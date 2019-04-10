@@ -53,47 +53,48 @@ void FaceCenteredBoundaryVariable::LoadEMFShearing(EdgeField &src,
   MeshBlock *pmb = pmy_block_;
   int sj, sk, ej, ek;
   int psj, pej; // indices for e3
+  int jo = pbval_->joverlap_;
   int nx2 = pmb->block_size.nx2 - NGHOST;
   sk = pmb->ks;        ek = pmb->ke;
   switch(nb) {
     case 0:
-      sj = pmb->je - joverlap_ - (NGHOST - 1); ej = pmb->je;
-      if (joverlap_ > nx2) sj = pmb->js;
+      sj = pmb->je - jo - (NGHOST - 1); ej = pmb->je;
+      if (jo > nx2) sj = pmb->js;
       psj = sj; pej = ej;
       break;
     case 1:
-      sj = pmb->js; ej = pmb->je - joverlap_ + NGHOST;
-      if (joverlap_ < NGHOST) ej = pmb->je;
+      sj = pmb->js; ej = pmb->je - jo + NGHOST;
+      if (jo < NGHOST) ej = pmb->je;
       psj = sj; pej = ej + 1;
       break;
     case 2:
       sj = pmb->je - (NGHOST - 1); ej = pmb->je;
-      if (joverlap_ > nx2) sj = pmb->je - (joverlap_ - nx2) + 1;
+      if (jo > nx2) sj = pmb->je - (jo - nx2) + 1;
       psj = sj; pej = ej;
       break;
     case 3:
       sj = pmb->js; ej = pmb->js + (NGHOST - 1);
-      if (joverlap_ < NGHOST) ej = pmb->js + (NGHOST - joverlap_) - 1;
+      if (jo < NGHOST) ej = pmb->js + (NGHOST - jo) - 1;
       psj = sj + 1; pej = ej + 1;
       break;
     case 4:
-      sj = pmb->js; ej = pmb->js + joverlap_ + NGHOST - 1;
-      if (joverlap_ > nx2) ej = pmb->je;
+      sj = pmb->js; ej = pmb->js + jo + NGHOST - 1;
+      if (jo > nx2) ej = pmb->je;
       psj = sj; pej = ej + 1;
       break;
     case 5:
-      sj = pmb->js + joverlap_ - NGHOST; ej = pmb->je;
-      if (joverlap_ < NGHOST) sj = pmb->js;
+      sj = pmb->js + jo - NGHOST; ej = pmb->je;
+      if (jo < NGHOST) sj = pmb->js;
       psj = sj; pej = ej + 1;
       break;
     case 6:
       sj = pmb->js; ej = pmb->js + (NGHOST - 1);
-      if (joverlap_ > nx2) ej = pmb->js + (joverlap_ - nx2) - 1;
+      if (jo > nx2) ej = pmb->js + (jo - nx2) - 1;
       psj = sj + 1; pej = ej + 1;
       break;
     case 7:
       sj = pmb->je - (NGHOST - 1); ej = pmb->je;
-      if (joverlap_ < NGHOST) sj = pmb->je - (NGHOST - joverlap_) + 1;
+      if (jo < NGHOST) sj = pmb->je - (NGHOST - jo) + 1;
       psj = sj; pej = ej;
       break;
     default:
@@ -129,34 +130,34 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
   int nx3 = pmb->block_size.nx3;
 
   if (shbb_.inner == true) {
-    // step 1. -- average edges of shboxvar_emf_
+    // step 1. -- average edges of shboxvar_fc_flx_
     // average e3 for x1x2 edge
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j+=nx2)
-        shboxvar_inner_emf_.x3e(k,j) *= 0.5;
+        shboxvar_inner_fc_flx_.x3e(k,j) *= 0.5;
     }
     // average e2 for x1x3 edge
     for (int k=ks; k<=ke+1; k+=nx3) {
       for (int j=js; j<=je; j++)
-        shboxvar_inner_emf_.x2e(k,j) *= 0.5;
+        shboxvar_inner_fc_flx_.x2e(k,j) *= 0.5;
     }
 
     // step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post
     // MPI_Isend otherwise
     for (int n=0; n<4; n++) {
       if (send_inner_rank_[n] != -1) {
-        LoadEMFShearing(shboxvar_inner_emf_, send_innerbuf_emf_[n], n);
+        LoadEMFShearing(shboxvar_inner_fc_flx_, send_innerbuf_fc_flx_[n], n);
         if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
-          std::memcpy(pbl->pbval->recv_innerbuf_emf_[n],
-                      send_innerbuf_emf_[n], send_innersize_emf_[n]*sizeof(Real));
-          pbl->pbval->shbox_inner_emf_flag_[n] = BoundaryStatus::arrived;
+          std::memcpy(pbl->pbval->recv_innerbuf_fc_flx_[n],
+                      send_innerbuf_fc_flx_[n], send_innersize_fc_flx_[n]*sizeof(Real));
+          pbl->pbval->shbox_inner_fc_flx_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
-          int tag = CreateBvalsMPITag(send_inner_lid_[n], n, AthenaTagMPI::shbox_emf);
-          MPI_Isend(send_innerbuf_emf_[n], send_innersize_emf_[n],
+          int tag = CreateBvalsMPITag(send_inner_lid_[n], n,sh_fc_flx_phys_id_);
+          MPI_Isend(send_innerbuf_fc_flx_[n], send_innersize_fc_flx_[n],
                     MPI_ATHENA_REAL, send_inner_rank_[n], tag,
-                    MPI_COMM_WORLD, &rq_innersend_emf_[n]);
+                    MPI_COMM_WORLD, &rq_innersend_fc_flx_[n]);
 #endif
         }
       }
@@ -164,16 +165,16 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
   } // inner boundaries
 
   if (shbb_.outer == true) {
-    // step 1. -- average edges of shboxvar_emf_
+    // step 1. -- average edges of shboxvar_fc_flx_
     // average e3 for x1x2 edge
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j+=nx2)
-        shboxvar_outer_emf_.x3e(k,j) *= 0.5;
+        shboxvar_outer_fc_flx_.x3e(k,j) *= 0.5;
     }
     // average e2 for x1x3 edge
     for (int k=ks; k<=ke+1; k+=nx3) {
       for (int j=js; j<=je; j++)
-        shboxvar_outer_emf_.x2e(k,j) *= 0.5;
+        shboxvar_outer_fc_flx_.x2e(k,j) *= 0.5;
     }
 
     // step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post
@@ -181,19 +182,19 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
     int offset = 4;
     for (int n=0; n<4; n++) {
       if (send_outer_rank_[n] != -1) {
-        LoadEMFShearing(shboxvar_outer_emf_, send_outerbuf_emf_[n], n+offset);
+        LoadEMFShearing(shboxvar_outer_fc_flx_, send_outerbuf_fc_flx_[n], n+offset);
         if (send_outer_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(send_outer_gid_[n]);
-          std::memcpy(pbl->pbval->recv_outerbuf_emf_[n],
-                      send_outerbuf_emf_[n], send_outersize_emf_[n]*sizeof(Real));
-          pbl->pbval->shbox_outer_emf_flag_[n] = BoundaryStatus::arrived;
+          std::memcpy(pbl->pbval->recv_outerbuf_fc_flx_[n],
+                      send_outerbuf_fc_flx_[n], send_outersize_fc_flx_[n]*sizeof(Real));
+          pbl->pbval->shbox_outer_fc_flx_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
           int tag = CreateBvalsMPITag(send_outer_lid_[n], n+offset,
-                                      AthenaTagMPI::shbox_emf);
-          MPI_Isend(send_outerbuf_emf_[n],send_outersize_emf_[n],
+                                     sh_fc_flx_phys_id_);
+          MPI_Isend(send_outerbuf_fc_flx_[n],send_outersize_fc_flx_[n],
                     MPI_ATHENA_REAL, send_outer_rank_[n], tag,
-                    MPI_COMM_WORLD, &rq_outersend_emf_[n]);
+                    MPI_COMM_WORLD, &rq_outersend_fc_flx_[n]);
 #endif
         }
       }
@@ -214,47 +215,48 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(EdgeField 
   MeshBlock *pmb = pmy_block_;
   int sj, sk, ej, ek;
   int psj, pej;
+  int jo = pbval_->joverlap_;
   int nx2 = pmb->block_size.nx2 - NGHOST;
-  int nxo = pmb->block_size.nx2 - joverlap_;
+  int nxo = pmb->block_size.nx2 - jo;
 
   sk = pmb->ks; ek = pmb->ke;
   switch(nb) {
     case 0:
-      sj = pmb->js - NGHOST; ej = pmb->js + (joverlap_ - 1);
-      if (joverlap_ > nx2) sj = pmb->js - nxo;
+      sj = pmb->js - NGHOST; ej = pmb->js + (jo - 1);
+      if (jo > nx2) sj = pmb->js - nxo;
       psj = sj; pej = ej + 1;
       break;
     case 1:
-      sj = pmb->js + joverlap_; ej = pmb->je + NGHOST;
-      if (joverlap_ < NGHOST) ej = pmb->je + joverlap_;
+      sj = pmb->js + jo; ej = pmb->je + NGHOST;
+      if (jo < NGHOST) ej = pmb->je + jo;
       psj = sj; pej = ej + 1;
       break;
     case 2:
       sj = pmb->js - NGHOST; ej = pmb->js - 1;
-      if (joverlap_ > nx2) ej = pmb->js - nxo - 1;
+      if (jo > nx2) ej = pmb->js - nxo - 1;
       psj = sj; pej = ej;
       break;
     case 3:
-      sj = pmb->je + joverlap_ + 1; ej = pmb->je + NGHOST;
+      sj = pmb->je + jo + 1; ej = pmb->je + NGHOST;
       psj = sj + 1; pej = ej + 1;
       break;
     case 4:
-      sj = pmb->je - (joverlap_ - 1); ej = pmb->je + NGHOST;
-      if (joverlap_ > nx2) ej = pmb->je + nxo;
+      sj = pmb->je - (jo - 1); ej = pmb->je + NGHOST;
+      if (jo > nx2) ej = pmb->je + nxo;
       psj = sj; pej = ej + 1;
       break;
     case 5:
-      sj = pmb->js - NGHOST; ej = pmb->je - joverlap_;
-      if (joverlap_<=NGHOST) sj = pmb->js - joverlap_;
+      sj = pmb->js - NGHOST; ej = pmb->je - jo;
+      if (jo <= NGHOST) sj = pmb->js - jo;
       psj = sj; pej = ej + 1;
       break;
     case 6:
       sj = pmb->je + 1; ej = pmb->je + NGHOST;
-      if (joverlap_ > nx2) sj = pmb->je + nxo + 1;
+      if (jo > nx2) sj = pmb->je + nxo + 1;
       psj = sj + 1; pej = ej + 1;
       break;
     case 7:
-      sj = pmb->js - NGHOST; ej = pmb->js - joverlap_ - 1;
+      sj = pmb->js - NGHOST; ej = pmb->js - jo - 1;
       psj = sj; pej = ej;
       break;
     default:
@@ -287,8 +289,8 @@ bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
 
   if (shbb_.inner == true) { // check inner boundaries
     for (int n=0; n<4; n++) {
-      if (shbox_inner_emf_flag_[n] == BoundaryStatus::completed) continue;
-      if (shbox_inner_emf_flag_[n] == BoundaryStatus::waiting) {
+      if (shbox_inner_fc_flx_flag_[n] == BoundaryStatus::completed) continue;
+      if (shbox_inner_fc_flx_flag_[n] == BoundaryStatus::waiting) {
         if (recv_inner_rank_[n] == Globals::my_rank) {// on the same process
           flagi = false;
           continue;
@@ -297,26 +299,26 @@ bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
-          MPI_Test(&rq_innerrecv_emf_[n], &test, MPI_STATUS_IGNORE);
+          MPI_Test(&rq_innerrecv_fc_flx_[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
             flagi = false;
             continue;
           }
-          shbox_inner_emf_flag_[n] = BoundaryStatus::arrived;
+          shbox_inner_fc_flx_flag_[n] = BoundaryStatus::arrived;
 #endif
         }
       }
       // set dst if boundary arrived
-      SetEMFShearingBoxBoundarySameLevel(shboxmap_inner_emf_, recv_innerbuf_emf_[n], n);
-      shbox_inner_emf_flag_[n] = BoundaryStatus::completed; // completed
+      SetEMFShearingBoxBoundarySameLevel(shboxmap_inner_fc_flx_, recv_innerbuf_fc_flx_[n], n);
+      shbox_inner_fc_flx_flag_[n] = BoundaryStatus::completed; // completed
     }
   } // inner boundary
 
   if (shbb_.outer == true) { // check outer boundaries
     int offset = 4;
     for (int n=0; n<4; n++) {
-      if (shbox_outer_emf_flag_[n] == BoundaryStatus::completed) continue;
-      if (shbox_outer_emf_flag_[n] == BoundaryStatus::waiting) {
+      if (shbox_outer_fc_flx_flag_[n] == BoundaryStatus::completed) continue;
+      if (shbox_outer_fc_flx_flag_[n] == BoundaryStatus::waiting) {
         if (recv_outer_rank_[n] == Globals::my_rank) {  // on the same process
           flago = false;
           continue;
@@ -325,18 +327,18 @@ bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
-          MPI_Test(&rq_outerrecv_emf_[n], &test, MPI_STATUS_IGNORE);
+          MPI_Test(&rq_outerrecv_fc_flx_[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
             flago = false;
             continue;
           }
-          shbox_outer_emf_flag_[n] = BoundaryStatus::arrived;
+          shbox_outer_fc_flx_flag_[n] = BoundaryStatus::arrived;
 #endif
         }
       }
-      SetEMFShearingBoxBoundarySameLevel(shboxmap_outer_emf_, recv_outerbuf_emf_[n],
+      SetEMFShearingBoxBoundarySameLevel(shboxmap_outer_fc_flx_, recv_outerbuf_fc_flx_[n],
                                          n+offset);
-      shbox_outer_emf_flag_[n] = BoundaryStatus::completed; // completed
+      shbox_outer_fc_flx_flag_[n] = BoundaryStatus::completed; // completed
     }
   } // outer boundary
   return (flagi && flago);
@@ -354,39 +356,41 @@ void FaceCenteredBoundaryVariable::RemapEMFShearingBoxBoundary() {
   int ks = pmb->ks, ke = pmb->ke;
   int js = pmb->js, je = pmb->je;
   int is = pmb->is, ie = pmb->ie;
+  Real eps = pbval_->eps_;
+
   if (shbb_.inner == true) {
-    ClearEMFShearing(shboxvar_inner_emf_);
+    ClearEMFShearing(shboxvar_inner_fc_flx_);
     // step 1.-- conservative remapping
     for (int k=ks; k<=ke+1; k++) {
-      RemapFluxEMF(k, js, je+2, eps_, shboxmap_inner_emf_.x2e, flx_inner_emf_.x2e);
+      RemapFluxEMF(k, js, je+2, eps, shboxmap_inner_fc_flx_.x2e, flx_inner_fc_flx_.x2e);
       for (int j=js; j<=je; j++) {
-        shboxmap_inner_emf_.x2e(k,j) -= flx_inner_emf_.x2e(j+1) - flx_inner_emf_.x2e(j);
+        shboxmap_inner_fc_flx_.x2e(k,j) -= flx_inner_fc_flx_.x2e(j+1) - flx_inner_fc_flx_.x2e(j);
       }
     }
     // step 2.-- average the EMF correction
     // average e2
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++)
-        e2(k,j,is) = 0.5*(e2(k,j,is) + shboxmap_inner_emf_.x2e(k,j));
+        e2(k,j,is) = 0.5*(e2(k,j,is) + shboxmap_inner_fc_flx_.x2e(k,j));
     }
-    ClearEMFShearing(shboxmap_inner_emf_);
+    ClearEMFShearing(shboxmap_inner_fc_flx_);
   }
 
   if (shbb_.outer == true) {
-    ClearEMFShearing(shboxvar_outer_emf_);
+    ClearEMFShearing(shboxvar_outer_fc_flx_);
     // step 1.-- conservative remapping
     for (int k=ks; k<=ke+1; k++) { // e2
-      RemapFluxEMF(k, js-1, je+1, -eps_, shboxmap_outer_emf_.x2e, flx_outer_emf_.x2e);
+      RemapFluxEMF(k, js-1, je+1, -eps, shboxmap_outer_fc_flx_.x2e, flx_outer_fc_flx_.x2e);
       for (int j=js; j<=je; j++)
-        shboxmap_outer_emf_.x2e(k,j) -= flx_outer_emf_.x2e(j+1) - flx_outer_emf_.x2e(j);
+        shboxmap_outer_fc_flx_.x2e(k,j) -= flx_outer_fc_flx_.x2e(j+1) - flx_outer_fc_flx_.x2e(j);
     }
     // step 2.-- average the EMF correction
     // average e2
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++)
-        e2(k,j,ie+1) = 0.5*(e2(k,j,ie+1) + shboxmap_outer_emf_.x2e(k,j));
+        e2(k,j,ie+1) = 0.5*(e2(k,j,ie+1) + shboxmap_outer_fc_flx_.x2e(k,j));
     }
-    ClearEMFShearing(shboxmap_outer_emf_);
+    ClearEMFShearing(shboxmap_outer_fc_flx_);
   }
   return;
 }

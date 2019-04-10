@@ -50,6 +50,7 @@ void FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int n
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int psj, pej; // indices for bx2
+  int jo = pbval_->joverlap_;
   int nx2 = pmb->block_size.nx2 - NGHOST;
 
   si = pmb->is - NGHOST; ei = pmb->is - 1;
@@ -57,43 +58,43 @@ void FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int n
   if (pmesh->mesh_size.nx3 > 1)  ek += NGHOST, sk -= NGHOST;
   switch(nb) {
     case 0:
-      sj = pmb->je - joverlap_ - (NGHOST - 1); ej = pmb->je;
-      if (joverlap_ > nx2) sj = pmb->js;
+      sj = pmb->je - jo - (NGHOST - 1); ej = pmb->je;
+      if (jo > nx2) sj = pmb->js;
       psj = sj; pej = ej + 1;
       break;
     case 1:
-      sj = pmb->js; ej = pmb->je - joverlap_ + NGHOST;
-      if (joverlap_ < NGHOST) ej = pmb->je;
+      sj = pmb->js; ej = pmb->je - jo + NGHOST;
+      if (jo < NGHOST) ej = pmb->je;
       psj = sj; pej = ej + 1;
       break;
     case 2:
       sj = pmb->je - (NGHOST - 1); ej = pmb->je;
-      if (joverlap_ > nx2) sj = pmb->je - (joverlap_ - nx2) + 1;
+      if (jo > nx2) sj = pmb->je - (jo - nx2) + 1;
       psj = sj; pej = ej;
       break;
     case 3:
       sj = pmb->js; ej = pmb->js + (NGHOST - 1);
-      if (joverlap_ < NGHOST) ej = pmb->js + (NGHOST - joverlap_) - 1;
+      if (jo < NGHOST) ej = pmb->js + (NGHOST - jo) - 1;
       psj = sj + 1; pej = ej + 1;
       break;
     case 4:
-      sj = pmb->js; ej = pmb->js + joverlap_ + NGHOST - 1;
-      if (joverlap_ > nx2) ej = pmb->je;
+      sj = pmb->js; ej = pmb->js + jo + NGHOST - 1;
+      if (jo > nx2) ej = pmb->je;
       psj = sj; pej = ej + 1;
       break;
     case 5:
-      sj = pmb->js + joverlap_ - NGHOST; ej = pmb->je;
-      if (joverlap_ < NGHOST) sj = pmb->js;
+      sj = pmb->js + jo - NGHOST; ej = pmb->je;
+      if (jo < NGHOST) sj = pmb->js;
       psj = sj; pej = ej + 1;
       break;
     case 6:
       sj = pmb->js; ej = pmb->js + (NGHOST - 1);
-      if (joverlap_ > nx2) ej = pmb->js + (joverlap_ - nx2) - 1;
+      if (jo > nx2) ej = pmb->js + (jo - nx2) - 1;
       psj = sj + 1; pej = ej + 1;
       break;
     case 7:
       sj = pmb->je - (NGHOST - 1); ej = pmb->je;
-      if (joverlap_ < NGHOST) sj = pmb->je - (NGHOST - joverlap_) + 1;
+      if (jo < NGHOST) sj = pmb->je - (NGHOST - jo) + 1;
       psj = sj; pej = ej;
       break;
     default:
@@ -119,7 +120,7 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  int ku,kl;
+  int ku, kl;
   if (pmesh->mesh_size.nx3 > 1) {
     ku = ke + NGHOST;
     kl = ks - NGHOST;
@@ -127,19 +128,20 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     ku = ke;
     kl = ks;
   }
+  Real eps = pbval_->eps_;
   Real qomL = pbval_->qomL_;
 
   if (shbb_.inner == true) {
     int ib = is - NGHOST;
     int ii;
-    // step 1. -- load shboxvar_field_
+    // step 1. -- load shboxvar_fc_
     for (int k=kl; k<=ku; k++) {
       for (int j=js-NGHOST; j<=je+NGHOST; j++) {
         for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
-          shboxvar_inner_field_.x1f(k,j,i) = (*var_fc).x1f(k,j,ii);
-          shboxvar_inner_field_.x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
-          shboxvar_inner_field_.x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
+          shboxvar_inner_fc_.x1f(k,j,i) = (*var_fc).x1f(k,j,ii);
+          shboxvar_inner_fc_.x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
+          shboxvar_inner_fc_.x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
         }
       }
     }
@@ -148,42 +150,42 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     for (int j=js-NGHOST; j<=je+NGHOST; j++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
-        shboxvar_inner_field_.x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
+        shboxvar_inner_fc_.x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
       }
     }
     int jp = je + NGHOST + 1;
     for (int k=kl; k<=ku; k++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
-        shboxvar_inner_field_.x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
+        shboxvar_inner_fc_.x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
       }
     }
 
     // step 2. -- conservative remapping
     for (int k=kl; k<=ku; k++) {  // bx1
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js, je+2, i, eps_, shboxvar_inner_field_.x1f, flx_inner_field_.x1f);
+        RemapFlux(k, js, je+2, i, eps, shboxvar_inner_fc_.x1f, flx_inner_fc_.x1f);
         for (int j=js; j<=je+1; j++) {
-          shboxvar_inner_field_.x1f(k,j,i) -= (flx_inner_field_.x1f(j+1) -
-                                               flx_inner_field_.x1f(j));
+          shboxvar_inner_fc_.x1f(k,j,i) -= (flx_inner_fc_.x1f(j+1) -
+                                               flx_inner_fc_.x1f(j));
         }
       }
     }
     for (int k=kl; k<=ku; k++) {  // bx2
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js, je+3, i, eps_, shboxvar_inner_field_.x2f, flx_inner_field_.x2f);
+        RemapFlux(k, js, je+3, i, eps, shboxvar_inner_fc_.x2f, flx_inner_fc_.x2f);
         for (int j=js; j<=je+2; j++) {
-          shboxvar_inner_field_.x2f(k,j,i) -= (flx_inner_field_.x2f(j+1) -
-                                               flx_inner_field_.x2f(j));
+          shboxvar_inner_fc_.x2f(k,j,i) -= (flx_inner_fc_.x2f(j+1) -
+                                               flx_inner_fc_.x2f(j));
         }
       }
     }
     for (int k=kl; k<=ku+1; k++) { // bx3
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js, je+2, i, eps_, shboxvar_inner_field_.x3f, flx_inner_field_.x3f);
+        RemapFlux(k, js, je+2, i, eps, shboxvar_inner_fc_.x3f, flx_inner_fc_.x3f);
         for (int j=js; j<=je+1; j++) {
-          shboxvar_inner_field_.x3f(k,j,i) -= (flx_inner_field_.x3f(j+1) -
-                                               flx_inner_field_.x3f(j));
+          shboxvar_inner_fc_.x3f(k,j,i) -= (flx_inner_fc_.x3f(j+1) -
+                                               flx_inner_fc_.x3f(j));
         }
       }
     }
@@ -191,18 +193,18 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
     for (int n=0; n<4; n++) {
       if (send_inner_rank_[n] != -1) {
-        LoadShearing(shboxvar_inner_field_, send_innerbuf_field_[n], n);
+        LoadShearing(shboxvar_inner_fc_, send_innerbuf_fc_[n], n);
         if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
-          std::memcpy(pbl->pbval->recv_innerbuf_field_[n],send_innerbuf_field_[n],
-                      send_innersize_field_[n]*sizeof(Real));
-          pbl->pbval->shbox_inner_field_flag_[n] = BoundaryStatus::arrived;
+          std::memcpy(pbl->pbval->recv_innerbuf_fc_[n],send_innerbuf_fc_[n],
+                      send_innersize_fc_[n]*sizeof(Real));
+          pbl->pbval->shbox_inner_fc_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid = n
-          int tag = CreateBvalsMPITag(send_inner_lid_[n], n, AthenaTagMPI::shbox_field);
-          MPI_Isend(send_innerbuf_field_[n],send_innersize_field_[n],MPI_ATHENA_REAL,
-                    send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_field_[n]);
+          int tag = CreateBvalsMPITag(send_inner_lid_[n], n, sh_fc_phys_id_);
+          MPI_Isend(send_innerbuf_fc_[n],send_innersize_fc_[n],MPI_ATHENA_REAL,
+                    send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_fc_[n]);
 #endif
         }
       }
@@ -213,14 +215,14 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     int  ib = ie + 1;
     qomL = -qomL;
     int ii;
-    // step 1. -- load shboxvar_field_
+    // step 1. -- load shboxvar_fc_
     for (int k=kl; k<=ku; k++) {
       for (int j=js-NGHOST; j<=je+NGHOST; j++) {
         for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
-          shboxvar_outer_field_.x1f(k,j,i) = (*var_fc).x1f(k,j,ii+1);
-          shboxvar_outer_field_.x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
-          shboxvar_outer_field_.x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
+          shboxvar_outer_fc_.x1f(k,j,i) = (*var_fc).x1f(k,j,ii+1);
+          shboxvar_outer_fc_.x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
+          shboxvar_outer_fc_.x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
         }
       }
     }
@@ -229,45 +231,45 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     for (int j=js-NGHOST; j<=je+NGHOST; j++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
-        shboxvar_outer_field_.x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
+        shboxvar_outer_fc_.x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
       }
     }
     int jp = je + NGHOST + 1;
     for (int k=kl; k<=ku; k++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
-        shboxvar_outer_field_.x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
+        shboxvar_outer_fc_.x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
       }
     }
 
     // step 2. -- conservative remapping
     for (int k=kl; k<=ku; k++) {  // bx1
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js-1, je+1, i, -eps_, shboxvar_outer_field_.x1f,
-                       flx_outer_field_.x1f);
+        RemapFlux(k, js-1, je+1, i, -eps, shboxvar_outer_fc_.x1f,
+                       flx_outer_fc_.x1f);
         for (int j=js-1; j<=je; j++) {
-          shboxvar_outer_field_.x1f(k,j,i) -= (flx_outer_field_.x1f(j+1) -
-                                               flx_outer_field_.x1f(j));
+          shboxvar_outer_fc_.x1f(k,j,i) -= (flx_outer_fc_.x1f(j+1) -
+                                               flx_outer_fc_.x1f(j));
         }
       }
     }
     for (int k=kl; k<=ku; k++) {  // bx2
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js-1, je+2, i, -eps_, shboxvar_outer_field_.x2f,
-                       flx_outer_field_.x2f);
+        RemapFlux(k, js-1, je+2, i, -eps, shboxvar_outer_fc_.x2f,
+                       flx_outer_fc_.x2f);
         for (int j=js-1; j<=je+1; j++) {
-          shboxvar_outer_field_.x2f(k,j,i) -= (flx_outer_field_.x2f(j+1) -
-                                               flx_outer_field_.x2f(j));
+          shboxvar_outer_fc_.x2f(k,j,i) -= (flx_outer_fc_.x2f(j+1) -
+                                               flx_outer_fc_.x2f(j));
         }
       }
     }
     for (int k=kl; k<=ku+1; k++) {  // bx3
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js-1, je+1, i, -eps_, shboxvar_outer_field_.x3f,
-                  flx_outer_field_.x3f);
+        RemapFlux(k, js-1, je+1, i, -eps, shboxvar_outer_fc_.x3f,
+                  flx_outer_fc_.x3f);
         for (int j=js-1; j<=je; j++) {
-          shboxvar_outer_field_.x3f(k,j,i) -= (flx_outer_field_.x3f(j+1) -
-                                               flx_outer_field_.x3f(j));
+          shboxvar_outer_fc_.x3f(k,j,i) -= (flx_outer_fc_.x3f(j+1)
+                                            - flx_outer_fc_.x3f(j));
         }
       }
     }
@@ -276,19 +278,18 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     int offset = 4;
     for (int n=0; n<4; n++) {
       if (send_outer_rank_[n] != -1) {
-        LoadShearing(shboxvar_outer_field_, send_outerbuf_field_[n], n+offset);
+        LoadShearing(shboxvar_outer_fc_, send_outerbuf_fc_[n], n+offset);
         if (send_outer_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_outer_gid_[n]);
-          std::memcpy(pbl->pbval->recv_outerbuf_field_[n],
-                      send_outerbuf_field_[n], send_outersize_field_[n]*sizeof(Real));
-          pbl->pbval->shbox_outer_field_flag_[n] = BoundaryStatus::arrived;
+          std::memcpy(pbl->pbval->recv_outerbuf_fc_[n],
+                      send_outerbuf_fc_[n], send_outersize_fc_[n]*sizeof(Real));
+          pbl->pbval->shbox_outer_fc_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid for outer(inner): 2(0) and 3(1)
-          int tag = CreateBvalsMPITag(send_outer_lid_[n], n+offset,
-                                      AthenaTagMPI::shbox_field);
-          MPI_Isend(send_outerbuf_field_[n],send_outersize_field_[n],MPI_ATHENA_REAL,
-                    send_outer_rank_[n],tag,MPI_COMM_WORLD, &rq_outersend_field_[n]);
+          int tag = CreateBvalsMPITag(send_outer_lid_[n], n+offset, sh_fc_phys_id_);
+          MPI_Isend(send_outerbuf_fc_[n], send_outersize_fc_[n], MPI_ATHENA_REAL,
+                    send_outer_rank_[n], tag, MPI_COMM_WORLD, &rq_outersend_fc_[n]);
 #endif
         }
       }
@@ -311,56 +312,57 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int psi, pei, psj, pej;
+  int jo = pbval_->joverlap_;
   int nx2 = pmb->block_size.nx2 - NGHOST;
-  int nxo = pmb->block_size.nx2 - joverlap_;
+  int nxo = pmb->block_size.nx2 - jo;
 
   sk = pmb->ks; ek = pmb->ke;
   if (pmesh->mesh_size.nx3 > 1) ek += NGHOST, sk -= NGHOST;
   switch(nb) {
     case 0:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->js - NGHOST; ej = pmb->js + (joverlap_ - 1);
-      if (joverlap_ > nx2) sj = pmb->js - nxo;
+      sj = pmb->js - NGHOST; ej = pmb->js + (jo - 1);
+      if (jo > nx2) sj = pmb->js - nxo;
       psi = si; pei = ei; psj = sj; pej = ej + 1;
       break;
     case 1:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->js + joverlap_; ej = pmb->je + NGHOST;
-      if (joverlap_ < NGHOST) ej = pmb->je + joverlap_;
+      sj = pmb->js + jo; ej = pmb->je + NGHOST;
+      if (jo < NGHOST) ej = pmb->je + jo;
       psi = si; pei = ei; psj = sj; pej = ej + 1;
       break;
     case 2:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
       sj = pmb->js - NGHOST; ej = pmb->js - 1;
-      if (joverlap_ > nx2) ej = pmb->js - nxo - 1;
+      if (jo > nx2) ej = pmb->js - nxo - 1;
       psi = si; pei = ei; psj = sj; pej = ej;
       break;
     case 3:
       si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->je + joverlap_ + 1; ej = pmb->je + NGHOST;
+      sj = pmb->je + jo + 1; ej = pmb->je + NGHOST;
       psi = si; pei = ei; psj = sj + 1; pej = ej + 1;
       break;
     case 4:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->je - (joverlap_ - 1); ej = pmb->je + NGHOST;
-      if (joverlap_ > nx2) ej = pmb->je + nxo;
+      sj = pmb->je - (jo - 1); ej = pmb->je + NGHOST;
+      if (jo > nx2) ej = pmb->je + nxo;
       psi = si + 1; pei = ei + 1; psj = sj; pej = ej + 1;
       break;
     case 5:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->js - NGHOST; ej = pmb->je - joverlap_;
-      if (joverlap_ < NGHOST) sj = pmb->js - joverlap_;
+      sj = pmb->js - NGHOST; ej = pmb->je - jo;
+      if (jo < NGHOST) sj = pmb->js - jo;
       psi = si + 1; pei = ei + 1; psj = sj; pej = ej + 1;
       break;
     case 6:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
       sj = pmb->je + 1; ej = pmb->je + NGHOST;
-      if (joverlap_ > nx2) sj = pmb->je + nxo + 1;
+      if (jo > nx2) sj = pmb->je + nxo + 1;
       psi = si + 1; pei = ei + 1; psj = sj + 1; pej = ej + 1;
       break;
     case 7:
       si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->js - NGHOST; ej = pmb->js - joverlap_ - 1;
+      sj = pmb->js - NGHOST; ej = pmb->js - jo - 1;
       psi = si + 1; pei = ei + 1; psj = sj; pej = ej;
       break;
     default:
@@ -387,8 +389,8 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
 
   if (shbb_.inner == true) { // check inner boundaries
     for (int n=0; n<4; n++) {
-      if (shbox_inner_field_flag_[n] == BoundaryStatus::completed) continue;
-      if (shbox_inner_field_flag_[n] == BoundaryStatus::waiting) {
+      if (shbox_inner_fc_flag_[n] == BoundaryStatus::completed) continue;
+      if (shbox_inner_fc_flag_[n] == BoundaryStatus::waiting) {
         if (recv_inner_rank_[n] == Globals::my_rank) {// on the same process
           flagi = false;
           continue;
@@ -397,26 +399,26 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
-          MPI_Test(&rq_innerrecv_field_[n], &test, MPI_STATUS_IGNORE);
+          MPI_Test(&rq_innerrecv_fc_[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
             flagi = false;
             continue;
           }
-          shbox_inner_field_flag_[n] = BoundaryStatus::arrived;
+          shbox_inner_fc_flag_[n] = BoundaryStatus::arrived;
 #endif
         }
       }
       // set dst if boundary arrived
-      SetShearingBoxBoundarySameLevel(recv_innerbuf_field_[n], n);
-      shbox_inner_field_flag_[n] = BoundaryStatus::completed; // completed
+      SetShearingBoxBoundarySameLevel(recv_innerbuf_fc_[n], n);
+      shbox_inner_fc_flag_[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] to recv[3]
   } // inner boundary
 
   if (shbb_.outer == true) { // check outer boundaries
     int offset = 4;
     for (int n=0; n<4; n++) {
-      if (shbox_outer_field_flag_[n] == BoundaryStatus::completed) continue;
-      if (shbox_outer_field_flag_[n] == BoundaryStatus::waiting) {
+      if (shbox_outer_fc_flag_[n] == BoundaryStatus::completed) continue;
+      if (shbox_outer_fc_flag_[n] == BoundaryStatus::waiting) {
         if (recv_outer_rank_[n] == Globals::my_rank) {// on the same process
           flago = false;
           continue;
@@ -426,17 +428,17 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
 
-          MPI_Test(&rq_outerrecv_field_[n], &test, MPI_STATUS_IGNORE);
+          MPI_Test(&rq_outerrecv_fc_[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
             flago = false;
             continue;
           }
-          shbox_outer_field_flag_[n] = BoundaryStatus::arrived;
+          shbox_outer_fc_flag_[n] = BoundaryStatus::arrived;
 #endif
         }
       }
-      SetShearingBoxBoundarySameLevel(recv_outerbuf_field_[n], n+offset);
-      shbox_outer_field_flag_[n] = BoundaryStatus::completed; // completed
+      SetShearingBoxBoundarySameLevel(recv_outerbuf_fc_[n], n+offset);
+      shbox_outer_fc_flag_[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] and recv[1]
   } // outer boundary
   return (flagi && flago);

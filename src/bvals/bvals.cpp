@@ -469,20 +469,20 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
         if ((recv_inner_rank_[n]!=Globals::my_rank) &&
                           (recv_inner_rank_[n]!=-1)) {
           size = ssize_*NHYDRO*recv_innersize_cc_[n];
-          tag  = CreateBvalsMPITag(pmb->lid, n, AthenaTagMPI::shbox_hydro);
+          tag  = CreateBvalsMPITag(pmb->lid, n, sh_cc_phys_id_);
           MPI_Irecv(recv_innerbuf_cc_[n],size,MPI_ATHENA_REAL,
-                    recv_inner_rank_[n],tag,MPI_COMM_WORLD,
+                    recv_inner_rank_[n], tag, MPI_COMM_WORLD,
                     &rq_innerrecv_cc_[n]);
           if (MAGNETIC_FIELDS_ENABLED) {
             size = recv_innersize_fc_[n];
-            tag  = CreateBvalsMPITag(pmb->lid, n, AthenaTagMPI::shbox_field);
-            MPI_Irecv(recv_innerbuf_fc_[n],size,MPI_ATHENA_REAL,
-                      recv_inner_rank_[n],tag,MPI_COMM_WORLD,
+            tag  = CreateBvalsMPITag(pmb->lid, n, sh_fc_phys_id_);
+            MPI_Irecv(recv_innerbuf_fc_[n], size, MPI_ATHENA_REAL,
+                      recv_inner_rank_[n], tag, MPI_COMM_WORLD,
                       &rq_innerrecv_fc_[n]);
             size = recv_innersize_emf_[n];
-            tag  = CreateBvalsMPITag(pmb->lid, n, AthenaTagMPI::shbox_emf);
-            MPI_Irecv(recv_innerbuf_emf_[n],size,MPI_ATHENA_REAL,
-                      recv_inner_rank_[n],tag,MPI_COMM_WORLD,
+            tag  = CreateBvalsMPITag(pmb->lid, n, sh_fc_flx_phys_id_);
+            MPI_Irecv(recv_innerbuf_emf_[n], size, MPI_ATHENA_REAL,
+                      recv_inner_rank_[n], tag, MPI_COMM_WORLD,
                       &rq_innerrecv_emf_[n]);
           }
         }
@@ -495,20 +495,20 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
         if ((recv_outer_rank_[n]!=Globals::my_rank) &&
                           (recv_outer_rank_[n]!=-1)) {
           size = ssize_*NHYDRO*recv_outersize_cc_[n];
-          tag  = CreateBvalsMPITag(pmb->lid, n+offset, AthenaTagMPI::shbox_hydro);
-          MPI_Irecv(recv_outerbuf_cc_[n],size,MPI_ATHENA_REAL,
-                    recv_outer_rank_[n],tag,MPI_COMM_WORLD,
+          tag  = CreateBvalsMPITag(pmb->lid, n+offset, sh_cc_phys_id_);
+          MPI_Irecv(recv_outerbuf_cc_[n], size, MPI_ATHENA_REAL,
+                    recv_outer_rank_[n], tag, MPI_COMM_WORLD,
                     &rq_outerrecv_cc_[n]);
           if (MAGNETIC_FIELDS_ENABLED) {
             size = recv_outersize_fc_[n];
-            tag  = CreateBvalsMPITag(pmb->lid, n+offset, AthenaTagMPI::shbox_field);
-            MPI_Irecv(recv_outerbuf_fc_[n],size,MPI_ATHENA_REAL,
-                      recv_outer_rank_[n],tag,MPI_COMM_WORLD,
+            tag  = CreateBvalsMPITag(pmb->lid, n+offset, sh_fc_phys_id_);
+            MPI_Irecv(recv_outerbuf_fc_[n], size, MPI_ATHENA_REAL,
+                      recv_outer_rank_[n], tag, MPI_COMM_WORLD,
                       &rq_outerrecv_fc_[n]);
             size = recv_outersize_emf_[n];
-            tag  = CreateBvalsMPITag(pmb->lid, n+offset, AthenaTagMPI::shbox_emf);
-            MPI_Irecv(recv_outerbuf_emf_[n],size,MPI_ATHENA_REAL,
-                      recv_outer_rank_[n],tag,MPI_COMM_WORLD,
+            tag  = CreateBvalsMPITag(pmb->lid, n+offset, sh_fc_flx_phys_id_);
+            MPI_Irecv(recv_outerbuf_emf_[n], size, MPI_ATHENA_REAL,
+                      recv_outer_rank_[n], tag, MPI_COMM_WORLD,
                       &rq_outerrecv_emf_[n]);
           }
         }

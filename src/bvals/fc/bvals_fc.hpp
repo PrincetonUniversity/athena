@@ -163,6 +163,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   int  send_outersize_fc_[4], recv_outersize_fc_[4];
   Real *send_outerbuf_fc_[4], *recv_outerbuf_fc_[4];
 #ifdef MPI_PARALLEL
+  int sh_fc_phys_id_;
   MPI_Request rq_innersend_fc_[4], rq_innerrecv_fc_[4];
   MPI_Request rq_outersend_fc_[4], rq_outerrecv_fc_[4];
 #endif
@@ -183,6 +184,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   int  send_outersize_fc_flx_[4], recv_outersize_fc_flx_[4];
   Real *send_outerbuf_fc_flx_[4], *recv_outerbuf_fc_flx_[4];
 #ifdef MPI_PARALLEL
+  int sh_fc_flx_phys_id_;
   MPI_Request rq_innersend_fc_flx_[4],  rq_innerrecv_fc_flx_[4];
   MPI_Request rq_outersend_fc_flx_[4],  rq_outerrecv_fc_flx_[4];
 #endif

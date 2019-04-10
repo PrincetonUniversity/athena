@@ -226,7 +226,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
         LoadShearing(shboxvar_inner_cc_, send_innerbuf_cc_[n], n);
         if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
           MeshBlock *pbl = pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
-          std::memcpy(pbl->pbval->recv_innerbuf_cc_[n],send_innerbuf_cc_[n],
+          std::memcpy(pbl->pbval->recv_innerbuf_cc_[n], send_innerbuf_cc_[n],
                       send_innersize_cc_[n]*ssize*sizeof(Real));
           pbl->pbval->shbox_inner_cc_flag_[n] = BoundaryStatus::arrived;
         } else { // MPI
