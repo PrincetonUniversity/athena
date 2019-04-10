@@ -75,7 +75,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   }
 
   if (pmb->block_size.nx3 > 1) {
-    nface_=6; nedge_=12;
+    nface_ = 6; nedge_ = 12;
     CheckBoundaryFlag(block_bcs[BoundaryFace::inner_x3], CoordinateDirection::X3DIR);
     CheckBoundaryFlag(block_bcs[BoundaryFace::outer_x3], CoordinateDirection::X3DIR);
   }
@@ -100,6 +100,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   bvars.reserve(3);
   // TOOD(KGF): rename to "bvars_time_int"? What about a std::vector for bvars_sts?
   bvars_main_int.reserve(2);
+
+  // Matches initial value of Mesh::next_phys_id_
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
   bvars_next_phys_id_ = 1;
 
@@ -725,17 +727,6 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   return;
 }
 
-// Public function, allows calling sites other than BoundaryVariable objects
-// E.g. if chemistry or radiation elects to communicate additional information with MPI
-// outside the framework of the BoundaryVariable classes
-
-int BoundaryValues::ReserveTagVariableIDs(int num_phys) {
-  // TODO(felker): add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
-  int start_id = bvars_next_phys_id_;
-  bvars_next_phys_id_ += num_phys;
-  return start_id;
-}
-
 
 // KGF: should "bvars_it" be fixed in this class member function? Or passed as argument?
 void BoundaryValues::DispatchBoundaryFunctions(
@@ -837,4 +828,19 @@ void BoundaryValues::DispatchBoundaryFunctions(
         break;
     } // end switch(block_bcs[face])
   } // end loop over BoundaryVariable *
+}
+
+// Public function, to be called in MeshBlock ctor for keeping MPI tag bitfields
+// consistent across MeshBlocks, even if certain MeshBlocks only construct a subset of
+// physical variable classes
+
+int BoundaryValues::AdvanceCounterPhysID(int num_phys) {
+#ifdef MPI_PARALLEL
+  // TODO(felker): add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
+  int start_id = bvars_next_phys_id_;
+  bvars_next_phys_id_ += num_phys;
+  return start_id;
+#else
+  return 0;
+#endif
 }

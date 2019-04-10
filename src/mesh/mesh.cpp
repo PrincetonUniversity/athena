@@ -91,6 +91,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   nreal_user_mesh_data_ = 0;
   nuser_history_output_ = 0;
 
+  next_phys_id_  = 0;
+#ifdef MPI_PARALLEL
+  // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
+  next_phys_id_  = 1;
+  ReserveMeshBlockPhysIDs();
+#endif
+
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh", "num_threads", 1);
   if (num_mesh_threads_ < 1) {
@@ -442,7 +449,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   }
 
   // initial mesh hierarchy construction is completed here
-
   tree.CountMeshBlock(nbtotal);
   loclist = new LogicalLocation[nbtotal];
   tree.GetMeshBlockList(loclist, nullptr, nbtotal);
@@ -555,6 +561,13 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   turb_flag = 0;
 
   nbnew=0; nbdel=0;
+
+  next_phys_id_  = 0;
+#ifdef MPI_PARALLEL
+  // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
+  next_phys_id_  = 1;
+  ReserveMeshBlockPhysIDs();
+#endif
 
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
@@ -1729,5 +1742,49 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
     //   SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
     pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
   } // end second exchange of ghost cells
+  return;
+}
+
+// Public function for advancing next_phys_id_ counter
+// E.g. if chemistry or radiation elects to communicate additional information with MPI
+// outside the framework of the BoundaryVariable classes
+
+// Store signed, but positive, integer corresponding to the next unused value to be used
+// as unique ID for a BoundaryVariable object's single set of MPI calls (formerly "enum
+// AthenaTagMPI"). 5 bits of unsigned integer representation are currently reserved
+// for this "phys" part of the bitfield tag, making 0, ..., 31 legal values
+
+int Mesh::ReserveTagPhysIDs(int num_phys) {
+  // TODO(felker): add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
+  int start_id = next_phys_id_;
+  next_phys_id_ += num_phys;
+  return start_id;
+}
+
+// private member fn, called in Mesh() ctor
+
+// depending on compile- and runtime options, reserve the maximum number of "int physid"
+// that might be necessary for each MeshBlock's BoundaryValues object to perform MPI
+// communication for all BoundaryVariable objects
+
+// TODO(felker): deduplicate this logic, which combines conditionals in MeshBlock ctor
+
+void Mesh::ReserveMeshBlockPhysIDs() {
+#ifdef MPI_ENABLED
+  // if (FLUID_ENABLED) {
+  // Advance Mesh's shared counter (initialized to next_phys_id=1 if MPI)
+  // Greedy reservation of phys IDs (only 1 of 2 needed for Hydro if multilevel==false)
+  ReserveTagPhysIDs(HydroBoundaryVariable::max_phys_id);
+  //  }
+  if (MAGNETIC_FIELDS_ENABLED) {
+    ReserveTagPhysIDs(FaceCenteredBoundaryVariable::max_phys_id);
+  }
+  if (SELF_GRAVITY_ENABLED) {
+    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+  }
+  if (NSCALARS > 0) {
+    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+  }
+#endif
   return;
 }

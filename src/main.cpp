@@ -87,14 +87,13 @@ int main(int argc, char *argv[]) {
     MPI_Finalize();
     return(0);
   }
-#else
+#else  // no OpenMP
   if (MPI_SUCCESS != MPI_Init(&argc, &argv)) {
     std::cout << "### FATAL ERROR in main" << std::endl
               << "MPI Initialization failed." << std::endl;
     return(0);
   }
-#endif
-
+#endif  // OPENMP_PARALLEL
   // Get process id (rank) in MPI_COMM_WORLD
   if (MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &(Globals::my_rank))) {
     std::cout << "### FATAL ERROR in main" << std::endl
@@ -110,10 +109,10 @@ int main(int argc, char *argv[]) {
     MPI_Finalize();
     return(0);
   }
-#else
+#else  // no MPI
   Globals::my_rank = 0;
   Globals::nranks  = 1;
-#endif // MPI_PARALLEL
+#endif  // MPI_PARALLEL
 
   //--- Step 2. --------------------------------------------------------------------------
   // Check for command line options and respond.

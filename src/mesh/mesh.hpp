@@ -227,11 +227,16 @@ class Mesh {
   MeshBlock* FindMeshBlock(int tgid);
   void ApplyUserWorkBeforeOutput(ParameterInput *pin);
 
+  // function for distributing unique "phys" bitfield IDs to BoundaryVariable objects and
+  // other categories of MPI communication for generating unique MPI_TAGs
+  int ReserveTagPhysIDs(int num_phys);
+
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void UserWorkAfterLoop(ParameterInput *pin);   // called in main loop
 
  private:
   // data
+  int next_phys_id_; // next unused value for encoding final component of MPI tag bitfield
   int root_level, max_level, current_level;
   int num_mesh_threads_;
   int *nslist, *ranklist, *nblist;
@@ -286,6 +291,7 @@ class Mesh {
   void OutputMeshStructure(int dim);
   void CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist, int nb);
   void CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb);
+  void ReserveMeshBlockPhysIDs();
 
   // Mesh::LoadBalancingAndAdaptiveMeshRefinement() helper functions:
   void UpdateMeshBlockTree(int &nnew, int &ndel);

@@ -63,6 +63,7 @@ class MGBoundaryValues : public BoundaryBase {
 
 #ifdef MPI_PARALLEL
   MPI_Comm mgcomm_;
+  int mg_grav_phys_id_;
 #endif
 
   friend class Multigrid;

@@ -121,13 +121,47 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   // physics-related, per-MeshBlock objects: may depend on Coordinates for diffusion
   // terms, and may enroll quantities in AMR and BoundaryVariable objs. in BoundaryValues
-  phydro = new Hydro(this, pin);
-  if (MAGNETIC_FIELDS_ENABLED)
+
+  // TODO(felker): prepare this section of the MeshBlock ctor to become more complicated
+  // for several extensions:
+  // 1) allow solver to compile without a Hydro class (or with a Hydro class for the
+  // background fluid that is not dynamically evolved)
+  // 2) MPI ranks containing MeshBlocks that solve a subset of the physics, e.g. Gravity
+  // but not Hydro.
+  // 3) MAGNETIC_FIELDS_ENABLED, SELF_GRAVITY_ENABLED, NSCALARS, (future) FLUID_ENABLED,
+  // etc. become runtime switches
+
+  // if (FLUID_ENABLED) {
+    // if (this->hydro_block)
+    phydro = new Hydro(this, pin);
+    // } else
+    // }
+    // Regardless, advance MeshBlock's local counter (initialized to bvars_next_phys_id=1)
+    // Greedy reservation of phys IDs (only 1 of 2 needed for Hydro if multilevel==false)
+    pbval->AdvanceCounterPhysID(HydroBoundaryVariable::max_phys_id);
+    //  }
+  if (MAGNETIC_FIELDS_ENABLED) {
+    // if (this->field_block)
     pfield = new Field(this, pin);
-  if (SELF_GRAVITY_ENABLED)
+    pbval->AdvanceCounterPhysID(FaceCenteredBoundaryVariable::max_phys_id);
+  }
+  if (SELF_GRAVITY_ENABLED) {
+    // if (this->grav_block)
     pgrav = new Gravity(this, pin);
-  if (NSCALARS > 0)
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
+  if (NSCALARS > 0) {
+    // if (this->grav_block)
     pscalars = new PassiveScalars(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
+  // KGF: suboptimal solution, since developer must copy/paste BoundaryVariable derived
+  // class type that is used in each PassiveScalars, Gravity, Field, Hydro, ... etc. class
+  // in order to correctly advance the BoundaryValues::bvars_next_phys_id_ local counter.
+
+  // TODO(felker): check that local counter pbval->bvars_next_phys_id_ agrees with shared
+  // Mesh::next_phys_id_ counter (including non-BoundaryVariable / per-MeshBlock reserved
+  // values). Compare both private member variables via BoundaryValues::CheckCounterPhysID
 
   peos = new EquationOfState(this, pin);
 
