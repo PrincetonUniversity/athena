@@ -100,6 +100,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   bvars.reserve(3);
   // TOOD(KGF): rename to "bvars_time_int"? What about a std::vector for bvars_sts?
   bvars_main_int.reserve(2);
+
+  // Matches initial value of Mesh::next_phys_id_
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
   bvars_next_phys_id_ = 1;
 
@@ -826,4 +828,19 @@ void BoundaryValues::DispatchBoundaryFunctions(
         break;
     } // end switch(block_bcs[face])
   } // end loop over BoundaryVariable *
+}
+
+// Public function, to be called in MeshBlock ctor for keeping MPI tag bitfields
+// consistent across MeshBlocks, even if certain MeshBlocks only construct a subset of
+// physical variable classes
+
+int BoundaryValues::AdvanceCounterPhysID(int num_phys) {
+#ifdef MPI_PARALLEL
+  // TODO(felker): add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
+  int start_id = bvars_next_phys_id_;
+  bvars_next_phys_id_ += num_phys;
+  return start_id;
+#else
+  return 0;
+#endif
 }

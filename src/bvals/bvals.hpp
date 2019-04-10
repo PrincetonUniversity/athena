@@ -123,6 +123,8 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // safety check of user's boundary fns in Mesh::Initialize before SetupPersistentMPI()
   void CheckUserBoundaries();
 
+  int AdvanceCounterPhysID(int num_phys);
+
  private:
   MeshBlock *pmy_block_;      // ptr to MeshBlock containing this BoundaryValues
   int nface_, nedge_;         // used only in fc/flux_correction_fc.cpp calculations
@@ -136,6 +138,10 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // the pole (azimuthally), shift the k-axis by nx3/2 for cell- and face-centered
   // variables, & emf, using this temporary 1D array.
   AthenaArray<Real> azimuthal_shift_;
+
+  // local counter for generating unique MPI tags for per-MeshBlock BoundaryVariable
+  // communication (subset of Mesh::next_phys_id_)
+  int bvars_next_phys_id_;
 
   // Shearingbox (shared with Field and Hydro)
   // ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
