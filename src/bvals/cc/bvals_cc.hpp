@@ -118,18 +118,19 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 #endif
 
   // Shearing box
-  ShearingBoundaryData shbd_inner_, shbd_outer_;
+  ShearingBoundaryData sh_bd_cc_[2]; // shbd_inner_, shbd_outer_;
   // BoundaryStatus shbox_inner_cc_flag_[4], shbox_outer_cc_flag_[4];
+  // Real *send_innerbuf_cc_[4], *recv_innerbuf_cc_[4]; // send and recv buffers
+  // Real *send_outerbuf_cc_[4], *recv_outerbuf_cc_[4]; // send and recv buffers
+
   // working arrays of remapped quantities
-  AthenaArray<Real>  shboxvar_inner_cc_, shboxvar_outer_cc_;
+  AthenaArray<Real>  sh_cc_[2]; // shboxvar_inner_cc_, shboxvar_outer_cc_;
   // flux from conservative remapping
-  AthenaArray<Real>  flx_inner_cc_, flx_outer_cc_;
+  AthenaArray<Real>  sh_flx_cc_[2]; // inner_cc_, flx_outer_cc_;
   // KGF: this should be a struct
   int  send_innersize_cc_[4], recv_innersize_cc_[4]; // buffer sizes
   int  send_outersize_cc_[4], recv_outersize_cc_[4]; // buffer sizes
 
-  // Real *send_innerbuf_cc_[4], *recv_innerbuf_cc_[4]; // send and recv buffers
-  // Real *send_outerbuf_cc_[4], *recv_outerbuf_cc_[4]; // send and recv buffers
 #ifdef MPI_PARALLEL
   int sh_cc_phys_id_;
 
