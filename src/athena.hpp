@@ -55,14 +55,12 @@ class FieldDiffusion;
 //! \struct LogicalLocation
 //  \brief stores logical location and level of MeshBlock
 
-struct LogicalLocation {
+struct LogicalLocation { // aggregate and POD type
   // These values can exceed the range of std::int32_t even if the root grid has only a
   // single MeshBlock if >30 levels of AMR are used, since the corresponding max index =
   // 1*2^31 > INT_MAX = 2^31 -1 for most 32-bit signed integer type impelementations
   std::int64_t lx1, lx2, lx3;
   int level;
-
-  LogicalLocation() : lx1(-1), lx2(-1), lx3(-1), level(-1) {}
 
   // operators useful for sorting
   bool operator==(LogicalLocation &ll) {
@@ -104,11 +102,6 @@ struct EdgeField {
   AthenaArray<Real> x1e, x2e, x3e;
 };
 
-// KGF: possible alternative to runtime-polymorphism based on templating and overloading:
-// struct Hydro {
-//   AthenaArray<Real> u, w;
-// };
-
 //----------------------------------------------------------------------------------------
 // enums used everywhere
 // (not specifying underlying integral type (C++11) for portability & performance)
@@ -144,41 +137,17 @@ enum TriangleIndex {T00=0, T10=1, T11=2, T20=3, T21=4, T22=5, T30=6, T31=7, T32=
 // enumerator types that are used for variables and function parameters:
 
 // needed for arrays dimensioned over grid directions
+// enumerator type only used in Mesh::EnrollUserMeshGenerator()
 enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
-// only used in Mesh::EnrollUserMeshGenerator(CoordinateDirection,MeshGenFunc my_mg)
 
 //------------------
 // strongly typed / scoped enums (C++11):
 //------------------
-// needed wherever MPI communications are used.  Must be < 32 and unique
-
-// AthenaTagMPI {hydro=0, field=1,
-//                      rad=2, // unused on rad0 branch
-//                      chem=3, // chemistry: renamed to TAG_SPECIES; add TAG_SIXRAY=16
-//                      hydflx=4, fldflx=5,
-//                      radFLX=6, // unused on rad0 branch
-//                      chmflx=7, // unused on chemistry branch
-//                      amr=8,  // Mesh::CreateAMRMPITag() for load balancing
-//                      fldflx_POLE=9, // tricky; only used in
-//                                         // BoundaryValues::Initialize() for emf
-//                      gravity=11, // FFT self-gravity
-//                      mggrav=12,  // phys=mggrav; in bvals_mg.cpp
-//                      shbox_hydro=13, shbox_field=14, shbox_emf=15};
-
-// KGF: temporary workaround for Multigrid
-#define TAG_MGGRAV 12
-
-//enum AthenaTagMPI : int {hydro, field, rad, chem, hydflx, fldflx, radflx, chmflx,
-//                         amr, fldflx_pole, gravity, mggrav,
-//                         shbox_hydro, shbox_field, shbox_emf};
-
 // KGF: Except for the 2x MG* enums, these may be unnessary w/ the new class inheritance
 // Now, only passed to BoundaryVariable::InitBoundaryData(); could replace w/ bool switch
 enum class BoundaryQuantity {cc, fc, cc_flcor, fc_flcor, mggrav, mggrav_f};
 enum class HydroBoundaryQuantity {cons, prim};
-// enum class BoundaryCommPhase {mesh_init, mesh_init_gr_amr, main_int};
 enum class BoundaryCommSubset {mesh_init, gr_amr, all};
-// enum class FluxCorrectionQuantity {hydro};
 
 //----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime
@@ -202,11 +171,6 @@ using MGBoundaryFunc = void (*)(
     AthenaArray<Real> &dst,Real time, int nvar,
     int is, int ie, int js, int je, int ks, int ke, int ngh,
     Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-// KGF: unused in pgen/, no EnrollUserGravBoundaryFunction() in Mesh class
-// using GravityBoundaryFunc = void (*)(
-//     MeshBlock *pmb, Coordinates *pco,
-//     AthenaArray<Real> &dst, Real time, Real dt,
-//     int is, int ie, int js, int je, int ks, int ke);
 using ViscosityCoeffFunc = void (*)(
     HydroDiffusion *phdif, MeshBlock *pmb,
     const  AthenaArray<Real> &w, const AthenaArray<Real> &bc,

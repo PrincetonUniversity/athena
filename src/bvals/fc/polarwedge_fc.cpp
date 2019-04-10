@@ -17,15 +17,11 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::PolarWedgeInnerX2(
-//                         MeshBlock *pmb, Coordinates *pco,
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int nl, int nu)
+//               Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
 //  \brief polar wedge boundary conditions, inner x2 boundary
 
 void FaceCenteredBoundaryVariable::PolarWedgeInnerX2(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b2
   Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
   for (int k=kl; k<=ku; ++k) {
@@ -65,14 +61,11 @@ void FaceCenteredBoundaryVariable::PolarWedgeInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::PolarWedgeOuterX2(
-//                        const Real time, const Real dt,
-//                        int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//               Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
 //  \brief polar wedge boundary conditions, outer x2 boundary
 
 void FaceCenteredBoundaryVariable::PolarWedgeOuterX2(
-    MeshBlock *pmb, Coordinates *pco,
-    Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
   // copy face-centered magnetic fields into ghost zones, reflecting b2
   Real sign = flip_across_pole_field[IB1] ? -1.0 : 1.0;
   for (int k=kl; k<=ku; ++k) {

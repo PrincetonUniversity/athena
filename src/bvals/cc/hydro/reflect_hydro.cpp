@@ -13,18 +13,15 @@
 // Athena++ headers
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
-#include "../../../mesh/mesh.hpp"
 #include "bvals_hydro.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::ReflectInnerX1(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, inner x1 boundary
 
 void HydroBoundaryVariable::ReflectInnerX1(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v1
   for (int n=0; n<=nu_; ++n) {
     if (n == (IVX)) {
@@ -52,13 +49,11 @@ void HydroBoundaryVariable::ReflectInnerX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::ReflectOuterX1(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, outer x1 boundary
 
 void HydroBoundaryVariable::ReflectOuterX1(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v1
   for (int n=0; n<=nu_; ++n) {
     if (n == (IVX)) {
@@ -85,14 +80,12 @@ void HydroBoundaryVariable::ReflectOuterX1(
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ReflecInnerX2(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//! \fn void HydroBoundaryVariable::ReflectInnerX2(
+//          Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, inner x2 boundary
 
 void HydroBoundaryVariable::ReflectInnerX2(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v2
   for (int n=0; n<=nu_; ++n) {
     if (n == (IVY)) {
@@ -120,13 +113,11 @@ void HydroBoundaryVariable::ReflectInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::ReflectOuterX2(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, outer x2 boundary
 
 void HydroBoundaryVariable::ReflectOuterX2(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v2
   for (int n=0; n<=nu_; ++n) {
     if (n == (IVY)) {
@@ -154,13 +145,11 @@ void HydroBoundaryVariable::ReflectOuterX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::ReflectInnerX3(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
 //  \brief REFLECTING boundary conditions, inner x3 boundary
 
 void HydroBoundaryVariable::ReflectInnerX3(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
   // copy hydro variables into ghost zones, reflecting v3
   for (int n=0; n<=nu_; ++n) {
     if (n == (IVZ)) {
@@ -188,13 +177,11 @@ void HydroBoundaryVariable::ReflectInnerX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::ReflectOuterX3(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, outer x3 boundary
 
 void HydroBoundaryVariable::ReflectOuterX3(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+    Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {
   // copy hydro variables into ghost zones, reflecting v3
   for (int n=0; n<=nu_; ++n) {
     if (n == (IVZ)) {

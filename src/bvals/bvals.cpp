@@ -43,17 +43,6 @@
 #include <mpi.h>
 #endif
 
-namespace {
-void BValFuncPlaceholder(
-    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-    Real time, Real dt,
-    int is, int ie, int js, int je, int ks, int ke, int ngh) {
-  // Free function temporarily used to replace all BValFunc function pointer targets other
-  // than user-defined boundary functions
-  return;
-}
-} // namespace
-
 // BoundaryValues constructor (the first object constructed inside the MeshBlock()
 // constructor): sets functions for the appropriate boundary conditions at each of the 6
 // dirs of a MeshBlock
@@ -61,176 +50,34 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
                                ParameterInput *pin)
     : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
   pmy_block_ = pmb;
-  for (int i=0; i<6; i++)
-    BoundaryFunction_[i] = nullptr;
-
-  // Set BC functions for each of the 6 boundaries in turn ------------------------------
+  // Check BC functions for each of the 6 boundaries in turn ---------------------
+  for (int i=0; i<6; i++) {
+    switch(block_bcs[i]) {
+      case BoundaryFlag::reflect:
+      case BoundaryFlag::outflow:
+      case BoundaryFlag::user:
+      case BoundaryFlag::polar_wedge:
+        apply_bndry_fn_[i] = true;
+        break;
+      default: // already initialized to false in class
+        break;
+    }
+  }
   // Inner x1
   nface_ = 2; nedge_ = 0;
-  switch(block_bcs[BoundaryFace::inner_x1]) {
-    case BoundaryFlag::reflect:
-      BoundaryFunction_[BoundaryFace::inner_x1] = BValFuncPlaceholder;
-      break;
-    case BoundaryFlag::outflow:
-      BoundaryFunction_[BoundaryFace::inner_x1] = BValFuncPlaceholder;
-      break;
-    case BoundaryFlag::block: // block boundary
-    case BoundaryFlag::periodic: // periodic boundary
-      BoundaryFunction_[BoundaryFace::inner_x1] = nullptr;
-      break;
-    // case BoundaryFlag::shear_periodic: // shearing periodic boundary
-    //   if (!SHEARING_BOX) block_bcs[BoundaryFace::inner_x1]=BoundaryFlag::periodic;
-    //   BoundaryFunction_[BoundaryFace::inner_x1] = nullptr;
-    //   break;
-    case BoundaryFlag::user: // user-enrolled BCs
-      BoundaryFunction_[BoundaryFace::inner_x1] =
-          pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x1];
-      break;
-    default:
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Flag ix1_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::inner_x1])
-          << " not valid" << std::endl;
-      ATHENA_ERROR(msg);
-      break;
-  }
-
-  // Outer x1
-  switch(block_bcs[BoundaryFace::outer_x1]) {
-    case BoundaryFlag::reflect:
-      BoundaryFunction_[BoundaryFace::outer_x1] = BValFuncPlaceholder;
-      break;
-    case BoundaryFlag::outflow:
-      BoundaryFunction_[BoundaryFace::outer_x1] = BValFuncPlaceholder;
-      break;
-    case BoundaryFlag::block: // block boundary
-    case BoundaryFlag::periodic: // periodic boundary
-      BoundaryFunction_[BoundaryFace::outer_x1] = nullptr;
-      break;
-    // case BoundaryFlag::shear_periodic: // shearing periodic boundary
-    //   if (!SHEARING_BOX) block_bcs[BoundaryFace::outer_x1]=BoundaryFlag::periodic;
-    //   BoundaryFunction_[BoundaryFace::outer_x1] = nullptr;
-    //   break;
-    case BoundaryFlag::user: // user-enrolled BCs
-      BoundaryFunction_[BoundaryFace::outer_x1] =
-          pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x1];
-      break;
-    default:
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-          << "Flag ox1_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::outer_x1])
-          << " not valid" << std::endl;
-      ATHENA_ERROR(msg);
-  }
+  CheckBoundaryFlag(block_bcs[BoundaryFace::inner_x1], CoordinateDirection::X1DIR);
+  CheckBoundaryFlag(block_bcs[BoundaryFace::outer_x1], CoordinateDirection::X1DIR);
 
   if (pmb->block_size.nx2 > 1) {
-    nface_=4; nedge_=4;
-    // Inner x2
-    switch(block_bcs[BoundaryFace::inner_x2]) {
-      case BoundaryFlag::reflect:
-        BoundaryFunction_[BoundaryFace::inner_x2] = BValFuncPlaceholder;
-        break;
-      case BoundaryFlag::outflow:
-        BoundaryFunction_[BoundaryFace::inner_x2] = BValFuncPlaceholder;
-        break;
-      case BoundaryFlag::block: // block boundary
-      case BoundaryFlag::periodic: // periodic boundary
-      case BoundaryFlag::polar: // polar boundary
-        BoundaryFunction_[BoundaryFace::inner_x2] = nullptr;
-        break;
-      case BoundaryFlag::polar_wedge: //polar boundary with a wedge
-        BoundaryFunction_[BoundaryFace::inner_x2] = BValFuncPlaceholder;
-        break;
-      case BoundaryFlag::user: // user-enrolled BCs
-        BoundaryFunction_[BoundaryFace::inner_x2] =
-            pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x2];
-        break;
-      default:
-        std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ix2_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::inner_x2])
-            << " not valid" << std::endl;
-        ATHENA_ERROR(msg);
-    }
-
-    // Outer x2
-    switch(block_bcs[BoundaryFace::outer_x2]) {
-      case BoundaryFlag::reflect:
-        BoundaryFunction_[BoundaryFace::outer_x2] = BValFuncPlaceholder;
-        break;
-      case BoundaryFlag::outflow:
-        BoundaryFunction_[BoundaryFace::outer_x2] = BValFuncPlaceholder;
-        break;
-      case BoundaryFlag::block: // block boundary
-      case BoundaryFlag::periodic: // periodic boundary
-      case BoundaryFlag::polar: // polar boundary
-        BoundaryFunction_[BoundaryFace::outer_x2] = nullptr;
-        break;
-      case BoundaryFlag::polar_wedge: // polar boundary with a wedge
-        BoundaryFunction_[BoundaryFace::outer_x2] = BValFuncPlaceholder;
-        break;
-      case BoundaryFlag::user: // user-enrolled BCs
-        BoundaryFunction_[BoundaryFace::outer_x2] =
-            pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x2];
-        break;
-      default:
-        std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ox2_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::outer_x2])
-            << " not valid" << std::endl;
-        ATHENA_ERROR(msg);
-    }
+    nface_ = 4; nedge_ = 4;
+    CheckBoundaryFlag(block_bcs[BoundaryFace::inner_x2], CoordinateDirection::X2DIR);
+    CheckBoundaryFlag(block_bcs[BoundaryFace::outer_x2], CoordinateDirection::X2DIR);
   }
 
   if (pmb->block_size.nx3 > 1) {
     nface_=6; nedge_=12;
-    // Inner x3
-    switch(block_bcs[BoundaryFace::inner_x3]) {
-      case BoundaryFlag::reflect:
-        BoundaryFunction_[BoundaryFace::inner_x3] = BValFuncPlaceholder;
-        break;
-      case BoundaryFlag::outflow:
-        BoundaryFunction_[BoundaryFace::inner_x3] = BValFuncPlaceholder;
-        break;
-      case BoundaryFlag::block: // block boundary
-      case BoundaryFlag::periodic: // periodic boundary
-        BoundaryFunction_[BoundaryFace::inner_x3] = nullptr;
-        break;
-      case BoundaryFlag::user: // user-enrolled BCs
-        BoundaryFunction_[BoundaryFace::inner_x3] =
-            pmy_mesh_->BoundaryFunction_[BoundaryFace::inner_x3];
-        break;
-      default:
-        std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ix3_bc=" <<  static_cast<int>(block_bcs[BoundaryFace::inner_x3])
-            << " not valid" << std::endl;
-        ATHENA_ERROR(msg);
-    }
-
-    // Outer x3
-    switch(block_bcs[BoundaryFace::outer_x3]) {
-      case BoundaryFlag::reflect:
-        BoundaryFunction_[BoundaryFace::outer_x3] = BValFuncPlaceholder;
-        break;
-      case BoundaryFlag::outflow:
-        BoundaryFunction_[BoundaryFace::outer_x3] = BValFuncPlaceholder;
-        break;
-      case BoundaryFlag::block: // block boundary
-      case BoundaryFlag::periodic: // periodic boundary
-        BoundaryFunction_[BoundaryFace::outer_x3] = nullptr;
-        break;
-      case BoundaryFlag::user: // user-enrolled BCs
-        BoundaryFunction_[BoundaryFace::outer_x3] =
-            pmy_mesh_->BoundaryFunction_[BoundaryFace::outer_x3];
-        break;
-      default:
-        std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
-            << "Flag ox3_bc=" << static_cast<int>(block_bcs[BoundaryFace::outer_x3])
-            << " not valid" << std::endl;
-        ATHENA_ERROR(msg);
-    }
+    CheckBoundaryFlag(block_bcs[BoundaryFace::inner_x3], CoordinateDirection::X3DIR);
+    CheckBoundaryFlag(block_bcs[BoundaryFace::outer_x3], CoordinateDirection::X3DIR);
   }
   // Perform compatibilty checks of user selections of polar vs. polar_wedge boundaries
   if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
@@ -583,18 +430,18 @@ void BoundaryValues::SetupPersistentMPI() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::CheckBoundary()
-//  \brief checks if the boundary conditions are correctly enrolled (and other boundary
-//  values compatibility checks performed at the top of Mesh::Initialize())
+//! \fn void BoundaryValues::CheckUserBoundaries()
+//  \brief checks if the boundary functions are correctly enrolled (this compatibility
+//  check is performed at the top of Mesh::Initialize(), after calling ProblemGenerator())
 
-void BoundaryValues::CheckBoundary() {
+void BoundaryValues::CheckUserBoundaries() {
   for (int i=0; i<nface_; i++) {
-    if (block_bcs[i]==BoundaryFlag::user) {
-      if (BoundaryFunction_[i]==nullptr) {
+    if (block_bcs[i] == BoundaryFlag::user) {
+      if (pmy_mesh_->BoundaryFunction_[i] == nullptr) {
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
-            << "A user-defined boundary is specified but the hydro boundary function "
-            << "is not enrolled in direction " << i  << "." << std::endl;
+            << "A user-defined boundary is specified but the actual boundary function "
+            << "is not enrolled in direction " << i  << " (in [0,6])." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -755,13 +602,13 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 
   // Extend the transverse limits that correspond to periodic boundaries as they are
   // updated: x1, then x2, then x3
-  if (BoundaryFunction_[BoundaryFace::inner_x2] == nullptr && pmb->block_size.nx2 > 1)
+  if (!apply_bndry_fn_[BoundaryFace::inner_x2] && pmb->block_size.nx2 > 1)
     bjs = pmb->js - NGHOST;
-  if (BoundaryFunction_[BoundaryFace::outer_x2] == nullptr && pmb->block_size.nx2 > 1)
+  if (!apply_bndry_fn_[BoundaryFace::outer_x2] && pmb->block_size.nx2 > 1)
     bje = pmb->je + NGHOST;
-  if (BoundaryFunction_[BoundaryFace::inner_x3] == nullptr && pmb->block_size.nx3 > 1)
+  if (!apply_bndry_fn_[BoundaryFace::inner_x3] && pmb->block_size.nx3 > 1)
     bks = pmb->ks - NGHOST;
-  if (BoundaryFunction_[BoundaryFace::outer_x3] == nullptr && pmb->block_size.nx3 > 1)
+  if (!apply_bndry_fn_[BoundaryFace::outer_x3] && pmb->block_size.nx3 > 1)
     bke = pmb->ke + NGHOST;
 
   // KGF: temporarily hardcode Hydro and Field access for coupling in EOS U(W) + calc bcc
@@ -780,30 +627,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   }
 
   // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
-  if (BoundaryFunction_[BoundaryFace::inner_x1] != nullptr) {
-    switch(block_bcs[BoundaryFace::inner_x1]) {
-      case BoundaryFlag::reflect:
-        for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-             ++bvars_it) {
-          (*bvars_it)->ReflectInnerX1(pmb, pco, time, dt, pmb->is, pmb->ie,
-                                      bjs, bje, bks, bke, NGHOST);
-        }
-        break;
-      case BoundaryFlag::outflow:
-        for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-             ++bvars_it) {
-          (*bvars_it)->OutflowInnerX1(pmb, pco, time, dt, pmb->is, pmb->ie,
-                                      bjs, bje, bks, bke, NGHOST);
-        }
-        break;
-      case BoundaryFlag::user: // user-enrolled BCs
-        BoundaryFunction_[BoundaryFace::inner_x1] (
-            pmb, pco, ph->w, pf->b, time, dt,
-            pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
-        break;
-      default:
-        break;
-    }
+  if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
+    DispatchBoundaryFunctions(pmb, pco, time, dt,
+                              pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
+                              ph->w, pf->b, BoundaryFace::inner_x1);
     // KGF: COUPLING OF QUANTITIES (must be manually specified)
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -815,30 +642,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   }
 
   // Apply boundary function on outer-x1 and update W,bcc (if not periodic)
-  if (BoundaryFunction_[BoundaryFace::outer_x1] != nullptr) {
-    switch(block_bcs[BoundaryFace::outer_x1]) {
-      case BoundaryFlag::reflect:
-        for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-             ++bvars_it) {
-          (*bvars_it)->ReflectOuterX1(pmb, pco, time, dt, pmb->is, pmb->ie,
-                                      bjs, bje, bks, bke, NGHOST);
-        }
-        break;
-      case BoundaryFlag::outflow:
-        for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-             ++bvars_it) {
-          (*bvars_it)->OutflowOuterX1(pmb, pco, time, dt, pmb->is, pmb->ie,
-                                      bjs, bje, bks, bke, NGHOST);
-        }
-        break;
-      case BoundaryFlag::user: // user-enrolled BCs
-        BoundaryFunction_[BoundaryFace::outer_x1](
-            pmb, pco, ph->w, pf->b, time, dt,
-            pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST);
-        break;
-      default:
-        break;
-    }
+  if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
+    DispatchBoundaryFunctions(pmb, pco, time, dt,
+                              pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
+                              ph->w, pf->b, BoundaryFace::outer_x1);
     // KGF: COUPLING OF QUANTITIES (must be manually specified)
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -851,37 +658,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 
   if (pmb->block_size.nx2 > 1) { // 2D or 3D
     // Apply boundary function on inner-x2 and update W,bcc (if not periodic)
-    if (BoundaryFunction_[BoundaryFace::inner_x2] != nullptr) {
-      switch(block_bcs[BoundaryFace::inner_x2]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectInnerX2(pmb, pco, time, dt, bis, bie,
-                                        pmb->js, pmb->je, bks, bke, NGHOST);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowInnerX2(pmb, pco, time, dt, bis, bie,
-                                        pmb->js, pmb->je, bks, bke, NGHOST);
-          }
-          break;
-        case BoundaryFlag::polar_wedge:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->PolarWedgeInnerX2(pmb, pco, time, dt, bis, bie,
-                                           pmb->js, pmb->je, bks, bke, NGHOST);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::inner_x2](pmb, pco, ph->w, pf->b, time, dt,
-                                                    bis, bie, pmb->js, pmb->je, bks, bke,
-                                                    NGHOST);
-          break;
-        default:
-          break;
-      }
+    if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
+      DispatchBoundaryFunctions(pmb, pco, time, dt,
+                                bis, bie, pmb->js, pmb->je, bks, bke, NGHOST,
+                                ph->w, pf->b, BoundaryFace::inner_x2);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -893,37 +673,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     }
 
     // Apply boundary function on outer-x2 and update W,bcc (if not periodic)
-    if (BoundaryFunction_[BoundaryFace::outer_x2] != nullptr) {
-      switch(block_bcs[BoundaryFace::outer_x2]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectOuterX2(pmb, pco, time, dt, bis, bie,
-                                        pmb->js, pmb->je, bks, bke, NGHOST);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowOuterX2(pmb, pco, time, dt, bis, bie,
-                                        pmb->js, pmb->je, bks, bke, NGHOST);
-          }
-          break;
-        case BoundaryFlag::polar_wedge:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->PolarWedgeOuterX2(pmb, pco, time, dt, bis, bie,
-                                           pmb->js, pmb->je, bks, bke, NGHOST);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::outer_x2](pmb, pco, ph->w, pf->b, time, dt,
-                                                    bis, bie, pmb->js, pmb->je, bks, bke,
-                                                    NGHOST);
-          break;
-        default:
-          break;
-      }
+    if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
+      DispatchBoundaryFunctions(pmb, pco, time, dt,
+                                bis, bie, pmb->js, pmb->je, bks, bke, NGHOST,
+                                ph->w, pf->b, BoundaryFace::outer_x2);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -940,30 +693,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     bje = pmb->je + NGHOST;
 
     // Apply boundary function on inner-x3 and update W,bcc (if not periodic)
-    if (BoundaryFunction_[BoundaryFace::inner_x3] != nullptr) {
-      switch(block_bcs[BoundaryFace::inner_x3]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectInnerX3(pmb, pco, time, dt, bis, bie,
-                                        bjs, bje, pmb->ks, pmb->ke, NGHOST);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowInnerX3(pmb, pco, time, dt, bis, bie,
-                                        bjs, bje, pmb->ks, pmb->ke, NGHOST);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::inner_x3](
-              pmb, pco, ph->w, pf->b, time, dt,
-              bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST);
-          break;
-        default:
-          break;
-      }
+    if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
+      DispatchBoundaryFunctions(pmb, pco, time, dt,
+                                bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
+                                ph->w, pf->b, BoundaryFace::inner_x3);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -975,30 +708,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     }
 
     // Apply boundary function on outer-x3 and update W,bcc (if not periodic)
-    if (BoundaryFunction_[BoundaryFace::outer_x3] != nullptr) {
-      switch(block_bcs[BoundaryFace::outer_x3]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectOuterX3(pmb, pco, time, dt, bis, bie,
-                                        bjs, bje, pmb->ks, pmb->ke, NGHOST);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowOuterX3(pmb, pco, time, dt, bis, bie,
-                                        bjs, bje, pmb->ks, pmb->ke, NGHOST);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::outer_x3](
-              pmb, pco, ph->w, pf->b, time, dt,
-              bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST);
-          break;
-        default:
-          break;
-      }
+    if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
+      DispatchBoundaryFunctions(pmb, pco, time, dt,
+                                bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
+                                ph->w, pf->b, BoundaryFace::outer_x3);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -1021,4 +734,107 @@ int BoundaryValues::ReserveTagVariableIDs(int num_phys) {
   int start_id = bvars_next_phys_id_;
   bvars_next_phys_id_ += num_phys;
   return start_id;
+}
+
+
+// KGF: should "bvars_it" be fixed in this class member function? Or passed as argument?
+void BoundaryValues::DispatchBoundaryFunctions(
+    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+    int il, int iu, int jl, int ju, int kl, int ku, int ngh,
+    AthenaArray<Real> &prim, FaceField &b, BoundaryFace face) {
+  if (block_bcs[face] ==  BoundaryFlag::user) {  // user-enrolled BCs
+    pmy_mesh_->BoundaryFunction_[face](pmb, pco, prim, b, time, dt,
+                                       il, iu, jl, ju, kl, ku, NGHOST);
+  }
+  // KGF: this is only to silence the compiler -Wswitch warnings about not handling the
+  // "undef" case when considering all possible BoundaryFace enumerator values. If "undef"
+  // is actually passed to this function, it will likely die before that ATHENA_ERROR()
+  // call, as it tries to access block_bcs[-1]
+  std::stringstream msg;
+  msg << "### FATAL ERROR in DispatchBoundaryFunctions" << std::endl
+      << "face = BoundaryFace::undef passed to this function" << std::endl;
+
+  // For any function in the BoundaryPhysics interface class, iterate over
+  // BoundaryVariable pointers "enrolled"
+  for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+       ++bvars_it) {
+    switch(block_bcs[face]) {
+      case BoundaryFlag::user: // handled above, outside loop over BoundaryVariable objs
+        break;
+      case BoundaryFlag::reflect:
+        switch(face) {
+          case BoundaryFace::undef:
+            ATHENA_ERROR(msg);
+          case BoundaryFace::inner_x1:
+            (*bvars_it)->ReflectInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::outer_x1:
+            (*bvars_it)->ReflectOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::inner_x2:
+            (*bvars_it)->ReflectInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::outer_x2:
+            (*bvars_it)->ReflectOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::inner_x3:
+            (*bvars_it)->ReflectInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
+            break;
+          case BoundaryFace::outer_x3:
+            (*bvars_it)->ReflectOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
+            break;
+        }
+        break;
+      case BoundaryFlag::outflow:
+        switch(face) {
+          case BoundaryFace::undef:
+            ATHENA_ERROR(msg);
+          case BoundaryFace::inner_x1:
+            (*bvars_it)->OutflowInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::outer_x1:
+            (*bvars_it)->OutflowOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::inner_x2:
+            (*bvars_it)->OutflowInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::outer_x2:
+            (*bvars_it)->OutflowOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::inner_x3:
+            (*bvars_it)->OutflowInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
+            break;
+          case BoundaryFace::outer_x3:
+            (*bvars_it)->OutflowOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
+            break;
+        }
+        break;
+      case BoundaryFlag::polar_wedge:
+        switch(face) {
+          case BoundaryFace::undef:
+            ATHENA_ERROR(msg);
+          case BoundaryFace::inner_x2:
+            (*bvars_it)->PolarWedgeInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::outer_x2:
+            (*bvars_it)->PolarWedgeOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+            break;
+          default:
+            std::stringstream msg_polar;
+            msg_polar << "### FATAL ERROR in DispatchBoundaryFunctions" << std::endl
+                << "Attempting to call polar wedge boundary function on \n"
+                << "MeshBlock boundary other than inner x2 or outer x2" << std::endl;
+            ATHENA_ERROR(msg_polar);
+        }
+        break;
+      default:
+        std::stringstream msg_flag;
+        msg_flag << "### FATAL ERROR in DispatchBoundaryFunctions" << std::endl
+                 << "No BoundaryPhysics function associated with provided\n"
+                 << "block_bcs[" << face << "] = BoundaryFlag::"
+                 << GetBoundaryString(block_bcs[face]) << std::endl;
+        ATHENA_ERROR(msg);
+        break;
+    } // end switch(block_bcs[face])
+  } // end loop over BoundaryVariable *
 }

@@ -51,8 +51,9 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.type != NeighborConnect::face) break;
-    if (nb.level == pmb->loc.level-1) {
+    if (bd_var_flcor_.sflag[nb.bufid] == BoundaryStatus::completed) continue;
+    if (nb.ni.type != NeighborConnect::face) break;
+    if (nb.snb.level == pmb->loc.level-1) {
       int p = 0;
       Real *sbuf=bd_var_flcor_.send[nb.bufid];
       // x1 direction
@@ -135,13 +136,14 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
           }
         }
       }
-      if (nb.rank == Globals::my_rank) { // on the same node
+      if (nb.snb.rank == Globals::my_rank) { // on the same node
         CopyFluxCorrectionBufferSameProcess(nb, p);
       }
 #ifdef MPI_PARALLEL
       else
         MPI_Start(&(bd_var_flcor_.req_send[nb.bufid]));
 #endif
+      bd_var_flcor_.sflag[nb.bufid] = BoundaryStatus::completed;
     }
   }
   return;
@@ -158,11 +160,11 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.type != NeighborConnect::face) break;
-    if (nb.level == pmb->loc.level+1) {
+    if (nb.ni.type != NeighborConnect::face) break;
+    if (nb.snb.level == pmb->loc.level+1) {
       if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
       if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
-        if (nb.rank == Globals::my_rank) {// on the same process
+        if (nb.snb.rank == Globals::my_rank) {// on the same process
           bflag = false;
           continue;
         }
@@ -186,9 +188,9 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
       if (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1) {
         int il = pmb->is + (pmb->ie - pmb->is)*nb.fid+nb.fid;
         int jl = pmb->js, ju = pmb->je, kl = pmb->ks, ku = pmb->ke;
-        if (nb.fi1 == 0) ju -= pmb->block_size.nx2/2;
+        if (nb.ni.fi1 == 0) ju -= pmb->block_size.nx2/2;
         else          jl += pmb->block_size.nx2/2;
-        if (nb.fi2 == 0) ku -= pmb->block_size.nx3/2;
+        if (nb.ni.fi2 == 0) ku -= pmb->block_size.nx3/2;
         else          kl += pmb->block_size.nx3/2;
         for (int nn=nl_; nn<=nu_; nn++) {
           for (int k=kl; k<=ku; k++) {
@@ -199,9 +201,9 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
       } else if (nb.fid == BoundaryFace::inner_x2 || nb.fid == BoundaryFace::outer_x2) {
         int jl = pmb->js + (pmb->je - pmb->js)*(nb.fid & 1) + (nb.fid & 1);
         int il = pmb->is, iu = pmb->ie, kl = pmb->ks, ku = pmb->ke;
-        if (nb.fi1 == 0) iu -= pmb->block_size.nx1/2;
+        if (nb.ni.fi1 == 0) iu -= pmb->block_size.nx1/2;
         else          il += pmb->block_size.nx1/2;
-        if (nb.fi2 == 0) ku -= pmb->block_size.nx3/2;
+        if (nb.ni.fi2 == 0) ku -= pmb->block_size.nx3/2;
         else          kl += pmb->block_size.nx3/2;
         for (int nn=nl_; nn<=nu_; nn++) {
           for (int k=kl; k<=ku; k++) {
@@ -212,9 +214,9 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
       } else if (nb.fid == BoundaryFace::inner_x3 || nb.fid == BoundaryFace::outer_x3) {
         int kl = pmb->ks + (pmb->ke - pmb->ks)*(nb.fid & 1) + (nb.fid & 1);
         int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je;
-        if (nb.fi1 == 0) iu -= pmb->block_size.nx1/2;
+        if (nb.ni.fi1 == 0) iu -= pmb->block_size.nx1/2;
         else          il += pmb->block_size.nx1/2;
-        if (nb.fi2 == 0) ju -= pmb->block_size.nx2/2;
+        if (nb.ni.fi2 == 0) ju -= pmb->block_size.nx2/2;
         else          jl += pmb->block_size.nx2/2;
         for (int nn=nl_; nn<=nu_; nn++) {
           for (int j=jl; j<=ju; j++) {

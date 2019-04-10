@@ -15,6 +15,7 @@
 // C++ headers
 #include <cstdint>  // int64_t
 #include <string>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -41,6 +42,7 @@ class Coordinates;
 class Reconstruction;
 class Hydro;
 class Field;
+class PassiveScalars;
 class Gravity;
 class MGGravityDriver;
 class EquationOfState;
@@ -106,6 +108,7 @@ class MeshBlock {
   Hydro *phydro;
   Field *pfield;
   Gravity *pgrav;
+  PassiveScalars *pscalars;
   EquationOfState *peos;
 
   MeshBlock *prev, *next;
@@ -180,6 +183,7 @@ class Mesh {
 #endif
 
  public:
+  // 2x function overloads of ctor: normal and restarted simulation
   explicit Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
   ~Mesh();
@@ -281,6 +285,7 @@ class Mesh {
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
   void CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist, int nb);
+  void CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb);
 
   // Mesh::LoadBalancingAndAdaptiveMeshRefinement() helper functions:
   void UpdateMeshBlockTree(int &nnew, int &ndel);

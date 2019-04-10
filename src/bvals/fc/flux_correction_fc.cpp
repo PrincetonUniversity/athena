@@ -53,7 +53,7 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
   // AthenaArray<Real> &bx1=pmb->pfield->b.x1f;
 
   int p = 0;
-  if (nb.type == NeighborConnect::face) {
+  if (nb.ni.type == NeighborConnect::face) {
     if (pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
       if (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1) {
@@ -139,11 +139,11 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
         // KGF: shearing box
         // shift azimuthal velocity for x-z shearing
         // if (SHEARING_BOX) {
-        //   if (ShBoxCoord_ == 2 && (pmb->loc.lx1 == 0) && (nb.ox1 == -1)) {
+        //   if (ShBoxCoord_ == 2 && (pmb->loc.lx1 == 0) && (nb.ni.ox1 == -1)) {
         //     for (int j=pmb->js; j<=pmb->je; j++)
         //       buf[p++] = e2(k,j,i)+qomL*bx1(k,j,i);
         //   } else if (ShBoxCoord_ == 2 && (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1-1))
-        //              && nb.ox1 == 1) {
+        //              && nb.ni.ox1 == 1) {
         //     for (int j=pmb->js; j<=pmb->je; j++)
         //       buf[p++] = e2(k,j,i)-qomL*bx1(k,j,i);
         //   } else {
@@ -183,7 +183,7 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
       buf[p++] = e2(k,j,i);
       buf[p++] = e3(k,j,i);
     }
-  } else if (nb.type == NeighborConnect::edge) {
+  } else if (nb.ni.type == NeighborConnect::edge) {
     // x1x2 edge (both 2D and 3D)
     if (nb.eid >= 0 && nb.eid < 4) {
       int i, j;
@@ -199,10 +199,10 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
       }
       // KGF: shearing box
       // shift azmuthal velocity if shearing boundary blocks
-      // if (nb.shear && nb.ox1 == -1) {
+      // if (nb.shear && nb.ni.ox1 == -1) {
       //   for (int k=pmb->ks; k<=pmb->ke; k++)
       //     buf[p++] = e3(k,j,i)-0.5*qomL*(bx1(k,j,i)+bx1(k,j-1,i));
-      // } else if (nb.shear && nb.ox1 == 1) {
+      // } else if (nb.shear && nb.ni.ox1 == 1) {
       //   for (int k=pmb->ks; k<=pmb->ke; k++)
       //     buf[p++] = e3(k,j,i)+0.5*qomL*(bx1(k,j,i)+bx1(k,j-1,i));
       // } else {
@@ -227,11 +227,11 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
       // KGF: shearing box
       // shift azimuthal velocity for x-z shearing
       // if (SHEARING_BOX) {
-      //   if (ShBoxCoord_ == 2 && (pmb->loc.lx1 == 0) && (nb.ox1 == -1))   {
+      //   if (ShBoxCoord_ == 2 && (pmb->loc.lx1 == 0) && (nb.ni.ox1 == -1))   {
       //     for (int j=pmb->js; j<=pmb->je; j++)
       //       buf[p++] = e2(k,j,i)+qomL*bx1(k,j,i);
       //   } else if (ShBoxCoord_ == 2 && (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1-1))
-      //              && nb.ox1 == 1) {
+      //              && nb.ni.ox1 == 1) {
       //     for (int j=pmb->js; j<=pmb->je; j++)
       //       buf[p++] = e2(k,j,i)-qomL*bx1(k,j,i);
       //   } else {
@@ -277,7 +277,7 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(
   AthenaArray<Real> &le1 = pbval_->sarea_[0];
   AthenaArray<Real> &le2 = pbval_->sarea_[1];
   int p = 0;
-  if (nb.type == NeighborConnect::face) {
+  if (nb.ni.type == NeighborConnect::face) {
     if (pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
       if (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1) {
@@ -430,7 +430,7 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(
       buf[p++] = e2(k,j,i);
       buf[p++] = e3(k,j,i);
     }
-  } else if (nb.type == NeighborConnect::edge) {
+  } else if (nb.ni.type == NeighborConnect::edge) {
     if (pmb->block_size.nx3 > 1) { // 3D
       // x1x2 edge
       if (nb.eid >= 0 && nb.eid < 4) {
@@ -547,10 +547,10 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(
 // helper function for below SendFluxCorrection()
 
 void FaceCenteredBoundaryVariable::CopyPolarBufferSameProcess(
-    const SimpleNeighborBlock& nb, int ssize, int polar_block_index, bool is_north) {
+    const SimpleNeighborBlock& snb, int ssize, int polar_block_index, bool is_north) {
   // Locate target buffer
   // 1) which MeshBlock?
-  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.gid);
+  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(snb.gid);
   // 2) which element in vector of BoundaryVariable *?
   FaceCenteredBoundaryVariable *ptarget_pfbval =
       static_cast<FaceCenteredBoundaryVariable *>(
@@ -581,36 +581,39 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
   // Send non-polar EMF values
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if ((nb.type!=NeighborConnect::face) && (nb.type!=NeighborConnect::edge)) break;
+    if (bd_var_flcor_.sflag[nb.bufid] == BoundaryStatus::completed) continue;
+    if ((nb.ni.type != NeighborConnect::face) && (nb.ni.type != NeighborConnect::edge))
+      break;
     int p = 0;
-    if (nb.level == pmb->loc.level) {
-      if ((nb.type == NeighborConnect::face)
-          || ((nb.type == NeighborConnect::edge)
+    if (nb.snb.level == pmb->loc.level) {
+      if ((nb.ni.type == NeighborConnect::face)
+          || ((nb.ni.type == NeighborConnect::edge)
               && (edge_flag_[nb.eid] == true))) {
         p = LoadFluxBoundaryBufferSameLevel(bd_var_flcor_.send[nb.bufid], nb);
       } else {
         continue;
       }
-    } else if (nb.level == pmb->loc.level-1) {
+    } else if (nb.snb.level == pmb->loc.level-1) {
       p = LoadFluxBoundaryBufferToCoarser(bd_var_flcor_.send[nb.bufid], nb);
     } else {
       continue;
     }
-    if (nb.rank == Globals::my_rank) { // on the same MPI rank
+    if (nb.snb.rank == Globals::my_rank) { // on the same MPI rank
       CopyFluxCorrectionBufferSameProcess(nb, p);
     }
 #ifdef MPI_PARALLEL
     else
       MPI_Start(&(bd_var_flcor_.req_send[nb.bufid]));
 #endif
+    bd_var_flcor_.sflag[nb.bufid] = BoundaryStatus::completed;
   }
 
   // Send polar EMF values
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
-    const SimpleNeighborBlock &nb = pbval_->polar_neighbor_north_[n];
-    int count = LoadFluxBoundaryBufferToPolar(flux_north_send_[n], nb, true);
-    if (nb.rank == Globals::my_rank) { // on the same MPI rank
-      CopyPolarBufferSameProcess(nb, count, n, true);
+    const SimpleNeighborBlock &snb = pbval_->polar_neighbor_north_[n];
+    int count = LoadFluxBoundaryBufferToPolar(flux_north_send_[n], snb, true);
+    if (snb.rank == Globals::my_rank) { // on the same MPI rank
+      CopyPolarBufferSameProcess(snb, count, n, true);
     }
 #ifdef MPI_PARALLEL
     else
@@ -618,10 +621,10 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
 #endif
   }
   for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
-    const SimpleNeighborBlock &nb = pbval_->polar_neighbor_south_[n];
-    int count = LoadFluxBoundaryBufferToPolar(flux_south_send_[n], nb, false);
-    if (nb.rank == Globals::my_rank) { // on the same node
-      CopyPolarBufferSameProcess(nb, count, n, false);
+    const SimpleNeighborBlock &snb = pbval_->polar_neighbor_south_[n];
+    int count = LoadFluxBoundaryBufferToPolar(flux_south_send_[n], snb, false);
+    if (snb.rank == Globals::my_rank) { // on the same node
+      CopyPolarBufferSameProcess(snb, count, n, false);
     }
 #ifdef MPI_PARALLEL
     else
@@ -645,7 +648,7 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
   AthenaArray<Real> &e2 = pmb->pfield->e.x2e;
   AthenaArray<Real> &e3 = pmb->pfield->e.x3e;
   int p = 0;
-  if (nb.type == NeighborConnect::face) {
+  if (nb.ni.type == NeighborConnect::face) {
     if (pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
       if (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1) {
@@ -778,7 +781,7 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
       e3(k,j+1,i) += buf[p];
       e3(k  ,j,i) += buf[p++];
     }
-  } else if (nb.type == NeighborConnect::edge) {
+  } else if (nb.ni.type == NeighborConnect::edge) {
     // x1x2 edge (2D and 3D)
     if (nb.eid>=0 && nb.eid<4) {
       int i, j;
@@ -793,11 +796,11 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
         j=pmb->je+1;
       }
       // KGF: shearing box
-      // if (nb.shear && nb.ox1 == -1) {
+      // if (nb.shear && nb.ni.ox1 == -1) {
       //   // store e3 for shearing periodic bcs
       //   for (int k=pmb->ks; k<=pmb->ke; k++)
       //     shboxvar_inner_emf_.x3e(k,j) += buf[p++];
-      // } else if (nb.shear && nb.ox1 == 1) {
+      // } else if (nb.shear && nb.ni.ox1 == 1) {
       //   // store e3 for shearing periodic bcs
       //   for (int k=pmb->ks; k<=pmb->ke; k++)
       //     shboxvar_outer_emf_.x3e(k,j) += buf[p++];
@@ -822,11 +825,11 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
         k=pmb->ke+1;
       }
       // KGF: shearing box
-      // if (nb.shear && nb.ox1 == -1) {
+      // if (nb.shear && nb.ni.ox1 == -1) {
       //   // store e2 for shearing periodic bcs
       //   for (int j=pmb->js; j<=pmb->je; j++)
       //     shboxvar_inner_emf_.x2e(k,j) += buf[p++];
-      // } else if (nb.shear && nb.ox1 == 1) {
+      // } else if (nb.shear && nb.ni.ox1 == 1) {
       //   // store e2 for shearing periodic bcs
       //   for (int j=pmb->js; j<=pmb->je; j++)
       //     shboxvar_outer_emf_.x2e(k,j) += buf[p++];
@@ -871,7 +874,7 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
   AthenaArray<Real> &e2=pmb->pfield->e.x2e;
   AthenaArray<Real> &e3=pmb->pfield->e.x3e;
   int p = 0;
-  if (nb.type == NeighborConnect::face) {
+  if (nb.ni.type == NeighborConnect::face) {
     if (pmb->block_size.nx3 > 1) { // 3D
       // x1 direction
       if (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1) {
@@ -881,12 +884,12 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
         } else {
           i = pmb->ie+1;
         }
-        if (nb.fi1 == 0) {
+        if (nb.ni.fi1 == 0) {
           ju = pmb->js + pmb->block_size.nx2/2-1;
         } else {
           jl = pmb->js + pmb->block_size.nx2/2;
         }
-        if (nb.fi2 == 0) {
+        if (nb.ni.fi2 == 0) {
           ku = pmb->ks + pmb->block_size.nx3/2-1;
         } else {
           kl = pmb->ks + pmb->block_size.nx3/2;
@@ -909,12 +912,12 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
         } else {
           j=pmb->je+1;
         }
-        if (nb.fi1 == 0) {
+        if (nb.ni.fi1 == 0) {
           iu = pmb->is + pmb->block_size.nx1/2-1;
         } else {
           il = pmb->is + pmb->block_size.nx1/2;
         }
-        if (nb.fi2 == 0) {
+        if (nb.ni.fi2 == 0) {
           ku = pmb->ks + pmb->block_size.nx3/2-1;
         } else {
           kl = pmb->ks + pmb->block_size.nx3/2;
@@ -939,12 +942,12 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
         } else {
           k=pmb->ke+1;
         }
-        if (nb.fi1 == 0) {
+        if (nb.ni.fi1 == 0) {
           iu = pmb->is + pmb->block_size.nx1/2-1;
         } else {
           il = pmb->is + pmb->block_size.nx1/2;
         }
-        if (nb.fi2 == 0) {
+        if (nb.ni.fi2 == 0) {
           ju = pmb->js + pmb->block_size.nx2/2-1;
         } else {
           jl = pmb->js + pmb->block_size.nx2/2;
@@ -970,7 +973,7 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
         } else {
           i = pmb->ie+1;
         }
-        if (nb.fi1 == 0) {
+        if (nb.ni.fi1 == 0) {
           ju = pmb->js + pmb->block_size.nx2/2-1;
         } else {
           jl = pmb->js + pmb->block_size.nx2/2;
@@ -991,7 +994,7 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
         } else {
           j=pmb->je+1;
         }
-        if (nb.fi1 == 0) {
+        if (nb.ni.fi1 == 0) {
           iu = pmb->is + pmb->block_size.nx1/2-1;
         } else {
           il = pmb->is + pmb->block_size.nx1/2;
@@ -1019,7 +1022,7 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
       e3(k,j+1,i) += buf[p];
       e3(k  ,j,i) += buf[p++];
     }
-  } else if (nb.type == NeighborConnect::edge) {
+  } else if (nb.ni.type == NeighborConnect::edge) {
     if (pmb->block_size.nx3 > 1) { // 3D
       // x1x2 edge
       if (nb.eid>=0 && nb.eid<4) {
@@ -1034,7 +1037,7 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
         } else {
           j=pmb->je+1;
         }
-        if (nb.fi1 == 0) {
+        if (nb.ni.fi1 == 0) {
           ku = pmb->ks + pmb->block_size.nx3/2-1;
         } else {
           kl = pmb->ks + pmb->block_size.nx3/2;
@@ -1056,7 +1059,7 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
         } else {
           k=pmb->ke+1;
         }
-        if (nb.fi1 == 0) {
+        if (nb.ni.fi1 == 0) {
           ju = pmb->js + pmb->block_size.nx2/2-1;
         } else {
           jl = pmb->js + pmb->block_size.nx2/2;
@@ -1077,7 +1080,7 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
         } else {
           k=pmb->ke+1;
         }
-        if (nb.fi1 == 0) {
+        if (nb.ni.fi1 == 0) {
           iu = pmb->is + pmb->block_size.nx1/2-1;
         } else {
           il = pmb->is + pmb->block_size.nx1/2;
@@ -1229,9 +1232,9 @@ void FaceCenteredBoundaryVariable::ClearCoarseFluxBoundary() {
         i = pmb->ie+1;
       }
       if ((n & 2) == 0) {
-        j=pmb->js;
+        j = pmb->js;
       } else {
-        j=pmb->je+1;
+        j = pmb->je+1;
       }
       for (int k=pmb->ks; k<=pmb->ke; k++)
         e3(k,j,i)=0.0;
@@ -1244,24 +1247,24 @@ void FaceCenteredBoundaryVariable::ClearCoarseFluxBoundary() {
         i = pmb->ie+1;
       }
       if ((n & 2) == 0) {
-        k=pmb->ks;
+        k = pmb->ks;
       } else {
-        k=pmb->ke+1;
+        k = pmb->ke+1;
       }
       for (int j=pmb->js; j<=pmb->je; j++)
-        e2(k,j,i)=0.0;
+        e2(k,j,i) = 0.0;
       // x2x3 edge
-    } else if (n>=8 && n<12) {
+    } else if (n >= 8 && n < 12) {
       int k, j;
       if ((n & 1) == 0) {
-        j=pmb->js;
+        j = pmb->js;
       } else {
-        j=pmb->je+1;
+        j = pmb->je+1;
       }
       if ((n & 2) == 0) {
-        k=pmb->ks;
+        k = pmb->ks;
       } else {
-        k=pmb->ke+1;
+        k = pmb->ke+1;
       }
       for (int i=pmb->is; i<=pmb->ie; i++)
         e1(k,j,i)=0.0;
@@ -1315,12 +1318,12 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
         }
       } else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         if (pmb->block_size.nx3 > 1) { // 3D
-          int k=pmb->ks+pmb->block_size.nx3/2;
+          int k = pmb->ks+pmb->block_size.nx3/2;
           for (int j=pmb->js; j<=pmb->je; j++)
             e2(k,j,i) *= 0.5;
         }
         if (pmb->block_size.nx2 > 1) { // 2D or 3D
-          int j=pmb->js + pmb->block_size.nx2/2;
+          int j = pmb->js + pmb->block_size.nx2/2;
           for (int k=pmb->ks; k<=pmb->ke; k++)
             e3(k,j,i) *= 0.5;
         }
@@ -1329,9 +1332,9 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
     if (n == BoundaryFace::inner_x2 || n == BoundaryFace::outer_x2) {
       int j;
       if (n == BoundaryFace::inner_x2) {
-        j=pmb->js;
+        j = pmb->js;
       } else {
-        j=pmb->je+1;
+        j = pmb->je+1;
       }
       nl = pbval_->nblevel[1][2*n-4][1];
       if (nl == pmb->loc.level) { // same ; divide all the face EMFs by 2
@@ -1352,13 +1355,13 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
         }
       } else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         if (pmb->block_size.nx3 > 1) { // 3D
-          int k=pmb->ks+pmb->block_size.nx3/2;
+          int k = pmb->ks+pmb->block_size.nx3/2;
           for (int i=pmb->is; i<=pmb->ie; i++)
             e1(k,j,i) *= 0.5;
         }
         if (pmb->block_size.nx2 > 1) { // 2D or 3D
           int i = pmb->is+pmb->block_size.nx1/2;
-          for (int k=pmb->ks; k<=pmb->ke; k++)
+          for (int k = pmb->ks; k<=pmb->ke; k++)
             e3(k,j,i) *= 0.5;
         }
       }
@@ -1366,9 +1369,9 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
     if (n == BoundaryFace::inner_x3 || n == BoundaryFace::outer_x3) {
       int k;
       if (n == BoundaryFace::inner_x3) {
-        k=pmb->ks;
+        k = pmb->ks;
       } else {
-        k=pmb->ke+1;
+        k = pmb->ke+1;
       }
       nl = pbval_->nblevel[2*n-8][1][1];
       if (nl == pmb->loc.level) { // same ; divide all the face EMFs by 2
@@ -1380,66 +1383,71 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
           for (int i=pmb->is+1; i<=pmb->ie; i++)
             e2(k,j,i) *= 0.5;
         }
-      } else if (nl>pmb->loc.level) { // finer; divide the overlapping EMFs by 2
+      } else if (nl > pmb->loc.level) { // finer; divide the overlapping EMFs by 2
         // this is always 3D
-        int j = pmb->js + pmb->block_size.nx2/2;
+        int j_fine = pmb->js + pmb->block_size.nx2/2;
         for (int i=pmb->is; i<=pmb->ie; i++)
-          e1(k,j,i) *= 0.5;
-        int i=pmb->is+pmb->block_size.nx1/2;
+          e1(k,j_fine,i) *= 0.5;
+        int i_fine = pmb->is +pmb->block_size.nx1/2;
         for (int j=pmb->js; j<=pmb->je; j++)
-          e2(k,j,i) *= 0.5;
+          e2(k,j,i_fine) *= 0.5;
       }
     }
   }
   // edge
   for (int n=0; n<pbval_->nedge_; n++) {
     if (nedge_fine_[n] == 1) continue;
-    Real div=1.0/static_cast<Real>(nedge_fine_[n]);
-    NeighborBlock& nb=pbval_->neighbor[n+6];
-    Real half_div=div;
-    if (nb.shear) half_div=0.5;
+    Real div = 1.0/static_cast<Real>(nedge_fine_[n]);
+    Real half_div = div;
+    // TODO(felker): rewrite so that it searches neighbor array for S/AMR compatibility
+    if (SHEARING_BOX) { // assumes fixed ordering of neighbor array in non-S/AMR configs
+      NeighborBlock& nb = pbval_->neighbor[n + pbval_->nface_];
+      if (nb.shear) {
+        half_div = 0.5;
+      }
+    }
     // x1x2 edge (both 2D and 3D)
-    if (n>=0 && n<4) {
+    if (n >= 0 && n < 4) {
       int i, j;
       if ((n & 1) == 0) {
-        i = pmb->is;
+        i=pmb->is;
       } else {
-        i = pmb->ie+1;
+        i=pmb->ie+1;
       }
       if ((n & 2) == 0) {
-        j=pmb->js;
+        j = pmb->js;
       } else {
-        j=pmb->je+1;
+        j = pmb->je+1;
       }
       for (int k=pmb->ks; k<=pmb->ke; k++)
         e3(k,j,i) *= half_div;
       // x1x3 edge
-    } else if (n>=4 && n<8) {
+    } else if (n >= 4 && n < 8) {
       int i, k;
       if ((n & 1) == 0) {
-        i = pmb->is;
+        i=pmb->is;
       } else {
-        i = pmb->ie+1;
+        i=pmb->ie+1;
       }
       if ((n & 2) == 0) {
-        k=pmb->ks;
+        k = pmb->ks;
       } else {
-        k=pmb->ke+1;
+        k = pmb->ke+1;
       }
       for (int j=pmb->js; j<=pmb->je; j++)
         e2(k,j,i) *= half_div;
       // x2x3 edge
-    } else if (n>=8 && n<12) {
+    } else if (n >= 8 && n < 12) {
       int j, k;
       if ((n & 1) == 0) {
-        j=pmb->js;
+        j = pmb->js;
       } else {
-        j=pmb->je+1;
+        j = pmb->je+1;
       }
       if ((n & 2) == 0) {
-        k=pmb->ks;
+        k = pmb->ks;
       } else {
-        k=pmb->ke+1;
+        k = pmb->ke+1;
       }
       for (int i=pmb->is; i<=pmb->ie; i++)
         e1(k,j,i) *= div;
@@ -1456,11 +1464,11 @@ void FaceCenteredBoundaryVariable::PolarFluxBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb=pmy_block_;
   if (pmb->loc.level == pmb->pmy_mesh->root_level && pmb->pmy_mesh->nrbx3 == 1
       && pmb->block_size.nx3 > 1) {
-    AthenaArray<Real> &e1=pmb->pfield->e.x1e;
-    AthenaArray<Real> &e3=pmb->pfield->e.x3e;
+    AthenaArray<Real> &e1 = pmb->pfield->e.x1e;
+    AthenaArray<Real> &e3 = pmb->pfield->e.x3e;
     if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
         || pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge) {
-      int j=pmb->js;
+      int j = pmb->js;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real tote1=0.0;
@@ -1483,7 +1491,7 @@ void FaceCenteredBoundaryVariable::PolarFluxBoundarySingleAzimuthalBlock() {
 
     if (pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
         || pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge) {
-      int j=pmb->je+1;
+      int j = pmb->je+1;
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int i=pmb->is; i<=pmb->ie; i++) {
         Real tote1=0.0;
@@ -1514,21 +1522,22 @@ void FaceCenteredBoundaryVariable::PolarFluxBoundarySingleAzimuthalBlock() {
 //  \brief Receive and Apply the surface EMF to the coarse neighbor(s) if needed
 
 bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
-  MeshBlock *pmb=pmy_block_;
-  bool flag=true;
+  MeshBlock *pmb = pmy_block_;
+  bool flag = true;
 
   // Receive same-level non-polar EMF values
   if (recv_flx_same_lvl_ == true) {
     for (int n=0; n<pbval_->nneighbor; n++) { // first correct the same level
       NeighborBlock& nb = pbval_->neighbor[n];
-      if (nb.type!=NeighborConnect::face && nb.type!=NeighborConnect::edge) break;
-      if (nb.level!=pmb->loc.level) continue;
-      if ((nb.type == NeighborConnect::face) || ((nb.type == NeighborConnect::edge) &&
-                                       (edge_flag_[nb.eid] == true))) {
+      if (nb.ni.type != NeighborConnect::face && nb.ni.type != NeighborConnect::edge)
+        break;
+      if (nb.snb.level!=pmb->loc.level) continue;
+      if ((nb.ni.type == NeighborConnect::face)
+          || ((nb.ni.type == NeighborConnect::edge) && (edge_flag_[nb.eid] == true))) {
         if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
         if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
-          if (nb.rank == Globals::my_rank) { // on the same process
-            flag=false;
+          if (nb.snb.rank == Globals::my_rank) { // on the same process
+            flag = false;
             continue;
           }
 #ifdef MPI_PARALLEL
@@ -1538,7 +1547,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
                        MPI_STATUS_IGNORE);
             MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
             if (static_cast<bool>(test) == false) {
-              flag=false;
+              flag = false;
               continue;
             }
             bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::arrived;
@@ -1550,7 +1559,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
         bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::completed;
       }
     }
-    if (flag == false) return flag;
+    if (flag == false) return flag;  // is this flag always false?
     if (pmb->pmy_mesh->multilevel == true)
       ClearCoarseFluxBoundary();
     recv_flx_same_lvl_ = false;
@@ -1560,12 +1569,13 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
   if (pmb->pmy_mesh->multilevel == true) {
     for (int n=0; n<pbval_->nneighbor; n++) { // then from finer
       NeighborBlock& nb = pbval_->neighbor[n];
-      if (nb.type!=NeighborConnect::face && nb.type!=NeighborConnect::edge) break;
-      if (nb.level!=pmb->loc.level+1) continue;
+      if (nb.ni.type != NeighborConnect::face && nb.ni.type != NeighborConnect::edge)
+        break;
+      if (nb.snb.level!=pmb->loc.level+1) continue;
       if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
       if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
-        if (nb.rank == Globals::my_rank) {// on the same process
-          flag=false;
+        if (nb.snb.rank == Globals::my_rank) {// on the same process
+          flag = false;
           continue;
         }
 #ifdef MPI_PARALLEL
@@ -1575,7 +1585,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
                      MPI_STATUS_IGNORE);
           MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
-            flag=false;
+            flag = false;
             continue;
           }
           bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::arrived;
@@ -1590,9 +1600,9 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
 
   // Receive polar EMF values
   for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
-    const SimpleNeighborBlock &nb = pbval_->polar_neighbor_north_[n];
+    const SimpleNeighborBlock &snb = pbval_->polar_neighbor_north_[n];
     if (flux_north_flag_[n]  ==  BoundaryStatus::waiting) {
-      if (nb.rank  ==  Globals::my_rank) { // on the same process
+      if (snb.rank  ==  Globals::my_rank) { // on the same process
         flag = false;
         continue;
       }
@@ -1610,9 +1620,9 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
     }
   }
   for (int n = 0; n < pbval_->num_south_polar_blocks_; ++n) {
-    const SimpleNeighborBlock &nb = pbval_->polar_neighbor_south_[n];
+    const SimpleNeighborBlock &snb = pbval_->polar_neighbor_south_[n];
     if (flux_south_flag_[n] == BoundaryStatus::waiting) {
-      if (nb.rank == Globals::my_rank) { // on the same process
+      if (snb.rank == Globals::my_rank) { // on the same process
         flag = false;
         continue;
       }

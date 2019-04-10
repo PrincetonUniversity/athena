@@ -17,14 +17,11 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::ReflectInnerX1(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, inner x1 boundary
 
 void CellCenteredBoundaryVariable::ReflectInnerX1(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones, reflecting v1
+    Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -40,14 +37,11 @@ void CellCenteredBoundaryVariable::ReflectInnerX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::ReflectOuterX1(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, outer x1 boundary
 
 void CellCenteredBoundaryVariable::ReflectOuterX1(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones, reflecting v1
+    Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -62,15 +56,12 @@ void CellCenteredBoundaryVariable::ReflectOuterX1(
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ReflecInnerX2(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//! \fn void CellCenteredBoundaryVariable::ReflectInnerX2(
+//          Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, inner x2 boundary
 
 void CellCenteredBoundaryVariable::ReflectInnerX2(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones, reflecting v2
+    Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
@@ -86,14 +77,11 @@ void CellCenteredBoundaryVariable::ReflectInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::ReflectOuterX2(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, outer x2 boundary
 
 void CellCenteredBoundaryVariable::ReflectOuterX2(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones, reflecting v2
+    Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
@@ -109,14 +97,11 @@ void CellCenteredBoundaryVariable::ReflectOuterX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::ReflectInnerX3(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
 //  \brief REFLECTING boundary conditions, inner x3 boundary
 
 void CellCenteredBoundaryVariable::ReflectInnerX3(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones, reflecting v3
+    Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
   for (int n=0; n<=nu_; ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -132,14 +117,11 @@ void CellCenteredBoundaryVariable::ReflectInnerX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::ReflectOuterX3(
-//                         const Real time, const Real dt,
-//                         int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//          Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
 //  \brief REFLECTING boundary conditions, outer x3 boundary
 
 void CellCenteredBoundaryVariable::ReflectOuterX3(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  // copy hydro variables into ghost zones, reflecting v3
+    Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {
   for (int n=0; n<=nu_; ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {

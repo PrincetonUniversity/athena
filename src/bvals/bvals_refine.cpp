@@ -57,25 +57,25 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   // surrounding the boundary zone to calculate the slopes ("ghost-ghost zone"). 3x steps:
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if (nb.level >= mylevel) continue;
+    if (nb.snb.level >= mylevel) continue;
     // fill the required ghost-ghost zone
     int nis, nie, njs, nje, nks, nke;
-    nis = std::max(nb.ox1-1, -1);
-    nie = std::min(nb.ox1+1, 1);
+    nis = std::max(nb.ni.ox1-1, -1);
+    nie = std::min(nb.ni.ox1+1, 1);
     if (pmb->block_size.nx2 == 1) {
       njs = 0;
       nje = 0;
     } else {
-      njs = std::max(nb.ox2-1, -1);
-      nje = std::min(nb.ox2+1, 1);
+      njs = std::max(nb.ni.ox2-1, -1);
+      nje = std::min(nb.ni.ox2+1, 1);
     }
 
     if (pmb->block_size.nx3 == 1) {
       nks = 0;
       nke = 0;
     } else {
-      nks = std::max(nb.ox3-1, -1);
-      nke = std::min(nb.ox3+1, 1);
+      nks = std::max(nb.ni.ox3-1, -1);
+      nke = std::min(nb.ni.ox3+1, 1);
     }
 
     // Step 1. Apply necessary variable restrictions when ghost-ghost zone is on same lvl
@@ -96,30 +96,30 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     // calculate the loop limits for the ghost zones
     int cn = pmb->cnghost - 1;
     int si, ei, sj, ej, sk, ek;
-    if (nb.ox1 == 0) {
+    if (nb.ni.ox1 == 0) {
       std::int64_t &lx1 = pmb->loc.lx1;
       si = pmb->cis, ei = pmb->cie;
       if ((lx1 & 1LL) == 0LL) ei += cn;
       else             si -= cn;
-    } else if (nb.ox1 > 0) { si = pmb->cie + 1,  ei = pmb->cie + cn;}
+    } else if (nb.ni.ox1 > 0) { si = pmb->cie + 1,  ei = pmb->cie + cn;}
     else              si = pmb->cis-cn, ei = pmb->cis-1;
-    if (nb.ox2 == 0) {
+    if (nb.ni.ox2 == 0) {
       sj = pmb->cjs, ej = pmb->cje;
       if (pmb->block_size.nx2 > 1) {
         std::int64_t &lx2 = pmb->loc.lx2;
         if ((lx2 & 1LL) == 0LL) ej += cn;
         else             sj -= cn;
       }
-    } else if (nb.ox2 > 0) { sj = pmb->cje + 1,  ej = pmb->cje + cn;}
+    } else if (nb.ni.ox2 > 0) { sj = pmb->cje + 1,  ej = pmb->cje + cn;}
     else              sj = pmb->cjs-cn, ej = pmb->cjs-1;
-    if (nb.ox3 == 0) {
+    if (nb.ni.ox3 == 0) {
       sk = pmb->cks, ek = pmb->cke;
       if (pmb->block_size.nx3 > 1) {
         std::int64_t &lx3 = pmb->loc.lx3;
         if ((lx3 & 1LL) == 0LL) ek += cn;
         else             sk -= cn;
       }
-    } else if (nb.ox3 > 0) { sk = pmb->cke + 1,  ek = pmb->cke + cn;}
+    } else if (nb.ni.ox3 > 0) { sk = pmb->cke + 1,  ek = pmb->cke + cn;}
     else              sk = pmb->cks-cn, ek = pmb->cks-1;
 
     // (temp workaround) to automatically call all BoundaryFunction_[] on coarse_prim/b
@@ -152,9 +152,9 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
   if (ni == 0) {
     ris = pmb->cis;
     rie = pmb->cie;
-    if (nb.ox1 == 1) {
+    if (nb.ni.ox1 == 1) {
       ris = pmb->cie;
-    } else if (nb.ox1 == -1) {
+    } else if (nb.ni.ox1 == -1) {
       rie = pmb->cis;
     }
   } else if (ni == 1) {
@@ -164,8 +164,8 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
   }
   if (nj == 0) {
     rjs = pmb->cjs, rje = pmb->cje;
-    if (nb.ox2 == 1) rjs = pmb->cje;
-    else if (nb.ox2 == -1) rje = pmb->cjs;
+    if (nb.ni.ox2 == 1) rjs = pmb->cje;
+    else if (nb.ni.ox2 == -1) rje = pmb->cjs;
   } else if (nj == 1) {
     rjs = pmb->cje + 1, rje = pmb->cje + 1;
   } else { //(nj == -1)
@@ -173,8 +173,8 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
   }
   if (nk == 0) {
     rks = pmb->cks, rke = pmb->cke;
-    if (nb.ox3 == 1) rks = pmb->cke;
-    else if (nb.ox3 == -1) rke = pmb->cks;
+    if (nb.ni.ox3 == 1) rks = pmb->cke;
+    else if (nb.ni.ox3 == -1) rke = pmb->cks;
   } else if (nk == 1) {
     rks = pmb->cke + 1, rke = pmb->cke + 1;
   } else { //(nk == -1)
@@ -241,14 +241,14 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
-//           const NeighborBlock& nb, const Real time, const Real dt)
+//           const NeighborBlock& nb, const Real time, const Real dt,
+//           int si, int ei, int sj, int ej, int sk, int ek)
 //  \brief
 
 void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     const NeighborBlock& nb, const Real time, const Real dt,
     int si, int ei, int sj, int ej, int sk, int ek) {
   MeshBlock *pmb = pmy_block_;
-  Coordinates *pco = pmb->pcoord;
   MeshRefinement *pmr = pmb->pmr;
 
   // temporarily hardcode Hydro and Field array access:
@@ -261,7 +261,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
   // convert the ghost zone and ghost-ghost zones into primitive variables
   // this includes cell-centered field calculation
   int f1m = 0, f1p = 0, f2m = 0, f2p = 0, f3m = 0, f3p = 0;
-  if (nb.ox1 == 0) {
+  if (nb.ni.ox1 == 0) {
     if (nblevel[1][1][0] != -1) f1m = 1;
     if (nblevel[1][1][2] != -1) f1p = 1;
   } else {
@@ -269,7 +269,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     f1p = 1;
   }
   if (pmb->block_size.nx2 > 1) {
-    if (nb.ox2 == 0) {
+    if (nb.ni.ox2 == 0) {
       if (nblevel[1][0][1] != -1) f2m = 1;
       if (nblevel[1][2][1] != -1) f2p = 1;
     } else {
@@ -278,7 +278,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     }
   }
   if (pmb->block_size.nx3 > 1) {
-    if (nb.ox3 == 0) {
+    if (nb.ni.ox3 == 0) {
       if (nblevel[0][1][1] != -1) f3m = 1;
       if (nblevel[2][1][1] != -1) f3p = 1;
     } else {
@@ -295,174 +295,40 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
                                   pf->coarse_bcc_, pmr->pcoarsec,
                                   si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
 
-  if (nb.ox1 == 0) {
-    if (BoundaryFunction_[BoundaryFace::inner_x1] != nullptr) {
-      switch(block_bcs[BoundaryFace::inner_x1]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectInnerX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
-                                        sj, ej, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowInnerX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
-                                        sj, ej, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::inner_x1](
-              pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
-              pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
-          break;
-        default:
-          break;
-      }
+  if (nb.ni.ox1 == 0) {
+    if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                pmb->cis, pmb->cie, sj, ej, sk, ek, 1,
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x1);
     }
-    if (BoundaryFunction_[BoundaryFace::outer_x1] != nullptr) {
-      switch(block_bcs[BoundaryFace::outer_x1]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectOuterX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
-                                        sj, ej, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowOuterX1(pmb, pco, time, dt, pmb->cis, pmb->cie,
-                                        sj, ej, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::outer_x1](
-              pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
-              pmb->cis, pmb->cie, sj, ej, sk, ek, 1);
-          break;
-        default:
-          break;
-      }
+    if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                pmb->cis, pmb->cie, sj, ej, sk, ek, 1,
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x1);
     }
   }
-  if (nb.ox2 == 0 && pmb->block_size.nx2 > 1) {
-    if (BoundaryFunction_[BoundaryFace::inner_x2] != nullptr) {
-      switch(block_bcs[BoundaryFace::inner_x2]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectInnerX2(pmb, pco, time, dt, si, ei,
-                                        pmb->cjs, pmb->cje, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowInnerX2(pmb, pco, time, dt, si, ei,
-                                        pmb->cjs, pmb->cje, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::polar_wedge:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->PolarWedgeInnerX2(pmb, pco, time, dt, si, ei,
-                                           pmb->cjs, pmb->cje, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::inner_x2](
-              pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
-              si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
-          break;
-        default:
-          break;
-      }
+  if (nb.ni.ox2 == 0 && pmb->block_size.nx2 > 1) {
+    if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                si, ei, pmb->cjs, pmb->cje, sk, ek, 1,
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x2);
     }
-    if (BoundaryFunction_[BoundaryFace::outer_x2] != nullptr) {
-      switch(block_bcs[BoundaryFace::outer_x2]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectOuterX2(pmb, pco, time, dt, si, ei,
-                                        pmb->cjs, pmb->cje, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowOuterX2(pmb, pco, time, dt, si, ei,
-                                        pmb->cjs, pmb->cje, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::polar_wedge:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->PolarWedgeOuterX2(pmb, pco, time, dt, si, ei,
-                                           pmb->cjs, pmb->cje, sk, ek, 1);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::outer_x2](
-              pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
-              si, ei, pmb->cjs, pmb->cje, sk, ek, 1);
-          break;
-        default:
-          break;
-      }
+    if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                si, ei, pmb->cjs, pmb->cje, sk, ek, 1,
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x2);
     }
   }
-  if (nb.ox3 == 0 && pmb->block_size.nx3 > 1) {
-    if (BoundaryFunction_[BoundaryFace::inner_x3] != nullptr) {
-      switch(block_bcs[BoundaryFace::inner_x3]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectInnerX3(pmb, pco, time, dt, si, ei,
-                                        sj, ej, pmb->cks, pmb->cke, 1);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowInnerX3(pmb, pco, time, dt, si, ei,
-                                        sj, ej, pmb->cks, pmb->cke, 1);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::inner_x3](
-              pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
-              si, ei, sj, ej, pmb->cks, pmb->cke, 1);
-          break;
-        default:
-          break;
-      }
+  if (nb.ni.ox3 == 0 && pmb->block_size.nx3 > 1) {
+    if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                si, ei, sj, ej, pmb->cks, pmb->cke, 1,
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x3);
     }
-    if (BoundaryFunction_[BoundaryFace::outer_x3] != nullptr) {
-      switch(block_bcs[BoundaryFace::outer_x3]) {
-        case BoundaryFlag::reflect:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->ReflectOuterX3(pmb, pco, time, dt, si, ei,
-                                        sj, ej, pmb->cks, pmb->cke, 1);
-          }
-          break;
-        case BoundaryFlag::outflow:
-          for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
-               ++bvars_it) {
-            (*bvars_it)->OutflowOuterX3(pmb, pco, time, dt, si, ei,
-                                        sj, ej, pmb->cks, pmb->cke, 1);
-          }
-          break;
-        case BoundaryFlag::user: // user-enrolled BCs
-          BoundaryFunction_[BoundaryFace::outer_x3](
-              pmb, pmr->pcoarsec, ph->coarse_prim_, pf->coarse_b_, time, dt,
-              si, ei, sj, ej, pmb->cks, pmb->cke, 1);
-          break;
-        default:
-          break;
-      }
+    if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                si, ei, sj, ej, pmb->cks, pmb->cke, 1,
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x3);
     }
   }
   return;
@@ -487,25 +353,30 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   // swap back Hydro refinement quantities:
   pmr->SetHydroRefinement(HydroBoundaryQuantity::cons);
 
-
   // prolongate face-centered S/AMR-enrolled quantities (magnetic fields)
   int &mylevel = pmb->loc.level;
   int il, iu, jl, ju, kl, ku;
   il = si, iu = ei + 1;
-  if ((nb.ox1 >= 0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1  ] >= mylevel)) il++;
-  if ((nb.ox1 <= 0) && (nblevel[nb.ox3+1][nb.ox2+1][nb.ox1+2] >= mylevel)) iu--;
+  if ((nb.ni.ox1 >= 0) && (nblevel[nb.ni.ox3+1][nb.ni.ox2+1][nb.ni.ox1  ] >= mylevel))
+    il++;
+  if ((nb.ni.ox1 <= 0) && (nblevel[nb.ni.ox3+1][nb.ni.ox2+1][nb.ni.ox1+2] >= mylevel))
+    iu--;
   if (pmb->block_size.nx2 > 1) {
     jl = sj, ju = ej + 1;
-    if ((nb.ox2 >= 0) && (nblevel[nb.ox3+1][nb.ox2  ][nb.ox1+1] >= mylevel)) jl++;
-    if ((nb.ox2 <= 0) && (nblevel[nb.ox3+1][nb.ox2+2][nb.ox1+1] >= mylevel)) ju--;
+    if ((nb.ni.ox2 >= 0) && (nblevel[nb.ni.ox3+1][nb.ni.ox2  ][nb.ni.ox1+1] >= mylevel))
+      jl++;
+    if ((nb.ni.ox2 <= 0) && (nblevel[nb.ni.ox3+1][nb.ni.ox2+2][nb.ni.ox1+1] >= mylevel))
+      ju--;
   } else {
     jl = sj;
     ju = ej;
   }
   if (pmb->block_size.nx3 > 1) {
     kl = sk, ku = ek + 1;
-    if ((nb.ox3 >= 0) && (nblevel[nb.ox3  ][nb.ox2+1][nb.ox1+1] >= mylevel)) kl++;
-    if ((nb.ox3 <= 0) && (nblevel[nb.ox3+2][nb.ox2+1][nb.ox1+1] >= mylevel)) ku--;
+    if ((nb.ni.ox3 >= 0) && (nblevel[nb.ni.ox3  ][nb.ni.ox2+1][nb.ni.ox1+1] >= mylevel))
+      kl++;
+    if ((nb.ni.ox3 <= 0) && (nblevel[nb.ni.ox3+2][nb.ni.ox2+1][nb.ni.ox1+1] >= mylevel))
+      ku--;
   } else {
     kl = sk;
     ku = ek;

@@ -32,6 +32,7 @@
 #include "../hydro/hydro.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../scalars/scalars.hpp"
 #include "../utils/buffer_utils.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
@@ -112,17 +113,22 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pcoord = new GRUser(this, pin, false);
   }
 
-  if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
-
   // Reconstruction: constructor may implicitly depend on Coordinates, and PPM variable
   // floors depend on EOS, but EOS isn't needed in Reconstruction constructor-> this is ok
   precon = new Reconstruction(this, pin);
 
   if (pm->multilevel == true) pmr = new MeshRefinement(this, pin);
 
-  // physics-related objects: may depend on Coordinates for diffusion terms
+  // physics-related, per-MeshBlock objects: may depend on Coordinates for diffusion
+  // terms, and may enroll quantities in AMR and BoundaryVariable objs. in BoundaryValues
   phydro = new Hydro(this, pin);
-  if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
+  if (MAGNETIC_FIELDS_ENABLED)
+    pfield = new Field(this, pin);
+  if (SELF_GRAVITY_ENABLED)
+    pgrav = new Gravity(this, pin);
+  if (NSCALARS > 0)
+    pscalars = new PassiveScalars(this, pin);
+
   peos = new EquationOfState(this, pin);
 
   // Create user mesh data

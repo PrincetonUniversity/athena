@@ -268,11 +268,11 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   InitUserMeshData(pin);
 
   // Load balancing flag and parameters
-  lb_flag_=true;
-  lb_automatic_=pin->GetOrAddBoolean("loadbalancing","automatic",false);
-  lb_tolerance_=pin->GetOrAddReal("loadbalancing","tolerance",0.5);
-  lb_interval_=pin->GetOrAddReal("loadbalancing","interval",10);
-  step_since_lb=0;
+  lb_flag_ = true;
+  lb_automatic_ = pin->GetOrAddBoolean("loadbalancing","automatic",false);
+  lb_tolerance_ = pin->GetOrAddReal("loadbalancing","tolerance",0.5);
+  lb_interval_ = pin->GetOrAddReal("loadbalancing","interval",10);
+  step_since_lb = 0;
 
   // SMR / AMR: create finer grids here
   multilevel = false;
@@ -281,7 +281,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     adaptive = true, multilevel = true;
   else if (pin->GetOrAddString("mesh", "refinement", "none") == "static")
     multilevel = true;
-  if (adaptive == true) {
+  if (adaptive) {
     max_level = pin->GetOrAddInteger("mesh", "numlevel", 1) + root_level - 1;
     if (max_level > 63) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -308,23 +308,23 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         RegionSize ref_size;
         ref_size.x1min = pin->GetReal(pib->block_name, "x1min");
         ref_size.x1max = pin->GetReal(pib->block_name, "x1max");
-        if (dim>=2) {
+        if (dim >= 2) {
           ref_size.x2min = pin->GetReal(pib->block_name, "x2min");
           ref_size.x2max = pin->GetReal(pib->block_name, "x2max");
         } else {
-          ref_size.x2min=mesh_size.x2min;
-          ref_size.x2max=mesh_size.x2max;
+          ref_size.x2min = mesh_size.x2min;
+          ref_size.x2max = mesh_size.x2max;
         }
-        if (dim>=3) {
+        if (dim >= 3) {
           ref_size.x3min = pin->GetReal(pib->block_name, "x3min");
           ref_size.x3max = pin->GetReal(pib->block_name, "x3max");
         } else {
-          ref_size.x3min=mesh_size.x3min;
-          ref_size.x3max=mesh_size.x3max;
+          ref_size.x3min = mesh_size.x3min;
+          ref_size.x3max = mesh_size.x3max;
         }
         int ref_lev = pin->GetInteger(pib->block_name, "level");
-        int lrlev=ref_lev+root_level;
-        if (lrlev>current_level) current_level=lrlev;
+        int lrlev = ref_lev + root_level;
+        if (lrlev>current_level) current_level = lrlev;
         // range check
         if (ref_lev<1) {
           msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -353,22 +353,25 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         }
         // find the logical range in the ref_level
         // note: if this is too slow, this should be replaced with bi-section search.
-        std::int64_t lx1min=0, lx1max=0, lx2min=0, lx2max=0, lx3min=0, lx3max=0;
-        std::int64_t lxmax=nrbx1*(1LL<<ref_lev);
+        std::int64_t lx1min = 0, lx1max = 0, lx2min = 0, lx2max = 0,
+                     lx3min = 0, lx3max = 0;
+        std::int64_t lxmax = nrbx1*(1LL<<ref_lev);
         for (lx1min=0; lx1min<lxmax; lx1min++) {
-          Real rx=ComputeMeshGeneratorX(lx1min+1, lxmax, use_uniform_meshgen_fn_[X1DIR]);
+          Real rx = ComputeMeshGeneratorX(lx1min+1, lxmax,
+                                          use_uniform_meshgen_fn_[X1DIR]);
           if (MeshGenerator_[X1DIR](rx, mesh_size) > ref_size.x1min)
             break;
         }
         for (lx1max=lx1min; lx1max<lxmax; lx1max++) {
-          Real rx=ComputeMeshGeneratorX(lx1max+1, lxmax, use_uniform_meshgen_fn_[X1DIR]);
+          Real rx = ComputeMeshGeneratorX(lx1max+1, lxmax,
+                                          use_uniform_meshgen_fn_[X1DIR]);
           if (MeshGenerator_[X1DIR](rx, mesh_size) >= ref_size.x1max)
             break;
         }
         if (lx1min % 2 == 1) lx1min--;
         if (lx1max % 2 == 0) lx1max++;
-        if (dim>=2) { // 2D or 3D
-          lxmax=nrbx2*(1LL<<ref_lev);
+        if (dim >= 2) { // 2D or 3D
+          lxmax = nrbx2*(1LL << ref_lev);
           for (lx2min=0; lx2min<lxmax; lx2min++) {
             Real rx=ComputeMeshGeneratorX(lx2min+1,lxmax,use_uniform_meshgen_fn_[X2DIR]);
             if (MeshGenerator_[X2DIR](rx, mesh_size) > ref_size.x2min)
@@ -383,14 +386,16 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
           if (lx2max % 2 == 0) lx2max++;
         }
         if (dim == 3) { // 3D
-          lxmax=nrbx3*(1LL<<ref_lev);
+          lxmax = nrbx3*(1LL<<ref_lev);
           for (lx3min=0; lx3min<lxmax; lx3min++) {
-            Real rx=ComputeMeshGeneratorX(lx3min+1,lxmax,use_uniform_meshgen_fn_[X3DIR]);
+            Real rx = ComputeMeshGeneratorX(lx3min+1, lxmax,
+                                            use_uniform_meshgen_fn_[X3DIR]);
             if (MeshGenerator_[X3DIR](rx, mesh_size) > ref_size.x3min)
               break;
           }
           for (lx3max=lx3min; lx3max<lxmax; lx3max++) {
-            Real rx=ComputeMeshGeneratorX(lx3max+1,lxmax,use_uniform_meshgen_fn_[X3DIR]);
+            Real rx = ComputeMeshGeneratorX(lx3max+1, lxmax,
+                                            use_uniform_meshgen_fn_[X3DIR]);
             if (MeshGenerator_[X3DIR](rx, mesh_size) >= ref_size.x3max)
               break;
           }
@@ -423,7 +428,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
             for (std::int64_t j=lx2min; j<lx2max; j+=2) {
               for (std::int64_t i=lx1min; i<lx1max; i+=2) {
                 LogicalLocation nloc;
-                nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=k;
+                nloc.level = lrlev, nloc.lx1 = i, nloc.lx2 = j, nloc.lx3 = k;
                 int nnew;
                 tree.AddMeshBlock(tree, nloc, dim, mesh_bcs, nrbx1, nrbx2, nrbx3,
                                   root_level, nnew);
@@ -439,8 +444,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   // initial mesh hierarchy construction is completed here
 
   tree.CountMeshBlock(nbtotal);
-  loclist=new LogicalLocation[nbtotal];
-  tree.GetMeshBlockList(loclist,nullptr,nbtotal);
+  loclist = new LogicalLocation[nbtotal];
+  tree.GetMeshBlockList(loclist, nullptr, nbtotal);
 
 #ifdef MPI_PARALLEL
   // check if there are sufficient blocks
@@ -458,10 +463,10 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   }
 #endif
 
-  ranklist=new int[nbtotal];
-  nslist=new int[Globals::nranks];
-  nblist=new int[Globals::nranks];
-  costlist=new double[nbtotal];
+  ranklist = new int[nbtotal];
+  nslist = new int[Globals::nranks];
+  nblist = new int[Globals::nranks];
+  costlist = new double[nbtotal];
   if (adaptive == true) { // allocate arrays for AMR
     nref = new int[Globals::nranks];
     nderef = new int[Globals::nranks];
@@ -474,27 +479,27 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   }
 
   // initialize cost array with the simplest estimate; all the blocks are equal
-  for (int i=0; i<nbtotal; i++) costlist[i]=1.0;
+  for (int i=0; i<nbtotal; i++) costlist[i] = 1.0;
 
   CalculateLoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
 
   // Output some diagnostic information to terminal
 
   // Output MeshBlock list and quit (mesh test only); do not create meshes
-  if (mesh_test>0) {
+  if (mesh_test > 0) {
     if (Globals::my_rank == 0) OutputMeshStructure(dim);
     return;
   }
 
   // set gravity flag
-  gflag=0;
-  if (SELF_GRAVITY_ENABLED) gflag=1;
+  gflag = 0;
+  if (SELF_GRAVITY_ENABLED) gflag = 1;
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
-  //    gflag=2;
+  //    gflag = 2;
 
   // create MeshBlock list for this process
-  int nbs=nslist[Globals::my_rank];
-  int nbe=nbs+nblist[Globals::my_rank]-1;
+  int nbs = nslist[Globals::my_rank];
+  int nbe = nbs + nblist[Globals::my_rank] - 1;
   // create MeshBlock list for this process
   for (int i=nbs; i<=nbe; i++) {
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
@@ -671,11 +676,11 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   MGBoundaryFunction_[BoundaryFace::outer_x3] = MGPeriodicOuterX3;
 
   // Load balancing flag and parameters
-  lb_flag_=true;
-  lb_automatic_=pin->GetOrAddBoolean("loadbalancing","automatic",false);
-  lb_tolerance_=pin->GetOrAddReal("loadbalancing","tolerance",0.5);
-  lb_interval_=pin->GetOrAddReal("loadbalancing","interval",10);
-  step_since_lb=0;
+  lb_flag_ = true;
+  lb_automatic_ = pin->GetOrAddBoolean("loadbalancing","automatic",false);
+  lb_tolerance_ = pin->GetOrAddReal("loadbalancing","tolerance",0.5);
+  lb_interval_ = pin->GetOrAddReal("loadbalancing","interval",10);
+  step_since_lb = 0;
 
   // SMR / AMR
   multilevel = false;
@@ -1330,7 +1335,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       for (int i=0; i<nmb; ++i) {
         MeshBlock *pmb = pmb_array[i];
         pmb->ProblemGenerator(pin);
-        pmb->pbval->CheckBoundary();
+        pmb->pbval->CheckUserBoundaries();
       }
     }
 
@@ -1426,102 +1431,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
                                                  HydroBoundaryQuantity::cons);
         }
-      }
+      } // multilevel
 
-      // begin fourth-order correction of midpoint initial condition:
-      // --------------------------
-
-      // correct IC on all MeshBlocks or none; switch cannot be toggled independently
+      // perform fourth-order correction of midpoint initial condition:
+      // (correct IC on all MeshBlocks or none; switch cannot be toggled independently)
       bool correct_ic = pmb_array[0]->precon->correct_ic;
-      if (correct_ic == true) {
-#pragma omp for private(pmb, phydro, pfield, pbval)
-        for (int nb=0; nb<nmb; ++nb) {
-          pmb = pmb_array[nb];
-          phydro = pmb->phydro;
-          pfield = pmb->pfield;
-          pbval = pmb->pbval;
-
-          // Assume cell-centered analytic value is computed at all real cells, and ghost
-          // cells with the cell-centered U have been exchanged
-          int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
-              kl = pmb->ks, ku = pmb->ke;
-
-          // Laplacian of cell-averaged conserved variables
-          AthenaArray<Real> delta_cons_;
-
-          // Allocate memory for 4D Laplacian
-          int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-          int ncells2 = 1, ncells3 = 1;
-          if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-          if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
-          int ncells4 = NHYDRO;
-          int nl = 0;
-          int nu = ncells4-1;
-          delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
-
-          // Compute and store Laplacian of cell-averaged conserved variables
-          pmb->pcoord->Laplacian(phydro->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
-          // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
-          // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-center
-          Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
-          Real C = (h*h)/24.0;
-
-          // Compute fourth-order approximation to cell-centered conserved variables
-          for (int n=nl; n<=nu; ++n) {
-            for (int k=kl; k<=ku; ++k) {
-              for (int j=jl; j<=ju; ++j) {
-                for (int i=il; i<=iu; ++i) {
-                  // We do not actually need to store all cell-centered cons. variables,
-                  // but the ConservedToPrimitivePointwise() implementation operates on 4D
-                  phydro->u(n,k,j,i) = phydro->u(n,k,j,i) + C*delta_cons_(n,k,j,i);
-                }
-              }
-            }
-          }
-          delta_cons_.DeleteAthenaArray();
-        }
-
-        // begin second exchange of ghost cells with corrected cell-averaged <U>
-        // -----------------  (mostly copied from above)
-        // prepare to receive conserved variables
-#pragma omp for private(pmb,pbval)
-        for (int i=0; i<nmb; ++i) {
-          pmb = pmb_array[i]; pbval = pmb->pbval;
-          // no need to re-SetupPersistentMPI() the MPI requests for boundary values
-          pbval->StartReceiving(BoundaryCommSubset::mesh_init);
-        }
-
-#pragma omp for private(pmb,pbval)
-        for (int i=0; i<nmb; ++i) {
-          pmb = pmb_array[i]; pbval = pmb->pbval;
-          pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
-                                                 HydroBoundaryQuantity::cons);
-          pmb->phydro->phbval->SendBoundaryBuffers();
-          if (MAGNETIC_FIELDS_ENABLED)
-            pmb->pfield->pfbval->SendBoundaryBuffers();
-        }
-
-        // wait to receive conserved variables
-#pragma omp for private(pmb,pbval)
-        for (int i=0; i<nmb; ++i) {
-          pmb = pmb_array[i]; pbval = pmb->pbval;
-          pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
-                                                 HydroBoundaryQuantity::cons);
-          pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
-          if (MAGNETIC_FIELDS_ENABLED)
-            pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
-          // KGF: disable shearing box bvals/ calls
-          // send and receive shearingbox boundary conditions
-          // if (SHEARING_BOX)
-          //   pmb->phydro->phbval->
-          //   SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
-          pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
-        }
-        // -----------------  (verbatim copied from above)
-        // end second exchange of ghost cells
-      } // end if (correct_ic == true)
-      // --------------------------
-      // end fourth-order correction of midpoint initial condition
+      if (correct_ic == true)
+        CorrectMidpointInitialCondition(pmb_array, nmb);
 
       // Now do prolongation, compute primitives, apply BCs
 #pragma omp for private(pmb,pbval,phydro,pfield)
@@ -1596,7 +1512,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       int onb = nbtotal;
       LoadBalancingAndAdaptiveMeshRefinement(pin);
       if (nbtotal == onb) {
-        iflag=true;
+        iflag = true;
       } else if (nbtotal < onb && Globals::my_rank == 0) {
         std::cout << "### Warning in Mesh::Initialize" << std::endl
                   << "The number of MeshBlocks decreased during AMR grid initialization."
@@ -1683,7 +1599,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_size.x2min = MeshGenerator_[X2DIR](rx, mesh_size);
       block_bcs[BoundaryFace::inner_x2] = BoundaryFlag::block;
     }
-    if (lx2 == (nrbx_ll)-1) {
+    if (lx2 == (nrbx_ll) - 1) {
       block_size.x2max = mesh_size.x2max;
       block_bcs[BoundaryFace::outer_x2] = mesh_bcs[BoundaryFace::outer_x2];
     } else {
@@ -1710,7 +1626,7 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
       block_size.x3min = MeshGenerator_[X3DIR](rx, mesh_size);
       block_bcs[BoundaryFace::inner_x3] = BoundaryFlag::block;
     }
-    if (lx3 == (nrbx_ll)-1) {
+    if (lx3 == (nrbx_ll) - 1) {
       block_size.x3max = mesh_size.x3max;
       block_bcs[BoundaryFace::outer_x3] = mesh_bcs[BoundaryFace::outer_x3];
     } else {
@@ -1724,5 +1640,94 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
   block_size.x2rat = mesh_size.x2rat;
   block_size.x3rat = mesh_size.x3rat;
 
+  return;
+}
+
+
+void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb) {
+  MeshBlock *pmb;
+  Hydro *phydro;
+#pragma omp for private(pmb, phydro)
+  for (int nb=0; nb<nmb; ++nb) {
+    pmb = pmb_array[nb];
+    phydro = pmb->phydro;
+
+    // Assume cell-centered analytic value is computed at all real cells, and ghost
+    // cells with the cell-centered U have been exchanged
+    int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
+        kl = pmb->ks, ku = pmb->ke;
+
+    // Laplacian of cell-averaged conserved variables
+    AthenaArray<Real> delta_cons_;
+
+    // Allocate memory for 4D Laplacian
+    int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+    int ncells2 = 1, ncells3 = 1;
+    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
+    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+    int ncells4 = NHYDRO;
+    int nl = 0;
+    int nu = ncells4-1;
+    delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
+
+    // Compute and store Laplacian of cell-averaged conserved variables
+    pmb->pcoord->Laplacian(phydro->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
+    // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
+    // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-center
+    Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
+    Real C = (h*h)/24.0;
+
+    // Compute fourth-order approximation to cell-centered conserved variables
+    for (int n=nl; n<=nu; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+          for (int i=il; i<=iu; ++i) {
+            // We do not actually need to store all cell-centered cons. variables,
+            // but the ConservedToPrimitivePointwise() implementation operates on 4D
+            phydro->u(n,k,j,i) = phydro->u(n,k,j,i) + C*delta_cons_(n,k,j,i);
+          }
+        }
+      }
+    }
+    delta_cons_.DeleteAthenaArray();
+  }
+
+  // begin second exchange of ghost cells with corrected cell-averaged <U>
+  // -----------------  (mostly copied from above section in Mesh::Initialize())
+  BoundaryValues *pbval;
+  // prepare to receive conserved variables
+#pragma omp for private(pmb,pbval)
+  for (int i=0; i<nmb; ++i) {
+    pmb = pmb_array[i]; pbval = pmb->pbval;
+    // no need to re-SetupPersistentMPI() the MPI requests for boundary values
+    pbval->StartReceiving(BoundaryCommSubset::mesh_init);
+  }
+
+#pragma omp for private(pmb,pbval)
+  for (int i=0; i<nmb; ++i) {
+    pmb = pmb_array[i];
+    pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+                                           HydroBoundaryQuantity::cons);
+    pmb->phydro->phbval->SendBoundaryBuffers();
+    if (MAGNETIC_FIELDS_ENABLED)
+      pmb->pfield->pfbval->SendBoundaryBuffers();
+  }
+
+  // wait to receive conserved variables
+#pragma omp for private(pmb,pbval)
+  for (int i=0; i<nmb; ++i) {
+    pmb = pmb_array[i]; pbval = pmb->pbval;
+    pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+                                           HydroBoundaryQuantity::cons);
+    pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
+    if (MAGNETIC_FIELDS_ENABLED)
+      pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
+    // KGF: disable shearing box bvals/ calls
+    // send and receive shearingbox boundary conditions
+    // if (SHEARING_BOX)
+    //   pmb->phydro->phbval->
+    //   SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
+    pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
+  } // end second exchange of ghost cells
   return;
 }
