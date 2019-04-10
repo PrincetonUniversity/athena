@@ -1792,3 +1792,19 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
   } // end second exchange of ghost cells
   return;
 }
+
+// Public function for advancing next_phys_id_ counter
+// E.g. if chemistry or radiation elects to communicate additional information with MPI
+// outside the framework of the BoundaryVariable classes
+
+// Store signed, but positive, integer corresponding to the next unused value to be used
+// as unique ID for a BoundaryVariable object's single set of MPI calls (formerly "enum
+// AthenaTagMPI"). 5 bits of unsigned integer representation are currently reserved
+// for this "phys" part of the bitfield tag, making 0, ..., 31 legal values
+
+int Mesh::ReserveTagVariableIDs(int num_phys) {
+  // TODO(felker): add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
+  int start_id = next_phys_id_;
+  next_phys_id_ += num_phys;
+  return start_id;
+}

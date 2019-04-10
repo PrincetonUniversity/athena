@@ -220,6 +220,10 @@ class Mesh {
   MeshBlock* FindMeshBlock(int tgid);
   void ApplyUserWorkBeforeOutput(ParameterInput *pin);
 
+  // function for distributing unique "phys" bitfield IDs to BoundaryVariable objects and
+  // other categories of MPI communication for generating unique MPI_TAGs
+  int ReserveTagVariableIDs(int num_phys);
+
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void UserWorkAfterLoop(ParameterInput *pin);   // called in main loop
 

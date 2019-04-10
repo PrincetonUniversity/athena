@@ -91,6 +91,7 @@ class BoundaryBase {
 //----------------------------------------------------------------------------------------
 //! \class BoundaryValues
 //  \brief centralized class for interacting with each individual variable boundary data
+//         (design pattern ~ mediator)
 
 class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
                        public BoundaryCommunication {
@@ -122,10 +123,6 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // safety check of user's boundary fns in Mesh::Initialize before SetupPersistentMPI()
   void CheckUserBoundaries();
 
-  // function for distributing unique "phys" bitfield IDs to BoundaryVariable objects and
-  // other categories of MPI communication for generating unique MPI_TAGs
-  int ReserveTagVariableIDs(int num_phys);
-
  private:
   MeshBlock *pmy_block_;      // ptr to MeshBlock containing this BoundaryValues
   int nface_, nedge_;         // used only in fc/flux_correction_fc.cpp calculations
@@ -139,12 +136,6 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // the pole (azimuthally), shift the k-axis by nx3/2 for cell- and face-centered
   // variables, & emf, using this temporary 1D array.
   AthenaArray<Real> azimuthal_shift_;
-
-  // Store signed, but positive, integer corresponding to the next unused value to be used
-  // as unique ID for a BoundaryVariable object's single set of MPI calls (formerly "enum
-  // AthenaTagMPI"). 5 bits of unsigned integer representation are currently reserved
-  // for this "phys" part of the bitfield tag, making 0, ..., 31 legal values
-  int bvars_next_phys_id_; // should be identical for all BVals, MeshBlocks, MPI ranks
 
   // Shearingbox (shared with Field and Hydro)
   // ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
