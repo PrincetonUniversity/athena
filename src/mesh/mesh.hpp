@@ -42,6 +42,7 @@ class Coordinates;
 class Reconstruction;
 class Hydro;
 class Field;
+class PassiveScalars;
 class Gravity;
 class MGGravityDriver;
 class EquationOfState;
@@ -107,6 +108,7 @@ class MeshBlock {
   Hydro *phydro;
   Field *pfield;
   Gravity *pgrav;
+  PassiveScalars *pscalars;
   EquationOfState *peos;
 
   MeshBlock *prev, *next;
