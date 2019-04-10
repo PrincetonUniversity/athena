@@ -74,7 +74,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
 
   if (SHEARING_BOX) {
 #ifdef MPI_PARALLEL
-    sh_cc_phys_id_ = pbval_->ReserveTagVariableIDs(1);
+    sh_cc_phys_id_ = cc_phys_id_ + 2;
 #endif
   }
 }

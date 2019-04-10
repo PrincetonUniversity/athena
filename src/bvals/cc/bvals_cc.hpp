@@ -42,9 +42,9 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   AthenaArray<Real> x1flux, x2flux, x3flux;
 
   // maximum number of reserved unique "physics ID" component of MPI tag bitfield
-  // (CellCenteredBoundaryVariable only actually uses 1x if multilevel==false)
+  // (CellCenteredBoundaryVariable only actually uses 1x if multilevel==false, no shear)
   // must correspond to the # of "int *phys_id_" private members, below. Convert to array?
-  static constexpr int max_phys_id = 2;
+  static constexpr int max_phys_id = 3;
 
   // BoundaryVariable:
   int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;
@@ -118,21 +118,24 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 #endif
 
   // Shearing box
-  BoundaryStatus shbox_inner_cc_flag_[4], shbox_outer_cc_flag_[4];
+  ShearingBoundaryData shbd_inner_, shbd_outer_;
+  // BoundaryStatus shbox_inner_cc_flag_[4], shbox_outer_cc_flag_[4];
   // working arrays of remapped quantities
   AthenaArray<Real>  shboxvar_inner_cc_, shboxvar_outer_cc_;
   // flux from conservative remapping
   AthenaArray<Real>  flx_inner_cc_, flx_outer_cc_;
   // KGF: this should be a struct
   int  send_innersize_cc_[4], recv_innersize_cc_[4]; // buffer sizes
-  Real *send_innerbuf_cc_[4], *recv_innerbuf_cc_[4]; // send and recv buffers
   int  send_outersize_cc_[4], recv_outersize_cc_[4]; // buffer sizes
-  Real *send_outerbuf_cc_[4], *recv_outerbuf_cc_[4]; // send and recv buffers
+
+  // Real *send_innerbuf_cc_[4], *recv_innerbuf_cc_[4]; // send and recv buffers
+  // Real *send_outerbuf_cc_[4], *recv_outerbuf_cc_[4]; // send and recv buffers
 #ifdef MPI_PARALLEL
   int sh_cc_phys_id_;
+
   // MPI request for send and recv msgs
-  MPI_Request rq_innersend_cc_[4], rq_innerrecv_cc_[4];
-  MPI_Request rq_outersend_cc_[4], rq_outerrecv_cc_[4];
+  // MPI_Request rq_innersend_cc_[4], rq_innerrecv_cc_[4];
+  // MPI_Request rq_outersend_cc_[4], rq_outerrecv_cc_[4];
 #endif
 
   void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);

@@ -119,7 +119,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
 
   if (SHEARING_BOX) {
 #ifdef MPI_PARALLEL
-    sh_fc_phys_id_ = pbval_->ReserveTagVariableIDs(2);
+    sh_fc_phys_id_ = fc_flx_phys_id_ + 2;
     sh_fc_flx_phys_id_ = sh_fc_phys_id_+ 1;
 #endif
   }
