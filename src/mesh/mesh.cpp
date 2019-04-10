@@ -92,6 +92,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   nreal_user_mesh_data_ = 0;
   nuser_history_output_ = 0;
 
+#ifdef MPI_PARALLEL
+  // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
+  next_phys_id_  = 1;
+#else
+  next_phys_id_  = 0;
+#endif
+
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh", "num_threads", 1);
   if (num_mesh_threads_ < 1) {
@@ -436,7 +443,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   }
 
   // initial mesh hierarchy construction is completed here
-
   tree.CountMeshBlock(nbtotal);
   loclist = new LogicalLocation[nbtotal];
   tree.GetMeshBlockList(loclist, nullptr, nbtotal);
@@ -549,6 +555,13 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   turb_flag = 0;
 
   nbnew=0; nbdel=0;
+
+#ifdef MPI_PARALLEL
+  // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
+  next_phys_id_  = 1;
+#else
+  next_phys_id_  = 0;
+#endif
 
   // read number of OpenMP threads for mesh
   num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);

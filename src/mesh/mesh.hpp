@@ -225,6 +225,7 @@ class Mesh {
 
  private:
   // data
+  int next_phys_id_; // next unused value for encoding final component of MPI tag bitfield
   int root_level, max_level, current_level;
   int num_mesh_threads_;
   int *nslist, *ranklist, *nblist;
