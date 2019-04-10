@@ -222,7 +222,7 @@ class Mesh {
 
   // function for distributing unique "phys" bitfield IDs to BoundaryVariable objects and
   // other categories of MPI communication for generating unique MPI_TAGs
-  int ReserveTagVariableIDs(int num_phys);
+  int ReserveTagPhysIDs(int num_phys);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void UserWorkAfterLoop(ParameterInput *pin);   // called in main loop
@@ -279,6 +279,7 @@ class Mesh {
   void OutputMeshStructure(int dim);
   void LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
   void CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb);
+  void ReserveMeshBlockPhysIDs();
 
   // Mesh::AdaptiveMeshRefinement() helper functions:
   // step 6: send

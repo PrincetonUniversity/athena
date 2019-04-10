@@ -136,6 +136,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     // } else
     // }
     // Regardless, advance MeshBlock's local counter (initialized to bvars_next_phys_id=1)
+    // Greedy reservation of phys IDs (only 1 of 2 needed for Hydro if multilevel==false)
     pbval->AdvanceCounterPhysID(HydroBoundaryVariable::max_phys_id);
     //  }
   if (MAGNETIC_FIELDS_ENABLED) {

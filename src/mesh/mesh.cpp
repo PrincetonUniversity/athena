@@ -92,11 +92,11 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   nreal_user_mesh_data_ = 0;
   nuser_history_output_ = 0;
 
+  next_phys_id_  = 0;
 #ifdef MPI_PARALLEL
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
   next_phys_id_  = 1;
-#else
-  next_phys_id_  = 0;
+  ReserveMeshBlockPhysIDs();
 #endif
 
   // read number of OpenMP threads for mesh
@@ -556,11 +556,11 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 
   nbnew=0; nbdel=0;
 
+  next_phys_id_  = 0;
 #ifdef MPI_PARALLEL
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
   next_phys_id_  = 1;
-#else
-  next_phys_id_  = 0;
+  ReserveMeshBlockPhysIDs();
 #endif
 
   // read number of OpenMP threads for mesh
@@ -1802,9 +1802,35 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
 // AthenaTagMPI"). 5 bits of unsigned integer representation are currently reserved
 // for this "phys" part of the bitfield tag, making 0, ..., 31 legal values
 
-int Mesh::ReserveTagVariableIDs(int num_phys) {
+int Mesh::ReserveTagPhysIDs(int num_phys) {
   // TODO(felker): add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
   int start_id = next_phys_id_;
   next_phys_id_ += num_phys;
   return start_id;
+}
+
+// private member fn, called in Mesh() ctor
+
+// depending on compile- and runtime options, reserve the maximum number of "int physid"
+// that might be necessary for each MeshBlock's BoundaryValues object to perform MPI
+// communication for all BoundaryVariable objects
+
+// TODO(felker): deduplicate this logic, which combines conditionals in MeshBlock ctor
+
+void Mesh::ReserveMeshBlockPhysIDs() {
+  // if (FLUID_ENABLED) {
+  // Advance Mesh's shared counter (initialized to next_phys_id=1 if MPI)
+  // Greedy reservation of phys IDs (only 1 of 2 needed for Hydro if multilevel==false)
+  ReserveTagPhysIDs(HydroBoundaryVariable::max_phys_id);
+  //  }
+  if (MAGNETIC_FIELDS_ENABLED) {
+    ReserveTagPhysIDs(FaceCenteredBoundaryVariable::max_phys_id);
+  }
+  if (SELF_GRAVITY_ENABLED) {
+    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+  }
+  if (NSCALARS > 0) {
+    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+  }
+  return;
 }
