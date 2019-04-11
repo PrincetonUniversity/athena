@@ -31,8 +31,8 @@
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
 #include "../../utils/buffer_utils.hpp"
-#include "../bvals_interfaces.hpp"
 #include "../bvals.hpp"
+#include "../bvals_interfaces.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL
@@ -192,19 +192,17 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 
     // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
     for (int n=0; n<4; n++) {
-      if (pbval_->shear_send_neighbor_[0][n].rank != -1) {
+      SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[0][n];
+      if (snb.rank != -1) {
         LoadShearing(shear_fc_[0], shear_bd_fc_[0].send[n], n);
-        if (pbval_->shear_send_neighbor_[0][n].rank == Globals::my_rank) {// on the same process
-          MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(pbval_->shear_send_neighbor_[0][n].gid);
-          std::memcpy(pbl->pbval->shear_bd_fc_[0].recv[n],shear_bd_fc_[0].send[n],
-                      shear_send_count_fc_[0][n]*sizeof(Real));
-          pbl->pbval->shear_bd_fc_[0].flag[n] = BoundaryStatus::arrived;
+        if (snb.rank == Globals::my_rank) {
+          CopyShearBufferSameProcess(snb, shear_send_count_fc_[0][n], n);
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid = n
-          int tag = pbval_->CreateBvalsMPITag(pbval_->shear_send_neighbor_[0][n].lid, n, shear_fc_phys_id_);
+          int tag = pbval_->CreateBvalsMPITag(snb.lid, n, shear_fc_phys_id_);
           MPI_Isend(shear_bd_fc_[0].send[n],shear_send_count_fc_[0][n],MPI_ATHENA_REAL,
-                    pbval_->shear_send_neighbor_[0][n].rank,tag,MPI_COMM_WORLD, &shear_bd_fc_[0].req_send[n]);
+                    snb.rank,tag,MPI_COMM_WORLD, &shear_bd_fc_[0].req_send[n]);
 #endif
         }
       }
@@ -277,19 +275,17 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
     int offset = 4;
     for (int n=0; n<4; n++) {
-      if (pbval_->shear_send_neighbor_[1][n].rank != -1) {
+      SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[1][n];
+      if (snb.rank != -1) {
         LoadShearing(shear_fc_[1], shear_bd_fc_[1].send[n], n+offset);
-        if (pbval_->shear_send_neighbor_[1][n].rank == Globals::my_rank) {// on the same process
-          MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(pbval_->shear_send_neighbor_[1][n].gid);
-          std::memcpy(pbl->pbval->shear_bd_fc_[1].recv[n],
-                      shear_bd_fc_[1].send[n], shear_send_count_fc_[1][n]*sizeof(Real));
-          pbl->pbval->shear_bd_fc_[1].flag[n] = BoundaryStatus::arrived;
+        if (snb.rank == Globals::my_rank) {// on the same process
+          CopyShearBufferSameProcess(snb, shear_send_count_fc_[1][n], n);
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid for outer(inner): 2(0) and 3(1)
-          int tag = pbval_->CreateBvalsMPITag(pbval_->shear_send_neighbor_[1][n].lid, n+offset, shear_fc_phys_id_);
+          int tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset, shear_fc_phys_id_);
           MPI_Isend(shear_bd_fc_[1].send[n], shear_send_count_fc_[1][n], MPI_ATHENA_REAL,
-                    pbval_->shear_send_neighbor_[1][n].rank, tag, MPI_COMM_WORLD, &shear_bd_fc_[1].req_send[n]);
+                    snb.rank, tag, MPI_COMM_WORLD, &shear_bd_fc_[1].req_send[n]);
 #endif
         }
       }

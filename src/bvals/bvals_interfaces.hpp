@@ -314,6 +314,8 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   void CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize);
   void CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize);
 
+  void CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int ssize, int bufid);
+
   void InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type);
   void DestroyBoundaryData(BoundaryData<> &bd);
   // private:
