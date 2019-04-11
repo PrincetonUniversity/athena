@@ -131,7 +131,7 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   Real eps = pbval_->eps_;
   Real qomL = pbval_->qomL_;
 
-  if (is_shear[0]) {
+  if (pbval_->is_shear[0]) {
     int ib = is - NGHOST;
     int ii;
     // step 1. -- load shboxvar_fc_
@@ -139,9 +139,9 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
       for (int j=js-NGHOST; j<=je+NGHOST; j++) {
         for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
-          shboxvar_inner_fc_.x1f(k,j,i) = (*var_fc).x1f(k,j,ii);
-          shboxvar_inner_fc_.x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
-          shboxvar_inner_fc_.x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
+          shear_fc_[0].x1f(k,j,i) = (*var_fc).x1f(k,j,ii);
+          shear_fc_[0].x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
+          shear_fc_[0].x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
         }
       }
     }
@@ -150,68 +150,68 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     for (int j=js-NGHOST; j<=je+NGHOST; j++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
-        shboxvar_inner_fc_.x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
+        shear_fc_[0].x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
       }
     }
     int jp = je + NGHOST + 1;
     for (int k=kl; k<=ku; k++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
-        shboxvar_inner_fc_.x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
+        shear_fc_[0].x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
       }
     }
 
     // step 2. -- conservative remapping
     for (int k=kl; k<=ku; k++) {  // bx1
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js, je+2, i, eps, shboxvar_inner_fc_.x1f, flx_inner_fc_.x1f);
+        RemapFlux(k, js, je+2, i, eps, shear_fc_[0].x1f, shear_flx_fc_[0].x1f);
         for (int j=js; j<=je+1; j++) {
-          shboxvar_inner_fc_.x1f(k,j,i) -= (flx_inner_fc_.x1f(j+1) -
-                                               flx_inner_fc_.x1f(j));
+          shear_fc_[0].x1f(k,j,i) -= (shear_flx_fc_[0].x1f(j+1) -
+                                               shear_flx_fc_[0].x1f(j));
         }
       }
     }
     for (int k=kl; k<=ku; k++) {  // bx2
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js, je+3, i, eps, shboxvar_inner_fc_.x2f, flx_inner_fc_.x2f);
+        RemapFlux(k, js, je+3, i, eps, shear_fc_[0].x2f, shear_flx_fc_[0].x2f);
         for (int j=js; j<=je+2; j++) {
-          shboxvar_inner_fc_.x2f(k,j,i) -= (flx_inner_fc_.x2f(j+1) -
-                                               flx_inner_fc_.x2f(j));
+          shear_fc_[0].x2f(k,j,i) -= (shear_flx_fc_[0].x2f(j+1) -
+                                               shear_flx_fc_[0].x2f(j));
         }
       }
     }
     for (int k=kl; k<=ku+1; k++) { // bx3
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js, je+2, i, eps, shboxvar_inner_fc_.x3f, flx_inner_fc_.x3f);
+        RemapFlux(k, js, je+2, i, eps, shear_fc_[0].x3f, shear_flx_fc_[0].x3f);
         for (int j=js; j<=je+1; j++) {
-          shboxvar_inner_fc_.x3f(k,j,i) -= (flx_inner_fc_.x3f(j+1) -
-                                               flx_inner_fc_.x3f(j));
+          shear_fc_[0].x3f(k,j,i) -= (shear_flx_fc_[0].x3f(j+1) -
+                                               shear_flx_fc_[0].x3f(j));
         }
       }
     }
 
     // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
     for (int n=0; n<4; n++) {
-      if (send_inner_rank_[n] != -1) {
-        LoadShearing(shboxvar_inner_fc_, send_innerbuf_fc_[n], n);
-        if (send_inner_rank_[n] == Globals::my_rank) {// on the same process
-          MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_inner_gid_[n]);
-          std::memcpy(pbl->pbval->recv_innerbuf_fc_[n],send_innerbuf_fc_[n],
-                      send_innersize_fc_[n]*sizeof(Real));
-          pbl->pbval->shbox_inner_fc_flag_[n] = BoundaryStatus::arrived;
+      if (pbval_->shear_send_neighbor_[0][n].rank != -1) {
+        LoadShearing(shear_fc_[0], shear_bd_fc_[0].send[n], n);
+        if (pbval_->shear_send_neighbor_[0][n].rank == Globals::my_rank) {// on the same process
+          MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(pbval_->shear_send_neighbor_[0][n].gid);
+          std::memcpy(pbl->pbval->shear_bd_fc_[0].recv[n],shear_bd_fc_[0].send[n],
+                      shear_send_count_fc_[0][n]*sizeof(Real));
+          pbl->pbval->shear_bd_fc_[0].flag[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid = n
-          int tag = CreateBvalsMPITag(send_inner_lid_[n], n, sh_fc_phys_id_);
-          MPI_Isend(send_innerbuf_fc_[n],send_innersize_fc_[n],MPI_ATHENA_REAL,
-                    send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_fc_[n]);
+          int tag = pbval_->CreateBvalsMPITag(pbval_->shear_send_neighbor_[0][n].lid, n, shear_fc_phys_id_);
+          MPI_Isend(shear_bd_fc_[0].send[n],shear_send_count_fc_[0][n],MPI_ATHENA_REAL,
+                    pbval_->shear_send_neighbor_[0][n].rank,tag,MPI_COMM_WORLD, &shear_bd_fc_[0].req_send[n]);
 #endif
         }
       }
     }
   } // inner boundaries
 
-  if (is_shear[1]) {
+  if (pbval_->is_shear[1]) {
     int  ib = ie + 1;
     qomL = -qomL;
     int ii;
@@ -220,9 +220,9 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
       for (int j=js-NGHOST; j<=je+NGHOST; j++) {
         for (int i=0; i<NGHOST; i++) {
           ii = ib+i;
-          shboxvar_outer_fc_.x1f(k,j,i) = (*var_fc).x1f(k,j,ii+1);
-          shboxvar_outer_fc_.x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
-          shboxvar_outer_fc_.x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
+          shear_fc_[1].x1f(k,j,i) = (*var_fc).x1f(k,j,ii+1);
+          shear_fc_[1].x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
+          shear_fc_[1].x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
         }
       }
     }
@@ -231,45 +231,45 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     for (int j=js-NGHOST; j<=je+NGHOST; j++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
-        shboxvar_outer_fc_.x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
+        shear_fc_[1].x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
       }
     }
     int jp = je + NGHOST + 1;
     for (int k=kl; k<=ku; k++) {
       for (int i=0; i<NGHOST; i++) {
         ii = ib+i;
-        shboxvar_outer_fc_.x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
+        shear_fc_[1].x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
       }
     }
 
     // step 2. -- conservative remapping
     for (int k=kl; k<=ku; k++) {  // bx1
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js-1, je+1, i, -eps, shboxvar_outer_fc_.x1f,
-                       flx_outer_fc_.x1f);
+        RemapFlux(k, js-1, je+1, i, -eps, shear_fc_[1].x1f,
+                       shear_flx_fc_[1].x1f);
         for (int j=js-1; j<=je; j++) {
-          shboxvar_outer_fc_.x1f(k,j,i) -= (flx_outer_fc_.x1f(j+1) -
-                                               flx_outer_fc_.x1f(j));
+          shear_fc_[1].x1f(k,j,i) -= (shear_flx_fc_[1].x1f(j+1) -
+                                               shear_flx_fc_[1].x1f(j));
         }
       }
     }
     for (int k=kl; k<=ku; k++) {  // bx2
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js-1, je+2, i, -eps, shboxvar_outer_fc_.x2f,
-                       flx_outer_fc_.x2f);
+        RemapFlux(k, js-1, je+2, i, -eps, shear_fc_[1].x2f,
+                       shear_flx_fc_[1].x2f);
         for (int j=js-1; j<=je+1; j++) {
-          shboxvar_outer_fc_.x2f(k,j,i) -= (flx_outer_fc_.x2f(j+1) -
-                                               flx_outer_fc_.x2f(j));
+          shear_fc_[1].x2f(k,j,i) -= (shear_flx_fc_[1].x2f(j+1) -
+                                               shear_flx_fc_[1].x2f(j));
         }
       }
     }
     for (int k=kl; k<=ku+1; k++) {  // bx3
       for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js-1, je+1, i, -eps, shboxvar_outer_fc_.x3f,
-                  flx_outer_fc_.x3f);
+        RemapFlux(k, js-1, je+1, i, -eps, shear_fc_[1].x3f,
+                  shear_flx_fc_[1].x3f);
         for (int j=js-1; j<=je; j++) {
-          shboxvar_outer_fc_.x3f(k,j,i) -= (flx_outer_fc_.x3f(j+1)
-                                            - flx_outer_fc_.x3f(j));
+          shear_fc_[1].x3f(k,j,i) -= (shear_flx_fc_[1].x3f(j+1)
+                                            - shear_flx_fc_[1].x3f(j));
         }
       }
     }
@@ -277,19 +277,19 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
     int offset = 4;
     for (int n=0; n<4; n++) {
-      if (send_outer_rank_[n] != -1) {
-        LoadShearing(shboxvar_outer_fc_, send_outerbuf_fc_[n], n+offset);
-        if (send_outer_rank_[n] == Globals::my_rank) {// on the same process
-          MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(send_outer_gid_[n]);
-          std::memcpy(pbl->pbval->recv_outerbuf_fc_[n],
-                      send_outerbuf_fc_[n], send_outersize_fc_[n]*sizeof(Real));
-          pbl->pbval->shbox_outer_fc_flag_[n] = BoundaryStatus::arrived;
+      if (pbval_->shear_send_neighbor_[1][n].rank != -1) {
+        LoadShearing(shear_fc_[1], shear_bd_fc_[1].send[n], n+offset);
+        if (pbval_->shear_send_neighbor_[1][n].rank == Globals::my_rank) {// on the same process
+          MeshBlock *pbl=pmb->pmy_mesh->FindMeshBlock(pbval_->shear_send_neighbor_[1][n].gid);
+          std::memcpy(pbl->pbval->shear_bd_fc_[1].recv[n],
+                      shear_bd_fc_[1].send[n], shear_send_count_fc_[1][n]*sizeof(Real));
+          pbl->pbval->shear_bd_fc_[1].flag[n] = BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid for outer(inner): 2(0) and 3(1)
-          int tag = CreateBvalsMPITag(send_outer_lid_[n], n+offset, sh_fc_phys_id_);
-          MPI_Isend(send_outerbuf_fc_[n], send_outersize_fc_[n], MPI_ATHENA_REAL,
-                    send_outer_rank_[n], tag, MPI_COMM_WORLD, &rq_outersend_fc_[n]);
+          int tag = pbval_->CreateBvalsMPITag(pbval_->shear_send_neighbor_[1][n].lid, n+offset, shear_fc_phys_id_);
+          MPI_Isend(shear_bd_fc_[1].send[n], shear_send_count_fc_[1][n], MPI_ATHENA_REAL,
+                    pbval_->shear_send_neighbor_[1][n].rank, tag, MPI_COMM_WORLD, &shear_bd_fc_[1].req_send[n]);
 #endif
         }
       }
@@ -387,11 +387,11 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
 bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   bool flagi = true, flago = true;
 
-  if (is_shear[0]) { // check inner boundaries
+  if (pbval_->is_shear[0]) { // check inner boundaries
     for (int n=0; n<4; n++) {
-      if (shbox_inner_fc_flag_[n] == BoundaryStatus::completed) continue;
-      if (shbox_inner_fc_flag_[n] == BoundaryStatus::waiting) {
-        if (recv_inner_rank_[n] == Globals::my_rank) {// on the same process
+      if (shear_bd_fc_[0].flag[n] == BoundaryStatus::completed) continue;
+      if (shear_bd_fc_[0].flag[n] == BoundaryStatus::waiting) {
+        if (pbval_->shear_recv_neighbor_[0][n].rank == Globals::my_rank) {// on the same process
           flagi = false;
           continue;
         } else { // MPI boundary
@@ -399,27 +399,27 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
-          MPI_Test(&rq_innerrecv_fc_[n], &test, MPI_STATUS_IGNORE);
+          MPI_Test(&shear_bd_fc_[0].req_recv[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
             flagi = false;
             continue;
           }
-          shbox_inner_fc_flag_[n] = BoundaryStatus::arrived;
+          shear_bd_fc_[0].flag[n] = BoundaryStatus::arrived;
 #endif
         }
       }
       // set dst if boundary arrived
-      SetShearingBoxBoundarySameLevel(recv_innerbuf_fc_[n], n);
-      shbox_inner_fc_flag_[n] = BoundaryStatus::completed; // completed
+      SetShearingBoxBoundarySameLevel(shear_bd_fc_[0].recv[n], n);
+      shear_bd_fc_[0].flag[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] to recv[3]
   } // inner boundary
 
-  if (is_shear[1]) { // check outer boundaries
+  if (pbval_->is_shear[1]) { // check outer boundaries
     int offset = 4;
     for (int n=0; n<4; n++) {
-      if (shbox_outer_fc_flag_[n] == BoundaryStatus::completed) continue;
-      if (shbox_outer_fc_flag_[n] == BoundaryStatus::waiting) {
-        if (recv_outer_rank_[n] == Globals::my_rank) {// on the same process
+      if (shear_bd_fc_[1].flag[n] == BoundaryStatus::completed) continue;
+      if (shear_bd_fc_[1].flag[n] == BoundaryStatus::waiting) {
+        if (pbval_->shear_recv_neighbor_[1][n].rank == Globals::my_rank) {// on the same process
           flago = false;
           continue;
         } else { // MPI boundary
@@ -428,17 +428,17 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
 
-          MPI_Test(&rq_outerrecv_fc_[n], &test, MPI_STATUS_IGNORE);
+          MPI_Test(&shear_bd_fc_[1].req_recv[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
             flago = false;
             continue;
           }
-          shbox_outer_fc_flag_[n] = BoundaryStatus::arrived;
+          shear_bd_fc_[1].flag[n] = BoundaryStatus::arrived;
 #endif
         }
       }
-      SetShearingBoxBoundarySameLevel(recv_outerbuf_fc_[n], n+offset);
-      shbox_outer_fc_flag_[n] = BoundaryStatus::completed; // completed
+      SetShearingBoxBoundarySameLevel(shear_bd_fc_[1].recv[n], n+offset);
+      shear_bd_fc_[1].flag[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] and recv[1]
   } // outer boundary
   return (flagi && flago);

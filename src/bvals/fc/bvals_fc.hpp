@@ -161,7 +161,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // Shearing box Field
   ShearingBoundaryData shear_bd_fc_[2];
   FaceField shear_fc_[2];
-  FaceField shear_flx_fc[2];
+  FaceField shear_flx_fc_[2];
   int shear_send_count_fc_[2][4], shear_recv_count_fc_[2][4];
 
 #ifdef MPI_PARALLEL

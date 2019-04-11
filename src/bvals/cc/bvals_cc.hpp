@@ -119,11 +119,10 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 
   // Shearing box
   ShearingBoundaryData shear_bd_cc_[2];
-
   // working arrays of remapped quantities
-  AthenaArray<Real>  shear_cc_[2]; // shboxvar_inner_cc_, shboxvar_outer_cc_;
+  AthenaArray<Real>  shear_cc_[2];
   // flux from conservative remapping
-  AthenaArray<Real>  shear_flx_cc_[2]; // inner_cc_, flx_outer_cc_;
+  AthenaArray<Real>  shear_flx_cc_[2];
   // KGF: this should be a struct
   int shear_send_count_cc_[2][4], shear_recv_count_cc_[2][4]; // buffer sizes
 
