@@ -470,7 +470,7 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
       for (int n=0; n<4; n++) {
         if ((recv_inner_rank_[n]!=Globals::my_rank) &&
                           (recv_inner_rank_[n]!=-1)) {
-          size = ssize_*NHYDRO*recv_innersize_cc_[n];
+          size = NHYDRO*recv_innersize_cc_[n];
           tag  = CreateBvalsMPITag(pmb->lid, n, sh_cc_phys_id_);
           MPI_Irecv(recv_innerbuf_cc_[n],size,MPI_ATHENA_REAL,
                     recv_inner_rank_[n], tag, MPI_COMM_WORLD,
@@ -496,7 +496,7 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
       for (int n=0; n<4; n++) {
         if ((recv_outer_rank_[n]!=Globals::my_rank) &&
                           (recv_outer_rank_[n]!=-1)) {
-          size = ssize_*NHYDRO*recv_outersize_cc_[n];
+          size = NHYDRO*recv_outersize_cc_[n];
           tag  = CreateBvalsMPITag(pmb->lid, n+offset, sh_cc_phys_id_);
           MPI_Irecv(recv_outerbuf_cc_[n], size, MPI_ATHENA_REAL,
                     recv_outer_rank_[n], tag, MPI_COMM_WORLD,
@@ -894,7 +894,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
     shear_send_inner_neighbor_[1].lid  = shbb_.ilidlist[jtmp];
 
     int nx_attach = std::min(je - js - joverlap_ + 1 + NGHOST, je -js + 1);
-    send_innersize_cc_[1] = nx_attach;
+    // KGF: ssize_=NGHOST*ncells3 is unset if ShBoxCoord==2. Is this fine?
+    // KGF: scale these sizes/counts by NHYDRO or nu_ in cc/
+    send_innersize_cc_[1] = nx_attach*ssize_;
 
     // recv [js+joverlap:je] from the shearing neighbor
     // attach [je+1:MIN(je+NGHOST, je+joverlap)] to its right end.
@@ -904,7 +906,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
     shear_recv_inner_neighbor_[1].rank = shbb_.irnklist[jtmp];
     shear_recv_inner_neighbor_[1].lid  = shbb_.ilidlist[jtmp];
 
-    recv_innersize_cc_[1] = nx_attach;
+    recv_innersize_cc_[1] = nx_attach*ssize_;
     shbox_inner_cc_flag_[1] = BoundaryStatus::waiting;
 
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -929,7 +931,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_send_inner_neighbor_[0].rank = shbb_.irnklist[jtmp];
       shear_send_inner_neighbor_[0].lid  = shbb_.ilidlist[jtmp];
 
-      send_innersize_cc_[0] = std::min(joverlap_+NGHOST, je -js + 1);
+      int nx_exchange_right = std::min(joverlap_+NGHOST, je -js + 1);
+      send_innersize_cc_[0] = nx_exchange_right*ssize_;
 
       // receive from its left
       jtmp = jblock - (Ngrids + 1);
@@ -938,15 +941,16 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_recv_inner_neighbor_[0].rank = shbb_.irnklist[jtmp];
       shear_recv_inner_neighbor_[0].lid  = shbb_.ilidlist[jtmp];
 
-      recv_innersize_cc_[0] = send_innersize_cc_[0];
+      recv_innersize_cc_[0] = nx_exchange_right*ssize_;
       shbox_inner_cc_flag_[0] = BoundaryStatus::waiting;  // switch on if overlap
 
       if (MAGNETIC_FIELDS_ENABLED) {
-        send_innersize_fc_[0] = send_innersize_cc_[0]*NGHOST*(NFIELD*ncells3 + 1)
+        send_innersize_fc_[0] = nx_exchange_right*NGHOST*(NFIELD*ncells3 + 1)
                                 + NGHOST*ncells3;
         recv_innersize_fc_[0] = send_innersize_fc_[0];
         shbox_inner_fc_flag_[0] = BoundaryStatus::waiting;
-        send_innersize_fc_flx_[0] = send_innersize_cc_[0]*(2*nx3 + 1)+nx3;
+
+        send_innersize_fc_flx_[0] = nx_exchange_right*(2*nx3 + 1)+nx3;
         recv_innersize_fc_flx_[0] = send_innersize_fc_flx_[0];
         shbox_inner_fc_flx_flag_[0] = BoundaryStatus::waiting;
       }
@@ -959,7 +963,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_send_inner_neighbor_[2].rank = shbb_.irnklist[jtmp];
         shear_send_inner_neighbor_[2].lid  = shbb_.ilidlist[jtmp];
 
-        send_innersize_cc_[2] = joverlap_ - (nx2 - NGHOST);
+        int nx_exchange_left = joverlap_ - (nx2 - NGHOST);
+        send_innersize_cc_[2] = nx_exchange_left*ssize_;
 
         // recv from Left
         jtmp = jblock - (Ngrids + 2);
@@ -968,14 +973,15 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_inner_neighbor_[2].rank = shbb_.irnklist[jtmp];
         shear_recv_inner_neighbor_[2].lid  = shbb_.ilidlist[jtmp];
 
-        recv_innersize_cc_[2] = send_innersize_cc_[2];
+        recv_innersize_cc_[2] = nx_exchange_left*ssize_;
         shbox_inner_cc_flag_[2] = BoundaryStatus::waiting;
 
         if (MAGNETIC_FIELDS_ENABLED) {
-          send_innersize_fc_[2] = send_innersize_cc_[2]*NGHOST*(NFIELD*ncells3 + 1);
+          send_innersize_fc_[2] = nx_exchange_left*NGHOST*(NFIELD*ncells3 + 1);
           recv_innersize_fc_[2] = send_innersize_fc_[2];
           shbox_inner_fc_flag_[2] = BoundaryStatus::waiting;
-          send_innersize_fc_flx_[2] = send_innersize_cc_[2]*(2*nx3 + 1);
+
+          send_innersize_fc_flx_[2] = nx_exchange_left*(2*nx3 + 1);
           recv_innersize_fc_flx_[2] = send_innersize_fc_flx_[2];
           shbox_inner_fc_flx_flag_[2] = BoundaryStatus::waiting;
         }
@@ -989,7 +995,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_send_inner_neighbor_[3].rank = shbb_.irnklist[jtmp];
         shear_send_inner_neighbor_[3].lid  = shbb_.ilidlist[jtmp];
 
-        send_innersize_cc_[3] = NGHOST - joverlap_;
+        int nx_exchange_right = NGHOST - joverlap_;
+        send_innersize_cc_[3] = nx_exchange_right*ssize_;
 
         jtmp = jblock - (Ngrids - 1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
@@ -998,14 +1005,15 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_inner_neighbor_[3].rank = shbb_.irnklist[jtmp];
         shear_recv_inner_neighbor_[3].lid  = shbb_.ilidlist[jtmp];
 
-        recv_innersize_cc_[3] = send_innersize_cc_[3];
+        recv_innersize_cc_[3] = nx_exchange_right*ssize_;
         shbox_inner_cc_flag_[3] = BoundaryStatus::waiting;
 
         if (MAGNETIC_FIELDS_ENABLED) {
-          send_innersize_fc_[3] = send_innersize_cc_[3]*NGHOST*(NFIELD*ncells3 + 1);
+          send_innersize_fc_[3] = nx_exchange_right*NGHOST*(NFIELD*ncells3 + 1);
           recv_innersize_fc_[3] = send_innersize_fc_[3];
           shbox_inner_fc_flag_[3] = BoundaryStatus::waiting;
-          send_innersize_fc_flx_[3] = send_innersize_cc_[3]*(2*nx3 + 1);
+
+          send_innersize_fc_flx_[3] = nx_exchange_right*(2*nx3 + 1);
           recv_innersize_fc_flx_[3] = send_innersize_fc_flx_[3];
           shbox_inner_fc_flx_flag_[3] = BoundaryStatus::waiting;
         }
@@ -1019,7 +1027,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_send_inner_neighbor_[2].rank = shbb_.irnklist[jtmp];
       shear_send_inner_neighbor_[2].lid  = shbb_.ilidlist[jtmp];
 
-      send_innersize_cc_[2] = NGHOST;
+      int nx_exchange = NGHOST;
+      send_innersize_cc_[2] = nx_exchange*ssize_;
 
       // recv [js-NGHOST:js-1] from Left
       jtmp = jblock - (Ngrids + 1);
@@ -1028,14 +1037,15 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_recv_inner_neighbor_[2].rank = shbb_.irnklist[jtmp];
       shear_recv_inner_neighbor_[2].lid  = shbb_.ilidlist[jtmp];
 
-      recv_innersize_cc_[2] = send_innersize_cc_[2];
+      recv_innersize_cc_[2] = nx_exchange*ssize_;
       shbox_inner_cc_flag_[2] = BoundaryStatus::waiting;
 
       if (MAGNETIC_FIELDS_ENABLED) {
-        send_innersize_fc_[2] = send_innersize_cc_[2]*NGHOST*(NFIELD*ncells3 + 1);
+        send_innersize_fc_[2] = nx_exchange*NGHOST*(NFIELD*ncells3 + 1);
         recv_innersize_fc_[2] = send_innersize_fc_[2];
         shbox_inner_fc_flag_[2] = BoundaryStatus::waiting;
-        send_innersize_fc_flx_[2] = send_innersize_cc_[2]*(2*nx3 + 1);
+
+        send_innersize_fc_flx_[2] = nx_exchange*(2*nx3 + 1);
         recv_innersize_fc_flx_[2] = send_innersize_fc_flx_[2];
         shbox_inner_fc_flx_flag_[2] = BoundaryStatus::waiting;
       }
@@ -1048,7 +1058,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_send_inner_neighbor_[3].rank = shbb_.irnklist[jtmp];
       shear_send_inner_neighbor_[3].lid  = shbb_.ilidlist[jtmp];
 
-      send_innersize_cc_[3] = NGHOST;
+      send_innersize_cc_[3] = nx_exchange*ssize_;
 
       // recv [je + 1:je+(NGHOST-1)] from Right
       jtmp = jblock - (Ngrids - 1);
@@ -1058,15 +1068,15 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_recv_inner_neighbor_[3].rank = shbb_.irnklist[jtmp];
       shear_recv_inner_neighbor_[3].lid  = shbb_.ilidlist[jtmp];
 
-      recv_innersize_cc_[3] = send_innersize_cc_[3];
+      recv_innersize_cc_[3] = nx_exchange*ssize_;
       shbox_inner_cc_flag_[3] = BoundaryStatus::waiting;
 
       if (MAGNETIC_FIELDS_ENABLED) {
-        send_innersize_fc_[3] = send_innersize_cc_[3]*NGHOST*(NFIELD*ncells3 + 1);
+        send_innersize_fc_[3] = nx_exchange*NGHOST*(NFIELD*ncells3 + 1);
         recv_innersize_fc_[3] = send_innersize_fc_[3];
         shbox_inner_fc_flag_[3] = BoundaryStatus::waiting;
 
-        send_innersize_fc_flx_[3] = send_innersize_cc_[3]*(2*nx3 + 1);
+        send_innersize_fc_flx_[3] = nx_exchange*(2*nx3 + 1);
         recv_innersize_fc_flx_[3] = send_innersize_fc_flx_[3];
         shbox_inner_fc_flx_flag_[3] = BoundaryStatus::waiting;
       }
@@ -1116,7 +1126,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
     shear_recv_outer_[1].lid  = shbb_.olidlist[jtmp];
 
     int nx_attach = std::min(je -js - joverlap_ + 1 + NGHOST, je -js + 1);
-    recv_outersize_cc_[1] = nx_attach;
+    recv_outersize_cc_[1] = nx_attach*ssize_;
 
     // send [js+joverlap-NGHOST:je] of the meshblock to other
     jtmp = jblock - Ngrids;
@@ -1125,7 +1135,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
     shear_send_outer_[1].rank = shbb_.ornklist[jtmp];
     shear_send_outer_[1].lid  = shbb_.olidlist[jtmp];
 
-    send_outersize_cc_[1] = nx_attach;
+    send_outersize_cc_[1] = nx_attach*ssize_;
     shbox_outer_cc_flag_[1] = BoundaryStatus::waiting;
 
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -1148,8 +1158,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_recv_outer_[0].rank = shbb_.ornklist[jtmp];
       shear_recv_outer_[0].lid  = shbb_.olidlist[jtmp];
 
-      int nx_exchange = std::min(jexchange_+NGHOST, je -js + 1);
-      recv_outersize_cc_[0] = nx_exchange;
+      int nx_exchange = std::min(joverlap_+NGHOST, je -js + 1);
+      recv_outersize_cc_[0] = nx_exchange*ssize_;
 
       // send to left
       jtmp = jblock - (Ngrids + 1);
@@ -1158,7 +1168,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_send_outer_[0].rank = shbb_.ornklist[jtmp];
       shear_send_outer_[0].lid  = shbb_.olidlist[jtmp];
 
-      send_outersize_cc_[0] = nx_exchange;
+      send_outersize_cc_[0] = nx_exchange*ssize_;
       shbox_outer_cc_flag_[0] = BoundaryStatus::waiting; // switch on if overlap
 
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -1181,7 +1191,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_outer_[2].lid  = shbb_.olidlist[jtmp];
 
         int nx_exchange_left = joverlap_ - (nx2 - NGHOST);
-        recv_outersize_cc_[2] = nx_exchange_left;
+        recv_outersize_cc_[2] = nx_exchange_left*ssize_;
 
         // send to right
         jtmp = jblock - (Ngrids + 2);
@@ -1190,7 +1200,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_send_outer_[2].rank = shbb_.ornklist[jtmp];
         shear_send_outer_[2].lid  = shbb_.olidlist[jtmp];
 
-        send_outersize_cc_[2] = nx_exchange_left;
+        send_outersize_cc_[2] = nx_exchange_left*ssize_;
         shbox_outer_cc_flag_[2] = BoundaryStatus::waiting;
 
         if (MAGNETIC_FIELDS_ENABLED) {
@@ -1213,7 +1223,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_outer_[3].lid  = shbb_.olidlist[jtmp];
 
         int nx_exchange_right = NGHOST - joverlap_;
-        recv_outersize_cc_[3] = nx_exchange_right;
+        recv_outersize_cc_[3] = nx_exchange_right*ssize_;
 
         jtmp = jblock - (Ngrids-1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
@@ -1222,13 +1232,14 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_send_outer_[3].rank = shbb_.ornklist[jtmp];
         shear_send_outer_[3].lid  = shbb_.olidlist[jtmp];
 
-        send_outersize_cc_[3] = nx_exchange_right;
+        send_outersize_cc_[3] = nx_exchange_right*ssize_;
         shbox_outer_cc_flag_[3] = BoundaryStatus::waiting;
 
         if (MAGNETIC_FIELDS_ENABLED) {
           send_outersize_fc_[3] = nx_exchange_right*NGHOST*(NFIELD*ncells3 + 1);
           recv_outersize_fc_[3] = send_outersize_fc_[3];
           shbox_outer_fc_flag_[3] = BoundaryStatus::waiting;
+
           send_outersize_fc_flx_[3] = nx_exchange_right*(2*nx3 + 1);
           recv_outersize_fc_flx_[3] = send_outersize_fc_flx_[3];
           shbox_outer_fc_flx_flag_[3] = BoundaryStatus::waiting;
@@ -1243,7 +1254,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_recv_outer_[2].lid  = shbb_.olidlist[jtmp];
 
       int nx_exchange = NGHOST;
-      recv_outersize_cc_[2] = nx_exchange;
+      recv_outersize_cc_[2] = nx_exchange*ssize_;
 
       // send [js:js+NGHOST-1] to Right
       jtmp = jblock - (Ngrids + 1);
@@ -1252,7 +1263,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_send_outer_[2].rank = shbb_.ornklist[jtmp];
       shear_send_outer_[2].lid  = shbb_.olidlist[jtmp];
 
-      send_outersize_cc_[2] = nx_exchange;
+      send_outersize_cc_[2] = nx_exchange*ssize_;
       shbox_outer_cc_flag_[2] = BoundaryStatus::waiting;
 
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -1273,7 +1284,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_recv_outer_[3].rank = shbb_.ornklist[jtmp];
       shear_recv_outer_[3].lid  = shbb_.olidlist[jtmp];
 
-      recv_outersize_cc_[3] = nx_exchange;
+      recv_outersize_cc_[3] = nx_exchange*ssize_;
 
       // send [je-(NGHOST-1):je] to Right
       jtmp = jblock - (Ngrids - 1);
@@ -1283,7 +1294,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_send_outer_[3].rank = shbb_.ornklist[jtmp];
       shear_send_outer_[3].lid  = shbb_.olidlist[jtmp];
 
-      send_outersize_cc_[3] = nx_exchange;
+      send_outersize_cc_[3] = nx_exchange*ssize_;
       shbox_outer_cc_flag_[3] = BoundaryStatus::waiting;
 
       if (MAGNETIC_FIELDS_ENABLED) {

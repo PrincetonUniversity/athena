@@ -185,7 +185,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 
   Real eps = pbval_->eps_;
   Real qomL = pbval_->qomL_;
-  int ssize = pbval_->ssize_*NHYDRO;
+  int ssize = NHYDRO;
 
   if (shbb_.inner == true) {
     int ib = pmb->is - NGHOST;
