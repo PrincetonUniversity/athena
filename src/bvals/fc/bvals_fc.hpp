@@ -166,8 +166,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 
   FaceField shboxvar_inner_fc_, shboxvar_outer_fc_;
   FaceField flx_inner_fc_, flx_outer_fc_;
-  int  send_innersize_fc_[4], recv_innersize_fc_[4];
-  int  send_outersize_fc_[4], recv_outersize_fc_[4];
+  int shear_send_count_fc_[2][4], shear_recv_count_fc_[2][4];
 
 #ifdef MPI_PARALLEL
   int sh_fc_phys_id_;
@@ -191,8 +190,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   EdgeField shboxvar_inner_fc_flx_, shboxvar_outer_fc_flx_;
   EdgeField shboxmap_inner_fc_flx_, shboxmap_outer_fc_flx_;
   EdgeField flx_inner_fc_flx_, flx_outer_fc_flx_;
-  int  send_innersize_fc_flx_[4], recv_innersize_fc_flx_[4];
-  int  send_outersize_fc_flx_[4], recv_outersize_fc_flx_[4];
+  int shear_send_count_fc_flx_[2][4], shear_recv_count_fc_flx_[2][4];
 #ifdef MPI_PARALLEL
   int sh_fc_flx_phys_id_;
   // MPI_Request rq_innersend_fc_flx_[4],  rq_innerrecv_fc_flx_[4];

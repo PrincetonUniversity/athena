@@ -161,8 +161,8 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
 
   // KGF: why 4x? shouldn't in only require +/-1 MeshBlock along the shear, aka 3x?
   // KGF: fold 4x arrays into 2x 2D array of structs (combine recv/send); inner=0, outer=1
-  SimpleNeighborBlock shear_send_inner_neighbor_[4], shear_recv_inner_neighbor_[4];
-  SimpleNeighborBlock shear_send_outer_neighbor_[4], shear_recv_outer_neighbor_[4];
+  SimpleNeighborBlock shear_send_neighbor_[2][4], shear_recv_neighbor_[2][4];
+  int shear_send_count_[2][4], shear_recv_count_[2][4];
 
   // ProlongateBoundaries() wraps the following S/AMR-operations (within nneighbor loop):
   // (the next function is also called within 3x nested loops over nk,nj,ni)
