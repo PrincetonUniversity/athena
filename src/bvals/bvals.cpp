@@ -810,26 +810,26 @@ void BoundaryValues::FindShearBlock(const Real time) {
 
   if (is_shear[0]) { // if inner block
     for (int n=0; n<4; n++) {
-      shear_send_inner_neighbor_[n].gid  = -1;
-      shear_send_inner_neighbor_[n].lid  = -1;
-      shear_send_inner_neighbor_[n].rank  = -1;
+      shear_send_neighbor_[0][n].gid  = -1;
+      shear_send_neighbor_[0][n].lid  = -1;
+      shear_send_neighbor_[0][n].rank  = -1;
 
-      shear_recv_inner_neighbor_[n].gid  = -1;
-      shear_recv_inner_neighbor_[n].lid  = -1;
-      shear_recv_inner_neighbor_[n].rank  = -1;
+      shear_recv_neighbor_[0][n].gid  = -1;
+      shear_recv_neighbor_[0][n].lid  = -1;
+      shear_recv_neighbor_[0][n].rank  = -1;
 
       shear_shear_send_count_cc_[0][n] = 0;
       shear_recv_count_cc_[0][n] = 0;
-      shbox_inner_cc_flag_[n] = BoundaryStatus::completed;
+      shear_bd_cc_[0].flag[n] = BoundaryStatus::completed;
 
       if (MAGNETIC_FIELDS_ENABLED) {
         shear_send_count_fc_[0][n] = 0;
         shear_recv_count_fc_[0][n] = 0;
-        shbox_inner_fc_flag_[n] = BoundaryStatus::completed;
+        shear_bd_fc_[0].flag[n] = BoundaryStatus::completed;
 
         shear_send_count_emf_[0][n] = 0;
         shear_recv_count_emf_[0][n] = 0;
-        shbox_inner_emf_flag_[n] = BoundaryStatus::completed;
+        shear_bd_emf_[0].flag[n] = BoundaryStatus::completed;
       }
     } // KGF: just clearing/resetting everything?
 
@@ -844,9 +844,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
     std::int64_t jtmp = jblock + Ngrids;
     if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
     // TODO(felker): replace this with C++ copy semantics (also copy level!):
-    shear_send_inner_neighbor_[1].gid  = shbb_[0][jtmp].gid;
-    shear_send_inner_neighbor_[1].rank = shbb_[0][jtmp].rank;
-    shear_send_inner_neighbor_[1].lid  = shbb_[0][jtmp].lid;
+    shear_send_neighbor_[0][1].gid  = shbb_[0][jtmp].gid;
+    shear_send_neighbor_[0][1].rank = shbb_[0][jtmp].rank;
+    shear_send_neighbor_[0][1].lid  = shbb_[0][jtmp].lid;
 
     int nx_attach = std::min(je - js - joverlap_ + 1 + NGHOST, je -js + 1);
     // KGF: ssize_=NGHOST*ncells3 is unset if ShBoxCoord==2. Is this fine?
@@ -857,21 +857,21 @@ void BoundaryValues::FindShearBlock(const Real time) {
     // attach [je+1:MIN(je+NGHOST, je+joverlap)] to its right end.
     jtmp = jblock - Ngrids;
     if (jtmp < 0) jtmp += nrbx2;
-    shear_recv_inner_neighbor_[1].gid  = shbb_[0][jtmp].gid;
-    shear_recv_inner_neighbor_[1].rank = shbb_[0][jtmp].rank;
-    shear_recv_inner_neighbor_[1].lid  = shbb_[0][jtmp].lid;
+    shear_recv_neighbor_[0][1].gid  = shbb_[0][jtmp].gid;
+    shear_recv_neighbor_[0][1].rank = shbb_[0][jtmp].rank;
+    shear_recv_neighbor_[0][1].lid  = shbb_[0][jtmp].lid;
 
     shear_recv_count_cc_[0][1] = nx_attach*ssize_;
-    shbox_inner_cc_flag_[1] = BoundaryStatus::waiting;
+    shear_bd_cc_[0].flag[1] = BoundaryStatus::waiting;
 
     if (MAGNETIC_FIELDS_ENABLED) {
       shear_send_count_fc_[0][1] = nx_attach*a1_fc + a0_fc;
       shear_recv_count_fc_[0][1] = shear_send_count_fc_[0][1];
-      shbox_inner_fc_flag_[1] = BoundaryStatus::waiting;
+      shear_bd_fc_[0].flag[1] = BoundaryStatus::waiting;
 
       shear_send_count_emf_[0][1] = nx_attach*a1_fc_flx + a0_fc_flx;
       shear_recv_count_emf_[0][1] = shear_send_count_emf_[0][1];
-      shbox_inner_emf_flag_[1] = BoundaryStatus::waiting;
+      shear_bd_emf_[0].flag[1] = BoundaryStatus::waiting;
     }
     // KGF: what is going on in the above code (since the end of the for loop)? No
     // counterpart for outer!
@@ -881,9 +881,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
       // send to the right
       jtmp = jblock + (Ngrids + 1);
       if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-      shear_send_inner_neighbor_[0].gid  = shbb_[0][jtmp].gid;
-      shear_send_inner_neighbor_[0].rank = shbb_[0][jtmp].rank;
-      shear_send_inner_neighbor_[0].lid  = shbb_[0][jtmp].lid;
+      shear_send_neighbor_[0][0].gid  = shbb_[0][jtmp].gid;
+      shear_send_neighbor_[0][0].rank = shbb_[0][jtmp].rank;
+      shear_send_neighbor_[0][0].lid  = shbb_[0][jtmp].lid;
 
       int nx_exchange_right = std::min(joverlap_+NGHOST, je -js + 1);
       shear_send_count_cc_[0][0] = nx_exchange_right*ssize_;
@@ -891,30 +891,30 @@ void BoundaryValues::FindShearBlock(const Real time) {
       // receive from its left
       jtmp = jblock - (Ngrids + 1);
       if (jtmp < 0) jtmp += nrbx2;
-      shear_recv_inner_neighbor_[0].gid  = shbb_[0][jtmp].gid;
-      shear_recv_inner_neighbor_[0].rank = shbb_[0][jtmp].rank;
-      shear_recv_inner_neighbor_[0].lid  = shbb_[0][jtmp].lid;
+      shear_recv_neighbor_[0][0].gid  = shbb_[0][jtmp].gid;
+      shear_recv_neighbor_[0][0].rank = shbb_[0][jtmp].rank;
+      shear_recv_neighbor_[0][0].lid  = shbb_[0][jtmp].lid;
 
       shear_recv_count_cc_[0][0] = nx_exchange_right*ssize_;
-      shbox_inner_cc_flag_[0] = BoundaryStatus::waiting;  // switch on if overlap
+      shear_bd_cc_[0].flag[0] = BoundaryStatus::waiting;  // switch on if overlap
 
       if (MAGNETIC_FIELDS_ENABLED) {
         shear_send_count_fc_[0][0] = nx_exchange_right*a1_fc + a0_fc;
         shear_recv_count_fc_[0][0] = shear_send_count_fc_[0][0];
-        shbox_inner_fc_flag_[0] = BoundaryStatus::waiting;
+        shear_bd_fc_[0].flag[0] = BoundaryStatus::waiting;
 
         shear_send_count_emf_[0][0] = nx_exchange_right*a1_fc_flx + a0_fc_flx;
         shear_recv_count_emf_[0][0] = shear_send_count_emf_[0][0];
-        shbox_inner_emf_flag_[0] = BoundaryStatus::waiting;
+        shear_bd_emf_[0].flag[0] = BoundaryStatus::waiting;
       }
       // deal the left boundary cells with send[2]
       if (joverlap_ > (nx2 - NGHOST)) {
         // send to Right
         jtmp = jblock + (Ngrids + 2);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-        shear_send_inner_neighbor_[2].gid  = shbb_[0][jtmp].gid;
-        shear_send_inner_neighbor_[2].rank = shbb_[0][jtmp].rank;
-        shear_send_inner_neighbor_[2].lid  = shbb_[0][jtmp].lid;
+        shear_send_neighbor_[0][2].gid  = shbb_[0][jtmp].gid;
+        shear_send_neighbor_[0][2].rank = shbb_[0][jtmp].rank;
+        shear_send_neighbor_[0][2].lid  = shbb_[0][jtmp].lid;
 
         int nx_exchange_left = joverlap_ - (nx2 - NGHOST);
         shear_send_count_cc_[0][2] = nx_exchange_left*ssize_;
@@ -922,21 +922,21 @@ void BoundaryValues::FindShearBlock(const Real time) {
         // recv from Left
         jtmp = jblock - (Ngrids + 2);
         while (jtmp < 0) jtmp += nrbx2;
-        shear_recv_inner_neighbor_[2].gid  = shbb_[0][jtmp].gid;
-        shear_recv_inner_neighbor_[2].rank = shbb_[0][jtmp].rank;
-        shear_recv_inner_neighbor_[2].lid  = shbb_[0][jtmp].lid;
+        shear_recv_neighbor_[0][2].gid  = shbb_[0][jtmp].gid;
+        shear_recv_neighbor_[0][2].rank = shbb_[0][jtmp].rank;
+        shear_recv_neighbor_[0][2].lid  = shbb_[0][jtmp].lid;
 
         shear_recv_count_cc_[0][2] = nx_exchange_left*ssize_;
-        shbox_inner_cc_flag_[2] = BoundaryStatus::waiting;
+        shear_bd_cc_[0].flag[2] = BoundaryStatus::waiting;
 
         if (MAGNETIC_FIELDS_ENABLED) {
           shear_send_count_fc_[0][2] = nx_exchange_left*a1_fc;
           shear_recv_count_fc_[0][2] = shear_send_count_fc_[0][2];
-          shbox_inner_fc_flag_[2] = BoundaryStatus::waiting;
+          shear_bd_fc_[0].flag[2] = BoundaryStatus::waiting;
 
           shear_send_count_emf_[0][2] = nx_exchange_left*a1_fc_flx;
           shear_recv_count_emf_[0][2] = shear_send_count_emf_[0][2];
-          shbox_inner_emf_flag_[2] = BoundaryStatus::waiting;
+          shear_bd_emf_[0].flag[2] = BoundaryStatus::waiting;
         }
       }
       // deal with the right boundary cells with send[3]
@@ -944,9 +944,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
         jtmp = jblock + (Ngrids - 1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         while (jtmp < 0) jtmp += nrbx2;
-        shear_send_inner_neighbor_[3].gid  = shbb_[0][jtmp].gid;
-        shear_send_inner_neighbor_[3].rank = shbb_[0][jtmp].rank;
-        shear_send_inner_neighbor_[3].lid  = shbb_[0][jtmp].lid;
+        shear_send_neighbor_[0][3].gid  = shbb_[0][jtmp].gid;
+        shear_send_neighbor_[0][3].rank = shbb_[0][jtmp].rank;
+        shear_send_neighbor_[0][3].lid  = shbb_[0][jtmp].lid;
 
         int nx_exchange_right = NGHOST - joverlap_;
         shear_send_count_cc_[0][3] = nx_exchange_right*ssize_;
@@ -954,21 +954,21 @@ void BoundaryValues::FindShearBlock(const Real time) {
         jtmp = jblock - (Ngrids - 1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         while (jtmp < 0) jtmp += nrbx2;
-        shear_recv_inner_neighbor_[3].gid  = shbb_[0][jtmp].gid;
-        shear_recv_inner_neighbor_[3].rank = shbb_[0][jtmp].rank;
-        shear_recv_inner_neighbor_[3].lid  = shbb_[0][jtmp].lid;
+        shear_recv_neighbor_[0][3].gid  = shbb_[0][jtmp].gid;
+        shear_recv_neighbor_[0][3].rank = shbb_[0][jtmp].rank;
+        shear_recv_neighbor_[0][3].lid  = shbb_[0][jtmp].lid;
 
         shear_recv_count_cc_[0][3] = nx_exchange_right*ssize_;
-        shbox_inner_cc_flag_[3] = BoundaryStatus::waiting;
+        shear_bd_cc_[0].flag[3] = BoundaryStatus::waiting;
 
         if (MAGNETIC_FIELDS_ENABLED) {
           shear_send_count_fc_[0][3] = nx_exchange_right*a1_fc;
           shear_recv_count_fc_[0][3] = shear_send_count_fc_[0][3];
-          shbox_inner_fc_flag_[3] = BoundaryStatus::waiting;
+          shear_bd_fc_[0].flag[3] = BoundaryStatus::waiting;
 
           shear_send_count_emf_[0][3] = nx_exchange_right*a1_fc_flx;
           shear_recv_count_emf_[0][3] = shear_send_count_emf_[0][3];
-          shbox_inner_emf_flag_[3] = BoundaryStatus::waiting;
+          shear_bd_emf_[0].flag[3] = BoundaryStatus::waiting;
         }
       }
     } else {  // joverlap_ == 0
@@ -976,9 +976,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
       // send [je-(NGHOST-1):je] to Right
       jtmp = jblock + (Ngrids + 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-      shear_send_inner_neighbor_[2].gid  = shbb_[0][jtmp].gid;
-      shear_send_inner_neighbor_[2].rank = shbb_[0][jtmp].rank;
-      shear_send_inner_neighbor_[2].lid  = shbb_[0][jtmp].lid;
+      shear_send_neighbor_[0][2].gid  = shbb_[0][jtmp].gid;
+      shear_send_neighbor_[0][2].rank = shbb_[0][jtmp].rank;
+      shear_send_neighbor_[0][2].lid  = shbb_[0][jtmp].lid;
 
       int nx_exchange = NGHOST;
       shear_send_count_cc_[0][2] = nx_exchange*ssize_;
@@ -986,30 +986,30 @@ void BoundaryValues::FindShearBlock(const Real time) {
       // recv [js-NGHOST:js-1] from Left
       jtmp = jblock - (Ngrids + 1);
       while (jtmp < 0) jtmp += nrbx2;
-      shear_recv_inner_neighbor_[2].gid  = shbb_[0][jtmp].gid;
-      shear_recv_inner_neighbor_[2].rank = shbb_[0][jtmp].rank;
-      shear_recv_inner_neighbor_[2].lid  = shbb_[0][jtmp].lid;
+      shear_recv_neighbor_[0][2].gid  = shbb_[0][jtmp].gid;
+      shear_recv_neighbor_[0][2].rank = shbb_[0][jtmp].rank;
+      shear_recv_neighbor_[0][2].lid  = shbb_[0][jtmp].lid;
 
       shear_recv_count_cc_[0][2] = nx_exchange*ssize_;
-      shbox_inner_cc_flag_[2] = BoundaryStatus::waiting;
+      shear_bd_cc_[0].flag[2] = BoundaryStatus::waiting;
 
       if (MAGNETIC_FIELDS_ENABLED) {
         shear_send_count_fc_[0][2] = nx_exchange*a1_fc;
         shear_recv_count_fc_[0][2] = shear_send_count_fc_[0][2];
-        shbox_inner_fc_flag_[2] = BoundaryStatus::waiting;
+        shear_bd_fc_[0].flag[2] = BoundaryStatus::waiting;
 
         shear_send_count_emf_[0][2] = nx_exchange*a1_fc_flx;
         shear_recv_count_emf_[0][2] = shear_send_count_emf_[0][2];
-        shbox_inner_emf_flag_[2] = BoundaryStatus::waiting;
+        shear_bd_emf_[0].flag[2] = BoundaryStatus::waiting;
       }
       // inner x2
       // send [js:js+(NGHOST-1)] to Left
       jtmp = jblock + (Ngrids - 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
       while (jtmp < 0) jtmp += nrbx2;
-      shear_send_inner_neighbor_[3].gid  = shbb_[0][jtmp].gid;
-      shear_send_inner_neighbor_[3].rank = shbb_[0][jtmp].rank;
-      shear_send_inner_neighbor_[3].lid  = shbb_[0][jtmp].lid;
+      shear_send_neighbor_[0][3].gid  = shbb_[0][jtmp].gid;
+      shear_send_neighbor_[0][3].rank = shbb_[0][jtmp].rank;
+      shear_send_neighbor_[0][3].lid  = shbb_[0][jtmp].lid;
 
       shear_send_count_cc_[0][3] = nx_exchange*ssize_;
 
@@ -1017,21 +1017,21 @@ void BoundaryValues::FindShearBlock(const Real time) {
       jtmp = jblock - (Ngrids - 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
       while (jtmp < 0) jtmp += nrbx2;
-      shear_recv_inner_neighbor_[3].gid  = shbb_[0][jtmp].gid;
-      shear_recv_inner_neighbor_[3].rank = shbb_[0][jtmp].rank;
-      shear_recv_inner_neighbor_[3].lid  = shbb_[0][jtmp].lid;
+      shear_recv_neighbor_[0][3].gid  = shbb_[0][jtmp].gid;
+      shear_recv_neighbor_[0][3].rank = shbb_[0][jtmp].rank;
+      shear_recv_neighbor_[0][3].lid  = shbb_[0][jtmp].lid;
 
       shear_recv_count_cc_[0][3] = nx_exchange*ssize_;
-      shbox_inner_cc_flag_[3] = BoundaryStatus::waiting;
+      shear_bd_cc_[0].flag[3] = BoundaryStatus::waiting;
 
       if (MAGNETIC_FIELDS_ENABLED) {
         shear_send_count_fc_[0][3] = nx_exchange*a1_fc;
         shear_recv_count_fc_[0][3] = shear_send_count_fc_[0][3];
-        shbox_inner_fc_flag_[3] = BoundaryStatus::waiting;
+        shear_bd_fc_[0].flag[3] = BoundaryStatus::waiting;
 
         shear_send_count_emf_[0][3] = nx_exchange*a1_fc_flx;
         shear_recv_count_emf_[0][3] = shear_send_count_emf_[0][3];
-        shbox_inner_emf_flag_[3] = BoundaryStatus::waiting;
+        shear_bd_emf_[0].flag[3] = BoundaryStatus::waiting;
       }
     }
   } // inner x1 shearing bc
@@ -1041,28 +1041,28 @@ void BoundaryValues::FindShearBlock(const Real time) {
   // outer x1 shearing bc
   if (is_shear[1]) { // if outer block
     for (int n=0; n<4; n++) {
-      shear_send_outer_neighbor_[n].gid  = -1;
-      shear_send_outer_neighbor_[n].lid  = -1;
-      shear_send_outer_neighbor_[n].rank  = -1;
+      shear_send_neighbor_[1][n].gid  = -1;
+      shear_send_neighbor_[1][n].lid  = -1;
+      shear_send_neighbor_[1][n].rank  = -1;
 
-      shear_recv_outer_neighbor_[n].gid  = -1;
-      shear_recv_outer_neighbor_[n].lid  = -1;
-      shear_recv_outer_neighbor_[n].rank  = -1;
+      shear_recv_neighbor_[1][n].gid  = -1;
+      shear_recv_neighbor_[1][n].lid  = -1;
+      shear_recv_neighbor_[1][n].rank  = -1;
 
       shear_send_count_cc_[1][n] = 0;
       shear_recv_count_cc_[1][n] = 0;
 
       // KGF: split
-      shbox_outer_cc_flag_[n] = BoundaryStatus::completed;
+      shear_bd_cc_[1].flag[n] = BoundaryStatus::completed;
 
       if (MAGNETIC_FIELDS_ENABLED) {
         shear_send_count_fc_[1][n] = 0;
         shear_recv_count_fc_[1][n] = 0;
-        shbox_outer_fc_flag_[n] = BoundaryStatus::completed;
+        shear_bd_fc_[1].flag[n] = BoundaryStatus::completed;
 
         shear_send_count_emf_[1][n] = 0;
         shear_recv_count_emf_[1][n] = 0;
-        shbox_outer_emf_flag_[n] = BoundaryStatus::completed;
+        shear_bd_emf_[1].flag[n] = BoundaryStatus::completed;
       }
     }
     int jblock = 0;
@@ -1073,9 +1073,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
     // recv [js-NGHOST:je-joverlap] of the meshblock from other
     std::int64_t jtmp = jblock + Ngrids;
     if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-    shear_recv_outer_neighbor_[1].gid  = shbb_[1][jtmp].gid;
-    shear_recv_outer_neighbor_[1].rank = shbb_[1][jtmp].rank;
-    shear_recv_outer_neighbor_[1].lid  = shbb_[1][jtmp].lid;
+    shear_recv_neighbor_[1][1].gid  = shbb_[1][jtmp].gid;
+    shear_recv_neighbor_[1][1].rank = shbb_[1][jtmp].rank;
+    shear_recv_neighbor_[1][1].lid  = shbb_[1][jtmp].lid;
 
     int nx_attach = std::min(je -js - joverlap_ + 1 + NGHOST, je -js + 1);
     shear_recv_count_cc_[1][1] = nx_attach*ssize_;
@@ -1083,21 +1083,21 @@ void BoundaryValues::FindShearBlock(const Real time) {
     // send [js+joverlap-NGHOST:je] of the meshblock to other
     jtmp = jblock - Ngrids;
     if (jtmp < 0) jtmp += nrbx2;
-    shear_send_outer_neighbor_[1].gid  = shbb_[1][jtmp].gid;
-    shear_send_outer_neighbor_[1].rank = shbb_[1][jtmp].rank;
-    shear_send_outer_neighbor_[1].lid  = shbb_[1][jtmp].lid;
+    shear_send_neighbor_[1][1].gid  = shbb_[1][jtmp].gid;
+    shear_send_neighbor_[1][1].rank = shbb_[1][jtmp].rank;
+    shear_send_neighbor_[1][1].lid  = shbb_[1][jtmp].lid;
 
     shear_send_count_cc_[1][1] = nx_attach*ssize_;
-    shbox_outer_cc_flag_[1] = BoundaryStatus::waiting;
+    shear_bd_cc_[1].flag[1] = BoundaryStatus::waiting;
 
     if (MAGNETIC_FIELDS_ENABLED) {
       shear_send_count_fc_[1][1] = nx_attach*a1_fc + a0_fc;
       shear_recv_count_fc_[1][1] = shear_send_count_fc_[1][1];
-      shbox_outer_fc_flag_[1] = BoundaryStatus::waiting;
+      shear_bd_fc_[1].flag[1] = BoundaryStatus::waiting;
 
       shear_send_count_emf_[1][1] = nx_attach*a1_fc_flx + a0_fc_flx;
       shear_recv_count_emf_[1][1] = shear_send_count_emf_[1][1];
-      shbox_outer_emf_flag_[1] = BoundaryStatus::waiting;
+      shear_bd_emf_[1].flag[1] = BoundaryStatus::waiting;
     }
 
     // if there is overlap to next blocks
@@ -1105,9 +1105,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
       // recv from right
       jtmp = jblock + (Ngrids + 1);
       if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-      shear_recv_outer_neighbor_[0].gid  = shbb_[1][jtmp].gid;
-      shear_recv_outer_neighbor_[0].rank = shbb_[1][jtmp].rank;
-      shear_recv_outer_neighbor_[0].lid  = shbb_[1][jtmp].lid;
+      shear_recv_neighbor_[1][0].gid  = shbb_[1][jtmp].gid;
+      shear_recv_neighbor_[1][0].rank = shbb_[1][jtmp].rank;
+      shear_recv_neighbor_[1][0].lid  = shbb_[1][jtmp].lid;
 
       int nx_exchange = std::min(joverlap_+NGHOST, je -js + 1);
       shear_recv_count_cc_[1][0] = nx_exchange*ssize_;
@@ -1115,30 +1115,30 @@ void BoundaryValues::FindShearBlock(const Real time) {
       // send to left
       jtmp = jblock - (Ngrids + 1);
       if (jtmp < 0) jtmp += nrbx2;
-      shear_send_outer_neighbor_[0].gid  = shbb_[1][jtmp].gid;
-      shear_send_outer_neighbor_[0].rank = shbb_[1][jtmp].rank;
-      shear_send_outer_neighbor_[0].lid  = shbb_[1][jtmp].lid;
+      shear_send_neighbor_[1][0].gid  = shbb_[1][jtmp].gid;
+      shear_send_neighbor_[1][0].rank = shbb_[1][jtmp].rank;
+      shear_send_neighbor_[1][0].lid  = shbb_[1][jtmp].lid;
 
       shear_send_count_cc_[1][0] = nx_exchange*ssize_;
-      shbox_outer_cc_flag_[0] = BoundaryStatus::waiting; // switch on if overlap
+      shear_bd_cc_[1].flag[0] = BoundaryStatus::waiting; // switch on if overlap
 
       if (MAGNETIC_FIELDS_ENABLED) {
         shear_send_count_fc_[1][0] = nx_exchange*a1_fc + a0_fc;
         shear_recv_count_fc_[1][0] = shear_send_count_fc_[1][0];
-        shbox_outer_fc_flag_[0] = BoundaryStatus::waiting;
+        shear_bd_fc_[1].flag[0] = BoundaryStatus::waiting;
 
         shear_send_count_emf_[1][0] = nx_exchange*a1_fc_flx + a0_fc_flx;
         shear_recv_count_emf_[1][0] = shear_send_count_emf_[1][0];
-        shbox_outer_emf_flag_[0] = BoundaryStatus::waiting;
+        shear_bd_emf_[1].flag[0] = BoundaryStatus::waiting;
       }
       // deal the left boundary cells with send[2]
       if (joverlap_ > (nx2 - NGHOST)) {
         // recv from left
         jtmp = jblock + (Ngrids + 2);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-        shear_recv_outer_neighbor_[2].gid  = shbb_[1][jtmp].gid;
-        shear_recv_outer_neighbor_[2].rank = shbb_[1][jtmp].rank;
-        shear_recv_outer_neighbor_[2].lid  = shbb_[1][jtmp].lid;
+        shear_recv_neighbor_[1][2].gid  = shbb_[1][jtmp].gid;
+        shear_recv_neighbor_[1][2].rank = shbb_[1][jtmp].rank;
+        shear_recv_neighbor_[1][2].lid  = shbb_[1][jtmp].lid;
 
         int nx_exchange_left = joverlap_ - (nx2 - NGHOST);
         shear_recv_count_cc_[1][2] = nx_exchange_left*ssize_;
@@ -1146,21 +1146,21 @@ void BoundaryValues::FindShearBlock(const Real time) {
         // send to right
         jtmp = jblock - (Ngrids + 2);
         while (jtmp < 0) jtmp += nrbx2;
-        shear_send_outer_neighbor_[2].gid  = shbb_[1][jtmp].gid;
-        shear_send_outer_neighbor_[2].rank = shbb_[1][jtmp].rank;
-        shear_send_outer_neighbor_[2].lid  = shbb_[1][jtmp].lid;
+        shear_send_neighbor_[1][2].gid  = shbb_[1][jtmp].gid;
+        shear_send_neighbor_[1][2].rank = shbb_[1][jtmp].rank;
+        shear_send_neighbor_[1][2].lid  = shbb_[1][jtmp].lid;
 
         shear_send_count_cc_[1][2] = nx_exchange_left*ssize_;
-        shbox_outer_cc_flag_[2] = BoundaryStatus::waiting;
+        shear_bd_cc_[1].flag[2] = BoundaryStatus::waiting;
 
         if (MAGNETIC_FIELDS_ENABLED) {
           shear_send_count_fc_[1][2] = nx_exchange_left*a1_fc;
           shear_recv_count_fc_[1][2] = shear_send_count_fc_[1][2];
-          shbox_outer_fc_flag_[2] = BoundaryStatus::waiting;
+          shear_bd_fc_[1].flag[2] = BoundaryStatus::waiting;
 
           shear_send_count_emf_[1][2] = nx_exchange_left*a1_fc_flx;
           shear_recv_count_emf_[1][2] = shear_send_count_emf_[1][2];
-          shbox_outer_emf_flag_[2] = BoundaryStatus::waiting;
+          shear_bd_emf_[1].flag[2] = BoundaryStatus::waiting;
         }
       }
       // deal the right boundary cells with send[3]
@@ -1168,9 +1168,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
         jtmp = jblock + (Ngrids - 1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         while (jtmp < 0) jtmp += nrbx2;
-        shear_recv_outer_neighbor_[3].gid  = shbb_[1][jtmp].gid;
-        shear_recv_outer_neighbor_[3].rank = shbb_[1][jtmp].rank;
-        shear_recv_outer_neighbor_[3].lid  = shbb_[1][jtmp].lid;
+        shear_recv_neighbor_[1][3].gid  = shbb_[1][jtmp].gid;
+        shear_recv_neighbor_[1][3].rank = shbb_[1][jtmp].rank;
+        shear_recv_neighbor_[1][3].lid  = shbb_[1][jtmp].lid;
 
         int nx_exchange_right = NGHOST - joverlap_;
         shear_recv_count_cc_[1][3] = nx_exchange_right*ssize_;
@@ -1178,30 +1178,30 @@ void BoundaryValues::FindShearBlock(const Real time) {
         jtmp = jblock - (Ngrids - 1);
         while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
         while (jtmp < 0) jtmp += nrbx2;
-        shear_send_outer_neighbor_[3].gid  = shbb_[1][jtmp].gid;
-        shear_send_outer_neighbor_[3].rank = shbb_[1][jtmp].rank;
-        shear_send_outer_neighbor_[3].lid  = shbb_[1][jtmp].lid;
+        shear_send_neighbor_[1][3].gid  = shbb_[1][jtmp].gid;
+        shear_send_neighbor_[1][3].rank = shbb_[1][jtmp].rank;
+        shear_send_neighbor_[1][3].lid  = shbb_[1][jtmp].lid;
 
         shear_send_count_cc_[1][3] = nx_exchange_right*ssize_;
-        shbox_outer_cc_flag_[3] = BoundaryStatus::waiting;
+        shear_bd_cc_[1].flag[3] = BoundaryStatus::waiting;
 
         if (MAGNETIC_FIELDS_ENABLED) {
           shear_send_count_fc_[1][3] = nx_exchange_right*a1_fc;
           shear_recv_count_fc_[1][3] = shear_send_count_fc_[1][3];
-          shbox_outer_fc_flag_[3] = BoundaryStatus::waiting;
+          shear_bd_fc_[1].flag[3] = BoundaryStatus::waiting;
 
           shear_send_count_emf_[1][3] = nx_exchange_right*a1_fc_flx;
           shear_recv_count_emf_[1][3] = shear_send_count_emf_[1][3];
-          shbox_outer_emf_flag_[3] = BoundaryStatus::waiting;
+          shear_bd_emf_[1].flag[3] = BoundaryStatus::waiting;
         }
       }
     } else { // joverlap_ == 0
       // recv [je + 1:je+NGHOST] from Left
       jtmp = jblock + (Ngrids + 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-      shear_recv_outer_neighbor_[2].gid  = shbb_[1][jtmp].gid;
-      shear_recv_outer_neighbor_[2].rank = shbb_[1][jtmp].rank;
-      shear_recv_outer_neighbor_[2].lid  = shbb_[1][jtmp].lid;
+      shear_recv_neighbor_[1][2].gid  = shbb_[1][jtmp].gid;
+      shear_recv_neighbor_[1][2].rank = shbb_[1][jtmp].rank;
+      shear_recv_neighbor_[1][2].lid  = shbb_[1][jtmp].lid;
 
       int nx_exchange = NGHOST;
       shear_recv_count_cc_[1][2] = nx_exchange*ssize_;
@@ -1209,30 +1209,30 @@ void BoundaryValues::FindShearBlock(const Real time) {
       // send [js:js+NGHOST-1] to Right
       jtmp = jblock - (Ngrids + 1);
       while (jtmp < 0) jtmp += nrbx2;
-      shear_send_outer_neighbor_[2].gid  = shbb_[1][jtmp].gid;
-      shear_send_outer_neighbor_[2].rank = shbb_[1][jtmp].rank;
-      shear_send_outer_neighbor_[2].lid  = shbb_[1][jtmp].lid;
+      shear_send_neighbor_[1][2].gid  = shbb_[1][jtmp].gid;
+      shear_send_neighbor_[1][2].rank = shbb_[1][jtmp].rank;
+      shear_send_neighbor_[1][2].lid  = shbb_[1][jtmp].lid;
 
       shear_send_count_cc_[1][2] = nx_exchange*ssize_;
-      shbox_outer_cc_flag_[2] = BoundaryStatus::waiting;
+      shear_bd_cc_[1].flag[2] = BoundaryStatus::waiting;
 
       if (MAGNETIC_FIELDS_ENABLED) {
         shear_send_count_fc_[1][2] = nx_exchange*a1_fc;
         shear_recv_count_fc_[1][2] = shear_send_count_fc_[1][2];
-        shbox_outer_fc_flag_[2] = BoundaryStatus::waiting;
+        shear_bd_fc_[1].flag[2] = BoundaryStatus::waiting;
 
         shear_send_count_emf_[1][2] = nx_exchange*a1_fc_flx;
         shear_recv_count_emf_[1][2] = shear_send_count_emf_[1][2];
-        shbox_outer_emf_flag_[2] = BoundaryStatus::waiting;
+        shear_bd_emf_[1].flag[2] = BoundaryStatus::waiting;
       }
 
       // recv [js-NGHOST:js-1] from Left
       jtmp = jblock + (Ngrids - 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
       while (jtmp < 0) jtmp += nrbx2;
-      shear_recv_outer_neighbor_[3].gid  = shbb_[1][jtmp].gid;
-      shear_recv_outer_neighbor_[3].rank = shbb_[1][jtmp].rank;
-      shear_recv_outer_neighbor_[3].lid  = shbb_[1][jtmp].lid;
+      shear_recv_neighbor_[1][3].gid  = shbb_[1][jtmp].gid;
+      shear_recv_neighbor_[1][3].rank = shbb_[1][jtmp].rank;
+      shear_recv_neighbor_[1][3].lid  = shbb_[1][jtmp].lid;
 
       shear_recv_count_cc_[1][3] = nx_exchange*ssize_;
 
@@ -1240,21 +1240,21 @@ void BoundaryValues::FindShearBlock(const Real time) {
       jtmp = jblock - (Ngrids - 1);
       while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
       while (jtmp < 0) jtmp += nrbx2;
-      shear_send_outer_neighbor_[3].gid  = shbb_[1][jtmp].gid;
-      shear_send_outer_neighbor_[3].rank = shbb_[1][jtmp].rank;
-      shear_send_outer_neighbor_[3].lid  = shbb_[1][jtmp].lid;
+      shear_send_neighbor_[1][3].gid  = shbb_[1][jtmp].gid;
+      shear_send_neighbor_[1][3].rank = shbb_[1][jtmp].rank;
+      shear_send_neighbor_[1][3].lid  = shbb_[1][jtmp].lid;
 
       shear_send_count_cc_[1][3] = nx_exchange*ssize_;
-      shbox_outer_cc_flag_[3] = BoundaryStatus::waiting;
+      shear_bd_cc_[1].flag[3] = BoundaryStatus::waiting;
 
       if (MAGNETIC_FIELDS_ENABLED) {
         shear_send_count_fc_[1][3] = nx_exchange*a1_fc;
         shear_recv_count_fc_[1][3] = shear_send_count_fc_[1][3];
-        shbox_outer_fc_flag_[3] = BoundaryStatus::waiting;
+        shear_bd_fc_[1].flag[3] = BoundaryStatus::waiting;
 
         shear_send_count_emf_[1][3] = nx_exchange*a1_fc_flx;
         shear_recv_count_emf_[1][3] = shear_send_count_emf_[1][3];
-        shbox_outer_emf_flag_[3] = BoundaryStatus::waiting;
+        shear_bd_emf_[1].flag[3] = BoundaryStatus::waiting;
       }
     }
   }   // outer x1 shearing bc
