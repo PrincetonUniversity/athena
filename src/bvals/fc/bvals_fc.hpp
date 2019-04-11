@@ -159,19 +159,13 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void CopyPolarBufferSameProcess(const SimpleNeighborBlock& nb, int ssize,
                                   int polar_block_index, bool is_north);
   // Shearing box Field
-  ShearingBoundaryData shbd_fc_[2]; // shbd_outer_;
-  // BoundaryStatus shbox_inner_fc_flag_[4], shbox_outer_fc_flag_[4];
-  // Real *send_innerbuf_fc_[4], *recv_innerbuf_fc_[4];
-  // Real *send_outerbuf_fc_[4], *recv_outerbuf_fc_[4];
-
-  FaceField shboxvar_inner_fc_, shboxvar_outer_fc_;
-  FaceField flx_inner_fc_, flx_outer_fc_;
+  ShearingBoundaryData shear_bd_fc_[2];
+  FaceField shear_fc_[2];
+  FaceField shear_flx_fc[2];
   int shear_send_count_fc_[2][4], shear_recv_count_fc_[2][4];
 
 #ifdef MPI_PARALLEL
-  int sh_fc_phys_id_;
-  // MPI_Request rq_innersend_fc_[4], rq_innerrecv_fc_[4];
-  // MPI_Request rq_outersend_fc_[4], rq_outerrecv_fc_[4];
+  int shear_fc_phys_id_;
 #endif
 
   void LoadShearing(FaceField &src, Real *buf, int nb);
@@ -181,20 +175,14 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
                  AthenaArray<Real> &flux);
 
   // Shearing box EMF correction
-  ShearingBoundaryData shbd_fc_flx_[2]; // shbd_outer_;
-  // KGF: 5 = typo???
-  // BoundaryStatus shbox_inner_fc_flx_flag_[5], shbox_outer_fc_flx_flag_[5];
-  // Real *send_innerbuf_fc_flx_[4], *recv_innerbuf_fc_flx_[4];
-  // Real *send_outerbuf_fc_flx_[4], *recv_outerbuf_fc_flx_[4];
+  ShearingBoundaryData shear_bd_emf_[2];
 
-  EdgeField shboxvar_inner_fc_flx_, shboxvar_outer_fc_flx_;
-  EdgeField shboxmap_inner_fc_flx_, shboxmap_outer_fc_flx_;
-  EdgeField flx_inner_fc_flx_, flx_outer_fc_flx_;
-  int shear_send_count_fc_flx_[2][4], shear_recv_count_fc_flx_[2][4];
+  EdgeField shear_var_emf_[2];
+  EdgeField shear_map_emf_[2];
+  EdgeField shear_flx_emf_[2];
+  int shear_send_count_emf_[2][4], shear_recv_count_emf_[2][4];
 #ifdef MPI_PARALLEL
-  int sh_fc_flx_phys_id_;
-  // MPI_Request rq_innersend_fc_flx_[4],  rq_innerrecv_fc_flx_[4];
-  // MPI_Request rq_outersend_fc_flx_[4],  rq_outerrecv_fc_flx_[4];
+  int shear_emf_phys_id_;
 #endif
 
   void LoadEMFShearing(EdgeField &src, Real *buf, const int nb);

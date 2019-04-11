@@ -827,9 +827,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_count_fc_[0][n] = 0;
         shbox_inner_fc_flag_[n] = BoundaryStatus::completed;
 
-        shear_send_count_fc_flx_[0][n] = 0;
-        shear_recv_count_fc_flx_[0][n] = 0;
-        shbox_inner_fc_flx_flag_[n] = BoundaryStatus::completed;
+        shear_send_count_emf_[0][n] = 0;
+        shear_recv_count_emf_[0][n] = 0;
+        shbox_inner_emf_flag_[n] = BoundaryStatus::completed;
       }
     } // KGF: just clearing/resetting everything?
 
@@ -869,9 +869,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_recv_count_fc_[0][1] = shear_send_count_fc_[0][1];
       shbox_inner_fc_flag_[1] = BoundaryStatus::waiting;
 
-      shear_send_count_fc_flx_[0][1] = nx_attach*a1_fc_flx + a0_fc_flx;
-      shear_recv_count_fc_flx_[0][1] = shear_send_count_fc_flx_[0][1];
-      shbox_inner_fc_flx_flag_[1] = BoundaryStatus::waiting;
+      shear_send_count_emf_[0][1] = nx_attach*a1_fc_flx + a0_fc_flx;
+      shear_recv_count_emf_[0][1] = shear_send_count_emf_[0][1];
+      shbox_inner_emf_flag_[1] = BoundaryStatus::waiting;
     }
     // KGF: what is going on in the above code (since the end of the for loop)? No
     // counterpart for outer!
@@ -903,9 +903,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_count_fc_[0][0] = shear_send_count_fc_[0][0];
         shbox_inner_fc_flag_[0] = BoundaryStatus::waiting;
 
-        shear_send_count_fc_flx_[0][0] = nx_exchange_right*a1_fc_flx + a0_fc_flx;
-        shear_recv_count_fc_flx_[0][0] = shear_send_count_fc_flx_[0][0];
-        shbox_inner_fc_flx_flag_[0] = BoundaryStatus::waiting;
+        shear_send_count_emf_[0][0] = nx_exchange_right*a1_fc_flx + a0_fc_flx;
+        shear_recv_count_emf_[0][0] = shear_send_count_emf_[0][0];
+        shbox_inner_emf_flag_[0] = BoundaryStatus::waiting;
       }
       // deal the left boundary cells with send[2]
       if (joverlap_ > (nx2 - NGHOST)) {
@@ -934,9 +934,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
           shear_recv_count_fc_[0][2] = shear_send_count_fc_[0][2];
           shbox_inner_fc_flag_[2] = BoundaryStatus::waiting;
 
-          shear_send_count_fc_flx_[0][2] = nx_exchange_left*a1_fc_flx;
-          shear_recv_count_fc_flx_[0][2] = shear_send_count_fc_flx_[0][2];
-          shbox_inner_fc_flx_flag_[2] = BoundaryStatus::waiting;
+          shear_send_count_emf_[0][2] = nx_exchange_left*a1_fc_flx;
+          shear_recv_count_emf_[0][2] = shear_send_count_emf_[0][2];
+          shbox_inner_emf_flag_[2] = BoundaryStatus::waiting;
         }
       }
       // deal with the right boundary cells with send[3]
@@ -966,9 +966,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
           shear_recv_count_fc_[0][3] = shear_send_count_fc_[0][3];
           shbox_inner_fc_flag_[3] = BoundaryStatus::waiting;
 
-          shear_send_count_fc_flx_[0][3] = nx_exchange_right*a1_fc_flx;
-          shear_recv_count_fc_flx_[0][3] = shear_send_count_fc_flx_[0][3];
-          shbox_inner_fc_flx_flag_[3] = BoundaryStatus::waiting;
+          shear_send_count_emf_[0][3] = nx_exchange_right*a1_fc_flx;
+          shear_recv_count_emf_[0][3] = shear_send_count_emf_[0][3];
+          shbox_inner_emf_flag_[3] = BoundaryStatus::waiting;
         }
       }
     } else {  // joverlap_ == 0
@@ -998,9 +998,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_count_fc_[0][2] = shear_send_count_fc_[0][2];
         shbox_inner_fc_flag_[2] = BoundaryStatus::waiting;
 
-        shear_send_count_fc_flx_[0][2] = nx_exchange*a1_fc_flx;
-        shear_recv_count_fc_flx_[0][2] = shear_send_count_fc_flx_[0][2];
-        shbox_inner_fc_flx_flag_[2] = BoundaryStatus::waiting;
+        shear_send_count_emf_[0][2] = nx_exchange*a1_fc_flx;
+        shear_recv_count_emf_[0][2] = shear_send_count_emf_[0][2];
+        shbox_inner_emf_flag_[2] = BoundaryStatus::waiting;
       }
       // inner x2
       // send [js:js+(NGHOST-1)] to Left
@@ -1029,9 +1029,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_count_fc_[0][3] = shear_send_count_fc_[0][3];
         shbox_inner_fc_flag_[3] = BoundaryStatus::waiting;
 
-        shear_send_count_fc_flx_[0][3] = nx_exchange*a1_fc_flx;
-        shear_recv_count_fc_flx_[0][3] = shear_send_count_fc_flx_[0][3];
-        shbox_inner_fc_flx_flag_[3] = BoundaryStatus::waiting;
+        shear_send_count_emf_[0][3] = nx_exchange*a1_fc_flx;
+        shear_recv_count_emf_[0][3] = shear_send_count_emf_[0][3];
+        shbox_inner_emf_flag_[3] = BoundaryStatus::waiting;
       }
     }
   } // inner x1 shearing bc
@@ -1060,9 +1060,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_count_fc_[1][n] = 0;
         shbox_outer_fc_flag_[n] = BoundaryStatus::completed;
 
-        shear_send_count_fc_flx_[1][n] = 0;
-        shear_recv_count_fc_flx_[1][n] = 0;
-        shbox_outer_fc_flx_flag_[n] = BoundaryStatus::completed;
+        shear_send_count_emf_[1][n] = 0;
+        shear_recv_count_emf_[1][n] = 0;
+        shbox_outer_emf_flag_[n] = BoundaryStatus::completed;
       }
     }
     int jblock = 0;
@@ -1095,9 +1095,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_recv_count_fc_[1][1] = shear_send_count_fc_[1][1];
       shbox_outer_fc_flag_[1] = BoundaryStatus::waiting;
 
-      shear_send_count_fc_flx_[1][1] = nx_attach*a1_fc_flx + a0_fc_flx;
-      shear_recv_count_fc_flx_[1][1] = shear_send_count_fc_flx_[1][1];
-      shbox_outer_fc_flx_flag_[1] = BoundaryStatus::waiting;
+      shear_send_count_emf_[1][1] = nx_attach*a1_fc_flx + a0_fc_flx;
+      shear_recv_count_emf_[1][1] = shear_send_count_emf_[1][1];
+      shbox_outer_emf_flag_[1] = BoundaryStatus::waiting;
     }
 
     // if there is overlap to next blocks
@@ -1127,9 +1127,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_count_fc_[1][0] = shear_send_count_fc_[1][0];
         shbox_outer_fc_flag_[0] = BoundaryStatus::waiting;
 
-        shear_send_count_fc_flx_[1][0] = nx_exchange*a1_fc_flx + a0_fc_flx;
-        shear_recv_count_fc_flx_[1][0] = shear_send_count_fc_flx_[1][0];
-        shbox_outer_fc_flx_flag_[0] = BoundaryStatus::waiting;
+        shear_send_count_emf_[1][0] = nx_exchange*a1_fc_flx + a0_fc_flx;
+        shear_recv_count_emf_[1][0] = shear_send_count_emf_[1][0];
+        shbox_outer_emf_flag_[0] = BoundaryStatus::waiting;
       }
       // deal the left boundary cells with send[2]
       if (joverlap_ > (nx2 - NGHOST)) {
@@ -1158,9 +1158,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
           shear_recv_count_fc_[1][2] = shear_send_count_fc_[1][2];
           shbox_outer_fc_flag_[2] = BoundaryStatus::waiting;
 
-          shear_send_count_fc_flx_[1][2] = nx_exchange_left*a1_fc_flx;
-          shear_recv_count_fc_flx_[1][2] = shear_send_count_fc_flx_[1][2];
-          shbox_outer_fc_flx_flag_[2] = BoundaryStatus::waiting;
+          shear_send_count_emf_[1][2] = nx_exchange_left*a1_fc_flx;
+          shear_recv_count_emf_[1][2] = shear_send_count_emf_[1][2];
+          shbox_outer_emf_flag_[2] = BoundaryStatus::waiting;
         }
       }
       // deal the right boundary cells with send[3]
@@ -1190,9 +1190,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
           shear_recv_count_fc_[1][3] = shear_send_count_fc_[1][3];
           shbox_outer_fc_flag_[3] = BoundaryStatus::waiting;
 
-          shear_send_count_fc_flx_[1][3] = nx_exchange_right*a1_fc_flx;
-          shear_recv_count_fc_flx_[1][3] = shear_send_count_fc_flx_[1][3];
-          shbox_outer_fc_flx_flag_[3] = BoundaryStatus::waiting;
+          shear_send_count_emf_[1][3] = nx_exchange_right*a1_fc_flx;
+          shear_recv_count_emf_[1][3] = shear_send_count_emf_[1][3];
+          shbox_outer_emf_flag_[3] = BoundaryStatus::waiting;
         }
       }
     } else { // joverlap_ == 0
@@ -1221,9 +1221,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_count_fc_[1][2] = shear_send_count_fc_[1][2];
         shbox_outer_fc_flag_[2] = BoundaryStatus::waiting;
 
-        shear_send_count_fc_flx_[1][2] = nx_exchange*a1_fc_flx;
-        shear_recv_count_fc_flx_[1][2] = shear_send_count_fc_flx_[1][2];
-        shbox_outer_fc_flx_flag_[2] = BoundaryStatus::waiting;
+        shear_send_count_emf_[1][2] = nx_exchange*a1_fc_flx;
+        shear_recv_count_emf_[1][2] = shear_send_count_emf_[1][2];
+        shbox_outer_emf_flag_[2] = BoundaryStatus::waiting;
       }
 
       // recv [js-NGHOST:js-1] from Left
@@ -1252,9 +1252,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_count_fc_[1][3] = shear_send_count_fc_[1][3];
         shbox_outer_fc_flag_[3] = BoundaryStatus::waiting;
 
-        shear_send_count_fc_flx_[1][3] = nx_exchange*a1_fc_flx;
-        shear_recv_count_fc_flx_[1][3] = shear_send_count_fc_flx_[1][3];
-        shbox_outer_fc_flx_flag_[3] = BoundaryStatus::waiting;
+        shear_send_count_emf_[1][3] = nx_exchange*a1_fc_flx;
+        shear_recv_count_emf_[1][3] = shear_send_count_emf_[1][3];
+        shbox_outer_emf_flag_[3] = BoundaryStatus::waiting;
       }
     }
   }   // outer x1 shearing bc
