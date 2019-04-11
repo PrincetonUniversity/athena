@@ -581,10 +581,6 @@ BoundaryValues::~BoundaryValues() {
     if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
       shboxvar_inner_hydro_.DeleteAthenaArray();
       flx_inner_hydro_.DeleteAthenaArray();
-      for (int n=0; n<4; n++) {
-        delete[] send_innerbuf_hydro_[n];
-        delete[] recv_innerbuf_hydro_[n];
-      }
       if (MAGNETIC_FIELDS_ENABLED) {
         shboxvar_inner_field_.x1f.DeleteAthenaArray();
         shboxvar_inner_field_.x2f.DeleteAthenaArray();
@@ -596,21 +592,11 @@ BoundaryValues::~BoundaryValues() {
         shboxvar_inner_emf_.x3e.DeleteAthenaArray();
         flx_inner_emf_.x2e.DeleteAthenaArray();
         flx_inner_emf_.x3e.DeleteAthenaArray();
-        for (int n=0; n<4; n++) {
-          delete[] send_innerbuf_field_[n];
-          delete[] recv_innerbuf_field_[n];
-          delete[] send_innerbuf_emf_[n];
-          delete[] recv_innerbuf_emf_[n];
-        }
       }
     }
     if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
       shboxvar_outer_hydro_.DeleteAthenaArray();
       flx_outer_hydro_.DeleteAthenaArray();
-      for (int n=0; n<4; n++) {
-        delete[] send_outerbuf_hydro_[n];
-        delete[] recv_outerbuf_hydro_[n];
-      }
       if (MAGNETIC_FIELDS_ENABLED) {
         shboxvar_outer_field_.x1f.DeleteAthenaArray();
         shboxvar_outer_field_.x2f.DeleteAthenaArray();
@@ -622,12 +608,6 @@ BoundaryValues::~BoundaryValues() {
         shboxvar_outer_emf_.x3e.DeleteAthenaArray();
         flx_outer_emf_.x2e.DeleteAthenaArray();
         flx_outer_emf_.x3e.DeleteAthenaArray();
-        for (int n=0; n<4; n++) {
-          delete[] send_outerbuf_field_[n];
-          delete[] recv_outerbuf_field_[n];
-          delete[] send_outerbuf_emf_[n];
-          delete[] recv_outerbuf_emf_[n];
-        }
       }
     }
   }
