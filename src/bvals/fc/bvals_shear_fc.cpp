@@ -129,7 +129,6 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     kl = ks;
   }
   Real eps = pbval_->eps_;
-  Real qomL = pbval_->qomL_;
 
   if (pbval_->is_shear[0]) {
     int ib = is - NGHOST;
@@ -194,15 +193,15 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     for (int n=0; n<4; n++) {
       SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[0][n];
       if (snb.rank != -1) {
-        LoadShearing(shear_fc_[0], shear_bd_fc_[0].send[n], n);
+        LoadShearing(shear_fc_[0], shear_bd_var_[0].send[n], n);
         if (snb.rank == Globals::my_rank) {
-          CopyShearBufferSameProcess(snb, shear_send_count_fc_[0][n], n);
+          CopyShearBufferSameProcess(snb, shear_send_count_fc_[0][n], n, 0);
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid = n
           int tag = pbval_->CreateBvalsMPITag(snb.lid, n, shear_fc_phys_id_);
-          MPI_Isend(shear_bd_fc_[0].send[n],shear_send_count_fc_[0][n],MPI_ATHENA_REAL,
-                    snb.rank,tag,MPI_COMM_WORLD, &shear_bd_fc_[0].req_send[n]);
+          MPI_Isend(shear_bd_var_[0].send[n],shear_send_count_fc_[0][n],MPI_ATHENA_REAL,
+                    snb.rank,tag,MPI_COMM_WORLD, &shear_bd_var_[0].req_send[n]);
 #endif
         }
       }
@@ -211,7 +210,6 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 
   if (pbval_->is_shear[1]) {
     int  ib = ie + 1;
-    qomL = -qomL;
     int ii;
     // step 1. -- load shboxvar_fc_
     for (int k=kl; k<=ku; k++) {
@@ -277,15 +275,15 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     for (int n=0; n<4; n++) {
       SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[1][n];
       if (snb.rank != -1) {
-        LoadShearing(shear_fc_[1], shear_bd_fc_[1].send[n], n+offset);
+        LoadShearing(shear_fc_[1], shear_bd_var_[1].send[n], n+offset);
         if (snb.rank == Globals::my_rank) {// on the same process
-          CopyShearBufferSameProcess(snb, shear_send_count_fc_[1][n], n);
+          CopyShearBufferSameProcess(snb, shear_send_count_fc_[1][n], n, 1);
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid for outer(inner): 2(0) and 3(1)
           int tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset, shear_fc_phys_id_);
-          MPI_Isend(shear_bd_fc_[1].send[n], shear_send_count_fc_[1][n], MPI_ATHENA_REAL,
-                    snb.rank, tag, MPI_COMM_WORLD, &shear_bd_fc_[1].req_send[n]);
+          MPI_Isend(shear_bd_var_[1].send[n], shear_send_count_fc_[1][n], MPI_ATHENA_REAL,
+                    snb.rank, tag, MPI_COMM_WORLD, &shear_bd_var_[1].req_send[n]);
 #endif
         }
       }
@@ -385,8 +383,8 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
 
   if (pbval_->is_shear[0]) { // check inner boundaries
     for (int n=0; n<4; n++) {
-      if (shear_bd_fc_[0].flag[n] == BoundaryStatus::completed) continue;
-      if (shear_bd_fc_[0].flag[n] == BoundaryStatus::waiting) {
+      if (shear_bd_var_[0].flag[n] == BoundaryStatus::completed) continue;
+      if (shear_bd_var_[0].flag[n] == BoundaryStatus::waiting) {
         if (pbval_->shear_recv_neighbor_[0][n].rank == Globals::my_rank) {// on the same process
           flagi = false;
           continue;
@@ -395,27 +393,27 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
           int test;
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
-          MPI_Test(&shear_bd_fc_[0].req_recv[n], &test, MPI_STATUS_IGNORE);
+          MPI_Test(&shear_bd_var_[0].req_recv[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
             flagi = false;
             continue;
           }
-          shear_bd_fc_[0].flag[n] = BoundaryStatus::arrived;
+          shear_bd_var_[0].flag[n] = BoundaryStatus::arrived;
 #endif
         }
       }
       // set dst if boundary arrived
-      SetShearingBoxBoundarySameLevel(shear_bd_fc_[0].recv[n], n);
-      shear_bd_fc_[0].flag[n] = BoundaryStatus::completed; // completed
+      SetShearingBoxBoundarySameLevel(shear_bd_var_[0].recv[n], n);
+      shear_bd_var_[0].flag[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] to recv[3]
   } // inner boundary
 
   if (pbval_->is_shear[1]) { // check outer boundaries
     int offset = 4;
     for (int n=0; n<4; n++) {
-      if (shear_bd_fc_[1].flag[n] == BoundaryStatus::completed) continue;
-      if (shear_bd_fc_[1].flag[n] == BoundaryStatus::waiting) {
-        if (pbval_->shear_recv_neighbor_[1][n].rank == Globals::my_rank) {// on the same process
+      if (shear_bd_var_[1].flag[n] == BoundaryStatus::completed) continue;
+      if (shear_bd_var_[1].flag[n] == BoundaryStatus::waiting) {
+        if (pbval_->shear_recv_neighbor_[1][n].rank == Globals::my_rank) {
           flago = false;
           continue;
         } else { // MPI boundary
@@ -424,17 +422,17 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
 
-          MPI_Test(&shear_bd_fc_[1].req_recv[n], &test, MPI_STATUS_IGNORE);
+          MPI_Test(&shear_bd_var_[1].req_recv[n], &test, MPI_STATUS_IGNORE);
           if (static_cast<bool>(test) == false) {
             flago = false;
             continue;
           }
-          shear_bd_fc_[1].flag[n] = BoundaryStatus::arrived;
+          shear_bd_var_[1].flag[n] = BoundaryStatus::arrived;
 #endif
         }
       }
-      SetShearingBoxBoundarySameLevel(shear_bd_fc_[1].recv[n], n+offset);
-      shear_bd_fc_[1].flag[n] = BoundaryStatus::completed; // completed
+      SetShearingBoxBoundarySameLevel(shear_bd_var_[1].recv[n], n+offset);
+      shear_bd_var_[1].flag[n] = BoundaryStatus::completed; // completed
     } // loop over recv[0] and recv[1]
   } // outer boundary
   return (flagi && flago);
