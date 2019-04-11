@@ -1089,7 +1089,6 @@ void BoundaryValues::FindShearBlock(const Real time) {
     }
   } // inner x1 shearing bc
 
-
   // KGF: halfway point in this function
 
   // outer x1 shearing bc

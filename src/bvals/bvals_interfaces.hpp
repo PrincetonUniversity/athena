@@ -163,11 +163,11 @@ struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
 using ShearingBoundaryData = BoundaryData<4>;
 
 // Struct for describing blocks which touch the shearing-periodic boundaries
-struct ShearingBoundaryBlock {
-  int *igidlist, *ilidlist, *irnklist, *ilevlist;
-  int *ogidlist, *olidlist, *ornklist, *olevlist;
-  bool inner, outer;
-};
+// struct ShearingBoundaryBlock {
+//   int *igidlist, *ilidlist, *irnklist, *ilevlist;
+//   int *ogidlist, *olidlist, *ornklist, *olevlist;
+//   bool inner, outer;
+// };
 
 //----------------------------------------------------------------------------------------
 // Interfaces = abstract classes containing ONLY pure virtual functions

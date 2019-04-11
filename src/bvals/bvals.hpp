@@ -144,8 +144,6 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   int bvars_next_phys_id_;
 
   // Shearing box (shared with Field and Hydro)
-  // KGF: this is the only instance of this struct. Eliminate it as a struct type
-  ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
   // KGF: remove the redundancies in these variables:
   Real x1size_, x2size_, x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
   Real Omega_0_, qshear_;       // orbital freq and shear rate
@@ -154,6 +152,11 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   Real ssize_;                  // # of ghost cells in x-z plane
   Real eps_;                    // fraction part of the shear
   Real qomL_;
+
+  // KGF: this is the only instance of this struct. Eliminate it as a struct type
+  // ShearingBoundaryBlock shbb_;
+  SimpleNeighborBlock *shbb_[2];
+  bool is_shear[2]; // inner_x1=0, outer_x1=1
 
   // KGF: why 4x? shouldn't in only require +/-1 MeshBlock along the shear, aka 3x?
   // KGF: fold 4x arrays into 2x 2D array of structs (combine recv/send); inner=0, outer=1

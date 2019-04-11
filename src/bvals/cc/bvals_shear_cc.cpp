@@ -124,17 +124,21 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
   Real qomL = pbval_->qomL_;
 
   if (shbb_.inner == true) {
+    int ib = 0;
+    int sign = +1;
     // step 1. -- add shear to the inner periodic boundary values
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
         for (int i=0; i<NGHOST; i++) {
+          int ii = ib + i;
           // add shear to conservative
-          shboxvar_inner_cc_(IM2,k,j,i) = var(IM2,k,j,i) + qomL*var(IDN,k,j,i);
+          shboxvar_inner_cc_(IM2,k,j,i) = var(IM2,k,j,ii) + sign*qomL*var(IDN,k,j,ii);
+          // Update energy, then x2 momentum
           if (NON_BAROTROPIC_EOS) {
-            var(IEN,k,j,i) += (0.5/var(IDN,k,j,i))*(SQR(shboxvar_inner_cc_(IM2,k,j,i))
-                                                    - SQR(var(IM2,k,j,i)));
+            var(IEN,k,j,ii) += (0.5/var(IDN,k,j,ii))*(SQR(shboxvar_inner_cc_(IM2,k,j,i))
+                                                    - SQR(var(IM2,k,j,ii)));
           } // update energy
-          var(IM2,k,j,i) = shboxvar_inner_cc_(IM2,k,j,i);// update IM2
+          var(IM2,k,j,ii) = shboxvar_inner_cc_(IM2,k,j,i);
         }
       }
     }
@@ -142,20 +146,20 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
 
   if (shbb_.outer == true) {
     int ib = pmb->ie + 1;
-    int ii;
+    int sign = -1;
     // step 2. -- add shear to the outer periodic boundary values
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
         for (int i=0; i<NGHOST; i++) {
-          ii = ib + i;
+          int ii = ib + i;
           // add shear to conservative
-          shboxvar_outer_cc_(IM2,k,j,i) = var(IM2,k,j,ii) - qomL*var(IDN,k,j,ii);
+          shboxvar_outer_cc_(IM2,k,j,i) = var(IM2,k,j,ii) + sign*qomL*var(IDN,k,j,ii);
+          // Update energy, then x2 momentum
           if (NON_BAROTROPIC_EOS) {
-            var(IEN,k,j,ii) += (0.5/var(IDN,k,j,ii))
-                               *(SQR(shboxvar_outer_cc_(IM2,k,j,i))
-                                 - SQR(var(IM2,k,j,ii)));
-          }  // update energy
-          var(IM2,k,j,ii) = shboxvar_outer_cc_(IM2,k,j,i);  // update IM2
+            var(IEN,k,j,ii) += (0.5/var(IDN,k,j,ii))*(SQR(shboxvar_outer_cc_(IM2,k,j,i))
+                                                      - SQR(var(IM2,k,j,ii)));
+          }
+          var(IM2,k,j,ii) = shboxvar_outer_cc_(IM2,k,j,i);
         }
       }
     }
