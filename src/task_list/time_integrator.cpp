@@ -301,7 +301,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     AddTask(PHY_BVAL,CON2PRIM);
     AddTask(USERWORK,PHY_BVAL);
     AddTask(NEW_DT,USERWORK);
-    if (pm->adaptive == true) {
+    if (pm->adaptive) {
       AddTask(FLAG_AMR,USERWORK);
       AddTask(CLEAR_ALLBND,FLAG_AMR);
     } else {

@@ -688,7 +688,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     adaptive = true, multilevel = true;
   else if (pin->GetOrAddString("mesh","refinement","none") == "static")
     multilevel = true;
-  if (adaptive == true) {
+  if (adaptive) {
     max_level = pin->GetOrAddInteger("mesh","numlevel",1)+root_level-1;
     if (max_level > 63) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -798,7 +798,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   }
 #endif
 
-  if (adaptive == true) { // allocate arrays for AMR
+  if (adaptive) { // allocate arrays for AMR
     nref = new int[Globals::nranks];
     nderef = new int[Globals::nranks];
     rdisp = new int[Globals::nranks];
@@ -893,7 +893,7 @@ Mesh::~Mesh() {
   if (SELF_GRAVITY_ENABLED == 1) delete pfgrd;
   else if (SELF_GRAVITY_ENABLED == 2) delete pmgrd;
   if (turb_flag > 0) delete ptrbd;
-  if (adaptive == true) { // deallocate arrays for AMR
+  if (adaptive) { // deallocate arrays for AMR
     delete [] nref;
     delete [] nderef;
     delete [] rdisp;
@@ -1143,7 +1143,7 @@ void Mesh::EnrollUserMGBoundaryFunction(int dir, MGBoundaryFunc my_bc) {
 //  \brief Enroll a user-defined function for checking refinement criteria
 
 void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag) {
-  if (adaptive == true)
+  if (adaptive)
     AMRFlag_=amrflag;
   return;
 }
@@ -1498,7 +1498,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
       }
 
-      if ((res_flag == 0) && (adaptive == true)) {
+      if ((res_flag == 0) && (adaptive)) {
 #pragma omp for
         for (int i=0; i<nmb; ++i) {
           pmb_array[i]->pmr->CheckRefinementCondition();
@@ -1506,7 +1506,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       }
     } // omp parallel
 
-    if ((res_flag == 0) && (adaptive == true)) {
+    if ((res_flag == 0) && (adaptive)) {
       iflag = false;
       int onb = nbtotal;
       AdaptiveMeshRefinement(pin);

@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
     pmesh->time += pmesh->dt;
     mbcnt += pmesh->nbtotal;
 
-    if (pmesh->adaptive == true)
+    if (pmesh->adaptive)
       pmesh->AdaptiveMeshRefinement(pinput);
 
     pmesh->NewTimeStep();
@@ -530,7 +530,7 @@ int main(int argc, char *argv[]) {
     std::cout << "time=" << pmesh->time << " cycle=" << pmesh->ncycle << std::endl;
     std::cout << "tlim=" << pmesh->tlim << " nlim=" << pmesh->nlim << std::endl;
 
-    if (pmesh->adaptive == true) {
+    if (pmesh->adaptive) {
       std::cout << std::endl << "Number of MeshBlocks = " << pmesh->nbtotal
                 << "; " << pmesh->nbnew << "  created, " << pmesh->nbdel
                 << " destroyed during this simulation." << std::endl;
