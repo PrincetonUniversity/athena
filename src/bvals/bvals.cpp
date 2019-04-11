@@ -854,6 +854,14 @@ void BoundaryValues::FindShearBlock(const Real time) {
   joverlap_   = joffset - Ngrids*nx2;
   eps_ = (std::fmod(deltay, pco->dx2v(js)))/pco->dx2v(js);
 
+  // scaling terms when computing inner/outersize_fc_[], fc_flx_[]
+  // where size = a1*nx + a0
+  const int a1_fc = NGHOST*(NFIELD*ncells3 + 1);
+  const int a0_fc = NGHOST*ncells3;   // only in a few cases
+
+  const int a1_fc_flx = (2*nx3 + 1);
+  const int a0_fc_flx = nx3;    // only in a few cases
+
   if (shbb_.inner == true) { // if inner block
     for (int n=0; n<4; n++) {
       shear_send_inner_neighbor_[n].gid  = -1;
@@ -910,12 +918,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
     shbox_inner_cc_flag_[1] = BoundaryStatus::waiting;
 
     if (MAGNETIC_FIELDS_ENABLED) {
-      send_innersize_fc_[1] = nx_attach*NGHOST*(NFIELD*ncells3 + 1)
-                              + NGHOST*ncells3;
+      send_innersize_fc_[1] = nx_attach*a1_fc + a0_fc;
       recv_innersize_fc_[1] = send_innersize_fc_[1];
       shbox_inner_fc_flag_[1] = BoundaryStatus::waiting;
 
-      send_innersize_fc_flx_[1] = nx_attach*(2*nx3 + 1) + nx3;
+      send_innersize_fc_flx_[1] = nx_attach*a1_fc_flx + a0_fc_flx;
       recv_innersize_fc_flx_[1] = send_innersize_fc_flx_[1];
       shbox_inner_fc_flx_flag_[1] = BoundaryStatus::waiting;
     }
@@ -945,12 +952,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shbox_inner_cc_flag_[0] = BoundaryStatus::waiting;  // switch on if overlap
 
       if (MAGNETIC_FIELDS_ENABLED) {
-        send_innersize_fc_[0] = nx_exchange_right*NGHOST*(NFIELD*ncells3 + 1)
-                                + NGHOST*ncells3;
+        send_innersize_fc_[0] = nx_exchange_right*a1_fc + a0_fc;
         recv_innersize_fc_[0] = send_innersize_fc_[0];
         shbox_inner_fc_flag_[0] = BoundaryStatus::waiting;
 
-        send_innersize_fc_flx_[0] = nx_exchange_right*(2*nx3 + 1)+nx3;
+        send_innersize_fc_flx_[0] = nx_exchange_right*a1_fc_flx + a0_fc_flx;
         recv_innersize_fc_flx_[0] = send_innersize_fc_flx_[0];
         shbox_inner_fc_flx_flag_[0] = BoundaryStatus::waiting;
       }
@@ -977,11 +983,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shbox_inner_cc_flag_[2] = BoundaryStatus::waiting;
 
         if (MAGNETIC_FIELDS_ENABLED) {
-          send_innersize_fc_[2] = nx_exchange_left*NGHOST*(NFIELD*ncells3 + 1);
+          send_innersize_fc_[2] = nx_exchange_left*a1_fc;
           recv_innersize_fc_[2] = send_innersize_fc_[2];
           shbox_inner_fc_flag_[2] = BoundaryStatus::waiting;
 
-          send_innersize_fc_flx_[2] = nx_exchange_left*(2*nx3 + 1);
+          send_innersize_fc_flx_[2] = nx_exchange_left*a1_fc_flx;
           recv_innersize_fc_flx_[2] = send_innersize_fc_flx_[2];
           shbox_inner_fc_flx_flag_[2] = BoundaryStatus::waiting;
         }
@@ -1009,11 +1015,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shbox_inner_cc_flag_[3] = BoundaryStatus::waiting;
 
         if (MAGNETIC_FIELDS_ENABLED) {
-          send_innersize_fc_[3] = nx_exchange_right*NGHOST*(NFIELD*ncells3 + 1);
+          send_innersize_fc_[3] = nx_exchange_right*a1_fc;
           recv_innersize_fc_[3] = send_innersize_fc_[3];
           shbox_inner_fc_flag_[3] = BoundaryStatus::waiting;
 
-          send_innersize_fc_flx_[3] = nx_exchange_right*(2*nx3 + 1);
+          send_innersize_fc_flx_[3] = nx_exchange_right*a1_fc_flx;
           recv_innersize_fc_flx_[3] = send_innersize_fc_flx_[3];
           shbox_inner_fc_flx_flag_[3] = BoundaryStatus::waiting;
         }
@@ -1041,11 +1047,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shbox_inner_cc_flag_[2] = BoundaryStatus::waiting;
 
       if (MAGNETIC_FIELDS_ENABLED) {
-        send_innersize_fc_[2] = nx_exchange*NGHOST*(NFIELD*ncells3 + 1);
+        send_innersize_fc_[2] = nx_exchange*a1_fc;
         recv_innersize_fc_[2] = send_innersize_fc_[2];
         shbox_inner_fc_flag_[2] = BoundaryStatus::waiting;
 
-        send_innersize_fc_flx_[2] = nx_exchange*(2*nx3 + 1);
+        send_innersize_fc_flx_[2] = nx_exchange*a1_fc_flx;
         recv_innersize_fc_flx_[2] = send_innersize_fc_flx_[2];
         shbox_inner_fc_flx_flag_[2] = BoundaryStatus::waiting;
       }
@@ -1072,11 +1078,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shbox_inner_cc_flag_[3] = BoundaryStatus::waiting;
 
       if (MAGNETIC_FIELDS_ENABLED) {
-        send_innersize_fc_[3] = nx_exchange*NGHOST*(NFIELD*ncells3 + 1);
+        send_innersize_fc_[3] = nx_exchange*a1_fc;
         recv_innersize_fc_[3] = send_innersize_fc_[3];
         shbox_inner_fc_flag_[3] = BoundaryStatus::waiting;
 
-        send_innersize_fc_flx_[3] = nx_exchange*(2*nx3 + 1);
+        send_innersize_fc_flx_[3] = nx_exchange*a1_fc_flx;
         recv_innersize_fc_flx_[3] = send_innersize_fc_flx_[3];
         shbox_inner_fc_flx_flag_[3] = BoundaryStatus::waiting;
       }
@@ -1139,12 +1145,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
     shbox_outer_cc_flag_[1] = BoundaryStatus::waiting;
 
     if (MAGNETIC_FIELDS_ENABLED) {
-      send_outersize_fc_[1] = nx_attach*NGHOST*(NFIELD*ncells3 + 1)
-                              + NGHOST*ncells3;
+      send_outersize_fc_[1] = nx_attach*a1_fc + a0_fc;
       recv_outersize_fc_[1] = send_outersize_fc_[1];
       shbox_outer_fc_flag_[1] = BoundaryStatus::waiting;
 
-      send_outersize_fc_flx_[1] = nx_attach*(2*nx3 + 1) + nx3;
+      send_outersize_fc_flx_[1] = nx_attach*a1_fc_flx + a0_fc_flx;
       recv_outersize_fc_flx_[1] = send_outersize_fc_flx_[1];
       shbox_outer_fc_flx_flag_[1] = BoundaryStatus::waiting;
     }
@@ -1172,12 +1177,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shbox_outer_cc_flag_[0] = BoundaryStatus::waiting; // switch on if overlap
 
       if (MAGNETIC_FIELDS_ENABLED) {
-        send_outersize_fc_[0] = nx_exchange*NGHOST*(NFIELD*ncells3 + 1)
-                                + NGHOST*ncells3;
+        send_outersize_fc_[0] = nx_exchange*a1_fc + a0_fc;
         recv_outersize_fc_[0] = send_outersize_fc_[0];
         shbox_outer_fc_flag_[0] = BoundaryStatus::waiting;
 
-        send_outersize_fc_flx_[0] = nx_exchange*(2*nx3 + 1) + nx3;
+        send_outersize_fc_flx_[0] = nx_exchange*a1_fc_flx + a0_fc_flx;
         recv_outersize_fc_flx_[0] = send_outersize_fc_flx_[0];
         shbox_outer_fc_flx_flag_[0] = BoundaryStatus::waiting;
       }
@@ -1204,11 +1208,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shbox_outer_cc_flag_[2] = BoundaryStatus::waiting;
 
         if (MAGNETIC_FIELDS_ENABLED) {
-          send_outersize_fc_[2] = nx_exchange_left*NGHOST*(NFIELD*ncells3 + 1);
+          send_outersize_fc_[2] = nx_exchange_left*a1_fc;
           recv_outersize_fc_[2] = send_outersize_fc_[2];
           shbox_outer_fc_flag_[2] = BoundaryStatus::waiting;
 
-          send_outersize_fc_flx_[2] = nx_exchange_left*(2*nx3 + 1);
+          send_outersize_fc_flx_[2] = nx_exchange_left*a1_fc_flx;
           recv_outersize_fc_flx_[2] = send_outersize_fc_flx_[2];
           shbox_outer_fc_flx_flag_[2] = BoundaryStatus::waiting;
         }
@@ -1236,11 +1240,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shbox_outer_cc_flag_[3] = BoundaryStatus::waiting;
 
         if (MAGNETIC_FIELDS_ENABLED) {
-          send_outersize_fc_[3] = nx_exchange_right*NGHOST*(NFIELD*ncells3 + 1);
+          send_outersize_fc_[3] = nx_exchange_right*a1_fc;
           recv_outersize_fc_[3] = send_outersize_fc_[3];
           shbox_outer_fc_flag_[3] = BoundaryStatus::waiting;
 
-          send_outersize_fc_flx_[3] = nx_exchange_right*(2*nx3 + 1);
+          send_outersize_fc_flx_[3] = nx_exchange_right*a1_fc_flx;
           recv_outersize_fc_flx_[3] = send_outersize_fc_flx_[3];
           shbox_outer_fc_flx_flag_[3] = BoundaryStatus::waiting;
         }
@@ -1267,11 +1271,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shbox_outer_cc_flag_[2] = BoundaryStatus::waiting;
 
       if (MAGNETIC_FIELDS_ENABLED) {
-        send_outersize_fc_[2] = nx_exchange*NGHOST*(NFIELD*ncells3 + 1);
+        send_outersize_fc_[2] = nx_exchange*a1_fc;
         recv_outersize_fc_[2] = send_outersize_fc_[2];
         shbox_outer_fc_flag_[2] = BoundaryStatus::waiting;
 
-        send_outersize_fc_flx_[2] = nx_exchange*(2*nx3 + 1);
+        send_outersize_fc_flx_[2] = nx_exchange*a1_fc_flx;
         recv_outersize_fc_flx_[2] = send_outersize_fc_flx_[2];
         shbox_outer_fc_flx_flag_[2] = BoundaryStatus::waiting;
       }
@@ -1298,11 +1302,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shbox_outer_cc_flag_[3] = BoundaryStatus::waiting;
 
       if (MAGNETIC_FIELDS_ENABLED) {
-        send_outersize_fc_[3] = nx_exchange*NGHOST*(NFIELD*ncells3 + 1);
+        send_outersize_fc_[3] = nx_exchange*a1_fc;
         recv_outersize_fc_[3] = send_outersize_fc_[3];
         shbox_outer_fc_flag_[3] = BoundaryStatus::waiting;
 
-        send_outersize_fc_flx_[3] = nx_exchange*(2*nx3 + 1);
+        send_outersize_fc_flx_[3] = nx_exchange*a1_fc_flx;
         recv_outersize_fc_flx_[3] = send_outersize_fc_flx_[3];
         shbox_outer_fc_flx_flag_[3] = BoundaryStatus::waiting;
       }
