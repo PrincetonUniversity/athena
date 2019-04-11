@@ -118,8 +118,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
     int level = pmb->loc.level - pmy_mesh_->root_level;
     std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
     std::int64_t nrbx2 = pmy_mesh_->nrbx2*(1L << level);
-    is_shear[1] = false;
     is_shear[0] = false;
+    is_shear[1] = false;
+    loc_shear[0] = 0;
+    loc_shear[1] = nrbx1 - 1;
 
     if (ShBoxCoord_ == 1) {
       int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
@@ -127,7 +129,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
       if (pmy_mesh_->mesh_size.nx3 > 1) ncells3 += 2*NGHOST;
       ssize_ = NGHOST*ncells3;
 
-      if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
+      if (pmb->loc.lx1 == loc_shear[0]) { // if true for shearing inner blocks
         shboxvar_inner_cc_.NewAthenaArray(NHYDRO, ncells3, ncells2, NGHOST);
         flx_inner_cc_.NewAthenaArray(ncells2);
         if (MAGNETIC_FIELDS_ENABLED) {
@@ -210,7 +212,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
         }
       }
 
-      if (pmb->loc.lx1 == (nrbx1 - 1)) { // if true for shearing outer blocks
+      if (pmb->loc.lx1 == loc_shear[1]) { // if true for shearing outer blocks
         shboxvar_outer_cc_.NewAthenaArray(NHYDRO, ncells3, ncells2, NGHOST);
         flx_outer_cc_.NewAthenaArray(ncells2);
         if (MAGNETIC_FIELDS_ENABLED) {
@@ -311,7 +313,7 @@ BoundaryValues::~BoundaryValues() {
 
   // KGF: shearing box destructor
   if (SHEARING_BOX) {
-    if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
+    if (is_shear[0]) { // if true for shearing inner blocks
       delete[] shbb_[0];
       shboxvar_inner_cc_.DeleteAthenaArray();
       flx_inner_cc_.DeleteAthenaArray();
@@ -338,7 +340,7 @@ BoundaryValues::~BoundaryValues() {
         }
       }
     }
-    if (pmb->loc.lx1 == (nrbx1 - 1)) { // if true for shearing outer blocks
+    if (is_shear[1]) { // if true for shearing outer blocks
       delete[] shbb_[1];
       shboxvar_outer_cc_.DeleteAthenaArray();
       flx_outer_cc_.DeleteAthenaArray();
@@ -382,9 +384,6 @@ void BoundaryValues::SetupPersistentMPI() {
   // initialize the shearing block lists
   if (SHEARING_BOX) {
     MeshBlock *pmb = pmy_block_;
-    int level = pmb->loc.level - pmy_mesh_->root_level;
-    std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
-    // std::int64_t nrbx2 = pmy_mesh_->nrbx2*(1L << level); // unused variable
     int nbtotal = pmy_mesh_->nbtotal;
     int *ranklist = pmy_mesh_->ranklist;
     int *nslist = pmy_mesh_->nslist;
@@ -393,7 +392,7 @@ void BoundaryValues::SetupPersistentMPI() {
     int count = 0;
     if (is_shear[0]) {
       for (int i=0; i<nbtotal; i++) {
-        if (loclist[i].lx1 == 0 && loclist[i].lx3 == pmb->loc.lx3 &&
+        if (loclist[i].lx1 == loc_shear[0] && loclist[i].lx3 == pmb->loc.lx3 &&
             loclist[i].level == pmb->loc.level) {
           shbb_[0][count].gid = i;
           shbb_[0][count].lid = i - nslist[ranklist[i]];
@@ -406,7 +405,7 @@ void BoundaryValues::SetupPersistentMPI() {
     count = 0;
     if (is_shear[1]) {
       for (int i=0; i<nbtotal; i++) {
-        if (loclist[i].lx1 == (nrbx1 - 1) && loclist[i].lx3 == pmb->loc.lx3 &&
+        if (loclist[i].lx1 == loc_shear[1] && loclist[i].lx3 == pmb->loc.lx3 &&
             loclist[i].level == pmb->loc.level) {
           shbb_[1][count].gid = i;
           shbb_[1][count].lid = i - nslist[ranklist[i]];
@@ -895,6 +894,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
     // to its right end.
     std::int64_t jtmp = jblock + Ngrids;
     if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
+    // TODO(felker): replace this with C++ copy semantics (also copy level!):
     shear_send_inner_neighbor_[1].gid  = shbb_[0][jtmp].gid;
     shear_send_inner_neighbor_[1].rank = shbb_[0][jtmp].rank;
     shear_send_inner_neighbor_[1].lid  = shbb_[0][jtmp].lid;

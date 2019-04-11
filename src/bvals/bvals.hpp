@@ -153,10 +153,11 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   Real eps_;                    // fraction part of the shear
   Real qomL_;
 
-  // KGF: this is the only instance of this struct. Eliminate it as a struct type
-  // ShearingBoundaryBlock shbb_;
-  SimpleNeighborBlock *shbb_[2];
+  // it is possible for a MeshBlock to have is_shear={true, true}, if it is the only block
+  // along x1
   bool is_shear[2]; // inner_x1=0, outer_x1=1
+  SimpleNeighborBlock *shbb_[2];
+  std::int64_t loc_shear[2];  // x1 LogicalLocation of block(s) on inner/outer shear bndry
 
   // KGF: why 4x? shouldn't in only require +/-1 MeshBlock along the shear, aka 3x?
   // KGF: fold 4x arrays into 2x 2D array of structs (combine recv/send); inner=0, outer=1
