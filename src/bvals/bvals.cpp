@@ -118,8 +118,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
     int level = pmb->loc.level - pmy_mesh_->root_level;
     std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
     std::int64_t nrbx2 = pmy_mesh_->nrbx2*(1L << level);
-    shbb_.outer = false;
-    shbb_.inner = false;
+    is_shear[1] = false;
+    is_shear[0] = false;
 
     if (ShBoxCoord_ == 1) {
       int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
@@ -144,7 +144,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
           flx_inner_emf_.x2e.NewAthenaArray(ncells2);
           flx_inner_emf_.x3e.NewAthenaArray(ncells2+1);
         }
-        shbb_.inner = true;
+        is_shear[0] = true;
         shbb_.igidlist = new int[nrbx2];
         shbb_.ilidlist = new int[nrbx2];
         shbb_.irnklist = new int[nrbx2];
@@ -229,7 +229,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
           flx_outer_emf_.x2e.NewAthenaArray(ncells2);
           flx_outer_emf_.x3e.NewAthenaArray(ncells2+1);
         }
-        shbb_.outer = true;
+        is_shear[1] = true;
         shbb_.ogidlist = new int[nrbx2];
         shbb_.olidlist = new int[nrbx2];
         shbb_.ornklist = new int[nrbx2];
@@ -393,7 +393,7 @@ void BoundaryValues::SetupPersistentMPI() {
     LogicalLocation *loclist = pmy_mesh_->loclist;
 
     int count = 0;
-    if (shbb_.inner) {
+    if (is_shear[0]) {
       for (int i=0; i<nbtotal; i++) {
         if (loclist[i].lx1 == 0 && loclist[i].lx3 == pmb->loc.lx3 &&
             loclist[i].level == pmb->loc.level) {
@@ -406,7 +406,7 @@ void BoundaryValues::SetupPersistentMPI() {
       }
     }
     count = 0;
-    if (shbb_.outer) {
+    if (is_shear[1]) {
       for (int i=0; i<nbtotal; i++) {
         if (loclist[i].lx1 == (nrbx1 - 1) && loclist[i].lx3 == pmb->loc.lx3 &&
             loclist[i].level == pmb->loc.level) {
@@ -466,7 +466,7 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
      //     Mesh *pmesh = pmb->pmy_mesh;
     int size,tag;
-    if (shbb_.inner) { // inner boundary
+    if (is_shear[0]) { // inner boundary
       for (int n=0; n<4; n++) {
         if ((recv_inner_rank_[n]!=Globals::my_rank) &&
                           (recv_inner_rank_[n]!=-1)) {
@@ -491,7 +491,7 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
       }
     }
 
-    if (shbb_.outer) { // outer boundary
+    if (is_shear[1]) { // outer boundary
       int offset=4;
       for (int n=0; n<4; n++) {
         if ((recv_outer_rank_[n]!=Globals::my_rank) &&
@@ -538,7 +538,7 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
   // KGF: begin shearing box exclusive section of ClearBoundaryAll
   // clear shearing box boundary communications
   if (SHEARING_BOX) {
-    if (shbb_.inner == true) {
+    if (is_shear[0] == true) {
       for (int n=0; n<4; n++) {
         if (send_inner_rank_[n] == -1) continue;
         shbox_inner_cc_flag_[n] = BoundaryStatus::waiting;
@@ -558,7 +558,7 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
       }
     } // inner boundary
 
-    if (shbb_.outer == true) {
+    if (is_shear[1] == true) {
       for (int n=0; n<4; n++) {
         if (send_outer_rank_[n] == -1) continue;
         shbox_outer_cc_flag_[n] = BoundaryStatus::waiting;
@@ -862,7 +862,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
   const int a1_fc_flx = (2*nx3 + 1);
   const int a0_fc_flx = nx3;    // only in a few cases
 
-  if (shbb_.inner == true) { // if inner block
+  if (is_shear[0] == true) { // if inner block
     for (int n=0; n<4; n++) {
       shear_send_inner_neighbor_[n].gid  = -1;
       shear_send_inner_neighbor_[n].lid  = -1;
@@ -1092,7 +1092,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
   // KGF: halfway point in this function
 
   // outer x1 shearing bc
-  if (shbb_.outer == true) { // if outer block
+  if (is_shear[1] == true) { // if outer block
     for (int n=0; n<4; n++) {
       shear_send_outer_neighbor_[n].gid  = -1;
       shear_send_outer_neighbor_[n].lid  = -1;

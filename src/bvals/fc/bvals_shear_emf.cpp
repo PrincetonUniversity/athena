@@ -129,7 +129,7 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
   int nx2 = pmb->block_size.nx2;
   int nx3 = pmb->block_size.nx3;
 
-  if (shbb_.inner == true) {
+  if (is_shear[0] == true) {
     // step 1. -- average edges of shboxvar_fc_flx_
     // average e3 for x1x2 edge
     for (int k=ks; k<=ke; k++) {
@@ -164,7 +164,7 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
     }
   } // inner boundaries
 
-  if (shbb_.outer == true) {
+  if (is_shear[1] == true) {
     // step 1. -- average edges of shboxvar_fc_flx_
     // average e3 for x1x2 edge
     for (int k=ks; k<=ke; k++) {
@@ -287,7 +287,7 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(EdgeField 
 bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
   bool flagi = true, flago = true;
 
-  if (shbb_.inner == true) { // check inner boundaries
+  if (is_shear[0] == true) { // check inner boundaries
     for (int n=0; n<4; n++) {
       if (shbox_inner_fc_flx_flag_[n] == BoundaryStatus::completed) continue;
       if (shbox_inner_fc_flx_flag_[n] == BoundaryStatus::waiting) {
@@ -314,7 +314,7 @@ bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
     }
   } // inner boundary
 
-  if (shbb_.outer == true) { // check outer boundaries
+  if (is_shear[1] == true) { // check outer boundaries
     int offset = 4;
     for (int n=0; n<4; n++) {
       if (shbox_outer_fc_flx_flag_[n] == BoundaryStatus::completed) continue;
@@ -358,7 +358,7 @@ void FaceCenteredBoundaryVariable::RemapEMFShearingBoxBoundary() {
   int is = pmb->is, ie = pmb->ie;
   Real eps = pbval_->eps_;
 
-  if (shbb_.inner == true) {
+  if (is_shear[0] == true) {
     ClearEMFShearing(shboxvar_inner_fc_flx_);
     // step 1.-- conservative remapping
     for (int k=ks; k<=ke+1; k++) {
@@ -376,7 +376,7 @@ void FaceCenteredBoundaryVariable::RemapEMFShearingBoxBoundary() {
     ClearEMFShearing(shboxmap_inner_fc_flx_);
   }
 
-  if (shbb_.outer == true) {
+  if (is_shear[1] == true) {
     ClearEMFShearing(shboxvar_outer_fc_flx_);
     // step 1.-- conservative remapping
     for (int k=ks; k<=ke+1; k++) { // e2
