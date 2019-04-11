@@ -822,6 +822,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_neighbor_[upper][n].lid  = -1;
         shear_recv_neighbor_[upper][n].rank  = -1;
 
+        shear_send_count_[upper][n] = 0;
+        shear_recv_count_[upper][n] = 0;
+
         shear_send_count_cc_[upper][n] = 0;
         shear_recv_count_cc_[upper][n] = 0;
         shear_bd_cc_[upper].flag[n] = BoundaryStatus::completed;
@@ -854,6 +857,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
       int nx_attach = std::min(je - js - joverlap_ + 1 + NGHOST, je -js + 1);
       // KGF: ssize_=NGHOST*ncells3 is unset if ShBoxCoord==2. Is this fine?
       // KGF: scale these sizes/counts by NHYDRO or nu_ in cc/
+      shear_send_count_[upper][1] = nx_attach*ssize_;
+
       shear_send_count_cc_[upper][1] = nx_attach*ssize_;
 
       // recv [js+joverlap:je] of the current MeshBlock to the shearing neighbor
@@ -863,6 +868,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_recv_neighbor_[upper][1].gid  = shbb_[upper][jtmp].gid;
       shear_recv_neighbor_[upper][1].rank = shbb_[upper][jtmp].rank;
       shear_recv_neighbor_[upper][1].lid  = shbb_[upper][jtmp].lid;
+
+      shear_recv_count_[upper][1] = nx_attach*ssize_;
 
       shear_recv_count_cc_[upper][1] = nx_attach*ssize_;
       shear_bd_cc_[upper].flag[1] = BoundaryStatus::waiting;
@@ -888,6 +895,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_send_neighbor_[upper][0].lid  = shbb_[upper][jtmp].lid;
 
         int nx_exchange = std::min(joverlap_+NGHOST, je -js + 1);
+        shear_send_count_[upper][0] = nx_exchange*ssize_;
+
         shear_send_count_cc_[upper][0] = nx_exchange*ssize_;
 
         // receive from its left
@@ -896,6 +905,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_neighbor_[upper][0].gid  = shbb_[upper][jtmp].gid;
         shear_recv_neighbor_[upper][0].rank = shbb_[upper][jtmp].rank;
         shear_recv_neighbor_[upper][0].lid  = shbb_[upper][jtmp].lid;
+
+        shear_recv_count_[upper][0] = nx_exchange*ssize_;
 
         shear_recv_count_cc_[upper][0] = nx_exchange*ssize_;
         shear_bd_cc_[upper].flag[0] = BoundaryStatus::waiting;  // switch on if overlap
@@ -919,6 +930,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
           shear_send_neighbor_[upper][2].lid  = shbb_[upper][jtmp].lid;
 
           int nx_exchange_left = joverlap_ - (nx2 - NGHOST);
+          shear_send_count_[upper][2] = nx_exchange_left*ssize_;
+
           shear_send_count_cc_[upper][2] = nx_exchange_left*ssize_;
 
           // recv from Left
@@ -927,6 +940,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
           shear_recv_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
           shear_recv_neighbor_[upper][2].rank = shbb_[upper][jtmp].rank;
           shear_recv_neighbor_[upper][2].lid  = shbb_[upper][jtmp].lid;
+
+          shear_recv_count_[upper][2] = nx_exchange_left*ssize_;
 
           shear_recv_count_cc_[upper][2] = nx_exchange_left*ssize_;
           shear_bd_cc_[upper].flag[2] = BoundaryStatus::waiting;
@@ -951,6 +966,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
           shear_send_neighbor_[upper][3].lid  = shbb_[upper][jtmp].lid;
 
           int nx_exchange_right = NGHOST - joverlap_;
+          shear_send_count_[upper][3] = nx_exchange_right*ssize_;
+
           shear_send_count_cc_[upper][3] = nx_exchange_right*ssize_;
 
           jtmp = jblock - (Ngrids - 1);
@@ -959,6 +976,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
           shear_recv_neighbor_[upper][3].gid  = shbb_[upper][jtmp].gid;
           shear_recv_neighbor_[upper][3].rank = shbb_[upper][jtmp].rank;
           shear_recv_neighbor_[upper][3].lid  = shbb_[upper][jtmp].lid;
+
+          shear_recv_count_[upper][3] = nx_exchange_right*ssize_;
 
           shear_recv_count_cc_[upper][3] = nx_exchange_right*ssize_;
           shear_bd_cc_[upper].flag[3] = BoundaryStatus::waiting;
@@ -982,6 +1001,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_send_neighbor_[upper][2].lid  = shbb_[upper][jtmp].lid;
 
         int nx_exchange = NGHOST;
+        shear_send_count_[upper][2] = nx_exchange*ssize_;
+
         shear_send_count_cc_[upper][2] = nx_exchange*ssize_;
 
         // recv [js-NGHOST:js-1] from Left
@@ -990,6 +1011,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
         shear_recv_neighbor_[upper][2].rank = shbb_[upper][jtmp].rank;
         shear_recv_neighbor_[upper][2].lid  = shbb_[upper][jtmp].lid;
+
+        shear_recv_count_[upper][2] = nx_exchange*ssize_;
 
         shear_recv_count_cc_[upper][2] = nx_exchange*ssize_;
         shear_bd_cc_[upper].flag[2] = BoundaryStatus::waiting;
@@ -1012,6 +1035,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_send_neighbor_[upper][3].rank = shbb_[upper][jtmp].rank;
         shear_send_neighbor_[upper][3].lid  = shbb_[upper][jtmp].lid;
 
+        shear_send_count_[upper][3] = nx_exchange*ssize_;
+
         shear_send_count_cc_[upper][3] = nx_exchange*ssize_;
 
         // recv [je + 1:je+(NGHOST-1)] from Right
@@ -1021,6 +1046,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
         shear_recv_neighbor_[upper][3].gid  = shbb_[upper][jtmp].gid;
         shear_recv_neighbor_[upper][3].rank = shbb_[upper][jtmp].rank;
         shear_recv_neighbor_[upper][3].lid  = shbb_[upper][jtmp].lid;
+
+        shear_recv_count_[upper][3] = nx_exchange*ssize_;
 
         shear_recv_count_cc_[upper][3] = nx_exchange*ssize_;
         shear_bd_cc_[upper].flag[3] = BoundaryStatus::waiting;
