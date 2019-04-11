@@ -318,8 +318,11 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   void DestroyBoundaryData(BoundaryData<> &bd);
 
   ShearingBoundaryData shear_bd_var_[2], shear_bd_emf_[2];
+  // TODO(felker): combine 4x Copy*SameProcess() functions
   void CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int ssize, int bufid,
                                   bool upper);
+  void CopyShearEMFSameProcess(SimpleNeighborBlock& snb, int ssize, int bufid,
+                               bool upper);
   // private:
 };
 

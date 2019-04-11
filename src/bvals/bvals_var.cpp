@@ -156,6 +156,21 @@ void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int 
   return;
 }
 
+void BoundaryVariable::CopyShearEMFSameProcess(SimpleNeighborBlock& snb, int ssize,
+                                               int bufid, bool upper) {
+  // Locate target buffer
+  // 1) which MeshBlock?
+  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(snb.gid);
+  // 2) which element in vector of BoundaryVariable *?
+  ShearingBoundaryData *ptarget_bdata =
+      &(ptarget_block->pbval->bvars[bvar_index]->shear_bd_emf_[upper]);
+  std::memcpy(ptarget_bdata->recv[bufid], shear_bd_emf_[upper].send[bufid],
+              ssize*sizeof(Real));
+  // finally, set the BoundaryStatus flag on the destination buffer
+  ptarget_bdata->flag[bufid] = BoundaryStatus::arrived;
+  return;
+}
+
 // Default / shared implementations of 4x BoundaryBuffer public functions
 
 //----------------------------------------------------------------------------------------
