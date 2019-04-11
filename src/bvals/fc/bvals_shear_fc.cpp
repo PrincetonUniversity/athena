@@ -131,7 +131,7 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   Real eps = pbval_->eps_;
   Real qomL = pbval_->qomL_;
 
-  if (is_shear[0] == true) {
+  if (is_shear[0]) {
     int ib = is - NGHOST;
     int ii;
     // step 1. -- load shboxvar_fc_
@@ -211,7 +211,7 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     }
   } // inner boundaries
 
-  if (is_shear[1] == true) {
+  if (is_shear[1]) {
     int  ib = ie + 1;
     qomL = -qomL;
     int ii;
@@ -387,7 +387,7 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
 bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   bool flagi = true, flago = true;
 
-  if (is_shear[0] == true) { // check inner boundaries
+  if (is_shear[0]) { // check inner boundaries
     for (int n=0; n<4; n++) {
       if (shbox_inner_fc_flag_[n] == BoundaryStatus::completed) continue;
       if (shbox_inner_fc_flag_[n] == BoundaryStatus::waiting) {
@@ -414,7 +414,7 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
     } // loop over recv[0] to recv[3]
   } // inner boundary
 
-  if (is_shear[1] == true) { // check outer boundaries
+  if (is_shear[1]) { // check outer boundaries
     int offset = 4;
     for (int n=0; n<4; n++) {
       if (shbox_outer_fc_flag_[n] == BoundaryStatus::completed) continue;

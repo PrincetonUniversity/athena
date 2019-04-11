@@ -538,7 +538,7 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
   // KGF: begin shearing box exclusive section of ClearBoundaryAll
   // clear shearing box boundary communications
   if (SHEARING_BOX) {
-    if (is_shear[0] == true) {
+    if (is_shear[0]) {
       for (int n=0; n<4; n++) {
         if (send_inner_rank_[n] == -1) continue;
         shbox_inner_cc_flag_[n] = BoundaryStatus::waiting;
@@ -558,7 +558,7 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
       }
     } // inner boundary
 
-    if (is_shear[1] == true) {
+    if (is_shear[1]) {
       for (int n=0; n<4; n++) {
         if (send_outer_rank_[n] == -1) continue;
         shbox_outer_cc_flag_[n] = BoundaryStatus::waiting;
@@ -862,7 +862,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
   const int a1_fc_flx = (2*nx3 + 1);
   const int a0_fc_flx = nx3;    // only in a few cases
 
-  if (is_shear[0] == true) { // if inner block
+  if (is_shear[0]) { // if inner block
     for (int n=0; n<4; n++) {
       shear_send_inner_neighbor_[n].gid  = -1;
       shear_send_inner_neighbor_[n].lid  = -1;
@@ -1092,7 +1092,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
   // KGF: halfway point in this function
 
   // outer x1 shearing bc
-  if (is_shear[1] == true) { // if outer block
+  if (is_shear[1]) { // if outer block
     for (int n=0; n<4; n++) {
       shear_send_outer_neighbor_[n].gid  = -1;
       shear_send_outer_neighbor_[n].lid  = -1;

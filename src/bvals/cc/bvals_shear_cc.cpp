@@ -123,7 +123,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
 
   Real qomL = pbval_->qomL_;
 
-  if (is_shear[0] == true) {
+  if (is_shear[0]) {
     int ib = 0;
     int sign = +1;
     // step 1. -- add shear to the inner periodic boundary values
@@ -144,7 +144,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
     }
   }
 
-  if (is_shear[1] == true) {
+  if (is_shear[1]) {
     int ib = pmb->ie + 1;
     int sign = -1;
     // step 2. -- add shear to the outer periodic boundary values
@@ -191,7 +191,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   Real qomL = pbval_->qomL_;
   int ssize = NHYDRO;
 
-  if (is_shear[0] == true) {
+  if (is_shear[0]) {
     int ib = pmb->is - NGHOST;
     int ii;
     // step 1. -- load shboxvar_cc_
@@ -245,7 +245,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     }
   } // inner boundaries
 
-  if (is_shear[1] == true) {
+  if (is_shear[1]) {
     int  ib = pmb->ie + 1;
     qomL = -qomL;
     int ii;
@@ -387,7 +387,7 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
 bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   bool flagi = true, flago = true;
 
-  if (is_shear[0] == true) { // check inner boundaries
+  if (is_shear[0]) { // check inner boundaries
     for (int n=0; n<4; n++) {
       if (shbox_inner_cc_flag_[n] == BoundaryStatus::completed) continue;
       if (shbox_inner_cc_flag_[n] == BoundaryStatus::waiting) {
@@ -414,7 +414,7 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
     } // loop over recv[0] to recv[3]
   } // inner boundary
 
-  if (is_shear[1] == true) { // check outer boundaries
+  if (is_shear[1]) { // check outer boundaries
     int offset = 4;
     for (int n=0; n<4; n++) {
       if (shbox_outer_cc_flag_[n] == BoundaryStatus::completed) continue;
