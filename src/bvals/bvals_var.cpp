@@ -139,18 +139,17 @@ void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, in
   return;
 }
 
-
-// kgf: replace shear_bd_cc_ with generic shear_bd_var
 // no nb.targetid, nb.bufid in SimpleNeighborBlock.
 // fixed "int bufid" is used for both IDs. Seems unnecessarily strict.
 void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int ssize,
-                                                  int bufid) {
+                                                  int bufid, bool upper) {
   // Locate target buffer
   // 1) which MeshBlock?
   MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(snb.gid);
   // 2) which element in vector of BoundaryVariable *?
-  ShearingBoundaryData *ptarget_bdata = &(ptarget_block->pbval->bvars[bvar_index]->shear_bd_cc_);
-  std::memcpy(ptarget_bdata->recv[bufid], shear_bd_cc_.send[bufid],
+  ShearingBoundaryData *ptarget_bdata =
+      &(ptarget_block->pbval->bvars[bvar_index]->shear_bd_var_[upper]);
+  std::memcpy(ptarget_bdata->recv[bufid], shear_bd_var_[upper].send[bufid],
               ssize*sizeof(Real));
   // finally, set the BoundaryStatus flag on the destination buffer
   ptarget_bdata->flag[bufid] = BoundaryStatus::arrived;

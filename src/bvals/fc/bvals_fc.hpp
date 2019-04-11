@@ -159,7 +159,6 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void CopyPolarBufferSameProcess(const SimpleNeighborBlock& nb, int ssize,
                                   int polar_block_index, bool is_north);
   // Shearing box Field
-  ShearingBoundaryData shear_bd_fc_[2];
   FaceField shear_fc_[2];
   FaceField shear_flx_fc_[2];
   int shear_send_count_fc_[2][4], shear_recv_count_fc_[2][4];
@@ -175,8 +174,6 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
                  AthenaArray<Real> &flux);
 
   // Shearing box EMF correction
-  ShearingBoundaryData shear_bd_emf_[2];
-
   EdgeField shear_var_emf_[2];
   EdgeField shear_map_emf_[2];
   EdgeField shear_flx_emf_[2];

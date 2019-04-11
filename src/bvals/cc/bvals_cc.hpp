@@ -118,7 +118,6 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 #endif
 
   // Shearing box
-  ShearingBoundaryData shear_bd_cc_[2];
   // working arrays of remapped quantities
   AthenaArray<Real>  shear_cc_[2];
   // flux from conservative remapping

@@ -314,10 +314,12 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   void CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize);
   void CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize);
 
-  void CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int ssize, int bufid);
-
   void InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type);
   void DestroyBoundaryData(BoundaryData<> &bd);
+
+  ShearingBoundaryData shear_bd_var_[2], shear_bd_emf_[2];
+  void CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int ssize, int bufid,
+                                  bool upper);
   // private:
 };
 
