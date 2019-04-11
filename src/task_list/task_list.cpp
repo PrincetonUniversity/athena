@@ -39,11 +39,9 @@ TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
     if ((taski.task_id & ts.finished_tasks) == 0ULL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
-        if (taski.lb_time)
-          pmb->StartTimeMeasurement();
+        if (taski.lb_time) pmb->StartTimeMeasurement();
         ret=(this->*task_list_[i].TaskFunc)(pmb, stage);
-        if (taski.lb_time)
-          pmb->StartTimeMeasurement();
+        if (taski.lb_time) pmb->StopTimeMeasurement();
         if (ret!=TaskStatus::fail) { // success
           ts.num_tasks_left--;
           ts.finished_tasks |= taski.task_id;

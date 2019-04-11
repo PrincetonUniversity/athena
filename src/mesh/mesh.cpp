@@ -524,6 +524,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   }
   pblock = pfirst;
 
+  if (lb_automatic_) ResetLoadBalanceVariables();
+
   if (SELF_GRAVITY_ENABLED == 1)
     pfgrd = new FFTGravityDriver(this, pin);
   else if (SELF_GRAVITY_ENABLED == 2)
@@ -877,6 +879,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
         << std::endl;
     ATHENA_ERROR(msg);
   }
+
+  if (lb_automatic_) ResetLoadBalanceVariables();
 
   // clean up
   delete [] offset;

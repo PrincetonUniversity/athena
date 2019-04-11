@@ -290,10 +290,13 @@ class Mesh {
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
   void CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist, int nb);
+  void ResetLoadBalanceVariables();
+
   void CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb);
   void ReserveMeshBlockPhysIDs();
 
   // Mesh::LoadBalancingAndAdaptiveMeshRefinement() helper functions:
+  void UpdateCostList();
   void UpdateMeshBlockTree(int &nnew, int &ndel);
   bool GatherCostListAndCheckBalance();
   void RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot);
