@@ -19,6 +19,8 @@
 #include "../athena_arrays.hpp"
 #include "../globals.hpp"
 #include "../utils/buffer_utils.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
@@ -47,9 +49,11 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
   if (nnew!=0 || ndel!=0) { // at least one (de)refinement happened
     GatherCostListAndCheckBalance();
     RedistributeAndRefineMeshBlocks(pin, nbtotal + nnew - ndel);
-  } else if (lb_flag_ == true && step_since_lb >= lb_interval_) { // cost updated
+  } else if (lb_flag_ == true && step_since_lb >= lb_interval_) {
+#ifdef MPI_PARALLEL
     if (GatherCostListAndCheckBalance()==false) // load inbalance detected
       RedistributeAndRefineMeshBlocks(pin, nbtotal);
+#endif
   }
 
   return;
@@ -314,19 +318,19 @@ bool Mesh::GatherCostListAndCheckBalance() {
   MeshBlock *pmb=pblock;
 
 #ifdef MPI_PARALLEL
-  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_ATHENA_REAL,
-                 costlist, nblist, nslist, MPI_ATHENA_REAL, MPI_COMM_WORLD);
+  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_DOUBLE, costlist, nblist,
+                 nslist, MPI_DOUBLE, MPI_COMM_WORLD);
 #endif
 
   double maxcost=0.0, avecost=0.0;
   for (int rank=0; rank<Globals::nranks; rank++) {
-    double mycost = 0.0;
-    int ns = nslist[Globals::my_rank];
-    int ne = ns + nblist[Globals::my_rank];
+    double rcost = 0.0;
+    int ns = nslist[rank];
+    int ne = ns + nblist[rank];
     for (int n=ns; n<ne; ++n)
-      mycost += costlist[n];
-    maxcost = std::max(maxcost,mycost);
-    avecost += mycost;
+      rcost += costlist[n];
+    maxcost = std::max(maxcost,rcost);
+    avecost += rcost;
   }
   avecost/=Globals::nranks;
 
@@ -695,17 +699,19 @@ void Mesh::PrepareSendSameLevelAMR(MeshBlock* pb, Real *sendbuf) {
   }
   for (auto fc_pair : pb->pmr->pvars_fc_) {
     FaceField *var_fc = std::get<0>(fc_pair);
-    BufferUtility::PackData((*var_fc).x1f, sendbuf,
+    BufferUtility::PackData(var_fc->x1f, sendbuf,
                             pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-    BufferUtility::PackData((*var_fc).x2f, sendbuf,
+    BufferUtility::PackData(var_fc->x2f, sendbuf,
                             pb->is, pb->ie, pb->js, pb->je+f2_, pb->ks, pb->ke, p);
-    BufferUtility::PackData((*var_fc).x3f, sendbuf,
+    BufferUtility::PackData(var_fc->x3f, sendbuf,
                             pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3_, p);
   }
   // WARNING(felker): casting from "Real *" to "int *" in order to append single integer
   // to send buffer is slightly unsafe (especially if sizeof(int) > sizeof(Real))
-  int *dcp = reinterpret_cast<int *>(&(sendbuf[p]));
-  *dcp = pb->pmr->deref_count_;
+  if (adaptive) {
+    int *dcp = reinterpret_cast<int *>(&(sendbuf[p]));
+    *dcp = pb->pmr->deref_count_;
+  }
   return;
 }
 
@@ -995,8 +1001,10 @@ void Mesh::FinishRecvSameLevelAMR(MeshBlock *pb, Real *recvbuf) {
   }
   // WARNING(felker): casting from "Real *" to "int *" in order to read single
   // appended integer from received buffer is slightly unsafe
-  int *dcp = reinterpret_cast<int *>(&(recvbuf[p]));
-  pb->pmr->deref_count_ = *dcp;
+  if (adaptive) {
+    int *dcp = reinterpret_cast<int *>(&(recvbuf[p]));
+    pb->pmr->deref_count_ = *dcp;
+  }
   return;
 }
 
