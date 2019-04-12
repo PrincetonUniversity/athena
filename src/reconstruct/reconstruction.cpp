@@ -441,14 +441,3 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
     }
   }
 }
-
-// destructor
-
-Reconstruction::~Reconstruction() {
-
-
-
-
-
-
-}
