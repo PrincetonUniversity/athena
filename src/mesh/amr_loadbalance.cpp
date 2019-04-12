@@ -17,10 +17,10 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../globals.hpp"
-#include "../utils/buffer_utils.hpp"
 #include "../field/field.hpp"
+#include "../globals.hpp"
 #include "../hydro/hydro.hpp"
+#include "../utils/buffer_utils.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
@@ -36,7 +36,7 @@
 // \brief Main function for adaptive mesh refinement
 
 void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
-  int nnew=0, ndel=0;
+  int nnew = 0, ndel = 0;
 
   UpdateCostList();
 
@@ -46,13 +46,14 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
   }
 
   lb_flag_ |= lb_automatic_;
-  if (nnew!=0 || ndel!=0) { // at least one (de)refinement happened
+  if (nnew != 0 || ndel != 0) { // at least one (de)refinement happened
     GatherCostListAndCheckBalance();
     RedistributeAndRefineMeshBlocks(pin, nbtotal + nnew - ndel);
   } else if (lb_flag_ == true && step_since_lb >= lb_interval_) {
 #ifdef MPI_PARALLEL
-    if (GatherCostListAndCheckBalance()==false) // load inbalance detected
+    if (GatherCostListAndCheckBalance() == false) // load inbalance detected
       RedistributeAndRefineMeshBlocks(pin, nbtotal);
+    lb_flag_ = false;
 #endif
   }
 
@@ -65,7 +66,8 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
 //                                      int *nlist, int nb)
 // \brief Calculate distribution of MeshBlocks based on the cost list
 
-void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist, int nb) {
+void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist,
+                                int nb) {
   std::stringstream msg;
   double real_max  =  std::numeric_limits<double>::max();
   double totalcost = 0, maxcost = 0.0, mincost = (real_max);
@@ -147,8 +149,8 @@ void Mesh::ResetLoadBalanceVariables() {
       pmb = pmb->next;
     }
   }
-  lb_flag_=false;
-  step_since_lb=0;
+  lb_flag_ = false;
+  step_since_lb = 0;
 }
 
 //----------------------------------------------------------------------------------------
@@ -156,13 +158,13 @@ void Mesh::ResetLoadBalanceVariables() {
 // \brief update the cost list
 
 void Mesh::UpdateCostList() {
-  MeshBlock *pmb=pblock;
-  double w=0.0;
+  MeshBlock *pmb = pblock;
+  double w = 0.0;
   if (lb_automatic_)
-    w=static_cast<double>(lb_interval_-1)/static_cast<double>(lb_interval_);
-  while (pmb!=nullptr) {
-    costlist[pmb->gid]=costlist[pmb->gid]*w+pmb->cost_;
-    pmb=pmb->next;
+    w = static_cast<double>(lb_interval_-1)/static_cast<double>(lb_interval_);
+  while (pmb != nullptr) {
+    costlist[pmb->gid] = costlist[pmb->gid]*w+pmb->cost_;
+    pmb = pmb->next;
   }
 }
 
@@ -322,21 +324,27 @@ bool Mesh::GatherCostListAndCheckBalance() {
                  nslist, MPI_DOUBLE, MPI_COMM_WORLD);
 #endif
 
-  double maxcost=0.0, avecost=0.0;
-  for (int rank=0; rank<Globals::nranks; rank++) {
-    double rcost = 0.0;
-    int ns = nslist[rank];
-    int ne = ns + nblist[rank];
-    for (int n=ns; n<ne; ++n)
-      rcost += costlist[n];
-    maxcost = std::max(maxcost,rcost);
-    avecost += rcost;
-  }
-  avecost/=Globals::nranks;
+  if (lb_flag_ == true) {
+    double maxcost=0.0, avecost=0.0;
+    for (int rank=0; rank<Globals::nranks; rank++) {
+      double rcost = 0.0;
+      int ns = nslist[rank];
+      int ne = ns + nblist[rank];
+      for (int n=ns; n<ne; ++n)
+        rcost += costlist[n];
+      maxcost = std::max(maxcost,rcost);
+      avecost += rcost;
+    }
+    avecost/=Globals::nranks;
 
-  if (maxcost < (1.0+lb_tolerance_)*avecost)
-    return true;
-  return false;
+    if (adaptive) lb_tolerance_ = 2.0*static_cast<double>(Globals::nranks)
+                                     /static_cast<double>(nbtotal);
+
+    if (maxcost > (1.0+lb_tolerance_)*avecost)
+      return false;
+  }
+
+  return true;
 }
 
 

@@ -270,7 +270,7 @@ class Mesh {
 
   // variables for load balancing control
   bool lb_flag_, lb_automatic_;
-  Real lb_tolerance_;
+  double lb_tolerance_;
   int lb_interval_;
 
   // functions

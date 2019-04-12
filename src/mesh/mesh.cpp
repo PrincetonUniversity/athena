@@ -11,6 +11,7 @@
 // #define __STDC_FORMAT_MACROS
 
 // C++ headers
+#include <algorithm>
 #include <cinttypes>  // format macro "PRId64" for fixed-width integer type std::int64_t
 #include <cmath>      // std::abs(), std::pow()
 #include <cstdint>    // std::int64_t fixed-wdith integer type alias

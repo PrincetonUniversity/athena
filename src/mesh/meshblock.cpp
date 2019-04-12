@@ -441,7 +441,7 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::SetCostForLoadBalancing(double cost)
-//  \brief stop time measurement and accumulate it in the MeshBlock cost 
+//  \brief stop time measurement and accumulate it in the MeshBlock cost
 
 void MeshBlock::SetCostForLoadBalancing(double cost) {
   cost_ = std::min(cost, TINY_NUMBER);
@@ -472,7 +472,7 @@ void MeshBlock::StartTimeMeasurement() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::StartTimeMeasurement()
-//  \brief stop time measurement and accumulate it in the MeshBlock cost 
+//  \brief stop time measurement and accumulate it in the MeshBlock cost
 
 void MeshBlock::StopTimeMeasurement() {
   if (pmy_mesh->lb_automatic_) {
