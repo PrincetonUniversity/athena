@@ -80,16 +80,6 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
   }
 }
 
-// destructor
-
-FieldDiffusion::~FieldDiffusion() {
-  if ((eta_ohm != 0.0) || (eta_hall != 0.0) || (eta_ad != 0.0)) {
-
-
-
-
-  }
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::CalcFieldDiffusionEMF

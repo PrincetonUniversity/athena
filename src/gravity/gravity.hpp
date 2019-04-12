@@ -29,7 +29,6 @@ class GravityBoundaryValues;
 class Gravity {
  public:
   Gravity(MeshBlock *pmb, ParameterInput *pin);
-  ~Gravity();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
 

@@ -87,11 +87,6 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
 // destructor
 
 Field::~Field() {
-  // b2 only allocated if integrator was 3S* integrator or STS_ENABLED
-
-
-  if (GENERAL_RELATIVITY) {
-  }
   delete pfdif;
 }
 
