@@ -200,14 +200,6 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 }
 
-// destructor
-
-Cylindrical::~Cylindrical() {
-  if ((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
-  }
-  if (coarse_flag==false) {
-  }
-}
 
 //----------------------------------------------------------------------------------------
 // EdgeXLength functions: compute physical length at cell edge-X as vector

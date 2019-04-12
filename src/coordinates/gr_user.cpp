@@ -435,21 +435,8 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
       }
     }
   }
-
-  // Free scratch arrays
-  if (!coarse_flag) {
-  }
 }
 
-//----------------------------------------------------------------------------------------
-// Destructor
-
-GRUser::~GRUser() {
-  if (pmy_block->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
-  }
-  if (!coarse_flag) {
-  }
-}
 
 //----------------------------------------------------------------------------------------
 // EdgeXLength functions: compute physical length at cell edge-X as vector

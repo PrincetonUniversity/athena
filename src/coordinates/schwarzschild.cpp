@@ -318,15 +318,6 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 }
 
-//----------------------------------------------------------------------------------------
-// Destructor
-
-Schwarzschild::~Schwarzschild() {
-  if (pmy_block->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
-  }
-  if (coarse_flag == false) {
-  }
-}
 
 //----------------------------------------------------------------------------------------
 // EdgeXLength functions: compute physical length at cell edge-X as vector

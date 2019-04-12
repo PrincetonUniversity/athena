@@ -285,7 +285,6 @@ class Cartesian : public Coordinates {
 
  public:
   Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~Cartesian();
 };
 
 //----------------------------------------------------------------------------------------
@@ -298,7 +297,6 @@ class Cylindrical : public Coordinates {
 
  public:
   Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~Cylindrical();
 
   // functions...
   // ...to compute length of edges
@@ -345,7 +343,6 @@ class SphericalPolar : public Coordinates {
 
  public:
   SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~SphericalPolar();
 
   // functions...
   // ...to compute length of edges
@@ -405,7 +402,6 @@ class Minkowski : public Coordinates {
 
  public:
   Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~Minkowski();
 
   // In GR, functions...
   // ...to compute metric
@@ -460,7 +456,6 @@ class Schwarzschild : public Coordinates {
 
  public:
   Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~Schwarzschild();
 
   // functions...
   // ...to compute length of edges
@@ -556,7 +551,6 @@ class KerrSchild : public Coordinates {
 
  public:
   KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~KerrSchild();
 
   // functions...
   // ...to compute length of edges
@@ -652,7 +646,6 @@ class GRUser : public Coordinates {
 
  public:
   GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~GRUser();
 
   // functions...
   // ...to compute length of edges

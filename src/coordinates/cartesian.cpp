@@ -171,10 +171,3 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
   }
 }
-
-// destructor
-
-Cartesian::~Cartesian() {
-  if ((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
-  }
-}

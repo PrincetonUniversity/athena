@@ -135,13 +135,6 @@ Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 }
 
-//----------------------------------------------------------------------------------------
-// Destructor
-
-Minkowski::~Minkowski() {
-  if (pmy_block->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
-  }
-}
 
 //----------------------------------------------------------------------------------------
 // Function for computing cell-centered metric coefficients
