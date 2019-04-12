@@ -487,13 +487,13 @@ void MeshBlock::StopTimeMeasurement() {
 
 
 void MeshBlock::RegisterMeshBlockData(AthenaArray<Real> &pvar_cc) {
-  pvars_cc_.push_back(pvar_cc);
+  vars_cc_.push_back(pvar_cc);
   return;
 }
 
 
 void MeshBlock::RegisterMeshBlockData(FaceField &pvar_fc) {
-  pvars_fc_.push_back(pvar_fc);
+  vars_fc_.push_back(pvar_fc);
   return;
 }
 

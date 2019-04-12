@@ -140,8 +140,8 @@ class MeshBlock {
   // shared by main integrator + FFT gravity task lists. Multigrid has separate TaskStates
   TaskStates tasks;
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
-  std::vector<AthenaArray<Real> &> pvars_cc_;
-  std::vector<FaceField &> pvars_fc_;
+  std::vector<AthenaArray<Real> &> vars_cc_;
+  std::vector<FaceField &> vars_fc_;
 
   // functions
   void AllocateRealUserMeshBlockDataField(int n);
@@ -311,7 +311,7 @@ class Mesh {
 
   // Mesh::RedistributeAndRefineMeshBlocks() helper functions:
   // step 6: send
-  void PrepareSendSameLevelAMR(MeshBlock* pb, Real *sendbuf);
+  void PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf);
   void PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf, LogicalLocation &lloc);
   void PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf);
   // step 7: create new MeshBlock list (same MPI rank but diff level: create new block)
