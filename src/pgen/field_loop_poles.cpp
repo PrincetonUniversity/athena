@@ -263,7 +263,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-
   }
 
   //  Initialize density
