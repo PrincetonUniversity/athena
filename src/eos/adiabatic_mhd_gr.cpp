@@ -71,11 +71,6 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   normal_tt_.NewAthenaArray(ncells1);
 }
 
-//----------------------------------------------------------------------------------------
-// Destructor
-
-EquationOfState::~EquationOfState() {
-}
 
 //----------------------------------------------------------------------------------------
 // Variable inverter
