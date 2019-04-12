@@ -123,6 +123,12 @@ class MeshBlock {
   void WeightedAve(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
                    const Real wght[3]);
 
+  // inform MeshBlock which arrays contained in member Hydro, Field, Particles,
+  // ... etc. classes are the "primary" representations of a quantity. when registered,
+  // that data are used for (1) load balancing (2) (future) dumping to restart file
+  void RegisterMeshBlockData(AthenaArray<Real> &pvar_cc);
+  void RegisterMeshBlockData(FaceField &pvar_fc);
+
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void UserWorkBeforeOutput(ParameterInput *pin); // called in Mesh fn (friend class)
   void UserWorkInLoop();                          // called in TimeIntegratorTaskList
@@ -134,6 +140,8 @@ class MeshBlock {
   // shared by main integrator + FFT gravity task lists. Multigrid has separate TaskStates
   TaskStates tasks;
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
+  std::vector<AthenaArray<Real> &> pvars_cc_;
+  std::vector<FaceField &> pvars_fc_;
 
   // functions
   void AllocateRealUserMeshBlockDataField(int n);

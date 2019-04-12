@@ -485,3 +485,40 @@ void MeshBlock::StopTimeMeasurement() {
   }
 }
 
+
+void MeshBlock::RegisterMeshBlockData(AthenaArray<Real> &pvar_cc) {
+  pvars_cc_.push_back(pvar_cc);
+  return;
+}
+
+
+void MeshBlock::RegisterMeshBlockData(FaceField &pvar_fc) {
+  pvars_fc_.push_back(pvar_fc);
+  return;
+}
+
+
+// TODO(felker): consider merging the MeshRefinement::pvars_cc/fc_ into the
+// MeshBlock::pvars_cc/fc_. Would need to weaken the MeshBlock std::vector to use tuples
+// of pointers instead of a std::vector of references, so that:
+// - nullptr can be passed for the second entry if multilevel==false
+// - we can rebind the pointers to Hydro for GR purposes in bvals_refine.cpp
+// If GR, etc. in the future requires additional flexiblity from non-refinement load
+// balancing, we will need to use ptrs instead of references anyways, and add:
+
+// void MeshBlock::SetHydroData(HydroBoundaryQuantity hydro_type)
+//   Hydro *ph = pmy_block_->phydro;
+//   // hard-coded assumption that, if multilevel==true, then Hydro is always present
+//   // and enrolled in mesh refinement in the first pvars_cc_ vector entry
+//   switch (hydro_type) {
+//     case (HydroBoundaryQuantity::cons): {
+//       pvars_cc_.front() = &ph->u;
+//       break;
+//     }
+//     case (HydroBoundaryQuantity::prim): {
+//       pvars_cc_.front() = &ph->w;
+//       break;
+//     }
+//   }
+//   return;
+// }
