@@ -56,7 +56,6 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
     lb_flag_ = false;
 #endif
   }
-
   return;
 }
 
@@ -108,7 +107,7 @@ void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlis
   }
   nlist[j] = nb-slist[j];
 
-  if (Globals::my_rank==0) {
+  if (Globals::my_rank == 0) {
     for (int i=0; i<Globals::nranks; i++) {
       double rcost = 0.0;
       for(int n=slist[i]; n<slist[i]+nlist[i]; n++)
@@ -131,7 +130,6 @@ void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlis
         << "Decrease the number of threads or use more MeshBlocks." << std::endl;
     ATHENA_ERROR(msg);
   }
-
   return;
 }
 
@@ -317,15 +315,12 @@ void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
 // \brief collect the cost from MeshBlocks and check the load balance
 
 bool Mesh::GatherCostListAndCheckBalance() {
-  MeshBlock *pmb=pblock;
-
 #ifdef MPI_PARALLEL
   MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_DOUBLE, costlist, nblist,
                  nslist, MPI_DOUBLE, MPI_COMM_WORLD);
 #endif
-
   if (lb_flag_ == true) {
-    double maxcost=0.0, avecost=0.0;
+    double maxcost = 0.0, avecost = 0.0;
     for (int rank=0; rank<Globals::nranks; rank++) {
       double rcost = 0.0;
       int ns = nslist[rank];
@@ -335,12 +330,12 @@ bool Mesh::GatherCostListAndCheckBalance() {
       maxcost = std::max(maxcost,rcost);
       avecost += rcost;
     }
-    avecost/=Globals::nranks;
+    avecost /= Globals::nranks;
 
     if (adaptive) lb_tolerance_ = 2.0*static_cast<double>(Globals::nranks)
                                      /static_cast<double>(nbtotal);
 
-    if (maxcost > (1.0+lb_tolerance_)*avecost)
+    if (maxcost > (1.0 + lb_tolerance_)*avecost)
       return false;
   }
 
@@ -444,14 +439,17 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   // Step 4. calculate buffer sizes
   Real **sendbuf, **recvbuf;
   // use the first MeshBlock in the linked list of blocks belonging to this MPI rank as a
-  // representative of all MeshBlocks for counting the "SMR/AMR-enrolled" quantities
+  // representative of all MeshBlocks for counting the "load-balancing registered" and
+  // "SMR/AMR-enrolled" quantities (loop over MeshBlock::vars_cc_, not MeshRefinement)
+
+  // TODO(felker): add explicit check to ensure that elements of pb->vars_cc/fc_ and
+  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive==true
 
   // int num_cc = pblock->pmr->pvars_cc_.size();
-  int num_fc = pblock->pmr->pvars_fc_.size();
+  int num_fc = pblock->vars_fc_.size();
   int nx4_tot = 0;
-  for (auto cc_pair : pblock->pmr->pvars_cc_) {
-    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
-    nx4_tot += var_cc->GetDim4();
+  for (AthenaArray<Real> &var_cc : pblock->vars_cc_) {
+    nx4_tot += var_cc.GetDim4();
   }
 
   // cell-centered quantities enrolled in SMR/AMR
@@ -520,7 +518,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
       if (nloc.level == oloc.level) { // same level
         if (newrank[nn] == Globals::my_rank) continue;
         sendbuf[sb_idx] = new Real[bssame];
-        PrepareSendSameLevelAMR(pb, sendbuf[sb_idx]);
+        PrepareSendSameLevel(pb, sendbuf[sb_idx]);
         int tag = CreateAMRMPITag(nn-nslist[newrank[nn]], 0, 0, 0);
         MPI_Isend(sendbuf[sb_idx], bssame, MPI_ATHENA_REAL, newrank[nn],
                   tag, MPI_COMM_WORLD, &(req_send[sb_idx]));
@@ -693,25 +691,32 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   return;
 }
 
-// step 6, branch 1 (same2same: just pack+send)
+// AMR: step 6, branch 1 (same2same: just pack+send)
 
-void Mesh::PrepareSendSameLevelAMR(MeshBlock* pb, Real *sendbuf) {
+void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
   // pack
   int p = 0;
-  // (C++11) range-based for loop
-  for (auto cc_pair : pb->pmr->pvars_cc_) {
-    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
-    int nu = var_cc->GetDim4() - 1;
-    BufferUtility::PackData(*var_cc, sendbuf, 0, nu,
+
+  // this helper fn is used for AMR and non-refinement load balancing of
+  // MeshBlocks. Therefore, unlike PrepareSendCoarseToFineAMR(), etc., it loops over
+  // MeshBlock::vars_cc/fc_ containers, not MeshRefinement::pvars_cc/fc_ containers
+
+  // TODO(felker): add explicit check to ensure that elements of pb->vars_cc/fc_ and
+  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive==true
+
+  // (C++11) range-based for loop: (automatic type deduction fails when iterating over
+  // container with std::reference_wrapper; could use auto var_cc_r = var_cc.get())
+  for (AthenaArray<Real> &var_cc : pb->vars_cc_) {
+    int nu = var_cc.GetDim4() - 1;
+    BufferUtility::PackData(var_cc, sendbuf, 0, nu,
                             pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
   }
-  for (auto fc_pair : pb->pmr->pvars_fc_) {
-    FaceField *var_fc = std::get<0>(fc_pair);
-    BufferUtility::PackData(var_fc->x1f, sendbuf,
+  for (FaceField &var_fc : pb->vars_fc_) {
+    BufferUtility::PackData(var_fc.x1f, sendbuf,
                             pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-    BufferUtility::PackData(var_fc->x2f, sendbuf,
+    BufferUtility::PackData(var_fc.x2f, sendbuf,
                             pb->is, pb->ie, pb->js, pb->je+f2_, pb->ks, pb->ke, p);
-    BufferUtility::PackData(var_fc->x3f, sendbuf,
+    BufferUtility::PackData(var_fc.x3f, sendbuf,
                             pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3_, p);
   }
   // WARNING(felker): casting from "Real *" to "int *" in order to append single integer

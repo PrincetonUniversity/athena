@@ -88,6 +88,10 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
       cks = NGHOST, cke = cks + block_size.nx3/2 - 1;
   }
 
+  // (probably don't need to preallocate space for references in these vectors)
+  vars_cc_.reserve(3);
+  vars_fc_.reserve(3);
+
   // construct objects stored in MeshBlock class.  Note in particular that the initial
   // conditions for the simulation are set in problem generator called from main, not
   // in the Hydro constructor

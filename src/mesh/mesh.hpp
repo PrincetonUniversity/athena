@@ -13,7 +13,8 @@
 // C headers
 
 // C++ headers
-#include <cstdint>  // int64_t
+#include <cstdint>     // int64_t
+#include <functional>  // reference_wrapper
 #include <string>
 #include <vector>
 
@@ -140,8 +141,8 @@ class MeshBlock {
   // shared by main integrator + FFT gravity task lists. Multigrid has separate TaskStates
   TaskStates tasks;
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
-  std::vector<AthenaArray<Real> &> vars_cc_;
-  std::vector<FaceField &> vars_fc_;
+  std::vector<std::reference_wrapper<AthenaArray<Real>>> vars_cc_;
+  std::vector<std::reference_wrapper<FaceField>> vars_fc_;
 
   // functions
   void AllocateRealUserMeshBlockDataField(int n);
