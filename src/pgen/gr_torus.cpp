@@ -1219,13 +1219,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-
-    // Free vector potential arrays
-    if (field_config != MagneticFieldConfigs::vertical) {
-      if (psi == 0.0) {
-      } else {
-      }
-    }
   }
 
   // Impose density and pressure floors

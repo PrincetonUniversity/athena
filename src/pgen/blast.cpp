@@ -404,7 +404,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     std::fprintf(pfile,"%e  %e  %e  %e \n",rmax,rmin,rave,deform);
     std::fclose(pfile);
   }
-
   return;
 }
 

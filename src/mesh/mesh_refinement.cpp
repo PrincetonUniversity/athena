@@ -99,8 +99,6 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
 //  \brief destructor
 
 MeshRefinement::~MeshRefinement() {
-  if (MAGNETIC_FIELDS_ENABLED) {
-  }
   delete pcoarsec;
 }
 

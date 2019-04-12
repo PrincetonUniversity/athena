@@ -439,10 +439,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 // Outputs: (none)
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  // Free metric
-  if (GENERAL_RELATIVITY) {
-  }
-
   // Calculate L1 error against initial conditions
   if (compute_error) {
     // Prepare error calculation variables
@@ -546,10 +542,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
       // Close file
       std::fclose(pfile);
-    }
-
-    // Free initial conditions arrays
-    if (MAGNETIC_FIELDS_ENABLED) {
     }
   }
   return;

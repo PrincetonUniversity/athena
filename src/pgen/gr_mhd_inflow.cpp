@@ -93,17 +93,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 }
 
 //----------------------------------------------------------------------------------------
-// Function for cleaning up global mesh properties
-// Inputs:
-//   pin: parameters (unused)
-// Outputs: (none)
-
-void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  // Free interpolation table
-  return;
-}
-
-//----------------------------------------------------------------------------------------
 // Function for setting initial conditions
 // Inputs:
 //   pin: pointer to runtime inputs
