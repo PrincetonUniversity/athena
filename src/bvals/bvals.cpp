@@ -568,11 +568,6 @@ BoundaryValues::~BoundaryValues() {
 #endif
     }
   }
-  if (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
-      && (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
-          || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
-          || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
-          || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge))
 
   if (SHEARING_BOX && ShBoxCoord_ == 1) {
     int level = pmb->loc.level - pmb->pmy_mesh->root_level;
@@ -583,8 +578,6 @@ BoundaryValues::~BoundaryValues() {
       delete[] shbb_.irnklist;
       delete[] shbb_.ilevlist;
 
-      if (MAGNETIC_FIELDS_ENABLED) {
-      }
       for (int n=0; n<4; n++) {
         delete[] send_innerbuf_hydro_[n];
         delete[] recv_innerbuf_hydro_[n];
@@ -602,8 +595,6 @@ BoundaryValues::~BoundaryValues() {
       delete[] shbb_.ornklist;
       delete[] shbb_.olevlist;
 
-      if (MAGNETIC_FIELDS_ENABLED) {
-      }
       for (int n=0; n<4; n++) {
         delete[] send_outerbuf_hydro_[n];
         delete[] recv_outerbuf_hydro_[n];
