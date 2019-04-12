@@ -33,10 +33,10 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
   if (pmy_block->block_size.nx2 > 1) ncells2 = pmy_block->block_size.nx2 + 2*(NGHOST);
   if (pmy_block->block_size.nx3 > 1) ncells3 = pmy_block->block_size.nx3 + 2*(NGHOST);
 
-  // Allocate memory registers for primitive/conserved variables for time-integrator
   s.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
+  pmb->RegisterMeshBlockData(s);
 
-  // fourth-order hydro cell-centered approximations
+  // fourth-order cell-centered approximations
   s_cc.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
 
   s_flux[X1DIR].NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1+1);

@@ -37,6 +37,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
 
   // Allocate memory registers for primitive/conserved variables for time-integrator
   u.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
+  pmb->RegisterMeshBlockData(u);
   w.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
   u1.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
   w1.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);

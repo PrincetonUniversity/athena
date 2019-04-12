@@ -36,6 +36,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
   b.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
   b.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
   b.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+  pmb->RegisterMeshBlockData(b);
 
   b1.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
   b1.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
