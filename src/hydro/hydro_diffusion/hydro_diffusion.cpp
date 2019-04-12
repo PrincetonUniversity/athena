@@ -90,16 +90,6 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
   }
 }
 
-// destructor
-
-HydroDiffusion::~HydroDiffusion() {
-  if (nu_iso > 0.0 || nu_aniso > 0.0) {
-  }
-  if (kappa_iso  > 0.0 || kappa_aniso > 0.0) {
-  }
-  if (hydro_diffusion_defined) {
-  }
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::CalcHydroDiffusionFlux

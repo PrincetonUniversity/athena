@@ -123,26 +123,6 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
 // destructor
 
 Hydro::~Hydro() {
-  // only allocated if integrator was 3S* integrator or STS_ENABLED
-
-  // fourth-order hydro
-
-
-  if (pmy_block->block_size.nx2 > 1) {
-  }
-  if (pmy_block->block_size.nx3 > 1) {
-  }
-  if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) {  // only used in (SR/GR)MHD
-  }
-  if (GENERAL_RELATIVITY) {
-  }
-  // for one-time potential calcuation and correction (old Athena)
-  if (SELF_GRAVITY_ENABLED == 3) {
-  }
-
-  // fourth-order hydro
-  // 4D scratch arrays
-
   delete psrc;
   delete phdif;
 }
