@@ -51,7 +51,7 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
     RedistributeAndRefineMeshBlocks(pin, nbtotal + nnew - ndel);
   } else if (lb_flag_ == true && step_since_lb >= lb_interval_) {
 #ifdef MPI_PARALLEL
-    if (GatherCostListAndCheckBalance() == false) // load inbalance detected
+    if (GatherCostListAndCheckBalance() == false) // load imbalance detected
       RedistributeAndRefineMeshBlocks(pin, nbtotal);
     lb_flag_ = false;
 #endif
