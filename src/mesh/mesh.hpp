@@ -321,7 +321,7 @@ class Mesh {
   void FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
                                    LogicalLocation &newloc);
   // step 8: receive
-  void FinishRecvSameLevelAMR(MeshBlock *pb, Real *recvbuf);
+  void FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf);
   void FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf, LogicalLocation &lloc);
   void FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf);
 

@@ -38,12 +38,12 @@
 void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
   int nnew = 0, ndel = 0;
 
-  UpdateCostList();
-
   if (adaptive == true) {
     UpdateMeshBlockTree(nnew, ndel);
     nbnew += nnew; nbdel += ndel;
   }
+
+  UpdateCostList();
 
   lb_flag_ |= lb_automatic_;
   if (nnew != 0 || ndel != 0) { // at least one (de)refinement happened
@@ -632,7 +632,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
       if (oloc.level == nloc.level) { // same
         if (ranklist[on] == Globals::my_rank) continue;
         MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
-        FinishRecvSameLevelAMR(pb, recvbuf[rb_idx]);
+        FinishRecvSameLevel(pb, recvbuf[rb_idx]);
         rb_idx++;
       } else if (oloc.level > nloc.level) { // f2c
         for (int l=0; l<nleaf; l++) {
@@ -981,34 +981,28 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
 }
 
 // step 8 (receive and load), branch 1 (same2same: unpack)
-void Mesh::FinishRecvSameLevelAMR(MeshBlock *pb, Real *recvbuf) {
+void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
   int p = 0;
-  for (auto cc_pair : pb->pmr->pvars_cc_) {
-    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
-    int nu = var_cc->GetDim4() - 1;
-    BufferUtility::UnpackData(recvbuf, *var_cc, 0, nu,
+  for (AthenaArray<Real> &var_cc : pb->vars_cc_) {
+    int nu = var_cc.GetDim4() - 1;
+    BufferUtility::UnpackData(recvbuf, var_cc, 0, nu,
                               pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
   }
-  for (auto fc_pair : pb->pmr->pvars_fc_) {
-    FaceField *var_fc = std::get<0>(fc_pair);
-    FaceField &dst_b = *var_fc;
-    BufferUtility::UnpackData(
-        recvbuf, dst_b.x1f,
-        pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-    BufferUtility::UnpackData(
-        recvbuf, dst_b.x2f,
-        pb->is, pb->ie, pb->js, pb->je+f2_, pb->ks, pb->ke, p);
-    BufferUtility::UnpackData(
-        recvbuf, dst_b.x3f,
-        pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3_, p);
+  for (FaceField &var_fc : pb->vars_fc_) {
+    BufferUtility::UnpackData(recvbuf, var_fc.x1f,
+                              pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+    BufferUtility::UnpackData(recvbuf, var_fc.x2f,
+                              pb->is, pb->ie, pb->js, pb->je+f2_, pb->ks, pb->ke, p);
+    BufferUtility::UnpackData(recvbuf, var_fc.x3f,
+                              pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3_, p);
     if (pb->block_size.nx2 == 1) {
       for (int i=pb->is; i<=pb->ie; i++)
-        dst_b.x2f(pb->ks, pb->js+1, i) = dst_b.x2f(pb->ks, pb->js, i);
+        var_fc.x2f(pb->ks, pb->js+1, i) = var_fc.x2f(pb->ks, pb->js, i);
     }
     if (pb->block_size.nx3 == 1) {
       for (int j=pb->js; j<=pb->je; j++) {
         for (int i=pb->is; i<=pb->ie; i++)
-          dst_b.x3f(pb->ks+1, j, i) = dst_b.x3f(pb->ks, j, i);
+          var_fc.x3f(pb->ks+1, j, i) = var_fc.x3f(pb->ks, j, i);
       }
     }
   }

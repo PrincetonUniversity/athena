@@ -272,9 +272,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   // create the root grid
   tree.CreateRootGrid(nrbx1, nrbx2, nrbx3, root_level);
 
-  if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
-  InitUserMeshData(pin);
-
   // Load balancing flag and parameters
   lb_flag_ = true;
   lb_automatic_ = pin->GetOrAddBoolean("loadbalancing","automatic",false);
@@ -300,6 +297,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   } else {
     max_level = 63;
   }
+
+  if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
+  InitUserMeshData(pin);
 
   if (multilevel == true) {
     if (block_size.nx1 % 2 == 1 || (block_size.nx2 % 2 == 1 && block_size.nx2>1)
