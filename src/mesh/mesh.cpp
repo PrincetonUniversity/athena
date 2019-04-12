@@ -882,9 +882,7 @@ Mesh::~Mesh() {
     delete [] bddisp;
   }
   // delete user Mesh data
-  for (int n=0; n<nreal_user_mesh_data_; n++)
   if (nreal_user_mesh_data_>0) delete [] ruser_mesh_data;
-  for (int n=0; n<nint_user_mesh_data_; n++)
   if (nuser_history_output_ > 0) {
     delete [] user_history_output_names_;
     delete [] user_history_func_;

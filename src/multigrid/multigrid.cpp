@@ -123,8 +123,6 @@ Multigrid::~Multigrid() {
   if (prev!=nullptr) prev->next=next;
   if (next!=nullptr) next->prev=prev;
 
-  for (int l=0; l<nlevel_; l++) {
-  }
   delete [] u_;
   delete [] src_;
   delete [] def_;
