@@ -330,9 +330,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  a1.DeleteAthenaArray();
-  a2.DeleteAthenaArray();
-  a3.DeleteAthenaArray();
 
   // Now initialize rest of the cell centered quantities
   for (int k=ks; k<=ke; k++) {

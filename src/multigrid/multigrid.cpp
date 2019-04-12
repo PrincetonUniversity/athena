@@ -124,9 +124,6 @@ Multigrid::~Multigrid() {
   if (next!=nullptr) next->prev=prev;
 
   for (int l=0; l<nlevel_; l++) {
-    u_[l].DeleteAthenaArray();
-    src_[l].DeleteAthenaArray();
-    def_[l].DeleteAthenaArray();
   }
   delete [] u_;
   delete [] src_;

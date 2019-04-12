@@ -84,37 +84,10 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
 
 FieldDiffusion::~FieldDiffusion() {
   if ((eta_ohm != 0.0) || (eta_hall != 0.0) || (eta_ad != 0.0)) {
-    etaB.DeleteAthenaArray();
-    e_oa.x1e.DeleteAthenaArray();
-    e_oa.x2e.DeleteAthenaArray();
-    e_oa.x3e.DeleteAthenaArray();
-    e_h.x1e.DeleteAthenaArray();
-    e_h.x2e.DeleteAthenaArray();
-    e_h.x3e.DeleteAthenaArray();
-    pflux.x1f.DeleteAthenaArray();
-    pflux.x2f.DeleteAthenaArray();
-    pflux.x3f.DeleteAthenaArray();
 
-    jfx.DeleteAthenaArray();
-    jfy.DeleteAthenaArray();
-    jfz.DeleteAthenaArray();
-    jcc.DeleteAthenaArray();
 
-    eta_tot_.DeleteAthenaArray();
-    bmag_.DeleteAthenaArray();
 
-    jedge_.x1e.DeleteAthenaArray();
-    jedge_.x2e.DeleteAthenaArray();
-    jedge_.x3e.DeleteAthenaArray();
 
-    face_area_.DeleteAthenaArray();
-    face_area_p1_.DeleteAthenaArray();
-    edge_length_.DeleteAthenaArray();
-    edge_length_m1_.DeleteAthenaArray();
-    cell_volume_.DeleteAthenaArray();
-    dx1_.DeleteAthenaArray();
-    dx2_.DeleteAthenaArray();
-    dx3_.DeleteAthenaArray();
   }
 }
 

@@ -75,13 +75,6 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
 // Destructor
 
 EquationOfState::~EquationOfState() {
-  g_.DeleteAthenaArray();
-  g_inv_.DeleteAthenaArray();
-  normal_dd_.DeleteAthenaArray();
-  normal_ee_.DeleteAthenaArray();
-  normal_mm_.DeleteAthenaArray();
-  normal_bb_.DeleteAthenaArray();
-  normal_tt_.DeleteAthenaArray();
 }
 
 //----------------------------------------------------------------------------------------

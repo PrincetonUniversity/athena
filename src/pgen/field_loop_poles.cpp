@@ -264,12 +264,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
 
-    a1.DeleteAthenaArray();
-    a2.DeleteAthenaArray();
-    a3.DeleteAthenaArray();
-    area.DeleteAthenaArray();
-    len.DeleteAthenaArray();
-    len_p1.DeleteAthenaArray();
   }
 
   //  Initialize density

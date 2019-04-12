@@ -63,9 +63,6 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
 // Destructor
 
 EquationOfState::~EquationOfState() {
-  g_.DeleteAthenaArray();
-  g_inv_.DeleteAthenaArray();
-  fixed_.DeleteAthenaArray();
 }
 
 //----------------------------------------------------------------------------------------

@@ -405,7 +405,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     std::fclose(pfile);
   }
 
-  pr.DeleteAthenaArray();
   return;
 }
 

@@ -441,8 +441,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // Free metric
   if (GENERAL_RELATIVITY) {
-    g.DeleteAthenaArray();
-    gi.DeleteAthenaArray();
   }
 
   // Calculate L1 error against initial conditions
@@ -552,10 +550,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
     // Free initial conditions arrays
     if (MAGNETIC_FIELDS_ENABLED) {
-      bcc.DeleteAthenaArray();
     }
-    initial.DeleteAthenaArray();
-    volume.DeleteAthenaArray();
   }
   return;
 }

@@ -173,5 +173,4 @@ Real EosTable::GetEosData(int kOut, Real var, Real rho) {
 
 // EosTable destructor
 EosTable::~EosTable() {
-  EosRatios.DeleteAthenaArray();
 }

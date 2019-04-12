@@ -87,38 +87,10 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
 // destructor
 
 Field::~Field() {
-  b.x1f.DeleteAthenaArray();
-  b.x2f.DeleteAthenaArray();
-  b.x3f.DeleteAthenaArray();
-  b1.x1f.DeleteAthenaArray();
-  b1.x2f.DeleteAthenaArray();
-  b1.x3f.DeleteAthenaArray();
   // b2 only allocated if integrator was 3S* integrator or STS_ENABLED
-  b2.x1f.DeleteAthenaArray();
-  b2.x2f.DeleteAthenaArray();
-  b2.x3f.DeleteAthenaArray();
-  bcc.DeleteAthenaArray();
 
-  e.x1e.DeleteAthenaArray();
-  e.x2e.DeleteAthenaArray();
-  e.x3e.DeleteAthenaArray();
-  wght.x1f.DeleteAthenaArray();
-  wght.x2f.DeleteAthenaArray();
-  wght.x3f.DeleteAthenaArray();
-  e2_x1f.DeleteAthenaArray();
-  e3_x1f.DeleteAthenaArray();
-  e1_x2f.DeleteAthenaArray();
-  e3_x2f.DeleteAthenaArray();
-  e1_x3f.DeleteAthenaArray();
-  e2_x3f.DeleteAthenaArray();
 
-  cc_e_.DeleteAthenaArray();
-  face_area_.DeleteAthenaArray();
-  edge_length_.DeleteAthenaArray();
-  edge_length_p1_.DeleteAthenaArray();
   if (GENERAL_RELATIVITY) {
-    g_.DeleteAthenaArray();
-    gi_.DeleteAthenaArray();
   }
   delete pfdif;
 }

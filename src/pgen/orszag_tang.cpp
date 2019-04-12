@@ -113,6 +113,5 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
 
-  az.DeleteAthenaArray();
   return;
 }

@@ -294,12 +294,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 // destructor
 
 Coordinates::~Coordinates() {
-  dx1f.DeleteAthenaArray();
-  dx2f.DeleteAthenaArray();
-  dx3f.DeleteAthenaArray();
-  x1f.DeleteAthenaArray();
-  x2f.DeleteAthenaArray();
-  x3f.DeleteAthenaArray();
 }
 
 //----------------------------------------------------------------------------------------

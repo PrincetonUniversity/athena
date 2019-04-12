@@ -224,8 +224,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                              kl, ku);
 
   // Free scratch arrays
-  g.DeleteAthenaArray();
-  gi.DeleteAthenaArray();
   return;
 }
 

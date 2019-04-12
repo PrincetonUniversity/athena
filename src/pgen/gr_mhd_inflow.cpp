@@ -100,7 +100,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // Free interpolation table
-  interp_values.DeleteAthenaArray();
   return;
 }
 
@@ -213,13 +212,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  g.DeleteAthenaArray();
-  gi.DeleteAthenaArray();
 
   // Initialize conserved values
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is-NGHOST, ie+NGHOST, js,
                              je, ks, ke);
-  bb.DeleteAthenaArray();
   return;
 }
 

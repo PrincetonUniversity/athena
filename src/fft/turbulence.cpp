@@ -99,7 +99,6 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
 // destructor
 TurbulenceDriver::~TurbulenceDriver() {
   for (int nv=0; nv<3; nv++) {
-    vel[nv].DeleteAthenaArray();
     delete [] fv_[nv];
     delete [] fv_sh_[nv];
     delete [] fv_co_[nv];

@@ -203,28 +203,9 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
 // destructor
 
 Cylindrical::~Cylindrical() {
-  dx1v.DeleteAthenaArray();
-  dx2v.DeleteAthenaArray();
-  dx3v.DeleteAthenaArray();
-  x1v.DeleteAthenaArray();
-  x2v.DeleteAthenaArray();
-  x3v.DeleteAthenaArray();
   if ((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.DeleteAthenaArray();
-    x1s3.DeleteAthenaArray();
-    x2s1.DeleteAthenaArray();
-    x2s3.DeleteAthenaArray();
-    x3s1.DeleteAthenaArray();
-    x3s2.DeleteAthenaArray();
   }
   if (coarse_flag==false) {
-    coord_area3_i_.DeleteAthenaArray();
-    coord_area3vc_i_.DeleteAthenaArray();
-    coord_vol_i_.DeleteAthenaArray();
-    coord_src1_i_.DeleteAthenaArray();
-    coord_src2_i_.DeleteAthenaArray();
-    phy_src1_i_.DeleteAthenaArray();
-    phy_src2_i_.DeleteAthenaArray();
   }
 }
 
