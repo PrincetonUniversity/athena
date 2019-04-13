@@ -550,7 +550,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
 
   // Step 7. construct a new MeshBlock list (moving the data within the MPI rank)
   MeshBlock *newlist = nullptr;
-  MeshBlock *pmb;
+  MeshBlock *pmb = nullptr;
   RegionSize block_size = pblock->block_size;
 
   for (int n=nbs; n<=nbe; n++) {
