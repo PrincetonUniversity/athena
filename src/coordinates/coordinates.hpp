@@ -34,7 +34,7 @@ class Coordinates {
  public:
   friend class HydroSourceTerms;
   Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag = false);
-  virtual ~Coordinates();
+  virtual ~Coordinates() = default;
 
   // data
   MeshBlock *pmy_block;  // ptr to MeshBlock containing this Coordinates
