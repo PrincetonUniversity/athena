@@ -122,10 +122,6 @@ BoundaryBase::~BoundaryBase() {
   if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
       || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge)
     delete [] polar_neighbor_south;
-  if (pmy_mesh_->multilevel==true) {
-    sarea_[0].DeleteAthenaArray();
-    sarea_[1].DeleteAthenaArray();
-  }
 }
 
 

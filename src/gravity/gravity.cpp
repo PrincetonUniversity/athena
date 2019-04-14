@@ -54,9 +54,3 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
 
   phi.NewAthenaArray(ncells3,ncells2,ncells1);
 }
-
-// destructor
-
-Gravity::~Gravity() {
-  phi.DeleteAthenaArray();
-}

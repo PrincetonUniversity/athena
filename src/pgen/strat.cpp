@@ -568,7 +568,6 @@ Real hst_BxBy(MeshBlock *pmb, int iout) {
       }
     }
   }
-  volume.DeleteAthenaArray();
 
   return bxby;
 }
@@ -594,7 +593,6 @@ Real hst_dVxVy(MeshBlock *pmb, int iout) {
     }
   }
 
-  volume.DeleteAthenaArray();
   return dvxvy;
 }
 } // namespace

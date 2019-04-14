@@ -26,7 +26,6 @@ class ParameterInput;
 class Reconstruction {
  public:
   Reconstruction(MeshBlock *pmb, ParameterInput *pin);
-  ~Reconstruction();
 
   // data
   // order and type of reconstruction algorithm

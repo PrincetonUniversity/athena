@@ -99,34 +99,6 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
 //  \brief destructor
 
 MeshRefinement::~MeshRefinement() {
-  coarse_cons_.DeleteAthenaArray();
-  coarse_prim_.DeleteAthenaArray();
-  fvol_[0][0].DeleteAthenaArray();
-  fvol_[0][1].DeleteAthenaArray();
-  fvol_[1][0].DeleteAthenaArray();
-  fvol_[1][1].DeleteAthenaArray();
-  sarea_x1_[0][0].DeleteAthenaArray();
-  sarea_x1_[0][1].DeleteAthenaArray();
-  sarea_x1_[1][0].DeleteAthenaArray();
-  sarea_x1_[1][1].DeleteAthenaArray();
-  sarea_x2_[0][0].DeleteAthenaArray();
-  sarea_x2_[0][1].DeleteAthenaArray();
-  sarea_x2_[0][2].DeleteAthenaArray();
-  sarea_x2_[1][0].DeleteAthenaArray();
-  sarea_x2_[1][1].DeleteAthenaArray();
-  sarea_x2_[1][2].DeleteAthenaArray();
-  sarea_x3_[0][0].DeleteAthenaArray();
-  sarea_x3_[0][1].DeleteAthenaArray();
-  sarea_x3_[1][0].DeleteAthenaArray();
-  sarea_x3_[1][1].DeleteAthenaArray();
-  sarea_x3_[2][0].DeleteAthenaArray();
-  sarea_x3_[2][1].DeleteAthenaArray();
-  if (MAGNETIC_FIELDS_ENABLED) {
-    coarse_b_.x1f.DeleteAthenaArray();
-    coarse_b_.x2f.DeleteAthenaArray();
-    coarse_b_.x3f.DeleteAthenaArray();
-    coarse_bcc_.DeleteAthenaArray();
-  }
   delete pcoarsec;
 }
 

@@ -21,7 +21,7 @@ class InterpTable2D {
  public:
   InterpTable2D() = default;
   InterpTable2D(const int nvar, const int nx2, const int nx1);
-  ~InterpTable2D();
+
   void SetSize(const int nvar, const int nx2, const int nx1);
   Real interpolate(int nvar, Real x2, Real x1);
   int nvar();
@@ -46,7 +46,7 @@ class InterpTable2D {
 class EosTable {
  public:
   explicit EosTable(ParameterInput *pin);
-  ~EosTable();
+
   InterpTable2D table;
   Real GetEosData(int kOut, Real var, Real rho);
   Real logRhoMin, logRhoMax;

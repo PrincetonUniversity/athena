@@ -293,15 +293,10 @@ MeshBlock::~MeshBlock() {
 
   // delete user output variables array
   if (nuser_out_var > 0) {
-    user_out_var.DeleteAthenaArray();
     delete [] user_out_var_names_;
   }
   // delete user MeshBlock data
-  for (int n=0; n<nreal_user_meshblock_data_; n++)
-    ruser_meshblock_data[n].DeleteAthenaArray();
   if (nreal_user_meshblock_data_>0) delete [] ruser_meshblock_data;
-  for (int n=0; n<nint_user_meshblock_data_; n++)
-    iuser_meshblock_data[n].DeleteAthenaArray();
   if (nint_user_meshblock_data_>0) delete [] iuser_meshblock_data;
 }
 

@@ -568,36 +568,16 @@ BoundaryValues::~BoundaryValues() {
 #endif
     }
   }
-  if (pmb->loc.level == pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
-      && (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
-          || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
-          || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
-          || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge))
-    exc_.DeleteAthenaArray();
 
   if (SHEARING_BOX && ShBoxCoord_ == 1) {
     int level = pmb->loc.level - pmb->pmy_mesh->root_level;
     std::int64_t nrbx1 = pmb->pmy_mesh->nrbx1*(1L << level);
     if (pmb->loc.lx1 == 0) { // if true for shearing inner blocks
-      shboxvar_inner_hydro_.DeleteAthenaArray();
-      flx_inner_hydro_.DeleteAthenaArray();
       delete[] shbb_.igidlist;
       delete[] shbb_.ilidlist;
       delete[] shbb_.irnklist;
       delete[] shbb_.ilevlist;
 
-      if (MAGNETIC_FIELDS_ENABLED) {
-        shboxvar_inner_field_.x1f.DeleteAthenaArray();
-        shboxvar_inner_field_.x2f.DeleteAthenaArray();
-        shboxvar_inner_field_.x3f.DeleteAthenaArray();
-        flx_inner_field_.x1f.DeleteAthenaArray();
-        flx_inner_field_.x2f.DeleteAthenaArray();
-        flx_inner_field_.x3f.DeleteAthenaArray();
-        shboxvar_inner_emf_.x2e.DeleteAthenaArray();
-        shboxvar_inner_emf_.x3e.DeleteAthenaArray();
-        flx_inner_emf_.x2e.DeleteAthenaArray();
-        flx_inner_emf_.x3e.DeleteAthenaArray();
-      }
       for (int n=0; n<4; n++) {
         delete[] send_innerbuf_hydro_[n];
         delete[] recv_innerbuf_hydro_[n];
@@ -610,25 +590,11 @@ BoundaryValues::~BoundaryValues() {
       }
     }
     if (pmb->loc.lx1 == (nrbx1-1)) { // if true for shearing outer blocks
-      shboxvar_outer_hydro_.DeleteAthenaArray();
-      flx_outer_hydro_.DeleteAthenaArray();
       delete[] shbb_.ogidlist;
       delete[] shbb_.olidlist;
       delete[] shbb_.ornklist;
       delete[] shbb_.olevlist;
 
-      if (MAGNETIC_FIELDS_ENABLED) {
-        shboxvar_outer_field_.x1f.DeleteAthenaArray();
-        shboxvar_outer_field_.x2f.DeleteAthenaArray();
-        shboxvar_outer_field_.x3f.DeleteAthenaArray();
-        flx_outer_field_.x1f.DeleteAthenaArray();
-        flx_outer_field_.x2f.DeleteAthenaArray();
-        flx_outer_field_.x3f.DeleteAthenaArray();
-        shboxvar_outer_emf_.x2e.DeleteAthenaArray();
-        shboxvar_outer_emf_.x3e.DeleteAthenaArray();
-        flx_outer_emf_.x2e.DeleteAthenaArray();
-        flx_outer_emf_.x3e.DeleteAthenaArray();
-      }
       for (int n=0; n<4; n++) {
         delete[] send_outerbuf_hydro_[n];
         delete[] recv_outerbuf_hydro_[n];

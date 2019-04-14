@@ -108,7 +108,6 @@ MultigridDriver::~MultigridDriver() {
   delete [] nvslist_;
   delete [] nvlist_;
   delete [] rootbuf_;
-  rootsrc_.DeleteAthenaArray();
   delete mgtlist_;
   if (pmg_!=nullptr) {
     while (pmg_->prev != nullptr) // should not be true
