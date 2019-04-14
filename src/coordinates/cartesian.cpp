@@ -171,22 +171,3 @@ Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
   }
 }
-
-// destructor
-
-Cartesian::~Cartesian() {
-  dx1v.DeleteAthenaArray();
-  dx2v.DeleteAthenaArray();
-  dx3v.DeleteAthenaArray();
-  x1v.DeleteAthenaArray();
-  x2v.DeleteAthenaArray();
-  x3v.DeleteAthenaArray();
-  if ((pmy_block->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.DeleteAthenaArray();
-    x1s3.DeleteAthenaArray();
-    x2s1.DeleteAthenaArray();
-    x2s3.DeleteAthenaArray();
-    x3s1.DeleteAthenaArray();
-    x3s2.DeleteAthenaArray();
-  }
-}

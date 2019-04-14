@@ -37,7 +37,6 @@ void ConstDiffusivity(FieldDiffusion *pfdif, MeshBlock *pmb, const AthenaArray<R
 class FieldDiffusion {
  public:
   FieldDiffusion(MeshBlock *pmb, ParameterInput *pin);
-  ~FieldDiffusion();
 
   // data
   MeshBlock* pmy_block;

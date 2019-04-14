@@ -38,7 +38,6 @@ void ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Re
 class HydroDiffusion {
  public:
   HydroDiffusion(Hydro *phyd, ParameterInput *pin);
-  ~HydroDiffusion();
 
   // data
   bool hydro_diffusion_defined;

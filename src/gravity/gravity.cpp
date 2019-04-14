@@ -59,10 +59,3 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
   pgbval->bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(pgbval);
 }
-
-// destructor
-
-Gravity::~Gravity() {
-  phi.DeleteAthenaArray();
-  delete pgbval;
-}

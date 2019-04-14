@@ -93,18 +93,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 }
 
 //----------------------------------------------------------------------------------------
-// Function for cleaning up global mesh properties
-// Inputs:
-//   pin: parameters (unused)
-// Outputs: (none)
-
-void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  // Free interpolation table
-  interp_values.DeleteAthenaArray();
-  return;
-}
-
-//----------------------------------------------------------------------------------------
 // Function for setting initial conditions
 // Inputs:
 //   pin: pointer to runtime inputs
@@ -213,13 +201,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  g.DeleteAthenaArray();
-  gi.DeleteAthenaArray();
 
   // Initialize conserved values
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is-NGHOST, ie+NGHOST, js,
                              je, ks, ke);
-  bb.DeleteAthenaArray();
   return;
 }
 

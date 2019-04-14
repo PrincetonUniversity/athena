@@ -435,59 +435,8 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
       }
     }
   }
-
-  // Free scratch arrays
-  g.DeleteAthenaArray();
-  g_inv.DeleteAthenaArray();
-  dg_dx1.DeleteAthenaArray();
-  dg_dx2.DeleteAthenaArray();
-  dg_dx3.DeleteAthenaArray();
-  if (!coarse_flag) {
-    transformation.DeleteAthenaArray();
-  }
 }
 
-//----------------------------------------------------------------------------------------
-// Destructor
-
-GRUser::~GRUser() {
-  dx1v.DeleteAthenaArray();
-  dx2v.DeleteAthenaArray();
-  dx3v.DeleteAthenaArray();
-  x1v.DeleteAthenaArray();
-  x2v.DeleteAthenaArray();
-  x3v.DeleteAthenaArray();
-  if (pmy_block->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.DeleteAthenaArray();
-    x1s3.DeleteAthenaArray();
-    x2s1.DeleteAthenaArray();
-    x2s3.DeleteAthenaArray();
-    x3s1.DeleteAthenaArray();
-    x3s2.DeleteAthenaArray();
-  }
-  metric_cell_kji_.DeleteAthenaArray();
-  if (!coarse_flag) {
-    coord_vol_kji_.DeleteAthenaArray();
-    coord_area1_kji_.DeleteAthenaArray();
-    coord_area2_kji_.DeleteAthenaArray();
-    coord_area3_kji_.DeleteAthenaArray();
-    coord_len1_kji_.DeleteAthenaArray();
-    coord_len2_kji_.DeleteAthenaArray();
-    coord_len3_kji_.DeleteAthenaArray();
-    coord_width1_kji_.DeleteAthenaArray();
-    coord_width2_kji_.DeleteAthenaArray();
-    coord_width3_kji_.DeleteAthenaArray();
-    coord_src_kji_.DeleteAthenaArray();
-    metric_face1_kji_.DeleteAthenaArray();
-    metric_face2_kji_.DeleteAthenaArray();
-    metric_face3_kji_.DeleteAthenaArray();
-    trans_face1_kji_.DeleteAthenaArray();
-    trans_face2_kji_.DeleteAthenaArray();
-    trans_face3_kji_.DeleteAthenaArray();
-    g_.DeleteAthenaArray();
-    gi_.DeleteAthenaArray();
-  }
-}
 
 //----------------------------------------------------------------------------------------
 // EdgeXLength functions: compute physical length at cell edge-X as vector

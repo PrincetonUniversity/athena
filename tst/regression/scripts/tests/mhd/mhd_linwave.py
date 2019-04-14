@@ -31,7 +31,7 @@ def prepare(**kwargs):
         # to save time, reuse compiled .o files for all executables created in this test:
         athena.make(clean_first=False)
         move(_exec, _exec + '_' + flux)
-        os.system('cp obj obj_' + flux)
+        os.system('cp -r obj obj_' + flux)
     os.system('rm -rf obj')
 
 
