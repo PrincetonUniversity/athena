@@ -31,24 +31,24 @@ class AthenaArray {
   // ctor overloads: set expected size of unallocated container, possibly allocate
   explicit AthenaArray(int nx1, DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(1), nx3_(1), nx4_(1), nx5_(1), nx6_(1),
-      state_(init) {}
+      state_(init) { AllocateData(); }
   AthenaArray(int nx2, int nx1, DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(1), nx4_(1), nx5_(1), nx6_(1),
-      state_(init) {}
+      state_(init) { AllocateData(); }
   AthenaArray(int nx3, int nx2, int nx1, DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(1), nx5_(1), nx6_(1),
-      state_(init) {}
+      state_(init) { AllocateData(); }
   AthenaArray(int nx4, int nx3, int nx2, int nx1, DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(1), nx6_(1),
-      state_(init) {}
+      state_(init) { AllocateData(); }
   AthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1,
               DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5),  nx6_(1),
-      state_(init) {}
+      state_(init) { AllocateData(); }
   AthenaArray(int nx6, int nx5, int nx4, int nx3, int nx2, int nx1,
               DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5), nx6_(nx6),
-      state_(init) {}
+      state_(init) { AllocateData(); }
   // still allow delayed-initialization (after constructor) via array.NewAthenaArray() or
   // array.InitWithShallowCopy() and array.InitWithShallowSlice()
 
@@ -151,6 +151,8 @@ class AthenaArray {
   T *pdata_;
   int nx1_, nx2_, nx3_, nx4_, nx5_, nx6_;
   DataStatus state_;  // describe what "pdata_" points to and ownership
+
+  void AllocateData();
 };
 
 
@@ -476,6 +478,24 @@ void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
 template<typename T>
 void AthenaArray<T>::ZeroClear() {
   std::memset(pdata_, 0, GetSizeInBytes());
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn AthenaArray::AllocateData()
+//  \brief  to be called in non-default ctors, if immediate memory allocation is requested
+//          (could replace all "new[]" calls in NewAthenaArray function overloads)
+
+template<typename T>
+void AthenaArray<T>::AllocateData() {
+  switch (state_) {
+    case DataStatus::empty:
+    case DataStatus::shallow_copy: // shallow_copy should never be passed to ctor
+      break;
+    case DataStatus::allocated:
+      // allocate memory and initialize to zero
+      pdata_ = new T[nx1_*nx2_*nx3_*nx4_*nx5_*nx6_]();
+      break;
+  }
 }
 
 #endif // ATHENA_ARRAYS_HPP_

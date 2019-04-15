@@ -28,7 +28,8 @@
 
 Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), phi(pmb->block_size.nx3 + 2*NGHOST, pmb->block_size.nx2 + 2*NGHOST,
-                        pmb->block_size.nx1 + 2*NGHOST),
+                        pmb->block_size.nx1 + 2*NGHOST,
+                        AthenaArray<Real>::DataStatus::allocated),
     four_pi_G(pmb->pmy_mesh->four_pi_G_),
     grav_mean_rho(pmb->pmy_mesh->grav_mean_rho_),
     gbvar(pmb, &phi, nullptr, nullptr) {
@@ -49,13 +50,6 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     ATHENA_ERROR(msg);
     return;
   }
-
-  // Allocate memory for gravitational potential, but only when needed.
-  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
-  int ncells2 = 1, ncells3 = 1;
-  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*NGHOST;
-  if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*NGHOST;
-  phi.NewAthenaArray(ncells3, ncells2, ncells1);
 
   // create object to interface with BoundaryValues
 
