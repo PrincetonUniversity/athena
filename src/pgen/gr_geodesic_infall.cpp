@@ -122,7 +122,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, il, iu, jl, ju, kl, ku);
-  bb.DeleteAthenaArray();
   return;
 }
 

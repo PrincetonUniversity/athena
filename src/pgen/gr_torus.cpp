@@ -327,8 +327,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Free scratch arrays
-  g.DeleteAthenaArray();
-  gi.DeleteAthenaArray();
 
   // Initialize magnetic fields
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -844,14 +842,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
 
       // Free global arrays
-      r_face.DeleteAthenaArray();
-      r_cell.DeleteAthenaArray();
-      theta_face.DeleteAthenaArray();
-      theta_cell.DeleteAthenaArray();
-      a_phi_global_edges.DeleteAthenaArray();
-      a_phi_global_cells.DeleteAthenaArray();
-      bbr_r_faces.DeleteAthenaArray();
-      bbr_theta_faces.DeleteAthenaArray();
 
       // Calculate normalization in vertical case
     } else if (field_config == MagneticFieldConfigs::vertical) {
@@ -1229,23 +1219,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-
-    // Free vector potential arrays
-    if (field_config != MagneticFieldConfigs::vertical) {
-      if (psi == 0.0) {
-        a_phi_edges.DeleteAthenaArray();
-        a_phi_cells.DeleteAthenaArray();
-      } else {
-        a_theta_0.DeleteAthenaArray();
-        a_theta_1.DeleteAthenaArray();
-        a_theta_2.DeleteAthenaArray();
-        a_theta_3.DeleteAthenaArray();
-        a_phi_0.DeleteAthenaArray();
-        a_phi_1.DeleteAthenaArray();
-        a_phi_2.DeleteAthenaArray();
-        a_phi_3.DeleteAthenaArray();
-      }
-    }
   }
 
   // Impose density and pressure floors
@@ -1280,7 +1253,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                                kl, ku);
   } else {
     peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, il, iu, jl, ju, kl, ku);
-    bb.DeleteAthenaArray();
   }
 
   // Call user work function to set output variables

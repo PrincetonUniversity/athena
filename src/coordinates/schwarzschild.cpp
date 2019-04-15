@@ -318,61 +318,6 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 }
 
-//----------------------------------------------------------------------------------------
-// Destructor
-
-Schwarzschild::~Schwarzschild() {
-  dx1v.DeleteAthenaArray();
-  dx2v.DeleteAthenaArray();
-  dx3v.DeleteAthenaArray();
-  x1v.DeleteAthenaArray();
-  x2v.DeleteAthenaArray();
-  x3v.DeleteAthenaArray();
-  if (pmy_block->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.DeleteAthenaArray();
-    x1s3.DeleteAthenaArray();
-    x2s1.DeleteAthenaArray();
-    x2s3.DeleteAthenaArray();
-    x3s1.DeleteAthenaArray();
-    x3s2.DeleteAthenaArray();
-  }
-  metric_cell_i1_.DeleteAthenaArray();
-  metric_cell_j1_.DeleteAthenaArray();
-  if (coarse_flag == false) {
-    coord_vol_i1_.DeleteAthenaArray();
-    coord_area1_i1_.DeleteAthenaArray();
-    coord_area2_i1_.DeleteAthenaArray();
-    coord_area3_i1_.DeleteAthenaArray();
-    coord_len1_i1_.DeleteAthenaArray();
-    coord_len2_i1_.DeleteAthenaArray();
-    coord_len3_i1_.DeleteAthenaArray();
-    coord_width1_i1_.DeleteAthenaArray();
-    coord_vol_j1_.DeleteAthenaArray();
-    coord_area1_j1_.DeleteAthenaArray();
-    coord_area2_j1_.DeleteAthenaArray();
-    coord_area3_j1_.DeleteAthenaArray();
-    coord_len1_j1_.DeleteAthenaArray();
-    coord_len2_j1_.DeleteAthenaArray();
-    coord_len3_j1_.DeleteAthenaArray();
-    coord_width3_j1_.DeleteAthenaArray();
-    coord_src_j1_.DeleteAthenaArray();
-    coord_src_j2_.DeleteAthenaArray();
-    metric_face1_i1_.DeleteAthenaArray();
-    metric_face1_j1_.DeleteAthenaArray();
-    metric_face2_i1_.DeleteAthenaArray();
-    metric_face2_j1_.DeleteAthenaArray();
-    metric_face3_i1_.DeleteAthenaArray();
-    metric_face3_j1_.DeleteAthenaArray();
-    trans_face1_i1_.DeleteAthenaArray();
-    trans_face1_j1_.DeleteAthenaArray();
-    trans_face2_i1_.DeleteAthenaArray();
-    trans_face2_j1_.DeleteAthenaArray();
-    trans_face3_i1_.DeleteAthenaArray();
-    trans_face3_j1_.DeleteAthenaArray();
-    g_.DeleteAthenaArray();
-    gi_.DeleteAthenaArray();
-  }
-}
 
 //----------------------------------------------------------------------------------------
 // EdgeXLength functions: compute physical length at cell edge-X as vector

@@ -90,37 +90,6 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
   }
 }
 
-// destructor
-
-HydroDiffusion::~HydroDiffusion() {
-  if (nu_iso > 0.0 || nu_aniso > 0.0) {
-    visflx[X1DIR].DeleteAthenaArray();
-    visflx[X2DIR].DeleteAthenaArray();
-    visflx[X3DIR].DeleteAthenaArray();
-    x1area_.DeleteAthenaArray();
-    x2area_.DeleteAthenaArray();
-    x3area_.DeleteAthenaArray();
-    x2area_p1_.DeleteAthenaArray();
-    x3area_p1_.DeleteAthenaArray();
-    vol_.DeleteAthenaArray();
-    fx_.DeleteAthenaArray();
-    fy_.DeleteAthenaArray();
-    fz_.DeleteAthenaArray();
-    divv_.DeleteAthenaArray();
-  }
-  if (kappa_iso  > 0.0 || kappa_aniso > 0.0) {
-    cndflx[X1DIR].DeleteAthenaArray();
-    cndflx[X2DIR].DeleteAthenaArray();
-    cndflx[X3DIR].DeleteAthenaArray();
-  }
-  if (hydro_diffusion_defined) {
-    dx1_.DeleteAthenaArray();
-    dx2_.DeleteAthenaArray();
-    dx3_.DeleteAthenaArray();
-    nu_tot_.DeleteAthenaArray();
-    kappa_tot_.DeleteAthenaArray();
-  }
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::CalcHydroDiffusionFlux

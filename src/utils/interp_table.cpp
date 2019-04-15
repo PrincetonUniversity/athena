@@ -24,11 +24,6 @@ InterpTable2D::InterpTable2D(const int nvar, const int nx2, const int nx1) {
   SetSize(nvar, nx2, nx1);
 }
 
-// Destructor. Deletes athena array.
-InterpTable2D::~InterpTable2D() {
-  data.DeleteAthenaArray();
-}
-
 // Set size of table
 void InterpTable2D::SetSize(const int nvar, const int nx2, const int nx1) {
   nvar_ = nvar; // number of variables/tables

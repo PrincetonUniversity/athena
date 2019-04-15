@@ -904,11 +904,11 @@ Mesh::~Mesh() {
     delete [] bddisp;
   }
   // delete user Mesh data
-  for (int n=0; n<nreal_user_mesh_data_; n++)
-    ruser_mesh_data[n].DeleteAthenaArray();
   if (nreal_user_mesh_data_>0) delete [] ruser_mesh_data;
-  for (int n=0; n<nint_user_mesh_data_; n++)
-    iuser_mesh_data[n].DeleteAthenaArray();
+  if (nuser_history_output_ > 0) {
+    delete [] user_history_output_names_;
+    delete [] user_history_func_;
+  }
   if (nint_user_mesh_data_>0) delete [] iuser_mesh_data;
   if (EOS_TABLE_ENABLED) delete peos_table;
 }
@@ -1350,7 +1350,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       pmb->pbval->SetupPersistentMPI();
       // other BoundaryVariable objects:
       if (SELF_GRAVITY_ENABLED == 1)
-        pmb->pgrav->pgbval->SetupPersistentMPI();
+        pmb->pgrav->gbvar.SetupPersistentMPI();
     }
 
     // solve gravity for the first time

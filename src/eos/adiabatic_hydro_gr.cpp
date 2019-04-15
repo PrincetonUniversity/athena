@@ -59,14 +59,6 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   fixed_.NewAthenaArray(ncells3, ncells2, ncells1);
 }
 
-//----------------------------------------------------------------------------------------
-// Destructor
-
-EquationOfState::~EquationOfState() {
-  g_.DeleteAthenaArray();
-  g_inv_.DeleteAthenaArray();
-  fixed_.DeleteAthenaArray();
-}
 
 //----------------------------------------------------------------------------------------
 // Variable inverter

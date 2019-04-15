@@ -86,26 +86,6 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
 //  \brief destructor
 
 MeshRefinement::~MeshRefinement() {
-  fvol_[0][0].DeleteAthenaArray();
-  fvol_[0][1].DeleteAthenaArray();
-  fvol_[1][0].DeleteAthenaArray();
-  fvol_[1][1].DeleteAthenaArray();
-  sarea_x1_[0][0].DeleteAthenaArray();
-  sarea_x1_[0][1].DeleteAthenaArray();
-  sarea_x1_[1][0].DeleteAthenaArray();
-  sarea_x1_[1][1].DeleteAthenaArray();
-  sarea_x2_[0][0].DeleteAthenaArray();
-  sarea_x2_[0][1].DeleteAthenaArray();
-  sarea_x2_[0][2].DeleteAthenaArray();
-  sarea_x2_[1][0].DeleteAthenaArray();
-  sarea_x2_[1][1].DeleteAthenaArray();
-  sarea_x2_[1][2].DeleteAthenaArray();
-  sarea_x3_[0][0].DeleteAthenaArray();
-  sarea_x3_[0][1].DeleteAthenaArray();
-  sarea_x3_[1][0].DeleteAthenaArray();
-  sarea_x3_[1][1].DeleteAthenaArray();
-  sarea_x3_[2][0].DeleteAthenaArray();
-  sarea_x3_[2][1].DeleteAthenaArray();
   delete pcoarsec;
 }
 

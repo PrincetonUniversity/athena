@@ -88,30 +88,30 @@ void FFTGravitySolverTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
 }
 
 void FFTGravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
-  pmb->pgrav->pgbval->StartReceiving(BoundaryCommSubset::all);
+  pmb->pgrav->gbvar.StartReceiving(BoundaryCommSubset::all);
   return;
 }
 
 TaskStatus FFTGravitySolverTaskList::ClearFFTGravityBoundary(MeshBlock *pmb, int stage) {
-  pmb->pgrav->pgbval->ClearBoundary(BoundaryCommSubset::all);
+  pmb->pgrav->gbvar.ClearBoundary(BoundaryCommSubset::all);
   return TaskStatus::success;
 }
 
 TaskStatus FFTGravitySolverTaskList::SendFFTGravityBoundary(MeshBlock *pmb, int stage) {
-  pmb->pgrav->pgbval->SendBoundaryBuffers();
+  pmb->pgrav->gbvar.SendBoundaryBuffers();
   return TaskStatus::success;
 }
 
 TaskStatus FFTGravitySolverTaskList::ReceiveFFTGravityBoundary(MeshBlock *pmb,
                                                                int stage) {
-  bool ret = pmb->pgrav->pgbval->ReceiveBoundaryBuffers();
+  bool ret = pmb->pgrav->gbvar.ReceiveBoundaryBuffers();
   if (ret == false)
     return TaskStatus::fail;
   return TaskStatus::success;
 }
 
 TaskStatus FFTGravitySolverTaskList::SetFFTGravityBoundary(MeshBlock *pmb, int stage) {
-  pmb->pgrav->pgbval->SetBoundaries();
+  pmb->pgrav->gbvar.SetBoundaries();
   return TaskStatus::success;
 }
 

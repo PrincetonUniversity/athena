@@ -26,9 +26,10 @@
 
 // constructor, initializes data structures and parameters
 
-Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block = pmb;
-  four_pi_G = pmb->pmy_mesh->four_pi_G_; // default: 4*pi*G=1
+Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block(pmb), four_pi_G(pmb->pmy_mesh->four_pi_G_),
+    grav_mean_rho(pmb->pmy_mesh->grav_mean_rho_),
+    gbvar(pmy_block, &phi, nullptr, nullptr) {
   if (four_pi_G == 0.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
@@ -37,7 +38,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
     ATHENA_ERROR(msg);
     return;
   }
-  grav_mean_rho = pmb->pmy_mesh->grav_mean_rho_;
+
   if (grav_mean_rho == -1.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
@@ -55,14 +56,14 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
 
   phi.NewAthenaArray(ncells3, ncells2, ncells1);
   // create object to interface with BoundaryValues
-  pgbval = new CellCenteredBoundaryVariable(pmy_block, &phi, nullptr, nullptr);
-  pgbval->bvar_index = pmb->pbval->bvars.size();
-  pmb->pbval->bvars.push_back(pgbval);
-}
 
-// destructor
+  // KGF: use Gravity as an example of: containing full object members instead of pointer
+  // memebers, construting BoundaryVariaable composite obj (no default ctor) in Gravity
+  // ctor initializer list, avoiding dynamically-managed memory and the need for a
+  // user-provided dtor.
 
-Gravity::~Gravity() {
-  phi.DeleteAthenaArray();
-  delete pgbval;
+  //pgbval = new CellCenteredBoundaryVariable(pmy_block, &phi, nullptr, nullptr);
+  // pgbval = &gbvar;
+  gbvar.bvar_index = pmb->pbval->bvars.size();
+  pmb->pbval->bvars.push_back(&gbvar);
 }
