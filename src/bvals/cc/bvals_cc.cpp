@@ -13,6 +13,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>    // memcpy()
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
 // Athena++ headers
@@ -56,6 +58,13 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   // ---> get the index limits directly from the input AthenaArray
   nl_ = 0;
   nu_ = var->GetDim4() - 1;  // <=nu_ (inclusive), <nx4 (exclusive)
+  if (nu_ <= 0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in CellCenteredBoundaryVariable constructor" << std::endl
+        << "An 'AthenaArray<Real> *var' of nx4_ = " << var->GetDim4() << "was passed\n"
+        << "(uninitialized)" << std::endl;
+    ATHENA_ERROR(msg);
+  }
 
   flip_across_pole_ = nullptr;
 
