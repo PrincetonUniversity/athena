@@ -23,7 +23,32 @@
 template <typename T>
 class AthenaArray {
  public:
-  AthenaArray();
+  // ctors
+  // default ctor:
+  AthenaArray() : pdata_(nullptr), nx1_(0), nx2_(0), nx3_(0),
+                  nx4_(0), nx5_(0), scopy_(true) {}
+  // ctor overloads:
+  explicit AthenaArray(int nx1) : pdata_(nullptr), nx1_(nx1), nx2_(1), nx3_(1), nx4_(1),
+                         nx5_(1), scopy_(true) {}
+  AthenaArray(int nx2, int nx1) : pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(1), nx4_(1),
+                                  nx5_(1), scopy_(true) {}
+  AthenaArray(int nx3, int nx2, int nx1) : pdata_(nullptr), nx1_(nx1), nx2_(nx2),
+                                           nx3_(nx3), nx4_(1), nx5_(1), scopy_(true) {}
+  AthenaArray(int nx4, int nx3, int nx2, int nx1) : pdata_(nullptr), nx1_(nx1), nx2_(nx2),
+                                                    nx3_(nx3), nx4_(nx4), nx5_(1),
+                                                    scopy_(true) {}
+  AthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1) : pdata_(nullptr), nx1_(nx1),
+                                                             nx2_(nx2), nx3_(nx3),
+                                                             nx4_(nx4), nx5_(nx5),
+                                                             scopy_(true) {}
+  // still allow delayed-initialization (after constructor) via array.NewAthenaArray() or
+  // array.InitWithShallowCopy() and array.InitWithShallowSlice()
+
+  // - replace InitWithShallowCopy() with references
+  // - add allocate/shallow-copy/nothing constructor option?
+  // - add "bool initialized_" flag member?
+  // - replace "bool scopy_" with "AthenaArray<T>::status type"
+
   // rule of five:
   ~AthenaArray();
   // define copy constructor and overload assignment operator so both do deep copies.
@@ -107,12 +132,6 @@ class AthenaArray {
   bool scopy_;  // true if shallow copy (prevents source from being deleted)
 };
 
-// default constructor
-
-template<typename T>
-AthenaArray<T>::AthenaArray()
-    : pdata_(nullptr), nx1_(0), nx2_(0), nx3_(0), nx4_(0), nx5_(0), scopy_(true) {
-}
 
 // destructor
 
