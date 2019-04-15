@@ -1350,7 +1350,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       pmb->pbval->SetupPersistentMPI();
       // other BoundaryVariable objects:
       if (SELF_GRAVITY_ENABLED == 1)
-        pmb->pgrav->pgbval->SetupPersistentMPI();
+        pmb->pgrav->gbvar.SetupPersistentMPI();
     }
 
     // solve gravity for the first time
