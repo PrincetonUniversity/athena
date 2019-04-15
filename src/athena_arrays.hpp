@@ -49,15 +49,13 @@ class AthenaArray {
               DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5), nx6_(nx6),
       state_(init) { AllocateData(); }
-  // still allow delayed-initialization (after constructor) via array.NewAthenaArray() or
-  // array.InitWithShallowCopy() and array.InitWithShallowSlice()
+  // still allowing delayed-initialization (after constructor) via array.NewAthenaArray()
+  // or array.InitWithShallowCopy() and array.InitWithShallowSlice()
+  // TODO(felker): replace InitWithShallowCopy() with references (if perf. is unaffected)
+  // TODO(felker): consider making AthenaArray<T>::DataStatus::allocated the default
+  // parameter value in order to avoid this long identifier, if reasonable
 
-  // - replace InitWithShallowCopy() with references
-  // - add allocate/shallow-copy/nothing constructor option?
-  // - add "bool initialized_" flag member?
-  // - replace "bool scopy_" with "AthenaArray<T>::status type"
-
-  // rule of five:
+  // user-provided dtor, "rule of five" applies:
   ~AthenaArray();
   // define copy constructor and overload assignment operator so both do deep copies.
   __attribute__((nothrow)) AthenaArray(const AthenaArray<T>& t);
