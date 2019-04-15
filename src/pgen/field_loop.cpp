@@ -57,9 +57,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real iso_cs =peos->GetIsoSoundSpeed();
 
   AthenaArray<Real> ax,ay,az;
-  int nx1 = (ie-is)+1 + 2*(NGHOST);
-  int nx2 = (je-js)+1 + 2*(NGHOST);
-  int nx3 = (ke-ks)+1 + 2*(NGHOST);
+  int nx1 = (ie-is)+1 + 2*NGHOST;
+  int nx2 = (je-js)+1 + 2*NGHOST;
+  int nx3 = (ke-ks)+1 + 2*NGHOST;
   ax.NewAthenaArray(nx3,nx2,nx1);
   ay.NewAthenaArray(nx3,nx2,nx1);
   az.NewAthenaArray(nx3,nx2,nx1);

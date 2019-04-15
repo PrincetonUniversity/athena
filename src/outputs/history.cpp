@@ -46,7 +46,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   MeshBlock *pmb=pm->pblock;
   AthenaArray<Real> vol;
 
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
   vol.NewAthenaArray(ncells1);
   int nhistory_output=NHISTORY_VARS+pm->nuser_history_output_;
 

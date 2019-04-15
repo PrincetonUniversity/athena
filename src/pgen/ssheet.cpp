@@ -108,9 +108,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   Real x1,x2,rd,rp,rvx,rvy;
   // update the physical variables as initial conditions
-  // int nx1 = (ie-is)+1 + 2*(NGHOST);
-  // int nx2 = (je-js)+1 + 2*(NGHOST);
-  // int nx3 = (ke-ks)+1 + 2*(NGHOST);
+  // int nx1 = (ie-is)+1 + 2*NGHOST;
+  // int nx2 = (je-js)+1 + 2*NGHOST;
+  // int nx3 = (ke-ks)+1 + 2*NGHOST;
 
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {

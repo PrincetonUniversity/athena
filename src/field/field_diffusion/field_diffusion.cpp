@@ -28,10 +28,10 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
   field_diffusion_defined = false;
 
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
   int ncells2 = 1, ncells3 = 1;
-  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-  if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*NGHOST;
+  if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*NGHOST;
 
   // Check if field diffusion
   eta_ohm = pin->GetOrAddReal("problem","eta_ohm",0.0);

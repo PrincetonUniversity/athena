@@ -557,7 +557,7 @@ Real hst_BxBy(MeshBlock *pmb, int iout) {
   AthenaArray<Real> &b = pmb->pfield->bcc;
   AthenaArray<Real> volume; // 1D array of volumes
   // allocate 1D array for cell volume used in usr def history
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
   volume.NewAthenaArray(ncells1);
 
   for (int k=ks; k<=ke; k++) {
@@ -580,7 +580,7 @@ Real hst_dVxVy(MeshBlock *pmb, int iout) {
   Real vshear=0.0;
   AthenaArray<Real> volume; // 1D array of volumes
   // allocate 1D array for cell volume used in usr def history
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
   volume.NewAthenaArray(ncells1);
 
   for (int k=ks; k<=ke; k++) {

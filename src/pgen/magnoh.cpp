@@ -105,8 +105,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // initialize vector potential for inflowing B
   // (only initializing 2D array for vec potential)
-  int nx1 = (ie-is)+1 + 2*(NGHOST);
-  int nx2 = (je-js)+1 + 2*(NGHOST);
+  int nx1 = (ie-is)+1 + 2*NGHOST;
+  int nx2 = (je-js)+1 + 2*NGHOST;
   AthenaArray<Real> az;
   az.NewAthenaArray(nx2,nx1);
 

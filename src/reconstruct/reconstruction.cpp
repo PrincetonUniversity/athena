@@ -200,7 +200,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   // will use first PLM/PPM limiter without any coordinate terms
 
   // Allocate memory for scratch arrays used in PLM and PPM
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
   scr01_i_.NewAthenaArray(ncells1);
   scr02_i_.NewAthenaArray(ncells1);
 
@@ -241,7 +241,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
     // coeffiencients in x1 for uniform Cartesian mesh
     if (uniform_limiter[X1DIR]) {
 #pragma omp simd
-      for (int i=(pmb->is)-(NGHOST); i<=(pmb->ie)+(NGHOST); ++i) {
+      for (int i=(pmb->is)-NGHOST; i<=(pmb->ie)+NGHOST; ++i) {
         c1i(i) = 0.5;
         c2i(i) = 0.5;
         c3i(i) = 0.5;
@@ -254,14 +254,14 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       // (unnecessary work in case of uniform curvilinear mesh)
     } else {
 #pragma omp simd
-      for (int i=(pmb->is)-(NGHOST)+1; i<=(pmb->ie)+(NGHOST)-1; ++i) {
+      for (int i=(pmb->is)-NGHOST+1; i<=(pmb->ie)+NGHOST-1; ++i) {
         Real& dx_im1 = pmb->pcoord->dx1f(i-1);
         Real& dx_i   = pmb->pcoord->dx1f(i  );
         Real& dx_ip1 = pmb->pcoord->dx1f(i+1);
         Real qe = dx_i/(dx_im1 + dx_i + dx_ip1);       // Outermost coeff in CW eq 1.7
         c1i(i) = qe*(2.0*dx_im1+dx_i)/(dx_ip1 + dx_i); // First term in CW eq 1.7
         c2i(i) = qe*(2.0*dx_ip1+dx_i)/(dx_im1 + dx_i); // Second term in CW eq 1.7
-        if (i > (pmb->is)-(NGHOST)+1) {  // c3-c6 are not computed in first iteration
+        if (i > (pmb->is)-NGHOST+1) {  // c3-c6 are not computed in first iteration
           Real& dx_im2 = pmb->pcoord->dx1f(i-2);
           Real qa = dx_im2 + dx_im1 + dx_i + dx_ip1;
           Real qb = dx_im1/(dx_im1 + dx_i);
@@ -304,7 +304,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
 
     // Precompute PPM coefficients in x2-direction ---------------------------------------
     if (pmb->block_size.nx2 > 1) {
-      int ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
+      int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
       c1j.NewAthenaArray(ncells2);
       c2j.NewAthenaArray(ncells2);
       c3j.NewAthenaArray(ncells2);
@@ -317,7 +317,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       // coeffiencients in x2 for uniform Cartesian mesh
       if (uniform_limiter[X2DIR]) {
 #pragma omp simd
-        for (int j=(pmb->js)-(NGHOST); j<=(pmb->je)+(NGHOST); ++j) {
+        for (int j=(pmb->js)-NGHOST; j<=(pmb->je)+NGHOST; ++j) {
           c1j(j) = 0.5;
           c2j(j) = 0.5;
           c3j(j) = 0.5;
@@ -330,7 +330,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma omp simd
-        for (int j=(pmb->js)-(NGHOST)+2; j<=(pmb->je)+(NGHOST)-1; ++j) {
+        for (int j=(pmb->js)-NGHOST+2; j<=(pmb->je)+NGHOST-1; ++j) {
           Real& dx_jm1 = pmb->pcoord->dx2f(j-1);
           Real& dx_j   = pmb->pcoord->dx2f(j  );
           Real& dx_jp1 = pmb->pcoord->dx2f(j+1);
@@ -338,7 +338,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           c1j(j) = qe*(2.0*dx_jm1+dx_j)/(dx_jp1 + dx_j); // First term in CW eq 1.7
           c2j(j) = qe*(2.0*dx_jp1+dx_j)/(dx_jm1 + dx_j); // Second term in CW eq 1.7
 
-          if (j > (pmb->js)-(NGHOST)+1) {  // c3-c6 are not computed in first iteration
+          if (j > (pmb->js)-NGHOST+1) {  // c3-c6 are not computed in first iteration
             Real& dx_jm2 = pmb->pcoord->dx2f(j-2);
             Real qa = dx_jm2 + dx_jm1 + dx_j + dx_jp1;
             Real qb = dx_jm1/(dx_jm1 + dx_j);
@@ -381,7 +381,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
 
     // Precompute PPM coefficients in x3-direction
     if (pmb->block_size.nx3 > 1) {
-      int ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+      int ncells3 = pmb->block_size.nx3 + 2*NGHOST;
       c1k.NewAthenaArray(ncells3);
       c2k.NewAthenaArray(ncells3);
       c3k.NewAthenaArray(ncells3);
@@ -394,7 +394,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       // coeffiencients in x3 for uniform Cartesian mesh
       if (uniform_limiter[X3DIR]) {
 #pragma omp simd
-        for (int k=(pmb->ks)-(NGHOST); k<=(pmb->ke)+(NGHOST); ++k) {
+        for (int k=(pmb->ks)-NGHOST; k<=(pmb->ke)+NGHOST; ++k) {
           c1k(k) = 0.5;
           c2k(k) = 0.5;
           c3k(k) = 0.5;
@@ -407,7 +407,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma omp simd
-        for (int k=(pmb->ks)-(NGHOST)+2; k<=(pmb->ke)+(NGHOST)-1; ++k) {
+        for (int k=(pmb->ks)-NGHOST+2; k<=(pmb->ke)+NGHOST-1; ++k) {
           Real& dx_km1 = pmb->pcoord->dx3f(k-1);
           Real& dx_k   = pmb->pcoord->dx3f(k  );
           Real& dx_kp1 = pmb->pcoord->dx3f(k+1);
@@ -415,7 +415,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           c1k(k) = qe*(2.0*dx_km1+dx_k)/(dx_kp1 + dx_k); // First term in CW eq 1.7
           c2k(k) = qe*(2.0*dx_kp1+dx_k)/(dx_km1 + dx_k); // Second term in CW eq 1.7
 
-          if (k > (pmb->ks)-(NGHOST)+1) {  // c3-c6 are not computed in first iteration
+          if (k > (pmb->ks)-NGHOST+1) {  // c3-c6 are not computed in first iteration
             Real& dx_km2 = pmb->pcoord->dx3f(k-2);
             Real qa = dx_km2 + dx_km1 + dx_k + dx_kp1;
             Real qb = dx_km1/(dx_km1 + dx_k);

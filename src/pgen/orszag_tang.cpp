@@ -44,8 +44,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gm1 = peos->GetGamma() - 1.0;
 
   AthenaArray<Real> az;
-  int nx1 = (ie-is)+1 + 2*(NGHOST);
-  int nx2 = (je-js)+1 + 2*(NGHOST);
+  int nx1 = (ie-is)+1 + 2*NGHOST;
+  int nx2 = (je-js)+1 + 2*NGHOST;
   az.NewAthenaArray(nx2,nx1);
 
   Real B0 = 1.0/std::sqrt(4.0*PI);

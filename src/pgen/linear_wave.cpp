@@ -210,10 +210,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     }
     // Save analytic solution of conserved variables in 4D scratch array
     AthenaArray<Real> cons_;
-    int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+    int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
     int ncells2 = 1, ncells3 = 1;
-    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*NGHOST;
+    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*NGHOST;
     // Even for MHD, there are only cell-centered mesh variables
     int ncells4 = NHYDRO + NFIELD;
     int nl = 0;
@@ -443,9 +443,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   if (MAGNETIC_FIELDS_ENABLED) {
     AthenaArray<Real> a1,a2,a3;
-    int nx1 = (ie-is)+1 + 2*(NGHOST);
-    int nx2 = (je-js)+1 + 2*(NGHOST);
-    int nx3 = (ke-ks)+1 + 2*(NGHOST);
+    int nx1 = (ie-is)+1 + 2*NGHOST;
+    int nx2 = (je-js)+1 + 2*NGHOST;
+    int nx3 = (ke-ks)+1 + 2*NGHOST;
     a1.NewAthenaArray(nx3,nx2,nx1);
     a2.NewAthenaArray(nx3,nx2,nx1);
     a3.NewAthenaArray(nx3,nx2,nx1);

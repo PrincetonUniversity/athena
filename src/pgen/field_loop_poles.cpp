@@ -121,9 +121,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Set initial magnetic fields
   if (MAGNETIC_FIELDS_ENABLED) {
     AthenaArray<Real> a1,a2,a3;
-    int nx1 = (ie-is)+1 + 2*(NGHOST);
-    int nx2 = (je-js)+1 + 2*(NGHOST);
-    int nx3 = (ke-ks)+1 + 2*(NGHOST);
+    int nx1 = (ie-is)+1 + 2*NGHOST;
+    int nx2 = (je-js)+1 + 2*NGHOST;
+    int nx3 = (ke-ks)+1 + 2*NGHOST;
     a1.NewAthenaArray(nx3,nx2,nx1);
     a2.NewAthenaArray(nx3,nx2,nx1);
     a3.NewAthenaArray(nx3,nx2,nx1);

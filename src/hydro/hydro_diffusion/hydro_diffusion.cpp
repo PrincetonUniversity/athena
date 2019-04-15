@@ -29,10 +29,10 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
   pco_ = pmb_->pcoord;
   hydro_diffusion_defined = false;
 
-  int ncells1 = pmb_->block_size.nx1 + 2*(NGHOST);
+  int ncells1 = pmb_->block_size.nx1 + 2*NGHOST;
   int ncells2 = 1, ncells3 = 1;
-  if (pmb_->block_size.nx2 > 1) ncells2 = pmb_->block_size.nx2 + 2*(NGHOST);
-  if (pmb_->block_size.nx3 > 1) ncells3 = pmb_->block_size.nx3 + 2*(NGHOST);
+  if (pmb_->block_size.nx2 > 1) ncells2 = pmb_->block_size.nx2 + 2*NGHOST;
+  if (pmb_->block_size.nx3 > 1) ncells3 = pmb_->block_size.nx3 + 2*NGHOST;
 
   // Check if viscous process.
   nu_iso = pin->GetOrAddReal("problem","nu_iso",0.0); // iso viscosity

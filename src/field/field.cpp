@@ -27,10 +27,10 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
 
   // Allocate memory for interface fields
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
+  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
   int ncells2 = 1, ncells3 = 1;
-  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-  if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*NGHOST;
+  if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*NGHOST;
 
   //  Note the extra cell in each longitudinal dirn for interface fields
   b.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));

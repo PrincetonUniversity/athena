@@ -30,10 +30,10 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
 
   // Allocate memory for primitive/conserved variables
-  int ncells1 = pmy_block->block_size.nx1 + 2*(NGHOST);
+  int ncells1 = pmy_block->block_size.nx1 + 2*NGHOST;
   int ncells2 = 1, ncells3 = 1;
-  if (pmy_block->block_size.nx2 > 1) ncells2 = pmy_block->block_size.nx2 + 2*(NGHOST);
-  if (pmy_block->block_size.nx3 > 1) ncells3 = pmy_block->block_size.nx3 + 2*(NGHOST);
+  if (pmy_block->block_size.nx2 > 1) ncells2 = pmy_block->block_size.nx2 + 2*NGHOST;
+  if (pmy_block->block_size.nx3 > 1) ncells3 = pmy_block->block_size.nx3 + 2*NGHOST;
 
   // Allocate memory registers for primitive/conserved variables for time-integrator
   u.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
