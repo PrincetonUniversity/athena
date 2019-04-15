@@ -23,29 +23,32 @@
 template <typename T>
 class AthenaArray {
  public:
+  enum class DataStatus {empty, shallow_copy, allocated};  // formerly, "bool scopy_"
   // ctors
-  // default ctor:
+  // default ctor: simply set null AthenaArray
   AthenaArray() : pdata_(nullptr), nx1_(0), nx2_(0), nx3_(0),
-                  nx4_(0), nx5_(0), nx6_(0), scopy_(true) {}
-  // ctor overloads: set expected size of unallocated container
-  explicit AthenaArray(int nx1) :
+                  nx4_(0), nx5_(0), nx6_(0), state_(DataStatus::empty) {}
+  // ctor overloads: set expected size of unallocated container, possibly allocate
+  explicit AthenaArray(int nx1, DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(1), nx3_(1), nx4_(1), nx5_(1), nx6_(1),
-      scopy_(true) {}
-  AthenaArray(int nx2, int nx1) :
+      state_(init) {}
+  AthenaArray(int nx2, int nx1, DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(1), nx4_(1), nx5_(1), nx6_(1),
-      scopy_(true) {}
-  AthenaArray(int nx3, int nx2, int nx1) :
+      state_(init) {}
+  AthenaArray(int nx3, int nx2, int nx1, DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(1), nx5_(1), nx6_(1),
-      scopy_(true) {}
-  AthenaArray(int nx4, int nx3, int nx2, int nx1) :
+      state_(init) {}
+  AthenaArray(int nx4, int nx3, int nx2, int nx1, DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(1), nx6_(1),
-      scopy_(true) {}
-  AthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1) :
+      state_(init) {}
+  AthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1,
+              DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5),  nx6_(1),
-      scopy_(true) {}
-  AthenaArray(int nx6, int nx5, int nx4, int nx3, int nx2, int nx1) :
+      state_(init) {}
+  AthenaArray(int nx6, int nx5, int nx4, int nx3, int nx2, int nx1,
+              DataStatus init=DataStatus::empty) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5), nx6_(nx6),
-      scopy_(true) {}
+      state_(init) {}
   // still allow delayed-initialization (after constructor) via array.NewAthenaArray() or
   // array.InitWithShallowCopy() and array.InitWithShallowSlice()
 
@@ -90,7 +93,9 @@ class AthenaArray {
   int GetSize() const { return nx1_*nx2_*nx3_*nx4_*nx5_*nx6_; }
   std::size_t GetSizeInBytes() const {return nx1_*nx2_*nx3_*nx4_*nx5_*nx6_*sizeof(T); }
 
-  bool IsShallowCopy() { return (scopy_ == true); }
+  bool IsShallowCopy() { return (state_ == DataStatus::shallow_copy); }
+  bool IsEmpty() { return (state_ == DataStatus::empty); }
+  bool IsAllocated() { return (state_ == DataStatus::allocated); }
   // "getter" function to access private data member
   // TODO(felker): Replace this unrestricted "getter" with a limited, safer alternative.
   // TODO(felker): Rename function. Conflicts with "AthenaArray<> data" OutputData member.
@@ -145,7 +150,7 @@ class AthenaArray {
  private:
   T *pdata_;
   int nx1_, nx2_, nx3_, nx4_, nx5_, nx6_;
-  bool scopy_;  // true if shallow copy (prevents source from being deleted)
+  DataStatus state_;  // describe what "pdata_" points to and ownership
 };
 
 
@@ -172,7 +177,7 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) 
     for (std::size_t i=0; i<size; ++i) {
       pdata_[i] = src.pdata_[i]; // copy data (not just addresses!) into new memory
     }
-    scopy_ = false;
+    state_ = DataStatus::allocated;
   }
 }
 
@@ -187,7 +192,7 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
     for (std::size_t i=0; i<size; ++i) {
       this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!)
     }
-    scopy_ = false;
+    state_ = DataStatus::allocated;
   }
   return *this;
 }
@@ -202,15 +207,15 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(AthenaArray<T>&& src) {
   nx5_ = src.nx5_;
   nx6_ = src.nx6_;
   if (src.pdata_) {
-    // && !src.scopy_) {  // (if forbidden to move shallow copies)
-    // scopy_ = false;
+    // && (src.state_ != DataStatus::allocated){  // (if forbidden to move shallow copies)
+    //  ---- >state_ = DataStatus::allocated;
 
     // Allowing src shallow-copy AthenaArray to serve as move constructor argument
-    scopy_ = src.scopy_;
+    state_ = src.state_;
     pdata_ = src.pdata_;
     // remove ownership of data from src to prevent it from free'ing the resources
     src.pdata_ = nullptr;
-    src.scopy_ = true;
+    src.state_ = DataStatus::empty;
     src.nx1_= 0;
     src.nx2_= 0;
     src.nx3_= 0;
@@ -234,11 +239,11 @@ AthenaArray<T> &AthenaArray<T>::operator= (AthenaArray<T> &&src) {
       nx4_ = src.nx4_;
       nx5_ = src.nx5_;
       nx6_ = src.nx6_;
-      scopy_ = src.scopy_;
+      state_ = src.state_;
       pdata_ = src.pdata_;
 
       src.pdata_ = nullptr;
-      src.scopy_ = true;
+      src.state_ = DataStatus::empty;
       src.nx1_= 0;
       src.nx2_= 0;
       src.nx3_= 0;
@@ -263,7 +268,7 @@ void AthenaArray<T>::InitWithShallowCopy(AthenaArray<T> &src) {
   nx5_=src.nx5_;
   nx6_=src.nx6_;
   pdata_ = src.pdata_;
-  scopy_ = true;
+  state_ = DataStatus::shallow_copy;
   return;
 }
 
@@ -326,7 +331,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
     nx1_=nvar;
     pdata_ += indx;
   }
-  scopy_ = true;
+  state_ = DataStatus::shallow_copy;
   return;
 }
 
@@ -336,7 +341,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
 
 template<typename T>
 __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx1) {
-  scopy_ = false;
+  state_ = DataStatus::allocated;
   nx1_ = nx1;
   nx2_ = 1;
   nx3_ = 1;
@@ -352,7 +357,7 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx1) {
 
 template<typename T>
 __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx2, int nx1) {
-  scopy_ = false;
+  state_ = DataStatus::allocated;
   nx1_ = nx1;
   nx2_ = nx2;
   nx3_ = 1;
@@ -368,7 +373,7 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx2, int nx1) {
 
 template<typename T>
 __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1) {
-  scopy_ = false;
+  state_ = DataStatus::allocated;
   nx1_ = nx1;
   nx2_ = nx2;
   nx3_ = nx3;
@@ -385,7 +390,7 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, i
 template<typename T>
 __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2,
                                                              int nx1) {
-  scopy_ = false;
+  state_ = DataStatus::allocated;
   nx1_ = nx1;
   nx2_ = nx2;
   nx3_ = nx3;
@@ -402,7 +407,7 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, i
 template<typename T>
 __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3,
                                                              int nx2, int nx1) {
-  scopy_ = false;
+  state_ = DataStatus::allocated;
   nx1_ = nx1;
   nx2_ = nx2;
   nx3_ = nx3;
@@ -419,7 +424,7 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, i
 template<typename T>
 __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx6, int nx5, int nx4,
                                                              int nx3, int nx2, int nx1) {
-  scopy_ = false;
+  state_ = DataStatus::allocated;
   nx1_ = nx1;
   nx2_ = nx2;
   nx3_ = nx3;
@@ -435,12 +440,16 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx6, int nx5, i
 
 template<typename T>
 void AthenaArray<T>::DeleteAthenaArray() {
-  if (scopy_) {
-    pdata_ = nullptr;
-  } else {
-    delete[] pdata_;
-    pdata_ = nullptr;
-    scopy_ = true;
+  switch (state_) {
+    case DataStatus::empty:
+    case DataStatus::shallow_copy:
+      pdata_ = nullptr;
+      break;
+    case DataStatus::allocated:
+      delete[] pdata_;
+      pdata_ = nullptr;
+      state_ = DataStatus::empty;
+      break;
   }
 }
 
@@ -453,7 +462,7 @@ void AthenaArray<T>::DeleteAthenaArray() {
 
 template<typename T>
 void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
-  // scopy_ is essentially only tracked for correctness of delete[] in DeleteAthenaArray()
+  // state_ is tracked partly for correctness of delete[] in DeleteAthenaArray()
   // cache array1 data ptr
   T* tmp_pdata_ = pdata_;
   pdata_ = array2.pdata_;

@@ -52,7 +52,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   pmy_block_ = pmb;
   // Check BC functions for each of the 6 boundaries in turn ---------------------
   for (int i=0; i<6; i++) {
-    switch(block_bcs[i]) {
+    switch (block_bcs[i]) {
       case BoundaryFlag::reflect:
       case BoundaryFlag::outflow:
       case BoundaryFlag::user:
@@ -749,11 +749,11 @@ void BoundaryValues::DispatchBoundaryFunctions(
   // BoundaryVariable pointers "enrolled"
   for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
        ++bvars_it) {
-    switch(block_bcs[face]) {
+    switch (block_bcs[face]) {
       case BoundaryFlag::user: // handled above, outside loop over BoundaryVariable objs
         break;
       case BoundaryFlag::reflect:
-        switch(face) {
+        switch (face) {
           case BoundaryFace::undef:
             ATHENA_ERROR(msg);
           case BoundaryFace::inner_x1:
@@ -777,7 +777,7 @@ void BoundaryValues::DispatchBoundaryFunctions(
         }
         break;
       case BoundaryFlag::outflow:
-        switch(face) {
+        switch (face) {
           case BoundaryFace::undef:
             ATHENA_ERROR(msg);
           case BoundaryFace::inner_x1:
@@ -801,7 +801,7 @@ void BoundaryValues::DispatchBoundaryFunctions(
         }
         break;
       case BoundaryFlag::polar_wedge:
-        switch(face) {
+        switch (face) {
           case BoundaryFace::undef:
             ATHENA_ERROR(msg);
           case BoundaryFace::inner_x2:
@@ -826,7 +826,7 @@ void BoundaryValues::DispatchBoundaryFunctions(
                  << GetBoundaryString(block_bcs[face]) << std::endl;
         ATHENA_ERROR(msg);
         break;
-    } // end switch(block_bcs[face])
+    } // end switch (block_bcs[face])
   } // end loop over BoundaryVariable *
 }
 
