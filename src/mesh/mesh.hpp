@@ -278,7 +278,7 @@ class Mesh {
   Real four_pi_G_, grav_eps_, grav_mean_rho_;
 
   // variables for load balancing control
-  bool lb_flag_, lb_automatic_;
+  bool lb_flag_, lb_automatic_, lb_manual_;
   double lb_tolerance_;
   int lb_interval_;
 

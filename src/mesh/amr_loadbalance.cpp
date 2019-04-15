@@ -43,18 +43,17 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
     nbnew += nnew; nbdel += ndel;
   }
 
+  lb_flag_ |= lb_automatic_;
+
   UpdateCostList();
 
-  lb_flag_ |= lb_automatic_;
   if (nnew != 0 || ndel != 0) { // at least one (de)refinement happened
     GatherCostListAndCheckBalance();
     RedistributeAndRefineMeshBlocks(pin, nbtotal + nnew - ndel);
   } else if (lb_flag_ == true && step_since_lb >= lb_interval_) {
-#ifdef MPI_PARALLEL
     if (GatherCostListAndCheckBalance() == false) // load imbalance detected
       RedistributeAndRefineMeshBlocks(pin, nbtotal);
     lb_flag_ = false;
-#endif
   }
   return;
 }
@@ -140,9 +139,8 @@ void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlis
 void Mesh::ResetLoadBalanceVariables() {
   if (lb_automatic_) {
     MeshBlock *pmb = pblock;
-    for (int n=0; n<nbtotal; n++)
-      costlist[n] = TINY_NUMBER;
     while (pmb != nullptr) {
+      costlist[pmb->gid] = TINY_NUMBER;
       pmb->ResetTimeMeasurement();
       pmb = pmb->next;
     }
@@ -157,12 +155,17 @@ void Mesh::ResetLoadBalanceVariables() {
 
 void Mesh::UpdateCostList() {
   MeshBlock *pmb = pblock;
-  double w = 0.0;
-  if (lb_automatic_)
-    w = static_cast<double>(lb_interval_-1)/static_cast<double>(lb_interval_);
-  while (pmb != nullptr) {
-    costlist[pmb->gid] = costlist[pmb->gid]*w+pmb->cost_;
-    pmb = pmb->next;
+  if (lb_automatic_) {
+    double w = static_cast<double>(lb_interval_-1)/static_cast<double>(lb_interval_);
+    while (pmb != nullptr) {
+      costlist[pmb->gid] = costlist[pmb->gid]*w+pmb->cost_;
+      pmb = pmb->next;
+    }
+  } else if (lb_flag_) {
+    while (pmb != nullptr) {
+      costlist[pmb->gid] = pmb->cost_;
+      pmb = pmb->next;
+    }
   }
 }
 
@@ -315,11 +318,11 @@ void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
 // \brief collect the cost from MeshBlocks and check the load balance
 
 bool Mesh::GatherCostListAndCheckBalance() {
+  if (lb_manual_ || lb_automatic_) {
 #ifdef MPI_PARALLEL
-  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_DOUBLE, costlist, nblist,
-                 nslist, MPI_DOUBLE, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_DOUBLE, costlist, nblist,
+                   nslist, MPI_DOUBLE, MPI_COMM_WORLD);
 #endif
-  if (lb_flag_ == true) {
     double maxcost = 0.0, avecost = 0.0;
     for (int rank=0; rank<Globals::nranks; rank++) {
       double rcost = 0.0;
@@ -338,7 +341,6 @@ bool Mesh::GatherCostListAndCheckBalance() {
     if (maxcost > (1.0 + lb_tolerance_)*avecost)
       return false;
   }
-
   return true;
 }
 

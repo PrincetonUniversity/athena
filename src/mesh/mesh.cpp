@@ -273,10 +273,15 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   tree.CreateRootGrid(nrbx1, nrbx2, nrbx3, root_level);
 
   // Load balancing flag and parameters
-  lb_flag_ = true;
-  lb_automatic_ = pin->GetOrAddBoolean("loadbalancing","automatic",false);
+  lb_flag_ = true, lb_manual_ = false, lb_automatic_ = false;
+#ifdef MPI_PARALLEL
+  if (pin->GetOrAddString("loadbalancing","balancer","default") == "automatic")
+    lb_automatic_ = true;
+  else if (pin->GetOrAddString("loadbalancing","balancer","default") == "manual")
+    lb_manual_ = true;
   lb_tolerance_ = pin->GetOrAddReal("loadbalancing","tolerance",0.5);
   lb_interval_ = pin->GetOrAddReal("loadbalancing","interval",10);
+#endif
   step_since_lb = 0;
 
   // SMR / AMR: create finer grids here
@@ -525,7 +530,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   }
   pblock = pfirst;
 
-  if (lb_automatic_) ResetLoadBalanceVariables();
+  ResetLoadBalanceVariables();
 
   if (SELF_GRAVITY_ENABLED == 1)
     pfgrd = new FFTGravityDriver(this, pin);
@@ -692,10 +697,15 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   MGBoundaryFunction_[BoundaryFace::outer_x3] = MGPeriodicOuterX3;
 
   // Load balancing flag and parameters
-  lb_flag_ = true;
-  lb_automatic_ = pin->GetOrAddBoolean("loadbalancing","automatic",false);
+  lb_flag_ = true, lb_manual_ = false, lb_automatic_ = false;
+#ifdef MPI_PARALLEL
+  if (pin->GetOrAddString("loadbalancing","balancer","default") == "automatic")
+    lb_automatic_ = true;
+  else if (pin->GetOrAddString("loadbalancing","balancer","default") == "manual")
+    lb_manual_ = true;
   lb_tolerance_ = pin->GetOrAddReal("loadbalancing","tolerance",0.5);
   lb_interval_ = pin->GetOrAddReal("loadbalancing","interval",10);
+#endif
   step_since_lb = 0;
 
   // SMR / AMR
@@ -881,7 +891,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     ATHENA_ERROR(msg);
   }
 
-  if (lb_automatic_) ResetLoadBalanceVariables();
+  ResetLoadBalanceVariables();
 
   // clean up
   delete [] offset;

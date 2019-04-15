@@ -448,8 +448,10 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
 //  \brief stop time measurement and accumulate it in the MeshBlock cost
 
 void MeshBlock::SetCostForLoadBalancing(double cost) {
-  cost_ = std::min(cost, TINY_NUMBER);
-  pmy_mesh->lb_flag_ = true;
+  if (pmy_mesh->lb_manual_) {
+    cost_ = std::min(cost, TINY_NUMBER);
+    pmy_mesh->lb_flag_ = true;
+  }
 }
 
 //----------------------------------------------------------------------------------------
