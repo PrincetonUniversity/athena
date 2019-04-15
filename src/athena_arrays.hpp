@@ -26,21 +26,26 @@ class AthenaArray {
   // ctors
   // default ctor:
   AthenaArray() : pdata_(nullptr), nx1_(0), nx2_(0), nx3_(0),
-                  nx4_(0), nx5_(0), scopy_(true) {}
-  // ctor overloads:
-  explicit AthenaArray(int nx1) : pdata_(nullptr), nx1_(nx1), nx2_(1), nx3_(1), nx4_(1),
-                         nx5_(1), scopy_(true) {}
-  AthenaArray(int nx2, int nx1) : pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(1), nx4_(1),
-                                  nx5_(1), scopy_(true) {}
-  AthenaArray(int nx3, int nx2, int nx1) : pdata_(nullptr), nx1_(nx1), nx2_(nx2),
-                                           nx3_(nx3), nx4_(1), nx5_(1), scopy_(true) {}
-  AthenaArray(int nx4, int nx3, int nx2, int nx1) : pdata_(nullptr), nx1_(nx1), nx2_(nx2),
-                                                    nx3_(nx3), nx4_(nx4), nx5_(1),
-                                                    scopy_(true) {}
-  AthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1) : pdata_(nullptr), nx1_(nx1),
-                                                             nx2_(nx2), nx3_(nx3),
-                                                             nx4_(nx4), nx5_(nx5),
-                                                             scopy_(true) {}
+                  nx4_(0), nx5_(0), nx6_(0), scopy_(true) {}
+  // ctor overloads: set expected size of unallocated container
+  explicit AthenaArray(int nx1) :
+      pdata_(nullptr), nx1_(nx1), nx2_(1), nx3_(1), nx4_(1), nx5_(1), nx6_(1),
+      scopy_(true) {}
+  AthenaArray(int nx2, int nx1) :
+      pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(1), nx4_(1), nx5_(1), nx6_(1),
+      scopy_(true) {}
+  AthenaArray(int nx3, int nx2, int nx1) :
+      pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(1), nx5_(1), nx6_(1),
+      scopy_(true) {}
+  AthenaArray(int nx4, int nx3, int nx2, int nx1) :
+      pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(1), nx6_(1),
+      scopy_(true) {}
+  AthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1) :
+      pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5),  nx6_(1),
+      scopy_(true) {}
+  AthenaArray(int nx6, int nx5, int nx4, int nx3, int nx2, int nx1) :
+      pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5), nx6_(nx6),
+      scopy_(true) {}
   // still allow delayed-initialization (after constructor) via array.NewAthenaArray() or
   // array.InitWithShallowCopy() and array.InitWithShallowSlice()
 
@@ -65,6 +70,8 @@ class AthenaArray {
   __attribute__((nothrow)) void NewAthenaArray(int nx4, int nx3, int nx2, int nx1);
   __attribute__((nothrow)) void NewAthenaArray(int nx5, int nx4, int nx3, int nx2,
                                                int nx1);
+  __attribute__((nothrow)) void NewAthenaArray(int nx6, int nx5, int nx4, int nx3,
+                                               int nx2, int nx1);
   void DeleteAthenaArray();
 
   // public function to (shallow) swap data pointers of two equally-sized arrays
@@ -77,10 +84,11 @@ class AthenaArray {
   int GetDim3() const { return nx3_; }
   int GetDim4() const { return nx4_; }
   int GetDim5() const { return nx5_; }
+  int GetDim6() const { return nx6_; }
 
   // a function to get the total size of the array
-  int GetSize() const { return nx1_*nx2_*nx3_*nx4_*nx5_; }
-  std::size_t GetSizeInBytes() const {return nx1_*nx2_*nx3_*nx4_*nx5_*sizeof(T); }
+  int GetSize() const { return nx1_*nx2_*nx3_*nx4_*nx5_*nx6_; }
+  std::size_t GetSizeInBytes() const {return nx1_*nx2_*nx3_*nx4_*nx5_*nx6_*sizeof(T); }
 
   bool IsShallowCopy() { return (scopy_ == true); }
   // "getter" function to access private data member
@@ -121,6 +129,14 @@ class AthenaArray {
   T operator() (const int m, const int n, const int k, const int j, const int i) const {
     return pdata_[i + nx1_*(j + nx2_*(k + nx3_*(n + nx4_*m)))]; }
 
+  // int l?, int o?
+  T &operator() (const int p, const int m, const int n, const int k, const int j,
+                 const int i) {
+    return pdata_[i + nx1_*(j + nx2_*(k + nx3_*(n + nx4_*(m + nx5_*p))))]; }
+  T operator() (const int p, const int m, const int n, const int k, const int j,
+                const int i) const {
+    return pdata_[i + nx1_*(j + nx2_*(k + nx3_*(n + nx4_*(m + nx5_*p))))]; }
+
   // functions that initialize an array with shallow copy or slice from another array
   void InitWithShallowCopy(AthenaArray<T> &src);
   void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
@@ -128,7 +144,7 @@ class AthenaArray {
 
  private:
   T *pdata_;
-  int nx1_, nx2_, nx3_, nx4_, nx5_;
+  int nx1_, nx2_, nx3_, nx4_, nx5_, nx6_;
   bool scopy_;  // true if shallow copy (prevents source from being deleted)
 };
 
@@ -149,13 +165,14 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) 
   nx3_ = src.nx3_;
   nx4_ = src.nx4_;
   nx5_ = src.nx5_;
+  nx5_ = src.nx6_;
   if (src.pdata_) {
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_);
     pdata_ = new T[size]; // allocate memory for array data
     for (std::size_t i=0; i<size; ++i) {
       pdata_[i] = src.pdata_[i]; // copy data (not just addresses!) into new memory
     }
-    scopy_=false;
+    scopy_ = false;
   }
 }
 
@@ -166,11 +183,11 @@ template<typename T>
 __attribute__((nothrow))
 AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   if (this != &src) {
-    std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_);
+    std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_)*(src.nx6_);
     for (std::size_t i=0; i<size; ++i) {
       this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!)
     }
-    scopy_=false;
+    scopy_ = false;
   }
   return *this;
 }
@@ -183,6 +200,7 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(AthenaArray<T>&& src) {
   nx3_ = src.nx3_;
   nx4_ = src.nx4_;
   nx5_ = src.nx5_;
+  nx6_ = src.nx6_;
   if (src.pdata_) {
     // && !src.scopy_) {  // (if forbidden to move shallow copies)
     // scopy_ = false;
@@ -198,6 +216,7 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(AthenaArray<T>&& src) {
     src.nx3_= 0;
     src.nx4_= 0;
     src.nx5_= 0;
+    src.nx6_= 0;
   }
 }
 
@@ -214,6 +233,7 @@ AthenaArray<T> &AthenaArray<T>::operator= (AthenaArray<T> &&src) {
       nx3_ = src.nx3_;
       nx4_ = src.nx4_;
       nx5_ = src.nx5_;
+      nx6_ = src.nx6_;
       scopy_ = src.scopy_;
       pdata_ = src.pdata_;
 
@@ -224,6 +244,7 @@ AthenaArray<T> &AthenaArray<T>::operator= (AthenaArray<T> &&src) {
       src.nx3_= 0;
       src.nx4_= 0;
       src.nx5_= 0;
+      src.nx6_= 0;
     }
   }
   return *this;
@@ -240,6 +261,7 @@ void AthenaArray<T>::InitWithShallowCopy(AthenaArray<T> &src) {
   nx3_=src.nx3_;
   nx4_=src.nx4_;
   nx5_=src.nx5_;
+  nx6_=src.nx6_;
   pdata_ = src.pdata_;
   scopy_ = true;
   return;
@@ -255,7 +277,16 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
                                           const int indx, const int nvar) {
   pdata_ = src.pdata_;
 
-  if (dim == 5) {
+  if (dim == 6) {
+    nx6_=nvar;
+    nx5_=src.nx5_;
+    nx4_=src.nx4_;
+    nx3_=src.nx3_;
+    nx2_=src.nx2_;
+    nx1_=src.nx1_;
+    pdata_ += indx*(nx1_*nx2_*nx3_*nx4_*nx5_);
+  } else if (dim == 5) {
+    nx6_=1;
     nx5_=nvar;
     nx4_=src.nx4_;
     nx3_=src.nx3_;
@@ -263,6 +294,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
     nx1_=src.nx1_;
     pdata_ += indx*(nx1_*nx2_*nx3_*nx4_);
   } else if (dim == 4) {
+    nx6_=1;
     nx5_=1;
     nx4_=nvar;
     nx3_=src.nx3_;
@@ -270,6 +302,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
     nx1_=src.nx1_;
     pdata_ += indx*(nx1_*nx2_*nx3_);
   } else if (dim == 3) {
+    nx6_=1;
     nx5_=1;
     nx4_=1;
     nx3_=nvar;
@@ -277,6 +310,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
     nx1_=src.nx1_;
     pdata_ += indx*(nx1_*nx2_);
   } else if (dim == 2) {
+    nx6_=1;
     nx5_=1;
     nx4_=1;
     nx3_=1;
@@ -284,6 +318,7 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
     nx1_=src.nx1_;
     pdata_ += indx*(nx1_);
   } else if (dim == 1) {
+    nx6_=1;
     nx5_=1;
     nx4_=1;
     nx3_=1;
@@ -307,6 +342,7 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx1) {
   nx3_ = 1;
   nx4_ = 1;
   nx5_ = 1;
+  nx6_ = 1;
   pdata_ = new T[nx1](); // allocate memory and initialize to zero
 }
 
@@ -322,6 +358,7 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx2, int nx1) {
   nx3_ = 1;
   nx4_ = 1;
   nx5_ = 1;
+  nx6_ = 1;
   pdata_ = new T[nx1*nx2](); // allocate memory and initialize to zero
 }
 
@@ -337,6 +374,7 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, i
   nx3_ = nx3;
   nx4_ = 1;
   nx5_ = 1;
+  nx6_ = 1;
   pdata_ = new T[nx1*nx2*nx3](); // allocate memory and initialize to zero
 }
 
@@ -353,6 +391,7 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, i
   nx3_ = nx3;
   nx4_ = nx4;
   nx5_ = 1;
+  nx6_ = 1;
   pdata_ = new T[nx1*nx2*nx3*nx4](); // allocate memory and initialize to zero
 }
 
@@ -369,7 +408,25 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, i
   nx3_ = nx3;
   nx4_ = nx4;
   nx5_ = nx5;
+  nx6_ = 1;
   pdata_ = new T[nx1*nx2*nx3*nx4*nx5](); // allocate memory and initialize to zero
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn AthenaArray::NewAthenaArray()
+//  \brief 6d data allocation
+
+template<typename T>
+__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx6, int nx5, int nx4,
+                                                             int nx3, int nx2, int nx1) {
+  scopy_ = false;
+  nx1_ = nx1;
+  nx2_ = nx2;
+  nx3_ = nx3;
+  nx4_ = nx4;
+  nx5_ = nx5;
+  nx6_ = nx6;
+  pdata_ = new T[nx1*nx2*nx3*nx4*nx5*nx6](); // allocate memory and initialize to zero
 }
 
 //----------------------------------------------------------------------------------------
