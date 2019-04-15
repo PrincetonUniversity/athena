@@ -122,14 +122,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (NON_BAROTROPIC_EOS) {
     gm1 = (peos->GetGamma() - 1.0);
     iso_cs = std::sqrt((gm1+1.0)*p0/d0);
+    std::cout << "gamma  = " << peos->GetGamma() << std::endl;
   } else {
     iso_cs = peos->GetIsoSoundSpeed();
     p0 = d0*SQR(iso_cs);
+    std::cout << "iso_cs = " << iso_cs << std::endl;
   }
 
   B0 = std::sqrt(static_cast<Real>(2.0*p0/beta));
-  std::cout << "iso_cs = " << iso_cs << std::endl;
-  std::cout << "gamma  = " << peos->GetGamma() << std::endl;
   std::cout << "d0     = " << d0     << std::endl;
   std::cout << "p0     = " << p0     << std::endl;
   std::cout << "B0     = " << B0     << std::endl;

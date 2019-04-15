@@ -200,7 +200,6 @@ void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar
     int two[] = {2};
     HDF5ReadRealArray(filename, x2lim_name, 1, zero, two, 1, zero, two, lim);
     ptable->SetX2lim(lim(0), lim(1));
-    lim.DeleteAthenaArray();
   }
   if (x1lim_name) {
     AthenaArray<Real> lim;
@@ -209,7 +208,6 @@ void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar
     int two[] = {2};
     HDF5ReadRealArray(filename, x1lim_name, 1, zero, two, 1, zero, two, lim);
     ptable->SetX1lim(lim(0), lim(1));
-    lim.DeleteAthenaArray();
   }
   return;
 }

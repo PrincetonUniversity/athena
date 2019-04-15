@@ -48,7 +48,9 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
   pmy_mg_ = pmg;
 #ifdef MPI_PARALLEL
   mgcomm_ = pmg->pmy_driver_->MPI_COMM_MULTIGRID;
-  mg_grav_phys_id_ = pmy_mesh_->ReserveTagPhysIDs(1);
+  // currently assuming that Multigrid gravity is the only "int physid" associated with
+  // the owning MultigridDriver object:
+  mg_grav_phys_id_ = pmg->pmy_driver_->mg_phys_id_;
 #endif
   if (pmy_mg_->root_flag_ == true) {
     for (int i=0; i<6; i++)
