@@ -33,13 +33,15 @@ class Gravity {
   Gravity(MeshBlock *pmb, ParameterInput *pin);
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
-  // TODO(felker):  //GravityBoundaryVariable *pgbval;
-  CellCenteredBoundaryVariable *pgbval;
-
-  AthenaArray<Real> phi;  // gravitational potential
-  Real gconst, four_pi_G;
+  AthenaArray<Real> phi;   // gravitational potential
+  Real gconst, four_pi_G;  // default: 4*pi*G=1
   Real grav_mean_rho;
   bool srcterm;
+
+  // TODO(felker): consider creating a CellCentered.. derived class, and changing to
+  //GravityBoundaryVariable *pgbval;
+  CellCenteredBoundaryVariable gbvar;
+  //CellCenteredBoundaryVariable *pgbval;
 
   void Initialize(ParameterInput *pin);
   void Solver(const AthenaArray<Real> &u);
