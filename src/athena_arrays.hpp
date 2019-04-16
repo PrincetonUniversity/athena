@@ -86,8 +86,18 @@ class AthenaArray {
   int GetDim6() const { return nx6_; }
 
   // a function to get the total size of the array
-  int GetSize() const { return nx1_*nx2_*nx3_*nx4_*nx5_*nx6_; }
-  std::size_t GetSizeInBytes() const {return nx1_*nx2_*nx3_*nx4_*nx5_*nx6_*sizeof(T); }
+  int GetSize() const {
+    if (state_ == DataStatus::empty)
+      return 0;
+    else
+      return nx1_*nx2_*nx3_*nx4_*nx5_*nx6_;
+  }
+  std::size_t GetSizeInBytes() const {
+    if (state_ == DataStatus::empty)
+      return 0;
+    else
+      return nx1_*nx2_*nx3_*nx4_*nx5_*nx6_*sizeof(T);
+  }
 
   bool IsShallowCopy() { return (state_ == DataStatus::shallow_copy); }
   bool IsEmpty() { return (state_ == DataStatus::empty); }

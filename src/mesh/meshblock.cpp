@@ -313,12 +313,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   for (int n=0; n<nint_user_meshblock_data_; n++) {
     std::memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
                 iuser_meshblock_data[n].GetSizeInBytes());
-    os+=iuser_meshblock_data[n].GetSizeInBytes();
+    os += iuser_meshblock_data[n].GetSizeInBytes();
   }
   for (int n=0; n<nreal_user_meshblock_data_; n++) {
     std::memcpy(ruser_meshblock_data[n].data(), &(mbdata[os]),
                 ruser_meshblock_data[n].GetSizeInBytes());
-    os+=ruser_meshblock_data[n].GetSizeInBytes();
+    os += ruser_meshblock_data[n].GetSizeInBytes();
   }
 
   return;
@@ -347,8 +347,8 @@ MeshBlock::~MeshBlock() {
     delete [] user_out_var_names_;
   }
   // delete user MeshBlock data
-  if (nreal_user_meshblock_data_>0) delete [] ruser_meshblock_data;
-  if (nint_user_meshblock_data_>0) delete [] iuser_meshblock_data;
+  if (nreal_user_meshblock_data_ > 0) delete [] ruser_meshblock_data;
+  if (nint_user_meshblock_data_ > 0) delete [] iuser_meshblock_data;
 }
 
 //----------------------------------------------------------------------------------------
@@ -356,13 +356,13 @@ MeshBlock::~MeshBlock() {
 //  \brief Allocate Real AthenaArrays for user-defned data in MeshBlock
 
 void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
-  if (nreal_user_meshblock_data_!=0) {
+  if (nreal_user_meshblock_data_ != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateRealUserMeshBlockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
     ATHENA_ERROR(msg);
   }
-  nreal_user_meshblock_data_=n;
+  nreal_user_meshblock_data_ = n;
   ruser_meshblock_data = new AthenaArray<Real>[n];
   return;
 }
@@ -372,7 +372,7 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
 //  \brief Allocate integer AthenaArrays for user-defned data in MeshBlock
 
 void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
-  if (nint_user_meshblock_data_!=0) {
+  if (nint_user_meshblock_data_ != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateIntusermeshblockDataField"
         << std::endl << "User MeshBlock data arrays are already allocated" << std::endl;
@@ -389,15 +389,15 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
 //  \brief Allocate user-defined output variables
 
 void MeshBlock::AllocateUserOutputVariables(int n) {
-  if (n<=0) return;
-  if (nuser_out_var!=0) {
+  if (n <= 0) return;
+  if (nuser_out_var != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateUserOutputVariables"
         << std::endl << "User output variables are already allocated." << std::endl;
     ATHENA_ERROR(msg);
     return;
   }
-  nuser_out_var=n;
+  nuser_out_var = n;
   user_out_var.NewAthenaArray(nuser_out_var, ncells3, ncells2, ncells1);
   user_out_var_names_ = new std::string[n];
   return;
@@ -409,7 +409,7 @@ void MeshBlock::AllocateUserOutputVariables(int n) {
 //  \brief set the user-defined output variable name
 
 void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
-  if (n>=nuser_out_var) {
+  if (n >= nuser_out_var) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::SetUserOutputVariableName"
         << std::endl << "User output variable is not allocated." << std::endl;
@@ -427,24 +427,24 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
 std::size_t MeshBlock::GetBlockSizeInBytes() {
   std::size_t size;
 
-  size=phydro->u.GetSizeInBytes();
+  size = phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
-    size+=phydro->w.GetSizeInBytes();
-    size+=phydro->w1.GetSizeInBytes();
+    size += phydro->w.GetSizeInBytes();
+    size += phydro->w1.GetSizeInBytes();
   }
   if (MAGNETIC_FIELDS_ENABLED)
-    size+=(pfield->b.x1f.GetSizeInBytes()+pfield->b.x2f.GetSizeInBytes()
-           +pfield->b.x3f.GetSizeInBytes());
+    size += (pfield->b.x1f.GetSizeInBytes() + pfield->b.x2f.GetSizeInBytes()
+             + pfield->b.x3f.GetSizeInBytes());
   if (SELF_GRAVITY_ENABLED)
-    size+=pgrav->phi.GetSizeInBytes();
+    size += pgrav->phi.GetSizeInBytes();
 
   // NEW_PHYSICS: modify the size counter here when new physics is introduced
 
   // calculate user MeshBlock data size
   for (int n=0; n<nint_user_meshblock_data_; n++)
-    size+=iuser_meshblock_data[n].GetSizeInBytes();
+    size += iuser_meshblock_data[n].GetSizeInBytes();
   for (int n=0; n<nreal_user_meshblock_data_; n++)
-    size+=ruser_meshblock_data[n].GetSizeInBytes();
+    size += ruser_meshblock_data[n].GetSizeInBytes();
 
   return size;
 }
