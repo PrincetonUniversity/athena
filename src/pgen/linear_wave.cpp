@@ -188,14 +188,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // Initialize errors to zero
   Real l1_err[NHYDRO+NFIELD],max_err[NHYDRO+NFIELD];
   for (int i=0; i<(NHYDRO+NFIELD); ++i) {
-    l1_err[i]=0.0;
-    max_err[i]=0.0;
+    l1_err[i] = 0.0;
+    max_err[i] = 0.0;
   }
 
   MeshBlock *pmb = pblock;
   BoundaryValues *pbval;
   while (pmb != nullptr) {
-    pbval=pmb->pbval;
+    BoundaryValues *pbval = pmb->pbval;
     int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
     // adjust loop limits for fourth order error calculation
     //------------------------------------------------
@@ -210,15 +210,11 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     }
     // Save analytic solution of conserved variables in 4D scratch array
     AthenaArray<Real> cons_;
-    int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
-    int ncells2 = 1, ncells3 = 1;
-    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*NGHOST;
-    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*NGHOST;
     // Even for MHD, there are only cell-centered mesh variables
     int ncells4 = NHYDRO + NFIELD;
     int nl = 0;
-    int nu = ncells4-1;
-    cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
+    int nu = ncells4 - 1;
+    cons_.NewAthenaArray(ncells4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
     //  Compute errors at cell centers
     for (int k=kl; k<=ku; k++) {
@@ -269,7 +265,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
       // Compute and store Laplacian of cell-centered conserved variables, Hydro and Bcc
       AthenaArray<Real> delta_cons_;
-      delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
+      delta_cons_.NewAthenaArray(ncells4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
       pmb->pcoord->Laplacian(cons_, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
 
       // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
@@ -442,13 +438,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // are set in InitUserMeshData
 
   if (MAGNETIC_FIELDS_ENABLED) {
-    AthenaArray<Real> a1,a2,a3;
-    int nx1 = (ie-is)+1 + 2*NGHOST;
-    int nx2 = (je-js)+1 + 2*NGHOST;
-    int nx3 = (ke-ks)+1 + 2*NGHOST;
-    a1.NewAthenaArray(nx3,nx2,nx1);
-    a2.NewAthenaArray(nx3,nx2,nx1);
-    a3.NewAthenaArray(nx3,nx2,nx1);
+    AthenaArray<Real> a1, a2, a3;
+    a1.NewAthenaArray(ncells3, ncells2, ncells1);
+    a2.NewAthenaArray(ncells3, ncells2, ncells1);
+    a3.NewAthenaArray(ncells3, ncells2, ncells1);
 
     // wave amplitudes
     dby = amp*rem[NWAVE-2][wave_flag];

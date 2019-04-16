@@ -113,7 +113,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     ATHENA_ERROR(msg);
   }
   // allocate 1D array for cell volume used in usr def history
-  int ncells1 = block_size.nx1 + 2*NGHOST;
   volume.NewAthenaArray(ncells1);
 
   Real d0 = 1.0;

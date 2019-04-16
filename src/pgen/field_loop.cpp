@@ -56,13 +56,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gm1 = peos->GetGamma() - 1.0;
   Real iso_cs =peos->GetIsoSoundSpeed();
 
-  AthenaArray<Real> ax,ay,az;
-  int nx1 = (ie-is)+1 + 2*NGHOST;
-  int nx2 = (je-js)+1 + 2*NGHOST;
-  int nx3 = (ke-ks)+1 + 2*NGHOST;
-  ax.NewAthenaArray(nx3,nx2,nx1);
-  ay.NewAthenaArray(nx3,nx2,nx1);
-  az.NewAthenaArray(nx3,nx2,nx1);
+  AthenaArray<Real> ax, ay, az;
+  ax.NewAthenaArray(ncells3, ncells2, ncells1);
+  ay.NewAthenaArray(ncells3, ncells2, ncells1);
+  az.NewAthenaArray(ncells3, ncells2, ncells1);
 
   // Read initial conditions, diffusion coefficients (if needed)
   Real rad = pin->GetReal("problem","rad");

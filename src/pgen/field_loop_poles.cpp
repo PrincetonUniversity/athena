@@ -116,17 +116,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  Real rad, phi, z;
+  // Real rad, phi, z;
   Real v1, v2, v3;
   // Set initial magnetic fields
   if (MAGNETIC_FIELDS_ENABLED) {
-    AthenaArray<Real> a1,a2,a3;
-    int nx1 = (ie-is)+1 + 2*NGHOST;
-    int nx2 = (je-js)+1 + 2*NGHOST;
-    int nx3 = (ke-ks)+1 + 2*NGHOST;
-    a1.NewAthenaArray(nx3,nx2,nx1);
-    a2.NewAthenaArray(nx3,nx2,nx1);
-    a3.NewAthenaArray(nx3,nx2,nx1);
+    AthenaArray<Real> a1, a2, a3;
+    a1.NewAthenaArray(ncells3, ncells2, ncells1);
+    a2.NewAthenaArray(ncells3, ncells2, ncells1);
+    a3.NewAthenaArray(ncells3, ncells2, ncells1);
 
     int level=loc.level;
     for (int k=ks; k<=ke+1; k++) {
@@ -184,10 +181,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // Initialize interface fields
-    AthenaArray<Real> area,len,len_p1;
-    area.NewAthenaArray(nx1);
-    len.NewAthenaArray(nx1);
-    len_p1.NewAthenaArray(nx1);
+    AthenaArray<Real> area, len, len_p1;
+    area.NewAthenaArray(ncells1);
+    len.NewAthenaArray(ncells1);
+    len_p1.NewAthenaArray(ncells1);
 
     // for 1,2,3-D
     for (int k=ks; k<=ke; ++k) {
