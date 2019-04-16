@@ -29,10 +29,10 @@
 //! \fn MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 //  \brief constructor
 
-MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block_ = pmb;
-  AMRFlag_ = pmb->pmy_mesh->AMRFlag_;
-
+MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block_(pmb), deref_count_(0),
+    deref_threshold_(pin->GetOrAddInteger("mesh", "derefine_count", 10)),
+    AMRFlag_(pmb->pmy_mesh->AMRFlag_) {
   // Create coarse mesh object for parent grid
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     pcoarsec = new Cartesian(pmb, pin, true);
@@ -50,8 +50,11 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
     pcoarsec = new GRUser(pmb, pin, true);
   }
 
-  deref_count_ = 0;
-  deref_threshold_ = pin->GetOrAddInteger("mesh","derefine_count",10);
+  ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
+  ncc2 = 1;
+  ncc3 = 1;
+  if (pmy_block_->pmy_mesh->f2_) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
+  if (pmy_block_->pmy_mesh->f3_) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
 
   int nc1 = pmb->ncells1;
   fvol_[0][0].NewAthenaArray(nc1);

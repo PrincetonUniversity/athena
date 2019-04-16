@@ -45,6 +45,10 @@ class MeshRefinement {
   MeshRefinement(MeshBlock *pmb, ParameterInput *pin);
   ~MeshRefinement();
 
+  // for convenience: "max" # of real+ghost cells along each dir for allocating "standard"
+  // sized arrays on 1x coarser level MeshBlock (i.e. ncc2=nx2/2 + 2*NGHOST, if nx2>1)
+  int ncc1, ncc2, ncc3;
+
   // functions
   void RestrictCellCenteredValues(const AthenaArray<Real> &fine,
                                   AthenaArray<Real> &coarse, int sn, int en,
