@@ -1381,7 +1381,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                                HydroBoundaryQuantity::cons);
         pmb->phydro->hbvar.SendBoundaryBuffers();
         if (MAGNETIC_FIELDS_ENABLED)
-          pmb->pfield->pfbval->SendBoundaryBuffers();
+          pmb->pfield->fbvar.SendBoundaryBuffers();
       }
 
       // wait to receive conserved variables
@@ -1392,7 +1392,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                                HydroBoundaryQuantity::cons);
         pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
         if (MAGNETIC_FIELDS_ENABLED)
-          pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
+          pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
         // KGF: disable shearing box bvals/ calls
         // send and receive shearingbox boundary conditions
         // if (SHEARING_BOX)
@@ -1493,8 +1493,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (phydro->hdif.hydro_diffusion_defined)
           phydro->hdif.SetHydroDiffusivity(phydro->w, pfield->bcc);
         if (MAGNETIC_FIELDS_ENABLED) {
-          if (pfield->pfdif->field_diffusion_defined)
-            pfield->pfdif->SetFieldDiffusivity(phydro->w, pfield->bcc);
+          if (pfield->fdif.field_diffusion_defined)
+            pfield->fdif.SetFieldDiffusivity(phydro->w, pfield->bcc);
         }
       }
 
@@ -1767,7 +1767,7 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
                                            HydroBoundaryQuantity::cons);
     pmb->phydro->hbvar.SendBoundaryBuffers();
     if (MAGNETIC_FIELDS_ENABLED)
-      pmb->pfield->pfbval->SendBoundaryBuffers();
+      pmb->pfield->fbvar.SendBoundaryBuffers();
   }
 
   // wait to receive conserved variables
@@ -1778,7 +1778,7 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
                                            HydroBoundaryQuantity::cons);
     pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
     if (MAGNETIC_FIELDS_ENABLED)
-      pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
+      pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
     // KGF: disable shearing box bvals/ calls
     // send and receive shearingbox boundary conditions
     // if (SHEARING_BOX)

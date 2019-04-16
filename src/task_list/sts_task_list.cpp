@@ -41,7 +41,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
     ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) : ptlist_(ptlist) {
   // STS Incompatiblities
   if (MAGNETIC_FIELDS_ENABLED &&
-      !(pm->pblock->pfield->pfdif->field_diffusion_defined) &&
+      !(pm->pblock->pfield->fdif.field_diffusion_defined) &&
       !(pm->pblock->phydro->hdif.hydro_diffusion_defined)) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
@@ -249,7 +249,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   // Clear flux arrays from previous stage
   pmb->phydro->hdif.ClearHydroFlux(pmb->phydro->flux);
   if (MAGNETIC_FIELDS_ENABLED)
-    pmb->pfield->pfdif->ClearEMF(pmb->pfield->e);
+    pmb->pfield->fdif.ClearEMF(pmb->pfield->e);
 
   // Real time = pmb->pmy_mesh->time;
   pmb->pbval->StartReceiving(BoundaryCommSubset::all);

@@ -79,7 +79,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block->pmr->AddToRefinement(&b, &coarse_b_);
   }
 
-  // create object to interface with BoundaryValues
+  // enroll FaceCenteredBoundaryVariable object
   fbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&fbvar);
   pmb->pbval->bvars_main_int.push_back(&fbvar);
