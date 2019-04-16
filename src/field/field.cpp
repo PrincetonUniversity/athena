@@ -35,6 +35,12 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
     e3_x2f( pmb->ncells3   ,(pmb->ncells2+1), pmb->ncells1   ),
     e1_x3f((pmb->ncells3+1), pmb->ncells2   , pmb->ncells1   ),
     e2_x3f((pmb->ncells3+1), pmb->ncells2   , pmb->ncells1   ),
+    coarse_b_(pmb->ncc3, pmb->ncc2, pmb->ncc1+1,
+              (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
+               AthenaArray<Real>::DataStatus::empty)),
+    coarse_bcc_(3, pmb->ncc3, pmb->ncc2, pmb->ncc1,
+                (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
+                 AthenaArray<Real>::DataStatus::empty)),
     fbvar(pmb, &b, coarse_b_, e),
     fdif(pmb, pin) {
   int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, ncells3 = pmb->ncells3;
@@ -66,15 +72,6 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
   }
   // allocate prolongation buffers
   if (pm->multilevel == true) {
-    int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
-    int ncc2 = 1;
-    if (pmy_block->pmy_mesh->f2_) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
-    int ncc3 = 1;
-    if (pmy_block->pmy_mesh->f3_) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
-    coarse_b_.x1f.NewAthenaArray(ncc3, ncc2, ncc1+1);
-    coarse_b_.x2f.NewAthenaArray(ncc3, ncc2+1, ncc1);
-    coarse_b_.x3f.NewAthenaArray(ncc3+1, ncc2, ncc1);
-    coarse_bcc_.NewAthenaArray(3, ncc3, ncc2, ncc1);
     // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
     pmy_block->pmr->AddToRefinement(&b, &coarse_b_);
   }

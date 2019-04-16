@@ -50,12 +50,12 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     return;
   }
 
-  // create object to interface with BoundaryValues
-
-  // KGF: use Gravity as an example of: containing full object members instead of pointer
+  // using Gravity as an example of: containing full object members instead of pointer
   // memebers, construting BoundaryVariaable composite obj (no default ctor) in Gravity
   // ctor initializer list, avoiding dynamically-managed memory and the need for a
   // user-provided dtor.
+
+  // Enroll CellCenteredBoundaryVariable object
   gbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&gbvar);
 }
