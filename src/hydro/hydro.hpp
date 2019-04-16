@@ -22,6 +22,9 @@
 class MeshBlock;
 class ParameterInput;
 
+// TODO(felker): consider adding a struct FaceFlux w/ overloaded ctor in athena.hpp, or:
+// using FaceFlux = AthenaArray<Real>[3];
+
 //! \class Hydro
 //  \brief hydro data and functions
 

@@ -32,15 +32,17 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     w(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     u1(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     w1(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
-    flux{AthenaArray<Real>(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1+1),
-         AthenaArray<Real>(
-             NHYDRO, pmb->ncells3, pmb->ncells2+1, pmb->ncells1,
-             (pmb->pmy_mesh->f2_ ? AthenaArray<Real>::DataStatus::allocated :
-              AthenaArray<Real>::DataStatus::empty)),
-         AthenaArray<Real>(
-             NHYDRO, pmb->ncells3+1, pmb->ncells2, pmb->ncells1,
-             (pmb->pmy_mesh->f3_ ? AthenaArray<Real>::DataStatus::allocated :
-              AthenaArray<Real>::DataStatus::empty)) },
+    // C++11: nested brace-init-list in Hydro member initializer list = aggregate init. of
+    // flux[3] array --> direct list init. of each array element --> direct init. via
+    // constructor overload resolution of non-aggregate class type AthenaArray<Real>
+    flux{ {NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1+1},
+          {NHYDRO, pmb->ncells3, pmb->ncells2+1, pmb->ncells1,
+           (pmb->pmy_mesh->f2_ ? AthenaArray<Real>::DataStatus::allocated :
+            AthenaArray<Real>::DataStatus::empty)},
+          {NHYDRO, pmb->ncells3+1, pmb->ncells2, pmb->ncells1,
+           (pmb->pmy_mesh->f3_ ? AthenaArray<Real>::DataStatus::allocated :
+            AthenaArray<Real>::DataStatus::empty)}
+    },
     coarse_cons_(NHYDRO, pmb->ncc3, pmb->ncc2, pmb->ncc1,
                  (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
                   AthenaArray<Real>::DataStatus::empty)),
