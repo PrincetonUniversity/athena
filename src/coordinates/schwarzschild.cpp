@@ -37,46 +37,6 @@
 
 Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {
-  Mesh *pm = pmy_block->pmy_mesh;
-  // Set indices
-  int il, iu, jl, ju, kl, ku, ng;
-  if (coarse_flag == true) {
-    il = pmb->cis;
-    iu = pmb->cie;
-    jl = pmb->cjs;
-    ju = pmb->cje;
-    kl = pmb->cks;
-    ku = pmb->cke;
-    ng = NGHOST;
-  } else {
-    il = pmb->is;
-    iu = pmb->ie;
-    jl = pmb->js;
-    ju = pmb->je;
-    kl = pmb->ks;
-    ku = pmb->ke;
-    ng = NGHOST;
-  }
-
-  // Allocate arrays for volume-centered coordinates and positions of cells
-  int nc1 = pmy_block->ncells1, nc2 = pmy_block->ncells2, nc3 = pmy_block->ncells3;
-  dx1v.NewAthenaArray(nc1);
-  dx2v.NewAthenaArray(nc2);
-  dx3v.NewAthenaArray(nc3);
-  x1v.NewAthenaArray(nc1);
-  x2v.NewAthenaArray(nc2);
-  x3v.NewAthenaArray(nc3);
-
-  // Allocate arrays for area weighted positions for AMR/SMR MHD
-  if (pm->multilevel && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.NewAthenaArray(nc1);
-    x1s3.NewAthenaArray(nc1);
-    x2s1.NewAthenaArray(nc2);
-    x2s3.NewAthenaArray(nc2);
-    x3s1.NewAthenaArray(nc3);
-    x3s2.NewAthenaArray(nc3);
-  }
-
   // Set parameters
   bh_mass_ = pin->GetReal("coord", "m");
   const Real &m = bh_mass_;
