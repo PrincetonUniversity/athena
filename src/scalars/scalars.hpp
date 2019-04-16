@@ -26,11 +26,8 @@ class ParameterInput;
 class PassiveScalars {
  public:
   PassiveScalars(MeshBlock *pmb, ParameterInput *pin);
-  ~PassiveScalars();
 
   // public data:
-  CellCenteredBoundaryVariable *psbval;
-
   // mass fraction of each species
   AthenaArray<Real> s;
   AthenaArray<Real> s_flux[3];  // face-averaged flux vector
@@ -41,6 +38,8 @@ class PassiveScalars {
   // storage for SMR/AMR
   // TODO(KGF): remove trailing underscore or revert to private:
   AthenaArray<Real> coarse_s_;
+
+  CellCenteredBoundaryVariable sbvar;
 
   // public functions:
   // KGF: use inheritance for these functions / overall class?

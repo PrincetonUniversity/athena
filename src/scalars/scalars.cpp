@@ -18,52 +18,47 @@
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../field/field.hpp"
 #include "../mesh/mesh.hpp"
+#include "../reconstruct/reconstruction.hpp"
 #include "scalars.hpp"
 
 // constructor, initializes data structures and parameters
 
-PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block = pmb;
+PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
+    s(NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    sbvar(pmb, &s, &coarse_s_, s_flux),
+    pmy_block(pmb) {
+  int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, ncells3 = pmb->ncells3;
+  Mesh *pm = pmy_block->pmy_mesh;
 
-  // Allocate memory for primitive/conserved variables
-  int ncells1 = pmy_block->block_size.nx1 + 2*NGHOST;
-  int ncells2 = 1, ncells3 = 1;
-  if (pmy_block->block_size.nx2 > 1) ncells2 = pmy_block->block_size.nx2 + 2*NGHOST;
-  if (pmy_block->block_size.nx3 > 1) ncells3 = pmy_block->block_size.nx3 + 2*NGHOST;
-
-  // Allocate memory registers for primitive/conserved variables for time-integrator
-  s.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
-
-  // fourth-order hydro cell-centered approximations
-  s_cc.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
+  // Allocate optional passive scalar variable memory registers for time-integrator
+  if (pmb->precon->xorder == 4) {
+    // fourth-order cell-centered approximations
+    s_cc.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
+  }
 
   s_flux[X1DIR].NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1+1);
-  if (pmy_block->block_size.nx2 > 1)
+  if (pm->f2_)
     s_flux[X2DIR].NewAthenaArray(NSCALARS, ncells3, ncells2+1, ncells1);
-  if (pmy_block->block_size.nx3 > 1)
+  if (pm->f3_)
     s_flux[X3DIR].NewAthenaArray(NSCALARS, ncells3+1, ncells2, ncells1);
 
   // allocate prolongation buffers
-  if (pmy_block->pmy_mesh->multilevel == true) {
+  if (pm->multilevel == true) {
     int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
     int ncc2 = 1;
-    if (pmb->block_size.nx2 > 1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
+    if (pm->f2_) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
     int ncc3 = 1;
-    if (pmb->block_size.nx3 > 1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
+    if (pm->f3_) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
     coarse_s_.NewAthenaArray(NSCALARS, ncc3, ncc2, ncc1);
     // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
     pmy_block->pmr->AddToRefinement(&s, &coarse_s_);
   }
 
-  // TODO(KGF): change to RAII
-  // create object to interface with BoundaryValues
-  psbval  = new CellCenteredBoundaryVariable(pmy_block, &s, &coarse_s_, s_flux);
-  psbval->bvar_index = pmb->pbval->bvars.size();
-  pmb->pbval->bvars.push_back(psbval);
-
-  pmb->pbval->bvars_main_int.push_back(psbval);
+  // enroll CellCenteredBoundaryVariable object
+  sbvar.bvar_index = pmb->pbval->bvars.size();
+  pmb->pbval->bvars.push_back(&sbvar);
+  pmb->pbval->bvars_main_int.push_back(&sbvar);
 
   // Allocate memory for scratch arrays
   dxw_.NewAthenaArray(ncells1);
@@ -71,11 +66,11 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
   wr_.NewAthenaArray(NSCALARS, ncells1);
   wlb_.NewAthenaArray(NSCALARS, ncells1);
   x1face_area_.NewAthenaArray(ncells1+1);
-  if (pmy_block->block_size.nx2 > 1) {
+  if (pm->f2_) {
     x2face_area_.NewAthenaArray(ncells1);
     x2face_area_p1_.NewAthenaArray(ncells1);
   }
-  if (pmy_block->block_size.nx3 > 1) {
+  if (pm->f3_) {
     x3face_area_.NewAthenaArray(ncells1);
     x3face_area_p1_.NewAthenaArray(ncells1);
   }
@@ -88,42 +83,4 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin) {
   scr1_nkji_.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
   laplacian_l_fc_.NewAthenaArray(ncells1);
   laplacian_r_fc_.NewAthenaArray(ncells1);
-}
-
-// destructor
-
-PassiveScalars::~PassiveScalars() {
-  s.DeleteAthenaArray();
-
-  // fourth-order integrator
-  s_cc.DeleteAthenaArray();
-
-  s_flux[X1DIR].DeleteAthenaArray();
-  if (pmy_block->block_size.nx2 > 1) s_flux[X2DIR].DeleteAthenaArray();
-  if (pmy_block->block_size.nx3 > 1) s_flux[X3DIR].DeleteAthenaArray();
-
-  dxw_.DeleteAthenaArray();
-  wl_.DeleteAthenaArray();
-  wr_.DeleteAthenaArray();
-  wlb_.DeleteAthenaArray();
-  x1face_area_.DeleteAthenaArray();
-  if (pmy_block->block_size.nx2 > 1) {
-    x2face_area_.DeleteAthenaArray();
-    x2face_area_p1_.DeleteAthenaArray();
-  }
-  if (pmy_block->block_size.nx3 > 1) {
-    x3face_area_.DeleteAthenaArray();
-    x3face_area_p1_.DeleteAthenaArray();
-  }
-  cell_volume_.DeleteAthenaArray();
-
-  // fourth-order integrator
-  // 4D scratch arrays
-  wl3d_.DeleteAthenaArray();
-  wr3d_.DeleteAthenaArray();
-  scr1_nkji_.DeleteAthenaArray();
-  laplacian_l_fc_.DeleteAthenaArray();
-  laplacian_r_fc_.DeleteAthenaArray();
-
-  delete psbval;
 }
