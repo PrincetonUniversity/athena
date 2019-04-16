@@ -473,7 +473,15 @@ void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
 
 template<typename T>
 void AthenaArray<T>::ZeroClear() {
-  std::memset(pdata_, 0, GetSizeInBytes());
+  switch (state_) {
+    case DataStatus::empty:
+      break;
+    case DataStatus::shallow_copy:
+    case DataStatus::allocated:
+      // allocate memory and initialize to zero
+      std::memset(pdata_, 0, GetSizeInBytes());
+      break;
+  }
 }
 
 //----------------------------------------------------------------------------------------
