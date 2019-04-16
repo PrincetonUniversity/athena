@@ -27,14 +27,18 @@
 
 // constructor, initializes data structures and parameters
 
-Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block = pmb;
-  // Allocate memory registers for primitive/conserved variables for time-integrator
-  u.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
-  w.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
-  u1.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
-  w1.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
+Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block(pmb), u(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    w(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    u1(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    w1(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    hbvar(pmb, &u, &coarse_cons_, flux, HydroBoundaryQuantity::cons),
+    hsrc(this, pin),
+    hdif(this, pin) {
+  int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, ncells3 = pmb->ncells3;
+  Mesh *pm = pmy_block->pmy_mesh;
 
+  // Allocate optional memory primitive/conserved variable registers for time-integrator
   if (pmb->precon->xorder == 4) {
     // fourth-order hydro cell-centered approximations
     u_cc.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
@@ -48,29 +52,28 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
     u2.NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1);
 
   flux[X1DIR].NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1+1);
-  if (pmy_block->block_size.nx2 > 1)
+  if (pm->f2_)
     flux[X2DIR].NewAthenaArray(NHYDRO, ncells3, ncells2+1, ncells1);
-  if (pmy_block->block_size.nx3 > 1)
+  if (pm->f3_)
     flux[X3DIR].NewAthenaArray(NHYDRO, ncells3+1, ncells2, ncells1);
 
   // allocate prolongation buffers
-  if (pmy_block->pmy_mesh->multilevel == true) {
+  if (pm->multilevel == true) {
     int ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
     int ncc2 = 1;
-    if (pmb->block_size.nx2 > 1) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
+    if (pm->f2_) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
     int ncc3 = 1;
-    if (pmb->block_size.nx3 > 1) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
+    if (pm->f3_) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
     coarse_cons_.NewAthenaArray(NHYDRO, ncc3, ncc2, ncc1);
     coarse_prim_.NewAthenaArray(NHYDRO, ncc3, ncc2, ncc1);
     // "Enroll" in S/AMR by adding to vector of tuples of pointers in MeshRefinement class
     pmy_block->pmr->AddToRefinement(&u, &coarse_cons_);
   }
-  // create object to interface with BoundaryValues
-  phbval  = new HydroBoundaryVariable(pmy_block, &u, &coarse_cons_, flux,
-                                      HydroBoundaryQuantity::cons);
-  phbval->bvar_index = pmb->pbval->bvars.size();
-  pmb->pbval->bvars.push_back(phbval);
-  pmb->pbval->bvars_main_int.push_back(phbval);
+
+  // enroll HydroBoundaryVariable object
+  hbvar.bvar_index = pmb->pbval->bvars.size();
+  pmb->pbval->bvars.push_back(&hbvar);
+  pmb->pbval->bvars_main_int.push_back(&hbvar);
 
   // Allocate memory for scratch arrays
   dt1_.NewAthenaArray(ncells1);
@@ -81,11 +84,11 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   wr_.NewAthenaArray(NWAVE, ncells1);
   wlb_.NewAthenaArray(NWAVE, ncells1);
   x1face_area_.NewAthenaArray(ncells1+1);
-  if (pmy_block->block_size.nx2 > 1) {
+  if (pm->f2_) {
     x2face_area_.NewAthenaArray(ncells1);
     x2face_area_p1_.NewAthenaArray(ncells1);
   }
-  if (pmy_block->block_size.nx3 > 1) {
+  if (pm->f3_) {
     x3face_area_.NewAthenaArray(ncells1);
     x3face_area_p1_.NewAthenaArray(ncells1);
   }
@@ -106,15 +109,15 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   // for one-time potential calcuation and correction (old Athena)
   if (SELF_GRAVITY_ENABLED == 3) {
     gflx[X1DIR].NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1+1);
-    if (pmy_block->block_size.nx2 > 1)
+    if (pm->f2_)
       gflx[X2DIR].NewAthenaArray(NHYDRO, ncells3, ncells2+1, ncells1);
-    if (pmy_block->block_size.nx3 > 1)
+    if (pm->f3_)
       gflx[X3DIR].NewAthenaArray(NHYDRO, ncells3+1, ncells2, ncells1);
 
     gflx_old[X1DIR].NewAthenaArray(NHYDRO, ncells3, ncells2, ncells1+1);
-    if (pmy_block->block_size.nx2 > 1)
+    if (pm->f2_)
       gflx_old[X2DIR].NewAthenaArray(NHYDRO, ncells3, ncells2+1, ncells1);
-    if (pmy_block->block_size.nx3 > 1)
+    if (pm->f3_)
       gflx_old[X3DIR].NewAthenaArray(NHYDRO, ncells3+1, ncells2, ncells1);
   }
 
@@ -128,22 +131,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) {
   laplacian_r_fc_.NewAthenaArray(ncells1);
 
   UserTimeStep_ = pmb->pmy_mesh->UserTimeStep_;
-
-  // Construct ptrs to objects of various classes needed to integrate hydro/MHD eqns
-  psrc  = new HydroSourceTerms(this, pin);
-
-  // ptr to diffusion object
-  phdif = new HydroDiffusion(this, pin);
 }
-
-// destructor
-
-Hydro::~Hydro() {
-  delete psrc;
-  delete phdif;
-  delete phbval;
-}
-
 
 //----------------------------------------------------------------------------------------
 //! \fn Real Hydro::GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt)

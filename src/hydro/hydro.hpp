@@ -16,11 +16,11 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/cc/hydro/bvals_hydro.hpp"
+#include "hydro_diffusion/hydro_diffusion.hpp"
+#include "srcterms/hydro_srcterms.hpp"
 
 class MeshBlock;
 class ParameterInput;
-class HydroSourceTerms;
-class HydroDiffusion;
 
 //! \class Hydro
 //  \brief hydro data and functions
@@ -30,12 +30,10 @@ class Hydro {
   friend class EquationOfState;
  public:
   Hydro(MeshBlock *pmb, ParameterInput *pin);
-  ~Hydro();
 
   // data
   // TODO(KGF): make this private, if possible
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
-  HydroBoundaryVariable *phbval;
 
   // conserved and primitive variables
   AthenaArray<Real> u, w;      // time-integrator memory register #1
@@ -52,8 +50,9 @@ class Hydro {
   // fourth-order intermediate quantities
   AthenaArray<Real> u_cc, w_cc;      // cell-centered approximations
 
-  HydroSourceTerms *psrc;
-  HydroDiffusion *phdif;
+  HydroBoundaryVariable hbvar;
+  HydroSourceTerms hsrc;
+  HydroDiffusion hdif;
 
   // functions
   void NewBlockTimeStep();    // computes new timestep on a MeshBlock
