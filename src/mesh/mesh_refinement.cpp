@@ -53,7 +53,7 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
   deref_count_ = 0;
   deref_threshold_ = pin->GetOrAddInteger("mesh","derefine_count",10);
 
-  int nc1 = pmb->block_size.nx1+2*NGHOST;
+  int nc1 = pmb->ncells1;
   fvol_[0][0].NewAthenaArray(nc1);
   fvol_[0][1].NewAthenaArray(nc1);
   fvol_[1][0].NewAthenaArray(nc1);

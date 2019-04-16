@@ -1722,14 +1722,10 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
     AthenaArray<Real> delta_cons_;
 
     // Allocate memory for 4D Laplacian
-    int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
-    int ncells2 = 1, ncells3 = 1;
-    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*NGHOST;
-    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*NGHOST;
     int ncells4 = NHYDRO;
     int nl = 0;
-    int nu = ncells4-1;
-    delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
+    int nu = ncells4 - 1;
+    delta_cons_.NewAthenaArray(ncells4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
     // Compute and store Laplacian of cell-averaged conserved variables
     pmb->pcoord->Laplacian(phydro->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
