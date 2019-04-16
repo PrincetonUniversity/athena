@@ -64,23 +64,27 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   ie = is + block_size.nx1 - 1;
 
   ncells1 = block_size.nx1 + 2*NGHOST;
-
+  ncc1 = block_size.nx1/2 + 2*NGHOST;
   if (pmy_mesh->f2_) {
     js = NGHOST;
     je = js + block_size.nx2 - 1;
     ncells2 = block_size.nx2 + 2*NGHOST;
+    ncc2 = block_size.nx2/2 + 2*NGHOST;
   } else {
     js = je = 0;
     ncells2 = 1;
+    ncc2 = 1;
   }
 
   if (pmy_mesh->f3_) {
     ks = NGHOST;
     ke = ks + block_size.nx3 - 1;
     ncells3 = block_size.nx3 + 2*NGHOST;
+    ncc3 = block_size.nx3/2 + 2*NGHOST;
   } else {
     ks = ke = 0;
     ncells3 = 1;
+    ncc3 = 1;
   }
 
   if (pm->multilevel == true) {
@@ -202,23 +206,27 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   ie = is + block_size.nx1 - 1;
 
   ncells1 = block_size.nx1 + 2*NGHOST;
-
+  ncc1 = block_size.nx1/2 + 2*NGHOST;
   if (pmy_mesh->f2_) {
     js = NGHOST;
     je = js + block_size.nx2 - 1;
     ncells2 = block_size.nx2 + 2*NGHOST;
+    ncc2 = block_size.nx2/2 + 2*NGHOST;
   } else {
     js = je = 0;
     ncells2 = 1;
+    ncc2 = 1;
   }
 
   if (pmy_mesh->f3_) {
     ks = NGHOST;
     ke = ks + block_size.nx3 - 1;
     ncells3 = block_size.nx3 + 2*NGHOST;
+    ncc3 = block_size.nx3/2 + 2*NGHOST;
   } else {
     ks = ke = 0;
     ncells3 = 1;
+    ncc3 = 1;
   }
 
   if (pm->multilevel==true) {

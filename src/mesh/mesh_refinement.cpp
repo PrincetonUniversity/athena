@@ -50,12 +50,6 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
     pcoarsec = new GRUser(pmb, pin, true);
   }
 
-  ncc1 = pmb->block_size.nx1/2 + 2*NGHOST;
-  ncc2 = 1;
-  ncc3 = 1;
-  if (pmy_block_->pmy_mesh->f2_) ncc2 = pmb->block_size.nx2/2 + 2*NGHOST;
-  if (pmy_block_->pmy_mesh->f3_) ncc3 = pmb->block_size.nx3/2 + 2*NGHOST;
-
   int nc1 = pmb->ncells1;
   fvol_[0][0].NewAthenaArray(nc1);
   fvol_[0][1].NewAthenaArray(nc1);

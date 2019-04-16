@@ -82,6 +82,8 @@ class MeshBlock {
   // for convenience: "max" # of real+ghost cells along each dir for allocating "standard"
   // sized MeshBlock arrays, depending on ndim (i.e. ncells2=nx2+2*NGHOST if nx2>1)
   int ncells1, ncells2, ncells3;
+  // on 1x coarser level MeshBlock (i.e. ncc2=nx2/2 + 2*NGHOST, if nx2>1)
+  int ncc1, ncc2, ncc3;
   int is, ie, js, je, ks, ke;
   int gid, lid;
   int cis, cie, cjs, cje, cks, cke, cnghost;
