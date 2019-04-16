@@ -99,11 +99,11 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 #ifdef MPI_PARALLEL
   // sum over all ranks
   if (Globals::my_rank == 0) {
-    MPI_Reduce(MPI_IN_PLACE, data_sum, nhistory_output, MPI_ATHENA_REAL, MPI_SUM, 0,
+    MPI_Reduce(MPI_IN_PLACE, data_sum.get(), nhistory_output, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
   } else {
-    MPI_Reduce(data_sum, data_sum, nhistory_output, MPI_ATHENA_REAL, MPI_SUM, 0,
-               MPI_COMM_WORLD);
+    MPI_Reduce(data_sum.get(), data_sum.get(), nhistory_output, MPI_ATHENA_REAL, MPI_SUM,
+               0, MPI_COMM_WORLD);
   }
 #endif
 
