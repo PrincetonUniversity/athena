@@ -17,11 +17,11 @@
 #include "../athena_arrays.hpp"
 #include "../bvals/fc/bvals_fc.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "field_diffusion/field_diffusion.hpp"
 
 class MeshBlock;
 class ParameterInput;
 class Hydro;
-class FieldDiffusion;
 
 //! \class Field
 //  \brief electric and magnetic field data and functions
@@ -30,11 +30,8 @@ class Field {
   friend class Hydro;
  public:
   Field(MeshBlock *pmb, ParameterInput *pin);
-  ~Field();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
-  FaceCenteredBoundaryVariable *pfbval;
-  FieldDiffusion *pfdif;
 
   // face-centered magnetic fields
   FaceField b;       // time-integrator memory register #1
@@ -55,6 +52,9 @@ class Field {
   // TODO(KGF): remove trailing underscore or revert to private:
   AthenaArray<Real> coarse_bcc_;
   FaceField coarse_b_;
+
+  FaceCenteredBoundaryVariable fbvar;
+  FieldDiffusion fdif;
 
   void CalculateCellCenteredField(
       const FaceField &bf, AthenaArray<Real> &bc,
