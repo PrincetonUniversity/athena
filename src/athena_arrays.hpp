@@ -28,32 +28,30 @@ class AthenaArray {
   // default ctor: simply set null AthenaArray
   AthenaArray() : pdata_(nullptr), nx1_(0), nx2_(0), nx3_(0),
                   nx4_(0), nx5_(0), nx6_(0), state_(DataStatus::empty) {}
-  // ctor overloads: set expected size of unallocated container, possibly allocate
-  explicit AthenaArray(int nx1, DataStatus init=DataStatus::empty) :
+  // ctor overloads: set expected size of unallocated container, maybe allocate (default)
+  explicit AthenaArray(int nx1, DataStatus init=DataStatus::allocated) :
       pdata_(nullptr), nx1_(nx1), nx2_(1), nx3_(1), nx4_(1), nx5_(1), nx6_(1),
       state_(init) { AllocateData(); }
-  AthenaArray(int nx2, int nx1, DataStatus init=DataStatus::empty) :
+  AthenaArray(int nx2, int nx1, DataStatus init=DataStatus::allocated) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(1), nx4_(1), nx5_(1), nx6_(1),
       state_(init) { AllocateData(); }
-  AthenaArray(int nx3, int nx2, int nx1, DataStatus init=DataStatus::empty) :
+  AthenaArray(int nx3, int nx2, int nx1, DataStatus init=DataStatus::allocated) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(1), nx5_(1), nx6_(1),
       state_(init) { AllocateData(); }
-  AthenaArray(int nx4, int nx3, int nx2, int nx1, DataStatus init=DataStatus::empty) :
+  AthenaArray(int nx4, int nx3, int nx2, int nx1, DataStatus init=DataStatus::allocated) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(1), nx6_(1),
       state_(init) { AllocateData(); }
   AthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1,
-              DataStatus init=DataStatus::empty) :
+              DataStatus init=DataStatus::allocated) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5),  nx6_(1),
       state_(init) { AllocateData(); }
   AthenaArray(int nx6, int nx5, int nx4, int nx3, int nx2, int nx1,
-              DataStatus init=DataStatus::empty) :
+              DataStatus init=DataStatus::allocated) :
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5), nx6_(nx6),
       state_(init) { AllocateData(); }
   // still allowing delayed-initialization (after constructor) via array.NewAthenaArray()
   // or array.InitWithShallowCopy() and array.InitWithShallowSlice()
   // TODO(felker): replace InitWithShallowCopy() with references (if perf. is unaffected)
-  // TODO(felker): consider making AthenaArray<T>::DataStatus::allocated the default
-  // parameter value in order to avoid this long identifier, if reasonable
 
   // user-provided dtor, "rule of five" applies:
   ~AthenaArray();
