@@ -42,8 +42,8 @@ class Coordinates {
   AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // volume spacing and positions
   AthenaArray<Real> x1s2, x1s3, x2s1, x2s3, x3s1, x3s2; // area averaged posn for AMR
   // geometry coefficient
-  AthenaArray<Real> h2f,dh2fd1,h31f,h32f,dh31fd1,dh32fd2;
-  AthenaArray<Real> h2v,dh2vd1,h31v,h32v,dh31vd1,dh32vd2;
+  AthenaArray<Real> h2f, dh2fd1, h31f, h32f, dh31fd1, dh32fd2;
+  AthenaArray<Real> h2v, dh2vd1, h31v, h32v, dh31vd1, dh32vd2;
 
   // functions...
   // ...to compute length of edges

@@ -23,9 +23,11 @@
 //----------------------------------------------------------------------------------------
 // Coordinates constructor: sets coordinates and coordinate spacing of cell FACES
 
-Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
-  pmy_block = pmb;
-  coarse_flag=flag;
+Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
+    pmy_block(pmb), coarse_flag(flag) {
+  Mesh *pm = pmy_block->pmy_mesh;
+  RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
+  RegionSize& block_size = pmy_block->block_size;
   int is, ie, js, je, ks, ke, ng;
   if (coarse_flag==true) {
     is = pmb->cis; js = pmb->cjs; ks = pmb->cks;
@@ -36,39 +38,33 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     ie = pmb->ie; je = pmb->je; ke = pmb->ke;
     ng=NGHOST;
   }
-  Mesh *pm=pmy_block->pmy_mesh;
-  RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
-  RegionSize& block_size = pmy_block->block_size;
 
   // allocate arrays for face-centered coordinates and coordinate spacing
-  int ncells1 = (ie-is+1) + 2*ng;
-  int ncells2 = 1, ncells3 = 1;
-  if (block_size.nx2 > 1) ncells2 = (je-js+1) + 2*ng;
-  if (block_size.nx3 > 1) ncells3 = (ke-ks+1) + 2*ng;
 
   // note extra cell for face-positions
-  dx1f.NewAthenaArray(ncells1);
-  dx2f.NewAthenaArray(ncells2);
-  dx3f.NewAthenaArray(ncells3);
-  x1f.NewAthenaArray((ncells1+1));
-  x2f.NewAthenaArray((ncells2+1));
-  x3f.NewAthenaArray((ncells3+1));
+  int nc1 = pmy_block->ncells1, nc2 = pmy_block->ncells2, nc3 = pmy_block->ncells3;
+  dx1f.NewAthenaArray(nc1);
+  dx2f.NewAthenaArray(nc2);
+  dx3f.NewAthenaArray(nc3);
+  x1f.NewAthenaArray((nc1+1));
+  x2f.NewAthenaArray((nc2+1));
+  x3f.NewAthenaArray((nc3+1));
 
   std::int64_t nrootmesh, noffset;
-  std::int64_t &lx1=pmy_block->loc.lx1;
-  std::int64_t &lx2=pmy_block->loc.lx2;
-  std::int64_t &lx3=pmy_block->loc.lx3;
-  int &ll=pmy_block->loc.level;
+  std::int64_t &lx1 = pmy_block->loc.lx1;
+  std::int64_t &lx2 = pmy_block->loc.lx2;
+  std::int64_t &lx3 = pmy_block->loc.lx3;
+  int &ll = pmy_block->loc.level;
 
   //--- X1-DIRECTION: initialize coordinates and spacing of cell FACES (x1f,dx1f)
 
-  nrootmesh=mesh_size.nx1*(1L<<(ll-pm->root_level));
+  nrootmesh = mesh_size.nx1*(1L<<(ll-pm->root_level));
 
   // use nonuniform or user-defined meshgen fn
-  if (pm->use_uniform_meshgen_fn_[X1DIR]==false) {
+  if (!(pm->use_uniform_meshgen_fn_[X1DIR])) {
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
-      if (coarse_flag == false) {
+      if (!coarse_flag) {
         noffset = static_cast<std::int64_t>(i-is + lx1*block_size.nx1);
       } else {
         noffset = static_cast<std::int64_t>((i-is)*2 + lx1*block_size.nx1);
@@ -86,8 +82,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
     if (!coarse_flag) {
       Real rmax=1.0, rmin=1.0;
       for (int i=is; i<=ie-1; i++) {
-        rmax=std::max(dx1f(i+1)/dx1f(i),rmax);
-        rmin=std::min(dx1f(i+1)/dx1f(i),rmin);
+        rmax = std::max(dx1f(i+1)/dx1f(i),rmax);
+        rmin = std::min(dx1f(i+1)/dx1f(i),rmin);
       }
       if (rmax > 1.1 || rmin  < 1.0/1.1) {
         std::cout << "### Warning in Coordinates constructor" << std::endl
@@ -98,10 +94,10 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 
   } else {
     // uniform grid: use UniformMeshGeneratorX1()
-    Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
+    Real dx = (block_size.x1max - block_size.x1min)/(ie-is+1);
     for (int i=is-ng; i<=ie+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
-      if (coarse_flag == false) {
+      if (!coarse_flag) {
         noffset = static_cast<std::int64_t>(i-is + lx1*block_size.nx1);
       } else {
         noffset = static_cast<std::int64_t>((i-is)*2 + lx1*block_size.nx1);
@@ -133,14 +129,13 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 
   //--- X2-DIRECTION: initialize coordinates and spacing of cell FACES (x2f,dx2f)
 
-  if (ncells2 > 1) {
-    nrootmesh=mesh_size.nx2*(1L<<(ll-pm->root_level));
-
+  if (nc2 > 1) {
+    nrootmesh = mesh_size.nx2*(1L<<(ll-pm->root_level));
     // use nonuniform or user-defined meshgen fn
-    if (pm->use_uniform_meshgen_fn_[X2DIR]==false) {
+    if (!(pm->use_uniform_meshgen_fn_[X2DIR])) {
       for (int j=js-ng; j<=je+ng+1; ++j) {
         // if there are too many levels, this won't work or be precise enough
-        if (coarse_flag == false) {
+        if (!coarse_flag) {
           noffset = static_cast<std::int64_t>(j-js + lx2*block_size.nx2);
         } else {
           noffset = static_cast<std::int64_t>((j-js)*2 + lx2*block_size.nx2);
@@ -158,8 +153,8 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       if (!coarse_flag) {
         Real rmax=1.0, rmin=1.0;
         for (int j=js; j<=je-1; j++) {
-          rmax=std::max(dx2f(j+1)/dx2f(j),rmax);
-          rmin=std::min(dx2f(j+1)/dx2f(j),rmin);
+          rmax = std::max(dx2f(j+1)/dx2f(j),rmax);
+          rmin = std::min(dx2f(j+1)/dx2f(j),rmin);
         }
         if (rmax > 1.1 || rmin  < 1.0/1.1) {
           std::cout
@@ -171,9 +166,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 
     } else {
       // uniform grid: use UniformMeshGeneratorX2()
-      Real dx=(block_size.x2max-block_size.x2min)/(je-js+1);
+      Real dx = (block_size.x2max - block_size.x2min)/(je-js+1);
       for (int j=js-ng; j<=je+ng+1; ++j) {
-        if (coarse_flag == false) {
+        if (!coarse_flag) {
           noffset = static_cast<std::int64_t>(j-js + lx2*block_size.nx2);
         } else {
           noffset = static_cast<std::int64_t>((j-js)*2 + lx2*block_size.nx2);
@@ -207,21 +202,21 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 
     // 1D problem
   } else {
-    dx2f(js  ) = block_size.x2max-block_size.x2min;
+    dx2f(js  ) = block_size.x2max - block_size.x2min;
     x2f (js  ) = block_size.x2min;
     x2f (je+1) = block_size.x2max;
   }
 
   //--- X3-DIRECTION: initialize coordinates and spacing of cell FACES (x3f,dx3f)
 
-  if (ncells3 > 1) {
-    nrootmesh=mesh_size.nx3*(1L<<(ll-pm->root_level));
+  if (nc3 > 1) {
+    nrootmesh = mesh_size.nx3*(1L<<(ll-pm->root_level));
 
     // use nonuniform or user-defined meshgen fn
-    if (pm->use_uniform_meshgen_fn_[X3DIR]==false) {
+    if (!(pm->use_uniform_meshgen_fn_[X3DIR])) {
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
         // if there are too many levels, this won't work or be precise enough
-        if (coarse_flag == false) {
+        if (!coarse_flag) {
           noffset = static_cast<std::int64_t>(k-ks + lx3*block_size.nx3);
         } else {
           noffset = static_cast<std::int64_t>((k-ks)*2 + lx3*block_size.nx3);
@@ -232,15 +227,15 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       x3f(ks) = block_size.x3min;
       x3f(ke+1) = block_size.x3max;
       for (int k=ks-ng; k<=ke+ng; ++k) {
-        dx3f(k)=x3f(k+1)-x3f(k);
+        dx3f(k) = x3f(k+1)-x3f(k);
       }
 
       // check that coordinate spacing is reasonable
       if (!coarse_flag) {
         Real rmax=1.0, rmin=1.0;
         for (int k=ks; k<=ke-1; k++) {
-          rmax=std::max(dx3f(k+1)/dx3f(k),rmax);
-          rmin=std::min(dx3f(k+1)/dx3f(k),rmin);
+          rmax = std::max(dx3f(k+1)/dx3f(k),rmax);
+          rmin = std::min(dx3f(k+1)/dx3f(k),rmin);
         }
         if (rmax > 1.1 || rmin  < 1.0/1.1) {
           std::cout
@@ -251,9 +246,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
       }
     } else {
       // uniform grid: use UniformMeshGeneratorX3()
-      Real dx=(block_size.x3max-block_size.x3min)/(ke-ks+1);
+      Real dx = (block_size.x3max - block_size.x3min)/(ke-ks+1);
       for (int k=ks-ng; k<=ke+ng+1; ++k) {
-        if (coarse_flag == false) {
+        if (!coarse_flag) {
           noffset = static_cast<std::int64_t>(k-ks + lx3*block_size.nx3);
         } else {
           noffset = static_cast<std::int64_t>((k-ks)*2 + lx3*block_size.nx3);
@@ -285,7 +280,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) {
 
     // 1D or 2D problem
   } else {
-    dx3f(ks) = block_size.x3max-block_size.x3min;
+    dx3f(ks) = block_size.x3max - block_size.x3min;
     x3f(ks  ) = block_size.x3min;
     x3f(ke+1) = block_size.x3max;
   }

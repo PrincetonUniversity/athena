@@ -32,20 +32,18 @@
 
 SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {
-  pmy_block = pmb;
-  coarse_flag=flag;
+  Mesh *pm = pmy_block->pmy_mesh;
+  RegionSize& block_size = pmy_block->block_size;
   int il, iu, jl, ju, kl, ku, ng;
   if (coarse_flag==true) {
     il = pmb->cis; jl = pmb->cjs; kl = pmb->cks;
     iu = pmb->cie; ju = pmb->cje; ku = pmb->cke;
-    ng=NGHOST;
+    ng = NGHOST;
   } else {
     il = pmb->is; jl = pmb->js; kl = pmb->ks;
     iu = pmb->ie; ju = pmb->je; ku = pmb->ke;
-    ng=NGHOST;
+    ng = NGHOST;
   }
-  Mesh *pm=pmy_block->pmy_mesh;
-  RegionSize& block_size = pmy_block->block_size;
 
   // check that Mesh's polar coordinate range does not exceed [0, pi], even in 2D
   // (use 2D cylindrical coordinates to create a circular Mesh)
@@ -65,38 +63,35 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     ATHENA_ERROR(msg);
   }
   // allocate arrays for volume-centered coordinates and positions of cells
-  int ncells1 = (iu-il+1) + 2*ng;
-  int ncells2 = 1, ncells3 = 1;
-  if (block_size.nx2 > 1) ncells2 = (ju-jl+1) + 2*ng;
-  if (block_size.nx3 > 1) ncells3 = (ku-kl+1) + 2*ng;
-  dx1v.NewAthenaArray(ncells1);
-  dx2v.NewAthenaArray(ncells2);
-  dx3v.NewAthenaArray(ncells3);
-  x1v.NewAthenaArray(ncells1);
-  x2v.NewAthenaArray(ncells2);
-  x3v.NewAthenaArray(ncells3);
+  int nc1 = pmy_block->ncells1, nc2 = pmy_block->ncells2, nc3 = pmy_block->ncells3;
+  dx1v.NewAthenaArray(nc1);
+  dx2v.NewAthenaArray(nc2);
+  dx3v.NewAthenaArray(nc3);
+  x1v.NewAthenaArray(nc1);
+  x2v.NewAthenaArray(nc2);
+  x3v.NewAthenaArray(nc3);
   // allocate arrays for volume- and face-centered geometry coefficients of cells
-  h2f.NewAthenaArray(ncells1);
-  dh2fd1.NewAthenaArray(ncells1);
-  h31f.NewAthenaArray(ncells1);
-  dh31fd1.NewAthenaArray(ncells1);
-  h32f.NewAthenaArray(ncells2);
-  dh32fd2.NewAthenaArray(ncells2);
-  h2v.NewAthenaArray(ncells1);
-  dh2vd1.NewAthenaArray(ncells1);
-  h31v.NewAthenaArray(ncells1);
-  dh31vd1.NewAthenaArray(ncells1);
-  h32v.NewAthenaArray(ncells2);
-  dh32vd2.NewAthenaArray(ncells2);
+  h2f.NewAthenaArray(nc1);
+  dh2fd1.NewAthenaArray(nc1);
+  h31f.NewAthenaArray(nc1);
+  dh31fd1.NewAthenaArray(nc1);
+  h32f.NewAthenaArray(nc2);
+  dh32fd2.NewAthenaArray(nc2);
+  h2v.NewAthenaArray(nc1);
+  dh2vd1.NewAthenaArray(nc1);
+  h31v.NewAthenaArray(nc1);
+  dh31vd1.NewAthenaArray(nc1);
+  h32v.NewAthenaArray(nc2);
+  dh32vd2.NewAthenaArray(nc2);
 
   // allocate arrays for area weighted positions for AMR/SMR MHD
   if ((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.NewAthenaArray(ncells1);
-    x1s3.NewAthenaArray(ncells1);
-    x2s1.NewAthenaArray(ncells2);
-    x2s3.NewAthenaArray(ncells2);
-    x3s1.NewAthenaArray(ncells3);
-    x3s2.NewAthenaArray(ncells3);
+    x1s2.NewAthenaArray(nc1);
+    x1s3.NewAthenaArray(nc1);
+    x2s1.NewAthenaArray(nc2);
+    x2s3.NewAthenaArray(nc2);
+    x3s1.NewAthenaArray(nc3);
+    x3s2.NewAthenaArray(nc3);
   }
 
   // initialize volume-averaged coordinates and spacing
@@ -191,27 +186,27 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // Allocate memory for internal scratch arrays to store partial calculations
   // (note this is skipped if object is for coarse mesh with AMR)
   if (coarse_flag==false) {
-    coord_area1_i_.NewAthenaArray(ncells1+1);
-    coord_area2_i_.NewAthenaArray(ncells1);
-    coord_area3_i_.NewAthenaArray(ncells1);
-    coord_vol_i_.NewAthenaArray(ncells1);
-    coord_src1_i_.NewAthenaArray(ncells1);
-    coord_src2_i_.NewAthenaArray(ncells1);
-    phy_src1_i_.NewAthenaArray(ncells1);
-    phy_src2_i_.NewAthenaArray(ncells1);
+    coord_area1_i_.NewAthenaArray(nc1+1);
+    coord_area2_i_.NewAthenaArray(nc1);
+    coord_area3_i_.NewAthenaArray(nc1);
+    coord_vol_i_.NewAthenaArray(nc1);
+    coord_src1_i_.NewAthenaArray(nc1);
+    coord_src2_i_.NewAthenaArray(nc1);
+    phy_src1_i_.NewAthenaArray(nc1);
+    phy_src2_i_.NewAthenaArray(nc1);
 
-    coord_area1_j_.NewAthenaArray(ncells2);
-    coord_area2_j_.NewAthenaArray(ncells2+1);
-    coord_vol_j_.NewAthenaArray(ncells2);
-    coord_src1_j_.NewAthenaArray(ncells2);
-    coord_src2_j_.NewAthenaArray(ncells2);
-    coord_src3_j_.NewAthenaArray(ncells2);
+    coord_area1_j_.NewAthenaArray(nc2);
+    coord_area2_j_.NewAthenaArray(nc2+1);
+    coord_vol_j_.NewAthenaArray(nc2);
+    coord_src1_j_.NewAthenaArray(nc2);
+    coord_src2_j_.NewAthenaArray(nc2);
+    coord_src3_j_.NewAthenaArray(nc2);
     // non-ideal MHD
-    coord_area1vc_i_.NewAthenaArray(ncells1);
-    coord_area2vc_i_.NewAthenaArray(ncells1);
-    coord_area3vc_i_.NewAthenaArray(ncells1);
-    coord_area1vc_j_.NewAthenaArray(ncells2);
-    coord_area2vc_j_.NewAthenaArray(ncells2);
+    coord_area1vc_i_.NewAthenaArray(nc1);
+    coord_area2vc_i_.NewAthenaArray(nc1);
+    coord_area3vc_i_.NewAthenaArray(nc1);
+    coord_area1vc_j_.NewAthenaArray(nc2);
+    coord_area2vc_j_.NewAthenaArray(nc2);
     // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
     // This helps improve performance.
 #pragma omp simd

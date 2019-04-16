@@ -32,9 +32,8 @@
 
 Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {
+  Mesh *pm = pmy_block->pmy_mesh;
   // Set indices
-  pmy_block = pmb;
-  coarse_flag = flag;
   int il, iu, jl, ju, kl, ku, ng;
   if (coarse_flag == true) {
     il = pmb->cis;
@@ -53,30 +52,24 @@ Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
     ku = pmb->ke;
     ng = NGHOST;
   }
-  Mesh *pm = pmy_block->pmy_mesh;
-  RegionSize& mesh_size = pmy_block->pmy_mesh->mesh_size;
-  RegionSize& block_size = pmy_block->block_size;
 
   // Allocate arrays for volume-centered coordinates and positions of cells
-  int ncells1 = (iu-il+1) + 2*ng;
-  int ncells2 = 1, ncells3 = 1;
-  if (block_size.nx2 > 1) ncells2 = (ju-jl+1) + 2*ng;
-  if (block_size.nx3 > 1) ncells3 = (ku-kl+1) + 2*ng;
-  dx1v.NewAthenaArray(ncells1);
-  dx2v.NewAthenaArray(ncells2);
-  dx3v.NewAthenaArray(ncells3);
-  x1v.NewAthenaArray(ncells1);
-  x2v.NewAthenaArray(ncells2);
-  x3v.NewAthenaArray(ncells3);
+  int nc1 = pmy_block->ncells1, nc2 = pmy_block->ncells2, nc3 = pmy_block->ncells3;
+  dx1v.NewAthenaArray(nc1);
+  dx2v.NewAthenaArray(nc2);
+  dx3v.NewAthenaArray(nc3);
+  x1v.NewAthenaArray(nc1);
+  x2v.NewAthenaArray(nc2);
+  x3v.NewAthenaArray(nc3);
 
   // Allocate arrays for area weighted positions for AMR/SMR MHD
   if (pm->multilevel && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.NewAthenaArray(ncells1);
-    x1s3.NewAthenaArray(ncells1);
-    x2s1.NewAthenaArray(ncells2);
-    x2s3.NewAthenaArray(ncells2);
-    x3s1.NewAthenaArray(ncells3);
-    x3s2.NewAthenaArray(ncells3);
+    x1s2.NewAthenaArray(nc1);
+    x1s3.NewAthenaArray(nc1);
+    x2s1.NewAthenaArray(nc2);
+    x2s3.NewAthenaArray(nc2);
+    x3s1.NewAthenaArray(nc3);
+    x3s2.NewAthenaArray(nc3);
   }
 
   // Initialize volume-averaged coordinates and spacings: x-direction
