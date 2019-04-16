@@ -35,12 +35,12 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
     e3_x2f( pmb->ncells3   ,(pmb->ncells2+1), pmb->ncells1   ),
     e1_x3f((pmb->ncells3+1), pmb->ncells2   , pmb->ncells1   ),
     e2_x3f((pmb->ncells3+1), pmb->ncells2   , pmb->ncells1   ),
-    coarse_b_(pmb->ncc3, pmb->ncc2, pmb->ncc1+1,
-              (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
-               AthenaArray<Real>::DataStatus::empty)),
     coarse_bcc_(3, pmb->ncc3, pmb->ncc2, pmb->ncc1,
                 (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
                  AthenaArray<Real>::DataStatus::empty)),
+    coarse_b_(pmb->ncc3, pmb->ncc2, pmb->ncc1+1,
+              (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
+               AthenaArray<Real>::DataStatus::empty)),
     fbvar(pmb, &b, coarse_b_, e),
     fdif(pmb, pin) {
   int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, ncells3 = pmb->ncells3;
