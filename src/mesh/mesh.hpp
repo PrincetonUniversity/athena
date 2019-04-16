@@ -194,6 +194,7 @@ class Mesh {
   // data
   RegionSize mesh_size;
   BoundaryFlag mesh_bcs[6];
+  bool f2_, f3_; // flags indicating 2D or 3D Mesh
   Real start_time, tlim, cfl_number, time, dt, dt_diff;
   Real muj, nuj, muj_tilde;
   int nlim, ncycle, ncycle_out;
@@ -251,8 +252,6 @@ class Mesh {
   int nrbx1, nrbx2, nrbx3;
   // TODO(felker) find unnecessary static_cast<> ops. from old std::int64_t type in 2018:
   //std::int64_t nrbx1, nrbx2, nrbx3;
-
-  bool f2_, f3_; // flags indicating 2D or 3D Mesh
 
   // flags are false if using non-uniform or user meshgen function
   bool use_uniform_meshgen_fn_[3];
