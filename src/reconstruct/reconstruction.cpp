@@ -200,43 +200,43 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   // will use first PLM/PPM limiter without any coordinate terms
 
   // Allocate memory for scratch arrays used in PLM and PPM
-  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
-  scr01_i_.NewAthenaArray(ncells1);
-  scr02_i_.NewAthenaArray(ncells1);
+  int nc1 = pmb->ncells1;
+  scr01_i_.NewAthenaArray(nc1);
+  scr02_i_.NewAthenaArray(nc1);
 
-  scr1_ni_.NewAthenaArray(NWAVE,ncells1);
-  scr2_ni_.NewAthenaArray(NWAVE,ncells1);
-  scr3_ni_.NewAthenaArray(NWAVE,ncells1);
-  scr4_ni_.NewAthenaArray(NWAVE,ncells1);
+  scr1_ni_.NewAthenaArray(NWAVE, nc1);
+  scr2_ni_.NewAthenaArray(NWAVE, nc1);
+  scr3_ni_.NewAthenaArray(NWAVE, nc1);
+  scr4_ni_.NewAthenaArray(NWAVE, nc1);
 
   if ((xorder == 3) || (xorder == 4)) {
-    scr03_i_.NewAthenaArray(ncells1);
-    scr04_i_.NewAthenaArray(ncells1);
-    scr05_i_.NewAthenaArray(ncells1);
-    scr06_i_.NewAthenaArray(ncells1);
-    scr07_i_.NewAthenaArray(ncells1);
-    scr08_i_.NewAthenaArray(ncells1);
-    scr09_i_.NewAthenaArray(ncells1);
-    scr10_i_.NewAthenaArray(ncells1);
-    scr11_i_.NewAthenaArray(ncells1);
-    scr12_i_.NewAthenaArray(ncells1);
-    scr13_i_.NewAthenaArray(ncells1);
-    scr14_i_.NewAthenaArray(ncells1);
+    scr03_i_.NewAthenaArray(nc1);
+    scr04_i_.NewAthenaArray(nc1);
+    scr05_i_.NewAthenaArray(nc1);
+    scr06_i_.NewAthenaArray(nc1);
+    scr07_i_.NewAthenaArray(nc1);
+    scr08_i_.NewAthenaArray(nc1);
+    scr09_i_.NewAthenaArray(nc1);
+    scr10_i_.NewAthenaArray(nc1);
+    scr11_i_.NewAthenaArray(nc1);
+    scr12_i_.NewAthenaArray(nc1);
+    scr13_i_.NewAthenaArray(nc1);
+    scr14_i_.NewAthenaArray(nc1);
 
-    scr5_ni_.NewAthenaArray(NWAVE,ncells1);
-    scr6_ni_.NewAthenaArray(NWAVE,ncells1);
-    scr7_ni_.NewAthenaArray(NWAVE,ncells1);
-    scr8_ni_.NewAthenaArray(NWAVE,ncells1);
+    scr5_ni_.NewAthenaArray(NWAVE, nc1);
+    scr6_ni_.NewAthenaArray(NWAVE, nc1);
+    scr7_ni_.NewAthenaArray(NWAVE, nc1);
+    scr8_ni_.NewAthenaArray(NWAVE, nc1);
 
     // Precompute PPM coefficients in x1-direction ---------------------------------------
-    c1i.NewAthenaArray(ncells1);
-    c2i.NewAthenaArray(ncells1);
-    c3i.NewAthenaArray(ncells1);
-    c4i.NewAthenaArray(ncells1);
-    c5i.NewAthenaArray(ncells1);
-    c6i.NewAthenaArray(ncells1);
-    hplus_ratio_i.NewAthenaArray(ncells1);
-    hminus_ratio_i.NewAthenaArray(ncells1);
+    c1i.NewAthenaArray(nc1);
+    c2i.NewAthenaArray(nc1);
+    c3i.NewAthenaArray(nc1);
+    c4i.NewAthenaArray(nc1);
+    c5i.NewAthenaArray(nc1);
+    c6i.NewAthenaArray(nc1);
+    hplus_ratio_i.NewAthenaArray(nc1);
+    hminus_ratio_i.NewAthenaArray(nc1);
 
     // coeffiencients in x1 for uniform Cartesian mesh
     if (uniform_limiter[X1DIR]) {
@@ -304,15 +304,15 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
 
     // Precompute PPM coefficients in x2-direction ---------------------------------------
     if (pmb->block_size.nx2 > 1) {
-      int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
-      c1j.NewAthenaArray(ncells2);
-      c2j.NewAthenaArray(ncells2);
-      c3j.NewAthenaArray(ncells2);
-      c4j.NewAthenaArray(ncells2);
-      c5j.NewAthenaArray(ncells2);
-      c6j.NewAthenaArray(ncells2);
-      hplus_ratio_j.NewAthenaArray(ncells2);
-      hminus_ratio_j.NewAthenaArray(ncells2);
+      int nc2 = pmb->ncells2;
+      c1j.NewAthenaArray(nc2);
+      c2j.NewAthenaArray(nc2);
+      c3j.NewAthenaArray(nc2);
+      c4j.NewAthenaArray(nc2);
+      c5j.NewAthenaArray(nc2);
+      c6j.NewAthenaArray(nc2);
+      hplus_ratio_j.NewAthenaArray(nc2);
+      hminus_ratio_j.NewAthenaArray(nc2);
 
       // coeffiencients in x2 for uniform Cartesian mesh
       if (uniform_limiter[X2DIR]) {
@@ -381,15 +381,15 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
 
     // Precompute PPM coefficients in x3-direction
     if (pmb->block_size.nx3 > 1) {
-      int ncells3 = pmb->block_size.nx3 + 2*NGHOST;
-      c1k.NewAthenaArray(ncells3);
-      c2k.NewAthenaArray(ncells3);
-      c3k.NewAthenaArray(ncells3);
-      c4k.NewAthenaArray(ncells3);
-      c5k.NewAthenaArray(ncells3);
-      c6k.NewAthenaArray(ncells3);
-      hplus_ratio_k.NewAthenaArray(ncells3);
-      hminus_ratio_k.NewAthenaArray(ncells3);
+      int nc3 = pmb->ncells3;
+      c1k.NewAthenaArray(nc3);
+      c2k.NewAthenaArray(nc3);
+      c3k.NewAthenaArray(nc3);
+      c4k.NewAthenaArray(nc3);
+      c5k.NewAthenaArray(nc3);
+      c6k.NewAthenaArray(nc3);
+      hplus_ratio_k.NewAthenaArray(nc3);
+      hminus_ratio_k.NewAthenaArray(nc3);
 
       // coeffiencients in x3 for uniform Cartesian mesh
       if (uniform_limiter[X3DIR]) {
