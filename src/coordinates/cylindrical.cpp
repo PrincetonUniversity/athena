@@ -335,9 +335,9 @@ void Cylindrical::CoordSrcTerms(
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
 
-  HydroDiffusion *phd = pmy_block->phydro->phdif;
-  bool do_hydro_diffusion = (phd->hydro_diffusion_defined &&
-                             (phd->nu_iso > 0.0 || phd->nu_aniso > 0.0));
+  HydroDiffusion &hd = pmy_block->phydro->hdif;
+  bool do_hydro_diffusion = (hd.hydro_diffusion_defined &&
+                             (hd.nu_iso > 0.0 || hd.nu_aniso > 0.0));
 
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
     for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
@@ -351,10 +351,10 @@ void Cylindrical::CoordSrcTerms(
           m_pp += (iso_cs*iso_cs)*prim(IDN,k,j,i);
         }
         if (MAGNETIC_FIELDS_ENABLED) {
-          m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) - SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
+          m_pp += 0.5*(SQR(bcc(IB1,k,j,i)) - SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
         }
         if (do_hydro_diffusion)
-          m_pp += 0.5*(phd->visflx[X2DIR](IM2,k,j+1,i)+phd->visflx[X2DIR](IM2,k,j,i));
+          m_pp += 0.5*(hd.visflx[X2DIR](IM2,k,j+1,i) + hd.visflx[X2DIR](IM2,k,j,i));
 
         u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_pp;
 

@@ -1377,9 +1377,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
-        pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+        pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                                HydroBoundaryQuantity::cons);
-        pmb->phydro->phbval->SendBoundaryBuffers();
+        pmb->phydro->hbvar.SendBoundaryBuffers();
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->pfbval->SendBoundaryBuffers();
       }
@@ -1388,15 +1388,15 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
-        pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+        pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                                HydroBoundaryQuantity::cons);
-        pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
+        pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
         // KGF: disable shearing box bvals/ calls
         // send and receive shearingbox boundary conditions
         // if (SHEARING_BOX)
-        //   pmb->phydro->phbval->
+        //   pmb->phydro->hbvar.
         //   SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
         pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
       }
@@ -1414,20 +1414,20 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
-          pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w,
+          pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
                                                  HydroBoundaryQuantity::prim);
-          pmb->phydro->phbval->SendBoundaryBuffers();
+          pmb->phydro->hbvar.SendBoundaryBuffers();
         }
 
         // wait to receive AMR/SMR GR primitives
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
-          pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w,
+          pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
                                                  HydroBoundaryQuantity::prim);
-          pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
+          pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
           pbval->ClearBoundary(BoundaryCommSubset::gr_amr);
-          pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+          pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                                  HydroBoundaryQuantity::cons);
         }
       } // multilevel
@@ -1481,7 +1481,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
         // --------------------------
         // end fourth-order EOS
-        pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w,
+        pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
                                                HydroBoundaryQuantity::prim);
         pbval->ApplyPhysicalBoundaries(time, 0.0);
       }
@@ -1490,8 +1490,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,phydro,pfield)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; phydro = pmb->phydro, pfield = pmb->pfield;
-        if (phydro->phdif->hydro_diffusion_defined)
-          phydro->phdif->SetHydroDiffusivity(phydro->w, pfield->bcc);
+        if (phydro->hdif.hydro_diffusion_defined)
+          phydro->hdif.SetHydroDiffusivity(phydro->w, pfield->bcc);
         if (MAGNETIC_FIELDS_ENABLED) {
           if (pfield->pfdif->field_diffusion_defined)
             pfield->pfdif->SetFieldDiffusivity(phydro->w, pfield->bcc);
@@ -1767,9 +1767,9 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
 #pragma omp for private(pmb,pbval)
   for (int i=0; i<nmb; ++i) {
     pmb = pmb_array[i];
-    pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+    pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                            HydroBoundaryQuantity::cons);
-    pmb->phydro->phbval->SendBoundaryBuffers();
+    pmb->phydro->hbvar.SendBoundaryBuffers();
     if (MAGNETIC_FIELDS_ENABLED)
       pmb->pfield->pfbval->SendBoundaryBuffers();
   }
@@ -1778,15 +1778,15 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
 #pragma omp for private(pmb,pbval)
   for (int i=0; i<nmb; ++i) {
     pmb = pmb_array[i]; pbval = pmb->pbval;
-    pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+    pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                            HydroBoundaryQuantity::cons);
-    pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
+    pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
     if (MAGNETIC_FIELDS_ENABLED)
       pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
     // KGF: disable shearing box bvals/ calls
     // send and receive shearingbox boundary conditions
     // if (SHEARING_BOX)
-    //   pmb->phydro->phbval->
+    //   pmb->phydro->hbvar.
     //   SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
     pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
   } // end second exchange of ghost cells

@@ -490,9 +490,9 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
   bool use_x2_fluxes = pmy_block->block_size.nx2 > 1;
 
-  HydroDiffusion *phd = pmy_block->phydro->phdif;
-  bool do_hydro_diffusion = (phd->hydro_diffusion_defined &&
-                             (phd->nu_iso>0.0 || phd->nu_aniso>0.0));
+  HydroDiffusion &hd = pmy_block->phydro->hdif;
+  bool do_hydro_diffusion = (hd.hydro_diffusion_defined &&
+                             (hd.nu_iso > 0.0 || hd.nu_aniso > 0.0));
 
   // Go through cells
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
@@ -510,8 +510,8 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
           m_ii += SQR(bcc(IB1,k,j,i));
         }
         if (do_hydro_diffusion) {
-          m_ii += 0.5*(phd->visflx[X2DIR](IM2,k,j+1,i)+phd->visflx[X2DIR](IM2,k,j,i));
-          m_ii += 0.5*(phd->visflx[X3DIR](IM3,k+1,j,i)+phd->visflx[X3DIR](IM3,k,j,i));
+          m_ii += 0.5*(hd.visflx[X2DIR](IM2,k,j+1,i) + hd.visflx[X2DIR](IM2,k,j,i));
+          m_ii += 0.5*(hd.visflx[X3DIR](IM3,k+1,j,i) + hd.visflx[X3DIR](IM3,k,j,i));
         }
 
         u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_ii;
@@ -538,7 +538,7 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
                         - SQR(bcc(IB3,k,j,i)) );
         }
         if (do_hydro_diffusion)
-          m_pp += 0.5*(phd->visflx[X3DIR](IM3,k+1,j,i)+phd->visflx[X3DIR](IM3,k,j,i));
+          m_pp += 0.5*(hd.visflx[X3DIR](IM3,k+1,j,i) + hd.visflx[X3DIR](IM3,k,j,i));
 
         u(IM2,k,j,i) += dt*coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
 
@@ -553,7 +553,7 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
             m_ph -= bcc(IB3,k,j,i) * bcc(IB2,k,j,i);
           }
           if (do_hydro_diffusion)
-            m_ph += 0.5*(phd->visflx[X2DIR](IM3,k,j+1,i)+phd->visflx[X2DIR](IM3,k,j,i));
+            m_ph += 0.5*(hd.visflx[X2DIR](IM3,k,j+1,i) + hd.visflx[X2DIR](IM3,k,j,i));
 
           u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src3_j_(j)*m_ph;
         }

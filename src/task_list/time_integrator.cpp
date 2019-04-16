@@ -630,7 +630,7 @@ TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
 // Functions to communicate fluxes between MeshBlocks for flux correction with AMR
 
 TaskStatus TimeIntegratorTaskList::SendHydroFlux(MeshBlock *pmb, int stage) {
-  pmb->phydro->phbval->SendFluxCorrection();
+  pmb->phydro->hbvar.SendFluxCorrection();
   return TaskStatus::success;
 }
 
@@ -643,7 +643,7 @@ TaskStatus TimeIntegratorTaskList::SendEMF(MeshBlock *pmb, int stage) {
 // Functions to receive fluxes between MeshBlocks
 
 TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectHydroFlux(MeshBlock *pmb, int stage) {
-  if (pmb->phydro->phbval->ReceiveFluxCorrection() == true) {
+  if (pmb->phydro->hbvar.ReceiveFluxCorrection() == true) {
     return TaskStatus::next;
   } else {
     return TaskStatus::fail;
@@ -739,7 +739,7 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage
   Field *pf = pmb->pfield;
 
   // return if there are no source terms to be added
-  if (ph->psrc->hydro_sourceterms_defined == false) return TaskStatus::next;
+  if (ph->hsrc.hydro_sourceterms_defined == false) return TaskStatus::next;
 
   if (stage <= nstages) {
     // Time at beginning of stage for u()
@@ -747,7 +747,7 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage
     // Scaled coefficient for RHS update
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     // Evaluate the time-dependent source terms at the time at the beginning of the stage
-    ph->psrc->AddHydroSourceTerms(t_start_stage, dt, ph->flux, ph->w, pf->bcc, ph->u);
+    ph->hsrc.AddHydroSourceTerms(t_start_stage, dt, ph->flux, ph->w, pf->bcc, ph->u);
   } else {
     return TaskStatus::fail;
   }
@@ -761,10 +761,10 @@ TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
 
   // return if there are no diffusion to be added
-  if (ph->phdif->hydro_diffusion_defined == false) return TaskStatus::next;
+  if (ph->hdif.hydro_diffusion_defined == false) return TaskStatus::next;
 
   if (stage <= nstages) {
-    ph->phdif->CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
+    ph->hdif.CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
   } else {
     return TaskStatus::fail;
   }
@@ -793,9 +793,9 @@ TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SendHydro(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u, HydroBoundaryQuantity::cons);
-    pmb->phydro->phbval->SelectCoarseBuffer(HydroBoundaryQuantity::cons);
-    pmb->phydro->phbval->SendBoundaryBuffers();
+    pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u, HydroBoundaryQuantity::cons);
+    pmb->phydro->hbvar.SelectCoarseBuffer(HydroBoundaryQuantity::cons);
+    pmb->phydro->hbvar.SendBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -817,7 +817,7 @@ TaskStatus TimeIntegratorTaskList::SendField(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::ReceiveHydro(MeshBlock *pmb, int stage) {
   bool ret;
   if (stage <= nstages) {
-    ret = pmb->phydro->phbval->ReceiveBoundaryBuffers();
+    ret = pmb->phydro->hbvar.ReceiveBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -846,8 +846,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveField(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SetBoundariesHydro(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->phydro->phbval->SelectCoarseBuffer(HydroBoundaryQuantity::cons);
-    pmb->phydro->phbval->SetBoundaries();
+    pmb->phydro->hbvar.SelectCoarseBuffer(HydroBoundaryQuantity::cons);
+    pmb->phydro->hbvar.SetBoundaries();
     return TaskStatus::success;
   }
   return TaskStatus::fail;
@@ -863,7 +863,7 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesField(MeshBlock *pmb, int stage)
 
 TaskStatus TimeIntegratorTaskList::SendHydroShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    //    pmb->phydro->phbval->SendHydroShearingboxBoundaryBuffers(pmb->phydro->u, true);
+    //    pmb->phydro->hbvar.SendHydroShearingboxBoundaryBuffers(pmb->phydro->u, true);
   } else {
     return TaskStatus::fail;
   }
@@ -873,7 +873,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) 
   bool ret;
   ret = false;
   if (stage <= nstages) {
-    // ret = pmb->phydro->phbval->ReceiveHydroShearingboxBoundaryBuffers(pmb->phydro->u);
+    // ret = pmb->phydro->hbvar.ReceiveHydroShearingboxBoundaryBuffers(pmb->phydro->u);
   } else {
     return TaskStatus::fail;
   }
@@ -997,8 +997,8 @@ TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-    pmb->phydro->phbval->SelectCoarseBuffer(HydroBoundaryQuantity::prim);
-    pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w, HydroBoundaryQuantity::prim);
+    pmb->phydro->hbvar.SelectCoarseBuffer(HydroBoundaryQuantity::prim);
+    pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w, HydroBoundaryQuantity::prim);
     pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
   } else {
     return TaskStatus::fail;

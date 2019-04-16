@@ -126,9 +126,9 @@ void Hydro::NewBlockTimeStep() {
   }
 
   // calculate the timestep limited by the diffusion process
-  if (phdif->hydro_diffusion_defined) {
+  if (hdif.hydro_diffusion_defined) {
     Real mindt_vis, mindt_cnd;
-    phdif->NewHydroDiffusionDt(mindt_vis, mindt_cnd);
+    hdif.NewHydroDiffusionDt(mindt_vis, mindt_cnd);
     min_dt_diff = std::min(min_dt_diff,mindt_vis);
     min_dt_diff = std::min(min_dt_diff,mindt_cnd);
   } // hydro diffusion
