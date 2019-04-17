@@ -122,7 +122,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   AthenaArray<Real>  shear_cc_[2];
   // flux from conservative remapping
   AthenaArray<Real>  shear_flx_cc_[2];
-  // KGF: this should be a struct
+  // KGF: these should probably be combined into a struct or array with send/recv switch
   int shear_send_count_cc_[2][4], shear_recv_count_cc_[2][4]; // buffer sizes
 
 #ifdef MPI_PARALLEL
