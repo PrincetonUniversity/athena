@@ -85,7 +85,42 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
 #ifdef MPI_PARALLEL
     shear_cc_phys_id_ = cc_phys_id_ + 2;
 #endif
-  }
+    if (pbval_->ShBoxCoord_ == 1) {
+      int nc2 = pmb->ncells2;
+      int nc3 = pmb->ncells3;
+      for (int upper=0; upper<2; upper++) {
+        if (pbval_->is_shear[upper]) {
+          shear_cc_[upper].NewAthenaArray(NHYDRO, nc3, nc2, NGHOST);
+          shear_flx_cc_[upper].NewAthenaArray(nc2);
+
+          // TODO(KGF): the rest of this should be a part of InitBoundaryData()
+
+          // attach corner cells from L/R side
+          int size = (pmb->block_size.nx2 + NGHOST)*pbval_->ssize_*NHYDRO;
+          for (int n=0; n<2; n++) {
+            shear_bd_var_[upper].send[n] = new Real[size];
+            shear_bd_var_[upper].recv[n] = new Real[size];
+            shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+            shear_bd_var_[upper].req_send[n] = MPI_REQUEST_NULL;
+            shear_bd_var_[upper].req_recv[n] = MPI_REQUEST_NULL;
+#endif
+          }
+          // corner cells only
+          size = NGHOST*pbval_->ssize_*NHYDRO;
+          for (int n=2; n<4; n++) {
+            shear_bd_var_[upper].send[n] = new Real[size];
+            shear_bd_var_[upper].recv[n] = new Real[size];
+            shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+            shear_bd_var_[upper].req_send[n] = MPI_REQUEST_NULL;
+            shear_bd_var_[upper].req_recv[n] = MPI_REQUEST_NULL;
+#endif
+          }
+        } // end "if is a shearing boundary"
+      }  // end loop over inner, outer shearing boundaries
+    } // end "if (pbval_->ShBoxCoord_ == 1)"
+  } // end shearing box component of ctor
 }
 
 // destructor
@@ -94,6 +129,18 @@ CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
   DestroyBoundaryData(bd_var_);
   if (pmy_mesh_->multilevel)
     DestroyBoundaryData(bd_var_flcor_);
+
+  // TODO(KGF): this should be a part of DestroyBoundaryData()
+  if (SHEARING_BOX) {
+    for (int upper=0; upper<2; upper++) {
+      if (pbval_->is_shear[upper]) { // if true for shearing inner blocks
+        for (int n=0; n<4; n++) {
+          delete[] shear_bd_var_[upper].send[n];
+          delete[] shear_bd_var_[upper].recv[n];
+        }
+      }
+    }
+  }
 }
 
 int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,

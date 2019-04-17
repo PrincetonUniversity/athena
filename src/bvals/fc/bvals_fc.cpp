@@ -122,7 +122,69 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
     shear_fc_phys_id_ = fc_flx_phys_id_ + 2;
     shear_emf_phys_id_ = shear_fc_phys_id_+ 1;
 #endif
-  }
+
+    if (pbval_->ShBoxCoord_ == 1) {
+      int nc2 = pmb->ncells2;
+      int nc3 = pmb->ncells3;
+      for (int upper=0; upper<2; upper++) {
+        if (pbval_->is_shear[upper]) {
+          shear_fc_[upper].x1f.NewAthenaArray(nc3, nc2, NGHOST);
+          shear_fc_[upper].x2f.NewAthenaArray(nc3, nc2+1, NGHOST);
+          shear_fc_[upper].x3f.NewAthenaArray(nc3+1, nc2, NGHOST);
+          shear_flx_fc_[upper].x1f.NewAthenaArray(nc2);
+          shear_flx_fc_[upper].x2f.NewAthenaArray(nc2+1);
+          shear_flx_fc_[upper].x3f.NewAthenaArray(nc2);
+          shear_var_emf_[upper].x2e.NewAthenaArray(nc3+1, nc2);
+          shear_var_emf_[upper].x3e.NewAthenaArray(nc3, nc2+1);
+          shear_map_emf_[upper].x2e.NewAthenaArray(nc3+1, nc2);
+          shear_map_emf_[upper].x3e.NewAthenaArray(nc3, nc2+1);
+          shear_flx_emf_[upper].x2e.NewAthenaArray(nc2);
+          shear_flx_emf_[upper].x3e.NewAthenaArray(nc2+1);
+
+          // TODO(KGF): the rest of this should be a part of InitBoundaryData()
+
+          // attach corner cells from L/R side
+          // extra cell in azimuth/vertical
+          int bsize = (pmb->block_size.nx2 + NGHOST+1)*(pbval_->ssize_ + NGHOST)*NFIELD;
+          // face plus edge for EMF
+          int esize = 2*(pmb->block_size.nx2 + NGHOST)*pmb->block_size.nx3
+                      + pmb->block_size.nx2 + pmb->block_size.nx3 + NGHOST;
+          for (int n=0; n<2; n++) {
+            shear_bd_var_[upper].send[n] = new Real[bsize];
+            shear_bd_var_[upper].recv[n] = new Real[bsize];
+            shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
+            shear_bd_emf_[upper].send[n] = new Real[esize];
+            shear_bd_emf_[upper].recv[n] = new Real[esize];
+            shear_bd_emf_[upper].flag[n] = BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+            shear_bd_var_[upper].req_send[n] = MPI_REQUEST_NULL;
+            shear_bd_var_[upper].req_recv[n] = MPI_REQUEST_NULL;
+            shear_bd_emf_[upper].req_send[n] = MPI_REQUEST_NULL;
+            shear_bd_emf_[upper].req_recv[n] = MPI_REQUEST_NULL;
+#endif
+          }
+          // corner cells only
+          bsize = NGHOST*(pbval_->ssize_ + NGHOST)*NFIELD;
+          esize = 2*NGHOST*pmb->block_size.nx3 + NGHOST;
+
+          for (int n=2; n<4; n++) {
+            shear_bd_var_[upper].send[n] = new Real[bsize];
+            shear_bd_var_[upper].recv[n] = new Real[bsize];
+            shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
+            shear_bd_emf_[upper].send[n] = new Real[esize];
+            shear_bd_emf_[upper].recv[n] = new Real[esize];
+            shear_bd_emf_[upper].flag[n] = BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+            shear_bd_var_[upper].req_send[n] = MPI_REQUEST_NULL;
+            shear_bd_var_[upper].req_recv[n] = MPI_REQUEST_NULL;
+            shear_bd_emf_[upper].req_send[n] = MPI_REQUEST_NULL;
+            shear_bd_emf_[upper].req_recv[n] = MPI_REQUEST_NULL;
+#endif
+          }
+        } // end "if is a shearing boundary"
+      }  // end loop over inner, outer shearing boundaries
+    } // end "if (pbval_->ShBoxCoord_ == 1)"
+  } // end shearing box component of ctor
 }
 
 // destructor
@@ -130,6 +192,20 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
 FaceCenteredBoundaryVariable::~FaceCenteredBoundaryVariable() {
   DestroyBoundaryData(bd_var_);
   DestroyBoundaryData(bd_var_flcor_);
+
+  // TODO(KGF): this should be a part of DestroyBoundaryData()
+  if (SHEARING_BOX) {
+    for (int upper=0; upper<2; upper++) {
+      if (pbval_->is_shear[upper]) {
+        for (int n=0; n<4; n++) {
+          delete[] shear_bd_var_[upper].send[n];
+          delete[] shear_bd_var_[upper].recv[n];
+          delete[] shear_bd_emf_[upper].send[n];
+          delete[] shear_bd_emf_[upper].recv[n];
+        }
+      }
+    }
+  }
 
   if (pbval_->num_north_polar_blocks_ > 0) {
     for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n) {
@@ -185,14 +261,14 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
   cng3 = cng*f3;
 
   int size1 = ((ni.ox1 == 0) ? (nx1 + 1) : NGHOST)
-            *((ni.ox2 == 0) ? (nx2) : NGHOST)
-            *((ni.ox3 == 0) ? (nx3) : NGHOST);
+              *((ni.ox2 == 0) ? (nx2) : NGHOST)
+              *((ni.ox3 == 0) ? (nx3) : NGHOST);
   int size2 = ((ni.ox1 == 0) ? (nx1) : NGHOST)
-            *((ni.ox2 == 0) ? (nx2 + f2) : NGHOST)
-            *((ni.ox3 == 0) ? (nx3) : NGHOST);
+              *((ni.ox2 == 0) ? (nx2 + f2) : NGHOST)
+              *((ni.ox3 == 0) ? (nx3) : NGHOST);
   int size3 = ((ni.ox1 == 0) ? (nx1) : NGHOST)
-            *((ni.ox2 == 0) ? (nx2) : NGHOST)
-            *((ni.ox3 == 0) ? (nx3 + f3) : NGHOST);
+              *((ni.ox2 == 0) ? (nx2) : NGHOST)
+              *((ni.ox3 == 0) ? (nx3 + f3) : NGHOST);
   int size = size1 + size2 + size3;
   if (pmy_mesh_->multilevel) {
     if (ni.type != NeighborConnect::face) {
@@ -202,16 +278,16 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
     }
     size = size1 + size2 + size3;
     int f2c1 = ((ni.ox1 == 0) ? ((nx1 + 1)/2 + 1) : NGHOST)
-             *((ni.ox2 == 0) ? ((nx2 + 1)/2) : NGHOST)
-                   *((ni.ox3 == 0) ? ((nx3 + 1)/2) : NGHOST);
+               *((ni.ox2 == 0) ? ((nx2 + 1)/2) : NGHOST)
+               *((ni.ox3 == 0) ? ((nx3 + 1)/2) : NGHOST);
     int f2c2 = ((ni.ox1 == 0) ? ((nx1 + 1)/2) : NGHOST)
-             *((ni.ox2 == 0) ? ((nx2 + 1)/2 + f2)
-               : NGHOST)
-             *((ni.ox3 == 0) ? ((nx3 + 1)/2) : NGHOST);
+               *((ni.ox2 == 0) ? ((nx2 + 1)/2 + f2)
+                 : NGHOST)
+               *((ni.ox3 == 0) ? ((nx3 + 1)/2) : NGHOST);
     int f2c3 = ((ni.ox1 == 0) ? ((nx1 + 1)/2) : NGHOST)
-             *((ni.ox2 == 0) ? ((nx2 + 1)/2) : NGHOST)
-             *((ni.ox3 == 0) ? ((nx3 + 1)/2 + f3)
-               : NGHOST);
+               *((ni.ox2 == 0) ? ((nx2 + 1)/2) : NGHOST)
+               *((ni.ox3 == 0) ? ((nx3 + 1)/2 + f3)
+                 : NGHOST);
     if (ni.type != NeighborConnect::face) {
       if (ni.ox1 != 0) f2c1 = f2c1/NGHOST*(NGHOST + 1);
       if (ni.ox2 != 0) f2c2 = f2c2/NGHOST*(NGHOST + 1);
@@ -260,7 +336,7 @@ int FaceCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
         size = (nx1 + 1) + nx1;
     } else { // 1D
       size = 2;
-          }
+    }
   } else if (ni.type == NeighborConnect::edge) {
     if (nx3 > 1) { // 3D
       if (ni.ox3 == 0) size = nx3;
@@ -1344,8 +1420,8 @@ void FaceCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
           (nb.ni.type == NeighborConnect::face || nb.ni.type == NeighborConnect::edge)) {
         if ((nb.snb.level > mylevel) ||
             ((nb.snb.level == mylevel) && ((nb.ni.type == NeighborConnect::face)
-                                     || ((nb.ni.type == NeighborConnect::edge)
-                                         && (edge_flag_[nb.eid] == true)))))
+                                           || ((nb.ni.type == NeighborConnect::edge)
+                                               && (edge_flag_[nb.eid] == true)))))
           MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
       }
     }
