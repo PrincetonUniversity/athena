@@ -59,7 +59,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
 
   // allocate arrays for volume- and face-centered geometry coefficients of cells
   // (only for spherical-polar, cylindrical, cartesian coordinates, for now)
-  if (!RELATIVISTIC_DYNAMICS) {
+  if (!GENERAL_RELATIVITY) { // exclude: minkowski, gr_user, schwarzschild, kerr-schild
     h2f.NewAthenaArray(nc1);
     dh2fd1.NewAthenaArray(nc1);
     h31f.NewAthenaArray(nc1);
