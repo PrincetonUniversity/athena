@@ -112,9 +112,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
     Omega_0_ = pin->GetOrAddReal("problem", "Omega0", 0.001);
     qshear_  = pin->GetOrAddReal("problem", "qshear", 1.5);
     ShBoxCoord_ = pin->GetOrAddInteger("problem", "shboxcoord", 1);
-    x1size_ = pmy_mesh_->mesh_size.x1max - pmy_mesh_->mesh_size.x1min;
-    x2size_ = pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min;
-    x3size_ = pmy_mesh_->mesh_size.x3max - pmy_mesh_->mesh_size.x3min;
     int level = pmb->loc.level - pmy_mesh_->root_level;
     std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
     std::int64_t nrbx2 = pmy_mesh_->nrbx2*(1L << level);
@@ -757,9 +754,11 @@ void BoundaryValues::FindShearBlock(const Real time) {
   int nc3 = pmb->ncells3;;
 
   // Update the amount of shear:
-  qomL_ = qshear_*Omega_0_*x1size_;
+  Real x1size = pmy_mesh_->mesh_size.x1max - pmy_mesh_->mesh_size.x1min;
+  Real x2size = pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min;
+  qomL_ = qshear_*Omega_0_*x1size;
   Real yshear = qomL_*time;
-  Real deltay = std::fmod(yshear, x2size_);
+  Real deltay = std::fmod(yshear, x2size);
   int joffset = static_cast<int>(deltay/pco->dx2v(js)); // assumes uniform grid in azimuth
   int Ngrids  = static_cast<int>(joffset/nx2);
   joverlap_   = joffset - Ngrids*nx2;

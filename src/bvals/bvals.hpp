@@ -145,7 +145,6 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
 
   // Shearing box (shared with Field and Hydro)
   // KGF: remove the redundancies in these variables:
-  Real x1size_, x2size_, x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
   Real Omega_0_, qshear_;       // orbital freq and shear rate
   int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz
   int joverlap_;                // # of cells the shear runs over one block
