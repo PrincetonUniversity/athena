@@ -142,12 +142,11 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
         // shift azimuthal velocity for x-z shearing
         if (SHEARING_BOX) {
           if (pbval_->ShBoxCoord_ == 2
-              && (pmb->loc.lx1 == 0) && (nb.ni.ox1 == -1)) {
+              && (pmb->loc.lx1 == pbval_->loc_shear[0]) && (nb.ni.ox1 == -1)) {
             for (int j=pmb->js; j<=pmb->je; j++)
               buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);
           } else if (pbval_->ShBoxCoord_ == 2
-                     // KGF: incompatible with uses of nblx1 elsewhere. Assumes no refine
-                     && (pmb->loc.lx1 == (pmb->pmy_mesh->nblx1 - 1))
+                     && (pmb->loc.lx1 == pbval_->loc_shear[1])
                      && nb.ni.ox1 == 1) {
             for (int j=pmb->js; j<=pmb->je; j++)
               buf[p++] = e2(k,j,i) - qomL*bx1(k,j,i);
@@ -232,12 +231,11 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
       // KGF: shearing box
       // shift azimuthal velocity for x-z shearing
       if (SHEARING_BOX) {
-        if (pbval_->ShBoxCoord_ == 2 && (pmb->loc.lx1 == 0) && (nb.ni.ox1 == -1))   {
+        if (pbval_->ShBoxCoord_ == 2 && (pmb->loc.lx1 == pbval_->loc_shear[0]) && (nb.ni.ox1 == -1))   {
           for (int j=pmb->js; j<=pmb->je; j++)
             buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);
         } else if (pbval_->ShBoxCoord_ == 2
-                     // KGF: incompatible with uses of nblx1 elsewhere. Assumes no refine
-                   && (pmb->loc.lx1 == (pmb->pmy_mesh->nblx1 - 1))
+                   && (pmb->loc.lx1 == pbval_->loc_shear[1])
                    && nb.ni.ox1 == 1) {
           for (int j=pmb->js; j<=pmb->je; j++)
             buf[p++] = e2(k,j,i) - qomL*bx1(k,j,i);

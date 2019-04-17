@@ -109,10 +109,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   // set parameters for shearing box bc and allocate buffers
   if (SHEARING_BOX) {
     // TODO(felker): add checks on the requisite number of dimensions
+    // TODO(felker): move all of these to member initializer list of new shearing class
     Omega_0_ = pin->GetOrAddReal("problem", "Omega0", 0.001);
     qshear_  = pin->GetOrAddReal("problem", "qshear", 1.5);
     ShBoxCoord_ = pin->GetOrAddInteger("problem", "shboxcoord", 1);
     int level = pmb->loc.level - pmy_mesh_->root_level;
+    // nblx2 is only used for allocating SimpleNeighborBlock arrays; nblx1 for loc_shear
     std::int64_t nblx1 = pmy_mesh_->nrbx1*(1L << level);
     std::int64_t nblx2 = pmy_mesh_->nrbx2*(1L << level);
     is_shear[0] = false;
