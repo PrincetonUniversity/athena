@@ -146,7 +146,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
             for (int j=pmb->js; j<=pmb->je; j++)
               buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);
           } else if (pbval_->ShBoxCoord_ == 2
-                     && (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1 - 1))
+                     // KGF: incompatible with uses of nblx1 elsewhere. Assumes no refine
+                     && (pmb->loc.lx1 == (pmb->pmy_mesh->nblx1 - 1))
                      && nb.ni.ox1 == 1) {
             for (int j=pmb->js; j<=pmb->je; j++)
               buf[p++] = e2(k,j,i) - qomL*bx1(k,j,i);
@@ -235,7 +236,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
           for (int j=pmb->js; j<=pmb->je; j++)
             buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);
         } else if (pbval_->ShBoxCoord_ == 2
-                   && (pmb->loc.lx1 == (pmb->pmy_mesh->nrbx1 - 1))
+                     // KGF: incompatible with uses of nblx1 elsewhere. Assumes no refine
+                   && (pmb->loc.lx1 == (pmb->pmy_mesh->nblx1 - 1))
                    && nb.ni.ox1 == 1) {
           for (int j=pmb->js; j<=pmb->je; j++)
             buf[p++] = e2(k,j,i) - qomL*bx1(k,j,i);

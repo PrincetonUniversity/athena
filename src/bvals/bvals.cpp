@@ -113,12 +113,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
     qshear_  = pin->GetOrAddReal("problem", "qshear", 1.5);
     ShBoxCoord_ = pin->GetOrAddInteger("problem", "shboxcoord", 1);
     int level = pmb->loc.level - pmy_mesh_->root_level;
-    std::int64_t nrbx1 = pmy_mesh_->nrbx1*(1L << level);
-    std::int64_t nrbx2 = pmy_mesh_->nrbx2*(1L << level);
+    std::int64_t nblx1 = pmy_mesh_->nrbx1*(1L << level);
+    std::int64_t nblx2 = pmy_mesh_->nrbx2*(1L << level);
     is_shear[0] = false;
     is_shear[1] = false;
     loc_shear[0] = 0;
-    loc_shear[1] = nrbx1 - 1;
+    loc_shear[1] = nblx1 - 1;
 
     if (ShBoxCoord_ == 1) {
       int nc2 = pmb->ncells2;
@@ -144,7 +144,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
           shear_flx_emf_[0].x3e.NewAthenaArray(nc2+1);
         }
         is_shear[0] = true;
-        shbb_[0] = new SimpleNeighborBlock[nrbx2];
+        shbb_[0] = new SimpleNeighborBlock[nblx2];
 
         // attach corner cells from L/R side
         int size = (pmb->block_size.nx2 + NGHOST)*ssize_*NHYDRO;
@@ -227,7 +227,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
           shear_flx_emf_[1].x3e.NewAthenaArray(nc2+1);
         }
         is_shear[1] = true;
-        shbb_[1] = new SimpleNeighborBlock[nrbx2];
+        shbb_[1] = new SimpleNeighborBlock[nblx2];
 
         // attach corner cells from L/R side
         int size = (pmb->block_size.nx2 + NGHOST)*ssize_*NHYDRO;
@@ -746,7 +746,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
   int js = pmb->js; int je = pmb->je;
 
   int level = pmb->loc.level - pmesh->root_level;
-  std::int64_t nrbx2 = pmesh->nrbx2*(1L << level);
+  std::int64_t nblx2 = pmesh->nblx2*(1L << level);
   int nx2   = pmb->block_size.nx2;  // # of cells per meshblock
   int nx3   = pmb->block_size.nx3;  // # of cells per meshblock
   // KGF: for symmetry reasons, how can ncells3 but not ncells2 be used in this fn?
@@ -805,14 +805,14 @@ void BoundaryValues::FindShearBlock(const Real time) {
       }
 
       int jblock = 0;
-      for (int j=0; j<nrbx2; j++) {
+      for (int j=0; j<nblx2; j++) {
         // find global index of current MeshBlock on the shearing boundary block list
         if (shbb_[upper][j].gid == pmb->gid) jblock = j;
       }
       // send [js-NGHOST:je-joverlap] of the current MeshBlock to the shearing neighbor
       // attach [je-joverlap+1:MIN(je-joverlap + NGHOST, je-js+1)] to its right end.
       std::int64_t jtmp = jblock + Ngrids;
-      if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
+      if (jtmp > (nblx2 - 1)) jtmp -= nblx2;
       // TODO(felker): replace this with C++ copy semantics (also copy level!):
       shear_send_neighbor_[upper][1].gid  = shbb_[upper][jtmp].gid;
       shear_send_neighbor_[upper][1].rank = shbb_[upper][jtmp].rank;
@@ -828,7 +828,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
       // recv [js+joverlap:je] of the current MeshBlock to the shearing neighbor
       // attach [je+1:MIN(je+NGHOST, je+joverlap)] to its right end.
       jtmp = jblock - Ngrids;
-      if (jtmp < 0) jtmp += nrbx2;
+      if (jtmp < 0) jtmp += nblx2;
       shear_recv_neighbor_[upper][1].gid  = shbb_[upper][jtmp].gid;
       shear_recv_neighbor_[upper][1].rank = shbb_[upper][jtmp].rank;
       shear_recv_neighbor_[upper][1].lid  = shbb_[upper][jtmp].lid;
@@ -853,7 +853,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
       if (joverlap_ != 0) {
         // send to the right
         jtmp = jblock + (Ngrids + 1);
-        if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
+        if (jtmp > (nblx2 - 1)) jtmp -= nblx2;
         shear_send_neighbor_[upper][0].gid  = shbb_[upper][jtmp].gid;
         shear_send_neighbor_[upper][0].rank = shbb_[upper][jtmp].rank;
         shear_send_neighbor_[upper][0].lid  = shbb_[upper][jtmp].lid;
@@ -865,7 +865,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
 
         // receive from its left
         jtmp = jblock - (Ngrids + 1);
-        if (jtmp < 0) jtmp += nrbx2;
+        if (jtmp < 0) jtmp += nblx2;
         shear_recv_neighbor_[upper][0].gid  = shbb_[upper][jtmp].gid;
         shear_recv_neighbor_[upper][0].rank = shbb_[upper][jtmp].rank;
         shear_recv_neighbor_[upper][0].lid  = shbb_[upper][jtmp].lid;
@@ -888,7 +888,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
         if (joverlap_ > (nx2 - NGHOST)) {
           // send to Right
           jtmp = jblock + (Ngrids + 2);
-          while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
+          while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
           shear_send_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
           shear_send_neighbor_[upper][2].rank = shbb_[upper][jtmp].rank;
           shear_send_neighbor_[upper][2].lid  = shbb_[upper][jtmp].lid;
@@ -900,7 +900,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
 
           // recv from Left
           jtmp = jblock - (Ngrids + 2);
-          while (jtmp < 0) jtmp += nrbx2;
+          while (jtmp < 0) jtmp += nblx2;
           shear_recv_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
           shear_recv_neighbor_[upper][2].rank = shbb_[upper][jtmp].rank;
           shear_recv_neighbor_[upper][2].lid  = shbb_[upper][jtmp].lid;
@@ -923,8 +923,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
         // deal with the right boundary cells with send[3]
         if (joverlap_ < NGHOST) {
           jtmp = jblock + (Ngrids - 1);
-          while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-          while (jtmp < 0) jtmp += nrbx2;
+          while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
+          while (jtmp < 0) jtmp += nblx2;
           shear_send_neighbor_[upper][3].gid  = shbb_[upper][jtmp].gid;
           shear_send_neighbor_[upper][3].rank = shbb_[upper][jtmp].rank;
           shear_send_neighbor_[upper][3].lid  = shbb_[upper][jtmp].lid;
@@ -935,8 +935,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
           shear_send_count_cc_[upper][3] = nx_exchange_right*ssize_;
 
           jtmp = jblock - (Ngrids - 1);
-          while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-          while (jtmp < 0) jtmp += nrbx2;
+          while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
+          while (jtmp < 0) jtmp += nblx2;
           shear_recv_neighbor_[upper][3].gid  = shbb_[upper][jtmp].gid;
           shear_recv_neighbor_[upper][3].rank = shbb_[upper][jtmp].rank;
           shear_recv_neighbor_[upper][3].lid  = shbb_[upper][jtmp].lid;
@@ -959,7 +959,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
       } else {  // joverlap_ == 0
         // send [je-(NGHOST-1):je] to Right (outer x2)
         jtmp = jblock + (Ngrids + 1);
-        while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
+        while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
         shear_send_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
         shear_send_neighbor_[upper][2].rank = shbb_[upper][jtmp].rank;
         shear_send_neighbor_[upper][2].lid  = shbb_[upper][jtmp].lid;
@@ -971,7 +971,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
 
         // recv [js-NGHOST:js-1] from Left
         jtmp = jblock - (Ngrids + 1);
-        while (jtmp < 0) jtmp += nrbx2;
+        while (jtmp < 0) jtmp += nblx2;
         shear_recv_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
         shear_recv_neighbor_[upper][2].rank = shbb_[upper][jtmp].rank;
         shear_recv_neighbor_[upper][2].lid  = shbb_[upper][jtmp].lid;
@@ -993,8 +993,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
         // inner x2
         // send [js:js+(NGHOST-1)] to Left
         jtmp = jblock + (Ngrids - 1);
-        while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-        while (jtmp < 0) jtmp += nrbx2;
+        while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
+        while (jtmp < 0) jtmp += nblx2;
         shear_send_neighbor_[upper][3].gid  = shbb_[upper][jtmp].gid;
         shear_send_neighbor_[upper][3].rank = shbb_[upper][jtmp].rank;
         shear_send_neighbor_[upper][3].lid  = shbb_[upper][jtmp].lid;
@@ -1005,8 +1005,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
 
         // recv [je + 1:je+(NGHOST-1)] from Right
         jtmp = jblock - (Ngrids - 1);
-        while (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;
-        while (jtmp < 0) jtmp += nrbx2;
+        while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
+        while (jtmp < 0) jtmp += nblx2;
         shear_recv_neighbor_[upper][3].gid  = shbb_[upper][jtmp].gid;
         shear_recv_neighbor_[upper][3].rank = shbb_[upper][jtmp].rank;
         shear_recv_neighbor_[upper][3].lid  = shbb_[upper][jtmp].lid;
