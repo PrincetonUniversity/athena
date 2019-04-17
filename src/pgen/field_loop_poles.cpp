@@ -121,11 +121,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Set initial magnetic fields
   if (MAGNETIC_FIELDS_ENABLED) {
     AthenaArray<Real> a1, a2, a3;
-    a1.NewAthenaArray(ncells3, ncells2, ncells1);
-    a2.NewAthenaArray(ncells3, ncells2, ncells1);
-    a3.NewAthenaArray(ncells3, ncells2, ncells1);
+    // nxN != ncellsN, in general. Allocate to extend through 2*ghost, regardless # dim
+    int nx1 = block_size.nx1 + 2*NGHOST;
+    int nx2 = block_size.nx2 + 2*NGHOST;
+    int nx3 = block_size.nx3 + 2*NGHOST;
+    a1.NewAthenaArray(nx3, nx2, nx1);
+    a2.NewAthenaArray(nx3, nx2, nx1);
+    a3.NewAthenaArray(nx3, nx2, nx1);
 
-    int level=loc.level;
+    int level = loc.level;
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie+1; i++) {

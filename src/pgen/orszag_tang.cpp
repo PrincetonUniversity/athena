@@ -44,7 +44,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gm1 = peos->GetGamma() - 1.0;
 
   AthenaArray<Real> az;
-  az.NewAthenaArray(ncells2, ncells1);
+  az.NewAthenaArray(ncells2, ncells1);  // ncells2 is consistent only if 2D or 3D
 
   Real B0 = 1.0/std::sqrt(4.0*PI);
   Real d0 = 25.0/(36.0*PI);

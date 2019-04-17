@@ -439,9 +439,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   if (MAGNETIC_FIELDS_ENABLED) {
     AthenaArray<Real> a1, a2, a3;
-    a1.NewAthenaArray(ncells3, ncells2, ncells1);
-    a2.NewAthenaArray(ncells3, ncells2, ncells1);
-    a3.NewAthenaArray(ncells3, ncells2, ncells1);
+    // nxN != ncellsN, in general. Allocate to extend through 2*ghost, regardless # dim
+    int nx1 = block_size.nx1 + 2*NGHOST;
+    int nx2 = block_size.nx2 + 2*NGHOST;
+    int nx3 = block_size.nx3 + 2*NGHOST;
+    a1.NewAthenaArray(nx3, nx2, nx1);
+    a2.NewAthenaArray(nx3, nx2, nx1);
+    a3.NewAthenaArray(nx3, nx2, nx1);
 
     // wave amplitudes
     dby = amp*rem[NWAVE-2][wave_flag];

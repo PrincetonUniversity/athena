@@ -57,9 +57,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real iso_cs =peos->GetIsoSoundSpeed();
 
   AthenaArray<Real> ax, ay, az;
-  ax.NewAthenaArray(ncells3, ncells2, ncells1);
-  ay.NewAthenaArray(ncells3, ncells2, ncells1);
-  az.NewAthenaArray(ncells3, ncells2, ncells1);
+  // nxN != ncellsN, in general. Allocate to extend through 2*ghost, regardless # dim
+  int nx1 = block_size.nx1 + 2*NGHOST;
+  int nx2 = block_size.nx2 + 2*NGHOST;
+  int nx3 = block_size.nx3 + 2*NGHOST;
+  ax.NewAthenaArray(nx3, nx2, nx1);
+  ay.NewAthenaArray(nx3, nx2, nx1);
+  az.NewAthenaArray(nx3, nx2, nx1);
 
   // Read initial conditions, diffusion coefficients (if needed)
   Real rad = pin->GetReal("problem","rad");
@@ -84,7 +88,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     //     AND   lambda = x3size*sin_a;  are both satisfied.
 
     if (x1size == x3size) {
-      ang_2 = PI/4.0;
+      // ang_2 = PI/4.0;  // unused variable
       cos_a2 = sin_a2 = std::sqrt(0.5);
     } else {
       ang_2 = std::atan(x1size/x3size);
@@ -103,7 +107,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // the origin of the initial loop
   Real x0 = pin->GetOrAddReal("problem","x0",0.0);
   Real y0 = pin->GetOrAddReal("problem","y0",0.0);
-  Real z0 = pin->GetOrAddReal("problem","z0",0.0);
+  // Real z0 = pin->GetOrAddReal("problem","z0",0.0);
 
   for (int k=ks; k<=ke+1; k++) {
     for (int j=js; j<=je+1; j++) {

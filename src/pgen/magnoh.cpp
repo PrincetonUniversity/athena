@@ -106,7 +106,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // initialize vector potential for inflowing B
   // (only initializing 2D array for vec potential)
   AthenaArray<Real> az;
-  az.NewAthenaArray(ncells2, ncells1);
+  az.NewAthenaArray(ncells2, ncells1);  // ncells2 is consistent only if 2D or 3D
 
   for (int j=js; j<=je+1; ++j) {
     for (int i=is; i<=ie+1; ++i) {
