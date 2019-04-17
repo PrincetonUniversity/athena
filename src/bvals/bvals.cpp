@@ -333,18 +333,18 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
           if ((shear_recv_neighbor_[upper][n].rank != Globals::my_rank) &&
               (shear_recv_neighbor_[upper][n].rank != -1)) {
             size = NHYDRO*shear_recv_count_cc_[upper][n];
-            tag  = CreateBvalsMPITag(pmb->lid, n+tag_offset[upper], sh_cc_phys_id_);
+            tag  = CreateBvalsMPITag(pmb->lid, n+tag_offset[upper], shear_cc_phys_id_);
             MPI_Irecv(shear_bd_var_[upper].recv[n],size,MPI_ATHENA_REAL,
                       shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
                       &shear_bd_var_[upper].req_recv[upper]);
             if (MAGNETIC_FIELDS_ENABLED) {
               size = shear_recv_count_fc_[upper][n];
-              tag  = CreateBvalsMPITag(pmb->lid, n+tag_offset[upper], sh_fc_phys_id_);
+              tag  = CreateBvalsMPITag(pmb->lid, n+tag_offset[upper], shear_fc_phys_id_);
               MPI_Irecv(shear_bd_var_[upper].recv[n], size, MPI_ATHENA_REAL,
                         shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
                         &shear_bd_var_[upper].req_recv[n]);
               size = shear_recv_count_emf_[upper][n];
-              tag  = CreateBvalsMPITag(pmb->lid, n+tag_offset[upper], sh_fc_flx_phys_id_);
+              tag  = CreateBvalsMPITag(pmb->lid, n+tag_offset[upper], shear_emf_phys_id_);
               MPI_Irecv(shear_bd_emf_[upper].recv[n], size, MPI_ATHENA_REAL,
                         shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
                         &shear_bd_emf_[upper].req_recv[n]);

@@ -83,7 +83,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
 
   if (SHEARING_BOX) {
 #ifdef MPI_PARALLEL
-    sh_cc_phys_id_ = cc_phys_id_ + 2;
+    shear_cc_phys_id_ = cc_phys_id_ + 2;
 #endif
   }
 }
