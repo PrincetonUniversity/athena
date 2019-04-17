@@ -80,6 +80,11 @@ class MeshBlock {
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
   LogicalLocation loc;
   RegionSize block_size;
+  // for convenience: "max" # of real+ghost cells along each dir for allocating "standard"
+  // sized MeshBlock arrays, depending on ndim (i.e. ncells2=nx2+2*NGHOST if nx2>1)
+  int ncells1, ncells2, ncells3;
+  // on 1x coarser level MeshBlock (i.e. ncc2=nx2/2 + 2*NGHOST, if nx2>1)
+  int ncc1, ncc2, ncc3;
   int is, ie, js, je, ks, ke;
   int gid, lid;
   int cis, cie, cjs, cje, cks, cke, cnghost;
@@ -206,6 +211,7 @@ class Mesh {
   // data
   RegionSize mesh_size;
   BoundaryFlag mesh_bcs[6];
+  bool f2_, f3_; // flags indicating 2D or 3D Mesh
   Real start_time, tlim, cfl_number, time, dt, dt_diff;
   Real muj, nuj, muj_tilde;
   int nlim, ncycle, ncycle_out;
@@ -264,8 +270,6 @@ class Mesh {
   int nrbx1, nrbx2, nrbx3;
   // TODO(felker) find unnecessary static_cast<> ops. from old std::int64_t type in 2018:
   //std::int64_t nrbx1, nrbx2, nrbx3;
-
-  bool f2_, f3_; // flags indicating 2D or 3D Mesh
 
   // flags are false if using non-uniform or user meshgen function
   bool use_uniform_meshgen_fn_[3];

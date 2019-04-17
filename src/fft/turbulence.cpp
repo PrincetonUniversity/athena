@@ -73,9 +73,10 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
 #endif
   }
 
-  int nx1=pm->pblock->block_size.nx1+2*NGHOST;
-  int nx2=pm->pblock->block_size.nx2+2*NGHOST;
-  int nx3=pm->pblock->block_size.nx3+2*NGHOST;
+  int nx1 = pm->pblock->ncells1;
+  // does this assume 3D? if not, perhaps it should not use MeshBlock::ncells2,3
+  int nx2 = pm->pblock->ncells2;
+  int nx3 = pm->pblock->ncells3;
 
   vel = new AthenaArray<Real>[3];
   for (int nv=0; nv<3; nv++) vel[nv].NewAthenaArray(nmb, nx3, nx2, nx1);

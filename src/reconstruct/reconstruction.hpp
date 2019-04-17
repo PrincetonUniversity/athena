@@ -28,6 +28,7 @@ class Reconstruction {
   Reconstruction(MeshBlock *pmb, ParameterInput *pin);
 
   // data
+  // TODO(felker): these scalars could be made const members of the class via init. list
   // order and type of reconstruction algorithm
   int xorder;   // order of hydro reconstruction
   bool characteristic_reconstruction;  // TRUE for characteristic recon
@@ -35,11 +36,11 @@ class Reconstruction {
   // fourth-order solver switches
   bool correct_ic, correct_err; // used in Mesh::Initialize() and ProblemGenerator()
 
-  AthenaArray<Real> c1i,c2i,c3i,c4i,c5i,c6i;  // coefficients for PPM in x1
+  AthenaArray<Real> c1i, c2i, c3i, c4i, c5i, c6i;  // coefficients for PPM in x1
   AthenaArray<Real> hplus_ratio_i, hminus_ratio_i; // for curvilinear PPMx1
-  AthenaArray<Real> c1j,c2j,c3j,c4j,c5j,c6j;  // coefficients for PPM in x2
+  AthenaArray<Real> c1j, c2j, c3j, c4j, c5j, c6j;  // coefficients for PPM in x2
   AthenaArray<Real> hplus_ratio_j, hminus_ratio_j; // for curvilinear PPMx2
-  AthenaArray<Real> c1k,c2k,c3k,c4k,c5k,c6k;  // coefficients for PPM in x3
+  AthenaArray<Real> c1k, c2k, c3k, c4k, c5k, c6k;  // coefficients for PPM in x3
   AthenaArray<Real> hplus_ratio_k, hminus_ratio_k; // for curvilinear PPMx3
 
   // functions

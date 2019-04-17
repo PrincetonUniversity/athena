@@ -513,7 +513,7 @@
 //       if (shbb_.igidlist[j] == pmb->gid)  jblock = j;
 //     }
 //     // send [js:je-joverlap] of the meshblock to other
-//     // attach [je-joverlap+1:MIN(je-joverlap+(NGHOST),je-js+1)]
+//     // attach [je-joverlap+1:MIN(je-joverlap+NGHOST,je-js+1)]
 //     // to its right end.
 //     std::int64_t jtmp = jblock + Ngrids;
 //     if (jtmp > (nrbx2 - 1)) jtmp -= nrbx2;

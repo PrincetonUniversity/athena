@@ -390,57 +390,52 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 namespace {
 
 Real hst_BxBy(MeshBlock *pmb, int iout) {
-  Real bxby=0;
-  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+  Real bxby = 0;
+  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
   AthenaArray<Real> volume; // 1D array of volumes
   // allocate 1D array for cell volume used in usr def history
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  volume.NewAthenaArray(ncells1);
+  volume.NewAthenaArray(pmb->ncells1);
 
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
-      pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
+      pmb->pcoord->CellVolume(k, j, is, ie, volume);
       for (int i=is; i<=ie; i++) {
         bxby-=volume(i)*b(IB1,k,j,i)*b(IB2,k,j,i);
       }
     }
   }
-
   return bxby;
 }
 
 Real hst_dVxVy(MeshBlock *pmb, int iout) {
-  Real dvxvy=0.0;
-  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+  Real dvxvy = 0.0;
+  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;
-  Real vshear=0.0;
+  Real vshear = 0.0;
   AthenaArray<Real> volume; // 1D array of volumes
   // allocate 1D array for cell volume used in usr def history
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  volume.NewAthenaArray(ncells1);
+  volume.NewAthenaArray(pmb->ncells1);
 
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
-      pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
+      pmb->pcoord->CellVolume(k, j, is, ie, volume);
       for (int i=is; i<=ie; i++) {
         vshear = qshear*Omega_0*pmb->pcoord->x1v(i);
-        dvxvy+=volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i)+vshear);
+        dvxvy += volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i)+vshear);
       }
     }
   }
-
   return dvxvy;
 }
 
 Real hst_dBy(MeshBlock *pmb, int iout) {
-  Real dby=0;
+  Real dby = 0;
   Real fkx, fky, fkz; // Fourier kx, ky
-  Real x1,x2,x3;
+  Real x1, x2, x3;
   AthenaArray<Real> volume; // 1D array of volumes
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  volume.NewAthenaArray(ncells1);
-  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+  volume.NewAthenaArray(pmb->ncells1);
+  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
 
   fky = TWO_PI/Ly;
@@ -448,7 +443,7 @@ Real hst_dBy(MeshBlock *pmb, int iout) {
   fkz = TWO_PI/Lz;
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
-      pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
+      pmb->pcoord->CellVolume(k, j, is, ie, volume);
       for (int i=is; i<=ie; i++) {
         x1 = pmb->pcoord->x1v(i);
         x2 = pmb->pcoord->x2v(j);

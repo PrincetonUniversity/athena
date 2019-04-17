@@ -49,14 +49,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int jl = js;
   int ju = je;
   if (block_size.nx2 > 1) {
-    jl -= (NGHOST);
-    ju += (NGHOST);
+    jl -= NGHOST;
+    ju += NGHOST;
   }
   int kl = ks;
   int ku = ke;
   if (block_size.nx3 > 1) {
-    kl -= (NGHOST);
-    ku += (NGHOST);
+    kl -= NGHOST;
+    ku += NGHOST;
   }
 
   // Get ratio of specific heats
@@ -80,16 +80,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     bz = pin->GetReal("problem", "bz");
   }
 
-  // Prepare auxiliary array
-  int ncells1 = block_size.nx1 + 2*NGHOST;
-  int ncells2 = block_size.nx2;
-  if (ncells2 > 1) {
-    ncells2 += 2*NGHOST;
-  }
-  int ncells3 = block_size.nx3;
-  if (ncells3 > 1) {
-    ncells3 += 2*NGHOST;
-  }
+  // Prepare auxiliary arrays
   AthenaArray<Real> b, g, gi;
   b.NewAthenaArray(3, ncells3, ncells2, ncells1);
   g.NewAthenaArray(NMETRIC, ncells1);

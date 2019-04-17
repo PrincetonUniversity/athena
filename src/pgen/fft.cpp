@@ -47,21 +47,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  Coordinates *pcoord = pblock->pcoord;
-  Real x0=0.0, y0=0.0, z0=0.0;
-  int is=pblock->is, ie=pblock->ie;
-  int js=pblock->js, je=pblock->je;
-  int ks=pblock->ks, ke=pblock->ke;
-
   AthenaArray<Real> src, dst;
-  LogicalLocation &loc = pblock->loc;
-  RegionSize &block_size = pblock->block_size;
-  int nx1=block_size.nx1+2*NGHOST;
-  int nx2=block_size.nx2+2*NGHOST;
-  int nx3=block_size.nx3+2*NGHOST;
-
-  src.NewAthenaArray(nx3,nx2,nx1);
-  dst.NewAthenaArray(2,nx3,nx2,nx1);
+  // does this assume 3D? if not, perhaps should not use ncellsN
+  src.NewAthenaArray(pblock->ncells3, pblock->ncells2, pblock->ncells1);
+  dst.NewAthenaArray(2, pblock->ncells3, pblock->ncells2, pblock->ncells1);
 #ifdef FFT
   FFTDriver *pfftd;
   pfftd = new FFTDriver(this, pin);

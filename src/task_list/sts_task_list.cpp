@@ -41,8 +41,8 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
     ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) : ptlist_(ptlist) {
   // STS Incompatiblities
   if (MAGNETIC_FIELDS_ENABLED &&
-      !(pm->pblock->pfield->pfdif->field_diffusion_defined) &&
-      !(pm->pblock->phydro->phdif->hydro_diffusion_defined)) {
+      !(pm->pblock->pfield->fdif.field_diffusion_defined) &&
+      !(pm->pblock->phydro->hdif.hydro_diffusion_defined)) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping requires setting parameters for "
@@ -60,7 +60,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
   }
   // TODO(pdmullen): how should source terms be handled inside
   //                 operator-split RKL1 STS?
-  if (pm->pblock->phydro->psrc->hydro_sourceterms_defined==true) {
+  if (pm->pblock->phydro->hsrc.hydro_sourceterms_defined==true) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatible "
@@ -264,9 +264,9 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   }
 
   // Clear flux arrays from previous stage
-  pmb->phydro->phdif->ClearHydroFlux(pmb->phydro->flux);
+  pmb->phydro->hdif.ClearHydroFlux(pmb->phydro->flux);
   if (MAGNETIC_FIELDS_ENABLED)
-    pmb->pfield->pfdif->ClearEMF(pmb->pfield->e);
+    pmb->pfield->fdif.ClearEMF(pmb->pfield->e);
 
   // Real time = pmb->pmy_mesh->time;
   pmb->pbval->StartReceiving(BoundaryCommSubset::all);
@@ -351,8 +351,8 @@ TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage
     //                 operator-split RKL1 STS? For now, disable time-dep BCs.
     // Real t_end_stage = pmb->pmy_mesh->time;
     // Real dt = pmb->pmy_mesh->dt;
-    pmb->phydro->phbval->SelectCoarseBuffer(HydroBoundaryQuantity::prim);
-    pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w, HydroBoundaryQuantity::prim);
+    pmb->phydro->hbvar.SelectCoarseBuffer(HydroBoundaryQuantity::prim);
+    pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w, HydroBoundaryQuantity::prim);
     pbval->ApplyPhysicalBoundaries(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
   } else {
     return TaskStatus::fail;

@@ -92,6 +92,11 @@ struct RegionSize {
 
 struct FaceField {
   AthenaArray<Real> x1f, x2f, x3f;
+  FaceField() = default;
+  FaceField(int ncells3, int ncells2, int ncells1,
+            AthenaArray<Real>::DataStatus init=AthenaArray<Real>::DataStatus::allocated) :
+      x1f(ncells3, ncells2, ncells1+1, init), x2f(ncells3, ncells2+1, ncells1, init),
+      x3f(ncells3+1, ncells2, ncells1, init) {}
 };
 
 //----------------------------------------------------------------------------------------
@@ -100,6 +105,11 @@ struct FaceField {
 
 struct EdgeField {
   AthenaArray<Real> x1e, x2e, x3e;
+  EdgeField() = default;
+  EdgeField(int ncells3, int ncells2, int ncells1,
+            AthenaArray<Real>::DataStatus init=AthenaArray<Real>::DataStatus::allocated) :
+      x1e(ncells3+1, ncells2+1, ncells1, init), x2e(ncells3+1, ncells2, ncells1+1, init),
+      x3e(ncells3, ncells2+1, ncells1+1, init) {}
 };
 
 //----------------------------------------------------------------------------------------
