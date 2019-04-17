@@ -12,6 +12,7 @@
 #include <algorithm>  // sort()
 #include <cstdlib>
 #include <cstring>    // memcpy()
+#include <ctime>      // clock(), CLOCKS_PER_SEC, clock_t
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -53,7 +54,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   lid = ilid;
   loc = iloc;
   gflag = igflag;
-  cost = 1.0;
+  cost_ = 1.0;
 
   nuser_out_var = 0;
   nreal_user_meshblock_data_ = 0;
@@ -96,6 +97,10 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     if (pmy_mesh->f3_) // 3D
       cks = NGHOST, cke = cks + block_size.nx3/2 - 1;
   }
+
+  // (probably don't need to preallocate space for references in these vectors)
+  vars_cc_.reserve(3);
+  vars_fc_.reserve(3);
 
   // construct objects stored in MeshBlock class.  Note in particular that the initial
   // conditions for the simulation are set in problem generator called from main, not
@@ -186,15 +191,15 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
                      LogicalLocation iloc, RegionSize input_block,
                      BoundaryFlag *input_bcs,
-                     Real icost, char *mbdata, int igflag) {
+                     double icost, char *mbdata, int igflag) {
   pmy_mesh = pm;
-  prev=nullptr;
-  next=nullptr;
-  gid=igid;
-  lid=ilid;
-  loc=iloc;
-  gflag=igflag;
-  cost=icost;
+  prev = nullptr;
+  next = nullptr;
+  gid = igid;
+  lid = ilid;
+  loc = iloc;
+  gflag = igflag;
+  cost_ = icost;
   block_size = input_block;
 
   nuser_out_var = 0;
@@ -448,3 +453,89 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
 
   return size;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::SetCostForLoadBalancing(double cost)
+//  \brief stop time measurement and accumulate it in the MeshBlock cost
+
+void MeshBlock::SetCostForLoadBalancing(double cost) {
+  if (pmy_mesh->lb_manual_) {
+    cost_ = std::min(cost, TINY_NUMBER);
+    pmy_mesh->lb_flag_ = true;
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::ResetTimeMeasurement()
+//  \brief reset the MeshBlock cost for automatic load balancing
+
+void MeshBlock::ResetTimeMeasurement() {
+  if (pmy_mesh->lb_automatic_) cost_ = TINY_NUMBER;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::StartTimeMeasurement()
+//  \brief start time measurement for automatic load balancing
+
+void MeshBlock::StartTimeMeasurement() {
+  if (pmy_mesh->lb_automatic_) {
+#ifdef OPENMP_PARALLEL
+    lb_time_=omp_get_wtime();
+#else
+    lb_time_=static_cast<double>(clock());
+#endif
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlock::StartTimeMeasurement()
+//  \brief stop time measurement and accumulate it in the MeshBlock cost
+
+void MeshBlock::StopTimeMeasurement() {
+  if (pmy_mesh->lb_automatic_) {
+#ifdef OPENMP_PARALLEL
+    lb_time_=omp_get_wtime()-lb_time_;
+#else
+    lb_time_=static_cast<double>(clock())-lb_time_;
+#endif
+    cost_+=lb_time_;
+  }
+}
+
+
+void MeshBlock::RegisterMeshBlockData(AthenaArray<Real> &pvar_cc) {
+  vars_cc_.push_back(pvar_cc);
+  return;
+}
+
+
+void MeshBlock::RegisterMeshBlockData(FaceField &pvar_fc) {
+  vars_fc_.push_back(pvar_fc);
+  return;
+}
+
+
+// TODO(felker): consider merging the MeshRefinement::pvars_cc/fc_ into the
+// MeshBlock::pvars_cc/fc_. Would need to weaken the MeshBlock std::vector to use tuples
+// of pointers instead of a std::vector of references, so that:
+// - nullptr can be passed for the second entry if multilevel==false
+// - we can rebind the pointers to Hydro for GR purposes in bvals_refine.cpp
+// If GR, etc. in the future requires additional flexiblity from non-refinement load
+// balancing, we will need to use ptrs instead of references anyways, and add:
+
+// void MeshBlock::SetHydroData(HydroBoundaryQuantity hydro_type)
+//   Hydro *ph = pmy_block_->phydro;
+//   // hard-coded assumption that, if multilevel==true, then Hydro is always present
+//   // and enrolled in mesh refinement in the first pvars_cc_ vector entry
+//   switch (hydro_type) {
+//     case (HydroBoundaryQuantity::cons): {
+//       pvars_cc_.front() = &ph->u;
+//       break;
+//     }
+//     case (HydroBoundaryQuantity::prim): {
+//       pvars_cc_.front() = &ph->w;
+//       break;
+//     }
+//   }
+//   return;
+// }

@@ -42,15 +42,16 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, ncells3 = pmb->ncells3;
   Mesh *pm = pmy_block->pmy_mesh;
 
+  pmb->RegisterMeshBlockData(s);
+
   // Allocate optional passive scalar variable memory registers for time-integrator
   if (pmb->precon->xorder == 4) {
     // fourth-order cell-centered approximations
     s_cc.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
   }
 
-  // allocate prolongation buffers
-  if (pm->multilevel == true) {
-    // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
+  // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
+  if (pm->multilevel == true) { 
     pmy_block->pmr->AddToRefinement(&s, &coarse_s_);
   }
 

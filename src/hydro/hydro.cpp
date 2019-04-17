@@ -55,6 +55,8 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
   int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
   Mesh *pm = pmy_block->pmy_mesh;
 
+  pmb->RegisterMeshBlockData(u);
+
   // Allocate optional memory primitive/conserved variable registers for time-integrator
   if (pmb->precon->xorder == 4) {
     // fourth-order hydro cell-centered approximations

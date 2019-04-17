@@ -1023,6 +1023,8 @@ void MeshRefinement::CheckRefinementCondition() {
   return;
 }
 
+// TODO(felker): consider merging w/ MeshBlock::pvars_cc, etc. See meshblock.cpp
+
 void MeshRefinement::AddToRefinement(AthenaArray<Real> *pvar_cc,
                                      AthenaArray<Real> *pcoarse_cc) {
   pvars_cc_.push_back(std::make_tuple(pvar_cc, pcoarse_cc));
@@ -1033,6 +1035,9 @@ void MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) 
   pvars_fc_.push_back(std::make_tuple(pvar_fc, pcoarse_fc));
   return;
 }
+
+// Currently, only called in bvals_refine.cpp to perform additional prolongation and
+// restriction steps on primitive Hydro variables only for GR.
 
 void MeshRefinement::SetHydroRefinement(HydroBoundaryQuantity hydro_type) {
   Hydro *ph = pmy_block_->phydro;

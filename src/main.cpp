@@ -445,9 +445,9 @@ int main(int argc, char *argv[]) {
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;
     mbcnt += pmesh->nbtotal;
+    pmesh->step_since_lb++;
 
-    if (pmesh->adaptive == true)
-      pmesh->AdaptiveMeshRefinement(pinput);
+    pmesh->LoadBalancingAndAdaptiveMeshRefinement(pinput);
 
     pmesh->NewTimeStep();
 #ifdef ENABLE_EXCEPTIONS
@@ -538,7 +538,7 @@ int main(int argc, char *argv[]) {
 
     // Calculate and print the zone-cycles/cpu-second and wall-second
 #ifdef OPENMP_PARALLEL
-    double omp_time = omp_get_wtime() - omp_start_time;;
+    double omp_time = omp_get_wtime() - omp_start_time;
 #endif
     clock_t tstop = clock();
     double cpu_time = (tstop>tstart ? static_cast<double> (tstop-tstart) :
