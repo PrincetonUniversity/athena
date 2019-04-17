@@ -44,22 +44,10 @@
 
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
                      BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin,
-                     int igflag, bool ref_flag) {
-  pmy_mesh = pm;
-  // int root_level = pm->root_level;
-  block_size = input_block;
-  prev = nullptr;
-  next = nullptr;
-  gid = igid;
-  lid = ilid;
-  loc = iloc;
-  gflag = igflag;
-  cost_ = 1.0;
-
-  nuser_out_var = 0;
-  nreal_user_meshblock_data_ = 0;
-  nint_user_meshblock_data_ = 0;
-
+                     int igflag, bool ref_flag) :
+    pmy_mesh(pm), loc(iloc), block_size(input_block),
+    gid(igid), lid(ilid), gflag(igflag), nuser_out_var(), prev(nullptr), next(nullptr),
+    nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(1.0) {
   // initialize grid indices
   is = NGHOST;
   ie = is + block_size.nx1 - 1;
@@ -191,21 +179,10 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
                      LogicalLocation iloc, RegionSize input_block,
                      BoundaryFlag *input_bcs,
-                     double icost, char *mbdata, int igflag) {
-  pmy_mesh = pm;
-  prev = nullptr;
-  next = nullptr;
-  gid = igid;
-  lid = ilid;
-  loc = iloc;
-  gflag = igflag;
-  cost_ = icost;
-  block_size = input_block;
-
-  nuser_out_var = 0;
-  nreal_user_meshblock_data_ = 0;
-  nint_user_meshblock_data_ = 0;
-
+                     double icost, char *mbdata, int igflag) :
+    pmy_mesh(pm), loc(iloc), block_size(input_block),
+    gid(igid), lid(ilid), gflag(igflag), nuser_out_var(), prev(nullptr), next(nullptr),
+    nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(icost) {
   // initialize grid indices
   is = NGHOST;
   ie = is + block_size.nx1 - 1;
