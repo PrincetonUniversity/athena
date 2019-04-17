@@ -1713,7 +1713,6 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
         }
       }
     }
-    delta_cons_.DeleteAthenaArray();
   }
 
   // begin second exchange of ghost cells with corrected cell-averaged <U>

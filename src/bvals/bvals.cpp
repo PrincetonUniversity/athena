@@ -130,7 +130,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
       ssize_ = NGHOST*nc3;
 
       if (pmb->loc.lx1 == loc_shear[0]) { // if true for shearing inner blocks
-        shboxvar_inner_cc_.NewAthenaArray(NHYDRO, nc3, nc2, NGHOST);
+        shear_cc_[0].NewAthenaArray(NHYDRO, nc3, nc2, NGHOST);
         flx_inner_cc_.NewAthenaArray(nc2);
         if (MAGNETIC_FIELDS_ENABLED) {
           shboxvar_inner_fc_.x1f.NewAthenaArray(nc3, nc2, NGHOST);
@@ -309,29 +309,16 @@ BoundaryValues::~BoundaryValues() {
           || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
           || block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge
           || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge))
-    azimuthal_shift_.DeleteAthenaArray();
 
   // KGF: shearing box destructor
   if (SHEARING_BOX) {
     if (is_shear[0]) { // if true for shearing inner blocks
       delete[] shbb_[0];
-      shboxvar_inner_cc_.DeleteAthenaArray();
-      flx_inner_cc_.DeleteAthenaArray();
       for (int n=0; n<4; n++) {
         delete[] send_innerbuf_cc_[n];
         delete[] recv_innerbuf_cc_[n];
       }
       if (MAGNETIC_FIELDS_ENABLED) {
-        shboxvar_inner_fc_.x1f.DeleteAthenaArray();
-        shboxvar_inner_fc_.x2f.DeleteAthenaArray();
-        shboxvar_inner_fc_.x3f.DeleteAthenaArray();
-        flx_inner_fc_.x1f.DeleteAthenaArray();
-        flx_inner_fc_.x2f.DeleteAthenaArray();
-        flx_inner_fc_.x3f.DeleteAthenaArray();
-        shboxvar_inner_emf_.x2e.DeleteAthenaArray();
-        shboxvar_inner_emf_.x3e.DeleteAthenaArray();
-        flx_inner_emf_.x2e.DeleteAthenaArray();
-        flx_inner_emf_.x3e.DeleteAthenaArray();
         for (int n=0; n<4; n++) {
           delete[] send_innerbuf_fc_[n];
           delete[] recv_innerbuf_fc_[n];
@@ -342,23 +329,11 @@ BoundaryValues::~BoundaryValues() {
     }
     if (is_shear[1]) { // if true for shearing outer blocks
       delete[] shbb_[1];
-      shboxvar_outer_cc_.DeleteAthenaArray();
-      flx_outer_cc_.DeleteAthenaArray();
       for (int n=0; n<4; n++) {
         delete[] send_outerbuf_cc_[n];
         delete[] recv_outerbuf_cc_[n];
       }
       if (MAGNETIC_FIELDS_ENABLED) {
-        shboxvar_outer_fc_.x1f.DeleteAthenaArray();
-        shboxvar_outer_fc_.x2f.DeleteAthenaArray();
-        shboxvar_outer_fc_.x3f.DeleteAthenaArray();
-        flx_outer_fc_.x1f.DeleteAthenaArray();
-        flx_outer_fc_.x2f.DeleteAthenaArray();
-        flx_outer_fc_.x3f.DeleteAthenaArray();
-        shboxvar_outer_emf_.x2e.DeleteAthenaArray();
-        shboxvar_outer_emf_.x3e.DeleteAthenaArray();
-        flx_outer_emf_.x2e.DeleteAthenaArray();
-        flx_outer_emf_.x3e.DeleteAthenaArray();
         for (int n=0; n<4; n++) {
           delete[] send_outerbuf_fc_[n];
           delete[] recv_outerbuf_fc_[n];
