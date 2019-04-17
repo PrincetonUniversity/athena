@@ -54,6 +54,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void SetupPersistentMPI() override;
   void StartReceiving(BoundaryCommSubset phase) override;
   void ClearBoundary(BoundaryCommSubset phase) override;
+  void StartReceivingShear(BoundaryCommSubset phase) override;
 
   // BoundaryBuffer:
   void SendFluxCorrection() override;

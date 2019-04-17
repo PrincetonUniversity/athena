@@ -639,6 +639,31 @@ void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
   return;
 }
 
+
+void CellCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase) {
+#ifdef MPI_PARALLEL
+  int size, tag;
+  int tag_offset[2]{0, 4};
+  for (int upper=0; upper<2; upper++) {
+    if (pbval_->is_shear[upper]) {
+      for (int n=0; n<4; n++) {
+        int target_rank = pbval_->shear_recv_neighbor_[upper][n].rank;
+        if ((target_rank != Globals::my_rank) && (target_rank != -1)) {
+          size = (nu_ + 1)*shear_recv_count_cc_[upper][n];
+          tag  = pbval_->CreateBvalsMPITag(pmy_block_->lid, n+tag_offset[upper],
+                                           shear_cc_phys_id_);
+          MPI_Irecv(shear_bd_var_[upper].recv[n], size, MPI_ATHENA_REAL,
+                    pbval_->shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
+                    &shear_bd_var_[upper].req_recv[upper]);
+        }
+      }
+    }
+  }
+#endif
+  return;
+}
+
+
 void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
@@ -660,6 +685,24 @@ void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
         MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
     }
 #endif
+  }
+
+  // clear shearing box boundary communications
+  if (SHEARING_BOX) {
+    // TODO(KGF): clear sflag arrays
+    for (int upper=0; upper<2; upper++) {
+      if (pbval_->is_shear[upper]) {
+        for (int n=0; n<4; n++) {
+          if (pbval_->shear_send_neighbor_[upper][n].rank == -1) continue;
+          shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+          if (pbval_->shear_send_neighbor_[upper][n].rank != Globals::my_rank) {
+            MPI_Wait(&shear_bd_var_[upper].req_send[n], MPI_STATUS_IGNORE);
+          }
+#endif
+        }
+      }
+    }
   }
   return;
 }

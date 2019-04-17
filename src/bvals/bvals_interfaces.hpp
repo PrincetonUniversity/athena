@@ -192,6 +192,8 @@ class BoundaryCommunication {
   virtual void StartReceiving(BoundaryCommSubset phase) = 0;
   // call MPI_Wait() on req_send[] and set flag[] to BoundaryStatus::waiting
   virtual void ClearBoundary(BoundaryCommSubset phase) = 0;
+
+  virtual void StartReceivingShear(BoundaryCommSubset phase) = 0;
 };
 
 //----------------------------------------------------------------------------------------

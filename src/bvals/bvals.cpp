@@ -219,46 +219,34 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
   // KGF: begin shearing-box exclusive section of original StartReceivingForInit()
   // find send_block_id and recv_block_id;
   if (SHEARING_BOX) {
-    FindShearBlock(pmy_mesh_->time);
-  }
-  // end KGF: shearing box
+    switch (phase) {
+      case BoundaryCommSubset::mesh_init:
+        FindShearBlock(pmy_mesh_->time);
+        break;
+      case BoundaryCommSubset::all:
+        // KGF: must pass "time" parameter from time_integrator.cpp
+        FindShearBlock(time);
+        // KGF: cannot simply combine StartReceivingShear() at end of StartReceiving()
+        // (which is done for ClearBoundary), because the "shared"/non-virtual fn
+        // BoundaryValues::FindShearBlock() must be called in between 2x fns
 
-  // KGF: begin shearing-box exclusive section of original StartReceivingAll()
-  // find send_block_id and recv_block_id; post non-blocking recv
-  if (SHEARING_BOX) {
-    FindShearBlock(time);
-#ifdef MPI_PARALLEL
-    //     Mesh *pmesh = pmb->pmy_mesh;
-    int size, tag;
-    int tag_offset[2]{0, 4};
-    for (int upper=0; upper<2; upper++) {
-      if (is_shear[upper]) {
-        for (int n=0; n<4; n++) {
-          if ((shear_recv_neighbor_[upper][n].rank != Globals::my_rank) &&
-              (shear_recv_neighbor_[upper][n].rank != -1)) {
-            size = NHYDRO*shear_recv_count_cc_[upper][n];
-            tag  = CreateBvalsMPITag(pmb->lid, n+tag_offset[upper], shear_cc_phys_id_);
-            MPI_Irecv(shear_bd_var_[upper].recv[n],size,MPI_ATHENA_REAL,
-                      shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
-                      &shear_bd_var_[upper].req_recv[upper]);
-            if (MAGNETIC_FIELDS_ENABLED) {
-              size = shear_recv_count_fc_[upper][n];
-              tag  = CreateBvalsMPITag(pmb->lid, n+tag_offset[upper], shear_fc_phys_id_);
-              MPI_Irecv(shear_bd_var_[upper].recv[n], size, MPI_ATHENA_REAL,
-                        shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
-                        &shear_bd_var_[upper].req_recv[n]);
-              size = shear_recv_count_emf_[upper][n];
-              tag  = CreateBvalsMPITag(pmb->lid, n+tag_offset[upper], shear_emf_phys_id_);
-              MPI_Irecv(shear_bd_emf_[upper].recv[n], size, MPI_ATHENA_REAL,
-                        shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
-                        &shear_bd_emf_[upper].req_recv[n]);
-            }
-          }
+        // TODO(felker): consider calling FindShearBlock() at the beginning of this fn,
+        // which will allow the 2x StartReceiving() to be combined
+        for (auto bvar : bvars_main_int) {
+          bvar->StartReceivingShear(phase);
         }
-      }
+        break;
+      case BoundaryCommSubset::gr_amr:
+        // shearing box is currently incompatible with both GR and AMR
+        std::stringstream msg;
+        msg << "### FATAL ERROR in BoundaryValues::StartReceiving" << std::endl
+            << "BoundaryCommSubset::gr_amr was passed as the 'phase' argument while\n"
+            << "SHEARING_BOX=1 is enabled. Shearing box calculations are currently\n"
+            << "incompatible with both AMR and GR" << std::endl;
+        ATHENA_ERROR(msg);
+        break;
     }
-#endif
-  } // end KGF: shearing-box exclusive section of StartReceivingAll
+  }
   return;
 }
 
@@ -275,35 +263,6 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
        ++bvars_it) {
     (*bvars_it)->ClearBoundary(phase);
   }
-
-  // KGF: begin shearing box exclusive section of ClearBoundaryAll
-
-  // TODO(KGF): clear sflag arrays
-
-  // clear shearing box boundary communications
-  if (SHEARING_BOX) {
-    for (int upper=0; upper<2; upper++) {
-      if (is_shear[upper]) {
-        for (int n=0; n<4; n++) {
-          if (shear_send_neighbor_[upper][n].rank == -1) continue;
-          shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
-          if (MAGNETIC_FIELDS_ENABLED) {
-            shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
-            shear_bd_emf_[upper].flag[n] = BoundaryStatus::waiting;
-          }
-#ifdef MPI_PARALLEL
-          if (shear_send_neighbor_[upper][n].rank != Globals::my_rank) {
-            MPI_Wait(&shear_bd_var_[upper].req_send[n], MPI_STATUS_IGNORE);
-            if (MAGNETIC_FIELDS_ENABLED) {
-              MPI_Wait(&shear_bd_var_[upper].req_send[n], MPI_STATUS_IGNORE);
-              MPI_Wait(&shear_bd_emf_[upper].req_send[n], MPI_STATUS_IGNORE);
-            }
-          }
-#endif
-        }
-      }
-    }
-  } // end KGF: shearing box
   return;
 }
 

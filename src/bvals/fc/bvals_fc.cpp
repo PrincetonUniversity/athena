@@ -1445,6 +1445,38 @@ void FaceCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
   return;
 }
 
+void FaceCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase) {
+#ifdef MPI_PARALLEL
+  int size, tag;
+  int tag_offset[2]{0, 4};
+  for (int upper=0; upper<2; upper++) {
+    if (pbval_->is_shear[upper]) {
+      for (int n=0; n<4; n++) {
+        int target_rank = pbval_->shear_recv_neighbor_[upper][n].rank;
+        if ((target_rank != Globals::my_rank) && (target_rank != -1)) {
+          // var_vc
+          size = shear_recv_count_fc_[upper][n];
+          tag  = pbval_->CreateBvalsMPITag(pmy_block_->lid, n+tag_offset[upper],
+                                           shear_fc_phys_id_);
+          MPI_Irecv(shear_bd_var_[upper].recv[n], size, MPI_ATHENA_REAL,
+                    pbval_->shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
+                    &shear_bd_var_[upper].req_recv[n]);
+          // emf
+          size = shear_recv_count_emf_[upper][n];
+          tag  = pbval_->CreateBvalsMPITag(pmy_block_->lid, n+tag_offset[upper],
+                                           shear_emf_phys_id_);
+          MPI_Irecv(shear_bd_emf_[upper].recv[n], size, MPI_ATHENA_REAL,
+                    pbval_->shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
+                    &shear_bd_emf_[upper].req_recv[n]);
+        }
+      }
+    }
+  }
+#endif
+  return;
+}
+
+
 void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   // Clear non-polar boundary communications
   for (int n=0; n<pbval_->nneighbor; n++) {
@@ -1476,6 +1508,26 @@ void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
       }
     }
 #endif
+  }
+
+  // clear shearing box boundary communications
+  if (SHEARING_BOX) {
+    // TODO(KGF): clear sflag arrays
+    for (int upper=0; upper<2; upper++) {
+      if (pbval_->is_shear[upper]) {
+        for (int n=0; n<4; n++) {
+          if (pbval_->shear_send_neighbor_[upper][n].rank == -1) continue;
+          shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
+          shear_bd_emf_[upper].flag[n] = BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+          if (pbval_->shear_send_neighbor_[upper][n].rank != Globals::my_rank) {
+            MPI_Wait(&shear_bd_var_[upper].req_send[n], MPI_STATUS_IGNORE);
+            MPI_Wait(&shear_bd_emf_[upper].req_send[n], MPI_STATUS_IGNORE);
+          }
+#endif
+        }
+      }
+    }
   }
 
   // Clear polar boundary communications (only during main integration loop)

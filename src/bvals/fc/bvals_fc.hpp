@@ -56,6 +56,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void SetupPersistentMPI() override;
   void StartReceiving(BoundaryCommSubset phase) override;
   void ClearBoundary(BoundaryCommSubset phase) override;
+  void StartReceivingShear(BoundaryCommSubset phase) override;
 
   // BoundaryBuffer:
   void ReceiveAndSetBoundariesWithWait() override;
