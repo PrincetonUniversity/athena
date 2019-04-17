@@ -46,16 +46,10 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
   int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, ncells3 = pmb->ncells3;
   Mesh *pm = pmy_block->pmy_mesh;
 
-  // Allocate memory for interface fields
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  int ncells2 = 1, ncells3 = 1;
-  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-  if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
-
   pmb->RegisterMeshBlockData(b);
-      
-  // Note the extra cell in each longitudinal direction for interface fields
+
   // If user-requested time integrator is type 3S*, allocate additional memory registers
+  // Note the extra cell in each longitudinal direction for interface fields
   std::string integrator = pin->GetOrAddString("time","integrator","vl2");
   if (integrator == "ssprk5_4" || STS_ENABLED) {
     // future extension may add "int nregister" to Hydro class

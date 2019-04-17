@@ -51,7 +51,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   }
 
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
-  if (pm->multilevel == true) { 
+  if (pm->multilevel == true) {
     pmy_block->pmr->AddToRefinement(&s, &coarse_s_);
   }
 
