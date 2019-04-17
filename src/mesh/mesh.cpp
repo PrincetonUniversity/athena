@@ -64,7 +64,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   MeshBlock *pfirst{};
   BoundaryFlag block_bcs[6];
   std::int64_t nbmax;
-  int dim;
 
   // mesh test
   if (mesh_test > 0) Globals::nranks = mesh_test;
@@ -140,7 +139,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   }
 
   // setup convenience variables involving Mesh dimensionality
-  dim = 1;
+  int dim = 1;
   if (mesh_size.nx2 > 1) dim = 2;
   if (mesh_size.nx3 > 1) dim = 3;
   f2_ = (mesh_size.nx2 > 1) ? 1 : 0;
@@ -553,22 +552,22 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   IOWrapperSizeT datasize, listsize, headeroffset;
 
   // mesh test
-  if (mesh_test>0) Globals::nranks=mesh_test;
+  if (mesh_test > 0) Globals::nranks = mesh_test;
 
   // read time and cycle limits from input file
   start_time = pin->GetOrAddReal("time","start_time",0.0);
   tlim       = pin->GetReal("time","tlim");
   ncycle_out = pin->GetOrAddInteger("time","ncycle_out",1);
   nlim = pin->GetOrAddInteger("time","nlim",-1);
-  nint_user_mesh_data_=0;
-  nreal_user_mesh_data_=0;
-  nuser_history_output_=0;
+  nint_user_mesh_data_ = 0;
+  nreal_user_mesh_data_ = 0;
+  nuser_history_output_ = 0;
 
-  four_pi_G_=0.0, grav_eps_=-1.0, grav_mean_rho_=-1.0;
+  four_pi_G_ = 0.0, grav_eps_ = -1.0, grav_mean_rho_ = -1.0;
 
   turb_flag = 0;
 
-  nbnew=0; nbdel=0;
+  nbnew = 0; nbdel = 0;
 
   next_phys_id_  = 0;
 #ifdef MPI_PARALLEL
@@ -601,7 +600,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
       GetBoundaryFlag(pin->GetOrAddString("mesh", "ox3_bc", "none"));
 
   // get the end of the header
-  headeroffset=resfile.GetPosition();
+  headeroffset = resfile.GetPosition();
   // read the restart file
   // the file is already open and the pointer is set to after <par_end>
   IOWrapperSizeT headersize = sizeof(int)*3+sizeof(Real)*2
@@ -637,9 +636,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 
   delete [] headerdata;
 
+  // setup convenience variables involving Mesh dimensionality
   int dim = 1;
   if (mesh_size.nx2 > 1) dim = 2;
   if (mesh_size.nx3 > 1) dim = 3;
+  f2_ = (mesh_size.nx2 > 1) ? 1 : 0;
+  f3_ = (mesh_size.nx3 > 1) ? 1 : 0;
 
   // initialize
   loclist = new LogicalLocation[nbtotal];
