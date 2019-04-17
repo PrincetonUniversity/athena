@@ -48,7 +48,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   AthenaArray<Real> src, dst;
-  // does this assume 3D? if not, perhaps should not use ncellsN
+  // TODO(changgoo): this does NOT assume 3D anymore, but need to check that 2D works
   src.NewAthenaArray(pblock->ncells3, pblock->ncells2, pblock->ncells1);
   dst.NewAthenaArray(2, pblock->ncells3, pblock->ncells2, pblock->ncells1);
 #ifdef FFT

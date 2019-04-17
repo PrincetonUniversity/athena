@@ -72,9 +72,8 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
     return;
 #endif
   }
-
+  // TODO(changgoo): this assumes 3D and should not work with 1D, 2D. Add check.
   int nx1 = pm->pblock->ncells1;
-  // does this assume 3D? if not, perhaps it should not use MeshBlock::ncells2,3
   int nx2 = pm->pblock->ncells2;
   int nx3 = pm->pblock->ncells3;
 
