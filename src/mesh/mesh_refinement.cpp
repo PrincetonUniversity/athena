@@ -29,10 +29,10 @@
 //! \fn MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
 //  \brief constructor
 
-MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block_ = pmb;
-  AMRFlag_ = pmb->pmy_mesh->AMRFlag_;
-
+MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block_(pmb), deref_count_(0),
+    deref_threshold_(pin->GetOrAddInteger("mesh", "derefine_count", 10)),
+    AMRFlag_(pmb->pmy_mesh->AMRFlag_) {
   // Create coarse mesh object for parent grid
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     pcoarsec = new Cartesian(pmb, pin, true);
@@ -50,10 +50,7 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) {
     pcoarsec = new GRUser(pmb, pin, true);
   }
 
-  deref_count_ = 0;
-  deref_threshold_ = pin->GetOrAddInteger("mesh","derefine_count",10);
-
-  int nc1 = pmb->block_size.nx1+2*NGHOST;
+  int nc1 = pmb->ncells1;
   fvol_[0][0].NewAthenaArray(nc1);
   fvol_[0][1].NewAthenaArray(nc1);
   fvol_[1][0].NewAthenaArray(nc1);
@@ -1026,6 +1023,8 @@ void MeshRefinement::CheckRefinementCondition() {
   return;
 }
 
+// TODO(felker): consider merging w/ MeshBlock::pvars_cc, etc. See meshblock.cpp
+
 void MeshRefinement::AddToRefinement(AthenaArray<Real> *pvar_cc,
                                      AthenaArray<Real> *pcoarse_cc) {
   pvars_cc_.push_back(std::make_tuple(pvar_cc, pcoarse_cc));
@@ -1036,6 +1035,9 @@ void MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) 
   pvars_fc_.push_back(std::make_tuple(pvar_fc, pcoarse_fc));
   return;
 }
+
+// Currently, only called in bvals_refine.cpp to perform additional prolongation and
+// restriction steps on primitive Hydro variables only for GR.
 
 void MeshRefinement::SetHydroRefinement(HydroBoundaryQuantity hydro_type) {
   Hydro *ph = pmy_block_->phydro;

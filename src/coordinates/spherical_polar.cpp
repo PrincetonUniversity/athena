@@ -32,21 +32,7 @@
 
 SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {
-  pmy_block = pmb;
-  coarse_flag=flag;
-  int il, iu, jl, ju, kl, ku, ng;
-  if (coarse_flag==true) {
-    il = pmb->cis; jl = pmb->cjs; kl = pmb->cks;
-    iu = pmb->cie; ju = pmb->cje; ku = pmb->cke;
-    ng=NGHOST;
-  } else {
-    il = pmb->is; jl = pmb->js; kl = pmb->ks;
-    iu = pmb->ie; ju = pmb->je; ku = pmb->ke;
-    ng=NGHOST;
-  }
-  Mesh *pm=pmy_block->pmy_mesh;
   RegionSize& block_size = pmy_block->block_size;
-
   // check that Mesh's polar coordinate range does not exceed [0, pi], even in 2D
   // (use 2D cylindrical coordinates to create a circular Mesh)
   if (block_size.nx2 > 1
@@ -63,40 +49,6 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
         << "x2min=" << pm->mesh_size.x2min << "\n"
         << "x2max=" << pm->mesh_size.x2max << std::endl;
     ATHENA_ERROR(msg);
-  }
-  // allocate arrays for volume-centered coordinates and positions of cells
-  int ncells1 = (iu-il+1) + 2*ng;
-  int ncells2 = 1, ncells3 = 1;
-  if (block_size.nx2 > 1) ncells2 = (ju-jl+1) + 2*ng;
-  if (block_size.nx3 > 1) ncells3 = (ku-kl+1) + 2*ng;
-  dx1v.NewAthenaArray(ncells1);
-  dx2v.NewAthenaArray(ncells2);
-  dx3v.NewAthenaArray(ncells3);
-  x1v.NewAthenaArray(ncells1);
-  x2v.NewAthenaArray(ncells2);
-  x3v.NewAthenaArray(ncells3);
-  // allocate arrays for volume- and face-centered geometry coefficients of cells
-  h2f.NewAthenaArray(ncells1);
-  dh2fd1.NewAthenaArray(ncells1);
-  h31f.NewAthenaArray(ncells1);
-  dh31fd1.NewAthenaArray(ncells1);
-  h32f.NewAthenaArray(ncells2);
-  dh32fd2.NewAthenaArray(ncells2);
-  h2v.NewAthenaArray(ncells1);
-  dh2vd1.NewAthenaArray(ncells1);
-  h31v.NewAthenaArray(ncells1);
-  dh31vd1.NewAthenaArray(ncells1);
-  h32v.NewAthenaArray(ncells2);
-  dh32vd2.NewAthenaArray(ncells2);
-
-  // allocate arrays for area weighted positions for AMR/SMR MHD
-  if ((pm->multilevel) && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.NewAthenaArray(ncells1);
-    x1s3.NewAthenaArray(ncells1);
-    x2s1.NewAthenaArray(ncells2);
-    x2s3.NewAthenaArray(ncells2);
-    x3s1.NewAthenaArray(ncells3);
-    x3s2.NewAthenaArray(ncells3);
   }
 
   // initialize volume-averaged coordinates and spacing
@@ -191,27 +143,27 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // Allocate memory for internal scratch arrays to store partial calculations
   // (note this is skipped if object is for coarse mesh with AMR)
   if (coarse_flag==false) {
-    coord_area1_i_.NewAthenaArray(ncells1+1);
-    coord_area2_i_.NewAthenaArray(ncells1);
-    coord_area3_i_.NewAthenaArray(ncells1);
-    coord_vol_i_.NewAthenaArray(ncells1);
-    coord_src1_i_.NewAthenaArray(ncells1);
-    coord_src2_i_.NewAthenaArray(ncells1);
-    phy_src1_i_.NewAthenaArray(ncells1);
-    phy_src2_i_.NewAthenaArray(ncells1);
+    coord_area1_i_.NewAthenaArray(nc1+1);
+    coord_area2_i_.NewAthenaArray(nc1);
+    coord_area3_i_.NewAthenaArray(nc1);
+    coord_vol_i_.NewAthenaArray(nc1);
+    coord_src1_i_.NewAthenaArray(nc1);
+    coord_src2_i_.NewAthenaArray(nc1);
+    phy_src1_i_.NewAthenaArray(nc1);
+    phy_src2_i_.NewAthenaArray(nc1);
 
-    coord_area1_j_.NewAthenaArray(ncells2);
-    coord_area2_j_.NewAthenaArray(ncells2+1);
-    coord_vol_j_.NewAthenaArray(ncells2);
-    coord_src1_j_.NewAthenaArray(ncells2);
-    coord_src2_j_.NewAthenaArray(ncells2);
-    coord_src3_j_.NewAthenaArray(ncells2);
+    coord_area1_j_.NewAthenaArray(nc2);
+    coord_area2_j_.NewAthenaArray(nc2+1);
+    coord_vol_j_.NewAthenaArray(nc2);
+    coord_src1_j_.NewAthenaArray(nc2);
+    coord_src2_j_.NewAthenaArray(nc2);
+    coord_src3_j_.NewAthenaArray(nc2);
     // non-ideal MHD
-    coord_area1vc_i_.NewAthenaArray(ncells1);
-    coord_area2vc_i_.NewAthenaArray(ncells1);
-    coord_area3vc_i_.NewAthenaArray(ncells1);
-    coord_area1vc_j_.NewAthenaArray(ncells2);
-    coord_area2vc_j_.NewAthenaArray(ncells2);
+    coord_area1vc_i_.NewAthenaArray(nc1);
+    coord_area2vc_i_.NewAthenaArray(nc1);
+    coord_area3vc_i_.NewAthenaArray(nc1);
+    coord_area1vc_j_.NewAthenaArray(nc2);
+    coord_area2vc_j_.NewAthenaArray(nc2);
     // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
     // This helps improve performance.
 #pragma omp simd
@@ -490,9 +442,9 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
   bool use_x2_fluxes = pmy_block->block_size.nx2 > 1;
 
-  HydroDiffusion *phd = pmy_block->phydro->phdif;
-  bool do_hydro_diffusion = (phd->hydro_diffusion_defined &&
-                             (phd->nu_iso>0.0 || phd->nu_aniso>0.0));
+  HydroDiffusion &hd = pmy_block->phydro->hdif;
+  bool do_hydro_diffusion = (hd.hydro_diffusion_defined &&
+                             (hd.nu_iso > 0.0 || hd.nu_aniso > 0.0));
 
   // Go through cells
   for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
@@ -510,8 +462,8 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
           m_ii += SQR(bcc(IB1,k,j,i));
         }
         if (do_hydro_diffusion) {
-          m_ii += 0.5*(phd->visflx[X2DIR](IM2,k,j+1,i)+phd->visflx[X2DIR](IM2,k,j,i));
-          m_ii += 0.5*(phd->visflx[X3DIR](IM3,k+1,j,i)+phd->visflx[X3DIR](IM3,k,j,i));
+          m_ii += 0.5*(hd.visflx[X2DIR](IM2,k,j+1,i) + hd.visflx[X2DIR](IM2,k,j,i));
+          m_ii += 0.5*(hd.visflx[X3DIR](IM3,k+1,j,i) + hd.visflx[X3DIR](IM3,k,j,i));
         }
 
         u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_ii;
@@ -538,7 +490,7 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
                         - SQR(bcc(IB3,k,j,i)) );
         }
         if (do_hydro_diffusion)
-          m_pp += 0.5*(phd->visflx[X3DIR](IM3,k+1,j,i)+phd->visflx[X3DIR](IM3,k,j,i));
+          m_pp += 0.5*(hd.visflx[X3DIR](IM3,k+1,j,i) + hd.visflx[X3DIR](IM3,k,j,i));
 
         u(IM2,k,j,i) += dt*coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
 
@@ -553,7 +505,7 @@ void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
             m_ph -= bcc(IB3,k,j,i) * bcc(IB2,k,j,i);
           }
           if (do_hydro_diffusion)
-            m_ph += 0.5*(phd->visflx[X2DIR](IM3,k,j+1,i)+phd->visflx[X2DIR](IM3,k,j,i));
+            m_ph += 0.5*(hd.visflx[X2DIR](IM3,k,j+1,i) + hd.visflx[X2DIR](IM3,k,j,i));
 
           u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src3_j_(j)*m_ph;
         }

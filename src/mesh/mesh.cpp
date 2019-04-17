@@ -11,7 +11,7 @@
 // #define __STDC_FORMAT_MACROS
 
 // C++ headers
-#include <algorithm>  // std::sort()
+#include <algorithm>
 #include <cinttypes>  // format macro "PRId64" for fixed-width integer type std::int64_t
 #include <cmath>      // std::abs(), std::pow()
 #include <cstdint>    // std::int64_t fixed-wdith integer type alias
@@ -272,6 +272,18 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   // create the root grid
   tree.CreateRootGrid(nrbx1, nrbx2, nrbx3, root_level);
 
+  // Load balancing flag and parameters
+  lb_flag_ = true, lb_manual_ = false, lb_automatic_ = false;
+#ifdef MPI_PARALLEL
+  if (pin->GetOrAddString("loadbalancing","balancer","default") == "automatic")
+    lb_automatic_ = true;
+  else if (pin->GetOrAddString("loadbalancing","balancer","default") == "manual")
+    lb_manual_ = true;
+  lb_tolerance_ = pin->GetOrAddReal("loadbalancing","tolerance",0.5);
+  lb_interval_ = pin->GetOrAddReal("loadbalancing","interval",10);
+#endif
+  step_since_lb = 0;
+
   // SMR / AMR: create finer grids here
   multilevel = false;
   adaptive = false;
@@ -466,8 +478,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   ranklist = new int[nbtotal];
   nslist = new int[Globals::nranks];
   nblist = new int[Globals::nranks];
-  costlist = new Real[nbtotal];
-  if (adaptive) { // allocate arrays for AMR
+  costlist = new double[nbtotal];
+  if (adaptive == true) { // allocate arrays for AMR
     nref = new int[Globals::nranks];
     nderef = new int[Globals::nranks];
     rdisp = new int[Globals::nranks];
@@ -481,7 +493,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   // initialize cost array with the simplest estimate; all the blocks are equal
   for (int i=0; i<nbtotal; i++) costlist[i] = 1.0;
 
-  LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
+  CalculateLoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
 
   // Output some diagnostic information to terminal
 
@@ -517,6 +529,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     pblock->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   pblock = pfirst;
+
+  ResetLoadBalanceVariables();
 
   if (SELF_GRAVITY_ENABLED == 1)
     pfgrd = new FFTGravityDriver(this, pin);
@@ -630,7 +644,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   // initialize
   loclist = new LogicalLocation[nbtotal];
   offset = new IOWrapperSizeT[nbtotal];
-  costlist = new Real[nbtotal];
+  costlist = new double[nbtotal];
   ranklist = new int[nbtotal];
   nslist = new int[Globals::nranks];
   nblist = new int[Globals::nranks];
@@ -682,6 +696,19 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   MGBoundaryFunction_[BoundaryFace::inner_x3] = MGPeriodicInnerX3;
   MGBoundaryFunction_[BoundaryFace::outer_x3] = MGPeriodicOuterX3;
 
+  // Load balancing flag and parameters
+  lb_flag_ = true, lb_manual_ = false, lb_automatic_ = false;
+#ifdef MPI_PARALLEL
+  if (pin->GetOrAddString("loadbalancing","balancer","default") == "automatic")
+    lb_automatic_ = true;
+  else if (pin->GetOrAddString("loadbalancing","balancer","default") == "manual")
+    lb_manual_ = true;
+  lb_tolerance_ = pin->GetOrAddReal("loadbalancing","tolerance",0.5);
+  lb_interval_ = pin->GetOrAddReal("loadbalancing","interval",10);
+#endif
+  step_since_lb = 0;
+
+  // SMR / AMR
   multilevel = false;
   adaptive = false;
   if (pin->GetOrAddString("mesh","refinement","none") == "adaptive")
@@ -757,8 +784,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   for (int i=0; i<nbtotal; i++) {
     std::memcpy(&(loclist[i]), &(idlist[os]), sizeof(LogicalLocation));
     os += sizeof(LogicalLocation);
-    std::memcpy(&(costlist[i]), &(idlist[os]), sizeof(Real));
-    os += sizeof(Real);
+    std::memcpy(&(costlist[i]), &(idlist[os]), sizeof(double));
+    os += sizeof(double);
     if (loclist[i].level > current_level) current_level = loclist[i].level;
   }
   delete [] idlist;
@@ -809,7 +836,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     bddisp = new int[Globals::nranks];
   }
 
-  LoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
+  CalculateLoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
 
   // Output MeshBlock list and quit (mesh test only); do not create meshes
   if (mesh_test > 0) {
@@ -863,6 +890,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
         << std::endl;
     ATHENA_ERROR(msg);
   }
+
+  ResetLoadBalanceVariables();
 
   // clean up
   delete [] offset;
@@ -977,8 +1006,8 @@ void Mesh::OutputMeshStructure(int dim) {
   }
 
   // output relative size/locations of meshblock to file, for plotting
-  Real real_max = std::numeric_limits<Real>::max();
-  Real mincost = real_max, maxcost = 0.0, totalcost = 0.0;
+  double real_max = std::numeric_limits<double>::max();
+  double mincost = real_max, maxcost = 0.0, totalcost = 0.0;
   for (int i=root_level; i<=max_level; i++) {
     for (int j=0; j<nbtotal; j++) {
       if (loclist[j].level == i) {
@@ -1377,26 +1406,26 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
-        pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+        pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                                HydroBoundaryQuantity::cons);
-        pmb->phydro->phbval->SendBoundaryBuffers();
+        pmb->phydro->hbvar.SendBoundaryBuffers();
         if (MAGNETIC_FIELDS_ENABLED)
-          pmb->pfield->pfbval->SendBoundaryBuffers();
+          pmb->pfield->fbvar.SendBoundaryBuffers();
       }
 
       // wait to receive conserved variables
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
-        pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+        pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                                HydroBoundaryQuantity::cons);
-        pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
+        pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
         if (MAGNETIC_FIELDS_ENABLED)
-          pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
+          pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
         // KGF: disable shearing box bvals/ calls
         // send and receive shearing box boundary conditions
         if (SHEARING_BOX) {
-          pmb->phydro->phbval->SendShearingBoxBoundaryBuffersForInit();
+          pmb->phydro->hbvar.SendShearingBoxBoundaryBuffersForInit();
         }
         pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
       }
@@ -1414,20 +1443,20 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
-          pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w,
+          pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
                                                  HydroBoundaryQuantity::prim);
-          pmb->phydro->phbval->SendBoundaryBuffers();
+          pmb->phydro->hbvar.SendBoundaryBuffers();
         }
 
         // wait to receive AMR/SMR GR primitives
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
-          pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w,
+          pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
                                                  HydroBoundaryQuantity::prim);
-          pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
+          pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
           pbval->ClearBoundary(BoundaryCommSubset::gr_amr);
-          pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+          pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                                  HydroBoundaryQuantity::cons);
         }
       } // multilevel
@@ -1481,7 +1510,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
         // --------------------------
         // end fourth-order EOS
-        pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w,
+        pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
                                                HydroBoundaryQuantity::prim);
         pbval->ApplyPhysicalBoundaries(time, 0.0);
       }
@@ -1490,11 +1519,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,phydro,pfield)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; phydro = pmb->phydro, pfield = pmb->pfield;
-        if (phydro->phdif->hydro_diffusion_defined)
-          phydro->phdif->SetHydroDiffusivity(phydro->w, pfield->bcc);
+        if (phydro->hdif.hydro_diffusion_defined)
+          phydro->hdif.SetHydroDiffusivity(phydro->w, pfield->bcc);
         if (MAGNETIC_FIELDS_ENABLED) {
-          if (pfield->pfdif->field_diffusion_defined)
-            pfield->pfdif->SetFieldDiffusivity(phydro->w, pfield->bcc);
+          if (pfield->fdif.field_diffusion_defined)
+            pfield->fdif.SetFieldDiffusivity(phydro->w, pfield->bcc);
         }
       }
 
@@ -1509,7 +1538,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     if ((res_flag == 0) && (adaptive)) {
       iflag = false;
       int onb = nbtotal;
-      AdaptiveMeshRefinement(pin);
+      LoadBalancingAndAdaptiveMeshRefinement(pin);
       if (nbtotal == onb) {
         iflag = true;
       } else if (nbtotal < onb && Globals::my_rank == 0) {
@@ -1550,68 +1579,6 @@ MeshBlock* Mesh::FindMeshBlock(int tgid) {
     pbl = pbl->next;
   }
   return pbl;
-}
-
-//----------------------------------------------------------------------------------------
-// \!fn void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb)
-// \brief Calculate distribution of MeshBlocks based on the cost list
-
-void Mesh::LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb) {
-  std::stringstream msg;
-  Real real_max  =  std::numeric_limits<Real>::max();
-  Real totalcost = 0, maxcost = 0.0, mincost = (real_max);
-
-  for (int i=0; i<nb; i++) {
-    totalcost += clist[i];
-    mincost = std::min(mincost,clist[i]);
-    maxcost = std::max(maxcost,clist[i]);
-  }
-  int j = (Globals::nranks) - 1;
-  Real targetcost = totalcost/Globals::nranks;
-  Real mycost = 0.0;
-  // create rank list from the end: the master MPI rank should have less load
-  for (int i=nb-1; i>=0; i--) {
-    if (targetcost == 0.0) {
-      msg << "### FATAL ERROR in LoadBalance" << std::endl
-          << "There is at least one process which has no MeshBlock" << std::endl
-          << "Decrease the number of processes or use smaller MeshBlocks." << std::endl;
-      ATHENA_ERROR(msg);
-    }
-    mycost += clist[i];
-    rlist[i] = j;
-    if (mycost >= targetcost && j>0) {
-      j--;
-      totalcost -= mycost;
-      mycost = 0.0;
-      targetcost = totalcost/(j + 1);
-    }
-  }
-  slist[0] = 0;
-  j = 0;
-  for (int i=1; i<nb; i++) { // make the list of nbstart and nblocks
-    if (rlist[i] != rlist[i-1]) {
-      nlist[j] = i-nslist[j];
-      slist[++j] = i;
-    }
-  }
-  nlist[j] = nb - slist[j];
-
-#ifdef MPI_PARALLEL
-  if (nb % (Globals::nranks * num_mesh_threads_) != 0 && adaptive == false
-      && maxcost == mincost && Globals::my_rank == 0) {
-    std::cout << "### Warning in LoadBalance" << std::endl
-              << "The number of MeshBlocks cannot be divided evenly. "
-              << "This will result in poor load balancing." << std::endl;
-  }
-#endif
-  if ((Globals::nranks)*(num_mesh_threads_) > nb) {
-    msg << "### FATAL ERROR in LoadBalance" << std::endl
-        << "There are fewer MeshBlocks than OpenMP threads on each MPI rank" << std::endl
-        << "Decrease the number of threads or use more MeshBlocks." << std::endl;
-    ATHENA_ERROR(msg);
-  }
-
-  return;
 }
 
 //----------------------------------------------------------------------------------------
@@ -1722,14 +1689,10 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
     AthenaArray<Real> delta_cons_;
 
     // Allocate memory for 4D Laplacian
-    int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-    int ncells2 = 1, ncells3 = 1;
-    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
     int ncells4 = NHYDRO;
     int nl = 0;
-    int nu = ncells4-1;
-    delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
+    int nu = ncells4 - 1;
+    delta_cons_.NewAthenaArray(ncells4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
     // Compute and store Laplacian of cell-averaged conserved variables
     pmb->pcoord->Laplacian(phydro->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
@@ -1767,26 +1730,26 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
 #pragma omp for private(pmb,pbval)
   for (int i=0; i<nmb; ++i) {
     pmb = pmb_array[i];
-    pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+    pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                            HydroBoundaryQuantity::cons);
-    pmb->phydro->phbval->SendBoundaryBuffers();
+    pmb->phydro->hbvar.SendBoundaryBuffers();
     if (MAGNETIC_FIELDS_ENABLED)
-      pmb->pfield->pfbval->SendBoundaryBuffers();
+      pmb->pfield->fbvar.SendBoundaryBuffers();
   }
 
   // wait to receive conserved variables
 #pragma omp for private(pmb,pbval)
   for (int i=0; i<nmb; ++i) {
     pmb = pmb_array[i]; pbval = pmb->pbval;
-    pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->u,
+    pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                            HydroBoundaryQuantity::cons);
-    pmb->phydro->phbval->ReceiveAndSetBoundariesWithWait();
+    pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
     if (MAGNETIC_FIELDS_ENABLED)
-      pmb->pfield->pfbval->ReceiveAndSetBoundariesWithWait();
+      pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
     // KGF: disable shearing box bvals/ calls
     // send and receive shearing box boundary conditions
     if (SHEARING_BOX) {
-      pmb->phydro->phbval->SendShearingBoxBoundaryBuffersForInit();
+      pmb->phydro->hbvar.SendShearingBoxBoundaryBuffersForInit();
     }
     pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
   } // end second exchange of ghost cells

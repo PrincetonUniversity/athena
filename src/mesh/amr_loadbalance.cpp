@@ -11,11 +11,15 @@
 // C++ headers
 #include <algorithm>  // std::sort()
 #include <cstdint>
+#include <iostream>
+#include <sstream>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../field/field.hpp"
 #include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../utils/buffer_utils.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
@@ -28,12 +32,150 @@
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::AdaptiveMeshRefinement(ParameterInput *pin)
+// \!fn void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin)
 // \brief Main function for adaptive mesh refinement
 
-void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
-  MeshBlock *pmb;
+void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
+  int nnew = 0, ndel = 0;
+
+  if (adaptive == true) {
+    UpdateMeshBlockTree(nnew, ndel);
+    nbnew += nnew; nbdel += ndel;
+  }
+
+  lb_flag_ |= lb_automatic_;
+
+  UpdateCostList();
+
+  if (nnew != 0 || ndel != 0) { // at least one (de)refinement happened
+    GatherCostListAndCheckBalance();
+    RedistributeAndRefineMeshBlocks(pin, nbtotal + nnew - ndel);
+  } else if (lb_flag_ == true && step_since_lb >= lb_interval_) {
+    if (GatherCostListAndCheckBalance() == false) // load imbalance detected
+      RedistributeAndRefineMeshBlocks(pin, nbtotal);
+    lb_flag_ = false;
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+// \!fn void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist,
+//                                      int *nlist, int nb)
+// \brief Calculate distribution of MeshBlocks based on the cost list
+
+void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist,
+                                int nb) {
+  std::stringstream msg;
+  double real_max  =  std::numeric_limits<double>::max();
+  double totalcost = 0, maxcost = 0.0, mincost = (real_max);
+
+  for (int i=0; i<nb; i++) {
+    totalcost += clist[i];
+    mincost = std::min(mincost,clist[i]);
+    maxcost = std::max(maxcost,clist[i]);
+  }
+
+  int j = (Globals::nranks) - 1;
+  double targetcost = totalcost/Globals::nranks;
+  double mycost = 0.0;
+  // create rank list from the end: the master MPI rank should have less load
+  for (int i=nb-1; i>=0; i--) {
+    if (targetcost == 0.0) {
+      msg << "### FATAL ERROR in CalculateLoadBalance" << std::endl
+          << "There is at least one process which has no MeshBlock" << std::endl
+          << "Decrease the number of processes or use smaller MeshBlocks." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    mycost += clist[i];
+    rlist[i] = j;
+    if (mycost >= targetcost && j>0) {
+      j--;
+      totalcost -= mycost;
+      mycost = 0.0;
+      targetcost = totalcost/(j+1);
+    }
+  }
+  slist[0] = 0;
+  j = 0;
+  for (int i=1; i<nb; i++) { // make the list of nbstart and nblocks
+    if (rlist[i] != rlist[i-1]) {
+      nlist[j] = i-slist[j];
+      slist[++j] = i;
+    }
+  }
+  nlist[j] = nb-slist[j];
+
+  if (Globals::my_rank == 0) {
+    for (int i=0; i<Globals::nranks; i++) {
+      double rcost = 0.0;
+      for(int n=slist[i]; n<slist[i]+nlist[i]; n++)
+        rcost += clist[n];
+    }
+  }
+
+#ifdef MPI_PARALLEL
+  if (nb % (Globals::nranks * num_mesh_threads_) != 0
+      && adaptive == false && lb_flag_ ==false
+      && maxcost == mincost && Globals::my_rank == 0) {
+    std::cout << "### Warning in CalculateLoadBalance" << std::endl
+              << "The number of MeshBlocks cannot be divided evenly. "
+              << "This will result in poor load balancing." << std::endl;
+  }
+#endif
+  if ((Globals::nranks)*(num_mesh_threads_) > nb) {
+    msg << "### FATAL ERROR in CalculateLoadBalance" << std::endl
+        << "There are fewer MeshBlocks than OpenMP threads on each MPI rank" << std::endl
+        << "Decrease the number of threads or use more MeshBlocks." << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn void Mesh::ResetLoadBalanceVariables()
+// \brief reset counters and flags for load balancing
+
+void Mesh::ResetLoadBalanceVariables() {
+  if (lb_automatic_) {
+    MeshBlock *pmb = pblock;
+    while (pmb != nullptr) {
+      costlist[pmb->gid] = TINY_NUMBER;
+      pmb->ResetTimeMeasurement();
+      pmb = pmb->next;
+    }
+  }
+  lb_flag_ = false;
+  step_since_lb = 0;
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn void Mesh::UpdateCostList()
+// \brief update the cost list
+
+void Mesh::UpdateCostList() {
+  MeshBlock *pmb = pblock;
+  if (lb_automatic_) {
+    double w = static_cast<double>(lb_interval_-1)/static_cast<double>(lb_interval_);
+    while (pmb != nullptr) {
+      costlist[pmb->gid] = costlist[pmb->gid]*w+pmb->cost_;
+      pmb = pmb->next;
+    }
+  } else if (lb_flag_) {
+    while (pmb != nullptr) {
+      costlist[pmb->gid] = pmb->cost_;
+      pmb = pmb->next;
+    }
+  }
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel)
+// \brief collect refinement flags and manipulate the MeshBlockTree
+
+void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
   // compute nleaf= number of leaf MeshBlocks per refined block
+  MeshBlock *pmb;
   int nleaf = 2, dim = 1;
   if (mesh_size.nx2 > 1) nleaf = 4, dim = 2;
   if (mesh_size.nx3 > 1) nleaf = 8, dim = 3;
@@ -153,7 +295,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // Now the lists of the blocks to be refined and derefined are completed
   // Start tree manipulation
   // Step 1. perform refinement
-  int nnew = 0, ndel = 0, ntot = 0;
   for (int n=0; n<tnref; n++) {
     MeshBlockTree *bt=tree.FindMeshBlock(lref[n]);
     bt->Refine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, nnew);
@@ -168,17 +309,56 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   }
   if (tnderef >= nleaf)
     delete [] clderef;
-  ntot = nbtotal + nnew - ndel;
-  if (nnew == 0 && ndel == 0)
-    return; // nothing to do
-  // Tree manipulation completed
-  nbnew += nnew; nbdel += ndel;
 
-  // Block exchange
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn bool Mesh::GatherCostListAndCheckBalance()
+// \brief collect the cost from MeshBlocks and check the load balance
+
+bool Mesh::GatherCostListAndCheckBalance() {
+  if (lb_manual_ || lb_automatic_) {
+#ifdef MPI_PARALLEL
+    MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_DOUBLE, costlist, nblist,
+                   nslist, MPI_DOUBLE, MPI_COMM_WORLD);
+#endif
+    double maxcost = 0.0, avecost = 0.0;
+    for (int rank=0; rank<Globals::nranks; rank++) {
+      double rcost = 0.0;
+      int ns = nslist[rank];
+      int ne = ns + nblist[rank];
+      for (int n=ns; n<ne; ++n)
+        rcost += costlist[n];
+      maxcost = std::max(maxcost,rcost);
+      avecost += rcost;
+    }
+    avecost /= Globals::nranks;
+
+    if (adaptive) lb_tolerance_ = 2.0*static_cast<double>(Globals::nranks)
+                                     /static_cast<double>(nbtotal);
+
+    if (maxcost > (1.0 + lb_tolerance_)*avecost)
+      return false;
+  }
+  return true;
+}
+
+
+//----------------------------------------------------------------------------------------
+// \!fn void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot)
+// \brief redistribute MeshBlocks according to the new load balance
+
+void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
+  // compute nleaf= number of leaf MeshBlocks per refined block
+  int nleaf = 2;
+  if (mesh_size.nx2 > 1) nleaf = 4;
+  if (mesh_size.nx3 > 1) nleaf = 8;
+
   // Step 1. construct new lists
   LogicalLocation *newloc = new LogicalLocation[ntot];
   int *newrank = new int[ntot];
-  Real *newcost = new Real[ntot];
+  double *newcost = new double[ntot];
   int *newtoold = new int[ntot];
   int *oldtonew = new int[nbtotal];
   int nbtold = nbtotal;
@@ -200,12 +380,6 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   for ( ; mb_idx<nbtold; mb_idx++)
     oldtonew[mb_idx] = ntot-1;
 
-#ifdef MPI_PARALLEL
-  // share the cost list
-  MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_ATHENA_REAL,
-                 costlist, nblist, nslist, MPI_ATHENA_REAL, MPI_COMM_WORLD);
-#endif
-
   current_level = 0;
   for (int n=0; n<ntot; n++) {
     // "on" = "old n" = "old gid" = "old global MeshBlock ID"
@@ -215,7 +389,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
     if (newloc[n].level >= loclist[on].level) { // same or refined
       newcost[n] = costlist[on];
     } else {
-      Real acost = 0.0;
+      double acost = 0.0;
       for (int l=0; l<nleaf; l++)
         acost += costlist[on+l];
       newcost[n] = acost/nleaf;
@@ -227,7 +401,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   int onbe = onbs + nblist[Globals::my_rank] - 1;
 #endif
   // Step 2. Calculate new load balance
-  LoadBalance(newcost, newrank, nslist, nblist, ntot);
+  CalculateLoadBalance(newcost, newrank, nslist, nblist, ntot);
 
   int nbs = nslist[Globals::my_rank];
   int nbe = nbs + nblist[Globals::my_rank] - 1;
@@ -267,14 +441,17 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   // Step 4. calculate buffer sizes
   Real **sendbuf, **recvbuf;
   // use the first MeshBlock in the linked list of blocks belonging to this MPI rank as a
-  // representative of all MeshBlocks for counting the "SMR/AMR-enrolled" quantities
+  // representative of all MeshBlocks for counting the "load-balancing registered" and
+  // "SMR/AMR-enrolled" quantities (loop over MeshBlock::vars_cc_, not MeshRefinement)
+
+  // TODO(felker): add explicit check to ensure that elements of pb->vars_cc/fc_ and
+  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive==true
 
   // int num_cc = pblock->pmr->pvars_cc_.size();
-  int num_fc = pblock->pmr->pvars_fc_.size();
+  int num_fc = pblock->vars_fc_.size();
   int nx4_tot = 0;
-  for (auto cc_pair : pblock->pmr->pvars_cc_) {
-    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
-    nx4_tot += var_cc->GetDim4();
+  for (AthenaArray<Real> &var_cc : pblock->vars_cc_) {
+    nx4_tot += var_cc.GetDim4();
   }
 
   // cell-centered quantities enrolled in SMR/AMR
@@ -343,7 +520,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       if (nloc.level == oloc.level) { // same level
         if (newrank[nn] == Globals::my_rank) continue;
         sendbuf[sb_idx] = new Real[bssame];
-        PrepareSendSameLevelAMR(pb, sendbuf[sb_idx]);
+        PrepareSendSameLevel(pb, sendbuf[sb_idx]);
         int tag = CreateAMRMPITag(nn-nslist[newrank[nn]], 0, 0, 0);
         MPI_Isend(sendbuf[sb_idx], bssame, MPI_ATHENA_REAL, newrank[nn],
                   tag, MPI_COMM_WORLD, &(req_send[sb_idx]));
@@ -375,6 +552,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
 
   // Step 7. construct a new MeshBlock list (moving the data within the MPI rank)
   MeshBlock *newlist = nullptr;
+  MeshBlock *pmb = nullptr;
   RegionSize block_size = pblock->block_size;
 
   for (int n=nbs; n<=nbe; n++) {
@@ -456,7 +634,7 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
       if (oloc.level == nloc.level) { // same
         if (ranklist[on] == Globals::my_rank) continue;
         MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
-        FinishRecvSameLevelAMR(pb, recvbuf[rb_idx]);
+        FinishRecvSameLevel(pb, recvbuf[rb_idx]);
         rb_idx++;
       } else if (oloc.level > nloc.level) { // f2c
         for (int l=0; l<nleaf; l++) {
@@ -510,34 +688,45 @@ void Mesh::AdaptiveMeshRefinement(ParameterInput *pin) {
   }
   Initialize(2, pin);
 
+  ResetLoadBalanceVariables();
+
   return;
 }
 
-// step 6, branch 1 (same2same: just pack+send)
+// AMR: step 6, branch 1 (same2same: just pack+send)
 
-void Mesh::PrepareSendSameLevelAMR(MeshBlock* pb, Real *sendbuf) {
+void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
   // pack
   int p = 0;
-  // (C++11) range-based for loop
-  for (auto cc_pair : pb->pmr->pvars_cc_) {
-    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
-    int nu = var_cc->GetDim4() - 1;
-    BufferUtility::PackData(*var_cc, sendbuf, 0, nu,
+
+  // this helper fn is used for AMR and non-refinement load balancing of
+  // MeshBlocks. Therefore, unlike PrepareSendCoarseToFineAMR(), etc., it loops over
+  // MeshBlock::vars_cc/fc_ containers, not MeshRefinement::pvars_cc/fc_ containers
+
+  // TODO(felker): add explicit check to ensure that elements of pb->vars_cc/fc_ and
+  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive==true
+
+  // (C++11) range-based for loop: (automatic type deduction fails when iterating over
+  // container with std::reference_wrapper; could use auto var_cc_r = var_cc.get())
+  for (AthenaArray<Real> &var_cc : pb->vars_cc_) {
+    int nu = var_cc.GetDim4() - 1;
+    BufferUtility::PackData(var_cc, sendbuf, 0, nu,
                             pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
   }
-  for (auto fc_pair : pb->pmr->pvars_fc_) {
-    FaceField *var_fc = std::get<0>(fc_pair);
-    BufferUtility::PackData((*var_fc).x1f, sendbuf,
+  for (FaceField &var_fc : pb->vars_fc_) {
+    BufferUtility::PackData(var_fc.x1f, sendbuf,
                             pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-    BufferUtility::PackData((*var_fc).x2f, sendbuf,
+    BufferUtility::PackData(var_fc.x2f, sendbuf,
                             pb->is, pb->ie, pb->js, pb->je+f2_, pb->ks, pb->ke, p);
-    BufferUtility::PackData((*var_fc).x3f, sendbuf,
+    BufferUtility::PackData(var_fc.x3f, sendbuf,
                             pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3_, p);
   }
   // WARNING(felker): casting from "Real *" to "int *" in order to append single integer
   // to send buffer is slightly unsafe (especially if sizeof(int) > sizeof(Real))
-  int *dcp = reinterpret_cast<int *>(&(sendbuf[p]));
-  *dcp = pb->pmr->deref_count_;
+  if (adaptive) {
+    int *dcp = reinterpret_cast<int *>(&(sendbuf[p]));
+    *dcp = pb->pmr->deref_count_;
+  }
   return;
 }
 
@@ -794,41 +983,37 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
 }
 
 // step 8 (receive and load), branch 1 (same2same: unpack)
-void Mesh::FinishRecvSameLevelAMR(MeshBlock *pb, Real *recvbuf) {
+void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
   int p = 0;
-  for (auto cc_pair : pb->pmr->pvars_cc_) {
-    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
-    int nu = var_cc->GetDim4() - 1;
-    BufferUtility::UnpackData(recvbuf, *var_cc, 0, nu,
+  for (AthenaArray<Real> &var_cc : pb->vars_cc_) {
+    int nu = var_cc.GetDim4() - 1;
+    BufferUtility::UnpackData(recvbuf, var_cc, 0, nu,
                               pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
   }
-  for (auto fc_pair : pb->pmr->pvars_fc_) {
-    FaceField *var_fc = std::get<0>(fc_pair);
-    FaceField &dst_b = *var_fc;
-    BufferUtility::UnpackData(
-        recvbuf, dst_b.x1f,
-        pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
-    BufferUtility::UnpackData(
-        recvbuf, dst_b.x2f,
-        pb->is, pb->ie, pb->js, pb->je+f2_, pb->ks, pb->ke, p);
-    BufferUtility::UnpackData(
-        recvbuf, dst_b.x3f,
-        pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3_, p);
+  for (FaceField &var_fc : pb->vars_fc_) {
+    BufferUtility::UnpackData(recvbuf, var_fc.x1f,
+                              pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
+    BufferUtility::UnpackData(recvbuf, var_fc.x2f,
+                              pb->is, pb->ie, pb->js, pb->je+f2_, pb->ks, pb->ke, p);
+    BufferUtility::UnpackData(recvbuf, var_fc.x3f,
+                              pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3_, p);
     if (pb->block_size.nx2 == 1) {
       for (int i=pb->is; i<=pb->ie; i++)
-        dst_b.x2f(pb->ks, pb->js+1, i) = dst_b.x2f(pb->ks, pb->js, i);
+        var_fc.x2f(pb->ks, pb->js+1, i) = var_fc.x2f(pb->ks, pb->js, i);
     }
     if (pb->block_size.nx3 == 1) {
       for (int j=pb->js; j<=pb->je; j++) {
         for (int i=pb->is; i<=pb->ie; i++)
-          dst_b.x3f(pb->ks+1, j, i) = dst_b.x3f(pb->ks, j, i);
+          var_fc.x3f(pb->ks+1, j, i) = var_fc.x3f(pb->ks, j, i);
       }
     }
   }
   // WARNING(felker): casting from "Real *" to "int *" in order to read single
   // appended integer from received buffer is slightly unsafe
-  int *dcp = reinterpret_cast<int *>(&(recvbuf[p]));
-  pb->pmr->deref_count_ = *dcp;
+  if (adaptive) {
+    int *dcp = reinterpret_cast<int *>(&(recvbuf[p]));
+    pb->pmr->deref_count_ = *dcp;
+  }
   return;
 }
 

@@ -41,8 +41,8 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
     ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) : ptlist_(ptlist) {
   // STS Incompatiblities
   if (MAGNETIC_FIELDS_ENABLED &&
-      !(pm->pblock->pfield->pfdif->field_diffusion_defined) &&
-      !(pm->pblock->phydro->phdif->hydro_diffusion_defined)) {
+      !(pm->pblock->pfield->fdif.field_diffusion_defined) &&
+      !(pm->pblock->phydro->hdif.hydro_diffusion_defined)) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping requires setting parameters for "
@@ -60,7 +60,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
   }
   // TODO(pdmullen): how should source terms be handled inside
   //                 operator-split RKL1 STS?
-  if (pm->pblock->phydro->psrc->hydro_sourceterms_defined==true) {
+  if (pm->pblock->phydro->hsrc.hydro_sourceterms_defined==true) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatible "
@@ -136,95 +136,112 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::ClearAllBoundary);
+      task_list_[ntasks].lb_time = false;
       break;
 
     case (CALC_HYDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::CalculateHydroFlux_STS);
+      task_list_[ntasks].lb_time = true;
       break;
     case (CALC_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::CalculateEMF_STS);
+      task_list_[ntasks].lb_time = true;
       break;
 
     case (SEND_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::SendEMF);
+      task_list_[ntasks].lb_time = true;
       break;
 
     case (RECV_FLDFLX):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::ReceiveAndCorrectEMF);
+      task_list_[ntasks].lb_time = false;
       break;
 
     case (INT_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::IntegrateHydro_STS);
+      task_list_[ntasks].lb_time = true;
       break;
     case (INT_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::IntegrateField_STS);
+      task_list_[ntasks].lb_time = true;
       break;
 
     case (SEND_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::SendHydro);
+      task_list_[ntasks].lb_time = true;
       break;
     case (SEND_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::SendField);
+      task_list_[ntasks].lb_time = true;
       break;
 
     case (RECV_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::ReceiveHydro);
+      task_list_[ntasks].lb_time = false;
       break;
     case (RECV_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::ReceiveField);
+      task_list_[ntasks].lb_time = false;
       break;
 
     case (SETB_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::SetBoundariesHydro);
+      task_list_[ntasks].lb_time = true;
       break;
     case (SETB_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::SetBoundariesField);
+      task_list_[ntasks].lb_time = true;
       break;
 
     case (CON2PRIM):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::Primitives);
+      task_list_[ntasks].lb_time = true;
       break;
     case (PHY_BVAL):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&SuperTimeStepTaskList::PhysicalBoundary_STS);
+      task_list_[ntasks].lb_time = true;
       break;
 
     case (DIFFUSE_HYD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::DiffuseHydro);
+      task_list_[ntasks].lb_time = true;
       break;
     case (DIFFUSE_FLD):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::DiffuseField);
+      task_list_[ntasks].lb_time = true;
       break;
     default:
       std::stringstream msg;
@@ -247,9 +264,9 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   }
 
   // Clear flux arrays from previous stage
-  pmb->phydro->phdif->ClearHydroFlux(pmb->phydro->flux);
+  pmb->phydro->hdif.ClearHydroFlux(pmb->phydro->flux);
   if (MAGNETIC_FIELDS_ENABLED)
-    pmb->pfield->pfdif->ClearEMF(pmb->pfield->e);
+    pmb->pfield->fdif.ClearEMF(pmb->pfield->e);
 
   // Real time = pmb->pmy_mesh->time;
   pmb->pbval->StartReceiving(BoundaryCommSubset::all);
@@ -334,8 +351,8 @@ TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage
     //                 operator-split RKL1 STS? For now, disable time-dep BCs.
     // Real t_end_stage = pmb->pmy_mesh->time;
     // Real dt = pmb->pmy_mesh->dt;
-    pmb->phydro->phbval->SelectCoarseBuffer(HydroBoundaryQuantity::prim);
-    pmb->phydro->phbval->SwapHydroQuantity(pmb->phydro->w, HydroBoundaryQuantity::prim);
+    pmb->phydro->hbvar.SelectCoarseBuffer(HydroBoundaryQuantity::prim);
+    pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w, HydroBoundaryQuantity::prim);
     pbval->ApplyPhysicalBoundaries(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
   } else {
     return TaskStatus::fail;

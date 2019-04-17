@@ -51,11 +51,11 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
 
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    if (bd_var_flcor_.sflag[nb.bufid] == BoundaryStatus::completed) continue;
     if (nb.ni.type != NeighborConnect::face) break;
-    if (nb.snb.level == pmb->loc.level-1) {
+    if (bd_var_flcor_.sflag[nb.bufid] == BoundaryStatus::completed) continue;
+    if (nb.snb.level == pmb->loc.level - 1) {
       int p = 0;
-      Real *sbuf=bd_var_flcor_.send[nb.bufid];
+      Real *sbuf = bd_var_flcor_.send[nb.bufid];
       // x1 direction
       if (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1) {
         int i = pmb->is + (pmb->ie-pmb->is + 1)*nb.fid;
@@ -82,8 +82,7 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
               Real am = pco->GetFace1Area(k, j,   i);
               Real ap = pco->GetFace1Area(k, j+1, i);
               Real tarea = am + ap;
-              sbuf[p++] = (x1flux(nn, k, j  , i)*am
-                          + x1flux(nn, k, j+1, i)*ap)/tarea;
+              sbuf[p++] = (x1flux(nn, k, j  , i)*am + x1flux(nn, k, j+1, i)*ap)/tarea;
             }
           }
         } else { // 1D
@@ -93,7 +92,7 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
         }
         // x2 direction
       } else if (nb.fid == BoundaryFace::inner_x2 || nb.fid == BoundaryFace::outer_x2) {
-        int j = pmb->js + (pmb->je-pmb->js+1)*(nb.fid & 1);
+        int j = pmb->js + (pmb->je-pmb->js + 1)*(nb.fid & 1);
         if (pmb->block_size.nx3>1) { // 3D
           for (int nn=nl_; nn<=nu_; nn++) {
             for (int k=pmb->ks; k<=pmb->ke; k+=2) {

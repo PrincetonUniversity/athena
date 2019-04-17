@@ -61,14 +61,14 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   sigma_max_ = pin->GetOrAddReal("hydro", "sigma_max",  0.0);
   beta_min_ = pin->GetOrAddReal("hydro", "beta_min", 0.0);
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
-  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
-  g_.NewAthenaArray(NMETRIC, ncells1);
-  g_inv_.NewAthenaArray(NMETRIC, ncells1);
-  normal_dd_.NewAthenaArray(ncells1);
-  normal_ee_.NewAthenaArray(ncells1);
-  normal_mm_.NewAthenaArray(4,ncells1);
-  normal_bb_.NewAthenaArray(4,ncells1);
-  normal_tt_.NewAthenaArray(ncells1);
+  int nc1 = pmb->ncells1;
+  g_.NewAthenaArray(NMETRIC, nc1);
+  g_inv_.NewAthenaArray(NMETRIC, nc1);
+  normal_dd_.NewAthenaArray(nc1);
+  normal_ee_.NewAthenaArray(nc1);
+  normal_mm_.NewAthenaArray(4,nc1);
+  normal_bb_.NewAthenaArray(4,nc1);
+  normal_tt_.NewAthenaArray(nc1);
 }
 
 

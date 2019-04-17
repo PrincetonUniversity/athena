@@ -5,7 +5,7 @@
 # Modules
 # (needed for global variables modified in run_tests.py, even w/o athena.run(), etc.)
 import scripts.utils.athena as athena # noqa
-import linear_wave3d
+import scripts.tests.diffusion.linear_wave3d as linear_wave3d
 
 # Override analyze() paramaters from non-STS diffusion module
 linear_wave3d.error_rel_tols = [0.22, 0.05]

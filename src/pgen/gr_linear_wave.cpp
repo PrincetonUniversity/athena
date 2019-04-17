@@ -425,9 +425,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // Prepare arrays to hold metric
   if (GENERAL_RELATIVITY) {
-    int ncells1 = mesh_size.nx1/nrbx1 + 2*NGHOST;
-    g.NewAthenaArray(NMETRIC, ncells1);
-    gi.NewAthenaArray(NMETRIC, ncells1);
+    int nc1 = mesh_size.nx1/nrbx1 + 2*NGHOST;
+    g.NewAthenaArray(NMETRIC, nc1);
+    gi.NewAthenaArray(NMETRIC, nc1);
   }
   return;
 }

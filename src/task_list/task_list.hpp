@@ -37,6 +37,7 @@ struct Task { // aggregate and POD
   std::uint64_t task_id;    // encodes task with bit positions in HydroIntegratorTaskNames
   std::uint64_t dependency; // encodes dependencies to other tasks using " " " "
   TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  // ptr to member function
+  bool lb_time; // flag for automatic load balancing based on timing
 };
 
 //---------------------------------------------------------------------------------------
