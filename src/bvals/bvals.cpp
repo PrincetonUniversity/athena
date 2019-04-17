@@ -124,27 +124,27 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
     loc_shear[1] = nrbx1 - 1;
 
     if (ShBoxCoord_ == 1) {
-      int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
-      int ncells3 = pmb->block_size.nx3;
-      if (pmy_mesh_->mesh_size.nx3 > 1) ncells3 += 2*NGHOST;
-      ssize_ = NGHOST*ncells3;
+      int nc2 = pmb->ncells2;
+      int nc3 = pmb->ncells3;
+      if (pmy_mesh_->mesh_size.nx3 > 1) nc3 += 2*NGHOST;
+      ssize_ = NGHOST*nc3;
 
       if (pmb->loc.lx1 == loc_shear[0]) { // if true for shearing inner blocks
-        shboxvar_inner_cc_.NewAthenaArray(NHYDRO, ncells3, ncells2, NGHOST);
-        flx_inner_cc_.NewAthenaArray(ncells2);
+        shboxvar_inner_cc_.NewAthenaArray(NHYDRO, nc3, nc2, NGHOST);
+        flx_inner_cc_.NewAthenaArray(nc2);
         if (MAGNETIC_FIELDS_ENABLED) {
-          shboxvar_inner_fc_.x1f.NewAthenaArray(ncells3, ncells2, NGHOST);
-          shboxvar_inner_fc_.x2f.NewAthenaArray(ncells3, ncells2+1, NGHOST);
-          shboxvar_inner_fc_.x3f.NewAthenaArray(ncells3+1, ncells2, NGHOST);
-          flx_inner_fc_.x1f.NewAthenaArray(ncells2);
-          flx_inner_fc_.x2f.NewAthenaArray(ncells2+1);
-          flx_inner_fc_.x3f.NewAthenaArray(ncells2);
-          shboxvar_inner_emf_.x2e.NewAthenaArray(ncells3+1, ncells2);
-          shboxvar_inner_emf_.x3e.NewAthenaArray(ncells3, ncells2+1);
-          shboxmap_inner_emf_.x2e.NewAthenaArray(ncells3+1, ncells2);
-          shboxmap_inner_emf_.x3e.NewAthenaArray(ncells3, ncells2+1);
-          flx_inner_emf_.x2e.NewAthenaArray(ncells2);
-          flx_inner_emf_.x3e.NewAthenaArray(ncells2+1);
+          shboxvar_inner_fc_.x1f.NewAthenaArray(nc3, nc2, NGHOST);
+          shboxvar_inner_fc_.x2f.NewAthenaArray(nc3, nc2+1, NGHOST);
+          shboxvar_inner_fc_.x3f.NewAthenaArray(nc3+1, nc2, NGHOST);
+          flx_inner_fc_.x1f.NewAthenaArray(nc2);
+          flx_inner_fc_.x2f.NewAthenaArray(nc2+1);
+          flx_inner_fc_.x3f.NewAthenaArray(nc2);
+          shboxvar_inner_emf_.x2e.NewAthenaArray(nc3+1, nc2);
+          shboxvar_inner_emf_.x3e.NewAthenaArray(nc3, nc2+1);
+          shboxmap_inner_emf_.x2e.NewAthenaArray(nc3+1, nc2);
+          shboxmap_inner_emf_.x3e.NewAthenaArray(nc3, nc2+1);
+          flx_inner_emf_.x2e.NewAthenaArray(nc2);
+          flx_inner_emf_.x3e.NewAthenaArray(nc2+1);
         }
         is_shear[0] = true;
         shbb_[0] = new SimpleNeighborBlock[nrbx2];
@@ -213,21 +213,21 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
       }
 
       if (pmb->loc.lx1 == loc_shear[1]) { // if true for shearing outer blocks
-        shboxvar_outer_cc_.NewAthenaArray(NHYDRO, ncells3, ncells2, NGHOST);
-        flx_outer_cc_.NewAthenaArray(ncells2);
+        shboxvar_outer_cc_.NewAthenaArray(NHYDRO, nc3, nc2, NGHOST);
+        flx_outer_cc_.NewAthenaArray(nc2);
         if (MAGNETIC_FIELDS_ENABLED) {
-          shboxvar_outer_fc_.x1f.NewAthenaArray(ncells3, ncells2, NGHOST);
-          shboxvar_outer_fc_.x2f.NewAthenaArray(ncells3, ncells2+1, NGHOST);
-          shboxvar_outer_fc_.x3f.NewAthenaArray(ncells3+1, ncells2, NGHOST);
-          flx_outer_fc_.x1f.NewAthenaArray(ncells2);
-          flx_outer_fc_.x2f.NewAthenaArray(ncells2+1);
-          flx_outer_fc_.x3f.NewAthenaArray(ncells2);
-          shboxvar_outer_emf_.x2e.NewAthenaArray(ncells3+1, ncells2);
-          shboxvar_outer_emf_.x3e.NewAthenaArray(ncells3, ncells2+1);
-          shboxmap_outer_emf_.x2e.NewAthenaArray(ncells3+1, ncells2);
-          shboxmap_outer_emf_.x3e.NewAthenaArray(ncells3, ncells2+1);
-          flx_outer_emf_.x2e.NewAthenaArray(ncells2);
-          flx_outer_emf_.x3e.NewAthenaArray(ncells2+1);
+          shboxvar_outer_fc_.x1f.NewAthenaArray(nc3, nc2, NGHOST);
+          shboxvar_outer_fc_.x2f.NewAthenaArray(nc3, nc2+1, NGHOST);
+          shboxvar_outer_fc_.x3f.NewAthenaArray(nc3+1, nc2, NGHOST);
+          flx_outer_fc_.x1f.NewAthenaArray(nc2);
+          flx_outer_fc_.x2f.NewAthenaArray(nc2+1);
+          flx_outer_fc_.x3f.NewAthenaArray(nc2);
+          shboxvar_outer_emf_.x2e.NewAthenaArray(nc3+1, nc2);
+          shboxvar_outer_emf_.x3e.NewAthenaArray(nc3, nc2+1);
+          shboxmap_outer_emf_.x2e.NewAthenaArray(nc3+1, nc2);
+          shboxmap_outer_emf_.x3e.NewAthenaArray(nc3, nc2+1);
+          flx_outer_emf_.x2e.NewAthenaArray(nc2);
+          flx_outer_emf_.x3e.NewAthenaArray(nc2+1);
         }
         is_shear[1] = true;
         shbb_[1] = new SimpleNeighborBlock[nrbx2];
@@ -786,10 +786,9 @@ void BoundaryValues::FindShearBlock(const Real time) {
   std::int64_t nrbx2 = pmesh->nrbx2*(1L << level);
   int nx2   = pmb->block_size.nx2;  // # of cells per meshblock
   int nx3   = pmb->block_size.nx3;  // # of cells per meshblock
-  // KGF: for symMetry reasons, how can ncells3 but not ncells2 be used in this fn?
+  // KGF: for symmetry reasons, how can ncells3 but not ncells2 be used in this fn?
   // int ncells2 = pmb->block_size.nx2 + 2*NGHOST;
-  int ncells3 = pmb->block_size.nx3;
-  if (pmesh->mesh_size.nx3 > 1) ncells3 += 2*NGHOST;
+  int nc3 = pmb->ncells3;;
 
   // Update the amount of shear:
   qomL_ = qshear_*Omega_0_*x1size_;
@@ -802,8 +801,8 @@ void BoundaryValues::FindShearBlock(const Real time) {
 
   // scaling terms when computing inner/outersize_fc_[], fc_flx_[]
   // where size = a1*nx + a0
-  const int a1_fc = NGHOST*(NFIELD*ncells3 + 1);
-  const int a0_fc = NGHOST*ncells3;   // only in a few cases
+  const int a1_fc = NGHOST*(NFIELD*nc3 + 1);
+  const int a0_fc = NGHOST*nc3;   // only in a few cases
 
   const int a1_fc_flx = (2*nx3 + 1);
   const int a0_fc_flx = nx3;    // only in a few cases
@@ -855,7 +854,7 @@ void BoundaryValues::FindShearBlock(const Real time) {
       shear_send_neighbor_[upper][1].lid  = shbb_[upper][jtmp].lid;
 
       int nx_attach = std::min(je - js - joverlap_ + 1 + NGHOST, je -js + 1);
-      // KGF: ssize_=NGHOST*ncells3 is unset if ShBoxCoord==2. Is this fine?
+      // KGF: ssize_=NGHOST*nc3 is unset if ShBoxCoord==2. Is this fine?
       // KGF: scale these sizes/counts by NHYDRO or nu_ in cc/
       shear_send_count_[upper][1] = nx_attach*ssize_;
 
