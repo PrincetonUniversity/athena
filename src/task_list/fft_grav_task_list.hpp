@@ -28,7 +28,6 @@ class MeshBlock;
 class FFTGravitySolverTaskList : public TaskList {
  public:
   FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm);
-  ~FFTGravitySolverTaskList() {}
 
   // functions
   TaskStatus ClearFFTGravityBoundary(MeshBlock *pmb, int stage);
