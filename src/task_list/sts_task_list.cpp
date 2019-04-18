@@ -326,7 +326,8 @@ TaskStatus SuperTimeStepTaskList::HydroIntegrate_STS(MeshBlock *pmb, int stage) 
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
-    ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, pmb->pmy_mesh->muj_tilde, ph->u);
+    ph->AddFluxDivergenceToAverage(pmb->pmy_mesh->muj_tilde, ph->u);
+    // not currently calling pmb->pcoord->CoordSrcTerms
     return TaskStatus::next;
   }
   return TaskStatus::fail;
