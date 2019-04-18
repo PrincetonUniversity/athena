@@ -549,6 +549,8 @@ void BoundaryValues::ComputeShear(const Real time) {
   // shear_send_count_*_ / shear_recv_count_*_
   for (int upper=0; upper<2; upper++) {
     if (is_shear[upper]) {
+      // permute the "shear_send_neighbor_" and "shear_recv_neighbor_"
+
       for (int n=0; n<4; n++) {
         shear_send_neighbor_[upper][n].gid  = -1;
         shear_send_neighbor_[upper][n].lid  = -1;
@@ -593,9 +595,13 @@ void BoundaryValues::ComputeShear(const Real time) {
 
       // KGF: what is going on in the above code (since the end of the for loop)?
 
+      // COMMENT SYNTAX: send/recv nx+ji+... to/from left/right
+      // for "inner/outer" boundaries
+
       // if there is overlap to next blocks
       if (joverlap_ != 0) {
         // send to the right
+        // recv from the right
         jtmp = jblock + (Ngrids + 1);
         if (jtmp > (nblx2 - 1)) jtmp -= nblx2;
         shear_send_neighbor_[upper][0].gid  = shbb_[upper][jtmp].gid;
@@ -606,6 +612,7 @@ void BoundaryValues::ComputeShear(const Real time) {
         shear_send_count_[upper][0] = nx_exchange;
 
         // receive from its left
+        // send to its left
         jtmp = jblock - (Ngrids + 1);
         if (jtmp < 0) jtmp += nblx2;
         shear_recv_neighbor_[upper][0].gid  = shbb_[upper][jtmp].gid;
@@ -617,6 +624,7 @@ void BoundaryValues::ComputeShear(const Real time) {
         // deal the left boundary cells with send[2]
         if (joverlap_ > (nx2 - NGHOST)) {
           // send to Right
+          // send to left
           jtmp = jblock + (Ngrids + 2);
           while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
           shear_send_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
@@ -627,6 +635,7 @@ void BoundaryValues::ComputeShear(const Real time) {
           shear_send_count_[upper][2] = nx_exchange_left;
 
           // recv from Left
+          // send to right
           jtmp = jblock - (Ngrids + 2);
           while (jtmp < 0) jtmp += nblx2;
           shear_recv_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
@@ -658,6 +667,7 @@ void BoundaryValues::ComputeShear(const Real time) {
         }
       } else {  // joverlap_ == 0
         // send [je-(NGHOST-1):je] to Right (outer x2)
+        // recv [je + 1:je+NGHOST] from Left
         jtmp = jblock + (Ngrids + 1);
         while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
         shear_send_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
@@ -668,6 +678,7 @@ void BoundaryValues::ComputeShear(const Real time) {
         shear_send_count_[upper][2] = nx_exchange;
 
         // recv [js-NGHOST:js-1] from Left
+        // send [js:js+NGHOST-1] to Right
         jtmp = jblock - (Ngrids + 1);
         while (jtmp < 0) jtmp += nblx2;
         shear_recv_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
@@ -676,8 +687,8 @@ void BoundaryValues::ComputeShear(const Real time) {
 
         shear_recv_count_[upper][2] = nx_exchange;
 
-        // inner x2
-        // send [js:js+(NGHOST-1)] to Left
+        // send [js:js+(NGHOST-1)] to Left (inner x2)
+        // recv [js-NGHOST:js-1] from Left
         jtmp = jblock + (Ngrids - 1);
         while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
         while (jtmp < 0) jtmp += nblx2;
@@ -687,7 +698,8 @@ void BoundaryValues::ComputeShear(const Real time) {
 
         shear_send_count_[upper][3] = nx_exchange;
 
-        // recv [je + 1:je+(NGHOST-1)] from Right
+        // recv [je + 1:je+(NGHOST-1)] from Right (outer x2)
+        // send [je-(NGHOST-1):je] to Right
         jtmp = jblock - (Ngrids - 1);
         while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
         while (jtmp < 0) jtmp += nblx2;
