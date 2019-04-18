@@ -41,19 +41,9 @@ void Hydro::NewBlockTimeStep() {
   MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  AthenaArray<Real> w,bcc,b_x1f,b_x2f,b_x3f;
-  w.InitWithShallowCopy(pmb->phydro->w);
-  if (MAGNETIC_FIELDS_ENABLED) {
-    bcc.InitWithShallowCopy(pmb->pfield->bcc);
-    b_x1f.InitWithShallowCopy(pmb->pfield->b.x1f);
-    b_x2f.InitWithShallowCopy(pmb->pfield->b.x2f);
-    b_x3f.InitWithShallowCopy(pmb->pfield->b.x3f);
-  }
+  AthenaArray<Real> &w = pmb->phydro->w;
+  AthenaArray<Real> &dt1 = dt1_, &dt2 = dt2_, &dt3 = dt3_;
 
-  AthenaArray<Real> dt1, dt2, dt3;
-  dt1.InitWithShallowCopy(dt1_);
-  dt2.InitWithShallowCopy(dt2_);
-  dt3.InitWithShallowCopy(dt3_);
   Real wi[(NWAVE)];
 
   Real real_max = std::numeric_limits<Real>::max();
@@ -75,6 +65,8 @@ void Hydro::NewBlockTimeStep() {
           if (NON_BAROTROPIC_EOS) wi[IPR]=w(IPR,k,j,i);
 
           if (MAGNETIC_FIELDS_ENABLED) {
+            AthenaArray<Real> &bcc = pmb->pfield->bcc, &b_x1f = pmb->pfield->b.x1f,
+                            &b_x2f = pmb->pfield->b.x2f, &b_x3f = pmb->pfield->b.x3f;
             Real bx = bcc(IB1,k,j,i) + std::fabs(b_x1f(k,j,i)-bcc(IB1,k,j,i));
             wi[IBY] = bcc(IB2,k,j,i);
             wi[IBZ] = bcc(IB3,k,j,i);
