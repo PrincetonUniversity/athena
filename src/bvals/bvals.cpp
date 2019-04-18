@@ -544,7 +544,7 @@ void BoundaryValues::ComputeShear(const Real time) {
   joverlap_   = joffset - Ngrids*nx2;
   eps_ = (std::fmod(deltay, pco->dx2v(js)))/pco->dx2v(js);
 
-  // TODO: generalized from inner case. If upper==1, swap all send/recv arrays:
+  // TODO(felker): generalize from inner case. If upper==1, swap all send/recv arrays:
   // shear_send_neighbor_[][], shear_recv_neighbor_[][]
   // shear_send_count_*_ / shear_recv_count_*_
   for (int upper=0; upper<2; upper++) {

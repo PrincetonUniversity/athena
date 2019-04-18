@@ -385,7 +385,8 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
     for (int n=0; n<4; n++) {
       if (shear_bd_var_[0].flag[n] == BoundaryStatus::completed) continue;
       if (shear_bd_var_[0].flag[n] == BoundaryStatus::waiting) {
-        if (pbval_->shear_recv_neighbor_[0][n].rank == Globals::my_rank) {// on the same process
+        // on the same process
+        if (pbval_->shear_recv_neighbor_[0][n].rank == Globals::my_rank) {
           flagi = false;
           continue;
         } else { // MPI boundary

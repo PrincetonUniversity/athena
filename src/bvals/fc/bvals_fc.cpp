@@ -1645,11 +1645,11 @@ void FaceCenteredBoundaryVariable::ComputeShear(const Real time) {
 
         // send [js:js+(NGHOST-1)] to Left (inner x2)
         // recv [je + 1:je+(NGHOST-1)] from Right
-        shear_send_count_fc_[upper][3] = pbval_->shear_send_count_[upper][4]*a1_fc;
+        shear_send_count_fc_[upper][3] = pbval_->shear_send_count_[upper][3]*a1_fc;
         shear_recv_count_fc_[upper][3] = shear_send_count_fc_[upper][3];
         shear_bd_var_[upper].flag[3] = BoundaryStatus::waiting;
 
-        shear_send_count_emf_[upper][3] = pbval_->shear_send_count_[upper][4]*a1_fc_flx;
+        shear_send_count_emf_[upper][3] = pbval_->shear_send_count_[upper][3]*a1_fc_flx;
         shear_recv_count_emf_[upper][3] = shear_send_count_emf_[upper][3];
         shear_bd_emf_[upper].flag[3] = BoundaryStatus::waiting;
       }
