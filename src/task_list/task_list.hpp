@@ -262,5 +262,8 @@ const std::uint64_t SEND_SCLR      = 1ULL<<53;
 const std::uint64_t RECV_SCLR      = 1ULL<<54;
 const std::uint64_t SETB_SCLR      = 1ULL<<55;
 
+// const std::uint64_t RECV_SCLRSH      = 1ULL<<56;
+// const std::uint64_t SEND_SCLRSH      = 1ULL<<57;
+
 }  // namespace HydroIntegratorTaskNames
 #endif  // TASK_LIST_TASK_LIST_HPP_
