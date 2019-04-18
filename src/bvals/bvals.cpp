@@ -520,7 +520,7 @@ void BoundaryValues::DispatchBoundaryFunctions(
 //  send_size_hydro  recv_size_hydro: for MPI_Irecv
 //  eps_,joverlap_: for update the conservative
 
-// TODO(felker): break up this ~400 line function:
+// TODO(felker): consider breaking up this ~200 (originally 400)line function:
 
 void BoundaryValues::ComputeShear(const Real time) {
   MeshBlock *pmb = pmy_block_;

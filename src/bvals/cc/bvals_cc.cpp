@@ -640,30 +640,6 @@ void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 }
 
 
-void CellCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase) {
-#ifdef MPI_PARALLEL
-  int size, tag;
-  int tag_offset[2]{0, 4};
-  for (int upper=0; upper<2; upper++) {
-    if (pbval_->is_shear[upper]) {
-      for (int n=0; n<4; n++) {
-        int target_rank = pbval_->shear_recv_neighbor_[upper][n].rank;
-        if ((target_rank != Globals::my_rank) && (target_rank != -1)) {
-          size = (nu_ + 1)*shear_recv_count_cc_[upper][n];
-          tag  = pbval_->CreateBvalsMPITag(pmy_block_->lid, n+tag_offset[upper],
-                                           shear_cc_phys_id_);
-          MPI_Irecv(shear_bd_var_[upper].recv[n], size, MPI_ATHENA_REAL,
-                    pbval_->shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
-                    &shear_bd_var_[upper].req_recv[upper]);
-        }
-      }
-    }
-  }
-#endif
-  return;
-}
-
-
 void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
@@ -704,68 +680,5 @@ void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
       }
     }
   }
-  return;
-}
-
-
-// TODO(felker): also set sflag members of ShearingBoundaryData
-void CellCenteredBoundaryVariable::ComputeShear(const Real time) {
-  MeshBlock *pmb = pmy_block_;
-  int nx2 = pmb->block_size.nx2;
-  int &jo = pbval_->joverlap_;
-  int ssize = pbval_->ssize_;
-  // Note, this CellCenteredBoundaryVariable implementation could be replaced by a single
-  // loop n=0:4 without any conditionals IF a shared "BoundaryStatus flag[4]" was computed
-  // in BoundaryValues::FindShearBlock(), since this fn merely scales the shared count
-  // arrays by ssize. However, this entire logic is confusing and should probably be
-  // replaced entirely.
-  for (int upper=0; upper<2; upper++) {
-    if (pbval_->is_shear[upper]) {
-      for (int n=0; n<4; n++) {
-        shear_send_count_cc_[upper][n] = 0;
-        shear_recv_count_cc_[upper][n] = 0;
-        shear_bd_var_[upper].flag[n] = BoundaryStatus::completed;
-      }
-      shear_send_count_cc_[upper][1] = pbval_->shear_send_count_[upper][1]*ssize;
-      shear_recv_count_cc_[upper][1] = pbval_->shear_recv_count_[upper][1]*ssize;
-      shear_bd_var_[upper].flag[1] = BoundaryStatus::waiting;
-
-      // if there is overlap to next blocks
-      if (jo != 0) {
-        // send to the right
-        shear_send_count_cc_[upper][0] = pbval_->shear_send_count_[upper][0]*ssize;
-        shear_recv_count_cc_[upper][0] = pbval_->shear_recv_count_[upper][0]*ssize;
-        shear_bd_var_[upper].flag[0] = BoundaryStatus::waiting;  // switch on if overlap
-
-        // deal the left boundary cells with send[2]
-        if (jo > (nx2 - NGHOST)) {
-          // send to Right
-          shear_send_count_cc_[upper][2] = pbval_->shear_send_count_[upper][2]*ssize;
-          // recv from Left
-          shear_recv_count_cc_[upper][2] = pbval_->shear_recv_count_[upper][2]*ssize;
-          shear_bd_var_[upper].flag[2] = BoundaryStatus::waiting;
-        }
-        // deal with the right boundary cells with send[3]
-        if (jo < NGHOST) {
-          shear_send_count_cc_[upper][3] = pbval_->shear_send_count_[upper][3]*ssize;
-
-          shear_recv_count_cc_[upper][3] = pbval_->shear_recv_count_[upper][3]*ssize;
-          shear_bd_var_[upper].flag[3] = BoundaryStatus::waiting;
-        }
-      } else {  // jo == 0
-        // send [je-(NGHOST-1):je] to Right (outer x2)
-        shear_send_count_cc_[upper][2] = pbval_->shear_send_count_[upper][2]*ssize;
-        // recv [js-NGHOST:js-1] from Left
-        shear_recv_count_cc_[upper][2] = pbval_->shear_recv_count_[upper][2]*ssize;
-        shear_bd_var_[upper].flag[2] = BoundaryStatus::waiting;
-
-        // send [js:js+(NGHOST-1)] to Left (inner x2)
-        shear_send_count_cc_[upper][3] = pbval_->shear_send_count_[upper][3]*ssize;
-        // recv [je + 1:je+(NGHOST-1)] from Right
-        shear_recv_count_cc_[upper][3] = pbval_->shear_recv_count_[upper][3]*ssize;
-        shear_bd_var_[upper].flag[3] = BoundaryStatus::waiting;
-      }
-    }
-  } // end loop over inner, outer shearing boundaries
   return;
 }
