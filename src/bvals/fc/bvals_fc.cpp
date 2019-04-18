@@ -1554,7 +1554,7 @@ void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
 
 
 // TODO(felker): also set sflag members of ShearingBoundaryData
-void FaceCenteredBoundaryVariable::CountShear() {
+void FaceCenteredBoundaryVariable::ComputeShear(const Real time) {
   MeshBlock *pmb = pmy_block_;
   int &jo = pbval_->joverlap_;
   int nx2 = pmb->block_size.nx2;

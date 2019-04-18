@@ -219,33 +219,40 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
   // KGF: begin shearing-box exclusive section of original StartReceivingForInit()
   // find send_block_id and recv_block_id;
   if (SHEARING_BOX) {
-    switch (phase) {
-      case BoundaryCommSubset::mesh_init:
-        FindShearBlock(pmy_mesh_->time);
-        break;
-      case BoundaryCommSubset::all:
-        // KGF: must pass "time" parameter from time_integrator.cpp
-        FindShearBlock(time);
-        // KGF: cannot simply combine StartReceivingShear() at end of StartReceiving()
-        // (which is done for ClearBoundary), because the "shared"/non-virtual fn
-        // BoundaryValues::FindShearBlock() must be called in between 2x fns
+    StartReceivingShear(phase);
+  }
+  return;
+}
 
-        // TODO(felker): consider calling FindShearBlock() at the beginning of this fn,
-        // which will allow the 2x StartReceiving() to be combined
-        for (auto bvar : bvars_main_int) {
-          bvar->StartReceivingShear(phase);
-        }
-        break;
-      case BoundaryCommSubset::gr_amr:
-        // shearing box is currently incompatible with both GR and AMR
-        std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues::StartReceiving" << std::endl
-            << "BoundaryCommSubset::gr_amr was passed as the 'phase' argument while\n"
-            << "SHEARING_BOX=1 is enabled. Shearing box calculations are currently\n"
+
+void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase) {
+  switch (phase) {
+    case BoundaryCommSubset::mesh_init:
+      //FindShearBlock(pmy_mesh_->time);
+      break;
+    case BoundaryCommSubset::all:
+      // KGF: must pass "time" parameter from time_integrator.cpp
+      //FindShearBlock(time);
+
+      // KGF: cannot simply combine StartReceivingShear() at end of StartReceiving()
+      // (which is done for ClearBoundary), because the "shared"/non-virtual fn
+      // BoundaryValues::FindShearBlock() must be called in between 2x fns
+
+      // TODO(felker): consider calling FindShearBlock() at the beginning of this fn,
+      // which will allow the 2x StartReceiving() to be combined
+      for (auto bvar : bvars_main_int) {
+        bvar->StartReceivingShear(phase);
+      }
+      break;
+    case BoundaryCommSubset::gr_amr:
+      // shearing box is currently incompatible with both GR and AMR
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues::StartReceiving" << std::endl
+          << "BoundaryCommSubset::gr_amr was passed as the 'phase' argument while\n"
+          << "SHEARING_BOX=1 is enabled. Shearing box calculations are currently\n"
             << "incompatible with both AMR and GR" << std::endl;
-        ATHENA_ERROR(msg);
-        break;
-    }
+      ATHENA_ERROR(msg);
+      break;
   }
   return;
 }
@@ -507,7 +514,7 @@ void BoundaryValues::DispatchBoundaryFunctions(
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::FindShearBlock(const Real time)
+//! \fn void BoundaryValues::ComputeShear(const Real time)
 //  \brief Calculate the following quantities:
 //  send_gid recv_gid send_lid recv_lid send_rank recv_rank,
 //  send_size_hydro  recv_size_hydro: for MPI_Irecv
@@ -515,7 +522,7 @@ void BoundaryValues::DispatchBoundaryFunctions(
 
 // TODO(felker): break up this ~400 line function:
 
-void BoundaryValues::FindShearBlock(const Real time) {
+void BoundaryValues::ComputeShear(const Real time) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
   Mesh *pmesh = pmb->pmy_mesh;
@@ -692,6 +699,10 @@ void BoundaryValues::FindShearBlock(const Real time) {
       }
     }
   } // end loop over inner, outer shearing boundaries
+
+  for (auto bvar : bvars_main_int) {
+    bvar->ComputeShear(time);
+  }
   return;
 }
 

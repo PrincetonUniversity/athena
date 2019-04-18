@@ -1401,6 +1401,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
+        if (SHEARING_BOX) {
+          pbval->ComputeShear(time);
+        }
         pbval->StartReceiving(BoundaryCommSubset::mesh_init);
       }
 
@@ -1724,6 +1727,9 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
 #pragma omp for private(pmb,pbval)
   for (int i=0; i<nmb; ++i) {
     pmb = pmb_array[i]; pbval = pmb->pbval;
+    if (SHEARING_BOX) {
+      pbval->ComputeShear(time);
+    }
     // no need to re-SetupPersistentMPI() the MPI requests for boundary values
     pbval->StartReceiving(BoundaryCommSubset::mesh_init);
   }

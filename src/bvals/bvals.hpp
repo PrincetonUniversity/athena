@@ -110,15 +110,22 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // called before time-stepper:
   void SetupPersistentMPI() final; // setup MPI requests
 
-  // called during time-stepper:
+  // called before and during time-stepper:
   void StartReceiving(BoundaryCommSubset phase) final;
   void ClearBoundary(BoundaryCommSubset phase) final;
+
+  void StartReceivingShear(BoundaryCommSubset phase) final;
+  void ComputeShear(const Real time) final;
 
   // non-inhertied / unique functions (do not exist in BoundaryVariable objects):
   // (these typically involve a coupled interaction of boundary variable/quantities)
   // ------
   void ApplyPhysicalBoundaries(const Real time, const Real dt);
   void ProlongateBoundaries(const Real time, const Real dt);
+
+  // compute the shear at each integrator stage
+  // TODO(felker): consider making this fn private again if calling within StartRecv()
+  void FindShearBlock(const Real time);
 
   // safety check of user's boundary fns in Mesh::Initialize before SetupPersistentMPI()
   void CheckUserBoundaries();
@@ -178,9 +185,6 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
       AthenaArray<Real> &prim, FaceField &b, BoundaryFace face);
 
   void CheckPolarBoundaries();  // called in BoundaryValues() ctor
-
-  // KGF: shearing box
-  void FindShearBlock(const Real time);
 
   // temporary--- Added by @tomidakn on 2015-11-27 in f0f989f85f
   // TODO(KGF): consider removing this friendship designation

@@ -194,7 +194,7 @@ class BoundaryCommunication {
   virtual void ClearBoundary(BoundaryCommSubset phase) = 0;
 
   virtual void StartReceivingShear(BoundaryCommSubset phase) = 0;
-  virtual void CountShear() = 0;
+  virtual void ComputeShear(const Real time) = 0;
 };
 
 //----------------------------------------------------------------------------------------

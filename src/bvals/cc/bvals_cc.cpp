@@ -709,7 +709,7 @@ void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
 
 
 // TODO(felker): also set sflag members of ShearingBoundaryData
-void CellCenteredBoundaryVariable::CountShear() {
+void CellCenteredBoundaryVariable::ComputeShear(const Real time) {
   MeshBlock *pmb = pmy_block_;
   int nx2 = pmb->block_size.nx2;
   int &jo = pbval_->joverlap_;

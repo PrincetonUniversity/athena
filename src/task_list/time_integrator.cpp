@@ -619,10 +619,11 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     }
   }
 
-  // KGF: Needed only for shearing box in "StartReceivingAll(time)"
-  // Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-  // Real time = pmb->pmy_mesh->time+dt;
-
+  if (SHEARING_BOX) {
+    Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+    Real time = pmb->pmy_mesh->time+dt;
+    pmb->pbval->ComputeShear(time);
+  }
   pmb->pbval->StartReceiving(BoundaryCommSubset::all);
 
   return;
