@@ -31,6 +31,18 @@
 //  \brief Adds flux divergence to weighted average of conservative variables from
 //  previous step(s) of time integrator algorithm
 
+// TODO(felker): after the removal of CoordSrcTerms() fn call from
+// Hydro::AddFluxDivergenceToAverage(), the 2x fns could be trivially shared if:
+// - flux/s_flux renamed to the same class member name
+// - 7x below references of x1face_area_ ... dflx_ private class members (which are only
+// ever used in this fn and are members to prevent de/allocating each fn call)
+// - NHYDRO/NSCALARS is replaced with array_out.GetDim4()
+
+// ----> Hydro should be derived from PassiveScalars
+
+// TODO(felker): remove the following unnecessary private class member?
+// field_diffusion.cpp:66:    cell_volume_.NewAthenaArray(nc1);
+
 void PassiveScalars::AddFluxDivergenceToAverage(const Real wght,
                                                 AthenaArray<Real> &s_out) {
   MeshBlock *pmb = pmy_block;
@@ -46,19 +58,19 @@ void PassiveScalars::AddFluxDivergenceToAverage(const Real wght,
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       // calculate x1-flux divergence
-      pmb->pcoord->Face1Area(k,j,is,ie+1,x1area);
-      for (int n=0; n<NHYDRO; ++n) {
+      pmb->pcoord->Face1Area(k, j, is, ie+1, x1area);
+      for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          dflx(n,i) = (x1area(i+1) *x1flux(n,k,j,i+1) - x1area(i)*x1flux(n,k,j,i));
+          dflx(n,i) = (x1area(i+1)*x1flux(n,k,j,i+1) - x1area(i)*x1flux(n,k,j,i));
         }
       }
 
       // calculate x2-flux divergence
       if (pmb->block_size.nx2 > 1) {
-        pmb->pcoord->Face2Area(k,j  ,is,ie,x2area   );
-        pmb->pcoord->Face2Area(k,j+1,is,ie,x2area_p1);
-        for (int n=0; n<NHYDRO; ++n) {
+        pmb->pcoord->Face2Area(k, j  , is, ie, x2area   );
+        pmb->pcoord->Face2Area(k, j+1, is, ie, x2area_p1);
+        for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
           for (int i=is; i<=ie; ++i) {
             dflx(n,i) += (x2area_p1(i)*x2flux(n,k,j+1,i) - x2area(i)*x2flux(n,k,j,i));
@@ -68,9 +80,9 @@ void PassiveScalars::AddFluxDivergenceToAverage(const Real wght,
 
       // calculate x3-flux divergence
       if (pmb->block_size.nx3 > 1) {
-        pmb->pcoord->Face3Area(k  ,j,is,ie,x3area   );
-        pmb->pcoord->Face3Area(k+1,j,is,ie,x3area_p1);
-        for (int n=0; n<NHYDRO; ++n) {
+        pmb->pcoord->Face3Area(k  , j, is, ie, x3area   );
+        pmb->pcoord->Face3Area(k+1, j, is, ie, x3area_p1);
+        for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
           for (int i=is; i<=ie; ++i) {
             dflx(n,i) += (x3area_p1(i)*x3flux(n,k+1,j,i) - x3area(i)*x3flux(n,k,j,i));
@@ -79,8 +91,8 @@ void PassiveScalars::AddFluxDivergenceToAverage(const Real wght,
       }
 
       // update conserved variables
-      pmb->pcoord->CellVolume(k,j,is,ie,vol);
-      for (int n=0; n<NHYDRO; ++n) {
+      pmb->pcoord->CellVolume(k, j, is, ie, vol);
+      for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
           s_out(n,k,j,i) -= wght*(pmb->pmy_mesh->dt)*dflx(n,i)/vol(i);

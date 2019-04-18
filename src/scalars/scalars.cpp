@@ -26,6 +26,7 @@
 
 PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     s(NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    s1(NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     s_flux{ {NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1+1},
             {NSCALARS, pmb->ncells3, pmb->ncells2+1, pmb->ncells1,
              (pmb->pmy_mesh->f2_ ? AthenaArray<Real>::DataStatus::allocated :
@@ -49,6 +50,12 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     // fourth-order cell-centered approximations
     s_cc.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
   }
+
+  // If user-requested time integrator is type 3S*, allocate additional memory registers
+  std::string integrator = pin->GetOrAddString("time", "integrator", "vl2");
+  if (integrator == "ssprk5_4" || STS_ENABLED)
+    // future extension may add "int nregister" to Hydro class
+    s2.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
 
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
   if (pm->multilevel == true) {

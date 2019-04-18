@@ -148,13 +148,13 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus NewBlockTimeStep(MeshBlock *pmb, int stage);
   TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
 
-  // TaskStatus CalculateScalarFlux(MeshBlock *pmb, int stage);
-  // TaskStatus SendScalarFlux(MeshBlock *pmb, int stage);
-  // TaskStatus ReceiveScalarFlux(MeshBlock *pmb, int stage);
-  // TaskStatus IntegrateScalars(MeshBlock *pmb, int stage);
-  // TaskStatus SendScalars(MeshBlock *pmb, int stage);
-  // TaskStatus ReceiveScalars(MeshBlock *pmb, int stage);
-  // TaskStatus SetBoundariesScalars(MeshBlock *pmb, int stage);
+  TaskStatus CalculateScalarFlux(MeshBlock *pmb, int stage);
+  TaskStatus SendScalarFlux(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveScalarFlux(MeshBlock *pmb, int stage);
+  TaskStatus IntegrateScalars(MeshBlock *pmb, int stage);
+  TaskStatus SendScalars(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveScalars(MeshBlock *pmb, int stage);
+  TaskStatus SetBoundariesScalars(MeshBlock *pmb, int stage);
 
  private:
   IntegratorWeight stage_wghts[MAX_NSTAGE];

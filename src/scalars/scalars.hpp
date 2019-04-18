@@ -25,12 +25,13 @@ class ParameterInput;
 
 class PassiveScalars {
  public:
-  // TODO(felker): pin is currently unused, but leaving for run-time "nscalars" option
+  // TODO(felker): pin is currently only used for checking ssprk5_4, otherwise unused.
+  // Leaving as ctor parameter in case of run-time "nscalars" option
   PassiveScalars(MeshBlock *pmb, ParameterInput *pin);
 
   // public data:
   // mass fraction of each species
-  AthenaArray<Real> s;
+  AthenaArray<Real> s, s1, s2;  // (no more than MAX_NREGISTER allowed)
   AthenaArray<Real> s_flux[3];  // face-averaged flux vector
 
   // fourth-order intermediate quantities

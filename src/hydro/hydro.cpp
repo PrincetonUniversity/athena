@@ -98,7 +98,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     x3face_area_p1_.NewAthenaArray(nc1);
   }
   cell_volume_.NewAthenaArray(nc1);
-  dflx_.NewAthenaArray((NHYDRO), nc1);
+  dflx_.NewAthenaArray(NHYDRO, nc1);
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) { // only used in (SR/GR)MHD
     bb_normal_.NewAthenaArray(nc1);
     lambdas_p_l_.NewAthenaArray(nc1);
