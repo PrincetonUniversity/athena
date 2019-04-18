@@ -20,6 +20,7 @@
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
+#include <utility>    // swap()
 #include <vector>
 
 // Athena++ headers
@@ -549,19 +550,27 @@ void BoundaryValues::ComputeShear(const Real time) {
   // shear_send_count_*_ / shear_recv_count_*_
   for (int upper=0; upper<2; upper++) {
     if (is_shear[upper]) {
-      // permute the "shear_send_neighbor_" and "shear_recv_neighbor_"
+      int *counts1 = shear_send_count_[upper];
+      int *counts2 = shear_recv_count_[upper];
+      SimpleNeighborBlock *nb1 = shear_send_neighbor_[upper];
+      SimpleNeighborBlock *nb2 = shear_recv_neighbor_[upper];
+      // permute the 2x pairs of send/recv variables if we are at the outer shear boundary
+      if (upper) {
+        std::swap(counts1, counts2);
+        std::swap(nb1, nb2);
+      }
 
       for (int n=0; n<4; n++) {
-        shear_send_neighbor_[upper][n].gid  = -1;
-        shear_send_neighbor_[upper][n].lid  = -1;
-        shear_send_neighbor_[upper][n].rank  = -1;
+        nb1[n].gid  = -1;
+        nb1[n].lid  = -1;
+        nb1[n].rank  = -1;
 
-        shear_recv_neighbor_[upper][n].gid  = -1;
-        shear_recv_neighbor_[upper][n].lid  = -1;
-        shear_recv_neighbor_[upper][n].rank  = -1;
+        nb2[n].gid  = -1;
+        nb2[n].lid  = -1;
+        nb2[n].rank  = -1;
 
-        shear_send_count_[upper][n] = 0;
-        shear_recv_count_[upper][n] = 0;
+        counts1[n] = 0;
+        counts2[n] = 0;
       }
 
       int jblock = 0;
@@ -573,53 +582,51 @@ void BoundaryValues::ComputeShear(const Real time) {
       // attach [je-joverlap+1:MIN(je-joverlap + NGHOST, je-js+1)] to its right end.
       std::int64_t jtmp = jblock + Ngrids;
       if (jtmp > (nblx2 - 1)) jtmp -= nblx2;
-      // TODO(felker): replace this with C++ copy semantics (also copy level!):
-      shear_send_neighbor_[upper][1].gid  = shbb_[upper][jtmp].gid;
-      shear_send_neighbor_[upper][1].rank = shbb_[upper][jtmp].rank;
-      shear_send_neighbor_[upper][1].lid  = shbb_[upper][jtmp].lid;
+      // TODO(felker): replace this with C++ copy semantics (also copy shbb_.level!):
+      nb1[1].gid  = shbb_[upper][jtmp].gid;
+      nb1[1].rank = shbb_[upper][jtmp].rank;
+      nb1[1].lid  = shbb_[upper][jtmp].lid;
 
       int nx_attach = std::min(je - js - joverlap_ + 1 + NGHOST, je -js + 1);
       // KGF: ssize_=NGHOST*nc3 is unset if ShBoxCoord==2. Is this fine?
-      // KGF: scale these sizes/counts by NHYDRO or nu_ in cc/
-      shear_send_count_[upper][1] = nx_attach;
+      // all counts are scaled by (nu_+1) e.g. NHYDRO in cc/
+      counts1[1] = nx_attach;
 
       // recv [js+joverlap:je] of the current MeshBlock to the shearing neighbor
       // attach [je+1:MIN(je+NGHOST, je+joverlap)] to its right end.
       jtmp = jblock - Ngrids;
       if (jtmp < 0) jtmp += nblx2;
-      shear_recv_neighbor_[upper][1].gid  = shbb_[upper][jtmp].gid;
-      shear_recv_neighbor_[upper][1].rank = shbb_[upper][jtmp].rank;
-      shear_recv_neighbor_[upper][1].lid  = shbb_[upper][jtmp].lid;
+      nb2[1].gid  = shbb_[upper][jtmp].gid;
+      nb2[1].rank = shbb_[upper][jtmp].rank;
+      nb2[1].lid  = shbb_[upper][jtmp].lid;
 
-      shear_recv_count_[upper][1] = nx_attach;
+      counts2[1] = nx_attach;
 
-      // KGF: what is going on in the above code (since the end of the for loop)?
-
-      // COMMENT SYNTAX: send/recv nx+ji+... to/from left/right
-      // for "inner/outer" boundaries
+      // KGF: what is going on in the above code (since the end of the "for" loop)?
 
       // if there is overlap to next blocks
       if (joverlap_ != 0) {
+        // COMMENT SYNTAX: inner then outer (x1) boundaries
         // send to the right
         // recv from the right
         jtmp = jblock + (Ngrids + 1);
         if (jtmp > (nblx2 - 1)) jtmp -= nblx2;
-        shear_send_neighbor_[upper][0].gid  = shbb_[upper][jtmp].gid;
-        shear_send_neighbor_[upper][0].rank = shbb_[upper][jtmp].rank;
-        shear_send_neighbor_[upper][0].lid  = shbb_[upper][jtmp].lid;
+        nb1[0].gid  = shbb_[upper][jtmp].gid;
+        nb1[0].rank = shbb_[upper][jtmp].rank;
+        nb1[0].lid  = shbb_[upper][jtmp].lid;
 
         int nx_exchange = std::min(joverlap_+NGHOST, je -js + 1);
-        shear_send_count_[upper][0] = nx_exchange;
+        counts1[0] = nx_exchange;
 
         // receive from its left
         // send to its left
         jtmp = jblock - (Ngrids + 1);
         if (jtmp < 0) jtmp += nblx2;
-        shear_recv_neighbor_[upper][0].gid  = shbb_[upper][jtmp].gid;
-        shear_recv_neighbor_[upper][0].rank = shbb_[upper][jtmp].rank;
-        shear_recv_neighbor_[upper][0].lid  = shbb_[upper][jtmp].lid;
+        nb2[0].gid  = shbb_[upper][jtmp].gid;
+        nb2[0].rank = shbb_[upper][jtmp].rank;
+        nb2[0].lid  = shbb_[upper][jtmp].lid;
 
-        shear_recv_count_[upper][0] = nx_exchange;
+        counts2[0] = nx_exchange;
 
         // deal the left boundary cells with send[2]
         if (joverlap_ > (nx2 - NGHOST)) {
@@ -627,87 +634,87 @@ void BoundaryValues::ComputeShear(const Real time) {
           // send to left
           jtmp = jblock + (Ngrids + 2);
           while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
-          shear_send_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
-          shear_send_neighbor_[upper][2].rank = shbb_[upper][jtmp].rank;
-          shear_send_neighbor_[upper][2].lid  = shbb_[upper][jtmp].lid;
+          nb1[2].gid  = shbb_[upper][jtmp].gid;
+          nb1[2].rank = shbb_[upper][jtmp].rank;
+          nb1[2].lid  = shbb_[upper][jtmp].lid;
 
           int nx_exchange_left = joverlap_ - (nx2 - NGHOST);
-          shear_send_count_[upper][2] = nx_exchange_left;
+          counts1[2] = nx_exchange_left;
 
           // recv from Left
           // send to right
           jtmp = jblock - (Ngrids + 2);
           while (jtmp < 0) jtmp += nblx2;
-          shear_recv_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
-          shear_recv_neighbor_[upper][2].rank = shbb_[upper][jtmp].rank;
-          shear_recv_neighbor_[upper][2].lid  = shbb_[upper][jtmp].lid;
+          nb2[2].gid  = shbb_[upper][jtmp].gid;
+          nb2[2].rank = shbb_[upper][jtmp].rank;
+          nb2[2].lid  = shbb_[upper][jtmp].lid;
 
-          shear_recv_count_[upper][2] = nx_exchange_left;
+          counts2[2] = nx_exchange_left;
         }
         // deal with the right boundary cells with send[3]
         if (joverlap_ < NGHOST) {
           jtmp = jblock + (Ngrids - 1);
           while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
           while (jtmp < 0) jtmp += nblx2;
-          shear_send_neighbor_[upper][3].gid  = shbb_[upper][jtmp].gid;
-          shear_send_neighbor_[upper][3].rank = shbb_[upper][jtmp].rank;
-          shear_send_neighbor_[upper][3].lid  = shbb_[upper][jtmp].lid;
+          nb1[3].gid  = shbb_[upper][jtmp].gid;
+          nb1[3].rank = shbb_[upper][jtmp].rank;
+          nb1[3].lid  = shbb_[upper][jtmp].lid;
 
           int nx_exchange_right = NGHOST - joverlap_;
-          shear_send_count_[upper][3] = nx_exchange_right;
+          counts1[3] = nx_exchange_right;
 
           jtmp = jblock - (Ngrids - 1);
           while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
           while (jtmp < 0) jtmp += nblx2;
-          shear_recv_neighbor_[upper][3].gid  = shbb_[upper][jtmp].gid;
-          shear_recv_neighbor_[upper][3].rank = shbb_[upper][jtmp].rank;
-          shear_recv_neighbor_[upper][3].lid  = shbb_[upper][jtmp].lid;
+          nb2[3].gid  = shbb_[upper][jtmp].gid;
+          nb2[3].rank = shbb_[upper][jtmp].rank;
+          nb2[3].lid  = shbb_[upper][jtmp].lid;
 
-          shear_recv_count_[upper][3] = nx_exchange_right;
+          counts2[3] = nx_exchange_right;
         }
       } else {  // joverlap_ == 0
         // send [je-(NGHOST-1):je] to Right (outer x2)
         // recv [je + 1:je+NGHOST] from Left
         jtmp = jblock + (Ngrids + 1);
         while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
-        shear_send_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
-        shear_send_neighbor_[upper][2].rank = shbb_[upper][jtmp].rank;
-        shear_send_neighbor_[upper][2].lid  = shbb_[upper][jtmp].lid;
+        nb1[2].gid  = shbb_[upper][jtmp].gid;
+        nb1[2].rank = shbb_[upper][jtmp].rank;
+        nb1[2].lid  = shbb_[upper][jtmp].lid;
 
         int nx_exchange = NGHOST;
-        shear_send_count_[upper][2] = nx_exchange;
+        counts1[2] = nx_exchange;
 
         // recv [js-NGHOST:js-1] from Left
         // send [js:js+NGHOST-1] to Right
         jtmp = jblock - (Ngrids + 1);
         while (jtmp < 0) jtmp += nblx2;
-        shear_recv_neighbor_[upper][2].gid  = shbb_[upper][jtmp].gid;
-        shear_recv_neighbor_[upper][2].rank = shbb_[upper][jtmp].rank;
-        shear_recv_neighbor_[upper][2].lid  = shbb_[upper][jtmp].lid;
+        nb2[2].gid  = shbb_[upper][jtmp].gid;
+        nb2[2].rank = shbb_[upper][jtmp].rank;
+        nb2[2].lid  = shbb_[upper][jtmp].lid;
 
-        shear_recv_count_[upper][2] = nx_exchange;
+        counts2[2] = nx_exchange;
 
         // send [js:js+(NGHOST-1)] to Left (inner x2)
         // recv [js-NGHOST:js-1] from Left
         jtmp = jblock + (Ngrids - 1);
         while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
         while (jtmp < 0) jtmp += nblx2;
-        shear_send_neighbor_[upper][3].gid  = shbb_[upper][jtmp].gid;
-        shear_send_neighbor_[upper][3].rank = shbb_[upper][jtmp].rank;
-        shear_send_neighbor_[upper][3].lid  = shbb_[upper][jtmp].lid;
+        nb1[3].gid  = shbb_[upper][jtmp].gid;
+        nb1[3].rank = shbb_[upper][jtmp].rank;
+        nb1[3].lid  = shbb_[upper][jtmp].lid;
 
-        shear_send_count_[upper][3] = nx_exchange;
+        counts1[3] = nx_exchange;
 
         // recv [je + 1:je+(NGHOST-1)] from Right (outer x2)
         // send [je-(NGHOST-1):je] to Right
         jtmp = jblock - (Ngrids - 1);
         while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
         while (jtmp < 0) jtmp += nblx2;
-        shear_recv_neighbor_[upper][3].gid  = shbb_[upper][jtmp].gid;
-        shear_recv_neighbor_[upper][3].rank = shbb_[upper][jtmp].rank;
-        shear_recv_neighbor_[upper][3].lid  = shbb_[upper][jtmp].lid;
+        nb2[3].gid  = shbb_[upper][jtmp].gid;
+        nb2[3].rank = shbb_[upper][jtmp].rank;
+        nb2[3].lid  = shbb_[upper][jtmp].lid;
 
-        shear_recv_count_[upper][3] = nx_exchange;
+        counts2[3] = nx_exchange;
       }
     }
   } // end loop over inner, outer shearing boundaries
