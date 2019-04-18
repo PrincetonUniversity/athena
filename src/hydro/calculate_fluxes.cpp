@@ -44,6 +44,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   int il, iu, jl, ju, kl, ku;
 
+  // TODO(felker): inconsistency: why are b,bcc passed as fn parameters, but the remaining
+  // members of the Field class  are accessed via pointers?
   AthenaArray<Real> b1, b2, b3, w_x1f, w_x2f, w_x3f, e2x1, e3x1, e1x2, e3x2, e1x3, e2x3;
   if (MAGNETIC_FIELDS_ENABLED) {
     b1.InitWithShallowCopy(b.x1f);
