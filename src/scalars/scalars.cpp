@@ -39,7 +39,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
                AthenaArray<Real>::DataStatus::empty)),
     sbvar(pmb, &s, &coarse_s_, s_flux),
     pmy_block(pmb) {
-  int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, ncells3 = pmb->ncells3;
+  int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
   Mesh *pm = pmy_block->pmy_mesh;
 
   pmb->RegisterMeshBlockData(s);
@@ -47,7 +47,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   // Allocate optional passive scalar variable memory registers for time-integrator
   if (pmb->precon->xorder == 4) {
     // fourth-order cell-centered approximations
-    s_cc.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
+    s_cc.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
   }
 
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
@@ -61,25 +61,27 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   pmb->pbval->bvars_main_int.push_back(&sbvar);
 
   // Allocate memory for scratch arrays
-  dxw_.NewAthenaArray(ncells1);
-  wl_.NewAthenaArray(NSCALARS, ncells1);
-  wr_.NewAthenaArray(NSCALARS, ncells1);
-  wlb_.NewAthenaArray(NSCALARS, ncells1);
-  x1face_area_.NewAthenaArray(ncells1+1);
+  dxw_.NewAthenaArray(nc1);
+  sl_.NewAthenaArray(NSCALARS, nc1);
+  sr_.NewAthenaArray(NSCALARS, nc1);
+  slb_.NewAthenaArray(NSCALARS, nc1);
+  x1face_area_.NewAthenaArray(nc1+1);
   if (pm->f2_) {
-    x2face_area_.NewAthenaArray(ncells1);
-    x2face_area_p1_.NewAthenaArray(ncells1);
+    x2face_area_.NewAthenaArray(nc1);
+    x2face_area_p1_.NewAthenaArray(nc1);
   }
   if (pm->f3_) {
-    x3face_area_.NewAthenaArray(ncells1);
-    x3face_area_p1_.NewAthenaArray(ncells1);
+    x3face_area_.NewAthenaArray(nc1);
+    x3face_area_p1_.NewAthenaArray(nc1);
   }
-  cell_volume_.NewAthenaArray(ncells1);
+  cell_volume_.NewAthenaArray(nc1);
+  dflx_.NewAthenaArray(NHYDRO, nc1);
 
   // fourth-order 4D scratch arrays
-  wl3d_.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
-  wr3d_.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
-  scr1_nkji_.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
-  laplacian_l_fc_.NewAthenaArray(ncells1);
-  laplacian_r_fc_.NewAthenaArray(ncells1);
+  sl3d_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+  sr3d_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+  scr1_nkji_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+  scr2_nkji_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+  laplacian_l_fc_.NewAthenaArray(nc1);
+  laplacian_r_fc_.NewAthenaArray(nc1);
 }

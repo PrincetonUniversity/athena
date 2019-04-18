@@ -25,6 +25,7 @@ class ParameterInput;
 
 class PassiveScalars {
  public:
+  // TODO(felker): pin is currently unused, but leaving for run-time "nscalars" option
   PassiveScalars(MeshBlock *pmb, ParameterInput *pin);
 
   // public data:
@@ -43,22 +44,23 @@ class PassiveScalars {
 
   // public functions:
   // KGF: use inheritance for these functions / overall class?
-  void AddFluxDivergenceToAverage(AthenaArray<Real> &w, const Real wght);
-  void CalculateFluxes(AthenaArray<Real> &w, const int order);
+  void AddFluxDivergenceToAverage(const Real wght, AthenaArray<Real> &s_out);
+  void CalculateFluxes(AthenaArray<Real> &s, const int order);
 
  private:
   MeshBlock* pmy_block;
   // scratch space used to compute fluxes
-  AthenaArray<Real> wl_, wr_, wlb_;
+  AthenaArray<Real> sl_, sr_, slb_;
   AthenaArray<Real> dxw_;
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
   AthenaArray<Real> cell_volume_;
+  AthenaArray<Real> dflx_;
 
-  // fourth-order hydro
+  // fourth-order
   // 4D scratch arrays
-  AthenaArray<Real> scr1_nkji_;
-  AthenaArray<Real> wl3d_, wr3d_;
+  AthenaArray<Real> scr1_nkji_, scr2_nkji_;
+  AthenaArray<Real> sl3d_, sr3d_;
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 };
 #endif // SCALARS_SCALARS_HPP_
