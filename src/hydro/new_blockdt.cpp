@@ -44,11 +44,11 @@ void Hydro::NewBlockTimeStep() {
   AthenaArray<Real> &w = pmb->phydro->w;
   AthenaArray<Real> &dt1 = dt1_, &dt2 = dt2_, &dt3 = dt3_;
 
-  Real wi[(NWAVE)];
+  Real wi[NWAVE];
 
   Real real_max = std::numeric_limits<Real>::max();
-  Real min_dt = (real_max);
-  Real min_dt_diff  = (real_max);
+  Real min_dt = real_max;
+  Real min_dt_diff  = real_max;
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {

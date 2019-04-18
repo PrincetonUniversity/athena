@@ -85,10 +85,8 @@ void EquationOfState::ConservedToPrimitive(
 
   const Real TINY_NUMBER_p2 = SQR(TINY_NUMBER);
 
-  // Make array copies for performance reasons
-  AthenaArray<Real> cons_copy,prim_copy;
-  cons_copy.InitWithShallowCopy(cons);
-  prim_copy.InitWithShallowCopy(prim);
+  // Make array aliases (for performance reasons?)
+  AthenaArray<Real> &cons_copy = cons, &prim_copy = prim;
 
   // Go through cells
   for (int k=kl; k<=ku; ++k) {
