@@ -706,3 +706,59 @@ void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   }
   return;
 }
+
+
+void CellCenteredBoundaryVariable::CountShear() {
+  MeshBlock *pmb = pmy_block_;
+  int nx2 = pmb->block_size.nx2;
+  int &jo = pbval_->joverlap_;
+
+  for (int upper=0; upper<2; upper++) {
+    if (pbval_->is_shear[upper]) {
+      for (int n=0; n<4; n++) {
+        shear_send_count_cc_[upper][n] = 0;
+        shear_recv_count_cc_[upper][n] = 0;
+        shear_bd_var_[upper].flag[n] = BoundaryStatus::completed;
+      }
+      shear_send_count_cc_[upper][1] = nx_attach*ssize_;
+      shear_recv_count_cc_[upper][1] = nx_attach*ssize_;
+      shear_bd_var_[upper].flag[1] = BoundaryStatus::waiting;
+
+      // if there is overlap to next blocks
+      if (jo != 0) {
+        // send to the right
+        shear_send_count_cc_[upper][0] = nx_exchange*ssize_;
+        shear_recv_count_cc_[upper][0] = nx_exchange*ssize_;
+        shear_bd_var_[upper].flag[0] = BoundaryStatus::waiting;  // switch on if overlap
+
+        // deal the left boundary cells with send[2]
+        if (jo > (nx2 - NGHOST)) {
+          // send to Right
+          shear_send_count_cc_[upper][2] = nx_exchange_left*ssize_;
+          // recv from Left
+          shear_recv_count_cc_[upper][2] = nx_exchange_left*ssize_;
+          shear_bd_var_[upper].flag[2] = BoundaryStatus::waiting;
+        }
+        // deal with the right boundary cells with send[3]
+        if (jo < NGHOST) {
+          shear_send_count_cc_[upper][3] = nx_exchange_right*ssize_;
+          shear_recv_count_cc_[upper][3] = nx_exchange_right*ssize_;
+          shear_bd_var_[upper].flag[3] = BoundaryStatus::waiting;
+        }
+      } else {  // jo == 0
+        // send [je-(NGHOST-1):je] to Right (outer x2)
+        shear_send_count_cc_[upper][2] = nx_exchange*ssize_;
+        // recv [js-NGHOST:js-1] from Left
+        shear_recv_count_cc_[upper][2] = nx_exchange*ssize_;
+        shear_bd_var_[upper].flag[2] = BoundaryStatus::waiting;
+
+        // send [js:js+(NGHOST-1)] to Left (inner x2)
+        shear_send_count_cc_[upper][3] = nx_exchange*ssize_;
+        // recv [je + 1:je+(NGHOST-1)] from Right
+        shear_recv_count_cc_[upper][3] = nx_exchange*ssize_;
+        shear_bd_var_[upper].flag[3] = BoundaryStatus::waiting;
+      }
+    }
+  } // end loop over inner, outer shearing boundaries
+  return;
+}
