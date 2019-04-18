@@ -1553,6 +1553,7 @@ void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
 }
 
 
+// TODO(felker): also set sflag members of ShearingBoundaryData
 void FaceCenteredBoundaryVariable::CountShear() {
   MeshBlock *pmb = pmy_block_;
   int &jo = pbval_->joverlap_;
@@ -1568,6 +1569,9 @@ void FaceCenteredBoundaryVariable::CountShear() {
   const int a1_fc_flx = (2*nx3 + 1);
   const int a0_fc_flx = nx3;    // only in a few cases
 
+  // unlike the CellCenteredBoundaryVariable implementation of this fn, the scaling factor
+  // for the counts is not a constant ssize. the n=1 (always set) and n=0 (only set if
+  // overlap) have different expressions than the other cases
   for (int upper=0; upper<2; upper++) {
     if (pbval_->is_shear[upper]) {
       for (int n=0; n<4; n++) {
@@ -1584,11 +1588,12 @@ void FaceCenteredBoundaryVariable::CountShear() {
 
       // recv [js+joverlap:je] of the current MeshBlock to the shearing neighbor
       // attach [je+1:MIN(je+NGHOST, je+joverlap)] to its right end.
-      shear_send_count_fc_[upper][1] = nx_attach*a1_fc + a0_fc;
+      shear_send_count_fc_[upper][1] = pbval_->shear_send_count_[upper][1]*a1_fc + a0_fc;
       shear_recv_count_fc_[upper][1] = shear_send_count_fc_[upper][1];
       shear_bd_var_[upper].flag[1] = BoundaryStatus::waiting;
 
-      shear_send_count_emf_[upper][1] = nx_attach*a1_fc_flx + a0_fc_flx;
+      shear_send_count_emf_[upper][1] = pbval_->shear_send_count_[upper][1]*a1_fc_flx
+                                        + a0_fc_flx;
       shear_recv_count_emf_[upper][1] = shear_send_count_emf_[upper][1];
       shear_bd_emf_[upper].flag[1] = BoundaryStatus::waiting;
 
@@ -1596,53 +1601,55 @@ void FaceCenteredBoundaryVariable::CountShear() {
       if (jo != 0) {
         // send to the right
         // receive from its left
-        shear_send_count_fc_[upper][0] = nx_exchange*a1_fc + a0_fc;
+        shear_send_count_fc_[upper][0] = pbval_->shear_send_count_[upper][0]*a1_fc
+                                         + a0_fc;
         shear_recv_count_fc_[upper][0] = shear_send_count_fc_[upper][0];
         shear_bd_var_[upper].flag[0] = BoundaryStatus::waiting;
 
-        shear_send_count_emf_[upper][0] = nx_exchange*a1_fc_flx + a0_fc_flx;
+        shear_send_count_emf_[upper][0] = pbval_->shear_send_count_[upper][0]*a1_fc_flx
+                                          + a0_fc_flx;
         shear_recv_count_emf_[upper][0] = shear_send_count_emf_[upper][0];
         shear_bd_emf_[upper].flag[0] = BoundaryStatus::waiting;
 
         // deal the left boundary cells with send[2]
         if (jo > (nx2 - NGHOST)) {
           // send to Right, recv from Left
-          shear_send_count_fc_[upper][2] = nx_exchange_left*a1_fc;
+          shear_send_count_fc_[upper][2] = pbval_->shear_send_count_[upper][2]*a1_fc;
           shear_recv_count_fc_[upper][2] = shear_send_count_fc_[upper][2];
           shear_bd_var_[upper].flag[2] = BoundaryStatus::waiting;
 
-          shear_send_count_emf_[upper][2] = nx_exchange_left*a1_fc_flx;
+          shear_send_count_emf_[upper][2] = pbval_->shear_send_count_[upper][2]*a1_fc_flx;
           shear_recv_count_emf_[upper][2] = shear_send_count_emf_[upper][2];
           shear_bd_emf_[upper].flag[2] = BoundaryStatus::waiting;
         }
         // deal with the right boundary cells with send[3]
         if (jo < NGHOST) {
-          shear_send_count_fc_[upper][3] = nx_exchange_right*a1_fc;
+          shear_send_count_fc_[upper][3] = pbval_->shear_send_count_[upper][3]*a1_fc;
           shear_recv_count_fc_[upper][3] = shear_send_count_fc_[upper][3];
           shear_bd_var_[upper].flag[3] = BoundaryStatus::waiting;
 
-          shear_send_count_emf_[upper][3] = nx_exchange_right*a1_fc_flx;
+          shear_send_count_emf_[upper][3] = pbval_->shear_send_count_[upper][3]*a1_fc_flx;
           shear_recv_count_emf_[upper][3] = shear_send_count_emf_[upper][3];
           shear_bd_emf_[upper].flag[3] = BoundaryStatus::waiting;
         }
       } else {  // jo == 0
         // send [je-(NGHOST-1):je] to Right (outer x2)
         // recv [js-NGHOST:js-1] from Left
-        shear_send_count_fc_[upper][2] = nx_exchange*a1_fc;
+        shear_send_count_fc_[upper][2] = pbval_->shear_send_count_[upper][2]*a1_fc;
         shear_recv_count_fc_[upper][2] = shear_send_count_fc_[upper][2];
         shear_bd_var_[upper].flag[2] = BoundaryStatus::waiting;
 
-        shear_send_count_emf_[upper][2] = nx_exchange*a1_fc_flx;
+        shear_send_count_emf_[upper][2] = pbval_->shear_send_count_[upper][2]*a1_fc_flx;
         shear_recv_count_emf_[upper][2] = shear_send_count_emf_[upper][2];
         shear_bd_emf_[upper].flag[2] = BoundaryStatus::waiting;
 
         // send [js:js+(NGHOST-1)] to Left (inner x2)
         // recv [je + 1:je+(NGHOST-1)] from Right
-        shear_send_count_fc_[upper][3] = nx_exchange*a1_fc;
+        shear_send_count_fc_[upper][3] = pbval_->shear_send_count_[upper][4]*a1_fc;
         shear_recv_count_fc_[upper][3] = shear_send_count_fc_[upper][3];
         shear_bd_var_[upper].flag[3] = BoundaryStatus::waiting;
 
-        shear_send_count_emf_[upper][3] = nx_exchange*a1_fc_flx;
+        shear_send_count_emf_[upper][3] = pbval_->shear_send_count_[upper][4]*a1_fc_flx;
         shear_recv_count_emf_[upper][3] = shear_send_count_emf_[upper][3];
         shear_bd_emf_[upper].flag[3] = BoundaryStatus::waiting;
       }
