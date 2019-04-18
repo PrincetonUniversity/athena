@@ -90,13 +90,13 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
       int nc3 = pmb->ncells3;
       for (int upper=0; upper<2; upper++) {
         if (pbval_->is_shear[upper]) {
-          shear_cc_[upper].NewAthenaArray(NHYDRO, nc3, nc2, NGHOST);
+          shear_cc_[upper].NewAthenaArray(nu_+1, nc3, nc2, NGHOST);
           shear_flx_cc_[upper].NewAthenaArray(nc2);
 
           // TODO(KGF): the rest of this should be a part of InitBoundaryData()
 
           // attach corner cells from L/R side
-          int size = (pmb->block_size.nx2 + NGHOST)*pbval_->ssize_*NHYDRO;
+          int size = (pmb->block_size.nx2 + NGHOST)*pbval_->ssize_*(nu_ + 1);
           for (int n=0; n<2; n++) {
             shear_bd_var_[upper].send[n] = new Real[size];
             shear_bd_var_[upper].recv[n] = new Real[size];
@@ -107,7 +107,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
 #endif
           }
           // corner cells only
-          size = NGHOST*pbval_->ssize_*NHYDRO;
+          size = NGHOST*pbval_->ssize_*(nu_ + 1);
           for (int n=2; n<4; n++) {
             shear_bd_var_[upper].send[n] = new Real[size];
             shear_bd_var_[upper].recv[n] = new Real[size];

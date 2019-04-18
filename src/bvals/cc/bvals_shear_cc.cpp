@@ -99,7 +99,7 @@ void CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *bu
       ATHENA_ERROR(msg);
   }
   int p = 0;
-  BufferUtility::PackData(src, buf, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(src, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   return;
 }
 
@@ -190,7 +190,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 
   Real eps = pbval_->eps_;
   Real qomL = pbval_->qomL_;
-  int ssize = NHYDRO;
+  int ssize = nu_ + 1;
 
   if (pbval_->is_shear[0]) {
     int ib = pmb->is - NGHOST;
@@ -214,7 +214,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     }
 
     // step 2. -- conservative remaping
-    for (int n=0; n<NHYDRO; n++) {
+    for (int n=0; n<=nu_; n++) {
       for (int k=kl; k<=ku; k++) {
         for (int i=0; i<NGHOST; i++) {
           RemapFlux(n, k, js, je+2, i, eps, shear_cc_[0], shear_flx_cc_[0]);
@@ -268,7 +268,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     }
 
     // step 2. -- conservative remaping
-    for (int n=0; n<NHYDRO; n++) {
+    for (int n=0; n<=nu_; n++) {
       for (int k=kl; k<=ku; k++) {
         for (int i=0; i<NGHOST; i++) {
           RemapFlux(n, k, js-1, je+1, i, -eps, shear_cc_[1], shear_flx_cc_[1]);
@@ -371,7 +371,7 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
 
   // set [sj:ej] of current meshblock
   int p = 0;
-  BufferUtility::UnpackData(buf, *var_cc, 0, NHYDRO-1, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::UnpackData(buf, *var_cc, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   return;
 }
 
