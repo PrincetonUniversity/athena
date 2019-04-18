@@ -326,8 +326,10 @@ TaskStatus SuperTimeStepTaskList::HydroIntegrate_STS(MeshBlock *pmb, int stage) 
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
-    ph->AddFluxDivergenceToAverage(pmb->pmy_mesh->muj_tilde, ph->u);
-    // not currently calling pmb->pcoord->CoordSrcTerms
+    Real wght = pmb->pmy_mesh->muj_tilde;
+    ph->AddFluxDivergenceToAverage(wght, ph->u);
+    // TODO(pdmullen): check this after disabling ATHENA_ERROR for src terms
+    pmb->pcoord->CoordSrcTerms(wght, ph->flux, ph->w, pf->bcc, ph->u);
     return TaskStatus::next;
   }
   return TaskStatus::fail;
