@@ -102,10 +102,10 @@ void CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *bu
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit()
+//! \fn void CellCenteredBoundaryVariable::AddHydroShearForInit()
 //  \brief Send shearing box boundary buffers for hydro variables
 
-void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
+void CellCenteredBoundaryVariable::AddHydroShearForInit() {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   AthenaArray<Real> &var = *var_cc;

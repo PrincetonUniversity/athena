@@ -62,7 +62,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   bool ReceiveFluxCorrection() override;
 
   // Shearing box
-  void SendShearingBoxBoundaryBuffersForInit();
+  void AddHydroShearForInit();
   void SendShearingBoxBoundaryBuffers();
   bool ReceiveShearingBoxBoundaryBuffers();
 
