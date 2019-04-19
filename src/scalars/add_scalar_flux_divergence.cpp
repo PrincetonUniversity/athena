@@ -14,11 +14,8 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../field/field.hpp"
 #include "../mesh/mesh.hpp"
-#include "../reconstruct/reconstruction.hpp"
 #include "scalars.hpp"
 
 // OpenMP header
