@@ -44,8 +44,9 @@
 //! \fn int FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int nb)
 //  \brief Load shearing box field boundary buffers
 
-// KGF: FaceField &src = shboxvar_inner/outer_field_, send_innerbuf/outerbuf_field_[n]
 void FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int nb) {
+  // TODO(felker): deduplicate with CellCenteredBoundaryVariable::LoadShearing()
+  // Only differences are the calculation of psj, pej, and 3x PackData calls
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
@@ -56,6 +57,7 @@ void FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int n
   si = pmb->is - NGHOST; ei = pmb->is - 1;
   sk = pmb->ks;        ek = pmb->ke;
   if (pmesh->mesh_size.nx3 > 1)  ek += NGHOST, sk -= NGHOST;
+  // nb=0-3 for inner boundary; nb=4-7 for outer boundary
   switch(nb) {
     case 0:
       sj = pmb->je - jo - (NGHOST - 1); ej = pmb->je;
@@ -128,167 +130,97 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
     ku = ke;
     kl = ks;
   }
-  Real eps = pbval_->eps_;
 
-  if (pbval_->is_shear[0]) {
-    int ib = is - NGHOST;
-    int ii;
-    // step 1. -- load shboxvar_fc_
-    for (int k=kl; k<=ku; k++) {
+  int offset[2]{0, 4};
+  int sign[2]{1, -1};
+  int ib[2]{is - NGHOST, ie + 1};
+
+  for (int upper=0; upper<2; upper++) {
+    if (pbval_->is_shear[upper]) {
+      Real eps = sign[upper]*pbval_->eps_;
+      int jl_remap = js - upper;
+      int ju_remap = je + 2 - upper;
+
+      // step 1. -- load shboxvar_fc_
+      for (int k=kl; k<=ku; k++) {
+        for (int j=js-NGHOST; j<=je+NGHOST; j++) {
+          for (int i=0; i<NGHOST; i++) {
+            int ii = ib[upper] + i;
+            shear_fc_[upper].x1f(k,j,i) = (*var_fc).x1f(k,j,ii);
+            shear_fc_[upper].x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
+            shear_fc_[upper].x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
+          }
+        }
+      }
+      // fill the extra cells for B2i and B3i
+      int kp = ku + 1;
       for (int j=js-NGHOST; j<=je+NGHOST; j++) {
         for (int i=0; i<NGHOST; i++) {
-          ii = ib+i;
-          shear_fc_[0].x1f(k,j,i) = (*var_fc).x1f(k,j,ii);
-          shear_fc_[0].x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
-          shear_fc_[0].x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
+          int ii = ib[upper] + i;
+          shear_fc_[upper].x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
         }
       }
-    }
-    // fill the extra cells for B2i and B3i
-    int kp = ku + 1;
-    for (int j=js-NGHOST; j<=je+NGHOST; j++) {
-      for (int i=0; i<NGHOST; i++) {
-        ii = ib+i;
-        shear_fc_[0].x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
-      }
-    }
-    int jp = je + NGHOST + 1;
-    for (int k=kl; k<=ku; k++) {
-      for (int i=0; i<NGHOST; i++) {
-        ii = ib+i;
-        shear_fc_[0].x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
-      }
-    }
-
-    // step 2. -- conservative remapping
-    for (int k=kl; k<=ku; k++) {  // bx1
-      for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js, je+2, i, eps, shear_fc_[0].x1f, shear_flx_fc_[0].x1f);
-        for (int j=js; j<=je+1; j++) {
-          shear_fc_[0].x1f(k,j,i) -= (shear_flx_fc_[0].x1f(j+1) -
-                                               shear_flx_fc_[0].x1f(j));
-        }
-      }
-    }
-    for (int k=kl; k<=ku; k++) {  // bx2
-      for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js, je+3, i, eps, shear_fc_[0].x2f, shear_flx_fc_[0].x2f);
-        for (int j=js; j<=je+2; j++) {
-          shear_fc_[0].x2f(k,j,i) -= (shear_flx_fc_[0].x2f(j+1) -
-                                               shear_flx_fc_[0].x2f(j));
-        }
-      }
-    }
-    for (int k=kl; k<=ku+1; k++) { // bx3
-      for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js, je+2, i, eps, shear_fc_[0].x3f, shear_flx_fc_[0].x3f);
-        for (int j=js; j<=je+1; j++) {
-          shear_fc_[0].x3f(k,j,i) -= (shear_flx_fc_[0].x3f(j+1) -
-                                               shear_flx_fc_[0].x3f(j));
-        }
-      }
-    }
-
-    // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
-    for (int n=0; n<4; n++) {
-      SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[0][n];
-      if (snb.rank != -1) {
-        LoadShearing(shear_fc_[0], shear_bd_var_[0].send[n], n);
-        if (snb.rank == Globals::my_rank) {
-          CopyShearBufferSameProcess(snb, shear_send_count_fc_[0][n], n, 0);
-        } else { // MPI
-#ifdef MPI_PARALLEL
-          // bufid = n
-          int tag = pbval_->CreateBvalsMPITag(snb.lid, n, shear_fc_phys_id_);
-          MPI_Isend(shear_bd_var_[0].send[n],shear_send_count_fc_[0][n],MPI_ATHENA_REAL,
-                    snb.rank,tag,MPI_COMM_WORLD, &shear_bd_var_[0].req_send[n]);
-#endif
-        }
-      }
-    }
-  } // inner boundaries
-
-  if (pbval_->is_shear[1]) {
-    int  ib = ie + 1;
-    int ii;
-    // step 1. -- load shboxvar_fc_
-    for (int k=kl; k<=ku; k++) {
-      for (int j=js-NGHOST; j<=je+NGHOST; j++) {
+      int jp = je + NGHOST + 1;
+      for (int k=kl; k<=ku; k++) {
         for (int i=0; i<NGHOST; i++) {
-          ii = ib+i;
-          shear_fc_[1].x1f(k,j,i) = (*var_fc).x1f(k,j,ii+1);
-          shear_fc_[1].x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
-          shear_fc_[1].x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
+          int ii = ib[upper] + i;
+          shear_fc_[upper].x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
         }
       }
-    }
-    // fill the extra cells for B2i and B3i
-    int kp = ku + 1;
-    for (int j=js-NGHOST; j<=je+NGHOST; j++) {
-      for (int i=0; i<NGHOST; i++) {
-        ii = ib+i;
-        shear_fc_[1].x3f(kp,j,i) = (*var_fc).x3f(kp,j,ii);
-      }
-    }
-    int jp = je + NGHOST + 1;
-    for (int k=kl; k<=ku; k++) {
-      for (int i=0; i<NGHOST; i++) {
-        ii = ib+i;
-        shear_fc_[1].x2f(k,jp,i) = (*var_fc).x2f(k,jp,ii);
-      }
-    }
 
-    // step 2. -- conservative remapping
-    for (int k=kl; k<=ku; k++) {  // bx1
-      for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js-1, je+1, i, -eps, shear_fc_[1].x1f,
-                       shear_flx_fc_[1].x1f);
-        for (int j=js-1; j<=je; j++) {
-          shear_fc_[1].x1f(k,j,i) -= (shear_flx_fc_[1].x1f(j+1) -
-                                               shear_flx_fc_[1].x1f(j));
+      // step 2. -- conservative remapping
+      for (int k=kl; k<=ku; k++) {  // bx1
+        for (int i=0; i<NGHOST; i++) {
+          RemapFlux(k, jl_remap, ju_remap, i, eps, shear_fc_[upper].x1f,
+                    shear_flx_fc_[upper].x1f);
+          for (int j=jl_remap; j<=ju_remap-1; j++) {
+            shear_fc_[upper].x1f(k,j,i) -= (shear_flx_fc_[upper].x1f(j+1) -
+                                            shear_flx_fc_[upper].x1f(j));
+          }
         }
       }
-    }
-    for (int k=kl; k<=ku; k++) {  // bx2
-      for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js-1, je+2, i, -eps, shear_fc_[1].x2f,
-                       shear_flx_fc_[1].x2f);
-        for (int j=js-1; j<=je+1; j++) {
-          shear_fc_[1].x2f(k,j,i) -= (shear_flx_fc_[1].x2f(j+1) -
-                                               shear_flx_fc_[1].x2f(j));
+      for (int k=kl; k<=ku; k++) {  // bx2
+        for (int i=0; i<NGHOST; i++) {
+          RemapFlux(k, jl_remap, ju_remap+1, i, eps, shear_fc_[upper].x2f,
+                    shear_flx_fc_[upper].x2f);
+          for (int j=jl_remap; j<=ju_remap; j++) {
+            shear_fc_[upper].x2f(k,j,i) -= (shear_flx_fc_[upper].x2f(j+1) -
+                                            shear_flx_fc_[upper].x2f(j));
+          }
         }
       }
-    }
-    for (int k=kl; k<=ku+1; k++) {  // bx3
-      for (int i=0; i<NGHOST; i++) {
-        RemapFlux(k, js-1, je+1, i, -eps, shear_fc_[1].x3f,
-                  shear_flx_fc_[1].x3f);
-        for (int j=js-1; j<=je; j++) {
-          shear_fc_[1].x3f(k,j,i) -= (shear_flx_fc_[1].x3f(j+1)
-                                            - shear_flx_fc_[1].x3f(j));
+      for (int k=kl; k<=ku+1; k++) { // bx3
+        for (int i=0; i<NGHOST; i++) {
+          RemapFlux(k, jl_remap, ju_remap, i, eps, shear_fc_[upper].x3f,
+                    shear_flx_fc_[upper].x3f);
+          for (int j=jl_remap; j<=ju_remap-1; j++) {
+            shear_fc_[upper].x3f(k,j,i) -= (shear_flx_fc_[upper].x3f(j+1) -
+                                            shear_flx_fc_[upper].x3f(j));
+          }
         }
       }
-    }
 
-    // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
-    int offset = 4;
-    for (int n=0; n<4; n++) {
-      SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[1][n];
-      if (snb.rank != -1) {
-        LoadShearing(shear_fc_[1], shear_bd_var_[1].send[n], n+offset);
-        if (snb.rank == Globals::my_rank) {// on the same process
-          CopyShearBufferSameProcess(snb, shear_send_count_fc_[1][n], n, 1);
-        } else { // MPI
+      // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
+      for (int n=0; n<4; n++) {
+        SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[upper][n];
+        if (snb.rank != -1) {
+          LoadShearing(shear_fc_[upper], shear_bd_var_[upper].send[n], n+offset[upper]);
+          if (snb.rank == Globals::my_rank) {
+            CopyShearBufferSameProcess(snb, shear_send_count_fc_[upper][n], n, upper);
+          } else { // MPI
 #ifdef MPI_PARALLEL
-          // bufid for outer(inner): 2(0) and 3(1)
-          int tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset, shear_fc_phys_id_);
-          MPI_Isend(shear_bd_var_[1].send[n], shear_send_count_fc_[1][n], MPI_ATHENA_REAL,
-                    snb.rank, tag, MPI_COMM_WORLD, &shear_bd_var_[1].req_send[n]);
+            // bufid = n
+            int tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset[upper],
+                                                shear_fc_phys_id_);
+            MPI_Isend(shear_bd_var_[upper].send[n], shear_send_count_fc_[upper][n],
+                      MPI_ATHENA_REAL, snb.rank, tag, MPI_COMM_WORLD,
+                      &shear_bd_var_[upper].req_send[n]);
 #endif
+          }
         }
       }
-    }
-  } // outer boundaries
+    }  // if boundary is shearing
+  }  // loop over inner/outer boundaries
   return;
 }
 
@@ -297,8 +229,8 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 //                                           Real *buf, const int nb)
 //  \brief Set field shearing box boundary received from a block on the same level
 
-// KGF: FaceField &dst = passed through pmb->pfield->b from
-// ReceiveFieldShearingboxBoundaryBuffers(FaceField &dst)
+// TODO(felker): deduplicate with CellCenteredBoundaryVariable::SetShearingBoxBound...()
+// Only differences are the calculation of psi,pei,psj,pej, and 3x UnpackData calls
 
 void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
                                                                    const int nb) {
@@ -378,66 +310,43 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
 //! \fn bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
 //  \brief receive shearing box boundary data for field(face-centered) variables
 
+// TODO(felker): DRY. completely identical to CellCenteredBoundaryVariable implementation
 bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
-  bool flagi = true, flago = true;
+  bool flag[2]{true, true};
+  int nb_offset[2]{0, 4};
 
-  if (pbval_->is_shear[0]) { // check inner boundaries
-    for (int n=0; n<4; n++) {
-      if (shear_bd_var_[0].flag[n] == BoundaryStatus::completed) continue;
-      if (shear_bd_var_[0].flag[n] == BoundaryStatus::waiting) {
-        // on the same process
-        if (pbval_->shear_recv_neighbor_[0][n].rank == Globals::my_rank) {
-          flagi = false;
-          continue;
-        } else { // MPI boundary
-#ifdef MPI_PARALLEL
-          int test;
-          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
-                     MPI_STATUS_IGNORE);
-          MPI_Test(&shear_bd_var_[0].req_recv[n], &test, MPI_STATUS_IGNORE);
-          if (static_cast<bool>(test) == false) {
-            flagi = false;
+  for (int upper=0; upper<2; upper++) {
+    if (pbval_->is_shear[upper]) { // check inner boundaries
+      for (int n=0; n<4; n++) {
+        if (shear_bd_var_[upper].flag[n] == BoundaryStatus::completed) continue;
+        if (shear_bd_var_[upper].flag[n] == BoundaryStatus::waiting) {
+          // on the same process
+          if (pbval_->shear_recv_neighbor_[upper][n].rank == Globals::my_rank) {
+            flag[upper] = false;
             continue;
-          }
-          shear_bd_var_[0].flag[n] = BoundaryStatus::arrived;
-#endif
-        }
-      }
-      // set dst if boundary arrived
-      SetShearingBoxBoundarySameLevel(shear_bd_var_[0].recv[n], n);
-      shear_bd_var_[0].flag[n] = BoundaryStatus::completed; // completed
-    } // loop over recv[0] to recv[3]
-  } // inner boundary
-
-  if (pbval_->is_shear[1]) { // check outer boundaries
-    int offset = 4;
-    for (int n=0; n<4; n++) {
-      if (shear_bd_var_[1].flag[n] == BoundaryStatus::completed) continue;
-      if (shear_bd_var_[1].flag[n] == BoundaryStatus::waiting) {
-        if (pbval_->shear_recv_neighbor_[1][n].rank == Globals::my_rank) {
-          flago = false;
-          continue;
-        } else { // MPI boundary
+          } else { // MPI boundary
 #ifdef MPI_PARALLEL
-          int test;
-          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
-                     MPI_STATUS_IGNORE);
-
-          MPI_Test(&shear_bd_var_[1].req_recv[n], &test, MPI_STATUS_IGNORE);
-          if (static_cast<bool>(test) == false) {
-            flago = false;
-            continue;
-          }
-          shear_bd_var_[1].flag[n] = BoundaryStatus::arrived;
+            int test;
+            MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
+                       MPI_STATUS_IGNORE);
+            MPI_Test(&shear_bd_var_[upper].req_recv[n], &test, MPI_STATUS_IGNORE);
+            if (static_cast<bool>(test) == false) {
+              flag[upper] = false;
+              continue;
+            }
+            shear_bd_var_[upper].flag[n] = BoundaryStatus::arrived;
 #endif
+          }
         }
-      }
-      SetShearingBoxBoundarySameLevel(shear_bd_var_[1].recv[n], n+offset);
-      shear_bd_var_[1].flag[n] = BoundaryStatus::completed; // completed
-    } // loop over recv[0] and recv[1]
-  } // outer boundary
-  return (flagi && flago);
+        // set dst if boundary arrived
+        SetShearingBoxBoundarySameLevel(shear_bd_var_[upper].recv[n], n+nb_offset[upper]);
+        shear_bd_var_[upper].flag[n] = BoundaryStatus::completed; // completed
+      } // loop over recv[0] to recv[3]
+    }  // if boundary is shearing
+  }  // loop over inner/outer boundaries
+  return (flag[0] && flag[1]);
 }
+
 
 //--------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::RemapFlux(const int k, const int jinner,

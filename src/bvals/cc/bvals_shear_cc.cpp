@@ -45,15 +45,13 @@
 //                                                     int nb)
 //  \brief Load shearing box hydro boundary buffers
 
-// KGF: AthenaArray<Real> &src = shboxvar_inner_hydro_, shboxvar_outer_hydro_
-// TODO(KGF): is this identical to the copy in FaceCenteredBoundaryVariable??
 void CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *buf,
                                                 int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
-  int nx2 = pmb->block_size.nx2 - NGHOST;
   int jo = pbval_->joverlap_;
+  int nx2 = pmb->block_size.nx2 - NGHOST;
 
   si = pmb->is - NGHOST; ei = pmb->is - 1;
   sk = pmb->ks;        ek = pmb->ke;
@@ -223,7 +221,8 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
         if (snb.rank != -1) {
           LoadShearing(shear_cc_[upper], shear_bd_var_[upper].send[n], n+offset[upper]);
           if (snb.rank == Globals::my_rank) {// on the same process
-            CopyShearBufferSameProcess(snb, shear_send_count_cc_[upper][n]*ssize, n, upper);
+            CopyShearBufferSameProcess(snb, shear_send_count_cc_[upper][n]*ssize, n,
+                                       upper);
           } else { // MPI
 #ifdef MPI_PARALLEL
             int tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset[upper],
@@ -244,9 +243,6 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 //! \fn void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
 //                                                                         const int nb)
 //  \brief Set hydro shearing box boundary received from a block on the same level
-
-// KGF: AthenaArray<Real> &dst= pmb->phydro->u passed through from
-// ReceiveHydroShearingboxBoundaryBuffers()
 
 void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
                                                                    const int nb) {
