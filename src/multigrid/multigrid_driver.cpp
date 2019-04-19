@@ -19,7 +19,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals_mg.hpp"
+#include "../bvals/cc/mg/bvals_mg.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
@@ -86,6 +86,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
   nvslist_ = new int[nranks_];
 #ifdef MPI_PARALLEL
   MPI_Comm_dup(MPI_COMM_WORLD, &MPI_COMM_MULTIGRID);
+  mg_phys_id_ = pmy_mesh_->ReserveTagPhysIDs(1);
 #endif
   for (int n=0; n<nranks_; n++) {
     nslist_[n]  = pmy_mesh_->nslist[n];
@@ -124,7 +125,8 @@ MultigridDriver::~MultigridDriver() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::AddMultigrid(Multigrid *nmg)
-//  \brief add a Multigrid object to the linked list
+//  \brief add a Multigrid object to the tail of the doubly linked list
+
 void MultigridDriver::AddMultigrid(Multigrid *nmg) {
   if (pmg_ == nullptr) {
     pmg_=nmg;

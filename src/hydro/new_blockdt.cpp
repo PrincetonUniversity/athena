@@ -43,7 +43,6 @@ void Hydro::NewBlockTimeStep() {
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;
   AthenaArray<Real> &dt1 = dt1_, &dt2 = dt2_, &dt3 = dt3_;
-
   Real wi[NWAVE];
 
   Real real_max = std::numeric_limits<Real>::max();
@@ -52,22 +51,22 @@ void Hydro::NewBlockTimeStep() {
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-      pmb->pcoord->CenterWidth1(k,j,is,ie,dt1);
-      pmb->pcoord->CenterWidth2(k,j,is,ie,dt2);
-      pmb->pcoord->CenterWidth3(k,j,is,ie,dt3);
+      pmb->pcoord->CenterWidth1(k, j, is, ie, dt1);
+      pmb->pcoord->CenterWidth2(k, j, is, ie, dt2);
+      pmb->pcoord->CenterWidth3(k, j, is, ie, dt3);
       if (!RELATIVISTIC_DYNAMICS) {
 #pragma ivdep
         for (int i=is; i<=ie; ++i) {
-          wi[IDN]=w(IDN,k,j,i);
-          wi[IVX]=w(IVX,k,j,i);
-          wi[IVY]=w(IVY,k,j,i);
-          wi[IVZ]=w(IVZ,k,j,i);
-          if (NON_BAROTROPIC_EOS) wi[IPR]=w(IPR,k,j,i);
+          wi[IDN] = w(IDN,k,j,i);
+          wi[IVX] = w(IVX,k,j,i);
+          wi[IVY] = w(IVY,k,j,i);
+          wi[IVZ] = w(IVZ,k,j,i);
+          if (NON_BAROTROPIC_EOS) wi[IPR] = w(IPR,k,j,i);
 
           if (MAGNETIC_FIELDS_ENABLED) {
             AthenaArray<Real> &bcc = pmb->pfield->bcc, &b_x1f = pmb->pfield->b.x1f,
                             &b_x2f = pmb->pfield->b.x2f, &b_x3f = pmb->pfield->b.x3f;
-            Real bx = bcc(IB1,k,j,i) + std::fabs(b_x1f(k,j,i)-bcc(IB1,k,j,i));
+            Real bx = bcc(IB1,k,j,i) + std::fabs(b_x1f(k,j,i) - bcc(IB1,k,j,i));
             wi[IBY] = bcc(IB2,k,j,i);
             wi[IBZ] = bcc(IB3,k,j,i);
             Real cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
@@ -75,13 +74,13 @@ void Hydro::NewBlockTimeStep() {
 
             wi[IBY] = bcc(IB3,k,j,i);
             wi[IBZ] = bcc(IB1,k,j,i);
-            bx = bcc(IB2,k,j,i) + std::fabs(b_x2f(k,j,i)-bcc(IB2,k,j,i));
+            bx = bcc(IB2,k,j,i) + std::fabs(b_x2f(k,j,i) - bcc(IB2,k,j,i));
             cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
             dt2(i) /= (std::fabs(wi[IVY]) + cf);
 
             wi[IBY] = bcc(IB1,k,j,i);
             wi[IBZ] = bcc(IB2,k,j,i);
-            bx = bcc(IB3,k,j,i) + std::fabs(b_x3f(k,j,i)-bcc(IB3,k,j,i));
+            bx = bcc(IB3,k,j,i) + std::fabs(b_x3f(k,j,i) - bcc(IB3,k,j,i));
             cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
             dt3(i) /= (std::fabs(wi[IVZ]) + cf);
           } else {
@@ -118,34 +117,34 @@ void Hydro::NewBlockTimeStep() {
   }
 
   // calculate the timestep limited by the diffusion process
-  if (phdif->hydro_diffusion_defined) {
+  if (hdif.hydro_diffusion_defined) {
     Real mindt_vis, mindt_cnd;
-    phdif->NewHydroDiffusionDt(mindt_vis, mindt_cnd);
-    min_dt_diff = std::min(min_dt_diff,mindt_vis);
-    min_dt_diff = std::min(min_dt_diff,mindt_cnd);
+    hdif.NewHydroDiffusionDt(mindt_vis, mindt_cnd);
+    min_dt_diff = std::min(min_dt_diff, mindt_vis);
+    min_dt_diff = std::min(min_dt_diff, mindt_cnd);
   } // hydro diffusion
 
   if (MAGNETIC_FIELDS_ENABLED &&
-      pmb->pfield->pfdif->field_diffusion_defined) {
+      pmb->pfield->fdif.field_diffusion_defined) {
     Real mindt_oa, mindt_h;
-    pmb->pfield->pfdif->NewFieldDiffusionDt(mindt_oa, mindt_h);
-    min_dt_diff = std::min(min_dt_diff,mindt_oa);
-    min_dt_diff = std::min(min_dt_diff,mindt_h);
+    pmb->pfield->fdif.NewFieldDiffusionDt(mindt_oa, mindt_h);
+    min_dt_diff = std::min(min_dt_diff, mindt_oa);
+    min_dt_diff = std::min(min_dt_diff, mindt_h);
   } // field diffusion
 
   min_dt *= pmb->pmy_mesh->cfl_number;
   min_dt_diff *= pmb->pmy_mesh->cfl_number;
 
-  if (UserTimeStep_!=nullptr)
+  if (UserTimeStep_ != nullptr)
     min_dt = std::min(min_dt, UserTimeStep_(pmb));
 
   if (STS_ENABLED) {
-    pmb->new_block_dt_=min_dt;
-    pmb->new_block_dt_diff_=min_dt_diff;
+    pmb->new_block_dt_ = min_dt;
+    pmb->new_block_dt_diff_ = min_dt_diff;
   } else {
-    min_dt=std::min(min_dt, min_dt_diff);
-    pmb->new_block_dt_=min_dt;
-    pmb->new_block_dt_diff_=min_dt;
+    min_dt = std::min(min_dt, min_dt_diff);
+    pmb->new_block_dt_ = min_dt;
+    pmb->new_block_dt_diff_ = min_dt;
   }
 
   return;

@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file fftgravity.cpp
+//! \file fft_gravity.cpp
 //  \brief implementation of functions in class FFTGravity
 
 // C headers
@@ -23,10 +23,9 @@
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-#include "../task_list/grav_task_list.hpp"
-#include "fftgravity.hpp"
+#include "../task_list/fft_grav_task_list.hpp"
+#include "fft_gravity.hpp"
 #include "gravity.hpp"
-
 
 //----------------------------------------------------------------------------------------
 //! \fn FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
@@ -53,7 +52,7 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
 
   QuickCreatePlan();
 
-  gtlist_ = new GravitySolverTaskList(pin, pm);
+  gtlist_ = new FFTGravitySolverTaskList(pin, pm);
 }
 
 FFTGravityDriver::~FFTGravityDriver() {

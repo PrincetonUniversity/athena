@@ -10,6 +10,7 @@
 
 // C++ headers
 #include <string>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -22,73 +23,66 @@
 
 // constructor, initializes data structures and parameters
 
-Field::Field(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block = pmb;
+Field::Field(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block(pmb), b(pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    b1(pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    bcc(NFIELD, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    e(pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    wght(pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    e2_x1f( pmb->ncells3   , pmb->ncells2   ,(pmb->ncells1+1)),
+    e3_x1f( pmb->ncells3   , pmb->ncells2   ,(pmb->ncells1+1)),
+    e1_x2f( pmb->ncells3   ,(pmb->ncells2+1), pmb->ncells1   ),
+    e3_x2f( pmb->ncells3   ,(pmb->ncells2+1), pmb->ncells1   ),
+    e1_x3f((pmb->ncells3+1), pmb->ncells2   , pmb->ncells1   ),
+    e2_x3f((pmb->ncells3+1), pmb->ncells2   , pmb->ncells1   ),
+    coarse_bcc_(3, pmb->ncc3, pmb->ncc2, pmb->ncc1,
+                (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
+                 AthenaArray<Real>::DataStatus::empty)),
+    coarse_b_(pmb->ncc3, pmb->ncc2, pmb->ncc1+1,
+              (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
+               AthenaArray<Real>::DataStatus::empty)),
+    fbvar(pmb, &b, coarse_b_, e),
+    fdif(pmb, pin) {
+  int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, ncells3 = pmb->ncells3;
+  Mesh *pm = pmy_block->pmy_mesh;
 
-  // Allocate memory for interface fields, but only when needed.
-  if (MAGNETIC_FIELDS_ENABLED) {
-    int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-    int ncells2 = 1, ncells3 = 1;
-    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+  pmb->RegisterMeshBlockData(b);
 
-    //  Note the extra cell in each longitudinal dirn for interface fields
-    b.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-    b.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-    b.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
-
-    b1.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-    b1.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-    b1.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
-    // If user-requested time integrator is type 3S*, allocate additional memory registers
-    std::string integrator = pin->GetOrAddString("time","integrator","vl2");
-    if (integrator == "ssprk5_4" || STS_ENABLED) {
-      // future extension may add "int nregister" to Hydro class
-      b2.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-      b2.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-      b2.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
-    }
-
-    bcc.NewAthenaArray (NFIELD,ncells3,ncells2,ncells1);
-
-    e.x1e.NewAthenaArray((ncells3+1),(ncells2+1), ncells1   );
-    e.x2e.NewAthenaArray((ncells3+1), ncells2   ,(ncells1+1));
-    e.x3e.NewAthenaArray( ncells3   ,(ncells2+1),(ncells1+1));
-
-    wght.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-    wght.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-    wght.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
-
-    e2_x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-    e3_x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
-    e1_x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-    e3_x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
-    e1_x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
-    e2_x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
-
-    // Allocate memory for scratch vectors
-    if (pmb->block_size.nx3 == 1)
-      cc_e_.NewAthenaArray(ncells3,ncells2,ncells1);
-    else
-      cc_e_.NewAthenaArray(3,ncells3,ncells2,ncells1);
-
-    face_area_.NewAthenaArray(ncells1);
-    edge_length_.NewAthenaArray(ncells1);
-    edge_length_p1_.NewAthenaArray(ncells1);
-    if (GENERAL_RELATIVITY) {
-      g_.NewAthenaArray(NMETRIC,ncells1);
-      gi_.NewAthenaArray(NMETRIC,ncells1);
-    }
-    // ptr to diffusion object
-    pfdif = new FieldDiffusion(pmb,pin);
+  // If user-requested time integrator is type 3S*, allocate additional memory registers
+  // Note the extra cell in each longitudinal direction for interface fields
+  std::string integrator = pin->GetOrAddString("time","integrator","vl2");
+  if (integrator == "ssprk5_4" || STS_ENABLED) {
+    // future extension may add "int nregister" to Hydro class
+    b2.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+    b2.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+    b2.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
   }
+
+  // Allocate memory for scratch vectors
+  if (!pm->f3_)
+    cc_e_.NewAthenaArray(ncells3, ncells2, ncells1);
+  else
+    cc_e_.NewAthenaArray(3, ncells3, ncells2, ncells1);
+
+  face_area_.NewAthenaArray(ncells1);
+  edge_length_.NewAthenaArray(ncells1);
+  edge_length_p1_.NewAthenaArray(ncells1);
+  if (GENERAL_RELATIVITY) {
+    g_.NewAthenaArray(NMETRIC, ncells1);
+    gi_.NewAthenaArray(NMETRIC, ncells1);
+  }
+
+  if (pm->multilevel) {
+    // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
+    pmy_block->pmr->AddToRefinement(&b, &coarse_b_);
+  }
+
+  // enroll FaceCenteredBoundaryVariable object
+  fbvar.bvar_index = pmb->pbval->bvars.size();
+  pmb->pbval->bvars.push_back(&fbvar);
+  pmb->pbval->bvars_main_int.push_back(&fbvar);
 }
 
-// destructor
-
-Field::~Field() {
-  delete pfdif;
-}
 
 //----------------------------------------------------------------------------------------
 // \! fn

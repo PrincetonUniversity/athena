@@ -17,12 +17,12 @@
 #include <stdexcept>  // runtime_error
 
 // Athena++ headers
-#include "../coordinates/coordinates.hpp"
-#include "../mesh/mesh.hpp"
-#include "bvals.hpp"
+#include "../../coordinates/coordinates.hpp"
+#include "../../mesh/mesh.hpp"
+#include "../bvals.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::CheckPolarBoundaries(void)
+//! \fn void BoundaryValues::CheckPolarBoundaries()
 //  \brief Check for any compatibility issues if polar-type boundary flags are selected.
 //  Called after setting 6x boundary functions in MeshBlock's BoundaryValues() constructor
 
@@ -42,8 +42,8 @@ void BoundaryValues::CheckPolarBoundaries() {
     ATHENA_ERROR(msg);
   }
   // Check that AMR is disabled (SMR is ok)
-  if (pmy_mesh_->multilevel == true) {
-    if (pmy_mesh_->adaptive == true) {
+  if (pmy_mesh_->multilevel) {
+    if (pmy_mesh_->adaptive) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "The use of AMR with any 'polar' or 'polar_wedge' boundary \n"
@@ -131,7 +131,7 @@ void BoundaryValues::CheckPolarBoundaries() {
       // Real block_dx3 = pmy_block_->block_size.x3max - pmy_block_->block_size.x3min;
       // (accumulation of floating-point round off makes it too dificult to impose this
       // condition individually on each MeshBlock's specific x3 limits)
-      Real block_dx3= mesh_dx3;
+      Real block_dx3 = mesh_dx3;
       // std::fmod() returns PI/dx3 with truncated fractional part, not actual remainder
       Real remainder = std::abs(std::remainder(PI, block_dx3));
       // scale the machine precision by the # of azimuthal blocks due to accumulation of
@@ -170,7 +170,7 @@ void BoundaryValues::CheckPolarBoundaries() {
     }
 
     // even number of cells in the azimuthal direction for the root grid of the Mesh
-    if (pmy_mesh_->mesh_size.nx3%2!=0) {
+    if ((pmy_mesh_->mesh_size.nx3 % 2) != 0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "The use of 'polar' or 'polar_wedge' boundary flags in 3D\n"
@@ -179,7 +179,7 @@ void BoundaryValues::CheckPolarBoundaries() {
       ATHENA_ERROR(msg);
     }
     // single MeshBlock or even number of MeshBlocks wrapping around poles in 3D
-    if (pmy_mesh_->nrbx3>1 && pmy_mesh_->nrbx3%2!=0) {
+    if ((pmy_mesh_->nrbx3 > 1) && (pmy_mesh_->nrbx3 % 2) != 0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "The use of 'polar' or 'polar_wedge' boundary flags in 3D\n"
