@@ -133,8 +133,8 @@ def analyze():
                   '{}% of analytic value'.format(method, err_rel_tol_percent))
         print('')
 
-
     # Check 2nd order convergence rate of solver (STS should only converge at 1st order)
+    # SEE ABOVE NOTE
     rate = np.log(errors_abs[-2]/errors_abs[-1]) / (
         np.log(resolution_range[-1]/resolution_range[-2]))
     print('[Decaying 3D Linear Wave]: convergence rate of decay rate error = {}'.format(
