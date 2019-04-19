@@ -137,7 +137,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
             << "dx3f=" << dx_k << std::endl;
         // ATHENA_ERROR(msg);
       }
-      if (pmb->pmy_mesh->multilevel==true) {
+      if (pmb->pmy_mesh->multilevel) {
         std::stringstream msg;
         msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
             << "Selected time/xorder=" << input_recon << " flux calculations"
@@ -181,67 +181,67 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
   // switch to secondary PLM and PPM limiters for nonuniform and/or curvilinear meshes
   if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     // cylindrical: r should be non uniform; the others depend on the mesh spacing
-    uniform_limiter[X1DIR]=false;
+    uniform_limiter[X1DIR] = false;
   }
   if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     // spherical_polar: r and theta should be non uniform, phi can be uniform
-    uniform_limiter[X1DIR]=false;
-    uniform_limiter[X2DIR]=false;
+    uniform_limiter[X1DIR] = false;
+    uniform_limiter[X2DIR] = false;
   }
   // nonuniform geometric spacing or user-defined MeshGenerator, for all coordinate
   // systems, use nonuniform limiter (non-curvilinear will default to Cartesian factors)
   if (pmb->block_size.x1rat != 1.0)
-    uniform_limiter[X1DIR]=false;
+    uniform_limiter[X1DIR] = false;
   if (pmb->block_size.x2rat != 1.0)
-    uniform_limiter[X2DIR]=false;
+    uniform_limiter[X2DIR] = false;
   if (pmb->block_size.x3rat != 1.0)
-    uniform_limiter[X3DIR]=false;
+    uniform_limiter[X3DIR] = false;
   // uniform cartesian,minkowski,sinusoidal,tilted,schwarzschild,kerr-schild,gr_user
   // will use first PLM/PPM limiter without any coordinate terms
 
   // Allocate memory for scratch arrays used in PLM and PPM
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  scr01_i_.NewAthenaArray(ncells1);
-  scr02_i_.NewAthenaArray(ncells1);
+  int nc1 = pmb->ncells1;
+  scr01_i_.NewAthenaArray(nc1);
+  scr02_i_.NewAthenaArray(nc1);
 
-  scr1_ni_.NewAthenaArray(NWAVE,ncells1);
-  scr2_ni_.NewAthenaArray(NWAVE,ncells1);
-  scr3_ni_.NewAthenaArray(NWAVE,ncells1);
-  scr4_ni_.NewAthenaArray(NWAVE,ncells1);
+  scr1_ni_.NewAthenaArray(NWAVE, nc1);
+  scr2_ni_.NewAthenaArray(NWAVE, nc1);
+  scr3_ni_.NewAthenaArray(NWAVE, nc1);
+  scr4_ni_.NewAthenaArray(NWAVE, nc1);
 
   if ((xorder == 3) || (xorder == 4)) {
-    scr03_i_.NewAthenaArray(ncells1);
-    scr04_i_.NewAthenaArray(ncells1);
-    scr05_i_.NewAthenaArray(ncells1);
-    scr06_i_.NewAthenaArray(ncells1);
-    scr07_i_.NewAthenaArray(ncells1);
-    scr08_i_.NewAthenaArray(ncells1);
-    scr09_i_.NewAthenaArray(ncells1);
-    scr10_i_.NewAthenaArray(ncells1);
-    scr11_i_.NewAthenaArray(ncells1);
-    scr12_i_.NewAthenaArray(ncells1);
-    scr13_i_.NewAthenaArray(ncells1);
-    scr14_i_.NewAthenaArray(ncells1);
+    scr03_i_.NewAthenaArray(nc1);
+    scr04_i_.NewAthenaArray(nc1);
+    scr05_i_.NewAthenaArray(nc1);
+    scr06_i_.NewAthenaArray(nc1);
+    scr07_i_.NewAthenaArray(nc1);
+    scr08_i_.NewAthenaArray(nc1);
+    scr09_i_.NewAthenaArray(nc1);
+    scr10_i_.NewAthenaArray(nc1);
+    scr11_i_.NewAthenaArray(nc1);
+    scr12_i_.NewAthenaArray(nc1);
+    scr13_i_.NewAthenaArray(nc1);
+    scr14_i_.NewAthenaArray(nc1);
 
-    scr5_ni_.NewAthenaArray(NWAVE,ncells1);
-    scr6_ni_.NewAthenaArray(NWAVE,ncells1);
-    scr7_ni_.NewAthenaArray(NWAVE,ncells1);
-    scr8_ni_.NewAthenaArray(NWAVE,ncells1);
+    scr5_ni_.NewAthenaArray(NWAVE, nc1);
+    scr6_ni_.NewAthenaArray(NWAVE, nc1);
+    scr7_ni_.NewAthenaArray(NWAVE, nc1);
+    scr8_ni_.NewAthenaArray(NWAVE, nc1);
 
     // Precompute PPM coefficients in x1-direction ---------------------------------------
-    c1i.NewAthenaArray(ncells1);
-    c2i.NewAthenaArray(ncells1);
-    c3i.NewAthenaArray(ncells1);
-    c4i.NewAthenaArray(ncells1);
-    c5i.NewAthenaArray(ncells1);
-    c6i.NewAthenaArray(ncells1);
-    hplus_ratio_i.NewAthenaArray(ncells1);
-    hminus_ratio_i.NewAthenaArray(ncells1);
+    c1i.NewAthenaArray(nc1);
+    c2i.NewAthenaArray(nc1);
+    c3i.NewAthenaArray(nc1);
+    c4i.NewAthenaArray(nc1);
+    c5i.NewAthenaArray(nc1);
+    c6i.NewAthenaArray(nc1);
+    hplus_ratio_i.NewAthenaArray(nc1);
+    hminus_ratio_i.NewAthenaArray(nc1);
 
     // coeffiencients in x1 for uniform Cartesian mesh
     if (uniform_limiter[X1DIR]) {
 #pragma omp simd
-      for (int i=(pmb->is)-(NGHOST); i<=(pmb->ie)+(NGHOST); ++i) {
+      for (int i=(pmb->is)-NGHOST; i<=(pmb->ie)+NGHOST; ++i) {
         c1i(i) = 0.5;
         c2i(i) = 0.5;
         c3i(i) = 0.5;
@@ -254,14 +254,14 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       // (unnecessary work in case of uniform curvilinear mesh)
     } else {
 #pragma omp simd
-      for (int i=(pmb->is)-(NGHOST)+1; i<=(pmb->ie)+(NGHOST)-1; ++i) {
+      for (int i=(pmb->is)-NGHOST+1; i<=(pmb->ie)+NGHOST-1; ++i) {
         Real& dx_im1 = pmb->pcoord->dx1f(i-1);
         Real& dx_i   = pmb->pcoord->dx1f(i  );
         Real& dx_ip1 = pmb->pcoord->dx1f(i+1);
         Real qe = dx_i/(dx_im1 + dx_i + dx_ip1);       // Outermost coeff in CW eq 1.7
         c1i(i) = qe*(2.0*dx_im1+dx_i)/(dx_ip1 + dx_i); // First term in CW eq 1.7
         c2i(i) = qe*(2.0*dx_ip1+dx_i)/(dx_im1 + dx_i); // Second term in CW eq 1.7
-        if (i > (pmb->is)-(NGHOST)+1) {  // c3-c6 are not computed in first iteration
+        if (i > (pmb->is)-NGHOST+1) {  // c3-c6 are not computed in first iteration
           Real& dx_im2 = pmb->pcoord->dx1f(i-2);
           Real qa = dx_im2 + dx_im1 + dx_i + dx_ip1;
           Real qb = dx_im1/(dx_im1 + dx_i);
@@ -304,20 +304,20 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
 
     // Precompute PPM coefficients in x2-direction ---------------------------------------
     if (pmb->block_size.nx2 > 1) {
-      int ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-      c1j.NewAthenaArray(ncells2);
-      c2j.NewAthenaArray(ncells2);
-      c3j.NewAthenaArray(ncells2);
-      c4j.NewAthenaArray(ncells2);
-      c5j.NewAthenaArray(ncells2);
-      c6j.NewAthenaArray(ncells2);
-      hplus_ratio_j.NewAthenaArray(ncells2);
-      hminus_ratio_j.NewAthenaArray(ncells2);
+      int nc2 = pmb->ncells2;
+      c1j.NewAthenaArray(nc2);
+      c2j.NewAthenaArray(nc2);
+      c3j.NewAthenaArray(nc2);
+      c4j.NewAthenaArray(nc2);
+      c5j.NewAthenaArray(nc2);
+      c6j.NewAthenaArray(nc2);
+      hplus_ratio_j.NewAthenaArray(nc2);
+      hminus_ratio_j.NewAthenaArray(nc2);
 
       // coeffiencients in x2 for uniform Cartesian mesh
       if (uniform_limiter[X2DIR]) {
 #pragma omp simd
-        for (int j=(pmb->js)-(NGHOST); j<=(pmb->je)+(NGHOST); ++j) {
+        for (int j=(pmb->js)-NGHOST; j<=(pmb->je)+NGHOST; ++j) {
           c1j(j) = 0.5;
           c2j(j) = 0.5;
           c3j(j) = 0.5;
@@ -330,7 +330,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma omp simd
-        for (int j=(pmb->js)-(NGHOST)+2; j<=(pmb->je)+(NGHOST)-1; ++j) {
+        for (int j=(pmb->js)-NGHOST+2; j<=(pmb->je)+NGHOST-1; ++j) {
           Real& dx_jm1 = pmb->pcoord->dx2f(j-1);
           Real& dx_j   = pmb->pcoord->dx2f(j  );
           Real& dx_jp1 = pmb->pcoord->dx2f(j+1);
@@ -338,7 +338,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           c1j(j) = qe*(2.0*dx_jm1+dx_j)/(dx_jp1 + dx_j); // First term in CW eq 1.7
           c2j(j) = qe*(2.0*dx_jp1+dx_j)/(dx_jm1 + dx_j); // Second term in CW eq 1.7
 
-          if (j > (pmb->js)-(NGHOST)+1) {  // c3-c6 are not computed in first iteration
+          if (j > (pmb->js)-NGHOST+1) {  // c3-c6 are not computed in first iteration
             Real& dx_jm2 = pmb->pcoord->dx2f(j-2);
             Real qa = dx_jm2 + dx_jm1 + dx_j + dx_jp1;
             Real qb = dx_jm1/(dx_jm1 + dx_j);
@@ -381,20 +381,20 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
 
     // Precompute PPM coefficients in x3-direction
     if (pmb->block_size.nx3 > 1) {
-      int ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
-      c1k.NewAthenaArray(ncells3);
-      c2k.NewAthenaArray(ncells3);
-      c3k.NewAthenaArray(ncells3);
-      c4k.NewAthenaArray(ncells3);
-      c5k.NewAthenaArray(ncells3);
-      c6k.NewAthenaArray(ncells3);
-      hplus_ratio_k.NewAthenaArray(ncells3);
-      hminus_ratio_k.NewAthenaArray(ncells3);
+      int nc3 = pmb->ncells3;
+      c1k.NewAthenaArray(nc3);
+      c2k.NewAthenaArray(nc3);
+      c3k.NewAthenaArray(nc3);
+      c4k.NewAthenaArray(nc3);
+      c5k.NewAthenaArray(nc3);
+      c6k.NewAthenaArray(nc3);
+      hplus_ratio_k.NewAthenaArray(nc3);
+      hminus_ratio_k.NewAthenaArray(nc3);
 
       // coeffiencients in x3 for uniform Cartesian mesh
       if (uniform_limiter[X3DIR]) {
 #pragma omp simd
-        for (int k=(pmb->ks)-(NGHOST); k<=(pmb->ke)+(NGHOST); ++k) {
+        for (int k=(pmb->ks)-NGHOST; k<=(pmb->ke)+NGHOST; ++k) {
           c1k(k) = 0.5;
           c2k(k) = 0.5;
           c3k(k) = 0.5;
@@ -407,7 +407,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma omp simd
-        for (int k=(pmb->ks)-(NGHOST)+2; k<=(pmb->ke)+(NGHOST)-1; ++k) {
+        for (int k=(pmb->ks)-NGHOST+2; k<=(pmb->ke)+NGHOST-1; ++k) {
           Real& dx_km1 = pmb->pcoord->dx3f(k-1);
           Real& dx_k   = pmb->pcoord->dx3f(k  );
           Real& dx_kp1 = pmb->pcoord->dx3f(k+1);
@@ -415,7 +415,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           c1k(k) = qe*(2.0*dx_km1+dx_k)/(dx_kp1 + dx_k); // First term in CW eq 1.7
           c2k(k) = qe*(2.0*dx_kp1+dx_k)/(dx_km1 + dx_k); // Second term in CW eq 1.7
 
-          if (k > (pmb->ks)-(NGHOST)+1) {  // c3-c6 are not computed in first iteration
+          if (k > (pmb->ks)-NGHOST+1) {  // c3-c6 are not computed in first iteration
             Real& dx_km2 = pmb->pcoord->dx3f(k-2);
             Real qa = dx_km2 + dx_km1 + dx_k + dx_kp1;
             Real qb = dx_km1/(dx_km1 + dx_k);
@@ -440,61 +440,4 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
       }
     }
   }
-}
-
-// destructor
-
-Reconstruction::~Reconstruction() {
-  scr01_i_.DeleteAthenaArray();
-  scr02_i_.DeleteAthenaArray();
-
-  scr1_ni_.DeleteAthenaArray();
-  scr2_ni_.DeleteAthenaArray();
-  scr3_ni_.DeleteAthenaArray();
-  scr4_ni_.DeleteAthenaArray();
-
-  scr03_i_.DeleteAthenaArray();
-  scr04_i_.DeleteAthenaArray();
-  scr05_i_.DeleteAthenaArray();
-  scr06_i_.DeleteAthenaArray();
-  scr07_i_.DeleteAthenaArray();
-  scr08_i_.DeleteAthenaArray();
-  scr09_i_.DeleteAthenaArray();
-  scr10_i_.DeleteAthenaArray();
-  scr11_i_.DeleteAthenaArray();
-  scr12_i_.DeleteAthenaArray();
-  scr13_i_.DeleteAthenaArray();
-  scr14_i_.DeleteAthenaArray();
-
-  scr5_ni_.DeleteAthenaArray();
-  scr6_ni_.DeleteAthenaArray();
-  scr7_ni_.DeleteAthenaArray();
-  scr8_ni_.DeleteAthenaArray();
-
-  c1i.DeleteAthenaArray();
-  c2i.DeleteAthenaArray();
-  c3i.DeleteAthenaArray();
-  c4i.DeleteAthenaArray();
-  c5i.DeleteAthenaArray();
-  c6i.DeleteAthenaArray();
-  hplus_ratio_i.DeleteAthenaArray();
-  hminus_ratio_i.DeleteAthenaArray();
-
-  c1j.DeleteAthenaArray();
-  c2j.DeleteAthenaArray();
-  c3j.DeleteAthenaArray();
-  c4j.DeleteAthenaArray();
-  c5j.DeleteAthenaArray();
-  c6j.DeleteAthenaArray();
-  hplus_ratio_j.DeleteAthenaArray();
-  hminus_ratio_j.DeleteAthenaArray();
-
-  c1k.DeleteAthenaArray();
-  c2k.DeleteAthenaArray();
-  c3k.DeleteAthenaArray();
-  c4k.DeleteAthenaArray();
-  c5k.DeleteAthenaArray();
-  c6k.DeleteAthenaArray();
-  hplus_ratio_k.DeleteAthenaArray();
-  hminus_ratio_k.DeleteAthenaArray();
 }

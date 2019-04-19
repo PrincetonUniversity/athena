@@ -1,5 +1,5 @@
-#ifndef BVALS_BVALS_MG_HPP_
-#define BVALS_BVALS_MG_HPP_
+#ifndef BVALS_CC_MG_BVALS_MG_HPP_
+#define BVALS_CC_MG_BVALS_MG_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -14,9 +14,9 @@
 #include <string>   // string
 
 // Athena++ headers
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "bvals.hpp"
+#include "../../../athena.hpp"
+#include "../../../athena_arrays.hpp"
+#include "../../bvals.hpp"
 
 // MPI headers
 #ifdef MPI_PARALLEL
@@ -30,31 +30,19 @@ class MeshBlockTree;
 class ParameterInput;
 class Coordinates;
 
-//! \struct MGBoundaryData
-//  \brief structure storing multigrid boundary information
-struct MGBoundaryData {
-  int nbmax;
-  BoundaryStatus flag[56], sflag[56];
-  Real *send[56], *recv[56];
-#ifdef MPI_PARALLEL
-  MPI_Request req_send[56], req_recv[56];
-#endif
-};
-
 //----------------------------------------------------------------------------------------
 //! \class MGBoundaryValues
 //  \brief BVals data and functions
 
 class MGBoundaryValues : public BoundaryBase {
  public:
-  MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
-                   MGBoundaryFunc *MGBoundary);
+  MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs, MGBoundaryFunc *MGBoundary);
   ~MGBoundaryValues();
 
-  void InitBoundaryData(MGBoundaryData &bd, BoundaryQuantity type);
-  void DestroyBoundaryData(MGBoundaryData &bd);
+  void InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type);
+  void DestroyBoundaryData(BoundaryData<> &bd);
 
-  void ApplyPhysicalBoundaries(void);
+  void ApplyPhysicalBoundaries();
   void StartReceivingMultigrid(int nc, BoundaryQuantity type);
   void ClearBoundaryMultigrid(BoundaryQuantity type);
   int LoadMultigridBoundaryBufferSameLevel(
@@ -71,13 +59,14 @@ class MGBoundaryValues : public BoundaryBase {
  private:
   Multigrid *pmy_mg_;
   MGBoundaryFunc MGBoundaryFunction_[6];
-  MGBoundaryData bd_mggrav_;
+  BoundaryData<> bd_mggrav_;
 
 #ifdef MPI_PARALLEL
   MPI_Comm mgcomm_;
+  int mg_grav_phys_id_; // for now, MPI assumes MGGravityDriver is associated driver
 #endif
 
   friend class Multigrid;
 };
 
-#endif // BVALS_BVALS_MG_HPP_
+#endif // BVALS_CC_MG_BVALS_MG_HPP_

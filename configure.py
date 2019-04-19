@@ -13,6 +13,7 @@
 #   --eos=xxx         use xxx as the equation of state
 #   --flux=xxx        use xxx as the Riemann solver
 #   --nghost=xxx      set NGHOST=xxx
+#   --nscalars=xxx    set NSCALARS=xxx
 #   -eos_table        enable EOS table
 #   -b                enable magnetic fields
 #   -s                enable special relativity
@@ -103,6 +104,11 @@ parser.add_argument('--flux',
 parser.add_argument('--nghost',
                     default='2',
                     help='set number of ghost zones')
+
+# --nscalars=[value] argument
+parser.add_argument('--nscalars',
+                    default='0',
+                    help='set number of passive scalars')
 
 # -b argument
 parser.add_argument('-b',
@@ -373,6 +379,9 @@ definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
 
 # --nghost=[value] argument
 definitions['NUMBER_GHOST_CELLS'] = args['nghost']
+
+# --nscalars=[value] argument
+definitions['NUMBER_PASSIVE_SCALARS'] = args['nscalars']
 
 # -b argument
 # set variety of macros based on whether MHD/hydro or adi/iso are defined
@@ -779,6 +788,7 @@ print('  Coordinate system:          ' + args['coord'])
 print('  Equation of state:          ' + args['eos'])
 print('  Riemann solver:             ' + args['flux'])
 print('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF'))
+print('  Number of scalars:          ' + args['nscalars'])
 print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))

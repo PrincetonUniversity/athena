@@ -116,19 +116,20 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  Real rad, phi, z;
+  // Real rad, phi, z;
   Real v1, v2, v3;
   // Set initial magnetic fields
   if (MAGNETIC_FIELDS_ENABLED) {
-    AthenaArray<Real> a1,a2,a3;
-    int nx1 = (ie-is)+1 + 2*(NGHOST);
-    int nx2 = (je-js)+1 + 2*(NGHOST);
-    int nx3 = (ke-ks)+1 + 2*(NGHOST);
-    a1.NewAthenaArray(nx3,nx2,nx1);
-    a2.NewAthenaArray(nx3,nx2,nx1);
-    a3.NewAthenaArray(nx3,nx2,nx1);
+    AthenaArray<Real> a1, a2, a3;
+    // nxN != ncellsN, in general. Allocate to extend through 2*ghost, regardless # dim
+    int nx1 = block_size.nx1 + 2*NGHOST;
+    int nx2 = block_size.nx2 + 2*NGHOST;
+    int nx3 = block_size.nx3 + 2*NGHOST;
+    a1.NewAthenaArray(nx3, nx2, nx1);
+    a2.NewAthenaArray(nx3, nx2, nx1);
+    a3.NewAthenaArray(nx3, nx2, nx1);
 
-    int level=loc.level;
+    int level = loc.level;
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie+1; i++) {
@@ -184,10 +185,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // Initialize interface fields
-    AthenaArray<Real> area,len,len_p1;
-    area.NewAthenaArray(nx1);
-    len.NewAthenaArray(nx1);
-    len_p1.NewAthenaArray(nx1);
+    AthenaArray<Real> area, len, len_p1;
+    area.NewAthenaArray(ncells1);
+    len.NewAthenaArray(ncells1);
+    len_p1.NewAthenaArray(ncells1);
 
     // for 1,2,3-D
     for (int k=ks; k<=ke; ++k) {
@@ -263,13 +264,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-
-    a1.DeleteAthenaArray();
-    a2.DeleteAthenaArray();
-    a3.DeleteAthenaArray();
-    area.DeleteAthenaArray();
-    len.DeleteAthenaArray();
-    len_p1.DeleteAthenaArray();
   }
 
   //  Initialize density

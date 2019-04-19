@@ -16,7 +16,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals_mg.hpp"
+#include "../bvals/cc/mg/bvals_mg.hpp"
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../task_list/mg_task_list.hpp"
@@ -60,8 +60,12 @@ class Multigrid {
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;
+  // KGF: Both btype=BoundaryQuantity::mggrav and btypef=BoundaryQuantity::mggrav_f (face
+  // neighbors only) are passed to comm function calls in mg_task_list.cpp Only
+  // BoundaryQuantity::mggrav is handled in a case in InitBoundaryData(). Passed directly
+  // (not through btype) in MGBoundaryValues() ctor
   BoundaryQuantity btype, btypef;
-  Multigrid *next, *prev;
+  Multigrid *next, *prev; // node links for doubly linked list
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
@@ -148,7 +152,8 @@ class MultigridDriver {
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *ranklist_;
   MGBoundaryFunc MGBoundaryFunction_[6];
   Mesh *pmy_mesh_;
-  Multigrid *pmg_;
+  Multigrid *pmg_;       // pointer to head node of doubly linked list of Multgrid objects
+  // (not storing a reference to the tail node)
   Multigrid *mgroot_;
   bool fperiodic_;
   Real last_ave_;
@@ -160,6 +165,7 @@ class MultigridDriver {
   AthenaArray<Real> rootsrc_;
 #ifdef MPI_PARALLEL
   MPI_Comm MPI_COMM_MULTIGRID;
+  int mg_phys_id_;
 #endif
 };
 

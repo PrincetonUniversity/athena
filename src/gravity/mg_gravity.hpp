@@ -1,12 +1,11 @@
-#ifndef GRAVITY_MGGRAVITY_HPP_
-#define GRAVITY_MGGRAVITY_HPP_
-
+#ifndef GRAVITY_MG_GRAVITY_HPP_
+#define GRAVITY_MG_GRAVITY_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file mggravity.hpp
+//! \file mg_gravity.hpp
 //  \brief defines MGGravity class
 
 // C headers
@@ -32,7 +31,7 @@ class MGGravity : public Multigrid {
             RegionSize isize, MGBoundaryFunc *MGBoundary,
             BoundaryFlag *input_bcs, bool root)
       : Multigrid(pmd,iloc,igid,ilid,1,1,isize,MGBoundary,input_bcs,root), omega_(1.15)
-  { btype=BoundaryQuantity::mggrav; btypef=BoundaryQuantity::mggravf; };
+  { btype=BoundaryQuantity::mggrav; btypef=BoundaryQuantity::mggrav_f; };
   ~MGGravity() {}
   void Smooth(int color) final;
   void CalculateDefect() final;
@@ -55,4 +54,4 @@ class MGGravityDriver : public MultigridDriver{
   Real four_pi_G_;
 };
 
-#endif // GRAVITY_MGGRAVITY_HPP_
+#endif // GRAVITY_MG_GRAVITY_HPP_
