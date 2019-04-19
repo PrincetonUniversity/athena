@@ -77,7 +77,8 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       if (out_ks != out_ke) {out_ks -= NGHOST; out_ke += NGHOST;}
     }
 
-    // set ptrs to data in OutputData linked list, then slice/sum as needed
+    // build doubly linked list of OutputData nodes (setting data ptrs to appropriate
+    // quantity on MeshBlock for each node), then slice/sum as needed
     LoadOutputData(pmb);
     if (TransformOutputData(pmb) == false) {
       ClearOutputData();  // required when LoadOutputData() is used.
@@ -182,7 +183,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     std::fwrite(data,sizeof(float),static_cast<std::size_t>(ncoord3),pfile);
 
     //  5. Data.  An arbitrary number of scalars and vectors can be written (every node
-    //  in the OutputData linked lists), all in binary floats format
+    //  in the OutputData doubly linked lists), all in binary floats format
     std::fprintf(pfile,"\nCELL_DATA %d", (ncells1)*(ncells2)*(ncells3));
 
     OutputData *pdata = pfirst_data_;

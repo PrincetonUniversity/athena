@@ -11,6 +11,8 @@
 // C headers
 
 // C++ headers
+#include <tuple>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"         // Real
@@ -26,15 +28,19 @@ class ParameterInput;
 class Coordinates;
 struct FaceField;
 class BoundaryValues;
+class FaceCenteredBoundaryVariable;
+class HydroBoundaryVariable;
 
 //----------------------------------------------------------------------------------------
 //! \class MeshRefinement
 //  \brief
 
 class MeshRefinement {
+  // needs to access pcoarsec in ProlongateBoundaries() for passing to BoundaryFunc()
   friend class BoundaryValues;
-  friend class MeshBlock;
+  // needs to access refine_flag_ in Mesh::AdaptiveMeshRefinement(). Make var public?
   friend class Mesh;
+
  public:
   MeshRefinement(MeshBlock *pmb, ParameterInput *pin);
   ~MeshRefinement();
@@ -62,17 +68,28 @@ class MeshRefinement {
                                int si, int ei, int sj, int ej, int sk, int ek);
   void CheckRefinementCondition();
 
+  // setter functions for "enrolling" variable arrays in refinement via Mesh::AMR()
+  // and/or in BoundaryValues::ProlongateBoundaries() (for SMR and AMR)
+  void AddToRefinement(AthenaArray<Real> *pvar_cc, AthenaArray<Real> *pcoarse_cc);
+  void AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc);
+
+  // for switching first entry in pvars_cc_ to/from: (w, coarse_prim); (u, coarse_cons_)
+  void SetHydroRefinement(HydroBoundaryQuantity hydro_type);
+
  private:
   // data
   MeshBlock *pmy_block_;
   Coordinates *pcoarsec;
-  AthenaArray<Real> coarse_cons_, coarse_prim_, coarse_bcc_;
-  FaceField coarse_b_;
+
   AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
   int refine_flag_, neighbor_rflag_, deref_count_, deref_threshold_;
 
   // functions
-  AMRFlagFunc AMRFlag_;
+  AMRFlagFunc AMRFlag_; // duplicate of Mesh class member
+
+  // tuples of references to AMR-enrolled arrays (quantity, coarse_quantity)
+  std::vector<std::tuple<AthenaArray<Real> *, AthenaArray<Real> *>> pvars_cc_;
+  std::vector<std::tuple<FaceField *, FaceField *>> pvars_fc_;
 };
 
 #endif // MESH_MESH_REFINEMENT_HPP_

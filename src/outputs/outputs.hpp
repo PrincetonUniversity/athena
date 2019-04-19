@@ -56,20 +56,21 @@ struct OutputParameters {
 
 //----------------------------------------------------------------------------------------
 //! \struct OutputData
-//  \brief container for output data and metadata; used as node in linked list
+//  \brief container for output data and metadata; node in nested doubly linked list
 
 struct OutputData {
   std::string type;        // one of (SCALARS,VECTORS) used for vtk outputs
   std::string name;
   AthenaArray<Real> data;  // array containing data (usually shallow copy/slice)
-  OutputData *pnext, *pprev; // ptrs to next and previous nodes in list
+  // ptrs to previous and next nodes in doubly linked list:
+  OutputData *pnext, *pprev;
 
   OutputData() : pnext(nullptr),  pprev(nullptr) {}
 };
 
 //----------------------------------------------------------------------------------------
-//  \brief abstract base class for different output types (modes).  Each OutputType
-//  is designed to be a node in a linked list created and stored in the Outputs class.
+//  \brief abstract base class for different output types (modes/formats). Each OutputType
+//  is designed to be a node in a singly linked list created & stored in the Outputs class
 
 class OutputType {
  public:
@@ -90,7 +91,7 @@ class OutputType {
   // data
   int out_is, out_ie, out_js, out_je, out_ks, out_ke;  // OutputData array start/end index
   OutputParameters output_params; // control data read from <output> block
-  OutputType *pnext_type;         // ptr to next node in linked list of OutputTypes
+  OutputType *pnext_type;         // ptr to next node in singly linked list of OutputTypes
 
   // functions
   void LoadOutputData(MeshBlock *pmb);
@@ -107,8 +108,9 @@ class OutputType {
 
  protected:
   int num_vars_;             // number of variables in output
-  OutputData *pfirst_data_;  // ptr to first OutputData in linked list
-  OutputData *plast_data_;   // ptr to last OutputData in linked list
+  // nested doubly linked list of OutputData nodes (of the same OutputType):
+  OutputData *pfirst_data_;  // ptr to head OutputData node in doubly linked list
+  OutputData *plast_data_;   // ptr to tail OutputData node in doubly linked list
 };
 
 //----------------------------------------------------------------------------------------
@@ -181,8 +183,9 @@ class ATHDF5Output : public OutputType {
 
 //----------------------------------------------------------------------------------------
 //! \class Outputs
-//  \brief root class for all Athena++ outputs.  Provides a linked list of OutputTypes,
-//  with each node representing one mode of output to be made during a simulation.
+
+//  \brief root class for all Athena++ outputs. Provides a singly linked list of
+//  OutputTypes, with each node representing one mode/format of output to be made.
 
 class Outputs {
  public:
@@ -192,6 +195,7 @@ class Outputs {
   void MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag=false);
 
  private:
-  OutputType *pfirst_type_; // ptr to first OutputType in linked list
+  OutputType *pfirst_type_; // ptr to head OutputType node in singly linked list
+  // (not storing a reference to the tail node)
 };
 #endif // OUTPUTS_OUTPUTS_HPP_

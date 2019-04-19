@@ -42,30 +42,9 @@ void CalculateTransformation(
 GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {
   // Set object names
-  pmy_block = pmb;
-  Mesh *pm = pmy_block->pmy_mesh;
   RegionSize& block_size = pmy_block->block_size;
-  coarse_flag = flag;
 
-  // Set indices
-  int il, iu, jl, ju, kl, ku, ng;
-  if (coarse_flag) {
-    il = pmb->cis;
-    iu = pmb->cie;
-    jl = pmb->cjs;
-    ju = pmb->cje;
-    kl = pmb->cks;
-    ku = pmb->cke;
-    ng = NGHOST;
-  } else {
-    il = pmb->is;
-    iu = pmb->ie;
-    jl = pmb->js;
-    ju = pmb->je;
-    kl = pmb->ks;
-    ku = pmb->ke;
-    ng = NGHOST;
-  }
+  // set more indices
   int ill = il - ng;
   int iuu = iu + ng;
   int jll, juu;
@@ -85,33 +64,12 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
     kuu = ku;
   }
 
-  // Allocate arrays for volume-centered coordinates and positions of cells
-  int ncells1 = (iu-il+1) + 2*ng;
-  int ncells2 = 1, ncells3 = 1;
-  if (block_size.nx2 > 1) ncells2 = (ju-jl+1) + 2*ng;
-  if (block_size.nx3 > 1) ncells3 = (ku-kl+1) + 2*ng;
-  dx1v.NewAthenaArray(ncells1);
-  dx2v.NewAthenaArray(ncells2);
-  dx3v.NewAthenaArray(ncells3);
-  x1v.NewAthenaArray(ncells1);
-  x2v.NewAthenaArray(ncells2);
-  x3v.NewAthenaArray(ncells3);
-
-  // Allocate arrays for area-weighted positions for AMR/SMR MHD
-  if (pm->multilevel && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.NewAthenaArray(ncells1);
-    x1s3.NewAthenaArray(ncells1);
-    x2s1.NewAthenaArray(ncells2);
-    x2s3.NewAthenaArray(ncells2);
-    x3s1.NewAthenaArray(ncells3);
-    x3s2.NewAthenaArray(ncells3);
-  }
-
   // Set parameters
   bh_mass_ = pin->GetReal("coord", "m");
   bh_spin_ = pin->GetReal("coord", "a");
-  const Real &m = bh_mass_;
-  const Real &a = bh_spin_;
+  // unused:
+  // const Real &m = bh_mass_;
+  // const Real &a = bh_spin_;
 
   // Initialize volume-averaged coordinates and spacings: r-direction
   for (int i=ill; i<=iuu; ++i) {
@@ -179,27 +137,27 @@ GRUser::GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Allocate arrays for geometric quantities
-  metric_cell_kji_.NewAthenaArray(2, NMETRIC, ncells3, ncells2, ncells1);
+  metric_cell_kji_.NewAthenaArray(2, NMETRIC, nc3, nc2, nc1);
   if (!coarse_flag) {
-    coord_vol_kji_.NewAthenaArray(ncells3, ncells2, ncells1);
-    coord_area1_kji_.NewAthenaArray(ncells3, ncells2, ncells1+1);
-    coord_area2_kji_.NewAthenaArray(ncells3, ncells2+1, ncells1);
-    coord_area3_kji_.NewAthenaArray(ncells3+1, ncells2, ncells1);
-    coord_len1_kji_.NewAthenaArray(ncells3+1, ncells2+1, ncells1);
-    coord_len2_kji_.NewAthenaArray(ncells3+1, ncells2, ncells1+1);
-    coord_len3_kji_.NewAthenaArray(ncells3, ncells2+1, ncells1+1);
-    coord_width1_kji_.NewAthenaArray(ncells3, ncells2, ncells1);
-    coord_width2_kji_.NewAthenaArray(ncells3, ncells2, ncells1);
-    coord_width3_kji_.NewAthenaArray(ncells3, ncells2, ncells1);
-    coord_src_kji_.NewAthenaArray(3, NMETRIC, ncells3, ncells2, ncells1);
-    metric_face1_kji_.NewAthenaArray(2, NMETRIC, ncells3, ncells2, ncells1+1);
-    metric_face2_kji_.NewAthenaArray(2, NMETRIC, ncells3, ncells2+1, ncells1);
-    metric_face3_kji_.NewAthenaArray(2, NMETRIC, ncells3+1, ncells2, ncells1);
-    trans_face1_kji_.NewAthenaArray(2, NMETRIC, ncells3, ncells2, ncells1+1);
-    trans_face2_kji_.NewAthenaArray(2, NMETRIC, ncells3, ncells2+1, ncells1);
-    trans_face3_kji_.NewAthenaArray(2, NMETRIC, ncells3+1, ncells2, ncells1);
-    g_.NewAthenaArray(NMETRIC, ncells1+1);
-    gi_.NewAthenaArray(NMETRIC, ncells1+1);
+    coord_vol_kji_.NewAthenaArray(nc3, nc2, nc1);
+    coord_area1_kji_.NewAthenaArray(nc3, nc2, nc1+1);
+    coord_area2_kji_.NewAthenaArray(nc3, nc2+1, nc1);
+    coord_area3_kji_.NewAthenaArray(nc3+1, nc2, nc1);
+    coord_len1_kji_.NewAthenaArray(nc3+1, nc2+1, nc1);
+    coord_len2_kji_.NewAthenaArray(nc3+1, nc2, nc1+1);
+    coord_len3_kji_.NewAthenaArray(nc3, nc2+1, nc1+1);
+    coord_width1_kji_.NewAthenaArray(nc3, nc2, nc1);
+    coord_width2_kji_.NewAthenaArray(nc3, nc2, nc1);
+    coord_width3_kji_.NewAthenaArray(nc3, nc2, nc1);
+    coord_src_kji_.NewAthenaArray(3, NMETRIC, nc3, nc2, nc1);
+    metric_face1_kji_.NewAthenaArray(2, NMETRIC, nc3, nc2, nc1+1);
+    metric_face2_kji_.NewAthenaArray(2, NMETRIC, nc3, nc2+1, nc1);
+    metric_face3_kji_.NewAthenaArray(2, NMETRIC, nc3+1, nc2, nc1);
+    trans_face1_kji_.NewAthenaArray(2, NMETRIC, nc3, nc2, nc1+1);
+    trans_face2_kji_.NewAthenaArray(2, NMETRIC, nc3, nc2+1, nc1);
+    trans_face3_kji_.NewAthenaArray(2, NMETRIC, nc3+1, nc2, nc1);
+    g_.NewAthenaArray(NMETRIC, nc1+1);
+    gi_.NewAthenaArray(NMETRIC, nc1+1);
   }
 
   // Allocate scratch arrays

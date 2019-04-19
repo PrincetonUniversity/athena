@@ -64,8 +64,8 @@ int CheckSignalFlags() {
                 nsignal, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 #endif
   for (int n=0; n<nsignal; n++)
-    ret+=signalflag[n];
-  sigprocmask(SIG_UNBLOCK,&mask,nullptr);
+    ret += signalflag[n];
+  sigprocmask(SIG_UNBLOCK, &mask, nullptr);
   return ret;
 }
 

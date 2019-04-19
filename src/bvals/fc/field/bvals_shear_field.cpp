@@ -101,9 +101,9 @@ void BoundaryValues::LoadFieldShearing(FaceField &src, Real *buf, int nb) {
   }
 
   int p=0;
-  BufferUtility::Pack3DData(src.x1f, buf, si, ei, sj, ej, sk, ek, p);
-  BufferUtility::Pack3DData(src.x2f, buf, si, ei, psj, pej, sk, ek, p);
-  BufferUtility::Pack3DData(src.x3f, buf, si, ei, sj, ej, sk, ek+1, p);
+  BufferUtility::PackData(src.x1f, buf, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(src.x2f, buf, si, ei, psj, pej, sk, ek, p);
+  BufferUtility::PackData(src.x3f, buf, si, ei, sj, ej, sk, ek+1, p);
 
   return;
 }
@@ -211,7 +211,7 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
         } else { // MPI
 #ifdef MPI_PARALLEL
           // bufid = n
-          int tag = CreateBvalsMPITag(send_inner_lid_[n], AthenaTagMPI::shbox_field, n);
+          int tag = CreateBvalsMPITag(send_inner_lid_[n], n, AthenaTagMPI::shbox_field);
           MPI_Isend(send_innerbuf_field_[n],send_innersize_field_[n],MPI_ATHENA_REAL,
                     send_inner_rank_[n],tag,MPI_COMM_WORLD, &rq_innersend_field_[n]);
 #endif
@@ -295,9 +295,9 @@ void BoundaryValues::SendFieldShearingboxBoundaryBuffers(FaceField &src,
           pbl->pbval->shbox_outer_field_flag_[n]=BoundaryStatus::arrived;
         } else { // MPI
 #ifdef MPI_PARALLEL
-          //bufid for outer(inner): 2(0) and 3(1)
-          int tag = CreateBvalsMPITag(send_outer_lid_[n], AthenaTagMPI::shbox_field,
-                                      n+offset);
+          // bufid for outer(inner): 2(0) and 3(1)
+          int tag = CreateBvalsMPITag(send_outer_lid_[n], n+offset,
+                                      AthenaTagMPI::shbox_field);
           MPI_Isend(send_outerbuf_field_[n],send_outersize_field_[n],MPI_ATHENA_REAL,
                     send_outer_rank_[n],tag,MPI_COMM_WORLD, &rq_outersend_field_[n]);
 #endif
@@ -371,9 +371,9 @@ void BoundaryValues::SetFieldShearingboxBoundarySameLevel(FaceField &dst, Real *
 
   // set [sj:ej] of current meshblock
   int p=0;
-  BufferUtility::Unpack3DData(buf, dst.x1f, psi, pei, sj, ej, sk, ek, p);
-  BufferUtility::Unpack3DData(buf, dst.x2f, si, ei, psj, pej, sk, ek, p);
-  BufferUtility::Unpack3DData(buf, dst.x3f, si, ei, sj, ej, sk, ek+1, p);
+  BufferUtility::UnpackData(buf, dst.x1f, psi, pei, sj, ej, sk, ek, p);
+  BufferUtility::UnpackData(buf, dst.x2f, si, ei, psj, pej, sk, ek, p);
+  BufferUtility::UnpackData(buf, dst.x3f, si, ei, sj, ej, sk, ek+1, p);
   return;
 }
 
@@ -480,6 +480,5 @@ void BoundaryValues::RemapFluxField(const int k, const int jinner, const int jou
       Flux(j  ) = eps*(U(k,j,i) - 0.5*(1.0 + eps)*dUm);
     }
   }
-
   return;
 }
