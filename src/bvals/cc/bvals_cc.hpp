@@ -42,9 +42,9 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   AthenaArray<Real> x1flux, x2flux, x3flux;
 
   // maximum number of reserved unique "physics ID" component of MPI tag bitfield
-  // (CellCenteredBoundaryVariable only actually uses 1x if multilevel==false)
+  // (CellCenteredBoundaryVariable only actually uses 1x if multilevel==false, no shear)
   // must correspond to the # of "int *phys_id_" private members, below. Convert to array?
-  static constexpr int max_phys_id = 2;
+  static constexpr int max_phys_id = 3;
 
   // BoundaryVariable:
   int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;
@@ -54,23 +54,17 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void SetupPersistentMPI() override;
   void StartReceiving(BoundaryCommSubset phase) override;
   void ClearBoundary(BoundaryCommSubset phase) override;
+  void StartReceivingShear(BoundaryCommSubset phase) override;
+  void ComputeShear(const Real time) override;
 
   // BoundaryBuffer:
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
 
-  // Shearingbox Hydro
-  // void LoadHydroShearing(AthenaArray<Real> &src, Real *buf, int nb);
-  // void SendHydroShearingboxBoundaryBuffersForInit(AthenaArray<Real> &src, bool cons);
-  // void SendHydroShearingboxBoundaryBuffers(AthenaArray<Real> &src, bool cons);
-
-  // void SetHydroShearingboxBoundarySameLevel(AthenaArray<Real> &dst, Real *buf,
-  //                                           const int nb);
-  // bool ReceiveHydroShearingboxBoundaryBuffers(AthenaArray<Real> &dst);
-  // void FindShearBlock(const Real time);
-  // void RemapFlux(const int n, const int k, const int jinner, const int jouter,
-  //                const int i, const Real eps, const AthenaArray<Real> &U,
-  //                AthenaArray<Real> &Flux);
+  // Shearing box
+  void SendShearingBoxBoundaryBuffersForInit();
+  void SendShearingBoxBoundaryBuffers();
+  bool ReceiveShearingBoxBoundaryBuffers();
 
   // BoundaryPhysics:
   void ReflectInnerX1(Real time, Real dt,
@@ -125,21 +119,24 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   int cc_phys_id_, cc_flx_phys_id_;
 #endif
 
-  // Shearingbox Hydro
-  //   BoundaryStatus shbox_inner_hydro_flag_[4], shbox_outer_hydro_flag_[4];
-  //   // working arrays of remapped quantities
-  //   AthenaArray<Real>  shboxvar_inner_hydro_, shboxvar_outer_hydro_;
-  //   // Hydro flux from conservative remapping
-  //   AthenaArray<Real>  flx_inner_hydro_, flx_outer_hydro_;
-  //   int  send_innersize_hydro_[4], recv_innersize_hydro_[4]; // buffer sizes
-  //   Real *send_innerbuf_hydro_[4], *recv_innerbuf_hydro_[4]; // send and recv buffers
-  //   int  send_outersize_hydro_[4], recv_outersize_hydro_[4]; // buffer sizes
-  //   Real *send_outerbuf_hydro_[4], *recv_outerbuf_hydro_[4]; // send and recv buffers
-  // #ifdef MPI_PARALLEL
-  //   // MPI request for send and recv msgs
-  //   MPI_Request rq_innersend_hydro_[4], rq_innerrecv_hydro_[4];
-  //   MPI_Request rq_outersend_hydro_[4], rq_outerrecv_hydro_[4];
-  // #endif
+  // Shearing box
+  // working arrays of remapped quantities
+  AthenaArray<Real>  shear_cc_[2];
+  // flux from conservative remapping
+  AthenaArray<Real>  shear_flx_cc_[2];
+  // KGF: these should probably be combined into a struct or array with send/recv switch
+  int shear_send_count_cc_[2][4], shear_recv_count_cc_[2][4]; // buffer sizes
+
+#ifdef MPI_PARALLEL
+  int shear_cc_phys_id_;
+#endif
+
+  void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);
+  void SetShearingBoxBoundarySameLevel(Real *buf, const int nb);
+  // KGF: AthenaArray<Real>: shboxvar_inner/outer_hydro_, flx_inner/outer_hydro_
+  void RemapFlux(const int n, const int k, const int jinner, const int jouter,
+                 const int i, const Real eps, const AthenaArray<Real> &var,
+                 AthenaArray<Real> &flux);
 };
 
 #endif // BVALS_CC_BVALS_CC_HPP_

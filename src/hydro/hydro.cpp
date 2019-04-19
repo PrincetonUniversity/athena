@@ -66,12 +66,13 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
 
   // If user-requested time integrator is type 3S*, allocate additional memory registers
   std::string integrator = pin->GetOrAddString("time", "integrator", "vl2");
-  if (integrator == "ssprk5_4" || STS_ENABLED)
+  if (integrator == "ssprk5_4" || STS_ENABLED) {
     // future extension may add "int nregister" to Hydro class
     u2.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
+  }
 
   // "Enroll" in S/AMR by adding to vector of tuples of pointers in MeshRefinement class
-  if (pm->multilevel == true) {
+  if (pm->multilevel) {
     pmy_block->pmr->AddToRefinement(&u, &coarse_cons_);
   }
 

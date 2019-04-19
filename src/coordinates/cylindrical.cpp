@@ -92,7 +92,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // initialize area-averaged coordinates used with MHD AMR
-  if ((pmb->pmy_mesh->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pmb->pmy_mesh->multilevel) && MAGNETIC_FIELDS_ENABLED) {
     for (int i=il-ng; i<=iu+ng; ++i) {
       x1s2(i) = x1s3(i) = x1v(i);
     }

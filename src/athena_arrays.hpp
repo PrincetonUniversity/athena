@@ -16,7 +16,8 @@
 
 // C++ headers
 #include <cstddef>  // size_t
-#include <cstring>  // memset
+#include <cstring>  // memset()
+#include <utility>  // swap()
 
 // Athena++ headers
 
@@ -448,6 +449,7 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx6, int nx5, i
 
 template<typename T>
 void AthenaArray<T>::DeleteAthenaArray() {
+  // state_ is tracked partly for correctness of delete[] in DeleteAthenaArray()
   switch (state_) {
     case DataStatus::empty:
     case DataStatus::shallow_copy:
@@ -470,11 +472,8 @@ void AthenaArray<T>::DeleteAthenaArray() {
 
 template<typename T>
 void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
-  // state_ is tracked partly for correctness of delete[] in DeleteAthenaArray()
-  // cache array1 data ptr
-  T* tmp_pdata_ = pdata_;
-  pdata_ = array2.pdata_;
-  array2.pdata_ = tmp_pdata_;
+  std::swap(pdata_, array2.pdata_);
+  return;
 }
 
 //----------------------------------------------------------------------------------------

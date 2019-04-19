@@ -305,7 +305,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
 
-  if (multilevel == true) {
+  if (multilevel) {
     if (block_size.nx1 % 2 == 1 || (block_size.nx2 % 2 == 1 && block_size.nx2>1)
         || (block_size.nx3 % 2 == 1 && block_size.nx3>1)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -717,7 +717,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     adaptive = true, multilevel = true;
   else if (pin->GetOrAddString("mesh","refinement","none") == "static")
     multilevel = true;
-  if (adaptive == true) {
+  if (adaptive) {
     max_level = pin->GetOrAddInteger("mesh","numlevel",1)+root_level-1;
     if (max_level > 63) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
@@ -827,7 +827,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   }
 #endif
 
-  if (adaptive == true) { // allocate arrays for AMR
+  if (adaptive) { // allocate arrays for AMR
     nref = new int[Globals::nranks];
     nderef = new int[Globals::nranks];
     rdisp = new int[Globals::nranks];
@@ -924,7 +924,7 @@ Mesh::~Mesh() {
   if (SELF_GRAVITY_ENABLED == 1) delete pfgrd;
   else if (SELF_GRAVITY_ENABLED == 2) delete pmgrd;
   if (turb_flag > 0) delete ptrbd;
-  if (adaptive == true) { // deallocate arrays for AMR
+  if (adaptive) { // deallocate arrays for AMR
     delete [] nref;
     delete [] nderef;
     delete [] rdisp;
@@ -1174,7 +1174,7 @@ void Mesh::EnrollUserMGBoundaryFunction(int dir, MGBoundaryFunc my_bc) {
 //  \brief Enroll a user-defined function for checking refinement criteria
 
 void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag) {
-  if (adaptive == true)
+  if (adaptive)
     AMRFlag_=amrflag;
   return;
 }
@@ -1401,6 +1401,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
+        if (SHEARING_BOX) {
+          pbval->ComputeShear(time);
+        }
         pbval->StartReceiving(BoundaryCommSubset::mesh_init);
       }
 
@@ -1425,10 +1428,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
         // KGF: disable shearing box bvals/ calls
-        // send and receive shearingbox boundary conditions
-        // if (SHEARING_BOX)
-        //   pmb->phydro->hbvar.
-        //   SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
+        // send and receive shearing box boundary conditions
+        if (SHEARING_BOX) {
+          pmb->phydro->hbvar.SendShearingBoxBoundaryBuffersForInit();
+        }
         pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
       }
 
@@ -1474,7 +1477,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i];
         pbval = pmb->pbval, phydro = pmb->phydro, pfield = pmb->pfield;
-        if (multilevel == true)
+        if (multilevel)
           pbval->ProlongateBoundaries(time, 0.0);
 
         int il = pmb->is, iu = pmb->ie,
@@ -1529,7 +1532,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
       }
 
-      if ((res_flag == 0) && (adaptive == true)) {
+      if ((res_flag == 0) && (adaptive)) {
 #pragma omp for
         for (int i=0; i<nmb; ++i) {
           pmb_array[i]->pmr->CheckRefinementCondition();
@@ -1537,7 +1540,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       }
     } // omp parallel
 
-    if ((res_flag == 0) && (adaptive == true)) {
+    if ((res_flag == 0) && (adaptive)) {
       iflag = false;
       int onb = nbtotal;
       LoadBalancingAndAdaptiveMeshRefinement(pin);
@@ -1715,7 +1718,6 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
         }
       }
     }
-    delta_cons_.DeleteAthenaArray();
   }
 
   // begin second exchange of ghost cells with corrected cell-averaged <U>
@@ -1725,6 +1727,9 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
 #pragma omp for private(pmb,pbval)
   for (int i=0; i<nmb; ++i) {
     pmb = pmb_array[i]; pbval = pmb->pbval;
+    if (SHEARING_BOX) {
+      pbval->ComputeShear(time);
+    }
     // no need to re-SetupPersistentMPI() the MPI requests for boundary values
     pbval->StartReceiving(BoundaryCommSubset::mesh_init);
   }
@@ -1749,10 +1754,10 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
     if (MAGNETIC_FIELDS_ENABLED)
       pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
     // KGF: disable shearing box bvals/ calls
-    // send and receive shearingbox boundary conditions
-    // if (SHEARING_BOX)
-    //   pmb->phydro->hbvar.
-    //   SendHydroShearingboxBoundaryBuffersForInit(pmb->phydro->u, true);
+    // send and receive shearing box boundary conditions
+    if (SHEARING_BOX) {
+      pmb->phydro->hbvar.SendShearingBoxBoundaryBuffersForInit();
+    }
     pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
   } // end second exchange of ghost cells
   return;

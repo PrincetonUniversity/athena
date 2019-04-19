@@ -131,7 +131,8 @@ struct NeighborBlock { // aggregate and POD type. Inheritance breaks standard-la
   int bufid, eid, targetid;
   BoundaryFace fid;
   bool polar; // flag indicating boundary is across a pole
-  bool shear; // flag indicating boundary is attaching shearing periodic boundaries.
+  bool shear; // flag indicating boundary is attaching shearing periodic boundaries. (used
+              // only in flux_correction_fc.cpp, for now)
 
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, NeighborConnect itype, int ibid, int itargetid,
@@ -161,13 +162,12 @@ struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
 
 using ShearingBoundaryData = BoundaryData<4>;
 
-// KGF: shearing box
-// Struct for describing blocks which touched the shearing-periodic boundaries
+// Struct for describing blocks which touch the shearing-periodic boundaries
 // struct ShearingBoundaryBlock {
 //   int *igidlist, *ilidlist, *irnklist, *ilevlist;
 //   int *ogidlist, *olidlist, *ornklist, *olevlist;
-//   bool inner, outer; // inner=true if inner blocks
-// } ShearingBoundaryBlock;
+//   bool inner, outer;
+// };
 
 //----------------------------------------------------------------------------------------
 // Interfaces = abstract classes containing ONLY pure virtual functions
@@ -192,6 +192,9 @@ class BoundaryCommunication {
   virtual void StartReceiving(BoundaryCommSubset phase) = 0;
   // call MPI_Wait() on req_send[] and set flag[] to BoundaryStatus::waiting
   virtual void ClearBoundary(BoundaryCommSubset phase) = 0;
+
+  virtual void StartReceivingShear(BoundaryCommSubset phase) = 0;
+  virtual void ComputeShear(const Real time) = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -316,6 +319,13 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
 
   void InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type);
   void DestroyBoundaryData(BoundaryData<> &bd);
+
+  ShearingBoundaryData shear_bd_var_[2], shear_bd_emf_[2];
+  // TODO(felker): combine 4x Copy*SameProcess() functions
+  void CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int ssize, int bufid,
+                                  bool upper);
+  void CopyShearEMFSameProcess(SimpleNeighborBlock& snb, int ssize, int bufid,
+                               bool upper);
   // private:
 };
 

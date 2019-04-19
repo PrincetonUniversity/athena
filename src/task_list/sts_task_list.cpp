@@ -77,7 +77,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
     ATHENA_ERROR(msg);
   }
   // TODO(pdmullen): add mesh-refinement functionality
-  if (pm->multilevel==true) {
+  if (pm->multilevel) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatibile "

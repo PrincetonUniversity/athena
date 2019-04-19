@@ -42,8 +42,6 @@ class MultigridTaskList {
  public:
   explicit MultigridTaskList(MultigridDriver *pmd) : ntasks(0), pmy_mgdriver_(pmd),
                                                      task_list_{} {}
-  ~MultigridTaskList() {}
-
   // data
   int ntasks;     // number of tasks in this list
 
