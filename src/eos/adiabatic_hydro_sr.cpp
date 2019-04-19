@@ -85,8 +85,6 @@ void EquationOfState::ConservedToPrimitive(
 
   const Real TINY_NUMBER_p2 = SQR(TINY_NUMBER);
 
-  // Make array aliases (for performance reasons?)
-  AthenaArray<Real> &cons_copy = cons, &prim_copy = prim;
 
   // Go through cells
   for (int k=kl; k<=ku; ++k) {
@@ -94,19 +92,19 @@ void EquationOfState::ConservedToPrimitive(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         // Extract conserved quantities
-        Real d = cons_copy(IDN,k,j,i);
-        Real e = cons_copy(IEN,k,j,i);
+        Real d = cons(IDN,k,j,i);
+        Real e = cons(IEN,k,j,i);
 
-        Real mx = cons_copy(IVX,k,j,i);
-        Real my = cons_copy(IVY,k,j,i);
-        Real mz = cons_copy(IVZ,k,j,i);
+        Real mx = cons(IVX,k,j,i);
+        Real my = cons(IVY,k,j,i);
+        Real mz = cons(IVZ,k,j,i);
 
         // Extract primitives quantities
-        Real rho = prim_copy(IDN,k,j,i);
-        Real pgas = prim_copy(IPR,k,j,i);
-        Real vx = prim_copy(IVX,k,j,i);
-        Real vy = prim_copy(IVY,k,j,i);
-        Real vz = prim_copy(IVZ,k,j,i);
+        Real rho = prim(IDN,k,j,i);
+        Real pgas = prim(IPR,k,j,i);
+        Real vx = prim(IVX,k,j,i);
+        Real vy = prim(IVY,k,j,i);
+        Real vz = prim(IVZ,k,j,i);
 
         // Calculate total momentum
         Real m_sq = SQR(mx) + SQR(my) + SQR(mz);
@@ -185,13 +183,13 @@ void EquationOfState::ConservedToPrimitive(
           e = pgas/gamma_adi_minus_1 + e_tmp + rho;
         }
 
-        cons_copy(IDN,k,j,i) = d;
-        cons_copy(IEN,k,j,i) = e;
-        prim_copy(IDN,k,j,i) = rho;
-        prim_copy(IPR,k,j,i) = pgas;
-        prim_copy(IVX,k,j,i) = vx;
-        prim_copy(IVY,k,j,i) = vy;
-        prim_copy(IVZ,k,j,i) = vz;
+        cons(IDN,k,j,i) = d;
+        cons(IEN,k,j,i) = e;
+        prim(IDN,k,j,i) = rho;
+        prim(IPR,k,j,i) = pgas;
+        prim(IVX,k,j,i) = vx;
+        prim(IVY,k,j,i) = vy;
+        prim(IVZ,k,j,i) = vz;
       }
     }
   }
