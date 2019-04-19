@@ -46,8 +46,6 @@
 //                                                        Real *buf, int nb)
 //  \brief Load shearing box EMF boundary buffers
 
-// KGF: EdgeField &src = shboxvar_outer_emf_, shboxvar_inner_emf_
-
 void FaceCenteredBoundaryVariable::LoadEMFShearing(EdgeField &src,
                                                    Real *buf, const int nb) {
   MeshBlock *pmb = pmy_block_;
@@ -55,7 +53,10 @@ void FaceCenteredBoundaryVariable::LoadEMFShearing(EdgeField &src,
   int psj, pej; // indices for e3
   int jo = pbval_->joverlap_;
   int nx2 = pmb->block_size.nx2 - NGHOST;
-  sk = pmb->ks;        ek = pmb->ke;
+  // Unlike non-emf FaceCentered::LoadShearing... these aren't extended by NGHOST in 3D:
+  sk = pmb->ks; ek = pmb->ke;
+  // psj, pej calculations seem to be identical to non-emf version, but no psi, pei calc.
+  // also, manual packing loops in this fn versus PackData() calls in non-emf impl.
   switch(nb) {
     case 0:
       sj = pmb->je - jo - (NGHOST - 1); ej = pmb->je;
@@ -129,73 +130,43 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
   int nx2 = pmb->block_size.nx2;
   int nx3 = pmb->block_size.nx3;
 
-  if (pbval_->is_shear[0]) {
-    // step 1. -- average edges of shboxvar_fc_flx_
-    // average e3 for x1x2 edge
-    for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je+1; j+=nx2)
-        shear_var_emf_[0].x3e(k,j) *= 0.5;
-    }
-    // average e2 for x1x3 edge
-    for (int k=ks; k<=ke+1; k+=nx3) {
-      for (int j=js; j<=je; j++)
-        shear_var_emf_[0].x2e(k,j) *= 0.5;
-    }
+  int offset[2]{0, 4};
+  for (int upper=0; upper<2; upper++) {
+    if (pbval_->is_shear[upper]) {
+      // step 1. -- average edges of shboxvar_fc_flx_
+      // average e3 for x1x2 edge
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je+1; j+=nx2)
+          shear_var_emf_[upper].x3e(k,j) *= 0.5;
+      }
+      // average e2 for x1x3 edge
+      for (int k=ks; k<=ke+1; k+=nx3) {
+        for (int j=js; j<=je; j++)
+          shear_var_emf_[upper].x2e(k,j) *= 0.5;
+      }
 
-    // step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post
-    // MPI_Isend otherwise
-    for (int n=0; n<4; n++) {
-      SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[0][n];
-      if (snb.rank != -1) {
-        LoadEMFShearing(shear_var_emf_[0], shear_bd_emf_[0].send[n], n);
-        if (snb.rank == Globals::my_rank) {
-          CopyShearEMFSameProcess(snb, shear_send_count_emf_[0][n], n, 0);
-        } else { // MPI
+      // step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post
+      // MPI_Isend otherwise
+      for (int n=0; n<4; n++) {
+        SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[upper][n];
+        if (snb.rank != -1) {
+          LoadEMFShearing(shear_var_emf_[upper], shear_bd_emf_[upper].send[n],
+                          n+offset[upper]);
+          if (snb.rank == Globals::my_rank) {
+            CopyShearEMFSameProcess(snb, shear_send_count_emf_[upper][n], n, upper);
+          } else { // MPI
 #ifdef MPI_PARALLEL
-          int tag = pbval_->CreateBvalsMPITag(snb.lid, n, shear_emf_phys_id_);
-          MPI_Isend(shear_bd_emf_[0].send[n], shear_send_count_emf_[0][n],
-                    MPI_ATHENA_REAL, snb.rank, tag,
-                    MPI_COMM_WORLD, &shear_bd_emf_[0].req_send[n]);
+            int tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset[upper],
+                                                shear_emf_phys_id_);
+            MPI_Isend(shear_bd_emf_[upper].send[n], shear_send_count_emf_[upper][n],
+                      MPI_ATHENA_REAL, snb.rank, tag,
+                      MPI_COMM_WORLD, &shear_bd_emf_[upper].req_send[n]);
 #endif
+          }
         }
       }
-    }
-  } // inner boundaries
-
-  if (pbval_->is_shear[1]) {
-    // step 1. -- average edges of shboxvar_fc_flx_
-    // average e3 for x1x2 edge
-    for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je+1; j+=nx2)
-        shear_var_emf_[1].x3e(k,j) *= 0.5;
-    }
-    // average e2 for x1x3 edge
-    for (int k=ks; k<=ke+1; k+=nx3) {
-      for (int j=js; j<=je; j++)
-        shear_var_emf_[1].x2e(k,j) *= 0.5;
-    }
-
-    // step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post
-    // MPI_Isend otherwise
-    int offset = 4;
-    for (int n=0; n<4; n++) {
-      SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[1][n];
-      if (snb.rank != -1) {
-        LoadEMFShearing(shear_var_emf_[1], shear_bd_emf_[1].send[n], n+offset);
-        if (snb.rank == Globals::my_rank) {
-          CopyShearEMFSameProcess(snb, shear_send_count_emf_[1][n], n, 1);
-        } else { // MPI
-#ifdef MPI_PARALLEL
-          int tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset,
-                                     shear_emf_phys_id_);
-          MPI_Isend(shear_bd_emf_[1].send[n],shear_send_count_emf_[1][n],
-                    MPI_ATHENA_REAL, snb.rank, tag,
-                    MPI_COMM_WORLD, &shear_bd_emf_[1].req_send[n]);
-#endif
-        }
-      }
-    }
-  } // outer boundaries
+    }  // if boundary is shearing
+  }  // loop over inner/outer boundaries
   return;
 }
 
@@ -204,7 +175,6 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
 //                                   EdgeField &dst, Real *buf, const int nb)
 //  \brief Set EMF shearing box boundary received from a block on the same level
 
-// KGF: EdgeField &dst = shboxmap_outer_emf_, shboxmap_inner_emf_
 void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(EdgeField &dst,
                                                                       Real *buf,
                                                                       const int nb) {
@@ -215,8 +185,11 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(EdgeField 
   int nx2 = pmb->block_size.nx2 - NGHOST;
   int nxo = pmb->block_size.nx2 - jo;
 
+  // Unlike non-emf FaceCentered::SetShearing... these aren't extended by NGHOST in 3D:
   sk = pmb->ks; ek = pmb->ke;
-  switch(nb) {
+  // psj, pej calculations seem to be identical to non-emf version, but no psi, pei calc.
+  // also, manual unpacking loops in this fn versus UnpackData() calls in non-emf impl.
+  switch (nb) {
     case 0:
       sj = pmb->js - NGHOST; ej = pmb->js + (jo - 1);
       if (jo > nx2) sj = pmb->js - nxo;
@@ -257,7 +230,8 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(EdgeField 
       break;
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in FaceCenteredBoundaryVariable:SetFieldShearing\n"
+      msg << "### FATAL ERROR in "
+          << "FaceCenteredBoundaryVariable:SetEMFShearingBoxBoundarySameLevel\n"
           << "nb = " << nb << " not valid" << std::endl;
       ATHENA_ERROR(msg);
   }
@@ -280,64 +254,40 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(EdgeField 
 //! \fn bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection()
 //  \brief receive shearing box boundary data for EMF correction
 
+// TODO(felker): DRY. Identical to Face/CellCentered impl. except for "emf" identifiers
 bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
-  bool flagi = true, flago = true;
-
-  if (pbval_->is_shear[0]) { // check inner boundaries
-    for (int n=0; n<4; n++) {
-      if (shear_bd_emf_[0].flag[n] == BoundaryStatus::completed) continue;
-      if (shear_bd_emf_[0].flag[n] == BoundaryStatus::waiting) {
-        if (pbval_->shear_recv_neighbor_[0][n].rank == Globals::my_rank) {
-          flagi = false;
-          continue;
-        } else { // MPI boundary
-#ifdef MPI_PARALLEL
-          int test;
-          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
-                     MPI_STATUS_IGNORE);
-          MPI_Test(&shear_bd_emf_[0].req_recv[n], &test, MPI_STATUS_IGNORE);
-          if (static_cast<bool>(test) == false) {
-            flagi = false;
+  bool flag[2]{true, true};
+  int nb_offset[2]{0, 4};
+  for (int upper=0; upper<2; upper++) {
+    if (pbval_->is_shear[upper]) {
+      for (int n=0; n<4; n++) {
+        if (shear_bd_emf_[upper].flag[n] == BoundaryStatus::completed) continue;
+        if (shear_bd_emf_[upper].flag[n] == BoundaryStatus::waiting) {
+          if (pbval_->shear_recv_neighbor_[upper][n].rank == Globals::my_rank) {
+            flag[upper] = false;
             continue;
-          }
-          shear_bd_emf_[0].flag[n] = BoundaryStatus::arrived;
-#endif
-        }
-      }
-      // set dst if boundary arrived
-      SetEMFShearingBoxBoundarySameLevel(shear_map_emf_[0], shear_bd_emf_[0].recv[n], n);
-      shear_bd_emf_[0].flag[n] = BoundaryStatus::completed; // completed
-    }
-  } // inner boundary
-
-  if (pbval_->is_shear[1]) { // check outer boundaries
-    int offset = 4;
-    for (int n=0; n<4; n++) {
-      if (shear_bd_emf_[1].flag[n] == BoundaryStatus::completed) continue;
-      if (shear_bd_emf_[1].flag[n] == BoundaryStatus::waiting) {
-        if (pbval_->shear_recv_neighbor_[1][n].rank == Globals::my_rank) {
-          flago = false;
-          continue;
-        } else { // MPI boundary
+          } else { // MPI boundary
 #ifdef MPI_PARALLEL
-          int test;
-          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
-                     MPI_STATUS_IGNORE);
-          MPI_Test(&shear_bd_emf_[1].req_recv[n], &test, MPI_STATUS_IGNORE);
-          if (static_cast<bool>(test) == false) {
-            flago = false;
-            continue;
-          }
-          shear_bd_emf_[1].flag[n] = BoundaryStatus::arrived;
+            int test;
+            MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
+                       MPI_STATUS_IGNORE);
+            MPI_Test(&shear_bd_emf_[upper].req_recv[n], &test, MPI_STATUS_IGNORE);
+            if (static_cast<bool>(test) == false) {
+              flag[upper] = false;
+              continue;
+            }
+            shear_bd_emf_[upper].flag[n] = BoundaryStatus::arrived;
 #endif
+          }
         }
+        // set dst if boundary arrived
+        SetEMFShearingBoxBoundarySameLevel(
+            shear_map_emf_[upper], shear_bd_emf_[upper].recv[n], n+nb_offset[upper]);
+        shear_bd_emf_[upper].flag[n] = BoundaryStatus::completed; // completed
       }
-      SetEMFShearingBoxBoundarySameLevel(shear_map_emf_[1], shear_bd_emf_[1].recv[n],
-                                         n+offset);
-      shear_bd_emf_[1].flag[n] = BoundaryStatus::completed; // completed
-    }
-  } // outer boundary
-  return (flagi && flago);
+    }  // if boundary is shearing
+  }  // loop over inner/outer boundaries
+  return (flag[0] && flag[1]);
 }
 
 
@@ -352,44 +302,36 @@ void FaceCenteredBoundaryVariable::RemapEMFShearingBoxBoundary() {
   int ks = pmb->ks, ke = pmb->ke;
   int js = pmb->js, je = pmb->je;
   int is = pmb->is, ie = pmb->ie;
-  Real eps = pbval_->eps_;
 
-  if (pbval_->is_shear[0]) {
-    ClearEMFShearing(shear_var_emf_[0]);
-    // step 1.-- conservative remapping
-    for (int k=ks; k<=ke+1; k++) {
-      RemapFluxEMF(k, js, je+2, eps, shear_map_emf_[0].x2e, shear_flx_emf_[0].x2e);
-      for (int j=js; j<=je; j++) {
-        shear_map_emf_[0].x2e(k,j) -= shear_flx_emf_[0].x2e(j+1)
-                                      - shear_flx_emf_[0].x2e(j);
+  int ib[2]{is, ie + 1};
+  int sign[2]{1, -1};
+  for (int upper=0; upper<2; upper++) {
+    if (pbval_->is_shear[upper]) {
+      Real eps = sign[upper]*pbval_->eps_;
+      int jl_remap = js - upper;
+      int ju_remap = je + 2 - upper;
+
+      ClearEMFShearing(shear_var_emf_[upper]);
+      // step 1.-- conservative remapping
+      for (int k=ks; k<=ke+1; k++) {
+        RemapFluxEMF(k, jl_remap, ju_remap, eps, shear_map_emf_[upper].x2e,
+                     shear_flx_emf_[upper].x2e);
+        for (int j=js; j<=je; j++) {
+          shear_map_emf_[upper].x2e(k,j) -= shear_flx_emf_[upper].x2e(j+1)
+                                        - shear_flx_emf_[upper].x2e(j);
+        }
       }
-    }
-    // step 2.-- average the EMF correction
-    // average e2
-    for (int k=ks; k<=ke+1; k++) {
-      for (int j=js; j<=je; j++)
-        e2(k,j,is) = 0.5*(e2(k,j,is) + shear_map_emf_[0].x2e(k,j));
-    }
-    ClearEMFShearing(shear_map_emf_[0]);
-  }
-
-  if (pbval_->is_shear[1]) {
-    ClearEMFShearing(shear_var_emf_[1]);
-    // step 1.-- conservative remapping
-    for (int k=ks; k<=ke+1; k++) { // e2
-      RemapFluxEMF(k, js-1, je+1, -eps, shear_map_emf_[1].x2e, shear_flx_emf_[1].x2e);
-      for (int j=js; j<=je; j++)
-        shear_map_emf_[1].x2e(k,j) -= shear_flx_emf_[1].x2e(j+1)
-                                      - shear_flx_emf_[1].x2e(j);
-    }
-    // step 2.-- average the EMF correction
-    // average e2
-    for (int k=ks; k<=ke+1; k++) {
-      for (int j=js; j<=je; j++)
-        e2(k,j,ie+1) = 0.5*(e2(k,j,ie+1) + shear_map_emf_[1].x2e(k,j));
-    }
-    ClearEMFShearing(shear_map_emf_[1]);
-  }
+      // step 2.-- average the EMF correction
+      // average e2
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je; j++) {
+          int ii = ib[upper];
+          e2(k,j,ii) = 0.5*(e2(k,j,ii) + shear_map_emf_[upper].x2e(k,j));
+        }
+      }
+      ClearEMFShearing(shear_map_emf_[upper]);
+    }  // if boundary is shearing
+  }  // loop over inner/outer boundaries
   return;
 }
 
@@ -448,8 +390,8 @@ void FaceCenteredBoundaryVariable::RemapFluxEMF(const int k, const int jinner,
 
     dUm = 0.0;
     if (dUl*dUr > 0.0) {
-      lim_slope = std::min(std::fabs(dUl),std::fabs(dUr));
-      dUm = SIGN(dUc)*std::min(0.5*std::fabs(dUc),2.0*lim_slope);
+      lim_slope = std::min(std::fabs(dUl), std::fabs(dUr));
+      dUm = SIGN(dUc)*std::min(0.5*std::fabs(dUc), 2.0*lim_slope);
     }
 
     if (eps > 0.0) { // eps always > 0 for inner i boundary
