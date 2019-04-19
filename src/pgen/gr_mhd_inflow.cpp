@@ -36,20 +36,22 @@
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi);
-static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                            Real theta, Real phi,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3);
-static void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
-                               Real *puphi, Real *pbt, Real *pbr, Real *pbphi);
+namespace {
+void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+                                  Real *ptheta, Real *pphi);
+void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+                     Real theta, Real phi,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
+                        Real *puphi, Real *pbt, Real *pbr, Real *pbphi);
 
 // Global variables
-static Real m;                           // mass M of black hole
-static Real a;                           // spin of black hole (0 <= a < M)
-static Real temperature;                 // temperature pgas/rho
-static AthenaArray<Real> interp_values;  // table for analytic solution
-static int num_lines;                    // number of lines in table
+Real m;                           // mass M of black hole
+Real a;                           // spin of black hole (0 <= a < M)
+Real temperature;                 // temperature pgas/rho
+AthenaArray<Real> interp_values;  // table for analytic solution
+int num_lines;                    // number of lines in table
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for initializing global mesh properties
@@ -86,19 +88,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   }
 
   // Enroll fixed outer boundary function
-  EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for cleaning up global mesh properties
-// Inputs:
-//   pin: parameters (unused)
-// Outputs: (none)
-
-void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  // Free interpolation table
-  interp_values.DeleteAthenaArray();
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, FixedBoundary);
   return;
 }
 
@@ -211,13 +201,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  g.DeleteAthenaArray();
-  gi.DeleteAthenaArray();
 
   // Initialize conserved values
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is-NGHOST, ie+NGHOST, js,
                              je, ks, ke);
-  bb.DeleteAthenaArray();
   return;
 }
 
@@ -240,6 +227,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Function for returning corresponding Boyer-Lindquist coordinates of point
 // Inputs:
@@ -249,8 +237,8 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 // Notes:
 //   conversion is trivial in all currently implemented coordinate systems
 
-static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi) {
+void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+                                  Real *ptheta, Real *pphi) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0 ||
       std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     *pr = x1;
@@ -270,9 +258,9 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 // Notes:
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 
-static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                            Real theta, Real phi,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+                     Real theta, Real phi,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     *pa0 = a0_bl;
     *pa1 = a1_bl;
@@ -297,8 +285,8 @@ static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real
 //   put,pur,puphi: values set to interpolated u^\mu in Boyer-Lindquist coordinates
 //   pbt,pbr,pbphi: values set to interpolated b^\mu in Boyer-Lindquist coordinates
 
-static void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
-                               Real *puphi, Real *pbt, Real *pbr, Real *pbphi) {
+void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
+                        Real *puphi, Real *pbt, Real *pbr, Real *pbphi) {
   // Find location in interpolation table
   int n;
   Real fraction = 0.0;
@@ -357,3 +345,4 @@ static void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *
   *pbphi = 1.0/ut * (bbphi + bt * uphi);
   return;
 }
+} // namespace

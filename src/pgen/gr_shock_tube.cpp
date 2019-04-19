@@ -32,10 +32,12 @@
 #endif
 
 // Declarations
-static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-                                    Real *px, Real *py, Real *pz);
-static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+namespace {
+void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+                             Real *px, Real *py, Real *pz);
+void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for setting initial conditions
@@ -220,13 +222,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is, ie, js, je, ks, ke);
 
-  // Delete auxiliary arrays
-  bb.DeleteAthenaArray();
-  if (GENERAL_RELATIVITY) {
-    g.DeleteAthenaArray();
-    gi.DeleteAthenaArray();
-  }
-
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=ks; k<=ke+1; ++k) {
@@ -326,6 +321,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Function for returning corresponding Minkowski coordinates of point
 // Inputs:
@@ -336,8 +332,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //   conversion is trivial
 //   useful to have if other coordinate systems for Minkowski space are developed
 
-static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-                                    Real *px, Real *py, Real *pz) {
+void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+                             Real *px, Real *py, Real *pz) {
   if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pt = x0;
     *px = x1;
@@ -358,8 +354,8 @@ static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt
 //   conversion is trivial
 //   useful to have if other coordinate systems for Minkowski space are developed
 
-static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pa0 = at;
     *pa1 = ax;
@@ -368,3 +364,4 @@ static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, 
   }
   return;
 }
+} // namespace

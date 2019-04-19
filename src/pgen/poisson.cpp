@@ -25,9 +25,9 @@
 #include "../fft/athena_fft.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
-#include "../gravity/fftgravity.hpp"
+#include "../gravity/fft_gravity.hpp"
 #include "../gravity/gravity.hpp"
-#include "../gravity/mggravity.hpp"
+#include "../gravity/mg_gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../multigrid/multigrid.hpp"
@@ -61,7 +61,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real x0=0.0, y0=0.0, z0=0.0;
   Real x, y, z;
-  Real r, r2;
+  Real r2; // r
   Real den(0.0), phia(0.0);
   RegionSize &mesh_size = pmy_mesh->mesh_size;
 
@@ -126,11 +126,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 }
 
 //========================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
+//! \fn void MeshBlock::UserWorkInLoop()
 //  \brief Function called once every time step for user-defined work.
 //========================================================================================
 
-void MeshBlock::UserWorkInLoop(void) {
+void MeshBlock::UserWorkInLoop() {
   // do nothing
   return;
 }
@@ -140,11 +140,9 @@ void MeshBlock::UserWorkInLoop(void) {
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  MeshBlock *pmb=pblock;
-  Real x0=0.0, y0=0.0, z0=0.0;
-  int is=pblock->is, ie=pblock->ie;
-  int js=pblock->js, je=pblock->je;
-  int ks=pblock->ks, ke=pblock->ke;
+  int is = pblock->is, ie = pblock->ie;
+  int js = pblock->js, je = pblock->je;
+  int ks = pblock->ks, ke = pblock->ke;
   int cnt = (ke-ks+1)*(je-js+1)*(ie-is+1);
 
   int nlim = pin->GetInteger("time","nlim");
@@ -165,10 +163,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 #endif
 
       for (int n=0; n < ncycle; n++) {
-        pmb=pblock;
-        while (pmb!=nullptr) {
+        MeshBlock *pmb = pblock;
+        while (pmb != nullptr) {
           std::memset(pmb->pgrav->phi.data(), 0, pmb->pgrav->phi.GetSizeInBytes());
-          pmb=pmb->next;
+          pmb = pmb->next;
         }
         if (SELF_GRAVITY_ENABLED == 1) pfgrd->Solve(1,1);
         else if (SELF_GRAVITY_ENABLED == 2) pmgrd->Solve(1);
@@ -214,9 +212,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         std::cout << "=====================================================" << std::endl;
       }
 
-      Real err1=0.0,err2=0.0,maxphi=0.0;
-      pmb=pblock;
-      while (pmb!=nullptr) {
+      Real err1 = 0.0, maxphi = 0.0; // err2 = 0.0
+      MeshBlock *pmb = pblock;
+      while (pmb != nullptr) {
         Hydro *phydro = pmb->phydro;
         Gravity *pgrav = pmb->pgrav;
         for (int k=ks; k<=ke; ++k) {
@@ -224,24 +222,24 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             for (int i=is; i<=ie; ++i) {
               err1 += std::abs(pgrav->phi(k,j,i) - phydro->u(IM2,k,j,i));
               //          err2 += pgrav->phi(k,j,i)/phydro->u(IM2,k,j,i);
-              maxphi=std::max(pgrav->phi(k,j,i),maxphi);
+              maxphi = std::max(pgrav->phi(k,j,i),maxphi);
             }
           }
         }
-        pmb=pmb->next;
+        pmb = pmb->next;
       }
 #ifdef MPI_PARALLEL
-      MPI_Allreduce(MPI_IN_PLACE,&err1,1,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_WORLD);
-      MPI_Allreduce(MPI_IN_PLACE,&maxphi,1,MPI_ATHENA_REAL,MPI_MAX,MPI_COMM_WORLD);
+      MPI_Allreduce(MPI_IN_PLACE, &err1, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
+      MPI_Allreduce(MPI_IN_PLACE, &maxphi, 1, MPI_ATHENA_REAL, MPI_MAX, MPI_COMM_WORLD);
 #endif
 
       err1 = err1/(static_cast<Real>(cnt*nbtotal));
-      err2 = err2/cnt;
+      // err2 = err2/cnt;
 
       Real x1size = mesh_size.x1max - mesh_size.x1min;
       Real x2size = mesh_size.x2max - mesh_size.x2min;
       Real x3size = mesh_size.x3max - mesh_size.x3min;
-      Real four_pi_G = pin->GetReal("problem","four_pi_G");
+      Real four_pi_G = pin->GetReal("problem", "four_pi_G");
       Real phiamp = SQR(TWO_PI/x1size);
       phiamp += SQR(TWO_PI/x2size);
       phiamp += SQR(TWO_PI/x3size);

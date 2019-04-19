@@ -28,10 +28,10 @@
 namespace SignalHandler {
 
 //----------------------------------------------------------------------------------------
-//! \fn void SignalHandlerInit(void)
+//! \fn void SignalHandlerInit()
 //  \brief install handlers for selected signals
 
-void SignalHandlerInit(void) {
+void SignalHandlerInit() {
   for (int n=0; n<nsignal; n++) {
     signalflag[n]=0;
   }
@@ -49,10 +49,10 @@ void SignalHandlerInit(void) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int CheckSignalFlags(void)
+//! \fn int CheckSignalFlags()
 //  \brief Synchronize and check signal flags and return true if any of them is caught
 
-int CheckSignalFlags(void) {
+int CheckSignalFlags() {
   // Currently, only checking for nonzero return code at the end of each timestep in
   // main.cpp; i.e. if an issue prevents a process from reaching the end of a cycle, the
   // signals will never be handled by that process / the solver may hang
@@ -64,8 +64,8 @@ int CheckSignalFlags(void) {
                 nsignal, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 #endif
   for (int n=0; n<nsignal; n++)
-    ret+=signalflag[n];
-  sigprocmask(SIG_UNBLOCK,&mask,nullptr);
+    ret += signalflag[n];
+  sigprocmask(SIG_UNBLOCK, &mask, nullptr);
   return ret;
 }
 
@@ -129,10 +129,10 @@ void SetWallTimeAlarm(int t) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void CancelWallTimeAlarm(void)
+//! \fn void CancelWallTimeAlarm()
 //  \brief Cancel the wall time limit alarm
 
-void CancelWallTimeAlarm(void) {
+void CancelWallTimeAlarm() {
   alarm(0);
   return;
 }

@@ -23,14 +23,16 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "eos.hpp"
 
+namespace {
 // Declarations
-static void PrimitiveToConservedSingle(
+void PrimitiveToConservedSingle(
     const AthenaArray<Real> &prim, Real gamma_adi,
     const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
     int k, int j, int i,
     AthenaArray<Real> &cons, Coordinates *pco);
-static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi);
-static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
+Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi);
+Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -49,22 +51,12 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pgas_min_ = pin->GetOrAddReal("hydro", "pgas_min", pressure_floor_);
   pgas_pow_ = pin->GetOrAddReal("hydro", "pgas_pow", 0.0);
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
-  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
-  g_.NewAthenaArray(NMETRIC, ncells1);
-  g_inv_.NewAthenaArray(NMETRIC, ncells1);
-  int ncells2 = (pmb->block_size.nx2 > 1) ? pmb->block_size.nx2 + 2*NGHOST : 1;
-  int ncells3 = (pmb->block_size.nx3 > 1) ? pmb->block_size.nx3 + 2*NGHOST : 1;
-  fixed_.NewAthenaArray(ncells3, ncells2, ncells1);
+  int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
+  g_.NewAthenaArray(NMETRIC, nc1);
+  g_inv_.NewAthenaArray(NMETRIC, nc1);
+  fixed_.NewAthenaArray(nc3, nc2, nc1);
 }
 
-//----------------------------------------------------------------------------------------
-// Destructor
-
-EquationOfState::~EquationOfState() {
-  g_.DeleteAthenaArray();
-  g_inv_.DeleteAthenaArray();
-  fixed_.DeleteAthenaArray();
-}
 
 //----------------------------------------------------------------------------------------
 // Variable inverter
@@ -290,59 +282,6 @@ void EquationOfState::PrimitiveToConserved(
 }
 
 //----------------------------------------------------------------------------------------
-// Function for converting primitives to conserved variables in a single cell
-// Inputs:
-//   prim: 3D array of primitives
-//   gamma_adi: ratio of specific heats
-//   g,gi: 1D arrays of metric covariant and contravariant coefficients
-//   k,j,i: indices of cell
-//   pco: pointer to Coordinates
-// Outputs:
-//   cons: conserved variables set in desired cell
-
-static void PrimitiveToConservedSingle(
-    const AthenaArray<Real> &prim, Real gamma_adi,
-    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int i,
-    AthenaArray<Real> &cons, Coordinates *pco) {
-  // Extract primitives
-  const Real &rho = prim(IDN,k,j,i);
-  const Real &pgas = prim(IPR,k,j,i);
-  const Real &uu1 = prim(IVX,k,j,i);
-  const Real &uu2 = prim(IVY,k,j,i);
-  const Real &uu3 = prim(IVZ,k,j,i);
-
-  // Calculate 4-velocity
-  Real alpha = std::sqrt(-1.0/gi(I00,i));
-  Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
-             + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
-             + g(I33,i)*uu3*uu3;
-  Real gamma = std::sqrt(1.0 + tmp);
-  Real u0 = gamma/alpha;
-  Real u1 = uu1 - alpha * gamma * gi(I01,i);
-  Real u2 = uu2 - alpha * gamma * gi(I02,i);
-  Real u3 = uu3 - alpha * gamma * gi(I03,i);
-  Real u_0, u_1, u_2, u_3;
-  pco->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
-
-  // Extract conserved quantities
-  Real &rho_u0 = cons(IDN,k,j,i);
-  Real &t0_0 = cons(IEN,k,j,i);
-  Real &t0_1 = cons(IM1,k,j,i);
-  Real &t0_2 = cons(IM2,k,j,i);
-  Real &t0_3 = cons(IM3,k,j,i);
-
-  // Set conserved quantities
-  Real wgas = rho + gamma_adi/(gamma_adi-1.0) * pgas;
-  rho_u0 = rho * u0;
-  t0_0 = wgas * u0 * u_0 + pgas;
-  t0_1 = wgas * u0 * u_1;
-  t0_2 = wgas * u0 * u_2;
-  t0_3 = wgas * u0 * u_3;
-  return;
-}
-
-//----------------------------------------------------------------------------------------
 // Function for calculating relativistic sound speeds
 // Inputs:
 //   rho_h: enthalpy per unit volume
@@ -413,6 +352,61 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
   return;
 }
 
+namespace {
+
+//----------------------------------------------------------------------------------------
+// Function for converting primitives to conserved variables in a single cell
+// Inputs:
+//   prim: 3D array of primitives
+//   gamma_adi: ratio of specific heats
+//   g,gi: 1D arrays of metric covariant and contravariant coefficients
+//   k,j,i: indices of cell
+//   pco: pointer to Coordinates
+// Outputs:
+//   cons: conserved variables set in desired cell
+
+void PrimitiveToConservedSingle(
+    const AthenaArray<Real> &prim, Real gamma_adi,
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
+    int k, int j, int i,
+    AthenaArray<Real> &cons, Coordinates *pco) {
+  // Extract primitives
+  const Real &rho = prim(IDN,k,j,i);
+  const Real &pgas = prim(IPR,k,j,i);
+  const Real &uu1 = prim(IVX,k,j,i);
+  const Real &uu2 = prim(IVY,k,j,i);
+  const Real &uu3 = prim(IVZ,k,j,i);
+
+  // Calculate 4-velocity
+  Real alpha = std::sqrt(-1.0/gi(I00,i));
+  Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
+             + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
+             + g(I33,i)*uu3*uu3;
+  Real gamma = std::sqrt(1.0 + tmp);
+  Real u0 = gamma/alpha;
+  Real u1 = uu1 - alpha * gamma * gi(I01,i);
+  Real u2 = uu2 - alpha * gamma * gi(I02,i);
+  Real u3 = uu3 - alpha * gamma * gi(I03,i);
+  Real u_0, u_1, u_2, u_3;
+  pco->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+
+  // Extract conserved quantities
+  Real &rho_u0 = cons(IDN,k,j,i);
+  Real &t0_0 = cons(IEN,k,j,i);
+  Real &t0_1 = cons(IM1,k,j,i);
+  Real &t0_2 = cons(IM2,k,j,i);
+  Real &t0_3 = cons(IM3,k,j,i);
+
+  // Set conserved quantities
+  Real wgas = rho + gamma_adi/(gamma_adi-1.0) * pgas;
+  rho_u0 = rho * u0;
+  t0_0 = wgas * u0 * u_0 + pgas;
+  t0_1 = wgas * u0 * u_1;
+  t0_2 = wgas * u0 * u_2;
+  t0_3 = wgas * u0 * u_3;
+  return;
+}
+
 //----------------------------------------------------------------------------------------
 // Function whose value vanishes for correct enthalpy
 // Inputs:
@@ -427,7 +421,7 @@ void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Rea
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
 
-static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi) {
+Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi) {
   Real v_norm_sq = qq_sq / (w_guess*w_guess);        // (N 28)
   Real gamma_sq = 1.0/(1.0 - v_norm_sq);
   Real pgas = (gamma_adi-1.0)/gamma_adi
@@ -448,7 +442,7 @@ static Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_ad
 //   follows Noble et al. 2006, ApJ 641 626 (N)
 //   implements formulas assuming no magnetic field
 
-static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi) {
+Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi) {
   Real v_norm_sq = qq_sq/SQR(w_guess);                             // (N 28)
   Real gamma_sq = 1.0/(1.0-v_norm_sq);
   Real gamma_4 = SQR(gamma_sq);
@@ -458,6 +452,7 @@ static Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi) {
                   * (gamma_sq + (0.5*d*std::sqrt(gamma_sq) - w_guess) * d_gamma_sq_dw);
   return -1.0 + dpgas_dw;
 }
+} // namespace
 
 //---------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,

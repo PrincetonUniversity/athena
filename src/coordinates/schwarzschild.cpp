@@ -37,53 +37,6 @@
 
 Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {
-  // Set indices
-  pmy_block = pmb;
-  coarse_flag = flag;
-  int il, iu, jl, ju, kl, ku, ng;
-  if (coarse_flag == true) {
-    il = pmb->cis;
-    iu = pmb->cie;
-    jl = pmb->cjs;
-    ju = pmb->cje;
-    kl = pmb->cks;
-    ku = pmb->cke;
-    ng = pmb->cnghost;
-  } else {
-    il = pmb->is;
-    iu = pmb->ie;
-    jl = pmb->js;
-    ju = pmb->je;
-    kl = pmb->ks;
-    ku = pmb->ke;
-    ng = NGHOST;
-  }
-  Mesh *pm = pmy_block->pmy_mesh;
-  RegionSize& mesh_size = pmy_block->pmy_mesh->mesh_size;
-  RegionSize& block_size = pmy_block->block_size;
-
-  // Allocate arrays for volume-centered coordinates and positions of cells
-  int ncells1 = (iu-il+1) + 2*ng;
-  int ncells2 = 1, ncells3 = 1;
-  if (block_size.nx2 > 1) ncells2 = (ju-jl+1) + 2*ng;
-  if (block_size.nx3 > 1) ncells3 = (ku-kl+1) + 2*ng;
-  dx1v.NewAthenaArray(ncells1);
-  dx2v.NewAthenaArray(ncells2);
-  dx3v.NewAthenaArray(ncells3);
-  x1v.NewAthenaArray(ncells1);
-  x2v.NewAthenaArray(ncells2);
-  x3v.NewAthenaArray(ncells3);
-
-  // Allocate arrays for area weighted positions for AMR/SMR MHD
-  if (pm->multilevel && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.NewAthenaArray(ncells1);
-    x1s3.NewAthenaArray(ncells1);
-    x2s1.NewAthenaArray(ncells2);
-    x2s3.NewAthenaArray(ncells2);
-    x3s1.NewAthenaArray(ncells3);
-    x3s2.NewAthenaArray(ncells3);
-  }
-
   // Set parameters
   bh_mass_ = pin->GetReal("coord", "m");
   const Real &m = bh_mass_;
@@ -154,8 +107,8 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Allocate and compute arrays for intermediate geometric quantities always needed
-  metric_cell_i1_.NewAthenaArray(ncells1);
-  metric_cell_j1_.NewAthenaArray(ncells2);
+  metric_cell_i1_.NewAthenaArray(nc1);
+  metric_cell_j1_.NewAthenaArray(nc2);
   for (int i=il-ng; i<=iu+ng; ++i) {
     Real r_c = x1v(i);
     Real alpha_c = std::sqrt(1.0 - 2.0*m/r_c);
@@ -178,40 +131,40 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // needed if object is NOT a coarse mesh
   if (coarse_flag == false) {
     // Allocate arrays for intermediate geometric quantities: r-direction
-    coord_vol_i1_.NewAthenaArray(ncells1);
-    coord_area1_i1_.NewAthenaArray(ncells1+1);
-    coord_area2_i1_.NewAthenaArray(ncells1);
-    coord_area3_i1_.NewAthenaArray(ncells1);
-    coord_len1_i1_.NewAthenaArray(ncells1);
-    coord_len2_i1_.NewAthenaArray(ncells1+1);
-    coord_len3_i1_.NewAthenaArray(ncells1+1);
-    coord_width1_i1_.NewAthenaArray(ncells1);
-    metric_face1_i1_.NewAthenaArray(ncells1+1);
-    metric_face2_i1_.NewAthenaArray(ncells1);
-    metric_face3_i1_.NewAthenaArray(ncells1);
-    trans_face1_i1_.NewAthenaArray(ncells1+1);
-    trans_face2_i1_.NewAthenaArray(ncells1);
-    trans_face3_i1_.NewAthenaArray(ncells1);
-    g_.NewAthenaArray(NMETRIC, ncells1+1);
-    gi_.NewAthenaArray(NMETRIC, ncells1+1);
+    coord_vol_i1_.NewAthenaArray(nc1);
+    coord_area1_i1_.NewAthenaArray(nc1+1);
+    coord_area2_i1_.NewAthenaArray(nc1);
+    coord_area3_i1_.NewAthenaArray(nc1);
+    coord_len1_i1_.NewAthenaArray(nc1);
+    coord_len2_i1_.NewAthenaArray(nc1+1);
+    coord_len3_i1_.NewAthenaArray(nc1+1);
+    coord_width1_i1_.NewAthenaArray(nc1);
+    metric_face1_i1_.NewAthenaArray(nc1+1);
+    metric_face2_i1_.NewAthenaArray(nc1);
+    metric_face3_i1_.NewAthenaArray(nc1);
+    trans_face1_i1_.NewAthenaArray(nc1+1);
+    trans_face2_i1_.NewAthenaArray(nc1);
+    trans_face3_i1_.NewAthenaArray(nc1);
+    g_.NewAthenaArray(NMETRIC, nc1+1);
+    gi_.NewAthenaArray(NMETRIC, nc1+1);
 
     // Allocate arrays for intermediate geometric quantities: theta-direction
-    coord_vol_j1_.NewAthenaArray(ncells2);
-    coord_area1_j1_.NewAthenaArray(ncells2);
-    coord_area2_j1_.NewAthenaArray(ncells2+1);
-    coord_area3_j1_.NewAthenaArray(ncells2);
-    coord_len1_j1_.NewAthenaArray(ncells2+1);
-    coord_len2_j1_.NewAthenaArray(ncells2);
-    coord_len3_j1_.NewAthenaArray(ncells2+1);
-    coord_width3_j1_.NewAthenaArray(ncells2);
-    coord_src_j1_.NewAthenaArray(ncells2);
-    coord_src_j2_.NewAthenaArray(ncells2);
-    metric_face1_j1_.NewAthenaArray(ncells2);
-    metric_face2_j1_.NewAthenaArray(ncells2+1);
-    metric_face3_j1_.NewAthenaArray(ncells2);
-    trans_face1_j1_.NewAthenaArray(ncells2);
-    trans_face2_j1_.NewAthenaArray(ncells2+1);
-    trans_face3_j1_.NewAthenaArray(ncells2);
+    coord_vol_j1_.NewAthenaArray(nc2);
+    coord_area1_j1_.NewAthenaArray(nc2);
+    coord_area2_j1_.NewAthenaArray(nc2+1);
+    coord_area3_j1_.NewAthenaArray(nc2);
+    coord_len1_j1_.NewAthenaArray(nc2+1);
+    coord_len2_j1_.NewAthenaArray(nc2);
+    coord_len3_j1_.NewAthenaArray(nc2+1);
+    coord_width3_j1_.NewAthenaArray(nc2);
+    coord_src_j1_.NewAthenaArray(nc2);
+    coord_src_j2_.NewAthenaArray(nc2);
+    metric_face1_j1_.NewAthenaArray(nc2);
+    metric_face2_j1_.NewAthenaArray(nc2+1);
+    metric_face3_j1_.NewAthenaArray(nc2);
+    trans_face1_j1_.NewAthenaArray(nc2);
+    trans_face2_j1_.NewAthenaArray(nc2+1);
+    trans_face3_j1_.NewAthenaArray(nc2);
 
     // Calculate intermediate geometric quantities: r-direction
     for (int i=il-ng; i<=iu+ng; ++i) {
@@ -318,61 +271,6 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 }
 
-//----------------------------------------------------------------------------------------
-// Destructor
-
-Schwarzschild::~Schwarzschild() {
-  dx1v.DeleteAthenaArray();
-  dx2v.DeleteAthenaArray();
-  dx3v.DeleteAthenaArray();
-  x1v.DeleteAthenaArray();
-  x2v.DeleteAthenaArray();
-  x3v.DeleteAthenaArray();
-  if (pmy_block->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.DeleteAthenaArray();
-    x1s3.DeleteAthenaArray();
-    x2s1.DeleteAthenaArray();
-    x2s3.DeleteAthenaArray();
-    x3s1.DeleteAthenaArray();
-    x3s2.DeleteAthenaArray();
-  }
-  metric_cell_i1_.DeleteAthenaArray();
-  metric_cell_j1_.DeleteAthenaArray();
-  if (coarse_flag == false) {
-    coord_vol_i1_.DeleteAthenaArray();
-    coord_area1_i1_.DeleteAthenaArray();
-    coord_area2_i1_.DeleteAthenaArray();
-    coord_area3_i1_.DeleteAthenaArray();
-    coord_len1_i1_.DeleteAthenaArray();
-    coord_len2_i1_.DeleteAthenaArray();
-    coord_len3_i1_.DeleteAthenaArray();
-    coord_width1_i1_.DeleteAthenaArray();
-    coord_vol_j1_.DeleteAthenaArray();
-    coord_area1_j1_.DeleteAthenaArray();
-    coord_area2_j1_.DeleteAthenaArray();
-    coord_area3_j1_.DeleteAthenaArray();
-    coord_len1_j1_.DeleteAthenaArray();
-    coord_len2_j1_.DeleteAthenaArray();
-    coord_len3_j1_.DeleteAthenaArray();
-    coord_width3_j1_.DeleteAthenaArray();
-    coord_src_j1_.DeleteAthenaArray();
-    coord_src_j2_.DeleteAthenaArray();
-    metric_face1_i1_.DeleteAthenaArray();
-    metric_face1_j1_.DeleteAthenaArray();
-    metric_face2_i1_.DeleteAthenaArray();
-    metric_face2_j1_.DeleteAthenaArray();
-    metric_face3_i1_.DeleteAthenaArray();
-    metric_face3_j1_.DeleteAthenaArray();
-    trans_face1_i1_.DeleteAthenaArray();
-    trans_face1_j1_.DeleteAthenaArray();
-    trans_face2_i1_.DeleteAthenaArray();
-    trans_face2_j1_.DeleteAthenaArray();
-    trans_face3_i1_.DeleteAthenaArray();
-    trans_face3_j1_.DeleteAthenaArray();
-    g_.DeleteAthenaArray();
-    gi_.DeleteAthenaArray();
-  }
-}
 
 //----------------------------------------------------------------------------------------
 // EdgeXLength functions: compute physical length at cell edge-X as vector
@@ -915,7 +813,7 @@ void Schwarzschild::PrimToLocal1(
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
       // Extract metric coefficients
-      const Real &g_00 = g_(I00,i);
+      //      const Real &g_00 = g_(I00,i);
       const Real &g_11 = g_(I11,i);
       const Real &g_22 = g_(I22,i);
       const Real &g_33 = g_(I33,i);
@@ -1050,7 +948,7 @@ void Schwarzschild::PrimToLocal2(
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
       // Extract metric coefficients
-      const Real &g_00 = g_(I00,i);
+      //const Real &g_00 = g_(I00,i);
       const Real &g_11 = g_(I11,i);
       const Real &g_22 = g_(I22,i);
       const Real &g_33 = g_(I33,i);
@@ -1185,7 +1083,7 @@ void Schwarzschild::PrimToLocal3(
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
       // Extract metric coefficients
-      const Real &g_00 = g_(I00,i);
+      //const Real &g_00 = g_(I00,i);
       const Real &g_11 = g_(I11,i);
       const Real &g_22 = g_(I22,i);
       const Real &g_33 = g_(I33,i);
@@ -1287,7 +1185,7 @@ void Schwarzschild::FluxToGlobal1(
     const Real g11 = 1.0/alpha_sq;
     const Real g22 = r_sq;
     const Real g33 = r_sq * sin_sq_theta;
-    const Real m0_t = 1.0/alpha;
+    const Real m0_tm = 1.0/alpha;
     const Real m1_x = alpha;
     const Real m2_y = 1.0/r;
     const Real m3_z = 1.0 / (r * abs_sin_theta);
@@ -1300,7 +1198,7 @@ void Schwarzschild::FluxToGlobal1(
     const Real txz = flux(IM3,k,j,i);
 
     // Transform stress-energy tensor
-    Real t10 = m1_x*m0_t*txt;
+    Real t10 = m1_x*m0_tm*txt;
     Real t11 = m1_x*m1_x*txx;
     Real t12 = m1_x*m2_y*txy;
     Real t13 = m1_x*m3_z*txz;
@@ -1370,7 +1268,7 @@ void Schwarzschild::FluxToGlobal2(
     const Real g11 = 1.0/alpha_sq;
     const Real g22 = r_sq;
     const Real g33 = r_sq * sin_sq_theta;
-    const Real m0_t = 1.0/alpha;
+    const Real m0_tm = 1.0/alpha;
     const Real m1_z = alpha;
     const Real m2_x = 1.0/r;
     const Real m3_y = 1.0 / (r * abs_sin_theta);
@@ -1383,7 +1281,7 @@ void Schwarzschild::FluxToGlobal2(
     const Real txz = flux(IM1,k,j,i);
 
     // Transform stress-energy tensor
-    Real t20 = m2_x*m0_t*txt;
+    Real t20 = m2_x*m0_tm*txt;
     Real t21 = m2_x*m1_z*txz;
     Real t22 = m2_x*m2_x*txx;
     Real t23 = m2_x*m3_y*txy;
@@ -1453,7 +1351,7 @@ void Schwarzschild::FluxToGlobal3(
     const Real g11 = 1.0/alpha_sq;
     const Real g22 = r_sq;
     const Real g33 = r_sq * sin_sq_theta;
-    const Real m0_t = 1.0/alpha;
+    const Real m0_tm = 1.0/alpha;
     const Real m1_y = alpha;
     const Real m2_z = 1.0/r;
     const Real m3_x = 1.0 / (r * abs_sin_theta);
@@ -1466,7 +1364,7 @@ void Schwarzschild::FluxToGlobal3(
     const Real txz = flux(IM2,k,j,i);
 
     // Transform stress-energy tensor
-    Real t30 = m3_x*m0_t*txt;
+    Real t30 = m3_x*m0_tm*txt;
     Real t31 = m3_x*m1_y*txy;
     Real t32 = m3_x*m2_z*txz;
     Real t33 = m3_x*m3_x*txx;

@@ -47,14 +47,20 @@ def make(clean_first=True, obj_only=False):
         obj_dir = 'OBJ_DIR:={0}/obj/'.format(current_dir)
         clean_command = ['make', 'clean', exe_dir, obj_dir]
         if obj_only:
-            make_command = ['make', '-j8', 'objs', exe_dir, obj_dir]
+            # used in pgen_compile.py to save expensive linking time for Intel Compiler:
+            make_command = ['make', '-j8', 'objs']
         else:
-            make_command = ['make', '-j8', exe_dir, obj_dir]
+            # disable parallel GNU Make execution for Lcov (issues w/ Jenkins filesystem)
+            if (global_coverage_cmd is not None):
+                make_command = ['make']
+            else:
+                make_command = ['make', '-j8']
+        make_command += [exe_dir, obj_dir]
         try:
             stdout_f = open(os.devnull, 'w') if global_silent else sys.stdout
             if clean_first:
                 subprocess.check_call(clean_command, stdout=stdout_f)
-            subprocess.check_call(make_command)  # , stdout=stdout_f)
+            subprocess.check_call(make_command, stdout=stdout_f)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
@@ -112,7 +118,7 @@ def mpirun(mpirun_cmd, mpirun_opts, nproc, input_filename, arguments,
                                                     input_filename_full]
         run_command = list(filter(None, run_command))  # remove any empty strings
         try:
-            subprocess.check_call(run_command + arguments)
+            subprocess.check_call(run_command + arguments + global_run_args)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))

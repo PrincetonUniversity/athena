@@ -33,11 +33,16 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 
-static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k);
-static Real DenProfileCyl(const Real rad, const Real phi, const Real z);
-static Real PoverR(const Real rad, const Real phi, const Real z);
-static void VelProfileCyl(const Real rad, const Real phi, const Real z,
-                          Real &v1, Real &v2, Real &v3);
+namespace {
+void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k);
+Real DenProfileCyl(const Real rad, const Real phi, const Real z);
+Real PoverR(const Real rad, const Real phi, const Real z);
+void VelProfileCyl(const Real rad, const Real phi, const Real z,
+                   Real &v1, Real &v2, Real &v3);
+// problem parameters which are useful to make global to this file
+Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas;
+Real dfloor;
+} // namespace
 
 // User-defined boundary conditions for disk simulations
 void DiskInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
@@ -58,10 +63,6 @@ void DiskInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 void DiskOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
                  Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-
-// problem parameters which are useful to make global to this file
-static Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas;
-static Real dfloor;
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -91,23 +92,23 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   dfloor=pin->GetOrAddReal("hydro","dfloor",(1024*(float_min)));
 
   // enroll user-defined boundary condition
-  if (mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(INNER_X1, DiskInnerX1);
+  if (mesh_bcs[BoundaryFace::inner_x1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x1, DiskInnerX1);
   }
-  if (mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(OUTER_X1, DiskOuterX1);
+  if (mesh_bcs[BoundaryFace::outer_x1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x1, DiskOuterX1);
   }
-  if (mesh_bcs[INNER_X2] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(INNER_X2, DiskInnerX2);
+  if (mesh_bcs[BoundaryFace::inner_x2] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x2, DiskInnerX2);
   }
-  if (mesh_bcs[OUTER_X2] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(OUTER_X2, DiskOuterX2);
+  if (mesh_bcs[BoundaryFace::outer_x2] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x2, DiskOuterX2);
   }
-  if (mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(INNER_X3, DiskInnerX3);
+  if (mesh_bcs[BoundaryFace::inner_x3] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x3, DiskInnerX3);
   }
-  if (mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(OUTER_X3, DiskOuterX3);
+  if (mesh_bcs[BoundaryFace::outer_x3] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x3, DiskOuterX3);
   }
 
   return;
@@ -147,10 +148,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 //!\f transform to cylindrical coordinate
 
-static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k) {
+void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k) {
   if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     rad=pco->x1v(i);
     phi=pco->x2v(j);
@@ -166,7 +168,7 @@ static void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j
 //----------------------------------------------------------------------------------------
 //! \f  computes density in cylindrical coordinates
 
-static Real DenProfileCyl(const Real rad, const Real phi, const Real z) {
+Real DenProfileCyl(const Real rad, const Real phi, const Real z) {
   Real den;
   Real p_over_r = p0_over_r0;
   if (NON_BAROTROPIC_EOS) p_over_r = PoverR(rad, phi, z);
@@ -179,7 +181,7 @@ static Real DenProfileCyl(const Real rad, const Real phi, const Real z) {
 //----------------------------------------------------------------------------------------
 //! \f  computes pressure/density in cylindrical coordinates
 
-static Real PoverR(const Real rad, const Real phi, const Real z) {
+Real PoverR(const Real rad, const Real phi, const Real z) {
   Real poverr;
   poverr = p0_over_r0*std::pow(rad/r0, pslope);
   return poverr;
@@ -188,8 +190,8 @@ static Real PoverR(const Real rad, const Real phi, const Real z) {
 //----------------------------------------------------------------------------------------
 //! \f  computes rotational velocity in cylindrical coordinates
 
-static void VelProfileCyl(const Real rad, const Real phi, const Real z,
-                          Real &v1, Real &v2, Real &v3) {
+void VelProfileCyl(const Real rad, const Real phi, const Real z,
+                   Real &v1, Real &v2, Real &v3) {
   Real p_over_r = PoverR(rad, phi, z);
   Real vel = (dslope+pslope)*p_over_r/(gm0/rad) + (1.0+pslope)
              - pslope*rad/std::sqrt(rad*rad+z*z);
@@ -205,6 +207,7 @@ static void VelProfileCyl(const Real rad, const Real phi, const Real z,
   }
   return;
 }
+} // namespace
 
 //----------------------------------------------------------------------------------------
 //!\f: User-defined boundary Conditions: sets solution in ghost zones to initial values

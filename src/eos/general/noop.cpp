@@ -26,38 +26,24 @@ Real EquationOfState::RiemannAsq(Real rho, Real hint) {
   ATHENA_ERROR(msg);
   return -1.0;
 }
-Real EquationOfState::SimplePres(Real rho, Real egas) {
+Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
   std::stringstream msg;
-  msg << "### FATAL ERROR in EquationOfState::SimplePres" << std::endl
+  msg << "### FATAL ERROR in EquationOfState::PresFromRhoEg" << std::endl
       << "Function should not be called with current configuration." << std::endl;
   ATHENA_ERROR(msg);
   return -1.0;
 }
-Real EquationOfState::SimpleEgas(Real rho, Real pres) {
+Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
   std::stringstream msg;
-  msg << "### FATAL ERROR in EquationOfState::SimpleEgas" << std::endl
+  msg << "### FATAL ERROR in EquationOfState::EgasFromRhoP" << std::endl
       << "Function should not be called with current configuration." << std::endl;
   ATHENA_ERROR(msg);
   return -1.0;
 }
-Real EquationOfState::SimpleAsq(Real rho, Real pres) {
+Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
   std::stringstream msg;
-  msg << "### FATAL ERROR in EquationOfState::SimpleAsq" << std::endl
+  msg << "### FATAL ERROR in EquationOfState::AsqFromRhoP" << std::endl
       << "Function should not be called with current configuration." << std::endl;
   ATHENA_ERROR(msg);
   return -1.0;
-}
-void EquationOfState::PrepEOS(ParameterInput *pin) {
-  std::stringstream msg;
-  msg << "### FATAL ERROR in EquationOfState::PrepEOS" << std::endl
-      << "Function should not be called with current configuration." << std::endl;
-  ATHENA_ERROR(msg);
-  return;
-}
-void EquationOfState::CleanEOS() {
-  std::stringstream msg;
-  msg << "### FATAL ERROR in EquationOfState::CleanEOS()" << std::endl
-      << "Function should not be called with current configuration." << std::endl;
-  ATHENA_ERROR(msg);
-  return;
 }

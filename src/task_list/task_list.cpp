@@ -24,43 +24,31 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-// TaskList constructor
-
-TaskList::TaskList(Mesh *pm) {
-  pmy_mesh_=pm;
-  ntasks = 0;
-  nstages = 0;
-}
-
-// destructor
-
-TaskList::~TaskList() {
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn enum TaskListStatus TaskList::DoAllAvailableTasks
+//! \fn TaskListStatus TaskList::DoAllAvailableTasks
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
-enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
-                                                  TaskState &ts) {
+TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
+                                             TaskStates &ts) {
   int skip=0;
-  enum TaskStatus ret;
-  if (ts.num_tasks_left == 0) return TL_NOTHING_TO_DO;
+  TaskStatus ret;
+  if (ts.num_tasks_left == 0) return TaskListStatus::nothing_to_do;
 
   for (int i=ts.indx_first_task; i<ntasks; i++) {
     Task &taski=task_list_[i];
     if ((taski.task_id & ts.finished_tasks) == 0ULL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
+        if (taski.lb_time) pmb->StartTimeMeasurement();
         ret=(this->*task_list_[i].TaskFunc)(pmb, stage);
-        if (ret!=TASK_FAIL) { // success
+        if (taski.lb_time) pmb->StopTimeMeasurement();
+        if (ret!=TaskStatus::fail) { // success
           ts.num_tasks_left--;
           ts.finished_tasks |= taski.task_id;
           if (skip==0) ts.indx_first_task++;
-          if (ts.num_tasks_left == 0) return TL_COMPLETE;
-          if (ret==TASK_NEXT) continue;
-          return TL_RUNNING;
+          if (ts.num_tasks_left == 0) return TaskListStatus::complete;
+          if (ret==TaskStatus::next) continue;
+          return TaskListStatus::running;
         }
       }
       skip++; // increment number of tasks processed
@@ -69,7 +57,8 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
       ts.indx_first_task++;
     }
   }
-  return TL_STUCK; // there are still tasks to do but nothing can be done now
+  // there are still tasks to do but nothing can be done now
+  return TaskListStatus::stuck;
 }
 
 //----------------------------------------------------------------------------------------
@@ -101,7 +90,8 @@ void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
     // KNOWN ISSUE: Workaround for unknown OpenMP race condition. See #183 on GitHub.
 #pragma omp parallel for reduction(- : nmb_left) num_threads(nthreads) schedule(dynamic,1)
     for (int i=0; i<nmb; ++i) {
-      if (DoAllAvailableTasks(pmb_array[i],stage,pmb_array[i]->tasks) == TL_COMPLETE) {
+      if (DoAllAvailableTasks(pmb_array[i],stage,pmb_array[i]->tasks)
+          == TaskListStatus::complete) {
         nmb_left--;
       }
     }

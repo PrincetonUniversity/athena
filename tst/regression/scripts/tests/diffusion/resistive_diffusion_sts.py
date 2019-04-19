@@ -5,6 +5,10 @@
 # Modules
 import scripts.utils.athena as athena
 import numpy as np
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read  # noqa
+athena_read.check_nan_flag = True
 
 
 def prepare(**kwargs):
@@ -16,11 +20,10 @@ def prepare(**kwargs):
 
 def run(**kwargs):
     for i in (64, 128):
-        arguments0 = ['output1/file_type=hst', 'output1/dt=0.1',
-                      'output2/file_type=tab', 'output2/variable=bcc2',
+        arguments0 = ['output2/file_type=tab', 'output2/variable=bcc2',
                       'output2/data_format=%24.16e', 'output2/dt=0.5',
-                      'time/cfl_number=0.8', 'time/tlim=0.5', 'time/nlim=200',
-                      'time/xorder=2', 'time/integrator=vl2', 'time/ncycle_out=0',
+                      'time/cfl_number=0.8', 'time/tlim=0.5', 'time/nlim=800',
+                      'time/ncycle_out=0',
                       'mesh/nx1=' + repr(i), 'mesh/x1min=-4.0', 'mesh/x1max=4.0',
                       'mesh/ix1_bc=outflow', 'mesh/ox1_bc=outflow',
                       'mesh/nx2=1', 'mesh/x2min=-1.0', 'mesh/x2max=1.0',
@@ -39,9 +42,8 @@ def analyze():
     l1ERROR = []
 
     for n in res:
-        x1v, bcc2 = np.loadtxt("bin/res"+str(n)+".block0.out2.00001.tab",
-                               usecols=(1, 2), dtype=float,
-                               unpack=True, comments='#')
+        x1v, bcc2 = athena_read.tab("bin/res"+str(n)+".block0.out2.00001.tab", raw=True,
+                                    dimensions=1)
 
         # initial conditions
         amp = 1.e-6

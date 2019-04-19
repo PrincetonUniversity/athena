@@ -31,7 +31,6 @@ class EquationOfState {
   friend class Hydro;
  public:
   EquationOfState(MeshBlock *pmb, ParameterInput *pin);
-  ~EquationOfState();
 
   void ConservedToPrimitive(
       AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
@@ -133,14 +132,12 @@ class EquationOfState {
 #endif  // #else (#if !RELATIVISTIC_DYNAMICS, #elif !GENERAL_RELATIVITY)
 
   Real RiemannAsq(Real rho, Real hint);
-  Real SimplePres(Real rho, Real egas);
-  Real SimpleEgas(Real rho, Real pres);
-  Real SimpleAsq(Real rho, Real pres);
+  Real PresFromRhoEg(Real rho, Real egas);
+  Real EgasFromRhoP(Real rho, Real pres);
+  Real AsqFromRhoP(Real rho, Real pres);
   Real GetIsoSoundSpeed() const {return iso_sound_speed_;}
   Real GetDensityFloor() const {return density_floor_;}
   Real GetPressureFloor() const {return pressure_floor_;}
-  void PrepEOS(ParameterInput *pin);
-  void CleanEOS();
   EosTable* ptable; // pointer to EOS table data
 #if GENERAL_EOS
   Real GetGamma();

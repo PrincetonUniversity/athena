@@ -64,12 +64,17 @@
 #error "This problem generator requires shearing box"
 #endif
 
-Real Lx,Ly,Lz; // root grid size, global to share with output functions
+// TODO(felker): shouldn't these have internal linkage?
+Real Lx, Ly, Lz; // root grid size, global to share with output functions
+
+namespace {
 // TODO(felker): iout is unused in all 3x of these functions
-static Real hst_BxBy(MeshBlock *pmb, int iout);
-static Real hst_dVxVy(MeshBlock *pmb, int iout);
-static Real hst_dBy(MeshBlock *pmb, int iout);
-static Real Omega_0,qshear;
+Real hst_BxBy(MeshBlock *pmb, int iout);
+Real hst_dVxVy(MeshBlock *pmb, int iout);
+Real hst_dBy(MeshBlock *pmb, int iout);
+Real Omega_0,qshear;
+} // namespace
+
 // ===================================================================================
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   AllocateUserHistoryOutput(3);
@@ -382,61 +387,55 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+namespace {
 
-static Real hst_BxBy(MeshBlock *pmb, int iout) {
-  Real bxby=0;
-  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+Real hst_BxBy(MeshBlock *pmb, int iout) {
+  Real bxby = 0;
+  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
   AthenaArray<Real> volume; // 1D array of volumes
   // allocate 1D array for cell volume used in usr def history
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  volume.NewAthenaArray(ncells1);
+  volume.NewAthenaArray(pmb->ncells1);
 
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
-      pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
+      pmb->pcoord->CellVolume(k, j, is, ie, volume);
       for (int i=is; i<=ie; i++) {
         bxby-=volume(i)*b(IB1,k,j,i)*b(IB2,k,j,i);
       }
     }
   }
-  volume.DeleteAthenaArray();
-
   return bxby;
 }
 
-static Real hst_dVxVy(MeshBlock *pmb, int iout) {
-  Real dvxvy=0.0;
-  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+Real hst_dVxVy(MeshBlock *pmb, int iout) {
+  Real dvxvy = 0.0;
+  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;
-  Real vshear=0.0;
+  Real vshear = 0.0;
   AthenaArray<Real> volume; // 1D array of volumes
   // allocate 1D array for cell volume used in usr def history
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  volume.NewAthenaArray(ncells1);
+  volume.NewAthenaArray(pmb->ncells1);
 
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
-      pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
+      pmb->pcoord->CellVolume(k, j, is, ie, volume);
       for (int i=is; i<=ie; i++) {
         vshear = qshear*Omega_0*pmb->pcoord->x1v(i);
-        dvxvy+=volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i)+vshear);
+        dvxvy += volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i)+vshear);
       }
     }
   }
-
-  volume.DeleteAthenaArray();
   return dvxvy;
 }
 
-static Real hst_dBy(MeshBlock *pmb, int iout) {
-  Real dby=0;
+Real hst_dBy(MeshBlock *pmb, int iout) {
+  Real dby = 0;
   Real fkx, fky, fkz; // Fourier kx, ky
-  Real x1,x2,x3;
+  Real x1, x2, x3;
   AthenaArray<Real> volume; // 1D array of volumes
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  volume.NewAthenaArray(ncells1);
-  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+  volume.NewAthenaArray(pmb->ncells1);
+  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
 
   fky = TWO_PI/Ly;
@@ -444,7 +443,7 @@ static Real hst_dBy(MeshBlock *pmb, int iout) {
   fkz = TWO_PI/Lz;
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
-      pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
+      pmb->pcoord->CellVolume(k, j, is, ie, volume);
       for (int i=is; i<=ie; i++) {
         x1 = pmb->pcoord->x1v(i);
         x2 = pmb->pcoord->x2v(j);
@@ -456,7 +455,6 @@ static Real hst_dBy(MeshBlock *pmb, int iout) {
       }
     }
   }
-  volume.DeleteAthenaArray();
-
   return dby;
 }
+} // namespace

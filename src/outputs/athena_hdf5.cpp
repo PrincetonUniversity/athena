@@ -7,7 +7,7 @@
 // C headers
 
 // C++ headers
-#include <cstdio>     // sprintf()
+#include <cstdio>     // snprintf()
 #include <cstring>    // strlen(), strncpy()
 #include <fstream>    // ofstream
 #include <iomanip>    // setfill(), setw()
@@ -36,16 +36,16 @@
 #include <mpi.h>   // MPI_COMM_WORLD, MPI_INFO_NULL
 #endif
 
-// typedefs that allow HDF5 output written in either floats or doubles
+// type alias that allows HDF5 output to be written in either floats or doubles
 #if H5_DOUBLE_PRECISION_ENABLED
-typedef double H5Real;
+using H5Real = double;
 #if SINGLE_PRECISION_ENABLED
 #error "Cannot create HDF5 output at higher precision than internal representation"
 #endif
 #define H5T_NATIVE_REAL H5T_NATIVE_DOUBLE
 
 #else
-typedef float H5Real;
+using H5Real = float;
 #define H5T_NATIVE_REAL H5T_NATIVE_FLOAT
 #endif
 

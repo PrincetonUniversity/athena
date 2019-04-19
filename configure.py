@@ -13,6 +13,7 @@
 #   --eos=xxx         use xxx as the equation of state
 #   --flux=xxx        use xxx as the Riemann solver
 #   --nghost=xxx      set NGHOST=xxx
+#   --nscalars=xxx    set NSCALARS=xxx
 #   -eos_table        enable EOS table
 #   -b                enable magnetic fields
 #   -s                enable special relativity
@@ -90,7 +91,7 @@ parser.add_argument(
 parser.add_argument('--eos',
                     default='adiabatic',
                     choices=['adiabatic', 'isothermal', 'general/eos_table',
-                             'general/hydrogen'],
+                             'general/hydrogen', 'general/ideal'],
                     help='select equation of state')
 
 # --flux=[name] argument
@@ -103,6 +104,11 @@ parser.add_argument('--flux',
 parser.add_argument('--nghost',
                     default='2',
                     help='set number of ghost zones')
+
+# --nscalars=[value] argument
+parser.add_argument('--nscalars',
+                    default='0',
+                    help='set number of passive scalars')
 
 # -b argument
 parser.add_argument('-b',
@@ -352,6 +358,7 @@ definitions['COORDINATE_SYSTEM'] = makefile_options['COORDINATES_FILE'] = args['
 # --eos=[name] argument
 definitions['NON_BAROTROPIC_EOS'] = '0' if args['eos'] == 'isothermal' else '1'
 makefile_options['EOS_FILE'] = args['eos']
+definitions['EQUATION_OF_STATE'] = args['eos']
 # set number of hydro variables for adiabatic/isothermal
 definitions['GENERAL_EOS'] = '0'
 makefile_options['GENERAL_EOS_FILE'] = 'noop'
@@ -373,13 +380,17 @@ definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
 # --nghost=[value] argument
 definitions['NUMBER_GHOST_CELLS'] = args['nghost']
 
+# --nscalars=[value] argument
+definitions['NUMBER_PASSIVE_SCALARS'] = args['nscalars']
+
 # -b argument
 # set variety of macros based on whether MHD/hydro or adi/iso are defined
 if args['b']:
     definitions['MAGNETIC_FIELDS_ENABLED'] = '1'
-    makefile_options['EOS_FILE'] += '_mhd'
     if definitions['GENERAL_EOS'] != '0':
         makefile_options['GENERAL_EOS_FILE'] += '_mhd'
+    else:
+        makefile_options['EOS_FILE'] += '_mhd'
     definitions['NFIELD_VARIABLES'] = '3'
     makefile_options['RSOLVER_DIR'] = 'mhd/'
     if args['flux'] == 'hlle' or args['flux'] == 'llf' or args['flux'] == 'roe':
@@ -392,9 +403,10 @@ if args['b']:
         definitions['NWAVE_VALUE'] = '7'
 else:
     definitions['MAGNETIC_FIELDS_ENABLED'] = '0'
-    makefile_options['EOS_FILE'] += '_hydro'
     if definitions['GENERAL_EOS'] != '0':
         makefile_options['GENERAL_EOS_FILE'] += '_hydro'
+    else:
+        makefile_options['EOS_FILE'] += '_hydro'
     definitions['NFIELD_VARIABLES'] = '0'
     makefile_options['RSOLVER_DIR'] = 'hydro/'
     if args['eos'] == 'isothermal':
@@ -762,29 +774,39 @@ with open(makefile_output, 'w') as current_file:
     current_file.write(makefile_template)
 
 # Finish with diagnostic output
+# To match show_config.cpp output: use 2 space indent for option, value string starts on
+# column 30
+self_grav_string = 'OFF'
+if args['grav'] == 'fft':
+    self_grav_string = 'FFT'
+elif args['grav'] == 'mg':
+    self_grav_string = 'Multigrid'
+
 print('Your Athena++ distribution has now been configured with the following options:')
-print('  Problem generator:       ' + args['prob'])
-print('  Coordinate system:       ' + args['coord'])
-print('  Equation of state:       ' + args['eos'])
-print('  Riemann solver:          ' + args['flux'])
-print('  Self Gravity:            ' + ('OFF' if args['grav'] == 'none' else args['grav']))
-print('  Magnetic fields:         ' + ('ON' if args['b'] else 'OFF'))
-print('  Super-Time-Stepping:     ' + ('ON' if args['sts'] else 'OFF'))
-print('  Special relativity:      ' + ('ON' if args['s'] else 'OFF'))
-print('  General relativity:      ' + ('ON' if args['g'] else 'OFF'))
-print('  Frame transformations:   ' + ('ON' if args['t'] else 'OFF'))
-print('  Shearing Box:            ' + ('ON' if args['shear'] else 'OFF'))
-print('  Debug flags:             ' + ('ON' if args['debug'] else 'OFF'))
-print('  Code coverage flags:     ' + ('ON' if args['coverage'] else 'OFF'))
-print('  Linker flags:            ' + makefile_options['LINKER_FLAGS'] + ' '
+print('  Problem generator:          ' + args['prob'])
+print('  Coordinate system:          ' + args['coord'])
+print('  Equation of state:          ' + args['eos'])
+print('  Riemann solver:             ' + args['flux'])
+print('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF'))
+print('  Number of scalars:          ' + args['nscalars'])
+print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))
+print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
+print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
+print('  Self-Gravity:               ' + self_grav_string)
+print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
+print('  Shearing Box BCs:           ' + ('ON' if args['shear'] else 'OFF'))
+print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))
+print('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF'))
+print('  Linker flags:               ' + makefile_options['LINKER_FLAGS'] + ' '
       + makefile_options['LIBRARY_FLAGS'])
-print('  Precision:               ' + ('single' if args['float'] else 'double'))
-print('  Number of ghost cells:   ' + args['nghost'])
-print('  MPI parallelism:         ' + ('ON' if args['mpi'] else 'OFF'))
-print('  OpenMP parallelism:      ' + ('ON' if args['omp'] else 'OFF'))
-print('  FFT:                     ' + ('ON' if args['fft'] else 'OFF'))
-print('  HDF5 output:             ' + ('ON' if args['hdf5'] else 'OFF'))
-print('  HDF5 precision:          ' + ('double' if args['h5double'] else 'single'))
-print('  Compiler:                ' + args['cxx'])
-print('  Compilation command:     ' + makefile_options['COMPILER_COMMAND'] + ' '
+print('  Floating-point precision:   ' + ('single' if args['float'] else 'double'))
+print('  Number of ghost cells:      ' + args['nghost'])
+print('  MPI parallelism:            ' + ('ON' if args['mpi'] else 'OFF'))
+print('  OpenMP parallelism:         ' + ('ON' if args['omp'] else 'OFF'))
+print('  FFT:                        ' + ('ON' if args['fft'] else 'OFF'))
+print('  HDF5 output:                ' + ('ON' if args['hdf5'] else 'OFF'))
+if args['hdf5']:
+    print('  HDF5 precision:             ' + ('double' if args['h5double'] else 'single'))
+print('  Compiler:                   ' + args['cxx'])
+print('  Compilation command:        ' + makefile_options['COMPILER_COMMAND'] + ' '
       + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])

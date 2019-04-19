@@ -23,38 +23,32 @@
 
 // HydroDiffusion constructor
 
-HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
-  pmy_hydro_ = phyd;
-  pmb_ = pmy_hydro_->pmy_block;
-  pco_ = pmb_->pcoord;
-  hydro_diffusion_defined = false;
+HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
+    hydro_diffusion_defined(false),
+    pmy_hydro_(phyd), pmb_(pmy_hydro_->pmy_block), pco_(pmb_->pcoord) {
+  int nc1 = pmb_->ncells1, nc2 = pmb_->ncells2, nc3 = pmb_->ncells3;
 
-  int ncells1 = pmb_->block_size.nx1 + 2*(NGHOST);
-  int ncells2 = 1, ncells3 = 1;
-  if (pmb_->block_size.nx2 > 1) ncells2 = pmb_->block_size.nx2 + 2*(NGHOST);
-  if (pmb_->block_size.nx3 > 1) ncells3 = pmb_->block_size.nx3 + 2*(NGHOST);
-
-  // Check if viscous process.
-  nu_iso = pin->GetOrAddReal("problem","nu_iso",0.0); // iso viscosity
-  nu_aniso = pin->GetOrAddReal("problem","nu_aniso",0.0); // aniso viscosity
+  // Check if viscous process are active
+  nu_iso = pin->GetOrAddReal("problem", "nu_iso", 0.0); // iso viscosity
+  nu_aniso = pin->GetOrAddReal("problem", "nu_aniso", 0.0); // aniso viscosity
   if (nu_iso > 0.0 || nu_aniso  > 0.0) {
     hydro_diffusion_defined = true;
     // Allocate memory for fluxes.
-    visflx[X1DIR].NewAthenaArray(NHYDRO,ncells3,ncells2,ncells1+1);
-    visflx[X2DIR].NewAthenaArray(NHYDRO,ncells3,ncells2+1,ncells1);
-    visflx[X3DIR].NewAthenaArray(NHYDRO,ncells3+1,ncells2,ncells1);
-    x1area_.NewAthenaArray(ncells1+1);
-    x2area_.NewAthenaArray(ncells1);
-    x3area_.NewAthenaArray(ncells1);
-    x2area_p1_.NewAthenaArray(ncells1);
-    x3area_p1_.NewAthenaArray(ncells1);
-    vol_.NewAthenaArray(ncells1);
-    fx_.NewAthenaArray(ncells1);
-    fy_.NewAthenaArray(ncells1);
-    fz_.NewAthenaArray(ncells1);
-    divv_.NewAthenaArray(ncells3,ncells2,ncells1);
+    visflx[X1DIR].NewAthenaArray(NHYDRO, nc3, nc2, nc1+1);
+    visflx[X2DIR].NewAthenaArray(NHYDRO, nc3, nc2+1, nc1);
+    visflx[X3DIR].NewAthenaArray(NHYDRO, nc3+1, nc2, nc1);
+    x1area_.NewAthenaArray(nc1+1);
+    x2area_.NewAthenaArray(nc1);
+    x3area_.NewAthenaArray(nc1);
+    x2area_p1_.NewAthenaArray(nc1);
+    x3area_p1_.NewAthenaArray(nc1);
+    vol_.NewAthenaArray(nc1);
+    fx_.NewAthenaArray(nc1);
+    fy_.NewAthenaArray(nc1);
+    fz_.NewAthenaArray(nc1);
+    divv_.NewAthenaArray(nc3, nc2, nc1);
 
-    nu.NewAthenaArray(2,ncells3,ncells2,ncells1);
+    nu.NewAthenaArray(2, nc3, nc2, nc1);
     if (pmb_->pmy_mesh->ViscosityCoeff_==nullptr)
       CalcViscCoeff_ = ConstViscosity;
     else
@@ -62,16 +56,18 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
   }
 
   // Check if thermal conduction.
+  kappa_iso = 0.0;
+  kappa_aniso = 0.0;
   if (NON_BAROTROPIC_EOS) {
-    kappa_iso  = pin->GetOrAddReal("problem","kappa_iso",0.0); // iso thermal conduction
-    kappa_aniso  = pin->GetOrAddReal("problem","kappa_aniso",0.0); // aniso conduction
+    kappa_iso  = pin->GetOrAddReal("problem", "kappa_iso", 0.0); // iso thermal conduction
+    kappa_aniso  = pin->GetOrAddReal("problem", "kappa_aniso", 0.0); // aniso conduction
     if (kappa_iso > 0.0 || kappa_aniso > 0.0) {
       hydro_diffusion_defined = true;
-      cndflx[X1DIR].NewAthenaArray(ncells3,ncells2,ncells1+1);
-      cndflx[X2DIR].NewAthenaArray(ncells3,ncells2+1,ncells1);
-      cndflx[X3DIR].NewAthenaArray(ncells3+1,ncells2,ncells1);
+      cndflx[X1DIR].NewAthenaArray(nc3, nc2, nc1+1);
+      cndflx[X2DIR].NewAthenaArray(nc3, nc2+1, nc1);
+      cndflx[X3DIR].NewAthenaArray(nc3+1, nc2, nc1);
 
-      kappa.NewAthenaArray(2,ncells3,ncells2,ncells1);
+      kappa.NewAthenaArray(2, nc3, nc2, nc1);
       if (pmb_->pmy_mesh->ConductionCoeff_==nullptr)
         CalcCondCoeff_ = ConstConduction;
       else
@@ -80,45 +76,14 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) {
   }
 
   if (hydro_diffusion_defined) {
-    dx1_.NewAthenaArray(ncells1);
-    dx2_.NewAthenaArray(ncells1);
-    dx3_.NewAthenaArray(ncells1);
-    nu_tot_.NewAthenaArray(ncells1);
-    kappa_tot_.NewAthenaArray(ncells1);
+    dx1_.NewAthenaArray(nc1);
+    dx2_.NewAthenaArray(nc1);
+    dx3_.NewAthenaArray(nc1);
+    nu_tot_.NewAthenaArray(nc1);
+    kappa_tot_.NewAthenaArray(nc1);
   }
 }
 
-// destructor
-
-HydroDiffusion::~HydroDiffusion() {
-  if (nu_iso > 0.0 || nu_aniso > 0.0) {
-    visflx[X1DIR].DeleteAthenaArray();
-    visflx[X2DIR].DeleteAthenaArray();
-    visflx[X3DIR].DeleteAthenaArray();
-    x1area_.DeleteAthenaArray();
-    x2area_.DeleteAthenaArray();
-    x3area_.DeleteAthenaArray();
-    x2area_p1_.DeleteAthenaArray();
-    x3area_p1_.DeleteAthenaArray();
-    vol_.DeleteAthenaArray();
-    fx_.DeleteAthenaArray();
-    fy_.DeleteAthenaArray();
-    fz_.DeleteAthenaArray();
-    divv_.DeleteAthenaArray();
-  }
-  if (kappa_iso  > 0.0 || kappa_aniso > 0.0) {
-    cndflx[X1DIR].DeleteAthenaArray();
-    cndflx[X2DIR].DeleteAthenaArray();
-    cndflx[X3DIR].DeleteAthenaArray();
-  }
-  if (hydro_diffusion_defined) {
-    dx1_.DeleteAthenaArray();
-    dx2_.DeleteAthenaArray();
-    dx3_.DeleteAthenaArray();
-    nu_tot_.DeleteAthenaArray();
-    kappa_tot_.DeleteAthenaArray();
-  }
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::CalcHydroDiffusionFlux
@@ -127,10 +92,10 @@ HydroDiffusion::~HydroDiffusion() {
 void HydroDiffusion::CalcHydroDiffusionFlux(const AthenaArray<Real> &prim,
                                             const AthenaArray<Real> &cons,
                                             AthenaArray<Real> *flux) {
-  Hydro *ph=pmb_->phydro;
-  Field *pf=pmb_->pfield;
+  Hydro *ph = pmb_->phydro;
+  Field *pf = pmb_->pfield;
 
-  SetHydroDiffusivity(ph->w,pf->bcc);
+  SetHydroDiffusivity(ph->w, pf->bcc);
 
   if (nu_iso > 0.0 || nu_aniso > 0.0) ClearHydroFlux(visflx);
   if (nu_iso > 0.0) ViscousFlux_iso(prim, cons, visflx);
@@ -139,7 +104,6 @@ void HydroDiffusion::CalcHydroDiffusionFlux(const AthenaArray<Real> &prim,
   if (kappa_iso > 0.0 || kappa_aniso > 0.0) ClearHydroFlux(cndflx);
   if (kappa_iso > 0.0) ThermalFlux_iso(prim, cons, cndflx);
   if (kappa_aniso > 0.0) ThermalFlux_aniso(prim, cons, cndflx);
-
 
   return;
 }
@@ -153,12 +117,12 @@ void HydroDiffusion::AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
   int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
   int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
 
-  AthenaArray<Real> &x1flux=flux_des[X1DIR];
-  AthenaArray<Real> &x2flux=flux_des[X2DIR];
-  AthenaArray<Real> &x3flux=flux_des[X3DIR];
-  AthenaArray<Real> &x1diflx=flux_src[X1DIR];
-  AthenaArray<Real> &x2diflx=flux_src[X2DIR];
-  AthenaArray<Real> &x3diflx=flux_src[X3DIR];
+  AthenaArray<Real> &x1flux = flux_des[X1DIR];
+  AthenaArray<Real> &x2flux = flux_des[X2DIR];
+  AthenaArray<Real> &x3flux = flux_des[X3DIR];
+  AthenaArray<Real> &x1diflx = flux_src[X1DIR];
+  AthenaArray<Real> &x2diflx = flux_src[X2DIR];
+  AthenaArray<Real> &x3diflx = flux_src[X3DIR];
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
@@ -279,19 +243,19 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
       }
       if (nu_iso > 0.0) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) nu_t(i) += nu(ISO,k,j,i);
+        for (int i=il; i<=iu; ++i) nu_t(i) += nu(DiffProcess::iso,k,j,i);
       }
       if (nu_aniso > 0.0) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) nu_t(i) += nu(ANI,k,j,i);
+        for (int i=il; i<=iu; ++i) nu_t(i) += nu(DiffProcess::aniso,k,j,i);
       }
       if (kappa_iso > 0.0) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) kappa_t(i) += kappa(ISO,k,j,i);
+        for (int i=il; i<=iu; ++i) kappa_t(i) += kappa(DiffProcess::iso,k,j,i);
       }
       if (kappa_aniso > 0.0) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) kappa_t(i) += kappa(ANI,k,j,i);
+        for (int i=il; i<=iu; ++i) kappa_t(i) += kappa(DiffProcess::aniso,k,j,i);
       }
       pmb_->pcoord->CenterWidth1(k,j,il,iu,len);
       pmb_->pcoord->CenterWidth2(k,j,il,iu,dx2);

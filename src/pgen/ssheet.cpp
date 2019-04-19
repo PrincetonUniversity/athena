@@ -36,13 +36,14 @@
 #error "This problem generator requires shearing box"
 #endif
 
-static Real amp, nwx, nwy; // amplitude, Wavenumbers
-static int ipert; // initial pattern
-static Real gm1,iso_cs;
-static Real x1size,x2size,x3size;
-static Real Omega_0,qshear;
-static int shboxcoord;
-AthenaArray<Real> volume; // 1D array of volumes
+namespace {
+Real amp, nwx, nwy; // amplitude, Wavenumbers
+int ipert; // initial pattern
+Real gm1,iso_cs;
+Real x1size,x2size,x3size;
+Real Omega_0,qshear;
+int shboxcoord;
+} // namespace
 
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -105,12 +106,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
   Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
 
-  Real x1,x2,rd,rp,rvx,rvy;
+  Real x1, x2, rd, rp, rvx, rvy;
   // update the physical variables as initial conditions
-  // int nx1 = (ie-is)+1 + 2*(NGHOST);
-  // int nx2 = (je-js)+1 + 2*(NGHOST);
-  // int nx3 = (ke-ks)+1 + 2*(NGHOST);
-
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
@@ -164,17 +161,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-
-
   return;
 }
 
 
 //======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
+//! \fn void MeshBlock::UserWorkInLoop()
 //  \brief User-defined work function for every time step
 //======================================================================================
-void MeshBlock::UserWorkInLoop(void) {
+void MeshBlock::UserWorkInLoop() {
   // nothing to do
   return;
 }

@@ -34,12 +34,17 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 
-static Real DenProfileCyl(const Real rad, const Real phi, const Real z);
-static void VelProfileCyl(const Real rad, const Real phi, const Real z,
-                          Real &v1, Real &v2, Real &v3);
-static Real A3(const Real x1, const Real x2, const Real x3);
-static Real A2(const Real x1, const Real x2, const Real x3);
-static Real A1(const Real x1, const Real x2, const Real x3);
+namespace {
+void VelProfileCyl(const Real rad, const Real phi, const Real z,
+                   Real &v1, Real &v2, Real &v3);
+Real A3(const Real x1, const Real x2, const Real x3);
+Real A2(const Real x1, const Real x2, const Real x3);
+Real A1(const Real x1, const Real x2, const Real x3);
+
+// problem parameters which are global variables with internal linkage
+Real vy0, rho0, isocs2, gamma_gas;
+Real xc, yc, zc, beta, b0;
+} // namespace
 
 // User-defined boundary conditions along inner/outer edges (not poles)
 void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
@@ -55,9 +60,8 @@ void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Face
                  Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
-// problem parameters which are useful to make global to this file
-static Real vy0, rho0, isocs2, gamma_gas;
-static Real xc, yc, zc, beta, b0;
+int RefinementCondition(MeshBlock *pmb);
+
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -86,18 +90,21 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     b0=std::sqrt(2.*isocs2*rho0/beta);
   }
 
+  if (adaptive==true)
+    EnrollUserRefinementCondition(RefinementCondition);
+
   // setup boundary condition
-  if (mesh_bcs[INNER_X1] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(INNER_X1, LoopInnerX1);
+  if (mesh_bcs[BoundaryFace::inner_x1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x1, LoopInnerX1);
   }
-  if (mesh_bcs[OUTER_X1] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(OUTER_X1, LoopOuterX1);
+  if (mesh_bcs[BoundaryFace::outer_x1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x1, LoopOuterX1);
   }
-  if (mesh_bcs[INNER_X2] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(INNER_X2, LoopInnerX2);
+  if (mesh_bcs[BoundaryFace::inner_x2] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x2, LoopInnerX2);
   }
-  if (mesh_bcs[OUTER_X2] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(OUTER_X2, LoopOuterX2);
+  if (mesh_bcs[BoundaryFace::outer_x2] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x2, LoopOuterX2);
   }
 
   return;
@@ -109,40 +116,86 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  Real rad, phi, z;
+  // Real rad, phi, z;
   Real v1, v2, v3;
   // Set initial magnetic fields
   if (MAGNETIC_FIELDS_ENABLED) {
-    AthenaArray<Real> a1,a2,a3;
-    int nx1 = (ie-is)+1 + 2*(NGHOST);
-    int nx2 = (je-js)+1 + 2*(NGHOST);
-    int nx3 = (ke-ks)+1 + 2*(NGHOST);
-    a1.NewAthenaArray(nx3,nx2,nx1);
-    a2.NewAthenaArray(nx3,nx2,nx1);
-    a3.NewAthenaArray(nx3,nx2,nx1);
+    AthenaArray<Real> a1, a2, a3;
+    // nxN != ncellsN, in general. Allocate to extend through 2*ghost, regardless # dim
+    int nx1 = block_size.nx1 + 2*NGHOST;
+    int nx2 = block_size.nx2 + 2*NGHOST;
+    int nx3 = block_size.nx3 + 2*NGHOST;
+    a1.NewAthenaArray(nx3, nx2, nx1);
+    a2.NewAthenaArray(nx3, nx2, nx1);
+    a3.NewAthenaArray(nx3, nx2, nx1);
 
+    int level = loc.level;
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie+1; i++) {
-          a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
-          a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
-          a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+          if ((pbval->nblevel[1][0][1]>level && j==js)
+              || (pbval->nblevel[1][2][1]>level && j==je+1)
+              || (pbval->nblevel[0][1][1]>level && k==ks)
+              || (pbval->nblevel[2][1][1]>level && k==ke+1)
+              || (pbval->nblevel[0][0][1]>level && j==js   && k==ks)
+              || (pbval->nblevel[0][2][1]>level && j==je+1 && k==ks)
+              || (pbval->nblevel[2][0][1]>level && j==js   && k==ke+1)
+              || (pbval->nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
+            Real x1l = pcoord->x1f(i)+0.25*pcoord->dx1f(i);
+            Real x1r = pcoord->x1f(i)+0.75*pcoord->dx1f(i);
+            a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
+                             A1(x1r, pcoord->x2f(j), pcoord->x3f(k)));
+          } else {
+            a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
+          }
+
+          if ((pbval->nblevel[1][1][0]>level && i==is)
+              || (pbval->nblevel[1][1][2]>level && i==ie+1)
+              || (pbval->nblevel[0][1][1]>level && k==ks)
+              || (pbval->nblevel[2][1][1]>level && k==ke+1)
+              || (pbval->nblevel[0][1][0]>level && i==is   && k==ks)
+              || (pbval->nblevel[0][1][2]>level && i==ie+1 && k==ks)
+              || (pbval->nblevel[2][1][0]>level && i==is   && k==ke+1)
+              || (pbval->nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
+            Real x2l = pcoord->x2f(j)+0.25*pcoord->dx2f(j);
+            Real x2r = pcoord->x2f(j)+0.75*pcoord->dx2f(j);
+            a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
+                             A2(pcoord->x1f(i), x2r, pcoord->x3f(k)));
+          } else {
+            a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
+          }
+
+          if ((pbval->nblevel[1][1][0]>level && i==is)
+              || (pbval->nblevel[1][1][2]>level && i==ie+1)
+              || (pbval->nblevel[1][0][1]>level && j==js)
+              || (pbval->nblevel[1][2][1]>level && j==je+1)
+              || (pbval->nblevel[1][0][0]>level && i==is   && j==js)
+              || (pbval->nblevel[1][0][2]>level && i==ie+1 && j==js)
+              || (pbval->nblevel[1][2][0]>level && i==is   && j==je+1)
+              || (pbval->nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
+            Real x3l = pcoord->x3f(k)+0.25*pcoord->dx3f(k);
+            Real x3r = pcoord->x3f(k)+0.75*pcoord->dx3f(k);
+            a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +
+                             A3(pcoord->x1f(i), pcoord->x2f(j), x3r));
+          } else {
+            a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+          }
         }
       }
     }
 
     // Initialize interface fields
-    AthenaArray<Real> area,len,len_p1;
-    area.NewAthenaArray(nx1);
-    len.NewAthenaArray(nx1);
-    len_p1.NewAthenaArray(nx1);
+    AthenaArray<Real> area, len, len_p1;
+    area.NewAthenaArray(ncells1);
+    len.NewAthenaArray(ncells1);
+    len_p1.NewAthenaArray(ncells1);
 
     // for 1,2,3-D
     for (int k=ks; k<=ke; ++k) {
       // reset loop limits for polar boundary
       int jl=js; int ju=je+1;
-      if (pbval->block_bcs[INNER_X2] == 5) jl=js+1;
-      if (pbval->block_bcs[OUTER_X2] == 5) ju=je;
+      if (pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) jl=js+1;
+      if (pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) ju=je;
       for (int j=jl; j<=ju; ++j) {
         pcoord->Face2Area(k,j,is,ie,area);
         pcoord->Edge3Length(k,j,is,ie+1,len);
@@ -199,8 +252,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; ++k) {
         // reset loop limits for polar boundary
         int jl=js; int ju=je+1;
-        if (pbval->block_bcs[INNER_X2] == 5) jl=js+1;
-        if (pbval->block_bcs[OUTER_X2] == 5) ju=je;
+        if (pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) jl=js+1;
+        if (pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) ju=je;
         for (int j=jl; j<=ju; ++j) {
           pcoord->Face2Area(k,j,is,ie,area);
           pcoord->Edge1Length(k  ,j,is,ie,len);
@@ -211,13 +264,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-
-    a1.DeleteAthenaArray();
-    a2.DeleteAthenaArray();
-    a3.DeleteAthenaArray();
-    area.DeleteAthenaArray();
-    len.DeleteAthenaArray();
-    len_p1.DeleteAthenaArray();
   }
 
   //  Initialize density
@@ -248,11 +294,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 //! \f transforms uniform velocity in x-directin in spherical polar coords
 
-static void VelProfileCyl(const Real x1, const Real x2, const Real x3,
-                          Real &v1, Real &v2, Real &v3) {
+void VelProfileCyl(const Real x1, const Real x2, const Real x3,
+                   Real &v1, Real &v2, Real &v3) {
   v1 = vy0*std::sin(x2)*std::sin(x3);
   v2 = vy0*std::cos(x2)*std::sin(x3);
   v3 = vy0*std::cos(x3);
@@ -262,7 +309,7 @@ static void VelProfileCyl(const Real x1, const Real x2, const Real x3,
 //----------------------------------------------------------------------------------------
 //! \f compute 3-compnent of vector potential
 
-static Real A3(const Real x1, const Real x2, const Real x3) {
+Real A3(const Real x1, const Real x2, const Real x3) {
   Real a3=0.0;
   return a3;
 }
@@ -270,7 +317,7 @@ static Real A3(const Real x1, const Real x2, const Real x3) {
 //----------------------------------------------------------------------------------------
 //! \f compute 2-compnent of vector potential
 
-static Real A2(const Real x1, const Real x2, const Real x3) {
+Real A2(const Real x1, const Real x2, const Real x3) {
   Real a2=0.0;
   Real az=0.0;
   Real x=x1*std::fabs(std::sin(x2))*std::cos(x3);
@@ -290,7 +337,7 @@ static Real A2(const Real x1, const Real x2, const Real x3) {
 //----------------------------------------------------------------------------------------
 //! \f compute 1-compnent of vector potential
 
-static Real A1(const Real x1, const Real x2, const Real x3) {
+Real A1(const Real x1, const Real x2, const Real x3) {
   Real a1=0.0;
   Real az=0.0;
   Real x=x1*std::fabs(std::sin(x2))*std::cos(x3);
@@ -306,6 +353,7 @@ static Real A1(const Real x1, const Real x2, const Real x3) {
   a1=az*std::cos(x2);
   return a1;
 }
+} // namespace
 
 //----------------------------------------------------------------------------------------
 //!\f: User-defined boundary Conditions: LoopInnerX1
@@ -513,4 +561,23 @@ void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
       }
     }
   }
+}
+
+
+// refinement condition: check the field amplitude
+int RefinementCondition(MeshBlock *pmb) {
+  AthenaArray<Real> &bc = pmb->pfield->bcc;
+  Real maxb=0.0;
+  for (int k=pmb->ks-1; k<=pmb->ke+1; k++) {
+    for (int j=pmb->js-1; j<=pmb->je+1; j++) {
+      for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
+        Real b = std::sqrt(SQR(bc(IB1,k,j,i))+SQR(bc(IB2,k,j,i))+SQR(bc(IB3,k,j,i)));
+        maxb = std::max(maxb, b);
+      }
+    }
+  }
+
+  if (maxb > 0.2*b0) return 1;
+  if (maxb < 0.1*b0) return -1;
+  return 0;
 }

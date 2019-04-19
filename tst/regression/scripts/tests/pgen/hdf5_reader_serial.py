@@ -11,6 +11,7 @@ import h5py
 import scripts.utils.athena as athena
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
+athena_read.check_nan_flag = True
 
 # Parameters
 filename_input = 'initial_data.hdf5'

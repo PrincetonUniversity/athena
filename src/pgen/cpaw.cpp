@@ -20,6 +20,7 @@
 // C++ headers
 #include <algorithm>
 #include <cmath>      // sqrt()
+#include <cstdio>     // fopen(), fprintf(), freopen()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -39,18 +40,19 @@
 #error "This problem generator requires magnetic fields"
 #endif
 
+namespace {
 // Parameters which define initial solution -- made global so that they can be shared
 // with functions A1,2,3 which compute vector potentials
-static Real den, pres, gm1, b_par, b_perp, v_perp, v_par;
-static Real ang_2, ang_3; // Rotation angles about the y and z' axis
-static Real fac, sin_a2, cos_a2, sin_a3, cos_a3;
-static Real lambda, k_par; // Wavelength, 2*PI/wavelength
+Real den, pres, gm1, b_par, b_perp, v_perp, v_par;
+Real ang_2, ang_3; // Rotation angles about the y and z' axis
+Real fac, sin_a2, cos_a2, sin_a3, cos_a3;
+Real lambda, k_par; // Wavelength, 2*PI/wavelength
 
 // functions to compute vector potential to initialize the solution
-static Real A1(const Real x1, const Real x2, const Real x3);
-static Real A2(const Real x1, const Real x2, const Real x3);
-static Real A3(const Real x1, const Real x2, const Real x3);
-
+Real A1(const Real x1, const Real x2, const Real x3);
+Real A2(const Real x1, const Real x2, const Real x3);
+Real A3(const Real x1, const Real x2, const Real x3);
+} // namespace
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -185,7 +187,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   // The file exists -- reopen the file in append mode
   if ((pfile = std::fopen(fname.c_str(),"r")) != nullptr) {
-    if ((pfile = freopen(fname.c_str(),"a",pfile)) == nullptr) {
+    if ((pfile = std::freopen(fname.c_str(),"a",pfile)) == nullptr) {
       msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
           << std::endl << "Error output file could not be opened" <<std::endl;
       ATHENA_ERROR(msg);
@@ -222,15 +224,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  AthenaArray<Real> a1,a2,a3;
-  int nx1 = (ie-is)+1 + 2*(NGHOST);
-  int nx2 = (je-js)+1 + 2*(NGHOST);
-  int nx3 = (ke-ks)+1 + 2*(NGHOST);
-  a1.NewAthenaArray(nx3,nx2,nx1);
-  a2.NewAthenaArray(nx3,nx2,nx1);
-  a3.NewAthenaArray(nx3,nx2,nx1);
+  AthenaArray<Real> a1, a2, a3;
+  // nxN != ncellsN, in general. Allocate to extend through ghost zones, regardless # dim
+  int nx1 = block_size.nx1 + 2*NGHOST;
+  int nx2 = block_size.nx2 + 2*NGHOST;
+  int nx3 = block_size.nx3 + 2*NGHOST;
+  a1.NewAthenaArray(nx3, nx2, nx1);
+  a2.NewAthenaArray(nx3, nx2, nx1);
+  a3.NewAthenaArray(nx3, nx2, nx1);
 
-  int level=loc.level;
+  int level = loc.level;
   // Initialize components of the vector potential
   if (block_size.nx3 > 1) {
     for (int k=ks; k<=ke+1; k++) {
@@ -328,9 +331,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  a1.DeleteAthenaArray();
-  a2.DeleteAthenaArray();
-  a3.DeleteAthenaArray();
 
   // Now initialize rest of the cell centered quantities
   for (int k=ks; k<=ke; k++) {
@@ -367,12 +367,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
-//! \fn static Real A1(const Real x1,const Real x2,const Real x3)
+//! \fn Real A1(const Real x1,const Real x2,const Real x3)
 //  \brief A1: 1-component of vector potential, using a gauge such that Ax = 0, and Ay,
 //  Az are functions of x and y alone.
 
-static Real A1(const Real x1, const Real x2, const Real x3) {
+Real A1(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Ay = fac*(b_perp/k_par)*std::sin(k_par*(x));
@@ -382,10 +383,10 @@ static Real A1(const Real x1, const Real x2, const Real x3) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static Real A2(const Real x1,const Real x2,const Real x3)
+//! \fn Real A2(const Real x1,const Real x2,const Real x3)
 //  \brief A2: 2-component of vector potential
 
-static Real A2(const Real x1, const Real x2, const Real x3) {
+Real A2(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Ay = fac*(b_perp/k_par)*std::sin(k_par*(x));
@@ -395,13 +396,14 @@ static Real A2(const Real x1, const Real x2, const Real x3) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static Real A3(const Real x1,const Real x2,const Real x3)
+//! \fn Real A3(const Real x1,const Real x2,const Real x3)
 //  \brief A3: 3-component of vector potential
 
-static Real A3(const Real x1, const Real x2, const Real x3) {
+Real A3(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
   Real Az = (b_perp/k_par)*std::cos(k_par*(x)) + b_par*y;
 
   return Az*cos_a2;
 }
+} // namespace

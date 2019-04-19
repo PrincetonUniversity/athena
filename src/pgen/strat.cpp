@@ -68,14 +68,15 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
                          AthenaArray<Real> &a,
                          FaceField &b, Real time, Real dt,
                          int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-static Real hst_BxBy(MeshBlock *pmb, int iout);
-static Real hst_dVxVy(MeshBlock *pmb, int iout);
+namespace {
+Real hst_BxBy(MeshBlock *pmb, int iout);
+Real hst_dVxVy(MeshBlock *pmb, int iout);
 
-static Real Omega_0,qshear;
+Real Omega_0, qshear;
 
 // Apply a density floor - useful for large |z| regions
-static Real dfloor,pfloor;
-
+Real dfloor, pfloor;
+} // namespace
 
 //====================================================================================
 void Mesh::InitUserMeshData(ParameterInput *pin) {
@@ -91,11 +92,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   EnrollUserExplicitSourceFunction(VertGrav);
 
   // enroll user-defined boundary conditions
-  if (mesh_bcs[INNER_X3] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(INNER_X3, StratOutflowInnerX3);
+  if (mesh_bcs[BoundaryFace::inner_x3] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x3, StratOutflowInnerX3);
   }
-  if (mesh_bcs[OUTER_X3] == GetBoundaryFlag("user")) {
-    EnrollUserBoundaryFunction(OUTER_X3, StratOutflowOuterX3);
+  if (mesh_bcs[BoundaryFace::outer_x3] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x3, StratOutflowOuterX3);
   }
 
   return;
@@ -338,7 +339,7 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
   return;
 }
 
-void MeshBlock::UserWorkInLoop(void) {
+void MeshBlock::UserWorkInLoop() {
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
@@ -548,50 +549,46 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
   return;
 }
 
+namespace {
 
-static Real hst_BxBy(MeshBlock *pmb, int iout) {
-  Real bxby=0;
-  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+Real hst_BxBy(MeshBlock *pmb, int iout) {
+  Real bxby = 0;
+  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
   AthenaArray<Real> volume; // 1D array of volumes
   // allocate 1D array for cell volume used in usr def history
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  volume.NewAthenaArray(ncells1);
+  volume.NewAthenaArray(pmb->ncells1);
 
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
       for (int i=is; i<=ie; i++) {
-        bxby-=volume(i)*b(IB1,k,j,i)*b(IB2,k,j,i);
+        bxby -= volume(i)*b(IB1,k,j,i)*b(IB2,k,j,i);
       }
     }
   }
-  volume.DeleteAthenaArray();
-
   return bxby;
 }
 
 
-static Real hst_dVxVy(MeshBlock *pmb, int iout) {
-  Real dvxvy=0.0;
-  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+Real hst_dVxVy(MeshBlock *pmb, int iout) {
+  Real dvxvy = 0.0;
+  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;
-  Real vshear=0.0;
+  Real vshear = 0.0;
   AthenaArray<Real> volume; // 1D array of volumes
   // allocate 1D array for cell volume used in usr def history
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  volume.NewAthenaArray(ncells1);
+  volume.NewAthenaArray(pmb->ncells1);
 
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
       for (int i=is; i<=ie; i++) {
         vshear = qshear*Omega_0*pmb->pcoord->x1v(i);
-        dvxvy+=volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i)+vshear);
+        dvxvy += volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i) + vshear);
       }
     }
   }
-
-  volume.DeleteAthenaArray();
   return dvxvy;
 }
+} // namespace

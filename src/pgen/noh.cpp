@@ -42,7 +42,9 @@ void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Fac
                   int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 // made global to share with BC functions
-static Real gmma, gmma1;
+namespace {
+Real gmma, gmma1;
+} // namespace
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -53,10 +55,10 @@ static Real gmma, gmma1;
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Enroll boundary value function pointers
-  EnrollUserBoundaryFunction(OUTER_X1, Noh3DOuterX1);
-  EnrollUserBoundaryFunction(OUTER_X2, Noh3DOuterX2);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, Noh3DOuterX1);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x2, Noh3DOuterX2);
   if (mesh_size.nx3 > 1)
-    EnrollUserBoundaryFunction(OUTER_X3, Noh3DOuterX3);
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x3, Noh3DOuterX3);
   return;
 }
 
@@ -105,23 +107,23 @@ void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Fac
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       for (int i=1;  i<=ngh; ++i) {
-        Real rad,f_t;
+        Real rad,f_tm;
         if (pmb->block_size.nx3 > 1) {
           rad = std::sqrt(SQR(pco->x1v(iu+i)) + SQR(pco->x2v(j))
                           + SQR(pco->x3v(k)));
-          f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
+          f_tm = SQR(1.0 + pmb->pmy_mesh->time/rad);
         } else {
           rad = std::sqrt(SQR(pco->x1v(iu+i)) + SQR(pco->x2v(j)));
-          f_t = (1.0 + pmb->pmy_mesh->time/rad);
+          f_tm = (1.0 + pmb->pmy_mesh->time/rad);
         }
-        Real d0 = 1.0*f_t;
+        Real d0 = 1.0*f_tm;
 
         prim(IDN,k,j,iu+i)  = d0;
         prim(IVX,k,j,iu+i) = -pco->x1v(iu+i)/rad;
         prim(IVY,k,j,iu+i) = -pco->x2v(j   )/rad;
         if (pmb->block_size.nx3 > 1) {
           prim(IVZ,k,j,iu+i) = -pco->x3v(k)/rad;
-          prim(IPR,k,j,iu+i) = 1.0e-6*std::pow(f_t,(1.0+gmma));
+          prim(IPR,k,j,iu+i) = 1.0e-6*std::pow(f_tm,(1.0+gmma));
         } else {
           prim(IVZ,k,j,iu+i) = 0.0;
           prim(IPR,k,j,iu+i)= 1.0e-6;
@@ -143,23 +145,23 @@ void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Fac
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
       for (int i=il; i<=iu; ++i) {
-        Real rad,f_t;
+        Real rad,f_tm;
         if (pmb->block_size.nx3 > 1) {
           rad = std::sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(ju+j))
                           + SQR(pco->x3v(k)));
-          f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
+          f_tm = SQR(1.0 + pmb->pmy_mesh->time/rad);
         } else {
           rad = std::sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(ju+j)));
-          f_t = (1.0 + pmb->pmy_mesh->time/rad);
+          f_tm = (1.0 + pmb->pmy_mesh->time/rad);
         }
-        Real d0 = 1.0*f_t;
+        Real d0 = 1.0*f_tm;
 
         prim(IDN,k,ju+j,i)  = d0;
         prim(IVX,k,ju+j,i) = -pco->x1v(i)/rad;
         prim(IVY,k,ju+j,i) = -pco->x2v(ju+j)/rad;
         if (pmb->block_size.nx3 > 1) {
           prim(IVZ,k,ju+j,i) = -pco->x3v(k)/rad;
-          prim(IPR,k,ju+j,i) = 1.0e-6*std::pow(f_t,(1.0+gmma));
+          prim(IPR,k,ju+j,i) = 1.0e-6*std::pow(f_tm,(1.0+gmma));
         } else {
           prim(IVZ,k,ju+j,i) = 0.0;
           prim(IPR,k,ju+j,i)= 1.0e-6;
@@ -183,14 +185,14 @@ void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Fac
       for (int i=il; i<=iu; ++i) {
         Real rad = std::sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j))
                              + SQR(pco->x3v(ku+k)));
-        Real f_t = SQR(1.0 + pmb->pmy_mesh->time/rad);
-        Real d0 = 1.0*f_t;
+        Real f_tm = SQR(1.0 + pmb->pmy_mesh->time/rad);
+        Real d0 = 1.0*f_tm;
 
         prim(IDN,ku+k,j,i)  = d0;
         prim(IVX,ku+k,j,i) = -pco->x1v(i)/rad;
         prim(IVY,ku+k,j,i) = -pco->x2v(j)/rad;
         prim(IVZ,ku+k,j,i) = -pco->x3v(ku+k)/rad;
-        prim(IPR,ku+k,j,i) = 1.0e-6*std::pow(f_t,(1.0+gmma));
+        prim(IPR,ku+k,j,i) = 1.0e-6*std::pow(f_tm,(1.0+gmma));
       }
     }
   }

@@ -20,19 +20,21 @@
 #include "../../../mesh/mesh.hpp"                // MeshBlock
 #include "../../hydro.hpp"
 
+namespace {
 // Declarations
-static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
-                             const int iu, const int ivx,
-                             const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                             AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                             AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                             AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                             AthenaArray<Real> &ey, AthenaArray<Real> &ez);
-static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
-                                const int il, const int iu,
-                                AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                                AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                                AthenaArray<Real> &flux);
+void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
+                      const int iu, const int ivx,
+                      const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                      AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                      AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                      AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
+                         const int il, const int iu,
+                         AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                         AthenaArray<Real> &flux);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Riemann solver
@@ -68,6 +70,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Frame-transforming HLLC implementation
 // Inputs:
@@ -88,13 +91,13 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 //   implements HLLC algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
 //   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
 
-static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
-                             const int iu, const int ivx,
-                             const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                             AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                             AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                             AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                             AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
+                      const int iu, const int ivx,
+                      const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                      AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                      AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                      AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Calculate metric if in GR
   int i01(0), i11(0);
 #if GENERAL_RELATIVITY
@@ -376,11 +379,11 @@ static void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int
 //   derived from RiemannSolver() in hlle_rel_no_transform.cpp assuming ivx = IVY
 //   same function as in hlle_rel.cpp
 
-static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
-                                const int il, const int iu,
-                                AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                                AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                                AthenaArray<Real> &flux) {
+void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
+                         const int il, const int iu,
+                         AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                         AthenaArray<Real> &flux) {
 #if GENERAL_RELATIVITY
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
@@ -521,3 +524,4 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 #endif  // GENERAL_RELATIVITY
   return;
 }
+} // namespace

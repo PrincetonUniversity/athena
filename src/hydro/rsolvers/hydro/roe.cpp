@@ -26,12 +26,14 @@
 #include "../../../eos/eos.hpp"
 #include "../../hydro.hpp"
 
+namespace {
 // prototype for function to compute Roe fluxes from eigenmatrices
 inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real flx[],
                     Real eigenvalues[], int &flag);
 
 // (gamma-1) and isothermal sound speed made global so can be shared with flux fn
-static Real gm1, iso_cs;
+Real gm1, iso_cs;
+} // namespace
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::RiemannSolver
@@ -175,6 +177,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 //! \fn RoeFlux()
 //  \brief Computes Roe fluxes for the conserved variables, that is
@@ -347,3 +350,4 @@ inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real f
   }
   return;
 }
+} // namespace

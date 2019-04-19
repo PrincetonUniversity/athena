@@ -19,6 +19,7 @@
 #include "../athena.hpp"             // Real
 #include "../athena_arrays.hpp"      // AthenaArray
 #include "../utils/interp_table.hpp" // InterpTable2D
+#include "ascii_table_reader.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void ASCIITableLoader(const char *filename, InterpTable2D* ptable,
@@ -76,7 +77,7 @@ void ASCIITableLoader(const char *filename, InterpTable2D &table,
   table.SetX1lim(min_, max_);
 
   // read ratios for each (#=nvar) x2
-  if (pratios) {
+  if (pratios != nullptr) {
     while (std::getline(file, line) && (line[0] == '#')) continue;
     stream.str(line);
     stream.clear();

@@ -39,8 +39,10 @@
 #include "../parameter_input.hpp"
 
 // postshock flow variables are shared with IIB function
-static Real gmma1,dl,pl,ul;
-static Real bxl,byl,bzl;
+namespace {
+Real gmma1, dl, pl, ul;
+Real bxl, byl, bzl;
+} // namespace
 
 // fixes BCs on L-x1 (left edge) of grid to postshock flow.
 void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
@@ -56,7 +58,7 @@ void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Set IIB value function pointer
-  EnrollUserBoundaryFunction(INNER_X1, ShockCloudInnerX1);
+  EnrollUserBoundaryFunction(BoundaryFace::inner_x1, ShockCloudInnerX1);
   return;
 }
 

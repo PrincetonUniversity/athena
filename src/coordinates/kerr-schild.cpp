@@ -47,53 +47,6 @@
 
 KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {
-  // Set indices
-  pmy_block = pmb;
-  coarse_flag = flag;
-  int il, iu, jl, ju, kl, ku, ng;
-  if (coarse_flag == true) {
-    il = pmb->cis;
-    iu = pmb->cie;
-    jl = pmb->cjs;
-    ju = pmb->cje;
-    kl = pmb->cks;
-    ku = pmb->cke;
-    ng = pmb->cnghost;
-  } else {
-    il = pmb->is;
-    iu = pmb->ie;
-    jl = pmb->js;
-    ju = pmb->je;
-    kl = pmb->ks;
-    ku = pmb->ke;
-    ng = NGHOST;
-  }
-  Mesh *pm = pmy_block->pmy_mesh;
-  RegionSize& mesh_size = pmy_block->pmy_mesh->mesh_size;
-  RegionSize& block_size = pmy_block->block_size;
-
-  // Allocate arrays for volume-centered coordinates and positions of cells
-  int ncells1 = (iu-il+1) + 2*ng;
-  int ncells2 = 1, ncells3 = 1;
-  if (block_size.nx2 > 1) ncells2 = (ju-jl+1) + 2*ng;
-  if (block_size.nx3 > 1) ncells3 = (ku-kl+1) + 2*ng;
-  dx1v.NewAthenaArray(ncells1);
-  dx2v.NewAthenaArray(ncells2);
-  dx3v.NewAthenaArray(ncells3);
-  x1v.NewAthenaArray(ncells1);
-  x2v.NewAthenaArray(ncells2);
-  x3v.NewAthenaArray(ncells3);
-
-  // Allocate arrays for area weighted positions for AMR/SMR MHD
-  if (pm->multilevel && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.NewAthenaArray(ncells1);
-    x1s3.NewAthenaArray(ncells1);
-    x2s1.NewAthenaArray(ncells2);
-    x2s3.NewAthenaArray(ncells2);
-    x3s1.NewAthenaArray(ncells3);
-    x3s2.NewAthenaArray(ncells3);
-  }
-
   // Set parameters
   bh_mass_ = pin->GetReal("coord", "m");
   bh_spin_ = pin->GetReal("coord", "a");
@@ -166,9 +119,9 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Allocate and compute arrays for intermediate geometric quantities always needed
-  metric_cell_i1_.NewAthenaArray(ncells1);
-  metric_cell_j1_.NewAthenaArray(ncells2);
-  metric_cell_j2_.NewAthenaArray(ncells2);
+  metric_cell_i1_.NewAthenaArray(nc1);
+  metric_cell_j1_.NewAthenaArray(nc2);
+  metric_cell_j2_.NewAthenaArray(nc2);
   for (int i=il-ng; i<=iu+ng; ++i) {
     Real r_c = x1v(i);
     metric_cell_i1_(i) = r_c;
@@ -194,81 +147,81 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // needed if object is NOT a coarse mesh
   if (coarse_flag == false) {
     // Allocate arrays for intermediate geometric quantities: r-direction
-    coord_vol_i1_.NewAthenaArray(ncells1);
-    coord_vol_i2_.NewAthenaArray(ncells1);
-    coord_area1_i1_.NewAthenaArray(ncells1+1);
-    coord_area2_i1_.NewAthenaArray(ncells1);
-    coord_area2_i2_.NewAthenaArray(ncells1);
-    coord_area3_i1_.NewAthenaArray(ncells1);
-    coord_area3_i2_.NewAthenaArray(ncells1);
-    coord_len1_i1_.NewAthenaArray(ncells1);
-    coord_len1_i2_.NewAthenaArray(ncells1);
-    coord_len2_i1_.NewAthenaArray(ncells1+1);
-    coord_len3_i1_.NewAthenaArray(ncells1+1);
-    coord_width1_i1_.NewAthenaArray(ncells1);
-    coord_width2_i1_.NewAthenaArray(ncells1);
-    metric_face1_i1_.NewAthenaArray(ncells1+1);
-    metric_face2_i1_.NewAthenaArray(ncells1);
-    metric_face3_i1_.NewAthenaArray(ncells1);
-    g_.NewAthenaArray(NMETRIC, ncells1+1);
-    gi_.NewAthenaArray(NMETRIC, ncells1+1);
+    coord_vol_i1_.NewAthenaArray(nc1);
+    coord_vol_i2_.NewAthenaArray(nc1);
+    coord_area1_i1_.NewAthenaArray(nc1+1);
+    coord_area2_i1_.NewAthenaArray(nc1);
+    coord_area2_i2_.NewAthenaArray(nc1);
+    coord_area3_i1_.NewAthenaArray(nc1);
+    coord_area3_i2_.NewAthenaArray(nc1);
+    coord_len1_i1_.NewAthenaArray(nc1);
+    coord_len1_i2_.NewAthenaArray(nc1);
+    coord_len2_i1_.NewAthenaArray(nc1+1);
+    coord_len3_i1_.NewAthenaArray(nc1+1);
+    coord_width1_i1_.NewAthenaArray(nc1);
+    coord_width2_i1_.NewAthenaArray(nc1);
+    metric_face1_i1_.NewAthenaArray(nc1+1);
+    metric_face2_i1_.NewAthenaArray(nc1);
+    metric_face3_i1_.NewAthenaArray(nc1);
+    g_.NewAthenaArray(NMETRIC, nc1+1);
+    gi_.NewAthenaArray(NMETRIC, nc1+1);
 
     // Allocate arrays for intermediate geometric quantities: theta-direction
-    coord_vol_j1_.NewAthenaArray(ncells2);
-    coord_vol_j2_.NewAthenaArray(ncells2);
-    coord_area1_j1_.NewAthenaArray(ncells2);
-    coord_area1_j2_.NewAthenaArray(ncells2);
-    coord_area2_j1_.NewAthenaArray(ncells2+1);
-    coord_area2_j2_.NewAthenaArray(ncells2+1);
-    coord_area3_j1_.NewAthenaArray(ncells2);
-    coord_area3_j2_.NewAthenaArray(ncells2);
-    coord_len1_j1_.NewAthenaArray(ncells2+1);
-    coord_len1_j2_.NewAthenaArray(ncells2+1);
-    coord_len2_j1_.NewAthenaArray(ncells2);
-    coord_len2_j2_.NewAthenaArray(ncells2);
-    coord_len3_j1_.NewAthenaArray(ncells2+1);
-    coord_len3_j2_.NewAthenaArray(ncells2+1);
-    coord_width2_j1_.NewAthenaArray(ncells2);
-    coord_width3_j1_.NewAthenaArray(ncells2);
-    coord_width3_j2_.NewAthenaArray(ncells2);
-    coord_width3_j3_.NewAthenaArray(ncells2);
-    coord_src_j1_.NewAthenaArray(ncells2);
-    coord_src_j2_.NewAthenaArray(ncells2);
-    metric_face1_j1_.NewAthenaArray(ncells2);
-    metric_face1_j2_.NewAthenaArray(ncells2);
-    metric_face2_j1_.NewAthenaArray(ncells2+1);
-    metric_face2_j2_.NewAthenaArray(ncells2+1);
-    metric_face3_j1_.NewAthenaArray(ncells2);
-    metric_face3_j2_.NewAthenaArray(ncells2);
+    coord_vol_j1_.NewAthenaArray(nc2);
+    coord_vol_j2_.NewAthenaArray(nc2);
+    coord_area1_j1_.NewAthenaArray(nc2);
+    coord_area1_j2_.NewAthenaArray(nc2);
+    coord_area2_j1_.NewAthenaArray(nc2+1);
+    coord_area2_j2_.NewAthenaArray(nc2+1);
+    coord_area3_j1_.NewAthenaArray(nc2);
+    coord_area3_j2_.NewAthenaArray(nc2);
+    coord_len1_j1_.NewAthenaArray(nc2+1);
+    coord_len1_j2_.NewAthenaArray(nc2+1);
+    coord_len2_j1_.NewAthenaArray(nc2);
+    coord_len2_j2_.NewAthenaArray(nc2);
+    coord_len3_j1_.NewAthenaArray(nc2+1);
+    coord_len3_j2_.NewAthenaArray(nc2+1);
+    coord_width2_j1_.NewAthenaArray(nc2);
+    coord_width3_j1_.NewAthenaArray(nc2);
+    coord_width3_j2_.NewAthenaArray(nc2);
+    coord_width3_j3_.NewAthenaArray(nc2);
+    coord_src_j1_.NewAthenaArray(nc2);
+    coord_src_j2_.NewAthenaArray(nc2);
+    metric_face1_j1_.NewAthenaArray(nc2);
+    metric_face1_j2_.NewAthenaArray(nc2);
+    metric_face2_j1_.NewAthenaArray(nc2+1);
+    metric_face2_j2_.NewAthenaArray(nc2+1);
+    metric_face3_j1_.NewAthenaArray(nc2);
+    metric_face3_j2_.NewAthenaArray(nc2);
 
     // Allocate arrays for intermediate geometric quantities: phi-direction
-    coord_vol_k1_.NewAthenaArray(ncells3);
-    coord_area1_k1_.NewAthenaArray(ncells3);
-    coord_area2_k1_.NewAthenaArray(ncells3);
-    coord_len3_k1_.NewAthenaArray(ncells3);
-    coord_width3_k1_.NewAthenaArray(ncells3);
+    coord_vol_k1_.NewAthenaArray(nc3);
+    coord_area1_k1_.NewAthenaArray(nc3);
+    coord_area2_k1_.NewAthenaArray(nc3);
+    coord_len3_k1_.NewAthenaArray(nc3);
+    coord_width3_k1_.NewAthenaArray(nc3);
 
     // Allocate arrays for intermediate geometric quantities: r-theta-direction
-    coord_width3_ji1_.NewAthenaArray(ncells2, ncells1);
-    trans_face1_ji1_.NewAthenaArray(ncells2, ncells1+1);
-    trans_face1_ji2_.NewAthenaArray(ncells2, ncells1+1);
-    trans_face1_ji3_.NewAthenaArray(ncells2, ncells1+1);
-    trans_face1_ji4_.NewAthenaArray(ncells2, ncells1+1);
-    trans_face1_ji5_.NewAthenaArray(ncells2, ncells1+1);
-    trans_face1_ji6_.NewAthenaArray(ncells2, ncells1+1);
-    trans_face1_ji7_.NewAthenaArray(ncells2, ncells1+1);
-    trans_face2_ji1_.NewAthenaArray(ncells2+1, ncells1);
-    trans_face2_ji2_.NewAthenaArray(ncells2+1, ncells1);
-    trans_face2_ji3_.NewAthenaArray(ncells2+1, ncells1);
-    trans_face2_ji4_.NewAthenaArray(ncells2+1, ncells1);
-    trans_face2_ji5_.NewAthenaArray(ncells2+1, ncells1);
-    trans_face2_ji6_.NewAthenaArray(ncells2+1, ncells1);
-    trans_face3_ji1_.NewAthenaArray(ncells2, ncells1);
-    trans_face3_ji2_.NewAthenaArray(ncells2, ncells1);
-    trans_face3_ji3_.NewAthenaArray(ncells2, ncells1);
-    trans_face3_ji4_.NewAthenaArray(ncells2, ncells1);
-    trans_face3_ji5_.NewAthenaArray(ncells2, ncells1);
-    trans_face3_ji6_.NewAthenaArray(ncells2, ncells1);
+    coord_width3_ji1_.NewAthenaArray(nc2, nc1);
+    trans_face1_ji1_.NewAthenaArray(nc2, nc1+1);
+    trans_face1_ji2_.NewAthenaArray(nc2, nc1+1);
+    trans_face1_ji3_.NewAthenaArray(nc2, nc1+1);
+    trans_face1_ji4_.NewAthenaArray(nc2, nc1+1);
+    trans_face1_ji5_.NewAthenaArray(nc2, nc1+1);
+    trans_face1_ji6_.NewAthenaArray(nc2, nc1+1);
+    trans_face1_ji7_.NewAthenaArray(nc2, nc1+1);
+    trans_face2_ji1_.NewAthenaArray(nc2+1, nc1);
+    trans_face2_ji2_.NewAthenaArray(nc2+1, nc1);
+    trans_face2_ji3_.NewAthenaArray(nc2+1, nc1);
+    trans_face2_ji4_.NewAthenaArray(nc2+1, nc1);
+    trans_face2_ji5_.NewAthenaArray(nc2+1, nc1);
+    trans_face2_ji6_.NewAthenaArray(nc2+1, nc1);
+    trans_face3_ji1_.NewAthenaArray(nc2, nc1);
+    trans_face3_ji2_.NewAthenaArray(nc2, nc1);
+    trans_face3_ji3_.NewAthenaArray(nc2, nc1);
+    trans_face3_ji4_.NewAthenaArray(nc2, nc1);
+    trans_face3_ji5_.NewAthenaArray(nc2, nc1);
+    trans_face3_ji6_.NewAthenaArray(nc2, nc1);
 
     // Calculate intermediate geometric quantities: r-direction
     for (int i=il-ng; i<=iu+ng; ++i) {
@@ -276,10 +229,10 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       Real r_c = x1v(i);
       Real r_m = x1f(i);
       Real r_p = x1f(i+1);
-      Real r_c_sq = SQR(r_c);
+      //Real r_c_sq = SQR(r_c);
       Real r_m_sq = SQR(r_m);
       Real r_p_sq = SQR(r_p);
-      Real r_m_cu = r_m * r_m_sq;
+      //Real r_m_cu = r_m * r_m_sq;
       Real rm_m = std::sqrt(r_m_sq + SQR(m));
       Real rm_p = std::sqrt(r_p_sq + SQR(m));
 
@@ -334,8 +287,8 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       Real cos_c_sq = SQR(cos_c);
       Real cos_m_sq = SQR(cos_m);
       Real cos_p_sq = SQR(cos_p);
-      Real sin_m_cu = sin_m_sq*sin_m;
-      Real sin_p_cu = SQR(sin_p)*sin_p;
+      // Real sin_m_cu = sin_m_sq*sin_m;
+      // Real sin_p_cu = SQR(sin_p)*sin_p;
 
       // Volumes, areas, lengths, and widths
       coord_vol_j1_(j) = std::abs(cos_m - cos_p);
@@ -515,99 +468,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 }
 
-//----------------------------------------------------------------------------------------
-// Destructor
-
-KerrSchild::~KerrSchild() {
-  dx1v.DeleteAthenaArray();
-  dx2v.DeleteAthenaArray();
-  dx3v.DeleteAthenaArray();
-  x1v.DeleteAthenaArray();
-  x2v.DeleteAthenaArray();
-  x3v.DeleteAthenaArray();
-  if (pmy_block->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
-    x1s2.DeleteAthenaArray();
-    x1s3.DeleteAthenaArray();
-    x2s1.DeleteAthenaArray();
-    x2s3.DeleteAthenaArray();
-    x3s1.DeleteAthenaArray();
-    x3s2.DeleteAthenaArray();
-  }
-  metric_cell_i1_.DeleteAthenaArray();
-  metric_cell_j1_.DeleteAthenaArray();
-  metric_cell_j2_.DeleteAthenaArray();
-  if (coarse_flag == false) {
-    coord_vol_i1_.DeleteAthenaArray();
-    coord_vol_i2_.DeleteAthenaArray();
-    coord_area1_i1_.DeleteAthenaArray();
-    coord_area2_i1_.DeleteAthenaArray();
-    coord_area2_i2_.DeleteAthenaArray();
-    coord_area3_i1_.DeleteAthenaArray();
-    coord_area3_i2_.DeleteAthenaArray();
-    coord_len1_i1_.DeleteAthenaArray();
-    coord_len1_i2_.DeleteAthenaArray();
-    coord_len2_i1_.DeleteAthenaArray();
-    coord_len3_i1_.DeleteAthenaArray();
-    coord_width1_i1_.DeleteAthenaArray();
-    coord_width2_i1_.DeleteAthenaArray();
-    metric_face1_i1_.DeleteAthenaArray();
-    metric_face2_i1_.DeleteAthenaArray();
-    metric_face3_i1_.DeleteAthenaArray();
-    g_.DeleteAthenaArray();
-    gi_.DeleteAthenaArray();
-    coord_vol_j1_.DeleteAthenaArray();
-    coord_vol_j2_.DeleteAthenaArray();
-    coord_area1_j1_.DeleteAthenaArray();
-    coord_area1_j2_.DeleteAthenaArray();
-    coord_area2_j1_.DeleteAthenaArray();
-    coord_area2_j2_.DeleteAthenaArray();
-    coord_area3_j1_.DeleteAthenaArray();
-    coord_area3_j2_.DeleteAthenaArray();
-    coord_len1_j1_.DeleteAthenaArray();
-    coord_len1_j2_.DeleteAthenaArray();
-    coord_len2_j1_.DeleteAthenaArray();
-    coord_len2_j2_.DeleteAthenaArray();
-    coord_len3_j1_.DeleteAthenaArray();
-    coord_len3_j2_.DeleteAthenaArray();
-    coord_width2_j1_.DeleteAthenaArray();
-    coord_width3_j1_.DeleteAthenaArray();
-    coord_width3_j2_.DeleteAthenaArray();
-    coord_width3_j3_.DeleteAthenaArray();
-    coord_src_j1_.DeleteAthenaArray();
-    coord_src_j2_.DeleteAthenaArray();
-    metric_face1_j1_.DeleteAthenaArray();
-    metric_face1_j2_.DeleteAthenaArray();
-    metric_face2_j1_.DeleteAthenaArray();
-    metric_face2_j2_.DeleteAthenaArray();
-    metric_face3_j1_.DeleteAthenaArray();
-    metric_face3_j2_.DeleteAthenaArray();
-    coord_vol_k1_.DeleteAthenaArray();
-    coord_area1_k1_.DeleteAthenaArray();
-    coord_area2_k1_.DeleteAthenaArray();
-    coord_len3_k1_.DeleteAthenaArray();
-    coord_width3_k1_.DeleteAthenaArray();
-    coord_width3_ji1_.DeleteAthenaArray();
-    trans_face1_ji1_.DeleteAthenaArray();
-    trans_face1_ji2_.DeleteAthenaArray();
-    trans_face1_ji3_.DeleteAthenaArray();
-    trans_face1_ji4_.DeleteAthenaArray();
-    trans_face1_ji5_.DeleteAthenaArray();
-    trans_face1_ji6_.DeleteAthenaArray();
-    trans_face1_ji7_.DeleteAthenaArray();
-    trans_face2_ji1_.DeleteAthenaArray();
-    trans_face2_ji2_.DeleteAthenaArray();
-    trans_face2_ji3_.DeleteAthenaArray();
-    trans_face2_ji4_.DeleteAthenaArray();
-    trans_face2_ji5_.DeleteAthenaArray();
-    trans_face2_ji6_.DeleteAthenaArray();
-    trans_face3_ji1_.DeleteAthenaArray();
-    trans_face3_ji2_.DeleteAthenaArray();
-    trans_face3_ji3_.DeleteAthenaArray();
-    trans_face3_ji4_.DeleteAthenaArray();
-    trans_face3_ji5_.DeleteAthenaArray();
-    trans_face3_ji6_.DeleteAthenaArray();
-  }
-}
 
 //----------------------------------------------------------------------------------------
 // EdgeXLength functions: compute physical length at cell edge-X as vector
@@ -1212,9 +1072,9 @@ void KerrSchild::PrimToLocal1(
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
       // Extract metric coefficients
-      const Real &g_00 = g_(I00,i);
-      const Real &g_01 = g_(I01,i);
-      const Real &g_03 = g_(I03,i);
+      // const Real &g_00 = g_(I00,i);
+      // const Real &g_01 = g_(I01,i);
+      // const Real &g_03 = g_(I03,i);
       const Real &g_10 = g_(I01,i);
       const Real &g_11 = g_(I11,i);
       const Real &g_13 = g_(I13,i);
@@ -1354,9 +1214,9 @@ void KerrSchild::PrimToLocal2(
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
       // Extract metric coefficients
-      const Real &g_00 = g_(I00,i);
-      const Real &g_01 = g_(I01,i);
-      const Real &g_03 = g_(I03,i);
+      // const Real &g_00 = g_(I00,i);
+      // const Real &g_01 = g_(I01,i);
+      // const Real &g_03 = g_(I03,i);
       const Real &g_10 = g_(I01,i);
       const Real &g_11 = g_(I11,i);
       const Real &g_13 = g_(I13,i);
@@ -1496,9 +1356,9 @@ void KerrSchild::PrimToLocal3(
     // Transform magnetic field if necessary
     if (MAGNETIC_FIELDS_ENABLED) {
       // Extract metric coefficients
-      const Real &g_00 = g_(I00,i);
-      const Real &g_01 = g_(I01,i);
-      const Real &g_03 = g_(I03,i);
+      // const Real &g_00 = g_(I00,i);
+      // const Real &g_01 = g_(I01,i);
+      // const Real &g_03 = g_(I03,i);
       const Real &g_10 = g_(I01,i);
       const Real &g_11 = g_(I11,i);
       const Real &g_13 = g_(I13,i);
@@ -1606,8 +1466,8 @@ void KerrSchild::FluxToGlobal1(
     const Real &my_2 = trans_face1_ji3_(j,i);
     const Real &mz_1 = trans_face1_ji7_(j,i);
     const Real &mz_3 = trans_face1_ji4_(j,i);
-    Real m0_t = 1.0/mt_0;
-    Real m1_t = -mx_0/(mt_0*mx_1);
+    Real m0_tm = 1.0/mt_0;
+    Real m1_tm = -mx_0/(mt_0*mx_1);
     Real m1_x = 1.0/mx_1;
     Real m2_y = 1.0/my_2;
     Real m3_x = -mz_1/(mx_1*mz_3);
@@ -1626,10 +1486,10 @@ void KerrSchild::FluxToGlobal1(
     Real txz = flux(IM3,k,j,i);
 
     // Transform stress-energy tensor
-    Real t10 = m1_t*m0_t*ttt + m1_x*m0_t*txt;
-    Real t11 = m1_t*m1_t*ttt + m1_t*m1_x*ttx + m1_x*m1_t*txt + m1_x*m1_x*txx;
-    Real t12 = m1_t*m2_y*tty + m1_x*m2_y*txy;
-    Real t13 = m1_t*m3_x*ttx + m1_t*m3_z*ttz + m1_x*m3_x*txx + m1_x*m3_z*txz;
+    Real t10 = m1_tm*m0_tm*ttt + m1_x*m0_tm*txt;
+    Real t11 = m1_tm*m1_tm*ttt + m1_tm*m1_x*ttx + m1_x*m1_tm*txt + m1_x*m1_x*txx;
+    Real t12 = m1_tm*m2_y*tty + m1_x*m2_y*txy;
+    Real t13 = m1_tm*m3_x*ttx + m1_tm*m3_z*ttz + m1_x*m3_x*txx + m1_x*m3_z*txz;
 
     // Extract metric coefficients
     const Real &g_00 = g_(I00,i);
@@ -1651,7 +1511,7 @@ void KerrSchild::FluxToGlobal1(
     Real &t1_3 = flux(IM3,k,j,i);
 
     // Set fluxes
-    d1 = m1_t*dt + m1_x*dx;
+    d1 = m1_tm*dt + m1_x*dx;
     t1_0 = g_00*t10 + g_01*t11 + g_03*t13;
     t1_1 = g_10*t10 + g_11*t11 + g_13*t13;
     t1_2 = g_22*t12;
@@ -1664,8 +1524,8 @@ void KerrSchild::FluxToGlobal1(
       Real fzt = cons(IBZ,i);
       Real fyx = -ey(k,j,i);
       Real fzx = ez(k,j,i);
-      Real f21 = m2_y*m1_t*fyt + m2_y*m1_x*fyx;
-      Real f31 = m3_x*m1_t*fxt + m3_z*m1_t*fzt + m3_z*m1_x*fzx;
+      Real f21 = m2_y*m1_tm*fyt + m2_y*m1_x*fyx;
+      Real f31 = m3_x*m1_tm*fxt + m3_z*m1_tm*fzt + m3_z*m1_x*fzx;
       ey(k,j,i) = -f21;
       ez(k,j,i) = f31;
     }
@@ -1708,19 +1568,19 @@ void KerrSchild::FluxToGlobal2(
     const Real &mz_0 = trans_face2_ji5_(j,i);
     const Real &mz_1 = trans_face2_ji2_(j,i);
     const Real &mz_3 = trans_face2_ji6_(j,i);
-    Real m0_t = 1.0/mt_0;
-    Real m1_t = -mz_0/(mt_0*mz_1);
+    Real m0_tm = 1.0/mt_0;
+    Real m1_tm = -mz_0/(mt_0*mz_1);
     Real m1_y = -mz_3/(mz_1*my_3);
     Real m1_z = 1.0/mz_1;
     Real m2_x = 1.0/mx_2;
     Real m3_y = 1.0/my_3;
 
     // Extract local conserved quantities and fluxes
-    Real dt = cons(IDN,i);
-    Real ttt = cons(IEN,i);
-    Real ttx = cons(IM1,i);
-    Real tty = cons(IM2,i);
-    Real ttz = cons(IM3,i);
+    // Real dt = cons(IDN,i);
+    // Real ttt = cons(IEN,i);
+    // Real ttx = cons(IM1,i);
+    // Real tty = cons(IM2,i);
+    // Real ttz = cons(IM3,i);
     Real dx = flux(IDN,k,j,i);
     Real txt = flux(IEN,k,j,i);
     Real txx = flux(IM2,k,j,i);
@@ -1728,8 +1588,8 @@ void KerrSchild::FluxToGlobal2(
     Real txz = flux(IM1,k,j,i);
 
     // Transform stress-energy tensor
-    Real t20 = m2_x*m0_t*txt;
-    Real t21 = m2_x*m1_t*txt + m2_x*m1_y*txy + m2_x*m1_z*txz;
+    Real t20 = m2_x*m0_tm*txt;
+    Real t21 = m2_x*m1_tm*txt + m2_x*m1_y*txy + m2_x*m1_z*txz;
     Real t22 = m2_x*m2_x*txx;
     Real t23 = m2_x*m3_y*txy;
 
@@ -1765,7 +1625,7 @@ void KerrSchild::FluxToGlobal2(
       Real fyx = -ey(k,j,i);
       Real fzx = ez(k,j,i);
       Real f32 = m3_y*m2_x*fyx;
-      Real f12 = m1_t*m2_x*ftx + m1_y*m2_x*fyx + m1_z*m2_x*fzx;
+      Real f12 = m1_tm*m2_x*ftx + m1_y*m2_x*fyx + m1_z*m2_x*fzx;
       ey(k,j,i) = -f32;
       ez(k,j,i) = f12;
     }
@@ -1808,19 +1668,19 @@ void KerrSchild::FluxToGlobal3(
     const Real &my_1 = trans_face3_ji2_(j,i);
     const Real &my_3 = trans_face3_ji6_(j,i);
     const Real &mz_2 = trans_face3_ji3_(j,i);
-    Real m0_t = 1.0/mt_0;
-    Real m1_t = -my_0/(mt_0*my_1);
+    Real m0_tm = 1.0/mt_0;
+    Real m1_tm = -my_0/(mt_0*my_1);
     Real m1_x = -my_3/(my_1*mx_3);
     Real m1_y = 1.0/my_1;
     Real m2_z = 1.0/mz_2;
     Real m3_x = 1.0/mx_3;
 
     // Extract local conserved quantities and fluxes
-    Real dt = cons(IDN,i);
-    Real ttt = cons(IEN,i);
-    Real ttx = cons(IM1,i);
-    Real tty = cons(IM2,i);
-    Real ttz = cons(IM3,i);
+    // Real dt = cons(IDN,i);
+    // Real ttt = cons(IEN,i);
+    // Real ttx = cons(IM1,i);
+    // Real tty = cons(IM2,i);
+    // Real ttz = cons(IM3,i);
     Real dx = flux(IDN,k,j,i);
     Real txt = flux(IEN,k,j,i);
     Real txx = flux(IM3,k,j,i);
@@ -1828,8 +1688,8 @@ void KerrSchild::FluxToGlobal3(
     Real txz = flux(IM2,k,j,i);
 
     // Transform stress-energy tensor
-    Real t30 = m3_x*m0_t*txt;
-    Real t31 = m3_x*m1_t*txt + m3_x*m1_x*txx + m3_x*m1_y*txy;
+    Real t30 = m3_x*m0_tm*txt;
+    Real t31 = m3_x*m1_tm*txt + m3_x*m1_x*txx + m3_x*m1_y*txy;
     Real t32 = m3_x*m2_z*txz;
     Real t33 = m3_x*m3_x*txx;
 
@@ -1864,7 +1724,7 @@ void KerrSchild::FluxToGlobal3(
       Real ftx = -bbx(i);
       Real fyx = -ey(k,j,i);
       Real fzx = ez(k,j,i);
-      Real f13 = m1_t*m3_x*ftx + m1_y*m3_x*fyx;
+      Real f13 = m1_tm*m3_x*ftx + m1_y*m3_x*fyx;
       Real f23 = m2_z*m3_x*fzx;
       ey(k,j,i) = -f13;
       ez(k,j,i) = f23;

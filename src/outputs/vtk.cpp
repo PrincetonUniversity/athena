@@ -12,7 +12,7 @@
 
 // C++ headers
 #include <algorithm>
-#include <cstdio>      // std::fwrite(), std::fclose(), std::fopen()
+#include <cstdio>      // fwrite(), fclose(), fopen(), fnprintf(), snprintf()
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
@@ -32,7 +32,7 @@
 // Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
 // legacy format requires data to be stored as big-endian.
 
-int IsBigEndian(void) {
+int IsBigEndian() {
   std::int32_t n = 1;
   // careful! although int -> char * -> int round-trip conversion is safe,
   // an arbitrary char* may not be converted to int*
@@ -40,11 +40,13 @@ int IsBigEndian(void) {
   return (*ep == 0); // Returns 1 (true) on a big endian machine
 }
 
-static inline void Swap4Bytes(void *vdat) {
+namespace {
+inline void Swap4Bytes(void *vdat) {
   char tmp, *dat = static_cast<char *>(vdat);
   tmp = dat[0];  dat[0] = dat[3];  dat[3] = tmp;
   tmp = dat[1];  dat[1] = dat[2];  dat[2] = tmp;
 }
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // VTKOutput constructor
@@ -75,7 +77,8 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       if (out_ks != out_ke) {out_ks -= NGHOST; out_ke += NGHOST;}
     }
 
-    // set ptrs to data in OutputData linked list, then slice/sum as needed
+    // build doubly linked list of OutputData nodes (setting data ptrs to appropriate
+    // quantity on MeshBlock for each node), then slice/sum as needed
     LoadOutputData(pmb);
     if (TransformOutputData(pmb) == false) {
       ClearOutputData();  // required when LoadOutputData() is used.
@@ -180,7 +183,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     std::fwrite(data,sizeof(float),static_cast<std::size_t>(ncoord3),pfile);
 
     //  5. Data.  An arbitrary number of scalars and vectors can be written (every node
-    //  in the OutputData linked lists), all in binary floats format
+    //  in the OutputData doubly linked lists), all in binary floats format
     std::fprintf(pfile,"\nCELL_DATA %d", (ncells1)*(ncells2)*(ncells3));
 
     OutputData *pdata = pfirst_data_;

@@ -16,7 +16,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals_mg.hpp"
+#include "../bvals/cc/mg/bvals_mg.hpp"
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../task_list/mg_task_list.hpp"
@@ -55,38 +55,42 @@ void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 class Multigrid {
  public:
   Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
-            int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
-            enum BoundaryFlag *input_bcs, bool root);
+            int invar, int nghost, RegionSize isize, MGBoundaryFunc *MGBoundary,
+            BoundaryFlag *input_bcs, bool root);
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;
-  enum BoundaryType btype, btypef;
-  Multigrid *next, *prev;
+  // KGF: Both btype=BoundaryQuantity::mggrav and btypef=BoundaryQuantity::mggrav_f (face
+  // neighbors only) are passed to comm function calls in mg_task_list.cpp Only
+  // BoundaryQuantity::mggrav is handled in a case in InitBoundaryData(). Passed directly
+  // (not through btype) in MGBoundaryValues() ctor
+  BoundaryQuantity btype, btypef;
+  Multigrid *next, *prev; // node links for doubly linked list
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
-  void RestrictFMGSource(void);
+  void RestrictFMGSource();
   void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh);
-  void ZeroClearData(void);
-  void Restrict(void);
-  void ProlongateAndCorrect(void);
-  void FMGProlongate(void);
+  void ZeroClearData();
+  void Restrict();
+  void ProlongateAndCorrect();
+  void FMGProlongate();
   void SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck);
   Real CalculateDefectNorm(int n, int nrm);
   Real CalculateTotal(int type, int n);
   void SubtractAverage(int type, int n, Real ave);
 
   // small functions
-  int GetCurrentNumberOfCells(void) { return 1<<current_level_; }
-  int GetNumberOfLevels(void) { return nlevel_; }
-  int GetCurrentLevel(void) { return current_level_; }
-  AthenaArray<Real>& GetCurrentData(void) { return u_[current_level_]; }
-  AthenaArray<Real>& GetCurrentSource(void) { return src_[current_level_]; }
+  int GetCurrentNumberOfCells() { return 1<<current_level_; }
+  int GetNumberOfLevels() { return nlevel_; }
+  int GetCurrentLevel() { return current_level_; }
+  AthenaArray<Real>& GetCurrentData() { return u_[current_level_]; }
+  AthenaArray<Real>& GetCurrentSource() { return src_[current_level_]; }
   Real GetRootSource(int n) { return src_[0](n,ngh_,ngh_,ngh_); }
 
   // pure virtual functions
   virtual void Smooth(int color) = 0;
-  virtual void CalculateDefect(void) = 0;
+  virtual void CalculateDefect() = 0;
 
   friend class MultigridDriver;
   friend class MultigridTaskList;
@@ -104,7 +108,7 @@ class Multigrid {
 
  private:
   bool root_flag_;
-  TaskState ts_;
+  TaskStates ts_;
 };
 
 
@@ -113,27 +117,27 @@ class Multigrid {
 
 class MultigridDriver {
  public:
-  MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar);
+  MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar);
   virtual ~MultigridDriver();
   void AddMultigrid(Multigrid *nmg);
   void SubtractAverage(int type);
-  void SetupMultigrid(void);
-  void FillRootGridSource(void);
-  void FMGProlongate(void);
-  void TransferFromRootToBlocks(void);
+  void SetupMultigrid();
+  void FillRootGridSource();
+  void FMGProlongate();
+  void TransferFromRootToBlocks();
   void OneStepToFiner(int nsmooth);
   void OneStepToCoarser(int nsmooth);
   void SolveVCycle(int npresmooth, int npostsmooth);
   void SolveFCycle(int npresmooth, int npostsmooth);
-  void SolveFMGCycle(void);
-  void SolveIterative(void);
+  void SolveFMGCycle();
+  void SolveIterative();
 
-  virtual void SolveCoarsestGrid(void);
+  virtual void SolveCoarsestGrid();
   Real CalculateDefectNorm(int n, int nrm);
   Multigrid* FindMultigrid(int tgid);
 
   // small functions
-  int GetNumMultigrids(void) { return nblist_[Globals::my_rank]; }
+  int GetNumMultigrids() { return nblist_[Globals::my_rank]; }
 
   // pure virtual functions
   virtual void Solve(int step) = 0;
@@ -146,9 +150,10 @@ class MultigridDriver {
   int nranks_, nvar_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
   int current_level_;
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *ranklist_;
-  MGBoundaryFunc_t MGBoundaryFunction_[6];
+  MGBoundaryFunc MGBoundaryFunction_[6];
   Mesh *pmy_mesh_;
-  Multigrid *pmg_;
+  Multigrid *pmg_;       // pointer to head node of doubly linked list of Multgrid objects
+  // (not storing a reference to the tail node)
   Multigrid *mgroot_;
   bool fperiodic_;
   Real last_ave_;
@@ -160,6 +165,7 @@ class MultigridDriver {
   AthenaArray<Real> rootsrc_;
 #ifdef MPI_PARALLEL
   MPI_Comm MPI_COMM_MULTIGRID;
+  int mg_phys_id_;
 #endif
 };
 

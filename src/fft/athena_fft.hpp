@@ -11,6 +11,7 @@
 // C headers
 
 // C++ headers
+#include <complex>
 #include <iostream>
 
 // Athena++ headers
@@ -29,34 +30,29 @@
 #endif // MPI_PARALLEL
 #endif
 
-enum AthenaFFTDirection { AthenaFFTForward = -1, AthenaFFTBackward = 1 };
-
 #ifdef FFT
-typedef fftw_complex AthenaFFTComplex;
-
-#ifdef MPI_PARALLEL
-typedef struct AthenaFFTPlan {
+#ifdef MPI_PARALLEL // parallel FFT
+struct AthenaFFTPlan {
   struct fft_plan_3d *plan3d;
   struct fft_plan_2d *plan2d;
   fftw_plan plan;
   int dir;
   int dim;
-} AthenaFFTPlan;
-#else // MPI_PARALLEL
-typedef struct AthenaFFTPlan {
+};
+#else // serial FFT
+struct AthenaFFTPlan {
   fftw_plan plan;
   int dir;
   int dim;
-} AthenaFFTPlan;
-#endif // MPI_PARALLEL
-#else // FFT
-typedef Real AthenaFFTComplex[2];
-typedef struct AthenaFFTPlan {
+};
+#endif
+#else // no FFT
+struct AthenaFFTPlan {
   void *plan;
   int dir;
   int dim;
-} AthenaFFTPlan;
-#endif // FFT
+};
+#endif
 
 class Mesh;
 class MeshBlock;
@@ -67,10 +63,9 @@ class TurbulenceDriver;
 
 class AthenaFFTIndex{
  public:
-  AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, RegionSize bsize);
-  ~AthenaFFTIndex();
-
   explicit AthenaFFTIndex(const AthenaFFTIndex *psrc);
+  AthenaFFTIndex(int dim, LogicalLocation loc, RegionSize msize, RegionSize bsize);
+
   // mesh size
   Real Lx[3];
   int Nx[3];
@@ -87,18 +82,15 @@ class AthenaFFTIndex{
   void PermuteAxis(int npermute);
   void SwapProc(int ref_axis);
   void PermuteProc(int npermute);
-  void RemapAxis(int dir);
-  void RemapProc(int dir);
-  void PrintIndex(void);
+  void PrintIndex();
 
   friend class FFTDriver;
   friend class FFTBlock;
  private:
   int dim_;
   int npermute_, swap_;
-  void Permute_(int loc[], int npermute);
-  void Swap_(int loc[], int ref_axis);
-  void RemapArray_(int arr[], int loc[], int dir);
+  template <typename T> void Swap_(T loc[], int ref_axis);
+  template <typename T> void Permute_(T loc[], int npermute);
 };
 
 //! \class FFTBlock
@@ -110,9 +102,9 @@ class FFTBlock {
            RegionSize msize, RegionSize bsize);
   virtual ~FFTBlock();
 
-  void LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
+  void LoadSource(const AthenaArray<Real> &src, bool nu, int ngh,
                   LogicalLocation loc, RegionSize bsize);
-  void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh,
+  void RetrieveResult(AthenaArray<Real> &dst, bool nu, int ngh,
                       LogicalLocation loc, RegionSize bsize);
   virtual void ApplyKernel(int mode);
 
@@ -124,24 +116,26 @@ class FFTBlock {
   void DestroyPlan(AthenaFFTPlan *plan);
   void MpiInitialize();
   void Execute(AthenaFFTPlan *plan);
-  void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *data);
-  void Execute(AthenaFFTPlan *plan, AthenaFFTComplex *in_data,
-               AthenaFFTComplex *out_data);
+  void Execute(AthenaFFTPlan *plan, std::complex<Real> *data);
+  void Execute(AthenaFFTPlan *plan, std::complex<Real> *in_data,
+               std::complex<Real> *out_data);
 
-  AthenaFFTPlan *QuickCreatePlan(AthenaFFTComplex *data,enum AthenaFFTDirection dir);
-  AthenaFFTPlan *CreatePlan(int nfast, AthenaFFTComplex *data,
-                            enum AthenaFFTDirection dir);
-  AthenaFFTPlan *CreatePlan(int nfast, int nslow, AthenaFFTComplex *data,
-                            enum AthenaFFTDirection dir);
+  enum class AthenaFFTDirection {forward=-1, backward=1};
+
+  AthenaFFTPlan *QuickCreatePlan(std::complex<Real> *data,AthenaFFTDirection dir);
+  AthenaFFTPlan *CreatePlan(int nfast, std::complex<Real> *data,
+                            AthenaFFTDirection dir);
+  AthenaFFTPlan *CreatePlan(int nfast, int nslow, std::complex<Real> *data,
+                            AthenaFFTDirection dir);
   AthenaFFTPlan *CreatePlan(int nfast, int nmid, int nslow,
-                            AthenaFFTComplex *data,
-                            enum AthenaFFTDirection dir);
+                            std::complex<Real> *data,
+                            AthenaFFTDirection dir);
 
-  void ExecuteForward(void) {Execute(fplan_);}
-  void ExecuteBackward(void) {Execute(bplan_);}
+  void ExecuteForward() {Execute(fplan_);}
+  void ExecuteBackward() {Execute(bplan_);}
 
   void PrintSource(int in);
-  void PrintNormFactor(void) {std::cout << norm_factor_ << std::endl;}
+  void PrintNormFactor() {std::cout << norm_factor_ << std::endl;}
 
   void SetNormFactor(Real norm) { norm_factor_=norm;}
 
@@ -157,19 +151,19 @@ class FFTBlock {
   std::int64_t cnt_,gcnt_;
   int gid_;
   FFTDriver *pmy_driver_;
-  AthenaFFTComplex *in_, *out_;
-  AthenaFFTPlan *fplan_,*bplan_;
+  std::complex<Real> *in_, *out_;
+  AthenaFFTPlan *fplan_, *bplan_;
   AthenaFFTIndex *orig_idx_;
-  AthenaFFTIndex *f_in_,*f_out_,*b_in_,*b_out_;
+  AthenaFFTIndex *f_in_, *f_out_, *b_in_, *b_out_;
   Real norm_factor_;
   int dim_;
 
   LogicalLocation loc_;
   RegionSize msize_, bsize_;
 #ifdef MPI_PARALLEL
-  int decomp_,pdim_;
+  int decomp_, pdim_;
   int permute0_, permute1_, permute2_;
-  bool swap1_,swap2_;
+  bool swap1_, swap2_;
 #endif
 };
 
@@ -181,13 +175,13 @@ class FFTDriver {
   FFTDriver(Mesh *pm, ParameterInput *pin);
   virtual ~FFTDriver();
 
-  int npx1,npx2,npx3,nmb;
+  int npx1, npx2, npx3, nmb;
   FFTBlock *pmy_fb;
 
   void QuickCreatePlan();
   void InitializeFFTBlock(bool set_norm);
   // small functions
-  int GetNumFFTBlocks(void) { return nblist_[Globals::my_rank]; }
+  int GetNumFFTBlocks() { return nblist_[Globals::my_rank]; }
 
   friend class FFTBlock;
   friend class Mesh;
@@ -200,7 +194,7 @@ class FFTDriver {
   RegionSize fft_mesh_size_, fft_block_size_;
   LogicalLocation *fft_loclist_;
 #ifdef MPI_PARALLEL
-  int decomp_,pdim_;
+  int decomp_, pdim_;
 #endif
   int dim_;
 #ifdef MPI_PARALLEL

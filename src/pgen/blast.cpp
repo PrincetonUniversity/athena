@@ -1,3 +1,4 @@
+
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -16,6 +17,7 @@
 // C++ headers
 #include <algorithm>
 #include <cmath>
+#include <cstdio>     // fopen(), fprintf(), freopen()
 #include <cstring>    // strcmp()
 #include <sstream>
 #include <stdexcept>
@@ -32,31 +34,43 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 
+Real threshold;
+
+int RefinementCondition(MeshBlock *pmb);
+
+void Mesh::InitUserMeshData(ParameterInput *pin) {
+  if (adaptive) {
+    EnrollUserRefinementCondition(RefinementCondition);
+    threshold = pin->GetReal("problem","thr");
+  }
+  return;
+}
+
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief Spherical blast wave test problem generator
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  Real rout = pin->GetReal("problem","radius");
-  Real rin  = rout - pin->GetOrAddReal("problem","ramp",0.0);
-  Real pa   = pin->GetOrAddReal("problem","pamb",1.0);
-  Real da   = pin->GetOrAddReal("problem","damb",1.0);
-  Real prat = pin->GetReal("problem","prat");
-  Real drat = pin->GetOrAddReal("problem","drat",1.0);
-  Real b0,angle;
+  Real rout = pin->GetReal("problem", "radius");
+  Real rin  = rout - pin->GetOrAddReal("problem", "ramp", 0.0);
+  Real pa   = pin->GetOrAddReal("problem", "pamb", 1.0);
+  Real da   = pin->GetOrAddReal("problem", "damb", 1.0);
+  Real prat = pin->GetReal("problem", "prat");
+  Real drat = pin->GetOrAddReal("problem", "drat", 1.0);
+  Real b0, angle;
   if (MAGNETIC_FIELDS_ENABLED) {
-    b0 = pin->GetReal("problem","b0");
-    angle = (PI/180.0)*pin->GetReal("problem","angle");
+    b0 = pin->GetReal("problem", "b0");
+    angle = (PI/180.0)*pin->GetReal("problem", "angle");
   }
   Real gamma = peos->GetGamma();
   Real gm1 = gamma - 1.0;
 
   // get coordinates of center of blast, and convert to Cartesian if necessary
-  Real x1_0   = pin->GetOrAddReal("problem","x1_0",0.0);
-  Real x2_0   = pin->GetOrAddReal("problem","x2_0",0.0);
-  Real x3_0   = pin->GetOrAddReal("problem","x3_0",0.0);
-  Real x0,y0,z0;
+  Real x1_0   = pin->GetOrAddReal("problem", "x1_0", 0.0);
+  Real x2_0   = pin->GetOrAddReal("problem", "x2_0", 0.0);
+  Real x3_0   = pin->GetOrAddReal("problem", "x3_0", 0.0);
+  Real x0, y0, z0;
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     x0 = x1_0;
     y0 = x2_0;
@@ -252,79 +266,79 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   kc--;
 
   // search pressure maximum in each direction
-  Real rmax=0.0, rmin=100.0, rave=0.0;
-  int nr=0;
+  Real rmax = 0.0, rmin = 100.0, rave = 0.0;
+  int nr = 0;
   for (int o=0; o<=6; o++) {
-    int ios=0, jos=0, kos=0;
-    if (o==1) ios=-10;
-    else if (o==2) ios= 10;
-    else if (o==3) jos=-10;
-    else if (o==4) jos= 10;
-    else if (o==5) kos=-10;
-    else if (o==6) kos= 10;
+    int ios = 0, jos = 0, kos = 0;
+    if (o == 1) ios=-10;
+    else if (o == 2) ios =  10;
+    else if (o == 3) jos = -10;
+    else if (o == 4) jos =  10;
+    else if (o == 5) kos = -10;
+    else if (o == 6) kos =  10;
     for (int d=0; d<6; d++) {
-      Real pmax=0.0;
+      Real pmax = 0.0;
       int imax(0), jmax(0), kmax(0);
-      if (d==0) {
-        if (ios!=0) continue;
-        jmax=jc+jos, kmax=kc+kos;
+      if (d == 0) {
+        if (ios != 0) continue;
+        jmax = jc+jos, kmax = kc+kos;
         for (int i=ic; i>=is; i--) {
           if (pr(kmax,jmax,i)>pmax) {
-            pmax=pr(kmax,jmax,i);
-            imax=i;
+            pmax = pr(kmax,jmax,i);
+            imax = i;
           }
         }
-      } else if (d==1) {
-        if (ios!=0) continue;
-        jmax=jc+jos, kmax=kc+kos;
+      } else if (d == 1) {
+        if (ios != 0) continue;
+        jmax = jc+jos, kmax = kc+kos;
         for (int i=ic; i<=ie; i++) {
           if (pr(kmax,jmax,i)>pmax) {
-            pmax=pr(kmax,jmax,i);
-            imax=i;
+            pmax = pr(kmax,jmax,i);
+            imax = i;
           }
         }
-      } else if (d==2) {
-        if (jos!=0) continue;
-        imax=ic+ios, kmax=kc+kos;
+      } else if (d == 2) {
+        if (jos != 0) continue;
+        imax = ic+ios, kmax = kc+kos;
         for (int j=jc; j>=js; j--) {
           if (pr(kmax,j,imax)>pmax) {
-            pmax=pr(kmax,j,imax);
-            jmax=j;
+            pmax = pr(kmax,j,imax);
+            jmax = j;
           }
         }
-      } else if (d==3) {
-        if (jos!=0) continue;
-        imax=ic+ios, kmax=kc+kos;
+      } else if (d == 3) {
+        if (jos != 0) continue;
+        imax = ic+ios, kmax = kc+kos;
         for (int j=jc; j<=je; j++) {
           if (pr(kmax,j,imax)>pmax) {
-            pmax=pr(kmax,j,imax);
-            jmax=j;
+            pmax = pr(kmax,j,imax);
+            jmax = j;
           }
         }
-      } else if (d==4) {
-        if (kos!=0) continue;
-        imax=ic+ios, jmax=jc+jos;
+      } else if (d == 4) {
+        if (kos != 0) continue;
+        imax = ic+ios, jmax = jc+jos;
         for (int k=kc; k>=ks; k--) {
           if (pr(k,jmax,imax)>pmax) {
-            pmax=pr(k,jmax,imax);
-            kmax=k;
+            pmax = pr(k,jmax,imax);
+            kmax = k;
           }
         }
-      } else { // if (d==5) {
-        if (kos!=0) continue;
-        imax=ic+ios, jmax=jc+jos;
+      } else { // if (d == 5) {
+        if (kos != 0) continue;
+        imax = ic+ios, jmax = jc+jos;
         for (int k=kc; k<=ke; k++) {
           if (pr(k,jmax,imax)>pmax) {
-            pmax=pr(k,jmax,imax);
-            kmax=k;
+            pmax = pr(k,jmax,imax);
+            kmax = k;
           }
         }
       }
 
       Real xm, ym, zm;
-      Real x1m=pblock->pcoord->x1v(imax);
-      Real x2m=pblock->pcoord->x2v(jmax);
-      Real x3m=pblock->pcoord->x3v(kmax);
+      Real x1m = pblock->pcoord->x1v(imax);
+      Real x2m = pblock->pcoord->x2v(jmax);
+      Real x3m = pblock->pcoord->x3v(kmax);
       if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
         xm = x1m;
         ym = x2m;
@@ -339,13 +353,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         zm = x1m*std::cos(x2m);
       }
       Real rad = std::sqrt(SQR(xm-x0)+SQR(ym-y0)+SQR(zm-z0));
-      if (rad>rmax) rmax=rad;
-      if (rad<rmin) rmin=rad;
-      rave+=rad;
+      if (rad > rmax) rmax = rad;
+      if (rad < rmin) rmin = rad;
+      rave += rad;
       nr++;
     }
   }
-  rave/=static_cast<Real>(nr);
+  rave /= static_cast<Real>(nr);
 
   // use physical grid spacing at center of blast
   Real dr_max;
@@ -372,7 +386,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
     // The file exists -- reopen the file in append mode
     if ((pfile = std::fopen(fname.c_str(),"r")) != nullptr) {
-      if ((pfile = freopen(fname.c_str(),"a",pfile)) == nullptr) {
+      if ((pfile = std::freopen(fname.c_str(),"a",pfile)) == nullptr) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Blast shape output file could not be opened" <<std::endl;
         ATHENA_ERROR(msg);
@@ -391,7 +405,39 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     std::fprintf(pfile,"%e  %e  %e  %e \n",rmax,rmin,rave,deform);
     std::fclose(pfile);
   }
-
-  pr.DeleteAthenaArray();
   return;
+}
+
+
+// refinement condition: check the pressure gradient
+int RefinementCondition(MeshBlock *pmb) {
+  AthenaArray<Real> &w = pmb->phydro->w;
+  Real maxeps = 0.0;
+  if (pmb->block_size.nx3>1) {
+    for (int k=pmb->ks-1; k<=pmb->ke+1; k++) {
+      for (int j=pmb->js-1; j<=pmb->je+1; j++) {
+        for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
+          Real eps = std::sqrt(SQR(0.5*(w(IPR,k,j,i+1)-w(IPR,k,j,i-1)))
+                               +SQR(0.5*(w(IPR,k,j+1,i)-w(IPR,k,j-1,i)))
+                               +SQR(0.5*(w(IPR,k+1,j,i)-w(IPR,k-1,j,i))))/w(IPR,k,j,i);
+          maxeps = std::max(maxeps, eps);
+        }
+      }
+    }
+  } else if (pmb->block_size.nx2>1) {
+    int k = pmb->ks;
+    for (int j=pmb->js-1; j<=pmb->je+1; j++) {
+      for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
+        Real eps = std::sqrt(SQR(0.5*(w(IPR,k,j,i+1)-w(IPR,k,j,i-1)))
+                             +SQR(0.5*(w(IPR,k,j+1,i)-w(IPR,k,j-1,i))))/w(IPR,k,j,i);
+        maxeps = std::max(maxeps, eps);
+      }
+    }
+  } else {
+    return 0;
+  }
+
+  if (maxeps > threshold) return 1;
+  if (maxeps < 0.25*threshold) return -1;
+  return 0;
 }

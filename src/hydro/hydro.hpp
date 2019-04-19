@@ -15,13 +15,15 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-//#include "../task_list/task_list.hpp"
+#include "../bvals/cc/hydro/bvals_hydro.hpp"
+#include "hydro_diffusion/hydro_diffusion.hpp"
+#include "srcterms/hydro_srcterms.hpp"
 
 class MeshBlock;
 class ParameterInput;
-class HydroSourceTerms;
-class HydroDiffusion;
-struct IntegratorWeight;
+
+// TODO(felker): consider adding a struct FaceFlux w/ overloaded ctor in athena.hpp, or:
+// using FaceFlux = AthenaArray<Real>[3];
 
 //! \class Hydro
 //  \brief hydro data and functions
@@ -31,10 +33,11 @@ class Hydro {
   friend class EquationOfState;
  public:
   Hydro(MeshBlock *pmb, ParameterInput *pin);
-  ~Hydro();
 
   // data
+  // TODO(KGF): make this private, if possible
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
+
   // conserved and primitive variables
   AthenaArray<Real> u, w;      // time-integrator memory register #1
   AthenaArray<Real> u1, w1;    // time-integrator memory register #2
@@ -43,16 +46,19 @@ class Hydro {
 
   AthenaArray<Real> flux[3];  // face-averaged flux vector
 
+  // storage for SMR/AMR
+  // TODO(KGF): remove trailing underscore or revert to private:
+  AthenaArray<Real> coarse_cons_, coarse_prim_;
+
   // fourth-order intermediate quantities
   AthenaArray<Real> u_cc, w_cc;      // cell-centered approximations
 
-  HydroSourceTerms *psrc;
-  HydroDiffusion *phdif;
+  HydroBoundaryVariable hbvar;
+  HydroSourceTerms hsrc;
+  HydroDiffusion hdif;
 
   // functions
-  Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
-  void WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
-                    AthenaArray<Real> &u_in2, const Real wght[3]);
+  void NewBlockTimeStep();    // computes new timestep on a MeshBlock
   void AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
                                   const Real wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
@@ -66,8 +72,8 @@ class Hydro {
       AthenaArray<Real> &ey, AthenaArray<Real> &ez,
       AthenaArray<Real> &wct, const AthenaArray<Real> &dxw);
 
-  void AddGravityFlux(void);
-  void AddGravityFluxWithGflx(void);
+  void AddGravityFlux();
+  void AddGravityFluxWithGflx();
   void CalculateGravityFlux(AthenaArray<Real> &phi_in);
 
  private:
@@ -96,8 +102,9 @@ class Hydro {
   AthenaArray<Real> wl3d_, wr3d_;
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
-  TimeStepFunc_t UserTimeStep_;
+  TimeStepFunc UserTimeStep_;
 
+  void AddDiffusionFluxes();
   Real GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt);
 };
 #endif // HYDRO_HYDRO_HPP_

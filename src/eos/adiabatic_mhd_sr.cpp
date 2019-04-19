@@ -23,11 +23,13 @@
 #include "../parameter_input.hpp"          // ParameterInput
 #include "eos.hpp"
 
+namespace {
 // Declarations
-static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-                      Real gamma_prime);
-static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-                           Real gamma_prime);
+Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
+               Real gamma_prime);
+Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
+                    Real gamma_prime);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -45,11 +47,6 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   beta_min_ = pin->GetOrAddReal("hydro", "beta_min", 0.0);
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
 }
-
-//----------------------------------------------------------------------------------------
-// Destructor
-
-EquationOfState::~EquationOfState() {}
 
 //----------------------------------------------------------------------------------------
 // Variable inverter
@@ -450,9 +447,9 @@ void EquationOfState::FastMagnetosonicSpeedsSR(
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   implementation follows that of hlld_sr.c in Athena 4.2
 //   same function as in hlld_rel.cpp
-
-static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-                      Real gamma_prime) {
+namespace {
+Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
+               Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
               / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
@@ -480,8 +477,8 @@ static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Rea
 //   implementation follows that of hlld_sr.c in Athena 4.2
 //   same function as in hlld_mhd_rel.cpp
 
-static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-                           Real gamma_prime) {
+Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
+                    Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
               / SQR(w_guess + bb_sq);                                 // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
@@ -501,6 +498,7 @@ static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss
   Real dpgas_dw = dpgas_dchi * dchi_dw + dpgas_drho * drho_dw;
   return 1.0 - dpgas_dw + 0.5*bb_sq * dv_sq_dw + ss_sq/w_cu;
 }
+} // namespace
 
 //---------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,

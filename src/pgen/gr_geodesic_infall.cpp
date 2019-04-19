@@ -36,9 +36,11 @@
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+namespace {
 // TODO(felker): can the 4x copies of this function in pgen/ files be shared?
-static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi);
+void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+                                  Real *ptheta, Real *pphi);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for initializing global mesh properties
@@ -48,7 +50,7 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Enroll boundary functions
-  EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, FixedBoundary);
   return;
 }
 
@@ -69,14 +71,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int jl = js;
   int ju = je;
   if (block_size.nx2 > 1) {
-    jl -= (NGHOST);
-    ju += (NGHOST);
+    jl -= NGHOST;
+    ju += NGHOST;
   }
   int kl = ks;
   int ku = ke;
   if (block_size.nx3 > 1) {
-    kl -= (NGHOST);
-    ku += (NGHOST);
+    kl -= NGHOST;
+    ku += NGHOST;
   }
 
   // Read problem properties
@@ -92,7 +94,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int j=jl; j<=ju; j++) {
     for (int i=il; i<=iu; i++) {
       // Get Boyer-Lindquist coordinates of cell
-      Real r, theta, phi;
+      Real r=0;
+      Real theta=0;
+      Real phi=0;
       GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl), &r,
                                    &theta, &phi);
 
@@ -118,7 +122,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, il, iu, jl, ju, kl, ku);
-  bb.DeleteAthenaArray();
   return;
 }
 
@@ -141,6 +144,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Function for returning corresponding Boyer-Lindquist coordinates of point
 // Inputs:
@@ -150,8 +154,8 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 // Notes:
 //   conversion is trivial in all currently implemented coordinate systems
 
-static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi) {
+void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+                                  Real *ptheta, Real *pphi) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0 ||
       std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     *pr = x1;
@@ -160,3 +164,4 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
   }
   return;
 }
+} // namespace

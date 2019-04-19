@@ -54,15 +54,21 @@
 #error "This problem generator requires shearing box"
 #endif
 
-static Real amp, nwx, nwy; // amplitude, Wavenumbers
-static int ShBoxCoord, ipert,ifield; // initial pattern
-static Real beta, B0, pres;
-static Real gm1, iso_cs;
-static Real x1size, x2size, x3size;
-static Real Omega_0, qshear;
+namespace {
+Real amp, nwx, nwy; // amplitude, Wavenumbers
+int ShBoxCoord, ipert,ifield; // initial pattern
+Real beta, B0;
+Real gm1, iso_cs;
+Real x1size, x2size, x3size;
+Real Omega_0, qshear;
+
+Real hst_BxBy(MeshBlock *pmb, int iout);
+} // namespace
+
+// TODO(felker): shouldn't this have internal linkage?
 AthenaArray<Real> volume; // 1D array of volumes
 
-static Real hst_BxBy(MeshBlock *pmb, int iout);
+
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Init the Mesh properties
@@ -107,7 +113,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     ATHENA_ERROR(msg);
   }
   // allocate 1D array for cell volume used in usr def history
-  int ncells1 = block_size.nx1 + 2*(NGHOST);
   volume.NewAthenaArray(ncells1);
 
   Real d0 = 1.0;
@@ -116,14 +121,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (NON_BAROTROPIC_EOS) {
     gm1 = (peos->GetGamma() - 1.0);
     iso_cs = std::sqrt((gm1+1.0)*p0/d0);
+    std::cout << "gamma  = " << peos->GetGamma() << std::endl;
   } else {
     iso_cs = peos->GetIsoSoundSpeed();
     p0 = d0*SQR(iso_cs);
+    std::cout << "iso_cs = " << iso_cs << std::endl;
   }
 
   B0 = std::sqrt(static_cast<Real>(2.0*p0/beta));
-  std::cout << "iso_cs = " << iso_cs << std::endl;
-  std::cout << "gamma  = " << peos->GetGamma() << std::endl;
   std::cout << "d0     = " << d0     << std::endl;
   std::cout << "p0     = " << p0     << std::endl;
   std::cout << "B0     = " << B0     << std::endl;
@@ -230,15 +235,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 
 //======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
+//! \fn void MeshBlock::UserWorkInLoop()
 //  \brief User-defined work function for every time step
 //======================================================================================
-void MeshBlock::UserWorkInLoop(void) {
+void MeshBlock::UserWorkInLoop() {
   // nothing to do
   return;
 }
 
-static Real hst_BxBy(MeshBlock *pmb, int iout) {
+namespace {
+Real hst_BxBy(MeshBlock *pmb, int iout) {
   Real bxby=0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
@@ -254,3 +260,4 @@ static Real hst_BxBy(MeshBlock *pmb, int iout) {
 
   return bxby;
 }
+} // namespace

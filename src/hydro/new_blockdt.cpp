@@ -34,10 +34,10 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-// \!fn Real Hydro::NewBlockTimeStep(void)
+// \!fn void Hydro::NewBlockTimeStep()
 // \brief calculate the minimum timestep within a MeshBlock
 
-Real Hydro::NewBlockTimeStep(void) {
+void Hydro::NewBlockTimeStep() {
   MeshBlock *pmb=pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -54,29 +54,28 @@ Real Hydro::NewBlockTimeStep(void) {
   dt1.InitWithShallowCopy(dt1_);
   dt2.InitWithShallowCopy(dt2_);
   dt3.InitWithShallowCopy(dt3_);
-  Real wi[(NWAVE)];
+  Real wi[NWAVE];
 
   Real real_max = std::numeric_limits<Real>::max();
-  Real min_dt = (real_max);
-  Real min_dt_hyperbolic = (real_max);
-  Real min_dt_parabolic  = (real_max);
+  Real min_dt = real_max;
+  Real min_dt_diff  = real_max;
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-      pmb->pcoord->CenterWidth1(k,j,is,ie,dt1);
-      pmb->pcoord->CenterWidth2(k,j,is,ie,dt2);
-      pmb->pcoord->CenterWidth3(k,j,is,ie,dt3);
+      pmb->pcoord->CenterWidth1(k, j, is, ie, dt1);
+      pmb->pcoord->CenterWidth2(k, j, is, ie, dt2);
+      pmb->pcoord->CenterWidth3(k, j, is, ie, dt3);
       if (!RELATIVISTIC_DYNAMICS) {
 #pragma ivdep
         for (int i=is; i<=ie; ++i) {
-          wi[IDN]=w(IDN,k,j,i);
-          wi[IVX]=w(IVX,k,j,i);
-          wi[IVY]=w(IVY,k,j,i);
-          wi[IVZ]=w(IVZ,k,j,i);
-          if (NON_BAROTROPIC_EOS) wi[IPR]=w(IPR,k,j,i);
+          wi[IDN] = w(IDN,k,j,i);
+          wi[IVX] = w(IVX,k,j,i);
+          wi[IVY] = w(IVY,k,j,i);
+          wi[IVZ] = w(IVZ,k,j,i);
+          if (NON_BAROTROPIC_EOS) wi[IPR] = w(IPR,k,j,i);
 
           if (MAGNETIC_FIELDS_ENABLED) {
-            Real bx = bcc(IB1,k,j,i) + std::fabs(b_x1f(k,j,i)-bcc(IB1,k,j,i));
+            Real bx = bcc(IB1,k,j,i) + std::fabs(b_x1f(k,j,i) - bcc(IB1,k,j,i));
             wi[IBY] = bcc(IB2,k,j,i);
             wi[IBZ] = bcc(IB3,k,j,i);
             Real cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
@@ -84,13 +83,13 @@ Real Hydro::NewBlockTimeStep(void) {
 
             wi[IBY] = bcc(IB3,k,j,i);
             wi[IBZ] = bcc(IB1,k,j,i);
-            bx = bcc(IB2,k,j,i) + std::fabs(b_x2f(k,j,i)-bcc(IB2,k,j,i));
+            bx = bcc(IB2,k,j,i) + std::fabs(b_x2f(k,j,i) - bcc(IB2,k,j,i));
             cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
             dt2(i) /= (std::fabs(wi[IVY]) + cf);
 
             wi[IBY] = bcc(IB1,k,j,i);
             wi[IBZ] = bcc(IB2,k,j,i);
-            bx = bcc(IB3,k,j,i) + std::fabs(b_x3f(k,j,i)-bcc(IB3,k,j,i));
+            bx = bcc(IB3,k,j,i) + std::fabs(b_x3f(k,j,i) - bcc(IB3,k,j,i));
             cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
             dt3(i) /= (std::fabs(wi[IVZ]) + cf);
           } else {
@@ -126,37 +125,36 @@ Real Hydro::NewBlockTimeStep(void) {
     }
   }
 
-  min_dt_hyperbolic = min_dt*pmb->pmy_mesh->cfl_number;
-
   // calculate the timestep limited by the diffusion process
-  if (phdif->hydro_diffusion_defined) {
+  if (hdif.hydro_diffusion_defined) {
     Real mindt_vis, mindt_cnd;
-    phdif->NewHydroDiffusionDt(mindt_vis, mindt_cnd);
-    min_dt = std::min(min_dt,mindt_vis);
-    min_dt = std::min(min_dt,mindt_cnd);
+    hdif.NewHydroDiffusionDt(mindt_vis, mindt_cnd);
+    min_dt_diff = std::min(min_dt_diff, mindt_vis);
+    min_dt_diff = std::min(min_dt_diff, mindt_cnd);
   } // hydro diffusion
 
   if (MAGNETIC_FIELDS_ENABLED &&
-      pmb->pfield->pfdif->field_diffusion_defined) {
+      pmb->pfield->fdif.field_diffusion_defined) {
     Real mindt_oa, mindt_h;
-    pmb->pfield->pfdif->NewFieldDiffusionDt(mindt_oa, mindt_h);
-    min_dt = std::min(min_dt,mindt_oa);
-    min_dt = std::min(min_dt,mindt_h);
+    pmb->pfield->fdif.NewFieldDiffusionDt(mindt_oa, mindt_h);
+    min_dt_diff = std::min(min_dt_diff, mindt_oa);
+    min_dt_diff = std::min(min_dt_diff, mindt_h);
   } // field diffusion
 
-  if ((phdif->hydro_diffusion_defined) ||
-      (MAGNETIC_FIELDS_ENABLED &&
-       pmb->pfield->pfdif->field_diffusion_defined))
-    min_dt_parabolic  = min_dt*pmb->pmy_mesh->cfl_number;
-
   min_dt *= pmb->pmy_mesh->cfl_number;
+  min_dt_diff *= pmb->pmy_mesh->cfl_number;
 
-  if (UserTimeStep_!=nullptr) {
+  if (UserTimeStep_ != nullptr)
     min_dt = std::min(min_dt, UserTimeStep_(pmb));
+
+  if (STS_ENABLED) {
+    pmb->new_block_dt_ = min_dt;
+    pmb->new_block_dt_diff_ = min_dt_diff;
+  } else {
+    min_dt = std::min(min_dt, min_dt_diff);
+    pmb->new_block_dt_ = min_dt;
+    pmb->new_block_dt_diff_ = min_dt;
   }
 
-  pmb->new_block_dt=min_dt;
-  pmb->new_block_dt_hyperbolic=min_dt_hyperbolic;
-  pmb->new_block_dt_parabolic =min_dt_parabolic;
-  return min_dt;
+  return;
 }

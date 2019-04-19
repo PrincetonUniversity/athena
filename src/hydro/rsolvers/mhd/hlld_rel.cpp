@@ -20,28 +20,30 @@
 #include "../../../mesh/mesh.hpp"                // MeshBlock
 #include "../../hydro.hpp"
 
+namespace {
 // Declarations
-static void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
-                             const int il, const int iu, const int ivx,
-                             const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                             AthenaArray<Real> &lambdas_p_l,
-                             AthenaArray<Real> &lambdas_m_l,
-                             AthenaArray<Real> &lambdas_p_r,
-                             AthenaArray<Real> &lambdas_m_r,
-                             AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                             AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                             AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                             AthenaArray<Real> &ey, AthenaArray<Real> &ez);
-static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-                      Real gamma_prime);
-static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-                           Real gamma_prime);
-static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
-                                const int il, const int iu, const AthenaArray<Real> &bb,
-                                AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                                AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                                AthenaArray<Real> &flux,
-                                AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
+                      const int il, const int iu, const int ivx,
+                      const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                      AthenaArray<Real> &lambdas_p_l,
+                      AthenaArray<Real> &lambdas_m_l,
+                      AthenaArray<Real> &lambdas_p_r,
+                      AthenaArray<Real> &lambdas_m_r,
+                      AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                      AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                      AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
+               Real gamma_prime);
+Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
+                    Real gamma_prime);
+void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
+                         const int il, const int iu, const AthenaArray<Real> &bb,
+                         AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                         AthenaArray<Real> &flux,
+                         AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Riemann solver
@@ -87,6 +89,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Frame-transforming HLLD implementation
 // Inputs:
@@ -110,17 +113,17 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 //   references Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   follows Athena 4.2, hlld_sr.c, in variable choices and magic numbers
 
-static void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
-                             const int il, const int iu, const int ivx,
-                             const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                             AthenaArray<Real> &lambdas_p_l,
-                             AthenaArray<Real> &lambdas_m_l,
-                             AthenaArray<Real> &lambdas_p_r,
-                             AthenaArray<Real> &lambdas_m_r,
-                             AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                             AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                             AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                             AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
+                      const int il, const int iu, const int ivx,
+                      const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                      AthenaArray<Real> &lambdas_p_l,
+                      AthenaArray<Real> &lambdas_m_l,
+                      AthenaArray<Real> &lambdas_p_r,
+                      AthenaArray<Real> &lambdas_m_r,
+                      AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                      AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                      AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Parameters
   const Real p_transition = 0.01;     // value delineating intial pressure regimes
   const Real vc_extension = 1.0e-6;   // use contact region if Alfven speeds smaller
@@ -939,8 +942,8 @@ static void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
 //   implementation follows that of hlld_sr.c in Athena 4.2
 //   same function as in adiabatic_mhd_sr.cpp
 
-static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
-                      Real gamma_prime) {
+Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
+               Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
               / SQR(w_guess + bb_sq);                                      // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
@@ -968,8 +971,8 @@ static Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Rea
 //   implementation follows that of hlld_sr.c in Athena 4.2
 //   same function as in adiabatic_mhd_sr.cpp
 
-static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
-                           Real gamma_prime) {
+Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
+                    Real gamma_prime) {
   Real v_sq = (m_sq + ss_sq/SQR(w_guess) * (2.0*w_guess + bb_sq))
               / SQR(w_guess + bb_sq);                                 // (cf. MM A3)
   Real gamma_sq = 1.0/(1.0-v_sq);
@@ -1005,13 +1008,13 @@ static Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss
 //   derived from RiemannSolver() in hlle_mhd_rel_no_transform.cpp assuming ivx = IVY
 //   same function as in hlle_mhd_rel.cpp
 
-static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
-                                const int il, const int iu,
-                                const AthenaArray<Real> &bb,
-                                AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                                AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                                AthenaArray<Real> &flux,
-                                AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
+                         const int il, const int iu,
+                         const AthenaArray<Real> &bb,
+                         AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                         AthenaArray<Real> &flux,
+                         AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
 #if GENERAL_RELATIVITY
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
@@ -1209,3 +1212,4 @@ static void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 #endif  // GENERAL_RELATIVITY
   return;
 }
+} // namespace

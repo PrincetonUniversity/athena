@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //!   \file mg_task_list.hpp
-//    \brief provides functionality to control dynamic execution using tasks
+//    \brief
 
 // C headers
 
@@ -14,8 +14,6 @@
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../mesh/mesh.hpp"
-#include "../multigrid/multigrid.hpp"
 #include "./task_list.hpp"
 
 // forward declarations
@@ -32,7 +30,7 @@ class MultigridTaskList;
 struct MGTask {
   std::uint64_t task_id;      // encodes task using bit positions in MultigridTaskNames
   std::uint64_t dependency;   // encodes dependencies to other tasks using " " " "
-  enum TaskStatus (MultigridTaskList::*TaskFunc)(Multigrid*);  // ptr to a task
+  TaskStatus (MultigridTaskList::*TaskFunc)(Multigrid*);  // ptr to a task
 };
 
 
@@ -42,33 +40,31 @@ struct MGTask {
 
 class MultigridTaskList {
  public:
-  explicit MultigridTaskList(MultigridDriver *pmd) : pmy_mgdriver_(pmd) {}
-  ~MultigridTaskList() {}
-
+  explicit MultigridTaskList(MultigridDriver *pmd) : ntasks(0), pmy_mgdriver_(pmd),
+                                                     task_list_{} {}
   // data
   int ntasks;     // number of tasks in this list
 
   // functions
-  enum TaskListStatus DoAllAvailableTasks(Multigrid *pmg, TaskState &ts);
+  TaskListStatus DoAllAvailableTasks(Multigrid *pmg, TaskStates &ts);
   void DoTaskListOneStage(MultigridDriver *pmd);
-  void ClearTaskList(void) {ntasks=0;}
-  void AddMultigridTask(std::uint64_t id, std::uint64_t dep);
+  void ClearTaskList() {ntasks=0;}
 
   // functions
-  enum TaskStatus StartReceive(Multigrid *pmg);
-  enum TaskStatus StartReceiveFace(Multigrid *pmg);
-  enum TaskStatus ClearBoundary(Multigrid *pmg);
-  enum TaskStatus ClearBoundaryFace(Multigrid *pmg);
-  enum TaskStatus SendBoundary(Multigrid *pmg);
-  enum TaskStatus SendBoundaryFace(Multigrid *pmg);
-  enum TaskStatus ReceiveBoundary(Multigrid *pmg);
-  enum TaskStatus ReceiveBoundaryFace(Multigrid *pmg);
-  enum TaskStatus SmoothRed(Multigrid *pmg);
-  enum TaskStatus SmoothBlack(Multigrid *pmg);
-  enum TaskStatus PhysicalBoundary(Multigrid *pmg);
-  enum TaskStatus Restrict(Multigrid *pmg);
-  enum TaskStatus Prolongate(Multigrid *pmg);
-  enum TaskStatus FMGProlongate(Multigrid *pmg);
+  TaskStatus StartReceive(Multigrid *pmg);
+  TaskStatus StartReceiveFace(Multigrid *pmg);
+  TaskStatus ClearBoundary(Multigrid *pmg);
+  TaskStatus ClearBoundaryFace(Multigrid *pmg);
+  TaskStatus SendBoundary(Multigrid *pmg);
+  TaskStatus SendBoundaryFace(Multigrid *pmg);
+  TaskStatus ReceiveBoundary(Multigrid *pmg);
+  TaskStatus ReceiveBoundaryFace(Multigrid *pmg);
+  TaskStatus SmoothRed(Multigrid *pmg);
+  TaskStatus SmoothBlack(Multigrid *pmg);
+  TaskStatus PhysicalBoundary(Multigrid *pmg);
+  TaskStatus Restrict(Multigrid *pmg);
+  TaskStatus Prolongate(Multigrid *pmg);
+  TaskStatus FMGProlongate(Multigrid *pmg);
 
   void SetMGTaskListToFiner(int nsmooth, int ngh, int flag = 0);
   void SetMGTaskListToCoarser(int nsmooth, int ngh);
@@ -76,7 +72,9 @@ class MultigridTaskList {
 
  private:
   MultigridDriver* pmy_mgdriver_;
-  struct MGTask task_list_[64];
+  MGTask task_list_[64];
+
+  void AddMultigridTask(std::uint64_t id, std::uint64_t dep);
 };
 
 //----------------------------------------------------------------------------------------

@@ -61,8 +61,10 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
                             FaceField &b, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
+namespace {
 // made global to share with BC functions
-static Real grav_acc;
+Real grav_acc;
+} // namespace
 
 int RefinementCondition(MeshBlock *pmb);
 
@@ -78,12 +80,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     EnrollUserRefinementCondition(RefinementCondition);
   if (mesh_size.nx3 == 1) {  // 2D problem
     // Enroll special BCs
-    EnrollUserBoundaryFunction(INNER_X2, ProjectPressureInnerX2);
-    EnrollUserBoundaryFunction(OUTER_X2, ProjectPressureOuterX2);
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x2, ProjectPressureInnerX2);
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x2, ProjectPressureOuterX2);
   } else { // 3D problem
     // Enroll special BCs
-    EnrollUserBoundaryFunction(INNER_X3, ProjectPressureInnerX3);
-    EnrollUserBoundaryFunction(OUTER_X3, ProjectPressureOuterX3);
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x3, ProjectPressureInnerX3);
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x3, ProjectPressureOuterX3);
   }
   return;
 }
@@ -111,7 +113,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // 2D PROBLEM ---------------------------------------------------------------
 
   if (block_size.nx3 == 1) {
-    grav_acc = phydro->psrc->GetG2();
+    grav_acc = phydro->hsrc.GetG2();
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
@@ -176,7 +178,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     // 3D PROBLEM ----------------------------------------------------------------
 
   } else {
-    grav_acc = phydro->psrc->GetG3();
+    grav_acc = phydro->hsrc.GetG3();
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {

@@ -3,15 +3,16 @@ Regression test for general EOS 1D Sod shock tube with HDF5 tables.
 """
 
 # Modules
-import numpy as np                             # standard Python module for numerics
-import sys                                     # standard Python module to change path
+import numpy as np
+import sys
 import os
-from shutil import move                        # moves/renames files
-import scripts.utils.athena as athena          # utilities for running Athena++
-import scripts.utils.comparison as comparison  # more utilities explicitly for testing
-from .eos_table_test import mk_ideal, write_H
-sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
-import athena_read  # noqa                     # utilities for reading Athena++ data
+from shutil import move
+import scripts.utils.athena as athena
+import scripts.utils.comparison as comparison
+from .eos_comparison import mk_ideal, write_H
+sys.path.insert(0, '../../vis/python')
+import athena_read  # noqa
+athena_read.check_nan_flag = True
 
 _gammas = [1.1, 1.4, 5./3.]
 

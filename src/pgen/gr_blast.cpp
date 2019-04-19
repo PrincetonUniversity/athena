@@ -29,11 +29,13 @@
 #endif
 
 // Declarations
-static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-                                    Real *px, Real *py, Real *pz);
-static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3);
-static Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3);
+namespace {
+void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+                             Real *px, Real *py, Real *pz);
+void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for setting initial conditions
@@ -47,14 +49,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int jl = js;
   int ju = je;
   if (block_size.nx2 > 1) {
-    jl -= (NGHOST);
-    ju += (NGHOST);
+    jl -= NGHOST;
+    ju += NGHOST;
   }
   int kl = ks;
   int ku = ke;
   if (block_size.nx3 > 1) {
-    kl -= (NGHOST);
-    ku += (NGHOST);
+    kl -= NGHOST;
+    ku += NGHOST;
   }
 
   // Get ratio of specific heats
@@ -78,16 +80,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     bz = pin->GetReal("problem", "bz");
   }
 
-  // Prepare auxiliary array
-  int ncells1 = block_size.nx1 + 2*NGHOST;
-  int ncells2 = block_size.nx2;
-  if (ncells2 > 1) {
-    ncells2 += 2*NGHOST;
-  }
-  int ncells3 = block_size.nx3;
-  if (ncells3 > 1) {
-    ncells3 += 2*NGHOST;
-  }
+  // Prepare auxiliary arrays
   AthenaArray<Real> b, g, gi;
   b.NewAthenaArray(3, ncells3, ncells2, ncells1);
   g.NewAthenaArray(NMETRIC, ncells1);
@@ -159,9 +152,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   peos->PrimitiveToConserved(phydro->w, b, phydro->u, pcoord, il, iu, jl, ju, kl, ku);
 
   // Delete auxiliary array
-  b.DeleteAthenaArray();
-  g.DeleteAthenaArray();
-  gi.DeleteAthenaArray();
 
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -218,6 +208,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Function for returning corresponding Minkowski coordinates of point
 // Inputs:
@@ -228,8 +219,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //   conversion is trivial
 //   useful to have if other coordinate systems for Minkowski space are developed
 
-static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-                                    Real *px, Real *py, Real *pz) {
+void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+                             Real *px, Real *py, Real *pz) {
   if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pt = x0;
     *px = x1;
@@ -250,8 +241,8 @@ static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt
 //   conversion is trivial
 //   useful to have if other coordinate systems for Minkowski space are developed
 
-static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pa0 = at;
     *pa1 = ax;
@@ -271,10 +262,11 @@ static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, 
 // Notes:
 //   distance function is Euclidean in Minkowski coordinates
 
-static Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3) {
+Real DistanceBetweenPoints(Real x1, Real x2, Real x3, Real y1, Real y2, Real y3) {
   Real distance = 0.0;
   if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     distance = std::sqrt(SQR(x1-y1) + SQR(x2-y2) + SQR(x3-y3));
   }
   return distance;
 }
+} // namespace

@@ -19,9 +19,9 @@
 
 class InterpTable2D {
  public:
-  InterpTable2D();
+  InterpTable2D() = default;
   InterpTable2D(const int nvar, const int nx2, const int nx1);
-  ~InterpTable2D();
+
   void SetSize(const int nvar, const int nx2, const int nx1);
   Real interpolate(int nvar, Real x2, Real x1);
   int nvar();
@@ -31,6 +31,7 @@ class InterpTable2D {
   void GetX1lim(Real &x1min, Real &x1max);
   void GetX2lim(Real &x2min, Real &x2max);
   void GetSize(int &nvar, int &nx2, int &nx1);
+
  private:
   int nvar_;
   int nx1_;
@@ -46,14 +47,15 @@ class InterpTable2D {
 class EosTable {
  public:
   explicit EosTable(ParameterInput *pin);
-  ~EosTable();
+
   InterpTable2D table;
-  Real GetEosData(int kOut, Real var, Real rho);
   Real logRhoMin, logRhoMax;
   Real logEgasMin, logEgasMax;
   Real rhoUnit, eUnit, hUnit;
   int nRho, nEgas, nVar;
   AthenaArray<Real> EosRatios;
+
+  Real GetEosData(int kOut, Real var, Real rho);
 };
 
 #endif //UTILS_INTERP_TABLE_HPP_

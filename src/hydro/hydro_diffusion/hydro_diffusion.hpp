@@ -23,7 +23,7 @@ class ParameterInput;
 class Coordinates;
 class HydroDiffusion;
 
-
+// currently must be free functions for compatibility with user-defined fn via fn pointers
 void ConstViscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &w,
                     const AthenaArray<Real> &bc,
                     int is, int ie, int js, int je, int ks, int ke);
@@ -32,15 +32,12 @@ void ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Re
                      const AthenaArray<Real> &bc,
                      int is, int ie, int js, int je, int ks, int ke);
 
-enum {ISO=0, ANI=1};
-
 //! \class HydroDiffusion
 //  \brief data and functions for physical diffusion processes in the hydro
 
 class HydroDiffusion {
  public:
   HydroDiffusion(Hydro *phyd, ParameterInput *pin);
-  ~HydroDiffusion();
 
   // data
   bool hydro_diffusion_defined;
@@ -51,6 +48,10 @@ class HydroDiffusion {
   Real kappa_iso, kappa_aniso; // thermal conduction coeff
   AthenaArray<Real> cndflx[3]; // thermal stress tensor
   AthenaArray<Real> kappa; // conduction array
+
+  // array indices for hydro diffusion (conduction & viscosity) variants: directionality
+  // should not be scoped (C++11) since enumerators are only used as "int" to index arrays
+  enum DiffProcess {iso=0, aniso=1};
 
   // functions
   void CalcHydroDiffusionFlux(const AthenaArray<Real> &p, const AthenaArray<Real> &c,
@@ -75,8 +76,8 @@ class HydroDiffusion {
                          AthenaArray<Real> *flx);
 
  private:
-  MeshBlock *pmb_;    // ptr to meshblock containing this HydroDiffusion
   Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroDiffusion
+  MeshBlock *pmb_;    // ptr to meshblock containing this HydroDiffusion
   Coordinates *pco_;  // ptr to coordinates class
   AthenaArray<Real> divv_; // divergence of velocity
   AthenaArray<Real> x1area_,x2area_,x2area_p1_,x3area_,x3area_p1_;
@@ -86,8 +87,8 @@ class HydroDiffusion {
   AthenaArray<Real> nu_tot_,kappa_tot_;
 
   // functions pointer to calculate spatial dependent coefficients
-  ViscosityCoeff_t CalcViscCoeff_;
-  ConductionCoeff_t CalcCondCoeff_;
+  ViscosityCoeffFunc CalcViscCoeff_;
+  ConductionCoeffFunc CalcCondCoeff_;
 
   // auxiliary functions to calculate viscous flux
   void Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv);

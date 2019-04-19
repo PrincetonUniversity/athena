@@ -30,6 +30,7 @@ import scripts.utils.athena as athena          # utilities for running Athena++
 import scripts.utils.comparison as comparison  # more utilities explicitly for testing
 sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
 import athena_read                             # utilities for reading Athena++ data # noqa
+athena_read.check_nan_flag = True              # raise exception when encountering NaNs
 
 
 def prepare(**kwargs):
@@ -148,12 +149,26 @@ def analyze():
     # Finally, we test that the relative errors in the two quantities are no more than 1%.
     # If they are, we "return False" at the very end of the function and file; otherwise
     # we "return True". NumPy provides a way of checking if the error is NaN, which also
-    # indicates something went wrong. The main test script will record the result and
-    # delete both tst/regression/bin/ and obj/ folders before proceeding on to the next
-    # test.
+    # indicates something went wrong. The same check can (and should) be enabled
+    # automatically at the point of reading the input files via the athena_read.py
+    # functions by setting "athena_read.check_nan_flag=True" (as done at the top of this
+    # file). Regression test authors should keep in mind the caveats of floating-point
+    # calculations and perform multiple checks for NaNs when necessary.
+
+    # The main test script will record the result and delete both tst/regression/bin/ and
+    # obj/ folders before proceeding on to the next test.
     analyze_status = True
     if error_rel_e > 0.01 or np.isnan(error_rel_e):
         analyze_status = False
     if error_rel_mx > 0.01 or np.isnan(error_rel_mx):
         analyze_status = False
+
+    # Note, if the problem generator in question outputs a unique CSV file containing
+    # quantitative error measurements (e.g. --prob=linear_wave outputs
+    # linearwave-errors.dat when problem/compute_error=true at runtime), then these values
+    # can also be input and used in this analyze() function. It is recommended to use:
+    # athena_read.error_dat('bin/linearwave-errors.dat')
+    # This wrapper function to np.loadtxt() can automatically check for the presence of
+    # NaN values as in the other athena_read.py functions.
+
     return analyze_status

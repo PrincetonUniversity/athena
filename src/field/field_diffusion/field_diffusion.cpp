@@ -24,14 +24,9 @@
 
 // FieldDiffusion constructor
 
-FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block = pmb;
-  field_diffusion_defined = false;
-
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  int ncells2 = 1, ncells3 = 1;
-  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-  if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block(pmb), field_diffusion_defined(false) {
+  int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
 
   // Check if field diffusion
   eta_ohm = pin->GetOrAddReal("problem","eta_ohm",0.0);
@@ -41,37 +36,37 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
   if ((eta_ohm != 0.0) || (eta_hall != 0.0) || (eta_ad != 0.0)) {
     field_diffusion_defined = true;
     // Allocate memory for scratch vectors
-    etaB.NewAthenaArray(3,ncells3,ncells2,ncells1);
-    e_oa.x1e.NewAthenaArray(ncells3+1,ncells2+1,ncells1);
-    e_oa.x2e.NewAthenaArray(ncells3+1,ncells2,ncells1+1);
-    e_oa.x3e.NewAthenaArray(ncells3,ncells2+1,ncells1+1);
-    e_h.x1e.NewAthenaArray(ncells3+1,ncells2+1,ncells1);
-    e_h.x2e.NewAthenaArray(ncells3+1,ncells2,ncells1+1);
-    e_h.x3e.NewAthenaArray(ncells3,ncells2+1,ncells1+1);
-    pflux.x1f.NewAthenaArray(ncells3,ncells2,ncells1+1);
-    pflux.x2f.NewAthenaArray(ncells3,ncells2+1,ncells1);
-    pflux.x3f.NewAthenaArray(ncells3+1,ncells2,ncells1);
+    etaB.NewAthenaArray(3, nc3, nc2, nc1);
+    e_oa.x1e.NewAthenaArray(nc3+1, nc2+1, nc1);
+    e_oa.x2e.NewAthenaArray(nc3+1, nc2, nc1+1);
+    e_oa.x3e.NewAthenaArray(nc3, nc2+1, nc1+1);
+    e_h.x1e.NewAthenaArray(nc3+1, nc2+1, nc1);
+    e_h.x2e.NewAthenaArray(nc3+1, nc2, nc1+1);
+    e_h.x3e.NewAthenaArray(nc3, nc2+1, nc1+1);
+    pflux.x1f.NewAthenaArray(nc3, nc2, nc1+1);
+    pflux.x2f.NewAthenaArray(nc3, nc2+1, nc1);
+    pflux.x3f.NewAthenaArray(nc3+1, nc2, nc1);
 
-    jfx.NewAthenaArray(3,ncells3+1,ncells2+1,ncells1+1);
-    jfy.NewAthenaArray(3,ncells3+1,ncells2+1,ncells1+1);
-    jfz.NewAthenaArray(3,ncells3+1,ncells2+1,ncells1+1);
-    jcc.NewAthenaArray(3,ncells3+1,ncells2+1,ncells1+1);
+    jfx.NewAthenaArray(3, nc3+1, nc2+1, nc1+1);
+    jfy.NewAthenaArray(3, nc3+1, nc2+1, nc1+1);
+    jfz.NewAthenaArray(3, nc3+1, nc2+1, nc1+1);
+    jcc.NewAthenaArray(3, nc3+1, nc2+1, nc1+1);
 
-    eta_tot_.NewAthenaArray(ncells1);
-    bmag_.NewAthenaArray(ncells3,ncells2,ncells1);
+    eta_tot_.NewAthenaArray(nc1);
+    bmag_.NewAthenaArray(nc3, nc2, nc1);
 
-    jedge_.x1e.NewAthenaArray(ncells3+1,ncells2+1,ncells1);
-    jedge_.x2e.NewAthenaArray(ncells3+1,ncells2,ncells1+1);
-    jedge_.x3e.NewAthenaArray(ncells3,ncells2+1,ncells1+1);
+    jedge_.x1e.NewAthenaArray(nc3+1, nc2+1, nc1);
+    jedge_.x2e.NewAthenaArray(nc3+1, nc2, nc1+1);
+    jedge_.x3e.NewAthenaArray(nc3, nc2+1, nc1+1);
 
-    face_area_.NewAthenaArray(ncells1);
-    face_area_p1_.NewAthenaArray(ncells1);
-    edge_length_.NewAthenaArray(ncells1);
-    edge_length_m1_.NewAthenaArray(ncells1);
-    cell_volume_.NewAthenaArray(ncells1);
-    dx1_.NewAthenaArray(ncells1);
-    dx2_.NewAthenaArray(ncells1);
-    dx3_.NewAthenaArray(ncells1);
+    face_area_.NewAthenaArray(nc1);
+    face_area_p1_.NewAthenaArray(nc1);
+    edge_length_.NewAthenaArray(nc1);
+    edge_length_m1_.NewAthenaArray(nc1);
+    cell_volume_.NewAthenaArray(nc1);
+    dx1_.NewAthenaArray(nc1);
+    dx2_.NewAthenaArray(nc1);
+    dx3_.NewAthenaArray(nc1);
 
     if (pmb->pmy_mesh->FieldDiffusivity_ == nullptr)
       CalcMagDiffCoeff_ = ConstDiffusivity;
@@ -80,43 +75,6 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) {
   }
 }
 
-// destructor
-
-FieldDiffusion::~FieldDiffusion() {
-  if ((eta_ohm != 0.0) || (eta_hall != 0.0) || (eta_ad != 0.0)) {
-    etaB.DeleteAthenaArray();
-    e_oa.x1e.DeleteAthenaArray();
-    e_oa.x2e.DeleteAthenaArray();
-    e_oa.x3e.DeleteAthenaArray();
-    e_h.x1e.DeleteAthenaArray();
-    e_h.x2e.DeleteAthenaArray();
-    e_h.x3e.DeleteAthenaArray();
-    pflux.x1f.DeleteAthenaArray();
-    pflux.x2f.DeleteAthenaArray();
-    pflux.x3f.DeleteAthenaArray();
-
-    jfx.DeleteAthenaArray();
-    jfy.DeleteAthenaArray();
-    jfz.DeleteAthenaArray();
-    jcc.DeleteAthenaArray();
-
-    eta_tot_.DeleteAthenaArray();
-    bmag_.DeleteAthenaArray();
-
-    jedge_.x1e.DeleteAthenaArray();
-    jedge_.x2e.DeleteAthenaArray();
-    jedge_.x3e.DeleteAthenaArray();
-
-    face_area_.DeleteAthenaArray();
-    face_area_p1_.DeleteAthenaArray();
-    edge_length_.DeleteAthenaArray();
-    edge_length_m1_.DeleteAthenaArray();
-    cell_volume_.DeleteAthenaArray();
-    dx1_.DeleteAthenaArray();
-    dx2_.DeleteAthenaArray();
-    dx3_.DeleteAthenaArray();
-  }
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::CalcFieldDiffusionEMF
@@ -130,7 +88,7 @@ void FieldDiffusion::CalcFieldDiffusionEMF(FaceField &bi,
 
   if ((eta_ohm==0.0) && (eta_ad==0.0)) return;
 
-  SetFieldDiffusivity(ph->w,pf->bcc);
+  SetFieldDiffusivity(ph->w, pf->bcc);
 
   CalcCurrent(bi);
   ClearEMF(e_oa);
@@ -314,13 +272,13 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
       if (eta_ohm > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          eta_t(i) += etaB(I_O,k,j,i);
+          eta_t(i) += etaB(ohmic,k,j,i);
         }
       }
       if (eta_ad > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          eta_t(i) += etaB(I_A,k,j,i);
+          eta_t(i) += etaB(DiffProcess::ambipolar,k,j,i);
         }
       }
       pmb->pcoord->CenterWidth1(k,j,is,ie,len);
@@ -341,7 +299,7 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
         for (int i=is; i<=ie; ++i)
           dt_h = std::min(dt_h,
                           static_cast<Real>(fac_h*SQR(len(i))
-                                            / (std::fabs(etaB(I_H,k,j,i))+TINY_NUMBER)));
+                                            / (std::fabs(etaB(hall,k,j,i))+TINY_NUMBER)));
       }
     }
   }

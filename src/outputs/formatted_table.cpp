@@ -11,7 +11,7 @@
 // C headers
 
 // C++ headers
-#include <cstdio>
+#include <cstdio>      // fwrite(), fclose(), fopen(), fnprintf(), snprintf()
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
@@ -53,7 +53,8 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
       if (out_ks != out_ke) {out_ks -= NGHOST; out_ke += NGHOST;}
     }
 
-    // set ptrs to data in OutputData linked list, then slice/sum if needed
+    // build doubly linked list of OutputData nodes (setting data ptrs to appropriate
+    // quantity on MeshBlock for each node), then slice/sum as needed
     LoadOutputData(pmb);
     if (TransformOutputData(pmb) == false) {
       ClearOutputData();  // required when LoadOutputData() is used.
@@ -83,7 +84,8 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     std::stringstream msg;
     if ((pfile = std::fopen(fname.c_str(),"w")) == nullptr) {
       msg << "### FATAL ERROR in function [FormattedTableOutput::WriteOutputFile]"
-          <<std::endl<< "Output file '" <<fname<< "' could not be opened" <<std::endl;
+          << std::endl << "Output file '" << fname << "' could not be opened"
+          << std::endl;
       ATHENA_ERROR(msg);
     }
 
@@ -97,7 +99,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     if (out_is != out_ie) std::fprintf(pfile," i       x1v     ");
     if (out_js != out_je) std::fprintf(pfile," j       x2v     ");
     if (out_ks != out_ke) std::fprintf(pfile," k       x3v     ");
-    // write data column headers from "name" stored in linked-list of OutputData's
+    // write data col headers from "name" stored in OutputData nodes of doubly linked list
     OutputData *pdata = pfirst_data_;
     while (pdata != nullptr) {
       if (pdata->type == "VECTORS") {
@@ -129,16 +131,15 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
             std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x3v(k));
           }
 
-          // step through linked-list of OutputData's and write each on same line
-          OutputData *pdata = pfirst_data_;
-          while (pdata != nullptr) {
-            for (int n=0; n<(pdata->data.GetDim4()); ++n) {
+          // step through doubly linked list of OutputData's and write each on same line
+          OutputData *pdata_inner_loop = pfirst_data_;
+          while (pdata_inner_loop != nullptr) {
+            for (int n=0; n<(pdata_inner_loop->data.GetDim4()); ++n) {
               std::fprintf(pfile, output_params.data_format.c_str(),
-                           pdata->data(n,k,j,i));
+                           pdata_inner_loop->data(n,k,j,i));
             }
-            pdata = pdata->pnext;
+            pdata_inner_loop = pdata_inner_loop->pnext;
           }
-
           std::fprintf(pfile,"\n"); // terminate line
         }
       }

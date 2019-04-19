@@ -7,6 +7,11 @@
 # Modules
 import scripts.utils.athena as athena
 import numpy as np
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read                             # noqa
+athena_read.check_nan_flag = True
+
 
 # List of time/integrator and time/xorder combinations to test:
 solvers = [('vl2', '2'), ('rk3', '4c'), ('ssprk5_4', '4')]
@@ -74,18 +79,14 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = []
-    with open(filename, 'r') as f:
-        raw_data = f.readlines()
-        for line in raw_data:
-            if line.split()[0][0] == '#':
-                continue
-            data.append([float(val) for val in line.split()])
+    data = athena_read.error_dat(filename)
 
     for (torder, xorder) in solvers:
         # effectively list.pop() range of rows for this solver configuration
         solver_results = np.array(data[0:nrows_per_solver])
-        del data[0:nrows_per_solver]
+        # del data[0:nrows_per_solver]
+
+        data = np.delete(data, np.s_[0:nrows_per_solver], 0)
 
         # print('{} + {}'.format(torder.upper(), xorder))
         # L-going sound wave: Ncycle, RMS-L1, d_L1, E_L1, d_max, E_max

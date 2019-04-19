@@ -20,19 +20,21 @@
 #include "../../../mesh/mesh.hpp"                // MeshBlock
 #include "../../hydro.hpp"
 
+namespace {
 // Declarations
-static void LLFTransforming(MeshBlock *pmb, const int k, const int j,
-                            const int il, const int iu, const int ivx,
-                            const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                            AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                            AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                            AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                            AthenaArray<Real> &ey, AthenaArray<Real> &ez);
-static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
-                               const int il, const int iu,
-                               AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                               AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                               AthenaArray<Real> &flux);
+void LLFTransforming(MeshBlock *pmb, const int k, const int j,
+                     const int il, const int iu, const int ivx,
+                     const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                     AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                     AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                     AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
+                        const int il, const int iu,
+                        AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                        AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                        AthenaArray<Real> &flux);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Riemann solver
@@ -66,6 +68,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Frame-transforming LLF implementation
 // Inputs:
@@ -86,13 +89,13 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   references Mignone & Bodo 2005, MNRAS 364 126 (MB)
 
-static void LLFTransforming(MeshBlock *pmb, const int k, const int j,
-                            const int il, const int iu, const int ivx,
-                            const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                            AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                            AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                            AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                            AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+void LLFTransforming(MeshBlock *pmb, const int k, const int j,
+                     const int il, const int iu, const int ivx,
+                     const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
+                     AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                     AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                     AthenaArray<Real> &cons, AthenaArray<Real> &flux,
+                     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
   // Transform primitives to locally flat coordinates if in GR
 #if GENERAL_RELATIVITY
   {
@@ -260,11 +263,11 @@ static void LLFTransforming(MeshBlock *pmb, const int k, const int j,
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   derived from RiemannSolver() in llf_rel_no_transform.cpp assuming ivx = IVY
 
-static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
-                               const int il, const int iu,
-                               AthenaArray<Real> &g, AthenaArray<Real> &gi,
-                               AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                               AthenaArray<Real> &flux) {
+void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
+                        const int il, const int iu,
+                        AthenaArray<Real> &g, AthenaArray<Real> &gi,
+                        AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+                        AthenaArray<Real> &flux) {
 #if GENERAL_RELATIVITY
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
@@ -389,3 +392,4 @@ static void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
 #endif  // GENERAL_RELATIVITY
   return;
 }
+} // namespace

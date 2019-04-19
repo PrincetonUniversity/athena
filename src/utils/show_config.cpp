@@ -15,49 +15,53 @@
 #include "../athena.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn void ShowConfig(void)
+//! \fn void ShowConfig()
 //  \brief prints diagnostic messages about the configuration of an Athena++ executable
 
-void ShowConfig(void) {
+void ShowConfig() {
+  // To match configure.py output: use 2 space indent for option, value output starts on
+  // column 30
   std::cout<<"This Athena++ executable is configured with:" << std::endl;
   std::cout<<"  Problem generator:          " << PROBLEM_GENERATOR << std::endl;
   std::cout<<"  Coordinate system:          " << COORDINATE_SYSTEM << std::endl;
-  if (NON_BAROTROPIC_EOS) {
-    std::cout<<"  Equation of state:          adiabatic" << std::endl;
-  } else {
-    std::cout<<"  Equation of state:          isothermal" << std::endl;
-  }
+  std::cout<<"  Equation of state:          " << EQUATION_OF_STATE << std::endl;
   std::cout<<"  Riemann solver:             " << RIEMANN_SOLVER << std::endl;
-
-  if (SHEARING_BOX) {
-    std::cout<<"  ShearingBox BCs:            ON" << std::endl;
-  } else {
-    std::cout<<"  ShearingBox BCs:            OFF" << std::endl;
-  }
-
-  if (SELF_GRAVITY_ENABLED == 1) {
-    std::cout<<"  Self Gravity:               FFT" << std::endl;
-  } else if (SELF_GRAVITY_ENABLED == 2) {
-    std::cout<<"  Self Gravity:               Multigrid" << std::endl;
-  } else {
-    std::cout<<"  Self Gravity:               OFF" << std::endl;
-  }
-
   if (MAGNETIC_FIELDS_ENABLED) {
     std::cout<<"  Magnetic fields:            ON" << std::endl;
   } else {
     std::cout<<"  Magnetic fields:            OFF" << std::endl;
   }
-  if (RELATIVISTIC_DYNAMICS) {
+  if (RELATIVISTIC_DYNAMICS) { // configure.py output: "Special relativity"
     std::cout<<"  Relativistic dynamics:      ON " << std::endl;
   } else {
     std::cout<<"  Relativistic dynamics:      OFF " << std::endl;
   }
   if (GENERAL_RELATIVITY) {
-    std::cout<<"  General Relativity:         ON " << std::endl;
+    std::cout<<"  General relativity:         ON " << std::endl;
   } else {
-    std::cout<<"  General Relativity:         OFF " << std::endl;
+    std::cout<<"  General relativity:         OFF " << std::endl;
   }
+  // configure.py output: "Frame transformations"
+  if (SELF_GRAVITY_ENABLED == 1) {
+    std::cout<<"  Self-Gravity:               FFT" << std::endl;
+  } else if (SELF_GRAVITY_ENABLED == 2) {
+    std::cout<<"  Self-Gravity:               Multigrid" << std::endl;
+  } else {
+    std::cout<<"  Self-Gravity:               OFF" << std::endl;
+  }
+  if (STS_ENABLED) {
+    std::cout<<"  Super-Time-Stepping:        ON" << std::endl;
+  } else {
+    std::cout<<"  Super-Time-Stepping:        OFF" << std::endl;
+  }
+  if (SHEARING_BOX) {
+    std::cout<<"  Shearing Box BCs:           ON" << std::endl;
+  } else {
+    std::cout<<"  Shearing Box BCs:           OFF" << std::endl;
+  }
+  // configure.py output: +"Debug flags"
+  // configure.py output: +"Code coverage flags"
+  // configure.py output: +"Linker flags"
   if (SINGLE_PRECISION_ENABLED) {
     std::cout<<"  Floating-point precision:   single" << std::endl;
   } else {
@@ -82,15 +86,19 @@ void ShowConfig(void) {
 #endif
 
 #ifdef HDF5OUTPUT
-  std::cout<<"  HDF5 Output:                ON" << std::endl;
+  std::cout<<"  HDF5 output:                ON" << std::endl;
   if (H5_DOUBLE_PRECISION_ENABLED) {
     std::cout<<"  HDF5 precision:             double" << std::endl;
   } else {
     std::cout<<"  HDF5 precision:             single" << std::endl;
   }
 #else
-  std::cout<<"  HDF5 Output:                OFF" << std::endl;
+  std::cout<<"  HDF5 output:                OFF" << std::endl;
 #endif
 
+  std::cout<<"  Compiler:                   " << COMPILED_WITH << std::endl;
+  std::cout<<"  Compilation command:        " << COMPILER_COMMAND
+           << COMPILED_WITH_OPTIONS << std::endl;
+  // configure.py output: Doesnt append "Linker flags" in prev. output (excessive space!)
   return;
 }

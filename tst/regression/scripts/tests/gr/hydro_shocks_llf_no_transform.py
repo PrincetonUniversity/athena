@@ -7,6 +7,7 @@ import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
+athena_read.check_nan_flag = True
 
 
 # Prepare Athena++

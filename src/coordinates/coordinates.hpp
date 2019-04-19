@@ -34,16 +34,16 @@ class Coordinates {
  public:
   friend class HydroSourceTerms;
   Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag = false);
-  virtual ~Coordinates();
+  virtual ~Coordinates() = default;
 
   // data
   MeshBlock *pmy_block;  // ptr to MeshBlock containing this Coordinates
-  AthenaArray<Real> dx1f, dx2f, dx3f, x1f, x2f, x3f; // face   spacing and positions
-  AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v; // volume spacing and positions
-  AthenaArray<Real> x1s2, x1s3, x2s1, x2s3, x3s1, x3s2; // area averaged posn for AMR
-  // geometry coefficient
-  AthenaArray<Real> h2f,dh2fd1,h31f,h32f,dh31fd1,dh32fd2;
-  AthenaArray<Real> h2v,dh2vd1,h31v,h32v,dh31vd1,dh32vd2;
+  AthenaArray<Real> dx1f, dx2f, dx3f, x1f, x2f, x3f;    // face   spacing and positions
+  AthenaArray<Real> dx1v, dx2v, dx3v, x1v, x2v, x3v;    // volume spacing and positions
+  AthenaArray<Real> x1s2, x1s3, x2s1, x2s3, x3s1, x3s2; // area averaged positions for AMR
+  // geometry coefficients (only used in SphericalPolar, Cylindrical, Cartesian)
+  AthenaArray<Real> h2f, dh2fd1, h31f, h32f, dh31fd1, dh32fd2;
+  AthenaArray<Real> h2v, dh2vd1, h31v, h32v, dh31vd1, dh32vd2;
 
   // functions...
   // ...to compute length of edges
@@ -185,7 +185,9 @@ class Coordinates {
 
  protected:
   bool coarse_flag;  // true if this coordinate object is parent (coarse) mesh in AMR
-
+  Mesh *pm;
+  int il, iu, jl, ju, kl, ku, ng;  // limits of indices of arrays (normal or coarse)
+  int nc1, nc2, nc3;               // # cells in each dir of arrays (normal or coarse)
   // Scratch arrays for coordinate factors
   // Format: coord_<type>[<direction>]_<index>[<count>]_
   //   type: vol[ume], area, etc.
@@ -285,7 +287,6 @@ class Cartesian : public Coordinates {
 
  public:
   Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~Cartesian();
 };
 
 //----------------------------------------------------------------------------------------
@@ -298,7 +299,6 @@ class Cylindrical : public Coordinates {
 
  public:
   Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~Cylindrical();
 
   // functions...
   // ...to compute length of edges
@@ -345,7 +345,6 @@ class SphericalPolar : public Coordinates {
 
  public:
   SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~SphericalPolar();
 
   // functions...
   // ...to compute length of edges
@@ -405,7 +404,6 @@ class Minkowski : public Coordinates {
 
  public:
   Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~Minkowski();
 
   // In GR, functions...
   // ...to compute metric
@@ -460,7 +458,6 @@ class Schwarzschild : public Coordinates {
 
  public:
   Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~Schwarzschild();
 
   // functions...
   // ...to compute length of edges
@@ -556,7 +553,6 @@ class KerrSchild : public Coordinates {
 
  public:
   KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~KerrSchild();
 
   // functions...
   // ...to compute length of edges
@@ -652,7 +648,6 @@ class GRUser : public Coordinates {
 
  public:
   GRUser(MeshBlock *pmb, ParameterInput *pin, bool flag);
-  ~GRUser();
 
   // functions...
   // ...to compute length of edges

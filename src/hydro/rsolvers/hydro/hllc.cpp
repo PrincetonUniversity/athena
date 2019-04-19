@@ -79,9 +79,9 @@ void Hydro::RiemannSolver(
     // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
     Real el,er,hroe;
     if (GENERAL_EOS) {
-      el = pmy_block->peos->SimpleEgas(wli[IDN], wli[IPR]) +
+      el = pmy_block->peos->EgasFromRhoP(wli[IDN], wli[IPR]) +
            0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-      er = pmy_block->peos->SimpleEgas(wri[IDN], wri[IPR]) +
+      er = pmy_block->peos->EgasFromRhoP(wri[IDN], wri[IPR]) +
            0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
     } else {
       el = wli[IPR]*igm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));

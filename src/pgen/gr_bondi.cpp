@@ -32,23 +32,25 @@
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
-static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi);
-static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                            Real theta, Real phi,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3);
-static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
-                                Real *ppgas, Real *put, Real *pur);
-static Real TemperatureMin(Real r, Real t_min, Real t_max);
-static Real TemperatureBisect(Real r, Real t_min, Real t_max);
-static Real TemperatureResidual(Real t, Real r);
+namespace {
+void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+                                  Real *ptheta, Real *pphi);
+void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+                     Real theta, Real phi,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
+                         Real *ppgas, Real *put, Real *pur);
+Real TemperatureMin(Real r, Real t_min, Real t_max);
+Real TemperatureBisect(Real r, Real t_min, Real t_max);
+Real TemperatureResidual(Real t, Real r);
 
 // Global variables
-static Real m, a;          // black hole mass and spin
-static Real n_adi, k_adi;  // hydro parameters
-static Real r_crit;        // sonic point radius
-static Real c1, c2;        // useful constants
-static Real bsq_over_rho;  // b^2/rho at inner radius
+Real m, a;          // black hole mass and spin
+Real n_adi, k_adi;  // hydro parameters
+Real r_crit;        // sonic point radius
+Real c1, c2;        // useful constants
+Real bsq_over_rho;  // b^2/rho at inner radius
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for initializing global mesh properties
@@ -66,8 +68,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   }
 
   // Enroll boundary functions
-  EnrollUserBoundaryFunction(INNER_X1, FixedBoundary);
-  EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
+  EnrollUserBoundaryFunction(BoundaryFace::inner_x1, FixedBoundary);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, FixedBoundary);
   return;
 }
 
@@ -91,14 +93,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int jl = js;
   int ju = je;
   if (block_size.nx2 > 1) {
-    jl -= (NGHOST);
-    ju += (NGHOST);
+    jl -= NGHOST;
+    ju += NGHOST;
   }
   int kl = ks;
   int ku = ke;
   if (block_size.nx3 > 1) {
-    kl -= (NGHOST);
-    ku += (NGHOST);
+    kl -= NGHOST;
+    ku += NGHOST;
   }
 
   // Get mass of black hole
@@ -222,8 +224,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                              kl, ku);
 
   // Free scratch arrays
-  g.DeleteAthenaArray();
-  gi.DeleteAthenaArray();
   return;
 }
 
@@ -246,6 +246,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Function for returning corresponding Boyer-Lindquist coordinates of point
 // Inputs:
@@ -255,8 +256,8 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 // Notes:
 //   conversion is trivial in all currently implemented coordinate systems
 
-static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi) {
+void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+                                  Real *ptheta, Real *pphi) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0 ||
       std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     *pr = x1;
@@ -276,9 +277,9 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 // Notes:
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 
-static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                            Real theta, Real phi,
-                            Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+                     Real theta, Real phi,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     *pa0 = a0_bl;
     *pa1 = a1_bl;
@@ -307,8 +308,8 @@ static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real
 // Notes:
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 
-static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
-                                Real *ppgas, Real *put, Real *pur) {
+void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho,
+                         Real *ppgas, Real *put, Real *pur) {
   // Calculate solution to (HSW 76)
   Real temp_neg_res = TemperatureMin(r, temp_min, temp_max);
   Real temp;
@@ -344,7 +345,7 @@ static void CalculatePrimitives(Real r, Real temp_min, Real temp_max, Real *prho
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 //   performs golden section search (cf. Numerical Recipes, 3rd ed., 10.2)
 
-static Real TemperatureMin(Real r, Real t_min, Real t_max) {
+Real TemperatureMin(Real r, Real t_min, Real t_max) {
   // Parameters
   const Real ratio = 0.3819660112501051;  // (3+\sqrt{5})/2
   const int max_iterations = 30;          // maximum number of iterations
@@ -398,7 +399,7 @@ static Real TemperatureMin(Real r, Real t_min, Real t_max) {
 //   references Hawley, Smarr, & Wilson 1984, ApJ 277 296 (HSW)
 //   performs bisection search
 
-static Real TemperatureBisect(Real r, Real t_min, Real t_max) {
+Real TemperatureBisect(Real r, Real t_min, Real t_max) {
   // Parameters
   const int max_iterations = 20;
   const Real tol_residual = 1.0e-6;
@@ -449,7 +450,8 @@ static Real TemperatureBisect(Real r, Real t_min, Real t_max) {
 // Notes:
 //   implements (76) from Hawley, Smarr, & Wilson 1984, ApJ 277 296
 
-static Real TemperatureResidual(Real t, Real r) {
+Real TemperatureResidual(Real t, Real r) {
   return SQR(1.0 + (n_adi+1.0) * t)
       * (1.0 - 2.0*m/r + SQR(c1) / (SQR(SQR(r)) * std::pow(t, 2.0*n_adi))) - c2;
 }
+} // namespace

@@ -25,14 +25,14 @@
 //----------------------------------------------------------------------------------------
 //! \fn Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid,
 //                           int ilid, int invar, int nghost, RegionSize isize,
-//                           MGBoundaryFunc_t *MGBoundary, enum BoundaryFlag *input_bcs,
+//                           MGBoundaryFunc *MGBoundary, BoundaryFlag *input_bcs,
 //                           bool root);
 //  \brief Multigrid constructor
 
 Multigrid::Multigrid(
     MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
-    int invar, int nghost, RegionSize isize, MGBoundaryFunc_t *MGBoundary,
-    enum BoundaryFlag *input_bcs, bool root) {
+    int invar, int nghost, RegionSize isize, MGBoundaryFunc *MGBoundary,
+    BoundaryFlag *input_bcs, bool root) {
   pmy_driver_=pmd;
   loc_=iloc;
   gid_=igid;
@@ -123,11 +123,6 @@ Multigrid::~Multigrid() {
   if (prev!=nullptr) prev->next=next;
   if (next!=nullptr) next->prev=prev;
 
-  for (int l=0; l<nlevel_; l++) {
-    u_[l].DeleteAthenaArray();
-    src_[l].DeleteAthenaArray();
-    def_[l].DeleteAthenaArray();
-  }
   delete [] u_;
   delete [] src_;
   delete [] def_;
@@ -192,10 +187,10 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::RestrictFMGSource(void)
+//! \fn void Multigrid::RestrictFMGSource()
 //  \brief restrict the source through all the multigrid levels
 
-void Multigrid::RestrictFMGSource(void) {
+void Multigrid::RestrictFMGSource() {
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   current_level_=nlevel_-1;
@@ -240,9 +235,9 @@ void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::ZeroClearData(void)
+//! \fn void Multigrid::ZeroClearData()
 //  \brief Clear the data array with zero
-void Multigrid::ZeroClearData(void) {
+void Multigrid::ZeroClearData() {
   AthenaArray<Real> &u=u_[current_level_];
   std::memset(u.data(), 0, u.GetSizeInBytes());
   return;
@@ -250,9 +245,9 @@ void Multigrid::ZeroClearData(void) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::Restrict(void)
+//! \fn void Multigrid::Restrict()
 //  \brief Restrict the defect to the source
-void Multigrid::Restrict(void) {
+void Multigrid::Restrict() {
   AthenaArray<Real> &dst=src_[current_level_-1];
   const AthenaArray<Real> &src=def_[current_level_];
   int ll=nlevel_-current_level_;
@@ -279,9 +274,9 @@ void Multigrid::Restrict(void) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::ProlongateAndCorrect(void)
+//! \fn void Multigrid::ProlongateAndCorrect()
 //  \brief Prolongate the potential using tri-linear interpolation
-void Multigrid::ProlongateAndCorrect(void) {
+void Multigrid::ProlongateAndCorrect() {
   const AthenaArray<Real> &src=u_[current_level_];
   AthenaArray<Real> &dst=u_[current_level_+1];
   int ll=nlevel_-1-current_level_;
@@ -334,9 +329,9 @@ void Multigrid::ProlongateAndCorrect(void) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::FMGProlongate(void)
+//! \fn void Multigrid::FMGProlongate()
 //  \brief Prolongate the potential for Full Multigrid cycle
-void Multigrid::FMGProlongate(void) {
+void Multigrid::FMGProlongate() {
   const AthenaArray<Real> &src=u_[current_level_];
   AthenaArray<Real> &dst=u_[current_level_+1];
   int ll=nlevel_-1-current_level_;

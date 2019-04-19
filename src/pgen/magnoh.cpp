@@ -46,10 +46,12 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 
-static Real gm1;
-static Real alpha, beta, rho0, P0, pcoeff, vr, perturb, mphi;
-static Real bphi0, bz;
-// static Real nu_iso, eta_ohm;
+namespace {
+Real gm1;
+Real alpha, beta, rho0, P0, pcoeff, vr, perturb, mphi;
+Real bphi0, bz;
+// Real nu_iso, eta_ohm;
+} // namespace
 
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"
@@ -103,10 +105,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // initialize vector potential for inflowing B
   // (only initializing 2D array for vec potential)
-  int nx1 = (ie-is)+1 + 2*(NGHOST);
-  int nx2 = (je-js)+1 + 2*(NGHOST);
   AthenaArray<Real> az;
-  az.NewAthenaArray(nx2,nx1);
+  az.NewAthenaArray(ncells2, ncells1);  // ncells2 is consistent only if 2D or 3D
 
   for (int j=js; j<=je+1; ++j) {
     for (int i=is; i<=ie+1; ++i) {
@@ -134,8 +134,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
           rad = pcoord->x1v(i);
         } else { // cartesian
-          x1=pcoord->x1v(i);
-          x2=pcoord->x2v(j);
+          x1 = pcoord->x1v(i);
+          x2 = pcoord->x2v(j);
           rad = std::sqrt(SQR(x1) + SQR(x2));
         }
         Real rho = rho0*std::pow(rad, alpha);
@@ -208,6 +208,5 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  az.DeleteAthenaArray();
   return;
 }
