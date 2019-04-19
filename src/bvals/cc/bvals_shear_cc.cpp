@@ -223,7 +223,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
         if (snb.rank != -1) {
           LoadShearing(shear_cc_[upper], shear_bd_var_[upper].send[n], n+offset[upper]);
           if (snb.rank == Globals::my_rank) {// on the same process
-            CopyShearBufferSameProcess(snb, shear_send_count_cc_[upper][n]*ssize, n, 0);
+            CopyShearBufferSameProcess(snb, shear_send_count_cc_[upper][n]*ssize, n, upper);
           } else { // MPI
 #ifdef MPI_PARALLEL
             int tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset[upper],
