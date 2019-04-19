@@ -195,7 +195,8 @@ void EquationOfState::ConservedToPrimitive(
       }
 
       // Pass 3: Density and pressure floors, and possible re-inversion
-#pragma omp simd simdlen(SIMD_WIDTH)
+//#pragma omp simd simdlen(SIMD_WIDTH) 
+// adding simd pragma above causes memory corruption for MHD GR problems
       for (int i=il; i<=iu; ++i) {
         // Handle failures
         if (!success_(i)) {
