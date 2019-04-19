@@ -6,7 +6,6 @@ branches:
   - master
   - dust
   - mhd4_3D
-  - bvals_pscalars
 # Default build matrix is 4x Ubuntu builds (inherit the default stage name "test"):
 os:
   - linux

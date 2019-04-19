@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -43,15 +44,12 @@ HistoryOutput::HistoryOutput(OutputParameters oparams)
 //  \brief Writes a history file
 
 void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
-  MeshBlock *pmb=pm->pblock;
+  MeshBlock *pmb = pm->pblock;
   AthenaArray<Real> vol;
-
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  vol.NewAthenaArray(ncells1);
-  int nhistory_output=NHISTORY_VARS+pm->nuser_history_output_;
-
-  Real *data_sum = new Real[nhistory_output];
-  for (int n=0; n<nhistory_output; ++n) data_sum[n]=0.0;
+  vol.NewAthenaArray(pmb->ncells1);
+  int nhistory_output = NHISTORY_VARS + pm->nuser_history_output_;
+  std::unique_ptr<Real[]> data_sum(new Real[nhistory_output]);
+  for (int n=0; n<nhistory_output; ++n) data_sum[n] = 0.0;
 
   // Loop over MeshBlocks
   while (pmb != nullptr) {
@@ -101,11 +99,11 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 #ifdef MPI_PARALLEL
   // sum over all ranks
   if (Globals::my_rank == 0) {
-    MPI_Reduce(MPI_IN_PLACE, data_sum, nhistory_output, MPI_ATHENA_REAL, MPI_SUM, 0,
+    MPI_Reduce(MPI_IN_PLACE, data_sum.get(), nhistory_output, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
   } else {
-    MPI_Reduce(data_sum, data_sum, nhistory_output, MPI_ATHENA_REAL, MPI_SUM, 0,
-               MPI_COMM_WORLD);
+    MPI_Reduce(data_sum.get(), data_sum.get(), nhistory_output, MPI_ATHENA_REAL, MPI_SUM,
+               0, MPI_COMM_WORLD);
   }
 #endif
 
@@ -126,8 +124,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     }
 
     // If this is the first output, write header
-    int iout = 1;
     if (output_params.file_number == 0) {
+      int iout = 1;
       std::fprintf(pfile,"# Athena++ history data\n"); // descriptor is first line
       std::fprintf(pfile,"# [%d]=time     ", iout++);
       std::fprintf(pfile,"[%d]=dt       ", iout++);
@@ -164,7 +162,5 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   output_params.next_time += output_params.dt;
   pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
   pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
-  vol.DeleteAthenaArray();
-  delete [] data_sum;
   return;
 }

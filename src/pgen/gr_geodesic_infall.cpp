@@ -71,14 +71,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int jl = js;
   int ju = je;
   if (block_size.nx2 > 1) {
-    jl -= (NGHOST);
-    ju += (NGHOST);
+    jl -= NGHOST;
+    ju += NGHOST;
   }
   int kl = ks;
   int ku = ke;
   if (block_size.nx3 > 1) {
-    kl -= (NGHOST);
-    ku += (NGHOST);
+    kl -= NGHOST;
+    ku += NGHOST;
   }
 
   // Read problem properties
@@ -122,7 +122,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, il, iu, jl, ju, kl, ku);
-  bb.DeleteAthenaArray();
   return;
 }
 

@@ -100,8 +100,6 @@ class EquationOfState {
   void FastMagnetosonicSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real,
                                 Real *, Real *) {return;}
 #else  // GR: Newtonian defined as no-op
-  // don't use implicit destructor definition
-  ~EquationOfState();
   Real SoundSpeed(const Real[]) {return 0.0;}
   Real FastMagnetosonicSpeed(const Real[], const Real) {return 0.0;}
   void ApplyPrimitiveConservedFloors(

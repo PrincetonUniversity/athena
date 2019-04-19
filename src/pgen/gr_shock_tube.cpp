@@ -222,13 +222,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is, ie, js, je, ks, ke);
 
-  // Delete auxiliary arrays
-  bb.DeleteAthenaArray();
-  if (GENERAL_RELATIVITY) {
-    g.DeleteAthenaArray();
-    gi.DeleteAthenaArray();
-  }
-
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=ks; k<=ke+1; ++k) {

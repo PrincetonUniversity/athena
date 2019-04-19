@@ -224,15 +224,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  AthenaArray<Real> a1,a2,a3;
-  int nx1 = (ie-is)+1 + 2*(NGHOST);
-  int nx2 = (je-js)+1 + 2*(NGHOST);
-  int nx3 = (ke-ks)+1 + 2*(NGHOST);
-  a1.NewAthenaArray(nx3,nx2,nx1);
-  a2.NewAthenaArray(nx3,nx2,nx1);
-  a3.NewAthenaArray(nx3,nx2,nx1);
+  AthenaArray<Real> a1, a2, a3;
+  // nxN != ncellsN, in general. Allocate to extend through ghost zones, regardless # dim
+  int nx1 = block_size.nx1 + 2*NGHOST;
+  int nx2 = block_size.nx2 + 2*NGHOST;
+  int nx3 = block_size.nx3 + 2*NGHOST;
+  a1.NewAthenaArray(nx3, nx2, nx1);
+  a2.NewAthenaArray(nx3, nx2, nx1);
+  a3.NewAthenaArray(nx3, nx2, nx1);
 
-  int level=loc.level;
+  int level = loc.level;
   // Initialize components of the vector potential
   if (block_size.nx3 > 1) {
     for (int k=ks; k<=ke+1; k++) {
@@ -330,9 +331,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  a1.DeleteAthenaArray();
-  a2.DeleteAthenaArray();
-  a3.DeleteAthenaArray();
 
   // Now initialize rest of the cell centered quantities
   for (int k=ks; k<=ke; k++) {

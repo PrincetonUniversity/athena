@@ -632,6 +632,13 @@ template <typename T> void AthenaFFTIndex::Permute_(T loc[], int npermute) {
   }
 }
 
+// For safety when linking to other TUs which might use these function templates in the
+// future, provide explicit instantiations (not using template argument deduction)
+template void AthenaFFTIndex::Swap_<Real>(Real loc[], int ref_axis);
+template void AthenaFFTIndex::Swap_<int>(int loc[], int ref_axis);
+template void AthenaFFTIndex::Permute_<Real>(Real loc[], int npermute);
+template void AthenaFFTIndex::Permute_<int>(int loc[], int npermute);
+
 void AthenaFFTIndex::PermuteAxis(int npermute) {
   Permute_(iloc,npermute);
   Permute_(Nx,npermute);

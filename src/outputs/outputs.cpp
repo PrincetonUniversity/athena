@@ -75,11 +75,12 @@
 
 OutputType::OutputType(OutputParameters oparams) {
   output_params = oparams;
-  pnext_type = nullptr;   // Terminate this node in linked list with nullptr
+  pnext_type = nullptr;   // Terminate this node in singly linked list with nullptr
 
   num_vars_ = 0;
-  pfirst_data_ = nullptr; // Initialize start of linked list of OutputData's to nullptr
-  plast_data_ = nullptr;  // Initialize end   of linked list of OutputData's to nullptr
+  // nested doubly linked list of OutputData:
+  pfirst_data_ = nullptr; // Initialize head node to nullptr
+  plast_data_ = nullptr;  // Initialize tail node to nullptr
 }
 
 //----------------------------------------------------------------------------------------
@@ -94,7 +95,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
   int num_hst_outputs=0, num_rst_outputs=0; // number of history and restart outputs
 
   // loop over input block names.  Find those that start with "output", read parameters,
-  // and construct linked list of OutputTypes.
+  // and construct singly linked list of OutputTypes.
   while (pib != nullptr) {
     if (pib->block_name.compare(0,6,"output") == 0) {
       OutputParameters op;  // define temporary OutputParameters struct
@@ -227,7 +228,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
           ATHENA_ERROR(msg);
         }
 
-        // Add type as node in linked list
+        // Append type as tail node in singly linked list
         if (pfirst_type_ == nullptr) {
           pfirst_type_ = pnew_type;
         } else {
@@ -247,7 +248,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
     ATHENA_ERROR(msg);
   }
 
-  // Move restarts to the end of the OutputType list, so file counters for other
+  // Move restarts to the tail end of the OutputType list, so file counters for other
   // output types are up-to-date in restart file
   int pos=0, found=0;
   OutputType *pot = pfirst_type_;
@@ -265,7 +266,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
   if (found==1) {
     // remove the restarting block
     pot=pfirst_type_;
-    if (pos==0) { // first block
+    if (pos==0) { // head node/first block
       pfirst_type_=pfirst_type_->pnext_type;
     } else {
       for (int j=0; j<pos-1; j++) // seek the list
@@ -273,14 +274,14 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
       pot->pnext_type=prst->pnext_type; // remove it
     }
     while (pot->pnext_type!=nullptr)
-      pot=pot->pnext_type; // find the end
+      pot=pot->pnext_type; // find the tail node
     prst->pnext_type=nullptr;
     pot->pnext_type=prst;
   }
-  // if found==2, do nothing; it's already at the end of the list
+  // if found==2, do nothing; it's already at the tail node/end of the list
 }
 
-// destructor - iterates through linked list of OutputTypes and deletes nodes
+// destructor - iterates through singly linked list of OutputTypes and deletes nodes
 
 Outputs::~Outputs() {
   OutputType *ptype = pfirst_type_;
@@ -293,7 +294,7 @@ Outputs::~Outputs() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::LoadOutputData(MeshBlock *pmb)
-//  \brief Create linked list of OutputData's containing requested variables
+//  \brief Create doubly linked list of OutputData's containing requested variables
 
 void OutputType::LoadOutputData(MeshBlock *pmb) {
   Hydro *phyd = pmb->phydro;
@@ -605,6 +606,7 @@ void OutputType::AppendOutputDataNode(OutputData *pnew_data) {
     pnew_data->pprev = plast_data_;
     plast_data_->pnext = pnew_data;
   }
+  // make the input node the new tail node of the doubly linked list
   plast_data_ = pnew_data;
 }
 
@@ -645,13 +647,14 @@ void OutputType::ClearOutputData() {
     pdata = pdata->pnext;
     delete pdata_old;
   }
+  // reset pointers to head and tail nodes of doubly linked list:
   pfirst_data_ = nullptr;
   plast_data_  = nullptr;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
-//  \brief scans through linked list of OutputTypes and makes any outputs needed.
+//  \brief scans through singly linked list of OutputTypes and makes any outputs needed.
 
 void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
   bool first=true;
@@ -667,7 +670,7 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
       }
       ptype->WriteOutputFile(pm, pin, wtflag);
     }
-    ptype = ptype->pnext_type; // move to next OutputType in list
+    ptype = ptype->pnext_type; // move to next OutputType node in signly linked list
   }
 }
 
@@ -751,7 +754,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
     }
   }
 
-  // For each node in OutputData linked list, slice arrays containing output data
+  // For each node in OutputData doubly linked list, slice arrays containing output data
   OutputData *pdata,*pnew;
   pdata = pfirst_data_;
 
@@ -809,7 +812,6 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
     out_is = 0;
     out_ie = 0;
   }
-
   return true;
 }
 
@@ -818,7 +820,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
 //  \brief perform data summation and update the data list
 
 void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
-  // For each node in OutputData linked list, sum arrays containing output data
+  // For each node in OutputData doubly linked list, sum arrays containing output data
   OutputData *pdata = pfirst_data_;
 
   while (pdata != nullptr) {
@@ -881,7 +883,6 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
     out_is = 0;
     out_ie = 0;
   }
-
   return;
 }
 

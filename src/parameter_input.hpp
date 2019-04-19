@@ -30,18 +30,18 @@
 
 //----------------------------------------------------------------------------------------
 //! \struct InputLine
-//  \brief  node in a linked list of parameters contained within a single input block
+//  \brief  node in a singly linked list of parameters contained within 1x input block
 
 struct InputLine {
   std::string param_name;
-  std::string param_value;    // value of the parameter is stored as a string!
+  std::string param_value;   // value of the parameter is stored as a string!
   std::string param_comment;
-  InputLine *pnext;    // pointer to the next node
+  InputLine *pnext;   // pointer to the next node in this nested singly linked list
 };
 
 //----------------------------------------------------------------------------------------
 //! \class InputBlock
-//  \brief  node in a linked list of all input blocks contained within input file
+//  \brief node in a singly linked list of all input blocks contained within input file
 
 class InputBlock {
  public:
@@ -53,8 +53,10 @@ class InputBlock {
   std::string block_name;
   std::size_t max_len_parname;  // length of longest param_name, for nice-looking output
   std::size_t max_len_parvalue; // length of longest param_value, to format outputs
-  InputLine *pline;             // pointer to first InputLine in this block
-  InputBlock *pnext;            // pointer to the next node
+  InputBlock *pnext;  // pointer to the next node in InputBlock singly linked list
+
+  InputLine *pline;   // pointer to head node in nested singly linked list (in this block)
+  // (not storing a reference to the tail node)
 
   // functions
   InputLine* GetPtrToLine(std::string name);
@@ -72,7 +74,8 @@ class ParameterInput {
   ~ParameterInput();
 
   // data
-  InputBlock* pfirst_block;   // pointer to first input block in linked list
+  InputBlock* pfirst_block;   // pointer to head node in singly linked list of InputBlock
+  // (not storing a reference to the tail node)
 
   // functions
   void LoadFromStream(std::istream &is);
