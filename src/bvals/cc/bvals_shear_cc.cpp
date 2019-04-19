@@ -124,47 +124,30 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
 
   Real qomL = pbval_->qomL_;
 
-  if (pbval_->is_shear[0]) {
-    int ib = 0;
-    int sign = +1;
-    // step 1. -- add shear to the inner periodic boundary values
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-        for (int i=0; i<NGHOST; i++) {
-          int ii = ib + i;
-          // add shear to conservative
-          shear_cc_[0](IM2,k,j,i) = var(IM2,k,j,ii) + sign*qomL*var(IDN,k,j,ii);
-          // Update energy, then x2 momentum
-          if (NON_BAROTROPIC_EOS) {
-            var(IEN,k,j,ii) += (0.5/var(IDN,k,j,ii))*(SQR(shear_cc_[0](IM2,k,j,i))
-                                                    - SQR(var(IM2,k,j,ii)));
-          } // update energy
-          var(IM2,k,j,ii) = shear_cc_[0](IM2,k,j,i);
-        }
-      }
-    }
-  }
+  int sign[2]{1, -1};
+  int ib[2]{pmb->is - NGHOST, pmb->ie + 1};
 
-  if (pbval_->is_shear[1]) {
-    int ib = pmb->ie + 1;
-    int sign = -1;
-    // step 2. -- add shear to the outer periodic boundary values
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-        for (int i=0; i<NGHOST; i++) {
-          int ii = ib + i;
-          // add shear to conservative
-          shear_cc_[1](IM2,k,j,i) = var(IM2,k,j,ii) + sign*qomL*var(IDN,k,j,ii);
-          // Update energy, then x2 momentum
-          if (NON_BAROTROPIC_EOS) {
-            var(IEN,k,j,ii) += (0.5/var(IDN,k,j,ii))*(SQR(shear_cc_[1](IM2,k,j,i))
-                                                      - SQR(var(IM2,k,j,ii)));
+  for (int upper=0; upper<2; upper++) {
+    if (pbval_->is_shear[upper]) {
+      // step 1. -- add shear to the inner periodic boundary values
+      for (int k=kl; k<=ku; k++) {
+        for (int j=jl; j<=ju; j++) {
+          for (int i=0; i<NGHOST; i++) {
+            int ii = ib[upper] + i;
+            // add shear to conservative
+            shear_cc_[upper](IM2,k,j,i) = var(IM2,k,j,ii)
+                                          + sign[upper]*qomL*var(IDN,k,j,ii);
+            // Update energy, then x2 momentum
+            if (NON_BAROTROPIC_EOS) {
+              var(IEN,k,j,ii) += (0.5/var(IDN,k,j,ii))*(SQR(shear_cc_[upper](IM2,k,j,i))
+                                                        - SQR(var(IM2,k,j,ii)));
+            } // update energy
+            var(IM2,k,j,ii) = shear_cc_[upper](IM2,k,j,i);
           }
-          var(IM2,k,j,ii) = shear_cc_[1](IM2,k,j,i);
         }
       }
-    }
-  }
+    }  // if boundary is shearing
+  }  // loop over inner/outer boundaries
   return;
 }
 // --------------------------------------------------------------------------------------
@@ -177,129 +160,83 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   AthenaArray<Real> &var = *var_cc;
 
   // KGF: hidden assumption that 2D?
-  int jl = pmb->js - NGHOST;
-  int ju = pmb->je + NGHOST;
+  int js = pmb->js;
+  int je = pmb->je;
+
+  int jl = js - NGHOST;
+  int ju = je + NGHOST;
   int kl = pmb->ks;
   int ku = pmb->ke;
   if (pmesh->mesh_size.nx3 > 1) {
     kl -= NGHOST;
     ku += NGHOST;
   }
-  int js = pmb->js;
-  int je = pmb->je;
 
   Real eps = pbval_->eps_;
   Real qomL = pbval_->qomL_;
   int ssize = nu_ + 1;
 
-  if (pbval_->is_shear[0]) {
-    int ib = pmb->is - NGHOST;
-    int ii;
-    // step 1. -- load shboxvar_cc_
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-        for (int i=0; i<NGHOST; i++) {
-          ii = ib + i;
-          shear_cc_[0](IDN,k,j,i) = var(IDN,k,j,ii);
-          shear_cc_[0](IM1,k,j,i) = var(IM1,k,j,ii);
-          shear_cc_[0](IM2,k,j,i) = var(IM2,k,j,ii) + qomL*var(IDN,k,j,ii);
-          shear_cc_[0](IM3,k,j,i) = var(IM3,k,j,ii);
-          if (NON_BAROTROPIC_EOS) {
-            shear_cc_[0](IEN,k,j,i) = var(IEN,k,j,ii) + (0.5/var(IDN,k,j,ii))
-                                               *(SQR(shear_cc_[0](IM2,k,j,i))
-                                                 - SQR(var(IM2,k,j,ii)));
-          }
-        }
-      }
-    }
+  int offset[2]{0, 4};
+  int sign[2]{1, -1};
+  int ib[2]{pmb->is - NGHOST, pmb->ie + 1};
 
-    // step 2. -- conservative remaping
-    for (int n=0; n<=nu_; n++) {
+  for (int upper=0; upper<2; upper++) {
+    if (pbval_->is_shear[upper]) {
+      // step 1. -- load shboxvar_cc_
       for (int k=kl; k<=ku; k++) {
-        for (int i=0; i<NGHOST; i++) {
-          RemapFlux(n, k, js, je+2, i, eps, shear_cc_[0], shear_flx_cc_[0]);
-          for (int j=js; j<=je+1; j++) {
-            shear_cc_[0](n,k,j,i) -= shear_flx_cc_[0](j+1) - shear_flx_cc_[0](j);
+        for (int j=jl; j<=ju; j++) {
+          for (int i=0; i<NGHOST; i++) {
+            int ii = ib[upper] + i;
+            shear_cc_[upper](IDN,k,j,i) = var(IDN,k,j,ii);
+            shear_cc_[upper](IM1,k,j,i) = var(IM1,k,j,ii);
+            shear_cc_[upper](IM2,k,j,i) = var(IM2,k,j,ii)
+                                          + sign[upper]*qomL*var(IDN,k,j,ii);
+            shear_cc_[upper](IM3,k,j,i) = var(IM3,k,j,ii);
+            if (NON_BAROTROPIC_EOS) {
+              shear_cc_[upper](IEN,k,j,i) = var(IEN,k,j,ii) + (0.5/var(IDN,k,j,ii))
+                                            *(SQR(shear_cc_[upper](IM2,k,j,i))
+                                              - SQR(var(IM2,k,j,ii)));
+            }
           }
         }
       }
-    }
 
-    // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
-    for (int n=0; n<4; n++) {
-      SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[0][n];
-      if (snb.rank != -1) {
-        LoadShearing(shear_cc_[0], shear_bd_var_[0].send[n], n);
-        if (snb.rank == Globals::my_rank) {// on the same process
-          CopyShearBufferSameProcess(snb, shear_send_count_cc_[0][n]*ssize, n, 0);
-        } else { // MPI
+      // step 2. -- conservative remaping
+      for (int n=0; n<=nu_; n++) {
+        for (int k=kl; k<=ku; k++) {
+          for (int i=0; i<NGHOST; i++) {
+            int jl_remap = js - upper;
+            int ju_remap = je + 2 - upper;
+            RemapFlux(n, k, jl_remap, ju_remap, i, sign[upper]*eps, shear_cc_[upper],
+                      shear_flx_cc_[upper]);
+            for (int j=js-upper; j<=je+1-upper; j++) {
+              shear_cc_[upper](n,k,j,i) -= shear_flx_cc_[upper](j+1)
+                                           - shear_flx_cc_[upper](j);
+            }
+          }
+        }
+      }
+
+      // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
+      for (int n=0; n<4; n++) {
+        SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[upper][n];
+        if (snb.rank != -1) {
+          LoadShearing(shear_cc_[upper], shear_bd_var_[upper].send[n], n+offset[upper]);
+          if (snb.rank == Globals::my_rank) {// on the same process
+            CopyShearBufferSameProcess(snb, shear_send_count_cc_[upper][n]*ssize, n, 0);
+          } else { // MPI
 #ifdef MPI_PARALLEL
-          int tag = pbval_->CreateBvalsMPITag(snb.lid, n, shear_cc_phys_id_);
-          MPI_Isend(shear_bd_var_[0].send[n], shear_send_count_cc_[0][n]*ssize,
-                    MPI_ATHENA_REAL, snb.rank, tag, MPI_COMM_WORLD,
-                    &shear_bd_var_[0].req_send[n]);
+            int tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset[upper],
+                                                shear_cc_phys_id_);
+            MPI_Isend(shear_bd_var_[upper].send[n], shear_send_count_cc_[upper][n]*ssize,
+                      MPI_ATHENA_REAL, snb.rank, tag, MPI_COMM_WORLD,
+                      &shear_bd_var_[upper].req_send[n]);
 #endif
-        }
-      }
-    }
-  } // inner boundaries
-
-  if (pbval_->is_shear[1]) {
-    int  ib = pmb->ie + 1;
-    qomL = -qomL;
-    int ii;
-    // step 1. -- load shboxvar_cc_
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-        for (int i=0; i<NGHOST; i++) {
-          ii = ib+i;
-          shear_cc_[1](IDN,k,j,i) = var(IDN,k,j,ii);
-          shear_cc_[1](IM1,k,j,i) = var(IM1,k,j,ii);
-          shear_cc_[1](IM2,k,j,i) = var(IM2,k,j,ii) + qomL*var(IDN,k,j,ii);
-          shear_cc_[1](IM3,k,j,i) = var(IM3,k,j,ii);
-          if (NON_BAROTROPIC_EOS) {
-            shear_cc_[1](IEN,k,j,i) = var(IEN,k,j,ii)
-                                               + (0.5/var(IDN,k,j,ii))
-                                               *(SQR(shear_cc_[1](IM2,k,j,i))
-                                                 - SQR(var(IM2,k,j,ii)));
           }
         }
-      }
-    }
-
-    // step 2. -- conservative remaping
-    for (int n=0; n<=nu_; n++) {
-      for (int k=kl; k<=ku; k++) {
-        for (int i=0; i<NGHOST; i++) {
-          RemapFlux(n, k, js-1, je+1, i, -eps, shear_cc_[1], shear_flx_cc_[1]);
-          for (int j=js-1; j<=je; j++) {
-            shear_cc_[1](n,k,j,i) -= shear_flx_cc_[1](j+1) - shear_flx_cc_[1](j);
-          }
-        }
-      }
-    }
-
-    // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, post
-    // MPI_Isend otherwise
-    int offset = 4;
-    for (int n=0; n<4; n++) {
-      SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[1][n];
-      if (snb.rank != -1) {
-        LoadShearing(shear_cc_[1], shear_bd_var_[1].send[n], n+offset);
-        if (snb.rank == Globals::my_rank) {
-          CopyShearBufferSameProcess(snb, shear_send_count_cc_[1][n]*ssize, n, 1);
-        } else { // MPI
-#ifdef MPI_PARALLEL
-          // bufid for outer(inner): 2(0) and 3(1)
-          int tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset, shear_cc_phys_id_);
-          MPI_Isend(shear_bd_var_[1].send[n], shear_send_count_cc_[1][n]*ssize,
-                    MPI_ATHENA_REAL, snb.rank, tag, MPI_COMM_WORLD,
-                    &shear_bd_var_[1].req_send[n]);
-#endif
-        }
-      }
-    }
-  } // outer boundaries
+      }  // loop over recv[0] to recv[3]
+    }  // if boundary is shearing
+  }  // loop over inner/outer boundaries
   return;
 }
 
@@ -381,64 +318,39 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
 //  \brief receive shearing box boundary data for hydro variables
 
 bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
-  bool flagi = true, flago = true;
+  bool flag[2]{true, true};
+  int nb_offset[2]{0, 4};
 
-  if (pbval_->is_shear[0]) { // check inner boundaries
-    for (int n=0; n<4; n++) {
-      if (shear_bd_var_[0].flag[n] == BoundaryStatus::completed) continue;
-      if (shear_bd_var_[0].flag[n] == BoundaryStatus::waiting) {
-        // on the same process
-        if (pbval_->shear_recv_neighbor_[0][n].rank == Globals::my_rank) {
-          flagi = false;
-          continue;
-        } else { // MPI boundary
-#ifdef MPI_PARALLEL
-          int test;
-          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
-                     MPI_STATUS_IGNORE);
-          MPI_Test(&shear_bd_var_[0].req_recv[n], &test, MPI_STATUS_IGNORE);
-          if (static_cast<bool>(test) == false) {
-            flagi = false;
+  for (int upper=0; upper<2; upper++) {
+    if (pbval_->is_shear[upper]) { // check inner boundaries
+      for (int n=0; n<4; n++) {
+        if (shear_bd_var_[upper].flag[n] == BoundaryStatus::completed) continue;
+        if (shear_bd_var_[upper].flag[n] == BoundaryStatus::waiting) {
+          // on the same process
+          if (pbval_->shear_recv_neighbor_[upper][n].rank == Globals::my_rank) {
+            flag[upper] = false;
             continue;
-          }
-          shear_bd_var_[0].flag[n] = BoundaryStatus::arrived;
-#endif
-        }
-      }
-      // set var if boundary arrived
-      SetShearingBoxBoundarySameLevel(shear_bd_var_[0].recv[n], n);
-      shear_bd_var_[0].flag[n] = BoundaryStatus::completed; // completed
-    } // loop over recv[0] to recv[3]
-  } // inner boundary
-
-  if (pbval_->is_shear[1]) { // check outer boundaries
-    int offset = 4;
-    for (int n=0; n<4; n++) {
-      if (shear_bd_var_[1].flag[n] == BoundaryStatus::completed) continue;
-      if (shear_bd_var_[1].flag[n] == BoundaryStatus::waiting) {
-        // on the same process
-        if (pbval_->shear_recv_neighbor_[1][n].rank == Globals::my_rank) {
-          flago = false;
-          continue;
-        } else { // MPI boundary
+          } else { // MPI boundary
 #ifdef MPI_PARALLEL
-          int test;
-          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
-                     MPI_STATUS_IGNORE);
-          MPI_Test(&shear_bd_var_[1].req_recv[n], &test, MPI_STATUS_IGNORE);
-          if (static_cast<bool>(test) == false) {
-            flago = false;
-            continue;
-          }
-          shear_bd_var_[1].flag[n] = BoundaryStatus::arrived;
+            int test;
+            MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
+                       MPI_STATUS_IGNORE);
+            MPI_Test(&shear_bd_var_[upper].req_recv[n], &test, MPI_STATUS_IGNORE);
+            if (static_cast<bool>(test) == false) {
+              flag[upper] = false;
+              continue;
+            }
+            shear_bd_var_[upper].flag[n] = BoundaryStatus::arrived;
 #endif
+          }
         }
-      }
-      SetShearingBoxBoundarySameLevel(shear_bd_var_[1].recv[n], n+offset);
-      shear_bd_var_[1].flag[n] = BoundaryStatus::completed;  // completed
-    }
-  } // outer boundary
-  return (flagi && flago);
+        // set var if boundary arrived
+        SetShearingBoxBoundarySameLevel(shear_bd_var_[upper].recv[n], n+nb_offset[upper]);
+        shear_bd_var_[upper].flag[n] = BoundaryStatus::completed; // completed
+      }  // loop over recv[0] to recv[3]
+    }  // if boundary is shearing
+  }  // loop over inner/outer boundaries
+  return (flag[0] && flag[1]);
 }
 
 

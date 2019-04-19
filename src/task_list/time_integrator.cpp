@@ -859,7 +859,6 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydro(MeshBlock *pmb, int stage) {
   } else {
     return TaskStatus::fail;
   }
-
   if (ret == true) {
     return TaskStatus::success;
   } else {
@@ -874,7 +873,6 @@ TaskStatus TimeIntegratorTaskList::ReceiveField(MeshBlock *pmb, int stage) {
   } else {
     return TaskStatus::fail;
   }
-
   if (ret == true) {
     return TaskStatus::success;
   } else {
