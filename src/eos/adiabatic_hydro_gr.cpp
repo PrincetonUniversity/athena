@@ -51,22 +51,12 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
   pgas_min_ = pin->GetOrAddReal("hydro", "pgas_min", pressure_floor_);
   pgas_pow_ = pin->GetOrAddReal("hydro", "pgas_pow", 0.0);
   gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
-  int ncells1 = pmb->block_size.nx1 + 2*NGHOST;
-  g_.NewAthenaArray(NMETRIC, ncells1);
-  g_inv_.NewAthenaArray(NMETRIC, ncells1);
-  int ncells2 = (pmb->block_size.nx2 > 1) ? pmb->block_size.nx2 + 2*NGHOST : 1;
-  int ncells3 = (pmb->block_size.nx3 > 1) ? pmb->block_size.nx3 + 2*NGHOST : 1;
-  fixed_.NewAthenaArray(ncells3, ncells2, ncells1);
+  int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
+  g_.NewAthenaArray(NMETRIC, nc1);
+  g_inv_.NewAthenaArray(NMETRIC, nc1);
+  fixed_.NewAthenaArray(nc3, nc2, nc1);
 }
 
-//----------------------------------------------------------------------------------------
-// Destructor
-
-EquationOfState::~EquationOfState() {
-  g_.DeleteAthenaArray();
-  g_inv_.DeleteAthenaArray();
-  fixed_.DeleteAthenaArray();
-}
 
 //----------------------------------------------------------------------------------------
 // Variable inverter

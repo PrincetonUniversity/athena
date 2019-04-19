@@ -37,7 +37,6 @@ void ConstDiffusivity(FieldDiffusion *pfdif, MeshBlock *pmb, const AthenaArray<R
 class FieldDiffusion {
  public:
   FieldDiffusion(MeshBlock *pmb, ParameterInput *pin);
-  ~FieldDiffusion();
 
   // data
   MeshBlock* pmy_block;
@@ -56,7 +55,7 @@ class FieldDiffusion {
   // TODO(felker) Unlike HydroDiffusion::DiffProcess, not using optional "unscoped enum
   // name" qualifier when referencing the enumerators in other files. Be consistent
 
-  // alternative to unscoped (possibly anonymous) enum for int constants:
+  // alternative to unscoped (possibly anonymous) for int constants:
   // static constexpr int n_ohmic = 0;
   // static constexpr int n_hall = 1;
   // static constexpr int n_ambi = 2;

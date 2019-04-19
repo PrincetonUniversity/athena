@@ -22,9 +22,20 @@ _eta = _kappa
 _c_s = 0.5  # slow mode wave speed of Athena++ linear wave configuration
 
 resolution_range = [32, 64]
+
 method = 'Explicit'
 # Upper bound on relative L1 error for each above nx1:
 error_rel_tols = [0.22, 0.05]
+# lower bound on convergence rate at final (Nx1=64) asymptotic convergence regime
+rate_tols = [2.0]  # convergence rate > 3.0 for this particular resolution, sovler
+
+# NOTE: the linear wave convergence test is currently insufficiently discriminatory for
+# both STS and non-STS handling of the diffusion terms. pgen/linear_wave.cpp does NOT
+# initialize the correct diffusive eigenmodes, nor are we checking the exact analytic
+# solution (unlike simpler 1D diffusion/ tests like viscous_diffusion.py) but instead are
+# checking a decay rate predicted by linear analysis that becomes invalid at large
+# diffusion coefficients (where we would be able to observe the different convergence
+# rates of the STS and non-STS solvers).
 
 
 def prepare(*args, **kwargs):
@@ -121,5 +132,19 @@ def analyze():
             print('[Decaying 3D Linear Wave {}]: decay rate is within '
                   '{}% of analytic value'.format(method, err_rel_tol_percent))
         print('')
+
+
+    # Check 2nd order convergence rate of solver (STS should only converge at 1st order)
+    rate = np.log(errors_abs[-2]/errors_abs[-1]) / (
+        np.log(resolution_range[-1]/resolution_range[-2]))
+    print('[Decaying 3D Linear Wave]: convergence rate of decay rate error = {}'.format(
+        rate))
+    if rate < rate_tols[-1]:
+        print('[Decaying 3D Linear Wave]: convergence of decay rate absolute error '
+              'is slower than {}'.format(rate_tols[-1]))
+        analyze_status = False
+    else:
+        print('[Decaying 3D Linear Wave]: convergence of decay rate absolute error '
+              'is at least {}'.format(rate_tols[-1]))
 
     return analyze_status

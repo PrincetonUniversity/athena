@@ -71,14 +71,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int jl = js;
   int ju = je;
   if (block_size.nx2 > 1) {
-    jl -= (NGHOST);
-    ju += (NGHOST);
+    jl -= NGHOST;
+    ju += NGHOST;
   }
   int kl = ks;
   int ku = ke;
   if (block_size.nx3 > 1) {
-    kl -= (NGHOST);
-    ku += (NGHOST);
+    kl -= NGHOST;
+    ku += NGHOST;
   }
 
   // Read problem properties
@@ -94,7 +94,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int j=jl; j<=ju; j++) {
     for (int i=il; i<=iu; i++) {
       // Get Boyer-Lindquist coordinates of cell
-      Real r, theta, phi;
+      Real r=0;
+      Real theta=0;
+      Real phi=0;
       GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl), &r,
                                    &theta, &phi);
 
@@ -120,7 +122,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   AthenaArray<Real> bb;
   bb.NewAthenaArray(3, ku+1, ju+1, iu+1);
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, il, iu, jl, ju, kl, ku);
-  bb.DeleteAthenaArray();
   return;
 }
 

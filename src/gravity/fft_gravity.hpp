@@ -1,12 +1,11 @@
-#ifndef GRAVITY_FFTGRAVITY_HPP_
-#define GRAVITY_FFTGRAVITY_HPP_
-
+#ifndef GRAVITY_FFT_GRAVITY_HPP_
+#define GRAVITY_FFT_GRAVITY_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file fftgravity.hpp
+//! \file fft_gravity.hpp
 //  \brief defines FFTGravity class
 
 // C headers
@@ -23,7 +22,7 @@ class ParameterInput;
 class Coordinates;
 class FFTBlock;
 class FFTDriver;
-class GravitySolverTaskList;
+class FFTGravitySolverTaskList;
 
 //! \class FFTGravity
 //  \brief FFT gravity solver for each block
@@ -45,11 +44,11 @@ class FFTGravityDriver : public FFTDriver{
  public:
   FFTGravityDriver(Mesh *pm, ParameterInput *pin);
   ~FFTGravityDriver();
-  void Solve(int stage, int mode); // unlike MultigridDriver::Solve(), not inherited
+  void Solve(int stage, int mode);
 
  private:
   Real four_pi_G_;
-  GravitySolverTaskList *gtlist_;
+  FFTGravitySolverTaskList *gtlist_;
 };
 
-#endif // GRAVITY_FFTGRAVITY_HPP_
+#endif // GRAVITY_FFT_GRAVITY_HPP_

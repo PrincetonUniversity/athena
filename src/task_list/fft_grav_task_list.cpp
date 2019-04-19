@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file grav_task_list.cpp
+//! \file fft_grav_task_list.cpp
 //  \brief
 
 // C headers
@@ -16,7 +16,6 @@
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../bvals/bvals_grav.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
@@ -24,58 +23,63 @@
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "grav_task_list.hpp"
+#include "fft_grav_task_list.hpp"
 #include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------
-//  GravitySolverTaskList constructor
+//  FFTGravitySolverTaskList constructor
 
-GravitySolverTaskList::GravitySolverTaskList(ParameterInput *pin, Mesh *pm) {
+FFTGravitySolverTaskList::FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm) {
   // Now assemble list of tasks for each stage of time integrator
-  {using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
+  {using namespace FFTGravitySolverTaskNames; // NOLINT (build/namespace)
     // compute hydro fluxes, integrate hydro variables
-    AddGravitySolverTask(SEND_GRAV_BND,NONE);
-    AddGravitySolverTask(RECV_GRAV_BND,NONE);
-    AddGravitySolverTask(GRAV_PHYS_BND,SEND_GRAV_BND|RECV_GRAV_BND);
-    AddGravitySolverTask(CLEAR_GRAV, GRAV_PHYS_BND);
+    AddTask(SEND_GRAV_BND,NONE);
+    AddTask(RECV_GRAV_BND,NONE);
+    AddTask(SETB_GRAV_BND,(RECV_GRAV_BND|SEND_GRAV_BND));
+    AddTask(GRAV_PHYS_BND,SETB_GRAV_BND);
+    AddTask(CLEAR_GRAV, GRAV_PHYS_BND);
   } // end of using namespace block
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void GravitySolverTaskList::AddGravitySolverTask(std::uint64_t id,
-//                                                       std::uint64_t dep)
+//! \fn void FFTGravitySolverTaskList::AddTask(std::uint64_t id, std::uint64_t dep)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.
 
-void GravitySolverTaskList::AddGravitySolverTask(std::uint64_t id, std::uint64_t dep) {
+void FFTGravitySolverTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
-  using namespace GravitySolverTaskNames; // NOLINT (build/namespace)
+  using namespace FFTGravitySolverTaskNames; // NOLINT (build/namespace)
   switch (id) {
     case (CLEAR_GRAV):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&GravitySolverTaskList::ClearGravityBoundary);
+          (&FFTGravitySolverTaskList::ClearFFTGravityBoundary);
       break;
     case (SEND_GRAV_BND):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&GravitySolverTaskList::SendGravityBoundary);
+          (&FFTGravitySolverTaskList::SendFFTGravityBoundary);
       break;
     case (RECV_GRAV_BND):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&GravitySolverTaskList::ReceiveGravityBoundary);
+          (&FFTGravitySolverTaskList::ReceiveFFTGravityBoundary);
+      break;
+    case (SETB_GRAV_BND):
+      task_list_[ntasks].TaskFunc=
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&FFTGravitySolverTaskList::SetFFTGravityBoundary);
       break;
     case (GRAV_PHYS_BND):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&GravitySolverTaskList::PhysicalBoundary);
+          (&FFTGravitySolverTaskList::PhysicalBoundary);
       break;
     default:
       std::stringstream msg;
-      msg << "### FATAL ERROR in AddGravitySolverTask" << std::endl
+      msg << "### FATAL ERROR in FFTGravitySolverTaskList::AddTask" << std::endl
           << "Invalid Task "<< id << " is specified" << std::endl;
       ATHENA_ERROR(msg);
   }
@@ -83,38 +87,34 @@ void GravitySolverTaskList::AddGravitySolverTask(std::uint64_t id, std::uint64_t
   return;
 }
 
-
-void GravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
-  pmb->pgbval->StartReceivingGravity();
-
+void FFTGravitySolverTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
+  pmb->pgrav->gbvar.StartReceiving(BoundaryCommSubset::all);
   return;
 }
 
-//----------------------------------------------------------------------------------------
-//! \fn
-//  \brief
-
-//----------------------------------------------------------------------------------------
-// Functions to start/end MPI communication
-
-TaskStatus GravitySolverTaskList::ClearGravityBoundary(MeshBlock *pmb, int stage) {
-  pmb->pgbval->ClearBoundaryGravity();
+TaskStatus FFTGravitySolverTaskList::ClearFFTGravityBoundary(MeshBlock *pmb, int stage) {
+  pmb->pgrav->gbvar.ClearBoundary(BoundaryCommSubset::all);
   return TaskStatus::success;
 }
 
-TaskStatus GravitySolverTaskList::SendGravityBoundary(MeshBlock *pmb, int stage) {
-  if (pmb->pgbval->SendGravityBoundaryBuffers(pmb->pgrav->phi)==false)
+TaskStatus FFTGravitySolverTaskList::SendFFTGravityBoundary(MeshBlock *pmb, int stage) {
+  pmb->pgrav->gbvar.SendBoundaryBuffers();
+  return TaskStatus::success;
+}
+
+TaskStatus FFTGravitySolverTaskList::ReceiveFFTGravityBoundary(MeshBlock *pmb,
+                                                               int stage) {
+  bool ret = pmb->pgrav->gbvar.ReceiveBoundaryBuffers();
+  if (ret == false)
     return TaskStatus::fail;
   return TaskStatus::success;
 }
 
-TaskStatus GravitySolverTaskList::ReceiveGravityBoundary(MeshBlock *pmb, int stage) {
-  if (pmb->pgbval->ReceiveGravityBoundaryBuffers(pmb->pgrav->phi)==false)
-    return TaskStatus::fail;
+TaskStatus FFTGravitySolverTaskList::SetFFTGravityBoundary(MeshBlock *pmb, int stage) {
+  pmb->pgrav->gbvar.SetBoundaries();
   return TaskStatus::success;
 }
 
-TaskStatus GravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
-  pmb->pgbval->ApplyPhysicalBoundaries();
+TaskStatus FFTGravitySolverTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   return TaskStatus::next;
 }

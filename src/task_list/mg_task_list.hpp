@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //!   \file mg_task_list.hpp
-//    \brief provides functionality to control dynamic execution using tasks
+//    \brief
 
 // C headers
 
@@ -14,8 +14,6 @@
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../mesh/mesh.hpp"
-#include "../multigrid/multigrid.hpp"
 #include "./task_list.hpp"
 
 // forward declarations
@@ -42,9 +40,8 @@ struct MGTask {
 
 class MultigridTaskList {
  public:
-  explicit MultigridTaskList(MultigridDriver *pmd) : pmy_mgdriver_(pmd) {}
-  ~MultigridTaskList() {}
-
+  explicit MultigridTaskList(MultigridDriver *pmd) : ntasks(0), pmy_mgdriver_(pmd),
+                                                     task_list_{} {}
   // data
   int ntasks;     // number of tasks in this list
 
@@ -52,7 +49,6 @@ class MultigridTaskList {
   TaskListStatus DoAllAvailableTasks(Multigrid *pmg, TaskStates &ts);
   void DoTaskListOneStage(MultigridDriver *pmd);
   void ClearTaskList() {ntasks=0;}
-  void AddMultigridTask(std::uint64_t id, std::uint64_t dep);
 
   // functions
   TaskStatus StartReceive(Multigrid *pmg);
@@ -77,6 +73,8 @@ class MultigridTaskList {
  private:
   MultigridDriver* pmy_mgdriver_;
   MGTask task_list_[64];
+
+  void AddMultigridTask(std::uint64_t id, std::uint64_t dep);
 };
 
 //----------------------------------------------------------------------------------------

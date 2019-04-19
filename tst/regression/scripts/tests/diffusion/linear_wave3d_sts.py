@@ -8,6 +8,11 @@ import scripts.utils.athena as athena  # noqa
 import scripts.tests.diffusion.linear_wave3d as linear_wave3d
 
 linear_wave3d.method = 'STS'
+# Override analyze() paramaters from non-STS diffusion module
+# linear_wave3d.error_rel_tols = [0.22, 0.05]
+
+# lower bound on convergence rate at final (Nx1=64) asymptotic convergence regime
+linear_wave3d.rate_tols = [1.0]
 
 
 def prepare(*args, **kwargs):

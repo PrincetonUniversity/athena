@@ -34,6 +34,7 @@ const char *var_names[] = {"p/e(e/rho,rho)", "e/p(p/rho,rho)", "asq*rho/p(p/rho,
 //----------------------------------------------------------------------------------------
 //! \fn void ReadBinaryTable(std::string fn, EosTable *peos_table)
 //  \brief Read data from binary EOS table and initialize interpolated table.
+
 void ReadBinaryTable(std::string fn, EosTable *peos_table) {
   std::ifstream eos_file(fn.c_str(), std::ios::binary);
   if (eos_file.is_open()) {
@@ -70,6 +71,7 @@ void ReadBinaryTable(std::string fn, EosTable *peos_table) {
 //----------------------------------------------------------------------------------------
 //! \fn void ReadBinaryTable(std::string fn, EosTable *peos_table, ParameterInput *pin)
 //  \brief Read data from HDF5 EOS table and initialize interpolated table.
+
 void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 #ifndef HDF5OUTPUT
   {
@@ -111,6 +113,7 @@ void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 //----------------------------------------------------------------------------------------
 //! \fn void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin)
 //  \brief Read data from HDF5 EOS table and initialize interpolated table.
+
 void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin) {
   bool read_ratios = pin->GetOrAddBoolean("hydro", "eos_read_ratios", true);
   AthenaArray<Real> *pratios = nullptr;
@@ -126,15 +129,15 @@ void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin) {
   }
 }
 
-// EosTable constructor
-EosTable::EosTable (ParameterInput *pin) {
+// ctor
+EosTable::EosTable(ParameterInput *pin) :
+    table(), logRhoMin(), logRhoMax(),
+    rhoUnit(pin->GetOrAddReal("hydro", "eos_rho_unit", 1.0)),
+    eUnit(pin->GetOrAddReal("hydro", "eos_egas_unit", 1.0)),
+    hUnit(eUnit/rhoUnit) {
   std::string eos_fn, eos_file_type;
   eos_fn = pin->GetString("hydro", "eos_file_name");
   eos_file_type = pin->GetOrAddString("hydro", "eos_file_type", "auto");
-  rhoUnit = pin->GetOrAddReal("hydro", "eos_rho_unit", 1.0);
-  eUnit = pin->GetOrAddReal("hydro", "eos_egas_unit", 1.0);
-  hUnit = eUnit/rhoUnit;
-  table = InterpTable2D();
 
   if (eos_file_type.compare("auto") == 0) {
     std::string ext = eos_fn.substr(eos_fn.find_last_of(".") + 1);
@@ -169,9 +172,4 @@ Real EosTable::GetEosData(int kOut, Real var, Real rho) {
   Real x1 = std::log10(rho * rhoUnit);
   Real x2 = std::log10(var * EosRatios(kOut) * eUnit) - x1;
   return std::pow((Real)10, table.interpolate(kOut, x2, x1));
-}
-
-// EosTable destructor
-EosTable::~EosTable() {
-  EosRatios.DeleteAthenaArray();
 }

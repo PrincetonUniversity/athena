@@ -12,8 +12,8 @@
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 //======================================================================================
-//! \file shearingbox.cpp
-//  \brief Adds source terms due to local shearingbox approximation
+//! \file shearing_box.cpp
+//  \brief Adds source terms due to local shearing box approximation
 //======================================================================================
 
 // C headers
