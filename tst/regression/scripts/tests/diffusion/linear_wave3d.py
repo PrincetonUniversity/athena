@@ -90,7 +90,7 @@ def analyze():
 
     for (nx, err_tol) in zip(resolution_range, error_rel_tols):
         logging.info('[Decaying 3D Linear Wave {}]: '
-              'Mesh size {} x {} x {}'.format(method, nx, nx/2, nx/2))
+                     'Mesh size {} x {} x {}'.format(method, nx, nx/2, nx/2))
         basename = 'bin/DecayLinWave-{}.block0.out2.'.format(nx)
         max_vy = np.zeros(nframe)
         tt = np.zeros(nframe)
