@@ -41,23 +41,13 @@
 CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     MeshBlock *pmb, AthenaArray<Real> *var, AthenaArray<Real> *coarse_var,
     AthenaArray<Real> *var_flux)
-    : BoundaryVariable(pmb) {
-  var_cc = var;
-  if (coarse_var) {
-    coarse_buf.InitWithShallowCopy(*coarse_var);
-  }
-
-  if (var_flux) { // allow nullptr to be passed for non-AMR/SMR variables w/o seg-faulting
-    x1flux.InitWithShallowCopy(var_flux[X1DIR]);
-    x2flux.InitWithShallowCopy(var_flux[X2DIR]);
-    x3flux.InitWithShallowCopy(var_flux[X3DIR]);
-  }
-
+    : BoundaryVariable(pmb), var_cc(var), coarse_buf(coarse_var), x1flux(var_flux[X1DIR]),
+      x2flux(var_flux[X2DIR]), x3flux(var_flux[X3DIR]), nl_(0), nu_(var->GetDim4() -1),
+      flip_across_pole_(nullptr) {
   // CellCenteredBoundaryVariable should only be used w/ 4D or 3D (nx4=1) AthenaArray
   // For now, assume that full span of 4th dim of input AthenaArray should be used:
   // ---> get the index limits directly from the input AthenaArray
-  nl_ = 0;
-  nu_ = var->GetDim4() - 1;  // <=nu_ (inclusive), <nx4 (exclusive)
+  // <=nu_ (inclusive), <nx4 (exclusive)
   if (nu_ < 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in CellCenteredBoundaryVariable constructor" << std::endl
@@ -65,8 +55,6 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
         << "Should be nx4 >= 1 (likely uninitialized)." << std::endl;
     ATHENA_ERROR(msg);
   }
-
-  flip_across_pole_ = nullptr;
 
   InitBoundaryData(bd_var_, BoundaryQuantity::cc);
 #ifdef MPI_PARALLEL
@@ -216,6 +204,7 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   int si, sj, sk, ei, ej, ek;
   int cn = NGHOST - 1;
   AthenaArray<Real> &var = *var_cc;
+  AthenaArray<Real> &coarse_var = *coarse_buf;
 
   si = (nb.ni.ox1 > 0) ? (pmb->cie - cn) : pmb->cis;
   ei = (nb.ni.ox1 < 0) ? (pmb->cis + cn) : pmb->cie;
@@ -225,8 +214,8 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   ek = (nb.ni.ox3 < 0) ? (pmb->cks + cn) : pmb->cke;
 
   int p = 0;
-  pmr->RestrictCellCenteredValues(var, coarse_buf, nl_, nu_, si, ei, sj, ej, sk, ek);
-  BufferUtility::PackData(coarse_buf, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+  pmr->RestrictCellCenteredValues(var, coarse_var, nl_, nu_, si, ei, sj, ej, sk, ek);
+  BufferUtility::PackData(coarse_var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   return p;
 }
 
@@ -365,6 +354,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int cng = pmb->cnghost;
+  AthenaArray<Real> &coarse_var = *coarse_buf;
 
   if (nb.ni.ox1 == 0) {
     si = pmb->cis, ei = pmb->cie;
@@ -407,12 +397,12 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
         for (int j=ej; j>=sj; --j) {
 #pragma omp simd linear(p)
           for (int i=si; i<=ei; ++i)
-            coarse_buf(n,k,j,i) = sign * buf[p++];
+            coarse_var(n,k,j,i) = sign * buf[p++];
         }
       }
     }
   } else {
-    BufferUtility::UnpackData(buf, coarse_buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackData(buf, coarse_var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
   return;
 }

@@ -36,10 +36,12 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   ~CellCenteredBoundaryVariable();
 
   AthenaArray<Real> *var_cc;
-  AthenaArray<Real> coarse_buf;
+  AthenaArray<Real> *coarse_buf;
 
-  // currently, no need to ever switch flux[]. Keep as non-pointer member, shallow-copied
-  AthenaArray<Real> x1flux, x2flux, x3flux;
+  // currently, no need to ever switch flux[]. Keep as reference members (not pointers)
+  // empty AthenaArray<Real> flux[3] may be passed if no refinement is supported,
+  // however. (nullptr not allowed)
+  AthenaArray<Real> &x1flux, &x2flux, &x3flux;
 
   // maximum number of reserved unique "physics ID" component of MPI tag bitfield
   // (CellCenteredBoundaryVariable only actually uses 1x if multilevel==false, no shear)
