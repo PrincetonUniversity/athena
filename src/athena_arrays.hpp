@@ -51,8 +51,8 @@ class AthenaArray {
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5), nx6_(nx6),
       state_(init) { AllocateData(); }
   // still allowing delayed-initialization (after constructor) via array.NewAthenaArray()
-  // or array.InitWithShallowCopy() and array.InitWithShallowSlice()
-  // TODO(felker): replace InitWithShallowCopy() with references (if perf. is unaffected)
+  // or array.InitWithShallowSlice().
+  // TODO(felker): replace InitWithShallowSlice with
 
   // user-provided dtor, "rule of five" applies:
   ~AthenaArray();
@@ -150,7 +150,6 @@ class AthenaArray {
     return pdata_[i + nx1_*(j + nx2_*(k + nx3_*(n + nx4_*(m + nx5_*p))))]; }
 
   // functions that initialize an array with shallow copy or slice from another array
-  void InitWithShallowCopy(AthenaArray<T> &src);
   void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
                             const int nvar);
 
@@ -271,22 +270,6 @@ AthenaArray<T> &AthenaArray<T>::operator= (AthenaArray<T> &&src) {
   return *this;
 }
 
-//----------------------------------------------------------------------------------------
-//! \fn AthenaArray::InitWithShallowCopy()
-//  \brief shallow copy of array (copies ptrs, but not data)
-
-template<typename T>
-void AthenaArray<T>::InitWithShallowCopy(AthenaArray<T> &src) {
-  nx1_=src.nx1_;
-  nx2_=src.nx2_;
-  nx3_=src.nx3_;
-  nx4_=src.nx4_;
-  nx5_=src.nx5_;
-  nx6_=src.nx6_;
-  pdata_ = src.pdata_;
-  state_ = DataStatus::shallow_copy;
-  return;
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn AthenaArray::InitWithShallowSlice()
