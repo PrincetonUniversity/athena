@@ -34,6 +34,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
                                EdgeField &var_flux);
   ~FaceCenteredBoundaryVariable();
 
+  // may want to rebind var_fc to b, b1, b2, etc. Hence ptr member, not reference
   FaceField *var_fc;
 
   // unlke Hydro cons vs. prim, never need to rebind FaceCentered coarse_buf, so it can be

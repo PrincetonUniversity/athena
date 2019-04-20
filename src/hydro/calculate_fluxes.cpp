@@ -36,37 +36,33 @@
 
 void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
                             AthenaArray<Real> &bcc, const int order) {
-  MeshBlock *pmb=pmy_block;
-  AthenaArray<Real> &x1flux = flux[X1DIR];
-  AthenaArray<Real> &x2flux = flux[X2DIR];
-  AthenaArray<Real> &x3flux = flux[X3DIR];
+  MeshBlock *pmb = pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   int il, iu, jl, ju, kl, ku;
 
-  // TODO(felker): inconsistency: why are b,bcc passed as fn parameters, but the remaining
-  // members of the Field class  are accessed via pointers?
-  AthenaArray<Real> b1, b2, b3, w_x1f, w_x2f, w_x3f, e2x1, e3x1, e1x2, e3x2, e1x3, e2x3;
-  if (MAGNETIC_FIELDS_ENABLED) {
-    b1.InitWithShallowCopy(b.x1f);
-    b2.InitWithShallowCopy(b.x2f);
-    b3.InitWithShallowCopy(b.x3f);
-    w_x1f.InitWithShallowCopy(pmb->pfield->wght.x1f);
-    w_x2f.InitWithShallowCopy(pmb->pfield->wght.x2f);
-    w_x3f.InitWithShallowCopy(pmb->pfield->wght.x3f);
-    e2x1.InitWithShallowCopy(pmb->pfield->e2_x1f);
-    e3x1.InitWithShallowCopy(pmb->pfield->e3_x1f);
-    e1x2.InitWithShallowCopy(pmb->pfield->e1_x2f);
-    e3x2.InitWithShallowCopy(pmb->pfield->e3_x2f);
-    e1x3.InitWithShallowCopy(pmb->pfield->e1_x3f);
-    e2x3.InitWithShallowCopy(pmb->pfield->e2_x3f);
-  }
+  // b,bcc are passed as fn parameters becausse clients may want to pass different bcc1,
+  // b1, b2, etc., but the remaining members of the Field class are accessed directly via
+  // pointers because they are unique. NOTE: b, bcc are nullptrs if no MHD.
+#if MAGNETIC_FIELDS_ENABLED
+  // used only to pass to (up-to) 2x RiemannSolver() calls per dimension:
+  // x1:
+  AthenaArray<Real> &b1 = b.x1f, &w_x1f = pmb->pfield->wght.x1f,
+                  &e3x1 = pmb->pfield->e3_x1f, &e2x1 = pmb->pfield->e2_x1f;
+  // x2:
+  AthenaArray<Real> &b2 = b.x2f, &w_x2f = pmb->pfield->wght.x2f,
+                  &e1x2 = pmb->pfield->e1_x2f, &e3x2 = pmb->pfield->e3_x2f;
+  // x3:
+  AthenaArray<Real> &b3 = b.x3f, &w_x3f = pmb->pfield->wght.x3f,
+                  &e1x3 = pmb->pfield->e1_x3f, &e2x3 = pmb->pfield->e2_x3f;
+#endif
   AthenaArray<Real> &flux_fc = scr1_nkji_;
   AthenaArray<Real> &laplacian_all_fc = scr2_nkji_;
 
   //--------------------------------------------------------------------------------------
   // i-direction
 
+  AthenaArray<Real> &x1flux = flux[X1DIR];
   // set the loop limits
   jl=js, ju=je, kl=ks, ku=ke;
   // TODO(felker): fix loop limits for fourth-order hydro
@@ -90,10 +86,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
       }
 
+      pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw_);
+#if !MAGNETIC_FIELDS_ENABLED  // Hydro:
+      RiemannSolver(k, j, is, ie+1, IVX, wl_, wr_, x1flux, dxw_);
+#else  // MHD:
       // x1flux(IBY) = (v1*b2 - v2*b1) = -EMFZ
       // x1flux(IBZ) = (v1*b3 - v3*b1) =  EMFY
-      pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw_);
       RiemannSolver(k, j, is, ie+1, IVX, b1, wl_, wr_, x1flux, e3x1, e2x1, w_x1f, dxw_);
+#endif
 
       if (order == 4) {
         for (int n=0; n<NWAVE; n++) {
@@ -137,9 +137,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         // Compute x1 interface fluxes from face-centered primitive variables
         // TODO(felker): check that e3x1,e2x1 arguments added in late 2017 work here
         pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw_);
+#if !MAGNETIC_FIELDS_ENABLED  // Hydro:
+        RiemannSolver(k, j, is, ie+1, IVX, wl_, wr_, flux_fc, dxw_);
+#else  // MHD:
         RiemannSolver(k, j, is, ie+1, IVX, b1, wl_, wr_, flux_fc, e3x1, e2x1,
                       w_x1f, dxw_);
-
+#endif
         // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
         for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
@@ -156,6 +159,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   // j-direction
 
   if (pmb->block_size.nx2 > 1) {
+    AthenaArray<Real> &x2flux = flux[X2DIR];
     // set the loop limits
     il=is-1, iu=ie+1, kl=ks, ku=ke;
     // TODO(felker): fix loop limits for fourth-order hydro
@@ -185,10 +189,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX2(k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
+        pmb->pcoord->CenterWidth2(k,j,il,iu,dxw_);
+#if !MAGNETIC_FIELDS_ENABLED  // Hydro:
+        RiemannSolver(k, j, il, iu, IVY, wl_, wr_, x2flux, dxw_);
+#else  // MHD:
         // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
         // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
-        pmb->pcoord->CenterWidth2(k,j,il,iu,dxw_);
         RiemannSolver(k, j, il, iu, IVY, b2, wl_, wr_, x2flux, e1x2, e3x2, w_x2f, dxw_);
+#endif
 
         if (order == 4) {
           for (int n=0; n<NWAVE; n++) {
@@ -235,8 +243,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           // Compute x2 interface fluxes from face-centered primitive variables
           // TODO(felker): check that e1x2,e3x2 arguments added in late 2017 work here
           pmb->pcoord->CenterWidth2(k,j,il,iu,dxw_);
+#if !MAGNETIC_FIELDS_ENABLED  // Hydro:
+          RiemannSolver(k, j, il, iu, IVY, wl_, wr_, flux_fc, dxw_);
+#else  // MHD:
           RiemannSolver(k, j, il, iu, IVY, b2, wl_, wr_, flux_fc, e1x2, e3x2,
                         w_x2f, dxw_);
+#endif
 
           // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
           for (int n=0; n<NHYDRO; ++n) {
@@ -253,6 +265,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   // k-direction
 
   if (pmb->block_size.nx3 > 1) {
+    AthenaArray<Real> &x3flux = flux[X3DIR];
     // set the loop limits
     // TODO(felker): fix loop limits for fourth-order hydro
     //    if (MAGNETIC_FIELDS_ENABLED)
@@ -277,11 +290,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX3(k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
+        pmb->pcoord->CenterWidth3(k,j,il,iu,dxw_);
+#if !MAGNETIC_FIELDS_ENABLED  // Hydro:
+        RiemannSolver(k, j, il, iu, IVZ, wl_, wr_, x3flux, dxw_);
+#else  // MHD:
         // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
         // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
-        pmb->pcoord->CenterWidth3(k,j,il,iu,dxw_);
         RiemannSolver(k, j, il, iu, IVZ, b3, wl_, wr_, x3flux, e2x3, e1x3, w_x3f, dxw_);
-
+#endif
         if (order == 4) {
           for (int n=0; n<NWAVE; n++) {
             for (int i=il; i<=iu; i++) {
@@ -327,9 +343,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           // Compute x3 interface fluxes from face-centered primitive variables
           // TODO(felker): check that e2x3,e1x3 arguments added in late 2017 work here
           pmb->pcoord->CenterWidth3(k,j,il,iu,dxw_);
+#if !MAGNETIC_FIELDS_ENABLED  // Hydro:
+          RiemannSolver(k, j, il, iu, IVZ, wl_, wr_, flux_fc, dxw_);
+#else  // MHD:
           RiemannSolver(k, j, il, iu, IVZ, b3, wl_, wr_, flux_fc, e2x3, e1x3,
                         w_x3f, dxw_);
-
+#endif
           // Apply Laplacian of second-order accurate face-averaged flux on x3 faces
           for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd

@@ -63,13 +63,20 @@ class Hydro {
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
                        AthenaArray<Real> &bcc, const int order);
   void CalculateFluxes_STS();
-
+#if !MAGNETIC_FIELDS_ENABLED  // Hydro:
+  void RiemannSolver(
+      const int k, const int j, const int il, const int iu,
+      const int ivx,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+      const AthenaArray<Real> &dxw);
+#else  // MHD:
   void RiemannSolver(
       const int k, const int j, const int il, const int iu,
       const int ivx, const AthenaArray<Real> &bx,
       AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
       AthenaArray<Real> &ey, AthenaArray<Real> &ez,
       AthenaArray<Real> &wct, const AthenaArray<Real> &dxw);
+#endif
 
   void AddGravityFlux();
   void AddGravityFluxWithGflx();
