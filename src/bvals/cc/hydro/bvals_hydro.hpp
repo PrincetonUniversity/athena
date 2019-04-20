@@ -34,6 +34,9 @@ class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
   void SwapHydroQuantity(AthenaArray<Real> &var_hydro, HydroBoundaryQuantity hydro_type);
   void SelectCoarseBuffer(HydroBoundaryQuantity hydro_type);
 
+  void AddHydroShearForInit();
+  void ShearQuantities(AthenaArray<Real> &shear_cc_, bool upper) override;
+
   // BoundaryPhysics: need to flip sign of velocity vectors for Reflect*()
   void ReflectInnerX1(Real time, Real dt,
                       int il, int jl, int ju, int kl, int ku, int ngh) override;
