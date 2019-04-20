@@ -40,13 +40,10 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-//   bb: 3D array of normal magnetic fields (not used)
 //   prim_l,prim_r: 1D arrays of left and right primitive states
 //   dxw: 1D arrays of mesh spacing in the x1 direction (not used)
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
-//   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces (not used)
-//   wct: 3D arrays of weighting factors for CT (not used)
 // Notes:
 //   prim_l, prim_r overwritten
 //   tries to implement HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
@@ -73,14 +70,11 @@ namespace {
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-//   bb: 3D array of normal magnetic fields (not used)
-//   bb_normal: 1D scratch array for normal magnetic fields
 //   g,gi: 1D scratch arrays for metric coefficients
 //   prim_l,prim_r: 1D arrays of left and right primitive states
 //   cons: 1D scratch array for conserved quantities
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
-//   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces (not used)
 // Notes:
 //   prim_l, prim_r overwritten
 //   implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
@@ -92,6 +86,7 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
                       AthenaArray<Real> &cons, AthenaArray<Real> &flux) {
   // Calculate metric if in GR
   int i01(0), i11(0);
+  AthenaArray<Real> empty{};  // placeholder for unused electric/magnetic fields
 #if GENERAL_RELATIVITY
   {
     switch (ivx) {
@@ -119,13 +114,13 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
   {
     switch (ivx) {
       case IVX:
-        pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+        pmb->pcoord->PrimToLocal1(k, j, il, iu, empty, prim_l, prim_r, empty);
         break;
       case IVY:
-        pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+        pmb->pcoord->PrimToLocal2(k, j, il, iu, empty, prim_l, prim_r, empty);
         break;
       case IVZ:
-        pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+        pmb->pcoord->PrimToLocal3(k, j, il, iu, empty, prim_l, prim_r, empty);
         break;
     }
   }
@@ -288,13 +283,13 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
   {
     switch (ivx) {
       case IVX:
-        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, empty, flux, empty, empty);
         break;
       case IVY:
-        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, empty, flux, empty, empty);
         break;
       case IVZ:
-        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, empty, flux, empty, empty);
         break;
     }
   }

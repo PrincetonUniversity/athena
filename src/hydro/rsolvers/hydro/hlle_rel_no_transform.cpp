@@ -26,13 +26,10 @@
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-//   bb: 3D array of normal magnetic fields (not used)
 //   prim_l,prim_r: 1D arrays of left and right primitive states
 //   dxw: 1D arrays of mesh spacing in the x1 direction (not used)
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
-//   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces (not used)
-//   wct: 3D arrays of weighting factors for CT (not used)
 // Notes:
 //   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
 //   cf. HLLENonTransforming() in hlle_rel.cpp and hllc_rel.cpp
