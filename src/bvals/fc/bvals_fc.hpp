@@ -39,10 +39,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // unlke Hydro cons vs. prim, never need to rebind FaceCentered coarse_buf, so it can be
   // a reference member: ---> must be initialized in initializer list; cannot pass nullptr
   FaceField &coarse_buf;
-
-  AthenaArray<Real> e1;
-  AthenaArray<Real> e2;
-  AthenaArray<Real> e3;
+  AthenaArray<Real> &e1, &e2, &e3;  // same for EdgeField
 
   // maximum number of reserved unique "physics ID" component of MPI tag bitfield
   // must correspond to the # of "int *phys_id_" private members, below. Convert to array?
