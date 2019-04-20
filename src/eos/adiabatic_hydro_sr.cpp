@@ -85,15 +85,14 @@ void EquationOfState::ConservedToPrimitive(
 
   const Real TINY_NUMBER_p2 = SQR(TINY_NUMBER);
 
-
   // Go through cells
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         // Extract conserved quantities
-        Real d = cons(IDN,k,j,i);
-        Real e = cons(IEN,k,j,i);
+        Real &d = cons(IDN,k,j,i);
+        Real &e = cons(IEN,k,j,i);
 
         Real mx = cons(IVX,k,j,i);
         Real my = cons(IVY,k,j,i);
@@ -183,8 +182,9 @@ void EquationOfState::ConservedToPrimitive(
           e = pgas/gamma_adi_minus_1 + e_tmp + rho;
         }
 
-        cons(IDN,k,j,i) = d;
-        cons(IEN,k,j,i) = e;
+        // cons(IDN,k,j,i) = d;
+        // cons(IEN,k,j,i) = e;
+
         prim(IDN,k,j,i) = rho;
         prim(IPR,k,j,i) = pgas;
         prim(IVX,k,j,i) = vx;
