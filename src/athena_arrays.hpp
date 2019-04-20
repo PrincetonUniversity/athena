@@ -74,7 +74,7 @@ class AthenaArray {
                                                int nx2, int nx1);
   void DeleteAthenaArray();
 
-  // public function to (shallow) swap data pointers of two equally-sized arrays
+  // public function to swap underlying data pointers of two equally-sized arrays
   void SwapAthenaArray(AthenaArray<T>& array2);
   void ZeroClear();
 
@@ -179,7 +179,7 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) 
   nx3_ = src.nx3_;
   nx4_ = src.nx4_;
   nx5_ = src.nx5_;
-  nx5_ = src.nx6_;
+  nx6_ = src.nx6_;
   if (src.pdata_) {
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_);
     pdata_ = new T[size]; // allocate memory for array data
@@ -197,6 +197,13 @@ template<typename T>
 __attribute__((nothrow))
 AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   if (this != &src) {
+    // setting nxN_ is redundant given the above (unenforced) constraint on allowed usage
+    nx1_ = src.nx1_;
+    nx2_ = src.nx2_;
+    nx3_ = src.nx3_;
+    nx4_ = src.nx4_;
+    nx5_ = src.nx5_;
+    nx6_ = src.nx6_;
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_)*(src.nx6_);
     for (std::size_t i=0; i<size; ++i) {
       this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!)
@@ -225,12 +232,12 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(AthenaArray<T>&& src) {
     // remove ownership of data from src to prevent it from free'ing the resources
     src.pdata_ = nullptr;
     src.state_ = DataStatus::empty;
-    src.nx1_= 0;
-    src.nx2_= 0;
-    src.nx3_= 0;
-    src.nx4_= 0;
-    src.nx5_= 0;
-    src.nx6_= 0;
+    src.nx1_ = 0;
+    src.nx2_ = 0;
+    src.nx3_ = 0;
+    src.nx4_ = 0;
+    src.nx5_ = 0;
+    src.nx6_ = 0;
   }
 }
 
@@ -253,12 +260,12 @@ AthenaArray<T> &AthenaArray<T>::operator= (AthenaArray<T> &&src) {
 
       src.pdata_ = nullptr;
       src.state_ = DataStatus::empty;
-      src.nx1_= 0;
-      src.nx2_= 0;
-      src.nx3_= 0;
-      src.nx4_= 0;
-      src.nx5_= 0;
-      src.nx6_= 0;
+      src.nx1_ = 0;
+      src.nx2_ = 0;
+      src.nx3_ = 0;
+      src.nx4_ = 0;
+      src.nx5_ = 0;
+      src.nx6_ = 0;
     }
   }
   return *this;
@@ -290,54 +297,53 @@ template<typename T>
 void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
                                           const int indx, const int nvar) {
   pdata_ = src.pdata_;
-
   if (dim == 6) {
-    nx6_=nvar;
-    nx5_=src.nx5_;
-    nx4_=src.nx4_;
-    nx3_=src.nx3_;
-    nx2_=src.nx2_;
-    nx1_=src.nx1_;
+    nx6_ = nvar;
+    nx5_ = src.nx5_;
+    nx4_ = src.nx4_;
+    nx3_ = src.nx3_;
+    nx2_ = src.nx2_;
+    nx1_ = src.nx1_;
     pdata_ += indx*(nx1_*nx2_*nx3_*nx4_*nx5_);
   } else if (dim == 5) {
-    nx6_=1;
-    nx5_=nvar;
-    nx4_=src.nx4_;
-    nx3_=src.nx3_;
-    nx2_=src.nx2_;
-    nx1_=src.nx1_;
+    nx6_ = 1;
+    nx5_ = nvar;
+    nx4_ = src.nx4_;
+    nx3_ = src.nx3_;
+    nx2_ = src.nx2_;
+    nx1_ = src.nx1_;
     pdata_ += indx*(nx1_*nx2_*nx3_*nx4_);
   } else if (dim == 4) {
-    nx6_=1;
-    nx5_=1;
-    nx4_=nvar;
-    nx3_=src.nx3_;
-    nx2_=src.nx2_;
-    nx1_=src.nx1_;
+    nx6_ = 1;
+    nx5_ = 1;
+    nx4_ = nvar;
+    nx3_ = src.nx3_;
+    nx2_ = src.nx2_;
+    nx1_ = src.nx1_;
     pdata_ += indx*(nx1_*nx2_*nx3_);
   } else if (dim == 3) {
-    nx6_=1;
-    nx5_=1;
-    nx4_=1;
-    nx3_=nvar;
-    nx2_=src.nx2_;
-    nx1_=src.nx1_;
+    nx6_ = 1;
+    nx5_ = 1;
+    nx4_ = 1;
+    nx3_ = nvar;
+    nx2_ = src.nx2_;
+    nx1_ = src.nx1_;
     pdata_ += indx*(nx1_*nx2_);
   } else if (dim == 2) {
-    nx6_=1;
-    nx5_=1;
-    nx4_=1;
-    nx3_=1;
-    nx2_=nvar;
-    nx1_=src.nx1_;
+    nx6_ = 1;
+    nx5_ = 1;
+    nx4_ = 1;
+    nx3_ = 1;
+    nx2_ = nvar;
+    nx1_ = src.nx1_;
     pdata_ += indx*(nx1_);
   } else if (dim == 1) {
-    nx6_=1;
-    nx5_=1;
-    nx4_=1;
-    nx3_=1;
-    nx2_=1;
-    nx1_=nvar;
+    nx6_ = 1;
+    nx5_ = 1;
+    nx4_ = 1;
+    nx3_ = 1;
+    nx2_ = 1;
+    nx1_ = nvar;
     pdata_ += indx;
   }
   state_ = DataStatus::shallow_copy;
