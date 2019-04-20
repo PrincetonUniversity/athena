@@ -39,11 +39,9 @@
 //   cf. LLFNonTransforming() in llf_rel.cpp
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-                          const int ivx, const AthenaArray<Real> &bb,
+                          const int ivx,
                           AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                          AthenaArray<Real> &flux,
-                          AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+                          AthenaArray<Real> &flux, const AthenaArray<Real> &dxw) {
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;

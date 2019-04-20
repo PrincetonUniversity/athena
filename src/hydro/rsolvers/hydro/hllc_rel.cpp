@@ -24,11 +24,9 @@ namespace {
 // Declarations
 void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
                       const int iu, const int ivx,
-                      const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
                       AthenaArray<Real> &g, AthenaArray<Real> &gi,
                       AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                      AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                      AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+                      AthenaArray<Real> &cons, AthenaArray<Real> &flux);
 void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
                          const int il, const int iu,
                          AthenaArray<Real> &g, AthenaArray<Real> &gi,
@@ -56,16 +54,13 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 //       Harm
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-                          const int ivx, const AthenaArray<Real> &bb,
+                          const int ivx,
                           AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                          AthenaArray<Real> &flux,
-                          AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+                          AthenaArray<Real> &flux, const AthenaArray<Real> &dxw) {
   if (GENERAL_RELATIVITY && ivx == IVY && pmy_block->pcoord->IsPole(j)) {
     HLLENonTransforming(pmy_block, k, j, il, iu, g_, gi_, prim_l, prim_r, flux);
   } else {
-    HLLCTransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, g_, gi_, prim_l,
-                     prim_r, cons_, flux, ey, ez);
+    HLLCTransforming(pmy_block, k, j, il, iu, ivx, g_, gi_, prim_l, prim_r, cons_, flux);
   }
   return;
 }
@@ -93,11 +88,9 @@ namespace {
 
 void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
                       const int iu, const int ivx,
-                      const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
                       AthenaArray<Real> &g, AthenaArray<Real> &gi,
                       AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                      AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                      AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+                      AthenaArray<Real> &cons, AthenaArray<Real> &flux) {
   // Calculate metric if in GR
   int i01(0), i11(0);
 #if GENERAL_RELATIVITY

@@ -24,11 +24,9 @@ namespace {
 // Declarations
 void LLFTransforming(MeshBlock *pmb, const int k, const int j,
                      const int il, const int iu, const int ivx,
-                     const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
                      AthenaArray<Real> &g, AthenaArray<Real> &gi,
                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                     AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                     AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+                     AthenaArray<Real> &cons, AthenaArray<Real> &flux);
 void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
                         const int il, const int iu,
                         AthenaArray<Real> &g, AthenaArray<Real> &gi,
@@ -54,16 +52,15 @@ void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-                          const int ivx, const AthenaArray<Real> &bb,
+                          const int ivx, const
                           AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
                           AthenaArray<Real> &flux,
-                          AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+
+                          const AthenaArray<Real> &dxw) {
   if (GENERAL_RELATIVITY && ivx == IVY && pmy_block->pcoord->IsPole(j)) {
     LLFNonTransforming(pmy_block, k, j, il, iu, g_, gi_, prim_l, prim_r, flux);
   } else {
-    LLFTransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, g_, gi_, prim_l,
-                    prim_r, cons_, flux, ey, ez);
+    LLFTransforming(pmy_block, k, j, il, iu, ivx, g_, gi_, prim_l, prim_r, cons_, flux);
   }
   return;
 }
@@ -91,11 +88,9 @@ namespace {
 
 void LLFTransforming(MeshBlock *pmb, const int k, const int j,
                      const int il, const int iu, const int ivx,
-                     const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
                      AthenaArray<Real> &g, AthenaArray<Real> &gi,
                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                     AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+                     AthenaArray<Real> &cons, AthenaArray<Real> &flux) {
   // Transform primitives to locally flat coordinates if in GR
 #if GENERAL_RELATIVITY
   {
