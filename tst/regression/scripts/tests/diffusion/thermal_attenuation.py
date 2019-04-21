@@ -3,6 +3,7 @@
 # solution.
 
 # Modules
+import logging
 import numpy as np
 from numpy.polynomial import Polynomial
 import sys
@@ -10,6 +11,7 @@ import scripts.utils.athena as athena
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 _kappa = 0.04
 
@@ -20,6 +22,7 @@ error_rel_tols = [0.38, 0.10]
 
 
 def prepare(*args, **kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure(*args,
                      prob='linear_wave',
                      flux='hllc',
@@ -61,8 +64,8 @@ def analyze():
     errors_abs = []
 
     for (nx, err_tol) in zip(resolution_range, error_rel_tols):
-        print('[Decaying 3D Linear Wave {}]: '
-              'Mesh size {} x {} x {}'.format(method, nx, nx/2, nx/2))
+        logger.info('[Decaying 3D Linear Wave {}]: '
+                    'Mesh size {} x {} x {}'.format(method, nx, nx/2, nx/2))
         basename = 'bin/DecayLinWave-{}.block0.out2.'.format(nx)
         max_vy = np.zeros(nframe)
         tt = np.zeros(nframe)
@@ -86,24 +89,24 @@ def analyze():
         error_rel = np.fabs(decay_rate/fit_rate - 1.0)
         err_rel_tol_percent = err_tol*100.
 
-        print('[Decaying 3D Linear Wave {}]: R-squared of WLS regression = {}'.format(
-            method, r2))
-        print('[Decaying 3D Linear Wave {}]: Analytic decay rate = {}'.format(
+        logger.info('[Decaying 3D Linear Wave {}]: R-squared of WLS regression = {}'.
+                    format(method, r2))
+        logger.info('[Decaying 3D Linear Wave {}]: Analytic decay rate = {}'.format(
             method, decay_rate))
-        print('[Decaying 3D Linear Wave {}]: Measured decay rate = {}'.format(
+        logger.info('[Decaying 3D Linear Wave {}]: Measured decay rate = {}'.format(
             method, fit_rate))
-        print('[Decaying 3D Linear Wave {}]: Decay rate absolute error = {}'.format(
+        logger.info('[Decaying 3D Linear Wave {}]: Decay rate absolute error = {}'.format(
             method, error_abs))
-        print('[Decaying 3D Linear Wave {}]: Decay rate relative error = {}'.format(
+        logger.info('[Decaying 3D Linear Wave {}]: Decay rate relative error = {}'.format(
             method, error_rel))
 
         if error_rel > err_tol:
-            print('[Decaying 3D Linear Wave {}]: decay rate disagrees'
-                  ' with prediction by >{}%'.format(method, err_rel_tol_percent))
+            logger.warning('[Decaying 3D Linear Wave {}]: decay rate disagrees'
+                           ' with prediction by >{}%'.format(method, err_rel_tol_percent))
             analyze_status = False
         else:
-            print('[Decaying 3D Linear Wave {}]: decay rate is within '
-                  '{}% of analytic value'.format(method, err_rel_tol_percent))
-        print('')
+            logger.info('[Decaying 3D Linear Wave {}]: decay rate is within '
+                        '{}% of analytic value'.format(method, err_rel_tol_percent))
+            logger.info('')
 
     return analyze_status

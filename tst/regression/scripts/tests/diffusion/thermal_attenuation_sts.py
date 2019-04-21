@@ -6,8 +6,10 @@
 # (needed for global variables modified in run_tests.py, even w/o athena.run(), etc.)
 import scripts.utils.athena as athena  # noqa
 import scripts.tests.diffusion.thermal_attenuation as thermal_attenuation
+import logging
 
 thermal_attenuation.method = 'STS'
+thermal_attenuation.logger = logging.getLogger('athena' + __name__[7:])
 
 
 def prepare(*args, **kwargs):

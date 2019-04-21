@@ -1,15 +1,18 @@
 # Regression test to check whether blast wave remains spherical in cylindrical coords
 
 # Modules
+import logging
 import scripts.utils.athena as athena
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure(
         prob='blast',
         coord='cylindrical', **kwargs)
@@ -30,7 +33,8 @@ def analyze():
 
     # check blast is spherical
     if data[0][3] > 1.0:
-        print("Distortion of blast wave in cylindrical coords too large", data[0][3])
+        logger.warning("Distortion of blast wave in cylindrical coords too large %g",
+                       data[0][3])
         return False
 
     return True

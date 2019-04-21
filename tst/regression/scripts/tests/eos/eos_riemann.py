@@ -3,6 +3,7 @@ Regression test for general EOS 1D Riemann problems.
 """
 
 # Modules
+import logging
 import sys
 import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
@@ -10,6 +11,7 @@ from scripts.utils.RiemannSolver.riemann import riemann_problem
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 _tests = [[1e-07, 0.00, 0.150, 1.25e-8, 0., 0.062, .25],
           [4e-06, 0.00, 0.120, 4e-08, 0.00, 0.019, 0.3],
@@ -33,6 +35,7 @@ _thresh = [dict(zip(['rho', 'press', 'vel'], i)) for i in _thresh]
 
 
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure(
                      prob='shock_tube',
                      coord='cartesian',
@@ -62,9 +65,12 @@ def analyze():
             if var == 'vel':
                 data = data_ref[var][0, 0, :, 0]
             diff = comparison.l1_norm(x_ref, data - exact[var])
+            msg = ['EOS Riemann', 'fail:', 'Test#, var, diff, thresh =', n, var, diff,
+                   _thresh[n][var]]
             if diff > _thresh[n][var]:
-                print(' '.join(
-                    map(str, ['EOS Riemann fail. Test#, var, diff, thresh =', n,
-                        var, diff, _thresh[n][var]])))
+                logger.warning(' '.join(map(str, msg)))
                 analyze_status = False
+            else:
+                msg[1] = 'pass:'
+                logger.debug(' '.join(map(str, msg)))
     return analyze_status

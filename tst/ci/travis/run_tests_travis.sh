@@ -20,9 +20,9 @@ else
 fi
 
 # --silent option refers only to stdout of Makefile calls for condensed build logs. Don't use with pgen_compile.py
-time python3 run_tests.py pgen/pgen_compile --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --config=--cflag="$(../ci/set_warning_cflag.sh $TEMP_CXX)"
+time python3 run_tests.py pgen/pgen_compile --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --config=--cflag="$(../ci/set_warning_cflag.sh $TEMP_CXX)" -v
 # Only building serial HDF5 library on Travis CI (skip "pgen/hdf5_reader_parallel"):
-time python3 run_tests.py pgen/hdf5_reader_serial --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD
+time python3 run_tests.py pgen/hdf5_reader_serial --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD -v
 
 # need to switch serial compiler to Homebrew's GCC instead of /usr/bin/gcc -> Apple Clang for OpenMP functionality
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
