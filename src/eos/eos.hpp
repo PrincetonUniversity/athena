@@ -82,6 +82,7 @@ class EquationOfState {
       AthenaArray<Real> &, AthenaArray<Real> &, AthenaArray<Real> &,
       int, int, int) {return;}
 #if !MAGNETIC_FIELDS_ENABLED  // SR hydro: SR MHD defined as no-op
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
   void SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
                      Real *plambda_plus, Real *plambda_minus);
   void FastMagnetosonicSpeedsSR(
@@ -90,6 +91,7 @@ class EquationOfState {
       AthenaArray<Real> &) {return;}
 #else  // SR MHD: SR hydro defined as no-op
   void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
   void FastMagnetosonicSpeedsSR(
       const AthenaArray<Real> &prim, const AthenaArray<Real> &bbx_vals,
       int k, int j, int il, int iu, int ivx,
@@ -106,12 +108,14 @@ class EquationOfState {
       AthenaArray<Real> &, AthenaArray<Real> &, AthenaArray<Real> &,
       int, int, int) {return;}
 #if !MAGNETIC_FIELDS_ENABLED  // GR hydro: GR+SR MHD defined as no-op
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
   void SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
                      Real *plambda_plus, Real *plambda_minus);
   void FastMagnetosonicSpeedsSR(
       const AthenaArray<Real> &, const AthenaArray<Real> &,
       int, int, int, int, int, AthenaArray<Real> &,
       AthenaArray<Real> &) {return;}
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
   void SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
                      Real g00, Real g01, Real g11,
                      Real *plambda_plus, Real *plambda_minus);
@@ -119,12 +123,14 @@ class EquationOfState {
                                 Real *, Real *) {return;}
 #else  // GR MHD: GR+SR hydro defined as no-op
   void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
   void FastMagnetosonicSpeedsSR(
       const AthenaArray<Real> &prim, const AthenaArray<Real> &bbx_vals,
       int k, int j, int il, int iu, int ivx,
       AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m);
   void SoundSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real *, Real *)
   {return;}
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
   void FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Real b_sq,
                                 Real g00, Real g01, Real g11,
                                 Real *plambda_plus, Real *plambda_minus);
