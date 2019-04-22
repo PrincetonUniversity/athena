@@ -356,8 +356,6 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
   MeshBlockTree *bt = proot_;
   lx=myloc.lx1, ly=myloc.lx2, lz=myloc.lx3, ll=myloc.level;
 
-  if (ll<1) return proot_; // single grid; return root
-
   lx+=ox1; ly+=ox2; lz+=ox3;
   // periodic and polar boundaries
   if (lx<0) {
@@ -408,6 +406,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
     else
       return nullptr;
   }
+  if (ll<1) return proot_; // single grid; return root
   if (polar) lz=(lz+num_x3/2)%num_x3;
 
   for (int level=0; level<ll; level++) {
