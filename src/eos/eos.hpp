@@ -122,7 +122,6 @@ class EquationOfState {
                                 Real *, Real *) {return;}
 #else  // GR MHD: GR+SR hydro defined as no-op
   void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
-#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
   void FastMagnetosonicSpeedsSR(
       const AthenaArray<Real> &prim, const AthenaArray<Real> &bbx_vals,
       int k, int j, int il, int iu, int ivx,
