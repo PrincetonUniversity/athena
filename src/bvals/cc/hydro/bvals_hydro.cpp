@@ -38,11 +38,11 @@ void HydroBoundaryVariable::SelectCoarseBuffer(HydroBoundaryQuantity hydro_type)
   if (pmy_mesh_->multilevel) {
     switch (hydro_type) {
       case (HydroBoundaryQuantity::cons): {
-        coarse_buf.InitWithShallowCopy(pmy_block_->phydro->coarse_cons_);
+        coarse_buf = &(pmy_block_->phydro->coarse_cons_);
         break;
       }
       case (HydroBoundaryQuantity::prim): {
-        coarse_buf.InitWithShallowCopy(pmy_block_->phydro->coarse_prim_);
+        coarse_buf = &(pmy_block_->phydro->coarse_prim_);
         break;
       }
     }

@@ -30,12 +30,10 @@
 //! \fn void Hydro::RiemannSolver
 //! \brief The HLLC Riemann solver for adiabatic hydrodynamics (use HLLE for isothermal)
 
-void Hydro::RiemannSolver(
-    const int k, const int j, const int il, const int iu,
-    const int ivx, const AthenaArray<Real> &bx, AthenaArray<Real> &wl,
-    AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-    AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-    AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+                          const int ivx, AthenaArray<Real> &wl,
+                          AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+                          const AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];

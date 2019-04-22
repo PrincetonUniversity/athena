@@ -743,7 +743,10 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
     else
       pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
 
-    ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, stage_wghts[stage-1].beta, ph->u);
+    const Real wght = stage_wghts[stage-1].beta;
+    ph->AddFluxDivergenceToAverage(wght, ph->u);
+    // add coordinate (geometric) source terms
+    pmb->pcoord->CoordSrcTerms(wght*pmb->pmy_mesh->dt, ph->flux, ph->w, pf->bcc, ph->u);
 
     // Hardcode an additional flux divergence weighted average for the penultimate
     // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
@@ -756,11 +759,12 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
       // writing out to u2 register
       pmb->WeightedAve(ph->u2, ph->u1, ph->u2, ave_wghts);
 
-      ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, beta, ph->u2);
+      ph->AddFluxDivergenceToAverage(beta, ph->u2);
+      // add coordinate (geometric) source terms
+      pmb->pcoord->CoordSrcTerms(beta, ph->flux, ph->w, pf->bcc, ph->u2);
     }
     return TaskStatus::next;
   }
-
   return TaskStatus::fail;
 }
 

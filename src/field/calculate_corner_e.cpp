@@ -30,14 +30,8 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e1,e2,e3,w_x1f,w_x2f,w_x3f;
-  e1.InitWithShallowCopy(pmb->pfield->e.x1e);
-  e2.InitWithShallowCopy(pmb->pfield->e.x2e);
-  e3.InitWithShallowCopy(pmb->pfield->e.x3e);
-  w_x1f.InitWithShallowCopy(pmb->pfield->wght.x1f);
-  w_x2f.InitWithShallowCopy(pmb->pfield->wght.x2f);
-  w_x3f.InitWithShallowCopy(pmb->pfield->wght.x3f);
-
+  AthenaArray<Real> &e1 = e.x1e, &e2 = e.x2e, &e3 = e.x3e,
+                 &w_x1f = wght.x1f, &w_x2f = wght.x2f, &w_x3f = wght.x3f;
   //---- 1-D update:
   //  copy face-centered E-fields to edges and return.
 

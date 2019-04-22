@@ -35,19 +35,16 @@ void EquationOfState::ConservedToPrimitiveCellAverage(
   Hydro *ph = pmb->phydro;
 
   int nl = 0;
-  int nu = NHYDRO-1;
+  int nu = NHYDRO - 1;
   // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this should factor out
   // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-centered
   Real h = pco->dx1f(il);  // pco->dx1f(i); inside loop
   Real C = (h*h)/24.0;
 
   // Fourth-order accurate approx to cell-centered conserved and primitive variables
-  AthenaArray<Real> u_cc, w_cc;
-  u_cc.InitWithShallowCopy(ph->u_cc);
-  w_cc.InitWithShallowCopy(ph->w_cc);
+  AthenaArray<Real> &u_cc = ph->u_cc, &w_cc = ph->w_cc;
   // Laplacians of cell-averaged conserved and 2nd order accurate primitive variables
-  AthenaArray<Real> laplacian_cc;
-  laplacian_cc.InitWithShallowCopy(ph->scr1_nkji_);
+  AthenaArray<Real> &laplacian_cc = ph->scr1_nkji_;
 
   // Compute and store Laplacian of cell-averaged conserved variables
   pco->Laplacian(cons, laplacian_cc, il, iu, jl, ju, kl, ku, nl, nu);
