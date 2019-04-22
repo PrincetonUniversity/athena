@@ -75,7 +75,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
   }
 
   // allocate arrays for area weighted positions for AMR/SMR MHD
-  if ((pm->multilevel==true) && MAGNETIC_FIELDS_ENABLED) {
+  if (pm->multilevel && MAGNETIC_FIELDS_ENABLED) {
     x1s2.NewAthenaArray(nc1);
     x1s3.NewAthenaArray(nc1);
     x2s1.NewAthenaArray(nc2);

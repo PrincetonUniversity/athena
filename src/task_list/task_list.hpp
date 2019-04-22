@@ -87,7 +87,6 @@ class TaskList {
 class TimeIntegratorTaskList : public TaskList {
  public:
   TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm);
-  ~TimeIntegratorTaskList() {}
 
   //--------------------------------------------------------------------------------------
   //! \struct IntegratorWeight
@@ -170,7 +169,6 @@ class TimeIntegratorTaskList : public TaskList {
 class SuperTimeStepTaskList : public TaskList {
  public:
   SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist);
-  ~SuperTimeStepTaskList() {}
 
   // functions
   TaskStatus CalculateHydroFlux_STS(MeshBlock *pmb, int stage);

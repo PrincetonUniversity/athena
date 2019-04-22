@@ -6,6 +6,7 @@
 # error calculations.
 
 # Modules
+import logging
 import scripts.utils.athena as athena
 from math import log
 import numpy as np
@@ -13,6 +14,7 @@ import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 # List of time/integrator and time/xorder combinations to test:
 solvers = [('rk4', '4c'), ('ssprk5_4', '4')]
@@ -41,6 +43,7 @@ nrows_per_solver = 2*num_nx1 + 2
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure(
         nghost=4,  # required for fourth-order configurations
         prob='linear_wave',
@@ -102,52 +105,52 @@ def analyze():
 
         # Compute error convergence rates with Richardson extrapolation for each wave flag
         # --------------------
-        print('{} + {}'.format(torder.upper(), xorder))
+        logger.info('{} + {}'.format(torder.upper(), xorder))
         # L-going sound wave
-        print("Sound wave error convergence:")
-        print("nx1   |   rate   |   RMS-L1")
+        logger.info("Sound wave error convergence:")
+        logger.info("nx1   |   rate   |   RMS-L1")
         rms_errs = solver_results[0:num_nx1, 4]
         nx1_range = solver_results[0:num_nx1, 0]
         for i in range(1, num_nx1):
             rate = log(rms_errs[i-1]/rms_errs[i])/log(nx1_range[i]/nx1_range[i-1])
-            print(int(nx1_range[i]), rate, rms_errs[i])
+            logger.info("%d %g %g", int(nx1_range[i]), rate, rms_errs[i])
             # old rate calculation from hydro/hydro_linwave.py:
-            # print(rms_errs[i]/rms_errs[i-1])
+            # logger.info(rms_errs[i]/rms_errs[i-1])
             if (nx1_range[i] == 128 and rate < rate_tol[0]):
-                print("L-going sound wave converging at rate {} slower than {}".format(
-                    rate, rate_tol[0]))
+                msg = "L-going sound wave converging at rate {} slower than {}"
+                logger.warning(msg.format(rate, rate_tol[0]))
                 return False
             if (rms_errs[i] > err_tol[0][i-1]):
-                print("L-going sound wave error {} is larger than tolerance {}".format(
-                    rms_errs[i], err_tol[0][i-1]))
+                msg = "L-going sound wave error {} is larger than tolerance {}"
+                logger.warning(msg.format(rms_errs[i], err_tol[0][i-1]))
                 return False
 
         # L-going entropy wave
-        print("Entropy wave error convergence:")
-        print("nx1   |   rate   |   RMS-L1")
+        logger.info("Entropy wave error convergence:")
+        logger.info("nx1   |   rate   |   RMS-L1")
         rms_errs = solver_results[num_nx1:2*num_nx1, 4]
         nx1_range = solver_results[num_nx1:2*num_nx1, 0]
         for i in range(1, num_nx1):
             rate = log(rms_errs[i-1]/rms_errs[i])/log(nx1_range[i]/nx1_range[i-1])
-            print(int(nx1_range[i]), rate, rms_errs[i])
+            logger.info("%d %g %g", int(nx1_range[i]), rate, rms_errs[i])
             # old rate calculation from hydro/hydro_linwave.py:
-            # print(rms_errs[i]/rms_errs[i-1])
+            # logger.info(rms_errs[i]/rms_errs[i-1])
             if (nx1_range[i] == 128 and rate < rate_tol[1]):
-                print("L-going entropy wave converging at rate {} slower than {}".format(
-                    rate, rate_tol[1]))
+                msg = "L-going entropy wave converging at rate {} slower than {}"
+                logger.warning(msg.format(rate, rate_tol[1]))
                 return False
             if (rms_errs[i] > err_tol[1][i-1]):
-                print("L-going entropy wave error {} is larger than tolerance {}".format(
-                    rms_errs[i], err_tol[1][i-1]))
+                msg = "L-going entropy wave error {} is larger than tolerance {}"
+                logger.warning(msg.format(rms_errs[i], err_tol[1][i-1]))
                 return False
 
         # Check that errors are identical for sound waves in each direction at default
         # 64x32x32 resolution
         if (not np.allclose(solver_results[-2, 4], solver_results[-1, 4],
                             atol=5e-16, rtol=1e-5)):
-            print(("L/R-going sound wave errors, {} and {}".format(solver_results[-2, 4],
-                                                                   solver_results[-1, 4]),
-                   ", have a difference that is not close to round-off"))
+            msg = "L/R-going sound wave errors, {} and {}"
+            msg += ", have a difference that is not close to round-off"
+            logger.warning(msg.format(solver_results[-2, 4], solver_results[-1, 4]))
             return False
 
     return True

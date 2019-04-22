@@ -4,6 +4,7 @@
 import sys
 
 # Other modules
+import logging
 import numpy as np
 import h5py
 
@@ -12,6 +13,7 @@ import scripts.utils.athena as athena
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 # Parameters
 filename_input = 'initial_data.hdf5'
@@ -29,6 +31,7 @@ gamma = 5.0/3.0
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
 
     # Configure and compile code
     athena.configure('b',

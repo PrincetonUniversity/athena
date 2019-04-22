@@ -124,6 +124,7 @@ void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssiz
   return;
 }
 
+// KGF: change ssize to send_count
 
 void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
@@ -135,6 +136,38 @@ void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, in
   std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_flcor_.send[nb.bufid],
               ssize*sizeof(Real));
   ptarget_bdata->flag[nb.targetid] = BoundaryStatus::arrived;
+  return;
+}
+
+// no nb.targetid, nb.bufid in SimpleNeighborBlock.
+// fixed "int bufid" is used for both IDs. Seems unnecessarily strict.
+void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int ssize,
+                                                  int bufid, bool upper) {
+  // Locate target buffer
+  // 1) which MeshBlock?
+  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(snb.gid);
+  // 2) which element in vector of BoundaryVariable *?
+  ShearingBoundaryData *ptarget_bdata =
+      &(ptarget_block->pbval->bvars[bvar_index]->shear_bd_var_[upper]);
+  std::memcpy(ptarget_bdata->recv[bufid], shear_bd_var_[upper].send[bufid],
+              ssize*sizeof(Real));
+  // finally, set the BoundaryStatus flag on the destination buffer
+  ptarget_bdata->flag[bufid] = BoundaryStatus::arrived;
+  return;
+}
+
+void BoundaryVariable::CopyShearEMFSameProcess(SimpleNeighborBlock& snb, int ssize,
+                                               int bufid, bool upper) {
+  // Locate target buffer
+  // 1) which MeshBlock?
+  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(snb.gid);
+  // 2) which element in vector of BoundaryVariable *?
+  ShearingBoundaryData *ptarget_bdata =
+      &(ptarget_block->pbval->bvars[bvar_index]->shear_bd_emf_[upper]);
+  std::memcpy(ptarget_bdata->recv[bufid], shear_bd_emf_[upper].send[bufid],
+              ssize*sizeof(Real));
+  // finally, set the BoundaryStatus flag on the destination buffer
+  ptarget_bdata->flag[bufid] = BoundaryStatus::arrived;
   return;
 }
 

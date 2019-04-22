@@ -6,16 +6,19 @@
 # jeans-errors.dat)
 
 # Modules
+import logging
 import numpy as np
 import scripts.utils.athena as athena
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('fft',
                      prob='jeans',
                      grav='fft',
@@ -51,13 +54,13 @@ def analyze():
     # read data from error file
     filename = 'bin/jeans-errors.dat'
     data = athena_read.error_dat(filename)
-    print(data)
+    logger.info(str(data))
     result = True
     # error
     for i in range(len(data)):
         if data[i][4] > 1.e-7:
-            print("FFT Gravity Linear Jeans instability error is too large:",
-                  data[i][4])
+            logger.warning("FFT Gravity Linear Jeans instability error is too large: %g",
+                           data[i][4])
             result = False
     # compute overall convergence slope
     gslope = np.log(data[len(data)-1][4]/data[0][4])/np.log(4.0)
@@ -67,12 +70,13 @@ def analyze():
     for i in range(len(data)-1):
         slope = np.log(data[i+1][4]/data[i][4])/np.log(2.0)
         if data[i+1][4] > (err_tol*data[i][4]/(4.0)):
-            print("Linear Jeans instability error is not converging at 2nd order")
-            print("Error tolerance:", err_tol)
-            print("Order estimate:", slope, gslope)
+            logger.warning(
+                "Linear Jeans instability error is not converging at 2nd order")
+            logger.warning("Error tolerance: %g", err_tol)
+            logger.warning("Order estimate: %g %g", slope, gslope)
             result = False
         elif data[i+1][4] > (warn_tol*data[i][4]/(4.0)):
-            print("WARNING: Linear Jeans instability error is converging slowly")
-            print("Error tolerance:", warn_tol)
-            print("Order estimate:", slope, gslope)
+            logger.warning("WARNING: Linear Jeans instability error is converging slowly")
+            logger.warning("Error tolerance: %g", warn_tol)
+            logger.warning("Order estimate: %g %g", slope, gslope)
     return result

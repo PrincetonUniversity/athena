@@ -71,8 +71,8 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
     g_.NewAthenaArray(NMETRIC, ncells1);
     gi_.NewAthenaArray(NMETRIC, ncells1);
   }
-  // allocate prolongation buffers
-  if (pm->multilevel == true) {
+
+  if (pm->multilevel) {
     // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
     pmy_block->pmr->AddToRefinement(&b, &coarse_b_);
   }

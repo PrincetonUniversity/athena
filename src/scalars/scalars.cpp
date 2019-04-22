@@ -58,7 +58,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     s2.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
 
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
-  if (pm->multilevel == true) {
+  if (pm->multilevel) {
     pmy_block->pmr->AddToRefinement(&s, &coarse_s_);
   }
 

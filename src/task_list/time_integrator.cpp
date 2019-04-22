@@ -235,7 +235,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     } else { // STS enabled:
       AddTask(CALC_HYDFLX,NONE);
     }
-    if (pm->multilevel == true) { // SMR or AMR
+    if (pm->multilevel) { // SMR or AMR
       AddTask(SEND_HYDFLX,CALC_HYDFLX);
       AddTask(RECV_HYDFLX,CALC_HYDFLX);
       AddTask(INT_HYD,RECV_HYDFLX);
@@ -293,7 +293,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       }
 
       // prolongate, compute new primitives
-      if (pm->multilevel == true) { // SMR or AMR
+      if (pm->multilevel) { // SMR or AMR
         if (NSCALARS > 0) {
           AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD|SEND_SCLR|SETB_SCLR));
         } else {
@@ -302,15 +302,14 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         AddTask(CON2PRIM,PROLONG);
       } else {
         if (SHEARING_BOX) {
-          AddTask(CON2PRIM,(SETB_HYD|SETB_FLD|
-                                          RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
+          AddTask(CON2PRIM,(SETB_HYD|SETB_FLD|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
         } else {
           AddTask(CON2PRIM,(SETB_HYD|SETB_FLD));
         }
       }
     } else {  // HYDRO
       // prolongate, compute new primitives
-      if (pm->multilevel == true) { // SMR or AMR
+      if (pm->multilevel) { // SMR or AMR
         AddTask(PROLONG,(SEND_HYD|SETB_HYD));
         AddTask(CON2PRIM,PROLONG);
       } else {
@@ -326,7 +325,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     AddTask(PHY_BVAL,CON2PRIM);
     AddTask(USERWORK,PHY_BVAL);
     AddTask(NEW_DT,USERWORK);
-    if (pm->adaptive == true) {
+    if (pm->adaptive) {
       AddTask(FLAG_AMR,USERWORK);
       AddTask(CLEAR_ALLBND,FLAG_AMR);
     } else {
@@ -643,10 +642,11 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     }
   }
 
-  // KGF: Needed only for shearing box in "StartReceivingAll(time)"
-  // Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-  // Real time = pmb->pmy_mesh->time+dt;
-
+  if (SHEARING_BOX) {
+    Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+    Real time = pmb->pmy_mesh->time+dt;
+    pmb->pbval->ComputeShear(time);
+  }
   pmb->pbval->StartReceiving(BoundaryCommSubset::all);
 
   return;
@@ -886,7 +886,6 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydro(MeshBlock *pmb, int stage) {
   } else {
     return TaskStatus::fail;
   }
-
   if (ret == true) {
     return TaskStatus::success;
   } else {
@@ -902,7 +901,6 @@ TaskStatus TimeIntegratorTaskList::ReceiveField(MeshBlock *pmb, int stage) {
   } else {
     return TaskStatus::fail;
   }
-
   if (ret == true) {
     return TaskStatus::success;
   } else {
@@ -932,7 +930,8 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesField(MeshBlock *pmb, int stage)
 
 TaskStatus TimeIntegratorTaskList::SendHydroShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    //    pmb->phydro->hbvar.SendHydroShearingboxBoundaryBuffers(pmb->phydro->u, true);
+    // KGF: (pmb->phydro->u, true);
+    pmb->phydro->hbvar.SendShearingBoxBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -944,7 +943,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) 
   bool ret;
   ret = false;
   if (stage <= nstages) {
-    // ret = pmb->phydro->hbvar.ReceiveHydroShearingboxBoundaryBuffers(pmb->phydro->u);
+    // KGF: (pmb->phydro->u);
+    ret = pmb->phydro->hbvar.ReceiveShearingBoxBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -958,7 +958,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) 
 
 TaskStatus TimeIntegratorTaskList::SendFieldShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    //    pmb->pfield->fbvar.SendFieldShearingboxBoundaryBuffers(pmb->pfield->b, true);
+    // KGF: (pmb->pfield->b, true);
+    pmb->pfield->fbvar.SendShearingBoxBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -970,7 +971,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveFieldShear(MeshBlock *pmb, int stage) 
   bool ret;
   ret = false;
   if (stage <= nstages) {
-    // ret = pmb->pfield->fbvar.ReceiveFieldShearingboxBoundaryBuffers(pmb->pfield->b);
+    // KGF: (pmb->pfield->b);
+    ret = pmb->pfield->fbvar.ReceiveShearingBoxBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -983,24 +985,23 @@ TaskStatus TimeIntegratorTaskList::ReceiveFieldShear(MeshBlock *pmb, int stage) 
 
 
 TaskStatus TimeIntegratorTaskList::SendEMFShear(MeshBlock *pmb, int stage) {
-  //pmb->pfield->fbvar.SendEMFShearingboxBoundaryCorrection();
+  pmb->pfield->fbvar.SendEMFShearingBoxBoundaryCorrection();
   return TaskStatus::success;
 }
 
 
 TaskStatus TimeIntegratorTaskList::ReceiveEMFShear(MeshBlock *pmb, int stage) {
-  // if (pmb->pfield->fbvar.ReceiveEMFShearingboxBoundaryCorrection() == true) {
-  //   return TaskStatus::next;
-  // } else {
-  //   return TaskStatus::fail;
-  // }
-
+  if (pmb->pfield->fbvar.ReceiveEMFShearingBoxBoundaryCorrection() == true) {
+    return TaskStatus::next;
+  } else {
+    return TaskStatus::fail;
+  }
   return TaskStatus::fail;
 }
 
 
 TaskStatus TimeIntegratorTaskList::RemapEMFShear(MeshBlock *pmb, int stage) {
-  // pmb->pfield->fbvar.RemapEMFShearingboxBoundary();
+  pmb->pfield->fbvar.RemapEMFShearingBoxBoundary();
   return TaskStatus::success;
 }
 

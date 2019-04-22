@@ -8,13 +8,15 @@
 
 
 # Modules
+import logging
 import numpy as np
 from numpy.polynomial import Polynomial
 import sys
 import scripts.utils.athena as athena
 sys.path.insert(0, '../../vis/python')
-import athena_read                             # noqa
+import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 _nu = 0.01
 _kappa = _nu*2.0
@@ -22,13 +24,24 @@ _eta = _kappa
 _c_s = 0.5  # slow mode wave speed of Athena++ linear wave configuration
 
 resolution_range = [32, 64]
+
+method = 'Explicit'
 # Upper bound on relative L1 error for each above nx1:
 error_rel_tols = [0.22, 0.05]
 # lower bound on convergence rate at final (Nx1=64) asymptotic convergence regime
 rate_tols = [2.0]  # convergence rate > 3.0 for this particular resolution, sovler
 
+# NOTE: the linear wave convergence test is currently insufficiently discriminatory for
+# both STS and non-STS handling of the diffusion terms. pgen/linear_wave.cpp does NOT
+# initialize the correct diffusive eigenmodes, nor are we checking the exact analytic
+# solution (unlike simpler 1D diffusion/ tests like viscous_diffusion.py) but instead are
+# checking a decay rate predicted by linear analysis that becomes invalid at large
+# diffusion coefficients (where we would be able to observe the different convergence
+# rates of the STS and non-STS solvers).
+
 
 def prepare(*args, **kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('b', *args,
                      prob='linear_wave',
                      flux='hlld',
@@ -76,7 +89,8 @@ def analyze():
     errors_abs = []
 
     for (nx, err_tol) in zip(resolution_range, error_rel_tols):
-        print("[Decaying 3D Linear Wave]: Mesh size {} x {} x {}".format(nx, nx/2, nx/2))
+        logging.info('[Decaying 3D Linear Wave {}]: '
+                     'Mesh size {} x {} x {}'.format(method, nx, nx/2, nx/2))
         basename = 'bin/DecayLinWave-{}.block0.out2.'.format(nx)
         max_vy = np.zeros(nframe)
         tt = np.zeros(nframe)
@@ -100,39 +114,40 @@ def analyze():
         error_rel = np.fabs(slow_mode_rate/fit_rate - 1.0)
         err_rel_tol_percent = err_tol*100.
 
-        print('[Decaying 3D Linear Wave]: Reynolds number of slow mode: {}'.format(
-            re_num))
-        print('[Decaying 3D Linear Wave]: R-squared of WLS regression = {}'.format(
-            r2))
-        print('[Decaying 3D Linear Wave]: Analytic decay rate = {}'.format(
-            slow_mode_rate))
-        print('[Decaying 3D Linear Wave]: Measured decay rate = {}'.format(
-            fit_rate))
-        print('[Decaying 3D Linear Wave]: Decay rate absolute error = {}'.format(
-            error_abs))
-        print('[Decaying 3D Linear Wave]: Decay rate relative error = {}'.format(
-            error_rel))
+        logger.info('[Decaying 3D Linear Wave {}]: Reynolds number of slow mode: {}'.
+                    format(method, re_num))
+        logger.info('[Decaying 3D Linear Wave {}]: R-squared of WLS regression = {}'.
+                    format(method, r2))
+        logger.info('[Decaying 3D Linear Wave {}]: Analytic decay rate = {}'.format(
+            method, slow_mode_rate))
+        logger.info('[Decaying 3D Linear Wave {}]: Measured decay rate = {}'.format(
+            method, fit_rate))
+        logger.info('[Decaying 3D Linear Wave {}]: Decay rate absolute error = {}'.format(
+            method, error_abs))
+        logger.info('[Decaying 3D Linear Wave {}]: Decay rate relative error = {}'.format(
+            method, error_rel))
 
         if error_rel > err_tol:
-            print('[Decaying 3D Linear Wave]: decay rate disagrees'
-                  ' with prediction by >{}%'.format(err_rel_tol_percent))
+            logger.warning('[Decaying 3D Linear Wave {}]: decay rate disagrees'
+                           ' with prediction by >{}%'.format(method, err_rel_tol_percent))
             analyze_status = False
         else:
-            print('[Decaying 3D Linear Wave]: decay rate is within '
-                  '{}% of analytic value'.format(err_rel_tol_percent))
-        print('')
+            logger.info('[Decaying 3D Linear Wave {}]: decay rate is within '
+                        '{}% of analytic value'.format(method, err_rel_tol_percent))
+            logger.info('')
 
-    # Check second-order convergence rate of overall solver (STS converges only at 1st)
+    # Check 2nd order convergence rate of solver (STS should only converge at 1st order)
+    # SEE ABOVE NOTE
     rate = np.log(errors_abs[-2]/errors_abs[-1]) / (
         np.log(resolution_range[-1]/resolution_range[-2]))
-    print('[Decaying 3D Linear Wave]: convergence rate of decay rate error = {}'.format(
-        rate))
+    logger.info('[Decaying 3D Linear Wave]: convergence rate of decay rate error = {}'.
+                format(rate))
     if rate < rate_tols[-1]:
-        print('[Decaying 3D Linear Wave]: convergence of decay rate absolute error '
-              'is slower than {}'.format(rate_tols[-1]))
+        logger.warning('[Decaying 3D Linear Wave]: convergence of decay rate absolute '
+                       'error is slower than {}'.format(rate_tols[-1]))
         analyze_status = False
     else:
-        print('[Decaying 3D Linear Wave]: convergence of decay rate absolute error '
-              'is at least {}'.format(rate_tols[-1]))
+        logger.info('[Decaying 3D Linear Wave]: convergence of decay rate absolute error '
+                    'is at least {}'.format(rate_tols[-1]))
 
     return analyze_status

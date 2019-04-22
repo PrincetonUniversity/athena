@@ -17,7 +17,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "./bvals_interfaces.hpp"
+#include "bvals_interfaces.hpp"
 
 // MPI headers
 #ifdef MPI_PARALLEL
@@ -110,15 +110,22 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // called before time-stepper:
   void SetupPersistentMPI() final; // setup MPI requests
 
-  // called during time-stepper:
+  // called before and during time-stepper:
   void StartReceiving(BoundaryCommSubset phase) final;
   void ClearBoundary(BoundaryCommSubset phase) final;
+
+  void StartReceivingShear(BoundaryCommSubset phase) final;
+  void ComputeShear(const Real time) final;
 
   // non-inhertied / unique functions (do not exist in BoundaryVariable objects):
   // (these typically involve a coupled interaction of boundary variable/quantities)
   // ------
   void ApplyPhysicalBoundaries(const Real time, const Real dt);
   void ProlongateBoundaries(const Real time, const Real dt);
+
+  // compute the shear at each integrator stage
+  // TODO(felker): consider making this fn private again if calling within StartRecv()
+  void FindShearBlock(const Real time);
 
   // safety check of user's boundary fns in Mesh::Initialize before SetupPersistentMPI()
   void CheckUserBoundaries();
@@ -143,21 +150,25 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // communication (subset of Mesh::next_phys_id_)
   int bvars_next_phys_id_;
 
-  // Shearingbox (shared with Field and Hydro)
-  // ShearingBoundaryBlock shbb_;  // shearing block properties: lists etc.
-  // Real x1size_,x2size_,x3size_; // mesh_size.x1max-mesh_size.x1min etc. [Lx,Ly,Lz]
-  // Real Omega_0_, qshear_;       // orbital freq and shear rate
-  // int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz
-  // int joverlap_;                // # of cells the shear runs over one block
-  // Real ssize_;                  // # of ghost cells in x-z plane
-  // Real eps_;                    // fraction part of the shear
+  // Shearing box (shared with Field and Hydro)
+  // KGF: remove the redundancies in these variables:
+  Real Omega_0_, qshear_;       // orbital freq and shear rate
+  int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz
+  int joverlap_;                // # of cells the shear runs over one block
+  Real ssize_;                  // # of ghost cells in x-z plane
+  Real eps_;                    // fraction part of the shear
+  Real qomL_;
 
-  // int  send_inner_gid_[4], recv_inner_gid_[4]; // gid of meshblocks for communication
-  // int  send_inner_lid_[4], recv_inner_lid_[4]; // lid of meshblocks for communication
-  // int send_inner_rank_[4],recv_inner_rank_[4]; // rank of meshblocks for communication
-  // int  send_outer_gid_[4], recv_outer_gid_[4]; // gid of meshblocks for communication
-  // int  send_outer_lid_[4], recv_outer_lid_[4]; // lid of meshblocks for communication
-  // int send_outer_rank_[4],recv_outer_rank_[4]; // rank of meshblocks for communication
+  // it is possible for a MeshBlock to have is_shear={true, true}, if it is the only block
+  // along x1
+  bool is_shear[2]; // inner_x1=0, outer_x1=1
+  SimpleNeighborBlock *shbb_[2];
+  std::int64_t loc_shear[2];  // x1 LogicalLocation of block(s) on inner/outer shear bndry
+
+  // KGF: why 4x? shouldn't in only require +/-1 MeshBlock along the shear, aka 3x?
+  // KGF: fold 4x arrays into 2x 2D array of structs (combine recv/send); inner=0, outer=1
+  SimpleNeighborBlock shear_send_neighbor_[2][4], shear_recv_neighbor_[2][4];
+  int shear_send_count_[2][4], shear_recv_count_[2][4];
 
   // ProlongateBoundaries() wraps the following S/AMR-operations (within nneighbor loop):
   // (the next function is also called within 3x nested loops over nk,nj,ni)

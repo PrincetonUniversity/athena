@@ -76,7 +76,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     ncc3 = 1;
   }
 
-  if (pm->multilevel == true) {
+  if (pm->multilevel) {
     cnghost = (NGHOST + 1)/2 + 1;
     cis = NGHOST; cie = cis + block_size.nx1/2 - 1;
     cjs = cje = cks = cke = 0;
@@ -119,7 +119,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // floors depend on EOS, but EOS isn't needed in Reconstruction constructor-> this is ok
   precon = new Reconstruction(this, pin);
 
-  if (pm->multilevel == true) pmr = new MeshRefinement(this, pin);
+  if (pm->multilevel) pmr = new MeshRefinement(this, pin);
 
   // physics-related, per-MeshBlock objects: may depend on Coordinates for diffusion
   // terms, and may enroll quantities in AMR and BoundaryVariable objs. in BoundaryValues
@@ -211,7 +211,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     ncc3 = 1;
   }
 
-  if (pm->multilevel==true) {
+  if (pm->multilevel) {
     cnghost=(NGHOST+1)/2+1;
     cis=NGHOST; cie=cis+block_size.nx1/2-1;
     cjs=cje=cks=cke=0;
@@ -253,7 +253,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // Reconstruction (constructor may implicitly depend on Coordinates)
   precon = new Reconstruction(this, pin);
 
-  if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
+  if (pm->multilevel) pmr = new MeshRefinement(this, pin);
 
   // (re-)create physics-related objects in MeshBlock
   phydro = new Hydro(this, pin);
@@ -315,7 +315,7 @@ MeshBlock::~MeshBlock() {
 
   delete pcoord;
   delete precon;
-  if (pmy_mesh->multilevel == true) delete pmr;
+  if (pmy_mesh->multilevel) delete pmr;
 
   delete phydro;
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;

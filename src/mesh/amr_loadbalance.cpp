@@ -484,7 +484,8 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
         for (int l=0; l<nleaf; l++) {
           if (ranklist[on+l] == Globals::my_rank) continue;
           LogicalLocation &lloc = loclist[on+l];
-          int ox1 = lloc.lx1 & 1LL, ox2 = lloc.lx2 & 1LL, ox3 = lloc.lx3 & 1LL;
+          int ox1 = ((lloc.lx1 & 1LL) == 1LL), ox2 = ((lloc.lx2 & 1LL) == 1LL),
+              ox3 = ((lloc.lx3 & 1LL) == 1LL);
           recvbuf[rb_idx] = new Real[bsf2c];
           int tag = CreateAMRMPITag(n-nbs, ox1, ox2, ox3);
           MPI_Irecv(recvbuf[rb_idx], bsf2c, MPI_ATHENA_REAL, ranklist[on+l],
@@ -540,7 +541,8 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
         if (newrank[nn] == Globals::my_rank) continue;
         sendbuf[sb_idx] = new Real[bsf2c];
         PrepareSendFineToCoarseAMR(pb, sendbuf[sb_idx]);
-        int ox1 = oloc.lx1 & 1LL, ox2 = oloc.lx2 & 1LL, ox3 = oloc.lx3 & 1LL;
+        int ox1 = ((oloc.lx1 & 1LL) == 1LL), ox2 = ((oloc.lx2 & 1LL) == 1LL),
+            ox3 = ((oloc.lx3 & 1LL) == 1LL);
         int tag = CreateAMRMPITag(nn-nslist[newrank[nn]], ox1, ox2, ox3);
         MPI_Isend(sendbuf[sb_idx], bsf2c, MPI_ATHENA_REAL, newrank[nn],
                   tag, MPI_COMM_WORLD, &(req_send[sb_idx]));
@@ -735,7 +737,8 @@ void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
 
 void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
                                       LogicalLocation &lloc) {
-  int ox1 = lloc.lx1 & 1LL, ox2 = lloc.lx2 & 1LL, ox3 = lloc.lx3 & 1LL;
+  int ox1 = ((lloc.lx1 & 1LL) == 1LL), ox2 = ((lloc.lx2 & 1LL) == 1LL),
+      ox3 = ((lloc.lx3 & 1LL) == 1LL);
   // pack
   int il, iu, jl, ju, kl, ku;
   if (ox1 == 0) il = pb->is - 1,               iu = pb->is + pb->block_size.nx1/2;
@@ -1020,7 +1023,8 @@ void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
 // step 8 (receive and load), branch 2 (f2c: unpack)
 void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
                                      LogicalLocation &lloc) {
-  int ox1 = lloc.lx1 & 1LL, ox2 = lloc.lx2 & 1LL, ox3 = lloc.lx3 & 1LL;
+  int ox1 = ((lloc.lx1 & 1LL) == 1LL), ox2 = ((lloc.lx2 & 1LL) == 1LL),
+      ox3 = ((lloc.lx3 & 1LL) == 1LL);
   int p = 0, il, iu, jl, ju, kl, ku;
   if (ox1 == 0) il = pb->is,            iu = pb->is + pb->block_size.nx1/2 - 1;
   else        il = pb->is + pb->block_size.nx1/2, iu = pb->ie;

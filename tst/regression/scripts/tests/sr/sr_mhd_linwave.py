@@ -6,16 +6,19 @@ executable in linearwave-errors.dat.
 """
 
 # Modules
+import logging
 import numpy as np
 import scripts.utils.athena as athena
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read                            # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('sb',
                      prob='gr_linear_wave',
                      coord='cartesian',
@@ -84,11 +87,11 @@ def analyze():
     status = True
     for wave_flag in range(7):
         if data[2*wave_flag+1][4] > high_res_errors[wave_flag]:
-            print('{0} wave error too large ({1} vs. {2})'.format(
+            logger.warning('{0} wave error too large ({1} vs. {2})'.format(
                 names[wave_flag], data[2*wave_flag+1][4], high_res_errors[wave_flag]))
             status = False
         if data[2*wave_flag+1][4]/data[2*wave_flag][4] > error_ratio:
-            print('{0} wave error not converging ({1} to {2})'.format(
+            logger.warning('{0} wave error not converging ({1} to {2})'.format(
                 names[wave_flag], data[2*wave_flag][4], data[2*wave_flag+1][4]))
             status = False
     return status

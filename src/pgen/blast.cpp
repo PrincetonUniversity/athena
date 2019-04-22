@@ -39,7 +39,7 @@ Real threshold;
 int RefinementCondition(MeshBlock *pmb);
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
-  if (adaptive == true) {
+  if (adaptive) {
     EnrollUserRefinementCondition(RefinementCondition);
     threshold = pin->GetReal("problem","thr");
   }

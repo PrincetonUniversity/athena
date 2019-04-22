@@ -1,6 +1,7 @@
 # Test script for relativistic MHD shock tubes in GR with HLLE
 
 # Modules
+import logging
 import numpy as np
 import sys
 import scripts.utils.athena as athena
@@ -8,10 +9,12 @@ import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('bgt',
                      prob='gr_shock_tube',
                      coord='minkowski',
