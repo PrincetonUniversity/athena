@@ -28,6 +28,12 @@
 //  \brief Adds flux divergence to weighted average of conservative variables from
 //  previous step(s) of time integrator algorithm
 
+// TODO(felker): consider combining with PassiveScalars implementation + (see 57cfe28b)
+// (may rename to AddPhysicalFluxDivergence or AddQuantityFluxDivergence to explicitly
+// distinguish from CoordTerms)
+// (may rename to AddHydroFluxDivergence and AddScalarsFluxDivergence, if
+// the implementations remain completely independent / no inheritance is
+// used)
 void Hydro::AddFluxDivergence(const Real wght, AthenaArray<Real> &u_out) {
   MeshBlock *pmb = pmy_block;
   AthenaArray<Real> &x1flux = flux[X1DIR];
