@@ -292,6 +292,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         AddTask(RECV_FLDSH,SETB_FLD);
       }
 
+      // TODO(felker): these nested conditionals are horrible now. Add option to AddTask
+      // for "wait for all previously added tasks"?
+
       // prolongate, compute new primitives
       if (pm->multilevel) { // SMR or AMR
         if (NSCALARS > 0) {
@@ -302,21 +305,42 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         AddTask(CON2PRIM,PROLONG);
       } else {
         if (SHEARING_BOX) {
-          AddTask(CON2PRIM,(SETB_HYD|SETB_FLD|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
+          if (NSCALARS > 0) {
+            AddTask(CON2PRIM,
+                    (SETB_HYD|SETB_FLD|SETB_SCLR|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
+          } else {
+            AddTask(CON2PRIM,(SETB_HYD|SETB_FLD|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
+          }
         } else {
-          AddTask(CON2PRIM,(SETB_HYD|SETB_FLD));
+          if (NSCALARS > 0) {
+            AddTask(CON2PRIM,(SETB_HYD|SETB_FLD|SETB_SCLR));
+          } else {
+            AddTask(CON2PRIM,(SETB_HYD|SETB_FLD));
+          }
         }
       }
     } else {  // HYDRO
       // prolongate, compute new primitives
       if (pm->multilevel) { // SMR or AMR
-        AddTask(PROLONG,(SEND_HYD|SETB_HYD));
+        if (NSCALARS > 0) {
+          AddTask(PROLONG,(SEND_HYD|SETB_HYD|SETB_SCLR|SEND_SCLR));
+        } else {
+          AddTask(PROLONG,(SEND_HYD|SETB_HYD));
+        }
         AddTask(CON2PRIM,PROLONG);
       } else {
         if (SHEARING_BOX) {
-          AddTask(CON2PRIM,(SETB_HYD|RECV_HYDSH));
+          if (NSCALARS > 0) {
+            AddTask(CON2PRIM,(SETB_HYD|RECV_HYDSH|SETB_SCLR));  // RECV_SCLRSH
+          } else {
+            AddTask(CON2PRIM,(SETB_HYD|RECV_HYDSH));
+          }
         } else {
-          AddTask(CON2PRIM,(SETB_HYD));
+          if (NSCALARS > 0) {
+            AddTask(CON2PRIM,(SETB_HYD|SETB_SCLR));
+          } else {
+            AddTask(CON2PRIM,(SETB_HYD));
+          }
         }
       }
     }
