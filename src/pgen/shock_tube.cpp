@@ -31,7 +31,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-
+#include "../scalars/scalars.hpp"
 
 //========================================================================================
 //! \fn Real press(Real rho, Real T)
@@ -554,6 +554,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         pfield->b.x3f(ke+1,j,i) = pfield->b.x3f(ke,j,i);
+      }
+    }
+  }
+
+  // uniformly fill all scalars to have equal concentration
+  // mass fraction? or concentration?
+  if (NSCALARS > 0) {
+    for (int n=0; n<NSCALARS; ++n) {
+      for (int k=ks; k<=ke; ++k) {
+        for (int j=js; j<=je; ++j) {
+          for (int i=is; i<=ie; ++i) {
+            pscalars->s(k,j,i) = 1.0/NSCALARS;
+          }
+        }
       }
     }
   }
