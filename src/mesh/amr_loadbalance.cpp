@@ -276,9 +276,9 @@ void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
           }
         }
         if (rr == nleaf) {
-          clderef[ctnd].lx1   = (lderef[n].lx1>>1);
-          clderef[ctnd].lx2   = (lderef[n].lx2>>1);
-          clderef[ctnd].lx3   = (lderef[n].lx3>>1);
+          clderef[ctnd].lx1   = lderef[n].lx1>>1;
+          clderef[ctnd].lx2   = lderef[n].lx2>>1;
+          clderef[ctnd].lx3   = lderef[n].lx3>>1;
           clderef[ctnd].level = lderef[n].level-1;
           ctnd++;
         }
@@ -297,7 +297,7 @@ void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
   // Step 1. perform refinement
   for (int n=0; n<tnref; n++) {
     MeshBlockTree *bt=tree.FindMeshBlock(lref[n]);
-    bt->Refine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, nnew);
+    bt->Refine(nnew);
   }
   if (tnref != 0)
     delete [] lref;
@@ -305,7 +305,7 @@ void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
   // Step 2. perform derefinement
   for (int n=0; n<ctnd; n++) {
     MeshBlockTree *bt = tree.FindMeshBlock(clderef[n]);
-    bt->Derefine(tree, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level, ndel);
+    bt->Derefine(ndel);
   }
   if (tnderef >= nleaf)
     delete [] clderef;
