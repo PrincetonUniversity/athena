@@ -5,15 +5,18 @@
 # to finding errors in AMR prolongation/restriction/boundaries
 
 # Modules
+import logging
 import scripts.utils.athena as athena
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('b',
                      prob='linear_wave',
                      coord='cartesian',
@@ -38,10 +41,11 @@ def analyze():
 
     analyze_status = True
     if data[0][4] > 2.0e-8:
-        print("RMS error in L-going fast wave too large", data[0][4])
+        logger.warning("RMS error in L-going fast wave too large %g", data[0][4])
         analyze_status = False
     if data[0][13] > 5.5:
-        print("maximum relative error in L-going fast wave too large", data[0][13])
+        logger.warning("maximum relative error in L-going fast wave too large %g",
+                       data[0][13])
         analyze_status = False
 
     return analyze_status
