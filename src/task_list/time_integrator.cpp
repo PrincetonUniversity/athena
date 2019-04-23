@@ -640,6 +640,12 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
       pf->b1.x2f.ZeroClear();
       pf->b1.x3f.ZeroClear();
     }
+    if (NSCALARS > 0) {
+      PassiveScalars *ps = pmb->pscalars;
+      ps->s1.ZeroClear();
+      if (integrator == "ssprk5_4")
+        ps->s2 = ps->s;
+    }
   }
 
   if (SHEARING_BOX) {
