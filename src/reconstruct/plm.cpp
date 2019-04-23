@@ -15,8 +15,6 @@
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../hydro/hydro.hpp"
-#include "../mesh/mesh.hpp"
 #include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------

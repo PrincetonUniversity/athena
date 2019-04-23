@@ -27,15 +27,13 @@
 // C headers
 
 // C++ headers
-#include <algorithm>
+#include <algorithm>    // max()
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../hydro/hydro.hpp"
-#include "../mesh/mesh.hpp"
 #include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
