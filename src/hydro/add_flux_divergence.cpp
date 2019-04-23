@@ -24,11 +24,11 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Hydro::AddFluxDivergenceToAverage
+//! \fn  void Hydro::AddFluxDivergence
 //  \brief Adds flux divergence to weighted average of conservative variables from
 //  previous step(s) of time integrator algorithm
 
-void Hydro::AddFluxDivergenceToAverage(const Real wght, AthenaArray<Real> &u_out) {
+void Hydro::AddFluxDivergence(const Real wght, AthenaArray<Real> &u_out) {
   MeshBlock *pmb = pmy_block;
   AthenaArray<Real> &x1flux = flux[X1DIR];
   AthenaArray<Real> &x2flux = flux[X2DIR];

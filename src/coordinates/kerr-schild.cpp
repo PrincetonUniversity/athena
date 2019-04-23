@@ -686,7 +686,7 @@ Real KerrSchild::GetCellVolume(const int k, const int j, const int i) {
 // Outputs:
 //   cons: source terms added to 3D array of conserved variables
 
-void KerrSchild::CoordSrcTerms(
+void KerrSchild::AddCoordTermsDivergence(
     const Real dt, const AthenaArray<Real> *flux, const AthenaArray<Real> &prim,
     const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons) {
   // Extract ratio of specific heats

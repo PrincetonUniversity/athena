@@ -45,7 +45,7 @@ class PassiveScalars {
 
   // public functions:
   // KGF: use inheritance for these functions / overall class?
-  void AddFluxDivergenceToAverage(const Real wght, AthenaArray<Real> &s_out);
+  void AddFluxDivergence(const Real wght, AthenaArray<Real> &s_out);
   void CalculateFluxes(AthenaArray<Real> &s, const int order);
 
  private:

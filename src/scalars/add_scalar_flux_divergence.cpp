@@ -24,12 +24,12 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-//! \fn  void PassiveScalars::AddFluxDivergenceToAverage
+//! \fn  void PassiveScalars::AddFluxDivergence
 //  \brief Adds flux divergence to weighted average of conservative variables from
 //  previous step(s) of time integrator algorithm
 
-// TODO(felker): after the removal of CoordSrcTerms() fn call from
-// Hydro::AddFluxDivergenceToAverage(), the 2x fns could be trivially shared if:
+// TODO(felker): after the removal of AddCoordTermsDivergence() fn call from
+// Hydro::AddFluxDivergence(), the 2x fns could be trivially shared if:
 // - flux/s_flux renamed to the same class member name
 // - 7x below references of x1face_area_ ... dflx_ private class members (which are only
 // ever used in this fn and are members to prevent de/allocating each fn call)
@@ -40,7 +40,7 @@
 // TODO(felker): remove the following unnecessary private class member?
 // field_diffusion.cpp:66:    cell_volume_.NewAthenaArray(nc1);
 
-void PassiveScalars::AddFluxDivergenceToAverage(const Real wght,
+void PassiveScalars::AddFluxDivergence(const Real wght,
                                                 AthenaArray<Real> &s_out) {
   MeshBlock *pmb = pmy_block;
   AthenaArray<Real> &x1flux = s_flux[X1DIR];

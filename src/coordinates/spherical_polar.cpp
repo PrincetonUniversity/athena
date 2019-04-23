@@ -436,7 +436,7 @@ Real SphericalPolar::GetCellVolume(const int k, const int j, const int i) {
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
 
-void SphericalPolar::CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+void SphericalPolar::AddCoordTermsDivergence(const Real dt, const AthenaArray<Real> *flux,
                                    const AthenaArray<Real> &prim,
                                    const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();

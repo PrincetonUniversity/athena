@@ -744,9 +744,9 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
       pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
 
     const Real wght = stage_wghts[stage-1].beta;
-    ph->AddFluxDivergenceToAverage(wght, ph->u);
+    ph->AddFluxDivergence(wght, ph->u);
     // add coordinate (geometric) source terms
-    pmb->pcoord->CoordSrcTerms(wght*pmb->pmy_mesh->dt, ph->flux, ph->w, pf->bcc, ph->u);
+    pmb->pcoord->AddCoordTermsDivergence(wght*pmb->pmy_mesh->dt, ph->flux, ph->w, pf->bcc, ph->u);
 
     // Hardcode an additional flux divergence weighted average for the penultimate
     // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
@@ -759,9 +759,9 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
       // writing out to u2 register
       pmb->WeightedAve(ph->u2, ph->u1, ph->u2, ave_wghts);
 
-      ph->AddFluxDivergenceToAverage(beta, ph->u2);
+      ph->AddFluxDivergence(beta, ph->u2);
       // add coordinate (geometric) source terms
-      pmb->pcoord->CoordSrcTerms(beta, ph->flux, ph->w, pf->bcc, ph->u2);
+      pmb->pcoord->AddCoordTermsDivergence(beta, ph->flux, ph->w, pf->bcc, ph->u2);
     }
     return TaskStatus::next;
   }
@@ -1169,7 +1169,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
       pmb->WeightedAve(ps->s, ps->s1, ps->s2, ave_wghts);
 
     const Real wght = stage_wghts[stage-1].beta;
-    ps->AddFluxDivergenceToAverage(wght, ps->s);
+    ps->AddFluxDivergence(wght, ps->s);
 
     // Hardcode an additional flux divergence weighted average for the penultimate
     // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
@@ -1181,7 +1181,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
       Real beta = 0.063692468666290; // F(u^(3)) coeff.
       // writing out to s2 register
       pmb->WeightedAve(ps->s2, ps->s1, ps->s2, ave_wghts);
-      ps->AddFluxDivergenceToAverage(beta, ps->s2);
+      ps->AddFluxDivergence(beta, ps->s2);
     }
     return TaskStatus::next;
   }

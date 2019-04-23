@@ -733,7 +733,7 @@ void Coordinates::LaplacianX3All(const AthenaArray<Real> &s, AthenaArray<Real> &
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-void Coordinates::CoordSrcTerms(
+void Coordinates::AddCoordTermsDivergence(
     const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   return;
