@@ -45,6 +45,7 @@
 #include "../outputs/io_wrapper.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../scalars/scalars.hpp"
 #include "../utils/buffer_utils.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
@@ -1416,6 +1417,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pmb->phydro->hbvar.SendBoundaryBuffers();
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.SendBoundaryBuffers();
+        // and passive scalars:
+        if (NSCALARS > 0)
+          pmb->pscalars->sbvar.SendBoundaryBuffers();
       }
 
       // wait to receive conserved variables
@@ -1427,6 +1431,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
+        if (NSCALARS > 0)
+          pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
         // KGF: disable shearing box bvals/ calls
         // send and receive shearing box boundary conditions
         if (SHEARING_BOX) {
@@ -1532,7 +1538,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
       }
 
-      if ((res_flag == 0) && (adaptive)) {
+      if ((res_flag == 0) && adaptive) {
 #pragma omp for
         for (int i=0; i<nmb; ++i) {
           pmb_array[i]->pmr->CheckRefinementCondition();
@@ -1540,7 +1546,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       }
     } // omp parallel
 
-    if ((res_flag == 0) && (adaptive)) {
+    if ((res_flag == 0) && adaptive) {
       iflag = false;
       int onb = nbtotal;
       LoadBalancingAndAdaptiveMeshRefinement(pin);
@@ -1742,6 +1748,9 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
     pmb->phydro->hbvar.SendBoundaryBuffers();
     if (MAGNETIC_FIELDS_ENABLED)
       pmb->pfield->fbvar.SendBoundaryBuffers();
+    // and passive scalars:
+    if (NSCALARS > 0)
+      pmb->pscalars->sbvar.SendBoundaryBuffers();
   }
 
   // wait to receive conserved variables
@@ -1753,6 +1762,9 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
     pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
     if (MAGNETIC_FIELDS_ENABLED)
       pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
+    if (NSCALARS > 0)
+      pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
+
     // KGF: disable shearing box bvals/ calls
     // send and receive shearing box boundary conditions
     if (SHEARING_BOX) {
