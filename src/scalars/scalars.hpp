@@ -23,6 +23,7 @@ class ParameterInput;
 //! \class PassiveScalars
 //  \brief
 
+// TODO(felker): consider renaming to Scalars
 class PassiveScalars {
  public:
   // TODO(felker): pin is currently only used for checking ssprk5_4, otherwise unused.
@@ -63,5 +64,11 @@ class PassiveScalars {
   AthenaArray<Real> scr1_nkji_, scr2_nkji_;
   AthenaArray<Real> sl3d_, sr3d_;
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
+
+  void ComputeUpwindFlux(const int k, const int j, const int il,
+                         const int iu, // CoordinateDirection dir,
+                         AthenaArray<Real> &sl, AthenaArray<Real> &sr,
+                         AthenaArray<Real> &mass_flx,
+                         AthenaArray<Real> &flx_out);
 };
 #endif // SCALARS_SCALARS_HPP_
