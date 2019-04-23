@@ -51,36 +51,19 @@ void Reconstruction::PiecewiseParabolicX1(
   const Real C2 = 1.25;
 
   // set work arrays used for primitive/characterstic cell-averages to scratch
-  AthenaArray<Real> bx,wc,q_im2,q_im1,q,q_ip1,q_ip2,qr_imh,ql_iph;
-  bx.InitWithShallowCopy(scr01_i_);
-  wc.InitWithShallowCopy(scr1_ni_);
-  q_im2.InitWithShallowCopy(scr2_ni_);
-  q_im1.InitWithShallowCopy(scr3_ni_);
-  q.InitWithShallowCopy(scr4_ni_);
-  q_ip1.InitWithShallowCopy(scr5_ni_);
-  q_ip2.InitWithShallowCopy(scr6_ni_);
-  qr_imh.InitWithShallowCopy(scr7_ni_);
-  ql_iph.InitWithShallowCopy(scr8_ni_);
+  AthenaArray<Real> &bx = scr01_i_, &wc = scr1_ni_, &q_im2 = scr2_ni_, &q_im1 = scr3_ni_,
+                     &q = scr4_ni_, &q_ip1 = scr5_ni_, &q_ip2 = scr6_ni_,
+                &qr_imh = scr7_ni_, &ql_iph = scr8_ni_;
 
   // set work PPM work arrays to shallow copies of scratch arrays:
-  AthenaArray<Real> dd,dd_im1,dd_ip1,dph,dph_ip1;
-  dd.InitWithShallowCopy(scr02_i_);
-  dd_im1.InitWithShallowCopy(scr03_i_);
-  dd_ip1.InitWithShallowCopy(scr04_i_);
-  dph.InitWithShallowCopy(scr05_i_);
-  dph_ip1.InitWithShallowCopy(scr06_i_);
+  AthenaArray<Real> &dd = scr02_i_, &dd_im1 = scr03_i_, &dd_ip1 = scr04_i_,
+                   &dph = scr05_i_, &dph_ip1 = scr06_i_;
 
-  AthenaArray<Real> d2qc_im1,d2qc,d2qc_ip1,d2qf;
-  d2qc_im1.InitWithShallowCopy(scr07_i_);
-  d2qc.InitWithShallowCopy(scr08_i_);
-  d2qc_ip1.InitWithShallowCopy(scr09_i_);
-  d2qf.InitWithShallowCopy(scr10_i_);
+  AthenaArray<Real> &d2qc_im1 = scr07_i_, &d2qc = scr08_i_, &d2qc_ip1 = scr09_i_,
+                        &d2qf = scr10_i_;
 
-  AthenaArray<Real> qplus,qminus,dqf_plus,dqf_minus;
-  qplus.InitWithShallowCopy(scr11_i_);
-  qminus.InitWithShallowCopy(scr12_i_);
-  dqf_plus.InitWithShallowCopy(scr13_i_);
-  dqf_minus.InitWithShallowCopy(scr14_i_);
+  AthenaArray<Real> &qplus = scr11_i_, &qminus = scr12_i_, &dqf_plus = scr13_i_,
+                &dqf_minus = scr14_i_;
 
   // cache the x1-sliced primitive states for eigensystem calculation
   for (int n=0; n<(NHYDRO); ++n) {
@@ -356,36 +339,19 @@ void Reconstruction::PiecewiseParabolicX2(
   const Real C2 = 1.25;
 
   // set work arrays used for primitive/characterstic cell-averages to scratch
-  AthenaArray<Real> bx,wc,q_jm2,q_jm1,q,q_jp1,q_jp2,qr_jmh,ql_jph;
-  bx.InitWithShallowCopy(scr01_i_);
-  wc.InitWithShallowCopy(scr1_ni_);
-  q_jm2.InitWithShallowCopy(scr2_ni_);
-  q_jm1.InitWithShallowCopy(scr3_ni_);
-  q.InitWithShallowCopy(scr4_ni_);
-  q_jp1.InitWithShallowCopy(scr5_ni_);
-  q_jp2.InitWithShallowCopy(scr6_ni_);
-  qr_jmh.InitWithShallowCopy(scr7_ni_);
-  ql_jph.InitWithShallowCopy(scr8_ni_);
+  AthenaArray<Real> &bx = scr01_i_, &wc = scr1_ni_, &q_jm2 = scr2_ni_, &q_jm1 = scr3_ni_,
+                     &q = scr4_ni_, &q_jp1 = scr5_ni_, &q_jp2 = scr6_ni_,
+                &qr_jmh = scr7_ni_, &ql_jph = scr8_ni_;
 
   // set work PPM work arrays to shallow copies of scratch arrays:
-  AthenaArray<Real> dd,dd_jm1,dd_jp1,dph,dph_jp1;
-  dd.InitWithShallowCopy(scr02_i_);
-  dd_jm1.InitWithShallowCopy(scr03_i_);
-  dd_jp1.InitWithShallowCopy(scr04_i_);
-  dph.InitWithShallowCopy(scr05_i_);
-  dph_jp1.InitWithShallowCopy(scr06_i_);
+  AthenaArray<Real> &dd = scr02_i_, &dd_jm1 = scr03_i_, &dd_jp1 = scr04_i_,
+                   &dph = scr05_i_, &dph_jp1 = scr06_i_;
 
-  AthenaArray<Real> d2qc_jm1,d2qc,d2qc_jp1,d2qf;
-  d2qc_jm1.InitWithShallowCopy(scr07_i_);
-  d2qc.InitWithShallowCopy(scr08_i_);
-  d2qc_jp1.InitWithShallowCopy(scr09_i_);
-  d2qf.InitWithShallowCopy(scr10_i_);
+  AthenaArray<Real> &d2qc_jm1 = scr07_i_, &d2qc = scr08_i_, &d2qc_jp1 = scr09_i_,
+                        &d2qf = scr10_i_;
 
-  AthenaArray<Real> qplus,qminus,dqf_plus,dqf_minus;
-  qplus.InitWithShallowCopy(scr11_i_);
-  qminus.InitWithShallowCopy(scr12_i_);
-  dqf_plus.InitWithShallowCopy(scr13_i_);
-  dqf_minus.InitWithShallowCopy(scr14_i_);
+  AthenaArray<Real> &qplus = scr11_i_, &qminus = scr12_i_, &dqf_plus = scr13_i_,
+                &dqf_minus = scr14_i_;
 
   // cache the x1-sliced primitive states for eigensystem calculation
   for (int n=0; n<(NHYDRO); ++n) {
@@ -657,36 +623,19 @@ void Reconstruction::PiecewiseParabolicX3(
   const Real C2 = 1.25;
 
   // set work arrays used for primitive/characterstic cell-averages to scratch
-  AthenaArray<Real> bx,wc,q_km2,q_km1,q,q_kp1,q_kp2,qr_kmh,ql_kph;
-  bx.InitWithShallowCopy(scr01_i_);
-  wc.InitWithShallowCopy(scr1_ni_);
-  q_km2.InitWithShallowCopy(scr2_ni_);
-  q_km1.InitWithShallowCopy(scr3_ni_);
-  q.InitWithShallowCopy(scr4_ni_);
-  q_kp1.InitWithShallowCopy(scr5_ni_);
-  q_kp2.InitWithShallowCopy(scr6_ni_);
-  qr_kmh.InitWithShallowCopy(scr7_ni_);
-  ql_kph.InitWithShallowCopy(scr8_ni_);
+  AthenaArray<Real> &bx = scr01_i_, &wc = scr1_ni_, &q_km2 = scr2_ni_, &q_km1 = scr3_ni_,
+                     &q = scr4_ni_, &q_kp1 = scr5_ni_, &q_kp2 = scr6_ni_,
+                &qr_kmh = scr7_ni_, &ql_kph = scr8_ni_;
 
   // set work PPM work arrays to shallow copies of scratch arrays:
-  AthenaArray<Real> dd,dd_km1,dd_kp1,dph,dph_kp1;
-  dd.InitWithShallowCopy(scr02_i_);
-  dd_km1.InitWithShallowCopy(scr03_i_);
-  dd_kp1.InitWithShallowCopy(scr04_i_);
-  dph.InitWithShallowCopy(scr05_i_);
-  dph_kp1.InitWithShallowCopy(scr06_i_);
+  AthenaArray<Real> &dd = scr02_i_, &dd_km1 = scr03_i_, &dd_kp1 = scr04_i_,
+                   &dph = scr05_i_, &dph_kp1 = scr06_i_;
 
-  AthenaArray<Real> d2qc_km1,d2qc,d2qc_kp1,d2qf;
-  d2qc_km1.InitWithShallowCopy(scr07_i_);
-  d2qc.InitWithShallowCopy(scr08_i_);
-  d2qc_kp1.InitWithShallowCopy(scr09_i_);
-  d2qf.InitWithShallowCopy(scr10_i_);
+  AthenaArray<Real> &d2qc_km1 = scr07_i_, &d2qc = scr08_i_,
+                    &d2qc_kp1 = scr09_i_, &d2qf = scr10_i_;
 
-  AthenaArray<Real> qplus,qminus,dqf_plus,dqf_minus;
-  qplus.InitWithShallowCopy(scr11_i_);
-  qminus.InitWithShallowCopy(scr12_i_);
-  dqf_plus.InitWithShallowCopy(scr13_i_);
-  dqf_minus.InitWithShallowCopy(scr14_i_);
+  AthenaArray<Real> &qplus = scr11_i_, &qminus = scr12_i_, &dqf_plus = scr13_i_,
+                &dqf_minus = scr14_i_;
 
   // cache the x1-sliced primitive states for eigensystem calculation
   for (int n=0; n<(NHYDRO); ++n) {

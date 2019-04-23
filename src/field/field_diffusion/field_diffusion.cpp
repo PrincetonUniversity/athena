@@ -191,10 +191,7 @@ void FieldDiffusion::AddPoyntingFlux(FaceField &p_src) {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> f1,f2,f3;
-  f1.InitWithShallowCopy(p_src.x1f);
-  f2.InitWithShallowCopy(p_src.x2f);
-  f3.InitWithShallowCopy(p_src.x3f);
+  AthenaArray<Real> &f1 = p_src.x1f, &f2 = p_src.x2f, &f3 = p_src.x3f;
 
   // 1D update:
   if (pmb->block_size.nx2 == 1) {
@@ -256,12 +253,8 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
   dt_oa = (real_max);
   dt_h  = (real_max);
 
-  AthenaArray<Real> eta_t;
-  eta_t.InitWithShallowCopy(eta_tot_);
-  AthenaArray<Real> len, dx2, dx3;
-  len.InitWithShallowCopy(dx1_);
-  dx2.InitWithShallowCopy(dx2_);
-  dx3.InitWithShallowCopy(dx3_);
+  AthenaArray<Real> &eta_t = eta_tot_;
+  AthenaArray<Real> &len = dx1_, &dx2 = dx2_, &dx3 = dx3_;
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {

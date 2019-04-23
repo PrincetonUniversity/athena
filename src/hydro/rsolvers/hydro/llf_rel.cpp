@@ -24,11 +24,9 @@ namespace {
 // Declarations
 void LLFTransforming(MeshBlock *pmb, const int k, const int j,
                      const int il, const int iu, const int ivx,
-                     const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
                      AthenaArray<Real> &g, AthenaArray<Real> &gi,
                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                     AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                     AthenaArray<Real> &ey, AthenaArray<Real> &ez);
+                     AthenaArray<Real> &cons, AthenaArray<Real> &flux);
 void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
                         const int il, const int iu,
                         AthenaArray<Real> &g, AthenaArray<Real> &gi,
@@ -42,28 +40,22 @@ void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-//   bb: 3D array of normal magnetic fields (not used)
 //   prim_l,prim_r: 1D arrays of left and right primitive states
 //   dxw: 1D arrays of mesh spacing in the x1 direction (not used)
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
-//   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces (not used)
-//   wct: 3D arrays of weighting factors for CT (not used)
 // Notes:
 //   prim_l, prim_r overwritten
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-                          const int ivx, const AthenaArray<Real> &bb,
+                          const int ivx,
                           AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                          AthenaArray<Real> &flux,
-                          AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+                          AthenaArray<Real> &flux, const AthenaArray<Real> &dxw) {
   if (GENERAL_RELATIVITY && ivx == IVY && pmy_block->pcoord->IsPole(j)) {
     LLFNonTransforming(pmy_block, k, j, il, iu, g_, gi_, prim_l, prim_r, flux);
   } else {
-    LLFTransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, g_, gi_, prim_l,
-                    prim_r, cons_, flux, ey, ez);
+    LLFTransforming(pmy_block, k, j, il, iu, ivx, g_, gi_, prim_l, prim_r, cons_, flux);
   }
   return;
 }
@@ -76,14 +68,11 @@ namespace {
 //   k,j: x3- and x2-indices
 //   il,iu: lower and upper x1-indices
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-//   bb: 3D array of normal magnetic fields (not used)
-//   bb_normal: 1D scratch array for normal magnetic fields
 //   g,gi: 1D scratch arrays for metric coefficients
 //   prim_l,prim_r: 1D arrays of left and right primitive states
 //   cons: 1D scratch array for conserved quantities
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
-//   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces (not used)
 // Notes:
 //   prim_l, prim_r overwritten
 //   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
@@ -91,23 +80,22 @@ namespace {
 
 void LLFTransforming(MeshBlock *pmb, const int k, const int j,
                      const int il, const int iu, const int ivx,
-                     const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
                      AthenaArray<Real> &g, AthenaArray<Real> &gi,
                      AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                     AthenaArray<Real> &cons, AthenaArray<Real> &flux,
-                     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+                     AthenaArray<Real> &cons, AthenaArray<Real> &flux) {
+  AthenaArray<Real> empty{};  // placeholder for unused electric/magnetic fields
   // Transform primitives to locally flat coordinates if in GR
 #if GENERAL_RELATIVITY
   {
     switch (ivx) {
       case IVX:
-        pmb->pcoord->PrimToLocal1(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+        pmb->pcoord->PrimToLocal1(k, j, il, iu, empty, prim_l, prim_r, empty);
         break;
       case IVY:
-        pmb->pcoord->PrimToLocal2(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+        pmb->pcoord->PrimToLocal2(k, j, il, iu, empty, prim_l, prim_r, empty);
         break;
       case IVZ:
-        pmb->pcoord->PrimToLocal3(k, j, il, iu, bb, prim_l, prim_r, bb_normal);
+        pmb->pcoord->PrimToLocal3(k, j, il, iu, empty, prim_l, prim_r, empty);
         break;
     }
   }
@@ -235,13 +223,13 @@ void LLFTransforming(MeshBlock *pmb, const int k, const int j,
   {
     switch (ivx) {
       case IVX:
-        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+        pmb->pcoord->FluxToGlobal1(k, j, il, iu, cons, empty, flux, empty, empty);
         break;
       case IVY:
-        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+        pmb->pcoord->FluxToGlobal2(k, j, il, iu, cons, empty, flux, empty, empty);
         break;
       case IVZ:
-        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, bb_normal, flux, ey, ez);
+        pmb->pcoord->FluxToGlobal3(k, j, il, iu, cons, empty, flux, empty, empty);
         break;
     }
   }
