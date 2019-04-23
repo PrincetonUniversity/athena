@@ -33,15 +33,8 @@ void Field::CT(const Real wght, FaceField &b_out) {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e1,e2,e3;
-  e1.InitWithShallowCopy(pmb->pfield->e.x1e);
-  e2.InitWithShallowCopy(pmb->pfield->e.x2e);
-  e3.InitWithShallowCopy(pmb->pfield->e.x3e);
-
-  AthenaArray<Real> area,len,len_p1;
-  area.InitWithShallowCopy(face_area_);
-  len.InitWithShallowCopy(edge_length_);
-  len_p1.InitWithShallowCopy(edge_length_p1_);
+  AthenaArray<Real> &e1 = e.x1e, &e2 = e.x2e, &e3 = e.x3e;
+  AthenaArray<Real> &area = face_area_, &len = edge_length_, &len_p1 = edge_length_p1_;
 
   //---- update B1
   for (int k=ks; k<=ke; ++k) {

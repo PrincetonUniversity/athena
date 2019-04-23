@@ -92,13 +92,12 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
 
 void MGGravityDriver::Solve(int stage) {
   Multigrid *pmggrav = pmg_;
-  AthenaArray<Real> in;
 
   // Load the source
   while (pmggrav != nullptr) {
     MeshBlock *pmb = pmy_mesh_->FindMeshBlock(pmggrav->gid_);
     if (pmb != nullptr) {
-      in.InitWithShallowCopy(pmb->phydro->u);
+      AthenaArray<Real> &in = pmb->phydro->u;
       pmggrav->LoadSource(in, IDN, NGHOST, four_pi_G_);
       if (mode_ >= 2) // iterative mode - load initial guess
         pmggrav->LoadFinestData(pmb->pgrav->phi, 0, NGHOST);

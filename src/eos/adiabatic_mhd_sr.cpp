@@ -81,8 +81,8 @@ void EquationOfState::ConservedToPrimitive(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         // Extract conserved quantities
-        Real dd = cons(IDN,k,j,i);
-        Real ee = cons(IEN,k,j,i);
+        Real &dd = cons(IDN,k,j,i);
+        Real &ee = cons(IEN,k,j,i);
 
         Real mx = cons(IM1,k,j,i);
         Real my = cons(IM2,k,j,i);
@@ -174,8 +174,8 @@ void EquationOfState::ConservedToPrimitive(
           ee = gamma_sq * w - SQR(bt) - (pgas + pmag);
         }
 
-        cons(IDN,k,j,i) = dd;
-        cons(IEN,k,j,i) = ee;
+        // cons(IDN,k,j,i) = dd;
+        // cons(IEN,k,j,i) = ee;
 
         prim(IDN,k,j,i) = rho;
         prim(IPR,k,j,i) = pgas;

@@ -42,15 +42,10 @@
 
 FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
     MeshBlock *pmb, FaceField *var, FaceField &coarse_buf, EdgeField &var_flux)
-    : BoundaryVariable(pmb), coarse_buf(coarse_buf) {
-  var_fc = var;
-
-  e1.InitWithShallowCopy(var_flux.x1e);
-  e2.InitWithShallowCopy(var_flux.x2e);
-  e3.InitWithShallowCopy(var_flux.x3e);
-
+    : BoundaryVariable(pmb), var_fc(var), coarse_buf(coarse_buf), e1(var_flux.x1e),
+      e2(var_flux.x2e), e3(var_flux.x3e), flip_across_pole_(flip_across_pole_field) {
   // assuming Field, not generic FaceCenteredBoundaryVariable:
-  flip_across_pole_ = flip_across_pole_field;
+  //flip_across_pole_ = flip_across_pole_field;
 
   InitBoundaryData(bd_var_, BoundaryQuantity::fc);
   InitBoundaryData(bd_var_flcor_, BoundaryQuantity::fc_flcor);

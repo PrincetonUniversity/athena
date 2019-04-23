@@ -29,12 +29,8 @@ void Reconstruction::PiecewiseLinearX1(
     AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmy_block_->pcoord;
   // set work arrays to shallow copies of scratch arrays
-  AthenaArray<Real> bx,wc,dwl,dwr,dwm;
-  bx.InitWithShallowCopy(scr01_i_);
-  wc.InitWithShallowCopy(scr1_ni_);
-  dwl.InitWithShallowCopy(scr2_ni_);
-  dwr.InitWithShallowCopy(scr3_ni_);
-  dwm.InitWithShallowCopy(scr4_ni_);
+  AthenaArray<Real> &bx = scr01_i_, &wc = scr1_ni_, &dwl = scr2_ni_, &dwr = scr3_ni_,
+                   &dwm = scr4_ni_;
 
   // compute L/R slopes for each variable
   for (int n=0; n<(NHYDRO); ++n) {
@@ -129,12 +125,8 @@ void Reconstruction::PiecewiseLinearX2(
     AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmy_block_->pcoord;
   // set work arrays to shallow copies of scratch arrays
-  AthenaArray<Real> bx,wc,dwl,dwr,dwm;
-  bx.InitWithShallowCopy(scr01_i_);
-  wc.InitWithShallowCopy(scr1_ni_);
-  dwl.InitWithShallowCopy(scr2_ni_);
-  dwr.InitWithShallowCopy(scr3_ni_);
-  dwm.InitWithShallowCopy(scr4_ni_);
+  AthenaArray<Real> &bx = scr01_i_, &wc = scr1_ni_, &dwl = scr2_ni_,
+                   &dwr = scr3_ni_, &dwm = scr4_ni_;
 
   // compute L/R slopes for each variable
   for (int n=0; n<(NHYDRO); ++n) {
@@ -231,12 +223,8 @@ void Reconstruction::PiecewiseLinearX3(
     AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmy_block_->pcoord;
   // set work arrays to shallow copies of scratch arrays
-  AthenaArray<Real> bx,wc,dwl,dwr,dwm;
-  bx.InitWithShallowCopy(scr01_i_);
-  wc.InitWithShallowCopy(scr1_ni_);
-  dwl.InitWithShallowCopy(scr2_ni_);
-  dwr.InitWithShallowCopy(scr3_ni_);
-  dwm.InitWithShallowCopy(scr4_ni_);
+  AthenaArray<Real> &bx = scr01_i_, &wc = scr1_ni_, &dwl = scr2_ni_, &dwr = scr3_ni_,
+                   &dwm = scr4_ni_;
 
   // compute L/R slopes for each variable
   for (int n=0; n<(NHYDRO); ++n) {

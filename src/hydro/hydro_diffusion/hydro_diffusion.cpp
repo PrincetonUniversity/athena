@@ -222,17 +222,12 @@ void HydroDiffusion::NewHydroDiffusionDt(Real &dt_vis, Real &dt_cnd) {
   else
     fac = 0.5;
 
-  dt_vis = (real_max);
-  dt_cnd = (real_max);
+  dt_vis = real_max;
+  dt_cnd = real_max;
 
-  AthenaArray<Real> nu_t;
-  nu_t.InitWithShallowCopy(nu_tot_);
-  AthenaArray<Real> kappa_t;
-  kappa_t.InitWithShallowCopy(kappa_tot_);
-  AthenaArray<Real> len, dx2, dx3;
-  len.InitWithShallowCopy(dx1_);
-  dx2.InitWithShallowCopy(dx2_);
-  dx3.InitWithShallowCopy(dx3_);
+  AthenaArray<Real> &nu_t = nu_tot_;
+  AthenaArray<Real> &kappa_t = kappa_tot_;
+  AthenaArray<Real> &len = dx1_, &dx2 = dx2_, &dx3 = dx3_;
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
