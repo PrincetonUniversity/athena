@@ -14,13 +14,11 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"   // reapply floors to face-centered reconstructed states
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
 #include "../gravity/gravity.hpp"
-#include "../mesh/mesh.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "hydro.hpp"
 #include "hydro_diffusion/hydro_diffusion.hpp"
@@ -98,8 +96,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       if (order == 4) {
         for (int n=0; n<NWAVE; n++) {
           for (int i=is; i<=ie+1; i++) {
-            wl3d_(n,k,j,i)=wl_(n,i);
-            wr3d_(n,k,j,i)=wr_(n,i);
+            wl3d_(n,k,j,i) = wl_(n,i);
+            wr3d_(n,k,j,i) = wr_(n,i);
           }
         }
       }
@@ -136,7 +134,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
         // Compute x1 interface fluxes from face-centered primitive variables
         // TODO(felker): check that e3x1,e2x1 arguments added in late 2017 work here
-        pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw_);
+        pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
         RiemannSolver(k, j, is, ie+1, IVX, wl_, wr_, flux_fc, dxw_);
 #else  // MHD:
@@ -189,7 +187,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX2(k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
-        pmb->pcoord->CenterWidth2(k,j,il,iu,dxw_);
+        pmb->pcoord->CenterWidth2(k, j, il, iu, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
         RiemannSolver(k, j, il, iu, IVY, wl_, wr_, x2flux, dxw_);
 #else  // MHD:
@@ -201,8 +199,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         if (order == 4) {
           for (int n=0; n<NWAVE; n++) {
             for (int i=il; i<=iu; i++) {
-              wl3d_(n,k,j,i)=wl_(n,i);
-              wr3d_(n,k,j,i)=wr_(n,i);
+              wl3d_(n,k,j,i) = wl_(n,i);
+              wr3d_(n,k,j,i) = wr_(n,i);
             }
           }
         }
@@ -242,7 +240,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
           // Compute x2 interface fluxes from face-centered primitive variables
           // TODO(felker): check that e1x2,e3x2 arguments added in late 2017 work here
-          pmb->pcoord->CenterWidth2(k,j,il,iu,dxw_);
+          pmb->pcoord->CenterWidth2(k, j, il, iu, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
           RiemannSolver(k, j, il, iu, IVY, wl_, wr_, flux_fc, dxw_);
 #else  // MHD:
@@ -290,7 +288,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX3(k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
-        pmb->pcoord->CenterWidth3(k,j,il,iu,dxw_);
+        pmb->pcoord->CenterWidth3(k, j, il, iu, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
         RiemannSolver(k, j, il, iu, IVZ, wl_, wr_, x3flux, dxw_);
 #else  // MHD:
@@ -301,8 +299,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         if (order == 4) {
           for (int n=0; n<NWAVE; n++) {
             for (int i=il; i<=iu; i++) {
-              wl3d_(n,k,j,i)=wl_(n,i);
-              wr3d_(n,k,j,i)=wr_(n,i);
+              wl3d_(n,k,j,i) = wl_(n,i);
+              wr3d_(n,k,j,i) = wr_(n,i);
             }
           }
         }
@@ -342,7 +340,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
           // Compute x3 interface fluxes from face-centered primitive variables
           // TODO(felker): check that e2x3,e1x3 arguments added in late 2017 work here
-          pmb->pcoord->CenterWidth3(k,j,il,iu,dxw_);
+          pmb->pcoord->CenterWidth3(k, j, il, iu, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
           RiemannSolver(k, j, il, iu, IVZ, wl_, wr_, flux_fc, dxw_);
 #else  // MHD:
