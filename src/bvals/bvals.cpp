@@ -49,8 +49,9 @@
 // dirs of a MeshBlock
 BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
                                ParameterInput *pin)
-    : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
-  pmy_block_ = pmb;
+    : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs), pmy_block_(pmb),
+      shear_send_neighbor_{}, shear_recv_neighbor_{},
+      shear_send_count_{}, shear_recv_count_{} {
   // Check BC functions for each of the 6 boundaries in turn ---------------------
   for (int i=0; i<6; i++) {
     switch (block_bcs[i]) {
