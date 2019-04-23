@@ -6,9 +6,11 @@
 # (needed for global variables modified in run_tests.py, even w/o athena.run(), etc.)
 import scripts.utils.athena as athena  # noqa
 import scripts.tests.diffusion.viscous_diffusion as viscous_diffusion
+import logging
 
 viscous_diffusion.method = 'STS'
 viscous_diffusion.rate_tols = [-0.99]
+viscous_diffusion.logger = logging.getLogger('athena' + __name__[7:])
 
 
 def prepare(*args, **kwargs):

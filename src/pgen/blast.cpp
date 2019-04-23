@@ -222,17 +222,17 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
 
   // analysis - check shape of the spherical blast wave
-  int is=pblock->is, ie=pblock->ie;
-  int js=pblock->js, je=pblock->je;
-  int ks=pblock->ks, ke=pblock->ke;
+  int is = pblock->is, ie = pblock->ie;
+  int js = pblock->js, je = pblock->je;
+  int ks = pblock->ks, ke = pblock->ke;
   AthenaArray<Real> pr;
-  pr.InitWithShallowSlice(pblock->phydro->w,4,IPR,1);
+  pr.InitWithShallowSlice(pblock->phydro->w, 4, IPR, 1);
 
   // get coordinate location of the center, convert to Cartesian
-  Real x1_0   = pin->GetOrAddReal("problem","x1_0",0.0);
-  Real x2_0   = pin->GetOrAddReal("problem","x2_0",0.0);
-  Real x3_0   = pin->GetOrAddReal("problem","x3_0",0.0);
-  Real x0,y0,z0;
+  Real x1_0 = pin->GetOrAddReal("problem", "x1_0", 0.0);
+  Real x2_0 = pin->GetOrAddReal("problem", "x2_0", 0.0);
+  Real x3_0 = pin->GetOrAddReal("problem", "x3_0", 0.0);
+  Real x0, y0, z0;
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     x0 = x1_0;
     y0 = x2_0;

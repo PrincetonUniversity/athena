@@ -1,15 +1,18 @@
 # Regression test of shearing box with 3d MRI
 
 # Modules
+import logging
 import numpy as np
 import scripts.utils.athena as athena
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('b', 'shear',
                      prob='hgb',
                      flux='hlld',
@@ -61,24 +64,21 @@ def analyze():
     new_me = np.average(me[index:] / vol / pres)
     new_ratio = new_me / new_stress
 
-    print('[MRI-3D]: Ref(stress,ME,ratio) = {} {} {}'.format(ref_stress,
-                                                             ref_me,
-                                                             ref_ratio))
-    print('[MRI-3D]: New(stress,ME,ratio) = {} {} {}'.format(new_stress,
-                                                             new_me,
-                                                             new_ratio))
+    msg = '[MRI-3D]: {}(stress,ME,ratio) = {} {} {}'
+    logger.warning(msg.format('Ref', ref_stress, ref_me, ref_ratio))
+    logger.warning(msg.format('New', new_stress, new_me, new_ratio))
     flag = True
     error_rel = np.fabs((new_stress / ref_stress) - 1.0)
     if error_rel > 0.5:
-        print('[MRI-3D]: averaged stress is off by a factor > 2')
+        logger.warning('[MRI-3D]: averaged stress is off by a factor > 2')
         flag = False
     error_rel = np.fabs((new_me / ref_me) - 1.0)
     if error_rel > 0.5:
-        print('[MRI-3D]: averaged magnetic energy is off by a factor > 2')
+        logger.warning('[MRI-3D]: averaged magnetic energy is off by a factor > 2')
         flag = False
     error_rel = np.fabs(new_ratio - ref_ratio)
     if error_rel > 1.0:
-        print('[MRI-3D]: energy-to-stress ratio is off by an amount > 1.0')
+        logger.warning('[MRI-3D]: energy-to-stress ratio is off by an amount > 1.0')
         flag = False
 
     return flag

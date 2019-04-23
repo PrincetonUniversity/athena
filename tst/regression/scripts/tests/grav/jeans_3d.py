@@ -5,16 +5,19 @@
 # linearwave_errors.dat)
 
 # Modules
+import logging
 import os
 import scripts.utils.athena as athena
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('mpi', 'fft',
                      prob='jeans',
                      grav='fft', **kwargs)
@@ -88,52 +91,47 @@ def analyze():
     filename = 'bin/jeans-errors.dat'
     data = athena_read.error_dat(filename)
 
-    print(data[0][4], data[1][4])
-    print(data[2][4], data[3][4], data[4][4])
-    print(data[5][4], data[6][4], data[7][4])
+    logger.info("%g %g", data[0][4], data[1][4])
+    logger.info("%g %g %g", data[2][4], data[3][4], data[4][4])
+    logger.info("%g %g %g", data[5][4], data[6][4], data[7][4])
 
     # check errors between runs w/wo MPI and different numbers of cores
     if data[0][4] != data[2][4]:
-        print(
-            "Linear wave error with one core w/wo MPI not identical for MG gravity",
+        logger.warning(
+            "Linear wave error with one core w/wo MPI not identical for MG gravity %g %g",
             data[0][4],
             data[2][4])
         return False
     if data[0][4] > 1.e-7:
-        print("Linear wave error is too large for MG gravity", data[0][4])
+        logger.warning("Linear wave error is too large for MG gravity %g", data[0][4])
         return False
     if data[1][4] > 1.e-7:
-        print("Linear wave error is too large for FFT gravity", data[1][4])
+        logger.warning("Linear wave error is too large for FFT gravity %g", data[1][4])
         return False
     if data[1][4] != data[5][4]:
-        print(
-            "Linear wave error with one core w/wo MPI not identical for FFT gravity",
-            data[1][4],
-            data[5][4])
+        logger.warning(
+            "Linear wave error with one core w/wo MPI not identical for FFT gravity"
+            + " %g %g", data[1][4], data[5][4])
         return False
     if abs(data[3][4]-data[2][4]) > 5.0e-4:
-        print(
-            "Linear wave error between 2 and 1 cores too large for MG gravity",
-            data[3][4],
-            data[2][4])
+        logger.warning(
+            "Linear wave error between 2 and 1 cores too large for MG gravity %g %g",
+            data[3][4], data[2][4])
         return False
     if abs(data[4][4]-data[2][4]) > 5.0e-4:
-        print(
-            "Linear wave error between 4 and 1 cores too large for MG gravity",
-            data[4][4],
-            data[2][4])
+        logger.warning(
+            "Linear wave error between 4 and 1 cores too large for MG gravity %g %g",
+            data[4][4], data[2][4])
         return False
     if abs(data[6][4]-data[5][4]) > 5.0e-4:
-        print(
-            "Linear wave error between 2 and 1 cores too large for FFT gravity",
-            data[6][4],
-            data[5][4])
+        logger.warning(
+            "Linear wave error between 2 and 1 cores too large for FFT gravity %g %g",
+            data[6][4], data[5][4])
         return False
     if abs(data[7][4]-data[5][4]) > 5.0e-4:
-        print(
-            "Linear wave error between 4 and 1 cores too large for FFT gravity",
-            data[7][4],
-            data[5][4])
+        logger.warning(
+            "Linear wave error between 4 and 1 cores too large for FFT gravity %g %g",
+            data[7][4], data[5][4])
         return False
 
     return True
