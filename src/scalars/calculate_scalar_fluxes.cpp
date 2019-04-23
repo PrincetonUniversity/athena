@@ -336,7 +336,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
 
 void PassiveScalars::ComputeUpwindFlux(const int k, const int j, const int il,
                                        const int iu, // CoordinateDirection dir,
-                                       AthenaArray<Real> &sl, AthenaArray<Real> &sr,
+                                       AthenaArray<Real> &sl, AthenaArray<Real> &sr, // 2D
                                        AthenaArray<Real> &mass_flx,  // 3D
                                        AthenaArray<Real> &flx_out) { // 4D
   const int nu = NSCALARS - 1;
@@ -346,9 +346,9 @@ void PassiveScalars::ComputeUpwindFlux(const int k, const int j, const int il,
     for (int i=il; i<=iu; i++) {
       Real fluid_flx = mass_flx(k,j,i);
       if (fluid_flx >= 0.0)
-        flx_out(n,k,j,i) = fluid_flx*sl_(n,k,j,i);
+        flx_out(n,k,j,i) = fluid_flx*sl_(n,i);
       else
-        flx_out(n,k,j,i) = fluid_flx*sr_(n,k,j,i);
+        flx_out(n,k,j,i) = fluid_flx*sr_(n,i);
     }
   }
   return;
