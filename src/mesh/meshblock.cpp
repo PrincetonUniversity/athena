@@ -321,6 +321,7 @@ MeshBlock::~MeshBlock() {
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
+  if (NSCALARS > 0) delete pscalars;
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
   delete pbval;
