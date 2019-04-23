@@ -15,6 +15,7 @@
 
 // C++ headers
 #include <iostream>
+#include <cstdint>    // int64_t
 #include <sstream>
 #include <stdexcept>
 
@@ -85,12 +86,12 @@ void MeshBlockTree::CreateRootGrid() {
   for (int n=0; n<nleaf_; n++)
     pleaf_[n] = nullptr;
 
-  int levfac = 1LL<<(pmesh_->root_level-loc_.level-1);
+  std::int64_t levfac = 1LL<<(pmesh_->root_level - loc_.level-1);
   for (int n=0; n<nleaf_; n++) {
     int i = n&1, j = (n>>1)&1, k = (n>>2)&1;
-    if ((loc_.lx3*2+k)*levfac < pmesh_->nrbx3
-     && (loc_.lx2*2+j)*levfac < pmesh_->nrbx2
-     && (loc_.lx1*2+i)*levfac < pmesh_->nrbx1) {
+    if ((loc_.lx3*2 + k)*levfac < pmesh_->nrbx3
+     && (loc_.lx2*2 + j)*levfac < pmesh_->nrbx2
+     && (loc_.lx1*2 + i)*levfac < pmesh_->nrbx1) {
       pleaf_[n] = new MeshBlockTree(this, i, j, k);
       pleaf_[n]->CreateRootGrid();
     }
