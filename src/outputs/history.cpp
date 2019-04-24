@@ -77,7 +77,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
           }
           if (SELF_GRAVITY_ENABLED) {
             Real& phi = pgrav->phi(k,j,i);
-            data_sum[NHYDRO + 3] += vol(i)*u_d*phi;
+            data_sum[NHYDRO + 3] += vol(i)*0.5*u_d*phi;
           }
           if (MAGNETIC_FIELDS_ENABLED) {
             Real& bcc1 = pfld->bcc(IB1,k,j,i);
@@ -144,7 +144,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       std::fprintf(pfile,"[%d]=2-KE     ", iout++);
       std::fprintf(pfile,"[%d]=3-KE     ", iout++);
       if (NON_BAROTROPIC_EOS) std::fprintf(pfile,"[%d]=tot-E   ", iout++);
-      if (SELF_GRAVITY_ENABLED) std::fprintf(pfile,"[%d]=rho*phi   ", iout++);
+      if (SELF_GRAVITY_ENABLED) std::fprintf(pfile,"[%d]=0.5*rho*phi   ", iout++);
       if (MAGNETIC_FIELDS_ENABLED) {
         std::fprintf(pfile,"[%d]=1-ME    ", iout++);
         std::fprintf(pfile,"[%d]=2-ME    ", iout++);
