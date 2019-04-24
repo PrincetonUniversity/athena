@@ -75,7 +75,7 @@ struct OutputData {
 class OutputType {
  public:
   // mark single parameter constructors as "explicit" to prevent them from acting as
-  // implicit conversion functions, e.g. f(OutputType arg), prevent f(anOutputParameters)
+  // implicit conversion functions: for f(OutputType arg), prevent f(anOutputParameters)
   explicit OutputType(OutputParameters oparams);
 
   // rule of five:

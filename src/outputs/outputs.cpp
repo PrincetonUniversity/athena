@@ -74,14 +74,13 @@
 //----------------------------------------------------------------------------------------
 // OutputType constructor
 
-OutputType::OutputType(OutputParameters oparams) {
-  output_params = oparams;
-  pnext_type = nullptr;   // Terminate this node in singly linked list with nullptr
-
-  num_vars_ = 0;
-  // nested doubly linked list of OutputData:
-  pfirst_data_ = nullptr; // Initialize head node to nullptr
-  plast_data_ = nullptr;  // Initialize tail node to nullptr
+OutputType::OutputType(OutputParameters oparams) :
+    output_params(oparams),
+    pnext_type(),  // Terminate this node in singly linked list with nullptr
+    num_vars_(),
+    // nested doubly linked list of OutputData:
+    pfirst_data_(),  // Initialize head node to nullptr
+    plast_data_() { // Initialize tail node to nullptr
 }
 
 //----------------------------------------------------------------------------------------
