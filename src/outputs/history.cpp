@@ -144,7 +144,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       std::fprintf(pfile,"[%d]=2-KE     ", iout++);
       std::fprintf(pfile,"[%d]=3-KE     ", iout++);
       if (NON_BAROTROPIC_EOS) std::fprintf(pfile,"[%d]=tot-E   ", iout++);
-      if (SELF_GRAVITY_ENABLED) std::fprintf(pfile,"[%d]=0.5*rho*phi   ", iout++);
+      if (SELF_GRAVITY_ENABLED) std::fprintf(pfile,"[%d]=grav-E   ", iout++);
       if (MAGNETIC_FIELDS_ENABLED) {
         std::fprintf(pfile,"[%d]=1-ME    ", iout++);
         std::fprintf(pfile,"[%d]=2-ME    ", iout++);
