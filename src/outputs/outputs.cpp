@@ -57,7 +57,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <string>
+#include <string>   // std::string, to_string()
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -68,6 +68,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -299,6 +300,7 @@ Outputs::~Outputs() {
 void OutputType::LoadOutputData(MeshBlock *pmb) {
   Hydro *phyd = pmb->phydro;
   Field *pfld = pmb->pfield;
+  PassiveScalars *psclr = pmb->pscalars;
   Gravity *pgrav = pmb->pgrav;
   num_vars_ = 0;
   OutputData *pod;
@@ -543,6 +545,23 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       num_vars_++;
     }
   } // endif (MAGNETIC_FIELDS_ENABLED)
+
+  if (NSCALARS > 0) {
+    std::string root_name = "s";
+    for (int n=0; n<NSCALARS; n++) {
+      std::string scalar_name = root_name + std::to_string(n);
+      if (output_params.variable.compare(scalar_name) == 0 ||
+          output_params.variable.compare("prim") == 0 ||
+          output_params.variable.compare("cons") == 0) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = scalar_name;
+        pod->data.InitWithShallowSlice(psclr->s, 4, n, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+    }
+  }
 
   if (output_params.variable.compare(0, 3, "uov") == 0
       || output_params.variable.compare(0, 12, "user_out_var") == 0) {
