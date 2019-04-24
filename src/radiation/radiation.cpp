@@ -25,16 +25,20 @@
 //   pmb: pointer to containing MeshBlock
 //   pin: pointer to runtime parameters
 
-Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
+Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
+    rbvar(pmb, &cons, &coarse_cons, flux_x) {
 
-  // Set object pointers
+  // Set object and function pointers
   pmy_block = pmb;
-
-  // Set user source term
   UserSourceTerm = pmb->pmy_mesh->UserRadSourceTerm_;
 
+  // Construct objects
+  rbvar.bvar_index = pmb->pbval->bvars.size();
+  pmb->pbval->bvars.push_back(&rbvar);
+  pmb->pbval->bvars_main_int.push_back(&rbvar);
+
   // Set flags
-  if (UserSourceTerm == NULL) {
+  if (UserSourceTerm == nullptr) {
     source_terms_defined = false;
   } else {
     source_terms_defined = true;
@@ -448,7 +452,7 @@ Radiation::~Radiation() {
 // Notes:
 //   same procedure as in Hydro::WeightedAveU()
 
-void Radiation::WeightedAveCons(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
+void Radiation::WeightedAve(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
     AthenaArray<Real> &cons_in_2, const Real weights[3]) {
 
   // Apply averaging based on which weights are 0

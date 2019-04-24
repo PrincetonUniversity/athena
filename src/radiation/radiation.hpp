@@ -9,8 +9,9 @@
 //  \brief definitions for Radiation class
 
 // Athena++ headers
-#include "../athena.hpp"         // Real
-#include "../athena_arrays.hpp"  // AthenaArray
+#include "../athena.hpp"             // Real
+#include "../athena_arrays.hpp"      // AthenaArray
+#include "../bvals/cc/bvals_cc.hpp"  // CellCenteredBoundaryVariable
 
 // Forward declarations
 class MeshBlock;
@@ -29,8 +30,12 @@ public:
   Radiation(MeshBlock *pmb, ParameterInput *pin);
   ~Radiation();
 
-  // Object pointers
-  MeshBlock* pmy_block;  // pointer to containing MeshBlock
+  // Object and function pointers
+  MeshBlock* pmy_block;
+  RadSrcTermFunc UserSourceTerm;
+
+  // Objects
+  CellCenteredBoundaryVariable rbvar;
 
   // Flags
   bool source_terms_defined;
@@ -65,12 +70,11 @@ public:
   AthenaArray<Real> cons2;        // conserved intensity n^0 I, for substeps
   AthenaArray<Real> flux_x[3];    // spatial fluxes of intensity n^i I
   AthenaArray<Real> flux_a[2];    // angular fluxes of intensity n^a I
-
-  // Function pointers
-  RadSrcTermFunc_t UserSourceTerm;
+  AthenaArray<Real> coarse_prim;  // prolongation/restriction buffer
+  AthenaArray<Real> coarse_cons;  // prolongation/restriction buffer
 
   // Task list functions
-  void WeightedAveCons(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
+  void WeightedAve(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
       AthenaArray<Real> &cons_in_2, const Real weights[3]);
   void CalculateFluxes(AthenaArray<Real> &prim_in, int order);
   void AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Real weight,

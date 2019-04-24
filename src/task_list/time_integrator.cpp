@@ -276,7 +276,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     // compute radiation fluxes, integrate radiation variables
     if (RADIATION_ENABLED) {
-      AddTask(CALC_RADFLX,NONE)
+      AddTask(CALC_RADFLX,NONE);
       if (pm->multilevel) { // SMR or AMR
         AddTask(SEND_RADFLX,CALC_RADFLX);
         AddTask(RECV_RADFLX,CALC_RADFLX);
@@ -695,9 +695,9 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 
     if (RADIATION_ENABLED) {
       Radiation *pr = pmb->prad;
-      pr->u1.ZeroClear();
+      pr->cons1.ZeroClear();
       if (integrator == "ssprk5_4")
-        pr->u2 = pr->u;
+        pr->cons2 = pr->cons;
     }
   }
 
@@ -904,7 +904,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateRad(MeshBlock *pmb, int stage) {
       pr->WeightedAve(pr->cons, pr->cons1, pr->cons2, ave_wghts);
 
     const Real wght = stage_wghts[stage-1].beta;
-    pr->AddFluxDivergenceToAverage(wght, pr->cons);
+    pr->AddFluxDivergenceToAverage(pr->prim, wght, pr->cons);
 
     // Hardcode an additional flux divergence weighted average for the penultimate
     // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
@@ -917,7 +917,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateRad(MeshBlock *pmb, int stage) {
       // writing out to u2 register
       pr->WeightedAve(pr->cons2, pr->cons1, pr->cons2, ave_wghts);
 
-      pr->AddFluxDivergenceToAverage(beta, pr->cons2);
+      pr->AddFluxDivergenceToAverage(pr->prim, beta, pr->cons2);
     }
     return TaskStatus::next;
   }
@@ -951,7 +951,7 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) 
   Radiation *pr = pmb->prad;
 
   // return if there are no source terms to be added
-  if (pr->rsrc.rad_sourceterms_defined == false) return TaskStatus::next;
+  if (pr->source_terms_defined == false) return TaskStatus::next;
 
   if (stage <= nstages) {
     // Time at beginning of stage for u()
@@ -959,7 +959,7 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) 
     // Scaled coefficient for RHS update
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     // Evaluate the time-dependent source terms at the time at the beginning of the stage
-    pr->rsrc.AddRadSourceTerms(t_start_stage, dt, pr->prim, pr->cons);
+    pr->AddSourceTerms(t_start_stage, dt, pr->prim, pr->cons);
   } else {
     return TaskStatus::fail;
   }
@@ -1025,8 +1025,6 @@ TaskStatus TimeIntegratorTaskList::SendField(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SendRad(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->prad->rbvar.SwapRadQuantity(pmb->prad->cons, RadBoundaryQuantity::cons);
-    pmb->prad->rbvar.SelectCoarseBuffer(RadBoundaryQuantity::cons);
     pmb->prad->rbvar.SendBoundaryBuffers();
   } else {
     return TaskStatus::fail;
@@ -1098,7 +1096,6 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesField(MeshBlock *pmb, int stage)
 
 TaskStatus TimeIntegratorTaskList::SetBoundariesRad(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->prad->rbvar.SelectCoarseBuffer(RadBoundaryQuantity::cons);
     pmb->prad->rbvar.SetBoundaries();
     return TaskStatus::success;
   }
@@ -1254,10 +1251,6 @@ TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     pmb->phydro->hbvar.SelectCoarseBuffer(HydroBoundaryQuantity::prim);
     pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w, HydroBoundaryQuantity::prim);
-    if (RADIATION_ENABLED) {
-      pmb->prad->rbvar.SelectCoarseBuffer(RadBoundaryQuantity::prim);
-      pmb->prad->rbvar.SwapRadQuantity(pmb->prad->prim, RadBoundaryQuantity::prim);
-    }
     pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
   } else {
     return TaskStatus::fail;

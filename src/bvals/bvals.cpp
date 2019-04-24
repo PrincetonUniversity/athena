@@ -433,7 +433,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
       pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pco,
                                       bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
       if (RADIATION_ENABLED) {
-        pmb->prad->PrimitiveToConserved(prad->prim, prad->cons, pco, bis, bie, bjs, bje,
+        pmb->prad->PrimitiveToConserved(pr->prim, pr->cons, pco, bis, bie, bjs, bje,
             pmb->ke+1, pmb->ke+NGHOST);
       }
     }

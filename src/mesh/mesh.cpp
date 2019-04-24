@@ -1424,10 +1424,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pmb->phydro->hbvar.SendBoundaryBuffers();
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.SendBoundaryBuffers();
-        if (RADIATION_ENABLED) {
-          pmb->prad->rbvar.SwapRadQuantity(pmb->prad->cons, RadBoundaryQuantity::cons);
+        if (RADIATION_ENABLED)
           pmb->prad->rbvar.SendBoundaryBuffers();
-        }
       }
 
       // wait to receive conserved variables
@@ -1439,10 +1437,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
-        if (RADIATION_ENABLED) {
-          pmb->prad->rbvar.SwapRadQuantity(pmb->prad->cons, RadBoundaryQuantity::cons);
+        if (RADIATION_ENABLED)
           pmb->prad->rbvar.ReceiveAndSetBoundariesWithWait();
-        }
         // KGF: disable shearing box bvals/ calls
         // send and receive shearing box boundary conditions
         if (SHEARING_BOX) {
@@ -1467,10 +1463,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
                                                  HydroBoundaryQuantity::prim);
           pmb->phydro->hbvar.SendBoundaryBuffers();
-          if (RADIATION_ENABLED) {
-            pmb->prad->rbvar.SwapRadQuantity(pmb->prad->prim, RadBoundaryQuantity::prim);
-            pmb->prad->rbvar.SendBoundaryBuffers();
-          }
         }
 
         // wait to receive AMR/SMR GR primitives
@@ -1480,16 +1472,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
                                                  HydroBoundaryQuantity::prim);
           pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
-          if (RADIATION_ENABLED) {
-            pmb->prad->rbvar.SwapRadQuantity(pmb->prad->prim, RadBoundaryQuantity::prim);
-            pmb->prad->rbvar.ReceiveAndSetBoundariesWithWait();
-          }
           pbval->ClearBoundary(BoundaryCommSubset::gr_amr);
           pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                                  HydroBoundaryQuantity::cons);
-          if (RADIATION_ENABLED) {
-            pmb->prad->rbvar.SwapRadQuantity(pmb->prad->cons, RadBoundaryQuantity::cons);
-          }
         }
       } // multilevel
 
@@ -1548,9 +1533,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         // end fourth-order EOS
         pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
                                                HydroBoundaryQuantity::prim);
-        if (RADIATION_ENABLED) {
-          pmb->prad->rbvar.SwapRadQuantity(pmb->prad->prim, RadBoundaryQuantity::prim);
-        }
         pbval->ApplyPhysicalBoundaries(time, 0.0);
       }
 
