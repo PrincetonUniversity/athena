@@ -25,13 +25,14 @@
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
+#include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
 // "3" for 1-KE, 2-KE, 3-KE additional columns (come before tot-E)
-#define NHISTORY_VARS ((NHYDRO) + (NFIELD) + 3 + (NSCALARS))
+#define NHISTORY_VARS ((NHYDRO) + (SELF_GRAVITY_ENABLED) + (NFIELD) + 3 + (NSCALARS))
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::HistoryFile()
@@ -50,7 +51,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     Hydro *phyd = pmb->phydro;
     Field *pfld = pmb->pfield;
     PassiveScalars *psclr = pmb->pscalars;
-    // Gravity *pgrav = pmb->pgrav;
+    Gravity *pgrav = pmb->pgrav;
 
     // Sum history variables over cells.  Note ghost cells are never included in sums
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
@@ -74,17 +75,23 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             Real& u_e = phyd->u(IEN,k,j,i);;
             data_sum[7] += vol(i)*u_e;
           }
+          if (SELF_GRAVITY_ENABLED) {
+            Real& phi = pgrav->phi(k,j,i);
+            data_sum[NHYDRO + 3] += vol(i)*u_d*phi;
+          }
           if (MAGNETIC_FIELDS_ENABLED) {
             Real& bcc1 = pfld->bcc(IB1,k,j,i);
             Real& bcc2 = pfld->bcc(IB2,k,j,i);
             Real& bcc3 = pfld->bcc(IB3,k,j,i);
-            data_sum[NHYDRO + 3] += vol(i)*0.5*bcc1*bcc1;
-            data_sum[NHYDRO + 4] += vol(i)*0.5*bcc2*bcc2;
-            data_sum[NHYDRO + 5] += vol(i)*0.5*bcc3*bcc3;
+            constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED;
+            data_sum[prev_out] += vol(i)*0.5*bcc1*bcc1;
+            data_sum[prev_out + 1] += vol(i)*0.5*bcc2*bcc2;
+            data_sum[prev_out + 2] += vol(i)*0.5*bcc3*bcc3;
           }
           for (int n=0; n<NSCALARS; n++) {
             Real& s = psclr->s(n,k,j,i);
-            data_sum[NHYDRO + NFIELD + 3 + n] += vol(i)*s;
+            constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED + NFIELD;
+            data_sum[prev_out + n] += vol(i)*s;
           }
         }
       }
@@ -137,6 +144,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       std::fprintf(pfile,"[%d]=2-KE     ", iout++);
       std::fprintf(pfile,"[%d]=3-KE     ", iout++);
       if (NON_BAROTROPIC_EOS) std::fprintf(pfile,"[%d]=tot-E   ", iout++);
+      if (SELF_GRAVITY_ENABLED) std::fprintf(pfile,"[%d]=rho*phi   ", iout++);
       if (MAGNETIC_FIELDS_ENABLED) {
         std::fprintf(pfile,"[%d]=1-ME    ", iout++);
         std::fprintf(pfile,"[%d]=2-ME    ", iout++);
