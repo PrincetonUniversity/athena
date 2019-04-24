@@ -27,8 +27,10 @@
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
+// "3" for 1-KE, 2-KE, 3-KE additional columns (come before tot-E)
 #define NHISTORY_VARS ((NHYDRO) + (NFIELD) + 3 + (NSCALARS))
 
 //----------------------------------------------------------------------------------------
@@ -47,6 +49,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   while (pmb != nullptr) {
     Hydro *phyd = pmb->phydro;
     Field *pfld = pmb->pfield;
+    PassiveScalars *psclr = pmb->pscalars;
+    // Gravity *pgrav = pmb->pgrav;
 
     // Sum history variables over cells.  Note ghost cells are never included in sums
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
@@ -78,11 +82,15 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             data_sum[NHYDRO + 4] += vol(i)*0.5*bcc2*bcc2;
             data_sum[NHYDRO + 5] += vol(i)*0.5*bcc3*bcc3;
           }
+          for (int n=0; n<NSCALARS; n++) {
+            Real& s = psclr->s(n,k,j,i);
+            data_sum[NHYDRO + NFIELD + 3 + n] += vol(i)*s;
+          }
         }
       }
     }
     for (int n=0; n<pm->nuser_history_output_; n++) { // user-defined history outputs
-      if (pm->user_history_func_[n]!=nullptr)
+      if (pm->user_history_func_[n] != nullptr)
         data_sum[NHISTORY_VARS+n] += pm->user_history_func_[n](pmb, n);
     }
     pmb = pmb->next;
@@ -133,6 +141,9 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         std::fprintf(pfile,"[%d]=1-ME    ", iout++);
         std::fprintf(pfile,"[%d]=2-ME    ", iout++);
         std::fprintf(pfile,"[%d]=3-ME    ", iout++);
+      }
+      for (int n=0; n<NSCALARS; n++) {
+        std::fprintf(pfile,"[%d]=%d-scalar    ", iout++, n);
       }
       for (int n=0; n<pm->nuser_history_output_; n++)
         std::fprintf(pfile,"[%d]=%-8s", iout++,
