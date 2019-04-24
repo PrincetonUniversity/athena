@@ -560,12 +560,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // uniformly fill all scalars to have equal concentration
   // mass fraction? or concentration?
+  constexpr int scalar_norm = NSCALARS > 0 ? NSCALARS : 1.0;
   if (NSCALARS > 0) {
     for (int n=0; n<NSCALARS; ++n) {
       for (int k=ks; k<=ke; ++k) {
         for (int j=js; j<=je; ++j) {
           for (int i=is; i<=ie; ++i) {
-            pscalars->s(n,k,j,i) = 1.0/NSCALARS;
+            pscalars->s(n,k,j,i) = 1.0/scalar_norm;
           }
         }
       }
