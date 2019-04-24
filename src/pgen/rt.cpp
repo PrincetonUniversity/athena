@@ -30,12 +30,14 @@
 // REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
 //========================================================================================
 
+// C headers
+
+// C++ headers
 #include <cmath>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
@@ -43,23 +45,26 @@
 #include "../hydro/hydro.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "../utils/utils.hpp"
 
 void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
-                            int is, int ie, int js, int je, int ks, int ke, int ngh);
+                            int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
-                            int is, int ie, int js, int je, int ks, int ke, int ngh);
+                            int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
-                            int is, int ie, int js, int je, int ks, int ke, int ngh);
+                            int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
-                            int is, int ie, int js, int je, int ks, int ke, int ngh);
+                            int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
+namespace {
 // made global to share with BC functions
-static Real grav_acc;
+Real grav_acc;
+} // namespace
 
 int RefinementCondition(MeshBlock *pmb);
 
@@ -75,12 +80,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     EnrollUserRefinementCondition(RefinementCondition);
   if (mesh_size.nx3 == 1) {  // 2D problem
     // Enroll special BCs
-    EnrollUserBoundaryFunction(INNER_X2, ProjectPressureInnerX2);
-    EnrollUserBoundaryFunction(OUTER_X2, ProjectPressureOuterX2);
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x2, ProjectPressureInnerX2);
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x2, ProjectPressureOuterX2);
   } else { // 3D problem
     // Enroll special BCs
-    EnrollUserBoundaryFunction(INNER_X3, ProjectPressureInnerX3);
-    EnrollUserBoundaryFunction(OUTER_X3, ProjectPressureOuterX3);
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x3, ProjectPressureInnerX3);
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x3, ProjectPressureOuterX3);
   }
   return;
 }
@@ -91,7 +96,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  int64_t iseed = -1;
+  std::int64_t iseed = -1;
   Real gamma = peos->GetGamma();
   Real gm1 = gamma - 1.0;
 
@@ -105,89 +110,101 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real drat = pin->GetOrAddReal("problem","drat",3.0);
 
 
-// 2D PROBLEM ---------------------------------------------------------------
+  // 2D PROBLEM ---------------------------------------------------------------
 
   if (block_size.nx3 == 1) {
-    grav_acc = phydro->psrc->GetG2();
+    grav_acc = phydro->hsrc.GetG2();
     for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
-        Real den=1.0;
-        if (pcoord->x2v(j) > 0.0) den *= drat;
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          Real den=1.0;
+          if (pcoord->x2v(j) > 0.0) den *= drat;
 
-        if (iprob == 1) {
-          phydro->u(IM2,k,j,i) = (1.0 + cos(kx*pcoord->x1v(i)))*
-              (1.0 + cos(ky*pcoord->x2v(j)))/4.0;
-        } else {
-          phydro->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+cos(ky*pcoord->x2v(j)));
-        }
+          if (iprob == 1) {
+            phydro->u(IM2,k,j,i) = (1.0 + std::cos(kx*pcoord->x1v(i)))*
+                                   (1.0 + std::cos(ky*pcoord->x2v(j)))/4.0;
+          } else {
+            phydro->u(IM2,k,j,i) = (ran2(&iseed) - 0.5)*(1.0+std::cos(ky*pcoord->x2v(j)));
+          }
 
-        phydro->u(IDN,k,j,i) = den;
-        phydro->u(IM1,k,j,i) = 0.0;
-        phydro->u(IM2,k,j,i) *= (den*amp);
-        phydro->u(IM3,k,j,i) = 0.0;
-        if (NON_BAROTROPIC_EOS) {
-          phydro->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pcoord->x2v(j)))/gm1;
-          phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM2,k,j,i))/den;
+          phydro->u(IDN,k,j,i) = den;
+          phydro->u(IM1,k,j,i) = 0.0;
+          phydro->u(IM2,k,j,i) *= (den*amp);
+          phydro->u(IM3,k,j,i) = 0.0;
+          if (NON_BAROTROPIC_EOS) {
+            phydro->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pcoord->x2v(j)))/gm1;
+            phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM2,k,j,i))/den;
+          }
         }
       }
-    }}
+    }
 
     // initialize interface B, same for all iprob
     if (MAGNETIC_FIELDS_ENABLED) {
       // Read magnetic field strength, angle [in degrees, 0 is along +ve X-axis]
       Real b0 = pin->GetReal("problem","b0");
       for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie+1; i++) {
-        pfield->b.x1f(k,j,i) = b0;
-      }}}
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            pfield->b.x1f(k,j,i) = b0;
+          }
+        }
+      }
       for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je+1; j++) {
-      for (int i=is; i<=ie; i++) {
-        pfield->b.x2f(k,j,i) = 0.0;
-      }}}
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x2f(k,j,i) = 0.0;
+          }
+        }
+      }
       for (int k=ks; k<=ke+1; k++) {
-      for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
-        pfield->b.x3f(k,j,i) = 0.0;
-      }}}
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x3f(k,j,i) = 0.0;
+          }
+        }
+      }
       if (NON_BAROTROPIC_EOS) {
         for (int k=ks; k<=ke; k++) {
-        for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie; i++) {
-          phydro->u(IEN,k,j,i) += 0.5*b0*b0;
-        }}}
+          for (int j=js; j<=je; j++) {
+            for (int i=is; i<=ie; i++) {
+              phydro->u(IEN,k,j,i) += 0.5*b0*b0;
+            }
+          }
+        }
       }
     }
 
-// 3D PROBLEM ----------------------------------------------------------------
+    // 3D PROBLEM ----------------------------------------------------------------
 
   } else {
-    grav_acc = phydro->psrc->GetG3();
+    grav_acc = phydro->hsrc.GetG3();
     for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
-        Real den=1.0;
-        if (pcoord->x3v(k) > 0.0) den *= drat;
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++) {
+          Real den=1.0;
+          if (pcoord->x3v(k) > 0.0) den *= drat;
 
-        if (iprob == 1) {
-          phydro->u(IM3,k,j,i) = (1.0+cos(kx*(pcoord->x1v(i))))/8.0
-                     *(1.0+cos(ky*pcoord->x2v(j)))*(1.0+cos(kz*pcoord->x3v(k)));
-        } else {
-          phydro->u(IM3,k,j,i) = amp*(ran2(&iseed) - 0.5)*(1.0+cos(kz*pcoord->x3v(k)));
-        }
+          if (iprob == 1) {
+            phydro->u(IM3,k,j,i) = (1.0 + std::cos(kx*(pcoord->x1v(i))))/8.0
+                                   *(1.0 + std::cos(ky*pcoord->x2v(j)))
+                                   *(1.0 + std::cos(kz*pcoord->x3v(k)));
+          } else {
+            phydro->u(IM3,k,j,i) = amp*(ran2(&iseed) - 0.5)*(
+                1.0 + std::cos(kz*pcoord->x3v(k)));
+          }
 
-        phydro->u(IDN,k,j,i) = den;
-        phydro->u(IM1,k,j,i) = 0.0;
-        phydro->u(IM2,k,j,i) = 0.0;
-        phydro->u(IM3,k,j,i) *= (den*amp);
-        if (NON_BAROTROPIC_EOS) {
-          phydro->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pcoord->x3v(k)))/gm1;
-          phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/den;
+          phydro->u(IDN,k,j,i) = den;
+          phydro->u(IM1,k,j,i) = 0.0;
+          phydro->u(IM2,k,j,i) = 0.0;
+          phydro->u(IM3,k,j,i) *= (den*amp);
+          if (NON_BAROTROPIC_EOS) {
+            phydro->u(IEN,k,j,i) = (1.0/gamma + grav_acc*den*(pcoord->x3v(k)))/gm1;
+            phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/den;
+          }
         }
       }
-    }}
+    }
 
     // initialize interface B
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -196,34 +213,42 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       Real angle = pin->GetReal("problem","angle");
       angle = (angle/180.)*PI;
       for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie+1; i++) {
-        if (pcoord->x3v(k) > 0.0) {
-          pfield->b.x1f(k,j,i) = b0;
-        } else {
-          pfield->b.x1f(k,j,i) = b0*cos(angle);
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            if (pcoord->x3v(k) > 0.0) {
+              pfield->b.x1f(k,j,i) = b0;
+            } else {
+              pfield->b.x1f(k,j,i) = b0*std::cos(angle);
+            }
+          }
         }
-      }}}
+      }
       for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je+1; j++) {
-      for (int i=is; i<=ie; i++) {
-        if (pcoord->x3v(k) > 0.0) {
-          pfield->b.x2f(k,j,i) = 0.0;
-        } else {
-          pfield->b.x2f(k,j,i) = b0*sin(angle);
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            if (pcoord->x3v(k) > 0.0) {
+              pfield->b.x2f(k,j,i) = 0.0;
+            } else {
+              pfield->b.x2f(k,j,i) = b0*std::sin(angle);
+            }
+          }
         }
-      }}}
+      }
       for (int k=ks; k<=ke+1; k++) {
-      for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
-        pfield->b.x3f(k,j,i) = 0.0;
-      }}}
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x3f(k,j,i) = 0.0;
+          }
+        }
+      }
       if (NON_BAROTROPIC_EOS) {
         for (int k=ks; k<=ke; k++) {
-        for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie; i++) {
-          phydro->u(IEN,k,j,i) += 0.5*b0*b0;
-        }}}
+          for (int j=js; j<=je; j++) {
+            for (int i=is; i<=ie; i++) {
+              phydro->u(IEN,k,j,i) += 0.5*b0*b0;
+            }
+          }
+        }
       }
     }
   } // end of 3D initialization
@@ -238,235 +263,251 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
-                            int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
-      if (n==(IVY)) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
+        if (n==(IVY)) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(IVY,k,js-j,i) = -prim(IVY,k,js+j-1,i);  // reflect 2-velocity
-        }
-      } else if (n==(IPR)) {
+          for (int i=il; i<=iu; ++i) {
+            prim(IVY,k,jl-j,i) = -prim(IVY,k,jl+j-1,i);  // reflect 2-velocity
+          }
+        } else if (n==(IPR)) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(IPR,k,js-j,i) = prim(IPR,k,js+j-1,i)
-             - prim(IDN,k,js+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
-        }
-      } else {
+          for (int i=il; i<=iu; ++i) {
+            prim(IPR,k,jl-j,i) = prim(IPR,k,jl+j-1,i)
+                                 - prim(IDN,k,jl+j-1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
+          }
+        } else {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(n,k,js-j,i) = prim(n,k,js+j-1,i);
+          for (int i=il; i<=iu; ++i) {
+            prim(n,k,jl-j,i) = prim(n,k,jl+j-1,i);
+          }
         }
       }
-    }}
+    }
   }
 
   // copy face-centered magnetic fields into ghost zones, reflecting b2
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie+1; ++i) {
-        b.x1f(k,(js-j),i) =  b.x1f(k,(js+j-1),i);
+        for (int i=il; i<=iu+1; ++i) {
+          b.x1f(k,(jl-j),i) =  b.x1f(k,(jl+j-1),i);
+        }
       }
-    }}
+    }
 
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x2f(k,(js-j),i) = -b.x2f(k,(js+j  ),i);  // reflect 2-field
+        for (int i=il; i<=iu; ++i) {
+          b.x2f(k,(jl-j),i) = -b.x2f(k,(jl+j  ),i);  // reflect 2-field
+        }
       }
-    }}
+    }
 
-    for (int k=ks; k<=ke+1; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x3f(k,(js-j),i) =  b.x3f(k,(js+j-1),i);
+        for (int i=il; i<=iu; ++i) {
+          b.x3f(k,(jl-j),i) =  b.x3f(k,(jl+j-1),i);
+        }
       }
-    }}
+    }
   }
 
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ProjectPressureOuterX2()
+//! \fn void ProjuctPressureOuterX2()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
-                            int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<(NHYDRO); ++n) {
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
-      if (n==(IVY)) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
+        if (n==(IVY)) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(IVY,k,je+j,i) = -prim(IVY,k,je-j+1,i);  // reflect 2-velocity
-        }
-      } else if (n==(IPR)) {
+          for (int i=il; i<=iu; ++i) {
+            prim(IVY,k,ju+j,i) = -prim(IVY,k,ju-j+1,i);  // reflect 2-velocity
+          }
+        } else if (n==(IPR)) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(IPR,k,je+j,i) = prim(IPR,k,je-j+1,i)
-             + prim(IDN,k,je-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
-        }
-      } else {
+          for (int i=il; i<=iu; ++i) {
+            prim(IPR,k,ju+j,i) = prim(IPR,k,ju-j+1,i)
+                                 + prim(IDN,k,ju-j+1,i)*grav_acc*(2*j-1)*pco->dx2f(j);
+          }
+        } else {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(n,k,je+j,i) = prim(n,k,je-j+1,i);
+          for (int i=il; i<=iu; ++i) {
+            prim(n,k,ju+j,i) = prim(n,k,ju-j+1,i);
+          }
         }
       }
-    }}
+    }
   }
 
   // copy face-centered magnetic fields into ghost zones, reflecting b2
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie+1; ++i) {
-        b.x1f(k,(je+j  ),i) =  b.x1f(k,(je-j+1),i);
+        for (int i=il; i<=iu+1; ++i) {
+          b.x1f(k,(ju+j  ),i) =  b.x1f(k,(ju-j+1),i);
+        }
       }
-    }}
+    }
 
-    for (int k=ks; k<=ke; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x2f(k,(je+j+1),i) = -b.x2f(k,(je-j+1),i);  // reflect 2-field
+        for (int i=il; i<=iu; ++i) {
+          b.x2f(k,(ju+j+1),i) = -b.x2f(k,(ju-j+1),i);  // reflect 2-field
+        }
       }
-    }}
+    }
 
-    for (int k=ks; k<=ke+1; ++k) {
-    for (int j=1; j<=ngh; ++j) {
+    for (int k=kl; k<=ku+1; ++k) {
+      for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x3f(k,(je+j  ),i) =  b.x3f(k,(je-j+1),i);
+        for (int i=il; i<=iu; ++i) {
+          b.x3f(k,(ju+j  ),i) =  b.x3f(k,(ju-j+1),i);
+        }
       }
-    }}
+    }
   }
 
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ProjectPressureInnerX3()
+//! \fn void ProjuctPressureInnerX3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
-                            int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=ngh; ++k) {
-    for (int j=js; j<=je; ++j) {
-      if (n==(IVZ)) {
+      for (int j=jl; j<=ju; ++j) {
+        if (n==(IVZ)) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(IVZ,ks-k,j,i) = -prim(IVZ,ks+k-1,j,i);  // reflect 3-vel
-        }
-      } else if (n==(IPR)) {
+          for (int i=il; i<=iu; ++i) {
+            prim(IVZ,kl-k,j,i) = -prim(IVZ,kl+k-1,j,i);  // reflect 3-vel
+          }
+        } else if (n==(IPR)) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(IPR,ks-k,j,i) = prim(IPR,ks+k-1,j,i)
-             - prim(IDN,ks+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
-        }
-      } else {
+          for (int i=il; i<=iu; ++i) {
+            prim(IPR,kl-k,j,i) = prim(IPR,kl+k-1,j,i)
+                                 - prim(IDN,kl+k-1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
+          }
+        } else {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(n,ks-k,j,i) = prim(n,ks+k-1,j,i);
+          for (int i=il; i<=iu; ++i) {
+            prim(n,kl-k,j,i) = prim(n,kl+k-1,j,i);
+          }
         }
       }
-    }}
+    }
   }
 
   // copy face-centered magnetic fields into ghost zones, reflecting b3
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=1; k<=ngh; ++k) {
-    for (int j=js; j<=je; ++j) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie+1; ++i) {
-        b.x1f((ks-k),j,i) =  b.x1f((ks+k-1),j,i);
+        for (int i=il; i<=iu+1; ++i) {
+          b.x1f((kl-k),j,i) =  b.x1f((kl+k-1),j,i);
+        }
       }
-    }}
+    }
 
     for (int k=1; k<=ngh; ++k) {
-    for (int j=js; j<=je+1; ++j) {
+      for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x2f((ks-k),j,i) =  b.x2f((ks+k-1),j,i);
+        for (int i=il; i<=iu; ++i) {
+          b.x2f((kl-k),j,i) =  b.x2f((kl+k-1),j,i);
+        }
       }
-    }}
+    }
 
     for (int k=1; k<=ngh; ++k) {
-    for (int j=js; j<=je; ++j) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x3f((ks-k),j,i) = -b.x3f((ks+k  ),j,i);  // reflect 3-field
+        for (int i=il; i<=iu; ++i) {
+          b.x3f((kl-k),j,i) = -b.x3f((kl+k  ),j,i);  // reflect 3-field
+        }
       }
-    }}
+    }
   }
 
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ProjectPressureOuterX3()
+//! \fn void ProjuctPressureOuterX3()
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
-                            int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=ngh; ++k) {
-    for (int j=js; j<=je; ++j) {
-      if (n==(IVZ)) {
+      for (int j=jl; j<=ju; ++j) {
+        if (n==(IVZ)) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(IVZ,ke+k,j,i) = -prim(IVZ,ke-k+1,j,i);  // reflect 3-vel
-        }
-      } else if (n==(IPR)) {
+          for (int i=il; i<=iu; ++i) {
+            prim(IVZ,ku+k,j,i) = -prim(IVZ,ku-k+1,j,i);  // reflect 3-vel
+          }
+        } else if (n==(IPR)) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(IPR,ke+k,j,i) = prim(IPR,ke-k+1,j,i)
-             + prim(IDN,ke-k+1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
-        }
-      } else {
+          for (int i=il; i<=iu; ++i) {
+            prim(IPR,ku+k,j,i) = prim(IPR,ku-k+1,j,i)
+                                 + prim(IDN,ku-k+1,j,i)*grav_acc*(2*k-1)*pco->dx3f(k);
+          }
+        } else {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
-          prim(n,ke+k,j,i) = prim(n,ke-k+1,j,i);
+          for (int i=il; i<=iu; ++i) {
+            prim(n,ku+k,j,i) = prim(n,ku-k+1,j,i);
+          }
         }
       }
-    }}
+    }
   }
 
   // copy face-centered magnetic fields into ghost zones, reflecting b3
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k=1; k<=ngh; ++k) {
-    for (int j=js; j<=je; ++j) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie+1; ++i) {
-        b.x1f((ke+k  ),j,i) =  b.x1f((ke-k+1),j,i);
+        for (int i=il; i<=iu+1; ++i) {
+          b.x1f((ku+k  ),j,i) =  b.x1f((ku-k+1),j,i);
+        }
       }
-    }}
+    }
 
     for (int k=1; k<=ngh; ++k) {
-    for (int j=js; j<=je+1; ++j) {
+      for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x2f((ke+k  ),j,i) =  b.x2f((ke-k+1),j,i);
+        for (int i=il; i<=iu; ++i) {
+          b.x2f((ku+k  ),j,i) =  b.x2f((ku-k+1),j,i);
+        }
       }
-    }}
+    }
 
     for (int k=1; k<=ngh; ++k) {
-    for (int j=js; j<=je; ++j) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie; ++i) {
-        b.x3f((ke+k+1),j,i) = -b.x3f((ke-k+1),j,i);  // reflect 3-field
+        for (int i=il; i<=iu; ++i) {
+          b.x3f((ku+k+1),j,i) = -b.x3f((ku-k+1),j,i);  // reflect 3-field
+        }
       }
-    }}
+    }
   }
 
   return;

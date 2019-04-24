@@ -6,57 +6,49 @@
 //! \file task_list.cpp
 //  \brief functions for TaskList base class
 
-// needed for vector of pointers in DoTaskListOneStage()
-#include <vector>
 
-// Athena++ classes headers
+// C headers
+
+// C++ headers
+//#include <vector>
+// used to be needed for vector of pointers in DoTaskListOneStage()
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
-
-// this class header
 #include "task_list.hpp"
 
-//----------------------------------------------------------------------------------------
-// TaskList constructor
-
-TaskList::TaskList(Mesh *pm) {
-  pmy_mesh_=pm;
-  ntasks = 0;
-  nstages = 0;
-}
-
-// destructor
-
-TaskList::~TaskList() {
-}
+#ifdef OPENMP_PARALLEL
+#include <omp.h>
+#endif
 
 //----------------------------------------------------------------------------------------
-//! \fn enum TaskListStatus TaskList::DoAllAvailableTasks
+//! \fn TaskListStatus TaskList::DoAllAvailableTasks
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
-enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
-                                                  TaskState &ts) {
+TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
+                                             TaskStates &ts) {
   int skip=0;
-  enum TaskStatus ret;
-
-  if (ts.num_tasks_left==0) return TL_NOTHING_TO_DO;
+  TaskStatus ret;
+  if (ts.num_tasks_left == 0) return TaskListStatus::nothing_to_do;
 
   for (int i=ts.indx_first_task; i<ntasks; i++) {
     Task &taski=task_list_[i];
-
-    if ((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
+    if ((taski.task_id & ts.finished_tasks) == 0ULL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
+        if (taski.lb_time) pmb->StartTimeMeasurement();
         ret=(this->*task_list_[i].TaskFunc)(pmb, stage);
-        if (ret!=TASK_FAIL) { // success
+        if (taski.lb_time) pmb->StopTimeMeasurement();
+        if (ret!=TaskStatus::fail) { // success
           ts.num_tasks_left--;
           ts.finished_tasks |= taski.task_id;
           if (skip==0) ts.indx_first_task++;
-          if (ts.num_tasks_left==0) return TL_COMPLETE;
-          if (ret==TASK_NEXT) continue;
-          return TL_RUNNING;
+          if (ts.num_tasks_left == 0) return TaskListStatus::complete;
+          if (ret==TaskStatus::next) continue;
+          return TaskListStatus::running;
         }
       }
       skip++; // increment number of tasks processed
@@ -65,7 +57,8 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
       ts.indx_first_task++;
     }
   }
-  return TL_STUCK; // there are still tasks to do but nothing can be done now
+  // there are still tasks to do but nothing can be done now
+  return TaskListStatus::stuck;
 }
 
 //----------------------------------------------------------------------------------------
@@ -73,39 +66,36 @@ enum TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
 //  \brief completes all tasks in this list, will not return until all are tasks done
 
 void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
+  int nthreads = pmesh->GetNumMeshThreads();
+  int nmb = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
+
+  // construct the MeshBlock array on this process
+  MeshBlock **pmb_array = new MeshBlock*[nmb];
   MeshBlock *pmb = pmesh->pblock;
-  // initialize counters stored in each MeshBlock
-  while (pmb != NULL)  {
-    pmb->tasks.Reset(ntasks);
-    pmb=pmb->next;
+  for (int n=0; n < nmb; ++n) {
+    pmb_array[n] = pmb;
+    pmb = pmb->next;
   }
 
-  // initialize a vector of MeshBlock pointers
-  int nmb = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
-  std::vector<MeshBlock*> pmb_array(nmb);
-  pmb = pmesh->pblock;
+  // clear the task states, startup the integrator and initialize mpi calls
+#pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
   for (int i=0; i<nmb; ++i) {
-    pmb_array[i] = pmb;
-    pmb=pmb->next;
+    pmb_array[i]->tasks.Reset(ntasks);
+    StartupTaskList(pmb_array[i], stage);
   }
 
   int nmb_left = nmb;
-  int nthreads = pmesh->GetNumMeshThreads();
-
   // cycle through all MeshBlocks and perform all tasks possible
-  while(nmb_left > 0) {
-
-#pragma omp parallel shared(nmb_left) num_threads(nthreads)
-{
-    #pragma omp for reduction(- : nmb_left) schedule(dynamic,1)
+  while (nmb_left > 0) {
+    // KNOWN ISSUE: Workaround for unknown OpenMP race condition. See #183 on GitHub.
+#pragma omp parallel for reduction(- : nmb_left) num_threads(nthreads) schedule(dynamic,1)
     for (int i=0; i<nmb; ++i) {
-      if (DoAllAvailableTasks(pmb_array[i], stage, pmb_array[i]->tasks) == TL_COMPLETE) {
+      if (DoAllAvailableTasks(pmb_array[i],stage,pmb_array[i]->tasks)
+          == TaskListStatus::complete) {
         nmb_left--;
       }
     }
-}
-
   }
-
+  delete [] pmb_array;
   return;
 }

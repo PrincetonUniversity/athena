@@ -21,8 +21,9 @@ athena_rel_path='./'
 athena_abs_path=$(realpath $athena_rel_path)
 
 # Install Python dependencies
-pip install -q --user h5py # outputs/all_outputs.py uses athena_read.athdf() reader
 pip install -q --user flake8
+pip install -q --user h5py    # needed for outputs/all_outputs.py, pgen/hdf5*, eos/eos_hdf5_table.py tests
+pip install -q --user scipy   # needed in scripts/utils/ for eos/ tests
 
 # Build step #0: Test source code style consistency
 # step #0a: lint Python files
@@ -30,7 +31,7 @@ python -m flake8
 echo "Finished linting Python files with flake8"
 
 # step #0b: lint C++ files
-cd tst/style/; ./cpplint_athena.sh
+cd tst/style/; ./check_athena_cpp_style.sh
 cd ../regression/
 
 # Build step #1: regression tests using GNU compiler and OpenMPI library
@@ -39,7 +40,8 @@ module purge
 # (vs. /usr/bin/gcc v4.8.5 (released 2015-06-23)
 module load rh/devtoolset/7  # GCC 7.3.1 (v7.3 released on 2018-01-25)
 #module load openmpi/gcc/1.10.2/64  # OpenMPI v1.10.2 released on 2016-01-21
-module load openmpi/gcc/3.0.0/64
+module load openmpi/gcc/3.0.3/64
+# OpenMPI v3.0.3 was released on 2018-10-29
 # OpenMPI v3.0.0 was released on 2017-09-12. Originally, was only installed on Perseus
 # without development files (mpicc, etc.) as a VisIt 2.13.1 dependency
 
@@ -58,46 +60,47 @@ lcov_capture_cmd="${lcov_cmd} --directory=${regression_abs_path}/obj/ --capture 
 
 # Run regression test sets. Need to specify Slurm mpirun wrapper, srun
 # In order to condense the build log, --silent option suppresses only the stdout of Makefile calls. Don't use with pgen_compile.py:
-time python ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
+time python -u ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_warning_cflag.sh g++)"
 # For (most) regression tests compiled with GCC, perform Gcov code coverage analysis via Lcov front end:
-time python ./run_tests.py pgen/hdf5_reader_serial --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py grav --mpirun=srun --mpirun_opts=--job-name='GCC grav/jeans_3d' \
+time python -u ./run_tests.py pgen/hdf5_reader_serial --coverage="${lcov_capture_cmd}" --silent
+time python -u ./run_tests.py grav --mpirun=srun --mpirun_opts=--job-name='GCC grav/jeans_3d' \
      --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py mpi --mpirun=srun --mpirun_opts=--job-name='GCC mpi/mpi_linwave' \
+time python -u ./run_tests.py mpi --mpirun=srun --mpirun_opts=--job-name='GCC mpi/mpi_linwave' \
      --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py omp --coverage="${lcov_capture_cmd}" --silent
-timeout --signal=TERM 60m time python ./run_tests.py hybrid --mpirun=srun \
+time python -u ./run_tests.py omp --coverage="${lcov_capture_cmd}" --silent
+timeout --signal=TERM 60m time python -u ./run_tests.py hybrid --mpirun=srun \
 	--mpirun_opts=--job-name='GCC hybrid/hybrid_linwave' \
 	--coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py hydro --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py amr --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py outputs --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py sr --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py curvilinear --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py symmetry --coverage="${lcov_capture_cmd}" --silent
+time python -u ./run_tests.py hydro --coverage="${lcov_capture_cmd}" --silent
+time python -u ./run_tests.py amr --coverage="${lcov_capture_cmd}" --silent
+time python -u ./run_tests.py outputs --coverage="${lcov_capture_cmd}" --silent
+time python -u ./run_tests.py sr --coverage="${lcov_capture_cmd}" --silent
+time python -u ./run_tests.py curvilinear --coverage="${lcov_capture_cmd}" --silent
+time python -u ./run_tests.py symmetry --coverage="${lcov_capture_cmd}" --silent
+time python -u ./run_tests.py eos --coverage="${lcov_capture_cmd}" --silent
 # Exclude gr/compile*.py regression tests from code coverage analysis (nothing is executed in these tests):
-time python ./run_tests.py gr/compile_kerr-schild gr/compile_minkowski gr/compile_schwarzschild --silent
-time python ./run_tests.py gr/mhd_shocks_hlld gr/mhd_shocks_hlle gr/mhd_shocks_llf \
+time python -u ./run_tests.py gr/compile_kerr-schild gr/compile_minkowski gr/compile_schwarzschild --silent
+time python -u ./run_tests.py gr/mhd_shocks_hlld gr/mhd_shocks_hlle gr/mhd_shocks_llf \
      --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py gr/hydro_shocks_hllc gr/hydro_shocks_hlle gr/hydro_shocks_llf \
+time python -u ./run_tests.py gr/hydro_shocks_hllc gr/hydro_shocks_hlle gr/hydro_shocks_llf \
      --coverage="${lcov_capture_cmd}" --silent
-time python ./run_tests.py gr/hydro_shocks_hlle_no_transform gr/hydro_shocks_llf_no_transform \
+time python -u ./run_tests.py gr/hydro_shocks_hlle_no_transform gr/hydro_shocks_llf_no_transform \
      --coverage="${lcov_capture_cmd}" --silent
 # For regression tests with unacceptably long runtimes with -O0 optimization, "sample" the code coverage by running each test twice:
 # - 1x normally (-O3) without --coverage=CMD to check correctness
 # - 1x with --coverage=CMD (and hence -O0) and small cycle limit, ignoring failure in subsequent test.analyze() step
-time python ./run_tests.py mhd --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
-time python ./run_tests.py mhd --silent  # (mhd/mhd_linwave.py is currenlty the slowest regression test):
+time python -u ./run_tests.py mhd --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
+time python -u ./run_tests.py mhd --silent  # (mhd/mhd_linwave.py is currenlty the slowest regression test):
 
-time python ./run_tests.py shearingbox --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
-time python ./run_tests.py shearingbox --silent
+time python -u ./run_tests.py shearingbox --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
+time python -u ./run_tests.py shearingbox --silent
 
-time python ./run_tests.py diffusion --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
-time python ./run_tests.py diffusion --silent
+time python -u ./run_tests.py diffusion --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
+time python -u ./run_tests.py diffusion --silent
 
 # High-order solver regression tests w/ GCC
-time python ./run_tests.py hydro4 --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
-time python ./run_tests.py hydro4 --silent
+time python -u ./run_tests.py hydro4 --coverage="${lcov_capture_cmd}" -r="time/nlim=10" --silent || true
+time python -u ./run_tests.py hydro4 --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/gcc/1.10.0
@@ -109,7 +112,7 @@ module list
 
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still chooses serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
-time python ./run_tests.py pgen/hdf5_reader_parallel --coverage="${lcov_capture_cmd}" \
+time python -u ./run_tests.py pgen/hdf5_reader_parallel --coverage="${lcov_capture_cmd}" \
      --mpirun=srun --mpirun_opts=--job-name='GCC pgen/hdf5_reader_parallel' \
      --config=--lib=${mpi_hdf5_library_path} --silent
 
@@ -117,6 +120,7 @@ time python ./run_tests.py pgen/hdf5_reader_parallel --coverage="${lcov_capture_
 # All .info files in current working directory tst/regression/ -> lcov.info
 # (remove '-maxdepth 1' to recursively search subfolders for more .info)
 lcov_counter=0
+set +e  # Don't quit on errors during Lcov processing / don't let the build fail here
 while read filename; do
     # Accumulate string variable containing all tracefiles joined by '-a '
     lcov_input_files="$lcov_input_files -a \"$filename\""
@@ -137,9 +141,12 @@ echo "Detected ${lcov_counter} individual tracefiles and combined them -> lcov.i
 # Generate Lcov HTML report and backup to home directory on Perseus (never used by Codecov):
 gendesc scripts/tests/test_descriptions.txt --output-filename ./regression_tests.desc
 lcov_dir_name="${SLURM_JOB_NAME}_lcov_html"
+# TODO(felker): Address "lcov: ERROR: no valid records found in tracefile ./eos_eos_comparison_eos_hllc.info"
 genhtml --legend --show-details --keep-descriptions --description-file=regression_tests.desc \
 	--branch-coverage -o ${lcov_dir_name} lcov.info
-tar -cvzf "${lcov_dir_name}.tar.gz" ${lcov_dir_name}
+mv lcov.info ${lcov_dir_name}
+# GNU (but not BSD) tar supports --remove-files option for cleaning up files (and directories) after adding them to the archive:
+tar --remove-files -cvzf "${lcov_dir_name}.tar.gz" ${lcov_dir_name}
 mv "${lcov_dir_name}.tar.gz" $HOME  # ~2 MB. Manually rm HTML databases from $HOME on a reg. basis
 # genhtml requires that src/ is unmoved since compilation; works from $HOME on Perseus,
 # but lcov.info tracefile is not portable across sytems (without --to-package, etc.)
@@ -147,40 +154,48 @@ mv "${lcov_dir_name}.tar.gz" $HOME  # ~2 MB. Manually rm HTML databases from $HO
 
 # Ensure that no stale tracefiles are kept in Jenkins cached workspace
 rm -rf *.info
+set -e
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
 # Delete version info from module names to automatically use latest default version of these libraries as Princeton Research Computing updates them:
 # (Currently using pinned Intel 17.0 Release 5 versions as of November 2018 due to bugs on Perseus installation of ICC 19.0.
 # Intel's MPI Library 2019 version was not installed on Perseus since it is much slower than 2018 version on Mellanox Infiniband)
-module load intel/17.0/64/17.0.5.239 # intel ---intel/19.0/64/19.0.0.117
+module load intel/19.0/64/19.0.3.199 # intel/17.0/64/17.0.5.239 # intel ---intel/19.0/64/19.0.1.144 as of 2019-01-15
 module load intel-mpi/intel/2017.5/64 # intel-mpi --- intel-mpi/intel/2018.3/64
 # Always pinning these modules to a specific version, since new library versions are rarely compiled:
 module load fftw/gcc/3.3.4
 module load hdf5/intel-17.0/1.10.0 # hdf5/intel-17.0/intel-mpi/1.10.0
 # Note, do not mix w/ "module load rh" to ensure that Intel shared libraries are used by the loader (especially OpenMP?)
+
 module list
 
-time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
-time python ./run_tests.py pgen/hdf5_reader_serial --silent
-time python ./run_tests.py grav --config=--cxx=icc --mpirun=srun --mpirun_opts=--job-name='ICC grav/jeans_3d' --silent
-time python ./run_tests.py mpi --config=--cxx=icc --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
-time python ./run_tests.py omp --config=--cxx=icc --silent
-timeout --signal=TERM 60m time python ./run_tests.py hybrid --config=--cxx=icc \
+# Use of --config=--cflag=-gxx-name=/opt/rh/devtoolset-7/root/usr/bin/g++ (For GCC >6 Enumerator Attributes) possibly causing:
+# src/eos/general/general_hydro.cpp(163): (col. 10) remark: function was not vectorized: condition too complex
+# ": internal error: ** The compiler has encountered an unexpected problem. ** Segmentation violation signal raised. **
+# Access violation or stack overflow. Please contact Intel Support for assistance.
+
+time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpc --config=--cflag="$(../ci/set_warning_cflag.sh icpc)"
+time python -u ./run_tests.py pgen/hdf5_reader_serial --silent
+time python -u ./run_tests.py grav --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC grav/jeans_3d' --silent
+time python -u ./run_tests.py mpi --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
+time python -u ./run_tests.py omp --config=--cxx=icpc --silent
+timeout --signal=TERM 60m time python -u ./run_tests.py hybrid --config=--cxx=icpc \
 	--mpirun=srun --mpirun_opts=--job-name='ICC hybrid/hybrid_linwave' --silent
-time python ./run_tests.py hydro --config=--cxx=icc --silent
-time python ./run_tests.py mhd --config=--cxx=icc --silent
-time python ./run_tests.py amr --config=--cxx=icc --silent
-time python ./run_tests.py outputs --config=--cxx=icc --silent
-time python ./run_tests.py sr --config=--cxx=icc --silent
-time python ./run_tests.py gr --config=--cxx=icc --silent
-time python ./run_tests.py curvilinear --config=--cxx=icc --silent
-time python ./run_tests.py shearingbox --config=--cxx=icc --silent
-time python ./run_tests.py diffusion --config=--cxx=icc --silent
-time python ./run_tests.py symmetry --config=--cxx=icc --silent
+time python -u ./run_tests.py hydro --config=--cxx=icpc --silent
+time python -u ./run_tests.py mhd --config=--cxx=icpc --silent
+time python -u ./run_tests.py amr --config=--cxx=icpc --silent
+time python -u ./run_tests.py outputs --config=--cxx=icpc --silent
+time python -u ./run_tests.py sr --config=--cxx=icpc --silent
+time python -u ./run_tests.py gr --config=--cxx=icpc --silent
+time python -u ./run_tests.py curvilinear --config=--cxx=icpc --silent
+time python -u ./run_tests.py shearingbox --config=--cxx=icpc --silent
+time python -u ./run_tests.py diffusion --config=--cxx=icpc --silent
+time python -u ./run_tests.py symmetry --config=--cxx=icpc --silent
+time python -u ./run_tests.py eos --config=--cxx=icpc --silent
 
 # High-order solver regression tests w/ Intel compiler
-time python ./run_tests.py hydro4 --config=--cxx=icc --silent
+time python -u ./run_tests.py hydro4 --config=--cxx=icpc --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/intel-17.0/1.10.0
@@ -189,17 +204,17 @@ mpi_hdf5_library_path='/usr/local/hdf5/intel-17.0/intel-mpi/1.10.0/lib64'
 module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
-time python ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icc \
+time python -u ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icpc \
      --mpirun=srun --mpirun_opts=--job-name='ICC pgen/hdf5_reader_parallel' \
      --config=--lib=${mpi_hdf5_library_path} --silent
 
 # Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining w/ Intel compiler flags
 # Check subset of regression test sets to try most EOS functions (which heavily depend on vectorization) that are called in rsolvers
-time python ./run_tests.py pgen/pgen_compile --config=--cxx=icc-debug --config=--cflag="$(../ci/set_warning_cflag.sh icc)"
-time python ./run_tests.py hydro --config=--cxx=icc-debug --silent
-time python ./run_tests.py mhd --config=--cxx=icc-debug --silent
-time python ./run_tests.py sr --config=--cxx=icc-debug --silent
-time python ./run_tests.py gr --config=--cxx=icc-debug --silent
+time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpc-debug --config=--cflag="$(../ci/set_warning_cflag.sh icpc)"
+time python -u ./run_tests.py hydro --config=--cxx=icpc-debug --silent
+time python -u ./run_tests.py mhd --config=--cxx=icpc-debug --silent
+time python -u ./run_tests.py sr --config=--cxx=icpc-debug --silent
+time python -u ./run_tests.py gr --config=--cxx=icpc-debug --silent
 
 set +e
 # end regression tests

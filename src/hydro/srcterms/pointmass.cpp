@@ -5,20 +5,24 @@
 //========================================================================================
 //  \brief Adds source terms due to point mass AT ORIGIN
 
+// C headers
+
+// C++ headers
+
 // Athena++ headers
-#include "hydro_srcterms.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
+#include "../../mesh/mesh.hpp"
 #include "../hydro.hpp"
+#include "hydro_srcterms.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroSourceTerms::PointMass
 //  \brief Adds source terms due to point mass AT ORIGIN
 
 void HydroSourceTerms::PointMass(const Real dt, const AthenaArray<Real> *flux,
-  const AthenaArray<Real> &prim, AthenaArray<Real> &cons) {
+                                 const AthenaArray<Real> &prim, AthenaArray<Real> &cons) {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
   for (int k=pmb->ks; k<=pmb->ke; ++k) {
     for (int j=pmb->js; j<=pmb->je; ++j) {
@@ -27,9 +31,11 @@ void HydroSourceTerms::PointMass(const Real dt, const AthenaArray<Real> *flux,
         Real den = prim(IDN,k,j,i);
         Real src = dt*den*pmb->pcoord->coord_src1_i_(i)*gm_/pmb->pcoord->x1v(i);
         cons(IM1,k,j,i) -= src;
-        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) -=
-          dt*0.5*(pmb->pcoord->phy_src1_i_(i)*flux[X1DIR](IDN,k,j,i)*gm_
-                 +pmb->pcoord->phy_src2_i_(i)*flux[X1DIR](IDN,k,j,i+1)*gm_);
+        if (NON_BAROTROPIC_EOS) {
+          cons(IEN,k,j,i) -=
+              dt*0.5*(pmb->pcoord->phy_src1_i_(i)*flux[X1DIR](IDN,k,j,i)*gm_
+                      +pmb->pcoord->phy_src2_i_(i)*flux[X1DIR](IDN,k,j,i+1)*gm_);
+        }
       }
     }
   }

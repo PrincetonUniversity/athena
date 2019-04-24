@@ -9,7 +9,11 @@
 //  \brief defines class FieldDiffusion
 //  Contains data and functions that implement the diffusion processes
 
-// Athena headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 
@@ -21,19 +25,18 @@ class Coordinates;
 
 class FieldDiffusion;
 
+// currently must be free function for compatibility with user-defined fn via fn pointers
 void ConstDiffusivity(FieldDiffusion *pfdif, MeshBlock *pmb, const AthenaArray<Real> &w,
-     const AthenaArray<Real> &bmag, int is, int ie, int js, int je, int ks, int ke);
-
-// array indices for magnetic diffusivities
-enum {I_O=0, I_H=1, I_A=2};
+                      const AthenaArray<Real> &bmag,
+                      const int is, const int ie, const int js, const int je,
+                      const int ks, const int ke);
 
 //! \class HydroDiffusion
 //  \brief data and functions for physical diffusion processes in the hydro
 
 class FieldDiffusion {
-public:
+ public:
   FieldDiffusion(MeshBlock *pmb, ParameterInput *pin);
-  ~FieldDiffusion();
 
   // data
   MeshBlock* pmy_block;
@@ -45,6 +48,17 @@ public:
 
   AthenaArray<Real> jfx,jfy,jfz; // interface current density (for the HLL Riemann solver)
   AthenaArray<Real> jcc;     // cell-centered current density (for the integrator)
+
+  // array indices for magnetic diffusion types
+  // should not be scoped (C++11) since enumerators are only used as "int" to index arrays
+  enum DiffProcess {ohmic=0, hall=1, ambipolar=2};
+  // TODO(felker) Unlike HydroDiffusion::DiffProcess, not using optional "unscoped enum
+  // name" qualifier when referencing the enumerators in other files. Be consistent
+
+  // alternative to unscoped (possibly anonymous) for int constants:
+  // static constexpr int n_ohmic = 0;
+  // static constexpr int n_hall = 1;
+  // static constexpr int n_ambi = 2;
 
   // functions
   void CalcFieldDiffusionEMF(FaceField &bi, const AthenaArray<Real> &bc, EdgeField &e);
@@ -65,12 +79,12 @@ public:
   // functions for energy flux
   void PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bcc);
 
-private:
+ private:
   AthenaArray<Real> bmag_; // B field strength
   EdgeField jedge_;       // curl of B
   //EdgeField eh1_,eh2_,eh3_; // scratch arrays for the Hall integrator
 
-  FieldDiffusionCoeff_t CalcMagDiffCoeff_; // calculate magnetic diffusivities
+  FieldDiffusionCoeffFunc CalcMagDiffCoeff_; // calculate magnetic diffusivities
 
   AthenaArray<Real> face_area_,face_area_p1_,edge_length_,edge_length_m1_,cell_volume_;
   AthenaArray<Real> dx1_,dx2_,dx3_,len_;

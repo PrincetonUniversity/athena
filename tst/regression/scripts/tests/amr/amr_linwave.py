@@ -5,11 +5,18 @@
 # to finding errors in AMR prolongation/restriction/boundaries
 
 # Modules
+import logging
 import scripts.utils.athena as athena
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read  # noqa
+athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('b',
                      prob='linear_wave',
                      coord='cartesian',
@@ -20,7 +27,9 @@ def prepare(**kwargs):
 # Run Athena++
 def run(**kwargs):
     # L-going fast wave (set by default in input)
-    arguments = ['time/ncycle_out=10', 'output1/dt=-1']
+    arguments = ['time/ncycle_out=10',
+                 'time/cfl_number=0.3',  # default =0.4, but tolerances measured w/ 0.3
+                 'output1/dt=-1']
     athena.run('mhd/athinput.linear_wave2d_amr', arguments)
 
 
@@ -28,19 +37,15 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = []
-    with open(filename, 'r') as f:
-        raw_data = f.readlines()
-        for line in raw_data:
-            if line.split()[0][0] == '#':
-                continue
-            data.append([float(val) for val in line.split()])
+    data = athena_read.error_dat(filename)
 
+    analyze_status = True
     if data[0][4] > 2.0e-8:
-        print("RMS error in L-going fast wave too large", data[0][4])
-        return False
+        logger.warning("RMS error in L-going fast wave too large %g", data[0][4])
+        analyze_status = False
     if data[0][13] > 5.5:
-        print("maximum relative error in L-going fast wave too large", data[0][13])
-        return False
+        logger.warning("maximum relative error in L-going fast wave too large %g",
+                       data[0][13])
+        analyze_status = False
 
-    return True
+    return analyze_status

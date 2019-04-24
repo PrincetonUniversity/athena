@@ -9,7 +9,11 @@
 //  \brief defines class HydroDiffusion
 //  Contains data and functions that implement the diffusion processes
 
-// Athena headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 
@@ -19,23 +23,21 @@ class ParameterInput;
 class Coordinates;
 class HydroDiffusion;
 
-
+// currently must be free functions for compatibility with user-defined fn via fn pointers
 void ConstViscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bc, int is, int ie, int js, int je, int ks, int ke);
+                    const AthenaArray<Real> &bc,
+                    int is, int ie, int js, int je, int ks, int ke);
 
-void  ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &w,
-    const AthenaArray<Real> &bc, int is, int ie, int js, int je, int ks, int ke);
-
-
-enum {ISO=0, ANI=1};
+void ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &w,
+                     const AthenaArray<Real> &bc,
+                     int is, int ie, int js, int je, int ks, int ke);
 
 //! \class HydroDiffusion
 //  \brief data and functions for physical diffusion processes in the hydro
 
 class HydroDiffusion {
-public:
+ public:
   HydroDiffusion(Hydro *phyd, ParameterInput *pin);
-  ~HydroDiffusion();
 
   // data
   bool hydro_diffusion_defined;
@@ -47,9 +49,13 @@ public:
   AthenaArray<Real> cndflx[3]; // thermal stress tensor
   AthenaArray<Real> kappa; // conduction array
 
+  // array indices for hydro diffusion (conduction & viscosity) variants: directionality
+  // should not be scoped (C++11) since enumerators are only used as "int" to index arrays
+  enum DiffProcess {iso=0, aniso=1};
+
   // functions
   void CalcHydroDiffusionFlux(const AthenaArray<Real> &p, const AthenaArray<Real> &c,
-                                    AthenaArray<Real> *flx);
+                              AthenaArray<Real> *flx);
   void AddHydroDiffusionFlux(AthenaArray<Real> *flx_src, AthenaArray<Real> *flx_des);
   void AddHydroDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
                                    AthenaArray<Real> *flux_des);
@@ -59,19 +65,19 @@ public:
 
   // viscosity
   void ViscousFlux_iso(const AthenaArray<Real> &p,const AthenaArray<Real> &c,
-                             AthenaArray<Real> *flx);
+                       AthenaArray<Real> *flx);
   void ViscousFlux_aniso(const AthenaArray<Real> &p,const AthenaArray<Real> &c,
-                               AthenaArray<Real> *flx);
+                         AthenaArray<Real> *flx);
 
   // thermal conduction
   void ThermalFlux_iso(const AthenaArray<Real> &p,const AthenaArray<Real> &c,
-                             AthenaArray<Real> *flx);
+                       AthenaArray<Real> *flx);
   void ThermalFlux_aniso(const AthenaArray<Real> &p,const AthenaArray<Real> &c,
-                               AthenaArray<Real> *flx);
+                         AthenaArray<Real> *flx);
 
-private:
-  MeshBlock *pmb_;    // ptr to meshblock containing this HydroDiffusion
+ private:
   Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroDiffusion
+  MeshBlock *pmb_;    // ptr to meshblock containing this HydroDiffusion
   Coordinates *pco_;  // ptr to coordinates class
   AthenaArray<Real> divv_; // divergence of velocity
   AthenaArray<Real> x1area_,x2area_,x2area_p1_,x3area_,x3area_p1_;
@@ -81,28 +87,28 @@ private:
   AthenaArray<Real> nu_tot_,kappa_tot_;
 
   // functions pointer to calculate spatial dependent coefficients
-  ViscosityCoeff_t CalcViscCoeff_;
-  ConductionCoeff_t CalcCondCoeff_;
+  ViscosityCoeffFunc CalcViscCoeff_;
+  ConductionCoeffFunc CalcCondCoeff_;
 
   // auxiliary functions to calculate viscous flux
   void Divv(const AthenaArray<Real> &prim, AthenaArray<Real> &divv);
   void FaceXdx(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+               const AthenaArray<Real> &prim, AthenaArray<Real> &len);
   void FaceXdy(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+               const AthenaArray<Real> &prim, AthenaArray<Real> &len);
   void FaceXdz(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+               const AthenaArray<Real> &prim, AthenaArray<Real> &len);
   void FaceYdx(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+               const AthenaArray<Real> &prim, AthenaArray<Real> &len);
   void FaceYdy(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+               const AthenaArray<Real> &prim, AthenaArray<Real> &len);
   void FaceYdz(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+               const AthenaArray<Real> &prim, AthenaArray<Real> &len);
   void FaceZdx(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+               const AthenaArray<Real> &prim, AthenaArray<Real> &len);
   void FaceZdy(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+               const AthenaArray<Real> &prim, AthenaArray<Real> &len);
   void FaceZdz(const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &prim, AthenaArray<Real> &len);
+               const AthenaArray<Real> &prim, AthenaArray<Real> &len);
 };
 #endif // HYDRO_HYDRO_DIFFUSION_HYDRO_DIFFUSION_HPP_

@@ -8,16 +8,22 @@
 //! \file hydro.hpp
 //  \brief definitions for Hydro class
 
-// Athena++ classes headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-//#include "../task_list/task_list.hpp"
+#include "../bvals/cc/hydro/bvals_hydro.hpp"
+#include "hydro_diffusion/hydro_diffusion.hpp"
+#include "srcterms/hydro_srcterms.hpp"
 
 class MeshBlock;
 class ParameterInput;
-class HydroSourceTerms;
-class HydroDiffusion;
-struct IntegratorWeight;
+
+// TODO(felker): consider adding a struct FaceFlux w/ overloaded ctor in athena.hpp, or:
+// using FaceFlux = AthenaArray<Real>[3];
 
 //! \class Hydro
 //  \brief hydro data and functions
@@ -25,12 +31,13 @@ struct IntegratorWeight;
 class Hydro {
   friend class Field;
   friend class EquationOfState;
-public:
+ public:
   Hydro(MeshBlock *pmb, ParameterInput *pin);
-  ~Hydro();
 
   // data
+  // TODO(KGF): make this private, if possible
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
+
   // conserved and primitive variables
   AthenaArray<Real> u, w;      // time-integrator memory register #1
   AthenaArray<Real> u1, w1;    // time-integrator memory register #2
@@ -39,35 +46,46 @@ public:
 
   AthenaArray<Real> flux[3];  // face-averaged flux vector
 
+  // storage for SMR/AMR
+  // TODO(KGF): remove trailing underscore or revert to private:
+  AthenaArray<Real> coarse_cons_, coarse_prim_;
+
   // fourth-order intermediate quantities
   AthenaArray<Real> u_cc, w_cc;      // cell-centered approximations
 
-  HydroSourceTerms *psrc;
-  HydroDiffusion *phdif;
+  HydroBoundaryVariable hbvar;
+  HydroSourceTerms hsrc;
+  HydroDiffusion hdif;
 
   // functions
-  Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
-  void WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
-    AthenaArray<Real> &u_in2, const Real wght[3]);
-  void AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-    const Real wght, AthenaArray<Real> &u_out);
+  void NewBlockTimeStep();    // computes new timestep on a MeshBlock
+  void AddFluxDivergenceToAverage(const Real wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
-    AthenaArray<Real> &bcc, const int order);
+                       AthenaArray<Real> &bcc, const int order);
   void CalculateFluxes_STS();
-  void RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-    const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-    AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-    AthenaArray<Real> &e1, AthenaArray<Real> &e2);
+#if !MAGNETIC_FIELDS_ENABLED  // Hydro:
+  void RiemannSolver(
+      const int k, const int j, const int il, const int iu,
+      const int ivx,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+      const AthenaArray<Real> &dxw);
+#else  // MHD:
+  void RiemannSolver(
+      const int k, const int j, const int il, const int iu,
+      const int ivx, const AthenaArray<Real> &bx,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+      AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+      AthenaArray<Real> &wct, const AthenaArray<Real> &dxw);
+#endif
 
-  void AddGravityFlux(void);
-  void AddGravityFluxWithGflx(void);
+  void AddGravityFlux();
+  void AddGravityFluxWithGflx();
   void CalculateGravityFlux(AthenaArray<Real> &phi_in);
-  void CorrectGravityFlux(void);
 
-private:
+ private:
   AthenaArray<Real> dt1_, dt2_, dt3_;  // scratch arrays used in NewTimeStep
   // scratch space used to compute fluxes
-  AthenaArray<Real> wl_, wr_;
+  AthenaArray<Real> wl_, wr_, wlb_;
   AthenaArray<Real> dxw_;
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
@@ -86,9 +104,13 @@ private:
 
   // fourth-order hydro
   // 4D scratch arrays
-  AthenaArray<Real> wl_fc_, wr_fc_, flux_fc_;
   AthenaArray<Real> scr1_nkji_, scr2_nkji_;
+  AthenaArray<Real> wl3d_, wr3d_;
+  AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
-  TimeStepFunc_t UserTimeStep_;
+  TimeStepFunc UserTimeStep_;
+
+  void AddDiffusionFluxes();
+  Real GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt);
 };
 #endif // HYDRO_HYDRO_HPP_

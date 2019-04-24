@@ -5,12 +5,19 @@
 # linearwave_errors.dat)
 
 # Modules
+import logging
 import os
 import scripts.utils.athena as athena
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read                             # noqa
+athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++ w/wo OpenMP
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('b', 'omp', prob='linear_wave', coord='cartesian',
                      flux='hlld', **kwargs)
     athena.make()
@@ -47,28 +54,23 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
-    data = []
-    with open(filename, 'r') as f:
-        raw_data = f.readlines()
-        for line in raw_data:
-            if line.split()[0][0] == '#':
-                continue
-            data.append([float(val) for val in line.split()])
+    data = athena_read.error_dat(filename)
 
-    print(data[0][4], data[1][4], data[2][4], data[3][4])
+    logger.warning("%g %g %g %g", data[0][4], data[1][4], data[2][4], data[3][4])
 
     # check errors between runs w/wo OpenMP and different numbers of threads
+    fmt = " %g %g"
     if data[0][4] != data[1][4]:
-        print("Linear wave error from serial calculation vs. single thread not identical",
-              data[0][4], data[1][4])
+        msg = "Linear wave error from serial calculation vs. single thread not identical"
+        logger.warning(msg + fmt, data[0][4], data[1][4])
         return False
     if abs(data[2][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error differences between 2 threads vs. serial is too large",
-              data[2][4], data[0][4])
+        msg = "Linear wave error differences between 2 threads vs. serial is too large"
+        logger.warning(msg + fmt, data[2][4], data[0][4])
         return False
     if abs(data[3][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error differences between 4 threads vs. serial is too large",
-              data[3][4], data[0][4])
+        msg = "Linear wave error differences between 4 threads vs. serial is too large"
+        logger.warning(msg + fmt, data[3][4], data[0][4])
         return False
 
     return True

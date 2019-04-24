@@ -8,28 +8,30 @@
 //! \file field.hpp
 //  \brief defines Field class which implements data and functions for E/B fields
 
-// Athena++ classes headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/fc/bvals_fc.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../task_list/task_list.hpp"
+#include "field_diffusion/field_diffusion.hpp"
 
 class MeshBlock;
 class ParameterInput;
 class Hydro;
-class FieldDiffusion;
 
 //! \class Field
 //  \brief electric and magnetic field data and functions
 
 class Field {
   friend class Hydro;
-public:
+ public:
   Field(MeshBlock *pmb, ParameterInput *pin);
-  ~Field();
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
-  FieldDiffusion *pfdif;
 
   // face-centered magnetic fields
   FaceField b;       // time-integrator memory register #1
@@ -46,15 +48,22 @@ public:
   AthenaArray<Real> e1_x2f, e3_x2f; // electric fields at x2-face from Riemann solver
   AthenaArray<Real> e1_x3f, e2_x3f; // electric fields at x3-face from Riemann solver
 
-  void CalculateCellCenteredField(const FaceField &bf, AthenaArray<Real> &bc,
-       Coordinates *pco, int is, int ie, int js, int je, int ks, int ke);
+  // storage for SMR/AMR
+  // TODO(KGF): remove trailing underscore or revert to private:
+  AthenaArray<Real> coarse_bcc_;
+  FaceField coarse_b_;
+
+  FaceCenteredBoundaryVariable fbvar;
+  FieldDiffusion fdif;
+
+  void CalculateCellCenteredField(
+      const FaceField &bf, AthenaArray<Real> &bc,
+      Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
   void CT(const Real wght, FaceField &b_out);
-  void WeightedAveB(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
-       const Real wght[3]);
   void ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc);
   void ComputeCornerE_STS();
 
-private:
+ private:
   // scratch space used to compute fluxes
   AthenaArray<Real> cc_e_;
   AthenaArray<Real> face_area_, edge_length_, edge_length_p1_;

@@ -7,6 +7,8 @@
 //  \brief Problem generator for complex-to-complex FFT test.
 //
 
+// C headers
+
 // C++ headers
 #include <cmath>
 #include <ctime>
@@ -17,15 +19,15 @@
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../globals.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../field/field.hpp"
-#include "../hydro/hydro.hpp"
 #include "../fft/athena_fft.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
@@ -45,21 +47,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  Coordinates *pcoord = pblock->pcoord;
-  Real x0=0.0, y0=0.0, z0=0.0;
-  int is=pblock->is, ie=pblock->ie;
-  int js=pblock->js, je=pblock->je;
-  int ks=pblock->ks, ke=pblock->ke;
-
   AthenaArray<Real> src, dst;
-  LogicalLocation &loc = pblock->loc;
-  RegionSize &block_size = pblock->block_size;
-  int nx1=block_size.nx1+2*NGHOST;
-  int nx2=block_size.nx2+2*NGHOST;
-  int nx3=block_size.nx3+2*NGHOST;
-
-  src.NewAthenaArray(nx3,nx2,nx1);
-  dst.NewAthenaArray(2,nx3,nx2,nx1);
+  // TODO(changgoo): this does NOT assume 3D anymore, but need to check that 2D works
+  src.NewAthenaArray(pblock->ncells3, pblock->ncells2, pblock->ncells1);
+  dst.NewAthenaArray(2, pblock->ncells3, pblock->ncells2, pblock->ncells1);
 #ifdef FFT
   FFTDriver *pfftd;
   pfftd = new FFTDriver(this, pin);
@@ -79,18 +70,18 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         Real r2;
-        if (COORDINATE_SYSTEM == "cartesian") {
+        if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
           Real x = pcoord->x1v(i);
           Real y = pcoord->x2v(j);
           Real z = pcoord->x3v(k);
           r2 = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
         }
-        src(k,j,i)= std::exp(-r2);
+        src(k,j,i) = std::exp(-r2);
       }
     }
   }
 
-  pfft->LoadSource(src,1,NGHOST,loc,block_size);
+  pfft->LoadSource(src, 0, NGHOST, loc, block_size);
 
   if (Globals::my_rank == 0) {
     std::cout << "=====================================================" << std::endl;
@@ -118,8 +109,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 #endif
   clock_t tstop = clock();
   float cpu_time = (tstop>tstart ? static_cast<Real>(tstop-tstart) : 1.0) /
-      static_cast<Real>(CLOCKS_PER_SEC);
-  int64_t zones = GetTotalCells();
+                   static_cast<Real>(CLOCKS_PER_SEC);
+  std::int64_t zones = GetTotalCells();
   float zc_cpus = static_cast<Real>(zones*ncycle)/cpu_time;
 
   if (Globals::my_rank == 0) {
@@ -136,28 +127,32 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         Real r2;
-        if (COORDINATE_SYSTEM == "cartesian") {
+        if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
           Real x = pcoord->x1v(i);
           Real y = pcoord->x2v(j);
           Real z = pcoord->x3v(k);
           r2 = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
         }
         src(k,j,i) = std::exp(-r2);
-      }}}
+      }
+    }
+  }
 
-  pfft->LoadSource(src,1,NGHOST,loc,block_size);
+  pfft->LoadSource(src, 0, NGHOST, loc, block_size);
   pfft->ExecuteForward();
   pfft->ApplyKernel(0);
   pfft->ExecuteBackward();
-  pfft->RetrieveResult(dst,2,NGHOST,loc,block_size);
+  pfft->RetrieveResult(dst, 1, NGHOST, loc, block_size);
 
-  Real err1=0.0,err2=0.0;
+  Real err1=0.0, err2=0.0;
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         err1 += std::abs(dst(0,k,j,i) - src(k,j,i));
         err2 += std::abs(dst(1,k,j,i));
-      }}}
+      }
+    }
+  }
   if (Globals::my_rank == 0) {
     std::cout << std::scientific
               << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1);

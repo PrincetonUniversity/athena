@@ -6,17 +6,18 @@
 //! \file eos_high_order.cpp
 //  \brief functions for variable conversion at greater than second-order spatial accuracy
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <cmath>   // sqrt()
-#include <cfloat>  // FLT_MIN
 
 // Athena++ headers
-#include "eos.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "eos.hpp"
 
 //---------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
@@ -26,28 +27,24 @@
 // \brief Converts cell-averaged conserved variables to cell-averaged primitive variables
 // at fourth order accuracy. Wrapper function for specific pointwise conversion routine
 
-void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
-    const AthenaArray<Real> &prim_old, const FaceField &b, AthenaArray<Real> &prim,
-    AthenaArray<Real> &bcc, Coordinates *pco, int il, int iu, int jl, int ju,
-    int kl, int ku) {
-
+void EquationOfState::ConservedToPrimitiveCellAverage(
+    AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
+    AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
+    Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku) {
   MeshBlock *pmb = pmy_block_;
   Hydro *ph = pmb->phydro;
 
   int nl = 0;
-  int nu = NHYDRO-1;
-  // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so this should factor out
-  // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
+  int nu = NHYDRO - 1;
+  // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this should factor out
+  // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-centered
   Real h = pco->dx1f(il);  // pco->dx1f(i); inside loop
   Real C = (h*h)/24.0;
 
   // Fourth-order accurate approx to cell-centered conserved and primitive variables
-  AthenaArray<Real> u_cc, w_cc;
-  u_cc.InitWithShallowCopy(ph->u_cc);
-  w_cc.InitWithShallowCopy(ph->w_cc);
+  AthenaArray<Real> &u_cc = ph->u_cc, &w_cc = ph->w_cc;
   // Laplacians of cell-averaged conserved and 2nd order accurate primitive variables
-  AthenaArray<Real> laplacian_cc;
-  laplacian_cc.InitWithShallowCopy(ph->scr1_nkji_);
+  AthenaArray<Real> &laplacian_cc = ph->scr1_nkji_;
 
   // Compute and store Laplacian of cell-averaged conserved variables
   pco->Laplacian(cons, laplacian_cc, il, iu, jl, ju, kl, ku, nl, nu);

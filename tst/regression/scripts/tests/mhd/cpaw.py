@@ -5,11 +5,18 @@
 # linearwave_errors.dat)
 
 # Modules
+import logging
 import scripts.utils.athena as athena
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read                             # noqa
+athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('b', prob='cpaw', eos='isothermal', flux='hlld', **kwargs)
     athena.make()
 
@@ -43,29 +50,25 @@ def run(**kwargs):
 def analyze():
     # read data from error file
     filename = 'bin/cpaw-errors.dat'
-    data = []
-    with open(filename, 'r') as f:
-        raw_data = f.readlines()
-        for line in raw_data:
-            if line.split()[0][0] == '#':
-                continue
-            data.append([float(val) for val in line.split()])
+    data = athena_read.error_dat(filename)
 
-    print(data[0][4])
-    print(data[1][4])
-    print(data[2][4])
+    logger.info("%g", data[0][4])
+    logger.info("%g", data[1][4])
+    logger.info("%g", data[2][4])
 
     # check absolute error and convergence
     if data[1][4] > 2.0e-4:
-        print("error in L-going fast wave too large", data[1][4])
+        logger.warning("error in L-going fast wave too large %g", data[1][4])
         return False
     if data[1][4]/data[0][4] > 0.3:
-        print("not converging for L-going fast wave", data[0][4], data[1][4])
+        logger.warning("not converging for L-going fast wave %g %g",
+                       data[0][4], data[1][4])
         return False
 
     # check error identical for waves in each direction
     if abs(data[2][4] - data[1][4]) > 2.0e-6:
-        print("error in L/R-going Alfven waves not equal", data[2][4], data[0][4])
+        logger.warning("error in L/R-going Alfven waves not equal %g %g",
+                       data[2][4], data[0][4])
         return False
 
     return True
