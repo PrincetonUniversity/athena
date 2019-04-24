@@ -358,7 +358,7 @@ void CellCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
                                            shear_cc_phys_id_);
           MPI_Irecv(shear_bd_var_[upper].recv[n], size, MPI_ATHENA_REAL,
                     pbval_->shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
-                    &shear_bd_var_[upper].req_recv[upper]);
+                    &shear_bd_var_[upper].req_recv[n]);
         }
       }
     }
