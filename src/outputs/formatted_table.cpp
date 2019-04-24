@@ -25,13 +25,6 @@
 #include "../mesh/mesh.hpp"
 #include "outputs.hpp"
 
-//----------------------------------------------------------------------------------------
-// FormattedTableOutput constructor
-// destructor not required for this derived class
-
-FormattedTableOutput::FormattedTableOutput(OutputParameters oparams)
-    : OutputType(oparams) {
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn void FormattedTableOutput:::WriteOutputFile(Mesh *pm)

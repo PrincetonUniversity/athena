@@ -48,13 +48,6 @@ inline void Swap4Bytes(void *vdat) {
 }
 } // namespace
 
-//----------------------------------------------------------------------------------------
-// VTKOutput constructor
-// destructor - not needed for this derived class
-
-VTKOutput::VTKOutput(OutputParameters oparams)
-    : OutputType(oparams) {
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn void VTKOutput:::WriteOutputFile(Mesh *pm)

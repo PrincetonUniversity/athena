@@ -28,13 +28,6 @@
 #include "../parameter_input.hpp"
 #include "outputs.hpp"
 
-//----------------------------------------------------------------------------------------
-// RestartOutput constructor
-// destructor - not needed for this derived class
-
-RestartOutput::RestartOutput(OutputParameters oparams)
-    : OutputType(oparams) {
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)

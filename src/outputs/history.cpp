@@ -29,15 +29,7 @@
 #include "../mesh/mesh.hpp"
 #include "outputs.hpp"
 
-#define NHISTORY_VARS ((NHYDRO)+(NFIELD)+3)
-
-//----------------------------------------------------------------------------------------
-// HistoryOutput constructor
-// destructor - not needed for this derived class
-
-HistoryOutput::HistoryOutput(OutputParameters oparams)
-    : OutputType(oparams) {
-}
+#define NHISTORY_VARS ((NHYDRO) + (NFIELD) + 3 + (NSCALARS))
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::HistoryFile()
@@ -93,7 +85,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       if (pm->user_history_func_[n]!=nullptr)
         data_sum[NHISTORY_VARS+n] += pm->user_history_func_[n](pmb, n);
     }
-    pmb=pmb->next;
+    pmb = pmb->next;
   }  // end loop over MeshBlocks
 
 #ifdef MPI_PARALLEL

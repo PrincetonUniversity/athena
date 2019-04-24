@@ -49,13 +49,6 @@ using H5Real = float;
 #define H5T_NATIVE_REAL H5T_NATIVE_FLOAT
 #endif
 
-//----------------------------------------------------------------------------------------
-// ATHDF5Output constructor
-// destructor - not needed for this derived class
-
-ATHDF5Output::ATHDF5Output(OutputParameters oparams)
-    : OutputType(oparams) {
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn void ATHDF5Output:::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
