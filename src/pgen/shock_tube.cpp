@@ -565,7 +565,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; ++k) {
         for (int j=js; j<=je; ++j) {
           for (int i=is; i<=ie; ++i) {
-            pscalars->s(k,j,i) = 1.0/NSCALARS;
+            pscalars->s(n,k,j,i) = 1.0/NSCALARS;
           }
         }
       }
