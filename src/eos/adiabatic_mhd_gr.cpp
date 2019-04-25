@@ -217,8 +217,8 @@ void EquationOfState::ConservedToPrimitive(
         Real wgas_add = rho_add + gamma_prime * pgas_add;
 
         // Adjust normal frame conserved quantities, and recalculate primitives
-	// using 0.0 for the floating point comparison below will cause
-	// memory corruption at the end of the simulation if we turn on omp simd
+        // using 0.0 for the floating point comparison below will cause
+        // memory corruption at the end of the simulation if we turn on omp simd
         if (success_(i) && (rho_add > 1.0e-12 || pgas_add > 1.0e-12)) {
           // Adjust conserved density and energy
           normal_dd_(i) += rho_add * normal_gamma_(i);
