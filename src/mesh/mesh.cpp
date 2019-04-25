@@ -62,14 +62,14 @@
 Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     // public members:
     // aggregate initialization of RegionSize struct:
-    mesh_size{pin->GetReal("mesh","x1min"), pin->GetReal("mesh","x2min"),
-              pin->GetReal("mesh","x3min"), pin->GetReal("mesh","x1max"),
-              pin->GetReal("mesh","x2max"), pin->GetReal("mesh","x3max"),
+    mesh_size{pin->GetReal("mesh", "x1min"), pin->GetReal("mesh", "x2min"),
+              pin->GetReal("mesh", "x3min"), pin->GetReal("mesh", "x1max"),
+              pin->GetReal("mesh", "x2max"), pin->GetReal("mesh", "x3max"),
               pin->GetOrAddReal("mesh", "x1rat", 1.0),
               pin->GetOrAddReal("mesh", "x2rat", 1.0),
               pin->GetOrAddReal("mesh", "x3rat", 1.0),
-              pin->GetInteger("mesh","nx1"), pin->GetInteger("mesh","nx2"),
-              pin->GetInteger("mesh","nx3") },
+              pin->GetInteger("mesh", "nx1"), pin->GetInteger("mesh", "nx2"),
+              pin->GetInteger("mesh", "nx3") },
     mesh_bcs{GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none")),
              GetBoundaryFlag(pin->GetOrAddString("mesh", "ox1_bc", "none")),
              GetBoundaryFlag(pin->GetOrAddString("mesh", "ix2_bc", "none")),
@@ -92,9 +92,12 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     step_since_lb(), gflag(), turb_flag(),
     // private members:
     next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
+    use_uniform_meshgen_fn_{true, true, true},
     nreal_user_mesh_data_(), nint_user_mesh_data_(), nuser_history_output_(),
     four_pi_G_(), grav_eps_(-1.0), grav_mean_rho_(-1.0),
     lb_flag_(true), lb_automatic_(), lb_manual_(),
+    MeshGenerator_{UniformMeshGeneratorX1, UniformMeshGeneratorX2,
+                   UniformMeshGeneratorX3},
     BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
     ConductionCoeff_{}, FieldDiffusivity_{},
@@ -209,23 +212,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
   if (mesh_size.x1rat != 1.0) {
     use_uniform_meshgen_fn_[X1DIR] = false;
     MeshGenerator_[X1DIR] = DefaultMeshGeneratorX1;
-  } else {
-    use_uniform_meshgen_fn_[X1DIR] = true;
-    MeshGenerator_[X1DIR] = UniformMeshGeneratorX1;
   }
   if (mesh_size.x2rat != 1.0) {
     use_uniform_meshgen_fn_[X2DIR] = false;
     MeshGenerator_[X2DIR] = DefaultMeshGeneratorX2;
-  } else {
-    use_uniform_meshgen_fn_[X2DIR] = true;
-    MeshGenerator_[X2DIR] = UniformMeshGeneratorX2;
   }
   if (mesh_size.x3rat != 1.0) {
     use_uniform_meshgen_fn_[X3DIR] = false;
     MeshGenerator_[X3DIR] = DefaultMeshGeneratorX3;
-  } else {
-    use_uniform_meshgen_fn_[X3DIR] = true;
-    MeshGenerator_[X3DIR] = UniformMeshGeneratorX3;
   }
 
   // calculate the logical root level and maximum level
@@ -503,14 +497,15 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     // public members:
     // aggregate initialization of RegionSize struct:
-    mesh_size{pin->GetReal("mesh","x1min"), pin->GetReal("mesh","x2min"),
-              pin->GetReal("mesh","x3min"), pin->GetReal("mesh","x1max"),
-              pin->GetReal("mesh","x2max"), pin->GetReal("mesh","x3max"),
+    // (will be overwritten by memcpy from restart file, in this case)
+    mesh_size{pin->GetReal("mesh", "x1min"), pin->GetReal("mesh", "x2min"),
+              pin->GetReal("mesh", "x3min"), pin->GetReal("mesh", "x1max"),
+              pin->GetReal("mesh", "x2max"), pin->GetReal("mesh", "x3max"),
               pin->GetOrAddReal("mesh", "x1rat", 1.0),
               pin->GetOrAddReal("mesh", "x2rat", 1.0),
               pin->GetOrAddReal("mesh", "x3rat", 1.0),
-              pin->GetInteger("mesh","nx1"), pin->GetInteger("mesh","nx2"),
-              pin->GetInteger("mesh","nx3") },
+              pin->GetInteger("mesh", "nx1"), pin->GetInteger("mesh", "nx2"),
+              pin->GetInteger("mesh", "nx3") },
     mesh_bcs{GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none")),
              GetBoundaryFlag(pin->GetOrAddString("mesh", "ox1_bc", "none")),
              GetBoundaryFlag(pin->GetOrAddString("mesh", "ix2_bc", "none")),
@@ -533,9 +528,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     step_since_lb(), gflag(), turb_flag(),
     // private members:
     next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
+    use_uniform_meshgen_fn_{true, true, true},
     nreal_user_mesh_data_(), nint_user_mesh_data_(), nuser_history_output_(),
     four_pi_G_(), grav_eps_(-1.0), grav_mean_rho_(-1.0),
     lb_flag_(true), lb_automatic_(), lb_manual_(),
+    MeshGenerator_{UniformMeshGeneratorX1, UniformMeshGeneratorX2,
+                   UniformMeshGeneratorX3},
     BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
     ConductionCoeff_{}, FieldDiffusivity_{},
@@ -623,27 +621,17 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   if (mesh_size.x1rat != 1.0) {
     use_uniform_meshgen_fn_[X1DIR] = false;
     MeshGenerator_[X1DIR] = DefaultMeshGeneratorX1;
-  } else {
-    use_uniform_meshgen_fn_[X1DIR] = true;
-    MeshGenerator_[X1DIR] = UniformMeshGeneratorX1;
   }
   if (mesh_size.x2rat != 1.0) {
     use_uniform_meshgen_fn_[X2DIR] = false;
     MeshGenerator_[X2DIR] = DefaultMeshGeneratorX2;
-  } else {
-    use_uniform_meshgen_fn_[X2DIR] = true;
-    MeshGenerator_[X2DIR] = UniformMeshGeneratorX2;
   }
   if (mesh_size.x3rat != 1.0) {
     use_uniform_meshgen_fn_[X3DIR] = false;
     MeshGenerator_[X3DIR] = DefaultMeshGeneratorX3;
-  } else {
-    use_uniform_meshgen_fn_[X3DIR] = true;
-    MeshGenerator_[X3DIR] = UniformMeshGeneratorX3;
   }
 
   // Load balancing flag and parameters
-  lb_flag_ = true, lb_manual_ = false, lb_automatic_ = false;
 #ifdef MPI_PARALLEL
   if (pin->GetOrAddString("loadbalancing", "balancer", "default") == "automatic")
     lb_automatic_ = true;
@@ -730,7 +718,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   delete [] idlist;
 
   // calculate the header offset and seek
-  headeroffset += headersize+udsize+listsize*nbtotal;
+  headeroffset += headersize + udsize + listsize*nbtotal;
   if (Globals::my_rank != 0)
     resfile.Seek(headeroffset);
 
