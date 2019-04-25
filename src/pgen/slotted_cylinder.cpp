@@ -137,7 +137,7 @@ Real slotted_cylinder(Real x, Real y, void* data) {
   Real zx = x - center_x1;
   Real zy = y - center_x2;
   // distance from center of cylinder
-  Real r = sqrt(SQR(zx) + SQR(zy));
+  Real r = std::sqrt(SQR(zx) + SQR(zy));
   Real scalar = 0.0;
 
   // Initial condition is specified in pointwise fashion as follows:
