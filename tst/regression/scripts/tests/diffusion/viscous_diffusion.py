@@ -3,12 +3,14 @@
 # in v is tested.  Expected 2nd order conv. for explicit.
 
 # Modules
+import logging
 import scripts.utils.athena as athena
 import numpy as np
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 _amp = 1.e-6
 _nu = 0.25
@@ -21,6 +23,7 @@ rate_tols = [-1.99]
 
 
 def prepare(*args, **kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure(prob='visc', *args,
                      eos='isothermal', **kwargs)
     athena.make()
@@ -64,15 +67,15 @@ def analyze():
 
     # estimate L1 convergence
     conv = np.diff(np.log(np.array(l1ERROR)))/np.diff(np.log(np.array(resolution_range)))
-    print('[Viscous Diffusion {}]: Convergence order = {}'.format(method, conv))
+    logger.info('[Viscous Diffusion {}]: Convergence order = {}'.format(method, conv))
 
     analyze_status = True
     if conv > rate_tols[-1]:
-        print('[Viscous Diffusion {}]: '
-              'Scheme NOT converging at expected order.'.format(method))
+        logger.warning('[Viscous Diffusion {}]: '
+                       'Scheme NOT converging at expected order.'.format(method))
         analyze_status = False
     else:
-        print('[Viscous Diffusion {}]: '
-              'Scheme converging at expected order.'.format(method))
+        logger.info('[Viscous Diffusion {}]: '
+                    'Scheme converging at expected order.'.format(method))
 
     return analyze_status

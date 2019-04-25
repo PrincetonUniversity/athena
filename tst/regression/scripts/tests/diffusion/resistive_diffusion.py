@@ -3,12 +3,14 @@
 # in b is tested.  Expected 2nd order conv. for explicit.
 
 # Modules
+import logging
 import scripts.utils.athena as athena
 import numpy as np
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 _amp = 1.e-6
 _eta = 0.4
@@ -21,6 +23,7 @@ rate_tols = [-1.99]
 
 
 def prepare(*args, **kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('b', *args,
                      prob='resist',
                      eos='isothermal', **kwargs)
@@ -60,20 +63,20 @@ def analyze():
         analytic = ((_amp/np.sqrt(2.*np.pi*sigma**2.))
                     * (1./np.sqrt(1.+(2.*_eta*_t0/sigma**2.)))
                     * np.exp(-(x1v**2.)
-                    / (2.*sigma**2.*(1.+(2.*_eta*_t0/sigma**2.)))))
+                             / (2.*sigma**2.*(1.+(2.*_eta*_t0/sigma**2.)))))
         l1ERROR.append(sum(np.absolute(bcc2-analytic)*dx1))
 
     # estimate L1 convergence
     conv = np.diff(np.log(np.array(l1ERROR)))/np.diff(np.log(np.array(resolution_range)))
-    print('[Resistive Diffusion {}]: Convergence order = {}'.format(method, conv))
+    logger.info('[Resistive Diffusion {}]: Convergence order = {}'.format(method, conv))
 
     analyze_status = True
     if conv > rate_tols[-1]:
-        print('[Resistive Diffusion {}]: '
-              'Scheme NOT converging at expected order.'.format(method))
+        logger.warning('[Resistive Diffusion {}]: '
+                       'Scheme NOT converging at expected order.'.format(method))
         analyze_status = False
     else:
-        print('[Resistive Diffusion {}]: '
-              'Scheme converging at expected order.'.format(method))
+        logger.info('[Resistive Diffusion {}]: '
+                    'Scheme converging at expected order.'.format(method))
 
     return analyze_status

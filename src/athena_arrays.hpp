@@ -24,7 +24,7 @@
 template <typename T>
 class AthenaArray {
  public:
-  enum class DataStatus {empty, shallow_copy, allocated};  // formerly, "bool scopy_"
+  enum class DataStatus {empty, shallow_slice, allocated};  // formerly, "bool scopy_"
   // ctors
   // default ctor: simply set null AthenaArray
   AthenaArray() : pdata_(nullptr), nx1_(0), nx2_(0), nx3_(0),
@@ -51,8 +51,9 @@ class AthenaArray {
       pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5), nx6_(nx6),
       state_(init) { AllocateData(); }
   // still allowing delayed-initialization (after constructor) via array.NewAthenaArray()
-  // or array.InitWithShallowCopy() and array.InitWithShallowSlice()
-  // TODO(felker): replace InitWithShallowCopy() with references (if perf. is unaffected)
+  // or array.InitWithShallowSlice() (only used in outputs.cpp + 3x other files)
+  // TODO(felker): replace InitWithShallowSlice with ??? and remove shallow_copy enum val
+  // TODO(felker): replace raw pointer with std::vector + reshape (if performance is same)
 
   // user-provided dtor, "rule of five" applies:
   ~AthenaArray();
@@ -74,7 +75,7 @@ class AthenaArray {
                                                int nx2, int nx1);
   void DeleteAthenaArray();
 
-  // public function to (shallow) swap data pointers of two equally-sized arrays
+  // public function to swap underlying data pointers of two equally-sized arrays
   void SwapAthenaArray(AthenaArray<T>& array2);
   void ZeroClear();
 
@@ -100,7 +101,7 @@ class AthenaArray {
       return nx1_*nx2_*nx3_*nx4_*nx5_*nx6_*sizeof(T);
   }
 
-  bool IsShallowCopy() { return (state_ == DataStatus::shallow_copy); }
+  bool IsShallowSlice() { return (state_ == DataStatus::shallow_slice); }
   bool IsEmpty() { return (state_ == DataStatus::empty); }
   bool IsAllocated() { return (state_ == DataStatus::allocated); }
   // "getter" function to access private data member
@@ -149,15 +150,14 @@ class AthenaArray {
                 const int i) const {
     return pdata_[i + nx1_*(j + nx2_*(k + nx3_*(n + nx4_*(m + nx5_*p))))]; }
 
-  // functions that initialize an array with shallow copy or slice from another array
-  void InitWithShallowCopy(AthenaArray<T> &src);
+  // (deferred) initialize an array with slice from another array
   void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
                             const int nvar);
 
  private:
   T *pdata_;
   int nx1_, nx2_, nx3_, nx4_, nx5_, nx6_;
-  DataStatus state_;  // describe what "pdata_" points to and ownership
+  DataStatus state_;  // describe what "pdata_" points to and ownership of allocated data
 
   void AllocateData();
 };
@@ -179,7 +179,7 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) 
   nx3_ = src.nx3_;
   nx4_ = src.nx4_;
   nx5_ = src.nx5_;
-  nx5_ = src.nx6_;
+  nx6_ = src.nx6_;
   if (src.pdata_) {
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_);
     pdata_ = new T[size]; // allocate memory for array data
@@ -191,12 +191,19 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) 
 }
 
 // copy assignment operator (does a deep copy). Does not allocate memory for destination.
-// THIS REQUIRES DESTINATION ARRAY BE ALREADY ALLOCATED AND SAME SIZE AS SOURCE
+// THIS REQUIRES THAT THE DESTINATION ARRAY IS ALREADY ALLOCATED & THE SAME SIZE AS SOURCE
 
 template<typename T>
 __attribute__((nothrow))
 AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
   if (this != &src) {
+    // setting nxN_ is redundant given the above (unenforced) constraint on allowed usage
+    nx1_ = src.nx1_;
+    nx2_ = src.nx2_;
+    nx3_ = src.nx3_;
+    nx4_ = src.nx4_;
+    nx5_ = src.nx5_;
+    nx6_ = src.nx6_;
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_)*(src.nx6_);
     for (std::size_t i=0; i<size; ++i) {
       this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!)
@@ -216,21 +223,21 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(AthenaArray<T>&& src) {
   nx5_ = src.nx5_;
   nx6_ = src.nx6_;
   if (src.pdata_) {
-    // && (src.state_ != DataStatus::allocated){  // (if forbidden to move shallow copies)
+    // && (src.state_ != DataStatus::allocated){  // (if forbidden to move shallow slices)
     //  ---- >state_ = DataStatus::allocated;
 
-    // Allowing src shallow-copy AthenaArray to serve as move constructor argument
+    // Allowing src shallow-sliced AthenaArray to serve as move constructor argument
     state_ = src.state_;
     pdata_ = src.pdata_;
     // remove ownership of data from src to prevent it from free'ing the resources
     src.pdata_ = nullptr;
     src.state_ = DataStatus::empty;
-    src.nx1_= 0;
-    src.nx2_= 0;
-    src.nx3_= 0;
-    src.nx4_= 0;
-    src.nx5_= 0;
-    src.nx6_= 0;
+    src.nx1_ = 0;
+    src.nx2_ = 0;
+    src.nx3_ = 0;
+    src.nx4_ = 0;
+    src.nx5_ = 0;
+    src.nx6_ = 0;
   }
 }
 
@@ -253,94 +260,80 @@ AthenaArray<T> &AthenaArray<T>::operator= (AthenaArray<T> &&src) {
 
       src.pdata_ = nullptr;
       src.state_ = DataStatus::empty;
-      src.nx1_= 0;
-      src.nx2_= 0;
-      src.nx3_= 0;
-      src.nx4_= 0;
-      src.nx5_= 0;
-      src.nx6_= 0;
+      src.nx1_ = 0;
+      src.nx2_ = 0;
+      src.nx3_ = 0;
+      src.nx4_ = 0;
+      src.nx5_ = 0;
+      src.nx6_ = 0;
     }
   }
   return *this;
 }
 
-//----------------------------------------------------------------------------------------
-//! \fn AthenaArray::InitWithShallowCopy()
-//  \brief shallow copy of array (copies ptrs, but not data)
-
-template<typename T>
-void AthenaArray<T>::InitWithShallowCopy(AthenaArray<T> &src) {
-  nx1_=src.nx1_;
-  nx2_=src.nx2_;
-  nx3_=src.nx3_;
-  nx4_=src.nx4_;
-  nx5_=src.nx5_;
-  nx6_=src.nx6_;
-  pdata_ = src.pdata_;
-  state_ = DataStatus::shallow_copy;
-  return;
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn AthenaArray::InitWithShallowSlice()
 //  \brief shallow copy of nvar elements in dimension dim of an array, starting at
-//  index=indx.  Copies pointers to data, but not data itself.
+//  index=indx. Copies pointer to data, but not data itself.
+
+//  Shallow slice is only able to address the "nvar" range in "dim", and all entries of
+//  the src array for d<dim (cannot access any nx4=2, etc. entries if dim=3 for example)
 
 template<typename T>
 void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
                                           const int indx, const int nvar) {
   pdata_ = src.pdata_;
-
   if (dim == 6) {
-    nx6_=nvar;
-    nx5_=src.nx5_;
-    nx4_=src.nx4_;
-    nx3_=src.nx3_;
-    nx2_=src.nx2_;
-    nx1_=src.nx1_;
+    nx6_ = nvar;
+    nx5_ = src.nx5_;
+    nx4_ = src.nx4_;
+    nx3_ = src.nx3_;
+    nx2_ = src.nx2_;
+    nx1_ = src.nx1_;
     pdata_ += indx*(nx1_*nx2_*nx3_*nx4_*nx5_);
   } else if (dim == 5) {
-    nx6_=1;
-    nx5_=nvar;
-    nx4_=src.nx4_;
-    nx3_=src.nx3_;
-    nx2_=src.nx2_;
-    nx1_=src.nx1_;
+    nx6_ = 1;
+    nx5_ = nvar;
+    nx4_ = src.nx4_;
+    nx3_ = src.nx3_;
+    nx2_ = src.nx2_;
+    nx1_ = src.nx1_;
     pdata_ += indx*(nx1_*nx2_*nx3_*nx4_);
   } else if (dim == 4) {
-    nx6_=1;
-    nx5_=1;
-    nx4_=nvar;
-    nx3_=src.nx3_;
-    nx2_=src.nx2_;
-    nx1_=src.nx1_;
+    nx6_ = 1;
+    nx5_ = 1;
+    nx4_ = nvar;
+    nx3_ = src.nx3_;
+    nx2_ = src.nx2_;
+    nx1_ = src.nx1_;
     pdata_ += indx*(nx1_*nx2_*nx3_);
   } else if (dim == 3) {
-    nx6_=1;
-    nx5_=1;
-    nx4_=1;
-    nx3_=nvar;
-    nx2_=src.nx2_;
-    nx1_=src.nx1_;
+    nx6_ = 1;
+    nx5_ = 1;
+    nx4_ = 1;
+    nx3_ = nvar;
+    nx2_ = src.nx2_;
+    nx1_ = src.nx1_;
     pdata_ += indx*(nx1_*nx2_);
   } else if (dim == 2) {
-    nx6_=1;
-    nx5_=1;
-    nx4_=1;
-    nx3_=1;
-    nx2_=nvar;
-    nx1_=src.nx1_;
+    nx6_ = 1;
+    nx5_ = 1;
+    nx4_ = 1;
+    nx3_ = 1;
+    nx2_ = nvar;
+    nx1_ = src.nx1_;
     pdata_ += indx*(nx1_);
   } else if (dim == 1) {
-    nx6_=1;
-    nx5_=1;
-    nx4_=1;
-    nx3_=1;
-    nx2_=1;
-    nx1_=nvar;
+    nx6_ = 1;
+    nx5_ = 1;
+    nx4_ = 1;
+    nx3_ = 1;
+    nx2_ = 1;
+    nx1_ = nvar;
     pdata_ += indx;
   }
-  state_ = DataStatus::shallow_copy;
+  state_ = DataStatus::shallow_slice;
   return;
 }
 
@@ -449,10 +442,10 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx6, int nx5, i
 
 template<typename T>
 void AthenaArray<T>::DeleteAthenaArray() {
-  // state_ is tracked partly for correctness of delete[] in DeleteAthenaArray()
+  // state_ is tracked partly for correctness of delete[] operation in DeleteAthenaArray()
   switch (state_) {
     case DataStatus::empty:
-    case DataStatus::shallow_copy:
+    case DataStatus::shallow_slice:
       pdata_ = nullptr;
       break;
     case DataStatus::allocated:
@@ -467,8 +460,8 @@ void AthenaArray<T>::DeleteAthenaArray() {
 //! \fn AthenaArray::SwapAthenaArray()
 //  \brief  swap pdata_ pointers of two equally sized AthenaArrays (shallow swap)
 // Does not allocate memory for either AthenArray
-// THIS REQUIRES DESTINATION AND SOURCE ARRAYS BE ALREADY ALLOCATED AND HAVE THE SAME
-// SIZES (does not explicitly check either condition)
+// THIS REQUIRES THAT THE DESTINATION AND SOURCE ARRAYS BE ALREADY ALLOCATED (state_ !=
+// empty) AND HAVE THE SAME SIZES (does not explicitly check either condition)
 
 template<typename T>
 void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
@@ -485,7 +478,7 @@ void AthenaArray<T>::ZeroClear() {
   switch (state_) {
     case DataStatus::empty:
       break;
-    case DataStatus::shallow_copy:
+    case DataStatus::shallow_slice:
     case DataStatus::allocated:
       // allocate memory and initialize to zero
       std::memset(pdata_, 0, GetSizeInBytes());
@@ -502,7 +495,7 @@ template<typename T>
 void AthenaArray<T>::AllocateData() {
   switch (state_) {
     case DataStatus::empty:
-    case DataStatus::shallow_copy: // shallow_copy should never be passed to ctor
+    case DataStatus::shallow_slice: // init=shallow_slice should never be passed to ctor
       break;
     case DataStatus::allocated:
       // allocate memory and initialize to zero
