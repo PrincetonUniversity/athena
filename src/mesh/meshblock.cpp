@@ -409,7 +409,7 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
 
 std::size_t MeshBlock::GetBlockSizeInBytes() {
   std::size_t size;
-
+  // NEW_OUTPUT_TYPES:
   size = phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
     size += phydro->w.GetSizeInBytes();
@@ -420,8 +420,8 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
              + pfield->b.x3f.GetSizeInBytes());
   if (SELF_GRAVITY_ENABLED)
     size += pgrav->phi.GetSizeInBytes();
-
-  // NEW_PHYSICS: modify the size counter here when new physics is introduced
+  if (NSCALARS > 0)
+    size += pscalars->s.GetSizeInBytes();
 
   // calculate user MeshBlock data size
   for (int n=0; n<nint_user_meshblock_data_; n++)
