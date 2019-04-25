@@ -346,8 +346,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         }
         if (lrlev > max_level) {
           msg << "### FATAL ERROR in Mesh constructor" << std::endl
-              << "Refinement level exceeds the maximum level (specify"
-              << "maxlevel in <mesh> if adaptive)."
+              << "Refinement level exceeds the maximum level (specify "
+              << "'maxlevel' parameter in <mesh> input block if adaptive)."
               << std::endl;
           ATHENA_ERROR(msg);
         }
