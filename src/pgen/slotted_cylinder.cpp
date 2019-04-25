@@ -159,7 +159,7 @@ Real slotted_cylinder(Real x, Real y, void* data) {
 // refinement condition: maximum gradient of each passive scalar profile
 
 int RefinementCondition(MeshBlock *pmb) {
-  int f2 = pmb->pmy_mesh->f2_, f3 = pmb->pmy_mesh->f3_;
+  int f2 = pmb->pmy_mesh->f2, f3 = pmb->pmy_mesh->f3;
   AthenaArray<Real> &s = pmb->pscalars->s;
   Real maxeps = 0.0;
   if (f3) {

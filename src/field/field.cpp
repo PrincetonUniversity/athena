@@ -59,7 +59,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   // Allocate memory for scratch vectors
-  if (!pm->f3_)
+  if (!pm->f3)
     cc_e_.NewAthenaArray(ncells3, ncells2, ncells1);
   else
     cc_e_.NewAthenaArray(3, ncells3, ncells2, ncells1);

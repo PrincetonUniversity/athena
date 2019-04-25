@@ -516,7 +516,7 @@ void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 
 // refinement condition: density jump
 int RefinementCondition(MeshBlock *pmb) {
-  int f2 = pmb->pmy_mesh->f2_, f3 = pmb->pmy_mesh->f3_;
+  int f2 = pmb->pmy_mesh->f2, f3 = pmb->pmy_mesh->f3;
   AthenaArray<Real> &w = pmb->phydro->w;
   // maximum intercell density ratio
   Real drmax = 1.0;

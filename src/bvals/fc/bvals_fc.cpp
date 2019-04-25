@@ -249,7 +249,7 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
   int nx1 = pmb->block_size.nx1;
   int nx2 = pmb->block_size.nx2;
   int nx3 = pmb->block_size.nx3;
-  int f2 = pmy_mesh_->f2_, f3 = pmy_mesh_->f3_;
+  int f2 = pmy_mesh_->f2, f3 = pmy_mesh_->f3;
   int cng1, cng2, cng3;
   cng1 = cng;
   cng2 = cng*f2;
@@ -1207,7 +1207,7 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
   int nx3 = pmb->block_size.nx3;
   int &mylevel = pmb->loc.level;
 
-  int f2 = pmy_mesh_->f2_, f3 = pmy_mesh_->f3_;
+  int f2 = pmy_mesh_->f2, f3 = pmy_mesh_->f3;
   int cng, cng1, cng2, cng3;
   cng  = cng1 = pmb->cnghost;
   cng2 = cng*f2;

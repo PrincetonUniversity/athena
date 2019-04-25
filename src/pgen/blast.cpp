@@ -413,7 +413,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
   Real maxeps = 0.0;
-  if (pmb->pmy_mesh->f3_) {
+  if (pmb->pmy_mesh->f3) {
     for (int k=pmb->ks-1; k<=pmb->ke+1; k++) {
       for (int j=pmb->js-1; j<=pmb->je+1; j++) {
         for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
@@ -424,7 +424,7 @@ int RefinementCondition(MeshBlock *pmb) {
         }
       }
     }
-  } else if (pmb->pmy_mesh->f2_) {
+  } else if (pmb->pmy_mesh->f2) {
     int k = pmb->ks;
     for (int j=pmb->js-1; j<=pmb->je+1; j++) {
       for (int i=pmb->is-1; i<=pmb->ie+1; i++) {

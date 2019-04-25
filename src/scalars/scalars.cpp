@@ -29,10 +29,10 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     s1(NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     s_flux{ {NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1+1},
             {NSCALARS, pmb->ncells3, pmb->ncells2+1, pmb->ncells1,
-             (pmb->pmy_mesh->f2_ ? AthenaArray<Real>::DataStatus::allocated :
+             (pmb->pmy_mesh->f2 ? AthenaArray<Real>::DataStatus::allocated :
               AthenaArray<Real>::DataStatus::empty)},
             {NSCALARS, pmb->ncells3+1, pmb->ncells2, pmb->ncells1,
-             (pmb->pmy_mesh->f3_ ? AthenaArray<Real>::DataStatus::allocated :
+             (pmb->pmy_mesh->f3 ? AthenaArray<Real>::DataStatus::allocated :
               AthenaArray<Real>::DataStatus::empty)}
     },
     coarse_s_(NSCALARS, pmb->ncc3, pmb->ncc2, pmb->ncc1,
@@ -73,11 +73,11 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   sr_.NewAthenaArray(NSCALARS, nc1);
   slb_.NewAthenaArray(NSCALARS, nc1);
   x1face_area_.NewAthenaArray(nc1+1);
-  if (pm->f2_) {
+  if (pm->f2) {
     x2face_area_.NewAthenaArray(nc1);
     x2face_area_p1_.NewAthenaArray(nc1);
   }
-  if (pm->f3_) {
+  if (pm->f3) {
     x3face_area_.NewAthenaArray(nc1);
     x3face_area_p1_.NewAthenaArray(nc1);
   }
