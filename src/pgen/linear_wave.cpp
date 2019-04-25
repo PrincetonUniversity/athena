@@ -1161,18 +1161,18 @@ void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
 // refinement condition: density curvature
 int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
-  Real rmax=0.0, rmin=2.0*d0;
+  Real dmax = 0.0, dmin = 2.0*d0;  // max and min densities
   for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
-        if (w(IDN,k,j,i)>rmax) rmax=w(IDN,k,j,i);
-        if (w(IDN,k,j,i)<rmin) rmin=w(IDN,k,j,i);
+        if (w(IDN,k,j,i) > dmax) dmax = w(IDN,k,j,i);
+        if (w(IDN,k,j,i) < dmin) dmin = w(IDN,k,j,i);
       }
     }
   }
   // refine : delta rho > 0.9*amp
-  if (rmax-d0 > 0.9*amp*rem[0][wave_flag]) return 1;
-  //  Real a=std::max(rmax-d0,d0-rmin);
+  if (dmax-d0 > 0.9*amp*rem[0][wave_flag]) return 1;
+  //  Real a=std::max(dmax-d0,d0-dmin);
   //  if (a > 0.9*amp*rem[0][wave_flag]) return 1;
   // derefinement: else
   return -1;
