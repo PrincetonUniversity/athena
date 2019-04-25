@@ -31,6 +31,8 @@
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
+// NEW_OUTPUT_TYPES:
+
 // "3" for 1-KE, 2-KE, 3-KE additional columns (come before tot-E)
 #define NHISTORY_VARS ((NHYDRO) + (SELF_GRAVITY_ENABLED) + (NFIELD) + 3 + (NSCALARS))
 
@@ -56,8 +58,11 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // Sum history variables over cells.  Note ghost cells are never included in sums
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
       for (int j=pmb->js; j<=pmb->je; ++j) {
-        pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,vol);
+        pmb->pcoord->CellVolume(k, j, pmb->is, pmb->ie, vol);
         for (int i=pmb->is; i<=pmb->ie; ++i) {
+          // NEW_OUTPUT_TYPES:
+
+          // Hydro conserved variables:
           Real& u_d  = phyd->u(IDN,k,j,i);
           Real& u_mx = phyd->u(IM1,k,j,i);
           Real& u_my = phyd->u(IM2,k,j,i);
@@ -67,6 +72,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
           data_sum[1] += vol(i)*u_mx;
           data_sum[2] += vol(i)*u_my;
           data_sum[3] += vol(i)*u_mz;
+          // + partitioned KE by coordinate direction:
           data_sum[4] += vol(i)*0.5*SQR(u_mx)/u_d;
           data_sum[5] += vol(i)*0.5*SQR(u_my)/u_d;
           data_sum[6] += vol(i)*0.5*SQR(u_mz)/u_d;
@@ -75,10 +81,12 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             Real& u_e = phyd->u(IEN,k,j,i);;
             data_sum[7] += vol(i)*u_e;
           }
+          // Graviatational potential energy:
           if (SELF_GRAVITY_ENABLED) {
             Real& phi = pgrav->phi(k,j,i);
             data_sum[NHYDRO + 3] += vol(i)*0.5*u_d*phi;
           }
+          // Cell-centered magnetic energy, partitioned by coordinate direction:
           if (MAGNETIC_FIELDS_ENABLED) {
             Real& bcc1 = pfld->bcc(IB1,k,j,i);
             Real& bcc2 = pfld->bcc(IB2,k,j,i);
@@ -88,6 +96,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             data_sum[prev_out + 1] += vol(i)*0.5*bcc2*bcc2;
             data_sum[prev_out + 2] += vol(i)*0.5*bcc3*bcc3;
           }
+          // Passive scalars:
           for (int n=0; n<NSCALARS; n++) {
             Real& s = psclr->s(n,k,j,i);
             constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED + NFIELD;
@@ -132,6 +141,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
     // If this is the first output, write header
     if (output_params.file_number == 0) {
+      // NEW_OUTPUT_TYPES:
+
       int iout = 1;
       std::fprintf(pfile,"# Athena++ history data\n"); // descriptor is first line
       std::fprintf(pfile,"# [%d]=time     ", iout++);

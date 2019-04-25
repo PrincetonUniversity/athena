@@ -42,9 +42,40 @@
 // OutputType stored in the Outputs class.  During a simulation, outputs are made when
 // the simulation time satisfies the criteria implemented in the MakeOutputs() function.
 //
-// To implement a new output type, write a new derived OutputType class, and construct
+// To implement a new output type, write a new OutputType derived class, and construct
 // an object of this class in the Outputs constructor at the location indicated by the
-// text 'ADD NEW OUTPUT TYPES HERE'.
+// comment text: 'NEW_OUTPUT_TYPES'. Current summary:
+// -----------------------------------
+// - outputs.cpp, OutputType:LoadOutputData() (below): conditionally add new OutputData
+// node to linked list, depending on the user-input 'variable' string. Provide direction
+// on how to slice a possible 4D source AthenaArray into separate 3D arrays; automatically
+// enrolls quantity in vtk.cpp, formatted_table.cpp outputs.
+
+// - athena_hdf5.cpp, ATHDF5Output::WriteOutputFile(): need to allocate space for the new
+// OutputData node as an HDF5 "variable" inside an existing HDF5 "dataset" (cell-centered
+// vs. face-centered data).
+
+// - restart.cpp, RestartOutput::WriteOutputFile(): memcpy array of quantity to pdata
+// pointer and increment the pointer. pdata points to an allocated region of memory whose
+// "datasize" is inferred from MeshBlock::GetBlockSizeInBytes(), ---->
+
+// - mesh/meshblock.cpp, MeshBlock::GetBlockSizeInBytes(): increment std::size_t size by
+// the size of the new quantity's array(s)
+
+// - history.cpp, HistoryOutput::WriteOutputFile() (3x places): 1) modify NHISTORY_VARS
+// macro so that the size of data_sum[] can accommodate the new physics, when active.
+// 2) Compute volume-weighted data_sum[i] for the new quantity + etc. factors
+// 3) Provide short string to serve as the column header description of new quantity
+// -----------------------------------
+
+// HDF5 note: packing gas velocity into the "prim" HDF5 dataset will cause VisIt to treat
+// the 3x components as independent scalars instead of a physical vector, unlike how it
+// treats .vtk velocity output from Athena++. The workaround is to import the
+// vis/visit/*.xml expressions file, which can pack these HDF5 scalars into a vector.
+
+// TODO(felker): Replace MeshBlock::GetBlockSizeInBytes() by 2x RegisterMeshBlockData()
+// overloads. Replace "NEW_OUTPUT_TYPES" region of RestartOutput::WriteOutputFile() with
+// automatic loops over registered MeshBlock quantities in pvars_cc, pvars_fc vectors.
 //========================================================================================
 
 // C headers
@@ -97,7 +128,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
   // loop over input block names.  Find those that start with "output", read parameters,
   // and construct singly linked list of OutputTypes.
   while (pib != nullptr) {
-    if (pib->block_name.compare(0,6,"output") == 0) {
+    if (pib->block_name.compare(0, 6, "output") == 0) {
       OutputParameters op;  // define temporary OutputParameters struct
 
       // extract integer number of output block.  Save name and number
@@ -183,15 +214,16 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         }
 
         // read ghost cell option
-        op.include_ghost_zones=pin->GetOrAddBoolean(op.block_name, "ghost_zones", false);
+        op.include_ghost_zones = pin->GetOrAddBoolean(op.block_name, "ghost_zones",
+                                                      false);
 
         // read cartesian mapping option
         if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0 ||
             std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
-          op.cartesian_vector=pin->GetOrAddBoolean(op.block_name, "cartesian_vector",
+          op.cartesian_vector = pin->GetOrAddBoolean(op.block_name, "cartesian_vector",
                                                    false);
         else
-          op.cartesian_vector=false;
+          op.cartesian_vector = false;
 
         // set output variable and optional data format string used in formatted writes
         if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
@@ -212,7 +244,8 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         } else if (op.file_type.compare("rst") == 0) {
           pnew_type = new RestartOutput(op);
           num_rst_outputs++;
-        } else if (op.file_type.compare("ath5")==0 || op.file_type.compare("hdf5")==0) {
+        } else if (op.file_type.compare("ath5") == 0
+                   || op.file_type.compare("hdf5") == 0) {
 #ifdef HDF5OUTPUT
           pnew_type = new ATHDF5Output(op);
 #else
@@ -250,35 +283,35 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
 
   // Move restarts to the tail end of the OutputType list, so file counters for other
   // output types are up-to-date in restart file
-  int pos=0, found=0;
+  int pos = 0, found = 0;
   OutputType *pot = pfirst_type_;
   OutputType *prst = pot;
-  while (pot!=nullptr) {
-    if (pot->output_params.file_type.compare("rst")==0) {
-      prst=pot;
-      found=1;
-      if (pot->pnext_type==nullptr) found=2;
+  while (pot != nullptr) {
+    if (pot->output_params.file_type.compare("rst") == 0) {
+      prst = pot;
+      found = 1;
+      if (pot->pnext_type == nullptr) found = 2;
       break;
     }
     pos++;
-    pot=pot->pnext_type;
+    pot = pot->pnext_type;
   }
-  if (found==1) {
+  if (found == 1) {
     // remove the restarting block
-    pot=pfirst_type_;
-    if (pos==0) { // head node/first block
-      pfirst_type_=pfirst_type_->pnext_type;
+    pot = pfirst_type_;
+    if (pos == 0) { // head node/first block
+      pfirst_type_ = pfirst_type_->pnext_type;
     } else {
       for (int j=0; j<pos-1; j++) // seek the list
-        pot=pot->pnext_type;
-      pot->pnext_type=prst->pnext_type; // remove it
+        pot = pot->pnext_type;
+      pot->pnext_type = prst->pnext_type; // remove it
     }
-    while (pot->pnext_type!=nullptr)
-      pot=pot->pnext_type; // find the tail node
-    prst->pnext_type=nullptr;
-    pot->pnext_type=prst;
+    while (pot->pnext_type != nullptr)
+      pot = pot->pnext_type; // find the tail node
+    prst->pnext_type = nullptr;
+    pot->pnext_type = prst;
   }
-  // if found==2, do nothing; it's already at the tail node/end of the list
+  // if found == 2, do nothing; it's already at the tail node/end of the list
 }
 
 // destructor - iterates through singly linked list of OutputTypes and deletes nodes
@@ -303,6 +336,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   Gravity *pgrav = pmb->pgrav;
   num_vars_ = 0;
   OutputData *pod;
+
+  // NEW_OUTPUT_TYPES:
 
   // (lab-frame) density
   if (output_params.variable.compare("D") == 0 ||
@@ -358,7 +393,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod->name = "mom";
     pod->data.InitWithShallowSlice(phyd->u, 4, IM1, 3);
     AppendOutputDataNode(pod);
-    num_vars_+=3;
+    num_vars_ += 3;
     if (output_params.cartesian_vector) {
       AthenaArray<Real> src;
       src.InitWithShallowSlice(phyd->u, 4, IM1, 3);
@@ -369,7 +404,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
                                phyd->u.GetDim1());
       CalculateCartesianVector(src,  pod->data,  pmb->pcoord);
       AppendOutputDataNode(pod);
-      num_vars_+=3;
+      num_vars_ += 3;
     }
   }
 
@@ -407,7 +442,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod->name = "vel";
     pod->data.InitWithShallowSlice(phyd->w, 4, IVX, 3);
     AppendOutputDataNode(pod);
-    num_vars_+=3;
+    num_vars_ += 3;
     if (output_params.cartesian_vector) {
       AthenaArray<Real> src;
       src.InitWithShallowSlice(phyd->w, 4, IVX, 3);
@@ -418,7 +453,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
                                phyd->w.GetDim1());
       CalculateCartesianVector(src,  pod->data,  pmb->pcoord);
       AppendOutputDataNode(pod);
-      num_vars_+=3;
+      num_vars_ += 3;
     }
   }
 
@@ -475,7 +510,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       pod->name = "Bcc";
       pod->data.InitWithShallowSlice(pfld->bcc, 4, IB1, 3);
       AppendOutputDataNode(pod);
-      num_vars_+=3;
+      num_vars_ += 3;
       if (output_params.cartesian_vector) {
         AthenaArray<Real> src;
         src.InitWithShallowSlice(pfld->bcc, 4, IB1, 3);
@@ -486,7 +521,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
                                  pfld->bcc.GetDim1());
         CalculateCartesianVector(src, pod->data, pmb->pcoord);
         AppendOutputDataNode(pod);
-        num_vars_+=3;
+        num_vars_ += 3;
       }
     }
 
@@ -564,7 +599,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
 
   if (output_params.variable.compare(0, 3, "uov") == 0
       || output_params.variable.compare(0, 12, "user_out_var") == 0) {
-    int iv, ns=0, ne=pmb->nuser_out_var-1;
+    int iv, ns = 0, ne = pmb->nuser_out_var-1;
     if (sscanf(output_params.variable.c_str(), "uov%d", &iv)>0) {
       if (iv>=0 && iv<pmb->nuser_out_var)
         ns=iv, ne=iv;
@@ -575,8 +610,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     for (int n = ns; n <= ne; ++n) {
       pod = new OutputData;
       pod->type = "SCALARS";
-      if (pmb->user_out_var_names_[n].length()!=0) {
-        pod->name=pmb->user_out_var_names_[n];
+      if (pmb->user_out_var_names_[n].length() != 0) {
+        pod->name = pmb->user_out_var_names_[n];
       } else {
         char vn[16];
         std::snprintf(vn, sizeof(vn), "user_out_var%d", n);
@@ -589,11 +624,11 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   }
 
   for (int n = 0; n < pmb->nuser_out_var; ++n) {
-    if (pmb->user_out_var_names_[n].length()!=0) {
+    if (pmb->user_out_var_names_[n].length() != 0) {
       if (output_params.variable.compare(pmb->user_out_var_names_[n]) == 0) {
         pod = new OutputData;
         pod->type = "SCALARS";
-        pod->name=pmb->user_out_var_names_[n];
+        pod->name = pmb->user_out_var_names_[n];
         pod->data.InitWithShallowSlice(pmb->user_out_var, 4, n, 1);
         AppendOutputDataNode(pod);
         num_vars_++;
@@ -602,7 +637,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   }
 
   // throw an error if output variable name not recognized
-  if (num_vars_==0) {
+  if (num_vars_ == 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in function [OutputType::LoadOutputData]" << std::endl
         << "Output variable '" << output_params.variable << "' not implemented"
@@ -681,10 +716,10 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
     if ((pm->time == pm->start_time) ||
         (pm->time >= ptype->output_params.next_time) ||
         (pm->time >= pm->tlim) ||
-        (wtflag==true && ptype->output_params.file_type=="rst")) {
-      if (first && ptype->output_params.file_type!="hst") {
+        (wtflag && ptype->output_params.file_type == "rst")) {
+      if (first && ptype->output_params.file_type != "hst") {
         pm->ApplyUserWorkBeforeOutput(pin);
-        first=false;
+        first = false;
       }
       ptype->WriteOutputFile(pm, pin, wtflag);
     }
@@ -701,15 +736,15 @@ bool OutputType::TransformOutputData(MeshBlock *pmb) {
   bool flag = true;
   if (output_params.output_slicex3) {
     bool ret = SliceOutputData(pmb,3);
-    if (ret==false) flag=false;
+    if (!ret) flag = false;
   }
   if (output_params.output_slicex2) {
     bool ret = SliceOutputData(pmb,2);
-    if (ret==false) flag=false;
+    if (!ret) flag = false;
   }
   if (output_params.output_slicex1) {
     bool ret = SliceOutputData(pmb,1);
-    if (ret==false) flag=false;
+    if (!ret) flag = false;
   }
   if (output_params.output_sumx3) {
     SumOutputData(pmb,3);
@@ -736,7 +771,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
         output_params.x1_slice < pmb->block_size.x1max) {
       for (int i=pmb->is+1; i<=pmb->ie+1; ++i) {
         if (pmb->pcoord->x1f(i) > output_params.x1_slice) {
-          islice = i-1;
+          islice = i - 1;
           output_params.islice = islice;
           break;
         }
@@ -749,7 +784,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
         output_params.x2_slice < pmb->block_size.x2max) {
       for (int j=pmb->js+1; j<=pmb->je+1; ++j) {
         if (pmb->pcoord->x2f(j) > output_params.x2_slice) {
-          jslice = j-1;
+          jslice = j - 1;
           output_params.jslice = jslice;
           break;
         }
@@ -762,7 +797,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
         output_params.x3_slice < pmb->block_size.x3max) {
       for (int k=pmb->ks+1; k<=pmb->ke+1; ++k) {
         if (pmb->pcoord->x3f(k) > output_params.x3_slice) {
-          kslice = k-1;
+          kslice = k - 1;
           output_params.kslice = kslice;
           break;
         }
@@ -773,7 +808,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
   }
 
   // For each node in OutputData doubly linked list, slice arrays containing output data
-  OutputData *pdata,*pnew;
+  OutputData *pdata, *pnew;
   pdata = pfirst_data_;
 
   while (pdata != nullptr) {
@@ -787,7 +822,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
 
     // Loop over variables and dimensions, extract slice
     if (dim == 3) {
-      pnew->data.NewAthenaArray(nx4,1,nx2,nx1);
+      pnew->data.NewAthenaArray(nx4, 1, nx2, nx1);
       for (int n=0; n<nx4; ++n) {
         for (int j=out_js; j<=out_je; ++j) {
           for (int i=out_is; i<=out_ie; ++i) {
@@ -852,7 +887,7 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
 
     // Loop over variables and dimensions, sum over specified dimension
     if (dim == 3) {
-      pnew->data.NewAthenaArray(nx4,1,nx2,nx1);
+      pnew->data.NewAthenaArray(nx4, 1, nx2, nx1);
       for (int n=0; n<nx4; ++n) {
         for (int k=out_ks; k<=out_ke; ++k) {
           for (int j=out_js; j<=out_je; ++j) {
@@ -863,7 +898,7 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
         }
       }
     } else if (dim == 2) {
-      pnew->data.NewAthenaArray(nx4,nx3,1,nx1);
+      pnew->data.NewAthenaArray(nx4, nx3, 1, nx1);
       for (int n=0; n<nx4; ++n) {
         for (int k=out_ks; k<=out_ke; ++k) {
           for (int j=out_js; j<=out_je; ++j) {
@@ -874,7 +909,7 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
         }
       }
     } else {
-      pnew->data.NewAthenaArray(nx4,nx3,nx2,1);
+      pnew->data.NewAthenaArray(nx4, nx3, nx2, 1);
       for (int n=0; n<nx4; ++n) {
         for (int k=out_ks; k<=out_ke; ++k) {
           for (int j=out_js; j<=out_je; ++j) {
@@ -886,7 +921,7 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
       }
     }
 
-    ReplaceOutputDataNode(pdata,pnew);
+    ReplaceOutputDataNode(pdata, pnew);
     pdata = pdata->pnext;
   }
 
@@ -912,38 +947,38 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
 
 void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Real> &dst,
                                           Coordinates *pco) {
-  Real n1x,n1y,n1z,n2x,n2y,n2z,n3x,n3y,n3z;
+  Real n1x, n1y, n1z, n2x, n2y, n2z, n3x, n3y, n3z;
   if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
-    if (out_ks==out_ke) { // 2D
+    if (out_ks == out_ke) { // 2D
       for (int k=out_ks; k<=out_ke; k++) {
         for (int j=out_js; j<=out_je; j++) {
-          n1x=std::sin(pco->x2v(j));
-          n1z=std::cos(pco->x2v(j));
-          n2x=std::cos(pco->x2v(j));
-          n2z=-std::sin(pco->x2v(j));
+          n1x = std::sin(pco->x2v(j));
+          n1z = std::cos(pco->x2v(j));
+          n2x = std::cos(pco->x2v(j));
+          n2z = -std::sin(pco->x2v(j));
           for (int i=out_is; i<=out_ie; i++) {
-            dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x;
-            dst(1,k,j,i)=src(2,k,j,i);
-            dst(2,k,j,i)=src(0,k,j,i)*n1z+src(1,k,j,i)*n2z;
+            dst(0,k,j,i) = src(0,k,j,i)*n1x + src(1,k,j,i)*n2x;
+            dst(1,k,j,i) = src(2,k,j,i);
+            dst(2,k,j,i) = src(0,k,j,i)*n1z + src(1,k,j,i)*n2z;
           }
         }
       }
     } else { // 3D
       for (int k=out_ks; k<=out_ke; k++) {
-        n3x=-std::sin(pco->x3v(k));
-        n3y=std::cos(pco->x3v(k));
-        n3z=0.0;
+        n3x = -std::sin(pco->x3v(k));
+        n3y = std::cos(pco->x3v(k));
+        n3z = 0.0;
         for (int j=out_js; j<=out_je; j++) {
-          n1x=std::sin(pco->x2v(j))*std::cos(pco->x3v(k));
-          n1y=std::sin(pco->x2v(j))*std::sin(pco->x3v(k));
-          n1z=std::cos(pco->x2v(j));
-          n2x=std::cos(pco->x2v(j))*std::cos(pco->x3v(k));
-          n2y=std::cos(pco->x2v(j))*std::sin(pco->x3v(k));
-          n2z=-std::sin(pco->x2v(j));
+          n1x = std::sin(pco->x2v(j))*std::cos(pco->x3v(k));
+          n1y = std::sin(pco->x2v(j))*std::sin(pco->x3v(k));
+          n1z = std::cos(pco->x2v(j));
+          n2x = std::cos(pco->x2v(j))*std::cos(pco->x3v(k));
+          n2y = std::cos(pco->x2v(j))*std::sin(pco->x3v(k));
+          n2z = -std::sin(pco->x2v(j));
           for (int i=out_is; i<=out_ie; i++) {
-            dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x+src(2,k,j,i)*n3x;
-            dst(1,k,j,i)=src(0,k,j,i)*n1y+src(1,k,j,i)*n2y+src(2,k,j,i)*n3y;
-            dst(2,k,j,i)=src(0,k,j,i)*n1z+src(1,k,j,i)*n2z+src(2,k,j,i)*n3z;
+            dst(0,k,j,i) = src(0,k,j,i)*n1x + src(1,k,j,i)*n2x + src(2,k,j,i)*n3x;
+            dst(1,k,j,i) = src(0,k,j,i)*n1y + src(1,k,j,i)*n2y + src(2,k,j,i)*n3y;
+            dst(2,k,j,i) = src(0,k,j,i)*n1z + src(1,k,j,i)*n2z + src(2,k,j,i)*n3z;
           }
         }
       }
@@ -952,14 +987,14 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
   if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     for (int k=out_ks; k<=out_ke; k++) {
       for (int j=out_js; j<=out_je; j++) {
-        n1x=std::cos(pco->x2v(j));
-        n1y=std::sin(pco->x2v(j));
-        n2x=-std::sin(pco->x2v(j));
-        n2y=std::cos(pco->x2v(j));
+        n1x = std::cos(pco->x2v(j));
+        n1y = std::sin(pco->x2v(j));
+        n2x =-std::sin(pco->x2v(j));
+        n2y = std::cos(pco->x2v(j));
         for (int i=out_is; i<=out_ie; i++) {
-          dst(0,k,j,i)=src(0,k,j,i)*n1x+src(1,k,j,i)*n2x;
-          dst(1,k,j,i)=src(0,k,j,i)*n1y+src(1,k,j,i)*n2y;
-          dst(2,k,j,i)=src(2,k,j,i);
+          dst(0,k,j,i) = src(0,k,j,i)*n1x + src(1,k,j,i)*n2x;
+          dst(1,k,j,i) = src(0,k,j,i)*n1y + src(1,k,j,i)*n2y;
+          dst(2,k,j,i) = src(2,k,j,i);
         }
       }
     }

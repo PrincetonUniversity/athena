@@ -32,14 +32,14 @@
 //         Writes one file per MeshBlock
 
 void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
-  MeshBlock *pmb=pm->pblock;
+  MeshBlock *pmb = pm->pblock;
 
   // Loop over MeshBlocks
   while (pmb != nullptr) {
     // set start/end array indices depending on whether ghost zones are included
-    out_is=pmb->is; out_ie=pmb->ie;
-    out_js=pmb->js; out_je=pmb->je;
-    out_ks=pmb->ks; out_ke=pmb->ke;
+    out_is = pmb->is; out_ie = pmb->ie;
+    out_js = pmb->js; out_je = pmb->je;
+    out_ks = pmb->ks; out_ke = pmb->ke;
     if (output_params.include_ghost_zones) {
       out_is -= NGHOST; out_ie += NGHOST;
       if (out_js != out_je) {out_js -= NGHOST; out_je += NGHOST;}
@@ -51,7 +51,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     LoadOutputData(pmb);
     if (TransformOutputData(pmb) == false) {
       ClearOutputData();  // required when LoadOutputData() is used.
-      pmb=pmb->next;
+      pmb = pmb->next;
       continue;
     } // skip if slice was out of range
 
@@ -83,15 +83,15 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     }
 
     // print file header
-    std::fprintf(pfile,"# Athena++ data at time=%e",pm->time);
-    std::fprintf(pfile,"  cycle=%d",pmb->pmy_mesh->ncycle);
-    std::fprintf(pfile,"  variables=%s \n",output_params.variable.c_str());
+    std::fprintf(pfile, "# Athena++ data at time=%e", pm->time);
+    std::fprintf(pfile, "  cycle=%d", pmb->pmy_mesh->ncycle);
+    std::fprintf(pfile, "  variables=%s \n", output_params.variable.c_str());
 
     // write x1, x2, x3 column headers
-    std::fprintf(pfile,"#");
-    if (out_is != out_ie) std::fprintf(pfile," i       x1v     ");
-    if (out_js != out_je) std::fprintf(pfile," j       x2v     ");
-    if (out_ks != out_ke) std::fprintf(pfile," k       x3v     ");
+    std::fprintf(pfile, "#");
+    if (out_is != out_ie) std::fprintf(pfile, " i       x1v     ");
+    if (out_js != out_je) std::fprintf(pfile, " j       x2v     ");
+    if (out_ks != out_ke) std::fprintf(pfile, " k       x3v     ");
     // write data col headers from "name" stored in OutputData nodes of doubly linked list
     OutputData *pdata = pfirst_data_;
     while (pdata != nullptr) {
@@ -104,7 +104,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
       }
       pdata = pdata->pnext;
     }
-    std::fprintf(pfile,"\n"); // terminate line
+    std::fprintf(pfile, "\n"); // terminate line
 
     // loop over all cells in data arrays
     for (int k=out_ks; k<=out_ke; ++k) {
@@ -112,16 +112,16 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
         for (int i=out_is; i<=out_ie; ++i) {
           // write x1, x2, x3 indices and coordinates on start of new line
           if (out_is != out_ie) {
-            std::fprintf(pfile,"%04d",i);
-            std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x1v(i));
+            std::fprintf(pfile, "%04d", i);
+            std::fprintf(pfile, output_params.data_format.c_str(), pmb->pcoord->x1v(i));
           }
           if (out_js != out_je) {
-            std::fprintf(pfile," %04d",j);  // note extra space for formatting
-            std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x2v(j));
+            std::fprintf(pfile, " %04d", j);  // note extra space for formatting
+            std::fprintf(pfile, output_params.data_format.c_str(), pmb->pcoord->x2v(j));
           }
           if (out_ks != out_ke) {
-            std::fprintf(pfile," %04d",k);  // note extra space for formatting
-            std::fprintf(pfile,output_params.data_format.c_str(),pmb->pcoord->x3v(k));
+            std::fprintf(pfile, " %04d", k);  // note extra space for formatting
+            std::fprintf(pfile, output_params.data_format.c_str(), pmb->pcoord->x3v(k));
           }
 
           // step through doubly linked list of OutputData's and write each on same line
@@ -140,7 +140,7 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     // don't forget to close the output file and clean up ptrs to data in OutputData
     std::fclose(pfile);
     ClearOutputData(); // required when LoadOutputData() is used.
-    pmb=pmb->next;
+    pmb = pmb->next;
   }  // end loop over MeshBlocks
 
   // increment counters

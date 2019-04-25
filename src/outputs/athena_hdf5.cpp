@@ -87,21 +87,21 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   H5Real *x3v_mesh;                            // array of x3 values on Mesh
   H5Real **data_buffers;                       // array of data buffers
 
-  MeshBlock *pmb=pm->pblock;
+  MeshBlock *pmb = pm->pblock;
   OutputData* pod;
   int max_blocks_global = pm->nbtotal;
-  int max_blocks_local=pm->nblist[Globals::my_rank];
+  int max_blocks_local = pm->nblist[Globals::my_rank];
   int first_block = pm->nslist[Globals::my_rank];
   bool *active_flags = new bool[max_blocks_local];
   std::string variable = output_params.variable;
 
   for (int i=0; i<max_blocks_local; i++)
-    active_flags[i]=true;
+    active_flags[i] = true;
 
   // shooting a blank just for getting the variable names
-  out_is=pmb->is; out_ie=pmb->ie;
-  out_js=pmb->js; out_je=pmb->je;
-  out_ks=pmb->ks; out_ke=pmb->ke;
+  out_is = pmb->is; out_ie = pmb->ie;
+  out_js = pmb->js; out_je = pmb->je;
+  out_ks = pmb->ks; out_ke = pmb->ke;
   if (output_params.include_ghost_zones) {
     out_is -= NGHOST; out_ie += NGHOST;
     if (out_js != out_je) {out_js -= NGHOST; out_je += NGHOST;}
@@ -109,22 +109,38 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   }
   LoadOutputData(pmb);
   // set num_datasets and num_variables
+
+  // NEW_OUTPUT_TYPES:
   // this must be expanded when new variables are introduced
+
   if (variable.compare("prim") == 0 || variable.compare("cons") == 0) {
+    int n_dataset = 0;
+    // cell-centered data packed into 1 dataset: (prim, phi, s0, etc.)
     num_datasets = 1;
+    // face-centered data packed into 1 dataset:
     if (MAGNETIC_FIELDS_ENABLED)
       num_datasets += 1;
     num_variables = new int[num_datasets];
-    int n_dataset = 0;
-    num_variables[n_dataset++] = NHYDRO;
+
+    // n_dataset = 0: all cell-centered AthenaArray variable data of the same size
+    // Hydro conserved variables:
+    num_variables[n_dataset] = NHYDRO;
     if (output_params.cartesian_vector)
-      num_variables[n_dataset-1] += 3;
+      num_variables[n_dataset] += 3;
+    // Graviatational potential:
     if (SELF_GRAVITY_ENABLED)
-      num_variables[n_dataset-1] += 1;
+      num_variables[n_dataset] += 1;
+    // Passive scalars:
+    if (NSCALARS > 0)
+      num_variables[n_dataset] += NSCALARS;
+
+    // n_dataset = 1: face-centered FaceField variable data
+    n_dataset++;
+    // Longitudinal, face-centered magnetic field components:
     if (MAGNETIC_FIELDS_ENABLED) {
-      num_variables[n_dataset++] = 3;
+      num_variables[n_dataset] = 3;
       if (output_params.cartesian_vector)
-        num_variables[n_dataset-1] += 3;
+        num_variables[n_dataset] += 3;
     }
   } else {
     num_datasets = 1;
@@ -135,29 +151,29 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   variable_names = new char[num_vars_][max_name_length+1];
 
   // set dataset names
-  int n_dataset_naems = 0;
+  int n_dataset_names = 0;
   if (variable.compare("prim") == 0 || variable.compare("cons") == 0) {
     if (variable.compare("prim") == 0)
-      std::strncpy(dataset_names[n_dataset_naems++], "prim", max_name_length+1);
+      std::strncpy(dataset_names[n_dataset_names++], "prim", max_name_length+1);
     else
-      std::strncpy(dataset_names[n_dataset_naems++], "cons", max_name_length+1);
+      std::strncpy(dataset_names[n_dataset_names++], "cons", max_name_length+1);
     if (MAGNETIC_FIELDS_ENABLED)
-      std::strncpy(dataset_names[n_dataset_naems++], "B", max_name_length+1);
+      std::strncpy(dataset_names[n_dataset_names++], "B", max_name_length+1);
   } else { // single data
     if (variable.compare(0,1,"B") == 0 && MAGNETIC_FIELDS_ENABLED)
-      std::strncpy(dataset_names[n_dataset_naems++], "B", max_name_length+1);
+      std::strncpy(dataset_names[n_dataset_names++], "B", max_name_length+1);
     else if (variable.compare(0,1,"uov") == 0
              || variable.compare(0,1,"user_out_var") == 0)
-      std::strncpy(dataset_names[n_dataset_naems++], "user_out_var", max_name_length+1);
+      std::strncpy(dataset_names[n_dataset_names++], "user_out_var", max_name_length+1);
     else
-      std::strncpy(dataset_names[n_dataset_naems++], "hydro", max_name_length+1);
+      std::strncpy(dataset_names[n_dataset_names++], "hydro", max_name_length+1);
   }
 
   // set variable names, loop over outputdata
   int n_variable = 0;
-  pod=pfirst_data_;
-  while (pod!=nullptr) {
-    if (pod->type=="VECTORS") {
+  pod = pfirst_data_;
+  while (pod != nullptr) {
+    if (pod->type == "VECTORS") {
       for (int i=1; i<=3; i++) {
         char sn[3];
         std::snprintf(sn, sizeof(sn), "%d", i);
@@ -167,7 +183,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     } else {
       std::strncpy(variable_names[n_variable++], pod->name.c_str(), max_name_length+1);
     }
-    pod=pod->pnext;
+    pod = pod->pnext;
   }
 
   // Make sure C-strings are null-terminated
@@ -181,57 +197,57 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // count the number of active blocks if slicing
   if (output_params.output_slicex1 || output_params.output_slicex2
       || output_params.output_slicex3) {
-    int nb=0, nba=0;
-    pmb=pm->pblock;
-    while (pmb!=nullptr) {
+    int nb = 0, nba = 0;
+    pmb = pm->pblock;
+    while (pmb != nullptr) {
       if (output_params.output_slicex1) {
         if (pmb->block_size.x1min >  output_params.x1_slice
             || pmb->block_size.x1max <= output_params.x1_slice)
-          active_flags[nb]=false;
+          active_flags[nb] = false;
       }
       if (output_params.output_slicex2) {
         if (pmb->block_size.x2min >  output_params.x2_slice
             || pmb->block_size.x2max <= output_params.x2_slice)
-          active_flags[nb]=false;
+          active_flags[nb] = false;
       }
       if (output_params.output_slicex3) {
         if (pmb->block_size.x3min >  output_params.x3_slice
             || pmb->block_size.x3max <= output_params.x3_slice)
-          active_flags[nb]=false;
+          active_flags[nb] = false;
       }
-      if (active_flags[nb]==true) nba++;
+      if (active_flags[nb]) nba++;
       nb++;
-      pmb=pmb->next;
+      pmb = pmb->next;
     }
 #ifdef MPI_PARALLEL
-    int *n_active=new int[Globals::nranks];
+    int *n_active = new int[Globals::nranks];
     MPI_Allgather(&nba, 1, MPI_INT, n_active, 1, MPI_INT, MPI_COMM_WORLD);
-    num_blocks_local=n_active[Globals::my_rank];
-    first_block=0;
+    num_blocks_local = n_active[Globals::my_rank];
+    first_block = 0;
     for (int n=0; n<Globals::my_rank; n++)
-      first_block+=n_active[n];
-    num_blocks_global=0;
+      first_block += n_active[n];
+    num_blocks_global = 0;
     for (int n=0; n<Globals::nranks; n++)
-      num_blocks_global+=n_active[n];
+      num_blocks_global += n_active[n];
     delete [] n_active;
 #else
     num_blocks_global=num_blocks_local=nba;
-    first_block=0;
+    first_block = 0;
 #endif
   } else {
-    num_blocks_global=max_blocks_global;
-    num_blocks_local=max_blocks_local;
+    num_blocks_global = max_blocks_global;
+    num_blocks_local = max_blocks_local;
   }
 
-  pmb=pm->pblock;
+  pmb = pm->pblock;
   // set output size
-  nx1=pmb->block_size.nx1;
-  nx2=pmb->block_size.nx2;
-  nx3=pmb->block_size.nx3;
+  nx1 = pmb->block_size.nx1;
+  nx2 = pmb->block_size.nx2;
+  nx3 = pmb->block_size.nx3;
   if (output_params.include_ghost_zones) {
-    nx1+=2*NGHOST;
-    if (nx2 > 1) nx2+=2*NGHOST;
-    if (nx3 > 1) nx3+=2*NGHOST;
+    nx1 += 2*NGHOST;
+    if (nx2 > 1) nx2 += 2*NGHOST;
+    if (nx3 > 1) nx3 += 2*NGHOST;
   }
   if (output_params.output_slicex1) nx1=1;
   if (output_params.output_slicex2) nx2=1;
@@ -253,14 +269,14 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   for (int n = 0; n < num_datasets; ++n)
     data_buffers[n] = new H5Real[num_variables[n]*num_blocks_local*nx3*nx2*nx1];
 
-  int nb=0, nba=0;
-  while (pmb!=nullptr) {
+  int nb = 0, nba = 0;
+  while (pmb != nullptr) {
     // Load the output data
     if (active_flags[nb] == true) {
       // set the default size because TransformOutputData will override it
-      out_is=pmb->is; out_ie=pmb->ie;
-      out_js=pmb->js; out_je=pmb->je;
-      out_ks=pmb->ks; out_ke=pmb->ke;
+      out_is = pmb->is; out_ie = pmb->ie;
+      out_js = pmb->js; out_je = pmb->je;
+      out_ks = pmb->ks; out_ke = pmb->ke;
       if (output_params.include_ghost_zones) {
         out_is -= NGHOST; out_ie += NGHOST;
         if (out_js != out_je) {out_js -= NGHOST; out_je += NGHOST;}
@@ -286,14 +302,15 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
       // Load coordinates
       if (output_params.output_slicex1) {
-        x1f_mesh[nba*(nx1+1)]=static_cast<H5Real>(pmb->pcoord->x1f(output_params.islice));
-        x1f_mesh[nba*(nx1+1)+1]=static_cast<H5Real>(
+        x1f_mesh[nba*(nx1+1)] =
+            static_cast<H5Real>(pmb->pcoord->x1f(output_params.islice));
+        x1f_mesh[nba*(nx1+1)+1] = static_cast<H5Real>(
             pmb->pcoord->x1f(output_params.islice+1));
-        x1v_mesh[nba*nx1]=static_cast<H5Real>(pmb->pcoord->x1v(output_params.islice));
+        x1v_mesh[nba*nx1] = static_cast<H5Real>(pmb->pcoord->x1v(output_params.islice));
       } else if (output_params.output_sumx1) {
         x1f_mesh[nba*(nx1+1)] = pmb->pcoord->x1f(pmb->is);
         x1f_mesh[nba*(nx1+1)+1] = pmb->pcoord->x1f(pmb->ie+1);
-        if (pmb->block_size.nx1%2 == 0) {
+        if (pmb->block_size.nx1 % 2 == 0) {
           x1v_mesh[nba*nx1] = pmb->pcoord->x1f((pmb->is + pmb->ie + 1) / 2);
         } else {
           x1v_mesh[nba*nx1] = pmb->pcoord->x1v((pmb->is + pmb->ie) / 2);
@@ -306,15 +323,15 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       }
       if (output_params.output_slicex2) {
         x2f_mesh[nba*(nx2+1)]
-            =static_cast<H5Real>(pmb->pcoord->x2f(output_params.jslice));
+            = static_cast<H5Real>(pmb->pcoord->x2f(output_params.jslice));
         x2f_mesh[nba*(nx2+1)+1]
-            =static_cast<H5Real>(pmb->pcoord->x2f(output_params.jslice+1));
+            = static_cast<H5Real>(pmb->pcoord->x2f(output_params.jslice+1));
         x2v_mesh[nba*nx2]
-            =static_cast<H5Real>(pmb->pcoord->x2v(output_params.jslice));
+            = static_cast<H5Real>(pmb->pcoord->x2v(output_params.jslice));
       } else if (output_params.output_sumx2) {
         x2f_mesh[nba*(nx2+1)] = pmb->pcoord->x2f(pmb->js);
         x2f_mesh[nba*(nx2+1)+1] = pmb->pcoord->x2f(pmb->je+1);
-        if (pmb->block_size.nx2%2 == 0) {
+        if (pmb->block_size.nx2 % 2 == 0) {
           x2v_mesh[nba*nx2] = pmb->pcoord->x2f((pmb->js + pmb->je + 1) / 2);
         } else {
           x2v_mesh[nba*nx2] = pmb->pcoord->x2v((pmb->js + pmb->je) / 2);
@@ -327,15 +344,15 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       }
       if (output_params.output_slicex3) {
         x3f_mesh[nba*(nx3+1)]
-            =static_cast<H5Real>(pmb->pcoord->x3f(output_params.kslice));
+            = static_cast<H5Real>(pmb->pcoord->x3f(output_params.kslice));
         x3f_mesh[nba*(nx3+1)+1]
-            =static_cast<H5Real>(pmb->pcoord->x3f(output_params.kslice+1));
+            = static_cast<H5Real>(pmb->pcoord->x3f(output_params.kslice+1));
         x3v_mesh[nba*nx3]
-            =static_cast<H5Real>(pmb->pcoord->x3v(output_params.kslice));
+            = static_cast<H5Real>(pmb->pcoord->x3v(output_params.kslice));
       } else if (output_params.output_sumx3) {
         x3f_mesh[nba*(nx3+1)] = pmb->pcoord->x3f(pmb->ks);
         x3f_mesh[nba*(nx3+1)+1] = pmb->pcoord->x3f(pmb->ke+1);
-        if (pmb->block_size.nx3%2 == 0) {
+        if (pmb->block_size.nx3 % 2 == 0) {
           x3v_mesh[nba*nx3] = pmb->pcoord->x3f((pmb->ks + pmb->ke + 1) / 2);
         } else {
           x3v_mesh[nba*nx3] = pmb->pcoord->x3v((pmb->ks + pmb->ke) / 2);
@@ -349,16 +366,16 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
       // store the data into the data_buffers
       if (variable.compare("prim") == 0 || variable.compare("cons") == 0) {
-        int n_dataset=0;
-        int ndv=0;
-        pod=pfirst_data_;
-        while (pod!=nullptr) {
-          if (pod->name=="Bcc") {
+        int n_dataset = 0;
+        int ndv = 0;
+        pod = pfirst_data_;
+        while (pod != nullptr) {
+          if (pod->name == "Bcc") {
             n_dataset++;
-            ndv=0;
+            ndv = 0;
           }
           int nv=1;
-          if (pod->type=="VECTORS") nv=3;
+          if (pod->type == "VECTORS") nv=3;
           for (int v=0; v < nv; v++, ndv++) {
             int index = 0;
             for (int k = out_ks; k <= out_ke; k++) {
@@ -369,14 +386,14 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
               }
             }
           }
-          pod=pod->pnext;
+          pod = pod->pnext;
         }
       } else {
-        int ndv=0;
-        pod=pfirst_data_;
-        while (pod!=nullptr) {
+        int ndv = 0;
+        pod = pfirst_data_;
+        while (pod != nullptr) {
           int nv=1;
-          if (pod->type=="VECTORS") nv=3;
+          if (pod->type == "VECTORS") nv=3;
           for (int v=0; v < nv; v++, ndv++) {
             int index = 0;
             for (int k = out_ks; k <= out_ke; k++) {
@@ -387,14 +404,14 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
               }
             }
           }
-          pod=pod->pnext;
+          pod = pod->pnext;
         }
       }
       nba++;
       ClearOutputData();  // required when LoadOutputData() is used.
     }
     nb++;
-    pmb=pmb->next;
+    pmb = pmb->next;
   }
 
   // Define output filename
@@ -784,6 +801,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 //   should only be called by single process
 //   file size scales proportional to total number of MeshBlocks
 //   for many small MeshBlocks, this can take most of the output writing time
+
 void ATHDF5Output::MakeXDMF() {
   std::string filename_aux(filename);
   filename_aux.append(".xdmf");
