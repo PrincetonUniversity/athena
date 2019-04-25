@@ -78,7 +78,7 @@ struct LogicalLocation { // aggregate and POD type
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh or a MeshBlock
 
-struct RegionSize {
+struct RegionSize {  // aggregate and POD type; do NOT reorder member declarations:
   Real x1min, x2min, x3min;
   Real x1max, x2max, x3max;
   Real x1rat, x2rat, x3rat; // ratio of x(i)/x(i-1)

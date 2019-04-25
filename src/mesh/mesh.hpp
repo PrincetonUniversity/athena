@@ -211,12 +211,14 @@ class Mesh {
   // data
   RegionSize mesh_size;
   BoundaryFlag mesh_bcs[6];
-  bool f2_, f3_; // flags indicating 2D or 3D Mesh
-  Real start_time, tlim, cfl_number, time, dt, dt_diff;
-  Real muj, nuj, muj_tilde;
+  const bool f2, f3; // flags indicating (at least) 2D or 3D Mesh
+  const int ndim;     // number of dimensions
+  const bool adaptive, multilevel;
+  Real start_time, time, tlim, dt, dt_diff, cfl_number;
   int nlim, ncycle, ncycle_out;
+  Real muj, nuj, muj_tilde;
   int nbtotal, nbnew, nbdel;
-  bool adaptive, multilevel;
+
   int step_since_lb;
   int gflag;
   int turb_flag; // turbulence flag
@@ -288,9 +290,9 @@ class Mesh {
 
   // functions
   MeshGenFunc MeshGenerator_[3];
-  SrcTermFunc UserSourceTerm_;
   BValFunc BoundaryFunction_[6];
   AMRFlagFunc AMRFlag_;
+  SrcTermFunc UserSourceTerm_;
   TimeStepFunc UserTimeStep_;
   HistoryOutputFunc *user_history_func_;
   MetricFunc UserMetric_;

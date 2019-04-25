@@ -59,7 +59,47 @@
 //----------------------------------------------------------------------------------------
 // Mesh constructor, builds mesh at start of calculation using parameters in input file
 
-Mesh::Mesh(ParameterInput *pin, int mesh_test) {
+Mesh::Mesh(ParameterInput *pin, int mesh_test) :
+    // public members:
+    // aggregate initialization of RegionSize struct:
+    mesh_size{pin->GetReal("mesh","x1min"), pin->GetReal("mesh","x2min"),
+              pin->GetReal("mesh","x3min"), pin->GetReal("mesh","x1max"),
+              pin->GetReal("mesh","x2max"), pin->GetReal("mesh","x3max"),
+              pin->GetOrAddReal("mesh", "x1rat", 1.0),
+              pin->GetOrAddReal("mesh", "x2rat", 1.0),
+              pin->GetOrAddReal("mesh", "x3rat", 1.0),
+              pin->GetInteger("mesh","nx1"), pin->GetInteger("mesh","nx2"),
+              pin->GetInteger("mesh","nx3") },
+    mesh_bcs{GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none")),
+             GetBoundaryFlag(pin->GetOrAddString("mesh", "ox1_bc", "none")),
+             GetBoundaryFlag(pin->GetOrAddString("mesh", "ix2_bc", "none")),
+             GetBoundaryFlag(pin->GetOrAddString("mesh", "ox2_bc", "none")),
+             GetBoundaryFlag(pin->GetOrAddString("mesh", "ix3_bc", "none")),
+             GetBoundaryFlag(pin->GetOrAddString("mesh", "ox3_bc", "none"))},
+    f2(mesh_size.nx2 > 1 ? true : false), f3(mesh_size.nx3 > 1 ? true : false),
+    ndim(f3 ? 3 : (f2 ? 2 : 1)),
+    adaptive(pin->GetOrAddString("mesh", "refinement", "none") == "adaptive"
+             ? true : false),
+    multilevel((adaptive || pin->GetOrAddString("mesh", "refinement", "none") == "static")
+               ? true : false),
+    start_time(pin->GetOrAddReal("time", "start_time", 0.0)), time(start_time),
+    tlim(pin->GetReal("time", "tlim")), dt(std::numeric_limits<Real>::max()), dt_diff(dt),
+    cfl_number(pin->GetReal("time", "cfl_number")),
+    nlim(pin->GetOrAddInteger("time", "nlim", -1)), ncycle(),
+    ncycle_out(pin->GetOrAddInteger("time", "ncycle_out", 1)),
+    muj(), nuj(), muj_tilde(),
+    nbnew(), nbdel(),
+    step_since_lb(), gflag(), turb_flag(),
+    // private members:
+    next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
+    nreal_user_mesh_data_(), nint_user_mesh_data_(), nuser_history_output_(),
+    four_pi_G_(), grav_eps_(-1.0), grav_mean_rho_(-1.0),
+    lb_flag_(true), lb_automatic_(), lb_manual_(),
+    BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
+    AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
+    ConductionCoeff_{}, FieldDiffusivity_{},
+    MGBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
+                        MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
   std::stringstream msg;
   RegionSize block_size;
   MeshBlock *pfirst{};
@@ -69,38 +109,13 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   // mesh test
   if (mesh_test > 0) Globals::nranks = mesh_test;
 
-  // read time and cycle limits from input file
-  start_time = pin->GetOrAddReal("time", "start_time", 0.0);
-  tlim       = pin->GetReal("time", "tlim");
-  cfl_number = pin->GetReal("time", "cfl_number");
-  ncycle_out = pin->GetOrAddInteger("time", "ncycle_out", 1);
-  time = start_time;
-  Real real_max = std::numeric_limits<Real>::max();
-  dt = dt_diff = (real_max);
-  muj = 0.0;
-  nuj = 0.0;
-  muj_tilde = 0.0;
-  nbnew = 0; nbdel = 0;
-
-  four_pi_G_ = 0.0, grav_eps_ = -1.0, grav_mean_rho_ = -1.0;
-
-  turb_flag = 0;
-
-  nlim = pin->GetOrAddInteger("time", "nlim", -1);
-  ncycle = 0;
-  nint_user_mesh_data_ = 0;
-  nreal_user_mesh_data_ = 0;
-  nuser_history_output_ = 0;
-
-  next_phys_id_  = 0;
 #ifdef MPI_PARALLEL
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
   next_phys_id_  = 1;
   ReserveMeshBlockPhysIDs();
 #endif
 
-  // read number of OpenMP threads for mesh
-  num_mesh_threads_ = pin->GetOrAddInteger("mesh", "num_threads", 1);
+  // check number of OpenMP threads for mesh
   if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Number of OpenMP threads must be >= 1, but num_threads="
@@ -108,24 +123,19 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     ATHENA_ERROR(msg);
   }
 
-  // read number of grid cells in root level of mesh from input file.
-  mesh_size.nx1 = pin->GetInteger("mesh","nx1");
+  // check number of grid cells in root level of mesh from input file.
   if (mesh_size.nx1 < 4) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "In mesh block in input file nx1 must be >= 4, but nx1="
         << mesh_size.nx1 << std::endl;
     ATHENA_ERROR(msg);
   }
-
-  mesh_size.nx2 = pin->GetInteger("mesh","nx2");
   if (mesh_size.nx2 < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "In mesh block in input file nx2 must be >= 1, but nx2="
         << mesh_size.nx2 << std::endl;
     ATHENA_ERROR(msg);
   }
-
-  mesh_size.nx3 = pin->GetInteger("mesh","nx3");
   if (mesh_size.nx3 < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "In mesh block in input file nx3 must be >= 1, but nx3="
@@ -139,22 +149,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     ATHENA_ERROR(msg);
   }
 
-  // setup convenience variables involving Mesh dimensionality
-  int dim = 1;
-  if (mesh_size.nx2 > 1) dim = 2;
-  if (mesh_size.nx3 > 1) dim = 3;
-  f2_ = (mesh_size.nx2 > 1) ? 1 : 0;
-  f3_ = (mesh_size.nx3 > 1) ? 1 : 0;
-
-  // read physical size of mesh (root level) from input file.
-  mesh_size.x1min = pin->GetReal("mesh","x1min");
-  mesh_size.x2min = pin->GetReal("mesh","x2min");
-  mesh_size.x3min = pin->GetReal("mesh","x3min");
-
-  mesh_size.x1max = pin->GetReal("mesh","x1max");
-  mesh_size.x2max = pin->GetReal("mesh","x2max");
-  mesh_size.x3max = pin->GetReal("mesh","x3max");
-
+  // check physical size of mesh (root level) from input file.
   if (mesh_size.x1max <= mesh_size.x1min) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Input x1max must be larger than x1min: x1min=" << mesh_size.x1min
@@ -174,32 +169,16 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     ATHENA_ERROR(msg);
   }
 
-  // read ratios of grid cell size in each direction
-  block_size.x1rat = mesh_size.x1rat = pin->GetOrAddReal("mesh", "x1rat", 1.0);
-  block_size.x2rat = mesh_size.x2rat = pin->GetOrAddReal("mesh", "x2rat", 1.0);
-  block_size.x3rat = mesh_size.x3rat = pin->GetOrAddReal("mesh", "x3rat", 1.0);
-
-  // read BC flags for each of the 6 boundaries in turn.
-  mesh_bcs[BoundaryFace::inner_x1] =
-      GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none"));
-  mesh_bcs[BoundaryFace::outer_x1] =
-      GetBoundaryFlag(pin->GetOrAddString("mesh", "ox1_bc", "none"));
-  mesh_bcs[BoundaryFace::inner_x2] =
-      GetBoundaryFlag(pin->GetOrAddString("mesh", "ix2_bc", "none"));
-  mesh_bcs[BoundaryFace::outer_x2] =
-      GetBoundaryFlag(pin->GetOrAddString("mesh", "ox2_bc", "none"));
-  mesh_bcs[BoundaryFace::inner_x3] =
-      GetBoundaryFlag(pin->GetOrAddString("mesh", "ix3_bc", "none"));
-  mesh_bcs[BoundaryFace::outer_x3] =
-      GetBoundaryFlag(pin->GetOrAddString("mesh", "ox3_bc", "none"));
-
-  // read MeshBlock parameters
+  // read and set MeshBlock parameters
+  block_size.x1rat = mesh_size.x1rat;
+  block_size.x2rat = mesh_size.x2rat;
+  block_size.x3rat = mesh_size.x3rat;
   block_size.nx1 = pin->GetOrAddInteger("meshblock", "nx1", mesh_size.nx1);
-  if (dim >= 2)
+  if (f2)
     block_size.nx2 = pin->GetOrAddInteger("meshblock", "nx2", mesh_size.nx2);
   else
     block_size.nx2 = mesh_size.nx2;
-  if (dim == 3)
+  if (f3)
     block_size.nx3 = pin->GetOrAddInteger("meshblock", "nx3", mesh_size.nx3);
   else
     block_size.nx3 = mesh_size.nx3;
@@ -212,8 +191,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         << "the Mesh must be evenly divisible by the MeshBlock" << std::endl;
     ATHENA_ERROR(msg);
   }
-  if (block_size.nx1 < 4 || (block_size.nx2 < 4 && dim >= 2)
-      || (block_size.nx3 < 4 && dim == 3)) {
+  if (block_size.nx1 < 4 || (block_size.nx2 < 4 && f2)
+      || (block_size.nx3 < 4 && f3)) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "block_size must be larger than or equal to 4 cells." << std::endl;
     ATHENA_ERROR(msg);
@@ -249,31 +228,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
     MeshGenerator_[X3DIR] = UniformMeshGeneratorX3;
   }
 
-  for (int dir=0; dir<6; dir++)
-    BoundaryFunction_[dir] = nullptr;
-  AMRFlag_ = nullptr;
-  UserSourceTerm_ = nullptr;
-  UserTimeStep_ = nullptr;
-  ViscosityCoeff_ = nullptr;
-  ConductionCoeff_ = nullptr;
-  FieldDiffusivity_ = nullptr;
-  MGBoundaryFunction_[BoundaryFace::inner_x1] = MGPeriodicInnerX1;
-  MGBoundaryFunction_[BoundaryFace::outer_x1] = MGPeriodicOuterX1;
-  MGBoundaryFunction_[BoundaryFace::inner_x2] = MGPeriodicInnerX2;
-  MGBoundaryFunction_[BoundaryFace::outer_x2] = MGPeriodicOuterX2;
-  MGBoundaryFunction_[BoundaryFace::inner_x3] = MGPeriodicInnerX3;
-  MGBoundaryFunction_[BoundaryFace::outer_x3] = MGPeriodicOuterX3;
-
-
   // calculate the logical root level and maximum level
-  for (root_level=0; (1<<root_level)<nbmax; root_level++) {}
+  for (root_level=0; (1<<root_level) < nbmax; root_level++) {}
   current_level = root_level;
 
   // create the root grid
   tree.CreateRootGrid(nrbx1, nrbx2, nrbx3, root_level);
 
   // Load balancing flag and parameters
-  lb_flag_ = true, lb_manual_ = false, lb_automatic_ = false;
 #ifdef MPI_PARALLEL
   if (pin->GetOrAddString("loadbalancing","balancer","default") == "automatic")
     lb_automatic_ = true;
@@ -282,21 +244,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   lb_tolerance_ = pin->GetOrAddReal("loadbalancing","tolerance",0.5);
   lb_interval_ = pin->GetOrAddReal("loadbalancing","interval",10);
 #endif
-  step_since_lb = 0;
 
-  // SMR / AMR: create finer grids here
-  multilevel = false;
-  adaptive = false;
-  if (pin->GetOrAddString("mesh", "refinement", "none") == "adaptive")
-    adaptive = true, multilevel = true;
-  else if (pin->GetOrAddString("mesh", "refinement", "none") == "static")
-    multilevel = true;
+  // SMR / AMR:
   if (adaptive) {
     max_level = pin->GetOrAddInteger("mesh", "numlevel", 1) + root_level - 1;
     if (max_level > 63) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The number of the refinement level must be smaller than "
-          << 63-root_level+1 << "." << std::endl;
+          << 63 - root_level + 1 << "." << std::endl;
       ATHENA_ERROR(msg);
     }
   } else {
@@ -307,8 +262,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
   InitUserMeshData(pin);
 
   if (multilevel) {
-    if (block_size.nx1 % 2 == 1 || (block_size.nx2 % 2 == 1 && block_size.nx2>1)
-        || (block_size.nx3 % 2 == 1 && block_size.nx3>1)) {
+    if (block_size.nx1 % 2 == 1 || (block_size.nx2 % 2 == 1 && f2)
+        || (block_size.nx3 % 2 == 1 && f3)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The size of MeshBlock must be divisible by 2 in order to use SMR or AMR."
           << std::endl;
@@ -321,14 +276,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         RegionSize ref_size;
         ref_size.x1min = pin->GetReal(pib->block_name, "x1min");
         ref_size.x1max = pin->GetReal(pib->block_name, "x1max");
-        if (dim >= 2) {
+        if (f2) {
           ref_size.x2min = pin->GetReal(pib->block_name, "x2min");
           ref_size.x2max = pin->GetReal(pib->block_name, "x2max");
         } else {
           ref_size.x2min = mesh_size.x2min;
           ref_size.x2max = mesh_size.x2max;
         }
-        if (dim >= 3) {
+        if (ndim == 3) {
           ref_size.x3min = pin->GetReal(pib->block_name, "x3min");
           ref_size.x3max = pin->GetReal(pib->block_name, "x3max");
         } else {
@@ -337,9 +292,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         }
         int ref_lev = pin->GetInteger(pib->block_name, "level");
         int lrlev = ref_lev + root_level;
-        if (lrlev>current_level) current_level = lrlev;
+        if (lrlev > current_level) current_level = lrlev;
         // range check
-        if (ref_lev<1) {
+        if (ref_lev < 1) {
           msg << "### FATAL ERROR in Mesh constructor" << std::endl
               << "Refinement level must be larger than 0 (root level = 0)" << std::endl;
           ATHENA_ERROR(msg);
@@ -383,22 +338,24 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
         }
         if (lx1min % 2 == 1) lx1min--;
         if (lx1max % 2 == 0) lx1max++;
-        if (dim >= 2) { // 2D or 3D
+        if (f2) { // 2D or 3D
           lxmax = nrbx2*(1LL << ref_lev);
           for (lx2min=0; lx2min<lxmax; lx2min++) {
-            Real rx=ComputeMeshGeneratorX(lx2min+1,lxmax,use_uniform_meshgen_fn_[X2DIR]);
+            Real rx = ComputeMeshGeneratorX(lx2min+1, lxmax,
+                                            use_uniform_meshgen_fn_[X2DIR]);
             if (MeshGenerator_[X2DIR](rx, mesh_size) > ref_size.x2min)
               break;
           }
           for (lx2max=lx2min; lx2max<lxmax; lx2max++) {
-            Real rx=ComputeMeshGeneratorX(lx2max+1,lxmax,use_uniform_meshgen_fn_[X2DIR]);
+            Real rx = ComputeMeshGeneratorX(lx2max+1, lxmax,
+                                            use_uniform_meshgen_fn_[X2DIR]);
             if (MeshGenerator_[X2DIR](rx, mesh_size) >= ref_size.x2max)
               break;
           }
           if (lx2min % 2 == 1) lx2min--;
           if (lx2max % 2 == 0) lx2max++;
         }
-        if (dim == 3) { // 3D
+        if (ndim == 3) { // 3D
           lxmax = nrbx3*(1LL<<ref_lev);
           for (lx3min=0; lx3min<lxmax; lx3min++) {
             Real rx = ComputeMeshGeneratorX(lx3min+1, lxmax,
@@ -416,34 +373,34 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
           if (lx3max % 2 == 0) lx3max++;
         }
         // create the finest level
-        if (dim == 1) {
+        if (ndim == 1) {
           for (std::int64_t i=lx1min; i<lx1max; i+=2) {
             LogicalLocation nloc;
             nloc.level=lrlev, nloc.lx1=i, nloc.lx2=0, nloc.lx3=0;
             int nnew;
-            tree.AddMeshBlock(tree, nloc, dim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level,
+            tree.AddMeshBlock(tree, nloc, ndim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level,
                               nnew);
           }
         }
-        if (dim == 2) {
+        if (ndim == 2) {
           for (std::int64_t j=lx2min; j<lx2max; j+=2) {
             for (std::int64_t i=lx1min; i<lx1max; i+=2) {
               LogicalLocation nloc;
               nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=0;
               int nnew;
-              tree.AddMeshBlock(tree, nloc, dim, mesh_bcs, nrbx1, nrbx2, nrbx3,
+              tree.AddMeshBlock(tree, nloc, ndim, mesh_bcs, nrbx1, nrbx2, nrbx3,
                                 root_level, nnew);
             }
           }
         }
-        if (dim == 3) {
+        if (ndim == 3) {
           for (std::int64_t k=lx3min; k<lx3max; k+=2) {
             for (std::int64_t j=lx2min; j<lx2max; j+=2) {
               for (std::int64_t i=lx1min; i<lx1max; i+=2) {
                 LogicalLocation nloc;
                 nloc.level = lrlev, nloc.lx1 = i, nloc.lx2 = j, nloc.lx3 = k;
                 int nnew;
-                tree.AddMeshBlock(tree, nloc, dim, mesh_bcs, nrbx1, nrbx2, nrbx3,
+                tree.AddMeshBlock(tree, nloc, ndim, mesh_bcs, nrbx1, nrbx2, nrbx3,
                                   root_level, nnew);
               }
             }
@@ -499,12 +456,11 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
 
   // Output MeshBlock list and quit (mesh test only); do not create meshes
   if (mesh_test > 0) {
-    if (Globals::my_rank == 0) OutputMeshStructure(dim);
+    if (Globals::my_rank == 0) OutputMeshStructure(ndim);
     return;
   }
 
   // set gravity flag
-  gflag = 0;
   if (SELF_GRAVITY_ENABLED) gflag = 1;
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
   //    gflag = 2;
@@ -544,7 +500,47 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) {
 //----------------------------------------------------------------------------------------
 // Mesh constructor for restarts. Load the restart file
 
-Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
+Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
+    // public members:
+    // aggregate initialization of RegionSize struct:
+    mesh_size{pin->GetReal("mesh","x1min"), pin->GetReal("mesh","x2min"),
+              pin->GetReal("mesh","x3min"), pin->GetReal("mesh","x1max"),
+              pin->GetReal("mesh","x2max"), pin->GetReal("mesh","x3max"),
+              pin->GetOrAddReal("mesh", "x1rat", 1.0),
+              pin->GetOrAddReal("mesh", "x2rat", 1.0),
+              pin->GetOrAddReal("mesh", "x3rat", 1.0),
+              pin->GetInteger("mesh","nx1"), pin->GetInteger("mesh","nx2"),
+              pin->GetInteger("mesh","nx3") },
+    mesh_bcs{GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none")),
+             GetBoundaryFlag(pin->GetOrAddString("mesh", "ox1_bc", "none")),
+             GetBoundaryFlag(pin->GetOrAddString("mesh", "ix2_bc", "none")),
+             GetBoundaryFlag(pin->GetOrAddString("mesh", "ox2_bc", "none")),
+             GetBoundaryFlag(pin->GetOrAddString("mesh", "ix3_bc", "none")),
+             GetBoundaryFlag(pin->GetOrAddString("mesh", "ox3_bc", "none"))},
+    f2(mesh_size.nx2 > 1 ? true : false), f3(mesh_size.nx3 > 1 ? true : false),
+    ndim(f3 ? 3 : (f2 ? 2 : 1)),
+    adaptive(pin->GetOrAddString("mesh", "refinement", "none") == "adaptive"
+             ? true : false),
+    multilevel((adaptive || pin->GetOrAddString("mesh", "refinement", "none") == "static")
+               ? true : false),
+    start_time(pin->GetOrAddReal("time", "start_time", 0.0)), time(start_time),
+    tlim(pin->GetReal("time", "tlim")), dt(std::numeric_limits<Real>::max()), dt_diff(dt),
+    cfl_number(pin->GetReal("time", "cfl_number")),
+    nlim(pin->GetOrAddInteger("time", "nlim", -1)), ncycle(),
+    ncycle_out(pin->GetOrAddInteger("time", "ncycle_out", 1)),
+    muj(), nuj(), muj_tilde(),
+    nbnew(), nbdel(),
+    step_since_lb(), gflag(), turb_flag(),
+    // private members:
+    next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
+    nreal_user_mesh_data_(), nint_user_mesh_data_(), nuser_history_output_(),
+    four_pi_G_(), grav_eps_(-1.0), grav_mean_rho_(-1.0),
+    lb_flag_(true), lb_automatic_(), lb_manual_(),
+    BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
+    AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
+    ConductionCoeff_{}, FieldDiffusivity_{},
+    MGBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
+                        MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
   std::stringstream msg;
   RegionSize block_size;
   BoundaryFlag block_bcs[6];
@@ -555,22 +551,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   // mesh test
   if (mesh_test > 0) Globals::nranks = mesh_test;
 
-  // read time and cycle limits from input file
-  start_time = pin->GetOrAddReal("time","start_time",0.0);
-  tlim       = pin->GetReal("time","tlim");
-  ncycle_out = pin->GetOrAddInteger("time","ncycle_out",1);
-  nlim = pin->GetOrAddInteger("time","nlim",-1);
-  nint_user_mesh_data_ = 0;
-  nreal_user_mesh_data_ = 0;
-  nuser_history_output_ = 0;
-
-  four_pi_G_ = 0.0, grav_eps_ = -1.0, grav_mean_rho_ = -1.0;
-
-  turb_flag = 0;
-
-  nbnew = 0; nbdel = 0;
-
-  next_phys_id_  = 0;
 #ifdef MPI_PARALLEL
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
   next_phys_id_  = 1;
@@ -578,27 +558,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 #endif
 
   // read number of OpenMP threads for mesh
-  num_mesh_threads_ = pin->GetOrAddInteger("mesh","num_threads",1);
   if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Number of OpenMP threads must be >= 1, but num_threads="
         << num_mesh_threads_ << std::endl;
     ATHENA_ERROR(msg);
   }
-
-  // read BC flags for each of the 6 boundaries
-  mesh_bcs[BoundaryFace::inner_x1] =
-      GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none"));
-  mesh_bcs[BoundaryFace::outer_x1] =
-      GetBoundaryFlag(pin->GetOrAddString("mesh", "ox1_bc", "none"));
-  mesh_bcs[BoundaryFace::inner_x2] =
-      GetBoundaryFlag(pin->GetOrAddString("mesh", "ix2_bc", "none"));
-  mesh_bcs[BoundaryFace::outer_x2] =
-      GetBoundaryFlag(pin->GetOrAddString("mesh", "ox2_bc", "none"));
-  mesh_bcs[BoundaryFace::inner_x3] =
-      GetBoundaryFlag(pin->GetOrAddString("mesh", "ix3_bc", "none"));
-  mesh_bcs[BoundaryFace::outer_x3] =
-      GetBoundaryFlag(pin->GetOrAddString("mesh", "ox3_bc", "none"));
 
   // get the end of the header
   headeroffset = resfile.GetPosition();
@@ -623,7 +588,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   hdos += sizeof(int);
   std::memcpy(&root_level, &(headerdata[hdos]), sizeof(int));
   hdos += sizeof(int);
-  current_level=root_level;
+  current_level = root_level;
   std::memcpy(&mesh_size, &(headerdata[hdos]), sizeof(RegionSize));
   hdos += sizeof(RegionSize);
   std::memcpy(&time, &(headerdata[hdos]), sizeof(Real));
@@ -637,13 +602,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 
   delete [] headerdata;
 
-  // setup convenience variables involving Mesh dimensionality
-  int dim = 1;
-  if (mesh_size.nx2 > 1) dim = 2;
-  if (mesh_size.nx3 > 1) dim = 3;
-  f2_ = (mesh_size.nx2 > 1) ? 1 : 0;
-  f3_ = (mesh_size.nx3 > 1) ? 1 : 0;
-
   // initialize
   loclist = new LogicalLocation[nbtotal];
   offset = new IOWrapperSizeT[nbtotal];
@@ -652,9 +610,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   nslist = new int[Globals::nranks];
   nblist = new int[Globals::nranks];
 
-  block_size.nx1 = pin->GetOrAddInteger("meshblock","nx1",mesh_size.nx1);
-  block_size.nx2 = pin->GetOrAddInteger("meshblock","nx2",mesh_size.nx2);
-  block_size.nx3 = pin->GetOrAddInteger("meshblock","nx3",mesh_size.nx3);
+  block_size.nx1 = pin->GetOrAddInteger("meshblock", "nx1", mesh_size.nx1);
+  block_size.nx2 = pin->GetOrAddInteger("meshblock", "nx2", mesh_size.nx2);
+  block_size.nx3 = pin->GetOrAddInteger("meshblock", "nx3", mesh_size.nx3);
 
   // calculate the number of the blocks
   nrbx1 = mesh_size.nx1/block_size.nx1;
@@ -684,46 +642,24 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
     MeshGenerator_[X3DIR] = UniformMeshGeneratorX3;
   }
 
-  for (int dir=0; dir<6; dir++)
-    BoundaryFunction_[dir] = nullptr;
-  AMRFlag_ = nullptr;
-  UserSourceTerm_ = nullptr;
-  UserTimeStep_ = nullptr;
-  ViscosityCoeff_ = nullptr;
-  ConductionCoeff_ = nullptr;
-  FieldDiffusivity_ = nullptr;
-  MGBoundaryFunction_[BoundaryFace::inner_x1] = MGPeriodicInnerX1;
-  MGBoundaryFunction_[BoundaryFace::outer_x1] = MGPeriodicOuterX1;
-  MGBoundaryFunction_[BoundaryFace::inner_x2] = MGPeriodicInnerX2;
-  MGBoundaryFunction_[BoundaryFace::outer_x2] = MGPeriodicOuterX2;
-  MGBoundaryFunction_[BoundaryFace::inner_x3] = MGPeriodicInnerX3;
-  MGBoundaryFunction_[BoundaryFace::outer_x3] = MGPeriodicOuterX3;
-
   // Load balancing flag and parameters
   lb_flag_ = true, lb_manual_ = false, lb_automatic_ = false;
 #ifdef MPI_PARALLEL
-  if (pin->GetOrAddString("loadbalancing","balancer","default") == "automatic")
+  if (pin->GetOrAddString("loadbalancing", "balancer", "default") == "automatic")
     lb_automatic_ = true;
-  else if (pin->GetOrAddString("loadbalancing","balancer","default") == "manual")
+  else if (pin->GetOrAddString("loadbalancing", "balancer", "default") == "manual")
     lb_manual_ = true;
-  lb_tolerance_ = pin->GetOrAddReal("loadbalancing","tolerance",0.5);
-  lb_interval_ = pin->GetOrAddReal("loadbalancing","interval",10);
+  lb_tolerance_ = pin->GetOrAddReal("loadbalancing", "tolerance", 0.5);
+  lb_interval_ = pin->GetOrAddReal("loadbalancing", "interval", 10);
 #endif
-  step_since_lb = 0;
 
   // SMR / AMR
-  multilevel = false;
-  adaptive = false;
-  if (pin->GetOrAddString("mesh","refinement","none") == "adaptive")
-    adaptive = true, multilevel = true;
-  else if (pin->GetOrAddString("mesh","refinement","none") == "static")
-    multilevel = true;
   if (adaptive) {
-    max_level = pin->GetOrAddInteger("mesh","numlevel",1)+root_level-1;
+    max_level = pin->GetOrAddInteger("mesh", "numlevel", 1) + root_level - 1;
     if (max_level > 63) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The number of the refinement level must be smaller than "
-          << 63-root_level+1 << "." << std::endl;
+          << 63 - root_level + 1 << "." << std::endl;
       ATHENA_ERROR(msg);
     }
   } else {
@@ -742,7 +678,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   if (udsize != 0) {
     char *userdata = new char[udsize];
     if (Globals::my_rank == 0) { // only the master process reads the ID list
-      if (resfile.Read(userdata,1,udsize) != udsize) {
+      if (resfile.Read(userdata, 1, udsize) != udsize) {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl
             << "The restart file is broken." << std::endl;
         ATHENA_ERROR(msg);
@@ -772,7 +708,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
   //allocate the idlist buffer
   char *idlist = new char[listsize*nbtotal];
   if (Globals::my_rank == 0) { // only the master process reads the ID list
-    if (resfile.Read(idlist,listsize,nbtotal) != static_cast<unsigned int>(nbtotal)) {
+    if (resfile.Read(idlist, listsize, nbtotal) != static_cast<unsigned int>(nbtotal)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "The restart file is broken." << std::endl;
       ATHENA_ERROR(msg);
@@ -800,7 +736,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 
   // rebuild the Block Tree
   for (int i=0; i<nbtotal; i++)
-    tree.AddMeshBlockWithoutRefine(loclist[i],nrbx1,nrbx2,nrbx3,root_level);
+    tree.AddMeshBlockWithoutRefine(loclist[i], nrbx1, nrbx2, nrbx3, root_level);
   int nnb;
   // check the tree structure, and assign GID
   tree.GetMeshBlockList(loclist, nullptr, nnb);
@@ -843,13 +779,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) {
 
   // Output MeshBlock list and quit (mesh test only); do not create meshes
   if (mesh_test > 0) {
-    if (Globals::my_rank == 0) OutputMeshStructure(dim);
+    if (Globals::my_rank == 0) OutputMeshStructure(ndim);
     delete [] offset;
     return;
   }
 
   // set gravity flag
-  gflag = 0;
   if (SELF_GRAVITY_ENABLED) gflag = 1;
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
   //    gflag=2;
@@ -946,16 +881,16 @@ Mesh::~Mesh() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::OutputMeshStructure(int dim)
+//! \fn void Mesh::OutputMeshStructure(int ndim)
 //  \brief print the mesh structure information
 
-void Mesh::OutputMeshStructure(int dim) {
+void Mesh::OutputMeshStructure(int ndim) {
   RegionSize block_size;
   BoundaryFlag block_bcs[6];
   FILE *fp = nullptr;
 
   // open 'mesh_structure.dat' file
-  if (dim >= 2) {
+  if (f2) {
     if ((fp = std::fopen("mesh_structure.dat","wb")) == nullptr) {
       std::cout << "### ERROR in function Mesh::OutputMeshStructure" << std::endl
                 << "Cannot open mesh_structure.dat" << std::endl;
@@ -976,8 +911,8 @@ void Mesh::OutputMeshStructure(int dim) {
   int *nb_per_plevel = new int[max_level];
   int *cost_per_plevel = new int[max_level];
   for (int i=0; i<=max_level; ++i) {
-    nb_per_plevel[i]=0;
-    cost_per_plevel[i]=0;
+    nb_per_plevel[i] = 0;
+    cost_per_plevel[i] = 0;
   }
   for (int i=0; i<nbtotal; i++) {
     nb_per_plevel[(loclist[i].level - root_level)]++;
@@ -1027,7 +962,7 @@ void Mesh::OutputMeshStructure(int dim) {
         std::fprintf(
             fp, "#  Logical level %d, location = (%" PRId64 " %" PRId64 " %" PRId64")\n",
             ll, lx1, lx2, lx3);
-        if (dim == 2) {
+        if (ndim == 2) {
           std::fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
           std::fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2min);
           std::fprintf(fp, "%g %g\n", block_size.x1max, block_size.x2max);
@@ -1035,7 +970,7 @@ void Mesh::OutputMeshStructure(int dim) {
           std::fprintf(fp, "%g %g\n", block_size.x1min, block_size.x2min);
           std::fprintf(fp, "\n\n");
         }
-        if (dim == 3) {
+        if (ndim == 3) {
           std::fprintf(fp, "%g %g %g\n", block_size.x1min, block_size.x2min,
                        block_size.x3min);
           std::fprintf(fp, "%g %g %g\n", block_size.x1max, block_size.x2min,
@@ -1077,7 +1012,7 @@ void Mesh::OutputMeshStructure(int dim) {
   }
 
   // close file, final outputs
-  if (dim>=2) std::fclose(fp);
+  if (f2) std::fclose(fp);
   std::cout << "Load Balancing:" << std::endl;
   std::cout << "  Minimum cost = " << mincost << ", Maximum cost = " << maxcost
             << ", Average cost = " << totalcost/nbtotal << std::endl << std::endl;
@@ -1150,12 +1085,12 @@ void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
 
 void Mesh::EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
   std::stringstream msg;
-  if (dir<0 || dir>5) {
+  if (dir < 0 || dir > 5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
     ATHENA_ERROR(msg);
   }
-  MGBoundaryFunction_[static_cast<int>(dir)]=my_bc;
+  MGBoundaryFunction_[static_cast<int>(dir)] = my_bc;
   return;
 }
 
@@ -1176,7 +1111,7 @@ void Mesh::EnrollUserMGBoundaryFunction(int dir, MGBoundaryFunc my_bc) {
 
 void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag) {
   if (adaptive)
-    AMRFlag_=amrflag;
+    AMRFlag_ = amrflag;
   return;
 }
 
@@ -1186,7 +1121,7 @@ void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag) {
 
 void Mesh::EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg) {
   std::stringstream msg;
-  if (dir<0 || dir>=3) {
+  if (dir < 0 || dir >= 3) {
     msg << "### FATAL ERROR in EnrollUserMeshGenerator function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
     ATHENA_ERROR(msg);
@@ -1209,8 +1144,8 @@ void Mesh::EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg) {
         " must be negative for user-defined mesh generator in X3DIR " << std::endl;
     ATHENA_ERROR(msg);
   }
-  use_uniform_meshgen_fn_[dir]=false;
-  MeshGenerator_[dir]=my_mg;
+  use_uniform_meshgen_fn_[dir] = false;
+  MeshGenerator_[dir] = my_mg;
   return;
 }
 
@@ -1250,7 +1185,7 @@ void Mesh::AllocateUserHistoryOutput(int n) {
 
 void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name) {
   std::stringstream msg;
-  if (i>=nuser_history_output_) {
+  if (i >= nuser_history_output_) {
     msg << "### FATAL ERROR in EnrollUserHistoryOutput function" << std::endl
         << "The number of the user-defined history output (" << i << ") "
         << "exceeds the declared number (" << nuser_history_output_ << ")." << std::endl;
@@ -1306,7 +1241,7 @@ void Mesh::AllocateRealUserMeshDataField(int n) {
         << std::endl << "User Mesh data arrays are already allocated" << std::endl;
     ATHENA_ERROR(msg);
   }
-  nreal_user_mesh_data_=n;
+  nreal_user_mesh_data_ = n;
   ruser_mesh_data = new AthenaArray<Real>[n];
   return;
 }
@@ -1322,7 +1257,7 @@ void Mesh::AllocateIntUserMeshDataField(int n) {
         << std::endl << "User Mesh data arrays are already allocated" << std::endl;
     ATHENA_ERROR(msg);
   }
-  nint_user_mesh_data_=n;
+  nint_user_mesh_data_ = n;
   iuser_mesh_data = new AthenaArray<int>[n];
   return;
 }
