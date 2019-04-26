@@ -46,10 +46,10 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   pmb->RegisterMeshBlockData(s);
 
   // Allocate optional passive scalar variable memory registers for time-integrator
-  if (pmb->precon->xorder == 4) {
-    // fourth-order cell-centered approximations
-    s_cc.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
-  }
+  // if (pmb->precon->xorder == 4) {
+  //   // fourth-order cell-centered approximations
+  //   s_cc.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+  // }
 
   // If user-requested time integrator is type 3S*, allocate additional memory registers
   std::string integrator = pin->GetOrAddString("time", "integrator", "vl2");
