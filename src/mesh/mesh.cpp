@@ -1655,10 +1655,10 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
     // If NSCALARS < NHYDRO, could reuse delta_cons_ allocated memory...
     int ncells4_s = NSCALARS;
     int nl_s = 0;
-    int nu_s = ncells4 -1;
+    int nu_s = ncells4_s -1;
     if (NSCALARS > 0) {
       delta_s_.NewAthenaArray(ncells4_s, pmb->ncells3, pmb->ncells2, pmb->ncells1);
-      pmb->pcoord->Laplacian(ps->s, delta_s_, il, iu, jl, ju, kl, ku, nl, nu);
+      pmb->pcoord->Laplacian(ps->s, delta_s_, il, iu, jl, ju, kl, ku, nl_s, nu_s);
     }
 
     // Compute fourth-order approximation to cell-centered conserved variables
