@@ -56,6 +56,7 @@ nx3        = 1        # Number of zones in X3-direction
 
 <hydro>
 iso_sound_speed = 1.0     # isothermal sound speed
+active    = background    # compute Hydro fluxes, etc. but do NOT evolve the fluid
 
 <problem>
 compute_error = true   # set value to 'true' to compute L1 error compared to initial data

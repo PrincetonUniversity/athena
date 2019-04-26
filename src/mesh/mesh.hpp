@@ -51,6 +51,8 @@ class FFTDriver;
 class FFTGravityDriver;
 class TurbulenceDriver;
 
+FluidFormulation GetFluidFormulation(const std::string& input_string);
+
 //----------------------------------------------------------------------------------------
 //! \class MeshBlock
 //  \brief data/functions associated with a single block
@@ -215,6 +217,7 @@ class Mesh {
   const bool f2, f3; // flags indicating (at least) 2D or 3D Mesh
   const int ndim;     // number of dimensions
   const bool adaptive, multilevel;
+  const FluidFormulation fluid_setup;
   Real start_time, time, tlim, dt, dt_diff, cfl_number;
   int nlim, ncycle, ncycle_out;
   Real muj, nuj, muj_tilde;

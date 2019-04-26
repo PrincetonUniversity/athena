@@ -82,6 +82,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
              ? true : false),
     multilevel((adaptive || pin->GetOrAddString("mesh", "refinement", "none") == "static")
                ? true : false),
+    fluid_setup(GetFluidFormulation(pin->GetOrAddString("hydro", "active", "true"))),
     start_time(pin->GetOrAddReal("time", "start_time", 0.0)), time(start_time),
     tlim(pin->GetReal("time", "tlim")), dt(std::numeric_limits<Real>::max()), dt_diff(dt),
     cfl_number(pin->GetReal("time", "cfl_number")),
@@ -515,6 +516,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
              ? true : false),
     multilevel((adaptive || pin->GetOrAddString("mesh", "refinement", "none") == "static")
                ? true : false),
+    fluid_setup(GetFluidFormulation(pin->GetOrAddString("hydro", "active", "true"))),
     start_time(pin->GetOrAddReal("time", "start_time", 0.0)), time(start_time),
     tlim(pin->GetReal("time", "tlim")), dt(std::numeric_limits<Real>::max()), dt_diff(dt),
     cfl_number(pin->GetReal("time", "cfl_number")),
@@ -1739,4 +1741,25 @@ void Mesh::ReserveMeshBlockPhysIDs() {
   }
 #endif
   return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn GetFluidFormulation(std::string input_string)
+//  \brief Parses input string to return scoped enumerator flag specifying boundary
+//  condition. Typically called in Mesh() ctor initializer list
+
+FluidFormulation GetFluidFormulation(const std::string& input_string) {
+  if (input_string == "true") {
+    return FluidFormulation::evolve;
+  } else if (input_string == "disabled") {
+    return FluidFormulation::disabled;
+  } else if (input_string == "background") {
+    return FluidFormulation::background;
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in GetFluidFormulation" << std::endl
+        << "Input string=" << input_string << "\n"
+        << "is an invalid fluid formulation" << std::endl;
+    ATHENA_ERROR(msg);
+  }
 }

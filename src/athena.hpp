@@ -158,6 +158,8 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 enum class BoundaryQuantity {cc, fc, cc_flcor, fc_flcor, mggrav, mggrav_f};
 enum class HydroBoundaryQuantity {cons, prim};
 enum class BoundaryCommSubset {mesh_init, gr_amr, all};
+// TODO(felker): consider generalizing/renaming to QuantityFormulation
+enum class FluidFormulation {evolve, background, disabled}; // rename background -> fixed?
 
 //----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime
