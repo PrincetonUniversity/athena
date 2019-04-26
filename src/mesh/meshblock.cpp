@@ -503,7 +503,7 @@ void MeshBlock::RegisterMeshBlockData(FaceField &pvar_fc) {
 
 // void MeshBlock::SetHydroData(HydroBoundaryQuantity hydro_type)
 //   Hydro *ph = pmy_block_->phydro;
-//   // hard-coded assumption that, if multilevel==true, then Hydro is always present
+//   // hard-coded assumption that, if multilevel, then Hydro is always present
 //   // and enrolled in mesh refinement in the first pvars_cc_ vector entry
 //   switch (hydro_type) {
 //     case (HydroBoundaryQuantity::cons): {

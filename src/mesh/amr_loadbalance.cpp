@@ -38,7 +38,7 @@
 void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
   int nnew = 0, ndel = 0;
 
-  if (adaptive == true) {
+  if (adaptive) {
     UpdateMeshBlockTree(nnew, ndel);
     nbnew += nnew; nbdel += ndel;
   }
@@ -50,7 +50,7 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
   if (nnew != 0 || ndel != 0) { // at least one (de)refinement happened
     GatherCostListAndCheckBalance();
     RedistributeAndRefineMeshBlocks(pin, nbtotal + nnew - ndel);
-  } else if (lb_flag_ == true && step_since_lb >= lb_interval_) {
+  } else if (lb_flag_ && step_since_lb >= lb_interval_) {
     if (GatherCostListAndCheckBalance() == false) // load imbalance detected
       RedistributeAndRefineMeshBlocks(pin, nbtotal);
     lb_flag_ = false;
@@ -445,7 +445,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   // "SMR/AMR-enrolled" quantities (loop over MeshBlock::vars_cc_, not MeshRefinement)
 
   // TODO(felker): add explicit check to ensure that elements of pb->vars_cc/fc_ and
-  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive==true
+  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
 
   // int num_cc = pblock->pmr->pvars_cc_.size();
   int num_fc = pblock->vars_fc_.size();
@@ -706,7 +706,7 @@ void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
   // MeshBlock::vars_cc/fc_ containers, not MeshRefinement::pvars_cc/fc_ containers
 
   // TODO(felker): add explicit check to ensure that elements of pb->vars_cc/fc_ and
-  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive==true
+  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
 
   // (C++11) range-based for loop: (automatic type deduction fails when iterating over
   // container with std::reference_wrapper; could use auto var_cc_r = var_cc.get())

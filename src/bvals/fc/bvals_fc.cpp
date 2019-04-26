@@ -1331,7 +1331,7 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
       if (nb.snb.level == mylevel) { // the same level
         if ((nb.ni.type == NeighborConnect::face)
             || ((nb.ni.type == NeighborConnect::edge)
-                && (edge_flag_[nb.eid] == true))) {
+                && (edge_flag_[nb.eid]))) {
           tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, fc_flx_phys_id_);
           if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
@@ -1416,7 +1416,7 @@ void FaceCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
         if ((nb.snb.level > mylevel) ||
             ((nb.snb.level == mylevel) && ((nb.ni.type == NeighborConnect::face)
                                            || ((nb.ni.type == NeighborConnect::edge)
-                                               && (edge_flag_[nb.eid] == true)))))
+                                               && (edge_flag_[nb.eid])))))
           MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
       }
     }
@@ -1466,7 +1466,7 @@ void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
           else if ((nb.snb.level == mylevel)
                    && ((nb.ni.type == NeighborConnect::face)
                        || ((nb.ni.type == NeighborConnect::edge)
-                           && (edge_flag_[nb.eid] == true))))
+                           && (edge_flag_[nb.eid]))))
             MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
         }
       }

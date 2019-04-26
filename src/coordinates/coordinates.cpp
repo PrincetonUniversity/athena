@@ -29,7 +29,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
   RegionSize& block_size = pmy_block->block_size;
 
   // Set indices
-  if (coarse_flag==true) {
+  if (coarse_flag) {
     il = pmb->cis; jl = pmb->cjs; kl = pmb->cks;
     iu = pmb->cie; ju = pmb->cje; ku = pmb->cke;
     ng = NGHOST;

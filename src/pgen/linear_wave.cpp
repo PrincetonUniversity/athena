@@ -107,7 +107,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   cos_a3 = std::cos(ang_3);
 
   // Override ang_3 input and hardcode vertical (along x2 axis) wavevector
-  if (ang_3_vert == true) {
+  if (ang_3_vert) {
     sin_a3 = 1.0;
     cos_a3 = 0.0;
     ang_3 = 0.5*M_PI;
@@ -118,7 +118,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   cos_a2 = std::cos(ang_2);
 
   // Override ang_2 input and hardcode vertical (along x3 axis) wavevector
-  if (ang_2_vert == true) {
+  if (ang_2_vert) {
     sin_a2 = 1.0;
     cos_a2 = 0.0;
     ang_2 = 0.5*M_PI;
@@ -134,9 +134,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
 
   // If cos_a2 or cos_a3 = 0, need to override lambda
-  if (ang_3_vert == true)
+  if (ang_3_vert)
     lambda = x2;
-  if (ang_2_vert == true)
+  if (ang_2_vert)
     lambda = x3;
 
   // Initialize k_parallel
@@ -164,14 +164,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   Eigensystem(d0,u0,v0,w0,h0,bx0,by0,bz0,xfact,yfact,ev,rem,lem);
 
-  if (pin->GetOrAddBoolean("problem","test",false)==true && ncycle==0) {
+  if (pin->GetOrAddBoolean("problem","test",false) && ncycle==0) {
     // reinterpret tlim as the number of orbital periods
     Real ntlim=lambda/std::fabs(ev[wave_flag])*tlim;
     tlim=ntlim;
     pin->SetReal("time","tlim",ntlim);
   }
 
-  if (adaptive==true)
+  if (adaptive)
     EnrollUserRefinementCondition(RefinementCondition);
 
   return;
@@ -199,7 +199,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
     // adjust loop limits for fourth order error calculation
     //------------------------------------------------
-    if (pmb->precon->correct_err == true) {
+    if (pmb->precon->correct_err) {
       // Expand loop limits on all sides by one
       if (pbval->nblevel[1][1][0]!=-1) il-=1;
       if (pbval->nblevel[1][1][2]!=-1) iu+=1;
@@ -259,7 +259,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     }
     // begin fourth-order error correction
     // -------------------------------
-    if (pmb->precon->correct_err == true) {
+    if (pmb->precon->correct_err) {
       // Restore loop limits to real cells only
       il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
 
@@ -283,7 +283,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           }
         }
       }
-    } // end if (pmb->precon->correct_err == true)
+    } // end if (pmb->precon->correct_err)
     // ------- end fourth-order error calculation
 
     for (int k=kl; k<=ku; ++k) {

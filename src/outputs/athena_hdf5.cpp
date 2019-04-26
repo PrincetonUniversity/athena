@@ -272,7 +272,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   int nb = 0, nba = 0;
   while (pmb != nullptr) {
     // Load the output data
-    if (active_flags[nb] == true) {
+    if (active_flags[nb]) {
       // set the default size because TransformOutputData will override it
       out_is = pmb->is; out_ie = pmb->ie;
       out_js = pmb->js; out_je = pmb->je;

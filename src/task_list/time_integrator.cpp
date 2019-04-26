@@ -253,7 +253,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     if (NSCALARS > 0) {
       AddTask(CALC_SCLRFLX,CALC_HYDFLX);
-      if (pm->multilevel == true) {
+      if (pm->multilevel) {
         AddTask(SEND_SCLRFLX,CALC_SCLRFLX);
         AddTask(RECV_SCLRFLX,CALC_SCLRFLX);
         AddTask(INT_SCLR,RECV_SCLRFLX);
@@ -736,7 +736,7 @@ TaskStatus TimeIntegratorTaskList::SendEMF(MeshBlock *pmb, int stage) {
 // Functions to receive fluxes between MeshBlocks
 
 TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectHydroFlux(MeshBlock *pmb, int stage) {
-  if (pmb->phydro->hbvar.ReceiveFluxCorrection() == true) {
+  if (pmb->phydro->hbvar.ReceiveFluxCorrection()) {
     return TaskStatus::next;
   } else {
     return TaskStatus::fail;
@@ -744,7 +744,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectHydroFlux(MeshBlock *pmb, in
 }
 
 TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectEMF(MeshBlock *pmb, int stage) {
-  if (pmb->pfield->fbvar.ReceiveFluxCorrection() == true) {
+  if (pmb->pfield->fbvar.ReceiveFluxCorrection()) {
     return TaskStatus::next;
   } else {
     return TaskStatus::fail;
@@ -921,7 +921,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydro(MeshBlock *pmb, int stage) {
   } else {
     return TaskStatus::fail;
   }
-  if (ret == true) {
+  if (ret) {
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;
@@ -936,7 +936,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveField(MeshBlock *pmb, int stage) {
   } else {
     return TaskStatus::fail;
   }
-  if (ret == true) {
+  if (ret) {
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;
@@ -983,7 +983,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) 
   } else {
     return TaskStatus::fail;
   }
-  if (ret == true) {
+  if (ret) {
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;
@@ -1011,7 +1011,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveFieldShear(MeshBlock *pmb, int stage) 
   } else {
     return TaskStatus::fail;
   }
-  if (ret == true) {
+  if (ret) {
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;
@@ -1026,7 +1026,7 @@ TaskStatus TimeIntegratorTaskList::SendEMFShear(MeshBlock *pmb, int stage) {
 
 
 TaskStatus TimeIntegratorTaskList::ReceiveEMFShear(MeshBlock *pmb, int stage) {
-  if (pmb->pfield->fbvar.ReceiveEMFShearingBoxBoundaryCorrection() == true) {
+  if (pmb->pfield->fbvar.ReceiveEMFShearingBoxBoundaryCorrection()) {
     return TaskStatus::next;
   } else {
     return TaskStatus::fail;
@@ -1172,7 +1172,7 @@ TaskStatus TimeIntegratorTaskList::SendScalarFlux(MeshBlock *pmb, int stage) {
 
 
 TaskStatus TimeIntegratorTaskList::ReceiveScalarFlux(MeshBlock *pmb, int stage) {
-  if (pmb->pscalars->sbvar.ReceiveFluxCorrection() == true) {
+  if (pmb->pscalars->sbvar.ReceiveFluxCorrection()) {
     return TaskStatus::next;
   } else {
     return TaskStatus::fail;
@@ -1237,7 +1237,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveScalars(MeshBlock *pmb, int stage) {
   } else {
     return TaskStatus::fail;
   }
-  if (ret == true) {
+  if (ret) {
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;

@@ -427,7 +427,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
   nslist = new int[Globals::nranks];
   nblist = new int[Globals::nranks];
   costlist = new double[nbtotal];
-  if (adaptive == true) { // allocate arrays for AMR
+  if (adaptive) { // allocate arrays for AMR
     nref = new int[Globals::nranks];
     nderef = new int[Globals::nranks];
     rdisp = new int[Globals::nranks];
@@ -1397,7 +1397,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       // perform fourth-order correction of midpoint initial condition:
       // (correct IC on all MeshBlocks or none; switch cannot be toggled independently)
       bool correct_ic = pmb_array[0]->precon->correct_ic;
-      if (correct_ic == true)
+      if (correct_ic)
         CorrectMidpointInitialCondition(pmb_array, nmb);
 
       // Now do prolongation, compute primitives, apply BCs
