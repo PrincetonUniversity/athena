@@ -128,13 +128,16 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   // fourth-order hydro
-  // 4D scratch arrays
-  wl3d_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
-  wr3d_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
-  scr1_nkji_.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
-  scr2_nkji_.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
-  laplacian_l_fc_.NewAthenaArray(nc1);
-  laplacian_r_fc_.NewAthenaArray(nc1);
+  if (pmb->precon->xorder == 4) {
+    // 4D scratch arrays
+    wl3d_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
+    wr3d_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
+    scr1_nkji_.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
+    scr2_nkji_.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
+    // 1D scratch arrays
+    laplacian_l_fc_.NewAthenaArray(nc1);
+    laplacian_r_fc_.NewAthenaArray(nc1);
+  }
 
   UserTimeStep_ = pmb->pmy_mesh->UserTimeStep_;
 }
