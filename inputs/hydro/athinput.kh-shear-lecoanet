@@ -52,7 +52,7 @@ nx3        = 1
 iso_sound_speed = 1.0
 gamma           = 1.6666667    # gamma = C_p/C_v
 
-<problem>
+<problem>                # Default parameter values correspond to Re=5,000
 iprob  = 4
 amp    = 0.01            # amplitude of initial vy perturbation
 vflow  = 1.0             # background vx
