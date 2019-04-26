@@ -85,17 +85,20 @@ class Hydro {
  private:
   AthenaArray<Real> dt1_, dt2_, dt3_;  // scratch arrays used in NewTimeStep
   // scratch space used to compute fluxes
-  AthenaArray<Real> wl_, wr_, wlb_;
   AthenaArray<Real> dxw_;
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
   AthenaArray<Real> cell_volume_;
+  // 2D
+  AthenaArray<Real> wl_, wr_, wlb_;
   AthenaArray<Real> dflx_;
+  // 1D GR
   AthenaArray<Real> bb_normal_;    // normal magnetic field, for (SR/GR)MHD
   AthenaArray<Real> lambdas_p_l_;  // most positive wavespeeds in left state
   AthenaArray<Real> lambdas_m_l_;  // most negative wavespeeds in left state
   AthenaArray<Real> lambdas_p_r_;  // most positive wavespeeds in right state
   AthenaArray<Real> lambdas_m_r_;  // most negative wavespeeds in right state
+  // 2D GR
   AthenaArray<Real> g_, gi_;       // metric and inverse, for some GR Riemann solvers
   AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
 
@@ -106,6 +109,7 @@ class Hydro {
   // 4D scratch arrays
   AthenaArray<Real> scr1_nkji_, scr2_nkji_;
   AthenaArray<Real> wl3d_, wr3d_;
+  // 1D scratch arrays
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
   TimeStepFunc UserTimeStep_;

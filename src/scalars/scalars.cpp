@@ -84,11 +84,22 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   cell_volume_.NewAthenaArray(nc1);
   dflx_.NewAthenaArray(NHYDRO, nc1);
 
-  // fourth-order 4D scratch arrays
-  sl3d_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
-  sr3d_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
-  scr1_nkji_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
-  scr2_nkji_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
-  laplacian_l_fc_.NewAthenaArray(nc1);
-  laplacian_r_fc_.NewAthenaArray(nc1);
+  // fourth-order integration scheme
+  if (pmb->precon->xorder == 4) {
+    // 4D scratch arrays
+    sl3d_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    sr3d_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    scr1_nkji_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    scr2_nkji_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    // store all face-centered mass fluxes (all 3x coordinate directions) from Hydro:
+    mass_flux_fc[X1DIR].NewAthenaArray(nc3, nc2, nc1+1);
+    if (pmb->pmy_mesh->f2)
+      mass_flux_fc[X2DIR].NewAthenaArray(nc3, nc2+1, nc1);
+    if (pmb->pmy_mesh->f3)
+      mass_flux_fc[X3DIR].NewAthenaArray(nc3+3, nc2, nc1);
+
+    // 1D scratch arrays
+    laplacian_l_fc_.NewAthenaArray(nc1);
+    laplacian_r_fc_.NewAthenaArray(nc1);
+  }
 }

@@ -127,7 +127,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
       gflx_old[X3DIR].NewAthenaArray(NHYDRO, nc3+1, nc2, nc1);
   }
 
-  // fourth-order hydro
+  // fourth-order hydro integration scheme
   if (pmb->precon->xorder == 4) {
     // 4D scratch arrays
     wl3d_.NewAthenaArray(NWAVE, nc3, nc2, nc1);

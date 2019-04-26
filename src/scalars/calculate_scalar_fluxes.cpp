@@ -49,6 +49,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   int il, iu, jl, ju, kl, ku;
 
+  AthenaArray<Real> &mass_x1flux_fc = mass_flux_fc[X1DIR];
   AthenaArray<Real> &flux_fc = scr1_nkji_;
   AthenaArray<Real> &laplacian_all_fc = scr2_nkji_;
 
@@ -56,14 +57,14 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
   // i-direction
 
   // set the loop limits
-  jl=js, ju=je, kl=ks, ku=ke;
+  jl = js, ju = je, kl = ks, ku = ke;
   // TODO(felker): fix loop limits for fourth-order hydro
   //  if (MAGNETIC_FIELDS_ENABLED) {
   if (pmb->block_size.nx2 > 1) {
     if (pmb->block_size.nx3 == 1) // 2D
-      jl=js-1, ju=je+1, kl=ks, ku=ke;
+      jl = js-1, ju = je+1, kl = ks, ku = ke;
     else // 3D
-      jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
+      jl = js-1, ju = je+1, kl = ks-1, ku = ke+1;
   }
   //  }
 
@@ -125,7 +126,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
         // Compute x1 interface fluxes from face-centered primitive variables
         // TODO(felker): check that e3x1,e2x1 arguments added in late 2017 work here
         pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw_);
-        // ComputeUpwindFlux(k, j, il, iu, sl_, sr_, Hydro::x1flux_fc, flux_fc);
+        ComputeUpwindFlux(k, j, is, ie+1, sl_, sr_, mass_x1flux_fc, flux_fc);
 
         // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
         for (int n=0; n<NSCALARS; ++n) {
@@ -142,18 +143,19 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
   //--------------------------------------------------------------------------------------
   // j-direction
 
-  if (pmb->block_size.nx2 > 1) {
+  if (pmb->pmy_mesh->f2) {
     AthenaArray<Real> &x2flux = s_flux[X2DIR];
+    AthenaArray<Real> &mass_x2flux_fc = mass_flux_fc[X2DIR];
     mass_flux.InitWithShallowSlice(hyd.flux[X2DIR], 4, IDN, 1);
 
     // set the loop limits
-    il=is-1, iu=ie+1, kl=ks, ku=ke;
+    il = is-1, iu = ie+1, kl = ks, ku = ke;
     // TODO(felker): fix loop limits for fourth-order hydro
     //    if (MAGNETIC_FIELDS_ENABLED) {
     if (pmb->block_size.nx3 == 1) // 2D
-      kl=ks, ku=ke;
+      kl = ks, ku = ke;
     else // 3D
-      kl=ks-1, ku=ke+1;
+      kl = ks-1, ku = ke+1;
     //    }
 
     for (int k=kl; k<=ku; ++k) {
@@ -225,7 +227,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
           // Compute x2 interface fluxes from face-centered primitive variables
           // TODO(felker): check that e1x2,e3x2 arguments added in late 2017 work here
           pmb->pcoord->CenterWidth2(k, j, il, iu, dxw_);
-          // ComputeUpwindFlux(k, j, il, iu, sl_, sr_, Hydro::x2flux_fc, flux_fc);
+          ComputeUpwindFlux(k, j, il, iu, sl_, sr_, mass_x2flux_fc, flux_fc);
 
           // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
           for (int n=0; n<NSCALARS; ++n) {
@@ -241,14 +243,15 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
   //--------------------------------------------------------------------------------------
   // k-direction
 
-  if (pmb->block_size.nx3 > 1) {
+  if (pmb->pmy_mesh->f3) {
     AthenaArray<Real> &x3flux = s_flux[X3DIR];
+    AthenaArray<Real> &mass_x3flux_fc = mass_flux_fc[X3DIR];
     mass_flux.InitWithShallowSlice(hyd.flux[X3DIR], 4, IDN, 1);
 
     // set the loop limits
     // TODO(felker): fix loop limits for fourth-order hydro
     //    if (MAGNETIC_FIELDS_ENABLED)
-    il=is-1, iu=ie+1, jl=js-1, ju=je+1;
+    il = is-1, iu = ie+1, jl = js-1, ju = je+1;
 
     for (int j=jl; j<=ju; ++j) { // this loop ordering is intentional
       // reconstruct the first row
@@ -319,7 +322,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
           // Compute x3 interface fluxes from face-centered primitive variables
           // TODO(felker): check that e2x3,e1x3 arguments added in late 2017 work here
           pmb->pcoord->CenterWidth3(k, j, il, iu, dxw_);
-          // ComputeUpwindFlux(k, j, il, iu, sl_, sr_, Hydro::x3flux_fc, flux_fc);
+          ComputeUpwindFlux(k, j, il, iu, sl_, sr_, mass_x3flux_fc, flux_fc);
 
           // Apply Laplacian of second-order accurate face-averaged flux on x3 faces
           for (int n=0; n<NSCALARS; ++n) {

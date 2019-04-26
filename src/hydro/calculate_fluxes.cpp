@@ -20,6 +20,7 @@
 #include "../field/field_diffusion/field_diffusion.hpp"
 #include "../gravity/gravity.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../scalars/scalars.hpp"
 #include "hydro.hpp"
 #include "hydro_diffusion/hydro_diffusion.hpp"
 
@@ -62,14 +63,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
   AthenaArray<Real> &x1flux = flux[X1DIR];
   // set the loop limits
-  jl=js, ju=je, kl=ks, ku=ke;
+  jl = js, ju = je, kl = ks, ku = ke;
   // TODO(felker): fix loop limits for fourth-order hydro
   //  if (MAGNETIC_FIELDS_ENABLED) {
   if (pmb->block_size.nx2 > 1) {
     if (pmb->block_size.nx3 == 1) // 2D
-      jl=js-1, ju=je+1, kl=ks, ku=ke;
+      jl = js-1, ju = je+1, kl = ks, ku = ke;
     else // 3D
-      jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
+      jl = js-1, ju = je+1, kl = ks-1, ku = ke+1;
   }
   //  }
 
@@ -144,8 +145,13 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
         for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
-          for (int i=is; i<=ie+1; i++)
+          for (int i=is; i<=ie+1; i++) {
             x1flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_all_fc(n,k,j,i);
+            // TODO(felker): replace this loop-based deep copy with memcpy, or alternative
+            if (n == IDN && NSCALARS > 0) {
+              pmb->pscalars->mass_flux_fc[X1DIR](k,j,i) = flux_fc(n,k,j,i);
+            }
+          }
         }
       }
     }
@@ -156,16 +162,16 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   //--------------------------------------------------------------------------------------
   // j-direction
 
-  if (pmb->block_size.nx2 > 1) {
+  if (pmb->pmy_mesh->f2) {
     AthenaArray<Real> &x2flux = flux[X2DIR];
     // set the loop limits
-    il=is-1, iu=ie+1, kl=ks, ku=ke;
+    il = is-1, iu = ie+1, kl = ks, ku = ke;
     // TODO(felker): fix loop limits for fourth-order hydro
     //    if (MAGNETIC_FIELDS_ENABLED) {
     if (pmb->block_size.nx3 == 1) // 2D
-      kl=ks, ku=ke;
+      kl = ks, ku = ke;
     else // 3D
-      kl=ks-1, ku=ke+1;
+      kl = ks-1, ku = ke+1;
     //    }
 
     for (int k=kl; k<=ku; ++k) {
@@ -251,8 +257,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
           for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
-            for (int i=il; i<=iu; i++)
+            for (int i=il; i<=iu; i++) {
               x2flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_all_fc(n,k,j,i);
+              if (n == IDN && NSCALARS > 0) {
+                pmb->pscalars->mass_flux_fc[X2DIR](k,j,i) = flux_fc(n,k,j,i);
+              }
+            }
           }
         }
       }
@@ -262,12 +272,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   //--------------------------------------------------------------------------------------
   // k-direction
 
-  if (pmb->block_size.nx3 > 1) {
+  if (pmb->pmy_mesh->f3) {
     AthenaArray<Real> &x3flux = flux[X3DIR];
     // set the loop limits
     // TODO(felker): fix loop limits for fourth-order hydro
     //    if (MAGNETIC_FIELDS_ENABLED)
-    il=is-1, iu=ie+1, jl=js-1, ju=je+1;
+    il = is-1, iu = ie+1, jl = js-1, ju = je+1;
 
     for (int j=jl; j<=ju; ++j) { // this loop ordering is intentional
       // reconstruct the first row
@@ -350,8 +360,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           // Apply Laplacian of second-order accurate face-averaged flux on x3 faces
           for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
-            for (int i=il; i<=iu; i++)
+            for (int i=il; i<=iu; i++) {
               x3flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_all_fc(n,k,j,i);
+              if (n == IDN && NSCALARS > 0) {
+                pmb->pscalars->mass_flux_fc[X3DIR](k,j,i) = flux_fc(n,k,j,i);
+              }
+            }
           }
         }
       }

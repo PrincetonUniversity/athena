@@ -36,7 +36,8 @@ class PassiveScalars {
   AthenaArray<Real> s_flux[3];  // face-averaged flux vector
 
   // fourth-order intermediate quantities
-  AthenaArray<Real> s_cc;      // cell-centered approximations
+  AthenaArray<Real> s_cc;             // cell-centered approximations
+  AthenaArray<Real> mass_flux_fc[3];  // deep copy of intermediate Hydro quantities
 
   // storage for SMR/AMR
   // TODO(KGF): remove trailing underscore or revert to private:
@@ -52,7 +53,9 @@ class PassiveScalars {
  private:
   MeshBlock* pmy_block;
   // scratch space used to compute fluxes
+  // 2D scratch arrays
   AthenaArray<Real> sl_, sr_, slb_;
+  // 1D scratch arrays
   AthenaArray<Real> dxw_;
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
@@ -63,6 +66,7 @@ class PassiveScalars {
   // 4D scratch arrays
   AthenaArray<Real> scr1_nkji_, scr2_nkji_;
   AthenaArray<Real> sl3d_, sr3d_;
+  // 1D scratch arrays
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
   void ComputeUpwindFlux(const int k, const int j, const int il,
