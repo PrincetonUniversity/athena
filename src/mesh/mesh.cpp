@@ -92,6 +92,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     step_since_lb(), gflag(), turb_flag(),
     // private members:
     next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
+    tree(this),
     use_uniform_meshgen_fn_{true, true, true},
     nreal_user_mesh_data_(), nint_user_mesh_data_(), nuser_history_output_(),
     four_pi_G_(), grav_eps_(-1.0), grav_mean_rho_(-1.0),
@@ -226,8 +227,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
   for (root_level=0; (1<<root_level) < nbmax; root_level++) {}
   current_level = root_level;
 
-  // create the root grid
-  tree.CreateRootGrid(nrbx1, nrbx2, nrbx3, root_level);
+  tree.CreateRootGrid();
 
   // Load balancing flag and parameters
 #ifdef MPI_PARALLEL
@@ -372,8 +372,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
             LogicalLocation nloc;
             nloc.level=lrlev, nloc.lx1=i, nloc.lx2=0, nloc.lx3=0;
             int nnew;
-            tree.AddMeshBlock(tree, nloc, ndim, mesh_bcs, nrbx1, nrbx2, nrbx3, root_level,
-                              nnew);
+            tree.AddMeshBlock(nloc, nnew);
           }
         }
         if (ndim == 2) {
@@ -382,8 +381,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
               LogicalLocation nloc;
               nloc.level=lrlev, nloc.lx1=i, nloc.lx2=j, nloc.lx3=0;
               int nnew;
-              tree.AddMeshBlock(tree, nloc, ndim, mesh_bcs, nrbx1, nrbx2, nrbx3,
-                                root_level, nnew);
+              tree.AddMeshBlock(nloc, nnew);
             }
           }
         }
@@ -394,8 +392,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
                 LogicalLocation nloc;
                 nloc.level = lrlev, nloc.lx1 = i, nloc.lx2 = j, nloc.lx3 = k;
                 int nnew;
-                tree.AddMeshBlock(tree, nloc, ndim, mesh_bcs, nrbx1, nrbx2, nrbx3,
-                                  root_level, nnew);
+                tree.AddMeshBlock(nloc, nnew);
               }
             }
           }
@@ -528,6 +525,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     step_since_lb(), gflag(), turb_flag(),
     // private members:
     next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
+    tree(this),
     use_uniform_meshgen_fn_{true, true, true},
     nreal_user_mesh_data_(), nint_user_mesh_data_(), nuser_history_output_(),
     four_pi_G_(), grav_eps_(-1.0), grav_mean_rho_(-1.0),
@@ -723,8 +721,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     resfile.Seek(headeroffset);
 
   // rebuild the Block Tree
+  tree.CreateRootGrid();
   for (int i=0; i<nbtotal; i++)
-    tree.AddMeshBlockWithoutRefine(loclist[i], nrbx1, nrbx2, nrbx3, root_level);
+    tree.AddMeshBlockWithoutRefine(loclist[i]);
   int nnb;
   // check the tree structure, and assign GID
   tree.GetMeshBlockList(loclist, nullptr, nnb);

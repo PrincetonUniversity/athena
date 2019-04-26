@@ -175,6 +175,7 @@ class Mesh {
   friend class RestartOutput;
   friend class HistoryOutput;
   friend class MeshBlock;
+  friend class MeshBlockTree;
   friend class BoundaryBase;
   friend class BoundaryValues;
   friend class CellCenteredBoundaryVariable;
