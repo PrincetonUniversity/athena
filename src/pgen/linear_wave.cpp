@@ -186,11 +186,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem", "compute_error", false)) return;
 
   // Initialize errors to zero
-  Real l1_err[NHYDRO+NFIELD], max_err[NHYDRO+NFIELD];
-  for (int i=0; i<(NHYDRO+NFIELD); ++i) {
-    l1_err[i] = 0.0;
-    max_err[i] = 0.0;
-  }
+  Real l1_err[NHYDRO+NFIELD]{}, max_err[NHYDRO+NFIELD]{};
 
   MeshBlock *pmb = pblock;
   while (pmb != nullptr) {
@@ -380,7 +376,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     // The file exists -- reopen the file in append mode
     if ((pfile = std::fopen(fname.c_str(), "r")) != nullptr) {
       if ((pfile = std::freopen(fname.c_str(), "a", pfile)) == nullptr) {
-        msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
+        msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop"
             << std::endl << "Error output file could not be opened" <<std::endl;
         ATHENA_ERROR(msg);
       }
@@ -388,7 +384,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       // The file does not exist -- open the file in write mode and add headers
     } else {
       if ((pfile = std::fopen(fname.c_str(), "w")) == nullptr) {
-        msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
+        msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop"
             << std::endl << "Error output file could not be opened" <<std::endl;
         ATHENA_ERROR(msg);
       }
