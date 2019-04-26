@@ -313,9 +313,11 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     pfbvar = dynamic_cast<FaceCenteredBoundaryVariable *>(bvars_main_int[1]);
   }
 
+  CellCenteredBoundaryVariable *prbvar = nullptr;
   Radiation *pr = nullptr;
   if (RADIATION_ENABLED) {
     pr = pmb->prad;
+    prbvar = dynamic_cast<CellCenteredBoundaryVariable *>(bvars_main_int[2]);
   }
 
   // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
