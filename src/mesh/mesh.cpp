@@ -553,7 +553,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   ReserveMeshBlockPhysIDs();
 #endif
 
-  // read number of OpenMP threads for mesh
+  // check the number of OpenMP threads for mesh
   if (num_mesh_threads_ < 1) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "Number of OpenMP threads must be >= 1, but num_threads="
