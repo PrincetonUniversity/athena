@@ -29,6 +29,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../scalars/scalars.hpp"
 #include "../utils/utils.hpp"
 
 Real vflow, threshold;
@@ -340,7 +341,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                                                  + SQR(phydro->u(IM3,k,j,i)) )
                                    /phydro->u(IDN,k,j,i);
           }
-          // TODO(kfelker): add equation 8e) for color concentration of passive scalar
+          // color concentration of passive scalar
+          if (NSCALARS > 0) {
+            Real concentration = 0.5*(std::tanh((pcoord->x2v(j) - z2)/a)  // 8e)
+                                      - std::tanh((pcoord->x2v(j) - z1)/a) + 2.0);
+            // uniformly fill all scalar species to have equal concentration
+            constexpr int scalar_norm = NSCALARS > 0 ? NSCALARS : 1.0;
+            for (int n=0; n<NSCALARS; ++n) {
+              pscalars->s(n,k,j,i) = 1.0/scalar_norm*concentration;
+            }
+          }
         }
       }
     }
