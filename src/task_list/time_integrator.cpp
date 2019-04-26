@@ -64,9 +64,6 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
   // TODO(felker): validate Field and Hydro diffusion with RK3, RK4, SSPRK(5,4)
   integrator = pin->GetOrAddString("time","integrator","vl2");
-  int dim = 1;
-  if (pm->mesh_size.nx2 > 1) dim = 2;
-  if (pm->mesh_size.nx3 > 1) dim = 3;
 
   if (integrator == "vl2") {
     // VL: second-order van Leer integrator (Stone & Gardiner, NewA 14, 139 2009)
@@ -75,8 +72,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     nstages = 2;
     cfl_limit = 1.0;
     // Modify VL2 stability limit in 2D, 3D
-    if (dim == 2) cfl_limit = 0.5;
-    if (dim == 3) cfl_limit = ONE_3RD;
+    if (pm->ndim == 2) cfl_limit = 0.5;
+    if (pm->ndim == 3) cfl_limit = ONE_3RD;
 
     stage_wghts[0].delta = 1.0; // required for consistency
     stage_wghts[0].gamma_1 = 0.0;
@@ -213,8 +210,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
   if (cfl_number > cfl_limit) {
     std::cout << "### Warning in CreateTimeIntegrator" << std::endl
               << "User CFL number " << cfl_number << " must be smaller than " << cfl_limit
-              << " for integrator=" << integrator << " in "
-              << dim << "D simulation" << std::endl << "Setting to limit" << std::endl;
+              << " for integrator=" << integrator << " in " << pm->ndim
+              << "D simulation" << std::endl << "Setting to limit" << std::endl;
     cfl_number = cfl_limit;
   }
   // Save to Mesh class
@@ -757,6 +754,9 @@ TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectEMF(MeshBlock *pmb, int stag
 TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   Field *pf = pmb->pfield;
+
+  if (pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
+
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to FieldInt
     Real ave_wghts[3];
@@ -790,7 +790,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
       // writing out to u2 register
       pmb->WeightedAve(ph->u2, ph->u1, ph->u2, ave_wghts);
 
-      ph->AddFluxDivergence(beta, ph->u2);
+       ph->AddFluxDivergence(beta, ph->u2);
       // add coordinate (geometric) source terms
       pmb->pcoord->AddCoordTermsDivergence(beta, ph->flux, ph->w, pf->bcc, ph->u2);
     }
@@ -838,7 +838,8 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage
   Field *pf = pmb->pfield;
 
   // return if there are no source terms to be added
-  if (ph->hsrc.hydro_sourceterms_defined == false) return TaskStatus::next;
+  if (ph->hsrc.hydro_sourceterms_defined == false
+      || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
     // Time at beginning of stage for u()
@@ -860,7 +861,8 @@ TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
 
   // return if there are no diffusion to be added
-  if (ph->hdif.hydro_diffusion_defined == false) return TaskStatus::next;
+  if (ph->hdif.hydro_diffusion_defined == false
+      || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
     ph->hdif.CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);

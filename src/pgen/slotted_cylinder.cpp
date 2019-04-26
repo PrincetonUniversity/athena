@@ -63,7 +63,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   if (adaptive) {
     EnrollUserRefinementCondition(RefinementCondition);
-    threshold = pin->GetReal("problem","thr");
+    threshold = pin->GetReal("problem", "thr");
   }
 
   return;

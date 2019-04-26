@@ -41,7 +41,7 @@
 namespace {
 // Parameters which define initial solution -- made global so that they can be shared
 // with functions A1,2,3 which compute vector potentials
-Real d0,p0,u0,bx0, by0, bz0, dby, dbz;
+Real d0, p0, u0, bx0, by0, bz0, dby, dbz;
 int wave_flag;
 Real ang_2, ang_3; // Rotation angles about the y and z' axis
 bool ang_2_vert, ang_3_vert; // Switches to set ang_2 and/or ang_3 to pi/2
@@ -130,8 +130,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // For lambda choose the smaller of the 3
   lambda = x1;
-  if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
-  if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
+  if (f2 && ang_3 != 0.0) lambda = std::min(lambda,x2);
+  if (f3 && ang_2 != 0.0) lambda = std::min(lambda,x3);
 
   // If cos_a2 or cos_a3 = 0, need to override lambda
   if (ang_3_vert)
@@ -158,17 +158,17 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   if (NON_BAROTROPIC_EOS) {
     p0 = 1.0/gam;
-    h0 = ((p0/gm1 + 0.5*d0*(u0*u0+v0*v0+w0*w0)) + p0)/d0;
-    if (MAGNETIC_FIELDS_ENABLED) h0 += (bx0*bx0+by0*by0+bz0*bz0)/d0;
+    h0 = ((p0/gm1 + 0.5*d0*(u0*u0 + v0*v0+w0*w0)) + p0)/d0;
+    if (MAGNETIC_FIELDS_ENABLED) h0 += (bx0*bx0 + by0*by0 + bz0*bz0)/d0;
   }
 
-  Eigensystem(d0,u0,v0,w0,h0,bx0,by0,bz0,xfact,yfact,ev,rem,lem);
+  Eigensystem(d0, u0, v0, w0, h0, bx0, by0, bz0, xfact, yfact, ev, rem, lem);
 
-  if (pin->GetOrAddBoolean("problem","test",false) && ncycle==0) {
+  if (pin->GetOrAddBoolean("problem", "test", false) && ncycle==0) {
     // reinterpret tlim as the number of orbital periods
-    Real ntlim=lambda/std::fabs(ev[wave_flag])*tlim;
-    tlim=ntlim;
-    pin->SetReal("time","tlim",ntlim);
+    Real ntlim = lambda/std::fabs(ev[wave_flag])*tlim;
+    tlim = ntlim;
+    pin->SetReal("time", "tlim", ntlim);
   }
 
   if (adaptive)
@@ -183,30 +183,30 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
+  if (!pin->GetOrAddBoolean("problem", "compute_error", false)) return;
 
   // Initialize errors to zero
-  Real l1_err[NHYDRO+NFIELD],max_err[NHYDRO+NFIELD];
+  Real l1_err[NHYDRO+NFIELD], max_err[NHYDRO+NFIELD];
   for (int i=0; i<(NHYDRO+NFIELD); ++i) {
     l1_err[i] = 0.0;
     max_err[i] = 0.0;
   }
 
   MeshBlock *pmb = pblock;
-  BoundaryValues *pbval;
   while (pmb != nullptr) {
     BoundaryValues *pbval = pmb->pbval;
-    int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+    int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
+        kl = pmb->ks, ku = pmb->ke;
     // adjust loop limits for fourth order error calculation
     //------------------------------------------------
     if (pmb->precon->correct_err) {
       // Expand loop limits on all sides by one
-      if (pbval->nblevel[1][1][0]!=-1) il-=1;
-      if (pbval->nblevel[1][1][2]!=-1) iu+=1;
-      if (pbval->nblevel[1][0][1]!=-1) jl-=1;
-      if (pbval->nblevel[1][2][1]!=-1) ju+=1;
-      if (pbval->nblevel[0][1][1]!=-1) kl-=1;
-      if (pbval->nblevel[2][1][1]!=-1) ku+=1;
+      if (pbval->nblevel[1][1][0] != -1) il -= 1;
+      if (pbval->nblevel[1][1][2] != -1) iu += 1;
+      if (pbval->nblevel[1][0][1] != -1) jl -= 1;
+      if (pbval->nblevel[1][2][1] != -1) ju += 1;
+      if (pbval->nblevel[0][1][1] != -1) kl -= 1;
+      if (pbval->nblevel[2][1][1] != -1) ku += 1;
     }
     // Save analytic solution of conserved variables in 4D scratch array
     AthenaArray<Real> cons_;
@@ -241,7 +241,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           if (NON_BAROTROPIC_EOS) {
             Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
             if (MAGNETIC_FIELDS_ENABLED) {
-              e0 += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
+              e0 += 0.5*(bx0*bx0 + by0*by0 + bz0*bz0);
               Real bx = bx0;
               Real by = by0 + amp*sn*rem[5][wave_flag];
               Real bz = bz0 + amp*sn*rem[6][wave_flag];
@@ -261,7 +261,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     // -------------------------------
     if (pmb->precon->correct_err) {
       // Restore loop limits to real cells only
-      il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+      il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je, kl = pmb->ks, ku = pmb->ke;
 
       // Compute and store Laplacian of cell-centered conserved variables, Hydro and Bcc
       AthenaArray<Real> delta_cons_;
@@ -340,20 +340,20 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         }
       }
     }
-    pmb=pmb->next;
+    pmb = pmb->next;
   }
-  Real rms_err = 0.0, max_max_over_l1=0.0;
+  Real rms_err = 0.0, max_max_over_l1 = 0.0;
 
 #ifdef MPI_PARALLEL
   if (Globals::my_rank == 0) {
-    MPI_Reduce(MPI_IN_PLACE,&l1_err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_SUM,0,
+    MPI_Reduce(MPI_IN_PLACE, &l1_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
-    MPI_Reduce(MPI_IN_PLACE,&max_err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_MAX,0,
+    MPI_Reduce(MPI_IN_PLACE, &max_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_MAX, 0,
                MPI_COMM_WORLD);
   } else {
-    MPI_Reduce(&l1_err,&l1_err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_SUM,0,
+    MPI_Reduce(&l1_err, &l1_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
-    MPI_Reduce(&max_err,&max_err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_MAX,0,
+    MPI_Reduce(&max_err, &max_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_MAX, 0,
                MPI_COMM_WORLD);
   }
 #endif
@@ -361,8 +361,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // only the root process outputs the data
   if (Globals::my_rank == 0) {
     // normalize errors by number of cells
-    Real vol= (mesh_size.x1max-mesh_size.x1min)*(mesh_size.x2max-mesh_size.x2min)
-              *(mesh_size.x3max-mesh_size.x3min);
+    Real vol= (mesh_size.x1max - mesh_size.x1min)*(mesh_size.x2max - mesh_size.x2min)
+              *(mesh_size.x3max - mesh_size.x3min);
     for (int i=0; i<(NHYDRO+NFIELD); ++i) l1_err[i] = l1_err[i]/vol;
     // compute rms error
     for (int i=0; i<(NHYDRO+NFIELD); ++i) {
@@ -378,8 +378,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     FILE *pfile;
 
     // The file exists -- reopen the file in append mode
-    if ((pfile = std::fopen(fname.c_str(),"r")) != nullptr) {
-      if ((pfile = std::freopen(fname.c_str(),"a",pfile)) == nullptr) {
+    if ((pfile = std::fopen(fname.c_str(), "r")) != nullptr) {
+      if ((pfile = std::freopen(fname.c_str(), "a", pfile)) == nullptr) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         ATHENA_ERROR(msg);
@@ -387,41 +387,41 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
       // The file does not exist -- open the file in write mode and add headers
     } else {
-      if ((pfile = std::fopen(fname.c_str(),"w")) == nullptr) {
+      if ((pfile = std::fopen(fname.c_str(), "w")) == nullptr) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         ATHENA_ERROR(msg);
       }
-      std::fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  ");
-      std::fprintf(pfile,"RMS-L1-Error  d_L1  M1_L1  M2_L1  M3_L1  E_L1 ");
-      if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile,"  B1c_L1  B2c_L1  B3c_L1");
-      std::fprintf(pfile,"  Largest-Max/L1  d_max  M1_max  M2_max  M3_max  E_max ");
-      if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile,"  B1c_max  B2c_max  B3c_max");
-      std::fprintf(pfile,"\n");
+      std::fprintf(pfile, "# Nx1  Nx2  Nx3  Ncycle  ");
+      std::fprintf(pfile, "RMS-L1-Error  d_L1  M1_L1  M2_L1  M3_L1  E_L1 ");
+      if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile, "  B1c_L1  B2c_L1  B3c_L1");
+      std::fprintf(pfile, "  Largest-Max/L1  d_max  M1_max  M2_max  M3_max  E_max ");
+      if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile, "  B1c_max  B2c_max  B3c_max");
+      std::fprintf(pfile, "\n");
     }
 
     // write errors
-    std::fprintf(pfile,"%d  %d",mesh_size.nx1,mesh_size.nx2);
-    std::fprintf(pfile,"  %d  %d",mesh_size.nx3,ncycle);
-    std::fprintf(pfile,"  %e  %e",rms_err,l1_err[IDN]);
-    std::fprintf(pfile,"  %e  %e  %e",l1_err[IM1],l1_err[IM2],l1_err[IM3]);
+    std::fprintf(pfile, "%d  %d", mesh_size.nx1, mesh_size.nx2);
+    std::fprintf(pfile, "  %d  %d", mesh_size.nx3, ncycle);
+    std::fprintf(pfile, "  %e  %e", rms_err, l1_err[IDN]);
+    std::fprintf(pfile, "  %e  %e  %e", l1_err[IM1], l1_err[IM2], l1_err[IM3]);
     if (NON_BAROTROPIC_EOS)
-      std::fprintf(pfile,"  %e",l1_err[IEN]);
+      std::fprintf(pfile, "  %e", l1_err[IEN]);
     if (MAGNETIC_FIELDS_ENABLED) {
-      std::fprintf(pfile,"  %e",l1_err[NHYDRO+IB1]);
-      std::fprintf(pfile,"  %e",l1_err[NHYDRO+IB2]);
-      std::fprintf(pfile,"  %e",l1_err[NHYDRO+IB3]);
+      std::fprintf(pfile, "  %e", l1_err[NHYDRO+IB1]);
+      std::fprintf(pfile, "  %e", l1_err[NHYDRO+IB2]);
+      std::fprintf(pfile, "  %e", l1_err[NHYDRO+IB3]);
     }
-    std::fprintf(pfile,"  %e  %e  ",max_max_over_l1,max_err[IDN]);
-    std::fprintf(pfile,"%e  %e  %e",max_err[IM1],max_err[IM2],max_err[IM3]);
+    std::fprintf(pfile, "  %e  %e  ", max_max_over_l1, max_err[IDN]);
+    std::fprintf(pfile, "%e  %e  %e", max_err[IM1], max_err[IM2], max_err[IM3]);
     if (NON_BAROTROPIC_EOS)
-      std::fprintf(pfile,"  %e",max_err[IEN]);
+      std::fprintf(pfile, "  %e", max_err[IEN]);
     if (MAGNETIC_FIELDS_ENABLED) {
-      std::fprintf(pfile,"  %e",max_err[NHYDRO+IB1]);
-      std::fprintf(pfile,"  %e",max_err[NHYDRO+IB2]);
-      std::fprintf(pfile,"  %e",max_err[NHYDRO+IB3]);
+      std::fprintf(pfile, "  %e", max_err[NHYDRO+IB1]);
+      std::fprintf(pfile, "  %e", max_err[NHYDRO+IB2]);
+      std::fprintf(pfile, "  %e", max_err[NHYDRO+IB3]);
     }
-    std::fprintf(pfile,"\n");
+    std::fprintf(pfile, "\n");
     std::fclose(pfile);
   }
 
@@ -451,7 +451,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     dby = amp*rem[NWAVE-2][wave_flag];
     dbz = amp*rem[NWAVE-1][wave_flag];
 
-    int level=loc.level;
+    int level = loc.level;
     // Initialize components of the vector potential
     if (block_size.nx3 > 1) {
       for (int k=ks; k<=ke+1; k++) {
@@ -672,7 +672,7 @@ void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
       vbet = v2*bet2_star + v3*bet3_star;
 
       // Compute alpha(s) (eq. A16)
-      if ((cfsq-cssq) == 0.0) {
+      if ((cfsq - cssq) == 0.0) {
         alpha_f = 1.0;
         alpha_s = 0.0;
       } else if ( (twid_asq - cssq) <= 0.0) {
