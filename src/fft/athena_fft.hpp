@@ -196,7 +196,7 @@ class FFTDriver {
 #ifdef MPI_PARALLEL
   int decomp_, pdim_;
 #endif
-  int dim_;
+  const int dim_;
 #ifdef MPI_PARALLEL
   MPI_Comm MPI_COMM_FFT;
 #endif

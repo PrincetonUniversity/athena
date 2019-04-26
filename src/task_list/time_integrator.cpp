@@ -838,7 +838,7 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage
   Field *pf = pmb->pfield;
 
   // return if there are no source terms to be added
-  if (ph->hsrc.hydro_sourceterms_defined == false
+  if (!(ph->hsrc.hydro_sourceterms_defined)
       || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
@@ -861,7 +861,7 @@ TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
 
   // return if there are no diffusion to be added
-  if (ph->hdif.hydro_diffusion_defined == false
+  if (!(ph->hdif.hydro_diffusion_defined)
       || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
@@ -879,7 +879,7 @@ TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
 
   // return if there are no diffusion to be added
-  if (pf->fdif.field_diffusion_defined == false) return TaskStatus::next;
+  if (!(pf->fdif.field_diffusion_defined)) return TaskStatus::next;
 
   if (stage <= nstages) {
     pf->fdif.CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);

@@ -1490,7 +1490,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
             << "More computing power than you expected may be required." << std::endl;
       }
     }
-  } while (iflag == false);
+  } while (!iflag);
 
   // calculate the first time step
 #pragma omp parallel for num_threads(nthreads)

@@ -437,14 +437,14 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
   if (bt->pleaf_ == nullptr) // leaf on the same level
     return bt;
   // one level finer: check if it is a leaf
-  ox=oy=oz=0;
-  if (ox1<0) ox=1;
-  if (ox2<0) oy=1;
-  if (ox3<0) oz=1;
+  ox = oy = oz = 0;
+  if (ox1 < 0) ox = 1;
+  if (ox2 < 0) oy = 1;
+  if (ox3 < 0) oz = 1;
   MeshBlockTree *btleaf = bt->GetLeaf(ox, oy, oz);
   if (btleaf->pleaf_ == nullptr)
     return bt;  // return this block
-  if (amrflag == false) {
+  if (!amrflag) {
     msg << "### FATAL ERROR in FindNeighbor" << std::endl
         << "Neighbor search failed. The Block Tree is broken." << std::endl;
     ATHENA_ERROR(msg);
@@ -459,7 +459,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
 MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc) {
   if (tloc.level == loc_.level) return this;
   // get leaf indexes
-  int sh = tloc.level-loc_.level-1;
+  int sh = tloc.level - loc_.level - 1;
   int mx = (((tloc.lx1>>sh) & 1LL) == 1LL);
   int my = (((tloc.lx2>>sh) & 1LL) == 1LL);
   int mz = (((tloc.lx3>>sh) & 1LL) == 1LL);

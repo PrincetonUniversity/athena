@@ -145,7 +145,7 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Allocate and compute arrays for intermediate geometric quantities that are only
   // needed if object is NOT a coarse mesh
-  if (coarse_flag == false) {
+  if (!coarse_flag) {
     // Allocate arrays for intermediate geometric quantities: r-direction
     coord_vol_i1_.NewAthenaArray(nc1);
     coord_vol_i2_.NewAthenaArray(nc1);

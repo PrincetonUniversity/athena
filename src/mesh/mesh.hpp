@@ -371,7 +371,7 @@ class Mesh {
 inline Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange,
                                   bool sym_interval) {
   // index is typically 0, ... nrange for non-ghost boundaries
-  if (sym_interval == false) {
+  if (!sym_interval) {
     // to map to fractional logical position [0.0, 1.0], simply divide by # of faces
     return static_cast<Real>(index)/static_cast<Real>(nrange);
   } else {
