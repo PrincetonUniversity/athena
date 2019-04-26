@@ -595,7 +595,7 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
     if (nb.snb.level == pmb->loc.level) {
       if ((nb.ni.type == NeighborConnect::face)
           || ((nb.ni.type == NeighborConnect::edge)
-              && (edge_flag_[nb.eid] == true))) {
+              && (edge_flag_[nb.eid]))) {
         p = LoadFluxBoundaryBufferSameLevel(bd_var_flcor_.send[nb.bufid], nb);
       } else {
         continue;
@@ -1230,7 +1230,7 @@ void FaceCenteredBoundaryVariable::ClearCoarseFluxBoundary() {
   }
   // edge
   for (int n=0; n<pbval_->nedge_; n++) {
-    if (edge_flag_[n] == true) continue;
+    if (edge_flag_[n]) continue;
     if (n >= 0 && n < 4) {
       int i, j;
       if ((n & 1) == 0) {
@@ -1533,14 +1533,14 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
   bool flag = true;
 
   // Receive same-level non-polar EMF values
-  if (recv_flx_same_lvl_ == true) {
+  if (recv_flx_same_lvl_) {
     for (int n=0; n<pbval_->nneighbor; n++) { // first correct the same level
       NeighborBlock& nb = pbval_->neighbor[n];
       if (nb.ni.type != NeighborConnect::face && nb.ni.type != NeighborConnect::edge)
         break;
       if (nb.snb.level!=pmb->loc.level) continue;
       if ((nb.ni.type == NeighborConnect::face)
-          || ((nb.ni.type == NeighborConnect::edge) && (edge_flag_[nb.eid] == true))) {
+          || ((nb.ni.type == NeighborConnect::edge) && (edge_flag_[nb.eid]))) {
         if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
         if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
           if (nb.snb.rank == Globals::my_rank) { // on the same process
@@ -1647,7 +1647,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
     }
   }
 
-  if (flag == true) {
+  if (flag) {
     AverageFluxBoundary();
     if (pbval_->num_north_polar_blocks_ > 0)
       SetFluxBoundaryFromPolar(flux_north_recv_, pbval_->num_north_polar_blocks_, true);

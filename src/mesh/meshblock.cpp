@@ -54,7 +54,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   ncells1 = block_size.nx1 + 2*NGHOST;
   ncc1 = block_size.nx1/2 + 2*NGHOST;
-  if (pmy_mesh->f2_) {
+  if (pmy_mesh->f2) {
     js = NGHOST;
     je = js + block_size.nx2 - 1;
     ncells2 = block_size.nx2 + 2*NGHOST;
@@ -65,7 +65,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     ncc2 = 1;
   }
 
-  if (pmy_mesh->f3_) {
+  if (pmy_mesh->f3) {
     ks = NGHOST;
     ke = ks + block_size.nx3 - 1;
     ncells3 = block_size.nx3 + 2*NGHOST;
@@ -80,9 +80,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     cnghost = (NGHOST + 1)/2 + 1;
     cis = NGHOST; cie = cis + block_size.nx1/2 - 1;
     cjs = cje = cks = cke = 0;
-    if (pmy_mesh->f2_) // 2D or 3D
+    if (pmy_mesh->f2) // 2D or 3D
       cjs = NGHOST, cje = cjs + block_size.nx2/2 - 1;
-    if (pmy_mesh->f3_) // 3D
+    if (pmy_mesh->f3) // 3D
       cks = NGHOST, cke = cks + block_size.nx3/2 - 1;
   }
 
@@ -189,7 +189,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   ncells1 = block_size.nx1 + 2*NGHOST;
   ncc1 = block_size.nx1/2 + 2*NGHOST;
-  if (pmy_mesh->f2_) {
+  if (pmy_mesh->f2) {
     js = NGHOST;
     je = js + block_size.nx2 - 1;
     ncells2 = block_size.nx2 + 2*NGHOST;
@@ -200,7 +200,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     ncc2 = 1;
   }
 
-  if (pmy_mesh->f3_) {
+  if (pmy_mesh->f3) {
     ks = NGHOST;
     ke = ks + block_size.nx3 - 1;
     ncells3 = block_size.nx3 + 2*NGHOST;
@@ -321,6 +321,7 @@ MeshBlock::~MeshBlock() {
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
+  if (NSCALARS > 0) delete pscalars;
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
   delete pbval;
@@ -408,7 +409,7 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
 
 std::size_t MeshBlock::GetBlockSizeInBytes() {
   std::size_t size;
-
+  // NEW_OUTPUT_TYPES:
   size = phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
     size += phydro->w.GetSizeInBytes();
@@ -419,8 +420,8 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
              + pfield->b.x3f.GetSizeInBytes());
   if (SELF_GRAVITY_ENABLED)
     size += pgrav->phi.GetSizeInBytes();
-
-  // NEW_PHYSICS: modify the size counter here when new physics is introduced
+  if (NSCALARS > 0)
+    size += pscalars->s.GetSizeInBytes();
 
   // calculate user MeshBlock data size
   for (int n=0; n<nint_user_meshblock_data_; n++)
@@ -502,7 +503,7 @@ void MeshBlock::RegisterMeshBlockData(FaceField &pvar_fc) {
 
 // void MeshBlock::SetHydroData(HydroBoundaryQuantity hydro_type)
 //   Hydro *ph = pmy_block_->phydro;
-//   // hard-coded assumption that, if multilevel==true, then Hydro is always present
+//   // hard-coded assumption that, if multilevel, then Hydro is always present
 //   // and enrolled in mesh refinement in the first pvars_cc_ vector entry
 //   switch (hydro_type) {
 //     case (HydroBoundaryQuantity::cons): {

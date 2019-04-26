@@ -41,7 +41,7 @@ int RefinementCondition(MeshBlock *pmb);
 //  functions in this file.  Called in Mesh constructor.
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
-  if (adaptive==true) {
+  if (adaptive) {
     threshold = pin->GetReal("problem","thr");
     EnrollUserRefinementCondition(RefinementCondition);
   }
@@ -453,16 +453,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 
 // refinement condition: velocity gradient
+
 int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
-  Real vgmax=0.0;
+  Real vgmax = 0.0;
   for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js-1; j<=pmb->je+1; j++) {
       for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
         Real vgy = std::fabs(w(IVY,k,j,i+1) - w(IVY,k,j,i-1))*0.5;
         Real vgx = std::fabs(w(IVX,k,j+1,i) - w(IVX,k,j-1,i))*0.5;
-        Real vg  = std::sqrt(vgx*vgx+vgy*vgy);
-        if (vg > vgmax) vgmax=vg;
+        Real vg  = std::sqrt(vgx*vgx + vgy*vgy);
+        if (vg > vgmax) vgmax = vg;
       }
     }
   }

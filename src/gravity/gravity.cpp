@@ -29,9 +29,10 @@
 // TODO(felker): change "MeshBlock *pmb" to reference member, set in initializer list
 Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), phi(pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
     four_pi_G(pmb->pmy_mesh->four_pi_G_),
     grav_mean_rho(pmb->pmy_mesh->grav_mean_rho_),
-    gbvar(pmb, &phi, nullptr, nullptr) {
+    gbvar(pmb, &phi, nullptr, empty_flux) {
   if (four_pi_G == 0.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Gravity::Gravity" << std::endl

@@ -40,9 +40,9 @@
 SuperTimeStepTaskList::SuperTimeStepTaskList(
     ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) : ptlist_(ptlist) {
   // STS Incompatiblities
-  if (MAGNETIC_FIELDS_ENABLED &&
-      !(pm->pblock->pfield->fdif.field_diffusion_defined) &&
-      !(pm->pblock->phydro->hdif.hydro_diffusion_defined)) {
+  if (MAGNETIC_FIELDS_ENABLED
+      && !(pm->pblock->pfield->fdif.field_diffusion_defined)
+      && !(pm->pblock->phydro->hdif.hydro_diffusion_defined)) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping requires setting parameters for "
@@ -60,7 +60,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
   }
   // TODO(pdmullen): how should source terms be handled inside
   //                 operator-split RKL1 STS?
-  if (pm->pblock->phydro->hsrc.hydro_sourceterms_defined==true) {
+  if (pm->pblock->phydro->hsrc.hydro_sourceterms_defined) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatible "
@@ -323,7 +323,10 @@ TaskStatus SuperTimeStepTaskList::IntegrateHydro_STS(MeshBlock *pmb, int stage) 
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
-    ph->AddFluxDivergenceToAverage(ph->w, pf->bcc, pmb->pmy_mesh->muj_tilde, ph->u);
+    Real wght = pmb->pmy_mesh->muj_tilde;
+    ph->AddFluxDivergence(wght, ph->u);
+    // TODO(pdmullen): check this after disabling ATHENA_ERROR for src terms
+    pmb->pcoord->AddCoordTermsDivergence(wght, ph->flux, ph->w, pf->bcc, ph->u);
     return TaskStatus::next;
   }
   return TaskStatus::fail;

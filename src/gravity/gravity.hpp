@@ -34,6 +34,7 @@ class Gravity {
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
   AthenaArray<Real> phi;   // gravitational potential
+  AthenaArray<Real> empty_flux[3];
   Real gconst, four_pi_G;  // default: 4*pi*G=1
   Real grav_mean_rho;
   bool srcterm;

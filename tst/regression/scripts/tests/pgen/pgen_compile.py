@@ -1,6 +1,7 @@
 # Test script to make sure all problem generator files in /src/pgen compile
 
 # Modules
+import logging
 import scripts.utils.athena as athena
 import glob
 import os
@@ -8,6 +9,7 @@ import os
 current_dir = os.getcwd()
 test = current_dir[0:(len(current_dir) - 14)]
 pgen_directory = test + 'src/pgen/'
+logger = logging.getLogger('athena' + __name__[7:])
 
 # set pgen_choices to list of .cpp files in src/pgen/
 pgen_choices = glob.glob(pgen_directory + '*.cpp')
@@ -39,6 +41,7 @@ hydro_args = []
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     # Check that code compiles all pgen files in single or double precision
     for single_precision in [True, False]:
         for pgen_set, args in zip([gr_probs, mhd_probs,

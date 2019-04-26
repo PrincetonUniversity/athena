@@ -14,11 +14,8 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../field/field.hpp"
 #include "../mesh/mesh.hpp"
-#include "../reconstruct/reconstruction.hpp"
 #include "hydro.hpp"
 
 // OpenMP header
@@ -27,27 +24,26 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-//! \fn  void Hydro::AddFluxDivergenceToAverage
+//! \fn  void Hydro::AddFluxDivergence
 //  \brief Adds flux divergence to weighted average of conservative variables from
 //  previous step(s) of time integrator algorithm
 
-void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-                                       const Real wght, AthenaArray<Real> &u_out) {
-  MeshBlock *pmb=pmy_block;
-  AthenaArray<Real> &x1flux=flux[X1DIR];
-  AthenaArray<Real> &x2flux=flux[X2DIR];
-  AthenaArray<Real> &x3flux=flux[X3DIR];
+// TODO(felker): consider combining with PassiveScalars implementation + (see 57cfe28b)
+// (may rename to AddPhysicalFluxDivergence or AddQuantityFluxDivergence to explicitly
+// distinguish from CoordTerms)
+// (may rename to AddHydroFluxDivergence and AddScalarsFluxDivergence, if
+// the implementations remain completely independent / no inheritance is
+// used)
+void Hydro::AddFluxDivergence(const Real wght, AthenaArray<Real> &u_out) {
+  MeshBlock *pmb = pmy_block;
+  AthenaArray<Real> &x1flux = flux[X1DIR];
+  AthenaArray<Real> &x2flux = flux[X2DIR];
+  AthenaArray<Real> &x3flux = flux[X3DIR];
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  AthenaArray<Real> x1area, x2area, x2area_p1, x3area, x3area_p1, vol, dflx;
-  x1area.InitWithShallowCopy(x1face_area_);
-  x2area.InitWithShallowCopy(x2face_area_);
-  x2area_p1.InitWithShallowCopy(x2face_area_p1_);
-  x3area.InitWithShallowCopy(x3face_area_);
-  x3area_p1.InitWithShallowCopy(x3face_area_p1_);
-  vol.InitWithShallowCopy(cell_volume_);
-  dflx.InitWithShallowCopy(dflx_);
-
+  AthenaArray<Real> &x1area = x1face_area_, &x2area = x2face_area_,
+                 &x2area_p1 = x2face_area_p1_, &x3area = x3face_area_,
+                 &x3area_p1 = x3face_area_p1_, &vol = cell_volume_, &dflx = dflx_;
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       // calculate x1-flux divergence
@@ -93,10 +89,5 @@ void Hydro::AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &
       }
     }
   }
-
-  // add coordinate (geometric) source terms
-  if (!STS_ENABLED)
-    pmb->pcoord->CoordSrcTerms((wght*pmb->pmy_mesh->dt),pmb->phydro->flux,w,bcc,u_out);
-
   return;
 }

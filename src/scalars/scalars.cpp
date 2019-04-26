@@ -26,12 +26,13 @@
 
 PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     s(NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    s1(NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     s_flux{ {NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1+1},
             {NSCALARS, pmb->ncells3, pmb->ncells2+1, pmb->ncells1,
-             (pmb->pmy_mesh->f2_ ? AthenaArray<Real>::DataStatus::allocated :
+             (pmb->pmy_mesh->f2 ? AthenaArray<Real>::DataStatus::allocated :
               AthenaArray<Real>::DataStatus::empty)},
             {NSCALARS, pmb->ncells3+1, pmb->ncells2, pmb->ncells1,
-             (pmb->pmy_mesh->f3_ ? AthenaArray<Real>::DataStatus::allocated :
+             (pmb->pmy_mesh->f3 ? AthenaArray<Real>::DataStatus::allocated :
               AthenaArray<Real>::DataStatus::empty)}
     },
     coarse_s_(NSCALARS, pmb->ncc3, pmb->ncc2, pmb->ncc1,
@@ -39,7 +40,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
                AthenaArray<Real>::DataStatus::empty)),
     sbvar(pmb, &s, &coarse_s_, s_flux),
     pmy_block(pmb) {
-  int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, ncells3 = pmb->ncells3;
+  int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
   Mesh *pm = pmy_block->pmy_mesh;
 
   pmb->RegisterMeshBlockData(s);
@@ -47,8 +48,14 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   // Allocate optional passive scalar variable memory registers for time-integrator
   if (pmb->precon->xorder == 4) {
     // fourth-order cell-centered approximations
-    s_cc.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
+    s_cc.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
   }
+
+  // If user-requested time integrator is type 3S*, allocate additional memory registers
+  std::string integrator = pin->GetOrAddString("time", "integrator", "vl2");
+  if (integrator == "ssprk5_4" || STS_ENABLED)
+    // future extension may add "int nregister" to Hydro class
+    s2.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
 
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
   if (pm->multilevel) {
@@ -61,25 +68,38 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   pmb->pbval->bvars_main_int.push_back(&sbvar);
 
   // Allocate memory for scratch arrays
-  dxw_.NewAthenaArray(ncells1);
-  wl_.NewAthenaArray(NSCALARS, ncells1);
-  wr_.NewAthenaArray(NSCALARS, ncells1);
-  wlb_.NewAthenaArray(NSCALARS, ncells1);
-  x1face_area_.NewAthenaArray(ncells1+1);
-  if (pm->f2_) {
-    x2face_area_.NewAthenaArray(ncells1);
-    x2face_area_p1_.NewAthenaArray(ncells1);
+  dxw_.NewAthenaArray(nc1);
+  sl_.NewAthenaArray(NSCALARS, nc1);
+  sr_.NewAthenaArray(NSCALARS, nc1);
+  slb_.NewAthenaArray(NSCALARS, nc1);
+  x1face_area_.NewAthenaArray(nc1+1);
+  if (pm->f2) {
+    x2face_area_.NewAthenaArray(nc1);
+    x2face_area_p1_.NewAthenaArray(nc1);
   }
-  if (pm->f3_) {
-    x3face_area_.NewAthenaArray(ncells1);
-    x3face_area_p1_.NewAthenaArray(ncells1);
+  if (pm->f3) {
+    x3face_area_.NewAthenaArray(nc1);
+    x3face_area_p1_.NewAthenaArray(nc1);
   }
-  cell_volume_.NewAthenaArray(ncells1);
+  cell_volume_.NewAthenaArray(nc1);
+  dflx_.NewAthenaArray(NHYDRO, nc1);
 
-  // fourth-order 4D scratch arrays
-  wl3d_.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
-  wr3d_.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
-  scr1_nkji_.NewAthenaArray(NSCALARS, ncells3, ncells2, ncells1);
-  laplacian_l_fc_.NewAthenaArray(ncells1);
-  laplacian_r_fc_.NewAthenaArray(ncells1);
+  // fourth-order integration scheme
+  if (pmb->precon->xorder == 4) {
+    // 4D scratch arrays
+    sl3d_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    sr3d_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    scr1_nkji_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    scr2_nkji_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    // store all face-centered mass fluxes (all 3x coordinate directions) from Hydro:
+    mass_flux_fc[X1DIR].NewAthenaArray(nc3, nc2, nc1+1);
+    if (pmb->pmy_mesh->f2)
+      mass_flux_fc[X2DIR].NewAthenaArray(nc3, nc2+1, nc1);
+    if (pmb->pmy_mesh->f3)
+      mass_flux_fc[X3DIR].NewAthenaArray(nc3+3, nc2, nc1);
+
+    // 1D scratch arrays
+    laplacian_l_fc_.NewAthenaArray(nc1);
+    laplacian_r_fc_.NewAthenaArray(nc1);
+  }
 }

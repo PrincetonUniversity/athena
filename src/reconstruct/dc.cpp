@@ -13,9 +13,6 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../coordinates/coordinates.hpp"
-#include "../hydro/hydro.hpp"
-#include "../mesh/mesh.hpp"
 #include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -26,7 +23,7 @@ void Reconstruction::DonorCellX1(const int k, const int j, const int il, const i
                                  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
                                  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   // compute L/R states for each variable
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       wl(n,i+1) =  wr(n,i) = w(n,k,j,i);
@@ -54,7 +51,7 @@ void Reconstruction::DonorCellX2(const int k, const int j, const int il, const i
                                  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
                                  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   // compute L/R states for each variable
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       wl(n,i) = wr(n,i) = w(n,k,j,i);
@@ -81,7 +78,7 @@ void Reconstruction::DonorCellX3(const int k, const int j, const int il, const i
                                  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
                                  AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   // compute L/R states for each variable
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       wl(n,i) = wr(n,i) = w(n,k,j,i);

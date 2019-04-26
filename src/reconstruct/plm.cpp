@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file plm-uniform.cpp
+//! \file plm.cpp
 //  \brief  piecewise linear reconstruction for both uniform and non-uniform meshes
 
 // C headers
@@ -15,8 +15,6 @@
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../hydro/hydro.hpp"
-#include "../mesh/mesh.hpp"
 #include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -29,15 +27,11 @@ void Reconstruction::PiecewiseLinearX1(
     AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmy_block_->pcoord;
   // set work arrays to shallow copies of scratch arrays
-  AthenaArray<Real> bx,wc,dwl,dwr,dwm;
-  bx.InitWithShallowCopy(scr01_i_);
-  wc.InitWithShallowCopy(scr1_ni_);
-  dwl.InitWithShallowCopy(scr2_ni_);
-  dwr.InitWithShallowCopy(scr3_ni_);
-  dwm.InitWithShallowCopy(scr4_ni_);
+  AthenaArray<Real> &bx = scr01_i_, &wc = scr1_ni_, &dwl = scr2_ni_, &dwr = scr3_ni_,
+                   &dwm = scr4_ni_;
 
   // compute L/R slopes for each variable
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       dwl(n,i) = (w(n,k,j,i  ) - w(n,k,j,i-1));
@@ -69,7 +63,7 @@ void Reconstruction::PiecewiseLinearX1(
 
   // Apply van Leer limiter for uniform grid
   if (uniform_limiter[X1DIR]) {
-    for (int n=0; n<(NWAVE); ++n) {
+    for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real dw2 = dwl(n,i)*dwr(n,i);
@@ -80,7 +74,7 @@ void Reconstruction::PiecewiseLinearX1(
 
     // Apply Mignone limiter for non-uniform grid
   } else {
-    for (int n=0; n<(NWAVE); ++n) {
+    for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real dw2 = dwl(n,i)*dwr(n,i);
@@ -99,7 +93,7 @@ void Reconstruction::PiecewiseLinearX1(
   }
 
   // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
-  for (int n=0; n<(NWAVE); ++n) {
+  for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
       wl(n,i+1) = wc(n,i) + ((pco->x1f(i+1)-pco->x1v(i))/pco->dx1f(i))*dwm(n,i);
@@ -129,15 +123,11 @@ void Reconstruction::PiecewiseLinearX2(
     AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmy_block_->pcoord;
   // set work arrays to shallow copies of scratch arrays
-  AthenaArray<Real> bx,wc,dwl,dwr,dwm;
-  bx.InitWithShallowCopy(scr01_i_);
-  wc.InitWithShallowCopy(scr1_ni_);
-  dwl.InitWithShallowCopy(scr2_ni_);
-  dwr.InitWithShallowCopy(scr3_ni_);
-  dwm.InitWithShallowCopy(scr4_ni_);
+  AthenaArray<Real> &bx = scr01_i_, &wc = scr1_ni_, &dwl = scr2_ni_,
+                   &dwr = scr3_ni_, &dwm = scr4_ni_;
 
   // compute L/R slopes for each variable
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       dwl(n,i) = (w(n,k,j  ,i) - w(n,k,j-1,i));
@@ -170,7 +160,7 @@ void Reconstruction::PiecewiseLinearX2(
 
   // Apply van Leer limiter for uniform grid
   if (uniform_limiter[X2DIR]) {
-    for (int n=0; n<(NWAVE); ++n) {
+    for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real dw2 = dwl(n,i)*dwr(n,i);
@@ -183,7 +173,7 @@ void Reconstruction::PiecewiseLinearX2(
   } else {
     Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
     Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
-    for (int n=0; n<(NWAVE); ++n) {
+    for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real dw2 = dwl(n,i)*dwr(n,i);
@@ -202,7 +192,7 @@ void Reconstruction::PiecewiseLinearX2(
   // compute ql_(j+1/2) and qr_(j-1/2) using monotonized slopes
   Real dxp = (pco->x2f(j+1)-pco->x2v(j))/pco->dx2f(j);
   Real dxm = (pco->x2v(j  )-pco->x2f(j))/pco->dx2f(j);
-  for (int n=0; n<(NWAVE); ++n) {
+  for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
       wl(n,i) = wc(n,i) + dxp*dwm(n,i);
@@ -231,15 +221,11 @@ void Reconstruction::PiecewiseLinearX3(
     AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
   Coordinates *pco = pmy_block_->pcoord;
   // set work arrays to shallow copies of scratch arrays
-  AthenaArray<Real> bx,wc,dwl,dwr,dwm;
-  bx.InitWithShallowCopy(scr01_i_);
-  wc.InitWithShallowCopy(scr1_ni_);
-  dwl.InitWithShallowCopy(scr2_ni_);
-  dwr.InitWithShallowCopy(scr3_ni_);
-  dwm.InitWithShallowCopy(scr4_ni_);
+  AthenaArray<Real> &bx = scr01_i_, &wc = scr1_ni_, &dwl = scr2_ni_, &dwr = scr3_ni_,
+                   &dwm = scr4_ni_;
 
   // compute L/R slopes for each variable
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       dwl(n,i) = (w(n,k  ,j,i) - w(n,k-1,j,i));
@@ -272,7 +258,7 @@ void Reconstruction::PiecewiseLinearX3(
 
   // Apply van Leer limiter for uniform grid
   if (uniform_limiter[X3DIR]) {
-    for (int n=0; n<(NWAVE); ++n) {
+    for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real dw2 = dwl(n,i)*dwr(n,i);
@@ -283,7 +269,7 @@ void Reconstruction::PiecewiseLinearX3(
 
     // Apply Mignone limiter for non-uniform grid
   } else {
-    for (int n=0; n<(NWAVE); ++n) {
+    for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real dw2 = dwl(n,i)*dwr(n,i);
@@ -304,7 +290,7 @@ void Reconstruction::PiecewiseLinearX3(
   // compute ql_(k+1/2) and qr_(k-1/2) using monotonized slopes
   Real dxp = (pco->x3f(k+1)-pco->x3v(k))/pco->dx3f(k);
   Real dxm = (pco->x3v(k  )-pco->x3f(k))/pco->dx3f(k);
-  for (int n=0; n<(NWAVE); ++n) {
+  for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
       wl(n,i) = wc(n,i) + dxp*dwm(n,i);

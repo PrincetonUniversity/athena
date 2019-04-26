@@ -71,7 +71,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   alpha  = pin->GetReal("problem", "alpha");
   beta  = pin->GetReal("problem", "beta");
-  pcoeff= pin->GetReal("problem", "pcoeff");
+  pcoeff = pin->GetReal("problem", "pcoeff");
   rho0  = pin->GetReal("problem", "d");
   vr =  pin->GetReal("problem", "vr");
   // convert from CGS to Athena Heaviside units:
@@ -162,9 +162,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie+1; i++) {
-          Real geom_coeff=1.0;
+          Real geom_coeff = 1.0;
           if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
-            geom_coeff=1.0/pcoord->x1f(i);
+            geom_coeff = 1.0/pcoord->x1f(i);
           }
           pfield->b.x1f(k,j,i) = geom_coeff*(az(j+1,i) - az(j,i))/pcoord->dx2f(j);
         }
@@ -173,9 +173,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie; i++) {
-          Real geom_coeff=1.0;
+          Real geom_coeff = 1.0;
           if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
-            geom_coeff=-1.0; // Left hand system?
+            geom_coeff = -1.0; // Left hand system?
           }
           pfield->b.x2f(k,j,i) = geom_coeff*(az(j,i) - az(j,i+1))/pcoord->dx1f(i);
         }
@@ -200,9 +200,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           for (int i=is; i<=ie; i++) {
             phydro->u(IEN,k,j,i) +=
                 // second-order accurate assumption about volume-averaged field
-                0.5*0.25*(SQR(pfield->b.x1f(k,j,i)+pfield->b.x1f(k,j,i+1))
-                          + SQR(pfield->b.x2f(k,j,i)+pfield->b.x2f(k,j+1,i))
-                          + SQR(pfield->b.x3f(k,j,i)+pfield->b.x3f(k+1,j,i)));
+                0.5*0.25*(SQR(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))
+                          + SQR(pfield->b.x2f(k,j,i)  + pfield->b.x2f(k,j+1,i))
+                          + SQR(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)));
           }
         }
       }

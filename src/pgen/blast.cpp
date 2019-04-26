@@ -222,17 +222,17 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
 
   // analysis - check shape of the spherical blast wave
-  int is=pblock->is, ie=pblock->ie;
-  int js=pblock->js, je=pblock->je;
-  int ks=pblock->ks, ke=pblock->ke;
+  int is = pblock->is, ie = pblock->ie;
+  int js = pblock->js, je = pblock->je;
+  int ks = pblock->ks, ke = pblock->ke;
   AthenaArray<Real> pr;
-  pr.InitWithShallowSlice(pblock->phydro->w,4,IPR,1);
+  pr.InitWithShallowSlice(pblock->phydro->w, 4, IPR, 1);
 
   // get coordinate location of the center, convert to Cartesian
-  Real x1_0   = pin->GetOrAddReal("problem","x1_0",0.0);
-  Real x2_0   = pin->GetOrAddReal("problem","x2_0",0.0);
-  Real x3_0   = pin->GetOrAddReal("problem","x3_0",0.0);
-  Real x0,y0,z0;
+  Real x1_0 = pin->GetOrAddReal("problem", "x1_0", 0.0);
+  Real x2_0 = pin->GetOrAddReal("problem", "x2_0", 0.0);
+  Real x3_0 = pin->GetOrAddReal("problem", "x3_0", 0.0);
+  Real x0, y0, z0;
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     x0 = x1_0;
     y0 = x2_0;
@@ -409,27 +409,27 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 }
 
 
-// refinement condition: check the pressure gradient
+// refinement condition: check the maximum pressure gradient
 int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
   Real maxeps = 0.0;
-  if (pmb->block_size.nx3>1) {
+  if (pmb->pmy_mesh->f3) {
     for (int k=pmb->ks-1; k<=pmb->ke+1; k++) {
       for (int j=pmb->js-1; j<=pmb->je+1; j++) {
         for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
-          Real eps = std::sqrt(SQR(0.5*(w(IPR,k,j,i+1)-w(IPR,k,j,i-1)))
-                               +SQR(0.5*(w(IPR,k,j+1,i)-w(IPR,k,j-1,i)))
-                               +SQR(0.5*(w(IPR,k+1,j,i)-w(IPR,k-1,j,i))))/w(IPR,k,j,i);
+          Real eps = std::sqrt(SQR(0.5*(w(IPR,k,j,i+1) - w(IPR,k,j,i-1)))
+                               +SQR(0.5*(w(IPR,k,j+1,i) - w(IPR,k,j-1,i)))
+                               +SQR(0.5*(w(IPR,k+1,j,i) - w(IPR,k-1,j,i))))/w(IPR,k,j,i);
           maxeps = std::max(maxeps, eps);
         }
       }
     }
-  } else if (pmb->block_size.nx2>1) {
+  } else if (pmb->pmy_mesh->f2) {
     int k = pmb->ks;
     for (int j=pmb->js-1; j<=pmb->je+1; j++) {
       for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
-        Real eps = std::sqrt(SQR(0.5*(w(IPR,k,j,i+1)-w(IPR,k,j,i-1)))
-                             +SQR(0.5*(w(IPR,k,j+1,i)-w(IPR,k,j-1,i))))/w(IPR,k,j,i);
+        Real eps = std::sqrt(SQR(0.5*(w(IPR,k,j,i+1) - w(IPR,k,j,i-1)))
+                             + SQR(0.5*(w(IPR,k,j+1,i) - w(IPR,k,j-1,i))))/w(IPR,k,j,i);
         maxeps = std::max(maxeps, eps);
       }
     }

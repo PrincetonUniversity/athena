@@ -23,17 +23,21 @@ class ParameterInput;
 //! \class PassiveScalars
 //  \brief
 
+// TODO(felker): consider renaming to Scalars
 class PassiveScalars {
  public:
+  // TODO(felker): pin is currently only used for checking ssprk5_4, otherwise unused.
+  // Leaving as ctor parameter in case of run-time "nscalars" option
   PassiveScalars(MeshBlock *pmb, ParameterInput *pin);
 
   // public data:
   // mass fraction of each species
-  AthenaArray<Real> s;
+  AthenaArray<Real> s, s1, s2;  // (no more than MAX_NREGISTER allowed)
   AthenaArray<Real> s_flux[3];  // face-averaged flux vector
 
   // fourth-order intermediate quantities
-  AthenaArray<Real> s_cc;      // cell-centered approximations
+  AthenaArray<Real> s_cc;             // cell-centered approximations
+  AthenaArray<Real> mass_flux_fc[3];  // deep copy of intermediate Hydro quantities
 
   // storage for SMR/AMR
   // TODO(KGF): remove trailing underscore or revert to private:
@@ -43,22 +47,32 @@ class PassiveScalars {
 
   // public functions:
   // KGF: use inheritance for these functions / overall class?
-  void AddFluxDivergenceToAverage(AthenaArray<Real> &w, const Real wght);
-  void CalculateFluxes(AthenaArray<Real> &w, const int order);
+  void AddFluxDivergence(const Real wght, AthenaArray<Real> &s_out);
+  void CalculateFluxes(AthenaArray<Real> &s, const int order);
 
  private:
   MeshBlock* pmy_block;
   // scratch space used to compute fluxes
-  AthenaArray<Real> wl_, wr_, wlb_;
+  // 2D scratch arrays
+  AthenaArray<Real> sl_, sr_, slb_;
+  // 1D scratch arrays
   AthenaArray<Real> dxw_;
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
   AthenaArray<Real> cell_volume_;
+  AthenaArray<Real> dflx_;
 
-  // fourth-order hydro
+  // fourth-order
   // 4D scratch arrays
-  AthenaArray<Real> scr1_nkji_;
-  AthenaArray<Real> wl3d_, wr3d_;
+  AthenaArray<Real> scr1_nkji_, scr2_nkji_;
+  AthenaArray<Real> sl3d_, sr3d_;
+  // 1D scratch arrays
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
+
+  void ComputeUpwindFlux(const int k, const int j, const int il,
+                         const int iu, // CoordinateDirection dir,
+                         AthenaArray<Real> &sl, AthenaArray<Real> &sr,
+                         AthenaArray<Real> &mass_flx,
+                         AthenaArray<Real> &flx_out);
 };
 #endif // SCALARS_SCALARS_HPP_

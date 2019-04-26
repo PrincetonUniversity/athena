@@ -52,7 +52,7 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
   // the owning MultigridDriver object:
   mg_grav_phys_id_ = pmg->pmy_driver_->mg_phys_id_;
 #endif
-  if (pmy_mg_->root_flag_ == true) {
+  if (pmy_mg_->root_flag_) {
     for (int i=0; i<6; i++)
       MGBoundaryFunction_[i] = MGBoundary[i];
   } else {

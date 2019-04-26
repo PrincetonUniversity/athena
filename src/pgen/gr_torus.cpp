@@ -1271,9 +1271,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void MeshBlock::UserWorkInLoop() {
   // Create aliases for metric
-  AthenaArray<Real> g, gi;
-  g.InitWithShallowCopy(ruser_meshblock_data[0]);
-  gi.InitWithShallowCopy(ruser_meshblock_data[1]);
+  AthenaArray<Real> &g = ruser_meshblock_data[0], &gi = ruser_meshblock_data[1];
 
   // Go through all cells
   for (int k=ks; k<=ke; ++k) {
