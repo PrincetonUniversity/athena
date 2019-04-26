@@ -1,6 +1,6 @@
 <comment>
 problem   = beam of radiation in GR (flat spacetime)
-configure = -g -r --prob beam --coord minkowski -hdf5
+configure = -g -r --prob gr_rad_beam --coord minkowski -hdf5
 
 <job>
 problem_id = beam_flat  # name of run

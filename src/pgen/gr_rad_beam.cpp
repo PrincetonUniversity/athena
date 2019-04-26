@@ -80,10 +80,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // Enroll boundary functions
   if (pin->GetString("mesh", "ix1_bc") == "user") {
-    EnrollUserBoundaryFunction(INNER_X1, FixedBoundary);
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x1, FixedBoundary);
   }
   if (pin->GetString("mesh", "ox1_bc") == "user") {
-    EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x1, FixedBoundary);
   }
 
   // Enroll source function
@@ -191,8 +191,7 @@ void Source(MeshBlock *pmb, const Real time, const Real dt,
 
   // Extract information from block
   Radiation *prad = pmb->prad;
-  AthenaArray<Real> cons;
-  cons.InitWithShallowCopy(pmb->ruser_meshblock_data[1]);
+  AthenaArray<Real> &cons = pmb->ruser_meshblock_data[1];
   int is = pmb->is;
   int ie = pmb->ie;
   int js = pmb->js;
@@ -216,8 +215,5 @@ void Source(MeshBlock *pmb, const Real time, const Real dt,
       }
     }
   }
-
-  // Delete array copy
-  cons.DeleteAthenaArray();
   return;
 }

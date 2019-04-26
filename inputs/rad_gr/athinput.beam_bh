@@ -1,6 +1,6 @@
 <comment>
 problem   = beam of radiation in GR (black hole spacetime)
-configure = -g -r --prob beam --coord schwarzschild -hdf5
+configure = -g -r --prob gr_rad_beam --coord schwarzschild -hdf5
 
 <job>
 problem_id = beam_bh  # name of run
