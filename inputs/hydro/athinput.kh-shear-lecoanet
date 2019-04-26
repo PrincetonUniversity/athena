@@ -1,7 +1,7 @@
 <comment>
 problem   = Kelvin-Helmholtz instability
 reference = Lecoanet et al., MNRAS 455, 4274-4288, 2016
-configure = --prob=kh -hdf5
+configure = --prob=kh -hdf5 --nscalars=1
 
 <job>
 problem_id = kh-shear-lecoanet  # problem ID: basename of output filenames
@@ -18,10 +18,11 @@ dt         = 0.1       # time increment between outputs
 <time>
 cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = 100000    # cycle limit
-tlim       = 10.0       # time limit
+tlim       = 10.0      # time limit
 integrator  = vl2      # time integration algorithm
 xorder      = 2        # order of spatial reconstruction
 ncycle_out  = 1        # interval for stdout summary info
+correct_ic  = false    # correct midpoint assumption in initial condition
 
 <mesh>
 nx1        = 128         # Number of zones in X1-direction
