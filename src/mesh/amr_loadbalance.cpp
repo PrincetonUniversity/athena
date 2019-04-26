@@ -51,7 +51,7 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
     GatherCostListAndCheckBalance();
     RedistributeAndRefineMeshBlocks(pin, nbtotal + nnew - ndel);
   } else if (lb_flag_ && step_since_lb >= lb_interval_) {
-    if (GatherCostListAndCheckBalance() == false) // load imbalance detected
+    if (!GatherCostListAndCheckBalance()) // load imbalance detected
       RedistributeAndRefineMeshBlocks(pin, nbtotal);
     lb_flag_ = false;
   }
@@ -116,8 +116,7 @@ void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlis
 
 #ifdef MPI_PARALLEL
   if (nb % (Globals::nranks * num_mesh_threads_) != 0
-      && adaptive == false && lb_flag_ ==false
-      && maxcost == mincost && Globals::my_rank == 0) {
+      && !adaptive && !lb_flag_ && maxcost == mincost && Globals::my_rank == 0) {
     std::cout << "### Warning in CalculateLoadBalance" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will result in poor load balancing." << std::endl;

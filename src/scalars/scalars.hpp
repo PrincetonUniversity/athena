@@ -36,8 +36,10 @@ class PassiveScalars {
   AthenaArray<Real> s_flux[3];  // face-averaged flux vector
 
   // fourth-order intermediate quantities
-  AthenaArray<Real> s_cc;             // cell-centered approximations
   AthenaArray<Real> mass_flux_fc[3];  // deep copy of intermediate Hydro quantities
+  // AthenaArray<Real> s_cc;         // cell-centered approximations
+  // (only needed for 4th order EOS evaluations that have explicit dependence on species
+  // concentration)
 
   // storage for SMR/AMR
   // TODO(KGF): remove trailing underscore or revert to private:

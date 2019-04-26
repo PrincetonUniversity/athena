@@ -44,8 +44,8 @@ class MultigridDriver;
 
 MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
                                    MGBoundaryFunc *MGBoundary)
-    : BoundaryBase(pmg->pmy_driver_->pmy_mesh_, pmg->loc_, pmg->size_, input_bcs) {
-  pmy_mg_ = pmg;
+    : BoundaryBase(pmg->pmy_driver_->pmy_mesh_, pmg->loc_, pmg->size_, input_bcs),
+      pmy_mg_(pmg) {
 #ifdef MPI_PARALLEL
   mgcomm_ = pmg->pmy_driver_->MPI_COMM_MULTIGRID;
   // currently assuming that Multigrid gravity is the only "int physid" associated with
@@ -441,7 +441,7 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, mgcomm_, &test, MPI_STATUS_IGNORE);
         MPI_Test(&(pbd->req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
-        if (static_cast<bool>(test) == false) {
+        if (!static_cast<bool>(test)) {
           bflag = false;
           continue;
         }

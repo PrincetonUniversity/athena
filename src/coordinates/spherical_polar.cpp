@@ -142,7 +142,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Allocate memory for internal scratch arrays to store partial calculations
   // (note this is skipped if object is for coarse mesh with AMR)
-  if (coarse_flag==false) {
+  if (!coarse_flag) {
     coord_area1_i_.NewAthenaArray(nc1+1);
     coord_area2_i_.NewAthenaArray(nc1);
     coord_area3_i_.NewAthenaArray(nc1);

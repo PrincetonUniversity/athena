@@ -1490,7 +1490,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
             << "More computing power than you expected may be required." << std::endl;
       }
     }
-  } while (iflag == false);
+  } while (!iflag);
 
   // calculate the first time step
 #pragma omp parallel for num_threads(nthreads)
@@ -1610,18 +1610,20 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
 void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb) {
   MeshBlock *pmb;
   Hydro *phydro;
-#pragma omp for private(pmb, phydro)
+  PassiveScalars *ps;
+#pragma omp for private(pmb, phydro, ps)
   for (int nb=0; nb<nmb; ++nb) {
     pmb = pmb_array[nb];
     phydro = pmb->phydro;
+    ps = pmb->pscalars;
 
     // Assume cell-centered analytic value is computed at all real cells, and ghost
     // cells with the cell-centered U have been exchanged
     int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
         kl = pmb->ks, ku = pmb->ke;
 
-    // Laplacian of cell-averaged conserved variables
-    AthenaArray<Real> delta_cons_;
+    // Laplacian of cell-averaged conserved variables, scalar concentrations
+    AthenaArray<Real> delta_cons_, delta_s_;
 
     // Allocate memory for 4D Laplacian
     int ncells4 = NHYDRO;
@@ -1631,6 +1633,7 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
 
     // Compute and store Laplacian of cell-averaged conserved variables
     pmb->pcoord->Laplacian(phydro->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
+
     // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
     // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-center
     Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
@@ -1648,7 +1651,27 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
         }
       }
     }
-  }
+
+    // If NSCALARS < NHYDRO, could reuse delta_cons_ allocated memory...
+    int ncells4_s = NSCALARS;
+    int nl_s = 0;
+    int nu_s = ncells4 -1;
+    if (NSCALARS > 0) {
+      delta_s_.NewAthenaArray(ncells4_s, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+      pmb->pcoord->Laplacian(ps->s, delta_s_, il, iu, jl, ju, kl, ku, nl, nu);
+    }
+
+    // Compute fourth-order approximation to cell-centered conserved variables
+    for (int n=nl_s; n<=nu_s; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+          for (int i=il; i<=iu; ++i) {
+            ps->s(n,k,j,i) = ps->s(n,k,j,i) + C*delta_s_(n,k,j,i);
+          }
+        }
+      }
+    }
+  } // end loop over MeshBlocks
 
   // begin second exchange of ghost cells with corrected cell-averaged <U>
   // -----------------  (mostly copied from above section in Mesh::Initialize())

@@ -1553,7 +1553,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
             MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                        MPI_STATUS_IGNORE);
             MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
-            if (static_cast<bool>(test) == false) {
+            if (!static_cast<bool>(test) ) {
               flag = false;
               continue;
             }
@@ -1566,7 +1566,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
         bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::completed;
       }
     }
-    if (flag == false) return flag;  // is this flag always false?
+    if (!flag) return flag;  // is this flag always false?
     if (pmb->pmy_mesh->multilevel)
       ClearCoarseFluxBoundary();
     recv_flx_same_lvl_ = false;
@@ -1591,7 +1591,7 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
           MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
-          if (static_cast<bool>(test) == false) {
+          if (!static_cast<bool>(test)) {
             flag = false;
             continue;
           }
