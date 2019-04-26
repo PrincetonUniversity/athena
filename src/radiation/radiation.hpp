@@ -34,9 +34,6 @@ public:
   MeshBlock* pmy_block;
   RadSrcTermFunc UserSourceTerm;
 
-  // Objects
-  CellCenteredBoundaryVariable rbvar;
-
   // Flags
   bool source_terms_defined;
 
@@ -72,6 +69,9 @@ public:
   AthenaArray<Real> flux_a[2];    // angular fluxes of intensity n^a I
   AthenaArray<Real> coarse_prim;  // prolongation/restriction buffer
   AthenaArray<Real> coarse_cons;  // prolongation/restriction buffer
+
+  // Boundary communication
+  CellCenteredBoundaryVariable rbvar;
 
   // Task list functions
   void WeightedAve(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,

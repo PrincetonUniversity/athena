@@ -26,10 +26,31 @@
 //   pin: pointer to runtime parameters
 
 Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block(pmb),
+    nzeta(pin->GetInteger("radiation", "n_polar")),
+    npsi(pin->GetInteger("radiation", "n_azimuthal")),
+    nang((nzeta + 2*NGHOST) * (npsi + 2*NGHOST)),
+    prim(nang, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    prim1(nang, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    cons(nang, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    cons1(nang, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    cons2(nang, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    flux_x{
+      {nang, pmb->ncells3, pmb->ncells2, pmb->ncells1+1},
+      {nang, pmb->ncells3, pmb->ncells2+1, pmb->ncells1, (pmb-> pmy_mesh->f2_ ?
+          AthenaArray<Real>::DataStatus::allocated :
+          AthenaArray<Real>::DataStatus::empty)},
+      {nang, pmb->ncells3+1, pmb->ncells2, pmb->ncells1, (pmb-> pmy_mesh->f3_ ?
+          AthenaArray<Real>::DataStatus::allocated :
+          AthenaArray<Real>::DataStatus::empty)}
+    },
+    coarse_cons(nang, pmb->ncc3, pmb->ncc2, pmb->ncc1, (pmb->pmy_mesh->multilevel ?
+        AthenaArray<Real>::DataStatus::allocated : AthenaArray<Real>::DataStatus::empty)),
+    coarse_prim(nang, pmb->ncc3, pmb->ncc2, pmb->ncc1, (pmb->pmy_mesh->multilevel ?
+        AthenaArray<Real>::DataStatus::allocated : AthenaArray<Real>::DataStatus::empty)),
     rbvar(pmb, &cons, &coarse_cons, flux_x) {
 
   // Set object and function pointers
-  pmy_block = pmb;
   UserSourceTerm = pmb->pmy_mesh->UserRadSourceTerm_;
 
   // Construct objects
@@ -45,9 +66,6 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   // Set parameters
-  nzeta = pin->GetInteger("radiation", "n_polar");
-  npsi = pin->GetInteger("radiation", "n_azimuthal");
-  nang = (nzeta + 2*NGHOST) * (npsi + 2*NGHOST);
   nang_zf = (nzeta + 2*NGHOST + 1) * (npsi + 2*NGHOST);
   nang_pf = (nzeta + 2*NGHOST) * (npsi + 2*NGHOST + 1);
   nang_zpf = (nzeta + 2*NGHOST + 1) * (npsi + 2*NGHOST + 1);
@@ -148,32 +166,9 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
-  // Allocate memory for intensities
-  int num_cells_1 = ie + NGHOST + 1;
-  int num_cells_2 = 1;
-  if (js != je) {
-    num_cells_2 = je + NGHOST + 1;
-  }
-  int num_cells_3 = 1;
-  if (ks != ke) {
-    num_cells_3 = ke + NGHOST + 1;
-  }
-  prim.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
-  prim1.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
-  cons.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
-  cons1.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
-  cons2.NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1);
-
-  // Allocate memory for fluxes
-  flux_x[X1DIR].NewAthenaArray(nang, num_cells_3, num_cells_2, num_cells_1 + 1);
-  if (js != je) {
-    flux_x[X2DIR].NewAthenaArray(nang, num_cells_3, num_cells_2 + 1, num_cells_1);
-  }
-  if (ks != ke) {
-    flux_x[X3DIR].NewAthenaArray(nang, num_cells_3 + 1, num_cells_2, num_cells_1);
-  }
-  flux_a[ZETADIR].NewAthenaArray(nang_zf, num_cells_3, num_cells_2, num_cells_1);
-  flux_a[PSIDIR].NewAthenaArray(nang_pf, num_cells_3, num_cells_2, num_cells_1);
+  // Allocate memory for angle fluxes
+  flux_a[ZETADIR].NewAthenaArray(nang_zf, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+  flux_a[PSIDIR].NewAthenaArray(nang_pf, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
   // Allocate memory for unit normal components in orthonormal frame
   int num_cells_zeta = ze + NGHOST;
@@ -214,20 +209,20 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   // Allocate memory for unit normal and related components in coordinate frame
-  n0_.NewAthenaArray(num_cells_zeta, num_cells_psi, num_cells_3, num_cells_2,
-      num_cells_1);
-  n1_.NewAthenaArray(num_cells_zeta, num_cells_psi, num_cells_3, num_cells_2,
-      num_cells_1 + 1);
-  n2_.NewAthenaArray(num_cells_zeta, num_cells_psi, num_cells_3, num_cells_2 + 1,
-      num_cells_1);
-  n3_.NewAthenaArray(num_cells_zeta, num_cells_psi, num_cells_3 + 1, num_cells_2,
-      num_cells_1);
-  na0_.NewAthenaArray(num_cells_zeta, num_cells_psi, num_cells_3, num_cells_2,
-      num_cells_1);
-  na1_.NewAthenaArray(num_cells_zeta + 1, num_cells_psi, num_cells_3, num_cells_2,
-      num_cells_1);
-  na2_.NewAthenaArray(num_cells_zeta, num_cells_psi + 1, num_cells_3, num_cells_2,
-      num_cells_1);
+  n0_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
+      pmb->ncells1);
+  n1_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
+      pmb->ncells1 + 1);
+  n2_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2 + 1,
+      pmb->ncells1);
+  n3_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3 + 1, pmb->ncells2,
+      pmb->ncells1);
+  na0_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
+      pmb->ncells1);
+  na1_.NewAthenaArray(num_cells_zeta + 1, num_cells_psi, pmb->ncells3, pmb->ncells2,
+      pmb->ncells1);
+  na2_.NewAthenaArray(num_cells_zeta, num_cells_psi + 1, pmb->ncells3, pmb->ncells2,
+      pmb->ncells1);
 
   // Allocate memory for tetrad and rotation coefficients
   AthenaArray<Real> e, omega;
@@ -394,14 +389,14 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   nh_cf.DeleteAthenaArray();
 
   // Allocate memory for left and right reconstructed states
-  prim_l_.NewAthenaArray(nang_zpf, num_cells_1 + 1);
-  prim_r_.NewAthenaArray(nang_zpf, num_cells_1 + 1);
+  prim_l_.NewAthenaArray(nang_zpf, pmb->ncells1 + 1);
+  prim_r_.NewAthenaArray(nang_zpf, pmb->ncells1 + 1);
 
   // Allocate memory for flux divergence calculation
-  area_l_.NewAthenaArray(num_cells_1 + 1);
-  area_r_.NewAthenaArray(num_cells_1 + 1);
-  vol_.NewAthenaArray(num_cells_1 + 1);
-  flux_div_.NewAthenaArray(nang, num_cells_1 + 1);
+  area_l_.NewAthenaArray(pmb->ncells1 + 1);
+  area_r_.NewAthenaArray(pmb->ncells1 + 1);
+  vol_.NewAthenaArray(pmb->ncells1 + 1);
+  flux_div_.NewAthenaArray(nang, pmb->ncells1 + 1);
 }
 
 //----------------------------------------------------------------------------------------
@@ -417,14 +412,6 @@ Radiation::~Radiation() {
   zeta_length.DeleteAthenaArray();
   psi_length.DeleteAthenaArray();
   solid_angle.DeleteAthenaArray();
-  prim.DeleteAthenaArray();
-  prim1.DeleteAthenaArray();
-  cons.DeleteAthenaArray();
-  cons1.DeleteAthenaArray();
-  cons2.DeleteAthenaArray();
-  flux_x[X1DIR].DeleteAthenaArray();
-  flux_x[X2DIR].DeleteAthenaArray();
-  flux_x[X3DIR].DeleteAthenaArray();
   flux_a[ZETADIR].DeleteAthenaArray();
   flux_a[PSIDIR].DeleteAthenaArray();
   n0_.DeleteAthenaArray();
