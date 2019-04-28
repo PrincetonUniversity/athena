@@ -67,7 +67,6 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   bool ReceiveFluxCorrection() override;
 
   // Shearing box
-  void SendShearingBoxBoundaryBuffersForInit();
   void SendShearingBoxBoundaryBuffers();
   bool ReceiveShearingBoxBoundaryBuffers();
 
@@ -107,6 +106,10 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   int nl_, nu_;
   const bool *flip_across_pole_;
 
+  // shearing box:
+  // working arrays of remapped quantities
+  AthenaArray<Real>  shear_cc_[2];
+
  private:
   // BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;
@@ -123,10 +126,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 #ifdef MPI_PARALLEL
   int cc_phys_id_, cc_flx_phys_id_;
 #endif
-
-  // Shearing box
-  // working arrays of remapped quantities
-  AthenaArray<Real>  shear_cc_[2];
+  // shearing box:
   // flux from conservative remapping
   AthenaArray<Real>  shear_flx_cc_[2];
   // KGF: these should probably be combined into a struct or array with send/recv switch
@@ -137,6 +137,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
 #endif
 
   void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);
+  virtual void ShearQuantities(AthenaArray<Real> &shear_cc_, bool upper) {}
   void SetShearingBoxBoundarySameLevel(Real *buf, const int nb);
   // KGF: AthenaArray<Real>: shboxvar_inner/outer_hydro_, flx_inner/outer_hydro_
   void RemapFlux(const int n, const int k, const int jinner, const int jouter,
