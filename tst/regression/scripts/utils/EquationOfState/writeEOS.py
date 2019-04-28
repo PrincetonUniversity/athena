@@ -2,12 +2,14 @@
 import numpy as np                             # standard Python module for numerics
 from . import eos
 
-_names = ['p/e(e/rho,rho)', 'e/p(p/rho,rho)', 'asq*rho/p(p/rho,rho)',
-          'asq*rho/h(h/rho,rho)']
+default_names = ['p/e(e/rho,rho)', 'e/p(p/rho,rho)', 'asq*rho/p(p/rho,rho)',
+                 'asq*rho/h(h/rho,rho)']
 
 
 def write_varlist(dlim, elim, varlist, fn=None, out_type=None, eOp=1.5,
-                  ratios=None, ftype=None, sdim=0, opt=None):
+                  ratios=None, ftype=None, sdim=0, opt=None, var_names=None):
+    if var_names is None:
+        var_names = default_names
     nvar = len(varlist)
     if out_type is None:
         ext = fn.split('.')[-1]
@@ -44,7 +46,7 @@ def write_varlist(dlim, elim, varlist, fn=None, out_type=None, eOp=1.5,
             f.create_dataset('LogEspecLim', data=elim.astype(ftype))
             f.create_dataset('ratios', data=ratios.astype(ftype))
             for i, d in enumerate(varlist):
-                f.create_dataset(_names[i], data=np.log10(d).astype(ftype))
+                f.create_dataset(var_names[i], data=np.log10(d).astype(ftype))
     elif out_type == 'ascii':
         with open(fn, 'w') as f:
             f.write('# Entries must be space separated.\n')
@@ -58,7 +60,7 @@ def write_varlist(dlim, elim, varlist, fn=None, out_type=None, eOp=1.5,
             ratios.tofile(f, **opt)
             f.write('\n')
             for i, d in enumerate(varlist):
-                f.write('# ' + _names[i] + '\n')
+                f.write('# ' + var_names[i] + '\n')
                 np.savetxt(f, np.log10(d), opt['format'], delimiter=opt['sep'])
     else:  # if binary:
         with open(fn, 'wb') as f:
