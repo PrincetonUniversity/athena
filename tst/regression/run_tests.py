@@ -14,14 +14,15 @@ Notes:
     - Example can be forced to run, but does not run by default in full test.
   - For more information, check online regression test documentation.
 """
-from __future__ import print_function
 
 # Python modules
+from __future__ import print_function
 import argparse
 import os
 from collections import OrderedDict
+import logging
+import logging.config
 from pkgutil import iter_modules
-import traceback
 
 # Prevent generation of .pyc files
 # This should be set before importing any user modules
@@ -30,6 +31,8 @@ sys.dont_write_bytecode = True
 
 # Athena++ modules
 import scripts.utils.athena as athena  # noqa
+
+logger = logging.getLogger('athena')
 
 
 # Main function
@@ -106,16 +109,13 @@ def main(**kwargs):
                 try:
                     module.prepare(**kwargs)
                 except Exception:
-                    # KGF: temporary debugging diagnostic for Jenkins+Gcov issues
-                    # (will pollute output if prepare() fails to compile an obj/ dir)
-                    print(os.listdir('obj'))
-                    traceback.print_exc()
+                    logger.error("Exception occurred", exc_info=True)
                     test_errors.append('prepare()')
                     raise TestError(name_full.replace('.', '/') + '.py')
                 try:
                     run_ret = module.run(mpirun_cmd=mpirun_cmd, mpirun_opts=mpirun_opts)
                 except Exception:
-                    traceback.print_exc()
+                    logger.error("Exception occurred", exc_info=True)
                     test_errors.append('run()')
                     raise TestError(name_full.replace('.', '/') + '.py')
                 else:
@@ -128,12 +128,12 @@ def main(**kwargs):
                 try:
                     result = module.analyze()
                 except Exception:
-                    traceback.print_exc()
+                    logger.error("Exception occurred", exc_info=True)
                     test_errors.append('analyze()')
                     raise TestError(name_full.replace('.', '/') + '.py')
             except TestError as err:
                 test_results.append(False)
-                print('---> Error in ' + str(err))
+                logger.error('---> Error in ' + str(err))
             else:
                 test_results.append(result)
                 test_errors.append(None)
@@ -141,25 +141,25 @@ def main(**kwargs):
                 os.system('rm -rf {0}/bin'.format(current_dir))
                 os.system('rm -rf {0}/obj'.format(current_dir))
             # For CI, print after every individual test has finished
-            print('{} test: prepare(), run(), analyze() finished'.format(name))
+            logger.info('{} test: prepare(), run(), analyze() finished'.format(name))
 
     # Restore any previously-existing files once ALL runs are complete
     finally:
         athena.restore_files()
 
     # Report test results
-    print('\nResults:')
+    logger.info('\nResults:')
     for name, result, error in zip(test_names, test_results, test_errors):
         result_string = 'passed' if result else 'failed'
         error_string = ' -- unexpected failure in {0} stage'.format(error) \
                        if error is not None else ''
-        print('    {0}: {1}{2}'.format(name, result_string, error_string))
-    print('')
+        logger.info('    {0}: {1}{2}'.format(name, result_string, error_string))
+    logger.info('')
     num_tests = len(test_results)
     num_passed = test_results.count(True)
     test_string = 'test' if num_tests == 1 else 'tests'
-    print('Summary: {0} out of {1} {2} passed\n'.format(num_passed, num_tests,
-                                                        test_string))
+    logger.info('Summary: {0} out of {1} {2} passed\n'.format(num_passed, num_tests,
+                                                              test_string))
     # For CI calling scripts, explicitly raise error if not all tests passed
     if num_passed == num_tests:
         return 0
@@ -170,6 +170,59 @@ def main(**kwargs):
 # Exception for unexpected behavior by individual tests
 class TestError(RuntimeError):
     pass
+
+
+class ExceptionFilter(logging.Filter):
+    """Filter out exceptions"""
+    def filter(self, record):
+        return not record.exc_info
+
+
+class MakeFilter(logging.Filter):
+    """Filter out make output"""
+    def filter(self, record):
+        return not 'athena.make' == record.name[:len('athena.make')]
+
+
+def log_init(args):
+    """Initialize log"""
+    kwargs = vars(args)
+    logging.basicConfig(level=0)  # setting this to zero gives output control to handler
+    logger.propagate = False  # don't use default handler
+    c_handler = logging.StreamHandler()  # console/terminal handler
+    c_handler.setLevel(kwargs.pop('loglevel'))
+    c_handler.addFilter(ExceptionFilter())  # let stderr print errors to screen
+    if kwargs.pop('verbose'):
+        c_handler.setLevel(0)
+        c_handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s: %(message)s'))
+    if c_handler.level >= logging.INFO:
+        # if we are not in debugging mode and (not show_make) add MakeFilter
+        if kwargs.pop('hide_make'):
+            c_handler.addFilter(MakeFilter())
+        c_handler.setFormatter(logging.Formatter('%(message)s'))  # only show the message
+    logger.addHandler(c_handler)
+    # setup logfile
+    log_fn = kwargs.pop('logfile')
+    if log_fn:
+        f_handler = logging.FileHandler(log_fn)
+        f_handler.setLevel(0)  # log everything
+        f_format = \
+            logging.Formatter('%(asctime)s|%(levelname)s:%(name)s: %(message)s')
+        f_handler.setFormatter(f_format)
+        logger.addHandler(f_handler)
+    # setup runtime diagnostics file
+    if kwargs.pop('diagnostics_file'):
+        rtd_handler = logging.FileHandler('diagnostics.log')
+        rtd_handler.setLevel(0)  # log everything
+        rtd_fmt = logging.Formatter('%(asctime)s|%(levelname)s:%(name)s: %(message)s')
+        rtd_handler.setFormatter(rtd_fmt)
+        record = logger.makeRecord('athena.tests', logging.INFO, None, None,
+                                   'Starting new tests', None, None)
+        rtd_handler.emit(record)
+        for log in ['athena.run', 'athena.tests']:
+            logging.getLogger(log).addHandler(rtd_handler)
+
+    logger.debug('Starting Athena++ regression tests')
 
 
 # Execute main function
@@ -203,12 +256,12 @@ if __name__ == '__main__':
     parser.add_argument("--config", "-c",
                         default=[],
                         action='append',
-                        help=('arguments to pass to athena.configure'))
+                        help='arguments to pass to athena.configure')
 
     parser.add_argument("--run", "-r",
                         default=[],
                         action='append',
-                        help=('arguments to pass to athena.run'))
+                        help='arguments to pass to athena.run')
 
     parser.add_argument("--coverage", "-cov",
                         type=str,
@@ -217,6 +270,34 @@ if __name__ == '__main__':
                               ' automatically passes -coverage to configure.py.'
                               ' Currently, assumes that Lcov is being used and appends '
                               ' -t and -o options w/ reformatted test name to COVERAGE.'))
+    parser.add_argument('-d', '--debug',
+                        help="print debugging information",
+                        action="store_const",
+                        dest="loglevel",
+                        const=logging.DEBUG,
+                        default=logging.INFO)
+    parser.add_argument('-v', '--verbose',
+                        default=False,
+                        action='store_true',
+                        help="print all output, timestamps and logging information")
+    parser.add_argument('--logfile',
+                        type=str,
+                        default=None,
+                        help='set filename of logfile')
+    parser.add_argument('--diagnostics_file',
+                        default=False,
+                        action='store_true',
+                        help='Write runtime diagnostics to runtime.log')
+    parser.add_argument('--hide_make',
+                        default=False,
+                        action='store_true',
+                        help='Hide output from make command')
 
     args = parser.parse_args()
-    main(**vars(args))
+    log_init(args)
+
+    try:
+        main(**vars(args))
+    except Exception:
+        logger.critical('', exc_info=True)
+        raise

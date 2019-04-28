@@ -3,6 +3,7 @@ Regression test for 1D Sod shock tube comparing different general EOS implementa
 """
 
 # Modules
+import logging
 import numpy as np
 import sys
 import os
@@ -13,11 +14,12 @@ from scripts.utils.EquationOfState.writeEOS import mk_ideal, write_H
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
-
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 _gammas = [1.1, 1.4, 5./3.]
 
 
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure(
                      prob='shock_tube',
                      coord='cartesian',
@@ -149,10 +151,14 @@ def analyze():
                     norm = comparison.l1_norm(x_ref, data_ref[var][loc])
                     diff = comparison.l1_diff(
                         x_ref, data_ref[var][loc], x_new, data_new[var][loc]) / norm
+                    msg = '({0:}). var, err, gamma ='.format(lbls[j])
                     if diff > tolerances[j] or np.isnan(diff):
-                        line = 'Eos ideal table test fail ({0:}). var, err, gamma ='
-                        print(' '.join(map([line.format(lbls[j]), var, diff, g])))
+                        line = 'Eos ideal table test fail '
+                        logger.warning(' '.join(map(str, [line, msg, var, diff, g])))
                         analyze_status = False
+                    else:
+                        line = 'Eos ideal table test pass '
+                        logger.debug(' '.join(map(str, [line, msg, var, diff, g])))
 
     tol = .004
     for t in [10, 25]:
@@ -167,15 +173,22 @@ def analyze():
             norm = comparison.l1_norm(x_ref, data_ref[var][loc])
             diff = comparison.l1_diff(
                 x_ref, data_ref[var][loc], x_new, data_new[var][loc]) / norm
+            msg = ['Eos H table test', 'fail', '(binary). var, err =', var, diff]
             if diff > tol or np.isnan(diff):
-                line = ['Eos H table test fail (binary). var, err =', var, diff]
-                print(' '.join(map(str, line)))
+                logger.warning(' '.join(map(str, msg)))
                 analyze_status = False
+            else:
+                msg[1] = 'pass'
+                logger.debug(' '.join(map(str, msg)))
+
             diff = comparison.l1_diff(
                 x_ref, data_ref[var][loc], x_ascii, data_ascii[var][loc]) / norm
+            msg = ['Eos H table test', 'fail', '(ascii). var, err =', var, diff]
             if diff > tol or np.isnan(diff):
-                line = ['Eos H table test fail (ascii). var, err =', var, diff]
-                print(' '.join(map(str, line)))
+                logger.warning(' '.join(map(str, msg)))
                 analyze_status = False
+            else:
+                msg[1] = 'pass'
+                logger.debug(' '.join(map(str, msg)))
 
     return analyze_status

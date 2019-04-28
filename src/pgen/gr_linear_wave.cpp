@@ -425,9 +425,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // Prepare arrays to hold metric
   if (GENERAL_RELATIVITY) {
-    int ncells1 = mesh_size.nx1/nrbx1 + 2*NGHOST;
-    g.NewAthenaArray(NMETRIC, ncells1);
-    gi.NewAthenaArray(NMETRIC, ncells1);
+    int nc1 = mesh_size.nx1/nrbx1 + 2*NGHOST;
+    g.NewAthenaArray(NMETRIC, nc1);
+    gi.NewAthenaArray(NMETRIC, nc1);
   }
   return;
 }
@@ -439,12 +439,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 // Outputs: (none)
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  // Free metric
-  if (GENERAL_RELATIVITY) {
-    g.DeleteAthenaArray();
-    gi.DeleteAthenaArray();
-  }
-
   // Calculate L1 error against initial conditions
   if (compute_error) {
     // Prepare error calculation variables
@@ -549,13 +543,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       // Close file
       std::fclose(pfile);
     }
-
-    // Free initial conditions arrays
-    if (MAGNETIC_FIELDS_ENABLED) {
-      bcc.DeleteAthenaArray();
-    }
-    initial.DeleteAthenaArray();
-    volume.DeleteAthenaArray();
   }
   return;
 }

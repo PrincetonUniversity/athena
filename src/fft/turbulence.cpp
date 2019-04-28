@@ -11,6 +11,7 @@
 // C++ headers
 #include <algorithm>
 #include <cmath>
+#include <complex>
 #include <iostream>
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
@@ -33,20 +34,18 @@
 
 TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
     : FFTDriver(pm, pin) {
-
-  rseed = pin->GetOrAddInteger("problem","rseed",-1); // seed for random number.
-
-  nlow = pin->GetOrAddInteger("problem","nlow",0); // cut-off wavenumber
+  rseed = pin->GetOrAddInteger("problem", "rseed", -1); // seed for random number.
+  nlow = pin->GetOrAddInteger("problem", "nlow", 0); // cut-off wavenumber
   // cut-off wavenumber, high:
-  nhigh = pin->GetOrAddInteger("problem","nhigh",pm->mesh_size.nx1/2);
-  expo = pin->GetOrAddReal("problem","expo",2); // power-law exponent
-  dedt = pin->GetReal("problem","dedt"); // turbulence amplitude
+  nhigh = pin->GetOrAddInteger("problem", "nhigh", pm->mesh_size.nx1/2);
+  expo = pin->GetOrAddReal("problem", "expo", 2); // power-law exponent
+  dedt = pin->GetReal("problem", "dedt"); // turbulence amplitude
   if (pm->turb_flag > 1) {
-    tcorr = pin->GetReal("problem","tcorr"); // correlation time scales for OU smoothing
+    tcorr = pin->GetReal("problem", "tcorr"); // correlation time scales for OU smoothing
     if (pm->turb_flag == 2)
-      dtdrive = pin->GetReal("problem","dtdrive"); // driving interval is set by hand
+      dtdrive = pin->GetReal("problem", "dtdrive"); // driving interval is set by hand
   }
-  f_shear = pin->GetOrAddReal("problem","f_shear",-1); // ratio of shear component
+  f_shear = pin->GetOrAddReal("problem", "f_shear", -1); // ratio of shear component
   if (f_shear > 1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
@@ -73,34 +72,33 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
     return;
 #endif
   }
-
-  int nx1=pm->pblock->block_size.nx1+2*NGHOST;
-  int nx2=pm->pblock->block_size.nx2+2*NGHOST;
-  int nx3=pm->pblock->block_size.nx3+2*NGHOST;
+  // TODO(changgoo): this assumes 3D and should not work with 1D, 2D. Add check.
+  int nx1 = pm->pblock->ncells1;
+  int nx2 = pm->pblock->ncells2;
+  int nx3 = pm->pblock->ncells3;
 
   vel = new AthenaArray<Real>[3];
-  for (int nv=0; nv<3; nv++) vel[nv].NewAthenaArray(nmb,nx3,nx2,nx1);
+  for (int nv=0; nv<3; nv++) vel[nv].NewAthenaArray(nmb, nx3, nx2, nx1);
 
   InitializeFFTBlock(true);
   QuickCreatePlan();
   dvol = pmy_fb->dx1*pmy_fb->dx2*pmy_fb->dx3;
 
-  fv_ = new AthenaFFTComplex*[3];
-  fv_sh_ = new AthenaFFTComplex*[3];
-  fv_co_ = new AthenaFFTComplex*[3];
-  if (pm->turb_flag > 1) fv_new_ = new AthenaFFTComplex*[3];
+  fv_ = new std::complex<Real>*[3];
+  fv_sh_ = new std::complex<Real>*[3];
+  fv_co_ = new std::complex<Real>*[3];
+  if (pm->turb_flag > 1) fv_new_ = new std::complex<Real>*[3];
   for (int nv=0; nv<3; nv++) {
-    fv_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
-    fv_sh_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
-    fv_co_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
-    if (pm->turb_flag > 1) fv_new_[nv] = new AthenaFFTComplex[pmy_fb->cnt_];
+    fv_[nv] = new std::complex<Real>[pmy_fb->cnt_];
+    fv_sh_[nv] = new std::complex<Real>[pmy_fb->cnt_];
+    fv_co_[nv] = new std::complex<Real>[pmy_fb->cnt_];
+    if (pm->turb_flag > 1) fv_new_[nv] = new std::complex<Real>[pmy_fb->cnt_];
   }
 }
 
 // destructor
 TurbulenceDriver::~TurbulenceDriver() {
   for (int nv=0; nv<3; nv++) {
-    vel[nv].DeleteAthenaArray();
     delete [] fv_[nv];
     delete [] fv_sh_[nv];
     delete [] fv_co_[nv];
@@ -165,10 +163,10 @@ void TurbulenceDriver::Generate() {
   // unless tcorr == 0
   if (!initialized_) {
     for (int nv=0; nv<3; nv++) {
-      AthenaFFTComplex *fv = fv_[nv];
+      std::complex<Real> *fv = fv_[nv];
       PowerSpectrum(fv);
     }
-    if (f_shear >= 0) Project(fv_,f_shear);
+    if (f_shear >= 0) Project(fv_, f_shear);
     if (tcorr > 0.) initialized_ = true;
   } else {
     Real OUdt = pm->dt;
@@ -183,7 +181,7 @@ void TurbulenceDriver::Generate() {
       MeshBlock *pmb=pm->FindMeshBlock(igid);
       if (pmb != nullptr) {
         dv_mb.InitWithShallowSlice(dv, 4, nb, 1);
-        pfb->RetrieveResult(dv_mb,1,NGHOST,pmb->loc,pmb->block_size);
+        pfb->RetrieveResult(dv_mb, 0, NGHOST, pmb->loc, pmb->block_size);
       }
     }
   }
@@ -201,26 +199,25 @@ void TurbulenceDriver::OUProcess(Real dt) {
   FFTBlock *pfb = pmy_fb;
   Real factor = std::exp(-dt/tcorr);
   //Real factor = 1-dt/tcorr;
-  Real sqrt_factor = std::sqrt(1-factor*factor);
+  Real sqrt_factor = std::sqrt(1 - factor*factor);
 
   for (int nv=0; nv<3; nv++) PowerSpectrum(fv_new_[nv]);
 
-  if (f_shear >= 0) Project(fv_new_,f_shear);
+  if (f_shear >= 0) Project(fv_new_, f_shear);
 
   for (int nv=0; nv<3; nv++) {
     for (int k=0; k<pfb->cnt_; k++) {
-      fv_[nv][k][0] = factor * fv_[nv][k][0] + sqrt_factor * fv_new_[nv][k][0];
-      fv_[nv][k][1] = factor * fv_[nv][k][1] + sqrt_factor * fv_new_[nv][k][1];
+      fv_[nv][k] = factor * fv_[nv][k] + sqrt_factor * fv_new_[nv][k];
     }
   }
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp)
+//! \fn void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp)
 //  \brief Generate Power spectrum in Fourier space with power-law
 
-void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
+void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp) {
   Real pcoeff;
   FFTBlock *pfb = pmy_fb;
   AthenaFFTIndex *idx = pfb->b_in_;
@@ -239,13 +236,12 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
         if ((k >= 0) && (k < knx3) &&
             (j >= 0) && (j < knx2) &&
             (i >= 0) && (i < knx3)) {
-          Real q1=ran2(&rseed);
-          Real q2=ran2(&rseed);
-          Real q3=std::sqrt(-2.0*std::log(q1+1.e-20))*std::cos(TWO_PI*q2);
-          q1=ran2(&rseed);
-          std::int64_t kidx=pfb->GetIndex(i,j,k,idx);
-          amp[kidx][0] = q3*std::cos(TWO_PI*q1);
-          amp[kidx][1] = q3*std::sin(TWO_PI*q1);
+          Real q1 = ran2(&rseed);
+          Real q2 = ran2(&rseed);
+          Real q3 = std::sqrt(-2.0*std::log(q1 + 1.e-20))*std::cos(TWO_PI*q2);
+          q1 = ran2(&rseed);
+          std::int64_t kidx = pfb->GetIndex(i,j,k,idx);
+          amp[kidx] = q3*std::complex<Real>(std::cos(TWO_PI*q1), std::sin(TWO_PI*q1));
         } else { // if it is not in FFTBlock, just burn three random numbers
           ran2(&rseed);
           ran2(&rseed);
@@ -259,13 +255,13 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
   for (int k=0; k<knx3; k++) {
     for (int j=0; j<knx2; j++) {
       for (int i=0; i<knx1; i++) {
-        std::int64_t nx=GetKcomp(i,pfb->kdisp[0],pfb->kNx[0]);
-        std::int64_t ny=GetKcomp(j,pfb->kdisp[1],pfb->kNx[1]);
-        std::int64_t nz=GetKcomp(k,pfb->kdisp[2],pfb->kNx[2]);
+        std::int64_t nx = GetKcomp(i,pfb->kdisp[0],pfb->kNx[0]);
+        std::int64_t ny = GetKcomp(j,pfb->kdisp[1],pfb->kNx[1]);
+        std::int64_t nz = GetKcomp(k,pfb->kdisp[2],pfb->kNx[2]);
         Real nmag = std::sqrt(nx*nx+ny*ny+nz*nz);
-        Real kx=nx*pfb->dkx[0];
-        Real ky=ny*pfb->dkx[1];
-        Real kz=nz*pfb->dkx[2];
+        Real kx = nx*pfb->dkx[0];
+        Real ky = ny*pfb->dkx[1];
+        Real kz = nz*pfb->dkx[2];
         Real kmag = std::sqrt(kx*kx+ky*ky+kz*kz);
 
         std::int64_t gidx = pfb->GetGlobalIndex(i,j,k);
@@ -280,8 +276,7 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
           }
         }
         std::int64_t kidx=pfb->GetIndex(i,j,k,idx);
-        amp[kidx][0] *= pcoeff;
-        amp[kidx][1] *= pcoeff;
+        amp[kidx] *= pcoeff;
       }
     }
   }
@@ -295,23 +290,23 @@ void TurbulenceDriver::PowerSpectrum(AthenaFFTComplex *amp) {
 void TurbulenceDriver::Perturb(Real dt) {
   Mesh *pm = pmy_mesh_;
   std::stringstream msg;
-  int nbs=nslist_[Globals::my_rank];
-  int nbe=nbs+nblist_[Globals::my_rank]-1;
+  int nbs = nslist_[Globals::my_rank];
+  int nbe = nbs+nblist_[Globals::my_rank]-1;
 
-  int is=pm->pblock->is, ie=pm->pblock->ie;
-  int js=pm->pblock->js, je=pm->pblock->je;
-  int ks=pm->pblock->ks, ke=pm->pblock->ke;
+  int il = pm->pblock->is, iu = pm->pblock->ie;
+  int jl = pm->pblock->js, ju = pm->pblock->je;
+  int kl = pm->pblock->ks, ku = pm->pblock->ke;
 
   Real aa, b, c, s, de, v1, v2, v3, den, M1, M2, M3;
   Real m[4] = {0}, gm[4];
   AthenaArray<Real> &dv1 = vel[0], &dv2 = vel[1], &dv3 = vel[2];
 
   for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
-    MeshBlock *pmb=pm->FindMeshBlock(igid);
+    MeshBlock *pmb = pm->FindMeshBlock(igid);
     if (pmb != nullptr) {
-      for (int k=ks; k<=ke; k++) {
-        for (int j=js; j<=je; j++) {
-          for (int i=is; i<=ie; i++) {
+      for (int k=kl; k<=ku; k++) {
+        for (int j=jl; j<=ju; j++) {
+          for (int i=il; i<=iu; i++) {
             den = pmb->phydro->u(IDN,k,j,i);
             m[0] += den;
             m[1] += den*dv1(nb,k,j,i);
@@ -337,9 +332,9 @@ void TurbulenceDriver::Perturb(Real dt) {
 #endif // MPI_PARALLEL
 
   for (int nb=0; nb<nmb; nb++) {
-    for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie; i++) {
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+        for (int i=il; i<=iu; i++) {
           dv1(nb,k,j,i) -= m[1]/m[0];
           dv2(nb,k,j,i) -= m[2]/m[0];
           dv3(nb,k,j,i) -= m[3]/m[0];
@@ -354,9 +349,9 @@ void TurbulenceDriver::Perturb(Real dt) {
   for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
     MeshBlock *pmb=pm->FindMeshBlock(igid);
     if (pmb != nullptr) {
-      for (int k=ks; k<=ke; k++) {
-        for (int j=js; j<=je; j++) {
-          for (int i=is; i<=ie; i++) {
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+        for (int i=il; i<=iu; i++) {
             v1 = dv1(nb,k,j,i);
             v2 = dv2(nb,k,j,i);
             v3 = dv3(nb,k,j,i);
@@ -406,9 +401,9 @@ void TurbulenceDriver::Perturb(Real dt) {
   for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
     MeshBlock *pmb=pm->FindMeshBlock(igid);
     if (pmb != nullptr) {
-      for (int k=ks; k<=ke; k++) {
-        for (int j=js; j<=je; j++) {
-          for (int i=is; i<=ie; i++) {
+      for (int k=kl; k<=ku; k++) {
+        for (int j=jl; j<=ju; j++) {
+          for (int i=il; i<=iu; i++) {
             v1 = dv1(nb,k,j,i);
             v2 = dv2(nb,k,j,i);
             v3 = dv3(nb,k,j,i);
@@ -418,8 +413,8 @@ void TurbulenceDriver::Perturb(Real dt) {
             M3 = pmb->phydro->u(IM3,k,j,i);
 
             if (NON_BAROTROPIC_EOS) {
-              pmb->phydro->u(IEN,k,j,i) += s*(M1*v1+M2*v2+M3*v3)
-                                           + 0.5*s*s*den*(SQR(v1)+SQR(v2)+SQR(v3));
+              pmb->phydro->u(IEN,k,j,i) += s*(M1*v1 + M2*v2+M3*v3)
+                                           + 0.5*s*s*den*(SQR(v1) + SQR(v2) + SQR(v3));
             }
             pmb->phydro->u(IM1,k,j,i) += s*den*v1;
             pmb->phydro->u(IM2,k,j,i) += s*den*v2;
@@ -436,59 +431,49 @@ void TurbulenceDriver::Perturb(Real dt) {
 //! \fn void TurbulenceDriver::Project()
 //  \brief calculates shear and compressible components
 
-void TurbulenceDriver::Project(AthenaFFTComplex **fv, Real f_shear) {
+void TurbulenceDriver::Project(std::complex<Real> **fv, Real f_shear) {
   FFTBlock *pfb = pmy_fb;
   Project(fv, fv_sh_, fv_co_);
   for (int nv=0; nv<3; nv++) {
     for (int kidx=0; kidx<pfb->cnt_; kidx++) {
-      fv[nv][kidx][0] = (1-f_shear)*fv_co_[nv][kidx][0] + f_shear*fv_sh_[nv][kidx][0];
-      fv[nv][kidx][1] = (1-f_shear)*fv_co_[nv][kidx][1] + f_shear*fv_sh_[nv][kidx][1];
+      fv[nv][kidx] = (1-f_shear)*fv_co_[nv][kidx] + f_shear*fv_sh_[nv][kidx];
     }
   }
 }
 
-void TurbulenceDriver::Project(AthenaFFTComplex **fv, AthenaFFTComplex **fv_sh,
-                               AthenaFFTComplex **fv_co) {
+void TurbulenceDriver::Project(std::complex<Real> **fv, std::complex<Real> **fv_sh,
+                               std::complex<Real> **fv_co) {
   FFTBlock *pfb = pmy_fb;
   AthenaFFTIndex *idx = pfb->b_in_;
-  int knx1=pfb->knx[0],knx2=pfb->knx[1],knx3=pfb->knx[2];
+  int knx1 = pfb->knx[0], knx2 = pfb->knx[1], knx3 = pfb->knx[2];
 
   for (int k=0; k<knx3; k++) {
     for (int j=0; j<knx2; j++) {
       for (int i=0; i<knx1; i++) {
         // Get khat
-        std::int64_t nx=GetKcomp(i,pfb->kdisp[0],pfb->kNx[0]);
-        std::int64_t ny=GetKcomp(j,pfb->kdisp[1],pfb->kNx[1]);
-        std::int64_t nz=GetKcomp(k,pfb->kdisp[2],pfb->kNx[2]);
-        Real kx=nx*pfb->dkx[0];
-        Real ky=ny*pfb->dkx[1];
-        Real kz=nz*pfb->dkx[2];
+        std::int64_t nx = GetKcomp(i, pfb->kdisp[0], pfb->kNx[0]);
+        std::int64_t ny = GetKcomp(j, pfb->kdisp[1], pfb->kNx[1]);
+        std::int64_t nz = GetKcomp(k, pfb->kdisp[2], pfb->kNx[2]);
+        Real kx = nx*pfb->dkx[0];
+        Real ky = ny*pfb->dkx[1];
+        Real kz = nz*pfb->dkx[2];
         Real kmag = std::sqrt(kx*kx+ky*ky+kz*kz);
 
-        std::int64_t kidx=pfb->GetIndex(i,j,k,idx);
+        std::int64_t kidx = pfb->GetIndex(i, j, k, idx);
         if (kmag != 0.0) {
           kx /= kmag;
           ky /= kmag;
           kz /= kmag;
           // Form (khat.f)
-          Real kdotf_re = kx*fv[0][kidx][0] + ky*fv[1][kidx][0] + kz*fv[2][kidx][0];
-          Real kdotf_im = kx*fv[0][kidx][1] + ky*fv[1][kidx][1] + kz*fv[2][kidx][1];
+          std::complex<Real> kdotf = kx*fv[0][kidx] + ky*fv[1][kidx] + kz*fv[2][kidx];
 
-          fv_co[0][kidx][0] = kdotf_re * kx;
-          fv_co[1][kidx][0] = kdotf_re * ky;
-          fv_co[2][kidx][0] = kdotf_re * kz;
+          fv_co[0][kidx] = kdotf * kx;
+          fv_co[1][kidx] = kdotf * ky;
+          fv_co[2][kidx] = kdotf * kz;
 
-          fv_co[0][kidx][1] = kdotf_im * kx;
-          fv_co[1][kidx][1] = kdotf_im * ky;
-          fv_co[2][kidx][1] = kdotf_im * kz;
-
-          fv_sh[0][kidx][0] = fv[0][kidx][0] - fv_co[0][kidx][0];
-          fv_sh[1][kidx][0] = fv[1][kidx][0] - fv_co[1][kidx][0];
-          fv_sh[2][kidx][0] = fv[2][kidx][0] - fv_co[2][kidx][0];
-
-          fv_sh[0][kidx][1] = fv[0][kidx][1] - fv_co[0][kidx][1];
-          fv_sh[1][kidx][1] = fv[1][kidx][1] - fv_co[1][kidx][1];
-          fv_sh[2][kidx][1] = fv[2][kidx][1] - fv_co[2][kidx][1];
+          fv_sh[0][kidx] = fv[0][kidx] - fv_co[0][kidx];
+          fv_sh[1][kidx] = fv[1][kidx] - fv_co[1][kidx];
+          fv_sh[2][kidx] = fv[2][kidx] - fv_co[2][kidx];
         }
       }
     }

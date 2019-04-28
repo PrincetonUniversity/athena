@@ -13,8 +13,10 @@
 // C headers
 
 // C++ headers
-#include <cstdint>  // int64_t
+#include <cstdint>     // int64_t
+#include <functional>  // reference_wrapper
 #include <string>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -33,13 +35,15 @@ class Mesh;
 class MeshRefinement;
 class MeshBlockTree;
 class BoundaryValues;
-class GravityBoundaryValues;
+class CellCenteredBoundaryVariable;
+class FaceCenteredBoundaryVariable;
 class TaskList;
 struct TaskStates;
 class Coordinates;
 class Reconstruction;
 class Hydro;
 class Field;
+class PassiveScalars;
 class Gravity;
 class MGGravityDriver;
 class EquationOfState;
@@ -54,7 +58,8 @@ class TurbulenceDriver;
 class MeshBlock {
   friend class RestartOutput;
   friend class BoundaryValues;
-  friend class GravityBoundaryValues;
+  friend class CellCenteredBoundaryVariable;
+  friend class FaceCenteredBoundaryVariable;
   friend class Mesh;
   friend class Hydro;
   friend class TaskList;
@@ -67,7 +72,7 @@ class MeshBlock {
             BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag,
             bool ref_flag = false);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
-            RegionSize input_block, BoundaryFlag *input_bcs, Real icost,
+            RegionSize input_block, BoundaryFlag *input_bcs, double icost,
             char *mbdata, int igflag);
   ~MeshBlock();
 
@@ -75,6 +80,11 @@ class MeshBlock {
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
   LogicalLocation loc;
   RegionSize block_size;
+  // for convenience: "max" # of real+ghost cells along each dir for allocating "standard"
+  // sized MeshBlock arrays, depending on ndim (i.e. ncells2=nx2+2*NGHOST if nx2>1)
+  int ncells1, ncells2, ncells3;
+  // on 1x coarser level MeshBlock (i.e. ncc2=nx2/2 + 2*NGHOST, if nx2>1)
+  int ncc1, ncc2, ncc3;
   int is, ie, js, je, ks, ke;
   int gid, lid;
   int cis, cie, cjs, cje, cks, cke, cnghost;
@@ -97,14 +107,14 @@ class MeshBlock {
   // mesh-related objects
   Coordinates *pcoord;
   BoundaryValues *pbval;
-  GravityBoundaryValues *pgbval;
   Reconstruction *precon;
   MeshRefinement *pmr;
 
-  // physics-related objects
+  // physics-related objects (possibly containing their derived bvals classes)
   Hydro *phydro;
   Field *pfield;
   Gravity *pgrav;
+  PassiveScalars *pscalars;
   EquationOfState *peos;
 
   MeshBlock *prev, *next;
@@ -119,28 +129,42 @@ class MeshBlock {
   void WeightedAve(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
                    const Real wght[3]);
 
+  // inform MeshBlock which arrays contained in member Hydro, Field, Particles,
+  // ... etc. classes are the "primary" representations of a quantity. when registered,
+  // that data are used for (1) load balancing (2) (future) dumping to restart file
+  void RegisterMeshBlockData(AthenaArray<Real> &pvar_cc);
+  void RegisterMeshBlockData(FaceField &pvar_fc);
+
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void UserWorkBeforeOutput(ParameterInput *pin); // called in Mesh fn (friend class)
   void UserWorkInLoop();                          // called in TimeIntegratorTaskList
 
  private:
   // data
-  Real cost;
   Real new_block_dt_, new_block_dt_diff_;
   // TODO(felker): make global TaskList a member of MeshBlock, store TaskStates in list
   // shared by main integrator + FFT gravity task lists. Multigrid has separate TaskStates
   TaskStates tasks;
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
+  std::vector<std::reference_wrapper<AthenaArray<Real>>> vars_cc_;
+  std::vector<std::reference_wrapper<FaceField>> vars_fc_;
 
   // functions
   void AllocateRealUserMeshBlockDataField(int n);
   void AllocateIntUserMeshBlockDataField(int n);
   void AllocateUserOutputVariables(int n);
   void SetUserOutputVariableName(int n, const char *name);
+  void SetCostForLoadBalancing(double cost);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void ProblemGenerator(ParameterInput *pin);
   void InitUserMeshBlockData(ParameterInput *pin);
+
+  // functions and variables for automatic load balancing based on timing
+  double cost_, lb_time_;
+  void ResetTimeMeasurement();
+  void StartTimeMeasurement();
+  void StopTimeMeasurement();
 };
 
 //----------------------------------------------------------------------------------------
@@ -151,10 +175,12 @@ class Mesh {
   friend class RestartOutput;
   friend class HistoryOutput;
   friend class MeshBlock;
+  friend class MeshBlockTree;
   friend class BoundaryBase;
   friend class BoundaryValues;
+  friend class CellCenteredBoundaryVariable;
+  friend class FaceCenteredBoundaryVariable;
   friend class MGBoundaryValues;
-  friend class GravityBoundaryValues;
   friend class Coordinates;
   friend class MeshRefinement;
   friend class HydroSourceTerms;
@@ -172,6 +198,7 @@ class Mesh {
 #endif
 
  public:
+  // 2x function overloads of ctor: normal and restarted simulation
   explicit Mesh(ParameterInput *pin, int test_flag=0);
   Mesh(ParameterInput *pin, IOWrapper &resfile, int test_flag=0);
   ~Mesh();
@@ -185,15 +212,18 @@ class Mesh {
   // data
   RegionSize mesh_size;
   BoundaryFlag mesh_bcs[6];
+  bool f2_, f3_; // flags indicating 2D or 3D Mesh
   Real start_time, tlim, cfl_number, time, dt, dt_diff;
   Real muj, nuj, muj_tilde;
   int nlim, ncycle, ncycle_out;
   int nbtotal, nbnew, nbdel;
   bool adaptive, multilevel;
+  int step_since_lb;
   int gflag;
   int turb_flag; // turbulence flag
   EosTable *peos_table;
 
+  // ptr to first MeshBlock (node) in linked list of blocks belonging to this MPI rank:
   MeshBlock *pblock;
 
   TurbulenceDriver *ptrbd;
@@ -208,20 +238,25 @@ class Mesh {
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  BoundaryFlag *block_bcs);
   void NewTimeStep();
-  void AdaptiveMeshRefinement(ParameterInput *pin);
-  unsigned int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
+  void LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin);
+  int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
   MeshBlock* FindMeshBlock(int tgid);
   void ApplyUserWorkBeforeOutput(ParameterInput *pin);
+
+  // function for distributing unique "phys" bitfield IDs to BoundaryVariable objects and
+  // other categories of MPI communication for generating unique MPI_TAGs
+  int ReserveTagPhysIDs(int num_phys);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void UserWorkAfterLoop(ParameterInput *pin);   // called in main loop
 
  private:
   // data
+  int next_phys_id_; // next unused value for encoding final component of MPI tag bitfield
   int root_level, max_level, current_level;
   int num_mesh_threads_;
   int *nslist, *ranklist, *nblist;
-  Real *costlist;
+  double *costlist;
   // 8x arrays used exclusively for AMR (not SMR):
   int *nref, *nderef;
   int *rdisp, *ddisp;
@@ -247,6 +282,11 @@ class Mesh {
   // global constants
   Real four_pi_G_, grav_eps_, grav_mean_rho_;
 
+  // variables for load balancing control
+  bool lb_flag_, lb_automatic_, lb_manual_;
+  double lb_tolerance_;
+  int lb_interval_;
+
   // functions
   MeshGenFunc MeshGenerator_[3];
   SrcTermFunc UserSourceTerm_;
@@ -263,7 +303,32 @@ class Mesh {
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
   void OutputMeshStructure(int dim);
-  void LoadBalance(Real *clist, int *rlist, int *slist, int *nlist, int nb);
+  void CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist, int nb);
+  void ResetLoadBalanceVariables();
+
+  void CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb);
+  void ReserveMeshBlockPhysIDs();
+
+  // Mesh::LoadBalancingAndAdaptiveMeshRefinement() helper functions:
+  void UpdateCostList();
+  void UpdateMeshBlockTree(int &nnew, int &ndel);
+  bool GatherCostListAndCheckBalance();
+  void RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot);
+
+  // Mesh::RedistributeAndRefineMeshBlocks() helper functions:
+  // step 6: send
+  void PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf);
+  void PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf, LogicalLocation &lloc);
+  void PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf);
+  // step 7: create new MeshBlock list (same MPI rank but diff level: create new block)
+  void FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
+                                   LogicalLocation &loc);
+  void FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
+                                   LogicalLocation &newloc);
+  // step 8: receive
+  void FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf);
+  void FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf, LogicalLocation &lloc);
+  void FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void InitUserMeshData(ParameterInput *pin);

@@ -5,12 +5,14 @@
 # calculations. Setting CFL=0.3 for all runs.
 
 # Modules
+import logging
 import scripts.utils.athena as athena
 import numpy as np
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # List of time/integrator and time/xorder combinations to test:
@@ -25,6 +27,7 @@ nrows_per_solver = 3*num_nx1
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure(
         nghost=4,  # required for fourth-order configurations
         prob='linear_wave',
@@ -88,7 +91,7 @@ def analyze():
 
         data = np.delete(data, np.s_[0:nrows_per_solver], 0)
 
-        # print('{} + {}'.format(torder.upper(), xorder))
+        logger.debug('{} + {}'.format(torder.upper(), xorder))
         # L-going sound wave: Ncycle, RMS-L1, d_L1, E_L1, d_max, E_max
         indices = [3, 4, 5, 9, 11, 15]
         results_1D = np.take(np.squeeze(solver_results[0, :]), indices)
@@ -101,21 +104,21 @@ def analyze():
         rtol = 1e-8
 
         # Useful optional diagnostics for determining if differences are meaningful in FP:
-        # print(np.allclose(results_1D, results_2D, atol=atol, rtol=rtol))
-        # print("numpy tolerance = {}".format(atol + 1e-10*abs(results_2D)))
-        # print(np.allclose(results_2D, results_3D, atol=atol, rtol=rtol))
-        # print("numpy tolerance = {}".format(atol + 1e-10*abs(results_3D)))
-        # print(results_1D, results_2D)
-        # print(results_1D - results_2D)
+        logger.debug(str(np.allclose(results_1D, results_2D, atol=atol, rtol=rtol)))
+        logger.debug("numpy tolerance = {} %g".format(atol + 1e-10*abs(results_2D)))
+        logger.debug(np.allclose(results_2D, results_3D, atol=atol, rtol=rtol))
+        logger.debug("numpy tolerance = {} %g".format(atol + 1e-10*abs(results_3D)))
+        logger.debug(" ".join(map(str, [results_1D, results_2D])))
+        logger.debug(str(results_1D - results_2D))
 
         if not (np.allclose(results_1D, results_2D, atol=atol, rtol=rtol)
                 and np.allclose(results_2D, results_3D, atol=atol, rtol=rtol)):
-            print("1D/2D/3D grid-aligned sound wave results:")
-            print("Ncycle  RMS-L1-Error  d_L1  E_L1  d_max  E_max")
-            print(results_1D)
-            print(results_2D)
-            print(results_3D)
-            print("Exhibit differences that are not close to round-off")
+            logger.warning("1D/2D/3D grid-aligned sound wave results:")
+            logger.warning("Ncycle  RMS-L1-Error  d_L1  E_L1  d_max  E_max")
+            logger.warning(str(results_1D))
+            logger.warning(str(results_2D))
+            logger.warning(str(results_3D))
+            logger.warning("Exhibit differences that are not close to round-off")
             return False
 
     return True

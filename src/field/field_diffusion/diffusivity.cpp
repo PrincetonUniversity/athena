@@ -90,18 +90,10 @@ void FieldDiffusion::CalcCurrent(FaceField &b) {
   if (pmb->block_size.nx2 > 1) ext2 = 1;
   if (pmb->block_size.nx3 > 1) ext3 = 1;
 
-  AthenaArray<Real> J1,J2,J3,b1i,b2i,b3i;
-  J1.InitWithShallowCopy(jedge_.x1e);
-  J2.InitWithShallowCopy(jedge_.x2e);
-  J3.InitWithShallowCopy(jedge_.x3e);
-  b1i.InitWithShallowCopy(b.x1f);
-  b2i.InitWithShallowCopy(b.x2f);
-  b3i.InitWithShallowCopy(b.x3f);
+  AthenaArray<Real> &J1 = jedge_.x1e, &J2 = jedge_.x2e, &J3 = jedge_.x3e,
+                   &b1i = b.x1f, &b2i = b.x2f, &b3i = b.x3f;
 
-  AthenaArray<Real> area,len,len_m1;
-  area.InitWithShallowCopy(face_area_);
-  len.InitWithShallowCopy(edge_length_);
-  len_m1.InitWithShallowCopy(edge_length_m1_);
+  AthenaArray<Real> &area = face_area_, &len = edge_length_, &len_m1 = edge_length_m1_;
 
   for (int k=ks-ext3; k<=ke+2*ext3; ++k) {
     for (int j=js-2*ext2; j<=je+2*ext2; ++j) {
@@ -189,13 +181,8 @@ void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc,
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e1,e2,e3,J1,J2,J3;
-  e1.InitWithShallowCopy(e.x1e);
-  e2.InitWithShallowCopy(e.x2e);
-  e3.InitWithShallowCopy(e.x3e);
-  J1.InitWithShallowCopy(jedge_.x1e);
-  J2.InitWithShallowCopy(jedge_.x2e);
-  J3.InitWithShallowCopy(jedge_.x3e);
+  AthenaArray<Real> &e1 = e.x1e, &e2 = e.x2e, &e3 = e.x3e,
+                    &J1 = jedge_.x1e, &J2 = jedge_.x2e, &J3 = jedge_.x3e;
 
   // 1D update:
   if (pmb->block_size.nx2 == 1) {
@@ -262,13 +249,8 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e1,e2,e3,J1,J2,J3;
-  e1.InitWithShallowCopy(e.x1e);
-  e2.InitWithShallowCopy(e.x2e);
-  e3.InitWithShallowCopy(e.x3e);
-  J1.InitWithShallowCopy(jedge_.x1e);
-  J2.InitWithShallowCopy(jedge_.x2e);
-  J3.InitWithShallowCopy(jedge_.x3e);
+  AthenaArray<Real> &e1 = e.x1e, &e2 = e.x2e, &e3 = e.x3e,
+                    &J1 = jedge_.x1e, &J2 = jedge_.x2e, &J3 = jedge_.x3e;
 
   // 1D update:
   if (pmb->block_size.nx2 == 1) {
@@ -433,13 +415,8 @@ void FieldDiffusion::PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bc) {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e1,e2,e3,f1,f2,f3;
-  e1.InitWithShallowCopy(e.x1e);
-  e2.InitWithShallowCopy(e.x2e);
-  e3.InitWithShallowCopy(e.x3e);
-  f1.InitWithShallowCopy(pflux.x1f);
-  f2.InitWithShallowCopy(pflux.x2f);
-  f3.InitWithShallowCopy(pflux.x3f);
+  AthenaArray<Real> &e1 = e.x1e, &e2 = e.x2e, &e3 = e.x3e,
+                    &f1 = pflux.x1f, &f2 = pflux.x2f, &f3 = pflux.x3f;
 
   // 1D update:
   if (pmb->block_size.nx2 == 1) {

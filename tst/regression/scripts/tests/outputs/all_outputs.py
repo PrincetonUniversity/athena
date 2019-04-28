@@ -5,16 +5,19 @@
 # version of each file to make sure output data is correct
 
 # Modules
+import logging
 import numpy as np
 import sys
 import scripts.utils.athena as athena
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('b', 'hdf5',
                      prob='orszag_tang',
                      flux='hlld', **kwargs)
@@ -69,7 +72,7 @@ def analyze():
     #   return False
     # if max(yf) != 0.5 and min(yf) != -0.5:
     #  return False
-    # print(vtk_data['rho'].shape)
+    # logger.debug(str(vtk_data['rho'].shape))
 
     hdf5_data = athena_read.athdf('bin/TestOutputs.out5.00010.athdf', dtype=np.float32)
     if max(hdf5_data['rho'][0, 32, :]) < 0.25:

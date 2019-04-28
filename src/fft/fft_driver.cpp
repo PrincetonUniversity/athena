@@ -66,7 +66,7 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   }
 
   int ns = nslist_[Globals::my_rank];
-  int ne = ns+nblist_[Globals::my_rank];
+  int ne = ns + nblist_[Globals::my_rank];
 
   std::int64_t &lx1min = pm->loclist[ns].lx1;
   std::int64_t &lx2min = pm->loclist[ns].lx2;
@@ -112,17 +112,17 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   fft_loclist_ = new LogicalLocation[nranks_];
 
   for (int n=0; n<nranks_; n++) {
-    int ns = nslist_[n];
-    fft_loclist_[n] = pm->loclist[ns];
+    int ns_inner = nslist_[n];
+    fft_loclist_[n] = pm->loclist[ns_inner];
     fft_loclist_[n].lx1 = fft_loclist_[n].lx1/nbx1;
     fft_loclist_[n].lx2 = fft_loclist_[n].lx2/nbx2;
     fft_loclist_[n].lx3 = fft_loclist_[n].lx3/nbx3;
   }
-  npx1 = (pm->nrbx1*(1<<ref_lev))/nbx1;
-  npx2 = (pm->nrbx2*(1<<ref_lev))/nbx2;
-  npx3 = (pm->nrbx3*(1<<ref_lev))/nbx3;
+  npx1 = (pm->nrbx1*(1 << ref_lev))/nbx1;
+  npx2 = (pm->nrbx2*(1 << ref_lev))/nbx2;
+  npx3 = (pm->nrbx3*(1 << ref_lev))/nbx3;
 
-  fft_mesh_size_=pm->mesh_size;
+  fft_mesh_size_ = pm->mesh_size;
 
   fft_mesh_size_.nx1 = pm->mesh_size.nx1*(1<<ref_lev);
   fft_mesh_size_.nx2 = pm->mesh_size.nx2*(1<<ref_lev);
@@ -130,19 +130,19 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
 
   RegionSize &bsize = (pm->pblock->block_size);
 
-  fft_block_size_.nx1=fft_mesh_size_.nx1/npx1;
-  fft_block_size_.nx2=fft_mesh_size_.nx2/npx2;
-  fft_block_size_.nx3=fft_mesh_size_.nx3/npx3;
+  fft_block_size_.nx1 = fft_mesh_size_.nx1/npx1;
+  fft_block_size_.nx2 = fft_mesh_size_.nx2/npx2;
+  fft_block_size_.nx3 = fft_mesh_size_.nx3/npx3;
 
-  Real x1size=bsize.x1max-bsize.x1min;
-  Real x2size=bsize.x2max-bsize.x2min;
-  Real x3size=bsize.x3max-bsize.x3min;
-  fft_block_size_.x1min=bsize.x1min;
-  fft_block_size_.x1max=bsize.x1min+x1size*nbx1;
-  fft_block_size_.x2min=bsize.x2min;
-  fft_block_size_.x2max=bsize.x2min+x2size*nbx2;
-  fft_block_size_.x3min=bsize.x3min;
-  fft_block_size_.x3max=bsize.x3min+x3size*nbx3;
+  Real x1size = bsize.x1max-bsize.x1min;
+  Real x2size = bsize.x2max-bsize.x2min;
+  Real x3size = bsize.x3max-bsize.x3min;
+  fft_block_size_.x1min = bsize.x1min;
+  fft_block_size_.x1max = bsize.x1min+x1size*nbx1;
+  fft_block_size_.x2min = bsize.x2min;
+  fft_block_size_.x2max = bsize.x2min+x2size*nbx2;
+  fft_block_size_.x3min = bsize.x3min;
+  fft_block_size_.x3max = bsize.x3min+x3size*nbx3;
 
   gcnt_ = fft_mesh_size_.nx1*fft_mesh_size_.nx2*fft_mesh_size_.nx3;
 
@@ -174,8 +174,8 @@ FFTDriver::~FFTDriver() {
 }
 
 void FFTDriver::InitializeFFTBlock(bool set_norm) {
-  int igid=Globals::my_rank;
-  pmy_fb=new FFTBlock(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
+  int igid = Globals::my_rank;
+  pmy_fb = new FFTBlock(this, fft_loclist_[igid], igid, fft_mesh_size_, fft_block_size_);
   if (set_norm) pmy_fb->SetNormFactor(1./gcnt_);
 }
 

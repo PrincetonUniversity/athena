@@ -5,16 +5,19 @@
 # linearwave_errors.dat)
 
 # Modules
+import logging
 import os
 import scripts.utils.athena as athena
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++ w/wo MPI+OpenMP
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('b', 'mpi', 'omp', prob='linear_wave', coord='cartesian',
                      flux='hlld', **kwargs)
     athena.make()
@@ -55,16 +58,17 @@ def analyze():
     filename = 'bin/linearwave-errors.dat'
     data = athena_read.error_dat(filename)
 
-    print(data[0][4], data[1][4], data[2][4])
+    logger.info("%g %g %g", data[0][4], data[1][4], data[2][4])
 
     # check errors between runs: serial vs. hybrid w/ 1 thread vs. hybrid w/ 4 threads
     if data[0][4] != data[1][4]:
-        print("Linear wave error from serial calculation vs. single thread not identical",
-              data[0][4], data[1][4])
+        logger.warning(
+            "Linear wave error from serial calculation vs."
+            "single thread not identical %g %g", data[0][4], data[1][4])
         return False
     if abs(data[2][4] - data[0][4]) > 5.0e-4:
-        print("Linear wave error differences between 4 threads vs. serial is too large",
-              data[2][4], data[0][4])
+        logger.warning("Linear wave error differences between 4 threads vs."
+                       "serial is too large %g %g", data[2][4], data[0][4])
         return False
 
     return True

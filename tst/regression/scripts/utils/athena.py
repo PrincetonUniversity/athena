@@ -1,9 +1,10 @@
 # Functions for interfacing with Athena++ during testing
 
 # Modules
+import logging
 import os
-import sys
 import subprocess
+from .log_pipe import LogPipe
 
 # Global variables
 athena_rel_path = '../../'
@@ -29,11 +30,19 @@ def configure(*args, **kwargs):
                 configure_command.append('--{0}={1}'.format(key, val))
         if global_coverage_cmd is not None:
             configure_command.append('-coverage')
+        out_log = LogPipe('athena.configure', logging.INFO)
+        err_log = LogPipe('athena.configure', logging.ERROR)
+        cmd = ' '.join(['Executing: '] + configure_command + global_config_args)
+        logging.getLogger('athena.configure').debug(cmd)
         try:
-            subprocess.check_call(configure_command + global_config_args)
+            subprocess.check_call(configure_command + global_config_args,
+                                  stdout=out_log, stderr=err_log)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
+        finally:
+            out_log.close()
+            err_log.close()
     finally:
         os.chdir(current_dir)
 
@@ -42,6 +51,9 @@ def configure(*args, **kwargs):
 def make(clean_first=True, obj_only=False):
     current_dir = os.getcwd()
     os.chdir(athena_rel_path)
+    logger = logging.getLogger('athena.make')
+    out_log = open(os.devnull, 'w') if global_silent else LogPipe('athena.make',
+                                                                  logging.INFO)
     try:
         exe_dir = 'EXE_DIR:={0}/bin/'.format(current_dir)
         obj_dir = 'OBJ_DIR:={0}/obj/'.format(current_dir)
@@ -50,28 +62,24 @@ def make(clean_first=True, obj_only=False):
             # used in pgen_compile.py to save expensive linking time for Intel Compiler:
             make_command = ['make', '-j8', 'objs']
         else:
+            # disable parallel GNU Make execution for Lcov (issues w/ Jenkins filesystem)
             if (global_coverage_cmd is not None):
-                # disable parallel compilation for Lcov issues on Jenkins filesystem
                 make_command = ['make']
             else:
                 make_command = ['make', '-j8']
         make_command += [exe_dir, obj_dir]
         try:
-            stdout_f = open(os.devnull, 'w') if global_silent else sys.stdout
             if clean_first:
-                subprocess.check_call(clean_command, stdout=stdout_f)
-            # KGF: temporarily ignore "--silent" option for devnull redirection
-            # (what about stderr?) stdout, stderr default behavior:
-            # "with the default settings of None, no redirection will occur; the child's
-            # file handles will be inherited from the parent."
-            subprocess.check_call(make_command)  # , stdout=stdout_f)
+                logger.debug('Executing: ' + ' '.join(clean_command))
+                subprocess.check_call(clean_command, stdout=out_log)
+            logger.debug('Executing: ' + ' '.join(make_command))
+            subprocess.check_call(make_command, stdout=out_log)
         except subprocess.CalledProcessError as err:
+            logger.error("Something bad happened", exc_info=True)
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
-        finally:
-            if stdout_f is not sys.stdout:
-                stdout_f.close()
     finally:
+        out_log.close()
         os.chdir(current_dir)
 
 
@@ -79,12 +87,15 @@ def make(clean_first=True, obj_only=False):
 def run(input_filename, arguments, lcov_test_suffix=None):
     current_dir = os.getcwd()
     os.chdir('bin')
+    out_log = LogPipe('athena.run', logging.INFO)
     try:
         input_filename_full = '../' + athena_rel_path + 'inputs/' + \
                               input_filename
         run_command = ['./athena', '-i', input_filename_full]
         try:
-            subprocess.check_call(run_command + arguments + global_run_args)
+            cmd = run_command + arguments + global_run_args
+            logging.getLogger('athena.run').debug('Executing: ' + ' '.join(cmd))
+            subprocess.check_call(cmd, stdout=out_log)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
@@ -94,20 +105,25 @@ def run(input_filename, arguments, lcov_test_suffix=None):
             # explicitly passed, process Lcov tracefile immediately after run_command
             analyze_code_coverage(global_test_name, lcov_test_suffix)
     finally:
+        out_log.close()
         os.chdir(current_dir)
 
 
 def restart(input_filename, arguments):
     current_dir = os.getcwd()
     os.chdir('bin')
+    out_log = LogPipe('athena.make', logging.INFO)
     try:
         run_command = ['./athena', '-r', input_filename]
         try:
-            subprocess.check_call(run_command + arguments)
+            cmd = run_command + arguments
+            logging.getLogger('athena.run').debug('Executing (restart): ' + ' '.join(cmd))
+            subprocess.check_call(cmd, stdout=out_log)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
     finally:
+        out_log.close()
         os.chdir(current_dir)
 
 
@@ -115,6 +131,7 @@ def mpirun(mpirun_cmd, mpirun_opts, nproc, input_filename, arguments,
            lcov_test_suffix=None):
     current_dir = os.getcwd()
     os.chdir('bin')
+    out_log = LogPipe('athena.run', logging.INFO)
     try:
         input_filename_full = '../' + athena_rel_path + 'inputs/' + \
                               input_filename
@@ -122,7 +139,9 @@ def mpirun(mpirun_cmd, mpirun_opts, nproc, input_filename, arguments,
                                                     input_filename_full]
         run_command = list(filter(None, run_command))  # remove any empty strings
         try:
-            subprocess.check_call(run_command + arguments)
+            cmd = run_command + arguments + global_run_args
+            logging.getLogger('athena.run').debug('Executing (mpirun): ' + ' '.join(cmd))
+            subprocess.check_call(cmd, stdout=out_log)
         except subprocess.CalledProcessError as err:
             raise AthenaError('Return code {0} from command \'{1}\''
                               .format(err.returncode, ' '.join(err.cmd)))
@@ -132,6 +151,7 @@ def mpirun(mpirun_cmd, mpirun_opts, nproc, input_filename, arguments,
             # explicitly passed, process Lcov tracefile immediately after run_command
             analyze_code_coverage(global_test_name, lcov_test_suffix)
     finally:
+        out_log.close()
         os.chdir(current_dir)
 
 

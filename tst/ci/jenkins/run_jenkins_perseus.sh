@@ -137,15 +137,16 @@ eval "${lcov_cmd}" "${lcov_input_files}" -o lcov.info
 # Explicitly return count of individual Lcov tracefiles, and monitor any changes to this number (53 expected as of 2018-12-04):
 # (most Lcov failures will be silent and hidden in build log;, missing reports will be hard to notice in Lcov HTML and Codecov reports)
 echo "Detected ${lcov_counter} individual tracefiles and combined them -> lcov.info"
-set -e
 
 # Generate Lcov HTML report and backup to home directory on Perseus (never used by Codecov):
 gendesc scripts/tests/test_descriptions.txt --output-filename ./regression_tests.desc
 lcov_dir_name="${SLURM_JOB_NAME}_lcov_html"
+# TODO(felker): Address "lcov: ERROR: no valid records found in tracefile ./eos_eos_comparison_eos_hllc.info"
 genhtml --legend --show-details --keep-descriptions --description-file=regression_tests.desc \
 	--branch-coverage -o ${lcov_dir_name} lcov.info
 mv lcov.info ${lcov_dir_name}
-tar -cvzf "${lcov_dir_name}.tar.gz" ${lcov_dir_name}
+# GNU (but not BSD) tar supports --remove-files option for cleaning up files (and directories) after adding them to the archive:
+tar --remove-files -cvzf "${lcov_dir_name}.tar.gz" ${lcov_dir_name}
 mv "${lcov_dir_name}.tar.gz" $HOME  # ~2 MB. Manually rm HTML databases from $HOME on a reg. basis
 # genhtml requires that src/ is unmoved since compilation; works from $HOME on Perseus,
 # but lcov.info tracefile is not portable across sytems (without --to-package, etc.)
@@ -153,13 +154,14 @@ mv "${lcov_dir_name}.tar.gz" $HOME  # ~2 MB. Manually rm HTML databases from $HO
 
 # Ensure that no stale tracefiles are kept in Jenkins cached workspace
 rm -rf *.info
+set -e
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
 # Delete version info from module names to automatically use latest default version of these libraries as Princeton Research Computing updates them:
 # (Currently using pinned Intel 17.0 Release 5 versions as of November 2018 due to bugs on Perseus installation of ICC 19.0.
 # Intel's MPI Library 2019 version was not installed on Perseus since it is much slower than 2018 version on Mellanox Infiniband)
-module load intel/19.0/64/19.0.1.144 # intel/17.0/64/17.0.5.239 # intel ---intel/19.0/64/19.0.1.144 as of 2019-01-15
+module load intel/19.0/64/19.0.3.199 # intel/17.0/64/17.0.5.239 # intel ---intel/19.0/64/19.0.1.144 as of 2019-01-15
 module load intel-mpi/intel/2017.5/64 # intel-mpi --- intel-mpi/intel/2018.3/64
 # Always pinning these modules to a specific version, since new library versions are rarely compiled:
 module load fftw/gcc/3.3.4

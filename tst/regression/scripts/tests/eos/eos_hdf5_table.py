@@ -3,6 +3,7 @@ Regression test for general EOS 1D Sod shock tube with HDF5 tables.
 """
 
 # Modules
+import logging
 import numpy as np
 import sys
 import os
@@ -13,11 +14,13 @@ from .eos_comparison import mk_ideal, write_H
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 _gammas = [1.1, 1.4, 5./3.]
 
 
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('hdf5',
                      prob='shock_tube',
                      coord='cartesian',
@@ -71,7 +74,7 @@ def run(**kwargs):
     arguments0.extend(['hydro/eos_file_name=gamma_is_{0:.3f}.hdf5'])
     for i, g in enumerate(_gammas):
         arguments = [j.format(g, i) for j in arguments0]
-        print(arguments)
+        logger.debug(' '.join(arguments))
         athena.run('hydro/athinput.sod', arguments, lcov_test_suffix='eos_hllc_hdf5')
     # now run with simple H table
     arguments0[0] = 'hydro/gamma=1.6667'
@@ -89,7 +92,7 @@ def run(**kwargs):
     dst = os.path.join('bin', 'athena')
     move(src, dst)
     arguments0[1] = 'job/problem_id=Sod_eos_H'
-    print(ic + arguments0[:-1])
+    logger.debug(ic + arguments0[:-1])
     athena.run('hydro/athinput.sod', ic + arguments0[:-1])
     return 'skip_lcov'
 
@@ -107,11 +110,13 @@ def analyze():
                 diff = comparison.l1_diff(
                     x_ref, data_ref[var][loc], x_new, data_new[var][loc])
                 diff /= comparison.l1_norm(x_ref, data_ref[var][loc])
+                msg = ['Eos hdf5 table', 'failed.', 'var, diff, gamma =', var, diff, g]
                 if diff > 1e-8 or np.isnan(diff):
-                    print(
-                        ' '.join(map(str, ['Eos hdf5 table fail. var, diff, gamma =',
-                                           var, diff, g])))
+                    logger.warning(' '.join(map(str, msg)))
                     analyze_status = False
+                else:
+                    msg[1] = 'passed.'
+                    logger.debug(' '.join(map(str, msg)))
 
     tol = [3e-3, 6e-4]
     for i, t in enumerate([10, 25]):
@@ -124,9 +129,12 @@ def analyze():
             norm = comparison.l1_norm(x_ref, data_ref[var][loc])
             diff = comparison.l1_diff(
                 x_ref, data_ref[var][loc], x_new, data_new[var][loc]) / norm
+            msg = ['Eos H table test', 'failed.', 'var, err =', var, diff]
             if diff > tol[i] or np.isnan(diff):
-                print(
-                    ' '.join(map(str, ['Eos H table test fail. var, err =', var, diff])))
+                logger.warning(' '.join(map(str, msg)))
                 analyze_status = False
+            else:
+                msg[1] = 'passed.'
+                logger.debug(' '.join(map(str, msg)))
 
     return analyze_status

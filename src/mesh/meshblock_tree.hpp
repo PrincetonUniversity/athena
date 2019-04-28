@@ -19,6 +19,8 @@
 #include "../bvals/bvals.hpp"
 #include "../defs.hpp"
 
+class Mesh;
+
 //--------------------------------------------------------------------------------------
 //! \class MeshBlockTree
 //  \brief Objects are nodes in an AMR MeshBlock tree structure
@@ -28,39 +30,34 @@ class MeshBlockTree {
   friend class MeshBlock;
   friend class BoundaryBase;
  public:
-  MeshBlockTree();
-  MeshBlockTree(MeshBlockTree *parent, int ox, int oy, int oz);
+  explicit MeshBlockTree(Mesh *pmesh);
+  MeshBlockTree(MeshBlockTree *parent, int ox1, int ox2, int ox3);
   ~MeshBlockTree();
 
   // accessor
-  MeshBlockTree* GetLeaf(int ox, int oy, int oz) {return pleaf[oz][oy][ox];}
+  MeshBlockTree* GetLeaf(int ox1, int ox2, int ox3)
+  { return pleaf_[(ox1 + (ox2<<1) + (ox3<<2))]; }
 
   // functions
-  void CreateRootGrid(std::int64_t nx, std::int64_t ny, std::int64_t nz, int nl);
-  void AddMeshBlock(MeshBlockTree& root, LogicalLocation rloc, int dim,
-                    BoundaryFlag* mesh_bcs, std::int64_t rbx, std::int64_t rby,
-                    std::int64_t rbz, int rl, int &nnew);
-  void AddMeshBlockWithoutRefine(LogicalLocation rloc,
-                                 std::int64_t rbx, std::int64_t rby, std::int64_t rbz,
-                                 int rl);
-  void Refine(MeshBlockTree& root, int dim, BoundaryFlag* mesh_bcs,
-              std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl, int &nnew);
-  void Derefine(MeshBlockTree& root, int dim, BoundaryFlag* mesh_bcs,
-                std::int64_t rbx, std::int64_t rby, std::int64_t rbz, int rl, int &ndel);
+  void CreateRootGrid();
+  void AddMeshBlock(LogicalLocation rloc, int &nnew);
+  void AddMeshBlockWithoutRefine(LogicalLocation rloc);
+  void Refine(int &nnew);
+  void Derefine(int &ndel);
   MeshBlockTree* FindMeshBlock(LogicalLocation tloc);
   void CountMeshBlock(int& count);
   void GetMeshBlockList(LogicalLocation *list, int *pglist, int& count);
   MeshBlockTree* FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3,
-                              BoundaryFlag* bcs, std::int64_t rbx, std::int64_t rby,
-                              std::int64_t rbz, int rl, bool amrflag=false);
+                              bool amrflag=false);
 
  private:
   // data
-  bool flag; // false: virtual node, has leaves; true: real node, is a leaf
-  MeshBlockTree* pparent;
-  MeshBlockTree* pleaf[2][2][2];
-  LogicalLocation loc;
-  int gid;
+  MeshBlockTree** pleaf_;
+  int gid_;
+  LogicalLocation loc_;
+
+  static MeshBlockTree* proot_;
+  static int nleaf_;
 };
 
 #endif // MESH_MESHBLOCK_TREE_HPP_
