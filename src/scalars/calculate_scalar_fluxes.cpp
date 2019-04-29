@@ -173,7 +173,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
           pmb->peos->ApplyPassiveScalarFloors(sl_, i);
-          pmb->peos->ApplyPassiveScalarFloors(sr_, i);
+          //pmb->peos->ApplyPassiveScalarFloors(sr_, i);
         }
       }
       for (int j=js; j<=je+1; ++j) {
@@ -278,7 +278,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
             pmb->peos->ApplyPassiveScalarFloors(sl_, i);
-            pmb->peos->ApplyPassiveScalarFloors(sr_, i);
+            //pmb->peos->ApplyPassiveScalarFloors(sr_, i);
           }
       }
       for (int k=ks; k<=ke+1; ++k) {
