@@ -277,12 +277,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           // Lecoanet (2016) equation 8a)
-          Real dens = 1.0 + 0.5*drho_rho0*(std::tanh((pcoord->x2v(j)-z1)/a) -
-                                           std::tanh((pcoord->x2v(j)-z2)/a));
+          Real dens = 1.0 + 0.5*drho_rho0*(std::tanh((pcoord->x2v(j) - z1)/a) -
+                                           std::tanh((pcoord->x2v(j) - z2)/a));
           phydro->u(IDN,k,j,i) = dens;
 
-          Real v1 = vflow*(std::tanh((pcoord->x2v(j)-z1)/a)
-                           - std::tanh((pcoord->x2v(j)-z2)/a) - 1.0); // 8b)
+          Real v1 = vflow*(std::tanh((pcoord->x2v(j) - z1)/a)
+                           - std::tanh((pcoord->x2v(j) - z2)/a) - 1.0); // 8b)
           // Currently, the midpoint approx. is applied in the momenta and energy calc
           phydro->u(IM1,k,j,i) = v1*dens;
 
@@ -330,8 +330,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           // translated x1= x - 1/2 relative to Lecoanet (2016) shifts sine function by pi
           // (half-period) and introduces U_z sign change:
           Real v2 = -amp*ave_sine
-                    *(std::exp(-(SQR(pcoord->x2v(j)-z1))/(sigma*sigma)) +
-                      std::exp(-(SQR(pcoord->x2v(j)-z2))/(sigma*sigma))); // 8c), modified
+                    *(std::exp(-(SQR(pcoord->x2v(j) - z1))/(sigma*sigma)) +
+                      std::exp(-(SQR(pcoord->x2v(j) - z2))/(sigma*sigma))); // 8c), mod.
           phydro->u(IM2,k,j,i) = v2*dens;
 
           phydro->u(IM3,k,j,i) = 0.0;
