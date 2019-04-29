@@ -30,34 +30,33 @@
 
 // EquationOfState constructor
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
+  ptable{pmb->pmy_mesh->peos_table},
+  pmy_block_{pmb},
+  gamma_{pin->GetOrAddReal("hydro", "gamma", 2.)},
+  density_floor_ {pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))} {
   std::stringstream msg;
   msg << "### FATAL ERROR in EquationOfState::EquationOfState" << std::endl
       << "General EOS with MHD is not yet implemented." << std::endl;
   ATHENA_ERROR(msg);
 
-  pmy_block_ = pmb;
-  ptable = pmb->pmy_mesh->peos_table;
-  Real float_min = std::numeric_limits<float>::min();
-  density_floor_  = pin->GetOrAddReal("hydro","dfloor",std::sqrt(1024*(float_min)));
-  if (pin->DoesParameterExist("hydro","efloor")) {
-    energy_floor_ = pin->GetReal("hydro","efloor");
-    pressure_floor_ = energy_floor_ * (pin->GetOrAddReal("hydro","gamma", 2.) - 1.);
-    pressure_floor_ = pin->GetOrAddReal("hydro","pfloor", pressure_floor_);
+  if (pin->DoesParameterExist("hydro", "efloor")) {
+    energy_floor_ = pin->GetReal("hydro", "efloor");
+    pressure_floor_ = energy_floor_*(pin->GetOrAddReal("hydro", "gamma", 2.) - 1.);
+    pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", pressure_floor_);
   } else {
-    pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",std::sqrt(1024*(float_min)));
-    energy_floor_ = pressure_floor_ / (pin->GetOrAddReal("hydro","gamma", 2.) - 1.);
-    pin->SetReal("hydro","efloor", energy_floor_);
+    pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*float_min));
+    energy_floor_ = pressure_floor_/(pin->GetOrAddReal("hydro", "gamma", 2.) - 1.);
+    pin->SetReal("hydro", "efloor", energy_floor_);
   }
   if (EOS_TABLE_ENABLED) {
     if (!ptable) {
       std::stringstream msg;
       msg << "### FATAL ERROR in EquationOfState::EquationOfState" << std::endl
-          << "EOS table data uninitialized. Should be initialized by mesh." << std::endl;
+          << "EOS table data uninitialized. Should be initialized by Mesh." << std::endl;
       ATHENA_ERROR(msg);
     }
   }
-  gamma_ = pin->GetOrAddReal("hydro","gamma", 2.);
 }
 
 //----------------------------------------------------------------------------------------
