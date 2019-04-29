@@ -58,7 +58,8 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   Radiation *pr = nullptr;
   if (RADIATION_ENABLED) {
     pr = pmb->prad;
-    prbvar = dynamic_cast<CellCenteredBoundaryVariable *>(bvars_main_int[2]);
+    int rad_bvars_int = (MAGNETIC_FIELDS_ENABLED ? 2 : 1);
+    prbvar = dynamic_cast<CellCenteredBoundaryVariable *>(bvars_main_int[rad_bvars_int]);
   }
 
   // For each finer neighbor, to prolongate a boundary we need to fill one more cell

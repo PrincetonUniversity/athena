@@ -97,11 +97,12 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
        || block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge))
     azimuthal_shift_.NewAthenaArray(pmb->ke + NGHOST + 2);
 
-  // prevent reallocation of contiguous memory space for each of 4x possible calls to
-  // std::vector<BoundaryVariable *>.push_back() in Hydro, Field, Gravity, PassiveScalars
-  bvars.reserve(3);
+  // prevent reallocation of contiguous memory space for each of 5x possible calls to
+  // std::vector<BoundaryVariable *>.push_back() in Hydro, Field, Gravity, PassiveScalars,
+  // Radiation
+  bvars.reserve(5);
   // TOOD(KGF): rename to "bvars_time_int"? What about a std::vector for bvars_sts?
-  bvars_main_int.reserve(2);
+  bvars_main_int.reserve(5);
 
   // Matches initial value of Mesh::next_phys_id_
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
@@ -317,7 +318,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   Radiation *pr = nullptr;
   if (RADIATION_ENABLED) {
     pr = pmb->prad;
-    prbvar = dynamic_cast<CellCenteredBoundaryVariable *>(bvars_main_int[2]);
+    int rad_bvars_int = (MAGNETIC_FIELDS_ENABLED ? 2 : 1);
+    prbvar = dynamic_cast<CellCenteredBoundaryVariable *>(bvars_main_int[rad_bvars_int]);
   }
 
   // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
