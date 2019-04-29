@@ -28,14 +28,12 @@
 //   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block_ = pmb;
-  gamma_ = pin->GetReal("hydro", "gamma");
-  Real float_min = std::numeric_limits<float>::min();
-  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(float_min)) );
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(float_min)) );
-  gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
-}
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block_(pmb),
+    gamma_{pin->GetReal("hydro", "gamma")},
+    density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))},
+    pressure_floor_{pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*float_min))},
+    gamma_max_{pin->GetOrAddReal("hydro", "gamma_max", 1000.0)} {}
 
 //----------------------------------------------------------------------------------------
 // Variable inverter
@@ -280,8 +278,7 @@ void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_l
 }
 
 //---------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
-//           int k, int j, int i)
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i) {

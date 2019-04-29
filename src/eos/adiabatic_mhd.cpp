@@ -24,13 +24,11 @@
 
 // EquationOfState constructor
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block_ = pmb;
-  gamma_ = pin->GetReal("hydro", "gamma");
-  Real float_min = std::numeric_limits<float>::min();
-  density_floor_  = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(float_min)));
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(float_min)));
-}
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block_(pmb),
+    gamma_{pin->GetReal("hydro", "gamma")},
+    density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))},
+    pressure_floor_{pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*float_min))} {}
 
 //----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
@@ -158,8 +156,7 @@ Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real
 }
 
 //---------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
-//           int k, int j, int i)
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i) {
   Real& w_d  = prim(IDN,i);
