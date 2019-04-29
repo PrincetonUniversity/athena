@@ -11,7 +11,6 @@
 
 // C++ headers
 #include <cmath>   // atan2(), cbrt(), cos(), sqrt()
-#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"                   // enums, macros

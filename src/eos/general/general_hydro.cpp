@@ -21,7 +21,6 @@
 #include <cmath>   // sqrt()
 #include <fstream>
 #include <iostream> // ifstream
-#include <limits>
 #include <sstream>
 #include <stdexcept> // std::invalid_argument
 #include <string>

@@ -12,7 +12,6 @@
 // C++ headers
 #include <algorithm>  // max()
 #include <cmath>      // NAN, sqrt(), abs(), isfinite(), isnan(), pow()
-#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"                   // enums, macros

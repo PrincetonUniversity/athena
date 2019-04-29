@@ -10,7 +10,6 @@
 
 // C++ headers
 #include <cmath>   // sqrt()
-#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"
