@@ -169,8 +169,8 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i) {
-  Real& w_d  = prim(IDN,k,j,i);
-  Real& w_p  = prim(IPR,k,j,i);
+  Real& w_d  = prim(IDN,i);
+  Real& w_p  = prim(IPR,i);
 
   // apply density floor
   w_d = (w_d > density_floor_) ?  w_d : density_floor_;
