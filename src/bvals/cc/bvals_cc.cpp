@@ -312,33 +312,23 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   if (SHEARING_BOX) {
     // 2D shearing box in x-z plane: additional step to shift azimuthal velocity
     if (pbval_->ShBoxCoord_ == 2) {
+      int sign[2]{1, -1};
       Real qomL = pbval_->qomL_;
-      if ((pmb->loc.lx1 == pbval_->loc_shear[0]) && (nb.ni.ox1 < 0)) {
-        for (int k=sk; k<=ek; ++k) {
-          for (int j=sj; j<=ej; ++j) {
-            for (int i=si; i<=ei; ++i) {
-              if (NON_BAROTROPIC_EOS)
-                var(IEN,k,j,i) += (0.5/var(IDN,k,j,i)) *(SQR(var(IM3,k,j,i)
-                                                             + qomL*var(IDN,k,j,i))
-                                                         - SQR(var(IM3,k,j,i)));
-              var(IM3,k,j,i) += qomL*var(IDN,k,j,i);
+      for (int upper=0; upper<2; upper++) {
+        if ((pmb->loc.lx1 == pbval_->loc_shear[upper]) && (sign[upper]*nb.ni.ox1 < 0)) {
+          for (int k=sk; k<=ek; ++k) {
+            for (int j=sj; j<=ej; ++j) {
+              for (int i=si; i<=ei; ++i) {
+                if (NON_BAROTROPIC_EOS)
+                  var(IEN,k,j,i) += (0.5/var(IDN,k,j,i))*(
+                      SQR(var(IM3,k,j,i) + sign[upper]*qomL*var(IDN,k,j,i))
+                      - SQR(var(IM3,k,j,i)));
+                var(IM3,k,j,i) += sign[upper]*qomL*var(IDN,k,j,i);
+              }
             }
           }
         }
-      } // inner boundary
-      if ((pmb->loc.lx1 == pbval_->loc_shear[1]) && (nb.ni.ox1 > 0)) {
-        for (int k=sk; k<=ek; ++k) {
-          for (int j=sj; j<=ej; ++j) {
-            for (int i=si; i<=ei; ++i) {
-              if (NON_BAROTROPIC_EOS)
-                var(IEN,k,j,i) += (0.5/var(IDN,k,j,i))*(SQR(var(IM3,k,j,i)
-                                                            - qomL*var(IDN,k,j,i))
-                                                        - SQR(var(IM3,k,j,i)));
-              var(IM3,k,j,i) -= qomL*var(IDN,k,j,i);
-            }
-          }
-        }
-      } // outer boundary
+      }
     }
   } // end KGF: shearing box in SetBoundarySameLevel
   return;
@@ -590,14 +580,14 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
         else // (nb.fid == 4 || nb.fid == 5)
           size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx2 + 1)/2);
         size *= (nu_ + 1);
-        if (nb.snb.level<mylevel) { // send to coarser
+        if (nb.snb.level < mylevel) { // send to coarser
           tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_flx_phys_id_);
           if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
           MPI_Send_init(bd_var_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL,
                         nb.snb.rank, tag, MPI_COMM_WORLD,
                         &(bd_var_flcor_.req_send[nb.bufid]));
-        } else if (nb.snb.level>mylevel) { // receive from finer
+        } else if (nb.snb.level > mylevel) { // receive from finer
           tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
           if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
             MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);

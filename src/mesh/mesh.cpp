@@ -1357,10 +1357,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
         if (NSCALARS > 0)
           pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
-        // KGF: disable shearing box bvals/ calls
-        // send and receive shearing box boundary conditions
         if (SHEARING_BOX) {
-          pmb->phydro->hbvar.SendShearingBoxBoundaryBuffersForInit();
+          pmb->phydro->hbvar.AddHydroShearForInit();
         }
         pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
       }
@@ -1711,11 +1709,8 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
       pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
     if (NSCALARS > 0)
       pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
-
-    // KGF: disable shearing box bvals/ calls
-    // send and receive shearing box boundary conditions
     if (SHEARING_BOX) {
-      pmb->phydro->hbvar.SendShearingBoxBoundaryBuffersForInit();
+      pmb->phydro->hbvar.AddHydroShearForInit();
     }
     pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
   } // end second exchange of ghost cells

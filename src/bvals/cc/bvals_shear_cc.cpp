@@ -101,53 +101,7 @@ void CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *bu
   return;
 }
 
-//--------------------------------------------------------------------------------------
-//! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit()
-//  \brief Send shearing box boundary buffers for hydro variables
 
-void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffersForInit() {
-  MeshBlock *pmb = pmy_block_;
-  Mesh *pmesh = pmb->pmy_mesh;
-  AthenaArray<Real> &var = *var_cc;
-
-  // KGF: hidden assumption that 2D?
-  int jl = pmb->js - NGHOST;
-  int ju = pmb->je + NGHOST;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-  if (pmesh->mesh_size.nx3 > 1) {
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
-
-  Real qomL = pbval_->qomL_;
-
-  int sign[2]{1, -1};
-  int ib[2]{pmb->is - NGHOST, pmb->ie + 1};
-
-  for (int upper=0; upper<2; upper++) {
-    if (pbval_->is_shear[upper]) {
-      // step 1. -- add shear to the inner periodic boundary values
-      for (int k=kl; k<=ku; k++) {
-        for (int j=jl; j<=ju; j++) {
-          for (int i=0; i<NGHOST; i++) {
-            int ii = ib[upper] + i;
-            // add shear to conservative
-            shear_cc_[upper](IM2,k,j,i) = var(IM2,k,j,ii)
-                                          + sign[upper]*qomL*var(IDN,k,j,ii);
-            // Update energy, then x2 momentum
-            if (NON_BAROTROPIC_EOS) {
-              var(IEN,k,j,ii) += (0.5/var(IDN,k,j,ii))*(SQR(shear_cc_[upper](IM2,k,j,i))
-                                                        - SQR(var(IM2,k,j,ii)));
-            } // update energy
-            var(IM2,k,j,ii) = shear_cc_[upper](IM2,k,j,i);
-          }
-        }
-      }
-    }  // if boundary is shearing
-  }  // loop over inner/outer boundaries
-  return;
-}
 // --------------------------------------------------------------------------------------
 // ! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
 //  \brief Send shearing box boundary buffers for hydro variables
@@ -171,7 +125,7 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   }
 
   Real eps = pbval_->eps_;
-  Real qomL = pbval_->qomL_;
+  // Real qomL = pbval_->qomL_;
   int ssize = nu_ + 1;
 
   int offset[2]{0, 4};
@@ -180,27 +134,23 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 
   for (int upper=0; upper<2; upper++) {
     if (pbval_->is_shear[upper]) {
-      // step 1. -- load shboxvar_cc_
-      for (int k=kl; k<=ku; k++) {
-        for (int j=jl; j<=ju; j++) {
-          for (int i=0; i<NGHOST; i++) {
-            int ii = ib[upper] + i;
-            shear_cc_[upper](IDN,k,j,i) = var(IDN,k,j,ii);
-            shear_cc_[upper](IM1,k,j,i) = var(IM1,k,j,ii);
-            shear_cc_[upper](IM2,k,j,i) = var(IM2,k,j,ii)
-                                          + sign[upper]*qomL*var(IDN,k,j,ii);
-            shear_cc_[upper](IM3,k,j,i) = var(IM3,k,j,ii);
-            if (NON_BAROTROPIC_EOS) {
-              shear_cc_[upper](IEN,k,j,i) = var(IEN,k,j,ii) + (0.5/var(IDN,k,j,ii))
-                                            *(SQR(shear_cc_[upper](IM2,k,j,i))
-                                              - SQR(var(IM2,k,j,ii)));
+      // step 1.a -- load shear_cc_
+      for (int n=nl_; n<=nu_; ++n) {
+        for (int k=kl; k<=ku; k++) {
+          for (int j=jl; j<=ju; j++) {
+            for (int i=0; i<NGHOST; i++) {
+              int ii = ib[upper] + i;
+              shear_cc_[upper](n,k,j,i) = var(n,k,j,ii);
             }
           }
         }
       }
 
-      // step 2. -- conservative remaping
-      for (int n=0; n<=nu_; n++) {
+      // step 1.b -- (optionally) appy shear to shear_cc_ (does nothing by default)
+      ShearQuantities(shear_cc_[upper], upper);  // Hydro overrides this
+
+      // step 2. -- remaping
+      for (int n=nl_; n<=nu_; n++) {
         for (int k=kl; k<=ku; k++) {
           for (int i=0; i<NGHOST; i++) {
             int jl_remap = js - upper;
@@ -408,7 +358,7 @@ void CellCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
                                            shear_cc_phys_id_);
           MPI_Irecv(shear_bd_var_[upper].recv[n], size, MPI_ATHENA_REAL,
                     pbval_->shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
-                    &shear_bd_var_[upper].req_recv[upper]);
+                    &shear_bd_var_[upper].req_recv[n]);
         }
       }
     }
