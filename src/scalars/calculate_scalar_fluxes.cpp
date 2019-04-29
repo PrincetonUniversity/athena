@@ -39,7 +39,6 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
   // approximations (flux_fc in calculate_fluxes.cpp is currently not saved persistently
   // in Hydro class but each flux dir is temp. stored in 4D scratch array scr1_nkji_)
 
-  // (moved to ComputeUpwindFlux() definition:)--- REVERT
   Hydro &hyd = *(pmb->phydro);
 
   AthenaArray<Real> &x1flux = s_flux[X1DIR];
@@ -119,8 +118,8 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
         }
 #pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
-          // pmb->peos->ApplyPrimitiveFloors(sl_, k, j, i);
-          // pmb->peos->ApplyPrimitiveFloors(sr_, k, j, i);
+          pmb->peos->ApplyPassiveScalarFloors(sl_, i);
+          pmb->peos->ApplyPassiveScalarFloors(sr_, i);
         }
 
         // Compute x1 interface fluxes from face-centered primitive variables
@@ -220,8 +219,8 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
           }
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            // pmb->peos->ApplyPrimitiveFloors(sl_, k, j, i);
-            // pmb->peos->ApplyPrimitiveFloors(sr_, k, j, i);
+            pmb->peos->ApplyPassiveScalarFloors(sl_, i);
+            pmb->peos->ApplyPassiveScalarFloors(sr_, i);
           }
 
           // Compute x2 interface fluxes from face-centered primitive variables
@@ -315,8 +314,8 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
           }
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            // pmb->peos->ApplyPrimitiveFloors(sl_, k, j, i);
-            // pmb->peos->ApplyPrimitiveFloors(sr_, k, j, i);
+            pmb->peos->ApplyPassiveScalarFloors(sl_, i);
+            pmb->peos->ApplyPassiveScalarFloors(sr_, i);
           }
 
           // Compute x3 interface fluxes from face-centered primitive variables

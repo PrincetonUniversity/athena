@@ -53,7 +53,7 @@ class EquationOfState {
   void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i);
 
 #pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s) linear(i)
-  void ApplyPassiveScalarsFloor(AthenaArray<Real> &s, int i);
+  void ApplyPassiveScalarFloors(AthenaArray<Real> &s, int i);
 
   // Sound speed functions in different regimes
 #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
