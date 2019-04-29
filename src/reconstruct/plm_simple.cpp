@@ -77,16 +77,6 @@ void Reconstruction::PiecewiseLinearX1(
       qr(n,i  ) = qc(n,i) - ((pco->x1v(i  )-pco->x1f(i))/pco->dx1f(i))*dqm(n,i);
     }
   }
-
-//   if (???) {
-// #pragma omp simd
-//     for (int i=il; i<=iu; ++i) {
-//       // Reapply EOS floors to both L/R reconstructed primitive states
-//       // TODO(felker): check if fused loop with NWAVE redundant application is slower
-//       pmy_block_->peos->ApplyPrimitiveFloors(ql, k, j, i+1);
-//       pmy_block_->peos->ApplyPrimitiveFloors(qr, k, j, i);
-//     }
-//   }
   return;
 }
 
@@ -150,16 +140,6 @@ void Reconstruction::PiecewiseLinearX2(
       qr(n,i) = qc(n,i) - dxm*dqm(n,i);
     }
   }
-
-//   if (???) {
-// #pragma omp simd
-//     for (int i=il; i<=iu; ++i) {
-//       // Reapply EOS floors to both L/R reconstructed primitive states
-//       pmy_block_->peos->ApplyPrimitiveFloors(ql, k, j, i);
-//       pmy_block_->peos->ApplyPrimitiveFloors(qr, k, j, i);
-//     }
-//   }
-//   return;
 }
 
 //----------------------------------------------------------------------------------------
@@ -222,14 +202,5 @@ void Reconstruction::PiecewiseLinearX3(
       qr(n,i) = qc(n,i) - dxm*dqm(n,i);
     }
   }
-
-//   if (???) {
-// #pragma omp simd
-//     for (int i=il; i<=iu; ++i) {
-//       // Reapply EOS floors to both L/R reconstructed primitive states
-//       pmy_block_->peos->ApplyPrimitiveFloors(ql, k, j, i);
-//       pmy_block_->peos->ApplyPrimitiveFloors(qr, k, j, i);
-//     }
-//   }
   return;
 }
