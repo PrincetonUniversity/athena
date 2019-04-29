@@ -52,7 +52,7 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
 #ifdef MPI_PARALLEL
   decomp_ = pmy_driver_->decomp_;
   pdim_ = pmy_driver_->pdim_;
-  MpiInitialize();
+  InitializeMPI();
 #else
   f_in_  = new AthenaFFTIndex(orig_idx_);
   f_out_ = new AthenaFFTIndex(orig_idx_);
@@ -433,7 +433,7 @@ void FFTBlock::Execute(AthenaFFTPlan *plan, std::complex<Real> *data) {
 //----------------------------------------------------------------------------------------
 //! \fn void FFTBlock::Execute(AthenaFFTPlan *plan,
 //                              std::complex<Real> *in_data,std::complex<Real> *out_data)
-//  \brief excute out-place FFT
+//  \brief excute out-of-place FFT
 
 void FFTBlock::Execute(AthenaFFTPlan *plan, std::complex<Real> *in_data,
                        std::complex<Real> *out_data) {
@@ -453,11 +453,11 @@ void FFTBlock::Execute(AthenaFFTPlan *plan, std::complex<Real> *in_data,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FFTBlock::MpiInitialize(AthenaFFTPlan *plan,
+//! \fn void FFTBlock::InitializeMPI(AthenaFFTPlan *plan,
 //                              std::complex<Real> *in_data,std::complex<Real> *out_data)
-//  \brief excute out-place FFT
+//  \brief excute out-of-place FFT
 
-void FFTBlock::MpiInitialize() {
+void FFTBlock::InitializeMPI() {
 #ifdef MPI_PARALLEL
   std::stringstream msg;
   if ((pdim_ == 2 || pdim_ ==1) && dim_ == 3) {
