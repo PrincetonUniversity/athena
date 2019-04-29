@@ -1,9 +1,8 @@
-# Regression test based on Newtonian hydro linear wave convergence problem
+# Regression test based on intercomparison between serial and MPI runs.
 #
-# Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
-# are computed by the executable automatically and stored in the temporary file
-# linearwave_errors.dat)
-
+# Runs a driven turbulence test in 3D and checks L1 errors between
+# serial and MPI runs using kinetic energy history.
+#
 # Modules
 import logging
 import os
