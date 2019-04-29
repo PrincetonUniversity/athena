@@ -15,14 +15,18 @@ file_type  = hdf5      # HDF5 data dump
 variable   = prim      # variables to be output
 dt         = 0.1       # time increment between outputs
 
+<output3>
+file_type  = rst       # Restart dump
+dt         = 2.0       # time increment between outputs
+
 <time>
 cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
-nlim       = 100000    # cycle limit
+nlim       = 1000000   # cycle limit
 tlim       = 10.0      # time limit
 integrator  = vl2      # time integration algorithm
 xorder      = 2        # order of spatial reconstruction
 ncycle_out  = 1        # interval for stdout summary info
-correct_ic  = false    # correct midpoint assumption in initial condition
+correct_ic  = true     # correct midpoint assumption in initial condition
 
 <mesh>
 nx1        = 128         # Number of zones in X1-direction
@@ -52,10 +56,10 @@ nx3        = 1
 iso_sound_speed = 1.0
 gamma           = 1.6666667    # gamma = C_p/C_v
 
-<problem>                # Default parameter values correspond to Re=5,000
+<problem>                # Default parameter values correspond to Re=10^5
 iprob  = 4
 amp    = 0.01            # amplitude of initial vy perturbation
 vflow  = 1.0             # background vx
 drho_rho0 = 0.0          # stratified or unstratified problem (delta rho / rho0)
-nu_iso    = 4e-4         # isotropic viscosity coefficient
-kappa_iso = 4e-4         # isotropic thermal conduction coefficient
+nu_iso    = 2e-5         # isotropic viscosity coefficient
+kappa_iso = 2e-5         # isotropic thermal conduction coefficient
