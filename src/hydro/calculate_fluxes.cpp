@@ -129,8 +129,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         }
 #pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
-          pmb->peos->ApplyPrimitiveFloors(wl_, k, j, i);
-          pmb->peos->ApplyPrimitiveFloors(wr_, k, j, i);
+          pmb->peos->ApplyPrimitiveFloors(wl_, i);
+          pmb->peos->ApplyPrimitiveFloors(wr_, i);
         }
 
         // Compute x1 interface fluxes from face-centered primitive variables
@@ -240,8 +240,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           }
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            pmb->peos->ApplyPrimitiveFloors(wl_, k, j, i);
-            pmb->peos->ApplyPrimitiveFloors(wr_, k, j, i);
+            pmb->peos->ApplyPrimitiveFloors(wl_, i);
+            pmb->peos->ApplyPrimitiveFloors(wr_, i);
           }
 
           // Compute x2 interface fluxes from face-centered primitive variables
@@ -344,8 +344,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           }
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            pmb->peos->ApplyPrimitiveFloors(wl_, k, j, i);
-            pmb->peos->ApplyPrimitiveFloors(wr_, k, j, i);
+            pmb->peos->ApplyPrimitiveFloors(wl_, i);
+            pmb->peos->ApplyPrimitiveFloors(wr_, i);
           }
 
           // Compute x3 interface fluxes from face-centered primitive variables
