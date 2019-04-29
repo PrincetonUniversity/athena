@@ -33,6 +33,7 @@ def prepare(**kwargs):
     os.system('mv bin/athena bin/athena_fft')
     os.system('mv obj obj_fft')
 
+
 # Run Athena++
 def run(**kwargs):
     os.system('mv obj_fft obj')
@@ -71,7 +72,7 @@ def analyze():
     hst = athena_read.hst(filenames[0])
     KE0 = hst['1-KE']+hst['2-KE']+hst['3-KE']
 
-    KE_final=[KE0[-1]]
+    KE_final = [KE0[-1]]
     diff = []
     for hstfile in filenames[1:]:
         hst = athena_read.hst(hstfile)
