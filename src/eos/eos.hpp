@@ -48,8 +48,11 @@ class EquationOfState {
   //   const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int il,
   //   int iu, int jl, int ju, int kl, int ku);
 
-#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim,k,j) linear(i)
-  void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim) linear(i)
+  void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i);
+
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s) linear(i)
+  void ApplyPassiveScalarsFloor(AthenaArray<Real> &s, int i);
 
   // Sound speed functions in different regimes
 #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
@@ -154,6 +157,7 @@ class EquationOfState {
   Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
   Real density_floor_, pressure_floor_;  // density and pressure floors
   Real energy_floor_;                    // energy floor
+  Real scalar_floor_;                    // dimensionless concentration scalar floor
   Real sigma_max_, beta_min_;            // limits on ratios of gas quantities to pmag
   Real gamma_max_;                       // maximum Lorentz factor
   Real rho_min_, rho_pow_;               // variables to control power-law denity floor
