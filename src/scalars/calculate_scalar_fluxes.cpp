@@ -76,6 +76,11 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
         pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, s, sl_, sr_);
       } else {
         pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, s, sl_, sr_);
+#pragma omp simd
+        for (int i=is; i<=ie+1; ++i) {
+          pmb->peos->ApplyPassiveScalarFloors(sl_, i);
+          pmb->peos->ApplyPassiveScalarFloors(sr_, i);
+        }
       }
 
       pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw_);
@@ -165,6 +170,11 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
         pmb->precon->PiecewiseLinearX2(k, js-1, il, iu, s, sl_, sr_);
       } else {
         pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, s, sl_, sr_);
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          pmb->peos->ApplyPassiveScalarFloors(sl_, i);
+          pmb->peos->ApplyPassiveScalarFloors(sr_, i);
+        }
       }
       for (int j=js; j<=je+1; ++j) {
         // reconstruct L/R states at j
@@ -174,6 +184,11 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
           pmb->precon->PiecewiseLinearX2(k, j, il, iu, s, slb_, sr_);
         } else {
           pmb->precon->PiecewiseParabolicX2(k, j, il, iu, s, slb_, sr_);
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            pmb->peos->ApplyPassiveScalarFloors(slb_, i);
+            pmb->peos->ApplyPassiveScalarFloors(sr_, i);
+          }
         }
 
         // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
@@ -260,6 +275,11 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
         pmb->precon->PiecewiseLinearX3(ks-1, j, il, iu, s, sl_, sr_);
       } else {
         pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, s, sl_, sr_);
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            pmb->peos->ApplyPassiveScalarFloors(sl_, i);
+            pmb->peos->ApplyPassiveScalarFloors(sr_, i);
+          }
       }
       for (int k=ks; k<=ke+1; ++k) {
         // reconstruct L/R states at k
@@ -269,6 +289,11 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &s, const int order) {
           pmb->precon->PiecewiseLinearX3(k, j, il, iu, s, slb_, sr_);
         } else {
           pmb->precon->PiecewiseParabolicX3(k, j, il, iu, s, slb_, sr_);
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            pmb->peos->ApplyPassiveScalarFloors(slb_, i);
+            pmb->peos->ApplyPassiveScalarFloors(sr_, i);
+          }
         }
 
         // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
