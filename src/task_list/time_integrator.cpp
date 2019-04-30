@@ -894,6 +894,8 @@ TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SendHydro(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
+    // Swap Hydro quantity in BoundaryVariable interface back to conserved var formulation
+    // (also needed in SetBoundariesHydro(), since the tasks are independent)
     pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u, HydroBoundaryQuantity::cons);
     pmb->phydro->hbvar.SendBoundaryBuffers();
   } else {
@@ -1062,44 +1064,53 @@ TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
 
 
 TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
-  Hydro *phydro = pmb->phydro;
-  Field *pfield = pmb->pfield;
+  Hydro *ph = pmb->phydro;
+  Field *pf = pmb->pfield;
+  PassiveScalars *ps = pmb->pscalars;
   BoundaryValues *pbval = pmb->pbval;
+
   int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je, kl = pmb->ks, ku = pmb->ke;
-  if (pbval->nblevel[1][1][0] != -1) il-=NGHOST;
-  if (pbval->nblevel[1][1][2] != -1) iu+=NGHOST;
-  if (pbval->nblevel[1][0][1] != -1) jl-=NGHOST;
-  if (pbval->nblevel[1][2][1] != -1) ju+=NGHOST;
-  if (pbval->nblevel[0][1][1] != -1) kl-=NGHOST;
-  if (pbval->nblevel[2][1][1] != -1) ku+=NGHOST;
+  if (pbval->nblevel[1][1][0] != -1) il -= NGHOST;
+  if (pbval->nblevel[1][1][2] != -1) iu += NGHOST;
+  if (pbval->nblevel[1][0][1] != -1) jl -= NGHOST;
+  if (pbval->nblevel[1][2][1] != -1) ju += NGHOST;
+  if (pbval->nblevel[0][1][1] != -1) kl -= NGHOST;
+  if (pbval->nblevel[2][1][1] != -1) ku += NGHOST;
 
   if (stage <= nstages) {
-    // At beginning of this task, phydro->w contains previous stage's W(U) output
-    // and phydro->w1 is used as a register to store the current stage's output.
+    // At beginning of this task, ph->w contains previous stage's W(U) output
+    // and ph->w1 is used as a register to store the current stage's output.
     // For the second order integrators VL2 and RK2, the prim_old initial guess for the
     // Newton-Raphson solver in GR EOS uses the following abscissae:
     // stage=1: W at t^n and
     // stage=2: W at t^{n+1/2} (VL2) or t^{n+1} (RK2)
-    pmb->peos->ConservedToPrimitive(phydro->u, phydro->w, pfield->b,
-                                    phydro->w1, pfield->bcc, pmb->pcoord,
+    pmb->peos->ConservedToPrimitive(ph->u, ph->w, pf->b,
+                                    ph->w1, pf->bcc, pmb->pcoord,
                                     il, iu, jl, ju, kl, ku);
+    if (NSCALARS > 0) {
+      // r1/r_old for GR is currently unused:
+      pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->w, ps->r, ps->r,
+                                                   pmb->pcoord, il, iu, jl, ju, kl, ku);
+    }
     // fourth-order EOS:
     if (pmb->precon->xorder == 4) {
       // for hydro, shrink buffer by 1 on all sides
-      if (pbval->nblevel[1][1][0] != -1) il+=1;
-      if (pbval->nblevel[1][1][2] != -1) iu-=1;
-      if (pbval->nblevel[1][0][1] != -1) jl+=1;
-      if (pbval->nblevel[1][2][1] != -1) ju-=1;
-      if (pbval->nblevel[0][1][1] != -1) kl+=1;
-      if (pbval->nblevel[2][1][1] != -1) ku-=1;
+      if (pbval->nblevel[1][1][0] != -1) il += 1;
+      if (pbval->nblevel[1][1][2] != -1) iu -= 1;
+      if (pbval->nblevel[1][0][1] != -1) jl += 1;
+      if (pbval->nblevel[1][2][1] != -1) ju -= 1;
+      if (pbval->nblevel[0][1][1] != -1) kl += 1;
+      if (pbval->nblevel[2][1][1] != -1) ku -= 1;
       // for MHD, shrink buffer by 3
       // TODO(felker): add MHD loop limit calculation for 4th order W(U)
-      pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w, pfield->b,
-                                                 phydro->w1, pfield->bcc, pmb->pcoord,
+      pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w, pf->b,
+                                                 ph->w1, pf->bcc, pmb->pcoord,
                                                  il, iu, jl, ju, kl, ku);
     }
     // swap AthenaArray data pointers so that w now contains the updated w_out
-    phydro->w.SwapAthenaArray(phydro->w1);
+    ph->w.SwapAthenaArray(ph->w1);
+    // r1/r_old for GR is currently unused:
+    // ps->r.SwapAthenaArray(ps->r1);
   } else {
     return TaskStatus::fail;
   }
@@ -1109,6 +1120,8 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
 
 
 TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
+  Hydro *ph = pmb->phydro;
+  PassiveScalars *ps = pmb->pscalars;
   BoundaryValues *pbval = pmb->pbval;
 
   if (stage <= nstages) {
@@ -1116,7 +1129,12 @@ TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-    pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w, HydroBoundaryQuantity::prim);
+    // Swap Hydro and (possibly) passive scalar quantities in BoundaryVariable interface
+    // from conserved to primitive formulations:
+    ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
+    if (NSCALARS > 0)
+      ps->sbvar.var_cc = &(ps->r);
+
     pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
   } else {
     return TaskStatus::fail;
@@ -1222,6 +1240,9 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SendScalars(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
+    // Swap PassiveScalars quantity in BoundaryVariable interface back to conserved var
+    // formulation (also needed in SetBoundariesScalars() since the tasks are independent)
+    pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->s);
     pmb->pscalars->sbvar.SendBoundaryBuffers();
   } else {
     return TaskStatus::fail;
@@ -1248,6 +1269,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveScalars(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SetBoundariesScalars(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
+    // Set PassiveScalars quantity in BoundaryVariable interface to cons var formulation
+    pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->s);
     pmb->pscalars->sbvar.SetBoundaries();
     return TaskStatus::success;
   }
