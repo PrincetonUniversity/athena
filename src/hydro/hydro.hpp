@@ -93,7 +93,10 @@ class Hydro {
   AthenaArray<Real> wl_, wr_, wlb_;
   AthenaArray<Real> dflx_;
   // 1D GR
-  AthenaArray<Real> bb_normal_;    // normal magnetic field, for (SR/GR)MHD
+  AthenaArray<Real> prim_field_;   // primitives and transverse field, for SR MHD
+  AthenaArray<Real> lambdas_p_;    // most positive wavespeeds in cell, for SR MHD
+  AthenaArray<Real> lambdas_m_;    // most negative wavespeeds in cell, for SR MHD
+  AthenaArray<Real> bb_normal_;    // normal magnetic field, for (SR/GR) MHD
   AthenaArray<Real> lambdas_p_l_;  // most positive wavespeeds in left state
   AthenaArray<Real> lambdas_m_l_;  // most negative wavespeeds in left state
   AthenaArray<Real> lambdas_p_r_;  // most positive wavespeeds in right state

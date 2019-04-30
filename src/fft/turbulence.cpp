@@ -235,7 +235,7 @@ void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp) {
         int i = gi - kdisp1;
         if ((k >= 0) && (k < knx3) &&
             (j >= 0) && (j < knx2) &&
-            (i >= 0) && (i < knx3)) {
+            (i >= 0) && (i < knx1)) {
           Real q1 = ran2(&rseed);
           Real q2 = ran2(&rseed);
           Real q3 = std::sqrt(-2.0*std::log(q1 + 1.e-20))*std::cos(TWO_PI*q2);

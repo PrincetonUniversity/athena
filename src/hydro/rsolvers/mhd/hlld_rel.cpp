@@ -53,7 +53,7 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
 //   bb: 3D array of normal magnetic fields
 //   prim_l,prim_r: 1D arrays of left and right primitive states
-//   dxw: 1D array of mesh spacing in the x-direction
+//   dxw: 1D arrays of mesh spacing in the x-direction
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
 //   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces
@@ -72,19 +72,17 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           AthenaArray<Real> &ey, AthenaArray<Real> &ez,
                           AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   Real dt = pmy_block->pmy_mesh->dt;
+
   if (GENERAL_RELATIVITY && ivx == IVY && pmy_block->pcoord->IsPole(j)) {
     HLLENonTransforming(pmy_block, k, j, il, iu, bb, g_, gi_, prim_l, prim_r, flux, ey,
                         ez);
   } else {
-    HLLDTransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_,
-                     lambdas_p_l_, lambdas_m_l_, lambdas_p_r_, lambdas_m_r_,
-                     g_, gi_,
-                     prim_l, prim_r, cons_, flux,
-                     ey, ez);
+    HLLDTransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_, lambdas_p_l_,
+                     lambdas_m_l_, lambdas_p_r_, lambdas_m_r_, g_, gi_, prim_l, prim_r,
+                     cons_, flux, ey, ez);
   }
   for(int i=il; i<=iu; ++i) {
-    wct(k,j,i) = GetWeightForCT(flux(IDN,k,j,i), prim_l(IDN,i), prim_r(IDN,i), dxw(i),
-                                dt);
+    wct(k,j,i)=GetWeightForCT(flux(IDN,k,j,i), prim_l(IDN,i), prim_r(IDN,i), dxw(i), dt);
   }
   return;
 }
@@ -451,7 +449,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
       Real eta_l, eta_r;
 
       // Apply secant method to find total pressure
-      Real tol_ptot = 1.0e-8 * ptot_init[m];  // unused variable
+      Real tol_ptot = 1.0e-8 * ptot_init[m];
       // Calculate initial pressure residual
       ptot_0[m] = ptot_init[m];
       {
@@ -665,9 +663,11 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         vx_al = (bbx * (al*bbx+lambda_l*cl)
                  - (al+gl) * (ptot_n+r_l[ivx][m])) * xl_inv;  // (MUB 23)
         vy_al = (ql*r_l[ivy][m] + r_l[IBY][m]
-                 * (cl + bbx * (lambda_l*r_l[ivx][m] -r_l[IEN][m]))) * xl_inv; // (MUB 24)
+                 * (cl + bbx * (lambda_l*r_l[ivx][m]
+                                -r_l[IEN][m]))) * xl_inv;  // (MUB 24)
         vz_al = (ql*r_l[ivz][m] + r_l[IBZ][m]
-                 * (cl + bbx * (lambda_l*r_l[ivx][m] -r_l[IEN][m]))) * xl_inv; // (MUB 24)
+                 * (cl + bbx * (lambda_l*r_l[ivx][m]
+                                -r_l[IEN][m]))) * xl_inv;  // (MUB 24)
         Real ar = r_r[ivx][m] - lambda_r*r_r[IEN][m]
                   + ptot_n*(1.0-SQR(lambda_r));  // (MUB 26)
         Real gr = SQR(r_r[IBY][m]) + SQR(r_r[IBZ][m]);  // (MUB 27)
@@ -678,9 +678,11 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
         vx_ar = (bbx * (ar*bbx+lambda_r*cr)
                  - (ar+gr) * (ptot_n+r_r[ivx][m])) * xr_inv;  // (MUB 23)
         vy_ar = (qr*r_r[ivy][m] + r_r[IBY][m]
-                 * (cr + bbx * (lambda_r*r_r[ivx][m] -r_r[IEN][m]))) * xr_inv; // (MUB 24)
+                 * (cr + bbx * (lambda_r*r_r[ivx][m]
+                                -r_r[IEN][m]))) * xr_inv;  // (MUB 24)
         vz_ar = (qr*r_r[ivz][m] + r_r[IBZ][m]
-                 * (cr + bbx * (lambda_r*r_r[ivx][m] -r_r[IEN][m]))) * xr_inv; // (MUB 24)
+                 * (cr + bbx * (lambda_r*r_r[ivx][m]
+                                -r_r[IEN][m]))) * xr_inv;  // (MUB 24)
 
         // Calculate B_aL and B_aR (MUB 21)
         cons_al[IBY][m] = (r_l[IBY][m] - bbx*vy_al) / (lambda_l-vx_al);
@@ -981,7 +983,7 @@ Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
   Real w_cu = SQR(w_guess) * w_guess;
   Real w_b_cu = SQR(w_guess + bb_sq) * (w_guess + bb_sq);
   Real dv_sq_dw = -2.0 / (w_cu*w_b_cu)                                // (MM A16)
-                  * (ss_sq* (3.0*w_guess*(w_guess+bb_sq) + SQR(bb_sq)) + m_sq*w_cu);
+                  * (ss_sq * (3.0*w_guess*(w_guess+bb_sq) + SQR(bb_sq)) + m_sq*w_cu);
   Real dchi_dw = 1.0 - v_sq                                           // (cf. MM A14)
                  - gamma_lorentz/2.0 * (dd + 2.0*gamma_lorentz*chi) * dv_sq_dw;
   Real drho_dw = -gamma_lorentz*dd/2.0 * dv_sq_dw;                    // (MM A15)
@@ -999,7 +1001,7 @@ Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
 //   il,iu: lower and upper x1-indices
 //   bb: 3D array of normal magnetic fields
 //   g,gi: 1D scratch arrays for metric coefficients
-//   prim_l,prim_r: 3D arrays of left and right primitive states
+//   prim_l,prim_r: 1D arrays of left and right primitive states
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
 //   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces
@@ -1018,43 +1020,44 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 #if GENERAL_RELATIVITY
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
+  const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
 
   // Get metric components
   pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
 
   // Go through each interface
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+  for (int i=il; i<=iu; i++) {
     // Extract metric
-    const Real &g_00 = g(I00,i), &g_01 = g(I01,i), &g_02 = g(I02,i), &g_03 = g(I03,i),
-               &g_10 = g(I01,i), &g_11 = g(I11,i), &g_12 = g(I12,i), &g_13 = g(I13,i),
-               &g_20 = g(I02,i), &g_21 = g(I12,i), &g_22 = g(I22,i), &g_23 = g(I23,i),
-               &g_30 = g(I03,i), &g_31 = g(I13,i), &g_32 = g(I23,i), &g_33 = g(I33,i);
-    const Real &g00 = gi(I00,i), &g01 = gi(I01,i), &g02 = gi(I02,i), &g03 = gi(I03,i),
-               &g10 = gi(I01,i), &g11 = gi(I11,i), &g12 = gi(I12,i), &g13 = gi(I13,i),
-               &g20 = gi(I02,i), &g21 = gi(I12,i), &g22 = gi(I22,i), &g23 = gi(I23,i),
-               &g30 = gi(I03,i), &g31 = gi(I13,i), &g32 = gi(I23,i), &g33 = gi(I33,i);
+    Real g_00 = g(I00,i), g_01 = g(I01,i), g_02 = g(I02,i), g_03 = g(I03,i),
+         g_10 = g(I01,i), g_11 = g(I11,i), g_12 = g(I12,i), g_13 = g(I13,i),
+         g_20 = g(I02,i), g_21 = g(I12,i), g_22 = g(I22,i), g_23 = g(I23,i),
+         g_30 = g(I03,i), g_31 = g(I13,i), g_32 = g(I23,i), g_33 = g(I33,i);
+    Real g00 = gi(I00,i), g01 = gi(I01,i), g02 = gi(I02,i), g03 = gi(I03,i),
+         g10 = gi(I01,i), g11 = gi(I11,i), g12 = gi(I12,i), g13 = gi(I13,i),
+         g20 = gi(I02,i), g21 = gi(I12,i), g22 = gi(I22,i), g23 = gi(I23,i),
+         g30 = gi(I03,i), g31 = gi(I13,i), g32 = gi(I23,i), g33 = gi(I33,i);
     Real alpha = std::sqrt(-1.0/g00);
 
     // Extract left primitives
-    const Real &rho_l = prim_l(IDN,i);
-    const Real &pgas_l = prim_l(IPR,i);
-    const Real &uu1_l = prim_l(IVX,i);
-    const Real &uu2_l = prim_l(IVY,i);
-    const Real &uu3_l = prim_l(IVZ,i);
-    const Real &bb2_l = bb(k,j,i);
-    const Real &bb3_l = prim_l(IBY,i);
-    const Real &bb1_l = prim_l(IBZ,i);
+    Real rho_l = prim_l(IDN,i);
+    Real pgas_l = prim_l(IPR,i);
+    Real uu1_l = prim_l(IVX,i);
+    Real uu2_l = prim_l(IVY,i);
+    Real uu3_l = prim_l(IVZ,i);
+    Real bb2_l = bb(k,j,i);
+    Real bb3_l = prim_l(IBY,i);
+    Real bb1_l = prim_l(IBZ,i);
 
     // Extract right primitives
-    const Real &rho_r = prim_r(IDN,i);
-    const Real &pgas_r = prim_r(IPR,i);
-    const Real &uu1_r = prim_r(IVX,i);
-    const Real &uu2_r = prim_r(IVY,i);
-    const Real &uu3_r = prim_r(IVZ,i);
-    const Real &bb2_r = bb(k,j,i);
-    const Real &bb3_r = prim_r(IBY,i);
-    const Real &bb1_r = prim_r(IBZ,i);
+    Real rho_r = prim_r(IDN,i);
+    Real pgas_r = prim_r(IPR,i);
+    Real uu1_r = prim_r(IVX,i);
+    Real uu2_r = prim_r(IVY,i);
+    Real uu3_r = prim_r(IVZ,i);
+    Real bb2_r = bb(k,j,i);
+    Real bb3_r = prim_r(IBY,i);
+    Real bb1_r = prim_r(IBZ,i);
 
     // Calculate 4-velocity in left state
     Real ucon_l[4], ucov_l[4];
@@ -1120,13 +1123,13 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 
     // Calculate wavespeeds in left state
     Real lambda_p_l, lambda_m_l;
-    Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
+    Real wgas_l = rho_l + gamma_prime * pgas_l;
     pmb->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], b_sq_l,
                                         g00, g02, g22, &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
-    Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
+    Real wgas_r = rho_r + gamma_prime * pgas_r;
     pmb->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], b_sq_r,
                                         g00, g02, g22, &lambda_p_r, &lambda_m_r);
 
@@ -1184,12 +1187,13 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     flux_r[IBY] = bcon_r[IVZ] * ucon_r[IVY] - bcon_r[IVY] * ucon_r[IVZ];
     flux_r[IBZ] = bcon_r[IVX] * ucon_r[IVY] - bcon_r[IVY] * ucon_r[IVX];
 
+    Real lambda_diff_inv = 1.0 / (lambda_r-lambda_l);
     // Calculate fluxes in HLL region
     Real flux_hll[NWAVE];
     for (int n = 0; n < NWAVE; ++n) {
       flux_hll[n] = (lambda_r*flux_l[n] - lambda_l*flux_r[n]
                      + lambda_r*lambda_l * (cons_r[n] - cons_l[n]))
-                    / (lambda_r-lambda_l);
+                    * lambda_diff_inv;
     }
 
     // Determine region of wavefan
@@ -1209,7 +1213,8 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
     ey(k,j,i) = -flux_interface[IBY];
     ez(k,j,i) = flux_interface[IBZ];
   }
-#endif  // GENERAL_RELATIVITY
+#endif // GENERAL_RELATIVITY
   return;
 }
+
 } // namespace
