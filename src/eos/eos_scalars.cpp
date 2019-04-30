@@ -45,8 +45,14 @@ void EquationOfState::PassiveScalarConservedToPrimitive(
           Real& r_n  = r(n,k,j,i);
           // apply passive scalars floor to conserved variable first, then transform:
           // (multi-D fluxes may have caused it to drop below floor)
-          s_n = (s_n > scalar_floor_*w_d) ?  s_n : scalar_floor_*w_d;
+          s_n = (s_n < scalar_floor_*w_d) ?  scalar_floor_*w_d : s_n;
           r_n = s_n*di;
+          // TODO(felker): continue to monitor the acceptability of this absolute 0. floor
+          // (may create very large global conservation violations, e.g. the first few
+          // cycles of the slotted cylinder test)
+
+          //r_n = (r_n < scalar_floor_) ? scalar_floor_ : r_n;
+          //s_n = r_n*w_d;
         }
       }
     }
