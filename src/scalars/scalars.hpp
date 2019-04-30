@@ -45,7 +45,7 @@ class PassiveScalars {
 
   // storage for SMR/AMR
   // TODO(KGF): remove trailing underscore or revert to private:
-  AthenaArray<Real> coarse_s_;  // coarse_r_
+  AthenaArray<Real> coarse_s_, coarse_r_;
 
   CellCenteredBoundaryVariable sbvar;
 

@@ -39,6 +39,9 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     coarse_s_(NSCALARS, pmb->ncc3, pmb->ncc2, pmb->ncc1,
               (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
                AthenaArray<Real>::DataStatus::empty)),
+    coarse_r_(NSCALARS, pmb->ncc3, pmb->ncc2, pmb->ncc1,
+              (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
+               AthenaArray<Real>::DataStatus::empty)),
     sbvar(pmb, &s, &coarse_s_, s_flux),
     pmy_block(pmb) {
   int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
