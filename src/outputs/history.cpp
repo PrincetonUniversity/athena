@@ -96,7 +96,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             data_sum[prev_out + 1] += vol(i)*0.5*bcc2*bcc2;
             data_sum[prev_out + 2] += vol(i)*0.5*bcc3*bcc3;
           }
-          // Passive scalars:
+          // (conserved variable) Passive scalars:
           for (int n=0; n<NSCALARS; n++) {
             Real& s = psclr->s(n,k,j,i);
             constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED + NFIELD;
