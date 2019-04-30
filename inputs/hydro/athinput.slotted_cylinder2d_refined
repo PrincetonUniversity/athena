@@ -17,6 +17,15 @@ file_type   = hdf5     # HDF5 data dump
 variable    = prim     # variables to be output
 dt          = 0.01     # time increment between outputs
 
+<output3>
+file_type   = hdf5     # HDF5 data dump
+variable    = cons     # variables to be output
+dt          = 0.01     # time increment between outputs
+
+<output4>
+file_type   = rst      # Binary data dump
+dt          = 0.5     # time increment between outputs
+
 <time>
 cfl_number = 0.4        # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1         # cycle limit
