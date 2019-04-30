@@ -3,9 +3,9 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file add_flux_divergence.cpp
-//  \brief Applies divergence of the fluxes, including geometric "source terms" added
-//         by a function implemented in each Coordinate class.
+//! \file add_scalar_flux_divergence.cpp
+//  \brief Computes divergence of the passive scalar fluxes and adds that to a conserved
+// variable register (passive scalar mass)
 
 // C headers
 
@@ -40,8 +40,7 @@
 // TODO(felker): remove the following unnecessary private class member?
 // field_diffusion.cpp:66:    cell_volume_.NewAthenaArray(nc1);
 
-void PassiveScalars::AddFluxDivergence(const Real wght,
-                                                AthenaArray<Real> &s_out) {
+void PassiveScalars::AddFluxDivergence(const Real wght, AthenaArray<Real> &s_out) {
   MeshBlock *pmb = pmy_block;
   AthenaArray<Real> &x1flux = s_flux[X1DIR];
   AthenaArray<Real> &x2flux = s_flux[X2DIR];
