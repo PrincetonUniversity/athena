@@ -64,7 +64,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
 
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
   if (pm->multilevel) {
-    pmy_block->pmr->AddToRefinement(&s, &coarse_s_);
+    refinement_idx = pmy_block->pmr->AddToRefinement(&s, &coarse_s_);
   }
 
   // enroll CellCenteredBoundaryVariable object

@@ -73,7 +73,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
 
   // "Enroll" in S/AMR by adding to vector of tuples of pointers in MeshRefinement class
   if (pm->multilevel) {
-    pmy_block->pmr->AddToRefinement(&u, &coarse_cons_);
+    refinement_idx = pmy_block->pmr->AddToRefinement(&u, &coarse_cons_);
   }
 
   // enroll HydroBoundaryVariable object

@@ -74,7 +74,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
 
   if (pm->multilevel) {
     // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
-    pmy_block->pmr->AddToRefinement(&b, &coarse_b_);
+    refinement_idx = pmy_block->pmr->AddToRefinement(&b, &coarse_b_);
   }
 
   // enroll FaceCenteredBoundaryVariable object
