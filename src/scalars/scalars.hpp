@@ -31,19 +31,21 @@ class PassiveScalars {
   PassiveScalars(MeshBlock *pmb, ParameterInput *pin);
 
   // public data:
-  // mass fraction of each species
+  // "conserved vars" = passive scalar mass
   AthenaArray<Real> s, s1, s2;  // (no more than MAX_NREGISTER allowed)
+  // "primitive vars" = (density-normalized) mass fraction/concentration of each species
+  AthenaArray<Real> r;  // , r1;
   AthenaArray<Real> s_flux[3];  // face-averaged flux vector
 
   // fourth-order intermediate quantities
-  AthenaArray<Real> mass_flux_fc[3];  // deep copy of intermediate Hydro quantities
-  // AthenaArray<Real> s_cc;         // cell-centered approximations
+  AthenaArray<Real> mass_flux_fc[3];  // deep copy of Hydro intermediate flux quantities
+  AthenaArray<Real> s_cc, r_cc;       // cell-centered approximations
   // (only needed for 4th order EOS evaluations that have explicit dependence on species
   // concentration)
 
   // storage for SMR/AMR
   // TODO(KGF): remove trailing underscore or revert to private:
-  AthenaArray<Real> coarse_s_;
+  AthenaArray<Real> coarse_s_;  // coarse_r_
 
   CellCenteredBoundaryVariable sbvar;
 
@@ -56,7 +58,7 @@ class PassiveScalars {
   MeshBlock* pmy_block;
   // scratch space used to compute fluxes
   // 2D scratch arrays
-  AthenaArray<Real> sl_, sr_, slb_;
+  AthenaArray<Real> rl_, rr_, rlb_;
   // 1D scratch arrays
   AthenaArray<Real> dxw_;
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
@@ -67,13 +69,13 @@ class PassiveScalars {
   // fourth-order
   // 4D scratch arrays
   AthenaArray<Real> scr1_nkji_, scr2_nkji_;
-  AthenaArray<Real> sl3d_, sr3d_;
+  AthenaArray<Real> rl3d_, rr3d_;
   // 1D scratch arrays
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
   void ComputeUpwindFlux(const int k, const int j, const int il,
                          const int iu, // CoordinateDirection dir,
-                         AthenaArray<Real> &sl, AthenaArray<Real> &sr,
+                         AthenaArray<Real> &rl, AthenaArray<Real> &rr,
                          AthenaArray<Real> &mass_flx,
                          AthenaArray<Real> &flx_out);
 };

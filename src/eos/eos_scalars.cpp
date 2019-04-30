@@ -26,16 +26,16 @@
 // reconstructed L/R cell interface states (if PPM is used, e.g.) along:
 // (NSCALARS x) x1 slices
 
-void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &s, int i) {
+void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &r, int i) {
   // TODO(felker): process user-input "hydro/sfloor" in each EquationOfState ctor
   // 8x .cpp files + more in general/. Is there a better way to avoid code duplication?
 
   // currently, assumes same floor is applied to all NSCALARS species
   // TODO(felker): generalize this to allow separate floors per species
   for (int n=0; n<NSCALARS; ++n) {
-    Real& s_n  = s(n,i);
+    Real& r_n  = r(n,i);
     // apply (prim) density floor
-    s_n = (s_n > scalar_floor_) ?  s_n : scalar_floor_;
+    r_n = (r_n > scalar_floor_) ?  r_n : scalar_floor_;
   }
   return;
 }
