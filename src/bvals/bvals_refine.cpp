@@ -20,9 +20,37 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../scalars/scalars.hpp"
 #include "bvals.hpp"
 #include "cc/hydro/bvals_hydro.hpp"
 #include "fc/bvals_fc.hpp"
+
+// -----------
+// NOTE ON SWITCHING BETWEEN PRIMITIVE VS. CONSERVED AND STANDARD VS. COARSE BUFFERS HERE:
+// -----------
+// In both Mesh::Initialize and time_integartor.cpp, this wrapper function
+// ProlongateBoundaries expects to have Hydro (and passive scalar)-associated
+// BoundaryVariable objects associated with their CONSERVED VARIABLE ARRAYS (standard and
+// coarse buffers) by the time this function is called
+
+// E.g. in time_integrator.cpp, the PROLONG task is called after SEND_HYD, SETB_HYD,
+// SEND_SCLR, SETB_SCLR, all of which indepedently switch to their associated CONSERVED
+// VARIABLE ARRAYS and before CON2PRIM which switches to PRIMITIVE VARIABLE ARRAYS.
+
+// This is essential so that the first step in this function,
+// RestrictGhostCellsOnSameLevel, by default operates on u/coarse_cons and s/coarse_s
+// (also on w/coarse_prim if GR):
+// -----------
+// SUMMARY OF BELOW BoundaryVariable var_cc/coarse_buf CHANGES:
+// -----------
+// 1. RestrictGhostCellsOnSameLevel--- standard and coarse CONSERVED
+// (also standard and coarse PRIMITIVE for GR simulations)
+
+// 2. ApplyPhysicalBoundariesOnCoarseLevel--- coarse ONLY, PRIMITIVE
+// (automatically switches to standard and coarse primitive variables after fn)
+
+// 3. ProlongateGhostCells--- standard and coarse PRIMITIVE
+// (automatically switches back to conserved variables at the end of fn)
 
 void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   MeshBlock *pmb = pmy_block_;
@@ -45,6 +73,13 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   HydroBoundaryVariable *phbvar =
       dynamic_cast<HydroBoundaryVariable *>(bvars_main_int[0]);
   Hydro *ph = pmb->phydro;
+
+  CellCenteredBoundaryVariable *psbvar = nullptr;
+  PassiveScalars *ps = nullptr;
+  if (NSCALARS > 0) {
+    ps = pmb->pscalars;
+    //psbvar = dynamic_cast<CellCenteredBoundaryVariable *>(bvars_main_int[???]);
+  }
 
   FaceCenteredBoundaryVariable *pfbvar = nullptr;
   Field *pf = nullptr;
@@ -131,7 +166,8 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     // Step 2. Re-apply physical boundaries on the coarse boundary:
     ApplyPhysicalBoundariesOnCoarseLevel(nb, time, dt, si, ei, sj, ej, sk, ek);
 
-    // (temp workaround) swap BoundaryVariable var_cc/fc back from coarse_buf
+    // (temp workaround) swap BoundaryVariable var_cc/fc to standard primitive variable
+    // arrays (not coarse) from coarse primitive variables arrays
     phbvar->var_cc = &(ph->w);
     if (MAGNETIC_FIELDS_ENABLED)
       pfbvar->var_fc = &(pf->b);
@@ -341,7 +377,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   MeshRefinement *pmr = pmb->pmr;
 
   // prolongate cell-centered S/AMR-enrolled quantities (hydro, passive scalars, ...)
-  // (unique to Hydro) swap (u, coarse_cons_) with (w, coarse_prim)
+  // (unique to Hydro): swap (u, coarse_cons_) with (w, coarse_prim)
   pmr->SetHydroRefinement(HydroBoundaryQuantity::prim);
   for (auto cc_pair : pmr->pvars_cc_) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
