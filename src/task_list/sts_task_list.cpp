@@ -354,7 +354,6 @@ TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage
     //                 operator-split RKL1 STS? For now, disable time-dep BCs.
     // Real t_end_stage = pmb->pmy_mesh->time;
     // Real dt = pmb->pmy_mesh->dt;
-    pmb->phydro->hbvar.SelectCoarseBuffer(HydroBoundaryQuantity::prim);
     pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w, HydroBoundaryQuantity::prim);
     pbval->ApplyPhysicalBoundaries(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
   } else {

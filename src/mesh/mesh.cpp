@@ -1350,8 +1350,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
-        pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
-                                               HydroBoundaryQuantity::cons);
         pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
@@ -1377,7 +1375,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         for (int i=0; i<nmb; ++i) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
           pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
-                                                 HydroBoundaryQuantity::prim);
+                                               HydroBoundaryQuantity::prim);
           pmb->phydro->hbvar.SendBoundaryBuffers();
         }
 
@@ -1385,12 +1383,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
-          pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
-                                                 HydroBoundaryQuantity::prim);
           pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
           pbval->ClearBoundary(BoundaryCommSubset::gr_amr);
           pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
-                                                 HydroBoundaryQuantity::cons);
+                                               HydroBoundaryQuantity::cons);
         }
       } // multilevel
 
@@ -1444,7 +1440,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         // --------------------------
         // end fourth-order EOS
         pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
-                                               HydroBoundaryQuantity::prim);
+                                             HydroBoundaryQuantity::prim);
         pbval->ApplyPhysicalBoundaries(time, 0.0);
       }
 
