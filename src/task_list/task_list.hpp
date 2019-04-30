@@ -235,7 +235,7 @@ const std::uint64_t SETB_FLD = 1ULL<<31;
 // const std::uint64_t SETB_CHM = 1ULL<<33;
 
 const std::uint64_t PROLONG  = 1ULL<<34;
-const std::uint64_t CON2PRIM = 1ULL<<35;
+const std::uint64_t CONS2PRIM = 1ULL<<35;
 const std::uint64_t PHY_BVAL = 1ULL<<36;
 const std::uint64_t USERWORK = 1ULL<<37;
 const std::uint64_t NEW_DT   = 1ULL<<38;

@@ -299,20 +299,20 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         } else {
           AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD));
         }
-        AddTask(CON2PRIM,PROLONG);
+        AddTask(CONS2PRIM,PROLONG);
       } else {
         if (SHEARING_BOX) {
           if (NSCALARS > 0) {
-            AddTask(CON2PRIM,
+            AddTask(CONS2PRIM,
                     (SETB_HYD|SETB_FLD|SETB_SCLR|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
           } else {
-            AddTask(CON2PRIM,(SETB_HYD|SETB_FLD|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
+            AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
           }
         } else {
           if (NSCALARS > 0) {
-            AddTask(CON2PRIM,(SETB_HYD|SETB_FLD|SETB_SCLR));
+            AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD|SETB_SCLR));
           } else {
-            AddTask(CON2PRIM,(SETB_HYD|SETB_FLD));
+            AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD));
           }
         }
       }
@@ -324,26 +324,26 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         } else {
           AddTask(PROLONG,(SEND_HYD|SETB_HYD));
         }
-        AddTask(CON2PRIM,PROLONG);
+        AddTask(CONS2PRIM,PROLONG);
       } else {
         if (SHEARING_BOX) {
           if (NSCALARS > 0) {
-            AddTask(CON2PRIM,(SETB_HYD|RECV_HYDSH|SETB_SCLR));  // RECV_SCLRSH
+            AddTask(CONS2PRIM,(SETB_HYD|RECV_HYDSH|SETB_SCLR));  // RECV_SCLRSH
           } else {
-            AddTask(CON2PRIM,(SETB_HYD|RECV_HYDSH));
+            AddTask(CONS2PRIM,(SETB_HYD|RECV_HYDSH));
           }
         } else {
           if (NSCALARS > 0) {
-            AddTask(CON2PRIM,(SETB_HYD|SETB_SCLR));
+            AddTask(CONS2PRIM,(SETB_HYD|SETB_SCLR));
           } else {
-            AddTask(CON2PRIM,(SETB_HYD));
+            AddTask(CONS2PRIM,(SETB_HYD));
           }
         }
       }
     }
 
     // everything else
-    AddTask(PHY_BVAL,CON2PRIM);
+    AddTask(PHY_BVAL,CONS2PRIM);
     AddTask(USERWORK,PHY_BVAL);
     AddTask(NEW_DT,USERWORK);
     if (pm->adaptive) {
@@ -371,7 +371,7 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
 
   // Note, there are exceptions to the "verb+object" convention in some TASK_NAMES and
   // TaskFunc, e.g. NEW_DT + NewBlockTimeStep() and AMR_FLAG + CheckRefinement(),
-  // SRCTERM_HYD and HydroSourceTerms(), USERWORK, PHY_BVAL, PROLONG, CON2PRIM,
+  // SRCTERM_HYD and HydroSourceTerms(), USERWORK, PHY_BVAL, PROLONG, CONS2PRIM,
   // ... Although, AMR_FLAG = "flag blocks for AMR" should be FLAG_AMR in VERB_OBJECT
   using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
   switch (id) {
@@ -529,7 +529,7 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
           (&TimeIntegratorTaskList::Prolongation);
       task_list_[ntasks].lb_time = true;
       break;
-    case (CON2PRIM):
+    case (CONS2PRIM):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::Primitives);
