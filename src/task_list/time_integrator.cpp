@@ -63,7 +63,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
   // main.cpp invokes the tasklist in a for () loop from stage=1 to stage=ptlist->nstages
 
   // TODO(felker): validate Field and Hydro diffusion with RK3, RK4, SSPRK(5,4)
-  integrator = pin->GetOrAddString("time","integrator","vl2");
+  integrator = pin->GetOrAddString("time", "integrator", "vl2");
 
   if (integrator == "vl2") {
     // VL: second-order van Leer integrator (Stone & Gardiner, NewA 14, 139 2009)
@@ -86,6 +86,15 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     stage_wghts[1].gamma_2 = 1.0;
     stage_wghts[1].gamma_3 = 0.0;
     stage_wghts[1].beta = 1.0;
+  } else if (integrator == "rk1") {
+    // RK1: first-order Runge-Kutta
+    nstages = 1;
+    cfl_limit = 1.0;
+    stage_wghts[0].delta = 1.0;
+    stage_wghts[0].gamma_1 = 0.0;
+    stage_wghts[0].gamma_2 = 1.0;
+    stage_wghts[0].gamma_3 = 0.0;
+    stage_wghts[0].beta = 1.0;
   } else if (integrator == "rk2") {
     // Heun's method / SSPRK (2,2): Gottlieb (2009) equation 3.1
     // Optimal (in error bounds) explicit two-stage, second-order SSPRK
@@ -968,7 +977,6 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesField(MeshBlock *pmb, int stage)
 
 TaskStatus TimeIntegratorTaskList::SendHydroShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    // KGF: (pmb->phydro->u, true);
     pmb->phydro->hbvar.SendShearingBoxBoundaryBuffers();
   } else {
     return TaskStatus::fail;
@@ -981,7 +989,6 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) 
   bool ret;
   ret = false;
   if (stage <= nstages) {
-    // KGF: (pmb->phydro->u);
     ret = pmb->phydro->hbvar.ReceiveShearingBoxBoundaryBuffers();
   } else {
     return TaskStatus::fail;
@@ -996,7 +1003,6 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) 
 
 TaskStatus TimeIntegratorTaskList::SendFieldShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    // KGF: (pmb->pfield->b, true);
     pmb->pfield->fbvar.SendShearingBoxBoundaryBuffers();
   } else {
     return TaskStatus::fail;
@@ -1009,7 +1015,6 @@ TaskStatus TimeIntegratorTaskList::ReceiveFieldShear(MeshBlock *pmb, int stage) 
   bool ret;
   ret = false;
   if (stage <= nstages) {
-    // KGF: (pmb->pfield->b);
     ret = pmb->pfield->fbvar.ReceiveShearingBoxBoundaryBuffers();
   } else {
     return TaskStatus::fail;
