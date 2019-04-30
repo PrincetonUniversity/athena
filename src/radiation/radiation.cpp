@@ -53,6 +53,11 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   // Set object and function pointers
   UserSourceTerm = pmb->pmy_mesh->UserRadSourceTerm_;
 
+  // Enroll refinement communication
+  if (pmb->pmy_mesh->multilevel) {
+    pmb->pmr->AddToRefinement(&cons, &coarse_cons);
+  }
+
   // Construct objects
   rbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&rbvar);
