@@ -153,7 +153,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
   if (NSCALARS > 0) {
-    // if (this->grav_block)
+    // if (this->scalars_block)
     pscalars = new PassiveScalars(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
@@ -259,12 +259,21 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   phydro = new Hydro(this, pin);
   if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
   peos = new EquationOfState(this, pin);
+
+  if (NSCALARS > 0) {
+    // if (this->scalars_block)
+    pscalars = new PassiveScalars(this, pin);
+    //pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
+
   InitUserMeshBlockData(pin);
 
-  std::size_t os=0;
+  std::size_t os = 0;
+  // NEW_OUTPUT_TYPES:
+
   // load hydro and field data
   std::memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
-  // load it into the half-step arrays too
+  // load it into the other memory register(s) too
   std::memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
   os += phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
@@ -285,10 +294,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     os += pfield->b.x3f.GetSizeInBytes();
   }
 
-  // NEW_PHYSICS: add load of new physics from restart file here
-  if (SELF_GRAVITY_ENABLED >= 1) {
-    std::memcpy(pgrav->phi.data(), &(mbdata[os]), pgrav->phi.GetSizeInBytes());
-    os += pgrav->phi.GetSizeInBytes();
+  // (conserved variable) Passive scalars:
+  for (int n=0; n<NSCALARS; n++) {
+    std::memcpy(pscalars->s.data(), &(mbdata[os]), pscalars->s.GetSizeInBytes());
+    // load it into the other memory register(s) too
+    std::memcpy(pscalars->s1.data(), &(mbdata[os]), pscalars->s1.GetSizeInBytes());
+    os += pscalars->s.GetSizeInBytes();
   }
 
   // load user MeshBlock data

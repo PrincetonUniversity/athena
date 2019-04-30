@@ -62,6 +62,10 @@
 // - mesh/meshblock.cpp, MeshBlock::GetBlockSizeInBytes(): increment std::size_t size by
 // the size of the new quantity's array(s)
 
+// - mesh/meshblock.cpp, MeshBlock restart constructor: memcpy quantity (IN THE SAME ORDER
+// AS THE VARIABLES ARE WRITTEN IN restart.cpp) from the loaded .rst file to the
+// MeshBlock's appropriate physics member object
+
 // - history.cpp, HistoryOutput::WriteOutputFile() (3x places): 1) modify NHISTORY_VARS
 // macro so that the size of data_sum[] can accommodate the new physics, when active.
 // 2) Compute volume-weighted data_sum[i] for the new quantity + etc. factors
