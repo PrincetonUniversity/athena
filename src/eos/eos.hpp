@@ -49,6 +49,15 @@ class EquationOfState {
   //   const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int il,
   //   int iu, int jl, int ju, int kl, int ku);
 
+  void PassiveScalarConservedToPrimitive(
+      AthenaArray<Real> &s, const AthenaArray<Real> &w, const AthenaArray<Real> &r_old,
+      AthenaArray<Real> &r,
+      Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
+  void PassiveScalarPrimitiveToConserved(
+    const AthenaArray<Real> &r, const AthenaArray<Real> &w,
+    AthenaArray<Real> &s, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku);
+
 #pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim) linear(i)
   void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i);
 

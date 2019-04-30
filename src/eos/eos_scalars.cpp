@@ -20,6 +20,67 @@
 #include "../parameter_input.hpp"
 #include "eos.hpp"
 
+
+//----------------------------------------------------------------------------------------
+// \!fn void EquationOfState::PassiveScalarConservedToPrimitive(AthenaArray<Real> &s,
+//           const AthenaArray<Real> &w, const AthenaArray<Real> &r_old,
+//           AthenaArray<Real> &r, Coordinates *pco,
+//           int il, int iu, int jl, int ju, int kl, int ku)
+// \brief Converts conserved into primitive passive scalar variables
+
+void EquationOfState::PassiveScalarConservedToPrimitive(
+    AthenaArray<Real> &s, const AthenaArray<Real> &w, const AthenaArray<Real> &r_old,
+    AthenaArray<Real> &r,
+    Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku) {
+  for (int n=0; n<NSCALARS; ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          const Real &w_d  = w(IDN,k,j,i);
+          const Real di = 1.0/w_d;
+
+          //for (int n=0; n<NSCALARS; ++n) {
+          Real& s_n  = s(n,k,j,i);
+          Real& r_n  = r(n,k,j,i);
+          // apply passive scalars floor to conserved variable first, then transform:
+          // (multi-D fluxes may have caused it to drop below floor)
+          s_n = (s_n > scalar_floor_) ?  s_n : scalar_floor_;
+          r_n = s_n*di;
+        }
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn void EquationOfState::PassiveScalarPrimitiveToConserved(const AthenaArray<Real> &r
+//           const AthenaArray<Real> &w, AthenaArray<Real> &s, Coordinates *pco,
+//           int il, int iu, int jl, int ju, int kl, int ku);
+// \brief Converts primitive variables into conservative variables
+
+void EquationOfState::PassiveScalarPrimitiveToConserved(
+    const AthenaArray<Real> &r, const AthenaArray<Real> &w,
+    AthenaArray<Real> &s, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
+  for (int n=0; n<NSCALARS; ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          const Real &w_d  = w(IDN,k,j,i);
+          //for (int n=0; n<NSCALARS; ++n) {
+          Real& s_n  = s(n,k,j,i);
+          const Real& r_n  = r(n,k,j,i);
+          s_n = r_n*w_d;
+        }
+      }
+    }
+  }
+  return;
+}
+
 //----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &prim, int i)
 // \brief Apply species concentration floor to cell-averaged passive scalars or
