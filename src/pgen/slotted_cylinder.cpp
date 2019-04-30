@@ -59,7 +59,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   s_width = pin->GetOrAddReal("problem", "s_width", 0.05);
   s_height = pin->GetOrAddReal("problem", "s_height", 0.25);
 
-  // Restrict to: 1) no-MHD 2) isothermal EOS only
+  // Restrict to: 1) no-MHD 2) isothermal EOS only 3) hydro/active=background
+  // TODO(felker): add explicit user-safety checks for these conditions
 
   if (adaptive) {
     EnrollUserRefinementCondition(RefinementCondition);
@@ -187,6 +188,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
+  Real d0 = 1.0;
   AthenaArray<Real> vol(ncells1);
 
   // initialize conserved variables
@@ -195,12 +197,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       pcoord->CellVolume(k, j, is, ie, vol);
       for (int i=is; i<=ie; i++) {
         // background fluid:
-        phydro->u(IDN,k,j,i) = 1.0;
-        phydro->u(IM1,k,j,i) = -TWO_PI*omega*(pcoord->x2v(j)
+        phydro->u(IDN,k,j,i) = d0;
+        phydro->u(IM1,k,j,i) = -d0*TWO_PI*omega*(pcoord->x2v(j)
                                               - omega_x2)*phydro->u(IDN,k,j,i);
-        phydro->u(IM2,k,j,i) = TWO_PI*omega*(pcoord->x1v(i)
+        phydro->u(IM2,k,j,i) = d0*TWO_PI*omega*(pcoord->x1v(i)
                                              - omega_x1)*phydro->u(IDN,k,j,i);
         phydro->u(IM3,k,j,i) = 0.0;
+        // assuming isothermal EOS:
+        //  phydro->u(IEN,k,j,i) =
 
         // Use Gauss-Legendre quadrature rules to compute cell-averaged initial condition
         // based on pointwise analytic formula
@@ -225,7 +229,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         constexpr int scalar_norm = NSCALARS > 0 ? NSCALARS : 1.0;
         if (NSCALARS > 0) {
           for (int n=0; n<NSCALARS; ++n) {
-            pscalars->s(n,k,j,i) = 1.0/scalar_norm*cell_ave;
+            pscalars->s(n,k,j,i) = 1.0/scalar_norm*cell_ave*d0;
           }
         }
       }
@@ -263,18 +267,18 @@ Real slotted_cylinder(Real x, Real y, void* data) {
 
 int RefinementCondition(MeshBlock *pmb) {
   int f2 = pmb->pmy_mesh->f2, f3 = pmb->pmy_mesh->f3;
-  AthenaArray<Real> &s = pmb->pscalars->s;
+  AthenaArray<Real> &r = pmb->pscalars->r;
   Real maxeps = 0.0;
   if (f3) {
     for (int n=0; n<NSCALARS; ++n) {
       for (int k=pmb->ks-1; k<=pmb->ke+1; k++) {
         for (int j=pmb->js-1; j<=pmb->je+1; j++) {
           for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
-            Real eps = std::sqrt(SQR(0.5*(s(n,k,j,i+1) - s(n,k,j,i-1)))
-                                 + SQR(0.5*(s(n,k,j+1,i) - s(n,k,j-1,i)))
-                                 + SQR(0.5*(s(n,k+1,j,i) - s(n,k-1,j,i))));
-            // /s(n,k,j,i); Do not normalize by scalar, since (unlike IDN and IPR) there
-            // are are no physical floors / s=0 might be allowed. Compare w/ blast.cpp.
+            Real eps = std::sqrt(SQR(0.5*(r(n,k,j,i+1) - r(n,k,j,i-1)))
+                                 + SQR(0.5*(r(n,k,j+1,i) - r(n,k,j-1,i)))
+                                 + SQR(0.5*(r(n,k+1,j,i) - r(n,k-1,j,i))));
+            // /r(n,k,j,i); Do not normalize by scalar, since (unlike IDN and IPR) there
+            // are are no physical floors / r=0 might be allowed. Compare w/ blast.cpp.
             maxeps = std::max(maxeps, eps);
           }
         }
@@ -285,8 +289,8 @@ int RefinementCondition(MeshBlock *pmb) {
     for (int n=0; n<NSCALARS; ++n) {
       for (int j=pmb->js-1; j<=pmb->je+1; j++) {
         for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
-          Real eps = std::sqrt(SQR(0.5*(s(n,k,j,i+1) - s(n,k,j,i-1)))
-                               + SQR(0.5*(s(n,k,j+1,i) - s(n,k,j-1,i)))); // /s(n,k,j,i);
+          Real eps = std::sqrt(SQR(0.5*(r(n,k,j,i+1) - r(n,k,j,i-1)))
+                               + SQR(0.5*(r(n,k,j+1,i) - r(n,k,j-1,i)))); // /r(n,k,j,i);
           maxeps = std::max(maxeps, eps);
         }
       }

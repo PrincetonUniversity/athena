@@ -1156,10 +1156,10 @@ TaskStatus TimeIntegratorTaskList::CalculateScalarFlux(MeshBlock *pmb, int stage
   PassiveScalars *ps = pmb->pscalars;
   if (stage <= nstages) {
     if ((stage == 1) && (integrator == "vl2")) {
-      ps->CalculateFluxes(ps->s, 1);
+      ps->CalculateFluxes(ps->r, 1);
       return TaskStatus::next;
     } else {
-      ps->CalculateFluxes(ps->s, pmb->precon->xorder);
+      ps->CalculateFluxes(ps->r, pmb->precon->xorder);
       return TaskStatus::next;
     }
   }
