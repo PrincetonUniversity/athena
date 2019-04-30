@@ -10,7 +10,7 @@ problem_id = LinWave   # problem ID: basename of output filenames
 file_type  = hst       # History data dump
 dt         = 0.01      # time increment between outputs
 
-<output1>
+<output2>
 file_type  = hdf5      # HDF5 data dump
 variable   = prim      # variables to be output
 dt         = 0.1       # time increment between outputs
