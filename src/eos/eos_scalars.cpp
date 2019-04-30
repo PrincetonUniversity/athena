@@ -45,7 +45,7 @@ void EquationOfState::PassiveScalarConservedToPrimitive(
           Real& r_n  = r(n,k,j,i);
           // apply passive scalars floor to conserved variable first, then transform:
           // (multi-D fluxes may have caused it to drop below floor)
-          s_n = (s_n > scalar_floor_) ?  s_n : scalar_floor_;
+          s_n = (s_n > scalar_floor_*w_d) ?  s_n : scalar_floor_*w_d;
           r_n = s_n*di;
         }
       }
