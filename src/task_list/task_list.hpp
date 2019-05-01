@@ -122,6 +122,7 @@ class TimeIntegratorTaskList : public TaskList {
 
   TaskStatus DiffuseHydro(MeshBlock *pmb, int stage);
   TaskStatus DiffuseField(MeshBlock *pmb, int stage);
+  TaskStatus DiffuseScalars(MeshBlock *pmb, int stage);
 
   TaskStatus SendHydro(MeshBlock *pmb, int stage);
   TaskStatus SendField(MeshBlock *pmb, int stage);
@@ -259,9 +260,10 @@ const std::uint64_t INT_SCLR       = 1ULL<<52;
 const std::uint64_t SEND_SCLR      = 1ULL<<53;
 const std::uint64_t RECV_SCLR      = 1ULL<<54;
 const std::uint64_t SETB_SCLR      = 1ULL<<55;
+const std::uint64_t DIFFUSE_SCLR      = 1ULL<<56;
 
-// const std::uint64_t RECV_SCLRSH      = 1ULL<<56;
-// const std::uint64_t SEND_SCLRSH      = 1ULL<<57;
+// const std::uint64_t RECV_SCLRSH      = 1ULL<<57;
+// const std::uint64_t SEND_SCLRSH      = 1ULL<<58;
 
 }  // namespace HydroIntegratorTaskNames
 #endif  // TASK_LIST_TASK_LIST_HPP_

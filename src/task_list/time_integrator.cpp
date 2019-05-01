@@ -231,6 +231,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     // calculate hydro/field diffusive fluxes
     if (!STS_ENABLED) {
       AddTask(DIFFUSE_HYD,NONE);
+      if (NSCALARS > 0)
+        AddTask(DIFFUSE_SCLR,NONE);
       if (MAGNETIC_FIELDS_ENABLED) {
         AddTask(DIFFUSE_FLD,NONE);
         // compute hydro fluxes, integrate hydro variables
@@ -258,7 +260,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     }
 
     if (NSCALARS > 0) {
-      AddTask(CALC_SCLRFLX,CALC_HYDFLX);
+      AddTask(CALC_SCLRFLX,(CALC_HYDFLX|DIFFUSE_SCLR));
       if (pm->multilevel) {
         AddTask(SEND_SCLRFLX,CALC_SCLRFLX);
         AddTask(RECV_SCLRFLX,CALC_SCLRFLX);
@@ -622,6 +624,12 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
           (&TimeIntegratorTaskList::SetBoundariesScalars);
       task_list_[ntasks].lb_time = true;
       break;
+    case (DIFFUSE_SCLR):
+      task_list_[ntasks].TaskFunc=
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::DiffuseScalars);
+      task_list_[ntasks].lb_time = true;
+      break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in AddTask" << std::endl
@@ -864,7 +872,8 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to calculate hydro diffusion fluxes
+// Functions to calculate hydro diffusion fluxes (stored in HydroDiffusion::visflx[],
+// cndflx[], added at the end of Hydro::CalculateFluxes()
 
 TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
@@ -1280,4 +1289,20 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesScalars(MeshBlock *pmb, int stag
     return TaskStatus::success;
   }
   return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::DiffuseScalars(MeshBlock *pmb, int stage) {
+  PassiveScalars *ps = pmb->pscalars;
+
+  // return if there are no diffusion to be added
+  // if (!(ph->hdif.hydro_diffusion_defined)
+  //     || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
+
+  // if (stage <= nstages) {
+  //   ps->CalcDiffusionFlux(ph->w, ph->u, ph->flux);
+  // } else {
+  //   return TaskStatus::fail;
+  // }
+  return TaskStatus::next;
 }
