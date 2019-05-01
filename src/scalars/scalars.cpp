@@ -43,6 +43,9 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
               (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
                AthenaArray<Real>::DataStatus::empty)),
     sbvar(pmb, &s, &coarse_s_, s_flux),
+    nu_scalar_iso{pin->GetOrAddReal("problem", "nu_scalar_iso", 0.0)},
+    //nu_scalar_aniso{pin->GetOrAddReal("problem", "nu_scalar_aniso", 0.0)},
+    scalar_diffusion_defined{(nu_scalar_iso > 0.0 ? true : false)},
     pmy_block(pmb) {
   int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
   Mesh *pm = pmy_block->pmy_mesh;
@@ -106,5 +109,12 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     // 1D scratch arrays
     laplacian_l_fc_.NewAthenaArray(nc1);
     laplacian_r_fc_.NewAthenaArray(nc1);
+  }
+
+  if (scalar_diffusion_defined) {
+    diffusion_flx[X1DIR].NewAthenaArray(nc3, nc2, nc1+1);
+    diffusion_flx[X2DIR].NewAthenaArray(nc3, nc2+1, nc1);
+    diffusion_flx[X3DIR].NewAthenaArray(nc3+1, nc2, nc1);
+    //nu_scalar.NewAthenaArray(2, nc3, nc2, nc1);
   }
 }

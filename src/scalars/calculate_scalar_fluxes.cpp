@@ -276,10 +276,10 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
       } else {
         pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, r, rl_, rr_);
 #pragma omp simd
-          for (int i=il; i<=iu; ++i) {
-            pmb->peos->ApplyPassiveScalarFloors(rl_, i);
-            //pmb->peos->ApplyPassiveScalarFloors(rr_, i);
-          }
+        for (int i=il; i<=iu; ++i) {
+          pmb->peos->ApplyPassiveScalarFloors(rl_, i);
+          //pmb->peos->ApplyPassiveScalarFloors(rr_, i);
+        }
       }
       for (int k=ks; k<=ke+1; ++k) {
         // reconstruct L/R states at k
@@ -358,8 +358,13 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
       }
     } // end if (order == 4)
   }
+
+  if (!STS_ENABLED) { // add diffusion fluxes
+    AddDiffusionFluxes();
+  }
   return;
 }
+
 
 void PassiveScalars::ComputeUpwindFlux(const int k, const int j, const int il,
                                        const int iu, // CoordinateDirection dir,
@@ -377,6 +382,138 @@ void PassiveScalars::ComputeUpwindFlux(const int k, const int j, const int il,
       else
         flx_out(n,k,j,i) = fluid_flx*rr_(n,i);
     }
+  }
+  return;
+}
+
+
+// --- passive scalar dye diffusion fns:
+
+void PassiveScalars::CalculateFluxes_STS() {
+  AddDiffusionFluxes();
+}
+
+
+void PassiveScalars::AddDiffusionFluxes() {
+  if (scalar_diffusion_defined) {
+    // Currently, no need to have 2x sets of wrapper fns like:
+    // Hydro::AddDiffusionFluxes()
+    // +
+    // 2x HydroDiffusion::AddDiffusion*Flux(), FieldDiffusion::AddPoyntingFlux
+
+    // if (nu_scalar_iso > 0.0 || nu_scalar_aniso > 0.0)
+    // AddDiffusionFlux(diffusion_flx, flux);
+
+    // TODO(felker): copied wholesale from HydroDiffusion::AddDiffusionFlux, see notes
+    int size1 = s_flux[X1DIR].GetSize();
+#pragma omp simd
+    for (int i=0; i<size1; ++i)
+      s_flux[X1DIR](i) += diffusion_flx[X1DIR](i);
+
+    if (pmy_block->pmy_mesh->f2) {
+      int size2 = s_flux[X2DIR].GetSize();
+#pragma omp simd
+      for (int i=0; i<size2; ++i)
+        s_flux[X2DIR](i) += diffusion_flx[X2DIR](i);
+    }
+    if (pmy_block->pmy_mesh->f3) {
+      int size3 = s_flux[X3DIR].GetSize();
+#pragma omp simd
+      for (int i=0; i<size3; ++i)
+        s_flux[X3DIR](i) += diffusion_flx[X3DIR](i);
+    }
+  }
+  return;
+}
+
+void PassiveScalars::DiffusiveFluxIso(const AthenaArray<Real> &prim,
+                                      AthenaArray<Real> *flx_out) {
+  MeshBlock *pmb = pmy_block;
+  Coordinates *pco = pmb->pcoord;
+  const bool f2 = pmb->pmy_mesh->f2;
+  const bool f3 = pmb->pmy_mesh->f3;
+  AthenaArray<Real> &x1flux = flx_out[X1DIR];
+  int il, iu, jl, ju, kl, ku;
+  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+  Real nu_face, r_face, dprim_r_dx, dprim_r_dy, dprim_r_dz;
+
+  // i-direction
+  jl = js, ju = je, kl = ks, ku = ke;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if (f2) {
+      if (!f3) // 2D
+        jl = js - 1, ju = je + 1, kl = ks, ku = ke;
+      else // 3D
+        jl = js - 1, ju = je + 1, kl = ks - 1, ku = ke + 1;
+    }
+  }
+  for (int n=0; n<NSCALARS; n++) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+        for (int i=is; i<=ie+1; ++i) {
+          nu_face = nu_scalar_iso;
+          // = 0.5*(kappa(DiffProcess::iso,k,j,i) + kappa(DiffProcess::iso,k,j,i-1));
+          r_face = 0.5*(s(n,k,j,i) + s(n,k,j,i-1));
+          dprim_r_dx = (s(n,k,j,i) - s(n,k,j,i-1))/pco->dx1v(i-1);
+          x1flux(k,j,i) -= nu_face*r_face*dprim_r_dx;
+        }
+      }
+    }
+  }
+
+  // j-direction
+  il = is, iu = ie, kl = ks, ku = ke;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if (!f3) // 2D
+      il = is - 1, iu = ie + 1, kl = ks, ku = ke;
+    else // 3D
+      il = is - 1, iu = ie + 1, kl = ks - 1, ku = ke + 1;
+  }
+  if (f2) { // 2D or 3D
+    AthenaArray<Real> &x2flux = flx_out[X2DIR];
+    for (int n=0; n<NSCALARS; n++) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=js; j<=je+1; ++j) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            nu_face = nu_scalar_iso;
+            // = 0.5*(kappa(DiffProcess::iso,k,j,i) + kappa(DiffProcess::iso,k,j-1,i));
+            r_face = 0.5*(s(n,k,j,i) + s(n,k,j-1,i));
+            dprim_r_dy = (s(n,k,j,i) - s(n,k,j-1,i))/pco->h2v(i)/pco->dx2v(j-1);
+            x2flux(k,j,i) -= nu_face*r_face*dprim_r_dy;
+          }
+        }
+      }
+    } // zero flux for 1D
+  }
+
+  // k-direction
+  il = is, iu = ie, jl = js, ju = je;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    if (f2) // 2D or 3D
+      il = is - 1, iu = ie + 1, jl = js - 1, ju = je + 1;
+    else // 1D
+      il = is - 1, iu = ie + 1;
+  }
+  if (f3) { // 3D
+    AthenaArray<Real> &x3flux = flx_out[X3DIR];
+    for (int n=0; n<NSCALARS; n++) {
+      for (int k=ks; k<=ke+1; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            nu_face = nu_scalar_iso;
+            // = 0.5*(kappa(DiffProcess::iso,k,j,i) + kappa(DiffProcess::iso,k-1,j,i));
+            r_face = 0.5*(s(n,k,j,i) + s(n,k-1,j,i));
+            dprim_r_dz = (s(n,k,j,i) - s(n,k-1,j,i))/pco->dx3v(k-1)/pco->h31v(i)
+                         /pco->h32v(j);
+            x3flux(k,j,i) -= nu_face*r_face*dprim_r_dz;
+          }
+        }
+      }
+    } // zero flux for 1D/2D
   }
   return;
 }

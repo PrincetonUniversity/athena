@@ -54,6 +54,22 @@ class PassiveScalars {
   // KGF: use inheritance for these functions / overall class?
   void AddFluxDivergence(const Real wght, AthenaArray<Real> &s_out);
   void CalculateFluxes(AthenaArray<Real> &s, const int order);
+  void CalculateFluxes_STS();
+
+  // NOTE: for now, not creating subfolder "scalars_diffusion/", nor class ScalarDiffusion
+  // that is would have an instance contained within PassiveScalars like HydroDiffusion
+  // approach. Consider creating an encapsulated class as these features are generalized.
+  Real nu_scalar_iso; //, nu_scalar_aniso;          // diffusion coeff
+  bool scalar_diffusion_defined;
+  AthenaArray<Real> diffusion_flx[3];
+  // AthenaArray<Real> nu_scalar;               // diffusion array
+
+  // No need for nu_scalar array, nor counterpart to HydroDiffusion::CalcDiffusionFlux
+  // wrapper function since, currently: 1) nu_scalar_iso must be constant across the mesh
+  // (does not depend on local fluid or field variables), 2) there is only one type of
+  // passive scalar diffusion process (nu_scalar_aniso disabled, no "eta"l, etc.)
+  // 3) nu_scalar_iso is identical for all NSCALARS
+  void DiffusiveFluxIso(const AthenaArray<Real> &prim, AthenaArray<Real> *flx_out);
 
  private:
   MeshBlock* pmy_block;
@@ -79,5 +95,7 @@ class PassiveScalars {
                          AthenaArray<Real> &rl, AthenaArray<Real> &rr,
                          AthenaArray<Real> &mass_flx,
                          AthenaArray<Real> &flx_out);
+
+  void AddDiffusionFluxes();
 };
 #endif // SCALARS_SCALARS_HPP_
