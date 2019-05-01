@@ -147,13 +147,13 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus NewBlockTimeStep(MeshBlock *pmb, int stage);
   TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
 
-  // TaskStatus CalculateScalarFlux(MeshBlock *pmb, int stage);
-  // TaskStatus SendScalarFlux(MeshBlock *pmb, int stage);
-  // TaskStatus ReceiveScalarFlux(MeshBlock *pmb, int stage);
-  // TaskStatus IntegrateScalars(MeshBlock *pmb, int stage);
-  // TaskStatus SendScalars(MeshBlock *pmb, int stage);
-  // TaskStatus ReceiveScalars(MeshBlock *pmb, int stage);
-  // TaskStatus SetBoundariesScalars(MeshBlock *pmb, int stage);
+  TaskStatus CalculateScalarFlux(MeshBlock *pmb, int stage);
+  TaskStatus SendScalarFlux(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveScalarFlux(MeshBlock *pmb, int stage);
+  TaskStatus IntegrateScalars(MeshBlock *pmb, int stage);
+  TaskStatus SendScalars(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveScalars(MeshBlock *pmb, int stage);
+  TaskStatus SetBoundariesScalars(MeshBlock *pmb, int stage);
 
  private:
   IntegratorWeight stage_wghts[MAX_NSTAGE];
@@ -235,7 +235,7 @@ const std::uint64_t SETB_FLD = 1ULL<<31;
 // const std::uint64_t SETB_CHM = 1ULL<<33;
 
 const std::uint64_t PROLONG  = 1ULL<<34;
-const std::uint64_t CON2PRIM = 1ULL<<35;
+const std::uint64_t CONS2PRIM = 1ULL<<35;
 const std::uint64_t PHY_BVAL = 1ULL<<36;
 const std::uint64_t USERWORK = 1ULL<<37;
 const std::uint64_t NEW_DT   = 1ULL<<38;
@@ -259,6 +259,9 @@ const std::uint64_t INT_SCLR       = 1ULL<<52;
 const std::uint64_t SEND_SCLR      = 1ULL<<53;
 const std::uint64_t RECV_SCLR      = 1ULL<<54;
 const std::uint64_t SETB_SCLR      = 1ULL<<55;
+
+// const std::uint64_t RECV_SCLRSH      = 1ULL<<56;
+// const std::uint64_t SEND_SCLRSH      = 1ULL<<57;
 
 }  // namespace HydroIntegratorTaskNames
 #endif  // TASK_LIST_TASK_LIST_HPP_

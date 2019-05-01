@@ -59,7 +59,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   // Allocate memory for scratch vectors
-  if (!pm->f3_)
+  if (!pm->f3)
     cc_e_.NewAthenaArray(ncells3, ncells2, ncells1);
   else
     cc_e_.NewAthenaArray(3, ncells3, ncells2, ncells1);
@@ -74,7 +74,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
 
   if (pm->multilevel) {
     // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
-    pmy_block->pmr->AddToRefinement(&b, &coarse_b_);
+    refinement_idx = pmy_block->pmr->AddToRefinement(&b, &coarse_b_);
   }
 
   // enroll FaceCenteredBoundaryVariable object
@@ -115,7 +115,7 @@ void Field::CalculateCellCenteredField(
         Real lw, rw; // linear interpolation coefficients from lower and upper cell faces
 
         // cell center B-fields are defined as spatial interpolation at the volume center
-        if (uniform_ave_x1 == true) {
+        if (uniform_ave_x1) {
           lw = 0.5;
           rw = 0.5;
         } else {
@@ -128,7 +128,7 @@ void Field::CalculateCellCenteredField(
         }
         bcc1 = lw*b1_i + rw*b1_ip1;
 
-        if (uniform_ave_x2 == true) {
+        if (uniform_ave_x2) {
           lw = 0.5;
           rw = 0.5;
         } else {
@@ -140,7 +140,7 @@ void Field::CalculateCellCenteredField(
           rw = (x2v_j  - x2f_j)/dx2_j;
         }
         bcc2 = lw*b2_j + rw*b2_jp1;
-        if (uniform_ave_x3 == true) {
+        if (uniform_ave_x3) {
           lw = 0.5;
           rw = 0.5;
         } else {

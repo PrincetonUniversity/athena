@@ -48,7 +48,7 @@ Multigrid::Multigrid(
   next=nullptr;
 
   nlevel_=0;
-  if (root_flag_ == true) {
+  if (root_flag_) {
     int nbx, nby, nbz;
     for (int l=0; l<20; l++) {
       if (size_.nx1%(1<<l)==0 && size_.nx2%(1<<l)==0 && size_.nx3%(1<<l)==0) {

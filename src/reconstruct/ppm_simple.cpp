@@ -3,10 +3,13 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file ppm.cpp
+//! \file ppm_simple.cpp
 //  \brief piecewise parabolic reconstruction with modified McCorquodale/Colella limiter
 //         for a uniform Cartesian mesh, Mignone limiter for nonuniform mesh
-//
+//  Operates on the entire nx4 range of a single AthenaArray<Real> input (no MHD).
+//  No assumptions of hydrodynamic fluid variable input; no characteristic projection.
+
+
 // REFERENCES:
 // (CW) P. Colella & P. Woodward, "The Piecewise Parabolic Method (PPM) for Gas-Dynamical
 // Simulations", JCP, 54, 174 (1984)
@@ -43,14 +46,19 @@
 
 void Reconstruction::PiecewiseParabolicX1(
     const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-    AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
+    const AthenaArray<Real> &q,
+    AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
+  const int nu = q.GetDim4() - 1;
+
   // CS08 constant used in second derivative limiter, >1 , independent of h
   const Real C2 = 1.25;
 
+  // TODO(felker): renumber scratch array references; not using 2x from ppm.cpp
+  // bx (MHD) and wc (characteristic projection)
+
   // set work arrays used for primitive/characterstic cell-averages to scratch
-  AthenaArray<Real> &bx = scr01_i_, &wc = scr1_ni_, &q_im2 = scr2_ni_, &q_im1 = scr3_ni_,
-                     &q = scr4_ni_, &q_ip1 = scr5_ni_, &q_ip2 = scr6_ni_,
+  AthenaArray<Real> &q_im2 = scr2_ni_, &q_im1 = scr3_ni_,
+                     &q_i = scr4_ni_, &q_ip1 = scr5_ni_, &q_ip2 = scr6_ni_,
                 &qr_imh = scr7_ni_, &ql_iph = scr8_ni_;
 
   // set work PPM work arrays to shallow copies of scratch arrays:
@@ -64,65 +72,34 @@ void Reconstruction::PiecewiseParabolicX1(
                 &dqf_minus = scr14_i_;
 
   // cache the x1-sliced primitive states for eigensystem calculation
-  for (int n=0; n<NHYDRO; ++n) {
+  for (int n=0; n<=nu; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      wc(n,i) = w(n,k,j,i);
-      q    (n,i) = w(n,k,j,i  );
-      q_im2(n,i) = w(n,k,j,i-2);
-      q_im1(n,i) = w(n,k,j,i-1);
-      q_ip1(n,i) = w(n,k,j,i+1);
-      q_ip2(n,i) = w(n,k,j,i+2);
+      q_i  (n,i) = q(n,k,j,i  );
+      q_im2(n,i) = q(n,k,j,i-2);
+      q_im1(n,i) = q(n,k,j,i-1);
+      q_ip1(n,i) = q(n,k,j,i+1);
+      q_ip2(n,i) = q(n,k,j,i+2);
     }
-  }
-  if (MAGNETIC_FIELDS_ENABLED) {
-#pragma omp simd
-    for (int i=il; i<=iu; ++i) {
-      bx(i) = bcc(IB1,k,j,i);
-
-      wc(IBY,i) = bcc(IB2,k,j,i);
-      q    (IBY,i) = bcc(IB2,k,j,i  );
-      q_im2(IBY,i) = bcc(IB2,k,j,i-2);
-      q_im1(IBY,i) = bcc(IB2,k,j,i-1);
-      q_ip1(IBY,i) = bcc(IB2,k,j,i+1);
-      q_ip2(IBY,i) = bcc(IB2,k,j,i+2);
-
-      wc(IBZ,i) = bcc(IB3,k,j,i);
-      q    (IBZ,i) = bcc(IB3,k,j,i  );
-      q_im2(IBZ,i) = bcc(IB3,k,j,i-2);
-      q_im1(IBZ,i) = bcc(IB3,k,j,i-1);
-      q_ip1(IBZ,i) = bcc(IB3,k,j,i+1);
-      q_ip2(IBZ,i) = bcc(IB3,k,j,i+2);
-    }
-  }
-
-  // Project cell-averages to characteristic variables, if necessary
-  // Note order of characteristic fields in output vect corresponds to (IVX,IVY,IVZ)
-  if (characteristic_reconstruction) {
-    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q_im2);
-    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q_im1);
-    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q);
-    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q_ip1);
-    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q_ip2);
   }
 
   //--- Step 1. --------------------------------------------------------------------------
   // Reconstruct interface averages <a>_{i-1/2} and <a>_{i+1/2}
-  for (int n=0; n<NWAVE; ++n) {
+  for (int n=0; n<=nu; ++n) {
     // Compute average slope in i-1, i, i+1 zones
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
-      Real qa = (q(n,i) - q_im1(n,i));
-      Real qb = (q_ip1(n,i) - q(n,i));
+      Real qa = (q_i(n,i) - q_im1(n,i));
+      Real qb = (q_ip1(n,i) - q_i(n,i));
       dd_im1(i) = c1i(i-1)*qa + c2i(i-1)*(q_im1(n,i) - q_im2(n,i));
       dd    (i) = c1i(i  )*qb + c2i(i  )*qa;
       dd_ip1(i) = c1i(i+1)*(q_ip2(n,i) - q_ip1(n,i)) + c2i(i+1)*qb;
 
       // Approximate interface average at i-1/2 and i+1/2 using PPM (CW eq 1.6)
       // KGF: group the biased stencil quantities to preserve FP symmetry
-      dph(i)= (c3i(i)*q_im1(n,i) + c4i(i)*q(n,i)) +
+      dph(i)= (c3i(i)*q_im1(n,i) + c4i(i)*q_i(n,i)) +
               (c5i(i)*dd_im1(i) + c6i(i)*dd(i));
-      dph_ip1(i)= (c3i(i+1)*q(n,i) + c4i(i+1)*q_ip1(n,i)) +
+      dph_ip1(i)= (c3i(i+1)*q_i(n,i) + c4i(i+1)*q_ip1(n,i)) +
                   (c5i(i+1)*dd(i) + c6i(i+1)*dd_ip1(i) );
     }
 
@@ -133,18 +110,18 @@ void Reconstruction::PiecewiseParabolicX1(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu+1; ++i) {
         // KGF: add the off-centered quantities first to preserve FP symmetry
-        d2qc_im1(i) = q_im2(n,i) + q    (n,i) - 2.0*q_im1(n,i);
-        d2qc    (i) = q_im1(n,i) + q_ip1(n,i) - 2.0*q    (n,i); //(CD eq 85a) (no 1/2)
-        d2qc_ip1(i) = q    (n,i) + q_ip2(n,i) - 2.0*q_ip1(n,i);
+        d2qc_im1(i) = q_im2(n,i) + q_i  (n,i) - 2.0*q_im1(n,i);
+        d2qc    (i) = q_im1(n,i) + q_ip1(n,i) - 2.0*q_i  (n,i); //(CD eq 85a) (no 1/2)
+        d2qc_ip1(i) = q_i  (n,i) + q_ip2(n,i) - 2.0*q_ip1(n,i);
       }
 
       // i-1/2
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=(iu+1); ++i) {
         Real qa_tmp = dph(i) - q_im1(n,i); // (CD eq 84a)
-        Real qb_tmp = q(n,i) - dph(i);     // (CD eq 84b)
+        Real qb_tmp = q_i(n,i) - dph(i);     // (CD eq 84b)
         // KGF: add the off-centered quantities first to preserve FP symmetry
-        Real qa = 3.0*(q_im1(n,i) + q(n,i)  - 2.0*dph(i));  // (CD eq 85b)
+        Real qa = 3.0*(q_im1(n,i) + q_i(n,i)  - 2.0*dph(i));  // (CD eq 85b)
         Real qb = d2qc_im1(i);    // (CD eq 85a) (no 1/2)
         Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
@@ -152,7 +129,7 @@ void Reconstruction::PiecewiseParabolicX1(
           qd = SIGN(qa)* std::min(C2*std::fabs(qb),
                                   std::min(C2*std::fabs(qc), std::fabs(qa)));
         }
-        Real dph_tmp = 0.5*(q_im1(n,i)+q(n,i)) - qd/6.0;
+        Real dph_tmp = 0.5*(q_im1(n,i)+q_i(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { // Local extrema detected at i-1/2 face
           dph(i) = dph_tmp;
         }
@@ -161,10 +138,10 @@ void Reconstruction::PiecewiseParabolicX1(
       // i+1/2
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=(iu+1); ++i) {
-        Real qa_tmp = dph_ip1(i) - q(n,i);       // (CD eq 84a)
+        Real qa_tmp = dph_ip1(i) - q_i(n,i);       // (CD eq 84a)
         Real qb_tmp = q_ip1(n,i) - dph_ip1(i);   // (CD eq 84b)
         // KGF: add the off-centered quantities first to preserve FP symmetry
-        Real qa = 3.0*(q(n,i) + q_ip1(n,i) - 2.0*dph_ip1(i));  // (CD eq 85b)
+        Real qa = 3.0*(q_i(n,i) + q_ip1(n,i) - 2.0*dph_ip1(i));  // (CD eq 85b)
         Real qb = d2qc(i);            // (CD eq 85a) (no 1/2)
         Real qc = d2qc_ip1(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
@@ -172,7 +149,7 @@ void Reconstruction::PiecewiseParabolicX1(
           qd = SIGN(qa)* std::min(C2*std::fabs(qb),
                                   std::min(C2*std::fabs(qc), std::fabs(qa)));
         }
-        Real dphip1_tmp = 0.5*(q(n,i)+q_ip1(n,i)) - qd/6.0;
+        Real dphip1_tmp = 0.5*(q_i(n,i)+q_ip1(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { // Local extrema detected at i+1/2 face
           dph_ip1(i) = dphip1_tmp;
         }
@@ -181,7 +158,7 @@ void Reconstruction::PiecewiseParabolicX1(
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         // KGF: add the off-centered quantities first to preserve FP symmetry
-        d2qf(i) = 6.0*(dph(i) + dph_ip1(i) - 2.0*q(n,i)); // a6 coefficient * -2
+        d2qf(i) = 6.0*(dph(i) + dph_ip1(i) - 2.0*q_i(n,i)); // a6 coefficient * -2
       }
 
       //--- Step 2b. ---------------------------------------------------------------------
@@ -189,11 +166,11 @@ void Reconstruction::PiecewiseParabolicX1(
     } else {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        dph    (i) = std::min(dph    (i), std::max(q(n,i),q_im1(n,i)));
-        dph_ip1(i) = std::min(dph_ip1(i), std::max(q(n,i),q_ip1(n,i)));
+        dph    (i) = std::min(dph    (i), std::max(q_i(n,i),q_im1(n,i)));
+        dph_ip1(i) = std::min(dph_ip1(i), std::max(q_i(n,i),q_ip1(n,i)));
 
-        dph    (i) = std::max(dph    (i), std::min(q(n,i),q_im1(n,i)));
-        dph_ip1(i) = std::max(dph_ip1(i), std::min(q(n,i),q_ip1(n,i)));
+        dph    (i) = std::max(dph    (i), std::min(q_i(n,i),q_im1(n,i)));
+        dph_ip1(i) = std::max(dph_ip1(i), std::min(q_i(n,i),q_ip1(n,i)));
       }
     }
 
@@ -208,8 +185,8 @@ void Reconstruction::PiecewiseParabolicX1(
     // Compute cell-centered difference stencils (MC section 2.4.1)
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      dqf_minus(i) = q(n,i) - qminus(i); // (CS eq 25)
-      dqf_plus(i)  = qplus(i) - q(n,i);
+      dqf_minus(i) = q_i(n,i) - qminus(i); // (CS eq 25)
+      dqf_plus(i)  = qplus(i) - q_i(n,i);
     }
 
     //--- Step 4a. -----------------------------------------------------------------------
@@ -218,7 +195,7 @@ void Reconstruction::PiecewiseParabolicX1(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
-        Real qb_tmp = (q_ip1(n,i) - q(n,i))*(q(n,i) - q_im1(n,i));
+        Real qb_tmp = (q_ip1(n,i) - q_i(n,i))*(q_i(n,i) - q_im1(n,i));
 
         Real qa = d2qc_im1(i);
         Real qb = d2qc(i);
@@ -234,7 +211,7 @@ void Reconstruction::PiecewiseParabolicX1(
 
         // Check if 2nd derivative is close to roundoff error
         qa = std::max(std::fabs(q_im1(n,i)), std::fabs(q_im2(n,i)));
-        qb = std::max(std::max(std::fabs(q(n,i)), std::fabs(q_ip1(n,i))),
+        qb = std::max(std::max(std::fabs(q_i(n,i)), std::fabs(q_ip1(n,i))),
                       std::fabs(q_ip2(n,i)));
 
         Real rho = 0.0;
@@ -243,10 +220,10 @@ void Reconstruction::PiecewiseParabolicX1(
           rho = qe/qd;
         }
 
-        Real tmp_m = q(n,i) - rho*dqf_minus(i);
-        Real tmp_p = q(n,i) + rho*dqf_plus(i);
-        Real tmp2_m = q(n,i) - 2.0*dqf_plus(i);
-        Real tmp2_p = q(n,i) + 2.0*dqf_minus(i);
+        Real tmp_m = q_i(n,i) - rho*dqf_minus(i);
+        Real tmp_p = q_i(n,i) + rho*dqf_plus(i);
+        Real tmp2_m = q_i(n,i) - 2.0*dqf_plus(i);
+        Real tmp2_p = q_i(n,i) + 2.0*dqf_minus(i);
 
         // Check for local extrema
         if ((qa_tmp <= 0.0 || qb_tmp <=0.0)) {
@@ -276,16 +253,16 @@ void Reconstruction::PiecewiseParabolicX1(
       for (int i=il; i<=iu; ++i) {
         Real qa = dqf_minus(i)*dqf_plus(i);
         if (qa <= 0.0) { // Local extrema detected
-          qminus(i) = q(n,i);
-          qplus(i) = q(n,i);
+          qminus(i) = q_i(n,i);
+          qplus(i) = q_i(n,i);
         } else { // No extrema detected
           // Overshoot i-1/2,R / i,(-) state
           if (std::fabs(dqf_minus(i)) >= hplus_ratio_i(i)*std::fabs(dqf_plus(i))) {
-            qminus(i) = q(n,i) - hplus_ratio_i(i)*dqf_plus(i);
+            qminus(i) = q_i(n,i) - hplus_ratio_i(i)*dqf_plus(i);
           }
           // Overshoot i+1/2,L / i,(+) state
           if (std::fabs(dqf_plus(i)) >= hminus_ratio_i(i)*std::fabs(dqf_minus(i))) {
-            qplus(i) = q(n,i) + hminus_ratio_i(i)*dqf_minus(i);
+            qplus(i) = q_i(n,i) + hminus_ratio_i(i)*dqf_minus(i);
           }
         }
       }
@@ -298,28 +275,15 @@ void Reconstruction::PiecewiseParabolicX1(
       ql_iph(n,i ) = qplus(i);
       qr_imh(n,i ) = qminus(i);
     }
-  } // end char PPM loop over NWAVE
-
-  // Project limited slope back to primitive variables, if necessary
-  if (characteristic_reconstruction) {
-    RightEigenmatrixDotVector(IVX,il,iu,bx,wc,ql_iph);
-    RightEigenmatrixDotVector(IVX,il,iu,bx,wc,qr_imh);
-  }
+  } // end char PPM loop over =nu
 
   // compute ql_(i+1/2) and qr_(i-1/2)
-  for (int n=0; n<NWAVE; ++n) {
+  for (int n=0; n<=nu; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      wl(n,i+1) = ql_iph(n,i);
-      wr(n,i  ) = qr_imh(n,i);
+      ql(n,i+1) = ql_iph(n,i);
+      qr(n,i  ) = qr_imh(n,i);
     }
-  }
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // Reapply EOS floors to both L/R reconstructed primitive states
-    // TODO(felker): check that fused loop with NWAVE redundant application is slower
-    pmy_block_->peos->ApplyPrimitiveFloors(wl, i+1);
-    pmy_block_->peos->ApplyPrimitiveFloors(wr, i);
   }
   return;
 }
@@ -331,14 +295,15 @@ void Reconstruction::PiecewiseParabolicX1(
 
 void Reconstruction::PiecewiseParabolicX2(
     const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-    AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
+    const AthenaArray<Real> &q,
+    AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
+  const int nu = q.GetDim4() - 1;
   // CS08 constant used in second derivative limiter, >1 , independent of h
   const Real C2 = 1.25;
 
   // set work arrays used for primitive/characterstic cell-averages to scratch
-  AthenaArray<Real> &bx = scr01_i_, &wc = scr1_ni_, &q_jm2 = scr2_ni_, &q_jm1 = scr3_ni_,
-                     &q = scr4_ni_, &q_jp1 = scr5_ni_, &q_jp2 = scr6_ni_,
+  AthenaArray<Real> &q_jm2 = scr2_ni_, &q_jm1 = scr3_ni_,
+                     &q_j = scr4_ni_, &q_jp1 = scr5_ni_, &q_jp2 = scr6_ni_,
                 &qr_jmh = scr7_ni_, &ql_jph = scr8_ni_;
 
   // set work PPM work arrays to shallow copies of scratch arrays:
@@ -352,65 +317,34 @@ void Reconstruction::PiecewiseParabolicX2(
                 &dqf_minus = scr14_i_;
 
   // cache the x1-sliced primitive states for eigensystem calculation
-  for (int n=0; n<NHYDRO; ++n) {
+  for (int n=0; n<=nu; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      wc(n,i) = w(n,k,j,i);
-      q    (n,i) = w(n,k,j  ,i);
-      q_jm2(n,i) = w(n,k,j-2,i);
-      q_jm1(n,i) = w(n,k,j-1,i);
-      q_jp1(n,i) = w(n,k,j+1,i);
-      q_jp2(n,i) = w(n,k,j+2,i);
+      q_j  (n,i) = q(n,k,j  ,i);
+      q_jm2(n,i) = q(n,k,j-2,i);
+      q_jm1(n,i) = q(n,k,j-1,i);
+      q_jp1(n,i) = q(n,k,j+1,i);
+      q_jp2(n,i) = q(n,k,j+2,i);
     }
-  }
-  if (MAGNETIC_FIELDS_ENABLED) {
-#pragma omp simd
-    for (int i=il; i<=iu; ++i) {
-      bx(i) = bcc(IB2,k,j,i);
-
-      wc(IBY,i) = bcc(IB3,k,j,i);
-      q    (IBY,i) = bcc(IB3,k,j  ,i);
-      q_jm2(IBY,i) = bcc(IB3,k,j-2,i);
-      q_jm1(IBY,i) = bcc(IB3,k,j-1,i);
-      q_jp1(IBY,i) = bcc(IB3,k,j+1,i);
-      q_jp2(IBY,i) = bcc(IB3,k,j+2,i);
-
-      wc(IBZ,i) = bcc(IB1,k,j,i);
-      q    (IBZ,i) = bcc(IB1,k,j  ,i);
-      q_jm2(IBZ,i) = bcc(IB1,k,j-2,i);
-      q_jm1(IBZ,i) = bcc(IB1,k,j-1,i);
-      q_jp1(IBZ,i) = bcc(IB1,k,j+1,i);
-      q_jp2(IBZ,i) = bcc(IB1,k,j+2,i);
-    }
-  }
-
-  // Project cell-averages to characteristic variables, if necessary
-  // Note order of characteristic fields in output vect corresponds to (IVY,IVZ,IVX)
-  if (characteristic_reconstruction) {
-    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q_jm2);
-    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q_jm1);
-    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q);
-    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q_jp1);
-    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q_jp2);
   }
 
   //--- Step 1. ------------------------------------------------------------------------
   // Reconstruct interface averages <a>_{j-1/2} and <a>_{j+1/2}
-  for (int n=0; n<NWAVE; ++n) {
+  for (int n=0; n<=nu; ++n) {
     // Compute average slope in j-1, j, j+1 zones
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
-      Real qa = (q(n,i) - q_jm1(n,i));
-      Real qb = (q_jp1(n,i) - q(n,i));
+      Real qa = (q_j(n,i) - q_jm1(n,i));
+      Real qb = (q_jp1(n,i) - q_j(n,i));
       dd_jm1(i) = c1j(j-1)*qa + c2j(j-1)*(q_jm1(n,i) - q_jm2(n,i));
       dd    (i) = c1j(j  )*qb + c2j(j  )*qa;
       dd_jp1(i) = c1j(j+1)*(q_jp2(n,i) - q_jp1(n,i)) + c2j(j+1)*qb;
 
       // Approximate interface average at j-1/2 and j+1/2 using PPM (CW eq 1.6)
       // KGF: group the biased stencil quantities to preserve FP symmetry
-      dph(i)= (c3j(j)*q_jm1(n,i) + c4j(j)*q(n,i)) +
+      dph(i)= (c3j(j)*q_jm1(n,i) + c4j(j)*q_j(n,i)) +
               (c5j(j)*dd_jm1(i) + c6j(j)*dd(i));
-      dph_jp1(i)= (c3j(j+1)*q(n,i) + c4j(j+1)*q_jp1(n,i)) +
+      dph_jp1(i)= (c3j(j+1)*q_j(n,i) + c4j(j+1)*q_jp1(n,i)) +
                   (c5j(j+1)*dd(i) + c6j(j+1)*dd_jp1(i));
     }
 
@@ -421,18 +355,18 @@ void Reconstruction::PiecewiseParabolicX2(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         // KGF: add the off-centered quantities first to preserve FP symmetry
-        d2qc_jm1(i) = q_jm2(n,i) + q    (n,i) - 2.0*q_jm1(n,i);
-        d2qc    (i) = q_jm1(n,i) + q_jp1(n,i) - 2.0*q    (n,i); //(CD eq 85a) (no 1/2)
-        d2qc_jp1(i) = q    (n,i) + q_jp2(n,i) - 2.0*q_jp1(n,i);
+        d2qc_jm1(i) = q_jm2(n,i) + q_j  (n,i) - 2.0*q_jm1(n,i);
+        d2qc    (i) = q_jm1(n,i) + q_jp1(n,i) - 2.0*q_j  (n,i); //(CD eq 85a) (no 1/2)
+        d2qc_jp1(i) = q_j  (n,i) + q_jp2(n,i) - 2.0*q_jp1(n,i);
       }
 
       // j-1/2
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dph(i) - q_jm1(n,i); // (CD eq 84a)
-        Real qb_tmp = q(n,i) - dph(i);     // (CD eq 84b)
+        Real qb_tmp = q_j(n,i) - dph(i);     // (CD eq 84b)
         // KGF: add the off-centered quantities first to preserve FP symmetry
-        Real qa = 3.0*(q_jm1(n,i) + q(n,i) - 2.0*dph(i));  // (CD eq 85b)
+        Real qa = 3.0*(q_jm1(n,i) + q_j(n,i) - 2.0*dph(i));  // (CD eq 85b)
         Real qb = d2qc_jm1(i);    // (CD eq 85a) (no 1/2)
         Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
@@ -440,7 +374,7 @@ void Reconstruction::PiecewiseParabolicX2(
           qd = SIGN(qa)* std::min(C2*std::fabs(qb),
                                   std::min(C2*std::fabs(qc), std::fabs(qa)));
         }
-        Real dph_tmp = 0.5*(q_jm1(n,i)+q(n,i)) - qd/6.0;
+        Real dph_tmp = 0.5*(q_jm1(n,i)+q_j(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { //Local extrema detected at j-1/2 face
           dph(i) = dph_tmp;
         }
@@ -448,10 +382,10 @@ void Reconstruction::PiecewiseParabolicX2(
       // j+1/2
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
-        Real qa_tmp = dph_jp1(i) - q(n,i);       // (CD eq 84a)
+        Real qa_tmp = dph_jp1(i) - q_j(n,i);       // (CD eq 84a)
         Real qb_tmp = q_jp1(n,i) - dph_jp1(i);   // (CD eq 84b)
         // KGF: add the off-centered quantities first to preserve FP symmetry
-        Real qa = 3.0*(q(n,i) + q_jp1(n,i)  - 2.0*dph_jp1(i));  // (CD eq 85b)
+        Real qa = 3.0*(q_j(n,i) + q_jp1(n,i)  - 2.0*dph_jp1(i));  // (CD eq 85b)
         Real qb = d2qc(i);            // (CD eq 85a) (no 1/2)
         Real qc = d2qc_jp1(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
@@ -459,7 +393,7 @@ void Reconstruction::PiecewiseParabolicX2(
           qd = SIGN(qa)* std::min(C2*std::fabs(qb),
                                   std::min(C2*std::fabs(qc), std::fabs(qa)));
         }
-        Real dphjp1_tmp = 0.5*(q(n,i)+q_jp1(n,i)) - qd/6.0;
+        Real dphjp1_tmp = 0.5*(q_j(n,i)+q_jp1(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { // Local extrema detected at j+1/2 face
           dph_jp1(i) = dphjp1_tmp;
         }
@@ -468,7 +402,7 @@ void Reconstruction::PiecewiseParabolicX2(
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         // KGF: add the off-centered quantities first to preserve FP symmetry
-        d2qf(i) = 6.0*(dph(i) + dph_jp1(i) - 2.0*q(n,i)); // a6 coefficient * -2
+        d2qf(i) = 6.0*(dph(i) + dph_jp1(i) - 2.0*q_j(n,i)); // a6 coefficient * -2
       }
 
       //--- Step 2b. -------------------------------------------------------------------
@@ -476,11 +410,11 @@ void Reconstruction::PiecewiseParabolicX2(
     } else {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        dph    (i) = std::min(dph    (i), std::max(q(n,i),q_jm1(n,i)));
-        dph_jp1(i) = std::min(dph_jp1(i), std::max(q(n,i),q_jp1(n,i)));
+        dph    (i) = std::min(dph    (i), std::max(q_j(n,i),q_jm1(n,i)));
+        dph_jp1(i) = std::min(dph_jp1(i), std::max(q_j(n,i),q_jp1(n,i)));
 
-        dph    (i) = std::max(dph    (i), std::min(q(n,i),q_jm1(n,i)));
-        dph_jp1(i) = std::max(dph_jp1(i), std::min(q(n,i),q_jp1(n,i)));
+        dph    (i) = std::max(dph    (i), std::min(q_j(n,i),q_jm1(n,i)));
+        dph_jp1(i) = std::max(dph_jp1(i), std::min(q_j(n,i),q_jp1(n,i)));
       }
     }
 
@@ -495,8 +429,8 @@ void Reconstruction::PiecewiseParabolicX2(
     // Compute cell-centered difference stencils (MC section 2.4.1)
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      dqf_minus(i) = q(n,i) - qminus(i); // (CS eq 25)
-      dqf_plus(i)  = qplus(i) - q(n,i);
+      dqf_minus(i) = q_j(n,i) - qminus(i); // (CS eq 25)
+      dqf_plus(i)  = qplus(i) - q_j(n,i);
     }
 
     //--- Step 4a. ---------------------------------------------------------------------
@@ -505,7 +439,7 @@ void Reconstruction::PiecewiseParabolicX2(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
-        Real qb_tmp = (q_jp1(n,i) - q(n,i))*(q(n,i) - q_jm1(n,i));
+        Real qb_tmp = (q_jp1(n,i) - q_j(n,i))*(q_j(n,i) - q_jm1(n,i));
 
         Real qa = d2qc_jm1(i);
         Real qb = d2qc(i);
@@ -520,7 +454,7 @@ void Reconstruction::PiecewiseParabolicX2(
 
         // Check if 2nd derivative is close to roundoff error
         qa = std::max(std::fabs(q_jm1(n,i)),std::fabs(q_jm2(n,i)));
-        qb = std::max(std::max(std::fabs(q(n,i)),
+        qb = std::max(std::max(std::fabs(q_j(n,i)),
                                std::fabs(q_jp1(n,i))), std::fabs(q_jp2(n,i)));
 
         Real rho = 0.0;
@@ -529,10 +463,10 @@ void Reconstruction::PiecewiseParabolicX2(
           rho = qe/qd;
         }
 
-        Real tmp_m = q(n,i) - rho*dqf_minus(i);
-        Real tmp_p = q(n,i) + rho*dqf_plus(i);
-        Real tmp2_m = q(n,i) - 2.0*dqf_plus(i);
-        Real tmp2_p = q(n,i) + 2.0*dqf_minus(i);
+        Real tmp_m = q_j(n,i) - rho*dqf_minus(i);
+        Real tmp_p = q_j(n,i) + rho*dqf_plus(i);
+        Real tmp2_m = q_j(n,i) - 2.0*dqf_plus(i);
+        Real tmp2_p = q_j(n,i) + 2.0*dqf_minus(i);
 
         // Check if relative change in limited 2nd deriv is > roundoff
         // Check for local extrema
@@ -562,16 +496,16 @@ void Reconstruction::PiecewiseParabolicX2(
       for (int i=il; i<=iu; ++i) {
         Real qa = dqf_minus(i)*dqf_plus(i);
         if (qa <= 0.0) { // Local extrema detected
-          qminus(i) = q(n,i);
-          qplus(i) = q(n,i);
+          qminus(i) = q_j(n,i);
+          qplus(i) = q_j(n,i);
         } else { // No extrema detected
           // Overshoot j-1/2,R / j,(-) state
           if (std::fabs(dqf_minus(i)) >= hplus_ratio_j(j)*std::fabs(dqf_plus(i))) {
-            qminus(i) = q(n,i) - hplus_ratio_j(j)*dqf_plus(i);
+            qminus(i) = q_j(n,i) - hplus_ratio_j(j)*dqf_plus(i);
           }
           // Overshoot j+1/2,L / j,(+) state
           if (std::fabs(dqf_plus(i)) >= hminus_ratio_j(j)*std::fabs(dqf_minus(i))) {
-            qplus(i) = q(n,i) + hminus_ratio_j(j)*dqf_minus(i);
+            qplus(i) = q_j(n,i) + hminus_ratio_j(j)*dqf_minus(i);
           }
         }
       }
@@ -584,27 +518,16 @@ void Reconstruction::PiecewiseParabolicX2(
       ql_jph(n,i ) = qplus(i);
       qr_jmh(n,i ) = qminus(i);
     }
-  } // end char PPM loop over NWAVE
+  } // end char PPM loop over =nu
 
-  // Project limited slope back to primitive variables, if necessary
-  if (characteristic_reconstruction) {
-    RightEigenmatrixDotVector(IVY,il,iu,bx,wc,ql_jph);
-    RightEigenmatrixDotVector(IVY,il,iu,bx,wc,qr_jmh);
-  }
 
   // compute ql_(j+1/2) and qr_(j-1/2)
-  for (int n=0; n<NWAVE; ++n) {
+  for (int n=0; n<=nu; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      wl(n,i) = ql_jph(n,i);
-      wr(n,i) = qr_jmh(n,i);
+      ql(n,i) = ql_jph(n,i);
+      qr(n,i) = qr_jmh(n,i);
     }
-  }
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // Reapply EOS floors to both L/R reconstructed primitive states
-    pmy_block_->peos->ApplyPrimitiveFloors(wl, i);
-    pmy_block_->peos->ApplyPrimitiveFloors(wr, i);
   }
   return;
 }
@@ -613,16 +536,18 @@ void Reconstruction::PiecewiseParabolicX2(
 //! \fn Reconstruction::PiecewiseParabolicX3()
 //  \brief Returns L/R interface values in X3-dir constructed using fourth-order PPM and
 //         Colella-Sekora or Mignone limiting over [kl,ku][jl,ju][il,iu]
+
 void Reconstruction::PiecewiseParabolicX3(
     const int k, const int j, const int il, const int iu,
-    const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
-    AthenaArray<Real> &wl, AthenaArray<Real> &wr) {
+    const AthenaArray<Real> &q,
+    AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
+  const int nu = q.GetDim4() - 1;
   // CS08 constant used in second derivative limiter, >1 , independent of h
   const Real C2 = 1.25;
 
   // set work arrays used for primitive/characterstic cell-averages to scratch
-  AthenaArray<Real> &bx = scr01_i_, &wc = scr1_ni_, &q_km2 = scr2_ni_, &q_km1 = scr3_ni_,
-                     &q = scr4_ni_, &q_kp1 = scr5_ni_, &q_kp2 = scr6_ni_,
+  AthenaArray<Real> &q_km2 = scr2_ni_, &q_km1 = scr3_ni_,
+                     &q_k = scr4_ni_, &q_kp1 = scr5_ni_, &q_kp2 = scr6_ni_,
                 &qr_kmh = scr7_ni_, &ql_kph = scr8_ni_;
 
   // set work PPM work arrays to shallow copies of scratch arrays:
@@ -636,65 +561,34 @@ void Reconstruction::PiecewiseParabolicX3(
                 &dqf_minus = scr14_i_;
 
   // cache the x1-sliced primitive states for eigensystem calculation
-  for (int n=0; n<NHYDRO; ++n) {
+  for (int n=0; n<=nu; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      wc(n,i) = w(n,k,j,i);
-      q    (n,i) = w(n,k  ,j,i);
-      q_km2(n,i) = w(n,k-2,j,i);
-      q_km1(n,i) = w(n,k-1,j,i);
-      q_kp1(n,i) = w(n,k+1,j,i);
-      q_kp2(n,i) = w(n,k+2,j,i);
+      q_k  (n,i) = q(n,k  ,j,i);
+      q_km2(n,i) = q(n,k-2,j,i);
+      q_km1(n,i) = q(n,k-1,j,i);
+      q_kp1(n,i) = q(n,k+1,j,i);
+      q_kp2(n,i) = q(n,k+2,j,i);
     }
-  }
-  if (MAGNETIC_FIELDS_ENABLED) {
-#pragma omp simd
-    for (int i=il; i<=iu; ++i) {
-      bx(i) = bcc(IB3,k,j,i);
-
-      wc(IBY,i) = bcc(IB1,k,j,i);
-      q    (IBY,i) = bcc(IB1,k  ,j,i);
-      q_km2(IBY,i) = bcc(IB1,k-2,j,i);
-      q_km1(IBY,i) = bcc(IB1,k-1,j,i);
-      q_kp1(IBY,i) = bcc(IB1,k+1,j,i);
-      q_kp2(IBY,i) = bcc(IB1,k+2,j,i);
-
-      wc(IBZ,i) = bcc(IB2,k,j,i);
-      q    (IBZ,i) = bcc(IB2,k  ,j,i);
-      q_km2(IBZ,i) = bcc(IB2,k-2,j,i);
-      q_km1(IBZ,i) = bcc(IB2,k-1,j,i);
-      q_kp1(IBZ,i) = bcc(IB2,k+1,j,i);
-      q_kp2(IBZ,i) = bcc(IB2,k+2,j,i);
-    }
-  }
-
-  // Project cell-averages to characteristic variables, if necessary
-  // Note order of characteristic fields in output vect corresponds to (IVZ,IVX,IVY)
-  if (characteristic_reconstruction) {
-    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q_km2);
-    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q_km1);
-    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q);
-    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q_kp1);
-    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q_kp2);
   }
 
   //--- Step 1. -------------------------------------------------------------------------
   // Reconstruct interface averages <a>_{k-1/2} and <a>_{k+1/2}
-  for (int n=0; n<NWAVE; ++n) {
+  for (int n=0; n<=nu; ++n) {
     // Compute average slope in k-1, k, k+1 zones
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
-      Real qa = (q(n,i) - q_km1(n,i));
-      Real qb = (q_kp1(n,i) - q(n,i));
+      Real qa = (q_k(n,i) - q_km1(n,i));
+      Real qb = (q_kp1(n,i) - q_k(n,i));
       dd_km1(i) = c1k(k-1)*qa + c2k(k-1)*(q_km1(n,i) - q_km2(n,i));
       dd    (i) = c1k(k  )*qb + c2k(k  )*qa;
       dd_kp1(i) = c1k(k+1)*(q_kp2(n,i) - q_kp1(n,i)) + c2k(k+1)*qb;
 
       // Approximate interface average at k-1/2 and k+1/2 using PPM (CW eq 1.6)
       // KGF: group the biased stencil quantities to preserve FP symmetry
-      dph(i)= (c3k(k)*q_km1(n,i) + c4k(k)*q(n,i)) +
+      dph(i)= (c3k(k)*q_km1(n,i) + c4k(k)*q_k(n,i)) +
               (c5k(k)*dd_km1(i) + c6k(k)*dd(i));
-      dph_kp1(i)= (c3k(k+1)*q(n,i) + c4k(k+1)*q_kp1(n,i)) +
+      dph_kp1(i)= (c3k(k+1)*q_k(n,i) + c4k(k+1)*q_kp1(n,i)) +
                   (c5k(k+1)*dd(i) + c6k(k+1)*dd_kp1(i));
     }
 
@@ -705,18 +599,18 @@ void Reconstruction::PiecewiseParabolicX3(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         // KGF: add the off-centered quantities first to preserve FP symmetry
-        d2qc_km1(i) = q_km2(n,i) + q    (n,i) - 2.0*q_km1(n,i);
-        d2qc    (i) = q_km1(n,i) + q_kp1(n,i) - 2.0*q    (n,i); // (CD eq 85a) (no 1/2)
-        d2qc_kp1(i) = q    (n,i) + q_kp2(n,i) - 2.0*q_kp1(n,i);
+        d2qc_km1(i) = q_km2(n,i) + q_k  (n,i) - 2.0*q_km1(n,i);
+        d2qc    (i) = q_km1(n,i) + q_kp1(n,i) - 2.0*q_k  (n,i); // (CD eq 85a) (no 1/2)
+        d2qc_kp1(i) = q_k  (n,i) + q_kp2(n,i) - 2.0*q_kp1(n,i);
       }
 
       // k-1/2
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dph(i) - q_km1(n,i); // (CD eq 84a)
-        Real qb_tmp = q(n,i) - dph(i);     // (CD eq 84b)
+        Real qb_tmp = q_k(n,i) - dph(i);     // (CD eq 84b)
         // KGF: add the off-centered quantities first to preserve FP symmetry
-        Real qa = 3.0*(q_km1(n,i) + q(n,i) - 2.0*dph(i));  // (CD eq 85b)
+        Real qa = 3.0*(q_km1(n,i) + q_k(n,i) - 2.0*dph(i));  // (CD eq 85b)
         Real qb = d2qc_km1(i);    // (CD eq 85a) (no 1/2)
         Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
@@ -724,7 +618,7 @@ void Reconstruction::PiecewiseParabolicX3(
           qd = SIGN(qa)* std::min(C2*std::fabs(qb),
                                   std::min(C2*std::fabs(qc), std::fabs(qa)));
         }
-        Real dph_tmp = 0.5*(q_km1(n,i)+q(n,i)) - qd/6.0;
+        Real dph_tmp = 0.5*(q_km1(n,i)+q_k(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) {  // Local extrema detected at k-1/2 face
           dph(i) = dph_tmp;
         }
@@ -732,10 +626,10 @@ void Reconstruction::PiecewiseParabolicX3(
       // k+1/2
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
-        Real qa_tmp = dph_kp1(i) - q(n,i);       // (CD eq 84a)
+        Real qa_tmp = dph_kp1(i) - q_k(n,i);       // (CD eq 84a)
         Real qb_tmp = q_kp1(n,i) - dph_kp1(i);   // (CD eq 84b)
         // KGF: add the off-centered quantities first to preserve FP symmetry
-        Real qa = 3.0*(q(n,i) + q_kp1(n,i) - 2.0*dph_kp1(i));  // (CD eq 85b)
+        Real qa = 3.0*(q_k(n,i) + q_kp1(n,i) - 2.0*dph_kp1(i));  // (CD eq 85b)
         Real qb = d2qc(i);            // (CD eq 85a) (no 1/2)
         Real qc = d2qc_kp1(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
@@ -743,7 +637,7 @@ void Reconstruction::PiecewiseParabolicX3(
           qd = SIGN(qa)* std::min(C2*std::fabs(qb),
                                   std::min(C2*std::fabs(qc), std::fabs(qa)));
         }
-        Real dphkp1_tmp = 0.5*(q(n,i)+q_kp1(n,i)) - qd/6.0;
+        Real dphkp1_tmp = 0.5*(q_k(n,i)+q_kp1(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { // Local extrema detected at k+1/2 face
           dph_kp1(i) = dphkp1_tmp;
         }
@@ -752,18 +646,18 @@ void Reconstruction::PiecewiseParabolicX3(
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         // KGF: add the off-centered quantities first to preserve FP symmetry
-        d2qf(i) = 6.0*(dph(i) + dph_kp1(i) - 2.0*q(n,i)); // a6 coefficient * -2
+        d2qf(i) = 6.0*(dph(i) + dph_kp1(i) - 2.0*q_k(n,i)); // a6 coefficient * -2
       }
       //--- Step 2b. ---------------------------------------------------------------------
       // Non-uniform/curvilinear: apply strict monotonicity constraints (Mignone eq 45)
     } else {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        dph    (i) = std::min(dph    (i), std::max(q(n,i),q_km1(n,i)));
-        dph_kp1(i) = std::min(dph_kp1(i), std::max(q(n,i),q_kp1(n,i)));
+        dph    (i) = std::min(dph    (i), std::max(q_k(n,i),q_km1(n,i)));
+        dph_kp1(i) = std::min(dph_kp1(i), std::max(q_k(n,i),q_kp1(n,i)));
 
-        dph    (i) = std::max(dph    (i), std::min(q(n,i),q_km1(n,i)));
-        dph_kp1(i) = std::max(dph_kp1(i), std::min(q(n,i),q_kp1(n,i)));
+        dph    (i) = std::max(dph    (i), std::min(q_k(n,i),q_km1(n,i)));
+        dph_kp1(i) = std::max(dph_kp1(i), std::min(q_k(n,i),q_kp1(n,i)));
       }
     }
 
@@ -778,8 +672,8 @@ void Reconstruction::PiecewiseParabolicX3(
     // Compute cell-centered difference stencils (MC section 2.4.1)
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      dqf_minus(i) = q(n,i) - qminus(i); // (CS eq 25)
-      dqf_plus(i)  = qplus(i) - q(n,i);
+      dqf_minus(i) = q_k(n,i) - qminus(i); // (CS eq 25)
+      dqf_plus(i)  = qplus(i) - q_k(n,i);
     }
 
     //--- Step 4a. -----------------------------------------------------------------------
@@ -788,7 +682,7 @@ void Reconstruction::PiecewiseParabolicX3(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
-        Real qb_tmp = (q_kp1(n,i) - q(n,i))*(q(n,i) - q_km1(n,i));
+        Real qb_tmp = (q_kp1(n,i) - q_k(n,i))*(q_k(n,i) - q_km1(n,i));
 
         // Check if extrema is smooth
         Real qa = d2qc_km1(i);
@@ -804,7 +698,7 @@ void Reconstruction::PiecewiseParabolicX3(
 
         // Check if 2nd derivative is close to roundoff error
         qa = std::max(std::fabs(q_km1(n,i)),std::fabs(q_km2(n,i)));
-        qb = std::max(std::max(std::fabs(q(n,i)),
+        qb = std::max(std::max(std::fabs(q_k(n,i)),
                                std::fabs(q_kp1(n,i))), std::fabs(q_kp2(n,i)));
 
         Real rho = 0.0;
@@ -813,10 +707,10 @@ void Reconstruction::PiecewiseParabolicX3(
           rho = qe/qd;
         }
 
-        Real tmp_m = q(n,i) - rho*dqf_minus(i);
-        Real tmp_p = q(n,i) + rho*dqf_plus(i);
-        Real tmp2_m = q(n,i) - 2.0*dqf_plus(i);
-        Real tmp2_p = q(n,i) + 2.0*dqf_minus(i);
+        Real tmp_m = q_k(n,i) - rho*dqf_minus(i);
+        Real tmp_p = q_k(n,i) + rho*dqf_plus(i);
+        Real tmp2_m = q_k(n,i) - 2.0*dqf_plus(i);
+        Real tmp2_p = q_k(n,i) + 2.0*dqf_minus(i);
 
         // Check for local extrema
         if (qa_tmp <= 0.0 || qb_tmp <= 0.0 ) {
@@ -846,17 +740,17 @@ void Reconstruction::PiecewiseParabolicX3(
       for (int i=il; i<=iu; ++i) {
         Real qa = dqf_minus(i)*dqf_plus(i);
         if (qa <= 0.0) { // Local extrema detected
-          qminus(i) = q(n,i);
-          qplus(i) = q(n,i);
+          qminus(i) = q_k(n,i);
+          qplus(i) = q_k(n,i);
         } else { // No extrema detected
           // could delete hplus_ratio_k() arrays for curvilinear PPMx3
           // Overshoot k-1/2,R / k,(-) state
           if (std::fabs(dqf_minus(i)) >= hplus_ratio_k(k)*std::fabs(dqf_plus(i))) {
-            qminus(i) = q(n,i) - hplus_ratio_k(k)*dqf_plus(i);
+            qminus(i) = q_k(n,i) - hplus_ratio_k(k)*dqf_plus(i);
           }
           // Overshoot k+1/2,L / k,(+) state
           if (std::fabs(dqf_plus(i)) >= hminus_ratio_k(k)*std::fabs(dqf_minus(i))) {
-            qplus(i) = q(n,i) + hminus_ratio_k(k)*dqf_minus(i);
+            qplus(i) = q_k(n,i) + hminus_ratio_k(k)*dqf_minus(i);
           }
         }
       }
@@ -869,27 +763,15 @@ void Reconstruction::PiecewiseParabolicX3(
       ql_kph(n,i ) = qplus(i);
       qr_kmh(n,i ) = qminus(i);
     }
-  } // end char PPM loop over NWAVE
-
-  // Project limited slope back to primitive variables, if necessary
-  if (characteristic_reconstruction) {
-    RightEigenmatrixDotVector(IVZ,il,iu,bx,wc,ql_kph);
-    RightEigenmatrixDotVector(IVZ,il,iu,bx,wc,qr_kmh);
-  }
+  } // end char PPM loop over =nu
 
   // compute ql_(k+1/2) and qr_(k-1/2)
-  for (int n=0; n<NWAVE; ++n) {
+  for (int n=0; n<=nu; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      wl(n,i) = ql_kph(n,i);
-      wr(n,i) = qr_kmh(n,i);
+      ql(n,i) = ql_kph(n,i);
+      qr(n,i) = qr_kmh(n,i);
     }
-  }
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // Reapply EOS floors to both L/R reconstructed primitive states
-    pmy_block_->peos->ApplyPrimitiveFloors(wl, i);
-    pmy_block_->peos->ApplyPrimitiveFloors(wr, i);
   }
   return;
 }

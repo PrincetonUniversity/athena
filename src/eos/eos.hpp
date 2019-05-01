@@ -12,6 +12,7 @@
 // C headers
 
 // C++ headers
+#include <limits>     // std::numeric_limits<float>
 
 // Athena++ headers
 #include "../athena.hpp"         // Real
@@ -48,8 +49,20 @@ class EquationOfState {
   //   const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int il,
   //   int iu, int jl, int ju, int kl, int ku);
 
-#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim,k,j) linear(i)
-  void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
+  void PassiveScalarConservedToPrimitive(
+      AthenaArray<Real> &s, const AthenaArray<Real> &w, const AthenaArray<Real> &r_old,
+      AthenaArray<Real> &r,
+      Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
+  void PassiveScalarPrimitiveToConserved(
+    const AthenaArray<Real> &r, const AthenaArray<Real> &w,
+    AthenaArray<Real> &s, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku);
+
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim) linear(i)
+  void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i);
+
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s) linear(i)
+  void ApplyPassiveScalarFloors(AthenaArray<Real> &s, int i);
 
   // Sound speed functions in different regimes
 #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
@@ -150,10 +163,13 @@ class EquationOfState {
 #endif
 
  private:
+  // (C++11) in-class Default Member Initializer (fallback option):
+  const Real float_min{std::numeric_limits<float>::min()};
   MeshBlock *pmy_block_;                 // ptr to MeshBlock containing this EOS
   Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
   Real density_floor_, pressure_floor_;  // density and pressure floors
   Real energy_floor_;                    // energy floor
+  Real scalar_floor_{0.0};               // dimensionless concentration scalar floor
   Real sigma_max_, beta_min_;            // limits on ratios of gas quantities to pmag
   Real gamma_max_;                       // maximum Lorentz factor
   Real rho_min_, rho_pow_;               // variables to control power-law denity floor

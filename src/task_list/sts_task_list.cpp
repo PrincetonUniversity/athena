@@ -40,9 +40,9 @@
 SuperTimeStepTaskList::SuperTimeStepTaskList(
     ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) : ptlist_(ptlist) {
   // STS Incompatiblities
-  if (MAGNETIC_FIELDS_ENABLED &&
-      !(pm->pblock->pfield->fdif.field_diffusion_defined) &&
-      !(pm->pblock->phydro->hdif.hydro_diffusion_defined)) {
+  if (MAGNETIC_FIELDS_ENABLED
+      && !(pm->pblock->pfield->fdif.field_diffusion_defined)
+      && !(pm->pblock->phydro->hdif.hydro_diffusion_defined)) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping requires setting parameters for "
@@ -60,7 +60,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
   }
   // TODO(pdmullen): how should source terms be handled inside
   //                 operator-split RKL1 STS?
-  if (pm->pblock->phydro->hsrc.hydro_sourceterms_defined==true) {
+  if (pm->pblock->phydro->hsrc.hydro_sourceterms_defined) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatible "
@@ -111,13 +111,13 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
       AddTask(RECV_FLD,NONE);
       AddTask(SETB_FLD,(RECV_FLD|INT_FLD));
       // compute new primitives
-      AddTask(CON2PRIM,(SETB_HYD|SETB_FLD));
+      AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD));
     } else {  // HYDRO
-      AddTask(CON2PRIM,(SETB_HYD));
+      AddTask(CONS2PRIM,(SETB_HYD));
     }
 
     // everything else
-    AddTask(PHY_BVAL,CON2PRIM);
+    AddTask(PHY_BVAL,CONS2PRIM);
     AddTask(CLEAR_ALLBND,PHY_BVAL);
   } // end of using namespace block
 }
@@ -218,7 +218,7 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
       task_list_[ntasks].lb_time = true;
       break;
 
-    case (CON2PRIM):
+    case (CONS2PRIM):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::Primitives);
@@ -324,9 +324,9 @@ TaskStatus SuperTimeStepTaskList::IntegrateHydro_STS(MeshBlock *pmb, int stage) 
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
     Real wght = pmb->pmy_mesh->muj_tilde;
-    ph->AddFluxDivergenceToAverage(wght, ph->u);
+    ph->AddFluxDivergence(wght, ph->u);
     // TODO(pdmullen): check this after disabling ATHENA_ERROR for src terms
-    pmb->pcoord->CoordSrcTerms(wght, ph->flux, ph->w, pf->bcc, ph->u);
+    pmb->pcoord->AddCoordTermsDivergence(wght, ph->flux, ph->w, pf->bcc, ph->u);
     return TaskStatus::next;
   }
   return TaskStatus::fail;

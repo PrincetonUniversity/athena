@@ -51,6 +51,8 @@ class FFTDriver;
 class FFTGravityDriver;
 class TurbulenceDriver;
 
+FluidFormulation GetFluidFormulation(const std::string& input_string);
+
 //----------------------------------------------------------------------------------------
 //! \class MeshBlock
 //  \brief data/functions associated with a single block
@@ -212,12 +214,15 @@ class Mesh {
   // data
   RegionSize mesh_size;
   BoundaryFlag mesh_bcs[6];
-  bool f2_, f3_; // flags indicating 2D or 3D Mesh
-  Real start_time, tlim, cfl_number, time, dt, dt_diff;
-  Real muj, nuj, muj_tilde;
+  const bool f2, f3; // flags indicating (at least) 2D or 3D Mesh
+  const int ndim;     // number of dimensions
+  const bool adaptive, multilevel;
+  const FluidFormulation fluid_setup;
+  Real start_time, time, tlim, dt, dt_diff, cfl_number;
   int nlim, ncycle, ncycle_out;
+  Real muj, nuj, muj_tilde;
   int nbtotal, nbnew, nbdel;
-  bool adaptive, multilevel;
+
   int step_since_lb;
   int gflag;
   int turb_flag; // turbulence flag
@@ -289,9 +294,9 @@ class Mesh {
 
   // functions
   MeshGenFunc MeshGenerator_[3];
-  SrcTermFunc UserSourceTerm_;
   BValFunc BoundaryFunction_[6];
   AMRFlagFunc AMRFlag_;
+  SrcTermFunc UserSourceTerm_;
   TimeStepFunc UserTimeStep_;
   HistoryOutputFunc *user_history_func_;
   MetricFunc UserMetric_;
@@ -366,7 +371,7 @@ class Mesh {
 inline Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange,
                                   bool sym_interval) {
   // index is typically 0, ... nrange for non-ghost boundaries
-  if (sym_interval == false) {
+  if (!sym_interval) {
     // to map to fractional logical position [0.0, 1.0], simply divide by # of faces
     return static_cast<Real>(index)/static_cast<Real>(nrange);
   } else {

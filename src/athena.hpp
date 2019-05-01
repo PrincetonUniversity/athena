@@ -78,7 +78,7 @@ struct LogicalLocation { // aggregate and POD type
 //! \struct RegionSize
 //  \brief physical size and number of cells in a Mesh or a MeshBlock
 
-struct RegionSize {
+struct RegionSize {  // aggregate and POD type; do NOT reorder member declarations:
   Real x1min, x2min, x3min;
   Real x1max, x2max, x3max;
   Real x1rat, x2rat, x3rat; // ratio of x(i)/x(i-1)
@@ -158,6 +158,8 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 enum class BoundaryQuantity {cc, fc, cc_flcor, fc_flcor, mggrav, mggrav_f};
 enum class HydroBoundaryQuantity {cons, prim};
 enum class BoundaryCommSubset {mesh_init, gr_amr, all};
+// TODO(felker): consider generalizing/renaming to QuantityFormulation
+enum class FluidFormulation {evolve, background, disabled}; // rename background -> fixed?
 
 //----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime

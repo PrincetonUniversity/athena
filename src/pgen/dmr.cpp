@@ -63,7 +63,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   EnrollUserBoundaryFunction(BoundaryFace::inner_x2, DMRInnerX2);
   EnrollUserBoundaryFunction(BoundaryFace::outer_x2, DMROuterX2);
   // Enroll user-defined AMR criterion
-  if (adaptive==true)
+  if (adaptive)
     EnrollUserRefinementCondition(RefinementCondition);
 
   return;
@@ -165,7 +165,7 @@ void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   Real u0 =  8.25*std::sqrt(3.0)/2.0;
   Real v0 = -8.25*0.5;
   Real gamma = pmb->peos->GetGamma();
-  Real p0=e0*(gamma-1.0);
+  Real p0 = e0*(gamma-1.0);
 
   for (int j=jl; j<=ju; ++j) {
     for (int i=1;  i<=ngh; ++i) {
@@ -231,8 +231,8 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
   Real v0 = -8.25*0.5;
   Real shock_pos = 0.1666666666 + (1. + 20.*time)/std::sqrt(3.0);
   Real gamma = pmb->peos->GetGamma();
-  Real p0=e0*(gamma-1.0);
-  Real p1=2.5*(gamma-1.0);
+  Real p0 = e0*(gamma-1.0);
+  Real p1 = 2.5*(gamma-1.0);
 
   for (int j=1;  j<=ngh; ++j) {
     for (int i=il; i<=iu; ++i) {
@@ -257,18 +257,20 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 
 //----------------------------------------------------------------------------------------
 //! \fn
-//  \brief refinement condition: density and pressure curvature
+//  \brief refinement condition: maximum density and pressure curvature
 
 int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
-  Real maxeps=0.0;
-  int k=pmb->ks;
+  Real maxeps = 0.0;
+  int k = pmb->ks;
   for (int j=pmb->js; j<=pmb->je; j++) {
     for (int i=pmb->is; i<=pmb->ie; i++) {
-      Real epsr= (std::abs(w(IDN,k,j,i+1)-2.0*w(IDN,k,j,i)+w(IDN,k,j,i-1))
-                  +std::abs(w(IDN,k,j+1,i)-2.0*w(IDN,k,j,i)+w(IDN,k,j-1,i)))/w(IDN,k,j,i);
-      Real epsp= (std::abs(w(IPR,k,j,i+1)-2.0*w(IPR,k,j,i)+w(IPR,k,j,i-1))
-                  +std::abs(w(IPR,k,j+1,i)-2.0*w(IPR,k,j,i)+w(IPR,k,j-1,i)))/w(IPR,k,j,i);
+      Real epsr = (std::abs(w(IDN,k,j,i+1) - 2.0*w(IDN,k,j,i) + w(IDN,k,j,i-1))
+                  + std::abs(w(IDN,k,j+1,i) - 2.0*w(IDN,k,j,i) + w(IDN,k,j-1,i)))
+                  /w(IDN,k,j,i);
+      Real epsp = (std::abs(w(IPR,k,j,i+1) - 2.0*w(IPR,k,j,i) + w(IPR,k,j,i-1))
+                  + std::abs(w(IPR,k,j+1,i) - 2.0*w(IPR,k,j,i) + w(IPR,k,j-1,i)))
+                  /w(IPR,k,j,i);
       Real eps = std::max(epsr, epsp);
       maxeps = std::max(maxeps, eps);
     }

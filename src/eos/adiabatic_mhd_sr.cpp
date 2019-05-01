@@ -12,7 +12,6 @@
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // abs(), cbrt(), isfinite(), NAN, sqrt()
-#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"                   // enums, macros
@@ -37,16 +36,14 @@ Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
 //   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block_ = pmb;
-  gamma_ = pin->GetReal("hydro", "gamma");
-  Real float_min = std::numeric_limits<float>::min();
-  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(float_min)) );
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(float_min)) );
-  sigma_max_ = pin->GetOrAddReal("hydro", "sigma_max",  0.0);
-  beta_min_ = pin->GetOrAddReal("hydro", "beta_min", 0.0);
-  gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
-}
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block_(pmb),
+    gamma_{pin->GetReal("hydro", "gamma")},
+    density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))},
+    pressure_floor_{pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*float_min))},
+    sigma_max_{pin->GetOrAddReal("hydro", "sigma_max",  0.0)},
+    beta_min_{pin->GetOrAddReal("hydro", "beta_min", 0.0)},
+    gamma_max_{pin->GetOrAddReal("hydro", "gamma_max", 1000.0)} {}
 
 //----------------------------------------------------------------------------------------
 // Variable inverter
@@ -397,11 +394,10 @@ Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
 } // namespace
 
 //---------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
-//           int k, int j, int i)
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
-void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i) {
   Real& w_d  = prim(IDN,i);
   Real& w_p  = prim(IPR,i);
   // Eventually, may want to check that small field errors don't overwhelm gas floor
