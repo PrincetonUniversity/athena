@@ -32,7 +32,7 @@
 namespace {
 constexpr int N_gl = 8;
 constexpr Real d0 = 1.0;
-
+constexpr bool use_gl_quadrature = true;
 Real radius, omega_x1, omega_x2, omega, iso_cs;
 Real s_width, s_height, center_x1, center_x2;
 
@@ -103,17 +103,24 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           for (int j=jl; j<=ju; j++) {
             pmb->pcoord->CellVolume(k, j, il, iu, vol);
             for (int i=il; i<=iu; i++) {
+              Real cell_ave;
               Real cell_vol = vol(i);
-              Real xl, xu, yl, yu;
-              xl = pmb->pcoord->x1f(i);
-              xu = pmb->pcoord->x1f(i+1);
-              yl = pmb->pcoord->x2f(j);
-              yu = pmb->pcoord->x2f(j+1);
+              if (use_gl_quadrature) {
+                Real xl, xu, yl, yu;
+                xl = pmb->pcoord->x1f(i);
+                xu = pmb->pcoord->x1f(i+1);
+                yl = pmb->pcoord->x2f(j);
+                yu = pmb->pcoord->x2f(j+1);
 
-              // GL implementation returns total integral, not ave. Divide by cell volume
-              Real cell_quad = GaussLegendre::integrate(N_gl, slotted_cylinder, xl, xu,
-                                                        yl, yu);
-              Real cell_ave = cell_quad/vol(i);  // 2D: (pcoord->dx1v(i)*pcoord->dx2v(j));
+                // GL implementation returns total integral, not ave. Divide by cell vol
+                Real cell_quad = GaussLegendre::integrate(N_gl, slotted_cylinder, xl, xu,
+                                                          yl, yu);
+                cell_ave = cell_quad/cell_vol;  // 2D: (pcoord->dx1v(i)*pcoord->dx2v(j));
+              } else {
+                // Use standard midpoint approximation with cell centered coords:
+                cell_ave = slotted_cylinder(pmb->pcoord->x1v(i), pmb->pcoord->x2v(j));
+              }
+
               Real sol = 1.0/scalar_norm*cell_ave;
               l1_err[n] += std::fabs(sol - pmb->pscalars->s(n,k,j,i))*cell_vol;
               max_err[n] = std::max(
@@ -122,8 +129,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             }
           }
         }
-
-
         pmb = pmb->next;
       }
     }
@@ -213,23 +218,24 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         // assuming isothermal EOS:
         //  phydro->u(IEN,k,j,i) =
 
-        // Use Gauss-Legendre quadrature rules to compute cell-averaged initial condition
-        // based on pointwise analytic formula
-        Real xl, xu, yl, yu;
-        xl = pcoord->x1f(i);
-        xu = pcoord->x1f(i+1);
-        yl = pcoord->x2f(j);
-        yu = pcoord->x2f(j+1);
+        Real cell_ave;
+        if (use_gl_quadrature) {
+          // Use Gauss-Legendre quadrature rules to compute cell-averaged initial
+          // condition based on pointwise analytic formula
+          Real xl, xu, yl, yu;
+          xl = pcoord->x1f(i);
+          xu = pcoord->x1f(i+1);
+          yl = pcoord->x2f(j);
+          yu = pcoord->x2f(j+1);
 
-        // GL implementation returns total integral, not average. Divide by cell volume
-        Real cell_quad = GaussLegendre::integrate(N_gl, slotted_cylinder, xl, xu,
-                                                  yl, yu);
-        Real cell_ave = cell_quad/vol(i);  // 2D: (pcoord->dx1v(i)*pcoord->dx2v(j));
-
-        // TODO(felker): add switch to skip the quadrature eval. and use midpoint approx.
-        // Use standard midpoint approximation with cell centered coords:
-        // pscalars->s(n,k,j,i) = slotted_cylinder_ic(pcoord->x1v(i), pcoord->x2v(j),
-        //                                            nullptr);
+          // GL implementation returns total integral, not average. Divide by cell volume
+          Real cell_quad = GaussLegendre::integrate(N_gl, slotted_cylinder, xl, xu,
+                                                    yl, yu);
+          cell_ave = cell_quad/vol(i);  // 2D: (pcoord->dx1v(i)*pcoord->dx2v(j));
+        } else {
+          // Use standard midpoint approximation with cell centered coords:
+          cell_ave = slotted_cylinder(pcoord->x1v(i), pcoord->x2v(j));
+        }
 
         // uniformly fill all scalars to have equal concentration
         constexpr int scalar_norm = NSCALARS > 0 ? NSCALARS : 1.0;
