@@ -69,7 +69,8 @@ class PassiveScalars {
   // (does not depend on local fluid or field variables), 2) there is only one type of
   // passive scalar diffusion process (nu_scalar_aniso disabled, no "eta"l, etc.)
   // 3) nu_scalar_iso is identical for all NSCALARS
-  void DiffusiveFluxIso(const AthenaArray<Real> &prim, AthenaArray<Real> *flx_out);
+  void DiffusiveFluxIso(const AthenaArray<Real> &prim_r, const AthenaArray<Real> &w,
+                        AthenaArray<Real> *flx_out);
 
  private:
   MeshBlock* pmy_block;

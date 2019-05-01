@@ -426,7 +426,8 @@ void PassiveScalars::AddDiffusionFluxes() {
   return;
 }
 
-void PassiveScalars::DiffusiveFluxIso(const AthenaArray<Real> &prim,
+void PassiveScalars::DiffusiveFluxIso(const AthenaArray<Real> &prim_r,
+                                      const AthenaArray<Real> &w,
                                       AthenaArray<Real> *flx_out) {
   MeshBlock *pmb = pmy_block;
   Coordinates *pco = pmb->pcoord;
@@ -436,7 +437,7 @@ void PassiveScalars::DiffusiveFluxIso(const AthenaArray<Real> &prim,
   int il, iu, jl, ju, kl, ku;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
-  Real nu_face, r_face, dprim_r_dx, dprim_r_dy, dprim_r_dz;
+  Real nu_face, rho_face, dprim_r_dx, dprim_r_dy, dprim_r_dz;
 
   // i-direction
   jl = js, ju = je, kl = ks, ku = ke;
@@ -455,9 +456,9 @@ void PassiveScalars::DiffusiveFluxIso(const AthenaArray<Real> &prim,
         for (int i=is; i<=ie+1; ++i) {
           nu_face = nu_scalar_iso;
           // = 0.5*(kappa(DiffProcess::iso,k,j,i) + kappa(DiffProcess::iso,k,j,i-1));
-          r_face = 0.5*(s(n,k,j,i) + s(n,k,j,i-1));
-          dprim_r_dx = (s(n,k,j,i) - s(n,k,j,i-1))/pco->dx1v(i-1);
-          x1flux(k,j,i) -= nu_face*r_face*dprim_r_dx;
+          rho_face = 0.5*(w(IDN,k,j,i) + w(IDN,k,j,i-1));
+          dprim_r_dx = (prim_r(n,k,j,i) - prim_r(n,k,j,i-1))/pco->dx1v(i-1);
+          x1flux(n,k,j,i) -= nu_face*rho_face*dprim_r_dx;
         }
       }
     }
@@ -480,9 +481,9 @@ void PassiveScalars::DiffusiveFluxIso(const AthenaArray<Real> &prim,
           for (int i=il; i<=iu; ++i) {
             nu_face = nu_scalar_iso;
             // = 0.5*(kappa(DiffProcess::iso,k,j,i) + kappa(DiffProcess::iso,k,j-1,i));
-            r_face = 0.5*(s(n,k,j,i) + s(n,k,j-1,i));
-            dprim_r_dy = (s(n,k,j,i) - s(n,k,j-1,i))/pco->h2v(i)/pco->dx2v(j-1);
-            x2flux(k,j,i) -= nu_face*r_face*dprim_r_dy;
+            rho_face = 0.5*(w(IDN,k,j,i) + w(IDN,k,j-1,i));
+            dprim_r_dy = (prim_r(n,k,j,i) - prim_r(n,k,j-1,i))/pco->h2v(i)/pco->dx2v(j-1);
+            x2flux(n,k,j,i) -= nu_face*rho_face*dprim_r_dy;
           }
         }
       }
@@ -506,10 +507,10 @@ void PassiveScalars::DiffusiveFluxIso(const AthenaArray<Real> &prim,
           for (int i=il; i<=iu; ++i) {
             nu_face = nu_scalar_iso;
             // = 0.5*(kappa(DiffProcess::iso,k,j,i) + kappa(DiffProcess::iso,k-1,j,i));
-            r_face = 0.5*(s(n,k,j,i) + s(n,k-1,j,i));
-            dprim_r_dz = (s(n,k,j,i) - s(n,k-1,j,i))/pco->dx3v(k-1)/pco->h31v(i)
+            rho_face = 0.5*(w(IDN,k,j,i) + w(IDN,k-1,j,i));
+            dprim_r_dz = (prim_r(n,k,j,i) - prim_r(n,k-1,j,i))/pco->dx3v(k-1)/pco->h31v(i)
                          /pco->h32v(j);
-            x3flux(k,j,i) -= nu_face*r_face*dprim_r_dz;
+            x3flux(n,k,j,i) -= nu_face*rho_face*dprim_r_dz;
           }
         }
       }
