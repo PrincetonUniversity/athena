@@ -81,19 +81,23 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem", "compute_error", false)) return;
 
-  // Initialize errors to zero
-  Real l1_err[NSCALARS]{}, max_err[NSCALARS]{};
+  if (NSCALARS > 0) { // TODO(felker): error-out at compile time if NSCALARS < 1
+    // Initialize errors to zero
+    // (temp. workaround for zero-length array prohibition from ISO C++; replace with
+    // dynamically-sized arrays)
+    Real l1_err[(NSCALARS > 0 ? NSCALARS : 1)]{},
+        max_err[(NSCALARS > 0 ? NSCALARS : 1)]{};
 
-  MeshBlock *pmb = pblock;
-  // recalculate initial condition from ProblemGenerator on final Mesh configuration:
-  // (may have changed due to AMR)
-  while (pmb != nullptr) {
-    int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
-        kl = pmb->ks, ku = pmb->ke;
-    AthenaArray<Real> vol(pmb->ncells1);
-    // only interested in error of the evolved passive scalar profiles
-    constexpr int scalar_norm = NSCALARS > 0 ? NSCALARS : 1.0;
-    if (NSCALARS > 0) {
+    MeshBlock *pmb = pblock;
+    // recalculate initial condition from ProblemGenerator on final Mesh configuration:
+    // (may have changed due to AMR)
+    while (pmb != nullptr) {
+      int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
+          kl = pmb->ks, ku = pmb->ke;
+      AthenaArray<Real> vol(pmb->ncells1);
+      // only interested in error of the evolved passive scalar profiles
+      constexpr int scalar_norm = NSCALARS > 0 ? NSCALARS : 1.0;
+
       for (int n=0; n<NSCALARS; ++n) {
         for (int k=kl; k<=ku; k++) {
           for (int j=jl; j<=ju; j++) {
@@ -118,70 +122,71 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             }
           }
         }
+
+
+        pmb = pmb->next;
       }
     }
-    pmb = pmb->next;
-  }
 #ifdef MPI_PARALLEL
-  if (Globals::my_rank == 0) {
-    MPI_Reduce(MPI_IN_PLACE, &l1_err, NSCALARS, MPI_ATHENA_REAL, MPI_SUM, 0,
-               MPI_COMM_WORLD);
-    MPI_Reduce(MPI_IN_PLACE, &max_err, NSCALARS, MPI_ATHENA_REAL, MPI_MAX, 0,
-               MPI_COMM_WORLD);
-  } else {
-    MPI_Reduce(&l1_err, &l1_err, NSCALARS, MPI_ATHENA_REAL, MPI_SUM, 0,
-               MPI_COMM_WORLD);
-    MPI_Reduce(&max_err, &max_err, NSCALARS, MPI_ATHENA_REAL, MPI_MAX, 0,
-               MPI_COMM_WORLD);
-  }
+    if (Globals::my_rank == 0) {
+      MPI_Reduce(MPI_IN_PLACE, &l1_err, NSCALARS, MPI_ATHENA_REAL, MPI_SUM, 0,
+                 MPI_COMM_WORLD);
+      MPI_Reduce(MPI_IN_PLACE, &max_err, NSCALARS, MPI_ATHENA_REAL, MPI_MAX, 0,
+                 MPI_COMM_WORLD);
+    } else {
+      MPI_Reduce(&l1_err, &l1_err, NSCALARS, MPI_ATHENA_REAL, MPI_SUM, 0,
+                 MPI_COMM_WORLD);
+      MPI_Reduce(&max_err, &max_err, NSCALARS, MPI_ATHENA_REAL, MPI_MAX, 0,
+                 MPI_COMM_WORLD);
+    }
 #endif
 
-  // only the root process outputs the data
-  if (Globals::my_rank == 0) {
-    // normalize errors by number of cells
-    Real vol= (mesh_size.x1max - mesh_size.x1min)*(mesh_size.x2max - mesh_size.x2min)
-              *(mesh_size.x3max - mesh_size.x3min);
-    for (int i=0; i<NSCALARS; ++i) l1_err[i] = l1_err[i]/vol;
-    // open output file and write out errors
-    std::string fname;
-    fname.assign("slotted_cylinder-errors.dat");
-    std::stringstream msg;
-    FILE *pfile;
+    // only the root process outputs the data
+    if (Globals::my_rank == 0) {
+      // normalize errors by number of cells
+      Real vol= (mesh_size.x1max - mesh_size.x1min)*(mesh_size.x2max - mesh_size.x2min)
+                *(mesh_size.x3max - mesh_size.x3min);
+      for (int i=0; i<NSCALARS; ++i) l1_err[i] = l1_err[i]/vol;
+      // open output file and write out errors
+      std::string fname;
+      fname.assign("slotted_cylinder-errors.dat");
+      std::stringstream msg;
+      FILE *pfile;
 
-    // The file exists -- reopen the file in append mode
-    if ((pfile = std::fopen(fname.c_str(), "r")) != nullptr) {
-      if ((pfile = std::freopen(fname.c_str(), "a", pfile)) == nullptr) {
-        msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop"
-            << std::endl << "Error output file could not be opened" <<std::endl;
-        ATHENA_ERROR(msg);
+      // The file exists -- reopen the file in append mode
+      if ((pfile = std::fopen(fname.c_str(), "r")) != nullptr) {
+        if ((pfile = std::freopen(fname.c_str(), "a", pfile)) == nullptr) {
+          msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop"
+              << std::endl << "Error output file could not be opened" <<std::endl;
+          ATHENA_ERROR(msg);
+        }
+
+        // The file does not exist -- open the file in write mode and add headers
+      } else {
+        if ((pfile = std::fopen(fname.c_str(), "w")) == nullptr) {
+          msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop"
+              << std::endl << "Error output file could not be opened" <<std::endl;
+          ATHENA_ERROR(msg);
+        }
+        std::fprintf(pfile, "# Nx1  Nx2  Nx3  Ncycle  ");
+        for (int n=0; n<NSCALARS; ++n)
+          std::fprintf(pfile, "s%d_L1  ", n);
+        for (int n=0; n<NSCALARS; ++n)
+          std::fprintf(pfile, "s%d_max  ", n);
+        std::fprintf(pfile, "\n");
       }
 
-      // The file does not exist -- open the file in write mode and add headers
-    } else {
-      if ((pfile = std::fopen(fname.c_str(), "w")) == nullptr) {
-        msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop"
-            << std::endl << "Error output file could not be opened" <<std::endl;
-        ATHENA_ERROR(msg);
-      }
-      std::fprintf(pfile, "# Nx1  Nx2  Nx3  Ncycle  ");
+      // write errors
+      std::fprintf(pfile, "%d  %d", mesh_size.nx1, mesh_size.nx2);
+      std::fprintf(pfile, "  %d  %d", mesh_size.nx3, ncycle);
       for (int n=0; n<NSCALARS; ++n)
-        std::fprintf(pfile, "s%d_L1  ", n);
+        std::fprintf(pfile, "  %e", l1_err[n]);
       for (int n=0; n<NSCALARS; ++n)
-        std::fprintf(pfile, "s%d_max  ", n);
+        std::fprintf(pfile, "  %e", max_err[n]);
       std::fprintf(pfile, "\n");
+      std::fclose(pfile);
     }
-
-    // write errors
-    std::fprintf(pfile, "%d  %d", mesh_size.nx1, mesh_size.nx2);
-    std::fprintf(pfile, "  %d  %d", mesh_size.nx3, ncycle);
-    for (int n=0; n<NSCALARS; ++n)
-      std::fprintf(pfile, "  %e", l1_err[n]);
-    for (int n=0; n<NSCALARS; ++n)
-      std::fprintf(pfile, "  %e", max_err[n]);
-    std::fprintf(pfile, "\n");
-    std::fclose(pfile);
-  }
-
+  } // if NSCALARS > 0
   return;
 }
 
