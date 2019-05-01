@@ -29,7 +29,6 @@ static constexpr Real weight_n0[] = {0.0};
 static constexpr Real weight_n1[] = {0.0};
 static constexpr Real weight_n2[] = {
   1.0000000000000000000000,
-  1.0000000000000000000000,
 };
 static constexpr Real weight_n3[] = {
   0.8888888888888888888888,
