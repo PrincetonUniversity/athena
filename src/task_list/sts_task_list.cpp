@@ -264,7 +264,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   }
 
   // Clear flux arrays from previous stage
-  pmb->phydro->hdif.ClearHydroFlux(pmb->phydro->flux);
+  pmb->phydro->hdif.ClearFlux(pmb->phydro->flux);
   if (MAGNETIC_FIELDS_ENABLED)
     pmb->pfield->fdif.ClearEMF(pmb->pfield->e);
 
@@ -278,8 +278,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 // Functions to calculates fluxes
 
 TaskStatus SuperTimeStepTaskList::CalculateHydroFlux_STS(MeshBlock *pmb, int stage) {
-  Hydro *phydro=pmb->phydro;
-  // Field *pfield=pmb->pfield;
+  Hydro *phydro = pmb->phydro;
 
   if (stage <= nstages) {
     phydro->CalculateFluxes_STS();

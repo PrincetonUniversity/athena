@@ -90,8 +90,8 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
 //  \brief Calculate diffusion flux for hydro flux
 
 void HydroDiffusion::CalcDiffusionFlux(const AthenaArray<Real> &prim,
-                                            const AthenaArray<Real> &cons,
-                                            AthenaArray<Real> *flux) {
+                                       const AthenaArray<Real> &cons,
+                                       AthenaArray<Real> *flux) {
   Hydro *ph = pmb_->phydro;
   Field *pf = pmb_->pfield;
 
@@ -113,7 +113,7 @@ void HydroDiffusion::CalcDiffusionFlux(const AthenaArray<Real> &prim,
 //  \brief Adds only diffusion energy flux to hydro flux
 
 void HydroDiffusion::AddDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
-                                                 AthenaArray<Real> *flux_des) {
+                                            AthenaArray<Real> *flux_des) {
   int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
   int ie = pmb_->ie; int je = pmb_->je; int ke = pmb_->ke;
 
@@ -150,7 +150,7 @@ void HydroDiffusion::AddDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
 //  \brief Adds all componenets of diffusion flux to hydro flux
 
 void HydroDiffusion::AddDiffusionFlux(AthenaArray<Real> *flux_src,
-                                           AthenaArray<Real> *flux_des) {
+                                      AthenaArray<Real> *flux_des) {
   int size1 = flux_des[X1DIR].GetSize();
 #pragma omp simd
   for (int i=0; i<size1; ++i)

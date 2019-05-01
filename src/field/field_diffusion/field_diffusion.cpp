@@ -77,18 +77,18 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) :
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void FieldDiffusion::CalcFieldDiffusionEMF
+//! \fn void FieldDiffusion::CalcDiffusionEMF
 //  \brief Calculate diffusion EMF(Ohmic & Ambipolar for now)
 
-void FieldDiffusion::CalcFieldDiffusionEMF(FaceField &bi,
-                                           const AthenaArray<Real> &bc, EdgeField &e) {
+void FieldDiffusion::CalcDiffusionEMF(FaceField &bi, const AthenaArray<Real> &bc,
+                                      EdgeField &e) {
   Field *pf = pmy_block->pfield;
   Hydro *ph = pmy_block->phydro;
   // Mesh  *pm = pmy_block->pmy_mesh; // unused variable
 
-  if ((eta_ohm==0.0) && (eta_ad==0.0)) return;
+  if ((eta_ohm == 0.0) && (eta_ad == 0.0)) return;
 
-  SetFieldDiffusivity(ph->w, pf->bcc);
+  SetDiffusivity(ph->w, pf->bcc);
 
   CalcCurrent(bi);
   ClearEMF(e_oa);
@@ -152,11 +152,11 @@ void FieldDiffusion::ClearEMF(EdgeField &e) {
 //--------------------------------------------------------------------------------------
 // Set magnetic diffusion coefficients
 
-void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w,
-                                         const AthenaArray<Real> &bc) {
+void FieldDiffusion::SetDiffusivity(const AthenaArray<Real> &w,
+                                    const AthenaArray<Real> &bc) {
   MeshBlock *pmb = pmy_block;
-  int il = pmb->is-NGHOST; int jl = pmb->js; int kl = pmb->ks;
-  int iu = pmb->ie+NGHOST; int ju = pmb->je; int ku = pmb->ke;
+  int il = pmb->is - NGHOST; int jl = pmb->js; int kl = pmb->ks;
+  int iu = pmb->ie + NGHOST; int ju = pmb->je; int ku = pmb->ke;
   if (pmb->block_size.nx2 > 1) {
     jl -= NGHOST; ju += NGHOST;
   }
@@ -168,8 +168,7 @@ void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w,
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        Real Bsq = SQR(bc(IB1,k,j,i))+SQR(bc(IB2,k,j,i))
-                   +SQR(bc(IB3,k,j,i));
+        Real Bsq = SQR(bc(IB1,k,j,i)) + SQR(bc(IB2,k,j,i)) + SQR(bc(IB3,k,j,i));
         bmag_(k,j,i) = std::sqrt(Bsq);
       }
     }
@@ -184,10 +183,10 @@ void FieldDiffusion::SetFieldDiffusivity(const AthenaArray<Real> &w,
 // Add Poynting flux to the hydro energy flux
 
 void FieldDiffusion::AddPoyntingFlux(FaceField &p_src) {
-  MeshBlock *pmb=pmy_block;
-  AthenaArray<Real> &x1flux=pmb->phydro->flux[X1DIR];
-  AthenaArray<Real> &x2flux=pmb->phydro->flux[X2DIR];
-  AthenaArray<Real> &x3flux=pmb->phydro->flux[X3DIR];
+  MeshBlock *pmb = pmy_block;
+  AthenaArray<Real> &x1flux = pmb->phydro->flux[X1DIR];
+  AthenaArray<Real> &x2flux = pmb->phydro->flux[X2DIR];
+  AthenaArray<Real> &x3flux = pmb->phydro->flux[X3DIR];
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
@@ -231,27 +230,32 @@ void FieldDiffusion::AddPoyntingFlux(FaceField &p_src) {
 //--------------------------------------------------------------------------------------
 // Get the non-ideal MHD timestep
 
-void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
+void FieldDiffusion::NewDiffusionDt(Real &dt_oa, Real &dt_h) {
   MeshBlock *pmb = pmy_block;
+  const bool f2 = pmb->pmy_mesh->f2;
+  const bool f3 = pmb->pmy_mesh->f3;
+
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  Real fac_oa,fac_h;
-  if (pmb->block_size.nx3>1) {
+  Real fac_oa, fac_h;
+  if (f3 ) { // 3D
     fac_oa = 1.0/6.0;
-  } else if (pmb->block_size.nx2>1) {
-    fac_oa = 0.25;
   } else {
-    fac_oa = 0.5;
+    if (f2) { // 2D
+      fac_oa = 0.25;
+    } else { // 1D
+      fac_oa = 0.5;
+    }
   }
 
-  if (pmb->block_size.nx2>1)
+  if (f2)
     fac_h = 1.0;
   else
-    fac_h=0.5;
+    fac_h = 0.5;
   Real real_max = std::numeric_limits<Real>::max();
-  dt_oa = (real_max);
-  dt_h  = (real_max);
+  dt_oa = real_max;
+  dt_h  = real_max;
 
   AthenaArray<Real> &eta_t = eta_tot_;
   AthenaArray<Real> &len = dx1_, &dx2 = dx2_, &dx3 = dx3_;
@@ -274,25 +278,23 @@ void FieldDiffusion::NewFieldDiffusionDt(Real &dt_oa, Real &dt_h) {
           eta_t(i) += etaB(DiffProcess::ambipolar,k,j,i);
         }
       }
-      pmb->pcoord->CenterWidth1(k,j,is,ie,len);
-      pmb->pcoord->CenterWidth2(k,j,is,ie,dx2);
-      pmb->pcoord->CenterWidth3(k,j,is,ie,dx3);
+      pmb->pcoord->CenterWidth1(k, j, is, ie, len);
+      pmb->pcoord->CenterWidth2(k, j, is, ie, dx2);
+      pmb->pcoord->CenterWidth3(k, j, is, ie, dx3);
 #pragma omp simd
       for (int i=is; i<=ie; ++i) {
-        len(i) = (pmb->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
-        len(i) = (pmb->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);
+        len(i) = (f2) ? std::min(len(i), dx2(i)):len(i);
+        len(i) = (f3) ? std::min(len(i), dx3(i)):len(i);
       }
       if ((eta_ohm > 0.0) || (eta_ad > 0.0)) {
         for (int i=is; i<=ie; ++i)
-          dt_oa = std::min(dt_oa,
-                           static_cast<Real>(fac_oa*SQR(len(i))
-                                             /(eta_t(i)+TINY_NUMBER)));
+          dt_oa = std::min(dt_oa, static_cast<Real>(
+              fac_oa*SQR(len(i)) / (eta_t(i) + TINY_NUMBER)));
       }
       if (eta_hall > 0.0) {
         for (int i=is; i<=ie; ++i)
-          dt_h = std::min(dt_h,
-                          static_cast<Real>(fac_h*SQR(len(i))
-                                            / (std::fabs(etaB(hall,k,j,i))+TINY_NUMBER)));
+          dt_h = std::min(dt_h, static_cast<Real>(
+              fac_h*SQR(len(i)) / (std::fabs(etaB(hall,k,j,i)) + TINY_NUMBER)));
       }
     }
   }

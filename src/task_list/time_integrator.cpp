@@ -900,7 +900,7 @@ TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
   if (!(pf->fdif.field_diffusion_defined)) return TaskStatus::next;
 
   if (stage <= nstages) {
-    pf->fdif.CalcFieldDiffusionEMF(pf->b, pf->bcc, pf->e);
+    pf->fdif.CalcDiffusionEMF(pf->b, pf->bcc, pf->e);
   } else {
     return TaskStatus::fail;
   }
@@ -1293,11 +1293,11 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesScalars(MeshBlock *pmb, int stag
 
 
 TaskStatus TimeIntegratorTaskList::DiffuseScalars(MeshBlock *pmb, int stage) {
-  PassiveScalars *ps = pmb->pscalars;
+  // PassiveScalars *ps = pmb->pscalars;
 
   // return if there are no diffusion to be added
   // if (!(ph->hdif.hydro_diffusion_defined)
-  //     || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
+  // || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   // if (stage <= nstages) {
   //   ps->CalcDiffusionFlux(ph->w, ph->u, ph->flux);

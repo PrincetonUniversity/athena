@@ -23,8 +23,8 @@
 //  \brief Calculate isotropic viscous stress as fluxes
 
 void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
-                                     const AthenaArray<Real> &cons,
-                                     AthenaArray<Real> *visflx) {
+                                    const AthenaArray<Real> &cons,
+                                    AthenaArray<Real> *visflx) {
   const bool f2 = pmb_->pmy_mesh->f2;
   const bool f3 = pmb_->pmy_mesh->f3;
   AthenaArray<Real> &x1flux = visflx[X1DIR];
@@ -464,7 +464,7 @@ void HydroDiffusion::FaceZdz(const int k, const int j, const int il, const int i
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       len(i) = 2.0*prim(IM1,k,j,i)*pco_->dh31vd1(i)/pco_->h31v(i)
-               +    2.0*prim(IM2,k,j,i)*pco_->dh32vd2(j)/pco_->h32v(j)/pco_->h2v(i);
+               + 2.0*prim(IM2,k,j,i)*pco_->dh32vd2(j)/pco_->h32v(j)/pco_->h2v(i);
     }
   }
   return;
@@ -475,8 +475,8 @@ void HydroDiffusion::FaceZdz(const int k, const int j, const int il, const int i
 //  \brief Calculate anisotropic viscous stress as fluxes
 
 void HydroDiffusion::ViscousFluxAniso(const AthenaArray<Real> &prim,
-                                       const AthenaArray<Real> &cons,
-                                       AthenaArray<Real> *visflx) {
+                                      const AthenaArray<Real> &cons,
+                                      AthenaArray<Real> *visflx) {
   return;
 }
 
