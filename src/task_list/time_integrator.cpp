@@ -1293,16 +1293,18 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesScalars(MeshBlock *pmb, int stag
 
 
 TaskStatus TimeIntegratorTaskList::DiffuseScalars(MeshBlock *pmb, int stage) {
-  // PassiveScalars *ps = pmb->pscalars;
+  PassiveScalars *ps = pmb->pscalars;
 
   // return if there are no diffusion to be added
-  // if (!(ph->hdif.hydro_diffusion_defined)
-  // || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
+  if (!(ps->scalar_diffusion_defined))
+    return TaskStatus::next;
 
-  // if (stage <= nstages) {
-  //   ps->CalcDiffusionFlux(ph->w, ph->u, ph->flux);
-  // } else {
-  //   return TaskStatus::fail;
-  // }
+  if (stage <= nstages) {
+    // unlike HydroDiffusion, only 1x passive scalar diffusive process is allowed, so
+    // there is no need for counterpart to wrapper fn HydroDiffusion::CalcDiffusionFlux
+    ps->DiffusiveFluxIso(ps->r, ps->s_flux);
+  } else {
+    return TaskStatus::fail;
+  }
   return TaskStatus::next;
 }
