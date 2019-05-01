@@ -25,15 +25,16 @@
 
 HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
     hydro_diffusion_defined(false),
+    nu_iso{pin->GetOrAddReal("problem", "nu_iso", 0.0)},
+    nu_aniso{pin->GetOrAddReal("problem", "nu_aniso", 0.0)},
+    kappa_iso{}, kappa_aniso{},
     pmy_hydro_(phyd), pmb_(pmy_hydro_->pmy_block), pco_(pmb_->pcoord) {
   int nc1 = pmb_->ncells1, nc2 = pmb_->ncells2, nc3 = pmb_->ncells3;
 
   // Check if viscous process are active
-  nu_iso = pin->GetOrAddReal("problem", "nu_iso", 0.0); // iso viscosity
-  nu_aniso = pin->GetOrAddReal("problem", "nu_aniso", 0.0); // aniso viscosity
   if (nu_iso > 0.0 || nu_aniso  > 0.0) {
     hydro_diffusion_defined = true;
-    // Allocate memory for fluxes.
+    // Allocate memory for fluxes
     visflx[X1DIR].NewAthenaArray(NHYDRO, nc3, nc2, nc1+1);
     visflx[X2DIR].NewAthenaArray(NHYDRO, nc3, nc2+1, nc1);
     visflx[X3DIR].NewAthenaArray(NHYDRO, nc3+1, nc2, nc1);
@@ -56,8 +57,6 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
   }
 
   // Check if thermal conduction is active
-  kappa_iso = 0.0;
-  kappa_aniso = 0.0;
   if (NON_BAROTROPIC_EOS) {
     kappa_iso  = pin->GetOrAddReal("problem", "kappa_iso", 0.0); // iso thermal conduction
     kappa_aniso  = pin->GetOrAddReal("problem", "kappa_aniso", 0.0); // aniso conduction
@@ -86,8 +85,9 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void HydroDiffusion::CalcHydroDiffusionFlux
-//  \brief Calculate diffusion flux for hydro flux
+//! \fn void HydroDiffusion::CalcDiffusionFlux
+//  \brief Wrapper function for calculating local diffusivity coefficients and then
+//  diffusion fluxes (of various flavors) for overall hydro flux.
 
 void HydroDiffusion::CalcDiffusionFlux(const AthenaArray<Real> &prim,
                                        const AthenaArray<Real> &cons,
@@ -109,8 +109,11 @@ void HydroDiffusion::CalcDiffusionFlux(const AthenaArray<Real> &prim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void HydroDiffusion::AddHydroDiffusionEnergyFlux
+//! \fn void HydroDiffusion::AddDiffusionEnergyFlux
 //  \brief Adds only diffusion energy flux to hydro flux
+
+// TODO(felker): completely general operation for any 2x AthenaArray<Real>
+// flux[3]. Replace calls with below "AddDiffusionFlux" on shallow-sliced inputs.
 
 void HydroDiffusion::AddDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
                                             AthenaArray<Real> *flux_des) {
@@ -149,6 +152,9 @@ void HydroDiffusion::AddDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
 //! \fn void HydroDiffusion::AddDiffusionFlux
 //  \brief Adds all componenets of diffusion flux to hydro flux
 
+// TODO(felker): completely general operation for any 2x AthenaArray<Real> flux[3]. Move
+// from this class, and remove "Diffusion" from name.
+
 void HydroDiffusion::AddDiffusionFlux(AthenaArray<Real> *flux_src,
                                       AthenaArray<Real> *flux_des) {
   int size1 = flux_des[X1DIR].GetSize();
@@ -168,7 +174,6 @@ void HydroDiffusion::AddDiffusionFlux(AthenaArray<Real> *flux_src,
     for (int i=0; i<size3; ++i)
       flux_des[X3DIR](i) += flux_src[X3DIR](i);
   }
-
   return;
 }
 
@@ -176,6 +181,9 @@ void HydroDiffusion::AddDiffusionFlux(AthenaArray<Real> *flux_src,
 //----------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::ClearDiffusionFlux
 //  \brief Reset diffusion flux back to zeros
+
+// TODO(felker): completely general operation for any 1x AthenaArray<Real> flux[3]. Move
+// from this class.
 
 void HydroDiffusion::ClearFlux(AthenaArray<Real> *flux) {
   flux[X1DIR].ZeroClear();
@@ -186,7 +194,8 @@ void HydroDiffusion::ClearFlux(AthenaArray<Real> *flux) {
 
 //---------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::SetDiffusivity(Athena<Real> &w, AthenaArray<Real> &bc)
-// Set hydro diffusion coefficients; called in CALC_DIFFUSIVITY in tasklist
+//  Set local hydro diffusion coefficients based on the fluid and magnetic field variables
+//  across the mesh. Called within HydroDiffusion::CalcDiffusionFlux wrapper function.
 
 void HydroDiffusion::SetDiffusivity(AthenaArray<Real> &w, AthenaArray<Real> &bc) {
   int il = pmb_->is - NGHOST; int jl = pmb_->js; int kl = pmb_->ks;

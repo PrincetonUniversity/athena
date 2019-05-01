@@ -56,9 +56,10 @@ class HydroDiffusion {
   // functions
   void CalcDiffusionFlux(const AthenaArray<Real> &p, const AthenaArray<Real> &c,
                               AthenaArray<Real> *flx);
+  // TODO(felker): Rename+move out of this class. Confusing w/ Hydro::AddDiffusionFluxes()
+  // See note in hydro_diffusion.cpp.
   void AddDiffusionFlux(AthenaArray<Real> *flx_src, AthenaArray<Real> *flx_des);
-  void AddDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
-                                   AthenaArray<Real> *flux_des);
+  void AddDiffusionEnergyFlux(AthenaArray<Real> *flux_src, AthenaArray<Real> *flux_des);
   void ClearFlux(AthenaArray<Real> *flx);
   void SetDiffusivity(AthenaArray<Real> &w, AthenaArray<Real> &bc);
   void NewDiffusionDt(Real &dt_vis, Real &dt_cnd);
