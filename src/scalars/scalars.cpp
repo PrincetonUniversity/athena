@@ -112,9 +112,9 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   }
 
   if (scalar_diffusion_defined) {
-    diffusion_flx[X1DIR].NewAthenaArray(nc3, nc2, nc1+1);
-    diffusion_flx[X2DIR].NewAthenaArray(nc3, nc2+1, nc1);
-    diffusion_flx[X3DIR].NewAthenaArray(nc3+1, nc2, nc1);
+    diffusion_flx[X1DIR].NewAthenaArray(NSCALARS, nc3, nc2, nc1+1);
+    diffusion_flx[X2DIR].NewAthenaArray(NSCALARS, nc3, nc2+1, nc1);
+    diffusion_flx[X3DIR].NewAthenaArray(NSCALARS, nc3+1, nc2, nc1);
     //nu_scalar.NewAthenaArray(2, nc3, nc2, nc1);
   }
 }
