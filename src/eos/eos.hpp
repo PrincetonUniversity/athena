@@ -158,7 +158,7 @@ class EquationOfState {
   EosTable* ptable; // pointer to EOS table data
 #if GENERAL_EOS
   Real GetGamma();
-#else // not EOS_TABLE_ENABLED
+#else // not GENERAL_EOS
   Real GetGamma() const {return gamma_;}
 #endif
 
@@ -174,6 +174,9 @@ class EquationOfState {
   Real gamma_max_;                       // maximum Lorentz factor
   Real rho_min_, rho_pow_;               // variables to control power-law denity floor
   Real pgas_min_, pgas_pow_;             // variables to control power-law pressure floor
+  Real rho_unit_, inv_rho_unit_;         // physical unit/sim unit for mass density
+  Real egas_unit_, inv_egas_unit_;       // physical unit/sim unit for energy density
+  Real vsqr_unit_, inv_vsqr_unit_;       // physical unit/sim unit for speed^2
   AthenaArray<Real> g_, g_inv_;          // metric and its inverse, used in GR
   AthenaArray<bool> fixed_, success_;    // flags for problems, used in GR
   AthenaArray<Real> normal_dd_;          // normal-frame densities, used in GR MHD

@@ -40,7 +40,14 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
   ptable{pmb->pmy_mesh->peos_table},
   pmy_block_{pmb},
   gamma_{pin->GetOrAddReal("hydro", "gamma", 2.)},
-  density_floor_ {pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))} {
+  density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))},
+  rho_unit_{pin->GetOrAddReal("hydro", "eos_rho_unit", 1.0)},
+  inv_rho_unit_{1.0/rho_unit_},
+  egas_unit_{pin->GetOrAddReal("hydro", "eos_egas_unit", 1.0)},
+  inv_egas_unit_{1.0/egas_unit_},
+  vsqr_unit_{egas_unit_/rho_unit_},
+  inv_vsqr_unit_{1.0/vsqr_unit_} {
+
   if (pin->DoesParameterExist("hydro", "efloor")) {
     energy_floor_ = pin->GetReal("hydro", "efloor");
     pressure_floor_ = energy_floor_*(pin->GetOrAddReal("hydro", "gamma", 2.) - 1.);

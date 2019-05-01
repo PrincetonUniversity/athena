@@ -28,7 +28,7 @@
 
 namespace {
 const Real float_eps = std::numeric_limits<float>::epsilon();
-const Real my_1pe = 1.0 + float_eps;
+const Real float_1pe = 1.0 + float_eps;
 
 //----------------------------------------------------------------------------------------
 //! \fn Real x_(Real rho, Real T) {
@@ -134,35 +134,43 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
 //! \fn Real EquationOfState::RiemannAsq(Real rho, Real hint)
 //  \brief Return adiabatic sound speed squared for use in Riemann solver.
 Real EquationOfState::RiemannAsq(Real rho, Real hint) {
+  rho *= rho_unit_;
+  hint *= vsqr_unit_;
   Real T = invert(*h_of_rho_T, rho, hint, 0.2*std::max(hint - 1.0, 0.1*hint),
-                  my_1pe*0.4*hint);
-  return asq_(rho, T);
+                  float_1pe*0.4*hint);
+  return asq_(rho, T) * inv_vsqr_unit_;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
 //  \brief Return gas pressure
 Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
+  rho *= rho_unit_;
+  egas *= egas_unit_;
   Real es = egas / rho;
   Real T = invert(*e_of_rho_T, rho, egas, std::max(es - 1.0, 0.1*es)/3.0,
-                  my_1pe*2.0*es/3.0);
-  return P_of_rho_T(rho, T);
+                  float_1pe*2.0*es/3.0);
+  return P_of_rho_T(rho, T) * inv_egas_unit_;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
 //  \brief Return internal energy density
 Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
+  rho *= rho_unit_;
+  pres *= egas_unit_;
   Real ps = pres / rho;
-  Real T = invert(*P_of_rho_T, rho, pres, 0.5*ps, my_1pe*ps);
-  return e_of_rho_T(rho, T);
+  Real T = invert(*P_of_rho_T, rho, pres, 0.5*ps, float_1pe*ps);
+  return e_of_rho_T(rho, T) * inv_egas_unit_;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
 //  \brief Return adiabatic sound speed squared
 Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
+  rho *= rho_unit_;
+  pres *= egas_unit_;
   Real ps = pres / rho;
-  Real T = invert(*P_of_rho_T, rho, pres, 0.5*ps, my_1pe*ps);
-  return asq_(rho, T);
+  Real T = invert(*P_of_rho_T, rho, pres, 0.5*ps, float_1pe*ps);
+  return asq_(rho, T) * inv_vsqr_unit_;
 }

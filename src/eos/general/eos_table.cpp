@@ -55,6 +55,6 @@ Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
 //         Riemann solver.
 Real EquationOfState::RiemannAsq(Real rho, Real hint) {
   return std::pow(static_cast<Real>(10.0),
-                  ptable->table.interpolate(3, std::log10(hint*ptable->hUnit),
-                                            std::log10(rho*ptable->rhoUnit))) * hint;
+                  ptable->table.interpolate(3, std::log10(hint*vsqr_unit_),
+                                            std::log10(rho*rho_unit_))) * hint;
 }
