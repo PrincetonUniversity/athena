@@ -1028,12 +1028,12 @@ void MeshRefinement::CheckRefinementCondition() {
 int MeshRefinement::AddToRefinement(AthenaArray<Real> *pvar_cc,
                                      AthenaArray<Real> *pcoarse_cc) {
   pvars_cc_.push_back(std::make_tuple(pvar_cc, pcoarse_cc));
-  return pvars_cc_.size() - 1;
+  return static_cast<int>(pvars_cc_.size() - 1);
 }
 
 int MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) {
   pvars_fc_.push_back(std::make_tuple(pvar_fc, pcoarse_fc));
-  return pvars_fc_.size() - 1;
+  return static_cast<int>(pvars_fc_.size() - 1);
 }
 
 // Currently, only called in 2x functions in bvals_refine.cpp:
