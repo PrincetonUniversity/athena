@@ -1302,7 +1302,7 @@ TaskStatus TimeIntegratorTaskList::DiffuseScalars(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     // unlike HydroDiffusion, only 1x passive scalar diffusive process is allowed, so
     // there is no need for counterpart to wrapper fn HydroDiffusion::CalcDiffusionFlux
-    ps->DiffusiveFluxIso(ps->r, ph->w, ps->s_flux);
+    ps->DiffusiveFluxIso(ps->r, ph->w, ps->diffusion_flx);
   } else {
     return TaskStatus::fail;
   }
