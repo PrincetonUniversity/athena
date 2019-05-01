@@ -38,7 +38,7 @@
 // \brief calculate the minimum timestep within a MeshBlock
 
 void Hydro::NewBlockTimeStep() {
-  MeshBlock *pmb=pmy_block;
+  MeshBlock *pmb = pmy_block;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;
@@ -119,7 +119,7 @@ void Hydro::NewBlockTimeStep() {
   // calculate the timestep limited by the diffusion process
   if (hdif.hydro_diffusion_defined) {
     Real mindt_vis, mindt_cnd;
-    hdif.NewHydroDiffusionDt(mindt_vis, mindt_cnd);
+    hdif.NewDiffusionDt(mindt_vis, mindt_cnd);
     min_dt_diff = std::min(min_dt_diff, mindt_vis);
     min_dt_diff = std::min(min_dt_diff, mindt_cnd);
   } // hydro diffusion
@@ -127,7 +127,7 @@ void Hydro::NewBlockTimeStep() {
   if (MAGNETIC_FIELDS_ENABLED &&
       pmb->pfield->fdif.field_diffusion_defined) {
     Real mindt_oa, mindt_h;
-    pmb->pfield->fdif.NewFieldDiffusionDt(mindt_oa, mindt_h);
+    pmb->pfield->fdif.NewDiffusionDt(mindt_oa, mindt_h);
     min_dt_diff = std::min(min_dt_diff, mindt_oa);
     min_dt_diff = std::min(min_dt_diff, mindt_h);
   } // field diffusion

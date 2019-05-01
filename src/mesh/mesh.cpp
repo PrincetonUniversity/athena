@@ -1461,10 +1461,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; ph = pmb->phydro, pf = pmb->pfield;
         if (ph->hdif.hydro_diffusion_defined)
-          ph->hdif.SetHydroDiffusivity(ph->w, pf->bcc);
+          ph->hdif.SetDiffusivity(ph->w, pf->bcc);
         if (MAGNETIC_FIELDS_ENABLED) {
           if (pf->fdif.field_diffusion_defined)
-            pf->fdif.SetFieldDiffusivity(ph->w, pf->bcc);
+            pf->fdif.SetDiffusivity(ph->w, pf->bcc);
         }
       }
 
