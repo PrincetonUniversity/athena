@@ -883,7 +883,7 @@ TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
       || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
-    ph->hdif.CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
+    ph->hdif.CalcDiffusionFlux(ph->w, ph->u, ph->flux);
   } else {
     return TaskStatus::fail;
   }
@@ -900,7 +900,7 @@ TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
   if (!(pf->fdif.field_diffusion_defined)) return TaskStatus::next;
 
   if (stage <= nstages) {
-    pf->fdif.CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
+    pf->fdif.CalcFieldDiffusionEMF(pf->b, pf->bcc, pf->e);
   } else {
     return TaskStatus::fail;
   }

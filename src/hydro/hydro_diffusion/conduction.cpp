@@ -20,9 +20,11 @@
 //---------------------------------------------------------------------------------------
 // Calculate isotropic thermal conduction
 
-void HydroDiffusion::ThermalFlux_iso(
+void HydroDiffusion::ThermalFluxIso(
     const AthenaArray<Real> &prim,
     const AthenaArray<Real> &cons, AthenaArray<Real> *cndflx) {
+  const bool f2 = pmb_->pmy_mesh->f2;
+  const bool f3 = pmb_->pmy_mesh->f3;
   AthenaArray<Real> &x1flux = cndflx[X1DIR];
   int il, iu, jl, ju, kl, ku;
   int is = pmb_->is; int js = pmb_->js; int ks = pmb_->ks;
@@ -32,8 +34,8 @@ void HydroDiffusion::ThermalFlux_iso(
   // i-direction
   jl = js, ju = je, kl = ks, ku = ke;
   if (MAGNETIC_FIELDS_ENABLED) {
-    if (pmb_->block_size.nx2 > 1) {
-      if (pmb_->block_size.nx3 == 1) // 2D
+    if (f2) {
+      if (!f3) // 2D
         jl = js-1, ju = je+1, kl = ks, ku = ke;
       else // 3D
         jl = js-1, ju = je+1, kl = ks-1, ku = ke+1;
@@ -43,8 +45,8 @@ void HydroDiffusion::ThermalFlux_iso(
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
-        kappaf = 0.5*(kappa(DiffProcess::iso,k,j,i)+kappa(DiffProcess::iso,k,j,i-1));
-        denf = 0.5*(prim(IDN,k,j,i)+prim(IDN,k,j,i-1));
+        kappaf = 0.5*(kappa(DiffProcess::iso,k,j,i) + kappa(DiffProcess::iso,k,j,i-1));
+        denf = 0.5*(prim(IDN,k,j,i) + prim(IDN,k,j,i-1));
         dTdx = (prim(IPR,k,j,i)/prim(IDN,k,j,i) - prim(IPR,k,j,i-1)/
                 prim(IDN,k,j,i-1))/pco_->dx1v(i-1);
         x1flux(k,j,i) -= kappaf*denf*dTdx;
@@ -55,12 +57,12 @@ void HydroDiffusion::ThermalFlux_iso(
   // j-direction
   il = is, iu = ie, kl = ks, ku = ke;
   if (MAGNETIC_FIELDS_ENABLED) {
-    if (pmb_->block_size.nx3  ==  1) // 2D
+    if (!f3) // 2D
       il = is-1, iu = ie+1, kl = ks, ku = ke;
     else // 3D
       il = is-1, iu = ie+1, kl = ks-1, ku = ke+1;
   }
-  if (pmb_->block_size.nx2 > 1) { // 2D or 3D
+  if (f2) { // 2D or 3D
     AthenaArray<Real> &x2flux = cndflx[X2DIR];
     for (int k=kl; k<=ku; ++k) {
       for (int j=js; j<=je+1; ++j) {
@@ -79,7 +81,7 @@ void HydroDiffusion::ThermalFlux_iso(
   // k-direction
   il = is, iu = ie, jl = js, ju = je;
   if (MAGNETIC_FIELDS_ENABLED) {
-    if (pmb_->block_size.nx2 > 1) // 2D or 3D
+    if (f2) // 2D or 3D
       il = is-1, iu = ie+1, jl = js-1, ju = je+1;
     else // 1D
       il = is-1, iu = ie+1;
@@ -107,7 +109,7 @@ void HydroDiffusion::ThermalFlux_iso(
 //---------------------------------------------------------------------------------------
 // Calculate anisotropic thermal conduction
 
-void HydroDiffusion::ThermalFlux_aniso(
+void HydroDiffusion::ThermalFluxAniso(
     const AthenaArray<Real> &p,
     const AthenaArray<Real> &c, AthenaArray<Real> *flx) {
   return;
