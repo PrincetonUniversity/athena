@@ -1140,7 +1140,6 @@ TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
     if (NSCALARS > 0)
       ps->sbvar.var_cc = &(ps->r);
-
     pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
   } else {
     return TaskStatus::fail;

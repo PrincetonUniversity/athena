@@ -176,7 +176,8 @@ void TurbulenceDriver::Generate() {
 
   for (int nv=0; nv<3; nv++) {
     AthenaArray<Real> &dv = vel[nv], dv_mb;
-    pfb->Execute(plan, fv_[nv], pfb->out_);
+    for (int kidx=0; kidx<pfb->cnt_; kidx++) pfb->in_[kidx] = fv_[nv][kidx];
+    pfb->Execute(plan);
     for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
       MeshBlock *pmb=pm->FindMeshBlock(igid);
       if (pmb != nullptr) {
@@ -460,7 +461,16 @@ void TurbulenceDriver::Project(std::complex<Real> **fv, std::complex<Real> **fv_
         Real kmag = std::sqrt(kx*kx+ky*ky+kz*kz);
 
         std::int64_t kidx = pfb->GetIndex(i, j, k, idx);
-        if (kmag != 0.0) {
+        std::int64_t gidx = pfb->GetGlobalIndex(i,j,k);
+        if (gidx == 0.0) {
+          fv_co[0][kidx] = std::complex<Real>(0,0);
+          fv_co[1][kidx] = std::complex<Real>(0,0);
+          fv_co[2][kidx] = std::complex<Real>(0,0);
+
+          fv_sh[0][kidx] = std::complex<Real>(0,0);
+          fv_sh[1][kidx] = std::complex<Real>(0,0);
+          fv_sh[2][kidx] = std::complex<Real>(0,0);
+        } else {
           kx /= kmag;
           ky /= kmag;
           kz /= kmag;

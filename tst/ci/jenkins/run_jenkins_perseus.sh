@@ -65,6 +65,8 @@ time python -u ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_wa
 time python -u ./run_tests.py pgen/hdf5_reader_serial --coverage="${lcov_capture_cmd}" --silent
 time python -u ./run_tests.py grav --mpirun=srun --mpirun_opts=--job-name='GCC grav/jeans_3d' \
      --coverage="${lcov_capture_cmd}" --silent
+time python -u ./run_tests.py turb --mpirun=srun --mpirun_opts=--job-name='GCC turb/' \
+     --coverage="${lcov_capture_cmd}" --silent
 time python -u ./run_tests.py mpi --mpirun=srun --mpirun_opts=--job-name='GCC mpi/mpi_linwave' \
      --coverage="${lcov_capture_cmd}" --silent
 time python -u ./run_tests.py omp --coverage="${lcov_capture_cmd}" --silent
@@ -178,6 +180,7 @@ module list
 time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpc --config=--cflag="$(../ci/set_warning_cflag.sh icpc)"
 time python -u ./run_tests.py pgen/hdf5_reader_serial --silent
 time python -u ./run_tests.py grav --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC grav/jeans_3d' --silent
+time python -u ./run_tests.py turb --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC turb/' --silent
 time python -u ./run_tests.py mpi --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
 time python -u ./run_tests.py omp --config=--cxx=icpc --silent
 timeout --signal=TERM 60m time python -u ./run_tests.py hybrid --config=--cxx=icpc \
