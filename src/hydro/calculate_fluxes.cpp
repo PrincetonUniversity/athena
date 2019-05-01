@@ -389,19 +389,19 @@ void Hydro::CalculateFluxes_STS() {
 }
 
 void Hydro::AddDiffusionFluxes() {
-  MeshBlock *pmb = pmy_block;
+  Field *pf = pmy_block->pfield;
   // add diffusion fluxes
   if (hdif.hydro_diffusion_defined) {
     if (hdif.nu_iso > 0.0 || hdif.nu_aniso > 0.0)
-      hdif.AddHydroDiffusionFlux(hdif.visflx,flux);
+      hdif.AddDiffusionFlux(hdif.visflx,flux);
     if (NON_BAROTROPIC_EOS) {
       if (hdif.kappa_iso > 0.0 || hdif.kappa_aniso > 0.0)
-        hdif.AddHydroDiffusionEnergyFlux(hdif.cndflx,flux);
+        hdif.AddDiffusionEnergyFlux(hdif.cndflx,flux);
     }
   }
   if (MAGNETIC_FIELDS_ENABLED && NON_BAROTROPIC_EOS) {
-    if (pmb->pfield->fdif.field_diffusion_defined)
-      pmb->pfield->fdif.AddPoyntingFlux(pmb->pfield->fdif.pflux);
+    if (pf->fdif.field_diffusion_defined)
+      pf->fdif.AddPoyntingFlux(pf->fdif.pflux);
   }
   return;
 }
