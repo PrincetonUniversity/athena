@@ -23,7 +23,8 @@ namespace GaussLegendre {
 // For n=2,4,16,20,32,40,48, refer to:
 // Davis, P., & Rabinowitz, P. (1956). Abscissas and Weights for Gaussian Quadratures of
 // High Order. Journal of Research of the National Bureau of Standards, 56(1).
-
+static constexpr Real weight_n0[] = {0.0};
+static constexpr Real weight_n1[] = {0.0};
 static constexpr Real weight_n2[] = {
   1.0000000000000000000000,
   1.0000000000000000000000,
@@ -628,6 +629,10 @@ static constexpr Real weight_n64[] = {
   0.0111681394601311288185, 0.0088467598263639477230, 0.0065044579689783628561,
   0.0041470332605624676352, 0.0017832807216964329472,
 };
+
+
+static constexpr Real abscissa_n0[] = {-100.};
+static constexpr Real abscissa_n1[] = {-100.};
 static constexpr Real abscissa_n2[] = {
   0.5773502691896257645091
 };
@@ -1116,6 +1121,37 @@ static constexpr Real abscissa_n64[] = {
   0.9295691721319395758214, 0.9464113748584028160624, 0.9610087996520537189186,
   0.9733268277899109637418, 0.9833362538846259569312, 0.9910133714767443207393,
   0.9963401167719552793469, 0.9993050417357721394569
+};
+
+struct Quadrature {
+  const Real *abscissa;
+  const Real *weight;
+};
+
+static const Quadrature gl_order[65] = {
+  // n=0, n=1 are both invalid choices:
+  {abscissa_n0, weight_n0}, {abscissa_n1, weight_n1},
+  {abscissa_n2, weight_n2}, {abscissa_n3, weight_n3}, {abscissa_n4, weight_n4},
+  {abscissa_n5, weight_n5}, {abscissa_n6, weight_n6}, {abscissa_n7, weight_n7},
+  {abscissa_n8, weight_n8}, {abscissa_n9, weight_n9}, {abscissa_n10, weight_n10},
+  {abscissa_n11, weight_n11}, {abscissa_n12, weight_n12}, {abscissa_n13, weight_n13},
+  {abscissa_n14, weight_n14}, {abscissa_n15, weight_n15}, {abscissa_n16, weight_n16},
+  {abscissa_n17, weight_n17}, {abscissa_n18, weight_n18}, {abscissa_n19, weight_n19},
+  {abscissa_n20, weight_n20}, {abscissa_n21, weight_n21}, {abscissa_n22, weight_n22},
+  {abscissa_n23, weight_n23}, {abscissa_n24, weight_n24}, {abscissa_n25, weight_n25},
+  {abscissa_n26, weight_n26}, {abscissa_n27, weight_n27}, {abscissa_n28, weight_n28},
+  {abscissa_n29, weight_n29}, {abscissa_n30, weight_n30}, {abscissa_n31, weight_n31},
+  {abscissa_n32, weight_n32}, {abscissa_n33, weight_n33}, {abscissa_n34, weight_n34},
+  {abscissa_n35, weight_n35}, {abscissa_n36, weight_n36}, {abscissa_n37, weight_n37},
+  {abscissa_n38, weight_n38}, {abscissa_n39, weight_n39}, {abscissa_n40, weight_n40},
+  {abscissa_n41, weight_n41}, {abscissa_n42, weight_n42}, {abscissa_n43, weight_n43},
+  {abscissa_n44, weight_n44}, {abscissa_n45, weight_n45}, {abscissa_n46, weight_n46},
+  {abscissa_n47, weight_n47}, {abscissa_n48, weight_n48}, {abscissa_n49, weight_n49},
+  {abscissa_n50, weight_n50}, {abscissa_n51, weight_n51}, {abscissa_n52, weight_n52},
+  {abscissa_n53, weight_n53}, {abscissa_n54, weight_n54}, {abscissa_n55, weight_n55},
+  {abscissa_n56, weight_n56}, {abscissa_n57, weight_n57}, {abscissa_n58, weight_n58},
+  {abscissa_n59, weight_n59}, {abscissa_n60, weight_n60}, {abscissa_n61, weight_n61},
+  {abscissa_n62, weight_n62}, {abscissa_n63, weight_n63}, {abscissa_n64, weight_n64},
 };
 
 Real integrate(const int n, Real (*f)(Real), Real x1l, Real x1u) {
