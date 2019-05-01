@@ -29,7 +29,10 @@ def run(**kwargs):
     # L-going fast wave (set by default in input)
     arguments = ['time/ncycle_out=10',
                  'time/cfl_number=0.3',  # default =0.4, but tolerances measured w/ 0.3
-                 'output1/dt=-1']
+                 'output1/dt=-1',
+                 'output2/file_type=vtk',
+                 'output2/dt=-1',
+                 ]
     athena.run('mhd/athinput.linear_wave2d_amr', arguments)
 
 
