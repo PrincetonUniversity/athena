@@ -62,4 +62,5 @@ amp    = 0.01            # amplitude of initial vy perturbation
 vflow  = 1.0             # background vx
 drho_rho0 = 0.0          # stratified or unstratified problem (delta rho / rho0)
 nu_iso    = 2e-5         # isotropic viscosity coefficient
+nu_scalar_iso = 2e-5     # isotropic passive scalar diffusion coefficient
 kappa_iso = 2e-5         # isotropic thermal conduction coefficient
