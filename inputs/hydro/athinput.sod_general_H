@@ -64,9 +64,15 @@ Tl = 0.15               # temperature
 ul = 0.0                # X-velocity
 vl = 0.0                # Y-velocity
 wl = 0.0                # Z-velocity
+bxl = 0.0               # X-magnetic field
+byl = 0.0               # Y-magnetic field
+bzl = 0.0               # Z-magnetic field
 
 dr = 1.25e-8            # density on right
 Tr = 0.062              # temperature
 ur = 0.0                # X-velocity
 vr = 0.0                # Y-velocity
 wr = 0.0                # Z-velocity
+bxr = 0.0               # X-magnetic field
+byr = 0.0               # Y-magnetic field
+bzr = 0.0               # Z-magnetic field
