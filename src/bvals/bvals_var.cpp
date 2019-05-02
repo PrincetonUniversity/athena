@@ -30,12 +30,9 @@
 
 // constructor
 
-BoundaryVariable::BoundaryVariable(MeshBlock *pmb) {
-  pmy_block_ = pmb;
-  pbval_ = pmb->pbval;
-  pmy_mesh_ = pmb->pmy_mesh;
-  bvar_index = 0;
-}
+BoundaryVariable::BoundaryVariable(MeshBlock *pmb) : bvar_index(), pmy_block_(pmb),
+                                                     pmy_mesh_(pmb->pmy_mesh),
+                                                     pbval_(pmb->pbval) {}
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type)

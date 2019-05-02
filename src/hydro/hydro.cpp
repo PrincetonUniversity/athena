@@ -73,7 +73,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
 
   // "Enroll" in S/AMR by adding to vector of tuples of pointers in MeshRefinement class
   if (pm->multilevel) {
-    pmy_block->pmr->AddToRefinement(&u, &coarse_cons_);
+    refinement_idx = pmy_block->pmr->AddToRefinement(&u, &coarse_cons_);
   }
 
   // enroll HydroBoundaryVariable object
@@ -101,6 +101,11 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
   cell_volume_.NewAthenaArray(nc1);
   dflx_.NewAthenaArray(NHYDRO, nc1);
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) { // only used in (SR/GR)MHD
+    if (!GENERAL_RELATIVITY) {
+      prim_field_.NewAthenaArray(NWAVE, 1, 1, nc1);
+      lambdas_p_.NewAthenaArray(nc1);
+      lambdas_m_.NewAthenaArray(nc1);
+    }
     bb_normal_.NewAthenaArray(nc1);
     lambdas_p_l_.NewAthenaArray(nc1);
     lambdas_m_l_.NewAthenaArray(nc1);

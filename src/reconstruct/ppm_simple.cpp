@@ -285,13 +285,6 @@ void Reconstruction::PiecewiseParabolicX1(
       qr(n,i  ) = qr_imh(n,i);
     }
   }
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // Reapply EOS floors to both L/R reconstructed primitive states
-    // TODO(felker): check that fused loop with =nu redundant application is slower
-    // pmy_block_->peos->ApplyPrimitiveFloors(ql, k, j, i+1);
-    // pmy_block_->peos->ApplyPrimitiveFloors(qr, k, j, i);
-  }
   return;
 }
 
@@ -536,12 +529,6 @@ void Reconstruction::PiecewiseParabolicX2(
       qr(n,i) = qr_jmh(n,i);
     }
   }
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // Reapply EOS floors to both L/R reconstructed primitive states
-    // pmy_block_->peos->ApplyPrimitiveFloors(ql, k, j, i);
-    // pmy_block_->peos->ApplyPrimitiveFloors(qr, k, j, i);
-  }
   return;
 }
 
@@ -785,12 +772,6 @@ void Reconstruction::PiecewiseParabolicX3(
       ql(n,i) = ql_kph(n,i);
       qr(n,i) = qr_kmh(n,i);
     }
-  }
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // Reapply EOS floors to both L/R reconstructed primitive states
-    // pmy_block_->peos->ApplyPrimitiveFloors(ql, k, j, i);
-    // pmy_block_->peos->ApplyPrimitiveFloors(qr, k, j, i);
   }
   return;
 }

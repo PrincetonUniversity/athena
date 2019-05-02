@@ -153,7 +153,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
   if (NSCALARS > 0) {
-    // if (this->grav_block)
+    // if (this->scalars_block)
     pscalars = new PassiveScalars(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
@@ -212,26 +212,19 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
 
   if (pm->multilevel) {
-    cnghost=(NGHOST+1)/2+1;
-    cis=NGHOST; cie=cis+block_size.nx1/2-1;
-    cjs=cje=cks=cke=0;
-    if (block_size.nx2>1) // 2D or 3D
-      cjs=NGHOST, cje=cjs+block_size.nx2/2-1;
-    if (block_size.nx3>1) // 3D
-      cks=NGHOST, cke=cks+block_size.nx3/2-1;
+    cnghost = (NGHOST + 1)/2 + 1;
+    cis = NGHOST; cie = cis + block_size.nx1/2 - 1;
+    cjs = cje = cks = cke = 0;
+    if (pmy_mesh->f2) // 2D or 3D
+      cjs = NGHOST, cje = cjs + block_size.nx2/2 - 1;
+    if (pmy_mesh->f3) // 3D
+      cks = NGHOST, cke = cks + block_size.nx3/2 - 1;
   }
 
   // (re-)create mesh-related objects in MeshBlock
 
   // Boundary
-  pbval  = new BoundaryValues(this, input_bcs, pin);
-
-  // (re-)create physics-related objects in MeshBlock
-  //phydro = new Hydro(this, pin);
-  //if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
-  //peos = new EquationOfState(this, pin);
-
-  if (SELF_GRAVITY_ENABLED) pgrav = new Gravity(this, pin);
+  pbval = new BoundaryValues(this, input_bcs, pin);
 
   // Coordinates
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
@@ -256,15 +249,43 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if (pm->multilevel) pmr = new MeshRefinement(this, pin);
 
   // (re-)create physics-related objects in MeshBlock
+
+  // if (FLUID_ENABLED) {
+  // if (this->hydro_block)
   phydro = new Hydro(this, pin);
-  if (MAGNETIC_FIELDS_ENABLED) pfield = new Field(this, pin);
+  // } else
+  // }
+  // Regardless, advance MeshBlock's local counter (initialized to bvars_next_phys_id=1)
+  // Greedy reservation of phys IDs (only 1 of 2 needed for Hydro if multilevel==false)
+  pbval->AdvanceCounterPhysID(HydroBoundaryVariable::max_phys_id);
+  //  }
+  if (MAGNETIC_FIELDS_ENABLED) {
+    // if (this->field_block)
+    pfield = new Field(this, pin);
+    pbval->AdvanceCounterPhysID(FaceCenteredBoundaryVariable::max_phys_id);
+  }
+  if (SELF_GRAVITY_ENABLED) {
+    // if (this->grav_block)
+    pgrav = new Gravity(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
+
+  if (NSCALARS > 0) {
+    // if (this->scalars_block)
+    pscalars = new PassiveScalars(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
+
   peos = new EquationOfState(this, pin);
+
   InitUserMeshBlockData(pin);
 
-  std::size_t os=0;
+  std::size_t os = 0;
+  // NEW_OUTPUT_TYPES:
+
   // load hydro and field data
   std::memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
-  // load it into the half-step arrays too
+  // load it into the other memory register(s) too
   std::memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
   os += phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
@@ -285,10 +306,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     os += pfield->b.x3f.GetSizeInBytes();
   }
 
-  // NEW_PHYSICS: add load of new physics from restart file here
-  if (SELF_GRAVITY_ENABLED >= 1) {
-    std::memcpy(pgrav->phi.data(), &(mbdata[os]), pgrav->phi.GetSizeInBytes());
-    os += pgrav->phi.GetSizeInBytes();
+  // (conserved variable) Passive scalars:
+  for (int n=0; n<NSCALARS; n++) {
+    std::memcpy(pscalars->s.data(), &(mbdata[os]), pscalars->s.GetSizeInBytes());
+    // load it into the other memory register(s) too
+    std::memcpy(pscalars->s1.data(), &(mbdata[os]), pscalars->s1.GetSizeInBytes());
+    os += pscalars->s.GetSizeInBytes();
   }
 
   // load user MeshBlock data
@@ -399,7 +422,7 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
     ATHENA_ERROR(msg);
     return;
   }
-  user_out_var_names_[n]=name;
+  user_out_var_names_[n] = name;
   return;
 }
 
@@ -458,9 +481,9 @@ void MeshBlock::ResetTimeMeasurement() {
 void MeshBlock::StartTimeMeasurement() {
   if (pmy_mesh->lb_automatic_) {
 #ifdef OPENMP_PARALLEL
-    lb_time_=omp_get_wtime();
+    lb_time_ = omp_get_wtime();
 #else
-    lb_time_=static_cast<double>(clock());
+    lb_time_ = static_cast<double>(clock());
 #endif
   }
 }
@@ -472,11 +495,11 @@ void MeshBlock::StartTimeMeasurement() {
 void MeshBlock::StopTimeMeasurement() {
   if (pmy_mesh->lb_automatic_) {
 #ifdef OPENMP_PARALLEL
-    lb_time_=omp_get_wtime()-lb_time_;
+    lb_time_ = omp_get_wtime() - lb_time_;
 #else
-    lb_time_=static_cast<double>(clock())-lb_time_;
+    lb_time_ = static_cast<double>(clock()) - lb_time_;
 #endif
-    cost_+=lb_time_;
+    cost_ += lb_time_;
   }
 }
 

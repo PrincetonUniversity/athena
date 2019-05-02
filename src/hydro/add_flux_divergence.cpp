@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file add_flux_divergence.cpp
-//  \brief Applies divergence of the fluxes, including geometric "source terms" added
-//         by a function implemented in each Coordinate class.
+//  \brief Computes divergence of the Hydro fluxes and adds that to a conserved variable
+// register
 
 // C headers
 

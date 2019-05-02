@@ -24,9 +24,9 @@
 HydroBoundaryVariable::HydroBoundaryVariable(
     MeshBlock *pmb, AthenaArray<Real> *var_hydro, AthenaArray<Real> *coarse_var,
     AthenaArray<Real> *var_flux,
-    HydroBoundaryQuantity hydro_type)
-    : CellCenteredBoundaryVariable(pmb, var_hydro, coarse_var, var_flux) {
-  hydro_type_ = hydro_type;
+    HydroBoundaryQuantity hydro_type) :
+    CellCenteredBoundaryVariable(pmb, var_hydro, coarse_var, var_flux),
+    hydro_type_(hydro_type) {
   flip_across_pole_ = flip_across_pole_hydro;
 }
 

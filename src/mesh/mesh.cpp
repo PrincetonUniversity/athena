@@ -1318,8 +1318,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp parallel num_threads(nthreads)
     {
       MeshBlock *pmb;
-      Hydro *phydro;
-      Field *pfield;
       BoundaryValues *pbval;
 
       // prepare to receive conserved variables
@@ -1341,7 +1339,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pmb->phydro->hbvar.SendBoundaryBuffers();
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.SendBoundaryBuffers();
-        // and passive scalars:
+        // and (conserved variable) passive scalar masses:
         if (NSCALARS > 0)
           pmb->pscalars->sbvar.SendBoundaryBuffers();
       }
@@ -1350,17 +1348,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
-        pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
-                                               HydroBoundaryQuantity::cons);
         pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
         if (NSCALARS > 0)
           pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
-        // KGF: disable shearing box bvals/ calls
-        // send and receive shearing box boundary conditions
         if (SHEARING_BOX) {
-          pmb->phydro->hbvar.SendShearingBoxBoundaryBuffersForInit();
+          pmb->phydro->hbvar.AddHydroShearForInit();
         }
         pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
       }
@@ -1379,7 +1373,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         for (int i=0; i<nmb; ++i) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
           pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
-                                                 HydroBoundaryQuantity::prim);
+                                               HydroBoundaryQuantity::prim);
           pmb->phydro->hbvar.SendBoundaryBuffers();
         }
 
@@ -1387,12 +1381,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
         for (int i=0; i<nmb; ++i) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
-          pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
-                                                 HydroBoundaryQuantity::prim);
           pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
           pbval->ClearBoundary(BoundaryCommSubset::gr_amr);
           pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
-                                                 HydroBoundaryQuantity::cons);
+                                               HydroBoundaryQuantity::cons);
         }
       } // multilevel
 
@@ -1403,10 +1395,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         CorrectMidpointInitialCondition(pmb_array, nmb);
 
       // Now do prolongation, compute primitives, apply BCs
-#pragma omp for private(pmb,pbval,phydro,pfield)
+      Hydro *ph;
+      Field *pf;
+      PassiveScalars *ps;
+#pragma omp for private(pmb,pbval,ph,pf,ps)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i];
-        pbval = pmb->pbval, phydro = pmb->phydro, pfield = pmb->pfield;
+        pbval = pmb->pbval, ph = pmb->phydro, pf = pmb->pfield, ps = pmb->pscalars;
         if (multilevel)
           pbval->ProlongateBoundaries(time, 0.0);
 
@@ -1423,9 +1418,15 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           if (pbval->nblevel[0][1][1] != -1) kl -= NGHOST;
           if (pbval->nblevel[2][1][1] != -1) ku += NGHOST;
         }
-        pmb->peos->ConservedToPrimitive(phydro->u, phydro->w1, pfield->b,
-                                        phydro->w, pfield->bcc, pmb->pcoord,
+        pmb->peos->ConservedToPrimitive(ph->u, ph->w1, pf->b,
+                                        ph->w, pf->bcc, pmb->pcoord,
                                         il, iu, jl, ju, kl, ku);
+        if (NSCALARS > 0) {
+          // r1/r_old for GR is currently unused:
+          pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->w, ps->r, ps->r,
+                                                       pmb->pcoord,
+                                                       il, iu, jl, ju, kl, ku);
+        }
         // --------------------------
         int order = pmb->precon->xorder;
         if (order == 4) {
@@ -1439,30 +1440,35 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           if (pbval->nblevel[2][1][1] != -1) ku -= 1;
           // for MHD, shrink buffer by 3
           // TODO(felker): add MHD loop limit calculation for 4th order W(U)
-          pmb->peos->ConservedToPrimitiveCellAverage(phydro->u, phydro->w1, pfield->b,
-                                                     phydro->w, pfield->bcc, pmb->pcoord,
+          pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
+                                                     ph->w, pf->bcc, pmb->pcoord,
                                                      il, iu, jl, ju, kl, ku);
         }
         // --------------------------
         // end fourth-order EOS
-        pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
-                                               HydroBoundaryQuantity::prim);
+
+        // Swap Hydro and (possibly) passive scalar quantities in BoundaryVariable
+        // interface from conserved to primitive formulations:
+        ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
+        if (NSCALARS > 0)
+          ps->sbvar.var_cc = &(ps->r);
+
         pbval->ApplyPhysicalBoundaries(time, 0.0);
       }
 
       // Calc initial diffusion coefficients
-#pragma omp for private(pmb,phydro,pfield)
+#pragma omp for private(pmb,ph,pf)
       for (int i=0; i<nmb; ++i) {
-        pmb = pmb_array[i]; phydro = pmb->phydro, pfield = pmb->pfield;
-        if (phydro->hdif.hydro_diffusion_defined)
-          phydro->hdif.SetHydroDiffusivity(phydro->w, pfield->bcc);
+        pmb = pmb_array[i]; ph = pmb->phydro, pf = pmb->pfield;
+        if (ph->hdif.hydro_diffusion_defined)
+          ph->hdif.SetDiffusivity(ph->w, pf->bcc);
         if (MAGNETIC_FIELDS_ENABLED) {
-          if (pfield->fdif.field_diffusion_defined)
-            pfield->fdif.SetFieldDiffusivity(phydro->w, pfield->bcc);
+          if (pf->fdif.field_diffusion_defined)
+            pf->fdif.SetDiffusivity(ph->w, pf->bcc);
         }
       }
 
-      if ((res_flag == 0) && adaptive) {
+      if (!res_flag && adaptive) {
 #pragma omp for
         for (int i=0; i<nmb; ++i) {
           pmb_array[i]->pmr->CheckRefinementCondition();
@@ -1470,7 +1476,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       }
     } // omp parallel
 
-    if ((res_flag == 0) && adaptive) {
+    if (!res_flag && adaptive) {
       iflag = false;
       int onb = nbtotal;
       LoadBalancingAndAdaptiveMeshRefinement(pin);
@@ -1609,12 +1615,12 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
 
 void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb) {
   MeshBlock *pmb;
-  Hydro *phydro;
+  Hydro *ph;
   PassiveScalars *ps;
-#pragma omp for private(pmb, phydro, ps)
+#pragma omp for private(pmb, ph, ps)
   for (int nb=0; nb<nmb; ++nb) {
     pmb = pmb_array[nb];
-    phydro = pmb->phydro;
+    ph = pmb->phydro;
     ps = pmb->pscalars;
 
     // Assume cell-centered analytic value is computed at all real cells, and ghost
@@ -1632,7 +1638,7 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
     delta_cons_.NewAthenaArray(ncells4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
     // Compute and store Laplacian of cell-averaged conserved variables
-    pmb->pcoord->Laplacian(phydro->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
+    pmb->pcoord->Laplacian(ph->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
 
     // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
     // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-center
@@ -1646,7 +1652,7 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
           for (int i=il; i<=iu; ++i) {
             // We do not actually need to store all cell-centered cons. variables,
             // but the ConservedToPrimitivePointwise() implementation operates on 4D
-            phydro->u(n,k,j,i) = phydro->u(n,k,j,i) + C*delta_cons_(n,k,j,i);
+            ph->u(n,k,j,i) = ph->u(n,k,j,i) + C*delta_cons_(n,k,j,i);
           }
         }
       }
@@ -1695,7 +1701,7 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
     pmb->phydro->hbvar.SendBoundaryBuffers();
     if (MAGNETIC_FIELDS_ENABLED)
       pmb->pfield->fbvar.SendBoundaryBuffers();
-    // and passive scalars:
+    // and (conserved variable) passive scalar masses:
     if (NSCALARS > 0)
       pmb->pscalars->sbvar.SendBoundaryBuffers();
   }
@@ -1711,11 +1717,8 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
       pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
     if (NSCALARS > 0)
       pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
-
-    // KGF: disable shearing box bvals/ calls
-    // send and receive shearing box boundary conditions
     if (SHEARING_BOX) {
-      pmb->phydro->hbvar.SendShearingBoxBoundaryBuffersForInit();
+      pmb->phydro->hbvar.AddHydroShearForInit();
     }
     pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
   } // end second exchange of ghost cells

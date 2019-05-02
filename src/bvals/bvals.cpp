@@ -36,6 +36,7 @@
 #include "../mesh/mesh_refinement.hpp"
 #include "../multigrid/multigrid.hpp"
 #include "../parameter_input.hpp"
+#include "../scalars/scalars.hpp"
 #include "../utils/buffer_utils.hpp"
 #include "bvals.hpp"
 
@@ -49,8 +50,9 @@
 // dirs of a MeshBlock
 BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
                                ParameterInput *pin)
-    : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs) {
-  pmy_block_ = pmb;
+    : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs), pmy_block_(pmb),
+      shear_send_neighbor_{}, shear_recv_neighbor_{},
+      shear_send_count_{}, shear_recv_count_{} {
   // Check BC functions for each of the 6 boundaries in turn ---------------------
   for (int i=0; i<6; i++) {
     switch (block_bcs[i]) {
@@ -251,7 +253,7 @@ void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase) {
       msg << "### FATAL ERROR in BoundaryValues::StartReceiving" << std::endl
           << "BoundaryCommSubset::gr_amr was passed as the 'phase' argument while\n"
           << "SHEARING_BOX=1 is enabled. Shearing box calculations are currently\n"
-            << "incompatible with both AMR and GR" << std::endl;
+          << "incompatible with both AMR and GR" << std::endl;
       ATHENA_ERROR(msg);
       break;
   }
@@ -299,16 +301,24 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   // KGF: temporarily hardcode Hydro and Field access for coupling in EOS U(W) + calc bcc
   // and when passed to user-defined boundary function stored in function pointer array
 
+  // KGF: COUPLING OF QUANTITIES (must be manually specified)
   // downcast BoundaryVariable ptrs to known derived class types: RTTI via dynamic_cast
   HydroBoundaryVariable *phbvar =
       dynamic_cast<HydroBoundaryVariable *>(bvars_main_int[0]);
   Hydro *ph = pmb->phydro;
+
+  // TODO(KGF): passing nullptrs (pf) if no MHD (coarse_* no longer in MeshRefinement)
+  // (may be fine to unconditionally directly set to pmb->pfield. See bvals_refine.cpp)
 
   FaceCenteredBoundaryVariable *pfbvar = nullptr;
   Field *pf = nullptr;
   if (MAGNETIC_FIELDS_ENABLED) {
     pf = pmb->pfield;
     pfbvar = dynamic_cast<FaceCenteredBoundaryVariable *>(bvars_main_int[1]);
+  }
+  PassiveScalars *ps = nullptr;
+  if (NSCALARS > 0) {
+    ps = pmb->pscalars;
   }
 
   // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
@@ -324,6 +334,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     }
     pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pco,
                                     pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
+    if (NSCALARS > 0) {
+      pmb->peos->PassiveScalarPrimitiveToConserved(
+          ps->r, ph->w, ps->s, pco, pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
+    }
   }
 
   // Apply boundary function on outer-x1 and update W,bcc (if not periodic)
@@ -339,6 +353,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     }
     pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pco,
                                     pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
+    if (NSCALARS > 0) {
+      pmb->peos->PassiveScalarPrimitiveToConserved(
+          ps->r, ph->w, ps->s, pco, pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
+    }
   }
 
   if (pmb->block_size.nx2 > 1) { // 2D or 3D
@@ -355,6 +373,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
       }
       pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pco,
                                       bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
+      if (NSCALARS > 0) {
+        pmb->peos->PassiveScalarPrimitiveToConserved(
+            ps->r, ph->w, ps->s, pco, bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
+      }
     }
 
     // Apply boundary function on outer-x2 and update W,bcc (if not periodic)
@@ -370,6 +392,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
       }
       pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pco,
                                       bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
+      if (NSCALARS > 0) {
+        pmb->peos->PassiveScalarPrimitiveToConserved(
+            ps->r, ph->w, ps->s, pco, bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
+      }
     }
   }
 
@@ -390,6 +416,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
       }
       pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pco,
                                       bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
+      if (NSCALARS > 0) {
+        pmb->peos->PassiveScalarPrimitiveToConserved(
+            ps->r, ph->w, ps->s, pco, bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
+      }
     }
 
     // Apply boundary function on outer-x3 and update W,bcc (if not periodic)
@@ -405,6 +435,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
       }
       pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pco,
                                       bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
+      if (NSCALARS > 0) {
+        pmb->peos->PassiveScalarPrimitiveToConserved(
+            ps->r, ph->w, ps->s, pco, bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
+      }
     }
   }
   return;
@@ -496,8 +530,9 @@ void BoundaryValues::DispatchBoundaryFunctions(
           default:
             std::stringstream msg_polar;
             msg_polar << "### FATAL ERROR in DispatchBoundaryFunctions" << std::endl
-                << "Attempting to call polar wedge boundary function on \n"
-                << "MeshBlock boundary other than inner x2 or outer x2" << std::endl;
+                      << "Attempting to call polar wedge boundary function on \n"
+                      << "MeshBlock boundary other than inner x2 or outer x2"
+                      << std::endl;
             ATHENA_ERROR(msg_polar);
         }
         break;

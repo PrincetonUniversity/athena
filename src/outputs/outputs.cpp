@@ -55,6 +55,10 @@
 // - mesh/meshblock.cpp, MeshBlock::GetBlockSizeInBytes(): increment std::size_t size by
 // the size of the new quantity's array(s)
 
+// - mesh/meshblock.cpp, MeshBlock restart constructor: memcpy quantity (IN THE SAME ORDER
+// AS THE VARIABLES ARE WRITTEN IN restart.cpp) from the loaded .rst file to the
+// MeshBlock's appropriate physics member object
+
 // - history.cpp, HistoryOutput::WriteOutputFile() (3x places): 1) modify NHISTORY_VARS
 // macro so that the size of data_sum[] can accommodate the new physics, when active.
 // 2) Compute volume-weighted data_sum[i] for the new quantity + etc. factors
@@ -574,16 +578,26 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   } // endif (MAGNETIC_FIELDS_ENABLED)
 
   if (NSCALARS > 0) {
-    std::string root_name = "s";
+    std::string root_name_cons = "s";
+    std::string root_name_prim = "r";
     for (int n=0; n<NSCALARS; n++) {
-      std::string scalar_name = root_name + std::to_string(n);
-      if (output_params.variable.compare(scalar_name) == 0 ||
-          output_params.variable.compare("prim") == 0 ||
+      std::string scalar_name_cons = root_name_cons + std::to_string(n);
+      std::string scalar_name_prim = root_name_prim + std::to_string(n);
+      if (output_params.variable.compare(scalar_name_cons) == 0 ||
           output_params.variable.compare("cons") == 0) {
         pod = new OutputData;
         pod->type = "SCALARS";
-        pod->name = scalar_name;
+        pod->name = scalar_name_cons;
         pod->data.InitWithShallowSlice(psclr->s, 4, n, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+      if (output_params.variable.compare(scalar_name_prim) == 0 ||
+          output_params.variable.compare("prim") == 0) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = scalar_name_prim;
+        pod->data.InitWithShallowSlice(psclr->r, 4, n, 1);
         AppendOutputDataNode(pod);
         num_vars_++;
       }

@@ -114,7 +114,7 @@ class FFTBlock {
   std::int64_t GetGlobalIndex(const int i, const int j, const int k);
 
   void DestroyPlan(AthenaFFTPlan *plan);
-  void MpiInitialize();
+  void InitializeMPI();
   void Execute(AthenaFFTPlan *plan);
   void Execute(AthenaFFTPlan *plan, std::complex<Real> *data);
   void Execute(AthenaFFTPlan *plan, std::complex<Real> *in_data,

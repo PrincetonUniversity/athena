@@ -566,7 +566,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; ++k) {
         for (int j=js; j<=je; ++j) {
           for (int i=is; i<=ie; ++i) {
-            pscalars->s(n,k,j,i) = 1.0/scalar_norm;
+            pscalars->s(n,k,j,i) = 1.0/scalar_norm*phydro->u(IDN,k,j,i);
           }
         }
       }

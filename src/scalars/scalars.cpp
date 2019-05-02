@@ -27,6 +27,7 @@
 PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     s(NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     s1(NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    r(NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     s_flux{ {NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1+1},
             {NSCALARS, pmb->ncells3, pmb->ncells2+1, pmb->ncells1,
              (pmb->pmy_mesh->f2 ? AthenaArray<Real>::DataStatus::allocated :
@@ -38,7 +39,13 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     coarse_s_(NSCALARS, pmb->ncc3, pmb->ncc2, pmb->ncc1,
               (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
                AthenaArray<Real>::DataStatus::empty)),
+    coarse_r_(NSCALARS, pmb->ncc3, pmb->ncc2, pmb->ncc1,
+              (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
+               AthenaArray<Real>::DataStatus::empty)),
     sbvar(pmb, &s, &coarse_s_, s_flux),
+    nu_scalar_iso{pin->GetOrAddReal("problem", "nu_scalar_iso", 0.0)},
+    //nu_scalar_aniso{pin->GetOrAddReal("problem", "nu_scalar_aniso", 0.0)},
+    scalar_diffusion_defined{(nu_scalar_iso > 0.0 ? true : false)},
     pmy_block(pmb) {
   int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
   Mesh *pm = pmy_block->pmy_mesh;
@@ -46,10 +53,11 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   pmb->RegisterMeshBlockData(s);
 
   // Allocate optional passive scalar variable memory registers for time-integrator
-  // if (pmb->precon->xorder == 4) {
-  //   // fourth-order cell-centered approximations
-  //   s_cc.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
-  // }
+  if (pmb->precon->xorder == 4) {
+    // fourth-order cell-centered approximations
+    s_cc.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    r_cc.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+  }
 
   // If user-requested time integrator is type 3S*, allocate additional memory registers
   std::string integrator = pin->GetOrAddString("time", "integrator", "vl2");
@@ -59,7 +67,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
 
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
   if (pm->multilevel) {
-    pmy_block->pmr->AddToRefinement(&s, &coarse_s_);
+    refinement_idx = pmy_block->pmr->AddToRefinement(&s, &coarse_s_);
   }
 
   // enroll CellCenteredBoundaryVariable object
@@ -69,9 +77,9 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
 
   // Allocate memory for scratch arrays
   dxw_.NewAthenaArray(nc1);
-  sl_.NewAthenaArray(NSCALARS, nc1);
-  sr_.NewAthenaArray(NSCALARS, nc1);
-  slb_.NewAthenaArray(NSCALARS, nc1);
+  rl_.NewAthenaArray(NSCALARS, nc1);
+  rr_.NewAthenaArray(NSCALARS, nc1);
+  rlb_.NewAthenaArray(NSCALARS, nc1);
   x1face_area_.NewAthenaArray(nc1+1);
   if (pm->f2) {
     x2face_area_.NewAthenaArray(nc1);
@@ -87,8 +95,8 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   // fourth-order integration scheme
   if (pmb->precon->xorder == 4) {
     // 4D scratch arrays
-    sl3d_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
-    sr3d_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    rl3d_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    rr3d_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
     scr1_nkji_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
     scr2_nkji_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
     // store all face-centered mass fluxes (all 3x coordinate directions) from Hydro:
@@ -101,5 +109,16 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     // 1D scratch arrays
     laplacian_l_fc_.NewAthenaArray(nc1);
     laplacian_r_fc_.NewAthenaArray(nc1);
+  }
+
+  if (scalar_diffusion_defined) {
+    diffusion_flx[X1DIR].NewAthenaArray(NSCALARS, nc3, nc2, nc1+1);
+    diffusion_flx[X2DIR].NewAthenaArray(NSCALARS, nc3, nc2+1, nc1);
+    diffusion_flx[X3DIR].NewAthenaArray(NSCALARS, nc3+1, nc2, nc1);
+    //nu_scalar.NewAthenaArray(2, nc3, nc2, nc1);
+    dx1_.NewAthenaArray(nc1);
+    dx2_.NewAthenaArray(nc1);
+    dx3_.NewAthenaArray(nc1);
+    // nu_scalar_tot_.NewAthenaArray(nc1);
   }
 }

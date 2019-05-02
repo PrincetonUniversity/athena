@@ -12,6 +12,7 @@
 // C headers
 
 // C++ headers
+#include <limits>     // std::numeric_limits<float>
 
 // Athena++ headers
 #include "../athena.hpp"         // Real
@@ -48,8 +49,20 @@ class EquationOfState {
   //   const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco, int il,
   //   int iu, int jl, int ju, int kl, int ku);
 
-#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim,k,j) linear(i)
-  void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
+  void PassiveScalarConservedToPrimitive(
+      AthenaArray<Real> &s, const AthenaArray<Real> &w, const AthenaArray<Real> &r_old,
+      AthenaArray<Real> &r,
+      Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
+  void PassiveScalarPrimitiveToConserved(
+    const AthenaArray<Real> &r, const AthenaArray<Real> &w,
+    AthenaArray<Real> &s, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku);
+
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim) linear(i)
+  void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i);
+
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s) linear(i)
+  void ApplyPassiveScalarFloors(AthenaArray<Real> &s, int i);
 
   // Sound speed functions in different regimes
 #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
@@ -150,21 +163,28 @@ class EquationOfState {
 #endif
 
  private:
+  // (C++11) in-class Default Member Initializer (fallback option):
+  const Real float_min{std::numeric_limits<float>::min()};
   MeshBlock *pmy_block_;                 // ptr to MeshBlock containing this EOS
   Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
   Real density_floor_, pressure_floor_;  // density and pressure floors
   Real energy_floor_;                    // energy floor
+  Real scalar_floor_{0.0};               // dimensionless concentration scalar floor
   Real sigma_max_, beta_min_;            // limits on ratios of gas quantities to pmag
   Real gamma_max_;                       // maximum Lorentz factor
   Real rho_min_, rho_pow_;               // variables to control power-law denity floor
   Real pgas_min_, pgas_pow_;             // variables to control power-law pressure floor
   AthenaArray<Real> g_, g_inv_;          // metric and its inverse, used in GR
-  AthenaArray<Real> fixed_;              // cells with problems, used in GR hydro
+  AthenaArray<bool> fixed_, success_;    // flags for problems, used in GR
   AthenaArray<Real> normal_dd_;          // normal-frame densities, used in GR MHD
   AthenaArray<Real> normal_ee_;          // normal-frame energies, used in GR MHD
   AthenaArray<Real> normal_mm_;          // normal-frame momenta, used in GR MHD
   AthenaArray<Real> normal_bb_;          // normal-frame fields, used in GR MHD
   AthenaArray<Real> normal_tt_;          // normal-frame M.B, used in GR MHD
+  AthenaArray<Real> dens_floor_local_;   // floor on rho for any reason, used in GR MHD
+  AthenaArray<Real> press_floor_local_;  // floor on pgas for any reason, used in GR MHD
+  AthenaArray<Real> normal_gamma_;       // normal-frame Lorentz factor, used in GR MHD
+  AthenaArray<Real> pmag_;               // fluid-frame magnetic pressure, used in GR MHD
 };
 
 #endif // EOS_EOS_HPP_

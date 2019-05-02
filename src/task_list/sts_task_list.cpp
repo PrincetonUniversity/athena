@@ -111,13 +111,13 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
       AddTask(RECV_FLD,NONE);
       AddTask(SETB_FLD,(RECV_FLD|INT_FLD));
       // compute new primitives
-      AddTask(CON2PRIM,(SETB_HYD|SETB_FLD));
+      AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD));
     } else {  // HYDRO
-      AddTask(CON2PRIM,(SETB_HYD));
+      AddTask(CONS2PRIM,(SETB_HYD));
     }
 
     // everything else
-    AddTask(PHY_BVAL,CON2PRIM);
+    AddTask(PHY_BVAL,CONS2PRIM);
     AddTask(CLEAR_ALLBND,PHY_BVAL);
   } // end of using namespace block
 }
@@ -218,7 +218,7 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
       task_list_[ntasks].lb_time = true;
       break;
 
-    case (CON2PRIM):
+    case (CONS2PRIM):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::Primitives);
@@ -264,7 +264,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   }
 
   // Clear flux arrays from previous stage
-  pmb->phydro->hdif.ClearHydroFlux(pmb->phydro->flux);
+  pmb->phydro->hdif.ClearFlux(pmb->phydro->flux);
   if (MAGNETIC_FIELDS_ENABLED)
     pmb->pfield->fdif.ClearEMF(pmb->pfield->e);
 
@@ -278,8 +278,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 // Functions to calculates fluxes
 
 TaskStatus SuperTimeStepTaskList::CalculateHydroFlux_STS(MeshBlock *pmb, int stage) {
-  Hydro *phydro=pmb->phydro;
-  // Field *pfield=pmb->pfield;
+  Hydro *phydro = pmb->phydro;
 
   if (stage <= nstages) {
     phydro->CalculateFluxes_STS();
@@ -354,7 +353,6 @@ TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage
     //                 operator-split RKL1 STS? For now, disable time-dep BCs.
     // Real t_end_stage = pmb->pmy_mesh->time;
     // Real dt = pmb->pmy_mesh->dt;
-    pmb->phydro->hbvar.SelectCoarseBuffer(HydroBoundaryQuantity::prim);
     pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w, HydroBoundaryQuantity::prim);
     pbval->ApplyPhysicalBoundaries(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
   } else {

@@ -182,7 +182,7 @@ def main(**kwargs):
 
     # Join scalar data through boundaries
     if not kwargs['midplane']:
-        vals = np.vstack((vals_right, vals_left))
+        vals = np.vstack((vals_right, vals_left[::-1, :]))
 
     # Perform slicing/averaging of vector data
     if kwargs['stream'] is not None:
