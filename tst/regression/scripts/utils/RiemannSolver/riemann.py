@@ -11,7 +11,7 @@ def sanitize_lbl(label):
     import re
     out = label.split('$')
     for i in range(0, len(out), 2):
-        out[i] = re.sub('_', '\_', out[i])
+        out[i] = re.sub('_', r'\_', out[i])
     return '$'.join(out)
 
 
