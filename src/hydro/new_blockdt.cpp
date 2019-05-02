@@ -50,6 +50,7 @@ void Hydro::NewBlockTimeStep() {
   Real min_dt = real_max;
   Real min_dt_diff  = real_max;
 
+  // TODO(felker): skip this next loop if pm->fluid_setup == FluidFormulation::disabled
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       pmb->pcoord->CenterWidth1(k, j, is, ie, dt1);

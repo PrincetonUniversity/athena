@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file time_integrator.cpp
-//  \brief derived class for time integrator task list.  Can create task lists for one
+//  \brief derived class for time integrator task list. Can create task lists for one
 //  of many different time integrators (e.g. van Leer, RK2, RK3, etc.)
 
 // C headers
@@ -209,15 +209,16 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     stage_wghts[4].beta = 0.226007483236906; // F(u^(4)) coeff.
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in CreateTimeIntegrator" << std::endl
+    msg << "### FATAL ERROR in TimeIntegratorTaskList constructor" << std::endl
         << "integrator=" << integrator << " not valid time integrator" << std::endl;
     ATHENA_ERROR(msg);
   }
 
   // Set cfl_number based on user input and time integrator CFL limit
-  Real cfl_number = pin->GetReal("time","cfl_number");
-  if (cfl_number > cfl_limit) {
-    std::cout << "### Warning in CreateTimeIntegrator" << std::endl
+  Real cfl_number = pin->GetReal("time", "cfl_number");
+  if (cfl_number > cfl_limit
+      && pm->fluid_setup == FluidFormulation::evolve) {
+    std::cout << "### Warning in TimeIntegratorTaskList constructor" << std::endl
               << "User CFL number " << cfl_number << " must be smaller than " << cfl_limit
               << " for integrator=" << integrator << " in " << pm->ndim
               << "D simulation" << std::endl << "Setting to limit" << std::endl;
