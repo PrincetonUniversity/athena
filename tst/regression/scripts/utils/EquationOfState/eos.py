@@ -42,6 +42,9 @@ class SimpleHydrogen(EOS):
     def __init__(self):
         super(SimpleHydrogen, self).__init__()
         self.indep = 'T'  # Temperature is the independent variable other than density
+        self.T_of_rho_ei = np.vectorize(self._T_of_rho_ei)
+        self.T_of_rho_p = np.vectorize(self._T_of_rho_p)
+        self.T_of_rho_h = np.vectorize(self._T_of_rho_h)
 
     def _phi(self, T):
         return np.exp(1. / T - 1.5 * np.log(T))
@@ -88,6 +91,10 @@ class SimpleHydrogen(EOS):
 
     def asq_of_rho_h(self, rho, h):
         """Adiabatic sound speed^2 function of density (rho) and specific enthalpy (h)"""
+        return self.asq_of_rho_T(rho, self.T_of_rho_h(rho, h))
+
+    def _T_of_rho_h(self, rho, h):
+        """Temperature as a function of density (rho) and specific enthalpy (h)"""
         t1 = .4 * h * (1. + sys.float_info.epsilon)
 
         def f(y):
@@ -96,9 +103,9 @@ class SimpleHydrogen(EOS):
         T, r = brentq(f, .1 * t1, t1, **brent_opt)
         if not r.converged:
             raise RuntimeError('Unable to converge on temperature.')
-        return self.asq_of_rho_T(rho, T)
+        return T
 
-    def T_of_rho_p(self, rho, p):
+    def _T_of_rho_p(self, rho, p):
         """Temperature as a function of density (rho) and pressure (p)"""
         t1 = p / rho * (1. + sys.float_info.epsilon)  # initial guess
 
@@ -113,7 +120,7 @@ class SimpleHydrogen(EOS):
             raise RuntimeError('Unable to converge on temperature.')
         return T
 
-    def T_of_rho_ei(self, rho, ei):
+    def _T_of_rho_ei(self, rho, ei):
         """Temperature as a function of density (rho) and internal energy density (e)"""
         t1 = ei / rho * (1. + sys.float_info.epsilon)  # initial guess
 
