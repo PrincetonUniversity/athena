@@ -1122,6 +1122,8 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
       pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w, pf->b,
                                                  ph->w1, pf->bcc, pmb->pcoord,
                                                  il, iu, jl, ju, kl, ku);
+      pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
+          ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
     }
     // swap AthenaArray data pointers so that w now contains the updated w_out
     ph->w.SwapAthenaArray(ph->w1);
