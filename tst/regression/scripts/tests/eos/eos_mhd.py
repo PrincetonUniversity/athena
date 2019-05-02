@@ -8,9 +8,9 @@ import sys
 import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
 from scripts.utils.RiemannSolver.riemann import riemann_problem
+from .eos_riemann import _tests, _thresh, _states
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
-from .eos_riemann import _tests, _thresh, _states
 athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
@@ -46,6 +46,7 @@ def run(**kwargs):
     # run RJ2a test for hydrogen EOS
     args = ['hydro/eos_rho_unit=1e-7', 'hydro/eos_egas_unit=1e-8', 'time/ncycle_out=0']
     athena.run('mhd/athinput.rj2a', args)
+
 
 def analyze():
     analyze_status = True
