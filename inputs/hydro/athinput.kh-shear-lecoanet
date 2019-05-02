@@ -25,7 +25,7 @@ nlim       = 1000000   # cycle limit
 tlim       = 10.0      # time limit
 integrator  = vl2      # time integration algorithm
 xorder      = 2        # order of spatial reconstruction
-ncycle_out  = 1        # interval for stdout summary info
+ncycle_out  = 1000     # interval for stdout summary info
 correct_ic  = true     # correct midpoint assumption in initial condition
 
 <mesh>
