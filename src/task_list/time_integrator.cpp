@@ -1300,6 +1300,11 @@ TaskStatus TimeIntegratorTaskList::DiffuseScalars(MeshBlock *pmb, int stage) {
     return TaskStatus::next;
 
   if (stage <= nstages) {
+    // TODO(felker): adapted directly from HydroDiffusion::ClearFlux. Deduplicate
+    ps->diffusion_flx[X1DIR].ZeroClear();
+    ps->diffusion_flx[X2DIR].ZeroClear();
+    ps->diffusion_flx[X3DIR].ZeroClear();
+
     // unlike HydroDiffusion, only 1x passive scalar diffusive process is allowed, so
     // there is no need for counterpart to wrapper fn HydroDiffusion::CalcDiffusionFlux
     ps->DiffusiveFluxIso(ps->r, ph->w, ps->diffusion_flx);
