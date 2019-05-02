@@ -10,6 +10,7 @@
 
 // C++ headers
 #include <algorithm>   // min,max
+#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -517,4 +518,59 @@ void PassiveScalars::DiffusiveFluxIso(const AthenaArray<Real> &prim_r,
     } // zero flux for 1D/2D
   }
   return;
+}
+
+Real PassiveScalars::NewDiffusionDt() {
+  Real real_max = std::numeric_limits<Real>::max();
+  MeshBlock *pmb = pmy_block;
+  const bool f2 = pmb->pmy_mesh->f2;
+  const bool f3 = pmb->pmy_mesh->f3;
+  int il = pmb->is - NGHOST; int jl = pmb->js; int kl = pmb->ks;
+  int iu = pmb->ie + NGHOST; int ju = pmb->je; int ku = pmb->ke;
+  Real fac;
+  if (f3)
+    fac = 1.0/6.0;
+  else if (f2)
+    fac = 0.25;
+  else
+    fac = 0.5;
+
+  Real dt_diff = real_max;
+  // Commented-out future extensions: local diffusion coefficients, anisotropic diffusion
+  // for passive scalars:
+  // AthenaArray<Real> &nu_scalar_t = nu_scalar_tot_;
+  AthenaArray<Real> &len = dx1_, &dx2 = dx2_, &dx3 = dx3_;
+
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+      // #pragma omp simd
+//       for (int i=il; i<=iu; ++i) {
+//         nu_scalar_t(i) = 0.0;
+//       }
+//       if (nu_scalar_iso > 0.0) {
+// #pragma omp simd
+//         for (int i=il; i<=iu; ++i) nu_scalar_t(i) += nu(DiffProcess::iso,k,j,i);
+//       }
+//       if (nu_scalar_aniso > 0.0) {
+// #pragma omp simd
+//         for (int i=il; i<=iu; ++i) nu_scalar_t(i) += nu(DiffProcess::aniso,k,j,i);
+//       }
+      pmb->pcoord->CenterWidth1(k, j, il, iu, len);
+      pmb->pcoord->CenterWidth2(k, j, il, iu, dx2);
+      pmb->pcoord->CenterWidth3(k, j, il, iu, dx3);
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        len(i) = (f2) ? std::min(len(i), dx2(i)) : len(i);
+        len(i) = (f3) ? std::min(len(i), dx3(i)) : len(i);
+      }
+      if (nu_scalar_iso > 0.0) { // || (nu_scalar_aniso > 0.0)) {
+        for (int i=il; i<=iu; ++i) {
+          dt_diff = std::min(dt_diff, static_cast<Real>(
+              SQR(len(i))*fac/(nu_scalar_iso + TINY_NUMBER)));
+              // /(nu_scalar_t(i) + TINY_NUMBER)));
+        }
+      }
+    }
+  }
+  return dt_diff;
 }

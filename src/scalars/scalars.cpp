@@ -116,5 +116,9 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     diffusion_flx[X2DIR].NewAthenaArray(NSCALARS, nc3, nc2+1, nc1);
     diffusion_flx[X3DIR].NewAthenaArray(NSCALARS, nc3+1, nc2, nc1);
     //nu_scalar.NewAthenaArray(2, nc3, nc2, nc1);
+    dx1_.NewAthenaArray(nc1);
+    dx2_.NewAthenaArray(nc1);
+    dx3_.NewAthenaArray(nc1);
+    // nu_scalar_tot_.NewAthenaArray(nc1);
   }
 }

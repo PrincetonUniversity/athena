@@ -71,6 +71,7 @@ class PassiveScalars {
   // 3) nu_scalar_iso is identical for all NSCALARS
   void DiffusiveFluxIso(const AthenaArray<Real> &prim_r, const AthenaArray<Real> &w,
                         AthenaArray<Real> *flx_out);
+  Real NewDiffusionDt();
 
  private:
   MeshBlock* pmy_block;
@@ -96,7 +97,8 @@ class PassiveScalars {
                          AthenaArray<Real> &rl, AthenaArray<Real> &rr,
                          AthenaArray<Real> &mass_flx,
                          AthenaArray<Real> &flx_out);
-
   void AddDiffusionFluxes();
+  // TODO(felker): dedpulicate these arrays and the same named ones in HydroDiffusion
+  AthenaArray<Real> dx1_, dx2_, dx3_;
 };
 #endif // SCALARS_SCALARS_HPP_

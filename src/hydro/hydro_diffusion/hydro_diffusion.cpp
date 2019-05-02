@@ -179,7 +179,7 @@ void HydroDiffusion::AddDiffusionFlux(AthenaArray<Real> *flux_src,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void HydroDiffusion::ClearDiffusionFlux
+//! \fn void HydroDiffusion::ClearFlux
 //  \brief Reset diffusion flux back to zeros
 
 // TODO(felker): completely general operation for any 1x AthenaArray<Real> flux[3]. Move
@@ -219,14 +219,17 @@ void HydroDiffusion::SetDiffusivity(AthenaArray<Real> &w, AthenaArray<Real> &bc)
 
 // Get the hydro diffusion timestep
 // currently return dt for viscous and conduction processes
+
 void HydroDiffusion::NewDiffusionDt(Real &dt_vis, Real &dt_cnd) {
   Real real_max = std::numeric_limits<Real>::max();
+  const bool f2 = pmb_->pmy_mesh->f2;
+  const bool f3 = pmb_->pmy_mesh->f3;
   int il = pmb_->is - NGHOST; int jl = pmb_->js; int kl = pmb_->ks;
   int iu = pmb_->ie + NGHOST; int ju = pmb_->je; int ku = pmb_->ke;
   Real fac;
-  if (pmb_->block_size.nx3 > 1)
+  if (f3)
     fac = 1.0/6.0;
-  else if (pmb_->block_size.nx2 > 1)
+  else if (f2)
     fac = 0.25;
   else
     fac = 0.5;
@@ -261,23 +264,23 @@ void HydroDiffusion::NewDiffusionDt(Real &dt_vis, Real &dt_cnd) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) kappa_t(i) += kappa(DiffProcess::aniso,k,j,i);
       }
-      pmb_->pcoord->CenterWidth1(k,j,il,iu,len);
-      pmb_->pcoord->CenterWidth2(k,j,il,iu,dx2);
-      pmb_->pcoord->CenterWidth3(k,j,il,iu,dx3);
+      pmb_->pcoord->CenterWidth1(k, j, il, iu, len);
+      pmb_->pcoord->CenterWidth2(k, j, il, iu, dx2);
+      pmb_->pcoord->CenterWidth3(k, j, il, iu, dx3);
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        len(i) = (pmb_->block_size.nx2 > 1) ? std::min(len(i),dx2(i)):len(i);
-        len(i) = (pmb_->block_size.nx3 > 1) ? std::min(len(i),dx3(i)):len(i);
+        len(i) = (f2) ? std::min(len(i), dx2(i)) : len(i);
+        len(i) = (f3) ? std::min(len(i), dx3(i)) : len(i);
       }
       if ((nu_iso > 0.0) || (nu_aniso > 0.0)) {
         for (int i=il; i<=iu; ++i)
-          dt_vis = std::min(dt_vis, static_cast<Real>(SQR(len(i))
-                                                      *fac/(nu_t(i)+TINY_NUMBER)));
+          dt_vis = std::min(dt_vis, static_cast<Real>(
+              SQR(len(i))*fac/(nu_t(i) + TINY_NUMBER)));
       }
       if ((kappa_iso > 0.0) || (kappa_aniso > 0.0)) {
         for (int i=il; i<=iu; ++i)
-          dt_cnd = std::min(dt_cnd, static_cast<Real>(SQR(len(i))
-                                                      *fac/(kappa_t(i)+TINY_NUMBER)));
+          dt_cnd = std::min(dt_cnd, static_cast<Real>(
+              SQR(len(i))*fac/(kappa_t(i) + TINY_NUMBER)));
       }
     }
   }

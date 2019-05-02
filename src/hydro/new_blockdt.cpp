@@ -21,6 +21,7 @@
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
 #include "../mesh/mesh.hpp"
+#include "../scalars/scalars.hpp"
 #include "hydro.hpp"
 #include "hydro_diffusion/hydro_diffusion.hpp"
 
@@ -95,14 +96,14 @@ void Hydro::NewBlockTimeStep() {
       // compute minimum of (v1 +/- C)
       for (int i=is; i<=ie; ++i) {
         Real& dt_1 = dt1(i);
-        min_dt = std::min(min_dt,dt_1);
+        min_dt = std::min(min_dt, dt_1);
       }
 
       // if grid is 2D/3D, compute minimum of (v2 +/- C)
       if (pmb->block_size.nx2 > 1) {
         for (int i=is; i<=ie; ++i) {
           Real& dt_2 = dt2(i);
-          min_dt = std::min(min_dt,dt_2);
+          min_dt = std::min(min_dt, dt_2);
         }
       }
 
@@ -110,27 +111,32 @@ void Hydro::NewBlockTimeStep() {
       if (pmb->block_size.nx3 > 1) {
         for (int i=is; i<=ie; ++i) {
           Real& dt_3 = dt3(i);
-          min_dt = std::min(min_dt,dt_3);
+          min_dt = std::min(min_dt, dt_3);
         }
       }
     }
   }
 
-  // calculate the timestep limited by the diffusion process
+  // calculate the timestep limited by the diffusion processes
   if (hdif.hydro_diffusion_defined) {
-    Real mindt_vis, mindt_cnd;
-    hdif.NewDiffusionDt(mindt_vis, mindt_cnd);
-    min_dt_diff = std::min(min_dt_diff, mindt_vis);
-    min_dt_diff = std::min(min_dt_diff, mindt_cnd);
+    Real min_dt_vis, min_dt_cnd;
+    hdif.NewDiffusionDt(min_dt_vis, min_dt_cnd);
+    min_dt_diff = std::min(min_dt_diff, min_dt_vis);
+    min_dt_diff = std::min(min_dt_diff, min_dt_cnd);
   } // hydro diffusion
 
   if (MAGNETIC_FIELDS_ENABLED &&
       pmb->pfield->fdif.field_diffusion_defined) {
-    Real mindt_oa, mindt_h;
-    pmb->pfield->fdif.NewDiffusionDt(mindt_oa, mindt_h);
-    min_dt_diff = std::min(min_dt_diff, mindt_oa);
-    min_dt_diff = std::min(min_dt_diff, mindt_h);
+    Real min_dt_oa, min_dt_h;
+    pmb->pfield->fdif.NewDiffusionDt(min_dt_oa, min_dt_h);
+    min_dt_diff = std::min(min_dt_diff, min_dt_oa);
+    min_dt_diff = std::min(min_dt_diff, min_dt_h);
   } // field diffusion
+
+  if (NSCALARS > 0 && pmb->pscalars->scalar_diffusion_defined) {
+    Real min_dt_scalar_diff = pmb->pscalars->NewDiffusionDt();
+    min_dt_diff = std::min(min_dt_diff, min_dt_scalar_diff);
+  } // passive scalar diffusion
 
   min_dt *= pmb->pmy_mesh->cfl_number;
   min_dt_diff *= pmb->pmy_mesh->cfl_number;
