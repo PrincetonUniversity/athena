@@ -161,12 +161,14 @@ void EquationOfState::PassiveScalarPrimitiveToConserved(
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &prim, int i)
+// \!fn void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &prim, int k,
+//                                                     int j, int i)
 // \brief Apply species concentration floor to cell-averaged passive scalars or
 // reconstructed L/R cell interface states (if PPM is used, e.g.) along:
 // (NSCALARS x) x1 slices
 
-void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &r, int i) {
+void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &r, int k, int j,
+                                               int i) {
   // TODO(felker): process user-input "hydro/sfloor" in each EquationOfState ctor
   // 8x .cpp files + more in general/. Is there a better way to avoid code duplication?
 
