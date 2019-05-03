@@ -89,9 +89,10 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) : nranks_(Globals::nranks),
   int nbx2 = static_cast<int>(lx2max-lx2min+1);
   int nbx3 = static_cast<int>(lx3max-lx3min+1);
 
-  nmb = nbx1*nbx2*nbx3; // number of mesh blocks to be loaded to the FFT block
+  nmb = nbx1*nbx2*nbx3; // number of MeshBlock to be loaded to the FFT block
   if (pm->nbtotal/nmb != nranks_) {
-    // Will be implemented later.
+    // this restriction (to a single cuboid FFTBlock that covers the union of all
+    // MeshBlocks owned by an MPI rank) should be relaxed in the future
     std::stringstream msg;
     msg << "### FATAL ERROR in FFTDriver::FFTDriver" << std::endl
         << nmb << " MeshBlocks will be loaded to the FFT block."  << std::endl
