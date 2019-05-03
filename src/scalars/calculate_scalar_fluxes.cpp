@@ -85,8 +85,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
 
       pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw_);
 
-      ComputeUpwindFlux(k, j, is, ie+1, // CoordinateDirection::X1DIR,
-                        rl_, rr_, mass_flux, x1flux);
+      ComputeUpwindFlux(k, j, is, ie+1, rl_, rr_, mass_flux, x1flux);
 
       if (order == 4) {
         for (int n=0; n<NSCALARS; n++) {
@@ -128,7 +127,6 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
         }
 
         // Compute x1 interface fluxes from face-centered primitive variables
-        // TODO(felker): check that e3x1,e2x1 arguments added in late 2017 work here
         pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw_);
         ComputeUpwindFlux(k, j, is, ie+1, rl_, rr_, mass_x1flux_fc, flux_fc);
 
@@ -191,8 +189,6 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
           }
         }
 
-        // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
-        // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
         pmb->pcoord->CenterWidth2(k, j, il, iu, dxw_);
         ComputeUpwindFlux(k, j, il, iu, rl_, rr_, mass_flux, x2flux);
 
@@ -239,7 +235,6 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
           }
 
           // Compute x2 interface fluxes from face-centered primitive variables
-          // TODO(felker): check that e1x2,e3x2 arguments added in late 2017 work here
           pmb->pcoord->CenterWidth2(k, j, il, iu, dxw_);
           ComputeUpwindFlux(k, j, il, iu, rl_, rr_, mass_x2flux_fc, flux_fc);
 
@@ -296,8 +291,6 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
           }
         }
 
-        // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
-        // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
         pmb->pcoord->CenterWidth3(k, j, il, iu, dxw_);
         ComputeUpwindFlux(k, j, il, iu, rl_, rr_, mass_flux, x3flux);
 
@@ -344,7 +337,6 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
           }
 
           // Compute x3 interface fluxes from face-centered primitive variables
-          // TODO(felker): check that e2x3,e1x3 arguments added in late 2017 work here
           pmb->pcoord->CenterWidth3(k, j, il, iu, dxw_);
           ComputeUpwindFlux(k, j, il, iu, rl_, rr_, mass_x3flux_fc, flux_fc);
 
@@ -359,14 +351,12 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
     } // end if (order == 4)
   }
 
-  if (!STS_ENABLED) { // add diffusion fluxes
+  if (!STS_ENABLED) {
     AddDiffusionFluxes();
   }
   return;
 }
 
-
-// --- passive scalar dye diffusion fns:
 
 void PassiveScalars::CalculateFluxes_STS() {
   AddDiffusionFluxes();
