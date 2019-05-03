@@ -79,7 +79,6 @@ class PassiveScalars {
   // 2D scratch arrays
   AthenaArray<Real> rl_, rr_, rlb_;
   // 1D scratch arrays
-  AthenaArray<Real> dxw_;
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
   AthenaArray<Real> cell_volume_;

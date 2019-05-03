@@ -76,7 +76,6 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   pmb->pbval->bvars_main_int.push_back(&sbvar);
 
   // Allocate memory for scratch arrays
-  dxw_.NewAthenaArray(nc1);
   rl_.NewAthenaArray(NSCALARS, nc1);
   rr_.NewAthenaArray(NSCALARS, nc1);
   rlb_.NewAthenaArray(NSCALARS, nc1);
