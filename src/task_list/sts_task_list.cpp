@@ -58,6 +58,15 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
         << "with shearing box BC's." << std::endl;
     ATHENA_ERROR(msg);
   }
+  // TODO(felker): should be able to nearly duplicate the setup of SCLR tasks from
+  // time_integrator.cpp
+  if (NSCALARS > 0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
+        << "Super-time-stepping is not yet compatible "
+        << "with passive scalars." << std::endl;
+    ATHENA_ERROR(msg);
+  }
   // TODO(pdmullen): how should source terms be handled inside
   //                 operator-split RKL1 STS?
   if (pm->pblock->phydro->hsrc.hydro_sourceterms_defined) {
