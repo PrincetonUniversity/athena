@@ -408,32 +408,15 @@ int main(int argc, char *argv[]) {
 
   while ((pmesh->time < pmesh->tlim) &&
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)) {
-    if (Globals::my_rank == 0) {
-      if (pmesh->ncycle_out != 0) {
-        if (pmesh->ncycle % pmesh->ncycle_out == 0) {
-          std::cout << "cycle=" << pmesh->ncycle << std::scientific
-                    << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1)
-                    << " time=" << pmesh->time << " dt=" << pmesh->dt;
-          if (pmesh->diff_nstage_out != -1) {
-            if (STS_ENABLED) {
-              std::cout << "=dt_hyperbolic" << std::endl;
-              // remaining diagnostic output is handled in STS StartupTaskList
-            } else {
-              Real ratio = pmesh->dt / pmesh->dt_diff;
-              std::cout << "\ndt_parabolic=" << pmesh->dt_diff << " ratio=" << ratio;
-              std::cout << std::endl;
-            }
-          }
-        }
-      }
-    }
+    if (Globals::my_rank == 0)
+      pmesh->OutputCycleDiagnostics();
 
     if (STS_ENABLED) {
       // compute nstages for this STS
       Real my_dt = pmesh->dt;
-      Real dt_diff  = pmesh->dt_diff;
+      Real dt_parabolic  = pmesh->dt_parabolic;
       pststlist->nstages =
-          static_cast<int>(0.5*(-1. + std::sqrt(1. + 8.*my_dt/dt_diff))) + 1;
+          static_cast<int>(0.5*(-1. + std::sqrt(1. + 8.*my_dt/dt_parabolic))) + 1;
 
       // take super-timestep
       for (int stage=1; stage<=pststlist->nstages; ++stage)
@@ -522,25 +505,7 @@ int main(int argc, char *argv[]) {
   //--- Step 10. -------------------------------------------------------------------------
   // Print diagnostic messages related to the end of the simulation
   if (Globals::my_rank == 0) {
-    std::cout << "cycle=" << pmesh->ncycle << " time=" << pmesh->time
-              << " dt=" << pmesh->dt; // << std::endl;
-          if (STS_ENABLED) {
-            std::cout << "=dt_hyperbolic" << std::endl;
-            // std::cout << " dt_hyperbolic=" << pmesh->dt
-            //           << " dt_parabolic=" << pmesh->dt_diff
-            //           << std::endl;
-          } else {
-            std::cout << std::endl;
-            //std::cout << " dt=" << pmesh->dt << std::endl;
-          }
-
-    // if (STS_ENABLED) {
-    //   std::cout << " dt_hyperbolic=" << pmesh->dt
-    //             << " dt_parabolic=" << pmesh->dt_diff
-    //             << std::endl;
-    // } else {
-    //   std::cout << " dt=" << pmesh->dt << std::endl;
-    // }
+    pmesh->OutputCycleDiagnostics();
     if (SignalHandler::GetSignalFlag(SIGTERM) != 0) {
       std::cout << std::endl << "Terminating on Terminate signal" << std::endl;
     } else if (SignalHandler::GetSignalFlag(SIGINT) != 0) {

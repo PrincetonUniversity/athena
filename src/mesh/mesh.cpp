@@ -84,7 +84,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
                ? true : false),
     fluid_setup(GetFluidFormulation(pin->GetOrAddString("hydro", "active", "true"))),
     start_time(pin->GetOrAddReal("time", "start_time", 0.0)), time(start_time),
-    tlim(pin->GetReal("time", "tlim")), dt(std::numeric_limits<Real>::max()), dt_diff(dt),
+    tlim(pin->GetReal("time", "tlim")), dt(std::numeric_limits<Real>::max()),
+    dt_hyperbolic(dt), dt_parabolic(dt), dt_user(dt),
     cfl_number(pin->GetReal("time", "cfl_number")),
     nlim(pin->GetOrAddInteger("time", "nlim", -1)), ncycle(),
     ncycle_out(pin->GetOrAddInteger("time", "ncycle_out", 1)),
@@ -519,7 +520,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
                ? true : false),
     fluid_setup(GetFluidFormulation(pin->GetOrAddString("hydro", "active", "true"))),
     start_time(pin->GetOrAddReal("time", "start_time", 0.0)), time(start_time),
-    tlim(pin->GetReal("time", "tlim")), dt(std::numeric_limits<Real>::max()), dt_diff(dt),
+    tlim(pin->GetReal("time", "tlim")), dt(std::numeric_limits<Real>::max()),
+    dt_hyperbolic(dt), dt_parabolic(dt), dt_user(dt),
     cfl_number(pin->GetReal("time", "cfl_number")),
     nlim(pin->GetOrAddInteger("time", "nlim", -1)), ncycle(),
     ncycle_out(pin->GetOrAddInteger("time", "ncycle_out", 1)),
@@ -1028,21 +1030,27 @@ void Mesh::OutputMeshStructure(int ndim) {
 void Mesh::NewTimeStep() {
   MeshBlock *pmb = pblock;
 
-  dt_diff = dt = static_cast<Real>(2.0)*dt;
+  dt_parabolic = dt_hyperbolic = dt_user = dt = static_cast<Real>(2.0)*dt;
 
   while (pmb != nullptr)  {
     dt = std::min(dt,pmb->new_block_dt_);
-    dt_diff  = std::min(dt_diff, pmb->new_block_dt_diff_);
+    dt_hyperbolic  = std::min(dt_hyperbolic, pmb->new_block_dt_hyperbolic_);
+    dt_parabolic  = std::min(dt_parabolic, pmb->new_block_dt_parabolic_);
+    dt_user  = std::min(dt_user, pmb->new_block_dt_user_);
     pmb = pmb->next;
   }
 
 #ifdef MPI_PARALLEL
-  MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_ATHENA_REAL, MPI_MIN, MPI_COMM_WORLD);
-  if (STS_ENABLED)
-    MPI_Allreduce(MPI_IN_PLACE, &dt_diff, 1, MPI_ATHENA_REAL, MPI_MIN, MPI_COMM_WORLD);
+  // pack array, MPI allreduce over array, then unpack into Mesh variables
+  Real dt_array[4] = {dt, dt_hyperbolic, dt_parabolic, dt_user};
+  MPI_Allreduce(MPI_IN_PLACE, dt_array, 4, MPI_ATHENA_REAL, MPI_MIN, MPI_COMM_WORLD);
+  dt            = dt_array[0];
+  dt_hyperbolic = dt_array[1];
+  dt_parabolic  = dt_array[2];
+  dt_user       = dt_array[3];
 #endif
 
-  if (time < tlim && tlim-time < dt) // timestep would take us past desired endpoint
+  if (time < tlim && (tlim - time) < dt) // timestep would take us past desired endpoint
     dt = tlim - time;
 
   return;
@@ -1792,4 +1800,29 @@ FluidFormulation GetFluidFormulation(const std::string& input_string) {
         << "is an invalid fluid formulation" << std::endl;
     ATHENA_ERROR(msg);
   }
+}
+
+void Mesh::OutputCycleDiagnostics() {
+  if (ncycle_out != 0) {
+    if (ncycle % ncycle_out == 0) {
+      std::cout << "cycle=" << ncycle << std::scientific
+                << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1)
+                << " time=" << time << " dt=" << dt;
+      if (diff_nstage_out != -1) {
+        if (STS_ENABLED) {
+          std::cout << "=dt_hyperbolic";
+          // remaining dt_parabolic diagnostic output handled in STS StartupTaskList
+        } else {
+          Real ratio = dt / dt_parabolic;
+          std::cout << "\ndt_parabolic=" << dt_parabolic << " ratio=" << ratio;
+        }
+        if (UserTimeStep_ != nullptr) {
+          Real ratio = dt / dt_user;
+          std::cout << "\ndt_user=" << dt_user << " ratio=" << ratio;
+        }
+      } // else (empty): diff_nstage = -1 ----> provide no additional timestep diagnostics
+      std::cout << std::endl;
+    }
+  }
+  return;
 }
