@@ -87,7 +87,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     stage_wghts[1].gamma_3 = 0.0;
     stage_wghts[1].beta = 1.0;
   } else if (integrator == "rk1") {
-    // RK1: first-order Runge-Kutta
+    // RK1: first-order Runge-Kutta / the forward Euler (FE) method
     nstages = 1;
     cfl_limit = 1.0;
     stage_wghts[0].delta = 1.0;
