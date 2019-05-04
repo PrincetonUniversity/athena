@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file calculate_fluxes.cpp
-//  \brief Calculate hydro/MHD fluxes
+//! \file calculate_scalar_fluxes.cpp
+//  \brief Calculate passive scalar fluxes
 
 // C headers
 
@@ -78,15 +78,12 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
         pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, r, rl_, rr_);
 #pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
-          pmb->peos->ApplyPassiveScalarFloors(rl_, i);
-          pmb->peos->ApplyPassiveScalarFloors(rr_, i);
+          pmb->peos->ApplyPassiveScalarFloors(rl_, k, j, i);
+          pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
         }
       }
 
-      pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw_);
-
-      ComputeUpwindFlux(k, j, is, ie+1, // CoordinateDirection::X1DIR,
-                        rl_, rr_, mass_flux, x1flux);
+      ComputeUpwindFlux(k, j, is, ie+1, rl_, rr_, mass_flux, x1flux);
 
       if (order == 4) {
         for (int n=0; n<NSCALARS; n++) {
@@ -123,13 +120,11 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
         }
 #pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
-          pmb->peos->ApplyPassiveScalarFloors(rl_, i);
-          pmb->peos->ApplyPassiveScalarFloors(rr_, i);
+          pmb->peos->ApplyPassiveScalarFloors(rl_, k, j, i);
+          pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
         }
 
         // Compute x1 interface fluxes from face-centered primitive variables
-        // TODO(felker): check that e3x1,e2x1 arguments added in late 2017 work here
-        pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw_);
         ComputeUpwindFlux(k, j, is, ie+1, rl_, rr_, mass_x1flux_fc, flux_fc);
 
         // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
@@ -172,8 +167,8 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
         pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, r, rl_, rr_);
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          pmb->peos->ApplyPassiveScalarFloors(rl_, i);
-          //pmb->peos->ApplyPassiveScalarFloors(rr_, i);
+          pmb->peos->ApplyPassiveScalarFloors(rl_, k, js-1, i);
+          //pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
         }
       }
       for (int j=js; j<=je+1; ++j) {
@@ -186,14 +181,11 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
           pmb->precon->PiecewiseParabolicX2(k, j, il, iu, r, rlb_, rr_);
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            pmb->peos->ApplyPassiveScalarFloors(rlb_, i);
-            pmb->peos->ApplyPassiveScalarFloors(rr_, i);
+            pmb->peos->ApplyPassiveScalarFloors(rlb_, k, j, i);
+            pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
           }
         }
 
-        // flx(IBY) = (v2*b3 - v3*b2) = -EMFX
-        // flx(IBZ) = (v2*b1 - v1*b2) =  EMFZ
-        pmb->pcoord->CenterWidth2(k, j, il, iu, dxw_);
         ComputeUpwindFlux(k, j, il, iu, rl_, rr_, mass_flux, x2flux);
 
         if (order == 4) {
@@ -234,13 +226,11 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
           }
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            pmb->peos->ApplyPassiveScalarFloors(rl_, i);
-            pmb->peos->ApplyPassiveScalarFloors(rr_, i);
+            pmb->peos->ApplyPassiveScalarFloors(rl_, k, j, i);
+            pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
           }
 
           // Compute x2 interface fluxes from face-centered primitive variables
-          // TODO(felker): check that e1x2,e3x2 arguments added in late 2017 work here
-          pmb->pcoord->CenterWidth2(k, j, il, iu, dxw_);
           ComputeUpwindFlux(k, j, il, iu, rl_, rr_, mass_x2flux_fc, flux_fc);
 
           // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
@@ -276,10 +266,10 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
       } else {
         pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, r, rl_, rr_);
 #pragma omp simd
-          for (int i=il; i<=iu; ++i) {
-            pmb->peos->ApplyPassiveScalarFloors(rl_, i);
-            //pmb->peos->ApplyPassiveScalarFloors(rr_, i);
-          }
+        for (int i=il; i<=iu; ++i) {
+          pmb->peos->ApplyPassiveScalarFloors(rl_, ks-1, j, i);
+          //pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
+        }
       }
       for (int k=ks; k<=ke+1; ++k) {
         // reconstruct L/R states at k
@@ -291,14 +281,11 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
           pmb->precon->PiecewiseParabolicX3(k, j, il, iu, r, rlb_, rr_);
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            pmb->peos->ApplyPassiveScalarFloors(rlb_, i);
-            pmb->peos->ApplyPassiveScalarFloors(rr_, i);
+            pmb->peos->ApplyPassiveScalarFloors(rlb_, k, j, i);
+            pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
           }
         }
 
-        // flx(IBY) = (v3*b1 - v1*b3) = -EMFY
-        // flx(IBZ) = (v3*b2 - v2*b3) =  EMFX
-        pmb->pcoord->CenterWidth3(k, j, il, iu, dxw_);
         ComputeUpwindFlux(k, j, il, iu, rl_, rr_, mass_flux, x3flux);
 
         if (order == 4) {
@@ -339,13 +326,11 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
           }
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            pmb->peos->ApplyPassiveScalarFloors(rl_, i);
-            pmb->peos->ApplyPassiveScalarFloors(rr_, i);
+            pmb->peos->ApplyPassiveScalarFloors(rl_, k, j, i);
+            pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
           }
 
           // Compute x3 interface fluxes from face-centered primitive variables
-          // TODO(felker): check that e2x3,e1x3 arguments added in late 2017 work here
-          pmb->pcoord->CenterWidth3(k, j, il, iu, dxw_);
           ComputeUpwindFlux(k, j, il, iu, rl_, rr_, mass_x3flux_fc, flux_fc);
 
           // Apply Laplacian of second-order accurate face-averaged flux on x3 faces
@@ -358,8 +343,18 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
       }
     } // end if (order == 4)
   }
+
+  if (!STS_ENABLED) {
+    AddDiffusionFluxes();
+  }
   return;
 }
+
+
+void PassiveScalars::CalculateFluxes_STS() {
+  AddDiffusionFluxes();
+}
+
 
 void PassiveScalars::ComputeUpwindFlux(const int k, const int j, const int il,
                                        const int iu, // CoordinateDirection dir,

@@ -318,8 +318,8 @@ void Reconstruction::PiecewiseParabolicX1(
   for (int i=il; i<=iu; ++i) {
     // Reapply EOS floors to both L/R reconstructed primitive states
     // TODO(felker): check that fused loop with NWAVE redundant application is slower
-    pmy_block_->peos->ApplyPrimitiveFloors(wl, i+1);
-    pmy_block_->peos->ApplyPrimitiveFloors(wr, i);
+    pmy_block_->peos->ApplyPrimitiveFloors(wl, k, j, i+1);
+    pmy_block_->peos->ApplyPrimitiveFloors(wr, k, j, i);
   }
   return;
 }
@@ -603,8 +603,8 @@ void Reconstruction::PiecewiseParabolicX2(
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Reapply EOS floors to both L/R reconstructed primitive states
-    pmy_block_->peos->ApplyPrimitiveFloors(wl, i);
-    pmy_block_->peos->ApplyPrimitiveFloors(wr, i);
+    pmy_block_->peos->ApplyPrimitiveFloors(wl, k, j, i);
+    pmy_block_->peos->ApplyPrimitiveFloors(wr, k, j, i);
   }
   return;
 }
@@ -888,8 +888,8 @@ void Reconstruction::PiecewiseParabolicX3(
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // Reapply EOS floors to both L/R reconstructed primitive states
-    pmy_block_->peos->ApplyPrimitiveFloors(wl, i);
-    pmy_block_->peos->ApplyPrimitiveFloors(wr, i);
+    pmy_block_->peos->ApplyPrimitiveFloors(wl, k, j, i);
+    pmy_block_->peos->ApplyPrimitiveFloors(wr, k, j, i);
   }
   return;
 }

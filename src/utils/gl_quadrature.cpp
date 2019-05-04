@@ -16,6 +16,8 @@
 #include "../athena_arrays.hpp"
 #include "gl_quadrature.hpp"
 
+// Not checking that input integration order "N" is correct: 1 < N <=64
+
 namespace GaussLegendre {
 // NOTE: 3x function overload definitions follow the 64x abscissae and 64x weights arrays
 // (around L1120)
@@ -26,7 +28,6 @@ namespace GaussLegendre {
 static constexpr Real weight_n0[] = {0.0};
 static constexpr Real weight_n1[] = {0.0};
 static constexpr Real weight_n2[] = {
-  1.0000000000000000000000,
   1.0000000000000000000000,
 };
 static constexpr Real weight_n3[] = {
@@ -1128,7 +1129,7 @@ struct Quadrature {
   const Real *weight;
 };
 
-static const Quadrature gl_order[65] = {
+static const Quadrature gl_coeff[65] = {
   // n=0, n=1 are both invalid choices:
   {abscissa_n0, weight_n0}, {abscissa_n1, weight_n1},
   {abscissa_n2, weight_n2}, {abscissa_n3, weight_n3}, {abscissa_n4, weight_n4},
@@ -1154,21 +1155,143 @@ static const Quadrature gl_order[65] = {
   {abscissa_n62, weight_n62}, {abscissa_n63, weight_n63}, {abscissa_n64, weight_n64},
 };
 
+// 1D f(x1)
 Real integrate(const int n, Real (*f)(Real), Real x1l, Real x1u) {
-  return 0.0;
+  // affine transformmation from interval [-1, 1] to [x1l, xu]
+  Real m1 = (x1u - x1l)/2.0;
+  Real b1 = (x1u + x1l)/2.0;
+  // exploiting symmetry of weights and abscissae about x1=0.0 to only store half of coeff
+  const int nelements = (n + 1)/2;
+  Real sum = 0.0;
+  int istart = 0;
+
+  if (n % 2) { // odd order ---> x1=0.0 is abscissa point
+    sum += gl_coeff[n].weight[0]*f(b1);
+    istart = 1;  // don't double count this abscissa
+  }
+  for (int i=istart; i<nelements; i++) {
+    Real x1 = gl_coeff[n].abscissa[i];
+    sum += gl_coeff[n].weight[i]*(f(m1*x1 + b1) + f(-m1*x1 + b1));
+  }
+  return m1*sum;
 }
 
 
 // 2D f(x1, x2)
 Real integrate(const int n, Real (*f)(Real, Real),
                Real x1l, Real x1u, Real x2l, Real x2u) {
-  return 0.0;
+  Real m1 = (x1u - x1l)/2.0;
+  Real b1 = (x1u + x1l)/2.0;
+  Real m2 = (x2u - x2l)/2.0;
+  Real b2 = (x2u + x2l)/2.0;
+  const int nelements = (n + 1)/2;
+  Real sum = 0.0;
+  int istart = 0;
+
+  if (n % 2) {
+    Real w_zero = gl_coeff[n].weight[0];
+    sum += SQR(w_zero)*f(b1, b2);
+    istart = 1;
+    for (int i=istart; i<nelements; i++) {
+      Real x1 = gl_coeff[n].abscissa[i];
+      Real w1 = gl_coeff[n].weight[i];
+      sum += w1*w_zero*(f(m1*x1 + b1, b2) + f(-m1*x1 + b1, b2));
+    }
+    for (int j=istart; j<nelements; j++) {
+      Real x2 = gl_coeff[n].abscissa[j];
+      Real w2 = gl_coeff[n].weight[j];
+      sum += w2*w_zero*(f(b1, m2*x2 + b2) + f(b1, -m2*x2 + b2));
+    }
+  }
+  for (int j=istart; j<nelements; j++) {
+    Real x2 = gl_coeff[n].abscissa[j];
+    Real w2 = gl_coeff[n].weight[j];
+    for (int i=istart; i<nelements; i++) {
+      Real x1 = gl_coeff[n].abscissa[i];
+      Real w1 = gl_coeff[n].weight[i];
+      sum += w1*w2*(f(m1*x1 + b1, m2*x2 + b2) + f(-m1*x1 + b1, m2*x2 + b2)
+                    + f(m1*x1 + b1, -m2*x2 + b2) + f(-m1*x1 + b1, -m2*x2 + b2));
+    }
+  }
+  return m1*m2*sum;
 }
 
 
 // 3D f(x1, x2, x3)
 Real integrate(const int n, Real (*f)(Real, Real, Real),
                Real x1l, Real x1u, Real x2l, Real x2u, Real x3l, Real x3u) {
-  return 0.0;
+    Real m1 = (x1u - x1l)/2.0;
+  Real b1 = (x1u + x1l)/2.0;
+  Real m2 = (x2u - x2l)/2.0;
+  Real b2 = (x2u + x2l)/2.0;
+  Real m3 = (x3u - x3l)/2.0;
+  Real b3 = (x3u + x3l)/2.0;
+  const int nelements = (n + 1)/2;
+  Real sum = 0.0;
+  int istart = 0;
+
+  if (n % 2) {
+    Real w_zero = gl_coeff[n].weight[0];
+    sum += SQR(w_zero)*w_zero*f(b1, b2, b3);
+    istart = 1;
+    for (int k=istart; k<nelements; k++) {
+      Real x3 = gl_coeff[n].abscissa[k];
+      Real w3 = gl_coeff[n].weight[k];
+      for (int i=istart; i<nelements; i++) {
+        Real x1 = gl_coeff[n].abscissa[i];
+        Real w1 = gl_coeff[n].weight[i];
+        sum += w1*w3*w_zero*(f(m1*x1 + b1, b2, m3*x3 + b3)
+                             + f(-m1*x1 + b1, b2, m3*x3 + b3)
+                             + f(m1*x1 + b1, b2, -m3*x3 + b3)
+                             + f(-m1*x1 + b1, b2, -m3*x3 + b3));
+      }
+    }
+    for (int k=istart; k<nelements; k++) {
+      Real x3 = gl_coeff[n].abscissa[k];
+      Real w3 = gl_coeff[n].weight[k];
+      for (int j=istart; j<nelements; j++) {
+        Real x2 = gl_coeff[n].abscissa[j];
+        Real w2 = gl_coeff[n].weight[j];
+        sum += w2*w3*w_zero*(f(b1, m2*x2 + b2, m3*x3 + b3)
+                             + f(b1, -m2*x2 + b2, m3*x3 + b3)
+                             + f(b1, m2*x2 + b2, -m3*x3 + b3)
+                             + f(b1, -m2*x2 + b2, -m3*x3 + b3));
+      }
+    }
+    for (int j=istart; j<nelements; j++) {
+      Real x2 = gl_coeff[n].abscissa[j];
+      Real w2 = gl_coeff[n].weight[j];
+      for (int i=istart; i<nelements; i++) {
+        Real x1 = gl_coeff[n].abscissa[i];
+        Real w1 = gl_coeff[n].weight[i];
+        sum += w2*w1*w_zero*(f(m1*x1 + b1, m2*x2 + b2, b3)
+                             + f(-m1*x1 + b1, m2*x2 + b2, b3)
+                             + f(m1*x1 + b1, -m2*x2 + b2, b3)
+                             + f(-m1*x1 + b1, -m2*x2 + b2, b3));
+      }
+    }
+  }
+  for (int k=istart; k<nelements; k++) {
+    Real x3 = gl_coeff[n].abscissa[k];
+    Real w3 = gl_coeff[n].weight[k];
+    for (int j=istart; j<nelements; j++) {
+      Real x2 = gl_coeff[n].abscissa[j];
+      Real w2 = gl_coeff[n].weight[j];
+      for (int i=istart; i<nelements; i++) {
+        Real x1 = gl_coeff[n].abscissa[i];
+        Real w1 = gl_coeff[n].weight[i];
+        sum += w1*w2*w3*(
+            f(m1*x1 + b1, m2*x2 + b2, m3*x3 + b3)
+            + f(-m1*x1 + b1, m2*x2 + b2, m3*x3 + b3)
+            + f(m1*x1 + b1, -m2*x2 + b2, m3*x3 + b3)
+            + f(-m1*x1 + b1, -m2*x2 + b2, m3*x3 + b3)
+            + f(m1*x1 + b1, m2*x2 + b2, -m3*x3 + b3)
+            + f(-m1*x1 + b1, m2*x2 + b2, -m3*x3 + b3)
+            + f(m1*x1 + b1, -m2*x2 + b2, -m3*x3 + b3)
+            + f(-m1*x1 + b1, -m2*x2 + b2, -m3*x3 + b3));
+      }
+    }
+  }
+  return m1*m2*m3*sum;
 }
 } // namespace GaussLegendre

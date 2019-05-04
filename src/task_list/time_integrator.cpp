@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file time_integrator.cpp
-//  \brief derived class for time integrator task list.  Can create task lists for one
+//  \brief derived class for time integrator task list. Can create task lists for one
 //  of many different time integrators (e.g. van Leer, RK2, RK3, etc.)
 
 // C headers
@@ -87,7 +87,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     stage_wghts[1].gamma_3 = 0.0;
     stage_wghts[1].beta = 1.0;
   } else if (integrator == "rk1") {
-    // RK1: first-order Runge-Kutta
+    // RK1: first-order Runge-Kutta / the forward Euler (FE) method
     nstages = 1;
     cfl_limit = 1.0;
     stage_wghts[0].delta = 1.0;
@@ -209,15 +209,16 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     stage_wghts[4].beta = 0.226007483236906; // F(u^(4)) coeff.
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in CreateTimeIntegrator" << std::endl
+    msg << "### FATAL ERROR in TimeIntegratorTaskList constructor" << std::endl
         << "integrator=" << integrator << " not valid time integrator" << std::endl;
     ATHENA_ERROR(msg);
   }
 
   // Set cfl_number based on user input and time integrator CFL limit
-  Real cfl_number = pin->GetReal("time","cfl_number");
-  if (cfl_number > cfl_limit) {
-    std::cout << "### Warning in CreateTimeIntegrator" << std::endl
+  Real cfl_number = pin->GetReal("time", "cfl_number");
+  if (cfl_number > cfl_limit
+      && pm->fluid_setup == FluidFormulation::evolve) {
+    std::cout << "### Warning in TimeIntegratorTaskList constructor" << std::endl
               << "User CFL number " << cfl_number << " must be smaller than " << cfl_limit
               << " for integrator=" << integrator << " in " << pm->ndim
               << "D simulation" << std::endl << "Setting to limit" << std::endl;
@@ -235,11 +236,17 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         AddTask(DIFFUSE_FLD,NONE);
         // compute hydro fluxes, integrate hydro variables
         AddTask(CALC_HYDFLX,(DIFFUSE_HYD|DIFFUSE_FLD));
-      } else {
+      } else { // Hydro
         AddTask(CALC_HYDFLX,DIFFUSE_HYD);
+      }
+      if (NSCALARS > 0) {
+        AddTask(DIFFUSE_SCLR,NONE);
+        AddTask(CALC_SCLRFLX,(CALC_HYDFLX|DIFFUSE_SCLR));
       }
     } else { // STS enabled:
       AddTask(CALC_HYDFLX,NONE);
+      if (NSCALARS > 0)
+        AddTask(CALC_SCLRFLX,CALC_HYDFLX);
     }
     if (pm->multilevel) { // SMR or AMR
       AddTask(SEND_HYDFLX,CALC_HYDFLX);
@@ -258,7 +265,6 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     }
 
     if (NSCALARS > 0) {
-      AddTask(CALC_SCLRFLX,CALC_HYDFLX);
       if (pm->multilevel) {
         AddTask(SEND_SCLRFLX,CALC_SCLRFLX);
         AddTask(RECV_SCLRFLX,CALC_SCLRFLX);
@@ -622,6 +628,12 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
           (&TimeIntegratorTaskList::SetBoundariesScalars);
       task_list_[ntasks].lb_time = true;
       break;
+    case (DIFFUSE_SCLR):
+      task_list_[ntasks].TaskFunc=
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::DiffuseScalars);
+      task_list_[ntasks].lb_time = true;
+      break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in AddTask" << std::endl
@@ -812,6 +824,8 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
 
+  if (pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
+
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to HydroInt
     Real ave_wghts[3];
@@ -864,7 +878,8 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to calculate hydro diffusion fluxes
+// Functions to calculate hydro diffusion fluxes (stored in HydroDiffusion::visflx[],
+// cndflx[], added at the end of Hydro::CalculateFluxes()
 
 TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
@@ -874,7 +889,7 @@ TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
       || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
-    ph->hdif.CalcHydroDiffusionFlux(ph->w, ph->u, ph->flux);
+    ph->hdif.CalcDiffusionFlux(ph->w, ph->u, ph->flux);
   } else {
     return TaskStatus::fail;
   }
@@ -891,7 +906,7 @@ TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
   if (!(pf->fdif.field_diffusion_defined)) return TaskStatus::next;
 
   if (stage <= nstages) {
-    pf->fdif.CalcFieldDiffusionEMF(pf->b,pf->bcc,pf->e);
+    pf->fdif.CalcDiffusionEMF(pf->b, pf->bcc, pf->e);
   } else {
     return TaskStatus::fail;
   }
@@ -1112,6 +1127,8 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
       pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w, pf->b,
                                                  ph->w1, pf->bcc, pmb->pcoord,
                                                  il, iu, jl, ju, kl, ku);
+      pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
+          ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
     }
     // swap AthenaArray data pointers so that w now contains the updated w_out
     ph->w.SwapAthenaArray(ph->w1);
@@ -1227,7 +1244,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
 
     // Hardcode an additional flux divergence weighted average for the penultimate
     // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
-    if (stage==4 && integrator == "ssprk5_4") {
+    if (stage == 4 && integrator == "ssprk5_4") {
       // From Gottlieb (2009), u^(n+1) partial calculation
       ave_wghts[0] = -1.0; // -u^(n) coeff.
       ave_wghts[1] = 0.0;
@@ -1280,4 +1297,27 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesScalars(MeshBlock *pmb, int stag
     return TaskStatus::success;
   }
   return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::DiffuseScalars(MeshBlock *pmb, int stage) {
+  PassiveScalars *ps = pmb->pscalars;
+  Hydro *ph = pmb->phydro;
+  // return if there are no diffusion to be added
+  if (!(ps->scalar_diffusion_defined))
+    return TaskStatus::next;
+
+  if (stage <= nstages) {
+    // TODO(felker): adapted directly from HydroDiffusion::ClearFlux. Deduplicate
+    ps->diffusion_flx[X1DIR].ZeroClear();
+    ps->diffusion_flx[X2DIR].ZeroClear();
+    ps->diffusion_flx[X3DIR].ZeroClear();
+
+    // unlike HydroDiffusion, only 1x passive scalar diffusive process is allowed, so
+    // there is no need for counterpart to wrapper fn HydroDiffusion::CalcDiffusionFlux
+    ps->DiffusiveFluxIso(ps->r, ph->w, ps->diffusion_flx);
+  } else {
+    return TaskStatus::fail;
+  }
+  return TaskStatus::next;
 }
