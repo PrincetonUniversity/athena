@@ -33,10 +33,10 @@ eos_rj2a = [[1.08, 1.2, 1.0e-2, 0.5, 1.0155412503859613, 0.5641895835477563, 0.9
             [1.5041659368828393, 0.5636029312390515, 3.098189935379706e-2,
              0.2416583997245898, 1.4423591033631782, 0.44751658761318547,
              1.8006247196213527],
-            [1.3165384507447337, 0.520140488883702,-0.19219053007193185,
+            [1.3165384507447337, 0.520140488883702, -0.19219053007193185,
              0.17241533547445267, 1.6238113887027137, 0.5038152634148083,
              1.4757264774462406],
-            [1.3165384507447337, 0.520140488883702,-0.10231023474942734,
+            [1.3165384507447337, 0.520140488883702, -0.10231023474942734,
              -5.115511737471367e-2, 1.5206822799599837, 0.7603411399799919,
              1.4757264774462406],
             [1.0, 0.0, 0.0, 0.0, 1.1283791670955126, 0.5641895835477563, 1.0]]
@@ -44,6 +44,7 @@ eos_rj2a = np.array(eos_rj2a)
 wave_speeds = [-0.8236630408305421, 0.15084012571797972, 0.29445281898990067,
                0.5636029312390516, 0.868568785133063, 1.011849638757723,
                2.1633547260796724]
+
 
 def prepare(**kwargs):
     logger.debug('Running test ' + __name__)
@@ -94,25 +95,27 @@ def analyze():
             else:
                 msg[1] = 'pass:'
                 logger.debug(' '.join(map(str, msg)))
-    x_ref, _, _, data = athena_read.vtk(
-        'bin/RJ2a.block0.out1.{1:05d}.vtk'.format(n, t))
-    xc = x_ref[1:] - x_ref[:-1]
-    data_ref = np.empty((7, x_ref.size - 1))
+    x_ref, _, _, data = athena_read.vtk('bin/RJ2a.block0.out1.00040.vtk')
+    xc = (x_ref[1:] + x_ref[:-1]) * .5
     j = 0
     t = 0.2
+    data_ref = np.empty((7, xc.size))
     for i, x in enumerate(xc):
-        while x / t > wave_speeds[j]:
-            j += 1
+        try:
+            while x / t > wave_speeds[j]:
+                j += 1
+        except IndexError:
+            pass
         data_ref[:, i] = eos_rj2a[j]
     errors = [comparison.l1_norm(x_ref, data['rho'][0, 0] - data_ref[0]),
               comparison.l1_norm(x_ref, data['vel'][0, 0, :, 0] - data_ref[1]),
               comparison.l1_norm(x_ref, data['vel'][0, 0, :, 1] - data_ref[2]),
               comparison.l1_norm(x_ref, data['vel'][0, 0, :, 2] - data_ref[3]),
-              comparison.l1_norm(x_ref, data['Bcc'][0, 0, :, 0] - data_ref[4]),
-              comparison.l1_norm(x_ref, data['Bcc'][0, 0, :, 1] - data_ref[5]),
-              comparison.l1_norm(x_ref, data['Bcc'][0, 0, :, 2] - data_ref[6])]
+              comparison.l1_norm(x_ref, data['Bcc'][0, 0, :, 1] - data_ref[4]),
+              comparison.l1_norm(x_ref, data['Bcc'][0, 0, :, 2] - data_ref[5]),
+              comparison.l1_norm(x_ref, data['press'][0, 0] - data_ref[6])]
     names = ["rho", "vx", "vy", "vz", "By", "Bz", "p"]
-    threshes = [0, 0, 0, 0, 0, 0, 0]
+    threshes = [7e-3] + [5e-3] * 3 + [7e-3] * 3
     for err, name, thresh in zip(errors, names, threshes):
         msg = ['EOS RJ2a', 'fail:', 'var, diff, thresh =', name, err, thresh]
         if err > thresh:
