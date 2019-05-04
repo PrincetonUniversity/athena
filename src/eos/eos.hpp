@@ -61,11 +61,13 @@ class EquationOfState {
     AthenaArray<Real> &s, const AthenaArray<Real> &r_old, AthenaArray<Real> &r,
     Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
 
+  // pass k, j, i to following 2x functions even though x1-sliced input array is expected
+  // in order to accomodate position-dependent floors
 #pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim) linear(i)
-  void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i);
+  void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
 
 #pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s) linear(i)
-  void ApplyPassiveScalarFloors(AthenaArray<Real> &s, int i);
+  void ApplyPassiveScalarFloors(AthenaArray<Real> &s, int k, int j, int i);
 
   void ApplyPassiveScalarPrimitiveConservedFloors(
     AthenaArray<Real> &s, const AthenaArray<Real> &w, AthenaArray<Real> &r,

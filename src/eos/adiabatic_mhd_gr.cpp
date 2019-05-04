@@ -791,10 +791,11 @@ void EquationOfState::FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, R
 }
 
 //---------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i)
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j,
+//                                                 int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
-void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int i) {
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,i);
   Real& w_p  = prim(IPR,i);
   // Eventually, may want to check that small field errors don't overwhelm gas floor

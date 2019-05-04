@@ -73,7 +73,7 @@ class TaskList {
   void DoTaskListOneStage(Mesh *pmesh, int stage);
 
  protected:
-  Task task_list_[64];
+  Task task_list_[64];  // TODO(felker): rename to avoid confusion with class name
 
  private:
   virtual void AddTask(std::uint64_t id, std::uint64_t dep) = 0;
@@ -174,9 +174,11 @@ class SuperTimeStepTaskList : public TaskList {
   // functions
   TaskStatus CalculateHydroFlux_STS(MeshBlock *pmb, int stage);
   TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);
+  TaskStatus CalculateScalarFlux_STS(MeshBlock *pmb, int stage);
 
   TaskStatus IntegrateHydro_STS(MeshBlock *pmb, int stage);
   TaskStatus IntegrateField_STS(MeshBlock *pmb, int stage);
+  TaskStatus IntegrateScalars_STS(MeshBlock *pmb, int stage);
 
   TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 

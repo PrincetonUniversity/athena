@@ -87,7 +87,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     stage_wghts[1].gamma_3 = 0.0;
     stage_wghts[1].beta = 1.0;
   } else if (integrator == "rk1") {
-    // RK1: first-order Runge-Kutta
+    // RK1: first-order Runge-Kutta / the forward Euler (FE) method
     nstages = 1;
     cfl_limit = 1.0;
     stage_wghts[0].delta = 1.0;
@@ -232,17 +232,21 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     // calculate hydro/field diffusive fluxes
     if (!STS_ENABLED) {
       AddTask(DIFFUSE_HYD,NONE);
-      if (NSCALARS > 0)
-        AddTask(DIFFUSE_SCLR,NONE);
       if (MAGNETIC_FIELDS_ENABLED) {
         AddTask(DIFFUSE_FLD,NONE);
         // compute hydro fluxes, integrate hydro variables
         AddTask(CALC_HYDFLX,(DIFFUSE_HYD|DIFFUSE_FLD));
-      } else {
+      } else { // Hydro
         AddTask(CALC_HYDFLX,DIFFUSE_HYD);
+      }
+      if (NSCALARS > 0) {
+        AddTask(DIFFUSE_SCLR,NONE);
+        AddTask(CALC_SCLRFLX,(CALC_HYDFLX|DIFFUSE_SCLR));
       }
     } else { // STS enabled:
       AddTask(CALC_HYDFLX,NONE);
+      if (NSCALARS > 0)
+        AddTask(CALC_SCLRFLX,CALC_HYDFLX);
     }
     if (pm->multilevel) { // SMR or AMR
       AddTask(SEND_HYDFLX,CALC_HYDFLX);
@@ -261,7 +265,6 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     }
 
     if (NSCALARS > 0) {
-      AddTask(CALC_SCLRFLX,(CALC_HYDFLX|DIFFUSE_SCLR));
       if (pm->multilevel) {
         AddTask(SEND_SCLRFLX,CALC_SCLRFLX);
         AddTask(RECV_SCLRFLX,CALC_SCLRFLX);
@@ -821,6 +824,8 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
 
+  if (pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
+
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to HydroInt
     Real ave_wghts[3];
@@ -1239,7 +1244,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
 
     // Hardcode an additional flux divergence weighted average for the penultimate
     // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
-    if (stage==4 && integrator == "ssprk5_4") {
+    if (stage == 4 && integrator == "ssprk5_4") {
       // From Gottlieb (2009), u^(n+1) partial calculation
       ave_wghts[0] = -1.0; // -u^(n) coeff.
       ave_wghts[1] = 0.0;
