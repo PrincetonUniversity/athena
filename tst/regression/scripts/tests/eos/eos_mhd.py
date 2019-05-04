@@ -20,6 +20,7 @@ _mhd_tests = _tests + len(_mag_list) * [_tests[0]]
 _mhd_thresh = _thresh + len(_mag_list) * [_thresh[0]]
 _mhd_states = _states + len(_mag_list) * [_states[0]]
 
+# Solution data
 eos_rj2a = [[1.08, 1.2, 1.0e-2, 0.5, 1.0155412503859613, 0.5641895835477563, 0.95],
             [1.527257978792011, 0.6073696428720876, 0.13086751616368864,
              0.5671486200909381, 1.4837575078718286, 0.8243097265954603,
@@ -95,10 +96,12 @@ def analyze():
             else:
                 msg[1] = 'pass:'
                 logger.debug(' '.join(map(str, msg)))
+    # test hydrogen version of RJ2a
     x_ref, _, _, data = athena_read.vtk('bin/RJ2a.block0.out1.00040.vtk')
     xc = (x_ref[1:] + x_ref[:-1]) * .5
     j = 0
     t = 0.2
+    # construct H-RJ2a solution array
     data_ref = np.empty((7, xc.size))
     for i, x in enumerate(xc):
         try:
@@ -107,6 +110,7 @@ def analyze():
         except IndexError:
             pass
         data_ref[:, i] = eos_rj2a[j]
+    # compute errors
     errors = [comparison.l1_norm(x_ref, data['rho'][0, 0] - data_ref[0]),
               comparison.l1_norm(x_ref, data['vel'][0, 0, :, 0] - data_ref[1]),
               comparison.l1_norm(x_ref, data['vel'][0, 0, :, 1] - data_ref[2]),
@@ -116,6 +120,7 @@ def analyze():
               comparison.l1_norm(x_ref, data['press'][0, 0] - data_ref[6])]
     names = ["rho", "vx", "vy", "vz", "By", "Bz", "p"]
     threshes = [7e-3] + [5e-3] * 3 + [7e-3] * 3
+    # check errors
     for err, name, thresh in zip(errors, names, threshes):
         msg = ['EOS RJ2a', 'fail:', 'var, diff, thresh =', name, err, thresh]
         if err > thresh:
