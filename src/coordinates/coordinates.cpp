@@ -29,7 +29,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
   RegionSize& block_size = pmy_block->block_size;
 
   // Set indices
-  if (coarse_flag==true) {
+  if (coarse_flag) {
     il = pmb->cis; jl = pmb->cjs; kl = pmb->cks;
     iu = pmb->cie; ju = pmb->cje; ku = pmb->cke;
     ng = NGHOST;
@@ -733,7 +733,7 @@ void Coordinates::LaplacianX3All(const AthenaArray<Real> &s, AthenaArray<Real> &
 
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function
-void Coordinates::CoordSrcTerms(
+void Coordinates::AddCoordTermsDivergence(
     const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   return;

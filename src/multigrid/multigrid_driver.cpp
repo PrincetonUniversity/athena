@@ -31,12 +31,9 @@
 
 // constructor, initializes data structures and parameters
 
-MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) {
-  pmy_mesh_=pm;
-  nvar_=invar;
-  eps_=-1.0;
-  mode_=0; // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
-
+MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) :
+    nvar_(invar), mode_(), // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
+    pmy_mesh_(pm), fperiodic_(false), eps_(-1.0) {
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
@@ -44,9 +41,9 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
     ATHENA_ERROR(msg);
     return;
   }
-  if (pmy_mesh_->use_uniform_meshgen_fn_[X1DIR]==false
-      || pmy_mesh_->use_uniform_meshgen_fn_[X2DIR]==false
-      || pmy_mesh_->use_uniform_meshgen_fn_[X3DIR]==false) {
+  if (!(pmy_mesh_->use_uniform_meshgen_fn_[X1DIR])
+      || !(pmy_mesh_->use_uniform_meshgen_fn_[X2DIR])
+      || !(pmy_mesh_->use_uniform_meshgen_fn_[X3DIR])) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
         << "Non-uniform mesh spacing is not supported." << std::endl;
@@ -64,14 +61,13 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
     return;
   }
 
-  fperiodic_=false;
   if (MGBoundary[BoundaryFace::inner_x1] == MGPeriodicInnerX1
       && MGBoundary[BoundaryFace::outer_x1] == MGPeriodicOuterX1
       && MGBoundary[BoundaryFace::inner_x2] == MGPeriodicInnerX2
       && MGBoundary[BoundaryFace::outer_x2] == MGPeriodicOuterX2
       && MGBoundary[BoundaryFace::inner_x3] == MGPeriodicInnerX3
       && MGBoundary[BoundaryFace::outer_x3] == MGPeriodicOuterX3)
-    fperiodic_=true;
+    fperiodic_ = true;
 
   // Setting up the MPI information
   // *** this part should be modified when dedicate processes are allocated ***

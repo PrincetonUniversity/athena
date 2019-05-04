@@ -1025,21 +1025,40 @@ void MeshRefinement::CheckRefinementCondition() {
 
 // TODO(felker): consider merging w/ MeshBlock::pvars_cc, etc. See meshblock.cpp
 
-void MeshRefinement::AddToRefinement(AthenaArray<Real> *pvar_cc,
+int MeshRefinement::AddToRefinement(AthenaArray<Real> *pvar_cc,
                                      AthenaArray<Real> *pcoarse_cc) {
   pvars_cc_.push_back(std::make_tuple(pvar_cc, pcoarse_cc));
-  return;
+  return static_cast<int>(pvars_cc_.size() - 1);
 }
 
-void MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) {
+int MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) {
   pvars_fc_.push_back(std::make_tuple(pvar_fc, pcoarse_fc));
-  return;
+  return static_cast<int>(pvars_fc_.size() - 1);
 }
 
-// Currently, only called in bvals_refine.cpp to perform additional prolongation and
-// restriction steps on primitive Hydro variables only for GR.
+// Currently, only called in 2x functions in bvals_refine.cpp:
+// ----------
+// - BoundaryValues::RestrictGhostCellsOnSameLevel()--- to perform additional
+// restriction on primitive Hydro standard/coarse arrays (only for GR) without changing
+// the var_cc/coarse_buf pointer members of the HydroBoundaryVariable.
+
+// - BoundaryValues::ProlongateGhostCells()--- to ensure prolongation occurs on conserved
+// (not primitive) variable standard/coarse arrays for Hydro, PassiveScalars
+
+// Should probably consolidate this function and std::vector of tuples with
+// BoundaryVariable interface ptr members. Too much independent switching of ptrs!
+// ----------
+// Even though we currently do not have special GR functionality planned for
+// PassiveScalars::coarse_r_ like Hydro::coarse_prim_
+// (it is never transferred in Mesh::LoadBalancingAndAdaptiveMeshRefinement)
+// the physical (non-periodic) boundary functions will still apply only to the PRIMITIVE
+// scalar variable arrays, thus S/AMR demand 1) AthenaArray<Real> PassiveScalars::coarse_r
+// 2) ability to switch (s, coarse_s) and (r, coarse_r) ptrs in MeshRefinement::bvals_cc_
 
 void MeshRefinement::SetHydroRefinement(HydroBoundaryQuantity hydro_type) {
+  // TODO(felker): make more general so it can be used as SetPassiveScalarsRefinement()
+  // e.g. refer to "int Hydro::refinement_idx" instead of assuming that the correct tuple
+  // is in the first vector entry
   Hydro *ph = pmy_block_->phydro;
   // hard-coded assumption that, if multilevel, then Hydro is always present
   // and enrolled in mesh refinement in the first pvars_cc_ vector entry

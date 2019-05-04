@@ -70,8 +70,8 @@ class MeshRefinement {
 
   // setter functions for "enrolling" variable arrays in refinement via Mesh::AMR()
   // and/or in BoundaryValues::ProlongateBoundaries() (for SMR and AMR)
-  void AddToRefinement(AthenaArray<Real> *pvar_cc, AthenaArray<Real> *pcoarse_cc);
-  void AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc);
+  int AddToRefinement(AthenaArray<Real> *pvar_cc, AthenaArray<Real> *pcoarse_cc);
+  int AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc);
 
   // for switching first entry in pvars_cc_ to/from: (w, coarse_prim); (u, coarse_cons_)
   void SetHydroRefinement(HydroBoundaryQuantity hydro_type);

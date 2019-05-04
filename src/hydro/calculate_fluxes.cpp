@@ -14,14 +14,13 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"   // reapply floors to face-centered reconstructed states
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
 #include "../gravity/gravity.hpp"
-#include "../mesh/mesh.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../scalars/scalars.hpp"
 #include "hydro.hpp"
 #include "hydro_diffusion/hydro_diffusion.hpp"
 
@@ -64,14 +63,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
   AthenaArray<Real> &x1flux = flux[X1DIR];
   // set the loop limits
-  jl=js, ju=je, kl=ks, ku=ke;
+  jl = js, ju = je, kl = ks, ku = ke;
   // TODO(felker): fix loop limits for fourth-order hydro
   //  if (MAGNETIC_FIELDS_ENABLED) {
   if (pmb->block_size.nx2 > 1) {
     if (pmb->block_size.nx3 == 1) // 2D
-      jl=js-1, ju=je+1, kl=ks, ku=ke;
+      jl = js-1, ju = je+1, kl = ks, ku = ke;
     else // 3D
-      jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
+      jl = js-1, ju = je+1, kl = ks-1, ku = ke+1;
   }
   //  }
 
@@ -98,8 +97,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       if (order == 4) {
         for (int n=0; n<NWAVE; n++) {
           for (int i=is; i<=ie+1; i++) {
-            wl3d_(n,k,j,i)=wl_(n,i);
-            wr3d_(n,k,j,i)=wr_(n,i);
+            wl3d_(n,k,j,i) = wl_(n,i);
+            wr3d_(n,k,j,i) = wr_(n,i);
           }
         }
       }
@@ -136,7 +135,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
         // Compute x1 interface fluxes from face-centered primitive variables
         // TODO(felker): check that e3x1,e2x1 arguments added in late 2017 work here
-        pmb->pcoord->CenterWidth1(k,j,is,ie+1,dxw_);
+        pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
         RiemannSolver(k, j, is, ie+1, IVX, wl_, wr_, flux_fc, dxw_);
 #else  // MHD:
@@ -146,8 +145,13 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
         for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
-          for (int i=is; i<=ie+1; i++)
+          for (int i=is; i<=ie+1; i++) {
             x1flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_all_fc(n,k,j,i);
+            // TODO(felker): replace this loop-based deep copy with memcpy, or alternative
+            if (n == IDN && NSCALARS > 0) {
+              pmb->pscalars->mass_flux_fc[X1DIR](k,j,i) = flux_fc(n,k,j,i);
+            }
+          }
         }
       }
     }
@@ -158,16 +162,16 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   //--------------------------------------------------------------------------------------
   // j-direction
 
-  if (pmb->block_size.nx2 > 1) {
+  if (pmb->pmy_mesh->f2) {
     AthenaArray<Real> &x2flux = flux[X2DIR];
     // set the loop limits
-    il=is-1, iu=ie+1, kl=ks, ku=ke;
+    il = is-1, iu = ie+1, kl = ks, ku = ke;
     // TODO(felker): fix loop limits for fourth-order hydro
     //    if (MAGNETIC_FIELDS_ENABLED) {
     if (pmb->block_size.nx3 == 1) // 2D
-      kl=ks, ku=ke;
+      kl = ks, ku = ke;
     else // 3D
-      kl=ks-1, ku=ke+1;
+      kl = ks-1, ku = ke+1;
     //    }
 
     for (int k=kl; k<=ku; ++k) {
@@ -189,7 +193,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX2(k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
-        pmb->pcoord->CenterWidth2(k,j,il,iu,dxw_);
+        pmb->pcoord->CenterWidth2(k, j, il, iu, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
         RiemannSolver(k, j, il, iu, IVY, wl_, wr_, x2flux, dxw_);
 #else  // MHD:
@@ -201,8 +205,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         if (order == 4) {
           for (int n=0; n<NWAVE; n++) {
             for (int i=il; i<=iu; i++) {
-              wl3d_(n,k,j,i)=wl_(n,i);
-              wr3d_(n,k,j,i)=wr_(n,i);
+              wl3d_(n,k,j,i) = wl_(n,i);
+              wr3d_(n,k,j,i) = wr_(n,i);
             }
           }
         }
@@ -242,7 +246,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
           // Compute x2 interface fluxes from face-centered primitive variables
           // TODO(felker): check that e1x2,e3x2 arguments added in late 2017 work here
-          pmb->pcoord->CenterWidth2(k,j,il,iu,dxw_);
+          pmb->pcoord->CenterWidth2(k, j, il, iu, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
           RiemannSolver(k, j, il, iu, IVY, wl_, wr_, flux_fc, dxw_);
 #else  // MHD:
@@ -253,8 +257,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           // Apply Laplacian of second-order accurate face-averaged flux on x1 faces
           for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
-            for (int i=il; i<=iu; i++)
+            for (int i=il; i<=iu; i++) {
               x2flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_all_fc(n,k,j,i);
+              if (n == IDN && NSCALARS > 0) {
+                pmb->pscalars->mass_flux_fc[X2DIR](k,j,i) = flux_fc(n,k,j,i);
+              }
+            }
           }
         }
       }
@@ -264,12 +272,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   //--------------------------------------------------------------------------------------
   // k-direction
 
-  if (pmb->block_size.nx3 > 1) {
+  if (pmb->pmy_mesh->f3) {
     AthenaArray<Real> &x3flux = flux[X3DIR];
     // set the loop limits
     // TODO(felker): fix loop limits for fourth-order hydro
     //    if (MAGNETIC_FIELDS_ENABLED)
-    il=is-1, iu=ie+1, jl=js-1, ju=je+1;
+    il = is-1, iu = ie+1, jl = js-1, ju = je+1;
 
     for (int j=jl; j<=ju; ++j) { // this loop ordering is intentional
       // reconstruct the first row
@@ -290,7 +298,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX3(k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
-        pmb->pcoord->CenterWidth3(k,j,il,iu,dxw_);
+        pmb->pcoord->CenterWidth3(k, j, il, iu, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
         RiemannSolver(k, j, il, iu, IVZ, wl_, wr_, x3flux, dxw_);
 #else  // MHD:
@@ -301,8 +309,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         if (order == 4) {
           for (int n=0; n<NWAVE; n++) {
             for (int i=il; i<=iu; i++) {
-              wl3d_(n,k,j,i)=wl_(n,i);
-              wr3d_(n,k,j,i)=wr_(n,i);
+              wl3d_(n,k,j,i) = wl_(n,i);
+              wr3d_(n,k,j,i) = wr_(n,i);
             }
           }
         }
@@ -342,7 +350,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
           // Compute x3 interface fluxes from face-centered primitive variables
           // TODO(felker): check that e2x3,e1x3 arguments added in late 2017 work here
-          pmb->pcoord->CenterWidth3(k,j,il,iu,dxw_);
+          pmb->pcoord->CenterWidth3(k, j, il, iu, dxw_);
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
           RiemannSolver(k, j, il, iu, IVZ, wl_, wr_, flux_fc, dxw_);
 #else  // MHD:
@@ -352,8 +360,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           // Apply Laplacian of second-order accurate face-averaged flux on x3 faces
           for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
-            for (int i=il; i<=iu; i++)
+            for (int i=il; i<=iu; i++) {
               x3flux(n,k,j,i) = flux_fc(n,k,j,i) + C*laplacian_all_fc(n,k,j,i);
+              if (n == IDN && NSCALARS > 0) {
+                pmb->pscalars->mass_flux_fc[X3DIR](k,j,i) = flux_fc(n,k,j,i);
+              }
+            }
           }
         }
       }
@@ -377,19 +389,19 @@ void Hydro::CalculateFluxes_STS() {
 }
 
 void Hydro::AddDiffusionFluxes() {
-  MeshBlock *pmb = pmy_block;
+  Field *pf = pmy_block->pfield;
   // add diffusion fluxes
   if (hdif.hydro_diffusion_defined) {
     if (hdif.nu_iso > 0.0 || hdif.nu_aniso > 0.0)
-      hdif.AddHydroDiffusionFlux(hdif.visflx,flux);
+      hdif.AddDiffusionFlux(hdif.visflx,flux);
     if (NON_BAROTROPIC_EOS) {
       if (hdif.kappa_iso > 0.0 || hdif.kappa_aniso > 0.0)
-        hdif.AddHydroDiffusionEnergyFlux(hdif.cndflx,flux);
+        hdif.AddDiffusionEnergyFlux(hdif.cndflx,flux);
     }
   }
   if (MAGNETIC_FIELDS_ENABLED && NON_BAROTROPIC_EOS) {
-    if (pmb->pfield->fdif.field_diffusion_defined)
-      pmb->pfield->fdif.AddPoyntingFlux(pmb->pfield->fdif.pflux);
+    if (pf->fdif.field_diffusion_defined)
+      pf->fdif.AddPoyntingFlux(pf->fdif.pflux);
   }
   return;
 }

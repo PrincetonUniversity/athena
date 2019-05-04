@@ -73,7 +73,7 @@ class TaskList {
   void DoTaskListOneStage(Mesh *pmesh, int stage);
 
  protected:
-  Task task_list_[64];
+  Task task_list_[64];  // TODO(felker): rename to avoid confusion with class name
 
  private:
   virtual void AddTask(std::uint64_t id, std::uint64_t dep) = 0;
@@ -122,6 +122,7 @@ class TimeIntegratorTaskList : public TaskList {
 
   TaskStatus DiffuseHydro(MeshBlock *pmb, int stage);
   TaskStatus DiffuseField(MeshBlock *pmb, int stage);
+  TaskStatus DiffuseScalars(MeshBlock *pmb, int stage);
 
   TaskStatus SendHydro(MeshBlock *pmb, int stage);
   TaskStatus SendField(MeshBlock *pmb, int stage);
@@ -147,13 +148,13 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus NewBlockTimeStep(MeshBlock *pmb, int stage);
   TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
 
-  // TaskStatus CalculateScalarFlux(MeshBlock *pmb, int stage);
-  // TaskStatus SendScalarFlux(MeshBlock *pmb, int stage);
-  // TaskStatus ReceiveScalarFlux(MeshBlock *pmb, int stage);
-  // TaskStatus IntegrateScalars(MeshBlock *pmb, int stage);
-  // TaskStatus SendScalars(MeshBlock *pmb, int stage);
-  // TaskStatus ReceiveScalars(MeshBlock *pmb, int stage);
-  // TaskStatus SetBoundariesScalars(MeshBlock *pmb, int stage);
+  TaskStatus CalculateScalarFlux(MeshBlock *pmb, int stage);
+  TaskStatus SendScalarFlux(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveScalarFlux(MeshBlock *pmb, int stage);
+  TaskStatus IntegrateScalars(MeshBlock *pmb, int stage);
+  TaskStatus SendScalars(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveScalars(MeshBlock *pmb, int stage);
+  TaskStatus SetBoundariesScalars(MeshBlock *pmb, int stage);
 
  private:
   IntegratorWeight stage_wghts[MAX_NSTAGE];
@@ -173,9 +174,11 @@ class SuperTimeStepTaskList : public TaskList {
   // functions
   TaskStatus CalculateHydroFlux_STS(MeshBlock *pmb, int stage);
   TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);
+  TaskStatus CalculateScalarFlux_STS(MeshBlock *pmb, int stage);
 
   TaskStatus IntegrateHydro_STS(MeshBlock *pmb, int stage);
   TaskStatus IntegrateField_STS(MeshBlock *pmb, int stage);
+  TaskStatus IntegrateScalars_STS(MeshBlock *pmb, int stage);
 
   TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 
@@ -235,7 +238,7 @@ const std::uint64_t SETB_FLD = 1ULL<<31;
 // const std::uint64_t SETB_CHM = 1ULL<<33;
 
 const std::uint64_t PROLONG  = 1ULL<<34;
-const std::uint64_t CON2PRIM = 1ULL<<35;
+const std::uint64_t CONS2PRIM = 1ULL<<35;
 const std::uint64_t PHY_BVAL = 1ULL<<36;
 const std::uint64_t USERWORK = 1ULL<<37;
 const std::uint64_t NEW_DT   = 1ULL<<38;
@@ -259,6 +262,10 @@ const std::uint64_t INT_SCLR       = 1ULL<<52;
 const std::uint64_t SEND_SCLR      = 1ULL<<53;
 const std::uint64_t RECV_SCLR      = 1ULL<<54;
 const std::uint64_t SETB_SCLR      = 1ULL<<55;
+const std::uint64_t DIFFUSE_SCLR      = 1ULL<<56;
+
+// const std::uint64_t RECV_SCLRSH      = 1ULL<<57;
+// const std::uint64_t SEND_SCLRSH      = 1ULL<<58;
 
 }  // namespace HydroIntegratorTaskNames
 #endif  // TASK_LIST_TASK_LIST_HPP_

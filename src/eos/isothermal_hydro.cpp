@@ -10,7 +10,6 @@
 
 // C++ headers
 #include <cmath>   // sqrt()
-#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -23,12 +22,10 @@
 
 // EquationOfState constructor
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block_ = pmb;
-  iso_sound_speed_ = pin->GetReal("hydro", "iso_sound_speed"); // error if missing!
-  Real float_min = std::numeric_limits<float>::min();
-  density_floor_  = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(float_min)));
-}
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block_(pmb),
+    iso_sound_speed_{pin->GetReal("hydro", "iso_sound_speed")},  // error if missing!
+    density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min) )} {}
 
 //----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
@@ -78,8 +75,6 @@ void EquationOfState::PrimitiveToConserved(
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
     AthenaArray<Real> &cons, Coordinates *pco,
     int il, int iu, int jl, int ju, int kl, int ku) {
-  Real igm1 = 1.0/(GetGamma() - 1.0);
-
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
@@ -108,14 +103,16 @@ void EquationOfState::PrimitiveToConserved(
 //----------------------------------------------------------------------------------------
 // \!fn Real EquationOfState::SoundSpeed(Real dummy_arg[NHYDRO])
 // \brief returns isothermal sound speed
+
 Real EquationOfState::SoundSpeed(const Real dummy_arg[NHYDRO]) {
   return iso_sound_speed_;
 }
 
 //---------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
-//           int k, int j, int i)
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j,
+//                                                 int i)
 // \brief Apply density floor to reconstructed L/R cell interface states
+
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,i);
 
@@ -129,11 +126,11 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
 // \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
 //           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
 // \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
+
 void EquationOfState::ApplyPrimitiveConservedFloors(
     AthenaArray<Real> &prim, AthenaArray<Real> &cons, AthenaArray<Real> &bcc,
     int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
-
   Real& u_d  = cons(IDN,k,j,i);
 
   // apply (prim) density floor, without changing momentum or energy

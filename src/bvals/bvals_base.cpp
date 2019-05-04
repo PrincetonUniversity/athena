@@ -81,7 +81,7 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
   loc = iloc;
   block_size_ = isize;
   pmy_mesh_ = pm;
-  if (called_ == false) {
+  if (!called_) {
     int dim = 1;
     if (block_size_.nx2 > 1) dim = 2;
     if (block_size_.nx3 > 1) dim = 3;

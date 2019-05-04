@@ -41,7 +41,7 @@ class Hydro {
   // conserved and primitive variables
   AthenaArray<Real> u, w;      // time-integrator memory register #1
   AthenaArray<Real> u1, w1;    // time-integrator memory register #2
-  AthenaArray<Real> u2;       // time-integrator memory register #3
+  AthenaArray<Real> u2;        // time-integrator memory register #3
   // (no more than MAX_NREGISTER allowed)
 
   AthenaArray<Real> flux[3];  // face-averaged flux vector
@@ -49,6 +49,7 @@ class Hydro {
   // storage for SMR/AMR
   // TODO(KGF): remove trailing underscore or revert to private:
   AthenaArray<Real> coarse_cons_, coarse_prim_;
+  int refinement_idx{-1};
 
   // fourth-order intermediate quantities
   AthenaArray<Real> u_cc, w_cc;      // cell-centered approximations
@@ -59,7 +60,7 @@ class Hydro {
 
   // functions
   void NewBlockTimeStep();    // computes new timestep on a MeshBlock
-  void AddFluxDivergenceToAverage(const Real wght, AthenaArray<Real> &u_out);
+  void AddFluxDivergence(const Real wght, AthenaArray<Real> &u_out);
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
                        AthenaArray<Real> &bcc, const int order);
   void CalculateFluxes_STS();
@@ -85,12 +86,14 @@ class Hydro {
  private:
   AthenaArray<Real> dt1_, dt2_, dt3_;  // scratch arrays used in NewTimeStep
   // scratch space used to compute fluxes
-  AthenaArray<Real> wl_, wr_, wlb_;
   AthenaArray<Real> dxw_;
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
   AthenaArray<Real> cell_volume_;
+  // 2D
+  AthenaArray<Real> wl_, wr_, wlb_;
   AthenaArray<Real> dflx_;
+  // 1D GR
   AthenaArray<Real> prim_field_;   // primitives and transverse field, for SR MHD
   AthenaArray<Real> lambdas_p_;    // most positive wavespeeds in cell, for SR MHD
   AthenaArray<Real> lambdas_m_;    // most negative wavespeeds in cell, for SR MHD
@@ -99,6 +102,7 @@ class Hydro {
   AthenaArray<Real> lambdas_m_l_;  // most negative wavespeeds in left state
   AthenaArray<Real> lambdas_p_r_;  // most positive wavespeeds in right state
   AthenaArray<Real> lambdas_m_r_;  // most negative wavespeeds in right state
+  // 2D GR
   AthenaArray<Real> g_, gi_;       // metric and inverse, for some GR Riemann solvers
   AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
 
@@ -109,6 +113,7 @@ class Hydro {
   // 4D scratch arrays
   AthenaArray<Real> scr1_nkji_, scr2_nkji_;
   AthenaArray<Real> wl3d_, wr3d_;
+  // 1D scratch arrays
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
   TimeStepFunc UserTimeStep_;

@@ -29,12 +29,11 @@
 
 // constructor, initializes data structures and parameters
 
-FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
-  pmy_mesh_=pm;
-
-  if (pm->use_uniform_meshgen_fn_[X1DIR]==false
-      || pm->use_uniform_meshgen_fn_[X2DIR]==false
-      || pm->use_uniform_meshgen_fn_[X3DIR]==false) {
+FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) : nranks_(Globals::nranks),
+                                                      pmy_mesh_(pm), dim_(pm->ndim) {
+  if (!(pm->use_uniform_meshgen_fn_[X1DIR])
+      || !(pm->use_uniform_meshgen_fn_[X2DIR])
+      || !(pm->use_uniform_meshgen_fn_[X3DIR])) {
     std::stringstream msg;
     msg << "### FATAL ERROR in FFTDriver::FFTDriver" << std::endl
         << "Non-uniform mesh spacing is not supported." << std::endl;
@@ -42,19 +41,14 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
     return;
   }
 
-  dim_ = 1;
-  if (pm->mesh_size.nx2 > 1) dim_=2;
-  if (pm->mesh_size.nx3 > 1) dim_=3;
-
   // Setting up the MPI information
   // *** this part should be modified when dedicate processes are allocated ***
   // *** we also need to construct another neighbor list for Multigrid ***
 
   ranklist_  = new int[pm->nbtotal];
   for (int n=0; n<pm->nbtotal; n++)
-    ranklist_[n]=pm->ranklist[n];
+    ranklist_[n] = pm->ranklist[n];
 
-  nranks_  = Globals::nranks;
   nslist_  = new int[nranks_];
   nblist_  = new int[nranks_];
 #ifdef MPI_PARALLEL
@@ -95,9 +89,10 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) {
   int nbx2 = static_cast<int>(lx2max-lx2min+1);
   int nbx3 = static_cast<int>(lx3max-lx3min+1);
 
-  nmb = nbx1*nbx2*nbx3; // number of mesh blocks to be loaded to the FFT block
+  nmb = nbx1*nbx2*nbx3; // number of MeshBlock to be loaded to the FFT block
   if (pm->nbtotal/nmb != nranks_) {
-    // Will be implemented later.
+    // this restriction (to a single cuboid FFTBlock that covers the union of all
+    // MeshBlocks owned by an MPI rank) should be relaxed in the future
     std::stringstream msg;
     msg << "### FATAL ERROR in FFTDriver::FFTDriver" << std::endl
         << nmb << " MeshBlocks will be loaded to the FFT block."  << std::endl

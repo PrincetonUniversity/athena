@@ -21,7 +21,6 @@
 #include <cmath>   // sqrt()
 #include <fstream>
 #include <iostream> // ifstream
-#include <limits>
 #include <sstream>
 #include <stdexcept> // std::invalid_argument
 #include <string>
@@ -37,29 +36,28 @@
 
 // EquationOfState constructor
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block_ = pmb;
-  ptable = pmb->pmy_mesh->peos_table;
-  Real float_min = std::numeric_limits<float>::min();
-  density_floor_  = pin->GetOrAddReal("hydro","dfloor",std::sqrt(1024*(float_min)));
-  if (pin->DoesParameterExist("hydro","efloor")) {
-    energy_floor_ = pin->GetReal("hydro","efloor");
-    pressure_floor_ = energy_floor_ * (pin->GetOrAddReal("hydro","gamma", 2.) - 1.);
-    pressure_floor_ = pin->GetOrAddReal("hydro","pfloor", pressure_floor_);
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
+  ptable{pmb->pmy_mesh->peos_table},
+  pmy_block_{pmb},
+  gamma_{pin->GetOrAddReal("hydro", "gamma", 2.)},
+  density_floor_ {pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))} {
+  if (pin->DoesParameterExist("hydro", "efloor")) {
+    energy_floor_ = pin->GetReal("hydro", "efloor");
+    pressure_floor_ = energy_floor_*(pin->GetOrAddReal("hydro", "gamma", 2.) - 1.);
+    pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", pressure_floor_);
   } else {
-    pressure_floor_ = pin->GetOrAddReal("hydro","pfloor",std::sqrt(1024*(float_min)));
-    energy_floor_ = pressure_floor_ / (pin->GetOrAddReal("hydro","gamma", 2.) - 1.);
-    pin->SetReal("hydro","efloor", energy_floor_);
+    pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*float_min));
+    energy_floor_ = pressure_floor_/(pin->GetOrAddReal("hydro", "gamma", 2.) - 1.);
+    pin->SetReal("hydro", "efloor", energy_floor_);
   }
   if (EOS_TABLE_ENABLED) {
     if (!ptable) {
       std::stringstream msg;
       msg << "### FATAL ERROR in EquationOfState::EquationOfState" << std::endl
-          << "EOS table data uninitialized. Should be initialized by mesh." << std::endl;
+          << "EOS table data uninitialized. Should be initialized by Mesh." << std::endl;
       ATHENA_ERROR(msg);
     }
   }
-  gamma_ = pin->GetOrAddReal("hydro","gamma", 2.);
 }
 
 //----------------------------------------------------------------------------------------
@@ -164,13 +162,13 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
 }
 
 //---------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
-//           int k, int j, int i)
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j,
+//                                                 int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
-  Real& w_d  = prim(IDN,k,j,i);
-  Real& w_p  = prim(IPR,k,j,i);
+  Real& w_d  = prim(IDN,i);
+  Real& w_p  = prim(IPR,i);
 
   // apply density floor
   w_d = (w_d > density_floor_) ?  w_d : density_floor_;

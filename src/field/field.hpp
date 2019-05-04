@@ -51,6 +51,7 @@ class Field {
   // storage for SMR/AMR
   // TODO(KGF): remove trailing underscore or revert to private:
   AthenaArray<Real> coarse_bcc_;
+  int refinement_idx{-1};
   FaceField coarse_b_;
 
   FaceCenteredBoundaryVariable fbvar;

@@ -27,15 +27,13 @@
 // C headers
 
 // C++ headers
-#include <algorithm>
+#include <algorithm>    // max()
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../hydro/hydro.hpp"
-#include "../mesh/mesh.hpp"
 #include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -66,7 +64,7 @@ void Reconstruction::PiecewiseParabolicX1(
                 &dqf_minus = scr14_i_;
 
   // cache the x1-sliced primitive states for eigensystem calculation
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       wc(n,i) = w(n,k,j,i);
@@ -110,7 +108,7 @@ void Reconstruction::PiecewiseParabolicX1(
 
   //--- Step 1. --------------------------------------------------------------------------
   // Reconstruct interface averages <a>_{i-1/2} and <a>_{i+1/2}
-  for (int n=0; n<(NWAVE); ++n) {
+  for (int n=0; n<NWAVE; ++n) {
     // Compute average slope in i-1, i, i+1 zones
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
@@ -309,7 +307,7 @@ void Reconstruction::PiecewiseParabolicX1(
   }
 
   // compute ql_(i+1/2) and qr_(i-1/2)
-  for (int n=0; n<(NWAVE); ++n) {
+  for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       wl(n,i+1) = ql_iph(n,i);
@@ -354,7 +352,7 @@ void Reconstruction::PiecewiseParabolicX2(
                 &dqf_minus = scr14_i_;
 
   // cache the x1-sliced primitive states for eigensystem calculation
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       wc(n,i) = w(n,k,j,i);
@@ -398,7 +396,7 @@ void Reconstruction::PiecewiseParabolicX2(
 
   //--- Step 1. ------------------------------------------------------------------------
   // Reconstruct interface averages <a>_{j-1/2} and <a>_{j+1/2}
-  for (int n=0; n<(NWAVE); ++n) {
+  for (int n=0; n<NWAVE; ++n) {
     // Compute average slope in j-1, j, j+1 zones
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
@@ -595,7 +593,7 @@ void Reconstruction::PiecewiseParabolicX2(
   }
 
   // compute ql_(j+1/2) and qr_(j-1/2)
-  for (int n=0; n<(NWAVE); ++n) {
+  for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       wl(n,i) = ql_jph(n,i);
@@ -638,7 +636,7 @@ void Reconstruction::PiecewiseParabolicX3(
                 &dqf_minus = scr14_i_;
 
   // cache the x1-sliced primitive states for eigensystem calculation
-  for (int n=0; n<(NHYDRO); ++n) {
+  for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       wc(n,i) = w(n,k,j,i);
@@ -682,7 +680,7 @@ void Reconstruction::PiecewiseParabolicX3(
 
   //--- Step 1. -------------------------------------------------------------------------
   // Reconstruct interface averages <a>_{k-1/2} and <a>_{k+1/2}
-  for (int n=0; n<(NWAVE); ++n) {
+  for (int n=0; n<NWAVE; ++n) {
     // Compute average slope in k-1, k, k+1 zones
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
@@ -880,7 +878,7 @@ void Reconstruction::PiecewiseParabolicX3(
   }
 
   // compute ql_(k+1/2) and qr_(k-1/2)
-  for (int n=0; n<(NWAVE); ++n) {
+  for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       wl(n,i) = ql_kph(n,i);

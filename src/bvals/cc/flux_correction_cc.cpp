@@ -173,7 +173,7 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
           MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                      MPI_STATUS_IGNORE);
           MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
-          if (static_cast<bool>(test) == false) {
+          if (!static_cast<bool>(test)) {
             bflag = false;
             continue;
           }

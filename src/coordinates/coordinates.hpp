@@ -122,7 +122,7 @@ class Coordinates {
   virtual Real GetCellVolume(const int k, const int j, const int i);
 
   // ...to compute geometrical source terms
-  virtual void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  virtual void AddCoordTermsDivergence(const Real dt, const AthenaArray<Real> *flux,
                              const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
                              AthenaArray<Real> &u);
 
@@ -330,7 +330,7 @@ class Cylindrical : public Coordinates {
   Real GetCellVolume(const int k, const int j, const int i) final;
 
   // ...to compute geometrical source terms
-  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  void AddCoordTermsDivergence(const Real dt, const AthenaArray<Real> *flux,
                      const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
                      AthenaArray<Real> &u) final;
 };
@@ -388,7 +388,7 @@ class SphericalPolar : public Coordinates {
   Real GetCellVolume(const int k, const int j, const int i) final;
 
   // ...to compute geometrical source terms
-  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  void AddCoordTermsDivergence(const Real dt, const AthenaArray<Real> *flux,
                      const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
                      AthenaArray<Real> &u) final;
 };
@@ -496,7 +496,7 @@ class Schwarzschild : public Coordinates {
   Real GetCellVolume(const int k, const int j, const int i) final;
 
   // ...to compute geometrical source terms
-  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  void AddCoordTermsDivergence(const Real dt, const AthenaArray<Real> *flux,
                      const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
                      AthenaArray<Real> &u) final;
 
@@ -591,7 +591,7 @@ class KerrSchild : public Coordinates {
   Real GetCellVolume(const int k, const int j, const int i) final;
 
   // ...to compute geometrical source terms
-  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  void AddCoordTermsDivergence(const Real dt, const AthenaArray<Real> *flux,
                      const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
                      AthenaArray<Real> &u) final;
 
@@ -686,7 +686,7 @@ class GRUser : public Coordinates {
   Real GetCellVolume(const int k, const int j, const int i) final;
 
   // ...to compute geometrical source terms
-  void CoordSrcTerms(const Real dt, const AthenaArray<Real> *flux,
+  void AddCoordTermsDivergence(const Real dt, const AthenaArray<Real> *flux,
                      const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
                      AthenaArray<Real> &u) final;
 

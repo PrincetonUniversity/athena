@@ -12,7 +12,6 @@
 // C++ headers
 #include <algorithm>  // max()
 #include <cmath>      // NAN, sqrt(), abs(), isfinite(), isnan(), pow()
-#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"                   // enums, macros
@@ -40,17 +39,16 @@ Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi);
 //   pmb: pointer to MeshBlock
 //   pin: pointer to runtime inputs
 
-EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block_ = pmb;
-  gamma_ = pin->GetReal("hydro", "gamma");
-  Real float_min = std::numeric_limits<float>::min();
-  density_floor_ = pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*(float_min)) );
-  pressure_floor_ = pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*(float_min)) );
-  rho_min_ = pin->GetOrAddReal("hydro", "rho_min", density_floor_);
-  rho_pow_ = pin->GetOrAddReal("hydro", "rho_pow", 0.0);
-  pgas_min_ = pin->GetOrAddReal("hydro", "pgas_min", pressure_floor_);
-  pgas_pow_ = pin->GetOrAddReal("hydro", "pgas_pow", 0.0);
-  gamma_max_ = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
+EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block_(pmb),
+    gamma_{pin->GetReal("hydro", "gamma")},
+    density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))},
+    pressure_floor_{pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*float_min))},
+    gamma_max_{pin->GetOrAddReal("hydro", "gamma_max", 1000.0)},
+    rho_min_{pin->GetOrAddReal("hydro", "rho_min", density_floor_)},
+    rho_pow_{pin->GetOrAddReal("hydro", "rho_pow", 0.0)},
+    pgas_min_{pin->GetOrAddReal("hydro", "pgas_min", pressure_floor_)},
+    pgas_pow_{pin->GetOrAddReal("hydro", "pgas_pow", 0.0)} {
   int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
   g_.NewAthenaArray(NMETRIC, nc1);
   g_inv_.NewAthenaArray(NMETRIC, nc1);
@@ -438,8 +436,8 @@ Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi) {
 } // namespace
 
 //---------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim,
-//           int k, int j, int i)
+// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j,
+//                                                 int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {

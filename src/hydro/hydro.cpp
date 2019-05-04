@@ -37,10 +37,10 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     // constructor overload resolution of non-aggregate class type AthenaArray<Real>
     flux{ {NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1+1},
           {NHYDRO, pmb->ncells3, pmb->ncells2+1, pmb->ncells1,
-           (pmb->pmy_mesh->f2_ ? AthenaArray<Real>::DataStatus::allocated :
+           (pmb->pmy_mesh->f2 ? AthenaArray<Real>::DataStatus::allocated :
             AthenaArray<Real>::DataStatus::empty)},
           {NHYDRO, pmb->ncells3+1, pmb->ncells2, pmb->ncells1,
-           (pmb->pmy_mesh->f3_ ? AthenaArray<Real>::DataStatus::allocated :
+           (pmb->pmy_mesh->f3 ? AthenaArray<Real>::DataStatus::allocated :
             AthenaArray<Real>::DataStatus::empty)}
     },
     coarse_cons_(NHYDRO, pmb->ncc3, pmb->ncc2, pmb->ncc1,
@@ -73,7 +73,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
 
   // "Enroll" in S/AMR by adding to vector of tuples of pointers in MeshRefinement class
   if (pm->multilevel) {
-    pmy_block->pmr->AddToRefinement(&u, &coarse_cons_);
+    refinement_idx = pmy_block->pmr->AddToRefinement(&u, &coarse_cons_);
   }
 
   // enroll HydroBoundaryVariable object
@@ -90,16 +90,16 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
   wr_.NewAthenaArray(NWAVE, nc1);
   wlb_.NewAthenaArray(NWAVE, nc1);
   x1face_area_.NewAthenaArray(nc1+1);
-  if (pm->f2_) {
+  if (pm->f2) {
     x2face_area_.NewAthenaArray(nc1);
     x2face_area_p1_.NewAthenaArray(nc1);
   }
-  if (pm->f3_) {
+  if (pm->f3) {
     x3face_area_.NewAthenaArray(nc1);
     x3face_area_p1_.NewAthenaArray(nc1);
   }
   cell_volume_.NewAthenaArray(nc1);
-  dflx_.NewAthenaArray((NHYDRO), nc1);
+  dflx_.NewAthenaArray(NHYDRO, nc1);
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) { // only used in (SR/GR)MHD
     if (!GENERAL_RELATIVITY) {
       prim_field_.NewAthenaArray(NWAVE, 1, 1, nc1);
@@ -120,26 +120,29 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
   // for one-time potential calcuation and correction (old Athena)
   if (SELF_GRAVITY_ENABLED == 3) {
     gflx[X1DIR].NewAthenaArray(NHYDRO, nc3, nc2, nc1+1);
-    if (pm->f2_)
+    if (pm->f2)
       gflx[X2DIR].NewAthenaArray(NHYDRO, nc3, nc2+1, nc1);
-    if (pm->f3_)
+    if (pm->f3)
       gflx[X3DIR].NewAthenaArray(NHYDRO, nc3+1, nc2, nc1);
 
     gflx_old[X1DIR].NewAthenaArray(NHYDRO, nc3, nc2, nc1+1);
-    if (pm->f2_)
+    if (pm->f2)
       gflx_old[X2DIR].NewAthenaArray(NHYDRO, nc3, nc2+1, nc1);
-    if (pm->f3_)
+    if (pm->f3)
       gflx_old[X3DIR].NewAthenaArray(NHYDRO, nc3+1, nc2, nc1);
   }
 
-  // fourth-order hydro
-  // 4D scratch arrays
-  wl3d_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
-  wr3d_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
-  scr1_nkji_.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
-  scr2_nkji_.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
-  laplacian_l_fc_.NewAthenaArray(nc1);
-  laplacian_r_fc_.NewAthenaArray(nc1);
+  // fourth-order hydro integration scheme
+  if (pmb->precon->xorder == 4) {
+    // 4D scratch arrays
+    wl3d_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
+    wr3d_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
+    scr1_nkji_.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
+    scr2_nkji_.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
+    // 1D scratch arrays
+    laplacian_l_fc_.NewAthenaArray(nc1);
+    laplacian_r_fc_.NewAthenaArray(nc1);
+  }
 
   UserTimeStep_ = pmb->pmy_mesh->UserTimeStep_;
 }

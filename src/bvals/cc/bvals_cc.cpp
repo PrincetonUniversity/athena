@@ -524,7 +524,7 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
   MeshBlock* pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
 
-  int f2 = pmy_mesh_->f2_, f3 = pmy_mesh_->f3_;
+  int f2 = pmy_mesh_->f2, f3 = pmy_mesh_->f3;
   int cng, cng1, cng2, cng3;
   cng  = cng1 = pmb->cnghost;
   cng2 = cng*f2;

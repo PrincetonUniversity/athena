@@ -32,6 +32,7 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../scalars/scalars.hpp"
 #include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -40,9 +41,9 @@
 SuperTimeStepTaskList::SuperTimeStepTaskList(
     ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) : ptlist_(ptlist) {
   // STS Incompatiblities
-  if (MAGNETIC_FIELDS_ENABLED &&
-      !(pm->pblock->pfield->fdif.field_diffusion_defined) &&
-      !(pm->pblock->phydro->hdif.hydro_diffusion_defined)) {
+  if (MAGNETIC_FIELDS_ENABLED
+      && !(pm->pblock->pfield->fdif.field_diffusion_defined)
+      && !(pm->pblock->phydro->hdif.hydro_diffusion_defined)) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping requires setting parameters for "
@@ -60,7 +61,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
   }
   // TODO(pdmullen): how should source terms be handled inside
   //                 operator-split RKL1 STS?
-  if (pm->pblock->phydro->hsrc.hydro_sourceterms_defined==true) {
+  if (pm->pblock->phydro->hsrc.hydro_sourceterms_defined) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatible "
@@ -89,6 +90,8 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
   {using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
     // calculate hydro/field diffusive fluxes
     AddTask(DIFFUSE_HYD,NONE);
+    if (NSCALARS > 0)
+      AddTask(DIFFUSE_SCLR,NONE);
     // compute hydro fluxes, integrate hydro variables
     if (MAGNETIC_FIELDS_ENABLED) {
       AddTask(DIFFUSE_FLD,NONE);
@@ -101,6 +104,22 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
     AddTask(RECV_HYD,NONE);
     AddTask(SETB_HYD,(RECV_HYD|INT_HYD));
 
+    // compute passive scalar fluxes and integrate the density of each species:
+    if (NSCALARS > 0) {
+      AddTask(CALC_SCLRFLX,(CALC_HYDFLX|DIFFUSE_SCLR));
+      // TODO(felker): uncomment after S/AMR prohibitiion for STS is removed
+      // if (pm->multilevel) {
+      //   AddTask(SEND_SCLRFLX,CALC_SCLRFLX);
+      //   AddTask(RECV_SCLRFLX,CALC_SCLRFLX);
+      //   AddTask(INT_SCLR,RECV_SCLRFLX);
+      // } else {
+      AddTask(INT_SCLR, CALC_SCLRFLX);
+        //}
+      AddTask(SEND_SCLR,INT_SCLR);
+      AddTask(RECV_SCLR,NONE);
+      AddTask(SETB_SCLR,RECV_SCLR);
+    }
+
     // compute MHD fluxes, integrate field
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
       AddTask(CALC_FLDFLX,CALC_HYDFLX);
@@ -111,13 +130,21 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
       AddTask(RECV_FLD,NONE);
       AddTask(SETB_FLD,(RECV_FLD|INT_FLD));
       // compute new primitives
-      AddTask(CON2PRIM,(SETB_HYD|SETB_FLD));
-    } else {  // HYDRO
-      AddTask(CON2PRIM,(SETB_HYD));
+      if (NSCALARS > 0) {
+        AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD|SETB_SCLR));
+      } else {
+        AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD));
+      }
+    } else {  // Hydro
+      if (NSCALARS > 0) {
+        AddTask(CONS2PRIM,(SETB_HYD|SETB_SCLR));
+      } else {
+        AddTask(CONS2PRIM,SETB_HYD);
+      }
     }
 
     // everything else
-    AddTask(PHY_BVAL,CON2PRIM);
+    AddTask(PHY_BVAL,CONS2PRIM);
     AddTask(CLEAR_ALLBND,PHY_BVAL);
   } // end of using namespace block
 }
@@ -127,8 +154,8 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
 //  ntask.
 
 void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
-  task_list_[ntasks].task_id=id;
-  task_list_[ntasks].dependency=dep;
+  task_list_[ntasks].task_id = id;
+  task_list_[ntasks].dependency = dep;
 
   using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
   switch (id) {
@@ -218,7 +245,38 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
       task_list_[ntasks].lb_time = true;
       break;
 
-    case (CON2PRIM):
+    case (CALC_SCLRFLX):
+      task_list_[ntasks].TaskFunc=
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::CalculateScalarFlux_STS);
+      task_list_[ntasks].lb_time = true;
+      break;
+    case (INT_SCLR):
+      task_list_[ntasks].TaskFunc=
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&SuperTimeStepTaskList::IntegrateScalars_STS);
+      task_list_[ntasks].lb_time = true;
+      break;
+    case (SEND_SCLR):
+      task_list_[ntasks].TaskFunc=
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::SendScalars);
+      task_list_[ntasks].lb_time = true;
+      break;
+    case (RECV_SCLR):
+      task_list_[ntasks].TaskFunc=
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::ReceiveScalars);
+      task_list_[ntasks].lb_time = false;
+      break;
+    case (SETB_SCLR):
+      task_list_[ntasks].TaskFunc=
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::SetBoundariesScalars);
+      task_list_[ntasks].lb_time = true;
+      break;
+
+    case (CONS2PRIM):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::Primitives);
@@ -243,6 +301,12 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
           (&TimeIntegratorTaskList::DiffuseField);
       task_list_[ntasks].lb_time = true;
       break;
+    case (DIFFUSE_SCLR):
+      task_list_[ntasks].TaskFunc=
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::DiffuseScalars);
+      task_list_[ntasks].lb_time = true;
+      break;
     default:
       std::stringstream msg;
       msg << "### FATAL ERROR in AddTask" << std::endl
@@ -258,15 +322,21 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 #pragma omp single
   {
     // Set RKL1 params
-    pmb->pmy_mesh->muj = (2.*stage-1.)/stage;
-    pmb->pmy_mesh->nuj = (1.-stage)/stage;
-    pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(std::pow(nstages,2.)+nstages);
+    pmb->pmy_mesh->muj = (2.*stage - 1.)/stage;
+    pmb->pmy_mesh->nuj = (1. - stage)/stage;
+    pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(std::pow(nstages, 2.) + nstages);
   }
 
   // Clear flux arrays from previous stage
-  pmb->phydro->hdif.ClearHydroFlux(pmb->phydro->flux);
+  pmb->phydro->hdif.ClearFlux(pmb->phydro->flux);
   if (MAGNETIC_FIELDS_ENABLED)
     pmb->pfield->fdif.ClearEMF(pmb->pfield->e);
+  if (NSCALARS > 0) {
+    PassiveScalars *ps = pmb->pscalars;
+    ps->s_flux[X1DIR].ZeroClear();
+    ps->s_flux[X2DIR].ZeroClear();
+    ps->s_flux[X3DIR].ZeroClear();
+  }
 
   // Real time = pmb->pmy_mesh->time;
   pmb->pbval->StartReceiving(BoundaryCommSubset::all);
@@ -278,19 +348,29 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 // Functions to calculates fluxes
 
 TaskStatus SuperTimeStepTaskList::CalculateHydroFlux_STS(MeshBlock *pmb, int stage) {
-  Hydro *phydro=pmb->phydro;
-  // Field *pfield=pmb->pfield;
-
+  Hydro *ph = pmb->phydro;
   if (stage <= nstages) {
-    phydro->CalculateFluxes_STS();
+    ph->CalculateFluxes_STS();
     return TaskStatus::next;
   }
   return TaskStatus::fail;
 }
 
-TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
+
+TaskStatus SuperTimeStepTaskList::CalculateScalarFlux_STS(MeshBlock *pmb, int stage) {
+  PassiveScalars *ps = pmb->pscalars;
   if (stage <= nstages) {
-    pmb->pfield->ComputeCornerE_STS();
+    ps->CalculateFluxes_STS();
+    return TaskStatus::next;
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
+  Field *pf = pmb->pfield;
+  if (stage <= nstages) {
+    pf->ComputeCornerE_STS();
     return TaskStatus::next;
   }
   return TaskStatus::fail;
@@ -302,6 +382,8 @@ TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
 TaskStatus SuperTimeStepTaskList::IntegrateHydro_STS(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   Field *pf = pmb->pfield;
+
+  if (pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   // set registers
   ph->u2.SwapAthenaArray(ph->u1);
@@ -324,16 +406,41 @@ TaskStatus SuperTimeStepTaskList::IntegrateHydro_STS(MeshBlock *pmb, int stage) 
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
     Real wght = pmb->pmy_mesh->muj_tilde;
-    ph->AddFluxDivergenceToAverage(wght, ph->u);
+    ph->AddFluxDivergence(wght, ph->u);
     // TODO(pdmullen): check this after disabling ATHENA_ERROR for src terms
-    pmb->pcoord->CoordSrcTerms(wght, ph->flux, ph->w, pf->bcc, ph->u);
+    pmb->pcoord->AddCoordTermsDivergence(wght, ph->flux, ph->w, pf->bcc, ph->u);
     return TaskStatus::next;
   }
   return TaskStatus::fail;
 }
 
+
+TaskStatus SuperTimeStepTaskList::IntegrateScalars_STS(MeshBlock *pmb, int stage) {
+  PassiveScalars *ps = pmb->pscalars;
+  // set registers
+  ps->s2.SwapAthenaArray(ps->s1);
+  ps->s1.SwapAthenaArray(ps->s);
+
+  // update s
+  if (stage <= nstages) {
+    Real ave_wghts[3];
+    ave_wghts[0] = 0.0;
+    ave_wghts[1] = pmb->pmy_mesh->muj;
+    ave_wghts[2] = pmb->pmy_mesh->nuj;
+    pmb->WeightedAve(ps->s, ps->s1, ps->s2, ave_wghts);
+    Real wght = pmb->pmy_mesh->muj_tilde;
+    ps->AddFluxDivergence(wght, ps->s);
+
+    return TaskStatus::next;
+  }
+  return TaskStatus::fail;
+}
+
+
 TaskStatus SuperTimeStepTaskList::IntegrateField_STS(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
+
+  if (pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
     Real ave_wghts[3];

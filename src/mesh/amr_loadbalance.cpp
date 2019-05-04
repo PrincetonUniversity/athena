@@ -38,7 +38,7 @@
 void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
   int nnew = 0, ndel = 0;
 
-  if (adaptive == true) {
+  if (adaptive) {
     UpdateMeshBlockTree(nnew, ndel);
     nbnew += nnew; nbdel += ndel;
   }
@@ -50,8 +50,8 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
   if (nnew != 0 || ndel != 0) { // at least one (de)refinement happened
     GatherCostListAndCheckBalance();
     RedistributeAndRefineMeshBlocks(pin, nbtotal + nnew - ndel);
-  } else if (lb_flag_ == true && step_since_lb >= lb_interval_) {
-    if (GatherCostListAndCheckBalance() == false) // load imbalance detected
+  } else if (lb_flag_ && step_since_lb >= lb_interval_) {
+    if (!GatherCostListAndCheckBalance()) // load imbalance detected
       RedistributeAndRefineMeshBlocks(pin, nbtotal);
     lb_flag_ = false;
   }
@@ -116,8 +116,7 @@ void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlis
 
 #ifdef MPI_PARALLEL
   if (nb % (Globals::nranks * num_mesh_threads_) != 0
-      && adaptive == false && lb_flag_ ==false
-      && maxcost == mincost && Globals::my_rank == 0) {
+      && !adaptive && !lb_flag_ && maxcost == mincost && Globals::my_rank == 0) {
     std::cout << "### Warning in CalculateLoadBalance" << std::endl
               << "The number of MeshBlocks cannot be divided evenly. "
               << "This will result in poor load balancing." << std::endl;
@@ -445,7 +444,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   // "SMR/AMR-enrolled" quantities (loop over MeshBlock::vars_cc_, not MeshRefinement)
 
   // TODO(felker): add explicit check to ensure that elements of pb->vars_cc/fc_ and
-  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive==true
+  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
 
   // int num_cc = pblock->pmr->pvars_cc_.size();
   int num_fc = pblock->vars_fc_.size();
@@ -457,16 +456,16 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   // cell-centered quantities enrolled in SMR/AMR
   int bssame = bnx1*bnx2*bnx3*nx4_tot;
   int bsf2c = (bnx1/2)*((bnx2 + 1)/2)*((bnx3 + 1)/2)*nx4_tot;
-  int bsc2f = (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2_)*((bnx3 + 1)/2 + 2*f3_)*nx4_tot;
+  int bsc2f = (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)*nx4_tot;
   // face-centered quantities enrolled in SMR/AMR
-  bssame += num_fc*((bnx1 + 1)*bnx2*bnx3 + bnx1*(bnx2 + f2_)*bnx3
-                    + bnx1*bnx2*(bnx3 + f3_));
+  bssame += num_fc*((bnx1 + 1)*bnx2*bnx3 + bnx1*(bnx2 + f2)*bnx3
+                    + bnx1*bnx2*(bnx3 + f3));
   bsf2c += num_fc*(((bnx1/2) + 1)*((bnx2 + 1)/2)*((bnx3 + 1)/2)
-                   + (bnx1/2)*(((bnx2 + 1)/2) + f2_)*((bnx3 + 1)/2)
-                   + (bnx1/2)*((bnx2 + 1)/2)*(((bnx3 + 1)/2) + f3_));
-  bsc2f += num_fc*(((bnx1/2) + 1 + 2)*((bnx2 + 1)/2 + 2*f2_)*((bnx3 + 1)/2 + 2*f3_)
-                   + (bnx1/2 + 2)*(((bnx2 + 1)/2) + f2_ + 2*f2_)*((bnx3 + 1)/2 + 2*f3_)
-                   + (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2_)*(((bnx3 + 1)/2) + f3_ +2*f3_));
+                   + (bnx1/2)*(((bnx2 + 1)/2) + f2)*((bnx3 + 1)/2)
+                   + (bnx1/2)*((bnx2 + 1)/2)*(((bnx3 + 1)/2) + f3));
+  bsc2f += num_fc*(((bnx1/2) + 1 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
+                   + (bnx1/2 + 2)*(((bnx2 + 1)/2) + f2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
+                   + (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*(((bnx3 + 1)/2) + f3 + 2*f3));
   // add one more element to buffer size for storing the derefinement counter
   bssame++;
 
@@ -706,7 +705,7 @@ void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
   // MeshBlock::vars_cc/fc_ containers, not MeshRefinement::pvars_cc/fc_ containers
 
   // TODO(felker): add explicit check to ensure that elements of pb->vars_cc/fc_ and
-  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive==true
+  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
 
   // (C++11) range-based for loop: (automatic type deduction fails when iterating over
   // container with std::reference_wrapper; could use auto var_cc_r = var_cc.get())
@@ -719,9 +718,9 @@ void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
     BufferUtility::PackData(var_fc.x1f, sendbuf,
                             pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
     BufferUtility::PackData(var_fc.x2f, sendbuf,
-                            pb->is, pb->ie, pb->js, pb->je+f2_, pb->ks, pb->ke, p);
+                            pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
     BufferUtility::PackData(var_fc.x3f, sendbuf,
-                            pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3_, p);
+                            pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
   }
   // WARNING(felker): casting from "Real *" to "int *" in order to append single integer
   // to send buffer is slightly unsafe (especially if sizeof(int) > sizeof(Real))
@@ -743,10 +742,10 @@ void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
   int il, iu, jl, ju, kl, ku;
   if (ox1 == 0) il = pb->is - 1,               iu = pb->is + pb->block_size.nx1/2;
   else        il = pb->is + pb->block_size.nx1/2-1,  iu = pb->ie + 1;
-  if (ox2 == 0) jl = pb->js - f2_,              ju = pb->js + pb->block_size.nx2/2;
-  else        jl = pb->js + pb->block_size.nx2/2 - f2_, ju = pb->je + f2_;
-  if (ox3 == 0) kl = pb->ks - f3_,              ku = pb->ks + pb->block_size.nx3/2;
-  else        kl = pb->ks + pb->block_size.nx3/2 - f3_, ku = pb->ke + f3_;
+  if (ox2 == 0) jl = pb->js - f2,              ju = pb->js + pb->block_size.nx2/2;
+  else        jl = pb->js + pb->block_size.nx2/2 - f2, ju = pb->je + f2;
+  if (ox3 == 0) kl = pb->ks - f3,              ku = pb->ks + pb->block_size.nx3/2;
+  else        kl = pb->ks + pb->block_size.nx3/2 - f3, ku = pb->ke + f3;
   int p = 0;
   for (auto cc_pair : pb->pmr->pvars_cc_) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
@@ -759,9 +758,9 @@ void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
     BufferUtility::PackData((*var_fc).x1f, sendbuf,
                             il, iu+1, jl, ju, kl, ku, p);
     BufferUtility::PackData((*var_fc).x2f, sendbuf,
-                            il, iu, jl, ju+f2_, kl, ku, p);
+                            il, iu, jl, ju+f2, kl, ku, p);
     BufferUtility::PackData((*var_fc).x3f, sendbuf,
-                            il, iu, jl, ju, kl, ku+f3_, p);
+                            il, iu, jl, ju, kl, ku+f3, p);
   }
   return;
 }
@@ -799,20 +798,20 @@ void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
                             pb->cks, pb->cke, p);
     pmr->RestrictFieldX2((*var_fc).x2f, (*coarse_fc).x2f,
                          pb->cis, pb->cie,
-                         pb->cjs, pb->cje+f2_,
+                         pb->cjs, pb->cje+f2,
                          pb->cks, pb->cke);
     BufferUtility::PackData((*coarse_fc).x2f, sendbuf,
                             pb->cis, pb->cie,
-                            pb->cjs, pb->cje+f2_,
+                            pb->cjs, pb->cje+f2,
                             pb->cks, pb->cke, p);
     pmr->RestrictFieldX3((*var_fc).x3f, (*coarse_fc).x3f,
                          pb->cis, pb->cie,
                          pb->cjs, pb->cje,
-                         pb->cks, pb->cke+f3_);
+                         pb->cks, pb->cke+f3);
     BufferUtility::PackData((*coarse_fc).x3f, sendbuf,
                             pb->cis, pb->cie,
                             pb->cjs, pb->cje,
-                            pb->cks, pb->cke+f3_, p);
+                            pb->cks, pb->cke+f3, p);
   }
   return;
 }
@@ -864,12 +863,12 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
                          pob->cks, pob->cke);
     pmr->RestrictFieldX2((*var_fc).x2f, (*coarse_fc).x2f,
                          pob->cis, pob->cie,
-                         pob->cjs, pob->cje+f2_,
+                         pob->cjs, pob->cje+f2,
                          pob->cks, pob->cke);
     pmr->RestrictFieldX3((*var_fc).x3f, (*coarse_fc).x3f,
                          pob->cis, pob->cie,
                          pob->cjs, pob->cje,
-                         pob->cks, pob->cke+f3_);
+                         pob->cks, pob->cke+f3);
     FaceField &src_b = *coarse_fc;
     FaceField &dst_b = *std::get<0>(*pmb_fc_it); // pmb->pfield->b;
     for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
@@ -879,7 +878,7 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
       }
     }
     for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
-      for (int j=jl, fj=pob->cjs; fj<=pob->cje+f2_; j++, fj++) {
+      for (int j=jl, fj=pob->cjs; fj<=pob->cje+f2; j++, fj++) {
         for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++)
           dst_b.x2f(k, j, i) = src_b.x2f(fk, fj, fi);
       }
@@ -889,7 +888,7 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
       for (int i=il; i<=iu; i++)
         dst_b.x2f(pmb->ks, pmb->js+1, i) = dst_b.x2f(pmb->ks, pmb->js, i);
     }
-    for (int k=kl, fk=pob->cks; fk<=pob->cke+f3_; k++, fk++) {
+    for (int k=kl, fk=pob->cks; fk<=pob->cke+f3; k++, fk++) {
       for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
         for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++)
           dst_b.x3f(k, j, i) = src_b.x3f(fk, fj, fi);
@@ -913,11 +912,11 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
 void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
                                        LogicalLocation &newloc) {
   MeshRefinement *pmr = pmb->pmr;
-  int il = pob->cis - 1, iu = pob->cie + 1, jl = pob->cjs - f2_,
-      ju = pob->cje + f2_, kl = pob->cks - f3_, ku = pob->cke + f3_;
+  int il = pob->cis - 1, iu = pob->cie + 1, jl = pob->cjs - f2,
+      ju = pob->cje + f2, kl = pob->cks - f3, ku = pob->cke + f3;
   int cis = ((newloc.lx1 & 1LL) == 1LL)*pob->block_size.nx1/2 + pob->is - 1;
-  int cjs = ((newloc.lx2 & 1LL) == 1LL)*pob->block_size.nx2/2 + pob->js - f2_;
-  int cks = ((newloc.lx3 & 1LL) == 1LL)*pob->block_size.nx3/2 + pob->ks - f3_;
+  int cjs = ((newloc.lx2 & 1LL) == 1LL)*pob->block_size.nx2/2 + pob->js - f2;
+  int cks = ((newloc.lx3 & 1LL) == 1LL)*pob->block_size.nx3/2 + pob->ks - f3;
 
   auto pob_cc_it = pob->pmr->pvars_cc_.begin();
   // iterate MeshRefinement std::vectors on new pmb
@@ -957,12 +956,12 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
       }
     }
     for (int k=kl, ck=cks; k<=ku; k++, ck++) {
-      for (int j=jl, cj=cjs; j<=ju+f2_; j++, cj++) {
+      for (int j=jl, cj=cjs; j<=ju+f2; j++, cj++) {
         for (int i=il, ci=cis; i<=iu; i++, ci++)
           dst_b.x2f(k, j, i) = src_b.x2f(ck, cj, ci);
       }
     }
-    for (int k=kl, ck=cks; k<=ku+f3_; k++, ck++) {
+    for (int k=kl, ck=cks; k<=ku+f3; k++, ck++) {
       for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
         for (int i=il, ci=cis; i<=iu; i++, ci++)
           dst_b.x3f(k, j, i) = src_b.x3f(ck, cj, ci);
@@ -973,10 +972,10 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
         pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
     pmr->ProlongateSharedFieldX2(
         dst_b.x2f, (*var_fc).x2f,
-        pob->cis, pob->cie, pob->cjs, pob->cje+f2_, pob->cks, pob->cke);
+        pob->cis, pob->cie, pob->cjs, pob->cje+f2, pob->cks, pob->cke);
     pmr->ProlongateSharedFieldX3(
         dst_b.x3f, (*var_fc).x3f,
-        pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3_);
+        pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3);
     pmr->ProlongateInternalField(
         *var_fc, pob->cis, pob->cie,
         pob->cjs, pob->cje, pob->cks, pob->cke);
@@ -997,9 +996,9 @@ void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
     BufferUtility::UnpackData(recvbuf, var_fc.x1f,
                               pb->is, pb->ie+1, pb->js, pb->je, pb->ks, pb->ke, p);
     BufferUtility::UnpackData(recvbuf, var_fc.x2f,
-                              pb->is, pb->ie, pb->js, pb->je+f2_, pb->ks, pb->ke, p);
+                              pb->is, pb->ie, pb->js, pb->je+f2, pb->ks, pb->ke, p);
     BufferUtility::UnpackData(recvbuf, var_fc.x3f,
-                              pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3_, p);
+                              pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
     if (pb->block_size.nx2 == 1) {
       for (int i=pb->is; i<=pb->ie; i++)
         var_fc.x2f(pb->ks, pb->js+1, i) = var_fc.x2f(pb->ks, pb->js, i);
@@ -1028,9 +1027,9 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
   int p = 0, il, iu, jl, ju, kl, ku;
   if (ox1 == 0) il = pb->is,            iu = pb->is + pb->block_size.nx1/2 - 1;
   else        il = pb->is + pb->block_size.nx1/2, iu = pb->ie;
-  if (ox2 == 0) jl = pb->js,            ju = pb->js + pb->block_size.nx2/2 - f2_;
+  if (ox2 == 0) jl = pb->js,            ju = pb->js + pb->block_size.nx2/2 - f2;
   else        jl = pb->js + pb->block_size.nx2/2, ju = pb->je;
-  if (ox3 == 0) kl = pb->ks,            ku = pb->ks + pb->block_size.nx3/2 - f3_;
+  if (ox3 == 0) kl = pb->ks,            ku = pb->ks + pb->block_size.nx3/2 - f3;
   else        kl = pb->ks + pb->block_size.nx3/2, ku = pb->ke;
 
   for (auto cc_pair : pb->pmr->pvars_cc_) {
@@ -1045,9 +1044,9 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
     BufferUtility::UnpackData(recvbuf, dst_b.x1f,
                               il, iu+1, jl, ju, kl, ku, p);
     BufferUtility::UnpackData(recvbuf, dst_b.x2f,
-                              il, iu, jl, ju+f2_, kl, ku, p);
+                              il, iu, jl, ju+f2, kl, ku, p);
     BufferUtility::UnpackData(recvbuf, dst_b.x3f,
-                              il, iu, jl, ju, kl, ku+f3_, p);
+                              il, iu, jl, ju, kl, ku+f3, p);
     if (pb->block_size.nx2 == 1) {
       for (int i=il; i<=iu; i++)
         dst_b.x2f(pb->ks, pb->js+1, i) = dst_b.x2f(pb->ks, pb->js, i);
@@ -1066,8 +1065,8 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
 void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
   MeshRefinement *pmr = pb->pmr;
   int p = 0;
-  int il = pb->cis - 1, iu = pb->cie+1, jl = pb->cjs - f2_,
-      ju = pb->cje + f2_, kl = pb->cks - f3_, ku = pb->cke + f3_;
+  int il = pb->cis - 1, iu = pb->cie+1, jl = pb->cjs - f2,
+      ju = pb->cje + f2, kl = pb->cks - f3, ku = pb->cke + f3;
   for (auto cc_pair : pb->pmr->pvars_cc_) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
@@ -1085,18 +1084,18 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
     BufferUtility::UnpackData(recvbuf, (*coarse_fc).x1f,
                               il, iu+1, jl, ju, kl, ku, p);
     BufferUtility::UnpackData(recvbuf, (*coarse_fc).x2f,
-                              il, iu, jl, ju+f2_, kl, ku, p);
+                              il, iu, jl, ju+f2, kl, ku, p);
     BufferUtility::UnpackData(recvbuf, (*coarse_fc).x3f,
-                              il, iu, jl, ju, kl, ku+f3_, p);
+                              il, iu, jl, ju, kl, ku+f3, p);
     pmr->ProlongateSharedFieldX1(
         (*coarse_fc).x1f, (*var_fc).x1f,
         pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke);
     pmr->ProlongateSharedFieldX2(
         (*coarse_fc).x2f, (*var_fc).x2f,
-        pb->cis, pb->cie, pb->cjs, pb->cje+f2_, pb->cks, pb->cke);
+        pb->cis, pb->cie, pb->cjs, pb->cje+f2, pb->cks, pb->cke);
     pmr->ProlongateSharedFieldX3(
         (*coarse_fc).x3f, (*var_fc).x3f,
-        pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3_);
+        pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3);
     pmr->ProlongateInternalField(
         *var_fc, pb->cis, pb->cie,
         pb->cjs, pb->cje, pb->cks, pb->cke);
