@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file hlld.cpp
+//! \file hlld_roe.cpp (based on hlld.cpp but uses Roe average estimate for middle speed)
 //  \brief HLLD Riemann solver for adiabatic MHD.
 //
 // REFERENCES:
