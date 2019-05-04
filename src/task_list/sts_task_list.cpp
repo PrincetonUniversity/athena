@@ -322,9 +322,9 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 #pragma omp single
   {
     // Set RKL1 params
-    pmb->pmy_mesh->muj = (2.*stage-1.)/stage;
-    pmb->pmy_mesh->nuj = (1.-stage)/stage;
-    pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(std::pow(nstages,2.)+nstages);
+    pmb->pmy_mesh->muj = (2.*stage - 1.)/stage;
+    pmb->pmy_mesh->nuj = (1. - stage)/stage;
+    pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(std::pow(nstages, 2.) + nstages);
   }
 
   // Clear flux arrays from previous stage
@@ -333,9 +333,9 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     pmb->pfield->fdif.ClearEMF(pmb->pfield->e);
   if (NSCALARS > 0) {
     PassiveScalars *ps = pmb->pscalars;
-    ps->diffusion_flx[X1DIR].ZeroClear();
-    ps->diffusion_flx[X2DIR].ZeroClear();
-    ps->diffusion_flx[X3DIR].ZeroClear();
+    ps->s_flux[X1DIR].ZeroClear();
+    ps->s_flux[X2DIR].ZeroClear();
+    ps->s_flux[X3DIR].ZeroClear();
   }
 
   // Real time = pmb->pmy_mesh->time;
@@ -360,7 +360,6 @@ TaskStatus SuperTimeStepTaskList::CalculateHydroFlux_STS(MeshBlock *pmb, int sta
 TaskStatus SuperTimeStepTaskList::CalculateScalarFlux_STS(MeshBlock *pmb, int stage) {
   PassiveScalars *ps = pmb->pscalars;
   if (stage <= nstages) {
-    std::cout << "In STS CALC_SCLRFLX, stage= " << stage << std::endl;
     ps->CalculateFluxes_STS();
     return TaskStatus::next;
   }
@@ -383,6 +382,8 @@ TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
 TaskStatus SuperTimeStepTaskList::IntegrateHydro_STS(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   Field *pf = pmb->pfield;
+
+  if (pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   // set registers
   ph->u2.SwapAthenaArray(ph->u1);
@@ -420,7 +421,7 @@ TaskStatus SuperTimeStepTaskList::IntegrateScalars_STS(MeshBlock *pmb, int stage
   ps->s2.SwapAthenaArray(ps->s1);
   ps->s1.SwapAthenaArray(ps->s);
 
-  // update u
+  // update s
   if (stage <= nstages) {
     Real ave_wghts[3];
     ave_wghts[0] = 0.0;
@@ -438,6 +439,8 @@ TaskStatus SuperTimeStepTaskList::IntegrateScalars_STS(MeshBlock *pmb, int stage
 
 TaskStatus SuperTimeStepTaskList::IntegrateField_STS(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
+
+  if (pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
     Real ave_wghts[3];

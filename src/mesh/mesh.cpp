@@ -1026,7 +1026,7 @@ void Mesh::OutputMeshStructure(int ndim) {
 void Mesh::NewTimeStep() {
   MeshBlock *pmb = pblock;
 
-  dt_diff=dt=static_cast<Real>(2.0)*dt;
+  dt_diff = dt = static_cast<Real>(2.0)*dt;
 
   while (pmb != nullptr)  {
     dt = std::min(dt,pmb->new_block_dt_);
@@ -1035,13 +1035,13 @@ void Mesh::NewTimeStep() {
   }
 
 #ifdef MPI_PARALLEL
-  MPI_Allreduce(MPI_IN_PLACE,&dt,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE, &dt, 1, MPI_ATHENA_REAL, MPI_MIN, MPI_COMM_WORLD);
   if (STS_ENABLED)
-    MPI_Allreduce(MPI_IN_PLACE,&dt_diff,1,MPI_ATHENA_REAL,MPI_MIN,MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &dt_diff, 1, MPI_ATHENA_REAL, MPI_MIN, MPI_COMM_WORLD);
 #endif
 
   if (time < tlim && tlim-time < dt) // timestep would take us past desired endpoint
-    dt = tlim-time;
+    dt = tlim - time;
 
   return;
 }
@@ -1052,7 +1052,7 @@ void Mesh::NewTimeStep() {
 
 void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
   std::stringstream msg;
-  if (dir<0 || dir>5) {
+  if (dir < 0 || dir > 5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
     ATHENA_ERROR(msg);

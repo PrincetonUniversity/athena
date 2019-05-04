@@ -73,7 +73,7 @@ class TaskList {
   void DoTaskListOneStage(Mesh *pmesh, int stage);
 
  protected:
-  Task task_list_[64];
+  Task task_list_[64];  // TODO(felker): rename to avoid confusion with class name
 
  private:
   virtual void AddTask(std::uint64_t id, std::uint64_t dep) = 0;
