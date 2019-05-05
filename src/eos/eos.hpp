@@ -69,6 +69,7 @@ class EquationOfState {
 #pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s) linear(i)
   void ApplyPassiveScalarFloors(AthenaArray<Real> &s, int k, int j, int i);
 
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s,w,r,k,j) linear(i)
   void ApplyPassiveScalarPrimitiveConservedFloors(
     AthenaArray<Real> &s, const AthenaArray<Real> &w, AthenaArray<Real> &r,
     int k, int j, int i);
