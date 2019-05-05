@@ -113,12 +113,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
                 yu = pmb->pcoord->x2f(j+1);
 
                 // GL implementation returns total integral, not ave. Divide by cell vol
-                Real cell_quad = GaussLegendre::integrate(N_gl, SlottedCylinderProfile, xl, xu,
-                                                          yl, yu);
+                Real cell_quad = GaussLegendre::integrate(N_gl, SlottedCylinderProfile,
+                                                          xl, xu, yl, yu);
                 cell_ave = cell_quad/cell_vol;  // 2D: (pcoord->dx1v(i)*pcoord->dx2v(j));
               } else {
                 // Use standard midpoint approximation with cell centered coords:
-                cell_ave = SlottedCylinderProfile(pmb->pcoord->x1v(i), pmb->pcoord->x2v(j));
+                cell_ave = SlottedCylinderProfile(pmb->pcoord->x1v(i),
+                                                  pmb->pcoord->x2v(j));
               }
 
               Real sol = 1.0/scalar_norm*cell_ave;
