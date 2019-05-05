@@ -11,12 +11,13 @@
 //   - iprob=2: tanh profile, with single-mode perturbation (Frank et al. 1996)
 //   - iprob=3: tanh profiles for v and d, SR test problem in Beckwith & Stone (2011)
 //   - iprob=4: tanh profiles for v and d, "Lecoanet" test
+//   - iprob=5: two resolved slip-surfaces with m=2 perturbation for the AMR test
 
 // C headers
 
 // C++ headers
 #include <algorithm>  // min, max
-#include <cmath>
+#include <cmath>      // log
 #include <cstring>    // strcmp()
 
 // Athena++ headers
@@ -32,7 +33,13 @@
 #include "../scalars/scalars.hpp"
 #include "../utils/utils.hpp"
 
-Real vflow, threshold;
+namespace {
+Real vflow;
+int iprob;
+Real PassiveDyeEntropy(MeshBlock *pmb, int iout);
+} // namespace
+
+Real threshold;
 int RefinementCondition(MeshBlock *pmb);
 
 //----------------------------------------------------------------------------------------
@@ -42,11 +49,17 @@ int RefinementCondition(MeshBlock *pmb);
 //  functions in this file.  Called in Mesh constructor.
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
+  vflow = pin->GetReal("problem","vflow");
+  iprob = pin->GetInteger("problem","iprob");
+
   if (adaptive) {
-    threshold = pin->GetReal("problem","thr");
+    threshold = pin->GetReal("problem", "thr");
     EnrollUserRefinementCondition(RefinementCondition);
   }
-  vflow = pin->GetReal("problem","vflow");
+  if (iprob == 4) {
+    AllocateUserHistoryOutput(1);
+    EnrollUserHistoryOutput(0, PassiveDyeEntropy, "S");
+  }
   return;
 }
 
@@ -57,7 +70,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::int64_t iseed = -1 - gid;
   Real gm1 = peos->GetGamma() - 1.0;
-  int iprob = pin->GetInteger("problem","iprob");
 
   //--- iprob=1.  Uniform stream with density ratio "drat" located in region -1/4<y<1/4
   // moving at (-vflow) seperated by two slip-surfaces from background medium with d=1
@@ -480,4 +492,26 @@ int RefinementCondition(MeshBlock *pmb) {
   if (vgmax > threshold) return 1;
   if (vgmax < 0.5*threshold) return -1;
   return 0;
+}
+
+Real PassiveDyeEntropy(MeshBlock *pmb, int iout) {
+  Real total_entropy = 0;
+  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
+  AthenaArray<Real> &r = pmb->pscalars->r;
+  AthenaArray<Real> &w = pmb->phydro->w;
+  AthenaArray<Real> volume; // 1D array of volumes
+  // allocate 1D array for cell volume used in usr def history
+  volume.NewAthenaArray(pmb->ncells1);
+
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      pmb->pcoord->CellVolume(k, j, pmb->is, pmb->ie, volume);
+      for (int i=is; i<=ie; i++) {
+        // no loop over NSCALARS; hardcode assumption that NSCALARS=1
+        Real specific_entropy = -r(0,k,j,i)*std::log(r(0,k,j,i));
+        total_entropy += volume(i)*w(IDN,k,j,i)*specific_entropy;  // Lecoanet (2016) eq 5
+      }
+    }
+  }
+  return total_entropy;
 }
