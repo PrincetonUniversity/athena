@@ -58,7 +58,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   }
   if (iprob == 4) {
     AllocateUserHistoryOutput(1);
-    EnrollUserHistoryOutput(0, PassiveDyeEntropy, "S");
+    EnrollUserHistoryOutput(0, PassiveDyeEntropy, "tot-S");
   }
   return;
 }
