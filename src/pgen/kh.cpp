@@ -494,6 +494,7 @@ int RefinementCondition(MeshBlock *pmb) {
   return 0;
 }
 
+namespace {
 Real PassiveDyeEntropy(MeshBlock *pmb, int iout) {
   Real total_entropy = 0;
   int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
@@ -515,3 +516,4 @@ Real PassiveDyeEntropy(MeshBlock *pmb, int iout) {
   }
   return total_entropy;
 }
+} // namespace
