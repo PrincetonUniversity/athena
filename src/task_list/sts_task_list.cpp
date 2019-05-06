@@ -333,13 +333,15 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     if (Globals::my_rank == 0 && pm->dt_nstage_out != -1) {
       const int ratio_precision = 3;
       const int dt_precision = std::numeric_limits<Real>::max_digits10 - 1;
-      Real ratio = pm->dt / pm->dt_parabolic;
+      Real dt_ratio = pm->dt / pm->dt_parabolic;
+      Real nstages_time_int = ptlist_->nstages;
+      Real stage_ratio = nstages_time_int*dt_ratio/(nstages + nstages_time_int);
       if (pm->dt_nstage_out == 0) {
         if (stage == nstages) {
           std::cout << "stage=" << stage << "/" << nstages
                     << " dt_parabolic=" << pm->dt_parabolic
-                    << " ratio=" << std::setprecision(ratio_precision) << ratio
-                    << " speedup=" << ratio/(nstages + 1)
+                    << " ratio=" << std::setprecision(ratio_precision) <<  dt_ratio
+                    << " stage_ratio=" << stage_ratio
                     << std::setprecision(dt_precision)
                     << std::endl;
         }
@@ -347,8 +349,8 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
         if (stage % pm->dt_nstage_out == 0) {
           std::cout << "stage=" << stage << "/" << nstages
                     << " dt_parabolic=" << pm->dt_parabolic
-                    << " ratio=" << std::setprecision(ratio_precision) << ratio
-                    << " speedup=" << ratio/(nstages + 1)
+                    << " ratio=" << std::setprecision(ratio_precision) << dt_ratio
+                    << " stage_ratio=" << stage_ratio
                     << std::setprecision(dt_precision)
                     << std::endl;
         }
