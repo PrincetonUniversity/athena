@@ -113,17 +113,7 @@ void EquationOfState::PassiveScalarConservedToPrimitiveCellAverage(
         for (int i=il; i<=iu; ++i) {
           // Compute fourth-order approximation to cell-averaged primitive variables
           r(n,k,j,i) = r_cc(n,k,j,i) + C*laplacian_cc(n,k,j,i);
-        }
-      }
-    }
-  }
-  // Reapply primitive variable floors
-  // TODO(felker): fuse with above set of nested loops, now that they are identical
-  for (int n=nl; n<=nu; ++n) {
-    for (int k=kl; k<=ku; ++k) {
-      for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
-        for (int i=il; i<=iu; ++i) {
+          // Reapply primitive variable floors
           ApplyPassiveScalarPrimitiveConservedFloors(s, w, r, n, k, j, i);
         }
       }
