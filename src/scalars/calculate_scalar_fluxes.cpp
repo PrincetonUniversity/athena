@@ -76,10 +76,12 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
         pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, r, rl_, rr_);
       } else {
         pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, r, rl_, rr_);
+        for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
-        for (int i=is; i<=ie+1; ++i) {
-          pmb->peos->ApplyPassiveScalarFloors(rl_, k, j, i);
-          pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
+          for (int i=is; i<=ie+1; ++i) {
+            pmb->peos->ApplyPassiveScalarFloors(rl_, n, k, j, i);
+            pmb->peos->ApplyPassiveScalarFloors(rr_, n, k, j, i);
+          }
         }
       }
 
@@ -116,12 +118,9 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
           for (int i=is; i<=ie+1; ++i) {
             rl_(n,i) = rl3d_(n,k,j,i) - C*laplacian_l_fc_(i);
             rr_(n,i) = rr3d_(n,k,j,i) - C*laplacian_r_fc_(i);
+            pmb->peos->ApplyPassiveScalarFloors(rl_, n, k, j, i);
+            pmb->peos->ApplyPassiveScalarFloors(rr_, n, k, j, i);
           }
-        }
-#pragma omp simd
-        for (int i=is; i<=ie+1; ++i) {
-          pmb->peos->ApplyPassiveScalarFloors(rl_, k, j, i);
-          pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
         }
 
         // Compute x1 interface fluxes from face-centered primitive variables
@@ -165,10 +164,12 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
         pmb->precon->PiecewiseLinearX2(k, js-1, il, iu, r, rl_, rr_);
       } else {
         pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, r, rl_, rr_);
+        for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          pmb->peos->ApplyPassiveScalarFloors(rl_, k, js-1, i);
-          //pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
+          for (int i=il; i<=iu; ++i) {
+            pmb->peos->ApplyPassiveScalarFloors(rl_, n, k, js-1, i);
+            //pmb->peos->ApplyPassiveScalarFloors(rr_, n, k, j, i);
+          }
         }
       }
       for (int j=js; j<=je+1; ++j) {
@@ -179,10 +180,12 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
           pmb->precon->PiecewiseLinearX2(k, j, il, iu, r, rlb_, rr_);
         } else {
           pmb->precon->PiecewiseParabolicX2(k, j, il, iu, r, rlb_, rr_);
+          for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
-          for (int i=il; i<=iu; ++i) {
-            pmb->peos->ApplyPassiveScalarFloors(rlb_, k, j, i);
-            pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
+            for (int i=il; i<=iu; ++i) {
+              pmb->peos->ApplyPassiveScalarFloors(rlb_, n, k, j, i);
+              pmb->peos->ApplyPassiveScalarFloors(rr_, n, k, j, i);
+            }
           }
         }
 
@@ -222,12 +225,9 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
             for (int i=il; i<=iu; ++i) {
               rl_(n,i) = rl3d_(n,k,j,i) - C*laplacian_l_fc_(i);
               rr_(n,i) = rr3d_(n,k,j,i) - C*laplacian_r_fc_(i);
+              pmb->peos->ApplyPassiveScalarFloors(rl_, n, k, j, i);
+              pmb->peos->ApplyPassiveScalarFloors(rr_, n, k, j, i);
             }
-          }
-#pragma omp simd
-          for (int i=il; i<=iu; ++i) {
-            pmb->peos->ApplyPassiveScalarFloors(rl_, k, j, i);
-            pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
           }
 
           // Compute x2 interface fluxes from face-centered primitive variables
@@ -265,10 +265,12 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
         pmb->precon->PiecewiseLinearX3(ks-1, j, il, iu, r, rl_, rr_);
       } else {
         pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, r, rl_, rr_);
+        for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
-        for (int i=il; i<=iu; ++i) {
-          pmb->peos->ApplyPassiveScalarFloors(rl_, ks-1, j, i);
-          //pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
+          for (int i=il; i<=iu; ++i) {
+            pmb->peos->ApplyPassiveScalarFloors(rl_, n, ks-1, j, i);
+            //pmb->peos->ApplyPassiveScalarFloors(rr_, n, k, j, i);
+          }
         }
       }
       for (int k=ks; k<=ke+1; ++k) {
@@ -279,10 +281,12 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
           pmb->precon->PiecewiseLinearX3(k, j, il, iu, r, rlb_, rr_);
         } else {
           pmb->precon->PiecewiseParabolicX3(k, j, il, iu, r, rlb_, rr_);
+          for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
-          for (int i=il; i<=iu; ++i) {
-            pmb->peos->ApplyPassiveScalarFloors(rlb_, k, j, i);
-            pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
+            for (int i=il; i<=iu; ++i) {
+              pmb->peos->ApplyPassiveScalarFloors(rlb_, n, k, j, i);
+              pmb->peos->ApplyPassiveScalarFloors(rr_, n, k, j, i);
+            }
           }
         }
 
@@ -322,12 +326,9 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
             for (int i=il; i<=iu; ++i) {
               rl_(n,i) = rl3d_(n,k,j,i) - C*laplacian_l_fc_(i);
               rr_(n,i) = rr3d_(n,k,j,i) - C*laplacian_r_fc_(i);
+              pmb->peos->ApplyPassiveScalarFloors(rl_, n, k, j, i);
+              pmb->peos->ApplyPassiveScalarFloors(rr_, n, k, j, i);
             }
-          }
-#pragma omp simd
-          for (int i=il; i<=iu; ++i) {
-            pmb->peos->ApplyPassiveScalarFloors(rl_, k, j, i);
-            pmb->peos->ApplyPassiveScalarFloors(rr_, k, j, i);
           }
 
           // Compute x3 interface fluxes from face-centered primitive variables
