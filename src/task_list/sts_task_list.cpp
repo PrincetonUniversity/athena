@@ -43,14 +43,15 @@
 SuperTimeStepTaskList::SuperTimeStepTaskList(
     ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) :
     ptlist_(ptlist) {
-  // STS Incompatiblities
-  if (MAGNETIC_FIELDS_ENABLED
-      && !(pm->pblock->pfield->fdif.field_diffusion_defined)
-      && !(pm->pblock->phydro->hdif.hydro_diffusion_defined)) {
+  // Check for STS incompatiblities:
+  if (!(pm->pblock->phydro->hdif.hydro_diffusion_defined)
+      // short-circuit evaluation makes these safe (won't dereference pscalars=nullptr):
+      && !(MAGNETIC_FIELDS_ENABLED && pm->pblock->pfield->fdif.field_diffusion_defined)
+      && !(NSCALARS > 0 && pm->pblock->pscalars->scalar_diffusion_defined)) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping requires setting parameters for "
-        << "diffusive processes in input file." << std::endl;
+        << "at least one diffusive process in the input file." << std::endl;
     ATHENA_ERROR(msg);
   }
   // TODO(pdmullen): time-dep BC's require knowing the time within
