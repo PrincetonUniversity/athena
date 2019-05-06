@@ -328,9 +328,9 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     pm->muj = (2.*stage - 1.)/stage;
     pm->nuj = (1. - stage)/stage;
     pm->muj_tilde = pm->muj*2./(std::pow(nstages, 2.) + nstages);
-    if (Globals::my_rank == 0 && pm->diff_nstage_out != -1) {
+    if (Globals::my_rank == 0 && pm->dt_nstage_out != -1) {
       Real ratio = pm->dt / pm->dt_parabolic;
-      if (pm->diff_nstage_out == 0) {
+      if (pm->dt_nstage_out == 0) {
         if (stage == nstages) {
           std::cout << "stage=" << stage << "/" << nstages
                     << " dt_parabolic=" << pm->dt_parabolic
@@ -339,7 +339,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
                     << std::endl;
         }
       } else {
-        if (stage % pm->diff_nstage_out == 0) {
+        if (stage % pm->dt_nstage_out == 0) {
           std::cout << "stage=" << stage << "/" << nstages
                     << " dt_parabolic=" << pm->dt_parabolic
                     << " ratio=" << ratio
