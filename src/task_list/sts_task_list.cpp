@@ -14,6 +14,7 @@
 
 // C++ headers
 #include <cstring>    // strcmp()
+#include <iomanip>    // std::setprecision()
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
@@ -329,21 +330,25 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     pm->nuj = (1. - stage)/stage;
     pm->muj_tilde = pm->muj*2./(std::pow(nstages, 2.) + nstages);
     if (Globals::my_rank == 0 && pm->dt_nstage_out != -1) {
+      const int ratio_precision = 3;
+      const int dt_precision = std::numeric_limits<Real>::max_digits10 - 1;
       Real ratio = pm->dt / pm->dt_parabolic;
       if (pm->dt_nstage_out == 0) {
         if (stage == nstages) {
           std::cout << "stage=" << stage << "/" << nstages
                     << " dt_parabolic=" << pm->dt_parabolic
-                    << " ratio=" << ratio
+                    << " ratio=" << std::setprecision(ratio_precision) << ratio
                     << " speedup=" << ratio/(nstages + 1)
+                    << std::setprecision(dt_precision)
                     << std::endl;
         }
       } else {
         if (stage % pm->dt_nstage_out == 0) {
           std::cout << "stage=" << stage << "/" << nstages
                     << " dt_parabolic=" << pm->dt_parabolic
-                    << " ratio=" << ratio
+                    << " ratio=" << std::setprecision(ratio_precision) << ratio
                     << " speedup=" << ratio/(nstages + 1)
+                    << std::setprecision(dt_precision)
                     << std::endl;
         }
       }

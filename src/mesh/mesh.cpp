@@ -17,7 +17,7 @@
 #include <cstdint>    // std::int64_t fixed-wdith integer type alias
 #include <cstdlib>
 #include <cstring>    // std::memcpy()
-#include <iomanip>
+#include <iomanip>    // std::setprecision()
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -1803,10 +1803,12 @@ FluidFormulation GetFluidFormulation(const std::string& input_string) {
 }
 
 void Mesh::OutputCycleDiagnostics() {
+  const int ratio_precision = 3;
+  const int dt_precision = std::numeric_limits<Real>::max_digits10 - 1;
   if (ncycle_out != 0) {
     if (ncycle % ncycle_out == 0) {
       std::cout << "cycle=" << ncycle << std::scientific
-                << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1)
+                << std::setprecision(dt_precision)
                 << " time=" << time << " dt=" << dt;
       if (dt_nstage_out != -1) {
         if (STS_ENABLED) {
@@ -1814,11 +1816,15 @@ void Mesh::OutputCycleDiagnostics() {
           // remaining dt_parabolic diagnostic output handled in STS StartupTaskList
         } else {
           Real ratio = dt / dt_parabolic;
-          std::cout << "\ndt_parabolic=" << dt_parabolic << " ratio=" << ratio;
+          std::cout << "\ndt_parabolic=" << dt_parabolic << " ratio="
+                    << std::setprecision(ratio_precision) << ratio
+                    << std::setprecision(dt_precision);
         }
         if (UserTimeStep_ != nullptr) {
           Real ratio = dt / dt_user;
-          std::cout << "\ndt_user=" << dt_user << " ratio=" << ratio;
+          std::cout << "\ndt_user=" << dt_user << " ratio="
+                    << std::setprecision(ratio_precision) << ratio
+                    << std::setprecision(dt_precision);
         }
       } // else (empty): dt_nstage = -1 ----> provide no additional timestep diagnostics
       std::cout << std::endl;
