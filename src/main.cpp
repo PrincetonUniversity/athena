@@ -413,15 +413,16 @@ int main(int argc, char *argv[]) {
         if (pmesh->ncycle % pmesh->ncycle_out == 0) {
           std::cout << "cycle=" << pmesh->ncycle << std::scientific
                     << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1)
-                    << " time=" << pmesh->time << " dt=" << pmesh->dt; // << std::endl;
-          if (STS_ENABLED && pststlist->sts_nstage_out != -1) {
-            std::cout << "=dt_hyperbolic" << std::endl;
-            // std::cout << " dt_hyperbolic=" << pmesh->dt
-            //           << " dt_parabolic=" << pmesh->dt_diff
-            //           << std::endl;
-          } else {
-            std::cout << std::endl;
-            //std::cout << " dt=" << pmesh->dt << std::endl;
+                    << " time=" << pmesh->time << " dt=" << pmesh->dt;
+          if (pmesh->diff_nstage_out != -1) {
+            if (STS_ENABLED) {
+              std::cout << "=dt_hyperbolic" << std::endl;
+              // remaining diagnostic output is handled in STS StartupTaskList
+            } else {
+              Real ratio = pmesh->dt / pmesh->dt_diff;
+              std::cout << "\ndt_parabolic=" << pmesh->dt_diff << " ratio=" << ratio;
+              std::cout << std::endl;
+            }
           }
         }
       }

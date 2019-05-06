@@ -41,7 +41,6 @@
 
 SuperTimeStepTaskList::SuperTimeStepTaskList(
     ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) :
-    sts_nstage_out(pin->GetOrAddInteger("time", "sts_nstage_out", -1)),
     ptlist_(ptlist) {
   // STS Incompatiblities
   if (MAGNETIC_FIELDS_ENABLED
@@ -322,27 +321,29 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
 
 
 void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
+  Mesh *pm =  pmb->pmy_mesh;
 #pragma omp single
   {
     // Set RKL1 params
-    pmb->pmy_mesh->muj = (2.*stage - 1.)/stage;
-    pmb->pmy_mesh->nuj = (1. - stage)/stage;
-    pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(std::pow(nstages, 2.) + nstages);
-    if (Globals::my_rank == 0 && sts_nstage_out != -1) {
-      if (sts_nstage_out == 0) {
+    pm->muj = (2.*stage - 1.)/stage;
+    pm->nuj = (1. - stage)/stage;
+    pm->muj_tilde = pm->muj*2./(std::pow(nstages, 2.) + nstages);
+    if (Globals::my_rank == 0 && pm->diff_nstage_out != -1) {
+      Real ratio = pm->dt / pm->dt_diff;
+      if (pm->diff_nstage_out == 0) {
         if (stage == nstages) {
-          Real ratio = pmb->pmy_mesh->dt / pmb->pmy_mesh->dt_diff;
           std::cout << "stage=" << stage << "/" << nstages
-                    << " dt_parabolic="<< pmb->pmy_mesh->dt_diff
+                    << " dt_parabolic="<< pm->dt_diff
                     << " ratio=" << ratio
-                    << " speedup=" << ratio/(nstages+1)
+                    << " speedup=" << ratio/(nstages + 1)
                     << std::endl;
         }
       } else {
-        if (stage % sts_nstage_out == 0) {
+        if (stage % pm->diff_nstage_out == 0) {
           std::cout << "stage=" << stage << "/" << nstages
-                    << " dt_parabolic="<< pmb->pmy_mesh->dt_diff
-                    << " ratio="<< pmb->pmy_mesh->dt / pmb->pmy_mesh->dt_diff
+                    << " dt_parabolic="<< pm->dt_diff
+                    << " ratio="<< ratio
+                    << " speedup=" << ratio/(nstages + 1)
                     << std::endl;
         }
       }
@@ -360,7 +361,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     ps->s_flux[X3DIR].ZeroClear();
   }
 
-  // Real time = pmb->pmy_mesh->time;
+  // Real time = pm->time;
   pmb->pbval->StartReceiving(BoundaryCommSubset::all);
 
   return;

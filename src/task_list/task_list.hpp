@@ -171,8 +171,6 @@ class SuperTimeStepTaskList : public TaskList {
  public:
   SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist);
 
-  int sts_nstage_out;
-
   // functions
   TaskStatus CalculateHydroFlux_STS(MeshBlock *pmb, int stage);
   TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);

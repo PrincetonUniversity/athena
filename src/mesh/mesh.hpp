@@ -219,7 +219,7 @@ class Mesh {
   const bool adaptive, multilevel;
   const FluidFormulation fluid_setup;
   Real start_time, time, tlim, dt, dt_diff, cfl_number;
-  int nlim, ncycle, ncycle_out;
+  int nlim, ncycle, ncycle_out, diff_nstage_out;
   Real muj, nuj, muj_tilde;
   int nbtotal, nbnew, nbdel;
 
