@@ -75,7 +75,7 @@ void EquationOfState::PassiveScalarConservedToPrimitiveCellAverage(
   Real C = (h*h)/24.0;
 
   // Fourth-order accurate approx to cell-centered Hydro conserved and primitive variables
-  AthenaArray<Real> &w_cc = ph->w_cc; // &u_cc = ph->u_cc;
+  AthenaArray<Real> &w_cc = ph->w_cc, &w = ph->w; // &u_cc = ph->u_cc;
   // Passive scalrs
   AthenaArray<Real> &s_cc = ps->s_cc, &r_cc = ps->r_cc;
   // Laplacians of cell-averaged conserved and 2nd order accurate primitive variables
@@ -117,18 +117,18 @@ void EquationOfState::PassiveScalarConservedToPrimitiveCellAverage(
       }
     }
   }
-
   // Reapply primitive variable floors
-  // Cannot fuse w/ above loop since floors are applied to all NHYDRO variables at once
-  for (int k=kl; k<=ku; ++k) {
-    for (int j=jl; j<=ju; ++j) {
+  // TODO(felker): fuse with above set of nested loops, now that they are identical
+  for (int n=nl; n<=nu; ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for (int i=il; i<=iu; ++i) {
-        ApplyPassiveScalarPrimitiveConservedFloors(s, ph->w, r, k, j, i);
+        for (int i=il; i<=iu; ++i) {
+          ApplyPassiveScalarPrimitiveConservedFloors(s, w, r, n, k, j, i);
+        }
       }
     }
   }
-
   return;
 }
 
@@ -182,18 +182,19 @@ void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &r, int k, int 
   return;
 }
 
+// currently only called in above 4th order routine
+// PassiveScalarConservedToPrimitiveCellAverage
+
 void EquationOfState::ApplyPassiveScalarPrimitiveConservedFloors(
     AthenaArray<Real> &s, const AthenaArray<Real> &w, AthenaArray<Real> &r,
-    int k, int j, int i) {
+    int n, int k, int j, int i) {
   const Real &w_d  = w(IDN,k,j,i);
   const Real di = 1.0/w_d;
+  Real& s_n  = s(n,k,j,i);
+  Real& r_n  = r(n,k,j,i);
 
-  for (int n=0; n<NSCALARS; ++n) {
-    Real& s_n  = s(n,k,j,i);
-    Real& r_n  = r(n,k,j,i);
+  s_n = (s_n < scalar_floor_*w_d) ?  scalar_floor_*w_d : s_n;
+  r_n = s_n*di;
 
-    s_n = (s_n < scalar_floor_*w_d) ?  scalar_floor_*w_d : s_n;
-    r_n = s_n*di;
-  }
   return;
 }

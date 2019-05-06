@@ -63,16 +63,16 @@ class EquationOfState {
 
   // pass k, j, i to following 2x functions even though x1-sliced input array is expected
   // in order to accomodate position-dependent floors
-#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim) linear(i)
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim,k,j) linear(i)
   void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
 
-#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s) linear(i)
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s,k,j) linear(i)
   void ApplyPassiveScalarFloors(AthenaArray<Real> &s, int k, int j, int i);
 
-#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s,w,r,k,j) linear(i)
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s,w,r,n,k,j) linear(i)
   void ApplyPassiveScalarPrimitiveConservedFloors(
     AthenaArray<Real> &s, const AthenaArray<Real> &w, AthenaArray<Real> &r,
-    int k, int j, int i);
+    int n, int k, int j, int i);
 
   // Sound speed functions in different regimes
 #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
