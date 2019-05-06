@@ -145,10 +145,10 @@ void Hydro::NewBlockTimeStep() {
   if (UserTimeStep_ != nullptr)
     min_dt = std::min(min_dt, UserTimeStep_(pmb));
 
-  if (STS_ENABLED) {
+  if (STS_ENABLED) { // take the hyperbolic timestep if STS handles parabolic terms
     pmb->new_block_dt_ = min_dt;
     pmb->new_block_dt_diff_ = min_dt_diff;
-  } else {
+  } else { // otherwise, take the smaller of the hyperbolic and parabolic timesteps
     min_dt = std::min(min_dt, min_dt_diff);
     pmb->new_block_dt_ = min_dt;
     pmb->new_block_dt_diff_ = min_dt;

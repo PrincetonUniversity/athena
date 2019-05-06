@@ -25,6 +25,7 @@
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
+#include "../globals.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
@@ -39,7 +40,9 @@
 //  SuperTimeStepTaskList constructor
 
 SuperTimeStepTaskList::SuperTimeStepTaskList(
-    ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) : ptlist_(ptlist) {
+    ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) :
+    sts_nstage_out(pin->GetOrAddInteger("time", "sts_nstage_out", -1)),
+    ptlist_(ptlist) {
   // STS Incompatiblities
   if (MAGNETIC_FIELDS_ENABLED
       && !(pm->pblock->pfield->fdif.field_diffusion_defined)
@@ -325,6 +328,25 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     pmb->pmy_mesh->muj = (2.*stage - 1.)/stage;
     pmb->pmy_mesh->nuj = (1. - stage)/stage;
     pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(std::pow(nstages, 2.) + nstages);
+    if (Globals::my_rank == 0 && sts_nstage_out != -1) {
+      if (sts_nstage_out == 0) {
+        if (stage == nstages) {
+          Real ratio = pmb->pmy_mesh->dt / pmb->pmy_mesh->dt_diff;
+          std::cout << "stage=" << stage << "/" << nstages
+                    << " dt_parabolic="<< pmb->pmy_mesh->dt_diff
+                    << " ratio=" << ratio
+                    << " speedup=" << ratio/(nstages+1)
+                    << std::endl;
+        }
+      } else {
+        if (stage % sts_nstage_out == 0) {
+          std::cout << "stage=" << stage << "/" << nstages
+                    << " dt_parabolic="<< pmb->pmy_mesh->dt_diff
+                    << " ratio="<< pmb->pmy_mesh->dt / pmb->pmy_mesh->dt_diff
+                    << std::endl;
+        }
+      }
+    }
   }
 
   // Clear flux arrays from previous stage
