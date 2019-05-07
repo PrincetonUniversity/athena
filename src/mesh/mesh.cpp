@@ -1030,10 +1030,18 @@ void Mesh::OutputMeshStructure(int ndim) {
 void Mesh::NewTimeStep() {
   MeshBlock *pmb = pblock;
 
-  dt_parabolic = dt_hyperbolic = dt_user = dt = static_cast<Real>(2.0)*dt;
+  // prevent timestep from growing too fast in between 2x cycles (even if every MeshBlock
+  // has new_block_dt > 2.0*dt_old)
+  dt = static_cast<Real>(2.0)*dt;
+  // consider first MeshBlock on this MPI rank's linked list of blocks:
+  dt = std::min(dt, pmb->new_block_dt_);
+  dt_hyperbolic = pmb->new_block_dt_hyperbolic_;
+  dt_parabolic = pmb->new_block_dt_parabolic_;
+  dt_user = pmb->new_block_dt_user_;
+  pmb = pmb->next;
 
   while (pmb != nullptr)  {
-    dt = std::min(dt,pmb->new_block_dt_);
+    dt = std::min(dt, pmb->new_block_dt_);
     dt_hyperbolic  = std::min(dt_hyperbolic, pmb->new_block_dt_hyperbolic_);
     dt_parabolic  = std::min(dt_parabolic, pmb->new_block_dt_parabolic_);
     dt_user  = std::min(dt_user, pmb->new_block_dt_user_);
@@ -1803,8 +1811,8 @@ FluidFormulation GetFluidFormulation(const std::string& input_string) {
 }
 
 void Mesh::OutputCycleDiagnostics() {
-  const int ratio_precision = 3;
   const int dt_precision = std::numeric_limits<Real>::max_digits10 - 1;
+  const int ratio_precision = 3;
   if (ncycle_out != 0) {
     if (ncycle % ncycle_out == 0) {
       std::cout << "cycle=" << ncycle << std::scientific
