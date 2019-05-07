@@ -46,7 +46,6 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
     f_shear(pin->GetOrAddReal("problem", "f_shear", -1)), // ratio of shear component
     expo(pin->GetOrAddReal("problem", "expo", 2)), // power-law exponent
     dedt(pin->GetReal("problem", "dedt")), // turbulence amplitude
-    dvol(pmy_fb->dx1*pmy_fb->dx2*pmy_fb->dx3),
     // TODO(changgoo): this assumes 3D and should not work with 1D, 2D. Add check.
     vel{ {nmb, pm->pblock->ncells3, pm->pblock->ncells2, pm->pblock->ncells1},
          {nmb, pm->pblock->ncells3, pm->pblock->ncells2, pm->pblock->ncells1},
@@ -77,6 +76,8 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
   }
 
   InitializeFFTBlock(true);
+  // note, pmy_fb won't be defined until InitializeFFTBlock is called:
+  dvol = pmy_fb->dx1*pmy_fb->dx2*pmy_fb->dx3;
   QuickCreatePlan();
 
   fv_ = new std::complex<Real>*[3];
