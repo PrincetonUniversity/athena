@@ -114,9 +114,10 @@ void ParameterInput::LoadFromStream(std::istream &is) {
     std::getline(is, line);
     line_num++;
     if (line.find('\t') != std::string::npos) {
-        msg << "### FATAL ERROR in function [ParameterInput::LoadFromStream]"
-            << std::endl << "Tab characters are forbidden in input files";
-        ATHENA_ERROR(msg);
+      line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
+      // msg << "### FATAL ERROR in function [ParameterInput::LoadFromStream]"
+      //     << std::endl << "Tab characters are forbidden in input files";
+      // ATHENA_ERROR(msg);
     }
     if (line.empty()) continue;                             // skip blank line
     first_char = line.find_first_not_of(" ");               // skip white space
