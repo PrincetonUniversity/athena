@@ -18,7 +18,9 @@ set_warning_cflag () {
 		     "-Wno-unknown-pragmas"
 		     "-Wno-unused-function"
 		     # Add even more warnings:
-		     "-Wconversion"      # also controls sign-,float-conversion
+		     #"-Wconversion"      # also controls sign-,float-conversion
+		     # TODO(felker): all floating-point literals need toggleable "real"=float/double
+		     # suffix to avoid the -Wfloat-conversion warnings
 		    )
     elif [ "$1" == "clang++" ] || [ "$1" == "clang" ]; then
 	warn_flags+=("-Wno-unused-private-field"  # Added to Clang ~v3.2 in 2012
@@ -27,7 +29,7 @@ set_warning_cflag () {
 		     "-Wno-unknown-pragmas"
 		     "-Wno-unused-function"
 		     # Add even more warnings:
-		     "-Wconversion"       # also controls sign-,float-conversion
+		     # "-Wconversion"       # also controls sign-,float-conversion
 		     "-Wshorten-64-to-32" # (controlled by above flag; not avail in GCC)
 		    )
     elif [ "$1" == "icpc" ] || [ "$1" == "icc" ]; then
@@ -41,7 +43,7 @@ set_warning_cflag () {
 		     "-Wno-unused-variable"
 		     "-Wno-unused-function"
 		     # Add even more warnings:
-		     "-Wconversion"
+		     # "-Wconversion"
 		     "-Wshorten-64-to-32" # illegal narrowing warnings (#2259)
 	            )
     else
