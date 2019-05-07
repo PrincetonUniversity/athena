@@ -105,7 +105,7 @@ InputBlock::~InputBlock() {
 
 void ParameterInput::LoadFromStream(std::istream &is) {
   std::string line, block_name, param_name, param_value, param_comment;
-  std::size_t first_char,last_char;
+  std::size_t first_char, last_char;
   std::stringstream msg;
   InputBlock *pib{};
   int line_num{-1}, blocks_found{0};
@@ -113,6 +113,11 @@ void ParameterInput::LoadFromStream(std::istream &is) {
   while (is.good()) {
     std::getline(is, line);
     line_num++;
+    if (line.find('\t') != std::string::npos) {
+        msg << "### FATAL ERROR in function [ParameterInput::LoadFromStream]"
+            << std::endl << "Tab characters are forbidden in input files";
+        ATHENA_ERROR(msg);
+    }
     if (line.empty()) continue;                             // skip blank line
     first_char = line.find_first_not_of(" ");               // skip white space
     if (first_char == std::string::npos) continue;          // line is all white space
