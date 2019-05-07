@@ -43,12 +43,15 @@ void Hydro::NewBlockTimeStep() {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;
-  AthenaArray<Real> &dt1 = dt1_, &dt2 = dt2_, &dt3 = dt3_;
+  // hyperbolic timestep constraint in each (x1-slice) cell along coordinate direction:
+  AthenaArray<Real> &dt1 = dt1_, &dt2 = dt2_, &dt3 = dt3_;  // (x1 slices)
   Real wi[NWAVE];
 
   Real real_max = std::numeric_limits<Real>::max();
   Real min_dt = real_max;
-  Real min_dt_diff  = real_max;
+  Real min_dt_hyperbolic  = real_max;
+  Real min_dt_parabolic  = real_max;
+  Real min_dt_user  = real_max;
 
   // TODO(felker): skip this next loop if pm->fluid_setup == FluidFormulation::disabled
   for (int k=ks; k<=ke; ++k) {
@@ -97,14 +100,14 @@ void Hydro::NewBlockTimeStep() {
       // compute minimum of (v1 +/- C)
       for (int i=is; i<=ie; ++i) {
         Real& dt_1 = dt1(i);
-        min_dt = std::min(min_dt, dt_1);
+        min_dt_hyperbolic = std::min(min_dt_hyperbolic, dt_1);
       }
 
       // if grid is 2D/3D, compute minimum of (v2 +/- C)
       if (pmb->block_size.nx2 > 1) {
         for (int i=is; i<=ie; ++i) {
           Real& dt_2 = dt2(i);
-          min_dt = std::min(min_dt, dt_2);
+          min_dt_hyperbolic = std::min(min_dt_hyperbolic, dt_2);
         }
       }
 
@@ -112,47 +115,55 @@ void Hydro::NewBlockTimeStep() {
       if (pmb->block_size.nx3 > 1) {
         for (int i=is; i<=ie; ++i) {
           Real& dt_3 = dt3(i);
-          min_dt = std::min(min_dt, dt_3);
+          min_dt_hyperbolic = std::min(min_dt_hyperbolic, dt_3);
         }
       }
     }
   }
+  // (skip if fluid is nonexistent or frozen)
+  min_dt = std::min(min_dt, min_dt_hyperbolic);
 
   // calculate the timestep limited by the diffusion processes
   if (hdif.hydro_diffusion_defined) {
     Real min_dt_vis, min_dt_cnd;
     hdif.NewDiffusionDt(min_dt_vis, min_dt_cnd);
-    min_dt_diff = std::min(min_dt_diff, min_dt_vis);
-    min_dt_diff = std::min(min_dt_diff, min_dt_cnd);
+    min_dt_parabolic = std::min(min_dt_parabolic, min_dt_vis);
+    min_dt_parabolic = std::min(min_dt_parabolic, min_dt_cnd);
   } // hydro diffusion
 
   if (MAGNETIC_FIELDS_ENABLED &&
       pmb->pfield->fdif.field_diffusion_defined) {
     Real min_dt_oa, min_dt_h;
     pmb->pfield->fdif.NewDiffusionDt(min_dt_oa, min_dt_h);
-    min_dt_diff = std::min(min_dt_diff, min_dt_oa);
-    min_dt_diff = std::min(min_dt_diff, min_dt_h);
+    min_dt_parabolic = std::min(min_dt_parabolic, min_dt_oa);
+    min_dt_parabolic = std::min(min_dt_parabolic, min_dt_h);
   } // field diffusion
 
   if (NSCALARS > 0 && pmb->pscalars->scalar_diffusion_defined) {
     Real min_dt_scalar_diff = pmb->pscalars->NewDiffusionDt();
-    min_dt_diff = std::min(min_dt_diff, min_dt_scalar_diff);
+    min_dt_parabolic = std::min(min_dt_parabolic, min_dt_scalar_diff);
   } // passive scalar diffusion
 
   min_dt *= pmb->pmy_mesh->cfl_number;
-  min_dt_diff *= pmb->pmy_mesh->cfl_number;
+  // scale the theoretical stability limit by a safety factor = the hyperbolic CFL limit
+  // (user-selected or automaticlaly enforced). May add independent parameter "cfl_diff"
+  // in the future (with default = cfl_number).
+  min_dt_parabolic *= pmb->pmy_mesh->cfl_number;
 
-  if (UserTimeStep_ != nullptr)
-    min_dt = std::min(min_dt, UserTimeStep_(pmb));
-
-  if (STS_ENABLED) {
-    pmb->new_block_dt_ = min_dt;
-    pmb->new_block_dt_diff_ = min_dt_diff;
-  } else {
-    min_dt = std::min(min_dt, min_dt_diff);
-    pmb->new_block_dt_ = min_dt;
-    pmb->new_block_dt_diff_ = min_dt;
+  if (UserTimeStep_ != nullptr) {
+    min_dt_user = UserTimeStep_(pmb);
+    min_dt = std::min(min_dt, min_dt_user);
   }
+
+  // STS handles parabolic terms -> then take the smaller of hyperbolic or user timestep
+  if (!STS_ENABLED) {
+    // otherwise, take the smallest of the hyperbolic, parabolic, user timesteps
+    min_dt = std::min(min_dt, min_dt_parabolic);
+  }
+  pmb->new_block_dt_ = min_dt;
+  pmb->new_block_dt_hyperbolic_ = min_dt_hyperbolic;
+  pmb->new_block_dt_parabolic_ = min_dt_parabolic;
+  pmb->new_block_dt_user_ = min_dt_user;
 
   return;
 }
