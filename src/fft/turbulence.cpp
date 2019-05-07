@@ -99,7 +99,6 @@ TurbulenceDriver::~TurbulenceDriver() {
     delete [] fv_co_[nv];
     if (fv_new_ != nullptr) delete [] fv_new_[nv];
   }
-  delete [] vel;
   delete [] fv_;
   delete [] fv_sh_;
   delete [] fv_co_;
@@ -111,7 +110,7 @@ TurbulenceDriver::~TurbulenceDriver() {
 //  \brief Generate and Perturb the velocity field
 
 void TurbulenceDriver::Driving() {
-  Mesh *pm=pmy_mesh_;
+  Mesh *pm = pmy_mesh_;
 
   // check driving time interval to generate new perturbation
   switch(pm->turb_flag) {
@@ -285,7 +284,6 @@ void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp) {
 
 void TurbulenceDriver::Perturb(Real dt) {
   Mesh *pm = pmy_mesh_;
-  std::stringstream msg;
   int nbs = nslist_[Globals::my_rank];
   int nbe = nbs+nblist_[Globals::my_rank]-1;
 
@@ -294,7 +292,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   int kl = pm->pblock->ks, ku = pm->pblock->ke;
 
   Real aa, b, c, s, de, v1, v2, v3, den, M1, M2, M3;
-  Real m[4] = {0}, gm[4];
+  Real m[4] = {0};
   AthenaArray<Real> &dv1 = vel[0], &dv2 = vel[1], &dv3 = vel[2];
 
   for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
@@ -315,16 +313,17 @@ void TurbulenceDriver::Perturb(Real dt) {
   }
 
 #ifdef MPI_PARALLEL
+  Real gm[4];
   int mpierr;
   // Sum the perturbations over all processors
   mpierr = MPI_Allreduce(m, gm, 4, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   if (mpierr) {
-    msg << "[normalize]: MPI_Allreduce error = "
-        << mpierr << std::endl;
+    std::stringstream msg;
+    msg << "[normalize]: MPI_Allreduce error = " << mpierr << std::endl;
     ATHENA_ERROR(msg);
   }
   // TODO(felker): ask Chang-Goo about this next line:
-  for (int n=0; n<4; n++) m[n]=gm[n];
+  for (int n=0; n<4; n++) m[n] = gm[n];
 #endif // MPI_PARALLEL
 
   for (int nb=0; nb<nmb; nb++) {
@@ -343,7 +342,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   m[0] = 0.0;
   m[1] = 0.0;
   for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
-    MeshBlock *pmb=pm->FindMeshBlock(igid);
+    MeshBlock *pmb = pm->FindMeshBlock(igid);
     if (pmb != nullptr) {
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
@@ -367,6 +366,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   // Sum the perturbations over all processors
   mpierr = MPI_Allreduce(m, gm, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   if (mpierr) {
+    std::stringstream msg;
     msg << "[normalize]: MPI_Allreduce error = "
         << mpierr << std::endl;
     ATHENA_ERROR(msg);
@@ -395,7 +395,7 @@ void TurbulenceDriver::Perturb(Real dt) {
 
   // Apply momentum pertubations
   for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
-    MeshBlock *pmb=pm->FindMeshBlock(igid);
+    MeshBlock *pmb = pm->FindMeshBlock(igid);
     if (pmb != nullptr) {
       for (int k=kl; k<=ku; k++) {
         for (int j=jl; j<=ju; j++) {
