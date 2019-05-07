@@ -178,7 +178,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // primarily used for tests of decaying linear waves (might conditionally enroll):
   AllocateUserHistoryOutput(1);
-  EnrollUserHistoryOutput(0, MaxV2, "max-v2");
+  EnrollUserHistoryOutput(0, MaxV2, "max-v2", UserHistoryOperation::max);
   return;
 }
 
