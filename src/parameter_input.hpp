@@ -45,8 +45,7 @@ struct InputLine {
 
 class InputBlock {
  public:
-  // constructor/destructor
-  InputBlock();
+  InputBlock() = default;
   ~InputBlock();
 
   // data
