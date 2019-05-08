@@ -270,12 +270,12 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         AddTask(RECV_SCLRFLX,CALC_SCLRFLX);
         AddTask(INT_SCLR,RECV_SCLRFLX);
       } else {
-        AddTask(INT_SCLR, CALC_SCLRFLX);
+        AddTask(INT_SCLR,CALC_SCLRFLX);
       }
-      // no SRCTERM_SCLR task
+      // there is no SRCTERM_SCLR task
       AddTask(SEND_SCLR,INT_SCLR);
       AddTask(RECV_SCLR,NONE);
-      AddTask(SETB_SCLR,RECV_SCLR);
+      AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
       // if (SHEARING_BOX) {
       //   AddTask(SEND_SCLRSH,SETB_SCLR);
       //   AddTask(RECV_SCLRSH,SETB_SCLR);

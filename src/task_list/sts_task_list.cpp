@@ -117,7 +117,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
         //}
       AddTask(SEND_SCLR,INT_SCLR);
       AddTask(RECV_SCLR,NONE);
-      AddTask(SETB_SCLR,RECV_SCLR);
+      AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
     }
 
     // compute MHD fluxes, integrate field
