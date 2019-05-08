@@ -51,6 +51,7 @@ void Hydro::NewBlockTimeStep() {
   Real min_dt_diff  = real_max;
 
   // TODO(felker): skip this next loop if pm->fluid_setup == FluidFormulation::disabled
+  FluidFormulation fluid_status = pmb->pmy_mesh->fluid_setup;
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       pmb->pcoord->CenterWidth1(k, j, is, ie, dt1);
@@ -64,32 +65,37 @@ void Hydro::NewBlockTimeStep() {
           wi[IVY] = w(IVY,k,j,i);
           wi[IVZ] = w(IVZ,k,j,i);
           if (NON_BAROTROPIC_EOS) wi[IPR] = w(IPR,k,j,i);
+          if (fluid_status == FluidFormulation::evolve) {
+            if (MAGNETIC_FIELDS_ENABLED) {
+              AthenaArray<Real> &bcc = pmb->pfield->bcc, &b_x1f = pmb->pfield->b.x1f,
+                              &b_x2f = pmb->pfield->b.x2f, &b_x3f = pmb->pfield->b.x3f;
+              Real bx = bcc(IB1,k,j,i) + std::fabs(b_x1f(k,j,i) - bcc(IB1,k,j,i));
+              wi[IBY] = bcc(IB2,k,j,i);
+              wi[IBZ] = bcc(IB3,k,j,i);
+              Real cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
+              dt1(i) /= (std::fabs(wi[IVX]) + cf);
 
-          if (MAGNETIC_FIELDS_ENABLED) {
-            AthenaArray<Real> &bcc = pmb->pfield->bcc, &b_x1f = pmb->pfield->b.x1f,
-                            &b_x2f = pmb->pfield->b.x2f, &b_x3f = pmb->pfield->b.x3f;
-            Real bx = bcc(IB1,k,j,i) + std::fabs(b_x1f(k,j,i) - bcc(IB1,k,j,i));
-            wi[IBY] = bcc(IB2,k,j,i);
-            wi[IBZ] = bcc(IB3,k,j,i);
-            Real cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
-            dt1(i) /= (std::fabs(wi[IVX]) + cf);
+              wi[IBY] = bcc(IB3,k,j,i);
+              wi[IBZ] = bcc(IB1,k,j,i);
+              bx = bcc(IB2,k,j,i) + std::fabs(b_x2f(k,j,i) - bcc(IB2,k,j,i));
+              cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
+              dt2(i) /= (std::fabs(wi[IVY]) + cf);
 
-            wi[IBY] = bcc(IB3,k,j,i);
-            wi[IBZ] = bcc(IB1,k,j,i);
-            bx = bcc(IB2,k,j,i) + std::fabs(b_x2f(k,j,i) - bcc(IB2,k,j,i));
-            cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
-            dt2(i) /= (std::fabs(wi[IVY]) + cf);
-
-            wi[IBY] = bcc(IB1,k,j,i);
-            wi[IBZ] = bcc(IB2,k,j,i);
-            bx = bcc(IB3,k,j,i) + std::fabs(b_x3f(k,j,i) - bcc(IB3,k,j,i));
-            cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
-            dt3(i) /= (std::fabs(wi[IVZ]) + cf);
-          } else {
-            Real cs = pmb->peos->SoundSpeed(wi);
-            dt1(i) /= (std::fabs(wi[IVX]) + cs);
-            dt2(i) /= (std::fabs(wi[IVY]) + cs);
-            dt3(i) /= (std::fabs(wi[IVZ]) + cs);
+              wi[IBY] = bcc(IB1,k,j,i);
+              wi[IBZ] = bcc(IB2,k,j,i);
+              bx = bcc(IB3,k,j,i) + std::fabs(b_x3f(k,j,i) - bcc(IB3,k,j,i));
+              cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
+              dt3(i) /= (std::fabs(wi[IVZ]) + cf);
+            } else {
+              Real cs = pmb->peos->SoundSpeed(wi);
+              dt1(i) /= (std::fabs(wi[IVX]) + cs);
+              dt2(i) /= (std::fabs(wi[IVY]) + cs);
+              dt3(i) /= (std::fabs(wi[IVZ]) + cs);
+            }
+          } else { // FluidFormulation::background or disabled. Assume scalar advection:
+            dt1(i) /= (std::fabs(wi[IVX]));
+            dt2(i) /= (std::fabs(wi[IVY]));
+            dt3(i) /= (std::fabs(wi[IVZ]));
           }
         }
       }
