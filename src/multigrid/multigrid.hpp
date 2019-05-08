@@ -12,6 +12,7 @@
 
 // C++ headers
 #include <iostream>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
