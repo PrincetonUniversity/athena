@@ -23,6 +23,7 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "gravity.hpp"
+#include "mg_gravity.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -51,6 +52,9 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     return;
   }
 
+  if (SELF_GRAVITY_ENABLED == 2)
+    pmg_ = new MGGravity(pmy_block->pmy_mesh->pmgrd, pmy_block);
+
   // using Gravity as an example of: containing full object members instead of pointer
   // memebers, construting BoundaryVariaable composite obj (no default ctor) in Gravity
   // ctor initializer list, avoiding dynamically-managed memory and the need for a
@@ -60,3 +64,9 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
   gbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&gbvar);
 }
+
+Gravity::~Gravity() {
+  if (SELF_GRAVITY_ENABLED == 2)
+    delete pmg_;
+}
+

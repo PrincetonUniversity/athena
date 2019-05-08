@@ -83,8 +83,8 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
   pmy_mesh_ = pm;
   if (!called_) {
     int dim = 1;
-    if (block_size_.nx2 > 1) dim = 2;
-    if (block_size_.nx3 > 1) dim = 3;
+    if (pmy_mesh_->f2) dim = 2;
+    if (pmy_mesh_->f3) dim = 3;
     maxneighbor_ = BufferID(dim, pmy_mesh_->multilevel);
     called_ = true;
   }
