@@ -4,57 +4,61 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hlle_mhd.cpp
-//  \brief HLLE Riemann solver for MHD.  See the hydro version for details.
+//  \brief HLLE Riemann solver for MHD. See the hydro version for details.
+
+// C headers
 
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "../../hydro.hpp"
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
+#include "../../hydro.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn
 
-void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+                          const int ivx, const AthenaArray<Real> &bx,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr,
+                          AthenaArray<Real> &flx,
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real wli[(NWAVE)],wri[(NWAVE)],wroe[(NWAVE)],fl[(NWAVE)],fr[(NWAVE)],flxi[(NWAVE)];
+  Real wli[(NWAVE)], wri[(NWAVE)], wroe[(NWAVE)];
+  Real fl[(NWAVE)],fr[(NWAVE)],flxi[(NWAVE)];
+
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
+  Real dt = pmy_block->pmy_mesh->dt;
 
-  for (int k=kl; k<=ku; ++k) {
-  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd private(wli,wri,wroe,fl,fr,flxi)
   for (int i=il; i<=iu; ++i) {
+    //--- Step 1. Load L/R states into local variables
 
-//--- Step 1.  Load L/R states into local variables
+    wli[IDN]=wl(IDN,i);
+    wli[IVX]=wl(ivx,i);
+    wli[IVY]=wl(ivy,i);
+    wli[IVZ]=wl(ivz,i);
+    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,i);
+    wli[IBY]=wl(IBY,i);
+    wli[IBZ]=wl(IBZ,i);
 
-    wli[IDN]=wl(IDN,k,j,i);
-    wli[IVX]=wl(ivx,k,j,i);
-    wli[IVY]=wl(ivy,k,j,i);
-    wli[IVZ]=wl(ivz,k,j,i);
-    if (NON_BAROTROPIC_EOS) wli[IPR]=wl(IPR,k,j,i);
-    wli[IBY]=wl(IBY,k,j,i);
-    wli[IBZ]=wl(IBZ,k,j,i);
-
-    wri[IDN]=wr(IDN,k,j,i);
-    wri[IVX]=wr(ivx,k,j,i);
-    wri[IVY]=wr(ivy,k,j,i);
-    wri[IVZ]=wr(ivz,k,j,i);
-    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,k,j,i);
-    wri[IBY]=wr(IBY,k,j,i);
-    wri[IBZ]=wr(IBZ,k,j,i);
+    wri[IDN]=wr(IDN,i);
+    wri[IVX]=wr(ivx,i);
+    wri[IVY]=wr(ivy,i);
+    wri[IVZ]=wr(ivz,i);
+    if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,i);
+    wri[IBY]=wr(IBY,i);
+    wri[IBZ]=wr(IBZ,i);
 
     Real bxi = bx(k,j,i);
 
-//--- Step 2.  Compute Roe-averaged state
+    //--- Step 2. Compute Roe-averaged state
 
     Real sqrtdl = std::sqrt(wli[IDN]);
     Real sqrtdr = std::sqrt(wri[IDN]);
@@ -71,7 +75,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real y = 0.5*(wli[IDN] + wri[IDN])/wroe[IDN];
 
     // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
-    // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
+    // rather than E or P directly. sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
     Real pbl = 0.5*(bxi*bxi + SQR(wli[IBY]) + SQR(wli[IBZ]));
     Real pbr = 0.5*(bxi*bxi + SQR(wri[IBY]) + SQR(wri[IBZ]));
     Real el,er,hroe;
@@ -81,7 +85,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       hroe = ((el + wli[IPR] + pbl)/sqrtdl + (er + wri[IPR] + pbr)/sqrtdr)*isdlpdr;
     }
 
-//--- Step 3.  Compute fast magnetosonic speed in L,R, and Roe-averaged states
+    //--- Step 3. Compute fast magnetosonic speed in L,R, and Roe-averaged states
 
     Real cl = pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
     Real cr = pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
@@ -107,7 +111,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real cfsq = 0.5*(tsum + cf2_cs2);
     Real a = std::sqrt(cfsq);
 
-//--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
+    //--- Step 4. Compute the max/min wave speeds based on L/R and Roe-averaged values
 
     Real al = std::min((wroe[IVX] - a),(wli[IVX] - cl));
     Real ar = std::max((wroe[IVX] + a),(wri[IVX] + cr));
@@ -115,7 +119,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real bp = ar > 0.0 ? ar : 0.0;
     Real bm = al < 0.0 ? al : 0.0;
 
-//--- Step 5.  Compute L/R fluxes along the lines bm/bp: F_L - (S_L)U_L; F_R - (S_R)U_R
+    //--- Step 5. Compute L/R fluxes along the lines bm/bp: F_L - (S_L)U_L; F_R - (S_R)U_R
 
     Real vxl = wli[IVX] - bm;
     Real vxr = wri[IVX] - bp;
@@ -150,7 +154,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     fl[IBZ] = wli[IBZ]*vxl - bxi*wli[IVZ];
     fr[IBZ] = wri[IBZ]*vxr - bxi*wri[IVZ];
 
-//--- Step 6.  Compute the HLLE flux at interface.
+    //--- Step 6. Compute the HLLE flux at interface.
 
     Real tmp=0.0;
     if (bp != bm) tmp = 0.5*(bp + bm)/(bp - bm);
@@ -170,7 +174,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     if (NON_BAROTROPIC_EOS) flx(IEN,k,j,i) = flxi[IEN];
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
+
+    wct(k,j,i)=GetWeightForCT(flxi[IDN], wli[IDN], wri[IDN], dxw(i), dt);
   }
-  }}
   return;
 }

@@ -11,9 +11,12 @@
 // automatically sets the wavevector along the domain diagonal.
 //========================================================================================
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min, max
 #include <cmath>      // std::sqrt(), std::fabs()
+        //#include <cstdio>     // fopen(), fprintf(), freopen()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -35,34 +38,37 @@
 #include <mpi.h>
 #endif
 
+namespace {
 // Parameters which define initial solution -- made global so that they can be shared
 // with functions A1,2,3 which compute vector potentials
-static Real d0,p0,u0,bx0, by0, bz0, dby, dbz;
-static int wave_flag;
-static Real ang_2, ang_3; // Rotation angles about the y and z' axis
-static bool ang_2_vert, ang_3_vert; // Switches to set ang_2 and/or ang_3 to pi/2
-static Real sin_a2, cos_a2, sin_a3, cos_a3;
-static Real amp, lambda, k_par; // amplitude, Wavelength, 2*PI/wavelength
-static Real gam,gm1,iso_cs,vflow;
-static Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
+Real d0, p0, u0, bx0, by0, bz0, dby, dbz;
+int wave_flag;
+Real ang_2, ang_3; // Rotation angles about the y and z' axis
+bool ang_2_vert, ang_3_vert; // Switches to set ang_2 and/or ang_3 to pi/2
+Real sin_a2, cos_a2, sin_a3, cos_a3;
+Real amp, lambda, k_par; // amplitude, Wavelength, 2*PI/wavelength
+Real gam,gm1,iso_cs,vflow;
+Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
 
 // functions to compute vector potential to initialize the solution
-static Real A1(const Real x1, const Real x2, const Real x3);
-static Real A2(const Real x1, const Real x2, const Real x3);
-static Real A3(const Real x1, const Real x2, const Real x3);
+Real A1(const Real x1, const Real x2, const Real x3);
+Real A2(const Real x1, const Real x2, const Real x3);
+Real A3(const Real x1, const Real x2, const Real x3);
 // edge-averaged and differenced values of vector potential
-static Real A1_ave_diff2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+Real AveDiff2A1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
                          const Real x2f_jp1);
-static Real A2_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+Real AveDiff1A2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
                          const Real x2f_jp1);
-static Real A3_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j);
-static Real A3_ave_diff2(const Real x1f_i, const Real x2f_j, const Real x2f_jp1);
+Real AveDiff1A3(const Real x1f_i, const Real x1f_ip1, const Real x2f_j);
+Real AveDiff2A3(const Real x1f_i, const Real x2f_j, const Real x2f_jp1);
 
 // function to compute eigenvectors of linear waves
-static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
-  const Real h, const Real b1, const Real b2, const Real b3, const Real x, const Real y,
-  Real eigenvalues[(NWAVE)],
-  Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)]);
+void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
+                 const Real h, const Real b1, const Real b2, const Real b3,
+                 const Real x, const Real y, Real eigenvalues[(NWAVE)],
+                 Real right_eigenmatrix[(NWAVE)][(NWAVE)],
+                 Real left_eigenmatrix[(NWAVE)][(NWAVE)]);
+} // namespace
 
 // AMR refinement condition
 int RefinementCondition(MeshBlock *pmb);
@@ -103,23 +109,23 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real x3size = mesh_size.x3max - mesh_size.x3min;
 
   // User should never input -999.9 in angles
-  if (ang_3 == -999.9) ang_3 = atan(x1size/x2size);
-  sin_a3 = sin(ang_3);
-  cos_a3 = cos(ang_3);
+  if (ang_3 == -999.9) ang_3 = std::atan(x1size/x2size);
+  sin_a3 = std::sin(ang_3);
+  cos_a3 = std::cos(ang_3);
 
   // Override ang_3 input and hardcode vertical (along x2 axis) wavevector
-  if (ang_3_vert == true) {
+  if (ang_3_vert) {
     sin_a3 = 1.0;
     cos_a3 = 0.0;
     ang_3 = 0.5*M_PI;
   }
 
-  if (ang_2 == -999.9) ang_2 = atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
-  sin_a2 = sin(ang_2);
-  cos_a2 = cos(ang_2);
+  if (ang_2 == -999.9) ang_2 = std::atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
+  sin_a2 = std::sin(ang_2);
+  cos_a2 = std::cos(ang_2);
 
   // Override ang_2 input and hardcode vertical (along x3 axis) wavevector
-  if (ang_2_vert == true) {
+  if (ang_2_vert) {
     sin_a2 = 1.0;
     cos_a2 = 0.0;
     ang_2 = 0.5*M_PI;
@@ -131,13 +137,13 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // For lambda choose the smaller of the 3
   lambda = x1;
-  if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
-  if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
+  if (f2 && ang_3 != 0.0) lambda = std::min(lambda,x2);
+  if (f3 && ang_2 != 0.0) lambda = std::min(lambda,x3);
 
   // If cos_a2 or cos_a3 = 0, need to override lambda
-  if (ang_3_vert == true)
+  if (ang_3_vert)
     lambda = x2;
-  if (ang_2_vert == true)
+  if (ang_2_vert)
     lambda = x3;
 
   // Initialize k_parallel
@@ -159,20 +165,20 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   if (NON_BAROTROPIC_EOS) {
     p0 = 1.0/gam;
-    h0 = ((p0/gm1 + 0.5*d0*(u0*u0+v0*v0+w0*w0)) + p0)/d0;
-    if (MAGNETIC_FIELDS_ENABLED) h0 += (bx0*bx0+by0*by0+bz0*bz0)/d0;
+    h0 = ((p0/gm1 + 0.5*d0*(u0*u0 + v0*v0+w0*w0)) + p0)/d0;
+    if (MAGNETIC_FIELDS_ENABLED) h0 += (bx0*bx0 + by0*by0 + bz0*bz0)/d0;
   }
 
-  Eigensystem(d0,u0,v0,w0,h0,bx0,by0,bz0,xfact,yfact,ev,rem,lem);
+  Eigensystem(d0, u0, v0, w0, h0, bx0, by0, bz0, xfact, yfact, ev, rem, lem);
 
-  if (pin->GetOrAddBoolean("problem","test",false)==true && ncycle==0) {
+  if (pin->GetOrAddBoolean("problem", "test", false) && ncycle==0) {
     // reinterpret tlim as the number of orbital periods
-    Real ntlim=lambda/std::fabs(ev[wave_flag])*tlim;
-    tlim=ntlim;
-    pin->SetReal("time","tlim",ntlim);
+    Real ntlim = lambda/std::fabs(ev[wave_flag])*tlim;
+    tlim = ntlim;
+    pin->SetReal("time", "tlim", ntlim);
   }
 
-  if (adaptive==true)
+  if (adaptive)
     EnrollUserRefinementCondition(RefinementCondition);
 
   return;
@@ -184,50 +190,42 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
+  if (!pin->GetOrAddBoolean("problem", "compute_error", false)) return;
 
   // Initialize errors to zero
-  Real l1_err[NHYDRO+NFIELD],max_err[NHYDRO+NFIELD];
-  for (int i=0; i<(NHYDRO+NFIELD); ++i) {
-    l1_err[i]=0.0;
-    max_err[i]=0.0;
-  }
+  Real l1_err[NHYDRO+NFIELD]{}, max_err[NHYDRO+NFIELD]{};
 
   MeshBlock *pmb = pblock;
-  BoundaryValues *pbval;
-  while (pmb != NULL) {
-    pbval=pmb->pbval;
-    int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+  while (pmb != nullptr) {
+    BoundaryValues *pbval = pmb->pbval;
+    int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
+        kl = pmb->ks, ku = pmb->ke;
     // adjust loop limits for fourth order error calculation
     //------------------------------------------------
-    if (pmb->precon->correct_err == true) {
+    if (pmb->precon->correct_err) {
       // Expand loop limits on all sides by one
-      if (pbval->nblevel[1][1][0]!=-1) il-=1;
-      if (pbval->nblevel[1][1][2]!=-1) iu+=1;
-      if (pbval->nblevel[1][0][1]!=-1) jl-=1;
-      if (pbval->nblevel[1][2][1]!=-1) ju+=1;
-      if (pbval->nblevel[0][1][1]!=-1) kl-=1;
-      if (pbval->nblevel[2][1][1]!=-1) ku+=1;
+      if (pbval->nblevel[1][1][0] != -1) il -= 1;
+      if (pbval->nblevel[1][1][2] != -1) iu += 1;
+      if (pbval->nblevel[1][0][1] != -1) jl -= 1;
+      if (pbval->nblevel[1][2][1] != -1) ju += 1;
+      if (pbval->nblevel[0][1][1] != -1) kl -= 1;
+      if (pbval->nblevel[2][1][1] != -1) ku += 1;
     }
     // Save analytic solution of conserved variables in 4D scratch array
     AthenaArray<Real> cons_;
-    int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-    int ncells2 = 1, ncells3 = 1;
-    if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-    if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
     // Even for MHD, there are only cell-centered mesh variables
     int ncells4 = NHYDRO + NFIELD;
     int nl = 0;
-    int nu = ncells4-1;
-    cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
+    int nu = ncells4 - 1;
+    cons_.NewAthenaArray(ncells4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
     //  Compute errors at cell centers
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
         for (int i=il; i<=iu; i++) {
           Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3)
-              + pmb->pcoord->x3v(k)*sin_a2;
-          Real sn = sin(k_par*x);
+                   + pmb->pcoord->x3v(k)*sin_a2;
+          Real sn = std::sin(k_par*x);
 
           Real d1 = d0 + amp*sn*rem[0][wave_flag];
           Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
@@ -246,7 +244,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           if (NON_BAROTROPIC_EOS) {
             Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
             if (MAGNETIC_FIELDS_ENABLED) {
-              e0 += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
+              e0 += 0.5*(bx0*bx0 + by0*by0 + bz0*bz0);
               Real bx = bx0;
               Real by = by0 + amp*sn*rem[5][wave_flag];
               Real bz = bz0 + amp*sn*rem[6][wave_flag];
@@ -264,17 +262,17 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     }
     // begin fourth-order error correction
     // -------------------------------
-    if (pmb->precon->correct_err == true) {
+    if (pmb->precon->correct_err) {
       // Restore loop limits to real cells only
-      il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
+      il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je, kl = pmb->ks, ku = pmb->ke;
 
       // Compute and store Laplacian of cell-centered conserved variables, Hydro and Bcc
       AthenaArray<Real> delta_cons_;
-      delta_cons_.NewAthenaArray(ncells4, ncells3, ncells2, ncells1);
+      delta_cons_.NewAthenaArray(ncells4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
       pmb->pcoord->Laplacian(cons_, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
 
-      // TODO(kfelker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
-      // TODO(kfelker): also, this may need to be dx1v, since Laplacian is cell-centered
+      // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
+      // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-centered
       Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
       Real C = (h*h)/24.0;
 
@@ -288,7 +286,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           }
         }
       }
-    } // end if (pmb->precon->correct_err == true)
+    } // end if (pmb->precon->correct_err)
     // ------- end fourth-order error calculation
 
     for (int k=kl; k<=ku; ++k) {
@@ -303,24 +301,28 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real vol = pmb->pcoord->GetCellVolume(k, j, i);
 
           l1_err[IDN] += std::fabs(d1 - pmb->phydro->u(IDN,k,j,i))*vol;
-          max_err[IDN] = std::max(static_cast<Real>(
-              std::fabs(d1 - pmb->phydro->u(IDN,k,j,i))), max_err[IDN]);
-
+          max_err[IDN] = std::max(
+              static_cast<Real>(std::fabs(d1 - pmb->phydro->u(IDN,k,j,i))),
+              max_err[IDN]);
           l1_err[IM1] += std::fabs(m1 - pmb->phydro->u(IM1,k,j,i))*vol;
           l1_err[IM2] += std::fabs(m2 - pmb->phydro->u(IM2,k,j,i))*vol;
           l1_err[IM3] += std::fabs(m3 - pmb->phydro->u(IM3,k,j,i))*vol;
-          max_err[IM1] = std::max(static_cast<Real>(
-              std::fabs(m1 - pmb->phydro->u(IM1,k,j,i))), max_err[IM1]);
-          max_err[IM2] = std::max(static_cast<Real>(
-              std::fabs(m2 - pmb->phydro->u(IM2,k,j,i))), max_err[IM2]);
-          max_err[IM3] = std::max(static_cast<Real>(
-              std::fabs(m3 - pmb->phydro->u(IM3,k,j,i))), max_err[IM3]);
+          max_err[IM1] = std::max(
+              static_cast<Real>(std::fabs(m1 - pmb->phydro->u(IM1,k,j,i))),
+              max_err[IM1]);
+          max_err[IM2] = std::max(
+              static_cast<Real>(std::fabs(m2 - pmb->phydro->u(IM2,k,j,i))),
+              max_err[IM2]);
+          max_err[IM3] = std::max(
+              static_cast<Real>(std::fabs(m3 - pmb->phydro->u(IM3,k,j,i))),
+              max_err[IM3]);
 
           if (NON_BAROTROPIC_EOS) {
             Real e0 = cons_(IEN,k,j,i);
             l1_err[IEN] += std::fabs(e0 - pmb->phydro->u(IEN,k,j,i))*vol;
-            max_err[IEN] = std::max(static_cast<Real>(
-                std::fabs(e0-pmb->phydro->u(IEN,k,j,i))), max_err[IEN]);
+            max_err[IEN] = std::max(
+                static_cast<Real>(std::fabs(e0-pmb->phydro->u(IEN,k,j,i))),
+                max_err[IEN]);
           }
 
           if (MAGNETIC_FIELDS_ENABLED) {
@@ -341,36 +343,34 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         }
       }
     }
-    // TODO(kfelker): don't de/allocate per MeshBlock
-    cons_.DeleteAthenaArray();
-    pmb=pmb->next;
+    pmb = pmb->next;
   }
-  Real rms_err = 0.0, max_max_over_l1=0.0;
+  Real rms_err = 0.0, max_max_over_l1 = 0.0;
 
 #ifdef MPI_PARALLEL
   if (Globals::my_rank == 0) {
-    MPI_Reduce(MPI_IN_PLACE,&l1_err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_SUM,0,
+    MPI_Reduce(MPI_IN_PLACE, &l1_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
-    MPI_Reduce(MPI_IN_PLACE,&max_err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_MAX,0,
+    MPI_Reduce(MPI_IN_PLACE, &max_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_MAX, 0,
                MPI_COMM_WORLD);
   } else {
-    MPI_Reduce(&l1_err,&l1_err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_SUM,0,
+    MPI_Reduce(&l1_err, &l1_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
-    MPI_Reduce(&max_err,&max_err,(NHYDRO+NFIELD),MPI_ATHENA_REAL,MPI_MAX,0,
+    MPI_Reduce(&max_err, &max_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_MAX, 0,
                MPI_COMM_WORLD);
   }
 #endif
 
   // only the root process outputs the data
   if (Globals::my_rank == 0) {
-    // normalize errors by volume
-    Real vol= (mesh_size.x1max-mesh_size.x1min)*(mesh_size.x2max-mesh_size.x2min)
-             *(mesh_size.x3max-mesh_size.x3min);
+    // normalize errors by number of cells
+    Real vol = (mesh_size.x1max - mesh_size.x1min)*(mesh_size.x2max - mesh_size.x2min)
+               *(mesh_size.x3max - mesh_size.x3min);
     for (int i=0; i<(NHYDRO+NFIELD); ++i) l1_err[i] = l1_err[i]/vol;
     // compute rms error
     for (int i=0; i<(NHYDRO+NFIELD); ++i) {
-       rms_err += SQR(l1_err[i]);
-       max_max_over_l1 = std::max(max_max_over_l1, (max_err[i]/l1_err[i]));
+      rms_err += SQR(l1_err[i]);
+      max_max_over_l1 = std::max(max_max_over_l1, (max_err[i]/l1_err[i]));
     }
     rms_err = std::sqrt(rms_err);
 
@@ -381,53 +381,52 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     FILE *pfile;
 
     // The file exists -- reopen the file in append mode
-    if ((pfile = fopen(fname.c_str(),"r")) != NULL) {
-      if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL) {
-        msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
+    if ((pfile = std::fopen(fname.c_str(), "r")) != nullptr) {
+      if ((pfile = std::freopen(fname.c_str(), "a", pfile)) == nullptr) {
+        msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop"
             << std::endl << "Error output file could not be opened" <<std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
 
-    // The file does not exist -- open the file in write mode and add headers
+      // The file does not exist -- open the file in write mode and add headers
     } else {
-      if ((pfile = fopen(fname.c_str(),"w")) == NULL) {
-        msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
+      if ((pfile = std::fopen(fname.c_str(), "w")) == nullptr) {
+        msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop"
             << std::endl << "Error output file could not be opened" <<std::endl;
-        throw std::runtime_error(msg.str().c_str());
+        ATHENA_ERROR(msg);
       }
-      fprintf(pfile,"# Nx1  Nx2  Nx3  Ncycle  ");
-      fprintf(pfile,"RMS-L1-Error  d_L1  M1_L1  M2_L1  M3_L1  E_L1 ");
-      if (MAGNETIC_FIELDS_ENABLED) fprintf(pfile,"  B1c_L1  B2c_L1  B3c_L1");
-      fprintf(pfile,"  Largest-Max/L1  d_max  M1_max  M2_max  M3_max  E_max ");
-      if (MAGNETIC_FIELDS_ENABLED) fprintf(pfile,"  B1c_max  B2c_max  B3c_max");
-      fprintf(pfile,"\n");
+      std::fprintf(pfile, "# Nx1  Nx2  Nx3  Ncycle  ");
+      std::fprintf(pfile, "RMS-L1-Error  d_L1  M1_L1  M2_L1  M3_L1  E_L1 ");
+      if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile, "  B1c_L1  B2c_L1  B3c_L1");
+      std::fprintf(pfile, "  Largest-Max/L1  d_max  M1_max  M2_max  M3_max  E_max ");
+      if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile, "  B1c_max  B2c_max  B3c_max");
+      std::fprintf(pfile, "\n");
     }
 
     // write errors
-    fprintf(pfile,"%d  %d",mesh_size.nx1,mesh_size.nx2);
-    fprintf(pfile,"  %d  %d",mesh_size.nx3,ncycle);
-    fprintf(pfile,"  %e  %e",rms_err,l1_err[IDN]);
-    fprintf(pfile,"  %e  %e  %e",l1_err[IM1],l1_err[IM2],l1_err[IM3]);
+    std::fprintf(pfile, "%d  %d", mesh_size.nx1, mesh_size.nx2);
+    std::fprintf(pfile, "  %d  %d", mesh_size.nx3, ncycle);
+    std::fprintf(pfile, "  %e  %e", rms_err, l1_err[IDN]);
+    std::fprintf(pfile, "  %e  %e  %e", l1_err[IM1], l1_err[IM2], l1_err[IM3]);
     if (NON_BAROTROPIC_EOS)
-      fprintf(pfile,"  %e",l1_err[IEN]);
+      std::fprintf(pfile, "  %e", l1_err[IEN]);
     if (MAGNETIC_FIELDS_ENABLED) {
-      fprintf(pfile,"  %e",l1_err[NHYDRO+IB1]);
-      fprintf(pfile,"  %e",l1_err[NHYDRO+IB2]);
-      fprintf(pfile,"  %e",l1_err[NHYDRO+IB3]);
+      std::fprintf(pfile, "  %e", l1_err[NHYDRO+IB1]);
+      std::fprintf(pfile, "  %e", l1_err[NHYDRO+IB2]);
+      std::fprintf(pfile, "  %e", l1_err[NHYDRO+IB3]);
     }
-    fprintf(pfile,"  %e  %e  ",max_max_over_l1,max_err[IDN]);
-    fprintf(pfile,"%e  %e  %e",max_err[IM1],max_err[IM2],max_err[IM3]);
+    std::fprintf(pfile, "  %e  %e  ", max_max_over_l1, max_err[IDN]);
+    std::fprintf(pfile, "%e  %e  %e", max_err[IM1], max_err[IM2], max_err[IM3]);
     if (NON_BAROTROPIC_EOS)
-      fprintf(pfile,"  %e",max_err[IEN]);
+      std::fprintf(pfile, "  %e", max_err[IEN]);
     if (MAGNETIC_FIELDS_ENABLED) {
-      fprintf(pfile,"  %e",max_err[NHYDRO+IB1]);
-      fprintf(pfile,"  %e",max_err[NHYDRO+IB2]);
-      fprintf(pfile,"  %e",max_err[NHYDRO+IB3]);
+      std::fprintf(pfile, "  %e", max_err[NHYDRO+IB1]);
+      std::fprintf(pfile, "  %e", max_err[NHYDRO+IB2]);
+      std::fprintf(pfile, "  %e", max_err[NHYDRO+IB3]);
     }
-    fprintf(pfile,"\n");
-    fclose(pfile);
+    std::fprintf(pfile, "\n");
+    std::fclose(pfile);
   }
-
   return;
 }
 
@@ -441,32 +440,33 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // are set in InitUserMeshData
 
   if (MAGNETIC_FIELDS_ENABLED) {
-    AthenaArray<Real> a1,a2,a3;
-    int nx1 = (ie-is)+1 + 2*(NGHOST);
-    int nx2 = (je-js)+1 + 2*(NGHOST);
-    int nx3 = (ke-ks)+1 + 2*(NGHOST);
-    a1.NewAthenaArray(nx3,nx2,nx1);
-    a2.NewAthenaArray(nx3,nx2,nx1);
-    a3.NewAthenaArray(nx3,nx2,nx1);
+    AthenaArray<Real> a1, a2, a3;
+    // nxN != ncellsN, in general. Allocate to extend through 2*ghost, regardless # dim
+    int nx1 = block_size.nx1 + 2*NGHOST;
+    int nx2 = block_size.nx2 + 2*NGHOST;
+    int nx3 = block_size.nx3 + 2*NGHOST;
+    a1.NewAthenaArray(nx3, nx2, nx1);
+    a2.NewAthenaArray(nx3, nx2, nx1);
+    a3.NewAthenaArray(nx3, nx2, nx1);
 
     // wave amplitudes
     dby = amp*rem[NWAVE-2][wave_flag];
     dbz = amp*rem[NWAVE-1][wave_flag];
 
-    int level=loc.level;
+    int level = loc.level;
     // Initialize components of the vector potential
     if (block_size.nx3 > 1) {
       for (int k=ks; k<=ke+1; k++) {
         for (int j=js; j<=je+1; j++) {
           for (int i=is; i<=ie+1; i++) {
             if ((pbval->nblevel[1][0][1]>level && j==js)
-             || (pbval->nblevel[1][2][1]>level && j==je+1)
-             || (pbval->nblevel[0][1][1]>level && k==ks)
-             || (pbval->nblevel[2][1][1]>level && k==ke+1)
-             || (pbval->nblevel[0][0][1]>level && j==js   && k==ks)
-             || (pbval->nblevel[0][2][1]>level && j==je+1 && k==ks)
-             || (pbval->nblevel[2][0][1]>level && j==js   && k==ke+1)
-             || (pbval->nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
+                || (pbval->nblevel[1][2][1]>level && j==je+1)
+                || (pbval->nblevel[0][1][1]>level && k==ks)
+                || (pbval->nblevel[2][1][1]>level && k==ke+1)
+                || (pbval->nblevel[0][0][1]>level && j==js   && k==ks)
+                || (pbval->nblevel[0][2][1]>level && j==je+1 && k==ks)
+                || (pbval->nblevel[2][0][1]>level && j==js   && k==ke+1)
+                || (pbval->nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
               Real x1l = pcoord->x1f(i)+0.25*pcoord->dx1f(i);
               Real x1r = pcoord->x1f(i)+0.75*pcoord->dx1f(i);
               a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
@@ -476,13 +476,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
 
             if ((pbval->nblevel[1][1][0]>level && i==is)
-             || (pbval->nblevel[1][1][2]>level && i==ie+1)
-             || (pbval->nblevel[0][1][1]>level && k==ks)
-             || (pbval->nblevel[2][1][1]>level && k==ke+1)
-             || (pbval->nblevel[0][1][0]>level && i==is   && k==ks)
-             || (pbval->nblevel[0][1][2]>level && i==ie+1 && k==ks)
-             || (pbval->nblevel[2][1][0]>level && i==is   && k==ke+1)
-             || (pbval->nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
+                || (pbval->nblevel[1][1][2]>level && i==ie+1)
+                || (pbval->nblevel[0][1][1]>level && k==ks)
+                || (pbval->nblevel[2][1][1]>level && k==ke+1)
+                || (pbval->nblevel[0][1][0]>level && i==is   && k==ks)
+                || (pbval->nblevel[0][1][2]>level && i==ie+1 && k==ks)
+                || (pbval->nblevel[2][1][0]>level && i==is   && k==ke+1)
+                || (pbval->nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
               Real x2l = pcoord->x2f(j)+0.25*pcoord->dx2f(j);
               Real x2r = pcoord->x2f(j)+0.75*pcoord->dx2f(j);
               a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
@@ -492,13 +492,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
 
             if ((pbval->nblevel[1][1][0]>level && i==is)
-             || (pbval->nblevel[1][1][2]>level && i==ie+1)
-             || (pbval->nblevel[1][0][1]>level && j==js)
-             || (pbval->nblevel[1][2][1]>level && j==je+1)
-             || (pbval->nblevel[1][0][0]>level && i==is   && j==js)
-             || (pbval->nblevel[1][0][2]>level && i==ie+1 && j==js)
-             || (pbval->nblevel[1][2][0]>level && i==is   && j==je+1)
-             || (pbval->nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
+                || (pbval->nblevel[1][1][2]>level && i==ie+1)
+                || (pbval->nblevel[1][0][1]>level && j==js)
+                || (pbval->nblevel[1][2][1]>level && j==je+1)
+                || (pbval->nblevel[1][0][0]>level && i==is   && j==js)
+                || (pbval->nblevel[1][0][2]>level && i==ie+1 && j==js)
+                || (pbval->nblevel[1][2][0]>level && i==is   && j==je+1)
+                || (pbval->nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
               Real x3l = pcoord->x3f(k)+0.25*pcoord->dx3f(k);
               Real x3r = pcoord->x3f(k)+0.75*pcoord->dx3f(k);
               a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +
@@ -516,26 +516,24 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
                 (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
           }
-        }}
-
+        }
+      }
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je+1; j++) {
           for (int i=is; i<=ie; i++) {
             pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
                                (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
           }
-        }}
-
+        }
+      }
       for (int k=ks; k<=ke+1; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie; i++) {
             pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
                 (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
           }
-        }}
-      a1.DeleteAthenaArray();
-      a2.DeleteAthenaArray();
-      a3.DeleteAthenaArray();
+        }
+      }
     } else { // 1D or 2D
       // Initialize interface fields directly
       // TODO(kfelker): add 3D implementation
@@ -544,29 +542,29 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie+1; i++) {
-            pfield->b.x1f(k,j,i) = A3_ave_diff2(pcoord->x1f(i), pcoord->x2f(j),
+            pfield->b.x1f(k,j,i) = AveDiff2A3(pcoord->x1f(i), pcoord->x2f(j),
                                                 pcoord->x2f(j+1));
           }
-        }}
-
+        }
+      }
       // B2 initialization
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je+1; j++) {
           for (int i=is; i<=ie; i++) {
-            pfield->b.x2f(k,j,i) = - A3_ave_diff1(pcoord->x1f(i), pcoord-> x1f(i+1),
+            pfield->b.x2f(k,j,i) = - AveDiff1A3(pcoord->x1f(i), pcoord-> x1f(i+1),
                                                   pcoord->x2f(j));
           }
-        }}
-
+        }
+      }
       // B3 initialization
       for (int k=ks; k<=ke+1; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie; i++) {
             pfield->b.x3f(k,j,i) =
-                A2_ave_diff1(pcoord->x1f(i), pcoord-> x1f(i+1), pcoord->x2f(j),
-                             pcoord->x2f(j+1))
-                - A1_ave_diff2(pcoord->x1f(i), pcoord-> x1f(i+1), pcoord->x2f(j),
-                               pcoord->x2f(j+1));
+                AveDiff1A2(pcoord->x1f(i), pcoord-> x1f(i+1), pcoord->x2f(j),
+                           pcoord->x2f(j+1))
+                - AveDiff2A1(pcoord->x1f(i), pcoord-> x1f(i+1), pcoord->x2f(j),
+                             pcoord->x2f(j+1));
           }
         }
       }
@@ -575,78 +573,79 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // initialize conserved variables
   for (int k=ks; k<=ke; k++) {
-  for (int j=js; j<=je; j++) {
-    for (int i=is; i<=ie; i++) {
-      Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) +
-          pcoord->x3v(k)*sin_a2;
-      Real sn = sin(k_par*x);
-      phydro->u(IDN,k,j,i) = d0 + amp*sn*rem[0][wave_flag];
-      Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
-      Real my = amp*sn*rem[2][wave_flag];
-      Real mz = amp*sn*rem[3][wave_flag];
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        Real x = cos_a2*(pcoord->x1v(i)*cos_a3 + pcoord->x2v(j)*sin_a3) +
+                 pcoord->x3v(k)*sin_a2;
+        Real sn = std::sin(k_par*x);
+        phydro->u(IDN,k,j,i) = d0 + amp*sn*rem[0][wave_flag];
+        Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
+        Real my = amp*sn*rem[2][wave_flag];
+        Real mz = amp*sn*rem[3][wave_flag];
 
-      phydro->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
-      phydro->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
-      phydro->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
+        phydro->u(IM1,k,j,i) = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
+        phydro->u(IM2,k,j,i) = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
+        phydro->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
 
-      if (NON_BAROTROPIC_EOS) {
-        phydro->u(IEN,k,j,i) = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
-        if (MAGNETIC_FIELDS_ENABLED) {
-          phydro->u(IEN,k,j,i) += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
+        if (NON_BAROTROPIC_EOS) {
+          phydro->u(IEN,k,j,i) = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
+          if (MAGNETIC_FIELDS_ENABLED) {
+            phydro->u(IEN,k,j,i) += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
+          }
         }
       }
     }
-  }}
-
+  }
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
-//! \fn static Real A1(const Real x1,const Real x2,const Real x3)
+//! \fn Real A1(const Real x1,const Real x2,const Real x3)
 //  \brief A1: 1-component of vector potential, using a gauge such that Ax = 0, and Ay,
 //  Az are functions of x and y alone.
 
-static Real A1(const Real x1, const Real x2, const Real x3) {
+Real A1(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
-  Real Ay =  bz0*x - (dbz/k_par)*cos(k_par*(x));
-  Real Az = -by0*x + (dby/k_par)*cos(k_par*(x)) + bx0*y;
+  Real Ay =  bz0*x - (dbz/k_par)*std::cos(k_par*(x));
+  Real Az = -by0*x + (dby/k_par)*std::cos(k_par*(x)) + bx0*y;
 
   return -Ay*sin_a3 - Az*sin_a2*cos_a3;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static Real A2(const Real x1,const Real x2,const Real x3)
+//! \fn Real A2(const Real x1,const Real x2,const Real x3)
 //  \brief A2: 2-component of vector potential
 
-static Real A2(const Real x1, const Real x2, const Real x3) {
+Real A2(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
-  Real Ay =  bz0*x - (dbz/k_par)*cos(k_par*(x));
-  Real Az = -by0*x + (dby/k_par)*cos(k_par*(x)) + bx0*y;
+  Real Ay =  bz0*x - (dbz/k_par)*std::cos(k_par*(x));
+  Real Az = -by0*x + (dby/k_par)*std::cos(k_par*(x)) + bx0*y;
 
   return Ay*cos_a3 - Az*sin_a2*sin_a3;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static Real A3(const Real x1,const Real x2,const Real x3)
+//! \fn Real A3(const Real x1,const Real x2,const Real x3)
 //  \brief A3: 3-component of vector potential
 
-static Real A3(const Real x1, const Real x2, const Real x3) {
+Real A3(const Real x1, const Real x2, const Real x3) {
   Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
   Real y = -x1*sin_a3        + x2*cos_a3;
-  Real Az = -by0*x + (dby/k_par)*cos(k_par*(x)) + bx0*y;
+  Real Az = -by0*x + (dby/k_par)*std::cos(k_par*(x)) + bx0*y;
 
   return Az*cos_a2;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static Real A1_ave_diff2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+//! \fn Real AveDiff2A1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
 //                               const Real x2f_jp1)
-//  \brief A1_ave_diff2: 1-component of vector potential on x2-x3 edges, averaged along
+//  \brief AveDiff2A1: 1-component of vector potential on x2-x3 edges, averaged along
 //         x1, and differenced between x2 faces (x3f constant). Used to compute B3
 
-static Real A1_ave_diff2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+Real AveDiff2A1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
                          const Real x2f_jp1) {
   // xl_i, xl_ip1 are lower (x2f_j) x2-x3 edge x endpoints
   Real xl_i =  x1f_i*cos_a3 + x2f_j*sin_a3;
@@ -675,12 +674,12 @@ static Real A1_ave_diff2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fnstatic Real A2_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f,
+//! \fnReal AveDiff1A2(const Real x1f_i, const Real x1f_ip1, const Real x2f,
 //                              const Real x2f_jp1)
-//  \brief A2_ave_diff1: 2-component of vector potential on x1-x3 edges, averaged along
+//  \brief AveDiff1A2: 2-component of vector potential on x1-x3 edges, averaged along
 //         x2, and differenced between x1 faces (x3f constant). Used to compute B3
 
-static Real A2_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+Real AveDiff1A2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
                          const Real x2f_jp1) {
   // xl_j, xl_jp1 are lower (x1f_i) x1-x3 edge x2 endpoints
   Real xl_j =  x1f_i*cos_a3 + x2f_j*sin_a3;
@@ -708,11 +707,11 @@ static Real A2_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static Real A3_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f)
-//  \brief A3_ave_diff1: 3-component of vector potential on x1-x2 edges, averaged along
+//! \fn Real AveDiff1A3(const Real x1f_i, const Real x1f_ip1, const Real x2f)
+//  \brief AveDiff1A3: 3-component of vector potential on x1-x2 edges, averaged along
 //         x3, and differenced between x1 faces (x2f constant). Used to compute B2
 
-static Real A3_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j) {
+Real AveDiff1A3(const Real x1f_i, const Real x1f_ip1, const Real x2f_j) {
   // xl is lower (x1f_i) x1-x2 edge x3 midpoint
   // (no need for endpoints due to lack of x3 dependence)
   Real xl =  x1f_i*cos_a3 + x2f_j*sin_a3;
@@ -732,11 +731,11 @@ static Real A3_ave_diff1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static Real A3_ave_diff2(const Real x1f, const Real x2f_j, const Real x2f_jp1)
-//  \brief A3_ave_diff2: 3-component of vector potential on x1-x2 edges, averaged along
+//! \fn Real AveDiff2A3(const Real x1f, const Real x2f_j, const Real x2f_jp1)
+//  \brief AveDiff2A3: 3-component of vector potential on x1-x2 edges, averaged along
 //         x3, and differenced between x2 faces (x1f constant). Used to compute B1
 
-static Real A3_ave_diff2(const Real x1f_i, const Real x2f_j, const Real x2f_jp1) {
+Real AveDiff2A3(const Real x1f_i, const Real x2f_j, const Real x2f_jp1) {
   // xl is lower (x2f_j) x1-x2 edge x3 midpoint (no need for endpoints due to
   // lack of x3 dependence)
   Real xl =  x1f_i*cos_a3 + x2f_j*sin_a3;
@@ -756,24 +755,24 @@ static Real A3_ave_diff2(const Real x1f_i, const Real x2f_j, const Real x2f_jp1)
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn static void Eigensystem()
+//! \fn void Eigensystem()
 //  \brief computes eigenvectors of linear waves
 
-static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
-  const Real h, const Real b1, const Real b2, const Real b3, const Real x, const Real y,
-  Real eigenvalues[(NWAVE)],
-  Real right_eigenmatrix[(NWAVE)][(NWAVE)], Real left_eigenmatrix[(NWAVE)][(NWAVE)]) {
+void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
+                 const Real h, const Real b1, const Real b2, const Real b3,
+                 const Real x, const Real y, Real eigenvalues[(NWAVE)],
+                 Real right_eigenmatrix[(NWAVE)][(NWAVE)],
+                 Real left_eigenmatrix[(NWAVE)][(NWAVE)]) {
   if (MAGNETIC_FIELDS_ENABLED) {
-
-//--- Adiabatic MHD ---
-
+    //--- Adiabatic MHD ---
     if (NON_BAROTROPIC_EOS) {
-      Real vsq,btsq,bt_starsq,vaxsq,hp,twid_asq,cfsq,cf,cssq,cs;
-      Real bt,bt_star,bet2,bet3,bet2_star,bet3_star,bet_starsq,vbet,alpha_f,alpha_s;
-      Real isqrtd,sqrtd,s,twid_a,qf,qs,af_prime,as_prime,afpbb,aspbb,vax;
-      Real norm,cff,css,af,as,afpb,aspb,q2_star,q3_star,vqstr;
-      Real ct2,tsum,tdif,cf2_cs2;
-      Real qa,qb,qc,qd;
+      Real vsq, btsq, bt_starsq, vaxsq, hp, twid_asq, cfsq, cf, cssq, cs;
+      Real bt, bt_star, bet2, bet3, bet2_star, bet3_star, bet_starsq, vbet;
+      Real alpha_f, alpha_s;
+      Real isqrtd, sqrtd, s, twid_a, qf, qs, af_prime, as_prime, afpbb, aspbb, vax;
+      Real norm, cff, css, af, as, afpb, aspb, q2_star, q3_star, vqstr;
+      Real ct2, tsum, tdif, cf2_cs2;
+      Real qa, qb, qc, qd;
       vsq = v1*v1 + v2*v2 + v3*v3;
       btsq = b2*b2 + b3*b3;
       bt_starsq = (gm1 - (gm1 - 1.0)*y)*btsq;
@@ -809,7 +808,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       vbet = v2*bet2_star + v3*bet3_star;
 
       // Compute alpha(s) (eq. A16)
-      if ((cfsq-cssq) == 0.0) {
+      if ((cfsq - cssq) == 0.0) {
         alpha_f = 1.0;
         alpha_s = 0.0;
       } else if ( (twid_asq - cssq) <= 0.0) {
@@ -987,7 +986,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       left_eigenmatrix[6][5] = left_eigenmatrix[0][5];
       left_eigenmatrix[6][6] = left_eigenmatrix[0][6];
 
-//--- Isothermal MHD ---
+      //--- Isothermal MHD ---
 
     } else {
       Real btsq,bt_starsq,vaxsq,twid_csq,cfsq,cf,cssq,cs;
@@ -1162,9 +1161,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       left_eigenmatrix[5][5] = left_eigenmatrix[0][5];
     }
   } else {
-
-//--- Adiabatic Hydrodynamics ---
-
+    //--- Adiabatic Hydrodynamics ---
     if (NON_BAROTROPIC_EOS) {
       Real vsq = v1*v1 + v2*v2 + v3*v3;
       Real asq = gm1*std::max((h-0.5*vsq), TINY_NUMBER);
@@ -1241,7 +1238,7 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
       left_eigenmatrix[4][3] = left_eigenmatrix[0][3];
       left_eigenmatrix[4][4] = left_eigenmatrix[0][4];
 
-//--- Isothermal Hydrodynamics ---
+      //--- Isothermal Hydrodynamics ---
 
     } else {
       // Compute eigenvalues (eq. B6)
@@ -1295,24 +1292,24 @@ static void Eigensystem(const Real d, const Real v1, const Real v2, const Real v
     }
   }
 }
-
+} // namespace
 
 // refinement condition: density curvature
 int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
-  Real rmax=0.0, rmin=2.0*d0;
+  Real dmax = 0.0, dmin = 2.0*d0;  // max and min densities
   for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
-        if (w(IDN,k,j,i)>rmax) rmax=w(IDN,k,j,i);
-        if (w(IDN,k,j,i)<rmin) rmin=w(IDN,k,j,i);
+        if (w(IDN,k,j,i) > dmax) dmax = w(IDN,k,j,i);
+        if (w(IDN,k,j,i) < dmin) dmin = w(IDN,k,j,i);
       }
     }
   }
   // refine : delta rho > 0.9*amp
-  if (rmax-d0 > 0.9*amp*rem[0][wave_flag]) return 1;
-//  Real a=std::max(rmax-d0,d0-rmin);
-//  if (a > 0.9*amp*rem[0][wave_flag]) return 1;
+  if (dmax - d0 > 0.9*amp*rem[0][wave_flag]) return 1;
+  //  Real a=std::max(dmax-d0,d0-dmin);
+  //  if (a > 0.9*amp*rem[0][wave_flag]) return 1;
   // derefinement: else
   return -1;
 }

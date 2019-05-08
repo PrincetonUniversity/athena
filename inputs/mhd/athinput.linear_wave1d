@@ -1,5 +1,5 @@
 <comment>
-problem   = linear wave convergence
+problem   = 1D MHD linear wave convergence
 reference =
 configure = -b --prob=linear_wave
 
@@ -16,7 +16,7 @@ variable   = prim      # variables to be output
 dt         = 0.01      # time increment between outputs
 
 <time>
-cfl_number  = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
+cfl_number  = 0.8       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim        = -1        # cycle limit
 tlim        = 5.0       # time limit
 integrator  = vl2       # time integration algorithm

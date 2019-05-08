@@ -9,7 +9,7 @@
 //  \brief namespace containing external global variables
 
 namespace Globals {
-  extern int my_rank, nranks;
+extern int my_rank, nranks;
 }
 
 #endif // GLOBALS_HPP_

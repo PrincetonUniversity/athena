@@ -9,7 +9,11 @@
 //  \brief defines class HydroSourceTerms
 //  Contains data and functions that implement physical (not coordinate) source terms
 
-// Athena headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 
@@ -21,9 +25,8 @@ class ParameterInput;
 //  \brief data and functions for physical source terms in the hydro
 
 class HydroSourceTerms {
-public:
+ public:
   HydroSourceTerms(Hydro *phyd, ParameterInput *pin);
-  ~HydroSourceTerms();
 
   // accessors
   Real GetGM() const {return gm_;}
@@ -36,22 +39,23 @@ public:
 
   // functions
   void AddHydroSourceTerms(const Real time, const Real dt, const AthenaArray<Real> *flx,
-    const AthenaArray<Real> &p, const AthenaArray<Real> &b, AthenaArray<Real> &c);
+                           const AthenaArray<Real> &p,
+                           const AthenaArray<Real> &b, AthenaArray<Real> &c);
   void PointMass(const Real dt, const AthenaArray<Real> *flx,const AthenaArray<Real> &p,
-    AthenaArray<Real> &c);
+                 AthenaArray<Real> &c);
   void ConstantAcceleration(const Real dt, const AthenaArray<Real> *flx,
-    const AthenaArray<Real> &p, AthenaArray<Real> &c);
+                            const AthenaArray<Real> &p, AthenaArray<Real> &c);
   // shearing box src terms
   void ShearingBoxSourceTerms(const Real dt, const AthenaArray<Real> *flx,
-                           const AthenaArray<Real> &p, AthenaArray<Real> &c);
+                              const AthenaArray<Real> &p, AthenaArray<Real> &c);
   Real UnstratifiedDisk(const Real x1, const Real x2, const Real x3);
 
   void SelfGravity(const Real dt, const AthenaArray<Real> *flx,
-    const AthenaArray<Real> &p, AthenaArray<Real> &c);
-  void EnrollSrcTermFunction(SrcTermFunc_t my_func);
-  SrcTermFunc_t UserSourceTerm;
+                   const AthenaArray<Real> &p, AthenaArray<Real> &c);
+  void EnrollSrcTermFunction(SrcTermFunc my_func);
+  SrcTermFunc UserSourceTerm;
 
-private:
+ private:
   Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroSourceTerms
   Real gm_;           // GM for point mass MUST BE LOCATED AT ORIGIN
   Real g1_, g2_, g3_; // constant acc'n in each direction

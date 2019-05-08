@@ -14,6 +14,7 @@
 
 cd ../../src
 echo "Counting src/ files...."
+# Exclude plimptop/ C files copied into fft/
 git ls-files | grep -v "fft/plimpton/" | xargs wc -l | sort -k1 -r
 
 cd ../vis/
@@ -25,3 +26,9 @@ cd ../tst/
 echo "Counting tst/ files...."
 # Exclude tst/regression/data/ and Google C++ Style linter cpplint.py from count
 git ls-files | grep -vE "\.vtk|\.hst|\.tab|cpplint\.py" | xargs wc -l | sort -k1 -r
+
+cd ../
+echo "Counting Python files...."
+# In addition to previous two exclusion categories, exclude test_descriptions.txt,
+# join_vtk++.c, .gitignore, and Bash scripts
+git ls-files tst vis | grep -vE "\.vtk|\.hst|\.tab|cpplint\.py|\.xml|\.c|\.sh|\.txt|\.gitignore" | xargs wc -l | sort -k1 -r

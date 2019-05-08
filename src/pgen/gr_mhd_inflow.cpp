@@ -6,8 +6,11 @@
 //! \file gr_mhd_inflow.cpp
 //  \brief Problem generator for magnetized equatorial inflow around Kerr black hole.
 
+// C headers
+
 // C++ headers
 #include <cmath>      // cos, sin, sqrt
+#include <cstring>    // strcmp()
 #include <fstream>    // ifstream
 #include <iostream>   // endl
 #include <sstream>    // stringstream
@@ -15,14 +18,14 @@
 #include <string>     // string, c_str()
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // macros, enums, FaceField
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
 #if not GENERAL_RELATIVITY
@@ -32,20 +35,23 @@
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
-                   int is, int ie, int js, int je, int ks, int ke, int ngh);
-static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi);
-static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                     Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3);
-static void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
-                               Real *puphi, Real *pbt, Real *pbr, Real *pbphi);
+                   int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+namespace {
+void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+                                  Real *ptheta, Real *pphi);
+void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+                     Real theta, Real phi,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
+                        Real *puphi, Real *pbt, Real *pbr, Real *pbphi);
 
 // Global variables
-static Real m;                           // mass M of black hole
-static Real a;                           // spin of black hole (0 <= a < M)
-static Real temperature;                 // temperature pgas/rho
-static AthenaArray<Real> interp_values;  // table for analytic solution
-static int num_lines;                    // number of lines in table
+Real m;                           // mass M of black hole
+Real a;                           // spin of black hole (0 <= a < M)
+Real temperature;                 // temperature pgas/rho
+AthenaArray<Real> interp_values;  // table for analytic solution
+int num_lines;                    // number of lines in table
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for initializing global mesh properties
@@ -64,11 +70,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Read interpolation data from file
   std::string filename = pin->GetString("problem", "data_file");
   std::ifstream file(filename.c_str());
-  if (not file.is_open()) {
+  if (!file.is_open()) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Problem Generator\n"
         << "file " << filename << " cannot be opened" << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
   for (int n = 0; n < num_lines; ++n) {
     Real r, rho, ur, uphi, bbr, bbphi;
@@ -82,19 +88,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   }
 
   // Enroll fixed outer boundary function
-  EnrollUserBoundaryFunction(OUTER_X1, FixedBoundary);
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for cleaning up global mesh properties
-// Inputs:
-//   pin: parameters (unused)
-// Outputs: (none)
-
-void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  // Free interpolation table
-  interp_values.DeleteAthenaArray();
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, FixedBoundary);
   return;
 }
 
@@ -114,20 +108,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   a = pcoord->GetSpin();
 
   // Prepare variables to hold results from multiple-return functions
-  Real r, theta, phi;   // Boyer-Lindquist (BL) coordinates
+  Real r(0.0), theta(0.0), phi(0.0);   // Boyer-Lindquist (BL) coordinates
   Real rho;             // density
   Real ut, ur, uphi;    // BL u^\mu
   Real bt, br, bphi;    // BL b^\mu
-  Real u0, u1, u2, u3;  // preferred coordinates u^\mu
+  Real u0(0.0), u1(0.0), u2(0.0), u3(0.0);  // preferred coordinates u^\mu
   Real b0, b1, b2, b3;  // preferred coordinates b^\mu
 
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {
-
     // Initialize radial field components
-    for (int k = ks; k <= ke; ++k) {
-      for (int j = js; j <= je; ++j) {
-        for (int i = is-NGHOST; i <= ie+NGHOST+1; ++i) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is-NGHOST; i<=ie+NGHOST+1; ++i) {
           Real x1 = pcoord->x1f(i);
           Real x2 = pcoord->x2v(j);
           Real x3 = pcoord->x3v(k);
@@ -141,9 +134,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // Initialize poloidal field components
-    for (int k = ks; k <= ke; ++k) {
-      for (int j = js; j <= je+1; ++j) {
-        for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je+1; ++j) {
+        for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
           Real x1 = pcoord->x1v(i);
           Real x2 = pcoord->x2f(j);
           Real x3 = pcoord->x3v(k);
@@ -157,9 +150,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // Initialize azimuthal field components
-    for (int k = ks; k <= ke+1; ++k) {
-      for (int j = js; j <= je; ++j) {
-        for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
           Real x1 = pcoord->x1v(i);
           Real x2 = pcoord->x2v(j);
           Real x3 = pcoord->x3f(k);
@@ -178,17 +171,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   bb.NewAthenaArray(3, ke+1, je+1, ie+NGHOST+1);
   if (MAGNETIC_FIELDS_ENABLED) {
     pfield->CalculateCellCenteredField(pfield->b, bb, pcoord, is-NGHOST, ie+NGHOST, js,
-        je, ks, ke);
+                                       je, ks, ke);
   }
 
   // Initialize primitive values
   AthenaArray<Real> g, gi;
   g.NewAthenaArray(NMETRIC,ie+NGHOST+1);
   gi.NewAthenaArray(NMETRIC,ie+NGHOST+1);
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
       pcoord->CellMetric(k, j, is-NGHOST, ie+NGHOST, g, gi);
-      for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+      for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
         Real x1 = pcoord->x1v(i);
         Real x2 = pcoord->x2v(j);
         Real x3 = pcoord->x3v(k);
@@ -208,13 +201,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  g.DeleteAthenaArray();
-  gi.DeleteAthenaArray();
 
   // Initialize conserved values
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is-NGHOST, ie+NGHOST, js,
-      je, ks, ke);
-  bb.DeleteAthenaArray();
+                             je, ks, ke);
   return;
 }
 
@@ -233,10 +223,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                    FaceField &bb, Real time, Real dt,
-                   int is, int ie, int js, int je, int ks, int ke, int ngh) {
+                   int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Function for returning corresponding Boyer-Lindquist coordinates of point
 // Inputs:
@@ -246,9 +237,10 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 // Notes:
 //   conversion is trivial in all currently implemented coordinate systems
 
-static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
-                                         Real *ptheta, Real *pphi) {
-  if (COORDINATE_SYSTEM == "schwarzschild" or COORDINATE_SYSTEM == "kerr-schild") {
+void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
+                                  Real *ptheta, Real *pphi) {
+  if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0 ||
+      std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     *pr = x1;
     *ptheta = x2;
     *pphi = x3;
@@ -266,14 +258,15 @@ static void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
 // Notes:
 //   Schwarzschild coordinates match Boyer-Lindquist when a = 0
 
-static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
-                     Real theta, Real phi, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
-  if (COORDINATE_SYSTEM == "schwarzschild") {
+void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real r,
+                     Real theta, Real phi,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+  if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     *pa0 = a0_bl;
     *pa1 = a1_bl;
     *pa2 = a2_bl;
     *pa3 = a3_bl;
-  } else if (COORDINATE_SYSTEM == "kerr-schild") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     Real delta = SQR(r) - 2.0*m*r + SQR(a);
     *pa0 = a0_bl + 2.0*m*r/delta * a1_bl;
     *pa1 = a1_bl;
@@ -292,8 +285,8 @@ static void TransformVector(Real a0_bl, Real a1_bl, Real a2_bl, Real a3_bl, Real
 //   put,pur,puphi: values set to interpolated u^\mu in Boyer-Lindquist coordinates
 //   pbt,pbr,pbphi: values set to interpolated b^\mu in Boyer-Lindquist coordinates
 
-static void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
-                               Real *puphi, Real *pbt, Real *pbr, Real *pbphi) {
+void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *pur,
+                        Real *puphi, Real *pbt, Real *pbr, Real *pbphi) {
   // Find location in interpolation table
   int n;
   Real fraction = 0.0;
@@ -339,7 +332,7 @@ static void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *
     Real a0 = var_c/var_a;
     Real s2 = SQR(a1) - 4.0*a0;
     Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-    ut = (s2 >= 0.0 and a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
+    ut = (s2 >= 0.0 && a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
   }
   *put = ut;
   *pur = ur;
@@ -352,3 +345,4 @@ static void CalculateFromTable(Real r, Real theta, Real *prho, Real *put, Real *
   *pbphi = 1.0/ut * (bbphi + bt * uphi);
   return;
 }
+} // namespace

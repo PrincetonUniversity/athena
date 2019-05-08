@@ -6,22 +6,25 @@
 //! \file gr_shock_tube.cpp
 //  \brief Problem generator for shock tubes in special and general relativity.
 
+// C headers
+
 // C++ headers
 #include <cmath>      // sqrt()
+#include <cstring>    // strcmp()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
 // Athena++ headers
-#include "../mesh/mesh.hpp"
 #include "../athena.hpp"                   // macros, enums
 #include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
 #if not RELATIVISTIC_DYNAMICS
@@ -29,10 +32,12 @@
 #endif
 
 // Declarations
-static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-    Real *px, Real *py, Real *pz);
-static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+namespace {
+void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+                             Real *px, Real *py, Real *pz);
+void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3);
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for setting initial conditions
@@ -72,13 +77,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     default:
       msg << "### FATAL ERROR in Problem Generator\n"
           << "shock_dir=" << shock_dir << " must be either 1, 2, or 3" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+      ATHENA_ERROR(msg);
   }
   if (shock_pos < min_bound || shock_pos > max_bound) {
     msg << "### FATAL ERROR in Problem Generator\n"
         << "xshock=" << shock_pos << " lies outside x" << shock_dir
-            << " domain for shkdir=" << shock_dir << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+        << " domain for shkdir=" << shock_dir << std::endl;
+    ATHENA_ERROR(msg);
   }
 
   // Read left state
@@ -116,15 +121,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Initialize hydro variables
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      #if GENERAL_RELATIVITY
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+#if GENERAL_RELATIVITY
       {
         pcoord->CellMetric(k, j, is, ie, g, gi);
       }
-      #endif  // GENERAL_RELATIVITY
-      for (int i = is; i <= ie; ++i) {
-
+#endif  // GENERAL_RELATIVITY
+      for (int i=is; i<=ie; ++i) {
         // Determine which variables to use
         Real rho = rho_right;
         Real pgas = pgas_right;
@@ -170,7 +174,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         // Transform 4-vectors
         Real u0, u1, u2, u3;
         Real b0, b1, b2, b3;
-        #if GENERAL_RELATIVITY
+#if GENERAL_RELATIVITY
         {
           Real x1 = pcoord->x1v(i);
           Real x2 = pcoord->x2v(j);
@@ -180,7 +184,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           TransformVector(ut, ux, uy, uz, x, y, z, &u0, &u1, &u2, &u3);
           TransformVector(bt, bx, by, bz, x, y, z, &b0, &b1, &b2, &b3);
         }
-        #else  // SR
+#else  // SR
         {
           u0 = ut;
           u1 = ux;
@@ -191,7 +195,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           b2 = by;
           b3 = bz;
         }
-        #endif  // GENERAL_RELATIVITY
+#endif  // GENERAL_RELATIVITY
 
         // Set primitives
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
@@ -218,19 +222,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is, ie, js, je, ks, ke);
 
-  // Delete auxiliary arrays
-  bb.DeleteAthenaArray();
-  if (GENERAL_RELATIVITY) {
-    g.DeleteAthenaArray();
-    gi.DeleteAthenaArray();
-  }
-
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {
-    for (int k = ks; k <= ke+1; ++k) {
-      for (int j = js; j <= je+1; ++j) {
-        for (int i = is; i <= ie+1; ++i) {
-
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je+1; ++j) {
+        for (int i=is; i<=ie+1; ++i) {
           // Determine which variables to use
           Real vx = vx_right;
           Real vy = vy_right;
@@ -272,7 +268,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           // Set magnetic fields
           Real u0, u1, u2, u3;
           Real b0, b1, b2, b3;
-          #if GENERAL_RELATIVITY
+#if GENERAL_RELATIVITY
           {
             if (j != je+1 && k != ke+1) {
               Real x1 = pcoord->x1f(i);
@@ -305,7 +301,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               pfield->b.x3f(k,j,i) = b3 * u0 - b0 * u3;
             }
           }
-          #else  // SR
+#else  // SR
           {
             if (j != je+1 && k != ke+1) {
               pfield->b.x1f(k,j,i) = bbx;
@@ -317,7 +313,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               pfield->b.x3f(k,j,i) = bbz;
             }
           }
-          #endif  // GENERAL_RELATIVITY
+#endif  // GENERAL_RELATIVITY
         }
       }
     }
@@ -325,6 +321,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+namespace {
 //----------------------------------------------------------------------------------------
 // Function for returning corresponding Minkowski coordinates of point
 // Inputs:
@@ -335,9 +332,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //   conversion is trivial
 //   useful to have if other coordinate systems for Minkowski space are developed
 
-static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
-    Real *px, Real *py, Real *pz) {
-  if (COORDINATE_SYSTEM == "minkowski") {
+void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt,
+                             Real *px, Real *py, Real *pz) {
+  if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pt = x0;
     *px = x1;
     *py = x2;
@@ -357,9 +354,9 @@ static void GetMinkowskiCoordinates(Real x0, Real x1, Real x2, Real x3, Real *pt
 //   conversion is trivial
 //   useful to have if other coordinate systems for Minkowski space are developed
 
-static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
-    Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
-  if (COORDINATE_SYSTEM == "minkowski") {
+void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, Real z,
+                     Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+  if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     *pa0 = at;
     *pa1 = ax;
     *pa2 = ay;
@@ -367,3 +364,4 @@ static void TransformVector(Real at, Real ax, Real ay, Real az, Real x, Real y, 
   }
   return;
 }
+} // namespace

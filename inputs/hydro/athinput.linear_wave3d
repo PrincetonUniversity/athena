@@ -1,5 +1,5 @@
 <comment>
-problem   = linear wave convergence
+problem   = 3D Hydro linear wave convergence
 reference =
 configure = --prob=linear_wave
 
@@ -16,9 +16,9 @@ variable   = prim      # variables to be output
 dt         = 0.01      # time increment between outputs
 
 <time>
-cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
-nlim       = -1        # cycle limit
-tlim       = 5.0       # time limit
+cfl_number  = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = -1        # cycle limit
+tlim        = 5.0       # time limit
 integrator  = vl2       # time integration algorithm
 xorder      = 2         # order of spatial reconstruction
 ncycle_out  = 1         # interval for stdout summary info

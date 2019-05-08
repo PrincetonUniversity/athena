@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 """
-Script for plotting 1D data from .hst or .tab files.
+Script for plotting 1D data from .athdf, .hst, or .tab files.
 
 Run "plot_lines.py -h" to see full description of inputs.
 
@@ -62,9 +62,10 @@ def main(**kwargs):
         if y_names[n] == '':
             y_names[n] = y_names[n-1]
     for data_file in data_files:
-        if data_file[-4:] != '.hst' and data_file[-4:] != '.tab':
-            print(data_file)
-            raise RuntimeError('Files must have .hst or .tab extension')
+        valid_file = (data_file[-6:] == '.athdf' or data_file[-4:] == '.hst'
+                      or data_file[-4:] == '.tab')
+        if not valid_file:
+            raise RuntimeError('Files must have .athdf, .hst, or .tab extension')
     if len(styles) < num_lines:
         styles += styles[-1:] * (num_lines - len(styles))
     for n in range(num_lines):
@@ -107,12 +108,14 @@ def main(**kwargs):
     x_vals = []
     y_vals = []
     for n in range(num_lines):
-        if data_files[n][-4:] == '.hst':
+        if data_files[n][-6:] == '.athdf':
+            data = athena_read.athdf(data_files[n])
+        elif data_files[n][-4:] == '.hst':
             data = athena_read.hst(data_files[n])
         else:
             data = athena_read.tab(data_files[n])
-        x_vals.append(data[x_names[n]])
-        y_vals.append(data[y_names[n]])
+        x_vals.append(data[x_names[n]].flatten())
+        y_vals.append(data[y_names[n]].flatten())
 
     # Plot data
     plt.figure()

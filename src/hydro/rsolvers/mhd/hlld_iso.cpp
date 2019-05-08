@@ -10,31 +10,35 @@
 // - A. Mignone, "A simple and accurate Riemann solver for isothermal MHD", JPC, 225,
 //   1427 (2007)
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "../../hydro.hpp"
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
+#include "../../hydro.hpp"
 
 // container to store (density, momentum, tranverse magnetic field)
 // minimizes changes required to adopt athena4.2 version of this solver
-typedef struct Cons1D {
-  Real d,mx,my,mz,by,bz;
-} Cons1D;
+struct Cons1D {
+  Real d, mx, my, mz, by, bz;
+};
 
 #define SMALL_NUMBER 1.0e-8
 
 //----------------------------------------------------------------------------------------
 //! \fn
 
-void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+                          const int ivx, const AthenaArray<Real> &bx,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr,
+                          AthenaArray<Real> &flx,
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real flxi[(NWAVE)];             // temporary variable to store flux
@@ -43,30 +47,29 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
   Real dfloor = pmy_block->peos->GetDensityFloor();
   Real cs = (pmy_block->peos->GetIsoSoundSpeed());
+  Real dt = pmy_block->pmy_mesh->dt;
 
-  for (int k=kl; k<=ku; ++k) {
-  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd private(flxi,wli,wri,spd)
   for (int i=il; i<=iu; ++i) {
     Cons1D ul,ur;                   // L/R states, conserved variables (computed)
     Cons1D ulst,urst,ucst;          // Conserved variable for all states
     Cons1D fl,fr;                   // Fluxes for left & right states
 
-//--- Step 1.  Load L/R states into local variables
+    //--- Step 1.  Load L/R states into local variables
 
-    wli[IDN]=wl(IDN,k,j,i);
-    wli[IVX]=wl(ivx,k,j,i);
-    wli[IVY]=wl(ivy,k,j,i);
-    wli[IVZ]=wl(ivz,k,j,i);
-    wli[IBY]=wl(IBY,k,j,i);
-    wli[IBZ]=wl(IBZ,k,j,i);
+    wli[IDN]=wl(IDN,i);
+    wli[IVX]=wl(ivx,i);
+    wli[IVY]=wl(ivy,i);
+    wli[IVZ]=wl(ivz,i);
+    wli[IBY]=wl(IBY,i);
+    wli[IBZ]=wl(IBZ,i);
 
-    wri[IDN]=wr(IDN,k,j,i);
-    wri[IVX]=wr(ivx,k,j,i);
-    wri[IVY]=wr(ivy,k,j,i);
-    wri[IVZ]=wr(ivz,k,j,i);
-    wri[IBY]=wr(IBY,k,j,i);
-    wri[IBZ]=wr(IBZ,k,j,i);
+    wri[IDN]=wr(IDN,i);
+    wri[IVX]=wr(ivx,i);
+    wri[IVY]=wr(ivy,i);
+    wri[IVZ]=wr(ivz,i);
+    wri[IBY]=wr(IBY,i);
+    wri[IBZ]=wr(IBZ,i);
 
     Real bxi = bx(k,j,i);
 
@@ -85,7 +88,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ur.by = wri[IBY];
     ur.bz = wri[IBZ];
 
-//--- Step 2.  Compute left & right wave speeds according to Miyoshi & Kusano, eqn. (67)
+    //--- Step 2.  Compute L & R wave speeds according to Miyoshi & Kusano, eqn. (67)
 
     Real cfl = pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
     Real cfr = pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
@@ -93,7 +96,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     spd[0] = std::min( wli[IVX]-cfl, wri[IVX]-cfr );
     spd[4] = std::max( wli[IVX]+cfl, wri[IVX]+cfr );
 
-//--- Step 3.  Compute L/R fluxes
+    //--- Step 3.  Compute L/R fluxes
 
     // total pressures L,R
     Real bxsq = bxi*bxi;
@@ -114,7 +117,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     fr.by = ur.by*wri[IVX] - bxi*wri[IVY];
     fr.bz = ur.bz*wri[IVX] - bxi*wri[IVZ];
 
-//--- Step 4.  Compute hll averages and Alfven wave speed
+    //--- Step 4.  Compute hll averages and Alfven wave speed
 
     // inverse of difference between right and left signal speeds
     Real idspd = 1.0/(spd[4]-spd[0]);
@@ -136,17 +139,17 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real mxhll = (spd[4]*ur.mx - spd[0]*ul.mx - fr.mx + fl.mx)*idspd;
 
     // S*_L and S*_R from Mignone eqn. (29)
-    spd[1] = ustar - fabs(bxi)/sqrtdhll;
-    spd[3] = ustar + fabs(bxi)/sqrtdhll;
+    spd[1] = ustar - std::fabs(bxi)/sqrtdhll;
+    spd[3] = ustar + std::fabs(bxi)/sqrtdhll;
 
-//--- Step 5. Compute intermediate states
+    //--- Step 5. Compute intermediate states
 
-  // Ul* - eqn. (20) of Mignone
+    // Ul* - eqn. (20) of Mignone
     ulst.d  = dhll;
     ulst.mx = mxhll; // eqn. (24) of Mignone
 
     Real tmp = (spd[0]-spd[1])*(spd[0]-spd[3]);
-    if (fabs(spd[0]-spd[1]) < (SMALL_NUMBER)*cs) {
+    if (std::fabs(spd[0]-spd[1]) < (SMALL_NUMBER)*cs) {
       // degenerate case described below eqn. (39)
       ulst.my = ul.my;
       ulst.mz = ul.mz;
@@ -162,12 +165,12 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       ulst.bz = ul.bz*bfact; // eqn. (33) of Mignone
     }
 
-  // Ur* - eqn. (20) of Mignone */
+    // Ur* - eqn. (20) of Mignone */
     urst.d  = dhll;
     urst.mx = mxhll; // eqn. (24) of Mignone
 
     tmp = (spd[4]-spd[1])*(spd[4]-spd[3]);
-    if (fabs(spd[4]-spd[3]) < (SMALL_NUMBER)*cs) {
+    if (std::fabs(spd[4]-spd[3]) < (SMALL_NUMBER)*cs) {
       // degenerate case described below eqn. (39)
       urst.my = ur.my;
       urst.mz = ur.mz;
@@ -183,7 +186,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       urst.bz = ur.bz*bfact; // eqn. (33) of Mignone
     }
 
-  // Uc*
+    // Uc*
     Real x = sqrtdhll*(bxi > 0.0 ? 1.0 : -1.0); // from below eqn. (37) of Mignone
     ucst.d  = dhll;  // eqn. (20) of Mignone
     ucst.mx = mxhll; // eqn. (24) of Mignone
@@ -192,7 +195,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ucst.by = 0.5*(ulst.by + urst.by + (urst.my-ulst.my)/x); // eqn. (36) of Mignone
     ucst.bz = 0.5*(ulst.bz + urst.bz + (urst.mz-ulst.mz)/x); // eqn. (37) of Mignone
 
-//--- Step 6.  Compute flux
+    //--- Step 6.  Compute flux
 
     if (spd[0] >= 0.0) {
       // return Fl if flow is supersonic, eqn. (38a) of Mignone
@@ -243,8 +246,8 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
 
+    wct(k,j,i)=GetWeightForCT(flxi[IDN], wli[IDN], wri[IDN], dxw(i), dt);
   }
-  }}
 
   return;
 }

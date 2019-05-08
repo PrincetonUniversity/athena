@@ -1,0 +1,63 @@
+<comment>
+problem   = preexisting array
+configure = --prob from_array [-b]
+
+<job>
+problem_id = from_array  # problem ID: basename of output filenames
+
+<time>
+cfl_number = 0.3  # Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1   # cycle limit
+tlim       = 1.0  # time limit
+integrator = vl2  # time integration algorithm
+xorder     = 2    # order of spatial reconstruction
+ncycle_out = 1    # interval for stdout summary info
+
+<output1>
+file_type = hdf5  # HDF5 data dump
+variable  = cons  # variables to be output
+id        = cons  # part of filename
+dt        = 1.0   # time increment between outputs
+
+<mesh>
+nx1    = 16        # number of zones in x1-direction
+x1min  = -1.0      # minimum value of x1
+x1max  = 1.0       # maximum value of x1
+ix1_bc = periodic  # inner-x1 boundary condition
+ox1_bc = periodic  # outer-x1 boundary condition
+
+nx2    = 16        # number of zones in x2-direction
+x2min  = -1.0      # minimum value of x2
+x2max  = 1.0       # maximum value of x2
+ix2_bc = periodic  # inner-x2 boundary condition
+ox2_bc = periodic  # outer-x2 boundary condition
+
+nx3    = 16        # number of zones in x3-direction
+x3min  = -1.0      # minimum value of x3
+x3max  = 1.0       # maximum value of x3
+ix3_bc = periodic  # inner-x3 boundary condition
+ox3_bc = periodic  # outer-x3 boundary condition
+
+num_threads = 1     # number of OpenMP threads per process
+refinement  = none  # type of mesh refinement to use
+
+<meshblock>
+nx1 = 16  # block size in x1-direction
+nx2 = 16  # block size in x2-direction
+nx3 = 16  # block size in x3-direction
+
+<hydro>
+gamma           = 1.6666666666666667  # gamma = C_p/C_v
+iso_sound_speed = 1.0                 # isothermal sound speed (for barotropic EOS)
+
+<problem>
+input_filename = /dev/null  # name of HDF5 file containing initial conditions
+dataset_cons   = cons       # name of dataset containing conserved values
+index_dens     = 0          # index of density in conserved dataset
+index_mom1     = 1          # index of x1-momentum in conserved dataset
+index_mom2     = 2          # index of x2-momentum in conserved dataset
+index_mom3     = 3          # index of x3-momentum in conserved dataset
+index_etot     = 4          # index of energy in conserved dataset (for nonbarotropic EOS)
+dataset_b1     = b1         # name of dataset containing B field on x1-faces
+dataset_b2     = b2         # name of dataset containing B field on x2-faces
+dataset_b3     = b3         # name of dataset containing B field on x3-faces

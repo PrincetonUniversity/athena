@@ -1,52 +1,67 @@
 # .travis.yml
-# Defines build matrix and regression tests for Travis CI.com
+# Defines build matrix and regression tests for Travis CI
 language: cpp
 branches:
   only:
   - master
   - dust
   - mhd4_3D
-# Default build matrix is 4x Ubuntu builds:
+# Default build matrix is 4x Ubuntu builds (inherit the default stage name "test"):
 os:
   - linux
 dist: trusty
 sudo: false # use faster container-based build
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - llvm-toolchain-trusty-5.0
     packages:
       - "python3"
       - "python3-pip"
+      - "g++-7"      # Ubuntu 14.04.05 ships with GCC 4.8.4 (not 4.8.2) as of 2018-12-11
+      - "clang-5.0"  # Ubuntu 14.04.05 ships with Clang 3.5.0 as of 2018-10-29
 # OpenMPI and MPICH implementations:
 env:
   matrix:
-  - MPI_CHOICE=mpich
-  - MPI_CHOICE=openmpi
+    - MPI_CHOICE=mpich
+    - MPI_CHOICE=openmpi
 compiler:
   - g++
   - clang++
 # Define Ubuntu build caches (cache ignored inside "include:" matrix)
 cache:
   pip: true # Caching NumPy for regression test script
-  directories:
+  directories: # TODO(felker): sync "version_str=" lines in install scripts with cache dir names
     # For caching Linux source directories:
-    - openmpi-3.0.2 # released 6/1/18
-    - mpich-3.2.1 # stable maintenance release from 11/10/17
+    - openmpi-3.0.2
+    - mpich-3.2.1
     # Caching Linux install directories:
     - openmpi
     - mpich
     - fftw
-    - fftw-3.3.7 # stable release as of 11/8/17
+    - fftw-3.3.8
     - hdf5
-    - hdf5-1.10.1 # released on 2017-04-27
+    - hdf5-1.10.4
 
-# Explicitly includilng the 2x macOS jobs in build matrix
+# Explicitly includilng the 2x macOS jobs in build matrix (inherit the default stage name "test")
 # Must specify complete build details, or the jobs will inherit
 # the first value in the above arrays. Could encapsulate in script
+# --------------
+# History of Travis CI default osx_image (date = when used in this file)
+# (2018-10-30) xcode9.4 on macOS 10.13 High Sierra (requies softwareupdate workaround)
+# (2018-04-11) xcode8.3 on macOS 10.12 Sierra
+# TODO(felker): improve syncing of osx "softwareupdate" cmd xcode version argument in
+# tst/ci/travis/ install_mpich.sh, install_openmpi.sh (workaround for Homebrew GCC)
 matrix:
   include:
     - os: osx
-      osx_image: xcode9.3 # macOS 10.13 High Sierra
+      osx_image: xcode10.1
       compiler: clang++
+      addons:
+        homebrew:
+          packages:
+            - python3
       env:
         - MPI_CHOICE=mpich
       # Override Linux cache mapping
@@ -67,8 +82,12 @@ matrix:
           - hdf5
           - "/usr/local/Cellar/hdf5/"
     - os: osx
-      osx_image: xcode8.3 # macOS 10.12 Sierra. Default as of 4/11/18
+      osx_image: xcode10.1
       compiler: clang++
+      addons:
+        homebrew:
+          packages:
+            - python3
       env:
         - MPI_CHOICE=openmpi
         - TMPDIR=/tmp
@@ -93,20 +112,43 @@ matrix:
     - stage: python linter
       before_install: skip
       install: skip
-      script: python3 -m flake8 --exclude=cpplint.py,openmpi-*; echo "Finished linting Python files with flake8"
+      addons:
+        apt:
+          packages:
+            - "python3"
+            - "python3-pip"
+      env:
+      compiler:
+      script: python3 -m flake8 --exclude=cpplint.py,openmpi-* && echo "Finished linting Python files with flake8"
     # Test Google C++ Style Guide adherence for .cpp, .hpp files:
     - stage: c++ linter
       before_install: skip
       install: skip
       before_script: skip
-      script: cd tst/style/; ./cpplint_athena.sh
+      addons:
+      env:
+      compiler:
+      # "python" must point to Py2 distro, otherwise cpplint.py will silently quit while checking 1st file
+      script: cd tst/style/ && ./check_athena_cpp_style.sh
 
-# Recommended by Travis CI documentation to unset these for MPI builds to prevent conflicts
+# Recommended by Travis CI documentation to unset CC, CXX env. vars for MPI builds to prevent conflicts
 before_install:
+  # Specify upgraded compilers on Ubuntu image builds:
+  # /usr/local/clang-5.0.0/bin (tags/RELEASE_500/final) as of 2018-12-12
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "clang++" ]]; then eval "CC=clang && CXX=clang++"; fi
+  # /usr/bin/, clang 5.0.2-svn... : won't take /usr/local/clang/lib/libomp.so workaround in run_tests_travis.sh
+  # Could try /usr/local/clang-5.0/lib/libomp.so
+  #- if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "clang++" ]]; then eval "CC=clang-5.0 && CXX=clang++-5.0"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX_FOR_BUILD" == "g++" ]]; then eval "CC=gcc-7 && CXX=g++-7"; fi
   - test -n $CC  && unset CC
-  # Cache compiler variable from Travis CI Build Matrix before unsetting
-  - export TEMP_CXX=$CXX
+  # Cache general 'compiler' choice (g++ vs. clang++) from Travis CI Build Matrix before unsetting
+  - export TEMP_CXX=$CXX_FOR_BUILD
+  - export TEMP_CCMD=$CXX
   - test -n $CXX && unset CXX
+  # Dump default system and (possibly upgraded) selected C++ compiler versions
+  - g++ --version
+  - clang++ --version
+  - ${TEMP_CCMD} --version
 # Install OpenMPI, MPICH, and FFTW
 install:
   - travis_wait 45 bash ./tst/ci/travis/install_mpich.sh
@@ -121,12 +163,12 @@ install:
   - echo $TMPDIR || true
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
+  # - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
   - python3 -m pip install --upgrade --user pip
-  - pip3 install --user numpy || true # --user is necessary, since no virtualenv, sudo
+  - pip3 install --user numpy || true  # --user is necessary, since no virtualenv, sudo
   - pip3 install --user flake8 || true
-  - pip3 install --user h5py || true # needed only for outputs/all_outputs.py test
-
+  - pip3 install --user h5py || true   # needed for outputs/all_outputs.py, pgen/hdf5*, eos/eos_hdf5_table.py tests
+  - pip3 install --user scipy || true  # needed in scripts/utils/ for eos/ tests
 # Above Build Matrix expansion is assigned to default stage name "test";
 # Run subset of regression test suite on all build environments
 script: ./tst/ci/travis/run_tests_travis.sh
@@ -137,9 +179,10 @@ stages:
   - c++ linter
   - test
 
-# Codecov coverage analysis
+# Codecov coverage analysis: (Currently, Travis CI builds do not perform any code coverage analysis)
+# Could completely disable this step, since Codecov detects CI status via GitHub Commit Status API, not Bash uploader. Disabled searching for coverage reports.
 after_success:
-  - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471
+  - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471 -X gcov -X search || echo "Codecov did not collect coverage reports"
 notifications:
   email:
     on_success: change

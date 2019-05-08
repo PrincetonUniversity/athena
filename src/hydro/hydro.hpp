@@ -8,16 +8,22 @@
 //! \file hydro.hpp
 //  \brief definitions for Hydro class
 
-// Athena++ classes headers
+// C headers
+
+// C++ headers
+
+// Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-//#include "../task_list/task_list.hpp"
+#include "../bvals/cc/hydro/bvals_hydro.hpp"
+#include "hydro_diffusion/hydro_diffusion.hpp"
+#include "srcterms/hydro_srcterms.hpp"
 
 class MeshBlock;
 class ParameterInput;
-class HydroSourceTerms;
-class HydroDiffusion;
-struct IntegratorWeight;
+
+// TODO(felker): consider adding a struct FaceFlux w/ overloaded ctor in athena.hpp, or:
+// using FaceFlux = AthenaArray<Real>[3];
 
 //! \class Hydro
 //  \brief hydro data and functions
@@ -25,59 +31,82 @@ struct IntegratorWeight;
 class Hydro {
   friend class Field;
   friend class EquationOfState;
-public:
+ public:
   Hydro(MeshBlock *pmb, ParameterInput *pin);
-  ~Hydro();
 
   // data
+  // TODO(KGF): make this private, if possible
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Hydro
+
   // conserved and primitive variables
   AthenaArray<Real> u, w;      // time-integrator memory register #1
   AthenaArray<Real> u1, w1;    // time-integrator memory register #2
-  AthenaArray<Real> u2;       // time-integrator memory register #3
+  AthenaArray<Real> u2;        // time-integrator memory register #3
   // (no more than MAX_NREGISTER allowed)
 
   AthenaArray<Real> flux[3];  // face-averaged flux vector
 
+  // storage for SMR/AMR
+  // TODO(KGF): remove trailing underscore or revert to private:
+  AthenaArray<Real> coarse_cons_, coarse_prim_;
+  int refinement_idx{-1};
+
   // fourth-order intermediate quantities
   AthenaArray<Real> u_cc, w_cc;      // cell-centered approximations
 
-  HydroSourceTerms *psrc;
-  HydroDiffusion *phdif;
+  HydroBoundaryVariable hbvar;
+  HydroSourceTerms hsrc;
+  HydroDiffusion hdif;
 
   // functions
-  Real NewBlockTimeStep(void);    // computes new timestep on a MeshBlock
-  void WeightedAveU(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
-    AthenaArray<Real> &u_in2, const Real wght[3]);
-  void AddFluxDivergenceToAverage(AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-    const Real wght, AthenaArray<Real> &u_out);
+  void NewBlockTimeStep();    // computes new timestep on a MeshBlock
+  void AddFluxDivergence(const Real wght, AthenaArray<Real> &u_out);
+  // void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
+  //                      AthenaArray<Real> &bcc, const int order);
+  // 4th order MHD version:
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
                        AthenaArray<Real> &bcc, AthenaArray<Real> &bcc_center,
                        const int order);
-  void RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-    const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-    AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-    AthenaArray<Real> &e1, AthenaArray<Real> &e2);
+  void CalculateFluxes_STS();
+#if !MAGNETIC_FIELDS_ENABLED  // Hydro:
+  void RiemannSolver(
+      const int k, const int j, const int il, const int iu,
+      const int ivx,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+      const AthenaArray<Real> &dxw);
+#else  // MHD:
+  void RiemannSolver(
+      const int k, const int j, const int il, const int iu,
+      const int ivx, const AthenaArray<Real> &bx,
+      AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+      AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+      AthenaArray<Real> &wct, const AthenaArray<Real> &dxw);
+#endif
 
-  void AddGravityFlux(void);
-  void AddGravityFluxWithGflx(void);
+  void AddGravityFlux();
+  void AddGravityFluxWithGflx();
   void CalculateGravityFlux(AthenaArray<Real> &phi_in);
-  void CorrectGravityFlux(void);
 
-private:
+ private:
   AthenaArray<Real> dt1_, dt2_, dt3_;  // scratch arrays used in NewTimeStep
   // scratch space used to compute fluxes
-  AthenaArray<Real> wl_, wr_;
   AthenaArray<Real> dxw_;
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;
   AthenaArray<Real> cell_volume_;
+  // 2D
+  AthenaArray<Real> wl_, wr_, wlb_;
   AthenaArray<Real> dflx_;
-  AthenaArray<Real> bb_normal_;    // normal magnetic field, for (SR/GR)MHD
+  // 1D GR
+  AthenaArray<Real> prim_field_;   // primitives and transverse field, for SR MHD
+  AthenaArray<Real> lambdas_p_;    // most positive wavespeeds in cell, for SR MHD
+  AthenaArray<Real> lambdas_m_;    // most negative wavespeeds in cell, for SR MHD
+  AthenaArray<Real> bb_normal_;    // normal magnetic field, for (SR/GR) MHD
   AthenaArray<Real> lambdas_p_l_;  // most positive wavespeeds in left state
   AthenaArray<Real> lambdas_m_l_;  // most negative wavespeeds in left state
   AthenaArray<Real> lambdas_p_r_;  // most positive wavespeeds in right state
   AthenaArray<Real> lambdas_m_r_;  // most negative wavespeeds in right state
+  // 2D GR
   AthenaArray<Real> g_, gi_;       // metric and inverse, for some GR Riemann solvers
   AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
 
@@ -86,9 +115,14 @@ private:
 
   // fourth-order hydro
   // 4D scratch arrays
-  AthenaArray<Real> wl_fc_, wr_fc_, flux_fc_;
   AthenaArray<Real> scr1_nkji_, scr2_nkji_;
+  AthenaArray<Real> wl3d_, wr3d_;
+  // 1D scratch arrays
+  AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
-  TimeStepFunc_t UserTimeStep_;
+  TimeStepFunc UserTimeStep_;
+
+  void AddDiffusionFluxes();
+  Real GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt);
 };
 #endif // HYDRO_HYDRO_HPP_
