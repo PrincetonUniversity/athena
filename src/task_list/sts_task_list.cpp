@@ -405,7 +405,7 @@ TaskStatus SuperTimeStepTaskList::IntegrateHydro_STS(MeshBlock *pmb, int stage) 
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
-    Real wght = pmb->pmy_mesh->muj_tilde;
+    const Real wght = pmb->pmy_mesh->muj_tilde*pmb->pmy_mesh->dt;
     ph->AddFluxDivergence(wght, ph->u);
     // TODO(pdmullen): check this after disabling ATHENA_ERROR for src terms
     pmb->pcoord->AddCoordTermsDivergence(wght, ph->flux, ph->w, pf->bcc, ph->u);
@@ -428,7 +428,7 @@ TaskStatus SuperTimeStepTaskList::IntegrateScalars_STS(MeshBlock *pmb, int stage
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(ps->s, ps->s1, ps->s2, ave_wghts);
-    Real wght = pmb->pmy_mesh->muj_tilde;
+    const Real wght = pmb->pmy_mesh->muj_tilde*pmb->pmy_mesh->dt;
     ps->AddFluxDivergence(wght, ps->s);
 
     return TaskStatus::next;
@@ -448,7 +448,7 @@ TaskStatus SuperTimeStepTaskList::IntegrateField_STS(MeshBlock *pmb, int stage) 
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(pf->b, pf->b1, pf->b2, ave_wghts);
-    pf->CT(pmb->pmy_mesh->muj_tilde, pf->b);
+    pf->CT(pmb->pmy_mesh->muj_tilde*pmb->pmy_mesh->dt, pf->b);
     return TaskStatus::next;
   }
   return TaskStatus::fail;

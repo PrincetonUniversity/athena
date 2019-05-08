@@ -794,11 +794,10 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
     else
       pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
 
-    const Real wght = stage_wghts[stage-1].beta;
+    const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
     ph->AddFluxDivergence(wght, ph->u);
     // add coordinate (geometric) source terms
-    pmb->pcoord->AddCoordTermsDivergence(wght*pmb->pmy_mesh->dt, ph->flux, ph->w,
-                                         pf->bcc, ph->u);
+    pmb->pcoord->AddCoordTermsDivergence(wght, ph->flux, ph->w, pf->bcc, ph->u);
 
     // Hardcode an additional flux divergence weighted average for the penultimate
     // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
@@ -807,13 +806,14 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
       ave_wghts[0] = -1.0; // -u^(n) coeff.
       ave_wghts[1] = 0.0;
       ave_wghts[2] = 0.0;
-      Real beta = 0.063692468666290; // F(u^(3)) coeff.
+      const Real beta = 0.063692468666290; // F(u^(3)) coeff.
+      const Real wght = beta*pmb->pmy_mesh->dt;
       // writing out to u2 register
       pmb->WeightedAve(ph->u2, ph->u1, ph->u2, ave_wghts);
 
-       ph->AddFluxDivergence(beta, ph->u2);
+       ph->AddFluxDivergence(wght, ph->u2);
       // add coordinate (geometric) source terms
-      pmb->pcoord->AddCoordTermsDivergence(beta, ph->flux, ph->w, pf->bcc, ph->u2);
+      pmb->pcoord->AddCoordTermsDivergence(wght, ph->flux, ph->w, pf->bcc, ph->u2);
     }
     return TaskStatus::next;
   }
@@ -845,7 +845,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
       pmb->WeightedAve(pf->b, pf->b1, pf->b2, ave_wghts);
     }
 
-    pf->CT(stage_wghts[stage-1].beta, pf->b);
+    pf->CT(stage_wghts[stage-1].beta*pmb->pmy_mesh->dt, pf->b);
 
     return TaskStatus::next;
   }
@@ -1241,7 +1241,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
     else
       pmb->WeightedAve(ps->s, ps->s1, ps->s2, ave_wghts);
 
-    const Real wght = stage_wghts[stage-1].beta;
+    const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
     ps->AddFluxDivergence(wght, ps->s);
 
     // Hardcode an additional flux divergence weighted average for the penultimate
@@ -1251,7 +1251,8 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
       ave_wghts[0] = -1.0; // -u^(n) coeff.
       ave_wghts[1] = 0.0;
       ave_wghts[2] = 0.0;
-      Real beta = 0.063692468666290; // F(u^(3)) coeff.
+      const Real beta = 0.063692468666290; // F(u^(3)) coeff.
+      const Real wght = beta*pmb->pmy_mesh->dt;
       // writing out to s2 register
       pmb->WeightedAve(ps->s2, ps->s1, ps->s2, ave_wghts);
       ps->AddFluxDivergence(beta, ps->s2);
