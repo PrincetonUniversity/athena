@@ -1443,8 +1443,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
                                                      ph->w, pf->bcc, pmb->pcoord,
                                                      il, iu, jl, ju, kl, ku);
-          pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
-              ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
+          if (NSCALARS > 0) {
+            pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
+                ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
+          }
         }
         // --------------------------
         // end fourth-order EOS
