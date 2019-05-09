@@ -42,6 +42,7 @@
 
 SuperTimeStepTaskList::SuperTimeStepTaskList(
     ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) :
+    sts_max_dt_ratio(pin->GetOrAddReal("time", "sts_max_dt_ratio", -1.0)),
     ptlist_(ptlist) {
   // Check for STS incompatiblities:
   if (!(pm->pblock->phydro->hdif.hydro_diffusion_defined)
@@ -330,30 +331,43 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     pm->muj = (2.*stage - 1.)/stage;
     pm->nuj = (1. - stage)/stage;
     pm->muj_tilde = pm->muj*2./(std::pow(nstages, 2.) + nstages);
-    if (Globals::my_rank == 0 && pm->dt_diagnostics != -1 && pm->ncycle_out != 0
-        && pm->ncycle % pm->ncycle_out == 0) {
-      const int ratio_precision = 3;
-      const int dt_precision = std::numeric_limits<Real>::max_digits10 - 1;
-      Real dt_ratio = pm->dt / pm->dt_parabolic;
-      Real nstages_time_int = ptlist_->nstages;
-      Real stage_ratio = nstages_time_int*dt_ratio/(nstages + nstages_time_int);
-      if (pm->dt_diagnostics == 0) {
-        if (stage == nstages) {
-          std::cout << "stage=" << stage << "/" << nstages
-                    << " dt_parabolic=" << pm->dt_parabolic
-                    << " ratio=" << std::setprecision(ratio_precision) <<  dt_ratio
-                    << " stage_ratio=" << stage_ratio
-                    << std::setprecision(dt_precision)
-                    << std::endl;
-        }
-      } else {
-        if (stage % pm->dt_diagnostics == 0) {
-          std::cout << "stage=" << stage << "/" << nstages
-                    << " dt_parabolic=" << pm->dt_parabolic
-                    << " ratio=" << std::setprecision(ratio_precision) << dt_ratio
-                    << " stage_ratio=" << stage_ratio
-                    << std::setprecision(dt_precision)
-                    << std::endl;
+
+    Real dt_ratio = pm->dt / pm->dt_parabolic;
+    Real nstages_time_int = ptlist_->nstages;
+    Real stage_ratio = nstages_time_int*dt_ratio/(nstages + nstages_time_int);
+
+    if (Globals::my_rank == 0) {
+      // check sanity of timestep ratio dt_hyperbolic/dt_parabolic (and hence STS nstages)
+      if (sts_max_dt_ratio > 0 && dt_ratio > sts_max_dt_ratio) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in SuperTimeStepTaskList::StartupTaskList" << std::endl
+            << "Ratio of dt/dt_parabolic = "<< dt_ratio << " exceeds the\n"
+            << "specified limit for STS = " <<  sts_max_dt_ratio << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      // output additional diagnostics indiciating progress through STS stages:
+      if (pm->dt_diagnostics != -1 && pm->ncycle_out != 0
+          && pm->ncycle % pm->ncycle_out == 0) {
+        const int ratio_precision = 3;
+        const int dt_precision = std::numeric_limits<Real>::max_digits10 - 1;
+        if (pm->dt_diagnostics == 0) {
+          if (stage == nstages) {
+            std::cout << "stage=" << stage << "/" << nstages
+                      << " dt_parabolic=" << pm->dt_parabolic
+                      << " ratio=" << std::setprecision(ratio_precision) <<  dt_ratio
+                      << " stage_ratio=" << stage_ratio
+                      << std::setprecision(dt_precision)
+                      << std::endl;
+          }
+        } else {
+          if (stage % pm->dt_diagnostics == 0) {
+            std::cout << "stage=" << stage << "/" << nstages
+                      << " dt_parabolic=" << pm->dt_parabolic
+                      << " ratio=" << std::setprecision(ratio_precision) << dt_ratio
+                      << " stage_ratio=" << stage_ratio
+                      << std::setprecision(dt_precision)
+                      << std::endl;
+          }
         }
       }
     }
