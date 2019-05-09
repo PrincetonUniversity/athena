@@ -120,8 +120,6 @@ void Hydro::NewBlockTimeStep() {
       }
     }
   }
-  // (skip if fluid is nonexistent or frozen)
-  min_dt = std::min(min_dt, min_dt_hyperbolic);
 
   // calculate the timestep limited by the diffusion processes
   if (hdif.hydro_diffusion_defined) {
@@ -133,10 +131,11 @@ void Hydro::NewBlockTimeStep() {
 
   if (MAGNETIC_FIELDS_ENABLED &&
       pmb->pfield->fdif.field_diffusion_defined) {
-    Real min_dt_oa, min_dt_h;
-    pmb->pfield->fdif.NewDiffusionDt(min_dt_oa, min_dt_h);
+    Real min_dt_oa, min_dt_hall;
+    pmb->pfield->fdif.NewDiffusionDt(min_dt_oa, min_dt_hall);
     min_dt_parabolic = std::min(min_dt_parabolic, min_dt_oa);
-    min_dt_parabolic = std::min(min_dt_parabolic, min_dt_h);
+    // Hall effect is dispersive, not diffusive:
+    min_dt_hyperbolic = std::min(min_dt_hyperbolic, min_dt_hall);
   } // field diffusion
 
   if (NSCALARS > 0 && pmb->pscalars->scalar_diffusion_defined) {
@@ -144,17 +143,21 @@ void Hydro::NewBlockTimeStep() {
     min_dt_parabolic = std::min(min_dt_parabolic, min_dt_scalar_diff);
   } // passive scalar diffusion
 
-  min_dt *= pmb->pmy_mesh->cfl_number;
+  min_dt_hyperbolic *= pmb->pmy_mesh->cfl_number;
   // scale the theoretical stability limit by a safety factor = the hyperbolic CFL limit
   // (user-selected or automaticlaly enforced). May add independent parameter "cfl_diff"
   // in the future (with default = cfl_number).
   min_dt_parabolic *= pmb->pmy_mesh->cfl_number;
 
+  // set main integrator timestep as the minimum of the appropriate timestep constraints:
+  // hyperbolic: (skip if fluid is nonexistent or frozen)
+  min_dt = std::min(min_dt, min_dt_hyperbolic);
+  // user:
   if (UserTimeStep_ != nullptr) {
     min_dt_user = UserTimeStep_(pmb);
     min_dt = std::min(min_dt, min_dt_user);
   }
-
+  // parabolic:
   // STS handles parabolic terms -> then take the smaller of hyperbolic or user timestep
   if (!STS_ENABLED) {
     // otherwise, take the smallest of the hyperbolic, parabolic, user timesteps

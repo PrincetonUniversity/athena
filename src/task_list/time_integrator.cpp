@@ -906,6 +906,9 @@ TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
   if (!(pf->fdif.field_diffusion_defined)) return TaskStatus::next;
 
   if (stage <= nstages) {
+    // TODO(pdmullen): DiffuseField is also called in SuperTimeStepTaskLsit. It must skip
+    // Hall effect (once implemented) diffusion process in STS and always calculate those
+    // terms in the main integrator.
     pf->fdif.CalcDiffusionEMF(pf->b, pf->bcc, pf->e);
   } else {
     return TaskStatus::fail;
