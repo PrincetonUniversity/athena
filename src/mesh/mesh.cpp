@@ -89,7 +89,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     cfl_number(pin->GetReal("time", "cfl_number")),
     nlim(pin->GetOrAddInteger("time", "nlim", -1)), ncycle(),
     ncycle_out(pin->GetOrAddInteger("time", "ncycle_out", 1)),
-    dt_nstage_out(pin->GetOrAddInteger("time", "dt_nstage_out", -1)),
+    dt_diagnostics(pin->GetOrAddInteger("time", "dt_diagnostics", -1)),
     muj(), nuj(), muj_tilde(),
     nbnew(), nbdel(),
     step_since_lb(), gflag(), turb_flag(),
@@ -525,7 +525,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     cfl_number(pin->GetReal("time", "cfl_number")),
     nlim(pin->GetOrAddInteger("time", "nlim", -1)), ncycle(),
     ncycle_out(pin->GetOrAddInteger("time", "ncycle_out", 1)),
-    dt_nstage_out(pin->GetOrAddInteger("time", "dt_nstage_out", -1)),
+    dt_diagnostics(pin->GetOrAddInteger("time", "dt_diagnostics", -1)),
     muj(), nuj(), muj_tilde(),
     nbnew(), nbdel(),
     step_since_lb(), gflag(), turb_flag(),
@@ -1818,7 +1818,7 @@ void Mesh::OutputCycleDiagnostics() {
       std::cout << "cycle=" << ncycle << std::scientific
                 << std::setprecision(dt_precision)
                 << " time=" << time << " dt=" << dt;
-      if (dt_nstage_out != -1) {
+      if (dt_diagnostics != -1) {
         if (STS_ENABLED) {
           std::cout << "=dt_hyperbolic";
           // remaining dt_parabolic diagnostic output handled in STS StartupTaskList
@@ -1834,7 +1834,7 @@ void Mesh::OutputCycleDiagnostics() {
                     << std::setprecision(ratio_precision) << ratio
                     << std::setprecision(dt_precision);
         }
-      } // else (empty): dt_nstage = -1 ----> provide no additional timestep diagnostics
+      } // else (empty): dt_diagnostics = -1 -> provide no additional timestep diagnostics
       std::cout << std::endl;
     }
   }
