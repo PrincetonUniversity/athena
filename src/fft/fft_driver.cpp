@@ -123,21 +123,9 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) : nranks_(Globals::nranks),
   fft_mesh_size_.nx2 = pm->mesh_size.nx2*(1<<ref_lev);
   fft_mesh_size_.nx3 = pm->mesh_size.nx3*(1<<ref_lev);
 
-  RegionSize &bsize = (pm->pblock->block_size);
-
   fft_block_size_.nx1 = fft_mesh_size_.nx1/npx1;
   fft_block_size_.nx2 = fft_mesh_size_.nx2/npx2;
   fft_block_size_.nx3 = fft_mesh_size_.nx3/npx3;
-
-  Real x1size = bsize.x1max-bsize.x1min;
-  Real x2size = bsize.x2max-bsize.x2min;
-  Real x3size = bsize.x3max-bsize.x3min;
-  fft_block_size_.x1min = bsize.x1min;
-  fft_block_size_.x1max = bsize.x1min + x1size*nbx1;
-  fft_block_size_.x2min = bsize.x2min;
-  fft_block_size_.x2max = bsize.x2min + x2size*nbx2;
-  fft_block_size_.x3min = bsize.x3min;
-  fft_block_size_.x3max = bsize.x3min + x3size*nbx3;
 
   gcnt_ = fft_mesh_size_.nx1*fft_mesh_size_.nx2*fft_mesh_size_.nx3;
 
