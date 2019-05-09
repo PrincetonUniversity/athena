@@ -77,7 +77,7 @@ void MGGravityDriver::Solve(int stage) {
   vmg_.clear();
   MeshBlock *pmb = pmy_mesh_->pblock;
   while (pmb != nullptr) {
-    vmg_.push_back(pmb->pgrav->pmg_);
+    vmg_.push_back(pmb->pmg);
     pmb = pmb->next;
   }
 
