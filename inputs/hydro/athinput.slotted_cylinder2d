@@ -26,6 +26,8 @@ xorder      = 2         # order of spatial reconstruction
 ncycle_out  = 1         # interval for stdout summary info
 correct_ic  = false     # correct midpoint assumption in initial condition
 correct_err = false     # correct midpoint assumption in analytic solution
+dt_diagnostics = -1     # interval (in STS stages) for stdout extra dt info
+sts_max_dt_ratio = 100  # user-imposed limit for ratio dt/dt_parabolic for STS
 
 <mesh>
 nx1        = 100       # Number of zones in X1-direction

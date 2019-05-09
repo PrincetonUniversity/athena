@@ -25,39 +25,29 @@
 // constructor, initializes data structures and parameters
 
 FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
-                   RegionSize msize, RegionSize bsize) {
-  pmy_driver_ = pfd;
-  loc_ = iloc;
-  gid_ = igid;
-  msize_ = msize;
-  bsize_ = bsize;
-  dx1 = (msize_.x1max - msize_.x1min)/static_cast<Real>(msize_.nx1);
-  dx2 = (msize_.x2max - msize_.x2min)/static_cast<Real>(msize_.nx2);
-  dx3 = (msize_.x3max - msize_.x3min)/static_cast<Real>(msize_.nx3);
-  fplan_ = nullptr;
-  bplan_ = nullptr;
-
-  cnt_ = bsize_.nx1*bsize_.nx2*bsize_.nx3;
-  gcnt_ = pmy_driver_->gcnt_;
-
-  dim_ = pmy_driver_->dim_;
-
-  norm_factor_ = 1.0;
-
+                   RegionSize msize, RegionSize bsize) :
+    // public:
+    dx1((msize.x1max - msize.x1min)/static_cast<Real>(msize.nx1)),
+    dx2((msize.x2max - msize.x2min)/static_cast<Real>(msize.nx2)),
+    dx3((msize.x3max - msize.x3min)/static_cast<Real>(msize.nx3)),
+    // protected:
+    pmy_driver_(pfd),
+    cnt_(bsize.nx1*bsize.nx2*bsize.nx3), gcnt_(pmy_driver_->gcnt_),
+    gid_(igid), fplan_{}, bplan_{},
+    norm_factor_(1.0), dim_(pmy_driver_->dim_),
+    loc_(iloc), msize_(msize), bsize_(bsize),
+    orig_idx_{dim_, loc_, msize_, bsize_} {
   in_ = new std::complex<Real>[cnt_];
   out_ = new std::complex<Real>[cnt_];
-
-  orig_idx_ = new AthenaFFTIndex(dim_, loc_, msize_, bsize_);
-
 #ifdef MPI_PARALLEL
   decomp_ = pmy_driver_->decomp_;
   pdim_ = pmy_driver_->pdim_;
   InitializeMPI();
 #else
-  f_in_  = new AthenaFFTIndex(orig_idx_);
-  f_out_ = new AthenaFFTIndex(orig_idx_);
-  b_in_  = new AthenaFFTIndex(orig_idx_);
-  b_out_ = new AthenaFFTIndex(orig_idx_);
+  f_in_  = new AthenaFFTIndex(&orig_idx_);
+  f_out_ = new AthenaFFTIndex(&orig_idx_);
+  b_in_  = new AthenaFFTIndex(&orig_idx_);
+  b_out_ = new AthenaFFTIndex(&orig_idx_);
 #endif
 
   //  f_in_->PrintIndex();
@@ -79,7 +69,6 @@ FFTBlock::FFTBlock(FFTDriver *pfd, LogicalLocation iloc, int igid,
 FFTBlock::~FFTBlock() {
   delete[] in_;
   delete[] out_;
-  delete orig_idx_;
   delete f_in_;
   delete f_out_;
   delete b_in_;
@@ -499,8 +488,8 @@ void FFTBlock::InitializeMPI() {
     } else {
       msg << "Something wrong with " << pdim_ << "D decomposition!" << std::endl
           << "Current MPI Configuration is "
-          << orig_idx_->np[0] << " x " << orig_idx_->np[1]
-          << " x " << orig_idx_->np[2] << std::endl;
+          << orig_idx_.np[0] << " x " << orig_idx_.np[1]
+          << " x " << orig_idx_.np[2] << std::endl;
       ATHENA_ERROR(msg);
     }
   } else {
@@ -511,7 +500,7 @@ void FFTBlock::InitializeMPI() {
   }
 
   // permute axes and procs & swap mid <-> slow indices to prepare forward FFT
-  f_in_ = new AthenaFFTIndex(orig_idx_);
+  f_in_ = new AthenaFFTIndex(&orig_idx_);
   f_in_->PermuteAxis(permute0_);
   f_in_->PermuteProc(permute0_);
   if (swap1_) {

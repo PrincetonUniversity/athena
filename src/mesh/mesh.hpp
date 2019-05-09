@@ -145,7 +145,8 @@ class MeshBlock {
 
  private:
   // data
-  Real new_block_dt_, new_block_dt_diff_;
+  Real new_block_dt_, new_block_dt_hyperbolic_, new_block_dt_parabolic_,
+    new_block_dt_user_;
   // TODO(felker): make global TaskList a member of MeshBlock, store TaskStates in list
   // shared by main integrator + FFT gravity task lists. Multigrid has separate TaskStates
   TaskStates tasks;
@@ -220,8 +221,8 @@ class Mesh {
   const int ndim;     // number of dimensions
   const bool adaptive, multilevel;
   const FluidFormulation fluid_setup;
-  Real start_time, time, tlim, dt, dt_diff, cfl_number;
-  int nlim, ncycle, ncycle_out;
+  Real start_time, time, tlim, dt, dt_hyperbolic, dt_parabolic, dt_user, cfl_number;
+  int nlim, ncycle, ncycle_out, dt_diagnostics;
   Real muj, nuj, muj_tilde;
   int nbtotal, nbnew, nbdel;
 
@@ -245,6 +246,7 @@ class Mesh {
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  BoundaryFlag *block_bcs);
   void NewTimeStep();
+  void OutputCycleDiagnostics();
   void LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin);
   int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
   MeshBlock* FindMeshBlock(int tgid);

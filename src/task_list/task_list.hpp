@@ -170,6 +170,7 @@ class TimeIntegratorTaskList : public TaskList {
 class SuperTimeStepTaskList : public TaskList {
  public:
   SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist);
+  const Real sts_max_dt_ratio;
 
   // functions
   TaskStatus CalculateHydroFlux_STS(MeshBlock *pmb, int stage);

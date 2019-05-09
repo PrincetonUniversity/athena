@@ -29,9 +29,9 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) :
   int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
 
   // Check if field diffusion
-  eta_ohm = pin->GetOrAddReal("problem","eta_ohm",0.0);
-  eta_hall = pin->GetOrAddReal("problem","eta_hall",0.0);
-  eta_ad = pin->GetOrAddReal("problem","eta_ad",0.0);
+  eta_ohm = pin->GetOrAddReal("problem", "eta_ohm", 0.0);
+  eta_hall = pin->GetOrAddReal("problem", "eta_hall", 0.0);
+  eta_ad = pin->GetOrAddReal("problem", "eta_ad", 0.0);
 
   if ((eta_ohm != 0.0) || (eta_hall != 0.0) || (eta_ad != 0.0)) {
     field_diffusion_defined = true;
@@ -128,23 +128,11 @@ void FieldDiffusion::AddEMF(const EdgeField &e_src, EdgeField &e_des) {
 //! \fn void FieldDiffusion::ClearFieldDiffusionEMF(EdgeField &e)
 //  \brief Clear EMF
 
+// TODO(felker): move out of FieldDiffusion class. Completely general operation
 void FieldDiffusion::ClearEMF(EdgeField &e) {
-  int size1 = e.x1e.GetSize();
-  int size2 = e.x2e.GetSize();
-  int size3 = e.x3e.GetSize();
-
-#pragma omp simd
-  for (int i=0; i<size1; ++i)
-    e.x1e(i) = 0.0;
-
-#pragma omp simd
-  for (int i=0; i<size2; ++i)
-    e.x2e(i) = 0.0;
-
-#pragma omp simd
-  for (int i=0; i<size3; ++i)
-    e.x3e(i) = 0.0;
-
+  e.x1e.ZeroClear();
+  e.x2e.ZeroClear();
+  e.x3e.ZeroClear();
   return;
 }
 
@@ -157,10 +145,10 @@ void FieldDiffusion::SetDiffusivity(const AthenaArray<Real> &w,
   MeshBlock *pmb = pmy_block;
   int il = pmb->is - NGHOST; int jl = pmb->js; int kl = pmb->ks;
   int iu = pmb->ie + NGHOST; int ju = pmb->je; int ku = pmb->ke;
-  if (pmb->block_size.nx2 > 1) {
+  if (pmb->pmy_mesh->f2) {
     jl -= NGHOST; ju += NGHOST;
   }
-  if (pmb->block_size.nx3 > 1) {
+  if (pmb->pmy_mesh->f3) {
     kl -= NGHOST; ku += NGHOST;
   }
 
