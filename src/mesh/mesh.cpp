@@ -1820,10 +1820,15 @@ void Mesh::OutputCycleDiagnostics() {
                 << " time=" << time << " dt=" << dt;
       if (dt_diagnostics != -1) {
         if (STS_ENABLED) {
-          std::cout << "=dt_hyperbolic";
+          if (UserTimeStep_ == nullptr)
+            std::cout << "=dt_hyperbolic";
           // remaining dt_parabolic diagnostic output handled in STS StartupTaskList
         } else {
-          Real ratio = dt / dt_parabolic;
+          Real ratio = dt / dt_hyperbolic;
+          std::cout << "\ndt_hyperbolic=" << dt_hyperbolic << " ratio="
+                    << std::setprecision(ratio_precision) << ratio
+                    << std::setprecision(dt_precision);
+          ratio = dt / dt_parabolic;
           std::cout << "\ndt_parabolic=" << dt_parabolic << " ratio="
                     << std::setprecision(ratio_precision) << ratio
                     << std::setprecision(dt_precision);
