@@ -49,7 +49,12 @@ void Hydro::NewBlockTimeStep() {
 
   Real real_max = std::numeric_limits<Real>::max();
   Real min_dt = real_max;
+  // Note, "dt_hyperbolic" currently refers to the dt limit imposed by evoluiton of the
+  // ideal hydro or MHD fluid by the main integrator (even if not strictly hyperbolic)
   Real min_dt_hyperbolic  = real_max;
+  // TODO(felker): consider renaming dt_hyperbolic after general execution model is
+  // implemented and flexibility from #247 (zero fluid configurations) is
+  // addressed. dt_hydro, dt_main (inaccurate since "dt" is actually main), dt_MHD?
   Real min_dt_parabolic  = real_max;
   Real min_dt_user  = real_max;
 
