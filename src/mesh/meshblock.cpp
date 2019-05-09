@@ -29,6 +29,7 @@
 #include "../field/field.hpp"
 #include "../globals.hpp"
 #include "../gravity/gravity.hpp"
+#include "../gravity/mg_gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
@@ -153,6 +154,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     // if (this->grav_block)
     pgrav = new Gravity(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+    if (SELF_GRAVITY_ENABLED == 2)
+      pmg = new MGGravity(pmy_mesh->pmgrd, this);
   }
   if (NSCALARS > 0) {
     // if (this->scalars_block)
@@ -272,6 +275,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     // if (this->grav_block)
     pgrav = new Gravity(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+    if (SELF_GRAVITY_ENABLED == 2)
+      pmg = new MGGravity(pmy_mesh->pmgrd, this);
   }
 
   if (NSCALARS > 0) {

@@ -89,7 +89,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     cfl_number(pin->GetReal("time", "cfl_number")),
     nlim(pin->GetOrAddInteger("time", "nlim", -1)), ncycle(),
     ncycle_out(pin->GetOrAddInteger("time", "ncycle_out", 1)),
-    dt_nstage_out(pin->GetOrAddInteger("time", "dt_nstage_out", -1)),
+    dt_diagnostics(pin->GetOrAddInteger("time", "dt_diagnostics", -1)),
     muj(), nuj(), muj_tilde(),
     nbnew(), nbdel(),
     step_since_lb(), gflag(), turb_flag(),
@@ -105,8 +105,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
     ConductionCoeff_{}, FieldDiffusivity_{},
-    MGBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
-                        MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
+    MGGravityBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
+                               MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
   std::stringstream msg;
   RegionSize block_size;
   MeshBlock *pfirst{};
@@ -456,6 +456,10 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 
   // set gravity flag
   if (SELF_GRAVITY_ENABLED) gflag = 1;
+
+  if (SELF_GRAVITY_ENABLED == 2) // MGDriver must be initialzied before MeshBlocks
+    pmgrd = new MGGravityDriver(this, pin);
+
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
   //    gflag = 2;
 
@@ -484,8 +488,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 
   if (SELF_GRAVITY_ENABLED == 1)
     pfgrd = new FFTGravityDriver(this, pin);
-  else if (SELF_GRAVITY_ENABLED == 2)
-    pmgrd = new MGGravityDriver(this, MGBoundaryFunction_, pin);
 
   if (turb_flag > 0)
     ptrbd = new TurbulenceDriver(this, pin);
@@ -525,7 +527,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     cfl_number(pin->GetReal("time", "cfl_number")),
     nlim(pin->GetOrAddInteger("time", "nlim", -1)), ncycle(),
     ncycle_out(pin->GetOrAddInteger("time", "ncycle_out", 1)),
-    dt_nstage_out(pin->GetOrAddInteger("time", "dt_nstage_out", -1)),
+    dt_diagnostics(pin->GetOrAddInteger("time", "dt_diagnostics", -1)),
     muj(), nuj(), muj_tilde(),
     nbnew(), nbdel(),
     step_since_lb(), gflag(), turb_flag(),
@@ -541,7 +543,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
     ConductionCoeff_{}, FieldDiffusivity_{},
-    MGBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
+    MGGravityBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
                         MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
   std::stringstream msg;
   RegionSize block_size;
@@ -779,6 +781,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 
   // set gravity flag
   if (SELF_GRAVITY_ENABLED) gflag = 1;
+  if (SELF_GRAVITY_ENABLED == 2)
+    pmgrd = new MGGravityDriver(this, pin);
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
   //    gflag=2;
 
@@ -829,8 +833,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 
   if (SELF_GRAVITY_ENABLED == 1)
     pfgrd = new FFTGravityDriver(this, pin);
-  else if (SELF_GRAVITY_ENABLED == 2)
-    pmgrd = new MGGravityDriver(this, MGBoundaryFunction_, pin);
 
   if (turb_flag > 0)
     ptrbd = new TurbulenceDriver(this, pin);
@@ -1086,18 +1088,18 @@ void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserMGBoundaryFunction(BoundaryFace dir
-//                                              MGBoundaryFunc my_bc)
+//! \fn void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir
+//                                                     MGBoundaryFunc my_bc)
 //  \brief Enroll a user-defined Multigrid boundary function
 
-void Mesh::EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
+void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
   std::stringstream msg;
   if (dir < 0 || dir > 5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
     ATHENA_ERROR(msg);
   }
-  MGBoundaryFunction_[static_cast<int>(dir)] = my_bc;
+  MGGravityBoundaryFunction_[static_cast<int>(dir)] = my_bc;
   return;
 }
 
@@ -1107,8 +1109,8 @@ void Mesh::EnrollUserBoundaryFunction(int dir, BValFunc my_bc) {
   return;
 }
 
-void Mesh::EnrollUserMGBoundaryFunction(int dir, MGBoundaryFunc my_bc) {
-  EnrollUserMGBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
+void Mesh::EnrollUserMGGravityBoundaryFunction(int dir, MGBoundaryFunc my_bc) {
+  EnrollUserMGGravityBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
   return;
 }
 
@@ -1461,8 +1463,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
                                                      ph->w, pf->bcc, pmb->pcoord,
                                                      il, iu, jl, ju, kl, ku);
-          pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
-              ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
+          if (NSCALARS > 0) {
+            pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
+                ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
+          }
         }
         // --------------------------
         // end fourth-order EOS
@@ -1818,12 +1822,17 @@ void Mesh::OutputCycleDiagnostics() {
       std::cout << "cycle=" << ncycle << std::scientific
                 << std::setprecision(dt_precision)
                 << " time=" << time << " dt=" << dt;
-      if (dt_nstage_out != -1) {
+      if (dt_diagnostics != -1) {
         if (STS_ENABLED) {
-          std::cout << "=dt_hyperbolic";
+          if (UserTimeStep_ == nullptr)
+            std::cout << "=dt_hyperbolic";
           // remaining dt_parabolic diagnostic output handled in STS StartupTaskList
         } else {
-          Real ratio = dt / dt_parabolic;
+          Real ratio = dt / dt_hyperbolic;
+          std::cout << "\ndt_hyperbolic=" << dt_hyperbolic << " ratio="
+                    << std::setprecision(ratio_precision) << ratio
+                    << std::setprecision(dt_precision);
+          ratio = dt / dt_parabolic;
           std::cout << "\ndt_parabolic=" << dt_parabolic << " ratio="
                     << std::setprecision(ratio_precision) << ratio
                     << std::setprecision(dt_precision);
@@ -1834,7 +1843,7 @@ void Mesh::OutputCycleDiagnostics() {
                     << std::setprecision(ratio_precision) << ratio
                     << std::setprecision(dt_precision);
         }
-      } // else (empty): dt_nstage = -1 ----> provide no additional timestep diagnostics
+      } // else (empty): dt_diagnostics = -1 -> provide no additional timestep diagnostics
       std::cout << std::endl;
     }
   }

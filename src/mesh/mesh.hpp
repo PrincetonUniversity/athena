@@ -45,6 +45,7 @@ class Hydro;
 class Field;
 class PassiveScalars;
 class Gravity;
+class MGGravity;
 class MGGravityDriver;
 class EquationOfState;
 class FFTDriver;
@@ -116,6 +117,7 @@ class MeshBlock {
   Hydro *phydro;
   Field *pfield;
   Gravity *pgrav;
+  MGGravity* pmg;
   PassiveScalars *pscalars;
   EquationOfState *peos;
 
@@ -220,7 +222,7 @@ class Mesh {
   const bool adaptive, multilevel;
   const FluidFormulation fluid_setup;
   Real start_time, time, tlim, dt, dt_hyperbolic, dt_parabolic, dt_user, cfl_number;
-  int nlim, ncycle, ncycle_out, dt_nstage_out;
+  int nlim, ncycle, ncycle_out, dt_diagnostics;
   Real muj, nuj, muj_tilde;
   int nbtotal, nbnew, nbdel;
 
@@ -305,7 +307,7 @@ class Mesh {
   ViscosityCoeffFunc ViscosityCoeff_;
   ConductionCoeffFunc ConductionCoeff_;
   FieldDiffusionCoeffFunc FieldDiffusivity_;
-  MGBoundaryFunc MGBoundaryFunction_[6];
+  MGBoundaryFunc MGGravityBoundaryFunction_[6];
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -342,10 +344,10 @@ class Mesh {
 
   // often used (not defined) in prob file in ../pgen/
   void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);
-  void EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
+  void EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
   // DEPRECATED(felker): provide trivial overload for old-style BoundaryFace enum argument
   void EnrollUserBoundaryFunction(int face, BValFunc my_func);
-  void EnrollUserMGBoundaryFunction(int dir, MGBoundaryFunc my_bc);
+  void EnrollUserMGGravityBoundaryFunction(int dir, MGBoundaryFunc my_bc);
 
   void EnrollUserRefinementCondition(AMRFlagFunc amrflag);
   void EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg);

@@ -42,6 +42,7 @@
 
 SuperTimeStepTaskList::SuperTimeStepTaskList(
     ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) :
+    sts_max_dt_ratio(pin->GetOrAddReal("time", "sts_max_dt_ratio", -1.0)),
     ptlist_(ptlist) {
   // Check for STS incompatiblities:
   if (!(pm->pblock->phydro->hdif.hydro_diffusion_defined)
@@ -121,7 +122,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
         //}
       AddTask(SEND_SCLR,INT_SCLR);
       AddTask(RECV_SCLR,NONE);
-      AddTask(SETB_SCLR,RECV_SCLR);
+      AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
     }
 
     // compute MHD fluxes, integrate field
@@ -330,30 +331,43 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     pm->muj = (2.*stage - 1.)/stage;
     pm->nuj = (1. - stage)/stage;
     pm->muj_tilde = pm->muj*2./(std::pow(nstages, 2.) + nstages);
-    if (Globals::my_rank == 0 && pm->dt_nstage_out != -1 && pm->ncycle_out != 0
-        && pm->ncycle % pm->ncycle_out == 0) {
-      const int ratio_precision = 3;
-      const int dt_precision = std::numeric_limits<Real>::max_digits10 - 1;
-      Real dt_ratio = pm->dt / pm->dt_parabolic;
-      Real nstages_time_int = ptlist_->nstages;
-      Real stage_ratio = nstages_time_int*dt_ratio/(nstages + nstages_time_int);
-      if (pm->dt_nstage_out == 0) {
-        if (stage == nstages) {
-          std::cout << "stage=" << stage << "/" << nstages
-                    << " dt_parabolic=" << pm->dt_parabolic
-                    << " ratio=" << std::setprecision(ratio_precision) <<  dt_ratio
-                    << " stage_ratio=" << stage_ratio
-                    << std::setprecision(dt_precision)
-                    << std::endl;
-        }
-      } else {
-        if (stage % pm->dt_nstage_out == 0) {
-          std::cout << "stage=" << stage << "/" << nstages
-                    << " dt_parabolic=" << pm->dt_parabolic
-                    << " ratio=" << std::setprecision(ratio_precision) << dt_ratio
-                    << " stage_ratio=" << stage_ratio
-                    << std::setprecision(dt_precision)
-                    << std::endl;
+
+    Real dt_ratio = pm->dt / pm->dt_parabolic;
+    Real nstages_time_int = ptlist_->nstages;
+    Real stage_ratio = nstages_time_int*dt_ratio/(nstages + nstages_time_int);
+
+    if (Globals::my_rank == 0) {
+      // check sanity of timestep ratio dt_hyperbolic/dt_parabolic (and hence STS nstages)
+      if (sts_max_dt_ratio > 0 && dt_ratio > sts_max_dt_ratio) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in SuperTimeStepTaskList::StartupTaskList" << std::endl
+            << "Ratio of dt/dt_parabolic = "<< dt_ratio << " exceeds the\n"
+            << "specified limit for STS = " <<  sts_max_dt_ratio << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      // output additional diagnostics indiciating progress through STS stages:
+      if (pm->dt_diagnostics != -1 && pm->ncycle_out != 0
+          && pm->ncycle % pm->ncycle_out == 0) {
+        const int ratio_precision = 3;
+        const int dt_precision = std::numeric_limits<Real>::max_digits10 - 1;
+        if (pm->dt_diagnostics == 0) {
+          if (stage == nstages) {
+            std::cout << "stage=" << stage << "/" << nstages
+                      << " dt_parabolic=" << pm->dt_parabolic
+                      << " ratio=" << std::setprecision(ratio_precision) <<  dt_ratio
+                      << " stage_ratio=" << stage_ratio
+                      << std::setprecision(dt_precision)
+                      << std::endl;
+          }
+        } else {
+          if (stage % pm->dt_diagnostics == 0) {
+            std::cout << "stage=" << stage << "/" << nstages
+                      << " dt_parabolic=" << pm->dt_parabolic
+                      << " ratio=" << std::setprecision(ratio_precision) << dt_ratio
+                      << " stage_ratio=" << stage_ratio
+                      << std::setprecision(dt_precision)
+                      << std::endl;
+          }
         }
       }
     }
@@ -437,7 +451,7 @@ TaskStatus SuperTimeStepTaskList::IntegrateHydro_STS(MeshBlock *pmb, int stage) 
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
-    Real wght = pmb->pmy_mesh->muj_tilde;
+    const Real wght = pmb->pmy_mesh->muj_tilde*pmb->pmy_mesh->dt;
     ph->AddFluxDivergence(wght, ph->u);
     // TODO(pdmullen): check this after disabling ATHENA_ERROR for src terms
     pmb->pcoord->AddCoordTermsDivergence(wght, ph->flux, ph->w, pf->bcc, ph->u);
@@ -460,7 +474,7 @@ TaskStatus SuperTimeStepTaskList::IntegrateScalars_STS(MeshBlock *pmb, int stage
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(ps->s, ps->s1, ps->s2, ave_wghts);
-    Real wght = pmb->pmy_mesh->muj_tilde;
+    const Real wght = pmb->pmy_mesh->muj_tilde*pmb->pmy_mesh->dt;
     ps->AddFluxDivergence(wght, ps->s);
 
     return TaskStatus::next;
@@ -480,7 +494,7 @@ TaskStatus SuperTimeStepTaskList::IntegrateField_STS(MeshBlock *pmb, int stage) 
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(pf->b, pf->b1, pf->b2, ave_wghts);
-    pf->CT(pmb->pmy_mesh->muj_tilde, pf->b);
+    pf->CT(pmb->pmy_mesh->muj_tilde*pmb->pmy_mesh->dt, pf->b);
     return TaskStatus::next;
   }
   return TaskStatus::fail;

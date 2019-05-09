@@ -60,10 +60,10 @@ parsers:
 comment:                   # settings for codecov GitHub integration's comments on PRs
   layout: "header, diff"   # header*, diff*, trends, uncovered, reach, flags, files, footer?
   # message: "Coverage {{changed}} for {{owner}}/{{repo}}"  # customize the message
-  behavior: default        # default*|once|new|spammy; default= update, if comment exists
-  require_changes: no      # no*|yes= only post comment on PR if coverage % changes
-  require_base: no         # no*|yes= only post comment if there is a base coverage report
-  require_head: no         # no|yes*= only post comment if there is a head coverage report
+  behavior: default        # update*|once|new|spammy; default= update, if comment exists
+  require_changes: no       # no*|yes= only post comment on PR if coverage % changes
+  require_base: no          # no*|yes= only post comment if there is a base coverage report
+  require_head: yes         # no|yes*= only post comment if there is a head coverage report
   branches: null
 
 # Codecov YAML validation:
