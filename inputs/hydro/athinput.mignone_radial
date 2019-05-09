@@ -1,6 +1,6 @@
 <comment>
 problem   = 1D passive scalar advection of Gaussian profile along the radial coordinate
-reference = Mignone, A. (2014). Journal of Computational Physics, 270, 784-814. (Section 5.1)
+reference = Mignone, A. (2014). Journal of Computational Physics, 270, 784-814. (Section 5.1.1)
 configure = --prob=mignone_advection --eos=isothermal --nscalars=1 --coord=cylindrical/spherical --nghost=3
 
 <job>
@@ -23,11 +23,12 @@ tlim        = 1.0      # time limit
 integrator  = vl2      # time integration algorithm
 xorder      = 2        # order of spatial reconstruction
 ncycle_out  = 1        # interval for stdout summary info
-correct_ic  = true     # correct midpoint assumption in initial condition
+correct_ic  = false    # correct midpoint assumption in initial condition
+correct_err = false    # correct midpoint assumption in analytic solution
 
 <mesh>
 nx1        = 64        # Number of zones in X1-direction
-x1min      = 0.0       # minimum value of X1
+x1min      = 0.01       # minimum value of X1
 x1max      = 2.0       # maximum value of X1
 ix1_bc     = reflecting   # inner-X1 boundary flag
 ox1_bc     = outflow   # outer-X1 boundary flag
