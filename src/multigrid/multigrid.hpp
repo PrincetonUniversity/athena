@@ -12,6 +12,7 @@
 
 // C++ headers
 #include <iostream>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -54,9 +55,7 @@ void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 
 class Multigrid {
  public:
-  Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
-            int invar, int nghost, RegionSize isize, MGBoundaryFunc *MGBoundary,
-            BoundaryFlag *input_bcs, bool root);
+  Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost);
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;
@@ -65,7 +64,6 @@ class Multigrid {
   // BoundaryQuantity::mggrav is handled in a case in InitBoundaryData(). Passed directly
   // (not through btype) in MGBoundaryValues() ctor
   BoundaryQuantity btype, btypef;
-  Multigrid *next, *prev; // node links for doubly linked list
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
@@ -98,16 +96,15 @@ class Multigrid {
   friend class MGGravityDriver;
 
  protected:
-  int gid_, lid_;
-  LogicalLocation loc_;
   MultigridDriver *pmy_driver_;
+  MeshBlock *pmy_block_;
+  LogicalLocation loc_;
   RegionSize size_;
-  int nlevel_, ngh_, nvar_, current_level_;
+  int gid_, nlevel_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
   AthenaArray<Real> *u_, *def_, *src_;
 
  private:
-  bool root_flag_;
   TaskStates ts_;
 };
 
@@ -119,7 +116,6 @@ class MultigridDriver {
  public:
   MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar);
   virtual ~MultigridDriver();
-  void AddMultigrid(Multigrid *nmg);
   void SubtractAverage(int type);
   void SetupMultigrid();
   void FillRootGridSource();
@@ -150,10 +146,10 @@ class MultigridDriver {
   int nranks_, nvar_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
   int current_level_;
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *ranklist_;
+  int nrbx1_, nrbx2_, nrbx3_;
   MGBoundaryFunc MGBoundaryFunction_[6];
   Mesh *pmy_mesh_;
-  Multigrid *pmg_;       // pointer to head node of doubly linked list of Multgrid objects
-  // (not storing a reference to the tail node)
+  std::vector<Multigrid*> vmg_;
   Multigrid *mgroot_;
   bool fperiodic_;
   Real last_ave_;

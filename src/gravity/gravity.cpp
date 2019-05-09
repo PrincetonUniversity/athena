@@ -23,6 +23,7 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "gravity.hpp"
+#include "mg_gravity.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -60,3 +61,4 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
   gbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&gbvar);
 }
+

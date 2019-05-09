@@ -103,8 +103,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
     ConductionCoeff_{}, FieldDiffusivity_{},
-    MGBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
-                        MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
+    MGGravityBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
+                               MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
   std::stringstream msg;
   RegionSize block_size;
   MeshBlock *pfirst{};
@@ -454,6 +454,10 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 
   // set gravity flag
   if (SELF_GRAVITY_ENABLED) gflag = 1;
+
+  if (SELF_GRAVITY_ENABLED == 2) // MGDriver must be initialzied before MeshBlocks
+    pmgrd = new MGGravityDriver(this, pin);
+
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
   //    gflag = 2;
 
@@ -482,8 +486,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 
   if (SELF_GRAVITY_ENABLED == 1)
     pfgrd = new FFTGravityDriver(this, pin);
-  else if (SELF_GRAVITY_ENABLED == 2)
-    pmgrd = new MGGravityDriver(this, MGBoundaryFunction_, pin);
 
   if (turb_flag > 0)
     ptrbd = new TurbulenceDriver(this, pin);
@@ -537,7 +539,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
     ConductionCoeff_{}, FieldDiffusivity_{},
-    MGBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
+    MGGravityBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
                         MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
   std::stringstream msg;
   RegionSize block_size;
@@ -775,6 +777,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 
   // set gravity flag
   if (SELF_GRAVITY_ENABLED) gflag = 1;
+  if (SELF_GRAVITY_ENABLED == 2)
+    pmgrd = new MGGravityDriver(this, pin);
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
   //    gflag=2;
 
@@ -825,8 +829,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 
   if (SELF_GRAVITY_ENABLED == 1)
     pfgrd = new FFTGravityDriver(this, pin);
-  else if (SELF_GRAVITY_ENABLED == 2)
-    pmgrd = new MGGravityDriver(this, MGBoundaryFunction_, pin);
 
   if (turb_flag > 0)
     ptrbd = new TurbulenceDriver(this, pin);
@@ -1068,18 +1070,18 @@ void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserMGBoundaryFunction(BoundaryFace dir
-//                                              MGBoundaryFunc my_bc)
+//! \fn void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir
+//                                                     MGBoundaryFunc my_bc)
 //  \brief Enroll a user-defined Multigrid boundary function
 
-void Mesh::EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
+void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
   std::stringstream msg;
   if (dir < 0 || dir > 5) {
     msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
     ATHENA_ERROR(msg);
   }
-  MGBoundaryFunction_[static_cast<int>(dir)] = my_bc;
+  MGGravityBoundaryFunction_[static_cast<int>(dir)] = my_bc;
   return;
 }
 
@@ -1089,8 +1091,8 @@ void Mesh::EnrollUserBoundaryFunction(int dir, BValFunc my_bc) {
   return;
 }
 
-void Mesh::EnrollUserMGBoundaryFunction(int dir, MGBoundaryFunc my_bc) {
-  EnrollUserMGBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
+void Mesh::EnrollUserMGGravityBoundaryFunction(int dir, MGBoundaryFunc my_bc) {
+  EnrollUserMGGravityBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
   return;
 }
 
