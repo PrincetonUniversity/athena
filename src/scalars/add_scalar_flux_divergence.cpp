@@ -91,7 +91,7 @@ void PassiveScalars::AddFluxDivergence(const Real wght, AthenaArray<Real> &s_out
       for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          s_out(n,k,j,i) -= wght*(pmb->pmy_mesh->dt)*dflx(n,i)/vol(i);
+          s_out(n,k,j,i) -= wght*dflx(n,i)/vol(i);
         }
       }
     }

@@ -45,6 +45,7 @@ class Hydro;
 class Field;
 class PassiveScalars;
 class Gravity;
+class MGGravity;
 class MGGravityDriver;
 class EquationOfState;
 class FFTDriver;
@@ -116,6 +117,7 @@ class MeshBlock {
   Hydro *phydro;
   Field *pfield;
   Gravity *pgrav;
+  MGGravity* pmg;
   PassiveScalars *pscalars;
   EquationOfState *peos;
 
@@ -143,7 +145,8 @@ class MeshBlock {
 
  private:
   // data
-  Real new_block_dt_, new_block_dt_diff_;
+  Real new_block_dt_, new_block_dt_hyperbolic_, new_block_dt_parabolic_,
+    new_block_dt_user_;
   // TODO(felker): make global TaskList a member of MeshBlock, store TaskStates in list
   // shared by main integrator + FFT gravity task lists. Multigrid has separate TaskStates
   TaskStates tasks;
@@ -218,8 +221,8 @@ class Mesh {
   const int ndim;     // number of dimensions
   const bool adaptive, multilevel;
   const FluidFormulation fluid_setup;
-  Real start_time, time, tlim, dt, dt_diff, cfl_number;
-  int nlim, ncycle, ncycle_out;
+  Real start_time, time, tlim, dt, dt_hyperbolic, dt_parabolic, dt_user, cfl_number;
+  int nlim, ncycle, ncycle_out, dt_diagnostics;
   Real muj, nuj, muj_tilde;
   int nbtotal, nbnew, nbdel;
 
@@ -243,6 +246,7 @@ class Mesh {
   void SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                  BoundaryFlag *block_bcs);
   void NewTimeStep();
+  void OutputCycleDiagnostics();
   void LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin);
   int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3);
   MeshBlock* FindMeshBlock(int tgid);
@@ -304,7 +308,7 @@ class Mesh {
   ViscosityCoeffFunc ViscosityCoeff_;
   ConductionCoeffFunc ConductionCoeff_;
   FieldDiffusionCoeffFunc FieldDiffusivity_;
-  MGBoundaryFunc MGBoundaryFunction_[6];
+  MGBoundaryFunc MGGravityBoundaryFunction_[6];
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -341,10 +345,10 @@ class Mesh {
 
   // often used (not defined) in prob file in ../pgen/
   void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);
-  void EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
+  void EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
   // DEPRECATED(felker): provide trivial overload for old-style BoundaryFace enum argument
   void EnrollUserBoundaryFunction(int face, BValFunc my_func);
-  void EnrollUserMGBoundaryFunction(int dir, MGBoundaryFunc my_bc);
+  void EnrollUserMGGravityBoundaryFunction(int dir, MGBoundaryFunc my_bc);
 
   void EnrollUserRefinementCondition(AMRFlagFunc amrflag);
   void EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg);

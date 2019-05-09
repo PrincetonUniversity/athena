@@ -29,6 +29,7 @@
 #include "../field/field.hpp"
 #include "../globals.hpp"
 #include "../gravity/gravity.hpp"
+#include "../gravity/mg_gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
@@ -47,6 +48,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
                      int igflag, bool ref_flag) :
     pmy_mesh(pm), loc(iloc), block_size(input_block),
     gid(igid), lid(ilid), gflag(igflag), nuser_out_var(), prev(nullptr), next(nullptr),
+    new_block_dt_{}, new_block_dt_hyperbolic_{}, new_block_dt_parabolic_{},
+    new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(1.0) {
   // initialize grid indices
   is = NGHOST;
@@ -151,6 +154,8 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     // if (this->grav_block)
     pgrav = new Gravity(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+    if (SELF_GRAVITY_ENABLED == 2)
+      pmg = new MGGravity(pmy_mesh->pmgrd, this);
   }
   if (NSCALARS > 0) {
     // if (this->scalars_block)
@@ -182,6 +187,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
                      double icost, char *mbdata, int igflag) :
     pmy_mesh(pm), loc(iloc), block_size(input_block),
     gid(igid), lid(ilid), gflag(igflag), nuser_out_var(), prev(nullptr), next(nullptr),
+    new_block_dt_{}, new_block_dt_hyperbolic_{}, new_block_dt_parabolic_{},
+    new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(icost) {
   // initialize grid indices
   is = NGHOST;
@@ -268,6 +275,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     // if (this->grav_block)
     pgrav = new Gravity(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+    if (SELF_GRAVITY_ENABLED == 2)
+      pmg = new MGGravity(pmy_mesh->pmgrd, this);
   }
 
   if (NSCALARS > 0) {

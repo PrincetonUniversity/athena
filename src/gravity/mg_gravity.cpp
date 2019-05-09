@@ -33,13 +33,11 @@
 class MeshBlock;
 
 //----------------------------------------------------------------------------------------
-//! \fn MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
-//                                   ParameterInput *pin)
+//! \fn MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
 //  \brief MGGravityDriver constructor
 
-MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
-                                 ParameterInput *pin)
-    : MultigridDriver(pm, MGBoundary, 1) {
+MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
+    : MultigridDriver(pm, pm->MGGravityBoundaryFunction_, 1) {
   four_pi_G_ = pmy_mesh_->four_pi_G_;
   eps_ = pmy_mesh_->grav_eps_;
   if (four_pi_G_==0.0) {
@@ -58,53 +56,38 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     ATHENA_ERROR(msg);
   }
 
-  // Allocate multigrid objects
-  RegionSize root_size = pmy_mesh_->mesh_size;
-  root_size.nx1 = pmy_mesh_->nrbx1;
-  root_size.nx2 = pmy_mesh_->nrbx2;
-  root_size.nx3 = pmy_mesh_->nrbx3;
-  LogicalLocation lroot;
-  lroot.lx1 = 0, lroot.lx2 = 0, lroot.lx3 = 0, lroot.level = 0;
-  mgroot_ = new MGGravity(this, lroot, -1, -1, root_size, MGBoundary, pmy_mesh_->mesh_bcs,
-                          true);
-  pmg_ = nullptr;
-  // Multigrid *pfirst;
-  int nbs = nslist_[Globals::my_rank];
-  int nbe = nbs + nblist_[Globals::my_rank] - 1;
-  RegionSize block_size;
-  block_size.nx1 = pmy_mesh_->mesh_size.nx1/pmy_mesh_->nrbx1;
-  block_size.nx2 = pmy_mesh_->mesh_size.nx2/pmy_mesh_->nrbx2;
-  block_size.nx3 = pmy_mesh_->mesh_size.nx3/pmy_mesh_->nrbx3;
-  for (int i=nbs; i<=nbe; i++) {
-    BoundaryFlag block_bcs[6];
-    pmy_mesh_->SetBlockSizeAndBoundaries(pmy_mesh_->loclist[i], block_size, block_bcs);
-    Multigrid *nmg=new MGGravity(this, pmy_mesh_->loclist[i], i, i-nbs, block_size,
-                                 MGBoundary, block_bcs, false);
-    nmg->pmgbval->SearchAndSetNeighbors(pmy_mesh_->tree, ranklist_, nslist_);
-    AddMultigrid(nmg);
-  }
+  // Allocate the root multigrid
+  mgroot_ = new MGGravity(this, nullptr);
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn MGGravityDriver::~MGGravityDriver()
+//  \brief MGGravityDriver destructor
+MGGravityDriver::~MGGravityDriver() {
+  delete mgroot_;
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGGravityDriver::Solve(int stage)
 //  \brief load the data and solve
 
 void MGGravityDriver::Solve(int stage) {
-  Multigrid *pmggrav = pmg_;
+  // Construct the Multigrid array
+  vmg_.clear();
+  MeshBlock *pmb = pmy_mesh_->pblock;
+  while (pmb != nullptr) {
+    vmg_.push_back(pmb->pmg);
+    pmb = pmb->next;
+  }
 
-  // Load the source
-  while (pmggrav != nullptr) {
-    MeshBlock *pmb = pmy_mesh_->FindMeshBlock(pmggrav->gid_);
-    if (pmb != nullptr) {
-      AthenaArray<Real> &in = pmb->phydro->u;
-      pmggrav->LoadSource(in, IDN, NGHOST, four_pi_G_);
-      if (mode_ >= 2) // iterative mode - load initial guess
-        pmggrav->LoadFinestData(pmb->pgrav->phi, 0, NGHOST);
-    }
-    //    else { // on another process
-    //    }
-    pmggrav = pmggrav->next;
+  // load the source
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
+    // assume all the data are located on the same node
+    pmg->LoadSource(pmg->pmy_block_->phydro->u, IDN, NGHOST, four_pi_G_);
+    if (mode_ >= 2) // iterative mode - load initial guess
+      pmg->LoadFinestData(pmg->pmy_block_->pgrav->phi, 0, NGHOST);
   }
 
   SetupMultigrid();
@@ -119,19 +102,15 @@ void MGGravityDriver::Solve(int stage) {
   }
 
   // Return the result
-  pmggrav = pmg_;
-  while (pmggrav != nullptr) {
-    MeshBlock *pmb = pmy_mesh_->FindMeshBlock(pmggrav->gid_);
-    if (pmb != nullptr) {
-      pmggrav->RetrieveResult(pmb->pgrav->phi,0,NGHOST);
-      pmb->pgrav->grav_mean_rho = mean_rho;
-    }
-    //    else { // on another process
-    //    }
-    pmggrav = pmggrav->next;
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
+    Gravity *pgrav = pmg->pmy_block_->pgrav;
+    pmg->RetrieveResult(pgrav->phi,0,NGHOST);
+    pgrav->grav_mean_rho = mean_rho;
   }
   return;
 }
+
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::Smooth(int color)

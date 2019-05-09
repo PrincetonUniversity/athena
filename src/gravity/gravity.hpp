@@ -24,6 +24,8 @@ class MeshBlock;
 class ParameterInput;
 class Coordinates;
 class GravityBoundaryValues;
+class MGGravity;
+class MGGRavityDriver;
 
 //! \class Gravity
 //  \brief gravitational potential data and functions
@@ -35,7 +37,7 @@ class Gravity {
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
   AthenaArray<Real> phi;   // gravitational potential
   AthenaArray<Real> empty_flux[3];
-  Real gconst, four_pi_G;  // default: 4*pi*G=1
+  Real gconst, four_pi_G;
   Real grav_mean_rho;
   bool srcterm;
 
@@ -45,6 +47,8 @@ class Gravity {
 
   void Initialize(ParameterInput *pin);
   void Solver(const AthenaArray<Real> &u);
+
+  friend class MGGravityDriver;
 
  private:
   bool gravity_tensor_momentum_;
