@@ -92,7 +92,7 @@ void MGGravityDriver::Solve(int stage) {
 
   SetupMultigrid();
   Real mean_rho = 0.0;
-  if (fperiodic_)
+  if (fsubtract_average_)
     mean_rho = last_ave_/four_pi_G_;
 
   if (mode_ <= 1) {

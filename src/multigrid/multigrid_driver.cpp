@@ -23,6 +23,7 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "mg_bvalfunc.hpp"
 #include "multigrid.hpp"
 
 #ifdef MPI_PARALLEL
@@ -34,7 +35,7 @@
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) :
     nvar_(invar), mode_(), // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
-    fperiodic_(false), eps_(-1.0) {
+    fsubtract_average_(false), eps_(-1.0) {
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
@@ -55,13 +56,19 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
   for (int i=0; i<6; i++)
     MGBoundaryFunction_[i]=MGBoundary[i];
 
-  if ( MGBoundaryFunction_[BoundaryFace::inner_x1] == MGPeriodicInnerX1
-    && MGBoundaryFunction_[BoundaryFace::outer_x1] == MGPeriodicOuterX1
-    && MGBoundaryFunction_[BoundaryFace::inner_x2] == MGPeriodicInnerX2
-    && MGBoundaryFunction_[BoundaryFace::outer_x2] == MGPeriodicOuterX2
-    && MGBoundaryFunction_[BoundaryFace::inner_x3] == MGPeriodicInnerX3
-    && MGBoundaryFunction_[BoundaryFace::outer_x3] == MGPeriodicOuterX3)
-    fperiodic_ = true;
+  if ( (MGBoundaryFunction_[BoundaryFace::inner_x1] == MGPeriodicInnerX1
+    ||  MGBoundaryFunction_[BoundaryFace::inner_x1] == MGZeroGradientInnerX1)
+    && (MGBoundaryFunction_[BoundaryFace::outer_x1] == MGPeriodicOuterX1
+    ||  MGBoundaryFunction_[BoundaryFace::outer_x1] == MGZeroGradientOuterX1)
+    && (MGBoundaryFunction_[BoundaryFace::inner_x2] == MGPeriodicInnerX2
+    ||  MGBoundaryFunction_[BoundaryFace::inner_x2] == MGZeroGradientInnerX2)
+    && (MGBoundaryFunction_[BoundaryFace::outer_x2] == MGPeriodicOuterX2
+    ||  MGBoundaryFunction_[BoundaryFace::outer_x2] == MGZeroGradientOuterX2)
+    && (MGBoundaryFunction_[BoundaryFace::inner_x3] == MGPeriodicInnerX3
+    ||  MGBoundaryFunction_[BoundaryFace::inner_x3] == MGZeroGradientInnerX3)
+    && (MGBoundaryFunction_[BoundaryFace::outer_x3] == MGPeriodicOuterX3)
+    ||  MGBoundaryFunction_[BoundaryFace::outer_x3] == MGZeroGradientOuterX3)
+    fsubtract_average_ = true;
 
   // Setting up the MPI information
   // *** this part should be modified when dedicate processes are allocated ***
@@ -119,7 +126,7 @@ void MultigridDriver::SetupMultigrid() {
     Multigrid *pmg = *itr;
     pmg->pmgbval->CopyNeighborInfoFromMeshBlock();
   }
-  if (fperiodic_)
+  if (fsubtract_average_)
     SubtractAverage(0);
   if (mode_<=1) { // FMG
     for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
@@ -347,7 +354,7 @@ void MultigridDriver::SolveFMGCycle() {
       SolveFCycle(0, 1);
     if (lev!=ntotallevel_-1) FMGProlongate();
   }
-  if (fperiodic_)
+  if (fsubtract_average_)
     SubtractAverage(1);
   return;
 }
@@ -385,7 +392,7 @@ void MultigridDriver::SolveIterative() {
     }
     niter++;
   }
-  if (fperiodic_)
+  if (fsubtract_average_)
     SubtractAverage(1);
   return;
 }
@@ -398,11 +405,11 @@ void MultigridDriver::SolveIterative() {
 void MultigridDriver::SolveCoarsestGrid() {
   int ni = (std::max(nrbx1_, std::max(nrbx2_, nrbx3_))
             >> (nrootlevel_-1));
-  if (fperiodic_ && ni == 1) { // trivial case - all zero
+  if (fsubtract_average_ && ni == 1) { // trivial case - all zero
     mgroot_->ZeroClearData();
     return;
   } else {
-    if (fperiodic_) {
+    if (fsubtract_average_) {
       Real vol=(mgroot_->size_.x1max-mgroot_->size_.x1min)
               *(mgroot_->size_.x2max-mgroot_->size_.x2min)
               *(mgroot_->size_.x3max-mgroot_->size_.x3min);
@@ -418,7 +425,7 @@ void MultigridDriver::SolveCoarsestGrid() {
       mgroot_->Smooth(1);
     }
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
-    if (fperiodic_) {
+    if (fsubtract_average_) {
       Real vol=(mgroot_->size_.x1max-mgroot_->size_.x1min)
               *(mgroot_->size_.x2max-mgroot_->size_.x2min)
               *(mgroot_->size_.x3max-mgroot_->size_.x3min);

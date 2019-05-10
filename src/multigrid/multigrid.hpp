@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file multigrid.hpp
-//  \brief
+//  \brief defines the Multigrid base class
 
 // C headers
 
@@ -31,24 +31,6 @@ class MeshBlock;
 class ParameterInput;
 class Coordinates;
 
-void MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-void MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-void MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-void MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
-void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
 
 //! \class Multigrid
 //  \brief gravitational block
@@ -151,7 +133,7 @@ class MultigridDriver {
   Mesh *pmy_mesh_;
   std::vector<Multigrid*> vmg_;
   Multigrid *mgroot_;
-  bool fperiodic_;
+  bool fsubtract_average_;
   Real last_ave_;
   Real eps_;
 
