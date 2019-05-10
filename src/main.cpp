@@ -319,7 +319,7 @@ int main(int argc, char *argv[]) {
   }
 #endif // ENABLE_EXCEPTIONS
 
-  TaskList *pststlist = nullptr;
+  SuperTimeStepTaskList *pststlist = nullptr;
   if (STS_ENABLED) {
 #ifdef ENABLE_EXCEPTIONS
     try {
@@ -394,11 +394,8 @@ int main(int argc, char *argv[]) {
   }
 #endif // ENABLE_EXCEPTIONS
 
-  // KGF: missing step 8
-
-  //=== Step 9. === START OF MAIN INTEGRATION LOOP =======================================
+  //=== Step 8. === START OF MAIN INTEGRATION LOOP =======================================
   // For performance, there is no error handler protecting this step (except outputs)
-
 
   if (Globals::my_rank == 0) {
     std::cout << "\nSetup complete, entering main loop...\n" << std::endl;
@@ -411,23 +408,17 @@ int main(int argc, char *argv[]) {
 
   while ((pmesh->time < pmesh->tlim) &&
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)) {
-    if (Globals::my_rank == 0) {
-      if (pmesh->ncycle_out != 0) {
-        if (pmesh->ncycle % pmesh->ncycle_out == 0) {
-          std::cout << "cycle=" << pmesh->ncycle<< std::scientific
-                    << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1)
-                    << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
-        }
-      }
-    }
+    if (Globals::my_rank == 0)
+      pmesh->OutputCycleDiagnostics();
 
     if (STS_ENABLED) {
       // compute nstages for this STS
       Real my_dt = pmesh->dt;
-      Real dt_diff  = pmesh->dt_diff;
-      pststlist->nstages = static_cast<int>(0.5*(-1.+std::sqrt(1.+8.*my_dt/dt_diff))) + 1;
+      Real dt_parabolic  = pmesh->dt_parabolic;
+      pststlist->nstages =
+          static_cast<int>(0.5*(-1. + std::sqrt(1. + 8.*my_dt/dt_parabolic))) + 1;
 
-      // super-time-step
+      // take super-timestep
       for (int stage=1; stage<=pststlist->nstages; ++stage)
         pststlist->DoTaskListOneStage(pmesh,stage);
     }
@@ -484,7 +475,8 @@ int main(int argc, char *argv[]) {
   if (Globals::my_rank == 0 && wtlim > 0)
     SignalHandler::CancelWallTimeAlarm();
 
-  // make the final outputs
+  //--- Step 9. --------------------------------------------------------------------------
+  // Make the final outputs
 #ifdef ENABLE_EXCEPTIONS
   try {
 #endif
@@ -510,11 +502,10 @@ int main(int argc, char *argv[]) {
 
   pmesh->UserWorkAfterLoop(pinput);
 
-  // print diagnostic messages
+  //--- Step 10. -------------------------------------------------------------------------
+  // Print diagnostic messages related to the end of the simulation
   if (Globals::my_rank == 0) {
-    std::cout << "cycle=" << pmesh->ncycle << " time=" << pmesh->time
-              << " dt=" << pmesh->dt << std::endl;
-
+    pmesh->OutputCycleDiagnostics();
     if (SignalHandler::GetSignalFlag(SIGTERM) != 0) {
       std::cout << std::endl << "Terminating on Terminate signal" << std::endl;
     } else if (SignalHandler::GetSignalFlag(SIGINT) != 0) {

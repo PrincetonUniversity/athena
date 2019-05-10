@@ -161,9 +161,9 @@ set -e
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
 # Delete version info from module names to automatically use latest default version of these libraries as Princeton Research Computing updates them:
-# (Currently using pinned Intel 17.0 Release 5 versions as of November 2018 due to bugs on Perseus installation of ICC 19.0.
-# Intel's MPI Library 2019 version was not installed on Perseus since it is much slower than 2018 version on Mellanox Infiniband)
-module load intel/19.0/64/19.0.3.199 # intel/17.0/64/17.0.5.239 # intel ---intel/19.0/64/19.0.1.144 as of 2019-01-15
+# (Was using pinned Intel 17.0 Release 5 versions as of November 2018 due to bugs on Perseus installation of ICC 19.0.
+# Intel's MPI Library 2019 version was never installed on Perseus since it is much slower than 2018 version on Mellanox Infiniband)
+module load intel/18.0/64/18.0.3.222 # intel/17.0/64/17.0.5.239 # intel ---intel/19.0/64/19.0.3.199 latest version as of 2019-05-04
 module load intel-mpi/intel/2017.5/64 # intel-mpi --- intel-mpi/intel/2018.3/64
 # Always pinning these modules to a specific version, since new library versions are rarely compiled:
 module load fftw/gcc/3.3.4

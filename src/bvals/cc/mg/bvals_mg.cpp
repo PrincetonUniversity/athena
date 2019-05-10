@@ -38,12 +38,10 @@ class Multigrid;
 class MultigridDriver;
 
 //----------------------------------------------------------------------------------------
-//! \fn MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
-//                                         MGBoundaryFunc *MGBoundary)
+//! \fn MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs)
 //  \brief Constructor of the MGBoundaryValues class
 
-MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
-                                   MGBoundaryFunc *MGBoundary)
+MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs)
     : BoundaryBase(pmg->pmy_driver_->pmy_mesh_, pmg->loc_, pmg->size_, input_bcs),
       pmy_mg_(pmg) {
 #ifdef MPI_PARALLEL
@@ -52,15 +50,15 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
   // the owning MultigridDriver object:
   mg_grav_phys_id_ = pmg->pmy_driver_->mg_phys_id_;
 #endif
-  if (pmy_mg_->root_flag_) {
+  if (pmy_mg_->pmy_block_ == nullptr) {
     for (int i=0; i<6; i++)
-      MGBoundaryFunction_[i] = MGBoundary[i];
+      MGBoundaryFunction_[i] = pmg->pmy_driver_->MGBoundaryFunction_[i];
   } else {
     for (int i=0; i<6; i++) {
       if (block_bcs[i] == BoundaryFlag::periodic || block_bcs[i] == BoundaryFlag::block)
         MGBoundaryFunction_[i] = nullptr;
       else
-        MGBoundaryFunction_[i] = MGBoundary[i];
+        MGBoundaryFunction_[i] = pmg->pmy_driver_->MGBoundaryFunction_[i];
     }
     InitBoundaryData(bd_mggrav_, BoundaryQuantity::mggrav);
   }
@@ -72,7 +70,7 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs,
 //  \brief Destructor of the MGBoundaryValues class
 
 MGBoundaryValues::~MGBoundaryValues() {
-  if (pmy_mg_->root_flag_)
+  if (pmy_mg_->pmy_block_ != nullptr)
     DestroyBoundaryData(bd_mggrav_);
 }
 
@@ -83,7 +81,6 @@ MGBoundaryValues::~MGBoundaryValues() {
 void MGBoundaryValues::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type) {
   int size = 0;
   bd.nbmax = maxneighbor_;
-  // KGF: unlike "normal" InitBoundaryData(), there is no need for cng, ... , f3d
 
   for (int n=0; n<bd.nbmax; n++) {
     // Clear flags and requests
@@ -111,8 +108,8 @@ void MGBoundaryValues::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity typ
             size = ngh*ngh*ngh*2;
         } else { // uniform - NGHOST=1
           size = ((BoundaryValues::ni[n].ox1 == 0) ? block_size_.nx1 : ngh)
-                 *((BoundaryValues::ni[n].ox2 == 0) ? block_size_.nx2 : ngh)
-                 *((BoundaryValues::ni[n].ox3 == 0) ? block_size_.nx3 : ngh);
+                *((BoundaryValues::ni[n].ox2 == 0) ? block_size_.nx2 : ngh)
+                *((BoundaryValues::ni[n].ox3 == 0) ? block_size_.nx3 : ngh);
         }
       }
         break;
@@ -173,10 +170,10 @@ void MGBoundaryValues::ApplyPhysicalBoundaries() {
   Real y0 = block_size_.x2min - (static_cast<Real>(ngh) + 0.5)*dy;
   Real z0 = block_size_.x3min - (static_cast<Real>(ngh) + 0.5)*dz;
   Real time = pmy_mesh_->time;
-  if (MGBoundaryFunction_[BoundaryFace::inner_x2]  ==  nullptr) bjs = js - ngh;
-  if (MGBoundaryFunction_[BoundaryFace::outer_x2]  ==  nullptr) bje = je + ngh;
-  if (MGBoundaryFunction_[BoundaryFace::inner_x3]  ==  nullptr) bks = ks - ngh;
-  if (MGBoundaryFunction_[BoundaryFace::outer_x3]  ==  nullptr) bke = ke + ngh;
+  if (MGBoundaryFunction_[BoundaryFace::inner_x2] == nullptr) bjs = js - ngh;
+  if (MGBoundaryFunction_[BoundaryFace::outer_x2] == nullptr) bje = je + ngh;
+  if (MGBoundaryFunction_[BoundaryFace::inner_x3] == nullptr) bks = ks - ngh;
+  if (MGBoundaryFunction_[BoundaryFace::outer_x3] == nullptr) bke = ke + ngh;
 
   // Apply boundary function on inner-x1
   if (MGBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
@@ -252,13 +249,13 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, BoundaryQuantity type) {
           else if (nb.ni.type == NeighborConnect::edge) size = nc/2;
           else if (nb.ni.type == NeighborConnect::corner) size = 1;
         }
-      } else { // no SMR/AMR - NGHOST=2 (Not necessarily! KGF)
+      } else { // no SMR/AMR
         if (nb.ni.type == NeighborConnect::face) size = nc*nc*ngh;
         else if (nb.ni.type == NeighborConnect::edge) size = nc*ngh*ngh;
         else if (nb.ni.type == NeighborConnect::corner) size = ngh*ngh*ngh;
       }
       size *= nvar;
-      int tag = CreateBvalsMPITag(pmy_mg_->lid_, nb.bufid, phys);
+      int tag = CreateBvalsMPITag(pmy_mg_->pmy_block_->lid, nb.bufid, phys);
       MPI_Irecv(pbd->recv[nb.bufid], size, MPI_ATHENA_REAL, nb.snb.rank, tag,
                 mgcomm_, &(pbd->req_recv[nb.bufid]));
     }
@@ -459,3 +456,20 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
   }
   return bflag;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGBoundaryValues::CopyNeighborInfoFromMeshBlock()
+//  \brief copy the neighbor information from the MeshBlock BoundaryValues class
+void MGBoundaryValues::CopyNeighborInfoFromMeshBlock() {
+  BoundaryValues *pbv = pmy_mg_->pmy_block_->pbval;
+  nneighbor = pbv->nneighbor;
+  for (int k=0; k<=2; k++) {
+    for (int j=0; j<=2; j++) {
+      for (int i=0; i<=2; i++)
+        nblevel[k][j][i] = pbv->nblevel[k][j][i];
+    }
+  }
+  for (int n=0; n<nneighbor; n++)
+    neighbor[n] = pbv->neighbor[n];
+}
+

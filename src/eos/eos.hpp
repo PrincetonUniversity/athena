@@ -63,15 +63,16 @@ class EquationOfState {
 
   // pass k, j, i to following 2x functions even though x1-sliced input array is expected
   // in order to accomodate position-dependent floors
-#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim) linear(i)
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim,k,j) linear(i)
   void ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i);
 
-#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s) linear(i)
-  void ApplyPassiveScalarFloors(AthenaArray<Real> &s, int k, int j, int i);
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s,n,k,j) linear(i)
+  void ApplyPassiveScalarFloors(AthenaArray<Real> &s, int n, int k, int j, int i);
 
+#pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,s,w,r,n,k,j) linear(i)
   void ApplyPassiveScalarPrimitiveConservedFloors(
     AthenaArray<Real> &s, const AthenaArray<Real> &w, AthenaArray<Real> &r,
-    int k, int j, int i);
+    int n, int k, int j, int i);
 
   // Sound speed functions in different regimes
 #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
@@ -187,16 +188,12 @@ class EquationOfState {
   Real egas_unit_, inv_egas_unit_;       // physical unit/sim unit for energy density
   Real vsqr_unit_, inv_vsqr_unit_;       // physical unit/sim unit for speed^2
   AthenaArray<Real> g_, g_inv_;          // metric and its inverse, used in GR
-  AthenaArray<bool> fixed_, success_;    // flags for problems, used in GR
+  AthenaArray<Real> fixed_;              // cells with problems, used in GR hydro
   AthenaArray<Real> normal_dd_;          // normal-frame densities, used in GR MHD
   AthenaArray<Real> normal_ee_;          // normal-frame energies, used in GR MHD
   AthenaArray<Real> normal_mm_;          // normal-frame momenta, used in GR MHD
   AthenaArray<Real> normal_bb_;          // normal-frame fields, used in GR MHD
   AthenaArray<Real> normal_tt_;          // normal-frame M.B, used in GR MHD
-  AthenaArray<Real> dens_floor_local_;   // floor on rho for any reason, used in GR MHD
-  AthenaArray<Real> press_floor_local_;  // floor on pgas for any reason, used in GR MHD
-  AthenaArray<Real> normal_gamma_;       // normal-frame Lorentz factor, used in GR MHD
-  AthenaArray<Real> pmag_;               // fluid-frame magnetic pressure, used in GR MHD
 };
 
 #endif // EOS_EOS_HPP_
