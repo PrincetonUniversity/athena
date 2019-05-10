@@ -458,7 +458,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
   if (SELF_GRAVITY_ENABLED == 1) {
     gflag = 1; // set gravity flag
     pfgrd = new FFTGravityDriver(this, pin);
-  } else if (SELF_GRAVITY_ENABLED == 2) { // MGDriver must be initialzied before MeshBlocks
+  } else if (SELF_GRAVITY_ENABLED == 2) {
+    // MGDriver must be initialzied before MeshBlocks
     pmgrd = new MGGravityDriver(this, pin);
   }
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
@@ -780,7 +781,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   if (SELF_GRAVITY_ENABLED == 1) {
     gflag = 1; // set gravity flag
     pfgrd = new FFTGravityDriver(this, pin);
-  } else if (SELF_GRAVITY_ENABLED == 2) { // MGDriver must be initialzied before MeshBlocks
+  } else if (SELF_GRAVITY_ENABLED == 2) {
+    // MGDriver must be initialzied before MeshBlocks
     pmgrd = new MGGravityDriver(this, pin);
   }
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
@@ -789,7 +791,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   // allocate data buffer
   int nb = nblist[Globals::my_rank];
   int nbs = nslist[Globals::my_rank];
-  int nbe = nbs+nb-1;
+  int nbe = nbs + nb - 1;
   char *mbdata = new char[datasize*nb];
   // load MeshBlocks (parallel)
   if (resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize) !=
