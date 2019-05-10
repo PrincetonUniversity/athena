@@ -454,12 +454,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     return;
   }
 
-  // set gravity flag
-  if (SELF_GRAVITY_ENABLED) gflag = 1;
 
-  if (SELF_GRAVITY_ENABLED == 2) // MGDriver must be initialzied before MeshBlocks
+  if (SELF_GRAVITY_ENABLED == 1) {
+    gflag = 1; // set gravity flag
+    pfgrd = new FFTGravityDriver(this, pin);
+  } else if (SELF_GRAVITY_ENABLED == 2) {
+    // MGDriver must be initialzied before MeshBlocks
     pmgrd = new MGGravityDriver(this, pin);
-
+  }
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
   //    gflag = 2;
 
@@ -486,10 +488,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 
   ResetLoadBalanceVariables();
 
-  if (SELF_GRAVITY_ENABLED == 1)
-    pfgrd = new FFTGravityDriver(this, pin);
-
-  if (turb_flag > 0)
+  if (turb_flag > 0) // TurbulenceDriver depends on the MeshBlock ctor
     ptrbd = new TurbulenceDriver(this, pin);
 }
 
@@ -779,17 +778,20 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     return;
   }
 
-  // set gravity flag
-  if (SELF_GRAVITY_ENABLED) gflag = 1;
-  if (SELF_GRAVITY_ENABLED == 2)
+  if (SELF_GRAVITY_ENABLED == 1) {
+    gflag = 1; // set gravity flag
+    pfgrd = new FFTGravityDriver(this, pin);
+  } else if (SELF_GRAVITY_ENABLED == 2) {
+    // MGDriver must be initialzied before MeshBlocks
     pmgrd = new MGGravityDriver(this, pin);
+  }
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
   //    gflag=2;
 
   // allocate data buffer
   int nb = nblist[Globals::my_rank];
   int nbs = nslist[Globals::my_rank];
-  int nbe = nbs+nb-1;
+  int nbe = nbs + nb - 1;
   char *mbdata = new char[datasize*nb];
   // load MeshBlocks (parallel)
   if (resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize) !=
@@ -831,10 +833,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   // clean up
   delete [] offset;
 
-  if (SELF_GRAVITY_ENABLED == 1)
-    pfgrd = new FFTGravityDriver(this, pin);
-
-  if (turb_flag > 0)
+  if (turb_flag > 0) // TurbulenceDriver depends on the MeshBlock ctor
     ptrbd = new TurbulenceDriver(this, pin);
 }
 
