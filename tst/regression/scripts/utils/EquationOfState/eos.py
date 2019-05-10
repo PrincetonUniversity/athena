@@ -191,6 +191,54 @@ class TestIdeal(Ideal):
         self.indep = 'p'
 
 
+class AthenaTable(EOS):
+    def __init__(self, data, lrho, le, ratios=None, indep=None):
+        super(EOS, self).__init__()
+        if ratios is None:
+            ratios = np.ones(data.shape[0])
+        lr = np.log(ratios)
+        self._lr = lr
+        if indep is None:
+            indep = 'ei'
+        self.indep = indep
+        self.data = data
+        self.lrho = lrho
+        self.le = le
+        var = ['p', 'e', 'asq_p', 'asq_h']
+        tmp = [r'e', r'P', r'P', r'h']
+        if data.shape[0] == 6:
+            var += ['T', 's']
+            tmp += ['e', 'e']
+        self._axes = [r'$\log_{10}' + i + '$' for i in tmp]
+        tmp = ['P/e', 'e/P', r'\Gamma_1', r'a^2\rho/h']
+        if data.shape[0] == 6:
+            tmp += [r'T/\epsilon', 's']
+        self._var = ['${0:}$'.format(i) for i in tmp]
+        d = {var[i]: RBS(lrho, le + lr[i], np.log10(data[i].T), kx=1, ky=1).ev for i in range(len(var))}
+        self._interp_dict = d
+
+    def _interp(self, rho, e, var):
+        return 10**self._interp_dict[var](np.log10(rho), np.log10(e))
+
+    def asq_of_rho_p(self, rho, p):
+        """Adiabatic sound speed^2 as a function of density (rho) and pressure (p)"""
+        c2 = p / rho
+        return self._interp(rho, c2, 'asq_p') * c2
+
+    def ei_of_rho_p(self, rho, p):
+        """Internal energy density as a function of density (rho) and pressure (p)"""
+        return self._interp(rho, p / rho, 'e') * p
+
+    def es_of_rho_p(self, rho, p):
+        """Specific internal energy as a function of density (rho) and pressure (p)"""
+        c2 = p / rho
+        return self._interp(rho, c2, 'e') * c2
+
+    def p_of_rho_es(self, rho, es):
+        """Pressure as a function of density (rho) and specific internal energy (es)"""
+        return self._interp(rho, es, 'p') * es * rho
+
+
 def parse_eos(eos):
     """Function to interpret input as an EOS"""
     if hasattr(eos, 'asq_of_rho_p'):
