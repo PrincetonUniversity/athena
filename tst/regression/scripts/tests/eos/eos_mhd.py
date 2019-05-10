@@ -61,16 +61,16 @@ def run(**kwargs):
     # run same tests as in eos_riemann.py
     for n, test in enumerate(_tests):
         args = [i + '={0:}'.format(test[i]) for i in test]
-        args += ['job/problem_id=eos_mhd_{0:02d}'.format(n), 'time/ncycle_out=0']
+        args += ['job/problem_id=eos_mhd_{0:02d}'.format(n), 'time/ncycle_out=100']
         athena.run('hydro/athinput.sod_general_H', args)
     # run first Riemann problem but with different none zero Bx
     for mag in _mag_list:
         n += 1
         args = ['problem/bxl=' + mag, 'problem/bxr=' + mag]
-        args += ['job/problem_id=eos_mhd_{0:02d}'.format(n), 'time/ncycle_out=0']
+        args += ['job/problem_id=eos_mhd_{0:02d}'.format(n), 'time/ncycle_out=100']
         athena.run('hydro/athinput.sod_general_H', args)
     # run RJ2a test for hydrogen EOS
-    args = ['hydro/eos_rho_unit=1e-7', 'hydro/eos_egas_unit=2e-8', 'time/ncycle_out=0',
+    args = ['hydro/eos_rho_unit=1e-7', 'hydro/eos_egas_unit=2e-8', 'time/ncycle_out=100',
             'output1/file_type=vtk']
     athena.run('mhd/athinput.rj2a', args)
 
