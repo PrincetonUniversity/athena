@@ -8,12 +8,12 @@ problem_id = kh-shear-lecoanet  # problem ID: basename of output filenames
 
 <output1>
 file_type  = hst       # History data dump
-dt         = 0.01      # time increment between outputs
+dt         = 0.05      # time increment between outputs
 
 <output2>
 file_type  = hdf5      # HDF5 data dump
 variable   = prim      # variables to be output
-dt         = 0.1       # time increment between outputs
+dt         = 0.05       # time increment between outputs
 
 <output3>
 file_type  = rst       # Restart dump

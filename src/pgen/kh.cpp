@@ -333,9 +333,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
           Real ave_sine = std::sin(TWO_PI*pcoord->x1v(i));
           if (pcoord->x1v(i) > 0.0) {
-            ave_sine -= std::sin(TWO_PI*(-0.5+pcoord->x1v(i)));
+            ave_sine -= std::sin(TWO_PI*(-0.5 + pcoord->x1v(i)));
           } else {
-            ave_sine -= std::sin(TWO_PI*(0.5+pcoord->x1v(i)));
+            ave_sine -= std::sin(TWO_PI*(0.5 + pcoord->x1v(i)));
           }
           ave_sine /= 2.0;
 
@@ -360,7 +360,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             // uniformly fill all scalar species to have equal concentration
             constexpr int scalar_norm = NSCALARS > 0 ? NSCALARS : 1.0;
             for (int n=0; n<NSCALARS; ++n) {
-              pscalars->s(n,k,j,i) = 1.0/scalar_norm*concentration;
+              pscalars->s(n,k,j,i) = 1.0/scalar_norm*concentration*phydro->u(IDN,k,j,i);
             }
           }
         }
@@ -373,7 +373,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie+1; i++) {
-            pfield->b.x1f(k,j,i) = b0*std::tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
+            pfield->b.x1f(k,j,i) = b0*std::tanh((std::fabs(pcoord->x2v(j)) - 0.5)/a);
           }
         }
       }
