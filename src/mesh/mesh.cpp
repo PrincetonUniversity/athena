@@ -176,6 +176,36 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     ATHENA_ERROR(msg);
   }
 
+  // check the consistency of the periodic boundaries
+  if ( ((mesh_bcs[BoundaryFace::inner_x1] == BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x1] != BoundaryFlag::periodic)
+    ||  (mesh_bcs[BoundaryFace::inner_x1] != BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x1] == BoundaryFlag::periodic))
+    ||  (mesh_size.nx2 > 1
+    && ((mesh_bcs[BoundaryFace::inner_x2] == BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x2] != BoundaryFlag::periodic)
+    ||  (mesh_bcs[BoundaryFace::inner_x2] != BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x2] == BoundaryFlag::periodic)))
+    ||  (mesh_size.nx3 > 1
+    && ((mesh_bcs[BoundaryFace::inner_x3] == BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x3] != BoundaryFlag::periodic)
+    ||  (mesh_bcs[BoundaryFace::inner_x3] != BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x3] == BoundaryFlag::periodic)))) {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "When periodic boundaries are in use, both sides must be periodic."
+        << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  if ( ((mesh_bcs[BoundaryFace::inner_x1] == BoundaryFlag::shear_periodic
+    &&   mesh_bcs[BoundaryFace::outer_x1] != BoundaryFlag::shear_periodic)
+    ||  (mesh_bcs[BoundaryFace::inner_x1] != BoundaryFlag::shear_periodic
+    &&   mesh_bcs[BoundaryFace::outer_x1] == BoundaryFlag::shear_periodic))) {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "When shear_periodic boundaries are in use, "
+        << "both sides must be shear_periodic." << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
   // read and set MeshBlock parameters
   block_size.x1rat = mesh_size.x1rat;
   block_size.x2rat = mesh_size.x2rat;
