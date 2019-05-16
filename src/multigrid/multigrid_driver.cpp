@@ -23,7 +23,6 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "mg_bvalfunc.hpp"
 #include "multigrid.hpp"
 
 #ifdef MPI_PARALLEL
@@ -33,9 +32,9 @@
 // constructor, initializes data structures and parameters
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) :
-    nvar_(invar), mode_(), // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
+    nvar_(invar), mode_(0), // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
-    fsubtract_average_(false), eps_(-1.0) {
+    fsubtract_average_(false), ffas_(false), eps_(-1.0) {
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
@@ -81,20 +80,25 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
   nblist_  = new int[nranks_];
   nvlist_  = new int[nranks_];
   nvslist_ = new int[nranks_];
+  nvlisti_  = new int[nranks_];
+  nvslisti_ = new int[nranks_];
 #ifdef MPI_PARALLEL
   MPI_Comm_dup(MPI_COMM_WORLD, &MPI_COMM_MULTIGRID);
   mg_phys_id_ = pmy_mesh_->ReserveTagPhysIDs(1);
 #endif
+  int nv = nvar_;
+  if (ffas_) nv*=2;
   // assume the same parallelization as hydro
   for (int n=0; n<nranks_; n++) {
     nslist_[n]  = pmy_mesh_->nslist[n];
     nblist_[n]  = pmy_mesh_->nblist[n];
-    nvslist_[n] = nslist_[n]*nvar_;
-    nvlist_[n]  = nblist_[n]*nvar_;
+    nvslist_[n] = nslist_[n]*nv;
+    nvlist_[n]  = nblist_[n]*nv;
+    nvslisti_[n] = nslist_[n]*nvar_;
+    nvlisti_[n]  = nblist_[n]*nvar_;
   }
-  rootbuf_=new Real[pm->nbtotal*nvar_];
+  rootbuf_=new Real[pm->nbtotal*nv];
   mgtlist_ = new MultigridTaskList(this);
-  rootsrc_.NewAthenaArray(nvar_, nrbx3_, nrbx2_, nrbx1_);
 }
 
 // destructor
@@ -103,8 +107,10 @@ MultigridDriver::~MultigridDriver() {
   delete [] ranklist_;
   delete [] nslist_;
   delete [] nblist_;
-  delete [] nvslist_;
   delete [] nvlist_;
+  delete [] nvslist_;
+  delete [] nvlisti_;
+  delete [] nvslisti_;
   delete [] rootbuf_;
   delete mgtlist_;
 #ifdef MPI_PARALLEL
@@ -117,23 +123,24 @@ MultigridDriver::~MultigridDriver() {
 //  \brief initialize the source assuming that the source terms are already loaded
 
 void MultigridDriver::SetupMultigrid() {
-  nrootlevel_=mgroot_->GetNumberOfLevels();
-  nmblevel_=vmg_[0]->GetNumberOfLevels();
-  ntotallevel_=nrootlevel_+nmblevel_-1;
-  current_level_=ntotallevel_-1;
+  nrootlevel_ = mgroot_->GetNumberOfLevels();
+  nmblevel_ = vmg_[0]->GetNumberOfLevels();
+  ntotallevel_ = nrootlevel_+nmblevel_-1;
+  fmglevel_ = current_level_ = ntotallevel_-1;
+
 
   for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
     Multigrid *pmg = *itr;
     pmg->pmgbval->CopyNeighborInfoFromMeshBlock();
   }
   if (fsubtract_average_)
-    SubtractAverage(0);
+    SubtractAverage(MGVariable::src);
   if (mode_<=1) { // FMG
     for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       pmg->RestrictFMGSource();
     }
-    FillRootGridSource();
+    TransferFromBlocksToRoot(true);
     mgroot_->RestrictFMGSource();
     current_level_=0;
   } else {
@@ -144,10 +151,10 @@ void MultigridDriver::SetupMultigrid() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SubtractAverage(int type)
+//! \fn void MultigridDriver::SubtractAverage(MGVariable type)
 //  \brief Calculate the global average and subtract it
 
-void MultigridDriver::SubtractAverage(int type) {
+void MultigridDriver::SubtractAverage(MGVariable type) {
   for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
     Multigrid *pmg = *itr;
     for (int v=0; v<nvar_; v++)
@@ -155,11 +162,11 @@ void MultigridDriver::SubtractAverage(int type) {
   }
 #ifdef MPI_PARALLEL
   MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
-                 rootbuf_, nvlist_, nvslist_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
+                 rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
 #endif
   Real vol=(pmy_mesh_->mesh_size.x1max-pmy_mesh_->mesh_size.x1min)
-           *(pmy_mesh_->mesh_size.x2max-pmy_mesh_->mesh_size.x2min)
-           *(pmy_mesh_->mesh_size.x3max-pmy_mesh_->mesh_size.x3min);
+          *(pmy_mesh_->mesh_size.x2max-pmy_mesh_->mesh_size.x2min)
+          *(pmy_mesh_->mesh_size.x3max-pmy_mesh_->mesh_size.x3min);
   for (int v=0; v<nvar_; v++) {
     Real total=0.0;
     for (int n=0; n<pmy_mesh_->nbtotal; n++)
@@ -176,30 +183,66 @@ void MultigridDriver::SubtractAverage(int type) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::FillRootGridSource()
-//  \brief collect the coarsest data and fill the root grid
+//! \fn void MultigridDriver::TransferFromBlocksToRoot(bool initflag)
+//  \brief collect the coarsest data and transfer to the root grid
 
-void MultigridDriver::FillRootGridSource() {
+void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
+  int nv = nvar_;
+  if (ffas_ && !initflag) nv*=2;
   for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
     Multigrid *pmg = *itr;
     for (int v=0; v<nvar_; v++)
-      rootbuf_[pmg->pmy_block_->gid*nvar_+v]=pmg->GetRootSource(v);
+      rootbuf_[pmg->pmy_block_->gid*nv+v]=pmg->GetCoarsestData(MGVariable::src, v);
+    if (ffas_ && !initflag) {
+      for (int v=0; v<nvar_; v++)
+        rootbuf_[pmg->pmy_block_->gid*nv+nvar_+v]=pmg->GetCoarsestData(MGVariable::u, v);
+    }
   }
 #ifdef MPI_PARALLEL
-  MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
-                 rootbuf_, nvlist_, nvslist_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
+  if (!initflag)
+    MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nv, MPI_ATHENA_REAL,
+                   rootbuf_, nvlist_, nvslist_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
+  else
+    MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
+                   rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
 #endif
   if (pmy_mesh_->multilevel) {
     // *** implement later
   } else { // uniform
     for (int n=0; n<pmy_mesh_->nbtotal; n++) {
       LogicalLocation &loc=pmy_mesh_->loclist[n];
+      int i = static_cast<int>(loc.lx1);
+      int j = static_cast<int>(loc.lx2);
+      int k = static_cast<int>(loc.lx3);
       for (int v=0; v<nvar_; v++)
-        // KGF: possible std::int64_t overflow. Unlikely to occur with Multigrid
-        rootsrc_(v, static_cast<int>(loc.lx3), static_cast<int>(loc.lx2),
-                 static_cast<int>(loc.lx1))=rootbuf_[n*nvar_+v];
+        mgroot_->SetData(MGVariable::src, v, k, j, i, rootbuf_[n*nv+v]);
+      if (ffas_ && !initflag) {
+        for (int v=0; v<nvar_; v++)
+          mgroot_->SetData(MGVariable::u, v, k, j, i, rootbuf_[n*nv+nvar_+v]);
+      }
     }
-    mgroot_->LoadSource(rootsrc_, 0, 0, 1.0);
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::TransferFromRootToBlocks()
+//  \brief Transfer the data from the root grid to the coarsest level of each MeshBlock
+
+void MultigridDriver::TransferFromRootToBlocks() {
+  AthenaArray<Real> &src=mgroot_->GetCurrentData();
+  mgroot_->pmgbval->ApplyPhysicalBoundaries();
+  if (pmy_mesh_->multilevel) {
+    // *** implement later ***
+  } else {
+    for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
+      Multigrid *pmg = *itr;
+      LogicalLocation &loc=pmg->pmy_block_->loc;
+      // KGF: possible std::int64_t overflow. Practically never occur with Multigrid
+      pmg->SetFromRootGrid(src, static_cast<int>(loc.lx1), static_cast<int>(loc.lx2),
+                           static_cast<int>(loc.lx3));
+    }
   }
   return;
 }
@@ -223,28 +266,6 @@ void MultigridDriver::FMGProlongate() {
     mgroot_->FMGProlongate();
   }
   current_level_++;
-  return;
-}
-
-
-//----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::TransferFromRootToBlocks()
-//  \brief Transfer the data from the root grid to the coarsest level of each MeshBlock
-
-void MultigridDriver::TransferFromRootToBlocks() {
-  AthenaArray<Real> &src=mgroot_->GetCurrentData();
-  mgroot_->pmgbval->ApplyPhysicalBoundaries();
-  if (pmy_mesh_->multilevel) {
-    // *** implement later ***
-  } else {
-    for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
-      Multigrid *pmg = *itr;
-      LogicalLocation &loc=pmg->pmy_block_->loc;
-      // KGF: possible std::int64_t overflow. Practically never occur with Multigrid
-      pmg->SetFromRootGrid(src, static_cast<int>(loc.lx1), static_cast<int>(loc.lx2),
-                           static_cast<int>(loc.lx3));
-    }
-  }
   return;
 }
 
@@ -288,17 +309,22 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
     mgtlist_->SetMGTaskListToCoarser(nsmooth, ngh);
     mgtlist_->DoTaskListOneStage(this);
     if (current_level_ == nrootlevel_) {
-      FillRootGridSource();
-      mgroot_->ZeroClearData();
+      TransferFromBlocksToRoot();
+      if (!ffas_)
+        mgroot_->ZeroClearData();
     }
   } else { // root grid
+    mgroot_->pmgbval->ApplyPhysicalBoundaries();
+    if (ffas_ && current_level_ < fmglevel_) {
+      mgroot_->StoreOldData();
+      mgroot_->CalculateFASRHS();
+    }
     for (int n=0; n<nsmooth; n++) {
-      mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(1);
+      mgroot_->pmgbval->ApplyPhysicalBoundaries();
     }
-    mgroot_->pmgbval->ApplyPhysicalBoundaries();
     mgroot_->Restrict();
   }
   current_level_--;
@@ -347,15 +373,15 @@ void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth) {
 //  \brief Solve the FMG Cycle using the V(1,1) or F(0,1) cycle
 
 void MultigridDriver::SolveFMGCycle() {
-  for (int lev=0; lev<ntotallevel_; lev++) {
+  for (fmglevel_=0; fmglevel_<ntotallevel_; fmglevel_++) {
     if (mode_ == 0)
       SolveVCycle(1, 1);
     else if (mode_ == 1)
       SolveFCycle(0, 1);
-    if (lev!=ntotallevel_-1) FMGProlongate();
+    if (fmglevel_!=ntotallevel_-1) FMGProlongate();
   }
   if (fsubtract_average_)
-    SubtractAverage(1);
+    SubtractAverage(MGVariable::u);
   return;
 }
 
@@ -368,12 +394,12 @@ void MultigridDriver::SolveIterative() {
   Real def=eps_+1e-10;
   int niter=0;
   std::cout << std::scientific;
-  while (def>eps_) {
+  while (def > eps_) {
     SolveVCycle(1,1);
     Real olddef=def;
     def=0.0;
     for (int n=0; n<nvar_; n++)
-      def+=CalculateDefectNorm(n, 2);
+      def+=CalculateDefectNorm(MGNormType::l2, n);
     if (niter > 0 && def/olddef > 0.5) {
       if (eps_ == 0.0) break;
       if (Globals::my_rank == 0)
@@ -393,7 +419,7 @@ void MultigridDriver::SolveIterative() {
     niter++;
   }
   if (fsubtract_average_)
-    SubtractAverage(1);
+    SubtractAverage(MGVariable::u);
   return;
 }
 
@@ -406,6 +432,10 @@ void MultigridDriver::SolveCoarsestGrid() {
   int ni = (std::max(nrbx1_, std::max(nrbx2_, nrbx3_))
             >> (nrootlevel_-1));
   if (fsubtract_average_ && ni == 1) { // trivial case - all zero
+    if (ffas_) { 
+      mgroot_->pmgbval->ApplyPhysicalBoundaries();
+      mgroot_->StoreOldData();
+    }
     mgroot_->ZeroClearData();
     return;
   } else {
@@ -414,24 +444,28 @@ void MultigridDriver::SolveCoarsestGrid() {
               *(mgroot_->size_.x2max-mgroot_->size_.x2min)
               *(mgroot_->size_.x3max-mgroot_->size_.x3min);
       for (int v=0; v<nvar_; v++) {
-        Real ave=mgroot_->CalculateTotal(1, v)/vol;
-        mgroot_->SubtractAverage(1, v, ave);
+        Real ave=mgroot_->CalculateTotal(MGVariable::u, v)/vol;
+        mgroot_->SubtractAverage(MGVariable::u, v, ave);
       }
     }
+    mgroot_->pmgbval->ApplyPhysicalBoundaries();
+    if (ffas_ && current_level_ < fmglevel_) {
+      mgroot_->StoreOldData();
+      mgroot_->CalculateFASRHS();
+    }
     for (int i=0; i<ni; i++) { // iterate ni times
-      mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->Smooth(1);
+      mgroot_->pmgbval->ApplyPhysicalBoundaries();
     }
-    mgroot_->pmgbval->ApplyPhysicalBoundaries();
     if (fsubtract_average_) {
       Real vol=(mgroot_->size_.x1max-mgroot_->size_.x1min)
               *(mgroot_->size_.x2max-mgroot_->size_.x2min)
               *(mgroot_->size_.x3max-mgroot_->size_.x3min);
       for (int v=0; v<nvar_; v++) {
-        Real ave=mgroot_->CalculateTotal(1, v)/vol;
-        mgroot_->SubtractAverage(1, v, ave);
+        Real ave=mgroot_->CalculateTotal(MGVariable::u, v)/vol;
+        mgroot_->SubtractAverage(MGVariable::u, v, ave);
       }
     }
   }
@@ -440,25 +474,25 @@ void MultigridDriver::SolveCoarsestGrid() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn Real MultigridDriver::CalculateDefectNorm(int n, int nrm)
+//! \fn Real MultigridDriver::CalculateDefectNorm(MGNormType nrm, int n)
 //  \brief calculate the defect norm
 
-Real MultigridDriver::CalculateDefectNorm(int n, int nrm) {
+Real MultigridDriver::CalculateDefectNorm(MGNormType nrm, int n) {
   Real norm=0.0;
   for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
     Multigrid *pmg = *itr;
-    if (nrm == 0)
-      norm=std::max(norm, pmg->CalculateDefectNorm(n, nrm));
+    if (nrm == MGNormType::max)
+      norm=std::max(norm, pmg->CalculateDefectNorm(nrm, n));
     else
-      norm+=pmg->CalculateDefectNorm(n, nrm);
+      norm+=pmg->CalculateDefectNorm(nrm, n);
   }
 #ifdef MPI_PARALLEL
-  if (nrm == 0)
+  if (nrm == MGNormType::max)
     MPI_Allreduce(MPI_IN_PLACE,&norm,1,MPI_ATHENA_REAL,MPI_MAX,MPI_COMM_MULTIGRID);
   else
     MPI_Allreduce(MPI_IN_PLACE,&norm,1,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_MULTIGRID);
 #endif
-  if (nrm == 2)
+  if (nrm == MGNormType::l2)
     norm=std::sqrt(norm);
 
   return norm;

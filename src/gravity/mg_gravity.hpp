@@ -31,6 +31,7 @@ class MGGravity : public Multigrid {
   { btype=BoundaryQuantity::mggrav; btypef=BoundaryQuantity::mggrav_f; };
   void Smooth(int color) final;
   void CalculateDefect() final;
+  void CalculateFASRHS() final;
 
  private:
   static constexpr Real omega_ = 1.15;

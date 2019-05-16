@@ -6,6 +6,14 @@
 //! \file mgbval_zerograd.cpp
 //  \brief 6x zero gradient (outflow) boundary functions for Multigrid
 
+// C headers
+
+// C++ headers
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../defs.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn MGZeroGradientInnerX1(AthenaArray<Real> &dst,Real time, int nvar,

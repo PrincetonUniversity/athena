@@ -9,6 +9,15 @@
 //         Note that these are test implementation and should work only with ngh=1
 
 
+// C headers
+
+// C++ headers
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "../defs.hpp"
+
 //----------------------------------------------------------------------------------------
 //! \fn MGZeroFixedInnerX1(AthenaArray<Real> &dst,Real time, int nvar,
 //                         int is, int ie, int js, int je, int ks, int ke, int ngh,

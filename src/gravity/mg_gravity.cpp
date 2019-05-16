@@ -95,11 +95,10 @@ void MGGravityDriver::Solve(int stage) {
   if (fsubtract_average_)
     mean_rho = last_ave_/four_pi_G_;
 
-  if (mode_ <= 1) {
+  if (mode_ <= 1)
     SolveFMGCycle();
-  } else {
+  else
     SolveIterative();
-  }
 
   // Return the result
   for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
@@ -157,10 +156,36 @@ void MGGravity::CalculateDefect() {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         def(0,k,j,i) = (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
-                        - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2
+                       - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2
                        + src(0,k,j,i);
       }
     }
   }
   return;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGGravity::CalculateFASRHS()
+//  \brief calculate the RHS for the Full Approximation Scheme
+
+void MGGravity::CalculateFASRHS() {
+  AthenaArray<Real> &u = u_[current_level_];
+  AthenaArray<Real> &src = src_[current_level_];
+  int ll = nlevel_-1-current_level_;
+  int is, ie, js, je, ks, ke;
+  is = js = ks = ngh_;
+  ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
+  Real dx = rdx_*static_cast<Real>(1<<ll);
+  Real idx2 = 1.0/SQR(dx);
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        src(0,k,j,i) -= (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
+                        - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2;
+      }
+    }
+  }
+  return;
+}
+

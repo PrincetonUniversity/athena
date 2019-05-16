@@ -32,6 +32,9 @@ class ParameterInput;
 class Coordinates;
 
 
+enum class MGVariable {src, u};
+enum class MGNormType {max, l1, l2};
+
 //! \class Multigrid
 //  \brief gravitational block
 
@@ -56,9 +59,12 @@ class Multigrid {
   void ProlongateAndCorrect();
   void FMGProlongate();
   void SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck);
-  Real CalculateDefectNorm(int n, int nrm);
-  Real CalculateTotal(int type, int n);
-  void SubtractAverage(int type, int n, Real ave);
+  Real CalculateDefectNorm(MGNormType nrm, int n);
+  Real CalculateTotal(MGVariable type, int n);
+  void SubtractAverage(MGVariable type, int n, Real ave);
+  void StoreOldData();
+  Real GetCoarsestData(MGVariable type, int n);
+  void SetData(MGVariable type, int n, int k, int j, int i, Real v);
 
   // small functions
   int GetCurrentNumberOfCells() { return 1<<current_level_; }
@@ -66,11 +72,11 @@ class Multigrid {
   int GetCurrentLevel() { return current_level_; }
   AthenaArray<Real>& GetCurrentData() { return u_[current_level_]; }
   AthenaArray<Real>& GetCurrentSource() { return src_[current_level_]; }
-  Real GetRootSource(int n) { return src_[0](n,ngh_,ngh_,ngh_); }
 
-  // pure virtual functions
+  // physics-dependent virtual functions
   virtual void Smooth(int color) = 0;
   virtual void CalculateDefect() = 0;
+  virtual void CalculateFASRHS() {};
 
   friend class MultigridDriver;
   friend class MultigridTaskList;
@@ -84,7 +90,7 @@ class Multigrid {
   RegionSize size_;
   int gid_, nlevel_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
-  AthenaArray<Real> *u_, *def_, *src_;
+  AthenaArray<Real> *u_, *def_, *src_, *uold_;
 
  private:
   TaskStates ts_;
@@ -98,9 +104,9 @@ class MultigridDriver {
  public:
   MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar);
   virtual ~MultigridDriver();
-  void SubtractAverage(int type);
+  void SubtractAverage(MGVariable type);
   void SetupMultigrid();
-  void FillRootGridSource();
+  void TransferFromBlocksToRoot(bool initflag = false);
   void FMGProlongate();
   void TransferFromRootToBlocks();
   void OneStepToFiner(int nsmooth);
@@ -111,7 +117,7 @@ class MultigridDriver {
   void SolveIterative();
 
   virtual void SolveCoarsestGrid();
-  Real CalculateDefectNorm(int n, int nrm);
+  Real CalculateDefectNorm(MGNormType nrm, int n);
   Multigrid* FindMultigrid(int tgid);
 
   // small functions
@@ -126,26 +132,83 @@ class MultigridDriver {
 
  protected:
   int nranks_, nvar_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
-  int current_level_;
-  int *nslist_, *nblist_, *nvlist_, *nvslist_, *ranklist_;
+  int current_level_, fmglevel_;
+  int *nslist_, *nblist_, *nvlist_, *nvslist_, *nvlisti_, *nvslisti_, *ranklist_;
   int nrbx1_, nrbx2_, nrbx3_;
   MGBoundaryFunc MGBoundaryFunction_[6];
   Mesh *pmy_mesh_;
   std::vector<Multigrid*> vmg_;
   Multigrid *mgroot_;
-  bool fsubtract_average_;
+  bool fsubtract_average_, ffas_;
   Real last_ave_;
   Real eps_;
 
  private:
   MultigridTaskList *mgtlist_;
   Real *rootbuf_;
-  AthenaArray<Real> rootsrc_;
 #ifdef MPI_PARALLEL
   MPI_Comm MPI_COMM_MULTIGRID;
   int mg_phys_id_;
 #endif
 };
 
+// Function Prototypes for Multigrid Boundary
+
+void MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+                       Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+
+void MGZeroGradientInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGZeroGradientOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGZeroGradientInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGZeroGradientOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGZeroGradientInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGZeroGradientOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+
+void MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
 
 #endif // MULTIGRID_MULTIGRID_HPP_

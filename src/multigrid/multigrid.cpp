@@ -11,7 +11,7 @@
 // C++ headers
 #include <algorithm>
 #include <cmath>
-#include <cstring>    // memset
+#include <cstring>    // memset, memcpy
 #include <iostream>
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -114,6 +114,12 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
   u_ = new AthenaArray<Real>[nlevel_];
   src_ = new AthenaArray<Real>[nlevel_];
   def_ = new AthenaArray<Real>[nlevel_];
+  if (pmy_driver_->ffas_) {
+    if (pmy_block_ == nullptr)
+      uold_ = new AthenaArray<Real>[nlevel_];
+    else
+      uold_ = new AthenaArray<Real>[nlevel_-1];
+  }
   for (int l=0; l<nlevel_; l++) {
     int ll=nlevel_-1-l;
     int ncx=(size_.nx1>>ll)+2*ngh_, ncy=(size_.nx2>>ll)+2*ngh_,
@@ -121,6 +127,8 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
     u_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     src_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     def_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
+    if (pmy_driver_->ffas_ && !((pmy_block_ != nullptr) && (l == nlevel_-1)))
+      uold_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
   }
 }
 
@@ -133,6 +141,7 @@ Multigrid::~Multigrid() {
   delete [] u_;
   delete [] src_;
   delete [] def_;
+  if (pmy_driver_->ffas_) delete [] uold_;
   delete pmgbval;
 }
 
@@ -200,8 +209,7 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
 void Multigrid::RestrictFMGSource() {
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
-  current_level_=nlevel_-1;
-  for (; current_level_>0; current_level_--) {
+  for (current_level_=nlevel_-1; current_level_>0; current_level_--) {
     int ll=nlevel_-current_level_;
     ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
     AthenaArray<Real> &csrc=src_[current_level_-1];
@@ -211,9 +219,9 @@ void Multigrid::RestrictFMGSource() {
         for (int j=js, fj=js; j<=je; j++, fj+=2) {
           for (int i=is, fi=is; i<=ie; i++, fi+=2)
             csrc(n, k, j, i)=0.125*(fsrc(n, fk,   fj,   fi)+fsrc(n, fk,   fj,   fi+1)
-                                    +fsrc(n, fk,   fj+1, fi)+fsrc(n, fk,   fj+1, fi+1)
-                                    +fsrc(n, fk+1, fj,   fi)+fsrc(n, fk+1, fj,   fi+1)
-                                    +fsrc(n, fk+1, fj+1, fi)+fsrc(n, fk+1, fj+1, fi+1));
+                                   +fsrc(n, fk,   fj+1, fi)+fsrc(n, fk,   fj+1, fi+1)
+                                   +fsrc(n, fk+1, fj,   fi)+fsrc(n, fk+1, fj,   fi+1)
+                                   +fsrc(n, fk+1, fj+1, fi)+fsrc(n, fk+1, fj+1, fi+1));
         }
       }
     }
@@ -268,14 +276,32 @@ void Multigrid::Restrict() {
       for (int j=js, fj=js; j<=je; j++, fj+=2) {
         for (int i=is, fi=is; i<=ie; i++, fi+=2)
           dst(n, k, j, i)=0.125*(src(n, fk,   fj,   fi)+src(n, fk,   fj,   fi+1)
-                                 +src(n, fk,   fj+1, fi)+src(n, fk,   fj+1, fi+1)
-                                 +src(n, fk+1, fj,   fi)+src(n, fk+1, fj,   fi+1)
-                                 +src(n, fk+1, fj+1, fi)+src(n, fk+1, fj+1, fi+1));
+                                +src(n, fk,   fj+1, fi)+src(n, fk,   fj+1, fi+1)
+                                +src(n, fk+1, fj,   fi)+src(n, fk+1, fj,   fi+1)
+                                +src(n, fk+1, fj+1, fi)+src(n, fk+1, fj+1, fi+1));
       }
     }
   }
+
+  // Full Approximation Scheme - restrict the variable itself
+  if (pmy_driver_->ffas_) {
+    AthenaArray<Real> &cu=u_[current_level_-1];
+    const AthenaArray<Real> &fu=u_[current_level_];
+    for (int n=0; n<nvar_; n++) {
+      for (int k=ks, fk=ks; k<=ke; k++, fk+=2) {
+        for (int j=js, fj=js; j<=je; j++, fj+=2) {
+          for (int i=is, fi=is; i<=ie; i++, fi+=2)
+            cu(n, k, j, i)=0.125*(fu(n, fk,   fj,   fi)+fu(n, fk,   fj,   fi+1)
+                                 +fu(n, fk,   fj+1, fi)+fu(n, fk,   fj+1, fi+1)
+                                 +fu(n, fk+1, fj,   fi)+fu(n, fk+1, fj,   fi+1)
+                                 +fu(n, fk+1, fj+1, fi)+fu(n, fk+1, fj+1, fi+1));
+        }
+      }
+    }
+  }
+
   current_level_--;
-  ZeroClearData();
+  if (!pmy_driver_->ffas_) ZeroClearData();
   return;
 }
 
@@ -290,6 +316,15 @@ void Multigrid::ProlongateAndCorrect() {
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
+
+  if (pmy_driver_->ffas_) {
+    AthenaArray<Real> &u=u_[current_level_];
+    const AthenaArray<Real> &uold=uold_[current_level_];
+    int size = u.GetSize();
+    for (int i=0; i<size; i++)
+      u(i) -= uold(i);
+  }
+
   for (int n=0; n<nvar_; n++) {
     for (int k=ks, fk=ks; k<=ke; k++, fk+=2) {
       for (int j=js, fj=js; j<=je; j++, fj+=2) {
@@ -464,13 +499,11 @@ void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck) 
 }
 
 
-
-
 //----------------------------------------------------------------------------------------
-//! \fn Real Multigrid::CalculateDefectNorm(int n, int nrm)
+//! \fn Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n)
 //  \brief calculate the residual norm
 
-Real Multigrid::CalculateDefectNorm(int n, int nrm) {
+Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
   AthenaArray<Real> &def=def_[current_level_];
   int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
@@ -478,21 +511,21 @@ Real Multigrid::CalculateDefectNorm(int n, int nrm) {
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
 
   Real norm=0.0;
-  if (nrm==0) { // special case: max norm
+  if (nrm == MGNormType::max) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++)
           norm=std::max(norm,std::fabs(def(n,k,j,i)));
       }
     }
-  } else if (nrm==1) {
+  } else if (nrm == MGNormType::l1) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++)
           norm+=std::fabs(def(n,k,j,i));
       }
     }
-  } else { // nrm>1 -> nrm=2
+  } else { // L2 norm
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++)
@@ -505,11 +538,12 @@ Real Multigrid::CalculateDefectNorm(int n, int nrm) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn Real Multigrid::CalculateTotal(int type, int n)
+//! \fn Real Multigrid::CalculateTotal(MGVariable type, int n)
 //  \brief calculate the sum of the array (type: 0=src, 1=u)
 
-Real Multigrid::CalculateTotal(int type, int n) {
-  AthenaArray<Real> &src = (type == 0) ? src_[current_level_] : u_[current_level_];
+Real Multigrid::CalculateTotal(MGVariable type, int n) {
+  AthenaArray<Real> &src =
+                    (type == MGVariable::src) ? src_[current_level_] : u_[current_level_];
   int ll = nlevel_ - 1 - current_level_;
   Real s=0.0;
   int is, ie, js, je, ks, ke;
@@ -528,11 +562,11 @@ Real Multigrid::CalculateTotal(int type, int n) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn Real Multigrid::SubtractAverage(int type, int n, Real ave)
-//  \brief subtract the average value (type: 0=source, 1=u)
+//! \fn Real Multigrid::SubtractAverage(MGVariable type, int n, Real ave)
+//  \brief subtract the average value (type: 0=src, 1=u)
 
-void Multigrid::SubtractAverage(int type, int n, Real ave) {
-  AthenaArray<Real> &dst = (type == 0) ? src_[nlevel_-1] : u_[nlevel_-1];
+void Multigrid::SubtractAverage(MGVariable type, int n, Real ave) {
+  AthenaArray<Real> &dst = (type == MGVariable::src) ? src_[nlevel_-1] : u_[nlevel_-1];
   int is, ie, js, je, ks, ke;
   is=js=ks=0;
   ie=is+size_.nx1+1, je=js+size_.nx2+1, ke=ks+size_.nx3+1;
@@ -542,5 +576,38 @@ void Multigrid::SubtractAverage(int type, int n, Real ave) {
         dst(n,k,j,i)-=ave;
     }
   }
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::StoreOldData()
+//  \brief store the old u data in the uold array
+
+void Multigrid::StoreOldData() {
+  const AthenaArray<Real> &u=u_[current_level_];
+  AthenaArray<Real> &uold=uold_[current_level_];
+  int size = u.GetSizeInBytes();
+  memcpy(uold.data(), u.data(), size);
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn Real Multigrid::GetCoarsestData(MGVariable type, int n)
+//  \brief get the value on the coarsest level in the MG block (type: 0=src, 1=u)
+
+Real Multigrid::GetCoarsestData(MGVariable type, int n) {
+  AthenaArray<Real> &src = (type == MGVariable::src) ? src_[0] : u_[0];
+  return src(n, ngh_, ngh_, ngh_);
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v)
+//  \brief set a value to a cell on the current level
+
+void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v) {
+  AthenaArray<Real> &dst = 
+                    (type == MGVariable::src) ? src_[current_level_] : u_[current_level_];
+  dst(n, ngh_+k, ngh_+j, ngh_+i) = v;
 }
 

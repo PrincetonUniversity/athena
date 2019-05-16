@@ -13,7 +13,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "multigrid.hpp"
+#include "../defs.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn MGPeriodicInnerX1(AthenaArray<Real> &dst,Real time, int nvar,

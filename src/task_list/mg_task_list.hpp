@@ -65,6 +65,8 @@ class MultigridTaskList {
   TaskStatus Restrict(Multigrid *pmg);
   TaskStatus Prolongate(Multigrid *pmg);
   TaskStatus FMGProlongate(Multigrid *pmg);
+  TaskStatus CalculateFASRHS(Multigrid *pmg);
+  TaskStatus StoreOldData(Multigrid *pmg);
 
   void SetMGTaskListToFiner(int nsmooth, int ngh, int flag = 0);
   void SetMGTaskListToCoarser(int nsmooth, int ngh);
@@ -123,6 +125,7 @@ const std::uint64_t MG_PHYSBNDL    = 1ULL<<37;
 const std::uint64_t MG_RESTRICT    = 1ULL<<38;
 const std::uint64_t MG_PROLONG     = 1ULL<<39;
 const std::uint64_t MG_FMGPROLONG  = 1ULL<<40;
+const std::uint64_t MG_CALCFASRHS  = 1ULL<<41;
 } // namespace MultigridTaskNames
 
 #endif // TASK_LIST_MG_TASK_LIST_HPP_
