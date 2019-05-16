@@ -16,16 +16,16 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 _tests = [[1e-07, 0.00, 0.150, 1.25e-8, 0., 0.062, .25],
           [4e-06, 0.00, 0.120, 4e-08, 0.00, 0.019, 0.3],
           [8e-07, 1.10, 0.006, 4e-07, -1.7, 0.006, 1.5],
+          [5e-07, 1.50, 0.006, 4e-07, -1.8, 0.006, 1.5],
           [8e-05, -0.8, 0.095, 8e-05, 0.80, 0.095, .25],
-          [5e-09, 1.50, 0.006, 4e-09, -1.8, 0.006, 1.5],
-          [8e-05, -0.5, 0.095, 8e-05, 0.90, 0.095, .25]
+          [6e-05, -0.5, 0.095, 8e-05, 0.90, 0.095, .25]
           ]
 _thresh = [[5.1e-10, 6.5e-11, 0.0039],
            [8.0e-09, 1.4e-09, 0.0069],
            [2.0e-07, 2.0e-08, 0.027],
+           [3.6e-07, 6.6e-08, 0.08],
            [5.7e-07, 5.7e-08, 0.0091],
-           [4.4e-09, 6.8e-10, 0.077],
-           [5.1e-07, 4.7e-08, 0.0062]
+           [4.4e-07, 4.1e-08, 0.0062]
            ]
 tmp = ['dl', 'ul', 'Tl', 'dr', 'ur', 'Tr']
 _states = [dict(zip(tmp, i[:-1])) for i in _tests]
@@ -65,12 +65,12 @@ def analyze():
             if var == 'vel':
                 data = data_ref[var][0, 0, :, 0]
             diff = comparison.l1_norm(x_ref, data - exact[var])
-            msg = ['EOS Riemann', 'fail:', 'Test#, var, diff, thresh =', n, var, diff,
-                   _thresh[n][var]]
+            msg = 'Test#, var, diff, thresh = ' + '{:d}, {:>5}' + ', {:.03e}' * 2
+            msg = ['EOS Riemann', 'FAIL:', msg.format(n + 1, var, diff, _thresh[n][var])]
             if diff > _thresh[n][var]:
-                logger.warning(' '.join(map(str, msg)))
+                logger.warning(' '.join(msg))
                 analyze_status = False
             else:
                 msg[1] = 'pass:'
-                logger.debug(' '.join(map(str, msg)))
+                logger.debug(' '.join(msg))
     return analyze_status
