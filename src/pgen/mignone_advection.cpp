@@ -35,14 +35,21 @@ namespace {
 constexpr int N_gl = 12;
 constexpr Real d0 = 1.0;
 constexpr bool use_gl_quadrature = true;
+Real (*IntegrandInitial)(Real x1);
+Real (*IntegrandFinal)(Real x1);
 Real a_width, b_center, alpha;
 Real iso_cs;
 int m_coord;
 Real t_final;
+
 // pointwise analytic initial condition for Gaussian bell curve
 Real InitialGaussianProfile(Real x1);
 // pointwise analytic exact solution at any t >=0 for a linear x1 velocity profile
 Real FinalGaussianProfile(Real x1);
+Real CylindricalIntegrandInitial(Real x1);
+Real CylindricalIntegrandFinal(Real x1);
+Real SphericalIntegrandInitial(Real x1);
+Real SphericalIntegrandFinal(Real x1);
 } // namespace
 
 //========================================================================================
@@ -60,10 +67,16 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     m_coord = 0;
+    IntegrandInitial = &InitialGaussianProfile;
+    IntegrandFinal = &FinalGaussianProfile;
   } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     m_coord = 1;
+    IntegrandInitial = &CylindricalIntegrandInitial;
+    IntegrandFinal = &CylindricalIntegrandFinal;
   } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
     m_coord = 2;
+    IntegrandInitial = &SphericalIntegrandInitial;
+    IntegrandFinal = &SphericalIntegrandFinal;
   }
   // Restrict to: 1) no-MHD 2) isothermal EOS only 3) hydro/active=background
   // TODO(felker): add explicit user-safety checks for these conditions
@@ -83,8 +96,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     // dynamically-sized arrays)
     Real l1_err[(NSCALARS > 0 ? NSCALARS : 1)]{},
         max_err[(NSCALARS > 0 ? NSCALARS : 1)]{};
-
+    Real total_vol = 0.0;
     MeshBlock *pmb = pblock;
+    AthenaArray<Real> vol(pmb->ncells1);
     // recalculate initial condition from ProblemGenerator on final Mesh configuration:
     // (may have changed due to AMR)
     while (pmb != nullptr) {
@@ -96,6 +110,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       for (int n=0; n<NSCALARS; ++n) {
         for (int k=kl; k<=ku; k++) {
           for (int j=jl; j<=ju; j++) {
+            pmb->pcoord->CellVolume(k, j, il, iu, vol);
             for (int i=il; i<=iu; i++) {
               Real cell_ave;
               if (use_gl_quadrature) {
@@ -104,20 +119,26 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
                 xu = pmb->pcoord->x1f(i+1);
 
                 // GL implementation returns total integral, not ave. Divide by delta_r
-                Real cell_quad = GaussLegendre::integrate(N_gl, FinalGaussianProfile,
+                Real cell_quad = GaussLegendre::integrate(N_gl,
+                                                          IntegrandFinal,
                                                           xl, xu);
-                cell_ave = cell_quad/pmb->pcoord->dx1f(i);
+                cell_ave = cell_quad/vol(i);
+                // assuming that the Gaussian profile is 1D in radial coordinate to pull
+                // out constant sin(theta) from the triple volume integral
+                if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
+                  cell_ave *= std::sin(pmb->pcoord->x2v(j));
+                }
               } else {
                 // Use standard midpoint approximation with cell-centered coords:
                 cell_ave = FinalGaussianProfile(pmb->pcoord->x1v(i));
               }
 
               Real sol = 1.0/scalar_norm*cell_ave;
-              l1_err[n] += std::fabs(sol - pmb->pscalars->s(n,k,j,i))
-                           *pmb->pcoord->dx1f(i);
+              l1_err[n] += std::fabs(sol - pmb->pscalars->s(n,k,j,i))*vol(i);
               max_err[n] = std::max(
                   static_cast<Real>(std::fabs(sol - pmb->pscalars->s(n,k,j,i))),
                   max_err[n]);
+              total_vol += vol(i);
             }
           }
         }
@@ -128,10 +149,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     if (Globals::my_rank == 0) {
       MPI_Reduce(MPI_IN_PLACE, &l1_err, NSCALARS, MPI_ATHENA_REAL, MPI_SUM, 0,
                  MPI_COMM_WORLD);
+      MPI_Reduce(MPI_IN_PLACE, &total_vol, 1, MPI_ATHENA_REAL, MPI_SUM, 0,
+                 MPI_COMM_WORLD);
       MPI_Reduce(MPI_IN_PLACE, &max_err, NSCALARS, MPI_ATHENA_REAL, MPI_MAX, 0,
                  MPI_COMM_WORLD);
     } else {
       MPI_Reduce(&l1_err, &l1_err, NSCALARS, MPI_ATHENA_REAL, MPI_SUM, 0,
+                 MPI_COMM_WORLD);
+      MPI_Reduce(&total_vol, &total_vol, 1, MPI_ATHENA_REAL, MPI_SUM, 0,
                  MPI_COMM_WORLD);
       MPI_Reduce(&max_err, &max_err, NSCALARS, MPI_ATHENA_REAL, MPI_MAX, 0,
                  MPI_COMM_WORLD);
@@ -140,10 +165,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
     // only the root process outputs the data
     if (Globals::my_rank == 0) {
-      // normalize errors by number of cells
-      Real vol= (mesh_size.x1max - mesh_size.x1min)*(mesh_size.x2max - mesh_size.x2min)
-                *(mesh_size.x3max - mesh_size.x3min);
-      for (int i=0; i<NSCALARS; ++i) l1_err[i] = l1_err[i]/vol;
+      // normalize errors by total domain volume
+      for (int i=0; i<NSCALARS; ++i) l1_err[i] = l1_err[i]/total_vol;
       // open output file and write out errors
       std::string fname;
       fname.assign("mignone_radial-errors.dat");
@@ -193,9 +216,11 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
+  AthenaArray<Real> vol(ncells1);
   // initialize conserved variables
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
+      pcoord->CellVolume(k, j, is, ie, vol);
       for (int i=is; i<=ie; i++) {
         //--- iprob=1
         //if (iprob == 1) {
@@ -217,8 +242,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           xu = pcoord->x1f(i+1);
 
           // GL implementation returns total integral, not average. Divide by delta_r
-          Real cell_quad = GaussLegendre::integrate(N_gl, InitialGaussianProfile, xl, xu);
-          cell_ave = cell_quad/pcoord->dx1f(i);
+          Real cell_quad = GaussLegendre::integrate(N_gl,
+                                                    IntegrandInitial,
+                                                    xl, xu);
+          cell_ave = cell_quad/vol(i);
+          // assuming that the Gaussian profile is 1D in radial coordinate to pull
+          // out constant sin(theta) from the triple volume integral
+          if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
+            cell_ave *= std::sin(pcoord->x2v(j));
+          }
         } else {
           // Use standard midpoint approximation with cell centered coords:
           cell_ave = InitialGaussianProfile(pcoord->x1v(i));
@@ -241,11 +273,33 @@ namespace {
 Real InitialGaussianProfile(Real x1) {
   return std::exp(-SQR(a_width)*SQR(x1 - b_center));  // Mignone eq 73
 }
+
+
 Real FinalGaussianProfile(Real x1) {
   // hardcoding t=t_final to maintain compatiblity with GL quadrature routines
   Real x_initial = x1*std::exp(-alpha*t_final);
   Real q_initial = InitialGaussianProfile(x_initial);
   Real amp = std::exp(-(m_coord + 1)*alpha*t_final);
   return amp*q_initial;  // Mignone eq 72
+}
+
+
+Real CylindricalIntegrandInitial(Real x1) {
+  return x1*InitialGaussianProfile(x1);
+}
+
+
+Real CylindricalIntegrandFinal(Real x1) {
+  return x1*FinalGaussianProfile(x1);
+}
+
+
+Real SphericalIntegrandInitial(Real x1) {
+  return SQR(x1)*InitialGaussianProfile(x1);
+}
+
+
+Real SphericalIntegrandFinal(Real x1) {
+  return SQR(x1)*FinalGaussianProfile(x1);
 }
 } // namespace
