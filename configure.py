@@ -45,7 +45,7 @@ import glob
 import re
 
 # MSBC # TODO: remove flux tests "_ftest"
-_ftest = ['hlld_roe']
+_ftest = ['hlld_roe', 'hllc_pvrs']
 
 # Set template and output filenames
 makefile_input = 'Makefile.in'
