@@ -30,7 +30,7 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 
-// 2x members of Mesh class:
+// 3x members of Mesh class:
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -40,6 +40,16 @@
 //========================================================================================
 
 void __attribute__((weak)) Mesh::InitUserMeshData(ParameterInput *pin) {
+  // do nothing
+  return;
+}
+
+//========================================================================================
+//! \fn void Mesh::UserWorkInLoop()
+//  \brief Function called once every time step for user-defined work.
+//========================================================================================
+
+void __attribute__((weak)) Mesh::UserWorkInLoop() {
   // do nothing
   return;
 }

@@ -176,6 +176,36 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     ATHENA_ERROR(msg);
   }
 
+  // check the consistency of the periodic boundaries
+  if ( ((mesh_bcs[BoundaryFace::inner_x1] == BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x1] != BoundaryFlag::periodic)
+    ||  (mesh_bcs[BoundaryFace::inner_x1] != BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x1] == BoundaryFlag::periodic))
+    ||  (mesh_size.nx2 > 1
+    && ((mesh_bcs[BoundaryFace::inner_x2] == BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x2] != BoundaryFlag::periodic)
+    ||  (mesh_bcs[BoundaryFace::inner_x2] != BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x2] == BoundaryFlag::periodic)))
+    ||  (mesh_size.nx3 > 1
+    && ((mesh_bcs[BoundaryFace::inner_x3] == BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x3] != BoundaryFlag::periodic)
+    ||  (mesh_bcs[BoundaryFace::inner_x3] != BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x3] == BoundaryFlag::periodic)))) {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "When periodic boundaries are in use, both sides must be periodic."
+        << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  if ( ((mesh_bcs[BoundaryFace::inner_x1] == BoundaryFlag::shear_periodic
+    &&   mesh_bcs[BoundaryFace::outer_x1] != BoundaryFlag::shear_periodic)
+    ||  (mesh_bcs[BoundaryFace::inner_x1] != BoundaryFlag::shear_periodic
+    &&   mesh_bcs[BoundaryFace::outer_x1] == BoundaryFlag::shear_periodic))) {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "When shear_periodic boundaries are in use, "
+        << "both sides must be shear_periodic." << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
   // read and set MeshBlock parameters
   block_size.x1rat = mesh_size.x1rat;
   block_size.x2rat = mesh_size.x2rat;
@@ -454,12 +484,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     return;
   }
 
-  // set gravity flag
-  if (SELF_GRAVITY_ENABLED) gflag = 1;
 
-  if (SELF_GRAVITY_ENABLED == 2) // MGDriver must be initialzied before MeshBlocks
+  if (SELF_GRAVITY_ENABLED == 1) {
+    gflag = 1; // set gravity flag
+    pfgrd = new FFTGravityDriver(this, pin);
+  } else if (SELF_GRAVITY_ENABLED == 2) {
+    // MGDriver must be initialzied before MeshBlocks
     pmgrd = new MGGravityDriver(this, pin);
-
+  }
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
   //    gflag = 2;
 
@@ -486,10 +518,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 
   ResetLoadBalanceVariables();
 
-  if (SELF_GRAVITY_ENABLED == 1)
-    pfgrd = new FFTGravityDriver(this, pin);
-
-  if (turb_flag > 0)
+  if (turb_flag > 0) // TurbulenceDriver depends on the MeshBlock ctor
     ptrbd = new TurbulenceDriver(this, pin);
 }
 
@@ -779,17 +808,20 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     return;
   }
 
-  // set gravity flag
-  if (SELF_GRAVITY_ENABLED) gflag = 1;
-  if (SELF_GRAVITY_ENABLED == 2)
+  if (SELF_GRAVITY_ENABLED == 1) {
+    gflag = 1; // set gravity flag
+    pfgrd = new FFTGravityDriver(this, pin);
+  } else if (SELF_GRAVITY_ENABLED == 2) {
+    // MGDriver must be initialzied before MeshBlocks
     pmgrd = new MGGravityDriver(this, pin);
+  }
   //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
   //    gflag=2;
 
   // allocate data buffer
   int nb = nblist[Globals::my_rank];
   int nbs = nslist[Globals::my_rank];
-  int nbe = nbs+nb-1;
+  int nbe = nbs + nb - 1;
   char *mbdata = new char[datasize*nb];
   // load MeshBlocks (parallel)
   if (resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize) !=
@@ -831,10 +863,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   // clean up
   delete [] offset;
 
-  if (SELF_GRAVITY_ENABLED == 1)
-    pfgrd = new FFTGravityDriver(this, pin);
-
-  if (turb_flag > 0)
+  if (turb_flag > 0) // TurbulenceDriver depends on the MeshBlock ctor
     ptrbd = new TurbulenceDriver(this, pin);
 }
 
