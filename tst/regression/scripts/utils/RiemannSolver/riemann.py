@@ -6,6 +6,8 @@ from scripts.utils.EquationOfState.eos import parse_eos
 from . import brent_opt, ode_opt
 
 
+vector_state_names = ['rho', 'p', 'u']
+
 def sanitize_lbl(label):
     """sanitize_lbl(label): Makes labels latex friendly."""
     import re
@@ -50,7 +52,7 @@ class StateVector(object):
         if (not ignore_u) and self.u is None:
             raise ValueError('Speed must be specified.')
         var = ['p', 'ei', 'T']  # need at least one of these to continue
-        tmp = {i: getattr(self, i) for i in var if getattr(self, i) is not None}
+        tmp = {i: getattr(self, i) for i in var if hasattr(self, i)}
         if not tmp:
             raise ValueError('Insufficient information to complete state.')
         need = [i for i in var if i not in tmp]  # parameters we need to compute
@@ -308,6 +310,32 @@ class RiemannSol(object):
         tmp['left'] = self.lmid
         tmp['right'] = self.rmid
         self.waves[1].update(tmp)
+
+    def speeds(self):
+        return sum([list(w['speed']) for w in self.waves], start=[])
+
+    def vector_get_state(self, xi):
+        """Return the state for a specified sorted vector of characteristic (xi=x/t)."""
+        xi = np.atleast_1d(xi)
+        names = vector_state_names
+        data = np.ones((len(names),) + xi.shape) * np.nan
+
+        indicies = np.searchsorted(xi, self.speeds())
+        for i, name in enumerate(names):
+            data[i, :indicies[0]] = self.left[name]
+            data[i, indicies[1]:indicies[2]] = self.lmid[name]
+            data[i, indicies[3]:indicies[4]] = self.rmid[name]
+            data[i, indicies[5]:] = self.right[name]
+        for j in range(indicies[0], indicies[1]):
+            state = self._rare_int_left.characteristic(xi[j])
+            for i, name in enumerate(names):
+                data[i, j] = state[name]
+        for j in range(indicies[4], indicies[5]):
+            state = self._rare_int_right.characteristic(xi[j])
+            for i, name in enumerate(names):
+                data[i, j] = state[name]
+
+        return data
 
     def get_state(self, xi):
         """Return the state for a specified characteristic (xi=x/t)."""

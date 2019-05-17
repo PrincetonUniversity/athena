@@ -181,6 +181,10 @@ class Ideal(EOS):
         """Pressure as a function of density (rho) and specific internal energy (es)"""
         return rho * es * self._gm1
 
+    def p_of_rho_T(self, rho, T):
+        """Pressure as a function of density (rho) and temperature (T)"""
+        return rho * T * self.R
+
 
 class TestIdeal(Ideal):
     """Class to test if Riemann solver gives same answer as Ideal."""
