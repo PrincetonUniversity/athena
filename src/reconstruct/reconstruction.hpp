@@ -28,14 +28,14 @@ class Reconstruction {
   Reconstruction(MeshBlock *pmb, ParameterInput *pin);
 
   // data
-  // TODO(felker): these scalars could be made const members of the class via init. list
   // order and type of reconstruction algorithm
-  int xorder;   // order of hydro reconstruction
-  bool characteristic_reconstruction;  // TRUE for characteristic recon
-  bool uniform_limiter[3]; // TRUE to use the PLM or PPM limiter option w/o coord terms
+  int xorder;   // roughly the formal order of accuracy of hydro reconstruction method
+  bool characteristic_reconstruction;  // reconstruct on characteristic or primitive vars
+  bool uniform_limiter[3]; // true ---> use the PLM or PPM limiter option w/o coord terms
   // fourth-order solver switches
-  bool correct_ic, correct_err; // used in Mesh::Initialize() and ProblemGenerator()
+  const bool correct_ic, correct_err; // used in Mesh::Initialize() and ProblemGenerator()
 
+  // x1-sliced arrays of interpolation coefficients and limiter parameters:
   AthenaArray<Real> c1i, c2i, c3i, c4i, c5i, c6i;  // coefficients for PPM in x1
   AthenaArray<Real> hplus_ratio_i, hminus_ratio_i; // for curvilinear PPMx1
   AthenaArray<Real> c1j, c2j, c3j, c4j, c5j, c6j;  // coefficients for PPM in x2

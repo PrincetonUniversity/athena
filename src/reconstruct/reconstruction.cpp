@@ -9,6 +9,7 @@
 // C headers
 
 // C++ headers
+#include <cmath>      // abs()
 #include <cstring>    // strcmp()
 #include <iomanip>
 #include <limits>
@@ -26,17 +27,15 @@
 
 // constructor
 
-Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block_ = pmb;
-  // read and set type of spatial reconstruction
-  characteristic_reconstruction = false;
-  uniform_limiter[X1DIR] = true;
-  uniform_limiter[X2DIR] = true;
-  uniform_limiter[X3DIR] = true;
-  std::string input_recon = pin->GetOrAddString("time","xorder","2");
-  // read fourth-order solver switches
-  correct_ic = pin->GetOrAddBoolean("time", "correct_ic", false);
-  correct_err = pin->GetOrAddBoolean("time", "correct_err", false);
+Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
+    characteristic_reconstruction{false}, uniform_limiter{true, true, true},
+    // read fourth-order solver switches
+    correct_ic{pin->GetOrAddBoolean("time", "correct_ic", false)},
+    correct_err{pin->GetOrAddBoolean("time", "correct_err", false)}, pmy_block_{pmb}
+{
+  // Read and set type of spatial reconstruction
+  // --------------------------------
+  std::string input_recon = pin->GetOrAddString("time", "xorder", "2");
 
   if (input_recon == "1") {
     xorder = 1;
@@ -63,6 +62,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         << "xorder=" << input_recon << " not valid choice for reconstruction"<< std::endl;
     ATHENA_ERROR(msg);
   }
+  // Check for incompatible choices with broader solver configuration
+  // --------------------------------
   if (GENERAL_EOS && characteristic_reconstruction) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
@@ -85,7 +86,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
     }
   }
 
-  // Perform checks of fourth-order solver configuration restrictions:
+  // perform checks of fourth-order solver configuration restrictions:
   if (xorder == 4) {
     // Uniform, Cartesian mesh with square cells (dx1f=dx2f=dx3f)
     if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
@@ -131,7 +132,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
             << "Change mesh limits and/or number of cells for equal spacings" << std::endl
             << "Current values are:" << std::endl
             << std::scientific
-            << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
+            << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1)
             << "dx1f=" << dx_i << std::endl
             << "dx2f=" << dx_j << std::endl
             << "dx3f=" << dx_k << std::endl;
@@ -249,9 +250,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         c5i(i) = 1.0/6.0;
         c6i(i) = -1.0/6.0;
       }
-
       // coeffcients in x1 for non-uniform or cuvilinear mesh
-      // (unnecessary work in case of uniform curvilinear mesh)
     } else {
 #pragma omp simd
       for (int i=(pmb->is)-NGHOST+1; i<=(pmb->ie)+NGHOST-1; ++i) {
@@ -274,13 +273,20 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           c6i(i) = -dx_im1/qa*qc;
         }
       }
+
       // Compute curvilinear geometric factors for limiter (Mignone eq 48)
+      // radial direction in cylindrical and spherical-polar coordinates
       for (int i=(pmb->is)-1; i<=(pmb->ie)+1; ++i) {
         if ((std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) ||
             (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)) {
           Real h_plus, h_minus;
           Real& dx_i   = pmb->pcoord->dx1f(i);
           Real& xv_i   = pmb->pcoord->x1v(i);
+
+          // radius may beomce negative in the lower x1 ghost cells:
+          xv_i = 0.5*(pmb->pcoord->x1f(i+1) + pmb->pcoord->x1f(i));
+          xv_i = std::abs(xv_i);
+
           if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
             // cylindrical radial coordinate
             h_plus = 3.0 + dx_i/(2.0*xv_i);
@@ -295,7 +301,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         } else { // Cartesian, SR, GR
           // h_plus = 3.0;
           // h_minus = 3.0;
-          // Ratios are = 2 for Cartesian coords, as in original PPM overshoot limiter
+          // Ratios are = 2 for Cartesian coords, as in the original PPM limiter's
+          // overshoot conditions
           hplus_ratio_i(i) = 2.0;
           hminus_ratio_i(i) = 2.0;
         }
@@ -327,7 +334,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         }
 
         // coeffcients in x2 for non-uniform or cuvilinear mesh
-        // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma omp simd
         for (int j=(pmb->js)-NGHOST+2; j<=(pmb->je)+NGHOST-1; ++j) {
@@ -352,11 +358,15 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           }
         }
         // Compute curvilinear geometric factors for limiter (Mignone eq 48)
+        // meridional direction in spherical-polar coordinates
         for (int j=(pmb->js)-1; j<=(pmb->je)+1; ++j) {
           // corrections to PPMx2 only for spherical polar coordinates
           if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
             // x2 = theta polar coordinate adjustment
             Real h_plus, h_minus;
+            // note: x2 may become negative at lower boundary ghost cells and may exceedc
+            // pi at upper boundary ghost cells
+            // TODO(felker): may need to take abs() or change signs of terms in ghost zone
             Real& dx_j   = pmb->pcoord->dx2f(j);
             Real& xf_j   = pmb->pcoord->x2f(j);
             Real& xf_jp1   = pmb->pcoord->x2f(j+1);
@@ -371,7 +381,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
           } else {
             // h_plus = 3.0;
             // h_minus = 3.0;
-            // Ratios are both = 2, as in orig PPM overshoot limiter
+            // Ratios are = 2 for Cartesian coords, as in the original PPM limiter's
+            // overshoot conditions
             hplus_ratio_j(j) = 2.0;
             hminus_ratio_j(j) = 2.0;
           }
@@ -404,7 +415,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) {
         }
 
         // coeffcients in x3 for non-uniform or cuvilinear mesh
-        // (unnecessary work in case of uniform curvilinear mesh)
       } else {
 #pragma omp simd
         for (int k=(pmb->ks)-NGHOST+2; k<=(pmb->ke)+NGHOST-1; ++k) {
