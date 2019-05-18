@@ -124,9 +124,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
                                                           xl, xu);
                 cell_ave = cell_quad/vol(i);
                 // assuming that the Gaussian profile is 1D in radial coordinate to pull
-                // out constant sin(theta) from the triple volume integral
-                if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
-                  cell_ave *= std::sin(pmb->pcoord->x2v(j));
+                // out 2x integrals from the triple volume integral
+                if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0 ||    // dy*dz
+                    std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {  // dz*dphi
+                  cell_ave *= pmb->pcoord->dx2f(j);
+                  cell_ave *= pmb->pcoord->dx3f(k);
+                } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
+                  // sin(theta)*dtheta*dphi
+                  cell_ave *= std::cos(pmb->pcoord->x2f(j)) -
+                              std::cos(pmb->pcoord->x2f(j+1));
+                  cell_ave *= pmb->pcoord->dx3f(k);
                 }
               } else {
                 // Use standard midpoint approximation with cell-centered coords:
@@ -134,9 +141,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
               }
 
               Real sol = 1.0/scalar_norm*cell_ave;
-              l1_err[n] += std::fabs(sol - pmb->pscalars->s(n,k,j,i))*vol(i);
+              l1_err[n] += std::abs(sol - pmb->pscalars->s(n,k,j,i))*vol(i);
               max_err[n] = std::max(
-                  static_cast<Real>(std::fabs(sol - pmb->pscalars->s(n,k,j,i))),
+                  static_cast<Real>(std::abs(sol - pmb->pscalars->s(n,k,j,i))),
                   max_err[n]);
               total_vol += vol(i);
             }
@@ -247,9 +254,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                                                     xl, xu);
           cell_ave = cell_quad/vol(i);
           // assuming that the Gaussian profile is 1D in radial coordinate to pull
-          // out constant sin(theta) from the triple volume integral
-          if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
-            cell_ave *= std::sin(pcoord->x2v(j));
+          // out 2x integrals from the triple volume integral
+          if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0 ||    // dy*dz
+              std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {  // dz*dphi
+            cell_ave *= pcoord->dx2f(j);
+            cell_ave *= pcoord->dx3f(k);
+          } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
+            // sin(theta)*dtheta*dphi
+            cell_ave *= std::cos(pcoord->x2f(j)) - std::cos(pcoord->x2f(j+1));
+            cell_ave *= pcoord->dx3f(k);
           }
         } else {
           // Use standard midpoint approximation with cell centered coords:
