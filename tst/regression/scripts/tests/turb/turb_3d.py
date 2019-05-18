@@ -62,6 +62,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     # read data from error file
     filenames = ['bin/turb_serial.hst',
                  'bin/turb_mpi1.hst',

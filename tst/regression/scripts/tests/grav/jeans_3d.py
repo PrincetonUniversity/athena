@@ -87,6 +87,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     # read data from error file
     filename = 'bin/jeans-errors.dat'
     data = athena_read.error_dat(filename)
