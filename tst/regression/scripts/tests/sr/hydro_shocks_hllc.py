@@ -58,5 +58,5 @@ def analyze():
             eps = comparison.l1_diff(x_ref, array_ref, x_new, array_new)
             eps /= comparison.l1_norm(x_ref, array_ref)
             if eps > tol or np.isnan(eps):
-                return False
-    return True
+                analyze_status = False
+    return analyze_status

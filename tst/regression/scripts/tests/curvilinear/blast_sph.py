@@ -36,6 +36,6 @@ def analyze():
     if data[0][3] > 1.0:
         logger.warning("Distortion of blast wave in spherical coords too large %g",
                        data[0][3])
-        return False
+        analyze_status = False
 
-    return True
+    return analyze_status

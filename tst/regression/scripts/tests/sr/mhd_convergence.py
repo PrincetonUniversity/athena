@@ -102,10 +102,10 @@ def analyze():
 
         # Test fails if convergence is not at least that specified by cutoff
         if epsilon_high / epsilon_low > (float(res_low) / float(res_high))**cutoff:
-            return False
+            analyze_status = False
 
     # All waves must have converged
-    return True
+    return analyze_status
 
 
 # MHD wavespeed calculator
