@@ -45,6 +45,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     headers_ref = [('dens',), ('Etot',), ('mom', 0), ('mom', 1), ('mom', 2), ('cc-B', 0),
                    ('cc-B', 1), ('cc-B', 2)]
     headers_new = [('dens',), ('Etot',), ('mom', 0), ('mom', 1), ('mom', 2), ('Bcc', 0),

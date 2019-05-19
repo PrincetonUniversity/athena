@@ -40,6 +40,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     headers = [('dens',), ('Etot',), ('mom', 0)]
     tols = [[0.02, 0.01, 0.01], [0.01, 0.01, 0.02], [0.01, 0.01, 0.02], [0.5, 0.01, 0.02]]
     for i in range(1, 5):

@@ -64,7 +64,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
-
+    analyze_status = True
     # Specify tab file columns
     columns = (1, 2, 3, 4, 5, 6, 7, 8)
 
@@ -104,7 +104,7 @@ def analyze():
         if epsilon_high / epsilon_low > (float(res_low) / float(res_high))**cutoff:
             analyze_status = False
 
-    # All waves must have converged
+    # True --> all waves must have converged
     return analyze_status
 
 
