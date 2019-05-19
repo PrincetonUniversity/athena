@@ -28,11 +28,14 @@ class Reconstruction {
   Reconstruction(MeshBlock *pmb, ParameterInput *pin);
 
   // data
-  // order and type of reconstruction algorithm
-  int xorder;   // roughly the formal order of accuracy of hydro reconstruction method
-  bool characteristic_reconstruction;  // reconstruct on characteristic or primitive vars
-  bool uniform_limiter[3]; // true ---> use the PLM or PPM limiter option w/o coord terms
-  // fourth-order solver switches
+  // switches for reconstruction method variants:
+  int xorder;   // roughly the formal order of accuracy of overall reconstruction method
+  bool characteristic_projection; // reconstruct on characteristic or primitive hydro vars
+  bool uniform[3], curvilinear[2];
+  // (Cartesian reconstruction formulas are used for x3 azimuthal coordinate in both
+  // cylindrical and spherical-polar coordinates)
+
+  // related fourth-order solver switches
   const bool correct_ic, correct_err; // used in Mesh::Initialize() and ProblemGenerator()
 
   // x1-sliced arrays of interpolation coefficients and limiter parameters:
