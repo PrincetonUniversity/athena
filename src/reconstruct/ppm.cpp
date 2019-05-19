@@ -98,7 +98,7 @@ void Reconstruction::PiecewiseParabolicX1(
 
   // Project cell-averages to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVX,IVY,IVZ)
-  if (characteristic_reconstruction) {
+  if (characteristic_projection) {
     LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q_im2);
     LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q_im1);
     LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q);
@@ -128,7 +128,7 @@ void Reconstruction::PiecewiseParabolicX1(
 
     //--- Step 2a. -----------------------------------------------------------------------
     // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
-    if (uniform_limiter[X1DIR]) {
+    if (uniform[X1DIR]) {
       // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu+1; ++i) {
@@ -214,7 +214,7 @@ void Reconstruction::PiecewiseParabolicX1(
 
     //--- Step 4a. -----------------------------------------------------------------------
     // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
-    if (uniform_limiter[X1DIR]) {
+    if (uniform[X1DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
@@ -301,7 +301,7 @@ void Reconstruction::PiecewiseParabolicX1(
   } // end char PPM loop over NWAVE
 
   // Project limited slope back to primitive variables, if necessary
-  if (characteristic_reconstruction) {
+  if (characteristic_projection) {
     RightEigenmatrixDotVector(IVX,il,iu,bx,wc,ql_iph);
     RightEigenmatrixDotVector(IVX,il,iu,bx,wc,qr_imh);
   }
@@ -386,7 +386,7 @@ void Reconstruction::PiecewiseParabolicX2(
 
   // Project cell-averages to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVY,IVZ,IVX)
-  if (characteristic_reconstruction) {
+  if (characteristic_projection) {
     LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q_jm2);
     LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q_jm1);
     LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q);
@@ -416,7 +416,7 @@ void Reconstruction::PiecewiseParabolicX2(
 
     //--- Step 2a. ---------------------------------------------------------------------
     // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
-    if (uniform_limiter[X2DIR]) {
+    if (uniform[X2DIR]) {
       // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -501,7 +501,7 @@ void Reconstruction::PiecewiseParabolicX2(
 
     //--- Step 4a. ---------------------------------------------------------------------
     // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
-    if (uniform_limiter[X2DIR]) {
+    if (uniform[X2DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
@@ -587,7 +587,7 @@ void Reconstruction::PiecewiseParabolicX2(
   } // end char PPM loop over NWAVE
 
   // Project limited slope back to primitive variables, if necessary
-  if (characteristic_reconstruction) {
+  if (characteristic_projection) {
     RightEigenmatrixDotVector(IVY,il,iu,bx,wc,ql_jph);
     RightEigenmatrixDotVector(IVY,il,iu,bx,wc,qr_jmh);
   }
@@ -670,7 +670,7 @@ void Reconstruction::PiecewiseParabolicX3(
 
   // Project cell-averages to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVZ,IVX,IVY)
-  if (characteristic_reconstruction) {
+  if (characteristic_projection) {
     LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q_km2);
     LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q_km1);
     LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q);
@@ -700,7 +700,7 @@ void Reconstruction::PiecewiseParabolicX3(
 
     //--- Step 2a. -----------------------------------------------------------------------
     // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
-    if (uniform_limiter[X3DIR]) {
+    if (uniform[X3DIR]) {
       // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -784,7 +784,7 @@ void Reconstruction::PiecewiseParabolicX3(
 
     //--- Step 4a. -----------------------------------------------------------------------
     // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
-    if (uniform_limiter[X3DIR]) {
+    if (uniform[X3DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
@@ -872,7 +872,7 @@ void Reconstruction::PiecewiseParabolicX3(
   } // end char PPM loop over NWAVE
 
   // Project limited slope back to primitive variables, if necessary
-  if (characteristic_reconstruction) {
+  if (characteristic_projection) {
     RightEigenmatrixDotVector(IVZ,il,iu,bx,wc,ql_kph);
     RightEigenmatrixDotVector(IVZ,il,iu,bx,wc,qr_kmh);
   }
