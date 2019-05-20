@@ -31,32 +31,32 @@ mignone_tbl1 = {
     'cylindrical': {
         'A': {
             # PLM monotonized central (MC) limiter:
-            2: [3.36e-4, 1.02e-4, 2.07e-5, 4.61e-6, 1.08e-6, 2.63e-7, 6.48e-8],
-            # PLM van Leer (VL) limiter (unpublished--- from Athena++):
-            # 2: [],
+            # 2: [3.36e-4, 1.02e-4, 2.07e-5, 4.61e-6, 1.08e-6, 2.63e-7, 6.48e-8],
+            # PLM van Leer (VL) limiter (unpublished--- from Athena++ 79bc2b8751):
+            2: [2.18e-4, 5.93e-5, 1.54e-5, 3.97e-6, 1.01e-6, 2.54e-7, 6.36e-8],
             3: [1.41e-4, 1.42e-5, 1.13e-6, 7.18e-8, 4.50e-9, 2.83e-10, 1.77e-11],
         },
         'B': {
             # PLM MC
-            2: [1.48e-2, 5.93e-3, 2.15e-3, 6.35e-4, 1.82e-4, 4.92e-5, 1.28e-5],
+            # 2: [1.48e-2, 5.93e-3, 2.15e-3, 6.35e-4, 1.82e-4, 4.92e-5, 1.28e-5],
             # PLM VL
-            # 2: [],
+            2: [1.65e-2, 7.48e-3, 2.63e-3, 7.92e-4, 2.25e-4, 5.92e-5, 1.49e-5],
             3: [1.23e-2, 3.78e-3, 9.72e-4, 2.09e-4, 4.54e-5, 9.82e-6, 2.11e-6],
         },
     },
     'spherical_polar': {
         'A': {
             # PLM MC
-            2: [3.04e-5, 1.16e-5, 2.34e-6, 5.13e-7, 1.20e-7, 2.90e-8, 7.13e-9],
+            # 2: [3.04e-5, 1.16e-5, 2.34e-6, 5.13e-7, 1.20e-7, 2.90e-8, 7.13e-9],
             # PLM VL
-            # 2: [],
+            2: [1.57e-5, 5.56e-6, 1.61e-6, 4.26e-7, 1.09e-7, 2.77e-08, 6.97e-09],
             3: [1.24e-5, 1.23e-6, 8.65e-8, 5.37e-9, 3.32e-10, 2.05e-11, 1.27e-12],
         },
         'B': {
             # PLM MC
-            2: [5.58e-3, 2.27e-3, 8.62e-4, 2.48e-4, 6.99e-5, 1.88e-5, 4.86e-6],
+            # 2: [5.58e-3, 2.27e-3, 8.62e-4, 2.48e-4, 6.99e-5, 1.88e-5, 4.86e-6],
             # PLM VL
-            # 2: [],
+            2: [6.17e-3, 2.83e-3, 1.04e-3, 3.05e-4, 8.59e-5, 2.25e-5, 5.67e-6],
             3: [4.68e-3, 1.41e-3, 3.36e-4, 7.56e-5, 1.64e-5, 3.57e-6, 7.75e-7],
         },
     }
@@ -71,6 +71,7 @@ nrows_per_solver = 1*num_nx1 + 2
 percentage_formatter = lambda x: colored(
     "{:.2%}".format(x), None if np.abs(x) < diff_threshold
     else 'green' if x >= 0 else 'red')
+error_formatter = lambda x: "{:.2e}".format(x)
 
 
 # Prepare Athena++
@@ -125,25 +126,29 @@ def analyze():
         for (case_, case_params) in cases.items():
             logger.info("Mignone 1D radial test problem, case {}".format(case_))
             for (torder, xorder) in solvers:
-                logger.info('{} + {}'.format(torder.upper(), xorder))
+                logger.info('{} + xorder={}'.format(torder.upper(), xorder))
                 error_file = os.path.join('bin', 'errors_{}_case_{}_{}_xorder_{}'.format(
                     coord_, case_, torder, xorder))
                 # read Athena++ data from error file
                 data = athena_read.error_dat(error_file)
-                # compare with above hard-coded values from Mignone (2014)
+                # compare with above hard-coded values from Mignone (2014) (or Athena++
+                # for VL limiter for PLM)
                 mignone_errs = mignone_tbl1[coord_][case_][xorder]
                 percent_diff = (mignone_errs - data[:, 4])/mignone_errs
                 logger.info("Reference L1 errors: Mignone (2014) Table 1, N=[32, 2048]")
-                logger.info(mignone_errs)
-                logger.info("Observed Athena++ L1 errors, Nx1=[32, 2048]")
-                logger.info(data[:, 4])
+                with np.printoptions(formatter={'float_kind': error_formatter}):
+                    logger.info(mignone_errs)
+                    logger.info("Observed Athena++ L1 errors, Nx1=[32, 2048]")
+                    logger.info(data[:, 4])
                 logger.info("Percentage differences relative to reference values")
                 with np.printoptions(formatter={'float_kind': percentage_formatter}):
                     logger.info(percent_diff)
-                # perhaps allow Athena++ L1 errors to be much LOWER than Mignone errors?
-                if np.max(np.abs(percent_diff)) > diff_threshold:
+                # currently allowing Athena++ L1 errors to be more than threshold % LOWER
+                # than Mignone errors
+                if np.min(percent_diff) < -diff_threshold:
+                    # if np.max(np.abs(percent_diff)) > diff_threshold:
                     logger.warning(
-                        "Observed Athena++ L1 error disagrees with Mignone Table 1 value"
+                        "Observed Athena++ L1 error is higher than Mignone Table 1 value"
                         " by > {:2%}".format(diff_threshold))
                     analyze_status = False
     return analyze_status
