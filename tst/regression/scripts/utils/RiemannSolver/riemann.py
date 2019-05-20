@@ -52,7 +52,7 @@ class StateVector(object):
         if (not ignore_u) and self.u is None:
             raise ValueError('Speed must be specified.')
         var = ['p', 'ei', 'T']  # need at least one of these to continue
-        tmp = {i: getattr(self, i) for i in var if hasattr(self, i)}
+        tmp = {i: getattr(self, i) for i in var if getattr(self, i, None)}
         if not tmp:
             raise ValueError('Insufficient information to complete state.')
         need = [i for i in var if i not in tmp]  # parameters we need to compute
@@ -312,30 +312,31 @@ class RiemannSol(object):
         self.waves[1].update(tmp)
 
     def speeds(self):
-        return sum([list(w['speed']) for w in self.waves], start=[])
+        return sum([list(w['speed']) for w in self.waves], [])
 
-    def vector_get_state(self, xi):
+    def vector_get_state(self, xi, add_var=None):
         """Return the state for a specified sorted vector of characteristic (xi=x/t)."""
         xi = np.atleast_1d(xi)
         names = vector_state_names
+        if add_var:
+            names += add_var
         data = np.ones((len(names),) + xi.shape) * np.nan
 
-        indicies = np.searchsorted(xi, self.speeds())
+        indices = np.searchsorted(xi, self.speeds())
         for i, name in enumerate(names):
-            data[i, :indicies[0]] = self.left[name]
-            data[i, indicies[1]:indicies[2]] = self.lmid[name]
-            data[i, indicies[3]:indicies[4]] = self.rmid[name]
-            data[i, indicies[5]:] = self.right[name]
-        for j in range(indicies[0], indicies[1]):
+            data[i, :indices[0]] = self.left[name]
+            data[i, indices[1]:indices[2]] = self.lmid[name]
+            data[i, indices[3]:indices[4]] = self.rmid[name]
+            data[i, indices[5]:] = self.right[name]
+        for j in range(indices[0], indices[1]):
             state = self._rare_int_left.characteristic(xi[j])
             for i, name in enumerate(names):
                 data[i, j] = state[name]
-        for j in range(indicies[4], indicies[5]):
+        for j in range(indices[4], indices[5]):
             state = self._rare_int_right.characteristic(xi[j])
             for i, name in enumerate(names):
                 data[i, j] = state[name]
-
-        return data
+        return np.core.records.fromarrays(data, names=','.join(names))
 
     def get_state(self, xi):
         """Return the state for a specified characteristic (xi=x/t)."""
