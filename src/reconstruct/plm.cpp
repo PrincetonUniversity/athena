@@ -96,7 +96,7 @@ void Reconstruction::PiecewiseLinearX1(
         // Real v = dqB/dqF;
         // monotoniced central (MC) limiter (Mignone eq 38)
         // (std::min calls should avoid issue if divide-by-zero causes v=Inf)
-        //dqm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
+        // dwm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
       }
     }
   }

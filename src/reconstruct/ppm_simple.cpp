@@ -5,7 +5,8 @@
 //========================================================================================
 //! \file ppm_simple.cpp
 //  \brief piecewise parabolic reconstruction with modified McCorquodale/Colella limiter
-//         for a uniform Cartesian mesh, Mignone limiter for nonuniform mesh
+//         for a Cartesian-like coordinate with uniform spacing, Mignone modified original
+//         PPM limiter for nonuniform and/or curvilinear coordinate.
 //  Operates on the entire nx4 range of a single AthenaArray<Real> input (no MHD).
 //  No assumptions of hydrodynamic fluid variable input; no characteristic projection.
 

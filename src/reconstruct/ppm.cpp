@@ -5,7 +5,8 @@
 //========================================================================================
 //! \file ppm.cpp
 //  \brief piecewise parabolic reconstruction with modified McCorquodale/Colella limiter
-//         for a uniform Cartesian mesh, Mignone limiter for nonuniform mesh
+//         for a Cartesian-like coordinate with uniform spacing, Mignone modified original
+//         PPM limiter for nonuniform and/or curvilinear coordinate.
 //
 // REFERENCES:
 // (CW) P. Colella & P. Woodward, "The Piecewise Parabolic Method (PPM) for Gas-Dynamical
@@ -122,9 +123,9 @@ void Reconstruction::PiecewiseParabolicX1(
 
         // Approximate interface average at i-1/2 and i+1/2 using PPM (CW eq 1.6)
         // KGF: group the biased stencil quantities to preserve FP symmetry
-        dph(i)= (c3i(i)*q_im1(n,i) + c4i(i)*q(n,i)) +
+        dph(i) = (c3i(i)*q_im1(n,i) + c4i(i)*q(n,i)) +
                 (c5i(i)*dd_im1(i) + c6i(i)*dd(i));
-        dph_ip1(i)= (c3i(i+1)*q(n,i) + c4i(i+1)*q_ip1(n,i)) +
+        dph_ip1(i) = (c3i(i+1)*q(n,i) + c4i(i+1)*q_ip1(n,i)) +
                     (c5i(i+1)*dd(i) + c6i(i+1)*dd_ip1(i) );
       } else { // radial coordinate
         dph(i) = c1i(i)*q_im2(n,i) + c2i(i)*q_im1(n,i) + c3i(i)*q(n,i)
@@ -543,7 +544,7 @@ void Reconstruction::PiecewiseParabolicX2(
                                std::abs(q_jp1(n,i))), std::abs(q_jp2(n,i)));
 
         Real rho = 0.0;
-        if (std::abs(qd) > (1.0e-12)*std::max(qa,qb)) {
+        if (std::abs(qd) > (1.0e-12)*std::max(qa, qb)) {
           // Limiter is not sensitive to roundoff. Use limited ratio (MC eq 27)
           rho = qe/qd;
         }
@@ -781,11 +782,11 @@ void Reconstruction::PiecewiseParabolicX3(
     } else {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        dph    (i) = std::min(dph    (i), std::max(q(n,i),q_km1(n,i)));
-        dph_kp1(i) = std::min(dph_kp1(i), std::max(q(n,i),q_kp1(n,i)));
+        dph    (i) = std::min(dph    (i), std::max(q(n,i), q_km1(n,i)));
+        dph_kp1(i) = std::min(dph_kp1(i), std::max(q(n,i), q_kp1(n,i)));
 
-        dph    (i) = std::max(dph    (i), std::min(q(n,i),q_km1(n,i)));
-        dph_kp1(i) = std::max(dph_kp1(i), std::min(q(n,i),q_kp1(n,i)));
+        dph    (i) = std::max(dph    (i), std::min(q(n,i), q_km1(n,i)));
+        dph_kp1(i) = std::max(dph_kp1(i), std::min(q(n,i), q_kp1(n,i)));
       }
     }
 
@@ -862,7 +863,7 @@ void Reconstruction::PiecewiseParabolicX3(
         }
       }
       //--- Step 4b. ---------------------------------------------------------------------
-      // Non-uniform/curvilinear mesh: apply Mignone limiters to parabolic interpolant
+      // Nonuniform coordinate spacing: apply Mignone limiters to parabolic interpolant
       // Note, the Mignone limiter does not check for cell-averaged extrema:
     } else {
       for (int i=il; i<=iu; ++i) {

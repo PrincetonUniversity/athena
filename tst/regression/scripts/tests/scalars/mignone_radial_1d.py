@@ -82,6 +82,7 @@ def prepare(**kwargs):
             nghost=3,  # required for PPM
             prob='mignone_advection',
             eos='isothermal',
+            flux='upwind',
             nscalars=1,
             coord=coord_,
             **kwargs)
@@ -122,9 +123,9 @@ def run(**kwargs):
 def analyze():
     analyze_status = True
     for coord_ in coords:
-        logger.info("Testing --coord={}".format(coord_))
+        logger.info("\n\nTesting --coord={}\n".format(coord_))
         for (case_, case_params) in cases.items():
-            logger.info("Mignone 1D radial test problem, case {}".format(case_))
+            logger.info("\nMignone 1D radial test problem, case {}".format(case_))
             for (torder, xorder) in solvers:
                 logger.info('{} + xorder={}'.format(torder.upper(), xorder))
                 error_file = os.path.join('bin', 'errors_{}_case_{}_{}_xorder_{}'.format(
