@@ -12,8 +12,14 @@ import numpy as np
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
+from plot_mignone.section_5_1_1 import figure2_profiles # noqa
+
 athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
+# Switches to automatically use utilities in plot_mignone/ subfolder:
+plot_profiles = False
+nx1_profile = 64
+plot_convergence = False
 
 # List of time/integrator and time/xorder combinations to test:
 solvers = [('rk3', 2), ('rk3', 3), ]
@@ -112,19 +118,29 @@ def run(**kwargs):
         for (case_, case_params) in cases.items():
             for (torder, xorder) in solvers:
                 for i in resolution_range:
+                    dt_tab = 1.0 if plot_profiles and i == nx1_profile else -1
                     arguments = ['time/ncycle_out=0',
                                  'time/xorder={}'.format(xorder),
                                  'time/integrator={}'.format(torder),
                                  'mesh/nx1={}'.format(i),
-                                 # suppress .hst and .tab output, by default
+                                 # suppress .hst output, by default
                                  'output1/dt=-1',
-                                 'output2/dt=-1',
+                                 # .tab output:
+                                 'output2/dt={}'.format(dt_tab),
                                  'problem/iprob={}'.format(iprob),
                                  'problem/a_width={}'.format(case_params[0]),
                                  'problem/b_center={}'.format(case_params[1]),
                                  'problem/compute_error=true']
                     athena.run('hydro/athinput.mignone_radial', arguments,
                                lcov_test_suffix=coord_)
+                    if plot_profiles and i == nx1_profile:
+                        tab_file = os.path.join('bin',
+                                                'MignoneRadial.block0.out2.00001.tab')
+                        new_tab_file = os.path.join(
+                            'bin',
+                            '{}_case_{}_{}_xorder_{}_nx1_{}.tab'.format(
+                                coord_, case_, torder, xorder, i))
+                        os.system('mv {} {}'.format(tab_file, new_tab_file))
                 default_error_file = os.path.join('bin', 'mignone_radial-errors.dat')
                 error_file = os.path.join('bin', 'errors_{}_case_{}_{}_xorder_{}'.format(
                     coord_, case_, torder, xorder))
@@ -165,4 +181,9 @@ def analyze():
                         "Observed Athena++ L1 error is higher than Mignone Table 1 value"
                         " by > {:2%}".format(diff_threshold))
                     analyze_status = False
+
+    # (optional) produce plots of results:
+    if plot_profiles:
+        # section_5_1_1.figure2_profiles()
+        figure2_profiles()
     return analyze_status
