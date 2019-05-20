@@ -8,7 +8,6 @@
 import logging
 import os
 import scripts.utils.athena as athena
-from termcolor import colored
 import numpy as np
 import sys
 sys.path.insert(0, '../../vis/python')
@@ -67,10 +66,24 @@ num_nx1 = len(resolution_range)
 # Number of times Athena++ is run for each above configuration:
 nrows_per_solver = 1*num_nx1 + 2
 
-# TODO(felker): conditionally import "termcolors" (if available) and use of:
-percentage_formatter = lambda x: colored(
-    "{:.2%}".format(x), None if np.abs(x) < diff_threshold
-    else 'green' if x >= 0 else 'red')
+try:
+    # Filter ANSI escape character sequences from text sent to stdout and replace with
+    # Win32 calls for adding color to text
+    import colorama
+    colorama.init()  # does nothing if not on Windows
+except ImportError:
+    pass
+try:
+    # convenience package for colorizing and stylizing text using terminal ANSI escape
+    # codes
+    from termcolor import colored
+    percentage_formatter = lambda x: colored(
+        "{:.2%}".format(x), None if np.abs(x) < diff_threshold
+        else 'green' if x >= 0 else 'red')
+except ImportError:
+    # otherwise, do not use color annotations at all
+    percentage_formatter = lambda x: "{:.2%}".format(x)
+
 error_formatter = lambda x: "{:.2e}".format(x)
 
 
@@ -82,7 +95,7 @@ def prepare(**kwargs):
             nghost=3,  # required for PPM
             prob='mignone_advection',
             eos='isothermal',
-            flux='upwind',
+            # flux='upwind',
             nscalars=1,
             coord=coord_,
             **kwargs)

@@ -21,7 +21,7 @@ athena_rel_path='./'
 athena_abs_path=$(realpath $athena_rel_path)
 
 # Install Python dependencies
-pip install -q --user flake8
+pip install -q --user flake8 colorama termcolor
 pip install -q --user h5py    # needed for outputs/all_outputs.py, pgen/hdf5*, eos/eos_hdf5_table.py tests
 pip install -q --user scipy   # needed in scripts/utils/ for eos/ tests
 
