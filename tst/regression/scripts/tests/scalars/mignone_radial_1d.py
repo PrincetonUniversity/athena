@@ -12,7 +12,7 @@ import numpy as np
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
-from plot_mignone.section_5_1_1 import figure2_profiles # noqa
+from plot_mignone.section_5_1_1 import figure2_profiles, figure3_convergence # noqa
 
 athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
@@ -186,4 +186,6 @@ def analyze():
     if plot_profiles:
         # section_5_1_1.figure2_profiles()
         figure2_profiles()
+    if plot_convergence:
+        figure3_convergence()
     return analyze_status
