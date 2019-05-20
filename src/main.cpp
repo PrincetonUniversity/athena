@@ -120,10 +120,31 @@ int main(int argc, char *argv[]) {
   for (int i=1; i<argc; i++) {
     // If argv[i] is a 2 character string of the form "-?" then:
     if (*argv[i] == '-'  && *(argv[i]+1) != '\0' && *(argv[i]+2) == '\0') {
+      // check validity of command line options + arguments:
+      char opt_letter = *(argv[i]+1);
+      switch(opt_letter) {
+        // options that do not take arguments:
+        case 'n':
+        case 'c':
+        case 'h':
+          break;
+          // options that require arguments:
+        default:
+          if ((i+1 >= argc) // flag is at the end of the command line options
+              || (*argv[i+1] == '-') ) { // flag is followed by another flag
+            if (Globals::my_rank == 0) {
+              std::cout << "### FATAL ERROR in main" << std::endl
+                        << "-" << opt_letter << " must be followed by a valid argument\n";
+#ifdef MPI_PARALLEL
+              MPI_Finalize();
+#endif
+              return(0);
+            }
+          }
+      }
       switch(*(argv[i]+1)) {
         case 'i':                      // -i <input_filename>
-          ++i;
-          input_filename = argv[i];
+          input_filename = argv[++i];
           iarg_flag = 1;
           break;
         case 'r':                      // -r <restart_file>
@@ -136,10 +157,10 @@ int main(int argc, char *argv[]) {
         case 'n':
           narg_flag = 1;
           break;
-        case 'm':
+        case 'm':                      // -m <nproc>
           mesh_flag = static_cast<int>(std::strtol(argv[++i], nullptr, 10));
           break;
-        case 't':
+        case 't':                      // -t <hh:mm:ss>
           int wth, wtm, wts;
           std::sscanf(argv[++i], "%d:%d:%d", &wth, &wtm, &wts);
           wtlim = wth*3600 + wtm*60 + wts;
@@ -292,7 +313,7 @@ int main(int argc, char *argv[]) {
   if (res_flag == 1) restartfile.Close(); // close the restart file here
 
   // Quit if -m was on cmdline.  This option builds and outputs mesh structure.
-  if (mesh_flag>0) {
+  if (mesh_flag > 0) {
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
