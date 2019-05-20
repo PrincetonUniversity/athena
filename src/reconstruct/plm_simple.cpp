@@ -42,6 +42,7 @@ void Reconstruction::PiecewiseLinearX1(
   for (int n=0; n<=nu; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
+      // renamed dw* -> dq* from plm.cpp
       dql(n,i) = (q(n,k,j,i  ) - q(n,k,j,i-1));
       dqr(n,i) = (q(n,k,j,i+1) - q(n,k,j,i  ));
       qc(n,i) = q(n,k,j,i);
@@ -118,6 +119,7 @@ void Reconstruction::PiecewiseLinearX2(
   for (int n=0; n<=nu; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
+      // renamed dw* -> dq* from plm.cpp
       dql(n,i) = (q(n,k,j  ,i) - q(n,k,j-1,i));
       dqr(n,i) = (q(n,k,j+1,i) - q(n,k,j  ,i));
       qc(n,i) = q(n,k,j,i);
@@ -188,6 +190,7 @@ void Reconstruction::PiecewiseLinearX3(
   for (int n=0; n<=nu; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
+      // renamed dw* -> dq* from plm.cpp
       dql(n,i) = (q(n,k  ,j,i) - q(n,k-1,j,i));
       dqr(n,i) = (q(n,k+1,j,i) - q(n,k  ,j,i));
       qc(n,i) = q(n,k,j,i);

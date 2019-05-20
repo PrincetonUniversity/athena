@@ -57,12 +57,13 @@ void Reconstruction::PiecewiseLinearX1(
   // Project slopes to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVX,IVY,IVZ)
   if (characteristic_projection) {
-    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,dwl);
-    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,dwr);
+    LeftEigenmatrixDotVector(IVX, il, iu, bx, wc, dwl);
+    LeftEigenmatrixDotVector(IVX, il, iu, bx, wc, dwr);
   }
 
-  // Apply van Leer limiter for uniform grid
-  if (uniform[X1DIR]) {
+  // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
+  // with uniform mesh spacing
+  if (uniform[X1DIR] && !curvilinear[X1DIR]) {
     for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -72,32 +73,45 @@ void Reconstruction::PiecewiseLinearX1(
       }
     }
 
-    // Apply Mignone limiter for non-uniform grid
+    // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
+    // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
   } else {
     for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
-        Real dw2 = dwl(n,i)*dwr(n,i);
-        Real cf = pco->dx1v(i  )/(pco->x1f(i+1) - pco->x1v(i));
+        Real dqF =  dwr(n,i)*pco->dx1f(i)/pco->dx1v(i);
+        Real dqB =  dwl(n,i)*pco->dx1f(i)/pco->dx1v(i-1);
+        Real dq2 = dqF*dqB;
+        // cf, cb -> 2 (uniform Cartesian mesh / original VL value) w/ vanishing curvature
+        // (may not exactly hold for nonuniform meshes, but converges w/ smooth
+        // nonuniformity)
+        Real cf = pco->dx1v(i  )/(pco->x1f(i+1) - pco->x1v(i)); // (Mignone eq 33)
         Real cb = pco->dx1v(i-1)/(pco->x1v(i  ) - pco->x1f(i));
-        dwm(n,i) = (dw2*(cf*dwl(n,i) + cb*dwr(n,i))/
-                    (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2*(cf + cb - 2.0)));
-        if (dw2 <= 0.0) dwm(n,i) = 0.0;
+        // (modified) VL limiter (Mignone eq 37)
+        // (dQ^F term from eq 31 pulled into eq 37, then multiply by (dQ^F/dQ^F)^2)
+        dwm(n,i) = (dq2*(cf*dqB + cb*dqF)/
+                    (SQR(dqB) + SQR(dqF) + dq2*(cf + cb - 2.0)));
+        if (dq2 <= 0.0) dwm(n,i) = 0.0; // ---> no concern for divide-by-0 in above line
+
+        // Real v = dqB/dqF;
+        // monotoniced central (MC) limiter (Mignone eq 38)
+        // (std::min calls should avoid issue if divide-by-zero causes v=Inf)
+        //dqm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
       }
     }
   }
 
   // Project limited slope back to primitive variables, if necessary
   if (characteristic_projection) {
-    RightEigenmatrixDotVector(IVX,il,iu,bx,wc,dwm);
+    RightEigenmatrixDotVector(IVX, il, iu, bx, wc, dwm);
   }
 
-  // compute ql_(i+1/2) and qr_(i-1/2) using monotonized slopes
+  // compute ql_(i+1/2) and qr_(i-1/2) using limited slopes
   for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
-      wl(n,i+1) = wc(n,i) + ((pco->x1f(i+1)-pco->x1v(i))/pco->dx1f(i))*dwm(n,i);
-      wr(n,i  ) = wc(n,i) - ((pco->x1v(i  )-pco->x1f(i))/pco->dx1f(i))*dwm(n,i);
+      wl(n,i+1) = wc(n,i) + ((pco->x1f(i+1) - pco->x1v(i))/pco->dx1f(i))*dwm(n,i);
+      wr(n,i  ) = wc(n,i) - ((pco->x1v(i  ) - pco->x1f(i))/pco->dx1f(i))*dwm(n,i);
     }
   }
 
@@ -154,12 +168,13 @@ void Reconstruction::PiecewiseLinearX2(
   // Project slopes to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVY,IVZ,IVX)
   if (characteristic_projection) {
-    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,dwl);
-    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,dwr);
+    LeftEigenmatrixDotVector(IVY, il, iu, bx, wc, dwl);
+    LeftEigenmatrixDotVector(IVY, il, iu, bx, wc, dwr);
   }
 
-  // Apply van Leer limiter for uniform grid
-  if (uniform[X2DIR]) {
+  // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
+  // with uniform mesh spacing
+  if (uniform[X2DIR] && !curvilinear[X2DIR]) {
     for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -169,29 +184,36 @@ void Reconstruction::PiecewiseLinearX2(
       }
     }
 
-    // Apply Mignone limiter for non-uniform grid
+    // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
+    // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
   } else {
     Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
     Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
+    Real dxF = pco->dx2f(j)/pco->dx2v(j); // dimensionless, not technically a dx quantity
+    Real dxB = pco->dx2f(j)/pco->dx2v(j-1);
     for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
-        Real dw2 = dwl(n,i)*dwr(n,i);
-        dwm(n,i) = (dw2*(cf*dwl(n,i) + cb*dwr(n,i))/
-                    (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2*(cf + cb - 2.0)));
-        if (dw2 <= 0.0) dwm(n,i) = 0.0;
+        Real dqF =  dwr(n,i)*dxF;
+        Real dqB =  dwl(n,i)*dxB;
+        Real dq2 = dqF*dqB;
+        // (modified) VL limiter (Mignone eq 37)
+        dwm(n,i) = (dq2*(cf*dqB + cb*dqF)/
+                    (SQR(dqB) + SQR(dqF) + dq2*(cf + cb - 2.0)));
+        if (dq2 <= 0.0) dwm(n,i) = 0.0; // ---> no concern for divide-by-0 in above line
       }
     }
   }
 
   // Project limited slope back to primitive variables, if necessary
   if (characteristic_projection) {
-    RightEigenmatrixDotVector(IVY,il,iu,bx,wc,dwm);
+    RightEigenmatrixDotVector(IVY, il, iu, bx, wc, dwm);
   }
 
-  // compute ql_(j+1/2) and qr_(j-1/2) using monotonized slopes
-  Real dxp = (pco->x2f(j+1)-pco->x2v(j))/pco->dx2f(j);
-  Real dxm = (pco->x2v(j  )-pco->x2f(j))/pco->dx2f(j);
+  // compute ql_(j+1/2) and qr_(j-1/2) using limited slopes
+  // dimensionless, not technically a "dx" quantity
+  Real dxp = (pco->x2f(j+1) - pco->x2v(j))/pco->dx2f(j);
+  Real dxm = (pco->x2v(j  ) - pco->x2f(j))/pco->dx2f(j);
   for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
@@ -251,12 +273,13 @@ void Reconstruction::PiecewiseLinearX3(
   // Project slopes to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVZ,IVX,IVY)
   if (characteristic_projection) {
-    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,dwl);
-    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,dwr);
+    LeftEigenmatrixDotVector(IVZ, il, iu, bx, wc, dwl);
+    LeftEigenmatrixDotVector(IVZ, il, iu, bx, wc, dwr);
   }
 
 
-  // Apply van Leer limiter for uniform grid
+  // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
+  // with uniform mesh spacing
   if (uniform[X3DIR]) {
     for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
@@ -266,30 +289,34 @@ void Reconstruction::PiecewiseLinearX3(
         if (dw2 <= 0.0) dwm(n,i) = 0.0;
       }
     }
-
-    // Apply Mignone limiter for non-uniform grid
+    // Apply original VL limiter's general expression for a Cartesian-like coordinate with
+    // nonuniform mesh spacing
   } else {
+    Real dxF = pco->dx3f(k)/pco->dx3v(k);
+    Real dxB = pco->dx3f(k)/pco->dx3v(k-1);
     for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
-        Real dw2 = dwl(n,i)*dwr(n,i);
-        Real cf = pco->dx3v(k  )/(pco->x3f(k+1) - pco->x3v(k));
-        Real cb = pco->dx3v(k-1)/(pco->x3v(k  ) - pco->x3f(k));
-        dwm(n,i) = (dw2*(cf*dwl(n,i) + cb*dwr(n,i))/
-                    (SQR(dwl(n,i)) + SQR(dwr(n,i)) + dw2*(cf + cb - 2.0)));
-        if (dw2 <= 0.0) dwm(n,i) = 0.0;
+        Real dqF =  dwr(n,i)*dxF;
+        Real dqB =  dwl(n,i)*dxB;
+        Real dq2 = dqF*dqB;
+        // original VL limiter (Mignone eq 36)
+        dwm(n,i) = 2.0*dq2/(dqF + dqB);
+        // dq2 > 0 ---> dqF, dqB are nonzero and have the same sign ----> no risk for
+        // (dqF + dqB) = 0 cancellation causing a divide-by-0 in the above line
+        if (dq2 <= 0.0) dwm(n,i) = 0.0;
       }
     }
   }
 
   // Project limited slope back to primitive variables, if necessary
   if (characteristic_projection) {
-    RightEigenmatrixDotVector(IVZ,il,iu,bx,wc,dwm);
+    RightEigenmatrixDotVector(IVZ, il, iu, bx, wc, dwm);
   }
 
-  // compute ql_(k+1/2) and qr_(k-1/2) using monotonized slopes
-  Real dxp = (pco->x3f(k+1)-pco->x3v(k))/pco->dx3f(k);
-  Real dxm = (pco->x3v(k  )-pco->x3f(k))/pco->dx3f(k);
+  // compute ql_(k+1/2) and qr_(k-1/2) using limited slopes
+  Real dxp = (pco->x3f(k+1) - pco->x3v(k))/pco->dx3f(k);
+  Real dxm = (pco->x3v(k  ) - pco->x3f(k))/pco->dx3f(k);
   for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
