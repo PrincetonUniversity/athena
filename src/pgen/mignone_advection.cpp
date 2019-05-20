@@ -234,12 +234,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
         // background fluid:
         phydro->u(IDN,k,j,i) = d0;
-        phydro->u(IM1,k,j,i) = d0*alpha*pcoord->x1v(i);
+        // midpoint approximation for intiialization of linear velocity profile:
+        // phydro->u(IM1,k,j,i) = d0*alpha*pcoord->x1v(i);
         phydro->u(IM2,k,j,i) = 0.0;
         phydro->u(IM3,k,j,i) = 0.0;
         // assuming isothermal EOS:
         //  phydro->u(IEN,k,j,i) =
-
         Real cell_ave;
         if (use_gl_quadrature) {
           // Use Gauss-Legendre quadrature rules to compute cell-averaged initial
@@ -259,10 +259,21 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {  // dz*dphi
             cell_ave *= pcoord->dx2f(j);
             cell_ave *= pcoord->dx3f(k);
+            // exact integral of cell-averaged linear velocity profile:
+            phydro->u(IM1,k,j,i) =
+                d0*alpha*ONE_3RD*(pcoord->x1f(i+1)*SQR(pcoord->x1f(i+1)) -
+                                  pcoord->x1f(i)*SQR(pcoord->x1f(i)));
+            phydro->u(IM1,k,j,i) *= pcoord->dx2f(j)*pcoord->dx3f(k)/vol(i);
           } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
             // sin(theta)*dtheta*dphi
             cell_ave *= std::cos(pcoord->x2f(j)) - std::cos(pcoord->x2f(j+1));
             cell_ave *= pcoord->dx3f(k);
+            // exact integral of cell-averaged linear velocity profile:
+            phydro->u(IM1,k,j,i) =
+                d0*alpha*0.25*(SQR(SQR(pcoord->x1f(i+1))) -
+                               SQR(SQR(pcoord->x1f(i))));
+            phydro->u(IM1,k,j,i) *= pcoord->dx3f(k)/vol(i);
+            phydro->u(IM1,k,j,i) *= std::cos(pcoord->x2f(j)) - std::cos(pcoord->x2f(j+1));
           }
         } else {
           // Use standard midpoint approximation with cell centered coords:
