@@ -99,11 +99,11 @@ void Reconstruction::PiecewiseParabolicX1(
   // Project cell-averages to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVX,IVY,IVZ)
   if (characteristic_projection) {
-    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q_im2);
-    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q_im1);
-    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q);
-    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q_ip1);
-    LeftEigenmatrixDotVector(IVX,il,iu,bx,wc,q_ip2);
+    LeftEigenmatrixDotVector(IVX, il, iu, bx, wc, q_im2);
+    LeftEigenmatrixDotVector(IVX, il, iu, bx, wc, q_im1);
+    LeftEigenmatrixDotVector(IVX, il, iu, bx, wc, q);
+    LeftEigenmatrixDotVector(IVX, il, iu, bx, wc, q_ip1);
+    LeftEigenmatrixDotVector(IVX, il, iu, bx, wc, q_ip2);
   }
 
   //--- Step 1. --------------------------------------------------------------------------
@@ -112,29 +112,37 @@ void Reconstruction::PiecewiseParabolicX1(
     // Compute average slope in i-1, i, i+1 zones
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
-      Real qa = (q(n,i) - q_im1(n,i));
-      Real qb = (q_ip1(n,i) - q(n,i));
-      dd_im1(i) = c1i(i-1)*qa + c2i(i-1)*(q_im1(n,i) - q_im2(n,i));
-      dd    (i) = c1i(i  )*qb + c2i(i  )*qa;
-      dd_ip1(i) = c1i(i+1)*(q_ip2(n,i) - q_ip1(n,i)) + c2i(i+1)*qb;
+      // nonuniform or uniform Cartesian-like coord reconstruction from volume averages:
+      if (!curvilinear[X1DIR]) {
+        Real qa = (q(n,i) - q_im1(n,i));
+        Real qb = (q_ip1(n,i) - q(n,i));
+        dd_im1(i) = c1i(i-1)*qa + c2i(i-1)*(q_im1(n,i) - q_im2(n,i));
+        dd    (i) = c1i(i  )*qb + c2i(i  )*qa;
+        dd_ip1(i) = c1i(i+1)*(q_ip2(n,i) - q_ip1(n,i)) + c2i(i+1)*qb;
 
-      // Approximate interface average at i-1/2 and i+1/2 using PPM (CW eq 1.6)
-      // KGF: group the biased stencil quantities to preserve FP symmetry
-      dph(i)= (c3i(i)*q_im1(n,i) + c4i(i)*q(n,i)) +
-              (c5i(i)*dd_im1(i) + c6i(i)*dd(i));
-      dph_ip1(i)= (c3i(i+1)*q(n,i) + c4i(i+1)*q_ip1(n,i)) +
-                  (c5i(i+1)*dd(i) + c6i(i+1)*dd_ip1(i) );
+        // Approximate interface average at i-1/2 and i+1/2 using PPM (CW eq 1.6)
+        // KGF: group the biased stencil quantities to preserve FP symmetry
+        dph(i)= (c3i(i)*q_im1(n,i) + c4i(i)*q(n,i)) +
+                (c5i(i)*dd_im1(i) + c6i(i)*dd(i));
+        dph_ip1(i)= (c3i(i+1)*q(n,i) + c4i(i+1)*q_ip1(n,i)) +
+                    (c5i(i+1)*dd(i) + c6i(i+1)*dd_ip1(i) );
+      } else { // radial coordinate
+        dph(i) = c1i(i)*q_im2(n,i) + c2i(i)*q_im1(n,i) + c3i(i)*q(n,i)
+                 + c4i(i)*q_ip1(n,i);
+        dph_ip1(i) = c1i(i+1)*q_im1(n,i) + c2i(i+1)*q(n,i) + c3i(i+1)*q_ip1(n,i)
+                     + c4i(i+1)*q_ip2(n,i);
+      }
     }
 
     //--- Step 2a. -----------------------------------------------------------------------
-    // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
-    if (uniform[X1DIR]) {
+    // Uniform Cartesian-like coordinate: limit interpolated interface states (CD 4.3.1)
+    if (uniform[X1DIR] && !curvilinear[X1DIR]) {
       // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu+1; ++i) {
         // KGF: add the off-centered quantities first to preserve FP symmetry
         d2qc_im1(i) = q_im2(n,i) + q    (n,i) - 2.0*q_im1(n,i);
-        d2qc    (i) = q_im1(n,i) + q_ip1(n,i) - 2.0*q    (n,i); //(CD eq 85a) (no 1/2)
+        d2qc    (i) = q_im1(n,i) + q_ip1(n,i) - 2.0*q    (n,i); // (CD eq 85a) (no 1/2)
         d2qc_ip1(i) = q    (n,i) + q_ip2(n,i) - 2.0*q_ip1(n,i);
       }
 
@@ -149,10 +157,10 @@ void Reconstruction::PiecewiseParabolicX1(
         Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-          qd = SIGN(qa)* std::min(C2*std::fabs(qb),
-                                  std::min(C2*std::fabs(qc), std::fabs(qa)));
+          qd = SIGN(qa)* std::min(C2*std::abs(qb),
+                                  std::min(C2*std::abs(qc), std::abs(qa)));
         }
-        Real dph_tmp = 0.5*(q_im1(n,i)+q(n,i)) - qd/6.0;
+        Real dph_tmp = 0.5*(q_im1(n,i) + q(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { // Local extrema detected at i-1/2 face
           dph(i) = dph_tmp;
         }
@@ -169,10 +177,10 @@ void Reconstruction::PiecewiseParabolicX1(
         Real qc = d2qc_ip1(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-          qd = SIGN(qa)* std::min(C2*std::fabs(qb),
-                                  std::min(C2*std::fabs(qc), std::fabs(qa)));
+          qd = SIGN(qa)* std::min(C2*std::abs(qb),
+                                  std::min(C2*std::abs(qc), std::abs(qa)));
         }
-        Real dphip1_tmp = 0.5*(q(n,i)+q_ip1(n,i)) - qd/6.0;
+        Real dphip1_tmp = 0.5*(q(n,i) + q_ip1(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { // Local extrema detected at i+1/2 face
           dph_ip1(i) = dphip1_tmp;
         }
@@ -185,7 +193,8 @@ void Reconstruction::PiecewiseParabolicX1(
       }
 
       //--- Step 2b. ---------------------------------------------------------------------
-      // Non-uniform/curvilinear: apply strict monotonicity constraints (Mignone eq 45)
+      // Nonuniform and/or curvilinear coordinate: apply strict monotonicity constraints
+      // (Mignone eq 45)
     } else {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
@@ -213,7 +222,7 @@ void Reconstruction::PiecewiseParabolicX1(
     }
 
     //--- Step 4a. -----------------------------------------------------------------------
-    // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
+    // For uniform Cartesian-like coordinate: apply CS limiters to parabolic interpolant
     if (uniform[X1DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -227,18 +236,18 @@ void Reconstruction::PiecewiseParabolicX1(
         Real qe = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc) && SIGN(qa) == SIGN(qd)) {
           // Extrema is smooth
-          qe = SIGN(qd)* std::min(std::min(C2*std::fabs(qa), C2*std::fabs(qb)),
-                                  std::min(C2*std::fabs(qc),
-                                           std::fabs(qd))); // (CS eq 22)
+          qe = SIGN(qd)* std::min(std::min(C2*std::abs(qa), C2*std::abs(qb)),
+                                  std::min(C2*std::abs(qc),
+                                           std::abs(qd))); // (CS eq 22)
         }
 
         // Check if 2nd derivative is close to roundoff error
-        qa = std::max(std::fabs(q_im1(n,i)), std::fabs(q_im2(n,i)));
-        qb = std::max(std::max(std::fabs(q(n,i)), std::fabs(q_ip1(n,i))),
-                      std::fabs(q_ip2(n,i)));
+        qa = std::max(std::abs(q_im1(n,i)), std::abs(q_im2(n,i)));
+        qb = std::max(std::max(std::abs(q(n,i)), std::abs(q_ip1(n,i))),
+                      std::abs(q_ip2(n,i)));
 
         Real rho = 0.0;
-        if (std::fabs(qd) > (1.0e-12)*std::max(qa,qb)) {
+        if (std::abs(qd) > (1.0e-12)*std::max(qa,qb)) {
           // Limiter is not sensitive to roundoff. Use limited ratio (MC eq 27)
           rho = qe/qd;
         }
@@ -249,7 +258,7 @@ void Reconstruction::PiecewiseParabolicX1(
         Real tmp2_p = q(n,i) + 2.0*dqf_minus(i);
 
         // Check for local extrema
-        if ((qa_tmp <= 0.0 || qb_tmp <=0.0)) {
+        if ((qa_tmp <= 0.0 || qb_tmp <= 0.0)) {
           // Check if relative change in limited 2nd deriv is > roundoff
           if (rho <= (1.0 - (1.0e-12))) {
             // Limit smooth extrema
@@ -259,19 +268,19 @@ void Reconstruction::PiecewiseParabolicX1(
           // No extrema detected
         } else {
           // Overshoot i-1/2,R / i,(-) state
-          if (std::fabs(dqf_minus(i)) >= 2.0*std::fabs(dqf_plus(i))) {
+          if (std::abs(dqf_minus(i)) >= 2.0*std::abs(dqf_plus(i))) {
             qminus(i) = tmp2_m;
           }
           // Overshoot i+1/2,L / i,(+) state
-          if (std::fabs(dqf_plus(i)) >= 2.0*std::fabs(dqf_minus(i))) {
+          if (std::abs(dqf_plus(i)) >= 2.0*std::abs(dqf_minus(i))) {
             qplus(i) = tmp2_p;
           }
         }
       }
 
       //--- Step 4b. ---------------------------------------------------------------------
-      // Non-uniform/curvilinear mesh: apply Mignone limiters to parabolic interpolant
-      // Note, the Mignone limiter does not check for cell-averaged extrema:
+      // Nonuniform and/or curvilinear coordinate: apply Mignone limiters to parabolic
+      // interpolant. Note, the Mignone limiter does not check for cell-averaged extrema:
     } else {
       for (int i=il; i<=iu; ++i) {
         Real qa = dqf_minus(i)*dqf_plus(i);
@@ -280,11 +289,11 @@ void Reconstruction::PiecewiseParabolicX1(
           qplus(i) = q(n,i);
         } else { // No extrema detected
           // Overshoot i-1/2,R / i,(-) state
-          if (std::fabs(dqf_minus(i)) >= hplus_ratio_i(i)*std::fabs(dqf_plus(i))) {
+          if (std::abs(dqf_minus(i)) >= hplus_ratio_i(i)*std::abs(dqf_plus(i))) {
             qminus(i) = q(n,i) - hplus_ratio_i(i)*dqf_plus(i);
           }
           // Overshoot i+1/2,L / i,(+) state
-          if (std::fabs(dqf_plus(i)) >= hminus_ratio_i(i)*std::fabs(dqf_minus(i))) {
+          if (std::abs(dqf_plus(i)) >= hminus_ratio_i(i)*std::abs(dqf_minus(i))) {
             qplus(i) = q(n,i) + hminus_ratio_i(i)*dqf_minus(i);
           }
         }
@@ -302,8 +311,8 @@ void Reconstruction::PiecewiseParabolicX1(
 
   // Project limited slope back to primitive variables, if necessary
   if (characteristic_projection) {
-    RightEigenmatrixDotVector(IVX,il,iu,bx,wc,ql_iph);
-    RightEigenmatrixDotVector(IVX,il,iu,bx,wc,qr_imh);
+    RightEigenmatrixDotVector(IVX, il, iu, bx, wc, ql_iph);
+    RightEigenmatrixDotVector(IVX, il, iu, bx, wc, qr_imh);
   }
 
   // compute ql_(i+1/2) and qr_(i-1/2)
@@ -387,11 +396,11 @@ void Reconstruction::PiecewiseParabolicX2(
   // Project cell-averages to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVY,IVZ,IVX)
   if (characteristic_projection) {
-    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q_jm2);
-    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q_jm1);
-    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q);
-    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q_jp1);
-    LeftEigenmatrixDotVector(IVY,il,iu,bx,wc,q_jp2);
+    LeftEigenmatrixDotVector(IVY, il, iu, bx, wc, q_jm2);
+    LeftEigenmatrixDotVector(IVY, il, iu, bx, wc, q_jm1);
+    LeftEigenmatrixDotVector(IVY, il, iu, bx, wc, q);
+    LeftEigenmatrixDotVector(IVY, il, iu, bx, wc, q_jp1);
+    LeftEigenmatrixDotVector(IVY, il, iu, bx, wc, q_jp2);
   }
 
   //--- Step 1. ------------------------------------------------------------------------
@@ -400,29 +409,38 @@ void Reconstruction::PiecewiseParabolicX2(
     // Compute average slope in j-1, j, j+1 zones
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
-      Real qa = (q(n,i) - q_jm1(n,i));
-      Real qb = (q_jp1(n,i) - q(n,i));
-      dd_jm1(i) = c1j(j-1)*qa + c2j(j-1)*(q_jm1(n,i) - q_jm2(n,i));
-      dd    (i) = c1j(j  )*qb + c2j(j  )*qa;
-      dd_jp1(i) = c1j(j+1)*(q_jp2(n,i) - q_jp1(n,i)) + c2j(j+1)*qb;
+      // nonuniform or uniform Cartesian-like coord reconstruction from volume averages:
+      if (!curvilinear[X2DIR]) {
+        Real qa = (q(n,i) - q_jm1(n,i));
+        Real qb = (q_jp1(n,i) - q(n,i));
+        dd_jm1(i) = c1j(j-1)*qa + c2j(j-1)*(q_jm1(n,i) - q_jm2(n,i));
+        dd    (i) = c1j(j  )*qb + c2j(j  )*qa;
+        dd_jp1(i) = c1j(j+1)*(q_jp2(n,i) - q_jp1(n,i)) + c2j(j+1)*qb;
 
-      // Approximate interface average at j-1/2 and j+1/2 using PPM (CW eq 1.6)
-      // KGF: group the biased stencil quantities to preserve FP symmetry
-      dph(i)= (c3j(j)*q_jm1(n,i) + c4j(j)*q(n,i)) +
-              (c5j(j)*dd_jm1(i) + c6j(j)*dd(i));
-      dph_jp1(i)= (c3j(j+1)*q(n,i) + c4j(j+1)*q_jp1(n,i)) +
-                  (c5j(j+1)*dd(i) + c6j(j+1)*dd_jp1(i));
+        // Approximate interface average at j-1/2 and j+1/2 using PPM (CW eq 1.6)
+        // KGF: group the biased stencil quantities to preserve FP symmetry
+        dph(i) = (c3j(j)*q_jm1(n,i) + c4j(j)*q(n,i)) +
+                 (c5j(j)*dd_jm1(i) + c6j(j)*dd(i));
+        dph_jp1(i) = (c3j(j+1)*q(n,i) + c4j(j+1)*q_jp1(n,i)) +
+                     (c5j(j+1)*dd(i) + c6j(j+1)*dd_jp1(i));
+      } else { // spherical-polar coordinates meridional x2 direction:
+        // TODO(felker): implement weight calculation in reconstruction.cpp
+        dph(i) = c1j(j)*q_jm2(n,i) + c2j(j)*q_jm1(n,i) + c3j(j)*q(n,i)
+                 + c4j(j)*q_jp1(n,i);
+        dph_jp1(i) = c1j(j+1)*q_jm1(n,i) + c2j(j+1)*q(n,i) + c3j(j+1)*q_jp1(n,i)
+                     + c4j(j+1)*q_jp2(n,i);
+      }
     }
 
     //--- Step 2a. ---------------------------------------------------------------------
-    // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
-    if (uniform[X2DIR]) {
+    // Uniform Cartesian-like coordinate: limit interpolated interface states (CD 4.3.1)
+    if (uniform[X2DIR] && !curvilinear[X2DIR]) {
       // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         // KGF: add the off-centered quantities first to preserve FP symmetry
         d2qc_jm1(i) = q_jm2(n,i) + q    (n,i) - 2.0*q_jm1(n,i);
-        d2qc    (i) = q_jm1(n,i) + q_jp1(n,i) - 2.0*q    (n,i); //(CD eq 85a) (no 1/2)
+        d2qc    (i) = q_jm1(n,i) + q_jp1(n,i) - 2.0*q    (n,i); // (CD eq 85a) (no 1/2)
         d2qc_jp1(i) = q    (n,i) + q_jp2(n,i) - 2.0*q_jp1(n,i);
       }
 
@@ -437,10 +455,10 @@ void Reconstruction::PiecewiseParabolicX2(
         Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-          qd = SIGN(qa)* std::min(C2*std::fabs(qb),
-                                  std::min(C2*std::fabs(qc), std::fabs(qa)));
+          qd = SIGN(qa)* std::min(C2*std::abs(qb),
+                                  std::min(C2*std::abs(qc), std::abs(qa)));
         }
-        Real dph_tmp = 0.5*(q_jm1(n,i)+q(n,i)) - qd/6.0;
+        Real dph_tmp = 0.5*(q_jm1(n,i) + q(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { //Local extrema detected at j-1/2 face
           dph(i) = dph_tmp;
         }
@@ -456,10 +474,10 @@ void Reconstruction::PiecewiseParabolicX2(
         Real qc = d2qc_jp1(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-          qd = SIGN(qa)* std::min(C2*std::fabs(qb),
-                                  std::min(C2*std::fabs(qc), std::fabs(qa)));
+          qd = SIGN(qa)* std::min(C2*std::abs(qb),
+                                  std::min(C2*std::abs(qc), std::abs(qa)));
         }
-        Real dphjp1_tmp = 0.5*(q(n,i)+q_jp1(n,i)) - qd/6.0;
+        Real dphjp1_tmp = 0.5*(q(n,i) + q_jp1(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { // Local extrema detected at j+1/2 face
           dph_jp1(i) = dphjp1_tmp;
         }
@@ -472,7 +490,8 @@ void Reconstruction::PiecewiseParabolicX2(
       }
 
       //--- Step 2b. -------------------------------------------------------------------
-      // Non-uniform/curvilinear: apply strict monotonicity constraints (Mignone eq 45)
+      // Nonuniform and/or curvilinear coordinate: apply strict monotonicity constraints
+      // (Mignone eq 45)
     } else {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
@@ -500,8 +519,8 @@ void Reconstruction::PiecewiseParabolicX2(
     }
 
     //--- Step 4a. ---------------------------------------------------------------------
-    // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
-    if (uniform[X2DIR]) {
+    // For uniform Cartesian-like coordinate: apply CS limiters to parabolic interpolant
+    if (uniform[X2DIR] && !curvilinear[X2DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
@@ -514,17 +533,17 @@ void Reconstruction::PiecewiseParabolicX2(
         Real qe = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc) && SIGN(qa) == SIGN(qd)) {
           // Extrema is smooth
-          qe = SIGN(qd)* std::min(std::min(C2*std::fabs(qa),C2*std::fabs(qb)),
-                                  std::min(C2*std::fabs(qc),std::fabs(qd))); // (CS eq 22)
+          qe = SIGN(qd)* std::min(std::min(C2*std::abs(qa), C2*std::abs(qb)),
+                                  std::min(C2*std::abs(qc), std::abs(qd)));// (CS eq 22)
         }
 
         // Check if 2nd derivative is close to roundoff error
-        qa = std::max(std::fabs(q_jm1(n,i)),std::fabs(q_jm2(n,i)));
-        qb = std::max(std::max(std::fabs(q(n,i)),
-                               std::fabs(q_jp1(n,i))), std::fabs(q_jp2(n,i)));
+        qa = std::max(std::abs(q_jm1(n,i)), std::abs(q_jm2(n,i)));
+        qb = std::max(std::max(std::abs(q(n,i)),
+                               std::abs(q_jp1(n,i))), std::abs(q_jp2(n,i)));
 
         Real rho = 0.0;
-        if (std::fabs(qd) > (1.0e-12)*std::max(qa,qb)) {
+        if (std::abs(qd) > (1.0e-12)*std::max(qa,qb)) {
           // Limiter is not sensitive to roundoff. Use limited ratio (MC eq 27)
           rho = qe/qd;
         }
@@ -536,7 +555,7 @@ void Reconstruction::PiecewiseParabolicX2(
 
         // Check if relative change in limited 2nd deriv is > roundoff
         // Check for local extrema
-        if ((qa_tmp <= 0.0 || qb_tmp <=0.0)) {
+        if ((qa_tmp <= 0.0 || qb_tmp <= 0.0)) {
           if (rho <= (1.0 - (1.0e-12))) {
             // Limit smooth extrema
             qminus(i) = tmp_m; // (CS eq 23)
@@ -545,19 +564,19 @@ void Reconstruction::PiecewiseParabolicX2(
           // No extrema detected
         } else {
           // Overshoot j-1/2,R / j,(-) state
-          if (std::fabs(dqf_minus(i)) >= 2.0*std::fabs(dqf_plus(i))) {
+          if (std::abs(dqf_minus(i)) >= 2.0*std::abs(dqf_plus(i))) {
             qminus(i) = tmp2_m;
           }
           // Overshoot j+1/2,L / j,(+) state
-          if (std::fabs(dqf_plus(i)) >= 2.0*std::fabs(dqf_minus(i))) {
+          if (std::abs(dqf_plus(i)) >= 2.0*std::abs(dqf_minus(i))) {
             qplus(i) = tmp2_p;
           }
         }
       }
 
       //--- Step 4b. -------------------------------------------------------------------
-      // Non-uniform/curvilinear mesh: apply Mignone limiters to parabolic interpolant
-      // Note, the Mignone limiter does not check for cell-averaged extrema:
+      // Nonuniform and/or curvilinear coordinate: apply Mignone limiters to parabolic
+      // interpolant. Note, the Mignone limiter does not check for cell-averaged extrema:
     } else {
       for (int i=il; i<=iu; ++i) {
         Real qa = dqf_minus(i)*dqf_plus(i);
@@ -566,11 +585,11 @@ void Reconstruction::PiecewiseParabolicX2(
           qplus(i) = q(n,i);
         } else { // No extrema detected
           // Overshoot j-1/2,R / j,(-) state
-          if (std::fabs(dqf_minus(i)) >= hplus_ratio_j(j)*std::fabs(dqf_plus(i))) {
+          if (std::abs(dqf_minus(i)) >= hplus_ratio_j(j)*std::abs(dqf_plus(i))) {
             qminus(i) = q(n,i) - hplus_ratio_j(j)*dqf_plus(i);
           }
           // Overshoot j+1/2,L / j,(+) state
-          if (std::fabs(dqf_plus(i)) >= hminus_ratio_j(j)*std::fabs(dqf_minus(i))) {
+          if (std::abs(dqf_plus(i)) >= hminus_ratio_j(j)*std::abs(dqf_minus(i))) {
             qplus(i) = q(n,i) + hminus_ratio_j(j)*dqf_minus(i);
           }
         }
@@ -588,8 +607,8 @@ void Reconstruction::PiecewiseParabolicX2(
 
   // Project limited slope back to primitive variables, if necessary
   if (characteristic_projection) {
-    RightEigenmatrixDotVector(IVY,il,iu,bx,wc,ql_jph);
-    RightEigenmatrixDotVector(IVY,il,iu,bx,wc,qr_jmh);
+    RightEigenmatrixDotVector(IVY, il, iu, bx, wc, ql_jph);
+    RightEigenmatrixDotVector(IVY, il, iu, bx, wc, qr_jmh);
   }
 
   // compute ql_(j+1/2) and qr_(j-1/2)
@@ -613,6 +632,7 @@ void Reconstruction::PiecewiseParabolicX2(
 //! \fn Reconstruction::PiecewiseParabolicX3()
 //  \brief Returns L/R interface values in X3-dir constructed using fourth-order PPM and
 //         Colella-Sekora or Mignone limiting over [kl,ku][jl,ju][il,iu]
+
 void Reconstruction::PiecewiseParabolicX3(
     const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
@@ -671,11 +691,11 @@ void Reconstruction::PiecewiseParabolicX3(
   // Project cell-averages to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVZ,IVX,IVY)
   if (characteristic_projection) {
-    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q_km2);
-    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q_km1);
-    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q);
-    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q_kp1);
-    LeftEigenmatrixDotVector(IVZ,il,iu,bx,wc,q_kp2);
+    LeftEigenmatrixDotVector(IVZ, il, iu, bx, wc, q_km2);
+    LeftEigenmatrixDotVector(IVZ, il, iu, bx, wc, q_km1);
+    LeftEigenmatrixDotVector(IVZ, il, iu, bx, wc, q);
+    LeftEigenmatrixDotVector(IVZ, il, iu, bx, wc, q_kp1);
+    LeftEigenmatrixDotVector(IVZ, il, iu, bx, wc, q_kp2);
   }
 
   //--- Step 1. -------------------------------------------------------------------------
@@ -684,6 +704,7 @@ void Reconstruction::PiecewiseParabolicX3(
     // Compute average slope in k-1, k, k+1 zones
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
+      // nonuniform or uniform Cartesian-like coord reconstruction from volume averages:
       Real qa = (q(n,i) - q_km1(n,i));
       Real qb = (q_kp1(n,i) - q(n,i));
       dd_km1(i) = c1k(k-1)*qa + c2k(k-1)*(q_km1(n,i) - q_km2(n,i));
@@ -699,7 +720,7 @@ void Reconstruction::PiecewiseParabolicX3(
     }
 
     //--- Step 2a. -----------------------------------------------------------------------
-    // Uniform Cartesian grid: limit interpolated interface states as in CD 4.3.1
+    // Uniform Cartesian-like coordinate: limit interpolated interface states (CD 4.3.1)
     if (uniform[X3DIR]) {
       // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd simdlen(SIMD_WIDTH)
@@ -721,10 +742,10 @@ void Reconstruction::PiecewiseParabolicX3(
         Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-          qd = SIGN(qa)* std::min(C2*std::fabs(qb),
-                                  std::min(C2*std::fabs(qc), std::fabs(qa)));
+          qd = SIGN(qa)* std::min(C2*std::abs(qb),
+                                  std::min(C2*std::abs(qc), std::abs(qa)));
         }
-        Real dph_tmp = 0.5*(q_km1(n,i)+q(n,i)) - qd/6.0;
+        Real dph_tmp = 0.5*(q_km1(n,i) + q(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) {  // Local extrema detected at k-1/2 face
           dph(i) = dph_tmp;
         }
@@ -740,10 +761,10 @@ void Reconstruction::PiecewiseParabolicX3(
         Real qc = d2qc_kp1(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-          qd = SIGN(qa)* std::min(C2*std::fabs(qb),
-                                  std::min(C2*std::fabs(qc), std::fabs(qa)));
+          qd = SIGN(qa)* std::min(C2*std::abs(qb),
+                                  std::min(C2*std::abs(qc), std::abs(qa)));
         }
-        Real dphkp1_tmp = 0.5*(q(n,i)+q_kp1(n,i)) - qd/6.0;
+        Real dphkp1_tmp = 0.5*(q(n,i) + q_kp1(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { // Local extrema detected at k+1/2 face
           dph_kp1(i) = dphkp1_tmp;
         }
@@ -755,7 +776,8 @@ void Reconstruction::PiecewiseParabolicX3(
         d2qf(i) = 6.0*(dph(i) + dph_kp1(i) - 2.0*q(n,i)); // a6 coefficient * -2
       }
       //--- Step 2b. ---------------------------------------------------------------------
-      // Non-uniform/curvilinear: apply strict monotonicity constraints (Mignone eq 45)
+      // Nonuniform coordinate spacing: apply strict monotonicity constraints
+      // (Mignone eq 45)OB
     } else {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
@@ -783,7 +805,7 @@ void Reconstruction::PiecewiseParabolicX3(
     }
 
     //--- Step 4a. -----------------------------------------------------------------------
-    // For uniform Cartesian mesh: apply CS limiters to parabolic interpolant
+    // For uniform Cartesian-like coordinate: apply CS limiters to parabolic interpolant
     if (uniform[X3DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -798,17 +820,17 @@ void Reconstruction::PiecewiseParabolicX3(
         Real qe = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc) && SIGN(qa) == SIGN(qd)) {
           // Extrema is smooth
-          qe = SIGN(qd)* std::min(std::min(C2*std::fabs(qa),C2*std::fabs(qb)),
-                                  std::min(C2*std::fabs(qc),std::fabs(qd))); // (CS eq 22)
+          qe = SIGN(qd)* std::min(std::min(C2*std::abs(qa), C2*std::abs(qb)),
+                                  std::min(C2*std::abs(qc), std::abs(qd)));// (CS eq 22)
         }
 
         // Check if 2nd derivative is close to roundoff error
-        qa = std::max(std::fabs(q_km1(n,i)),std::fabs(q_km2(n,i)));
-        qb = std::max(std::max(std::fabs(q(n,i)),
-                               std::fabs(q_kp1(n,i))), std::fabs(q_kp2(n,i)));
+        qa = std::max(std::abs(q_km1(n,i)), std::abs(q_km2(n,i)));
+        qb = std::max(std::max(std::abs(q(n,i)),
+                               std::abs(q_kp1(n,i))), std::abs(q_kp2(n,i)));
 
         Real rho = 0.0;
-        if (std::fabs(qd) > (1.0e-12)*std::max(qa,qb)) {
+        if (std::abs(qd) > (1.0e-12)*std::max(qa, qb)) {
           // Limiter is not sensitive to roundoff. Use limited ratio (MC eq 27)
           rho = qe/qd;
         }
@@ -830,11 +852,11 @@ void Reconstruction::PiecewiseParabolicX3(
           // No extrema detected
         } else {
           // Overshoot k-1/2,R / k,(-) state
-          if (std::fabs(dqf_minus(i)) >= 2.0*std::fabs(dqf_plus(i))) {
+          if (std::abs(dqf_minus(i)) >= 2.0*std::abs(dqf_plus(i))) {
             qminus(i) = tmp2_m;
           }
           // Overshoot k+1/2,L / k,(+) state
-          if (std::fabs(dqf_plus(i)) >= 2.0*std::fabs(dqf_minus(i))) {
+          if (std::abs(dqf_plus(i)) >= 2.0*std::abs(dqf_minus(i))) {
             qplus(i) = tmp2_p;
           }
         }
@@ -851,11 +873,11 @@ void Reconstruction::PiecewiseParabolicX3(
         } else { // No extrema detected
           // could delete hplus_ratio_k() arrays for curvilinear PPMx3
           // Overshoot k-1/2,R / k,(-) state
-          if (std::fabs(dqf_minus(i)) >= hplus_ratio_k(k)*std::fabs(dqf_plus(i))) {
+          if (std::abs(dqf_minus(i)) >= hplus_ratio_k(k)*std::abs(dqf_plus(i))) {
             qminus(i) = q(n,i) - hplus_ratio_k(k)*dqf_plus(i);
           }
           // Overshoot k+1/2,L / k,(+) state
-          if (std::fabs(dqf_plus(i)) >= hminus_ratio_k(k)*std::fabs(dqf_minus(i))) {
+          if (std::abs(dqf_plus(i)) >= hminus_ratio_k(k)*std::abs(dqf_minus(i))) {
             qplus(i) = q(n,i) + hminus_ratio_k(k)*dqf_minus(i);
           }
         }
@@ -873,8 +895,8 @@ void Reconstruction::PiecewiseParabolicX3(
 
   // Project limited slope back to primitive variables, if necessary
   if (characteristic_projection) {
-    RightEigenmatrixDotVector(IVZ,il,iu,bx,wc,ql_kph);
-    RightEigenmatrixDotVector(IVZ,il,iu,bx,wc,qr_kmh);
+    RightEigenmatrixDotVector(IVZ, il, iu, bx, wc, ql_kph);
+    RightEigenmatrixDotVector(IVZ, il, iu, bx, wc, qr_kmh);
   }
 
   // compute ql_(k+1/2) and qr_(k-1/2)
