@@ -1,10 +1,12 @@
 import numpy as np
 import os
 import sys
-# import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.ticker import AutoMinorLocator, FormatStrFormatter
-from matplotlib.lines import Line2D
+import logging
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
+import matplotlib.pyplot as plt  # noqa
+from matplotlib.ticker import AutoMinorLocator, FormatStrFormatter  # noqa
+from matplotlib.lines import Line2D  # noqa
 sys.path.insert(0, '../../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
