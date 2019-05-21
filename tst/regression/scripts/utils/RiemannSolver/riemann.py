@@ -317,7 +317,7 @@ class RiemannSol(object):
     def vector_get_state(self, xi, add_var=None):
         """Return the state for a specified sorted vector of characteristic (xi=x/t)."""
         xi = np.atleast_1d(xi)
-        names = vector_state_names
+        names = vector_state_names[:]
         if add_var:
             names += add_var
         data = np.ones((len(names),) + xi.shape) * np.nan
