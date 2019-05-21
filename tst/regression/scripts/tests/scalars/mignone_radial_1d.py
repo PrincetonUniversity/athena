@@ -12,7 +12,8 @@ import numpy as np
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
-from plot_mignone.section_5_1_1 import figure2_profiles, figure3_convergence # noqa
+from scripts.tests.scalars.plot_mignone.section_5_1_1 import \
+    figure2_profiles, figure3_convergence # noqa
 
 athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module

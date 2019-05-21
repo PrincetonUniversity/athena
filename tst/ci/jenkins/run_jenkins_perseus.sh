@@ -21,10 +21,13 @@ athena_rel_path='./'
 athena_abs_path=$(realpath $athena_rel_path)
 
 # Install Python dependencies
-pip install -q --user flake8 colorama termcolor matplotlib
-pip install -q --user h5py    # needed for outputs/all_outputs.py, pgen/hdf5*, eos/eos_hdf5_table.py tests
-pip install -q --user scipy   # needed in scripts/utils/ for eos/ tests
-# module load anaconda
+# pip install -q --user flake8 colorama termcolor matplotlib
+# pip install -q --user h5py    # needed for outputs/all_outputs.py, pgen/hdf5*, eos/eos_hdf5_table.py tests
+# pip install -q --user scipy   # needed in scripts/utils/ for eos/ tests
+module load anaconda  # Python 2
+conda install termcolor flake8
+# included with conda distro:
+#conda install h5py scipy colorama matplotlib
 
 # Build step #0: Test source code style consistency
 # step #0a: lint Python files
