@@ -118,7 +118,7 @@ def analyze():
                     msg[1] = 'passed.'
                     logger.debug(' '.join(map(str, msg)))
 
-    tol = [3e-3, 6e-4]
+    tol = [3e-3, 7e-4]
     for i, t in enumerate([10, 25]):
         x_ref, _, _, data_ref = athena_read.vtk(
             'bin/Sod_eos_H.block0.out1.{1:05d}.vtk'.format(i, t))
