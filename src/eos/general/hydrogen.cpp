@@ -29,6 +29,7 @@
 namespace {
 const Real float_eps = std::numeric_limits<float>::epsilon();
 const Real float_1pe = 1.0 + float_eps;
+const Real prec=1e-12;
 
 //----------------------------------------------------------------------------------------
 //! \fn Real x_(Real rho, Real T) {
@@ -77,56 +78,70 @@ Real asq_(Real rho, Real T) {
 //----------------------------------------------------------------------------------------
 //! \fn Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1)
 //  \brief Invert an EOS function at a given density and return temperature.
-//         Uses simple bisection for inversion.
-Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
-  Real f0, f1, fa, fb;
-  Real Ta=-1;
-  Real Tb=-1;
-  const Real prec=1e-12;
-  f0 = f(rho, T0) / sol - 1.;
-  f1 = f(rho, T1) / sol - 1.;
+//         Uses Brent–Dekker method for inversion.
+Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real Ta, Real Tb) {
+  Real fc, fs, Tc, Td, Ts;
+  bool mflag = false;
+  Real fa = f(rho, Ta) / sol - 1.;
+  Real fb = f(rho, Tb) / sol - 1.;
 
-  if ( f0 < 0 ) {
-    fa = f0;
-    Ta = T0;
-  } else if ( f0 > 0 ) {
-    fb = f0;
-    Tb = T0;
-  } else {
-    return T0;
+  if (std::fabs(fa) < std::fabs(fb)) {
+    Ts = Ta;
+    Ta = Tb;
+    Tb = Ts;
+    fs = fa;
+    fa = fb;
+    fb = fs;
   }
 
-  if ( f1 < 0 ) {
-    fa = f1;
-    Ta = T1;
-  } else if ( f1 > 0 ) {
-    fb = f1;
-    Tb = T1;
-  } else {
-    return T1;
-  }
-
-  if ( (Ta < 0) || (Tb < 0) ) {
+  if (fa * fb > 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in EquationOfState inversion"
         << std::endl << "Root not bracketed" << std::endl;
     ATHENA_ERROR(msg);
   }
 
-  while ( (std::fabs(Ta - Tb) >= prec) && (fb - fa >= prec) ) {
-    T0 = 0.5 * Ta + 0.5 * Tb;
-    f0 = f(rho, T0) / sol - 1.0;
-    if ( f0 < 0 ) {
-      fa = f0;
-      Ta = T0;
-    } else if ( f0 > 0 ) {
-      fb = f0;
-      Tb = T0;
+  Tc = Ta;
+  while ((std::fabs(Ta - Tb) >= prec) && (std::fabs(fb) >= prec)) {
+    fc = f(rho, Tc) / sol - 1.0;
+    if ((fc != fa) && (fc != fb)) {
+      Ts = Ta * fb * fc / ((fa - fb) * (fa - fc))
+         + Tb * fa * fc / ((fb - fa) * (fb - fc))
+         + Tc * fa * fb / ((fc - fa) * (fc - fb));
     } else {
-      return T0;
+      Ts = Tb - fb * (Tb - Ta) / (fb - fa);
+    }
+    if ( ((Ts < .25 * (3 * Ta - Tb)) || (Ts > Tb)) ||
+         (mflag && std::fabs(Ts - Tb) >= 0.5 * std::fabs(Tc - Tb)) ||
+         (!mflag && std::fabs(Ts - Tb) >= 0.5 * std::fabs(Tc - Td)) ||
+         (mflag && std::fabs(Tc - Tb) < prec) ||
+         (!mflag && std::fabs(Tc - Td) < prec) ) {
+      Ts = .5 * (Ta + Tb);
+      mflag = true;
+    } else {
+      mflag = false;
+    }
+    fs = f(rho, Ts) / sol - 1.0;
+    Td = Tc;
+    Tc = Tb;
+    if (fa * fs < 0) {
+      Tb = Ts;
+      fb = fs;
+    } else {
+      Ta = Ts;
+      fa = fs;
+    }
+
+    if (std::fabs(fa) < std::fabs(fb)) {
+      Ts = Ta;
+      Ta = Tb;
+      Tb = Ts;
+      fs = fa;
+      fa = fb;
+      fb = fs;
     }
   }
-  return T0;
+  return Tb;
 }
 } // namespace
 
