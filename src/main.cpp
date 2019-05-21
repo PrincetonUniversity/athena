@@ -454,6 +454,8 @@ int main(int argc, char *argv[]) {
       ptlist->DoTaskListOneStage(pmesh, stage);
     }
 
+    pmesh->UserWorkInLoop();
+
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;
     mbcnt += pmesh->nbtotal;
