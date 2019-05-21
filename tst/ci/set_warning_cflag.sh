@@ -16,7 +16,12 @@ set_warning_cflag () {
 		     "-Wno-unused-parameter"
 		     "-Wno-unused-but-set-parameter"
 		     "-Wno-unknown-pragmas"
-		     "-Wno-unused-function")
+		     "-Wno-unused-function"
+		     # Add even more warnings:
+		     #"-Wconversion"      # also controls sign-,float-conversion
+		     # TODO(felker): all floating-point literals need toggleable "real"=float/double
+		     # suffix to avoid the -Wfloat-conversion warnings
+		    )
     elif [ "$1" == "clang++" ] || [ "$1" == "clang" ]; then
 	warn_flags+=("-Wno-unused-private-field"  # Added to Clang ~v3.2 in 2012
 		     "-Wno-unused-variable"
@@ -24,7 +29,9 @@ set_warning_cflag () {
 		     "-Wno-unknown-pragmas"
 		     "-Wno-unused-function"
 		     # Add even more warnings:
-		     "-Wshorten-64-to-32")
+		     # "-Wconversion"       # also controls sign-,float-conversion
+		     "-Wshorten-64-to-32" # (controlled by above flag; not avail in GCC)
+		    )
     elif [ "$1" == "icpc" ] || [ "$1" == "icc" ]; then
 	# TODO(felker): Intel compiler remarks, warnings, and errors are not well-documented.
 	# Intel's -Wall preset is minimalistic compared to GCC's. Elevate default -w1 to -w2 or -w3
@@ -35,7 +42,10 @@ set_warning_cflag () {
 	             "-diag-disable=175" # "error #175: subscript out of range" for IBY during Hydro, e.g.
 		     "-Wno-unused-variable"
 		     "-Wno-unused-function"
-		     "-Wshorten-64-to-32") # illegal narrowing warnings (#2259)
+		     # Add even more warnings:
+		     # "-Wconversion"
+		     "-Wshorten-64-to-32" # illegal narrowing warnings (#2259)
+	            )
     else
 	echo "Unknown CXX=$1 compiler"
 	return 1

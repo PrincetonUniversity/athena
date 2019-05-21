@@ -258,6 +258,7 @@ class Mesh {
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void UserWorkAfterLoop(ParameterInput *pin);   // called in main loop
+  void UserWorkInLoop(); // called in main after each cycle
 
  private:
   // data
@@ -287,6 +288,7 @@ class Mesh {
 
   int nuser_history_output_;
   std::string *user_history_output_names_;
+  UserHistoryOperation *user_history_ops_;
 
   // global constants
   Real four_pi_G_, grav_eps_, grav_mean_rho_;
@@ -354,7 +356,8 @@ class Mesh {
   void EnrollUserExplicitSourceFunction(SrcTermFunc my_func);
   void EnrollUserTimeStepFunction(TimeStepFunc my_func);
   void AllocateUserHistoryOutput(int n);
-  void EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name);
+  void EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name,
+                               UserHistoryOperation op=UserHistoryOperation::sum);
   void EnrollUserMetric(MetricFunc my_func);
   void EnrollViscosityCoefficient(ViscosityCoeffFunc my_func);
   void EnrollConductionCoefficient(ConductionCoeffFunc my_func);

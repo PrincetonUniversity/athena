@@ -21,7 +21,7 @@ athena_rel_path='./'
 athena_abs_path=$(realpath $athena_rel_path)
 
 # Install Python dependencies
-pip install -q --user flake8
+pip install -q --user flake8 colorama termcolor
 pip install -q --user h5py    # needed for outputs/all_outputs.py, pgen/hdf5*, eos/eos_hdf5_table.py tests
 pip install -q --user scipy   # needed in scripts/utils/ for eos/ tests
 
@@ -80,6 +80,7 @@ time python -u ./run_tests.py sr --coverage="${lcov_capture_cmd}" --silent
 time python -u ./run_tests.py curvilinear --coverage="${lcov_capture_cmd}" --silent
 time python -u ./run_tests.py symmetry --coverage="${lcov_capture_cmd}" --silent
 time python -u ./run_tests.py eos --coverage="${lcov_capture_cmd}" --silent
+time python -u ./run_tests.py scalars --coverage="${lcov_capture_cmd}" --silent
 # Exclude gr/compile*.py regression tests from code coverage analysis (nothing is executed in these tests):
 time python -u ./run_tests.py gr/compile_kerr-schild gr/compile_minkowski gr/compile_schwarzschild --silent
 time python -u ./run_tests.py gr/mhd_shocks_hlld gr/mhd_shocks_hlle gr/mhd_shocks_llf \
@@ -196,6 +197,7 @@ time python -u ./run_tests.py shearingbox --config=--cxx=icpc --silent
 time python -u ./run_tests.py diffusion --config=--cxx=icpc --silent
 time python -u ./run_tests.py symmetry --config=--cxx=icpc --silent
 time python -u ./run_tests.py eos --config=--cxx=icpc --silent
+time python -u ./run_tests.py scalars --config=--cxx=icpc --silent
 
 # High-order solver regression tests w/ Intel compiler
 time python -u ./run_tests.py hydro4 --config=--cxx=icpc --silent

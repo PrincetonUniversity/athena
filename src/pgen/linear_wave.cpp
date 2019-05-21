@@ -61,6 +61,8 @@ void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
                  const Real x, const Real y, Real eigenvalues[(NWAVE)],
                  Real right_eigenmatrix[(NWAVE)][(NWAVE)],
                  Real left_eigenmatrix[(NWAVE)][(NWAVE)]);
+
+Real MaxV2(MeshBlock *pmb, int iout);
 } // namespace
 
 // AMR refinement condition
@@ -174,6 +176,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (adaptive)
     EnrollUserRefinementCondition(RefinementCondition);
 
+  // primarily used for tests of decaying linear waves (might conditionally enroll):
+  AllocateUserHistoryOutput(1);
+  EnrollUserHistoryOutput(0, MaxV2, "max-v2", UserHistoryOperation::max);
   return;
 }
 
@@ -1151,6 +1156,20 @@ void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
       left_eigenmatrix[3][3] = 0.0;
     }
   }
+}
+
+Real MaxV2(MeshBlock *pmb, int iout) {
+  Real max_v2 = 0.0;
+  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
+  AthenaArray<Real> &w = pmb->phydro->w;
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        max_v2 = std::max(std::abs(w(IVY,k,j,i)), max_v2);
+      }
+    }
+  }
+  return max_v2;
 }
 } // namespace
 

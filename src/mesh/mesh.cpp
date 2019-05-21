@@ -176,6 +176,36 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     ATHENA_ERROR(msg);
   }
 
+  // check the consistency of the periodic boundaries
+  if ( ((mesh_bcs[BoundaryFace::inner_x1] == BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x1] != BoundaryFlag::periodic)
+    ||  (mesh_bcs[BoundaryFace::inner_x1] != BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x1] == BoundaryFlag::periodic))
+    ||  (mesh_size.nx2 > 1
+    && ((mesh_bcs[BoundaryFace::inner_x2] == BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x2] != BoundaryFlag::periodic)
+    ||  (mesh_bcs[BoundaryFace::inner_x2] != BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x2] == BoundaryFlag::periodic)))
+    ||  (mesh_size.nx3 > 1
+    && ((mesh_bcs[BoundaryFace::inner_x3] == BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x3] != BoundaryFlag::periodic)
+    ||  (mesh_bcs[BoundaryFace::inner_x3] != BoundaryFlag::periodic
+    &&   mesh_bcs[BoundaryFace::outer_x3] == BoundaryFlag::periodic)))) {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "When periodic boundaries are in use, both sides must be periodic."
+        << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  if ( ((mesh_bcs[BoundaryFace::inner_x1] == BoundaryFlag::shear_periodic
+    &&   mesh_bcs[BoundaryFace::outer_x1] != BoundaryFlag::shear_periodic)
+    ||  (mesh_bcs[BoundaryFace::inner_x1] != BoundaryFlag::shear_periodic
+    &&   mesh_bcs[BoundaryFace::outer_x1] == BoundaryFlag::shear_periodic))) {
+    msg << "### FATAL ERROR in Mesh constructor" << std::endl
+        << "When shear_periodic boundaries are in use, "
+        << "both sides must be shear_periodic." << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
   // read and set MeshBlock parameters
   block_size.x1rat = mesh_size.x1rat;
   block_size.x2rat = mesh_size.x2rat;
@@ -869,6 +899,7 @@ Mesh::~Mesh() {
   if (nuser_history_output_ > 0) {
     delete [] user_history_output_names_;
     delete [] user_history_func_;
+    delete [] user_history_ops_;
   }
   if (nint_user_mesh_data_>0) delete [] iuser_mesh_data;
   if (EOS_TABLE_ENABLED) delete peos_table;
@@ -1183,15 +1214,17 @@ void Mesh::AllocateUserHistoryOutput(int n) {
   nuser_history_output_ = n;
   user_history_output_names_ = new std::string[n];
   user_history_func_ = new HistoryOutputFunc[n];
+  user_history_ops_ = new UserHistoryOperation[n];
   for (int i=0; i<n; i++) user_history_func_[i] = nullptr;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func,
-//                                         const char *name)
+//                                         const char *name, UserHistoryOperation op)
 //  \brief Enroll a user-defined history output function and set its name
 
-void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name) {
+void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name,
+                                   UserHistoryOperation op) {
   std::stringstream msg;
   if (i >= nuser_history_output_) {
     msg << "### FATAL ERROR in EnrollUserHistoryOutput function" << std::endl
@@ -1201,6 +1234,7 @@ void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char 
   }
   user_history_output_names_[i] = name;
   user_history_func_[i] = my_func;
+  user_history_ops_[i] = op;
 }
 
 //----------------------------------------------------------------------------------------

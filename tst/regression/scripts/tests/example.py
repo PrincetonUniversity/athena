@@ -147,8 +147,8 @@ def analyze():
     error_rel_mx = error_abs_mx / comparison.l1_norm(x_ref, mx_ref)
 
     # Finally, we test that the relative errors in the two quantities are no more than 1%.
-    # If they are, we "return False" at the very end of the function and file; otherwise
-    # we "return True". NumPy provides a way of checking if the error is NaN, which also
+    # If they are, we return False at the very end of the function and file; otherwise
+    # we return True. NumPy provides a way of checking if the error is NaN, which also
     # indicates something went wrong. The same check can (and should) be enabled
     # automatically at the point of reading the input files via the athena_read.py
     # functions by setting "athena_read.check_nan_flag=True" (as done at the top of this

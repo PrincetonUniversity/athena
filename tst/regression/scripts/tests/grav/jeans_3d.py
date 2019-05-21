@@ -87,6 +87,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     # read data from error file
     filename = 'bin/jeans-errors.dat'
     data = athena_read.error_dat(filename)
@@ -101,37 +102,37 @@ def analyze():
             "Linear wave error with one core w/wo MPI not identical for MG gravity %g %g",
             data[0][4],
             data[2][4])
-        return False
+        analyze_status = False
     if data[0][4] > 1.e-7:
         logger.warning("Linear wave error is too large for MG gravity %g", data[0][4])
-        return False
+        analyze_status = False
     if data[1][4] > 1.e-7:
         logger.warning("Linear wave error is too large for FFT gravity %g", data[1][4])
-        return False
+        analyze_status = False
     if data[1][4] != data[5][4]:
         logger.warning(
             "Linear wave error with one core w/wo MPI not identical for FFT gravity"
             + " %g %g", data[1][4], data[5][4])
-        return False
+        analyze_status = False
     if abs(data[3][4]-data[2][4]) > 5.0e-4:
         logger.warning(
             "Linear wave error between 2 and 1 cores too large for MG gravity %g %g",
             data[3][4], data[2][4])
-        return False
+        analyze_status = False
     if abs(data[4][4]-data[2][4]) > 5.0e-4:
         logger.warning(
             "Linear wave error between 4 and 1 cores too large for MG gravity %g %g",
             data[4][4], data[2][4])
-        return False
+        analyze_status = False
     if abs(data[6][4]-data[5][4]) > 5.0e-4:
         logger.warning(
             "Linear wave error between 2 and 1 cores too large for FFT gravity %g %g",
             data[6][4], data[5][4])
-        return False
+        analyze_status = False
     if abs(data[7][4]-data[5][4]) > 5.0e-4:
         logger.warning(
             "Linear wave error between 4 and 1 cores too large for FFT gravity %g %g",
             data[7][4], data[5][4])
-        return False
+        analyze_status = False
 
-    return True
+    return analyze_status

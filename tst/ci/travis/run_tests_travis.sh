@@ -62,6 +62,7 @@ time python3 run_tests.py curvilinear --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_C
 time python3 run_tests.py shearingbox --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 time python3 run_tests.py symmetry --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 time python3 run_tests.py eos --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD  --silent
+#time python3 run_tests.py scalars --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD  --silent
 
 # mhd/ currently contains the longest set of tests. The following command often times-out after 10 m on Travis CI
 # time python3 run_tests.py mhd --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
