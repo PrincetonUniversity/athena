@@ -54,14 +54,6 @@ Real e_of_rho_T(Real rho, Real T) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real h_of_rho_T(Real rho, Real T) {
-//  \brief compute specific enthalpy
-Real h_of_rho_T(Real rho, Real T) {
-  Real x = x_(rho, T);
-  return x + 2.5 * T * (1. + x);
-}
-
-//----------------------------------------------------------------------------------------
 //! \fn Real asq_(Real rho, Real T) {
 //  \brief compute adiabatic sound speed squared
 Real asq_(Real rho, Real T) {
@@ -144,17 +136,6 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real Ta, Real Tb) {
   return Tb;
 }
 } // namespace
-
-//----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::RiemannAsq(Real rho, Real hint)
-//  \brief Return adiabatic sound speed squared for use in Riemann solver.
-Real EquationOfState::RiemannAsq(Real rho, Real hint) {
-  rho *= rho_unit_;
-  hint *= vsqr_unit_;
-  Real T = invert(*h_of_rho_T, rho, hint, 0.2*std::max(hint - 1.0, 0.1*hint),
-                  float_1pe*0.4*hint);
-  return asq_(rho, T) * inv_vsqr_unit_;
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas)

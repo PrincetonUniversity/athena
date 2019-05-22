@@ -26,35 +26,35 @@
 #include "../../utils/interp_table.hpp"
 #include "../eos.hpp"
 
-void EosTestLoop(EquationOfState *peos);
+namespace {
+//----------------------------------------------------------------------------------------
+//! \fn Real GetEosData(EosTable *ptable, int kOut, Real var, Real rho)
+//  \brief Gets interpolated data from EOS table assuming 'var' has dimensions
+//         of energy per volume.
+inline Real GetEosData(EosTable *ptable, int kOut, Real var, Real rho) {
+  Real x1 = std::log10(rho * ptable->rhoUnit);
+  Real x2 = std::log10(var * ptable->EosRatios(kOut) * ptable->eUnit) - x1;
+  return std::pow((Real)10, ptable->table.interpolate(kOut, x2, x1));
+}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
 //  \brief Return interpolated gas pressure
 Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
-  return ptable->GetEosData(0, egas, rho) * egas;
+  return GetEosData(ptable, 0, egas, rho) * egas;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
 //  \brief Return interpolated internal energy density
 Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
-  return ptable->GetEosData(1, pres, rho) * pres;
+  return GetEosData(ptable, 1, pres, rho) * pres;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
 //  \brief Return interpolated adiabatic sound speed squared
 Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
-  return ptable->GetEosData(2, pres, rho) * pres / rho;
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::RiemannAsq(Real rho, Real hint)
-//  \brief Return interpolated adiabatic sound speed squared for use in
-//         Riemann solver.
-Real EquationOfState::RiemannAsq(Real rho, Real hint) {
-  return std::pow(static_cast<Real>(10.0),
-                  ptable->table.interpolate(3, std::log10(hint*vsqr_unit_),
-                                            std::log10(rho*rho_unit_))) * hint;
+  return GetEosData(ptable, 2, pres, rho) * pres / rho;
 }

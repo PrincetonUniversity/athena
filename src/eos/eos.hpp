@@ -158,7 +158,6 @@ class EquationOfState {
 #endif  // !MAGNETIC_FIELDS_ENABLED (GR)
 #endif  // #else (#if !RELATIVISTIC_DYNAMICS, #elif !GENERAL_RELATIVITY)
 
-  Real RiemannAsq(Real rho, Real hint);
   Real PresFromRhoEg(Real rho, Real egas);
   Real EgasFromRhoP(Real rho, Real pres);
   Real AsqFromRhoP(Real rho, Real pres);

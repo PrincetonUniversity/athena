@@ -163,13 +163,3 @@ EosTable::EosTable(ParameterInput *pin) :
     ATHENA_ERROR(msg);
   }
 }
-
-//----------------------------------------------------------------------------------------
-//! \fn Real EosTable::GetEosData(int kOut, Real var, Real rho)
-//  \brief Gets interpolated data from EOS table assuming 'var' has dimensions
-//         of energy per volume.
-Real EosTable::GetEosData(int kOut, Real var, Real rho) {
-  Real x1 = std::log10(rho * rhoUnit);
-  Real x2 = std::log10(var * EosRatios(kOut) * eUnit) - x1;
-  return std::pow((Real)10, table.interpolate(kOut, x2, x1));
-}
