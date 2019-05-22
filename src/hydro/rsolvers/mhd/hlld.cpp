@@ -114,25 +114,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     Real cfl = pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
     Real cfr = pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
 
-    if (GENERAL_EOS) {
-      Real rhoa = .5 * (wli[IDN] + wri[IDN]);
-      Real ca = .5 * (cfl + cfr);
-      Real pmid = .5 * (wli[IPR] + wri[IPR] + (wli[IVX]-wri[IVX]) * rhoa * ca);
-      Real umid = .5 * (wli[IVX] + wri[IVX] + (wli[IPR]-wri[IPR]) / (rhoa * ca));
-      Real rhol = wli[IDN] + (wli[IVX] - umid) * rhoa / ca;
-      Real rhor = wri[IDN] + (umid - wri[IVX]) * rhoa / ca;
-      Real gl = pmy_block->peos->AsqFromRhoP(rhol, pmid) * rhol / pmid;
-      Real gr = pmy_block->peos->AsqFromRhoP(rhor, pmid) * rhor / pmid;
-      Real ql = (pmid <= wli[IPR]) ? 1.0 :
-                (1.0 + (gl + 1) / std::sqrt(2 * gl) * (pmid / wli[IPR]-1.0));
-      Real qr = (pmid <= wri[IPR]) ? 1.0 :
-                (1.0 + (gr + 1) / std::sqrt(2 * gr) * (pmid / wri[IPR]-1.0));
-      spd[0] = wli[IVX] - cfl*ql;
-      spd[4] = wri[IVX] + cfr*qr;
-    } else {
-      spd[0] = std::min( wli[IVX]-cfl, wri[IVX]-cfr );
-      spd[4] = std::max( wli[IVX]+cfl, wri[IVX]+cfr );
-    }
+    spd[0] = std::min( wli[IVX]-cfl, wri[IVX]-cfr );
+    spd[4] = std::max( wli[IVX]+cfl, wri[IVX]+cfr );
 
     // Real cfmax = std::max(cfl,cfr);
     // if (wli[IVX] <= wri[IVX]) {
