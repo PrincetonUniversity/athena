@@ -173,7 +173,8 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
 //                                                 int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
-void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
+void __attribute__((weak))
+     EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,i);
   Real& w_p  = prim(IPR,i);
 
@@ -189,7 +190,7 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
 // \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
 //           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
 // \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
-void EquationOfState::ApplyPrimitiveConservedFloors(
+void __attribute__((weak)) EquationOfState::ApplyPrimitiveConservedFloors(
     AthenaArray<Real> &prim, AthenaArray<Real> &cons, AthenaArray<Real> &bcc,
     int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
@@ -210,7 +211,7 @@ void EquationOfState::ApplyPrimitiveConservedFloors(
   return;
 }
 
-Real EquationOfState::GetGamma() {
+Real __attribute__((weak)) EquationOfState::GetGamma() {
   std::stringstream msg;
   msg << "GetGamma is not defined for general EOS." << std::endl;
   ATHENA_ERROR(msg);
