@@ -12,8 +12,6 @@ import numpy as np
 import sys
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
-from scripts.tests.scalars.plot_mignone.section_5_1_1 import \
-    figure2_profiles, figure3_convergence # noqa
 
 athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
@@ -21,6 +19,9 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 plot_profiles = False
 nx1_profile = 64
 plot_convergence = False
+if plot_convergence or plot_profiles:
+    from scripts.utils.plot_mignone.section_5_1_1 import \
+        figure2_profiles, figure3_convergence # noqa
 
 # List of time/integrator and time/xorder combinations to test:
 solvers = [('rk3', 2), ('rk3', 3), ]

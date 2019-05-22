@@ -4,10 +4,13 @@ import sys
 import logging
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
+import matplotlib
+# matplotlib.use('agg')
+matplotlib.use('pdf')
 import matplotlib.pyplot as plt  # noqa
 from matplotlib.ticker import AutoMinorLocator, FormatStrFormatter  # noqa
 from matplotlib.lines import Line2D  # noqa
-sys.path.insert(0, '../../../vis/python')
+sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
 
@@ -153,10 +156,10 @@ def figure2_profiles():
                 # disable rounded edges:
                 leg = ax.legend(handles=profile_legend_handles, fancybox=False,)
                 leg.get_frame().set_edgecolor('k')
-    plt.tight_layout()
 
     output_name = 'athena_mignone_fig2'
     pdf_name = "{}.pdf".format(output_name)
+    # fig.set_tight_layout(True)
     fig.savefig(pdf_name, bbox_inches='tight', dpi=dpi_global)
 
 
@@ -237,7 +240,7 @@ def figure3_convergence():
             leg = ax.legend(handles=legend_handles, fancybox=False)
             leg.get_frame().set_edgecolor('k')
 
-    plt.tight_layout()
     output_name = 'athena_mignone_fig3'
     pdf_name = "{}.pdf".format(output_name)
+    # fig.set_tight_layout(True)
     fig.savefig(pdf_name, bbox_inches='tight', dpi=dpi_global)
