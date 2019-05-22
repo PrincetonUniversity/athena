@@ -29,7 +29,7 @@
 namespace {
 const Real float_eps = std::numeric_limits<float>::epsilon();
 const Real float_1pe = 1.0 + float_eps;
-const Real prec=1e-12;
+Real prec = 1e-12;
 
 //----------------------------------------------------------------------------------------
 //! \fn Real x_(Real rho, Real T) {
@@ -169,4 +169,12 @@ Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
   Real ps = pres / rho;
   Real T = invert(*P_of_rho_T, rho, pres, 0.5*ps, float_1pe*ps);
   return asq_(rho, T) * inv_vsqr_unit_;
+}
+
+//----------------------------------------------------------------------------------------
+//! void EquationOfState::InitEosConstants(ParameterInput* pin)
+//  \brief Initialize constants for EOS
+void EquationOfState::InitEosConstants(ParameterInput* pin) {
+  prec = pin->GetOrAddReal("hydro", "InversionPrecision", prec);
+  return;
 }

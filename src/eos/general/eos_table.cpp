@@ -27,13 +27,15 @@
 #include "../eos.hpp"
 
 namespace {
+Real DensPow = -1.0;
+
 //----------------------------------------------------------------------------------------
 //! \fn Real GetEosData(EosTable *ptable, int kOut, Real var, Real rho)
 //  \brief Gets interpolated data from EOS table assuming 'var' has dimensions
 //         of energy per volume.
 inline Real GetEosData(EosTable *ptable, int kOut, Real var, Real rho) {
   Real x1 = std::log10(rho * ptable->rhoUnit);
-  Real x2 = std::log10(var * ptable->EosRatios(kOut) * ptable->eUnit) - x1;
+  Real x2 = std::log10(var * ptable->EosRatios(kOut) * ptable->eUnit) + DensPow * x1;
   return std::pow((Real)10, ptable->table.interpolate(kOut, x2, x1));
 }
 } // namespace
@@ -57,4 +59,12 @@ Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
 //  \brief Return interpolated adiabatic sound speed squared
 Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
   return GetEosData(ptable, 2, pres, rho) * pres / rho;
+}
+
+//----------------------------------------------------------------------------------------
+//! void EquationOfState::InitEosConstants(ParameterInput* pin)
+//  \brief Initialize constants for EOS
+void EquationOfState::InitEosConstants(ParameterInput* pin) {
+  DensPow = pin->GetOrAddReal("hydro", "DensPow", DensPow);
+  return;
 }

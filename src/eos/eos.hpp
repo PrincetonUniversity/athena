@@ -193,6 +193,7 @@ class EquationOfState {
   AthenaArray<Real> normal_mm_;          // normal-frame momenta, used in GR MHD
   AthenaArray<Real> normal_bb_;          // normal-frame fields, used in GR MHD
   AthenaArray<Real> normal_tt_;          // normal-frame M.B, used in GR MHD
+  void InitEosConstants(ParameterInput *pin);
 };
 
 #endif // EOS_EOS_HPP_

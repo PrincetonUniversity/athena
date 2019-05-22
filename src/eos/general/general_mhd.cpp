@@ -9,7 +9,6 @@
 
 // These functions MUST be implemented in an additional file.
 //
-// Real EquationOfState::RiemannAsq(Real rho, Real hint)
 // Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
 // Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
 // Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
@@ -61,6 +60,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
       ATHENA_ERROR(msg);
     }
   }
+  InitEosConstants(pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -241,4 +241,11 @@ Real __attribute__((weak)) EquationOfState::GetGamma() {
   std::stringstream msg;
   msg << "GetGamma is not defined for general EOS." << std::endl;
   ATHENA_ERROR(msg);
+}
+
+//----------------------------------------------------------------------------------------
+//! void EquationOfState::InitEosConstants(ParameterInput* pin)
+//  \brief Initialize constants for EOS
+void __attribute__((weak)) EquationOfState::InitEosConstants(ParameterInput *pin) {
+  return;
 }
