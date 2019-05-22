@@ -4,7 +4,7 @@ import sys
 import logging
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
-import matplotlib
+import matplotlib               # noqa
 # matplotlib.use('agg')
 matplotlib.use('pdf')
 import matplotlib.pyplot as plt  # noqa
