@@ -8,6 +8,7 @@ from . import brent_opt, ode_opt
 
 vector_state_names = ['rho', 'p', 'u']
 
+
 def sanitize_lbl(label):
     """sanitize_lbl(label): Makes labels latex friendly."""
     import re

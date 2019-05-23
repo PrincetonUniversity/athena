@@ -18,10 +18,6 @@
 
 // C++ headers
 #include <cmath>   // sqrt()
-#include <fstream>
-#include <iostream> // ifstream
-#include <sstream>
-#include <stdexcept> // std::invalid_argument
 #include <string>
 
 // Athena++ headers
@@ -45,8 +41,8 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
   egas_unit_{pin->GetOrAddReal("hydro", "eos_egas_unit", 1.0)},
   inv_egas_unit_{1.0/egas_unit_},
   vsqr_unit_{egas_unit_/rho_unit_},
-  inv_vsqr_unit_{1.0/vsqr_unit_} {
-
+  inv_vsqr_unit_{1.0/vsqr_unit_}
+  {
   if (pin->DoesParameterExist("hydro", "efloor")) {
     energy_floor_ = pin->GetReal("hydro", "efloor");
     pressure_floor_ = energy_floor_*(pin->GetOrAddReal("hydro", "gamma", 2.) - 1.);
