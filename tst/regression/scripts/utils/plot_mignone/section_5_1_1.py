@@ -118,7 +118,7 @@ profile_legend_handles += [Line2D([0], [0], color='k', label='Exact', linewidth=
 
 def figure2_profiles():
     fig = plt.figure(figsize=(1.0*figsize[0], 1.0*figsize[1]), dpi=dpi_global)
-    axes = fig.subplots(2, 2)
+    axes = fig.subplots(2, 2, gridspec_kw={'hspace': 0.4})
 
     for coord_, ylims_, m_, axes_row_ in zip(coords, coord_ylims, coord_m, axes):
         for case_, xlims_, param_str_, a_, b_, ax in zip(cases, case_xlims,
@@ -159,7 +159,6 @@ def figure2_profiles():
 
     output_name = 'athena_mignone_fig2'
     pdf_name = "{}.pdf".format(output_name)
-    # fig.set_tight_layout(True)
     fig.savefig(pdf_name, bbox_inches='tight', dpi=dpi_global)
 
 
@@ -183,7 +182,7 @@ n2_xrange = np.array([70., 300.])
 
 def figure3_convergence():
     fig = plt.figure(figsize=(0.75*figsize[0], 0.75*figsize[1]), dpi=dpi_global)
-    axes = fig.subplots(2, 2)
+    axes = fig.subplots(2, 2, gridspec_kw={'hspace': 0.4})
 
     plot_id = 0
     for coord_, axes_row_ in zip(coords, axes):
@@ -242,5 +241,4 @@ def figure3_convergence():
 
     output_name = 'athena_mignone_fig3'
     pdf_name = "{}.pdf".format(output_name)
-    # fig.set_tight_layout(True)
     fig.savefig(pdf_name, bbox_inches='tight', dpi=dpi_global)
