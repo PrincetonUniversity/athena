@@ -197,8 +197,10 @@ class TestIdeal(Ideal):
 
 
 class AthenaTable(EOS):
-    def __init__(self, data, lrho, le, ratios=None, indep=None, dens_pow=-1):
+    def __init__(self, data, lrho, le, ratios=None, indep=None, dens_pow=-1, fn=None,
+                 add_var=None):
         super(EOS, self).__init__()
+        self.fn = fn
         if ratios is None:
             ratios = np.ones(data.shape[0])
         lr = np.log(ratios)
@@ -211,15 +213,8 @@ class AthenaTable(EOS):
         self.le = le
         self.dens_pow = dens_pow
         var = ['p', 'e', 'asq_p']
-        tmp = [r'e', r'P', r'P']
-        if data.shape[0] == 5:
-            var += ['T', 's']
-            tmp += ['P', 'P']
-        self._axes = [r'$\log_{10}' + i + '$' for i in tmp]
-        tmp = ['P/e', 'e/P', r'\Gamma_1']
-        if data.shape[0] == 5:
-            tmp += [r'T/\epsilon', 's']
-        self._var = ['${0:}$'.format(i) for i in tmp]
+        if add_var is not None:
+            var.extend(add_var)
         d = {var[i]: RBS(lrho, le + lr[i], np.log10(data[i].T), kx=1, ky=1).ev
              for i in range(len(var))}
         self._interp_dict = d
