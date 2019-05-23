@@ -2,8 +2,7 @@
 import numpy as np                             # standard Python module for numerics
 from . import eos
 
-default_names = ['p/e(e/rho,rho)', 'e/p(p/rho,rho)', 'asq*rho/p(p/rho,rho)',
-                 'asq*rho/h(h/rho,rho)']
+default_names = ['p/e(e/rho,rho)', 'e/p(p/rho,rho)', 'asq*rho/p(p/rho,rho)']
 
 
 def write_varlist(dlim, elim, varlist, fn=None, out_type=None, eOp=1.5,
@@ -35,9 +34,9 @@ def write_varlist(dlim, elim, varlist, fn=None, out_type=None, eOp=1.5,
     ne = np.array(varlist[0].shape[0], 'int32')
     eOp = np.array(eOp)  # , ftype)
     if ratios is None:
-        ratios = [1., eOp, eOp, eOp / (1. + eOp)]
-        if nvar > 4:
-            ratios += [1] * (nvar - 4)
+        ratios = [1., eOp, eOp]
+        if nvar > 3:
+            ratios += [1] * (nvar - 3)
         ratios = np.array(ratios, dtype=ftype)
     if out_type == 'hdf5':
         import h5py
@@ -81,7 +80,7 @@ def mk_ideal(gamma=5./3., n=2, fn=None, out_type=None):
     g = gamma
     gm1 = g - 1.
 
-    varlist = [gm1, 1. / gm1, g, gm1]
+    varlist = [gm1, 1. / gm1, g]
     varlist = [np.ones(e.shape) * i for i in varlist]
 
     if fn is None:
@@ -123,9 +122,7 @@ def write_H(nEspec=256, nRho=64, logEspecLim=None, logRhoLim=None, eOp=1.5,
             temp = Heos.T_of_rho_p(rho[j], p0)
             e[i, j] = Heos.ei_of_rho_T(rho[j], temp) / p0
             a2p[i, j] = Heos.gamma1(rho[j], temp)
-            h = es[i] * (1. + eOp) / eOp
-            a2h[i, j] = Heos.asq_of_rho_h(rho[j], h) / h
-    args = logRhoLim, logEspecLim, [p, e, a2p, a2h]
+    args = logRhoLim, logEspecLim, [p, e, a2p]
     kwargs = dict(eOp=eOp)
     if binary:
         write_varlist(*args, fn=fn + '.data', **kwargs)
