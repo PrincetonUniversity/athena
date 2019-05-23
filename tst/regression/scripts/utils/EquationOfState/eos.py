@@ -210,14 +210,14 @@ class AthenaTable(EOS):
         self.lrho = lrho
         self.le = le
         self.dens_pow = dens_pow
-        var = ['p', 'e', 'asq_p', 'asq_h']
-        tmp = [r'e', r'P', r'P', r'h']
-        if data.shape[0] == 6:
+        var = ['p', 'e', 'asq_p']
+        tmp = [r'e', r'P', r'P']
+        if data.shape[0] == 5:
             var += ['T', 's']
-            tmp += ['e', 'e']
+            tmp += ['P', 'P']
         self._axes = [r'$\log_{10}' + i + '$' for i in tmp]
-        tmp = ['P/e', 'e/P', r'\Gamma_1', r'a^2\rho/h']
-        if data.shape[0] == 6:
+        tmp = ['P/e', 'e/P', r'\Gamma_1']
+        if data.shape[0] == 5:
             tmp += [r'T/\epsilon', 's']
         self._var = ['${0:}$'.format(i) for i in tmp]
         d = {var[i]: RBS(lrho, le + lr[i], np.log10(data[i].T), kx=1, ky=1).ev
