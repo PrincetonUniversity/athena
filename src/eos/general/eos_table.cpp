@@ -27,7 +27,7 @@
 #include "../eos.hpp"
 
 namespace {
-Real DensPow = -1.0;
+Real dens_pow = -1.0;
 
 //----------------------------------------------------------------------------------------
 //! \fn Real GetEosData(EosTable *ptable, int kOut, Real var, Real rho)
@@ -35,7 +35,7 @@ Real DensPow = -1.0;
 //         of energy per volume.
 inline Real GetEosData(EosTable *ptable, int kOut, Real var, Real rho) {
   Real x1 = std::log10(rho * ptable->rhoUnit);
-  Real x2 = std::log10(var * ptable->EosRatios(kOut) * ptable->eUnit) + DensPow * x1;
+  Real x2 = std::log10(var * ptable->EosRatios(kOut) * ptable->eUnit) + dens_pow * x1;
   return std::pow((Real)10, ptable->table.interpolate(kOut, x2, x1));
 }
 } // namespace
@@ -65,6 +65,6 @@ Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
 //! void EquationOfState::InitEosConstants(ParameterInput* pin)
 //  \brief Initialize constants for EOS
 void EquationOfState::InitEosConstants(ParameterInput* pin) {
-  DensPow = pin->GetOrAddReal("hydro", "DensPow", DensPow);
+  dens_pow = pin->GetOrAddReal("hydro", "dens_pow", dens_pow);
   return;
 }
