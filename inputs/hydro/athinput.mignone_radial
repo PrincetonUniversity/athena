@@ -32,6 +32,7 @@ x1min      = 0.00      # minimum value of X1
 x1max      = 2.0       # maximum value of X1
 ix1_bc     = reflecting   # inner-X1 boundary flag
 ox1_bc     = outflow   # outer-X1 boundary flag
+x1rat      = 1.0       # non-uniform grid ratio
 
 nx2        =  1        # Number of zones in X2-direction
 x2min      = 0.0       # minimum value of X2

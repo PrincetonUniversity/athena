@@ -70,6 +70,7 @@ mignone_tbl1 = {
 }
 
 resolution_range = [32, 64, 128, 256, 512, 1024, 2048]
+base_x1rat = 1.0
 num_nx1 = len(resolution_range)
 # Number of times Athena++ is run for each above configuration:
 nrows_per_solver = 1*num_nx1 + 2
@@ -119,12 +120,19 @@ def run(**kwargs):
         os.system('mv bin/athena_{} bin/athena'.format(coord_))
         for (case_, case_params) in cases.items():
             for (torder, xorder) in solvers:
-                for i in resolution_range:
-                    dt_tab = 1.0 if plot_profiles and i == nx1_profile else -1
+                for i, nx_ in enumerate(resolution_range):
+                    if i > 0:
+                        # take sqrt of geometric mesh spacing factor every time the radial
+                        # resolution is doubled:
+                        x1rat = np.power(base_x1rat, 0.5**i)
+                    else:
+                        x1rat = base_x1rat
+                    dt_tab = 1.0 if plot_profiles and nx_ == nx1_profile else -1
                     arguments = ['time/ncycle_out=0',
                                  'time/xorder={}'.format(xorder),
                                  'time/integrator={}'.format(torder),
-                                 'mesh/nx1={}'.format(i),
+                                 'mesh/nx1={}'.format(nx_),
+                                 'mesh/x1rat={}'.format(x1rat),
                                  # suppress .hst output, by default
                                  'output1/dt=-1',
                                  # .tab output:
@@ -135,17 +143,18 @@ def run(**kwargs):
                                  'problem/compute_error=true']
                     athena.run('hydro/athinput.mignone_radial', arguments,
                                lcov_test_suffix=coord_)
-                    if plot_profiles and i == nx1_profile:
+                    if plot_profiles and nx_ == nx1_profile:
                         tab_file = os.path.join('bin',
                                                 'MignoneRadial.block0.out2.00001.tab')
                         new_tab_file = os.path.join(
                             'bin',
                             '{}_case_{}_{}_xorder_{}_nx1_{}.tab'.format(
-                                coord_, case_, torder, xorder, i))
+                                coord_, case_, torder, xorder, nx_))
                         os.system('mv {} {}'.format(tab_file, new_tab_file))
                 default_error_file = os.path.join('bin', 'mignone_radial-errors.dat')
-                error_file = os.path.join('bin', 'errors_{}_case_{}_{}_xorder_{}'.format(
-                    coord_, case_, torder, xorder))
+                error_file = os.path.join(
+                    'bin', 'errors_{}_case_{}_{}_xorder_{}.dat'.format(coord_, case_,
+                                                                       torder, xorder))
                 os.system('mv {} {}'.format(default_error_file, error_file))
     return 'skip_lcov'
 
@@ -159,8 +168,9 @@ def analyze():
             logger.info("\nMignone 1D radial test problem, case {}".format(case_))
             for (torder, xorder) in solvers:
                 logger.info('{} + xorder={}'.format(torder.upper(), xorder))
-                error_file = os.path.join('bin', 'errors_{}_case_{}_{}_xorder_{}'.format(
-                    coord_, case_, torder, xorder))
+                error_file = os.path.join(
+                    'bin', 'errors_{}_case_{}_{}_xorder_{}.dat'.format(coord_, case_,
+                                                                       torder, xorder))
                 # read Athena++ data from error file
                 data = athena_read.error_dat(error_file)
                 # compare with above hard-coded values from Mignone (2014) (or Athena++

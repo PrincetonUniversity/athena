@@ -188,8 +188,10 @@ def figure3_convergence():
     for coord_, axes_row_ in zip(coords, axes):
         for case_, param_str_, ax in zip(cases, case_parameters, axes_row_):
             for xorder_, xorder_str_ in zip(xorders, xorder_strs):
-                error_file = os.path.join('bin', 'errors_{}_case_{}_{}_xorder_{}'.format(
-                    coord_, case_, integrator, xorder_))
+                error_file = os.path.join(
+                    'bin', 'errors_{}_case_{}_{}_xorder_{}.dat'.format(coord_, case_,
+                                                                       integrator,
+                                                                       xorder_))
                 # read Athena++ data from error file
                 data = athena_read.error_dat(error_file)
                 ax.loglog(data[:, 0], data[:, 4], ':{}'.format(xorder_symbols[xorder_]),
