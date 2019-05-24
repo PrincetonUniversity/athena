@@ -15,6 +15,7 @@ data_format = %.17g    # round trip conversion: binary64 <-> decimal
 file_type   = tab      # Binary data dump
 variable    = prim     # variables to be output
 dt          = 0.01     # time increment between outputs
+x1_slice    = 18.0
 
 <time>
 cfl_number  = 0.9      # The Courant, Friedrichs, & Lewy (CFL) Number
@@ -28,20 +29,22 @@ correct_err = false    # correct midpoint assumption in analytic solution
 
 <mesh>
 nx1        = 8         # Number of zones in X1-direction
-x1min      = 0.0       # minimum value of X1
-x1max      = 1.0       # maximum value of X1
+x1min      = 10.0       # minimum value of X1
+x1max      = 20.0       # maximum value of X1
 ix1_bc     = periodic  # inner-X1 boundary flag
 ox1_bc     = periodic  # outer-X1 boundary flag
 
 nx2        = 32         # Number of zones in X2-direction
 x2min      = 0.0       # minimum value of X2
 x2max      = 1.570796326794896 # = pi/2 # maximum value of X2
-ix2_bc     = polar_wedge # inner-X2 boundary flag
+ix2_bc     = reflecting   # polar_wedge # inner-X2 boundary flag
 ox2_bc     = outflow     # outer-X2 boundary flag
+
 # x2max = 3.141592653589793
 # ox2_bc = polar_wedge
+x2rat      = 1.0       # non-uniform grid ratio
 
-nx3        = 8        # Number of zones in X3-direction
+nx3        = 1        # Number of zones in X3-direction
 x3min      = 0.0       # minimum value of X3
 x3max      = 1.0       # maximum value of X3
 # 6.2831853071795862  
@@ -65,4 +68,4 @@ b_center      = 0.0
 
 # case B: non-monotonic function
 # a_width       = 16.0  
-# b_center      = 5.09295817894065074 // = 16.0/pi
+# b_center      = 0.196349540849362077 // = pi/16.0
