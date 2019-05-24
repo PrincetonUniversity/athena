@@ -807,12 +807,12 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
       ave_wghts[1] = 0.0;
       ave_wghts[2] = 0.0;
       const Real beta = 0.063692468666290; // F(u^(3)) coeff.
-      const Real wght = beta*pmb->pmy_mesh->dt;
+      const Real wght_ssp = beta*pmb->pmy_mesh->dt;
       // writing out to u2 register
       pmb->WeightedAve(ph->u2, ph->u1, ph->u2, ave_wghts);
-      ph->AddFluxDivergence(wght, ph->u2);
+      ph->AddFluxDivergence(wght_ssp, ph->u2);
       // add coordinate (geometric) source terms
-      pmb->pcoord->AddCoordTermsDivergence(wght, ph->flux, ph->w, pf->bcc, ph->u2);
+      pmb->pcoord->AddCoordTermsDivergence(wght_ssp, ph->flux, ph->w, pf->bcc, ph->u2);
     }
     return TaskStatus::next;
   }
@@ -1254,10 +1254,10 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
       ave_wghts[1] = 0.0;
       ave_wghts[2] = 0.0;
       const Real beta = 0.063692468666290; // F(u^(3)) coeff.
-      const Real wght = beta*pmb->pmy_mesh->dt;
+      const Real wght_ssp = beta*pmb->pmy_mesh->dt;
       // writing out to s2 register
       pmb->WeightedAve(ps->s2, ps->s1, ps->s2, ave_wghts);
-      ps->AddFluxDivergence(beta, ps->s2);
+      ps->AddFluxDivergence(wght_ssp, ps->s2);
     }
     return TaskStatus::next;
   }
