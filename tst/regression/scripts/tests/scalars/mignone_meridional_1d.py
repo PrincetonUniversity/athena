@@ -123,7 +123,6 @@ def run(**kwargs):
                 if plot_profiles and nx_ == nx2_profile:
                     tab_file = os.path.join('bin',
                                             'MignoneMeridional.block0.out2.00001.tab')
-                                            #'MignoneMeridional.block0.out2.00000.tab')
                     new_tab_file = os.path.join(
                         'bin',
                         'case_{}_{}_xorder_{}_nx2_{}.tab'.format(case_, torder,
@@ -139,38 +138,38 @@ def run(**kwargs):
 # Analyze outputs
 def analyze():
     analyze_status = True
-    # for (case_, case_params) in cases.items():
-    #     logger.info("\nMignone 1D meridional test problem, case {}".format(case_))
-    #     for (torder, xorder) in solvers:
-    #         logger.info('{} + xorder={}'.format(torder.upper(), xorder))
-    #         error_file = os.path.join(
-    #             'bin', 'errors_case_{}_{}_xorder_{}.dat'.format(case_, torder, xorder))
-    #         # read Athena++ data from error file
-    #         data = athena_read.error_dat(error_file)
-    #         # compare with above hard-coded values from Mignone (2014) (or Athena++
-    #         # for VL limiter for PLM)
-    #         mignone_errs = mignone_tbl4[case_][xorder]
-    #         percent_diff = (mignone_errs - data[:, 4])/mignone_errs
-    #         logger.info("Reference L1 errors: Mignone (2014) Table 4, N=[32, 2048]")
-    #         with np.printoptions(formatter={'float_kind': error_formatter}):
-    #             logger.info(mignone_errs)
-    #             logger.info("Observed Athena++ L1 errors, Nx2=[32, 2048]")
-    #             logger.info(data[:, 4])
-    #         logger.info("Percentage differences relative to reference values")
-    #         with np.printoptions(formatter={'float_kind': percentage_formatter}):
-    #             logger.info(percent_diff)
-    #         # currently allowing Athena++ L1 errors to be more than threshold % LOWER
-    #         # than Mignone errors
-    #         if np.min(percent_diff) < -diff_threshold:
-    #             # if np.max(np.abs(percent_diff)) > diff_threshold:
-    #             logger.warning(
-    #                 "Observed Athena++ L1 error is higher than Mignone Table 1 value"
-    #                 " by > {:2%}".format(diff_threshold))
-    #             analyze_status = False
+    for (case_, case_params) in cases.items():
+        logger.info("\nMignone 1D meridional test problem, case {}".format(case_))
+        for (torder, xorder) in solvers:
+            logger.info('{} + xorder={}'.format(torder.upper(), xorder))
+            error_file = os.path.join(
+                'bin', 'errors_case_{}_{}_xorder_{}.dat'.format(case_, torder, xorder))
+            # read Athena++ data from error file
+            data = athena_read.error_dat(error_file)
+            # compare with above hard-coded values from Mignone (2014) (or Athena++
+            # for VL limiter for PLM)
+            mignone_errs = mignone_tbl4[case_][xorder]
+            percent_diff = (mignone_errs - data[:, 4])/mignone_errs
+            logger.info("Reference L1 errors: Mignone (2014) Table 4, N=[32, 2048]")
+            with np.printoptions(formatter={'float_kind': error_formatter}):
+                logger.info(mignone_errs)
+                logger.info("Observed Athena++ L1 errors, Nx2=[32, 2048]")
+                logger.info(data[:, 4])
+            logger.info("Percentage differences relative to reference values")
+            with np.printoptions(formatter={'float_kind': percentage_formatter}):
+                logger.info(percent_diff)
+            # currently allowing Athena++ L1 errors to be more than threshold % LOWER
+            # than Mignone errors
+            if np.min(percent_diff) < -diff_threshold:
+                # if np.max(np.abs(percent_diff)) > diff_threshold:
+                logger.warning(
+                    "Observed Athena++ L1 error is higher than Mignone Table 1 value"
+                    " by > {:2%}".format(diff_threshold))
+                analyze_status = False
 
     # (optional) produce plots of results:
     if plot_profiles:
         plot_profiles()
-    # if plot_convergence:
-    #     figure4_convergence()
+    if plot_convergence:
+        figure4_convergence()
     return analyze_status
