@@ -26,6 +26,14 @@
 #include "../parameter_input.hpp"
 #include "reconstruction.hpp"
 
+namespace {
+// from Wikipedia article on LU decomposition
+int LUPDecompose(Real **A, int N, Real Tol, int *P);
+void LUPSolve(Real **A, int *P, Real *b, int N, Real *x);
+void LUPInvert(Real **A, int *P, int N, Real **IA);
+Real LUPDeterminant(Real **A, int *P, int N);
+} // namespace
+
 // constructor
 
 Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
@@ -215,6 +223,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   scr4_ni_.NewAthenaArray(NWAVE, nc1);
 
   if ((xorder == 3) || (xorder == 4)) {
+    Coordinates *pco = pmb->pcoord;
     scr03_i_.NewAthenaArray(nc1);
     scr04_i_.NewAthenaArray(nc1);
     scr05_i_.NewAthenaArray(nc1);
@@ -243,91 +252,165 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     hplus_ratio_i.NewAthenaArray(nc1);
     hminus_ratio_i.NewAthenaArray(nc1);
 
+    // Greedily allocate tiny 4x4 matrix + 4x1 vectors (RHS, solution, and permutation
+    // indices) in case PPMx1 and/or PPMx2 require them for computing the curvilinear
+    // coorddinate reconstruction weights. Same data structures are reused at each spatial
+    // index (i or j) and for both PPMx1 and PPMx2 weight calculations:
+    constexpr int kNrows = 4;       // = [i-i_L, i+i_R] stencil of reconstruction
+    constexpr int kNcols = 4;       // = [0, p-1], p=order of reconstruction
+    // system in Mignone equation 21
+    //AthenaArray<Real> beta(kNrows, kNcols), b_rhs(kNrows);
+    // AthenaArray<Real> beta_array(4,4);
+    // Real *beta = beta_array.data();
+
+    // bad/hardcoded raw pointer data structure for compatibility with Wikipedia routines:
+    Real beta_array[kNrows][kNcols];
+    Real *beta_rows[kNrows] = {beta_array[0], beta_array[1], beta_array[2],
+                               beta_array[3]};
+    Real **beta = beta_rows;
+    Real w_sol[kNrows], b_rhs[kNrows];
+    int permute[kNrows];
+    //AthenaArray<Real> beta(4, 4, pmb->ncells1), b_rhs(4, pmb->ncells1);
+    int m_coord = 0;    // power of simple Jacobian term;  0 ---> Cartesian coordinates
+    if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+      m_coord = 1;
+    } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
+      m_coord = 2;
+    }
+
     if (curvilinear[X1DIR]) {
-      for (int i=(pmb->is)-NGHOST+1; i<=(pmb->ie)+NGHOST-1; ++i) {
+      for (int i=(pmb->is)-NGHOST+2; i<=(pmb->ie)+NGHOST-1; ++i) {
+        // nonuniform Beta matrix entries reach uppermost face pmb->ncells1+1
         if (!uniform[X1DIR]) {  // nonuniform spacing in curvilinear coordinate
-          // emit warning: need to numerically invert system of equations given by Mignone
-          // equations 21 and 23 with specific nonuniform mesh spacings in order to
-          // precompute reconstruction weights.
-          if (Globals::my_rank == 0) {
-            std::stringstream nonuniform_curv_msg;
-            nonuniform_curv_msg
-                << "### Warning in Reconstruction constructor" << std::endl
-                << "Selected time/xorder=" << input_recon << " reconstruction with\n"
-                << "curvilinear COORDINATE_SYSTEM=" << COORDINATE_SYSTEM << "\n"
-                << " currently uses uniform mesh spacing reconstruction weights\n"
-                << "Precomputing the weights for a nonuniform mesh with curvilinear\n"
-                << "coordinates requires the solution to a linear system of equations;\n"
-                << "this will be implemented at a future date" << std::endl;
-            std::cout << nonuniform_curv_msg.str();
+          for (int row=0; row<kNrows; row++) {
+            b_rhs[row] = std::pow(pco->x1f(i), row);
+            for (int col=0; col<kNcols; col++) {
+              // Mignone equation 23: simplification of entries in \beta matrix when
+              // Jacobian is a simple power of the coordinate, e.g. radial coordinate:
+              Real coeff = (m_coord + 1.0)/(col + m_coord + 1.0);
+              int pow_num = col + m_coord + 1;
+              int pow_denom = m_coord + 1;
+              int s = row - kNrows/2;  // rescale index from -2 to +1
+              // beta(row, col) =
+              // transpose:
+              beta_array[col][row] =
+                  coeff*(
+                      std::pow(pco->x1f(i+s+1), pow_num)
+                      - std::pow(pco->x1f(i+s), pow_num)) / (
+                          std::pow(pco->x1f(i+s+1), pow_denom)
+                          - std::pow(pco->x1f(i+s), pow_denom));
+            }
           }
-          // for now, fall back to below uniform spacing curvilinear reconstruction wghts
-          // c1i(i) =
-          // c2i(i) =
-          // c3i(i) =
-          // c4i(i) =
-        }
-        // } else { // if (uniform[X1DIR]) {
+          // std::cout << "i= " << i << std::scientific
+          //           << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
+          //           << std::endl;
+          // std::cout << "pco->x1f(i-2, i-1, i, i+1, i+2) = "
+          //           << pco->x1f(i-2) << ", "
+          //           << pco->x1f(i-1) << ", "
+          //           << pco->x1f(i) << ", "
+          //           << pco->x1f(i+1) << ", "
+          //           << pco->x1f(i+2) << std::endl;
 
-        // Mignone section 2.2: conservative reconstruction from volume averages
-        Real io = std::abs(i - pmy_block_->is);  // il=is-1 ---> io = 2
-        // Notes:
-        // - io (i offset) must be floating-point, not integer type. io^4 and io^8 terms
-        // in below lines quickly cause overflows of 32-bit and 64-bit integer limtis in
-        // the intermediate calculations of RHS expressions
-        // - io=1 should correspond to "is" (first real cell face)
-        // - take absolute value to handle lower x1 ghost zone cell faces properly
-        if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
-          Real delta = 120.0*SQR(SQR(io)) - 360.0*SQR(io) + 96.0;
-          // Mignone equation B.9:
-          // w_im1
-          c1i(i) = -(2.0*io - 3.0)*(5.0*SQR(io)*io + 8.0*SQR(io) - 3.0*io - 4.0)/delta;
-          // w_i
-          c2i(i) = (2.0*io - 1.0)*(35.0*SQR(io)*io + 24.0*SQR(io)
-                                   - 93.0*io - 60.0)/delta;
-          // w_ip1
-          c3i(i) = (2.0*io + 1.0)*(35.0*SQR(io)*io - 24.0*SQR(io)
-                                   - 93.0*io + 60.0)/delta;
-          // w_ip2
-          c4i(i) = -(2.0*io + 3.0)*(5.0*SQR(io)*io - 8.0*SQR(io) - 3.0*io + 4.0)/delta;
-        } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
-          // Mignone equation B.14:
-          Real delta = 36.0*(15.0*SQR(SQR(SQR(io))) - 85.0*SQR(SQR(io))*SQR(io)
-                             + 150.0*SQR(SQR(io)) - 60.0*SQR(io) + 16);
-          c1i(i) = -(3.0*SQR(io) - 9.0*io + 7.0)*(
-              15.0*SQR(SQR(io))*SQR(io) + 48.0*SQR(SQR(io))*io
-              + 23.0*SQR(SQR(io)) - 48.0*SQR(io)*io - 30.0*SQR(io)
-              + 16.0*io + 12.0)/delta;
-          c2i(i) = (3.0*SQR(io) - 3.0*io + 1.0)*(
-              105.0*SQR(SQR(io))*SQR(io) + 144.0*SQR(SQR(io))*io
-              - 487.0*SQR(SQR(io)) - 720.0*SQR(io)*io +510.0*SQR(io)
-              + 1008.0*io + 372.0)/delta;
-          c3i(i) = (3.0*SQR(io) + 3*io + 1.0)*(
-              105.0*SQR(SQR(io))*SQR(io) - 144.0*SQR(SQR(io))*io
-              - 487.0*SQR(SQR(io)) + 720.0*SQR(io)*io +510.0*SQR(io)
-              - 1008.0*io + 372.0)/delta;
-          c4i(i) = -(3.0*SQR(io) + 9.0*io + 7.0)*(
-              15.0*SQR(SQR(io))*SQR(io) - 48.0*SQR(SQR(io))*io
-              + 23.0*SQR(SQR(io)) + 48.0*SQR(io)*io - 30.0*SQR(io)
-              - 16.0*io + 12.0)/delta;
-        } // end "spherical_polar"
+          // need to print out via separate pair of nested loops if initializing transpose
+          // for (int row=0; row<kNrows; row++) {
+          //   for (int col=0; col<kNcols; col++) {
+          //     std::cout << beta_array[row][col] << " ";
+          //   }
+          //   std::cout << "   " << b_rhs[row];
+          //   std::cout << std::endl;
+          // }
+          // std::cout << "\n\n";
 
-        // TODO(felker): add check for normalization condition, Mignone eq 22. Especially
-        // after adding nonuniform mesh spacing weights, since the formulas are sensitive
-        // to floating-point pathologies and the final weights might not sum to near 1.0.
-      } // end loop over i
-        // }  // end "uniform[X1DIR]"
+
+          Real tol = 3e-16;
+          if (LUPDecompose(beta, 4, tol, permute)) {
+            // LU decomposition succeeded; solve the linear system w/ forward/back sub:
+            LUPSolve(beta, permute, b_rhs, 4, w_sol);
+          } else {
+            std::stringstream msg;
+            msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+                << "Failure in LU decomposition step for computing PPMx1 curvilinear\n"
+                << "reconstruction weights at cell index i=" << i << " for nx1="
+                << pmb->block_size.nx1 << std::endl;
+            std::cout << msg.str();
+            ATHENA_ERROR(msg);
+          }
+          // TODO(felker): probably need to change the following condition to ensure that
+          // the ghost cells have negative radius. Add conditional for r < 0
+          if (i < pmb->is) {
+            // cant simply take abs(r) for negative radius ghost cells when we have to
+            // solve a matrix-vector system of equations to get the coefficients, since
+            // that introduces a singular matrix. Highest indexed ghost cell (with upper
+            // face at r=0) appear to have same radial face locations (reversed) as the
+            // first real cell. instead, reverse the coefficients:
+            c1i(i) = w_sol[3];
+            c2i(i) = w_sol[2];
+            c3i(i) = w_sol[1];
+            c4i(i) = w_sol[0];
+          } else {
+            c1i(i) = w_sol[0];
+            c2i(i) = w_sol[1];
+            c3i(i) = w_sol[2];
+            c4i(i) = w_sol[3];
+          }
+        } else { // if (uniform[X1DIR]) {
+          // Mignone section 2.2: conservative reconstruction from volume averages
+          Real io = std::abs(i - pmy_block_->is);  // il=is-1 ---> io = 2
+          // Notes:
+          // - io (i offset) must be floating-point, not integer type. io^4 and io^8 terms
+          // in below lines quickly cause overflows of 32-bit and 64-bit integer limtis in
+          // the intermediate calculations of RHS expressions
+          // - io=1 should correspond to "is" (first real cell face)
+          // - take absolute value to handle lower x1 ghost zone cell faces properly
+          if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+            Real delta = 120.0*SQR(SQR(io)) - 360.0*SQR(io) + 96.0;
+            // Mignone equation B.9:
+            // w_im1
+            c1i(i) = -(2.0*io - 3.0)*(5.0*SQR(io)*io + 8.0*SQR(io) - 3.0*io - 4.0)/delta;
+            // w_i
+            c2i(i) = (2.0*io - 1.0)*(35.0*SQR(io)*io + 24.0*SQR(io)
+                                     - 93.0*io - 60.0)/delta;
+            // w_ip1
+            c3i(i) = (2.0*io + 1.0)*(35.0*SQR(io)*io - 24.0*SQR(io)
+                                     - 93.0*io + 60.0)/delta;
+            // w_ip2
+            c4i(i) = -(2.0*io + 3.0)*(5.0*SQR(io)*io - 8.0*SQR(io) - 3.0*io + 4.0)/delta;
+          } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
+            // Mignone equation B.14:
+            Real delta = 36.0*(15.0*SQR(SQR(SQR(io))) - 85.0*SQR(SQR(io))*SQR(io)
+                               + 150.0*SQR(SQR(io)) - 60.0*SQR(io) + 16);
+            c1i(i) = -(3.0*SQR(io) - 9.0*io + 7.0)*(
+                15.0*SQR(SQR(io))*SQR(io) + 48.0*SQR(SQR(io))*io
+                + 23.0*SQR(SQR(io)) - 48.0*SQR(io)*io - 30.0*SQR(io)
+                + 16.0*io + 12.0)/delta;
+            c2i(i) = (3.0*SQR(io) - 3.0*io + 1.0)*(
+                105.0*SQR(SQR(io))*SQR(io) + 144.0*SQR(SQR(io))*io
+                - 487.0*SQR(SQR(io)) - 720.0*SQR(io)*io +510.0*SQR(io)
+                + 1008.0*io + 372.0)/delta;
+            c3i(i) = (3.0*SQR(io) + 3*io + 1.0)*(
+                105.0*SQR(SQR(io))*SQR(io) - 144.0*SQR(SQR(io))*io
+                - 487.0*SQR(SQR(io)) + 720.0*SQR(io)*io +510.0*SQR(io)
+                - 1008.0*io + 372.0)/delta;
+            c4i(i) = -(3.0*SQR(io) + 9.0*io + 7.0)*(
+                15.0*SQR(SQR(io))*SQR(io) - 48.0*SQR(SQR(io))*io
+                + 23.0*SQR(SQR(io)) + 48.0*SQR(io)*io - 30.0*SQR(io)
+                - 16.0*io + 12.0)/delta;
+          } // end "spherical_polar"
+          // TODO(felker): add check for normalization condition, Mignone eq 22.
+          // (typical deviations of sum(wghts)!=1.0 are around machine precision)
+        }   // end "uniform[X1DIR]"
+      }  // end loop over i
 
       // Compute curvilinear geometric factors for limiter (Mignone eq 48): radial
       // direction in cylindrical and spherical-polar coordinates. Same formulas
       // for nonuniform and uniform radial mesh spacings.
       for (int i=(pmb->is)-1; i<=(pmb->ie)+1; ++i) {
         Real h_plus, h_minus;
-        Real& dx_i   = pmb->pcoord->dx1f(i);
-        Real& xv_i   = pmb->pcoord->x1v(i);
+        Real& dx_i   = pco->dx1f(i);
+        Real& xv_i   = pco->x1v(i);
 
         // radius may beomce negative in the lower x1 ghost cells:
-        xv_i = 0.5*(pmb->pcoord->x1f(i+1) + pmb->pcoord->x1f(i));
+        xv_i = 0.5*(pco->x1f(i+1) + pco->x1f(i));
         xv_i = std::abs(xv_i);
 
         if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
@@ -368,14 +451,14 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       } else { // coeffcients along Cartesian-like x1 with nonuniform mesh spacing
 #pragma omp simd
         for (int i=(pmb->is)-NGHOST+1; i<=(pmb->ie)+NGHOST-1; ++i) {
-          Real& dx_im1 = pmb->pcoord->dx1f(i-1);
-          Real& dx_i   = pmb->pcoord->dx1f(i  );
-          Real& dx_ip1 = pmb->pcoord->dx1f(i+1);
+          Real& dx_im1 = pco->dx1f(i-1);
+          Real& dx_i   = pco->dx1f(i  );
+          Real& dx_ip1 = pco->dx1f(i+1);
           Real qe = dx_i/(dx_im1 + dx_i + dx_ip1);       // Outermost coeff in CW eq 1.7
           c1i(i) = qe*(2.0*dx_im1+dx_i)/(dx_ip1 + dx_i); // First term in CW eq 1.7
           c2i(i) = qe*(2.0*dx_ip1+dx_i)/(dx_im1 + dx_i); // Second term in CW eq 1.7
           if (i > (pmb->is)-NGHOST+1) {  // c3-c6 are not computed in first iteration
-            Real& dx_im2 = pmb->pcoord->dx1f(i-2);
+            Real& dx_im2 = pco->dx1f(i-2);
             Real qa = dx_im2 + dx_im1 + dx_i + dx_ip1;
             Real qb = dx_im1/(dx_im1 + dx_i);
             Real qc = (dx_im2 + dx_im1)/(2.0*dx_im1 + dx_i);
@@ -404,29 +487,50 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
 
       if (curvilinear[X2DIR]) {
         // meridional/polar/theta direction in spherical-polar coordinates
-
-        // emit warning: need to numerically invert system of equations given by Mignone
-        // equations 21 and 27 with specific nonuniform or uniform meridional mesh
-        // spacings in order to precompute reconstruction weights.
-        if (Globals::my_rank == 0) {
-          std::stringstream x2_curv_msg;
-          x2_curv_msg
-                << "### Warning in Reconstruction constructor" << std::endl
-                << "Selected time/xorder=" << input_recon << " reconstruction with\n"
-                << "curvilinear COORDINATE_SYSTEM=" << COORDINATE_SYSTEM << "\n"
-                << " currently uses uniform Cartesian reconstruction weights\n"
-                << "Precomputing the weights for the spherical-polar x2 meridional\n"
-                << "coordinate requires the solution to a linear system of equations;\n"
-                << "this will be implemented at a future date" << std::endl;
-            std::cout << x2_curv_msg.str();
+        std::function<int(int)> factorial;  // recursive lambda function
+                                            // (C++14 would make this easier)
+        factorial = [&factorial] (int k) -> int { return (k <=1) ? 1 : factorial(k-1)*k;};
+        for (int j=(pmb->js)-NGHOST+2; j<=(pmb->je)+NGHOST-1; ++j) {
+          // need to numerically invert system of equations given by Mignone
+          // equations 21 and 27 with specific nonuniform or uniform meridional mesh
+          // spacings in order to precompute reconstruction weights
+          for (int row=0; row<kNrows; row++) {
+            b_rhs[row] = std::pow(pco->x2f(j), row);
+            int s = row - kNrows/2;  // rescale index from -2 to +1
+            Real coeff = 1.0/(std::cos(pco->x2f(j+s)) - std::cos(pco->x2f(j+s+1)));
+            for (int col=0; col<kNcols; col++) {
+              beta_array[col][row] = 0.0;
+              for (int k=0; k<=col; k++) {
+                // Mignone equation 27:
+                // transpose:
+                beta_array[col][row] += factorial(col)/(factorial(col - k))*(
+                    std::pow(pco->x2f(j+s), col-k)
+                    *std::cos(pco->x2f(j+s) + 0.5*PI*k)
+                    - std::pow(pco->x2f(j+s+1), col-k)
+                    *std::cos(pco->x2f(j+s+1) + 0.5*PI*k));
+              }
+              beta_array[col][row] *= coeff;
+            }
           }
-        // for now, fall back to below uniform spacing Cartesian reconstruction wghts
-        // (could use general nonuniform Cartesian-like coordinate weights)
-        for (int j=(pmb->js)-NGHOST; j<=(pmb->je)+NGHOST; ++j) {
-          c1j(j) = -1.0/12.0;
-          c2j(j) = 7.0/12.0;
-          c3j(j) = 7.0/12.0;
-          c4j(j) = -1.0/12.0;
+
+          Real tol = 3e-16;
+          if (LUPDecompose(beta, 4, tol, permute)) {
+            // LU decomposition succeeded; solve the linear system w/ forward/back sub:
+            LUPSolve(beta, permute, b_rhs, 4, w_sol);
+          } else {
+            std::stringstream msg;
+            msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+                << "Failure in LU decomposition step for computing PPMx2 curvilinear\n"
+                << "reconstruction weights at cell index j=" << j << " for nx2="
+                << pmb->block_size.nx2 << std::endl;
+            std::cout << msg.str();
+            ATHENA_ERROR(msg);
+          }
+          // TODO(felker): possibly transform weights at theta <0 and/or theta >pi
+          c1j(j) = w_sol[0];
+          c2j(j) = w_sol[1];
+          c3j(j) = w_sol[2];
+          c4j(j) = w_sol[3];
         }
         // Compute curvilinear geometric factors for limiter (Mignone eq 48)
         for (int j=(pmb->js)-1; j<=(pmb->je)+1; ++j) {
@@ -436,9 +540,9 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
           // note: x2 may become negative at lower boundary ghost cells and may exceedc
           // pi at upper boundary ghost cells
           // TODO(felker): may need to take abs() or change signs of terms in ghost zone
-          Real& dx_j   = pmb->pcoord->dx2f(j);
-          Real& xf_j   = pmb->pcoord->x2f(j);
-          Real& xf_jp1   = pmb->pcoord->x2f(j+1);
+          Real& dx_j   = pco->dx2f(j);
+          Real& xf_j   = pco->x2f(j);
+          Real& xf_jp1   = pco->x2f(j+1);
           Real dmu = std::cos(xf_j) - std::cos(xf_jp1);
           Real dmu_tilde = std::sin(xf_j) - std::sin(xf_jp1);
           h_plus = (dx_j*(dmu_tilde + dx_j*std::cos(xf_jp1)))/(
@@ -472,15 +576,15 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
         } else { // coeffcients along Cartesian-like x2 with nonuniform mesh spacing
 #pragma omp simd
           for (int j=(pmb->js)-NGHOST+2; j<=(pmb->je)+NGHOST-1; ++j) {
-            Real& dx_jm1 = pmb->pcoord->dx2f(j-1);
-            Real& dx_j   = pmb->pcoord->dx2f(j  );
-            Real& dx_jp1 = pmb->pcoord->dx2f(j+1);
+            Real& dx_jm1 = pco->dx2f(j-1);
+            Real& dx_j   = pco->dx2f(j  );
+            Real& dx_jp1 = pco->dx2f(j+1);
             Real qe = dx_j/(dx_jm1 + dx_j + dx_jp1);       // Outermost coeff in CW eq 1.7
             c1j(j) = qe*(2.0*dx_jm1 + dx_j)/(dx_jp1 + dx_j); // First term in CW eq 1.7
             c2j(j) = qe*(2.0*dx_jp1 + dx_j)/(dx_jm1 + dx_j); // Second term in CW eq 1.7
 
             if (j > (pmb->js)-NGHOST+1) {  // c3-c6 are not computed in first iteration
-              Real& dx_jm2 = pmb->pcoord->dx2f(j-2);
+              Real& dx_jm2 = pco->dx2f(j-2);
               Real qa = dx_jm2 + dx_jm1 + dx_j + dx_jp1;
               Real qb = dx_jm1/(dx_jm1 + dx_j);
               Real qc = (dx_jm2 + dx_jm1)/(2.0*dx_jm1 + dx_j);
@@ -523,15 +627,15 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       } else { // nonuniform spacing
 #pragma omp simd
         for (int k=(pmb->ks)-NGHOST+2; k<=(pmb->ke)+NGHOST-1; ++k) {
-          Real& dx_km1 = pmb->pcoord->dx3f(k-1);
-          Real& dx_k   = pmb->pcoord->dx3f(k  );
-          Real& dx_kp1 = pmb->pcoord->dx3f(k+1);
+          Real& dx_km1 = pco->dx3f(k-1);
+          Real& dx_k   = pco->dx3f(k  );
+          Real& dx_kp1 = pco->dx3f(k+1);
           Real qe = dx_k/(dx_km1 + dx_k + dx_kp1);       // Outermost coeff in CW eq 1.7
           c1k(k) = qe*(2.0*dx_km1+dx_k)/(dx_kp1 + dx_k); // First term in CW eq 1.7
           c2k(k) = qe*(2.0*dx_kp1+dx_k)/(dx_km1 + dx_k); // Second term in CW eq 1.7
 
           if (k > (pmb->ks)-NGHOST+1) {  // c3-c6 are not computed in first iteration
-            Real& dx_km2 = pmb->pcoord->dx3f(k-2);
+            Real& dx_km2 = pco->dx3f(k-2);
             Real qa = dx_km2 + dx_km1 + dx_k + dx_kp1;
             Real qb = dx_km1/(dx_km1 + dx_k);
             Real qc = (dx_km2 + dx_km1)/(2.0*dx_km1 + dx_k);
@@ -556,3 +660,119 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 }
+
+
+namespace {
+// INPUT: A - array of pointers to rows of a square matrix having dimension N
+//       Tol - small tolerance number to detect failure when the matrix is near degenerate
+
+// OUTPUT: Matrix A is changed, it contains both matrices L-E and U as A=(L-E)+U such that
+//        P*A=L*U.  The permutation matrix is not stored as a matrix, but in an integer
+//        vector P of size N+1 containing column indexes where the permutation matrix has
+//        "1". The last element P[N]=S+N, where S is the number of row exchanges needed
+//        for determinant computation, det(P)=(-1)^S
+
+int LUPDecompose(Real **A, int N, Real Tol, int *P) {
+  for (int i=0; i<=N; i++)
+    P[i] = i; // Unit permutation matrix, P[N] initialized with N
+
+  for (int i=0; i<N; i++) {
+    Real maxA = 0.0;
+    Real absA = 0.0;
+    int imax = i;
+
+    for (int k=i; k<N; k++)
+      if ((absA = std::abs(A[k][i])) > maxA) {
+        maxA = absA;
+        imax = k;
+      }
+    if (maxA < Tol) {
+      std::cout << std::scientific
+                << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
+                << maxA << std::endl;
+      return 0; // failure, matrix is degenerate
+    }
+
+    if (imax != i) {
+      // pivoting P
+      int j = P[i];
+      P[i] = P[imax];
+      P[imax] = j;
+
+      // pivoting rows of A
+      Real *ptr = A[i];
+      A[i] = A[imax];
+      A[imax] = ptr;
+
+      // counting pivots starting from N (for determinant)
+      P[N]++;
+    }
+
+    for (int j=i+1; j<N; j++) {
+      A[j][i] /= A[i][i];
+
+      for (int k=i+1; k<N; k++)
+        A[j][k] -= A[j][i] * A[i][k];
+    }
+  }
+  return 1;  // decomposition done
+}
+
+// INPUT: A,P filled in LUPDecompose; b - rhs vector; N - dimension
+// OUTPUT: x - solution vector of A*x=b
+void LUPSolve(Real **A, int *P, Real *b, int N, Real *x) {
+  for (int i = 0; i < N; i++) {
+    x[i] = b[P[i]];
+
+    for (int k = 0; k < i; k++)
+      x[i] -= A[i][k] * x[k];
+  }
+
+  for (int i = N - 1; i >= 0; i--) {
+    for (int k = i + 1; k < N; k++)
+      x[i] -= A[i][k] * x[k];
+
+    x[i] = x[i] / A[i][i];
+  }
+  return;
+}
+
+// INPUT: A,P filled in LUPDecompose; N - dimension
+// OUTPUT: IA is the inverse of the initial matrix
+
+void LUPInvert(Real **A, int *P, int N, Real **IA) {
+  for (int j = 0; j < N; j++) {
+    for (int i = 0; i < N; i++) {
+      if (P[i] == j)
+        IA[i][j] = 1.0;
+      else
+        IA[i][j] = 0.0;
+
+      for (int k = 0; k < i; k++)
+        IA[i][j] -= A[i][k] * IA[k][j];
+    }
+
+    for (int i = N - 1; i >= 0; i--) {
+      for (int k = i + 1; k < N; k++)
+        IA[i][j] -= A[i][k] * IA[k][j];
+
+      IA[i][j] = IA[i][j] / A[i][i];
+    }
+  }
+}
+
+// INPUT: A,P filled in LUPDecompose; N - dimension.
+// OUTPUT: Function returns the determinant of the initial matrix
+
+Real LUPDeterminant(Real **A, int *P, int N) {
+  Real det = A[0][0];
+
+  for (int i = 1; i < N; i++)
+    det *= A[i][i];
+
+  if ((P[N] - N) % 2 == 0)
+    return det;
+  else
+    return -det;
+}
+} // namespace
