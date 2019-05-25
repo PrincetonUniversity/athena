@@ -88,7 +88,7 @@ time python -u ./run_tests.py sr --coverage="${lcov_capture_cmd}" --silent
 time python -u ./run_tests.py curvilinear --coverage="${lcov_capture_cmd}" --silent
 time python -u ./run_tests.py symmetry --coverage="${lcov_capture_cmd}" --silent
 time python -u ./run_tests.py eos --coverage="${lcov_capture_cmd}" --silent
-time python -u ./run_tests.py scalars --coverage="${lcov_capture_cmd}" --silent
+time python -u ./run_tests.py scalars/mignone_radial_1d --coverage="${lcov_capture_cmd}" --silent
 # Exclude gr/compile*.py regression tests from code coverage analysis (nothing is executed in these tests):
 time python -u ./run_tests.py gr/compile_kerr-schild gr/compile_minkowski gr/compile_schwarzschild --silent
 time python -u ./run_tests.py gr/mhd_shocks_hlld gr/mhd_shocks_hlle gr/mhd_shocks_llf \
@@ -205,7 +205,7 @@ time python -u ./run_tests.py shearingbox --config=--cxx=icpc --silent
 time python -u ./run_tests.py diffusion --config=--cxx=icpc --silent
 time python -u ./run_tests.py symmetry --config=--cxx=icpc --silent
 time python -u ./run_tests.py eos --config=--cxx=icpc --silent
-time python -u ./run_tests.py scalars --config=--cxx=icpc --silent
+time python -u ./run_tests.py scalars/mignone_radial_1d --config=--cxx=icpc --silent
 
 # High-order solver regression tests w/ Intel compiler
 time python -u ./run_tests.py hydro4 --config=--cxx=icpc --silent
