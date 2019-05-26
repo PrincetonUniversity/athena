@@ -264,10 +264,15 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     // Real *beta = beta_array.data();
 
     // bad/hardcoded raw pointer data structure for compatibility with Wikipedia routines:
-    Real beta_array[kNrows][kNcols];
-    Real *beta_rows[kNrows] = {beta_array[0], beta_array[1], beta_array[2],
-                               beta_array[3]};
-    Real **beta = beta_rows;
+    // Real beta_array[kNrows][kNcols];
+    // Real *beta_rows[kNrows] = {beta_array[0], beta_array[1], beta_array[2],
+    //                            beta_array[3]};
+    // Real **beta = beta_rows;
+    Real **beta = new Real*[kNrows];
+    for (int i=0; i<kNrows; ++i) {
+      beta[i] = new Real[kNcols];
+    }
+
     Real w_sol[kNrows], b_rhs[kNrows];
     int permute[kNrows];
     //AthenaArray<Real> beta(4, 4, pmb->ncells1), b_rhs(4, pmb->ncells1);
@@ -293,7 +298,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
               int s = row - kNrows/2;  // rescale index from -2 to +1
               // beta(row, col) =
               // transpose:
-              beta_array[col][row] =
+              beta[col][row] =
                   coeff*(
                       std::pow(pco->x1f(i+s+1), pow_num)
                       - std::pow(pco->x1f(i+s), pow_num)) / (
@@ -314,7 +319,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
           // need to print out via separate pair of nested loops if initializing transpose
           // for (int row=0; row<kNrows; row++) {
           //   for (int col=0; col<kNcols; col++) {
-          //     std::cout << beta_array[row][col] << " ";
+          //     std::cout << beta[row][col] << " ";
           //   }
           //   std::cout << "   " << b_rhs[row];
           //   std::cout << std::endl;
@@ -499,17 +504,17 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
             int s = row - kNrows/2;  // rescale index from -2 to +1
             Real coeff = 1.0/(std::cos(pco->x2f(j+s)) - std::cos(pco->x2f(j+s+1)));
             for (int col=0; col<kNcols; col++) {
-              beta_array[col][row] = 0.0;
+              beta[col][row] = 0.0;
               for (int k=0; k<=col; k++) {
                 // Mignone equation 27:
                 // transpose:
-                beta_array[col][row] += factorial(col)/(factorial(col - k))*(
+                beta[col][row] += factorial(col)/(factorial(col - k))*(
                     std::pow(pco->x2f(j+s), col-k)
                     *std::cos(pco->x2f(j+s) + 0.5*PI*k)
                     - std::pow(pco->x2f(j+s+1), col-k)
                     *std::cos(pco->x2f(j+s+1) + 0.5*PI*k));
               }
-              beta_array[col][row] *= coeff;
+              beta[col][row] *= coeff;
             }
           }
 
@@ -658,7 +663,10 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
         }
       }
     }
-  }
+    for (int i=0; i<kNrows; ++i) {
+      delete[] beta[i];
+    }
+  } // end "if PPM or full 4th order spatial integrator"
 }
 
 
