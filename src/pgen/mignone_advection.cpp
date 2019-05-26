@@ -169,14 +169,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
                   cell_ave *= ONE_3RD*(SQR(pmb->pcoord->x1f(i+1))*pmb->pcoord->x1f(i+1)
                                        - SQR(pmb->pcoord->x1f(i))*pmb->pcoord->x1f(i));
                 } else {
-                  cell_ave = InitialCosineProfile(pmb->pcoord->x2v(j));
+                  cell_ave = FinalCosineProfile(pmb->pcoord->x2v(j));
                 }
               } // end if iprob == 2
               Real sol = 1.0/scalar_norm*cell_ave;
-              l1_err[n] += std::abs(sol - pmb->pscalars->s(n,k,j,i))*vol(i);
-              max_err[n] = std::max(
-                  static_cast<Real>(std::abs(sol - pmb->pscalars->s(n,k,j,i))),
-                  max_err[n]);
+              Real abs_diff = std::abs(sol - pmb->pscalars->s(n,k,j,i));
+              l1_err[n] += abs_diff*vol(i);
+              max_err[n] = std::max(abs_diff, max_err[n]);
               total_vol += vol(i);
             }
           }
@@ -373,7 +372,7 @@ Real FinalGaussianProfile(Real x1) {
 Real InitialCosineProfile(Real x2) {
   Real shift_x2 = x2 - b_center;
   if (std::abs(shift_x2) < PI/a_width) {
-    return SQR(0.5 - 0.5*std::cos(a_width*shift_x2));  // Mignone eq 77
+    return SQR(0.5 + 0.5*std::cos(a_width*shift_x2));  // Mignone eq 77
   } else {
     return 0.0;
   }

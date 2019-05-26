@@ -31,17 +31,22 @@ nsamples = 1000    # x2 samples for analytic solution
 
 def InitialCosineProfile(x2, a, b):
     shift_x2 = x2 - b
-    return (np.abs(shift_x2) < np.pi/a)*(0.5 - 0.5*np.cos(a*shift_x2))**2
+    return (np.abs(shift_x2) < np.pi/a)*(0.5 + 0.5*np.cos(a*shift_x2))**2
 
 
 def EvolvedCosineProfile(x2, a, b, t):
-    x_initial = x2*np.exp(-alpha*t)
+    # deep copy input x2:
+    x = np.array(x2)
+    x_initial = x*np.exp(-alpha*t)
     q_initial = InitialCosineProfile(x_initial, a, b)
     # Mignone equation 77 becomes singular at pole; set to 0 at x2=0
-    amp = np.exp(-alpha*t)*np.sin(x_initial)/np.sin(x2)
-    sol = amp*q_initial
     if x2[0] == 0.0:
-        sol[0] = 0.0
+        x[0] = 1.0
+    amp = np.exp(-alpha*t)*np.sin(x_initial)/np.sin(x)
+    # change copied coordinate back to 0.0
+    if x2[0] == 0.0:
+        x[0] = 0.0
+    sol = amp*q_initial
     return sol
 
 
@@ -176,7 +181,7 @@ def figure4_convergence():
                                                                 xorder_))
             # read Athena++ data from error file
             data = athena_read.error_dat(error_file)
-            ax.loglog(data[:, 0], data[:, 4], ':{}'.format(xorder_symbols[xorder_]),
+            ax.loglog(data[:, 1], data[:, 4], ':{}'.format(xorder_symbols[xorder_]),
                       fillstyle='none', color=xorder_colors[xorder_],
                       label=xorder_str_, markersize=8)
 
