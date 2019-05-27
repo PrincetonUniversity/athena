@@ -353,16 +353,16 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                 data[str(key)] = f.attrs[key]
 
             # Store location metadata
-            data['Levels'] = f['Levels']
-            data['LogicalLocations'] = f['LogicalLocations']
+            data['Levels'] = f['Levels'][:]
+            data['LogicalLocations'] = f['LogicalLocations'][:]
 
             # Store coordinate data
-            data['x1f'] = f['x1f']
-            data['x2f'] = f['x2f']
-            data['x3f'] = f['x3f']
-            data['x1v'] = f['x1v']
-            data['x2v'] = f['x2v']
-            data['x3v'] = f['x3v']
+            data['x1f'] = f['x1f'][:]
+            data['x2f'] = f['x2f'][:]
+            data['x3f'] = f['x3f'][:]
+            data['x1v'] = f['x1v'][:]
+            data['x2v'] = f['x2v'][:]
+            data['x3v'] = f['x3v'][:]
 
             # Get metadata describing file layout
             dataset_names = np.array([x.decode('ascii', 'replace')
