@@ -162,8 +162,8 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   } else { // single data
     if (variable.compare(0,1,"B") == 0 && MAGNETIC_FIELDS_ENABLED)
       std::strncpy(dataset_names[n_dataset_names++], "B", max_name_length+1);
-    else if (variable.compare(0,1,"uov") == 0
-             || variable.compare(0,1,"user_out_var") == 0)
+    else if (variable.compare(0,3,"uov") == 0
+             || variable.compare(0,12,"user_out_var") == 0)
       std::strncpy(dataset_names[n_dataset_names++], "user_out_var", max_name_length+1);
     else
       std::strncpy(dataset_names[n_dataset_names++], "hydro", max_name_length+1);
