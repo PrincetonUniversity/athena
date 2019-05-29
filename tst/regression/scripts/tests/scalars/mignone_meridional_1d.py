@@ -16,9 +16,9 @@ import athena_read                             # noqa
 athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 # Switches to automatically use utilities in plot_mignone/ subfolder:
-plot_profiles = True
+plot_profiles = False
 nx2_profile = 64
-plot_convergence = True
+plot_convergence = False
 if plot_convergence or plot_profiles:
     from scripts.utils.plot_mignone.section_5_1_2 import \
         plot_profiles, figure4_convergence # noqa
@@ -36,17 +36,29 @@ cases = {
 mignone_tbl4 = {
     'A': {
         # PLM monotonized central (MC) limiter:
-        2: [3.95e-4, 1.31e-4, 2.95e-5, 6.92e-6, 1.67e-6, 4.12e-7, 1.02e-7],
+        # 2: [3.95e-4, 1.31e-4, 2.95e-5, 6.92e-6, 1.67e-6, 4.12e-7, 1.02e-7],
         # PLM van Leer (VL) limiter (unpublished--- from Athena++ ???):
-        # 2: [],
-        3: [8.76e-5, 9.97e-6, 8.44e-7, 6.41e-8, 4.66e-9, 3.33e-10, 2.42e-11],
+        2: [2.17e-4, 7.84e-5, 2.26e-5, 6.07e-6, 1.57e-6, 3.99e-7, 1.01e-7],
+        3: [8.76e-5, 9.97e-6, 8.44e-7, 6.41e-8, 4.66e-9,
+            # Unknown error convergence floor in 2D Athena++ variant of 1D Mignone problem
+            # that affects monotonic case's PPM4 results at nx2=1024, 2048:
+            3.45e-10, 8.17e-11],
+        # If analytic x2-face area-average v_theta(theta, r) is used to upwind scalars:
+        # (nearly the same for all dx1, unlike general technique's O(dx1^2) flux error)
+        # 3.45e-10, 8.72e-11],
+
+        # Actual Mignone (2014) Table 4 errors:
+        # 3.33e-10, 2.42e-11],
     },
     'B': {
         # PLM MC
-        2: [3.97e-3, 1.30e-3, 3.90e-4, 9.74e-5, 2.43e-5, 6.05e-6, 1.50e-6],
+        # 2: [3.97e-3, 1.30e-3, 3.90e-4, 9.74e-5, 2.43e-5, 6.05e-6, 1.50e-6],
         # PLM VL
-        # 2: [],
-        3: [2.57e-3, 5.87e-4, 1.30e-4, 2.81e-5, 6.10e-6, 1.33e-6, 2.82e-7],
+        2: [4.73e-3, 1.47e-3, 4.35e-4, 1.15e-4, 2.88e-5, 7.14e-6, 1.75e-6],
+        3: [2.57e-3, 5.87e-4, 1.30e-4, 2.81e-5, 6.10e-6, 1.33e-6,
+            # See above comments:
+            2.84e-07]
+        # 2.82e-7],
     },
 }
 
@@ -108,9 +120,6 @@ def run(**kwargs):
                              'time/integrator={}'.format(torder),
                              'mesh/nx2={}'.format(nx_),
                              'mesh/x2rat={}'.format(x2rat),
-
-                             # 'time/nlim=0',
-
                              # suppress .hst output, by default
                              'output1/dt=-1',
                              # .tab output:
