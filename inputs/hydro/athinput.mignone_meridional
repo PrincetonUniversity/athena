@@ -12,10 +12,16 @@ dt         = 0.01      # time increment between outputs
 data_format = %.17g    # round trip conversion: binary64 <-> decimal
 
 <output2>
-file_type   = tab      # Binary data dump
+file_type   = tab      # Tabular data dump
 variable    = prim     # variables to be output
 dt          = 0.01     # time increment between outputs
-x1_slice    = 18.0
+x1_slice    = 11.0     # slice in radius x1
+
+<output3>
+file_type   = vtk      # Binary data dump
+variable    = prim     # variables to be output
+cartesian_vector = true  # Transform velocity vector to Cartesian coordinate basis
+dt          = 0.01     # time increment between outputs
 
 <time>
 cfl_number  = 0.9      # The Courant, Friedrichs, & Lewy (CFL) Number
@@ -28,26 +34,22 @@ correct_ic  = false    # correct midpoint assumption in initial condition
 correct_err = false    # correct midpoint assumption in analytic solution
 
 <mesh>
-nx1        = 8         # Number of zones in X1-direction
-x1min      = 10.0       # minimum value of X1
-x1max      = 20.0       # maximum value of X1
+nx1        = 4         # Number of zones in X1-direction
+x1min      = 10.9999   # minimum value of X1
+x1max      = 11.0001   # maximum value of X1
 ix1_bc     = periodic  # inner-X1 boundary flag
 ox1_bc     = periodic  # outer-X1 boundary flag
 
-nx2        = 32         # Number of zones in X2-direction
+nx2        = 32        # Number of zones in X2-direction
 x2min      = 0.0       # minimum value of X2
 x2max      = 1.570796326794896 # = pi/2 # maximum value of X2
-ix2_bc     = reflecting   # polar_wedge # inner-X2 boundary flag
+ix2_bc     = reflecting  # polar_wedge # inner-X2 boundary flag
 ox2_bc     = outflow     # outer-X2 boundary flag
-
-# x2max = 3.141592653589793
-# ox2_bc = polar_wedge
 x2rat      = 1.0       # non-uniform grid ratio
 
 nx3        = 1        # Number of zones in X3-direction
-x3min      = 0.0       # minimum value of X3
-x3max      = 1.0       # maximum value of X3
-# 6.2831853071795862  
+x3min      = 2.6415926535897932384626433
+x3max      = 3.6415926535897932384626433
 ix3_bc     = periodic  # inner-X2 boundary flag
 ox3_bc     = periodic  # outer-X2 boundary flag
 
