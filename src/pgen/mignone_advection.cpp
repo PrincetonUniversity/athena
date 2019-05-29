@@ -329,8 +329,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               d0*alpha*(std::sin(xu) - xu*std::cos(xu)
                         - (std::sin(xl) - xl*std::cos(xl)));
           phydro->u(IM2,k,j,i) *= pcoord->dx3f(k)/vol(i);
-          phydro->u(IM2,k,j,i) *= ONE_3RD*(SQR(pcoord->x1f(i+1))*pcoord->x1f(i+1)
-                                           - SQR(pcoord->x1f(i))*pcoord->x1f(i));
+          phydro->u(IM2,k,j,i) *= 0.25*(SQR(SQR(pcoord->x1f(i+1)))
+                                        - SQR(SQR(pcoord->x1f(i))));
+          // vs. midpoint approximation for intiialization of linear velocity profile:
+          // (note, Mignone assumes r=1 for the 1D variant of this problem; need to scale
+          // v_theta with radius in this 2D variant)
+          // phydro->u(IM2,k,j,i) = d0*alpha*pcoord->x2v(j)*pcoord->x1f(i);
           if (use_gl_quadrature) {
             Real cell_quad = GaussLegendre::integrate(N_gl, IntegrandInitial, xl, xu);
             cell_ave = cell_quad*pcoord->dx3f(k)/vol(i);
