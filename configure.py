@@ -36,7 +36,8 @@
 #   --gcovcmd=name    use name as the command to call the gcov utility
 #   --cflag=string    append string whenever invoking compiler/linker
 #   --include=path    use -Ipath when compiling
-#   --lib=path        use -Lpath when linking
+#   --lib_path=path   use -Lpath when linking
+#   --lib=xxx         use -lxxx when linking
 # ----------------------------------------------------------------------------------------
 
 # Modules
@@ -280,16 +281,22 @@ parser.add_argument(
     default=[],
     action='append',
     help=('extra path for included header files (-I<path>); can be specified multiple '
-          'times')
-)
+          'times'))
+
+# --lib_path=[name] arguments
+parser.add_argument(
+    '--lib_path',
+    default=[],
+    action='append',
+    help=('extra path for linked library files (-L<path>); can be specified multiple '
+          'times'))
+
 # --lib=[name] arguments
 parser.add_argument(
     '--lib',
     default=[],
     action='append',
-    help=('extra path for linked library files (-L<path>); can be specified multiple '
-          'times')
-)
+    help='name of library to link against (-l<lib>); can be specified multiple times')
 
 # Parse command-line inputs
 args = vars(parser.parse_args())
@@ -738,9 +745,13 @@ if args['cflag'] is not None:
 for include_path in args['include']:
     makefile_options['COMPILER_FLAGS'] += ' -I'+include_path
 
-# --lib=[name] arguments
-for library_path in args['lib']:
+# --lib_path=[name] arguments
+for library_path in args['lib_path']:
     makefile_options['LINKER_FLAGS'] += ' -L'+library_path
+
+# --lib=[name] arguments
+for library_name in args['lib']:
+    makefile_options['LIBRARY_FLAGS'] += ' -l'+library_name
 
 # Assemble all flags of any sort given to compiler
 definitions['COMPILER_FLAGS'] = ' '.join(
