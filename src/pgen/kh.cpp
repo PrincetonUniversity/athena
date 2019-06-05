@@ -277,6 +277,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     Real amp = pin->GetReal("problem","amp");
     // unstratified problem is the default
     Real drho_rho0 = pin->GetOrAddReal("problem", "drho_rho0", 0.0);
+    // set background vx to nonzero to evolve the KHI in a moving frame
+    Real vboost = pin->GetOrAddReal("problem", "vboost", 0.0);
     Real P0 = 10.0;
     Real a = 0.05;
     Real sigma = 0.2;
@@ -294,7 +296,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IDN,k,j,i) = dens;
 
           Real v1 = vflow*(std::tanh((pcoord->x2v(j) - z1)/a)
-                           - std::tanh((pcoord->x2v(j) - z2)/a) - 1.0); // 8b)
+                           - std::tanh((pcoord->x2v(j) - z2)/a) - 1.0) // 8b)
+                    + vboost;
           // Currently, the midpoint approx. is applied in the momenta and energy calc
           phydro->u(IM1,k,j,i) = v1*dens;
 

@@ -60,7 +60,8 @@ gamma           = 1.6666667    # gamma = C_p/C_v
 <problem>                # Default parameter values correspond to Re=10^5
 iprob  = 4
 amp    = 0.01            # amplitude of initial vy perturbation
-vflow  = 1.0             # background vx
+vflow  = 1.0             # relative shear velocity of 2x interfaces
+vboost = 0.0             # background vx for setting up a moving ref frame
 drho_rho0 = 0.0          # stratified or unstratified problem (delta rho / rho0)
 nu_iso    = 2e-5         # isotropic viscosity coefficient
 nu_scalar_iso = 2e-5     # isotropic passive scalar diffusion coefficient
