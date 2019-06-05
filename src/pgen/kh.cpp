@@ -288,7 +288,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
-          // Lecoanet (2016) equation 8a)
+          // Lecoanet (2015) equation 8a)
           Real dens = 1.0 + 0.5*drho_rho0*(std::tanh((pcoord->x2v(j) - z1)/a) -
                                            std::tanh((pcoord->x2v(j) - z2)/a));
           phydro->u(IDN,k,j,i) = dens;
@@ -305,7 +305,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           // by modifying the operands.  Centering the domain on x1=0.0 ensures reflective
           // symmetry, x1' -> -x1 NOT shift symmetry, x1' -> x1 + 0.5 (harder guarantee)
 
-          // For example, consider a cell in the right half of the dom ain with x1v > 0.0,
+          // For example, consider a cell in the right half of the domain with x1v > 0.0,
           // so that shift symmetry should hold w/ another cell's x1v'= -0.5 + x1v < 0.0
 
           // ISSUE: sin(2*pi*(-0.5+x1v)) != -sin(2*pi*x1v) in floating-point calculations
@@ -327,7 +327,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           // to [-pi/4, pi/4], e.g.) is NOT guaranteed:
           // sin(2*pi*(-0.5+x1v)) = sin(-pi + 2*pi*x1v) != -sin(2*pi*x1v)
 
-          // WORKAROUND: Averge inexact sin() with -sin() sample on opposite x1-half of
+          // WORKAROUND: Average inexact sin() with -sin() sample on opposite x1-half of
           // domain The assumption of periodic domain with x1min=-0.5 and x1max=0.5 is
           // hardcoded here (v2 is the only quantity in the IC with x1 dependence)
 
@@ -339,7 +339,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           }
           ave_sine /= 2.0;
 
-          // translated x1= x - 1/2 relative to Lecoanet (2016) shifts sine function by pi
+          // translated x1= x - 1/2 relative to Lecoanet (2015) shifts sine function by pi
           // (half-period) and introduces U_z sign change:
           Real v2 = -amp*ave_sine
                     *(std::exp(-(SQR(pcoord->x2v(j) - z1))/(sigma*sigma)) +
