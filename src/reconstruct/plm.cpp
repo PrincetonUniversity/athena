@@ -201,6 +201,11 @@ void Reconstruction::PiecewiseLinearX2(
         dwm(n,i) = (dq2*(cf*dqB + cb*dqF)/
                     (SQR(dqB) + SQR(dqF) + dq2*(cf + cb - 2.0)));
         if (dq2 <= 0.0) dwm(n,i) = 0.0; // ---> no concern for divide-by-0 in above line
+
+        // Real v = dqB/dqF;
+        // // monotoniced central (MC) limiter (Mignone eq 38)
+        // // (std::min calls should avoid issue if divide-by-zero causes v=Inf)
+        // dwm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
       }
     }
   }

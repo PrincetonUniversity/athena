@@ -41,15 +41,21 @@ Real a_width, b_center, alpha;
 Real iso_cs;
 int m_coord;
 Real t_final;
+int iprob;
 
 // pointwise analytic initial condition for Gaussian bell curve
 Real InitialGaussianProfile(Real x1);
 // pointwise analytic exact solution at any t >=0 for a linear x1 velocity profile
 Real FinalGaussianProfile(Real x1);
-Real CylindricalIntegrandInitial(Real x1);
-Real CylindricalIntegrandFinal(Real x1);
-Real SphericalIntegrandInitial(Real x1);
-Real SphericalIntegrandFinal(Real x1);
+Real InitialGaussianCylindricalIntegrand(Real x1);
+Real FinalGaussianCylindricalIntegrand(Real x1);
+Real InitialGaussianSphericalIntegrand(Real x1);
+Real FinalGaussianSphericalIntegrand(Real x1);
+
+Real InitialCosineProfile(Real x2);
+Real FinalCosineProfile(Real x2);
+Real InitialCosineSphericalIntegrand(Real x2);
+Real FinalCosineSphericalIntegrand(Real x2);
 } // namespace
 
 //========================================================================================
@@ -64,19 +70,34 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   a_width = pin->GetOrAddReal("problem", "a_width", 10.0);
   b_center = pin->GetOrAddReal("problem", "b_center", 0.0);
   t_final = pin->GetOrAddReal("time", "tlim", 1.0);
+  iprob = pin->GetInteger("problem", "iprob");
 
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
-    m_coord = 0;
-    IntegrandInitial = &InitialGaussianProfile;
-    IntegrandFinal = &FinalGaussianProfile;
+    if (iprob == 1) {
+      m_coord = 0;
+      IntegrandInitial = &InitialGaussianProfile;
+      IntegrandFinal = &FinalGaussianProfile;
+    } else if (iprob == 2) {
+      IntegrandInitial = &InitialCosineProfile;
+      IntegrandFinal = &FinalCosineProfile;
+    }
   } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
-    m_coord = 1;
-    IntegrandInitial = &CylindricalIntegrandInitial;
-    IntegrandFinal = &CylindricalIntegrandFinal;
+    if (iprob == 1) {
+      m_coord = 1;
+      IntegrandInitial = &InitialGaussianCylindricalIntegrand;
+      IntegrandFinal = &FinalGaussianCylindricalIntegrand;
+    } else if (iprob == 2) {
+      // iprob=2 is for spherical-polar coordinates only
+    }
   } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
-    m_coord = 2;
-    IntegrandInitial = &SphericalIntegrandInitial;
-    IntegrandFinal = &SphericalIntegrandFinal;
+    if (iprob == 1) {
+      m_coord = 2;
+      IntegrandInitial = &InitialGaussianSphericalIntegrand;
+      IntegrandFinal = &FinalGaussianSphericalIntegrand;
+    } else if (iprob == 2) {
+      IntegrandInitial = &InitialCosineSphericalIntegrand;
+      IntegrandFinal = &FinalCosineSphericalIntegrand;
+    }
   }
   // Restrict to: 1) no-MHD 2) isothermal EOS only 3) hydro/active=background
   // TODO(felker): add explicit user-safety checks for these conditions
@@ -113,38 +134,48 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             pmb->pcoord->CellVolume(k, j, il, iu, vol);
             for (int i=il; i<=iu; i++) {
               Real cell_ave;
-              if (use_gl_quadrature) {
-                Real xl, xu;
-                xl = pmb->pcoord->x1f(i);
-                xu = pmb->pcoord->x1f(i+1);
+              if (iprob == 1) {
+                if (use_gl_quadrature) {
+                  Real xl, xu;
+                  xl = pmb->pcoord->x1f(i);
+                  xu = pmb->pcoord->x1f(i+1);
 
-                // GL implementation returns total integral, not ave. Divide by delta_r
-                Real cell_quad = GaussLegendre::integrate(N_gl,
-                                                          IntegrandFinal,
-                                                          xl, xu);
-                cell_ave = cell_quad/vol(i);
-                // assuming that the Gaussian profile is 1D in radial coordinate to pull
-                // out 2x integrals from the triple volume integral
-                if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0 ||    // dy*dz
-                    std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {  // dz*dphi
-                  cell_ave *= pmb->pcoord->dx2f(j);
-                  cell_ave *= pmb->pcoord->dx3f(k);
-                } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
-                  // sin(theta)*dtheta*dphi
-                  cell_ave *= std::cos(pmb->pcoord->x2f(j)) -
-                              std::cos(pmb->pcoord->x2f(j+1));
-                  cell_ave *= pmb->pcoord->dx3f(k);
+                  // GL implementation returns total integral, not ave. Divide by delta_r
+                  Real cell_quad = GaussLegendre::integrate(N_gl, IntegrandFinal, xl, xu);
+                  cell_ave = cell_quad/vol(i);
+                  // assuming that the Gaussian profile is 1D in radial coordinate to pull
+                  // out 2x integrals from the triple volume integral
+                  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0 ||    // dy*dz
+                      std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {  // dz*dphi
+                    cell_ave *= pmb->pcoord->dx2f(j);
+                    cell_ave *= pmb->pcoord->dx3f(k);
+                  } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
+                    // sin(theta)*dtheta*dphi
+                    cell_ave *= std::cos(pmb->pcoord->x2f(j)) -
+                                std::cos(pmb->pcoord->x2f(j+1));
+                    cell_ave *= pmb->pcoord->dx3f(k);
+                  }
+                } else {
+                  // Use standard midpoint approximation with cell-centered coords:
+                  cell_ave = FinalGaussianProfile(pmb->pcoord->x1v(i));
                 }
-              } else {
-                // Use standard midpoint approximation with cell-centered coords:
-                cell_ave = FinalGaussianProfile(pmb->pcoord->x1v(i));
-              }
-
+              } else if (iprob == 2) {
+                if (use_gl_quadrature) {
+                  Real xl, xu;
+                  xl = pmb->pcoord->x2f(j);
+                  xu = pmb->pcoord->x2f(j+1);
+                  Real cell_quad = GaussLegendre::integrate(N_gl, IntegrandFinal, xl, xu);
+                  cell_ave = cell_quad*pmb->pcoord->dx3f(k)/vol(i);
+                  cell_ave *= ONE_3RD*(SQR(pmb->pcoord->x1f(i+1))*pmb->pcoord->x1f(i+1)
+                                       - SQR(pmb->pcoord->x1f(i))*pmb->pcoord->x1f(i));
+                } else {
+                  cell_ave = FinalCosineProfile(pmb->pcoord->x2v(j));
+                }
+              } // end if iprob == 2
               Real sol = 1.0/scalar_norm*cell_ave;
-              l1_err[n] += std::abs(sol - pmb->pscalars->s(n,k,j,i))*vol(i);
-              max_err[n] = std::max(
-                  static_cast<Real>(std::abs(sol - pmb->pscalars->s(n,k,j,i))),
-                  max_err[n]);
+              Real abs_diff = std::abs(sol - pmb->pscalars->s(n,k,j,i));
+              l1_err[n] += abs_diff*vol(i);
+              max_err[n] = std::max(abs_diff, max_err[n]);
               total_vol += vol(i);
             }
           }
@@ -175,9 +206,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       // normalize errors by total domain volume
       for (int i=0; i<NSCALARS; ++i) l1_err[i] = l1_err[i]/total_vol;
       // open output file and write out errors
-      std::string fname;
-      fname.assign("mignone_radial-errors.dat");
       std::stringstream msg;
+      std::string fname;
+      if (iprob == 1) {
+        fname.assign("mignone_radial-errors.dat");
+      } else {
+        fname.assign("mignone_meridional-errors.dat");
+      }
       FILE *pfile;
 
       // The file exists -- reopen the file in append mode
@@ -229,56 +264,86 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j=js; j<=je; j++) {
       pcoord->CellVolume(k, j, is, ie, vol);
       for (int i=is; i<=ie; i++) {
-        //--- iprob=1
-        //if (iprob == 1) {
-
         // background fluid:
         phydro->u(IDN,k,j,i) = d0;
-        // midpoint approximation for intiialization of linear velocity profile:
-        // phydro->u(IM1,k,j,i) = d0*alpha*pcoord->x1v(i);
-        phydro->u(IM2,k,j,i) = 0.0;
         phydro->u(IM3,k,j,i) = 0.0;
         // assuming isothermal EOS:
         //  phydro->u(IEN,k,j,i) =
         Real cell_ave;
-        if (use_gl_quadrature) {
-          // Use Gauss-Legendre quadrature rules to compute cell-averaged initial
-          // condition based on pointwise analytic formula
+
+        //--- iprob=1
+        if (iprob == 1) {
+          // Note: GL quadrature is only ever used for the passive scalar profile (even
+          // though it would be straightforward to compute the analytic integral for the
+          // specific Gaussian profile) for generality with any initial condition
           Real xl, xu;
           xl = pcoord->x1f(i);
           xu = pcoord->x1f(i+1);
-
-          // GL implementation returns total integral, not average. Divide by delta_r
-          Real cell_quad = GaussLegendre::integrate(N_gl,
-                                                    IntegrandInitial,
-                                                    xl, xu);
-          cell_ave = cell_quad/vol(i);
-          // assuming that the Gaussian profile is 1D in radial coordinate to pull
-          // out 2x integrals from the triple volume integral
+          phydro->u(IM2,k,j,i) = 0.0;
+          // The cell-averaged linear velocity profile is always computed from the
+          // analytic integral expression:
           if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0 ||    // dy*dz
               std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {  // dz*dphi
-            cell_ave *= pcoord->dx2f(j);
-            cell_ave *= pcoord->dx3f(k);
-            // exact integral of cell-averaged linear velocity profile:
             phydro->u(IM1,k,j,i) =
                 d0*alpha*ONE_3RD*(pcoord->x1f(i+1)*SQR(pcoord->x1f(i+1)) -
                                   pcoord->x1f(i)*SQR(pcoord->x1f(i)));
             phydro->u(IM1,k,j,i) *= pcoord->dx2f(j)*pcoord->dx3f(k)/vol(i);
           } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
             // sin(theta)*dtheta*dphi
-            cell_ave *= std::cos(pcoord->x2f(j)) - std::cos(pcoord->x2f(j+1));
-            cell_ave *= pcoord->dx3f(k);
-            // exact integral of cell-averaged linear velocity profile:
             phydro->u(IM1,k,j,i) =
-                d0*alpha*0.25*(SQR(SQR(pcoord->x1f(i+1))) -
-                               SQR(SQR(pcoord->x1f(i))));
+                d0*alpha*0.25*(SQR(SQR(pcoord->x1f(i+1))) - SQR(SQR(pcoord->x1f(i))));
             phydro->u(IM1,k,j,i) *= pcoord->dx3f(k)/vol(i);
             phydro->u(IM1,k,j,i) *= std::cos(pcoord->x2f(j)) - std::cos(pcoord->x2f(j+1));
           }
-        } else {
-          // Use standard midpoint approximation with cell centered coords:
-          cell_ave = InitialGaussianProfile(pcoord->x1v(i));
-        }
+          // vs. midpoint approximation for intiialization of linear velocity profile:
+          // phydro->u(IM1,k,j,i) = d0*alpha*pcoord->x1v(i);
+
+          if (use_gl_quadrature) {
+            // Use Gauss-Legendre quadrature rules to compute cell-averaged passive scalar
+            // initial condition based on the pointwise analytic formula
+            // GL implementation returns total integral, not average. Divide by delta_r
+            Real cell_quad = GaussLegendre::integrate(N_gl, IntegrandInitial, xl, xu);
+            cell_ave = cell_quad/vol(i);
+            // assume that the Gaussian profile is 1D in radial coordinate to pull
+            // out 2x integrals from the triple volume integral
+            if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0 ||    // dy*dz
+                std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {  // dz*dphi
+              cell_ave *= pcoord->dx2f(j);
+              cell_ave *= pcoord->dx3f(k);
+            } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
+              // sin(theta)*dtheta*dphi
+              cell_ave *= std::cos(pcoord->x2f(j)) - std::cos(pcoord->x2f(j+1));
+              cell_ave *= pcoord->dx3f(k);
+            }
+          } else {
+            // Use standard midpoint approximation with cell centered coords:
+            cell_ave = InitialGaussianProfile(pcoord->x1v(i));
+          }
+        } else if (iprob == 2) {
+          Real xl, xu;
+          xl = pcoord->x2f(j);
+          xu = pcoord->x2f(j+1);
+          phydro->u(IM1,k,j,i) = 0.0;
+          // exact integral of cell-averaged linear velocity profile:
+          phydro->u(IM2,k,j,i) =
+              d0*alpha*(std::sin(xu) - xu*std::cos(xu)
+                        - (std::sin(xl) - xl*std::cos(xl)));
+          phydro->u(IM2,k,j,i) *= pcoord->dx3f(k)/vol(i);
+          phydro->u(IM2,k,j,i) *= 0.25*(SQR(SQR(pcoord->x1f(i+1)))
+                                        - SQR(SQR(pcoord->x1f(i))));
+          // vs. midpoint approximation for intiialization of linear velocity profile:
+          // (note, Mignone assumes r=1 for the 1D variant of this problem; need to scale
+          // v_theta with radius in this 2D variant)
+          // phydro->u(IM2,k,j,i) = d0*alpha*pcoord->x2v(j)*pcoord->x1f(i);
+          if (use_gl_quadrature) {
+            Real cell_quad = GaussLegendre::integrate(N_gl, IntegrandInitial, xl, xu);
+            cell_ave = cell_quad*pcoord->dx3f(k)/vol(i);
+            cell_ave *= ONE_3RD*(SQR(pcoord->x1f(i+1))*pcoord->x1f(i+1)
+                                 - SQR(pcoord->x1f(i))*pcoord->x1f(i));
+          } else {
+            cell_ave = InitialCosineProfile(pcoord->x2v(j));
+          }
+        } // end if iprob == 2
 
         // uniformly fill all scalars to have equal concentration
         constexpr int scalar_norm = NSCALARS > 0 ? NSCALARS : 1.0;
@@ -308,22 +373,50 @@ Real FinalGaussianProfile(Real x1) {
 }
 
 
-Real CylindricalIntegrandInitial(Real x1) {
+Real InitialCosineProfile(Real x2) {
+  Real shift_x2 = x2 - b_center;
+  if (std::abs(shift_x2) < PI/a_width) {
+    return SQR(0.5 + 0.5*std::cos(a_width*shift_x2));  // Mignone eq 77
+  } else {
+    return 0.0;
+  }
+}
+
+
+Real FinalCosineProfile(Real x2) {
+  Real x2_initial = x2*std::exp(-alpha*t_final);
+  Real q_initial = InitialCosineProfile(x2_initial);
+  Real amp = std::exp(-alpha*t_final)*std::sin(x2_initial)/sin(x2);
+  return amp*q_initial;  // Mignone eq 76
+}
+
+
+Real InitialGaussianCylindricalIntegrand(Real x1) {
   return x1*InitialGaussianProfile(x1);
 }
 
 
-Real CylindricalIntegrandFinal(Real x1) {
+Real FinalGaussianCylindricalIntegrand(Real x1) {
   return x1*FinalGaussianProfile(x1);
 }
 
 
-Real SphericalIntegrandInitial(Real x1) {
+Real InitialGaussianSphericalIntegrand(Real x1) {
   return SQR(x1)*InitialGaussianProfile(x1);
 }
 
 
-Real SphericalIntegrandFinal(Real x1) {
+Real FinalGaussianSphericalIntegrand(Real x1) {
   return SQR(x1)*FinalGaussianProfile(x1);
+}
+
+
+Real InitialCosineSphericalIntegrand(Real x2) {
+  return std::sin(x2)*InitialCosineProfile(x2);
+}
+
+
+Real FinalCosineSphericalIntegrand(Real x2) {
+  return std::sin(x2)*FinalCosineProfile(x2);
 }
 } // namespace

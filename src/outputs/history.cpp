@@ -45,8 +45,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   MeshBlock *pmb = pm->pblock;
   Real real_max = std::numeric_limits<Real>::max();
   Real real_min = std::numeric_limits<Real>::min();
-  AthenaArray<Real> vol;
-  vol.NewAthenaArray(pmb->ncells1);
+  AthenaArray<Real> vol(pmb->ncells1);
   const int nhistory_output = NHISTORY_VARS + pm->nuser_history_output_;
   std::unique_ptr<Real[]> hst_data(new Real[nhistory_output]);
   // initialize built-in variable sums to 0.0

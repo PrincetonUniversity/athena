@@ -4,10 +4,13 @@ import sys
 import logging
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
+import matplotlib               # noqa
+# matplotlib.use('agg')
+matplotlib.use('pdf')
 import matplotlib.pyplot as plt  # noqa
 from matplotlib.ticker import AutoMinorLocator, FormatStrFormatter  # noqa
 from matplotlib.lines import Line2D  # noqa
-sys.path.insert(0, '../../../vis/python')
+sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
 
@@ -115,7 +118,7 @@ profile_legend_handles += [Line2D([0], [0], color='k', label='Exact', linewidth=
 
 def figure2_profiles():
     fig = plt.figure(figsize=(1.0*figsize[0], 1.0*figsize[1]), dpi=dpi_global)
-    axes = fig.subplots(2, 2)
+    axes = fig.subplots(2, 2, gridspec_kw={'hspace': 0.4})
 
     for coord_, ylims_, m_, axes_row_ in zip(coords, coord_ylims, coord_m, axes):
         for case_, xlims_, param_str_, a_, b_, ax in zip(cases, case_xlims,
@@ -153,7 +156,6 @@ def figure2_profiles():
                 # disable rounded edges:
                 leg = ax.legend(handles=profile_legend_handles, fancybox=False,)
                 leg.get_frame().set_edgecolor('k')
-    plt.tight_layout()
 
     output_name = 'athena_mignone_fig2'
     pdf_name = "{}.pdf".format(output_name)
@@ -180,14 +182,16 @@ n2_xrange = np.array([70., 300.])
 
 def figure3_convergence():
     fig = plt.figure(figsize=(0.75*figsize[0], 0.75*figsize[1]), dpi=dpi_global)
-    axes = fig.subplots(2, 2)
+    axes = fig.subplots(2, 2, gridspec_kw={'hspace': 0.4})
 
     plot_id = 0
     for coord_, axes_row_ in zip(coords, axes):
         for case_, param_str_, ax in zip(cases, case_parameters, axes_row_):
             for xorder_, xorder_str_ in zip(xorders, xorder_strs):
-                error_file = os.path.join('bin', 'errors_{}_case_{}_{}_xorder_{}'.format(
-                    coord_, case_, integrator, xorder_))
+                error_file = os.path.join(
+                    'bin', 'errors_{}_case_{}_{}_xorder_{}.dat'.format(coord_, case_,
+                                                                       integrator,
+                                                                       xorder_))
                 # read Athena++ data from error file
                 data = athena_read.error_dat(error_file)
                 ax.loglog(data[:, 0], data[:, 4], ':{}'.format(xorder_symbols[xorder_]),
@@ -237,7 +241,6 @@ def figure3_convergence():
             leg = ax.legend(handles=legend_handles, fancybox=False)
             leg.get_frame().set_edgecolor('k')
 
-    plt.tight_layout()
     output_name = 'athena_mignone_fig3'
     pdf_name = "{}.pdf".format(output_name)
     fig.savefig(pdf_name, bbox_inches='tight', dpi=dpi_global)
