@@ -405,6 +405,8 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
         logical_locations = f['LogicalLocations'][:]
         if dtype is None:
             dtype = f[f.attrs['DatasetNames'][0]].dtype.newbyteorder('=')
+        if num_ghost == 0 and np.array(f['x1v']).min() < f.attrs['RootGridX1'][0]:
+            raise AthenaError('Ghost zones detected but "num_ghost" keyword set to zero.')
         if num_ghost > 0 and not np.all(levels == max_level):
             raise AthenaError('Cannot use ghost zones with different refinement levels')
         nx_vals = []
