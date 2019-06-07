@@ -328,7 +328,7 @@ def vtk(filename):
 
 # ========================================================================================
 
-def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, level=None,
+def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=None,
           return_levels=False, subsample=False, fast_restrict=False, x1_min=None,
           x1_max=None, x2_min=None, x2_max=None, x3_min=None, x3_max=None, vol_func=None,
           vol_params=None, face_func_1=None, face_func_2=None, face_func_3=None,
@@ -403,6 +403,8 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
         root_grid_size = f.attrs['RootGridSize']
         levels = f['Levels'][:]
         logical_locations = f['LogicalLocations'][:]
+        if dtype is None:
+            dtype = f[f.attrs['DatasetNames'][0]].dtype.newbyteorder('=')
         if num_ghost > 0 and not np.all(levels == max_level):
             raise AthenaError('Cannot use ghost zones with different refinement levels')
         nx_vals = []
