@@ -114,7 +114,6 @@ def write_H(nEspec=256, nRho=64, logEspecLim=None, logRhoLim=None, eOp=1.5,
     p = np.empty_like(one)
     e = np.empty_like(one)
     a2p = np.empty_like(one)
-    a2h = np.empty_like(one)
     for i in range(nEspec):
         for j in range(nRho):
             p[i, j] = Heos.p_of_rho_es(rho[j], es[i]) / (es[i] * rho[j])
