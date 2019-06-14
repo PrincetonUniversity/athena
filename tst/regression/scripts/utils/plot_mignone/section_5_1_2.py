@@ -169,7 +169,7 @@ n2_xrange = np.array([70., 300.])
 
 
 def figure4_convergence():
-    fig = plt.figure(figsize=(1.0*figsize[0], 0.5*figsize[1]), dpi=dpi_global)
+    fig = plt.figure(figsize=(0.75*figsize[0], 0.375*figsize[1]), dpi=dpi_global)
     axes = fig.subplots(1, 2, squeeze=True)
 
     plot_id = 0
