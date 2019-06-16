@@ -9,7 +9,6 @@ import logging
 import scripts.utils.athena as athena
 import sys
 import os
-import numpy as np
 from shutil import move
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
