@@ -160,7 +160,7 @@ def main(**kwargs):
                                          test_times):
         result_string = 'passed' if result else 'failed'
         error_string = ' -- unexpected failure in {0} stage'.format(error) \
-                       if error is not None else '; time ellapsed: {0:.3g} s'.format(time)
+                       if error is not None else '; time elapsed: {0:.3g} s'.format(time)
         logger.info('    {0}: {1}{2}'.format(name, result_string, error_string))
     logger.info('')
     num_tests = len(test_results)
