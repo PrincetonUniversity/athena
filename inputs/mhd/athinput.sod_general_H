@@ -1,7 +1,7 @@
 <comment>
 problem   = A Sod-like shock tube for testing general EOS; initialize temp not pres
 reference = Sod, G.A., JCP 27, pp. 1-31 (1978)
-configure = --prob=shock_tube --eos=general/hydrogen
+configure = --prob=shock_tube --eos=general/hydrogen -b
 
 <job>
 problem_id  = Sod       # problem ID: basename of output filenames
