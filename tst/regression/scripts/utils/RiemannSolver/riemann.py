@@ -35,6 +35,10 @@ class StateVector(object):
         self.u = u      # fluid speed
         self._alt_names = {'press': 'p', 'dens': 'rho', 'vel1': 'u', 'vel': 'u'}
 
+    @property
+    def d(self):
+        return self.rho
+
     def ram(self):
         """Computes ram pressure."""
         return self.p + self.rho * self.u ** 2
@@ -315,13 +319,17 @@ class RiemannSol(object):
     def speeds(self):
         return sum([list(w['speed']) for w in self.waves], [])
 
-    def vector_get_state(self, xi, add_var=None):
+    def vector_get_state(self, xi, add_var=None, inc_xi=False):
         """Return the state for a specified sorted vector of characteristic (xi=x/t)."""
         xi = np.atleast_1d(xi)
         names = vector_state_names[:]
         if add_var:
             names += add_var
-        data = np.ones((len(names),) + xi.shape) * np.nan
+            names = list(set(names))
+        offset = 0
+        if inc_xi:
+            offset = 1
+        data = np.ones((len(names) + offset,) + xi.shape) * np.nan
 
         indices = np.searchsorted(xi, self.speeds())
         for i, name in enumerate(names):
@@ -337,6 +345,9 @@ class RiemannSol(object):
             state = self._rare_int_right.characteristic(xi[j])
             for i, name in enumerate(names):
                 data[i, j] = state[name]
+        if inc_xi:
+            names.append('xi')
+            data[-1] = xi
         return np.core.records.fromarrays(data, names=','.join(names))
 
     def get_state(self, xi):
@@ -558,6 +569,64 @@ class RiemannSol(object):
     @property
     def states(self):
         return [self.left, self.lmid, self.rmid, self.right]
+
+    def speed_row(self, sep=None, fmt='.7e'):
+        """Format wave-speeds for printing in a table"""
+        fmt = '{0:' + fmt + '}'
+        speeds = [fmt.format(i) for i in self.speeds()]
+        if speeds[0] == speeds[1]:
+            speeds[1] = '-'
+        if speeds[4] == speeds[5]:
+            speeds[5] = '-'
+        speeds.pop(3)
+        if sep is None:
+            return speeds
+        return sep.join(speeds)
+
+    def state_tbl(self, row_sep=None, col_sep=None, eol='', fmt='.7e'):
+        """Format all for state-vectors for printing in a table"""
+        states = self.states
+        var_names = ['rho', 'p', 'u']
+        if self.eos.indep not in var_names:
+            var_names.append(self.eos.indep)
+        fmt = '{0:' + fmt + '}'
+        out = [[fmt.format(s[v]) for s in states] for v in var_names]
+        if col_sep is not None:
+            out = [col_sep.join(col) + eol for col in out]
+        if row_sep is not None:
+            out = row_sep.join(out)
+        return out
+
+    def rare_sol(self):
+        out = dict()
+        waves = self.waves
+        add_var = [self.eos.indep]
+        if waves[0]['kind'] == 'simple':
+            xi = np.linspace(*waves[0]['speed'], num=101)
+            tmp = self.vector_get_state(xi, add_var=add_var, inc_xi=True)
+            for i in tmp.dtype.names:
+                if i != 'xi':
+                    tmp[i][0] = self.left[i]
+                    tmp[i][-1] = self.lmid[i]
+            out['left'] = tmp
+        if waves[2]['kind'] == 'simple':
+            xi = np.linspace(*waves[2]['speed'], num=101)
+            tmp = self.vector_get_state(xi, add_var=add_var, inc_xi=True)
+            for i in tmp.dtype.names:
+                if i != 'xi':
+                    tmp[i][-1] = self.right[i]
+                    tmp[i][-0] = self.rmid[i]
+            out['right'] = tmp
+        return out
+
+    @property
+    def ic(self):
+        var_names = ['d', 'u', self.eos.indep]
+        out = dict()
+        for side in ['left', 'right']:
+            state = getattr(self, side)
+            out.update({v + side[0]: state[v] for v in var_names})
+        return out
 
 
 class RareInt(object):
