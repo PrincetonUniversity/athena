@@ -288,6 +288,10 @@ pgen_hdf5_reader_serial
 pgen_pgen_compile
     Test script to make sure all problem generator files in /src/pgen compile
 
+scalars_restart
+    Regression test to verify the ability use restart file to restart the code when using
+    passive scalars.
+    
 shearingbox_mri2d
     Regression test of shearingbox with 2d MRI.
 
