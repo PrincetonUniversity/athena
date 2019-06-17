@@ -77,7 +77,7 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real Ta, Real Tb) {
   Real fa = f(rho, Ta) / sol - 1.;
   Real fb = f(rho, Tb) / sol - 1.;
 
-  if (std::fabs(fa) < std::fabs(fb)) {
+  if (std::abs(fa) < std::abs(fb)) {
     Ts = Ta;
     Ta = Tb;
     Tb = Ts;
@@ -94,7 +94,7 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real Ta, Real Tb) {
   }
 
   Tc = Ta;
-  while ((std::fabs(Ta - Tb) >= prec) && (std::fabs(fb) >= prec)) {
+  while ((std::abs(Ta - Tb) >= prec) && (std::abs(fb) >= prec)) {
     fc = f(rho, Tc) / sol - 1.0;
     if ((fc != fa) && (fc != fb)) {
       Ts = Ta * fb * fc / ((fa - fb) * (fa - fc))
@@ -104,10 +104,10 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real Ta, Real Tb) {
       Ts = Tb - fb * (Tb - Ta) / (fb - fa);
     }
     if ( ((Ts < .25 * (3 * Ta - Tb)) || (Ts > Tb)) ||
-         (mflag && std::fabs(Ts - Tb) >= 0.5 * std::fabs(Tc - Tb)) ||
-         (!mflag && std::fabs(Ts - Tb) >= 0.5 * std::fabs(Tc - Td)) ||
-         (mflag && std::fabs(Tc - Tb) < prec) ||
-         (!mflag && std::fabs(Tc - Td) < prec) ) {
+         (mflag && std::abs(Ts - Tb) >= 0.5 * std::abs(Tc - Tb)) ||
+         (!mflag && std::abs(Ts - Tb) >= 0.5 * std::abs(Tc - Td)) ||
+         (mflag && std::abs(Tc - Tb) < prec) ||
+         (!mflag && std::abs(Tc - Td) < prec) ) {
       Ts = .5 * (Ta + Tb);
       mflag = true;
     } else {
@@ -124,7 +124,7 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real Ta, Real Tb) {
       fa = fs;
     }
 
-    if (std::fabs(fa) < std::fabs(fb)) {
+    if (std::abs(fa) < std::abs(fb)) {
       Ts = Ta;
       Ta = Tb;
       Tb = Ts;
