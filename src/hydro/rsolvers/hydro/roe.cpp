@@ -153,7 +153,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     if (llf_flag != 0) {
       Real cl = pmy_block->peos->SoundSpeed(wli);
       Real cr = pmy_block->peos->SoundSpeed(wri);
-      Real a  = 0.5*std::max( (std::fabs(wli[IVX]) + cl), (std::fabs(wri[IVX]) + cr) );
+      Real a  = 0.5*std::max( (std::abs(wli[IVX]) + cl), (std::abs(wri[IVX]) + cr) );
 
       flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
       flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]) - a*du[IVX];
@@ -255,11 +255,11 @@ inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real f
     a[4] *= na;
 
     Real coeff[(NHYDRO)];
-    coeff[0] = -0.5*std::fabs(ev[0])*a[0];
-    coeff[1] = -0.5*std::fabs(ev[1])*a[1];
-    coeff[2] = -0.5*std::fabs(ev[2])*a[2];
-    coeff[3] = -0.5*std::fabs(ev[3])*a[3];
-    coeff[4] = -0.5*std::fabs(ev[4])*a[4];
+    coeff[0] = -0.5*std::abs(ev[0])*a[0];
+    coeff[1] = -0.5*std::abs(ev[1])*a[1];
+    coeff[2] = -0.5*std::abs(ev[2])*a[2];
+    coeff[3] = -0.5*std::abs(ev[3])*a[3];
+    coeff[4] = -0.5*std::abs(ev[4])*a[4];
 
     // compute density in intermediate states and check that it is positive, set flag
     // This requires computing the [0][*] components of the right-eigenmatrix
@@ -318,10 +318,10 @@ inline void RoeFlux(const Real wroe[], const Real du[], const Real wli[], Real f
     a[3] += du[1]*0.5/iso_cs;
 
     Real coeff[(NHYDRO)];
-    coeff[0] = -0.5*std::fabs(ev[0])*a[0];
-    coeff[1] = -0.5*std::fabs(ev[1])*a[1];
-    coeff[2] = -0.5*std::fabs(ev[2])*a[2];
-    coeff[3] = -0.5*std::fabs(ev[3])*a[3];
+    coeff[0] = -0.5*std::abs(ev[0])*a[0];
+    coeff[1] = -0.5*std::abs(ev[1])*a[1];
+    coeff[2] = -0.5*std::abs(ev[2])*a[2];
+    coeff[3] = -0.5*std::abs(ev[3])*a[3];
 
     // compute density in intermediate states and check that it is positive, set flag
     // This requires computing the [0][*] components of the right-eigenmatrix

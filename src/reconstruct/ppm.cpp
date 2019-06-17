@@ -149,8 +149,8 @@ void Reconstruction::PiecewiseParabolicX1(
         Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-          qd = SIGN(qa)* std::min(C2*std::fabs(qb),
-                                  std::min(C2*std::fabs(qc), std::fabs(qa)));
+          qd = SIGN(qa)* std::min(C2*std::abs(qb),
+                                  std::min(C2*std::abs(qc), std::abs(qa)));
         }
         Real dph_tmp = 0.5*(q_im1(n,i)+q(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { // Local extrema detected at i-1/2 face
@@ -169,8 +169,8 @@ void Reconstruction::PiecewiseParabolicX1(
         Real qc = d2qc_ip1(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-          qd = SIGN(qa)* std::min(C2*std::fabs(qb),
-                                  std::min(C2*std::fabs(qc), std::fabs(qa)));
+          qd = SIGN(qa)* std::min(C2*std::abs(qb),
+                                  std::min(C2*std::abs(qc), std::abs(qa)));
         }
         Real dphip1_tmp = 0.5*(q(n,i)+q_ip1(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { // Local extrema detected at i+1/2 face
@@ -227,18 +227,18 @@ void Reconstruction::PiecewiseParabolicX1(
         Real qe = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc) && SIGN(qa) == SIGN(qd)) {
           // Extrema is smooth
-          qe = SIGN(qd)* std::min(std::min(C2*std::fabs(qa), C2*std::fabs(qb)),
-                                  std::min(C2*std::fabs(qc),
-                                           std::fabs(qd))); // (CS eq 22)
+          qe = SIGN(qd)* std::min(std::min(C2*std::abs(qa), C2*std::abs(qb)),
+                                  std::min(C2*std::abs(qc),
+                                           std::abs(qd))); // (CS eq 22)
         }
 
         // Check if 2nd derivative is close to roundoff error
-        qa = std::max(std::fabs(q_im1(n,i)), std::fabs(q_im2(n,i)));
-        qb = std::max(std::max(std::fabs(q(n,i)), std::fabs(q_ip1(n,i))),
-                      std::fabs(q_ip2(n,i)));
+        qa = std::max(std::abs(q_im1(n,i)), std::abs(q_im2(n,i)));
+        qb = std::max(std::max(std::abs(q(n,i)), std::abs(q_ip1(n,i))),
+                      std::abs(q_ip2(n,i)));
 
         Real rho = 0.0;
-        if (std::fabs(qd) > (1.0e-12)*std::max(qa,qb)) {
+        if (std::abs(qd) > (1.0e-12)*std::max(qa,qb)) {
           // Limiter is not sensitive to roundoff. Use limited ratio (MC eq 27)
           rho = qe/qd;
         }
@@ -259,11 +259,11 @@ void Reconstruction::PiecewiseParabolicX1(
           // No extrema detected
         } else {
           // Overshoot i-1/2,R / i,(-) state
-          if (std::fabs(dqf_minus(i)) >= 2.0*std::fabs(dqf_plus(i))) {
+          if (std::abs(dqf_minus(i)) >= 2.0*std::abs(dqf_plus(i))) {
             qminus(i) = tmp2_m;
           }
           // Overshoot i+1/2,L / i,(+) state
-          if (std::fabs(dqf_plus(i)) >= 2.0*std::fabs(dqf_minus(i))) {
+          if (std::abs(dqf_plus(i)) >= 2.0*std::abs(dqf_minus(i))) {
             qplus(i) = tmp2_p;
           }
         }
@@ -280,11 +280,11 @@ void Reconstruction::PiecewiseParabolicX1(
           qplus(i) = q(n,i);
         } else { // No extrema detected
           // Overshoot i-1/2,R / i,(-) state
-          if (std::fabs(dqf_minus(i)) >= hplus_ratio_i(i)*std::fabs(dqf_plus(i))) {
+          if (std::abs(dqf_minus(i)) >= hplus_ratio_i(i)*std::abs(dqf_plus(i))) {
             qminus(i) = q(n,i) - hplus_ratio_i(i)*dqf_plus(i);
           }
           // Overshoot i+1/2,L / i,(+) state
-          if (std::fabs(dqf_plus(i)) >= hminus_ratio_i(i)*std::fabs(dqf_minus(i))) {
+          if (std::abs(dqf_plus(i)) >= hminus_ratio_i(i)*std::abs(dqf_minus(i))) {
             qplus(i) = q(n,i) + hminus_ratio_i(i)*dqf_minus(i);
           }
         }
@@ -437,8 +437,8 @@ void Reconstruction::PiecewiseParabolicX2(
         Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-          qd = SIGN(qa)* std::min(C2*std::fabs(qb),
-                                  std::min(C2*std::fabs(qc), std::fabs(qa)));
+          qd = SIGN(qa)* std::min(C2*std::abs(qb),
+                                  std::min(C2*std::abs(qc), std::abs(qa)));
         }
         Real dph_tmp = 0.5*(q_jm1(n,i)+q(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { //Local extrema detected at j-1/2 face
@@ -456,8 +456,8 @@ void Reconstruction::PiecewiseParabolicX2(
         Real qc = d2qc_jp1(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-          qd = SIGN(qa)* std::min(C2*std::fabs(qb),
-                                  std::min(C2*std::fabs(qc), std::fabs(qa)));
+          qd = SIGN(qa)* std::min(C2*std::abs(qb),
+                                  std::min(C2*std::abs(qc), std::abs(qa)));
         }
         Real dphjp1_tmp = 0.5*(q(n,i)+q_jp1(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { // Local extrema detected at j+1/2 face
@@ -514,17 +514,17 @@ void Reconstruction::PiecewiseParabolicX2(
         Real qe = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc) && SIGN(qa) == SIGN(qd)) {
           // Extrema is smooth
-          qe = SIGN(qd)* std::min(std::min(C2*std::fabs(qa),C2*std::fabs(qb)),
-                                  std::min(C2*std::fabs(qc),std::fabs(qd))); // (CS eq 22)
+          qe = SIGN(qd)* std::min(std::min(C2*std::abs(qa),C2*std::abs(qb)),
+                                  std::min(C2*std::abs(qc),std::abs(qd))); // (CS eq 22)
         }
 
         // Check if 2nd derivative is close to roundoff error
-        qa = std::max(std::fabs(q_jm1(n,i)),std::fabs(q_jm2(n,i)));
-        qb = std::max(std::max(std::fabs(q(n,i)),
-                               std::fabs(q_jp1(n,i))), std::fabs(q_jp2(n,i)));
+        qa = std::max(std::abs(q_jm1(n,i)),std::abs(q_jm2(n,i)));
+        qb = std::max(std::max(std::abs(q(n,i)),
+                               std::abs(q_jp1(n,i))), std::abs(q_jp2(n,i)));
 
         Real rho = 0.0;
-        if (std::fabs(qd) > (1.0e-12)*std::max(qa,qb)) {
+        if (std::abs(qd) > (1.0e-12)*std::max(qa,qb)) {
           // Limiter is not sensitive to roundoff. Use limited ratio (MC eq 27)
           rho = qe/qd;
         }
@@ -545,11 +545,11 @@ void Reconstruction::PiecewiseParabolicX2(
           // No extrema detected
         } else {
           // Overshoot j-1/2,R / j,(-) state
-          if (std::fabs(dqf_minus(i)) >= 2.0*std::fabs(dqf_plus(i))) {
+          if (std::abs(dqf_minus(i)) >= 2.0*std::abs(dqf_plus(i))) {
             qminus(i) = tmp2_m;
           }
           // Overshoot j+1/2,L / j,(+) state
-          if (std::fabs(dqf_plus(i)) >= 2.0*std::fabs(dqf_minus(i))) {
+          if (std::abs(dqf_plus(i)) >= 2.0*std::abs(dqf_minus(i))) {
             qplus(i) = tmp2_p;
           }
         }
@@ -566,11 +566,11 @@ void Reconstruction::PiecewiseParabolicX2(
           qplus(i) = q(n,i);
         } else { // No extrema detected
           // Overshoot j-1/2,R / j,(-) state
-          if (std::fabs(dqf_minus(i)) >= hplus_ratio_j(j)*std::fabs(dqf_plus(i))) {
+          if (std::abs(dqf_minus(i)) >= hplus_ratio_j(j)*std::abs(dqf_plus(i))) {
             qminus(i) = q(n,i) - hplus_ratio_j(j)*dqf_plus(i);
           }
           // Overshoot j+1/2,L / j,(+) state
-          if (std::fabs(dqf_plus(i)) >= hminus_ratio_j(j)*std::fabs(dqf_minus(i))) {
+          if (std::abs(dqf_plus(i)) >= hminus_ratio_j(j)*std::abs(dqf_minus(i))) {
             qplus(i) = q(n,i) + hminus_ratio_j(j)*dqf_minus(i);
           }
         }
@@ -721,8 +721,8 @@ void Reconstruction::PiecewiseParabolicX3(
         Real qc = d2qc(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-          qd = SIGN(qa)* std::min(C2*std::fabs(qb),
-                                  std::min(C2*std::fabs(qc), std::fabs(qa)));
+          qd = SIGN(qa)* std::min(C2*std::abs(qb),
+                                  std::min(C2*std::abs(qc), std::abs(qa)));
         }
         Real dph_tmp = 0.5*(q_km1(n,i)+q(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) {  // Local extrema detected at k-1/2 face
@@ -740,8 +740,8 @@ void Reconstruction::PiecewiseParabolicX3(
         Real qc = d2qc_kp1(i);   // (CD eq 85c) (no 1/2)
         Real qd = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc)) {
-          qd = SIGN(qa)* std::min(C2*std::fabs(qb),
-                                  std::min(C2*std::fabs(qc), std::fabs(qa)));
+          qd = SIGN(qa)* std::min(C2*std::abs(qb),
+                                  std::min(C2*std::abs(qc), std::abs(qa)));
         }
         Real dphkp1_tmp = 0.5*(q(n,i)+q_kp1(n,i)) - qd/6.0;
         if (qa_tmp*qb_tmp < 0.0) { // Local extrema detected at k+1/2 face
@@ -798,17 +798,17 @@ void Reconstruction::PiecewiseParabolicX3(
         Real qe = 0.0;
         if (SIGN(qa) == SIGN(qb) && SIGN(qa) == SIGN(qc) && SIGN(qa) == SIGN(qd)) {
           // Extrema is smooth
-          qe = SIGN(qd)* std::min(std::min(C2*std::fabs(qa),C2*std::fabs(qb)),
-                                  std::min(C2*std::fabs(qc),std::fabs(qd))); // (CS eq 22)
+          qe = SIGN(qd)* std::min(std::min(C2*std::abs(qa),C2*std::abs(qb)),
+                                  std::min(C2*std::abs(qc),std::abs(qd))); // (CS eq 22)
         }
 
         // Check if 2nd derivative is close to roundoff error
-        qa = std::max(std::fabs(q_km1(n,i)),std::fabs(q_km2(n,i)));
-        qb = std::max(std::max(std::fabs(q(n,i)),
-                               std::fabs(q_kp1(n,i))), std::fabs(q_kp2(n,i)));
+        qa = std::max(std::abs(q_km1(n,i)),std::abs(q_km2(n,i)));
+        qb = std::max(std::max(std::abs(q(n,i)),
+                               std::abs(q_kp1(n,i))), std::abs(q_kp2(n,i)));
 
         Real rho = 0.0;
-        if (std::fabs(qd) > (1.0e-12)*std::max(qa,qb)) {
+        if (std::abs(qd) > (1.0e-12)*std::max(qa,qb)) {
           // Limiter is not sensitive to roundoff. Use limited ratio (MC eq 27)
           rho = qe/qd;
         }
@@ -830,11 +830,11 @@ void Reconstruction::PiecewiseParabolicX3(
           // No extrema detected
         } else {
           // Overshoot k-1/2,R / k,(-) state
-          if (std::fabs(dqf_minus(i)) >= 2.0*std::fabs(dqf_plus(i))) {
+          if (std::abs(dqf_minus(i)) >= 2.0*std::abs(dqf_plus(i))) {
             qminus(i) = tmp2_m;
           }
           // Overshoot k+1/2,L / k,(+) state
-          if (std::fabs(dqf_plus(i)) >= 2.0*std::fabs(dqf_minus(i))) {
+          if (std::abs(dqf_plus(i)) >= 2.0*std::abs(dqf_minus(i))) {
             qplus(i) = tmp2_p;
           }
         }
@@ -851,11 +851,11 @@ void Reconstruction::PiecewiseParabolicX3(
         } else { // No extrema detected
           // could delete hplus_ratio_k() arrays for curvilinear PPMx3
           // Overshoot k-1/2,R / k,(-) state
-          if (std::fabs(dqf_minus(i)) >= hplus_ratio_k(k)*std::fabs(dqf_plus(i))) {
+          if (std::abs(dqf_minus(i)) >= hplus_ratio_k(k)*std::abs(dqf_plus(i))) {
             qminus(i) = q(n,i) - hplus_ratio_k(k)*dqf_plus(i);
           }
           // Overshoot k+1/2,L / k,(+) state
-          if (std::fabs(dqf_plus(i)) >= hminus_ratio_k(k)*std::fabs(dqf_minus(i))) {
+          if (std::abs(dqf_plus(i)) >= hminus_ratio_k(k)*std::abs(dqf_minus(i))) {
             qplus(i) = q(n,i) + hminus_ratio_k(k)*dqf_minus(i);
           }
         }

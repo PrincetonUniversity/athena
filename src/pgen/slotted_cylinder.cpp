@@ -122,9 +122,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
               }
 
               Real sol = 1.0/scalar_norm*cell_ave;
-              l1_err[n] += std::fabs(sol - pmb->pscalars->s(n,k,j,i))*cell_vol;
+              l1_err[n] += std::abs(sol - pmb->pscalars->s(n,k,j,i))*cell_vol;
               max_err[n] = std::max(
-                  static_cast<Real>(std::fabs(sol - pmb->pscalars->s(n,k,j,i))),
+                  static_cast<Real>(std::abs(sol - pmb->pscalars->s(n,k,j,i))),
                   max_err[n]);
             }
           }

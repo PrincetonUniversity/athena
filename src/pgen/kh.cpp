@@ -73,7 +73,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM1,k,j,i) = vflow + amp*(ran2(&iseed) - 0.5);
           phydro->u(IM2,k,j,i) = amp*(ran2(&iseed) - 0.5);
           phydro->u(IM3,k,j,i) = 0.0;
-          if (std::fabs(pcoord->x2v(j)) < 0.25) {
+          if (std::abs(pcoord->x2v(j)) < 0.25) {
             phydro->u(IDN,k,j,i) = drat;
             phydro->u(IM1,k,j,i) = -drat*(vflow + amp*(ran2(&iseed) - 0.5));
             phydro->u(IM2,k,j,i) = drat*amp*(ran2(&iseed) - 0.5);
@@ -199,12 +199,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           phydro->u(IDN,k,j,i) = 0.505 + 0.495
-                                 *std::tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
-          phydro->u(IM1,k,j,i) = vflow*std::tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
+                                 *std::tanh((std::abs(pcoord->x2v(j))-0.5)/a);
+          phydro->u(IM1,k,j,i) = vflow*std::tanh((std::abs(pcoord->x2v(j))-0.5)/a);
           phydro->u(IM2,k,j,i) =
               amp*vflow*std::sin(TWO_PI*pcoord->x1v(i))
-              *std::exp(-((std::fabs(pcoord->x2v(j))-0.5)
-                          *(std::fabs(pcoord->x2v(j))-0.5))/(sigma*sigma));
+              *std::exp(-((std::abs(pcoord->x2v(j))-0.5)
+                          *(std::abs(pcoord->x2v(j))-0.5))/(sigma*sigma));
           if (pcoord->x2v(j) < 0.0) phydro->u(IM2,k,j,i) *= -1.0;
           phydro->u(IM1,k,j,i) *= phydro->u(IDN,k,j,i);
           phydro->u(IM2,k,j,i) *= phydro->u(IDN,k,j,i);
@@ -351,7 +351,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie+1; i++) {
-            pfield->b.x1f(k,j,i) = b0*std::tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
+            pfield->b.x1f(k,j,i) = b0*std::tanh((std::abs(pcoord->x2v(j))-0.5)/a);
           }
         }
       }
@@ -394,12 +394,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
-          Real w=(std::tanh((std::fabs(pcoord->x2v(j))-0.25)/a)+1.0)*0.5;
+          Real w=(std::tanh((std::abs(pcoord->x2v(j))-0.25)/a)+1.0)*0.5;
           phydro->u(IDN,k,j,i) = w+(1.0-w)*drat;
           phydro->u(IM1,k,j,i) = w*vflow-(1.0-w)*vflow*drat;
           phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*amp
                                  * std::sin(2.0*TWO_PI*pcoord->x1v(i))
-                                 * std::exp(-SQR(std::fabs(pcoord->x2v(j))-0.25)
+                                 * std::exp(-SQR(std::abs(pcoord->x2v(j))-0.25)
                                             /(sigma*sigma));
           phydro->u(IM3,k,j,i) = 0.0;
           // Pressure scaled to give a sound speed of 1 with gamma=1.4
@@ -460,8 +460,8 @@ int RefinementCondition(MeshBlock *pmb) {
   for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js-1; j<=pmb->je+1; j++) {
       for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
-        Real vgy = std::fabs(w(IVY,k,j,i+1) - w(IVY,k,j,i-1))*0.5;
-        Real vgx = std::fabs(w(IVX,k,j+1,i) - w(IVX,k,j-1,i))*0.5;
+        Real vgy = std::abs(w(IVY,k,j,i+1) - w(IVY,k,j,i-1))*0.5;
+        Real vgx = std::abs(w(IVX,k,j+1,i) - w(IVX,k,j-1,i))*0.5;
         Real vg  = std::sqrt(vgx*vgx + vgy*vgy);
         if (vg > vgmax) vgmax = vg;
       }
