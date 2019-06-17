@@ -45,8 +45,6 @@ import argparse
 import glob
 import re
 
-# MSBC # TODO: remove flux tests "_ftest"
-_ftest = ['hlld_roe', 'hlld_pvrs']
 
 # Set template and output filenames
 makefile_input = 'Makefile.in'
@@ -101,7 +99,7 @@ parser.add_argument('--eos',
 # --flux=[name] argument
 parser.add_argument('--flux',
                     default='default',
-                    choices=['default', 'hlle', 'hllc', 'hlld', 'roe', 'llf'] + _ftest,
+                    choices=['default', 'hlle', 'hllc', 'hlld', 'roe', 'llf'],
                     help='select Riemann solver')
 
 # --nghost=[value] argument
@@ -345,7 +343,7 @@ if args['eos'][:8] == 'general/':
     if args['s'] or args['g']:
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with relativity')
-    if args['flux'] not in ['hllc', 'hlld'] + _ftest:
+    if args['flux'] not in ['hllc', 'hlld']:
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with flux ' + args['flux'])
 
