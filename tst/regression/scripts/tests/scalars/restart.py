@@ -1,8 +1,5 @@
-# Regression test based on Newtonian hydro Sod shock tube problem
-#
-# Runs the Sod shock tube in x1, x2, and x3 directions successively, and checks errors
-# against the analytic solution (which are computed by the executable automatically and
-# stored in the temporary file shock_errors.dat)
+# Regression test to verify the ability use restart file to restart the code when using
+# passive scalars.
 
 # Modules
 import logging
@@ -31,8 +28,6 @@ def prepare(**kwargs):
         athena.make()
         move(_exec, _exec + '_' + str(n))
         os.system('cp -r obj obj_' + str(n))
-    # Resuing obj/*.o may cause issues with Lcov, due to files without any coverage data.
-    # Monitor this. E.g. obj_roe/ will contain hlle.o and hllc.o, but only roe.o is linked
     os.system('rm -rf obj')
 
 
