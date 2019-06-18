@@ -173,8 +173,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   peos = new EquationOfState(this, pin);
 
-  if (pm->multilevel==true) pmr = new MeshRefinement(this, pin);
-
   // Create user mesh data
   InitUserMeshBlockData(pin);
 
