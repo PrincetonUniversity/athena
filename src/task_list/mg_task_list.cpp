@@ -94,10 +94,10 @@ void MultigridTaskList::AddMultigridTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
- if (id == MG_STARTRECV0 || id == MG_STARTRECVL) {
-   task_list_[ntasks].TaskFunc=
-     static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
-     (&MultigridTaskList::StartReceive);
+  if (id == MG_STARTRECV0 || id == MG_STARTRECVL) {
+    task_list_[ntasks].TaskFunc=
+      static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+      (&MultigridTaskList::StartReceive);
   } else if (id == MG_STARTRECV0F || id == MG_STARTRECV1R || id == MG_STARTRECV1B
           || id == MG_STARTRECV2R || id == MG_STARTRECV2B) {
     task_list_[ntasks].TaskFunc=

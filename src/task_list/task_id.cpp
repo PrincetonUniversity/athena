@@ -11,7 +11,7 @@
 // TaskID constructor. Default id = 0.
 
 TaskID::TaskID(unsigned int id) {
-  for (int i=0; i<nfld_; i++)
+  for (int i=0; i<kNField_; i++)
     bitfld_[i] = 0;
   if (id > 0) {
     id--;
@@ -26,7 +26,7 @@ TaskID::TaskID(unsigned int id) {
 //  \brief Clear all the bits in the Task ID
 
 void TaskID::Clear() {
-  for (int i=0; i<nfld_; i++)
+  for (int i=0; i<kNField_; i++)
     bitfld_[i] = 0;
 }
 
@@ -37,7 +37,7 @@ void TaskID::Clear() {
 
 bool TaskID::IsUnfinished(const TaskID& id) const {
   std::uint64_t fld = (bitfld_[0] & id.bitfld_[0]);
-  for (int i=1; i<nfld_; i++)
+  for (int i=1; i<kNField_; i++)
     fld |= (bitfld_[i] & id.bitfld_[i]);
   return (fld == 0LL);
 }
@@ -49,7 +49,7 @@ bool TaskID::IsUnfinished(const TaskID& id) const {
 
 bool TaskID::CheckDependencies(const TaskID& dep) const {
   bool ret = ((bitfld_[0] & dep.bitfld_[0]) == dep.bitfld_[0]);
-  for (int i=1; i<nfld_; i++)
+  for (int i=1; i<kNField_; i++)
     ret &= ((bitfld_[i] & dep.bitfld_[i]) == dep.bitfld_[i]);
   return ret;
 }
@@ -61,7 +61,7 @@ bool TaskID::CheckDependencies(const TaskID& dep) const {
 //  This function is to be called on Task States.
 
 void TaskID::SetFinished(const TaskID& id) {
-  for (int i=0; i<nfld_; i++)
+  for (int i=0; i<kNField_; i++)
     bitfld_[i] |= id.bitfld_[i];
 }
 
@@ -72,7 +72,7 @@ void TaskID::SetFinished(const TaskID& id) {
 
 bool TaskID::operator== (const TaskID& rhs) const {
   bool ret = (bitfld_[0] == rhs.bitfld_[0]);
-  for (int i=1; i<nfld_; i++)
+  for (int i=1; i<kNField_; i++)
     ret &= (bitfld_[i] == rhs.bitfld_[i]);
   return ret;
 }
@@ -83,7 +83,7 @@ bool TaskID::operator== (const TaskID& rhs) const {
 
 TaskID TaskID::operator| (const TaskID& rhs) const {
   TaskID ret;
-  for (int i=0; i<nfld_; i++)
+  for (int i=0; i<kNField_; i++)
     ret.bitfld_[i] = (bitfld_[i] | rhs.bitfld_[i]);
   return ret;
 }

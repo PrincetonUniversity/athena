@@ -36,7 +36,7 @@ enum class TaskListStatus {running, stuck, complete, nothing_to_do};
 
 class TaskID {
  public:
-  TaskID(unsigned int id = 0);
+  explicit TaskID(unsigned int id = 0);
   void Clear();
   bool IsUnfinished(const TaskID& id) const;
   bool CheckDependencies(const TaskID& dep) const;
@@ -46,8 +46,8 @@ class TaskID {
   TaskID operator| (const TaskID& rhs) const;
 
  private:
-  constexpr static int nfld_ = 1;
-  std::uint64_t bitfld_[nfld_];
+  constexpr static int kNField_ = 1;
+  std::uint64_t bitfld_[kNField_];
 
   friend class TaskList;
 };
@@ -97,7 +97,8 @@ class TaskList {
   void DoTaskListOneStage(Mesh *pmesh, int stage);
 
  protected:
-  Task task_list_[64*TaskID::nfld_];  // TODO(felker): rename to avoid confusion with class name
+  // TODO(felker): rename to avoid confusion with class name
+  Task task_list_[64*TaskID::kNField_];
 
  private:
   virtual void AddTask(const TaskID& id, const TaskID& dep) = 0;
