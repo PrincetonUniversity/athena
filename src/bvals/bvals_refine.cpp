@@ -436,7 +436,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   // temporarily hardcode Hydro and Field array access
   Hydro *ph = pmb->phydro;
   Field *pf = nullptr;
-  Radiation *pr = pmb->prad;
+  Radiation *pr = nullptr;
 
   // KGF: COUPLING OF QUANTITIES (must be manually specified)
   // Field prolongation completed, calculate cell centered fields
@@ -450,6 +450,9 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   // calculate conservative variables
   pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pmb->pcoord,
                                   fsi, fei, fsj, fej, fsk, fek);
-  pr->PrimitiveToConserved(pr->prim, pr->cons, pmb->pcoord, fsi, fei, fsj, fej, fsk, fek);
+  if (RADIATION_ENABLED) {
+    pr = pmb->prad;
+    pr->PrimitiveToConserved(pr->prim, pr->cons, pmb->pcoord, fsi, fei, fsj, fej, fsk, fek);
+  }
   return;
 }
