@@ -23,7 +23,7 @@ TaskID::TaskID(unsigned int id) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void TaskID::Clear()
-//  \brief Clear all the bit fields in the Task ID
+//  \brief Clear all the bits in the Task ID
 
 void TaskID::Clear() {
   for (int i=0; i<nfld_; i++)
@@ -36,11 +36,6 @@ void TaskID::Clear() {
 //  called on Task States and returns true if the task is unfinished.
 
 bool TaskID::IsUnfinished(const TaskID& id) const {
-  bool ret = ((bitfld_[0] & id.bitfld_[0]) == 0LL);
-  for (int i=1; i<nfld_; i++)
-    ret &= ((bitfld_[i] & id.bitfld_[i]) == 0LL);
-  return ret;
-
   std::uint64_t fld = (bitfld_[0] & id.bitfld_[0]);
   for (int i=1; i<nfld_; i++)
     fld |= (bitfld_[i] & id.bitfld_[i]);
@@ -75,7 +70,7 @@ void TaskID::SetFinished(const TaskID& id) {
 //! \fn bool TaskID::operator== (const TaskID& rhs)
 //  \brief overloading operator == for TaskID
 
-bool TaskID::operator == (const TaskID& rhs) const {
+bool TaskID::operator== (const TaskID& rhs) const {
   bool ret = (bitfld_[0] == rhs.bitfld_[0]);
   for (int i=1; i<nfld_; i++)
     ret &= (bitfld_[i] == rhs.bitfld_[i]);
@@ -83,7 +78,7 @@ bool TaskID::operator == (const TaskID& rhs) const {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn bool TaskID::operator| (const TaskID& rhs)
+//! \fn TaskID TaskID::operator| (const TaskID& rhs)
 //  \brief overloading operator | for TaskID
 
 TaskID TaskID::operator| (const TaskID& rhs) const {

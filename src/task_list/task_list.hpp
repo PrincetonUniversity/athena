@@ -42,11 +42,11 @@ class TaskID {
   bool CheckDependencies(const TaskID& dep) const;
   void SetFinished(const TaskID& id);
 
-  bool operator == (const TaskID& rhs) const;
-  TaskID operator | (const TaskID& rhs) const;
+  bool operator== (const TaskID& rhs) const;
+  TaskID operator| (const TaskID& rhs) const;
 
  private:
-  const static int nfld_ = 2;
+  constexpr static int nfld_ = 1;
   std::uint64_t bitfld_[nfld_];
 
   friend class TaskList;
