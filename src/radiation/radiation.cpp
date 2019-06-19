@@ -55,7 +55,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
 
   // Enroll refinement communication
   if (pmb->pmy_mesh->multilevel) {
-    pmb->pmr->AddToRefinement(&cons, &coarse_cons);
+    refinement_idx = pmb->pmr->AddToRefinement(&cons, &coarse_cons);
   }
 
   // Construct objects

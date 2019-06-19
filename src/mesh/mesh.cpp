@@ -1415,11 +1415,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       Hydro *ph;
       Field *pf;
       PassiveScalars *ps;
-#pragma omp for private(pmb,pbval,ph,pf,ps,prad)
+      Radiation *pr;
+#pragma omp for private(pmb,pbval,ph,pf,ps,pr)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i];
         pbval = pmb->pbval, ph = pmb->phydro, pf = pmb->pfield, ps = pmb->pscalars;
-        prad = pmb->prad;
+        pr = pmb->prad;
         if (multilevel)
           pbval->ProlongateBoundaries(time, 0.0);
 
@@ -1446,8 +1447,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                                        il, iu, jl, ju, kl, ku);
         }
         if (RADIATION_ENABLED) {
-          pmb->prad->ConservedToPrimitive(prad->cons, prad->prim, pmb->pcoord, il, iu, jl,
-              ju, kl, ku);
+          pr->ConservedToPrimitive(pr->cons, pr->prim, pmb->pcoord, il, iu, jl, ju, kl,
+              ku);
         }
         // --------------------------
         int order = pmb->precon->xorder;
@@ -1476,6 +1477,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
         if (NSCALARS > 0)
           ps->sbvar.var_cc = &(ps->r);
+        if (RADIATION_ENABLED)
+          pr->rbvar.var_cc = &(pr->prim);
 
         pbval->ApplyPhysicalBoundaries(time, 0.0);
       }
@@ -1728,6 +1731,8 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
     // and (conserved variable) passive scalar masses:
     if (NSCALARS > 0)
       pmb->pscalars->sbvar.SendBoundaryBuffers();
+    if (RADIATION_ENABLED)
+      pmb->prad->rbvar.SendBoundaryBuffers();
   }
 
   // wait to receive conserved variables
@@ -1741,6 +1746,8 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
       pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
     if (NSCALARS > 0)
       pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
+    if (RADIATION_ENABLED)
+      pmb->prad->rbvar.ReceiveAndSetBoundariesWithWait();
     if (SHEARING_BOX) {
       pmb->phydro->hbvar.AddHydroShearForInit();
     }
@@ -1783,13 +1790,13 @@ void Mesh::ReserveMeshBlockPhysIDs() {
   if (MAGNETIC_FIELDS_ENABLED) {
     ReserveTagPhysIDs(FaceCenteredBoundaryVariable::max_phys_id);
   }
-  if (RADIATION_ENABLED) {
-    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
-  }
   if (SELF_GRAVITY_ENABLED) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
   if (NSCALARS > 0) {
+    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+  }
+  if (RADIATION_ENABLED) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
 #endif

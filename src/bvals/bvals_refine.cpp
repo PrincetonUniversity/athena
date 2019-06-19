@@ -106,19 +106,13 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     //psbvar = dynamic_cast<CellCenteredBoundaryVariable *>(bvars_main_int[???]);
   }
 
+  Radiation *prad = nullptr;
+
   FaceCenteredBoundaryVariable *pfbvar = nullptr;
   Field *pf = nullptr;
   if (MAGNETIC_FIELDS_ENABLED) {
     pf = pmb->pfield;
     pfbvar = dynamic_cast<FaceCenteredBoundaryVariable *>(bvars_main_int[1]);
-  }
-
-  CellCenteredBoundaryVariable *prbvar = nullptr;
-  Radiation *pr = nullptr;
-  if (RADIATION_ENABLED) {
-    pr = pmb->prad;
-    int rad_bvars_int = (MAGNETIC_FIELDS_ENABLED ? 2 : 1);
-    prbvar = dynamic_cast<CellCenteredBoundaryVariable *>(bvars_main_int[rad_bvars_int]);
   }
 
   // For each finer neighbor, to prolongate a boundary we need to fill one more cell
@@ -199,8 +193,10 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
       ps = pmb->pscalars;
       ps->sbvar.var_cc = &(ps->coarse_r_);
     }
-    if (RADIATION_ENABLED)
-      prbvar->var_cc = &(pr->coarse_prim);
+    if (RADIATION_ENABLED) {
+      prad = pmb->prad;
+      prad->rbvar.var_cc = &(prad->coarse_prim);
+    }
 
     // Step 2. Re-apply physical boundaries on the coarse boundary:
     ApplyPhysicalBoundariesOnCoarseLevel(nb, time, dt, si, ei, sj, ej, sk, ek);
@@ -214,8 +210,9 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
       ps = pmb->pscalars;
       ps->sbvar.var_cc = &(ps->r);
     }
-    if (RADIATION_ENABLED)
-      prbvar->var_cc = &(pr->prim);
+    if (RADIATION_ENABLED) {
+      prad->rbvar.var_cc = &(prad->prim);
+    }
 
     // Step 3. Finally, the ghost-ghost zones are ready for prolongation:
     ProlongateGhostCells(nb, si, ei, sj, ej, sk, ek);
@@ -338,9 +335,9 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
   if (MAGNETIC_FIELDS_ENABLED) {
     pf = pmb->pfield;
   }
-  Radiation *pr = nullptr;
+  Radiation *prad = nullptr;
   if (RADIATION_ENABLED) {
-    pr = pmb->prad;
+    prad = pmb->prad;
   }
 
   // convert the ghost zone and ghost-ghost zones into primitive variables
@@ -390,6 +387,10 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
                                                  si-f1m, ei+f1p, sj-f2m, ej+f2p,
                                                  sk-f3m, ek+f3p);
   }
+  if (RADIATION_ENABLED) {
+    prad->ConservedToPrimitive(prad->coarse_cons, prad->coarse_prim, pmr->pcoarsec,
+        si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
+  }
 
   if (nb.ni.ox1 == 0) {
     if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
@@ -436,13 +437,19 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
 
-  // prolongate cell-centered S/AMR-enrolled quantities (hydro, radiation, scalars, ...)
-  //(unique to Hydro, PassiveScalars): swap ptrs to (w, coarse_prim) from (u, coarse_cons)
+  // prolongate cell-centered S/AMR-enrolled quantities (hydro, scalars, radiation, ...)
+  // (unique to Hydro, PassiveScalars, Radiation): swap ptrs to (w, coarse_prim) from
+  // (u, coarse_cons)
   pmr->SetHydroRefinement(HydroBoundaryQuantity::prim);
   // (r, coarse_r) from (s, coarse_s)
   if (NSCALARS > 0) {
     PassiveScalars *ps = pmb->pscalars;
     pmr->pvars_cc_[ps->refinement_idx] = std::make_tuple(&ps->r, &ps->coarse_r_);
+  }
+  if (RADIATION_ENABLED) {
+    Radiation *prad = pmb->prad;
+    pmr->pvars_cc_[prad->refinement_idx]
+        = std::make_tuple(&prad->prim, &prad->coarse_prim);
   }
 
   for (auto cc_pair : pmr->pvars_cc_) {
@@ -457,6 +464,11 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   if (NSCALARS > 0) {
     PassiveScalars *ps = pmb->pscalars;
     pmr->pvars_cc_[ps->refinement_idx] = std::make_tuple(&ps->s, &ps->coarse_s_);
+  }
+  if (RADIATION_ENABLED) {
+    Radiation *prad = pmb->prad;
+    pmr->pvars_cc_[prad->refinement_idx]
+        = std::make_tuple(&prad->cons, &prad->coarse_cons);
   }
 
   // prolongate face-centered S/AMR-enrolled quantities (magnetic fields)
@@ -525,7 +537,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   // temporarily hardcode Hydro and Field array access
   Hydro *ph = pmb->phydro;
   Field *pf = nullptr;
-  Radiation *pr = nullptr;
+  Radiation *prad = nullptr;
 
   // KGF: COUPLING OF QUANTITIES (must be manually specified)
   // Field prolongation completed, calculate cell centered fields
@@ -547,8 +559,9 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
                                                  fsi, fei, fsj, fej, fsk, fek);
   }
   if (RADIATION_ENABLED) {
-    pr = pmb->prad;
-    pr->PrimitiveToConserved(pr->prim, pr->cons, pmb->pcoord, fsi, fei, fsj, fej, fsk, fek);
+    prad = pmb->prad;
+    prad->PrimitiveToConserved(prad->prim, prad->cons, pmb->pcoord, fsi, fei, fsj, fej,
+        fsk, fek);
   }
   return;
 }

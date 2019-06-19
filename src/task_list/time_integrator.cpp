@@ -741,10 +741,10 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
         ps->s2 = ps->s;
     }
     if (RADIATION_ENABLED) {
-      Radiation *pr = pmb->prad;
-      pr->cons1.ZeroClear();
+      Radiation *prad = pmb->prad;
+      prad->cons1.ZeroClear();
       if (integrator == "ssprk5_4")
-        pr->cons2 = pr->cons;
+        prad->cons2 = prad->cons;
     }
   }
 
@@ -941,7 +941,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
 }
 
 TaskStatus TimeIntegratorTaskList::IntegrateRad(MeshBlock *pmb, int stage) {
-  Radiation *pr = pmb->prad;
+  Radiation *prad = pmb->prad;
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to
     // IntegrateHydro and IntegrateField
@@ -949,18 +949,18 @@ TaskStatus TimeIntegratorTaskList::IntegrateRad(MeshBlock *pmb, int stage) {
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
-    pr->WeightedAve(pr->cons1, pr->cons, pr->cons2, ave_wghts);
+    prad->WeightedAve(prad->cons1, prad->cons, prad->cons2, ave_wghts);
 
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
     ave_wghts[2] = stage_wghts[stage-1].gamma_3;
     if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
-      pr->cons.SwapAthenaArray(pr->cons1);
+      prad->cons.SwapAthenaArray(prad->cons1);
     else
-      pr->WeightedAve(pr->cons, pr->cons1, pr->cons2, ave_wghts);
+      prad->WeightedAve(prad->cons, prad->cons1, prad->cons2, ave_wghts);
 
     const Real wght = stage_wghts[stage-1].beta;
-    pr->AddFluxDivergenceToAverage(pr->prim, wght, pr->cons);
+    prad->AddFluxDivergenceToAverage(prad->prim, wght, prad->cons);
 
     // Hardcode an additional flux divergence weighted average for the penultimate
     // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
@@ -971,9 +971,9 @@ TaskStatus TimeIntegratorTaskList::IntegrateRad(MeshBlock *pmb, int stage) {
       ave_wghts[2] = 0.0;
       Real beta = 0.063692468666290; // F(u^(3)) coeff.
       // writing out to u2 register
-      pr->WeightedAve(pr->cons2, pr->cons1, pr->cons2, ave_wghts);
+      prad->WeightedAve(prad->cons2, prad->cons1, prad->cons2, ave_wghts);
 
-      pr->AddFluxDivergenceToAverage(pr->prim, beta, pr->cons2);
+      prad->AddFluxDivergenceToAverage(prad->prim, beta, prad->cons2);
     }
     return TaskStatus::next;
   }
@@ -1288,15 +1288,15 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
     pmb->peos->ConservedToPrimitive(ph->u, ph->w, pf->b,
                                     ph->w1, pf->bcc, pmb->pcoord,
                                     il, iu, jl, ju, kl, ku);
-    if (RADIATION_ENABLED) {
-      pmb->prad->ConservedToPrimitive(prad->cons, prad->prim1, pmb->pcoord, il, iu, jl,
-          ju, kl, ku);
-    }
     if (NSCALARS > 0) {
       // r1/r_old for GR is currently unused:
       pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->w1, // ph->u, (updated rho)
                                                    ps->r, ps->r,
                                                    pmb->pcoord, il, iu, jl, ju, kl, ku);
+    }
+    if (RADIATION_ENABLED) {
+      pmb->prad->ConservedToPrimitive(prad->cons, prad->prim1, pmb->pcoord, il, iu, jl,
+          ju, kl, ku);
     }
     // fourth-order EOS:
     if (pmb->precon->xorder == 4) {

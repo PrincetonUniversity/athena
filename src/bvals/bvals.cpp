@@ -324,12 +324,9 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     ps = pmb->pscalars;
   }
 
-  CellCenteredBoundaryVariable *prbvar = nullptr;
-  Radiation *pr = nullptr;
+  Radiation *prad = nullptr;
   if (RADIATION_ENABLED) {
-    pr = pmb->prad;
-    int rad_bvars_int = (MAGNETIC_FIELDS_ENABLED ? 2 : 1);
-    prbvar = dynamic_cast<CellCenteredBoundaryVariable *>(bvars_main_int[rad_bvars_int]);
+    prad = pmb->prad;
   }
 
   // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
@@ -350,7 +347,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
           ps->r, ph->w, ps->s, pco, pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
     }
     if (RADIATION_ENABLED) {
-      pmb->prad->PrimitiveToConserved(pr->prim, pr->cons, pco, pmb->is-NGHOST, pmb->is-1,
+      prad->PrimitiveToConserved(prad->prim, prad->cons, pco, pmb->is-NGHOST, pmb->is-1,
           bjs, bje, bks, bke);
     }
   }
@@ -373,7 +370,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
           ps->r, ph->w, ps->s, pco, pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
     }
     if (RADIATION_ENABLED) {
-      pmb->prad->PrimitiveToConserved(pr->prim, pr->cons, pco, pmb->ie+1, pmb->ie+NGHOST,
+      prad->PrimitiveToConserved(prad->prim, prad->cons, pco, pmb->ie+1, pmb->ie+NGHOST,
           bjs, bje, bks, bke);
     }
   }
@@ -397,7 +394,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
             ps->r, ph->w, ps->s, pco, bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
       }
       if (RADIATION_ENABLED) {
-        pmb->prad->PrimitiveToConserved(pr->prim, pr->cons, pco, bis, bie, pmb->js-NGHOST,
+        prad->PrimitiveToConserved(prad->prim, prad->cons, pco, bis, bie, pmb->js-NGHOST,
             pmb->js-1, bks, bke);
       }
     }
@@ -420,7 +417,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
             ps->r, ph->w, ps->s, pco, bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
       }
       if (RADIATION_ENABLED) {
-        pmb->prad->PrimitiveToConserved(pr->prim, pr->cons, pco, bis, bie, pmb->je+1,
+        prad->PrimitiveToConserved(prad->prim, prad->cons, pco, bis, bie, pmb->je+1,
             pmb->je+NGHOST, bks, bke);
       }
     }
@@ -448,7 +445,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
             ps->r, ph->w, ps->s, pco, bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
       }
       if (RADIATION_ENABLED) {
-        pmb->prad->PrimitiveToConserved(pr->prim, pr->cons, pco, bis, bie, bjs, bje,
+        prad->PrimitiveToConserved(prad->prim, prad->cons, pco, bis, bie, bjs, bje,
             pmb->ks-NGHOST, pmb->ks-1);
       }
     }
@@ -471,7 +468,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
             ps->r, ph->w, ps->s, pco, bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
       }
       if (RADIATION_ENABLED) {
-        pmb->prad->PrimitiveToConserved(pr->prim, pr->cons, pco, bis, bie, bjs, bje,
+        prad->PrimitiveToConserved(prad->prim, prad->cons, pco, bis, bie, bjs, bje,
             pmb->ke+1, pmb->ke+NGHOST);
       }
     }

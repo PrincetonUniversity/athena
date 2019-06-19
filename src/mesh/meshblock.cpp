@@ -148,11 +148,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pfield = new Field(this, pin);
     pbval->AdvanceCounterPhysID(FaceCenteredBoundaryVariable::max_phys_id);
   }
-  if (RADIATION_ENABLED) {
-    // if (this->rad_block)
-    prad = new Radiation(this, pin);
-    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
-  }
   if (SELF_GRAVITY_ENABLED) {
     // if (this->grav_block)
     pgrav = new Gravity(this, pin);
@@ -161,6 +156,11 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   if (NSCALARS > 0) {
     // if (this->scalars_block)
     pscalars = new PassiveScalars(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
+  if (RADIATION_ENABLED) {
+    // if (this->rad_block)
+    prad = new Radiation(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
   // KGF: suboptimal solution, since developer must copy/paste BoundaryVariable derived
@@ -362,10 +362,10 @@ MeshBlock::~MeshBlock() {
 
   delete phydro;
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
-  if (RADIATION_ENABLED) delete prad;
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
   if (NSCALARS > 0) delete pscalars;
+  if (RADIATION_ENABLED) delete prad;
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
   delete pbval;
@@ -462,14 +462,14 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
   if (MAGNETIC_FIELDS_ENABLED)
     size += (pfield->b.x1f.GetSizeInBytes() + pfield->b.x2f.GetSizeInBytes()
              + pfield->b.x3f.GetSizeInBytes());
-  if (RADIATION_ENABLED) {
-    size += prad->prim.GetSizeInBytes();
-    size += prad->cons.GetSizeInBytes();
-  }
   if (SELF_GRAVITY_ENABLED)
     size += pgrav->phi.GetSizeInBytes();
   if (NSCALARS > 0)
     size += pscalars->s.GetSizeInBytes();
+  if (RADIATION_ENABLED) {
+    size += prad->prim.GetSizeInBytes();
+    size += prad->cons.GetSizeInBytes();
+  }
 
   // calculate user MeshBlock data size
   for (int n=0; n<nint_user_meshblock_data_; n++)

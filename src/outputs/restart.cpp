@@ -26,6 +26,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
@@ -185,6 +186,16 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     //   std::memcpy(pdata, r.data(), r.GetSizeInBytes());
     //   pdata += r.GetSizeInBytes();
     // }
+
+    // Radiation
+    if (RADIATION_ENABLED) {
+      AthenaArray<Real> &r_prim = pmb->prad->prim;
+      AthenaArray<Real> &r_cons = pmb->prad->cons;
+      std::memcpy(pdata, r_prim.data(), r_prim.GetSizeInBytes());
+      pdata += r_prim.GetSizeInBytes();
+      std::memcpy(pdata, r_cons.data(), r_cons.GetSizeInBytes());
+      pdata += r_cons.GetSizeInBytes();
+    }
 
     // User MeshBlock data:
     // integer data:

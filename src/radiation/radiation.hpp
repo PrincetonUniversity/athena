@@ -69,6 +69,7 @@ public:
   AthenaArray<Real> flux_a[2];    // angular fluxes of intensity n^a I
   AthenaArray<Real> coarse_prim;  // prolongation/restriction buffer
   AthenaArray<Real> coarse_cons;  // prolongation/restriction buffer
+  int refinement_idx{-1};         // location of enrolled arrays
 
   // Boundary communication
   CellCenteredBoundaryVariable rbvar;
