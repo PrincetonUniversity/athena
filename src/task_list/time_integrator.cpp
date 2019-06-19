@@ -73,7 +73,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     cfl_limit = 1.0;
     // Modify VL2 stability limit in 2D, 3D
     if (pm->ndim == 2) cfl_limit = 0.5;
-    if (pm->ndim == 3) cfl_limit = ONE_3RD;
+    if (pm->ndim == 3) cfl_limit = 0.5;
 
     stage_wghts[0].delta = 1.0; // required for consistency
     stage_wghts[0].gamma_1 = 0.0;
@@ -99,7 +99,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     // Heun's method / SSPRK (2,2): Gottlieb (2009) equation 3.1
     // Optimal (in error bounds) explicit two-stage, second-order SSPRK
     nstages = 2;
-    cfl_limit = 1.0;
+    cfl_limit = 1.0;  // c_eff = c/nstages = 1/2 (Gottlieb (2009), pg 271)
     stage_wghts[0].delta = 1.0;
     stage_wghts[0].gamma_1 = 0.0;
     stage_wghts[0].gamma_2 = 1.0;
@@ -115,7 +115,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     // SSPRK (3,3): Gottlieb (2009) equation 3.2
     // Optimal (in error bounds) explicit three-stage, third-order SSPRK
     nstages = 3;
-    cfl_limit = 1.0;
+    cfl_limit = 1.0;  // c_eff = c/nstages = 1/3 (Gottlieb (2009), pg 271)
     stage_wghts[0].delta = 1.0;
     stage_wghts[0].gamma_1 = 0.0;
     stage_wghts[0].gamma_2 = 1.0;
@@ -139,10 +139,10 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     // RK4()4[2S] from Table 2 of Ketcheson (2010)
     // Non-SSP, explicit four-stage, fourth-order RK
     nstages = 4;
-    // Stability properties are similar to classical RK4
-    // Refer to Colella (2011) for constant advection with 4th order fluxes
-    // linear stability analysis
-    cfl_limit = 1.3925;
+    // Stability properties are similar to classical (non-SSP) RK4 (but ~2x L2 principal
+    // error norm). Refer to Colella (2011) for linear stability analysis of constant
+    // coeff. advection of classical RK4 + 4th or 1st order (limiter engaged) fluxes
+    cfl_limit = 1.3925; // Colella (2011) eq 101; 1st order flux is most severe constraint
     stage_wghts[0].delta = 1.0;
     stage_wghts[0].gamma_1 = 0.0;
     stage_wghts[0].gamma_2 = 1.0;
@@ -170,9 +170,15 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     // SSPRK (5,4): Gottlieb (2009) section 3.1; between eq 3.3 and 3.4
     // Optimal (in error bounds) explicit five-stage, fourth-order SSPRK
     // 3N method, but there is no 3S* formulation due to irregular sparsity
-    // of Shu-Osher form matrix, alpha
+    // of Shu-Osher form matrix, alpha.
     nstages = 5;
-    cfl_limit = 1.3925;
+    // Because it is an SSP method, we can use the SSP coefficient c=1.508 to to trivially
+    // relate the CFL constraint to the RK1 CFL=1 (for first-order fluxes). There is no
+    // need to perform stability analysis from scratch (unlike e.g. the linear stability
+    // analysis for classical/non-SSP RK4 in Colella (2011)) However, PLM and PPM w/o the
+    // limiter engaged are unconditionally unstable under RK1 integration, so the SSP
+    // guarantees do not hold for the Athena++ spatial discretizations.
+    cfl_limit = 1.508;         //  (effective SSP coeff = 0.302) Gottlieb (2009) pg 272
     // u^(1)
     stage_wghts[0].delta = 1.0; // u1 = u^n
     stage_wghts[0].gamma_1 = 0.0;
@@ -681,6 +687,13 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
       pf->b1.x1f.ZeroClear();
       pf->b1.x2f.ZeroClear();
       pf->b1.x3f.ZeroClear();
+      if (integrator == "ssprk5_4") {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in TimeIntegratorTaskList::StartupTaskList\n"
+            << "integrator=" << integrator << " is currently incompatible with MHD"
+            << std::endl;
+        ATHENA_ERROR(msg);
+      }
     }
     if (NSCALARS > 0) {
       PassiveScalars *ps = pmb->pscalars;
