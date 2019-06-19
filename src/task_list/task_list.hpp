@@ -34,9 +34,10 @@ enum class TaskListStatus {running, stuck, complete, nothing_to_do};
 //! \class TaskID
 //  \brief generalization of bit fields for Task IDs, status, and dependencies.
 
-class TaskID {
+class TaskID {  // POD but not aggregate (there is a user-provided ctor)
  public:
-  explicit TaskID(unsigned int id = 0);
+  TaskID() = default;
+  explicit TaskID(unsigned int id);
   void Clear();
   bool IsUnfinished(const TaskID& id) const;
   bool CheckDependencies(const TaskID& dep) const;
