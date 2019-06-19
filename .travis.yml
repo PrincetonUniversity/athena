@@ -17,8 +17,8 @@ addons:
       - ubuntu-toolchain-r-test
       - llvm-toolchain-trusty-5.0
     packages:
-      - "python3"
-      - "python3-pip"
+      - "python3.6"
+      - "python3.6-pip"
       - "g++-7"      # Ubuntu 14.04.05 ships with GCC 4.8.4 (not 4.8.2) as of 2018-12-11
       - "clang-5.0"  # Ubuntu 14.04.05 ships with Clang 3.5.0 as of 2018-10-29
 # OpenMPI and MPICH implementations:
@@ -115,8 +115,8 @@ matrix:
       addons:
         apt:
           packages:
-            - "python3"
-            - "python3-pip"
+            - "python3.6"
+            - "python3.6-pip"
       env:
       compiler:
       script: python3 -m flake8 --exclude=cpplint.py,openmpi-* && echo "Finished linting Python files with flake8"
@@ -165,6 +165,7 @@ install:
 before_script:
   # - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
   - python3 -m pip install --upgrade --user pip # --user is necessary on C++ builds, since no virtualenv, sudo
+  - python3 --version; pip3 --version
   - pip3 install --user --only-binary=:all: numpy flake8 h5py scipy || true
   # h5py needed for outputs/all_outputs.py, pgen/hdf5*, eos/eos_hdf5_table.py tests
   # scipy needed in scripts/utils/ for eos/ tests
