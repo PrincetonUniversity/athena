@@ -164,11 +164,10 @@ install:
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
   # - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
-  - python3 -m pip install --upgrade --user pip
-  - pip3 install --user numpy || true  # --user is necessary, since no virtualenv, sudo
-  - pip3 install --user flake8 || true
-  - pip3 install --user h5py || true   # needed for outputs/all_outputs.py, pgen/hdf5*, eos/eos_hdf5_table.py tests
-  - pip3 install --user scipy || true  # needed in scripts/utils/ for eos/ tests
+  - python3 -m pip install --upgrade --user pip # --user is necessary on C++ builds, since no virtualenv, sudo
+  - pip3 install --user --only-binary=:all: numpy flake8 h5py scipy || true
+  # h5py needed for outputs/all_outputs.py, pgen/hdf5*, eos/eos_hdf5_table.py tests
+  # scipy needed in scripts/utils/ for eos/ tests
 # Above Build Matrix expansion is assigned to default stage name "test";
 # Run subset of regression test suite on all build environments
 script: ./tst/ci/travis/run_tests_travis.sh
