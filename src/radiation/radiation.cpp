@@ -37,10 +37,10 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     cons2(nang, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     flux_x{
       {nang, pmb->ncells3, pmb->ncells2, pmb->ncells1+1},
-      {nang, pmb->ncells3, pmb->ncells2+1, pmb->ncells1, (pmb-> pmy_mesh->f2_ ?
+      {nang, pmb->ncells3, pmb->ncells2+1, pmb->ncells1, (pmb->pmy_mesh->f2 ?
           AthenaArray<Real>::DataStatus::allocated :
           AthenaArray<Real>::DataStatus::empty)},
-      {nang, pmb->ncells3+1, pmb->ncells2, pmb->ncells1, (pmb-> pmy_mesh->f3_ ?
+      {nang, pmb->ncells3+1, pmb->ncells2, pmb->ncells1, (pmb->pmy_mesh->f3 ?
           AthenaArray<Real>::DataStatus::allocated :
           AthenaArray<Real>::DataStatus::empty)}
     },

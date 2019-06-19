@@ -193,7 +193,8 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // BoundaryVariable objects within different MeshBlocks on the same MPI rank:
   friend class BoundaryVariable;
   friend class FaceCenteredBoundaryVariable;  // needs nface_, nedge_, num_north/south_...
-  // TODO(KGF): consider removing this friendship designation
+  // TODO(KGF): consider removing these friendship designations:
   friend class CellCenteredBoundaryVariable;
+  friend class HydroBoundaryVariable;  // needed for shearing box quantities
 };
 #endif // BVALS_BVALS_HPP_

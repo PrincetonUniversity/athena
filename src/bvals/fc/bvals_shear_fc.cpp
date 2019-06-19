@@ -146,7 +146,11 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
         for (int j=js-NGHOST; j<=je+NGHOST; j++) {
           for (int i=0; i<NGHOST; i++) {
             int ii = ib[upper] + i;
-            shear_fc_[upper].x1f(k,j,i) = (*var_fc).x1f(k,j,ii);
+            // staggered mesh --> face indices are biased to lower x1
+            if (upper) // start loading at first ghost-ghost x1 face (ie+2) at upper x1
+              shear_fc_[upper].x1f(k,j,i) = (*var_fc).x1f(k,j,ii+1);
+            else       // stop loading before first ghost-real x1 face (is) at lower x1
+              shear_fc_[upper].x1f(k,j,i) = (*var_fc).x1f(k,j,ii);
             shear_fc_[upper].x2f(k,j,i) = (*var_fc).x2f(k,j,ii);
             shear_fc_[upper].x3f(k,j,i) = (*var_fc).x3f(k,j,ii);
           }
@@ -330,7 +334,7 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
             MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                        MPI_STATUS_IGNORE);
             MPI_Test(&shear_bd_var_[upper].req_recv[n], &test, MPI_STATUS_IGNORE);
-            if (static_cast<bool>(test) == false) {
+            if (!static_cast<bool>(test)) {
               flag[upper] = false;
               continue;
             }

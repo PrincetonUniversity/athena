@@ -105,7 +105,7 @@ TaskStatus FFTGravitySolverTaskList::SendFFTGravityBoundary(MeshBlock *pmb, int 
 TaskStatus FFTGravitySolverTaskList::ReceiveFFTGravityBoundary(MeshBlock *pmb,
                                                                int stage) {
   bool ret = pmb->pgrav->gbvar.ReceiveBoundaryBuffers();
-  if (ret == false)
+  if (!ret)
     return TaskStatus::fail;
   return TaskStatus::success;
 }

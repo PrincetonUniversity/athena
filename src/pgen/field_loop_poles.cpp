@@ -90,7 +90,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     b0=std::sqrt(2.*isocs2*rho0/beta);
   }
 
-  if (adaptive==true)
+  if (adaptive)
     EnrollUserRefinementCondition(RefinementCondition);
 
   // setup boundary condition
@@ -567,11 +567,11 @@ void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 // refinement condition: check the field amplitude
 int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &bc = pmb->pfield->bcc;
-  Real maxb=0.0;
+  Real maxb = 0.0;
   for (int k=pmb->ks-1; k<=pmb->ke+1; k++) {
     for (int j=pmb->js-1; j<=pmb->je+1; j++) {
       for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
-        Real b = std::sqrt(SQR(bc(IB1,k,j,i))+SQR(bc(IB2,k,j,i))+SQR(bc(IB3,k,j,i)));
+        Real b = std::sqrt(SQR(bc(IB1,k,j,i)) + SQR(bc(IB2,k,j,i))+SQR(bc(IB3,k,j,i)));
         maxb = std::max(maxb, b);
       }
     }

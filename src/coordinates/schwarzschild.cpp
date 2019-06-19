@@ -129,7 +129,7 @@ Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Allocate and compute arrays for intermediate geometric quantities that are only
   // needed if object is NOT a coarse mesh
-  if (coarse_flag == false) {
+  if (!coarse_flag) {
     // Allocate arrays for intermediate geometric quantities: r-direction
     coord_vol_i1_.NewAthenaArray(nc1);
     coord_area1_i1_.NewAthenaArray(nc1+1);
@@ -458,7 +458,7 @@ Real Schwarzschild::GetCellVolume(const int k, const int j, const int i) {
 // Outputs:
 //   cons: source terms added to 3D array of conserved variables
 
-void Schwarzschild::CoordSrcTerms(
+void Schwarzschild::AddCoordTermsDivergence(
     const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
     AthenaArray<Real> &cons) {

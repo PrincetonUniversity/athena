@@ -10,8 +10,7 @@
 // C headers
 
 // C++ headers
-//#include <vector>
-// used to be needed for vector of pointers in DoTaskListOneStage()
+//#include <vector> // formerly needed for vector of MeshBlock ptrs in DoTaskListOneStage
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -28,32 +27,31 @@
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
-TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage,
-                                             TaskStates &ts) {
-  int skip=0;
+TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskStates &ts) {
+  int skip = 0;
   TaskStatus ret;
   if (ts.num_tasks_left == 0) return TaskListStatus::nothing_to_do;
 
   for (int i=ts.indx_first_task; i<ntasks; i++) {
-    Task &taski=task_list_[i];
+    Task &taski = task_list_[i];
     if ((taski.task_id & ts.finished_tasks) == 0ULL) { // task not done
       // check if dependency clear
       if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
         if (taski.lb_time) pmb->StartTimeMeasurement();
-        ret=(this->*task_list_[i].TaskFunc)(pmb, stage);
+        ret = (this->*task_list_[i].TaskFunc)(pmb, stage);
         if (taski.lb_time) pmb->StopTimeMeasurement();
-        if (ret!=TaskStatus::fail) { // success
+        if (ret != TaskStatus::fail) { // success
           ts.num_tasks_left--;
           ts.finished_tasks |= taski.task_id;
-          if (skip==0) ts.indx_first_task++;
+          if (skip == 0) ts.indx_first_task++;
           if (ts.num_tasks_left == 0) return TaskListStatus::complete;
-          if (ret==TaskStatus::next) continue;
+          if (ret == TaskStatus::next) continue;
           return TaskListStatus::running;
         }
       }
       skip++; // increment number of tasks processed
 
-    } else if (skip==0) { // this task is already done AND it is at the top of the list
+    } else if (skip == 0) { // this task is already done AND it is at the top of the list
       ts.indx_first_task++;
     }
   }

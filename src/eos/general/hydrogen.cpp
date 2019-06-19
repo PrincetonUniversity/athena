@@ -14,7 +14,7 @@
 #include <cmath>   // sqrt()
 #include <fstream>
 #include <iostream> // ifstream
-#include <limits>
+#include <limits>   // std::numeric_limits<float>::epsilon()
 #include <sstream>
 #include <stdexcept> // std::invalid_argument
 
@@ -26,8 +26,9 @@
 #include "../../parameter_input.hpp"
 #include "../eos.hpp"
 
-Real float_eps = std::numeric_limits<float>::epsilon();
-const Real my_1pe = 1. + float_eps;
+namespace {
+const Real float_eps = std::numeric_limits<float>::epsilon();
+const Real my_1pe = 1.0 + float_eps;
 
 //----------------------------------------------------------------------------------------
 //! \fn Real x_(Real rho, Real T) {
@@ -113,8 +114,8 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
   }
 
   while ( (std::fabs(Ta - Tb) >= prec) && (fb - fa >= prec) ) {
-    T0 = .5 * Ta + .5 * Tb;
-    f0 = f(rho, T0) / sol - 1.;
+    T0 = 0.5 * Ta + 0.5 * Tb;
+    f0 = f(rho, T0) / sol - 1.0;
     if ( f0 < 0 ) {
       fa = f0;
       Ta = T0;
@@ -125,16 +126,16 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
       return T0;
     }
   }
-
   return T0;
 }
+} // namespace
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::RiemannAsq(Real rho, Real hint)
 //  \brief Return adiabatic sound speed squared for use in Riemann solver.
 Real EquationOfState::RiemannAsq(Real rho, Real hint) {
-  Real T = invert(*h_of_rho_T, rho, hint, .2 * std::max(hint - 1., .1 * hint),
-                  my_1pe * .4 * hint);
+  Real T = invert(*h_of_rho_T, rho, hint, 0.2*std::max(hint - 1.0, 0.1*hint),
+                  my_1pe*0.4*hint);
   return asq_(rho, T);
 }
 
@@ -143,7 +144,8 @@ Real EquationOfState::RiemannAsq(Real rho, Real hint) {
 //  \brief Return gas pressure
 Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
   Real es = egas / rho;
-  Real T = invert(*e_of_rho_T, rho, egas, std::max(es-1.,.1*es)/3.,my_1pe*2.*es/3.);
+  Real T = invert(*e_of_rho_T, rho, egas, std::max(es - 1.0, 0.1*es)/3.0,
+                  my_1pe*2.0*es/3.0);
   return P_of_rho_T(rho, T);
 }
 
@@ -152,7 +154,7 @@ Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
 //  \brief Return internal energy density
 Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
   Real ps = pres / rho;
-  Real T = invert(*P_of_rho_T, rho, pres, .5 * ps, my_1pe * ps);
+  Real T = invert(*P_of_rho_T, rho, pres, 0.5*ps, my_1pe*ps);
   return e_of_rho_T(rho, T);
 }
 
@@ -161,6 +163,6 @@ Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
 //  \brief Return adiabatic sound speed squared
 Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
   Real ps = pres / rho;
-  Real T = invert(*P_of_rho_T, rho, pres, .5 * ps, my_1pe * ps);
+  Real T = invert(*P_of_rho_T, rho, pres, 0.5*ps, my_1pe*ps);
   return asq_(rho, T);
 }

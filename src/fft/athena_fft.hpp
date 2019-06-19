@@ -114,7 +114,7 @@ class FFTBlock {
   std::int64_t GetGlobalIndex(const int i, const int j, const int k);
 
   void DestroyPlan(AthenaFFTPlan *plan);
-  void MpiInitialize();
+  void InitializeMPI();
   void Execute(AthenaFFTPlan *plan);
   void Execute(AthenaFFTPlan *plan, std::complex<Real> *data);
   void Execute(AthenaFFTPlan *plan, std::complex<Real> *in_data,
@@ -196,7 +196,7 @@ class FFTDriver {
 #ifdef MPI_PARALLEL
   int decomp_, pdim_;
 #endif
-  int dim_;
+  const int dim_;
 #ifdef MPI_PARALLEL
   MPI_Comm MPI_COMM_FFT;
 #endif

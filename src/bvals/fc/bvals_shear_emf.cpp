@@ -272,7 +272,7 @@ bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
             MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
                        MPI_STATUS_IGNORE);
             MPI_Test(&shear_bd_emf_[upper].req_recv[n], &test, MPI_STATUS_IGNORE);
-            if (static_cast<bool>(test) == false) {
+            if (!static_cast<bool>(test)) {
               flag[upper] = false;
               continue;
             }

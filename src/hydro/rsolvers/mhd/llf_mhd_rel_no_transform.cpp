@@ -23,16 +23,15 @@
 //----------------------------------------------------------------------------------------
 // Riemann solver
 // Inputs:
-//   k,j: x3- and x2-indices
-//   il,iu: lower and upper x1-indices
-//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
+//   kl,ku,jl,ju,il,iu: lower and upper x1-, x2-, and x3-indices
 //   bb: 3D array of normal magnetic fields
 //   prim_l,prim_r: 1D arrays of left and right primitive states
-//   dxw: 1D array of mesh spacing in the x-direction
 // Outputs:
 //   flux: 3D array of hydrodynamical fluxes across interfaces
 //   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces
-//   wct: 3D array of weighting factors for CT
+// Notes:
+//   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
+//   cf. LLFNonTransforming() in llf_mhd_rel.cpp
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, const AthenaArray<Real> &bb,
@@ -46,7 +45,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
   // Extract ratio of specific heats
   const Real gamma_adi = pmy_block->peos->GetGamma();
-  Real dt = pmy_block->pmy_mesh->dt;
+  const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
 
   // Get metric components
   switch (ivx) {
@@ -62,84 +61,71 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   }
 
   // Go through each interface
-#pragma omp simd
-  for (int i = il; i <= iu; ++i) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+  for (int i=il; i<=iu; ++i) {
     // Extract metric
-    const Real
-        &g_00 = g_(I00,i), &g_01 = g_(I01,i), &g_02 = g_(I02,i), &g_03 = g_(I03,i),
-        &g_10 = g_(I01,i), &g_11 = g_(I11,i), &g_12 = g_(I12,i), &g_13 = g_(I13,i),
-        &g_20 = g_(I02,i), &g_21 = g_(I12,i), &g_22 = g_(I22,i), &g_23 = g_(I23,i),
-        &g_30 = g_(I03,i), &g_31 = g_(I13,i), &g_32 = g_(I23,i), &g_33 = g_(I33,i);
-    const Real
-        &g00 = gi_(I00,i), &g01 = gi_(I01,i), &g02 = gi_(I02,i), &g03 = gi_(I03,i),
-        &g10 = gi_(I01,i), &g11 = gi_(I11,i), &g12 = gi_(I12,i), &g13 = gi_(I13,i),
-        &g20 = gi_(I02,i), &g21 = gi_(I12,i), &g22 = gi_(I22,i), &g23 = gi_(I23,i),
-        &g30 = gi_(I03,i), &g31 = gi_(I13,i), &g32 = gi_(I23,i), &g33 = gi_(I33,i);
+    Real g_00 = g_(I00,i), g_01 = g_(I01,i), g_02 = g_(I02,i), g_03 = g_(I03,i),
+         g_10 = g_(I01,i), g_11 = g_(I11,i), g_12 = g_(I12,i), g_13 = g_(I13,i),
+         g_20 = g_(I02,i), g_21 = g_(I12,i), g_22 = g_(I22,i), g_23 = g_(I23,i),
+         g_30 = g_(I03,i), g_31 = g_(I13,i), g_32 = g_(I23,i), g_33 = g_(I33,i);
+    Real g00 = gi_(I00,i), g01 = gi_(I01,i), g02 = gi_(I02,i), g03 = gi_(I03,i),
+         g10 = gi_(I01,i), g11 = gi_(I11,i), g12 = gi_(I12,i), g13 = gi_(I13,i),
+         g20 = gi_(I02,i), g21 = gi_(I12,i), g22 = gi_(I22,i), g23 = gi_(I23,i),
+         g30 = gi_(I03,i), g31 = gi_(I13,i), g32 = gi_(I23,i), g33 = gi_(I33,i);
     Real alpha = std::sqrt(-1.0/g00);
+
     Real gii, g0i;
-    switch (ivx) {
-      case IVX:
-        gii = g11;
-        g0i = g01;
-        break;
-      case IVY:
-        gii = g22;
-        g0i = g02;
-        break;
-      case IVZ:
-        gii = g33;
-        g0i = g03;
-        break;
+    if(ivx==IVX) {
+      gii = g11;
+      g0i = g01;
+    } else if (ivx==IVY) {
+      gii = g22;
+      g0i = g02;
+    } else if (ivx==IVZ) {
+      gii = g33;
+      g0i = g03;
     }
 
     // Extract left primitives
-    const Real &rho_l = prim_l(IDN,k,j,i);
-    const Real &pgas_l = prim_l(IPR,k,j,i);
-    const Real &uu1_l = prim_l(IVX,k,j,i);
-    const Real &uu2_l = prim_l(IVY,k,j,i);
-    const Real &uu3_l = prim_l(IVZ,k,j,i);
+    Real rho_l = prim_l(IDN,i);
+    Real pgas_l = prim_l(IPR,i);
+    Real uu1_l = prim_l(IVX,i);
+    Real uu2_l = prim_l(IVY,i);
+    Real uu3_l = prim_l(IVZ,i);
     Real bb1_l, bb2_l, bb3_l;
-    switch (ivx) {
-      case IVX:
-        bb1_l = bb(k,j,i);
-        bb2_l = prim_l(IBY,k,j,i);
-        bb3_l = prim_l(IBZ,k,j,i);
-        break;
-      case IVY:
-        bb2_l = bb(k,j,i);
-        bb3_l = prim_l(IBY,k,j,i);
-        bb1_l = prim_l(IBZ,k,j,i);
-        break;
-      case IVZ:
-        bb3_l = bb(k,j,i);
-        bb1_l = prim_l(IBY,k,j,i);
-        bb2_l = prim_l(IBZ,k,j,i);
-        break;
+    if (ivx==IVX) {
+      bb1_l = bb(k,j,i);
+      bb2_l = prim_l(IBY,i);
+      bb3_l = prim_l(IBZ,i);
+    } else if (ivx==IVY) {
+      bb2_l = bb(k,j,i);
+      bb3_l = prim_l(IBY,i);
+      bb1_l = prim_l(IBZ,i);
+    } else if (ivx==IVZ) {
+      bb3_l = bb(k,j,i);
+      bb1_l = prim_l(IBY,i);
+      bb2_l = prim_l(IBZ,i);
     }
 
     // Extract right primitives
-    const Real &rho_r = prim_r(IDN,k,j,i);
-    const Real &pgas_r = prim_r(IPR,k,j,i);
-    const Real &uu1_r = prim_r(IVX,k,j,i);
-    const Real &uu2_r = prim_r(IVY,k,j,i);
-    const Real &uu3_r = prim_r(IVZ,k,j,i);
+    Real rho_r = prim_r(IDN,i);
+    Real pgas_r = prim_r(IPR,i);
+    Real uu1_r = prim_r(IVX,i);
+    Real uu2_r = prim_r(IVY,i);
+    Real uu3_r = prim_r(IVZ,i);
     Real bb1_r, bb2_r, bb3_r;
-    switch (ivx) {
-      case IVX:
-        bb1_r = bb(k,j,i);
-        bb2_r = prim_r(IBY,k,j,i);
-        bb3_r = prim_r(IBZ,k,j,i);
-        break;
-      case IVY:
-        bb2_r = bb(k,j,i);
-        bb3_r = prim_r(IBY,k,j,i);
-        bb1_r = prim_r(IBZ,k,j,i);
-        break;
-      case IVZ:
-        bb3_r = bb(k,j,i);
-        bb1_r = prim_r(IBY,k,j,i);
-        bb2_r = prim_r(IBZ,k,j,i);
-        break;
+    if (ivx==IVZ) {
+      bb1_r = bb(k,j,i);
+      bb2_r = prim_r(IBY,i);
+      bb3_r = prim_r(IBZ,i);
+    } else if (ivx==IVY) {
+      bb2_r = bb(k,j,i);
+      bb3_r = prim_r(IBY,i);
+      bb1_r = prim_r(IBZ,i);
+    } else if (ivx==IVZ) {
+      bb3_r = bb(k,j,i);
+      bb1_r = prim_r(IBY,i);
+      bb2_r = prim_r(IBZ,i);
     }
 
     // Calculate 4-velocity in left state
@@ -206,14 +192,14 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
     // Calculate wavespeeds in left state
     Real lambda_p_l, lambda_m_l;
-    Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
+    Real wgas_l = rho_l + gamma_prime * pgas_l;
     pmy_block->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[ivx],
                                               b_sq_l, g00, g0i, gii,
                                               &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
-    Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
+    Real wgas_r = rho_r + gamma_prime * pgas_r;
     pmy_block->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[ivx],
                                               b_sq_r, g00, g0i, gii,
                                               &lambda_p_r, &lambda_m_r);
@@ -282,10 +268,6 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
         -0.5 * (flux_l[IBY] + flux_r[IBY] - lambda * (cons_r[IBY] - cons_l[IBY]));
     ez(k,j,i) =
         0.5 * (flux_l[IBZ] + flux_r[IBZ] - lambda * (cons_r[IBZ] - cons_l[IBZ]));
-
-    wct(k,j,i) =
-        GetWeightForCT(flux(IDN,k,j,i), prim_l(IDN,i), prim_r(IDN,i), dxw(i), dt);
   }
-
   return;
 }

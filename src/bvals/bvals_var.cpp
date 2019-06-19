@@ -1,3 +1,4 @@
+
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -29,12 +30,9 @@
 
 // constructor
 
-BoundaryVariable::BoundaryVariable(MeshBlock *pmb) {
-  pmy_block_ = pmb;
-  pbval_ = pmb->pbval;
-  pmy_mesh_ = pmb->pmy_mesh;
-  bvar_index = 0;
-}
+BoundaryVariable::BoundaryVariable(MeshBlock *pmb) : bvar_index(), pmy_block_(pmb),
+                                                     pmy_mesh_(pmb->pmy_mesh),
+                                                     pbval_(pmb->pbval) {}
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type)
@@ -223,7 +221,7 @@ bool BoundaryVariable::ReceiveBoundaryBuffers() {
         int test;
         MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test, MPI_STATUS_IGNORE);
         MPI_Test(&(bd_var_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
-        if (static_cast<bool>(test) == false) {
+        if (!static_cast<bool>(test)) {
           bflag = false;
           continue;
         }

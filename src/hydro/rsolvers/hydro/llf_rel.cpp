@@ -259,37 +259,38 @@ void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
 #if GENERAL_RELATIVITY
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
+  const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
 
   // Get metric components
   pmb->pcoord->Face2Metric(k, j, il, iu, g, gi);
 
   // Go through each interface
-#pragma omp simd
+#pragma omp simd simdlen(SIMD_WIDTH)
   for (int i=il; i<=iu; ++i) {
     // Extract metric
-    const Real &g_00 = g(I00,i), &g_01 = g(I01,i), &g_02 = g(I02,i), &g_03 = g(I03,i),
-               &g_10 = g(I01,i), &g_11 = g(I11,i), &g_12 = g(I12,i), &g_13 = g(I13,i),
-               &g_20 = g(I02,i), &g_21 = g(I12,i), &g_22 = g(I22,i), &g_23 = g(I23,i),
-               &g_30 = g(I03,i), &g_31 = g(I13,i), &g_32 = g(I23,i), &g_33 = g(I33,i);
-    const Real &g00 = gi(I00,i), &g01 = gi(I01,i), &g02 = gi(I02,i), &g03 = gi(I03,i),
-               &g10 = gi(I01,i), &g11 = gi(I11,i), &g12 = gi(I12,i), &g13 = gi(I13,i),
-               &g20 = gi(I02,i), &g21 = gi(I12,i), &g22 = gi(I22,i), &g23 = gi(I23,i),
-               &g30 = gi(I03,i), &g31 = gi(I13,i), &g32 = gi(I23,i), &g33 = gi(I33,i);
+    Real g_00 = g(I00,i), g_01 = g(I01,i), g_02 = g(I02,i), g_03 = g(I03,i),
+         g_10 = g(I01,i), g_11 = g(I11,i), g_12 = g(I12,i), g_13 = g(I13,i),
+         g_20 = g(I02,i), g_21 = g(I12,i), g_22 = g(I22,i), g_23 = g(I23,i),
+         g_30 = g(I03,i), g_31 = g(I13,i), g_32 = g(I23,i), g_33 = g(I33,i);
+    Real g00 = gi(I00,i), g01 = gi(I01,i), g02 = gi(I02,i), g03 = gi(I03,i),
+         g10 = gi(I01,i), g11 = gi(I11,i), g12 = gi(I12,i), g13 = gi(I13,i),
+         g20 = gi(I02,i), g21 = gi(I12,i), g22 = gi(I22,i), g23 = gi(I23,i),
+         g30 = gi(I03,i), g31 = gi(I13,i), g32 = gi(I23,i), g33 = gi(I33,i);
     Real alpha = std::sqrt(-1.0/g00);
 
     // Extract left primitives
-    const Real &rho_l = prim_l(IDN,i);
-    const Real &pgas_l = prim_l(IPR,i);
-    const Real &uu1_l = prim_l(IVX,i);
-    const Real &uu2_l = prim_l(IVY,i);
-    const Real &uu3_l = prim_l(IVZ,i);
+    Real rho_l = prim_l(IDN,i);
+    Real pgas_l = prim_l(IPR,i);
+    Real uu1_l = prim_l(IVX,i);
+    Real uu2_l = prim_l(IVY,i);
+    Real uu3_l = prim_l(IVZ,i);
 
     // Extract right primitives
-    const Real &rho_r = prim_r(IDN,i);
-    const Real &pgas_r = prim_r(IPR,i);
-    const Real &uu1_r = prim_r(IVX,i);
-    const Real &uu2_r = prim_r(IVY,i);
-    const Real &uu3_r = prim_r(IVZ,i);
+    Real rho_r = prim_r(IDN,i);
+    Real pgas_r = prim_r(IPR,i);
+    Real uu1_r = prim_r(IVX,i);
+    Real uu2_r = prim_r(IVY,i);
+    Real uu3_r = prim_r(IVZ,i);
 
     // Calculate 4-velocity in left state
     Real ucon_l[4], ucov_l[4];
@@ -323,13 +324,13 @@ void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
 
     // Calculate wavespeeds in left state
     Real lambda_p_l, lambda_m_l;
-    Real wgas_l = rho_l + gamma_adi/(gamma_adi-1.0) * pgas_l;
+    Real wgas_l = rho_l + gamma_prime * pgas_l;
     pmb->peos->SoundSpeedsGR(wgas_l, pgas_l, ucon_l[0], ucon_l[IVY], g00, g02, g22,
                              &lambda_p_l, &lambda_m_l);
 
     // Calculate wavespeeds in right state
     Real lambda_p_r, lambda_m_r;
-    Real wgas_r = rho_r + gamma_adi/(gamma_adi-1.0) * pgas_r;
+    Real wgas_r = rho_r + gamma_prime * pgas_r;
     pmb->peos->SoundSpeedsGR(wgas_r, pgas_r, ucon_r[0], ucon_r[IVY], g00, g02, g22,
                              &lambda_p_r, &lambda_m_r);
 
@@ -377,7 +378,7 @@ void LLFNonTransforming(MeshBlock *pmb, const int k, const int j,
       flux(n,k,j,i) = 0.5 * (flux_l[n] + flux_r[n] - lambda * (cons_r[n] - cons_l[n]));
     }
   }
-#endif  // GENERAL_RELATIVITY
+#endif // GENERAL_RELATIVITY
   return;
 }
 } // namespace

@@ -172,16 +172,16 @@ class TestError(RuntimeError):
     pass
 
 
-class ExceptionFilter(logging.Filter):
-    """Filter out exceptions"""
+class CriticalExceptionFilter(logging.Filter):
+    """Filter out critical exceptions"""
     def filter(self, record):
-        return not record.exc_info
+        return not record.exc_info or record.levelno != logging.CRITICAL
 
 
 class MakeFilter(logging.Filter):
     """Filter out make output"""
     def filter(self, record):
-        return not 'athena.make' == record.name[:len('athena.make')]
+        return 'athena.make' != record.name[:len('athena.make')]
 
 
 def log_init(args):
@@ -191,15 +191,13 @@ def log_init(args):
     logger.propagate = False  # don't use default handler
     c_handler = logging.StreamHandler()  # console/terminal handler
     c_handler.setLevel(kwargs.pop('loglevel'))
-    c_handler.addFilter(ExceptionFilter())  # let stderr print errors to screen
+    c_handler.addFilter(CriticalExceptionFilter())  # let stderr print errors to screen
+    c_handler.setFormatter(logging.Formatter('%(message)s'))  # only show the message
     if kwargs.pop('verbose'):
         c_handler.setLevel(0)
         c_handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s: %(message)s'))
-    if c_handler.level >= logging.INFO:
-        # if we are not in debugging mode and (not show_make) add MakeFilter
-        if kwargs.pop('hide_make'):
-            c_handler.addFilter(MakeFilter())
-        c_handler.setFormatter(logging.Formatter('%(message)s'))  # only show the message
+    if kwargs.pop('hide_make'):
+        c_handler.addFilter(MakeFilter())
     logger.addHandler(c_handler)
     # setup logfile
     log_fn = kwargs.pop('logfile')
@@ -297,6 +295,7 @@ if __name__ == '__main__':
     log_init(args)
 
     try:
+        logger.debug('args: ' + str(vars(args)))
         main(**vars(args))
     except Exception:
         logger.critical('', exc_info=True)

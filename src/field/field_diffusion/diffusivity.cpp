@@ -84,7 +84,7 @@ void FieldDiffusion::CalcCurrent(FaceField &b) {
   MeshBlock *pmb = pmy_block;
   Coordinates *pco = pmb->pcoord;
 
-  int ext2=0,ext3=0;
+  int ext2 = 0,ext3 = 0;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
   if (pmb->block_size.nx2 > 1) ext2 = 1;
@@ -97,8 +97,8 @@ void FieldDiffusion::CalcCurrent(FaceField &b) {
 
   for (int k=ks-ext3; k<=ke+2*ext3; ++k) {
     for (int j=js-2*ext2; j<=je+2*ext2; ++j) {
-      pco->VolCenterFace2Area(k-ext3,j,is-2,ie+1,area);
-      pco->VolCenter3Length(k-ext3,j,is-2,ie+2,len);
+      pco->VolCenterFace2Area(k-ext3, j, is-2, ie+1, area);
+      pco->VolCenter3Length(k-ext3, j, is-2, ie+2, len);
 #pragma omp simd
       for (int i=is-1; i<=ie+2; ++i) {
         J2(k,j,i) = -(len(i)*b3i(k,j,i) - len(i-1)*b3i(k,j,i-1))/area(i-1);
@@ -108,8 +108,8 @@ void FieldDiffusion::CalcCurrent(FaceField &b) {
 
   for (int k=ks-2*ext3; k<=ke+2*ext3; ++k) {
     for (int j=js-ext2; j<=je+2*ext2; ++j) {
-      pco->VolCenterFace3Area(k,j-ext2,is-2,ie+1,area);
-      pco->VolCenter2Length(k,j-ext2,is-2,ie+2,len);
+      pco->VolCenterFace3Area(k, j-ext2, is-2, ie+1, area);
+      pco->VolCenter2Length(k, j-ext2, is-2, ie+2, len);
 #pragma omp simd
       for (int i=is-1; i<=ie+2; ++i) {
         J3(k,j,i) = (len(i)*b2i(k,j,i) - len(i-1)*b2i(k,j,i-1))/area(i-1);
@@ -120,9 +120,9 @@ void FieldDiffusion::CalcCurrent(FaceField &b) {
   if (pmb->block_size.nx2 > 1) {
     for (int k=ks-ext3; k<=ke+2*ext3; ++k) {
       for (int j=js-1; j<=je+2; ++j) {
-        pco->VolCenterFace1Area(k-ext3,j-1,is-2,ie+2,area);
-        pco->VolCenter3Length(k-ext3,j-1,is-2,ie+2,len_m1);
-        pco->VolCenter3Length(k-ext3,j  ,is-2,ie+2,len);
+        pco->VolCenterFace1Area(k-ext3, j-1, is-2, ie+2, area);
+        pco->VolCenter3Length(k-ext3, j-1, is-2, ie+2, len_m1);
+        pco->VolCenter3Length(k-ext3, j  , is-2, ie+2, len);
 #pragma omp simd
         for (int i=is-2; i<=ie+2; ++i) {
           J1(k,j,i) = (len(i)*b3i(k,j,i) - len_m1(i)*b3i(k,j-1,i))/area(i);
@@ -132,9 +132,9 @@ void FieldDiffusion::CalcCurrent(FaceField &b) {
 
     for (int k=ks-2*ext3; k<=ke+2*ext3; ++k) {
       for (int j=js-1; j<=je+2; ++j) {
-        pco->VolCenterFace3Area(k,j-1,is-2,ie+1,area);
-        pco->VolCenter1Length(k,j-1,is-2,ie+1,len_m1);
-        pco->VolCenter1Length(k,j  ,is-2,ie+1,len);
+        pco->VolCenterFace3Area(k, j-1, is-2, ie+1, area);
+        pco->VolCenter1Length(k, j-1, is-2, ie+1, len_m1);
+        pco->VolCenter1Length(k, j  , is-2, ie+1, len);
 #pragma omp simd
         for (int i=is-1; i<=ie+2; ++i) {
           J3(k,j,i) -= (len(i-1)*b1i(k,j,i) - len_m1(i-1)*b1i(k,j-1,i))/area(i-1);
@@ -146,9 +146,9 @@ void FieldDiffusion::CalcCurrent(FaceField &b) {
   if (pmb->block_size.nx3 > 1) {
     for (int k=ks-1; k<=ke+2; ++k) {
       for (int j=js-1; j<=je+2; ++j) {
-        pco->VolCenterFace1Area(k-1,j-1,is-2,ie+2,area);
-        pco->VolCenter2Length(k-1,j-1,is-2,ie+2,len_m1);
-        pco->VolCenter2Length(k  ,j-1,is-2,ie+2,len);
+        pco->VolCenterFace1Area(k-1, j-1, is-2, ie+2, area);
+        pco->VolCenter2Length(k-1, j-1, is-2, ie+2, len_m1);
+        pco->VolCenter2Length(k  , j-1, is-2, ie+2, len);
 #pragma omp simd
         for (int i=is-2; i<=ie+2; ++i) {
           J1(k,j,i) -= (len(i)*b2i(k,j,i) - len_m1(i)*b2i(k-1,j,i))/area(i);
@@ -158,9 +158,9 @@ void FieldDiffusion::CalcCurrent(FaceField &b) {
 
     for (int k=ks-1; k<=ke+2; ++k) {
       for (int j=js-2; j<=je+2; ++j) {
-        pco->VolCenterFace2Area(k-1,j,is-2,ie+1,area);
-        pco->VolCenter1Length(k-1,j,is-2,ie+1,len_m1);
-        pco->VolCenter1Length(k  ,j,is-2,ie+1,len);
+        pco->VolCenterFace2Area(k-1, j, is-2, ie+1, area);
+        pco->VolCenter1Length(k-1, j, is-2, ie+1, len_m1);
+        pco->VolCenter1Length(k  , j, is-2, ie+1, len);
 #pragma omp simd
         for (int i=is-1; i<=ie+2; ++i) {
           J2(k,j,i) += (len(i-1)*b1i(k,j,i) - len_m1(i-1)*b1i(k-1,j,i))/area(i-1);
@@ -202,16 +202,16 @@ void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc,
     for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
-        Real eta_O = 0.5*(etaB(ohmic,ks,j,i)+etaB(ohmic,ks,j-1,i));
+        Real eta_O = 0.5*(etaB(ohmic,ks,j,i) + etaB(ohmic,ks,j-1,i));
         e1(ks  ,j,i) += eta_O * J1(ks,j,i);
         e1(ke+1,j,i)  = e1(ks,j,i);
 
-        eta_O = 0.5*(etaB(ohmic,ks,j,i)+etaB(ohmic,ks,j,i-1));
+        eta_O = 0.5*(etaB(ohmic,ks,j,i) + etaB(ohmic,ks,j,i-1));
         e2(ks  ,j,i) += eta_O * J2(ks,j,i);
         e2(ke+1,j,i)  = e2(ks,j,i);
 
-        eta_O = 0.25*(etaB(ohmic,ks,j  ,i)+etaB(ohmic,ks,j  ,i-1)
-                      +etaB(ohmic,ks,j-1,i)+etaB(ohmic,ks,j-1,i-1));
+        eta_O = 0.25*(etaB(ohmic,ks,j  ,i) + etaB(ohmic,ks,j  ,i-1)
+                      + etaB(ohmic,ks,j-1,i) + etaB(ohmic,ks,j-1,i-1));
         e3(ks,  j,i) += eta_O * J3(ks,j,i);
       }
     }
@@ -223,16 +223,16 @@ void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc,
     for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
-        Real eta_O = 0.25*(etaB(ohmic,k  ,j,i)+etaB(ohmic,k  ,j-1,i)
-                           +etaB(ohmic,k-1,j,i)+etaB(ohmic,k-1,j-1,i));
+        Real eta_O = 0.25*(etaB(ohmic,k  ,j,i) + etaB(ohmic,k  ,j-1,i)
+                           + etaB(ohmic,k-1,j,i) + etaB(ohmic,k-1,j-1,i));
         e1(k,j,i) += eta_O * J1(k,j,i);
 
-        eta_O = 0.25*(etaB(ohmic,k  ,j,i)+etaB(ohmic,k  ,j,i-1)
-                      +etaB(ohmic,k-1,j,i)+etaB(ohmic,k-1,j,i-1));
+        eta_O = 0.25*(etaB(ohmic,k  ,j,i) + etaB(ohmic,k  ,j,i-1)
+                      + etaB(ohmic,k-1,j,i) + etaB(ohmic,k-1,j,i-1));
         e2(k,j,i) += eta_O * J2(k,j,i);
 
-        eta_O = 0.25*(etaB(ohmic,k,j  ,i)+etaB(ohmic,k,j  ,i-1)
-                      +etaB(ohmic,k,j-1,i)+etaB(ohmic,k,j-1,i-1));
+        eta_O = 0.25*(etaB(ohmic,k,j  ,i) + etaB(ohmic,k,j  ,i-1)
+                      + etaB(ohmic,k,j-1,i) + etaB(ohmic,k,j-1,i-1));
         e3(k,j,i) += eta_O * J3(k,j,i);
       }
     }
@@ -255,13 +255,13 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
   // 1D update:
   if (pmb->block_size.nx2 == 1) {
     for (int i=is; i<=ie+1; ++i) {
-      Real eta_A = 0.5*(etaB(ambipolar,ks,js,i-1)+etaB(ambipolar,ks,js,i));
+      Real eta_A = 0.5*(etaB(ambipolar,ks,js,i-1) + etaB(ambipolar,ks,js,i));
 
       Real intBx = b.x1f(ks,js,i);
       Real intBy = 0.5*(b.x2f(ks,js,i) + b.x2f(ks,js,i-1));
       Real intBz = 0.5*(b.x3f(ks,js,i) + b.x3f(ks,js,i-1));
 
-      Real Bsq   = SQR(intBx)+SQR(intBy)+SQR(intBz)+TINY_NUMBER;
+      Real Bsq   = SQR(intBx) + SQR(intBy) + SQR(intBz) + TINY_NUMBER;
       Real JdotB = J2(ks,js,i)*intBy + J3(ks,js,i)*intBz;
 
       e2(ks  ,js  ,i) += eta_A * (J2(ks,js,i) - JdotB*intBy/Bsq);
@@ -279,7 +279,7 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
 #pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         // emf.x
-        Real eta_A = 0.5*(etaB(ambipolar,ks,j,i)+etaB(ambipolar,ks,j-1,i));
+        Real eta_A = 0.5*(etaB(ambipolar,ks,j,i) + etaB(ambipolar,ks,j-1,i));
 
         Real intJx = J1(ks,j,i);
         Real intJy = 0.25*(J2(ks,j,  i) + J2(ks,j,  i+1)
@@ -290,14 +290,14 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
         Real intBy = b.x2f(ks,j,i);
         Real intBz = 0.5*(b.x3f(ks,j,i)+b.x3f(ks,j-1,i));
 
-        Real Bsq   = SQR(intBx)+SQR(intBy)+SQR(intBz)+TINY_NUMBER;
+        Real Bsq   = SQR(intBx) + SQR(intBy) + SQR(intBz) + TINY_NUMBER;
         Real JdotB = intJx*intBx + intJy*intBy + intJz*intBz;
 
         e1(ks  ,j,i) += eta_A * (J1(ks,j,i) - JdotB*intBx/Bsq);
         e1(ke+1,j,i)  = e1(ks,j,i);
 
         // emf.y
-        eta_A = 0.5*(etaB(ambipolar,ks,j,i)+etaB(ambipolar,ks,j,i-1));
+        eta_A = 0.5*(etaB(ambipolar,ks,j,i) + etaB(ambipolar,ks,j,i-1));
 
         intJx = 0.25*(J1(ks,j,i  ) + J1(ks,j+1,i  )
                       +J1(ks,j,i-1) + J1(ks,j+1,i-1));
@@ -308,15 +308,15 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
         intBy = 0.5*(bc(IB2,ks,j,i)+bc(IB2,ks,j,i-1));
         intBz = 0.5*(b.x3f(  ks,j,i)+b.x3f(  ks,j,i-1));
 
-        Bsq   = SQR(intBx)+SQR(intBy)+SQR(intBz)+TINY_NUMBER;
+        Bsq   = SQR(intBx) + SQR(intBy) + SQR(intBz) + TINY_NUMBER;
         JdotB = intJx*intBx + intJy*intBy + intJz*intBz;
 
         e2(ks  ,j,i) += eta_A * (J2(ks,j,i) - JdotB*intBy/Bsq);
         e2(ke+1,j,i)  = e2(ks,j,i);
 
         // emf.z
-        eta_A = 0.25*(etaB(ambipolar,ks,j  ,i)+etaB(ambipolar,ks,j  ,i-1)
-                      +etaB(ambipolar,ks,j-1,i)+etaB(ambipolar,ks,j-1,i-1));
+        eta_A = 0.25*(etaB(ambipolar,ks,j  ,i) + etaB(ambipolar,ks,j  ,i-1)
+                      + etaB(ambipolar,ks,j-1,i) + etaB(ambipolar,ks,j-1,i-1));
 
         intJx = 0.5*(J1(ks,j,i) + J1(ks,j,i-1));
         intJy = 0.5*(J2(ks,j,i) + J2(ks,j-1,i));
@@ -327,7 +327,7 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
         intBz = 0.25*(b.x3f(ks,j  ,i) + b.x3f(ks,j  ,i-1)
                       +b.x3f(ks,j-1,i) + b.x3f(ks,j-1,i-1));
 
-        Bsq   = SQR(intBx)+SQR(intBy)+SQR(intBz)+TINY_NUMBER;
+        Bsq   = SQR(intBx) + SQR(intBy) + SQR(intBz) + TINY_NUMBER;
         JdotB = intJx*intBx + intJy*intBy + intJz*intBz;
 
         e3(ks,  j,i) += eta_A * (J3(ks,j,i) - JdotB*intBz/Bsq);
@@ -343,8 +343,8 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
 #pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         // emf.x
-        Real eta_A = 0.25*(etaB(ambipolar,k  ,j,i)+etaB(ambipolar,k  ,j-1,i)
-                           +etaB(ambipolar,k-1,j,i)+etaB(ambipolar,k-1,j-1,i));
+        Real eta_A = 0.25*(etaB(ambipolar,k  ,j,i) + etaB(ambipolar,k  ,j-1,i)
+                           + etaB(ambipolar,k-1,j,i) + etaB(ambipolar,k-1,j-1,i));
 
         Real intJx = J1(k,j,i);
         Real intJy = 0.25*(J2(k,j,  i) + J2(k,j,  i+1)
@@ -357,14 +357,14 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
         Real intBy = 0.5*(b.x2f(k,j,i) + b.x2f(k-1,j,i));
         Real intBz = 0.5*(b.x3f(k,j,i) + b.x3f(k,j-1,i));
 
-        Real Bsq   = SQR(intBx)+SQR(intBy)+SQR(intBz)+TINY_NUMBER;
+        Real Bsq   = SQR(intBx) + SQR(intBy) + SQR(intBz) + TINY_NUMBER;
         Real JdotB = intJx*intBx + intJy*intBy + intJz*intBz;
 
         e1(k,j,i) += eta_A * (J1(k,j,i) - JdotB*intBx/Bsq);
 
         // emf.y
-        eta_A = 0.25*(etaB(ambipolar,k  ,j,i)+etaB(ambipolar,k  ,j,i-1)
-                      +etaB(ambipolar,k-1,j,i)+etaB(ambipolar,k-1,j,i-1));
+        eta_A = 0.25*(etaB(ambipolar,k  ,j,i) + etaB(ambipolar,k  ,j,i-1)
+                      + etaB(ambipolar,k-1,j,i) + etaB(ambipolar,k-1,j,i-1));
 
         intJx = 0.25*(J1(k,j,  i) + J1(k,j,  i-1)
                       +J1(k,j+1,i) + J1(k,j+1,i-1));
@@ -377,14 +377,14 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
                       +bc(IB2,k-1,j,i)+bc(IB2,k-1,j,i-1));
         intBz = 0.5*(b.x3f(k,j,i) + b.x3f(k,j,i-1));
 
-        Bsq   = SQR(intBx)+SQR(intBy)+SQR(intBz)+TINY_NUMBER;
+        Bsq   = SQR(intBx) + SQR(intBy) + SQR(intBz) + TINY_NUMBER;
         JdotB = intJx*intBx + intJy*intBy + intJz*intBz;
 
         e2(k,j,i) += eta_A * (J2(k,j,i) - JdotB*intBy/Bsq);
 
         // emf.z
-        eta_A = 0.25*(etaB(ambipolar,k,j  ,i)+etaB(ambipolar,k,j  ,i-1)
-                      +etaB(ambipolar,k,j-1,i)+etaB(ambipolar,k,j-1,i-1));
+        eta_A = 0.25*(etaB(ambipolar,k,j  ,i) + etaB(ambipolar,k,j  ,i-1)
+                      + etaB(ambipolar,k,j-1,i) + etaB(ambipolar,k,j-1,i-1));
 
         intJx = 0.25*(J1(k  ,j,i) + J1(k  ,j,i-1)
                       +J1(k+1,j,i) + J1(k+1,j,i-1));
@@ -397,7 +397,7 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
         intBz = 0.25*(bc(IB3,k,j  ,i)+bc(IB3,k,j  ,i-1)
                       +bc(IB3,k,j-1,i)+bc(IB3,k,j-1,i-1));
 
-        Bsq   = SQR(intBx)+SQR(intBy)+SQR(intBz)+TINY_NUMBER;
+        Bsq   = SQR(intBx) + SQR(intBy) + SQR(intBz) + TINY_NUMBER;
         JdotB = intJx*intBx + intJy*intBy + intJz*intBz;
 
         e3(k,j,i) += eta_A * (J3(k,j,i) - JdotB*intBz/Bsq);
@@ -422,8 +422,8 @@ void FieldDiffusion::PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bc) {
   if (pmb->block_size.nx2 == 1) {
 #pragma omp simd
     for (int i=is; i<=ie+1; ++i) {
-      f1(ks,js,i) = -0.5*(bc(IB2,ks,js,i)+bc(IB2,ks,js,i-1))*e3(ks,js,i)
-                    +0.5*(bc(IB3,ks,js,i)+bc(IB3,ks,js,i-1))*e2(ks,js,i);
+      f1(ks,js,i) = -0.5*(bc(IB2,ks,js,i) + bc(IB2,ks,js,i-1))*e3(ks,js,i)
+                    + 0.5*(bc(IB3,ks,js,i) + bc(IB3,ks,js,i-1))*e2(ks,js,i);
     }
     return;
   }
@@ -433,12 +433,12 @@ void FieldDiffusion::PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bc) {
     for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
-        f1(ks,j,i) = -0.25*(bc(IB2,ks,j,i)+bc(IB2,ks,j,i-1))
+        f1(ks,j,i) = -0.25*(bc(IB2,ks,j,i) + bc(IB2,ks,j,i-1))
                      *(e3(ks,j,i) + e3(ks,j+1,i))
-                     +0.5*(bc(IB3,ks,j,i)+bc(IB3,ks,j,i-1))*e2(ks,j,i);
+                     + 0.5*(bc(IB3,ks,j,i) + bc(IB3,ks,j,i-1))*e2(ks,j,i);
 
-        f2(ks,j,i) = -0.5*(bc(IB3,ks,j,i)+bc(IB3,ks,j-1,i))*e1(ks,j,i)
-                     +0.25*(bc(IB1,ks,j,i)+bc(IB1,ks,j-1,i))
+        f2(ks,j,i) = -0.5*(bc(IB3,ks,j,i) + bc(IB3,ks,j-1,i))*e1(ks,j,i)
+                     + 0.25*(bc(IB1,ks,j,i) + bc(IB1,ks,j-1,i))
                      *(e3(ks,j,i) + e3(ks,j,i+1));
       }
     }
@@ -450,19 +450,19 @@ void FieldDiffusion::PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bc) {
     for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
-        f1(k,j,i) = -0.25*(bc(IB2,k,j,i)+bc(IB2,k,j,i-1))
+        f1(k,j,i) = -0.25*(bc(IB2,k,j,i) + bc(IB2,k,j,i-1))
                     *(e3(k,j,i) + e3(k,j+1,i))
-                    +0.25*(bc(IB3,k,j,i)+bc(IB3,k,j,i-1))
+                    + 0.25*(bc(IB3,k,j,i) + bc(IB3,k,j,i-1))
                     *(e2(k,j,i) + e2(k+1,j,i));
 
-        f2(k,j,i) = -0.25*(bc(IB3,k,j,i)+bc(IB3,k,j-1,i))
+        f2(k,j,i) = -0.25*(bc(IB3,k,j,i) + bc(IB3,k,j-1,i))
                     *(e1(k,j,i) + e1(k+1,j,i))
-                    +0.25*(bc(IB1,k,j,i)+bc(IB1,k,j-1,i))
+                    + 0.25*(bc(IB1,k,j,i) + bc(IB1,k,j-1,i))
                     *(e3(k,j,i) + e3(k,j,i+1));
 
-        f3(k,j,i) = -0.25*(bc(IB1,k,j,i)+bc(IB1,k-1,j,i))
+        f3(k,j,i) = -0.25*(bc(IB1,k,j,i) + bc(IB1,k-1,j,i))
                     *(e2(k,j,i) + e2(k,j,i+1))
-                    +0.25*(bc(IB2,k,j,i)+bc(IB2,k-1,j,i))
+                    + 0.25*(bc(IB2,k,j,i) + bc(IB2,k-1,j,i))
                     *(e1(k,j,i) + e1(k,j+1,i));
       }
     }

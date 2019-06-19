@@ -65,6 +65,8 @@ time python -u ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_wa
 time python -u ./run_tests.py pgen/hdf5_reader_serial --coverage="${lcov_capture_cmd}" --silent
 time python -u ./run_tests.py grav --mpirun=srun --mpirun_opts=--job-name='GCC grav/jeans_3d' \
      --coverage="${lcov_capture_cmd}" --silent
+time python -u ./run_tests.py turb --mpirun=srun --mpirun_opts=--job-name='GCC turb/' \
+     --coverage="${lcov_capture_cmd}" --silent
 time python -u ./run_tests.py mpi --mpirun=srun --mpirun_opts=--job-name='GCC mpi/mpi_linwave' \
      --coverage="${lcov_capture_cmd}" --silent
 time python -u ./run_tests.py omp --coverage="${lcov_capture_cmd}" --silent
@@ -159,9 +161,9 @@ set -e
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
 # Delete version info from module names to automatically use latest default version of these libraries as Princeton Research Computing updates them:
-# (Currently using pinned Intel 17.0 Release 5 versions as of November 2018 due to bugs on Perseus installation of ICC 19.0.
-# Intel's MPI Library 2019 version was not installed on Perseus since it is much slower than 2018 version on Mellanox Infiniband)
-module load intel/19.0/64/19.0.3.199 # intel/17.0/64/17.0.5.239 # intel ---intel/19.0/64/19.0.1.144 as of 2019-01-15
+# (Was using pinned Intel 17.0 Release 5 versions as of November 2018 due to bugs on Perseus installation of ICC 19.0.
+# Intel's MPI Library 2019 version was never installed on Perseus since it is much slower than 2018 version on Mellanox Infiniband)
+module load intel/18.0/64/18.0.3.222 # intel/17.0/64/17.0.5.239 # intel ---intel/19.0/64/19.0.3.199 latest version as of 2019-05-04
 module load intel-mpi/intel/2017.5/64 # intel-mpi --- intel-mpi/intel/2018.3/64
 # Always pinning these modules to a specific version, since new library versions are rarely compiled:
 module load fftw/gcc/3.3.4
@@ -178,6 +180,7 @@ module list
 time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpc --config=--cflag="$(../ci/set_warning_cflag.sh icpc)"
 time python -u ./run_tests.py pgen/hdf5_reader_serial --silent
 time python -u ./run_tests.py grav --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC grav/jeans_3d' --silent
+time python -u ./run_tests.py turb --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC turb/' --silent
 time python -u ./run_tests.py mpi --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
 time python -u ./run_tests.py omp --config=--cxx=icpc --silent
 timeout --signal=TERM 60m time python -u ./run_tests.py hybrid --config=--cxx=icpc \
