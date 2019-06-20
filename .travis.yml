@@ -164,7 +164,7 @@ install:
 # Install Python module dependencies for run_tests.py, utils/athena.py
 before_script:
   # - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew upgrade python3 || true; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; pyenv global 3.6; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then pyenv global 3.6; fi
   - python3 -m pip install --upgrade --user pip # --user is necessary on C++ builds, since no virtualenv, sudo
   - python3 --version; pip3 --version
   - "pip3 install --user --only-binary=:all: numpy flake8 h5py scipy || true"
