@@ -321,6 +321,8 @@ void Minkowski::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j
 //   e: 2D array for e_{(\hat{\mu})}^\nu:
 //     index 0: covariant orthonormal index
 //     index 1: contravariant coordinate index
+//   e_0: 1D array for {e_{(\hat{\mu})}}_0:
+//     index 0: covariant orthonormal index
 //   omega: 3D array for \omega^{\hat{\gamma}}_{\hat{\alpha}\hat{\beta}}:
 //     index 0: upper index
 //     index 1: first lower index
@@ -329,7 +331,7 @@ void Minkowski::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j
 //   implements trivial "x-aligned" tetrad (Gram-Schmidt on t-, x-, y-, and z-directions)
 
 void Minkowski::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
-    AthenaArray<Real> &omega) {
+    AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
 
   // Set tetrad
   for (int i = 0; i < 4; ++i) {
@@ -339,7 +341,12 @@ void Minkowski::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
     e(i,i) = 1.0;
   }
 
-  // Calculate Ricci rotation coefficients
+  // Set covariant tetrad
+  for (int i = 0; i < 4; ++i) {
+    e_0(i) = -e(i,0);
+  }
+
+  // Set Ricci rotation coefficients
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       for (int k = 0; k < 4; ++k) {

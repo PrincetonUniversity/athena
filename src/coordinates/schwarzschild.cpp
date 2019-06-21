@@ -1465,6 +1465,8 @@ void Schwarzschild::LowerVectorCell(
 //   e: 2D array for e_{(\hat{\mu})}^\nu:
 //     index 0: covariant orthonormal index
 //     index 1: contravariant coordinate index
+//   e_0: 1D array for {e_{(\hat{\mu})}}_0:
+//     index 0: covariant orthonormal index
 //   omega: 3D array for \omega^{\hat{\gamma}}_{\hat{\alpha}\hat{\beta}}:
 //     index 0: upper index
 //     index 1: first lower index
@@ -1473,7 +1475,7 @@ void Schwarzschild::LowerVectorCell(
 //   implements "r-aligned" tetrad (Gram-Schmidt on t-, r-, theta-, and phi-directions)
 
 void Schwarzschild::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
-    AthenaArray<Real> &omega) {
+    AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
 
   // Calculate useful quantities
   Real m = bh_mass_;
@@ -1528,6 +1530,14 @@ void Schwarzschild::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
   e(1,1) = f0_sqrt;
   e(2,2) = 1.0 / r;
   e(3,3) = 1.0 / (r * sth);
+
+  // Calculate covariant tetrad
+  for (int i = 0; i < 4; ++i) {
+    e_0(i) = 0.0;
+    for (int j = 0; j < 4; ++j) {
+      e_0(i) += g[0][j] * e(i,j);
+    }
+  }
 
   // Calculate inverse of tetrad
   for (int i = 0; i < 4; ++i) {

@@ -62,11 +62,11 @@ public:
   AthenaArray<Real> solid_angle;  // angular area of cell
   AthenaArray<Real> prim;         // primitive intensity I
   AthenaArray<Real> prim1;        // primitive intensity I, for substeps
-  AthenaArray<Real> cons;         // conserved intensity n^0 I
-  AthenaArray<Real> cons1;        // conserved intensity n^0 I, for substeps
-  AthenaArray<Real> cons2;        // conserved intensity n^0 I, for substeps
-  AthenaArray<Real> flux_x[3];    // spatial fluxes of intensity n^i I
-  AthenaArray<Real> flux_a[2];    // angular fluxes of intensity n^a I
+  AthenaArray<Real> cons;         // conserved intensity n^0 n_0 I
+  AthenaArray<Real> cons1;        // conserved intensity n^0 n_0 I, for substeps
+  AthenaArray<Real> cons2;        // conserved intensity n^0 n_0 I, for substeps
+  AthenaArray<Real> flux_x[3];    // spatial fluxes of intensity n^i n_0 I
+  AthenaArray<Real> flux_a[2];    // angular fluxes of intensity n^a n_0 I
   AthenaArray<Real> coarse_prim;  // prolongation/restriction buffer
   AthenaArray<Real> coarse_cons;  // prolongation/restriction buffer
 
@@ -97,13 +97,12 @@ public:
 private:
 
   // Data arrays
-  AthenaArray<Real> n0_;        // n^0 at cell and angle centers
-  AthenaArray<Real> n1_;        // n^1 at x^1-faces and angle centers
-  AthenaArray<Real> n2_;        // n^2 at x^2-faces and angle centers
-  AthenaArray<Real> n3_;        // n^3 at x^3-faces and angle centers
-  AthenaArray<Real> na0_;       // -n^ah n^bh omega^0h_{ah,bh} at cell and angle centers
-  AthenaArray<Real> na1_;       // n^zeta at cell centers and zeta-faces
-  AthenaArray<Real> na2_;       // n^psi at cell centers and psi-faces
+  AthenaArray<Real> n0_n_0_;    // n^0 n_0 at cell and angle centers
+  AthenaArray<Real> n1_n_0_;    // n^1 n_0 at x^1-faces and angle centers
+  AthenaArray<Real> n2_n_0_;    // n^2 n_0 at x^2-faces and angle centers
+  AthenaArray<Real> n3_n_0_;    // n^3 n_0 at x^3-faces and angle centers
+  AthenaArray<Real> na1_n_0_;   // n^zeta n_0 at cell centers and zeta-faces
+  AthenaArray<Real> na2_n_0_;   // n^psi n_0 at cell centers and psi-faces
   AthenaArray<Real> prim_l_;    // left reconstructed state
   AthenaArray<Real> prim_r_;    // right reconstructed state
   AthenaArray<Real> area_l_;    // left face areas

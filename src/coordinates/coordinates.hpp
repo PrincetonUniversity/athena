@@ -185,7 +185,7 @@ class Coordinates {
 
   // ...to calculate orthonormal tetrad
   virtual void Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
-      AthenaArray<Real> &omega) {}
+      AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {}
 
  protected:
   bool coarse_flag;  // true if this coordinate object is parent (coarse) mesh in AMR
@@ -453,7 +453,7 @@ class Minkowski : public Coordinates {
 
   // ...to calculate orthonormal tetrad
   virtual void Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
-      AthenaArray<Real> &omega) final;
+      AthenaArray<Real> &e_0, AthenaArray<Real> &omega) final;
 };
 
 //----------------------------------------------------------------------------------------
@@ -552,7 +552,7 @@ class Schwarzschild : public Coordinates {
 
   // ...to calculate orthonormal tetrad
   virtual void Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
-      AthenaArray<Real> &omega) final;
+      AthenaArray<Real> &e_0, AthenaArray<Real> &omega) final;
 };
 
 //----------------------------------------------------------------------------------------
