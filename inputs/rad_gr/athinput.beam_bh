@@ -63,8 +63,9 @@ x3min = 0.0                 # minimum phi
 x3max = 6.283185307179586   # maximum phi (2*pi)
 
 <coord>
-m = 1.0  # black hole mass M
-a = 0.0  # black hole spin a (0 <= a/M < 1)
+m = 1.0                 # black hole mass M
+a = 0.0                 # black hole spin a (0 <= a/M < 1)
+rad_tetrad = spherical  # choice of radiation tetrad
 
 <hydro>
 gamma = 1.3333333333333333  # ratio of specific heats Gamma

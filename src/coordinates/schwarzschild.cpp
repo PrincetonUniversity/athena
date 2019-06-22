@@ -18,7 +18,13 @@
 // C headers
 
 // C++ headers
-#include <cmath>  // abs(), acos(), cos(), log(), pow(), sin(), sqrt()
+#include <cmath>      // abs(), acos(), cos(), log(), pow(), sin(), sqrt()
+#include <cstdlib>    // exit
+#include <iostream>   // cout
+#include <ostream>    // endl
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // string
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -37,8 +43,10 @@
 
 Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {
+
   // Set parameters
   bh_mass_ = pin->GetReal("coord", "m");
+  rad_tetrad_ = pin->GetOrAddString("coord", "rad_tetrad", "none");
   const Real &m = bh_mass_;
 
   // Initialize volume-averaged coordinates and spacings: r-direction
@@ -1472,10 +1480,17 @@ void Schwarzschild::LowerVectorCell(
 //     index 1: first lower index
 //     index 2: second lower index
 // Notes:
-//   implements "r-aligned" tetrad (Gram-Schmidt on t-, r-, theta-, and phi-directions)
+//   implements "spherical" tetrad (Gram-Schmidt on t-, r-, theta-, and phi-directions)
 
 void Schwarzschild::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
     AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
+
+  // Check tetrad
+  if (rad_tetrad_ != "spherical") {
+    std::stringstream msg;
+    msg << "### FATAL ERROR invalid tetrad choice" << std::endl;
+    ATHENA_ERROR(msg);
+  }
 
   // Calculate useful quantities
   Real m = bh_mass_;

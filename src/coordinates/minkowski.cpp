@@ -14,7 +14,13 @@
 // C headers
 
 // C++ headers
-#include <cmath>  // sqrt()
+#include <cmath>      // sqrt()
+#include <cstdlib>    // exit
+#include <iostream>   // cout
+#include <ostream>    // endl
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // string
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -32,6 +38,9 @@
 
 Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {
+
+  // Set parameters
+  rad_tetrad_ = pin->GetOrAddString("coord", "rad_tetrad", "none");
 
   // Initialize volume-averaged coordinates and spacings: x-direction
   for (int i=il-ng; i<=iu+ng; ++i) {
@@ -328,10 +337,17 @@ void Minkowski::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j
 //     index 1: first lower index
 //     index 2: second lower index
 // Notes:
-//   implements trivial "x-aligned" tetrad (Gram-Schmidt on t-, x-, y-, and z-directions)
+//   implements trivial "cartesian" tetrad (Gram-Schmidt on t-, x-, y-, and z-directions)
 
 void Minkowski::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
     AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
+
+  // Check tetrad
+  if (rad_tetrad_ != "cartesian") {
+    std::stringstream msg;
+    msg << "### FATAL ERROR invalid tetrad choice" << std::endl;
+    ATHENA_ERROR(msg);
+  }
 
   // Set tetrad
   for (int i = 0; i < 4; ++i) {

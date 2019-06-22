@@ -279,6 +279,7 @@ class Coordinates {
   // GR-specific variables
   Real bh_mass_;
   Real bh_spin_;
+  std::string rad_tetrad_;
 };
 
 //----------------------------------------------------------------------------------------
