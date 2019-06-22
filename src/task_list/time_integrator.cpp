@@ -1089,6 +1089,8 @@ TaskStatus TimeIntegratorTaskList::SendField(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SendRad(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
+    pmb->prad->rbvar.var_cc = &(pmb->prad->cons);
+    pmb->prad->rbvar.coarse_buf = &(pmb->prad->coarse_cons);
     pmb->prad->rbvar.SendBoundaryBuffers();
   } else {
     return TaskStatus::fail;
@@ -1163,6 +1165,8 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesField(MeshBlock *pmb, int stage)
 
 TaskStatus TimeIntegratorTaskList::SetBoundariesRad(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
+    pmb->prad->rbvar.var_cc = &(pmb->prad->cons);
+    pmb->prad->rbvar.coarse_buf = &(pmb->prad->coarse_cons);
     pmb->prad->rbvar.SetBoundaries();
     return TaskStatus::success;
   }
@@ -1335,6 +1339,7 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   PassiveScalars *ps = pmb->pscalars;
+  Radiation *prad = pmb->prad;
   BoundaryValues *pbval = pmb->pbval;
 
   if (stage <= nstages) {
@@ -1347,6 +1352,8 @@ TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
     if (NSCALARS > 0)
       ps->sbvar.var_cc = &(ps->r);
+    if (RADIATION_ENABLED)
+      prad->rbvar.var_cc = &(prad->prim);
     pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
   } else {
     return TaskStatus::fail;
