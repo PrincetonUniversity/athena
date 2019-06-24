@@ -352,7 +352,7 @@ void Schwarzschild::CenterWidth2(const int k, const int j, const int il, const i
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     // \Delta W = r \Delta\theta
-    dx2(i) = x1v(i) * dx1f(j);
+    dx2(i) = x1v(i) * dx2f(j);
   }
   return;
 }
