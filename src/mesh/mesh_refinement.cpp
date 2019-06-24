@@ -43,6 +43,10 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
     pcoarsec = new SphericalPolar(pmb, pin, true);
   } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     pcoarsec = new Minkowski(pmb, pin, true);
+  } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski_cyl") == 0) {
+    pcoarsec = new MinkowskiCyl(pmb, pin, true);
+  } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski_sph") == 0) {
+    pcoarsec = new MinkowskiSph(pmb, pin, true);
   } else if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     pcoarsec = new Schwarzschild(pmb, pin, true);
   } else if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {

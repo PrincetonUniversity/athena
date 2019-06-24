@@ -108,6 +108,10 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pcoord = new SphericalPolar(this, pin, false);
   } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     pcoord = new Minkowski(this, pin, false);
+  } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski_cyl") == 0) {
+    pcoord = new MinkowskiCyl(this, pin, false);
+  } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski_sph") == 0) {
+    pcoord = new MinkowskiSph(this, pin, false);
   } else if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     pcoord = new Schwarzschild(this, pin, false);
   } else if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
@@ -241,6 +245,10 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     pcoord = new SphericalPolar(this, pin, false);
   } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
     pcoord = new Minkowski(this, pin, false);
+  } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski_cyl") == 0) {
+    pcoord = new MinkowskiCyl(this, pin, false);
+  } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski_sph") == 0) {
+    pcoord = new MinkowskiSph(this, pin, false);
   } else if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
     pcoord = new Schwarzschild(this, pin, false);
   } else if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
