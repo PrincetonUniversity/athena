@@ -925,7 +925,7 @@ void Schwarzschild::PrimToLocal2(
     const Real &r = x1v(i);
     const Real &alpha = trans_face2_i1_(i);
     const Real mt_0 = alpha;
-    const Real mx_2 = 1.0/r;
+    const Real mx_2 = r;
     const Real my_3 = r * abs_sin_theta;
     const Real &mz_1 = 1.0/alpha;
 
