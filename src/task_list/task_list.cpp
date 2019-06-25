@@ -34,15 +34,15 @@ TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskStat
 
   for (int i=ts.indx_first_task; i<ntasks; i++) {
     Task &taski = task_list_[i];
-    if ((taski.task_id & ts.finished_tasks) == 0ULL) { // task not done
+    if (ts.finished_tasks.IsUnfinished(taski.task_id)) { // task not done
       // check if dependency clear
-      if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
+      if (ts.finished_tasks.CheckDependencies(taski.dependency)) {
         if (taski.lb_time) pmb->StartTimeMeasurement();
         ret = (this->*task_list_[i].TaskFunc)(pmb, stage);
         if (taski.lb_time) pmb->StopTimeMeasurement();
         if (ret != TaskStatus::fail) { // success
           ts.num_tasks_left--;
-          ts.finished_tasks |= taski.task_id;
+          ts.finished_tasks.SetFinished(taski.task_id);
           if (skip == 0) ts.indx_first_task++;
           if (ts.num_tasks_left == 0) return TaskListStatus::complete;
           if (ret == TaskStatus::next) continue;
