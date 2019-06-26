@@ -4,6 +4,7 @@
 import logging
 import os
 import subprocess
+from timeit import default_timer as timer
 from .log_pipe import LogPipe
 
 # Global variables
@@ -73,7 +74,9 @@ def make(clean_first=True, obj_only=False):
                 logger.debug('Executing: ' + ' '.join(clean_command))
                 subprocess.check_call(clean_command, stdout=out_log)
             logger.debug('Executing: ' + ' '.join(make_command))
+            t0 = timer()
             subprocess.check_call(make_command, stdout=out_log)
+            logger.debug('Compilation took {0:.3g} seconds.'.format(timer() - t0))
         except subprocess.CalledProcessError as err:
             logger.error("Something bad happened", exc_info=True)
             raise AthenaError('Return code {0} from command \'{1}\''

@@ -22,6 +22,7 @@ class Mesh;
 class MeshBlock;
 class TaskList;
 class FFTGravitySolverTaskList;
+class TaskID;
 
 // TODO(felker): these 4x declarations can be nested in TaskList if MGTaskList is derived
 
@@ -30,12 +31,36 @@ enum class TaskStatus {fail, success, next};
 enum class TaskListStatus {running, stuck, complete, nothing_to_do};
 
 //----------------------------------------------------------------------------------------
+//! \class TaskID
+//  \brief generalization of bit fields for Task IDs, status, and dependencies.
+
+class TaskID {  // POD but not aggregate (there is a user-provided ctor)
+ public:
+  TaskID() = default;
+  explicit TaskID(unsigned int id);
+  void Clear();
+  bool IsUnfinished(const TaskID& id) const;
+  bool CheckDependencies(const TaskID& dep) const;
+  void SetFinished(const TaskID& id);
+
+  bool operator== (const TaskID& rhs) const;
+  TaskID operator| (const TaskID& rhs) const;
+
+ private:
+  constexpr static int kNField_ = 1;
+  std::uint64_t bitfld_[kNField_];
+
+  friend class TaskList;
+};
+
+
+//----------------------------------------------------------------------------------------
 //! \struct Task
 //  \brief data and function pointer for an individual Task
 
 struct Task { // aggregate and POD
-  std::uint64_t task_id;    // encodes task with bit positions in HydroIntegratorTaskNames
-  std::uint64_t dependency; // encodes dependencies to other tasks using " " " "
+  TaskID task_id;    // encodes task with bit positions in HydroIntegratorTaskNames
+  TaskID dependency; // encodes dependencies to other tasks using " " " "
   TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  // ptr to member function
   bool lb_time; // flag for automatic load balancing based on timing
 };
@@ -45,12 +70,12 @@ struct Task { // aggregate and POD
 //  \brief container for task states on a single MeshBlock
 
 struct TaskStates { // aggregate and POD
-  std::uint64_t finished_tasks;
+  TaskID finished_tasks;
   int indx_first_task, num_tasks_left;
   void Reset(int ntasks) {
     indx_first_task = 0;
     num_tasks_left = ntasks;
-    finished_tasks = 0ULL;
+    finished_tasks.Clear();
   }
 };
 
@@ -73,10 +98,11 @@ class TaskList {
   void DoTaskListOneStage(Mesh *pmesh, int stage);
 
  protected:
-  Task task_list_[64];  // TODO(felker): rename to avoid confusion with class name
+  // TODO(felker): rename to avoid confusion with class name
+  Task task_list_[64*TaskID::kNField_];
 
  private:
-  virtual void AddTask(std::uint64_t id, std::uint64_t dep) = 0;
+  virtual void AddTask(const TaskID& id, const TaskID& dep) = 0;
   virtual void StartupTaskList(MeshBlock *pmb, int stage) = 0;
 };
 
@@ -159,7 +185,7 @@ class TimeIntegratorTaskList : public TaskList {
  private:
   IntegratorWeight stage_wghts[MAX_NSTAGE];
 
-  void AddTask(std::uint64_t id, std::uint64_t dep) override;
+  void AddTask(const TaskID& id, const TaskID& dep) override;
   void StartupTaskList(MeshBlock *pmb, int stage) override;
 };
 
@@ -186,7 +212,7 @@ class SuperTimeStepTaskList : public TaskList {
  private:
   // currently intiialized but unused. May use it for direct calls to TimeIntegrator fns:
   TimeIntegratorTaskList *ptlist_;
-  void AddTask(std::uint64_t id, std::uint64_t dep) override;
+  void AddTask(const TaskID&, const TaskID& dep) override;
   void StartupTaskList(MeshBlock *pmb, int stage) override;
 };
 
@@ -195,78 +221,79 @@ class SuperTimeStepTaskList : public TaskList {
 
 // TODO(felker): uncomment the reserved TASK_NAMES once the features are merged to master
 namespace HydroIntegratorTaskNames {
-const std::uint64_t NONE          = 0ULL;
-const std::uint64_t CLEAR_ALLBND  = 1ULL<<1;
 
-const std::uint64_t CALC_HYDFLX = 1ULL<<2;
-const std::uint64_t CALC_FLDFLX = 1ULL<<3;
-const std::uint64_t CALC_RADFLX = 1ULL<<4;
-const std::uint64_t CALC_CHMFLX = 1ULL<<5;
+const TaskID NONE(0);
+const TaskID CLEAR_ALLBND(1);
 
-const std::uint64_t SEND_HYDFLX = 1ULL<<6;
-const std::uint64_t SEND_FLDFLX = 1ULL<<7;
-// const std::uint64_t SEND_RADFLX = 1ULL<<8;
-// const std::uint64_t SEND_CHMFLX = 1ULL<<9;
+const TaskID CALC_HYDFLX(2);
+const TaskID CALC_FLDFLX(3);
+const TaskID CALC_RADFLX(4);
+const TaskID CALC_CHMFLX(5);
 
-const std::uint64_t RECV_HYDFLX = 1ULL<<10;
-const std::uint64_t RECV_FLDFLX = 1ULL<<11;
-// const std::uint64_t RECV_RADFLX = 1ULL<<12;
-// const std::uint64_t RECV_CHMFLX = 1ULL<<13;
+const TaskID SEND_HYDFLX(6);
+const TaskID SEND_FLDFLX(7);
+// const TaskID SEND_RADFLX(8);
+// const TaskID SEND_CHMFLX(9);
 
-const std::uint64_t SRCTERM_HYD = 1ULL<<14;
-// const std::uint64_t SRCTERM_FLD = 1ULL<<15;
-// const std::uint64_t SRCTERM_RAD = 1ULL<<16;
-// const std::uint64_t SRCTERM_CHM = 1ULL<<17;
+const TaskID RECV_HYDFLX(10);
+const TaskID RECV_FLDFLX(11);
+// const TaskID RECV_RADFLX(12);
+// const TaskID RECV_CHMFLX(13);
 
-const std::uint64_t INT_HYD = 1ULL<<18;
-const std::uint64_t INT_FLD = 1ULL<<19;
-// const std::uint64_t INT_RAD = 1ULL<<20;
-// const std::uint64_t INT_CHM = 1ULL<<21;
+const TaskID SRCTERM_HYD(14);
+// const TaskID SRCTERM_FLD(15);
+// const TaskID SRCTERM_RAD(16);
+// const TaskID SRCTERM_CHM(17);
 
-const std::uint64_t SEND_HYD = 1ULL<<22;
-const std::uint64_t SEND_FLD = 1ULL<<23;
-// const std::uint64_t SEND_RAD = 1ULL<<24;
-// const std::uint64_t SEND_CHM = 1ULL<<25;
+const TaskID INT_HYD(18);
+const TaskID INT_FLD(19);
+// const TaskID INT_RAD(20);
+// const TaskID INT_CHM(21);
 
-const std::uint64_t RECV_HYD = 1ULL<<26;
-const std::uint64_t RECV_FLD = 1ULL<<27;
-// const std::uint64_t RECV_RAD = 1ULL<<28;
-// const std::uint64_t RECV_CHM = 1ULL<<29;
+const TaskID SEND_HYD(22);
+const TaskID SEND_FLD(23);
+// const TaskID SEND_RAD(24);
+// const TaskID SEND_CHM(25);
 
-const std::uint64_t SETB_HYD = 1ULL<<30;
-const std::uint64_t SETB_FLD = 1ULL<<31;
-// const std::uint64_t SETB_RAD = 1ULL<<32;
-// const std::uint64_t SETB_CHM = 1ULL<<33;
+const TaskID RECV_HYD(26);
+const TaskID RECV_FLD(27);
+// const TaskID RECV_RAD(28);
+// const TaskID RECV_CHM(29);
 
-const std::uint64_t PROLONG  = 1ULL<<34;
-const std::uint64_t CONS2PRIM = 1ULL<<35;
-const std::uint64_t PHY_BVAL = 1ULL<<36;
-const std::uint64_t USERWORK = 1ULL<<37;
-const std::uint64_t NEW_DT   = 1ULL<<38;
-const std::uint64_t FLAG_AMR = 1ULL<<39;
+const TaskID SETB_HYD(30);
+const TaskID SETB_FLD(31);
+// const TaskID SETB_RAD(32);
+// const TaskID SETB_CHM(33);
 
-const std::uint64_t SEND_HYDSH = 1ULL<<40;
-const std::uint64_t SEND_EMFSH = 1ULL<<41;
-const std::uint64_t SEND_FLDSH = 1ULL<<42;
-const std::uint64_t RECV_HYDSH = 1ULL<<43;
-const std::uint64_t RECV_EMFSH = 1ULL<<44;
-const std::uint64_t RECV_FLDSH = 1ULL<<45;
-const std::uint64_t RMAP_EMFSH = 1ULL<<46;
+const TaskID PROLONG(34);
+const TaskID CONS2PRIM(35);
+const TaskID PHY_BVAL(36);
+const TaskID USERWORK(37);
+const TaskID NEW_DT(38);
+const TaskID FLAG_AMR(39);
 
-const std::uint64_t DIFFUSE_HYD      = 1ULL<<47;
-const std::uint64_t DIFFUSE_FLD      = 1ULL<<48;
+const TaskID SEND_HYDSH(40);
+const TaskID SEND_EMFSH(41);
+const TaskID SEND_FLDSH(42);
+const TaskID RECV_HYDSH(43);
+const TaskID RECV_EMFSH(44);
+const TaskID RECV_FLDSH(45);
+const TaskID RMAP_EMFSH(46);
 
-const std::uint64_t CALC_SCLRFLX    = 1ULL<<49;
-const std::uint64_t SEND_SCLRFLX    = 1ULL<<50;
-const std::uint64_t RECV_SCLRFLX    = 1ULL<<51;
-const std::uint64_t INT_SCLR       = 1ULL<<52;
-const std::uint64_t SEND_SCLR      = 1ULL<<53;
-const std::uint64_t RECV_SCLR      = 1ULL<<54;
-const std::uint64_t SETB_SCLR      = 1ULL<<55;
-const std::uint64_t DIFFUSE_SCLR      = 1ULL<<56;
+const TaskID DIFFUSE_HYD(47);
+const TaskID DIFFUSE_FLD(48);
 
-// const std::uint64_t RECV_SCLRSH      = 1ULL<<57;
-// const std::uint64_t SEND_SCLRSH      = 1ULL<<58;
+const TaskID CALC_SCLRFLX(49);
+const TaskID SEND_SCLRFLX(50);
+const TaskID RECV_SCLRFLX(51);
+const TaskID INT_SCLR(52);
+const TaskID SEND_SCLR(53);
+const TaskID RECV_SCLR(54);
+const TaskID SETB_SCLR(55);
+const TaskID DIFFUSE_SCLR(56);
+
+// const TaskID RECV_SCLRSH(57);
+// const TaskID SEND_SCLRSH(58);
 
 }  // namespace HydroIntegratorTaskNames
 #endif  // TASK_LIST_TASK_LIST_HPP_
