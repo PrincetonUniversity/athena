@@ -306,6 +306,10 @@ scalars_mignone_radial_1d_cylindrical
     the importance of curvilinear corrections to PLM and PPM4 limiters and PPM4 stencil     
     weights for interpolation of face-averages from cell-avergages. --coord=cylindrical
 
+scalars_restart
+    Regression test to verify the ability use restart file to restart the code when using
+    passive scalars.
+    
 shearingbox_mri2d
     Regression test of shearingbox with 2d MRI.
 

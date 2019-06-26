@@ -89,7 +89,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     x3face_area_p1_.NewAthenaArray(nc1);
   }
   cell_volume_.NewAthenaArray(nc1);
-  dflx_.NewAthenaArray(NHYDRO, nc1);
+  dflx_.NewAthenaArray(NSCALARS, nc1);
 
   // fourth-order integration scheme
   if (pmb->precon->xorder == 4) {

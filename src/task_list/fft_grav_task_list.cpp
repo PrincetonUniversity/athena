@@ -42,46 +42,40 @@ FFTGravitySolverTaskList::FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FFTGravitySolverTaskList::AddTask(std::uint64_t id, std::uint64_t dep)
+//! \fn void FFTGravitySolverTaskList::AddTask(const TaskID& id, const TaskID& dep)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.
 
-void FFTGravitySolverTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
+void FFTGravitySolverTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
   using namespace FFTGravitySolverTaskNames; // NOLINT (build/namespace)
-  switch (id) {
-    case (CLEAR_GRAV):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&FFTGravitySolverTaskList::ClearFFTGravityBoundary);
-      break;
-    case (SEND_GRAV_BND):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&FFTGravitySolverTaskList::SendFFTGravityBoundary);
-      break;
-    case (RECV_GRAV_BND):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&FFTGravitySolverTaskList::ReceiveFFTGravityBoundary);
-      break;
-    case (SETB_GRAV_BND):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&FFTGravitySolverTaskList::SetFFTGravityBoundary);
-      break;
-    case (GRAV_PHYS_BND):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&FFTGravitySolverTaskList::PhysicalBoundary);
-      break;
-    default:
-      std::stringstream msg;
-      msg << "### FATAL ERROR in FFTGravitySolverTaskList::AddTask" << std::endl
-          << "Invalid Task "<< id << " is specified" << std::endl;
-      ATHENA_ERROR(msg);
+  if (id == CLEAR_GRAV) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&FFTGravitySolverTaskList::ClearFFTGravityBoundary);
+  } else if (id == SEND_GRAV_BND) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&FFTGravitySolverTaskList::SendFFTGravityBoundary);
+  } else if (id == RECV_GRAV_BND) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&FFTGravitySolverTaskList::ReceiveFFTGravityBoundary);
+  } else if (id == SETB_GRAV_BND) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&FFTGravitySolverTaskList::SetFFTGravityBoundary);
+  } else if (id == GRAV_PHYS_BND) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&FFTGravitySolverTaskList::PhysicalBoundary);
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in FFTGravitySolverTaskList::AddTask" << std::endl
+        << "Invalid Task is specified" << std::endl;
+    ATHENA_ERROR(msg);
   }
   ntasks++;
   return;

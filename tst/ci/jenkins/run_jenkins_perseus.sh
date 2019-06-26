@@ -125,7 +125,7 @@ module list
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
 time python -u ./run_tests.py pgen/hdf5_reader_parallel --coverage="${lcov_capture_cmd}" \
      --mpirun=srun --mpirun_opts=--job-name='GCC pgen/hdf5_reader_parallel' \
-     --config=--lib=${mpi_hdf5_library_path} --silent
+     --config=--lib_path=${mpi_hdf5_library_path} --silent
 
 # Combine Lcov tracefiles from individaul regression tests:
 # All .info files in current working directory tst/regression/ -> lcov.info
@@ -219,7 +219,7 @@ module list
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
 time python -u ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icpc \
      --mpirun=srun --mpirun_opts=--job-name='ICC pgen/hdf5_reader_parallel' \
-     --config=--lib=${mpi_hdf5_library_path} --silent
+     --config=--lib_path=${mpi_hdf5_library_path} --silent
 
 # Test OpenMP 4.5 SIMD-enabled function correctness by disabling IPO and forced inlining w/ Intel compiler flags
 # Check subset of regression test sets to try most EOS functions (which heavily depend on vectorization) that are called in rsolvers
