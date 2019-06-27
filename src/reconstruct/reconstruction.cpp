@@ -210,6 +210,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
 
   // Uniform mesh with --coord=cartesian or GR: Minkowski, Schwarzschild, Kerr-Schild,
   // GR-User will use the uniform Cartesian limiter and reconstruction weights
+  // TODO(c-white): use modified version of curvilinear PPM reconstruction weights and
+  // limiter formulations for Schwarzschild, Kerr metrics instead of Cartesian-like wghts
 
   // Allocate memory for scratch arrays used in PLM and PPM
   int nc1 = pmb->ncells1;
