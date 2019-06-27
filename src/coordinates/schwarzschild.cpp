@@ -1468,7 +1468,7 @@ void Schwarzschild::LowerVectorCell(
 //----------------------------------------------------------------------------------------
 // Function for calculating orthonormal tetrad
 // Inputs:
-//   x1, x2, x3: spatial position
+//   r, th, ph: spatial position
 // Outputs:
 //   e: 2D array for e_{(\hat{\mu})}^\nu:
 //     index 0: covariant orthonormal index
@@ -1482,7 +1482,7 @@ void Schwarzschild::LowerVectorCell(
 // Notes:
 //   implements "spherical" tetrad (Gram-Schmidt on t-, r-, theta-, and phi-directions)
 
-void Schwarzschild::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
+void Schwarzschild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
     AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
 
   // Check tetrad
@@ -1494,12 +1494,12 @@ void Schwarzschild::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
 
   // Calculate useful quantities
   Real m = bh_mass_;
-  Real r = x1;
-  Real th = x2;
+  Real r2 = SQR(r);
+  Real f = 1.0 - 2.0 * m / r;
+  Real f_sqrt = std::sqrt(f);
   Real sth = std::sin(th);
+  Real sth2 = SQR(sth);
   Real cth = std::cos(th);
-  Real f0 = 1.0 - 2.0 * m / r;
-  Real f0_sqrt = std::sqrt(f0);
 
   // Allocate intermediate arrays
   Real eta[4][4] = {};
@@ -1517,23 +1517,23 @@ void Schwarzschild::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
   eta[3][3] = 1.0;
 
   // Set covariant metric
-  g[0][0] = -f0;
-  g[1][1] = 1.0 / f0;
-  g[2][2] = SQR(r);
-  g[3][3] = SQR(r * sth);
+  g[0][0] = -f;
+  g[1][1] = 1.0 / f;
+  g[2][2] = r2;
+  g[3][3] = r2 * sth2;
 
   // Set contravariant metric
-  gi[0][0] = -1.0 / f0;
-  gi[1][1] = f0;
-  gi[2][2] = 1.0 / SQR(r);
-  gi[3][3] = 1.0 / SQR(r * sth);
+  gi[0][0] = -1.0 / f;
+  gi[1][1] = f;
+  gi[2][2] = 1.0 / r2;
+  gi[3][3] = 1.0 / (r2 * sth2);
 
   // Set derivatives of covariant metric
-  dg[1][0][0] = -2.0 * m / SQR(r);
-  dg[1][1][1] = -2.0 * m / SQR(f0 * r);
+  dg[1][0][0] = -2.0 * m / r2;
+  dg[1][1][1] = -2.0 * m / (r2 * SQR(f));
   dg[1][2][2] = 2.0 * r;
-  dg[1][3][3] = 2.0 * r * SQR(sth);
-  dg[2][3][3] = 2.0 * SQR(r) * sth * cth;
+  dg[1][3][3] = 2.0 * r * sth2;
+  dg[2][3][3] = 2.0 * r2 * sth * cth;
 
   // Set tetrad
   for (int i = 0; i < 4; ++i) {
@@ -1541,8 +1541,8 @@ void Schwarzschild::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
       e(i,j) = 0.0;
     }
   }
-  e(0,0) = 1.0 / f0_sqrt;
-  e(1,1) = f0_sqrt;
+  e(0,0) = 1.0 / f_sqrt;
+  e(1,1) = f_sqrt;
   e(2,2) = 1.0 / r;
   e(3,3) = 1.0 / (r * sth);
 
@@ -1566,11 +1566,11 @@ void Schwarzschild::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
   }
 
   // Set derivatives of tetrad
-  de[1][0][0] = -1.0 / (f0 * f0_sqrt) * m / SQR(r);
-  de[1][1][1] = 1.0 / f0_sqrt * m / SQR(r);
-  de[1][2][2] = -1.0 / SQR(r);
-  de[1][3][3] = -1.0 / (SQR(r) * sth);
-  de[2][3][3] = -1.0 / (r * SQR(sth)) * cth;
+  de[1][0][0] = -m / (r2 * f * f_sqrt);
+  de[1][1][1] = m / (r2 * f_sqrt);
+  de[1][2][2] = -1.0 / r2;
+  de[1][3][3] = -1.0 / (r2 * sth);
+  de[2][3][3] = -cth / (r * sth2);
 
   // Calculate Christoffel connection coefficients
   for (int i = 0; i < 4; ++i) {

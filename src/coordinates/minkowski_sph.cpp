@@ -15,7 +15,7 @@
 // C headers
 
 // C++ headers
-#include <cmath>      // abs(), cos(), sin(), sqrt()
+#include <cmath>      // abs, cos, sin, sqrt
 #include <cstdlib>    // exit
 #include <iostream>   // cout
 #include <ostream>    // endl
@@ -1411,7 +1411,7 @@ void MinkowskiSph::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, in
 //----------------------------------------------------------------------------------------
 // Function for calculating orthonormal tetrad
 // Inputs:
-//   x1, x2, x3: spatial position
+//   r, th, ph: spatial position
 // Outputs:
 //   e: 2D array for e_{(\hat{\mu})}^\nu:
 //     index 0: covariant orthonormal index
@@ -1423,26 +1423,29 @@ void MinkowskiSph::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, in
 //     index 1: first lower index
 //     index 2: second lower index
 // Notes:
-//   implements "spherical" tetrad (Gram-Schmidt on t-, r-, theta-, and phi-directions)
+//   tetrad options:
+//     "cartesian" (Gram-Schmidt on t, x, y, z)
+//     "cylindrical" (Gram-Schmidt on t, R, phi, z)
+//     "spherical" (Gram-Schmidt on t, r, theta, phi)
 
-void MinkowskiSph::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
+void MinkowskiSph::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
     AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
 
   // Check tetrad
-  if (rad_tetrad_ != "spherical") {
+  if (rad_tetrad_ != "cartesian" and rad_tetrad_ != "cylindrical"
+      and rad_tetrad_ != "spherical") {
     std::stringstream msg;
     msg << "### FATAL ERROR invalid tetrad choice" << std::endl;
     ATHENA_ERROR(msg);
   }
 
   // Calculate useful quantities
-  Real m = bh_mass_;
-  Real r = x1;
-  Real th = x2;
+  Real r2 = SQR(r);
   Real sth = std::sin(th);
+  Real sth2 = SQR(sth);
   Real cth = std::cos(th);
-  Real f0 = 1.0 - 2.0 * m / r;
-  Real f0_sqrt = std::sqrt(f0);
+  Real sph = std::sin(ph);
+  Real cph = std::cos(ph);
 
   // Allocate intermediate arrays
   Real eta[4][4] = {};
@@ -1460,23 +1463,21 @@ void MinkowskiSph::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
   eta[3][3] = 1.0;
 
   // Set covariant metric
-  g[0][0] = -f0;
-  g[1][1] = 1.0 / f0;
-  g[2][2] = SQR(r);
-  g[3][3] = SQR(r * sth);
+  g[0][0] = -1.0;
+  g[1][1] = 1.0;
+  g[2][2] = r2;
+  g[3][3] = r2 * sth2;
 
   // Set contravariant metric
-  gi[0][0] = -1.0 / f0;
-  gi[1][1] = f0;
-  gi[2][2] = 1.0 / SQR(r);
-  gi[3][3] = 1.0 / SQR(r * sth);
+  gi[0][0] = -1.0;
+  gi[1][1] = 1.0;
+  gi[2][2] = 1.0 / r2;
+  gi[3][3] = 1.0 / (r2 * sth2);
 
   // Set derivatives of covariant metric
-  dg[1][0][0] = -2.0 * m / SQR(r);
-  dg[1][1][1] = -2.0 * m / SQR(f0 * r);
   dg[1][2][2] = 2.0 * r;
-  dg[1][3][3] = 2.0 * r * SQR(sth);
-  dg[2][3][3] = 2.0 * SQR(r) * sth * cth;
+  dg[1][3][3] = 2.0 * r * sth2;
+  dg[2][3][3] = 2.0 * r2 * sth * cth;
 
   // Set tetrad
   for (int i = 0; i < 4; ++i) {
@@ -1484,10 +1485,29 @@ void MinkowskiSph::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
       e(i,j) = 0.0;
     }
   }
-  e(0,0) = 1.0 / f0_sqrt;
-  e(1,1) = f0_sqrt;
-  e(2,2) = 1.0 / r;
-  e(3,3) = 1.0 / (r * sth);
+  if (rad_tetrad_ == "cartesian") {
+    e(0,0) = 1.0;
+    e(1,1) = sth * cph;
+    e(1,2) = cth * cph / r;
+    e(1,3) = -sph / (r * sth);
+    e(2,1) = sth * sph;
+    e(2,2) = cth * sph / r;
+    e(2,3) = cph / (r * sth);
+    e(3,1) = cth;
+    e(3,2) = -sth / r;
+  } else if (rad_tetrad_ == "cylindrical") {
+    e(0,0) = 1.0;
+    e(1,1) = sth;
+    e(1,2) = cth / r;
+    e(2,3) = 1.0 / (r * sth);
+    e(3,1) = cth;
+    e(3,2) = -sth / r;
+  } else if (rad_tetrad_ == "spherical") {
+    e(0,0) = 1.0;
+    e(1,1) = 1.0;
+    e(2,2) = 1.0 / r;
+    e(3,3) = 1.0 / (r * sth);
+  }
 
   // Calculate covariant tetrad
   for (int i = 0; i < 4; ++i) {
@@ -1509,11 +1529,40 @@ void MinkowskiSph::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
   }
 
   // Set derivatives of tetrad
-  de[1][0][0] = -1.0 / (f0 * f0_sqrt) * m / SQR(r);
-  de[1][1][1] = 1.0 / f0_sqrt * m / SQR(r);
-  de[1][2][2] = -1.0 / SQR(r);
-  de[1][3][3] = -1.0 / (SQR(r) * sth);
-  de[2][3][3] = -1.0 / (r * SQR(sth)) * cth;
+  if (rad_tetrad_ == "cartesian") {
+    de[1][1][2] = -cth * cph / r2;
+    de[1][1][3] = sph / (r2 * sth);
+    de[1][2][2] = -cth * sph / r2;
+    de[1][2][3] = -cph / (r2 * sth);
+    de[1][3][2] = sth / r2;
+    de[2][1][1] = cth * cph;
+    de[2][1][2] = -sth * cph / r;
+    de[2][1][3] = cth * sph / (r * sth2);
+    de[2][2][1] = cth * sph;
+    de[2][2][2] = -sth * sph / r;
+    de[2][2][3] = -cth * cph / (r * sth2);
+    de[2][3][1] = -sth;
+    de[2][3][2] = -cth / r;
+    de[3][1][1] = -sth * sph;
+    de[3][1][2] = -cth * sph / r;
+    de[3][1][3] = -cph / (r * sth);
+    de[3][2][1] = sth * cph;
+    de[3][2][2] = cth * cph / r;
+    de[3][2][3] = -sph / (r * sth);
+  } else if (rad_tetrad_ == "cylindrical") {
+    de[1][1][2] = -cth / r2;
+    de[1][2][3] = -1.0 / (r2 * sth);
+    de[1][3][2] = sth / r2;
+    de[2][1][1] = cth;
+    de[2][1][2] = -sth / r;
+    de[2][2][3] = -cth / (r * sth2);
+    de[2][3][1] = -sth;
+    de[2][3][2] = -cth / r;
+  } else if (rad_tetrad_ == "spherical") {
+    de[1][2][2] = -1.0 / r2;
+    de[1][3][3] = -1.0 / (r2 * sth);
+    de[2][3][3] = -cth / (r * sth2);
+  }
 
   // Calculate Christoffel connection coefficients
   for (int i = 0; i < 4; ++i) {

@@ -15,7 +15,7 @@
 // C headers
 
 // C++ headers
-#include <cmath>      // abs(), cos(), sin(), sqrt()
+#include <cmath>      // cos, hypot, sin, sqrt
 #include <cstdlib>    // exit
 #include <iostream>   // cout
 #include <ostream>    // endl
@@ -109,20 +109,6 @@ MinkowskiCyl::MinkowskiCyl(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
   }
 
-  // Allocate and compute arrays for intermediate geometric quantities always needed
-  // metric_cell_j1_.NewAthenaArray(nc2);
-  // int jll, juu;
-  // if (pmb->block_size.nx2 > 1) {
-    // jll = jl - ng; juu = ju + ng;
-  // } else {
-    // jll = jl; juu = ju;
-  // }
-  // for (int j = jll; j <= juu; ++j) {
-    // Real sin_c = std::sin(x2v(j));
-    // Real sin_c_sq = SQR(sin_c);
-    // metric_cell_j1_(j) = sin_c_sq;
-  // }
-
   // Allocate and compute arrays for intermediate geometric quantities that are only
   // needed if object is NOT a coarse mesh
   if (!coarse_flag) {
@@ -134,37 +120,13 @@ MinkowskiCyl::MinkowskiCyl(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_area3_i1_.NewAthenaArray(nc1);
     coord_len1_i1_.NewAthenaArray(nc1);
     coord_len2_i1_.NewAthenaArray(nc1+1);
-    // coord_len3_i1_.NewAthenaArray(nc1+1);
-    // g_.NewAthenaArray(NMETRIC, nc1+1);
-    // gi_.NewAthenaArray(NMETRIC, nc1+1);
-
-    // Allocate arrays for intermediate geometric quantities: theta-direction
-    // coord_vol_j1_.NewAthenaArray(nc2);
-    // coord_area1_j1_.NewAthenaArray(nc2);
-    // coord_area2_j1_.NewAthenaArray(nc2+1);
-    // coord_area3_j1_.NewAthenaArray(nc2);
-    // coord_len1_j1_.NewAthenaArray(nc2+1);
-    // coord_len2_j1_.NewAthenaArray(nc2);
-    // coord_len3_j1_.NewAthenaArray(nc2+1);
-    // coord_width3_j1_.NewAthenaArray(nc2);
-    // coord_src_j1_.NewAthenaArray(nc2);
-    // coord_src_j2_.NewAthenaArray(nc2);
-    // metric_face1_j1_.NewAthenaArray(nc2);
-    // metric_face2_j1_.NewAthenaArray(nc2+1);
-    // metric_face3_j1_.NewAthenaArray(nc2);
-    // trans_face1_j1_.NewAthenaArray(nc2);
-    // trans_face2_j1_.NewAthenaArray(nc2+1);
-    // trans_face3_j1_.NewAthenaArray(nc2);
 
     // Calculate intermediate geometric quantities: r-direction
     for (int i = il-ng; i <= iu+ng; ++i) {
 
       // Useful quantities
-      // Real r_c = x1v(i);
       Real rr_m = x1f(i);
       Real rr_p = x1f(i+1);
-      // Real r_p_cu = r_p*r_p*r_p;
-      // Real r_m_cu = r_m*r_m*r_m;
 
       // Volumes, areas, lengths, and widths
       coord_vol_i1_(i) = 0.5 * (SQR(rr_p) - SQR(rr_m));
@@ -176,68 +138,9 @@ MinkowskiCyl::MinkowskiCyl(MeshBlock *pmb, ParameterInput *pin, bool flag)
       coord_area3_i1_(i) = coord_vol_i1_(i);
       coord_len1_i1_(i) = coord_vol_i1_(i);
       coord_len2_i1_(i) = coord_area1_i1_(i);
-      // coord_len3_i1_(i) = coord_area1_i1_(i);
       if (i == iu+ng) {
         coord_len2_i1_(i+1) = coord_area1_i1_(i+1);
-        // coord_len3_i1_(i+1) = coord_area1_i1_(i+1);
       }
-    }
-
-    // Calculate intermediate geometric quantities: theta-direction
-    for (int j = jll; j <= juu; ++j) {
-
-      // Useful quantities
-      // Real theta_c = x2v(j);
-      // Real theta_m = x2f(j);
-      // Real theta_p = x2f(j+1);
-      // Real sin_c = std::sin(theta_c);
-      // Real sin_m = std::sin(theta_m);
-      // Real sin_p = std::sin(theta_p);
-      // Real cos_c = std::cos(theta_c);
-      // Real cos_m = std::cos(theta_m);
-      // Real cos_p = std::cos(theta_p);
-      // Real sin_c_sq = SQR(sin_c);
-      // Real sin_m_sq = SQR(sin_m);
-      // Real sin_p_sq = SQR(sin_p);
-
-      // Volumes, areas, lengths, and widths
-      // coord_vol_j1_(j) = std::abs(cos_m - cos_p);
-      // coord_area1_j1_(j) = coord_vol_j1_(j);
-      // coord_area2_j1_(j) = std::abs(sin_m);
-      // if (j == juu) {
-        // coord_area2_j1_(j+1) = std::abs(sin_p);
-      // }
-      // coord_area3_j1_(j) = coord_vol_j1_(j);
-      // coord_len1_j1_(j) = coord_area2_j1_(j);
-      // if (j == juu) {
-        // coord_len1_j1_(j+1) = coord_area2_j1_(j+1);
-      // }
-      // coord_len2_j1_(j) = coord_vol_j1_(j);
-      // coord_len3_j1_(j) = coord_area2_j1_(j);
-      // if (j == juu) {
-        // coord_len3_j1_(j+1) = coord_area2_j1_(j+1);
-      // }
-      // coord_width3_j1_(j) = std::abs(sin_c);
-
-      // Source terms
-      // coord_src_j1_(j) = sin_c;
-      // coord_src_j2_(j) = cos_c;
-
-      // Metric coefficients
-      // metric_face1_j1_(j) = sin_c_sq;
-      // metric_face2_j1_(j) = sin_m_sq;
-      // if (j == juu) {
-        // metric_face2_j1_(j+1) = sin_p_sq;
-      // }
-      // metric_face3_j1_(j) = sin_c_sq;
-
-      // Coordinate transformations
-      // trans_face1_j1_(j) = std::abs(sin_c);
-      // trans_face2_j1_(j) = std::abs(sin_m);
-      // if (j == juu) {
-        // trans_face2_j1_(j+1) = std::abs(sin_p);
-      // }
-      // trans_face3_j1_(j) = std::abs(sin_c);
     }
   }
 }
@@ -1350,7 +1253,7 @@ void MinkowskiCyl::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, in
 //----------------------------------------------------------------------------------------
 // Function for calculating orthonormal tetrad
 // Inputs:
-//   x1, x2, x3: spatial position
+//   rr, ph, z: spatial position
 // Outputs:
 //   e: 2D array for e_{(\hat{\mu})}^\nu:
 //     index 0: covariant orthonormal index
@@ -1362,26 +1265,30 @@ void MinkowskiCyl::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, in
 //     index 1: first lower index
 //     index 2: second lower index
 // Notes:
-//   implements "spherical" tetrad (Gram-Schmidt on t-, r-, theta-, and phi-directions)
+//   tetrad options:
+//     "cartesian" (Gram-Schmidt on t, x, y, z)
+//     "cylindrical" (Gram-Schmidt on t, R, phi, z)
+//     "spherical" (Gram-Schmidt on t, r, theta, phi)
 
-void MinkowskiCyl::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
+void MinkowskiCyl::Tetrad(Real rr, Real ph, Real z, AthenaArray<Real> &e,
     AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
 
   // Check tetrad
-  if (rad_tetrad_ != "spherical") {
+  if (rad_tetrad_ != "cartesian" and rad_tetrad_ != "cylindrical"
+      and rad_tetrad_ != "spherical") {
     std::stringstream msg;
     msg << "### FATAL ERROR invalid tetrad choice" << std::endl;
     ATHENA_ERROR(msg);
   }
 
   // Calculate useful quantities
-  Real m = bh_mass_;
-  Real r = x1;
-  Real th = x2;
-  Real sth = std::sin(th);
-  Real cth = std::cos(th);
-  Real f0 = 1.0 - 2.0 * m / r;
-  Real f0_sqrt = std::sqrt(f0);
+  Real z2 = SQR(z);
+  Real rr2 = SQR(rr);
+  Real r = std::hypot(rr, z);
+  Real r2 = SQR(r);
+  Real r3 = r * r2;
+  Real sph = std::sin(ph);
+  Real cph = std::cos(ph);
 
   // Allocate intermediate arrays
   Real eta[4][4] = {};
@@ -1399,23 +1306,19 @@ void MinkowskiCyl::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
   eta[3][3] = 1.0;
 
   // Set covariant metric
-  g[0][0] = -f0;
-  g[1][1] = 1.0 / f0;
-  g[2][2] = SQR(r);
-  g[3][3] = SQR(r * sth);
+  g[0][0] = -1.0;
+  g[1][1] = 1.0;
+  g[2][2] = rr2;
+  g[3][3] = 1.0;
 
   // Set contravariant metric
-  gi[0][0] = -1.0 / f0;
-  gi[1][1] = f0;
-  gi[2][2] = 1.0 / SQR(r);
-  gi[3][3] = 1.0 / SQR(r * sth);
+  gi[0][0] = -1.0;
+  gi[1][1] = 1.0;
+  gi[2][2] = 1.0 / rr2;
+  gi[3][3] = 1.0;
 
   // Set derivatives of covariant metric
-  dg[1][0][0] = -2.0 * m / SQR(r);
-  dg[1][1][1] = -2.0 * m / SQR(f0 * r);
   dg[1][2][2] = 2.0 * r;
-  dg[1][3][3] = 2.0 * r * SQR(sth);
-  dg[2][3][3] = 2.0 * SQR(r) * sth * cth;
 
   // Set tetrad
   for (int i = 0; i < 4; ++i) {
@@ -1423,10 +1326,26 @@ void MinkowskiCyl::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
       e(i,j) = 0.0;
     }
   }
-  e(0,0) = 1.0 / f0_sqrt;
-  e(1,1) = f0_sqrt;
-  e(2,2) = 1.0 / r;
-  e(3,3) = 1.0 / (r * sth);
+  if (rad_tetrad_ == "cartesian") {
+    e(0,0) = 1.0;
+    e(1,1) = cph;
+    e(1,2) = -sph / rr;
+    e(2,1) = sph;
+    e(2,2) = cph / rr;
+    e(3,3) = 1.0;
+  } else if (rad_tetrad_ == "cylindrical") {
+    e(0,0) = 1.0;
+    e(1,1) = 1.0;
+    e(2,2) = 1.0 / rr;
+    e(3,3) = 1.0;
+  } else if (rad_tetrad_ == "spherical") {
+    e(0,0) = 1.0;
+    e(1,1) = rr / r;
+    e(1,3) = z / r;
+    e(2,1) = z / r;
+    e(2,3) = -rr / r;
+    e(3,2) = 1.0 / rr;
+  }
 
   // Calculate covariant tetrad
   for (int i = 0; i < 4; ++i) {
@@ -1448,11 +1367,26 @@ void MinkowskiCyl::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
   }
 
   // Set derivatives of tetrad
-  de[1][0][0] = -1.0 / (f0 * f0_sqrt) * m / SQR(r);
-  de[1][1][1] = 1.0 / f0_sqrt * m / SQR(r);
-  de[1][2][2] = -1.0 / SQR(r);
-  de[1][3][3] = -1.0 / (SQR(r) * sth);
-  de[2][3][3] = -1.0 / (r * SQR(sth)) * cth;
+  if (rad_tetrad_ == "cartesian") {
+    de[1][1][2] = sph / rr2;
+    de[1][2][2] = -cph / rr2;
+    de[2][1][1] = -sph;
+    de[2][1][2] = -cph / rr;
+    de[2][2][1] = cph;
+    de[2][2][2] = -sph / rr;
+  } else if (rad_tetrad_ == "cylindrical") {
+    de[1][2][2] = -1.0 / rr2;
+  } else if (rad_tetrad_ == "spherical") {
+    de[1][1][1] = z2 / r3;
+    de[1][1][3] = -rr * z / r3;
+    de[1][2][1] = -rr * z / r3;
+    de[1][2][3] = -z2 / r3;
+    de[1][3][2] = -1.0 / rr2;
+    de[3][1][1] = -rr * z / r3;
+    de[3][1][3] = rr2 / r3;
+    de[3][2][1] = rr2 / r3;
+    de[3][2][3] = rr * z / r3;
+  }
 
   // Calculate Christoffel connection coefficients
   for (int i = 0; i < 4; ++i) {

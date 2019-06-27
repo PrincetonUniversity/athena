@@ -14,7 +14,7 @@
 // C headers
 
 // C++ headers
-#include <cmath>      // sqrt()
+#include <cmath>      // hypot, sqrt
 #include <cstdlib>    // exit
 #include <iostream>   // cout
 #include <ostream>    // endl
@@ -325,7 +325,7 @@ void Minkowski::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j
 //----------------------------------------------------------------------------------------
 // Function for calculating orthonormal tetrad
 // Inputs:
-//   x1, x2, x3: spatial position
+//   x, y, z: spatial position
 // Outputs:
 //   e: 2D array for e_{(\hat{\mu})}^\nu:
 //     index 0: covariant orthonormal index
@@ -337,36 +337,138 @@ void Minkowski::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j
 //     index 1: first lower index
 //     index 2: second lower index
 // Notes:
-//   implements trivial "cartesian" tetrad (Gram-Schmidt on t-, x-, y-, and z-directions)
+//   tetrad options:
+//     "cartesian" (Gram-Schmidt on t, x, y, z; trivial)
+//     "cylindrical" (Gram-Schmidt on t, R, phi, z)
+//     "spherical" (Gram-Schmidt on t, r, theta, phi)
 
-void Minkowski::Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
+void Minkowski::Tetrad(Real x, Real y, Real z, AthenaArray<Real> &e,
     AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
 
   // Check tetrad
-  if (rad_tetrad_ != "cartesian") {
+  if (rad_tetrad_ != "cartesian" and rad_tetrad_ != "cylindrical"
+      and rad_tetrad_ != "spherical") {
     std::stringstream msg;
     msg << "### FATAL ERROR invalid tetrad choice" << std::endl;
     ATHENA_ERROR(msg);
   }
+
+  // Calculate useful quantities
+  Real x2 = SQR(x);
+  Real y2 = SQR(y);
+  Real z2 = SQR(z);
+  Real rr = std::hypot(x, y);
+  Real rr2 = SQR(rr);
+  Real rr3 = rr * rr2;
+  Real r = std::hypot(rr, z);
+  Real r2 = SQR(r);
+  Real r3 = r * r2;
+
+  // Allocate intermediate arrays
+  Real eta[4][4] = {};
+  Real g[4][4] = {};
+  Real ei[4][4] = {};
+  Real de[4][4][4] = {};
+
+  // Set Minkowski metric
+  eta[0][0] = -1.0;
+  eta[1][1] = 1.0;
+  eta[2][2] = 1.0;
+  eta[3][3] = 1.0;
+
+  // Set covariant metric
+  g[0][0] = -1.0;
+  g[1][1] = 1.0;
+  g[2][2] = 1.0;
+  g[3][3] = 1.0;
 
   // Set tetrad
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       e(i,j) = 0.0;
     }
-    e(i,i) = 1.0;
+  }
+  if (rad_tetrad_ == "cartesian") {
+    for (int i = 0; i < 4; ++i) {
+      e(i,i) = 1.0;
+    }
+  } else if (rad_tetrad_ == "cylindrical") {
+    e(0,0) = 1.0;
+    e(1,1) = x / rr;
+    e(1,2) = y / rr;
+    e(2,1) = -y / rr;
+    e(2,2) = x / rr;
+    e(3,3) = 1.0;
+  } else if (rad_tetrad_ == "spherical") {
+    e(0,0) = 1.0;
+    e(1,1) = x / r;
+    e(1,2) = y / r;
+    e(1,3) = z / r;
+    e(2,1) = x * z / (rr * r);
+    e(2,2) = y * z / (rr * r);
+    e(2,3) = -rr / r;
+    e(3,1) = -y / rr;
+    e(3,2) = x / rr;
   }
 
-  // Set covariant tetrad
+  // Calculate covariant tetrad
   for (int i = 0; i < 4; ++i) {
-    e_0(i) = -e(i,0);
+    e_0(i) = 0.0;
+    for (int j = 0; j < 4; ++j) {
+      e_0(i) += g[0][j] * e(i,j);
+    }
   }
 
-  // Set Ricci rotation coefficients
+  // Calculate inverse of tetrad
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        for (int l = 0; l < 4; ++l) {
+          ei[i][j] += eta[i][k] * g[j][l] * e(k,l);
+        }
+      }
+    }
+  }
+
+  // Set derivatives of tetrad
+  if (rad_tetrad_ == "cylindrical") {
+    de[1][1][1] = y2 / rr3;
+    de[1][1][2] = -x * y / rr3;
+    de[1][2][1] = x * y / rr3;
+    de[1][2][2] = y2 / rr3;
+    de[2][1][1] = -x * y / rr3;
+    de[2][1][2] = x2 / rr3;
+    de[2][2][1] = -x2 / rr3;
+    de[2][2][2] = -x * y / rr3;
+  } else if (rad_tetrad_ == "spherical") {
+    de[1][1][1] = (x2 + z*z) / r3;
+    de[1][1][2] = -x * y / r3;
+    de[1][1][3] = -x * z / r3;
+    de[1][2][1] = (r2 * y2 - rr2 * x2) * z / (rr3 * r3);
+    de[1][2][2] = -(rr2 * r2) * x * y * z / (rr3 * r3);
+    de[1][2][3] = -x * z*z / (rr * r3);
+    de[1][3][1] = x * y / rr3;
+    de[1][3][2] = y2 * / rr3;
+    de[2][1][1] = -x * y / r3;
+    de[2][1][2] = (x2 * z*z) / r3;
+    de[2][1][3] = -y * z / r3;
+    de[2][2][1] = -(rr2 + r2) * x * y * z / (rr3 * r3);
+    de[2][2][2] = (r2 * x2 - rr2 * y2) * z / (rr3 * r3);
+    de[2][2][3] = -y * z*z / (rr3 * r3);
+    de[2][3][1] = -x2 / rr3;
+    de[2][3][2] = -x * y / rr3;
+  }
+
+  // Calculate Ricci rotation coefficients
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       for (int k = 0; k < 4; ++k) {
         omega(i,j,k) = 0.0;
+        for (int l = 0; l < 4; ++l) {
+          for (int m = 0; m < 4; ++m) {
+            omega(i,j,k) += ei[i][l] * e(k,m) * de[m][j][l];
+          }
+        }
       }
     }
   }
