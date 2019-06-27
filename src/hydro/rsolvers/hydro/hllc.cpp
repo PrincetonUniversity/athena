@@ -64,6 +64,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     wri[IPR]=wr(IPR,i);
 
     //--- Step 2.  Compute middle state estimates with PVRS (Toro 10.5.2)
+
     Real al, ar, el, er;
     Real cl = pmy_block->peos->SoundSpeed(wli);
     Real cr = pmy_block->peos->SoundSpeed(wri);
@@ -84,6 +85,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     Real rhor = wri[IDN] + (umid - wri[IVX]) * rhoa / ca; // mid-right density
 
     //--- Step 3.  Compute sound speed in L,R
+
     Real ql, qr;
     if (GENERAL_EOS) {
       Real gl = pmy_block->peos->AsqFromRhoP(rhol, pmid) * rhol / pmid;
@@ -98,10 +100,11 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       qr = (pmid <= wri[IPR]) ? 1.0 :
            (1.0 + (gamma + 1) / std::sqrt(2 * gamma) * (pmid / wri[IPR]-1.0));
     }
+
+    //--- Step 4.  Compute the max/min wave speeds based on L/R
+
     al = wli[IVX] - cl*ql;
     ar = wri[IVX] + cr*qr;
-
-    //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
 
     Real bp = ar > 0.0 ? ar : 0.0;
     Real bm = al < 0.0 ? al : 0.0;
