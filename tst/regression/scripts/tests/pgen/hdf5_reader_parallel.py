@@ -85,7 +85,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
-
+    analyze_status = True
     # Read input data
     with h5py.File('bin/{0}'.format(filename_input), 'r') as f:
         cons_input = f[dataset_cons][:]
@@ -130,11 +130,11 @@ def analyze():
 
     # Check that outputs match inputs
     if not np.all(cons_output == cons_input):
-        return False
+        analyze_status = False
     if not np.all(b1_output == b1v):
-        return False
+        analyze_status = False
     if not np.all(b2_output == b2v):
-        return False
+        analyze_status = False
     if not np.all(b3_output == b3v):
-        return False
-    return True
+        analyze_status = False
+    return analyze_status

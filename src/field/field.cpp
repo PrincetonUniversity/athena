@@ -93,9 +93,9 @@ void Field::CalculateCellCenteredField(
     int il, int iu, int jl, int ju, int kl, int ku) {
   // Defer to Reconstruction class to check if uniform Cartesian formula can be used
   // (unweighted average)
-  const bool uniform_ave_x1 = pmy_block->precon->uniform_limiter[X1DIR];
-  const bool uniform_ave_x2 = pmy_block->precon->uniform_limiter[X2DIR];
-  const bool uniform_ave_x3 = pmy_block->precon->uniform_limiter[X3DIR];
+  const bool uniform_ave_x1 = pmy_block->precon->uniform[X1DIR];
+  const bool uniform_ave_x2 = pmy_block->precon->uniform[X2DIR];
+  const bool uniform_ave_x3 = pmy_block->precon->uniform[X3DIR];
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {

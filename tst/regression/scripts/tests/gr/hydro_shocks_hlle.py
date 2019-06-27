@@ -40,6 +40,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     headers = [('dens',), ('Etot',), ('mom', 0)]
     tols = [[0.02, 0.01, 0.01], [0.01, 0.01, 0.02], [0.01, 0.01, 0.02], [0.5, 0.01, 0.02]]
     for i in range(1, 5):
@@ -60,5 +61,5 @@ def analyze():
             eps = comparison.l1_diff(x_ref, array_ref, x_new, array_new)
             eps /= comparison.l1_norm(x_ref, array_ref)
             if eps > tol or np.isnan(eps):
-                return False
-    return True
+                analyze_status = False
+    return analyze_status
