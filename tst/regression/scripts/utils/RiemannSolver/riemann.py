@@ -583,14 +583,20 @@ class RiemannSol(object):
             return speeds
         return sep.join(speeds)
 
-    def state_tbl(self, row_sep=None, col_sep=None, eol='', fmt='.7e'):
+    def state_tbl(self, row_sep=None, col_sep=None, eol='', fmt='.7e', speeds=False):
         """Format all for state-vectors for printing in a table"""
         states = self.states
         var_names = ['rho', 'p', 'u']
         if self.eos.indep not in var_names:
             var_names.append(self.eos.indep)
         fmt = '{0:' + fmt + '}'
-        out = [[fmt.format(s[v]) for s in states] for v in var_names]
+        out = [[fmt.format(s[v]) for v in var_names] for s in states]
+        if speeds:
+            speeds = self.speeds()
+            out[0].extend([r'$-\infty$', fmt.format(speeds[0])])
+            out[1].extend([fmt.format(speeds[1]), fmt.format(speeds[2])])
+            out[2].extend([fmt.format(speeds[3]), fmt.format(speeds[4])])
+            out[3].extend([fmt.format(speeds[5]), r'$\infty$'])
         if col_sep is not None:
             out = [col_sep.join(col) + eol for col in out]
         if row_sep is not None:
