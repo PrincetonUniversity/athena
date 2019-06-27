@@ -27,6 +27,7 @@ def run(**kwargs):
 
 # Analyze output
 def analyze():
+    analyze_status = True
     # read data from error file
     filename = 'bin/blastwave-shape.dat'
     data = athena_read.error_dat(filename)
@@ -35,6 +36,6 @@ def analyze():
     if data[0][3] > 1.0:
         logger.warning("Distortion of blast wave in spherical coords too large %g",
                        data[0][3])
-        return False
+        analyze_status = False
 
-    return True
+    return analyze_status

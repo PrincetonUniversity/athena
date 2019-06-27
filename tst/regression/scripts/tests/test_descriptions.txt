@@ -288,6 +288,24 @@ pgen_hdf5_reader_serial
 pgen_pgen_compile
     Test script to make sure all problem generator files in /src/pgen compile
 
+scalars_mignone_radial_1d
+    Regression test based on Mignone (2014) section 5.1.1 tests: radial advection of passive
+    scalar profiles in cylindrical and spherical-polar curvilinear coordinate systems. Tests
+    the importance of curvilinear corrections to PLM and PPM4 limiters and PPM4 stencil     
+    weights for interpolation of face-averages from cell-avergages.
+
+scalars_mignone_radial_1d_spherical_polar
+    Regression test based on Mignone (2014) section 5.1.1 tests: radial advection of passive
+    scalar profiles in cylindrical and spherical-polar curvilinear coordinate systems. Tests
+    the importance of curvilinear corrections to PLM and PPM4 limiters and PPM4 stencil     
+    weights for interpolation of face-averages from cell-avergages. --coord=spherical_polar
+
+scalars_mignone_radial_1d_cylindrical
+    Regression test based on Mignone (2014) section 5.1.1 tests: radial advection of passive
+    scalar profiles in cylindrical and spherical-polar curvilinear coordinate systems. Tests
+    the importance of curvilinear corrections to PLM and PPM4 limiters and PPM4 stencil     
+    weights for interpolation of face-averages from cell-avergages. --coord=cylindrical
+
 scalars_restart
     Regression test to verify the ability use restart file to restart the code when using
     passive scalars.
@@ -332,3 +350,19 @@ symmetry_hydro_linwave_aligned
     Run grid-aligned linear waves in (x1) 1D, (x2) 2D, (x3) 3D and confirm symmetry in
     errors. Uniform square grid, midpoint approximation used for initialization and in error
     calculations. Setting CFL=0.3 for all runs.
+
+turb_turb_3d
+    Regression test based on intercomparison between serial and MPI runs.
+    Runs a driven turbulence test in 3D and checks L1 errors between
+    serial and MPI runs using kinetic energy history.
+
+turb_turb_3d_fft
+    Regression test based on intercomparison between serial and MPI runs.
+    Runs a driven turbulence test in 3D and checks L1 errors between
+    serial and MPI runs using kinetic energy history. Serial execution.
+
+turb_turb_3d_mpi_fft
+    Regression test based on intercomparison between serial and MPI runs.
+    Runs a driven turbulence test in 3D and checks L1 errors between
+    serial and MPI runs using kinetic energy history. MPI execution.
+
