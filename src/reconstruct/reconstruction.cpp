@@ -27,11 +27,10 @@
 #include "reconstruction.hpp"
 
 namespace {
-// from Wikipedia article on LU decomposition
-int LUPDecompose(Real **A, int N, Real Tol, int *P);
-void LUPSolve(Real **A, int *P, Real *b, int N, Real *x);
-void LUPInvert(Real **A, int *P, int N, Real **IA);
-Real LUPDeterminant(Real **A, int *P, int N);
+// TODO(felker): replace these hand-rolled linear algebra routines with a real library
+constexpr Real lu_tol = 3e-16;
+int DoolittleLUPDecompose(Real **a, int n, int *pivot);
+void DoolittleLUPSolve(Real **lu, int *pivot, Real *b, int n, Real *x);
 } // namespace
 
 // constructor
@@ -211,6 +210,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
 
   // Uniform mesh with --coord=cartesian or GR: Minkowski, Schwarzschild, Kerr-Schild,
   // GR-User will use the uniform Cartesian limiter and reconstruction weights
+  // TODO(c-white): use modified version of curvilinear PPM reconstruction weights and
+  // limiter formulations for Schwarzschild, Kerr metrics instead of Cartesian-like wghts
 
   // Allocate memory for scratch arrays used in PLM and PPM
   int nc1 = pmb->ncells1;
@@ -259,15 +260,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     constexpr int kNrows = 4;       // = [i-i_L, i+i_R] stencil of reconstruction
     constexpr int kNcols = 4;       // = [0, p-1], p=order of reconstruction
     // system in Mignone equation 21
-    //AthenaArray<Real> beta(kNrows, kNcols), b_rhs(kNrows);
-    // AthenaArray<Real> beta_array(4,4);
-    // Real *beta = beta_array.data();
-
-    // bad/hardcoded raw pointer data structure for compatibility with Wikipedia routines:
-    // Real beta_array[kNrows][kNcols];
-    // Real *beta_rows[kNrows] = {beta_array[0], beta_array[1], beta_array[2],
-    //                            beta_array[3]};
-    // Real **beta = beta_rows;
     Real **beta = new Real*[kNrows];
     for (int i=0; i<kNrows; ++i) {
       beta[i] = new Real[kNcols];
@@ -275,14 +267,12 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
 
     Real w_sol[kNrows], b_rhs[kNrows];
     int permute[kNrows];
-    //AthenaArray<Real> beta(4, 4, pmb->ncells1), b_rhs(4, pmb->ncells1);
     int m_coord = 0;    // power of simple Jacobian term;  0 ---> Cartesian coordinates
     if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
       m_coord = 1;
     } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
       m_coord = 2;
     }
-
     if (curvilinear[X1DIR]) {
       for (int i=(pmb->is)-NGHOST+2; i<=(pmb->ie)+NGHOST-1; ++i) {
         // nonuniform Beta matrix entries reach uppermost face pmb->ncells1+1
@@ -296,45 +286,29 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
               int pow_num = col + m_coord + 1;
               int pow_denom = m_coord + 1;
               int s = row - kNrows/2;  // rescale index from -2 to +1
-              // beta(row, col) =
-              // transpose:
+              // initializing transpose:
               beta[col][row] =
                   coeff*(
                       std::pow(pco->x1f(i+s+1), pow_num)
                       - std::pow(pco->x1f(i+s), pow_num)) / (
                           std::pow(pco->x1f(i+s+1), pow_denom)
                           - std::pow(pco->x1f(i+s), pow_denom));
+              // TODO(kfelker): add NaN detection to matrix entries. They are challenging
+              // to compute accurately w/ finite-precision arithmetic.
+              // Both the numerator and denominator consist of differences of nearby x1f
+              // values (that get closer the as resolution increases) raised to the same
+              // power, where the numerator has pow_num=3:6 and pow_denom=3 in
+              // spherical-polar coordinates, e.g.
             }
           }
-          // std::cout << "i= " << i << std::scientific
-          //           << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
-          //           << std::endl;
-          // std::cout << "pco->x1f(i-2, i-1, i, i+1, i+2) = "
-          //           << pco->x1f(i-2) << ", "
-          //           << pco->x1f(i-1) << ", "
-          //           << pco->x1f(i) << ", "
-          //           << pco->x1f(i+1) << ", "
-          //           << pco->x1f(i+2) << std::endl;
 
-          // need to print out via separate pair of nested loops if initializing transpose
-          // for (int row=0; row<kNrows; row++) {
-          //   for (int col=0; col<kNcols; col++) {
-          //     std::cout << beta[row][col] << " ";
-          //   }
-          //   std::cout << "   " << b_rhs[row];
-          //   std::cout << std::endl;
-          // }
-          // std::cout << "\n\n";
-
-
-          Real tol = 3e-16;
-          if (LUPDecompose(beta, 4, tol, permute)) {
-            // LU decomposition succeeded; solve the linear system w/ forward/back sub:
-            LUPSolve(beta, permute, b_rhs, 4, w_sol);
+          if (DoolittleLUPDecompose(beta, 4, permute)) {
+            // LUP decomposition succeeded; solve the linear system w/ forward/back sub:
+            DoolittleLUPSolve(beta, permute, b_rhs, 4, w_sol);
           } else {
             std::stringstream msg;
             msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
-                << "Failure in LU decomposition step for computing PPMx1 curvilinear\n"
+                << "Failure in LUP decomposition step for computing PPMx1 curvilinear\n"
                 << "reconstruction weights at cell index i=" << i << " for nx1="
                 << pmb->block_size.nx1 << std::endl;
             std::cout << msg.str();
@@ -515,17 +489,17 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
                     *std::cos(pco->x2f(j+s+1) + 0.5*PI*k));
               }
               beta[col][row] *= coeff;
+              // TODO(felker): add NaN detection for beta matrix entries
             }
           }
 
-          Real tol = 3e-16;
-          if (LUPDecompose(beta, 4, tol, permute)) {
-            // LU decomposition succeeded; solve the linear system w/ forward/back sub:
-            LUPSolve(beta, permute, b_rhs, 4, w_sol);
+          if (DoolittleLUPDecompose(beta, 4, permute)) {
+            // LUP decomposition succeeded; solve the linear system w/ forward/back sub:
+            DoolittleLUPSolve(beta, permute, b_rhs, 4, w_sol);
           } else {
             std::stringstream msg;
             msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
-                << "Failure in LU decomposition step for computing PPMx2 curvilinear\n"
+                << "Failure in LUP decomposition step for computing PPMx2 curvilinear\n"
                 << "reconstruction weights at cell index j=" << j << " for nx2="
                 << pmb->block_size.nx2 << std::endl;
             std::cout << msg.str();
@@ -671,116 +645,131 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
 
 
 namespace {
-// INPUT: A - array of pointers to rows of a square matrix having dimension N
-//       Tol - small tolerance number to detect failure when the matrix is near degenerate
 
-// OUTPUT: Matrix A is changed, it contains both matrices L-E and U as A=(L-E)+U such that
-//        P*A=L*U.  The permutation matrix is not stored as a matrix, but in an integer
-//        vector P of size N+1 containing column indexes where the permutation matrix has
-//        "1". The last element P[N]=S+N, where S is the number of row exchanges needed
-//        for determinant computation, det(P)=(-1)^S
+//----------------------------------------------------------------------------------------
+// \!fn void DoolittleLUPDecompose(Real **a, int n, int *pivot)
 
-int LUPDecompose(Real **A, int N, Real Tol, int *P) {
-  for (int i=0; i<=N; i++)
-    P[i] = i; // Unit permutation matrix, P[N] initialized with N
+// \brief perform LU decomposition with partial (row) pivoting using Doolittle's
+// algorithm. Partial pivoting is required for stability.
+//
+// Let D be a diagonal matrix, L be a unit lower triangular matrix (main diagonal is all
+// 1's), and U be a unit upper triangular matrix
+// Crout = (LD)U  ---> unit upper triangular U and L'=LD non-unit lower triangular
+// Doolittle = L(DU) ---> unit lower triangular L and U'=DU non-unit upper triangular
+//
+// INPUT:
+//     a: square nxn matrix A of real numbers. Must be a mutable pointer-to-pointer/rows.
+//     n: number of rows and columns in "a"
+//
+//    Also expects "const Real lu_tol >=0" file-scope variable to be defined = criterion
+//    for detecting degenerate input "a" (or nearly-degenerate).
+//
+// OUTPUT:
+//     a: modified in-place to contain both lower- and upper-triangular matrices L, U
+//        as A <- L + U (the 1's on the diagonal of L are not stored) in the decomposition
+//        PA=LU. See NR pg 50; even though they claim to use Crout, they are probably
+//        use Doolittle. They assume unit diagonal in Lx=Pb forward substitution.
+// pivot: nx1 int vector that is a sparse representation of the nxn permutation matrix P.
+//        For each row/vector entry, the value = the column # of the nonzero pivot element
+//
+// RETURN:
+//  failure=0: routine detected that "a" matrix was nearly-singular
+//  success=1: LUP decomposition completed
+//
+//     Both "a", "pivot" can then be passed with RHS vector "b" to DoolittleLUPSolve in
+//     order to solve Ax=b system of linear equations
+//
+// REFERENCES:
+//   - References Numerical Recipes, 3rd ed. (NR) section 2.3 "LU Decomposition & its
+//     Applications"
 
-  for (int i=0; i<N; i++) {
-    Real maxA = 0.0;
-    Real absA = 0.0;
-    int imax = i;
 
-    for (int k=i; k<N; k++)
-      if ((absA = std::abs(A[k][i])) > maxA) {
-        maxA = absA;
-        imax = k;
+int DoolittleLUPDecompose(Real **a, int n, int *pivot) {
+  constexpr int failure = 0, success = 1;
+  // initialize unit permutation matrix P=I. In our sparse representation, pivot[n]=n
+  for (int i=0; i<=n; i++)
+    pivot[i] = i;
+
+  // loop over rows of input matrix:
+  for (int i=0; i<n; i++) {
+    Real a_max = 0.0, a_abs = 0.0;
+    int i_max = i;
+    // search for largest pivot element, located at row i_max
+    for (int k=i; k<n; k++) {
+      a_abs = std::abs(a[k][i]);
+      if (a_abs > a_max) { // found larger pivot element
+        a_max = a_abs;
+        i_max = k;
       }
-    if (maxA < Tol) {
+    }
+
+    // if the pivot element is near zero, the matrix is likely singular
+    if (a_max < lu_tol) {  // 0.0) { // see NR comment in ludcmp.h
+      // do not divide by 0
       std::cout << std::scientific
                 << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
-                << maxA << std::endl;
-      return 0; // failure, matrix is degenerate
+                << "DoolittleLUPDecompose detects singular matrix with\n"
+                << "pivot element=" << a_max << " < tolerance=" << lu_tol << std::endl;
+      return failure;
     }
 
-    if (imax != i) {
-      // pivoting P
-      int j = P[i];
-      P[i] = P[imax];
-      P[imax] = j;
+    if (i != i_max) {  // need to pivot rows:
+      // pivoting "pivot" vector
+      int row_idx = pivot[i];
+      pivot[i] = pivot[i_max];
+      pivot[i_max] = row_idx;
 
       // pivoting rows of A
-      Real *ptr = A[i];
-      A[i] = A[imax];
-      A[imax] = ptr;
-
-      // counting pivots starting from N (for determinant)
-      P[N]++;
+      Real *pivot_ptr = a[i];
+      a[i] = a[i_max];
+      a[i_max] = pivot_ptr;
     }
 
-    for (int j=i+1; j<N; j++) {
-      A[j][i] /= A[i][i];
-
-      for (int k=i+1; k<N; k++)
-        A[j][k] -= A[j][i] * A[i][k];
+    // these lines are the only difference from Crout's in-place approach w/ pivoting
+    for (int j=i+1; j<n; j++) { // loop over rows; NR has the same approach as here
+      // fill lower triangular matrix L elements at column "i":
+      a[j][i] /= a[i][i];
+      // (Crout finds upper triangular matrix U elemens at row "i" in this step)
+      for (int k=i+1; k<n; k++) // update remaining submatrix
+        a[j][k] -= a[j][i]*a[i][k];
     }
   }
-  return 1;  // decomposition done
+  // in-place LU factorization with partial pivoting is complete
+  return success;
 }
 
-// INPUT: A,P filled in LUPDecompose; b - rhs vector; N - dimension
-// OUTPUT: x - solution vector of A*x=b
-void LUPSolve(Real **A, int *P, Real *b, int N, Real *x) {
-  for (int i = 0; i < N; i++) {
-    x[i] = b[P[i]];
 
-    for (int k = 0; k < i; k++)
-      x[i] -= A[i][k] * x[k];
+//----------------------------------------------------------------------------------------
+// \!fn void DoolittleLUPSolve(Real **lu, int *pivot, Real *b, int n, Real *x)
+
+// \brief after DoolittleLUPDecompose() function has transformed input the LHS of Ax=b
+// system to partially-row pivoted, LUP decomposed equivalent PAx=LUx=Pb, solve for x
+//
+// INPUT:
+//     lu: square nxn matrix of real numbers containing output "a" of successful
+//          DoolittleLUPDecompose() function call. See notes in that function for details.
+//  pivot: nx1 vector of integers produced by DoolittleLUPDecompose()
+//      b: RHS column vector of real numbers in original Ax=b system of linear equations
+//
+// OUTPUT:
+//     x: nx1 column vector of real numbers containing solution in original Ax=b system
+
+void DoolittleLUPSolve(Real **lu, int *pivot, Real *b, int n, Real *x) {
+  // forward substitution, Ly=Pb (L must be a UNIT lower-triangular matrix)
+  for (int i=0; i<n; i++) {
+    // initialize the solution to the RHS values, repeating permutation from LU decomp.
+    x[i] = b[pivot[i]];
+    for (int j=0; j<i; j++)
+      x[i] -= lu[i][j]*x[j];
   }
 
-  for (int i = N - 1; i >= 0; i--) {
-    for (int k = i + 1; k < N; k++)
-      x[i] -= A[i][k] * x[k];
-
-    x[i] = x[i] / A[i][i];
+  // back substitution, Ux=y (U is a NOT a unit upper-triangular matrix)
+  for (int i=(n-1); i>=0; i--) {
+    for (int j=(i+1); j<n; j++) {
+      x[i] -= x[j]*lu[i][j];
+    }
+    x[i] /= lu[i][i];
   }
   return;
-}
-
-// INPUT: A,P filled in LUPDecompose; N - dimension
-// OUTPUT: IA is the inverse of the initial matrix
-
-void LUPInvert(Real **A, int *P, int N, Real **IA) {
-  for (int j = 0; j < N; j++) {
-    for (int i = 0; i < N; i++) {
-      if (P[i] == j)
-        IA[i][j] = 1.0;
-      else
-        IA[i][j] = 0.0;
-
-      for (int k = 0; k < i; k++)
-        IA[i][j] -= A[i][k] * IA[k][j];
-    }
-
-    for (int i = N - 1; i >= 0; i--) {
-      for (int k = i + 1; k < N; k++)
-        IA[i][j] -= A[i][k] * IA[k][j];
-
-      IA[i][j] = IA[i][j] / A[i][i];
-    }
-  }
-}
-
-// INPUT: A,P filled in LUPDecompose; N - dimension.
-// OUTPUT: Function returns the determinant of the initial matrix
-
-Real LUPDeterminant(Real **A, int *P, int N) {
-  Real det = A[0][0];
-
-  for (int i = 1; i < N; i++)
-    det *= A[i][i];
-
-  if ((P[N] - N) % 2 == 0)
-    return det;
-  else
-    return -det;
 }
 } // namespace

@@ -167,7 +167,7 @@ before_script:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then pyenv global 3.6; fi
   - python3 -m pip install --upgrade --user pip # --user is necessary on C++ builds, since no virtualenv, sudo
   - python3 --version; pip3 --version
-  - "pip3 install --user --only-binary=:all: numpy flake8 h5py scipy coloarama termcolor matplotlib || true"
+  - "pip3 install --user --only-binary=:all: --no-binary=termcolor numpy flake8 h5py scipy colorama termcolor matplotlib || true"
   # h5py needed for outputs/all_outputs.py, pgen/hdf5*, eos/eos_hdf5_table.py tests
   # scipy needed in scripts/utils/ for eos/ tests
 # Above Build Matrix expansion is assigned to default stage name "test";
