@@ -394,7 +394,7 @@ int main(int argc, char *argv[]) {
 #endif
     ChangeRunDir(prundir);
     pouts = new Outputs(pmesh, pinput);
-    if (res_flag == 0) pouts->MakeOutputs(pmesh,pinput);
+    if (res_flag == 0) pouts->MakeOutputs(pmesh, pinput);
 #ifdef ENABLE_EXCEPTIONS
   }
   catch(std::bad_alloc& ba) {

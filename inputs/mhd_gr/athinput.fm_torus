@@ -4,23 +4,23 @@ reference = Fishbone & Moncrief 1976, ApJ 207 962
 configure  = --prob=gr_torus -g -b --coord=kerr-schild -hdf5
 
 <job>
-problem_id = fm_torus
+problem_id = fm_torus # problem ID: basename of output filenames
 
 <output1>
-file_type = hdf5
-variable  = prim
-id        = prim
-dt        = 1.0
+file_type  = hdf5      # HDF5 data dump
+variable   = prim      # variables to be output
+id         = prim
+dt         = 1.0       # time increment between outputs
 
 <output2>
-file_type = hdf5
-variable  = uov
-id        = user
-dt        = 1.0
+file_type  = hdf5      # HDF5 data dump
+variable   = uov       # variables to be output
+id         = user
+dt         = 1.0       # time increment between outputs
 
 <output3>
-file_type = rst
-dt        = 100.0
+file_type  = rst       # Restart dump
+dt         = 100.0     # time increment between outputs
 
 <time>
 cfl_number = 0.2

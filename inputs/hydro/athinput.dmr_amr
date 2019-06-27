@@ -7,9 +7,9 @@ configure = --prob=dmr
 problem_id = amr       # problem ID: basename of output filenames
 
 <output1>
-file_type = hdf5              # Binary data dump
-dt      = 0.01              # time increment between outputs
-variable     = prim
+file_type  = hdf5              # HDF5 data dump
+variable   = prim              # variables to be output
+dt         = 0.01              # time increment between outputs
 
 <time>
 cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
@@ -36,9 +36,9 @@ nx3        = 1         # Number of zones in X3-direction
 x3min      = -0.5      # minimum value of X3
 x3max      = 0.5       # maximum value of X3
 
-refinement = adaptive
+refinement     = adaptive
 derefine_count = 5
-numlevel   = 3
+numlevel       = 3
 
 <meshblock>
 nx1        = 16

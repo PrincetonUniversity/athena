@@ -64,23 +64,20 @@
 #error "This problem generator requires shearing box"
 #endif
 
-// TODO(felker): shouldn't these have internal linkage?
-Real Lx, Ly, Lz; // root grid size, global to share with output functions
-
 namespace {
-// TODO(felker): iout is unused in all 3x of these functions
-Real hst_BxBy(MeshBlock *pmb, int iout);
-Real hst_dVxVy(MeshBlock *pmb, int iout);
-Real hst_dBy(MeshBlock *pmb, int iout);
-Real Omega_0,qshear;
+Real HistoryBxBy(MeshBlock *pmb, int iout);
+Real HistorydVxVy(MeshBlock *pmb, int iout);
+Real HistorydBy(MeshBlock *pmb, int iout);
+Real Lx, Ly, Lz; // root grid size, global to share with output functions
+Real Omega_0, qshear;
 } // namespace
 
 // ===================================================================================
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   AllocateUserHistoryOutput(3);
-  EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
-  EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
-  EnrollUserHistoryOutput(2, hst_dBy, "dBy");
+  EnrollUserHistoryOutput(0, HistoryBxBy, "-BxBy");
+  EnrollUserHistoryOutput(1, HistorydVxVy, "dVxVy");
+  EnrollUserHistoryOutput(2, HistorydBy, "dBy");
   // Read problem parameters
   Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0);
   qshear  = pin->GetOrAddReal("problem","qshear",1.5);
@@ -389,7 +386,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 namespace {
 
-Real hst_BxBy(MeshBlock *pmb, int iout) {
+Real HistoryBxBy(MeshBlock *pmb, int iout) {
   Real bxby = 0;
   int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
@@ -408,7 +405,7 @@ Real hst_BxBy(MeshBlock *pmb, int iout) {
   return bxby;
 }
 
-Real hst_dVxVy(MeshBlock *pmb, int iout) {
+Real HistorydVxVy(MeshBlock *pmb, int iout) {
   Real dvxvy = 0.0;
   int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;
@@ -429,7 +426,7 @@ Real hst_dVxVy(MeshBlock *pmb, int iout) {
   return dvxvy;
 }
 
-Real hst_dBy(MeshBlock *pmb, int iout) {
+Real HistorydBy(MeshBlock *pmb, int iout) {
   Real dby = 0;
   Real fkx, fky, fkz; // Fourier kx, ky
   Real x1, x2, x3;
