@@ -64,8 +64,8 @@ MinkowskiSph::MinkowskiSph(MeshBlock *pmb, ParameterInput *pin, bool flag)
     for (int j = jl-ng; j <= ju+ng; ++j) {
       Real theta_m = x2f(j);
       Real theta_p = x2f(j+1);
-      Real temp_p = std::sin(theta_p) - theta_p * std::cos(theta_p)
-      Real temp_m = std::sin(theta_m) - theta_m * std::cos(theta_m)
+      Real temp_p = std::sin(theta_p) - theta_p * std::cos(theta_p);
+      Real temp_m = std::sin(theta_m) - theta_m * std::cos(theta_m);
       x2v(j) = (temp_p - temp_m) / (std::cos(theta_m) - std::cos(theta_p));
     }
     for (int j = jl-ng; j <= ju+ng-1; ++j) {
@@ -450,6 +450,8 @@ void MinkowskiSph::AddCoordTermsDivergence(const Real dt, const AthenaArray<Real
         Real g_11 = 1.0;
         Real g_22 = r2;
         Real g_33 = r2 * sin2;
+        Real g22 = 1.0 / r2;
+        Real g33 = 1.0 / (r2 * sin2);
         Real d1_g_22 = 2.0 * r;
         Real d1_g_33 = 2.0 * r * sin2;
         Real d2_g_33 = 2.0 * r2 * sincos;

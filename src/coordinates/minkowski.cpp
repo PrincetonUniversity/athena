@@ -448,7 +448,7 @@ void Minkowski::Tetrad(Real x, Real y, Real z, AthenaArray<Real> &e,
     de[1][2][2] = -(rr2 * r2) * x * y * z / (rr3 * r3);
     de[1][2][3] = -x * z*z / (rr * r3);
     de[1][3][1] = x * y / rr3;
-    de[1][3][2] = y2 * / rr3;
+    de[1][3][2] = y2 / rr3;
     de[2][1][1] = -x * y / r3;
     de[2][1][2] = (x2 * z*z) / r3;
     de[2][1][3] = -y * z / r3;

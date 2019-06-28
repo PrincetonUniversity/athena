@@ -333,6 +333,7 @@ void MinkowskiCyl::AddCoordTermsDivergence(const Real dt, const AthenaArray<Real
         Real g_11 = 1.0;
         Real g_22 = rr2;
         Real g_33 = 1.0;
+        Real g22 = 1.0 / rr2;
         Real d1_g_22 = 2.0 * rr;
 
         // Extract primitives
@@ -552,11 +553,11 @@ void MinkowskiCyl::Face3Metric(const int k, const int j, const int il, const int
     // Set metric terms
     g00 = -1.0;
     g11 = 1.0;
-    g22 = r_sq;
+    g22 = rr_sq;
     g33 = 1.0;
     gi00 = -1.0;
     gi11 = 1.0;
-    gi22 = 1.0/r_sq;
+    gi22 = 1.0/rr_sq;
     gi33 = 1.0;
   }
   return;
@@ -993,7 +994,7 @@ void MinkowskiCyl::FluxToGlobal1(const int k, const int j, const int il, const i
     const Real g33 = 1.0;
     const Real m0_tm = 1.0;
     const Real m1_x = 1.0;
-    const Real m2_y = 1.0/r;
+    const Real m2_y = 1.0/rr;
     const Real m3_z = 1.0;
 
     // Extract local conserved quantities and fluxes
