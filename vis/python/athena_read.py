@@ -446,22 +446,22 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
             x1_rat = f.attrs['RootGridX1'][2]
             x2_rat = f.attrs['RootGridX2'][2]
             x3_rat = f.attrs['RootGridX3'][2]
-            if (coord == 'cartesian' or coord == 'minkowski' or coord == 'tilted'
-                    or coord == 'sinusoidal'):
+            if coord == 'cartesian' or coord == 'minkowski':
                 if ((nx1 == 1 or x1_rat == 1.0) and (nx2 == 1 or x2_rat == 1.0)
                         and (nx3 == 1 or x3_rat == 1.0)):
                     fast_restrict = True
                 else:
                     def vol_func(xm, xp, ym, yp, zm, zp):
                         return (xp-xm) * (yp-ym) * (zp-zm)
-            elif coord == 'cylindrical':
+            elif coord == 'cylindrical' or coord == 'minkowski_cyl':
                 if (nx1 == 1 and (nx2 == 1 or x2_rat == 1.0)
                         and (nx3 == 1 or x3_rat == 1.0)):
                     fast_restrict = True
                 else:
                     def vol_func(rm, rp, phim, phip, zm, zp):
                         return (rp**2-rm**2) * (phip-phim) * (zp-zm)
-            elif coord == 'spherical_polar' or coord == 'schwarzschild':
+            elif (coord == 'spherical_polar' or coord == 'minkowski_sph'
+                    or coord == 'schwarzschild'):
                 if nx1 == 1 and nx2 == 1 and (nx3 == 1 or x3_rat == 1.0):
                     fast_restrict = True
                 else:
@@ -484,14 +484,13 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
 
         # Set cell center functions for preset coordinates
         if center_func_1 is None:
-            if (coord == 'cartesian' or coord == 'minkowski' or coord == 'tilted'
-                    or coord == 'sinusoidal' or coord == 'kerr-schild'):
+            if coord == 'cartesian' or coord == 'minkowski' or coord == 'kerr-schild':
                 def center_func_1(xm, xp):
                     return 0.5 * (xm+xp)
-            elif coord == 'cylindrical':
+            elif coord == 'cylindrical' or coord == 'minkowski_cyl':
                 def center_func_1(xm, xp):
                     return 2.0/3.0 * (xp**3-xm**3) / (xp**2-xm**2)
-            elif coord == 'spherical_polar':
+            elif coord == 'spherical_polar' or coord == 'minkowski_sph':
                 def center_func_1(xm, xp):
                     return 3.0/4.0 * (xp**4-xm**4) / (xp**3-xm**3)
             elif coord == 'schwarzschild':
@@ -501,11 +500,10 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                 raise AthenaError('Coordinates not recognized')
         if center_func_2 is None:
             if (coord == 'cartesian' or coord == 'cylindrical' or coord == 'minkowski'
-                    or coord == 'tilted' or coord == 'sinusoidal'
-                    or coord == 'kerr-schild'):
+                    or coord == 'minkowski_cyl' or coord == 'kerr-schild'):
                 def center_func_2(xm, xp):
                     return 0.5 * (xm+xp)
-            elif coord == 'spherical_polar':
+            elif coord == 'spherical_polar' or coord == 'minkowski_sph':
                 def center_func_2(xm, xp):
                     sm = np.sin(xm)
                     cm = np.cos(xm)
@@ -518,11 +516,10 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
             else:
                 raise AthenaError('Coordinates not recognized')
         if center_func_3 is None:
-            if (coord == 'cartesian' or coord == 'cylindrical' or coord == 'tilted'
+            if (coord == 'cartesian' or coord == 'cylindrical'
                     or coord == 'spherical_polar' or coord == 'minkowski'
-                    or coord == 'sinusoidal' or coord == 'schwarzschild'
-                    or coord == 'kerr-schild'):
-
+                    or coord == 'minkowski_cyl' or coord == 'minkowski_sph'
+                    or coord == 'schwarzschild' or coord == 'kerr-schild'):
                 def center_func_3(xm, xp):
                     return 0.5 * (xm+xp)
             else:

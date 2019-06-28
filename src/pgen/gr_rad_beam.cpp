@@ -42,7 +42,8 @@ static Real dir_1, dir_2, dir_3;  // relative direction of beam center
 static Real spread;               // full spread of beam in direction
 static Real zs, ze;               // index bounds on zeta
 static Real ps, pe;               // index bounds on psi
-static bool spherical;            // flag indicating coordinate type
+static bool cylindrical;          // flag indicating cylindrical coordinates
+static bool spherical;            // flag indicating spherical coordinates
 
 //----------------------------------------------------------------------------------------
 // Function for preparing Mesh
@@ -68,8 +69,16 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // Determine coordinate type
   if (COORDINATE_SYSTEM == std::string("minkowski")) {
+    cylindrical = false;
     spherical = false;
+  } else if (COORDINATE_SYSTEM == std::string("minkowski_cyl")) {
+    cylindrical = true;
+    spherical = false;
+  } else if (COORDINATE_SYSTEM == std::string("minkowski_sph")) {
+    cylindrical = false;
+    spherical = true;
   } else if (COORDINATE_SYSTEM == std::string("schwarzschild")) {
+    cylindrical = false;
     spherical = true;
   } else {
     std::stringstream msg;
@@ -120,7 +129,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Calculate beam pattern
   prad->CalculateBeamSource(pos_1, pos_2, pos_3, width, dir_1, dir_2, dir_3, spread,
-      ruser_meshblock_data[0], ruser_meshblock_data[1], spherical);
+      ruser_meshblock_data[0], ruser_meshblock_data[1], cylindrical, spherical);
 
   // Set primitive and conserved values
   for (int l = zs; l <= ze; ++l) {

@@ -91,7 +91,7 @@ public:
   int AngleInd(int l, int m, bool zeta_face = false, bool psi_face = false);
   void CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real width, Real dir_1,
       Real dir_2, Real dir_3, Real spread, AthenaArray<Real> &prim_vals,
-      AthenaArray<Real> &cons_vals, bool spherical = false);
+      AthenaArray<Real> &cons_vals, bool cylindrical = false, bool spherical = false);
   void SetMoments(AthenaArray<Real> &moments);
 
 private:

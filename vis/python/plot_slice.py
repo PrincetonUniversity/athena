@@ -86,12 +86,13 @@ def main(**kwargs):
     warn_vector = False
     if coordinates in ('cartesian', 'minkowski'):
         pass
-    elif coordinates == 'cylindrical':
+    elif coordinates in ('cylindrical', 'minkowski_cyl'):
         if ave_or_sum and kwargs['direction'] == 1:
             warn_projection = True
         if kwargs['stream'] and kwargs['direction'] in (1, 3):
             warn_vector = True
-    elif coordinates in ('spherical_polar', 'schwarzschild', 'kerr-schild'):
+    elif coordinates in ('spherical_polar', 'minkowski_sph', 'schwarzschild',
+            'kerr-schild'):
         if ave_or_sum and kwargs['direction'] in (1, 2):
             warn_projection = True
         if kwargs['stream']:
@@ -106,9 +107,10 @@ def main(**kwargs):
     # Name coordinates
     if coordinates in ('cartesian', 'minkowski'):
         coord_labels = (r'$x$', r'$y$', r'$z$')
-    elif coordinates == 'cartesian':
+    elif coordinates in ('cylindrical', 'minkowski_cyl'):
         coord_labels = (r'$R$', r'$\phi$', r'$z$')
-    elif coordinates in ('spherical_polar', 'schwarzschild', 'kerr-schild'):
+    elif coordinates in ('spherical_polar', 'minkowski_sph', 'schwarzschild',
+            'kerr-schild'):
         coord_labels = (r'$r$', r'$\theta$', r'$\phi$')
     else:
         coord_labels = (r'$x^1$', r'$x^2$', r'$x^3$')

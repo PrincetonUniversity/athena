@@ -1019,12 +1019,17 @@ int Radiation::AngleInd(int l, int m, bool zeta_face, bool psi_face) {
 //   width: full proper diameter of beam
 //   dir_1, dir_2, dir_3: relative directions of beam center
 //   spread: full spread of beam in direction, in degrees
+//   cylindrical: flag indicating coordinates are cylindrical
 //   spherical: flag indicating coordinates are spherical
 // Outputs:
 //   prim_vals: primitive values (I) set
 //   cons_vals: conserved values (n^0 I) set
 // Notes:
 //   arrays should be 4D, with first index holding both zeta and psi
+//   cylindrical coordinates:
+//     phi (x2) will be mapped to [-pi, pi]:
+//       beams near phi = 0 should work fine
+//       beams near phi = pi will likely not be initialized correctly
 //   spherical coordinates:
 //     theta (x2) will be mapped to [0, pi], adjusting phi (x3) as necessary
 //     phi (x3) will be mapped to [-pi, pi]:
@@ -1033,9 +1038,14 @@ int Radiation::AngleInd(int l, int m, bool zeta_face, bool psi_face) {
 
 void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real width,
     Real dir_1, Real dir_2, Real dir_3, Real spread, AthenaArray<Real> &prim_vals,
-    AthenaArray<Real> &cons_vals, bool spherical) {
+    AthenaArray<Real> &cons_vals, bool cylindrical, bool spherical) {
 
-  // Account for spherical coordinates in beam origin
+  // Account for cylindrical/spherical coordinates in beam origin
+  if (cylindrical) {
+    if (pos_2 > PI) {
+      pos_2 -= 2.0*PI;
+    }
+  }
   if (spherical) {
     if (pos_2 < 0.0) {
       pos_2 = -pos_2;
@@ -1078,10 +1088,15 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
       pmy_block->pcoord->CellMetric(k, j, is, ie, g, gi);
       for (int i = is; i <= ie; ++i) {
 
-        // Extract position, accounting for spherical coordinates
+        // Extract position, accounting for cylindrical/spherical coordinates
         Real x1 = pmy_block->pcoord->x1v(i);
         Real x2 = pmy_block->pcoord->x2v(j);
         Real x3 = pmy_block->pcoord->x3v(k);
+        if (cylindrical) {
+          if (x2 > PI) {
+            x2 -= 2.0*PI;
+          }
+        }
         if (spherical) {
           if (x2 < 0.0) {
             x2 = -x2;
