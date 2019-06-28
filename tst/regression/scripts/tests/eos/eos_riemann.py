@@ -77,8 +77,8 @@ def analyze():
             # the double shock tests are too hard for hlle
             if (flux != 'hlle') or (n not in [2, 3]):
                 t = 1
-                x_ref, _, _, data_ref = athena_read.vtk(
-                    'bin/eos_riemann_{0:}_{1:02d}.block0.out1.{2:05d}.vtk'.format(flux, n, t))
+                fn = 'bin/eos_riemann_{0:}_{1:02d}.block0.out1.{2:05d}.vtk'
+                x_ref, _, _, data_ref = athena_read.vtk(fn.format(flux, n, t))
                 xi = (.5 * x_ref[:-1] + .5 * x_ref[1:]) / _tests[n]['time/tlim']
                 exact = riemann_problem(state, 'H').data_array(xi)
                 for var in ['rho', 'press', 'vel']:
