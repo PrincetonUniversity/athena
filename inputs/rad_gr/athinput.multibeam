@@ -1,0 +1,80 @@
+<comment>
+problem   = beams of radiation in GR (flat spacetime)
+configure = -g -r --prob gr_rad_beam --coord minkowski -hdf5
+
+<job>
+problem_id = multibeam  # name of run
+
+<time>
+nlim       = -1   # maximum number of timesteps
+tlim       = 2.0  # maximum time to run
+cfl_number = 0.3  # fraction of Courant condition
+integrator = vl2  # time integration algorithm
+xorder     = 2    # order of spatial reconstruction
+ncycle_out = 1    # interval for stdout summary info
+
+<output1>
+file_type = hdf5  # output format
+variable  = uov   # choice of variables to output
+id        = user  # name of output files
+dt        = 0.2   # output cadence
+xdmf      = 0     # whether to include auxiliary metadata file
+
+<mesh>
+nx1    = 32       # number of cells in x-direction
+x1min  = 0.0      # minimum x
+x1max  = 1.0      # maximum x
+ix1_bc = outflow  # left boundary
+ox1_bc = outflow  # right boundary
+
+nx2    = 32       # number of cells in y-direction
+x2min  = 0.0      # minimum y
+x2max  = 1.0      # maximum y
+ix2_bc = outflow  # front boundary
+ox2_bc = outflow  # back boundary
+
+nx3    = 4        # number of cells in z-direction
+x3min  = -0.0625  # minimum z
+x3max  = 0.0625   # maximum z
+ix3_bc = outflow  # bottom boundary
+ox3_bc = outflow  # top boundary
+
+refinement = none  # whether to use mesh refinement
+
+num_threads = 1  # number of threads per process
+
+<meshblock>
+nx1 = 16  # block size in x-direction
+nx2 = 16  # block size in y-direction
+nx3 = 4   # block size in z-direction
+
+<coord>
+rad_tetrad = cartesian  # choice of radiation tetrad
+
+<hydro>
+gamma = 1.3333333333333333  # ratio of specific heats Gamma
+
+<radiation>
+n_polar     = 5   # number of polar angles in direction space
+n_azimuthal = 64  # number of azimuthal angles in direction space
+
+<problem>
+pos_a_1  = 0.125  # x-coordinate of beam A origin
+pos_a_2  = 0.875  # y-coordinate of beam A origin
+pos_a_3  = 0.0    # z-coordinate of beam A origin
+width_a  = 0.125  # full proper diameter of beam A
+dir_a_1  = 1.0    # relative x-direction of beam A center
+dir_a_2  = -1.0   # relative y-direction of beam A center
+dir_a_3  = 0.0    # relative z-direction of beam A center
+spread_a = 11.25  # full spread of beam A in direction, in degrees
+dii_dt_a = 10.0   # injected I per unit time for beam A
+
+pos_b_1  = 0.125  # x-coordinate of beam B origin
+pos_b_2  = 0.125  # y-coordinate of beam B origin
+pos_b_3  = 0.0    # z-coordinate of beam B origin
+width_b  = 0.125  # full proper diameter of beam B
+dir_b_1  = 1.0    # relative x-direction of beam B center
+dir_b_2  = 1.0    # relative y-direction of beam B center
+dir_b_3  = 0.0    # relative z-direction of beam B center
+spread_b = 11.25  # full spread of beam B in direction, in degrees
+dii_dt_b = 10.0   # injected I per unit time for beam B
