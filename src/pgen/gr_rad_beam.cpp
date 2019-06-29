@@ -29,9 +29,6 @@
 #endif
 
 // Declarations
-void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke,
-    int ngh);
 void Source(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Real> &prim,
     AthenaArray<Real> &cons);
 
@@ -87,14 +84,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     msg << "### FATAL ERROR in problem generator\n";
     msg << "unsupported coordinate system\n";
     throw std::runtime_error(msg.str().c_str());
-  }
-
-  // Enroll boundary functions
-  if (pin->GetString("mesh", "ix1_bc") == "user") {
-    EnrollUserBoundaryFunction(BoundaryFace::inner_x1, FixedBoundary);
-  }
-  if (pin->GetString("mesh", "ox1_bc") == "user") {
-    EnrollUserBoundaryFunction(BoundaryFace::outer_x1, FixedBoundary);
   }
 
   // Enroll source function
@@ -159,27 +148,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
   prad->SetMoments(user_out_var);
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Fixed boundary condition
-// Inputs:
-//   pmb: pointer to MeshBlock (not used)
-//   pcoord: pointer to Coordinates (not used)
-//   time: time of simulation
-//   dt: simulation timestep
-//   is,ie,js,je,ks,ke: indices demarcating active region (not used)
-// Outputs:
-//   prim: primitives set in ghost zones (not used)
-//   bb: face-centered magnetic field set in ghost zones (not used)
-//   pmb->prad: intensity field set in ghost zones (not used)
-// Notes:
-//   leaves all quantities as in initial state
-
-void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-    FaceField &bb, Real time, Real dt, int is, int ie, int js, int je, int ks, int ke,
-    int ngh) {
   return;
 }
 
