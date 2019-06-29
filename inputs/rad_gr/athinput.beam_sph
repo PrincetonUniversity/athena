@@ -30,8 +30,8 @@ ox1_bc = outflow             # outer boundary
 nx2    = 16                  # number of cells in theta-direction
 x2min  = 0.7853981633974483  # minimum theta
 x2max  = 2.356194490192345   # maximum theta
-ix2_bc = outflow             # upper boundary
-ox2_bc = outflow             # lower boundary
+ix2_bc = outflow             # top boundary
+ox2_bc = outflow             # bottom boundary
 
 nx3    = 16                   # number of cells in phi-direction
 x3min  = -0.7853981633974483  # minimum phi
