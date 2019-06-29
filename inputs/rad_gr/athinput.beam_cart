@@ -3,31 +3,27 @@ problem   = beam of radiation in GR (flat spacetime)
 configure = -g -r --prob gr_rad_beam --coord minkowski -hdf5
 
 <job>
-problem_id = beam_flat  # name of run
+problem_id = beam_cart  # name of run
 
 <time>
-cfl_number = 0.3  # fraction of Courant condition
-nlim       = -1   # maximum number of timesteps
-tlim       = 1.0  # maximum time to run
-integrator = vl2  # time integration algorithm
-xorder     = 2    # order of spatial reconstruction
-ncycle_out = 1    # interval for stdout summary info
+nlim       = -1                  # maximum number of timesteps
+tlim       = 1.4142135623730951  # maximum time to run
+cfl_number = 0.3                 # fraction of Courant condition
+integrator = vl2                 # time integration algorithm
+xorder     = 2                   # order of spatial reconstruction
+ncycle_out = 1                   # interval for stdout summary info
 
 <output1>
-file_type = hdf5  # output format
-variable  = uov   # choice of variables to output
-id        = user  # name of output files
-dt        = 0.1   # output cadence
-xdmf      = 0     # whether to include auxiliary metadata file
-
-<output2>
-file_type = rst    # output format
-dt        = 100.0  # output cadence
+file_type = hdf5                # output format
+variable  = uov                 # choice of variables to output
+id        = user                # name of output files
+dt        = 0.1414213562373095  # output cadence
+xdmf      = 0                   # whether to include auxiliary metadata file
 
 <mesh>
 nx1    = 16       # number of cells in x-direction
-x1min  = -1.0     # minimum x
-x1max  = 1.0      # maximum x
+x1min  = 1.0      # minimum x
+x1max  = 3.0      # maximum x
 ix1_bc = outflow  # left boundary
 ox1_bc = outflow  # right boundary
 
@@ -54,11 +50,11 @@ nx3 = 8  # block size in z-direction
 
 <refinement1>
 level = 1     # refinement level
-x1min = 0.5   # minimum x
-x1max = 1.0   # maximum x
+x1min = 1.0   # minimum x
+x1max = 1.5   # maximum x
 x2min = -1.0  # minimum y
-x2max = 1.0   # maximum y
-x3min = 0.5   # minimum z
+x2max = -0.5  # maximum y
+x3min = -1.0  # minimum z
 x3max = 1.0   # maximum z
 
 <coord>
@@ -72,11 +68,11 @@ n_polar     = 8   # number of polar angles in direction space
 n_azimuthal = 16  # number of azimuthal angles in direction space
 
 <problem>
-pos_1  = -0.5  # x-coordinate of beam origin
-pos_2  = 0.0   # y-coordinate of beam origin
+pos_1  = 1.5   # x-coordinate of beam origin
+pos_2  = -0.5  # y-coordinate of beam origin
 pos_3  = 0.0   # z-coordinate of beam origin
 width  = 0.25  # full proper diameter of beam
 dir_1  = 1.0   # relative x-direction of beam center
-dir_2  = 0.0   # relative y-direction of beam center
+dir_2  = 1.0   # relative y-direction of beam center
 dir_3  = 0.0   # relative z-direction of beam center
 spread = 45.0  # full spread of beam in direction, in degrees

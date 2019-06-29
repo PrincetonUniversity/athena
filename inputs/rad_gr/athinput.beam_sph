@@ -1,0 +1,78 @@
+<comment>
+problem   = beam of radiation in GR (flat spacetime)
+configure = -g -r --prob gr_rad_beam --coord minkowski_sph -hdf5
+
+<job>
+problem_id = beam_sph  # name of run
+
+<time>
+nlim       = -1                  # maximum number of timesteps
+tlim       = 1.4142135623730951  # maximum time to run
+cfl_number = 0.3                 # fraction of Courant condition
+integrator = vl2                 # time integration algorithm
+xorder     = 2                   # order of spatial reconstruction
+ncycle_out = 1                   # interval for stdout summary info
+
+<output1>
+file_type = hdf5                # output format
+variable  = uov                 # choice of variables to output
+id        = user                # name of output files
+dt        = 0.1414213562373095  # output cadence
+xdmf      = 0                   # whether to include auxiliary metadata file
+
+<mesh>
+nx1    = 16                  # number of cells in r-direction
+x1min  = 1.0                 # minimum r
+x1max  = 3.1622776601683795  # maximum r
+ix1_bc = outflow             # inner boundary
+ox1_bc = outflow             # outer boundary
+
+nx2    = 16                  # number of cells in theta-direction
+x2min  = 0.7853981633974483  # minimum theta
+x2max  = 2.356194490192345   # maximum theta
+ix2_bc = outflow             # upper boundary
+ox2_bc = outflow             # lower boundary
+
+nx3    = 16                   # number of cells in phi-direction
+x3min  = -0.7853981633974483  # minimum phi
+x3max  = 0.7853981633974483   # maximum phi
+ix3_bc = outflow              # clockwise boundary
+ox3_bc = outflow              # counterclockwise boundary
+
+refinement = none  # whether to use mesh refinement
+
+num_threads = 1  # number of threads per process
+
+<meshblock>
+nx1 = 8  # block size in r-direction
+nx2 = 8  # block size in theta-direction
+nx3 = 8  # block size in phi-direction
+
+<refinement1>
+level = 1                     # refinement level
+x1min = 1.0                   # minimum r
+x1max = 1.540569415042095     # maximum r
+x2min = 0.7853981633974483    # minimum theta
+x2max = 2.356194490192345     # maximum theta
+x3min = -0.7853981633974483   # minimum phi
+x3max = -0.39269908169872414  # maximum phi
+
+<coord>
+rad_tetrad = cartesian  # choice of radiation tetrad
+
+<hydro>
+gamma = 1.3333333333333333  # ratio of specific heats Gamma
+
+<radiation>
+n_polar     = 8   # number of polar angles in direction space
+n_azimuthal = 16  # number of azimuthal angles in direction space
+
+<problem>
+pos_1  = 1.5811388300841898   # r-coordinate of beam origin
+pos_2  = 1.5707963267948966   # theta-coordinate of beam origin
+pos_3  = -0.3217505543966422  # phi-coordinate of beam origin
+width  = 0.25                 # full proper diameter of beam
+dir_1  = 0.4472135954999579   # relative r-direction of beam center
+dir_2  = 0.0                  # relative theta-direction of beam center
+dir_3  = 0.8944271909999159   # relative phi-direction of beam center
+spread = 45.0                 # full spread of beam in direction, in degrees
