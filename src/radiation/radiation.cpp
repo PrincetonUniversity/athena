@@ -7,6 +7,7 @@
 //  \brief implementation of functions in class Radiation
 
 // C++ headers
+#include <algorithm>  // max
 #include <cmath>      // acos, cos, sin, sqrt
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -896,6 +897,7 @@ void Radiation::PrimitiveToConserved(const AthenaArray<Real> &prim_in,
 // Outputs:
 //   prim_out: primitives
 // Notes:
+//   Primitives are floored at 0. Conserved quantities are adjusted to match.
 //   This should be the only place where angular ghost zones need to be set.
 
 void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
@@ -910,6 +912,10 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
         for (int j = jl; j <= ju; ++j) {
           for (int i = il; i <= iu; ++i) {
             prim_out(lm,k,j,i) = cons_in(lm,k,j,i) / n0_n_0_(l,m,k,j,i);
+            if (prim_out(lm,k,j,i) < 0.0) {
+              prim_out(lm,k,j,i) = 0.0;
+              cons_in(lm,k,j,i) = 0.0;
+            }
           }
         }
       }
