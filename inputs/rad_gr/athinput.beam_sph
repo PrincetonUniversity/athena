@@ -76,4 +76,4 @@ dir_1  = 0.4472135954999579   # relative r-direction of beam center
 dir_2  = 0.0                  # relative theta-direction of beam center
 dir_3  = 0.8944271909999159   # relative phi-direction of beam center
 spread = 45.0                 # full spread of beam in direction, in degrees
-dii_dt = 1.0                  # injected I per unit time
+dii_dt = 10.0                 # injected I per unit time
