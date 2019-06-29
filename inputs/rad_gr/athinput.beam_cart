@@ -76,3 +76,4 @@ dir_1  = 1.0   # relative x-direction of beam center
 dir_2  = 1.0   # relative y-direction of beam center
 dir_3  = 0.0   # relative z-direction of beam center
 spread = 45.0  # full spread of beam in direction, in degrees
+dii_dt = 1.0   # injected I per unit time

@@ -1019,11 +1019,11 @@ int Radiation::AngleInd(int l, int m, bool zeta_face, bool psi_face) {
 //   width: full proper diameter of beam
 //   dir_1, dir_2, dir_3: relative directions of beam center
 //   spread: full spread of beam in direction, in degrees
+//   dii_dt: injected I per unit time
 //   cylindrical: flag indicating coordinates are cylindrical
 //   spherical: flag indicating coordinates are spherical
 // Outputs:
-//   prim_vals: primitive values (I) set
-//   cons_vals: conserved values (n^0 I) set
+//   dcons_dt: conserved values (n^0 n_0 I) per unit time set
 // Notes:
 //   arrays should be 4D, with first index holding both zeta and psi
 //   cylindrical coordinates:
@@ -1037,8 +1037,8 @@ int Radiation::AngleInd(int l, int m, bool zeta_face, bool psi_face) {
 //       beams near phi = pi will likely not be initialized correctly
 
 void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real width,
-    Real dir_1, Real dir_2, Real dir_3, Real spread, AthenaArray<Real> &prim_vals,
-    AthenaArray<Real> &cons_vals, bool cylindrical, bool spherical) {
+    Real dir_1, Real dir_2, Real dir_3, Real spread, Real dii_dt,
+    AthenaArray<Real> &dcons_dt, bool cylindrical, bool spherical) {
 
   // Account for cylindrical/spherical coordinates in beam origin
   if (cylindrical) {
@@ -1086,6 +1086,7 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       pmy_block->pcoord->CellMetric(k, j, is, ie, g, gi);
+      pmy_block->pcoord->CellVolume(k, j, is, ie, vol_);
       for (int i = is; i <= ie; ++i) {
 
         // Extract position, accounting for cylindrical/spherical coordinates
@@ -1124,8 +1125,7 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
           for (int l = zs; l <= ze; ++l) {
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
-              prim_vals(lm,k,j,i) = 0.0;
-              cons_vals(lm,k,j,i) = 0.0;
+              dcons_dt(lm,k,j,i) = 0.0;
             }
           }
           continue;
@@ -1167,14 +1167,12 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
 
             // Set to 0 if too far from beam in angle
             if (mu <= mu_min) {
-              prim_vals(lm,k,j,i) = 0.0;
-              cons_vals(lm,k,j,i) = 0.0;
+              dcons_dt(lm,k,j,i) = 0.0;
               continue;
             }
 
             // Set to nonzero value
-            prim_vals(lm,k,j,i) = 1.0;
-            cons_vals(lm,k,j,i) = n0_n_0_(l,m,k,j,i);
+            dcons_dt(lm,k,j,i) = dii_dt * n0_n_0_(l,m,k,j,i);
           }
         }
       }

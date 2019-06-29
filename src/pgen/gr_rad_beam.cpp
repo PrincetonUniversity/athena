@@ -40,6 +40,7 @@ static Real pos_1, pos_2, pos_3;  // coordinates of beam origin
 static Real width;                // full proper diameter of beam
 static Real dir_1, dir_2, dir_3;  // relative direction of beam center
 static Real spread;               // full spread of beam in direction
+static Real dii_dt;               // injected I per unit time
 static Real zs, ze;               // index bounds on zeta
 static Real ps, pe;               // index bounds on psi
 static bool cylindrical;          // flag indicating cylindrical coordinates
@@ -62,6 +63,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   dir_2 = pin->GetReal("problem", "dir_2");
   dir_3 = pin->GetReal("problem", "dir_3");
   spread = pin->GetReal("problem", "spread");
+  dii_dt = pin->GetReal("problem", "dii_dt");
   zs = NGHOST;
   ze = zs + pin->GetInteger("radiation", "n_polar");
   ps = NGHOST;
@@ -109,9 +111,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
 
   // Allocate persistent arrays
-  AllocateRealUserMeshBlockDataField(2);
+  AllocateRealUserMeshBlockDataField(1);
   ruser_meshblock_data[0].NewAthenaArray(prad->nang, ke + 1, je + 1, ie + 1);
-  ruser_meshblock_data[1].NewAthenaArray(prad->nang, ke + 1, je + 1, ie + 1);
+
+  // Calculate beam pattern
+  prad->CalculateBeamSource(pos_1, pos_2, pos_3, width, dir_1, dir_2, dir_3, spread,
+      dii_dt, ruser_meshblock_data[0], cylindrical, spherical);
 
   // Prepare output variables
   AllocateUserOutputVariables(1);
@@ -124,22 +129,18 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
 // Inputs:
 //   pin: parameters
 // Outputs: (none)
+// Notes:
+//   initializes vacuum
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-
-  // Calculate beam pattern
-  prad->CalculateBeamSource(pos_1, pos_2, pos_3, width, dir_1, dir_2, dir_3, spread,
-      ruser_meshblock_data[0], ruser_meshblock_data[1], cylindrical, spherical);
-
-  // Set primitive and conserved values
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
       int lm = prad->AngleInd(l, m);
       for (int k = ks; k <= ke; ++k) {
         for (int j = js; j <= je; ++j) {
           for (int i = is; i <= ie; ++i) {
-            prad->prim(lm,k,j,i) = ruser_meshblock_data[0](lm,k,j,i);
-            prad->cons(lm,k,j,i) = ruser_meshblock_data[1](lm,k,j,i);
+            prad->prim(lm,k,j,i) = 0.0;
+            prad->cons(lm,k,j,i) = 0.0;
           }
         }
       }
@@ -168,7 +169,7 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
 //   pcoord: pointer to Coordinates (not used)
 //   time: time of simulation
 //   dt: simulation timestep
-//   is,ie,js,je,ks,ke: indices demarkating active region (not used)
+//   is,ie,js,je,ks,ke: indices demarcating active region (not used)
 // Outputs:
 //   prim: primitives set in ghost zones (not used)
 //   bb: face-centered magnetic field set in ghost zones (not used)
@@ -200,7 +201,7 @@ void Source(MeshBlock *pmb, const Real time, const Real dt,
 
   // Extract information from block
   Radiation *prad = pmb->prad;
-  AthenaArray<Real> &cons = pmb->ruser_meshblock_data[1];
+  AthenaArray<Real> &dcons_dt = pmb->ruser_meshblock_data[0];
   int is = pmb->is;
   int ie = pmb->ie;
   int js = pmb->js;
@@ -215,10 +216,7 @@ void Source(MeshBlock *pmb, const Real time, const Real dt,
       for (int k = ks; k <= ke; ++k) {
         for (int j = js; j <= je; ++j) {
           for (int i = is; i <= ie; ++i) {
-            Real val = cons(lm,k,j,i);
-            if (val != 0.0) {
-              cons_out(lm,k,j,i) = val;
-            }
+            cons_out(lm,k,j,i) += dcons_dt(lm,k,j,i) * dt;
           }
         }
       }
