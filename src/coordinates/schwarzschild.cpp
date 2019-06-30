@@ -1480,13 +1480,15 @@ void Schwarzschild::LowerVectorCell(
 //     index 1: first lower index
 //     index 2: second lower index
 // Notes:
-//   implements "spherical" tetrad (Gram-Schmidt on t-, r-, theta-, and phi-directions)
+//   tetrad options:
+//     "cylindrical" (Gram-Schmidt on t, R, phi, z)
+//     "spherical" (Gram-Schmidt on t, r, theta, phi)
 
 void Schwarzschild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
     AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
 
   // Check tetrad
-  if (rad_tetrad_ != "spherical") {
+  if (rad_tetrad_ != "cylindrical" and rad_tetrad_ != "spherical") {
     std::stringstream msg;
     msg << "### FATAL ERROR invalid tetrad choice" << std::endl;
     ATHENA_ERROR(msg);
@@ -1500,6 +1502,9 @@ void Schwarzschild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
   Real sth = std::sin(th);
   Real sth2 = SQR(sth);
   Real cth = std::cos(th);
+  Real cth2 = SQR(cth);
+  Real fc = 1.0 - 2.0 * m * cth2 / r;
+  Real fc_sqrt = std::sqrt(fc);
 
   // Allocate intermediate arrays
   Real eta[4][4] = {};
@@ -1541,10 +1546,19 @@ void Schwarzschild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
       e(i,j) = 0.0;
     }
   }
-  e(0,0) = 1.0 / f_sqrt;
-  e(1,1) = f_sqrt;
-  e(2,2) = 1.0 / r;
-  e(3,3) = 1.0 / (r * sth);
+  if (rad_tetrad_ == "cylindrical") {
+    e(0,0) = 1.0 / f_sqrt;
+    e(1,1) = sth * f_sqrt / fc_sqrt;
+    e(1,2) = cth * f_sqrt / (r * fc_sqrt);
+    e(2,3) = 1.0 / (r * sth);
+    e(3,1) = cth * f / fc_sqrt;
+    e(3,2) = -sth / (r * fc_sqrt);
+  } else if (rad_tetrad_ == "spherical") {
+    e(0,0) = 1.0 / f_sqrt;
+    e(1,1) = f_sqrt;
+    e(2,2) = 1.0 / r;
+    e(3,3) = 1.0 / (r * sth);
+  }
 
   // Calculate covariant tetrad
   for (int i = 0; i < 4; ++i) {
@@ -1566,11 +1580,25 @@ void Schwarzschild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
   }
 
   // Set derivatives of tetrad
-  de[1][0][0] = -m / (r2 * f * f_sqrt);
-  de[1][1][1] = m / (r2 * f_sqrt);
-  de[1][2][2] = -1.0 / r2;
-  de[1][3][3] = -1.0 / (r2 * sth);
-  de[2][3][3] = -cth / (r * sth2);
+  if (rad_tetrad_ == "cylindrical") {
+    de[1][0][0] = -m / (r2 * f * f_sqrt);
+    de[1][1][1] = m * sth2 * sth / (r2 * f_sqrt * fc * fc_sqrt);
+    de[1][1][2] = -cth * (f * fc - m * sth2 / r) / (r2 * f_sqrt * fc * fc_sqrt);
+    de[1][2][3] = -1.0 / (r2 * sth);
+    de[1][3][1] = m * cth * (fc + sth2) / (r2 * fc * fc_sqrt);
+    de[1][3][2] = sth * (1.0 - 3.0 * m * cth2 / r) / (r2 * fc * fc_sqrt);
+    de[2][1][1] = cth * f * f_sqrt / (fc * fc_sqrt);
+    de[2][1][2] = -sth * f_sqrt / (r * fc * fc_sqrt);
+    de[2][2][3] = -cth / (r * sth2);
+    de[2][3][1] = -sth * f / (fc * fc_sqrt);
+    de[2][3][2] = -cth * f / (r * fc * fc_sqrt);
+  } else if (rad_tetrad_ == "spherical") {
+    de[1][0][0] = -m / (r2 * f * f_sqrt);
+    de[1][1][1] = m / (r2 * f_sqrt);
+    de[1][2][2] = -1.0 / r2;
+    de[1][3][3] = -1.0 / (r2 * sth);
+    de[2][3][3] = -cth / (r * sth2);
+  }
 
   // Calculate Christoffel connection coefficients
   for (int i = 0; i < 4; ++i) {
