@@ -36,7 +36,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
+  Real wli[(NHYDRO)],wri[(NHYDRO)];
   Real flxi[(NHYDRO)],fl[(NHYDRO)],fr[(NHYDRO)];
   Real gamma;
   if (GENERAL_EOS) {
@@ -48,7 +48,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   Real igm1 = 1.0/gm1;
 
 #pragma distribute_point
-#pragma omp simd private(wli,wri,wroe,flxi,fl,fr)
+#pragma omp simd private(wli,wri,flxi,fl,fr)
   for (int i=il; i<=iu; ++i) {
     //--- Step 1.  Load L/R states into local variables
     wli[IDN]=wl(IDN,i);
