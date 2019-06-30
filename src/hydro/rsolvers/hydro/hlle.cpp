@@ -72,42 +72,55 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     Real al, ar, el, er;
     Real cl = pmy_block->peos->SoundSpeed(wli);
     Real cr = pmy_block->peos->SoundSpeed(wri);
-    if (GENERAL_EOS) {
-      el = pmy_block->peos->EgasFromRhoP(wli[IDN], wli[IPR]) +
-           0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-      er = pmy_block->peos->EgasFromRhoP(wri[IDN], wri[IPR]) +
-           0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
-    } else {
-      el = wli[IPR]*igm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-      er = wri[IPR]*igm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+    if (NON_BAROTROPIC_EOS) {
+      if (GENERAL_EOS) {
+        el = pmy_block->peos->EgasFromRhoP(wli[IDN], wli[IPR]) +
+             0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+        er = pmy_block->peos->EgasFromRhoP(wri[IDN], wri[IPR]) +
+             0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+      } else {
+        el = wli[IPR]*igm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
+        er = wri[IPR]*igm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+      }
+      Real rhoa = .5 * (wli[IDN] + wri[IDN]); // average density
+      Real ca = .5 * (cl + cr); // average sound speed
+      Real pmid = .5 * (wli[IPR] + wri[IPR] + (wli[IVX]-wri[IVX]) * rhoa * ca);
+      Real umid = .5 * (wli[IVX] + wri[IVX] + (wli[IPR]-wri[IPR]) / (rhoa * ca));
+      Real rhol = wli[IDN] + (wli[IVX] - umid) * rhoa / ca; // mid-left density
+      Real rhor = wri[IDN] + (umid - wri[IVX]) * rhoa / ca; // mid-right density
+
+      //--- Step 3.  Compute sound speed in L,R
+      Real ql, qr;
+      if (GENERAL_EOS) {
+        Real gl = pmy_block->peos->AsqFromRhoP(rhol, pmid) * rhol / pmid;
+        Real gr = pmy_block->peos->AsqFromRhoP(rhor, pmid) * rhor / pmid;
+        ql = (pmid <= wli[IPR]) ? 1.0 :
+             (1.0 + (gl + 1) / std::sqrt(2 * gl) * (pmid / wli[IPR]-1.0));
+        qr = (pmid <= wri[IPR]) ? 1.0 :
+             (1.0 + (gr + 1) / std::sqrt(2 * gr) * (pmid / wri[IPR]-1.0));
+      } else {
+        ql = (pmid <= wli[IPR]) ? 1.0 :
+             (1.0 + (gamma + 1) / std::sqrt(2 * gamma) * (pmid / wli[IPR]-1.0));
+        qr = (pmid <= wri[IPR]) ? 1.0 :
+             (1.0 + (gamma + 1) / std::sqrt(2 * gamma) * (pmid / wri[IPR]-1.0));
+      }
+
+      //--- Step 4. Compute the max/min wave speeds based on L/R states
+
+      al = wli[IVX] - cl*ql;
+      ar = wri[IVX] + cr*qr;
+    } else { // isothermal; revert to Roe average
+      Real a  = iso_cs;
+      Real sqrtdl = std::sqrt(wli[IDN]);
+      Real sqrtdr = std::sqrt(wri[IDN]);
+      Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
+
+      wroe[IDN] = sqrtdl*sqrtdr;
+      wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
+      //--- Compute the max/min wave speeds based on L/R and Roe-averaged values
+      Real al = std::min((wroe[IVX] - a),(wli[IVX] - cl));
+      Real ar = std::max((wroe[IVX] + a),(wri[IVX] + cr));
     }
-    Real rhoa = .5 * (wli[IDN] + wri[IDN]); // average density
-    Real ca = .5 * (cl + cr); // average sound speed
-    Real pmid = .5 * (wli[IPR] + wri[IPR] + (wli[IVX]-wri[IVX]) * rhoa * ca);
-    Real umid = .5 * (wli[IVX] + wri[IVX] + (wli[IPR]-wri[IPR]) / (rhoa * ca));
-    Real rhol = wli[IDN] + (wli[IVX] - umid) * rhoa / ca; // mid-left density
-    Real rhor = wri[IDN] + (umid - wri[IVX]) * rhoa / ca; // mid-right density
-
-    //--- Step 3.  Compute sound speed in L,R
-    Real ql, qr;
-    if (GENERAL_EOS) {
-      Real gl = pmy_block->peos->AsqFromRhoP(rhol, pmid) * rhol / pmid;
-      Real gr = pmy_block->peos->AsqFromRhoP(rhor, pmid) * rhor / pmid;
-      ql = (pmid <= wli[IPR]) ? 1.0 :
-           (1.0 + (gl + 1) / std::sqrt(2 * gl) * (pmid / wli[IPR]-1.0));
-      qr = (pmid <= wri[IPR]) ? 1.0 :
-           (1.0 + (gr + 1) / std::sqrt(2 * gr) * (pmid / wri[IPR]-1.0));
-    } else {
-      ql = (pmid <= wli[IPR]) ? 1.0 :
-           (1.0 + (gamma + 1) / std::sqrt(2 * gamma) * (pmid / wli[IPR]-1.0));
-      qr = (pmid <= wri[IPR]) ? 1.0 :
-           (1.0 + (gamma + 1) / std::sqrt(2 * gamma) * (pmid / wri[IPR]-1.0));
-    }
-
-    //--- Step 4. Compute the max/min wave speeds based on L/R states
-
-    al = wli[IVX] - cl*ql;
-    ar = wri[IVX] + cr*qr;
 
     Real bp = ar > 0.0 ? ar : 0.0;
     Real bm = al < 0.0 ? al : 0.0;
