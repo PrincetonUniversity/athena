@@ -33,7 +33,7 @@ variable   = prim      # variables to be output
 dt         = 0.1       # time increment between outputs
 
 <output6>
-file_type  = rst       # restart dump
+file_type  = rst       # Restart dump
 dt         = 0.2       # time increment between outputs
 
 <time>

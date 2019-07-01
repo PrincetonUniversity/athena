@@ -81,7 +81,7 @@ struct LogicalLocation { // aggregate and POD type
 struct RegionSize {  // aggregate and POD type; do NOT reorder member declarations:
   Real x1min, x2min, x3min;
   Real x1max, x2max, x3max;
-  Real x1rat, x2rat, x3rat; // ratio of x(i)/x(i-1)
+  Real x1rat, x2rat, x3rat; // ratio of dxf(i)/dxf(i-1)
   // the size of the root grid or a MeshBlock should not exceed std::int32_t limits
   int nx1, nx2, nx3;        // number of active cells (not including ghost zones)
 };
@@ -160,6 +160,7 @@ enum class HydroBoundaryQuantity {cons, prim};
 enum class BoundaryCommSubset {mesh_init, gr_amr, all};
 // TODO(felker): consider generalizing/renaming to QuantityFormulation
 enum class FluidFormulation {evolve, background, disabled}; // rename background -> fixed?
+enum class UserHistoryOperation {sum, max, min};
 
 //----------------------------------------------------------------------------------------
 // function pointer prototypes for user-defined modules set at runtime

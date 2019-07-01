@@ -899,6 +899,7 @@ Mesh::~Mesh() {
   if (nuser_history_output_ > 0) {
     delete [] user_history_output_names_;
     delete [] user_history_func_;
+    delete [] user_history_ops_;
   }
   if (nint_user_mesh_data_>0) delete [] iuser_mesh_data;
   if (EOS_TABLE_ENABLED) delete peos_table;
@@ -1213,15 +1214,17 @@ void Mesh::AllocateUserHistoryOutput(int n) {
   nuser_history_output_ = n;
   user_history_output_names_ = new std::string[n];
   user_history_func_ = new HistoryOutputFunc[n];
+  user_history_ops_ = new UserHistoryOperation[n];
   for (int i=0; i<n; i++) user_history_func_[i] = nullptr;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func,
-//                                         const char *name)
+//                                         const char *name, UserHistoryOperation op)
 //  \brief Enroll a user-defined history output function and set its name
 
-void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name) {
+void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name,
+                                   UserHistoryOperation op) {
   std::stringstream msg;
   if (i >= nuser_history_output_) {
     msg << "### FATAL ERROR in EnrollUserHistoryOutput function" << std::endl
@@ -1231,6 +1234,7 @@ void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char 
   }
   user_history_output_names_[i] = name;
   user_history_func_[i] = my_func;
+  user_history_ops_[i] = op;
 }
 
 //----------------------------------------------------------------------------------------

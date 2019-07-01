@@ -32,7 +32,8 @@ def prepare(*args, **kwargs):
 
 def run(**kwargs):
     for i in resolution_range:
-        arguments = ['output2/dt=0.03',
+        arguments = ['output1/dt=0.03',
+                     'output2/dt=-1',  # disable .vtk outputs
                      'time/tlim=3.0',
                      'time/ncycle_out=0',
                      # L-going sound wave
@@ -57,23 +58,16 @@ def analyze():
     # The decay rate for a sound wave with a thermal conduction term is given by
     # decay rate = ((\gamma-1)^2*kappa/gamma/2)*k^2
     decay_rate = 2.0*_kappa/15.0*ksqr
-
-    nframe = 100
-    dumprate = 0.03
     analyze_status = True
     errors_abs = []
 
     for (nx, err_tol) in zip(resolution_range, error_rel_tols):
         logger.info('[Decaying 3D Linear Wave {}]: '
                     'Mesh size {} x {} x {}'.format(method, nx, nx/2, nx/2))
-        basename = 'bin/DecayLinWave-{}.block0.out2.'.format(nx)
-        max_vy = np.zeros(nframe)
-        tt = np.zeros(nframe)
-        # TODO(#237): Replace full 3D dataset output with user-defined .hst output
-        for i in range(nframe):
-            x1f, x2f, x3f, data = athena_read.vtk(basename + '{:05d}.vtk'.format(i))
-            max_vy[i] = np.max(data['vel'][..., 1])
-            tt[i] = i*dumprate
+        filename = 'bin/DecayLinWave-{}.hst'.format(nx)
+        hst_data = athena_read.hst(filename)
+        tt = hst_data['time']
+        max_vy = hst_data['max-v2']
 
         # estimate the decay rate from simulation, using weighted least-squares (WLS)
         yy = np.log(np.abs(max_vy))

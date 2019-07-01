@@ -12,6 +12,9 @@
 #include <algorithm>   // max()
 #include <cmath>
 #include <cstring>     // strcmp()
+#include <sstream>
+#include <stdexcept>  // runtime_error
+#include <string>
 #include <tuple>
 
 // Athena++ headers
@@ -48,6 +51,14 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
     pcoarsec = new KerrSchild(pmb, pin, true);
   } else if (std::strcmp(COORDINATE_SYSTEM, "gr_user") == 0) {
     pcoarsec = new GRUser(pmb, pin, true);
+  }
+
+  if (NGHOST % 2) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MeshRefinement constructor" << std::endl
+        << "Selected --nghost=" << NGHOST << " is incompatible with mesh refinement.\n"
+        << "Reconfigure with an even number of ghost cells " << std::endl;
+    ATHENA_ERROR(msg);
   }
 
   int nc1 = pmb->ncells1;

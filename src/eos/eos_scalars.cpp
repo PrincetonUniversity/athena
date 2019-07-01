@@ -113,8 +113,10 @@ void EquationOfState::PassiveScalarConservedToPrimitiveCellAverage(
         for (int i=il; i<=iu; ++i) {
           // Compute fourth-order approximation to cell-averaged primitive variables
           r(n,k,j,i) = r_cc(n,k,j,i) + C*laplacian_cc(n,k,j,i);
-          // Reapply primitive variable floors
-          ApplyPassiveScalarPrimitiveConservedFloors(s, w, r, n, k, j, i);
+          // Reapply primitive variable floors to cell-average of (prim) dimensionless
+          // concentration WITHOUT correcting cell-average of (cons) scalar mass
+          ApplyPassiveScalarFloors(r, n, k, j, i);
+          //ApplyPassiveScalarPrimitiveConservedFloors(s, w, r, n, k, j, i);
         }
       }
     }
@@ -166,14 +168,15 @@ void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &r, int n, int 
   // TODO(felker): generalize this to allow separate floors per species
   for (int n=0; n<NSCALARS; ++n) {
     Real& r_n  = r(n,i);
-    // apply (prim) density floor
+    // apply (prim) dimensionless concentration floor WITHOUT adjusting passive scalar
+    // mass (conserved), unlike in floor in standard EOS
     r_n = (r_n > scalar_floor_) ?  r_n : scalar_floor_;
   }
   return;
 }
 
-// currently only called in above 4th order routine
-// PassiveScalarConservedToPrimitiveCellAverage
+// currently unused. previously, only called in above 4th order routine:
+// PassiveScalarConservedToPrimitiveCellAverage()
 
 void EquationOfState::ApplyPassiveScalarPrimitiveConservedFloors(
     AthenaArray<Real> &s, const AthenaArray<Real> &w, AthenaArray<Real> &r,
@@ -184,7 +187,12 @@ void EquationOfState::ApplyPassiveScalarPrimitiveConservedFloors(
   Real& r_n  = r(n,k,j,i);
 
   s_n = (s_n < scalar_floor_*w_d) ?  scalar_floor_*w_d : s_n;
-  r_n = s_n*di;
 
+  // this next line, when applied indiscriminately, erases the accuracy gains performed in
+  // the 4th order stencils, since <r> != <s>*<1/di>, in general
+  r_n = s_n*di;
+  // however, if r_n is riding the variable floor, it probably should be applied so that
+  // s_n = rho*r_n is consistent (more concerned with conservation than order of accuracy
+  // when quantities are floored)
   return;
 }

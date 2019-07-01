@@ -179,7 +179,7 @@ class EquationOfState {
   Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
   Real density_floor_, pressure_floor_;  // density and pressure floors
   Real energy_floor_;                    // energy floor
-  Real scalar_floor_{0.0};               // dimensionless concentration scalar floor
+  Real scalar_floor_{std::sqrt(1024*float_min)}; // dimensionless concentration floor
   Real sigma_max_, beta_min_;            // limits on ratios of gas quantities to pmag
   Real gamma_max_;                       // maximum Lorentz factor
   Real rho_min_, rho_pow_;               // variables to control power-law denity floor

@@ -137,6 +137,8 @@ def main(**kwargs):
             except TestError as err:
                 test_results.append(False)
                 logger.error('---> Error in ' + str(err))
+                # do not measure runtime for failed/incomplete tests
+                test_times.append(None)
             else:
                 test_times.append(timer() - t0)
                 msg = 'Test {0} took {1:.3g} seconds to complete.'
