@@ -30,6 +30,7 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/utils.hpp"
+#include "../scalars/scalars.hpp"
 
 Real vflow, threshold;
 int RefinementCondition(MeshBlock *pmb);
@@ -83,6 +84,21 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             phydro->u(IEN,k,j,i) =
                 2.5/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
                                SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
+          }
+        }
+      }
+    }
+    if (NSCALARS > 0) {
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            for (int n=0; n<NSCALARS; ++n) {
+              if (std::fabs(pcoord->x2v(j)) > 0.25) {
+                pscalars->s(n,k,j,i) = n % 2;
+              } else {
+                pscalars->s(n,k,j,i) = abs(n % 2 - 1)*drat;
+              }
+            }
           }
         }
       }
