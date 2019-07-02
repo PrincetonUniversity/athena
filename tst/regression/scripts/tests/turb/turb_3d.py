@@ -62,6 +62,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     # read data from error file
     filenames = ['bin/turb_serial.hst',
                  'bin/turb_mpi1.hst',
@@ -84,12 +85,12 @@ def analyze():
     # check errors between runs w/wo MPI and different numbers of cores
     if diff[0] > 1.e-7:
         logger.warning("Turb runs with serial and 1 MPI rank are different %g", diff[0])
-        return False
+        analyze_status = False
     if diff[1] > 1.e-7:
         logger.warning("Turb runs with serial and 2 MPI ranks are different %g", diff[1])
-        return False
+        analyze_status = False
     if diff[2] > 1.e-7:
         logger.warning("Turb runs with serial and 4 MPI ranks are different %g", diff[2])
-        return False
+        analyze_status = False
 
-    return True
+    return analyze_status

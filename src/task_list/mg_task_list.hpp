@@ -28,8 +28,8 @@ class MultigridTaskList;
 //  \brief data and function pointer for an individual MGTask
 
 struct MGTask {
-  std::uint64_t task_id;      // encodes task using bit positions in MultigridTaskNames
-  std::uint64_t dependency;   // encodes dependencies to other tasks using " " " "
+  TaskID task_id;      // encodes task using bit positions in MultigridTaskNames
+  TaskID dependency;   // encodes dependencies to other tasks using " " " "
   TaskStatus (MultigridTaskList::*TaskFunc)(Multigrid*);  // ptr to a task
 };
 
@@ -76,56 +76,56 @@ class MultigridTaskList {
   MultigridDriver* pmy_mgdriver_;
   MGTask task_list_[64];
 
-  void AddMultigridTask(std::uint64_t id, std::uint64_t dep);
+  void AddMultigridTask(const TaskID& id, const TaskID& dep);
 };
 
 //----------------------------------------------------------------------------------------
 // 64-bit integers with "1" in different bit positions used to ID each Multigrid task.
 
 namespace MultigridTaskNames {
-const std::uint64_t NONE           = 0ULL;
-const std::uint64_t MG_STARTRECV0  = 1ULL<<0;
-const std::uint64_t MG_STARTRECV0F = 1ULL<<1;
-const std::uint64_t MG_STARTRECV1R = 1ULL<<2;
-const std::uint64_t MG_STARTRECV1B = 1ULL<<3;
-const std::uint64_t MG_STARTRECV2R = 1ULL<<4;
-const std::uint64_t MG_STARTRECV2B = 1ULL<<5;
-const std::uint64_t MG_STARTRECVL  = 1ULL<<6;
-const std::uint64_t MG_CLEARBND0   = 1ULL<<7;
-const std::uint64_t MG_CLEARBND0F  = 1ULL<<8;
-const std::uint64_t MG_CLEARBND1R  = 1ULL<<9;
-const std::uint64_t MG_CLEARBND1B  = 1ULL<<10;
-const std::uint64_t MG_CLEARBND2R  = 1ULL<<11;
-const std::uint64_t MG_CLEARBND2B  = 1ULL<<12;
-const std::uint64_t MG_CLEARBNDL   = 1ULL<<13;
-const std::uint64_t MG_SENDBND0    = 1ULL<<14;
-const std::uint64_t MG_SENDBND0F   = 1ULL<<15;
-const std::uint64_t MG_SENDBND1R   = 1ULL<<16;
-const std::uint64_t MG_SENDBND1B   = 1ULL<<17;
-const std::uint64_t MG_SENDBND2R   = 1ULL<<18;
-const std::uint64_t MG_SENDBND2B   = 1ULL<<19;
-const std::uint64_t MG_SENDBNDL    = 1ULL<<20;
-const std::uint64_t MG_RECVBND0    = 1ULL<<21;
-const std::uint64_t MG_RECVBND0F   = 1ULL<<22;
-const std::uint64_t MG_RECVBND1R   = 1ULL<<23;
-const std::uint64_t MG_RECVBND1B   = 1ULL<<24;
-const std::uint64_t MG_RECVBND2R   = 1ULL<<25;
-const std::uint64_t MG_RECVBND2B   = 1ULL<<26;
-const std::uint64_t MG_RECVBNDL    = 1ULL<<27;
-const std::uint64_t MG_SMOOTH1R    = 1ULL<<28;
-const std::uint64_t MG_SMOOTH1B    = 1ULL<<29;
-const std::uint64_t MG_SMOOTH2R    = 1ULL<<30;
-const std::uint64_t MG_SMOOTH2B    = 1ULL<<31;
-const std::uint64_t MG_PHYSBND0    = 1ULL<<32;
-const std::uint64_t MG_PHYSBND1R   = 1ULL<<33;
-const std::uint64_t MG_PHYSBND1B   = 1ULL<<34;
-const std::uint64_t MG_PHYSBND2R   = 1ULL<<35;
-const std::uint64_t MG_PHYSBND2B   = 1ULL<<36;
-const std::uint64_t MG_PHYSBNDL    = 1ULL<<37;
-const std::uint64_t MG_RESTRICT    = 1ULL<<38;
-const std::uint64_t MG_PROLONG     = 1ULL<<39;
-const std::uint64_t MG_FMGPROLONG  = 1ULL<<40;
-const std::uint64_t MG_CALCFASRHS  = 1ULL<<41;
+const TaskID NONE(0);
+const TaskID MG_STARTRECV0(1);
+const TaskID MG_STARTRECV0F(2);
+const TaskID MG_STARTRECV1R(3);
+const TaskID MG_STARTRECV1B(4);
+const TaskID MG_STARTRECV2R(5);
+const TaskID MG_STARTRECV2B(6);
+const TaskID MG_STARTRECVL(7);
+const TaskID MG_CLEARBND0(8);
+const TaskID MG_CLEARBND0F(9);
+const TaskID MG_CLEARBND1R(10);
+const TaskID MG_CLEARBND1B(11);
+const TaskID MG_CLEARBND2R(12);
+const TaskID MG_CLEARBND2B(13);
+const TaskID MG_CLEARBNDL(14);
+const TaskID MG_SENDBND0(15);
+const TaskID MG_SENDBND0F(16);
+const TaskID MG_SENDBND1R(17);
+const TaskID MG_SENDBND1B(18);
+const TaskID MG_SENDBND2R(19);
+const TaskID MG_SENDBND2B(20);
+const TaskID MG_SENDBNDL(21);
+const TaskID MG_RECVBND0(22);
+const TaskID MG_RECVBND0F(23);
+const TaskID MG_RECVBND1R(24);
+const TaskID MG_RECVBND1B(25);
+const TaskID MG_RECVBND2R(26);
+const TaskID MG_RECVBND2B(27);
+const TaskID MG_RECVBNDL(28);
+const TaskID MG_SMOOTH1R(29);
+const TaskID MG_SMOOTH1B(30);
+const TaskID MG_SMOOTH2R(31);
+const TaskID MG_SMOOTH2B(32);
+const TaskID MG_PHYSBND0(33);
+const TaskID MG_PHYSBND1R(34);
+const TaskID MG_PHYSBND1B(35);
+const TaskID MG_PHYSBND2R(36);
+const TaskID MG_PHYSBND2B(37);
+const TaskID MG_PHYSBNDL(38);
+const TaskID MG_RESTRICT(39);
+const TaskID MG_PROLONG(40);
+const TaskID MG_FMGPROLONG(41);
+const TaskID MG_CALCFASRHS(42);
 } // namespace MultigridTaskNames
 
 #endif // TASK_LIST_MG_TASK_LIST_HPP_

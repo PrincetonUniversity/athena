@@ -1,5 +1,5 @@
 <comment>
-problem   = MHD Kelvin Helmholtz instability
+problem   = MHD Kelvin-Helmholtz instability
 reference = "Lecoanet" test
 configure = --prob=kh -b
 

@@ -69,20 +69,19 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
                          FaceField &b, Real time, Real dt,
                          int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 namespace {
-Real hst_BxBy(MeshBlock *pmb, int iout);
-Real hst_dVxVy(MeshBlock *pmb, int iout);
-
-Real Omega_0, qshear;
+Real HistoryBxBy(MeshBlock *pmb, int iout);
+Real HistorydVxVy(MeshBlock *pmb, int iout);
 
 // Apply a density floor - useful for large |z| regions
 Real dfloor, pfloor;
+Real Omega_0, qshear;
 } // namespace
 
 //====================================================================================
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   AllocateUserHistoryOutput(2);
-  EnrollUserHistoryOutput(0, hst_BxBy, "-BxBy");
-  EnrollUserHistoryOutput(1, hst_dVxVy, "dVxVy");
+  EnrollUserHistoryOutput(0, HistoryBxBy, "-BxBy");
+  EnrollUserHistoryOutput(1, HistorydVxVy, "dVxVy");
   // Read problem parameters
   Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
   qshear  = pin->GetOrAddReal("problem","qshear",1.5);
@@ -98,7 +97,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (mesh_bcs[BoundaryFace::outer_x3] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(BoundaryFace::outer_x3, StratOutflowOuterX3);
   }
-
   return;
 }
 
@@ -551,7 +549,7 @@ void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
 
 namespace {
 
-Real hst_BxBy(MeshBlock *pmb, int iout) {
+Real HistoryBxBy(MeshBlock *pmb, int iout) {
   Real bxby = 0;
   int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
@@ -571,7 +569,7 @@ Real hst_BxBy(MeshBlock *pmb, int iout) {
 }
 
 
-Real hst_dVxVy(MeshBlock *pmb, int iout) {
+Real HistorydVxVy(MeshBlock *pmb, int iout) {
   Real dvxvy = 0.0;
   int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &w = pmb->phydro->w;

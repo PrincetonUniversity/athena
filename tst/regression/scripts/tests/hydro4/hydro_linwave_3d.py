@@ -94,6 +94,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
     data = athena_read.error_dat(filename)
@@ -119,11 +120,11 @@ def analyze():
             if (nx1_range[i] == 128 and rate < rate_tol[0]):
                 msg = "L-going sound wave converging at rate {} slower than {}"
                 logger.warning(msg.format(rate, rate_tol[0]))
-                return False
+                analyze_status = False
             if (rms_errs[i] > err_tol[0][i-1]):
                 msg = "L-going sound wave error {} is larger than tolerance {}"
                 logger.warning(msg.format(rms_errs[i], err_tol[0][i-1]))
-                return False
+                analyze_status = False
 
         # L-going entropy wave
         logger.info("Entropy wave error convergence:")
@@ -138,11 +139,11 @@ def analyze():
             if (nx1_range[i] == 128 and rate < rate_tol[1]):
                 msg = "L-going entropy wave converging at rate {} slower than {}"
                 logger.warning(msg.format(rate, rate_tol[1]))
-                return False
+                analyze_status = False
             if (rms_errs[i] > err_tol[1][i-1]):
                 msg = "L-going entropy wave error {} is larger than tolerance {}"
                 logger.warning(msg.format(rms_errs[i], err_tol[1][i-1]))
-                return False
+                analyze_status = False
 
         # Check that errors are identical for sound waves in each direction at default
         # 64x32x32 resolution
@@ -151,6 +152,6 @@ def analyze():
             msg = "L/R-going sound wave errors, {} and {}"
             msg += ", have a difference that is not close to round-off"
             logger.warning(msg.format(solver_results[-2, 4], solver_results[-1, 4]))
-            return False
+            analyze_status = False
 
-    return True
+    return analyze_status

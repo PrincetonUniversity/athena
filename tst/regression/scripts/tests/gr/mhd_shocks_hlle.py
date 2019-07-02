@@ -45,6 +45,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     headers_ref = [('dens',), ('Etot',), ('mom', 0), ('mom', 1), ('mom', 2), ('cc-B', 0),
                    ('cc-B', 1), ('cc-B', 2)]
     headers_new = [('dens',), ('Etot',), ('mom', 0), ('mom', 1), ('mom', 2), ('Bcc', 0),
@@ -72,9 +73,9 @@ def analyze():
             eps = comparison.l1_diff(x_ref, array_ref, x_new, array_new)
             if tol == 0.0:
                 if eps > 0.0:
-                    return False
+                    analyze_status = False
             else:
                 eps /= comparison.l1_norm(x_ref, array_ref)
                 if eps > tol or np.isnan(eps):
-                    return False
-    return True
+                    analyze_status = False
+    return analyze_status

@@ -11,12 +11,13 @@
 //   - iprob=2: tanh profile, with single-mode perturbation (Frank et al. 1996)
 //   - iprob=3: tanh profiles for v and d, SR test problem in Beckwith & Stone (2011)
 //   - iprob=4: tanh profiles for v and d, "Lecoanet" test
+//   - iprob=5: two resolved slip-surfaces with m=2 perturbation for the AMR test
 
 // C headers
 
 // C++ headers
 #include <algorithm>  // min, max
-#include <cmath>
+#include <cmath>      // log
 #include <cstring>    // strcmp()
 
 // Athena++ headers
@@ -29,9 +30,16 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../scalars/scalars.hpp"
 #include "../utils/utils.hpp"
 
-Real vflow, threshold;
+namespace {
+Real vflow;
+int iprob;
+Real PassiveDyeEntropy(MeshBlock *pmb, int iout);
+} // namespace
+
+Real threshold;
 int RefinementCondition(MeshBlock *pmb);
 
 //----------------------------------------------------------------------------------------
@@ -41,11 +49,17 @@ int RefinementCondition(MeshBlock *pmb);
 //  functions in this file.  Called in Mesh constructor.
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
+  vflow = pin->GetReal("problem","vflow");
+  iprob = pin->GetInteger("problem","iprob");
+
   if (adaptive) {
-    threshold = pin->GetReal("problem","thr");
+    threshold = pin->GetReal("problem", "thr");
     EnrollUserRefinementCondition(RefinementCondition);
   }
-  vflow = pin->GetReal("problem","vflow");
+  if (iprob == 4) {
+    AllocateUserHistoryOutput(1);
+    EnrollUserHistoryOutput(0, PassiveDyeEntropy, "tot-S");
+  }
   return;
 }
 
@@ -56,7 +70,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::int64_t iseed = -1 - gid;
   Real gm1 = peos->GetGamma() - 1.0;
-  int iprob = pin->GetInteger("problem","iprob");
 
   //--- iprob=1.  Uniform stream with density ratio "drat" located in region -1/4<y<1/4
   // moving at (-vflow) seperated by two slip-surfaces from background medium with d=1
@@ -264,6 +277,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     Real amp = pin->GetReal("problem","amp");
     // unstratified problem is the default
     Real drho_rho0 = pin->GetOrAddReal("problem", "drho_rho0", 0.0);
+    // set background vx to nonzero to evolve the KHI in a moving frame
+    Real vboost = pin->GetOrAddReal("problem", "vboost", 0.0);
     Real P0 = 10.0;
     Real a = 0.05;
     Real sigma = 0.2;
@@ -275,13 +290,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
-          // Lecoanet (2016) equation 8a)
-          Real dens = 1.0 + 0.5*drho_rho0*(std::tanh((pcoord->x2v(j)-z1)/a) -
-                                           std::tanh((pcoord->x2v(j)-z2)/a));
+          // Lecoanet (2015) equation 8a)
+          Real dens = 1.0 + 0.5*drho_rho0*(std::tanh((pcoord->x2v(j) - z1)/a) -
+                                           std::tanh((pcoord->x2v(j) - z2)/a));
           phydro->u(IDN,k,j,i) = dens;
 
-          Real v1 = vflow*(std::tanh((pcoord->x2v(j)-z1)/a)
-                           - std::tanh((pcoord->x2v(j)-z2)/a) - 1.0); // 8b)
+          Real v1 = vflow*(std::tanh((pcoord->x2v(j) - z1)/a)
+                           - std::tanh((pcoord->x2v(j) - z2)/a) - 1.0) // 8b)
+                    + vboost;
           // Currently, the midpoint approx. is applied in the momenta and energy calc
           phydro->u(IM1,k,j,i) = v1*dens;
 
@@ -292,7 +308,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           // by modifying the operands.  Centering the domain on x1=0.0 ensures reflective
           // symmetry, x1' -> -x1 NOT shift symmetry, x1' -> x1 + 0.5 (harder guarantee)
 
-          // For example, consider a cell in the right half of the dom ain with x1v > 0.0,
+          // For example, consider a cell in the right half of the domain with x1v > 0.0,
           // so that shift symmetry should hold w/ another cell's x1v'= -0.5 + x1v < 0.0
 
           // ISSUE: sin(2*pi*(-0.5+x1v)) != -sin(2*pi*x1v) in floating-point calculations
@@ -314,23 +330,23 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           // to [-pi/4, pi/4], e.g.) is NOT guaranteed:
           // sin(2*pi*(-0.5+x1v)) = sin(-pi + 2*pi*x1v) != -sin(2*pi*x1v)
 
-          // WORKAROUND: Averge inexact sin() with -sin() sample on opposite x1-half of
+          // WORKAROUND: Average inexact sin() with -sin() sample on opposite x1-half of
           // domain The assumption of periodic domain with x1min=-0.5 and x1max=0.5 is
           // hardcoded here (v2 is the only quantity in the IC with x1 dependence)
 
           Real ave_sine = std::sin(TWO_PI*pcoord->x1v(i));
           if (pcoord->x1v(i) > 0.0) {
-            ave_sine -= std::sin(TWO_PI*(-0.5+pcoord->x1v(i)));
+            ave_sine -= std::sin(TWO_PI*(-0.5 + pcoord->x1v(i)));
           } else {
-            ave_sine -= std::sin(TWO_PI*(0.5+pcoord->x1v(i)));
+            ave_sine -= std::sin(TWO_PI*(0.5 + pcoord->x1v(i)));
           }
           ave_sine /= 2.0;
 
-          // translated x1= x - 1/2 relative to Lecoanet (2016) shifts sine function by pi
+          // translated x1= x - 1/2 relative to Lecoanet (2015) shifts sine function by pi
           // (half-period) and introduces U_z sign change:
           Real v2 = -amp*ave_sine
-                    *(std::exp(-(SQR(pcoord->x2v(j)-z1))/(sigma*sigma)) +
-                      std::exp(-(SQR(pcoord->x2v(j)-z2))/(sigma*sigma))); // 8c), modified
+                    *(std::exp(-(SQR(pcoord->x2v(j) - z1))/(sigma*sigma)) +
+                      std::exp(-(SQR(pcoord->x2v(j) - z2))/(sigma*sigma))); // 8c), mod.
           phydro->u(IM2,k,j,i) = v2*dens;
 
           phydro->u(IM3,k,j,i) = 0.0;
@@ -340,18 +356,27 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                                                  + SQR(phydro->u(IM3,k,j,i)) )
                                    /phydro->u(IDN,k,j,i);
           }
-          // TODO(kfelker): add equation 8e) for color concentration of passive scalar
+          // color concentration of passive scalar
+          if (NSCALARS > 0) {
+            Real concentration = 0.5*(std::tanh((pcoord->x2v(j) - z2)/a)  // 8e)
+                                      - std::tanh((pcoord->x2v(j) - z1)/a) + 2.0);
+            // uniformly fill all scalar species to have equal concentration
+            constexpr int scalar_norm = NSCALARS > 0 ? NSCALARS : 1.0;
+            for (int n=0; n<NSCALARS; ++n) {
+              pscalars->s(n,k,j,i) = 1.0/scalar_norm*concentration*phydro->u(IDN,k,j,i);
+            }
+          }
         }
       }
     }
     // initialize uniform interface B
     if (MAGNETIC_FIELDS_ENABLED) {
-      Real b0 = pin->GetReal("problem","b0");
+      Real b0 = pin->GetReal("problem", "b0");
       b0 = b0/std::sqrt(4.0*(PI));
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie+1; i++) {
-            pfield->b.x1f(k,j,i) = b0*std::tanh((std::fabs(pcoord->x2v(j))-0.5)/a);
+            pfield->b.x1f(k,j,i) = b0*std::tanh((std::fabs(pcoord->x2v(j)) - 0.5)/a);
           }
         }
       }
@@ -471,3 +496,27 @@ int RefinementCondition(MeshBlock *pmb) {
   if (vgmax < 0.5*threshold) return -1;
   return 0;
 }
+
+namespace {
+Real PassiveDyeEntropy(MeshBlock *pmb, int iout) {
+  Real total_entropy = 0;
+  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
+  AthenaArray<Real> &r = pmb->pscalars->r;
+  AthenaArray<Real> &w = pmb->phydro->w;
+  AthenaArray<Real> volume; // 1D array of volumes
+  // allocate 1D array for cell volume used in usr def history
+  volume.NewAthenaArray(pmb->ncells1);
+
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      pmb->pcoord->CellVolume(k, j, pmb->is, pmb->ie, volume);
+      for (int i=is; i<=ie; i++) {
+        // no loop over NSCALARS; hardcode assumption that NSCALARS=1
+        Real specific_entropy = -r(0,k,j,i)*std::log(r(0,k,j,i));
+        total_entropy += volume(i)*w(IDN,k,j,i)*specific_entropy;  // Lecoanet (2016) eq 5
+      }
+    }
+  }
+  return total_entropy;
+}
+} // namespace
