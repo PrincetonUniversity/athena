@@ -1481,8 +1481,8 @@ void Schwarzschild::LowerVectorCell(
 //     index 2: second lower index
 // Notes:
 //   tetrad options:
-//     "cylindrical" (Gram-Schmidt on t, R, phi, z)
-//     "spherical" (Gram-Schmidt on t, r, theta, phi)
+//     "cylindrical" (Gram-Schmidt on t, z, R, phi)
+//     "spherical" (Gram-Schmidt on t, theta, phi, r)
 
 void Schwarzschild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
     AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
@@ -1555,9 +1555,9 @@ void Schwarzschild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
     e(3,2) = -sth / (r * fc_sqrt);
   } else if (rad_tetrad_ == "spherical") {
     e(0,0) = 1.0 / f_sqrt;
-    e(1,1) = f_sqrt;
-    e(2,2) = 1.0 / r;
-    e(3,3) = 1.0 / (r * sth);
+    e(1,3) = 1.0 / (r * sth);
+    e(2,1) = f_sqrt;
+    e(3,2) = 1.0 / r;
   }
 
   // Calculate covariant tetrad
@@ -1594,10 +1594,10 @@ void Schwarzschild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
     de[2][3][2] = -cth * f / (r * fc * fc_sqrt);
   } else if (rad_tetrad_ == "spherical") {
     de[1][0][0] = -m / (r2 * f * f_sqrt);
-    de[1][1][1] = m / (r2 * f_sqrt);
-    de[1][2][2] = -1.0 / r2;
-    de[1][3][3] = -1.0 / (r2 * sth);
-    de[2][3][3] = -cth / (r * sth2);
+    de[1][1][3] = -1.0 / (r2 * sth);
+    de[1][2][1] = m / (r2 * f_sqrt);
+    de[1][3][2] = -1.0 / r2;
+    de[2][1][3] = -cth / (r * sth2);
   }
 
   // Calculate Christoffel connection coefficients

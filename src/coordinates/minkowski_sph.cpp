@@ -1426,9 +1426,9 @@ void MinkowskiSph::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, in
 //     index 2: second lower index
 // Notes:
 //   tetrad options:
-//     "cartesian" (Gram-Schmidt on t, x, y, z)
-//     "cylindrical" (Gram-Schmidt on t, R, phi, z)
-//     "spherical" (Gram-Schmidt on t, r, theta, phi)
+//     "cartesian" (Gram-Schmidt on t, z, x, y)
+//     "cylindrical" (Gram-Schmidt on t, z, R, phi)
+//     "spherical" (Gram-Schmidt on t, theta, phi, r)
 
 void MinkowskiSph::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
     AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
@@ -1506,9 +1506,9 @@ void MinkowskiSph::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
     e(3,2) = -sth / r;
   } else if (rad_tetrad_ == "spherical") {
     e(0,0) = 1.0;
-    e(1,1) = 1.0;
-    e(2,2) = 1.0 / r;
-    e(3,3) = 1.0 / (r * sth);
+    e(1,3) = 1.0 / (r * sth);
+    e(2,1) = 1.0;
+    e(3,2) = 1.0 / r;
   }
 
   // Calculate covariant tetrad
@@ -1561,9 +1561,9 @@ void MinkowskiSph::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
     de[2][3][1] = -sth;
     de[2][3][2] = -cth / r;
   } else if (rad_tetrad_ == "spherical") {
-    de[1][2][2] = -1.0 / r2;
-    de[1][3][3] = -1.0 / (r2 * sth);
-    de[2][3][3] = -cth / (r * sth2);
+    de[1][1][3] = -1.0 / (r2 * sth);
+    de[1][3][2] = -1.0 / r2;
+    de[2][1][3] = -cth / (r * sth2);
   }
 
   // Calculate Christoffel connection coefficients

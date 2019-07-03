@@ -338,9 +338,9 @@ void Minkowski::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j
 //     index 2: second lower index
 // Notes:
 //   tetrad options:
-//     "cartesian" (Gram-Schmidt on t, x, y, z; trivial)
-//     "cylindrical" (Gram-Schmidt on t, R, phi, z)
-//     "spherical" (Gram-Schmidt on t, r, theta, phi)
+//     "cartesian" (Gram-Schmidt on t, z, x, y; trivial)
+//     "cylindrical" (Gram-Schmidt on t, z, R, phi)
+//     "spherical" (Gram-Schmidt on t, theta, phi, r)
 
 void Minkowski::Tetrad(Real x, Real y, Real z, AthenaArray<Real> &e,
     AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
@@ -389,9 +389,10 @@ void Minkowski::Tetrad(Real x, Real y, Real z, AthenaArray<Real> &e,
     }
   }
   if (rad_tetrad_ == "cartesian") {
-    for (int i = 0; i < 4; ++i) {
-      e(i,i) = 1.0;
-    }
+    e(0,0) = 1.0;
+    e(1,1) = 1.0;
+    e(2,2) = 1.0;
+    e(3,3) = 1.0;
   } else if (rad_tetrad_ == "cylindrical") {
     e(0,0) = 1.0;
     e(1,1) = x / rr;
@@ -401,14 +402,14 @@ void Minkowski::Tetrad(Real x, Real y, Real z, AthenaArray<Real> &e,
     e(3,3) = 1.0;
   } else if (rad_tetrad_ == "spherical") {
     e(0,0) = 1.0;
-    e(1,1) = x / r;
-    e(1,2) = y / r;
-    e(1,3) = z / r;
-    e(2,1) = x * z / (rr * r);
-    e(2,2) = y * z / (rr * r);
-    e(2,3) = -rr / r;
-    e(3,1) = -y / rr;
-    e(3,2) = x / rr;
+    e(1,1) = -y / rr;
+    e(1,2) = x / rr;
+    e(2,1) = x / r;
+    e(2,2) = y / r;
+    e(2,3) = z / r;
+    e(3,1) = x * z / (rr * r);
+    e(3,2) = y * z / (rr * r);
+    e(3,3) = -rr / r;
   }
 
   // Calculate covariant tetrad
@@ -441,22 +442,28 @@ void Minkowski::Tetrad(Real x, Real y, Real z, AthenaArray<Real> &e,
     de[2][2][1] = -x2 / rr3;
     de[2][2][2] = -x * y / rr3;
   } else if (rad_tetrad_ == "spherical") {
-    de[1][1][1] = (x2 + z*z) / r3;
-    de[1][1][2] = -x * y / r3;
-    de[1][1][3] = -x * z / r3;
-    de[1][2][1] = (r2 * y2 - rr2 * x2) * z / (rr3 * r3);
-    de[1][2][2] = -(rr2 * r2) * x * y * z / (rr3 * r3);
-    de[1][2][3] = -x * z*z / (rr * r3);
-    de[1][3][1] = x * y / rr3;
-    de[1][3][2] = y2 / rr3;
-    de[2][1][1] = -x * y / r3;
-    de[2][1][2] = (x2 * z*z) / r3;
-    de[2][1][3] = -y * z / r3;
-    de[2][2][1] = -(rr2 + r2) * x * y * z / (rr3 * r3);
-    de[2][2][2] = (r2 * x2 - rr2 * y2) * z / (rr3 * r3);
-    de[2][2][3] = -y * z*z / (rr3 * r3);
-    de[2][3][1] = -x2 / rr3;
-    de[2][3][2] = -x * y / rr3;
+    de[1][1][1] = x * y / rr3;
+    de[1][1][2] = y2 / rr3;
+    de[1][2][1] = (x2 + z2) / r3;
+    de[1][2][2] = -x * y / r3;
+    de[1][2][3] = -x * z / r3;
+    de[1][3][1] = (r2 * y2 - rr2 * x2) * z / (rr3 * r3);
+    de[1][3][2] = -(rr2 * r2) * x * y * z / (rr3 * r3);
+    de[1][3][3] = -x * z2 / (rr * r3);
+    de[2][1][1] = -x2 / rr3;
+    de[2][1][2] = -x * y / rr3;
+    de[2][2][1] = -x * y / r3;
+    de[2][2][2] = (x2 * z2) / r3;
+    de[2][2][3] = -y * z / r3;
+    de[2][3][1] = -(rr2 + r2) * x * y * z / (rr3 * r3);
+    de[2][3][2] = (r2 * x2 - rr2 * y2) * z / (rr3 * r3);
+    de[2][3][3] = -y * z2 / (rr3 * r3);
+    de[3][2][1] = -x * z / r3;
+    de[3][2][2] = -y * z / r3;
+    de[3][2][3] = rr2 / r3;
+    de[3][3][1] = rr * x / r3;
+    de[3][3][2] = rr * y / r3;
+    de[3][3][3] = rr * z / r3;
   }
 
   // Calculate Ricci rotation coefficients
