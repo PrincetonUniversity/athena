@@ -1,0 +1,83 @@
+<comment>
+problem   = equatorial beams of radiation around spinning black hole
+configure = -g -r --prob gr_rad_multibeam --coord kerr-schild -hdf5
+
+<job>
+problem_id = beam_kerr_eq  # name of run
+
+<time>
+nlim       = -1                 # maximum number of timesteps
+tlim       = 8.112259647021752  # maximum time to run
+cfl_number = 0.3                # fraction of Courant condition
+integrator = vl2                # time integration algorithm
+xorder     = 2                  # order of spatial reconstruction
+ncycle_out = 1                  # interval for stdout summary info
+
+<output1>
+file_type = hdf5                # output format
+variable  = uov                 # choice of variables to output
+id        = user                # name of output files
+dt        = 0.8112259647021751  # output cadence
+xdmf      = 0                   # whether to include auxiliary metadata file
+
+<mesh>
+nx1    = 32                  # number of cells in r-direction
+x1min  = 1.797029367425097   # minimum r
+x1max  = 6.0                 # maximum r
+x1rat  = 1.0383944957194686  # ratio of adjacent r-widths
+ix1_bc = outflow             # inner boundary
+ox1_bc = outflow             # outer boundary
+
+nx2    = 4                   # number of cells in theta-direction
+x2min  = 1.4726215563702154  # minimum theta
+x2max  = 1.6689710972195777  # maximum theta
+ix2_bc = outflow             # top boundary
+ox2_bc = outflow             # bottom boundary
+
+nx3    = 128                # number of cells in phi-direction
+x3min  = 0.0                # minimum phi
+x3max  = 6.283185307179586  # maximum phi
+ix3_bc = periodic           # clockwise boundary
+ox3_bc = periodic           # counterclockwise boundary
+
+refinement = none  # whether to use mesh refinement
+
+num_threads = 1  # number of threads per process
+
+<meshblock>
+nx1 = 32  # block size in r-direction
+nx2 = 4   # block size in theta-direction
+nx3 = 32  # block size in phi-direction
+
+<coord>
+m = 1.0                 # black hole mass M
+a = 0.5                 # black hole spin a (0 <= a/M < 1)
+rad_tetrad = spherical  # choice of radiation tetrad
+
+<hydro>
+gamma = 1.3333333333333333  # ratio of specific heats Gamma
+
+<radiation>
+n_polar     = 5    # number of polar angles in direction space
+n_azimuthal = 128  # number of azimuthal angles in direction space
+
+<problem>
+pos_a_1  = 2.34729635533386    # r-coordinate of beam A origin
+pos_a_2  = 1.5707963267948966  # theta-coordinate of beam A origin
+pos_a_3  = 0.0                 # phi-coordinate of beam A origin
+width_a  = 0.7                 # full proper diameter of beam A
+dir_a_1  = 0.0                 # relative r-direction of beam A center
+dir_a_2  = 0.0                 # relative theta-direction of beam A center
+dir_a_3  = 1.0                 # relative phi-direction of beam A center
+spread_a = 10.0                # full spread of beam A in direction, in degrees
+dii_dt_a = 1.0                 # injected I per unit time for beam A
+
+pos_b_1  = 3.5320888862379562  # r-coordinate of beam B origin
+pos_b_2  = 1.5707963267948966  # theta-coordinate of beam B origin
+pos_b_3  = 0.0                 # phi-coordinate of beam B origin
+width_b  = 0.7                 # full proper diameter of beam B
+dir_b_1  = 0.0                 # relative r-direction of beam B center
+dir_b_2  = 0.0                 # relative theta-direction of beam B center
+dir_b_3  = -1.0                # relative phi-direction of beam B center
+spread_b = 60.0                # full spread of beam B in direction, in degrees
+dii_dt_b = 10.0                # injected I per unit time for beam B

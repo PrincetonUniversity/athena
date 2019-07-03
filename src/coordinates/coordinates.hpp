@@ -841,6 +841,10 @@ class KerrSchild : public Coordinates {
                        Real *pa0, Real *pa1, Real *pa2, Real *pa3) final;
   void LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j, int i,
                        Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) final;
+
+  // ...to calculate orthonormal tetrad
+  virtual void Tetrad(Real x1, Real x2, Real x3, AthenaArray<Real> &e,
+      AthenaArray<Real> &e_0, AthenaArray<Real> &omega) final;
 };
 
 //----------------------------------------------------------------------------------------

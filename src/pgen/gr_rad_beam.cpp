@@ -79,6 +79,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   } else if (COORDINATE_SYSTEM == std::string("schwarzschild")) {
     cylindrical = false;
     spherical = true;
+  } else if (COORDINATE_SYSTEM == std::string("kerr-schild")) {
+    cylindrical = false;
+    spherical = true;
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in problem generator\n";

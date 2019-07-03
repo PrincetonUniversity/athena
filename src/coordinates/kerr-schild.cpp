@@ -28,7 +28,13 @@
 // C headers
 
 // C++ headers
-#include <cmath>  // abs(), cos(), log(), sin(), sqrt()
+#include <cmath>      // abs(), cos(), log(), sin(), sqrt()
+#include <cstdlib>    // exit
+#include <iostream>   // cout
+#include <ostream>    // endl
+#include <sstream>    // stringstream
+#include <stdexcept>  // runtime_error
+#include <string>     // string
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -47,9 +53,11 @@
 
 KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {
+
   // Set parameters
   bh_mass_ = pin->GetReal("coord", "m");
   bh_spin_ = pin->GetReal("coord", "a");
+  rad_tetrad_ = pin->GetOrAddString("coord", "rad_tetrad", "none");
   const Real &m = bh_mass_;
   const Real &a = bh_spin_;
 
@@ -1823,5 +1831,188 @@ void KerrSchild::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int 
   *pa_1 = g_10*a0 + g_11*a1 + g_12*a2 + g_13*a3;
   *pa_2 = g_20*a0 + g_21*a1 + g_22*a2 + g_23*a3;
   *pa_3 = g_30*a0 + g_31*a1 + g_32*a2 + g_33*a3;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for calculating orthonormal tetrad
+// Inputs:
+//   r, th, ph: spatial position
+// Outputs:
+//   e: 2D array for e_{(\hat{\mu})}^\nu:
+//     index 0: covariant orthonormal index
+//     index 1: contravariant coordinate index
+//   e_0: 1D array for {e_{(\hat{\mu})}}_0:
+//     index 0: covariant orthonormal index
+//   omega: 3D array for \omega^{\hat{\gamma}}_{\hat{\alpha}\hat{\beta}}:
+//     index 0: upper index
+//     index 1: first lower index
+//     index 2: second lower index
+// Notes:
+//   tetrad options:
+//     "spherical" (Gram-Schmidt on t, theta, phi, r)
+
+void KerrSchild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
+    AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
+
+  // Check tetrad
+  if (rad_tetrad_ != "spherical") {
+    std::stringstream msg;
+    msg << "### FATAL ERROR invalid tetrad choice" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
+  // Calculate useful quantities
+  Real m = bh_mass_;
+  Real a = bh_spin_;
+  Real a2 = SQR(a);
+  Real r2 = SQR(r);
+  Real sth = std::sin(th);
+  Real sth2 = SQR(sth);
+  Real cth = std::cos(th);
+  Real cth2 = SQR(cth);
+  Real delta = r2 - 2.0 * m * r + a2;
+  Real sigma = r2 + a2 * cth2;
+  Real sigma_sqrt = std::sqrt(sigma);
+  Real sigma2 = SQR(sigma);
+  Real sigma3 = sigma2 * sigma;
+  Real sigma_m = r2 - a2 * cth2;
+  Real fp = 1.0 + 2.0 * m * r / sigma;
+  Real fp_sqrt = std::sqrt(fp);
+  Real fm = 1.0 - 2.0 * m * r / sigma;
+
+  // Allocate intermediate arrays
+  Real eta[4][4] = {};
+  Real g[4][4] = {};
+  Real gi[4][4] = {};
+  Real dg[4][4][4] = {};
+  Real ei[4][4] = {};
+  Real de[4][4][4] = {};
+  Real gamma[4][4][4] = {};
+
+  // Set Minkowski metric
+  eta[0][0] = -1.0;
+  eta[1][1] = 1.0;
+  eta[2][2] = 1.0;
+  eta[3][3] = 1.0;
+
+  // Set covariant metric
+  g[0][0] = -fm;
+  g[0][1] = 2.0 * m * r / sigma;
+  g[0][3] = -2.0 * m * a * r * sth2 / sigma;
+  g[1][0] = g[0][1];
+  g[1][1] = fp;
+  g[1][3] = -a * sth2 * fp;
+  g[2][2] = sigma;
+  g[3][0] = g[0][3];
+  g[3][1] = g[1][3];
+  g[3][3] = (r2 + a2 + 2.0 * m * a2 * r * sth2 / sigma) * sth2;
+
+  // Set contravariant metric
+  gi[0][0] = -fp;
+  gi[0][1] = 2.0 * m * r / sigma;
+  gi[1][0] = gi[0][1];
+  gi[1][1] = delta / sigma;
+  gi[1][3] = a / sigma;
+  gi[2][2] = 1.0 / sigma;
+  gi[3][1] = gi[1][3];
+  gi[3][3] = 1.0 / (sigma * sth2);
+
+  // Set derivatives of covariant metric
+  dg[1][0][0] = -2.0 * m * sigma_m / sigma2;
+  dg[1][0][1] = -2.0 * m * sigma_m / sigma2;
+  dg[1][0][3] = 2.0 * m * a * sth2 * sigma_m / sigma2;
+  dg[1][1][0] = dg[1][0][1];
+  dg[1][1][1] = -2.0 * m * sigma_m / sigma2;
+  dg[1][1][3] = 2.0 * m * a * sth2 * sigma_m / sigma2;
+  dg[1][2][2] = 2.0 * r;
+  dg[1][3][0] = dg[1][0][3];
+  dg[1][3][1] = dg[1][1][3];
+  dg[1][3][3] = -2.0 * m * a2 * sth2 * sigma_m / sigma2 + 2.0 * r * sth2;
+  dg[2][0][0] = 4.0 * m * a2 * r * sth * cth / sigma2;
+  dg[2][0][1] = 4.0 * m * a2 * r * sth * cth / sigma2;
+  dg[2][0][3] = -4.0 * m * a * r * sth * cth * (r2 + a2) / sigma2;
+  dg[2][1][0] = dg[2][0][1];
+  dg[2][1][1] = 4.0 * m * a2 * r * sth * cth / sigma2;
+  dg[2][1][3] = -4.0 * m * a * r * sth * cth * (r2 + a2) / sigma2 - 2.0 * a * sth * cth;
+  dg[2][2][2] = -2.0 * a2 * sth * cth;
+  dg[2][3][0] = dg[2][0][3];
+  dg[2][3][1] = dg[2][1][3];
+  dg[2][3][3] = 2.0 * sth * cth / sigma2
+      * (2.0 * m * a2 * r * sth2 * (sigma + r2 + a2) + sigma2 * (r2 + a2));
+
+  // Set tetrad
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      e(i,j) = 0.0;
+    }
+  }
+  e(0,0) = fp_sqrt;
+  e(0,1) = -2.0 * m * r / (sigma * fp_sqrt);
+  e(1,1) = a * sth / sigma_sqrt;
+  e(1,3) = 1.0 / (sth * sigma_sqrt);
+  e(2,1) = 1.0 / fp_sqrt;
+  e(3,2) = 1.0 / sigma_sqrt;
+
+  // Calculate covariant tetrad
+  for (int i = 0; i < 4; ++i) {
+    e_0(i) = 0.0;
+    for (int j = 0; j < 4; ++j) {
+      e_0(i) += g[0][j] * e(i,j);
+    }
+  }
+
+  // Calculate inverse of tetrad
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        for (int l = 0; l < 4; ++l) {
+          ei[i][j] += eta[i][k] * g[j][l] * e(k,l);
+        }
+      }
+    }
+  }
+
+  // Set derivatives of tetrad
+  de[1][0][0] = -m * sigma_m / (sigma2 * fp_sqrt);
+  de[1][0][1] = 2.0 * m * sigma_m * (sigma + m * r) / (sigma3 * fp * fp_sqrt);
+  de[1][1][1] = -a * r * sth / (sigma * sigma_sqrt);
+  de[1][1][3] = -r / (sth * sigma * sigma_sqrt);
+  de[1][2][1] = m * sigma_m / (sigma2 * fp * fp_sqrt);
+  de[1][3][2] = -r / (sigma * sigma_sqrt);
+  de[2][0][0] = 2.0 * m * a2 * r * sth * cth / (sigma2 * fp_sqrt);
+  de[2][0][1] = -4.0 * m * a2 * r * sth * cth * (sigma + m * r) / (sigma3 * fp * fp_sqrt);
+  de[2][1][1] = a * cth * (r2 + a2) / (sigma * sigma_sqrt);
+  de[2][1][3] = -cth * (sigma - a2 * sth2) / (sth2 * sigma * sigma_sqrt);
+  de[2][2][1] = -2.0 * m * a2 * r * sth * cth / (sigma2 * fp * fp_sqrt);
+  de[2][3][2] = a2 * sth * cth / (sigma * sigma_sqrt);
+
+  // Calculate Christoffel connection coefficients
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        for (int l = 0; l < 4; ++l) {
+          gamma[i][j][k] += 0.5 * gi[i][l] * (dg[j][k][l] + dg[k][j][l] - dg[l][j][k]);
+        }
+      }
+    }
+  }
+
+  // Calculate Ricci rotation coefficients
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      for (int k = 0; k < 4; ++k) {
+        omega(i,j,k) = 0.0;
+        for (int l = 0; l < 4; ++l) {
+          for (int m = 0; m < 4; ++m) {
+            omega(i,j,k) += ei[i][l] * e(k,m) * de[m][j][l];
+            for (int n = 0; n < 4; ++n) {
+              omega(i,j,k) += ei[i][l] * e(k,m) * gamma[l][m][n] * e(j,n);
+            }
+          }
+        }
+      }
+    }
+  }
   return;
 }
