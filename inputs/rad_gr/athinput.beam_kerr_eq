@@ -6,18 +6,18 @@ configure = -g -r --prob gr_rad_multibeam --coord kerr-schild -hdf5
 problem_id = beam_kerr_eq  # name of run
 
 <time>
-nlim       = -1                 # maximum number of timesteps
-tlim       = 8.112259647021752  # maximum time to run
-cfl_number = 0.3                # fraction of Courant condition
-integrator = vl2                # time integration algorithm
-xorder     = 2                  # order of spatial reconstruction
-ncycle_out = 1                  # interval for stdout summary info
+nlim       = -1                  # maximum number of timesteps
+tlim       = 12.868801242160295  # maximum time to run
+cfl_number = 0.3                 # fraction of Courant condition
+integrator = vl2                 # time integration algorithm
+xorder     = 2                   # order of spatial reconstruction
+ncycle_out = 1                   # interval for stdout summary info
 
 <output1>
 file_type = hdf5                # output format
 variable  = uov                 # choice of variables to output
 id        = user                # name of output files
-dt        = 0.8112259647021751  # output cadence
+dt        = 1.2868801242160295  # output cadence
 xdmf      = 0                   # whether to include auxiliary metadata file
 
 <mesh>
@@ -79,5 +79,5 @@ width_b  = 0.7                 # full proper diameter of beam B
 dir_b_1  = 0.0                 # relative r-direction of beam B center
 dir_b_2  = 0.0                 # relative theta-direction of beam B center
 dir_b_3  = -1.0                # relative phi-direction of beam B center
-spread_b = 60.0                # full spread of beam B in direction, in degrees
-dii_dt_b = 10.0                # injected I per unit time for beam B
+spread_b = 10.0                # full spread of beam B in direction, in degrees
+dii_dt_b = 1.0                 # injected I per unit time for beam B
