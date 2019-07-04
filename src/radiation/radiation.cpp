@@ -1092,7 +1092,6 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       pmy_block->pcoord->CellMetric(k, j, is, ie, g, gi);
-      pmy_block->pcoord->CellVolume(k, j, is, ie, vol_);
       for (int i = is; i <= ie; ++i) {
 
         // Extract position, accounting for cylindrical/spherical coordinates
@@ -1137,17 +1136,37 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
           continue;
         }
 
-        // Normalize direction
-        Real dir_mag_sq = g(I11,i) * SQR(dir_1) + 2.0 * g(I12,i) * dir_1 * dir_2
-            + 2.0 * g(I13,i) * dir_1 * dir_3 + g(I22,i) * SQR(dir_2)
-            + 2.0 * g(I23,i) * dir_2 * dir_3 + g(I33,i) * SQR(dir_3);
-        Real dir_norm = 1.0 / std::sqrt(dir_mag_sq);
-        Real v1 = dir_1 * dir_norm;
-        Real v2 = dir_2 * dir_norm;
-        Real v3 = dir_3 * dir_norm;
-
         // Calculate tetrad
         pmy_block->pcoord->Tetrad(x1, x2, x3, e, e_0, omega);
+
+        // Calculate contravariant time component of direction
+        Real temp_a = g(I00,i);
+        Real temp_b = 2.0 * (g(I01,i) * dir_1 + g(I02,i) * dir_2 + g(I03,i) * dir_3);
+        Real temp_c = g(I11,i) * SQR(dir_1) + 2.0 * g(I12,i) * dir_1 * dir_2
+            + 2.0 * g(I13,i) * dir_1 * dir_3 + g(I22,i) * SQR(dir_2)
+            + 2.0 * g(I23,i) * dir_2 * dir_3 + g(I33,i) * SQR(dir_3);
+        Real dir_0 =
+            (-temp_b - std::sqrt(SQR(temp_b) - 4.0 * temp_a * temp_c)) / (2.0 * temp_a);
+
+        // Calculate covariant direction
+        Real dir_cov_0, dir_cov_1, dir_cov_2, dir_cov_3;
+        pmy_block->pcoord->LowerVectorCell(dir_0, dir_1, dir_2, dir_3, k, j, i,
+            &dir_cov_0, &dir_cov_1, &dir_cov_2, &dir_cov_3);
+
+        // Calculate covariant direction in tetrad frame
+        Real dir_tet_cov_0 = e(0,0) * dir_cov_0 + e(0,1) * dir_cov_1 + e(0,2) * dir_cov_2
+            + e(0,3) * dir_cov_3;
+        Real dir_tet_cov_1 = e(1,0) * dir_cov_0 + e(1,1) * dir_cov_1 + e(1,2) * dir_cov_2
+            + e(1,3) * dir_cov_3;
+        Real dir_tet_cov_2 = e(2,0) * dir_cov_0 + e(2,1) * dir_cov_1 + e(2,2) * dir_cov_2
+            + e(2,3) * dir_cov_3;
+        Real dir_tet_cov_3 = e(3,0) * dir_cov_0 + e(3,1) * dir_cov_1 + e(3,2) * dir_cov_2
+            + e(3,3) * dir_cov_3;
+
+        // Normalize covariant spatial direction in tetrad frame
+        dir_tet_cov_1 /= -dir_tet_cov_0;
+        dir_tet_cov_2 /= -dir_tet_cov_0;
+        dir_tet_cov_3 /= -dir_tet_cov_0;
 
         // Go through angles
         for (int l = zs; l <= ze; ++l) {
@@ -1156,20 +1175,9 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
             // Calculate combined angle index
             int lm = AngleInd(l, m);
 
-            // Calculate unit normal components in coordinate frame
-            Real n1 = 0.0;
-            Real n2 = 0.0;
-            Real n3 = 0.0;
-            for (int n = 0; n < 4; ++n) {
-              n1 += e(n,1) * nh(l,m,n);
-              n2 += e(n,2) * nh(l,m,n);
-              n3 += e(n,3) * nh(l,m,n);
-            }
-
             // Calculate angle to beam direction
-            Real mu = g(I11,i) * v1 * n1 + g(I12,i) * (v1 * n2 + v2 * n1)
-                + g(I13,i) * (v1 * n3 + v3 * n1) + g(I22,i) * v2 * n2
-                + g(I23,i) * (v2 * n3 + v3 * n2) + g(I33,i) * v3 * n3;
+            Real mu = nh(l,m,1) * dir_tet_cov_1 + nh(l,m,2) * dir_tet_cov_2
+                + nh(l,m,3) * dir_tet_cov_3;
 
             // Set to 0 if too far from beam in angle
             if (mu <= mu_min) {
