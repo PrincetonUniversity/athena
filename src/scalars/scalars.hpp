@@ -35,6 +35,7 @@ class PassiveScalars {
   // TODO(felker): pin is currently only used for checking ssprk5_4, otherwise unused.
   // Leaving as ctor parameter in case of run-time "nscalars" option
   PassiveScalars(MeshBlock *pmb, ParameterInput *pin);
+  ~PassiveScalars();
 
   // public data:
   // "conserved vars" = passive scalar mass

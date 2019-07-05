@@ -126,8 +126,14 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   //next step size
   h.NewAthenaArray(nc3, nc2, nc1);
   //construct ptrs to objects related to solving chemistry source term.
-  pchemnet = new ChemNetwork(pmb, pin);
-  podew = new ODEWrapper(pmb, pin);
+  pchemnet = new ChemNetwork(pmy_block, pin);
+  podew = new ODEWrapper(pmy_block, pin);
 #endif //INCLUDE_CHEMISTRY
+}
 
+PassiveScalars::~PassiveScalars() {
+#ifdef INCLUDE_CHEMISTRY
+  delete pchemnet;
+  delete podew;
+#endif //INCLUDE_CHEMISTRY
 }
