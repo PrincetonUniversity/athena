@@ -38,6 +38,7 @@
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
+#include "../radiation/radiation.hpp"
 
 //----------------------------------------------------------------------------------------
 // MeshBlock constructor: constructs coordinate, boundary condition, hydro, field
@@ -172,6 +173,12 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   peos = new EquationOfState(this, pin);
 
+  if (RADIATION_ENABLED) {
+    prad = new Radiation(this, pin);
+  } else {
+    prad = NULL;
+  }
+
   // Create user mesh data
   InitUserMeshBlockData(pin);
 
@@ -286,6 +293,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
 
   peos = new EquationOfState(this, pin);
+  if (RADIATION_ENABLED) {
+    prad = new Radiation(this, pin);
+  }
 
   InitUserMeshBlockData(pin);
 
@@ -323,6 +333,11 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     os += pscalars->s.GetSizeInBytes();
   }
 
+  if (RADIATION_ENABLED) {
+    std::memcpy(prad->ir.data(), &(mbdata[os]), prad->ir.GetSizeInBytes());
+    os += prad->ir.GetSizeInBytes();
+  }
+
   // load user MeshBlock data
   for (int n=0; n<nint_user_meshblock_data_; n++) {
     std::memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
@@ -354,6 +369,9 @@ MeshBlock::~MeshBlock() {
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
   if (NSCALARS > 0) delete pscalars;
+  if (RADIATION_ENABLED) {
+    delete prad;
+  }
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
   delete pbval;

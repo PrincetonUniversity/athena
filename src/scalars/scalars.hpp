@@ -16,6 +16,12 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/cc/bvals_cc.hpp"
+//chemistry headers
+#ifdef INCLUDE_CHEMISTRY
+#include "../chemistry/network/network.hpp" 
+#include "../chemistry/ode_wrapper.hpp"
+#include  CHEMNETWORK_HEADER //ChemNetwork class
+#endif //INCLUDE_CHEMISTRY
 
 class MeshBlock;
 class ParameterInput;
@@ -49,6 +55,17 @@ class PassiveScalars {
   int refinement_idx{-1};
 
   CellCenteredBoundaryVariable sbvar;
+
+  //chemistry variables
+#ifdef INCLUDE_CHEMISTRY
+  //chemistry source term
+  //s(ispec, k, j, i). read in s1(i, ispec), and loop over i,
+  //maybe parallelize i with openmpi later.
+  AthenaArray<Real> s_copy; //abundance of species copy at intermediate step
+  AthenaArray<Real> h; //next stepsize in chemistry solver
+  ChemNetwork *pchemnet; //pointer to chemical network
+  ODEWrapper *podew; //pointer to ode solver
+#endif //INCLUDE_CHEMISTRY
 
   // public functions:
   // KGF: use inheritance for these functions / overall class?

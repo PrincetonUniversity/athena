@@ -43,6 +43,10 @@
 #include "outputs/outputs.hpp"
 #include "parameter_input.hpp"
 #include "utils/utils.hpp"
+#ifdef INCLUDE_CHEMISTRY
+#include "task_list/chemistry_task_list.hpp"
+#endif
+#include "task_list/radiation_task_list.hpp"
 
 // MPI/OpenMP headers
 #ifdef MPI_PARALLEL
@@ -359,6 +363,46 @@ int main(int argc, char *argv[]) {
 #endif // ENABLE_EXCEPTIONS
   }
 
+//chemistry
+#ifdef INCLUDE_CHEMISTRY
+  ChemistryIntegratorTaskList *pchemlist = nullptr;
+#ifdef ENABLE_EXCEPTIONS
+  try {
+#endif
+    pchemlist = new ChemistryIntegratorTaskList(pinput, pmesh);
+#ifdef ENABLE_EXCEPTIONS
+  }
+  catch(std::bad_alloc& ba) {
+    std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
+      << "in creating task list " << ba.what() << std::endl;
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
+    return(0);
+  }
+#endif // ENABLE_EXCEPTIONS
+#endif //INCLUDE_CHEMISTRY
+
+//radiation
+  RadiationIntegratorTaskList *pradlist = nullptr;
+  if (RADIATION_ENABLED) {
+#ifdef ENABLE_EXCEPTIONS
+    try {
+#endif
+      pradlist = new RadiationIntegratorTaskList(pinput, pmesh);
+#ifdef ENABLE_EXCEPTIONS
+    }
+    catch(std::bad_alloc& ba) {
+      std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
+                << "in creating task list " << ba.what() << std::endl;
+#ifdef MPI_PARALLEL
+      MPI_Finalize();
+#endif
+      return(0);
+    }
+#endif // ENABLE_EXCEPTIONS
+  }
+
   //--- Step 6. --------------------------------------------------------------------------
   // Set initial conditions by calling problem generator, or reading restart file
 
@@ -451,8 +495,20 @@ int main(int argc, char *argv[]) {
         pmesh->pfgrd->Solve(stage, 0);
       else if (SELF_GRAVITY_ENABLED == 2) // multigrid
         pmesh->pmgrd->Solve(stage);
-      ptlist->DoTaskListOneStage(pmesh, stage);
+      if (POST_PROCESSING_ENABLED == 0) {
+        ptlist->DoTaskListOneStage(pmesh, stage);
+      }
     }
+
+    //radiation
+    if (RADIATION_ENABLED) {
+      pradlist->DoTaskListOneStage(pmesh, 1);
+    }
+
+    //chemistry
+#ifdef INCLUDE_CHEMISTRY
+    pchemlist->DoTaskListOneStage(pmesh, 1);
+#endif
 
     pmesh->UserWorkInLoop();
 

@@ -30,6 +30,10 @@
 #   -fft              enable FFT (requires the FFTW library)
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
 #   --grav=xxx        use xxx as the self-gravity solver
+#   -pp               enable post-processing
+#   --chemistry=choice enable chemistry, use choice as chemical network
+#   --cvode_path=path  path to CVODE libraries (chemistry requires the cvode library)
+#   --radiation=choice  enable radiative transfer, use choice for integrator
 #   --cxx=xxx         use xxx as the C++ compiler
 #   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
 #   --mpiccmd=name    use name as the command to call the MPI C++ compiler
@@ -193,6 +197,31 @@ parser.add_argument('-fft',
 parser.add_argument('--fftw_path',
                     default='',
                     help='path to FFTW libraries')
+
+# --chemistry argument
+parser.add_argument('--chemistry',
+    default=None,
+    choices=["gow16"],
+    help='select chemical network')
+
+# -radiation argument
+parser.add_argument('--radiation',
+    default=None,
+    choices=["const"],
+    help='enable and select radiation radiative transfer method')
+
+# --cvode_path argument
+parser.add_argument('--cvode_path',
+    type=str,
+    default='',
+    help='path to CVODE libraries')
+
+# -pp argument
+parser.add_argument('-pp',
+    action='store_true',
+    default=False,
+    help='enable post-processing')
+
 
 # -hdf5 argument
 parser.add_argument('-hdf5',
@@ -566,6 +595,44 @@ if args['cxx'] == 'clang++-apple':
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 
+# -chemistry argument
+if args['chemistry'] == "gow16":
+  definitions['CHEMISTRY_OPTION'] = 'INCLUDE_CHEMISTRY'
+  definitions['NUMBER_PASSIVE_SCALARS'] = '13'
+  #ChemNetwork class header file included in species.hpp
+  definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/gow16.hpp'
+  makefile_options['CHEMNET_FILE'] = 'src/chemistry/network/' \
+                                      + args['chemistry'] + '.cpp'
+  makefile_options['CHEMISTRY_FILE'] = 'src/chemistry/*.cpp'
+  makefile_options['LIBRARY_FLAGS'] += ' -lsundials_cvode -lsundials_nvecserial'
+else:
+  definitions['CHEMISTRY_OPTION'] = 'NOT_INCLUDE_CHEMISTRY'
+  makefile_options['CHEMNET_FILE'] = ''
+  makefile_options['CHEMISTRY_FILE'] = ''
+  definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/network.hpp'
+
+# --cvode_path=[path] argument
+if args['cvode_path'] != '':
+  makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['cvode_path']
+  makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['cvode_path']
+  makefile_options['LINKER_FLAGS'] += " -Wl,-rpath," + '%s/lib' % args['cvode_path']
+
+# -radiation argument
+if args['radiation'] != None:
+  definitions['RADIATION_ENABLED'] = '1'
+  makefile_options['RADIATION_FILE'] = args['radiation']+'.cpp'
+  definitions['RADIATION_INTEGRATOR'] = args['radiation']
+else:
+  definitions['RADIATION_ENABLED'] = '0'
+  makefile_options['RADIATION_FILE'] = 'const.cpp'
+  definitions['RADIATION_INTEGRATOR'] = 'none'
+
+# -pp argument
+if args['pp']:
+  definitions['POST_PROCESSING_ENABLED'] = '1'
+else:
+  definitions['POST_PROCESSING_ENABLED'] = '0'
+
 # -float argument
 if args['float']:
     definitions['SINGLE_PRECISION_ENABLED'] = '1'
@@ -806,6 +873,12 @@ print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:               ' + self_grav_string)
 print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
+print('  Chemistry:               '    + (args['chemistry'] if  args['chemistry'] \
+        !=  None else 'OFF'))
+print('  Radiation:               '    + (args['radiation'] if  args['radiation'] \
+        !=  None else 'OFF'))
+print('  cvode_path:          '        + args['cvode_path'])
+print('  Post processing:         '    + ('ON' if args['pp'] else 'OFF'))
 print('  Shearing Box BCs:           ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF'))

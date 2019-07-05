@@ -120,4 +120,14 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     dx3_.NewAthenaArray(nc1);
     // nu_scalar_tot_.NewAthenaArray(nc1);
   }
+#ifdef INCLUDE_CHEMISTRY
+  //allocate memory for the copy of s at intermediate step
+  s_copy.NewAthenaArray(nc1, NSCALARS);
+  //next step size
+  h.NewAthenaArray(nc3, nc2, nc1);
+  //construct ptrs to objects related to solving chemistry source term.
+  pchemnet = new ChemNetwork(pmb, pin);
+  podew = new ODEWrapper(pmb, pin);
+#endif //INCLUDE_CHEMISTRY
+
 }

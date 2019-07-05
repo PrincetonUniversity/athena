@@ -10,6 +10,9 @@ GENERAL_EOS_FILE = @GENERAL_EOS_FILE@
 RSOLVER_FILE = @RSOLVER_FILE@
 RSOLVER_DIR = @RSOLVER_DIR@
 MPIFFT_FILE = @MPIFFT_FILE@
+CHEMNET_FILE = @CHEMNET_FILE@
+CHEMISTRY_FILE = @CHEMISTRY_FILE@
+RADIATION_FILE = @RADIATION_FILE@
 
 # General compiler specifications
 
@@ -37,6 +40,10 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     src/eos/$(EOS_FILE) \
 	     src/eos/eos_high_order.cpp \
 	     src/eos/eos_scalars.cpp \
+		 $(wildcard $(CHEMISTRY_FILE)) \
+		 $(CHEMNET_FILE) \
+		 $(wildcard src/radiation/*.cpp) \
+		 $(wildcard src/radiation/integrators/$(RADIATION_FILE)) \
 	     $(wildcard src/fft/*.cpp) \
 	     $(wildcard src/field/*.cpp) \
 	     $(wildcard src/field/field_diffusion/*.cpp) \

@@ -1060,6 +1060,10 @@ void Mesh::OutputMeshStructure(int ndim) {
 //        this assumes that phydro->NewBlockTimeStep is already called
 
 void Mesh::NewTimeStep() {
+  if (POST_PROCESSING_ENABLED) { //this is called at the end of Mesh::Initialize()
+    dt = tlim/nlim;
+    return;
+  }
   MeshBlock *pmb = pblock;
 
   // prevent timestep from growing too fast in between 2x cycles (even if every MeshBlock

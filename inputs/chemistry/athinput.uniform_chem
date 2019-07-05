@@ -1,0 +1,99 @@
+<comment>
+problem   = Read C. G. Kim's MHD_32pc vtk output, single file.
+reference =
+configure = --prob=uniform_chem --chemistry=gow16 -radiation
+
+<job>
+problem_id = uniform_chem   # problem ID: basename of output filenames
+
+<output1>
+file_type  = vtk       # vtk data dump
+variable   = prim      # variables to be output
+dt         = 3.154e15  # time increment between outputs
+
+<output2>
+file_type  = rst       # restart data dump
+variable   = prim      # variables to be output
+dt         = 3.154e15  # time increment between outputs
+
+<time>
+cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = 10        # cycle limit
+tlim       = 3.154e16  # time limit, 1 Gyr
+
+<mesh>
+nx1        = 16        # Number of zones in X1-direction
+x1min      = -512      # minimum value of X1
+x1max      = 512       # maximum value of X1
+ix1_bc     = periodic  # ner-X1 boundary flag
+ox1_bc     = periodic  # outer-X1 boundary flag
+
+nx2        = 8        # Number of zones in X2-direction
+x2min      = -512      # minimum value of X2
+x2max      = 512       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
+
+nx3        = 8         # Number of zones in X3-direction
+x3min      = -2048      # minimum value of X3
+x3max      = 2048       # maximum value of X3
+ix3_bc     = outflow    # inner-X3 boundary flag
+ox3_bc     = outflow    # outer-X3 boundary flag
+
+<meshblock>
+nx1        =    4
+nx2        =    4
+nx3        =    4
+
+#hydro block is mendatory
+<hydro>
+gamma = 1.666666666666667 # gamma = C_p/C_v
+iso_sound_speed = 1.0     # isothermal sound speed
+
+<problem>
+nH         = 1.0921e+02 #density
+G0         = 1   #radiation field strength
+s_init      = 1.0e-6 #initial abundances
+
+<chemistry>
+#chemistry network parameters
+Zdg        = 1. #metallicity, dust and gas metallicity are the same. default = 1.
+CR         = 2e-16  #Cosmic-ray ionization rate per H
+#temperature
+const_T_flag = 1   #constant temperature flag. default 0/false.
+temperature = 20  #T in Kelvin, if const_T_flag is true.
+#chemistry solver parameters
+reltol     = 1.0e-6  #relative tolerance, default 1.0e-2
+abstol     = 1.0e-15 #absolute tolerance, default 1.0e-12
+abstol_OHx   = 1.0e-25 
+abstol_CHx   = 1.0e-25 
+abstol_CO   = 1.0e-25 
+abstol_H3+   = 1.0e-20 
+abstol_HCO+   = 1.0e-32 
+abstol_H2   = 1.0e-10 
+abstol_E   = 1.381e-18 #for internal energy. Set to 0.01 kb_
+user_jac   = 0       #flag for whether use user provided Jacobian. default false/0
+maxsteps   = 100000     #maximum number of steps in one integration. default 10000
+h_init      = 1e12    #first step of first zone. Default 0/CVODE algorithm.
+#code units
+unit_density_in_nH = 1.
+unit_radiation_in_draine1987 = 1
+unit_length_in_cm = 3.086e+18
+unit_vel_in_cms = 1.0e5
+isNCOeff_LVG = 0
+
+#default parameters
+xHe        = 0.1 #He per H, default = 0.1
+xC         = 1.6e-4 #C atom per H, this is Z=1 value, default 1.6e-4
+xO         = 3.2e-4 #O atom per H, this is Z=1 value, default 3.2e-4
+xS         = 3.5e-6 #S atom per H, this is Z=1 value, default 3.5e-6
+xSi        = 1.7e-6 #Si atom per H, this is Z=1 value, default 1.7e-6
+maxorder   = 3       #maximum order. Default 3.
+stldet     = 0       #stability limit detection. Default 0/false.
+#can also set absolute tolerance of individual species
+#abstol_H2  = 1.0e-5 #absolute tolerance of species H2, default abstol
+
+
+<radiation>
+n_frequency  = 8
+
