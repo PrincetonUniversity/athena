@@ -51,6 +51,7 @@ class TaskID {  // POD but not aggregate (there is a user-provided ctor)
   std::uint64_t bitfld_[kNField_];
 
   friend class TaskList;
+  friend class MultigridTaskList;
 };
 
 

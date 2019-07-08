@@ -128,7 +128,6 @@ void MultigridDriver::SetupMultigrid() {
   ntotallevel_ = nrootlevel_+nmblevel_-1;
   fmglevel_ = current_level_ = ntotallevel_-1;
 
-
   for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
     Multigrid *pmg = *itr;
     pmg->pmgbval->CopyNeighborInfoFromMeshBlock();
@@ -240,8 +239,8 @@ void MultigridDriver::TransferFromRootToBlocks() {
       Multigrid *pmg = *itr;
       LogicalLocation &loc=pmg->pmy_block_->loc;
       // KGF: possible std::int64_t overflow. Practically never occur with Multigrid
-      pmg->SetFromRootGrid(src, static_cast<int>(loc.lx1), static_cast<int>(loc.lx2),
-                           static_cast<int>(loc.lx3));
+      pmg->SetFromRootGrid(src, static_cast<int>(loc.lx3), static_cast<int>(loc.lx2),
+                           static_cast<int>(loc.lx1));
     }
   }
   return;

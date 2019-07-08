@@ -39,33 +39,38 @@ class MGBoundaryValues : public BoundaryBase {
   MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs);
   ~MGBoundaryValues();
 
-  void InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type);
-  void DestroyBoundaryData(BoundaryData<> &bd);
+  void InitBoundaryData(BoundaryQuantity type);
+  void DestroyBoundaryData();
 
   void ApplyPhysicalBoundaries();
-  void StartReceivingMultigrid(int nc, BoundaryQuantity type);
+  void StartReceivingMultigrid(BoundaryQuantity type);
   void ClearBoundaryMultigrid(BoundaryQuantity type);
-  int LoadMultigridBoundaryBufferSameLevel(
-      AthenaArray<Real> &src,
-      int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
-  bool SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
-                                    int nc, BoundaryQuantity type);
-  void SetMultigridBoundarySameLevel(
-      AthenaArray<Real> &dst,
-      int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
-  bool ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
-                                       int nc, BoundaryQuantity type);
+  bool SendMultigridBoundaryBuffers(BoundaryQuantity type);
+  bool ReceiveMultigridBoundaryBuffers(BoundaryQuantity type);
+  void ProlongateMultigridBoundaries();
   void CopyNeighborInfoFromMeshBlock();
 
  private:
   Multigrid *pmy_mg_;
   MGBoundaryFunc MGBoundaryFunction_[6];
-  BoundaryData<> bd_mggrav_;
+  BoundaryData<> bdata_;
+  AthenaArray<Real> cbuf_;
 
 #ifdef MPI_PARALLEL
   MPI_Comm mgcomm_;
-  int mg_grav_phys_id_; // for now, MPI assumes MGGravityDriver is associated driver
 #endif
+
+  int LoadMultigridBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb);
+  int LoadMultigridBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
+  int LoadMultigridBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb);
+  void SetMultigridBoundarySameLevel(Real *buf, const NeighborBlock& nb);
+  void SetMultigridBoundaryFromCoarser(Real *buf, const NeighborBlock& nb);
+  void SetMultigridBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
+  // functions specific to physics
+  int LoadMultigridBoundaryBufferToCoarserGravityMassCons(Real *buf,
+                                                          const NeighborBlock& nb);
+  void SetMultigridBoundaryFromCoarserGravityMassCons(Real *buf, const NeighborBlock& nb);
+  void SetMultigridBoundaryFromFinerGravityMassCons(Real *buf, const NeighborBlock& nb);
 
   friend class Multigrid;
 };

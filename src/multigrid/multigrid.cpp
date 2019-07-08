@@ -110,6 +110,8 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
     }
   }
 
+  current_level_ = nlevel_-1;
+
   // allocate arrays
   u_ = new AthenaArray<Real>[nlevel_];
   src_ = new AthenaArray<Real>[nlevel_];
@@ -482,9 +484,9 @@ void Multigrid::FMGProlongate() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck)
+//! \fn void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ck, int cj, int ci)
 //  \brief Load the data from the root grid
-void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck) {
+void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ck, int cj, int ci) {
   current_level_=0;
   AthenaArray<Real> &dst=u_[current_level_];
   for (int n=0; n<nvar_; n++) {

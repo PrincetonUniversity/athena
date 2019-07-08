@@ -76,7 +76,7 @@
 
 void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   MeshBlock *pmb = pmy_block_;
-  int &mylevel = pmb->loc.level;
+  int &mylevel = loc.level;
 
   // TODO(KGF): temporarily hardcode Hydro and Field array access for the below switch
   // around ApplyPhysicalBoundariesOnCoarseLevel()
@@ -156,7 +156,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     int cn = pmb->cnghost - 1;
     int si, ei, sj, ej, sk, ek;
     if (nb.ni.ox1 == 0) {
-      std::int64_t &lx1 = pmb->loc.lx1;
+      std::int64_t &lx1 = loc.lx1;
       si = pmb->cis, ei = pmb->cie;
       if ((lx1 & 1LL) == 0LL) ei += cn;
       else             si -= cn;
@@ -165,7 +165,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     if (nb.ni.ox2 == 0) {
       sj = pmb->cjs, ej = pmb->cje;
       if (pmb->block_size.nx2 > 1) {
-        std::int64_t &lx2 = pmb->loc.lx2;
+        std::int64_t &lx2 = loc.lx2;
         if ((lx2 & 1LL) == 0LL) ej += cn;
         else             sj -= cn;
       }
@@ -174,7 +174,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     if (nb.ni.ox3 == 0) {
       sk = pmb->cks, ek = pmb->cke;
       if (pmb->block_size.nx3 > 1) {
-        std::int64_t &lx3 = pmb->loc.lx3;
+        std::int64_t &lx3 = loc.lx3;
         if ((lx3 & 1LL) == 0LL) ek += cn;
         else             sk -= cn;
       }
@@ -218,13 +218,9 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
 
   int ris, rie, rjs, rje, rks, rke;
   if (ni == 0) {
-    ris = pmb->cis;
-    rie = pmb->cie;
-    if (nb.ni.ox1 == 1) {
-      ris = pmb->cie;
-    } else if (nb.ni.ox1 == -1) {
-      rie = pmb->cis;
-    }
+    ris = pmb->cis, rie = pmb->cie;
+    if (nb.ni.ox1 == 1)       ris = pmb->cie;
+    else if (nb.ni.ox1 == -1) rie = pmb->cis;
   } else if (ni == 1) {
     ris = pmb->cie + 1, rie = pmb->cie + 1;
   } else { //(ni ==  - 1)
@@ -232,7 +228,7 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
   }
   if (nj == 0) {
     rjs = pmb->cjs, rje = pmb->cje;
-    if (nb.ni.ox2 == 1) rjs = pmb->cje;
+    if (nb.ni.ox2 == 1)       rjs = pmb->cje;
     else if (nb.ni.ox2 == -1) rje = pmb->cjs;
   } else if (nj == 1) {
     rjs = pmb->cje + 1, rje = pmb->cje + 1;
@@ -241,7 +237,7 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
   }
   if (nk == 0) {
     rks = pmb->cks, rke = pmb->cke;
-    if (nb.ni.ox3 == 1) rks = pmb->cke;
+    if (nb.ni.ox3 == 1)       rks = pmb->cke;
     else if (nb.ni.ox3 == -1) rke = pmb->cks;
   } else if (nk == 1) {
     rks = pmb->cke + 1, rke = pmb->cke + 1;
@@ -271,7 +267,7 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
   for (auto fc_pair : pmr->pvars_fc_) {
     FaceField *var_fc = std::get<0>(fc_pair);
     FaceField *coarse_fc = std::get<1>(fc_pair);
-    int &mylevel = pmb->loc.level;
+    int &mylevel = loc.level;
     int rs = ris, re = rie + 1;
     if (rs == pmb->cis   && nblevel[nk+1][nj+1][ni  ] < mylevel) rs++;
     if (re == pmb->cie+1 && nblevel[nk+1][nj+1][ni+2] < mylevel) re--;

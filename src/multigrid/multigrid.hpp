@@ -58,7 +58,7 @@ class Multigrid {
   void Restrict();
   void ProlongateAndCorrect();
   void FMGProlongate();
-  void SetFromRootGrid(AthenaArray<Real> &src, int ci, int cj, int ck);
+  void SetFromRootGrid(AthenaArray<Real> &src, int ck, int cj, int ci);
   Real CalculateDefectNorm(MGNormType nrm, int n);
   Real CalculateTotal(MGVariable type, int n);
   void SubtractAverage(MGVariable type, int n, Real ave);
@@ -91,6 +91,9 @@ class Multigrid {
   int gid_, nlevel_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
   AthenaArray<Real> *u_, *def_, *src_, *uold_;
+
+  void RestrictOperation(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
+                         int nx1, int nx2, int nx3);
 
  private:
   TaskStates ts_;

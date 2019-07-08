@@ -19,22 +19,16 @@
 namespace BufferUtility {
 // 2x templated and overloaded functions
 // 4D
-template <typename T> void PackData(AthenaArray<T> &src, T *buf,
-                                    int sn, int en,
-                                    int si, int ei, int sj, int ej, int sk, int ek,
-                                    int &offset);
+template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
+         int sn, int en, int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 // 3D
-template <typename T> void PackData(AthenaArray<T> &src, T *buf,
-                                    int si, int ei, int sj, int ej, int sk, int ek,
-                                    int &offset);
+template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
+                           int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 // 4D
-template <typename T> void UnpackData(T *buf, AthenaArray<T> &dst,
-                                      int sn, int en,
-                                      int si, int ei, int sj, int ej, int sk, int ek,
-                                      int &offset);
+template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
+         int sn, int en, int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 // 3D
-template <typename T> void UnpackData(T *buf, AthenaArray<T> &dst,
-                                      int si, int ei, int sj, int ej, int sk, int ek,
-                                      int &offset);
+template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
+                      int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 } // namespace BufferUtility
 #endif // UTILS_BUFFER_UTILS_HPP_

@@ -65,6 +65,7 @@ class MultigridTaskList {
   TaskStatus Restrict(Multigrid *pmg);
   TaskStatus Prolongate(Multigrid *pmg);
   TaskStatus FMGProlongate(Multigrid *pmg);
+  TaskStatus ProlongateBoundary(Multigrid *pmg);
   TaskStatus CalculateFASRHS(Multigrid *pmg);
   TaskStatus StoreOldData(Multigrid *pmg);
 
@@ -74,7 +75,7 @@ class MultigridTaskList {
 
  private:
   MultigridDriver* pmy_mgdriver_;
-  MGTask task_list_[64];
+  MGTask task_list_[64*TaskID::kNField_];
 
   void AddMultigridTask(const TaskID& id, const TaskID& dep);
 };
@@ -112,20 +113,22 @@ const TaskID MG_RECVBND1B(25);
 const TaskID MG_RECVBND2R(26);
 const TaskID MG_RECVBND2B(27);
 const TaskID MG_RECVBNDL(28);
-const TaskID MG_SMOOTH1R(29);
-const TaskID MG_SMOOTH1B(30);
-const TaskID MG_SMOOTH2R(31);
-const TaskID MG_SMOOTH2B(32);
-const TaskID MG_PHYSBND0(33);
-const TaskID MG_PHYSBND1R(34);
-const TaskID MG_PHYSBND1B(35);
-const TaskID MG_PHYSBND2R(36);
-const TaskID MG_PHYSBND2B(37);
-const TaskID MG_PHYSBNDL(38);
-const TaskID MG_RESTRICT(39);
-const TaskID MG_PROLONG(40);
-const TaskID MG_FMGPROLONG(41);
-const TaskID MG_CALCFASRHS(42);
+const TaskID MG_PRLNGBND0(29);
+const TaskID MG_PRLNGBNDL(30);
+const TaskID MG_SMOOTH1R(31);
+const TaskID MG_SMOOTH1B(32);
+const TaskID MG_SMOOTH2R(33);
+const TaskID MG_SMOOTH2B(34);
+const TaskID MG_PHYSBND0(35);
+const TaskID MG_PHYSBND1R(36);
+const TaskID MG_PHYSBND1B(37);
+const TaskID MG_PHYSBND2R(38);
+const TaskID MG_PHYSBND2B(39);
+const TaskID MG_PHYSBNDL(40);
+const TaskID MG_RESTRICT(41);
+const TaskID MG_PROLONG(42);
+const TaskID MG_FMGPROLONG(43);
+const TaskID MG_CALCFASRHS(44);
 } // namespace MultigridTaskNames
 
 #endif // TASK_LIST_MG_TASK_LIST_HPP_
