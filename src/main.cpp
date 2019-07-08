@@ -631,6 +631,8 @@ int main(int argc, char *argv[]) {
   delete pmesh;
   delete ptlist;
   delete pouts;
+  delete pchemlist;
+  delete pradlist;
 
 #ifdef MPI_PARALLEL
   MPI_Finalize();

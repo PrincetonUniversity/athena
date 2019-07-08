@@ -1355,6 +1355,14 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     if (((turb_flag == 1) || (turb_flag == 2)) && (res_flag == 0))
       ptrbd->Driving();
 
+    //initialize ODE solver for chemistry
+#ifdef INCLUDE_CHEMISTRY
+    for (int i=0; i<nmb; ++i) {
+      MeshBlock *pmb = pmb_array[i];
+      pmb->pscalars->podew->Initialize(pin);
+    }
+#endif //INCLUDE_CHEMISTRY
+
     // Create send/recv MPI_Requests for all BoundaryData objects
 #pragma omp parallel for num_threads(nthreads)
     for (int i=0; i<nmb; ++i) {

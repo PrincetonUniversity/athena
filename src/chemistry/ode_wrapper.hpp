@@ -29,9 +29,10 @@ class PassiveScalars;
 //  \brief Wrapper for ODE solver, CVODE
 class ODEWrapper {
 public:
-  //Constructor: Initialize CVODE, allocate memory for the ODE solver.
   ODEWrapper(MeshBlock *pmb, ParameterInput *pin);
   ~ODEWrapper();
+  //Initialize CVODE
+  void Initialize(ParameterInput *pin);
   //Update abundance in PassiveScalars over time dt.
   // For each cell:
   // Step 1: Set the radiation field strength in ChemNetwork.

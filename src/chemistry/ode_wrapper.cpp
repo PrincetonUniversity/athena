@@ -35,16 +35,30 @@
 ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   int flag;
   pmy_block_ = pmb;
-  pmy_spec_ = pmb->pscalars;
   dense_matrix_ = NULL,
   dense_ls_ = NULL,
   //allocate y_
   y_ = N_VNew_Serial(NSCALARS);
   CheckFlag((void *)y_, "N_VNew_Serial", 0);
   ydata_ = NV_DATA_S(y_);
-  
-  //tolerance
   reltol_ = pin->GetOrAddReal("chemistry", "reltol", 1.0e-2);
+}
+
+ODEWrapper::~ODEWrapper() {
+  NV_DATA_S(y_) = ydata_;
+  //Free y_ vector
+  N_VDestroy_Serial(y_);
+  // Free integrator memory
+  CVodeFree(&cvode_mem_);
+}
+
+void ODEWrapper::Initialize(ParameterInput *pin) {
+  //Note: this cannot be in the constructor, since it needs the PassiveScalars
+  //class, and the ODEWrapper class is constructed in the PassiveScalars constructor.
+  int flag;
+  pmy_spec_ = pmy_block_->pscalars;
+
+  //tolerance
   Real abstol_all = pin->GetOrAddReal("chemistry", "abstol", 1.0e-12);
   for (int i=0; i<NSCALARS; i++) {
     abstol_[i] = pin->GetOrAddReal("chemistry",
@@ -143,16 +157,8 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   //Free abstol_ vector
   N_VDestroy_Serial(abstol_vec);
   
+  return;
 }
-
-ODEWrapper::~ODEWrapper() {
-  NV_DATA_S(y_) = ydata_;
-  //Free y_ vector
-  N_VDestroy_Serial(y_);
-  // Free integrator memory
-  CVodeFree(&cvode_mem_);
-}
-
 
 void ODEWrapper::Integrate() {
   int is = pmy_block_->is;
