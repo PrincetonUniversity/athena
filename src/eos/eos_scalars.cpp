@@ -143,7 +143,9 @@ void EquationOfState::PassiveScalarPrimitiveToConserved(
           const Real &w_d  = w(IDN,k,j,i);
           //for (int n=0; n<NSCALARS; ++n) {
           Real& s_n  = s(n,k,j,i);
-          const Real& r_n  = r(n,k,j,i);
+          Real& r_n  = r(n,k,j,i);
+          //apply passive scalar to primative concentration
+          r_n = (r_n < scalar_floor_) ?  scalar_floor_ : r_n;
           s_n = r_n*w_d;
         }
       }
