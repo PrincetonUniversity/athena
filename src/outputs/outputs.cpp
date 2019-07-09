@@ -500,8 +500,15 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     std::string root_name_cons = "s";
     std::string root_name_prim = "r";
     for (int n=0; n<NSCALARS; n++) {
+#ifdef INCLUDE_CHEMISTRY
+      std::string scalar_name_cons = root_name_cons + 
+                                      psclr->pchemnet->species_names[n];
+      std::string scalar_name_prim = root_name_prim +
+                                      psclr->pchemnet->species_names[n];
+#else
       std::string scalar_name_cons = root_name_cons + std::to_string(n);
       std::string scalar_name_prim = root_name_prim + std::to_string(n);
+#endif //INCLUDE_CHEMISTRY
       if (output_params.variable.compare(scalar_name_cons) == 0 ||
           output_params.variable.compare("cons") == 0) {
         pod = new OutputData;

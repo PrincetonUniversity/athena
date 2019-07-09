@@ -132,7 +132,7 @@ void EquationOfState::PassiveScalarConservedToPrimitiveCellAverage(
 // \brief Converts primitive variables into conservative variables
 
 void EquationOfState::PassiveScalarPrimitiveToConserved(
-    const AthenaArray<Real> &r, const AthenaArray<Real> &w,
+    AthenaArray<Real> &r, const AthenaArray<Real> &w,
     AthenaArray<Real> &s, Coordinates *pco,
     int il, int iu, int jl, int ju, int kl, int ku) {
   for (int n=0; n<NSCALARS; ++n) {
