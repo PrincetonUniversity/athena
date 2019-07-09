@@ -19,7 +19,7 @@
 //  \brief namespace containing chemistry utilities.
 //======================================================================================
 #include "chemistry_utils.hpp"
-#include "../bvals/bvals.hpp"
+#include "../../bvals/bvals.hpp"
 #include <math.h>
 #include <vector>     // vector container
 #include <sstream>    // stringstream

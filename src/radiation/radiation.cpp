@@ -32,9 +32,13 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin)
 {
   // read in the parameters
   integrator = RADIATION_INTEGRATOR;
-	nfreq = pin->GetOrAddInteger("radiation","n_frequency",1);
-  
   pmy_block = pmb;
+  //number of frequency bands
+#ifdef INCLUDE_CHEMISTRY
+  nfreq = pmb->pscalars->pchemnet->n_freq_;
+#else
+	nfreq = pin->GetOrAddInteger("radiation","n_frequency",1);
+#endif // INCLUDE_CHEMISTRY
   
 	if (integrator == "six_ray") {
 		nang = 6;
@@ -52,7 +56,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin)
   
   
   // allocate arrays
-  int ncells1 = pmy_block->block_size.nx1 + 2*(NGHOST);
+  int ncells1 = pmy_block->ncells1;
   int ncells2 = 1, ncells3 = 1;
   if (pmy_block->block_size.nx2 > 1) ncells2 = pmy_block->block_size.nx2 + 2*(NGHOST);
   if (pmy_block->block_size.nx3 > 1) ncells3 = pmy_block->block_size.nx3 + 2*(NGHOST);

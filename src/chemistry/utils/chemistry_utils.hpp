@@ -11,7 +11,7 @@
 //======================================================================================
 
 #include <string>
-#include "../athena.hpp"
+#include "../../athena.hpp"
 
 namespace ChemistryUtility
 {

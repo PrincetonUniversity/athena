@@ -62,7 +62,7 @@ class PassiveScalars {
   //chemistry source term
   //s(ispec, k, j, i). read in s1(i, ispec), and loop over i,
   //maybe parallelize i with openmpi later.
-  AthenaArray<Real> s_copy; //abundance of species copy at intermediate step
+  AthenaArray<Real> r_copy; //abundance of species copy at intermediate step
   AthenaArray<Real> h; //next stepsize in chemistry solver
   ChemNetwork *pchemnet; //pointer to chemical network
   ODEWrapper *podew; //pointer to ode solver

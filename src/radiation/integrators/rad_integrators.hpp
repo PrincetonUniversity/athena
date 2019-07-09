@@ -27,7 +27,6 @@ class NeighborBlock;
 class RadIntegrator {
   friend class Radiation;
   friend class BoundaryValues;
-  friend class RadiationIntegratorTaskList;
 public:
   RadIntegrator(Radiation *prad, ParameterInput *pin);
   ~RadIntegrator();
@@ -35,29 +34,18 @@ public:
   Radiation *pmy_rad;
   MeshBlock *pmy_mb;
 
-#ifdef INCLUDE_CHEMISTRY
-  int ncol;
-  AthenaArray<Real> col;
-  AthenaArray<Real> col_avg, col_Htot, col_CO, col_H2,  col_C;//TODO:for output
-  ChemNetwork* pmy_chemnet;
-  //calcuate column within each meshblock
-  void GetColMB(int direction);
-  //update column density after receive boundary.
-  void UpdateCol(int direction);
+  //average radiation field in all directions to output the radiation field
+  //strengths.
+  void CopyToOutput();
+
   //calcuate total column and update radiation
   void UpdateRadiation(int direction);
-  //copy column density and average radiation field to output
-  void CopyToOutput();
-  void SetSixRayNeighbors();
+
+#ifdef INCLUDE_CHEMISTRY
+  int ncol;
+  AthenaArray<Real> col, col_avg;
+  ChemNetwork* pmy_chemnet;
 #endif
-private:
-  Real rad_G0_; //unshielded radiation field strengh, uniform.
-  Real unit_length_in_cm_;
-  //six_ray: factors for column in current and previous cell
-  Real f_cell;
-  Real f_prev; 
-  //index for direction of rays in six-ray
-  NeighborBlock* pfacenb_[6]; //TODO:uniform mesh for now
 };
 
 #endif // RADINTEGRATORS_HPP

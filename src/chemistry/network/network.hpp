@@ -39,16 +39,21 @@ public:
   static int WrapRHS(const realtype t, const N_Vector y,
                      N_Vector ydot, void *user_data);
 
-  //------------All functions below has to be overloaded------------
-  // Note that the RHS and Jac does NOT have user_data. All parameters should
-  // be passed to the class as private variables.
-  // right hand side of ode
-  virtual void RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS]) = 0;
-  //Jacobian
+  //Jacobian, only necessary when the input parameter user_jac=1 in <chemistry>
+  //if user_jac=0 (default), then numerical jacobian is used.
   virtual void Jacobian(const Real t,
                const Real y[NSCALARS], const Real fy[NSCALARS], 
                Real jac[NSCALARS][NSCALARS], Real tmp1[NSCALARS],
-               Real tmp2[NSCALARS], Real tmp3[NSCALARS]) = 0;
+               Real tmp2[NSCALARS], Real tmp3[NSCALARS]);
+
+  //------------All functions below has to be overloaded------------
+  // Note that the RHS and Jac does NOT have user_data. All parameters should
+  // be passed to the class as private variables.
+  // initialize the parameters for chemical network. Called before the ODE
+  // solver in ODEWrapper::Integrate()
+  virtual void InitializeNextStep(const int k, const int j, const int i) = 0;
+  // right hand side of ode
+  virtual void RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS]) = 0;
 };
 
 #endif // NETWORK_HPP

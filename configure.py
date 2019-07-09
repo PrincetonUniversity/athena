@@ -603,7 +603,7 @@ if args['chemistry'] == "gow16":
   definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/gow16.hpp'
   makefile_options['CHEMNET_FILE'] = 'src/chemistry/network/' \
                                       + args['chemistry'] + '.cpp'
-  makefile_options['CHEMISTRY_FILE'] = 'src/chemistry/*.cpp'
+  makefile_options['CHEMISTRY_FILE'] = 'src/chemistry/*.cpp src/chemistry/utils/*.cpp'
   makefile_options['LIBRARY_FLAGS'] += ' -lsundials_cvode -lsundials_nvecserial'
 else:
   definitions['CHEMISTRY_OPTION'] = 'NOT_INCLUDE_CHEMISTRY'

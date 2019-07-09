@@ -30,11 +30,11 @@
 #include "../../hydro/hydro.hpp"
 #include "../../radiation/radiation.hpp"
 #include "../../radiation/integrators/rad_integrators.hpp"
-#include "../../utils/chemistry_utils.hpp"
-#include "../thermo.hpp"
+#include "../utils/chemistry_utils.hpp"
+#include "../utils/thermo.hpp"
+#include "../../defs.hpp"
 
 //c++ header
-#include <stdexcept>  // std::runtime_error()
 #include <sstream>    // stringstream
 #include <iostream>   // endl
 #include <math.h> //a^x = pow(a,x)
@@ -287,15 +287,6 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 	//number of species and a list of name of species
   pmy_spec_ = pmb->pscalars;
 	pmy_mb_ = pmb;
-  //check whether number of frequencies equal to the input file specification
-  const int nfreq = pin->GetOrAddInteger("radiation", "n_frequency",1);
-  std::stringstream msg; //error message
-  if (nfreq != n_freq_) {
-    msg << "### FATAL ERROR in ChemNetwork constructor" << std::endl
-      << "number of frequencies in radiation: " << nfreq 
-      << " not equal to that in chemistry: " << n_freq_  << std::endl;
-    throw std::runtime_error(msg.str().c_str());
-  }
 
 	//set the parameters from input file
 	zdg_ = pin->GetOrAddReal("chemistry", "Zdg", 1.);//dust and gas metallicity
@@ -405,8 +396,9 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS])
       }
       printf("\n");
       printf("nH_ = %.2e\n", nH_);
-      throw std::runtime_error(
-             "ChemNetwork (gow16): RHS(yprev): nan or inf\n");
+      std::stringstream msg;
+      msg << "ChemNetwork (gow16): RHS(yprev): nan or inf" << std::endl;
+      ATHENA_ERROR(msg);
     }
   }
 
@@ -495,8 +487,9 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS])
       }
       printf("\n");
       printf("nH_ = %.2e\n", nH_);
-      throw std::runtime_error(
-          "ChemNetwork (gow16): RHS(ydot): nan or inf\n");
+      std::stringstream msg;
+      msg << "ChemNetwork (gow16): RHS(ydot): nan or inf" << std::endl;
+      ATHENA_ERROR(msg);
     }
   }
 
@@ -1013,7 +1006,9 @@ Real ChemNetwork::dEdt_(const Real y[NSCALARS+ngs_]) {
 			printf("%s: %.2e  ", species_names_all_[i].c_str(), y[i]);
 		}
 		printf("\n");
-    throw std::runtime_error("ChemNetwork (gow16): dEdt: nan or inf number\n");
+    std::stringstream msg;
+    msg << "ChemNetwork (gow16): dEdt: nan or inf number" << std::endl;
+    ATHENA_ERROR(msg);
 	}
   return dEdt;
 }

@@ -71,6 +71,7 @@ private:
   N_Vector y_;
   Real *ydata_;
   Real h_init_;
+  int output_zone_sec_;
 
   //CVODE checkflag
   void CheckFlag(const void *flagvalue, const char *funcname, 

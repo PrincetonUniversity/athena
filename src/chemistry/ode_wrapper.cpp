@@ -28,6 +28,8 @@
 #include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
 #include "../scalars/scalars.hpp"
+#include "../eos/eos.hpp"
+#include "../hydro/hydro.hpp"
 
 // this class header
 #include "ode_wrapper.hpp"
@@ -42,6 +44,7 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   CheckFlag((void *)y_, "N_VNew_Serial", 0);
   ydata_ = NV_DATA_S(y_);
   reltol_ = pin->GetOrAddReal("chemistry", "reltol", 1.0e-2);
+  output_zone_sec_ = pin->GetOrAddInteger("chemistry", "output_zone_sec", 0);
 }
 
 ODEWrapper::~ODEWrapper() {
@@ -167,7 +170,7 @@ void ODEWrapper::Integrate() {
   int ie = pmy_block_->ie;
   int je = pmy_block_->je;
   int ke = pmy_block_->ke;
-  Real *pdata_s_copy = pmy_spec_->s_copy.data();
+  Real *pdata_r_copy = pmy_spec_->r_copy.data();
   Real tinit = pmy_block_->pmy_mesh->time;
   Real dt = pmy_block_->pmy_mesh->dt;
   int ncycle = pmy_block_->pmy_mesh->ncycle;
@@ -181,19 +184,19 @@ void ODEWrapper::Integrate() {
   begin = std::clock();
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-      //copy s to s_copy
+      //copy r to r_copy
       for (int ispec=0; ispec<NSCALARS; ispec++) {
         for (int i=is; i<=ie; ++i) {
-          pmy_spec_->s_copy(i, ispec) = pmy_spec_->s(ispec, k, j, i); 
+          pmy_spec_->r_copy(i, ispec) = pmy_spec_->r(ispec, k, j, i); 
         }
       }
       //loop over each cell
       for (int i=is; i<=ie; ++i) {
         //step 1: initialize chemistry network, eg: density, radiation
-        NV_DATA_S(y_) = pdata_s_copy + i*NSCALARS;
+        NV_DATA_S(y_) = pdata_r_copy + i*NSCALARS;
         pmy_spec_->pchemnet->InitializeNextStep(k, j, i);
         //step 2: re-initialize CVODE with starting time t, and vector y
-        //allocate s_copy(i, *) to y_.
+        //allocate r_copy(i, *) to y_.
         //TODO: make sure Real and realtype are the same.
         flag = CVodeReInit(cvode_mem_, tinit, y_);
         CheckFlag(&flag, "CVodeReInit", 1);
@@ -215,18 +218,39 @@ void ODEWrapper::Integrate() {
         }
       }
 
-      //copy s_copy back to s
+      //copy r_copy back to r
       for (int ispec=0; ispec<NSCALARS; ispec++) {
         for (int i=is; i<=ie; ++i) {
-					pmy_spec_->s(ispec, k, j, i) = pmy_spec_->s_copy(i, ispec);
+					pmy_spec_->r(ispec, k, j, i) = pmy_spec_->r_copy(i, ispec);
         }
       }
     }
   }
   end = std::clock();
-  elapsed_secs = Real(end - begin) / CLOCKS_PER_SEC;
-  printf("ncycle = %d, total time in sec = %.2e, zone/sec=%.2e\n",
-      ncycle, elapsed_secs, elapsed_secs/Real(nzones) );
+  if (output_zone_sec_) {
+    elapsed_secs = Real(end - begin) / CLOCKS_PER_SEC;
+    printf("chemistry ODE integration: ");
+    printf("ncycle = %d, total time in sec = %.2e, zone/sec=%.2e\n", 
+        ncycle, elapsed_secs, elapsed_secs/Real(nzones) );
+  }
+
+  //update conserved variable s in PassiveScalars class
+  int il = pmy_block_->is, iu = pmy_block_->ie,
+      jl = pmy_block_->js, ju = pmy_block_->je,
+      kl = pmy_block_->ks, ku = pmy_block_->ke;
+  if (pmy_block_->pbval->nblevel[1][1][0] != -1) il -= NGHOST;
+  if (pmy_block_->pbval->nblevel[1][1][2] != -1) iu += NGHOST;
+  if (pmy_block_->block_size.nx2 > 1) {
+    if (pmy_block_->pbval->nblevel[1][0][1] != -1) jl -= NGHOST;
+    if (pmy_block_->pbval->nblevel[1][2][1] != -1) ju += NGHOST;
+  }
+  if (pmy_block_->block_size.nx3 > 1) {
+    if (pmy_block_->pbval->nblevel[0][1][1] != -1) kl -= NGHOST;
+    if (pmy_block_->pbval->nblevel[2][1][1] != -1) ku += NGHOST;
+  }
+  pmy_block_->peos->PassiveScalarPrimitiveToConserved(pmy_spec_->r, 
+           pmy_block_->phydro->w, pmy_spec_->s, pmy_block_->pcoord,
+           il, iu, jl, ju, kl, ku);
   return;
 }
 

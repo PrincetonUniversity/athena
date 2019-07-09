@@ -11,7 +11,7 @@
 //======================================================================================
 
 // Athena++ classes headers
-#include "../athena.hpp"
+#include "../../athena.hpp"
 
 class Thermo {
   friend class ChemNetwork;

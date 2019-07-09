@@ -33,28 +33,14 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin)
 #ifdef INCLUDE_CHEMISTRY
   pmy_chemnet = pmy_mb->pscalars->pchemnet;
   ncol = pmy_chemnet->n_cols_;
-  //allocate array for column density
-  int ncells1 = pmy_mb->ncells1;
-  int ncells2 = 1, ncells3 = 1;
-  if (pmy_mb->block_size.nx2 > 1) ncells2 = pmy_mb->block_size.nx2 + 2*(NGHOST);
-  if (pmy_mb->block_size.nx3 > 1) ncells3 = pmy_mb->block_size.nx3 + 2*(NGHOST);
-  col.NewAthenaArray(6, ncells3, ncells2, ncells1, ncol);
-  col_avg.NewAthenaArray(ncol, ncells3, ncells2, ncells1);
+  col.NewAthenaArray(pmy_rad->nang,
+                     pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1, ncol);
+  col_avg.NewAthenaArray(ncol, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
 #endif
 }
 
-RadIntegrator::~RadIntegrator() {
-#ifdef INCLUDE_CHEMISTRY
-  col.DeleteAthenaArray();
-  col_avg.DeleteAthenaArray();
-#endif 
-}
+RadIntegrator::~RadIntegrator() {}
 
-#ifdef INCLUDE_CHEMISTRY
-void RadIntegrator::GetColMB(int direction) {}
-void RadIntegrator::UpdateRadiation(int direction) {}
-void RadIntegrator::UpdateCol(int direction) {}
-void RadIntegrator::SetSixRayNeighbors() {}
 void RadIntegrator::CopyToOutput() {
   int is = pmy_mb->is;
   int js = pmy_mb->js;
@@ -74,5 +60,6 @@ void RadIntegrator::CopyToOutput() {
   }
   return;
 }
-#endif
+
+void RadIntegrator::UpdateRadiation(int direction){}
 

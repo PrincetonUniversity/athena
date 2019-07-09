@@ -20,7 +20,7 @@
 #include "thermo.hpp"
 
 // Athena headers
-#include "../utils/interp.hpp"
+#include "../../utils/interp.hpp"
 
 //c++ headers
 #include <math.h>

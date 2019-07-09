@@ -122,7 +122,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   }
 #ifdef INCLUDE_CHEMISTRY
   //allocate memory for the copy of s at intermediate step
-  s_copy.NewAthenaArray(nc1, NSCALARS);
+  r_copy.NewAthenaArray(nc1, NSCALARS);
   //next step size
   h.NewAthenaArray(nc3, nc2, nc1);
   //construct ptrs to objects related to solving chemistry source term.

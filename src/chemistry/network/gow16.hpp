@@ -19,10 +19,17 @@
 
 //! \class ChemNetwork
 //  \brief Chemical Network that defines the reaction rates between species.
+//  Note: This is a template for chemistry network.
+//  When implementing a new chemistry network, all public functions should be
+//  in the same form.
 class ChemNetwork : public NetworkWrapper {
-	friend class RadIntegrator;
-	friend class MeshBlock;
-  friend class BoundaryValues;
+  friend class Radiation; //number of frequencies n_freq_
+  friend class RadIntegrator; //shielding
+  //OutputProperties in problem generator called by Mesh::UserWorkAfterLoop.
+  friend class Mesh; 
+  //It would be convenient to know the species names in
+  //initialization of chemical species in problem
+  friend class MeshBlock; 
 public:
   ChemNetwork(MeshBlock *pmb, ParameterInput *pin);
   ~ChemNetwork();
@@ -30,12 +37,9 @@ public:
 	//a list of species name, used in output
 	static const std::string species_names[NSCALARS];
 
-
 	//Set the rates of chemical reactions, eg. through density and radiation field.
   //k, j, i are the corresponding index of the grid
   void InitializeNextStep(const int k, const int j, const int i);
-  //output properties of network. Can be used in eg. ProblemGenerator.
-  void OutputProperties(FILE *pf) const;
 
   //RHS: right-hand-side of ODE. dy/dt = ydot(t, y). Here y are the abundance
   //of species. details see CVODE package documentation.
@@ -58,7 +62,7 @@ private:
 	static const int n_ph_ = 6;
 	static const int n_gr_ = 5;
 	static const int nE_ = 15;
-	static const int n_freq_ = n_ph_ + 2;
+	static const int n_freq_ = n_ph_ + 2; 
 	static const int index_gpe_ = n_ph_;
 	static const int index_cr_ = n_ph_ + 1;
 	//other variables
@@ -212,6 +216,8 @@ private:
   void SetbCO(const int k, const int j, const int i); //set bCO_ for CO cooling
   //set gradients of v and nH for CO cooling
   void SetGrad_v(const int k, const int j, const int i); 
+  //output properties of network. Can be used in eg. ProblemGenerator.
+  void OutputProperties(FILE *pf) const;
 };
 
 #endif // GOW16_HPP

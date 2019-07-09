@@ -20,6 +20,13 @@
 // this class header
 #include "network/network.hpp"
 
+//athena++ header
+#include "../defs.hpp"
+
+//c++ header
+#include <iostream>   // endl, ostream
+#include <sstream>    // stringstream
+
 NetworkWrapper::NetworkWrapper() {}
 
 NetworkWrapper::~NetworkWrapper() {}
@@ -74,4 +81,15 @@ int NetworkWrapper::WrapRHS(const realtype t, const N_Vector y,
 		NV_Ith_S(ydot, i) = ydot1[i];
   }
   return 0;
+}
+
+void NetworkWrapper::Jacobian(const Real t,
+               const Real y[NSCALARS], const Real fy[NSCALARS], 
+               Real jac[NSCALARS][NSCALARS],
+               Real tmp1[NSCALARS], Real tmp2[NSCALARS], Real tmp3[NSCALARS]) {
+  std::stringstream msg;
+  msg << "### FATAL ERROR in function NetworkWrapper::Jacobian: "
+      << "Jacobian not specified but used." << std::endl
+      << "specify Jacobian or set <chemistry> user_jac=0." << std::endl;
+  ATHENA_ERROR(msg);
 }

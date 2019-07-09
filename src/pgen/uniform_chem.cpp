@@ -34,7 +34,7 @@
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../scalars/scalars.hpp"
-#include "../chemistry/thermo.hpp"
+#include "../chemistry/utils/thermo.hpp"
 #include "../radiation/radiation.hpp"
 #include "../field/field.hpp"
 #include "../eos/eos.hpp"
@@ -79,35 +79,32 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 	}
 
 	//intialize radiation field
-	if (RADIATION_ENABLED) {
-      for (int k=ks; k<=ke; ++k) {
-        for (int j=js; j<=je; ++j) {
-          for (int i=is; i<=ie; ++i) {
-						for (int ifreq=0; ifreq < prad->nfreq; ++ifreq) {
-							for (int iang=0; iang < prad->nang; ++iang) {
-								prad->ir(k, j, i, ifreq * prad->nang + iang) = G0;
-							}
-						}
+  if (RADIATION_ENABLED) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          for (int ifreq=0; ifreq < prad->nfreq; ++ifreq) {
+            for (int iang=0; iang < prad->nang; ++iang) {
+              prad->ir(k, j, i, ifreq * prad->nang + iang) = G0;
+            }
           }
         }
       }
-	}
+    }
+  }
 
 	//intialize chemical species
-#ifdef INCLUDE_CHEMISTRY
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
-      for (int i=is; i<=ie; ++i) {
-        for (int ispec=0; ispec < NSCALARS; ++ispec) {
-          pscalars->s(ispec, k, j, i) = s_init;
+  if (NSCALARS > 0) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          for (int ispec=0; ispec < NSCALARS; ++ispec) {
+            pscalars->s(ispec, k, j, i) = s_init*nH;
+          }
         }
-        //temperature
-        pscalars->s(pscalars->pchemnet->iE_, k, j, i) = 20. *
-          Thermo::CvCold(0., 0.1, 0.);
       }
     }
   }
-#endif
 
   return;
 }

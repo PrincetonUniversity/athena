@@ -9,7 +9,7 @@
 //! \file shielding.hpp
 //  \brief definition of shielding class.
 //======================================================================================
-#include "../athena.hpp"
+#include "../../athena.hpp"
 #include <math.h> //a^x = pow(a,x)
 
 //! \class Shielding
