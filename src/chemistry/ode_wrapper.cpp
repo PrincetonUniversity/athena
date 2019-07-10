@@ -235,22 +235,9 @@ void ODEWrapper::Integrate() {
   }
 
   //update conserved variable s in PassiveScalars class
-  int il = pmy_block_->is, iu = pmy_block_->ie,
-      jl = pmy_block_->js, ju = pmy_block_->je,
-      kl = pmy_block_->ks, ku = pmy_block_->ke;
-  if (pmy_block_->pbval->nblevel[1][1][0] != -1) il -= NGHOST;
-  if (pmy_block_->pbval->nblevel[1][1][2] != -1) iu += NGHOST;
-  if (pmy_block_->block_size.nx2 > 1) {
-    if (pmy_block_->pbval->nblevel[1][0][1] != -1) jl -= NGHOST;
-    if (pmy_block_->pbval->nblevel[1][2][1] != -1) ju += NGHOST;
-  }
-  if (pmy_block_->block_size.nx3 > 1) {
-    if (pmy_block_->pbval->nblevel[0][1][1] != -1) kl -= NGHOST;
-    if (pmy_block_->pbval->nblevel[2][1][1] != -1) ku += NGHOST;
-  }
   pmy_block_->peos->PassiveScalarPrimitiveToConserved(pmy_spec_->r, 
            pmy_block_->phydro->w, pmy_spec_->s, pmy_block_->pcoord,
-           il, iu, jl, ju, kl, ku);
+           is, ie, js, je, ks, ke);
   return;
 }
 
