@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file two_ibw.c
+//! \file twoibw.cpp
 //  \brief Problem generator for two interacting blast waves test.
 //
 // REFERENCE: P. Woodward & P. Colella, "The numerical simulation of two-dimensional
