@@ -36,6 +36,7 @@
 #include "../scalars/scalars.hpp"
 #include "../chemistry/utils/thermo.hpp"
 #include "../radiation/radiation.hpp"
+#include "../radiation/integrators/rad_integrators.hpp"
 #include "../field/field.hpp"
 #include "../eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
@@ -68,6 +69,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 	const Real nH = pin->GetReal("problem", "nH");
 	const Real G0 = pin->GetReal("problem", "G0");
 	const Real s_init = pin->GetReal("problem", "s_init");
+  const Real cr_rate = pin->GetOrAddReal("chemistry", "CR", 2e-16);
 
 	//set density
 	for (int k=ks; k<=ke; ++k) {
@@ -87,6 +89,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             for (int iang=0; iang < prad->nang; ++iang) {
               prad->ir(k, j, i, ifreq * prad->nang + iang) = G0;
             }
+          }
+          for (int iang=0; iang < prad->nang; ++iang) {
+            //cr rate
+            prad->ir(k, j, i,
+                pscalars->pchemnet->index_cr_ * prad->nang + iang) = cr_rate;
           }
         }
       }
