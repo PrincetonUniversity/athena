@@ -111,14 +111,14 @@ def analyze():
                     x_ref, data_ref[var][loc], x_new, data_new[var][loc])
                 diff /= comparison.l1_norm(x_ref, data_ref[var][loc])
                 msg = ['Eos hdf5 table', 'failed.', 'var, diff, gamma =', var, diff, g]
-                if diff > 1e-3 or np.isnan(diff):
+                if diff > 1e-8 or np.isnan(diff):
                     logger.warning(' '.join(map(str, msg)))
                     analyze_status = False
                 else:
                     msg[1] = 'passed.'
                     logger.debug(' '.join(map(str, msg)))
 
-    tol = [3e-3, 6e-4]
+    tol = [3e-3, 7e-4]
     for i, t in enumerate([10, 25]):
         x_ref, _, _, data_ref = athena_read.vtk(
             'bin/Sod_eos_H.block0.out1.{1:05d}.vtk'.format(i, t))

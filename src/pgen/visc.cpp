@@ -100,7 +100,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                 -v1*std::sin(phi) + v2*std::cos(phi));
             phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*v3;
           } else { // (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
-            rad=std::fabs(pcoord->x1v(i)*std::sin(pcoord->x2v(j)));
+            rad=std::abs(pcoord->x1v(i)*std::sin(pcoord->x2v(j)));
             phi=pcoord->x3v(k);
             theta=pcoord->x2v(j);
             z=pcoord->x1v(i)*std::cos(pcoord->x2v(j));

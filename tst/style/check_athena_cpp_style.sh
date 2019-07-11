@@ -19,9 +19,8 @@
 # Apply Google C++ Style Linter to all source code files at once:
 echo "Starting Google C++ Style cpplint.py test"
 set -e
-# Use "python2 -u" to prevent buffering of sys.stdout,stderr.write() calls in cpplint.py and mix-up in Jenkins logs,
-# and since the local version of cpplint.py is currently incompatible with Python 3.
-find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -not -name "defs.hpp" -print | xargs python2 -u ./cpplint.py --counting=detailed
+# Use "python[23] -u" to prevent buffering of sys.stdout,stderr.write() calls in cpplint.py and mix-up in Jenkins logs,
+find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -not -name "defs.hpp" -print | xargs python -u ./cpplint.py --counting=detailed
 set +e
 echo "End of Google C++ Style cpplint.py test"
 

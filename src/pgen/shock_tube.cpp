@@ -6,10 +6,8 @@
 //! \file shock_tube.cpp
 //  \brief Problem generator for shock tube problems.
 //
-// Problem generator for simple hydrogen EOS shock tube (1-D Riemann) problems.
-// Initializes plane-parallel shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D),
-// and along x3 (in 3D).
-//
+// Problem generator for shock tube (1-D Riemann) problems. Initializes plane-parallel
+// shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D), and along x3 (in 3D).
 //========================================================================================
 
 // C headers
@@ -193,14 +191,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             e0 += 0.5*((mx*mx+my*my+mz*mz)/d0 + (bx*bx+by*by+bz*bz));
           }
 
-          err[IDN] += std::fabs(d0 - pmb->phydro->u(IDN,k,j,i));
-          err[im1] += std::fabs(mx - pmb->phydro->u(im1,k,j,i));
-          err[im2] += std::fabs(my - pmb->phydro->u(im2,k,j,i));
-          err[im3] += std::fabs(mz - pmb->phydro->u(im3,k,j,i));
-          err[IEN] += std::fabs(e0 - pmb->phydro->u(IEN,k,j,i));
-          err[NHYDRO + ib1] += std::fabs(bx - pmb->pfield->bcc(ib1,k,j,i));
-          err[NHYDRO + ib2] += std::fabs(by - pmb->pfield->bcc(ib2,k,j,i));
-          err[NHYDRO + ib3] += std::fabs(bz - pmb->pfield->bcc(ib3,k,j,i));
+          err[IDN] += std::abs(d0 - pmb->phydro->u(IDN,k,j,i));
+          err[im1] += std::abs(mx - pmb->phydro->u(im1,k,j,i));
+          err[im2] += std::abs(my - pmb->phydro->u(im2,k,j,i));
+          err[im3] += std::abs(mz - pmb->phydro->u(im3,k,j,i));
+          err[IEN] += std::abs(e0 - pmb->phydro->u(IEN,k,j,i));
+          err[NHYDRO + ib1] += std::abs(bx - pmb->pfield->bcc(ib1,k,j,i));
+          err[NHYDRO + ib2] += std::abs(by - pmb->pfield->bcc(ib2,k,j,i));
+          err[NHYDRO + ib3] += std::abs(bz - pmb->pfield->bcc(ib3,k,j,i));
         }
       }
     }
@@ -243,11 +241,11 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             m0 = 0.0;
             e0 = 2.5;
           }
-          err[IDN] += std::fabs(d0  - pmb->phydro->u(IDN,k,j,i));
-          err[im1] += std::fabs(m0  - pmb->phydro->u(im1,k,j,i));
-          err[im2] += std::fabs(0.0 - pmb->phydro->u(im2,k,j,i));
-          err[im3] += std::fabs(0.0 - pmb->phydro->u(im3,k,j,i));
-          err[IEN] += std::fabs(e0  - pmb->phydro->u(IEN,k,j,i));
+          err[IDN] += std::abs(d0  - pmb->phydro->u(IDN,k,j,i));
+          err[im1] += std::abs(m0  - pmb->phydro->u(im1,k,j,i));
+          err[im2] += std::abs(0.0 - pmb->phydro->u(im2,k,j,i));
+          err[im3] += std::abs(0.0 - pmb->phydro->u(im3,k,j,i));
+          err[IEN] += std::abs(e0  - pmb->phydro->u(IEN,k,j,i));
         }
       }
     }

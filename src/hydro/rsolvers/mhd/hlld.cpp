@@ -46,7 +46,9 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
   Real spd[5];                    // signal speeds, left to right
 
-  Real igm1 = 1.0 / (pmy_block->peos->GetGamma() - 1.0);
+  Real igm1;
+  EquationOfState *peos = pmy_block->peos;
+  if (!GENERAL_EOS) igm1 = 1.0 / (peos->GetGamma() - 1.0);
   Real dt = pmy_block->pmy_mesh->dt;
 
 #pragma omp simd simdlen(SIMD_WIDTH) private(wli,wri,spd,flxi)
@@ -87,7 +89,11 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     ul.mx = wli[IVX]*ul.d;
     ul.my = wli[IVY]*ul.d;
     ul.mz = wli[IVZ]*ul.d;
-    ul.e  = wli[IPR]*igm1 + kel + pbl;
+    if (GENERAL_EOS) {
+      ul.e  = peos->EgasFromRhoP(ul.d, wli[IPR]) + kel + pbl;
+    } else {
+      ul.e  = wli[IPR]*igm1 + kel + pbl;
+    }
     ul.by = wli[IBY];
     ul.bz = wli[IBZ];
 
@@ -95,7 +101,11 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     ur.mx = wri[IVX]*ur.d;
     ur.my = wri[IVY]*ur.d;
     ur.mz = wri[IVZ]*ur.d;
-    ur.e  = wri[IPR]*igm1 + ker + pbr;
+    if (GENERAL_EOS) {
+      ur.e  = peos->EgasFromRhoP(ur.d, wri[IPR]) + ker + pbr;
+    } else {
+      ur.e  = wri[IPR]*igm1 + ker + pbr;
+    }
     ur.by = wri[IBY];
     ur.bz = wri[IBZ];
 
@@ -159,8 +169,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     Real sqrtdr = std::sqrt(urst.d);
 
     // eqn (51) of Miyoshi & Kusano
-    spd[1] = spd[2] - std::fabs(bxi)/sqrtdl;
-    spd[3] = spd[2] + std::fabs(bxi)/sqrtdr;
+    spd[1] = spd[2] - std::abs(bxi)/sqrtdl;
+    spd[3] = spd[2] + std::abs(bxi)/sqrtdr;
 
     //--- Step 5.  Compute intermediate states
     // eqn (23) explicitly becomes eq (41) of Miyoshi & Kusano
@@ -173,7 +183,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
     // ul* - eqn (39) of M&K
     ulst.mx = ulst.d * spd[2];
-    if (std::fabs(ul.d*sdl*sdml-bxsq) < (SMALL_NUMBER)*ptst) {
+    if (std::abs(ul.d*sdl*sdml-bxsq) < (SMALL_NUMBER)*ptst) {
       // Degenerate case
       ulst.my = ulst.d * wli[IVY];
       ulst.mz = ulst.d * wli[IVZ];
@@ -201,7 +211,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
     // ur* - eqn (39) of M&K
     urst.mx = urst.d * spd[2];
-    if (std::fabs(ur.d*sdr*sdmr - bxsq) < (SMALL_NUMBER)*ptst) {
+    if (std::abs(ur.d*sdr*sdmr - bxsq) < (SMALL_NUMBER)*ptst) {
       // Degenerate case
       urst.my = urst.d * wri[IVY];
       urst.mz = urst.d * wri[IVZ];

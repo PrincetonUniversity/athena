@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import brentq
+from scipy.interpolate import RectBivariateSpline as RBS
 import sys
 from . import brent_opt
 
@@ -42,6 +43,9 @@ class SimpleHydrogen(EOS):
     def __init__(self):
         super(SimpleHydrogen, self).__init__()
         self.indep = 'T'  # Temperature is the independent variable other than density
+        self.T_of_rho_ei = np.vectorize(self._T_of_rho_ei)
+        self.T_of_rho_p = np.vectorize(self._T_of_rho_p)
+        self.T_of_rho_h = np.vectorize(self._T_of_rho_h)
 
     def _phi(self, T):
         return np.exp(1. / T - 1.5 * np.log(T))
@@ -88,6 +92,10 @@ class SimpleHydrogen(EOS):
 
     def asq_of_rho_h(self, rho, h):
         """Adiabatic sound speed^2 function of density (rho) and specific enthalpy (h)"""
+        return self.asq_of_rho_T(rho, self.T_of_rho_h(rho, h))
+
+    def _T_of_rho_h(self, rho, h):
+        """Temperature as a function of density (rho) and specific enthalpy (h)"""
         t1 = .4 * h * (1. + sys.float_info.epsilon)
 
         def f(y):
@@ -96,21 +104,24 @@ class SimpleHydrogen(EOS):
         T, r = brentq(f, .1 * t1, t1, **brent_opt)
         if not r.converged:
             raise RuntimeError('Unable to converge on temperature.')
-        return self.asq_of_rho_T(rho, T)
+        return T
 
-    def T_of_rho_p(self, rho, p):
+    def _T_of_rho_p(self, rho, p):
         """Temperature as a function of density (rho) and pressure (p)"""
         t1 = p / rho * (1. + sys.float_info.epsilon)  # initial guess
 
         def f(y):  # function to find root of
             return self.p_of_rho_T(rho, y) / p - 1.
 
-        T, r = brentq(f, .1 * t1, t1, **brent_opt)  # find root
+        try:
+            T, r = brentq(f, .1 * t1, t1, **brent_opt)  # find root
+        except ValueError:
+            T, r = brentq(f, .05 * t1, 2 * t1, **brent_opt)
         if not r.converged:
             raise RuntimeError('Unable to converge on temperature.')
         return T
 
-    def T_of_rho_ei(self, rho, ei):
+    def _T_of_rho_ei(self, rho, ei):
         """Temperature as a function of density (rho) and internal energy density (e)"""
         t1 = ei / rho * (1. + sys.float_info.epsilon)  # initial guess
 
@@ -171,6 +182,10 @@ class Ideal(EOS):
         """Pressure as a function of density (rho) and specific internal energy (es)"""
         return rho * es * self._gm1
 
+    def p_of_rho_T(self, rho, T):
+        """Pressure as a function of density (rho) and temperature (T)"""
+        return rho * T * self.R
+
 
 class TestIdeal(Ideal):
     """Class to test if Riemann solver gives same answer as Ideal."""
@@ -179,6 +194,54 @@ class TestIdeal(Ideal):
         super(TestIdeal, self).__init__(gamma, R=R)
         self.ideal = False
         self.indep = 'p'
+
+
+class AthenaTable(EOS):
+    def __init__(self, data, lrho, le, ratios=None, indep=None, dens_pow=-1, fn=None,
+                 add_var=None):
+        super(EOS, self).__init__()
+        self.fn = fn
+        if ratios is None:
+            ratios = np.ones(data.shape[0])
+        lr = np.log(ratios)
+        self._lr = lr
+        if indep is None:
+            indep = 'ei'
+        self.indep = indep
+        self.data = data
+        self.lrho = lrho
+        self.le = le
+        self.dens_pow = dens_pow
+        var = ['p', 'e', 'asq_p']
+        if add_var is not None:
+            var.extend(add_var)
+        d = {var[i]: RBS(lrho, le + lr[i], np.log10(data[i].T), kx=1, ky=1).ev
+             for i in range(len(var))}
+        self._interp_dict = d
+
+    def _interp(self, rho, e, var):
+        ld = np.log10(rho)
+        return 10**self._interp_dict[var](ld, np.log10(e) + self.dens_pow * ld)
+
+    def asq_of_rho_p(self, rho, p):
+        """Adiabatic sound speed^2 as a function of density (rho) and pressure (p)"""
+        return self._interp(rho, p, 'asq_p') * p / rho
+
+    def ei_of_rho_p(self, rho, p):
+        """Internal energy density as a function of density (rho) and pressure (p)"""
+        return self._interp(rho, p, 'e') * p
+
+    def es_of_rho_p(self, rho, p):
+        """Specific internal energy as a function of density (rho) and pressure (p)"""
+        return self._interp(rho, p, 'e') * p / rho
+
+    def p_of_rho_ei(self, rho, ei):
+        """Pressure as a function of density (rho) and internal energy density (ei)"""
+        return self._interp(rho, ei, 'p') * ei
+
+    def p_of_rho_es(self, rho, es):
+        """Pressure as a function of density (rho) and specific internal energy (es)"""
+        return self.p_of_rho_ei(rho, es / rho)
 
 
 def parse_eos(eos):
