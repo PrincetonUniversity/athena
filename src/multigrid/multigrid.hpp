@@ -55,9 +55,12 @@ class Multigrid {
   void RestrictFMGSource();
   void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh);
   void ZeroClearData();
-  void Restrict();
-  void ProlongateAndCorrect();
-  void FMGProlongate();
+  void RestrictBlock();
+  void ProlongateAndCorrectBlock();
+  void FMGProlongateBlock();
+  void SmoothBlock(int color);
+  void CalculateDefectBlock();
+  void CalculateFASRHSBlock();
   void SetFromRootGrid(AthenaArray<Real> &src, int ck, int cj, int ci);
   Real CalculateDefectNorm(MGNormType nrm, int n);
   Real CalculateTotal(MGVariable type, int n);
@@ -65,6 +68,7 @@ class Multigrid {
   void StoreOldData();
   Real GetCoarsestData(MGVariable type, int n);
   void SetData(MGVariable type, int n, int k, int j, int i, Real v);
+  void SubtractOldData(AthenaArray<Real> &u, const AthenaArray<Real> &uold);
 
   // small functions
   int GetCurrentNumberOfCells() { return 1<<current_level_; }
@@ -73,10 +77,22 @@ class Multigrid {
   AthenaArray<Real>& GetCurrentData() { return u_[current_level_]; }
   AthenaArray<Real>& GetCurrentSource() { return src_[current_level_]; }
 
+  // actual implementations of Multigrid operations
+  void Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
+                int il, int iu, int jl, int ju, int kl, int ku);
+  void ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
+                            int il, int iu, int jl, int ju, int kl, int ku);
+  void FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
+                     int il, int iu, int jl, int ju, int kl, int ku);
+
   // physics-dependent virtual functions
-  virtual void Smooth(int color) = 0;
-  virtual void CalculateDefect() = 0;
-  virtual void CalculateFASRHS() {};
+  virtual void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
+                      int il, int iu, int jl, int ju, int kl, int ku, int color) = 0;
+  virtual void CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
+    const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku) = 0;
+  virtual void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
+                               int il, int iu, int jl, int ju, int kl, int ku) = 0;
+
 
   friend class MultigridDriver;
   friend class MultigridTaskList;
@@ -91,9 +107,6 @@ class Multigrid {
   int gid_, nlevel_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
   AthenaArray<Real> *u_, *def_, *src_, *uold_;
-
-  void RestrictOperation(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                         int nx1, int nx2, int nx3);
 
  private:
   TaskStates ts_;

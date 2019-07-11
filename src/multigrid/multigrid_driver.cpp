@@ -260,9 +260,10 @@ void MultigridDriver::FMGProlongate() {
   if (current_level_ >= nrootlevel_-1) {
     mgtlist_->SetMGTaskListFMGProlongate(flag);
     mgtlist_->DoTaskListOneStage(this);
+//  } else if ( ) { // non uniform root
   } else { // root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
-    mgroot_->FMGProlongate();
+    mgroot_->FMGProlongateBlock();
   }
   current_level_++;
   return;
@@ -284,14 +285,15 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
     if (current_level_ == ntotallevel_-2) flag=2;
     mgtlist_->SetMGTaskListToFiner(nsmooth, ngh, flag);
     mgtlist_->DoTaskListOneStage(this);
+//  } else if ( ) { // non uniform root
   } else { // root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
-    mgroot_->ProlongateAndCorrect();
+    mgroot_->ProlongateAndCorrectBlock();
     for (int n=0; n<nsmooth; n++) {
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
-      mgroot_->Smooth(0);
+      mgroot_->SmoothBlock(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
-      mgroot_->Smooth(1);
+      mgroot_->SmoothBlock(1);
     }
   }
   current_level_++;
@@ -312,19 +314,20 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
       if (!ffas_)
         mgroot_->ZeroClearData();
     }
-  } else { // root grid
+//  } else if ( ) { // non uniform root
+  } else { // uniform root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
     if (ffas_ && current_level_ < fmglevel_) {
       mgroot_->StoreOldData();
-      mgroot_->CalculateFASRHS();
+      mgroot_->CalculateFASRHSBlock();
     }
     for (int n=0; n<nsmooth; n++) {
-      mgroot_->Smooth(0);
+      mgroot_->SmoothBlock(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
-      mgroot_->Smooth(1);
+      mgroot_->SmoothBlock(1);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
     }
-    mgroot_->Restrict();
+    mgroot_->RestrictBlock();
   }
   current_level_--;
 }
@@ -450,12 +453,12 @@ void MultigridDriver::SolveCoarsestGrid() {
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
     if (ffas_ && current_level_ < fmglevel_) {
       mgroot_->StoreOldData();
-      mgroot_->CalculateFASRHS();
+      mgroot_->CalculateFASRHSBlock();
     }
     for (int i=0; i<ni; i++) { // iterate ni times
-      mgroot_->Smooth(0);
+      mgroot_->SmoothBlock(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
-      mgroot_->Smooth(1);
+      mgroot_->SmoothBlock(1);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
     }
     if (fsubtract_average_) {

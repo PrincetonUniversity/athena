@@ -29,9 +29,13 @@ class MGGravity : public Multigrid {
  public:
   MGGravity(MultigridDriver *pmd, MeshBlock *pmb) : Multigrid(pmd, pmb, 1, 1)
   { btype=BoundaryQuantity::mggrav; btypef=BoundaryQuantity::mggrav_f; };
-  void Smooth(int color) final;
-  void CalculateDefect() final;
-  void CalculateFASRHS() final;
+
+  void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
+              int il, int iu, int jl, int ju, int kl, int ku, int color) final;
+  void CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
+    const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku) final;
+  void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
+                       int il, int iu, int jl, int ju, int kl, int ku) final;
 
  private:
   static constexpr Real omega_ = 1.15;

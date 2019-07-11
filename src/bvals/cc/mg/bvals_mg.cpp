@@ -226,9 +226,14 @@ void MGBoundaryValues::StartReceivingMultigrid(BoundaryQuantity type) {
         else size = SQR(nc/2)*ngh;
       } else { // default, full boundary communication
         if (nb.snb.level == mylevel) { // same
-          if (nb.ni.type == NeighborConnect::face) size = nc*nc*ngh;
+          if (nb.ni.type == NeighborConnect::face) size = SQR(nc)*ngh;
           else if (nb.ni.type == NeighborConnect::edge) size = nc*ngh*ngh;
           else if (nb.ni.type == NeighborConnect::corner) size = ngh*ngh*ngh;
+          if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel) {
+            if (nb.ni.type == NeighborConnect::face) size += SQR(nc/2)*ngh;
+            else if (nb.ni.type == NeighborConnect::edge) size += nc/2*ngh*ngh;
+            else if (nb.ni.type == NeighborConnect::corner) size += ngh*ngh*ngh;
+          }
         } else if (nb.snb.level < mylevel) { // coarser
           if (nb.ni.type == NeighborConnect::face) size = SQR(nc/2+cngh)*cngh;
           else if (nb.ni.type == NeighborConnect::edge) size = (nc/2+cngh)*cngh*cngh;
@@ -296,6 +301,31 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
   int p = 0;
   BufferUtility::PackData(src, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
 
+  if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel) {
+    int cn = ngh, fs = ngh, cs = cn, fe = fs + nc - 1, ce = cs + nc/2 - 1;
+    si = (nb.ni.ox1 > 0) ? (ce - cn) : cs;
+    ei = (nb.ni.ox1 < 0) ? (cs + cn) : ce;
+    sj = (nb.ni.ox2 > 0) ? (ce - cn) : cs;
+    ej = (nb.ni.ox2 < 0) ? (cs + cn) : ce;
+    sk = (nb.ni.ox3 > 0) ? (ce - cn) : cs;
+    ek = (nb.ni.ox3 < 0) ? (cs + cn) : ce;
+    int fsi = (si - ngh)*2 + ngh;
+    int fsj = (sj - ngh)*2 + ngh;
+    int fsk = (sk - ngh)*2 + ngh;
+    for (int n=0; n<nvar; ++n) {
+      for (int k=sk, fk=fsk; k<=ek; ++k, fk+=2) {
+        for (int j=sj, fj=fsj; j<=ej; ++j, fj+=2) {
+          for (int i=si, fi=fsi; i<=ei; ++i, fi+=2)
+            buf[p++] = cbuf_(n, k, j, i)
+                     = 0.125*(((src(n, fk,   fj,   fi)+src(n, fk,   fj,   fi+1))
+                            +  (src(n, fk,   fj+1, fi)+src(n, fk,   fj+1, fi+1)))
+                            + ((src(n, fk+1, fj,   fi)+src(n, fk+1, fj,   fi+1))
+                            +  (src(n, fk+1, fj+1, fi)+src(n, fk+1, fj+1, fi+1))));
+        }
+      }
+    }
+  }
+
   return p;
 }
 
@@ -308,8 +338,8 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
 int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
                                                            const NeighborBlock& nb) {
   const AthenaArray<Real> &src = pmy_mg_->GetCurrentData();
-  int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
+  int nc = pmy_mg_->GetCurrentNumberOfCells();
   int cn = ngh, fs = ngh, cs = cn, fe = fs + nc - 1, ce = cs + nc/2 - 1;
   int p=0;
   int si = (nb.ni.ox1 > 0) ? (ce - cn) : cs;
@@ -320,11 +350,13 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
   int ek = (nb.ni.ox3 < 0) ? (cs + cn) : ce;
 
   // restrict and store in the coarse buffer
-  // Restrict in MeshRefinement could be used but it needs to be generalized
+  int fsi = (si - ngh)*2 + ngh;
+  int fsj = (sj - ngh)*2 + ngh;
+  int fsk = (sk - ngh)*2 + ngh;
   for (int n=0; n<nvar; ++n) {
-    for (int k=sk, fk=fs; k<=ek; ++k, fk+=2) {
-      for (int j=sj, fj=fs; j<=ej; ++j, fj+=2) {
-        for (int i=si, fi=fs; i<=ei; ++i, fi+=2)
+    for (int k=sk, fk=fsk; k<=ek; ++k, fk+=2) {
+      for (int j=sj, fj=fsj; j<=ej; ++j, fj+=2) {
+        for (int i=si, fi=fsi; i<=ei; ++i, fi+=2)
           buf[p++] = cbuf_(n, k, j, i)
                    = 0.125*(((src(n, fk,   fj,   fi)+src(n, fk,   fj,   fi+1))
                           +  (src(n, fk,   fj+1, fi)+src(n, fk,   fj+1, fi+1)))
@@ -519,6 +551,33 @@ void MGBoundaryValues::SetMultigridBoundarySameLevel(Real *buf, const NeighborBl
 
   int p = 0;
   BufferUtility::UnpackData(buf, dst, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
+
+  if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel) {
+    int cng = ngh;
+    int cs = cng, ce = cng + nc/2 -1;
+
+    if (nb.ni.ox1 == 0)
+      si = cs, ei = ce;
+    else if (nb.ni.ox1 > 0)
+      si = ce + 1,   ei = ce + cng;
+    else
+      si = cs - cng, ei = cs - 1;
+    if (nb.ni.ox2 == 0)
+      sj = cs, ej = ce;
+    else if (nb.ni.ox2 > 0)
+      sj = ce + 1,   ej = ce + cng;
+    else
+      sj = cs - cng, ej = cs - 1;
+    if (nb.ni.ox3 == 0)
+      sk = cs, ek = ce;
+    else if (nb.ni.ox3 > 0)
+      sk = ce + 1,   ek = ce + cng;
+    else
+      sk = cs - cng, ek = cs - 1;
+
+    BufferUtility::UnpackData(buf, cbuf_, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
+  }
+
   return;
 }
 
@@ -849,76 +908,10 @@ void MGBoundaryValues::ProlongateMultigridBoundaries() {
   Real y0 = block_size_.x2min - (static_cast<Real>(ngh) + 0.5)*dy;
   Real z0 = block_size_.x3min - (static_cast<Real>(ngh) + 0.5)*dz;
   const int cn = 1, cs = cn, ce = cs + nc/2 -1;
-  const int os = ngh - 2*cs;
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (nb.snb.level >= mylevel) continue;
-
-    // fill the required ghost-ghost zone
-    int nis, nie, njs, nje, nks, nke;
-    nis = std::max(nb.ni.ox1-1, -1);
-    nie = std::min(nb.ni.ox1+1, 1);
-    njs = std::max(nb.ni.ox2-1, -1);
-    nje = std::min(nb.ni.ox2+1, 1);
-    nks = std::max(nb.ni.ox3-1, -1);
-    nke = std::min(nb.ni.ox3+1, 1);
-
-    // Step 1. Apply necessary variable restrictions when ghost-ghost zone is on same lvl
-    for (int nk=nks; nk<=nke; nk++) {
-      for (int nj=njs; nj<=nje; nj++) {
-        for (int ni=nis; ni<=nie; ni++) {
-          int ntype = std::abs(ni) + std::abs(nj) + std::abs(nk);
-          // skip myself or coarse levels; only the same level must be restricted
-          if (ntype == 0 || nblevel[nk+1][nj+1][ni+1] != mylevel) continue;
-
-          // this neighbor block is on the same level
-          // and needs to be restricted for prolongation
-          int ris, rie, rjs, rje, rks, rke;
-          if (ni == 0) {
-            ris = cs, rie = ce;
-            if (nb.ni.ox1 == 1)       ris = ce;
-            else if (nb.ni.ox1 == -1) rie = cs;
-          } else if (ni == 1)
-            ris = ce + 1, rie = ce + 1;
-          else
-            ris = cs - 1, rie = cs - 1;
-          if (nj == 0) {
-            rjs = cs, rje = ce;
-            if (nb.ni.ox2 == 1)       rjs = ce;
-            else if (nb.ni.ox2 == -1) rje = cs;
-          } else if (nj == 1)
-            rjs = ce + 1, ce + 1;
-          else 
-            rjs = cs - 1, rje = cs - 1;
-          if (nk == 0) {
-            rks = cs, rke = ce;
-            if (nb.ni.ox3 == 1)       rks = ce;
-            else if (nb.ni.ox3 == -1) rke = cs;
-          } else if (nk == 1)
-            rks = ce + 1, rke = ce + 1;
-          else
-            rks = cs - 1, rke = cs - 1;
-
-          for (int n=0; n<nvar; ++n) {
-            for (int k=rks; k<=rke; ++k) {
-              int fk = 2*k + os;
-              for (int j=rjs; j<=rje; ++j) {
-                int fj = 2*j + os;
-                for (int i=ris; i<=rie; ++i) {
-                  int fi = 2*i + os;
-                  cbuf_(n, k, j, i) = 
-                    0.125*(((src(n, fk,   fj,   fi)+src(n, fk,   fj,   fi+1))
-                         +  (src(n, fk,   fj+1, fi)+src(n, fk,   fj+1, fi+1)))
-                         + ((src(n, fk+1, fj,   fi)+src(n, fk+1, fj,   fi+1))
-                         +  (src(n, fk+1, fj+1, fi)+src(n, fk+1, fj+1, fi+1))));
-                }
-              }
-            }
-          }
-        }
-      }
-    }
 
     // calculate the loop limits for the ghost zones
     int si, ei, sj, ej, sk, ek;
@@ -941,7 +934,7 @@ void MGBoundaryValues::ProlongateMultigridBoundaries() {
     } else if (nb.ni.ox3 > 0) sk = ce + 1,  ek = ce + cn;
     else                      sk = cs-cn,   ek = cs-1;
 
-    // Step 2. Re-apply physical boundaries on the coarse boundary:
+    // Apply physical boundaries on the coarse boundary:
     if (nb.ni.ox1 == 0) {
       if (MGBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
         MGBoundaryFunction_[BoundaryFace::inner_x1](cbuf_, time, nvar,
@@ -967,44 +960,55 @@ void MGBoundaryValues::ProlongateMultigridBoundaries() {
                             cs, ce, sj, ej, sk, ek, ngh, x0, y0, z0, dx, dy, dz);
     }
 
-    // Step 3. Prolongation using tri-linear interpolation
+    // Prolongation using tri-linear interpolation
+    int fsi = (si - ngh)*2 + ngh;
+    int fsj = (sj - ngh)*2 + ngh;
+    int fsk = (sk - ngh)*2 + ngh;
     for (int n=0; n<nvar; ++n) {
-      for (int k=sk, fk=ngh; k<=ek; k++, fk+=2) {
-        for (int j=sj, fj=ngh; j<=ej; j++, fj+=2) {
-          for (int i=si, fi=ngh; i<=ei; i++, fi+=2) {
-            dst(n,fk  ,fj  ,fi  ) =
-              0.015625*(27.0*cbuf_(n,k,j,i) + cbuf_(n,k-1,j-1,i-1)
-                       +9.0*(cbuf_(n,k,j,i-1)+cbuf_(n,k,j-1,i)+cbuf_(n,k-1,j,i))
-                       +3.0*(cbuf_(n,k-1,j-1,i)+cbuf_(n,k-1,j,i-1)+cbuf_(n,k,j-1,i-1)));
-            dst(n,fk  ,fj  ,fi+1) =
-              0.015625*(27.0*cbuf_(n,k,j,i) + cbuf_(n,k-1,j-1,i+1)
-                       +9.0*(cbuf_(n,k,j,i+1)+cbuf_(n,k,j-1,i)+cbuf_(n,k-1,j,i))
-                       +3.0*(cbuf_(n,k-1,j-1,i)+cbuf_(n,k-1,j,i+1)+cbuf_(n,k,j-1,i+1)));
-            dst(n,fk  ,fj+1,fi  ) =
-              0.015625*(27.0*cbuf_(n,k,j,i) + cbuf_(n,k-1,j+1,i-1)
-                       +9.0*(cbuf_(n,k,j,i-1)+cbuf_(n,k,j+1,i)+cbuf_(n,k-1,j,i))
-                       +3.0*(cbuf_(n,k-1,j+1,i)+cbuf_(n,k-1,j,i-1)+cbuf_(n,k,j+1,i-1)));
-            dst(n,fk+1,fj  ,fi  ) =
-              0.015625*(27.0*cbuf_(n,k,j,i) + cbuf_(n,k+1,j-1,i-1)
-                       +9.0*(cbuf_(n,k,j,i-1)+cbuf_(n,k,j-1,i)+cbuf_(n,k+1,j,i))
-                       +3.0*(cbuf_(n,k+1,j-1,i)+cbuf_(n,k+1,j,i-1)+cbuf_(n,k,j-1,i-1)));
-            dst(n,fk+1,fj+1,fi  ) =
-              0.015625*(27.0*cbuf_(n,k,j,i) + cbuf_(n,k+1,j+1,i-1)
-                       +9.0*(cbuf_(n,k,j,i-1)+cbuf_(n,k,j+1,i)+cbuf_(n,k+1,j,i))
-                       +3.0*(cbuf_(n,k+1,j+1,i)+cbuf_(n,k+1,j,i-1)+cbuf_(n,k,j+1,i-1)));
-            dst(n,fk+1,fj  ,fi+1) =
-              0.015625*(27.0*cbuf_(n,k,j,i) + cbuf_(n,k+1,j-1,i+1)
-                       +9.0*(cbuf_(n,k,j,i+1)+cbuf_(n,k,j-1,i)+cbuf_(n,k+1,j,i))
-                       +3.0*(cbuf_(n,k+1,j-1,i)+cbuf_(n,k+1,j,i+1)+cbuf_(n,k,j-1,i+1)));
-            dst(n,fk  ,fj+1,fi+1) =
-              0.015625*(27.0*cbuf_(n,k,j,i) + cbuf_(n,k-1,j+1,i+1)
-                       +9.0*(cbuf_(n,k,j,i+1)+cbuf_(n,k,j+1,i)+cbuf_(n,k-1,j,i))
-                       +3.0*(cbuf_(n,k-1,j+1,i)+cbuf_(n,k-1,j,i+1)+cbuf_(n,k,j+1,i+1)));
-            dst(n,fk+1,fj+1,fi+1) =
-              0.015625*(27.0*cbuf_(n,k,j,i) + cbuf_(n,k+1,j+1,i+1)
-                       +9.0*(cbuf_(n,k,j,i+1)+cbuf_(n,k,j+1,i)+cbuf_(n,k+1,j,i))
-                       +3.0*(cbuf_(n,k+1,j+1,i)+cbuf_(n,k+1,j,i+1)+cbuf_(n,k,j+1,i+1)));
-          }
+      for (int k=sk, fk=fsk; k<=ek; k++, fk+=2) {
+        for (int j=sj, fj=fsj; j<=ej; j++, fj+=2) {
+          for (int i=si, fi=fsi; i<=ei; i++, fi+=2) {
+            if (nb.ni.ox1 >= 0 && nb.ni.ox2 >= 0 && nb.ni.ox3 >= 0)
+              dst(n,fk  ,fj  ,fi  ) =
+                0.015625*(27.0*cbuf_(n,k,j,i)+cbuf_(n,k-1,j-1,i-1)
+                        +9.0*(cbuf_(n,k,j,i-1)+cbuf_(n,k,j-1,i)+cbuf_(n,k-1,j,i))
+                        +3.0*(cbuf_(n,k-1,j-1,i)+cbuf_(n,k-1,j,i-1)+cbuf_(n,k,j-1,i-1)));
+            if (nb.ni.ox1 <= 0 && nb.ni.ox2 >= 0 && nb.ni.ox3 >= 0)
+              dst(n,fk  ,fj  ,fi+1) =
+                0.015625*(27.0*cbuf_(n,k,j,i)+cbuf_(n,k-1,j-1,i+1)
+                        +9.0*(cbuf_(n,k,j,i+1)+cbuf_(n,k,j-1,i)+cbuf_(n,k-1,j,i))
+                        +3.0*(cbuf_(n,k-1,j-1,i)+cbuf_(n,k-1,j,i+1)+cbuf_(n,k,j-1,i+1)));
+            if (nb.ni.ox1 >= 0 && nb.ni.ox2 <= 0 && nb.ni.ox3 >= 0)
+              dst(n,fk  ,fj+1,fi  ) =
+                0.015625*(27.0*cbuf_(n,k,j,i)+cbuf_(n,k-1,j+1,i-1)
+                        +9.0*(cbuf_(n,k,j,i-1)+cbuf_(n,k,j+1,i)+cbuf_(n,k-1,j,i))
+                        +3.0*(cbuf_(n,k-1,j+1,i)+cbuf_(n,k-1,j,i-1)+cbuf_(n,k,j+1,i-1)));
+            if (nb.ni.ox1 >= 0 && nb.ni.ox2 >= 0 && nb.ni.ox3 <= 0)
+              dst(n,fk+1,fj  ,fi  ) =
+                0.015625*(27.0*cbuf_(n,k,j,i)+cbuf_(n,k+1,j-1,i-1)
+                        +9.0*(cbuf_(n,k,j,i-1)+cbuf_(n,k,j-1,i)+cbuf_(n,k+1,j,i))
+                        +3.0*(cbuf_(n,k+1,j-1,i)+cbuf_(n,k+1,j,i-1)+cbuf_(n,k,j-1,i-1)));
+            if (nb.ni.ox1 >= 0 && nb.ni.ox2 <= 0 && nb.ni.ox3 <= 0)
+              dst(n,fk+1,fj+1,fi  ) =
+                0.015625*(27.0*cbuf_(n,k,j,i)+cbuf_(n,k+1,j+1,i-1)
+                        +9.0*(cbuf_(n,k,j,i-1)+cbuf_(n,k,j+1,i)+cbuf_(n,k+1,j,i))
+                        +3.0*(cbuf_(n,k+1,j+1,i)+cbuf_(n,k+1,j,i-1)+cbuf_(n,k,j+1,i-1)));
+            if (nb.ni.ox1 <= 0 && nb.ni.ox2 >= 0 && nb.ni.ox3 <= 0)
+              dst(n,fk+1,fj  ,fi+1) =
+                0.015625*(27.0*cbuf_(n,k,j,i)+cbuf_(n,k+1,j-1,i+1)
+                        +9.0*(cbuf_(n,k,j,i+1)+cbuf_(n,k,j-1,i)+cbuf_(n,k+1,j,i))
+                        +3.0*(cbuf_(n,k+1,j-1,i)+cbuf_(n,k+1,j,i+1)+cbuf_(n,k,j-1,i+1)));
+            if (nb.ni.ox1 <= 0 && nb.ni.ox2 <= 0 && nb.ni.ox3 >= 0)
+              dst(n,fk  ,fj+1,fi+1) =
+                0.015625*(27.0*cbuf_(n,k,j,i)+cbuf_(n,k-1,j+1,i+1)
+                        +9.0*(cbuf_(n,k,j,i+1)+cbuf_(n,k,j+1,i)+cbuf_(n,k-1,j,i))
+                        +3.0*(cbuf_(n,k-1,j+1,i)+cbuf_(n,k-1,j,i+1)+cbuf_(n,k,j+1,i+1)));
+            if (nb.ni.ox1 <= 0 && nb.ni.ox2 <= 0 && nb.ni.ox3 <= 0)
+              dst(n,fk+1,fj+1,fi+1) =
+                0.015625*(27.0*cbuf_(n,k,j,i)+cbuf_(n,k+1,j+1,i+1)
+                        +9.0*(cbuf_(n,k,j,i+1)+cbuf_(n,k,j+1,i)+cbuf_(n,k+1,j,i))
+                        +3.0*(cbuf_(n,k+1,j+1,i)+cbuf_(n,k+1,j,i+1)+cbuf_(n,k,j+1,i+1)));
+            }
         }
       }
     }

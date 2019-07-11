@@ -64,6 +64,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
 //----------------------------------------------------------------------------------------
 //! \fn MGGravityDriver::~MGGravityDriver()
 //  \brief MGGravityDriver destructor
+
 MGGravityDriver::~MGGravityDriver() {
   delete mgroot_;
 }
@@ -112,22 +113,21 @@ void MGGravityDriver::Solve(int stage) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void MGGravity::Smooth(int color)
-//  \brief Red-Black Gauss-Seidel Smoother
-void MGGravity::Smooth(int color) {
+//! \fn  void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
+//                              int il, int iu, int jl, int ju, int kl, int ku, int color)
+//  \brief Implementation of the Red-Black Gauss-Seidel Smoother
+
+void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
+                       int il, int iu, int jl, int ju, int kl, int ku, int color) {
   int c = color;
-  AthenaArray<Real> &u = u_[current_level_];
-  AthenaArray<Real> &src = src_[current_level_];
   int ll = nlevel_-1-current_level_;
-  int is, ie, js, je, ks, ke;
-  is = js = ks = ngh_;
-  ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
   Real dx = rdx_*static_cast<Real>(1<<ll);
   Real dx2 = SQR(dx);
   Real isix = omega_/6.0;
-  for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is+c; i<=ie; i+=2)
+
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+      for (int i=il+c; i<=iu; i+=2)
         u(0,k,j,i) -= ((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
                       - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))
                        + src(0,k,j,i)*dx2)*isix;
@@ -135,57 +135,52 @@ void MGGravity::Smooth(int color) {
     }
     c ^= 1;
   }
+
   return;
 }
 
-//----------------------------------------------------------------------------------------
-//! \fn void MGGravity::CalculateDefect()
-//  \brief calculate the residual
 
-void MGGravity::CalculateDefect() {
-  AthenaArray<Real> &u = u_[current_level_];
-  AthenaArray<Real> &src = src_[current_level_];
-  AthenaArray<Real> &def = def_[current_level_];
+//----------------------------------------------------------------------------------------
+//! \fn  void MGGravity::CalculateDefect(AthenaArray<Real> &def, 
+//                       const AthenaArray<Real> &u, const AthenaArray<Real> &src,
+//                       int il, int iu, int jl, int ju, int kl, int ku)
+//  \brief Implementation of the Defect calculation
+
+void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
+     const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku) {
   int ll = nlevel_-1-current_level_;
-  int is, ie, js, je, ks, ke;
-  is = js = ks = ngh_;
-  ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
   Real dx = rdx_*static_cast<Real>(1<<ll);
   Real idx2 = 1.0/SQR(dx);
-  for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+      for (int i=il; i<=iu; i++)
         def(0,k,j,i) = (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
                        - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2
                        + src(0,k,j,i);
-      }
     }
   }
+
   return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravity::CalculateFASRHS()
-//  \brief calculate the RHS for the Full Approximation Scheme
+//! \fn  void MGGravity::CalculateFASRHS(AthenaArray<Real> &src,
+//            const AthenaArray<Real> &u, int il, int iu, int jl, int ju, int kl, int ku)
+//  \brief Implementation of the RHS calculation for FAS
 
-void MGGravity::CalculateFASRHS() {
-  AthenaArray<Real> &u = u_[current_level_];
-  AthenaArray<Real> &src = src_[current_level_];
+void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> &u,
+                                int il, int iu, int jl, int ju, int kl, int ku) {
   int ll = nlevel_-1-current_level_;
-  int is, ie, js, je, ks, ke;
-  is = js = ks = ngh_;
-  ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
   Real dx = rdx_*static_cast<Real>(1<<ll);
   Real idx2 = 1.0/SQR(dx);
-  for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+      for (int i=il; i<=iu; i++)
         src(0,k,j,i) -= (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
                         - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2;
-      }
     }
   }
+
   return;
 }
-

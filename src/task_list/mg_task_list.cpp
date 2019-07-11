@@ -218,34 +218,34 @@ TaskStatus MultigridTaskList::ReceiveBoundaryFace(Multigrid *pmg) {
 }
 
 TaskStatus MultigridTaskList::SmoothRed(Multigrid *pmg) {
-  pmg->Smooth(0);
+  pmg->SmoothBlock(0);
   return TaskStatus::next;
 }
 
 TaskStatus MultigridTaskList::SmoothBlack(Multigrid *pmg) {
-  pmg->Smooth(1);
+  pmg->SmoothBlock(1);
   return TaskStatus::next;
 }
 
 TaskStatus MultigridTaskList::Restrict(Multigrid *pmg) {
-  pmg->Restrict();
+  pmg->RestrictBlock();
   return TaskStatus::success;
 }
 
 TaskStatus MultigridTaskList::Prolongate(Multigrid *pmg) {
-  pmg->ProlongateAndCorrect();
+  pmg->ProlongateAndCorrectBlock();
   return TaskStatus::next;
 }
 
 TaskStatus MultigridTaskList::FMGProlongate(Multigrid *pmg) {
-  pmg->FMGProlongate();
+  pmg->FMGProlongateBlock();
   return TaskStatus::success;
 }
 
 TaskStatus MultigridTaskList::CalculateFASRHS(Multigrid *pmg) {
   if (pmy_mgdriver_->current_level_ < pmy_mgdriver_->fmglevel_) {
     pmg->StoreOldData();
-    pmg->CalculateFASRHS();
+    pmg->CalculateFASRHSBlock();
   }
   return TaskStatus::success;
 }
