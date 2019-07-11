@@ -34,3 +34,10 @@ Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
 Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
   return gamma_ * pres / rho;
 }
+
+//----------------------------------------------------------------------------------------
+//! void EquationOfState::InitEosConstants(ParameterInput* pin)
+//  \brief Initialize constants for EOS
+void EquationOfState::InitEosConstants(ParameterInput *pin) {
+  return;
+}

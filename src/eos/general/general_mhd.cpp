@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file general_mhd.cpp
-//  \brief (NOT YET IMPLEMENTED) implements most but not all of the functions in class
+//  \brief implements most but not all of the functions in class
 // EquationOfState for general EOS MHD
 
 // These functions MUST be implemented in an additional file.
@@ -194,8 +194,7 @@ Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real
 //                                                 int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
-void __attribute__((weak))
-     EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,i);
   Real& w_p  = prim(IPR,i);
 
@@ -211,7 +210,7 @@ void __attribute__((weak))
 // \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
 //           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
 // \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
-void __attribute__((weak)) EquationOfState::ApplyPrimitiveConservedFloors(
+void EquationOfState::ApplyPrimitiveConservedFloors(
     AthenaArray<Real> &prim, AthenaArray<Real> &cons, AthenaArray<Real> &bcc,
     int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
@@ -236,15 +235,8 @@ void __attribute__((weak)) EquationOfState::ApplyPrimitiveConservedFloors(
   return;
 }
 
-Real __attribute__((weak)) EquationOfState::GetGamma() {
+Real EquationOfState::GetGamma() {
   std::stringstream msg;
   msg << "GetGamma is not defined for general EOS." << std::endl;
   ATHENA_ERROR(msg);
-}
-
-//----------------------------------------------------------------------------------------
-//! void EquationOfState::InitEosConstants(ParameterInput* pin)
-//  \brief Initialize constants for EOS
-void __attribute__((weak)) EquationOfState::InitEosConstants(ParameterInput *pin) {
-  return;
 }

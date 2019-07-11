@@ -12,6 +12,7 @@
 // Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
 // Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
 // Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
+// void EquationOfState::InitEosConstants(ParameterInput *pin) // can be empty
 
 
 // C headers
@@ -168,8 +169,7 @@ Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
 //                                                 int i)
 // \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
-void __attribute__((weak))
-     EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
+void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,i);
   Real& w_p  = prim(IPR,i);
 
@@ -185,9 +185,8 @@ void __attribute__((weak))
 // \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
 //           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
 // \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
-void __attribute__((weak)) EquationOfState::ApplyPrimitiveConservedFloors(
-    AthenaArray<Real> &prim, AthenaArray<Real> &cons, AthenaArray<Real> &bcc,
-    int k, int j, int i) {
+void EquationOfState::ApplyPrimitiveConservedFloors( AthenaArray<Real> &prim,
+                   AthenaArray<Real> &cons, AthenaArray<Real> &bcc, int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
   Real& w_p  = prim(IPR,k,j,i);
 
@@ -206,15 +205,8 @@ void __attribute__((weak)) EquationOfState::ApplyPrimitiveConservedFloors(
   return;
 }
 
-Real __attribute__((weak)) EquationOfState::GetGamma() {
+Real EquationOfState::GetGamma() {
   std::stringstream msg;
   msg << "GetGamma is not defined for general EOS." << std::endl;
   ATHENA_ERROR(msg);
-}
-
-//----------------------------------------------------------------------------------------
-//! void EquationOfState::InitEosConstants(ParameterInput* pin)
-//  \brief Initialize constants for EOS
-void __attribute__((weak)) EquationOfState::InitEosConstants(ParameterInput *pin) {
-  return;
 }

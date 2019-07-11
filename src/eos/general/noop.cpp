@@ -40,3 +40,10 @@ Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
   ATHENA_ERROR(msg);
   return -1.0;
 }
+
+//----------------------------------------------------------------------------------------
+//! void EquationOfState::InitEosConstants(ParameterInput* pin)
+//  \brief Initialize constants for EOS
+void EquationOfState::InitEosConstants(ParameterInput *pin) {
+  return;
+}
