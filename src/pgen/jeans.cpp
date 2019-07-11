@@ -96,7 +96,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   kwave = TWO_PI/lambda;
   omega2 = SQR(kwave)*cs2*(1.0 - SQR(njeans));
-  omega = std::sqrt(std::fabs(omega2));
+  omega = std::sqrt(std::abs(omega2));
 
   if (SELF_GRAVITY_ENABLED) {
     SetGravitationalConstant(gconst);
@@ -197,9 +197,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             cosot = std::cos(omega*tlim);//time dependent factor of rho
           }
           Real den=d0*(1.0+amp*sinkx*cosot);
-          l1_err[IDN] += std::fabs(den - phydro->u(IDN,k,j,i));
+          l1_err[IDN] += std::abs(den - phydro->u(IDN,k,j,i));
           max_err[IDN] =
-              std::max(static_cast<Real>(std::fabs(den - phydro->u(IDN,k,j,i))),
+              std::max(static_cast<Real>(std::abs(den - phydro->u(IDN,k,j,i))),
                        max_err[IDN]);
 
           Real m = -den*(omega/kwave)*amp*coskx*sinot;
@@ -207,20 +207,20 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real m2 = m*sin_a3*cos_a2;
           Real m3 = m*sin_a2;
 
-          l1_err[IM1] += std::fabs(m1-phydro->u(IM1,k,j,i));
-          l1_err[IM2] += std::fabs(m2-phydro->u(IM2,k,j,i));
-          l1_err[IM3] += std::fabs(m3-phydro->u(IM3,k,j,i));
-          max_err[IM1] = std::max(static_cast<Real>(std::fabs(m1-phydro->u(IM1,k,j,i))),
+          l1_err[IM1] += std::abs(m1-phydro->u(IM1,k,j,i));
+          l1_err[IM2] += std::abs(m2-phydro->u(IM2,k,j,i));
+          l1_err[IM3] += std::abs(m3-phydro->u(IM3,k,j,i));
+          max_err[IM1] = std::max(static_cast<Real>(std::abs(m1-phydro->u(IM1,k,j,i))),
                                   max_err[IM1]);
-          max_err[IM2] = std::max(static_cast<Real>(std::fabs(m2-phydro->u(IM2,k,j,i))),
+          max_err[IM2] = std::max(static_cast<Real>(std::abs(m2-phydro->u(IM2,k,j,i))),
                                   max_err[IM2]);
-          max_err[IM3] = std::max(static_cast<Real>(std::fabs(m3-phydro->u(IM3,k,j,i))),
+          max_err[IM3] = std::max(static_cast<Real>(std::abs(m3-phydro->u(IM3,k,j,i))),
                                   max_err[IM3]);
           if (NON_BAROTROPIC_EOS) {
             Real e0 = p0*(1 + gam*amp*sinkx*cosot);///gm1 + 0.5*m*m/den;
-            l1_err[IEN] += std::fabs(e0 - phydro->w(IEN,k,j,i));
+            l1_err[IEN] += std::abs(e0 - phydro->w(IEN,k,j,i));
             max_err[IEN] =
-                std::max(static_cast<Real>(std::fabs(e0 - phydro->w(IEN,k,j,i))),
+                std::max(static_cast<Real>(std::abs(e0 - phydro->w(IEN,k,j,i))),
                          max_err[IEN]);
           }
         }

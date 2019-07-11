@@ -79,6 +79,11 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
         << "General EOS does not support characteristic reconstruction."<< std::endl;
     ATHENA_ERROR(msg);
   }
+  if (GENERAL_EOS && xorder > 2) {
+    std::cout << "### Warning in Reconstruction constructor" << std::endl
+              << "The combination of general EOS and xorder > 2 has documented bugs"
+              << " in some cases." << std::endl;
+  }
 
   // check for necessary number of ghost zones for PPM w/o fourth-order flux corrections
   if (xorder == 3) {
