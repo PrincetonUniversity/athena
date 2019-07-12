@@ -36,6 +36,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
   pmy_block_{pmb},
   gamma_{pin->GetOrAddReal("hydro", "gamma", 2.)},
   density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))},
+  scalar_floor_{pin->GetOrAddReal("hydro", "sfloor", std::sqrt(1024*float_min))},
   rho_unit_{pin->GetOrAddReal("hydro", "eos_rho_unit", 1.0)},
   inv_rho_unit_{1.0/rho_unit_},
   egas_unit_{pin->GetOrAddReal("hydro", "eos_egas_unit", 1.0)},
