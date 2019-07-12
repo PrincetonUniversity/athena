@@ -25,7 +25,8 @@
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block_(pmb),
     iso_sound_speed_{pin->GetReal("hydro", "iso_sound_speed")},  // error if missing!
-    density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min) )} {}
+    density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min) )},
+    scalar_floor_{pin->GetOrAddReal("hydro", "sfloor", std::sqrt(1024*float_min))} {}
 
 //----------------------------------------------------------------------------------------
 // \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,

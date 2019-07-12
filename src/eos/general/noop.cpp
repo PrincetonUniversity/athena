@@ -19,13 +19,6 @@
 // Athena++ headers
 #include "../eos.hpp"
 
-Real EquationOfState::RiemannAsq(Real rho, Real hint) {
-  std::stringstream msg;
-  msg << "### FATAL ERROR in EquationOfState::RiemannAsq" << std::endl
-      << "Function should not be called with current configuration." << std::endl;
-  ATHENA_ERROR(msg);
-  return -1.0;
-}
 Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
   std::stringstream msg;
   msg << "### FATAL ERROR in EquationOfState::PresFromRhoEg" << std::endl
@@ -46,4 +39,11 @@ Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
       << "Function should not be called with current configuration." << std::endl;
   ATHENA_ERROR(msg);
   return -1.0;
+}
+
+//----------------------------------------------------------------------------------------
+//! void EquationOfState::InitEosConstants(ParameterInput* pin)
+//  \brief Initialize constants for EOS
+void EquationOfState::InitEosConstants(ParameterInput *pin) {
+  return;
 }

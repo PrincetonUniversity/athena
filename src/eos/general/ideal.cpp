@@ -15,13 +15,6 @@
 #include "../eos.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::RiemannAsq(Real rho, Real hint)
-//  \brief Return adiabatic sound speed squared for use in Riemann solver.
-Real EquationOfState::RiemannAsq(Real rho, Real hint) {
-  return (gamma_ - 1.) * hint;
-}
-
-//----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
 //  \brief Return gas pressure
 Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
@@ -40,4 +33,11 @@ Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
 //  \brief Return adiabatic sound speed squared
 Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
   return gamma_ * pres / rho;
+}
+
+//----------------------------------------------------------------------------------------
+//! void EquationOfState::InitEosConstants(ParameterInput* pin)
+//  \brief Initialize constants for EOS
+void EquationOfState::InitEosConstants(ParameterInput *pin) {
+  return;
 }

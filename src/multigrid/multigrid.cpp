@@ -101,7 +101,7 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
       return;
     }
     // *** temporary ***
-    if (std::fabs(rdx_-rdy_)>1.0e-5 || std::fabs(rdx_-rdz_)>1.0e-5) {
+    if (std::abs(rdx_-rdy_)>1.0e-5 || std::abs(rdx_-rdz_)>1.0e-5) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
           << "The cell size must be cubic." << std::endl;
@@ -243,6 +243,7 @@ void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh) {
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::ZeroClearData()
 //  \brief Clear the data array with zero
+
 void Multigrid::ZeroClearData() {
   u_[current_level_].ZeroClear();
   return;
@@ -252,6 +253,7 @@ void Multigrid::ZeroClearData() {
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::RestrictBlock()
 //  \brief Restrict the defect to the source
+
 void Multigrid::RestrictBlock() {
   AthenaArray<Real> &dst=src_[current_level_-1];
   const AthenaArray<Real> &src=def_[current_level_];
@@ -279,6 +281,7 @@ void Multigrid::RestrictBlock() {
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::ProlongateAndCorrectBlock()
 //  \brief Prolongate the potential using tri-linear interpolation
+
 void Multigrid::ProlongateAndCorrectBlock() {
   const AthenaArray<Real> &src=u_[current_level_];
   AthenaArray<Real> &dst=u_[current_level_+1];
@@ -300,6 +303,7 @@ void Multigrid::ProlongateAndCorrectBlock() {
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::FMGProlongateBlock()
 //  \brief Prolongate the potential for Full Multigrid cycle
+
 void Multigrid::FMGProlongateBlock() {
   const AthenaArray<Real> &src=u_[current_level_];
   AthenaArray<Real> &dst=u_[current_level_+1];
@@ -318,6 +322,7 @@ void Multigrid::FMGProlongateBlock() {
 //----------------------------------------------------------------------------------------
 //! \fn  void Multigrid::SmoothBlock(int color)
 //  \brief Apply Smoother on the Block
+
 void Multigrid::SmoothBlock(int color) {
   int ll = nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
@@ -366,6 +371,7 @@ void Multigrid::CalculateFASRHSBlock() {
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ck, int cj, int ci)
 //  \brief Load the data from the root grid
+
 void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ck, int cj, int ci) {
   current_level_=0;
   AthenaArray<Real> &dst=u_[current_level_];
@@ -678,6 +684,7 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
 //! \fn void Multigrid::SubtractOldData(AthenaArray<Real> &u,
 //                                      const AthenaArray<Real> &uold)
 //  \brief subtract the old data from the current data to calculate correction for FAS
+
 
 void Multigrid::SubtractOldData(AthenaArray<Real> &u, const AthenaArray<Real> &uold) {
   int size = u.GetSize();

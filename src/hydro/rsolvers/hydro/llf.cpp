@@ -61,7 +61,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
     Real cl = pmy_block->peos->SoundSpeed(wli);
     Real cr = pmy_block->peos->SoundSpeed(wri);
-    Real a  = 0.5*std::max( (std::fabs(wli[IVX]) + cl), (std::fabs(wri[IVX]) + cr) );
+    Real a  = 0.5*std::max( (std::abs(wli[IVX]) + cl), (std::abs(wri[IVX]) + cr) );
 
     //--- Step 3.  Compute L/R fluxes
 

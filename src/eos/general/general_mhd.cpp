@@ -4,12 +4,11 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file general_mhd.cpp
-//  \brief (NOT YET IMPLEMENTED) implements most but not all of the functions in class
+//  \brief implements most but not all of the functions in class
 // EquationOfState for general EOS MHD
 
 // These functions MUST be implemented in an additional file.
 //
-// Real EquationOfState::RiemannAsq(Real rho, Real hint)
 // Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
 // Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
 // Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
@@ -24,6 +23,7 @@
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
+#include "../../field/field.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
 #include "../eos.hpp"
@@ -34,12 +34,15 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
   ptable{pmb->pmy_mesh->peos_table},
   pmy_block_{pmb},
   gamma_{pin->GetOrAddReal("hydro", "gamma", 2.)},
-  density_floor_ {pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))} {
-  std::stringstream msg;
-  msg << "### FATAL ERROR in EquationOfState::EquationOfState" << std::endl
-      << "General EOS with MHD is not yet implemented." << std::endl;
-  ATHENA_ERROR(msg);
-
+  density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))},
+  scalar_floor_{pin->GetOrAddReal("hydro", "sfloor", std::sqrt(1024*float_min))},
+  rho_unit_{pin->GetOrAddReal("hydro", "eos_rho_unit", 1.0)},
+  inv_rho_unit_{1.0/rho_unit_},
+  egas_unit_{pin->GetOrAddReal("hydro", "eos_egas_unit", 1.0)},
+  inv_egas_unit_{1.0/egas_unit_},
+  vsqr_unit_{egas_unit_/rho_unit_},
+  inv_vsqr_unit_{1.0/vsqr_unit_}
+  {
   if (pin->DoesParameterExist("hydro", "efloor")) {
     energy_floor_ = pin->GetReal("hydro", "efloor");
     pressure_floor_ = energy_floor_*(pin->GetOrAddReal("hydro", "gamma", 2.) - 1.);
@@ -57,6 +60,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
       ATHENA_ERROR(msg);
     }
   }
+  InitEosConstants(pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -70,6 +74,9 @@ void EquationOfState::ConservedToPrimitive(
     AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
     AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
     Coordinates *pco, int il,int iu, int jl,int ju, int kl,int ku) {
+
+  pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,il,iu,jl,ju,kl,ku);
+
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
@@ -153,8 +160,8 @@ void EquationOfState::PrimitiveToConserved(
         u_m2 = w_vy*w_d;
         u_m3 = w_vz*w_d;
         // cellwise conversion
-        u_e = EgasFromRhoP(u_d, w_p) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz)
-                                                + SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
+        u_e = EgasFromRhoP(u_d, w_p) + 0.5*(w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz))
+                                     + (SQR(bcc1) + SQR(bcc2) + SQR(bcc3)));
       }
     }
   }

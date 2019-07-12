@@ -45,6 +45,7 @@ import argparse
 import glob
 import re
 
+
 # Set template and output filenames
 makefile_input = 'Makefile.in'
 makefile_output = 'Makefile'
@@ -342,10 +343,7 @@ if args['eos'][:8] == 'general/':
     if args['s'] or args['g']:
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with relativity')
-    if args['b']:
-        raise SystemExit('### CONFIGURE ERROR: MHD compatability with General EOS'
-                         + ' has not yet been implemented')
-    if args['flux'] not in ['hllc', 'hlld']:
+    if args['flux'] not in ['hllc', 'hlld', 'hlle']:
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with flux ' + args['flux'])
 
