@@ -1369,7 +1369,6 @@ TaskStatus TimeIntegratorTaskList::DiffuseScalars(MeshBlock *pmb, int stage) {
     ps->DiffusiveFluxIso(ps->r, ph->w, ps->diffusion_flx);
   } else {
     return TaskStatus::fail;
->>>>>>> master
   }
   return TaskStatus::next;
 }
