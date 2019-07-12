@@ -189,17 +189,6 @@ void Reconstruction::PiecewiseParabolicUCTx1(MeshBlock *pmb, const int kl, const
       }
     } // end loop over j
   }// end loop over k
-
-  // Free 1D scratch arrays
-  qplus_.DeleteAthenaArray();
-  qminus_.DeleteAthenaArray();
-  dph_.DeleteAthenaArray();
-
-  dqf_plus_.DeleteAthenaArray();
-  dqf_minus_.DeleteAthenaArray();
-  d2qf_.DeleteAthenaArray();
-  d2qc_.DeleteAthenaArray();
-
   return;
 }
 
@@ -216,10 +205,10 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
   int ncells1 = iu - il +2*NGHOST;
   // 1D scratch arrays for nonlimited reconstructed interface values. Face-indexed j-1/2
   AthenaArray<Real> dph_x2_;
-  AthenaArray<Real> dph_, dph_jp1_;
+  AthenaArray<Real> *dph_, *dph_jp1_;
   dph_x2_.NewAthenaArray(2,ncells1);
-  dph_.InitWithShallowSlice(dph_x2_, 2, 0, 0);
-  dph_jp1_.InitWithShallowSlice(dph_x2_, 2, 1, 0);
+  (*dph_).InitWithShallowSlice(dph_x2_, 2, 0, 0);
+  (*dph_jp1_).InitWithShallowSlice(dph_x2_, 2, 1, 0);
 
   // 1D scratch arrays for limited reconstructed interface values. Cell-indexed j
   // plus/minus match +/- notation as in CS and CMHOG, and R/L notation as in CW
@@ -233,16 +222,16 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
   dqf_minus_.NewAthenaArray(ncells1);
   d2qf_.NewAthenaArray(ncells1);
   AthenaArray<Real> d2qc_x2_;
-  AthenaArray<Real> d2qc_jm1_, d2qc_, d2qc_jp1_;
-  d2qc_x2_.NewAthenaArray(3,ncells1);
+  AthenaArray<Real> *d2qc_jm1_, *d2qc_, *d2qc_jp1_;
+  d2qc_x2_.NewAthenaArray(3, ncells1);
   d2qc_jm1_.InitWithShallowSlice(d2qc_x2_, 2, 0, 0);
-  d2qc_.InitWithShallowSlice(d2qc_x2_, 2, 1, 0);
+  (*d2qc_).InitWithShallowSlice(d2qc_x2_, 2, 1, 0);
   d2qc_jp1_.InitWithShallowSlice(d2qc_x2_, 2, 2, 0);
   // Temporary scratch pointer for swapping pointers in x2
-  AthenaArray<Real> x2scratch_;
+  AthenaArray<Real> *x2scratch_;
 
   // Assorted temporary scalars used in limiter
-  Real qa,qb,qc,qd,qe,rho;
+  Real qa, qb, qc, qd, qe, rho;
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl-1; j<=ju; ++j) {
@@ -283,14 +272,14 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
         // Reuse old x1 slice information from previous j
         //-------- Swap pointers of 1D scratch arrays from previous x1 slice sweep
          // Non-limited interface averages at j-1/2, j+1/2
-        x2scratch_.InitWithShallowCopy(dph_);
-        dph_.InitWithShallowCopy(dph_jp1_);
-        dph_jp1_.InitWithShallowCopy(x2scratch_);
+        x2scratch_ = &dph_;
+        dph_ = &dph_jp1_;
+        dph_jp1_ = &x2scratch_;
         // Shift (downward) 1D array pointers, dequeue lowest one
-        x2scratch_.InitWithShallowCopy(d2qc_jm1_);
-        d2qc_jm1_.InitWithShallowCopy(d2qc_);
-        d2qc_.InitWithShallowCopy(d2qc_jp1_);
-        d2qc_jp1_.InitWithShallowCopy(x2scratch_);
+        x2scratch_ = &d2qc_jm1_;
+        d2qc_jm1_ = &d2qc_;
+        d2qc_ = &d2qc_jp1_;
+        d2qc_jp1_ = &x2scratch_;
       }
 
       // Reconstruct x2 interfaces along x1 slices for performance
@@ -400,26 +389,6 @@ void Reconstruction::PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const
       } // end loop over i=il:iu, applying McCorquodale limiters
     } // end loop over j
   }// end loop over k
-
-  // Free 1D scratch arrays
-  // Allocated AthenaArray
-  qplus_.DeleteAthenaArray();
-  qminus_.DeleteAthenaArray();
-  dqf_plus_.DeleteAthenaArray();
-  dqf_minus_.DeleteAthenaArray();
-  d2qc_x2_.DeleteAthenaArray();
-  dph_x2_.DeleteAthenaArray();
-
-  // Shallow copied AthenaArray
-  dph_.DeleteAthenaArray();
-  dph_jp1_.DeleteAthenaArray();
-
-  d2qf_.DeleteAthenaArray();
-
-  d2qc_jm1_.DeleteAthenaArray();
-  d2qc_.DeleteAthenaArray();
-  d2qc_jp1_.DeleteAthenaArray();
-
   return;
 }
 
@@ -436,9 +405,9 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
   int ncells1 = iu - il +2*NGHOST;
   // 1D scratch arrays for nonlimited reconstructed interface values. Face-indexed j-1/2
   AthenaArray<Real> dph_x3_;
-  AthenaArray<Real> dph_, dph_kp1_;
+  AthenaArray<Real> *dph_, *dph_kp1_;
   dph_x3_.NewAthenaArray(2,ncells1);
-  dph_.InitWithShallowSlice(dph_x3_, 2, 0, 0);
+  (*dph_).InitWithShallowSlice(dph_x3_, 2, 0, 0);
   dph_kp1_.InitWithShallowSlice(dph_x3_, 2, 1, 0);
 
   // 1D scratch arrays for limited reconstructed interface values. Cell-indexed k
@@ -453,16 +422,16 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
   dqf_minus_.NewAthenaArray(ncells1);
   d2qf_.NewAthenaArray(ncells1);
   AthenaArray<Real> d2qc_x3_;
-  AthenaArray<Real> d2qc_km1_, d2qc_, d2qc_kp1_;
+  AthenaArray<Real> *d2qc_km1_, *d2qc_, *d2qc_kp1_;
   d2qc_x3_.NewAthenaArray(3,ncells1);
-  d2qc_km1_.InitWithShallowSlice(d2qc_x3_, 2, 0, 0);
-  d2qc_.InitWithShallowSlice(d2qc_x3_, 2, 1, 0);
-  d2qc_kp1_.InitWithShallowSlice(d2qc_x3_, 2, 2, 0);
+  (*d2qc_km1_).InitWithShallowSlice(d2qc_x3_, 2, 0, 0);
+  (*d2qc_).InitWithShallowSlice(d2qc_x3_, 2, 1, 0);
+  (*d2qc_kp1_).InitWithShallowSlice(d2qc_x3_, 2, 2, 0);
   // Temporary scratch pointer for swapping pointers in x3
-  AthenaArray<Real> x3scratch_;
+  AthenaArray<Real> *x3scratch_;
 
   // Assorted temporary scalars used in limiter
-  Real qa,qb,qc,qd,qe,rho;
+  Real qa, qb, qc, qd, qe, rho;
 
   for (int j=jl; j<=ju; ++j) {
     for (int k=kl-1; k<=ku; ++k) {
@@ -502,14 +471,14 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
       } else { // Reuse old x1 slice information from previous j:
         //-------- Swap pointers of 1D scratch arrays from previous x1 slice sweep
          // Non-limited interface averages at j-1/2, j+1/2
-        x3scratch_.InitWithShallowCopy(dph_);
-        dph_.InitWithShallowCopy(dph_kp1_);
-        dph_kp1_.InitWithShallowCopy(x3scratch_);
+        x3scratch_ = &dph_;
+        dph_ = &dph_kp1_;
+        dph_kp1_ = &x3scratch_;
         // Shift (downward) 1D array pointers, dequeue lowest one
-        x3scratch_.InitWithShallowCopy(d2qc_km1_);
-        d2qc_km1_.InitWithShallowCopy(d2qc_);
-        d2qc_.InitWithShallowCopy(d2qc_kp1_);
-        d2qc_kp1_.InitWithShallowCopy(x3scratch_);
+        x3scratch_ = &d2qc_km1_;
+        d2qc_km1_ = &d2qc_;
+        d2qc_ = &d2qc_kp1_;
+        d2qc_kp1_ = &x3scratch_;
       }
 
       // Reconstruct x3 interfaces along x1 slices for performance
@@ -616,28 +585,8 @@ void Reconstruction::PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const
         // Convert limited cell-centered values to interface-centered L/R Riemann states
         ql(nout,k+1,j,i) = qplus_(i);
         qr(nout,k,j,i) = qminus_(i);
-      } // end loop over i=il:iu, applying McCorquodale limiters
-    } // end loop over j
-  }// end loop over k
-
-  // Free 1D scratch arrays
-  // Allocated AthenaArray
-  qplus_.DeleteAthenaArray();
-  qminus_.DeleteAthenaArray();
-  dqf_plus_.DeleteAthenaArray();
-  dqf_minus_.DeleteAthenaArray();
-  d2qc_x3_.DeleteAthenaArray();
-  dph_x3_.DeleteAthenaArray();
-
-  // Shallow copied AthenaArray
-  dph_.DeleteAthenaArray();
-  dph_kp1_.DeleteAthenaArray();
-
-  d2qf_.DeleteAthenaArray();
-
-  d2qc_km1_.DeleteAthenaArray();
-  d2qc_.DeleteAthenaArray();
-  d2qc_kp1_.DeleteAthenaArray();
-
+      }  // end loop over i=il:iu, applying McCorquodale limiters
+    }  // end loop over j
+  }  // end loop over k
   return;
 }
