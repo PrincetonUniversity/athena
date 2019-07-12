@@ -235,10 +235,8 @@ void Field::ComputeCornerE_UCT4() {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e1, e2, e3;
-  e1.InitWithShallowCopy(pmb->pfield->e.x1e);
-  e2.InitWithShallowCopy(pmb->pfield->e.x2e);
-  e3.InitWithShallowCopy(pmb->pfield->e.x3e);
+  AthenaArray<Real> e1 = pmb->pfield->e.x1e, e2 = pmb->pfield->e.x2e,
+                    e3 = pmb->pfield->e.x3e;
 
 //---- 1-D update:
 //  copy face-centered E-fields to edges and return.

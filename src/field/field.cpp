@@ -246,16 +246,16 @@ void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
         const Real& x1f_ip = pco->x1f(i+1);
         const Real& x1v_i  = pco->x1v(i);
         const Real& dx1_i  = pco->dx1f(i);
-        Real lw=(x1f_ip-x1v_i)/dx1_i;
-        Real rw=(x1v_i -x1f_i)/dx1_i;
+        // Real lw = (x1f_ip-x1v_i)/dx1_i;
+        // Real rw = (x1v_i -x1f_i)/dx1_i;
         bcc1 = -1.0/16.0*(b1_im1 + b1_ip2) + 9.0/16.0*(b1_i + b1_ip1);
 
         const Real& x2f_j  = pco->x2f(j);
         const Real& x2f_jp = pco->x2f(j+1);
         const Real& x2v_j  = pco->x2v(j);
         const Real& dx2_j  = pco->dx2f(j);
-        lw=(x2f_jp-x2v_j)/dx2_j;
-        rw=(x2v_j -x2f_j)/dx2_j;
+        //  lw = (x2f_jp-x2v_j)/dx2_j;
+        //  rw = (x2v_j -x2f_j)/dx2_j;
         if (pmb->block_size.nx2 > 1) {
           const Real& b2_jm1 = bf_center.x2f(k,j-1,i);
           const Real& b2_jp2 = bf_center.x2f(k,j+2,i);
@@ -268,8 +268,8 @@ void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
         const Real& x3f_kp = pco->x3f(k+1);
         const Real& x3v_k  = pco->x3v(k);
         const Real& dx3_k  = pco->dx3f(k);
-        lw=(x3f_kp-x3v_k)/dx3_k;
-        rw=(x3v_k -x3f_k)/dx3_k;
+        //  lw = (x3f_kp-x3v_k)/dx3_k;
+        //  rw = (x3v_k -x3f_k)/dx3_k;
         if (pmb->block_size.nx3 > 1) {
           const Real& b3_km1 = bf_center.x3f(k-1,j,i);
           const Real& b3_kp2 = bf_center.x3f(k+2,j,i);
@@ -290,11 +290,9 @@ void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
 void Field::CellCenteredToAveragedField(const AthenaArray<Real> &bc_center,
                                        AthenaArray<Real> &bc, Coordinates *pco,
                                        int il, int iu, int jl, int ju, int kl, int ku) {
-  MeshBlock *pmb = pmy_block;
   // Transform cell-centered B to cell-averaged <B>
   // No need to add +1 ghost to longitudinal directions here as with FaceField
-  AthenaArray<Real> laplacian_cc;
-  laplacian_cc.InitWithShallowCopy(scr1_nkji_cc_);
+  AthenaArray<Real> &laplacian_cc = scr1_nkji_cc_;
 
   pco->Laplacian(bc_center, laplacian_cc, il, iu, jl, ju, kl, ku, 0, 2);
 
@@ -338,10 +336,8 @@ void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center
   BoundaryValues *pbval = pmb->pbval;
 
   // Laplacians (in orthogonal directions) of face-centered FaceField
-  AthenaArray<Real> laplacian_bx1, laplacian_bx2, laplacian_bx3;
-  laplacian_bx1.InitWithShallowCopy(scr1_kji_x1fc_);
-  laplacian_bx2.InitWithShallowCopy(scr2_kji_x2fc_);
-  laplacian_bx3.InitWithShallowCopy(scr3_kji_x3fc_);
+  AthenaArray<Real> &laplacian_bx1 = scr1_kji_x1fc_, &laplacian_bx2 = scr2_kji_x2fc_,
+                    &laplacian_bx3 = scr3_kji_x3fc_;
 
   // Use 1x cell per boundary edge as buffer
   int il_buf=il, iu_buf=iu, jl_buf=jl, ju_buf=ju, kl_buf=kl, ku_buf=ku;
