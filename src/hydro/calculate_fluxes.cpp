@@ -249,18 +249,18 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
         // Limited transverse reconstructions: call PPMx2() for vx, vy both L/R states
         // wl_{i-1/2}  is E side of interface --> discontinuous states in x2, L=N,  R=S
-        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke, js, je+1, is, ie+1, wl, IVX, 0,
-                                             v_NE, v_SE);
-        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke, js, je+1, is, ie+1, wl, IVY, 1,
-                                             v_NE, v_SE);
+        pmb->precon->PiecewiseParabolicX2(pmb, ks, ke, js, je+1, is, ie+1, wl,
+                                             v_NE, v_SE, IVX, IVX, 0);
+        pmb->precon->PiecewiseParabolicX2(pmb, ks, ke, js, je+1, is, ie+1, wl,
+                                             v_NE, v_SE, IVY, IVY, 1);
         // wr_{i-1/2}  is W side of interface --> discontinuous states in x2, L=N,  R=S
-        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke, js, je+1, is, ie+1, wr, IVX, 0,
-                                             v_NW, v_SW);
-        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke, js, je+1, is, ie+1, wr, IVY, 1,
-                                             v_NW, v_SW);
+        pmb->precon->PiecewiseParabolicX2(pmb, ks, ke, js, je+1, is, ie+1, wr,
+                                             v_NW, v_SW, IVX, IVX, 0);
+        pmb->precon->PiecewiseParabolicX2(pmb, ks, ke, js, je+1, is, ie+1, wr,
+                                             v_NW, v_SW, IVY, IVY, 1);
         // Limited transverse reconstructions: call PPMx2() for single-state b_x
-        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke, js, je+1, is, ie+1, b1, 0, 0,
-                                             bx_N, bx_S);
+        pmb->precon->PiecewiseParabolicX2(pmb, ks, ke, js, je+1, is, ie+1, b1,
+                                             bx_N, bx_S, 0, 0, 0);
         // Repeat calculation of x1 edge-centered wavespeeds as in HLL solver
         Real wli[(NWAVE)], wri[(NWAVE)];
         int ivx = IVX;
@@ -303,18 +303,18 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         }
         // Compute states for 3D UCT
         if (pmb->block_size.nx3 > 1) {
-          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wl, IVX,
-                                               0, v_L3L1, v_R3L1);
-          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wl, IVZ,
-                                               2, v_L3L1, v_R3L1);
-          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wr, IVX,
-                                               0, v_L3R1, v_R3R1);
-          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, wr, IVZ,
-                                               2, v_L3R1, v_R3R1);
+          pmb->precon->PiecewiseParabolicX3(pmb, ks, ke+1, js, je, is, ie+1, wl,
+                                               v_L3L1, v_R3L1, IVX, IVX, 0);
+          pmb->precon->PiecewiseParabolicX3(pmb, ks, ke+1, js, je, is, ie+1, wl,
+                                               v_L3L1, v_R3L1, IVZ, IVZ, 2);
+          pmb->precon->PiecewiseParabolicX3(pmb, ks, ke+1, js, je, is, ie+1, wr,
+                                               v_L3R1, v_R3R1, IVX, IVX, 0);
+          pmb->precon->PiecewiseParabolicX3(pmb, ks, ke+1, js, je, is, ie+1, wr,
+                                               v_L3R1, v_R3R1, IVZ, IVZ, 2);
 
           // Limited transverse reconstructions: call PPMx3() for single-state b_x
-          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je, is, ie+1, b1, 0, 0,
-                                               bx_L3, bx_R3);
+          pmb->precon->PiecewiseParabolicX3(pmb, ks, ke+1, js, je, is, ie+1, b1,
+                                               bx_L3, bx_R3, 0, 0, 0);
         } // end UCT if 3D
       } // end if 2D or 3D
     } else { // end if (order == 4) UCT4x1
@@ -486,10 +486,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
       if (order == 4) {
         // Limited transverse reconstructions: call PPMx1() for vx, vy both L/R states
         // wl_{i,j-1/2} is N side of interface --> discontinuous states in x1, L=E,  R=W
-        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke, js, je+1, is, ie+1, wl, IVX, 0,
-                                             vl_temp, vr_temp);
-        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke, js, je+1, is, ie+1, wl, IVY, 1,
-                                             vl_temp, vr_temp);
+        pmb->precon->PiecewiseParabolicX1(pmb, ks, ke, js, je+1, is, ie+1, wl,
+                                             vl_temp, vr_temp, IVX, IVX, 0);
+        pmb->precon->PiecewiseParabolicX1(pmb, ks, ke, js, je+1, is, ie+1, wl,
+                                             vl_temp, vr_temp, IVY, IVY, 1);
         // Store temporary arrays as average of R_x[R_y[]] and R_y[R_x[]] reconstructions
         for (int n=0; n<2; ++n) {
           for (int k=ks; k<=ke; ++k) {
@@ -502,10 +502,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           }
         }
         // wr_{i,j-1/2}  is S side of interface --> discontinuous states in x1, L=E, R=W
-        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke, js, je+1, is, ie+1, wr, IVX, 0,
-                                             vl_temp, vr_temp);
-        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke, js, je+1, is, ie+1, wr, IVY, 1,
-                                             vl_temp, vr_temp);
+        pmb->precon->PiecewiseParabolicX1(pmb, ks, ke, js, je+1, is, ie+1, wr,
+                                             vl_temp, vr_temp, IVX, IVX, 0);
+        pmb->precon->PiecewiseParabolicX1(pmb, ks, ke, js, je+1, is, ie+1, wr,
+                                             vl_temp, vr_temp, IVY, IVY, 1);
 
         // Store temporary arrays as average of R_x[R_y[]] and R_y[R_x[]] reconstructions
         for (int n=0; n<2; ++n) {
@@ -519,8 +519,8 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           }
         }
         // Limited transverse reconstructions: call PPMx1() for single-state b_y
-        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke, js, je+1, is, ie+1, b2, 0, 0,
-                                             by_E, by_W);
+        pmb->precon->PiecewiseParabolicX1(pmb, ks, ke, js, je+1, is, ie+1, b2,
+                                             by_E, by_W, 0, 0, 0);
         // Repeat calculation of x2 edge-centered wavespeeds as in HLL solver
         Real wli[(NWAVE)], wri[(NWAVE)];
         int ivx = IVY;
@@ -563,18 +563,18 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         }
         // Compute states for 3D UCT
         if (pmb->block_size.nx3 > 1) {
-          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, wl, IVY,
-                                               1, v_L3L2, v_R3L2);
-          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, wl, IVZ,
-                                               2, v_L3L2, v_R3L2);
-          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, wr, IVY,
-                                               1, v_L3R2, v_R3R2);
-          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, wr, IVZ,
-                                               2, v_L3R2, v_R3R2);
+          pmb->precon->PiecewiseParabolicX3(pmb, ks, ke+1, js, je+1, is, ie, wl,
+                                               v_L3L2, v_R3L2, IVY, IVY, 1);
+          pmb->precon->PiecewiseParabolicX3(pmb, ks, ke+1, js, je+1, is, ie, wl,
+                                               v_L3L2, v_R3L2, IVZ, IVZ, 2);
+          pmb->precon->PiecewiseParabolicX3(pmb, ks, ke+1, js, je+1, is, ie, wr,
+                                               v_L3R2, v_R3R2, IVY, IVY, 1);
+          pmb->precon->PiecewiseParabolicX3(pmb, ks, ke+1, js, je+1, is, ie, wr,
+                                               v_L3R2, v_R3R2, IVZ, IVZ, 2);
 
           // Limited transverse reconstructions: call PPMx3() for single-state b_x
-          pmb->precon->PiecewiseParabolicUCTx3(pmb, ks, ke+1, js, je+1, is, ie, b2, 0, 0,
-                                               by_L3, by_R3);
+          pmb->precon->PiecewiseParabolicX3(pmb, ks, ke+1, js, je+1, is, ie, b2,
+                                               by_L3, by_R3, 0, 0, 0);
         } // end UCT if 3D
       } else { // end if (order == 4) UCT4x1
         // compute weights for GS07 CT algorithm
@@ -721,10 +721,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
       //-------- begin fourth-order upwind constrained transport (UCT4x3)
         // Limited transverse reconstructions: call PPMx1() for x1x3 interfaces
         // L3 states:
-        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke+1, js, je, is, ie+1, wl, IVX, 0,
-                                             vl_temp, vr_temp);
-        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke+1, js, je, is, ie+1, wl, IVZ, 2,
-                                             vl_temp, vr_temp);
+        pmb->precon->PiecewiseParabolicX1(pmb, ks, ke+1, js, je, is, ie+1, wl,
+                                             vl_temp, vr_temp, IVX, IVX, 0);
+        pmb->precon->PiecewiseParabolicX1(pmb, ks, ke+1, js, je, is, ie+1, wl,
+                                             vl_temp, vr_temp, IVZ, IVZ, 2);
         // Store temporary arrays as average of R_x[R_z[]] and R_z[R_x[]] reconstructions
         for (int n=0; n<3; n+=2) { // n=0, 2
           for (int k=ks; k<=ke+1; ++k) {
@@ -738,10 +738,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         }
 
         // R3 states:
-        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke+1, js, je, is, ie+1, wr, IVX, 0,
-                                             vl_temp, vr_temp);
-        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke+1, js, je, is, ie+1, wr, IVZ, 2,
-                                             vl_temp, vr_temp);
+        pmb->precon->PiecewiseParabolicX1(pmb, ks, ke+1, js, je, is, ie+1, wr,
+                                             vl_temp, vr_temp, IVX, IVX, 0);
+        pmb->precon->PiecewiseParabolicX1(pmb, ks, ke+1, js, je, is, ie+1, wr,
+                                             vl_temp, vr_temp, IVZ, IVZ, 2);
         // Store temporary arrays as average of R_x[R_z[]] and R_z[R_x[]] reconstructions
         for (int n=0; n<3; n+=2) { // n=0, 2
           for (int k=ks; k<=ke+1; ++k) {
@@ -756,10 +756,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
         // Limited transverse reconstructions: call PPMx2() for x2x3 interfaces
         // L3 states:
-        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke+1, js, je+1, is, ie, wl, IVY, 1,
-                                             vl_temp, vr_temp);
-        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke+1, js, je+1, is, ie, wl, IVZ, 2,
-                                             vl_temp, vr_temp);
+        pmb->precon->PiecewiseParabolicX2(pmb, ks, ke+1, js, je+1, is, ie, wl,
+                                             vl_temp, vr_temp, IVY, IVY, 1 );
+        pmb->precon->PiecewiseParabolicX2(pmb, ks, ke+1, js, je+1, is, ie, wl,
+                                             vl_temp, vr_temp, IVZ, IVZ, 2);
         // Store temporary arrays as average of R_y[R_z[]] and R_z[R_y[]] reconstructions
         for (int n=1; n<3; ++n) {
           for (int k=ks; k<=ke+1; ++k) {
@@ -773,10 +773,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         }
 
         // R3 states:
-        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke+1, js, je+1, is, ie, wr, IVY, 1,
-                                             vl_temp, vr_temp);
-        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke+1, js, je+1, is, ie, wr, IVZ, 2,
-                                             vl_temp, vr_temp);
+        pmb->precon->PiecewiseParabolicX2(pmb, ks, ke+1, js, je+1, is, ie, wr,
+                                             vl_temp, vr_temp, IVY, IVY, 1);
+        pmb->precon->PiecewiseParabolicX2(pmb, ks, ke+1, js, je+1, is, ie, wr,
+                                             vl_temp, vr_temp, IVZ, IVZ, 2);
         // Store temporary arrays as average of R_y[R_z[]] and R_z[R_y[]] reconstructions
         for (int n=1; n<3; ++n) {
           for (int k=ks; k<=ke+1; ++k) {
@@ -791,11 +791,11 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
         // Limited transverse reconstructions: call PPM for single-state b_z
         // PPMx1()
-        pmb->precon->PiecewiseParabolicUCTx1(pmb, ks, ke+1, js, je, is, ie+1, b3, 0, 0,
-                                             bz_L1, bz_R1);
+        pmb->precon->PiecewiseParabolicX1(pmb, ks, ke+1, js, je, is, ie+1, b3,
+                                             bz_L1, bz_R1, 0, 0, 0);
         // PPMx2()
-        pmb->precon->PiecewiseParabolicUCTx2(pmb, ks, ke+1, js, je+1, is, ie, b3, 0, 0,
-                                             bz_L2, bz_R2);
+        pmb->precon->PiecewiseParabolicX2(pmb, ks, ke+1, js, je+1, is, ie, b3,
+                                             bz_L2, bz_R2, 0, 0, 0);
 
         // Repeat calculation of x3 edge-centered wavespeeds as in HLL solver
         Real wli[(NWAVE)], wri[(NWAVE)];
