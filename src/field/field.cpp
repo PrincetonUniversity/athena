@@ -357,11 +357,11 @@ void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center
   }
 
   // Compute and store Laplacian of cell-averaged conserved variables
-  pco->LaplacianX1(bf.x1f, laplacian_bx1, il, iu+1, jl_buf, ju_buf, kl_buf, ku_buf,
+  pco->LaplacianX1All(bf.x1f, laplacian_bx1, il, iu+1, jl_buf, ju_buf, kl_buf, ku_buf,
                    nl, nu);
-  pco->LaplacianX2(bf.x2f, laplacian_bx2, il_buf, iu_buf, jl, ju+1, kl_buf, ku_buf,
+  pco->LaplacianX2All(bf.x2f, laplacian_bx2, il_buf, iu_buf, jl, ju+1, kl_buf, ku_buf,
                    nl, nu);
-  pco->LaplacianX3(bf.x3f, laplacian_bx3, il_buf, iu_buf, jl_buf, ju_buf, kl, ku+1,
+  pco->LaplacianX3All(bf.x3f, laplacian_bx3, il_buf, iu_buf, jl_buf, ju_buf, kl, ku+1,
                    nl, nu);
 
   // TODO(kfelker): deal with this usage of C
