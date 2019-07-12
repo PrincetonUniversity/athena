@@ -19,7 +19,7 @@
 
 // C++ headers
 #include <algorithm>
-#include <cmath>      // std::sqrt(), std::fabs()
+#include <cmath>      // std::sqrt(), std::abs()
 // #include <cstdio>     // fopen(), fprintf(), freopen()
 #include <iostream>   // endl
 #include <sstream>    // stringstream
@@ -263,21 +263,21 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           // Weight l1 error by cell volume
           Real vol = pmb->pcoord->GetCellVolume(k, j, i);
 
-          err[IDN] += std::fabs(den - pmb->phydro->u(IDN,k,j,i))*vol;
-          err[IM1] += std::fabs(m1 - pmb->phydro->u(IM1,k,j,i))*vol;
-          err[IM2] += std::fabs(m2 - pmb->phydro->u(IM2,k,j,i))*vol;
-          err[IM3] += std::fabs(m3 - pmb->phydro->u(IM3,k,j,i))*vol;
+          err[IDN] += std::abs(den - pmb->phydro->u(IDN,k,j,i))*vol;
+          err[IM1] += std::abs(m1 - pmb->phydro->u(IM1,k,j,i))*vol;
+          err[IM2] += std::abs(m2 - pmb->phydro->u(IM2,k,j,i))*vol;
+          err[IM3] += std::abs(m3 - pmb->phydro->u(IM3,k,j,i))*vol;
 
           Real b1 = cons_(NHYDRO+IB1,k,j,i);
           Real b2 = cons_(NHYDRO+IB2,k,j,i);
           Real b3 = cons_(NHYDRO+IB3,k,j,i);
-          err[NHYDRO + IB1] += std::fabs(b1 - pmb->pfield->bcc(IB1,k,j,i))*vol;
-          err[NHYDRO + IB2] += std::fabs(b2 - pmb->pfield->bcc(IB2,k,j,i))*vol;
-          err[NHYDRO + IB3] += std::fabs(b3 - pmb->pfield->bcc(IB3,k,j,i))*vol;
+          err[NHYDRO + IB1] += std::abs(b1 - pmb->pfield->bcc(IB1,k,j,i))*vol;
+          err[NHYDRO + IB2] += std::abs(b2 - pmb->pfield->bcc(IB2,k,j,i))*vol;
+          err[NHYDRO + IB3] += std::abs(b3 - pmb->pfield->bcc(IB3,k,j,i))*vol;
 
           if (NON_BAROTROPIC_EOS) {
             Real e0 = cons_(IEN,k,j,i);
-            err[IEN] += std::fabs(e0 - pmb->phydro->u(IEN,k,j,i))*vol;
+            err[IEN] += std::abs(e0 - pmb->phydro->u(IEN,k,j,i))*vol;
           }
         }
       }

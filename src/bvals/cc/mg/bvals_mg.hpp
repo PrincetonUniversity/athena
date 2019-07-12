@@ -36,7 +36,7 @@ class Coordinates;
 
 class MGBoundaryValues : public BoundaryBase {
  public:
-  MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs, MGBoundaryFunc *MGBoundary);
+  MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs);
   ~MGBoundaryValues();
 
   void InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type);
@@ -55,6 +55,7 @@ class MGBoundaryValues : public BoundaryBase {
       int nvar, int nc, int ngh, Real *buf, const NeighborBlock& nb);
   bool ReceiveMultigridBoundaryBuffers(AthenaArray<Real> &dst,
                                        int nc, BoundaryQuantity type);
+  void CopyNeighborInfoFromMeshBlock();
 
  private:
   Multigrid *pmy_mg_;

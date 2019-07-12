@@ -23,32 +23,41 @@
 #include "multigrid.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn Multigrid::Multigrid(MultigridDriver *pmd, LogicalLocation iloc, int igid,
-//                           int ilid, int invar, int nghost, RegionSize isize,
-//                           MGBoundaryFunc *MGBoundary, BoundaryFlag *input_bcs,
-//                           bool root);
+//! \fn Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost)
 //  \brief Multigrid constructor
 
-Multigrid::Multigrid(
-    MultigridDriver *pmd, LogicalLocation iloc, int igid, int ilid,
-    int invar, int nghost, RegionSize isize, MGBoundaryFunc *MGBoundary,
-    BoundaryFlag *input_bcs, bool root) {
+Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost) {
   pmy_driver_=pmd;
-  loc_=iloc;
-  gid_=igid;
-  lid_=ilid;
+  pmy_block_=pmb;
   ngh_=nghost;
-  size_=isize;
   nvar_=invar;
-  root_flag_=root;
+  if (pmy_block_ != nullptr) {
+    loc_ = pmy_block_->loc;
+    size_ = pmy_block_->block_size;
+    if (size_.nx1 != size_.nx2 || size_.nx1 != size_.nx3) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
+          << "The Multigrid solver requires logically cubic MeshBlock." << std::endl;
+      ATHENA_ERROR(msg);
+      return;
+    }
+    pmgbval = new MGBoundaryValues(this, pmy_block_->pbval->block_bcs);
+  } else {
+    loc_.lx1 = loc_.lx2 = loc_.lx3 = 0;
+    loc_.level = 0;
+    size_ = pmy_driver_->pmy_mesh_->mesh_size;
+    size_.nx1 = pmy_driver_->nrbx1_;
+    size_.nx2 = pmy_driver_->nrbx2_;
+    size_.nx3 = pmy_driver_->nrbx3_;
+    pmgbval = new MGBoundaryValues(this, pmy_driver_->pmy_mesh_->mesh_bcs);
+  }
+
   rdx_=(size_.x1max-size_.x1min)/static_cast<Real>(size_.nx1);
   rdy_=(size_.x2max-size_.x2min)/static_cast<Real>(size_.nx2);
   rdz_=(size_.x3max-size_.x3min)/static_cast<Real>(size_.nx3);
-  prev=nullptr;
-  next=nullptr;
 
   nlevel_=0;
-  if (root_flag_) {
+  if (pmy_block_ == nullptr) { // root
     int nbx, nby, nbz;
     for (int l=0; l<20; l++) {
       if (size_.nx1%(1<<l)==0 && size_.nx2%(1<<l)==0 && size_.nx3%(1<<l)==0) {
@@ -89,7 +98,7 @@ Multigrid::Multigrid(
       return;
     }
     // *** temporary ***
-    if (std::fabs(rdx_-rdy_)>1.0e-5 || std::fabs(rdx_-rdz_)>1.0e-5) {
+    if (std::abs(rdx_-rdy_)>1.0e-5 || std::abs(rdx_-rdz_)>1.0e-5) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
           << "The cell size must be cubic." << std::endl;
@@ -97,8 +106,6 @@ Multigrid::Multigrid(
       return;
     }
   }
-
-  pmgbval = new MGBoundaryValues(this, input_bcs, MGBoundary);
 
   // allocate arrays
   u_ = new AthenaArray<Real>[nlevel_];
@@ -120,9 +127,6 @@ Multigrid::Multigrid(
 //  \brief Multigrid destroctor
 
 Multigrid::~Multigrid() {
-  if (prev!=nullptr) prev->next=next;
-  if (next!=nullptr) next->prev=prev;
-
   delete [] u_;
   delete [] src_;
   delete [] def_;
@@ -475,14 +479,14 @@ Real Multigrid::CalculateDefectNorm(int n, int nrm) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++)
-          norm=std::max(norm,std::fabs(def(n,k,j,i)));
+          norm=std::max(norm,std::abs(def(n,k,j,i)));
       }
     }
   } else if (nrm==1) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++)
-          norm+=std::fabs(def(n,k,j,i));
+          norm+=std::abs(def(n,k,j,i));
       }
     }
   } else { // nrm>1 -> nrm=2

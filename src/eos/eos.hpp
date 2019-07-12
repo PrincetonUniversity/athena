@@ -158,7 +158,6 @@ class EquationOfState {
 #endif  // !MAGNETIC_FIELDS_ENABLED (GR)
 #endif  // #else (#if !RELATIVISTIC_DYNAMICS, #elif !GENERAL_RELATIVITY)
 
-  Real RiemannAsq(Real rho, Real hint);
   Real PresFromRhoEg(Real rho, Real egas);
   Real EgasFromRhoP(Real rho, Real pres);
   Real AsqFromRhoP(Real rho, Real pres);
@@ -168,7 +167,7 @@ class EquationOfState {
   EosTable* ptable; // pointer to EOS table data
 #if GENERAL_EOS
   Real GetGamma();
-#else // not EOS_TABLE_ENABLED
+#else // not GENERAL_EOS
   Real GetGamma() const {return gamma_;}
 #endif
 
@@ -179,22 +178,22 @@ class EquationOfState {
   Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
   Real density_floor_, pressure_floor_;  // density and pressure floors
   Real energy_floor_;                    // energy floor
-  Real scalar_floor_{0.0};               // dimensionless concentration scalar floor
+  Real scalar_floor_; // dimensionless concentration floor
   Real sigma_max_, beta_min_;            // limits on ratios of gas quantities to pmag
   Real gamma_max_;                       // maximum Lorentz factor
   Real rho_min_, rho_pow_;               // variables to control power-law denity floor
   Real pgas_min_, pgas_pow_;             // variables to control power-law pressure floor
+  Real rho_unit_, inv_rho_unit_;         // physical unit/sim unit for mass density
+  Real egas_unit_, inv_egas_unit_;       // physical unit/sim unit for energy density
+  Real vsqr_unit_, inv_vsqr_unit_;       // physical unit/sim unit for speed^2
   AthenaArray<Real> g_, g_inv_;          // metric and its inverse, used in GR
-  AthenaArray<bool> fixed_, success_;    // flags for problems, used in GR
+  AthenaArray<Real> fixed_;              // cells with problems, used in GR hydro
   AthenaArray<Real> normal_dd_;          // normal-frame densities, used in GR MHD
   AthenaArray<Real> normal_ee_;          // normal-frame energies, used in GR MHD
   AthenaArray<Real> normal_mm_;          // normal-frame momenta, used in GR MHD
   AthenaArray<Real> normal_bb_;          // normal-frame fields, used in GR MHD
   AthenaArray<Real> normal_tt_;          // normal-frame M.B, used in GR MHD
-  AthenaArray<Real> dens_floor_local_;   // floor on rho for any reason, used in GR MHD
-  AthenaArray<Real> press_floor_local_;  // floor on pgas for any reason, used in GR MHD
-  AthenaArray<Real> normal_gamma_;       // normal-frame Lorentz factor, used in GR MHD
-  AthenaArray<Real> pmag_;               // fluid-frame magnetic pressure, used in GR MHD
+  void InitEosConstants(ParameterInput *pin);
 };
 
 #endif // EOS_EOS_HPP_

@@ -36,18 +36,19 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
+  Real wli[(NHYDRO)],wri[(NHYDRO)];
   Real flxi[(NHYDRO)],fl[(NHYDRO)],fr[(NHYDRO)];
-  Real gm1;
+  Real gamma;
   if (GENERAL_EOS) {
-    gm1 = std::nan("");
+    gamma = std::nan("");
   } else {
-    gm1 = pmy_block->peos->GetGamma() - 1.0;
+    gamma = pmy_block->peos->GetGamma();
   }
+  Real gm1 = gamma - 1.0;
   Real igm1 = 1.0/gm1;
 
 #pragma distribute_point
-#pragma omp simd private(wli,wri,wroe,flxi,fl,fr)
+#pragma omp simd private(wli,wri,flxi,fl,fr)
   for (int i=il; i<=iu; ++i) {
     //--- Step 1.  Load L/R states into local variables
     wli[IDN]=wl(IDN,i);
@@ -62,20 +63,11 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     wri[IVZ]=wr(ivz,i);
     wri[IPR]=wr(IPR,i);
 
-    //--- Step 2.  Compute Roe-averaged state
+    //--- Step 2.  Compute middle state estimates with PVRS (Toro 10.5.2)
 
-    Real sqrtdl = std::sqrt(wli[IDN]);
-    Real sqrtdr = std::sqrt(wri[IDN]);
-    Real isdlpdr = 1.0/(sqrtdl + sqrtdr);
-
-    if (GENERAL_EOS) wroe[IDN] = sqrtdl*sqrtdr;
-    wroe[IVX] = (sqrtdl*wli[IVX] + sqrtdr*wri[IVX])*isdlpdr;
-    wroe[IVY] = (sqrtdl*wli[IVY] + sqrtdr*wri[IVY])*isdlpdr;
-    wroe[IVZ] = (sqrtdl*wli[IVZ] + sqrtdr*wri[IVZ])*isdlpdr;
-
-    // Following Roe(1981), the enthalpy H=(E+P)/d is averaged for adiabatic flows,
-    // rather than E or P directly.  sqrtdl*hl = sqrtdl*(el+pl)/dl = (el+pl)/sqrtdl
-    Real el,er,hroe;
+    Real al, ar, el, er;
+    Real cl = pmy_block->peos->SoundSpeed(wli);
+    Real cr = pmy_block->peos->SoundSpeed(wri);
     if (GENERAL_EOS) {
       el = pmy_block->peos->EgasFromRhoP(wli[IDN], wli[IPR]) +
            0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
@@ -85,24 +77,34 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       el = wli[IPR]*igm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
       er = wri[IPR]*igm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
     }
-    hroe = ((el + wli[IPR])/sqrtdl + (er + wri[IPR])/sqrtdr)*isdlpdr;
+    Real rhoa = .5 * (wli[IDN] + wri[IDN]); // average density
+    Real ca = .5 * (cl + cr); // average sound speed
+    Real pmid = .5 * (wli[IPR] + wri[IPR] + (wli[IVX]-wri[IVX]) * rhoa * ca);
+    Real umid = .5 * (wli[IVX] + wri[IVX] + (wli[IPR]-wri[IPR]) / (rhoa * ca));
+    Real rhol = wli[IDN] + (wli[IVX] - umid) * rhoa / ca; // mid-left density
+    Real rhor = wri[IDN] + (umid - wri[IVX]) * rhoa / ca; // mid-right density
 
-    //--- Step 3.  Compute sound speed in L,R, and Roe-averaged states
+    //--- Step 3.  Compute sound speed in L,R
 
-    Real cl = pmy_block->peos->SoundSpeed(wli);
-    Real cr = pmy_block->peos->SoundSpeed(wri);
-    Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
-    Real a;
+    Real ql, qr;
     if (GENERAL_EOS) {
-      a = (q < 0.0) ? 0.0 : std::sqrt(pmy_block->peos->RiemannAsq(wroe[IDN], q));
-    } else { //not general EOS
-      a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
+      Real gl = pmy_block->peos->AsqFromRhoP(rhol, pmid) * rhol / pmid;
+      Real gr = pmy_block->peos->AsqFromRhoP(rhor, pmid) * rhor / pmid;
+      ql = (pmid <= wli[IPR]) ? 1.0 :
+           (1.0 + (gl + 1) / std::sqrt(2 * gl) * (pmid / wli[IPR]-1.0));
+      qr = (pmid <= wri[IPR]) ? 1.0 :
+           (1.0 + (gr + 1) / std::sqrt(2 * gr) * (pmid / wri[IPR]-1.0));
+    } else {
+      ql = (pmid <= wli[IPR]) ? 1.0 :
+           (1.0 + (gamma + 1) / std::sqrt(2 * gamma) * (pmid / wli[IPR]-1.0));
+      qr = (pmid <= wri[IPR]) ? 1.0 :
+           (1.0 + (gamma + 1) / std::sqrt(2 * gamma) * (pmid / wri[IPR]-1.0));
     }
 
-    //--- Step 4.  Compute the max/min wave speeds based on L/R and Roe-averaged values
+    //--- Step 4.  Compute the max/min wave speeds based on L/R
 
-    Real al = std::min((wroe[IVX] - a),(wli[IVX] - cl));
-    Real ar = std::max((wroe[IVX] + a),(wri[IVX] + cr));
+    al = wli[IVX] - cl*ql;
+    ar = wri[IVX] + cr*qr;
 
     Real bp = ar > 0.0 ? ar : 0.0;
     Real bm = al < 0.0 ? al : 0.0;

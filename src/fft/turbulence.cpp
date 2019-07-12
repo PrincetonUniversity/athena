@@ -32,20 +32,24 @@
 //! \fn TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
 //  \brief TurbulenceDriver constructor
 
-TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
-    : FFTDriver(pm, pin) {
-  rseed = pin->GetOrAddInteger("problem", "rseed", -1); // seed for random number.
-  nlow = pin->GetOrAddInteger("problem", "nlow", 0); // cut-off wavenumber
-  // cut-off wavenumber, high:
-  nhigh = pin->GetOrAddInteger("problem", "nhigh", pm->mesh_size.nx1/2);
-  expo = pin->GetOrAddReal("problem", "expo", 2); // power-law exponent
-  dedt = pin->GetReal("problem", "dedt"); // turbulence amplitude
-  if (pm->turb_flag > 1) {
-    tcorr = pin->GetReal("problem", "tcorr"); // correlation time scales for OU smoothing
-    if (pm->turb_flag == 2)
-      dtdrive = pin->GetReal("problem", "dtdrive"); // driving interval is set by hand
-  }
-  f_shear = pin->GetOrAddReal("problem", "f_shear", -1); // ratio of shear component
+TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
+    FFTDriver(pm, pin),
+    rseed(pin->GetOrAddInteger("problem", "rseed", -1)), // seed for RNG
+    // cut-off wavenumbers, low and high:
+    nlow(pin->GetOrAddInteger("problem", "nlow", 0)),
+    nhigh(pin->GetOrAddInteger("problem", "nhigh", pm->mesh_size.nx1/2)),
+    tdrive(pm->time),
+    // driving interval must be set manually:
+    dtdrive(pm->turb_flag == 2 ? pin->GetReal("problem", "dtdrive") : 0.0),
+    // correlation time scales for OU smoothing:
+    tcorr(pm->turb_flag > 1 ? pin->GetReal("problem", "tcorr") : 0.0),
+    f_shear(pin->GetOrAddReal("problem", "f_shear", -1)), // ratio of shear component
+    expo(pin->GetOrAddReal("problem", "expo", 2)), // power-law exponent
+    dedt(pin->GetReal("problem", "dedt")), // turbulence amplitude
+    // TODO(changgoo): this assumes 3D and should not work with 1D, 2D. Add check.
+    vel{ {nmb, pm->pblock->ncells3, pm->pblock->ncells2, pm->pblock->ncells1},
+         {nmb, pm->pblock->ncells3, pm->pblock->ncells2, pm->pblock->ncells1},
+         {nmb, pm->pblock->ncells3, pm->pblock->ncells2, pm->pblock->ncells1} } {
   if (f_shear > 1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
@@ -54,8 +58,6 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
     ATHENA_ERROR(msg);
     return;
   }
-
-  tdrive = pm->time;
 
   if (pm->turb_flag == 0) {
     std::stringstream msg;
@@ -72,17 +74,11 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
     return;
 #endif
   }
-  // TODO(changgoo): this assumes 3D and should not work with 1D, 2D. Add check.
-  int nx1 = pm->pblock->ncells1;
-  int nx2 = pm->pblock->ncells2;
-  int nx3 = pm->pblock->ncells3;
-
-  vel = new AthenaArray<Real>[3];
-  for (int nv=0; nv<3; nv++) vel[nv].NewAthenaArray(nmb, nx3, nx2, nx1);
 
   InitializeFFTBlock(true);
-  QuickCreatePlan();
+  // note, pmy_fb won't be defined until InitializeFFTBlock is called:
   dvol = pmy_fb->dx1*pmy_fb->dx2*pmy_fb->dx3;
+  QuickCreatePlan();
 
   fv_ = new std::complex<Real>*[3];
   fv_sh_ = new std::complex<Real>*[3];
@@ -104,7 +100,6 @@ TurbulenceDriver::~TurbulenceDriver() {
     delete [] fv_co_[nv];
     if (fv_new_ != nullptr) delete [] fv_new_[nv];
   }
-  delete [] vel;
   delete [] fv_;
   delete [] fv_sh_;
   delete [] fv_co_;
@@ -116,7 +111,7 @@ TurbulenceDriver::~TurbulenceDriver() {
 //  \brief Generate and Perturb the velocity field
 
 void TurbulenceDriver::Driving() {
-  Mesh *pm=pmy_mesh_;
+  Mesh *pm = pmy_mesh_;
 
   // check driving time interval to generate new perturbation
   switch(pm->turb_flag) {
@@ -149,12 +144,12 @@ void TurbulenceDriver::Driving() {
 //  \brief Generate velocity pertubation.
 
 void TurbulenceDriver::Generate() {
-  Mesh *pm=pmy_mesh_;
+  Mesh *pm = pmy_mesh_;
   FFTBlock *pfb = pmy_fb;
   AthenaFFTPlan *plan = pfb->bplan_;
 
-  int nbs=nslist_[Globals::my_rank];
-  int nbe=nbs+nblist_[Globals::my_rank]-1;
+  int nbs = nslist_[Globals::my_rank];
+  int nbe = nbs + nblist_[Globals::my_rank] - 1;
 
 
   // For driven turbulence (turb_flag == 2 or 3),
@@ -179,7 +174,7 @@ void TurbulenceDriver::Generate() {
     for (int kidx=0; kidx<pfb->cnt_; kidx++) pfb->in_[kidx] = fv_[nv][kidx];
     pfb->Execute(plan);
     for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
-      MeshBlock *pmb=pm->FindMeshBlock(igid);
+      MeshBlock *pmb = pm->FindMeshBlock(igid);
       if (pmb != nullptr) {
         dv_mb.InitWithShallowSlice(dv, 4, nb, 1);
         pfb->RetrieveResult(dv_mb, 0, NGHOST, pmb->loc, pmb->block_size);
@@ -290,7 +285,6 @@ void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp) {
 
 void TurbulenceDriver::Perturb(Real dt) {
   Mesh *pm = pmy_mesh_;
-  std::stringstream msg;
   int nbs = nslist_[Globals::my_rank];
   int nbe = nbs+nblist_[Globals::my_rank]-1;
 
@@ -299,7 +293,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   int kl = pm->pblock->ks, ku = pm->pblock->ke;
 
   Real aa, b, c, s, de, v1, v2, v3, den, M1, M2, M3;
-  Real m[4] = {0}, gm[4];
+  Real m[4] = {0};
   AthenaArray<Real> &dv1 = vel[0], &dv2 = vel[1], &dv3 = vel[2];
 
   for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
@@ -320,16 +314,17 @@ void TurbulenceDriver::Perturb(Real dt) {
   }
 
 #ifdef MPI_PARALLEL
+  Real gm[4];
   int mpierr;
   // Sum the perturbations over all processors
   mpierr = MPI_Allreduce(m, gm, 4, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   if (mpierr) {
-    msg << "[normalize]: MPI_Allreduce error = "
-        << mpierr << std::endl;
+    std::stringstream msg;
+    msg << "[normalize]: MPI_Allreduce error = " << mpierr << std::endl;
     ATHENA_ERROR(msg);
   }
   // TODO(felker): ask Chang-Goo about this next line:
-  for (int n=0; n<4; n++) m[n]=gm[n];
+  for (int n=0; n<4; n++) m[n] = gm[n];
 #endif // MPI_PARALLEL
 
   for (int nb=0; nb<nmb; nb++) {
@@ -348,7 +343,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   m[0] = 0.0;
   m[1] = 0.0;
   for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
-    MeshBlock *pmb=pm->FindMeshBlock(igid);
+    MeshBlock *pmb = pm->FindMeshBlock(igid);
     if (pmb != nullptr) {
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
@@ -372,6 +367,7 @@ void TurbulenceDriver::Perturb(Real dt) {
   // Sum the perturbations over all processors
   mpierr = MPI_Allreduce(m, gm, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   if (mpierr) {
+    std::stringstream msg;
     msg << "[normalize]: MPI_Allreduce error = "
         << mpierr << std::endl;
     ATHENA_ERROR(msg);
@@ -400,7 +396,7 @@ void TurbulenceDriver::Perturb(Real dt) {
 
   // Apply momentum pertubations
   for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
-    MeshBlock *pmb=pm->FindMeshBlock(igid);
+    MeshBlock *pmb = pm->FindMeshBlock(igid);
     if (pmb != nullptr) {
       for (int k=kl; k<=ku; k++) {
         for (int j=jl; j<=ju; j++) {

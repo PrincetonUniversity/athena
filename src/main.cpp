@@ -120,10 +120,31 @@ int main(int argc, char *argv[]) {
   for (int i=1; i<argc; i++) {
     // If argv[i] is a 2 character string of the form "-?" then:
     if (*argv[i] == '-'  && *(argv[i]+1) != '\0' && *(argv[i]+2) == '\0') {
+      // check validity of command line options + arguments:
+      char opt_letter = *(argv[i]+1);
+      switch(opt_letter) {
+        // options that do not take arguments:
+        case 'n':
+        case 'c':
+        case 'h':
+          break;
+          // options that require arguments:
+        default:
+          if ((i+1 >= argc) // flag is at the end of the command line options
+              || (*argv[i+1] == '-') ) { // flag is followed by another flag
+            if (Globals::my_rank == 0) {
+              std::cout << "### FATAL ERROR in main" << std::endl
+                        << "-" << opt_letter << " must be followed by a valid argument\n";
+#ifdef MPI_PARALLEL
+              MPI_Finalize();
+#endif
+              return(0);
+            }
+          }
+      }
       switch(*(argv[i]+1)) {
         case 'i':                      // -i <input_filename>
-          ++i;
-          input_filename = argv[i];
+          input_filename = argv[++i];
           iarg_flag = 1;
           break;
         case 'r':                      // -r <restart_file>
@@ -136,16 +157,16 @@ int main(int argc, char *argv[]) {
         case 'n':
           narg_flag = 1;
           break;
-        case 'm':
-          mesh_flag = static_cast<int>(std::strtol(argv[++i],nullptr,10));
+        case 'm':                      // -m <nproc>
+          mesh_flag = static_cast<int>(std::strtol(argv[++i], nullptr, 10));
           break;
-        case 't':
+        case 't':                      // -t <hh:mm:ss>
           int wth, wtm, wts;
-          std::sscanf(argv[++i],"%d:%d:%d",&wth,&wtm,&wts);
-          wtlim=wth*3600+wtm*60+wts;
+          std::sscanf(argv[++i], "%d:%d:%d", &wth, &wtm, &wts);
+          wtlim = wth*3600 + wtm*60 + wts;
           break;
         case 'c':
-          if (Globals::my_rank==0) ShowConfig();
+          if (Globals::my_rank == 0) ShowConfig();
 #ifdef MPI_PARALLEL
           MPI_Finalize();
 #endif
@@ -153,18 +174,18 @@ int main(int argc, char *argv[]) {
           break;
         case 'h':
         default:
-          if (Globals::my_rank==0) {
-            std::cout<<"Athena++ "<< athena_version <<std::endl;
-            std::cout<<"Usage: "<<argv[0]<<" [options] [block/par=value ...]"<<std::endl;
-            std::cout<<"Options:" << std::endl;
-            std::cout<<"  -i <file>       specify input file [athinput]"<<std::endl;
-            std::cout<<"  -r <file>       restart with this file"<<std::endl;
-            std::cout<<"  -d <directory>  specify run dir [current dir]"<<std::endl;
-            std::cout<<"  -n              parse input file and quit"<<std::endl;
-            std::cout<<"  -c              show configuration and quit"<<std::endl;
-            std::cout<<"  -m <nproc>      output mesh structure and quit"<<std::endl;
-            std::cout<<"  -t hh:mm:ss     wall time limit for final output" << std::endl;
-            std::cout<<"  -h              this help"<<std::endl;
+          if (Globals::my_rank == 0) {
+            std::cout << "Athena++ " << athena_version << std::endl;
+            std::cout << "Usage: " << argv[0] << " [options] [block/par=value ...]\n";
+            std::cout << "Options:" << std::endl;
+            std::cout << "  -i <file>       specify input file [athinput]\n";
+            std::cout << "  -r <file>       restart with this file\n";
+            std::cout << "  -d <directory>  specify run dir [current dir]\n";
+            std::cout << "  -n              parse input file and quit\n";
+            std::cout << "  -c              show configuration and quit\n";
+            std::cout << "  -m <nproc>      output mesh structure and quit\n";
+            std::cout << "  -t hh:mm:ss     wall time limit for final output\n";
+            std::cout << "  -h              this help\n";
             ShowConfig();
           }
 #ifdef MPI_PARALLEL
@@ -176,7 +197,7 @@ int main(int argc, char *argv[]) {
     } // else if argv[i] not of form "-?" ignore it here (tested in ModifyFromCmdline)
   }
 
-  if (restart_filename==nullptr && input_filename==nullptr) {
+  if (restart_filename == nullptr && input_filename == nullptr) {
     // no input file is given
     std::cout << "### FATAL ERROR in main" << std::endl
               << "No input file or restart file is specified." << std::endl;
@@ -292,7 +313,7 @@ int main(int argc, char *argv[]) {
   if (res_flag == 1) restartfile.Close(); // close the restart file here
 
   // Quit if -m was on cmdline.  This option builds and outputs mesh structure.
-  if (mesh_flag>0) {
+  if (mesh_flag > 0) {
 #ifdef MPI_PARALLEL
     MPI_Finalize();
 #endif
@@ -319,7 +340,7 @@ int main(int argc, char *argv[]) {
   }
 #endif // ENABLE_EXCEPTIONS
 
-  TaskList *pststlist = nullptr;
+  SuperTimeStepTaskList *pststlist = nullptr;
   if (STS_ENABLED) {
 #ifdef ENABLE_EXCEPTIONS
     try {
@@ -373,7 +394,7 @@ int main(int argc, char *argv[]) {
 #endif
     ChangeRunDir(prundir);
     pouts = new Outputs(pmesh, pinput);
-    if (res_flag == 0) pouts->MakeOutputs(pmesh,pinput);
+    if (res_flag == 0) pouts->MakeOutputs(pmesh, pinput);
 #ifdef ENABLE_EXCEPTIONS
   }
   catch(std::bad_alloc& ba) {
@@ -394,11 +415,8 @@ int main(int argc, char *argv[]) {
   }
 #endif // ENABLE_EXCEPTIONS
 
-  // KGF: missing step 8
-
-  //=== Step 9. === START OF MAIN INTEGRATION LOOP =======================================
+  //=== Step 8. === START OF MAIN INTEGRATION LOOP =======================================
   // For performance, there is no error handler protecting this step (except outputs)
-
 
   if (Globals::my_rank == 0) {
     std::cout << "\nSetup complete, entering main loop...\n" << std::endl;
@@ -411,23 +429,17 @@ int main(int argc, char *argv[]) {
 
   while ((pmesh->time < pmesh->tlim) &&
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)) {
-    if (Globals::my_rank == 0) {
-      if (pmesh->ncycle_out != 0) {
-        if (pmesh->ncycle % pmesh->ncycle_out == 0) {
-          std::cout << "cycle=" << pmesh->ncycle<< std::scientific
-                    << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1)
-                    << " time=" << pmesh->time << " dt=" << pmesh->dt <<std::endl;
-        }
-      }
-    }
+    if (Globals::my_rank == 0)
+      pmesh->OutputCycleDiagnostics();
 
     if (STS_ENABLED) {
       // compute nstages for this STS
       Real my_dt = pmesh->dt;
-      Real dt_diff  = pmesh->dt_diff;
-      pststlist->nstages = static_cast<int>(0.5*(-1.+std::sqrt(1.+8.*my_dt/dt_diff))) + 1;
+      Real dt_parabolic  = pmesh->dt_parabolic;
+      pststlist->nstages =
+          static_cast<int>(0.5*(-1. + std::sqrt(1. + 8.*my_dt/dt_parabolic))) + 1;
 
-      // super-time-step
+      // take super-timestep
       for (int stage=1; stage<=pststlist->nstages; ++stage)
         pststlist->DoTaskListOneStage(pmesh,stage);
     }
@@ -441,6 +453,8 @@ int main(int argc, char *argv[]) {
         pmesh->pmgrd->Solve(stage);
       ptlist->DoTaskListOneStage(pmesh, stage);
     }
+
+    pmesh->UserWorkInLoop();
 
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;
@@ -484,7 +498,8 @@ int main(int argc, char *argv[]) {
   if (Globals::my_rank == 0 && wtlim > 0)
     SignalHandler::CancelWallTimeAlarm();
 
-  // make the final outputs
+  //--- Step 9. --------------------------------------------------------------------------
+  // Make the final outputs
 #ifdef ENABLE_EXCEPTIONS
   try {
 #endif
@@ -510,11 +525,10 @@ int main(int argc, char *argv[]) {
 
   pmesh->UserWorkAfterLoop(pinput);
 
-  // print diagnostic messages
+  //--- Step 10. -------------------------------------------------------------------------
+  // Print diagnostic messages related to the end of the simulation
   if (Globals::my_rank == 0) {
-    std::cout << "cycle=" << pmesh->ncycle << " time=" << pmesh->time
-              << " dt=" << pmesh->dt << std::endl;
-
+    pmesh->OutputCycleDiagnostics();
     if (SignalHandler::GetSignalFlag(SIGTERM) != 0) {
       std::cout << std::endl << "Terminating on Terminate signal" << std::endl;
     } else if (SignalHandler::GetSignalFlag(SIGINT) != 0) {

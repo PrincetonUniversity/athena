@@ -23,6 +23,7 @@ from collections import OrderedDict
 import logging
 import logging.config
 from pkgutil import iter_modules
+from timeit import default_timer as timer
 
 # Prevent generation of .pyc files
 # This should be set before importing any user modules
@@ -81,10 +82,12 @@ def main(**kwargs):
 
     # Run tests
     current_dir = os.getcwd()
+    test_times = []
     test_results = []
     test_errors = []
     try:
         for name in test_names:
+            t0 = timer()
             try:
                 name_full = 'scripts.tests.' + name
                 module = __import__(name_full, globals(), locals(),
@@ -134,7 +137,13 @@ def main(**kwargs):
             except TestError as err:
                 test_results.append(False)
                 logger.error('---> Error in ' + str(err))
+                # do not measure runtime for failed/incomplete tests
+                test_times.append(None)
             else:
+                test_times.append(timer() - t0)
+                msg = 'Test {0} took {1:.3g} seconds to complete.'
+                msg = msg.format(name, test_times[-1])
+                logging.getLogger('athena.tests.' + name).debug(msg)
                 test_results.append(result)
                 test_errors.append(None)
             finally:
@@ -149,10 +158,11 @@ def main(**kwargs):
 
     # Report test results
     logger.info('\nResults:')
-    for name, result, error in zip(test_names, test_results, test_errors):
+    for name, result, error, time in zip(test_names, test_results, test_errors,
+                                         test_times):
         result_string = 'passed' if result else 'failed'
         error_string = ' -- unexpected failure in {0} stage'.format(error) \
-                       if error is not None else ''
+                       if error is not None else '; time elapsed: {0:.3g} s'.format(time)
         logger.info('    {0}: {1}{2}'.format(name, result_string, error_string))
     logger.info('')
     num_tests = len(test_results)

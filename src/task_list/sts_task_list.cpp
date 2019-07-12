@@ -14,6 +14,7 @@
 
 // C++ headers
 #include <cstring>    // strcmp()
+#include <iomanip>    // std::setprecision()
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
@@ -25,6 +26,7 @@
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
+#include "../globals.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
@@ -39,15 +41,18 @@
 //  SuperTimeStepTaskList constructor
 
 SuperTimeStepTaskList::SuperTimeStepTaskList(
-    ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) : ptlist_(ptlist) {
-  // STS Incompatiblities
-  if (MAGNETIC_FIELDS_ENABLED
-      && !(pm->pblock->pfield->fdif.field_diffusion_defined)
-      && !(pm->pblock->phydro->hdif.hydro_diffusion_defined)) {
+    ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) :
+    sts_max_dt_ratio(pin->GetOrAddReal("time", "sts_max_dt_ratio", -1.0)),
+    ptlist_(ptlist) {
+  // Check for STS incompatiblities:
+  if (!(pm->pblock->phydro->hdif.hydro_diffusion_defined)
+      // short-circuit evaluation makes these safe (won't dereference pscalars=nullptr):
+      && !(MAGNETIC_FIELDS_ENABLED && pm->pblock->pfield->fdif.field_diffusion_defined)
+      && !(NSCALARS > 0 && pm->pblock->pscalars->scalar_diffusion_defined)) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping requires setting parameters for "
-        << "diffusive processes in input file." << std::endl;
+        << "at least one diffusive process in the input file." << std::endl;
     ATHENA_ERROR(msg);
   }
   // TODO(pdmullen): time-dep BC's require knowing the time within
@@ -117,7 +122,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
         //}
       AddTask(SEND_SCLR,INT_SCLR);
       AddTask(RECV_SCLR,NONE);
-      AddTask(SETB_SCLR,RECV_SCLR);
+      AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
     }
 
     // compute MHD fluxes, integrate field
@@ -153,165 +158,131 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
 //  Sets id and dependency for "ntask" member of task_list_ array, then iterates value of
 //  ntask.
 
-void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
+void SuperTimeStepTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id = id;
   task_list_[ntasks].dependency = dep;
 
   using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
-  switch (id) {
-    case (CLEAR_ALLBND):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::ClearAllBoundary);
-      task_list_[ntasks].lb_time = false;
-      break;
-
-    case (CALC_HYDFLX):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::CalculateHydroFlux_STS);
-      task_list_[ntasks].lb_time = true;
-      break;
-    case (CALC_FLDFLX):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::CalculateEMF_STS);
-      task_list_[ntasks].lb_time = true;
-      break;
-
-    case (SEND_FLDFLX):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::SendEMF);
-      task_list_[ntasks].lb_time = true;
-      break;
-
-    case (RECV_FLDFLX):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::ReceiveAndCorrectEMF);
-      task_list_[ntasks].lb_time = false;
-      break;
-
-    case (INT_HYD):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::IntegrateHydro_STS);
-      task_list_[ntasks].lb_time = true;
-      break;
-    case (INT_FLD):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::IntegrateField_STS);
-      task_list_[ntasks].lb_time = true;
-      break;
-
-    case (SEND_HYD):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::SendHydro);
-      task_list_[ntasks].lb_time = true;
-      break;
-    case (SEND_FLD):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::SendField);
-      task_list_[ntasks].lb_time = true;
-      break;
-
-    case (RECV_HYD):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::ReceiveHydro);
-      task_list_[ntasks].lb_time = false;
-      break;
-    case (RECV_FLD):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::ReceiveField);
-      task_list_[ntasks].lb_time = false;
-      break;
-
-    case (SETB_HYD):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::SetBoundariesHydro);
-      task_list_[ntasks].lb_time = true;
-      break;
-    case (SETB_FLD):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::SetBoundariesField);
-      task_list_[ntasks].lb_time = true;
-      break;
-
-    case (CALC_SCLRFLX):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::CalculateScalarFlux_STS);
-      task_list_[ntasks].lb_time = true;
-      break;
-    case (INT_SCLR):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::IntegrateScalars_STS);
-      task_list_[ntasks].lb_time = true;
-      break;
-    case (SEND_SCLR):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::SendScalars);
-      task_list_[ntasks].lb_time = true;
-      break;
-    case (RECV_SCLR):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::ReceiveScalars);
-      task_list_[ntasks].lb_time = false;
-      break;
-    case (SETB_SCLR):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::SetBoundariesScalars);
-      task_list_[ntasks].lb_time = true;
-      break;
-
-    case (CONS2PRIM):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::Primitives);
-      task_list_[ntasks].lb_time = true;
-      break;
-    case (PHY_BVAL):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&SuperTimeStepTaskList::PhysicalBoundary_STS);
-      task_list_[ntasks].lb_time = true;
-      break;
-
-    case (DIFFUSE_HYD):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::DiffuseHydro);
-      task_list_[ntasks].lb_time = true;
-      break;
-    case (DIFFUSE_FLD):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::DiffuseField);
-      task_list_[ntasks].lb_time = true;
-      break;
-    case (DIFFUSE_SCLR):
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-          (&TimeIntegratorTaskList::DiffuseScalars);
-      task_list_[ntasks].lb_time = true;
-      break;
-    default:
-      std::stringstream msg;
-      msg << "### FATAL ERROR in AddTask" << std::endl
-          << "Invalid Task "<< id << " is specified" << std::endl;
-      ATHENA_ERROR(msg);
+  if (id == CLEAR_ALLBND) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::ClearAllBoundary);
+    task_list_[ntasks].lb_time = false;
+  } else if (id == CALC_HYDFLX) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&SuperTimeStepTaskList::CalculateHydroFlux_STS);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == CALC_FLDFLX) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&SuperTimeStepTaskList::CalculateEMF_STS);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == SEND_FLDFLX) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::SendEMF);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == RECV_FLDFLX) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::ReceiveAndCorrectEMF);
+    task_list_[ntasks].lb_time = false;
+  } else if (id == INT_HYD) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&SuperTimeStepTaskList::IntegrateHydro_STS);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == INT_FLD) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&SuperTimeStepTaskList::IntegrateField_STS);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == SEND_HYD) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::SendHydro);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == SEND_FLD) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::SendField);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == RECV_HYD) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::ReceiveHydro);
+    task_list_[ntasks].lb_time = false;
+  } else if (id == RECV_FLD) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::ReceiveField);
+    task_list_[ntasks].lb_time = false;
+  } else if (id == SETB_HYD) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::SetBoundariesHydro);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == SETB_FLD) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::SetBoundariesField);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == CALC_SCLRFLX) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&SuperTimeStepTaskList::CalculateScalarFlux_STS);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == INT_SCLR) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&SuperTimeStepTaskList::IntegrateScalars_STS);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == SEND_SCLR) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::SendScalars);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == RECV_SCLR) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::ReceiveScalars);
+    task_list_[ntasks].lb_time = false;
+  } else if (id == SETB_SCLR) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::SetBoundariesScalars);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == CONS2PRIM) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::Primitives);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == PHY_BVAL) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&SuperTimeStepTaskList::PhysicalBoundary_STS);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == DIFFUSE_HYD) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::DiffuseHydro);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == DIFFUSE_FLD) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::DiffuseField);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == DIFFUSE_SCLR) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::DiffuseScalars);
+    task_list_[ntasks].lb_time = true;
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in AddTask" << std::endl
+        << "Invalid Task is specified" << std::endl;
+    ATHENA_ERROR(msg);
   }
   ntasks++;
   return;
@@ -319,12 +290,53 @@ void SuperTimeStepTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
 
 
 void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
+  Mesh *pm =  pmb->pmy_mesh;
 #pragma omp single
   {
     // Set RKL1 params
-    pmb->pmy_mesh->muj = (2.*stage - 1.)/stage;
-    pmb->pmy_mesh->nuj = (1. - stage)/stage;
-    pmb->pmy_mesh->muj_tilde = pmb->pmy_mesh->muj*2./(std::pow(nstages, 2.) + nstages);
+    pm->muj = (2.*stage - 1.)/stage;
+    pm->nuj = (1. - stage)/stage;
+    pm->muj_tilde = pm->muj*2./(std::pow(nstages, 2.) + nstages);
+
+    Real dt_ratio = pm->dt / pm->dt_parabolic;
+    Real nstages_time_int = ptlist_->nstages;
+    Real stage_ratio = nstages_time_int*dt_ratio/(nstages + nstages_time_int);
+
+    if (Globals::my_rank == 0) {
+      // check sanity of timestep ratio dt_hyperbolic/dt_parabolic (and hence STS nstages)
+      if (sts_max_dt_ratio > 0 && dt_ratio > sts_max_dt_ratio) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in SuperTimeStepTaskList::StartupTaskList" << std::endl
+            << "Ratio of dt/dt_parabolic = "<< dt_ratio << " exceeds the\n"
+            << "specified limit for STS = " <<  sts_max_dt_ratio << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      // output additional diagnostics indiciating progress through STS stages:
+      if (pm->dt_diagnostics != -1 && pm->ncycle_out != 0
+          && pm->ncycle % pm->ncycle_out == 0) {
+        const int ratio_precision = 3;
+        const int dt_precision = std::numeric_limits<Real>::max_digits10 - 1;
+        if (pm->dt_diagnostics == 0) {
+          if (stage == nstages) {
+            std::cout << "stage=" << stage << "/" << nstages
+                      << " dt_parabolic=" << pm->dt_parabolic
+                      << " ratio=" << std::setprecision(ratio_precision) <<  dt_ratio
+                      << " stage_ratio=" << stage_ratio
+                      << std::setprecision(dt_precision)
+                      << std::endl;
+          }
+        } else {
+          if (stage % pm->dt_diagnostics == 0) {
+            std::cout << "stage=" << stage << "/" << nstages
+                      << " dt_parabolic=" << pm->dt_parabolic
+                      << " ratio=" << std::setprecision(ratio_precision) << dt_ratio
+                      << " stage_ratio=" << stage_ratio
+                      << std::setprecision(dt_precision)
+                      << std::endl;
+          }
+        }
+      }
+    }
   }
 
   // Clear flux arrays from previous stage
@@ -338,7 +350,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     ps->s_flux[X3DIR].ZeroClear();
   }
 
-  // Real time = pmb->pmy_mesh->time;
+  // Real time = pm->time;
   pmb->pbval->StartReceiving(BoundaryCommSubset::all);
 
   return;
@@ -405,7 +417,7 @@ TaskStatus SuperTimeStepTaskList::IntegrateHydro_STS(MeshBlock *pmb, int stage) 
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
-    Real wght = pmb->pmy_mesh->muj_tilde;
+    const Real wght = pmb->pmy_mesh->muj_tilde*pmb->pmy_mesh->dt;
     ph->AddFluxDivergence(wght, ph->u);
     // TODO(pdmullen): check this after disabling ATHENA_ERROR for src terms
     pmb->pcoord->AddCoordTermsDivergence(wght, ph->flux, ph->w, pf->bcc, ph->u);
@@ -428,7 +440,7 @@ TaskStatus SuperTimeStepTaskList::IntegrateScalars_STS(MeshBlock *pmb, int stage
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(ps->s, ps->s1, ps->s2, ave_wghts);
-    Real wght = pmb->pmy_mesh->muj_tilde;
+    const Real wght = pmb->pmy_mesh->muj_tilde*pmb->pmy_mesh->dt;
     ps->AddFluxDivergence(wght, ps->s);
 
     return TaskStatus::next;
@@ -448,7 +460,7 @@ TaskStatus SuperTimeStepTaskList::IntegrateField_STS(MeshBlock *pmb, int stage) 
     ave_wghts[1] = pmb->pmy_mesh->muj;
     ave_wghts[2] = pmb->pmy_mesh->nuj;
     pmb->WeightedAve(pf->b, pf->b1, pf->b2, ave_wghts);
-    pf->CT(pmb->pmy_mesh->muj_tilde, pf->b);
+    pf->CT(pmb->pmy_mesh->muj_tilde*pmb->pmy_mesh->dt, pf->b);
     return TaskStatus::next;
   }
   return TaskStatus::fail;

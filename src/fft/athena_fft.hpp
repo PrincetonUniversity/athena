@@ -148,18 +148,18 @@ class FFTBlock {
   friend class Mesh;
 
  protected:
-  std::int64_t cnt_,gcnt_;
-  int gid_;
   FFTDriver *pmy_driver_;
+  std::int64_t cnt_, gcnt_;
+  int gid_;
   std::complex<Real> *in_, *out_;
   AthenaFFTPlan *fplan_, *bplan_;
-  AthenaFFTIndex *orig_idx_;
   AthenaFFTIndex *f_in_, *f_out_, *b_in_, *b_out_;
   Real norm_factor_;
   int dim_;
 
   LogicalLocation loc_;
   RegionSize msize_, bsize_;
+  AthenaFFTIndex orig_idx_;
 #ifdef MPI_PARALLEL
   int decomp_, pdim_;
   int permute0_, permute1_, permute2_;

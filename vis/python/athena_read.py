@@ -328,7 +328,7 @@ def vtk(filename):
 
 # ========================================================================================
 
-def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, level=None,
+def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=None,
           return_levels=False, subsample=False, fast_restrict=False, x1_min=None,
           x1_max=None, x2_min=None, x2_max=None, x3_min=None, x3_max=None, vol_func=None,
           vol_params=None, face_func_1=None, face_func_2=None, face_func_3=None,
@@ -353,16 +353,16 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                 data[str(key)] = f.attrs[key]
 
             # Store location metadata
-            data['Levels'] = f['Levels']
-            data['LogicalLocations'] = f['LogicalLocations']
+            data['Levels'] = f['Levels'][:]
+            data['LogicalLocations'] = f['LogicalLocations'][:]
 
             # Store coordinate data
-            data['x1f'] = f['x1f']
-            data['x2f'] = f['x2f']
-            data['x3f'] = f['x3f']
-            data['x1v'] = f['x1v']
-            data['x2v'] = f['x2v']
-            data['x3v'] = f['x3v']
+            data['x1f'] = f['x1f'][:]
+            data['x2f'] = f['x2f'][:]
+            data['x3f'] = f['x3f'][:]
+            data['x1v'] = f['x1v'][:]
+            data['x2v'] = f['x2v'][:]
+            data['x3v'] = f['x3v'][:]
 
             # Get metadata describing file layout
             dataset_names = np.array([x.decode('ascii', 'replace')
@@ -403,6 +403,10 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
         root_grid_size = f.attrs['RootGridSize']
         levels = f['Levels'][:]
         logical_locations = f['LogicalLocations'][:]
+        if dtype is None:
+            dtype = f[f.attrs['DatasetNames'][0]].dtype.newbyteorder('=')
+        if num_ghost == 0 and np.array(f['x1v']).min() < f.attrs['RootGridX1'][0]:
+            raise AthenaError('Ghost zones detected but "num_ghost" keyword set to zero.')
         if num_ghost > 0 and not np.all(levels == max_level):
             raise AthenaError('Cannot use ghost zones with different refinement levels')
         nx_vals = []
@@ -615,7 +619,7 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
             if nx == 1:
                 xm = (x1m, x2m, x3m)[d-1]
                 xp = (x1p, x2p, x3p)[d-1]
-                data[xf] = np.array([xm, xp])
+                data[xf] = np.array([xm, xp], dtype=dtype)
             else:
                 xmin = f.attrs['RootGridX' + repr(d)][0]
                 xmax = f.attrs['RootGridX' + repr(d)][1]
@@ -629,7 +633,7 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                     data[xf] = face_func(xmin, xmax, xrat_root, nx+1)
                 elif xrat_root == 1.0:
                     if np.all(levels == level):
-                        data[xf] = np.empty(nx + 1)
+                        data[xf] = np.empty(nx + 1, dtype=dtype)
                         for n_block in range(int((nx - 2*num_ghost)
                                                  / (block_size[d-1] - 2*num_ghost))):
                             sample_block = np.where(logical_locations[:, d-1]
@@ -641,15 +645,15 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=np.float32, lev
                         if num_ghost > 0:
                             raise AthenaError('Cannot use ghost zones with different'
                                               + ' refinement levels')
-                        data[xf] = np.linspace(xmin, xmax, nx + 1)
+                        data[xf] = np.linspace(xmin, xmax, nx + 1, dtype=dtype)
                 else:
                     if num_ghost > 0:
                         raise AthenaError('Ghost zones incompatible with non-uniform'
                                           + ' coordinate spacing')
                     xrat = xrat_root ** (1.0 / 2**level)
-                    data[xf] = (xmin + (1.0-xrat**np.arange(nx+1))
+                    data[xf] = (xmin + (1.0-xrat**np.arange(nx+1, dtype=dtype))
                                 / (1.0-xrat**nx) * (xmax-xmin))
-            data[xv] = np.empty(nx)
+            data[xv] = np.empty(nx, dtype=dtype)
             for i in range(nx):
                 data[xv][i] = center_func(data[xf][i], data[xf][i+1])
 

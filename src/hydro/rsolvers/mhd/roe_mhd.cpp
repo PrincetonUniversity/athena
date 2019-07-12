@@ -187,7 +187,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     if (llf_flag != 0) {
       Real cfl = pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
       Real cfr = pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
-      Real a = 0.5*std::max( (std::fabs(wli[IVX]) + cfl), (std::fabs(wri[IVX]) + cfr) );
+      Real a = 0.5*std::max( (std::abs(wli[IVX]) + cfl), (std::abs(wri[IVX]) + cfr) );
 
       flxi[IDN] = 0.5*(fl[IDN] + fr[IDN]) - a*du[IDN];
       flxi[IVX] = 0.5*(fl[IVX] + fr[IVX]) - a*du[IVX];
@@ -420,13 +420,13 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
     a[6] += du[6]*(as*q3_star - alpha_f_bar*b3);
 
     Real coeff[(NWAVE)];
-    coeff[0] = -0.5*std::fabs(ev[0])*a[0];
-    coeff[1] = -0.5*std::fabs(ev[1])*a[1];
-    coeff[2] = -0.5*std::fabs(ev[2])*a[2];
-    coeff[3] = -0.5*std::fabs(ev[3])*a[3];
-    coeff[4] = -0.5*std::fabs(ev[4])*a[4];
-    coeff[5] = -0.5*std::fabs(ev[5])*a[5];
-    coeff[6] = -0.5*std::fabs(ev[6])*a[6];
+    coeff[0] = -0.5*std::abs(ev[0])*a[0];
+    coeff[1] = -0.5*std::abs(ev[1])*a[1];
+    coeff[2] = -0.5*std::abs(ev[2])*a[2];
+    coeff[3] = -0.5*std::abs(ev[3])*a[3];
+    coeff[4] = -0.5*std::abs(ev[4])*a[4];
+    coeff[5] = -0.5*std::abs(ev[5])*a[5];
+    coeff[6] = -0.5*std::abs(ev[6])*a[6];
 
     // compute density in intermediate states and check that it is positive, set flag
     // This uses the [0][*] components of the right-eigenmatrix
@@ -549,13 +549,13 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
     a[5] += du[5]*as*q3_star;
 
     Real coeff[(NWAVE)];
-    coeff[IDN] = -0.5*std::fabs(ev[IDN])*a[IDN];
-    coeff[IVX] = -0.5*std::fabs(ev[IVX])*a[IVX];
-    coeff[IVY] = -0.5*std::fabs(ev[IVY])*a[IVY];
-    coeff[IVZ] = -0.5*std::fabs(ev[IVZ])*a[IVZ];
-    if (NON_BAROTROPIC_EOS) coeff[IEN] = 0.5*std::fabs(ev[IEN])*a[IEN];
-    coeff[IBY] = -0.5*std::fabs(ev[IBY])*a[IBY];
-    coeff[IBZ] = -0.5*std::fabs(ev[IBZ])*a[IBZ];
+    coeff[IDN] = -0.5*std::abs(ev[IDN])*a[IDN];
+    coeff[IVX] = -0.5*std::abs(ev[IVX])*a[IVX];
+    coeff[IVY] = -0.5*std::abs(ev[IVY])*a[IVY];
+    coeff[IVZ] = -0.5*std::abs(ev[IVZ])*a[IVZ];
+    if (NON_BAROTROPIC_EOS) coeff[IEN] = 0.5*std::abs(ev[IEN])*a[IEN];
+    coeff[IBY] = -0.5*std::abs(ev[IBY])*a[IBY];
+    coeff[IBZ] = -0.5*std::abs(ev[IBZ])*a[IBZ];
 
     // compute density in intermediate states and check that it is positive, set flag
     // This uses the [0][*] components of the right-eigenmatrix

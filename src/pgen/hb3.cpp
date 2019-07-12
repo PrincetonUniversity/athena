@@ -61,13 +61,9 @@ Real beta, B0;
 Real gm1, iso_cs;
 Real x1size, x2size, x3size;
 Real Omega_0, qshear;
-
-Real hst_BxBy(MeshBlock *pmb, int iout);
-} // namespace
-
-// TODO(felker): shouldn't this have internal linkage?
 AthenaArray<Real> volume; // 1D array of volumes
-
+Real HistoryBxBy(MeshBlock *pmb, int iout);
+} // namespace
 
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -89,7 +85,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // enroll new history variables
   AllocateUserHistoryOutput(1);
-  EnrollUserHistoryOutput(0, hst_BxBy, "<-BxBy>");
+  EnrollUserHistoryOutput(0, HistoryBxBy, "<-BxBy>");
   return;
 }
 
@@ -244,7 +240,7 @@ void MeshBlock::UserWorkInLoop() {
 }
 
 namespace {
-Real hst_BxBy(MeshBlock *pmb, int iout) {
+Real HistoryBxBy(MeshBlock *pmb, int iout) {
   Real bxby=0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;

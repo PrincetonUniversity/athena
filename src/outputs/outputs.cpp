@@ -7,29 +7,22 @@
 //  \brief implements functions for Athena++ outputs
 //
 // The number and types of outputs are all controlled by the number and values of
-// parameters specified in <outputN> blocks in the input file.  Each output block must be
-// labelled by a unique integer "N".  Following the convention of the parser implemented
-// in the ParameterInput class, a second output block with the same integer "N" of an
-// earlier block will silently overwrite the values read by the first block. The numbering
-// of the output blocks does not need to be consecutive, and blocks may appear in any
-// order in the input file.  Moreover, unlike the C version of Athena, the total number of
-// <outputN> blocks does not need to be specified -- in Athena++ a new output type will be
-// created for each and every <outputN> block in the input file.
+// parameters specified in <output[n]> blocks in the input file.  Each output block must
+// be labelled by a unique integer "n".  Following the convention of the parser
+// implemented in the ParameterInput class, a second output block with the same integer
+// "n" of an earlier block will silently overwrite the values read by the first block. The
+// numbering of the output blocks does not need to be consecutive, and blocks may appear
+// in any order in the input file.  Moreover, unlike the C version of Athena, the total
+// number of <output[n]> blocks does not need to be specified -- in Athena++ a new output
+// type will be created for each and every <output[n]> block in the input file.
 //
-// Required parameters that must be specified in an <outputN> block are:
-//   - variable     = cons,prim,D,d,E,e,m,v
-//   - file_type    = rst,tab,vtk,hst
+// Required parameters that must be specified in an <output[n]> block are:
+//   - variable     = cons,prim,D,d,E,e,m,m1,m2,m3,v,v1=vx,v2=vy,v3=vz,p,
+//                    bcc,bcc1,bcc2,bcc3,b,b1,b2,b3,phi,uov
+//   - file_type    = rst,tab,vtk,hst,hdf5
 //   - dt           = problem time between outputs
 //
-// Optional parameters that may be specified in an <outputN> block are:
-//   - data_format  = format string used in writing data (e.g. %12.5e)
-//   - next_time    = time of next output (useful for restarts)
-//   - id           = any string
-//   - file_number  = any integer with up to 4 digits
-//   - x[123]_slice = specifies data should be a slice at x[123] position
-//   - x[123]_sum   = set to "true" to sum data along specified direction
-//
-// EXAMPLE of an <outputN> block for a VTK dump:
+// EXAMPLE of an <output[n]> block for a VTK dump:
 //   <output3>
 //   file_type   = tab       # Tabular data dump
 //   variable    = prim      # variables to be output
@@ -38,7 +31,7 @@
 //   x2_slice    = 0.0       # slice in x2
 //   x3_slice    = 0.0       # slice in x3
 //
-// Each <outputN> block will result in a new node being created in a linked list of
+// Each <output[n]> block will result in a new node being created in a linked list of
 // OutputType stored in the Outputs class.  During a simulation, outputs are made when
 // the simulation time satisfies the criteria implemented in the MakeOutputs() function.
 //
@@ -503,7 +496,34 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
   } // endif (SELF_GRAVITY_ENABLED)
 
-
+  if (NSCALARS > 0) {
+    std::string root_name_cons = "s";
+    std::string root_name_prim = "r";
+    for (int n=0; n<NSCALARS; n++) {
+      std::string scalar_name_cons = root_name_cons + std::to_string(n);
+      std::string scalar_name_prim = root_name_prim + std::to_string(n);
+      if (output_params.variable.compare(scalar_name_cons) == 0 ||
+          output_params.variable.compare("cons") == 0) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = scalar_name_cons;
+        pod->data.InitWithShallowSlice(psclr->s, 4, n, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+      if (output_params.variable.compare(scalar_name_prim) == 0 ||
+          output_params.variable.compare("prim") == 0) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = scalar_name_prim;
+        pod->data.InitWithShallowSlice(psclr->r, 4, n, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+    }
+  }
+  // note, the Bcc variables are stored in a separate HDF5 dataset from the above Output
+  // nodes, and it must come after those nodes in the linked list
   if (MAGNETIC_FIELDS_ENABLED) {
     // vector of cell-centered magnetic field
     if (output_params.variable.compare("bcc") == 0 ||
@@ -583,33 +603,6 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       num_vars_++;
     }
   } // endif (MAGNETIC_FIELDS_ENABLED)
-
-  if (NSCALARS > 0) {
-    std::string root_name_cons = "s";
-    std::string root_name_prim = "r";
-    for (int n=0; n<NSCALARS; n++) {
-      std::string scalar_name_cons = root_name_cons + std::to_string(n);
-      std::string scalar_name_prim = root_name_prim + std::to_string(n);
-      if (output_params.variable.compare(scalar_name_cons) == 0 ||
-          output_params.variable.compare("cons") == 0) {
-        pod = new OutputData;
-        pod->type = "SCALARS";
-        pod->name = scalar_name_cons;
-        pod->data.InitWithShallowSlice(psclr->s, 4, n, 1);
-        AppendOutputDataNode(pod);
-        num_vars_++;
-      }
-      if (output_params.variable.compare(scalar_name_prim) == 0 ||
-          output_params.variable.compare("prim") == 0) {
-        pod = new OutputData;
-        pod->type = "SCALARS";
-        pod->name = scalar_name_prim;
-        pod->data.InitWithShallowSlice(psclr->r, 4, n, 1);
-        AppendOutputDataNode(pod);
-        num_vars_++;
-      }
-    }
-  }
 
   if (output_params.variable.compare(0, 3, "uov") == 0
       || output_params.variable.compare(0, 12, "user_out_var") == 0) {

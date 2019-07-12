@@ -85,6 +85,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
     data = athena_read.error_dat(filename)
@@ -112,12 +113,12 @@ def analyze():
                 logger.warning(
                     "L-going sound wave converging at rate {} slower than {}".format(
                         rate, rate_tol[0]))
-                return False
+                analyze_status = False
             if (rms_errs[i] > err_tol[0][i-1]):
                 logger.warning(
                     "L-going sound wave error {} is larger than tolerance {}".format(
                         rms_errs[i], err_tol[0][i-1]))
-                return False
+                analyze_status = False
 
         # L-going entropy wave
         logger.warning("Entropy wave error convergence:")
@@ -133,12 +134,12 @@ def analyze():
                 logger.warning(
                     "L-going entropy wave converging at rate {} slower than {}".format(
                         rate, rate_tol[1]))
-                return False
+                analyze_status = False
             if (rms_errs[i] > err_tol[1][i-1]):
                 logger.warning(
                     "L-going entropy wave error {} is larger than tolerance {}".format(
                         rms_errs[i], err_tol[1][i-1]))
-                return False
+                analyze_status = False
 
         # logger.info(solver_results[-2, 4] - solver_results[-1, 4])
         # logger.info(solver_results[-2, 4], solver_results[-1, 4])
@@ -150,7 +151,7 @@ def analyze():
             msg = "L/R-going sound wave errors, {} and {}"
             msg += ", have a difference that is not close to round-off"
             logger.warning(msg.format(solver_results[-2, 4], solver_results[-1, 4]))
-            return False
+            analyze_status = False
         # Unlike comparison for VL2+PLM, the errors become small enough in the high-order
         # solver that round-off needs to be accounted for. Assuming true solution A is
         # O(1), then the difference betwee L/R-going RMS-L1 errors approach:
@@ -158,4 +159,4 @@ def analyze():
 
         # Currently, RK2 + 3c produces the largest directional asymmetry w/
         # diff=-2.22e-14. Characteristic projection procedure may be introducing asymmetry
-    return True
+    return analyze_status

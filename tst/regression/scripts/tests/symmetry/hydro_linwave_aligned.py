@@ -80,6 +80,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
     data = athena_read.error_dat(filename)
@@ -119,6 +120,6 @@ def analyze():
             logger.warning(str(results_2D))
             logger.warning(str(results_3D))
             logger.warning("Exhibit differences that are not close to round-off")
-            return False
+            analyze_status = False
 
-    return True
+    return analyze_status
