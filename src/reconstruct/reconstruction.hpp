@@ -119,33 +119,18 @@ class Reconstruction {
 
   void PiecewiseParabolicX1(const int k, const int j, const int il, const int iu,
                             const AthenaArray<Real> &q,
-                            AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+                            AthenaArray<Real> &ql, AthenaArray<Real> &qr,
+                            int ninl=0, int ninu=-1, int noutl=0);
 
   void PiecewiseParabolicX2(const int k, const int j, const int il, const int iu,
                             const AthenaArray<Real> &q,
-                            AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+                            AthenaArray<Real> &ql, AthenaArray<Real> &qr,
+                            int ninl=0, int ninu=-1, int noutl=0);
 
   void PiecewiseParabolicX3(const int k, const int j, const int il, const int iu,
                             const AthenaArray<Real> &q,
-                            AthenaArray<Real> &ql, AthenaArray<Real> &qr);
-
-  // ---- begin functions specific to fourth-order MHD
-
-  // TODO(felker): update these function signatures to match the above ones
-  void PiecewiseParabolicUCTx1(MeshBlock *pmb, const int kl, const int ku,
-                               const int jl, const int ju, const int il, const int iu,
-                               const AthenaArray<Real> &q, const int nin, const int nout,
-                               AthenaArray<Real> &ql, AthenaArray<Real> &qr);
-
-  void PiecewiseParabolicUCTx2(MeshBlock *pmb, const int kl, const int ku,
-                               const int jl, const int ju, const int il, const int iu,
-                               const AthenaArray<Real> &q, const int nin, const int nout,
-                               AthenaArray<Real> &ql, AthenaArray<Real> &qr);
-
-  void PiecewiseParabolicUCTx3(MeshBlock *pmb, const int kl, const int ku,
-                               const int jl, const int ju, const int il, const int iu,
-                               const AthenaArray<Real> &q, const int nin, const int nout,
-                               AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+                            AthenaArray<Real> &ql, AthenaArray<Real> &qr,
+                            int ninl=0, int ninu=-1, int noutl=0);
 
  private:
   MeshBlock* pmy_block_;  // ptr to MeshBlock containing this Reconstruction
