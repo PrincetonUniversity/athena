@@ -1540,49 +1540,49 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                                      il, iu, jl, ju, kl, ku);
           pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
               ps->s, ps->r, ps->r, pco, il, iu, jl, ju, kl, ku);
-        }
-        // TODO(felker): deduplicate with TimeIntegratorTaskList::Primitives
-        if (MAGNETIC_FIELDS_ENABLED) {
-          // for MHD, shrink buffer by 3 on all sides:
-          // TODO(kfelker): recheck this adjustment
-          // if (pbval->nblevel[1][1][0] != -1) il += 3;
-          il += 3;
-          iu -= 3;
-          if (pmb->block_size.nx2 > 1) {
-            jl += 3;
-            ju -= 3;
+
+          // TODO(felker): deduplicate with TimeIntegratorTaskList::Primitives
+          if (MAGNETIC_FIELDS_ENABLED) {
+            // for MHD4, shrink buffer by 3 on all sides:
+            // TODO(kfelker): recheck this adjustment
+            // if (pbval->nblevel[1][1][0] != -1) il += 3;
+            il += 3;
+            iu -= 3;
+            if (pmb->block_size.nx2 > 1) {
+              jl += 3;
+              ju -= 3;
+            }
+            if (pmb->block_size.nx3 > 1) {
+              kl += 3;
+              ku -= 3;
+            }
+            // Pass the fourth-order approximation to the cell-centered field, bcc_center,
+            // instead of bcc, to be used with the cell-centered hydro
+            pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b, ph->w,
+                                                       pf->bcc_center, pco,
+                                                       il, iu, jl, ju, kl, ku);
+          } else {
+            // for Hydro4, shrink buffer by 1 on all sides
+            il += 1;
+            iu -= 1;
+            if (pmb->block_size.nx2 > 1) {
+              jl += 1;
+              ju -= 1;
+            }
+            if (pmb->block_size.nx3 > 1) {
+              kl += 1;
+              ku -= 1;
+            }
+            pmb->peos->ConservedToPrimitiveCellAverage(
+                ph->u, ph->w1, pf->b, ph->w, pf->bcc, pco, il, iu, jl, ju, kl, ku);
+            // TODO(felker): check possibly messed-up merge commit 8993f57 on 2019-05-08:
+            if (NSCALARS > 0) {
+              pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
+                  ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
+            }
           }
-          if (pmb->block_size.nx3 > 1) {
-            kl += 3;
-            ku -= 3;
-          }
-          // Pass the fourth-order approximation to the cell-centered field, bcc_center,
-          // instead of bcc, to be used with the cell-centered hydro
-          pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b, ph->w,
-                                                     pf->bcc_center, pco,
-                                                     il, iu, jl, ju, kl, ku);
-        } else {
-          // for hydro, shrink buffer by 1 on all sides
-          il += 1;
-          iu -= 1;
-          if (pmb->block_size.nx2 > 1) {
-            jl += 1;
-            ju -= 1;
-          }
-          if (pmb->block_size.nx3 > 1) {
-            kl += 1;
-            ku -= 1;
-          }
-          pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b, ph->w, pf->bcc,
-                                                     pco, il, iu, jl, ju, kl, ku);
-          // TODO(felker): check possibly messed-up merge commit 8993f57 on 2019-05-08:
-          if (NSCALARS > 0) {
-            pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
-                ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
-          }
-        }
+        } // end fourth-order EOS
         // --------------------------
-        // end fourth-order EOS
 
         // Swap Hydro and (possibly) passive scalar quantities in BoundaryVariable
         // interface from conserved to primitive formulations:
