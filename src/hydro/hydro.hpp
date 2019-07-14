@@ -113,6 +113,8 @@ class Hydro {
   // 4D scratch arrays
   AthenaArray<Real> scr1_nkji_, scr2_nkji_;
   AthenaArray<Real> wl3d_, wr3d_;
+  AthenaArray<Real> wl_fc_, wr_fc_; // for MHD4
+
   // 1D scratch arrays
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 

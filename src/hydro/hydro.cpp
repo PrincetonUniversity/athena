@@ -135,6 +135,10 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     wr3d_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
     scr1_nkji_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
     scr2_nkji_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
+    if (MAGNETIC_FIELDS_ENABLED) {
+      wl_fc_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
+      wr_fc_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
+    }
     // 1D scratch arrays
     laplacian_l_fc_.NewAthenaArray(nc1);
     laplacian_r_fc_.NewAthenaArray(nc1);
