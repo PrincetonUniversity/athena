@@ -282,7 +282,7 @@ void FieldDiffusion::NewDiffusionDt(Real &dt_oa, Real &dt_h) {
       if (eta_hall > 0.0) {
         for (int i=is; i<=ie; ++i)
           dt_h = std::min(dt_h, static_cast<Real>(
-              fac_h*SQR(len(i)) / (std::fabs(etaB(hall,k,j,i)) + TINY_NUMBER)));
+              fac_h*SQR(len(i)) / (std::abs(etaB(hall,k,j,i)) + TINY_NUMBER)));
       }
     }
   }

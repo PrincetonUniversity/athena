@@ -9,27 +9,22 @@
 
 // These functions MUST be implemented in an additional file.
 //
-// Real EquationOfState::RiemannAsq(Real rho, Real hint)
 // Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
 // Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
 // Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
+// void EquationOfState::InitEosConstants(ParameterInput *pin) // can be empty
 
 
 // C headers
 
 // C++ headers
 #include <cmath>   // sqrt()
-#include <fstream>
-#include <iostream> // ifstream
 #include <sstream>
-#include <stdexcept> // std::invalid_argument
-#include <string>
 
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 #include "../../field/field.hpp"
-#include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
 #include "../eos.hpp"
@@ -40,7 +35,15 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
   ptable{pmb->pmy_mesh->peos_table},
   pmy_block_{pmb},
   gamma_{pin->GetOrAddReal("hydro", "gamma", 2.)},
-  density_floor_ {pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))} {
+  density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))},
+  scalar_floor_{pin->GetOrAddReal("hydro", "sfloor", std::sqrt(1024*float_min))},
+  rho_unit_{pin->GetOrAddReal("hydro", "eos_rho_unit", 1.0)},
+  inv_rho_unit_{1.0/rho_unit_},
+  egas_unit_{pin->GetOrAddReal("hydro", "eos_egas_unit", 1.0)},
+  inv_egas_unit_{1.0/egas_unit_},
+  vsqr_unit_{egas_unit_/rho_unit_},
+  inv_vsqr_unit_{1.0/vsqr_unit_}
+  {
   if (pin->DoesParameterExist("hydro", "efloor")) {
     energy_floor_ = pin->GetReal("hydro", "efloor");
     pressure_floor_ = energy_floor_*(pin->GetOrAddReal("hydro", "gamma", 2.) - 1.);
@@ -58,6 +61,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
       ATHENA_ERROR(msg);
     }
   }
+  InitEosConstants(pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -182,9 +186,8 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
 // \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
 //           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
 // \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
-void EquationOfState::ApplyPrimitiveConservedFloors(
-    AthenaArray<Real> &prim, AthenaArray<Real> &cons, AthenaArray<Real> &bcc,
-    int k, int j, int i) {
+void EquationOfState::ApplyPrimitiveConservedFloors( AthenaArray<Real> &prim,
+                   AthenaArray<Real> &cons, AthenaArray<Real> &bcc, int k, int j, int i) {
   Real& w_d  = prim(IDN,k,j,i);
   Real& w_p  = prim(IPR,k,j,i);
 

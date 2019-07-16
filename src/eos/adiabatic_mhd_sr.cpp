@@ -41,6 +41,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
     gamma_{pin->GetReal("hydro", "gamma")},
     density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))},
     pressure_floor_{pin->GetOrAddReal("hydro", "pfloor", std::sqrt(1024*float_min))},
+    scalar_floor_{pin->GetOrAddReal("hydro", "sfloor", std::sqrt(1024*float_min))},
     sigma_max_{pin->GetOrAddReal("hydro", "sigma_max",  0.0)},
     beta_min_{pin->GetOrAddReal("hydro", "beta_min", 0.0)},
     gamma_max_{pin->GetOrAddReal("hydro", "gamma_max", 1000.0)} {}

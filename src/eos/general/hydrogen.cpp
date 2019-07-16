@@ -28,7 +28,8 @@
 
 namespace {
 const Real float_eps = std::numeric_limits<float>::epsilon();
-const Real my_1pe = 1.0 + float_eps;
+const Real float_1pe = 1.0 + float_eps;
+Real prec = 1e-12;
 
 //----------------------------------------------------------------------------------------
 //! \fn Real x_(Real rho, Real T) {
@@ -53,14 +54,6 @@ Real e_of_rho_T(Real rho, Real T) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real h_of_rho_T(Real rho, Real T) {
-//  \brief compute specific enthalpy
-Real h_of_rho_T(Real rho, Real T) {
-  Real x = x_(rho, T);
-  return x + 2.5 * T * (1. + x);
-}
-
-//----------------------------------------------------------------------------------------
 //! \fn Real asq_(Real rho, Real T) {
 //  \brief compute adiabatic sound speed squared
 Real asq_(Real rho, Real T) {
@@ -77,92 +70,111 @@ Real asq_(Real rho, Real T) {
 //----------------------------------------------------------------------------------------
 //! \fn Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1)
 //  \brief Invert an EOS function at a given density and return temperature.
-//         Uses simple bisection for inversion.
-Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1) {
-  Real f0, f1, fa, fb;
-  Real Ta=-1;
-  Real Tb=-1;
-  const Real prec=1e-12;
-  f0 = f(rho, T0) / sol - 1.;
-  f1 = f(rho, T1) / sol - 1.;
+//         Uses Brent–Dekker method for inversion.
+Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real Ta, Real Tb) {
+  Real fc, fs, Tc, Td, Ts;
+  bool mflag = false;
+  Real fa = f(rho, Ta) / sol - 1.;
+  Real fb = f(rho, Tb) / sol - 1.;
 
-  if ( f0 < 0 ) {
-    fa = f0;
-    Ta = T0;
-  } else if ( f0 > 0 ) {
-    fb = f0;
-    Tb = T0;
-  } else {
-    return T0;
+  if (std::abs(fa) < std::abs(fb)) {
+    Ts = Ta;
+    Ta = Tb;
+    Tb = Ts;
+    fs = fa;
+    fa = fb;
+    fb = fs;
   }
 
-  if ( f1 < 0 ) {
-    fa = f1;
-    Ta = T1;
-  } else if ( f1 > 0 ) {
-    fb = f1;
-    Tb = T1;
-  } else {
-    return T1;
-  }
-
-  if ( (Ta < 0) || (Tb < 0) ) {
+  if (fa * fb > 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in EquationOfState inversion"
         << std::endl << "Root not bracketed" << std::endl;
     ATHENA_ERROR(msg);
   }
 
-  while ( (std::fabs(Ta - Tb) >= prec) && (fb - fa >= prec) ) {
-    T0 = 0.5 * Ta + 0.5 * Tb;
-    f0 = f(rho, T0) / sol - 1.0;
-    if ( f0 < 0 ) {
-      fa = f0;
-      Ta = T0;
-    } else if ( f0 > 0 ) {
-      fb = f0;
-      Tb = T0;
+  Tc = Ta;
+  while ((std::abs(Ta - Tb) >= prec) && (std::abs(fb) >= prec)) {
+    fc = f(rho, Tc) / sol - 1.0;
+    if ((fc != fa) && (fc != fb)) {
+      Ts = Ta * fb * fc / ((fa - fb) * (fa - fc))
+         + Tb * fa * fc / ((fb - fa) * (fb - fc))
+         + Tc * fa * fb / ((fc - fa) * (fc - fb));
     } else {
-      return T0;
+      Ts = Tb - fb * (Tb - Ta) / (fb - fa);
+    }
+    if ( ((Ts < .25 * (3 * Ta - Tb)) || (Ts > Tb)) ||
+         (mflag && std::abs(Ts - Tb) >= 0.5 * std::abs(Tc - Tb)) ||
+         (!mflag && std::abs(Ts - Tb) >= 0.5 * std::abs(Tc - Td)) ||
+         (mflag && std::abs(Tc - Tb) < prec) ||
+         (!mflag && std::abs(Tc - Td) < prec) ) {
+      Ts = .5 * (Ta + Tb);
+      mflag = true;
+    } else {
+      mflag = false;
+    }
+    fs = f(rho, Ts) / sol - 1.0;
+    Td = Tc;
+    Tc = Tb;
+    if (fa * fs < 0) {
+      Tb = Ts;
+      fb = fs;
+    } else {
+      Ta = Ts;
+      fa = fs;
+    }
+
+    if (std::abs(fa) < std::abs(fb)) {
+      Ts = Ta;
+      Ta = Tb;
+      Tb = Ts;
+      fs = fa;
+      fa = fb;
+      fb = fs;
     }
   }
-  return T0;
+  return Tb;
 }
 } // namespace
-
-//----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::RiemannAsq(Real rho, Real hint)
-//  \brief Return adiabatic sound speed squared for use in Riemann solver.
-Real EquationOfState::RiemannAsq(Real rho, Real hint) {
-  Real T = invert(*h_of_rho_T, rho, hint, 0.2*std::max(hint - 1.0, 0.1*hint),
-                  my_1pe*0.4*hint);
-  return asq_(rho, T);
-}
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
 //  \brief Return gas pressure
 Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
+  rho *= rho_unit_;
+  egas *= egas_unit_;
   Real es = egas / rho;
   Real T = invert(*e_of_rho_T, rho, egas, std::max(es - 1.0, 0.1*es)/3.0,
-                  my_1pe*2.0*es/3.0);
-  return P_of_rho_T(rho, T);
+                  float_1pe*2.0*es/3.0);
+  return P_of_rho_T(rho, T) * inv_egas_unit_;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
 //  \brief Return internal energy density
 Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
+  rho *= rho_unit_;
+  pres *= egas_unit_;
   Real ps = pres / rho;
-  Real T = invert(*P_of_rho_T, rho, pres, 0.5*ps, my_1pe*ps);
-  return e_of_rho_T(rho, T);
+  Real T = invert(*P_of_rho_T, rho, pres, 0.5*ps, float_1pe*ps);
+  return e_of_rho_T(rho, T) * inv_egas_unit_;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
 //  \brief Return adiabatic sound speed squared
 Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
+  rho *= rho_unit_;
+  pres *= egas_unit_;
   Real ps = pres / rho;
-  Real T = invert(*P_of_rho_T, rho, pres, 0.5*ps, my_1pe*ps);
-  return asq_(rho, T);
+  Real T = invert(*P_of_rho_T, rho, pres, 0.5*ps, float_1pe*ps);
+  return asq_(rho, T) * inv_vsqr_unit_;
+}
+
+//----------------------------------------------------------------------------------------
+//! void EquationOfState::InitEosConstants(ParameterInput* pin)
+//  \brief Initialize constants for EOS
+void EquationOfState::InitEosConstants(ParameterInput* pin) {
+  prec = pin->GetOrAddReal("hydro", "InversionPrecision", prec);
+  return;
 }

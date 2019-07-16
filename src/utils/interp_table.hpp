@@ -54,8 +54,6 @@ class EosTable {
   Real rhoUnit, eUnit, hUnit;
   int nRho, nEgas, nVar;
   AthenaArray<Real> EosRatios;
-
-  Real GetEosData(int kOut, Real var, Real rho);
 };
 
 #endif //UTILS_INTERP_TABLE_HPP_

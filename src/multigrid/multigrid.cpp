@@ -98,7 +98,7 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
       return;
     }
     // *** temporary ***
-    if (std::fabs(rdx_-rdy_)>1.0e-5 || std::fabs(rdx_-rdz_)>1.0e-5) {
+    if (std::abs(rdx_-rdy_)>1.0e-5 || std::abs(rdx_-rdz_)>1.0e-5) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
           << "The cell size must be cubic." << std::endl;
@@ -479,14 +479,14 @@ Real Multigrid::CalculateDefectNorm(int n, int nrm) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++)
-          norm=std::max(norm,std::fabs(def(n,k,j,i)));
+          norm=std::max(norm,std::abs(def(n,k,j,i)));
       }
     }
   } else if (nrm==1) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++)
-          norm+=std::fabs(def(n,k,j,i));
+          norm+=std::abs(def(n,k,j,i));
       }
     }
   } else { // nrm>1 -> nrm=2

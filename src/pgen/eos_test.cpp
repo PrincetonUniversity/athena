@@ -114,14 +114,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       zeros(i)=0.0;
       w2[i]=0.0;
     }
-    std::cout << "Input fluid parameters and retrive EOS parameters." << '\n'
+    std::cout << "Input fluid parameters and retrieve EOS parameters." << '\n'
               << "Non-positive inputs will exit loop." << '\n';
     std::cout << "Input density (mass/volume): ";
     std::cin >> rho;
     std::cout << "Input internal energy (energy/volume): ";
     std::cin >> egas;
     while (rho > 0 && std::isfinite(rho) && egas >0 && std::isfinite(egas)) {
-      Real p, h, asq, a2, perr, aerr;
+      Real p, h, asq, perr;
       FaceField f;
       std::cout << "Density, internal energy: " << rho << ", " << egas << '\n';
       u(IDN,0,0,0) = rho;
@@ -133,13 +133,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       w2[IDN]=rho;
       asq = SQR(peos->SoundSpeed(w2));
       h = p + egas;
-      a2 = asq;
-      if (GENERAL_EOS) a2 = peos->RiemannAsq(rho, h / rho);
       perr = 1.0 - u(IEN)/egas;
-      aerr = 1.0 - a2/asq;
-      std::cout << "P(d, e)    , h(d, e)    , ASq(d, P)  , PErr   , ASqErr\n";
-      std::cout << p << ", " << h << ", " << asq  << ", " << perr  << ", " << aerr
-                << '\n' << std::endl;
+      std::cout << "P(d, e)    , ASq(d, P)  , PErr\n";
+      std::cout << p << ", " << asq  << ", " << perr << '\n' << std::endl;
       std::cout << "Input density (mass/volume): ";
       std::cin >> rho;
       std::cout << "Input internal energy (energy/volume): ";
