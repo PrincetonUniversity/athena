@@ -45,6 +45,7 @@ nx3        =    4
 gamma = 1.666666666666667 # gamma = C_p/C_v
 iso_sound_speed = 1.0     # isothermal sound speed
 sfloor   =   0            # passive scalar floor
+active   =   fixed        # post-processing
 
 <problem>
 nH         = 1.0921e+02 #density

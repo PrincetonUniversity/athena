@@ -60,9 +60,6 @@
 // Radiation integrator method, used in constructing radiation tasklist
 #define RADIATION_INTEGRATOR "@RADIATION_INTEGRATOR@"
 
-// include post-processing?  default=0 (false).
-#define POST_PROCESSING_ENABLED @POST_PROCESSING_ENABLED@
-
 // enable special or general relativity? default=0 (false)
 #define RELATIVISTIC_DYNAMICS @RELATIVISTIC_DYNAMICS@
 

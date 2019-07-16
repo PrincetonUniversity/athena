@@ -1060,7 +1060,8 @@ void Mesh::OutputMeshStructure(int ndim) {
 //        this assumes that phydro->NewBlockTimeStep is already called
 
 void Mesh::NewTimeStep() {
-  if (POST_PROCESSING_ENABLED) { //this is called at the end of Mesh::Initialize()
+  //this is called at the end of Mesh::Initialize()
+  if (fluid_setup == FluidFormulation::fixed) {
     dt = tlim/nlim;
     return;
   }
@@ -1850,6 +1851,8 @@ FluidFormulation GetFluidFormulation(const std::string& input_string) {
     return FluidFormulation::disabled;
   } else if (input_string == "background") {
     return FluidFormulation::background;
+  } else if (input_string == "fixed") {
+    return FluidFormulation::fixed;
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in GetFluidFormulation" << std::endl

@@ -159,7 +159,9 @@ enum class BoundaryQuantity {cc, fc, cc_flcor, fc_flcor, mggrav, mggrav_f};
 enum class HydroBoundaryQuantity {cons, prim};
 enum class BoundaryCommSubset {mesh_init, gr_amr, all};
 // TODO(felker): consider generalizing/renaming to QuantityFormulation
-enum class FluidFormulation {evolve, background, disabled}; // rename background -> fixed?
+// TODO(Gong): currently disabled=background (with passive scalar advection),
+// and fixed is without passive scalar advection.
+enum class FluidFormulation {evolve, background, fixed, disabled}; 
 enum class UserHistoryOperation {sum, max, min};
 
 //----------------------------------------------------------------------------------------

@@ -495,9 +495,7 @@ int main(int argc, char *argv[]) {
         pmesh->pfgrd->Solve(stage, 0);
       else if (SELF_GRAVITY_ENABLED == 2) // multigrid
         pmesh->pmgrd->Solve(stage);
-      if (POST_PROCESSING_ENABLED == 0) {
-        ptlist->DoTaskListOneStage(pmesh, stage);
-      }
+      ptlist->DoTaskListOneStage(pmesh, stage);
     }
 
     //radiation

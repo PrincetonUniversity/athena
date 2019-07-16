@@ -1188,6 +1188,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveScalarFlux(MeshBlock *pmb, int stage) 
 
 
 TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
+  if (pmb->pmy_mesh->fluid_setup == FluidFormulation::fixed) return TaskStatus::next;
+
   PassiveScalars *ps = pmb->pscalars;
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to
@@ -1269,6 +1271,8 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesScalars(MeshBlock *pmb, int stag
 
 
 TaskStatus TimeIntegratorTaskList::DiffuseScalars(MeshBlock *pmb, int stage) {
+  if (pmb->pmy_mesh->fluid_setup == FluidFormulation::fixed) return TaskStatus::next;
+
   PassiveScalars *ps = pmb->pscalars;
   Hydro *ph = pmb->phydro;
   // return if there are no diffusion to be added

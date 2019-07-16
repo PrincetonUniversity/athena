@@ -30,7 +30,6 @@
 #   -fft              enable FFT (requires the FFTW library)
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
 #   --grav=xxx        use xxx as the self-gravity solver
-#   -pp               enable post-processing
 #   --chemistry=choice enable chemistry, use choice as chemical network
 #   --cvode_path=path  path to CVODE libraries (chemistry requires the cvode library)
 #   --radiation=choice  enable radiative transfer, use choice for integrator
@@ -216,13 +215,6 @@ parser.add_argument('--cvode_path',
     type=str,
     default='',
     help='path to CVODE libraries')
-
-# -pp argument
-parser.add_argument('-pp',
-    action='store_true',
-    default=False,
-    help='enable post-processing')
-
 
 # -hdf5 argument
 parser.add_argument('-hdf5',
@@ -625,12 +617,6 @@ else:
   makefile_options['RADIATION_FILE'] = 'const.cpp'
   definitions['RADIATION_INTEGRATOR'] = 'none'
 
-# -pp argument
-if args['pp']:
-  definitions['POST_PROCESSING_ENABLED'] = '1'
-else:
-  definitions['POST_PROCESSING_ENABLED'] = '0'
-
 # -float argument
 if args['float']:
     definitions['SINGLE_PRECISION_ENABLED'] = '1'
@@ -876,7 +862,6 @@ print('  Chemistry:               '    + (args['chemistry'] if  args['chemistry'
 print('  Radiation:               '    + (args['radiation'] if  args['radiation'] \
         !=  None else 'OFF'))
 print('  cvode_path:          '        + args['cvode_path'])
-print('  Post processing:         '    + ('ON' if args['pp'] else 'OFF'))
 print('  Shearing Box BCs:           ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF'))
