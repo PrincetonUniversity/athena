@@ -37,6 +37,7 @@
 
 void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
   int nnew = 0, ndel = 0;
+  amr_updated = false;
 
   if (adaptive) {
     UpdateMeshBlockTree(nnew, ndel);
@@ -48,6 +49,7 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
   UpdateCostList();
 
   if (nnew != 0 || ndel != 0) { // at least one (de)refinement happened
+    amr_updated = true;
     GatherCostListAndCheckBalance();
     RedistributeAndRefineMeshBlocks(pin, nbtotal + nnew - ndel);
   } else if (lb_flag_ && step_since_lb >= lb_interval_) {

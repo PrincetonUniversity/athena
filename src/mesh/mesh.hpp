@@ -229,6 +229,7 @@ class Mesh {
   int step_since_lb;
   int gflag;
   int turb_flag; // turbulence flag
+  bool amr_updated;
   EosTable *peos_table;
 
   // ptr to first MeshBlock (node) in linked list of blocks belonging to this MPI rank:

@@ -92,7 +92,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     dt_diagnostics(pin->GetOrAddInteger("time", "dt_diagnostics", -1)),
     muj(), nuj(), muj_tilde(),
     nbnew(), nbdel(),
-    step_since_lb(), gflag(), turb_flag(),
+    step_since_lb(), gflag(), turb_flag(), amr_updated(multilevel),
     // private members:
     next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
     tree(this),
@@ -559,7 +559,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     dt_diagnostics(pin->GetOrAddInteger("time", "dt_diagnostics", -1)),
     muj(), nuj(), muj_tilde(),
     nbnew(), nbdel(),
-    step_since_lb(), gflag(), turb_flag(),
+    step_since_lb(), gflag(), turb_flag(), amr_updated(multilevel),
     // private members:
     next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
     tree(this),
@@ -1537,6 +1537,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       iflag = false;
       int onb = nbtotal;
       LoadBalancingAndAdaptiveMeshRefinement(pin);
+      amr_updated = true;
       if (nbtotal == onb) {
         iflag = true;
       } else if (nbtotal < onb && Globals::my_rank == 0) {
