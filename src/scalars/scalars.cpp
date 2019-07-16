@@ -43,6 +43,11 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
               (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
                AthenaArray<Real>::DataStatus::empty)),
     sbvar(pmb, &s, &coarse_s_, s_flux),
+#ifdef INCLUDE_CHEMISTRY
+    //construct ptrs to objects related to solving chemistry source term.
+    chemnet(pmb, pin),
+    odew(pmb, pin),
+#endif //INCLUDE_CHEMISTRY
     nu_scalar_iso{pin->GetOrAddReal("problem", "nu_scalar_iso", 0.0)},
     //nu_scalar_aniso{pin->GetOrAddReal("problem", "nu_scalar_aniso", 0.0)},
     scalar_diffusion_defined{(nu_scalar_iso > 0.0 ? true : false)},
@@ -125,15 +130,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   r_copy.NewAthenaArray(nc1, NSCALARS);
   //next step size
   h.NewAthenaArray(nc3, nc2, nc1);
-  //construct ptrs to objects related to solving chemistry source term.
-  pchemnet = new ChemNetwork(pmy_block, pin);
-  podew = new ODEWrapper(pmy_block, pin);
 #endif //INCLUDE_CHEMISTRY
 }
 
-PassiveScalars::~PassiveScalars() {
-#ifdef INCLUDE_CHEMISTRY
-  delete pchemnet;
-  delete podew;
-#endif //INCLUDE_CHEMISTRY
-}
+PassiveScalars::~PassiveScalars() {}

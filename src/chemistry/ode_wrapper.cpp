@@ -65,7 +65,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   Real abstol_all = pin->GetOrAddReal("chemistry", "abstol", 1.0e-12);
   for (int i=0; i<NSCALARS; i++) {
     abstol_[i] = pin->GetOrAddReal("chemistry",
-        "abstol_"+pmy_spec_->pchemnet->species_names[i], -1);
+        "abstol_"+pmy_spec_->chemnet.species_names[i], -1);
     if (abstol_[i] < 0) {
       abstol_[i] = abstol_all;
     }
@@ -99,13 +99,13 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   CheckFlag((void *)cvode_mem_, "CVodeCreate", 0);
 
   // Set the user data pointer to NetworkWrapper
-  flag = CVodeSetUserData(cvode_mem_, pmy_spec_->pchemnet);
+  flag = CVodeSetUserData(cvode_mem_, &(pmy_spec_->chemnet));
   CheckFlag(&flag, "CVodeSetUserData", 1);
 
   // Call CVodeInit to initialize the integrator memory and specify the
   // user's right hand side function in y'=f(t,y), the inital time T0, and
   // the initial dependent variable vector y.
-  flag = CVodeInit(cvode_mem_,  pmy_spec_->pchemnet->WrapRHS, 
+  flag = CVodeInit(cvode_mem_,  pmy_spec_->chemnet.WrapRHS, 
                    pmy_block_->pmy_mesh->time, y_);
   CheckFlag(&flag, "CVodeInit", 1);
 
@@ -153,7 +153,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
 
   // Set the Jacobian routine to Jac (user-supplied)
 	if (user_jac) {
-		flag = CVDlsSetJacFn(cvode_mem_, pmy_spec_->pchemnet->WrapJacobian);
+		flag = CVDlsSetJacFn(cvode_mem_, pmy_spec_->chemnet.WrapJacobian);
 		CheckFlag(&flag, "CVDlsSetDenseJacFn", 1);
 	}
 
@@ -194,7 +194,7 @@ void ODEWrapper::Integrate() {
       for (int i=is; i<=ie; ++i) {
         //step 1: initialize chemistry network, eg: density, radiation
         NV_DATA_S(y_) = pdata_r_copy + i*NSCALARS;
-        pmy_spec_->pchemnet->InitializeNextStep(k, j, i);
+        pmy_spec_->chemnet.InitializeNextStep(k, j, i);
         //step 2: re-initialize CVODE with starting time t, and vector y
         //allocate r_copy(i, *) to y_.
         //TODO: make sure Real and realtype are the same.

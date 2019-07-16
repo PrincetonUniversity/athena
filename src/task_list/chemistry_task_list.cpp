@@ -74,7 +74,7 @@ void ChemistryIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 TaskStatus ChemistryIntegratorTaskList::IntegrateSourceTerm(MeshBlock *pmb, int stage)
 {
 #ifdef INCLUDE_CHEMISTRY
-  pmb->pscalars->podew->Integrate();
+  pmb->pscalars->odew.Integrate();
 #endif
   return TaskStatus::success;
 }

@@ -31,7 +31,7 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin)
   pmy_mb = prad->pmy_block;
   pmy_rad = prad;
 #ifdef INCLUDE_CHEMISTRY
-  pmy_chemnet = pmy_mb->pscalars->pchemnet;
+  pmy_chemnet = &(pmy_mb->pscalars->chemnet);
   ncol = pmy_chemnet->n_cols_;
   col.NewAthenaArray(pmy_rad->nang,
                      pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1, ncol);

@@ -1359,7 +1359,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #ifdef INCLUDE_CHEMISTRY
     for (int i=0; i<nmb; ++i) {
       MeshBlock *pmb = pmb_array[i];
-      pmb->pscalars->podew->Initialize(pin);
+      pmb->pscalars->odew.Initialize(pin);
     }
 #endif //INCLUDE_CHEMISTRY
 

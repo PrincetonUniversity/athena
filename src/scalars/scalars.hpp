@@ -64,8 +64,8 @@ class PassiveScalars {
   //maybe parallelize i with openmpi later.
   AthenaArray<Real> r_copy; //abundance of species copy at intermediate step
   AthenaArray<Real> h; //next stepsize in chemistry solver
-  ChemNetwork *pchemnet; //pointer to chemical network
-  ODEWrapper *podew; //pointer to ode solver
+  ChemNetwork chemnet; //pointer to chemical network
+  ODEWrapper odew; //pointer to ode solver
 #endif //INCLUDE_CHEMISTRY
 
   // public functions:

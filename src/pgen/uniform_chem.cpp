@@ -49,7 +49,7 @@
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   FILE *pf = fopen("chem_network.dat", "w");
-  pblock->pscalars->pchemnet->OutputProperties(pf);
+  pblock->pscalars->chemnet.OutputProperties(pf);
   fclose(pf);
   return;
 }
@@ -93,7 +93,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           for (int iang=0; iang < prad->nang; ++iang) {
             //cr rate
             prad->ir(k, j, i,
-                pscalars->pchemnet->index_cr_ * prad->nang + iang) = cr_rate;
+                pscalars->chemnet.index_cr_ * prad->nang + iang) = cr_rate;
           }
         }
       }

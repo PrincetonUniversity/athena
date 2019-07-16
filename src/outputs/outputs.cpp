@@ -502,9 +502,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     for (int n=0; n<NSCALARS; n++) {
 #ifdef INCLUDE_CHEMISTRY
       std::string scalar_name_cons = root_name_cons + 
-                                      psclr->pchemnet->species_names[n];
+                                      psclr->chemnet.species_names[n];
       std::string scalar_name_prim = root_name_prim +
-                                      psclr->pchemnet->species_names[n];
+                                      psclr->chemnet.species_names[n];
 #else
       std::string scalar_name_cons = root_name_cons + std::to_string(n);
       std::string scalar_name_prim = root_name_prim + std::to_string(n);
