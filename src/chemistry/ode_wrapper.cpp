@@ -222,6 +222,9 @@ void ODEWrapper::Integrate() {
       for (int ispec=0; ispec<NSCALARS; ispec++) {
         for (int i=is; i<=ie; ++i) {
 					pmy_spec_->r(ispec, k, j, i) = pmy_spec_->r_copy(i, ispec);
+          //apply floor to passive scalar concentrations
+          pmy_block_->peos->ApplyPassiveScalarFloors(pmy_spec_->r,
+              ispec, k, j, i);
         }
       }
     }
