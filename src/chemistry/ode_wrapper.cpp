@@ -163,7 +163,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   return;
 }
 
-void ODEWrapper::Integrate() {
+void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   int is = pmy_block_->is;
   int js = pmy_block_->js;
   int ks = pmy_block_->ks;
@@ -171,8 +171,6 @@ void ODEWrapper::Integrate() {
   int je = pmy_block_->je;
   int ke = pmy_block_->ke;
   Real *pdata_r_copy = pmy_spec_->r_copy.data();
-  Real tinit = pmy_block_->pmy_mesh->time;
-  Real dt = pmy_block_->pmy_mesh->dt;
   int ncycle = pmy_block_->pmy_mesh->ncycle;
   Real tfinal = tinit + dt;
   Real treturn = 0;

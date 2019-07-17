@@ -30,6 +30,9 @@
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
 #include "task_list.hpp"
+#ifdef INCLUDE_CHEMISTRY
+#include "../chemistry/network/network.hpp" 
+#endif
 
 //----------------------------------------------------------------------------------------
 //  TimeIntegratorTaskList constructor
@@ -278,8 +281,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       } else {
         AddTask(INT_SCLR,CALC_SCLRFLX);
       }
-      // there is no SRCTERM_SCLR task
-      AddTask(SEND_SCLR,INT_SCLR);
+      AddTask(SRCTERM_SCLR,INT_SCLR);
+      AddTask(SEND_SCLR,SRCTERM_SCLR);
       AddTask(RECV_SCLR,NONE);
       AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
       // if (SHEARING_BOX) {
@@ -569,6 +572,11 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::IntegrateScalars);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == SRCTERM_SCLR) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::AddSourceTermsScalars);
     task_list_[ntasks].lb_time = true;
   } else if (id == SEND_SCLR) {
     task_list_[ntasks].TaskFunc=
@@ -1229,6 +1237,22 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
   return TaskStatus::fail;
 }
 
+TaskStatus TimeIntegratorTaskList::AddSourceTermsScalars(MeshBlock *pmb, int stage) {
+//integrate chemistry reactions
+#ifdef INCLUDE_CHEMISTRY
+  if (stage <= nstages) {
+    // Time at beginning of stage for u()
+    Real t_start_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage-1][0];
+    // Scaled coefficient for RHS update
+    Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+    // Evaluate the time-dependent source terms at the time at the beginning of the stage
+    pmb->pscalars->odew.Integrate(t_start_stage, dt);
+  } else {
+    return TaskStatus::fail;
+  }
+#endif
+  return TaskStatus::next;
+}
 
 TaskStatus TimeIntegratorTaskList::SendScalars(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -1293,3 +1317,4 @@ TaskStatus TimeIntegratorTaskList::DiffuseScalars(MeshBlock *pmb, int stage) {
   }
   return TaskStatus::next;
 }
+

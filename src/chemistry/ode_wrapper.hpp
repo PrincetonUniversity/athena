@@ -47,7 +47,7 @@ public:
   // cell over time dt.
   // 
   // Note that this will be not vectorizable(?).
-  void Integrate();
+  void Integrate(const Real tinit, const Real dt);
 
   //solve the chemical abundance to equilibrium. Useful for post-processing.
   void SolveEq();
