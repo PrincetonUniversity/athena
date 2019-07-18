@@ -32,9 +32,10 @@
 // constructor, initializes data structures and parameters
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) :
-    nvar_(invar), mode_(0), // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
+    nvar_(invar), maxreflevel_(pm->max_level-pm->root_level),
+    mode_(0), // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
-    fsubtract_average_(false), ffas_(false), eps_(-1.0) {
+    fsubtract_average_(false), ffas_(false), eps_(-1.0), cbuf_(nvar_,3,3,3) {
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
@@ -99,6 +100,14 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
   }
   rootbuf_=new Real[pm->nbtotal*nv];
   mgtlist_ = new MultigridTaskList(this);
+
+  if (maxreflevel_ > 0) { // SMR / AMR
+    octets_ = new std::vector<MGOctet>[maxreflevel_];
+    octetmap_ = new std::unordered_map<LogicalLocation, int,
+                                       LogicalLocationHash>[maxreflevel_];
+    noctets_ = new int[maxreflevel_]();
+    prevnoct_ = new int[maxreflevel_];
+  }
 }
 
 // destructor
@@ -113,6 +122,12 @@ MultigridDriver::~MultigridDriver() {
   delete [] nvslisti_;
   delete [] rootbuf_;
   delete mgtlist_;
+  if (maxreflevel_ > 0) {
+    delete [] octets_;
+    delete [] octetmap_;
+    delete [] noctets_;
+    delete [] prevnoct_;
+  }
 #ifdef MPI_PARALLEL
   MPI_Comm_free(&MPI_COMM_MULTIGRID);
 #endif
@@ -125,13 +140,41 @@ MultigridDriver::~MultigridDriver() {
 void MultigridDriver::SetupMultigrid() {
   nrootlevel_ = mgroot_->GetNumberOfLevels();
   nmblevel_ = vmg_[0]->GetNumberOfLevels();
-  ntotallevel_ = nrootlevel_+nmblevel_-1;
-  fmglevel_ = current_level_ = ntotallevel_-1;
+  nreflevel_ = pmy_mesh_->current_level - pmy_mesh_->root_level;
+  ntotallevel_ = nrootlevel_ + nmblevel_ + nreflevel_ - 1;
+  fmglevel_ = current_level_ = ntotallevel_ - 1;
+  int ncoct = mgroot_->ngh_*2 + 2;
+
+  if (nreflevel_ > 0 && pmy_mesh_->amr_updated) {
+    for (int i=0; i<maxreflevel_; ++i) { // clear old data
+      octetmap_[i].clear();
+      prevnoct_[i] = noctets_[i];
+      noctets_[i] = 0;
+    }
+    pmy_mesh_->tree.CountMGOctets(noctets_);
+    for (int i=0; i<maxreflevel_; ++i) { // increase the octet array size if needed
+      if (prevnoct_[i] < noctets_[i]) {
+        octets_[i].resize(noctets_[i]);
+        octetmap_[i].reserve(noctets_[i]);
+      }
+      noctets_[i] = 0;
+    }
+    pmy_mesh_->tree.GetMGOctetList(octets_, octetmap_, noctets_);
+    for (int i=0; i<maxreflevel_; ++i) {
+      for (int j=prevnoct_[i]; j<noctets_[i]; ++j) {
+        octets_[i][j].u.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
+        octets_[i][j].def.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
+        octets_[i][j].src.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
+        octets_[i][j].uold.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
+      }
+    }
+  }
 
   for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
     Multigrid *pmg = *itr;
     pmg->pmgbval->CopyNeighborInfoFromMeshBlock();
   }
+
   if (fsubtract_average_)
     SubtractAverage(MGVariable::src);
   if (mode_<=1) { // FMG
@@ -140,11 +183,13 @@ void MultigridDriver::SetupMultigrid() {
       pmg->RestrictFMGSource();
     }
     TransferFromBlocksToRoot(true);
+    RestrictOctetsFMGSource();
     mgroot_->RestrictFMGSource();
     current_level_=0;
   } else {
     current_level_=ntotallevel_-1;
   }
+
   return;
 }
 
@@ -157,20 +202,20 @@ void MultigridDriver::SubtractAverage(MGVariable type) {
   for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
     Multigrid *pmg = *itr;
     for (int v=0; v<nvar_; v++)
-      rootbuf_[pmg->pmy_block_->gid*nvar_+v]=pmg->CalculateTotal(type, v);
+      rootbuf_[pmg->pmy_block_->gid*nvar_+v] = pmg->CalculateTotal(type, v);
   }
 #ifdef MPI_PARALLEL
   MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
                  rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
 #endif
-  Real vol=(pmy_mesh_->mesh_size.x1max-pmy_mesh_->mesh_size.x1min)
-          *(pmy_mesh_->mesh_size.x2max-pmy_mesh_->mesh_size.x2min)
-          *(pmy_mesh_->mesh_size.x3max-pmy_mesh_->mesh_size.x3min);
+  Real vol = (pmy_mesh_->mesh_size.x1max - pmy_mesh_->mesh_size.x1min)
+           * (pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min)
+           * (pmy_mesh_->mesh_size.x3max - pmy_mesh_->mesh_size.x3min);
   for (int v=0; v<nvar_; v++) {
-    Real total=0.0;
+    Real total = 0.0;
     for (int n=0; n<pmy_mesh_->nbtotal; n++)
-      total+=rootbuf_[n*nvar_+v];
-    last_ave_=total/vol;
+      total += rootbuf_[n*nvar_+v];
+    last_ave_ = total/vol;
     for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       pmg->SubtractAverage(type, v, last_ave_);
@@ -186,17 +231,18 @@ void MultigridDriver::SubtractAverage(MGVariable type) {
 //  \brief collect the coarsest data and transfer to the root grid
 
 void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
-  int nv = nvar_;
+  int nv = nvar_, ngh = mgroot_->ngh_;
   if (ffas_ && !initflag) nv*=2;
   for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
     Multigrid *pmg = *itr;
-    for (int v=0; v<nvar_; v++)
+    for (int v=0; v<nvar_; ++v)
       rootbuf_[pmg->pmy_block_->gid*nv+v]=pmg->GetCoarsestData(MGVariable::src, v);
     if (ffas_ && !initflag) {
-      for (int v=0; v<nvar_; v++)
+      for (int v=0; v<nvar_; ++v)
         rootbuf_[pmg->pmy_block_->gid*nv+nvar_+v]=pmg->GetCoarsestData(MGVariable::u, v);
     }
   }
+
 #ifdef MPI_PARALLEL
   if (!initflag)
     MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nv, MPI_ATHENA_REAL,
@@ -205,22 +251,39 @@ void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
     MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
                    rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
 #endif
-  if (pmy_mesh_->multilevel) {
-    // *** implement later
-  } else { // uniform
-    for (int n=0; n<pmy_mesh_->nbtotal; n++) {
-      LogicalLocation &loc=pmy_mesh_->loclist[n];
-      int i = static_cast<int>(loc.lx1);
-      int j = static_cast<int>(loc.lx2);
-      int k = static_cast<int>(loc.lx3);
-      for (int v=0; v<nvar_; v++)
+
+  for (int n=0; n<pmy_mesh_->nbtotal; n++) {
+    LogicalLocation &loc=pmy_mesh_->loclist[n];
+    int i = static_cast<int>(loc.lx1);
+    int j = static_cast<int>(loc.lx2);
+    int k = static_cast<int>(loc.lx3);
+    if (loc.level == nrootlevel_-1) {
+      for (int v=0; v<nvar_; ++v)
         mgroot_->SetData(MGVariable::src, v, k, j, i, rootbuf_[n*nv+v]);
       if (ffas_ && !initflag) {
-        for (int v=0; v<nvar_; v++)
+        for (int v=0; v<nvar_; ++v)
           mgroot_->SetData(MGVariable::u, v, k, j, i, rootbuf_[n*nv+nvar_+v]);
+      }
+    } else {
+      LogicalLocation oloc;
+      oloc.lx1 = (loc.lx1 >> 1);
+      oloc.lx2 = (loc.lx2 >> 1);
+      oloc.lx3 = (loc.lx3 >> 1);
+      oloc.level = loc.level - 1;
+      int olev = oloc.level-pmy_mesh_->root_level;
+      int oid = octetmap_[olev][oloc];
+      int oi = (i&1) + ngh;
+      int oj = (j&1) + ngh;
+      int ok = (k&1) + ngh;
+      for (int v=0; v<nvar_; ++v)
+        octets_[olev][oid].src(v,ok,oj,oi) = rootbuf_[n*nv+v];
+      if (ffas_ && !initflag) {
+        for (int v=0; v<nvar_; ++v)
+          octets_[olev][oid].u(v,ok,oj,oi) = rootbuf_[n*nv+nvar_+v];
       }
     }
   }
+
   return;
 }
 
@@ -511,5 +574,50 @@ Multigrid* MultigridDriver::FindMultigrid(int tgid) {
     if (pmg->pmy_block_->gid == tgid)
       return pmg;
   }
+
   return nullptr;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::RestrictOctetsFMGSource()
+//  \brief restrict the source in octets for FMG
+
+void MultigridDriver::RestrictOctetsFMGSource() {
+  if (maxreflevel_ > 0) {
+    int ngh = mgroot_->ngh_;
+    int is, ie, js, je, ks, ke;
+    is = js = ks = ngh;
+    ie = je = ke = ngh + 1;
+    for (int l=nreflevel_-1; l>=1; --l) {
+      for (int i=0; i<noctets_[l]; ++i) {
+        LogicalLocation &loc = octets_[l][i].loc;
+        LogicalLocation cloc;
+        cloc.lx1 = (loc.lx1 >> 1);
+        cloc.lx2 = (loc.lx2 >> 1);
+        cloc.lx3 = (loc.lx3 >> 1);
+        cloc.level = loc.level - 1;
+        int clev = cloc.level - pmy_mesh_->root_level;
+        int oi = (static_cast<int>(loc.lx1) & 1) + ngh;
+        int oj = (static_cast<int>(loc.lx2) & 1) + ngh;
+        int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
+        int oid = octetmap_[clev][cloc];
+        mgroot_->Restrict(cbuf_, octets_[l][i].src, is, ie, js, je, ks, ke);
+        for (int v=0; v<nvar_; ++v)
+          octets_[clev][oid].src(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
+      }
+    }
+    for (int i=0; i<noctets_[0]; ++i) {
+      LogicalLocation &loc = octets_[0][i].loc;
+      int ri = (loc.lx1 >> 1);
+      int rj = (loc.lx2 >> 1);
+      int rk = (loc.lx3 >> 1);
+      mgroot_->Restrict(cbuf_, octets_[0][i].src, is, ie, js, je, ks, ke);
+      for (int v=0; v<nvar_; ++v)
+        mgroot_->SetData(MGVariable::src, v, rk, rj, ri, cbuf_(v, ngh, ngh, ngh));
+    }
+  }
+
+  return;
+}
+

@@ -438,7 +438,7 @@ Real Multigrid::CalculateTotal(MGVariable type, int n) {
   is=js=ks=ngh_;
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
   Real dx=rdx_*static_cast<Real>(1<<ll), dy=rdy_*static_cast<Real>(1<<ll),
-       dz=rdz_*static_cast<Real>  (1<<ll);
+       dz=rdz_*static_cast<Real>(1<<ll);
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++)

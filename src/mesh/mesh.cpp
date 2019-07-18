@@ -435,6 +435,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     }
   }
 
+  if (!adaptive) max_level = current_level;
+
   // initial mesh hierarchy construction is completed here
   tree.CountMeshBlock(nbtotal);
   loclist = new LogicalLocation[nbtotal];
@@ -751,6 +753,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     if (loclist[i].level > current_level) current_level = loclist[i].level;
   }
   delete [] idlist;
+
+  if (!adaptive) max_level = current_level;
 
   // calculate the header offset and seek
   headeroffset += headersize + udsize + listsize*nbtotal;

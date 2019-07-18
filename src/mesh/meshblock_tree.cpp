@@ -26,9 +26,18 @@
 #include "meshblock_tree.hpp"
 
 // Define static member variables
-Mesh* pmesh_;
+Mesh* MeshBlockTree::pmesh_;
 MeshBlockTree* MeshBlockTree::proot_;
 int MeshBlockTree::nleaf_;
+
+
+//----------------------------------------------------------------------------------------
+//! \fn bool operator==(const LogicalLocation &l1, const LogicalLocation &l2)
+//  \brief overloading the comparison operator for LogicalLocation
+bool operator==(const LogicalLocation &l1, const LogicalLocation &l2) {
+  return ((l1.level == l2.level) && (l1.lx1 == l2.lx1)
+       && (l1.lx2 == l2.lx2) && (l1.lx3 == l2.lx3));
+}
 
 
 //----------------------------------------------------------------------------------------
@@ -109,7 +118,7 @@ void MeshBlockTree::AddMeshBlock(LogicalLocation rloc, int &nnew) {
   if (pleaf_ == nullptr) // leaf -> create the finer level
     Refine(nnew);
 
-  // get leaf indexes
+  // get leaf index
   int sh = rloc.level-loc_.level-1;
   int mx, my, mz;
   mx = ((rloc.lx1>>sh) & 1LL) == 1LL;
@@ -135,7 +144,7 @@ void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc) {
       pleaf_[n] = nullptr;
   }
 
-  // get leaf indexes
+  // get leaf index
   int sh = rloc.level-loc_.level-1;
   int mx, my, mz;
   mx = ((rloc.lx1>>sh) & 1LL) == 1LL;
@@ -458,7 +467,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
 
 MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc) {
   if (tloc.level == loc_.level) return this;
-  // get leaf indexes
+  // get leaf index
   int sh = tloc.level - loc_.level - 1;
   int mx = (((tloc.lx1>>sh) & 1LL) == 1LL);
   int my = (((tloc.lx2>>sh) & 1LL) == 1LL);
@@ -467,4 +476,45 @@ MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc) {
   if (pleaf_[n] == nullptr)
     return nullptr;
   return pleaf_[n]->FindMeshBlock(tloc);
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlockTree::CountMGOctets(int *noct)
+//  \brief count the number of octets for Multigrid with mesh refinement
+
+void MeshBlockTree::CountMGOctets(int *noct) {
+  if (pleaf_ == nullptr) return;
+
+  int lev = loc_.level - pmesh_->root_level;
+  if (lev >= 0)
+    noct[lev]++;
+  for (int n=0; n<nleaf_; n++) {
+    if (pleaf_[n] != nullptr)
+      pleaf_[n]->CountMGOctets(noct);
+  }
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void MeshBlockTree::GetMGOctetList(std::vector<MGOctet> *oct, 
+//      std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octmap, int *noct)
+//  \brief construct lists of octets Multigrid with mesh refinement
+
+void MeshBlockTree::GetMGOctetList(std::vector<MGOctet> *oct,
+     std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octmap, int *noct) {
+  if (pleaf_ == nullptr) return;
+
+  int lev = loc_.level - pmesh_->root_level;
+  if (lev >= 0) {
+    oct[lev][noct[lev]].loc = loc_;
+    octmap[lev][loc_] = noct[lev]++;
+  }
+  for (int n=0; n<nleaf_; n++) {
+    if (pleaf_[n] != nullptr)
+      pleaf_[n]->GetMGOctetList(oct, octmap, noct);
+  }
+
+  return;
 }

@@ -68,13 +68,11 @@ struct LogicalLocation { // aggregate and POD type
   static bool Greater(const LogicalLocation & left, const LogicalLocation &right) {
     return left.level > right.level;
   }
+
 };
 
-// overloading comparison operators for hash
-bool operator==(const LogicalLocation &l1, const LogicalLocation &l2) {
-  return ((l1.level == l2.level) && (l1.lx1 == l2.lx1)
-       && (l1.lx2 == l2.lx2) && (l1.lx3 == l2.lx3));
-}
+// prototype for overloading the comparison operator (defined in meshblock_tree.cpp)
+bool operator==(const LogicalLocation &l1, const LogicalLocation &l2);
 
 //----------------------------------------------------------------------------------------
 //! \struct RegionSize

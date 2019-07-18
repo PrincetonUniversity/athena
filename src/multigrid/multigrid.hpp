@@ -11,7 +11,10 @@
 // C headers
 
 // C++ headers
+#include <cstdio> // std::size_t
+#include <cstdint>  // std::int64_t
 #include <iostream>
+#include <unordered_map>
 #include <vector>
 
 // Athena++ headers
@@ -30,13 +33,34 @@ class Mesh;
 class MeshBlock;
 class ParameterInput;
 class Coordinates;
-
+struct MGOctet;
 
 enum class MGVariable {src, u};
 enum class MGNormType {max, l1, l2};
 
+
+
+//! \fn inline std::int64_t rotl(std::int64_t i, int s)
+//  \brief left bit rotation function for 64bit integers (unsafe if s > 64)
+
+inline std::int64_t rotl(std::int64_t i, int s) {
+  return (i << s) | (i >> (64 - s));
+}
+
+
+//! \struct LogicalLocationHash
+//  \brief Hash function object for LogicalLocation
+
+struct LogicalLocationHash {
+ public:
+  std::size_t operator()(const LogicalLocation &l) const {
+    return static_cast<std::size_t>(l.lx1^rotl(l.lx2,21)^rotl(l.lx3,42));
+  }
+};
+
+
 //! \class Multigrid
-//  \brief gravitational block
+//  \brief Multigrid object containing each MeshBlock and/or the root block
 
 class Multigrid {
  public:
@@ -93,7 +117,6 @@ class Multigrid {
   virtual void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
                                int il, int iu, int jl, int ju, int kl, int ku) = 0;
 
-
   friend class MultigridDriver;
   friend class MultigridTaskList;
   friend class MGBoundaryValues;
@@ -136,6 +159,9 @@ class MultigridDriver {
   Real CalculateDefectNorm(MGNormType nrm, int n);
   Multigrid* FindMultigrid(int tgid);
 
+  // octet manipulation functions
+  void RestrictOctetsFMGSource();
+
   // small functions
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }
 
@@ -147,7 +173,8 @@ class MultigridDriver {
   friend class MGBoundaryValues;
 
  protected:
-  int nranks_, nvar_, nrootlevel_, nmblevel_, ntotallevel_, mode_;
+  int nranks_, nvar_, mode_;
+  int nrootlevel_, nmblevel_, ntotallevel_, nreflevel_, maxreflevel_;
   int current_level_, fmglevel_;
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *nvlisti_, *nvslisti_, *ranklist_;
   int nrbx1_, nrbx2_, nrbx3_;
@@ -159,6 +186,12 @@ class MultigridDriver {
   Real last_ave_;
   Real eps_;
 
+  // for mesh refinement
+  std::vector<MGOctet> *octets_;
+  std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octetmap_;
+  int *noctets_, *prevnoct_;
+  AthenaArray<Real> cbuf_;
+
  private:
   MultigridTaskList *mgtlist_;
   Real *rootbuf_;
@@ -166,6 +199,16 @@ class MultigridDriver {
   MPI_Comm MPI_COMM_MULTIGRID;
   int mg_phys_id_;
 #endif
+};
+
+
+//! \struct MGOctet
+//  \brief structure containing eight (+ ghost) cells for Mesh Refinement
+
+struct MGOctet {
+ public:
+  LogicalLocation loc;
+  AthenaArray<Real> u, def, src, uold;
 };
 
 // Function Prototypes for Multigrid Boundary
