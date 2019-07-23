@@ -63,7 +63,7 @@ class Hydro {
   void AddFluxDivergence(const Real wght, AthenaArray<Real> &u_out);
   // void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   //                      AthenaArray<Real> &bcc, const int order);
-  // 4th order MHD version:
+  // 4th order MHD version (added b_fc, bcc_center to arguments list):
   void CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
                        AthenaArray<Real> &bcc, AthenaArray<Real> &bcc_center,
                        const int order);

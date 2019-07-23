@@ -1526,20 +1526,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         // --------------------------
         // fourth-order EOS:
         if (order == 4) {
-          // for hydro, shrink buffer by 1 on all sides
-          if (pbval->nblevel[1][1][0] != -1) il += 1;
-          if (pbval->nblevel[1][1][2] != -1) iu -= 1;
-          if (pbval->nblevel[1][0][1] != -1) jl += 1;
-          if (pbval->nblevel[1][2][1] != -1) ju -= 1;
-          if (pbval->nblevel[0][1][1] != -1) kl += 1;
-          if (pbval->nblevel[2][1][1] != -1) ku -= 1;
-          // for MHD, shrink buffer by 3
-          // TODO(felker): add MHD loop limit calculation for 4th order W(U)
-          pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
-                                                     ph->w, pf->bcc, pco,
-                                                     il, iu, jl, ju, kl, ku);
-          pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
-              ps->s, ps->r, ps->r, pco, il, iu, jl, ju, kl, ku);
 
           // TODO(felker): deduplicate with TimeIntegratorTaskList::Primitives
           if (MAGNETIC_FIELDS_ENABLED) {
@@ -1575,11 +1561,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
             }
             pmb->peos->ConservedToPrimitiveCellAverage(
                 ph->u, ph->w1, pf->b, ph->w, pf->bcc, pco, il, iu, jl, ju, kl, ku);
-            // TODO(felker): check possibly messed-up merge commit 8993f57 on 2019-05-08:
-            if (NSCALARS > 0) {
-              pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
-                  ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
-            }
+          } // hydro, not MHD
+          // passive scalar 4th order treatment is the same in either hydro or MHD
+          if (NSCALARS > 0) {
+            pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
+                ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
           }
         } // end fourth-order EOS
         // --------------------------
