@@ -503,11 +503,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 #if MAGNETIC_FIELDS_ENABLED
       //-------- begin fourth-order upwind constrained transport (UCT4x2)
       if (order == 4) {
-
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je+1; ++j) {
             // Limited transverse reconstructions: call PPMx1() for vx, vy both L/R states
-            // wl_{i,j-1/2} is N side of interface --> discontinuous states in x1, L=E,  R=W
+            // wl_{i,j-1/2} is N side of interface --> discontinuous states in x1: L=E,R=W
             pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, wl3d_,
                                               vl_temp, vr_temp, IVX, IVX, 0);
             pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, wl3d_,
@@ -783,7 +782,6 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         }
       for (int k=ks; k<=ke+1; ++k) {
         for (int j=js; j<=je; ++j) {
-
         // R3 states:
         pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, wr3d_,
                                              vl_temp, vr_temp, IVX, IVX, 0);
@@ -793,7 +791,6 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         // PPMx1()
         pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, b3,
                                              bz_L1, bz_R1, 0, 0, 0);
-
         }
       }
         // Store temporary arrays as average of R_x[R_z[]] and R_z[R_x[]] reconstructions
@@ -830,21 +827,19 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         }
       for (int k=ks; k<=ke+1; ++k) {
         for (int j=js; j<=je+1; ++j) {
-
-        // R3 states:
-        pmb->precon->PiecewiseParabolicX2(k, j, is, ie, wr3d_,
-                                             vl_temp, vr_temp, IVY, IVY, 1);
-        pmb->precon->PiecewiseParabolicX2(k, j, is, ie, wr3d_,
-                                             vl_temp, vr_temp, IVZ, IVZ, 2);
-        // PPMx2()
-        pmb->precon->PiecewiseParabolicX2(k, j, is, ie, b3, bz_L2, bz_R2, 0, 0, 0);
-
+          // R3 states:
+          pmb->precon->PiecewiseParabolicX2(k, j, is, ie, wr3d_,
+                                            vl_temp, vr_temp, IVY, IVY, 1);
+          pmb->precon->PiecewiseParabolicX2(k, j, is, ie, wr3d_,
+                                            vl_temp, vr_temp, IVZ, IVZ, 2);
+          // PPMx2()
+          pmb->precon->PiecewiseParabolicX2(k, j, is, ie, b3, bz_L2, bz_R2, 0, 0, 0);
         }
       }
-        // Store temporary arrays as average of R_y[R_z[]] and R_z[R_y[]] reconstructions
-        for (int n=1; n<3; ++n) {
-          for (int k=ks; k<=ke+1; ++k) {
-            for (int j=js; j<=je+1; ++j) {
+      // Store temporary arrays as average of R_y[R_z[]] and R_z[R_y[]] reconstructions
+      for (int n=1; n<3; ++n) {
+        for (int k=ks; k<=ke+1; ++k) {
+          for (int j=js; j<=je+1; ++j) {
               for (int i=is; i<=ie; ++i) {
                 v_R3L2(n,k,j,i) = 0.5*(v_R3L2(n,k,j,i) + vl_temp(n,k,j,i));
                 v_R3R2(n,k,j,i) = 0.5*(v_R3R2(n,k,j,i) + vr_temp(n,k,j,i));
