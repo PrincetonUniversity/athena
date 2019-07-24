@@ -43,13 +43,11 @@ public:
 
   //RHS: right-hand-side of ODE. dy/dt = ydot(t, y). Here y are the abundance
   //of species. details see CVODE package documentation.
-  void RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS]);
-  //Jacobian: Jacobian of ODE. CVODE can also numerically calculate Jacobian if
-  //this is not specified. Details see CVODE package documentation.
-  void Jacobian(const Real t,
-               const Real y[NSCALARS], const Real fy[NSCALARS], 
-               Real jac[NSCALARS][NSCALARS],
-               Real tmp1[NSCALARS], Real tmp2[NSCALARS], Real tmp3[NSCALARS]);
+  void RHS(const Real t, const Real y[NSCALARS], const Real E,
+           Real ydot[NSCALARS]);
+  
+  //energy equation dE/dt
+  Real Edot(const Real t, const Real y[NSCALARS], const Real E);
 
 private:
   PassiveScalars *pmy_spec_;
@@ -80,8 +78,6 @@ private:
 	Real temp_min_rates_; 
 	Real temp_max_rates_; 
   int is_H2_rovib_cooling_;//whether to include H2 rovibrational cooling
-	//maximum temperature above which heating and cooling is turned off 
-	int is_const_temp_; //flag for constant temperature
   //CR shielding
   int is_cr_shielding_;
 	//parameters of the netowork
@@ -207,10 +203,9 @@ private:
 	static const Real small_;
 	
 	//functions
-	void UpdateRates(const Real y[NSCALARS+ngs_]);
+	void UpdateRates(const Real y[NSCALARS+ngs_], const Real E);
 	void GetGhostSpecies(const Real *y, Real yall[NSCALARS+ngs_]); 
 	Real CII_rec_rate_(const Real temp);
-	Real dEdt_(const Real y[NSCALARS+ngs_]);
 	void OutputRates(FILE *pf) const;
   Real GetStddev(Real arr[], const int len);
   void SetbCO(const int k, const int j, const int i); //set bCO_ for CO cooling

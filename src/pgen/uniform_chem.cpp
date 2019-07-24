@@ -48,9 +48,11 @@
 //======================================================================================
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
+#ifdef INCLUDE_CHEMISTRY
   FILE *pf = fopen("chem_network.dat", "w");
   pblock->pscalars->chemnet.OutputProperties(pf);
   fclose(pf);
+#endif
   return;
 }
 
@@ -70,12 +72,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 	const Real G0 = pin->GetReal("problem", "G0");
 	const Real s_init = pin->GetReal("problem", "s_init");
   const Real cr_rate = pin->GetOrAddReal("chemistry", "CR", 2e-16);
+  const Real T = pin->GetOrAddReal("chemistry", "temperature", 20);
+	const Real xHe = pin->GetOrAddReal("chemistry", "xHe", 0.1);
 
-	//set density
 	for (int k=ks; k<=ke; ++k) {
 		for (int j=js; j<=je; ++j) {
 			for (int i=is; i<=ie; ++i) {
+        //density
 				phydro->u(IDN, k, j, i) = nH;
+        //energy
+        if (NON_BAROTROPIC_EOS) {
+          phydro->u(IEN, k, j, i) = T * Thermo::CvCold(0, xHe, 0);
+        }
 			}
 		}
 	}
@@ -90,11 +98,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               prad->ir(k, j, i, ifreq * prad->nang + iang) = G0;
             }
           }
+#ifdef INCLUDE_CHEMISTRY
           for (int iang=0; iang < prad->nang; ++iang) {
             //cr rate
             prad->ir(k, j, i,
                 pscalars->chemnet.index_cr_ * prad->nang + iang) = cr_rate;
           }
+#endif
         }
       }
     }

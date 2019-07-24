@@ -127,7 +127,8 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   }
 #ifdef INCLUDE_CHEMISTRY
   //allocate memory for the copy of s at intermediate step
-  r_copy.NewAthenaArray(nc1, NSCALARS);
+  //the +1 dimention is the energy equation
+  r_copy.NewAthenaArray(nc1, NSCALARS+1);
   //next step size
   h.NewAthenaArray(nc3, nc2, nc1);
 #endif //INCLUDE_CHEMISTRY

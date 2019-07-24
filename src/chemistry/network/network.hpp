@@ -41,19 +41,41 @@ public:
 
   //Jacobian, only necessary when the input parameter user_jac=1 in <chemistry>
   //if user_jac=0 (default), then numerical jacobian is used.
+  //the dimension is NSCALSRS+1, because the last equation is energy equation
+  //(Edot).
   virtual void Jacobian(const Real t,
-               const Real y[NSCALARS], const Real fy[NSCALARS], 
-               Real jac[NSCALARS][NSCALARS], Real tmp1[NSCALARS],
-               Real tmp2[NSCALARS], Real tmp3[NSCALARS]);
+               const Real y[NSCALARS+1], const Real fy[NSCALARS+1], 
+               Real jac[NSCALARS+1][NSCALARS+1], Real tmp1[NSCALARS+1],
+               Real tmp2[NSCALARS+1], Real tmp3[NSCALARS+1]);
 
   //------------All functions below has to be overloaded------------
   // Note that the RHS and Jac does NOT have user_data. All parameters should
   // be passed to the class as private variables.
-  // initialize the parameters for chemical network. Called before the ODE
-  // solver in ODEWrapper::Integrate()
+
+  // initialize the parameters for chemical network in the cell,
+  // such as reading density and temperature from hydro variables and
+  // reading the radiation field. The parameters are set as private variables
+  // of the ChemNetwork class.
+  // Called before the ODE solver in ODEWrapper::Integrate()
+  // input: k, j, i: index of the cell in the MeshBlock.
   virtual void InitializeNextStep(const int k, const int j, const int i) = 0;
-  // right hand side of ode
-  virtual void RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS]) = 0;
+  // right hand side of ode.
+  // input: 
+  //   t: time in code unites
+  //   y: chemical abundances. These are dimensionless concentrations: the
+  //   variable r in PassiveScalar class.
+  //   E: internal energy
+  // output:
+  //   ydot: time-derivative of abundance y.
+  virtual void RHS(const Real t, const Real y[NSCALARS], const Real E, 
+                   Real ydot[NSCALARS]) = 0;
+  // Energy equation. Currently solved with chemistry as coupled ODE.
+  // input:
+  //    t: time in code unites
+  //    y: chemical abundances, same as in RHS.
+  //    E: internal energy
+  // return: rate of energy change dE/dt.
+  virtual Real Edot(const Real t, const Real y[NSCALARS], const Real E) = 0;
 };
 
 #endif // NETWORK_HPP

@@ -588,7 +588,7 @@ if args['cxx'] == 'clang++-apple':
 # -chemistry argument
 if args['chemistry'] == "gow16":
   definitions['CHEMISTRY_OPTION'] = 'INCLUDE_CHEMISTRY'
-  definitions['NUMBER_PASSIVE_SCALARS'] = '13'
+  definitions['NUMBER_PASSIVE_SCALARS'] = '12'
   #ChemNetwork class header file included in species.hpp
   definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/gow16.hpp'
   makefile_options['CHEMNET_FILE'] = 'src/chemistry/network/' \

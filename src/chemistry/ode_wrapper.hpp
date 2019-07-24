@@ -64,7 +64,7 @@ private:
   PassiveScalars *pmy_spec_;
   MeshBlock *pmy_block_;
   Real reltol_;//relative tolerance
-  Real abstol_[NSCALARS];//absolute tolerance
+  Real abstol_[NSCALARS+1];//absolute tolerance
   SUNMatrix dense_matrix_;
   SUNLinearSolver dense_ls_;
   void *cvode_mem_;

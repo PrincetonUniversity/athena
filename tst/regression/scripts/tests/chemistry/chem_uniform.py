@@ -25,7 +25,6 @@ def prepare(**kwargs):
 
 def run(**kwargs):
   arguments = [ 
-          'chemistry/const_T_flag=0', 
           'problem/G0=1e-6',
           'chemistry/maxsteps=100000',
           'chemistry/reltol=1e-6',
@@ -37,17 +36,21 @@ def run(**kwargs):
 
 def analyze():
   err_control = 1e-6
+  gam1 = 1.666666666666667 - 1.
   _,_,_,data_ref = athena_read.vtk('data/chem_uniform_G1e-6.vtk')
   _,_,_,data_new = athena_read.vtk('bin/uniform_chem.block0.out1.00010.vtk')
   species = ["He+", "OHx", "CHx", "CO", "C+", "HCO+", "H2", "H+", "H3+", "H2+", 
-             "O+", "Si+", "E"]
+             "O+", "Si+"]
   ns = len(species)
-  err_all = np.zeros(ns)
+  err_all = np.zeros(ns+1)
   for i in xrange(ns):
     s = species[i]
     xs_ref = data_ref[s]
     xs_new = data_new["r"+s]
     err_all[i] = (abs(xs_ref - xs_new) / abs(xs_ref) ).max()
+  E_ref = data_ref["E"]
+  E_new = data_new["press"]/gam1
+  err_all[ns] = (abs(E_ref - E_new) / abs(E_ref) ).max()
   err_max = err_all.max()
   if err_max < err_control:
     return True

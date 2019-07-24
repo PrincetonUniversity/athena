@@ -30,6 +30,7 @@
 #include "../scalars/scalars.hpp"
 #include "../eos/eos.hpp"
 #include "../hydro/hydro.hpp"
+#include "../field/field.hpp"
 
 // this class header
 #include "ode_wrapper.hpp"
@@ -40,7 +41,7 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   dense_matrix_ = NULL,
   dense_ls_ = NULL,
   //allocate y_
-  y_ = N_VNew_Serial(NSCALARS);
+  y_ = N_VNew_Serial(NSCALARS+1);
   CheckFlag((void *)y_, "N_VNew_Serial", 0);
   ydata_ = NV_DATA_S(y_);
   reltol_ = pin->GetOrAddReal("chemistry", "reltol", 1.0e-2);
@@ -70,6 +71,10 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
       abstol_[i] = abstol_all;
     }
   }
+  abstol_[NSCALARS] = pin->GetOrAddReal("chemistry", "abstol_E", -1);
+  if (abstol_[NSCALARS] < 0) {
+    abstol_[NSCALARS] = abstol_all;
+  }
   //read initial step
   h_init_ = pin->GetOrAddReal("chemistry", "h_init", 0.);
   //user input Jacobian flag
@@ -86,9 +91,9 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   int stldet = pin->GetOrAddInteger("chemistry", "stldet", 0);
 
   // -----------Initialize absolute value vector----------
-  N_Vector abstol_vec = N_VNew_Serial(NSCALARS);
+  N_Vector abstol_vec = N_VNew_Serial(NSCALARS+1);
   CheckFlag((void *)abstol_vec, "N_VNew_Serial", 0);
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSCALARS+1; i++) {
     NV_Ith_S(abstol_vec, i) = abstol_[i];
   }
 
@@ -115,7 +120,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   CheckFlag(&flag, "CVodeSVtolerances", 1);
 
   // Create dense SUNMatrix for use in linear solves 
-  dense_matrix_ = SUNDenseMatrix(NSCALARS, NSCALARS);
+  dense_matrix_ = SUNDenseMatrix(NSCALARS+1, NSCALARS+1);
   CheckFlag((void *)dense_matrix_, "SUNDenseMatrix", 0);
 
   /* Create dense SUNLinearSolver object for use by CVode */
@@ -175,6 +180,9 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   Real tfinal = tinit + dt;
   Real treturn = 0;
   int flag;
+  //conserved variables
+  AthenaArray<Real> &u = pmy_block_->phydro->u;
+  AthenaArray<Real> &bcc = pmy_block_->pfield->bcc;
   //timing of the chemistry in each cycle
   int nzones = (ie-is+1) * (je-js+1) * (ke-ks+1);
   clock_t begin, end;
@@ -188,10 +196,22 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
           pmy_spec_->r_copy(i, ispec) = pmy_spec_->r(ispec, k, j, i); 
         }
       }
+      //assign internal energy, if not isothermal eos
+      if (NON_BAROTROPIC_EOS) {
+        for (int i=is; i<=ie; ++i) {
+          pmy_spec_->r_copy(i, NSCALARS) = u(IEN,k,j,i) 
+            - 0.5*( SQR(u(IM1,k,j,i)) + SQR(u(IM2,k,j,i)) + SQR(u(IM3,k,j,i))
+                   )/u(IDN,k,j,i);
+          if (MAGNETIC_FIELDS_ENABLED) {
+            pmy_spec_->r_copy(i, NSCALARS) -= 0.5*(
+                SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
+          }
+        }
+      }
       //loop over each cell
       for (int i=is; i<=ie; ++i) {
         //step 1: initialize chemistry network, eg: density, radiation
-        NV_DATA_S(y_) = pdata_r_copy + i*NSCALARS;
+        NV_DATA_S(y_) = pdata_r_copy + i*(NSCALARS+1);
         pmy_spec_->chemnet.InitializeNextStep(k, j, i);
         //step 2: re-initialize CVODE with starting time t, and vector y
         //allocate r_copy(i, *) to y_.
@@ -206,7 +226,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
           SetInitStep(pmy_spec_->h(k, j, i));
         }
         //step 3: integration. update array abundance over time dt
-
+        //in CV_NORMAL model, treturn=tfinal (the time of output)
         flag = CVode(cvode_mem_, tfinal, y_, &treturn, CV_NORMAL);
         CheckFlag(&flag, "CVode", 3);
 
@@ -223,6 +243,18 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
           //apply floor to passive scalar concentrations
           pmy_block_->peos->ApplyPassiveScalarFloors(pmy_spec_->r,
               ispec, k, j, i);
+        }
+      }
+      //assign internal energy, if not isothermal eos
+      if (NON_BAROTROPIC_EOS) {
+        for (int i=is; i<=ie; ++i) {
+          u(IEN,k,j,i) = pmy_spec_->r_copy(i, NSCALARS)
+            + 0.5*( SQR(u(IM1,k,j,i)) + SQR(u(IM2,k,j,i)) + SQR(u(IM3,k,j,i))
+                   )/u(IDN,k,j,i);
+          if (MAGNETIC_FIELDS_ENABLED) {
+            u(IEN,k,j,i) += 0.5*(
+                SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
+          }
         }
       }
     }

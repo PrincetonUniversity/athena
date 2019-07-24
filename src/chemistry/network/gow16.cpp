@@ -33,6 +33,7 @@
 #include "../utils/chemistry_utils.hpp"
 #include "../utils/thermo.hpp"
 #include "../../defs.hpp"
+#include "../../eos/eos.hpp"
 
 //c++ header
 #include <sstream>    // stringstream
@@ -48,7 +49,7 @@ const Real ChemNetwork::small_ = 1e-50;
 
 //species names
 const std::string ChemNetwork::species_names[NSCALARS] = 
-{"He+", "OHx", "CHx", "CO", "C+", "HCO+", "H2", "H+", "H3+", "H2+", "O+", "Si+", "E"};
+{"He+", "OHx", "CHx", "CO", "C+", "HCO+", "H2", "H+", "H3+", "H2+", "O+", "Si+"};
 
 //below are ghost species. The aboundances of ghost species are
 // recalculated in RHS everytime by other species.
@@ -80,8 +81,6 @@ const int ChemNetwork::iOplus_ =
   ChemistryUtility::FindStrIndex(species_names, NSCALARS, "O+");
 const int ChemNetwork::iSiplus_ =
   ChemistryUtility::FindStrIndex(species_names, NSCALARS, "Si+");
-const int ChemNetwork::iE_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "E");
 //index of ghost species
 const int ChemNetwork::igSi_ =
   ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*Si") + NSCALARS;
@@ -303,12 +302,11 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 	unit_vel_in_cms_ = pin->GetReal("chemistry", "unit_vel_in_cms");
 	unit_radiation_in_draine1987_ = pin->GetReal(
                                 "chemistry", "unit_radiation_in_draine1987");
-  //constant temperature
-  is_const_temp_ = pin->GetOrAddInteger("chemistry", "const_T_flag", 0);
-  if (is_const_temp_ != 0) {
-    temperature_ = pin->GetReal("chemistry", "temperature");
-  } else {
+  if (NON_BAROTROPIC_EOS) {
     temperature_ = 0.;
+  } else {
+    //isothermal
+    temperature_ = pin->GetReal("chemistry", "temperature");
   }
   //CR shielding
   is_cr_shielding_ = pin->GetOrAddInteger("chemistry", "is_cr_shielding", 0);
@@ -318,10 +316,10 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 	Real inf = std::numeric_limits<Real>::infinity();
 	temp_max_heat_ = pin->GetOrAddReal("chemistry", "temp_max_heat", inf);
 	temp_min_cool_ = pin->GetOrAddReal("chemistry", "temp_min_cool", 1.);
-	//minimum temperature for reaction rates
+	//minimum temperature for reaction rates, also applied to energy equation
 	temp_min_rates_ = pin->GetOrAddReal("chemistry", "temp_min_rates", 1.);
   //cap temperature when calculating rates 
-  //except for collisional dissociation reactions
+  //do not apply for collisional dissociation reactions and energy equation
 	temp_max_rates_ = pin->GetOrAddReal("chemistry", "temp_max_rates", inf);
 	//CO cooling parameters
 	//default: not use LVG approximation
@@ -362,7 +360,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 
 ChemNetwork::~ChemNetwork() {}
 
-void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS]) {
+void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real E, 
+                      Real ydot[NSCALARS]) {
 	Real rate;
 	//store previous y includeing ghost species
 	Real yprev[NSCALARS+ngs_];
@@ -375,7 +374,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS])
 
   // copy y to yprev and set ghost species
   GetGhostSpecies(y, yprev);
-  //correct negative abundance
+  //correct negative abundance to zero, used in rate update
   for (int i=0; i<NSCALARS+ngs_; i++) {
     if (yprev[i] < 0) {
       yprev0[i] = 0;
@@ -402,18 +401,13 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS])
     }
   }
 
-  UpdateRates(yprev0);
+  UpdateRates(yprev0, E);
 
   //cosmic ray reactions
   for (int i=0; i<n_cr_; i++) {
     rate = kcr_[i] * yprev[incr_[i]];
     ydotg[incr_[i]] -= rate;
     ydotg[outcr_[i]] += rate;
-//#ifdef DEBUG
-//    printf("CR, i=%d, rate=%.2e\n", i, rate);
-//    printf("ydotg_incr=%.2e, ydotg_outcr=%.2e\n",
-//            ydotg[incr_[i]], ydotg[outcr_[i]]);
-//#endif
   }
 
   //2body reactions
@@ -426,13 +420,6 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS])
     ydotg[in2body2_[i]] -= rate;
     ydotg[out2body1_[i]] += rate;
     ydotg[out2body2_[i]] += rate;
-//#ifdef DEBUG
-//    printf("2body, i=%d, rate=%.2e\n", i, rate);
-//    printf("ydotg_in2body1=%.2e, ydotg_in2body2=%.2e\n",
-//            ydotg[in2body1_[i]], ydotg[in2body2_[i]]);
-//    printf("ydotg_out2body1=%.2e, ydotg_out2body2=%.2e\n",
-//            ydotg[out2body1_[i]], ydotg[out2body2_[i]]);
-//#endif
   }
 
   //photo reactions
@@ -440,11 +427,6 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS])
     rate = kph_[i] * yprev[inph_[i]];
     ydotg[inph_[i]] -= rate;
     ydotg[outph1_[i]] += rate;
-//#ifdef DEBUG
-//    printf("photo, i=%d, rate=%.2e\n", i, rate);
-//    printf("ydotg_inph=%.2e, ydotg_outph1=%.2e\n",
-//            ydotg[inph_[i]], ydotg[outph1_[i]]);
-//#endif
   }
 
   //grain assisted reactions
@@ -452,17 +434,8 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS])
     rate = kgr_[i] * yprev[ingr_[i]];
     ydotg[ingr_[i]] -= rate;
     ydotg[outgr_[i]] += rate;
-//#ifdef DEBUG
-//    printf("gr, i=%d, rate=%.2e\n", i, rate);
-//    printf("ydotg_ingr=%.2e, ydotg_outgr=%.2e\n",
-//            ydotg[ingr_[i]], ydotg[outgr_[i]]);
-//#endif
   }
 
-  //energy equation
-  if (is_const_temp_ == 0) {
-    ydotg[iE_] = dEdt_(yprev0);
-  }
 	//set ydot to return
 	for (int i=0; i<NSCALARS; i++) {
 		ydot[i] = ydotg[i];
@@ -496,85 +469,19 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], Real ydot[NSCALARS])
   return;
 }
 
-void ChemNetwork::Jacobian(const Real t,
-               const Real y[NSCALARS], const Real fy[NSCALARS], 
-               Real jac[NSCALARS][NSCALARS],
-               Real tmp1[NSCALARS], Real tmp2[NSCALARS], Real tmp3[NSCALARS]) {
-	Real rate_pa = 0; // rate for partial derivative respect to species a
-	Real rate_pb = 0;
-	int ia, ib, ic, id;//index for species a, b, c, d
-	//store previous y with ghost species
-	Real yprev[NSCALARS+ngs_];
-	//Jacobian include ghost indexes
-	Real jac_[NSCALARS+ngs_][NSCALARS+ngs_];
-
-	//initialize jac_ to be zero
-	for (int i=0; i<NSCALARS+ngs_; i++) {
-		for (int j=0; j<NSCALARS+ngs_; j++) {
-			jac_[i][j] = 0;
-		}
-	}
-
-  // copy y to yprev and set ghost species
-  GetGhostSpecies(y, yprev);
-  // 2 body reactions: a+b -> c+d
-  for (int i=0; i<n_2body_; i++) {
-    ia = in2body1_[i];
-    ib = in2body2_[i];
-    ic = out2body1_[i];
-    id = out2body2_[i];
-    rate_pa = k2body_[i] * yprev[ib];
-    rate_pb = k2body_[i] * yprev[ia];
-    jac_[ia][ia] -= rate_pa;
-    jac_[ib][ia] -= rate_pa;
-    jac_[ic][ia] += rate_pa;
-    jac_[id][ia] += rate_pa;
-    jac_[ia][ib] -= rate_pb;
-    jac_[ib][ib] -= rate_pb;
-    jac_[ic][ib] += rate_pb;
-    jac_[id][ib] += rate_pb;
-  }
-  // photo reactions a + photon -> c+d
-  for (int i=0; i<n_ph_; i++) {
-    ia = inph_[i];
-    ic = outph1_[i];
-    rate_pa = kph_[i];
-    jac_[ia][ia] -= rate_pa;
-    jac_[ic][ia] += rate_pa;
-  }
-  //Cosmic ray reactions a + cr -> c
-  for (int i=0; i<n_cr_; i++) {
-    ia = incr_[i];
-    ic = outcr_[i];
-    rate_pa = kcr_[i];
-    jac_[ia][ia] -= rate_pa;
-    jac_[ic][ia] += rate_pa;
-  }
-
-  //grain reactions a + gr -> c
-  for (int i=0; i<n_gr_; i++) {
-    ia = ingr_[i];
-    ic = outgr_[i];
-    rate_pa = kgr_[i];
-    jac_[ia][ia] -= rate_pa;
-    jac_[ic][ia] += rate_pa;
-  }
-
-	//copy J to return
-	for (int i=0; i<NSCALARS; i++) {
-		for (int j=0; j<NSCALARS; j++) {
-			jac[i][j] = jac_[i][j];
-		}
-	}
-  return;
-}
 
 void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
-  Real rad_sum, temp, NCO_sum, NH;
+  Real rad_sum, temp, NCO_sum, NH, rho, rho_floor;
   int nang = pmy_mb_->prad->nang;
   //density
-  nH_ = pmy_mb_->phydro->w(IDN, k, j, i) / unit_density_in_nH_;
+  rho = pmy_mb_->phydro->w(IDN, k, j, i);
+  //apply density floor
+  rho_floor = pmy_mb_->peos->GetDensityFloor();
+  rho = (rho > rho_floor) ?  rho : rho_floor;
+  //hydrogen atom number density
+  nH_ =  rho / unit_density_in_nH_;
   //average radiation field of all angles
+  //TODO: put floor on radiation variables?
   for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
     rad_sum = 0;
     //radiation
@@ -673,13 +580,14 @@ Real ChemNetwork::CII_rec_rate_(const Real temp) {
   return (alpharr+alphadr);
 }
 
-void ChemNetwork::UpdateRates(const Real y[NSCALARS+ngs_]) {
+void ChemNetwork::UpdateRates(const Real y[NSCALARS+ngs_], const Real E) {
   Real T, Tcoll;
   //constant or evolve temperature
-  if (is_const_temp_ != 0) {
-    T = temperature_;
+  if (NON_BAROTROPIC_EOS) {
+    T = E / Thermo::CvCold(y[iH2_], xHe_, y[ige_]);
   } else {
-    T = y[iE_] / Thermo::CvCold(y[iH2_], xHe_, y[ige_]);
+    //isohermal EOS
+    T = temperature_;
   }
   Tcoll = T;
 	//cap T above some minimum temperature
@@ -687,6 +595,8 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS+ngs_]) {
 		T = temp_min_rates_;
     Tcoll = T;
 	} else if (T > temp_max_rates_) {
+    //do not put upper limit on the temperature for collisional ionization and
+    //dissociation rates Tcoll
     T = temp_max_rates_;
   }
   const Real logT = log10(T);
@@ -871,14 +781,31 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS+ngs_]) {
   return;
 }
 
-Real ChemNetwork::dEdt_(const Real y[NSCALARS+ngs_]) {
-  Real T = 0.;
-  if (is_const_temp_ != 0) {
-    return 0.;
-  } else {
-    T = y[iE_] / Thermo::CvCold(y[iH2_], xHe_, y[ige_]);
+Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real E) {
+  //isothermal
+  if (!NON_BAROTROPIC_EOS) {
+    return 0;
   }
+
+  Real T = 0.;
   Real dEdt = 0.;
+	Real yprev[NSCALARS+ngs_];
+  // copy y to yprev and set ghost species
+  GetGhostSpecies(y, yprev);
+  //correct negative abundance to zero
+  for (int i=0; i<NSCALARS+ngs_; i++) {
+    if (yprev[i] < 0) {
+      yprev[i] = 0;
+    }
+  }
+
+  //temperature
+  T = E / Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]);
+  //apply temperature floor, incase of very small or negative E
+	if (T < temp_min_rates_) {
+		T = temp_min_rates_;
+  }
+
   //--------------------------heating-----------------------------
   //cosmic ray ionization of H, He, and H2 
   //NOTE: because these depends on rates, make sure ChemInit is called before.
@@ -892,17 +819,17 @@ Real ChemNetwork::dEdt_(const Real y[NSCALARS+ngs_]) {
 		GH2pump = 0.;
 		GH2diss = 0.;
 	} else {
-		GCR = Thermo::HeatingCr(y[ige_],  nH_,
-				y[igH_],  y[igHe_],  y[iH2_],
+		GCR = Thermo::HeatingCr(yprev[ige_],  nH_,
+				yprev[igH_],  yprev[igHe_],  yprev[iH2_],
 				kcr_[icr_H_],  kcr_[icr_He_],  kcr_[icr_H2_]);
 		//photo electric effect on dust
-		GPE = Thermo::HeatingPE(rad_[index_gpe_], zdg_, T, nH_*y[ige_]);
+		GPE = Thermo::HeatingPE(rad_[index_gpe_], zdg_, T, nH_*yprev[ige_]);
 		//H2 formation on dust grains
-		GH2gr = Thermo::HeatingH2gr(y[igH_],  y[iH2_],  nH_,
+		GH2gr = Thermo::HeatingH2gr(yprev[igH_],  yprev[iH2_],  nH_,
 				T,  kgr_[igr_H_]);
 		//H2 UV pumping
-		dot_xH2_photo = kph_[iph_H2_] * y[iH2_];
-		GH2pump = Thermo::HeatingH2pump(y[igH_],  y[iH2_],  nH_,
+		dot_xH2_photo = kph_[iph_H2_] * yprev[iH2_];
+		GH2pump = Thermo::HeatingH2pump(yprev[igH_],  yprev[iH2_],  nH_,
 				T,  dot_xH2_photo);
 		//H2 photo dissiociation.
 		GH2diss = Thermo::HeatingH2diss(dot_xH2_photo);
@@ -925,20 +852,20 @@ Real ChemNetwork::dEdt_(const Real y[NSCALARS+ngs_]) {
 		LHIion = 0;
 	} else {
 		// C+ fine structure line 
-		LCII = Thermo::CoolingCII(y[iCplus_],  nH_*y[igH_],  nH_*y[iH2_],
-				nH_*y[ige_],  T);
+		LCII = Thermo::CoolingCII(yprev[iCplus_],  nH_*yprev[igH_],  nH_*yprev[iH2_],
+				nH_*yprev[ige_],  T);
 		// CI fine structure line 
-		LCI = Thermo:: CoolingCI(y[igC_],  nH_*y[igH_],  nH_*y[iH2_],
-				nH_*y[ige_],  T);
+		LCI = Thermo:: CoolingCI(yprev[igC_],  nH_*yprev[igH_],  nH_*yprev[iH2_],
+				nH_*yprev[ige_],  T);
 		// OI fine structure line 
-		LOI = Thermo:: CoolingOI(y[igO_],  nH_*y[igH_],  nH_*y[iH2_],
-				nH_*y[ige_],  T);
+		LOI = Thermo:: CoolingOI(yprev[igO_],  nH_*yprev[igH_],  nH_*yprev[iH2_],
+				nH_*yprev[ige_],  T);
 		// cooling of hot gas: radiative cooling, free-free.
 		LHotGas = Thermo::CoolingHotGas(nH_,  T, zdg_);
 		// CO rotational lines 
 		// Calculate effective CO column density
 		vth = sqrt(2. * Thermo::kb_ * T / ChemistryUtility::mCO);
-		nCO = nH_ * y[iCO_];
+		nCO = nH_ * yprev[iCO_];
 		grad_small_ = vth/Leff_CO_max_;
 		if (isNCOeff_LVG_ != 0) {
       gradeff = std::max(gradv_, grad_small_);
@@ -946,12 +873,12 @@ Real ChemNetwork::dEdt_(const Real y[NSCALARS+ngs_]) {
 		} else {
 			NCOeff = NCO_ / sqrt(bCO_*bCO_ + vth*vth);
 		}
-		LCOR = Thermo::CoolingCOR(y[iCO_], nH_*y[igH_],  nH_*y[iH2_],
-				nH_*y[ige_],  T,  NCOeff);
+		LCOR = Thermo::CoolingCOR(yprev[iCO_], nH_*yprev[igH_],  nH_*yprev[iH2_],
+				nH_*yprev[ige_],  T,  NCOeff);
 		// H2 vibration and rotation lines 
     if (is_H2_rovib_cooling_ != 0) {
-      LH2 = Thermo::CoolingH2(y[iH2_], nH_*y[igH_],  nH_*y[iH2_],
-          nH_*y[igHe_],  nH_*y[iHplus_], nH_*y[ige_],
+      LH2 = Thermo::CoolingH2(yprev[iH2_], nH_*yprev[igH_],  nH_*yprev[iH2_],
+          nH_*yprev[igHe_],  nH_*yprev[iHplus_], nH_*yprev[ige_],
           T);
     } else {
       LH2 = 0.;
@@ -959,31 +886,17 @@ Real ChemNetwork::dEdt_(const Real y[NSCALARS+ngs_]) {
 		// dust thermo emission 
 		LDust = Thermo::CoolingDustTd(zdg_,  nH_, T, 10.);
 		// reconbination of e on PAHs 
-		LRec = Thermo::CoolingRec(zdg_,  T,  nH_*y[ige_], rad_[index_gpe_]);
+		LRec = Thermo::CoolingRec(zdg_,  T,  nH_*yprev[ige_], rad_[index_gpe_]);
 		// collisional dissociation of H2 
-		LH2diss = Thermo::CoolingH2diss(y[igH_],  y[iH2_], k2body_[i2body_H2_H],
+		LH2diss = Thermo::CoolingH2diss(yprev[igH_],  yprev[iH2_], k2body_[i2body_H2_H],
 				k2body_[i2body_H2_H2]);
 		// collisional ionization of HI 
-		LHIion = Thermo::CoolingHIion(y[igH_],  y[ige_],
+		LHIion = Thermo::CoolingHIion(yprev[igH_],  yprev[ige_],
 				k2body_[i2body_H_e]);
 	}
   dEdt = (GCR + GPE + GH2gr + GH2pump + GH2diss)
             - (LCII + LCI + LOI + LHotGas + LCOR 
                 + LH2 + LDust + LRec + LH2diss + LHIion);
-#ifdef DEBUG
-//  printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
-//      GCR , GPE , GH2gr , GH2pump , GH2diss);
-//  printf("LCII=%.2e, LCI=%.2e, LOI=%.2e, LHotGas=%.2e, LCOR=%.2e\n",
-//      LCII , LCI , LOI , LHotGas , LCOR);
-//  printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
-//      LH2 , LDust , LRec , LH2diss , LHIion);
-//  printf("T=%.2e, dEdt=%.2e, y[iE_]=%.2e, Cv=%.2e, nH=%.2e\n", T, dEdt, y[iE_],
-//      Thermo::CvCold(y[iH2_], xHe_, y[ige_]), nH_);
-//  for (int i=0; i<NSCALARS+ngs_; i++) {
-//    printf("%s: %.2e  ", species_names_all_[i].c_str(), y[i]);
-//  }
-//  printf("\n");
-#endif //debug
 	if ( isnan(dEdt) || isinf(dEdt) ) {
     if ( isnan(LCOR) || isinf(LCOR) ) {
       if (isNCOeff_LVG_ != 0) {
@@ -1000,10 +913,10 @@ Real ChemNetwork::dEdt_(const Real y[NSCALARS+ngs_]) {
 				LCII , LCI , LOI , LHotGas , LCOR);
 		printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
 				LH2 , LDust , LRec , LH2diss , LHIion);
-		printf("T=%.2e, dEdt=%.2e, y[iE_]=%.2e, Cv=%.2e, nH=%.2e\n", T, dEdt, y[iE_],
-				Thermo::CvCold(y[iH2_], xHe_, y[ige_]), nH_);
+		printf("T=%.2e, dEdt=%.2e, E=%.2e, Cv=%.2e, nH=%.2e\n", T, dEdt, E,
+				Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]), nH_);
 		for (int i=0; i<NSCALARS+ngs_; i++) {
-			printf("%s: %.2e  ", species_names_all_[i].c_str(), y[i]);
+			printf("%s: %.2e  ", species_names_all_[i].c_str(), yprev[i]);
 		}
 		printf("\n");
     std::stringstream msg;

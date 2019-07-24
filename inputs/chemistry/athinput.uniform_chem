@@ -57,7 +57,6 @@ s_init      = 1.0e-6 #initial abundances
 Zdg        = 1. #metallicity, dust and gas metallicity are the same. default = 1.
 CR         = 2e-16  #Cosmic-ray ionization rate per H
 #temperature
-const_T_flag = 1   #constant temperature flag. default 0/false.
 temperature = 20  #T in Kelvin, if const_T_flag is true.
 #chemistry solver parameters
 reltol     = 1.0e-6  #relative tolerance, default 1.0e-2
