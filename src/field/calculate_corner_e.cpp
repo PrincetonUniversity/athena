@@ -380,7 +380,6 @@ void Field::ComputeCornerE_UCT4() {
         }
       }
     }
-
   } // end if 3D
   return;
 }

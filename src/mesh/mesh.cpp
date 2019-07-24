@@ -1526,7 +1526,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         // --------------------------
         // fourth-order EOS:
         if (order == 4) {
-
           // TODO(felker): deduplicate with TimeIntegratorTaskList::Primitives
           if (MAGNETIC_FIELDS_ENABLED) {
             // for MHD4, shrink buffer by 3 on all sides:
