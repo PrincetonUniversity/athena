@@ -235,8 +235,7 @@ void Field::ComputeCornerE_UCT4() {
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  AthenaArray<Real> e1 = pmb->pfield->e.x1e, e2 = pmb->pfield->e.x2e,
-                    e3 = pmb->pfield->e.x3e;
+  AthenaArray<Real> e1 = e.x1e, e2 = e.x2e, e3 = e.x3e;
 
 //---- 1-D update:
 //  copy face-centered E-fields to edges and return.
@@ -257,11 +256,11 @@ void Field::ComputeCornerE_UCT4() {
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
       for (int i=is; i<=ie+1; ++i) {
-        Real alpha_plus_x = std::abs(pmb->pfield->alpha_plus_x1_(k,j,i));
-        Real alpha_minus_x = std::abs(pmb->pfield->alpha_minus_x1_(k,j,i));
+        Real alpha_plus_x = std::abs(alpha_plus_x1_(k,j,i));
+        Real alpha_minus_x = std::abs(alpha_minus_x1_(k,j,i));
 
-        Real alpha_plus_y = std::abs(pmb->pfield->alpha_plus_x2_(k,j,i));
-        Real alpha_minus_y = std::abs(pmb->pfield->alpha_minus_x2_(k,j,i));
+        Real alpha_plus_y = std::abs(alpha_plus_x2_(k,j,i));
+        Real alpha_minus_y = std::abs(alpha_minus_x2_(k,j,i));
 
         // Following Londrillo and Del Zanna 2004, eq 56 notation
         // Real e3_L2L1, e3_R2L1, e3_L2R1, e3_R2R1;
@@ -318,11 +317,11 @@ void Field::ComputeCornerE_UCT4() {
     for (int k=ks; k<=ke+1; ++k) {
       for (int j=js; j<=je+1; ++j) {
         for (int i=is; i<=ie; ++i) {
-          Real alpha_plus_z = std::abs(pmb->pfield->alpha_plus_x3_(k,j,i));
-          Real alpha_minus_z = std::abs(pmb->pfield->alpha_minus_x3_(k,j,i));
+          Real alpha_plus_z = std::abs(alpha_plus_x3_(k,j,i));
+          Real alpha_minus_z = std::abs(alpha_minus_x3_(k,j,i));
 
-          Real alpha_plus_y = std::abs(pmb->pfield->alpha_plus_x2_(k,j,i));
-          Real alpha_minus_y = std::abs(pmb->pfield->alpha_minus_x2_(k,j,i));
+          Real alpha_plus_y = std::abs(alpha_plus_x2_(k,j,i));
+          Real alpha_minus_y = std::abs(alpha_minus_x2_(k,j,i));
 
           // Following Londrillo and Del Zanna 2004, eq 56 notation
           Real e1_L3L2, e1_L3R2, e1_R3L2, e1_R3R2;
@@ -352,11 +351,11 @@ void Field::ComputeCornerE_UCT4() {
     for (int k=ks; k<=ke+1; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie+1; ++i) {
-          Real alpha_plus_z = std::abs(pmb->pfield->alpha_plus_x3_(k,j,i));
-          Real alpha_minus_z = std::abs(pmb->pfield->alpha_minus_x3_(k,j,i));
+          Real alpha_plus_z = std::abs(alpha_plus_x3_(k,j,i));
+          Real alpha_minus_z = std::abs(alpha_minus_x3_(k,j,i));
 
-          Real alpha_plus_x = std::abs(pmb->pfield->alpha_plus_x1_(k,j,i));
-          Real alpha_minus_x = std::abs(pmb->pfield->alpha_minus_x1_(k,j,i));
+          Real alpha_plus_x = std::abs(alpha_plus_x1_(k,j,i));
+          Real alpha_minus_x = std::abs(alpha_minus_x1_(k,j,i));
 
           // Following Londrillo and Del Zanna 2004, eq 56 notation
           Real e2_L3L1, e2_L3R1, e2_R3L1, e2_R3R1;
