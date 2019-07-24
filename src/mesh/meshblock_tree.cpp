@@ -375,7 +375,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
     else
       return nullptr;
   }
-  if (lx>=pmesh_->nrbx1<<(ll-pmesh_->root_level)) {;
+  if (lx>=pmesh_->nrbx1<<(ll-pmesh_->root_level)) {
     if (pmesh_->mesh_bcs[BoundaryFace::outer_x1] == BoundaryFlag::periodic
         || pmesh_->mesh_bcs[BoundaryFace::outer_x1] == BoundaryFlag::shear_periodic)
       lx=0;
@@ -507,13 +507,21 @@ void MeshBlockTree::GetMGOctetList(std::vector<MGOctet> *oct,
   if (pleaf_ == nullptr) return;
 
   int lev = loc_.level - pmesh_->root_level;
+  int oid;
   if (lev >= 0) {
-    oct[lev][noct[lev]].loc = loc_;
-    octmap[lev][loc_] = noct[lev]++;
+    oid = noct[lev];
+    oct[lev][oid].loc = loc_;
+    octmap[lev][loc_] = oid;
+    oct[lev][oid].fleaf = true;
+    noct[lev]++;
   }
   for (int n=0; n<nleaf_; n++) {
-    if (pleaf_[n] != nullptr)
-      pleaf_[n]->GetMGOctetList(oct, octmap, noct);
+    if (pleaf_[n] != nullptr) {
+      if (pleaf_[n]->pleaf_ != nullptr) {
+        if (lev >= 0) oct[lev][oid].fleaf = false;
+        pleaf_[n]->GetMGOctetList(oct, octmap, noct);
+      }
+    }
   }
 
   return;

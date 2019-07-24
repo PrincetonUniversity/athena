@@ -85,14 +85,13 @@ class Multigrid {
   void SmoothBlock(int color);
   void CalculateDefectBlock();
   void CalculateFASRHSBlock();
-  void SetFromRootGrid(AthenaArray<Real> &src, int ck, int cj, int ci);
+  void SetFromRootGrid();
   Real CalculateDefectNorm(MGNormType nrm, int n);
   Real CalculateTotal(MGVariable type, int n);
   void SubtractAverage(MGVariable type, int n, Real ave);
   void StoreOldData();
   Real GetCoarsestData(MGVariable type, int n);
   void SetData(MGVariable type, int n, int k, int j, int i, Real v);
-  void SubtractOldData(AthenaArray<Real> &u, const AthenaArray<Real> &uold);
 
   // small functions
   int GetCurrentNumberOfCells() { return 1<<current_level_; }
@@ -105,9 +104,9 @@ class Multigrid {
   void Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
                 int il, int iu, int jl, int ju, int kl, int ku);
   void ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                            int il, int iu, int jl, int ju, int kl, int ku);
+       int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl);
   void FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                     int il, int iu, int jl, int ju, int kl, int ku);
+       int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl);
 
   // physics-dependent virtual functions
   virtual void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
@@ -160,13 +159,25 @@ class MultigridDriver {
   Multigrid* FindMultigrid(int tgid);
 
   // octet manipulation functions
-  void RestrictOctetsFMGSource();
-
+  void RestrictFMGSourceOctets();
+  void RestrictOctets();
+  void ZeroClearAllOctets();
+  void StoreOldDataOctets();
+  void CalculateFASRHSOctets();
+  void SmoothOctets(int color);
+  void ProlongateAndCorrectOctets();
+  void FMGProlongateOctets();
+  void SetBoundariesOctets(bool fprolong);
+  void SetOctetBoundarySameLevel(AthenaArray<Real> &dst, const AthenaArray<Real> &un,
+                                 const LogicalLocation loc, int ox1, int ox2, int ox3);
+  void ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u, const LogicalLocation &loc);
   // small functions
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }
 
   // pure virtual functions
   virtual void Solve(int step) = 0;
+  virtual void SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
+    const AthenaArray<Real> &un, LogicalLocation loc, int ox1, int ox2, int ox3) = 0;
 
   friend class Multigrid;
   friend class MultigridTaskList;
@@ -185,6 +196,7 @@ class MultigridDriver {
   bool fsubtract_average_, ffas_;
   Real last_ave_;
   Real eps_;
+  int os_, oe_;
 
   // for mesh refinement
   std::vector<MGOctet> *octets_;
@@ -208,6 +220,7 @@ class MultigridDriver {
 struct MGOctet {
  public:
   LogicalLocation loc;
+  bool fleaf;
   AthenaArray<Real> u, def, src, uold;
 };
 

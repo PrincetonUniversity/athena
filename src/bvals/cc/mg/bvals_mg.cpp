@@ -104,6 +104,14 @@ void MGBoundaryValues::InitBoundaryData(BoundaryQuantity type) {
           size = nc*ngh*ngh;
         else if (BoundaryValues::ni[n].type == NeighborConnect::corner)
           size = ngh*ngh*ngh;
+        if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel) {
+          if (BoundaryValues::ni[n].type == NeighborConnect::face)
+            size += SQR(nc/2)*ngh;
+          else if (BoundaryValues::ni[n].type == NeighborConnect::edge)
+            size += nc/2*ngh*ngh;
+          else if (BoundaryValues::ni[n].type == NeighborConnect::corner)
+            size += ngh*ngh*ngh;
+        }
       }
         break;
       default: {
@@ -302,7 +310,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
   BufferUtility::PackData(src, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
 
   if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel) {
-    int cn = ngh, fs = ngh, cs = cn, fe = fs + nc - 1, ce = cs + nc/2 - 1;
+    int cn = ngh - 1, fs = ngh, cs = ngh, fe = fs + nc - 1, ce = cs + nc/2 - 1;
     si = (nb.ni.ox1 > 0) ? (ce - cn) : cs;
     ei = (nb.ni.ox1 < 0) ? (cs + cn) : ce;
     sj = (nb.ni.ox2 > 0) ? (ce - cn) : cs;
@@ -340,7 +348,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
   const AthenaArray<Real> &src = pmy_mg_->GetCurrentData();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int nc = pmy_mg_->GetCurrentNumberOfCells();
-  int cn = ngh, fs = ngh, cs = cn, fe = fs + nc - 1, ce = cs + nc/2 - 1;
+  int cn = ngh - 1, fs = ngh, cs = ngh, fe = fs + nc - 1, ce = cs + nc/2 - 1;
   int p=0;
   int si = (nb.ni.ox1 > 0) ? (ce - cn) : cs;
   int ei = (nb.ni.ox1 < 0) ? (cs + cn) : ce;
@@ -379,7 +387,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToFiner(Real *buf,
   const AthenaArray<Real> &src = pmy_mg_->GetCurrentData();
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
-  int cn = 1, fs = ngh, fe = fs + nc - 1;
+  int cn = ngh - 1, fs = ngh, fe = fs + nc - 1;
   int si = (nb.ni.ox1 > 0) ? (fe - cn) : fs;
   int ei = (nb.ni.ox1 < 0) ? (fs + cn) : fe;
   int sj = (nb.ni.ox2 > 0) ? (fe - cn) : fs;
@@ -501,8 +509,8 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(BoundaryQuantity type) {
       ssize = LoadMultigridBoundaryBufferSameLevel(bdata_.send[nb.bufid], nb);
     } else if (nb.snb.level < mylevel) {
       if (type == BoundaryQuantity::mggrav_f)
-        ssize = LoadMultigridBoundaryBufferToCoarserGravityMassCons(bdata_.send[nb.bufid],
-                                                                    nb);
+        ssize = LoadMultigridBoundaryBufferToCoarserGravityMassCons(
+                                                    bdata_.send[nb.bufid], nb);
       else
         ssize = LoadMultigridBoundaryBufferToCoarser(bdata_.send[nb.bufid], nb);
     } else {

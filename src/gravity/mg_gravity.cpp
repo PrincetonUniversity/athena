@@ -184,3 +184,85 @@ void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> 
 
   return;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGGravityDriver::SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
+//           const AthenaArray<Real> &un, LogicalLocation loc, int ox1, int ox2, int ox3)
+//  \brief set an Octet boundary from a neighbor Octet on the coarser level
+
+void MGGravityDriver::SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
+     const AthenaArray<Real> &un, LogicalLocation loc, int ox1, int ox2, int ox3) {
+  constexpr Real itw = 1.0/12.0;
+  const int ngh = mgroot_->ngh_;
+  const int i = ngh, j = ngh, k = ngh;
+  const AthenaArray<Real> &u = dst;
+  int ci, cj, ck;
+  if (loc.level - pmy_mesh_->root_level == 0) { // from root
+    ci = loc.lx1;
+    cj = loc.lx2;
+    ck = loc.lx3;
+  } else { // from a neighbor octet
+    if (ox1 == 0)     ci = (static_cast<int>(loc.lx1) & 1) + ngh;
+    else if (ox1 < 0) ci = ngh+1;
+    else              ci = ngh;
+    if (ox2 == 0)     cj = (static_cast<int>(loc.lx2) & 1) + ngh;
+    else if (ox2 < 0) cj = ngh+1;
+    else              cj = ngh; 
+    if (ox3 == 0)     ck = (static_cast<int>(loc.lx3) & 1) + ngh;
+    else if (ox3 < 0) ck = ngh+1;
+    else              ck = ngh; 
+  }
+
+  if (ox1 != 0) {
+    int ig, fi;
+    if (ox1 < 0) ig = 0,       fi = ngh;
+    else         ig = ngh + 2, fi = ngh + 1;
+    for (int n=0; n<nvar_; ++n) {
+      Real cg = itw * (8.0*un(n, ck, cj, ci) + ((u(n, k,   j, fi) + u(n, k,   j+1, fi))
+                                             +  (u(n, k+1, j, fi) + u(n, k+1, j+1, fi))));
+      Real qdy = 0.25 * ((u(n, k+1, j+1, fi) - u(n, k+1, j,   fi))
+                       + (u(n, k,   j+1, fi) - u(n, k,   j,   fi)));
+      Real qdz = 0.25 * ((u(n, k+1, j+1, fi) - u(n, k,   j+1, fi))
+                       + (u(n, k+1, j,   fi) - u(n, k,   j,   fi)));
+      dst(n, k,   j,   ig) = cg - qdy - qdz;
+      dst(n, k,   j+1, ig) = cg + qdy - qdz;
+      dst(n, k+1, j,   ig) = cg - qdy + qdz;
+      dst(n, k+1, j+1, ig) = cg + qdy + qdz;
+    }
+  } else if (ox2 != 0) {
+    int jg, fj;
+    if (ox2 < 0) jg = 0,       fj = ngh;
+    else         jg = ngh + 2, fj = ngh + 1;
+    for (int n=0; n<nvar_; ++n) {
+      Real cg = itw * (8.0 * un(n, ck, cj, ci) + ((u(n, k,   fj, i) + u(n, k,   fj, i+1))
+                                               +  (u(n, k+1, fj, i) + u(n, k+1, fj, i+1))));
+      Real qdx = 0.25 * ((u(n, k+1, fj, i+1) - u(n, k+1, fj, i))
+                       + (u(n, k,   fj, i+1) - u(n, k,   fj, i)));
+      Real qdz = 0.25 * ((u(n, k+1, fj, i+1) - u(n, k,   fj, i+1))
+                       + (u(n, k+1, fj, i  ) - u(n, k,   fj, i)));
+      dst(n, k,   jg, i  ) = cg - qdx - qdz;
+      dst(n, k,   jg, i+1) = cg + qdx - qdz;
+      dst(n, k+1, jg, i  ) = cg - qdx + qdz;
+      dst(n, k+1, jg, i+1) = cg + qdx + qdz;
+    }
+  } else { // (ox3 != 0)
+    int kg, fk;
+    if (ox3 < 0) kg = 0,       fk = ngh;
+    else         kg = ngh + 2, fk = ngh + 1;
+    for (int n=0; n<nvar_; ++n) {
+      Real cg = itw * (8.0 * un(n, ck, cj, ci) + ((u(n, fk, j,   i) + u(n, fk, j,   i+1))
+                                               +  (u(n, fk, j+1, i) + u(n, fk, j+1, i+1))));
+      Real qdx = 0.25 * ((u(n, fk, j+1, i+1) - u(n, fk, j+1, i))
+                       + (u(n, fk, j,   i+1) - u(n, fk, j,   i)));
+      Real qdy = 0.25 * ((u(n, fk, j+1, i+1) - u(n, fk, j,   i+1))
+                       + (u(n, fk, j+1, i  ) - u(n, fk, j,   i)));
+      dst(n, kg, j,   i  ) = cg - qdx - qdy;
+      dst(n, kg, j,   i+1) = cg + qdx - qdy;
+      dst(n, kg, j+1, i  ) = cg - qdx + qdy;
+      dst(n, kg, j+1, i+1) = cg + qdx + qdy;
+    }
+  }
+
+  return;
+}

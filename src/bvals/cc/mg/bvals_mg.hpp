@@ -25,6 +25,7 @@
 
 // forward declarations
 class Multigrid;
+class MultigridDriver;
 class MeshBlock;
 class MeshBlockTree;
 class ParameterInput;
@@ -73,6 +74,7 @@ class MGBoundaryValues : public BoundaryBase {
   void SetMultigridBoundaryFromFinerGravityMassCons(Real *buf, const NeighborBlock& nb);
 
   friend class Multigrid;
+  friend class MultigridDriver;
 };
 
 #endif // BVALS_CC_MG_BVALS_MG_HPP_

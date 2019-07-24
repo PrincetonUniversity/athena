@@ -19,12 +19,12 @@
 #include "../defs.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn MGZeroFixedInnerX1(AthenaArray<Real> &dst,Real time, int nvar,
+//! \fn MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
 //                         int is, int ie, int js, int je, int ks, int ke, int ngh,
 //                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 //  \brief Zero fixed boundary condition in the inner-X1 direction
 
-void MGZeroFixedInnerX1(AthenaArray<Real> &dst,Real time, int nvar,
+void MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
   for (int n=0; n<nvar; n++) {
@@ -40,12 +40,12 @@ void MGZeroFixedInnerX1(AthenaArray<Real> &dst,Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGZeroFixedOuterX1(AthenaArray<Real> &dst,Real time, int nvar,
+//! \fn MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
 //                         int is, int ie, int js, int je, int ks, int ke, int ngh,
 //                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 //  \brief Zero fixed boundary condition in the outer-X1 direction
 
-void MGZeroFixedOuterX1(AthenaArray<Real> &dst,Real time, int nvar,
+void MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
   for (int n=0; n<nvar; n++) {
@@ -61,12 +61,12 @@ void MGZeroFixedOuterX1(AthenaArray<Real> &dst,Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGZeroFixedInnerX2(AthenaArray<Real> &dst,Real time, int nvar,
+//! \fn MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
 //                         int is, int ie, int js, int je, int ks, int ke, int ngh,
 //                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 //  \brief Zero fixed boundary condition in the inner-X2 direction
 
-void MGZeroFixedInnerX2(AthenaArray<Real> &dst,Real time, int nvar,
+void MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
   for (int n=0; n<nvar; n++) {
@@ -82,12 +82,12 @@ void MGZeroFixedInnerX2(AthenaArray<Real> &dst,Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGZeroFixedOuterX2(AthenaArray<Real> &dst,Real time, int nvar,
+//! \fn MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
 //                         int is, int ie, int js, int je, int ks, int ke, int ngh,
 //                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 //  \brief Zero fixed boundary condition in the outer-X2 direction
 
-void MGZeroFixedOuterX2(AthenaArray<Real> &dst,Real time, int nvar,
+void MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
   for (int n=0; n<nvar; n++) {
@@ -103,12 +103,12 @@ void MGZeroFixedOuterX2(AthenaArray<Real> &dst,Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGZeroFixedInnerX3(AthenaArray<Real> &dst,Real time, int nvar,
+//! \fn MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 //                         int is, int ie, int js, int je, int ks, int ke, int ngh,
 //                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 //  \brief Zero fixed boundary condition in the inner-X3 direction
 
-void MGZeroFixedInnerX3(AthenaArray<Real> &dst,Real time, int nvar,
+void MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
   for (int n=0; n<nvar; n++) {
@@ -124,12 +124,12 @@ void MGZeroFixedInnerX3(AthenaArray<Real> &dst,Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGZeroFixedOuterX3(AthenaArray<Real> &dst,Real time, int nvar,
+//! \fn MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 //                         int is, int ie, int js, int je, int ks, int ke, int ngh,
 //                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
 //  \brief Zero fixed boundary condition in the outer-X3 direction
 
-void MGZeroFixedOuterX3(AthenaArray<Real> &dst,Real time, int nvar,
+void MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
   for (int n=0; n<nvar; n++) {

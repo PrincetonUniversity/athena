@@ -255,8 +255,6 @@ void Multigrid::ZeroClearData() {
 //  \brief Restrict the defect to the source
 
 void Multigrid::RestrictBlock() {
-  AthenaArray<Real> &dst=src_[current_level_-1];
-  const AthenaArray<Real> &src=def_[current_level_];
   int ll=nlevel_-current_level_;
   int is, ie, js, je, ks, ke;
 
@@ -283,17 +281,19 @@ void Multigrid::RestrictBlock() {
 //  \brief Prolongate the potential using tri-linear interpolation
 
 void Multigrid::ProlongateAndCorrectBlock() {
-  const AthenaArray<Real> &src=u_[current_level_];
-  AthenaArray<Real> &dst=u_[current_level_+1];
   int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
 
-  if (pmy_driver_->ffas_)
-    SubtractOldData(u_[current_level_], uold_[current_level_]);
+  if (pmy_driver_->ffas_) {
+    int size = u_[current_level_].GetSize();
+    for (int s=0; s<size; ++s)
+      u_[current_level_](s) -= uold_[current_level_](s);
+  }
 
-  ProlongateAndCorrect(u_[current_level_+1], u_[current_level_], is, ie, js, je, ks, ke);
+  ProlongateAndCorrect(u_[current_level_+1], u_[current_level_], is, ie, js, je, ks, ke,
+                                                                 ngh_, ngh_, ngh_);
 
   current_level_++;
   return;
@@ -305,14 +305,13 @@ void Multigrid::ProlongateAndCorrectBlock() {
 //  \brief Prolongate the potential for Full Multigrid cycle
 
 void Multigrid::FMGProlongateBlock() {
-  const AthenaArray<Real> &src=u_[current_level_];
-  AthenaArray<Real> &dst=u_[current_level_+1];
   int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
 
-  FMGProlongate(u_[current_level_+1], u_[current_level_], is, ie, js, je, ks, ke);
+  FMGProlongate(u_[current_level_+1], u_[current_level_], is, ie, js, je, ks, ke,
+                                                          ngh_, ngh_, ngh_);
 
   current_level_++;
   return;
@@ -369,20 +368,48 @@ void Multigrid::CalculateFASRHSBlock() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ck, int cj, int ci)
-//  \brief Load the data from the root grid
+//! \fn void Multigrid::SetFromRootGrid()
+//  \brief Load the data from the root grid or octets
 
-void Multigrid::SetFromRootGrid(AthenaArray<Real> &src, int ck, int cj, int ci) {
+void Multigrid::SetFromRootGrid() {
   current_level_=0;
   AthenaArray<Real> &dst=u_[current_level_];
-  for (int n=0; n<nvar_; n++) {
-    for (int k=-1; k<=1; k++) {
-      for (int j=-1; j<=1; j++) {
-        for (int i=-1; i<=1; i++)
-          dst(n,ngh_+k,ngh_+j,ngh_+i)=src(n,ck+k+ngh_,cj+j+ngh_,ci+i+ngh_);
+  int lev = loc_.level - (pmy_driver_->nrootlevel_ - 1);
+  if (lev == 0) { // from the root grid
+    int ci = static_cast<int>(loc_.lx1);
+    int cj = static_cast<int>(loc_.lx2);
+    int ck = static_cast<int>(loc_.lx3);
+    const AthenaArray<Real> &src = pmy_driver_->mgroot_->GetCurrentData();
+    for (int n=0; n<nvar_; n++) {
+      for (int k=0; k<=2; k++) {
+        for (int j=0; j<=2; j++) {
+          for (int i=0; i<=2; i++)
+            dst(n, k, j, i)=src(n, ck+k, cj+j, ci+i);
+        }
+      }
+    }
+  } else { // from an octet
+    LogicalLocation oloc;
+    oloc.lx1 = (loc_.lx1 >> 1);
+    oloc.lx2 = (loc_.lx2 >> 1);
+    oloc.lx3 = (loc_.lx3 >> 1);
+    oloc.level = loc_.level - 1;
+    int olev = oloc.level - (pmy_driver_->nrootlevel_ - 1);
+    int oid = pmy_driver_->octetmap_[olev][oloc];
+    int ci = (static_cast<int>(loc_.lx1)&1);
+    int cj = (static_cast<int>(loc_.lx2)&1);
+    int ck = (static_cast<int>(loc_.lx3)&1);
+    const AthenaArray<Real> &src = pmy_driver_->octets_[olev][oid].u;
+    for (int n=0; n<nvar_; n++) {
+      for (int k=0; k<=2; k++) {
+        for (int j=0; j<=2; j++) {
+          for (int i=0; i<=2; i++)
+            dst(n, k, j, i)=src(n, ck+k, cj+j, ci+i);
+        }
       }
     }
   }
+
   return;
 }
 
@@ -524,14 +551,15 @@ void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst,
-//      const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku)
+//      const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku,
+//      int fil, int fjl, int fkl)
 //  \brief Actual implementation of prolongation and correction
 void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                                     int il, int iu, int jl, int ju, int kl, int ku) {
+     int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl) {
  for (int n=0; n<nvar_; n++) {
-    for (int k=kl, fk=kl; k<=ku; k++, fk+=2) {
-      for (int j=jl, fj=jl; j<=ju; j++, fj+=2) {
-        for (int i=il, fi=il; i<=iu; i++, fi+=2) {
+    for (int k=kl, fk=fkl; k<=ku; k++, fk+=2) {
+      for (int j=jl, fj=fjl; j<=ju; j++, fj+=2) {
+        for (int i=il, fi=fil; i<=iu; i++, fi+=2) {
           dst(n,fk  ,fj  ,fi  ) +=
               0.015625*(27.0*src(n,k,j,i) + src(n,k-1,j-1,i-1)
                         +9.0*(src(n,k,j,i-1)+src(n,k,j-1,i)+src(n,k-1,j,i))
@@ -575,14 +603,16 @@ void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<R
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::FMGProlongate(AthenaArray<Real> &dst,
-//           const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku)
+//           const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku
+//           int fil, int fjl, int fkl)
 //  \brief Actual implementation of FMG prolongation
 void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                              int il, int iu, int jl, int ju, int kl, int ku) {
+                              int il, int iu, int jl, int ju, int kl, int ku,
+                              int fil, int fjl, int fkl) {
   for (int n=0; n<nvar_; n++) {
-    for (int k=kl, fk=kl; k<=ku; k++, fk+=2) {
-      for (int j=jl, fj=jl; j<=ju; j++, fj+=2) {
-        for (int i=il, fi=il; i<=iu; i++, fi+=2) {
+    for (int k=kl, fk=fkl; k<=ku; k++, fk+=2) {
+      for (int j=jl, fj=fjl; j<=ju; j++, fj+=2) {
+        for (int i=il, fi=fil; i<=iu; i++, fi+=2) {
           dst(n,fk  ,fj,  fi  )=(
               + 125.*src(n,k-1,j-1,i-1)+  750.*src(n,k-1,j-1,i  )-  75.*src(n,k-1,j-1,i+1)
               + 750.*src(n,k-1,j,  i-1)+ 4500.*src(n,k-1,j,  i  )- 450.*src(n,k-1,j,  i+1)
@@ -679,15 +709,3 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
   return;
 }
 
-
-//----------------------------------------------------------------------------------------
-//! \fn void Multigrid::SubtractOldData(AthenaArray<Real> &u,
-//                                      const AthenaArray<Real> &uold)
-//  \brief subtract the old data from the current data to calculate correction for FAS
-
-
-void Multigrid::SubtractOldData(AthenaArray<Real> &u, const AthenaArray<Real> &uold) {
-  int size = u.GetSize();
-  for (int i=0; i<size; i++)
-    u(i) -= uold(i);
-}

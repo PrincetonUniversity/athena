@@ -45,12 +45,14 @@ class MGGravity : public Multigrid {
 //! \class MGGravityDriver
 //  \brief Multigrid gravity solver
 
-class MGGravityDriver : public MultigridDriver{
+class MGGravityDriver : public MultigridDriver {
  public:
   MGGravityDriver(Mesh *pm, ParameterInput *pin);
   ~MGGravityDriver();
   void Solve(int stage) final;
   // void SolveCoarsestGrid() final;
+  void SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst, const AthenaArray<Real> &un,
+                                   LogicalLocation loc, int ox1, int ox2, int ox3) final;
  private:
   Real four_pi_G_;
 };
