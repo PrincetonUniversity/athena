@@ -340,29 +340,29 @@ void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center
                     &laplacian_bx3 = scr3_kji_x3fc_;
 
   // Use 1x cell per boundary edge as buffer
-  int il_buf=il, iu_buf=iu, jl_buf=jl, ju_buf=ju, kl_buf=kl, ku_buf=ku;
-  int nl=0, nu=0;
+  int il_buf = il, iu_buf = iu, jl_buf = jl, ju_buf = ju, kl_buf = kl, ku_buf = ku;
+  int nl = 0, nu = 0;
   // If the x1 boundaries are periodic, use 1x cell on inner/outer boundary as buffer,
   // even in 1D. This is because all cells are passed to this function in a peridoic
   // domain, but only the real cells are passed for a physical boundary
-  if (pbval->nblevel[1][1][0]!=-1) il_buf+=1;
-  if (pbval->nblevel[1][1][2]!=-1) iu_buf-=1;
+  if (pbval->nblevel[1][1][0] != -1) il_buf += 1;
+  if (pbval->nblevel[1][1][2] != -1) iu_buf -= 1;
 
   if (pmb->block_size.nx2 > 1) {
     if (pmb->block_size.nx3 == 1) {// 2D
-      jl_buf+=1, ju_buf-=1;
+      jl_buf += 1, ju_buf -= 1;
     } else { // 3D
-      jl_buf+=1, ju_buf-=1, kl_buf+=1, ku_buf-=1;
+      jl_buf += 1, ju_buf -= 1, kl_buf += 1, ku_buf -= 1;
     }
   }
 
   // Compute and store Laplacian of cell-averaged conserved variables
-  pco->LaplacianX1All(bf.x1f, laplacian_bx1, il, iu+1, jl_buf, ju_buf, kl_buf, ku_buf,
-                   nl, nu);
-  pco->LaplacianX2All(bf.x2f, laplacian_bx2, il_buf, iu_buf, jl, ju+1, kl_buf, ku_buf,
-                   nl, nu);
-  pco->LaplacianX3All(bf.x3f, laplacian_bx3, il_buf, iu_buf, jl_buf, ju_buf, kl, ku+1,
-                   nl, nu);
+  pco->LaplacianX1All(bf.x1f, laplacian_bx1, nl, nu, kl_buf, ku_buf, jl_buf, ju_buf,
+                      il, iu+1);
+  pco->LaplacianX2All(bf.x2f, laplacian_bx2, nl, nu, kl_buf, ku_buf, jl, ju+1,
+                      il_buf, iu_buf);
+  pco->LaplacianX3All(bf.x3f, laplacian_bx3, nl, nu, kl, ku+1, jl_buf, ju_buf,
+                      il_buf, iu_buf);
 
   // TODO(kfelker): deal with this usage of C
   Real h = pco->dx1f(il);  // pco->dx1f(i); inside loop
