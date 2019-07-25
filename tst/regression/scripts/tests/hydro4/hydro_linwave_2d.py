@@ -102,7 +102,9 @@ def analyze():
 
         # Compute error convergence rates with Richardson extrapolation for each wave flag
         # --------------------
+        logger.info('------------------------------')
         logger.info('{} + time/xorder={}'.format(torder.upper(), xorder))
+        logger.info('------------------------------')
         logger.info('Solver sound/entropy wave error tolerances at each resolution:')
         logger.info('nx1=' + repr(resolution_range[1:]))
         with np.printoptions(formatter={'float_kind': error_formatter}):
