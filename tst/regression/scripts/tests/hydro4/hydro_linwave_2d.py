@@ -83,6 +83,11 @@ def run(**kwargs):
             athena.run('hydro/athinput.linear_wave2d', arguments)
 
 
+# formatting rules for numpy arrays of floats:
+error_formatter = lambda x: "{:.2e}".format(x)
+rate_formatter = lambda x: "{:.2f}".format(x)
+
+
 # Analyze outputs
 def analyze():
     analyze_status = True
@@ -95,10 +100,16 @@ def analyze():
         solver_results = np.array(data[0:nrows_per_solver])
         data = np.delete(data, np.s_[0:nrows_per_solver], 0)
 
-        logger.info("%g %g", err_tol[0], err_tol[1])
         # Compute error convergence rates with Richardson extrapolation for each wave flag
         # --------------------
-        logger.info('{} + {}'.format(torder.upper(), xorder))
+        logger.info('{} + time/xorder={}'.format(torder.upper(), xorder))
+        logger.info('Solver sound/entropy wave error tolerances at each resolution:')
+        logger.info('nx1=' + repr(resolution_range[1:]))
+        with np.printoptions(formatter={'float_kind': error_formatter}):
+            logger.info(err_tol)
+        logger.info('Sound/entropy wave convergence rate tolerances (at nx1=128)')
+        with np.printoptions(formatter={'float_kind': rate_formatter}):
+            logger.info(rate_tol)
         # L-going sound wave
         logger.info("Sound wave error convergence:")
         logger.info("nx1   |   rate   |   RMS-L1")
