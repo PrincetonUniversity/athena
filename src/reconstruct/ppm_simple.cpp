@@ -56,6 +56,11 @@ void Reconstruction::PiecewiseParabolicX1(
   const int nvar_m1 = nu - ninl;
   const int noutu = noutl + nvar_m1;
 
+  // std::cout << "ninl, ninu = " << ninl << ", " << ninu << std::endl;
+  // std::cout << "nu, nvar_m1 = " << nu << ", " << nvar_m1 << std::endl;
+  // std::cout << "noutl, noutu = " << noutl << ", " << noutu << std::endl;
+  // exit(1);
+
   // CS08 constant used in second derivative limiter, >1 , independent of h
   const Real C2 = 1.25;
 
@@ -293,12 +298,14 @@ void Reconstruction::PiecewiseParabolicX1(
   } // end char PPM loop over =nu
 
   // compute ql_(i+1/2) and qr_(i-1/2)
+  int nmap = ninl;
   for (int n=noutl; n<=noutu; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      ql(n,i+1) = ql_iph(n,i);
-      qr(n,i  ) = qr_imh(n,i);
+      ql(n,i+1) = ql_iph(nmap,i);
+      qr(n,i  ) = qr_imh(nmap,i);
     }
+    nmap++;
   }
   return;
 }
@@ -554,12 +561,14 @@ void Reconstruction::PiecewiseParabolicX2(
 
 
   // compute ql_(j+1/2) and qr_(j-1/2)
+  int nmap = ninl;
   for (int n=noutl; n<=noutu; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      ql(n,i) = ql_jph(n,i);
-      qr(n,i) = qr_jmh(n,i);
+      ql(n,i) = ql_jph(nmap,i);
+      qr(n,i) = qr_jmh(nmap,i);
     }
+    nmap++;
   }
   return;
 }
@@ -807,12 +816,14 @@ void Reconstruction::PiecewiseParabolicX3(
   } // end char PPM loop over =nu
 
   // compute ql_(k+1/2) and qr_(k-1/2)
+  int nmap = ninl;
   for (int n=noutl; n<=noutu; ++n) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
-      ql(n,i) = ql_kph(n,i);
-      qr(n,i) = qr_kmh(n,i);
+      ql(n,i) = ql_kph(nmap,i);
+      qr(n,i) = qr_kmh(nmap,i);
     }
+    nmap++;
   }
   return;
 }
