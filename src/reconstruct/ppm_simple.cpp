@@ -59,10 +59,6 @@ void Reconstruction::PiecewiseParabolicX1(
   // CS08 constant used in second derivative limiter, >1 , independent of h
   const Real C2 = 1.25;
 
-  std::cout << "ninl, ninu = " << ninl << ", " << ninu << std::endl;
-  std::cout << "noutl, noutu = " << noutl << ", " << noutu << std::endl;
-  exit(1);
-
   // TODO(felker): renumber scratch array references; not using 2x from ppm.cpp
   // bx (MHD) and wc (characteristic projection)
 
