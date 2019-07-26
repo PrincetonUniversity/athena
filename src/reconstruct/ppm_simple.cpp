@@ -54,10 +54,10 @@ void Reconstruction::PiecewiseParabolicX1(
   const int nvar_m1 = ninu - ninl;
   const int noutu = noutl + nvar_m1;
 
-  std::cout << "ninl, ninu = " << ninl << ", " << ninu << std::endl;
-  std::cout << "nvar_m1 = " << nvar_m1 << std::endl;
-  std::cout << "noutl, noutu = " << noutl << ", " << noutu << std::endl;
-  exit(1);
+  // std::cout << "ninl, ninu = " << ninl << ", " << ninu << std::endl;
+  // std::cout << "nvar_m1 = " << nvar_m1 << std::endl;
+  // std::cout << "noutl, noutu = " << noutl << ", " << noutu << std::endl;
+  // exit(1);
 
   // CS08 constant used in second derivative limiter, >1 , independent of h
   const Real C2 = 1.25;
