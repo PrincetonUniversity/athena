@@ -1,5 +1,5 @@
 //========================================================================================
-// Athena++ astrophysical MHD code
+//Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
@@ -376,20 +376,30 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie+1; i++) {
-            // For now, use sharp switch for face-averaged longitudinal B1 when following
+            // Use sharp switch for face-averaged longitudinal B1 when following
             // the x2 profile of the v1 velocity sign.
             // E.g. central slab of fluid -0.5<=x2<=0.5 has v1=+1 velocity away from the
-            // interfaces. Outer slab has v1=-1 away from the interfaces
-            if (std::abs(pcoord->x2v(j)) < 0.5) {
-              pfield->b.x1f(k,j,i) = b0;
-            } else {
-              pfield->b.x1f(k,j,i) = -b0;
-            }
+            // interfaces. Outer slab has v1=-1 away from the interfaces:
+
+            // if (std::abs(pcoord->x2v(j)) < 0.5) {
+            //   pfield->b.x1f(k,j,i) = b0;
+            // } else {
+            //   pfield->b.x1f(k,j,i) = -b0;
+            // }
             // pfield->b.x1f(k,j,i) = b0*std::tanh((std::abs(pcoord->x2v(j)) - 0.5)/a);
 
-            // TODO(felker): compute integral of this profile on x1 face:
+            // OR
+            // Compute analytic integral of this smooth B_1(x_2) profile on x1 face:
             // pfield->b.x1f(k,j,i) = b0*(std::tanh((pcoord->x2v(j) - z1)/a) -
             //                            std::tanh((pcoord->x2v(j) - z2)/a));
+
+            // average:
+            pfield->b.x1f(k,j,i) = -b0 + b0*a/pcoord->dx2f(j)*(
+                std::log(std::cosh((pcoord->x2f(j+1) - z1)/a)
+                         / std::cosh((pcoord->x2f(j+1) - z2)/a))
+                - std::log(std::cosh((pcoord->x2f(j) - z1)/a)
+                           / std::cosh((pcoord->x2f(j) - z2)/a))
+                                                              );
 
             // compare to Daniel's KH_1e5_Dr0.py Dedalus script:
             // B0 = 0.01
