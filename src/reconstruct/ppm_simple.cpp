@@ -48,18 +48,16 @@ void Reconstruction::PiecewiseParabolicX1(
     const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &q,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr, int ninl, int ninu, int noutl) {
-  int nu = ninu;
   if (ninu < 0) {  // default argument = -1 ---> use the entire 4th dim of input array
-    nu = q.GetDim4() - 1;
+    ninu = q.GetDim4() - 1;
   }
-  // const int nvar = nu - ninl + 1;
-  const int nvar_m1 = nu - ninl;
+  const int nvar_m1 = ninu - ninl;
   const int noutu = noutl + nvar_m1;
 
-  // std::cout << "ninl, ninu = " << ninl << ", " << ninu << std::endl;
-  // std::cout << "nu, nvar_m1 = " << nu << ", " << nvar_m1 << std::endl;
-  // std::cout << "noutl, noutu = " << noutl << ", " << noutu << std::endl;
-  // exit(1);
+  std::cout << "ninl, ninu = " << ninl << ", " << ninu << std::endl;
+  std::cout << "nvar_m1 = " << nvar_m1 << std::endl;
+  std::cout << "noutl, noutu = " << noutl << ", " << noutu << std::endl;
+  exit(1);
 
   // CS08 constant used in second derivative limiter, >1 , independent of h
   const Real C2 = 1.25;
@@ -295,7 +293,7 @@ void Reconstruction::PiecewiseParabolicX1(
       ql_iph(n,i ) = qplus(i);
       qr_imh(n,i ) = qminus(i);
     }
-  } // end char PPM loop over =nu
+  } // end char PPM loop over =ninu
 
   // compute ql_(i+1/2) and qr_(i-1/2)
   int nmap = ninl;
@@ -319,12 +317,10 @@ void Reconstruction::PiecewiseParabolicX2(
     const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &q,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr, int ninl, int ninu, int noutl) {
-  int nu = ninu;
   if (ninu < 0) {  // default argument = -1 ---> use the entire 4th dim of input array
-    nu = q.GetDim4() - 1;
+    ninu = q.GetDim4() - 1;
   }
-  // const int nvar = nu - ninl + 1;
-  const int nvar_m1 = nu - ninl;
+  const int nvar_m1 = ninu - ninl;
   const int noutu = noutl + nvar_m1;
 
   // CS08 constant used in second derivative limiter, >1 , independent of h
@@ -557,7 +553,7 @@ void Reconstruction::PiecewiseParabolicX2(
       ql_jph(n,i ) = qplus(i);
       qr_jmh(n,i ) = qminus(i);
     }
-  } // end char PPM loop over =nu
+  } // end char PPM loop over =ninu
 
 
   // compute ql_(j+1/2) and qr_(j-1/2)
@@ -582,12 +578,10 @@ void Reconstruction::PiecewiseParabolicX3(
     const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &q,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr, int ninl, int ninu, int noutl) {
-  int nu = ninu;
   if (ninu < 0) {  // default argument = -1 ---> use the entire 4th dim of input array
-    nu = q.GetDim4() - 1;
+    ninu = q.GetDim4() - 1;
   }
-  // const int nvar = nu - ninl + 1;
-  const int nvar_m1 = nu - ninl;
+  const int nvar_m1 = ninu - ninl;
   const int noutu = noutl + nvar_m1;
 
   // CS08 constant used in second derivative limiter, >1 , independent of h
@@ -813,7 +807,7 @@ void Reconstruction::PiecewiseParabolicX3(
       ql_kph(n,i ) = qplus(i);
       qr_kmh(n,i ) = qminus(i);
     }
-  } // end char PPM loop over =nu
+  } // end char PPM loop over =ninu
 
   // compute ql_(k+1/2) and qr_(k-1/2)
   int nmap = ninl;
