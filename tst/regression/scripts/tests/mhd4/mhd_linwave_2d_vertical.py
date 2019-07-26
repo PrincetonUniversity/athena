@@ -66,11 +66,11 @@ rate_tols = [
 # this metric is redundant with above error_tols, but it is simpler...
 
 resolution_range = [16, 32, 64, 128]  # , 256]  # , 512]
-num_nx1 = len(resolution_range)
+num_nx2 = len(resolution_range)
 # Number of times Athena++ is run for each above configuration:
-# L-going wave for each mode is run num_nx1 times, then L and R going fast waves are run
+# L-going wave for each mode is run num_nx2 times, then L and R going fast waves are run
 # at single resolution for symmetry test
-nrows_per_solver = 4*num_nx1 + 2
+nrows_per_solver = 4*num_nx2 + 2
 wave_mode_names = ['fast', 'Alfven', 'slow', 'entropy']
 
 
@@ -97,7 +97,7 @@ def run(**kwargs):
                              'problem/ang_3_vert=true',
                              'mesh/x1max=0.5', 'mesh/x2max=1.0',
                              'problem/wave_flag={}'.format(w), 'problem/vflow=0.0',
-                             'mesh/nx1={}'.format(i), 'mesh/nx2={}'.format(i/2),
+                             'mesh/nx1={}'.format(i/2), 'mesh/nx2={}'.format(i),
                              'output2/dt=-1', 'time/tlim={}'.format(tlim),
                              'time/correct_err=true',
                              'time/correct_ic=true',
@@ -110,7 +110,7 @@ def run(**kwargs):
                          'problem/ang_3_vert=true',
                          'mesh/x1max=0.5', 'mesh/x2max=1.0',
                          'problem/wave_flag=3', 'problem/vflow=1.0',
-                         'mesh/nx1={}'.format(i), 'mesh/nx2={}'.format(i/2),
+                         'mesh/nx1={}'.format(i/2), 'mesh/nx2={}'.format(i),
                          'output2/dt=-1', 'time/tlim=1.0',
                          'time/correct_err=true',
                          'time/correct_ic=true',
@@ -123,6 +123,7 @@ def run(**kwargs):
                          'problem/ang_3_vert=true',
                          'mesh/x1max=0.5', 'mesh/x2max=1.0',
                          'problem/wave_flag={}'.format(w),
+                         'mesh/nx1={}'.format(i/2), 'mesh/nx2={}'.format(i),
                          'output2/dt=-1', 'time/tlim=0.5',
                          'time/correct_err=true',
                          'time/correct_ic=true',
@@ -153,25 +154,25 @@ def analyze():
         logger.info('{} + time/xorder={}'.format(torder.upper(), xorder))
         logger.info('------------------------------')
         logger.info('Solver wave mode error tolerances at each resolution:')
-        logger.info('nx1=' + repr(resolution_range[1:]))
+        logger.info('nx2=' + repr(resolution_range[1:]))
         with np.printoptions(formatter={'float_kind': error_formatter}):
             logger.info(err_tol)
-        logger.info('Wave mode convergence rate tolerances (at nx1=128)')
+        logger.info('Wave mode convergence rate tolerances (at nx2=128)')
         with np.printoptions(formatter={'float_kind': rate_formatter}):
             logger.info(rate_tol)
         for w, wave_mode in enumerate(wave_mode_names):
             # L-going wave of each mode
             logger.info("{} wave error convergence:".format(wave_mode.capitalize()))
-            logger.info("nx1   |   rate   |   RMS-L1")
-            rms_errs = solver_results[0:num_nx1, 4]
-            nx1_range = solver_results[0:num_nx1, 0]
+            logger.info("nx2   |   rate   |   RMS-L1")
+            rms_errs = solver_results[0:num_nx2, 4]
+            nx2_range = solver_results[0:num_nx2, 1]
             # print(solver_results)
             # solver_results = np.delete(solver_results, np.s_[0:len(wave_mode_names)], 0)
-            solver_results = np.delete(solver_results, np.s_[0:num_nx1], 0)
-            for i in range(1, num_nx1):
-                rate = log(rms_errs[i-1]/rms_errs[i])/log(nx1_range[i]/nx1_range[i-1])
-                logger.info("%d %g %g", int(nx1_range[i]), rate, rms_errs[i])
-                if (nx1_range[i] == 128 and rate < rate_tol[w]):
+            solver_results = np.delete(solver_results, np.s_[0:num_nx2], 0)
+            for i in range(1, num_nx2):
+                rate = log(rms_errs[i-1]/rms_errs[i])/log(nx2_range[i]/nx2_range[i-1])
+                logger.info("%d %g %g", int(nx2_range[i]), rate, rms_errs[i])
+                if (nx2_range[i] == 128 and rate < rate_tol[w]):
                     logger.warning(
                         "L-going {} wave converging at rate {} slower than {}".format(
                             wave_mode, rate, rate_tol[w]))
@@ -182,7 +183,7 @@ def analyze():
                             wave_mode, rms_errs[i], err_tol[w][i-1]))
                     analyze_status = False
 
-        # Check that errors are identical for fast waves in each direction at Nx1=256
+        # Check that errors are identical for fast waves in each direction at Nx2=256
         if (not np.allclose(solver_results[-2, 4], solver_results[-1, 4],
                             atol=5e-16, rtol=1e-5) and xorder != '3c'):
             msg = "L/R-going fast wave errors, {} and {}"
