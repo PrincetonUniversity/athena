@@ -18,8 +18,9 @@ athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 # List of time/integrator and time/xorder combinations to test:
-solvers = [('vl2', '2c'), ('vl2', '3')]  # , ('rk2', '3c')]
-# ('rk3', '4'), ('rk4', '4c'), ('ssprk5_4', '4')]
+solvers = [('rk3', '4')]  # , ('rk4', '4c'), ('ssprk5_4', '4')]
+# [('vl2', '2c'), ('vl2', '3')]  # , ('rk2', '3c')]
+
 
 # Matching above list of solver configurations, provide bounds on error metrics:
 # for each tested resolution (excluding lowest Nx1=16) and wave_flag
@@ -96,6 +97,8 @@ def run(**kwargs):
                              'problem/wave_flag={}'.format(w), 'problem/vflow=0.0',
                              'mesh/nx1={}'.format(i), 'mesh/nx2={}'.format(i/2),
                              'output2/dt=-1', 'time/tlim={}'.format(tlim),
+                             'time/correct_err=true',
+                             'time/correct_ic=true',
                              'problem/compute_error=true']
                 athena.run('mhd/athinput.linear_wave2d', arguments)
         # L-going entropy wave
@@ -105,6 +108,8 @@ def run(**kwargs):
                          'problem/wave_flag=3', 'problem/vflow=1.0',
                          'mesh/nx1={}'.format(i), 'mesh/nx2={}'.format(i/2),
                          'output2/dt=-1', 'time/tlim=1.0',
+                         'time/correct_err=true',
+                         'time/correct_ic=true',
                          'problem/compute_error=true']
             athena.run('mhd/athinput.linear_wave2d', arguments)
         # L/R-going fast wave for symmetry comparison
@@ -113,6 +118,8 @@ def run(**kwargs):
                          'time/xorder=' + xorder, 'time/integrator=' + torder,
                          'problem/wave_flag={}'.format(w),
                          'output2/dt=-1', 'time/tlim=0.5',
+                         'time/correct_err=true',
+                         'time/correct_ic=true',
                          'problem/compute_error=true']
             athena.run('mhd/athinput.linear_wave2d', arguments)
 

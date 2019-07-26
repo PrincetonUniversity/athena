@@ -18,7 +18,8 @@ athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 # List of time/integrator and time/xorder combinations to test:
-solvers = [('vl2', '2'), ('rk3', '4')]  # , ('rk4', '4c'), ('ssprk5_4', '4')]
+solvers = [# ('vl2', '2'),
+           ('rk3', '4')]  # , ('rk4', '4c'), ('ssprk5_4', '4')]
 # [('vl2', '2c'), ('vl2', '3')]  # , ('rk2', '3c')]
 
 
@@ -186,5 +187,9 @@ def analyze():
             msg += ", have a difference that is not close to round-off"
             logger.warning(msg.format(solver_results[-2, 4], solver_results[-1, 4]))
             analyze_status = False
+        # RK3 + MHD4 triggers this on 2019-07-26, but not earlier 8ac9654ffc from
+        # 2018-05-05. Difference is just about 6e-16
+        # "L/R-going fast wave errors, 3.276061e-12 and 3.276678e-12, have a difference
+        # that is not close to round-off"
 
     return analyze_status

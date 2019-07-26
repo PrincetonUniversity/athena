@@ -18,7 +18,9 @@ athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 # List of time/integrator and time/xorder combinations to test:
-solvers = [('vl2', '2'), ('rk3', '4')]  # , ('rk4', '4c'), ('ssprk5_4', '4')]
+solvers = [
+    # ('vl2', '2'),
+    ('rk3', '4')]  # , ('rk4', '4c'), ('ssprk5_4', '4')]
 # [('vl2', '2c'), ('vl2', '3')]  # , ('rk2', '3c')]
 
 
