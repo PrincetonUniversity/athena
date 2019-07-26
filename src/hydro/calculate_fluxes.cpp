@@ -89,6 +89,26 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
                     &v_R3R1 = pmb->pfield->v_R3R1, &v_R3L1 = pmb->pfield->v_R3L1,
                     &v_L3R1 = pmb->pfield->v_L3R1, &v_L3L1 = pmb->pfield->v_L3L1;
 
+
+  // pencil decomposition:
+  AthenaArray<Real> &v_SE_ = pmb->pfield->v_SE_, &v_NE_ = pmb->pfield->v_NE_,
+                    &v_NW_ = pmb->pfield->v_NW_, &v_SW_ = pmb->pfield->v_SW_;
+  AthenaArray<Real> &bx_N_ = pmb->pfield->bx_N_, &bx_S_ = pmb->pfield->bx_S_;
+  AthenaArray<Real> &by_E_ = pmb->pfield->by_E_, &by_W_ = pmb->pfield->by_W_;
+  AthenaArray<Real> &bz_R1_ = pmb->pfield->bz_R1_, &bz_L1_ = pmb->pfield->bz_L1_,
+                    &bz_R2_ = pmb->pfield->bz_R2_, &bz_L2_ = pmb->pfield->bz_L2_,
+                    &by_R3_ = pmb->pfield->by_R3_, &by_L3_ = pmb->pfield->by_L3_,
+                    &bx_R3_ = pmb->pfield->bx_R3_, &bx_L3_ = pmb->pfield->bx_L3_;
+  AthenaArray<Real> &v_R3R2_ = pmb->pfield->v_R3R2_, &v_R3L2_ = pmb->pfield->v_R3L2_,
+                    &v_L3R2_ = pmb->pfield->v_L3R2_, &v_L3L2_ = pmb->pfield->v_L3L2_,
+                    &v_R3R1_ = pmb->pfield->v_R3R1_, &v_R3L1_ = pmb->pfield->v_R3L1_,
+                    &v_L3R1_ = pmb->pfield->v_L3R1_, &v_L3L1_ = pmb->pfield->v_L3L1_;
+  AthenaArray<Real> &vl_temp2 = pmb->pfield->vl_temp2_,
+                    &vr_temp2 = pmb->pfield->vr_temp2_;
+
+  AthenaArray<Real> &v_NEb_ = pmb->pfield->v_NEb_, &v_NWb_ = pmb->pfield->v_NWb_,
+                     &bx_Nb_ = pmb->pfield->bx_Nb_;
+
   // -------------- end fourth-order MHD indices and variables ------
 #endif
   //--------------------------------------------------------------------------------------
@@ -236,21 +256,105 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         // Limited transverse reconstructions: call PPMx2() for vx, vy both L/R states
         // wl_{i-1/2}  is E side of interface --> discontinuous states in x2, L=N,  R=S
         for (int k=ks; k<=ke; ++k) {
+          // TODO(felker): is this lower loop limit correct??
+
+          pmb->precon->PiecewiseParabolicX2(k, js-1, is, ie+1, wl3d_, v_NE_, v_SE_,
+                                            IVX, IVY, 0);
+          pmb->precon->PiecewiseParabolicX2(k, js-1, is, ie+1, wr3d_, v_NW_, v_SW_,
+                                            IVX, IVY, 0);
+          pmb->precon->PiecewiseParabolicX2(k, js-1, is, ie+1, b1, bx_N_, bx_S_,
+                                            0, 0, 0);
+          // for (int i=is; i<=ie+1; i++) {
+          //   int j=js;
+          // std::cout << "v_NE_(" << 0 << "," << i
+          //           << ") at (k,j) = (" << k << "," << j << ") ---> " << v_NE_(0, i)
+          //           << std::endl;
+          // }
+
           for (int j=js; j<=je+1; ++j) {
-            pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, wl3d_, v_NE, v_SE,
-                                              IVX, IVX, 0);
-            pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, wl3d_, v_NE, v_SE,
-                                              IVY, IVY, 1);
-            // wr_{i-1/2}  is W side of interface --> discontinuous states in x2, L=N, R=S
-            pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, wr3d_, v_NW, v_SW,
-                                              IVX, IVX, 0);
-            pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, wr3d_, v_NW, v_SW,
-                                              IVY, IVY, 1);
-            // Limited transverse reconstructions: call PPMx2() for single-state b_x
-            pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, b1, bx_N, bx_S,
+            pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, wl3d_, v_NEb_, v_SE_,
+                                              IVX, IVY, 0);
+            pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, wr3d_, v_NWb_, v_SW_,
+                                              IVX, IVY, 0);
+            pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, b1, bx_Nb_, bx_S_,
                                               0, 0, 0);
-          }
-        }
+            // KGF: debug array swapping
+            // for (int i=is; i<=ie+1; i++) {
+            //   std::cout << "v_NE_(" << 0 << "," << i
+            //             << ") at (k,j) = (" << k << "," << j << ") ---> " << v_NE_(0, i)
+            //             << std::endl;
+            //   std::cout << "v_NEb_(" << 0 << "," << i
+            //             << ") at (k,j) = (" << k << "," << j << ") ---> " << v_NEb_(0, i)
+            //             << std::endl;
+            // }
+
+
+          // for (int j=js-1; j<=je+1; ++j) {
+          //   // for (int j=js-1; j<=je+1; ++j) {
+          //   // std::cout << "k,j =" << k << ", " << j << std::endl;
+          //   // pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, wl3d_, v_NE, v_SE,
+          //   //                                   IVX, IVX, 0);
+          //   // pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, wl3d_, v_NE, v_SE,
+          //   //                                   IVY, IVY, 1);
+
+          //   pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, wl3d_, v_NE_, v_SE_,
+          //                                     IVX, IVY, 0);
+
+          //   // wr_{i-1/2}  is W side of interface --> discontinuous states in x2, L=N, R=S
+          //   // pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, wr3d_, v_NW, v_SW,
+          //   //                                   IVX, IVX, 0);
+          //   // pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, wr3d_, v_NW, v_SW,
+          //   //                                   IVY, IVY, 1);
+
+          //   pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, wr3d_, v_NW_, v_SW_,
+          //                                     IVX, IVY, 0);
+
+          //   // Limited transverse reconstructions: call PPMx2() for single-state b_x
+          //   pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, b1, bx_N_, bx_S_,
+          //                                     0, 0, 0);
+            for (int n=0; n<2; n++) {
+              for (int i=is; i<=ie+1; i++) {
+                //v_NE(n,k,j+1,i) = v_NE_(n,i);
+                v_NE(n,k,j,i) = v_NE_(n,i);
+                // KGF: debug pencil decomposition
+                // std::cout << "v_NE(" << n << "," << k << "," << j << "," << i
+                //           << ") = " << v_NE(n, k,j,i)
+                //           << std::endl;
+                v_SE(n,k,j,i) = v_SE_(n,i);
+                v_NW(n,k,j,i) = v_NW_(n,i);
+                //v_NW(n,k,j+1,i) = v_NW_(n,i);
+                v_SW(n,k,j,i) = v_SW_(n,i);
+              }
+            }
+            for (int i=is; i<=ie+1; i++) {
+              bx_N(k,j,i) = bx_N_(i);
+              //bx_N(k,j+1,i) = bx_N_(i);
+              bx_S(k,j,i) = bx_S_(i);
+            }
+            v_NE_.SwapAthenaArray(v_NEb_);
+            v_NW_.SwapAthenaArray(v_NWb_);
+            bx_N_.SwapAthenaArray(bx_Nb_);
+          } // end of loop over j
+        } // end of loop over k
+
+        // for (int n=0; n<2; n++) {
+        //   for (int k=ks; k<=ke; ++k) {
+        //     for (int j=js; j<=je+1; ++j) {
+        //       //for (int j=js-1; j<=je+1; ++j) {
+        //       for (int i=is; i<=ie+1; i++) {
+        //         // KGF: debug pencil decomposition
+        //         std::cout << "v_NE(" << n << "," << k << "," << j << "," << i
+        //                   << ") = " << v_NE(n, k,j,i)
+        //                   << std::endl;
+        //       }
+        //       std::cout << "\n";
+        //     }
+        //   }
+        //   std::cout << "\n\n\n\n";
+        // }
+        // exit(1);
+
+
         // Repeat calculation of x1 edge-centered wavespeeds as in HLL solver
         Real wli[NWAVE], wri[NWAVE];
         int ivx = IVX;
@@ -293,19 +397,31 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         }
         // Compute states for 3D UCT
         if (pmb->block_size.nx3 > 1) {
-          for (int k=ks; k<=ke+1; ++k) {
+          for (int k=ks-1; k<=ke+1; ++k) {
             for (int j=js; j<=je; ++j) {
-              pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, wl3d_, v_L3L1, v_R3L1,
+              pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, wl3d_, v_L3L1_, v_R3L1_,
                                                 IVX, IVX, 0);
-              pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, wl3d_, v_L3L1, v_R3L1,
+              pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, wl3d_, v_L3L1_, v_R3L1_,
                                                 IVZ, IVZ, 2);
-              pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, wr3d_, v_L3R1, v_R3R1,
+              pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, wr3d_, v_L3R1_, v_R3R1_,
                                                 IVX, IVX, 0);
-              pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, wr3d_, v_L3R1, v_R3R1,
+              pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, wr3d_, v_L3R1_, v_R3R1_,
                                                 IVZ, IVZ, 2);
               // Limited transverse reconstructions: call PPMx3() for single-state b_x
-              pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, b1, bx_L3, bx_R3,
+              pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, b1, bx_L3_, bx_R3_,
                                                 0, 0, 0);
+              for (int n=0; n<3; n+=2) {
+                for (int i=is; i<=ie+1; i++) {
+                  v_L3L1(n,k,j,i) = v_L3L1_(n,i);
+                  v_R3L1(n,k,j,i) = v_R3L1_(n,i);
+                  v_L3R1(n,k,j,i) = v_L3R1_(n,i);
+                  v_R3R1(n,k,j,i) = v_R3R1_(n,i);
+                }
+              }
+              for (int i=is; i<=ie+1; i++) {
+                bx_L3(k,j,i) = bx_L3_(i);
+                bx_R3(k,j,i) = bx_R3_(i);
+              }
             }
           }
         } // end UCT if 3D
@@ -347,6 +463,9 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
 
     for (int k=kl; k<=ku; ++k) {
       // reconstruct the first row
+
+      // KGF: wl_ is at the js-1/2 upper face of the js-1 cell, whereas
+      // wr_ is at the js-3/2 lower face of the cell (unused)
       if (order == 1) {
         pmb->precon->DonorCellX2(k, js-1, il, iu, w, bcc, wl_, wr_);
       } else if (order == 2) {
@@ -376,15 +495,20 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         if (order == 4) {
           for (int n=0; n<NWAVE; n++) {
             for (int i=il; i<=iu; i++) {
+              // KGF: they are stored in the 3D arrays with the correct interface-based
+              // indexing.
+
+              // e.g. for the wl_ at js-1/2 L Riemann state, it is stored at j=js
               wl3d_(n,k,j,i) = wl_(n,i);
               wr3d_(n,k,j,i) = wr_(n,i);
             }
           }
         }
         // swap the arrays for the next step
+        // KGF:
         wl_.SwapAthenaArray(wlb_);
-      }
-    }
+      } // end of loop over j
+    } // end of loop over k
     if (order == 4) {
       // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so factor this out
       // TODO(felker): also, this may need to be dx2v, since Laplacian is cell-centered
@@ -452,17 +576,62 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
           for (int j=js; j<=je+1; ++j) {
             // Limited transverse reconstructions: call PPMx1() for vx, vy both L/R states
             // wl_{i,j-1/2} is N side of interface --> discontinuous states in x1: L=E,R=W
-            pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, wl3d_,
-                                              vl_temp, vr_temp, IVX, IVX, 0);
-            pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, wl3d_,
-                                              vl_temp, vr_temp, IVY, IVY, 1);
+            // pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, wl3d_,
+            //                                   vl_temp, vr_temp, IVX, IVX, 0);
+            // pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, wl3d_,
+            //                                   vl_temp, vr_temp, IVY, IVY, 1);
+            pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, wl3d_,
+                                              vl_temp2, vr_temp2, IVX, IVY, 0);
+            for (int n=0; n<2; n++) {
+              // TODO(felker): check limit change
+              for (int i=is-1; i<=ie+1; i++) {
+                vl_temp(n,k,j,i) = vl_temp2(n,i);
+                vr_temp(n,k,j,i) = vr_temp2(n,i);
+              }
+            }
           }
         }
+
+
+        // for (int n=0; n<2; n++) {
+        //   for (int k=ks; k<=ke; ++k) {
+        //     for (int j=js-1; j<=je+1; ++j) {
+        //       for (int i=is; i<=ie+1; i++) {
+        //         // KGF: debug pencil decomposition
+        //         std::cout << "v_NE(" << n << "," << k << "," << j << "," << i
+        //                   << ") = " << v_NE(n, k,j,i)
+        //                   << std::endl;
+        //       }
+        //       std::cout << "\n";
+        //     }
+        //   }
+        //   std::cout << "\n\n\n\n";
+        // }
+        // exit(1);
+
+        // KGF: debug pencil decomposition
+        // for (int k=ks; k<=ke; ++k) {
+        //   for (int j=js; j<=je+1; ++j) {
+        //     for (int i=is; i<=ie+1; i++) {
+        //       std::cout << "by_E(" << k << "," << j << "," << i << ") = " << by_E(k,j,i);
+        //       std::cout << std::endl;
+        //     }
+        //     std::cout << std::endl;
+        //   }
+        // }
+        // exit(1);
+
         // Store temporary arrays as average of R_x[R_y[]] and R_y[R_x[]] reconstructions
         for (int n=0; n<2; ++n) {
           for (int k=ks; k<=ke; ++k) {
+            // TODO(felker): check limit change
             for (int j=js; j<=je+1; ++j) {
+            //for (int j=js-1; j<=je; ++j) {
               for (int i=is; i<=ie+1; ++i) {
+                // KGF: debug pencil decomposition
+                // std::cout << "v_NE, vl_temp(" << n << "," << k << "," << j << "," << i
+                //           << ") = " << v_NE(n, k,j,i) << ", " << vl_temp(n,k,j,i)
+                //           << std::endl;
                 v_NE(n,k,j,i) = 0.5*(v_NE(n,k,j,i) + vl_temp(n,k,j,i));
                 v_NW(n,k,j,i) = 0.5*(v_NW(n,k,j,i) + vr_temp(n,k,j,i));
               }
@@ -473,17 +642,35 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je+1; ++j) {
             // wr_{i,j-1/2}  is S side of interface --> discontinuous states in x1 L=E,R=W
-            pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, wr3d_,
-                                              vl_temp, vr_temp, IVX, IVX, 0);
-            pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, wr3d_,
-                                              vl_temp, vr_temp, IVY, IVY, 1);
+            // pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, wr3d_,
+            //                                   vl_temp, vr_temp, IVX, IVX, 0);
+            // pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, wr3d_,
+            //                                   vl_temp, vr_temp, IVY, IVY, 1);
+            pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, wr3d_,
+                                              vl_temp2, vr_temp2, IVX, IVY, 0);
+            for (int n=0; n<2; n++) {
+              // TODO(felker): check limit change
+              for (int i=is-1; i<=ie+1; i++) {
+                vl_temp(n,k,j,i) = vl_temp2(n,i);
+                vr_temp(n,k,j,i) = vr_temp2(n,i);
+              }
+            }
           }
         }
         // Store temporary arrays as average of R_x[R_y[]] and R_y[R_x[]] reconstructions
         for (int n=0; n<2; ++n) {
           for (int k=ks; k<=ke; ++k) {
+            // TODO(felker): check limit change
             for (int j=js; j<=je+1; ++j) {
+              //for (int j=js-1; j<=je; ++j) {
               for (int i=is; i<=ie+1; ++i) {
+                // KGF: debug pencil decomposition
+                // std::cout << "v_SE, vl_temp(" << n << "," << k << "," << j << "," << i
+                //           << ") = " << v_SE(n, k,j,i) << ", " << vl_temp(n,k,j,i)
+                //           << std::endl;
+
+                // v_SE(n,k,j,i) = 0.5*(v_SE(n,k,j,i) + vl_temp(n,k,j,i));
+                // v_SW(n,k,j,i) = 0.5*(v_SW(n,k,j,i) + vr_temp(n,k,j,i));
                 v_SE(n,k,j,i) = 0.5*(v_SE(n,k,j,i) + vl_temp(n,k,j,i));
                 v_SW(n,k,j,i) = 0.5*(v_SW(n,k,j,i) + vr_temp(n,k,j,i));
               }
@@ -493,10 +680,27 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je+1; ++j) {
             // Limited transverse reconstructions: call PPMx1() for single-state b_y
-            pmb->precon->PiecewiseParabolicX1(k, j, is, ie+1, b2,
-                                              by_E, by_W, 0, 0, 0);
+            pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, b2,
+                                              by_E_, by_W_, 0, 0, 0);
+            for (int i=is-1; i<=ie+1; i++) {
+              by_W(k,j,i) = by_W_(i);
+              by_E(k,j,i) = by_E_(i);
+            }
           }
         }
+
+        // KGF: debug pencil decomposition
+        // for (int k=ks; k<=ke; ++k) {
+        //   for (int j=js; j<=je+1; ++j) {
+        //     for (int i=is; i<=ie+1; i++) {
+        //       std::cout << "by_E(" << k << "," << j << "," << i << ") = " << by_E(k,j,i);
+        //       std::cout << std::endl;
+        //     }
+        //     std::cout << std::endl;
+        //   }
+        // }
+        // exit(1);
+
         // Repeat calculation of x2 edge-centered wavespeeds as in HLL solver
         Real wli[NWAVE], wri[NWAVE];
         int ivx = IVY;
@@ -539,7 +743,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b, FaceField &b_fc,
         }
         // Compute states for 3D UCT
         if (pmb->block_size.nx3 > 1) {
-          for (int k=ks; k<=ke+1; ++k) {
+          for (int k=ks-1; k<=ke+1; ++k) {
             for (int j=js; j<=je+1; ++j) {
               pmb->precon->PiecewiseParabolicX3(k, j, is, ie, wl3d_,
                                                 v_L3L2, v_R3L2, IVY, IVY, 1);

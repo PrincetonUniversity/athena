@@ -288,14 +288,52 @@ void Field::ComputeCornerE_UCT4() {
 
         bx_S_minus_bx_N = bx_S(k,j,i) - bx_N(k,j,i);
         by_W_minus_by_E = by_W(k,j,i) - by_E(k,j,i);
-        e3(k,j,i) = (alpha_plus_x*alpha_plus_y*e3_NE + alpha_plus_x*alpha_minus_y*e3_SE +
-                     alpha_minus_x*alpha_plus_y*e3_NW + alpha_minus_x*alpha_minus_y*e3_SW)
-            / ((alpha_plus_x + alpha_minus_x)*(alpha_plus_y + alpha_minus_y))
-            - alpha_plus_y*alpha_minus_y*bx_S_minus_bx_N/(alpha_plus_y+alpha_minus_y)
-            + alpha_plus_x*alpha_minus_x*by_W_minus_by_E/(alpha_plus_x+alpha_minus_x);
+        e3(k,j,i) = (
+            alpha_plus_x*alpha_plus_y*e3_NE + alpha_plus_x*alpha_minus_y*e3_SE +
+            alpha_minus_x*alpha_plus_y*e3_NW + alpha_minus_x*alpha_minus_y*e3_SW
+                     ) / ((alpha_plus_x + alpha_minus_x)*(alpha_plus_y + alpha_minus_y))
+                    - alpha_plus_y*alpha_minus_y*bx_S_minus_bx_N / (
+                        alpha_plus_y + alpha_minus_y)
+                    + alpha_plus_x*alpha_minus_x*by_W_minus_by_E/(
+                        alpha_plus_x + alpha_minus_x);
+        //if (j == 6 && k == ks) {
+
+
+        // if (j == 8 && k == ks) {
+        //   std::cout << "e3(" << k << "," << j << "," << i << ")= " << e3(k,j,i)
+        //             << std::endl;
+
+        //   std::cout << "bx_S_minus_bx_N=" << bx_S_minus_bx_N << std::endl;
+          //   std::cout << "by_W_minus_by_E=" << by_W_minus_by_E << std::endl;
+
+        // std::cout << "v_NE(0-1,k,j,i) = " << v_NE(0,k,j,i) << ", " << v_NE(1,k,j,i)
+        //             << std::endl;
+        //   std::cout << "bx_N(k,j,i) = " << bx_N(k,j,i) << std::endl;
+        //   std::cout << "by_E(k,j,i) = " << by_E(k,j,i) << std::endl;
+
+        //   std::cout << "v_SE(0-1,k,j,i) = " << v_SE(0,k,j,i) << ", " << v_SE(1,k,j,i)
+        //             << std::endl;
+        //   std::cout << "bx_S(k,j,i) = " << bx_S(k,j,i) << std::endl;
+          //   std::cout << "by_E(k,j,i) = " << by_E(k,j,i) << std::endl;
+
+        //   std::cout << "v_NW(0-1,k,j,i) = " << v_NW(0,k,j,i) << ", " << v_NW(1,k,j,i)
+        //             << std::endl;
+        //   std::cout << "v_SW(0-1,k,j,i) = " << v_SW(0,k,j,i) << ", " << v_SW(1,k,j,i)
+        //             << std::endl;
+
+        //   std::cout << "e3_NE=" << e3_NE << std::endl;
+        //   std::cout << "e3_SE=" << e3_SE << std::endl;
+        //   std::cout << "e3_NW=" << e3_NW << std::endl;
+        //   std::cout << "e3_SW=" << e3_SW << std::endl;
+        //   std::cout << std::endl;
+        // }
       }
     }
   }
+
+  //exit(1);
+
+
   // for 2D: copy E1 and E2 to edges and return
   if (pmb->block_size.nx3 == 1) {
     for (int j=js; j<=je; ++j) {

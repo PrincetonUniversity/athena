@@ -98,6 +98,44 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
     bcc_center.NewAthenaArray(NFIELD, ncells3, ncells2, ncells1);
 
     // fourth-order UCT reconstructions at corners
+
+    // pencil decomposition
+    by_W_.NewAthenaArray(ncells1);
+    by_E_.NewAthenaArray(ncells1);
+    bx_S_.NewAthenaArray(ncells1);
+    bx_N_.NewAthenaArray(ncells1);
+    // 3D states
+    bz_R1_.NewAthenaArray(ncells1);
+    bz_L1_.NewAthenaArray(ncells1);
+    bz_R2_.NewAthenaArray(ncells1);
+    bz_L2_.NewAthenaArray(ncells1);
+    by_R3_.NewAthenaArray(ncells1);
+    by_L3_.NewAthenaArray(ncells1);
+    bx_R3_.NewAthenaArray(ncells1);
+    bx_L3_.NewAthenaArray(ncells1);
+
+    // TODO(kfelker): only 2 velocity components are required at each interface.
+    v_NE_.NewAthenaArray(3, ncells1);
+    v_SE_.NewAthenaArray(3, ncells1);
+    v_NW_.NewAthenaArray(3, ncells1);
+    v_SW_.NewAthenaArray(3, ncells1);
+    // 3D states
+    v_R3R2_.NewAthenaArray(3, ncells1);
+    v_R3L2_.NewAthenaArray(3, ncells1);
+    v_L3R2_.NewAthenaArray(3, ncells1);
+    v_L3L2_.NewAthenaArray(3, ncells1);
+    v_R3R1_.NewAthenaArray(3, ncells1);
+    v_R3L1_.NewAthenaArray(3, ncells1);
+    v_L3R1_.NewAthenaArray(3, ncells1);
+    v_L3L1_.NewAthenaArray(3, ncells1);
+
+    vl_temp2_.NewAthenaArray(3, ncells1);
+    vr_temp2_.NewAthenaArray(3, ncells1);
+
+    v_NEb_.NewAthenaArray(3, ncells1);
+    v_NWb_.NewAthenaArray(3, ncells1);
+    bx_Nb_.NewAthenaArray(ncells1);
+
     // TODO(kfelker): cut down on these temporary arrays
     // TODO(kfelker): check array limits-- add +1 for upper face?
     by_W.NewAthenaArray(ncells3, ncells2, ncells1);

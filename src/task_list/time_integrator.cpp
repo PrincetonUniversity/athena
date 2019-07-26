@@ -602,6 +602,10 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
 
 
 void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
+  // std::cout << "-------------------------------\n";
+  // std::cout << "   STAGE = " << stage << "\n";
+  // std::cout << "-------------------------------\n";
+
   if (stage == 1) {
     // For each Meshblock, initialize time abscissae of each memory register pair (u,b)
     // at stage=0 to correspond to the beginning of the interval [t^n, t^{n+1}]

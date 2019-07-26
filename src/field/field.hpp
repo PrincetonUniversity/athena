@@ -51,6 +51,29 @@ class Field {
   // TODO(kfelker): renmae bcc and bcc_center, bc and bcc?
   AthenaArray<Real> bcc_center;
 
+
+  // pencil decomposition:
+  AthenaArray<Real> by_W_; // R1
+  AthenaArray<Real> by_E_; // L1
+  AthenaArray<Real> bx_S_; // R2
+  AthenaArray<Real> bx_N_; // L2
+  AthenaArray<Real> bz_R1_, bz_L1_;
+  AthenaArray<Real> bz_R2_, bz_L2_;
+  AthenaArray<Real> by_R3_, by_L3_;
+  AthenaArray<Real> bx_R3_, bx_L3_;
+  AthenaArray<Real> v_NE_; // L2 L1
+  AthenaArray<Real> v_SE_; // R2 L1
+  AthenaArray<Real> v_NW_; // L2 R1
+  AthenaArray<Real> v_SW_; // R2 R1
+  AthenaArray<Real> v_R3R2_, v_R3L2_, v_L3R2_, v_L3L2_;
+  AthenaArray<Real> v_R3R1_, v_R3L1_, v_L3R1_, v_L3L1_;
+  AthenaArray<Real> vl_temp2_;
+  AthenaArray<Real> vr_temp2_;
+
+  AthenaArray<Real> v_NEb_;
+  AthenaArray<Real> v_NWb_;
+  AthenaArray<Real> bx_Nb_;
+
   // fourth-order UCT reconstructions at corners
   AthenaArray<Real> by_W; // R1
   AthenaArray<Real> by_E; // L1
