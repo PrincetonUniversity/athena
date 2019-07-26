@@ -372,10 +372,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     // initialize uniform interface B
     if (MAGNETIC_FIELDS_ENABLED) {
       Real b0 = pin->GetReal("problem", "b0");
-      b0 = b0/std::sqrt(4.0*(PI));
+      // b0 = b0/std::sqrt(4.0*(PI));
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie+1; i++) {
+            // For now, use sharp switch for face-averaged longitudinal B1 when following
+            // the x2 profile of the v1 velocity sign.
+            // E.g. central slab of fluid -0.5<=x2<=0.5 has v1=+1 velocity away from the
+            // interfaces. Outer slab has v1=-1 away from the interfaces
             if (std::abs(pcoord->x2v(j)) < 0.5) {
               pfield->b.x1f(k,j,i) = b0;
             } else {
