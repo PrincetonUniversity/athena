@@ -386,8 +386,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               pfield->b.x1f(k,j,i) = -b0;
             }
             // pfield->b.x1f(k,j,i) = b0*std::tanh((std::abs(pcoord->x2v(j)) - 0.5)/a);
+
+            // TODO(felker): compute integral of this profile on x1 face:
             // pfield->b.x1f(k,j,i) = b0*(std::tanh((pcoord->x2v(j) - z1)/a) -
             //                            std::tanh((pcoord->x2v(j) - z2)/a));
+
+            // compare to Daniel's KH_1e5_Dr0.py Dedalus script:
+            // B0 = 0.01
+            // Prandtl_m = 1.
+            // problem.parameters['eta'] = 1/Re/Prandtl_m
+            // Bx['g'] = B0 * ( np.tanh( (y-y_1)/a ) - np.tanh( (y-y_2)/a ) - 1 )
           }
         }
       }
