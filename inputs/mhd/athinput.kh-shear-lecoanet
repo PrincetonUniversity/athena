@@ -1,7 +1,7 @@
 <comment>
 problem   = Kelvin-Helmholtz instability
 reference = Lecoanet et al., MNRAS 455, 4274-4288, 2016
-configure = --prob=kh -hdf5 -h5double --nghost=4 --nscalars=1
+configure = --prob=kh -hdf5 -h5double --nghost=6 --nscalars=1
 
 <job>
 problem_id = kh-shear-lecoanet  # problem ID: basename of output filenames
@@ -66,3 +66,6 @@ drho_rho0 = 0.0          # stratified or unstratified problem (delta rho / rho0)
 nu_iso    = 2e-5         # isotropic viscosity coefficient
 nu_scalar_iso = 2e-5     # isotropic passive scalar diffusion coefficient
 kappa_iso = 2e-5         # isotropic thermal conduction coefficient
+eta_iso   = 2e-5         # Ohmic resistivity coefficient
+#b0     = 0.4             # with P0=10, plasma beta = 20/b0^2 = 125
+b0     = 0.1             # with P0=10, plasma beta = 20/b0^2 = 2000

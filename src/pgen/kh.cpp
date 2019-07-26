@@ -376,7 +376,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie+1; i++) {
-            pfield->b.x1f(k,j,i) = b0*std::tanh((std::abs(pcoord->x2v(j)) - 0.5)/a);
+            if (std::abs(pcoord->x2v(j)) < 0.5) {
+              pfield->b.x1f(k,j,i) = b0;
+            } else {
+              pfield->b.x1f(k,j,i) = -b0;
+            }
+            // pfield->b.x1f(k,j,i) = b0*std::tanh((std::abs(pcoord->x2v(j)) - 0.5)/a);
+            // pfield->b.x1f(k,j,i) = b0*(std::tanh((pcoord->x2v(j) - z1)/a) -
+            //                            std::tanh((pcoord->x2v(j) - z2)/a));
           }
         }
       }
