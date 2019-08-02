@@ -34,9 +34,9 @@
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) :
     nvar_(invar), maxreflevel_(pm->max_level-pm->root_level),
-    mode_(0), // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
+    mode_(2), // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
-    fsubtract_average_(false), ffas_(false), eps_(-1.0), cbuf_(nvar_,3,3,3) {
+    fsubtract_average_(false), ffas_(true), eps_(-1.0), cbuf_(nvar_,3,3,3) {
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
@@ -75,7 +75,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
   // *** this part should be modified when dedicate processes are allocated ***
   // *** we also need to construct another neighbor list for Multigrid ***
   ranklist_  = new int[pmy_mesh_->nbtotal];
-  for (int n=0; n<pmy_mesh_->nbtotal; n++)
+  for (int n=0; n<pmy_mesh_->nbtotal; ++n)
     ranklist_[n]=pmy_mesh_->ranklist[n];
   nranks_  = Globals::nranks;
   nslist_  = new int[nranks_];
@@ -91,7 +91,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
   int nv = nvar_;
   if (ffas_) nv*=2;
   // assume the same parallelization as hydro
-  for (int n=0; n<nranks_; n++) {
+  for (int n=0; n<nranks_; ++n) {
     nslist_[n]  = pmy_mesh_->nslist[n];
     nblist_[n]  = pmy_mesh_->nblist[n];
     nvslist_[n] = nslist_[n]*nv;
@@ -148,6 +148,7 @@ void MultigridDriver::SetupMultigrid() {
   os_ = mgroot_->ngh_;
   oe_ = os_+1;
 
+  // note: the level of an Octet is one level lower than the data stored there
   if (nreflevel_ > 0 && pmy_mesh_->amr_updated) {
     for (int l=0; l<maxreflevel_; ++l) { // clear old data
       octetmap_[l].clear();
@@ -204,7 +205,7 @@ void MultigridDriver::SetupMultigrid() {
 void MultigridDriver::SubtractAverage(MGVariable type) {
   for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
     Multigrid *pmg = *itr;
-    for (int v=0; v<nvar_; v++)
+    for (int v=0; v<nvar_; ++v)
       rootbuf_[pmg->pmy_block_->gid*nvar_+v] = pmg->CalculateTotal(type, v);
   }
 #ifdef MPI_PARALLEL
@@ -214,9 +215,9 @@ void MultigridDriver::SubtractAverage(MGVariable type) {
   Real vol = (pmy_mesh_->mesh_size.x1max - pmy_mesh_->mesh_size.x1min)
            * (pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min)
            * (pmy_mesh_->mesh_size.x3max - pmy_mesh_->mesh_size.x3min);
-  for (int v=0; v<nvar_; v++) {
+  for (int v=0; v<nvar_; ++v) {
     Real total = 0.0;
-    for (int n=0; n<pmy_mesh_->nbtotal; n++)
+    for (int n=0; n<pmy_mesh_->nbtotal; ++n)
       total += rootbuf_[n*nvar_+v];
     last_ave_ = total/vol;
     for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
@@ -255,7 +256,7 @@ void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
                    rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
 #endif
 
-  for (int n=0; n<pmy_mesh_->nbtotal; n++) {
+  for (int n=0; n<pmy_mesh_->nbtotal; ++n) {
     const LogicalLocation &loc=pmy_mesh_->loclist[n];
     int i = static_cast<int>(loc.lx1);
     int j = static_cast<int>(loc.lx2);
@@ -273,7 +274,7 @@ void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
       oloc.lx2 = (loc.lx2 >> 1);
       oloc.lx3 = (loc.lx3 >> 1);
       oloc.level = loc.level - 1;
-      int olev = oloc.level - pmy_mesh_->root_level;
+      int olev = oloc.level - (nrootlevel_ - 1);
       int oid = octetmap_[olev][oloc];
       int oi = (i&1) + ngh;
       int oj = (j&1) + ngh;
@@ -358,7 +359,7 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
       SetBoundariesOctets(true);
     ProlongateAndCorrectOctets();
     current_level_++;
-    for (int n=0; n<nsmooth; n++) {
+    for (int n=0; n<nsmooth; ++n) {
       SetBoundariesOctets(false);
       SmoothOctets(0);
       SetBoundariesOctets(false);
@@ -368,7 +369,7 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
     mgroot_->ProlongateAndCorrectBlock();
     current_level_++;
-    for (int n=0; n<nsmooth; n++) {
+    for (int n=0; n<nsmooth; ++n) {
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->SmoothBlock(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
@@ -403,7 +404,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
       StoreOldDataOctets();
       CalculateFASRHSOctets();
     }
-    for (int n=0; n<nsmooth; n++) {
+    for (int n=0; n<nsmooth; ++n) {
       SmoothOctets(0);
       SetBoundariesOctets(false);
       SmoothOctets(1);
@@ -416,7 +417,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
       mgroot_->StoreOldData();
       mgroot_->CalculateFASRHSBlock();
     }
-    for (int n=0; n<nsmooth; n++) {
+    for (int n=0; n<nsmooth; ++n) {
       mgroot_->SmoothBlock(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->SmoothBlock(1);
@@ -498,9 +499,10 @@ void MultigridDriver::SolveIterative() {
     SolveVCycle(1,1);
     Real olddef=def;
     def=0.0;
-    for (int n=0; n<nvar_; n++)
-      def+=CalculateDefectNorm(MGNormType::l2, n);
-    if (niter > 0 && def/olddef > 0.5) {
+    for (int v=0; v<nvar_; ++v)
+      def+=CalculateDefectNorm(MGNormType::l2, v);
+    std::cout << "after " << niter << " def = " << def << std::endl;
+    if (niter > 0 && def/olddef > 0.9) {
       if (eps_ == 0.0) break;
       if (Globals::my_rank == 0)
         std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
@@ -543,7 +545,7 @@ void MultigridDriver::SolveCoarsestGrid() {
       Real vol=(mgroot_->size_.x1max-mgroot_->size_.x1min)
               *(mgroot_->size_.x2max-mgroot_->size_.x2min)
               *(mgroot_->size_.x3max-mgroot_->size_.x3min);
-      for (int v=0; v<nvar_; v++) {
+      for (int v=0; v<nvar_; ++v) {
         Real ave=mgroot_->CalculateTotal(MGVariable::u, v)/vol;
         mgroot_->SubtractAverage(MGVariable::u, v, ave);
       }
@@ -553,7 +555,7 @@ void MultigridDriver::SolveCoarsestGrid() {
       mgroot_->StoreOldData();
       mgroot_->CalculateFASRHSBlock();
     }
-    for (int i=0; i<ni; i++) { // iterate ni times
+    for (int i=0; i<ni; ++i) { // iterate ni times
       mgroot_->SmoothBlock(0);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->SmoothBlock(1);
@@ -563,7 +565,7 @@ void MultigridDriver::SolveCoarsestGrid() {
       Real vol=(mgroot_->size_.x1max-mgroot_->size_.x1min)
               *(mgroot_->size_.x2max-mgroot_->size_.x2min)
               *(mgroot_->size_.x3max-mgroot_->size_.x3min);
-      for (int v=0; v<nvar_; v++) {
+      for (int v=0; v<nvar_; ++v) {
         Real ave=mgroot_->CalculateTotal(MGVariable::u, v)/vol;
         mgroot_->SubtractAverage(MGVariable::u, v, ave);
       }
@@ -659,7 +661,8 @@ void MultigridDriver::RestrictFMGSourceOctets() {
 
 void MultigridDriver::RestrictOctets() {
   const int &ngh = mgroot_->ngh_;
-  int lev = current_level_ - pmy_mesh_->root_level;
+  int lev = current_level_ - nrootlevel_;
+
   if (lev >= 1) { // fine octets to coarse octets
     for (int o=0; o<noctets_[lev]; ++o) {
       const LogicalLocation &loc = octets_[lev][o].loc;
@@ -672,6 +675,8 @@ void MultigridDriver::RestrictOctets() {
       int oi = (static_cast<int>(loc.lx1) & 1) + ngh;
       int oj = (static_cast<int>(loc.lx2) & 1) + ngh;
       int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
+      mgroot_->CalculateDefect(octets_[lev][o].def, octets_[lev][o].u,
+                               octets_[lev][o].src, lev+1, os_, oe_, os_, oe_, os_, oe_);
       mgroot_->Restrict(cbuf_, octets_[lev][o].def, os_, oe_, os_, oe_, os_, oe_);
       for (int v=0; v<nvar_; ++v)
         octets_[lev-1][oid].src(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
@@ -687,6 +692,8 @@ void MultigridDriver::RestrictOctets() {
       int ri = (loc.lx1 >> 1);
       int rj = (loc.lx2 >> 1);
       int rk = (loc.lx3 >> 1);
+      mgroot_->CalculateDefect(octets_[0][o].def, octets_[0][o].u,
+                               octets_[0][o].src, 1, os_, oe_, os_, oe_, os_, oe_);
       mgroot_->Restrict(cbuf_, octets_[0][o].def, os_, oe_, os_, oe_, os_, oe_);
       for (int v=0; v<nvar_; ++v)
         mgroot_->SetData(MGVariable::src, v, rk, rj, ri, cbuf_(v, ngh, ngh, ngh));
@@ -721,7 +728,7 @@ void MultigridDriver::ZeroClearAllOctets() {
 //  \brief store the old u data in the uold array in octets
 
 void MultigridDriver::StoreOldDataOctets() {
-  int lev = current_level_ - pmy_mesh_->root_level;
+  int lev = current_level_ - nrootlevel_;
 
   for (int o=0; o<noctets_[lev]; ++o)
     memcpy(octets_[lev][o].uold.data(), octets_[lev][o].u.data(),
@@ -735,11 +742,11 @@ void MultigridDriver::StoreOldDataOctets() {
 //! \fn void MultigridDriver::CalculateFASRHSOctets()
 //  \brief store the old u data in the uold array in octets
 void MultigridDriver::CalculateFASRHSOctets() {
-  int lev = current_level_ - pmy_mesh_->root_level;
+  int lev = current_level_ - nrootlevel_;
 
   for (int o=0; o<noctets_[lev]; ++o)
     mgroot_->CalculateFASRHS(octets_[lev][o].src, octets_[lev][o].u,
-                             os_, oe_, os_, oe_, os_, oe_);
+                             lev+1, os_, oe_, os_, oe_, os_, oe_);
 
   return;
 }
@@ -749,11 +756,11 @@ void MultigridDriver::CalculateFASRHSOctets() {
 //! \fn void MultigridDriver::SmoothOctets(int color)
 //  \brief Apply the smoothing operator on octets
 void MultigridDriver::SmoothOctets(int color) {
-  int lev = current_level_ - pmy_mesh_->root_level;
+  int lev = current_level_ - nrootlevel_;
 
   for (int o=0; o<noctets_[lev]; ++o)
     mgroot_->Smooth(octets_[lev][o].u, octets_[lev][o].src,
-                    os_, oe_, os_, oe_, os_, oe_, color);
+                    lev+1, os_, oe_, os_, oe_, os_, oe_, color);
 
   return;
 }
@@ -764,13 +771,12 @@ void MultigridDriver::SmoothOctets(int color) {
 //  \brief Prolongate and correct the potential in octets
 
 void MultigridDriver::ProlongateAndCorrectOctets() {
-  int clev = current_level_ - pmy_mesh_->root_level;
+  int clev = current_level_ - nrootlevel_;
   int flev = clev + 1;
   int ngh = mgroot_->ngh_;
   bool faceonly = false;
-  
 
-  if (clev == 0) {  // from root to octets
+  if (flev == 0) {  // from root to octets
     const AthenaArray<Real> &u = mgroot_->GetCurrentData();
     const AthenaArray<Real> &uold = mgroot_->u_[mgroot_->current_level_]; // dirty
     for (int o=0; o<noctets_[0]; ++o) { // octets to the root grid
@@ -790,7 +796,7 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
         mgroot_->ProlongateAndCorrect(octets_[0][o].u, cbuf_,
                                       ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh);
       } else {
-        mgroot_->ProlongateAndCorrect(octets_[0][o].u, cbuf_,
+        mgroot_->ProlongateAndCorrect(octets_[0][o].u, u,
                                       ri, ri, rj, rj, rk, rk, ngh, ngh, ngh);
       }
     }
@@ -827,11 +833,11 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
 //  \brief Prolongate the potential in octets for FMG
 
 void MultigridDriver::FMGProlongateOctets() {
-  int clev = current_level_ - pmy_mesh_->root_level;
+  int clev = current_level_ - nrootlevel_;
   int flev = clev + 1;
   int ngh = mgroot_->ngh_;
 
-  if (clev == 0) {  // from root to octets
+  if (flev == 0) {  // from root to octets
     for (int o=0; o<noctets_[0]; ++o) { // octets to the root grid
       const LogicalLocation &loc = octets_[0][o].loc;
       int ri = (loc.lx1 >> 1) + ngh;
@@ -866,7 +872,7 @@ void MultigridDriver::FMGProlongateOctets() {
 //  \brief Apply boundary conditions for octets
 
 void MultigridDriver::SetBoundariesOctets(bool fprolong) {
-  int lev = current_level_ - pmy_mesh_->root_level;
+  int lev = current_level_ - nrootlevel_;
   bool faceonly = false;
   if (!fprolong && mgroot_->btypef == BoundaryQuantity::mggrav_f)
     faceonly = true;
@@ -979,7 +985,7 @@ void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
 
 void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
                                                    const LogicalLocation &loc) {
-  int lev = current_level_ - pmy_mesh_->root_level;
+  int lev = current_level_ - nrootlevel_;
   int ngh = mgroot_->ngh_;
   Real time = pmy_mesh_->time;
   Real fac = 1.0/(static_cast<Real>(2<<lev));

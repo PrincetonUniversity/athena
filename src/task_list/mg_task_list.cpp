@@ -266,7 +266,6 @@ TaskStatus MultigridTaskList::ProlongateBoundary(Multigrid *pmg) {
 
 void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag) {
   ClearTaskList();
-  // nsmooth==0 should not be used
   if (flag==1) { // first time on the block level
     AddMultigridTask(MG_PROLONG, NONE);
   } else {
@@ -314,9 +313,11 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag) {
     AddMultigridTask(MG_CLEARBND2B,  MG_SMOOTH2B);
   }
   if (flag==2) { // last
-    if (nsmooth==1)
+    if (nsmooth==0)
+      AddMultigridTask(MG_STARTRECVL, MG_CLEARBND0);
+    else if (nsmooth==1)
       AddMultigridTask(MG_STARTRECVL, MG_CLEARBND1B);
-    else if (nsmooth==2)
+    else
       AddMultigridTask(MG_STARTRECVL, MG_CLEARBND2B);
     AddMultigridTask(MG_SENDBNDL, MG_STARTRECVL);
     AddMultigridTask(MG_RECVBNDL, MG_STARTRECVL);

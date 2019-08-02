@@ -110,11 +110,12 @@ class Multigrid {
 
   // physics-dependent virtual functions
   virtual void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                      int il, int iu, int jl, int ju, int kl, int ku, int color) = 0;
+               int rlev, int il, int iu, int jl, int ju, int kl, int ku, int color) = 0;
   virtual void CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
-    const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku) = 0;
-  virtual void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
+                               const AthenaArray<Real> &src, int rlev,
                                int il, int iu, int jl, int ju, int kl, int ku) = 0;
+  virtual void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
+                        int rlev, int il, int iu, int jl, int ju, int kl, int ku) = 0;
 
   friend class MultigridDriver;
   friend class MultigridTaskList;

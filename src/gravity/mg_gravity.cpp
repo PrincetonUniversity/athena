@@ -114,17 +114,18 @@ void MGGravityDriver::Solve(int stage) {
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
-//                              int il, int iu, int jl, int ju, int kl, int ku, int color)
+//            int rlev, int il, int iu, int jl, int ju, int kl, int ku, int color)
 //  \brief Implementation of the Red-Black Gauss-Seidel Smoother
+//         rlev = relative level from the finest level of this Multigrid block
 
-void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
+void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int rlev,
                        int il, int iu, int jl, int ju, int kl, int ku, int color) {
   int c = color;
-  int ll = nlevel_-1-current_level_;
-  Real dx = rdx_*static_cast<Real>(1<<ll);
+  Real dx;
+  if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
+  else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real dx2 = SQR(dx);
   Real isix = omega_/6.0;
-
   for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
       for (int i=il+c; i<=iu; i+=2)
@@ -143,13 +144,16 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::CalculateDefect(AthenaArray<Real> &def, 
 //                       const AthenaArray<Real> &u, const AthenaArray<Real> &src,
-//                       int il, int iu, int jl, int ju, int kl, int ku)
+//                       int rlev, int il, int iu, int jl, int ju, int kl, int ku)
 //  \brief Implementation of the Defect calculation
+//         rlev = relative level from the finest level of this Multigrid block
 
 void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
-     const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku) {
-  int ll = nlevel_-1-current_level_;
-  Real dx = rdx_*static_cast<Real>(1<<ll);
+                                const AthenaArray<Real> &src, int rlev,
+                                int il, int iu, int jl, int ju, int kl, int ku) {
+  Real dx;
+  if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
+  else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real idx2 = 1.0/SQR(dx);
   for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
@@ -166,13 +170,15 @@ void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> 
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::CalculateFASRHS(AthenaArray<Real> &src,
-//            const AthenaArray<Real> &u, int il, int iu, int jl, int ju, int kl, int ku)
+//   const AthenaArray<Real> &u, int rlev, int il, int iu, int jl, int ju, int kl, int ku)
 //  \brief Implementation of the RHS calculation for FAS
+//         rlev = relative level from the finest level of this Multigrid block
 
 void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> &u,
-                                int il, int iu, int jl, int ju, int kl, int ku) {
-  int ll = nlevel_-1-current_level_;
-  Real dx = rdx_*static_cast<Real>(1<<ll);
+                         int rlev, int il, int iu, int jl, int ju, int kl, int ku) {
+  Real dx;
+  if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
+  else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real idx2 = 1.0/SQR(dx);
   for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
@@ -198,7 +204,7 @@ void MGGravityDriver::SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
   const int i = ngh, j = ngh, k = ngh;
   const AthenaArray<Real> &u = dst;
   int ci, cj, ck;
-  if (loc.level - pmy_mesh_->root_level == 0) { // from root
+  if (loc.level == nrootlevel_ - 1) { // from root
     ci = loc.lx1;
     cj = loc.lx2;
     ck = loc.lx3;
@@ -218,50 +224,44 @@ void MGGravityDriver::SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
     int ig, fi;
     if (ox1 < 0) ig = 0,       fi = ngh;
     else         ig = ngh + 2, fi = ngh + 1;
-    for (int n=0; n<nvar_; ++n) {
-      Real cg = itw * (8.0*un(n, ck, cj, ci) + ((u(n, k,   j, fi) + u(n, k,   j+1, fi))
-                                             +  (u(n, k+1, j, fi) + u(n, k+1, j+1, fi))));
-      Real qdy = 0.25 * ((u(n, k+1, j+1, fi) - u(n, k+1, j,   fi))
-                       + (u(n, k,   j+1, fi) - u(n, k,   j,   fi)));
-      Real qdz = 0.25 * ((u(n, k+1, j+1, fi) - u(n, k,   j+1, fi))
-                       + (u(n, k+1, j,   fi) - u(n, k,   j,   fi)));
-      dst(n, k,   j,   ig) = cg - qdy - qdz;
-      dst(n, k,   j+1, ig) = cg + qdy - qdz;
-      dst(n, k+1, j,   ig) = cg - qdy + qdz;
-      dst(n, k+1, j+1, ig) = cg + qdy + qdz;
-    }
+    Real cg = itw * (8.0*un(0, ck, cj, ci) + ((u(0, k,   j, fi) + u(0, k,   j+1, fi))
+                                           +  (u(0, k+1, j, fi) + u(0, k+1, j+1, fi))));
+    Real qdy = 0.25 * ((u(0, k+1, j+1, fi) - u(0, k+1, j,   fi))
+                     + (u(0, k,   j+1, fi) - u(0, k,   j,   fi)));
+    Real qdz = 0.25 * ((u(0, k+1, j+1, fi) - u(0, k,   j+1, fi))
+                     + (u(0, k+1, j,   fi) - u(0, k,   j,   fi)));
+    dst(0, k,   j,   ig) = cg - qdy - qdz;
+    dst(0, k,   j+1, ig) = cg + qdy - qdz;
+    dst(0, k+1, j,   ig) = cg - qdy + qdz;
+    dst(0, k+1, j+1, ig) = cg + qdy + qdz;
   } else if (ox2 != 0) {
     int jg, fj;
     if (ox2 < 0) jg = 0,       fj = ngh;
     else         jg = ngh + 2, fj = ngh + 1;
-    for (int n=0; n<nvar_; ++n) {
-      Real cg = itw * (8.0 * un(n, ck, cj, ci) + ((u(n, k,   fj, i) + u(n, k,   fj, i+1))
-                                               +  (u(n, k+1, fj, i) + u(n, k+1, fj, i+1))));
-      Real qdx = 0.25 * ((u(n, k+1, fj, i+1) - u(n, k+1, fj, i))
-                       + (u(n, k,   fj, i+1) - u(n, k,   fj, i)));
-      Real qdz = 0.25 * ((u(n, k+1, fj, i+1) - u(n, k,   fj, i+1))
-                       + (u(n, k+1, fj, i  ) - u(n, k,   fj, i)));
-      dst(n, k,   jg, i  ) = cg - qdx - qdz;
-      dst(n, k,   jg, i+1) = cg + qdx - qdz;
-      dst(n, k+1, jg, i  ) = cg - qdx + qdz;
-      dst(n, k+1, jg, i+1) = cg + qdx + qdz;
-    }
-  } else { // (ox3 != 0)
+    Real cg = itw * (8.0 * un(0, ck, cj, ci) + ((u(0, k,   fj, i) + u(0, k,   fj, i+1))
+                                             +  (u(0, k+1, fj, i) + u(0, k+1, fj, i+1))));
+    Real qdx = 0.25 * ((u(0, k+1, fj, i+1) - u(0, k+1, fj, i))
+                     + (u(0, k,   fj, i+1) - u(0, k,   fj, i)));
+    Real qdz = 0.25 * ((u(0, k+1, fj, i+1) - u(0, k,   fj, i+1))
+                     + (u(0, k+1, fj, i  ) - u(0, k,   fj, i)));
+    dst(0, k,   jg, i  ) = cg - qdx - qdz;
+    dst(0, k,   jg, i+1) = cg + qdx - qdz;
+    dst(0, k+1, jg, i  ) = cg - qdx + qdz;
+    dst(0, k+1, jg, i+1) = cg + qdx + qdz;
+  } else if (ox3 != 0) {
     int kg, fk;
     if (ox3 < 0) kg = 0,       fk = ngh;
     else         kg = ngh + 2, fk = ngh + 1;
-    for (int n=0; n<nvar_; ++n) {
-      Real cg = itw * (8.0 * un(n, ck, cj, ci) + ((u(n, fk, j,   i) + u(n, fk, j,   i+1))
-                                               +  (u(n, fk, j+1, i) + u(n, fk, j+1, i+1))));
-      Real qdx = 0.25 * ((u(n, fk, j+1, i+1) - u(n, fk, j+1, i))
-                       + (u(n, fk, j,   i+1) - u(n, fk, j,   i)));
-      Real qdy = 0.25 * ((u(n, fk, j+1, i+1) - u(n, fk, j,   i+1))
-                       + (u(n, fk, j+1, i  ) - u(n, fk, j,   i)));
-      dst(n, kg, j,   i  ) = cg - qdx - qdy;
-      dst(n, kg, j,   i+1) = cg + qdx - qdy;
-      dst(n, kg, j+1, i  ) = cg - qdx + qdy;
-      dst(n, kg, j+1, i+1) = cg + qdx + qdy;
-    }
+    Real cg = itw * (8.0 * un(0, ck, cj, ci) + ((u(0, fk, j,   i) + u(0, fk, j,   i+1))
+                                             +  (u(0, fk, j+1, i) + u(0, fk, j+1, i+1))));
+    Real qdx = 0.25 * ((u(0, fk, j+1, i+1) - u(0, fk, j+1, i))
+                     + (u(0, fk, j,   i+1) - u(0, fk, j,   i)));
+    Real qdy = 0.25 * ((u(0, fk, j+1, i+1) - u(0, fk, j,   i+1))
+                     + (u(0, fk, j+1, i  ) - u(0, fk, j,   i)));
+    dst(0, kg, j,   i  ) = cg - qdx - qdy;
+    dst(0, kg, j,   i+1) = cg + qdx - qdy;
+    dst(0, kg, j+1, i  ) = cg - qdx + qdy;
+    dst(0, kg, j+1, i+1) = cg + qdx + qdy;
   }
 
   return;
