@@ -11,7 +11,7 @@
 # brackets e.g.
 # incorrect: private_files="{pub}"
 #   correct: private_files="pub"
-private_files="{pub,tst/ci,.travis.yml,.github,.github_changelog_generator,CONTRIBUTING.md,CHANGELOG.md}"
+private_files="{pub,tst/ci,.travis.yml,.codecov.yml,.github,.github_changelog_generator,CONTRIBUTING.md,CHANGELOG.md}"
 
 # Repo HTTPS URLs:
 # priv_repo_url="https://github.com/PrincetonUniversity/athena.git"
