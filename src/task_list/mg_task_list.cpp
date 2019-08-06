@@ -6,19 +6,19 @@
 //! \file mg_task_list.cpp
 //  \brief functions for MultigridTaskList class
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
 
-// Athena++ classes headers
+// Athena++ headers
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../multigrid/multigrid.hpp"
-
-// this class header
 #include "mg_task_list.hpp"
 
 using namespace MultigridTaskNames; // NOLINT (build/namespace)
@@ -28,20 +28,18 @@ using namespace MultigridTaskNames; // NOLINT (build/namespace)
 //  \brief completes all tasks in this list, will not return until all are tasks done
 
 void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd) {
-  Multigrid *pmg = pmd->pmg_;
   int nmg_left = pmd->GetNumMultigrids();
 
-  while (pmg != NULL)  {
+  for (auto itr = pmd->vmg_.begin(); itr<pmd->vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
     pmg->ts_.Reset(ntasks);
-    pmg=pmg->next;
   }
 
   // cycle through all MeshBlocks and perform all tasks possible
-  while(nmg_left > 0) {
-    pmg = pmd->pmg_;
-    while (pmg != NULL)  {
-      if (DoAllAvailableTasks(pmg, pmg->ts_) == TL_COMPLETE) nmg_left--;
-      pmg=pmg->next;
+  while (nmg_left > 0) {
+    for (auto itr = pmd->vmg_.begin(); itr<pmd->vmg_.end(); itr++) {
+      Multigrid *pmg = *itr;
+      if (DoAllAvailableTasks(pmg, pmg->ts_) == TaskListStatus::complete) nmg_left--;
     }
   }
 
@@ -50,31 +48,30 @@ void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn enum TaskListStatus MultigridTaskList::DoAllAvailableTasks
+//! \fn TaskListStatus MultigridTaskList::DoAllAvailableTasks
 //  \brief do all tasks that can be done (are not waiting for a dependency to be
 //  cleared) in this TaskList, return status.
 
-enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg,
-                                                           TaskState &ts) {
+TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskStates &ts) {
   int skip=0;
-  enum TaskStatus ret;
+  TaskStatus ret;
 
-  if (ts.num_tasks_left==0) return TL_NOTHING_TO_DO;
+  if (ts.num_tasks_left==0) return TaskListStatus::nothing_to_do;
 
   for (int i=ts.indx_first_task; i<ntasks; i++) {
     MGTask &taski=task_list_[i];
 
-    if ((taski.task_id & ts.finished_tasks) == 0LL) { // task not done
+    if (ts.finished_tasks.IsUnfinished(taski.task_id)) { // task not done
       // check if dependency clear
-      if (((taski.dependency & ts.finished_tasks) == taski.dependency)) {
+      if (ts.finished_tasks.CheckDependencies(taski.dependency)) {
         ret=(this->*task_list_[i].TaskFunc)(pmg);
-        if (ret!=TASK_FAIL) { // success
+        if (ret!=TaskStatus::fail) { // success
           ts.num_tasks_left--;
-          ts.finished_tasks |= taski.task_id;
+          ts.finished_tasks.SetFinished(taski.task_id);
           if (skip==0) ts.indx_first_task++;
-          if (ts.num_tasks_left==0) return TL_COMPLETE;
-          if (ret==TASK_NEXT) continue;
-          return TL_RUNNING;
+          if (ts.num_tasks_left==0) return TaskListStatus::complete;
+          if (ret==TaskStatus::next) continue;
+          return TaskListStatus::running;
         }
       }
       skip++; // increment number of tasks processed
@@ -83,210 +80,173 @@ enum TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg,
       ts.indx_first_task++;
     }
   }
-  return TL_STUCK; // there are still tasks to do but nothing can be done now
+  // there are still tasks to do but nothing can be done now
+  return TaskListStatus::stuck;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep)
+//! \fn void MultigridTaskList::AddMultigridTask(const TaskID& id, const TaskID& dep)
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
 //  value of ntask.
 
-void MultigridTaskList::AddMultigridTask(uint64_t id, uint64_t dep) {
+void MultigridTaskList::AddMultigridTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
-  switch(id) {
-    case (MG_STARTRECV0):
-    case (MG_STARTRECVL):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::StartReceive);
-      break;
-    case (MG_STARTRECV0F):
-    case (MG_STARTRECV1R):
-    case (MG_STARTRECV1B):
-    case (MG_STARTRECV2R):
-    case (MG_STARTRECV2B):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::StartReceiveFace);
-      break;
-    case (MG_CLEARBND0):
-    case (MG_CLEARBNDL):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::ClearBoundary);
-      break;
-    case (MG_CLEARBND0F):
-    case (MG_CLEARBND1R):
-    case (MG_CLEARBND1B):
-    case (MG_CLEARBND2R):
-    case (MG_CLEARBND2B):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::ClearBoundaryFace);
-      break;
-    case (MG_SENDBND0):
-    case (MG_SENDBNDL):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::SendBoundary);
-      break;
-    case (MG_SENDBND0F):
-    case (MG_SENDBND1R):
-    case (MG_SENDBND1B):
-    case (MG_SENDBND2R):
-    case (MG_SENDBND2B):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::SendBoundaryFace);
-      break;
-    case (MG_RECVBND0):
-    case (MG_RECVBNDL):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::ReceiveBoundary);
-      break;
-    case (MG_RECVBND0F):
-    case (MG_RECVBND1R):
-    case (MG_RECVBND1B):
-    case (MG_RECVBND2R):
-    case (MG_RECVBND2B):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::ReceiveBoundaryFace);
-      break;
-    case (MG_SMOOTH1R):
-    case (MG_SMOOTH2R):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::SmoothRed);
-      break;
-    case (MG_SMOOTH1B):
-    case (MG_SMOOTH2B):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::SmoothBlack);
-      break;
-    case (MG_PHYSBND0):
-    case (MG_PHYSBND1R):
-    case (MG_PHYSBND1B):
-    case (MG_PHYSBND2R):
-    case (MG_PHYSBND2B):
-    case (MG_PHYSBNDL):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::PhysicalBoundary);
-      break;
-    case (MG_RESTRICT):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::Restrict);
-      break;
-    case (MG_PROLONG):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::Prolongate);
-      break;
-    case (MG_FMGPROLONG):
-      task_list_[ntasks].TaskFunc=
-        static_cast<enum TaskStatus (MultigridTaskList::*)(Multigrid*)>
-                                    (&MultigridTaskList::FMGProlongate);
-      break;
-
-    default:
-      std::stringstream msg;
-      msg << "### FATAL ERROR in AddMultigridTask" << std::endl
-          << "Invalid Task "<< id << " is specified" << std::endl;
-      throw std::runtime_error(msg.str().c_str());
+  if (id == MG_STARTRECV0 || id == MG_STARTRECVL) {
+    task_list_[ntasks].TaskFunc=
+      static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+      (&MultigridTaskList::StartReceive);
+  } else if (id == MG_STARTRECV0F || id == MG_STARTRECV1R || id == MG_STARTRECV1B
+          || id == MG_STARTRECV2R || id == MG_STARTRECV2B) {
+    task_list_[ntasks].TaskFunc=
+      static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+      (&MultigridTaskList::StartReceiveFace);
+  } else if (id == MG_CLEARBND0 || id == MG_CLEARBNDL) {
+    task_list_[ntasks].TaskFunc=
+      static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+      (&MultigridTaskList::ClearBoundary);
+  } else if (id == MG_CLEARBND0F || id == MG_CLEARBND1R || id == MG_CLEARBND1B
+          || id == MG_CLEARBND2R || id == MG_CLEARBND2B) {
+    task_list_[ntasks].TaskFunc=
+      static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+      (&MultigridTaskList::ClearBoundaryFace);
+  } else if (id == MG_SENDBND0 || id == MG_SENDBNDL) {
+    task_list_[ntasks].TaskFunc=
+      static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+      (&MultigridTaskList::SendBoundary);
+  } else if (id == MG_SENDBND0F || id == MG_SENDBND1R || id == MG_SENDBND1B
+          || id == MG_SENDBND2R || id == MG_SENDBND2B) {
+    task_list_[ntasks].TaskFunc=
+      static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+      (&MultigridTaskList::SendBoundaryFace);
+  } else if (id == MG_RECVBND0 || id == MG_RECVBNDL) {
+    task_list_[ntasks].TaskFunc=
+      static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+      (&MultigridTaskList::ReceiveBoundary);
+  } else if (id == MG_RECVBND0F || id == MG_RECVBND1R || id == MG_RECVBND1B
+          || id == MG_RECVBND2R || id == MG_RECVBND2B) {
+    task_list_[ntasks].TaskFunc=
+      static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+      (&MultigridTaskList::ReceiveBoundaryFace);
+  } else if (id == MG_SMOOTH1R || id == MG_SMOOTH2R) {
+    task_list_[ntasks].TaskFunc=
+      static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+      (&MultigridTaskList::SmoothRed);
+  } else if (id == MG_SMOOTH1B || id == MG_SMOOTH2B) {
+    task_list_[ntasks].TaskFunc=
+      static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+      (&MultigridTaskList::SmoothBlack);
+  } else if (id == MG_PHYSBND0 || id == MG_PHYSBND1R || id == MG_PHYSBND1B
+          || id == MG_PHYSBND2R || id == MG_PHYSBND2B || id == MG_PHYSBNDL) {
+    task_list_[ntasks].TaskFunc=
+      static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+      (&MultigridTaskList::PhysicalBoundary);
+  } else if (id == MG_RESTRICT) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+        (&MultigridTaskList::Restrict);
+  } else if (id == MG_PROLONG) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+        (&MultigridTaskList::Prolongate);
+  } else if (id == MG_FMGPROLONG) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
+        (&MultigridTaskList::FMGProlongate);
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in AddMultigridTask" << std::endl
+        << "Invalid Task is specified" << std::endl;
+    ATHENA_ERROR(msg);
   }
   ntasks++;
   return;
 }
 
-enum TaskStatus MultigridTaskList::StartReceive(Multigrid *pmg) {
-  int nc=pmg->GetCurrentNumberOfCells();
+TaskStatus MultigridTaskList::StartReceive(Multigrid *pmg) {
+  int nc = pmg->GetCurrentNumberOfCells();
   pmg->pmgbval->StartReceivingMultigrid(nc, pmg->btype);
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }
 
-enum TaskStatus MultigridTaskList::StartReceiveFace(Multigrid *pmg) {
-  int nc=pmg->GetCurrentNumberOfCells();
+TaskStatus MultigridTaskList::StartReceiveFace(Multigrid *pmg) {
+  int nc = pmg->GetCurrentNumberOfCells();
   pmg->pmgbval->StartReceivingMultigrid(nc, pmg->btypef);
-  return TASK_SUCCESS;
+  return TaskStatus::success;
 }
 
-enum TaskStatus MultigridTaskList::ClearBoundary(Multigrid *pmg) {
+TaskStatus MultigridTaskList::ClearBoundary(Multigrid *pmg) {
   pmg->pmgbval->ClearBoundaryMultigrid(pmg->btype);
-  return TASK_NEXT;
+  return TaskStatus::next;
 }
 
-enum TaskStatus MultigridTaskList::ClearBoundaryFace(Multigrid *pmg) {
+TaskStatus MultigridTaskList::ClearBoundaryFace(Multigrid *pmg) {
   pmg->pmgbval->ClearBoundaryMultigrid(pmg->btypef);
-  return TASK_NEXT;
+  return TaskStatus::next;
 }
 
-enum TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg) {
-  int nc=pmg->GetCurrentNumberOfCells();
-  if (pmg->pmgbval->
-     SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)==false)
-    return TASK_FAIL;
-  return TASK_SUCCESS;
+TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg) {
+  int nc = pmg->GetCurrentNumberOfCells();
+  if (!(pmg->pmgbval->
+        SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)))
+    return TaskStatus::fail;
+  return TaskStatus::success;
 }
 
-enum TaskStatus MultigridTaskList::SendBoundaryFace(Multigrid *pmg) {
-  int nc=pmg->GetCurrentNumberOfCells();
-  if (pmg->pmgbval->
-     SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)==false)
-    return TASK_FAIL;
-  return TASK_SUCCESS;
+TaskStatus MultigridTaskList::SendBoundaryFace(Multigrid *pmg) {
+  int nc = pmg->GetCurrentNumberOfCells();
+  if (!(pmg->pmgbval->
+        SendMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)))
+    return TaskStatus::fail;
+  return TaskStatus::success;
 }
 
-enum TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg) {
-  int nc=pmg->GetCurrentNumberOfCells();
-  if (pmg->pmgbval->
-     ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)==false)
-    return TASK_FAIL;
-  return TASK_NEXT;
+TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg) {
+  int nc = pmg->GetCurrentNumberOfCells();
+  if (!(pmg->pmgbval->
+        ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btype)))
+    return TaskStatus::fail;
+  return TaskStatus::next;
 }
 
-enum TaskStatus MultigridTaskList::ReceiveBoundaryFace(Multigrid *pmg) {
-  int nc=pmg->GetCurrentNumberOfCells();
-  if (pmg->pmgbval->
-     ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)==false)
-    return TASK_FAIL;
-  return TASK_NEXT;
+TaskStatus MultigridTaskList::ReceiveBoundaryFace(Multigrid *pmg) {
+  int nc = pmg->GetCurrentNumberOfCells();
+  if (!(pmg->pmgbval->
+        ReceiveMultigridBoundaryBuffers(pmg->GetCurrentData(), nc, pmg->btypef)))
+    return TaskStatus::fail;
+  return TaskStatus::next;
 }
 
-enum TaskStatus MultigridTaskList::SmoothRed(Multigrid *pmg) {
+TaskStatus MultigridTaskList::SmoothRed(Multigrid *pmg) {
   pmg->Smooth(0);
-  return TASK_NEXT;
+  return TaskStatus::next;
 }
 
-enum TaskStatus MultigridTaskList::SmoothBlack(Multigrid *pmg) {
+TaskStatus MultigridTaskList::SmoothBlack(Multigrid *pmg) {
   pmg->Smooth(1);
-  return TASK_NEXT;
+  return TaskStatus::next;
 }
 
-enum TaskStatus MultigridTaskList::Restrict(Multigrid *pmg) {
+TaskStatus MultigridTaskList::Restrict(Multigrid *pmg) {
   pmg->Restrict();
-  return TASK_NEXT;
+  return TaskStatus::next;
 }
 
-enum TaskStatus MultigridTaskList::Prolongate(Multigrid *pmg) {
+TaskStatus MultigridTaskList::Prolongate(Multigrid *pmg) {
   pmg->ProlongateAndCorrect();
-  return TASK_NEXT;
+  return TaskStatus::next;
 }
 
-enum TaskStatus MultigridTaskList::FMGProlongate(Multigrid *pmg) {
+TaskStatus MultigridTaskList::FMGProlongate(Multigrid *pmg) {
   pmg->FMGProlongate();
-  return TASK_NEXT;
+  return TaskStatus::next;
 }
 
-enum TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg) {
+TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg) {
   pmg->pmgbval->ApplyPhysicalBoundaries();
-  return TASK_NEXT;
+  return TaskStatus::next;
 }
 
 

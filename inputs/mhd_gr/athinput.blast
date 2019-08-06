@@ -1,5 +1,6 @@
 <comment>
 problem = GR MHD spherical blast wave
+configure  = --prob=gr_blast -g -b --coord=minkowski
 
 <job>
 problem_id = gr_blast
@@ -13,9 +14,9 @@ dt        = 0.1
 cfl_number = 0.4
 nlim       = -1
 tlim       = 1.0
-integrator  = vl2       # time integration algorithm
-xorder      = 2         # order of spatial reconstruction
-ncycle_out  = 1         # interval for stdout summary info
+integrator = vl2  # time integration algorithm
+xorder     = 2    # order of spatial reconstruction
+ncycle_out = 1    # interval for stdout summary info
 
 <mesh>
 nx1    = 120       # number of cells in x-direction

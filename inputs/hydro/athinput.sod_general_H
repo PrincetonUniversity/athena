@@ -1,0 +1,78 @@
+<comment>
+problem   = A Sod-like shock tube for testing general EOS; initialize temp not pres
+reference = Sod, G.A., JCP 27, pp. 1-31 (1978)
+configure = --prob=shock_tube --eos=general/hydrogen
+
+<job>
+problem_id  = Sod       # problem ID: basename of output filenames
+
+<output1>
+file_type   = vtk       # vtk data dump
+variable    = prim      # variables to be output
+data_format = %12.5e    # Optional data format string
+dt          = 10        # time increment between outputs
+x2_slice    = 0.0       # slice in x2
+x3_slice    = 0.0       # slice in x3
+
+<output2>
+file_type   = hst       # History data dump
+dt          = 0.01      # time increment between outputs
+data_format = %12.5e    # Optional data format string
+
+<time>
+cfl_number  = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = -1        # cycle limit
+tlim        = 0.25      # time limit
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
+
+<mesh>
+nx1         = 256       # Number of zones in X1-direction
+x1min       = -0.5      # minimum value of X1
+x1max       = 0.5       # maximum value of X1
+ix1_bc      = outflow   # Inner-X1 boundary condition flag
+ox1_bc      = outflow   # Outer-X1 boundary condition flag
+
+nx2         = 1         # Number of zones in X2-direction
+x2min       = -0.5      # minimum value of X2
+x2max       = 0.5       # maximum value of X2
+ix2_bc      = periodic  # Inner-X2 boundary condition flag
+ox2_bc      = periodic  # Outer-X2 boundary condition flag
+
+nx3         = 1         # Number of zones in X3-direction
+x3min       = -0.5      # minimum value of X3
+x3max       = 0.5       # maximum value of X3
+ix3_bc      = periodic  # Inner-X3 boundary condition flag
+ox3_bc      = periodic  # Outer-X3 boundary condition flag
+
+num_threads = 1         # maximum number of OMP threads
+
+<hydro>
+gamma           = 1.4   # gamma = C_p/C_v
+iso_sound_speed = 1.0   # isothermal sound speed
+eos_file_name   = none  # Specify EOS table filename (if used)
+eos_file_type   = auto  # Specify EOS table file type [auto,ascii,binary,hdf5]
+
+<problem>
+shock_dir     = 1       # Shock Direction -- (1,2,3) = (x1,x2,x3)
+xshock        = 0.0     # position of initial interface
+compute_error = 0       # set value to one to compute L1 error
+
+dl = 1e-7               # density on left
+Tl = 0.15               # temperature
+ul = 0.0                # X-velocity
+vl = 0.0                # Y-velocity
+wl = 0.0                # Z-velocity
+bxl = 0.0               # X-magnetic field
+byl = 0.0               # Y-magnetic field
+bzl = 0.0               # Z-magnetic field
+
+dr = 1.25e-8            # density on right
+Tr = 0.062              # temperature
+ur = 0.0                # X-velocity
+vr = 0.0                # Y-velocity
+wr = 0.0                # Z-velocity
+bxr = 0.0               # X-magnetic field
+byr = 0.0               # Y-magnetic field
+bzr = 0.0               # Z-magnetic field

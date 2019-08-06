@@ -1,12 +1,15 @@
 # Test script for relativistic MHD linear wave convergence
 
 # Modules
+import logging
 import numpy as np
 import math
 import sys
 import scripts.utils.athena as athena
 sys.path.insert(0, '../../vis/python')
-import athena_read # noqa
+import athena_read  # noqa
+athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 # Parameters
 wave_flags = range(7)
@@ -27,6 +30,7 @@ bz = -1.2
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('sb',
                      prob='gr_linear_wave',
                      coord='cartesian',
@@ -60,7 +64,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
-
+    analyze_status = True
     # Specify tab file columns
     columns = (1, 2, 3, 4, 5, 6, 7, 8)
 
@@ -98,10 +102,10 @@ def analyze():
 
         # Test fails if convergence is not at least that specified by cutoff
         if epsilon_high / epsilon_low > (float(res_low) / float(res_high))**cutoff:
-            return False
+            analyze_status = False
 
-    # All waves must have converged
-    return True
+    # True --> all waves must have converged
+    return analyze_status
 
 
 # MHD wavespeed calculator

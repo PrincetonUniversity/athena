@@ -6,7 +6,9 @@
 //! \file multigrid_driver.cpp
 //  \brief implementation of functions in class MultigridDriver
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <algorithm>
 #include <cmath>
 #include <iostream>   // endl
@@ -17,7 +19,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals_mg.hpp"
+#include "../bvals/cc/mg/bvals_mg.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
@@ -29,7 +31,10 @@
 
 // constructor, initializes data structures and parameters
 
-MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int invar) {
+MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) :
+    nvar_(invar), mode_(),
+    nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
+    fperiodic_(false), eps_(-1.0) {
 }
 
 // destructor
@@ -37,19 +42,12 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc_t *MGBoundary, int inv
 MultigridDriver::~MultigridDriver() {
 }
 
-
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::AddMultigrid(Multigrid *nmg)
-//  \brief add a Multigrid object to the linked list
-void MultigridDriver::AddMultigrid(Multigrid *nmg) {
-}
-
-
-//----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SetupMultigrid(void)
+//! \fn void MultigridDriver::SetupMultigrid()
 //  \brief initialize the source assuming that the source terms are already loaded
 
-void MultigridDriver::SetupMultigrid(void) {
+void MultigridDriver::SetupMultigrid() {
+  return;
 }
 
 
@@ -58,30 +56,34 @@ void MultigridDriver::SetupMultigrid(void) {
 //  \brief Calculate the global average and subtract it
 
 void MultigridDriver::SubtractAverage(int type) {
+  return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::FillRootGridSource(void)
+//! \fn void MultigridDriver::FillRootGridSource()
 //  \brief collect the coarsest data and fill the root grid
 
-void MultigridDriver::FillRootGridSource(void) {
+void MultigridDriver::FillRootGridSource() {
+  return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::FMGProlongate(void)
+//! \fn void MultigridDriver::FMGProlongate()
 //  \brief Prolongation for FMG Cycle
 
-void MultigridDriver::FMGProlongate(void) {
+void MultigridDriver::FMGProlongate() {
+  return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::TransferFromRootToBlocks(void)
+//! \fn void MultigridDriver::TransferFromRootToBlocks()
 //  \brief Transfer the data from the root grid to the coarsest level of each MeshBlock
 
-void MultigridDriver::TransferFromRootToBlocks(void) {
+void MultigridDriver::TransferFromRootToBlocks() {
+  return;
 }
 
 
@@ -90,6 +92,7 @@ void MultigridDriver::TransferFromRootToBlocks(void) {
 //  \brief smoothing and restriction one level
 
 void MultigridDriver::OneStepToFiner(int nsmooth) {
+  current_level_++;
 }
 
 
@@ -106,6 +109,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
 //  \brief Solve the V-cycle starting from the current level
 
 void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth) {
+  return;
 }
 
 
@@ -114,30 +118,34 @@ void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth) {
 //  \brief Solve the F-cycle starting from the current level
 
 void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth) {
+  return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SolveFMGCycle(void)
+//! \fn void MultigridDriver::SolveFMGCycle()
 //  \brief Solve the FMG Cycle using the V(1,1) or F(0,1) cycle
 
-void MultigridDriver::SolveFMGCycle(void) {
+void MultigridDriver::SolveFMGCycle() {
+  return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SolveIterative(void)
+//! \fn void MultigridDriver::SolveIterative()
 //  \brief Solve iteratively until the convergence is achieved
 
-void MultigridDriver::SolveIterative(void) {
+void MultigridDriver::SolveIterative() {
+  return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SolveCoarsestGrid(void)
+//! \fn void MultigridDriver::SolveCoarsestGrid()
 //  \brief Solve the coarsest root grid
 
-void MultigridDriver::SolveCoarsestGrid(void) {
+void MultigridDriver::SolveCoarsestGrid() {
+  return;
 }
 
 
@@ -146,6 +154,7 @@ void MultigridDriver::SolveCoarsestGrid(void) {
 //  \brief calculate the defect norm
 
 Real MultigridDriver::CalculateDefectNorm(int n, int nrm) {
+  return 0.0;
 }
 
 
@@ -154,4 +163,5 @@ Real MultigridDriver::CalculateDefectNorm(int n, int nrm) {
 //  \brief return the Multigrid whose gid is tgid
 
 Multigrid* MultigridDriver::FindMultigrid(int tgid) {
+  return nullptr;
 }

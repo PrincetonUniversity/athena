@@ -1,7 +1,7 @@
 <comment>
-problem = Stratified 3D MRI with zero-net vertical flux
+problem   = Stratified 3D MRI with zero-net vertical flux
 reference = Stone, Hawley, Gammie, & Balbus
-config  = -shear -b --prob=strat --eos=isothermal
+configure = --prob=strat -shear -b --eos=isothermal
 
 <job>
 problem_id  = Strat      # problem ID: basename of output filenames

@@ -1,16 +1,20 @@
 # Test script for relativistic hydro shock tubes in GR with LLF without transforming
 
 # Modules
+import logging
 import numpy as np
 import sys
 import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
-import athena_read # noqa
+import athena_read  # noqa
+athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('g',
                      prob='gr_shock_tube',
                      coord='minkowski',
@@ -36,6 +40,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     headers = [('dens',), ('Etot',), ('mom', 0)]
     tols = [[0.02, 0.01, 0.01], [0.01, 0.01, 0.02], [0.01, 0.01, 0.02], [0.5, 0.01, 0.02]]
     for i in range(1, 5):
@@ -56,5 +61,5 @@ def analyze():
             eps = comparison.l1_diff(x_ref, array_ref, x_new, array_new)
             eps /= comparison.l1_norm(x_ref, array_ref)
             if eps > tol or np.isnan(eps):
-                return False
-    return True
+                analyze_status = False
+    return analyze_status

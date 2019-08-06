@@ -1,0 +1,368 @@
+amr_amr_linwave
+    Regression test based on Newtonian 2D MHD linear wave test problem with AMR
+    Runs a 2D linear wave test with AMR, using a refinement condition that tracks the
+    velocity maxima. Then checks L1 and L_infty (max) error. This test is very sensitive
+    to finding errors in AMR prolongation/restriction/boundaries
+
+curvilinear_blast_cyl
+    Regression test to check whether blast wave remains spherical in cylindrical coords
+
+curvilinear_blast_sph
+    Regression test to check whether blast wave remains spherical in spherical_polar coords
+
+diffusion_linear_wave3d
+    Regression test based on the decaying linear wave due to viscosity,
+    Ohmic resistivity and thermal conduction. The decay rate is fit and
+    then compared with analytic solution
+
+diffusion_linear_wave3d_sts
+    Regression test based on the decaying linear wave due to viscosity,
+    Ohmic resistivity and thermal conduction. The decay rate is fit and
+    then compared with analytic solution. This test employs STS.
+
+diffusion_resistive_diffusion
+    Regression test based on the diffusion of a Gaussian
+    magnetic field. Convergence of L1 norm of the error
+    in b is tested. Expected 2nd order conv. for explicit.
+
+diffusion_resistive_diffusion_sts
+    Regression test based on the diffusion of a Gaussian
+    magnetic field. Convergence of L1 norm of the error
+    in b is tested. Expected 1st order conv. for STS.
+
+diffusion_thermal_attenuation
+    Regression test based on the decaying linear wave due to thermal
+    conduction. The decay rate is fit and then compared with analytic
+    solution
+
+diffusion_thermal_attenuation_sts
+    Regression test based on the decaying linear wave due to thermal
+    conduction. The decay rate is fit and then compared with analytic
+    solution. This test employs STS.
+
+diffusion_viscous_diffusion
+    Regression test based on the diffusion of a Gaussian
+    velocity field. Convergence of L1 norm of the error
+    in v is tested. Expected 2nd order conv. for explicit.
+
+diffusion_viscous_diffusion_sts
+    Regression test based on the diffusion of a Gaussian
+    velocity field. Convergence of L1 norm of the error
+    in v is tested. Expected 1st order conv. for STS.
+
+eos_eos_hdf5_table
+    Regression test for general EOS 1D Sod shock tube with HDF5 tables.
+
+eos_eos_riemann
+    Regression test for general EOS 1D Riemann problems.
+
+eos_eos_comparison
+    Regression test for general EOS 1D Sod shock tube with ASCII plain-text tables.
+
+gr_compile_kerr_schild
+    Test script for checking that Kerr-Schild coordinates compile.
+
+gr_compile_minkowski
+    Test script for checking that Minkowski coordinates compile.
+
+gr_compile_schwarzschild
+    Test script for checking that Schwarzschild coordinates compile.
+
+gr_hydro_shocks_hllc
+    Test script for relativistic hydro shock tubes in GR with HLLC
+
+gr_hydro_shocks_hlle
+    Test script for relativistic hydro shock tubes in GR with HLLE
+
+gr_hydro_shocks_hlle_no_transform
+    Test script for relativistic hydro shock tubes in GR with HLLE without transforming
+
+gr_hydro_shocks_llf
+    Test script for relativistic hydro shock tubes in GR with LLF
+
+gr_hydro_shocks_llf_no_transform
+    Test script for relativistic hydro shock tubes in GR with LLF without transforming
+
+gr_mhd_shocks_hlld
+    Test script for relativistic MHD shock tubes in GR with HLLD
+
+gr_mhd_shocks_hlle
+    Test script for relativistic MHD shock tubes in GR with HLLE
+
+gr_mhd_shocks_llf
+    Test script for relativistic MHD shock tubes in GR with LLF
+
+grav_jeans_3d
+    Regression test based on Newtonian hydro linear wave convergence problem.
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). Overall test.
+
+grav_jeans_3d_fft
+    Regression test based on Newtonian hydro linear wave convergence problem.
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). Serial FFT execution.
+
+grav_jeans_3d_mpi_fft
+    Regression test based on Newtonian hydro linear wave convergence problem.
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). MPI FFT execution.
+
+grav_jeans_3d_mg
+    Regression test based on Newtonian hydro linear wave convergence problem.
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). Serial Multigrid execution.
+
+grav_jeans_3d_mpi_mg
+    Regression test based on Newtonian hydro linear wave convergence problem.
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). MPI Multigrid execution.
+
+grav_unstable_jeans_3d_fft
+    Regression test for self-gravity based on linear Jeans instability
+    using FFT gravity + no MPI.
+    Runs a 3D linear Jeans convergence test and checks L1 errors (which are
+    computed by the executable automatically and stored in the temporary file
+
+grav_unstable_jeans_3d_mg
+    Regression test for self-gravity based on linear Jeans instability
+    MG gravity + no MPI
+    Runs a linear convergence test checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    jeans-errors.dat)
+
+hybrid_hybrid_linwave
+    Regression test based on Newtonian MHD linear wave convergence problem with MPI+OpenMP
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). Overall test.
+
+hybrid_hybrid_linwave_serial
+    Regression test based on Newtonian MHD linear wave convergence problem with MPI+OpenMP
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). Serial execution.
+
+hybrid_hybrid_linwave_hybrid
+    Regression test based on Newtonian MHD linear wave convergence problem with MPI+OpenMP
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). OpenMP+MPI execution.
+
+hydro_hydro_linwave
+    Regression test based on Newtonian hydro linear wave convergence problem.
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat).
+
+hydro_sod_shock
+    Regression test based on Newtonian hydro Sod shock tube problem
+    Runs the Sod shock tube in x1, x2, and x3 directions successively, and checks errors
+    against the analytic solution (which are computed by the executable automatically and
+    stored in the temporary file shock_errors.dat). Overall test.
+
+hydro_sod_shock_hlle
+    Regression test based on Newtonian hydro Sod shock tube problem
+    Runs the Sod shock tube in x1, x2, and x3 directions successively, and checks errors
+    against the analytic solution (which are computed by the executable automatically and
+    stored in the temporary file shock_errors.dat). HLLE variant.
+
+hydro_sod_shock_hllc
+    Regression test based on Newtonian hydro Sod shock tube problem
+    Runs the Sod shock tube in x1, x2, and x3 directions successively, and checks errors
+    against the analytic solution (which are computed by the executable automatically and
+    stored in the temporary file shock_errors.dat). HLLC variant.
+
+hydro_sod_shock_roe
+    Regression test based on Newtonian hydro Sod shock tube problem
+    Runs the Sod shock tube in x1, x2, and x3 directions successively, and checks errors
+    against the analytic solution (which are computed by the executable automatically and
+    stored in the temporary file shock_errors.dat). Roe variant.
+
+hydro4_hydro_linwave_2d
+    Regression test based on Newtonian hydro linear wave convergence problem
+    Check errors of reconstruction and time integrator options other than default VL2+PLM
+    primitive reconstruction. In particular, confirm fourth-order convergence rate for
+    semidiscrete integration with RK4 + PPM + Laplacian flux correction terms. 2D uniform
+
+hydro4_hydro_linwave_3d
+    Regression test based on Newtonian hydro linear wave convergence problem
+    Confirm fourth-order convergence rate for semidiscrete integration with RK4 + PPM (char.
+    and primitive) + Laplacian flux correction terms. 3D uniform square grid, no SMR,
+    fourth-order accurate approximation to analytic solution used in initialization and in
+
+mhd_cpaw
+    Regression test based on MHD circularly polarized Alfven wave convergence problem
+    Runs an isothermal cpaw convergence test in 2D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat)
+
+mhd_mhd_linwave
+    Regression test based on Newtonian MHD linear wave convergence problem
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). Overall test.
+
+mhd_mhd_linwave_hlld
+    Regression test based on Newtonian MHD linear wave convergence problem
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). HLLD variant.
+
+mhd_mhd_linwave_roe
+    Regression test based on Newtonian MHD linear wave convergence problem
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). Roe variant.
+
+mhd_rj2a_shock
+    Regression test based on Newtonian MHD RJ2a shock tube problem
+    Runs the Ryu & Jones "2a" shock tube in x1, x2, and x3 directions successively, and
+    checks errors against the analytic solution (which are computed by the executable
+    automatically and stored in the temporary file shock_errors.dat). Overall test.
+
+mhd_rj2a_shock_hlld
+    Regression test based on Newtonian MHD RJ2a shock tube problem
+    Runs the Ryu & Jones "2a" shock tube in x1, x2, and x3 directions successively, and
+    checks errors against the analytic solution (which are computed by the executable
+    automatically and stored in the temporary file shock_errors.dat). HLLD variant.
+
+mhd_rj2a_shock_roe
+    Regression test based on Newtonian MHD RJ2a shock tube problem
+    Runs the Ryu & Jones "2a" shock tube in x1, x2, and x3 directions successively, and
+    checks errors against the analytic solution (which are computed by the executable
+    automatically and stored in the temporary file shock_errors.dat). Roe variant.
+
+mpi_mpi_linwave
+    Regression test based on Newtonian MHD linear wave convergence problem with MPI
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). Overall test.
+
+mpi_mpi_linwave_serial
+    Regression test based on Newtonian MHD linear wave convergence problem with MPI
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). Serial execution.
+
+mpi_mpi_linwave_mpi
+    Regression test based on Newtonian MHD linear wave convergence problem with MPI
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). MPI execution.
+
+omp_omp_linwave
+    Regression test based on Newtonian MHD linear wave convergence problem with OpenMP
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). Overall test.
+
+omp_omp_linwave_serial
+    Regression test based on Newtonian MHD linear wave convergence problem with OpenMP
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). Serial execution.
+
+omp_omp_linwave_omp
+    Regression test based on Newtonian MHD linear wave convergence problem with OpenMP
+    Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
+    are computed by the executable automatically and stored in the temporary file
+    linearwave_errors.dat). OpenMP execution.
+
+outputs_all_outputs
+    Regression test for all output types
+    Runs Orszag Tang vortex test, restarting the job twice and making history (hst),
+    formatted table (.tab), VTK, and HDF5 (if available) outputs. Then reads last
+    version of each file to make sure output data is correct
+
+pgen_hdf5_reader_parallel
+    Parallel test script for initializing problem with preexisting array
+
+pgen_hdf5_reader_serial
+    Serial test script for initializing problem with preexisting array
+
+pgen_pgen_compile
+    Test script to make sure all problem generator files in /src/pgen compile
+
+scalars_mignone_radial_1d
+    Regression test based on Mignone (2014) section 5.1.1 tests: radial advection of passive
+    scalar profiles in cylindrical and spherical-polar curvilinear coordinate systems. Tests
+    the importance of curvilinear corrections to PLM and PPM4 limiters and PPM4 stencil     
+    weights for interpolation of face-averages from cell-avergages.
+
+scalars_mignone_radial_1d_spherical_polar
+    Regression test based on Mignone (2014) section 5.1.1 tests: radial advection of passive
+    scalar profiles in cylindrical and spherical-polar curvilinear coordinate systems. Tests
+    the importance of curvilinear corrections to PLM and PPM4 limiters and PPM4 stencil     
+    weights for interpolation of face-averages from cell-avergages. --coord=spherical_polar
+
+scalars_mignone_radial_1d_cylindrical
+    Regression test based on Mignone (2014) section 5.1.1 tests: radial advection of passive
+    scalar profiles in cylindrical and spherical-polar curvilinear coordinate systems. Tests
+    the importance of curvilinear corrections to PLM and PPM4 limiters and PPM4 stencil     
+    weights for interpolation of face-averages from cell-avergages. --coord=cylindrical
+
+scalars_restart
+    Regression test to verify the ability use restart file to restart the code when using
+    passive scalars.
+    
+shearingbox_mri2d
+    Regression test of shearingbox with 2d MRI.
+
+shearingbox_mri3d
+    Regression test of shearing box with 3d MRI
+
+sr_hydro_convergence
+    Test script for relativistic hydro linear wave convergence
+
+sr_hydro_shocks_hllc
+    Test script for relativistic hydro shock tubes with HLLC
+
+sr_hydro_shocks_hlle
+    Test script for relativistic hydro shock tubes with HLLE
+
+sr_hydro_shocks_llf
+    Test script for relativistic hydro shock tubes with LLF
+
+sr_mhd_convergence
+    Test script for relativistic MHD linear wave convergence
+
+sr_mhd_shocks_hlld
+    Test script for relativistic MHD shock tubes with HLLD
+
+sr_mhd_shocks_hlle
+    Test script for relativistic MHD shock tubes with HLLE
+
+sr_mhd_shocks_llf
+    Test script for relativistic MHD shock tubes with LLF
+
+sr_sr_mhd_linwave
+    Regression test based on SR MHD linear wave convergence problem.
+    Runs a linear wave convergence test in 3D and checks L1 errors as saved by the
+    executable in linearwave-errors.dat.
+
+symmetry_hydro_linwave_aligned
+    Regression test based on Newtonian hydro linear wave convergence problem
+    Run grid-aligned linear waves in (x1) 1D, (x2) 2D, (x3) 3D and confirm symmetry in
+    errors. Uniform square grid, midpoint approximation used for initialization and in error
+    calculations. Setting CFL=0.3 for all runs.
+
+turb_turb_3d
+    Regression test based on intercomparison between serial and MPI runs.
+    Runs a driven turbulence test in 3D and checks L1 errors between
+    serial and MPI runs using kinetic energy history.
+
+turb_turb_3d_fft
+    Regression test based on intercomparison between serial and MPI runs.
+    Runs a driven turbulence test in 3D and checks L1 errors between
+    serial and MPI runs using kinetic energy history. Serial execution.
+
+turb_turb_3d_mpi_fft
+    Regression test based on intercomparison between serial and MPI runs.
+    Runs a driven turbulence test in 3D and checks L1 errors between
+    serial and MPI runs using kinetic energy history. MPI execution.
+

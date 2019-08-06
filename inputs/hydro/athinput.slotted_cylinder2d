@@ -1,0 +1,73 @@
+<comment>
+problem   = advection of a 2D slotted cylinder passive scalar profile
+reference = Zalesak, S.T., JCP 31, 335-362 (1979) (Figure 11, section VII)
+reference = Colella, P., et al, JCP 230, 2952–2976 (2011) (Figure 13, section 4.4.5)
+configure = --prob=slotted_cylinder --eos=isothermal --nscalars=1
+
+<job>
+problem_id = SlottedCylinder   # problem ID: basename of output filenames
+
+<output1>
+file_type  = hst       # History data dump
+dt         = 0.01      # time increment between outputs
+data_format = %.17g    # round trip conversion: binary64 <-> decimal
+
+<output2>
+file_type   = vtk      # Binary data dump
+variable    = prim     # variables to be output
+dt          = 0.01     # time increment between outputs
+
+<time>
+cfl_number = 0.4        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1         # cycle limit
+tlim       = 1.0        # time limit
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
+correct_ic  = false     # correct midpoint assumption in initial condition
+correct_err = false     # correct midpoint assumption in analytic solution
+dt_diagnostics = -1     # interval (in STS stages) for stdout extra dt info
+sts_max_dt_ratio = 100  # user-imposed limit for ratio dt/dt_parabolic for STS
+
+<mesh>
+nx1        = 100       # Number of zones in X1-direction
+x1min      = -0.5      # minimum value of X1
+x1max      = 0.5       # maximum value of X1
+ix1_bc     = periodic  # inner-X1 boundary flag
+ox1_bc     = periodic  # outer-X1 boundary flag
+
+nx2        = 100       # Number of zones in X2-direction
+x2min      = -0.5      # minimum value of X2
+x2max      = 0.5       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
+
+nx3        = 1         # Number of zones in X3-direction
+x3min      = -0.5      # minimum value of X3
+x3max      = 0.5       # maximum value of X3
+ix3_bc     = periodic  # inner-X2 boundary flag
+ox3_bc     = periodic  # outer-X2 boundary flag
+
+num_threads = 1        # maximum number of OMP threads
+refinement  = none
+
+<meshblock>
+nx1        = 100        # Number of zones in X1-direction
+nx2        = 100        # Number of zones in X2-direction
+nx3        = 1        # Number of zones in X3-direction
+
+<hydro>
+iso_sound_speed = 1.0     # isothermal sound speed
+active    = background    # compute Hydro fluxes, etc. but do NOT evolve the fluid
+
+<problem>
+compute_error = true   # set value to 'true' to compute L1 error compared to initial data
+radius     = 0.15      # Radius of the cylinder
+center_x1  = 0.00      # x1 position of cylinder center
+center_x2  = 0.25      # x2 position of cylinder center
+omega      = 1.0       # angular velocity of the advecting cylinder
+omega_x1   = 0.00      # x1 position of axis of rotation
+omega_x2   = 0.00      # x2 position of axis of rotation
+s_width    = 0.05      # Width of the slot
+s_height   = 0.25      # Height of the slot
+nu_scalar_iso = 0.0    # isotropic passive scalar diffusion coefficient

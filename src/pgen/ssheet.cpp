@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //======================================================================================
 //! \file ssheet.cpp
-//  \brief Shearing wave problem generator for 2D/3D problems.
+//  \brief Shearing wave problem generator for 2D problems.
 //  Several different initial conditions:
 //  - ipert = 0  pure shearing background flow
 //  - ipert = 1  shearing wave perturbed in velocity
@@ -14,7 +14,6 @@
 //======================================================================================
 
 // C headers
-#include <stdlib.h>   // exit
 
 // C++ headers
 #include <cmath>      // sqrt()
@@ -37,13 +36,14 @@
 #error "This problem generator requires shearing box"
 #endif
 
-static Real amp, nwx, nwy; // amplitude, Wavenumbers
-static int ipert; // initial pattern
-static Real gm1,iso_cs;
-static Real x1size,x2size,x3size;
-static Real Omega_0,qshear;
-static int shboxcoord;
-AthenaArray<Real> volume; // 1D array of volumes
+namespace {
+Real amp, nwx, nwy; // amplitude, Wavenumbers
+int ipert; // initial pattern
+Real gm1,iso_cs;
+Real x1size,x2size,x3size;
+Real Omega_0,qshear;
+int shboxcoord;
+} // namespace
 
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -63,22 +63,23 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   return;
 }
 
-
-
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Linear wave problem generator for 1D/2D/3D problems.
-//======================================================================================
+//  \brief
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
-      std::cout << "[ssheet.cpp]: only works on 2D grid" << std::endl;
-      exit(0);
+    std::stringstream msg;
+    msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
+        << "Shearing wave sheet only works on a 2D grid" << std::endl;
+    ATHENA_ERROR(msg);
   }
 
   if (MAGNETIC_FIELDS_ENABLED) {
-      std::cout << "[ssheet.cpp]: only works for hydro alone" << std::endl;
-      exit(0);
+    std::stringstream msg;
+    msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
+        << "Shearing wave sheet is currently incompatible with MHD" << std::endl;
+    ATHENA_ERROR(msg);
   }
 
   Real d0 = 1.0;
@@ -96,84 +97,79 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::cout << "p0 = " << p0 << std::endl;
   std::cout << "ipert  = " << ipert  << std::endl;
 
-
   x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
   x2size = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
   x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
   std::cout << "[ssheet.cpp]: [Lx,Ly,Lz] = [" <<x1size <<","<<x2size
             <<","<<x3size<<"]"<<std::endl;
 
-  Real kx = (2.0*PI/x1size)*(static_cast<Real>(nwx));
-  Real ky = (2.0*PI/x2size)*(static_cast<Real>(nwy));
+  Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
+  Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
 
-  Real x1,x2,rd,rp,rvx,rvy;
-// update the physical variables as initial conditions
-  //int nx1 = (ie-is)+1 + 2*(NGHOST);
-  //int nx2 = (je-js)+1 + 2*(NGHOST);
-  //int nx3 = (ke-ks)+1 + 2*(NGHOST);
-
+  Real x1, x2, rd, rp, rvx, rvy;
+  // update the physical variables as initial conditions
   for (int k=ks; k<=ke; k++) {
-  for (int j=js; j<=je; j++) {
-    for (int i=is; i<=ie; i++) {
-      x1 = pcoord->x1v(i);
-      x2 = pcoord->x2v(j);
-      rd = d0;
-      rp = p0;
-      if (ipert == 0) {
-        // 1) pure shear bg flow:
-        phydro->u(IDN,k,j,i) = rd;
-        phydro->u(IM1,k,j,i) = 0.0;
-        phydro->u(IM2,k,j,i) -= rd*(qshear*Omega_0*x1);
-        phydro->u(IM3,k,j,i) = 0.0;
-      } else if (ipert == 1) {
-        // 2) initialize with shwave in velocity
-        rvx = amp*iso_cs*sin(kx*x1 + ky*x2);
-        rvy = amp*iso_cs*(kx/ky)*sin(kx*x1 + ky*x2);
-        phydro->u(IDN,k,j,i) = rd;
-        phydro->u(IM1,k,j,i) = rd*rvx;
-        phydro->u(IM2,k,j,i) -= rd*(rvy + qshear*Omega_0*x1);
-        phydro->u(IM3,k,j,i) = 0.0;
-      } else if (ipert == 2) {
-        // 3) epicyclic oscillation
-        if (shboxcoord == 1) { // x-y shear
-          rvx = 0.1*iso_cs;
-          rvy = 0.0;
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        x1 = pcoord->x1v(i);
+        x2 = pcoord->x2v(j);
+        rd = d0;
+        rp = p0;
+        if (ipert == 0) {
+          // 1) pure shear bg flow:
+          phydro->u(IDN,k,j,i) = rd;
+          phydro->u(IM1,k,j,i) = 0.0;
+          phydro->u(IM2,k,j,i) -= rd*(qshear*Omega_0*x1);
+          phydro->u(IM3,k,j,i) = 0.0;
+        } else if (ipert == 1) {
+          // 2) initialize with shwave in velocity
+          rvx = amp*iso_cs*std::sin(kx*x1 + ky*x2);
+          rvy = amp*iso_cs*(kx/ky)*std::sin(kx*x1 + ky*x2);
           phydro->u(IDN,k,j,i) = rd;
           phydro->u(IM1,k,j,i) = rd*rvx;
           phydro->u(IM2,k,j,i) -= rd*(rvy + qshear*Omega_0*x1);
           phydro->u(IM3,k,j,i) = 0.0;
-        } else { // x-z plane
-          rvx = 0.1*iso_cs;
-          rvy = 0.0;
-          phydro->u(IDN,k,j,i) = rd;
-          phydro->u(IM1,k,j,i) = rd*rvx;
-          phydro->u(IM2,k,j,i) = 0.0;
-          phydro->u(IM3,k,j,i) = -rd*(rvy + qshear*Omega_0*x1);
+        } else if (ipert == 2) {
+          // 3) epicyclic oscillation
+          if (shboxcoord == 1) { // x-y shear
+            rvx = 0.1*iso_cs;
+            rvy = 0.0;
+            phydro->u(IDN,k,j,i) = rd;
+            phydro->u(IM1,k,j,i) = rd*rvx;
+            phydro->u(IM2,k,j,i) -= rd*(rvy + qshear*Omega_0*x1);
+            phydro->u(IM3,k,j,i) = 0.0;
+          } else { // x-z plane
+            rvx = 0.1*iso_cs;
+            rvy = 0.0;
+            phydro->u(IDN,k,j,i) = rd;
+            phydro->u(IM1,k,j,i) = rd*rvx;
+            phydro->u(IM2,k,j,i) = 0.0;
+            phydro->u(IM3,k,j,i) = -rd*(rvy + qshear*Omega_0*x1);
+          }
+        } else {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
+              << "Shearing wave sheet ipert=" << ipert << " is unrecognized" << std::endl;
+          ATHENA_ERROR(msg);
         }
-      } else {
-          std::cout << "[ssheet.cpp] ipert = " << ipert
-                    << " is unrecognized " <<std::endl;
-          exit(0);
-      }
-      if (NON_BAROTROPIC_EOS) {
-        phydro->u(IEN,k,j,i) = rp/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
-                                             SQR(phydro->u(IM2,k,j,i)) +
-                                             SQR(phydro->u(IM3,k,j,i))
-                                             ) / phydro->u(IDN,k,j,i);
+        if (NON_BAROTROPIC_EOS) {
+          phydro->u(IEN,k,j,i) = rp/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
+                                               SQR(phydro->u(IM2,k,j,i)) +
+                                               SQR(phydro->u(IM3,k,j,i))
+                                               ) / phydro->u(IDN,k,j,i);
+        }
       }
     }
-  }}
-
-
+  }
   return;
 }
 
 
 //======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
+//! \fn void MeshBlock::UserWorkInLoop()
 //  \brief User-defined work function for every time step
 //======================================================================================
-void MeshBlock::UserWorkInLoop(void) {
+void MeshBlock::UserWorkInLoop() {
   // nothing to do
   return;
 }

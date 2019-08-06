@@ -1,0 +1,68 @@
+<comment>
+problem   = Kelvin-Helmholtz instability
+reference = Lecoanet et al., MNRAS 455, 4274-4288, 2016
+configure = --prob=kh -hdf5 --nscalars=1
+
+<job>
+problem_id = kh-shear-lecoanet  # problem ID: basename of output filenames
+
+<output1>
+file_type  = hst       # History data dump
+dt         = 0.05      # time increment between outputs
+
+<output2>
+file_type  = hdf5      # HDF5 data dump
+variable   = prim      # variables to be output
+dt         = 0.05       # time increment between outputs
+
+<output3>
+file_type  = rst       # Restart dump
+dt         = 2.0       # time increment between outputs
+
+<time>
+cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = 1000000   # cycle limit
+tlim       = 10.0      # time limit
+integrator  = vl2      # time integration algorithm
+xorder      = 2        # order of spatial reconstruction
+ncycle_out  = 1000     # interval for stdout summary info
+correct_ic  = true     # correct midpoint assumption in initial condition
+dt_diagnostics = 0      # interval (in STS stages) for stdout extra dt info
+
+<mesh>
+nx1        = 128         # Number of zones in X1-direction
+x1min      = -0.5        # minimum value of X1
+x1max      = 0.5         # maximum value of X1
+ix1_bc     = periodic    # inner-X1 boundary flag
+ox1_bc     = periodic    # inner-X1 boundary flag
+
+nx2        = 256         # Number of zones in X2-direction
+x2min      = -1.0        # minimum value of X2
+x2max      = 1.0         # maximum value of X2
+ix2_bc     = periodic    # inner-X2 boundary flag
+ox2_bc     = periodic    # inner-X2 boundary flag
+
+nx3        = 1           # Number of zones in X3-direction
+x3min      = -0.5        # minimum value of X3
+x3max      = 0.5         # maximum value of X3
+ix3_bc     = periodic    # inner-X3 boundary flag
+ox3_bc     = periodic    # inner-X3 boundary flag
+
+<meshblock>
+nx1        = 64
+nx2        = 128
+nx3        = 1
+
+<hydro>
+iso_sound_speed = 1.0
+gamma           = 1.6666667    # gamma = C_p/C_v
+
+<problem>                # Default parameter values correspond to Re=10^5
+iprob  = 4
+amp    = 0.01            # amplitude of initial vy perturbation
+vflow  = 1.0             # relative shear velocity of 2x interfaces
+vboost = 0.0             # background vx for setting up a moving ref frame
+drho_rho0 = 0.0          # stratified or unstratified problem (delta rho / rho0)
+nu_iso    = 2e-5         # isotropic viscosity coefficient
+nu_scalar_iso = 2e-5     # isotropic passive scalar diffusion coefficient
+kappa_iso = 2e-5         # isotropic thermal conduction coefficient

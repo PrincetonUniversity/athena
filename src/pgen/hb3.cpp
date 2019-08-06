@@ -5,7 +5,7 @@
 //========================================================================================
 //! \file hb3.c
 //  \brief Problem generator for 2D MRI simulations using the shearing sheet
-//   based on "A powerful local shear instability in weakly magnetized disks.
+//   based on "A powerful local shear instability in weakly magnetized disks"
 //
 //  PURPOSE: Problem generator for 2D MRI simulations using the shearing sheet
 //    based on "A powerful local shear instability in weakly magnetized disks.
@@ -16,7 +16,7 @@
 //  - ipert = 1 - isentropic perturbations to P & d [default]
 //  - ipert = 2 - uniform Vx=amp, sinusoidal density
 //
-//  - ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
+//  - ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
 //  - ifield = 2 - uniform Bz
 //
 //  PRIVATE FUNCTION PROTOTYPES:
@@ -27,10 +27,8 @@
 //======================================================================================
 
 // C headers
-#include <stdlib.h>   // exit
 
 // C++ headers
-#include <cfloat>     // DBL_EPSILON
 #include <cmath>      // sqrt()
 #include <iostream>   // cout, endl
 #include <sstream>    // stringstream
@@ -56,15 +54,17 @@
 #error "This problem generator requires shearing box"
 #endif
 
-static Real amp, nwx, nwy; // amplitude, Wavenumbers
-static int ShBoxCoord, ipert,ifield; // initial pattern
-static Real beta,B0,pres;
-static Real gm1,iso_cs;
-static Real x1size,x2size,x3size;
-static Real Omega_0,qshear;
+namespace {
+Real amp, nwx, nwy; // amplitude, Wavenumbers
+int ShBoxCoord, ipert,ifield; // initial pattern
+Real beta, B0;
+Real gm1, iso_cs;
+Real x1size, x2size, x3size;
+Real Omega_0, qshear;
 AthenaArray<Real> volume; // 1D array of volumes
+Real HistoryBxBy(MeshBlock *pmb, int iout);
+} // namespace
 
-static Real hst_BxBy(MeshBlock *pmb, int iout);
 //======================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Init the Mesh properties
@@ -85,28 +85,30 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // enroll new history variables
   AllocateUserHistoryOutput(1);
-  EnrollUserHistoryOutput(0, hst_BxBy, "<-BxBy>");
+  EnrollUserHistoryOutput(0, HistoryBxBy, "<-BxBy>");
   return;
 }
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Linear wave problem generator for 1D/2D/3D problems.
-//======================================================================================
+//  \brief
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
-      std::cout << "[hb3.cpp]: only works on 2D grid" << std::endl;
-      exit(0);
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "Shearing sheet only works on a 2D grid" << std::endl;
+    ATHENA_ERROR(msg);
   }
 
 
   if (ShBoxCoord != 2) {
-      std::cout << "[hb3.cpp]: only works for x-z plane with ShBoxCoord = 2" << std::endl;
-      exit(0);
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "Shearing sheet only works for x-z plane with ShBoxCoord=2" << std::endl;
+    ATHENA_ERROR(msg);
   }
   // allocate 1D array for cell volume used in usr def history
-  int ncells1 = block_size.nx1 + 2*(NGHOST);
   volume.NewAthenaArray(ncells1);
 
   Real d0 = 1.0;
@@ -115,14 +117,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (NON_BAROTROPIC_EOS) {
     gm1 = (peos->GetGamma() - 1.0);
     iso_cs = std::sqrt((gm1+1.0)*p0/d0);
+    std::cout << "gamma  = " << peos->GetGamma() << std::endl;
   } else {
     iso_cs = peos->GetIsoSoundSpeed();
     p0 = d0*SQR(iso_cs);
+    std::cout << "iso_cs = " << iso_cs << std::endl;
   }
 
   B0 = std::sqrt(static_cast<Real>(2.0*p0/beta));
-  std::cout << "iso_cs = " << iso_cs << std::endl;
-  std::cout << "gamma  = " << peos->GetGamma() << std::endl;
   std::cout << "d0     = " << d0     << std::endl;
   std::cout << "p0     = " << p0     << std::endl;
   std::cout << "B0     = " << B0     << std::endl;
@@ -137,14 +139,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::cout << "[hb3.cpp]: [Lx,Lz,Ly] = [" <<x1size <<","<<x2size<<","<<x3size<<"]"
             << std::endl;
 
-  Real kx = (2.0*PI/x1size)*(static_cast<Real>(nwx));
-  Real kz = (2.0*PI/x2size)*(static_cast<Real>(nwy));
+  Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
+  // Real kz = (TWO_PI/x2size)*(static_cast<Real>(nwy));
 
-  Real x1,x2,x3,rd,rp,rval, rvx, rvy, rvz;
-  int64_t iseed = -1-gid; // Initialize on the first call to ran2
-// Initialize perturbations
-//   ipert = 1 - isentropic perturbations to P & d [default]
-//   ipert = 2 - uniform Vx=amp, sinusoidal density
+  Real x1, x2; //, x3;
+  Real rd, rp, rval;
+  Real rvx, rvy, rvz;
+  std::int64_t iseed = -1-gid; // Initialize on the first call to ran2
+  // Initialize perturbations
+  //   ipert = 1 - isentropic perturbations to P & d [default]
+  //   ipert = 2 - uniform Vx=amp, sinusoidal density
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       x1 = pcoord->x1v(i);
@@ -165,15 +169,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         rvx = 0.0;
       } else if (ipert == 2) {
         rp = p0;
-        rd = d0*(1.0+0.1*sin(static_cast<Real>(kx)*x1));
+        rd = d0*(1.0+0.1*std::sin(static_cast<Real>(kx)*x1));
         if (NON_BAROTROPIC_EOS) {
           rvx = amp*std::sqrt((gm1+1.0)*p0/d0);
         } else {
           rvx = amp*std::sqrt(p0/d0);
         }
       } else {
-          std::cout << "[hb3.cpp] ipert = " <<ipert <<" is unrecognized " <<std::endl;
-          exit(0);
+        std::stringstream msg;
+        msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+            << "Shearing sheet ipert=" << ipert << " is unrecognized" << std::endl;
+        ATHENA_ERROR(msg);
       }
       phydro->u(IDN,ks,j,i) = rd;
       phydro->u(IM1,ks,j,i) = rd*rvx;
@@ -182,58 +188,59 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       phydro->u(IM3,ks,j,i) -= rd*qshear*Omega_0*x1;
       if (NON_BAROTROPIC_EOS) {
         phydro->u(IEN,ks,j,i) = rp/gm1 +
-             0.5*(SQR(phydro->u(IM1,ks,j,i)) +
-                  SQR(phydro->u(IM2,ks,j,i)) +
-                  SQR(phydro->u(IM3,ks,j,i)))/rd;
+                                0.5*(SQR(phydro->u(IM1,ks,j,i)) +
+                                     SQR(phydro->u(IM2,ks,j,i)) +
+                                     SQR(phydro->u(IM3,ks,j,i)))/rd;
       }
 
-// Initialize magnetic field.  For 2D shearing box
-// B1=Bx, B2=Bz, B3=By
-// ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
-// ifield = 2 - uniform Bz
-// ifield = 3 - sinusiodal modes (Nordita workshop test)
+      // Initialize magnetic field.  For 2D shearing box
+      // B1=Bx, B2=Bz, B3=By
+      // ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
+      // ifield = 2 - uniform Bz
+      // ifield = 3 - sinusiodal modes (Nordita workshop test)
       if (MAGNETIC_FIELDS_ENABLED) {
         if (ifield == 1) {
           pfield->b.x1f(ks,j,i) = 0.0;
-          pfield->b.x2f(ks,j,i) = B0*(sin(static_cast<Real>(kx)*x1));
+          pfield->b.x2f(ks,j,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
           pfield->b.x3f(ks,j,i) = 0.0;
           if (i==ie) pfield->b.x1f(ks,j,ie+1) = 0.0;
-          if (j==je) pfield->b.x2f(ks,je+1,i) = B0*(sin(static_cast<Real>(kx)*x1));
+          if (j==je) pfield->b.x2f(ks,je+1,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
         } else if (ifield == 2) {
-            pfield->b.x1f(ks,j,i) = 0.0;
-            pfield->b.x2f(ks,j,i) = B0;
-            pfield->b.x3f(ks,j,i) = 0.0;
-            if (i==ie) pfield->b.x1f(ks,j,ie+1) = 0.0;
-            if (j==je) pfield->b.x2f(ks,je+1,i) = B0;
+          pfield->b.x1f(ks,j,i) = 0.0;
+          pfield->b.x2f(ks,j,i) = B0;
+          pfield->b.x3f(ks,j,i) = 0.0;
+          if (i==ie) pfield->b.x1f(ks,j,ie+1) = 0.0;
+          if (j==je) pfield->b.x2f(ks,je+1,i) = B0;
         } else {
-            std::cout << "[hb3.cpp] ifield = " <<ifield <<" is unrecognized " <<std::endl;
-            exit(0);
+          std::stringstream msg;
+          msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+              << "Shearing sheet ifield=" << ifield << " is unrecognized" << std::endl;
+          ATHENA_ERROR(msg);
         }
-          if (NON_BAROTROPIC_EOS) {
+        if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,ks,j,i) += 0.5*(
-                  SQR(0.5*(pfield->b.x1f(ks,j,i) + pfield->b.x1f(ks,j,i+1))) +
-                  SQR(0.5*(pfield->b.x2f(ks,j,i) + pfield->b.x2f(ks,j+1,i))) +
-                  SQR(pfield->b.x3f(ks,j,i)));
+              SQR(0.5*(pfield->b.x1f(ks,j,i) + pfield->b.x1f(ks,j,i+1))) +
+              SQR(0.5*(pfield->b.x2f(ks,j,i) + pfield->b.x2f(ks,j+1,i))) +
+              SQR(pfield->b.x3f(ks,j,i)));
         }
-      }
-
       }
     }
-
+  }
   return;
 }
 
 
 //======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop(void)
+//! \fn void MeshBlock::UserWorkInLoop()
 //  \brief User-defined work function for every time step
 //======================================================================================
-void MeshBlock::UserWorkInLoop(void) {
+void MeshBlock::UserWorkInLoop() {
   // nothing to do
   return;
 }
 
-static Real hst_BxBy(MeshBlock *pmb, int iout) {
+namespace {
+Real HistoryBxBy(MeshBlock *pmb, int iout) {
   Real bxby=0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
@@ -249,3 +256,4 @@ static Real hst_BxBy(MeshBlock *pmb, int iout) {
 
   return bxby;
 }
+} // namespace

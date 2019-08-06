@@ -1,0 +1,46 @@
+<comment>
+problem   = Testing and debugging the compiled EOS to ensure correct behavior.
+configure = --prob=eos_test
+
+<job>
+problem_id  = eos_test  # problem ID: basename of output filenames
+
+<time>
+cfl_number  = 0.8       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = 0         # cycle limit
+tlim        = 0         # time limit
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
+
+<mesh>
+nx1         = 16        # Number of zones in X1-direction
+x1min       = -0.5      # minimum value of X1
+x1max       = 0.5       # maximum value of X1
+ix1_bc      = outflow   # Inner-X1 boundary condition flag
+ox1_bc      = outflow   # Outer-X1 boundary condition flag
+
+nx2         = 1         # Number of zones in X2-direction
+x2min       = -0.5      # minimum value of X2
+x2max       = 0.5       # maximum value of X2
+ix2_bc      = periodic  # Inner-X2 boundary condition flag
+ox2_bc      = periodic  # Outer-X2 boundary condition flag
+
+nx3         = 1         # Number of zones in X3-direction
+x3min       = -0.5      # minimum value of X3
+x3max       = 0.5       # maximum value of X3
+ix3_bc      = periodic  # Inner-X3 boundary condition flag
+ox3_bc      = periodic  # Outer-X3 boundary condition flag
+
+num_threads = 1         # maximum number of OMP threads
+
+<hydro>
+gamma           = 1.4   # gamma = C_p/C_v
+iso_sound_speed = 1.0   # isothermal sound speed
+eos_file_name   = none  # Specify EOS table filename (if used)
+eos_file_type   = auto  # Specify EOS table file type [auto,ascii,binary,hdf5]
+
+<problem>
+print_table         = true  # Print whole EOS table
+exponentiate_table  = true  # Print 10^<table value>
+eos_loop            = true  # Run EOS user input test loop

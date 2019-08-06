@@ -10,71 +10,76 @@
 // - T. Miyoshi & K. Kusano, "A multi-state HLL approximate Riemann solver for ideal
 //   MHD", JCP, 208, 315 (2005)
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // max(), min()
 #include <cmath>      // sqrt()
 
 // Athena++ headers
-#include "../../hydro.hpp"
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
 #include "../../../eos/eos.hpp"
+#include "../../../mesh/mesh.hpp"
+#include "../../hydro.hpp"
 
 // container to store (density, momentum, total energy, tranverse magnetic field)
 // minimizes changes required to adopt athena4.2 version of this solver
-typedef struct Cons1D {
-  Real d,mx,my,mz,e,by,bz;
-} Cons1D;
+struct Cons1D {
+  Real d, mx, my, mz, e, by, bz;
+};
 
 #define SMALL_NUMBER 1.0e-8
 
 //----------------------------------------------------------------------------------------
 //! \fn
 
-void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju,
-  const int il, const int iu, const int ivx, const AthenaArray<Real> &bx,
-  AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-  AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
+void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+                          const int ivx, const AthenaArray<Real> &bx,
+                          AthenaArray<Real> &wl, AthenaArray<Real> &wr,
+                          AthenaArray<Real> &flx,
+                          AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-
   Real flxi[(NWAVE)];             // temporary variable to store flux
   Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
   Real spd[5];                    // signal speeds, left to right
 
-  Real gm1 = pmy_block->peos->GetGamma() - 1.0;
+  Real igm1;
+  EquationOfState *peos = pmy_block->peos;
+  if (!GENERAL_EOS) igm1 = 1.0 / (peos->GetGamma() - 1.0);
+  Real dt = pmy_block->pmy_mesh->dt;
 
-  for (int k=kl; k<=ku; ++k) {
-  for (int j=jl; j<=ju; ++j) {
 #pragma omp simd simdlen(SIMD_WIDTH) private(wli,wri,spd,flxi)
   for (int i=il; i<=iu; ++i) {
     Cons1D ul,ur;                   // L/R states, conserved variables (computed)
     Cons1D ulst,uldst,urdst,urst;   // Conserved variable for all states
     Cons1D fl,fr;                   // Fluxes for left & right states
 
-//--- Step 1.  Load L/R states into local variables
+    //--- Step 1.  Load L/R states into local variables
 
-    wli[IDN]=wl(IDN,k,j,i);
-    wli[IVX]=wl(ivx,k,j,i);
-    wli[IVY]=wl(ivy,k,j,i);
-    wli[IVZ]=wl(ivz,k,j,i);
-    wli[IPR]=wl(IPR,k,j,i);
-    wli[IBY]=wl(IBY,k,j,i);
-    wli[IBZ]=wl(IBZ,k,j,i);
+    wli[IDN]=wl(IDN,i);
+    wli[IVX]=wl(ivx,i);
+    wli[IVY]=wl(ivy,i);
+    wli[IVZ]=wl(ivz,i);
+    wli[IPR]=wl(IPR,i);
+    wli[IBY]=wl(IBY,i);
+    wli[IBZ]=wl(IBZ,i);
 
-    wri[IDN]=wr(IDN,k,j,i);
-    wri[IVX]=wr(ivx,k,j,i);
-    wri[IVY]=wr(ivy,k,j,i);
-    wri[IVZ]=wr(ivz,k,j,i);
-    wri[IPR]=wr(IPR,k,j,i);
-    wri[IBY]=wr(IBY,k,j,i);
-    wri[IBZ]=wr(IBZ,k,j,i);
+    wri[IDN]=wr(IDN,i);
+    wri[IVX]=wr(ivx,i);
+    wri[IVY]=wr(ivy,i);
+    wri[IVZ]=wr(ivz,i);
+    wri[IPR]=wr(IPR,i);
+    wri[IBY]=wr(IBY,i);
+    wri[IBZ]=wr(IBZ,i);
 
     Real bxi = bx(k,j,i);
 
     // Compute L/R states for selected conserved variables
     Real bxsq = bxi*bxi;
-    // (KGF): group transverse vector components for floating point associativity symmetry
+    // (KGF): group transverse vector components for floating-point associativity symmetry
     Real pbl = 0.5*(bxsq + (SQR(wli[IBY]) + SQR(wli[IBZ])));  // magnetic pressure (l/r)
     Real pbr = 0.5*(bxsq + (SQR(wri[IBY]) + SQR(wri[IBZ])));
     Real kel = 0.5*wli[IDN]*(SQR(wli[IVX]) + (SQR(wli[IVY]) + SQR(wli[IVZ])));
@@ -84,7 +89,11 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ul.mx = wli[IVX]*ul.d;
     ul.my = wli[IVY]*ul.d;
     ul.mz = wli[IVZ]*ul.d;
-    ul.e  = wli[IPR]/gm1 + kel + pbl;
+    if (GENERAL_EOS) {
+      ul.e  = peos->EgasFromRhoP(ul.d, wli[IPR]) + kel + pbl;
+    } else {
+      ul.e  = wli[IPR]*igm1 + kel + pbl;
+    }
     ul.by = wli[IBY];
     ul.bz = wli[IBZ];
 
@@ -92,29 +101,32 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ur.mx = wri[IVX]*ur.d;
     ur.my = wri[IVY]*ur.d;
     ur.mz = wri[IVZ]*ur.d;
-    ur.e  = wri[IPR]/gm1 + ker + pbr;
+    if (GENERAL_EOS) {
+      ur.e  = peos->EgasFromRhoP(ur.d, wri[IPR]) + ker + pbr;
+    } else {
+      ur.e  = wri[IPR]*igm1 + ker + pbr;
+    }
     ur.by = wri[IBY];
     ur.bz = wri[IBZ];
 
-//--- Step 2.  Compute left & right wave speeds according to Miyoshi & Kusano, eqn. (67)
+    //--- Step 2.  Compute L & R wave speeds according to Miyoshi & Kusano, eqn. (67)
 
     Real cfl = pmy_block->peos->FastMagnetosonicSpeed(wli,bxi);
     Real cfr = pmy_block->peos->FastMagnetosonicSpeed(wri,bxi);
 
     spd[0] = std::min( wli[IVX]-cfl, wri[IVX]-cfr );
     spd[4] = std::max( wli[IVX]+cfl, wri[IVX]+cfr );
-/*
-    Real cfmax = std::max(cfl,cfr);
-    if (wli[IVX] <= wri[IVX]) {
-      spd[0] = wli[IVX] - cfmax;
-      spd[4] = wri[IVX] + cfmax;
-    } else {
-      spd[0] = wri[IVX] - cfmax;
-      spd[4] = wli[IVX] + cfmax;
-    }
-*/
 
-//--- Step 3.  Compute L/R fluxes
+    // Real cfmax = std::max(cfl,cfr);
+    // if (wli[IVX] <= wri[IVX]) {
+    //   spd[0] = wli[IVX] - cfmax;
+    //   spd[4] = wri[IVX] + cfmax;
+    // } else {
+    //   spd[0] = wri[IVX] - cfmax;
+    //   spd[4] = wli[IVX] + cfmax;
+    // }
+
+    //--- Step 3.  Compute L/R fluxes
 
     Real ptl = wli[IPR] + pbl; // total pressures L,R
     Real ptr = wri[IPR] + pbr;
@@ -135,13 +147,13 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     fr.by = ur.by*wri[IVX] - bxi*wri[IVY];
     fr.bz = ur.bz*wri[IVX] - bxi*wri[IVZ];
 
-//--- Step 4.  Compute middle and Alfven wave speeds
+    //--- Step 4.  Compute middle and Alfven wave speeds
 
     Real sdl = spd[0] - wli[IVX];  // S_i-u_i (i=L or R)
     Real sdr = spd[4] - wri[IVX];
 
     // S_M: eqn (38) of Miyoshi & Kusano
-    // (KGF): group ptl, ptr terms for floating point associativity symmetry
+    // (KGF): group ptl, ptr terms for floating-point associativity symmetry
     spd[2] = (sdr*ur.mx - sdl*ul.mx + (ptl - ptr))/(sdr*ur.d - sdl*ul.d);
 
     Real sdml   = spd[0] - spd[2];  // S_i-S_M (i=L or R)
@@ -157,12 +169,12 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     Real sqrtdr = std::sqrt(urst.d);
 
     // eqn (51) of Miyoshi & Kusano
-    spd[1] = spd[2] - fabs(bxi)/sqrtdl;
-    spd[3] = spd[2] + fabs(bxi)/sqrtdr;
+    spd[1] = spd[2] - std::abs(bxi)/sqrtdl;
+    spd[3] = spd[2] + std::abs(bxi)/sqrtdr;
 
-//--- Step 5.  Compute intermediate states
+    //--- Step 5.  Compute intermediate states
     // eqn (23) explicitly becomes eq (41) of Miyoshi & Kusano
-    // TODO(kfelker): place an assertion that ptstl==ptstr
+    // TODO(felker): place an assertion that ptstl==ptstr
     Real ptstl = ptl + ul.d*sdl*(spd[2]-wli[IVX]);
     Real ptstr = ptr + ur.d*sdr*(spd[2]-wri[IVX]);
     // Real ptstl = ptl + ul.d*sdl*(sdl-sdml); // these equations had issues when averaged
@@ -171,7 +183,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
     // ul* - eqn (39) of M&K
     ulst.mx = ulst.d * spd[2];
-    if (fabs(ul.d*sdl*sdml-bxsq) < (SMALL_NUMBER)*ptst) {
+    if (std::abs(ul.d*sdl*sdml-bxsq) < (SMALL_NUMBER)*ptst) {
       // Degenerate case
       ulst.my = ulst.d * wli[IVY];
       ulst.mz = ulst.d * wli[IVZ];
@@ -190,16 +202,16 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       ulst.bz = ul.bz * tmp;
     }
     // v_i* dot B_i*
-    // (KGF): group transverse momenta terms for floating point associativity symmetry
+    // (KGF): group transverse momenta terms for floating-point associativity symmetry
     Real vbstl = (ulst.mx*bxi+(ulst.my*ulst.by+ulst.mz*ulst.bz))*ulst_d_inv;
     // eqn (48) of M&K
-    // (KGF): group transverse by, bz terms for floating point associativity symmetry
+    // (KGF): group transverse by, bz terms for floating-point associativity symmetry
     ulst.e = (sdl*ul.e - ptl*wli[IVX] + ptst*spd[2] +
               bxi*(wli[IVX]*bxi + (wli[IVY]*ul.by + wli[IVZ]*ul.bz) - vbstl))*sdml_inv;
 
-  // ur* - eqn (39) of M&K
+    // ur* - eqn (39) of M&K
     urst.mx = urst.d * spd[2];
-    if (fabs(ur.d*sdr*sdmr - bxsq) < (SMALL_NUMBER)*ptst) {
+    if (std::abs(ur.d*sdr*sdmr - bxsq) < (SMALL_NUMBER)*ptst) {
       // Degenerate case
       urst.my = urst.d * wri[IVY];
       urst.mz = urst.d * wri[IVZ];
@@ -218,10 +230,10 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       urst.bz = ur.bz * tmp;
     }
     // v_i* dot B_i*
-    // (KGF): group transverse momenta terms for floating point associativity symmetry
+    // (KGF): group transverse momenta terms for floating-point associativity symmetry
     Real vbstr = (urst.mx*bxi+(urst.my*urst.by+urst.mz*urst.bz))*urst_d_inv;
     // eqn (48) of M&K
-    // (KGF): group transverse by, bz terms for floating point associativity symmetry
+    // (KGF): group transverse by, bz terms for floating-point associativity symmetry
     urst.e = (sdr*ur.e - ptr*wri[IVX] + ptst*spd[2] +
               bxi*(wri[IVX]*bxi + (wri[IVY]*ur.by + wri[IVZ]*ur.bz) - vbstr))*sdmr_inv;
     // ul** and ur** - if Bx is near zero, same as *-states
@@ -240,13 +252,13 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
 
       // eqn (59) of M&K
       Real tmp = invsumd*(sqrtdl*(ulst.my*ulst_d_inv) + sqrtdr*(urst.my*urst_d_inv) +
-                 bxsig*(urst.by - ulst.by));
+                          bxsig*(urst.by - ulst.by));
       uldst.my = uldst.d * tmp;
       urdst.my = urdst.d * tmp;
 
       // eqn (60) of M&K
       tmp = invsumd*(sqrtdl*(ulst.mz*ulst_d_inv) + sqrtdr*(urst.mz*urst_d_inv) +
-            bxsig*(urst.bz - ulst.bz));
+                     bxsig*(urst.bz - ulst.bz));
       uldst.mz = uldst.d * tmp;
       urdst.mz = urdst.d * tmp;
 
@@ -266,7 +278,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
       urdst.e = urst.e + sqrtdr*bxsig*(vbstr - tmp);
     }
 
-//--- Step 6.  Compute flux
+    //--- Step 6.  Compute flux
     uldst.d = spd[1] * (uldst.d - ulst.d);
     uldst.mx = spd[1] * (uldst.mx - ulst.mx);
     uldst.my = spd[1] * (uldst.my - ulst.my);
@@ -363,8 +375,7 @@ void Hydro::RiemannSolver(const int kl, const int ku, const int jl, const int ju
     ey(k,j,i) = -flxi[IBY];
     ez(k,j,i) =  flxi[IBZ];
 
+    wct(k,j,i)=GetWeightForCT(flxi[IDN], wli[IDN], wri[IDN], dxw(i), dt);
   }
-  }}
-
   return;
 }

@@ -1,0 +1,71 @@
+codecov:
+  branch: master           # override the default branch defined on GitHub
+  ci:  # Custom CI domains if Codecov does not identify them automatically
+    - jenkins.princeton.edu
+    - !travis    # ignore these providers when checking if CI passed
+                 # ex. You may test on Travis, Circle, and AppVeyor, but only need
+                 # to check if Travis passes. Therefore add: !circle and !appveyor
+  notify:                  # Advanced global configuration section:
+    #after_n_builds: 0  # null # number of builds to recieve before sending notifications
+    require_ci_to_pass: yes   # yes: delay sending notifications until all ci finishes
+                              # no: send notifications without checking ci status and
+                              # wait till "after_n_builds" are uploaded
+    #countdown: 0  # null     # number of seconds to wait before first ci build check
+    #delay: 0      # null     # number of seconds to wait between ci build checks
+
+coverage:
+  precision: 2             # digits after decimal point to show coverage, default=2 xx.xx%
+  round: nearest           # down|up|nearest; default=down to round x% to above precision
+  range: "30...70"         # scale the color plot range, red to green. 70...100 is default
+  # (Athena++ target > 50% for files in src/)
+
+  status:                  # for reporting various types of statuses on GitHub
+    project:               # "project status" = overall coverage of lines in src/
+      default:             # (use non-default names to split multiple component projects)
+        enabled: yes       # must be yes|true to enable this status. off|no for disabling
+        target: "auto"     # auto*|number; minimum coverage ratio for "success" status
+                           # auto= % must be >= "base" (PR base or parent commit)
+                           # number= float,int,string for absolute coverage % minimum
+        threshold: 2%      # null*|number = allow coverage to drop by x% and still succeed
+        base: auto         # auto*|pr|parent = comparison for target=auto
+        branches: null     # null*|"master, branch1, ..."; null= all branches (default)
+        if_no_uploads: error  # error*|success|failure; report if no tracefile uploaded
+        if_not_found: success # error|success*|failure; report if no parent report found
+        if_ci_failed: error   # error*|success|failure; Codecov status if CI reports fail
+    patch:                 # restrict attention to lines directly modified in PR or commit
+      default: no          # same nested key/value options as "project" and "changes"
+      #enabled: no         # default statuses are project: yes, patch: yes, changes: no
+    changes: off           # measure changes in code coverage NOT in diff of PR or commit
+    # (e.g. if a new Python regression test is added that tests unchanged lines in src/)
+
+  notify:
+    slack:
+      default:
+        url: "https://hooks.slack.com/services/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"
+        threshold: null    # null|x; send message if coverage drops by more than x%
+        only_pulls: false  # false|true; false=send message for every PR or commit status
+        attachments: "sunburst, diff"  # the interactive sunburst graph, and diff snapshot
+        branches: null
+        flags: null
+        paths: null
+
+parsers:
+  gcov:                    # not caling Gcov in Codecov Bash uploader (-X gcov)
+    branch_detection:      # using default gcov key:value pairs
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+comment:                   # settings for codecov GitHub integration's comments on PRs
+  layout: "header, diff"   # header*, diff*, trends, uncovered, reach, flags, files, footer?
+  # message: "Coverage {{changed}} for {{owner}}/{{repo}}"  # customize the message
+  behavior: default        # update*|once|new|spammy; default= update, if comment exists
+  require_changes: no       # no*|yes= only post comment on PR if coverage % changes
+  require_base: no          # no*|yes= only post comment if there is a base coverage report
+  require_head: yes         # no|yes*= only post comment if there is a head coverage report
+  branches: null
+
+# Codecov YAML validation:
+# - curl -X POST --data-binary @.codecov.yml https://codecov.io/validate
+# - cat .codecov.yml | curl --data-binary @- https://codecov.io/validate

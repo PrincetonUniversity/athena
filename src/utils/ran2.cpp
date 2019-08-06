@@ -5,15 +5,17 @@
 //========================================================================================
 //! \file ran2.cpp
 
-// C++ headers
-#include <iostream>
-#include <cfloat>
+// C headers
 
-// Athena headers
+// C++ headers
+#include <cfloat>
+#include <iostream>
+
+// Athena++ headers
 #include "../athena.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn double ran2(int64_t *idum)
+//! \fn double ran2(std::int64_t *idum)
 //  \brief  Extracted from the Numerical Recipes in C (version 2) code. Modified
 //   to use doubles instead of floats. -- T. A. Gardiner -- Aug. 12, 2003
 //
@@ -21,7 +23,7 @@
 // shuffle and added safeguards.  Returns a uniform random deviate between 0.0 and 1.0
 // (exclusive of the endpoint values).  Call with idum = a negative integer to
 // initialize; thereafter, do not alter idum between successive deviates in a sequence.
-// RNMX should appriximate the largest floating point value that is less than 1.
+// RNMX should appriximate the largest floating-point value that is less than 1.
 
 #define IMR1 2147483563
 #define IMR2 2147483399
@@ -37,19 +39,21 @@
 #define NDIV (1+IMM1/NTAB)
 #define RNMX (1.0-DBL_EPSILON)
 
-double ran2(int64_t *idum) {
+double ran2(std::int64_t *idum) {
   int j;
-  int64_t k;
-  static int64_t idum2=123456789;
-  static int64_t iy=0;
-  static int64_t iv[NTAB];
+  std::int64_t k;
+  static std::int64_t idum2=123456789;
+  static std::int64_t iy=0;
+  static std::int64_t iv[NTAB];
   double temp;
 
   if (*idum <= 0) { // Initialize
-    if (-(*idum) < 1) *idum=1; // Be sure to prevent idum = 0
-    else *idum = -(*idum);
+    if (-(*idum) < 1)
+      *idum=1; // Be sure to prevent idum = 0
+    else
+      *idum = -(*idum);
     idum2=(*idum);
-    for (j=NTAB+7;j>=0;j--) { // Load the shuffle table (after 8 warm-ups)
+    for (j=NTAB+7; j>=0; j--) { // Load the shuffle table (after 8 warm-ups)
       k=(*idum)/IQ1;
       *idum=IA1*(*idum-k*IQ1)-k*IR1;
       if (*idum < 0) *idum += IMR1;
@@ -66,9 +70,13 @@ double ran2(int64_t *idum) {
   j=static_cast<int>(iy/NDIV);              // Will be in the range 0...NTAB-1
   iy=iv[j]-idum2;                // Here idum is shuffled, idum and idum2
   iv[j] = *idum;                 // are combined to generate output
-  if (iy < 1) iy += IMM1;
-  if ((temp=AM*iy) > RNMX) return RNMX; // No endpoint values
-  else return temp;
+  if (iy < 1)
+    iy += IMM1;
+
+  if ((temp=AM*iy) > RNMX)
+    return RNMX; // No endpoint values
+  else
+    return temp;
 }
 
 #undef IMR1

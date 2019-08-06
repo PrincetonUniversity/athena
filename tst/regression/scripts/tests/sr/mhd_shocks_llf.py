@@ -1,16 +1,20 @@
 # Test script for relativistic MHD shock tubes with LLF
 
 # Modules
+import logging
 import numpy as np
 import sys
 import scripts.utils.athena as athena
 import scripts.utils.comparison as comparison
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
+athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 # Prepare Athena++
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('bs',
                      prob='gr_shock_tube',
                      coord='cartesian',
@@ -41,6 +45,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
+    analyze_status = True
     headers_ref = [('dens',), ('Etot',), ('mom', 0), ('mom', 1), ('mom', 2), ('cc-B', 0),
                    ('cc-B', 1), ('cc-B', 2)]
     headers_new = [('dens',), ('Etot',), ('mom', 0), ('mom', 1), ('mom', 2), ('Bcc', 0),
@@ -66,9 +71,9 @@ def analyze():
             eps = comparison.l1_diff(x_ref, array_ref, x_new, array_new)
             if tol == 0.0:
                 if eps > 0.0:
-                    return False
+                    analyze_status = False
             else:
                 eps /= comparison.l1_norm(x_ref, array_ref)
                 if eps > tol or np.isnan(eps):
-                    return False
-    return True
+                    analyze_status = False
+    return analyze_status

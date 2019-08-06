@@ -1,11 +1,18 @@
 # Regression test of shearing box with 3d MRI
 
 # Modules
+import logging
 import numpy as np
 import scripts.utils.athena as athena
+import sys
+sys.path.insert(0, '../../vis/python')
+import athena_read  # noqa
+athena_read.check_nan_flag = True
+logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
 def prepare(**kwargs):
+    logger.debug('Running test ' + __name__)
     athena.configure('b', 'shear',
                      prob='hgb',
                      flux='hlld',
@@ -42,42 +49,36 @@ def analyze():
     pres = rho0 * cs**2
     vol = 1.0 * np.pi * 1.0
     index = -500
-    dtype_array = np.dtype([('me1', 'f8'), ('me2', 'f8'), ('me3', 'f8'),
-                            ('stress', 'f8')])
-    col_indices = (9, 10, 11, 12)
 
     fname = 'data/mhd_mri_3d.hst'
-    a = np.loadtxt(fname, dtype=dtype_array, skiprows=2, usecols=col_indices)
-    me = (a['me1'] + a['me2'] + a['me3'])
-    ref_stress = np.average(a['stress'][index:] / vol / pres)
+    a = athena_read.hst(fname)
+    me = (a['1-ME'] + a['2-ME'] + a['3-ME'])
+    ref_stress = np.average(a['-BxBy'][index:] / vol / pres)
     ref_me = np.average(me[index:] / vol / pres)
     ref_ratio = ref_me / ref_stress
 
     fname = 'bin/HGB.hst'
-    b = np.loadtxt(fname, dtype=dtype_array, skiprows=2, usecols=col_indices)
-    me = (b['me1'] + b['me2'] + b['me3'])
-    new_stress = np.average(b['stress'][index:] / vol / pres)
+    b = athena_read.hst(fname)
+    me = (b['1-ME'] + b['2-ME'] + b['3-ME'])
+    new_stress = np.average(b['-BxBy'][index:] / vol / pres)
     new_me = np.average(me[index:] / vol / pres)
     new_ratio = new_me / new_stress
 
-    print('[MRI-3D]: Ref(stress,ME,ratio) = {} {} {}'.format(ref_stress,
-                                                             ref_me,
-                                                             ref_ratio))
-    print('[MRI-3D]: New(stress,ME,ratio) = {} {} {}'.format(new_stress,
-                                                             new_me,
-                                                             new_ratio))
+    msg = '[MRI-3D]: {}(stress,ME,ratio) = {} {} {}'
+    logger.warning(msg.format('Ref', ref_stress, ref_me, ref_ratio))
+    logger.warning(msg.format('New', new_stress, new_me, new_ratio))
     flag = True
     error_rel = np.fabs((new_stress / ref_stress) - 1.0)
     if error_rel > 0.5:
-        print('[MRI-3D]: averaged stress is off by a factor > 2')
+        logger.warning('[MRI-3D]: averaged stress is off by a factor > 2')
         flag = False
     error_rel = np.fabs((new_me / ref_me) - 1.0)
     if error_rel > 0.5:
-        print('[MRI-3D]: averaged magnetic energy is off by a factor > 2')
+        logger.warning('[MRI-3D]: averaged magnetic energy is off by a factor > 2')
         flag = False
     error_rel = np.fabs(new_ratio - ref_ratio)
     if error_rel > 1.0:
-        print('[MRI-3D]: energy-to-stress ratio is off by an amount > 1.0')
+        logger.warning('[MRI-3D]: energy-to-stress ratio is off by an amount > 1.0')
         flag = False
 
     return flag

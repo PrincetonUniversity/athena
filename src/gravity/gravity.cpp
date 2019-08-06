@@ -6,55 +6,59 @@
 //! \file gravity.cpp
 //  \brief implementation of functions in class Gravity
 
-// C/C++ headers
+// C headers
+
+// C++ headers
 #include <iostream>
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
+#include <vector>
 
 // Athena++ headers
-#include "gravity.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
+#include "../bvals/cc/bvals_cc.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../bvals/bvals_grav.hpp"
+#include "gravity.hpp"
+#include "mg_gravity.hpp"
 
 // constructor, initializes data structures and parameters
 
-Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) {
-  pmy_block = pmb;
-  four_pi_G=pmb->pmy_mesh->four_pi_G_; // default: 4piG=1
-  if (four_pi_G==0.0) {
-   std::stringstream msg;
-   msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
+// TODO(felker): change "MeshBlock *pmb" to reference member, set in initializer list
+Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
+    pmy_block(pmb), phi(pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
+    four_pi_G(pmb->pmy_mesh->four_pi_G_),
+    grav_mean_rho(pmb->pmy_mesh->grav_mean_rho_),
+    gbvar(pmb, &phi, nullptr, empty_flux) {
+  if (four_pi_G == 0.0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitationalConstant or SetFourPiG function." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
-  grav_mean_rho=pmb->pmy_mesh->grav_mean_rho_;
-  if (grav_mean_rho==-1.0) {
-   std::stringstream msg;
-   msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
+
+  if (grav_mean_rho == -1.0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
         << "Background Mean Density must be set in the Mesh::InitUserMeshData "
         << "using the SetMeanDensity function." << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
     return;
   }
 
-  // Allocate memory for gravitational potential, but only when needed.
-  int ncells1 = pmb->block_size.nx1 + 2*(NGHOST);
-  int ncells2 = 1, ncells3 = 1;
-  if (pmb->block_size.nx2 > 1) ncells2 = pmb->block_size.nx2 + 2*(NGHOST);
-  if (pmb->block_size.nx3 > 1) ncells3 = pmb->block_size.nx3 + 2*(NGHOST);
+  // using Gravity as an example of: containing full object members instead of pointer
+  // memebers, construting BoundaryVariaable composite obj (no default ctor) in Gravity
+  // ctor initializer list, avoiding dynamically-managed memory and the need for a
+  // user-provided dtor.
 
-  phi.NewAthenaArray(ncells3,ncells2,ncells1);
+  // Enroll CellCenteredBoundaryVariable object
+  gbvar.bvar_index = pmb->pbval->bvars.size();
+  pmb->pbval->bvars.push_back(&gbvar);
 }
 
-// destructor
-
-Gravity::~Gravity() {
-  phi.DeleteAthenaArray();
-}
