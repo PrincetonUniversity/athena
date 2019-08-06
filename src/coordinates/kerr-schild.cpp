@@ -1842,8 +1842,9 @@ void KerrSchild::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int 
 //   e: 2D array for e_{(\hat{\mu})}^\nu:
 //     index 0: covariant orthonormal index
 //     index 1: contravariant coordinate index
-//   e_0: 1D array for {e_{(\hat{\mu})}}_0:
+//   e_cov: 2D array for {e_{(\hat{\mu})}}_\nu:
 //     index 0: covariant orthonormal index
+//     index 1: covariant coordinate index
 //   omega: 3D array for \omega^{\hat{\gamma}}_{\hat{\alpha}\hat{\beta}}:
 //     index 0: upper index
 //     index 1: first lower index
@@ -1853,7 +1854,7 @@ void KerrSchild::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int 
 //     "spherical" (Gram-Schmidt on t, theta, phi, r)
 
 void KerrSchild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
-    AthenaArray<Real> &e_0, AthenaArray<Real> &omega) {
+    AthenaArray<Real> &e_cov, AthenaArray<Real> &omega) {
 
   // Check tetrad
   if (rad_tetrad_ != "spherical") {
@@ -1956,9 +1957,11 @@ void KerrSchild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
 
   // Calculate covariant tetrad
   for (int i = 0; i < 4; ++i) {
-    e_0(i) = 0.0;
     for (int j = 0; j < 4; ++j) {
-      e_0(i) += g[0][j] * e(i,j);
+      e_cov(i,j) = 0.0;
+      for (int k = 0; k < 4; ++k) {
+        e_cov(i,j) += g[j][k] * e(i,k)
+      }
     }
   }
 

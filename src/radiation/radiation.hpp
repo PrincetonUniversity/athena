@@ -97,18 +97,24 @@ public:
 private:
 
   // Data arrays
-  AthenaArray<Real> n0_n_0_;    // n^0 n_0 at cell and angle centers
-  AthenaArray<Real> n1_n_0_;    // n^1 n_0 at x^1-faces and angle centers
-  AthenaArray<Real> n2_n_0_;    // n^2 n_0 at x^2-faces and angle centers
-  AthenaArray<Real> n3_n_0_;    // n^3 n_0 at x^3-faces and angle centers
-  AthenaArray<Real> na1_n_0_;   // n^zeta n_0 at cell centers and zeta-faces
-  AthenaArray<Real> na2_n_0_;   // n^psi n_0 at cell centers and psi-faces
-  AthenaArray<Real> prim_l_;    // left reconstructed state
-  AthenaArray<Real> prim_r_;    // right reconstructed state
-  AthenaArray<Real> area_l_;    // left face areas
-  AthenaArray<Real> area_r_;    // right face areas
-  AthenaArray<Real> vol_;       // cell volumes
-  AthenaArray<Real> flux_div_;  // flux divergences in spatial coordinates
+  AthenaArray<Real> n0_n_0_;        // n^0 n_0 at cell and angle centers
+  AthenaArray<Real> n1_n_0_;        // n^1 n_0 at x^1-faces and angle centers
+  AthenaArray<Real> n2_n_0_;        // n^2 n_0 at x^2-faces and angle centers
+  AthenaArray<Real> n3_n_0_;        // n^3 n_0 at x^3-faces and angle centers
+  AthenaArray<Real> na1_n_0_;       // n^zeta n_0 at cell centers and zeta-faces
+  AthenaArray<Real> na2_n_0_;       // n^psi n_0 at cell centers and psi-faces
+  AthenaArray<Real> prim_l_;        // left reconstructed state
+  AthenaArray<Real> prim_r_;        // right reconstructed state
+  AthenaArray<Real> area_l_;        // left face areas
+  AthenaArray<Real> area_r_;        // right face areas
+  AthenaArray<Real> vol_;           // cell volumes
+  AthenaArray<Real> flux_div_;      // flux divergences in spatial coordinates
+  AthenaArray<Real> norm_to_tet_;   // transformation from normal to tetrad frame
+  AthenaArray<Real> g_, gi_;        // metric and inverse
+  AthenaArray<Real> u_tet_;         // fluid 4-velocity in tetrad frame
+  AthenaArray<Real> n_cm_;          // unit null direction in comoving fluid frame
+  AthenaArray<Real> omega_cm_;      // solid angle in comoving fluid frame
+  AthenaArray<Real> intensity_cm_;  // intensity I in comoving fluid frame
 };
 
 #endif // RADIATION_RADIATION_HPP_

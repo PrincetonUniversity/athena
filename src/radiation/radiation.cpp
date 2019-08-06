@@ -228,10 +228,10 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   na2_n_0_.NewAthenaArray(num_cells_zeta, num_cells_psi + 1, pmb->ncells3, pmb->ncells2,
       pmb->ncells1);
 
-  // Allocate memory for tetrad and rotation coefficients
-  AthenaArray<Real> e, e_0, omega;
+  // Allocate memory for temporary geometric quantities
+  AthenaArray<Real> e, e_cov, omega;
   e.NewAthenaArray(4, 4);
-  e_0.NewAthenaArray(4);
+  e_cov.NewAthenaArray(4, 4);
   omega.NewAthenaArray(4, 4, 4);
 
   // Calculate n^0 n_0
@@ -241,14 +241,14 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
         Real x1 = pmb->pcoord->x1v(i);
         Real x2 = pmb->pcoord->x2v(j);
         Real x3 = pmb->pcoord->x3v(k);
-        pmb->pcoord->Tetrad(x1, x2, x3, e, e_0, omega);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
         for (int l = zs; l <= ze; ++l) {
           for (int m = ps; m <= pe; ++m) {
             Real n0 = 0.0;
             Real n_0 = 0.0;
             for (int n = 0; n < 4; ++n) {
               n0 += e(n,0) * nh_cc(n,l,m);
-              n_0 += e_0(n) * nh_cc(n,l,m);
+              n_0 += e_cov(n,0) * nh_cc(n,l,m);
             }
             n0_n_0_(l,m,k,j,i) = n0 * n_0;
           }
@@ -264,14 +264,14 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
         Real x1 = pmb->pcoord->x1f(i);
         Real x2 = pmb->pcoord->x2v(j);
         Real x3 = pmb->pcoord->x3v(k);
-        pmb->pcoord->Tetrad(x1, x2, x3, e, e_0, omega);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
         for (int l = zs; l <= ze; ++l) {
           for (int m = ps; m <= pe; ++m) {
             Real n1 = 0.0;
             Real n_0 = 0.0;
             for (int n = 0; n < 4; ++n) {
               n1 += e(n,1) * nh_cc(n,l,m);
-              n_0 += e_0(n) * nh_cc(n,l,m);
+              n_0 += e_cov(n,0) * nh_cc(n,l,m);
             }
             n1_n_0_(l,m,k,j,i) = n1 * n_0;
           }
@@ -287,14 +287,14 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
         Real x1 = pmb->pcoord->x1v(i);
         Real x2 = pmb->pcoord->x2f(j);
         Real x3 = pmb->pcoord->x3v(k);
-        pmb->pcoord->Tetrad(x1, x2, x3, e, e_0, omega);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
         for (int l = zs; l <= ze; ++l) {
           for (int m = ps; m <= pe; ++m) {
             Real n2 = 0.0;
             Real n_0 = 0.0;
             for (int n = 0; n < 4; ++n) {
               n2 += e(n,2) * nh_cc(n,l,m);
-              n_0 += e_0(n) * nh_cc(n,l,m);
+              n_0 += e_cov(n,0) * nh_cc(n,l,m);
             }
             n2_n_0_(l,m,k,j,i) = n2 * n_0;
           }
@@ -310,14 +310,14 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
         Real x1 = pmb->pcoord->x1v(i);
         Real x2 = pmb->pcoord->x2v(j);
         Real x3 = pmb->pcoord->x3f(k);
-        pmb->pcoord->Tetrad(x1, x2, x3, e, e_0, omega);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
         for (int l = zs; l <= ze; ++l) {
           for (int m = ps; m <= pe; ++m) {
             Real n3 = 0.0;
             Real n_0 = 0.0;
             for (int n = 0; n < 4; ++n) {
               n3 += e(n,3) * nh_cc(n,l,m);
-              n_0 += e_0(n) * nh_cc(n,l,m);
+              n_0 += e_cov(n,0) * nh_cc(n,l,m);
             }
             n3_n_0_(l,m,k,j,i) = n3 * n_0;
           }
@@ -333,7 +333,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
         Real x1 = pmb->pcoord->x1v(i);
         Real x2 = pmb->pcoord->x2v(j);
         Real x3 = pmb->pcoord->x3v(k);
-        pmb->pcoord->Tetrad(x1, x2, x3, e, e_0, omega);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
         for (int l = zs; l <= ze+1; ++l) {
           for (int m = ps; m <= pe; ++m) {
             Real na1 = 0.0;
@@ -345,7 +345,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
             }
             Real n_0 = 0.0;
             for (int n = 0; n < 4; ++n) {
-              n_0 += e_0(n) * nh_fc(n,l,m);
+              n_0 += e_cov(n,0) * nh_fc(n,l,m);
             }
             na1_n_0_(l,m,k,j,i) = na1 * n_0;
           }
@@ -361,7 +361,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
         Real x1 = pmb->pcoord->x1v(i);
         Real x2 = pmb->pcoord->x2v(j);
         Real x3 = pmb->pcoord->x3v(k);
-        pmb->pcoord->Tetrad(x1, x2, x3, e, e_0, omega);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
         for (int l = zs; l <= ze; ++l) {
           for (int m = ps; m <= pe+1; ++m) {
             Real na2 = 0.0;
@@ -373,7 +373,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
             }
             Real n_0 = 0.0;
             for (int n = 0; n < 4; ++n) {
-              n_0 += e_0(n) * nh_cf(n,l,m);
+              n_0 += e_cov(n,0) * nh_cf(n,l,m);
             }
             na2_n_0_(l,m,k,j,i) = na2 * n_0;
           }
@@ -391,6 +391,60 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   area_r_.NewAthenaArray(pmb->ncells1 + 1);
   vol_.NewAthenaArray(pmb->ncells1 + 1);
   flux_div_.NewAthenaArray(nang, pmb->ncells1 + 1);
+
+  // Allocate memory for source term frame transformations
+  norm_to_tet_.NewAthenaArray(4, 4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+  g_.NewAthenaArray(NMETRIC, pmb->ncells1);
+  gi_.NewAthenaArray(NMETRIC, pmb->ncells1);
+  u_tet_.NewAthenaArray(4, pmb->ncells1);
+  n_cm_.NewAthenaArray(4, nzeta * npsi, pmb->ncells1);
+  omega_cm_.NewAthenaArray(nzeta * npsi, pmb->ncells1);
+  intensity_cm_.NewAthenaArray(nzeta * npsi, pmb->ncells1);
+
+  // Calculate transformation from normal frame to tetrad frame
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
+      for (int i = is; i <= ie; ++i) {
+
+        // Set Minkowski metric
+        Real eta[4][4] = {};
+        eta[0][0] = -1.0;
+        eta[1][1] = 1.0;
+        eta[2][2] = 1.0;
+        eta[3][3] = 1.0;
+
+        // Calculate coordinate-to-tetrad transformation
+        Real x1 = pmb->pcoord->x1v(i);
+        Real x2 = pmb->pcoord->x2v(j);
+        Real x3 = pmb->pcoord->x3v(k);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
+
+        // Calculate normal-to-coordinate transformation
+        Real norm_to_coord[4][4] = {};
+        Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
+        norm_to_coord[0][0] = 1.0 / alpha;
+        norm_to_coord[1][0] = -alpha * gi_(I01,i);
+        norm_to_coord[2][0] = -alpha * gi_(I02,i);
+        norm_to_coord[3][0] = -alpha * gi_(I03,i);
+        norm_to_coord[1][1] = 1.0;
+        norm_to_coord[2][2] = 1.0;
+        norm_to_coord[3][3] = 1.0;
+
+        // Concatenate transformations
+        for (int m = 0; m < 4; ++m) {
+          for (int n = 0; n < 4; ++n) {
+            norm_to_tet_(m,n,k,j,i) = 0.0;
+            for (int p = 0; p < 4; ++p) {
+              for (int q = 0; q < 4; ++q) {
+                norm_to_tet_(m,n,k,j,i) += eta[m][p] * e_cov(p,q) * norm_to_coord[q][n];
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 //----------------------------------------------------------------------------------------
@@ -989,14 +1043,83 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
 // Inputs:
 //   time: time of simulation
 //   dt: simulation timestep
-//   prim_in: primitive intensity
-//   cons_out: conserved intensity
+//   prim_rad: primitive intensity at beginning of stage
+//   prim_hydro: primitive hydro variables at beginning of stage
+//   cons_rad: conserved intensity after stage integration
+//   cons_hydro: conserved hydro variables after stage integration
 // Outputs:
-//   cons_out: conserved intensity set
+//   cons: conserved intensity updated
+//   cons_hydro: conserved hydro variables updated
 void Radiation::AddSourceTerms(const Real time, const Real dt,
-    const AthenaArray<Real> &prim_in, AthenaArray<Real> &cons_out) {
+    const AthenaArray<Real> &prim_rad, const AthenaArray<Real> &prim_hydro,
+    AthenaArray<Real> &cons_rad, AthenaArray<Real> &cons_hydro) {
+
+  // Prepare unit null vectors
+  AthenaArray<Real> ntet;
+  n_tet.NewAthenaArray(4, nzeta * npsi);
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = (l - zs) * (pe - ps + 1) + m - ps
+      n_tet(0,lm) = 1.0;
+      n_tet(1,lm) = std::sin(zetav(l)) * std::cos(psiv(m));
+      n_tet(2,lm) = std::sin(zetav(l)) * std::sin(psiv(m));
+      n_tet(3,lm) = std::cos(zetav(l));
+    }
+  }
+
+  // Go through outer loops of cells
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
+
+      // Calculate fluid velocity in tetrad frame
+      for (int i = is; i <= ie; ++i) {
+        Real uu1 = prim_hydro(IVX,k,j,i);
+        Real uu2 = prim_hydro(IVY,k,j,i);
+        Real uu3 = prim_hydro(IVZ,k,j,i);
+        Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+            + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+            + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+        Real uu0 = std::sqrt(1.0 + temp_var);
+        u_tet_(0,i) = norm_to_tet_(0,0) * uu0 + norm_to_tet_(0,1) * uu1
+            + norm_to_tet_(0,2) * uu2 + norm_to_tet_(0,3) * uu3;
+        u_tet_(1,i) = norm_to_tet_(1,0) * uu0 + norm_to_tet_(1,1) * uu1
+            + norm_to_tet_(1,2) * uu2 + norm_to_tet_(1,3) * uu3;
+        u_tet_(2,i) = norm_to_tet_(2,0) * uu0 + norm_to_tet_(2,1) * uu1
+            + norm_to_tet_(2,2) * uu2 + norm_to_tet_(2,3) * uu3;
+        u_tet_(3,i) = norm_to_tet_(3,0) * uu0 + norm_to_tet_(3,1) * uu1
+            + norm_to_tet_(3,2) * uu2 + norm_to_tet_(3,3) * uu3;
+      }
+
+      // Transform radiation from tetrad to fluid frame
+      for (int l = zs; l <= ze; ++l) {
+        for (int m = ps; m <= pe; ++m) {
+          int lm = (l - zs) * (pe - ps + 1) + m - ps
+          for (int i = is; i <= ie; ++i) {
+            Real un_tet = u_tet_(1,i) * n_tet_(1,lm) + u_tet_(2,i) * n_tet_(2,lm)
+                + u_tet_(3,i) * n_tet_(3,lm);
+            n_cm_(0,lm,i) = u_tet_(0,i) * n_tet_(0,lm) - un_tet;
+            n_cm_(1,lm,i) = -u_tet_(1,i) * n_tet(0,lm)
+                + u_tet_(1,i) / (u_tet_(0,i) + 1.0) * un_tet + n_tet(1,lm);
+            n_cm_(2,lm,i) = -u_tet_(2,i) * n_tet(0,lm)
+                + u_tet_(2,i) / (u_tet_(0,i) + 1.0) * un_tet + n_tet(2,lm);
+            n_cm_(3,lm,i) = -u_tet_(3,i) * n_tet(0,lm)
+                + u_tet_(3,i) / (u_tet_(0,i) + 1.0) * un_tet + n_tet(3,lm);
+            omega_cm_(lm,i) = solid_angle(l,m) / SQR(n_cm_(0,lm,i));
+            intensity_cm_(lm,i) = prim_rad(AngleInd(l,m),k,j,i) * SQR(SQR(n_cm_(0,lm,i)));
+          }
+        }
+      }
+
+      // Calculate radiation-matter coupling in fluid frame
+
+      // Apply radiation-matter coupling in coordinate frame
+    }
+  }
+
+  // Apply user source terms
   if (UserSourceTerm != NULL) {
-    UserSourceTerm(pmy_block, time, dt, prim_in, cons_out);
+    UserSourceTerm(pmy_block, time, dt, prim_rad, prim_hydro, cons_rad, cons_hydro);
   }
   return;
 }
@@ -1067,11 +1190,11 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
   }
 
   // Allocate scratch arrays
-  AthenaArray<Real> g, gi, e, e_0, omega, nh;
+  AthenaArray<Real> g, gi, e, e_cov, omega, nh;
   g.NewAthenaArray(NMETRIC, ie + 1);
   gi.NewAthenaArray(NMETRIC, ie + 1);
   e.NewAthenaArray(4, 4);
-  e_0.NewAthenaArray(4);
+  e_cov.NewAthenaArray(4, 4);
   omega.NewAthenaArray(4, 4, 4);
   nh.NewAthenaArray(ze + 1, pe + 1, 4);
 
@@ -1137,7 +1260,7 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
         }
 
         // Calculate tetrad
-        pmy_block->pcoord->Tetrad(x1, x2, x3, e, e_0, omega);
+        pmy_block->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
 
         // Calculate contravariant time component of direction
         Real temp_a = g(I00,i);

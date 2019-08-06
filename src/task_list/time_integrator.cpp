@@ -1005,6 +1005,7 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage
 }
 
 TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) {
+  Hydro *ph = pmb->phydro;
   Radiation *pr = pmb->prad;
 
   // return if there are no source terms to be added
@@ -1016,7 +1017,7 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) 
     // Scaled coefficient for RHS update
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     // Evaluate the time-dependent source terms at the time at the beginning of the stage
-    pr->AddSourceTerms(t_start_stage, dt, pr->prim, pr->cons);
+    pr->AddSourceTerms(t_start_stage, dt, pr->prim, ph->w, pr->cons, ph->u);
   } else {
     return TaskStatus::fail;
   }
