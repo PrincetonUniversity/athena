@@ -99,6 +99,7 @@ class Multigrid {
   int GetCurrentLevel() { return current_level_; }
   AthenaArray<Real>& GetCurrentData() { return u_[current_level_]; }
   AthenaArray<Real>& GetCurrentSource() { return src_[current_level_]; }
+  AthenaArray<Real>& GetCurrentOldData() { return uold_[current_level_]; }
 
   // actual implementations of Multigrid operations
   void Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
@@ -168,7 +169,7 @@ class MultigridDriver {
   void SmoothOctets(int color);
   void ProlongateAndCorrectOctets();
   void FMGProlongateOctets();
-  void SetBoundariesOctets(bool fprolong);
+  void SetBoundariesOctets(bool fprolong, bool folddata);
   void SetOctetBoundarySameLevel(AthenaArray<Real> &dst, const AthenaArray<Real> &un,
                                  const LogicalLocation loc, int ox1, int ox2, int ox3);
   void ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u, const LogicalLocation &loc);

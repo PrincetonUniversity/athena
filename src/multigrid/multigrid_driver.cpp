@@ -324,7 +324,7 @@ void MultigridDriver::FMGProlongate() {
     if (current_level_ == nrootlevel_ - 1)
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
     else
-      SetBoundariesOctets(true);
+      SetBoundariesOctets(true, false);
     FMGProlongateOctets();
   } else { // root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
@@ -345,6 +345,7 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
   int flag=0;
   if (current_level_ == nrootlevel_ + nreflevel_ - 1) {
     TransferFromRootToBlocks();
+    // *** Add boundary conditions 
     flag=1;
   }
   if (current_level_ >= nrootlevel_ + nreflevel_ - 1) { // MeshBlocks
@@ -353,16 +354,17 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
     mgtlist_->DoTaskListOneStage(this);
     current_level_++;
   } else if (current_level_ >= nrootlevel_ - 1) { // non uniform octets
-    if (current_level_ == nrootlevel_ - 1)
+    if (current_level_ == nrootlevel_ - 1) {
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
-    else
-      SetBoundariesOctets(true);
+    } else {
+      SetBoundariesOctets(true, ffas_);
+    }
     ProlongateAndCorrectOctets();
     current_level_++;
     for (int n=0; n<nsmooth; ++n) {
-      SetBoundariesOctets(false);
+      SetBoundariesOctets(false, false);
       SmoothOctets(0);
-      SetBoundariesOctets(false);
+      SetBoundariesOctets(false, false);
       SmoothOctets(1);
     }
   } else { // root grid
@@ -399,16 +401,16 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
       }
     }
   } else if (current_level_ > nrootlevel_-1) { // refined octets
-    SetBoundariesOctets(false);
+    SetBoundariesOctets(false, false);
     if (ffas_ && current_level_ < fmglevel_) {
       StoreOldDataOctets();
       CalculateFASRHSOctets();
     }
     for (int n=0; n<nsmooth; ++n) {
       SmoothOctets(0);
-      SetBoundariesOctets(false);
+      SetBoundariesOctets(false, false);
       SmoothOctets(1);
-      SetBoundariesOctets(false);
+      SetBoundariesOctets(false, false);
     }
     RestrictOctets();
   } else { // uniform root grid
@@ -479,7 +481,8 @@ void MultigridDriver::SolveFMGCycle() {
       SolveVCycle(1, 1);
     else if (mode_ == 1)
       SolveFCycle(0, 1);
-    if (fmglevel_!=ntotallevel_-1) FMGProlongate();
+    if (fmglevel_!=ntotallevel_-1)
+      FMGProlongate();
   }
   if (fsubtract_average_)
     SubtractAverage(MGVariable::u);
@@ -714,6 +717,7 @@ void MultigridDriver::RestrictOctets() {
 //  \brief zero clear the data in all the octets
 
 void MultigridDriver::ZeroClearAllOctets() {
+  // *** clear only where needed in case of FMG
   for (int l=0; l<nreflevel_; l++) {
     for (int o=0; o<noctets_[l]; ++o)
       octets_[l][o].u.ZeroClear();
@@ -778,7 +782,7 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
 
   if (flev == 0) {  // from root to octets
     const AthenaArray<Real> &u = mgroot_->GetCurrentData();
-    const AthenaArray<Real> &uold = mgroot_->u_[mgroot_->current_level_]; // dirty
+    const AthenaArray<Real> &uold = mgroot_->GetCurrentOldData();
     for (int o=0; o<noctets_[0]; ++o) { // octets to the root grid
       const LogicalLocation &loc = octets_[0][o].loc;
       int ri = (loc.lx1 >> 1) + ngh - 1;
@@ -868,10 +872,10 @@ void MultigridDriver::FMGProlongateOctets() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SetBoundariesOctets(bool fprolong)
+//! \fn void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata)
 //  \brief Apply boundary conditions for octets
 
-void MultigridDriver::SetBoundariesOctets(bool fprolong) {
+void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
   int lev = current_level_ - nrootlevel_;
   bool faceonly = false;
   if (!fprolong && mgroot_->btypef == BoundaryQuantity::mggrav_f)
@@ -907,7 +911,8 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong) {
           else continue;
         }
         for (int ox1=-1; ox1<=1; ++ox1) {
-          if (faceonly && std::abs(ox1)+std::abs(ox2)+std::abs(ox3) > 1) continue;
+          int nt = std::abs(ox1)+std::abs(ox2)+std::abs(ox3);
+          if (faceonly &&  nt > 1) continue;
           if (ox1 == 0 && ox2 == 0 && ox3 == 0) continue;
           // find a neighboring octet - either on the same or coarser level
           nloc.lx1 = loc.lx1 + ox1;
@@ -924,6 +929,11 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong) {
           if (octetmap_[lev].count(nloc) == 1) { // on the same level
             const AthenaArray<Real> &un = octets_[lev][octetmap_[lev][nloc]].u;
             SetOctetBoundarySameLevel(u, un, loc, ox1, ox2, ox3);
+            if (folddata) {
+              AthenaArray<Real> &uold = octets_[lev][o].uold;
+              const AthenaArray<Real> &unold = octets_[lev][octetmap_[lev][nloc]].uold;
+              SetOctetBoundarySameLevel(uold, unold, loc, ox1, ox2, ox3);
+            }
           } else { // on the coarser level
             nloc.lx1 >>= 1;
             nloc.lx2 >>= 1;

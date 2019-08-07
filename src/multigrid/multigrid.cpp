@@ -373,18 +373,31 @@ void Multigrid::CalculateFASRHSBlock() {
 
 void Multigrid::SetFromRootGrid() {
   current_level_=0;
-  AthenaArray<Real> &dst=u_[current_level_];
+  AthenaArray<Real> &dst = u_[current_level_];
   int lev = loc_.level - (pmy_driver_->nrootlevel_ - 1);
   if (lev == 0) { // from the root grid
     int ci = static_cast<int>(loc_.lx1);
     int cj = static_cast<int>(loc_.lx2);
     int ck = static_cast<int>(loc_.lx3);
-    const AthenaArray<Real> &src = pmy_driver_->mgroot_->GetCurrentData();
+    const AthenaArray<Real> &src=pmy_driver_->mgroot_->u_[pmy_driver_->nrootlevel_-1];
     for (int v=0; v<nvar_; ++v) {
       for (int k=0; k<=2; ++k) {
         for (int j=0; j<=2; ++j) {
           for (int i=0; i<=2; ++i)
-            dst(v, k, j, i)=src(v, ck+k, cj+j, ci+i);
+            dst(v, k, j, i) = src(v, ck+k, cj+j, ci+i);
+        }
+      }
+    }
+    if (pmy_driver_->ffas_) {
+      AthenaArray<Real> &odst = uold_[current_level_];
+      const AthenaArray<Real> &osrc
+                              = pmy_driver_->mgroot_->uold_[pmy_driver_->nrootlevel_-1];
+      for (int v=0; v<nvar_; ++v) {
+        for (int k=0; k<=2; ++k) {
+          for (int j=0; j<=2; ++j) {
+            for (int i=0; i<=2; ++i)
+              odst(v, k, j, i) = osrc(v, ck+k, cj+j, ci+i);
+          }
         }
       }
     }
@@ -405,6 +418,18 @@ void Multigrid::SetFromRootGrid() {
         for (int j=0; j<=2; ++j) {
           for (int i=0; i<=2; ++i)
             dst(v, k, j, i)=src(v, ck+k, cj+j, ci+i);
+        }
+      }
+    }
+    if (pmy_driver_->ffas_) {
+      AthenaArray<Real> &odst = uold_[current_level_];
+      const AthenaArray<Real> &osrc = pmy_driver_->octets_[olev][oid].uold;
+      for (int v=0; v<nvar_; ++v) {
+        for (int k=0; k<=2; ++k) {
+          for (int j=0; j<=2; ++j) {
+            for (int i=0; i<=2; ++i)
+              odst(v, k, j, i)=osrc(v, ck+k, cj+j, ci+i);
+          }
         }
       }
     }
@@ -491,6 +516,8 @@ void Multigrid::SubtractAverage(MGVariable type, int n, Real ave) {
         dst(n,k,j,i)-=ave;
     }
   }
+
+  return;
 }
 
 
@@ -499,10 +526,10 @@ void Multigrid::SubtractAverage(MGVariable type, int n, Real ave) {
 //  \brief store the old u data in the uold array
 
 void Multigrid::StoreOldData() {
-  const AthenaArray<Real> &u=u_[current_level_];
-  AthenaArray<Real> &uold=uold_[current_level_];
-  int size = u.GetSizeInBytes();
-  memcpy(uold.data(), u.data(), size);
+  memcpy(uold_[current_level_].data(), u_[current_level_].data(),
+         u_[current_level_].GetSizeInBytes());
+
+  return;
 }
 
 
@@ -524,6 +551,8 @@ void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v) {
   AthenaArray<Real> &dst = 
                     (type == MGVariable::src) ? src_[current_level_] : u_[current_level_];
   dst(n, ngh_+k, ngh_+j, ngh_+i) = v;
+
+  return;
 }
 
 
@@ -544,6 +573,7 @@ void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
       }
     }
   }
+  std::cout << "Restrict " << current_level_ << " coarse "<< dst(0,1,1,1) << " fine " << src(0,1,1,1) << std::endl;
 
   return;
 }
@@ -596,6 +626,7 @@ void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<R
       }
     }
   }
+  std::cout << "ProlongateAndCorrect " << current_level_ << " fine "<< dst(0,1,1,2) << " coarse " << src(0,1,1,2) << std::endl;
 
   return;
 }
