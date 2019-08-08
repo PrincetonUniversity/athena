@@ -1566,7 +1566,7 @@ void Schwarzschild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
     for (int j = 0; j < 4; ++j) {
       e_cov(i,j) = 0.0;
       for (int k = 0; k < 4; ++k) {
-        e_cov(i,j) += g[j][k] * e(i,k)
+        e_cov(i,j) += g[j][k] * e(i,k);
       }
     }
   }

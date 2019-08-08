@@ -1354,7 +1354,7 @@ void MinkowskiCyl::Tetrad(Real rr, Real ph, Real z, AthenaArray<Real> &e,
     for (int j = 0; j < 4; ++j) {
       e_cov(i,j) = 0.0;
       for (int k = 0; k < 4; ++k) {
-        e_cov(i,j) += g[j][k] * e(i,k)
+        e_cov(i,j) += g[j][k] * e(i,k);
       }
     }
   }
