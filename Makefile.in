@@ -52,6 +52,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     src/pgen/default_pgen.cpp \
 	     src/pgen/$(PROBLEM_FILE) \
 	     $(wildcard src/radiation/*.cpp) \
+	     src/radiation/coupling/emission.cpp \
 	     $(wildcard src/reconstruct/*.cpp) \
 	     $(wildcard src/scalars/*.cpp) \
 	     $(wildcard src/task_list/*.cpp) \

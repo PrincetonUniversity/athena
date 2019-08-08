@@ -20,7 +20,7 @@ class ParameterInput;
 //----------------------------------------------------------------------------------------
 // Radiation class
 // Notes:
-//   designed for general relativity
+//   Designed for general relativity.
 
 class Radiation {
 
@@ -35,6 +35,7 @@ public:
   RadSrcTermFunc UserSourceTerm;
 
   // Flags
+  bool coupled_to_matter;
   bool source_terms_defined;
 
   // Parameters
@@ -84,8 +85,14 @@ public:
       Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
   void ConservedToPrimitive(AthenaArray<Real> &cons_in, AthenaArray<Real> &prim_out,
       Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
-  void AddSourceTerms(const Real time, const Real dt, const AthenaArray<Real> &prim_in,
-      AthenaArray<Real> &cons_out);
+  void AddSourceTerms(const Real time, const Real dt, const AthenaArray<Real> &prim_rad,
+      const AthenaArray<Real> &prim_hydro, AthenaArray<Real> &cons_rad,
+      AthenaArray<Real> &cons_hydro);
+
+  // Fluid coupling functions
+  void Coupling(const AthenaArray<Real> &prim_hydro, const AthenaArray<Real> &n,
+      const AthenaArray<Real> &omega, Real dt, int k, int j,
+      AthenaArray<Real> &intensity);
 
   // Other functions
   int AngleInd(int l, int m, bool zeta_face = false, bool psi_face = false);
@@ -97,7 +104,7 @@ public:
 private:
 
   // Data arrays
-  AthenaArray<Real> n0_n_0_;        // n^0 n_0 at cell and angle centers
+  AthenaArray<Real> n0_n_mu_;       // n^0 n_mu at cell and angle centers
   AthenaArray<Real> n1_n_0_;        // n^1 n_0 at x^1-faces and angle centers
   AthenaArray<Real> n2_n_0_;        // n^2 n_0 at x^2-faces and angle centers
   AthenaArray<Real> n3_n_0_;        // n^3 n_0 at x^3-faces and angle centers
@@ -109,12 +116,15 @@ private:
   AthenaArray<Real> area_r_;        // right face areas
   AthenaArray<Real> vol_;           // cell volumes
   AthenaArray<Real> flux_div_;      // flux divergences in spatial coordinates
-  AthenaArray<Real> norm_to_tet_;   // transformation from normal to tetrad frame
   AthenaArray<Real> g_, gi_;        // metric and inverse
+  AthenaArray<Real> norm_to_tet_;   // transformation from normal to tetrad frame
   AthenaArray<Real> u_tet_;         // fluid 4-velocity in tetrad frame
+  AthenaArray<Real> weight_sum_;    // sum of solid angles, used for normalizing
   AthenaArray<Real> n_cm_;          // unit null direction in comoving fluid frame
   AthenaArray<Real> omega_cm_;      // solid angle in comoving fluid frame
   AthenaArray<Real> intensity_cm_;  // intensity I in comoving fluid frame
+  AthenaArray<Real> moments_old_;   // moments of radiation field before fluid coupling
+  AthenaArray<Real> moments_new_;   // moments of radiation field after fluid coupling
 };
 
 #endif // RADIATION_RADIATION_HPP_

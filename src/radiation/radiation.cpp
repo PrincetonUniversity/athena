@@ -28,6 +28,7 @@
 
 Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb),
+    coupled_to_matter(pin->GetBoolean("radiation", "coupled")),
     nzeta(pin->GetInteger("radiation", "n_polar")),
     npsi(pin->GetInteger("radiation", "n_azimuthal")),
     nang((nzeta + 2*NGHOST) * (npsi + 2*NGHOST)),
@@ -65,7 +66,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   pmb->pbval->bvars_main_int.push_back(&rbvar);
 
   // Set flags
-  if (UserSourceTerm == nullptr) {
+  if (not coupled_to_matter and UserSourceTerm == nullptr) {
     source_terms_defined = false;
   } else {
     source_terms_defined = true;
@@ -215,7 +216,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   // Allocate memory for unit normal and related components in coordinate frame
-  n0_n_0_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
+  n0_n_mu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
       pmb->ncells1);
   n1_n_0_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
       pmb->ncells1 + 1);
@@ -234,7 +235,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   e_cov.NewAthenaArray(4, 4);
   omega.NewAthenaArray(4, 4, 4);
 
-  // Calculate n^0 n_0
+  // Calculate n^0 n_mu
   for (int k = ks-NGHOST; k <= ke+NGHOST; ++k) {
     for (int j = js-NGHOST; j <= je+NGHOST; ++j) {
       for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
@@ -246,11 +247,20 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
           for (int m = ps; m <= pe; ++m) {
             Real n0 = 0.0;
             Real n_0 = 0.0;
+            Real n_1 = 0.0;
+            Real n_2 = 0.0;
+            Real n_3 = 0.0;
             for (int n = 0; n < 4; ++n) {
               n0 += e(n,0) * nh_cc(n,l,m);
               n_0 += e_cov(n,0) * nh_cc(n,l,m);
+              n_1 += e_cov(n,1) * nh_cc(n,l,m);
+              n_2 += e_cov(n,2) * nh_cc(n,l,m);
+              n_3 += e_cov(n,3) * nh_cc(n,l,m);
             }
-            n0_n_0_(l,m,k,j,i) = n0 * n_0;
+            n0_n_mu_(0,l,m,k,j,i) = n0 * n_0;
+            n0_n_mu_(1,l,m,k,j,i) = n0 * n_1;
+            n0_n_mu_(2,l,m,k,j,i) = n0 * n_2;
+            n0_n_mu_(3,l,m,k,j,i) = n0 * n_3;
           }
         }
       }
@@ -393,13 +403,16 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   flux_div_.NewAthenaArray(nang, pmb->ncells1 + 1);
 
   // Allocate memory for source term frame transformations
-  norm_to_tet_.NewAthenaArray(4, 4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
   g_.NewAthenaArray(NMETRIC, pmb->ncells1);
   gi_.NewAthenaArray(NMETRIC, pmb->ncells1);
+  norm_to_tet_.NewAthenaArray(4, 4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
   u_tet_.NewAthenaArray(4, pmb->ncells1);
+  weight_sum_.NewAthenaArray(pmb->ncells1);
   n_cm_.NewAthenaArray(4, nzeta * npsi, pmb->ncells1);
   omega_cm_.NewAthenaArray(nzeta * npsi, pmb->ncells1);
   intensity_cm_.NewAthenaArray(nzeta * npsi, pmb->ncells1);
+  moments_old_.NewAthenaArray(4, pmb->ncells1);
+  moments_new_.NewAthenaArray(4, pmb->ncells1);
 
   // Calculate transformation from normal frame to tetrad frame
   for (int k = ks; k <= ke; ++k) {
@@ -460,7 +473,7 @@ Radiation::~Radiation() {}
 // Outputs:
 //   cons_out: weighted intensity
 // Notes:
-//   same procedure as in Hydro::WeightedAveU()
+//   Same procedure as in Hydro::WeightedAveU().
 
 void Radiation::WeightedAve(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
     AthenaArray<Real> &cons_in_2, const Real weights[3]) {
@@ -933,7 +946,7 @@ void Radiation::PrimitiveToConserved(const AthenaArray<Real> &prim_in,
       for (int k = kl; k <= ku; ++k) {
         for (int j = jl; j <= ju; ++j) {
           for (int i = il; i <= iu; ++i) {
-            cons_out(lm,k,j,i) = n0_n_0_(l,m,k,j,i) * prim_in(lm,k,j,i);
+            cons_out(lm,k,j,i) = n0_n_mu_(0,l,m,k,j,i) * prim_in(lm,k,j,i);
           }
         }
       }
@@ -965,7 +978,7 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
       for (int k = kl; k <= ku; ++k) {
         for (int j = jl; j <= ju; ++j) {
           for (int i = il; i <= iu; ++i) {
-            prim_out(lm,k,j,i) = cons_in(lm,k,j,i) / n0_n_0_(l,m,k,j,i);
+            prim_out(lm,k,j,i) = cons_in(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i);
             if (prim_out(lm,k,j,i) < 0.0) {
               prim_out(lm,k,j,i) = 0.0;
               cons_in(lm,k,j,i) = 0.0;
@@ -1055,71 +1068,140 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
     AthenaArray<Real> &cons_rad, AthenaArray<Real> &cons_hydro) {
 
   // Prepare unit null vectors
-  AthenaArray<Real> ntet;
-  n_tet.NewAthenaArray(4, nzeta * npsi);
-  for (int l = zs; l <= ze; ++l) {
-    for (int m = ps; m <= pe; ++m) {
-      int lm = (l - zs) * (pe - ps + 1) + m - ps
-      n_tet(0,lm) = 1.0;
-      n_tet(1,lm) = std::sin(zetav(l)) * std::cos(psiv(m));
-      n_tet(2,lm) = std::sin(zetav(l)) * std::sin(psiv(m));
-      n_tet(3,lm) = std::cos(zetav(l));
+  AthenaArray<Real> n_tet;
+  if (coupled_to_matter) {
+    n_tet.NewAthenaArray(4, nzeta * npsi);
+    for (int l = zs; l <= ze; ++l) {
+      for (int m = ps; m <= pe; ++m) {
+        int lm_alt = (l - zs) * (pe - ps + 1) + m - ps;
+        n_tet(0,lm_alt) = 1.0;
+        n_tet(1,lm_alt) = std::sin(zetav(l)) * std::cos(psiv(m));
+        n_tet(2,lm_alt) = std::sin(zetav(l)) * std::sin(psiv(m));
+        n_tet(3,lm_alt) = std::cos(zetav(l));
+      }
     }
   }
 
   // Go through outer loops of cells
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
+  if (coupled_to_matter) {
+    for (int k = ks; k <= ke; ++k) {
+      for (int j = js; j <= je; ++j) {
+        pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
 
-      // Calculate fluid velocity in tetrad frame
-      for (int i = is; i <= ie; ++i) {
-        Real uu1 = prim_hydro(IVX,k,j,i);
-        Real uu2 = prim_hydro(IVY,k,j,i);
-        Real uu3 = prim_hydro(IVZ,k,j,i);
-        Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
-            + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
-            + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
-        Real uu0 = std::sqrt(1.0 + temp_var);
-        u_tet_(0,i) = norm_to_tet_(0,0) * uu0 + norm_to_tet_(0,1) * uu1
-            + norm_to_tet_(0,2) * uu2 + norm_to_tet_(0,3) * uu3;
-        u_tet_(1,i) = norm_to_tet_(1,0) * uu0 + norm_to_tet_(1,1) * uu1
-            + norm_to_tet_(1,2) * uu2 + norm_to_tet_(1,3) * uu3;
-        u_tet_(2,i) = norm_to_tet_(2,0) * uu0 + norm_to_tet_(2,1) * uu1
-            + norm_to_tet_(2,2) * uu2 + norm_to_tet_(2,3) * uu3;
-        u_tet_(3,i) = norm_to_tet_(3,0) * uu0 + norm_to_tet_(3,1) * uu1
-            + norm_to_tet_(3,2) * uu2 + norm_to_tet_(3,3) * uu3;
-      }
-
-      // Transform radiation from tetrad to fluid frame
-      for (int l = zs; l <= ze; ++l) {
-        for (int m = ps; m <= pe; ++m) {
-          int lm = (l - zs) * (pe - ps + 1) + m - ps
+        // Calculate zeroth and first moments of radiation before coupling
+        for (int n = 0; n < 4; ++n) {
           for (int i = is; i <= ie; ++i) {
-            Real un_tet = u_tet_(1,i) * n_tet_(1,lm) + u_tet_(2,i) * n_tet_(2,lm)
-                + u_tet_(3,i) * n_tet_(3,lm);
-            n_cm_(0,lm,i) = u_tet_(0,i) * n_tet_(0,lm) - un_tet;
-            n_cm_(1,lm,i) = -u_tet_(1,i) * n_tet(0,lm)
-                + u_tet_(1,i) / (u_tet_(0,i) + 1.0) * un_tet + n_tet(1,lm);
-            n_cm_(2,lm,i) = -u_tet_(2,i) * n_tet(0,lm)
-                + u_tet_(2,i) / (u_tet_(0,i) + 1.0) * un_tet + n_tet(2,lm);
-            n_cm_(3,lm,i) = -u_tet_(3,i) * n_tet(0,lm)
-                + u_tet_(3,i) / (u_tet_(0,i) + 1.0) * un_tet + n_tet(3,lm);
-            omega_cm_(lm,i) = solid_angle(l,m) / SQR(n_cm_(0,lm,i));
-            intensity_cm_(lm,i) = prim_rad(AngleInd(l,m),k,j,i) * SQR(SQR(n_cm_(0,lm,i)));
+            moments_old_(n,i) = 0.0;
           }
         }
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            for (int n = 0; n < 4; ++n) {
+              for (int i = is; i <= ie; ++i) {
+                moments_old_(n,i) +=
+                    n0_n_mu_(n,l,m,k,j,i) * prim_rad(lm,k,j,i) * solid_angle(l,m);
+              }
+            }
+          }
+        }
+
+        // Calculate fluid velocity in tetrad frame
+        for (int i = is; i <= ie; ++i) {
+          Real uu1 = prim_hydro(IVX,k,j,i);
+          Real uu2 = prim_hydro(IVY,k,j,i);
+          Real uu3 = prim_hydro(IVZ,k,j,i);
+          Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+              + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+          Real uu0 = std::sqrt(1.0 + temp_var);
+          u_tet_(0,i) = norm_to_tet_(0,0,k,j,i) * uu0 + norm_to_tet_(0,1,k,j,i) * uu1
+              + norm_to_tet_(0,2,k,j,i) * uu2 + norm_to_tet_(0,3,k,j,i) * uu3;
+          u_tet_(1,i) = norm_to_tet_(1,0,k,j,i) * uu0 + norm_to_tet_(1,1,k,j,i) * uu1
+              + norm_to_tet_(1,2,k,j,i) * uu2 + norm_to_tet_(1,3,k,j,i) * uu3;
+          u_tet_(2,i) = norm_to_tet_(2,0,k,j,i) * uu0 + norm_to_tet_(2,1,k,j,i) * uu1
+              + norm_to_tet_(2,2,k,j,i) * uu2 + norm_to_tet_(2,3,k,j,i) * uu3;
+          u_tet_(3,i) = norm_to_tet_(3,0,k,j,i) * uu0 + norm_to_tet_(3,1,k,j,i) * uu1
+              + norm_to_tet_(3,2,k,j,i) * uu2 + norm_to_tet_(3,3,k,j,i) * uu3;
+        }
+
+        // Transform radiation from tetrad to fluid frame
+        for (int i = is; i <= ie; ++i) {
+          weight_sum_(i) = 0.0;
+        }
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            int lm_alt = (l - zs) * (pe - ps + 1) + m - ps;
+            for (int i = is; i <= ie; ++i) {
+              Real un_tet = u_tet_(1,i) * n_tet(1,lm_alt) + u_tet_(2,i) * n_tet(2,lm_alt)
+                  + u_tet_(3,i) * n_tet(3,lm_alt);
+              n_cm_(0,lm_alt,i) = u_tet_(0,i) * n_tet(0,lm_alt) - un_tet;
+              n_cm_(1,lm_alt,i) = -u_tet_(1,i) * n_tet(0,lm_alt)
+                  + u_tet_(1,i) / (u_tet_(0,i) + 1.0) * un_tet + n_tet(1,lm_alt);
+              n_cm_(2,lm_alt,i) = -u_tet_(2,i) * n_tet(0,lm_alt)
+                  + u_tet_(2,i) / (u_tet_(0,i) + 1.0) * un_tet + n_tet(2,lm_alt);
+              n_cm_(3,lm_alt,i) = -u_tet_(3,i) * n_tet(0,lm_alt)
+                  + u_tet_(3,i) / (u_tet_(0,i) + 1.0) * un_tet + n_tet(3,lm_alt);
+              omega_cm_(lm_alt,i) = solid_angle(l,m) / SQR(n_cm_(0,lm_alt,i));
+              intensity_cm_(lm_alt,i) = prim_rad(lm,k,j,i) * SQR(SQR(n_cm_(0,lm_alt,i)));
+              weight_sum_(i) += omega_cm_(lm_alt,i);
+            }
+          }
+        }
+        for (int n = 0; n <= nzeta * npsi; ++n) {
+          for (int i = is; i <= ie; ++i) {
+            omega_cm_(n,i) /= weight_sum_(i);
+          }
+        }
+
+        // Calculate radiation-fluid coupling in fluid frame
+        Coupling(prim_hydro, n_cm_, omega_cm_, dt, k, j, intensity_cm_);
+
+        // Apply radiation-fluid coupling to radiation in coordinate frame
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            int lm_alt = (l - zs) * (pe - ps + 1) + m - ps;
+            for (int i = is; i <= ie; ++i) {
+              cons_rad(lm,k,j,i) = intensity_cm_(lm_alt,i) / SQR(SQR(n_cm_(0,lm_alt,i)))
+                  * n0_n_mu_(0,l,m,k,j,i);
+            }
+          }
+        }
+
+        // Calculate zeroth and first moments of radiation after coupling
+        for (int n = 0; n < 4; ++n) {
+          for (int i = is; i <= ie; ++i) {
+            moments_new_(n,i) = 0.0;
+          }
+        }
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            for (int n = 0; n < 4; ++n) {
+              for (int i = is; i <= ie; ++i) {
+                moments_new_(n,i) += n0_n_mu_(n,l,m,k,j,i) * cons_rad(lm,k,j,i)
+                    / n0_n_mu_(0,l,m,k,j,i) * solid_angle(l,m);
+              }
+            }
+          }
+        }
+
+        // Apply radiation-fluid coupling to fluid
+        for (int i = is; i <= ie; ++i) {
+          cons_hydro(IEN,k,j,i) += moments_old_(0,i) - moments_new_(0,i);
+          cons_hydro(IM1,k,j,i) += moments_old_(1,i) - moments_new_(1,i);
+          cons_hydro(IM2,k,j,i) += moments_old_(2,i) - moments_new_(2,i);
+          cons_hydro(IM3,k,j,i) += moments_old_(3,i) - moments_new_(3,i);
+        }
       }
-
-      // Calculate radiation-matter coupling in fluid frame
-
-      // Apply radiation-matter coupling in coordinate frame
     }
   }
 
   // Apply user source terms
-  if (UserSourceTerm != NULL) {
-    UserSourceTerm(pmy_block, time, dt, prim_rad, prim_hydro, cons_rad, cons_hydro);
+  if (UserSourceTerm != nullptr) {
+    UserSourceTerm(pmy_block, time, dt, prim_rad, cons_rad);
   }
   return;
 }
@@ -1154,16 +1236,16 @@ int Radiation::AngleInd(int l, int m, bool zeta_face, bool psi_face) {
 // Outputs:
 //   dcons_dt: conserved values (n^0 n_0 I) per unit time set
 // Notes:
-//   arrays should be 4D, with first index holding both zeta and psi
-//   cylindrical coordinates:
+//   Arrays should be 4D, with first index holding both zeta and psi.
+//   Cylindrical coordinates:
 //     phi (x2) will be mapped to [-pi, pi]:
-//       beams near phi = 0 should work fine
-//       beams near phi = pi will likely not be initialized correctly
-//   spherical coordinates:
-//     theta (x2) will be mapped to [0, pi], adjusting phi (x3) as necessary
+//       Beams near phi = 0 should work fine.
+//       Beams near phi = pi will likely not be initialized correctly.
+//   Spherical coordinates:
+//     theta (x2) will be mapped to [0, pi], adjusting phi (x3) as necessary.
 //     phi (x3) will be mapped to [-pi, pi]:
-//       beams near phi = 0 should work fine
-//       beams near phi = pi will likely not be initialized correctly
+//       Beams near phi = 0 should work fine.
+//       Beams near phi = pi will likely not be initialized correctly.
 
 void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real width,
     Real dir_1, Real dir_2, Real dir_3, Real spread, Real dii_dt,
@@ -1309,7 +1391,7 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
             }
 
             // Set to nonzero value
-            dcons_dt(lm,k,j,i) = dii_dt * n0_n_0_(l,m,k,j,i);
+            dcons_dt(lm,k,j,i) = dii_dt * n0_n_mu_(0,l,m,k,j,i);
           }
         }
       }
@@ -1324,28 +1406,36 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
 // Outputs:
 //   moments: 4D array:
 //     index 0:
-//       0: energy density (-\int I n^0 n_0 d\Omega)
+//       0: energy density (\int n^0 n_0 I d\Omega)
+//       1: 1-momentum density (\int n^0 n_1 I d\Omega)
+//       2: 2-momentum density (\int n^0 n_2 I d\Omega)
+//       3: 3-momentum density (\int n^0 n_3 I d\Omega)
 //     index 1: k
 //     index 2: j
 //     index 3: i
 // Notes:
-//   intensity defined by prim values when function is called
+//   Intensity defined by prim values when function is called.
 
 void Radiation::SetMoments(AthenaArray<Real> &moments) {
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie; ++i) {
-        moments(0,k,j,i) = 0.0;
+  for (int n = 0; n < 4; ++n) {
+    for (int k = ks; k <= ke; ++k) {
+      for (int j = js; j <= je; ++j) {
+        for (int i = is; i <= ie; ++i) {
+          moments(n,k,j,i) = 0.0;
+        }
       }
     }
   }
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
       int lm = AngleInd(l, m);
-      for (int k = ks; k <= ke; ++k) {
-        for (int j = js; j <= je; ++j) {
-          for (int i = is; i <= ie; ++i) {
-            moments(0,k,j,i) -= prim(lm,k,j,i) * n0_n_0_(l,m,k,j,i) * solid_angle(l,m);
+      for (int n = 0; n < 4; ++n) {
+        for (int k = ks; k <= ke; ++k) {
+          for (int j = js; j <= je; ++j) {
+            for (int i = is; i <= ie; ++i) {
+              moments(n,k,j,i) +=
+                  n0_n_mu_(n,l,m,k,j,i) * prim(lm,k,j,i) * solid_angle(l,m);
+            }
           }
         }
       }

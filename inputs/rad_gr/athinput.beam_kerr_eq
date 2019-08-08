@@ -58,8 +58,9 @@ rad_tetrad = spherical  # choice of radiation tetrad
 gamma = 1.3333333333333333  # ratio of specific heats Gamma
 
 <radiation>
-n_polar     = 5    # number of polar angles in direction space
-n_azimuthal = 128  # number of azimuthal angles in direction space
+coupled     = false  # flag indicating whether radiation is coupled to matter
+n_polar     = 5      # number of polar angles in direction space
+n_azimuthal = 128    # number of azimuthal angles in direction space
 
 <problem>
 pos_a_1  = 2.34729635533386    # r-coordinate of beam A origin

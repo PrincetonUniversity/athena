@@ -1,6 +1,6 @@
 <comment>
 problem   = beams of radiation in GR (flat spacetime)
-configure = -g -r --prob gr_rad_beam --coord minkowski -hdf5
+configure = -g -r --prob gr_rad_multibeam --coord minkowski -hdf5
 
 <job>
 problem_id = multibeam  # name of run
@@ -55,8 +55,9 @@ rad_tetrad = cartesian  # choice of radiation tetrad
 gamma = 1.3333333333333333  # ratio of specific heats Gamma
 
 <radiation>
-n_polar     = 5   # number of polar angles in direction space
-n_azimuthal = 64  # number of azimuthal angles in direction space
+coupled     = false  # flag indicating whether radiation is coupled to matter
+n_polar     = 5      # number of polar angles in direction space
+n_azimuthal = 64     # number of azimuthal angles in direction space
 
 <problem>
 pos_a_1  = 0.125  # x-coordinate of beam A origin

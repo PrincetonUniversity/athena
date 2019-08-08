@@ -13,12 +13,10 @@
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"
-#include "../athena.hpp"                   // Real, FaceField, enums
-#include "../athena_arrays.hpp"            // AthenaArray
-#include "../parameter_input.hpp"          // ParameterInput
-#include "../bvals/bvals.hpp"              // BoundaryValues
-#include "../coordinates/coordinates.hpp"  // Coordinates
-#include "../radiation/radiation.hpp"      // Radiation
+#include "../athena.hpp"               // Real, enums
+#include "../athena_arrays.hpp"        // AthenaArray
+#include "../parameter_input.hpp"      // ParameterInput
+#include "../radiation/radiation.hpp"  // Radiation
 
 // Configuration checking
 #if not RADIATION_ENABLED
@@ -51,7 +49,7 @@ static bool spherical;                  // flag indicating spherical coordinates
 //----------------------------------------------------------------------------------------
 // Function for preparing Mesh
 // Inputs:
-//   pin: input parameters (unused)
+//   pin: input parameters
 // Outputs: (none)
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
@@ -137,8 +135,11 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
   }
 
   // Prepare output variables
-  AllocateUserOutputVariables(1);
+  AllocateUserOutputVariables(4);
   SetUserOutputVariableName(0, "E");
+  SetUserOutputVariableName(1, "M1");
+  SetUserOutputVariableName(2, "M2");
+  SetUserOutputVariableName(3, "M3");
   return;
 }
 
@@ -170,7 +171,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //----------------------------------------------------------------------------------------
 // Function for preparing output
 // Inputs:
-//   pin: parameters
+//   pin: parameters (unused)
 // Outputs: (none)
 // Notes:
 //   sets user_out_var array
@@ -183,18 +184,19 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
 //----------------------------------------------------------------------------------------
 // Source function
 // Inputs:
-//   pmb: pointer to MeshBlock (not used)
+//   pmb: pointer to MeshBlock
 //   time: time of simulation
 //   dt: simulation timestep
-//   prim_in: primitive intensity
+//   prim_rad: primitive intensity
+//   cons_rad: conserved intensity
 // Outputs:
-//   cons_out: conserved intensity
+//   cons_rad: conserved intensity updated
 // Notes:
 //   applies pre-computed conserved intensity field
-//   source is opaque; intensities are replaced, not added to
+//   source is transparent; intensities are added to, not replaced
 
 void Source(MeshBlock *pmb, const Real time, const Real dt,
-    const AthenaArray<Real> &prim_in, AthenaArray<Real> &cons_out) {
+    const AthenaArray<Real> &prim_rad, AthenaArray<Real> &cons_rad) {
 
   // Extract information from block
   Radiation *prad = pmb->prad;
@@ -213,7 +215,7 @@ void Source(MeshBlock *pmb, const Real time, const Real dt,
       for (int k = ks; k <= ke; ++k) {
         for (int j = js; j <= je; ++j) {
           for (int i = is; i <= ie; ++i) {
-            cons_out(lm,k,j,i) += dcons_dt(lm,k,j,i) * dt;
+            cons_rad(lm,k,j,i) += dcons_dt(lm,k,j,i) * dt;
           }
         }
       }

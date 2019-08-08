@@ -175,8 +175,7 @@ using SrcTermFunc = void (*)(
     MeshBlock *pmb, const Real time, const Real dt,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &cons);
 using RadSrcTermFunc = void (*)(MeshBlock *pmb, const Real time, const Real dt,
-    const AthenaArray<Real> &prim_rad, const AthenaArray<Real> &prim_hydro,
-    AthenaArray<Real> &cons_rad, AthenaArray<Real> &cons_hydro);
+    const AthenaArray<Real> &prim_rad, AthenaArray<Real> &cons_rad);
 using TimeStepFunc = Real (*)(MeshBlock *pmb);
 using HistoryOutputFunc = Real (*)(MeshBlock *pmb, int iout);
 using MetricFunc = void (*)(
