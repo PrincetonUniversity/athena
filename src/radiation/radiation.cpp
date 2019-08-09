@@ -8,7 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // max
-#include <cmath>      // acos, cos, sin, sqrt
+#include <cmath>      // acos, cos, NAN, sin, sqrt
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str, string
@@ -86,6 +86,25 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   je = pmy_block->je;
   ks = pmy_block->ks;
   ke = pmy_block->ke;
+
+  // Set and calculate units
+  length_cgs = pin->GetOrAddReal("radiation", "length_cgs", NAN);
+  density_cgs = pin->GetOrAddReal("radiation", "density_cgs", NAN);
+  mol_weight = pin->GetOrAddReal("radiation", "mol_weight", NAN);
+  time_cgs = length_cgs / c_cgs;
+  pressure_cgs = density_cgs * SQR(c_cgs);
+  temperature_cgs = mol_weight * m_p_cgs * SQR(c_cgs) / k_b_cgs;
+  intensity_cgs = pressure_cgs * c_cgs;
+  opacity_cgs = 1.0 / (length_cgs * density_cgs);
+
+  // Calculate physical constants in code units
+  m_p = m_p_cgs / (density_cgs * length_cgs * SQR(length_cgs));
+  k_b = mol_weight * m_p;
+  sigma_sb = sigma_sb_cgs * SQR(SQR(temperature_cgs)) / intensity_cgs;
+
+  // Set and calculate emission, absorption, and scattering coefficients
+  kappa_cgs = pin->GetOrAddReal("radiation", "kappa_cgs", NAN);
+  kappa = kappa_cgs / opacity_cgs;
 
   // Verify numbers of angles
   std::stringstream msg;

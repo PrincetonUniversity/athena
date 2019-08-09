@@ -64,9 +64,9 @@ rad_tetrad = cartesian  # choice of radiation tetrad
 gamma = 1.3333333333333333  # ratio of specific heats Gamma
 
 <radiation>
-coupled     = false  # flag indicating whether radiation is coupled to matter
 n_polar     = 8      # number of polar angles in direction space
 n_azimuthal = 16     # number of azimuthal angles in direction space
+coupled     = false  # flag indicating whether radiation is coupled to matter
 
 <problem>
 pos_1  = 1.5   # x-coordinate of beam origin

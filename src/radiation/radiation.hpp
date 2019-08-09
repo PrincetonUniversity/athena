@@ -51,6 +51,35 @@ public:
   int js, je;    // start and end x2-indices
   int ks, ke;    // start and end x3-indices
 
+  // Physical constants in CGS
+  Real c_cgs = 2.99792458e10;          // speed of light in cm/s
+  Real m_p_cgs = 1.67262192369e-24;    // proton mass in g
+  Real k_b_cgs = 1.380649e-16;         // Boltzmann constant in erg/K
+  Real sigma_sb_cgs = 5.670374419e-5;  // Stefan-Boltzmann constant in erg/(cm^2*s*K^4)
+
+  // Physical constants in code units
+  Real m_p;       // proton mass in code units
+  Real k_b;       // Boltzmann constant in code units
+  Real sigma_sb;  // Stefan-Boltzmann constant in code units
+
+  // User-specified units
+  Real length_cgs;   // code unit of length in cm
+  Real density_cgs;  // code unit of density in g/cm^3
+  Real mol_weight;   // molecular weight of gas in proton masses
+
+  // Inferred units
+  Real time_cgs;         // code unit of time in s
+  Real pressure_cgs;     // code unit of pressure (and energy density) in dyne/cm^2
+  Real temperature_cgs;  // code unit of temperature in K
+  Real intensity_cgs;    // code unit of intensity I in erg/(cm^2*s*sr)
+  Real opacity_cgs;      // code unit of opacity in cm^2/g
+
+  // Emission, absorption, and scattering coefficients in CGS
+  Real kappa_cgs;  // opacity in cm^2/g
+
+  // Emission, absorption, and scattering coefficients in code units
+  Real kappa;  // opacity in code units
+
   // Data arrays
   AthenaArray<Real> zetaf;        // face-centered polar radiation angles
   AthenaArray<Real> zetav;        // volume-centered polar radiation angles
