@@ -173,6 +173,10 @@ class MultigridDriver {
   void SetOctetBoundarySameLevel(AthenaArray<Real> &dst, const AthenaArray<Real> &un,
                                  const LogicalLocation loc, int ox1, int ox2, int ox3);
   void ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u, const LogicalLocation &loc);
+  void SetMeshBlockCoarsestBoundaries();
+  void GetNeighborOctetAverage(LogicalLocation nloc, AthenaArray<Real> &u,
+                               AthenaArray<Real> &uold, int k, int, int i, Real vol);
+
   // small functions
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }
 

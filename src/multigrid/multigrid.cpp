@@ -573,7 +573,6 @@ void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
       }
     }
   }
-  std::cout << "Restrict " << current_level_ << " coarse "<< dst(0,1,1,1) << " fine " << src(0,1,1,1) << std::endl;
 
   return;
 }
@@ -626,7 +625,6 @@ void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<R
       }
     }
   }
-  std::cout << "ProlongateAndCorrect " << current_level_ << " fine "<< dst(0,1,1,2) << " coarse " << src(0,1,1,2) << std::endl;
 
   return;
 }

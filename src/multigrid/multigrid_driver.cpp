@@ -169,7 +169,8 @@ void MultigridDriver::SetupMultigrid() {
         octets_[l][o].u.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
         octets_[l][o].def.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
         octets_[l][o].src.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
-        octets_[l][o].uold.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
+        if (ffas_)
+          octets_[l][o].uold.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
       }
     }
   }
@@ -203,6 +204,7 @@ void MultigridDriver::SetupMultigrid() {
 //  \brief Calculate the global average and subtract it
 
 void MultigridDriver::SubtractAverage(MGVariable type) {
+  // ******
   for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
     Multigrid *pmg = *itr;
     for (int v=0; v<nvar_; ++v)
@@ -345,7 +347,7 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
   int flag=0;
   if (current_level_ == nrootlevel_ + nreflevel_ - 1) {
     TransferFromRootToBlocks();
-    // *** Add boundary conditions 
+    SetMeshBlockCoarsestBoundaries();
     flag=1;
   }
   if (current_level_ >= nrootlevel_ + nreflevel_ - 1) { // MeshBlocks
@@ -718,6 +720,8 @@ void MultigridDriver::RestrictOctets() {
 
 void MultigridDriver::ZeroClearAllOctets() {
   // *** clear only where needed in case of FMG
+  int maxlevel = std::min(fmglevel_ - nrootlevel_, nreflevel_);
+  
   for (int l=0; l<nreflevel_; l++) {
     for (int o=0; o<noctets_[l]; ++o)
       octets_[l][o].u.ZeroClear();
@@ -744,7 +748,7 @@ void MultigridDriver::StoreOldDataOctets() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::CalculateFASRHSOctets()
-//  \brief store the old u data in the uold array in octets
+//  \brief Calculate the RHS for FAS in Octets
 void MultigridDriver::CalculateFASRHSOctets() {
   int lev = current_level_ - nrootlevel_;
 
@@ -885,6 +889,7 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
     if (fprolong && octets_[lev][o].fleaf == true) continue;
     const LogicalLocation &loc = octets_[lev][o].loc;
     AthenaArray<Real> &u = octets_[lev][o].u;
+    AthenaArray<Real> &uold = octets_[lev][o].uold;
     LogicalLocation nloc = loc;
     for (int ox3=-1; ox3<=1; ++ox3) {
       nloc.lx3 = loc.lx3 + ox3;
@@ -930,7 +935,6 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
             const AthenaArray<Real> &un = octets_[lev][octetmap_[lev][nloc]].u;
             SetOctetBoundarySameLevel(u, un, loc, ox1, ox2, ox3);
             if (folddata) {
-              AthenaArray<Real> &uold = octets_[lev][o].uold;
               const AthenaArray<Real> &unold = octets_[lev][octetmap_[lev][nloc]].uold;
               SetOctetBoundarySameLevel(uold, unold, loc, ox1, ox2, ox3);
             }
@@ -1046,3 +1050,85 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
 }
 
 
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::SetMeshBlockCoarsestBoundaries()
+//  \brief Set boundaries of each MeshBlock from neighboring finer MeshBlocks
+
+void MultigridDriver::SetMeshBlockCoarsestBoundaries() {
+  int ngh = mgroot_->ngh_;
+  Real vol = 0.125;
+  for (auto itr = vmg_.begin(); itr<vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
+    AthenaArray<Real> &u = pmg->GetCurrentData();
+    AthenaArray<Real> &uold = pmg->GetCurrentOldData();
+    for(int ok=-1; ok<=1; ++ok) {
+      for(int oj=-1; oj<=1; ++oj) {
+        for(int oi=-1; oi<=1; ++oi) {
+          if (pmg->pmgbval->nblevel[ok+1][oj+1][oi+1] > pmg->loc_.level) {
+            LogicalLocation nloc;
+            nloc.lx1 = pmg->loc_.lx1 + oi;
+            nloc.lx2 = pmg->loc_.lx2 + oj;
+            nloc.lx3 = pmg->loc_.lx3 + ok;
+            nloc.level = pmg->loc_.level;
+            for (int v=0; v<nvar_; ++v) {
+              u(v, ok+ngh, oj+ngh, oi+ngh) = 0.0;
+              if (ffas_)
+                uold(v, ok+ngh, oj+ngh, oi+ngh) = 0.0;
+            }
+            GetNeighborOctetAverage(nloc, u, uold, ok+ngh, oj+ngh, oi+ngh, vol);
+          }
+        }
+      }
+    }
+
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::GetNeighborOctetAverage(LogicalLocation nloc,
+//           AthenaArray<Real> &u, AthenaArray<Real> &uold, int k, int j, int i, Real vol)
+//  \brief Update the ghost cell with the average of all the octets including the leafs
+
+void MultigridDriver::GetNeighborOctetAverage(LogicalLocation nloc, AthenaArray<Real> &u,
+                         AthenaArray<Real> &uold, int k, int j, int i, Real vol) {
+  constexpr Real volfac = 0.125;
+  int ngh = mgroot_->ngh_;
+  int olev = nloc.level - (nrootlevel_ - 1);
+  int oid = octetmap_[olev][nloc];
+  AthenaArray<Real> &un = octets_[olev][oid].u;
+  AthenaArray<Real> &unold = octets_[olev][oid].uold;
+  if (octets_[olev][oid].fleaf == true) {
+    for (int v=0; v<nvar_; ++v) {
+      u(v, k, j, i) += vol*(un(v,1,1,1)+un(v,1,1,2)+un(v,1,2,1)+un(v,2,1,1)
+                           +un(v,2,2,1)+un(v,2,1,2)+un(v,2,2,1)+un(v,2,2,2));
+      if (ffas_)
+        uold(v, k, j, i) += vol*
+                         (unold(v,1,1,1)+unold(v,1,1,2)+unold(v,1,2,1)+unold(v,2,1,1)
+                         +unold(v,2,2,1)+unold(v,2,1,2)+unold(v,2,2,1)+unold(v,2,2,2));
+    }
+  } else {
+    for (int ok=0; ok<=1; ++ok) {
+      for (int oj=0; oj<=1; ++oj) {
+        for (int oi=0; oi<=1; ++oi) {
+          LogicalLocation lloc;
+          lloc.lx1 = (nloc.lx1 << 1) + oi;
+          lloc.lx2 = (nloc.lx2 << 1) + oj;
+          lloc.lx3 = (nloc.lx3 << 1) + ok;
+          lloc.level = nloc.level + 1;
+          int llev = olev + 1;
+          if (octetmap_[llev].count(lloc) == 1) { // has leafs
+            GetNeighborOctetAverage(lloc, u, uold, k, j, i, vol*volfac);
+          } else {
+            for (int v=0; v<nvar_; ++v) {
+              u(v, k, j, i) += vol*un(v, ngh+ok, ngh+oj, ngh+oi);
+              if (ffas_)
+                uold(v, k, j, i) += vol*unold(v, ngh+ok, ngh+oj, ngh+oi);
+            }
+          }
+        }
+      }
+    }
+  }
+}
