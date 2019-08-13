@@ -194,30 +194,30 @@ void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> 
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGGravityDriver::SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
-//           const AthenaArray<Real> &un, LogicalLocation loc, int ox1, int ox2, int ox3)
+//   const AthenaArray<Real> &un, const LogicalLocation &loc, int ox1, int ox2, int ox3)
 //  \brief set an Octet boundary from a neighbor Octet on the coarser level
 
 void MGGravityDriver::SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
-     const AthenaArray<Real> &un, LogicalLocation loc, int ox1, int ox2, int ox3) {
+     const AthenaArray<Real> &un, const LogicalLocation &loc, int ox1, int ox2, int ox3) {
   constexpr Real itw = 1.0/12.0;
   const int ngh = mgroot_->ngh_;
   const int i = ngh, j = ngh, k = ngh;
   const AthenaArray<Real> &u = dst;
   int ci, cj, ck;
   if (loc.level == nrootlevel_ - 1) { // from root
-    ci = loc.lx1;
-    cj = loc.lx2;
-    ck = loc.lx3;
+    ci = loc.lx1 + ox1 + ngh;
+    cj = loc.lx2 + ox2 + ngh;
+    ck = loc.lx3 + ox3 + ngh;
   } else { // from a neighbor octet
-    if (ox1 == 0)     ci = (static_cast<int>(loc.lx1) & 1) + ngh;
-    else if (ox1 < 0) ci = ngh+1;
-    else              ci = ngh;
-    if (ox2 == 0)     cj = (static_cast<int>(loc.lx2) & 1) + ngh;
-    else if (ox2 < 0) cj = ngh+1;
-    else              cj = ngh; 
-    if (ox3 == 0)     ck = (static_cast<int>(loc.lx3) & 1) + ngh;
-    else if (ox3 < 0) ck = ngh+1;
-    else              ck = ngh; 
+    int ix1 = (static_cast<int>(loc.lx1) & 1);
+    int ix2 = (static_cast<int>(loc.lx2) & 1);
+    int ix3 = (static_cast<int>(loc.lx3) & 1);
+    if (ox1 == 0) ci = ix1 + ngh;
+    else          ci = (ix1^1) + ngh;
+    if (ox2 == 0) cj = ix2 + ngh;
+    else          cj = (ix2^1) + ngh; 
+    if (ox3 == 0) ck = ix3 + ngh;
+    else          ck = (ix3^1) + ngh; 
   }
 
   if (ox1 != 0) {
@@ -234,6 +234,7 @@ void MGGravityDriver::SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
     dst(0, k,   j+1, ig) = cg + qdy - qdz;
     dst(0, k+1, j,   ig) = cg - qdy + qdz;
     dst(0, k+1, j+1, ig) = cg + qdy + qdz;
+    std::cout << "ox1 " <<  ox1 << " " << k << " " << j << " " << ig << " " << dst(0,k,j,ig) << " " << dst(0,k,j+1,ig) << " " << dst(0,k+1,j,ig) << " " << dst(0,k+1,j+1,ig) << " " << ck << " " << cj << " " << ci << " " << un(0,ck,cj,ci)<<std::endl;
   } else if (ox2 != 0) {
     int jg, fj;
     if (ox2 < 0) jg = 0,       fj = ngh;

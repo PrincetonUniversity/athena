@@ -171,10 +171,11 @@ class MultigridDriver {
   void FMGProlongateOctets();
   void SetBoundariesOctets(bool fprolong, bool folddata);
   void SetOctetBoundarySameLevel(AthenaArray<Real> &dst, const AthenaArray<Real> &un,
-                                 const LogicalLocation loc, int ox1, int ox2, int ox3);
+               AthenaArray<Real> &uold, const AthenaArray<Real> &unold,
+               int ox1, int ox2, int ox3, bool folddata);
   void ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u, const LogicalLocation &loc);
   void SetMeshBlockCoarsestBoundaries();
-  void GetNeighborOctetAverage(LogicalLocation nloc, AthenaArray<Real> &u,
+  void GetNeighborOctetAverage(const LogicalLocation &nloc, AthenaArray<Real> &u,
                                AthenaArray<Real> &uold, int k, int, int i, Real vol);
 
   // small functions
@@ -183,7 +184,8 @@ class MultigridDriver {
   // pure virtual functions
   virtual void Solve(int step) = 0;
   virtual void SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
-    const AthenaArray<Real> &un, LogicalLocation loc, int ox1, int ox2, int ox3) = 0;
+                               const AthenaArray<Real> &un, const LogicalLocation &loc,
+                               int ox1, int ox2, int ox3) = 0;
 
   friend class Multigrid;
   friend class MultigridTaskList;

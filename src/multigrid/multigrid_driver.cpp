@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstdlib>    // abs
 #include <iostream>   // endl
+#include <iomanip>    // setprecision
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -340,7 +341,7 @@ void MultigridDriver::FMGProlongate() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::OneStepToFiner(int nsmooth)
-//  \brief smoothing and restriction one level
+//  \brief prolongation and smoothing one level
 
 void MultigridDriver::OneStepToFiner(int nsmooth) {
   int ngh=mgroot_->ngh_;
@@ -361,6 +362,7 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
     } else {
       SetBoundariesOctets(true, ffas_);
     }
+    std::cout << "Prolongating octets " << std::endl;
     ProlongateAndCorrectOctets();
     current_level_++;
     for (int n=0; n<nsmooth; ++n) {
@@ -371,6 +373,7 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
     }
   } else { // root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
+    std::cout << "Prolongating root grid " << std::endl;
     mgroot_->ProlongateAndCorrectBlock();
     current_level_++;
     for (int n=0; n<nsmooth; ++n) {
@@ -499,7 +502,7 @@ void MultigridDriver::SolveFMGCycle() {
 void MultigridDriver::SolveIterative() {
   Real def=eps_+1e-10;
   int niter=0;
-  std::cout << std::scientific;
+  std::cout << std::scientific << std::setprecision(14);
   while (def > eps_) {
     SolveVCycle(1,1);
     Real olddef=def;
@@ -556,7 +559,7 @@ void MultigridDriver::SolveCoarsestGrid() {
       }
     }
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
-    if (ffas_ && current_level_ < fmglevel_) {
+    if (ffas_) {
       mgroot_->StoreOldData();
       mgroot_->CalculateFASRHSBlock();
     }
@@ -694,9 +697,9 @@ void MultigridDriver::RestrictOctets() {
   } else { // octets to the root grid
     for (int o=0; o<noctets_[0]; ++o) {
       const LogicalLocation &loc = octets_[0][o].loc;
-      int ri = (loc.lx1 >> 1);
-      int rj = (loc.lx2 >> 1);
-      int rk = (loc.lx3 >> 1);
+      int ri = loc.lx1; //(loc.lx1 >> 1);
+      int rj = loc.lx2; //(loc.lx2 >> 1);
+      int rk = loc.lx3; //(loc.lx3 >> 1);
       mgroot_->CalculateDefect(octets_[0][o].def, octets_[0][o].u,
                                octets_[0][o].src, 1, os_, oe_, os_, oe_, os_, oe_);
       mgroot_->Restrict(cbuf_, octets_[0][o].def, os_, oe_, os_, oe_, os_, oe_);
@@ -766,10 +769,16 @@ void MultigridDriver::CalculateFASRHSOctets() {
 void MultigridDriver::SmoothOctets(int color) {
   int lev = current_level_ - nrootlevel_;
 
-  for (int o=0; o<noctets_[lev]; ++o)
+  for (int o=0; o<noctets_[lev]; ++o) {
+    std::cout << "SmoothOctet before " << o  << " color " << color<< std::endl;
+    for (int k=0; k<=3; k++) 
+    for (int j=0; j<=3; j++) 
+    for (int i=0; i<=3; i++) 
+    std::cout << k << " " << j << " " << i << " " << octets_[lev][o].u(0,k,j,i) << " " << octets_[lev][o].src(0,k,j,i) << std::endl;
     mgroot_->Smooth(octets_[lev][o].u, octets_[lev][o].src,
                     lev+1, os_, oe_, os_, oe_, os_, oe_, color);
-
+    std::cout << "SmoothOctet after  " << o << " " << octets_[lev][o].u(0,1,1,1) << " " << octets_[lev][o].u(0,2,2,2) << std::endl;
+  }
   return;
 }
 
@@ -818,17 +827,26 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
       cloc.lx3 = (loc.lx3 >> 1);
       cloc.level = loc.level - 1;
       int cid = octetmap_[clev][cloc];
-      int ci = (static_cast<int>(loc.lx1) & 1) + ngh;
-      int cj = (static_cast<int>(loc.lx2) & 1) + ngh;
-      int ck = (static_cast<int>(loc.lx3) & 1) + ngh;
-      if (ffas_ && pcid != cid) {
-        int size = octets_[clev][cid].u.GetSize();
-        for (int s=0; s<size; ++s)
-          octets_[clev][cid].u(s) -= octets_[clev][cid].uold(s);
+      int ci = (static_cast<int>(loc.lx1) & 1) + ngh - 1;
+      int cj = (static_cast<int>(loc.lx2) & 1) + ngh - 1;
+      int ck = (static_cast<int>(loc.lx3) & 1) + ngh - 1;
+      const AthenaArray<Real> &uc = octets_[clev][cid].u;
+      const AthenaArray<Real> &ucold = octets_[clev][cid].uold;
+      if (ffas_) {
+        for (int v=0; v<nvar_; ++v) {
+          for (int k=0; k<2; ++k) {
+            for (int j=0; j<2; ++j) {
+              for (int i=0; i<2; ++i)
+                cbuf_(v,k,j,i) = uc(v, ck+k, cj+j, ci+i) - ucold(v, ck+k, cj+j, ci+i);
+            }
+          }
+        }
+        mgroot_->ProlongateAndCorrect(octets_[flev][o].u, cbuf_,
+                                      ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh);
+      } else {
+        mgroot_->ProlongateAndCorrect(octets_[flev][o].u, uc,
+                 ci+ngh, ci+ngh, cj+ngh, cj+ngh, ck+ngh, ck+ngh, ngh, ngh, ngh);
       }
-      mgroot_->ProlongateAndCorrect(octets_[flev][o].u, octets_[clev][cid].u,
-                                    ci, ci, cj, cj, ck, ck, ngh, ngh, ngh);
-      pcid = cid;
     }
   }
 
@@ -931,24 +949,28 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
               == MGPeriodicOuterX1) nloc.lx1 = 0;
             else continue;
           }
+          std::cout << "octet boundary " << loc.lx1 << " " << loc.lx2 << " " << loc.lx3 << " " << loc.level << " " << lev << " " << ox1 << " " << ox2 << " " << ox3 << std::endl;
+          std::cout << "neighbor " << nloc.lx1 << " " << nloc.lx2 << " " << nloc.lx3 << " " << nloc.level << std::endl;
           if (octetmap_[lev].count(nloc) == 1) { // on the same level
+            std::cout << "neighbor on the same level" << std::endl;
             const AthenaArray<Real> &un = octets_[lev][octetmap_[lev][nloc]].u;
-            SetOctetBoundarySameLevel(u, un, loc, ox1, ox2, ox3);
-            if (folddata) {
-              const AthenaArray<Real> &unold = octets_[lev][octetmap_[lev][nloc]].uold;
-              SetOctetBoundarySameLevel(uold, unold, loc, ox1, ox2, ox3);
-            }
+            const AthenaArray<Real> &unold = octets_[lev][octetmap_[lev][nloc]].uold;
+            SetOctetBoundarySameLevel(u, un, uold, unold, ox1, ox2, ox3, folddata);
           } else { // on the coarser level
-            nloc.lx1 >>= 1;
-            nloc.lx2 >>= 1;
-            nloc.lx3 >>= 1;
-            nloc.level--;
             if (lev > 0) {
-              const AthenaArray<Real> &un = octets_[lev-1][octetmap_[lev-1][nloc]].u;
+              std::cout << "neighbor on a coarser octet" << std::endl;
+              LogicalLocation cloc;
+              cloc.lx1 = nloc.lx1 >> 1;
+              cloc.lx2 = nloc.lx2 >> 1;
+              cloc.lx3 = nloc.lx3 >> 1;
+              cloc.level = nloc.level - 1;
+              std::cout << "coarse neighbor " << cloc.lx1 << " " << cloc.lx2 << " " << cloc.lx3 << " " << cloc.level << std::endl;
+              const AthenaArray<Real> &un = octets_[lev-1][octetmap_[lev-1][cloc]].u;
               SetOctetBoundaryFromCoarser(u, un, loc, ox1, ox2, ox3);
             } else {
+              std::cout << "neighbor on the root grid" << std::endl;
               SetOctetBoundaryFromCoarser(u, mgroot_->GetCurrentData(),
-                                          nloc, ox1, ox2, ox3);
+                                          loc, ox1, ox2, ox3);
             }
           }
         }
@@ -963,11 +985,13 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
-//      const AthenaArray<Real> &un, const LogicalLocation loc, int ox1, int ox2, int ox3)
+//   const AthenaArray<Real> &un, AthenaArray<Real> &uold, const AthenaArray<Real> &unold,
+//   int ox1, int ox2, int ox3, bool folddata)
 //  \brief set an Octet boundary from a neighbor Octet on the same level
 
 void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
-     const AthenaArray<Real> &un, const LogicalLocation loc, int ox1, int ox2, int ox3) {
+     const AthenaArray<Real> &un, AthenaArray<Real> &uold, const AthenaArray<Real> &unold,
+     int ox1, int ox2, int ox3, bool folddata) {
   int ngh = mgroot_->ngh_;
   int is, ie, js, je, ks, ke, nis, njs, nks;
   if (ox1 == 0)     is = ngh,   ie = ngh+1, nis = ngh;
@@ -979,11 +1003,21 @@ void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
   if (ox3 == 0)     ks = ngh,   ke = ngh+1, nks = ngh;
   else if (ox3 < 0) ks = 0,     ke = ngh-1, nks = ngh+1;
   else              ks = ngh+2, ke = ngh+2, nks = ngh; 
-  for (int n=0; n<nvar_; ++n) {
+  for (int v=0; v<nvar_; ++v) {
     for (int k=ks, nk=nks; k<=ke; ++k, ++nk) {
       for (int j=js, nj=njs; j<=je; ++j, ++nj) {
         for (int i=is, ni=nis; i<=ie; ++i, ++ni)
-          dst(n, k, j, i) = un(n, nk, nj, ni);
+          dst(v, k, j, i) = un(v, nk, nj, ni);
+      }
+    }
+  }
+  if (folddata) {
+    for (int v=0; v<nvar_; ++v) {
+      for (int k=ks, nk=nks; k<=ke; ++k, ++nk) {
+        for (int j=js, nj=njs; j<=je; ++j, ++nj) {
+          for (int i=is, ni=nis; i<=ie; ++i, ++ni)
+            uold(v, k, j, i) = unold(v, nk, nj, ni);
+        }
       }
     }
   }
@@ -1087,26 +1121,27 @@ void MultigridDriver::SetMeshBlockCoarsestBoundaries() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::GetNeighborOctetAverage(LogicalLocation nloc,
+//! \fn void MultigridDriver::GetNeighborOctetAverage(const LogicalLocation &nloc,
 //           AthenaArray<Real> &u, AthenaArray<Real> &uold, int k, int j, int i, Real vol)
 //  \brief Update the ghost cell with the average of all the octets including the leafs
 
-void MultigridDriver::GetNeighborOctetAverage(LogicalLocation nloc, AthenaArray<Real> &u,
-                         AthenaArray<Real> &uold, int k, int j, int i, Real vol) {
+void MultigridDriver::GetNeighborOctetAverage(const LogicalLocation &nloc,
+     AthenaArray<Real> &u, AthenaArray<Real> &uold, int k, int j, int i, Real vol) {
   constexpr Real volfac = 0.125;
   int ngh = mgroot_->ngh_;
+  const int l = ngh, r = ngh+1;
   int olev = nloc.level - (nrootlevel_ - 1);
   int oid = octetmap_[olev][nloc];
   AthenaArray<Real> &un = octets_[olev][oid].u;
   AthenaArray<Real> &unold = octets_[olev][oid].uold;
   if (octets_[olev][oid].fleaf == true) {
     for (int v=0; v<nvar_; ++v) {
-      u(v, k, j, i) += vol*(un(v,1,1,1)+un(v,1,1,2)+un(v,1,2,1)+un(v,2,1,1)
-                           +un(v,2,2,1)+un(v,2,1,2)+un(v,2,2,1)+un(v,2,2,2));
+      u(v, k, j, i) += vol*(un(v,l,l,l)+un(v,l,l,r)+un(v,l,r,l)+un(v,r,l,l)
+                           +un(v,r,r,l)+un(v,r,l,r)+un(v,r,r,l)+un(v,r,r,r));
       if (ffas_)
         uold(v, k, j, i) += vol*
-                         (unold(v,1,1,1)+unold(v,1,1,2)+unold(v,1,2,1)+unold(v,2,1,1)
-                         +unold(v,2,2,1)+unold(v,2,1,2)+unold(v,2,2,1)+unold(v,2,2,2));
+                         (unold(v,l,l,l)+unold(v,l,l,r)+unold(v,l,r,l)+unold(v,r,l,l)
+                         +unold(v,r,r,l)+unold(v,r,l,r)+unold(v,r,r,l)+unold(v,r,r,r));
     }
   } else {
     for (int ok=0; ok<=1; ++ok) {
