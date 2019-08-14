@@ -94,12 +94,8 @@ void MultigridTaskList::AddMultigridTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
-  if (id == MG_STARTRECVL) {
-      task_list_[ntasks].TaskFunc=
-        static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
-        (&MultigridTaskList::StartReceive);
-  } else if (id == MG_STARTRECV0  || id == MG_STARTRECV1R || id == MG_STARTRECV1B
-          || id == MG_STARTRECV2R || id == MG_STARTRECV2B) {
+  if ( id == MG_STARTRECV0  || id == MG_STARTRECV1R || id == MG_STARTRECV1B
+    || id == MG_STARTRECV2R || id == MG_STARTRECV2B || id == MG_STARTRECVL) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
         (&MultigridTaskList::StartReceiveFace);
@@ -107,21 +103,17 @@ void MultigridTaskList::AddMultigridTask(const TaskID& id, const TaskID& dep) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
         (&MultigridTaskList::StartReceiveForProlongation);
-  } else if (id == MG_CLEARBNDL  || id == MG_CLEARBNDP) {
+  } else if (id == MG_CLEARBNDP) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
         (&MultigridTaskList::ClearBoundary);
   } else if (id == MG_CLEARBND0  || id == MG_CLEARBND1R || id == MG_CLEARBND1B
-          || id == MG_CLEARBND2R || id == MG_CLEARBND2B) {
+          || id == MG_CLEARBND2R || id == MG_CLEARBND2B || id == MG_CLEARBNDL) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
         (&MultigridTaskList::ClearBoundaryFace);
-  } else if (id == MG_SENDBNDL) {
-      task_list_[ntasks].TaskFunc=
-        static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
-        (&MultigridTaskList::SendBoundary);
   } else if (id == MG_SENDBND0  || id == MG_SENDBND1R || id == MG_SENDBND1B
-          || id == MG_SENDBND2R || id == MG_SENDBND2B) {
+          || id == MG_SENDBND2R || id == MG_SENDBND2B || id == MG_SENDBNDL) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
         (&MultigridTaskList::SendBoundaryFace);
@@ -129,12 +121,8 @@ void MultigridTaskList::AddMultigridTask(const TaskID& id, const TaskID& dep) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
         (&MultigridTaskList::SendBoundaryForProlongation);
-  } else if (id == MG_RECVBNDL) {
-      task_list_[ntasks].TaskFunc=
-        static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
-        (&MultigridTaskList::ReceiveBoundary);
   } else if (id == MG_RECVBND0  || id == MG_RECVBND1R || id == MG_RECVBND1B
-          || id == MG_RECVBND2R || id == MG_RECVBND2B) {
+          || id == MG_RECVBND2R || id == MG_RECVBND2B || id == MG_RECVBNDL) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
         (&MultigridTaskList::ReceiveBoundaryFace);
@@ -142,10 +130,6 @@ void MultigridTaskList::AddMultigridTask(const TaskID& id, const TaskID& dep) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
         (&MultigridTaskList::ReceiveBoundaryForProlongation);
-  } else if (id == MG_PRLNGBNDL) {
-      task_list_[ntasks].TaskFunc=
-          static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
-          (&MultigridTaskList::ProlongateBoundary);
   } else if (id == MG_PRLNGBNDP) {
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (MultigridTaskList::*)(Multigrid*)>
@@ -362,12 +346,7 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag) {
       AddMultigridTask(MG_STARTRECVL, MG_CLEARBND2B);
     AddMultigridTask(MG_SENDBNDL, MG_STARTRECVL);
     AddMultigridTask(MG_RECVBNDL, MG_STARTRECVL);
-    if (pmy_mgdriver_->pmy_mesh_->multilevel) {
-      AddMultigridTask(MG_PRLNGBNDL, MG_SENDBNDL|MG_RECVBNDL);
-      AddMultigridTask(MG_PHYSBNDL,  MG_PRLNGBNDL);
-    } else {
-      AddMultigridTask(MG_PHYSBNDL,  MG_SENDBNDL|MG_RECVBNDL);
-    }
+    AddMultigridTask(MG_PHYSBNDL,  MG_SENDBNDL|MG_RECVBNDL);
     AddMultigridTask(MG_CLEARBNDL, MG_PHYSBNDL);
   }
 }
@@ -465,16 +444,16 @@ void MultigridTaskList::SetMGTaskListFMGProlongate(int flag) {
   if (flag==1) { // first time on the block level
     AddMultigridTask(MG_FMGPROLONG, NONE);
   } else {
-    AddMultigridTask(MG_STARTRECVL, NONE);
-    AddMultigridTask(MG_SENDBNDL,   MG_STARTRECVL);
-    AddMultigridTask(MG_RECVBNDL,   MG_STARTRECVL);
+    AddMultigridTask(MG_STARTRECVP, NONE);
+    AddMultigridTask(MG_SENDBNDP,   MG_STARTRECVP);
+    AddMultigridTask(MG_RECVBNDP,   MG_STARTRECVP);
     if (pmy_mgdriver_->pmy_mesh_->multilevel) {
-      AddMultigridTask(MG_PRLNGBNDL, MG_SENDBNDL|MG_RECVBNDL);
-      AddMultigridTask(MG_PHYSBNDL,  MG_PRLNGBNDL);
+      AddMultigridTask(MG_PRLNGBNDP, MG_SENDBNDP|MG_RECVBNDP);
+      AddMultigridTask(MG_PHYSBND0,  MG_PRLNGBNDP);
     } else {
-      AddMultigridTask(MG_PHYSBNDL, MG_RECVBNDL|MG_SENDBNDL);
+      AddMultigridTask(MG_PHYSBND0, MG_RECVBNDP|MG_SENDBNDP);
     }
-    AddMultigridTask(MG_FMGPROLONG, MG_PHYSBNDL);
-    AddMultigridTask(MG_CLEARBNDL,  MG_FMGPROLONG);
+    AddMultigridTask(MG_FMGPROLONG, MG_PHYSBND0);
+    AddMultigridTask(MG_CLEARBNDP,  MG_FMGPROLONG);
   }
 }

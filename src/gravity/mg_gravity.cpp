@@ -234,7 +234,7 @@ void MGGravityDriver::SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
     dst(0, k,   j+1, ig) = cg + qdy - qdz;
     dst(0, k+1, j,   ig) = cg - qdy + qdz;
     dst(0, k+1, j+1, ig) = cg + qdy + qdz;
-    std::cout << "ox1 " <<  ox1 << " " << k << " " << j << " " << ig << " " << dst(0,k,j,ig) << " " << dst(0,k,j+1,ig) << " " << dst(0,k+1,j,ig) << " " << dst(0,k+1,j+1,ig) << " " << ck << " " << cj << " " << ci << " " << un(0,ck,cj,ci)<<std::endl;
+//    std::cout << "ox1 " <<  ox1 << " " << k << " " << j << " " << ig << " " << dst(0,k,j,ig) << " " << dst(0,k,j+1,ig) << " " << dst(0,k+1,j,ig) << " " << dst(0,k+1,j+1,ig) << " " << ck << " " << cj << " " << ci << " " << un(0,ck,cj,ci)<<std::endl;
   } else if (ox2 != 0) {
     int jg, fj;
     if (ox2 < 0) jg = 0,       fj = ngh;

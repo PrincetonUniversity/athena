@@ -118,21 +118,20 @@ const TaskID MG_RECVBND2B(26);
 const TaskID MG_RECVBNDP(27);
 const TaskID MG_RECVBNDL(28);
 const TaskID MG_PRLNGBNDP(29);
-const TaskID MG_PRLNGBNDL(30);
-const TaskID MG_SMOOTH1R(31);
-const TaskID MG_SMOOTH1B(32);
-const TaskID MG_SMOOTH2R(33);
-const TaskID MG_SMOOTH2B(34);
-const TaskID MG_PHYSBND0(35);
-const TaskID MG_PHYSBND1R(36);
-const TaskID MG_PHYSBND1B(37);
-const TaskID MG_PHYSBND2R(38);
-const TaskID MG_PHYSBND2B(39);
-const TaskID MG_PHYSBNDL(40);
-const TaskID MG_RESTRICT(41);
-const TaskID MG_PROLONG(42);
-const TaskID MG_FMGPROLONG(43);
-const TaskID MG_CALCFASRHS(44);
+const TaskID MG_SMOOTH1R(30);
+const TaskID MG_SMOOTH1B(31);
+const TaskID MG_SMOOTH2R(32);
+const TaskID MG_SMOOTH2B(33);
+const TaskID MG_PHYSBND0(34);
+const TaskID MG_PHYSBND1R(35);
+const TaskID MG_PHYSBND1B(36);
+const TaskID MG_PHYSBND2R(37);
+const TaskID MG_PHYSBND2B(38);
+const TaskID MG_PHYSBNDL(39);
+const TaskID MG_RESTRICT(40);
+const TaskID MG_PROLONG(41);
+const TaskID MG_FMGPROLONG(42);
+const TaskID MG_CALCFASRHS(43);
 } // namespace MultigridTaskNames
 
 #endif // TASK_LIST_MG_TASK_LIST_HPP_

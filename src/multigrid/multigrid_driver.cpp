@@ -346,6 +346,7 @@ void MultigridDriver::FMGProlongate() {
 void MultigridDriver::OneStepToFiner(int nsmooth) {
   int ngh=mgroot_->ngh_;
   int flag=0;
+  std::cout << "ToFiner " << current_level_ << std::endl;
   if (current_level_ == nrootlevel_ + nreflevel_ - 1) {
     TransferFromRootToBlocks();
     SetMeshBlockCoarsestBoundaries();
@@ -357,12 +358,13 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
     mgtlist_->DoTaskListOneStage(this);
     current_level_++;
   } else if (current_level_ >= nrootlevel_ - 1) { // non uniform octets
+    std::cout << "Prolongating octets " << current_level_ << " " << nrootlevel_-1 << std::endl;
     if (current_level_ == nrootlevel_ - 1) {
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
     } else {
+      std::cout << "Octets boundary for prolongation" << std::endl;
       SetBoundariesOctets(true, ffas_);
     }
-    std::cout << "Prolongating octets " << std::endl;
     ProlongateAndCorrectOctets();
     current_level_++;
     for (int n=0; n<nsmooth; ++n) {
@@ -394,6 +396,7 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
 
 void MultigridDriver::OneStepToCoarser(int nsmooth) {
   int ngh=mgroot_->ngh_;
+  std::cout << "ToCoarser " << current_level_ << std::endl;
   if (current_level_ >= nrootlevel_ + nreflevel_) { // MeshBlocks
     mgtlist_->SetMGTaskListToCoarser(nsmooth, ngh);
     mgtlist_->DoTaskListOneStage(this);
@@ -504,6 +507,7 @@ void MultigridDriver::SolveIterative() {
   int niter=0;
   std::cout << std::scientific << std::setprecision(14);
   while (def > eps_) {
+    std::cout << "iter " << niter << std::endl;
     SolveVCycle(1,1);
     Real olddef=def;
     def=0.0;
@@ -602,6 +606,12 @@ Real MultigridDriver::CalculateDefectNorm(MGNormType nrm, int n) {
   else
     MPI_Allreduce(MPI_IN_PLACE,&norm,1,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_MULTIGRID);
 #endif
+  if (nrm != MGNormType::max) {
+    Real vol=(mgroot_->size_.x1max-mgroot_->size_.x1min)
+            *(mgroot_->size_.x2max-mgroot_->size_.x2min)
+            *(mgroot_->size_.x3max-mgroot_->size_.x3min);
+    norm /= vol;
+  }
   if (nrm == MGNormType::l2)
     norm=std::sqrt(norm);
 
@@ -771,6 +781,7 @@ void MultigridDriver::SmoothOctets(int color) {
 
   for (int o=0; o<noctets_[lev]; ++o) {
     std::cout << "SmoothOctet before " << o  << " color " << color<< std::endl;
+    if (o==0) 
     for (int k=0; k<=3; k++) 
     for (int j=0; j<=3; j++) 
     for (int i=0; i<=3; i++) 
@@ -798,20 +809,28 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
     const AthenaArray<Real> &uold = mgroot_->GetCurrentOldData();
     for (int o=0; o<noctets_[0]; ++o) { // octets to the root grid
       const LogicalLocation &loc = octets_[0][o].loc;
-      int ri = (loc.lx1 >> 1) + ngh - 1;
-      int rj = (loc.lx2 >> 1) + ngh - 1;
-      int rk = (loc.lx3 >> 1) + ngh - 1;
+      int ri = (static_cast<int>(loc.lx1) >> 1) + ngh - 1;
+      int rj = (static_cast<int>(loc.lx2) >> 1) + ngh - 1;
+      int rk = (static_cast<int>(loc.lx3) >> 1) + ngh - 1;
       if (ffas_) {
+        std::cout << "prolongating " << o << std::endl;
         for (int v=0; v<nvar_; ++v) {
-          for (int k=0; k<2; ++k) {
-            for (int j=0; j<2; ++j) {
-              for (int i=0; i<2; ++i)
+          for (int k=0; k<=2; ++k) {
+            for (int j=0; j<=2; ++j) {
+              for (int i=0; i<=2; ++i) {
                 cbuf_(v,k,j,i) = u(v, rk+k, rj+j, ri+i) - uold(v, rk+k, rj+j, ri+i);
+                std::cout << k << " " << j << "  "<< i << " "  <<cbuf_(0,k,j,i) << std::endl;
+              }
             }
           }
         }
         mgroot_->ProlongateAndCorrect(octets_[0][o].u, cbuf_,
                                       ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh);
+        std::cout << "prolongated " << o << std::endl;
+        for (int k=1; k<=2; ++k)
+          for (int j=1; j<=2; ++j)
+            for (int i=1; i<=2; ++i)
+              std::cout <<k << " " << j << " " << i << " " << octets_[0][o].u(0,k,j,i)<< std::endl; 
       } else {
         mgroot_->ProlongateAndCorrect(octets_[0][o].u, u,
                                       ri, ri, rj, rj, rk, rk, ngh, ngh, ngh);
@@ -834,9 +853,9 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
       const AthenaArray<Real> &ucold = octets_[clev][cid].uold;
       if (ffas_) {
         for (int v=0; v<nvar_; ++v) {
-          for (int k=0; k<2; ++k) {
-            for (int j=0; j<2; ++j) {
-              for (int i=0; i<2; ++i)
+          for (int k=0; k<=2; ++k) {
+            for (int j=0; j<=2; ++j) {
+              for (int i=0; i<=2; ++i)
                 cbuf_(v,k,j,i) = uc(v, ck+k, cj+j, ci+i) - ucold(v, ck+k, cj+j, ci+i);
             }
           }

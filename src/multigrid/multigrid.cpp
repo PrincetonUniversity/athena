@@ -344,6 +344,7 @@ void Multigrid::CalculateDefectBlock() {
   is = js = ks = ngh_;
   ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
 
+  std::cout << "CalcDefBlock " << loc_.lx1 << " " << loc_.lx2 << " " << loc_.lx3 << " " << loc_.level << " " << current_level_<< std::endl;
   CalculateDefect(def_[current_level_], u_[current_level_], src_[current_level_],
                   -ll, is, ie, js, je, ks, ke);
 
@@ -379,7 +380,7 @@ void Multigrid::SetFromRootGrid() {
     int ci = static_cast<int>(loc_.lx1);
     int cj = static_cast<int>(loc_.lx2);
     int ck = static_cast<int>(loc_.lx3);
-    const AthenaArray<Real> &src=pmy_driver_->mgroot_->u_[pmy_driver_->nrootlevel_-1];
+    const AthenaArray<Real> &src=pmy_driver_->mgroot_->GetCurrentData();
     for (int v=0; v<nvar_; ++v) {
       for (int k=0; k<=2; ++k) {
         for (int j=0; j<=2; ++j) {
@@ -390,8 +391,7 @@ void Multigrid::SetFromRootGrid() {
     }
     if (pmy_driver_->ffas_) {
       AthenaArray<Real> &odst = uold_[current_level_];
-      const AthenaArray<Real> &osrc
-                              = pmy_driver_->mgroot_->uold_[pmy_driver_->nrootlevel_-1];
+      const AthenaArray<Real> &osrc = pmy_driver_->mgroot_->GetCurrentOldData();
       for (int v=0; v<nvar_; ++v) {
         for (int k=0; k<=2; ++k) {
           for (int j=0; j<=2; ++j) {
@@ -449,6 +449,11 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
+  Real dx=rdx_*static_cast<Real>(1<<ll), dy=rdy_*static_cast<Real>(1<<ll),
+       dz=rdz_*static_cast<Real>(1<<ll);
+
+  CalculateDefect(def_[current_level_], u_[current_level_], src_[current_level_],
+                  -ll, is, ie, js, je, ks, ke);
 
   Real norm=0.0;
   if (nrm == MGNormType::max) {
@@ -458,6 +463,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
           norm=std::max(norm,std::fabs(def(n,k,j,i)));
       }
     }
+    return norm;
   } else if (nrm == MGNormType::l1) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
@@ -473,7 +479,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
       }
     }
   }
-  return norm;
+  return norm*dx*dy*dz;
 }
 
 
