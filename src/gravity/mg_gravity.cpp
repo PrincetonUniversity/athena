@@ -83,8 +83,7 @@ void MGGravityDriver::Solve(int stage) {
   }
 
   // load the source
-  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
-    Multigrid *pmg = *itr;
+  for (Multigrid* pmg : vmg_) {
     // assume all the data are located on the same node
     pmg->LoadSource(pmg->pmy_block_->phydro->u, IDN, NGHOST, four_pi_G_);
     if (mode_ >= 2) // iterative mode - load initial guess
@@ -102,8 +101,7 @@ void MGGravityDriver::Solve(int stage) {
     SolveIterative();
 
   // Return the result
-  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
-    Multigrid *pmg = *itr;
+  for (Multigrid* pmg : vmg_) {
     Gravity *pgrav = pmg->pmy_block_->pgrav;
     pmg->RetrieveResult(pgrav->phi, 0, NGHOST);
     pgrav->grav_mean_rho = mean_rho;
@@ -234,7 +232,6 @@ void MGGravityDriver::SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
     dst(0, k,   j+1, ig) = cg + qdy - qdz;
     dst(0, k+1, j,   ig) = cg - qdy + qdz;
     dst(0, k+1, j+1, ig) = cg + qdy + qdz;
-//    std::cout << "ox1 " <<  ox1 << " " << k << " " << j << " " << ig << " " << dst(0,k,j,ig) << " " << dst(0,k,j+1,ig) << " " << dst(0,k+1,j,ig) << " " << dst(0,k+1,j+1,ig) << " " << ck << " " << cj << " " << ci << " " << un(0,ck,cj,ci)<<std::endl;
   } else if (ox2 != 0) {
     int jg, fj;
     if (ox2 < 0) jg = 0,       fj = ngh;
