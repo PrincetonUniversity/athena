@@ -151,6 +151,7 @@ Multigrid::~Multigrid() {
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
 //  \brief Fill the inital guess in the active zone of the finest level
+
 void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh) {
   AthenaArray<Real> &dst=u_[nlevel_-1];
   int is, ie, js, je, ks, ke;
@@ -173,6 +174,7 @@ void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh) {
 //! \fn void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
 //                                 Real fac)
 //  \brief Fill the source in the active zone of the finest level
+
 void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac) {
   AthenaArray<Real> &dst=src_[nlevel_-1];
   int is, ie, js, je, ks, ke;
@@ -223,6 +225,7 @@ void Multigrid::RestrictFMGSource() {
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
 //  \brief Set the result, including the ghost zone
+
 void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh) {
   const AthenaArray<Real> &src=u_[nlevel_-1];
   int sngh=std::min(ngh_,ngh);
@@ -566,6 +569,7 @@ void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v) {
 //! \fn void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
 //                               int il, int iu, int jl, int ju, int kl, int ku)
 //  \brief Actual implementation of prolongation and correction
+
 void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
                          int il, int iu, int jl, int ju, int kl, int ku) {
   for (int v=0; v<nvar_; ++v) {
@@ -589,6 +593,7 @@ void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
 //      const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku,
 //      int fil, int fjl, int fkl)
 //  \brief Actual implementation of prolongation and correction
+
 void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
      int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl) {
   for (int v=0; v<nvar_; ++v) {
@@ -641,6 +646,7 @@ void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<R
 //           const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku
 //           int fil, int fjl, int fkl)
 //  \brief Actual implementation of FMG prolongation
+
 void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
                               int il, int iu, int jl, int ju, int kl, int ku,
                               int fil, int fjl, int fkl) {

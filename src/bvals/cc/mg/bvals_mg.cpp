@@ -235,7 +235,7 @@ void MGBoundaryValues::StartReceivingMultigrid(BoundaryQuantity type, bool foldd
         if (nb.snb.level == mylevel) size = nc*nc*ngh;
         else if (nb.snb.level < mylevel) size = SQR(nc/2)*ngh;
         else size = SQR(nc/2)*ngh;
-      } else { // default, full boundary communication
+      } else { // full boundary communication
         if (nb.snb.level == mylevel) { // same
           if (nb.ni.type == NeighborConnect::face) size = SQR(nc)*ngh;
           else if (nb.ni.type == NeighborConnect::edge) size = nc*ngh*ngh;
@@ -949,7 +949,7 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(BoundaryQuantity type,
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
-    if (faceonly && nb.ni.type>NeighborConnect::face) break;
+    if (faceonly && nb.ni.type > NeighborConnect::face) break;
     if (bdata_.flag[nb.bufid] == BoundaryStatus::completed) continue;
     if (bdata_.flag[nb.bufid] == BoundaryStatus::waiting) {
       if (nb.snb.rank == Globals::my_rank) {// on the same process
@@ -1145,42 +1145,42 @@ void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata) {
           for (int j=sj, fj=fsj; j<=ej; ++j, fj+=2) {
             for (int i=si, fi=fsi; i<=ei; ++i, fi+=2) {
               if (fk >= 0 && fj >= 0 && fi >= 0)
-                dst(v, fk,   fj,   fi  ) =
+                old(v, fk,   fj,   fi  ) =
                 0.015625*(27.0*cbufold_(v,k,j,i)+cbufold_(v,k-1,j-1,i-1)
                 +9.0*(cbufold_(v,k,j,i-1)+cbufold_(v,k,j-1,i)+cbufold_(v,k-1,j,i))
                 +3.0*(cbufold_(v,k-1,j-1,i)+cbufold_(v,k-1,j,i-1)+cbufold_(v,k,j-1,i-1)));
               if (fk >= 0 && fj >= 0 && fi < flim)
-                dst(v, fk,   fj,   fi+1) =
+                old(v, fk,   fj,   fi+1) =
                 0.015625*(27.0*cbufold_(v,k,j,i)+cbufold_(v,k-1,j-1,i+1)
                 +9.0*(cbufold_(v,k,j,i+1)+cbufold_(v,k,j-1,i)+cbufold_(v,k-1,j,i))
                 +3.0*(cbufold_(v,k-1,j-1,i)+cbufold_(v,k-1,j,i+1)+cbufold_(v,k,j-1,i+1)));
               if (fk >= 0 && fj < flim && fi >= 0)
-                dst(v, fk,   fj+1, fi  ) =
+                old(v, fk,   fj+1, fi  ) =
                 0.015625*(27.0*cbufold_(v,k,j,i)+cbufold_(v,k-1,j+1,i-1)
                 +9.0*(cbufold_(v,k,j,i-1)+cbufold_(v,k,j+1,i)+cbufold_(v,k-1,j,i))
                 +3.0*(cbufold_(v,k-1,j+1,i)+cbufold_(v,k-1,j,i-1)+cbufold_(v,k,j+1,i-1)));
               if (fk < flim && fj >= 0 && fi >= 0)
-                dst(v, fk+1, fj,   fi  ) =
+                old(v, fk+1, fj,   fi  ) =
                 0.015625*(27.0*cbufold_(v,k,j,i)+cbufold_(v,k+1,j-1,i-1)
                 +9.0*(cbufold_(v,k,j,i-1)+cbufold_(v,k,j-1,i)+cbufold_(v,k+1,j,i))
                 +3.0*(cbufold_(v,k+1,j-1,i)+cbufold_(v,k+1,j,i-1)+cbufold_(v,k,j-1,i-1)));
               if (fk < flim && fj < flim && fi >= 0)
-                dst(v, fk+1, fj+1, fi  ) =
+                old(v, fk+1, fj+1, fi  ) =
                 0.015625*(27.0*cbufold_(v,k,j,i)+cbufold_(v,k+1,j+1,i-1)
                 +9.0*(cbufold_(v,k,j,i-1)+cbufold_(v,k,j+1,i)+cbufold_(v,k+1,j,i))
                 +3.0*(cbufold_(v,k+1,j+1,i)+cbufold_(v,k+1,j,i-1)+cbufold_(v,k,j+1,i-1)));
               if (fk < flim && fj >= 0 && fi < flim)
-                dst(v, fk+1, fj,   fi+1) =
+                old(v, fk+1, fj,   fi+1) =
                 0.015625*(27.0*cbufold_(v,k,j,i)+cbufold_(v,k+1,j-1,i+1)
                 +9.0*(cbufold_(v,k,j,i+1)+cbufold_(v,k,j-1,i)+cbufold_(v,k+1,j,i))
                 +3.0*(cbufold_(v,k+1,j-1,i)+cbufold_(v,k+1,j,i+1)+cbufold_(v,k,j-1,i+1)));
               if (fk >= 0 && fj < flim && fi < flim)
-                dst(v, fk,  fj+1, fi+1) =
+                old(v, fk,  fj+1, fi+1) =
                 0.015625*(27.0*cbufold_(v,k,j,i)+cbufold_(v,k-1,j+1,i+1)
                 +9.0*(cbufold_(v,k,j,i+1)+cbufold_(v,k,j+1,i)+cbufold_(v,k-1,j,i))
                 +3.0*(cbufold_(v,k-1,j+1,i)+cbufold_(v,k-1,j,i+1)+cbufold_(v,k,j+1,i+1)));
               if (fk < flim && fj < flim && fi < flim)
-                dst(v, fk+1, fj+1, fi+1) =
+                old(v, fk+1, fj+1, fi+1) =
                 0.015625*(27.0*cbufold_(v,k,j,i)+cbufold_(v,k+1,j+1,i+1)
                 +9.0*(cbufold_(v,k,j,i+1)+cbufold_(v,k,j+1,i)+cbufold_(v,k+1,j,i))
                 +3.0*(cbufold_(v,k+1,j+1,i)+cbufold_(v,k+1,j,i+1)+cbufold_(v,k,j+1,i+1)));
