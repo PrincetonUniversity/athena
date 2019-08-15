@@ -114,6 +114,8 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus SendEMF(MeshBlock *pmb, int stage);
   TaskStatus SendRadFlux(MeshBlock *pmb, int stage);
 
+  TaskStatus CalculateOpacity(MeshBlock *pmb, int stage);
+
   TaskStatus ReceiveAndCorrectHydroFlux(MeshBlock *pmb, int stage);
   TaskStatus ReceiveAndCorrectEMF(MeshBlock *pmb, int stage);
   TaskStatus ReceiveAndCorrectRadFlux(MeshBlock *pmb, int stage);
@@ -274,6 +276,7 @@ const std::uint64_t DIFFUSE_SCLR      = 1ULL<<56;
 
 // const std::uint64_t RECV_SCLRSH      = 1ULL<<57;
 // const std::uint64_t SEND_SCLRSH      = 1ULL<<58;
+const std::uint64_t CALC_OPACITY = 1ULL << 59;
 
 }  // namespace HydroIntegratorTaskNames
 #endif  // TASK_LIST_TASK_LIST_HPP_

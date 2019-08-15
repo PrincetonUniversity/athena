@@ -35,6 +35,10 @@ static Real ux, uy, uz;  // initial spatial components of fluid 4-velocity
 static Real zs, ze;      // index bounds on zeta
 static Real ps, pe;      // index bounds on psi
 
+// Opacity function
+
+void TestOpacity(MeshBlock *pmb, AthenaArray<Real> &prim);
+
 //----------------------------------------------------------------------------------------
 // Function for preparing Mesh
 // Inputs:
@@ -61,6 +65,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     msg << "unsupported coordinate system\n";
     throw std::runtime_error(msg.str().c_str());
   }
+
+
   return;
 }
 
@@ -76,6 +82,10 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
   SetUserOutputVariableName(1, "M1");
   SetUserOutputVariableName(2, "M2");
   SetUserOutputVariableName(3, "M3");
+
+  if(RADIATION_ENABLED)
+    prad->EnrollOpacityFunction(TestOpacity);
+
   return;
 }
 
@@ -133,3 +143,37 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
   prad->SetMoments(user_out_var);
   return;
 }
+
+
+//Opacity Function
+void TestOpacity(MeshBlock *pmb, AthenaArray<Real> &prim)
+{
+  Radiation *prad = pmb->prad;
+  int il = pmb->is; int jl = pmb->js; int kl = pmb->ks;
+  int iu = pmb->ie; int ju = pmb->je; int ku = pmb->ke;
+  il -= NGHOST;
+  iu += NGHOST;
+  if(ju > jl){
+    jl -= NGHOST;
+    ju += NGHOST;
+  }
+  if(ku > kl){
+    kl -= NGHOST;
+    ku += NGHOST;
+  }
+      // electron scattering opacity
+  Real kappas = 0.0;
+  Real kappaa = 1.0;
+  
+  for (int k=kl; k<=ku; ++k) {
+  for (int j=jl; j<=ju; ++j) {
+  for (int i=il; i<=iu; ++i) {
+    Real rho = prim(IDN,k,j,i);
+    prad->opacity(OPAS,k,j,i) = rho * kappas;
+    prad->opacity(OPAA,k,j,i) = rho * kappaa;
+    prad->opacity(OPAP,k,j,i) = 0.0;
+
+  }}}    
+
+}
+

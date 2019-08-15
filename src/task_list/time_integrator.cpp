@@ -363,6 +363,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     // everything else
     AddTask(PHY_BVAL,CONS2PRIM);
+    //
+    if(RADIATION_ENABLED)
+      AddTask(CALC_OPACITY,PHY_BVAL);
     AddTask(USERWORK,PHY_BVAL);
     AddTask(NEW_DT,USERWORK);
     if (pm->adaptive) {
@@ -438,6 +441,12 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
           (&TimeIntegratorTaskList::SendRadFlux);
       task_list_[ntasks].lb_time = true;
       break;
+
+    case (CALC_OPACITY):
+      task_list_[ntasks].TaskFunc=
+          static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+          (&TimeIntegratorTaskList::CalculateOpacity);
+      task_list_[ntasks].lb_time = true;    
 
     case (RECV_HYDFLX):
       task_list_[ntasks].TaskFunc=
@@ -1023,6 +1032,21 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) 
   }
   return TaskStatus::next;
 }
+
+
+TaskStatus TimeIntegratorTaskList::CalculateOpacity(MeshBlock *pmb, int stage) {
+
+  Hydro *ph = pmb->phydro;
+  Radiation *pr = pmb->prad;
+
+  if (stage <= nstages) {
+    pr->UpdateOpacity(pmb,ph->w);
+  } else {
+    return TaskStatus::fail;
+  }
+  return TaskStatus::next;
+}
+
 
 //----------------------------------------------------------------------------------------
 // Functions to calculate hydro diffusion fluxes (stored in HydroDiffusion::visflx[],

@@ -26,9 +26,18 @@
 //   pmb: pointer to containing MeshBlock
 //   pin: pointer to runtime parameters
 
+// The default opacity function.
+// Do nothing. Keep the opacity as the initial value
+void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &prim_hydro)
+{
+  
+}
+
+
 Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb),
     coupled_to_matter(pin->GetBoolean("radiation", "coupled")),
+    using_planck_mean(),
     nzeta(pin->GetInteger("radiation", "n_polar")),
     npsi(pin->GetInteger("radiation", "n_azimuthal")),
     nang((nzeta + 2*NGHOST) * (npsi + 2*NGHOST)),
@@ -101,6 +110,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   m_p = m_p_cgs / (density_cgs * length_cgs * SQR(length_cgs));
   k_b = mol_weight * m_p;
   sigma_sb = sigma_sb_cgs * SQR(SQR(temperature_cgs)) / intensity_cgs;
+  arad = arad_cgs *SQR(SQR(temperature_cgs))/pressure_cgs;
 
   // Set and calculate emission, absorption, and scattering coefficients
   kappa_cgs = pin->GetOrAddReal("radiation", "kappa_cgs", NAN);
@@ -195,6 +205,17 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   // Allocate memory for angle fluxes
   flux_a[ZETADIR].NewAthenaArray(nang_zf, pmb->ncells3, pmb->ncells2, pmb->ncells1);
   flux_a[PSIDIR].NewAthenaArray(nang_pf, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+
+  // Allocate memory for opacity array
+  opacity.NewAthenaArray(3,pmb->ncells3,pmb->ncells2,pmb->ncells1);
+
+  intensity_scr_.NewAthenaArray(nzeta*npsi);
+  tran_coef_.NewAthenaArray(nzeta*npsi);
+  weight_.NewAthenaArray(nzeta*npsi);
+  vncsigma2_.NewAthenaArray(nzeta*npsi);
+
+  // set a default opacity function
+  UpdateOpacity = DefaultOpacity;
 
   // Allocate memory for unit normal components in orthonormal frame
   int num_cells_zeta = ze + NGHOST;
@@ -1461,4 +1482,13 @@ void Radiation::SetMoments(AthenaArray<Real> &moments) {
     }
   }
   return;
+}
+
+
+//Enrol the function to update opacity
+
+void Radiation::EnrollOpacityFunction(Opacity_t MyOpacityFunction)
+{
+  UpdateOpacity = MyOpacityFunction;
+  
 }

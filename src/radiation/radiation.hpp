@@ -22,6 +22,13 @@ class ParameterInput;
 // Notes:
 //   Designed for general relativity.
 
+// prototype for user-defined opacity function for radiative transfer
+typedef void (*Opacity_t)(MeshBlock *pmb, AthenaArray<Real> &prim_hydro);
+
+// index for opacity array, scattering, Rosseland mean abosrption and 
+//  Planck mean absorption
+enum {OPAS=0, OPAA=1, OPAP=2};
+
 class Radiation {
 
 public:
@@ -37,6 +44,8 @@ public:
   // Flags
   bool coupled_to_matter;
   bool source_terms_defined;
+
+  bool using_planck_mean;
 
   // Parameters
   int nzeta;     // number of polar radiation angles in active zone
@@ -56,11 +65,14 @@ public:
   Real m_p_cgs = 1.67262192369e-24;    // proton mass in g
   Real k_b_cgs = 1.380649e-16;         // Boltzmann constant in erg/K
   Real sigma_sb_cgs = 5.670374419e-5;  // Stefan-Boltzmann constant in erg/(cm^2*s*K^4)
+  Real arad_cgs = 4.0* sigma_sb_cgs/c_cgs; //radiation constant in erg/cm^3 K^4
 
   // Physical constants in code units
   Real m_p;       // proton mass in code units
   Real k_b;       // Boltzmann constant in code units
   Real sigma_sb;  // Stefan-Boltzmann constant in code units
+  Real arad;      // radiation constant in code Unit
+
 
   // User-specified units
   Real length_cgs;   // code unit of length in cm
@@ -99,6 +111,7 @@ public:
   AthenaArray<Real> flux_a[2];    // angular fluxes of intensity n^a n_0 I
   AthenaArray<Real> coarse_prim;  // prolongation/restriction buffer
   AthenaArray<Real> coarse_cons;  // prolongation/restriction buffer
+  AthenaArray<Real> opacity;      // opacity array
 
   // Boundary communication
   CellCenteredBoundaryVariable rbvar;
@@ -130,6 +143,12 @@ public:
       bool cylindrical = false, bool spherical = false);
   void SetMoments(AthenaArray<Real> &moments);
 
+  //Function in problem generators to use user provided opacity function
+  void EnrollOpacityFunction(Opacity_t MyOpacityFunction);
+
+  // The function pointer for the opacity
+  Opacity_t UpdateOpacity;
+
 private:
 
   // Data arrays
@@ -154,6 +173,10 @@ private:
   AthenaArray<Real> intensity_cm_;  // intensity I in comoving fluid frame
   AthenaArray<Real> moments_old_;   // moments of radiation field before fluid coupling
   AthenaArray<Real> moments_new_;   // moments of radiation field after fluid coupling
+  AthenaArray<Real> intensity_scr_; // temporary array to switch the order of intensity
+  AthenaArray<Real> tran_coef_;     // temporary array to get the transformation coefficient
+  AthenaArray<Real> weight_;        // temporary array to get the weight
+  AthenaArray<Real> vncsigma2_;      // temporary array for source terms
 };
 
 #endif // RADIATION_RADIATION_HPP_
