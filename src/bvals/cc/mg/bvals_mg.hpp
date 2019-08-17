@@ -51,7 +51,7 @@ class MGBoundaryValues : public BoundaryBase {
   void ProlongateMultigridBoundaries(bool folddata);
   void CopyNeighborInfoFromMeshBlock();
 
- private:
+ protected:
   Multigrid *pmy_mg_;
   MGBoundaryFunc MGBoundaryFunction_[6];
   BoundaryData<> bdata_;
@@ -74,14 +74,37 @@ class MGBoundaryValues : public BoundaryBase {
   void SetMultigridBoundaryFromFiner(const Real *buf, const NeighborBlock& nb,
                                      bool folddata);
   // functions specific to physics
-  int LoadMultigridBoundaryBufferToCoarserGravityMassCons(Real *buf,
-                                                          const NeighborBlock& nb);
-  int LoadMultigridBoundaryBufferToFinerGravityMassCons(Real *buf,
-                                                        const NeighborBlock& nb);
-  void SetMultigridBoundaryFromCoarserGravityMassCons(const Real *buf,
-                                                      const NeighborBlock& nb);
-  void SetMultigridBoundaryFromFinerGravityMassCons(const Real *buf,
-                                                    const NeighborBlock& nb);
+  virtual int LoadMultigridBoundaryBufferToCoarserFluxCons(Real *buf,
+                                                           const NeighborBlock& nb) = 0;
+  virtual int LoadMultigridBoundaryBufferToFinerFluxCons(Real *buf,
+                                                         const NeighborBlock& nb) = 0;
+  virtual void SetMultigridBoundaryFromCoarserFluxCons(const Real *buf,
+                                                       const NeighborBlock& nb) = 0;
+  virtual void SetMultigridBoundaryFromFinerFluxCons(const Real *buf,
+                                                     const NeighborBlock& nb) = 0;
+
+  friend class Multigrid;
+  friend class MultigridDriver;
+};
+
+
+//----------------------------------------------------------------------------------------
+//! \class MGGravityBoundaryValues
+//  \brief BVals data and functions for Multigrid Gravity
+
+class MGGravityBoundaryValues : public MGBoundaryValues {
+ public:
+  MGGravityBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs)
+   : MGBoundaryValues(pmg, input_bcs) {} ;
+ private:
+  int LoadMultigridBoundaryBufferToCoarserFluxCons(Real *buf,
+                                                   const NeighborBlock& nb) final;
+  int LoadMultigridBoundaryBufferToFinerFluxCons(Real *buf,
+                                                 const NeighborBlock& nb) final;
+  void SetMultigridBoundaryFromCoarserFluxCons(const Real *buf,
+                                               const NeighborBlock& nb) final;
+  void SetMultigridBoundaryFromFinerFluxCons(const Real *buf,
+                                             const NeighborBlock& nb) final;
 
   friend class Multigrid;
   friend class MultigridDriver;
