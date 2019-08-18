@@ -27,8 +27,8 @@ class Multigrid;
 
 class MGGravity : public Multigrid {
  public:
-  MGGravity(MultigridDriver *pmd, MeshBlock *pmb) : Multigrid(pmd, pmb, 1, 1)
-  { btype=BoundaryQuantity::mggrav; btypef=BoundaryQuantity::mggrav_f; };
+  MGGravity(MultigridDriver *pmd, MeshBlock *pmb);
+  ~MGGravity();
 
   void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
               int rlev, int il, int iu, int jl, int ju, int kl, int ku, int color) final;
@@ -52,8 +52,9 @@ class MGGravityDriver : public MultigridDriver {
   ~MGGravityDriver();
   void Solve(int stage) final;
   // void SolveCoarsestGrid() final;
-  void SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst, const AthenaArray<Real> &un,
-                           const LogicalLocation &loc, int ox1, int ox2, int ox3) final;
+  void SetOctetBoundaryFromCoarserFluxCons(AthenaArray<Real> &dst,
+                           const AthenaArray<Real> &un, const LogicalLocation &loc,
+                           int ox1, int ox2, int ox3) final;
  private:
   Real four_pi_G_;
 };

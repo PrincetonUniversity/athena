@@ -44,7 +44,6 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
       ATHENA_ERROR(msg);
       return;
     }
-    pmgbval = new MGBoundaryValues(this, pmy_block_->pbval->block_bcs);
   } else {
     loc_.lx1 = loc_.lx2 = loc_.lx3 = 0;
     loc_.level = 0;
@@ -52,7 +51,6 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
     size_.nx1 = pmy_driver_->nrbx1_;
     size_.nx2 = pmy_driver_->nrbx2_;
     size_.nx3 = pmy_driver_->nrbx3_;
-    pmgbval = new MGBoundaryValues(this, pmy_driver_->pmy_mesh_->mesh_bcs);
   }
 
   rdx_=(size_.x1max-size_.x1min)/static_cast<Real>(size_.nx1);
@@ -144,7 +142,6 @@ Multigrid::~Multigrid() {
   delete [] src_;
   delete [] def_;
   if (pmy_driver_->ffas_) delete [] uold_;
-  delete pmgbval;
 }
 
 
@@ -347,7 +344,6 @@ void Multigrid::CalculateDefectBlock() {
   is = js = ks = ngh_;
   ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
 
-  std::cout << "CalcDefBlock " << loc_.lx1 << " " << loc_.lx2 << " " << loc_.lx3 << " " << loc_.level << " " << current_level_<< std::endl;
   CalculateDefect(def_[current_level_], u_[current_level_], src_[current_level_],
                   -ll, is, ie, js, je, ks, ke);
 
@@ -372,10 +368,10 @@ void Multigrid::CalculateFASRHSBlock() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::SetFromRootGrid()
+//! \fn void Multigrid::SetFromRootGrid(bool folddata)
 //  \brief Load the data from the root grid or octets
 
-void Multigrid::SetFromRootGrid() {
+void Multigrid::SetFromRootGrid(bool folddata) {
   current_level_=0;
   AthenaArray<Real> &dst = u_[current_level_];
   int lev = loc_.level - (pmy_driver_->nrootlevel_ - 1);
@@ -392,7 +388,7 @@ void Multigrid::SetFromRootGrid() {
         }
       }
     }
-    if (pmy_driver_->ffas_) {
+    if (folddata) {
       AthenaArray<Real> &odst = uold_[current_level_];
       const AthenaArray<Real> &osrc = pmy_driver_->mgroot_->GetCurrentOldData();
       for (int v=0; v<nvar_; ++v) {
@@ -424,7 +420,7 @@ void Multigrid::SetFromRootGrid() {
         }
       }
     }
-    if (pmy_driver_->ffas_) {
+    if (folddata) {
       AthenaArray<Real> &odst = uold_[current_level_];
       const AthenaArray<Real> &osrc = pmy_driver_->octets_[olev][oid].uold;
       for (int v=0; v<nvar_; ++v) {

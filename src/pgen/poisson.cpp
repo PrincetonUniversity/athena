@@ -89,9 +89,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         if (dim > 1) r2 += SQR(y - y0);
         if (dim > 2) r2 += SQR(z - z0);
         if (iprob == 1) {
-          den = std::sin(TWO_PI*x/x1size);
-          if (dim > 1) den *= std::sin(TWO_PI*y/x2size);
-          if (dim > 2) den *= std::sin(TWO_PI*z/x3size); // dkx=2*PI/Nx
+          den = std::cos(TWO_PI*x/x1size);
+          if (dim > 1) den *= std::cos(TWO_PI*y/x2size);
+          if (dim > 2) den *= std::cos(TWO_PI*z/x3size); // dkx=2*PI/Nx
           phia = SQR(TWO_PI/x1size);
           if (dim > 1) phia += SQR(TWO_PI/x2size);
           if (dim > 2) phia += SQR(TWO_PI/x3size);

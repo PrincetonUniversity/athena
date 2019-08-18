@@ -37,7 +37,8 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
     nvar_(invar), maxreflevel_(pm->max_level-pm->root_level),
     mode_(2), // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
-    fsubtract_average_(false), ffas_(true), eps_(-1.0), cbuf_(nvar_,3,3,3) {
+    fsubtract_average_(false), ffas_(true), eps_(-1.0), cbuf_(nvar_,3,3,3),
+    cbufold_(nvar_,3,3,3) {
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
@@ -287,13 +288,16 @@ void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::TransferFromRootToBlocks()
+//! \fn void MultigridDriver::TransferFromRootToBlocks(bool folddata)
 //  \brief Transfer the data from the root grid to the coarsest level of each MeshBlock
 
-void MultigridDriver::TransferFromRootToBlocks() {
-  mgroot_->pmgbval->ApplyPhysicalBoundaries();
+void MultigridDriver::TransferFromRootToBlocks(bool folddata) {
+  if (nreflevel_ > 0)
+    SetOctetBoundariesBeforeTransfer(folddata);
   for (Multigrid* pmg : vmg_)
-    pmg->SetFromRootGrid();
+    pmg->SetFromRootGrid(folddata);
+  if (nreflevel_ > 0)
+    SetMeshBlockCoarsestBoundaries(folddata);
 
   return;
 }
@@ -306,7 +310,8 @@ void MultigridDriver::TransferFromRootToBlocks() {
 void MultigridDriver::FMGProlongate() {
   int flag=0;
   if (current_level_ == nrootlevel_ + nreflevel_ - 1) {
-    TransferFromRootToBlocks();
+    mgroot_->pmgbval->ApplyPhysicalBoundaries();
+    TransferFromRootToBlocks(false);
     flag=1;
   }
   if (current_level_ >= nrootlevel_ + nreflevel_ - 1) { // MeshBlocks
@@ -337,8 +342,8 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
   int flag=0;
   std::cout << "ToFiner " << current_level_ << std::endl;
   if (current_level_ == nrootlevel_ + nreflevel_ - 1) {
-    TransferFromRootToBlocks();
-    SetMeshBlockCoarsestBoundaries();
+    mgroot_->pmgbval->ApplyPhysicalBoundaries();
+    TransferFromRootToBlocks(ffas_);
     flag=1;
   }
   if (current_level_ >= nrootlevel_ + nreflevel_ - 1) { // MeshBlocks
@@ -384,6 +389,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
   int ngh=mgroot_->ngh_;
   std::cout << "ToCoarser " << current_level_ << std::endl;
   if (current_level_ >= nrootlevel_ + nreflevel_) { // MeshBlocks
+    std::cout << "MeshBlocks " << vmg_[0]->current_level_ << std::endl;
     mgtlist_->SetMGTaskListToCoarser(nsmooth, ngh);
     mgtlist_->DoTaskListOneStage(this);
     if (current_level_ == nrootlevel_ + nreflevel_) {
@@ -395,6 +401,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
       }
     }
   } else if (current_level_ > nrootlevel_-1) { // refined octets
+    std::cout << "Octets " << current_level_ - nrootlevel_ << std::endl;
     SetBoundariesOctets(false, false);
     if (ffas_ && current_level_ < fmglevel_) {
       StoreOldDataOctets();
@@ -408,6 +415,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
     }
     RestrictOctets();
   } else { // uniform root grid
+    std::cout << "Rootgrid " << mgroot_->current_level_ << std::endl;
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
     if (ffas_ && current_level_ < fmglevel_) {
       mgroot_->StoreOldData();
@@ -493,7 +501,6 @@ void MultigridDriver::SolveIterative() {
   int niter=0;
   std::cout << std::scientific << std::setprecision(14);
   while (def > eps_) {
-    std::cout << "iter " << niter << std::endl;
     SolveVCycle(1,1);
     Real olddef=def;
     def=0.0;
@@ -507,7 +514,7 @@ void MultigridDriver::SolveIterative() {
                   << "Slow multigrid convergence : defect norm = " << def
                   << ", convergence factor = " << def/olddef << "." << std::endl;
     }
-    if (niter>100) {
+    if (niter>20) {
       if (Globals::my_rank == 0) {
         std::cout
             << "### Warning in MultigridDriver::SolveIterative" << std::endl
@@ -691,9 +698,9 @@ void MultigridDriver::RestrictOctets() {
   } else { // octets to the root grid
     for (int o=0; o<noctets_[0]; ++o) {
       const LogicalLocation &loc = octets_[0][o].loc;
-      int ri = loc.lx1; //(loc.lx1 >> 1);
-      int rj = loc.lx2; //(loc.lx2 >> 1);
-      int rk = loc.lx3; //(loc.lx3 >> 1);
+      int ri = loc.lx1;
+      int rj = loc.lx2;
+      int rk = loc.lx3;
       mgroot_->CalculateDefect(octets_[0][o].def, octets_[0][o].u,
                                octets_[0][o].src, 1, os_, oe_, os_, oe_, os_, oe_);
       mgroot_->Restrict(cbuf_, octets_[0][o].def, os_, oe_, os_, oe_, os_, oe_);
@@ -763,14 +770,9 @@ void MultigridDriver::CalculateFASRHSOctets() {
 void MultigridDriver::SmoothOctets(int color) {
   int lev = current_level_ - nrootlevel_;
 
-  for (int o=0; o<noctets_[lev]; ++o) {
-    if (o==0) 
-    for (int k=0; k<=3; k++) 
-    for (int j=0; j<=3; j++) 
-    for (int i=0; i<=3; i++) 
+  for (int o=0; o<noctets_[lev]; ++o)
     mgroot_->Smooth(octets_[lev][o].u, octets_[lev][o].src,
                     lev+1, os_, oe_, os_, oe_, os_, oe_, color);
-  }
   return;
 }
 
@@ -788,11 +790,11 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
   if (flev == 0) {  // from root to octets
     const AthenaArray<Real> &u = mgroot_->GetCurrentData();
     const AthenaArray<Real> &uold = mgroot_->GetCurrentOldData();
-    for (int o=0; o<noctets_[0]; ++o) { // octets to the root grid
+    for (int o=0; o<noctets_[0]; ++o) {
       const LogicalLocation &loc = octets_[0][o].loc;
-      int ri = (static_cast<int>(loc.lx1) >> 1) + ngh - 1;
-      int rj = (static_cast<int>(loc.lx2) >> 1) + ngh - 1;
-      int rk = (static_cast<int>(loc.lx3) >> 1) + ngh - 1;
+      int ri = static_cast<int>(loc.lx1) + ngh - 1;
+      int rj = static_cast<int>(loc.lx2) + ngh - 1;
+      int rk = static_cast<int>(loc.lx3) + ngh - 1;
       if (ffas_) {
         for (int v=0; v<nvar_; ++v) {
           for (int k=0; k<=2; ++k) {
@@ -807,11 +809,10 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
                                       ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh);
       } else {
         mgroot_->ProlongateAndCorrect(octets_[0][o].u, u,
-                                      ri, ri, rj, rj, rk, rk, ngh, ngh, ngh);
+                                      ri+1, ri+1, rj+1, rj+1, rk+1, rk+1, ngh, ngh, ngh);
       }
     }
   } else { // from coarse octets to fine octets
-    int pcid = -1;
     for (int o=0; o<noctets_[flev]; ++o) {
       const LogicalLocation &loc = octets_[flev][o].loc;
       LogicalLocation cloc;
@@ -838,7 +839,7 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
                                       ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh);
       } else {
         mgroot_->ProlongateAndCorrect(octets_[flev][o].u, uc,
-                 ci+ngh, ci+ngh, cj+ngh, cj+ngh, ck+ngh, ck+ngh, ngh, ngh, ngh);
+                                      ci+1, ci+1, cj+1, cj+1, ck+1, ck+1, ngh, ngh, ngh);
       }
     }
   }
@@ -857,11 +858,11 @@ void MultigridDriver::FMGProlongateOctets() {
   int ngh = mgroot_->ngh_;
 
   if (flev == 0) {  // from root to octets
-    for (int o=0; o<noctets_[0]; ++o) { // octets to the root grid
+    for (int o=0; o<noctets_[0]; ++o) {
       const LogicalLocation &loc = octets_[0][o].loc;
-      int ri = (loc.lx1 >> 1) + ngh;
-      int rj = (loc.lx2 >> 1) + ngh;
-      int rk = (loc.lx3 >> 1) + ngh;
+      int ri = static_cast<int>(loc.lx1) + ngh;
+      int rj = static_cast<int>(loc.lx2) + ngh;
+      int rk = static_cast<int>(loc.lx3) + ngh;
       mgroot_->FMGProlongate(octets_[0][o].u, mgroot_->GetCurrentData(),
                              ri, ri, rj, rj, rk, rk, ngh, ngh, ngh);
     }
@@ -897,6 +898,7 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
     faceonly = true;
 
   for (int o=0; o<noctets_[lev]; ++o) {
+    const LogicalLocation &l = octets_[lev][o].loc;
     if (fprolong && octets_[lev][o].fleaf == true) continue;
     const LogicalLocation &loc = octets_[lev][o].loc;
     AthenaArray<Real> &u = octets_[lev][o].u;
@@ -905,25 +907,25 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
     for (int ox3=-1; ox3<=1; ++ox3) {
       nloc.lx3 = loc.lx3 + ox3;
       if (nloc.lx3 < 0) {
-        if (mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::inner_x3]
-          == MGPeriodicInnerX3) nloc.lx3 = (nrbx3_ << lev) - 1;
+        if (MGBoundaryFunction_[BoundaryFace::inner_x3] == MGPeriodicInnerX3)
+          nloc.lx3 = (nrbx3_ << lev) - 1;
         else continue;
       }
       if (nloc.lx3 >= (nrbx3_ << lev)) {
-        if (mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::outer_x3]
-          == MGPeriodicOuterX3) nloc.lx3 = 0;
+        if (MGBoundaryFunction_[BoundaryFace::outer_x3] == MGPeriodicOuterX3)
+          nloc.lx3 = 0;
         else continue;
       }
       for (int ox2=-1; ox2<=1; ++ox2) {
         nloc.lx2 = loc.lx2 + ox2;
         if (nloc.lx2 < 0) {
-          if (mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::inner_x2]
-            == MGPeriodicInnerX2) nloc.lx2 = (nrbx2_ << lev) - 1;
+          if (MGBoundaryFunction_[BoundaryFace::inner_x2] == MGPeriodicInnerX2)
+            nloc.lx2 = (nrbx2_ << lev) - 1;
           else continue;
         }
         if (nloc.lx2 >= (nrbx2_ << lev)) {
-          if (mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::outer_x2]
-            == MGPeriodicOuterX2) nloc.lx2 = 0;
+          if (MGBoundaryFunction_[BoundaryFace::outer_x2] == MGPeriodicOuterX2)
+            nloc.lx2 = 0;
           else continue;
         }
         for (int ox1=-1; ox1<=1; ++ox1) {
@@ -933,37 +935,40 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
           // find a neighboring octet - either on the same or coarser level
           nloc.lx1 = loc.lx1 + ox1;
           if (nloc.lx1 < 0) {
-            if (mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::inner_x1]
-              == MGPeriodicInnerX1) nloc.lx1 = (nrbx1_ << lev) - 1;
+            if (MGBoundaryFunction_[BoundaryFace::inner_x1] == MGPeriodicInnerX1)
+              nloc.lx1 = (nrbx1_ << lev) - 1;
             else continue;
           }
           if (nloc.lx1 >= (nrbx1_ << lev)) {
-            if (mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::outer_x1]
-              == MGPeriodicOuterX1) nloc.lx1 = 0;
+            if (MGBoundaryFunction_[BoundaryFace::outer_x1] == MGPeriodicOuterX1)
+              nloc.lx1 = 0;
             else continue;
           }
           if (octetmap_[lev].count(nloc) == 1) { // on the same level
-            const AthenaArray<Real> &un = octets_[lev][octetmap_[lev][nloc]].u;
-            const AthenaArray<Real> &unold = octets_[lev][octetmap_[lev][nloc]].uold;
+            int nid = octetmap_[lev][nloc];
+            const AthenaArray<Real> &un = octets_[lev][nid].u;
+            const AthenaArray<Real> &unold = octets_[lev][nid].uold;
             SetOctetBoundarySameLevel(u, un, uold, unold, ox1, ox2, ox3, folddata);
-          } else { // on the coarser level
-            if (lev > 0) {
+          } else if (!fprolong) { // on the coarser level
+            // note: prolongation requires neighbors on the same level only
+            if (lev > 0) { // from octet
               LogicalLocation cloc;
               cloc.lx1 = nloc.lx1 >> 1;
               cloc.lx2 = nloc.lx2 >> 1;
               cloc.lx3 = nloc.lx3 >> 1;
               cloc.level = nloc.level - 1;
               const AthenaArray<Real> &un = octets_[lev-1][octetmap_[lev-1][cloc]].u;
-              SetOctetBoundaryFromCoarser(u, un, loc, ox1, ox2, ox3);
-            } else {
-              SetOctetBoundaryFromCoarser(u, mgroot_->GetCurrentData(),
-                                          loc, ox1, ox2, ox3);
+              SetOctetBoundaryFromCoarserFluxCons(u, un, loc, ox1, ox2, ox3);
+            } else { // from root
+              SetOctetBoundaryFromCoarserFluxCons(u, mgroot_->GetCurrentData(),
+                                                  nloc, ox1, ox2, ox3);
             }
           }
+          // note: finer neighbors are not needed here
         }
       }
     }
-    ApplyPhysicalBoundariesOctet(u, loc);
+    ApplyPhysicalBoundariesOctet(u, loc, false);
   }
 
   return;
@@ -1015,87 +1020,364 @@ void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
-//                                                         const LogicalLocation &loc)
+//                                         const LogicalLocation &loc, bool fcbuf)
 //  \brief Apply physical boundary conditions for an octet
 
 void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
-                                                   const LogicalLocation &loc) {
-  int lev = current_level_ - nrootlevel_;
+                                             const LogicalLocation &loc, bool fcbuf) {
+  int lev = loc.level - (nrootlevel_ - 1);
   int ngh = mgroot_->ngh_;
+  int l, r, cs, ce;
   Real time = pmy_mesh_->time;
+  // dx,dy,dz: cell spacing, x0,y0,z0: origins, x = x0+i*dx (integer = cell center), etc.
   Real fac = 1.0/(static_cast<Real>(2<<lev));
   Real dx = mgroot_->rdx_*fac;
   Real dy = mgroot_->rdy_*fac;
   Real dz = mgroot_->rdz_*fac;
-  Real x0 = mgroot_->size_.x1min + (static_cast<Real>(loc.lx1*2 - ngh) - 0.5)*dx;
-  Real y0 = mgroot_->size_.x2min + (static_cast<Real>(loc.lx2*2 - ngh) - 0.5)*dy;
-  Real z0 = mgroot_->size_.x3min + (static_cast<Real>(loc.lx2*2 - ngh) - 0.5)*dz;
+  Real x0 = mgroot_->size_.x1min + static_cast<Real>(loc.lx1*2)*dx;
+  Real y0 = mgroot_->size_.x2min + static_cast<Real>(loc.lx2*2)*dy;
+  Real z0 = mgroot_->size_.x3min + static_cast<Real>(loc.lx2*2)*dz;
+  if (fcbuf)
+    l = ngh, r = ngh,   cs = 0, ce = 1 + ngh, dx*=2.0, dy*=2.0, dz*=2.0;
+  else
+    l = ngh, r = ngh+1, cs = 0, ce = 2 + ngh;
+  x0 -= (static_cast<Real>(ngh) - 0.5) * dx;
+  y0 -= (static_cast<Real>(ngh) - 0.5) * dx;
+  z0 -= (static_cast<Real>(ngh) - 0.5) * dx;
   if (loc.lx1 == 0
-    && mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::inner_x1]
-                      != MGPeriodicInnerX1
-    && mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
-      MGBoundaryFunction_[BoundaryFace::inner_x1](u, time, nvar_,
-                0,     0,     ngh,   ngh+1, ngh,   ngh+1, ngh, x0, y0, z0, dx, dy, dz);
+    && MGBoundaryFunction_[BoundaryFace::inner_x1] != MGPeriodicInnerX1
+    && MGBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
+    MGBoundaryFunction_[BoundaryFace::inner_x1](u, time, nvar_,
+                        l, r, cs, ce, cs, ce, ngh, x0, y0, z0, dx, dy, dz);
   if (loc.lx1 == (nrbx1_<<lev)-1
-    && mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::outer_x1]
-                      != MGPeriodicOuterX1
-    && mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
-      MGBoundaryFunction_[BoundaryFace::outer_x1](u, time, nvar_,
-                ngh+2, ngh+2, ngh,   ngh+1, ngh,   ngh+1, ngh, x0, y0, z0, dx, dy, dz);
+    && MGBoundaryFunction_[BoundaryFace::outer_x1] != MGPeriodicOuterX1
+    && MGBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
+    MGBoundaryFunction_[BoundaryFace::outer_x1](u, time, nvar_,
+                        l, r, cs, ce, cs, ce, ngh, x0, y0, z0, dx, dy, dz);
   if (loc.lx2 == 0
-    && mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::inner_x2]
-                      != MGPeriodicInnerX2
-    && mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
-      MGBoundaryFunction_[BoundaryFace::inner_x2](u, time, nvar_,
-                0,     ngh+2, 0,     0,     ngh,   ngh+1, ngh, x0, y0, z0, dx, dy, dz);
+    && MGBoundaryFunction_[BoundaryFace::inner_x2] != MGPeriodicInnerX2
+    && MGBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
+    MGBoundaryFunction_[BoundaryFace::inner_x2](u, time, nvar_,
+                        cs, ce, l, r, cs, ce, ngh, x0, y0, z0, dx, dy, dz);
   if (loc.lx2 == (nrbx2_<<lev)-1
-    && mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::outer_x2]
-                      != MGPeriodicOuterX2
-    && mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
-      MGBoundaryFunction_[BoundaryFace::outer_x2](u, time, nvar_,
-                0,     ngh+2, ngh+2, ngh+2, ngh,   ngh+1, ngh, x0, y0, z0, dx, dy, dz);
+    && MGBoundaryFunction_[BoundaryFace::outer_x2] != MGPeriodicOuterX2
+    && MGBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
+    MGBoundaryFunction_[BoundaryFace::outer_x2](u, time, nvar_,
+                        cs, ce, l, r, cs, ce, ngh, x0, y0, z0, dx, dy, dz);
   if (loc.lx3 == 0
-    && mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::inner_x3]
-                      != MGPeriodicInnerX3
-    && mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
-      MGBoundaryFunction_[BoundaryFace::inner_x3](u, time, nvar_,
-                0,     ngh+2, 0,     ngh+2, 0,     0,     ngh, x0, y0, z0, dx, dy, dz);
+    && MGBoundaryFunction_[BoundaryFace::inner_x3] != MGPeriodicInnerX3
+    && MGBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
+    MGBoundaryFunction_[BoundaryFace::inner_x3](u, time, nvar_,
+                        cs, ce, cs, ce, l, r, ngh, x0, y0, z0, dx, dy, dz);
   if (loc.lx3 == (nrbx3_<<lev)-1
-    && mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::outer_x3]
-                      != MGPeriodicOuterX3
-    && mgroot_->pmgbval->MGBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
-      MGBoundaryFunction_[BoundaryFace::outer_x3](u, time, nvar_,
-                0,     ngh+2, 0,     ngh+2, ngh+2, ngh+2, ngh, x0, y0, z0, dx, dy, dz);
+    && MGBoundaryFunction_[BoundaryFace::outer_x3] != MGPeriodicOuterX3
+    && MGBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
+    MGBoundaryFunction_[BoundaryFace::outer_x3](u, time, nvar_,
+                        cs, ce, cs, ce, l, r, ngh, x0, y0, z0, dx, dy, dz);
 
   return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SetMeshBlockCoarsestBoundaries()
+//! \fn void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata)
+//  \brief Set octet boundaries before transfer from root to blocks
+
+void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
+  int poid = -1;
+  constexpr Real fac = 0.125;
+  const int ngh = mgroot_->ngh_;
+  const int l = ngh, r = ngh + 1;
+  const int flim = 2 + ngh;
+  const AthenaArray<Real> &cb = cbuf_;
+  const AthenaArray<Real> &co = cbufold_;
+  Real time = pmy_mesh_->time;
+  for (Multigrid* pmg : vmg_) {
+    const LogicalLocation &loc = pmg->loc_;
+    if (loc.level == nrootlevel_ - 1) continue;
+    LogicalLocation oloc;
+    oloc.lx1 = loc.lx1 >> 1;
+    oloc.lx2 = loc.lx2 >> 1;
+    oloc.lx3 = loc.lx3 >> 1;
+    oloc.level = loc.level - 1;
+    int olev = oloc.level - (nrootlevel_ - 1);
+    int oid = octetmap_[olev][oloc];
+    if (oid == poid) continue;
+    poid = oid;
+    AthenaArray<Real> &u = octets_[olev][oid].u;
+    AthenaArray<Real> &uold = octets_[olev][oid].uold;
+    for (int v=0; v<nvar_; ++v) {
+      cbuf_(v,ngh,ngh,ngh) = fac*(u(v,l,l,l)+u(v,l,l,r)+u(v,l,r,l)+u(v,r,l,l)
+                                 +u(v,r,r,l)+u(v,r,l,r)+u(v,l,r,r)+u(v,r,r,r));
+      if (folddata)
+        cbufold_(v,ngh,ngh,ngh) = fac*
+                                (uold(v,l,l,l)+uold(v,l,l,r)+uold(v,l,r,l)+uold(v,r,l,l)
+                                +uold(v,r,r,l)+uold(v,r,l,r)+uold(v,l,r,r)+uold(v,r,r,r));
+    }
+    LogicalLocation nloc = oloc;
+    for (int ox3=-1; ox3<=1; ++ox3) {
+      nloc.lx3 = oloc.lx3 + ox3;
+      if (nloc.lx3 < 0) {
+        if (MGBoundaryFunction_[BoundaryFace::inner_x3] == MGPeriodicInnerX3)
+          nloc.lx3 = (nrbx3_ << olev) - 1;
+        else continue;
+      }
+      if (nloc.lx3 >= (nrbx3_ << olev)) {
+        if (MGBoundaryFunction_[BoundaryFace::outer_x3] == MGPeriodicOuterX3)
+          nloc.lx3 = 0;
+        else continue;
+      }
+      for (int ox2=-1; ox2<=1; ++ox2) {
+        nloc.lx2 = oloc.lx2 + ox2;
+        if (nloc.lx2 < 0) {
+          if (MGBoundaryFunction_[BoundaryFace::inner_x2] == MGPeriodicInnerX2)
+            nloc.lx2 = (nrbx2_ << olev) - 1;
+          else continue;
+        }
+        if (nloc.lx2 >= (nrbx2_ << olev)) {
+          if (MGBoundaryFunction_[BoundaryFace::outer_x2] == MGPeriodicOuterX2)
+            nloc.lx2 = 0;
+          else continue;
+        }
+        for (int ox1=-1; ox1<=1; ++ox1) {
+          if (ox1 == 0 && ox2 == 0 && ox3 == 0) continue;
+          nloc.lx1 = oloc.lx1 + ox1;
+          if (nloc.lx1 < 0) {
+            if (MGBoundaryFunction_[BoundaryFace::inner_x1] == MGPeriodicInnerX1)
+              nloc.lx1 = (nrbx1_ << olev) - 1;
+            else continue;
+          }
+          if (nloc.lx1 >= (nrbx1_ << olev)) {
+            if (MGBoundaryFunction_[BoundaryFace::outer_x1] == MGPeriodicOuterX1)
+              nloc.lx1 = 0;
+            else continue;
+          }
+          int ci = ox1 + ngh, cj = ox2 + ngh, ck = ox3 + ngh;
+          if (octetmap_[olev].count(nloc) == 1) { // same or finer
+            int nid = octetmap_[olev][nloc];
+            if (octets_[olev][nid].fleaf == false) continue; // skip finer
+            const AthenaArray<Real> &un = octets_[olev][nid].u;
+            const AthenaArray<Real> &unold = octets_[olev][nid].uold;
+            SetOctetBoundarySameLevel(u, un, uold, unold, ox1, ox2, ox3, folddata);
+            for (int v=0; v<nvar_; ++v)
+              cbuf_(v,ck,cj,ci) = fac*(un(v,l,l,l)+un(v,l,l,r)+un(v,l,r,l)+un(v,r,l,l)
+                                      +un(v,r,r,l)+un(v,r,l,r)+un(v,l,r,r)+un(v,r,r,r));
+            if (folddata) {
+              for (int v=0; v<nvar_; ++v)
+                cbufold_(v,ck,cj,ci) = fac*
+                        (unold(v,l,l,l)+unold(v,l,l,r)+unold(v,l,r,l)+unold(v,r,l,l)
+                        +unold(v,r,r,l)+unold(v,r,l,r)+unold(v,l,r,r)+unold(v,r,r,r));
+            }
+          } else { // coarser
+            if (olev > 0) { // from octet
+              LogicalLocation cloc;
+              cloc.lx1 = nloc.lx1 >> 1;
+              cloc.lx2 = nloc.lx2 >> 1;
+              cloc.lx3 = nloc.lx3 >> 1;
+              cloc.level = nloc.level - 1;
+              int cid = octetmap_[olev-1][cloc];
+              const AthenaArray<Real> &un = octets_[olev-1][cid].u;
+              int ix1 = (static_cast<int>(oloc.lx1) & 1);
+              int ix2 = (static_cast<int>(oloc.lx2) & 1);
+              int ix3 = (static_cast<int>(oloc.lx3) & 1);
+              int ni, nj, nk;
+              if (ox1 == 0) ni = ix1 + ngh;
+              else          ni = (ix1^1) + ngh;
+              if (ox2 == 0) nj = ix2 + ngh;
+              else          nj = (ix2^1) + ngh;
+              if (ox3 == 0) nk = ix3 + ngh;
+              else          nk = (ix3^1) + ngh;
+              for (int v=0; v<nvar_; ++v)
+                cbuf_(v,ck,cj,ci) = un(v,nk,nj,ni);
+              if (folddata) {
+                const AthenaArray<Real> &unold = octets_[olev-1][cid].uold;
+                for (int v=0; v<nvar_; ++v)
+                  cbufold_(v,ck,cj,ci) = unold(v,nk,nj,ni);
+              }
+            } else { // from root
+              const AthenaArray<Real> &un = mgroot_->GetCurrentData();
+              for (int v=0; v<nvar_; ++v)
+                cbuf_(v,ck,cj,ci) = un(v,nloc.lx3+ngh,nloc.lx2+ngh,nloc.lx1+ngh);
+              if (folddata) {
+                const AthenaArray<Real> &unold = mgroot_->GetCurrentOldData();
+                for (int v=0; v<nvar_; ++v)
+                  cbufold_(v,ck,cj,ci) = unold(v,nloc.lx3+ngh,nloc.lx2+ngh,nloc.lx1+ngh);
+              }
+            }
+          }
+          // note: finer neighbors are later processed in SetMeshBlockCoarsestBoundaries
+        }
+      }
+    }
+
+    ApplyPhysicalBoundariesOctet(cbuf_, oloc, true);
+    if (folddata)
+      ApplyPhysicalBoundariesOctet(cbufold_, oloc, true);
+
+    // Prolongate boundaries
+    nloc.level = oloc.level;
+    for (int ox3=-1; ox3<=1; ++ox3) {
+      nloc.lx3 = oloc.lx3 + ox3;
+      if (nloc.lx3 < 0) {
+        if (MGBoundaryFunction_[BoundaryFace::inner_x3] == MGPeriodicInnerX3)
+          nloc.lx3 = (nrbx3_ << olev) - 1;
+        else continue;
+      }
+      if (nloc.lx3 >= (nrbx3_ << olev)) {
+        if (MGBoundaryFunction_[BoundaryFace::outer_x3] == MGPeriodicOuterX3)
+          nloc.lx3 = 0;
+        else continue;
+      }
+      for (int ox2=-1; ox2<=1; ++ox2) {
+        nloc.lx2 = oloc.lx2 + ox2;
+        if (nloc.lx2 < 0) {
+          if (MGBoundaryFunction_[BoundaryFace::inner_x2] == MGPeriodicInnerX2)
+            nloc.lx2 = (nrbx2_ << olev) - 1;
+          else continue;
+        }
+        if (nloc.lx2 >= (nrbx2_ << olev)) {
+          if (MGBoundaryFunction_[BoundaryFace::outer_x2] == MGPeriodicOuterX2)
+            nloc.lx2 = 0;
+          else continue;
+        }
+        for (int ox1=-1; ox1<=1; ++ox1) {
+          if (ox1 == 0 && ox2 == 0 && ox3 == 0) continue;
+          nloc.lx1 = oloc.lx1 + ox1;
+          if (nloc.lx1 < 0) {
+            if (MGBoundaryFunction_[BoundaryFace::inner_x1] == MGPeriodicInnerX1)
+              nloc.lx1 = (nrbx1_ << olev) - 1;
+            else continue;
+          }
+          if (nloc.lx1 >= (nrbx1_ << olev)) {
+            if (MGBoundaryFunction_[BoundaryFace::outer_x1] == MGPeriodicOuterX1)
+              nloc.lx1 = 0;
+            else continue;
+          }
+          int ci = ox1 + ngh, cj = ox2 + ngh, ck = ox3 + ngh;
+          if (octetmap_[olev].count(nloc) == 0) { // coarser
+            int i = ox1 + ngh, j = ox2 + ngh, k = ox3 + ngh;
+            int fi = ox1*2 + ngh, fj = ox2*2 + ngh, fk = ox3*2 + ngh;
+            for (int v=0; v<nvar_; ++v) {
+              if (fk >= 0 && fj >= 0 && fi >= 0)
+                u(v, fk,   fj,   fi  ) =
+                  0.015625*(27.0*cb(v,k,j,i)+cb(v,k-1,j-1,i-1)
+                    +9.0*(cb(v,k,j,i-1)+cb(v,k,j-1,i)+cb(v,k-1,j,i))
+                    +3.0*(cb(v,k-1,j-1,i)+cb(v,k-1,j,i-1)+cb(v,k,j-1,i-1)));
+              if (fk >= 0 && fj >= 0 && fi < flim)
+                u(v, fk,   fj,   fi+1) =
+                  0.015625*(27.0*cb(v,k,j,i)+cb(v,k-1,j-1,i+1)
+                    +9.0*(cb(v,k,j,i+1)+cb(v,k,j-1,i)+cb(v,k-1,j,i))
+                    +3.0*(cb(v,k-1,j-1,i)+cb(v,k-1,j,i+1)+cb(v,k,j-1,i+1)));
+              if (fk >= 0 && fj < flim && fi >= 0)
+                u(v, fk,   fj+1, fi  ) =
+                  0.015625*(27.0*cb(v,k,j,i)+cb(v,k-1,j+1,i-1)
+                    +9.0*(cb(v,k,j,i-1)+cb(v,k,j+1,i)+cb(v,k-1,j,i))
+                    +3.0*(cb(v,k-1,j+1,i)+cb(v,k-1,j,i-1)+cb(v,k,j+1,i-1)));
+              if (fk < flim && fj >= 0 && fi >= 0)
+                u(v, fk+1, fj,   fi  ) =
+                  0.015625*(27.0*cb(v,k,j,i)+cb(v,k+1,j-1,i-1)
+                    +9.0*(cb(v,k,j,i-1)+cb(v,k,j-1,i)+cb(v,k+1,j,i))
+                    +3.0*(cb(v,k+1,j-1,i)+cb(v,k+1,j,i-1)+cb(v,k,j-1,i-1)));
+              if (fk < flim && fj < flim && fi >= 0)
+                u(v, fk+1, fj+1, fi  ) =
+                  0.015625*(27.0*cb(v,k,j,i)+cb(v,k+1,j+1,i-1)
+                    +9.0*(cb(v,k,j,i-1)+cb(v,k,j+1,i)+cb(v,k+1,j,i))
+                    +3.0*(cb(v,k+1,j+1,i)+cb(v,k+1,j,i-1)+cb(v,k,j+1,i-1)));
+              if (fk < flim && fj >= 0 && fi < flim)
+                u(v, fk+1, fj,   fi+1) =
+                  0.015625*(27.0*cb(v,k,j,i)+cb(v,k+1,j-1,i+1)
+                    +9.0*(cb(v,k,j,i+1)+cb(v,k,j-1,i)+cb(v,k+1,j,i))
+                    +3.0*(cb(v,k+1,j-1,i)+cb(v,k+1,j,i+1)+cb(v,k,j-1,i+1)));
+              if (fk >= 0 && fj < flim && fi < flim)
+                u(v, fk,  fj+1, fi+1) =
+                  0.015625*(27.0*cb(v,k,j,i)+cb(v,k-1,j+1,i+1)
+                    +9.0*(cb(v,k,j,i+1)+cb(v,k,j+1,i)+cb(v,k-1,j,i))
+                    +3.0*(cb(v,k-1,j+1,i)+cb(v,k-1,j,i+1)+cb(v,k,j+1,i+1)));
+              if (fk < flim && fj < flim && fi < flim)
+                u(v, fk+1, fj+1, fi+1) =
+                  0.015625*(27.0*cb(v,k,j,i)+cb(v,k+1,j+1,i+1)
+                    +9.0*(cb(v,k,j,i+1)+cb(v,k,j+1,i)+cb(v,k+1,j,i))
+                    +3.0*(cb(v,k+1,j+1,i)+cb(v,k+1,j,i+1)+cb(v,k,j+1,i+1)));
+            }
+            if (folddata) {
+              for (int v=0; v<nvar_; ++v) {
+                if (fk >= 0 && fj >= 0 && fi >= 0)
+                  uold(v, fk,   fj,   fi  ) =
+                    0.015625*(27.0*co(v,k,j,i)+co(v,k-1,j-1,i-1)
+                      +9.0*(co(v,k,j,i-1)+co(v,k,j-1,i)+co(v,k-1,j,i))
+                      +3.0*(co(v,k-1,j-1,i)+co(v,k-1,j,i-1)+co(v,k,j-1,i-1)));
+                if (fk >= 0 && fj >= 0 && fi < flim)
+                  uold(v, fk,   fj,   fi+1) =
+                    0.015625*(27.0*co(v,k,j,i)+co(v,k-1,j-1,i+1)
+                      +9.0*(co(v,k,j,i+1)+co(v,k,j-1,i)+co(v,k-1,j,i))
+                      +3.0*(co(v,k-1,j-1,i)+co(v,k-1,j,i+1)+co(v,k,j-1,i+1)));
+                if (fk >= 0 && fj < flim && fi >= 0)
+                  uold(v, fk,   fj+1, fi  ) =
+                    0.015625*(27.0*co(v,k,j,i)+co(v,k-1,j+1,i-1)
+                      +9.0*(co(v,k,j,i-1)+co(v,k,j+1,i)+co(v,k-1,j,i))
+                      +3.0*(co(v,k-1,j+1,i)+co(v,k-1,j,i-1)+co(v,k,j+1,i-1)));
+                if (fk < flim && fj >= 0 && fi >= 0)
+                  uold(v, fk+1, fj,   fi  ) =
+                    0.015625*(27.0*co(v,k,j,i)+co(v,k+1,j-1,i-1)
+                      +9.0*(co(v,k,j,i-1)+co(v,k,j-1,i)+co(v,k+1,j,i))
+                      +3.0*(co(v,k+1,j-1,i)+co(v,k+1,j,i-1)+co(v,k,j-1,i-1)));
+                if (fk < flim && fj < flim && fi >= 0)
+                  uold(v, fk+1, fj+1, fi  ) =
+                    0.015625*(27.0*co(v,k,j,i)+co(v,k+1,j+1,i-1)
+                      +9.0*(co(v,k,j,i-1)+co(v,k,j+1,i)+co(v,k+1,j,i))
+                      +3.0*(co(v,k+1,j+1,i)+co(v,k+1,j,i-1)+co(v,k,j+1,i-1)));
+                if (fk < flim && fj >= 0 && fi < flim)
+                  uold(v, fk+1, fj,   fi+1) =
+                    0.015625*(27.0*co(v,k,j,i)+co(v,k+1,j-1,i+1)
+                      +9.0*(co(v,k,j,i+1)+co(v,k,j-1,i)+co(v,k+1,j,i))
+                      +3.0*(co(v,k+1,j-1,i)+co(v,k+1,j,i+1)+co(v,k,j-1,i+1)));
+                if (fk >= 0 && fj < flim && fi < flim)
+                  uold(v, fk,  fj+1, fi+1) =
+                    0.015625*(27.0*co(v,k,j,i)+co(v,k-1,j+1,i+1)
+                      +9.0*(co(v,k,j,i+1)+co(v,k,j+1,i)+co(v,k-1,j,i))
+                      +3.0*(co(v,k-1,j+1,i)+co(v,k-1,j,i+1)+co(v,k,j+1,i+1)));
+                if (fk < flim && fj < flim && fi < flim)
+                  uold(v, fk+1, fj+1, fi+1) =
+                    0.015625*(27.0*co(v,k,j,i)+co(v,k+1,j+1,i+1)
+                      +9.0*(co(v,k,j,i+1)+co(v,k,j+1,i)+co(v,k+1,j,i))
+                      +3.0*(co(v,k+1,j+1,i)+co(v,k+1,j,i+1)+co(v,k,j+1,i+1)));
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::SetMeshBlockCoarsestBoundaries(bool folddata)
 //  \brief Set boundaries of each MeshBlock from neighboring finer MeshBlocks
 
-void MultigridDriver::SetMeshBlockCoarsestBoundaries() {
+void MultigridDriver::SetMeshBlockCoarsestBoundaries(bool folddata) {
   int ngh = mgroot_->ngh_;
   Real vol = 0.125;
   for (Multigrid* pmg : vmg_) {
+    const LogicalLocation &loc = pmg->loc_;
     AthenaArray<Real> &u = pmg->GetCurrentData();
     AthenaArray<Real> &uold = pmg->GetCurrentOldData();
     for(int ok=-1; ok<=1; ++ok) {
       for(int oj=-1; oj<=1; ++oj) {
         for(int oi=-1; oi<=1; ++oi) {
-          if (pmg->pmgbval->nblevel[ok+1][oj+1][oi+1] > pmg->loc_.level) {
+          if (pmg->pmgbval->nblevel[ok+1][oj+1][oi+1] > loc.level) {
             LogicalLocation nloc;
-            nloc.lx1 = pmg->loc_.lx1 + oi;
-            nloc.lx2 = pmg->loc_.lx2 + oj;
-            nloc.lx3 = pmg->loc_.lx3 + ok;
-            nloc.level = pmg->loc_.level;
+            nloc.lx1 = loc.lx1 + oi;
+            nloc.lx2 = loc.lx2 + oj;
+            nloc.lx3 = loc.lx3 + ok;
+            nloc.level = loc.level;
             for (int v=0; v<nvar_; ++v) {
               u(v, ok+ngh, oj+ngh, oi+ngh) = 0.0;
-              if (ffas_)
+              if (folddata)
                 uold(v, ok+ngh, oj+ngh, oi+ngh) = 0.0;
             }
-            GetNeighborOctetAverage(nloc, u, uold, ok+ngh, oj+ngh, oi+ngh, vol);
+            GetNeighborOctetAverage(nloc, u, uold, ok+ngh, oj+ngh, oi+ngh, vol, folddata);
           }
         }
       }
@@ -1108,11 +1390,13 @@ void MultigridDriver::SetMeshBlockCoarsestBoundaries() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::GetNeighborOctetAverage(const LogicalLocation &nloc,
-//           AthenaArray<Real> &u, AthenaArray<Real> &uold, int k, int j, int i, Real vol)
+//                    AthenaArray<Real> &u, AthenaArray<Real> &uold, int k, int j, int i,
+//                    Real vol, bool folddata)
 //  \brief Update the ghost cell with the average of all the octets including the leafs
 
 void MultigridDriver::GetNeighborOctetAverage(const LogicalLocation &nloc,
-     AthenaArray<Real> &u, AthenaArray<Real> &uold, int k, int j, int i, Real vol) {
+                      AthenaArray<Real> &u, AthenaArray<Real> &uold, int k, int j, int i,
+                      Real vol, bool folddata) {
   constexpr Real volfac = 0.125;
   int ngh = mgroot_->ngh_;
   const int l = ngh, r = ngh+1;
@@ -1123,11 +1407,11 @@ void MultigridDriver::GetNeighborOctetAverage(const LogicalLocation &nloc,
   if (octets_[olev][oid].fleaf == true) {
     for (int v=0; v<nvar_; ++v) {
       u(v, k, j, i) += vol*(un(v,l,l,l)+un(v,l,l,r)+un(v,l,r,l)+un(v,r,l,l)
-                           +un(v,r,r,l)+un(v,r,l,r)+un(v,r,r,l)+un(v,r,r,r));
-      if (ffas_)
+                           +un(v,r,r,l)+un(v,r,l,r)+un(v,l,r,r)+un(v,r,r,r));
+      if (folddata)
         uold(v, k, j, i) += vol*
                          (unold(v,l,l,l)+unold(v,l,l,r)+unold(v,l,r,l)+unold(v,r,l,l)
-                         +unold(v,r,r,l)+unold(v,r,l,r)+unold(v,r,r,l)+unold(v,r,r,r));
+                         +unold(v,r,r,l)+unold(v,r,l,r)+unold(v,l,r,r)+unold(v,r,r,r));
     }
   } else {
     for (int ok=0; ok<=1; ++ok) {
@@ -1140,11 +1424,11 @@ void MultigridDriver::GetNeighborOctetAverage(const LogicalLocation &nloc,
           lloc.level = nloc.level + 1;
           int llev = olev + 1;
           if (octetmap_[llev].count(lloc) == 1) { // has leafs
-            GetNeighborOctetAverage(lloc, u, uold, k, j, i, vol*volfac);
+            GetNeighborOctetAverage(lloc, u, uold, k, j, i, vol*volfac, folddata);
           } else {
             for (int v=0; v<nvar_; ++v) {
               u(v, k, j, i) += vol*un(v, ngh+ok, ngh+oj, ngh+oi);
-              if (ffas_)
+              if (folddata)
                 uold(v, k, j, i) += vol*unold(v, ngh+ok, ngh+oj, ngh+oi);
             }
           }

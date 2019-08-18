@@ -69,6 +69,30 @@ MGGravityDriver::~MGGravityDriver() {
   delete mgroot_;
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn MGGravity::MGGravity(MultigridDriver *pmd, MeshBlock *pmb)
+//  \brief MGGravity constructor
+
+MGGravity::MGGravity(MultigridDriver *pmd, MeshBlock *pmb) : Multigrid(pmd, pmb, 1, 1) {
+  btype = BoundaryQuantity::mggrav;
+  btypef = BoundaryQuantity::mggrav_f;
+  if (pmy_block_ != nullptr)
+    pmgbval = new MGGravityBoundaryValues(this, pmy_block_->pbval->block_bcs);
+  else
+    pmgbval = new MGGravityBoundaryValues(this, pmy_driver_->pmy_mesh_->mesh_bcs);
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn MGGravity::~MGGravity()
+//  \brief MGGravity deconstructor
+
+MGGravity::~MGGravity() {
+  delete pmgbval;
+}
+
+
 //----------------------------------------------------------------------------------------
 //! \fn void MGGravityDriver::Solve(int stage)
 //  \brief load the data and solve
@@ -116,6 +140,8 @@ void MGGravityDriver::Solve(int stage) {
 //  \brief Implementation of the Red-Black Gauss-Seidel Smoother
 //         rlev = relative level from the finest level of this Multigrid block
 
+ AthenaArray<Real> temp;
+
 void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int rlev,
                        int il, int iu, int jl, int ju, int kl, int ku, int color) {
   int c = color;
@@ -124,7 +150,9 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real dx2 = SQR(dx);
   Real isix = omega_/6.0;
-  for (int k=kl; k<=ku; k++) {
+  if (!temp.IsAllocated())
+    temp.NewAthenaArray(1,18,18,18);
+/*  for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
       for (int i=il+c; i<=iu; i+=2)
         u(0,k,j,i) -= ((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
@@ -134,7 +162,21 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
     }
     c ^= 1;
   }
-
+*/
+// Jacobi
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+      for (int i=il; i<=iu; i++)
+        temp(0,k,j,i) = u(0,k,j,i) - (((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
+                      - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1)) + src(0,k,j,i)*dx2)*isix);
+    }
+  }
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+      for (int i=il; i<=iu; i++)
+      u(0,k,j,i) = temp(k,j,i);
+    }
+  }
   return;
 }
 
@@ -191,11 +233,11 @@ void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> 
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravityDriver::SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
+//! \fn void MGGravityDriver::SetOctetBoundaryFromCoarserFluxCons(AthenaArray<Real> &dst,
 //   const AthenaArray<Real> &un, const LogicalLocation &loc, int ox1, int ox2, int ox3)
 //  \brief set an Octet boundary from a neighbor Octet on the coarser level
 
-void MGGravityDriver::SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
+void MGGravityDriver::SetOctetBoundaryFromCoarserFluxCons(AthenaArray<Real> &dst,
      const AthenaArray<Real> &un, const LogicalLocation &loc, int ox1, int ox2, int ox3) {
   constexpr Real itw = 1.0/12.0;
   const int ngh = mgroot_->ngh_;
@@ -203,10 +245,12 @@ void MGGravityDriver::SetOctetBoundaryFromCoarser(AthenaArray<Real> &dst,
   const AthenaArray<Real> &u = dst;
   int ci, cj, ck;
   if (loc.level == nrootlevel_ - 1) { // from root
-    ci = loc.lx1 + ox1 + ngh;
-    cj = loc.lx2 + ox2 + ngh;
-    ck = loc.lx3 + ox3 + ngh;
+    // given loc is neighbor's location
+    ci = loc.lx1 + ngh;
+    cj = loc.lx2 + ngh;
+    ck = loc.lx3 + ngh;
   } else { // from a neighbor octet
+    // given loc is my location
     int ix1 = (static_cast<int>(loc.lx1) & 1);
     int ix2 = (static_cast<int>(loc.lx2) & 1);
     int ix3 = (static_cast<int>(loc.lx3) & 1);
