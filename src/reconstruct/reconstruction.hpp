@@ -154,6 +154,30 @@ class Reconstruction {
                             const AthenaArray<Real> &q,
                             AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
+  void WenoThirdX1(const int k, const int j, const int il, const int iu,
+                   const AthenaArray<Real> &q,
+                   AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void WenoThirdX2(const int k, const int j, const int il, const int iu,
+                   const AthenaArray<Real> &q,
+                   AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void WenoThirdX3(const int k, const int j, const int il, const int iu,
+                   const AthenaArray<Real> &q,
+                   AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void WenoFifthX1(const int k, const int j, const int il, const int iu,
+                   const AthenaArray<Real> &q,
+                   AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void WenoFifthX2(const int k, const int j, const int il, const int iu,
+                   const AthenaArray<Real> &q,
+                   AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void WenoFifthX3(const int k, const int j, const int il, const int iu,
+                   const AthenaArray<Real> &q,
+                   AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
  private:
   MeshBlock* pmy_block_;  // ptr to MeshBlock containing this Reconstruction
 
