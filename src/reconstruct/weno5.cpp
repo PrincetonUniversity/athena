@@ -3,12 +3,10 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file weno3.cpp
-//  \brief third-order accurate weighted essentially non-oscillatory (WENO_3) scheme
+//! \file weno5.cpp
+//  \brief fifth-order accurate weighted essentially non-oscillatory (WENO_5) scheme
 //
 // REFERENCES:
-// (Mignone) A. Mignone, "High-order conservative reconstruction schemes for finite volume
-// methods in cylindrical and spherical coordinates", JCP, 270, 784 (2014)
 //
 //======================================================================================
 
