@@ -81,6 +81,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         pmb->precon->DonorCellX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
+      } else if (order == 6) {
+        pmb->precon->WenoThirdX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
+      } else if (order == 5) {
+        pmb->precon->WenoFifthX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
       } else {
         pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
       }
@@ -180,6 +184,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         pmb->precon->DonorCellX2(k, js-1, il, iu, w, bcc, wl_, wr_);
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX2(k, js-1, il, iu, w, bcc, wl_, wr_);
+      } else if (order == 6) {
+        pmb->precon->WenoThirdX2(k, js-1, il, iu, w, bcc, wl_, wr_);
+      } else if (order == 5) {
+        pmb->precon->WenoFifthX2(k, js-1, il, iu, w, bcc, wl_, wr_);
       } else {
         pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, w, bcc, wl_, wr_);
       }
@@ -189,6 +197,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->DonorCellX2(k, j, il, iu, w, bcc, wlb_, wr_);
         } else if (order == 2) {
           pmb->precon->PiecewiseLinearX2(k, j, il, iu, w, bcc, wlb_, wr_);
+        } else if (order == 6) {
+          pmb->precon->WenoThirdX2(k, js, il, iu, w, bcc, wlb_, wr_);
+        } else if (order == 5) {
+          pmb->precon->WenoFifthX2(k, js, il, iu, w, bcc, wlb_, wr_);
         } else {
           pmb->precon->PiecewiseParabolicX2(k, j, il, iu, w, bcc, wlb_, wr_);
         }
@@ -285,6 +297,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         pmb->precon->DonorCellX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
+      } else if (order == 6) {
+        pmb->precon->WenoThirdX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
+      } else if (order == 5) {
+        pmb->precon->WenoFifthX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
       } else {
         pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
       }
@@ -294,6 +310,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->DonorCellX3(k, j, il, iu, w, bcc, wlb_, wr_);
         } else if (order == 2) {
           pmb->precon->PiecewiseLinearX3(k, j, il, iu, w, bcc, wlb_, wr_);
+        } else if (order == 6) {
+          pmb->precon->WenoThirdX3(k, j, il, iu, w, bcc, wlb_, wr_);
+        } else if (order == 5) {
+          pmb->precon->WenoFifthX3(k, j, il, iu, w, bcc, wlb_, wr_);
         } else {
           pmb->precon->PiecewiseParabolicX3(k, j, il, iu, w, bcc, wlb_, wr_);
         }

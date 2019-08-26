@@ -60,6 +60,17 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   } else if (input_recon == "3c") {
     xorder = 3;
     characteristic_projection = true;
+  } else if (input_recon == "w3") {
+    xorder = 6; // placeholder value for WENO3, since 3 is taken by PPM
+  } else if (input_recon == "w5") {
+    xorder = 5;
+    // TODO(felker): add characteristic projection switches and steps to 2x WENO files
+  // } else if (input_recon == "w3c") {
+  //   xorder = 6;
+  //   characteristic_projection = true;
+  // } else if (input_recon == "w5c") {
+  //   xorder = 5;
+  //   characteristic_projection = true;
   } else if ((input_recon == "4") || (input_recon == "4c")) {
     // Full 4th-order scheme for hydro or MHD on uniform Cartesian grids
     xorder = 4;
@@ -84,6 +95,8 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
               << "The combination of general EOS and xorder > 2 has documented bugs"
               << " in some cases." << std::endl;
   }
+
+  // TODO(felker): add check for requisite NGHOST for WENO3 and WENO5
 
   // check for necessary number of ghost zones for PPM w/o fourth-order flux corrections
   if (xorder == 3) {
