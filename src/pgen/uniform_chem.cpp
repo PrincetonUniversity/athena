@@ -82,7 +82,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 				phydro->u(IDN, k, j, i) = nH;
         //energy
         if (NON_BAROTROPIC_EOS) {
-          phydro->u(IEN, k, j, i) = T * Thermo::CvCold(0, xHe, 0);
+          phydro->u(IEN, k, j, i) = nH * 0.1 * 0.1;
         }
 			}
 		}

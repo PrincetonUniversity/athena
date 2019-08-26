@@ -300,6 +300,10 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 	unit_density_in_nH_ = pin->GetReal("chemistry", "unit_density_in_nH");
 	unit_length_in_cm_ = pin->GetReal("chemistry", "unit_length_in_cm");
 	unit_vel_in_cms_ = pin->GetReal("chemistry", "unit_vel_in_cms");
+  unit_time_in_s_ = unit_length_in_cm_/unit_vel_in_cms_;
+  unit_E_in_cgs_ = 1.67e-24 * (
+                            1 + xHe_*4 + xC_std_*12 + xO_std_*16 + xSi_std_*28
+                    ) * unit_density_in_nH_ * unit_vel_in_cms_ * unit_vel_in_cms_;
 	unit_radiation_in_draine1987_ = pin->GetReal(
                                 "chemistry", "unit_radiation_in_draine1987");
   if (NON_BAROTROPIC_EOS) {
@@ -360,13 +364,14 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 
 ChemNetwork::~ChemNetwork() {}
 
-void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real E, 
+void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED, 
                       Real ydot[NSCALARS]) {
 	Real rate;
 	//store previous y includeing ghost species
 	Real yprev[NSCALARS+ngs_];
 	Real yprev0[NSCALARS+ngs_];//correct negative abundance
 	Real ydotg[NSCALARS+ngs_];
+  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
 
 	for(int i=0; i<NSCALARS+ngs_; i++) {
 		ydotg[i] = 0.0;
@@ -401,7 +406,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real E,
     }
   }
 
-  UpdateRates(yprev0, E);
+  UpdateRates(yprev0, E_ergs);
 
   //cosmic ray reactions
   for (int i=0; i<n_cr_; i++) {
@@ -438,7 +443,8 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real E,
 
 	//set ydot to return
 	for (int i=0; i<NSCALARS; i++) {
-		ydot[i] = ydotg[i];
+    //return in code units
+		ydot[i] = ydotg[i] * unit_time_in_s_;
 	}
 
   //throw error if nan, or inf, or large value occurs
@@ -460,6 +466,10 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real E,
       }
       printf("\n");
       printf("nH_ = %.2e\n", nH_);
+      printf("ED = %.2e\n", ED);
+      printf("E_ergs = %.2e\n", E_ergs);
+      printf("unit_E_in_cgs_ = %.2e\n", unit_E_in_cgs_);
+      printf("T = %.2e\n", E_ergs/Thermo::CvCold(yprev0[iH2_], xHe_, yprev0[ige_]));
       std::stringstream msg;
       msg << "ChemNetwork (gow16): RHS(ydot): nan or inf" << std::endl;
       ATHENA_ERROR(msg);
@@ -479,7 +489,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   rho_floor = pmy_mb_->peos->GetDensityFloor();
   rho = (rho > rho_floor) ?  rho : rho_floor;
   //hydrogen atom number density
-  nH_ =  rho / unit_density_in_nH_;
+  nH_ =  rho * unit_density_in_nH_;
   //average radiation field of all angles
   //TODO: put floor on radiation variables?
   for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
@@ -491,7 +501,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
     if (ifreq == index_cr_) {
       rad_[index_cr_] = rad_sum / float(nang);
     } else {
-      rad_[ifreq] = rad_sum / float(nang) / unit_radiation_in_draine1987_;
+      rad_[ifreq] = rad_sum * unit_radiation_in_draine1987_ / float(nang) ;
     }
 #ifdef DEBUG
     if (isnan(rad_[ifreq])) {
@@ -502,6 +512,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
 #endif
   }
   //CO cooling paramters
+  //TODO: for six-ray, this should be in the right units
   NCO_sum = 0;
   for (int iang=0; iang < nang; ++iang) {
       NCO_sum += pmy_mb_->prad->pradintegrator->col(iang, k, j, i, iNCO_);
@@ -781,7 +792,8 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS+ngs_], const Real E) {
   return;
 }
 
-Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real E) {
+Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
+  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
   //isothermal
   if (!NON_BAROTROPIC_EOS) {
     return 0;
@@ -800,8 +812,8 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real E) {
   }
 
   //temperature
-  T = E / Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]);
-  //apply temperature floor, incase of very small or negative E
+  T = E_ergs / Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]);
+  //apply temperature floor, incase of very small or negative energy
 	if (T < temp_min_rates_) {
 		T = temp_min_rates_;
   }
@@ -913,7 +925,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real E) {
 				LCII , LCI , LOI , LHotGas , LCOR);
 		printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
 				LH2 , LDust , LRec , LH2diss , LHIion);
-		printf("T=%.2e, dEdt=%.2e, E=%.2e, Cv=%.2e, nH=%.2e\n", T, dEdt, E,
+		printf("T=%.2e, dEdt=%.2e, E=%.2e, Cv=%.2e, nH=%.2e\n", T, dEdt, E_ergs,
 				Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]), nH_);
 		for (int i=0; i<NSCALARS+ngs_; i++) {
 			printf("%s: %.2e  ", species_names_all_[i].c_str(), yprev[i]);
@@ -923,7 +935,9 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real E) {
     msg << "ChemNetwork (gow16): dEdt: nan or inf number" << std::endl;
     ATHENA_ERROR(msg);
 	}
-  return dEdt;
+  //return in code units
+  Real dEDdt = dEdt * nH_ / unit_E_in_cgs_ * unit_time_in_s_;
+  return dEDdt;
 }
 
 void ChemNetwork::OutputRates(FILE *pf) const {

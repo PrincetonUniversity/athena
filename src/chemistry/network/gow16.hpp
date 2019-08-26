@@ -22,6 +22,8 @@
 //  Note: This is a template for chemistry network.
 //  When implementing a new chemistry network, all public functions should be
 //  in the same form.
+//  The internal calculations are in cgs units. The input and 
+//  return of RHS and Edot must be in code units.
 class ChemNetwork : public NetworkWrapper {
   friend class Radiation; //number of frequencies n_freq_
   friend class RadIntegrator; //shielding
@@ -43,11 +45,13 @@ public:
 
   //RHS: right-hand-side of ODE. dy/dt = ydot(t, y). Here y are the abundance
   //of species. details see CVODE package documentation.
-  void RHS(const Real t, const Real y[NSCALARS], const Real E,
+  //all input/output variables are in code units
+  void RHS(const Real t, const Real y[NSCALARS], const Real ED,
            Real ydot[NSCALARS]);
   
-  //energy equation dE/dt
-  Real Edot(const Real t, const Real y[NSCALARS], const Real E);
+  //energy equation dE/dt, all input/output variables are in code units
+  //(ED is the energy density)
+  Real Edot(const Real t, const Real y[NSCALARS], const Real ED);
 
 private:
   PassiveScalars *pmy_spec_;
@@ -71,6 +75,8 @@ private:
 	Real unit_density_in_nH_;
 	Real unit_length_in_cm_;
 	Real unit_vel_in_cms_;
+	Real unit_time_in_s_;
+  Real unit_E_in_cgs_;//unit of energy density, in erg cm-3
 	Real unit_radiation_in_draine1987_;
 	Real temperature_;
 	Real temp_max_heat_; 

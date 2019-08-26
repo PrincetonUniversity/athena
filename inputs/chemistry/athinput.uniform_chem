@@ -9,12 +9,12 @@ problem_id = uniform_chem   # problem ID: basename of output filenames
 <output1>
 file_type  = vtk       # vtk data dump
 variable   = prim      # variables to be output
-dt         = 3.154e15  # time increment between outputs
+dt         = 1e5  # time increment between outputs
 
 <time>
 cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = 10        # cycle limit
-tlim       = 3.154e16  # time limit, 1 Gyr
+tlim       = 1e6  # time limit, 1 Gyr
 
 <mesh>
 nx1        = 4        # Number of zones in X1-direction
@@ -67,10 +67,10 @@ abstol_CO   = 1.0e-25
 abstol_H3+   = 1.0e-20 
 abstol_HCO+   = 1.0e-32 
 abstol_H2   = 1.0e-10 
-abstol_E   = 1.381e-18 #for internal energy. Set to 0.01 kb_
+abstol_E   = 1e-4 #for internal energy. Set to 0.01 K
 user_jac   = 0       #flag for whether use user provided Jacobian. default false/0
 maxsteps   = 100000     #maximum number of steps in one integration. default 10000
-h_init      = 1e12    #first step of first zone. Default 0/CVODE algorithm.
+h_init      = 1e-1    #first step of first zone. Default 0/CVODE algorithm.
 #code units
 unit_density_in_nH = 1.
 unit_radiation_in_draine1987 = 1

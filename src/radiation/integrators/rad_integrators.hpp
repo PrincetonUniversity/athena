@@ -42,6 +42,7 @@ public:
   void UpdateRadiation(int direction);
 
 #ifdef INCLUDE_CHEMISTRY
+  //TODO: for six-ray, this should be in the right units
   int ncol;
   AthenaArray<Real> col, col_avg;
   ChemNetwork* pmy_chemnet;
