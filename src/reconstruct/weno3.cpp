@@ -147,7 +147,7 @@ void Reconstruction::WenoThirdX1(const int k, const int j, const int il, const i
   for (int n=0; n<NWAVE; ++n) {
     // Start outermost spatial cell loop at the first ghost cell to reconstruct w^L at
     // lowest real interface (extend to iu=ie+1 for upper-most real interaface)
-    for (int i=il-1; i<=iu; ++i) {
+    for (int i=il; i<=iu; ++i) {
       // Compute smoothness reference value for this cell and cycle
       // (does not depend on the specific variable stencil)
       Real h = pco->dx1v(i); // TODO(felker): consider replacing with direct div. by Nx1

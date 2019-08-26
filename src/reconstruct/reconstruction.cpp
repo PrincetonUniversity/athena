@@ -241,6 +241,12 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   scr3_ni_.NewAthenaArray(NWAVE, nc1);
   scr4_ni_.NewAthenaArray(NWAVE, nc1);
 
+  // additional scratch arrays for WENO3
+  if (xorder == 6) {
+    scr5_ni_.NewAthenaArray(NWAVE, nc1);
+    scr6_ni_.NewAthenaArray(NWAVE, nc1);
+  }
+
   if ((xorder == 3) || (xorder == 4)) {
     Coordinates *pco = pmb->pcoord;
     scr03_i_.NewAthenaArray(nc1);
