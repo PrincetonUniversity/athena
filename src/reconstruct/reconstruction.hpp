@@ -92,6 +92,31 @@ class Reconstruction {
                             const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
                             AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
+  void WenoThirdX1(const int k, const int j, const int il, const int iu,
+                   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+                   AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+
+  void WenoThirdX2(const int k, const int j, const int il, const int iu,
+                   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+                   AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+
+  void WenoThirdX3(const int k, const int j, const int il, const int iu,
+                   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+                   AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+
+  void WenoFifthX1(const int k, const int j, const int il, const int iu,
+                   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+                   AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+
+  void WenoFifthX2(const int k, const int j, const int il, const int iu,
+                   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+                   AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+
+  void WenoFifthX3(const int k, const int j, const int il, const int iu,
+                   const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+                   AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+
+
   // overloads for non-fluid (cell-centered Hydro prim. and magnetic field) reconstruction
   void DonorCellX1(const int k, const int j, const int il, const int iu,
                    const AthenaArray<Real> &q,
