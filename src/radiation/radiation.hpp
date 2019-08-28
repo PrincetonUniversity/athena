@@ -157,6 +157,7 @@ private:
   AthenaArray<Real> g_, gi_;         // metric and inverse
   AthenaArray<Real> norm_to_tet_;    // transformation from normal to tetrad frame
   AthenaArray<Real> u_tet_;          // fluid 4-velocity in tetrad frame
+  AthenaArray<Real> dtau_;           // timestep in fluid frame
   AthenaArray<Real> weight_sum_;     // sum of solid angles, used for normalizing
   AthenaArray<Real> n_cm_;           // unit null direction in comoving fluid frame
   AthenaArray<Real> omega_cm_;       // solid angle in comoving fluid frame

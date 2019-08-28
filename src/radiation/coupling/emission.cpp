@@ -33,7 +33,8 @@ bool FourthPolyRoot(const Real coef4, const Real tconst, Real &root);
 //   omega: fractional solid angle (normalized to 1) in fluid frame:
 //     index 0: angle (0 through nzeta * npsi - 1)
 //     index 1: i
-//   dt: time interval over which coupling should be applied
+//   dtau: fluid proper time interval over which coupling should be applied:
+//     index 0: i
 //   k, j: x3- and x2-indices
 //   intensity: fluid-frame I:
 //     index 0: angle (0 through nzeta * npsi - 1)
@@ -47,8 +48,8 @@ bool FourthPolyRoot(const Real coef4, const Real tconst, Real &root);
 //       x-direction, and similarly for n^2/n^0 and n^3/n^0.
 
 void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
-    const AthenaArray<Real> &normal, const AthenaArray<Real> &omega, Real dt, int k,
-    int j, AthenaArray<Real> &intensity) {
+    const AthenaArray<Real> &normal, const AthenaArray<Real> &omega,
+    const AthenaArray<Real> Real dtau, int k, int j, AthenaArray<Real> &intensity) {
 
   // Prepare to go through cells
   Real gamma = pmy_block->peos->GetGamma();
@@ -78,9 +79,9 @@ void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
     if (using_planck_mean) {
       sigma_p = opacity(OPAP,k,j,i);
     }
-    Real dtcsigmaa = dt * sigma_a;
-    Real dtcsigmas = dt * sigma_s;
-    Real dtcsigmap = dt * sigma_p;
+    Real dtcsigmaa = dtau(i) * sigma_a;
+    Real dtcsigmas = dtau(i) * sigma_s;
+    Real dtcsigmap = dtau(i) * sigma_p;
 
     // Calculate polynomial coefficients
     Real jr_cm = 0.0;
