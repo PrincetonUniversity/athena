@@ -114,8 +114,6 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus SendEMF(MeshBlock *pmb, int stage);
   TaskStatus SendRadFlux(MeshBlock *pmb, int stage);
 
-  TaskStatus CalculateOpacity(MeshBlock *pmb, int stage);
-
   TaskStatus ReceiveAndCorrectHydroFlux(MeshBlock *pmb, int stage);
   TaskStatus ReceiveAndCorrectEMF(MeshBlock *pmb, int stage);
   TaskStatus ReceiveAndCorrectRadFlux(MeshBlock *pmb, int stage);
@@ -154,6 +152,7 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus Prolongation(MeshBlock *pmb, int stage);
   TaskStatus Primitives(MeshBlock *pmb, int stage);
   TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
+  TaskStatus CalculateOpacity(MeshBlock *pmb, int stage);
   TaskStatus UserWork(MeshBlock *pmb, int stage);
   TaskStatus NewBlockTimeStep(MeshBlock *pmb, int stage);
   TaskStatus CheckRefinement(MeshBlock *pmb, int stage);

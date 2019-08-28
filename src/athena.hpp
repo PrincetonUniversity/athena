@@ -144,12 +144,13 @@ enum MetricIndex {I00=0, I01=1, I02=2, I03=3, I11=4, I12=5, I13=6, I22=7, I23=8,
 enum TriangleIndex {T00=0, T10=1, T11=2, T20=3, T21=4, T22=5, T30=6, T31=7, T32=8, T33=9,
                     NTRIANGULAR=10};
 
-// enumerator types that are used for variables and function parameters:
+// array indices for radiation
+enum AngleDirection {ZETADIR, PSIDIR};  // meridional, azimuthal
+enum OpacityIndex {OPAS, OPAA, OPAP};   // scattering, Rosseland, Planck
 
 // needed for arrays dimensioned over grid directions
 // enumerator type only used in Mesh::EnrollUserMeshGenerator()
 enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
-enum AngleDirection {ZETADIR, PSIDIR};
 
 //------------------
 // strongly typed / scoped enums (C++11):
@@ -199,5 +200,6 @@ using FieldDiffusionCoeffFunc = void (*)(
     const AthenaArray<Real> &w,
     const AthenaArray<Real> &bmag,
     int is, int ie, int js, int je, int ks, int ke);
+using OpacityFunc = void (*)(MeshBlock *pmb, const AthenaArray<Real> &prim_hydro);
 
 #endif // ATHENA_HPP_

@@ -20,24 +20,19 @@
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../mesh/mesh.hpp"                // MeshBlock
 
+// Declarations
+void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &prim_hydro);
+
 //----------------------------------------------------------------------------------------
 // Radiation constructor
 // Inputs:
 //   pmb: pointer to containing MeshBlock
 //   pin: pointer to runtime parameters
 
-// The default opacity function.
-// Do nothing. Keep the opacity as the initial value
-void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &prim_hydro)
-{
-  
-}
-
-
 Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb),
     coupled_to_matter(pin->GetBoolean("radiation", "coupled")),
-    using_planck_mean(),
+    using_planck_mean(pin->GetBoolean("radiation", "planck")),
     nzeta(pin->GetInteger("radiation", "n_polar")),
     npsi(pin->GetInteger("radiation", "n_azimuthal")),
     nang((nzeta + 2*NGHOST) * (npsi + 2*NGHOST)),
@@ -63,6 +58,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
 
   // Set object and function pointers
   UserSourceTerm = pmb->pmy_mesh->UserRadSourceTerm_;
+  UpdateOpacity = DefaultOpacity;
 
   // Enroll refinement communication
   if (pmb->pmy_mesh->multilevel) {
@@ -110,7 +106,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   m_p = m_p_cgs / (density_cgs * length_cgs * SQR(length_cgs));
   k_b = mol_weight * m_p;
   sigma_sb = sigma_sb_cgs * SQR(SQR(temperature_cgs)) / intensity_cgs;
-  arad = arad_cgs *SQR(SQR(temperature_cgs))/pressure_cgs;
+  arad = arad_cgs * SQR(SQR(temperature_cgs)) / pressure_cgs;
 
   // Set and calculate emission, absorption, and scattering coefficients
   kappa_cgs = pin->GetOrAddReal("radiation", "kappa_cgs", NAN);
@@ -207,15 +203,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   flux_a[PSIDIR].NewAthenaArray(nang_pf, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
   // Allocate memory for opacity array
-  opacity.NewAthenaArray(3,pmb->ncells3,pmb->ncells2,pmb->ncells1);
-
-  intensity_scr_.NewAthenaArray(nzeta*npsi);
-  tran_coef_.NewAthenaArray(nzeta*npsi);
-  weight_.NewAthenaArray(nzeta*npsi);
-  vncsigma2_.NewAthenaArray(nzeta*npsi);
-
-  // set a default opacity function
-  UpdateOpacity = DefaultOpacity;
+  opacity.NewAthenaArray(3, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
   // Allocate memory for unit normal components in orthonormal frame
   int num_cells_zeta = ze + NGHOST;
@@ -441,6 +429,12 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   area_r_.NewAthenaArray(pmb->ncells1 + 1);
   vol_.NewAthenaArray(pmb->ncells1 + 1);
   flux_div_.NewAthenaArray(nang, pmb->ncells1 + 1);
+
+  // Allocate memory for source term calculation in a single cell
+  intensity_scr_.NewAthenaArray(nzeta * npsi);
+  tran_coef_.NewAthenaArray(nzeta * npsi);
+  weight_.NewAthenaArray(nzeta * npsi);
+  vncsigma2_.NewAthenaArray(nzeta * npsi);
 
   // Allocate memory for source term frame transformations
   g_.NewAthenaArray(NMETRIC, pmb->ncells1);
@@ -1247,6 +1241,20 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
 }
 
 //----------------------------------------------------------------------------------------
+// Opacity enrollment
+// Inputs:
+//   MyOpacityFunction: user-defined function from problem generator
+// Outputs: (none)
+// Notes:
+//   If not called, default function keeps opacity unchanged from initial conditions.
+
+void Radiation::EnrollOpacityFunction(OpacityFunc MyOpacityFunction)
+{
+  UpdateOpacity = MyOpacityFunction;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 // Indexing function for angles
 // Inputs:
 //   l: zeta-index
@@ -1484,11 +1492,15 @@ void Radiation::SetMoments(AthenaArray<Real> &moments) {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+// Default opacity function
+// Inputs:
+//   pmb: pointer to MeshBlock
+//   prim_hydro: primitive variables
+// Outputs: (none)
+// Notes:
+//   Does nothing; keeps the opacity as the initial value.
 
-//Enrol the function to update opacity
-
-void Radiation::EnrollOpacityFunction(Opacity_t MyOpacityFunction)
-{
-  UpdateOpacity = MyOpacityFunction;
-  
+void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &prim_hydro) {
+  return;
 }
