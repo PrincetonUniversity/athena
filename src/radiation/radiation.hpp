@@ -9,11 +9,11 @@
 //  \brief definitions for Radiation class
 
 // Athena++ headers
-#include "../athena.hpp"             // Real, indices, function prototypes
-#include "../athena_arrays.hpp"      // AthenaArray
-#include "../bvals/cc/bvals_cc.hpp"  // CellCenteredBoundaryVariable
-#include "../mesh.hpp"               // MeshBlock
-#include "../parameter_input.hpp"    // ParameterInput
+#include "../athena.hpp"                  // Real, indices, function prototypes
+#include "../athena_arrays.hpp"           // AthenaArray
+#include "../bvals/cc/rad/bvals_rad.hpp"  // RadBoundaryVariable
+#include "../mesh.hpp"                    // MeshBlock
+#include "../parameter_input.hpp"         // ParameterInput
 
 //----------------------------------------------------------------------------------------
 // Radiation class
@@ -105,7 +105,7 @@ public:
   AthenaArray<Real> opacity;      // opacity array
 
   // Boundary communication
-  CellCenteredBoundaryVariable rbvar;
+  RadBoundaryVariable rbvar;
   int refinement_idx{-1};
 
   // Task list functions

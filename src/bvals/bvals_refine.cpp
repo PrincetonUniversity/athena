@@ -396,36 +396,42 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
       DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
                                 pmb->cis, pmb->cie, sj, ej, sk, ek, 1,
-                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x1);
+                                ph->coarse_prim_, pf->coarse_b_, prad->coarse_prim_,
+                                BoundaryFace::inner_x1);
     }
     if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
       DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
                                 pmb->cis, pmb->cie, sj, ej, sk, ek, 1,
-                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x1);
+                                ph->coarse_prim_, pf->coarse_b_, prad->coarse_prim_,
+                                BoundaryFace::outer_x1);
     }
   }
   if (nb.ni.ox2 == 0 && pmb->block_size.nx2 > 1) {
     if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
       DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
                                 si, ei, pmb->cjs, pmb->cje, sk, ek, 1,
-                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x2);
+                                ph->coarse_prim_, pf->coarse_b_, prad->coarse_prim_,
+                                BoundaryFace::inner_x2);
     }
     if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
       DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
                                 si, ei, pmb->cjs, pmb->cje, sk, ek, 1,
-                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x2);
+                                ph->coarse_prim_, pf->coarse_b_, prad->coarse_prim_,
+                                BoundaryFace::outer_x2);
     }
   }
   if (nb.ni.ox3 == 0 && pmb->block_size.nx3 > 1) {
     if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
       DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
                                 si, ei, sj, ej, pmb->cks, pmb->cke, 1,
-                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x3);
+                                ph->coarse_prim_, pf->coarse_b_, prad->coarse_prim_,
+                                BoundaryFace::inner_x3);
     }
     if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
       DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
                                 si, ei, sj, ej, pmb->cks, pmb->cke, 1,
-                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x3);
+                                ph->coarse_prim_, pf->coarse_b_, prad->coarse_prim_,
+                                BoundaryFace::outer_x3);
     }
   }
   return;

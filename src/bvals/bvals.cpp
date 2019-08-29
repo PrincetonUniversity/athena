@@ -323,7 +323,6 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   if (NSCALARS > 0) {
     ps = pmb->pscalars;
   }
-
   Radiation *prad = nullptr;
   if (RADIATION_ENABLED) {
     prad = pmb->prad;
@@ -333,7 +332,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
     DispatchBoundaryFunctions(pmb, pco, time, dt,
                               pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
-                              ph->w, pf->b, BoundaryFace::inner_x1);
+                              ph->w, pf->b, prad->prim, BoundaryFace::inner_x1);
     // KGF: COUPLING OF QUANTITIES (must be manually specified)
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -356,7 +355,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
     DispatchBoundaryFunctions(pmb, pco, time, dt,
                               pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
-                              ph->w, pf->b, BoundaryFace::outer_x1);
+                              ph->w, pf->b, prad->prim, BoundaryFace::outer_x1);
     // KGF: COUPLING OF QUANTITIES (must be manually specified)
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -380,7 +379,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, pmb->js, pmb->je, bks, bke, NGHOST,
-                                ph->w, pf->b, BoundaryFace::inner_x2);
+                                ph->w, pf->b, prad->prim, BoundaryFace::inner_x2);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -403,7 +402,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, pmb->js, pmb->je, bks, bke, NGHOST,
-                                ph->w, pf->b, BoundaryFace::outer_x2);
+                                ph->w, pf->b, prad->prim, BoundaryFace::outer_x2);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -431,7 +430,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
-                                ph->w, pf->b, BoundaryFace::inner_x3);
+                                ph->w, pf->b, prad->prim, BoundaryFace::inner_x3);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -454,7 +453,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
-                                ph->w, pf->b, BoundaryFace::outer_x3);
+                                ph->w, pf->b, prad->prim, BoundaryFace::outer_x3);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -478,12 +477,13 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 
 
 // KGF: should "bvars_it" be fixed in this class member function? Or passed as argument?
-void BoundaryValues::DispatchBoundaryFunctions(
-    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
-    int il, int iu, int jl, int ju, int kl, int ku, int ngh,
-    AthenaArray<Real> &prim, FaceField &b, BoundaryFace face) {
+void BoundaryValues::DispatchBoundaryFunctions(MeshBlock *pmb, Coordinates *pco,
+    Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ku, int ngh,
+    AthenaArray<Real> &prim, FaceField &b, AthenaArray<Real> &prim_rad,
+    BoundaryFace face) {
+
   if (block_bcs[face] ==  BoundaryFlag::user) {  // user-enrolled BCs
-    pmy_mesh_->BoundaryFunction_[face](pmb, pco, prim, b, time, dt,
+    pmy_mesh_->BoundaryFunction_[face](pmb, pco, prim, b, prim_rad, time, dt,
                                        il, iu, jl, ju, kl, ku, NGHOST);
   }
   // KGF: this is only to silence the compiler -Wswitch warnings about not handling the

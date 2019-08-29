@@ -54,7 +54,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
         AthenaArray<Real>::DataStatus::allocated : AthenaArray<Real>::DataStatus::empty)),
     coarse_prim(nang, pmb->ncc3, pmb->ncc2, pmb->ncc1, (pmb->pmy_mesh->multilevel ?
         AthenaArray<Real>::DataStatus::allocated : AthenaArray<Real>::DataStatus::empty)),
-    rbvar(pmb, &cons, &coarse_cons, flux_x) {
+    rbvar(pmb, &cons, &coarse_cons, flux_x, nzeta, npsi) {
 
   // Set object and function pointers
   UserSourceTerm = pmb->pmy_mesh->UserRadSourceTerm_;
@@ -1266,6 +1266,8 @@ void Radiation::EnrollOpacityFunction(OpacityFunc MyOpacityFunction)
 //   psi_face: flag indicating psi-index is on faces
 // Outputs:
 //   returned value: 1D index for both zeta and psi
+// Notes:
+//   More general version of RadBoundaryVariable::AngleInd().
 
 int Radiation::AngleInd(int l, int m, bool zeta_face, bool psi_face) {
   if (psi_face) {
