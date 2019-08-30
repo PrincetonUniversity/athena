@@ -49,7 +49,7 @@ bool FourthPolyRoot(const Real coef4, const Real tconst, Real &root);
 
 void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
     const AthenaArray<Real> &normal, const AthenaArray<Real> &omega,
-    const AthenaArray<Real> Real dtau, int k, int j, AthenaArray<Real> &intensity) {
+    const AthenaArray<Real> &dtau, int k, int j, AthenaArray<Real> &intensity) {
 
   // Prepare to go through cells
   Real gamma = pmy_block->peos->GetGamma();
@@ -68,7 +68,7 @@ void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
     // Extract angle-dependent terms
     for (int n = 0; n < nang_local; ++n) {
       intensity_scr_(n) = intensity(n,i);
-      tran_coef_(n) = n(0,n,i);
+      tran_coef_(n) = normal(0,n,i);
       weight_(n) = omega(n,i);
     }
 

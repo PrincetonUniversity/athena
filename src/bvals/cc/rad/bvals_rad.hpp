@@ -24,7 +24,7 @@ public:
   RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_var,
       AthenaArray<Real> *p_coarse_var, AthenaArray<Real> *flux_x, int num_zeta,
       int num_psi);
-  virtual ~HydroBoundaryVariable() = default;
+  virtual ~RadBoundaryVariable() = default;
 
   // Parameters (manually mirroring Radiation)
   int nzeta;   // number of polar radiation angles in active zone

@@ -12,7 +12,7 @@
 #include "../athena.hpp"                  // Real, indices, function prototypes
 #include "../athena_arrays.hpp"           // AthenaArray
 #include "../bvals/cc/rad/bvals_rad.hpp"  // RadBoundaryVariable
-#include "../mesh.hpp"                    // MeshBlock
+#include "../mesh/mesh.hpp"               // MeshBlock
 #include "../parameter_input.hpp"         // ParameterInput
 
 //----------------------------------------------------------------------------------------
@@ -125,7 +125,7 @@ public:
   // Fluid coupling functions
   void EnrollOpacityFunction(OpacityFunc MyOpacityFunction);
   void Coupling(const AthenaArray<Real> &prim_hydro, const AthenaArray<Real> &normal,
-      const AthenaArray<Real> &omega, Real dt, int k, int j,
+      const AthenaArray<Real> &omega, const AthenaArray<Real> &dtau, int k, int j,
       AthenaArray<Real> &intensity);
 
   // Other functions

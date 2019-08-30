@@ -12,9 +12,9 @@
 
 // Athena++ headers
 #include "bvals_rad.hpp"
-#include "../../../athena.hpp"               // Real
-#include "../../../mesh/mesh.hpp"            // MeshBlock
-#include "../../../radiation/radiation.hpp"  // Radiation
+#include "../../../athena.hpp"                   // Real
+#include "../../../coordinates/coordinates.hpp"  // Coordinates
+#include "../../../mesh/mesh.hpp"                // MeshBlock
 
 //----------------------------------------------------------------------------------------
 // RadBoundaryVariable constructor
@@ -29,7 +29,7 @@
 //       pointers, so there are no analogues to Hydro::SwapHydroQuantity() and
 //       Hydro::SelectCoarseBuffer().
 
-RadBoundaryVariable::HydroBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_var,
+RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_var,
     AthenaArray<Real> *p_coarse_var, AthenaArray<Real> *flux_x, int num_zeta,
     int num_psi) :
     CellCenteredBoundaryVariable(pmb, p_var, p_coarse_var, flux_x),
@@ -178,16 +178,16 @@ RadBoundaryVariable::HydroBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_
               break;
             }
           }
-          reflect_ind_ix1_(0,lm,k,j,di) = AngleInd(l_a - 1, m_a - 1);
-          reflect_ind_ix1_(1,lm,k,j,di) = AngleInd(l_a - 1, m_a);
-          reflect_ind_ix1_(2,lm,k,j,di) = AngleInd(l_a, m_a - 1);
-          reflect_ind_ix1_(3,lm,k,j,di) = AngleInd(l_a, m_a);
+          reflect_ind_ix1_(0,lm_g,k,j,di) = AngleInd(l_a - 1, m_a - 1);
+          reflect_ind_ix1_(1,lm_g,k,j,di) = AngleInd(l_a - 1, m_a);
+          reflect_ind_ix1_(2,lm_g,k,j,di) = AngleInd(l_a, m_a - 1);
+          reflect_ind_ix1_(3,lm_g,k,j,di) = AngleInd(l_a, m_a);
           Real frac_l = (zeta_a - zetav(l_a-1)) / dzetaf(l_a-1);
           Real frac_m = (psi_a - psiv(m_a-1)) / dpsif(m_a-1);
-          reflect_frac_ix1_(0,lm,k,j,di) = (1.0 - frac_l) * (1.0 - frac_m);
-          reflect_frac_ix1_(1,lm,k,j,di) = (1.0 - frac_l) * frac_m;
-          reflect_frac_ix1_(2,lm,k,j,di) = frac_l * (1.0 - frac_m);
-          reflect_frac_ix1_(3,lm,k,j,di) = frac_l * frac_m;
+          reflect_frac_ix1_(0,lm_g,k,j,di) = (1.0 - frac_l) * (1.0 - frac_m);
+          reflect_frac_ix1_(1,lm_g,k,j,di) = (1.0 - frac_l) * frac_m;
+          reflect_frac_ix1_(2,lm_g,k,j,di) = frac_l * (1.0 - frac_m);
+          reflect_frac_ix1_(3,lm_g,k,j,di) = frac_l * frac_m;
         }
       }
     }
@@ -239,16 +239,16 @@ RadBoundaryVariable::HydroBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_
               break;
             }
           }
-          reflect_ind_ox1_(0,lm,k,j,di) = AngleInd(l_a - 1, m_a - 1);
-          reflect_ind_ox1_(1,lm,k,j,di) = AngleInd(l_a - 1, m_a);
-          reflect_ind_ox1_(2,lm,k,j,di) = AngleInd(l_a, m_a - 1);
-          reflect_ind_ox1_(3,lm,k,j,di) = AngleInd(l_a, m_a);
+          reflect_ind_ox1_(0,lm_g,k,j,di) = AngleInd(l_a - 1, m_a - 1);
+          reflect_ind_ox1_(1,lm_g,k,j,di) = AngleInd(l_a - 1, m_a);
+          reflect_ind_ox1_(2,lm_g,k,j,di) = AngleInd(l_a, m_a - 1);
+          reflect_ind_ox1_(3,lm_g,k,j,di) = AngleInd(l_a, m_a);
           Real frac_l = (zeta_a - zetav(l_a-1)) / dzetaf(l_a-1);
           Real frac_m = (psi_a - psiv(m_a-1)) / dpsif(m_a-1);
-          reflect_frac_ox1_(0,lm,k,j,di) = (1.0 - frac_l) * (1.0 - frac_m);
-          reflect_frac_ox1_(1,lm,k,j,di) = (1.0 - frac_l) * frac_m;
-          reflect_frac_ox1_(2,lm,k,j,di) = frac_l * (1.0 - frac_m);
-          reflect_frac_ox1_(3,lm,k,j,di) = frac_l * frac_m;
+          reflect_frac_ox1_(0,lm_g,k,j,di) = (1.0 - frac_l) * (1.0 - frac_m);
+          reflect_frac_ox1_(1,lm_g,k,j,di) = (1.0 - frac_l) * frac_m;
+          reflect_frac_ox1_(2,lm_g,k,j,di) = frac_l * (1.0 - frac_m);
+          reflect_frac_ox1_(3,lm_g,k,j,di) = frac_l * frac_m;
         }
       }
     }
@@ -301,16 +301,16 @@ RadBoundaryVariable::HydroBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_
                 break;
               }
             }
-            reflect_ind_ix2_(0,lm,k,dj,i) = AngleInd(l_a - 1, m_a - 1);
-            reflect_ind_ix2_(1,lm,k,dj,i) = AngleInd(l_a - 1, m_a);
-            reflect_ind_ix2_(2,lm,k,dj,i) = AngleInd(l_a, m_a - 1);
-            reflect_ind_ix2_(3,lm,k,dj,i) = AngleInd(l_a, m_a);
+            reflect_ind_ix2_(0,lm_g,k,dj,i) = AngleInd(l_a - 1, m_a - 1);
+            reflect_ind_ix2_(1,lm_g,k,dj,i) = AngleInd(l_a - 1, m_a);
+            reflect_ind_ix2_(2,lm_g,k,dj,i) = AngleInd(l_a, m_a - 1);
+            reflect_ind_ix2_(3,lm_g,k,dj,i) = AngleInd(l_a, m_a);
             Real frac_l = (zeta_a - zetav(l_a-1)) / dzetaf(l_a-1);
             Real frac_m = (psi_a - psiv(m_a-1)) / dpsif(m_a-1);
-            reflect_frac_ix2_(0,lm,k,dj,i) = (1.0 - frac_l) * (1.0 - frac_m);
-            reflect_frac_ix2_(1,lm,k,dj,i) = (1.0 - frac_l) * frac_m;
-            reflect_frac_ix2_(2,lm,k,dj,i) = frac_l * (1.0 - frac_m);
-            reflect_frac_ix2_(3,lm,k,dj,i) = frac_l * frac_m;
+            reflect_frac_ix2_(0,lm_g,k,dj,i) = (1.0 - frac_l) * (1.0 - frac_m);
+            reflect_frac_ix2_(1,lm_g,k,dj,i) = (1.0 - frac_l) * frac_m;
+            reflect_frac_ix2_(2,lm_g,k,dj,i) = frac_l * (1.0 - frac_m);
+            reflect_frac_ix2_(3,lm_g,k,dj,i) = frac_l * frac_m;
           }
         }
       }
@@ -364,16 +364,16 @@ RadBoundaryVariable::HydroBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_
                 break;
               }
             }
-            reflect_ind_ox2_(0,lm,k,dj,i) = AngleInd(l_a - 1, m_a - 1);
-            reflect_ind_ox2_(1,lm,k,dj,i) = AngleInd(l_a - 1, m_a);
-            reflect_ind_ox2_(2,lm,k,dj,i) = AngleInd(l_a, m_a - 1);
-            reflect_ind_ox2_(3,lm,k,dj,i) = AngleInd(l_a, m_a);
+            reflect_ind_ox2_(0,lm_g,k,dj,i) = AngleInd(l_a - 1, m_a - 1);
+            reflect_ind_ox2_(1,lm_g,k,dj,i) = AngleInd(l_a - 1, m_a);
+            reflect_ind_ox2_(2,lm_g,k,dj,i) = AngleInd(l_a, m_a - 1);
+            reflect_ind_ox2_(3,lm_g,k,dj,i) = AngleInd(l_a, m_a);
             Real frac_l = (zeta_a - zetav(l_a-1)) / dzetaf(l_a-1);
             Real frac_m = (psi_a - psiv(m_a-1)) / dpsif(m_a-1);
-            reflect_frac_ox2_(0,lm,k,dj,i) = (1.0 - frac_l) * (1.0 - frac_m);
-            reflect_frac_ox2_(1,lm,k,dj,i) = (1.0 - frac_l) * frac_m;
-            reflect_frac_ox2_(2,lm,k,dj,i) = frac_l * (1.0 - frac_m);
-            reflect_frac_ox2_(3,lm,k,dj,i) = frac_l * frac_m;
+            reflect_frac_ox2_(0,lm_g,k,dj,i) = (1.0 - frac_l) * (1.0 - frac_m);
+            reflect_frac_ox2_(1,lm_g,k,dj,i) = (1.0 - frac_l) * frac_m;
+            reflect_frac_ox2_(2,lm_g,k,dj,i) = frac_l * (1.0 - frac_m);
+            reflect_frac_ox2_(3,lm_g,k,dj,i) = frac_l * frac_m;
           }
         }
       }
@@ -427,16 +427,16 @@ RadBoundaryVariable::HydroBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_
                 break;
               }
             }
-            reflect_ind_ix3_(0,lm,dk,j,i) = AngleInd(l_a - 1, m_a - 1);
-            reflect_ind_ix3_(1,lm,dk,j,i) = AngleInd(l_a - 1, m_a);
-            reflect_ind_ix3_(2,lm,dk,j,i) = AngleInd(l_a, m_a - 1);
-            reflect_ind_ix3_(3,lm,dk,j,i) = AngleInd(l_a, m_a);
+            reflect_ind_ix3_(0,lm_g,dk,j,i) = AngleInd(l_a - 1, m_a - 1);
+            reflect_ind_ix3_(1,lm_g,dk,j,i) = AngleInd(l_a - 1, m_a);
+            reflect_ind_ix3_(2,lm_g,dk,j,i) = AngleInd(l_a, m_a - 1);
+            reflect_ind_ix3_(3,lm_g,dk,j,i) = AngleInd(l_a, m_a);
             Real frac_l = (zeta_a - zetav(l_a-1)) / dzetaf(l_a-1);
             Real frac_m = (psi_a - psiv(m_a-1)) / dpsif(m_a-1);
-            reflect_frac_ix3_(0,lm,dk,j,i) = (1.0 - frac_l) * (1.0 - frac_m);
-            reflect_frac_ix3_(1,lm,dk,j,i) = (1.0 - frac_l) * frac_m;
-            reflect_frac_ix3_(2,lm,dk,j,i) = frac_l * (1.0 - frac_m);
-            reflect_frac_ix3_(3,lm,dk,j,i) = frac_l * frac_m;
+            reflect_frac_ix3_(0,lm_g,dk,j,i) = (1.0 - frac_l) * (1.0 - frac_m);
+            reflect_frac_ix3_(1,lm_g,dk,j,i) = (1.0 - frac_l) * frac_m;
+            reflect_frac_ix3_(2,lm_g,dk,j,i) = frac_l * (1.0 - frac_m);
+            reflect_frac_ix3_(3,lm_g,dk,j,i) = frac_l * frac_m;
           }
         }
       }
@@ -490,16 +490,16 @@ RadBoundaryVariable::HydroBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_
                 break;
               }
             }
-            reflect_ind_ox3_(0,lm,dk,j,i) = AngleInd(l_a - 1, m_a - 1);
-            reflect_ind_ox3_(1,lm,dk,j,i) = AngleInd(l_a - 1, m_a);
-            reflect_ind_ox3_(2,lm,dk,j,i) = AngleInd(l_a, m_a - 1);
-            reflect_ind_ox3_(3,lm,dk,j,i) = AngleInd(l_a, m_a);
+            reflect_ind_ox3_(0,lm_g,dk,j,i) = AngleInd(l_a - 1, m_a - 1);
+            reflect_ind_ox3_(1,lm_g,dk,j,i) = AngleInd(l_a - 1, m_a);
+            reflect_ind_ox3_(2,lm_g,dk,j,i) = AngleInd(l_a, m_a - 1);
+            reflect_ind_ox3_(3,lm_g,dk,j,i) = AngleInd(l_a, m_a);
             Real frac_l = (zeta_a - zetav(l_a-1)) / dzetaf(l_a-1);
             Real frac_m = (psi_a - psiv(m_a-1)) / dpsif(m_a-1);
-            reflect_frac_ox3_(0,lm,dk,j,i) = (1.0 - frac_l) * (1.0 - frac_m);
-            reflect_frac_ox3_(1,lm,dk,j,i) = (1.0 - frac_l) * frac_m;
-            reflect_frac_ox3_(2,lm,dk,j,i) = frac_l * (1.0 - frac_m);
-            reflect_frac_ox3_(3,lm,dk,j,i) = frac_l * frac_m;
+            reflect_frac_ox3_(0,lm_g,dk,j,i) = (1.0 - frac_l) * (1.0 - frac_m);
+            reflect_frac_ox3_(1,lm_g,dk,j,i) = (1.0 - frac_l) * frac_m;
+            reflect_frac_ox3_(2,lm_g,dk,j,i) = frac_l * (1.0 - frac_m);
+            reflect_frac_ox3_(3,lm_g,dk,j,i) = frac_l * frac_m;
           }
         }
       }

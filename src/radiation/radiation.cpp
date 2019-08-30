@@ -21,7 +21,7 @@
 #include "../mesh/mesh.hpp"                // MeshBlock
 
 // Declarations
-void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &prim_hydro);
+void DefaultOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim_hydro);
 
 //----------------------------------------------------------------------------------------
 // Radiation constructor
@@ -1158,7 +1158,7 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
               + norm_to_tet_(2,2,k,j,i) * uu2 + norm_to_tet_(2,3,k,j,i) * uu3;
           u_tet_(3,i) = norm_to_tet_(3,0,k,j,i) * uu0 + norm_to_tet_(3,1,k,j,i) * uu1
               + norm_to_tet_(3,2,k,j,i) * uu2 + norm_to_tet_(3,3,k,j,i) * uu3;
-          Real u0 = uu0 * std::sqrt(-gi_(I00,i))
+          Real u0 = uu0 * std::sqrt(-gi_(I00,i));
           dtau_(i) = dt / u0;
         }
 
@@ -1193,7 +1193,7 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
         }
 
         // Calculate radiation-fluid coupling in fluid frame
-        Coupling(prim_hydro, n_cm_, omega_cm_, dtau, k, j, intensity_cm_);
+        Coupling(prim_hydro, n_cm_, omega_cm_, dtau_, k, j, intensity_cm_);
 
         // Apply radiation-fluid coupling to radiation in coordinate frame
         for (int l = zs; l <= ze; ++l) {
@@ -1506,6 +1506,6 @@ void Radiation::SetMoments(AthenaArray<Real> &moments) {
 // Notes:
 //   Does nothing; keeps the opacity as the initial value.
 
-void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &prim_hydro) {
+void DefaultOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim_hydro) {
   return;
 }

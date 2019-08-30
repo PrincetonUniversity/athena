@@ -30,6 +30,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/bvals/cc/fft_grav/*.cpp) \
 	     $(wildcard src/bvals/cc/hydro/*.cpp) \
 	     $(wildcard src/bvals/cc/mg/*.cpp) \
+	     $(wildcard src/bvals/cc/rad/*.cpp) \
 	     $(wildcard src/bvals/fc/*.cpp) \
 	     $(wildcard src/bvals/utils/*.cpp) \
 	     $(wildcard src/coordinates/*.cpp) \
