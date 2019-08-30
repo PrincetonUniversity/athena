@@ -62,11 +62,11 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
               AthenaArray<Real> &cons);
 void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
                          AthenaArray<Real> &a,
-                         FaceField &b, Real time, Real dt,
+                         FaceField &b, AthenaArray<Real> &prim_rad, Real time, Real dt,
                          int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
                          AthenaArray<Real> &a,
-                         FaceField &b, Real time, Real dt,
+                         FaceField &b, AthenaArray<Real> &prim_rad, Real time, Real dt,
                          int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 namespace {
 Real hst_BxBy(MeshBlock *pmb, int iout);
@@ -411,7 +411,7 @@ void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
 
 void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
                          AthenaArray<Real> &prim, FaceField &b,
-                         Real time, Real dt,
+                         AthenaArray<Real> &prim_rad, Real time, Real dt,
                          int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // Copy field components from last physical zone
   // zero slope boundary for B field
@@ -485,8 +485,8 @@ void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
 // flow.  All other variables are extrapolated into the
 // ghost zones with zero slope.
 void StratOutflowOuterX3(MeshBlock *pmb, Coordinates *pco,
-                         AthenaArray<Real> &prim,
-                         FaceField &b, Real time, Real dt,
+                         AthenaArray<Real> &prim, FaceField &b,
+                         AthenaArray<Real> &prim_rad, Real time, Real dt,
                          int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // Copy field components from last physical zone
   if (MAGNETIC_FIELDS_ENABLED) {

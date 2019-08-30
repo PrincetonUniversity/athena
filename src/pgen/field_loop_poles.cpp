@@ -48,16 +48,16 @@ Real xc, yc, zc, beta, b0;
 
 // User-defined boundary conditions along inner/outer edges (not poles)
 void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 int RefinementCondition(MeshBlock *pmb);
@@ -359,7 +359,7 @@ Real A1(const Real x1, const Real x2, const Real x3) {
 //!\f: User-defined boundary Conditions: LoopInnerX1
 
 void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // Real rad, phi, z;
   Real v1, v2, v3;
@@ -411,7 +411,7 @@ void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 //!\f: User-defined boundary Conditions: LoopOuterX1
 
 void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // Real rad,phi,z;
   Real v1, v2, v3;
@@ -463,7 +463,7 @@ void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 //!\f: User-defined boundary Conditions: LoopInnerX2
 
 void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // Real rad,phi,z;
   Real v1, v2, v3;
@@ -515,7 +515,7 @@ void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 //!\f: User-defined boundary Conditions: LoopOuterX2
 
 void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   //  Real rad,phi,z;
   Real v1, v2, v3;

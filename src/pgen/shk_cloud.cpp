@@ -46,7 +46,7 @@ Real bxl, byl, bzl;
 
 // fixes BCs on L-x1 (left edge) of grid to postshock flow.
 void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                       FaceField &b, Real time, Real dt,
+                       FaceField &b, AthenaArray<Real> &prim_rad, Real time, Real dt,
                        int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 //========================================================================================
@@ -194,7 +194,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Note quantities at this boundary are held fixed at the downstream state
 
 void ShockCloudInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                       FaceField &b, Real time, Real dt,
+                       FaceField &b, AthenaArray<Real> &prim_rad, Real time, Real dt,
                        int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {

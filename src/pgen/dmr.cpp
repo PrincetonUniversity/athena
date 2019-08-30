@@ -40,13 +40,13 @@
 // DMRInnerX2() - sets BCs on inner-x2 (bottom edge) of grid.
 // DMROuterX2() - sets BCs on outer-x2 (top edge) of grid.
 void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt,
+                AthenaArray<Real> &prim_rad, Real time, Real dt,
                 int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt,
+                AthenaArray<Real> &prim_rad, Real time, Real dt,
                 int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt,
+                AthenaArray<Real> &prim_rad, Real time, Real dt,
                 int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 int RefinementCondition(MeshBlock *pmb);
 
@@ -158,7 +158,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //  Quantities at this boundary are held fixed at the downstream state
 
 void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt,
+                AthenaArray<Real> &prim_rad, Real time, Real dt,
                 int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   Real d0 = 8.0;
   Real e0 = 291.25;
@@ -185,7 +185,7 @@ void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 //  x1 < 0.16666666, and are reflected for x1 > 0.16666666
 
 void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt,
+                AthenaArray<Real> &prim_rad, Real time, Real dt,
                 int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   Real d0 = 8.0;
   Real e0 = 291.25;
@@ -223,7 +223,7 @@ void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 //  x1 > 0.16666666+v1_shock*time
 
 void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                Real time, Real dt,
+                AthenaArray<Real> &prim_rad, Real time, Real dt,
                 int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   Real d0 = 8.0;
   Real e0 = 291.25;

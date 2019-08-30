@@ -32,13 +32,13 @@
 
 // BCs on outer edges of grid in each dimension
 void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                  Real time, Real dt,
+                  AthenaArray<Real> &prim_rad, Real time, Real dt,
                   int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                  Real time, Real dt,
+                  AthenaArray<Real> &prim_rad, Real time, Real dt,
                   int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                  Real time, Real dt,
+                  AthenaArray<Real> &prim_rad, Real time, Real dt,
                   int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 // made global to share with BC functions
@@ -102,7 +102,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
 void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                  Real time, Real dt,
+                  AthenaArray<Real> &prim_rad, Real time, Real dt,
                   int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -140,7 +140,7 @@ void Noh3DOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Fac
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
 void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                  Real time, Real dt,
+                  AthenaArray<Real> &prim_rad, Real time, Real dt,
                   int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -178,7 +178,7 @@ void Noh3DOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Fac
 // Quantities at this boundary are held fixed at the time-dependent upstream state
 
 void Noh3DOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                  Real time, Real dt,
+                  AthenaArray<Real> &prim_rad, Real time, Real dt,
                   int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {

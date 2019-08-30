@@ -30,7 +30,7 @@
 
 // Declarations
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-                   FaceField &bb, Real time, Real dt,
+                   FaceField &bb, AthenaArray<Real> &prim_rad, Real time, Real dt,
                    int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 namespace {
 void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
@@ -237,11 +237,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Outputs:
 //   prim: primitives set in ghost zones
 //   bb: face-centered magnetic field set in ghost zones
+//   prim_rad: radiation primitives set in ghost zones (not implemented)
 // Notes:
 //   does nothing
 
 void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
-                   FaceField &bb, Real time, Real dt,
+                   FaceField &bb, AthenaArray<Real> &prim_rad, Real time, Real dt,
                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   return;
 }

@@ -46,22 +46,22 @@ Real dfloor;
 
 // User-defined boundary conditions for disk simulations
 void DiskInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void DiskOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void DiskInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void DiskOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void DiskInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void DiskOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 //========================================================================================
@@ -214,7 +214,7 @@ void VelProfileCyl(const Real rad, const Real phi, const Real z,
 //
 
 void DiskInnerX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   Real rad(0.0), phi(0.0), z(0.0);
   Real v1(0.0), v2(0.0), v3(0.0);
@@ -235,7 +235,7 @@ void DiskInnerX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskOuterX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   Real rad(0.0), phi(0.0), z(0.0);
   Real v1(0.0), v2(0.0), v3(0.0);
@@ -256,7 +256,7 @@ void DiskOuterX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskInnerX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   Real rad(0.0), phi(0.0), z(0.0);
   Real v1(0.0), v2(0.0), v3(0.0);
@@ -277,7 +277,7 @@ void DiskInnerX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskOuterX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   Real rad(0.0), phi(0.0), z(0.0);
   Real v1(0.0), v2(0.0), v3(0.0);
@@ -298,7 +298,7 @@ void DiskOuterX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskInnerX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   Real rad(0.0), phi(0.0), z(0.0);
   Real v1(0.0), v2(0.0), v3(0.0);
@@ -319,7 +319,7 @@ void DiskInnerX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 void DiskOuterX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
-                 Real time, Real dt,
+                 AthenaArray<Real> &prim_rad, Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   Real rad(0.0), phi(0.0), z(0.0);
   Real v1(0.0), v2(0.0), v3(0.0);

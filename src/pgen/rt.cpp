@@ -49,16 +49,16 @@
 #include "../utils/utils.hpp"
 
 void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                            FaceField &b, Real time, Real dt,
+                            FaceField &b, AthenaArray<Real> &prim_rad, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                            FaceField &b, Real time, Real dt,
+                            FaceField &b, AthenaArray<Real> &prim_rad, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                            FaceField &b, Real time, Real dt,
+                            FaceField &b, AthenaArray<Real> &prim_rad, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                            FaceField &b, Real time, Real dt,
+                            FaceField &b, AthenaArray<Real> &prim_rad, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 namespace {
@@ -262,7 +262,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                            FaceField &b, Real time, Real dt,
+                            FaceField &b, AthenaArray<Real> &prim_rad, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
@@ -326,7 +326,7 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                            FaceField &b, Real time, Real dt,
+                            FaceField &b, AthenaArray<Real> &prim_rad, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
@@ -390,7 +390,7 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                            FaceField &b, Real time, Real dt,
+                            FaceField &b, AthenaArray<Real> &prim_rad, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=ngh; ++k) {
@@ -454,7 +454,7 @@ void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 //  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
-                            FaceField &b, Real time, Real dt,
+                            FaceField &b, AthenaArray<Real> &prim_rad, Real time, Real dt,
                             int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=ngh; ++k) {
