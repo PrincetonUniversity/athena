@@ -32,7 +32,6 @@ void DefaultOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim_hydro);
 Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb),
     coupled_to_matter(pin->GetBoolean("radiation", "coupled")),
-    using_planck_mean(pin->GetBoolean("radiation", "planck")),
     nzeta(pin->GetInteger("radiation", "n_polar")),
     npsi(pin->GetInteger("radiation", "n_azimuthal")),
     nang((nzeta + 2*NGHOST) * (npsi + 2*NGHOST)),
@@ -75,6 +74,11 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     source_terms_defined = false;
   } else {
     source_terms_defined = true;
+  }
+  if (coupled_to_matter) {
+    using_planck_mean = pin->GetBoolean("radiation", "planck");
+  } else {
+    using_planck_mean = false;
   }
 
   // Set parameters
