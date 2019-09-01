@@ -39,6 +39,9 @@ logger = logging.getLogger('athena')
 # Main function
 def main(**kwargs):
 
+    # check if Python modules are installed
+    check_imports()
+
     # Save existing files
     athena.save_files()
 
@@ -231,6 +234,28 @@ def log_init(args):
             logging.getLogger(log).addHandler(rtd_handler)
 
     logger.debug('Starting Athena++ regression tests')
+
+
+def check_imports(warn=True):
+    out = True
+    import importlib
+    imports = ['sys', 'math', 'os', 'numpy', 'scipy', 'shutil', 'glob', 'logging', 'h5py']
+    for i in imports:
+        try:
+            importlib.import_module(i)
+        except ImportError:
+            logger.warning('Unable to import "{:}".'.format(i))
+            out = False
+    if warn and not out:
+        logger.warning('##########################################################')
+        logger.warning('# WARNING! Not all required Python mdules are available. #')
+        logger.warning('##########################################################')
+        try:
+            from time import sleep
+            sleep(1)
+        except ImportError:
+            pass
+    return out
 
 
 # Execute main function
