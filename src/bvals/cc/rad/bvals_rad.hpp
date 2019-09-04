@@ -76,6 +76,18 @@ private:
   AthenaArray<Real> reflect_frac_ox2_;
   AthenaArray<Real> reflect_frac_ix3_;
   AthenaArray<Real> reflect_frac_ox3_;
+
+  // Polar boundary remapping arrays
+  AthenaArray<Real> polar_vals_;
+  AthenaArray<int> polar_ind_north_;
+  AthenaArray<int> polar_ind_south_;
+  AthenaArray<Real> polar_frac_north_;
+  AthenaArray<Real> polar_frac_south_;
+
+  // Boundary setting function overrides
+  void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
+  void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
+  void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
 };
 
 #endif  // BVALS_CC_RAD_BVALS_RAD_HPP_

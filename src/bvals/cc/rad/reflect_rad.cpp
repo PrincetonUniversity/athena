@@ -29,7 +29,7 @@
 
 void RadBoundaryVariable::ReflectInnerX1(Real time, Real dt, int il, int jl, int ju,
     int kl, int ku, int ngh) {
-  for (int n = 0; n <= nu_; ++n) {
+  for (int n = nl_; n <= nu_; ++n) {
     for (int k = kl; k <= ku; ++k) {
       for (int j = jl; j <= ju; ++j) {
         for (int di = 0; di < ngh; ++di) {
@@ -74,7 +74,7 @@ void RadBoundaryVariable::ReflectInnerX1(Real time, Real dt, int il, int jl, int
 
 void RadBoundaryVariable::ReflectOuterX1(Real time, Real dt, int iu, int jl, int ju,
     int kl, int ku, int ngh) {
-  for (int n = 0; n <= nu_; ++n) {
+  for (int n = nl_; n <= nu_; ++n) {
     for (int k = kl; k <= ku; ++k) {
       for (int j = jl; j <= ju; ++j) {
         for (int di = 0; di < ngh; ++di) {
@@ -119,12 +119,12 @@ void RadBoundaryVariable::ReflectOuterX1(Real time, Real dt, int iu, int jl, int
 
 void RadBoundaryVariable::ReflectInnerX2(Real time, Real dt, int il, int iu, int jl,
     int kl, int ku, int ngh) {
-  for (int n = 0; n <= nu_; ++n) {
+  for (int n = nl_; n <= nu_; ++n) {
     for (int k = kl; k <= ku; ++k) {
       for (int dj = 0; dj < ngh; ++dj) {
+        int j_g = jl - ngh + dj;
+        int j_a = jl + ngh - 1 - dj;
         for (int i = il; i <= iu; ++i) {
-          int j_g = jl - ngh + dj;
-          int j_a = jl + ngh - 1 - dj;
           int ind_a = reflect_ind_ix2_(0,n,k,dj,i);
           int ind_b = reflect_ind_ix2_(1,n,k,dj,i);
           int ind_c = reflect_ind_ix2_(2,n,k,dj,i);
@@ -164,12 +164,12 @@ void RadBoundaryVariable::ReflectInnerX2(Real time, Real dt, int il, int iu, int
 
 void RadBoundaryVariable::ReflectOuterX2(Real time, Real dt, int il, int iu, int ju,
     int kl, int ku, int ngh) {
-  for (int n = 0; n <= nu_; ++n) {
+  for (int n = nl_; n <= nu_; ++n) {
     for (int k = kl; k <= ku; ++k) {
       for (int dj = 0; dj < ngh; ++dj) {
+        int j_g = ju + 1 + dj;
+        int j_a = ju - dj;
         for (int i = il; i <= iu; ++i) {
-          int j_g = ju + 1 + dj;
-          int j_a = ju - dj;
           int ind_a = reflect_ind_ox2_(0,n,k,dj,i);
           int ind_b = reflect_ind_ox2_(1,n,k,dj,i);
           int ind_c = reflect_ind_ox2_(2,n,k,dj,i);
@@ -209,12 +209,12 @@ void RadBoundaryVariable::ReflectOuterX2(Real time, Real dt, int il, int iu, int
 
 void RadBoundaryVariable::ReflectInnerX3(Real time, Real dt, int il, int iu, int jl,
     int ju, int kl, int ngh) {
-  for (int n = 0; n <= nu_; ++n) {
+  for (int n = nl_; n <= nu_; ++n) {
     for (int dk = 0; dk < ngh; ++dk) {
+      int k_g = kl - ngh + dk;
+      int k_a = kl + ngh - 1 - dk;
       for (int j = jl; j <= ju; ++j) {
         for (int i = il; i <= iu; ++i) {
-          int k_g = kl - ngh + dk;
-          int k_a = kl + ngh - 1 - dk;
           int ind_a = reflect_ind_ix3_(0,n,dk,j,i);
           int ind_b = reflect_ind_ix3_(1,n,dk,j,i);
           int ind_c = reflect_ind_ix3_(2,n,dk,j,i);
@@ -254,12 +254,12 @@ void RadBoundaryVariable::ReflectInnerX3(Real time, Real dt, int il, int iu, int
 
 void RadBoundaryVariable::ReflectOuterX3(Real time, Real dt, int il, int iu, int jl,
     int ju, int ku, int ngh) {
-  for (int n = 0; n <= nu_; ++n) {
+  for (int n = nl_; n <= nu_; ++n) {
     for (int dk = 0; dk < ngh; ++dk) {
+      int k_g = ku + 1 + dk;
+      int k_a = ku - dk;
       for (int j = jl; j <= ju; ++j) {
         for (int i = il; i <= iu; ++i) {
-          int k_g = ku + 1 + dk;
-          int k_a = ku - dk;
           int ind_a = reflect_ind_ox3_(0,n,dk,j,i);
           int ind_b = reflect_ind_ox3_(1,n,dk,j,i);
           int ind_c = reflect_ind_ox3_(2,n,dk,j,i);
