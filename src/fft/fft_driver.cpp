@@ -129,6 +129,8 @@ FFTDriver::FFTDriver(Mesh *pm, ParameterInput *pin) : nranks_(Globals::nranks),
 
   gcnt_ = fft_mesh_size_.nx1*fft_mesh_size_.nx2*fft_mesh_size_.nx3;
 
+  pmy_fb = nullptr;
+
 #ifdef MPI_PARALLEL
   decomp_ = 0; pdim_ = 0;
   if (npx1 > 1) {
@@ -153,7 +155,7 @@ FFTDriver::~FFTDriver() {
   delete [] nslist_;
   delete [] nblist_;
   delete [] fft_loclist_;
-  delete pmy_fb;
+  if (pmy_fb != nullptr) delete pmy_fb;
 }
 
 void FFTDriver::InitializeFFTBlock(bool set_norm) {
