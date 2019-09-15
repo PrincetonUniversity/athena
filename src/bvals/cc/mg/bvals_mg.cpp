@@ -300,7 +300,7 @@ void MGBoundaryValues::ClearBoundaryMultigrid(BoundaryQuantity type) {
 
 int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
                                            const NeighborBlock& nb, bool folddata) {
-  const AthenaArray<Real> &src = pmy_mg_->GetCurrentData();
+  const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
   const AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
@@ -313,7 +313,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
   int ek = (nb.ni.ox3 < 0) ? (fs + ngh - 1) : fe;
 
   int p = 0;
-  BufferUtility::PackData(src, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(u, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
   if (folddata)
     BufferUtility::PackData(old, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
 
@@ -333,10 +333,10 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
         for (int j=sj, fj=fsj; j<=ej; ++j, fj+=2) {
           for (int i=si, fi=fsi; i<=ei; ++i, fi+=2)
             buf[p++] = cbuf_(n, k, j, i)
-                     = 0.125*(((src(n, fk,   fj,   fi)+src(n, fk,   fj,   fi+1))
-                            +  (src(n, fk,   fj+1, fi)+src(n, fk,   fj+1, fi+1)))
-                            + ((src(n, fk+1, fj,   fi)+src(n, fk+1, fj,   fi+1))
-                            +  (src(n, fk+1, fj+1, fi)+src(n, fk+1, fj+1, fi+1))));
+                     = 0.125*(((u(n, fk,   fj,   fi)+u(n, fk,   fj,   fi+1))
+                            +  (u(n, fk,   fj+1, fi)+u(n, fk,   fj+1, fi+1)))
+                            + ((u(n, fk+1, fj,   fi)+u(n, fk+1, fj,   fi+1))
+                            +  (u(n, fk+1, fj+1, fi)+u(n, fk+1, fj+1, fi+1))));
         }
       }
     }
@@ -367,7 +367,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
 
 int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
                                            const NeighborBlock& nb, bool folddata) {
-  const AthenaArray<Real> &src = pmy_mg_->GetCurrentData();
+  const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
   const AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int nc = pmy_mg_->GetCurrentNumberOfCells();
@@ -389,10 +389,10 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
       for (int j=sj, fj=fsj; j<=ej; ++j, fj+=2) {
         for (int i=si, fi=fsi; i<=ei; ++i, fi+=2)
           buf[p++] = cbuf_(n, k, j, i)
-                   = 0.125*(((src(n, fk,   fj,   fi)+src(n, fk,   fj,   fi+1))
-                          +  (src(n, fk,   fj+1, fi)+src(n, fk,   fj+1, fi+1)))
-                          + ((src(n, fk+1, fj,   fi)+src(n, fk+1, fj,   fi+1))
-                          +  (src(n, fk+1, fj+1, fi)+src(n, fk+1, fj+1, fi+1))));
+                   = 0.125*(((u(n, fk,   fj,   fi)+u(n, fk,   fj,   fi+1))
+                          +  (u(n, fk,   fj+1, fi)+u(n, fk,   fj+1, fi+1)))
+                          + ((u(n, fk+1, fj,   fi)+u(n, fk+1, fj,   fi+1))
+                          +  (u(n, fk+1, fj+1, fi)+u(n, fk+1, fj+1, fi+1))));
       }
     }
   }
@@ -421,7 +421,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
 //  \brief Set Multigrid boundary buffers for sending to a block on the finer level
 int MGBoundaryValues::LoadMultigridBoundaryBufferToFiner(Real *buf,
                                            const NeighborBlock& nb, bool folddata) {
-  const AthenaArray<Real> &src = pmy_mg_->GetCurrentData();
+  const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
   const AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
@@ -458,7 +458,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToFiner(Real *buf,
   }
 
   int p = 0;
-  BufferUtility::PackData(src, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(u, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
   if (folddata)
     BufferUtility::PackData(old, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
 
@@ -983,7 +983,7 @@ void MGBoundaryValues::CopyNeighborInfoFromMeshBlock() {
 
 int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *buf,
                                                           const NeighborBlock& nb) {
-  const AthenaArray<Real> &src = pmy_mg_->GetCurrentData();
+  const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int cn = ngh, fs = ngh, cs = cn, fe = fs + nc - 1, ce = cs + nc/2 - 1;
@@ -996,8 +996,8 @@ int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *
     else               fi = fe;
     for (int fk=fs; fk<=fe; fk+=2) {
       for (int fj=fs; fj<=fe; fj+=2)
-        buf[p++] = 0.25*((src(0, fk,   fj,   fi)+src(0, fk,   fj+1, fi))
-                        +(src(0, fk+1, fj,   fi)+src(0, fk+1, fj+1, fi)));
+        buf[p++] = 0.25*((u(0, fk,   fj,   fi)+u(0, fk,   fj+1, fi))
+                        +(u(0, fk+1, fj,   fi)+u(0, fk+1, fj+1, fi)));
     }
   } else if (nb.ni.ox2 != 0) { // x2 face
     int fj;
@@ -1005,8 +1005,8 @@ int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *
     else               fj = fe;
     for (int fk=fs; fk<=fe; fk+=2) {
       for (int fi=fs; fi<=fe; fi+=2)
-        buf[p++] = 0.25*((src(0, fk,   fj, fi)+src(0, fk,   fj, fi+1))
-                        +(src(0, fk+1, fj, fi)+src(0, fk+1, fj, fi+1)));
+        buf[p++] = 0.25*((u(0, fk,   fj, fi)+u(0, fk,   fj, fi+1))
+                        +(u(0, fk+1, fj, fi)+u(0, fk+1, fj, fi+1)));
     }
   } else { // x3 face
     int fk;
@@ -1014,8 +1014,8 @@ int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *
     else               fk = fe;
     for (int fj=fs; fj<=fe; fj+=2) {
       for (int fi=fs; fi<=fe; fi+=2)
-        buf[p++] = 0.25*((src(0, fk, fj,   fi)+src(0, fk, fj,   fi+1))
-                        +(src(0, fk, fj+1, fi)+src(0, fk, fj+1, fi+1)));
+        buf[p++] = 0.25*((u(0, fk, fj,   fi)+u(0, fk, fj,   fi+1))
+                        +(u(0, fk, fj+1, fi)+u(0, fk, fj+1, fi+1)));
     }
   }
 
@@ -1029,7 +1029,7 @@ int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *
 //  \brief Set Multigrid boundary buffers for sending to a block on the finer level
 int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToFinerFluxCons(Real *buf,
                                                                const NeighborBlock& nb) {
-  const AthenaArray<Real> &src = pmy_mg_->GetCurrentData();
+  const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int cn = ngh - 1, fs = ngh, fe = fs + nc - 1;
@@ -1065,7 +1065,7 @@ int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToFinerFluxCons(Real *bu
   }
 
   int p = 0;
-  BufferUtility::PackData(src, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::PackData(u, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
 
   return p;
 }
@@ -1079,12 +1079,12 @@ int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToFinerFluxCons(Real *bu
 void MGGravityBoundaryValues::SetMultigridBoundaryFromCoarserFluxCons(const Real *buf,
                                                              const NeighborBlock& nb) {
   AthenaArray<Real> &dst = pmy_mg_->GetCurrentData();
+  const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int fs = ngh, fe = fs + nc - 1;
   int p = 0;
   constexpr Real itw = 1.0/12.0;
-  const AthenaArray<Real> &u = dst;
 
   if (nb.ni.ox1 != 0) { // x1 face
     int i, ig;
@@ -1205,8 +1205,9 @@ void MGGravityBoundaryValues::SetMultigridBoundaryFromFinerFluxCons(const Real *
   // correct the ghost values using the mass conservation formula
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
-      for (int i=si; i<=ei; ++i)
+      for (int i=si; i<=ei; ++i) {
         dst(0,k,j,i) = ot * (4.0*buf[p++] - dst(0,k+ok,j+oj,i+oi));
+      }
     }
   }
   return;

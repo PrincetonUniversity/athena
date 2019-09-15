@@ -140,7 +140,7 @@ void MGGravityDriver::Solve(int stage) {
 //  \brief Implementation of the Red-Black Gauss-Seidel Smoother
 //         rlev = relative level from the finest level of this Multigrid block
 
- AthenaArray<Real> temp;
+//  AthenaArray<Real> temp;
 
 void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int rlev,
                        int il, int iu, int jl, int ju, int kl, int ku, int color) {
@@ -150,9 +150,7 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real dx2 = SQR(dx);
   Real isix = omega_/6.0;
-  if (!temp.IsAllocated())
-    temp.NewAthenaArray(1,18,18,18);
-/*  for (int k=kl; k<=ku; k++) {
+  for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
       for (int i=il+c; i<=iu; i+=2)
         u(0,k,j,i) -= ((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
@@ -162,21 +160,23 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
     }
     c ^= 1;
   }
-*/
+
 // Jacobi
+/*  if (!temp.IsAllocated())
+    temp.NewAthenaArray(1,18,18,18);
   for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
       for (int i=il; i<=iu; i++)
         temp(0,k,j,i) = u(0,k,j,i) - (((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
-                      - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1)) + src(0,k,j,i)*dx2)*isix);
+                      - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1)) + src(0,k,j,i)*dx2)/6.0);
     }
   }
   for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
       for (int i=il; i<=iu; i++)
-      u(0,k,j,i) = temp(k,j,i);
+      u(0,k,j,i) = temp(0,k,j,i);
     }
-  }
+  }*/
   return;
 }
 

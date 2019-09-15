@@ -129,7 +129,7 @@ class Multigrid {
   MeshBlock *pmy_block_;
   LogicalLocation loc_;
   RegionSize size_;
-  int gid_, nlevel_, ngh_, nvar_, current_level_;
+  int nlevel_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
   AthenaArray<Real> *u_, *def_, *src_, *uold_;
 
@@ -177,9 +177,7 @@ class MultigridDriver {
   void ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u, const LogicalLocation &loc,
                                     bool fcbuf);
   void SetOctetBoundariesBeforeTransfer(bool folddata);
-  void SetMeshBlockCoarsestBoundaries(bool folddata);
-  void GetNeighborOctetAverage(const LogicalLocation &nloc, AthenaArray<Real> &u,
-                  AthenaArray<Real> &uold, int k, int, int i, Real vol, bool folddata);
+  void RestrictOctetsBeforeTransfer();
 
   // small functions
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }
@@ -214,6 +212,7 @@ class MultigridDriver {
   // for mesh refinement
   std::vector<MGOctet> *octets_;
   std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octetmap_;
+  std::vector<bool> *octetbflag_;
   int *noctets_, *prevnoct_;
   AthenaArray<Real> cbuf_, cbufold_;
 

@@ -1,3 +1,4 @@
+
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -108,6 +109,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
     octets_ = new std::vector<MGOctet>[maxreflevel_];
     octetmap_ = new std::unordered_map<LogicalLocation, int,
                                        LogicalLocationHash>[maxreflevel_];
+    octetbflag_ = new std::vector<bool>[maxreflevel_];
     noctets_ = new int[maxreflevel_]();
     prevnoct_ = new int[maxreflevel_];
   }
@@ -128,6 +130,7 @@ MultigridDriver::~MultigridDriver() {
   if (maxreflevel_ > 0) {
     delete [] octets_;
     delete [] octetmap_;
+    delete [] octetbflag_;
     delete [] noctets_;
     delete [] prevnoct_;
   }
@@ -162,6 +165,7 @@ void MultigridDriver::SetupMultigrid() {
       if (prevnoct_[l] < noctets_[l]) {
         octets_[l].resize(noctets_[l]);
         octetmap_[l].reserve(noctets_[l]);
+        octetbflag_[l].resize(noctets_[l]);
       }
       noctets_[l] = 0;
     }
@@ -292,12 +296,12 @@ void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
 //  \brief Transfer the data from the root grid to the coarsest level of each MeshBlock
 
 void MultigridDriver::TransferFromRootToBlocks(bool folddata) {
-  if (nreflevel_ > 0)
+  if (nreflevel_ > 0) {
+    RestrictOctetsBeforeTransfer();
     SetOctetBoundariesBeforeTransfer(folddata);
+  }
   for (Multigrid* pmg : vmg_)
     pmg->SetFromRootGrid(folddata);
-  if (nreflevel_ > 0)
-    SetMeshBlockCoarsestBoundaries(folddata);
 
   return;
 }
@@ -499,7 +503,7 @@ void MultigridDriver::SolveFMGCycle() {
 void MultigridDriver::SolveIterative() {
   Real def=eps_+1e-10;
   int niter=0;
-  std::cout << std::scientific << std::setprecision(14);
+  std::cout << std::scientific << std::setprecision(15);
   while (def > eps_) {
     SolveVCycle(1,1);
     Real olddef=def;
@@ -630,7 +634,7 @@ Multigrid* MultigridDriver::FindMultigrid(int tgid) {
 //  \brief restrict the source in octets for FMG
 
 void MultigridDriver::RestrictFMGSourceOctets() {
-  if (maxreflevel_ > 0) {
+  if (nreflevel_ > 0) {
     const int &ngh = mgroot_->ngh_;
     for (int l=nreflevel_-1; l>=1; --l) {  // fine octets to coarse octets
       for (int o=0; o<noctets_[l]; ++o) {
@@ -651,12 +655,9 @@ void MultigridDriver::RestrictFMGSourceOctets() {
     }
     for (int o=0; o<noctets_[0]; ++o) { // octets to the root grid
       const LogicalLocation &loc = octets_[0][o].loc;
-      int ri = (loc.lx1 >> 1);
-      int rj = (loc.lx2 >> 1);
-      int rk = (loc.lx3 >> 1);
       mgroot_->Restrict(cbuf_, octets_[0][o].src, os_, oe_, os_, oe_, os_, oe_);
       for (int v=0; v<nvar_; ++v)
-        mgroot_->SetData(MGVariable::src, v, rk, rj, ri, cbuf_(v, ngh, ngh, ngh));
+        mgroot_->SetData(MGVariable::src, v, loc.lx3, loc.lx2, loc.lx1, cbuf_(v, ngh, ngh, ngh));
     }
   }
 
@@ -898,7 +899,6 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
     faceonly = true;
 
   for (int o=0; o<noctets_[lev]; ++o) {
-    const LogicalLocation &l = octets_[lev][o].loc;
     if (fprolong && octets_[lev][o].fleaf == true) continue;
     const LogicalLocation &loc = octets_[lev][o].loc;
     AthenaArray<Real> &u = octets_[lev][o].u;
@@ -1080,11 +1080,44 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::RestrictOctetsBeforeTransfer()
+//  \brief Restrict all the octets
+
+void MultigridDriver::RestrictOctetsBeforeTransfer() {
+  const int &ngh = mgroot_->ngh_;
+  for (int l=nreflevel_-1; l>=1; --l) {  // fine octets to coarse octets
+    for (int o=0; o<noctets_[l]; ++o) {
+      const LogicalLocation &loc = octets_[l][o].loc;
+      LogicalLocation cloc;
+      cloc.lx1 = (loc.lx1 >> 1);
+      cloc.lx2 = (loc.lx2 >> 1);
+      cloc.lx3 = (loc.lx3 >> 1);
+      cloc.level = loc.level - 1;
+      int oid = octetmap_[l-1][cloc];
+      int oi = (static_cast<int>(loc.lx1) & 1) + ngh;
+      int oj = (static_cast<int>(loc.lx2) & 1) + ngh;
+      int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
+      mgroot_->Restrict(cbuf_, octets_[l][o].u, os_, oe_, os_, oe_, os_, oe_);
+      for (int v=0; v<nvar_; ++v)
+        octets_[l-1][oid].u(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
+    }
+  }
+  for (int o=0; o<noctets_[0]; ++o) { // octets to the root grid
+    const LogicalLocation &loc = octets_[0][o].loc;
+    mgroot_->Restrict(cbuf_, octets_[0][o].u, os_, oe_, os_, oe_, os_, oe_);
+    for (int v=0; v<nvar_; ++v)
+      mgroot_->SetData(MGVariable::u, v, loc.lx3, loc.lx2, loc.lx1, cbuf_(v, ngh, ngh, ngh));
+  }
+
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata)
 //  \brief Set octet boundaries before transfer from root to blocks
 
 void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
-  int poid = -1;
   constexpr Real fac = 0.125;
   const int ngh = mgroot_->ngh_;
   const int l = ngh, r = ngh + 1;
@@ -1092,6 +1125,13 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
   const AthenaArray<Real> &cb = cbuf_;
   const AthenaArray<Real> &co = cbufold_;
   Real time = pmy_mesh_->time;
+
+  // clear octet boundary flag
+  for (int l=0; l < nreflevel_; ++l) {
+    for (int o=0; o < noctets_[l]; ++o)
+      octetbflag_[l][o] = false;
+  }
+
   for (Multigrid* pmg : vmg_) {
     const LogicalLocation &loc = pmg->loc_;
     if (loc.level == nrootlevel_ - 1) continue;
@@ -1102,8 +1142,8 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
     oloc.level = loc.level - 1;
     int olev = oloc.level - (nrootlevel_ - 1);
     int oid = octetmap_[olev][oloc];
-    if (oid == poid) continue;
-    poid = oid;
+    if (octetbflag_[olev][oid] == true) continue;
+    octetbflag_[olev][oid] = true;
     AthenaArray<Real> &u = octets_[olev][oid].u;
     AthenaArray<Real> &uold = octets_[olev][oid].uold;
     for (int v=0; v<nvar_; ++v) {
@@ -1155,7 +1195,6 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
           int ci = ox1 + ngh, cj = ox2 + ngh, ck = ox3 + ngh;
           if (octetmap_[olev].count(nloc) == 1) { // same or finer
             int nid = octetmap_[olev][nloc];
-            if (octets_[olev][nid].fleaf == false) continue; // skip finer
             const AthenaArray<Real> &un = octets_[olev][nid].u;
             const AthenaArray<Real> &unold = octets_[olev][nid].uold;
             SetOctetBoundarySameLevel(u, un, uold, unold, ox1, ox2, ox3, folddata);
@@ -1205,7 +1244,6 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
               }
             }
           }
-          // note: finer neighbors are later processed in SetMeshBlockCoarsestBoundaries
         }
       }
     }
@@ -1253,7 +1291,6 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
               nloc.lx1 = 0;
             else continue;
           }
-          int ci = ox1 + ngh, cj = ox2 + ngh, ck = ox3 + ngh;
           if (octetmap_[olev].count(nloc) == 0) { // coarser
             int i = ox1 + ngh, j = ox2 + ngh, k = ox3 + ngh;
             int fi = ox1*2 + ngh, fj = ox2*2 + ngh, fk = ox3*2 + ngh;
@@ -1351,89 +1388,3 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
   return;
 }
 
-
-//----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SetMeshBlockCoarsestBoundaries(bool folddata)
-//  \brief Set boundaries of each MeshBlock from neighboring finer MeshBlocks
-
-void MultigridDriver::SetMeshBlockCoarsestBoundaries(bool folddata) {
-  int ngh = mgroot_->ngh_;
-  Real vol = 0.125;
-  for (Multigrid* pmg : vmg_) {
-    const LogicalLocation &loc = pmg->loc_;
-    AthenaArray<Real> &u = pmg->GetCurrentData();
-    AthenaArray<Real> &uold = pmg->GetCurrentOldData();
-    for(int ok=-1; ok<=1; ++ok) {
-      for(int oj=-1; oj<=1; ++oj) {
-        for(int oi=-1; oi<=1; ++oi) {
-          if (pmg->pmgbval->nblevel[ok+1][oj+1][oi+1] > loc.level) {
-            LogicalLocation nloc;
-            nloc.lx1 = loc.lx1 + oi;
-            nloc.lx2 = loc.lx2 + oj;
-            nloc.lx3 = loc.lx3 + ok;
-            nloc.level = loc.level;
-            for (int v=0; v<nvar_; ++v) {
-              u(v, ok+ngh, oj+ngh, oi+ngh) = 0.0;
-              if (folddata)
-                uold(v, ok+ngh, oj+ngh, oi+ngh) = 0.0;
-            }
-            GetNeighborOctetAverage(nloc, u, uold, ok+ngh, oj+ngh, oi+ngh, vol, folddata);
-          }
-        }
-      }
-    }
-
-  }
-  return;
-}
-
-
-//----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::GetNeighborOctetAverage(const LogicalLocation &nloc,
-//                    AthenaArray<Real> &u, AthenaArray<Real> &uold, int k, int j, int i,
-//                    Real vol, bool folddata)
-//  \brief Update the ghost cell with the average of all the octets including the leafs
-
-void MultigridDriver::GetNeighborOctetAverage(const LogicalLocation &nloc,
-                      AthenaArray<Real> &u, AthenaArray<Real> &uold, int k, int j, int i,
-                      Real vol, bool folddata) {
-  constexpr Real volfac = 0.125;
-  int ngh = mgroot_->ngh_;
-  const int l = ngh, r = ngh+1;
-  int olev = nloc.level - (nrootlevel_ - 1);
-  int oid = octetmap_[olev][nloc];
-  AthenaArray<Real> &un = octets_[olev][oid].u;
-  AthenaArray<Real> &unold = octets_[olev][oid].uold;
-  if (octets_[olev][oid].fleaf == true) {
-    for (int v=0; v<nvar_; ++v) {
-      u(v, k, j, i) += vol*(un(v,l,l,l)+un(v,l,l,r)+un(v,l,r,l)+un(v,r,l,l)
-                           +un(v,r,r,l)+un(v,r,l,r)+un(v,l,r,r)+un(v,r,r,r));
-      if (folddata)
-        uold(v, k, j, i) += vol*
-                         (unold(v,l,l,l)+unold(v,l,l,r)+unold(v,l,r,l)+unold(v,r,l,l)
-                         +unold(v,r,r,l)+unold(v,r,l,r)+unold(v,l,r,r)+unold(v,r,r,r));
-    }
-  } else {
-    for (int ok=0; ok<=1; ++ok) {
-      for (int oj=0; oj<=1; ++oj) {
-        for (int oi=0; oi<=1; ++oi) {
-          LogicalLocation lloc;
-          lloc.lx1 = (nloc.lx1 << 1) + oi;
-          lloc.lx2 = (nloc.lx2 << 1) + oj;
-          lloc.lx3 = (nloc.lx3 << 1) + ok;
-          lloc.level = nloc.level + 1;
-          int llev = olev + 1;
-          if (octetmap_[llev].count(lloc) == 1) { // has leafs
-            GetNeighborOctetAverage(lloc, u, uold, k, j, i, vol*volfac, folddata);
-          } else {
-            for (int v=0; v<nvar_; ++v) {
-              u(v, k, j, i) += vol*un(v, ngh+ok, ngh+oj, ngh+oi);
-              if (folddata)
-                uold(v, k, j, i) += vol*unold(v, ngh+ok, ngh+oj, ngh+oi);
-            }
-          }
-        }
-      }
-    }
-  }
-}
