@@ -37,6 +37,7 @@ class MGGravity : public Multigrid {
                        int il, int iu, int jl, int ju, int kl, int ku) final;
   void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
                        int rlev, int il, int iu, int jl, int ju, int kl, int ku) final;
+  void SetBoundariesFromFinerOctets() final;
 
  private:
   static constexpr Real omega_ = 1.15;

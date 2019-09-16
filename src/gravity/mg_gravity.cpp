@@ -7,6 +7,7 @@
 //  \brief create multigrid solver for gravity
 
 // C headers
+#include <cstdlib>
 
 // C++ headers
 #include <iostream>
@@ -140,8 +141,6 @@ void MGGravityDriver::Solve(int stage) {
 //  \brief Implementation of the Red-Black Gauss-Seidel Smoother
 //         rlev = relative level from the finest level of this Multigrid block
 
-//  AthenaArray<Real> temp;
-
 void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int rlev,
                        int il, int iu, int jl, int ju, int kl, int ku, int color) {
   int c = color;
@@ -162,7 +161,8 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
   }
 
 // Jacobi
-/*  if (!temp.IsAllocated())
+/*  static AthenaArray<Real> temp;
+  if (!temp.IsAllocated())
     temp.NewAthenaArray(1,18,18,18);
   for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
@@ -308,3 +308,65 @@ void MGGravityDriver::SetOctetBoundaryFromCoarserFluxCons(AthenaArray<Real> &dst
 
   return;
 }
+
+
+
+void MGGravity::SetBoundariesFromFinerOctets() {
+  AthenaArray<Real> &u = u_[0];
+  constexpr Real ot = 1.0 / 3.0;
+  for(int k=0; k<=2; ++k) {
+    for(int j=0; j<=2; ++j) {
+      for(int i=0; i<=2; ++i) {
+        if (pmgbval->nblevel[k][j][i] > loc_.level) { // finer
+          LogicalLocation nloc;
+          nloc.lx1 = loc_.lx1 + i - 1;
+          nloc.lx2 = loc_.lx2 + j - 1;
+          nloc.lx3 = loc_.lx3 + k - 1;
+          nloc.level = loc_.level;
+          int lev = nloc.level - (pmy_driver_->nrootlevel_ - 1);
+          int nid = pmy_driver_->octetmap_[lev][nloc];
+          const AthenaArray<Real> &un = pmy_driver_->octets_[lev][nid].u;
+          int ci = i + ngh_ - 1, cj = j + ngh_ - 1, ck = k + ngh_ - 1;
+          int ni, nj, nk;
+          if (i == 0) ni = 1 + ngh_; 
+          else        ni = ngh_; 
+          if (j == 0) nj = 1 + ngh_; 
+          else        nj = ngh_; 
+          if (k == 0) nk = 1 + ngh_; 
+          else        nk = ngh_; 
+          int type = std::abs(i-1) + std::abs(j-1) + std::abs(k-1);
+          if (type == 1) { // face
+            if (i != 1) // x1
+              u(0, ck, cj, ci) = ot * (un(0, nk,   nj, ni) + un(0, nk,   nj+1, ni)
+                                     + un(0, nk+1, nj, ni) + un(0, nk+1, nj+1, ni)
+                                     - u(0, ngh_, ngh_, ngh_));
+            else if (j != 1) // x2
+              u(0, ck, cj, ci) = ot * (un(0, nk,   nj, ni) + un(0, nk,   nj, ni+1)
+                                     + un(0, nk+1, nj, ni) + un(0, nk+1, nj, ni+1)
+                                     - u(0, ngh_, ngh_, ngh_));
+            else // x3
+              u(0, ck, cj, ci) = ot * (un(0, nk, nj,   ni) + un(0, nk, nj,   ni+1)
+                                     + un(0, nk, nj+1, ni) + un(0, nk, nj+1, ni+1)
+                                     - u(0, ngh_, ngh_, ngh_));
+          } else if (type == 2) { // edge
+            if (i == 1) // x2x3
+              u(0, ck, cj, ci) = ot * (2.0*(un(0, nk, nj, ni) + un(0, nk, nj, ni+1))
+                                          - u(0, ngh_, ngh_, ngh_));
+            else if (j == 1) // x1x3
+              u(0, ck, cj, ci) = ot * (2.0*(un(0, nk, nj, ni) + un(0, nk, nj+1, ni))
+                                          - u(0, ngh_, ngh_, ngh_));
+            else // x1x2
+              u(0, ck, cj, ci) = ot * (2.0*(un(0, nk, nj, ni) + un(0, nk+1, nj, ni))
+                                          - u(0, ngh_, ngh_, ngh_));
+          } else { // corner
+            u(0, ck, cj, ci) = ot * (4.0*un(0, nk, nj, ni) - u(0, ngh_, ngh_, ngh_));
+          }
+        }
+      }
+    }
+  }
+
+  return;
+}
+
+
