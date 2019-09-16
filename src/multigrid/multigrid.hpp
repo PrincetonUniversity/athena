@@ -164,7 +164,7 @@ class MultigridDriver {
   // octet manipulation functions
   void RestrictFMGSourceOctets();
   void RestrictOctets();
-  void ZeroClearAllOctets();
+  void ZeroClearOctets();
   void StoreOldDataOctets();
   void CalculateFASRHSOctets();
   void SmoothOctets(int color);

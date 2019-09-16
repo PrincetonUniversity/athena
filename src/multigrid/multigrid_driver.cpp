@@ -1,4 +1,3 @@
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -36,7 +35,7 @@
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) :
     nvar_(invar), maxreflevel_(pm->max_level-pm->root_level),
-    mode_(2), // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
+    mode_(0), // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
     fsubtract_average_(false), ffas_(true), eps_(-1.0), cbuf_(nvar_,3,3,3),
     cbufold_(nvar_,3,3,3) {
@@ -155,13 +154,13 @@ void MultigridDriver::SetupMultigrid() {
 
   // note: the level of an Octet is one level lower than the data stored there
   if (nreflevel_ > 0 && pmy_mesh_->amr_updated) {
-    for (int l=0; l<maxreflevel_; ++l) { // clear old data
+    for (int l=0; l<nreflevel_; ++l) { // clear old data
       octetmap_[l].clear();
       prevnoct_[l] = noctets_[l];
       noctets_[l] = 0;
     }
     pmy_mesh_->tree.CountMGOctets(noctets_);
-    for (int l=0; l<maxreflevel_; ++l) { // increase the octet array size if needed
+    for (int l=0; l<nreflevel_; ++l) { // increase the octet array size if needed
       if (prevnoct_[l] < noctets_[l]) {
         octets_[l].resize(noctets_[l]);
         octetmap_[l].reserve(noctets_[l]);
@@ -170,7 +169,7 @@ void MultigridDriver::SetupMultigrid() {
       noctets_[l] = 0;
     }
     pmy_mesh_->tree.GetMGOctetList(octets_, octetmap_, noctets_);
-    for (int l=0; l<maxreflevel_; ++l) {
+    for (int l=0; l<nreflevel_; ++l) {
       for (int o=prevnoct_[l]; o<noctets_[l]; ++o) {
         octets_[l][o].u.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
         octets_[l][o].def.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
@@ -401,7 +400,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
       if (!ffas_) {
         mgroot_->ZeroClearData();
         if (nreflevel_ > 0)
-          ZeroClearAllOctets();
+          ZeroClearOctets();
       }
     }
   } else if (current_level_ > nrootlevel_-1) { // refined octets
@@ -418,6 +417,10 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
       SetBoundariesOctets(false, false);
     }
     RestrictOctets();
+    if (!ffas_ && current_level_ == fmglevel_) {
+      mgroot_->ZeroClearData();
+      ZeroClearOctets();
+    }
   } else { // uniform root grid
     std::cout << "Rootgrid " << mgroot_->current_level_ << std::endl;
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
@@ -657,7 +660,8 @@ void MultigridDriver::RestrictFMGSourceOctets() {
       const LogicalLocation &loc = octets_[0][o].loc;
       mgroot_->Restrict(cbuf_, octets_[0][o].src, os_, oe_, os_, oe_, os_, oe_);
       for (int v=0; v<nvar_; ++v)
-        mgroot_->SetData(MGVariable::src, v, loc.lx3, loc.lx2, loc.lx1, cbuf_(v, ngh, ngh, ngh));
+        mgroot_->SetData(MGVariable::src, v, loc.lx3, loc.lx2, loc.lx1,
+                         cbuf_(v, ngh, ngh, ngh));
     }
   }
 
@@ -720,14 +724,12 @@ void MultigridDriver::RestrictOctets() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::ZeroClearAllOctets()
+//! \fn void MultigridDriver::ZeroClearOctets()
 //  \brief zero clear the data in all the octets
 
-void MultigridDriver::ZeroClearAllOctets() {
-  // *** clear only where needed in case of FMG
-  int maxlevel = std::min(fmglevel_ - nrootlevel_, nreflevel_);
-  
-  for (int l=0; l<nreflevel_; l++) {
+void MultigridDriver::ZeroClearOctets() {
+  int maxlevel = current_level_ - 1 - nrootlevel_;
+  for (int l=0; l<=maxlevel; l++) {
     for (int o=0; o<noctets_[l]; ++o)
       octets_[l][o].u.ZeroClear();
   }
