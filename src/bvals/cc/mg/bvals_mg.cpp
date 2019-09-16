@@ -295,11 +295,11 @@ void MGBoundaryValues::ClearBoundaryMultigrid(BoundaryQuantity type) {
 
 //----------------------------------------------------------------------------------------
 //! \fn int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
-//                                                 const NeighborBlock& nb, bool folddata)
+//                                const NeighborBlock& nb, bool fcoarse, bool folddata)
 //  \brief Set Multigrid boundary buffers for sending to a block on the same level
 
 int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
-                                           const NeighborBlock& nb, bool folddata) {
+                          const NeighborBlock& nb, bool fcoarse, bool folddata) {
   const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
   const AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
   int nc = pmy_mg_->GetCurrentNumberOfCells();
@@ -317,7 +317,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
   if (folddata)
     BufferUtility::PackData(old, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
 
-  if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel) {
+  if (fcoarse) {
     int cn = ngh - 1, fs = ngh, cs = ngh, fe = fs + nc - 1, ce = cs + nc/2 - 1;
     si = (nb.ni.ox1 > 0) ? (ce - cn) : cs;
     ei = (nb.ni.ox1 < 0) ? (cs + cn) : ce;
@@ -475,10 +475,14 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(BoundaryQuantity type,
                                                     bool folddata) {
   int mylevel = loc.level;
   bool faceonly = false;
+  bool fcoarse = false;
   bool bflag = true;
 
   if (type == BoundaryQuantity::mggrav_f)
     faceonly = true;
+  else if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel)
+    fcoarse = true;
+
   for (int n=0; n<nneighbor; n++) {
     Multigrid *pmg;
     NeighborBlock& nb = neighbor[n];
@@ -493,7 +497,8 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(BoundaryQuantity type,
       }
     }
     if (nb.snb.level == mylevel) {
-      ssize = LoadMultigridBoundaryBufferSameLevel(bdata_.send[nb.bufid], nb, folddata);
+      ssize = LoadMultigridBoundaryBufferSameLevel(bdata_.send[nb.bufid], nb,
+                                                   fcoarse, folddata);
     } else if (nb.snb.level < mylevel) {
       if (type == BoundaryQuantity::mggrav_f)
         ssize = LoadMultigridBoundaryBufferToCoarserFluxCons(bdata_.send[nb.bufid], nb);
@@ -527,11 +532,11 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(BoundaryQuantity type,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::SetMultigridBoundarySameLevel(const Real *buf,
-//                                                 const NeighborBlock& nb, bool folddata)
+//                                const NeighborBlock& nb, bool fcoarse, bool folddata)
 //  \brief Set Multigrid boundary received from a block on the same level
 
 void MGBoundaryValues::SetMultigridBoundarySameLevel(const Real *buf,
-                                               const NeighborBlock& nb, bool folddata) {
+                          const NeighborBlock& nb, bool fcoarse, bool folddata) {
   AthenaArray<Real> &dst = pmy_mg_->GetCurrentData();
   AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
   int nc = pmy_mg_->GetCurrentNumberOfCells();
@@ -553,7 +558,7 @@ void MGBoundaryValues::SetMultigridBoundarySameLevel(const Real *buf,
   if (folddata)
     BufferUtility::UnpackData(buf, old, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
 
-  if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel) {
+  if (fcoarse) {
     int cng = ngh;
     int cs = cng, ce = cng + nc/2 -1;
 
@@ -703,10 +708,14 @@ void MGBoundaryValues::SetMultigridBoundaryFromFiner(const Real *buf,
 
 bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(BoundaryQuantity type,
                                                        bool folddata) {
-  bool bflag = true, faceonly = false;
+  bool faceonly = false;
+  bool fcoarse = false;
+  bool bflag = true;
 
   if (type == BoundaryQuantity::mggrav_f)
     faceonly = true;
+  else if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel)
+    fcoarse = true;
 
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
@@ -731,7 +740,7 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(BoundaryQuantity type,
 #endif
     }
     if (nb.snb.level == loc.level) {
-      SetMultigridBoundarySameLevel(bdata_.recv[nb.bufid], nb, folddata);
+      SetMultigridBoundarySameLevel(bdata_.recv[nb.bufid], nb, fcoarse, folddata);
     } else if (nb.snb.level<loc.level) { 
       if (type == BoundaryQuantity::mggrav_f)
         SetMultigridBoundaryFromCoarserFluxCons(bdata_.recv[nb.bufid], nb);

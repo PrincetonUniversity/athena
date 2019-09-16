@@ -62,13 +62,13 @@ class MGBoundaryValues : public BoundaryBase {
 #endif
 
   int LoadMultigridBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb,
-                                           bool folddata);
+                                           bool fcoarse, bool folddata);
   int LoadMultigridBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb,
                                            bool folddata);
   int LoadMultigridBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb,
                                          bool folddata);
   void SetMultigridBoundarySameLevel(const Real *buf, const NeighborBlock& nb,
-                                     bool folddata);
+                                     bool fcoarse, bool folddata);
   void SetMultigridBoundaryFromCoarser(const Real *buf, const NeighborBlock& nb,
                                        bool folddata);
   void SetMultigridBoundaryFromFiner(const Real *buf, const NeighborBlock& nb,
