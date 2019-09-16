@@ -117,7 +117,6 @@ class Multigrid {
                                int il, int iu, int jl, int ju, int kl, int ku) = 0;
   virtual void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
                         int rlev, int il, int iu, int jl, int ju, int kl, int ku) = 0;
-  virtual void SetBoundariesFromFinerOctets() = 0;
 
   friend class MultigridDriver;
   friend class MultigridTaskList;

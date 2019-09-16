@@ -300,10 +300,9 @@ void MultigridDriver::TransferFromRootToBlocks(bool folddata) {
     RestrictOctetsBeforeTransfer();
     SetOctetBoundariesBeforeTransfer(folddata);
   }
-  for (Multigrid* pmg : vmg_) {
+  for (Multigrid* pmg : vmg_)
     pmg->SetFromRootGrid(folddata);
-    pmg->SetBoundariesFromFinerOctets();
-  }
+
   return;
 }
 
