@@ -261,7 +261,11 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     } else {
       AddTask(INT_HYD, CALC_HYDFLX);
     }
-    AddTask(SRCTERM_HYD,INT_HYD);
+    if (NSCALARS > 0) {
+      AddTask(SRCTERM_HYD,INT_HYD|INT_SCLR);
+    } else {
+      AddTask(SRCTERM_HYD,INT_HYD);
+    }
     AddTask(SEND_HYD,SRCTERM_HYD);
     AddTask(RECV_HYD,NONE);
     AddTask(SETB_HYD,(RECV_HYD|SRCTERM_HYD));
@@ -279,9 +283,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         AddTask(INT_SCLR,CALC_SCLRFLX);
       }
       // there is no SRCTERM_SCLR task
-      AddTask(SEND_SCLR,INT_SCLR);
+      AddTask(SEND_SCLR,SRCTERM_HYD);
       AddTask(RECV_SCLR,NONE);
-      AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
+      AddTask(SETB_SCLR,(RECV_SCLR|SRCTERM_HYD));
       // if (SHEARING_BOX) {
       //   AddTask(SEND_SCLRSH,SETB_SCLR);
       //   AddTask(RECV_SCLRSH,SETB_SCLR);
