@@ -306,7 +306,7 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag) {
     AddMultigridTask(MG_PROLONG,   MG_PHYSBND0);
     AddMultigridTask(MG_CLEARBNDP, MG_PROLONG);
   }
-  if (nsmooth==1) {
+  if (nsmooth>=1) {
     if (flag==1)
       AddMultigridTask(MG_STARTRECV1R, MG_PROLONG);
     else
