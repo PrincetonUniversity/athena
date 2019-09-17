@@ -35,9 +35,9 @@
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) :
     nvar_(invar), maxreflevel_(pm->max_level-pm->root_level),
-    mode_(0), // 0: FMG+V(1,1), 1: FMG+F(0,1), 2: V(1,1)
+    mode_(1), // 0: V(1,1) FMG one sweep, 1: FMG + iterative, 2: V(1,1) iterative
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
-    fsubtract_average_(false), ffas_(true), eps_(-1.0), cbuf_(nvar_,3,3,3),
+    fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0), cbuf_(nvar_,3,3,3),
     cbufold_(nvar_,3,3,3) {
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
     std::stringstream msg;
@@ -459,39 +459,23 @@ void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth)
-//  \brief Solve the F-cycle starting from the current level
-
-void MultigridDriver::SolveFCycle(int npresmooth, int npostsmooth) {
-  int startlevel=current_level_;
-  int turnlevel;
-  if (startlevel == 0)
-    turnlevel=0;
-  else
-    turnlevel=1;
-  for (; turnlevel<=startlevel; turnlevel++) {
-    while (current_level_>0)
-      OneStepToCoarser(npresmooth);
-    SolveCoarsestGrid();
-    while (current_level_<turnlevel)
-      OneStepToFiner(npostsmooth);
-  }
-  return;
-}
-
-
-//----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SolveFMGCycle()
 //  \brief Solve the FMG Cycle using the V(1,1) or F(0,1) cycle
 
 void MultigridDriver::SolveFMGCycle() {
+  if (nreflevel_ > 0)
+    ffas_ = true; // Use FAS for FMG with refinement
   for (fmglevel_=0; fmglevel_<ntotallevel_; fmglevel_++) {
-    if (mode_ == 0)
-      SolveVCycle(1, 1);
-    else if (mode_ == 1)
-      SolveFCycle(0, 1);
+    SolveVCycle(1, 1);
     if (fmglevel_!=ntotallevel_-1)
       FMGProlongate();
+  }
+  if (mode_ == 1) {
+//    ffas_ = false; // MG correction is used for iteration
+    Real def = 0.0;
+    for (int v=0; v<nvar_; ++v)
+      def += CalculateDefectNorm(MGNormType::l2, v);
+    SolveIterative(def);
   }
   if (fsubtract_average_)
     SubtractAverage(MGVariable::u);
@@ -500,19 +484,19 @@ void MultigridDriver::SolveFMGCycle() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SolveIterative()
+//! \fn void MultigridDriver::SolveIterative(Real inidef)
 //  \brief Solve iteratively until the convergence is achieved
 
-void MultigridDriver::SolveIterative() {
-  Real def=eps_+1e-10;
-  int niter=0;
+void MultigridDriver::SolveIterative(Real inidef) {
+  Real def = inidef * (1.0 + 1e-10);
+  int niter = 0;
   std::cout << std::scientific << std::setprecision(15);
   while (def > eps_) {
     SolveVCycle(1,1);
-    Real olddef=def;
-    def=0.0;
+    Real olddef = def;
+    def = 0.0;
     for (int v=0; v<nvar_; ++v)
-      def+=CalculateDefectNorm(MGNormType::l2, v);
+      def += CalculateDefectNorm(MGNormType::l2, v);
     std::cout << "after " << niter << " def = " << def << std::endl;
     if (niter > 0 && def/olddef > 0.9) {
       if (eps_ == 0.0) break;

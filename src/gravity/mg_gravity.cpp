@@ -122,7 +122,7 @@ void MGGravityDriver::Solve(int stage) {
   if (mode_ <= 1)
     SolveFMGCycle();
   else
-    SolveIterative();
+    SolveIterative(eps_);
 
   // Return the result
   for (Multigrid* pmg : vmg_) {

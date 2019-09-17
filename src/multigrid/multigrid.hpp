@@ -153,9 +153,8 @@ class MultigridDriver {
   void OneStepToFiner(int nsmooth);
   void OneStepToCoarser(int nsmooth);
   void SolveVCycle(int npresmooth, int npostsmooth);
-  void SolveFCycle(int npresmooth, int npostsmooth);
   void SolveFMGCycle();
-  void SolveIterative();
+  void SolveIterative(Real inidef);
 
   virtual void SolveCoarsestGrid();
   Real CalculateDefectNorm(MGNormType nrm, int n);
