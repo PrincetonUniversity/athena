@@ -336,7 +336,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
                                     pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
     if (NSCALARS > 0) {
       pmb->peos->PassiveScalarPrimitiveToConserved(
-          ps->r, ph->w, ps->s, pco, pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
+          ps->r, ph->u, ps->s, pco, pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
     }
   }
 
@@ -355,7 +355,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
                                     pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
     if (NSCALARS > 0) {
       pmb->peos->PassiveScalarPrimitiveToConserved(
-          ps->r, ph->w, ps->s, pco, pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
+          ps->r, ph->u, ps->s, pco, pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
     }
   }
 
@@ -375,7 +375,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
                                       bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
       if (NSCALARS > 0) {
         pmb->peos->PassiveScalarPrimitiveToConserved(
-            ps->r, ph->w, ps->s, pco, bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
+            ps->r, ph->u, ps->s, pco, bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
       }
     }
 
@@ -394,7 +394,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
                                       bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
       if (NSCALARS > 0) {
         pmb->peos->PassiveScalarPrimitiveToConserved(
-            ps->r, ph->w, ps->s, pco, bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
+            ps->r, ph->u, ps->s, pco, bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
       }
     }
   }
@@ -418,7 +418,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
                                       bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
       if (NSCALARS > 0) {
         pmb->peos->PassiveScalarPrimitiveToConserved(
-            ps->r, ph->w, ps->s, pco, bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
+            ps->r, ph->u, ps->s, pco, bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
       }
     }
 
@@ -437,7 +437,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
                                       bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
       if (NSCALARS > 0) {
         pmb->peos->PassiveScalarPrimitiveToConserved(
-            ps->r, ph->w, ps->s, pco, bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
+            ps->r, ph->u, ps->s, pco, bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
       }
     }
   }

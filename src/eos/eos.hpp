@@ -50,11 +50,11 @@ class EquationOfState {
   //   int iu, int jl, int ju, int kl, int ku);
 
   void PassiveScalarConservedToPrimitive(
-      AthenaArray<Real> &s, const AthenaArray<Real> &w, const AthenaArray<Real> &r_old,
+      AthenaArray<Real> &s, const AthenaArray<Real> &u, const AthenaArray<Real> &r_old,
       AthenaArray<Real> &r,
       Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
   void PassiveScalarPrimitiveToConserved(
-    const AthenaArray<Real> &r, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &r, const AthenaArray<Real> &u,
     AthenaArray<Real> &s, Coordinates *pco,
     int il, int iu, int jl, int ju, int kl, int ku);
   void PassiveScalarConservedToPrimitiveCellAverage(

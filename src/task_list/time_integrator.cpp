@@ -1080,8 +1080,7 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
                                     il, iu, jl, ju, kl, ku);
     if (NSCALARS > 0) {
       // r1/r_old for GR is currently unused:
-      pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->w1, // ph->u, (updated rho)
-                                                   ps->r, ps->r,
+      pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->u, ps->r, ps->r,
                                                    pmb->pcoord, il, iu, jl, ju, kl, ku);
     }
     // fourth-order EOS:
