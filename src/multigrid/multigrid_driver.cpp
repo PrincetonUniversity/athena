@@ -35,7 +35,7 @@
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) :
     nvar_(invar), maxreflevel_(pm->max_level-pm->root_level),
-    mode_(1), // 0: V(1,1) FMG one sweep, 1: FMG + iterative, 2: V(1,1) iterative
+    mode_(2), // 0: V(1,1) FMG one sweep, 1: FMG + iterative, 2: V(1,1) iterative
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
     fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0), cbuf_(nvar_,3,3,3),
     cbufold_(nvar_,3,3,3) {
@@ -449,10 +449,10 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
 
 void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth) {
   int startlevel=current_level_;
-  while (current_level_>0)
+  while (current_level_ > 0)
     OneStepToCoarser(npresmooth);
   SolveCoarsestGrid();
-  while (current_level_<startlevel)
+  while (current_level_ < startlevel)
     OneStepToFiner(npostsmooth);
   return;
 }
@@ -467,7 +467,7 @@ void MultigridDriver::SolveFMGCycle() {
     ffas_ = true; // Use FAS for FMG with refinement
   for (fmglevel_=0; fmglevel_<ntotallevel_; fmglevel_++) {
     SolveVCycle(1, 1);
-    if (fmglevel_!=ntotallevel_-1)
+    if (fmglevel_ != ntotallevel_-1)
       FMGProlongate();
   }
   if (mode_ == 1) {
@@ -488,11 +488,13 @@ void MultigridDriver::SolveFMGCycle() {
 //  \brief Solve iteratively until the convergence is achieved
 
 void MultigridDriver::SolveIterative(Real inidef) {
-  Real def = inidef * (1.0 + 1e-10);
   int niter = 0;
+  Real def = inidef;
+  if (def != 0.0) def += inidef * 1e-10;
+  else def += TINY_NUMBER;
   std::cout << std::scientific << std::setprecision(15);
   while (def > eps_) {
-    SolveVCycle(1,1);
+    SolveVCycle(1, 1);
     Real olddef = def;
     def = 0.0;
     for (int v=0; v<nvar_; ++v)
@@ -505,7 +507,7 @@ void MultigridDriver::SolveIterative(Real inidef) {
                   << "Slow multigrid convergence : defect norm = " << def
                   << ", convergence factor = " << def/olddef << "." << std::endl;
     }
-    if (niter>20) {
+    if (niter > 100) {
       if (Globals::my_rank == 0) {
         std::cout
             << "### Warning in MultigridDriver::SolveIterative" << std::endl
