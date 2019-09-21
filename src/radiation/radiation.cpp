@@ -448,6 +448,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   dtau_.NewAthenaArray(pmb->ncells1);
   weight_sum_.NewAthenaArray(pmb->ncells1);
   n_cm_.NewAthenaArray(4, nzeta * npsi, pmb->ncells1);
+  n0_.NewAthenaArray(nzeta * npsi, pmb->ncells3, pmb->ncells2, pmb->ncells1);
   omega_cm_.NewAthenaArray(nzeta * npsi, pmb->ncells1);
   intensity_cm_.NewAthenaArray(nzeta * npsi, pmb->ncells1);
   moments_old_.NewAthenaArray(4, pmb->ncells1);
@@ -492,6 +493,28 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
                 norm_to_tet_(m,n,k,j,i) += eta[m][p] * e_cov(p,q) * norm_to_coord[q][n];
               }
             }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate n^0
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      for (int i = is; i <= ie; ++i) {
+        Real x1 = pmb->pcoord->x1v(i);
+        Real x2 = pmb->pcoord->x2v(j);
+        Real x3 = pmb->pcoord->x3v(k);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm_alt = (l - zs) * (pe - ps + 1) + m - ps;
+            Real n0 = 0.0;
+            for (int n = 0; n < 4; ++n) {
+              n0 += e(n,0) * nh_cc(n,l,m);
+            }
+            n0_(lm_alt,k,j,i) = n0;
           }
         }
       }
@@ -1197,7 +1220,7 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
         }
 
         // Calculate radiation-fluid coupling in fluid frame
-        Coupling(prim_hydro, n_cm_, omega_cm_, dtau_, k, j, intensity_cm_);
+        Coupling(prim_hydro, n_cm_, n0_, omega_cm_, dtau_, k, j, intensity_cm_);
 
         // Apply radiation-fluid coupling to radiation in coordinate frame
         for (int l = zs; l <= ze; ++l) {

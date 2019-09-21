@@ -125,8 +125,8 @@ public:
   // Fluid coupling functions
   void EnrollOpacityFunction(OpacityFunc MyOpacityFunction);
   void Coupling(const AthenaArray<Real> &prim_hydro, const AthenaArray<Real> &normal,
-      const AthenaArray<Real> &omega, const AthenaArray<Real> &dtau, int k, int j,
-      AthenaArray<Real> &intensity);
+      const AthenaArray<Real> &n0, const AthenaArray<Real> &omega,
+      const AthenaArray<Real> &dtau, int k, int j, AthenaArray<Real> &intensity);
 
   // Other functions
   int AngleInd(int l, int m, bool zeta_face = false, bool psi_face = false);
@@ -160,6 +160,7 @@ private:
   AthenaArray<Real> dtau_;           // timestep in fluid frame
   AthenaArray<Real> weight_sum_;     // sum of solid angles, used for normalizing
   AthenaArray<Real> n_cm_;           // unit null direction in comoving fluid frame
+  AthenaArray<Real> n0_;             // unit null time component in coordinate frame
   AthenaArray<Real> omega_cm_;       // solid angle in comoving fluid frame
   AthenaArray<Real> intensity_cm_;   // intensity I in comoving fluid frame
   AthenaArray<Real> moments_old_;    // moments of radiation field before fluid coupling

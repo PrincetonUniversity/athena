@@ -30,6 +30,9 @@ bool FourthPolyRoot(const Real coef4, const Real tconst, Real &root);
 //     index 0: fluid-frame component (0 through 3)
 //     index 1: angle (0 through nzeta * npsi - 1)
 //     index 2: i
+//   n0: unit normal null vector n, time component in coordinate frame:
+//     index 1: angle (0 through nzeta * npsi - 1)
+//     indices 1-3: k, j, i
 //   omega: fractional solid angle (normalized to 1) in fluid frame:
 //     index 0: angle (0 through nzeta * npsi - 1)
 //     index 1: i
@@ -48,8 +51,9 @@ bool FourthPolyRoot(const Real coef4, const Real tconst, Real &root);
 //       x-direction, and similarly for n^2/n^0 and n^3/n^0.
 
 void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
-    const AthenaArray<Real> &normal, const AthenaArray<Real> &omega,
-    const AthenaArray<Real> &dtau, int k, int j, AthenaArray<Real> &intensity) {
+    const AthenaArray<Real> &normal, const AthenaArray<Real> &n0,
+    const AthenaArray<Real> &omega, const AthenaArray<Real> &dtau, int k, int j,
+    AthenaArray<Real> &intensity) {
 
   // Prepare to go through cells
   Real gamma = pmy_block->peos->GetGamma();
