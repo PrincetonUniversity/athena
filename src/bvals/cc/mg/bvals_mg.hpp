@@ -43,12 +43,13 @@ class MGBoundaryValues : public BoundaryBase {
   void InitBoundaryData(BoundaryQuantity type);
   void DestroyBoundaryData();
 
-  void ApplyPhysicalBoundaries();
+  void ApplyPhysicalBoundaries(int flag = 0);
   void StartReceivingMultigrid(BoundaryQuantity type, bool folddata);
   void ClearBoundaryMultigrid(BoundaryQuantity type);
   bool SendMultigridBoundaryBuffers(BoundaryQuantity type, bool folddata);
   bool ReceiveMultigridBoundaryBuffers(BoundaryQuantity type, bool folddata);
   void ProlongateMultigridBoundaries(bool folddata);
+  void ProlongateMultigridBoundariesFluxCons();
   void CopyNeighborInfoFromMeshBlock();
 
  protected:
@@ -62,13 +63,13 @@ class MGBoundaryValues : public BoundaryBase {
 #endif
 
   int LoadMultigridBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb,
-                                           bool fcoarse, bool folddata);
+                                           bool folddata);
   int LoadMultigridBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb,
                                            bool folddata);
   int LoadMultigridBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb,
                                          bool folddata);
   void SetMultigridBoundarySameLevel(const Real *buf, const NeighborBlock& nb,
-                                     bool fcoarse, bool folddata);
+                                     bool folddata);
   void SetMultigridBoundaryFromCoarser(const Real *buf, const NeighborBlock& nb,
                                        bool folddata);
   void SetMultigridBoundaryFromFiner(const Real *buf, const NeighborBlock& nb,

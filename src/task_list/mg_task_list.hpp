@@ -52,15 +52,15 @@ class MultigridTaskList {
 
   // functions
   TaskStatus StartReceive(Multigrid *pmg);
-  TaskStatus StartReceiveFace(Multigrid *pmg);
+  TaskStatus StartReceiveFluxCons(Multigrid *pmg);
   TaskStatus StartReceiveForProlongation(Multigrid *pmg);
   TaskStatus ClearBoundary(Multigrid *pmg);
-  TaskStatus ClearBoundaryFace(Multigrid *pmg);
+  TaskStatus ClearBoundaryFluxCons(Multigrid *pmg);
   TaskStatus SendBoundary(Multigrid *pmg);
-  TaskStatus SendBoundaryFace(Multigrid *pmg);
+  TaskStatus SendBoundaryFluxCons(Multigrid *pmg);
   TaskStatus SendBoundaryForProlongation(Multigrid *pmg);
   TaskStatus ReceiveBoundary(Multigrid *pmg);
-  TaskStatus ReceiveBoundaryFace(Multigrid *pmg);
+  TaskStatus ReceiveBoundaryFluxCons(Multigrid *pmg);
   TaskStatus ReceiveBoundaryForProlongation(Multigrid *pmg);
   TaskStatus SmoothRed(Multigrid *pmg);
   TaskStatus SmoothBlack(Multigrid *pmg);
@@ -118,20 +118,26 @@ const TaskID MG_RECVBND2B(26);
 const TaskID MG_RECVBNDP(27);
 const TaskID MG_RECVBNDL(28);
 const TaskID MG_PRLNGBNDP(29);
-const TaskID MG_SMOOTH1R(30);
-const TaskID MG_SMOOTH1B(31);
-const TaskID MG_SMOOTH2R(32);
-const TaskID MG_SMOOTH2B(33);
-const TaskID MG_PHYSBND0(34);
-const TaskID MG_PHYSBND1R(35);
-const TaskID MG_PHYSBND1B(36);
-const TaskID MG_PHYSBND2R(37);
-const TaskID MG_PHYSBND2B(38);
-const TaskID MG_PHYSBNDL(39);
-const TaskID MG_RESTRICT(40);
-const TaskID MG_PROLONG(41);
-const TaskID MG_FMGPROLONG(42);
-const TaskID MG_CALCFASRHS(43);
+const TaskID MG_PRLNGFC0(30);
+const TaskID MG_PRLNGFC1R(31);
+const TaskID MG_PRLNGFC1B(32);
+const TaskID MG_PRLNGFC2R(33);
+const TaskID MG_PRLNGFC2B(34);
+const TaskID MG_PRLNGFCL(35);
+const TaskID MG_SMOOTH1R(36);
+const TaskID MG_SMOOTH1B(37);
+const TaskID MG_SMOOTH2R(38);
+const TaskID MG_SMOOTH2B(39);
+const TaskID MG_PHYSBND0(40);
+const TaskID MG_PHYSBND1R(41);
+const TaskID MG_PHYSBND1B(42);
+const TaskID MG_PHYSBND2R(43);
+const TaskID MG_PHYSBND2B(44);
+const TaskID MG_PHYSBNDL(45);
+const TaskID MG_RESTRICT(46);
+const TaskID MG_PROLONG(47);
+const TaskID MG_FMGPROLONG(48);
+const TaskID MG_CALCFASRHS(49);
 } // namespace MultigridTaskNames
 
 #endif // TASK_LIST_MG_TASK_LIST_HPP_

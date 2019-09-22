@@ -173,8 +173,13 @@ class MultigridDriver {
   void SetOctetBoundarySameLevel(AthenaArray<Real> &dst, const AthenaArray<Real> &un,
                        AthenaArray<Real> &uold, const AthenaArray<Real> &unold,
                        int ox1, int ox2, int ox3, bool folddata);
+  void SetOctetBoundaryFromCoarser(const AthenaArray<Real> &un,
+                       const AthenaArray<Real> &unold, const LogicalLocation &loc,
+                       int ox1, int ox2, int ox3, bool folddata);
   void ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u, const LogicalLocation &loc,
                                     bool fcbuf);
+  void ProlongateOctetBoundaries(AthenaArray<Real> &u, AthenaArray<Real> &uold,
+                                 bool folddata);
   void SetOctetBoundariesBeforeTransfer(bool folddata);
   void RestrictOctetsBeforeTransfer();
 
@@ -183,9 +188,7 @@ class MultigridDriver {
 
   // pure virtual functions
   virtual void Solve(int step) = 0;
-  virtual void SetOctetBoundaryFromCoarserFluxCons(AthenaArray<Real> &dst,
-                               const AthenaArray<Real> &un, const LogicalLocation &loc,
-                               int ox1, int ox2, int ox3) = 0;
+  virtual void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) = 0;
 
   friend class Multigrid;
   friend class MultigridTaskList;
@@ -214,6 +217,7 @@ class MultigridDriver {
   std::vector<bool> *octetbflag_;
   int *noctets_, *prevnoct_;
   AthenaArray<Real> cbuf_, cbufold_;
+  bool ncoarse_[3][3][3];
 
  private:
   MultigridTaskList *mgtlist_;

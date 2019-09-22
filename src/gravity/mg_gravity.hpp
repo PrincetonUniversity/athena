@@ -52,9 +52,7 @@ class MGGravityDriver : public MultigridDriver {
   ~MGGravityDriver();
   void Solve(int stage) final;
   // void SolveCoarsestGrid() final;
-  void SetOctetBoundaryFromCoarserFluxCons(AthenaArray<Real> &dst,
-                           const AthenaArray<Real> &un, const LogicalLocation &loc,
-                           int ox1, int ox2, int ox3) final;
+  void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) final;
  private:
   Real four_pi_G_;
 };

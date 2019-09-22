@@ -233,77 +233,79 @@ void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> 
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravityDriver::SetOctetBoundaryFromCoarserFluxCons(AthenaArray<Real> &dst,
-//   const AthenaArray<Real> &un, const LogicalLocation &loc, int ox1, int ox2, int ox3)
-//  \brief set an Octet boundary from a neighbor Octet on the coarser level
+//! \fn void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst)
+//  \brief prolongate octet boundaries using the flux conservation formula
 
-void MGGravityDriver::SetOctetBoundaryFromCoarserFluxCons(AthenaArray<Real> &dst,
-     const AthenaArray<Real> &un, const LogicalLocation &loc, int ox1, int ox2, int ox3) {
-  constexpr Real itw = 1.0/12.0;
+void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) {
+  constexpr Real ot = 1.0/3.0;
   const int ngh = mgroot_->ngh_;
-  const int i = ngh, j = ngh, k = ngh;
   const AthenaArray<Real> &u = dst;
-  int ci, cj, ck;
-  if (loc.level == nrootlevel_ - 1) { // from root
-    // given loc is neighbor's location
-    ci = loc.lx1 + ngh;
-    cj = loc.lx2 + ngh;
-    ck = loc.lx3 + ngh;
-  } else { // from a neighbor octet
-    // given loc is my location
-    int ix1 = (static_cast<int>(loc.lx1) & 1);
-    int ix2 = (static_cast<int>(loc.lx2) & 1);
-    int ix3 = (static_cast<int>(loc.lx3) & 1);
-    if (ox1 == 0) ci = ix1 + ngh;
-    else          ci = (ix1^1) + ngh;
-    if (ox2 == 0) cj = ix2 + ngh;
-    else          cj = (ix2^1) + ngh; 
-    if (ox3 == 0) ck = ix3 + ngh;
-    else          ck = (ix3^1) + ngh; 
+  const int ci = ngh, cj = ngh, ck = ngh, l = ngh, r = ngh + 1;
+
+  // x1face
+  for (int ox1=-1; ox1<=1; ox1+=2) {
+    if (ncoarse_[1][1][ox1+1]) {
+      int i, fi, fig;
+      if (ox1 > 0) i = ngh + 1, fi = ngh + 1, fig = ngh + 2;
+      else         i = ngh - 1, fi = ngh,     fig = ngh - 1;
+      Real ccval = cbuf_(0, ck, cj, i);
+      Real gx2m = ccval - cbuf_(0, ck, cj-1, i);
+      Real gx2p = cbuf_(0, ck, cj+1, i) - ccval;
+      Real gx2c = 0.125*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
+                                                           std::abs(gx2p));
+      Real gx3m = ccval - cbuf_(0, ck-1, cj, i);
+      Real gx3p = cbuf_(0, ck+1, cj, i) - ccval;
+      Real gx3c = 0.125*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
+                                                           std::abs(gx3p));
+      dst(0, l, l, fig) = ot*(2.0*(ccval - gx2c - gx3c) + u(0, l, l, fi));
+      dst(0, l, r, fig) = ot*(2.0*(ccval + gx2c - gx3c) + u(0, l, r, fi));
+      dst(0, r, l, fig) = ot*(2.0*(ccval - gx2c + gx3c) + u(0, r, l, fi));
+      dst(0, r, r, fig) = ot*(2.0*(ccval + gx2c + gx3c) + u(0, r, r, fi));
+    }
   }
 
-  if (ox1 != 0) {
-    int ig, fi;
-    if (ox1 < 0) ig = 0,       fi = ngh;
-    else         ig = ngh + 2, fi = ngh + 1;
-    Real cg = itw * (8.0*un(0, ck, cj, ci) + ((u(0, k,   j, fi) + u(0, k,   j+1, fi))
-                                           +  (u(0, k+1, j, fi) + u(0, k+1, j+1, fi))));
-    Real qdy = 0.25 * ((u(0, k+1, j+1, fi) - u(0, k+1, j,   fi))
-                     + (u(0, k,   j+1, fi) - u(0, k,   j,   fi)));
-    Real qdz = 0.25 * ((u(0, k+1, j+1, fi) - u(0, k,   j+1, fi))
-                     + (u(0, k+1, j,   fi) - u(0, k,   j,   fi)));
-    dst(0, k,   j,   ig) = cg - qdy - qdz;
-    dst(0, k,   j+1, ig) = cg + qdy - qdz;
-    dst(0, k+1, j,   ig) = cg - qdy + qdz;
-    dst(0, k+1, j+1, ig) = cg + qdy + qdz;
-  } else if (ox2 != 0) {
-    int jg, fj;
-    if (ox2 < 0) jg = 0,       fj = ngh;
-    else         jg = ngh + 2, fj = ngh + 1;
-    Real cg = itw * (8.0 * un(0, ck, cj, ci) + ((u(0, k,   fj, i) + u(0, k,   fj, i+1))
-                                             +  (u(0, k+1, fj, i) + u(0, k+1, fj, i+1))));
-    Real qdx = 0.25 * ((u(0, k+1, fj, i+1) - u(0, k+1, fj, i))
-                     + (u(0, k,   fj, i+1) - u(0, k,   fj, i)));
-    Real qdz = 0.25 * ((u(0, k+1, fj, i+1) - u(0, k,   fj, i+1))
-                     + (u(0, k+1, fj, i  ) - u(0, k,   fj, i)));
-    dst(0, k,   jg, i  ) = cg - qdx - qdz;
-    dst(0, k,   jg, i+1) = cg + qdx - qdz;
-    dst(0, k+1, jg, i  ) = cg - qdx + qdz;
-    dst(0, k+1, jg, i+1) = cg + qdx + qdz;
-  } else if (ox3 != 0) {
-    int kg, fk;
-    if (ox3 < 0) kg = 0,       fk = ngh;
-    else         kg = ngh + 2, fk = ngh + 1;
-    Real cg = itw * (8.0 * un(0, ck, cj, ci) + ((u(0, fk, j,   i) + u(0, fk, j,   i+1))
-                                             +  (u(0, fk, j+1, i) + u(0, fk, j+1, i+1))));
-    Real qdx = 0.25 * ((u(0, fk, j+1, i+1) - u(0, fk, j+1, i))
-                     + (u(0, fk, j,   i+1) - u(0, fk, j,   i)));
-    Real qdy = 0.25 * ((u(0, fk, j+1, i+1) - u(0, fk, j,   i+1))
-                     + (u(0, fk, j+1, i  ) - u(0, fk, j,   i)));
-    dst(0, kg, j,   i  ) = cg - qdx - qdy;
-    dst(0, kg, j,   i+1) = cg + qdx - qdy;
-    dst(0, kg, j+1, i  ) = cg - qdx + qdy;
-    dst(0, kg, j+1, i+1) = cg + qdx + qdy;
+  // x2face
+  for (int ox2=-1; ox2<=1; ox2+=2) {
+    if (ncoarse_[1][ox2+1][1]) {
+      int j, fj, fjg;
+      if (ox2 > 0) j = ngh + 1, fj = ngh + 1, fjg = ngh + 2;
+      else         j = ngh - 1, fj = ngh,     fjg = ngh - 1;
+      Real ccval = cbuf_(0, ck, j, ci);
+      Real gx1m = ccval - cbuf_(0, ck, j, ci-1);
+      Real gx1p = cbuf_(0, ck, j, ci+1) - ccval;
+      Real gx1c = 0.125*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
+                                                           std::abs(gx1p));
+      Real gx3m = ccval - cbuf_(0, ck-1, j, ci);
+      Real gx3p = cbuf_(0, ck+1, j, ci) - ccval;
+      Real gx3c = 0.125*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
+                                                           std::abs(gx3p));
+      dst(0, l, fjg, l) = ot*(2.0*(ccval - gx1c - gx3c) + u(0, l, fj, l));
+      dst(0, l, fjg, r) = ot*(2.0*(ccval + gx1c - gx3c) + u(0, l, fj, r));
+      dst(0, r, fjg, l) = ot*(2.0*(ccval - gx1c + gx3c) + u(0, r, fj, l));
+      dst(0, r, fjg, r) = ot*(2.0*(ccval + gx1c + gx3c) + u(0, r, fj, r));
+    }
+  }
+
+  // x3face
+  for (int ox3=-1; ox3<=1; ox3+=2) {
+    if (ncoarse_[ox3+1][1][1]) {
+      int k, fk, fkg;
+      if (ox3 > 0) k = ngh + 1, fk = ngh + 1, fkg = ngh + 2;
+      else         k = ngh - 1, fk = ngh,     fkg = ngh - 1;
+      Real ccval = cbuf_(0, k, cj, ci);
+      Real gx1m = ccval - cbuf_(0, k, cj, ci-1);
+      Real gx1p = cbuf_(0, k, cj, ci+1) - ccval;
+      Real gx1c = 0.125*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
+                                                           std::abs(gx1p));
+      Real gx2m = ccval - cbuf_(0, k, cj-1, ci);
+      Real gx2p = cbuf_(0, k, cj+1, ci) - ccval;
+      Real gx2c = 0.125*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
+                                                           std::abs(gx2p));
+      dst(0, fkg, l, l) = ot*(2.0*(ccval - gx1c - gx2c) + u(0, fk, l, l));
+      dst(0, fkg, l, r) = ot*(2.0*(ccval + gx1c - gx2c) + u(0, fk, l, r));
+      dst(0, fkg, r, l) = ot*(2.0*(ccval - gx1c + gx2c) + u(0, fk, r, l));
+      dst(0, fkg, r, r) = ot*(2.0*(ccval + gx1c + gx2c) + u(0, fk, r, r));
+    }
   }
 
   return;
