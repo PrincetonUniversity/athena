@@ -445,6 +445,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   gi_.NewAthenaArray(NMETRIC, pmb->ncells1);
   norm_to_tet_.NewAthenaArray(4, 4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
   u_tet_.NewAthenaArray(4, pmb->ncells1);
+  dt_.NewAthenaArray(pmb->ncells1);
   dtau_.NewAthenaArray(pmb->ncells1);
   weight_sum_.NewAthenaArray(pmb->ncells1);
   n_cm_.NewAthenaArray(4, nzeta * npsi, pmb->ncells1);
@@ -1168,7 +1169,7 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
           }
         }
 
-        // Calculate fluid velocity in tetrad frame
+        // Calculate fluid velocity in tetrad frame, as well as time steps
         for (int i = is; i <= ie; ++i) {
           Real uu1 = prim_hydro(IVX,k,j,i);
           Real uu2 = prim_hydro(IVY,k,j,i);
@@ -1186,6 +1187,7 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
           u_tet_(3,i) = norm_to_tet_(3,0,k,j,i) * uu0 + norm_to_tet_(3,1,k,j,i) * uu1
               + norm_to_tet_(3,2,k,j,i) * uu2 + norm_to_tet_(3,3,k,j,i) * uu3;
           Real u0 = uu0 * std::sqrt(-gi_(I00,i));
+          dt_(i) = dt;
           dtau_(i) = dt / u0;
         }
 
@@ -1220,7 +1222,7 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
         }
 
         // Calculate radiation-fluid coupling in fluid frame
-        Coupling(prim_hydro, n_cm_, n0_, omega_cm_, dtau_, k, j, intensity_cm_);
+        Coupling(prim_hydro, n_cm_, n0_, omega_cm_, dt_, dtau_, k, j, intensity_cm_);
 
         // Apply radiation-fluid coupling to radiation in coordinate frame
         for (int l = zs; l <= ze; ++l) {

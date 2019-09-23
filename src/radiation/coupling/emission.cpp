@@ -36,6 +36,8 @@ bool FourthPolyRoot(const Real coef4, const Real tconst, Real &root);
 //   omega: fractional solid angle (normalized to 1) in fluid frame:
 //     index 0: angle (0 through nzeta * npsi - 1)
 //     index 1: i
+//   dt: coordinate time interval over which coupling should be applied:
+//     index 0: i
 //   dtau: fluid proper time interval over which coupling should be applied:
 //     index 0: i
 //   k, j: x3- and x2-indices
@@ -49,11 +51,13 @@ bool FourthPolyRoot(const Real coef4, const Real tconst, Real &root);
 //   n^0 is -u_\mu n^\mu, which is equal to gamma * (1 - v \dot n) in SR.
 //   n^1/n^0 is the cosine of the angle the direction makes with the fluid-frame
 //       x-direction, and similarly for n^2/n^0 and n^3/n^0.
+//   dt and dtau are related according to dt = u^0 * dtau, where u^0 is the time component
+//       of the fluid 4-velocity in the coordinate frame.
 
 void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
     const AthenaArray<Real> &normal, const AthenaArray<Real> &n0,
-    const AthenaArray<Real> &omega, const AthenaArray<Real> &dtau, int k, int j,
-    AthenaArray<Real> &intensity) {
+    const AthenaArray<Real> &omega, const AthenaArray<Real> &dt,
+    const AthenaArray<Real> &dtau, int k, int j, AthenaArray<Real> &intensity) {
 
   // Prepare to go through cells
   Real gamma = pmy_block->peos->GetGamma();
