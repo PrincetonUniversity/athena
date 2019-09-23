@@ -29,11 +29,8 @@
 //! \fn Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost)
 //  \brief Multigrid constructor
 
-Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost) {
-  pmy_driver_=pmd;
-  pmy_block_=pmb;
-  ngh_=nghost;
-  nvar_=invar;
+Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost) : 
+  pmy_driver_(pmd), pmy_block_(pmb), ngh_(nghost), nvar_(invar), defscale_(1.0) {
   if (pmy_block_ != nullptr) {
     loc_ = pmy_block_->loc;
     size_ = pmy_block_->block_size;
@@ -233,6 +230,27 @@ void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh) {
       for (int j=ngh-sngh, mj=ngh_-sngh; mj<=je; ++j, ++mj) {
         for (int i=ngh-sngh, mi=ngh_-sngh; mi<=ie; ++i, ++mi)
           dst(ndst,k,j,i)=src(v,mk,mj,mi);
+      }
+    }
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::RetrieveDefect(AthenaArray<Real> &dst, int ns, int ngh)
+//  \brief Set the defect, including the ghost zone
+
+void Multigrid::RetrieveDefect(AthenaArray<Real> &dst, int ns, int ngh) {
+  const AthenaArray<Real> &src=def_[nlevel_-1];
+  int sngh=std::min(ngh_,ngh);
+  int ie=size_.nx1+ngh_+sngh-1, je=size_.nx2+ngh_+sngh-1, ke=size_.nx3+ngh_+sngh-1;
+  for (int v=0; v<nvar_; ++v) {
+    int ndst=ns+v;
+    for (int k=ngh-sngh, mk=ngh_-sngh; mk<=ke; ++k, ++mk) {
+      for (int j=ngh-sngh, mj=ngh_-sngh; mj<=je; ++j, ++mj) {
+        for (int i=ngh-sngh, mi=ngh_-sngh; mi<=ie; ++i, ++mi)
+          dst(ndst,k,j,i)=src(v,mk,mj,mi)*defscale_;
       }
     }
   }
@@ -478,7 +496,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
       }
     }
   }
-  return norm*dx*dy*dz;
+  return norm*dx*dy*dz*defscale_;
 }
 
 

@@ -78,6 +78,7 @@ class Multigrid {
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
   void RestrictFMGSource();
   void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh);
+  void RetrieveDefect(AthenaArray<Real> &dst, int ns, int ngh);
   void ZeroClearData();
   void RestrictBlock();
   void ProlongateAndCorrectBlock();
@@ -131,6 +132,7 @@ class Multigrid {
   RegionSize size_;
   int nlevel_, ngh_, nvar_, current_level_;
   Real rdx_, rdy_, rdz_;
+  Real defscale_;
   AthenaArray<Real> *u_, *def_, *src_, *uold_;
 
  private:

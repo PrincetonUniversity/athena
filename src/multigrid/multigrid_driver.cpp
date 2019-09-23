@@ -37,8 +37,8 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
     nvar_(invar), maxreflevel_(pm->max_level-pm->root_level),
     mode_(0), // 0: V(1,1) FMG one sweep, 1: FMG + iterative, 2: V(1,1) iterative
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
-    fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0), cbuf_(nvar_,3,3,3),
-    cbufold_(nvar_,3,3,3) {
+    fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0),
+    cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3) {
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl

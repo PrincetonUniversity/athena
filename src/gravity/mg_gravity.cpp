@@ -77,6 +77,7 @@ MGGravityDriver::~MGGravityDriver() {
 MGGravity::MGGravity(MultigridDriver *pmd, MeshBlock *pmb) : Multigrid(pmd, pmb, 1, 1) {
   btype = BoundaryQuantity::mggrav;
   btypef = BoundaryQuantity::mggrav_f;
+  defscale_ = rdx_*rdx_;
   if (pmy_block_ != nullptr)
     pmgbval = new MGGravityBoundaryValues(this, pmy_block_->pbval->block_bcs);
   else
@@ -128,6 +129,7 @@ void MGGravityDriver::Solve(int stage) {
   for (Multigrid* pmg : vmg_) {
     Gravity *pgrav = pmg->pmy_block_->pgrav;
     pmg->RetrieveResult(pgrav->phi, 0, NGHOST);
+    pmg->RetrieveDefect(pmg->pmy_block_->phydro->u, IVZ, NGHOST);
     pgrav->grav_mean_rho = mean_rho;
   }
   return;
