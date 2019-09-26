@@ -9,6 +9,8 @@
 // C headers
 
 // C++ headers
+#include <algorithm>  // std::binary_search
+#include <vector>     // std::vector
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -388,6 +390,137 @@ void MeshBlock::WeightedAve(FaceField &b_out, FaceField &b_in1, FaceField &b_in2
               b_out.x3f(k,j,i) *= wght[0];
             }
           }
+        }
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn  void WeightedAve::WeightedAve_STS
+//  \brief Compute weighted average of AthenaArrays in STS.
+
+void MeshBlock::WeightedAve_STS(AthenaArray<Real> &u_out,
+                                AthenaArray<Real> &u_in1, AthenaArray<Real> &u_in2,
+                                AthenaArray<Real> &u_in3, AthenaArray<Real> &u_in4,
+                                const Real wght[4]) {
+  const int nu = u_out.GetDim4() - 1;
+
+  // u_in2 may be an unallocated AthenaArray if using a 2S time integrator
+  if (wght[2] != 0.0 || wght[3] != 0.0) { // RKL2
+    for (int n=0; n<=nu; ++n) {
+      for (int k=ks; k<=ke; ++k) {
+        for (int j=js; j<=je; ++j) {
+#pragma omp simd
+          for (int i=is; i<=ie; ++i) {
+            u_out(n,k,j,i) = wght[0]*u_in1(n,k,j,i)
+                             + wght[1]*u_in2(n,k,j,i)
+                             + wght[2]*u_in3(n,k,j,i)
+                             + wght[3]*u_in4(n,k,j,i);
+          }
+        }
+      }
+    }
+  } else { // RKL1
+    for (int n=0; n<=nu; ++n) {
+      for (int k=ks; k<=ke; ++k) {
+        for (int j=js; j<=je; ++j) {
+#pragma omp simd
+          for (int i=is; i<=ie; ++i) {
+            u_out(n,k,j,i) = wght[0]*u_in1(n,k,j,i)
+                             + wght[1]*u_in2(n,k,j,i);
+          }
+        }
+      }
+    }
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn  void MeshBlock::WeightedAve_STS
+//  \brief Compute weighted average of face-averaged B in STS integrator step
+
+void MeshBlock::WeightedAve_STS(FaceField &b_out,
+                                FaceField &b_in1, FaceField &b_in2,
+                                FaceField &b_in3, FaceField &b_in4,
+                                const Real wght[4]) {
+  int jl=js; int ju=je+1;
+  // move these limit modifications outside the loop
+  if (pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
+      || pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar_wedge)
+    jl=js+1;
+  if (pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar
+      || pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar_wedge)
+    ju=je;
+
+  if (wght[2] != 0.0 || wght[3] != 0.0) { // RKL2
+    //---- B1
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+#pragma omp simd
+        for (int i=is; i<=ie+1; ++i) {
+          b_out.x1f(k,j,i) = wght[0]*b_in1.x1f(k,j,i)
+                             + wght[1]*b_in2.x1f(k,j,i)
+                             + wght[2]*b_in3.x1f(k,j,i)
+                             + wght[3]*b_in4.x1f(k,j,i);
+        }
+      }
+    }
+    //---- B2
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+        for (int i=is; i<=ie; ++i) {
+          b_out.x2f(k,j,i) = wght[0]*b_in1.x2f(k,j,i)
+                              + wght[1]*b_in2.x2f(k,j,i)
+                              + wght[2]*b_in3.x2f(k,j,i)
+                              + wght[3]*b_in4.x2f(k,j,i);
+        }
+      }
+    }
+    //---- B3
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je; ++j) {
+#pragma omp simd
+        for (int i=is; i<=ie; ++i) {
+          b_out.x3f(k,j,i) = wght[0]*b_in1.x3f(k,j,i)
+                             + wght[1]*b_in2.x3f(k,j,i)
+                             + wght[2]*b_in3.x3f(k,j,i)
+                             + wght[3]*b_in4.x3f(k,j,i);
+        }
+      }
+    }
+  } else { // RKL1
+    //---- B1
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+#pragma omp simd
+        for (int i=is; i<=ie+1; ++i) {
+          b_out.x1f(k,j,i) = wght[0]*b_in1.x1f(k,j,i)
+                             + wght[1]*b_in2.x1f(k,j,i);
+        }
+      }
+    }
+    //---- B2
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+        for (int i=is; i<=ie; ++i) {
+          b_out.x2f(k,j,i) = wght[0]*b_in1.x2f(k,j,i)
+                             + wght[1]*b_in2.x2f(k,j,i);
+        }
+      }
+    }
+    //---- B3
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je; ++j) {
+#pragma omp simd
+        for (int i=is; i<=ie; ++i) {
+          b_out.x3f(k,j,i) = wght[0]*b_in1.x3f(k,j,i)
+                             + wght[1]*b_in2.x3f(k,j,i);
         }
       }
     }

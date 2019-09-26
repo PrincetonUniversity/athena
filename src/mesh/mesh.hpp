@@ -132,6 +132,15 @@ class MeshBlock {
                    AthenaArray<Real> &u_in2, const Real wght[3]);
   void WeightedAve(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
                    const Real wght[3]);
+  void WeightedAve_STS(AthenaArray<Real> &u_out,
+                       AthenaArray<Real> &u_in1, AthenaArray<Real> &u_in2,
+                       AthenaArray<Real> &u_in3, AthenaArray<Real> &u_in4,
+                       const Real wght[4]);
+  void WeightedAve_STS(FaceField &b_out,
+                       FaceField &b_in1, FaceField &b_in2,
+                       FaceField &b_in3, FaceField &b_in4,
+                       const Real wght[4]);
+
 
   // inform MeshBlock which arrays contained in member Hydro, Field, Particles,
   // ... etc. classes are the "primary" representations of a quantity. when registered,
@@ -223,7 +232,10 @@ class Mesh {
   const FluidFormulation fluid_setup;
   Real start_time, time, tlim, dt, dt_hyperbolic, dt_parabolic, dt_user, cfl_number;
   int nlim, ncycle, ncycle_out, dt_diagnostics;
-  Real muj, nuj, muj_tilde;
+  std::string sts_integrator;
+  Real sts_max_dt_ratio;
+  int sts_loc;
+  Real muj, nuj, muj_tilde, gammaj_tilde;
   int nbtotal, nbnew, nbdel;
 
   int step_since_lb;

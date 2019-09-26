@@ -433,15 +433,23 @@ int main(int argc, char *argv[]) {
       pmesh->OutputCycleDiagnostics();
 
     if (STS_ENABLED) {
+      pmesh->sts_loc = OP_SPLIT_BEFORE;
       // compute nstages for this STS
-      Real my_dt = pmesh->dt;
-      Real dt_parabolic  = pmesh->dt_parabolic;
-      pststlist->nstages =
-          static_cast<int>(0.5*(-1. + std::sqrt(1. + 8.*my_dt/dt_parabolic))) + 1;
-
+      if (pmesh->sts_integrator == "rkl2") {
+        pststlist->nstages =
+            static_cast<int>
+              (0.5*(-1. + std::sqrt(9. + 16.*(0.5*pmesh->dt)/pmesh->dt_parabolic))) + 1;
+      } else { // rkl1, default
+        pststlist->nstages =
+            static_cast<int>
+              (0.5*(-1. + std::sqrt(1. + 8.*pmesh->dt/pmesh->dt_parabolic))) + 1;
+      }
+      if (pststlist->nstages % 2 == 0) { // guarantee odd nstages for STS
+        pststlist->nstages += 1;
+      }
       // take super-timestep
       for (int stage=1; stage<=pststlist->nstages; ++stage)
-        pststlist->DoTaskListOneStage(pmesh,stage);
+        pststlist->DoTaskListOneStage(pmesh, stage);
     }
 
     if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
@@ -454,6 +462,13 @@ int main(int argc, char *argv[]) {
       ptlist->DoTaskListOneStage(pmesh, stage);
     }
 
+    if (STS_ENABLED && pmesh->sts_integrator == "rkl2") {
+      pmesh->sts_loc = OP_SPLIT_AFTER;
+      // take super-timestep
+      for (int stage=1; stage<=pststlist->nstages; ++stage)
+        pststlist->DoTaskListOneStage(pmesh, stage);
+    }
+
     pmesh->UserWorkInLoop();
 
     pmesh->ncycle++;
@@ -464,6 +479,7 @@ int main(int argc, char *argv[]) {
     pmesh->LoadBalancingAndAdaptiveMeshRefinement(pinput);
 
     pmesh->NewTimeStep();
+
 #ifdef ENABLE_EXCEPTIONS
     try {
 #endif

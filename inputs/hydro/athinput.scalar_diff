@@ -1,10 +1,11 @@
 <comment>
-problem   = viscous diffusion
+problem   = scalar diffusion
 reference =
-configure = --prob=visc --eos=isothermal (-sts)
+configure = --prob=scalar_diffusion --eos=isothermal
+            --nscalars=1 (-sts)
 
 <job>
-problem_id = visc  # problem ID: basename of output filenames
+problem_id = sclr_diff  # problem ID: basename of output filenames
 
 <output1>
 file_type = hst   # History data dump
@@ -12,7 +13,7 @@ dt        = 0.01  # time increment between outputs
 
 <output2>
 file_type   = tab      # tab data dump
-variable    = v2       # variable(s) to output
+variable    = r0       # variable(s) to output
 data_format = %24.16e  # output precision
 dt          = 0.01     # time increment between outputs
 
@@ -50,7 +51,7 @@ refinement  = None
 iso_sound_speed = 1.0  # isothermal sound speed
 
 <problem>
-amp    = 1.e-6  # amplitude of Gaussian velocity distr
-iprob  = 0      # 0: 1-D, 1: 2-D
-nu_iso = 0.25   # isotropic viscosity coefficient
-t0     = 0.5    # intial time for Gaussian distr
+amp    = 1.e-6        # amplitude of Gaussian velocity distr.
+iprob  = 0            # 0: 1-D, 1: 2-D, 2: 3-D
+nu_scalar_iso = 0.25  # scalar diffusion coefficient
+t0     = 0.5          # intial time for Gaussian distr

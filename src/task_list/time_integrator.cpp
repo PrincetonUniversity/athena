@@ -365,13 +365,17 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     // everything else
     AddTask(PHY_BVAL,CONS2PRIM);
-    AddTask(USERWORK,PHY_BVAL);
-    AddTask(NEW_DT,USERWORK);
-    if (pm->adaptive) {
-      AddTask(FLAG_AMR,USERWORK);
-      AddTask(CLEAR_ALLBND,FLAG_AMR);
+    if (!STS_ENABLED || pm->sts_integrator == "rkl1") {
+      AddTask(USERWORK,PHY_BVAL);
+      AddTask(NEW_DT,USERWORK);
+      if (pm->adaptive) {
+        AddTask(FLAG_AMR,USERWORK);
+        AddTask(CLEAR_ALLBND,FLAG_AMR);
+      } else {
+        AddTask(CLEAR_ALLBND,NEW_DT);
+      }
     } else {
-      AddTask(CLEAR_ALLBND,NEW_DT);
+      AddTask(CLEAR_ALLBND,PHY_BVAL);
     }
   } // end of using namespace block
 }
@@ -658,7 +662,7 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     Real time = pmb->pmy_mesh->time+dt;
     pmb->pbval->ComputeShear(time);
   }
-  pmb->pbval->StartReceiving(BoundaryCommSubset::all);
+  pmb->pbval->StartReceivingSubset(BoundaryCommSubset::all, pmb->pbval->bvars_main_int);
 
   return;
 }
@@ -667,7 +671,8 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 // Functions to end MPI communication
 
 TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
-  pmb->pbval->ClearBoundary(BoundaryCommSubset::all);
+  pmb->pbval->ClearBoundarySubset(BoundaryCommSubset::all,
+                                  pmb->pbval->bvars_main_int);
   return TaskStatus::success;
 }
 
@@ -1039,7 +1044,7 @@ TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
     Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-    pbval->ProlongateBoundaries(t_end_stage, dt);
+    pbval->ProlongateBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
   } else {
     return TaskStatus::fail;
   }
@@ -1124,7 +1129,7 @@ TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
     if (NSCALARS > 0)
       ps->sbvar.var_cc = &(ps->r);
-    pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
+    pbval->ApplyPhysicalBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
   } else {
     return TaskStatus::fail;
   }
@@ -1189,6 +1194,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveScalarFlux(MeshBlock *pmb, int stage) 
 
 TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
   PassiveScalars *ps = pmb->pscalars;
+
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to
     // IntegrateHydro, IntegrateField

@@ -104,6 +104,8 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   std::vector<BoundaryVariable *> bvars;
   // subset of bvars that are exchanged in the main TimeIntegratorTaskList
   std::vector<BoundaryVariable *> bvars_main_int;
+  // subset of bvars that are exchanged in the SuperTimeStepTaskList
+  std::vector<BoundaryVariable *> bvars_sts;
 
   // inherited functions (interface shared with BoundaryVariable objects):
   // ------
@@ -111,17 +113,22 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void SetupPersistentMPI() final; // setup MPI requests
 
   // called before and during time-stepper:
-  void StartReceiving(BoundaryCommSubset phase) final;
-  void ClearBoundary(BoundaryCommSubset phase) final;
-
+  void StartReceiving(BoundaryCommSubset phase) final {return;};
+  void ClearBoundary(BoundaryCommSubset phase) final {return;};
   void StartReceivingShear(BoundaryCommSubset phase) final;
   void ComputeShear(const Real time) final;
 
   // non-inhertied / unique functions (do not exist in BoundaryVariable objects):
   // (these typically involve a coupled interaction of boundary variable/quantities)
   // ------
-  void ApplyPhysicalBoundaries(const Real time, const Real dt);
-  void ProlongateBoundaries(const Real time, const Real dt);
+  void StartReceivingSubset(BoundaryCommSubset phase,
+                            std::vector<BoundaryVariable *> bvars_subset);
+  void ClearBoundarySubset(BoundaryCommSubset phase,
+                           std::vector<BoundaryVariable *> bvars_subset);
+  void ApplyPhysicalBoundaries(const Real time, const Real dt,
+                               std::vector<BoundaryVariable *> bvars_subset);
+  void ProlongateBoundaries(const Real time, const Real dt,
+                            std::vector<BoundaryVariable *> bvars_subset);
 
   // compute the shear at each integrator stage
   // TODO(felker): consider making this fn private again if calling within StartRecv()
@@ -175,14 +182,16 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int nk, int nj, int ni);
   void ApplyPhysicalBoundariesOnCoarseLevel(
       const NeighborBlock& nb, const Real time, const Real dt,
-      int si, int ei, int sj, int ej, int sk, int ek);
+      int si, int ei, int sj, int ej, int sk, int ek,
+      std::vector<BoundaryVariable *> bvars_subset);
   void ProlongateGhostCells(const NeighborBlock& nb,
                             int si, int ei, int sj, int ej, int sk, int ek);
 
   void DispatchBoundaryFunctions(
       MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
       int il, int iu, int jl, int ju, int kl, int ku, int ngh,
-      AthenaArray<Real> &prim, FaceField &b, BoundaryFace face);
+      AthenaArray<Real> &prim, FaceField &b, BoundaryFace face,
+      std::vector<BoundaryVariable *> bvars_subset);
 
   void CheckPolarBoundaries();  // called in BoundaryValues() ctor
 
