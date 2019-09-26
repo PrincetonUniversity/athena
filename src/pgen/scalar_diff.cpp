@@ -31,10 +31,6 @@
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
 
-#if !(NSCALARS == 1)
-#error "This problem generator requires one scalar"
-#endif
-
 Real threshold;
 
 int RefinementCondition(MeshBlock *pmb);
@@ -227,33 +223,37 @@ int RefinementCondition(MeshBlock *pmb) {
   int f2 = pmb->pmy_mesh->f2, f3 = pmb->pmy_mesh->f3;
   AthenaArray<Real> &r = pmb->pscalars->r;
   Real maxeps = 0.;
-  if (f3) {
-    for (int k=pmb->ks-1; k<=pmb->ke+1; k++) {
+  if (NSCALARS > 0) {
+    if (f3) {
+      for (int k=pmb->ks-1; k<=pmb->ke+1; k++) {
+        for (int j=pmb->js-1; j<=pmb->je+1; j++) {
+          for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
+            Real eps = std::sqrt(SQR(0.5*(r(0,k,j,i+1) - r(0,k,j,i-1)))
+                                 + SQR(0.5*(r(0,k,j+1,i) - r(0,k,j-1,i)))
+                                 + SQR(0.5*(r(0,k+1,j,i) - r(0,k-1,j,i))));
+            maxeps = std::max(maxeps, eps);
+          }
+        }
+      }
+    } else if (f2) {
+      int k = pmb->ks;
       for (int j=pmb->js-1; j<=pmb->je+1; j++) {
         for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
           Real eps = std::sqrt(SQR(0.5*(r(0,k,j,i+1) - r(0,k,j,i-1)))
-                               + SQR(0.5*(r(0,k,j+1,i) - r(0,k,j-1,i)))
-                               + SQR(0.5*(r(0,k+1,j,i) - r(0,k-1,j,i))));
+                               + SQR(0.5*(r(0,k,j+1,i) - r(0,k,j-1,i))));
           maxeps = std::max(maxeps, eps);
         }
       }
-    }
-  } else if (f2) {
-    int k = pmb->ks;
-    for (int j=pmb->js-1; j<=pmb->je+1; j++) {
+    } else {
+      int k = pmb->ks;
+      int j = pmb->js;
       for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
-        Real eps = std::sqrt(SQR(0.5*(r(0,k,j,i+1) - r(0,k,j,i-1)))
-                             + SQR(0.5*(r(0,k,j+1,i) - r(0,k,j-1,i))));
+        Real eps = std::sqrt(SQR(0.5*(r(0,k,j,i+1) - r(0,k,j,i-1))));
         maxeps = std::max(maxeps, eps);
       }
     }
   } else {
-    int k = pmb->ks;
-    int j = pmb->js;
-    for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
-      Real eps = std::sqrt(SQR(0.5*(r(0,k,j,i+1) - r(0,k,j,i-1))));
-      maxeps = std::max(maxeps, eps);
-    }
+    return 0;
   }
 
   if (maxeps > threshold) return 1;
