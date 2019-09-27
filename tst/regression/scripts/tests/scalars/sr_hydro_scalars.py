@@ -8,14 +8,15 @@ import scripts.utils.athena as athena
 sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
-logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
+# set logger name based on module
+logger = logging.getLogger('athena' + __name__[7:])
 
 
 # Prepare Athena++
 def prepare(**kwargs):
     logger.debug('Running test ' + __name__)
     athena.configure('s', prob='gr_shock_tube', coord='cartesian', flux='hllc',
-            nscalars='1', **kwargs)
+                     nscalars='1', **kwargs)
     athena.make()
 
 
