@@ -14,7 +14,7 @@ sys.path.insert(0, '../../vis/python')
 import athena_read  # noqa
 athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
-_fluxes = ['hlle', 'hllc']
+_fluxes = ['hllc']
 _exec = os.path.join('bin', 'athena')
 
 _tests = [[1e-07, 0.00, 0.150, 1.25e-8, 0., 0.062, .25],
@@ -75,24 +75,23 @@ def analyze():
     for flux in _fluxes:
         for n, state in enumerate(_states):
             # the double shock tests are too hard for hlle
-            if (flux != 'hlle') or (n not in [2, 3]):
-                t = 1
-                fn = 'bin/eos_riemann_{0:}_{1:02d}.block0.out1.{2:05d}.vtk'
-                x_ref, _, _, data_ref = athena_read.vtk(fn.format(flux, n, t))
-                xi = (.5 * x_ref[:-1] + .5 * x_ref[1:]) / _tests[n]['time/tlim']
-                exact = riemann_problem(state, 'H').data_array(xi)
-                for var in ['rho', 'press', 'vel']:
-                    data = data_ref[var][0, 0, :]
-                    if var == 'vel':
-                        data = data_ref[var][0, 0, :, 0]
-                    diff = comparison.l1_norm(x_ref, data - exact[var])
-                    msg = 'Test#, var, diff, thresh = ' + '{:d}, {:>5}' + ', {:.03e}' * 2
-                    msg = msg.format(n + 1, var, diff, _thresh[n][var])
-                    msg = ['EOS Riemann ({0:})'.format(flux), 'FAIL:', msg]
-                    if diff > _thresh[n][var]:
-                        logger.warning(' '.join(msg))
-                        analyze_status = False
-                    else:
-                        msg[1] = 'pass:'
-                        logger.debug(' '.join(msg))
+            t = 1
+            fn = 'bin/eos_riemann_{0:}_{1:02d}.block0.out1.{2:05d}.vtk'
+            x_ref, _, _, data_ref = athena_read.vtk(fn.format(flux, n, t))
+            xi = (.5 * x_ref[:-1] + .5 * x_ref[1:]) / _tests[n]['time/tlim']
+            exact = riemann_problem(state, 'H').data_array(xi)
+            for var in ['rho', 'press', 'vel']:
+                data = data_ref[var][0, 0, :]
+                if var == 'vel':
+                    data = data_ref[var][0, 0, :, 0]
+                diff = comparison.l1_norm(x_ref, data - exact[var])
+                msg = 'Test#, var, diff, thresh = ' + '{:d}, {:>5}' + ', {:.03e}' * 2
+                msg = msg.format(n + 1, var, diff, _thresh[n][var])
+                msg = ['EOS Riemann ({0:})'.format(flux), 'FAIL:', msg]
+                if diff > _thresh[n][var]:
+                    logger.warning(' '.join(msg))
+                    analyze_status = False
+                else:
+                    msg[1] = 'pass:'
+                    logger.debug(' '.join(msg))
     return analyze_status
