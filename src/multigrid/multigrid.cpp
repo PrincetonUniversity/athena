@@ -392,7 +392,7 @@ void Multigrid::CalculateFASRHSBlock() {
 void Multigrid::SetFromRootGrid(bool folddata) {
   current_level_=0;
   AthenaArray<Real> &dst = u_[current_level_];
-  int lev = loc_.level - (pmy_driver_->nrootlevel_ - 1);
+  int lev = loc_.level - pmy_driver_->locrootlevel_;
   if (lev == 0) { // from the root grid
     int ci = static_cast<int>(loc_.lx1);
     int cj = static_cast<int>(loc_.lx2);
@@ -424,7 +424,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
     oloc.lx2 = (loc_.lx2 >> 1);
     oloc.lx3 = (loc_.lx3 >> 1);
     oloc.level = loc_.level - 1;
-    int olev = oloc.level - (pmy_driver_->nrootlevel_ - 1);
+    int olev = oloc.level - pmy_driver_->locrootlevel_;
     int oid = pmy_driver_->octetmap_[olev][oloc];
     int ci = (static_cast<int>(loc_.lx1)&1);
     int cj = (static_cast<int>(loc_.lx2)&1);

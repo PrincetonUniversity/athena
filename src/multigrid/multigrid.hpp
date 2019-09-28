@@ -200,7 +200,7 @@ class MultigridDriver {
 
  protected:
   int nranks_, nvar_, mode_;
-  int nrootlevel_, nmblevel_, ntotallevel_, nreflevel_, maxreflevel_;
+  int locrootlevel_, nrootlevel_, nmblevel_, ntotallevel_, nreflevel_, maxreflevel_;
   int current_level_, fmglevel_;
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *nvlisti_, *nvslisti_, *ranklist_;
   int nrbx1_, nrbx2_, nrbx3_;
