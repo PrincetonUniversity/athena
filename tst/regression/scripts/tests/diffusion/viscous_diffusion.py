@@ -25,8 +25,7 @@ rate_tols = [-1.99]
 
 def prepare(*args, **kwargs):
     logger.debug('Running test ' + __name__)
-    athena.configure(prob='visc', *args,
-                     eos='isothermal', **kwargs)
+    athena.configure(prob='visc', *args, **kwargs)
     athena.make()
 
 
@@ -48,6 +47,7 @@ def run(**kwargs):
                          'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
                          'mesh/nx3=1', 'mesh/x3min=-1.0', 'mesh/x3max=1.0',
                          'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
+                         'hydro/gamma=1.000000000001',
                          'hydro/iso_sound_speed=1.0',
                          'problem/amp={}'.format(_amp), 'problem/iprob=0',
                          'problem/t0={}'.format(_t0),

@@ -50,12 +50,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real r, phi;
   Real v1 = 0., v2 = 0., v3 = 0.;
   Real d0 = 1.;
+  Real p0 = 1.;
   int iprob = pin->GetOrAddInteger("problem", "iprob", 0);
   Real amp = pin->GetOrAddReal("problem", "amp", 1.e-6);
   Real t0 = pin->GetOrAddReal("problem", "t0", 0.5);
   Real nu_iso = pin->GetOrAddReal("problem", "nu_iso", 0.25);
   Real x10 = pin->GetOrAddReal("problem", "x10", 0.);
   Real x20 = pin->GetOrAddReal("problem", "x20", 0.);
+  Real gamma = peos->GetGamma();
+  Real gm1 = gamma - 1.0;
 
   if (iprob == 0) { // 1-D diffusion
     if (std::strcmp(COORDINATE_SYSTEM, "cartesian") != 0) {
@@ -75,6 +78,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                                  * std::exp(-(std::pow(x1-x10,2.))
                                             / (4.*nu_iso*t0));
           phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*v3;
+          if (NON_BAROTROPIC_EOS) {
+            phydro->u(IEN,k,j,i) =
+                p0/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
+                              SQR(phydro->u(IM2,k,j,i)) +
+                              SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
+          }
         }
       }
     }
@@ -93,6 +102,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                                    * std::exp(-(std::pow(x1-x10,2.)
                                                 + std::pow(x2-x20,2.))
                                               / (4.*nu_iso*t0));
+            if (NON_BAROTROPIC_EOS) {
+              phydro->u(IEN,k,j,i) =
+                  p0/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
+                                SQR(phydro->u(IM2,k,j,i)) +
+                                SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
+            }
           } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
             r = pcoord->x1v(i);
             phi = pcoord->x2v(j);
@@ -106,6 +121,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                                    * std::exp(-(std::pow(x1-x10,2.)
                                                 + std::pow(x2-x20,2.))
                                               / (4.*nu_iso*t0));
+            if (NON_BAROTROPIC_EOS) {
+              phydro->u(IEN,k,j,i) =
+                  p0/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
+                                SQR(phydro->u(IM2,k,j,i)) +
+                                SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
+            }
           } else {
             std::stringstream msg;
             msg << "### FATAL ERROR in visc.cpp ProblemGenerator" << std::endl

@@ -47,7 +47,8 @@ ox3_bc = periodic  # Outer-X3 boundary condition flag
 refinement  = None
 
 <hydro>
-iso_sound_speed = 1.0  # isothermal sound speed
+gamma           = 1.000000000001  # adiabatic index
+iso_sound_speed = 1.0             # isothermal sound speed
 
 <problem>
 amp    = 1.e-6  # amplitude of Gaussian velocity distr
