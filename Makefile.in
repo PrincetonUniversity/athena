@@ -55,6 +55,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/scalars/*.cpp) \
 	     $(wildcard src/task_list/*.cpp) \
 	     $(wildcard src/utils/*.cpp) \
+	     $(wildcard src/wave/*.cpp) \
 	     $(MPIFFT_FILE)
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))

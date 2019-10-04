@@ -57,6 +57,9 @@
 // enable general relativity? default=0 (false)
 #define GENERAL_RELATIVITY @GENERAL_RELATIVITY@
 
+// evolve the wave equation? default=0 (false)
+#define WAVE_ENABLED @WAVE_ENABLED@
+
 // enable GR frame transformations? default=0 (false)
 #define FRAME_TRANSFORMATIONS @FRAME_TRANSFORMATIONS@
 

@@ -41,6 +41,13 @@ void ShowConfig() {
   } else {
     std::cout<<"  General relativity:         OFF " << std::endl;
   }
+
+  if (WAVE_ENABLED) {
+    std::cout<<"  Wave equation:              ON" << std::endl;
+  } else {
+    std::cout<<"  Wave equation:              OFF" << std::endl;
+  }
+
   // configure.py output: "Frame transformations"
   if (SELF_GRAVITY_ENABLED == 1) {
     std::cout<<"  Self-Gravity:               FFT" << std::endl;

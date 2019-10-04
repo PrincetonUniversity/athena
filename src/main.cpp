@@ -70,6 +70,7 @@ int main(int argc, char *argv[]) {
 
   //--- Step 1. --------------------------------------------------------------------------
   // Initialize MPI environment, if necessary
+  printf("->main Step 1\n");
 
 #ifdef MPI_PARALLEL
 #ifdef OPENMP_PARALLEL
@@ -116,6 +117,7 @@ int main(int argc, char *argv[]) {
 
   //--- Step 2. --------------------------------------------------------------------------
   // Check for command line options and respond.
+  printf("->main Step 2\n");
 
   for (int i=1; i<argc; i++) {
     // If argv[i] is a 2 character string of the form "-?" then:
@@ -216,6 +218,7 @@ int main(int argc, char *argv[]) {
   //--- Step 3. --------------------------------------------------------------------------
   // Construct object to store input parameters, then parse input file and command line.
   // With MPI, the input is read by every process in parallel using MPI-IO.
+  printf("->main Step 3\n");
 
   ParameterInput *pinput;
   IOWrapper infile, restartfile;
@@ -262,6 +265,7 @@ int main(int argc, char *argv[]) {
 
   //--- Step 4. --------------------------------------------------------------------------
   // Construct and initialize Mesh
+  printf("->main Step 4\n");
 
   Mesh *pmesh;
 #ifdef ENABLE_EXCEPTIONS
@@ -319,9 +323,9 @@ int main(int argc, char *argv[]) {
 #endif
     return(0);
   }
-
   //--- Step 5. --------------------------------------------------------------------------
   // Construct and initialize TaskList
+  printf("->main Step 5\n");
 
   TimeIntegratorTaskList *ptlist;
 #ifdef ENABLE_EXCEPTIONS
@@ -361,6 +365,7 @@ int main(int argc, char *argv[]) {
 
   //--- Step 6. --------------------------------------------------------------------------
   // Set initial conditions by calling problem generator, or reading restart file
+  printf("->main Step 6\n");
 
 #ifdef ENABLE_EXCEPTIONS
   try {
@@ -387,6 +392,7 @@ int main(int argc, char *argv[]) {
 
   //--- Step 7. --------------------------------------------------------------------------
   // Change to run directory, initialize outputs object, and make output of ICs
+  printf("->main Step 7\n");
 
   Outputs *pouts;
 #ifdef ENABLE_EXCEPTIONS
@@ -417,6 +423,7 @@ int main(int argc, char *argv[]) {
 
   //=== Step 8. === START OF MAIN INTEGRATION LOOP =======================================
   // For performance, there is no error handler protecting this step (except outputs)
+  printf("->main Step 8\n");
 
   if (Globals::my_rank == 0) {
     std::cout << "\nSetup complete, entering main loop...\n" << std::endl;
@@ -500,6 +507,8 @@ int main(int argc, char *argv[]) {
 
   //--- Step 9. --------------------------------------------------------------------------
   // Make the final outputs
+  printf("->main Step 9\n");
+
 #ifdef ENABLE_EXCEPTIONS
   try {
 #endif
@@ -527,6 +536,8 @@ int main(int argc, char *argv[]) {
 
   //--- Step 10. -------------------------------------------------------------------------
   // Print diagnostic messages related to the end of the simulation
+  printf("->main Step 10\n");
+
   if (Globals::my_rank == 0) {
     pmesh->OutputCycleDiagnostics();
     if (SignalHandler::GetSignalFlag(SIGTERM) != 0) {

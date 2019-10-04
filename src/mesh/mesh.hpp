@@ -51,6 +51,8 @@ class EquationOfState;
 class FFTDriver;
 class FFTGravityDriver;
 class TurbulenceDriver;
+// BD: new problem
+class Wave;
 
 FluidFormulation GetFluidFormulation(const std::string& input_string);
 
@@ -69,6 +71,8 @@ class MeshBlock {
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
+  // BD: new problem
+  friend class Wave;
 
  public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
@@ -120,6 +124,9 @@ class MeshBlock {
   MGGravity* pmg;
   PassiveScalars *pscalars;
   EquationOfState *peos;
+
+  // BD: new problem
+  Wave *pwave;
 
   MeshBlock *prev, *next;
 

@@ -18,6 +18,7 @@
 #   -b                enable magnetic fields
 #   -s                enable special relativity
 #   -g                enable general relativity
+#   -w                enable wave equation
 #   -t                enable interface frame transformations for GR
 #   -shear            enable shearing periodic boundary conditions
 #   -debug            enable debug flags (-g -O0); override other compiler options
@@ -135,6 +136,12 @@ parser.add_argument('-g',
                     action='store_true',
                     default=False,
                     help='enable general relativity')
+
+# -w argument
+parser.add_argument("-w",
+                    action='store_true',
+                    default=False,
+                    help='enable wave equation')
 
 # -t argument
 parser.add_argument('-t',
@@ -441,6 +448,12 @@ if args['g']:
     makefile_options['RSOLVER_FILE'] += '_rel'
     if not args['t']:
         makefile_options['RSOLVER_FILE'] += '_no_transform'
+
+# -w argument
+if args['w']:
+  definitions['WAVE_ENABLED'] = '1'
+else:
+  definitions['WAVE_ENABLED'] = '0'
 
 # -shear argument
 if args['shear']:
@@ -801,6 +814,7 @@ print('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF'))
 print('  Number of scalars:          ' + args['nscalars'])
 print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
+print('  Wave equation:              ' + ('ON' if args['w'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:               ' + self_grav_string)
 print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
