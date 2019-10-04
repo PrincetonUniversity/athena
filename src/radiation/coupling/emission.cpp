@@ -87,16 +87,22 @@ void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
     if (using_planck_mean) {
       sigma_p = opacity(OPAP,k,j,i);
     }
-    Real dtcsigmaa = dtau(i) * sigma_a;
-    Real dtcsigmas = dtau(i) * sigma_s;
-    Real dtcsigmap = dtau(i) * sigma_p;
+    Real dtaucsigmaa = dtau(i) * sigma_a;
+    Real dtaucsigmas = dtau(i) * sigma_s;
+    Real dtaucsigmap = dtau(i) * sigma_p;
+      
+    Real dtsigmaa = dt(i) * sigma_a;
+    Real dtsigmas = dt(i) * sigma_s;
+    Real dtsigmap = dt(i) * sigma_p;
+      
 
     // Calculate polynomial coefficients
     Real jr_cm = 0.0;
     Real suma1 = 0.0;
     Real suma2 = 0.0;
     for (int n = 0; n < nang_local; n++) {
-       Real vncsigma = 1.0 / (1.0 + (dtcsigmaa + dtcsigmas) * tran_coef_(n));
+       Real n0_local = n0(n,k,j,i);
+       Real vncsigma = 1.0 / (n0_local + (dtcsigmaa + dtcsigmas) * tran_coef_(n));
        vncsigma2_(n) = tran_coef_(n) * vncsigma;
        Real ir_weight = intensity_scr_(n) * weight_(n);
        jr_cm += ir_weight;
@@ -105,10 +111,10 @@ void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
     }
     Real suma3 = suma1 * (dtcsigmas - dtcsigmap);
     suma1 *= (dtcsigmaa + dtcsigmap);
-    coef[1] = (dtcsigmaa + dtcsigmap - (dtcsigmaa + dtcsigmap) * suma1 / (1.0 - suma3))
-        * (gamma - 1.0) / rho;
+    coef[1] = (dtaucsigmaa + dtaucsigmap - (dtaucsigmaa + dtaucsigmap) * suma1 / (1.0 - suma3))
+        * arad * (gamma - 1.0) / rho;
     coef[0] =
-        -tgas - (dtcsigmaa + dtcsigmap) * suma2 * (gamma - 1.0) / (rho * (1.0 - suma3));
+        -tgas - (dtaucsigmaa + dtaucsigmap) * suma2 * (gamma - 1.0) / (rho * (1.0 - suma3));
 
     // Calculate new gas temperature
     bool badcell = false;
