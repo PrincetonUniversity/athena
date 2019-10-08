@@ -1,0 +1,14 @@
+- /bin
+- /obj
+- /tst
+- .git
+- /outputs
+
+- *.o
+
+- *.athdf
+- *.xdmf
+
+- *.png
+- *.rst
+- *.dat

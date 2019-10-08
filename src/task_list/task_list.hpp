@@ -17,6 +17,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 
+
 // forward declarations
 class Mesh;
 class MeshBlock;
@@ -35,7 +36,7 @@ enum class TaskListStatus {running, stuck, complete, nothing_to_do};
 //  \brief generalization of bit fields for Task IDs, status, and dependencies.
 
 class TaskID {  // POD but not aggregate (there is a user-provided ctor)
- public:
+public:
   TaskID() = default;
   explicit TaskID(unsigned int id);
   void Clear();
@@ -46,9 +47,11 @@ class TaskID {  // POD but not aggregate (there is a user-provided ctor)
   bool operator== (const TaskID& rhs) const;
   TaskID operator| (const TaskID& rhs) const;
 
- private:
+  // BD: debug [shift back to private]
   constexpr static int kNField_ = 1;
   std::uint64_t bitfld_[kNField_];
+  // -BD
+private:
 
   friend class TaskList;
 };
@@ -84,7 +87,7 @@ struct TaskStates { // aggregate and POD
 //  \brief data and function definitions for task list base class
 
 class TaskList {
- public:
+public:
   TaskList() : ntasks(0), nstages(0), task_list_{} {} // 2x direct + zero initialization
   // rule of five:
   virtual ~TaskList() = default;
@@ -97,11 +100,11 @@ class TaskList {
   TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskStates &ts);
   void DoTaskListOneStage(Mesh *pmesh, int stage);
 
- protected:
+protected:
   // TODO(felker): rename to avoid confusion with class name
   Task task_list_[64*TaskID::kNField_];
 
- private:
+private:
   virtual void AddTask(const TaskID& id, const TaskID& dep) = 0;
   virtual void StartupTaskList(MeshBlock *pmb, int stage) = 0;
 };
@@ -111,7 +114,7 @@ class TaskList {
 //  \brief data and function definitions for TimeIntegratorTaskList derived class
 
 class TimeIntegratorTaskList : public TaskList {
- public:
+public:
   TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm);
 
   //--------------------------------------------------------------------------------------
@@ -182,7 +185,7 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus ReceiveScalars(MeshBlock *pmb, int stage);
   TaskStatus SetBoundariesScalars(MeshBlock *pmb, int stage);
 
- private:
+private:
   IntegratorWeight stage_wghts[MAX_NSTAGE];
 
   void AddTask(const TaskID& id, const TaskID& dep) override;
@@ -194,7 +197,7 @@ class TimeIntegratorTaskList : public TaskList {
 //  \brief data and function definitions for SuperTimeStepTaskList derived class
 
 class SuperTimeStepTaskList : public TaskList {
- public:
+public:
   SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist);
   const Real sts_max_dt_ratio;
 
@@ -209,7 +212,7 @@ class SuperTimeStepTaskList : public TaskList {
 
   TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
 
- private:
+private:
   // currently intiialized but unused. May use it for direct calls to TimeIntegrator fns:
   TimeIntegratorTaskList *ptlist_;
   void AddTask(const TaskID&, const TaskID& dep) override;
@@ -222,78 +225,146 @@ class SuperTimeStepTaskList : public TaskList {
 // TODO(felker): uncomment the reserved TASK_NAMES once the features are merged to master
 namespace HydroIntegratorTaskNames {
 
-const TaskID NONE(0);
-const TaskID CLEAR_ALLBND(1);
+  const TaskID NONE(0);
+  const TaskID CLEAR_ALLBND(1);
 
-const TaskID CALC_HYDFLX(2);
-const TaskID CALC_FLDFLX(3);
-const TaskID CALC_RADFLX(4);
-const TaskID CALC_CHMFLX(5);
+  const TaskID CALC_HYDFLX(2);
+  const TaskID CALC_FLDFLX(3);
+  const TaskID CALC_RADFLX(4);
+  const TaskID CALC_CHMFLX(5);
 
-const TaskID SEND_HYDFLX(6);
-const TaskID SEND_FLDFLX(7);
-// const TaskID SEND_RADFLX(8);
-// const TaskID SEND_CHMFLX(9);
+  const TaskID SEND_HYDFLX(6);
+  const TaskID SEND_FLDFLX(7);
+  // const TaskID SEND_RADFLX(8);
+  // const TaskID SEND_CHMFLX(9);
 
-const TaskID RECV_HYDFLX(10);
-const TaskID RECV_FLDFLX(11);
-// const TaskID RECV_RADFLX(12);
-// const TaskID RECV_CHMFLX(13);
+  const TaskID RECV_HYDFLX(10);
+  const TaskID RECV_FLDFLX(11);
+  // const TaskID RECV_RADFLX(12);
+  // const TaskID RECV_CHMFLX(13);
 
-const TaskID SRCTERM_HYD(14);
-// const TaskID SRCTERM_FLD(15);
-// const TaskID SRCTERM_RAD(16);
-// const TaskID SRCTERM_CHM(17);
+  const TaskID SRCTERM_HYD(14);
+  // const TaskID SRCTERM_FLD(15);
+  // const TaskID SRCTERM_RAD(16);
+  // const TaskID SRCTERM_CHM(17);
 
-const TaskID INT_HYD(18);
-const TaskID INT_FLD(19);
-// const TaskID INT_RAD(20);
-// const TaskID INT_CHM(21);
+  const TaskID INT_HYD(18);
+  const TaskID INT_FLD(19);
+  // const TaskID INT_RAD(20);
+  // const TaskID INT_CHM(21);
 
-const TaskID SEND_HYD(22);
-const TaskID SEND_FLD(23);
-// const TaskID SEND_RAD(24);
-// const TaskID SEND_CHM(25);
+  const TaskID SEND_HYD(22);
+  const TaskID SEND_FLD(23);
+  // const TaskID SEND_RAD(24);
+  // const TaskID SEND_CHM(25);
 
-const TaskID RECV_HYD(26);
-const TaskID RECV_FLD(27);
-// const TaskID RECV_RAD(28);
-// const TaskID RECV_CHM(29);
+  const TaskID RECV_HYD(26);
+  const TaskID RECV_FLD(27);
+  // const TaskID RECV_RAD(28);
+  // const TaskID RECV_CHM(29);
 
-const TaskID SETB_HYD(30);
-const TaskID SETB_FLD(31);
-// const TaskID SETB_RAD(32);
-// const TaskID SETB_CHM(33);
+  const TaskID SETB_HYD(30);
+  const TaskID SETB_FLD(31);
+  // const TaskID SETB_RAD(32);
+  // const TaskID SETB_CHM(33);
 
-const TaskID PROLONG(34);
-const TaskID CONS2PRIM(35);
-const TaskID PHY_BVAL(36);
-const TaskID USERWORK(37);
-const TaskID NEW_DT(38);
-const TaskID FLAG_AMR(39);
+  const TaskID PROLONG(34);
+  const TaskID CONS2PRIM(35);
+  const TaskID PHY_BVAL(36);
+  const TaskID USERWORK(37);
+  const TaskID NEW_DT(38);
+  const TaskID FLAG_AMR(39);
 
-const TaskID SEND_HYDSH(40);
-const TaskID SEND_EMFSH(41);
-const TaskID SEND_FLDSH(42);
-const TaskID RECV_HYDSH(43);
-const TaskID RECV_EMFSH(44);
-const TaskID RECV_FLDSH(45);
-const TaskID RMAP_EMFSH(46);
+  const TaskID SEND_HYDSH(40);
+  const TaskID SEND_EMFSH(41);
+  const TaskID SEND_FLDSH(42);
+  const TaskID RECV_HYDSH(43);
+  const TaskID RECV_EMFSH(44);
+  const TaskID RECV_FLDSH(45);
+  const TaskID RMAP_EMFSH(46);
 
-const TaskID DIFFUSE_HYD(47);
-const TaskID DIFFUSE_FLD(48);
+  const TaskID DIFFUSE_HYD(47);
+  const TaskID DIFFUSE_FLD(48);
 
-const TaskID CALC_SCLRFLX(49);
-const TaskID SEND_SCLRFLX(50);
-const TaskID RECV_SCLRFLX(51);
-const TaskID INT_SCLR(52);
-const TaskID SEND_SCLR(53);
-const TaskID RECV_SCLR(54);
-const TaskID SETB_SCLR(55);
-const TaskID DIFFUSE_SCLR(56);
+  const TaskID CALC_SCLRFLX(49);
+  const TaskID SEND_SCLRFLX(50);
+  const TaskID RECV_SCLRFLX(51);
+  const TaskID INT_SCLR(52);
+  const TaskID SEND_SCLR(53);
+  const TaskID RECV_SCLR(54);
+  const TaskID SETB_SCLR(55);
+  const TaskID DIFFUSE_SCLR(56);
 
-// const TaskID RECV_SCLRSH(57);
-// const TaskID SEND_SCLRSH(58);
+  // const TaskID RECV_SCLRSH(57);
+  // const TaskID SEND_SCLRSH(58);
+
 
 }  // namespace HydroIntegratorTaskNames
+
+// BD: new problem
+//----------------------------------------------------------------------------------------
+
+class WaveIntegratorTaskList : public TaskList {
+public:
+  WaveIntegratorTaskList(ParameterInput *pin, Mesh *pm);
+
+  //--------------------------------------------------------------------------------------
+  //! \struct IntegratorWeight
+  //  \brief weights used in time integrator tasks
+
+  struct IntegratorWeight {
+    // 2S or 3S* low-storage RK coefficients, Ketchenson (2010)
+    Real delta; // low-storage coefficients to avoid double F() evaluation per substage
+    Real gamma_1, gamma_2, gamma_3; // low-storage coeff for weighted ave of registers
+    Real beta; // coeff. from bidiagonal Shu-Osher form Beta matrix, -1 diagonal terms
+  };
+
+  // data
+  std::string integrator;
+  Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
+
+  // functions
+  TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);  // CLEAR_ALLBND [x]
+  TaskStatus UserWork(MeshBlock *pmb, int stage);          // USERWORK     [x]
+  TaskStatus NewBlockTimeStep(MeshBlock *pmb, int stage);  // NEW_DT       [x]
+  TaskStatus CheckRefinement(MeshBlock *pmb, int stage);   // FLAG_AMR     [x]
+  TaskStatus CalculateWaveRHS(MeshBlock *pmb, int stage);  // CALC_WAVERHS [x]
+  TaskStatus IntegrateWave(MeshBlock *pmb, int stage);     // INT_WAVE     [x]
+  TaskStatus SendWave(MeshBlock *pmb, int stage);          // SEND_WAVE
+  TaskStatus ReceiveWave(MeshBlock *pmb, int stage);       // RECV_WAVE
+
+  TaskStatus SetBoundariesWave(MeshBlock *pmb, int stage); // SETB_WAVE
+
+  TaskStatus Prolongation(MeshBlock *pmb, int stage);      // PROLONG      [x]
+  TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);  // PHY_BVAL
+
+private:
+  IntegratorWeight stage_wghts[MAX_NSTAGE];
+
+  void AddTask(const TaskID& id, const TaskID& dep) override;
+  void StartupTaskList(MeshBlock *pmb, int stage) override;
+};
+
+//----------------------------------------------------------------------------------------
+// 64-bit integers with "1" in different bit positions used to ID each wave task.
+namespace WaveIntegratorTaskNames {
+
+  const TaskID NONE(0);
+  const TaskID CLEAR_ALLBND(1);
+
+  const TaskID CALC_WAVERHS(2);
+  const TaskID INT_WAVE(3);
+  const TaskID SEND_WAVE(4);
+  const TaskID RECV_WAVE(5);
+  const TaskID SETB_WAVE(6);
+  const TaskID PROLONG(7);
+  // const TaskID CON2PRIM(7);
+  const TaskID PHY_BVAL(8);
+  const TaskID USERWORK(9);
+  const TaskID NEW_DT(10);
+  const TaskID FLAG_AMR(11);
+  // const TaskID STARTUP_INT(12);
+}  // namespace WaveIntegratorTaskNames
+// -BD
+
 #endif  // TASK_LIST_TASK_LIST_HPP_

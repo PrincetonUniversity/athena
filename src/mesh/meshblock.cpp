@@ -39,6 +39,10 @@
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
 
+// BD: new problem
+#include "../wave/wave.hpp"
+// -BD
+
 //----------------------------------------------------------------------------------------
 // MeshBlock constructor: constructs coordinate, boundary condition, hydro, field
 //                        and mesh refinement objects.
@@ -162,6 +166,13 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pscalars = new PassiveScalars(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
+
+  // BD: new problem
+  if (WAVE_ENABLED){
+    pwave = new Wave(this, pin);
+  }
+  // -BD
+
   // KGF: suboptimal solution, since developer must copy/paste BoundaryVariable derived
   // class type that is used in each PassiveScalars, Gravity, Field, Hydro, ... etc. class
   // in order to correctly advance the BoundaryValues::bvars_next_phys_id_ local counter.
@@ -285,6 +296,14 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
 
+  // BD: new problem
+  if (WAVE_ENABLED){
+    pwave = new Wave(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
+  // -BD
+
+
   peos = new EquationOfState(this, pin);
 
   InitUserMeshBlockData(pin);
@@ -323,6 +342,13 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     os += pscalars->s.GetSizeInBytes();
   }
 
+  // BD: new problem
+  if (WAVE_ENABLED) {
+    std::memcpy(pwave->u.data(), &(mbdata[os]), pwave->u.GetSizeInBytes());
+    os += pwave->u.GetSizeInBytes();
+  }
+  // -BD
+
   // load user MeshBlock data
   for (int n=0; n<nint_user_meshblock_data_; n++) {
     std::memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
@@ -354,6 +380,10 @@ MeshBlock::~MeshBlock() {
   delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
   if (NSCALARS > 0) delete pscalars;
+
+  // BD: new problem
+  if (WAVE_ENABLED) delete pwave;
+  // -BD
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
   delete pbval;
@@ -454,6 +484,12 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
     size += pgrav->phi.GetSizeInBytes();
   if (NSCALARS > 0)
     size += pscalars->s.GetSizeInBytes();
+
+  // BD: new problem
+  if (WAVE_ENABLED) {
+    size += pwave->u.GetSizeInBytes();
+  }
+  // -BD
 
   // calculate user MeshBlock data size
   for (int n=0; n<nint_user_meshblock_data_; n++)

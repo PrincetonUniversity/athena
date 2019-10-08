@@ -326,12 +326,21 @@ int main(int argc, char *argv[]) {
   //--- Step 5. --------------------------------------------------------------------------
   // Construct and initialize TaskList
   printf("->main Step 5\n");
-
   TimeIntegratorTaskList *ptlist;
+  ptlist = new TimeIntegratorTaskList(pinput, pmesh);
+
+  // BD: new problem
+  WaveIntegratorTaskList *pwlist;
+  // -BD
+
 #ifdef ENABLE_EXCEPTIONS
   try {
 #endif
-    ptlist = new TimeIntegratorTaskList(pinput, pmesh);
+    // BD: new problem
+    if(WAVE_ENABLED) { // only init. when required
+      pwlist = new WaveIntegratorTaskList(pinput, pmesh);
+    }
+    // -BD
 #ifdef ENABLE_EXCEPTIONS
   }
   catch(std::bad_alloc& ba) {
@@ -444,7 +453,7 @@ int main(int argc, char *argv[]) {
       Real my_dt = pmesh->dt;
       Real dt_parabolic  = pmesh->dt_parabolic;
       pststlist->nstages =
-          static_cast<int>(0.5*(-1. + std::sqrt(1. + 8.*my_dt/dt_parabolic))) + 1;
+        static_cast<int>(0.5*(-1. + std::sqrt(1. + 8.*my_dt/dt_parabolic))) + 1;
 
       // take super-timestep
       for (int stage=1; stage<=pststlist->nstages; ++stage)
@@ -458,8 +467,20 @@ int main(int argc, char *argv[]) {
         pmesh->pfgrd->Solve(stage, 0);
       else if (SELF_GRAVITY_ENABLED == 2) // multigrid
         pmesh->pmgrd->Solve(stage);
-      ptlist->DoTaskListOneStage(pmesh, stage);
+      // BD: debug (disable hydro task processing)
+      // ptlist->DoTaskListOneStage(pmesh, stage);
+      // -BD
     }
+
+    // BD: new problem
+    if (WAVE_ENABLED) {
+      // This effectively means hydro takes a time-step and _then_ the given problem takes one
+      for (int stage=1; stage<=pwlist->nstages; ++stage) {
+        pwlist->DoTaskListOneStage(pmesh, stage);
+      }
+    }
+    // -BD
+
 
     pmesh->UserWorkInLoop();
 

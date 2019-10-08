@@ -34,6 +34,7 @@ TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskStat
 
   for (int i=ts.indx_first_task; i<ntasks; i++) {
     Task &taski = task_list_[i];
+
     if (ts.finished_tasks.IsUnfinished(taski.task_id)) { // task not done
       // check if dependency clear
       if (ts.finished_tasks.CheckDependencies(taski.dependency)) {

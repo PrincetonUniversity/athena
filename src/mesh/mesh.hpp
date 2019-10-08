@@ -53,6 +53,7 @@ class FFTGravityDriver;
 class TurbulenceDriver;
 // BD: new problem
 class Wave;
+// -BD
 
 FluidFormulation GetFluidFormulation(const std::string& input_string);
 
@@ -73,6 +74,7 @@ class MeshBlock {
 #endif
   // BD: new problem
   friend class Wave;
+  // -BD
 
  public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
@@ -127,6 +129,7 @@ class MeshBlock {
 
   // BD: new problem
   Wave *pwave;
+  // -BD
 
   MeshBlock *prev, *next;
 
@@ -208,6 +211,9 @@ class Mesh {
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
+  // BD: new problem
+  friend class Wave;
+  // -BD
 
  public:
   // 2x function overloads of ctor: normal and restarted simulation

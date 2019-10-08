@@ -51,6 +51,10 @@
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
 
+// BD: new problem
+#include "../wave/wave.hpp"
+// -BD
+
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
@@ -1388,13 +1392,18 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
         pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
-                                               HydroBoundaryQuantity::cons);
+                                             HydroBoundaryQuantity::cons);
         pmb->phydro->hbvar.SendBoundaryBuffers();
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.SendBoundaryBuffers();
         // and (conserved variable) passive scalar masses:
         if (NSCALARS > 0)
           pmb->pscalars->sbvar.SendBoundaryBuffers();
+
+        // BD: new problem
+        if (WAVE_ENABLED)
+          pmb->pwave->ubvar.SendBoundaryBuffers();
+        // -BD
       }
 
       // wait to receive conserved variables
@@ -1409,6 +1418,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (SHEARING_BOX) {
           pmb->phydro->hbvar.AddHydroShearForInit();
         }
+
+        // BD: new problem
+        if (WAVE_ENABLED)
+          pmb->pwave->ubvar.ReceiveAndSetBoundariesWithWait();
+        // -BD
+
         pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
       }
 
@@ -1444,13 +1459,17 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       // perform fourth-order correction of midpoint initial condition:
       // (correct IC on all MeshBlocks or none; switch cannot be toggled independently)
       bool correct_ic = pmb_array[0]->precon->correct_ic;
-      if (correct_ic)
+      if (correct_ic){
         CorrectMidpointInitialCondition(pmb_array, nmb);
-
+      }
       // Now do prolongation, compute primitives, apply BCs
       Hydro *ph;
       Field *pf;
       PassiveScalars *ps;
+      // BD: new problem
+      Wave *pw;
+      // -BD
+
 #pragma omp for private(pmb,pbval,ph,pf,ps)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i];
@@ -1459,8 +1478,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pbval->ProlongateBoundaries(time, 0.0);
 
         int il = pmb->is, iu = pmb->ie,
-            jl = pmb->js, ju = pmb->je,
-            kl = pmb->ks, ku = pmb->ke;
+          jl = pmb->js, ju = pmb->je,
+          kl = pmb->ks, ku = pmb->ke;
         if (pbval->nblevel[1][1][0] != -1) il -= NGHOST;
         if (pbval->nblevel[1][1][2] != -1) iu += NGHOST;
         if (pmb->block_size.nx2 > 1) {
@@ -1498,7 +1517,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                                      il, iu, jl, ju, kl, ku);
           if (NSCALARS > 0) {
             pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
-                ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
+                                                                    ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
           }
         }
         // --------------------------
@@ -1547,10 +1566,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       }
       if (nbtotal > 2*inb && Globals::my_rank == 0) {
         std::cout
-            << "### Warning in Mesh::Initialize" << std::endl
-            << "The number of MeshBlocks increased more than twice during initialization."
-            << std::endl
-            << "More computing power than you expected may be required." << std::endl;
+          << "### Warning in Mesh::Initialize" << std::endl
+          << "The number of MeshBlocks increased more than twice during initialization."
+          << std::endl
+          << "More computing power than you expected may be required." << std::endl;
       }
     }
   } while (!iflag);
@@ -1559,6 +1578,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp parallel for num_threads(nthreads)
   for (int i=0; i<nmb; ++i) {
     pmb_array[i]->phydro->NewBlockTimeStep();
+
+    // BD: new problem
+    if(WAVE_ENABLED)
+      pmb_array[i]->pwave->NewBlockTimeStep();
+    // -BD
   }
 
   NewTimeStep();
@@ -1822,6 +1846,12 @@ void Mesh::ReserveMeshBlockPhysIDs() {
   if (NSCALARS > 0) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
+  // BD: new problem
+  if (WAVE_ENABLED) {
+    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+  }
+  // -BD
+
 #endif
   return;
 }

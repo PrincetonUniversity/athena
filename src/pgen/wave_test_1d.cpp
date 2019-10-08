@@ -17,46 +17,47 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
-// #include "../wave/wave.hpp"
+
+#include "../wave/wave.hpp"
 
 using namespace std;
 
-// namespace {
+namespace {
 
-// Real linear(Real x) {
-//   return x;
-// }
+Real linear(Real x) {
+  return x;
+}
 
-// Real linear_diff(Real x) {
-//   return 1;
-// }
+Real linear_diff(Real x) {
+  return 1;
+}
 
-// Real bump(Real x) {
-//   if(abs(x) < 1.) {
-//     return exp(-1./(1. - SQR(x)));
-//   }
-//   else {
-//     return 0.;
-//   }
-// }
+Real bump(Real x) {
+  if(abs(x) < 1.) {
+    return exp(-1./(1. - SQR(x)));
+  }
+  else {
+    return 0.;
+  }
+}
 
-// Real bump_diff(Real x) {
-//   if(abs(x) < 1.) {
-//     return -2.*x*bump(x)/SQR(-1. + SQR(x));
-//   }
-//   else {
-//     return 0.;
-//   }
-// }
+Real bump_diff(Real x) {
+  if(abs(x) < 1.) {
+    return -2.*x*bump(x)/SQR(-1. + SQR(x));
+  }
+  else {
+    return 0.;
+  }
+}
 
-// typedef Real (*unary_function)(Real);
+  typedef Real (*unary_function)(Real);
 
-// unary_function prof = NULL;
-// unary_function prof_diff = NULL;
+  unary_function prof = NULL;
+  unary_function prof_diff = NULL;
 
-// int direction = 0;
+  int direction = 0;
 
-// } // namespace
+} // namespace
 
 
 //========================================================================================
@@ -64,86 +65,104 @@ using namespace std;
 //  \brief Sets the initial conditions.
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin){
   printf("->wave_test_1d MeshBlock::ProblemGenerator\n");
-  // direction = pin->GetOrAddInteger("problem", "direction", 1);
-  // if(abs(direction) > 1) {
-  //   cerr << "Invalid direction: " << direction << endl;
-  //   cerr << "Valid values are: -1, 0, and 1" << endl;
-  //   cerr << flush;
-  //   abort();
-  // }
 
-  // string profile = pin->GetOrAddString("problem", "profile", "linear");
-  // if(profile == "bump") {
-  //   prof = bump;
-  //   prof_diff = bump_diff;
-  // }
-  // else {
-  //   prof = linear;
-  //   prof_diff = linear_diff;
-  // }
-  // cout<<'\n'<<direction;
-  // for(int k = ks; k <= ke; ++k)
-  //   for(int j = js; j <= je; ++j)
-  //     for(int i = is; i <= ie; ++i) {
-  //       Real x = pcoord->x1v(i);
-  //       Real y = pcoord->x2v(j);
-  //       Real z = pcoord->x3v(k);
-  //       Real c = pwave->c;
+  direction = pin->GetOrAddInteger("problem", "direction", 1);
+  if(abs(direction) > 1) {
+    cerr << "Invalid direction: " << direction << endl;
+    cerr << "Valid values are: -1, 0, and 1" << endl;
+    cerr << flush;
+    abort();
+  }
 
-  //       //Sinusoidal initial profile
-  //       Real sin_x = sin(M_PI*x);
-  //       Real cos_x = cos(M_PI*x);
+  string profile = pin->GetOrAddString("problem", "profile", "linear");
+  if(profile == "bump") {
+    prof = bump;
+    prof_diff = bump_diff;
+  }
+  else {
+    prof = linear;
+    prof_diff = linear_diff;
+  }
+  cout<<'\n'<<direction;
+  for(int k = ks; k <= ke; ++k)
+    for(int j = js; j <= je; ++j)
+      for(int i = is; i <= ie; ++i) {
+        Real x = pcoord->x1v(i);
+        Real y = pcoord->x2v(j);
+        Real z = pcoord->x3v(k);
+        Real c = pwave->c;
 
-  //       pwave->u(0,k,j,i) = prof(sin_x);
-  //       pwave->u(1,k,j,i) = direction*M_PI*c*cos_x*prof_diff(sin_x);
+        //Sinusoidal initial profile
+        Real sin_x = sin(M_PI*x);
+        Real cos_x = cos(M_PI*x);
 
-  //       pwave->exact(0,k,j,i) = pwave->u(0,k,j,i);
-  //       pwave->error(0,k,j,i) = 0.0;
-  //     }
+        pwave->u(0,k,j,i) = prof(sin_x);
+        pwave->u(1,k,j,i) = -direction*M_PI*c*cos_x*prof_diff(sin_x);
+
+        pwave->exact(0,k,j,i) = pwave->u(0,k,j,i);
+        pwave->error(0,k,j,i) = 0.0;
+      }
+
   printf("<-wave_test_1d MeshBlock::ProblemGenerator\n");
   return;
 }
-void MeshBlock::UserWorkInLoop()
-{
+void MeshBlock::UserWorkInLoop(){
   printf("->wave_test_1d MeshBlock::UserWorkInLoop\n");
-  // for(int k = ks; k <= ke; ++k)
-  //   for(int j = js; j <= je; ++j)
-  //     for(int i = is; i <= ie; ++i) {
-  //       Real x = pcoord->x1v(i);
-  //       Real y = pcoord->x2v(j);
-  //       Real z = pcoord->x3v(k);
-  //       Real t = pmy_mesh->time + pmy_mesh->dt;
-  //       Real c = pwave->c;
-  //       Real xp, xm;
-  //       switch(direction) {
-  //       case -1:
-  //         //Sine
-  //         xp = sin(M_PI*(x + c*t));
+  // test parameter extraction
+  printf("c: %f\n", pwave->c);
 
-  //         pwave->exact(0,k,j,i) = prof(xp);
-  //         break;
-  //       case 0:
-  //         //Sine
-  //         xp = sin(M_PI*(x + c*t));
-  //         xm = sin(M_PI*(x - c*t));
+  Real max_err = 0;
+  Real fun_err = 0;
 
-  //         pwave->exact(0,k,j,i) = 0.5*(prof(xm) + prof(xp));
-  //         break;
-  //       case 1:
-  //         //Sine
-  //         xm = sin(M_PI*(x - c*t));
+  for(int k = ks; k <= ke; ++k)
+      for(int j = js; j <= je; ++j)
+      for(int i = is; i <= ie; ++i) {
+        Real x = pcoord->x1v(i);
+        Real y = pcoord->x2v(j);
+        Real z = pcoord->x3v(k);
+        Real t = pmy_mesh->time + pmy_mesh->dt;
+        Real c = pwave->c;
 
-  //         pwave->exact(0,k,j,i) = prof(xm);
-  //         break;
-  //       default:
-  //         assert(false); // you shouldn't be here
-  //         abort();
-  //       }
-  //       pwave->error(0,k,j,i) = pwave->u(0,k,j,i) - pwave->exact(0,k,j,i);
-  //     }
+        Real xL, xR;
+
+        switch(direction) {
+        case -1:
+          // left travelling clean profile
+          xL = sin(M_PI * (x + c * t));
+
+          pwave->exact(0,k,j,i) = prof(xL);
+          break;
+        case 0:
+
+          xL = sin(M_PI*(x + c*t));
+          xR = sin(M_PI*(x - c*t));
+
+          // Average of left/right travelling
+          pwave->exact(0,k,j,i) = 0.5*(prof(xL) + prof(xR));
+          break;
+        case 1:
+          // right travelling clean profile
+          xR = sin(M_PI*(x - c*t));
+
+          pwave->exact(0,k,j,i) = prof(xR);
+          break;
+        default:
+          assert(false); // you shouldn't be here
+          abort();
+        }
+        pwave->error(0,k,j,i) = pwave->u(0,k,j,i) - pwave->exact(0,k,j,i);
+
+        if (std::abs(pwave->error(0,k,j,i)) > max_err){
+          max_err = std::abs(pwave->error(0,k,j,i));
+          fun_err = pwave->u(0,k,j,i);
+        }
+      }
+
+  printf("max_err=%1.7f\n", max_err);
+  printf("fun_err=%1.7f\n", fun_err);
+
   printf("<-wave_test_1d MeshBlock::UserWorkInLoop\n");
   return;
 }
