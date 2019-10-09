@@ -57,9 +57,9 @@ public:
   Real WaveProfile(Real x, Real y, Real z);
 */
 
+  static const int NWAVE_CPT = 2;    // number of wave equation field components
 
 private:
-  static const int NWAVE_CPT = 2;    // number of wave equation field components
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
 
 private:

@@ -28,28 +28,28 @@ class AthenaArray {
   // ctors
   // default ctor: simply set null AthenaArray
   AthenaArray() : pdata_(nullptr), nx1_(0), nx2_(0), nx3_(0),
-                  nx4_(0), nx5_(0), nx6_(0), state_(DataStatus::empty) {}
+                  nx4_(0), nx5_(0), nx6_(0), dim_(0), state_(DataStatus::empty) {}
   // ctor overloads: set expected size of unallocated container, maybe allocate (default)
   explicit AthenaArray(int nx1, DataStatus init=DataStatus::allocated) :
-      pdata_(nullptr), nx1_(nx1), nx2_(1), nx3_(1), nx4_(1), nx5_(1), nx6_(1),
-      state_(init) { AllocateData(); }
+    pdata_(nullptr), nx1_(nx1), nx2_(1), nx3_(1), nx4_(1), nx5_(1), nx6_(1), dim_(1),
+    state_(init) { AllocateData(); }
   AthenaArray(int nx2, int nx1, DataStatus init=DataStatus::allocated) :
-      pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(1), nx4_(1), nx5_(1), nx6_(1),
-      state_(init) { AllocateData(); }
+    pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(1), nx4_(1), nx5_(1), nx6_(1), dim_(2),
+    state_(init) { AllocateData(); }
   AthenaArray(int nx3, int nx2, int nx1, DataStatus init=DataStatus::allocated) :
-      pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(1), nx5_(1), nx6_(1),
-      state_(init) { AllocateData(); }
+    pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(1), nx5_(1), nx6_(1), dim_(3),
+    state_(init) { AllocateData(); }
   AthenaArray(int nx4, int nx3, int nx2, int nx1, DataStatus init=DataStatus::allocated) :
-      pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(1), nx6_(1),
-      state_(init) { AllocateData(); }
+    pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(1), nx6_(1), dim_(4),
+    state_(init) { AllocateData(); }
   AthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1,
               DataStatus init=DataStatus::allocated) :
-      pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5),  nx6_(1),
-      state_(init) { AllocateData(); }
+    pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5),  nx6_(1),  dim_(5),
+    state_(init) { AllocateData(); }
   AthenaArray(int nx6, int nx5, int nx4, int nx3, int nx2, int nx1,
               DataStatus init=DataStatus::allocated) :
-      pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5), nx6_(nx6),
-      state_(init) { AllocateData(); }
+    pdata_(nullptr), nx1_(nx1), nx2_(nx2), nx3_(nx3), nx4_(nx4), nx5_(nx5), nx6_(nx6),  dim_(6),
+    state_(init) { AllocateData(); }
   // still allowing delayed-initialization (after constructor) via array.NewAthenaArray()
   // or array.InitWithShallowSlice() (only used in outputs.cpp + 3x other files)
   // TODO(felker): replace InitWithShallowSlice with ??? and remove shallow_copy enum val
@@ -86,6 +86,16 @@ class AthenaArray {
   int GetDim4() const { return nx4_; }
   int GetDim5() const { return nx5_; }
   int GetDim6() const { return nx6_; }
+  int GetDim(int dim) const;
+
+  // function to get the stride used to access the data
+  int GetStride1() const { return 1; }
+  int GetStride2() const { return nx1_; }
+  int GetStride3() const { return nx2_*GetStride2(); }
+  int GetStride4() const { return nx3_*GetStride3(); }
+  int GetStride5() const { return nx4_*GetStride4(); }
+  int GetStride6() const { return nx5_*GetStride5(); }
+  int GetStride(int dim) const;
 
   // a function to get the total size of the array
   int GetSize() const {
@@ -154,10 +164,15 @@ class AthenaArray {
   void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
                             const int nvar);
 
- private:
+  // make use of internal dim if not provided
+  void InitWithShallowSlice(AthenaArray<T> &src, const int indx, const int nvar);
+
+private:
   T *pdata_;
   int nx1_, nx2_, nx3_, nx4_, nx5_, nx6_;
+  int dim_;
   DataStatus state_;  // describe what "pdata_" points to and ownership of allocated data
+
 
   void AllocateData();
 };
@@ -180,6 +195,7 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(const AthenaArray<T>& src) 
   nx4_ = src.nx4_;
   nx5_ = src.nx5_;
   nx6_ = src.nx6_;
+  dim_ = src.dim_;
   if (src.pdata_) {
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_);
     pdata_ = new T[size]; // allocate memory for array data
@@ -204,6 +220,7 @@ AthenaArray<T> &AthenaArray<T>::operator= (const AthenaArray<T> &src) {
     nx4_ = src.nx4_;
     nx5_ = src.nx5_;
     nx6_ = src.nx6_;
+    dim_ = src.dim_;
     std::size_t size = (src.nx1_)*(src.nx2_)*(src.nx3_)*(src.nx4_)*(src.nx5_)*(src.nx6_);
     for (std::size_t i=0; i<size; ++i) {
       this->pdata_[i] = src.pdata_[i]; // copy data (not just addresses!)
@@ -222,6 +239,7 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(AthenaArray<T>&& src) {
   nx4_ = src.nx4_;
   nx5_ = src.nx5_;
   nx6_ = src.nx6_;
+  dim_ = src.dim_;
   if (src.pdata_) {
     // && (src.state_ != DataStatus::allocated){  // (if forbidden to move shallow slices)
     //  ---- >state_ = DataStatus::allocated;
@@ -238,6 +256,7 @@ __attribute__((nothrow)) AthenaArray<T>::AthenaArray(AthenaArray<T>&& src) {
     src.nx4_ = 0;
     src.nx5_ = 0;
     src.nx6_ = 0;
+    src.dim_ = 0;
   }
 }
 
@@ -257,6 +276,7 @@ AthenaArray<T> &AthenaArray<T>::operator= (AthenaArray<T> &&src) {
       nx6_ = src.nx6_;
       state_ = src.state_;
       pdata_ = src.pdata_;
+      dim_ = src.dim_;
 
       src.pdata_ = nullptr;
       src.state_ = DataStatus::empty;
@@ -266,6 +286,7 @@ AthenaArray<T> &AthenaArray<T>::operator= (AthenaArray<T> &&src) {
       src.nx4_ = 0;
       src.nx5_ = 0;
       src.nx6_ = 0;
+      src.dim_ = 0;
     }
   }
   return *this;
@@ -337,113 +358,172 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
   return;
 }
 
+
+template<typename T>
+void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src,
+                                          const int indx, const int nvar) {
+  InitWithShallowSlice(src, src.dim_, indx, nvar);
+}
+
 //----------------------------------------------------------------------------------------
 //! \fn AthenaArray::NewAthenaArray()
 //  \brief allocate new 1D array with elements initialized to zero.
 
 template<typename T>
-__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx1) {
-  state_ = DataStatus::allocated;
-  nx1_ = nx1;
-  nx2_ = 1;
-  nx3_ = 1;
-  nx4_ = 1;
-  nx5_ = 1;
-  nx6_ = 1;
-  pdata_ = new T[nx1](); // allocate memory and initialize to zero
-}
+    __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx1) {
+    state_ = DataStatus::allocated;
+    nx1_ = nx1;
+    nx2_ = 1;
+    nx3_ = 1;
+    nx4_ = 1;
+    nx5_ = 1;
+    nx6_ = 1;
+    dim_ = 1;
+    pdata_ = new T[nx1](); // allocate memory and initialize to zero
+  }
 
-//----------------------------------------------------------------------------------------
-//! \fn AthenaArray::NewAthenaArray()
-//  \brief 2d data allocation
+  //----------------------------------------------------------------------------------------
+  //! \fn AthenaArray::NewAthenaArray()
+  //  \brief 2d data allocation
 
-template<typename T>
-__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx2, int nx1) {
-  state_ = DataStatus::allocated;
-  nx1_ = nx1;
-  nx2_ = nx2;
-  nx3_ = 1;
-  nx4_ = 1;
-  nx5_ = 1;
-  nx6_ = 1;
-  pdata_ = new T[nx1*nx2](); // allocate memory and initialize to zero
-}
+  template<typename T>
+    __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx2, int nx1) {
+    state_ = DataStatus::allocated;
+    nx1_ = nx1;
+    nx2_ = nx2;
+    nx3_ = 1;
+    nx4_ = 1;
+    nx5_ = 1;
+    nx6_ = 1;
+    dim_ = 2;
+    pdata_ = new T[nx1*nx2](); // allocate memory and initialize to zero
+  }
 
-//----------------------------------------------------------------------------------------
-//! \fn AthenaArray::NewAthenaArray()
-//  \brief 3d data allocation
+  //----------------------------------------------------------------------------------------
+  //! \fn AthenaArray::NewAthenaArray()
+  //  \brief 3d data allocation
 
-template<typename T>
-__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1) {
-  state_ = DataStatus::allocated;
-  nx1_ = nx1;
-  nx2_ = nx2;
-  nx3_ = nx3;
-  nx4_ = 1;
-  nx5_ = 1;
-  nx6_ = 1;
-  pdata_ = new T[nx1*nx2*nx3](); // allocate memory and initialize to zero
-}
+  template<typename T>
+    __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1) {
+    state_ = DataStatus::allocated;
+    nx1_ = nx1;
+    nx2_ = nx2;
+    nx3_ = nx3;
+    nx4_ = 1;
+    nx5_ = 1;
+    nx6_ = 1;
+    dim_ = 3;
+    pdata_ = new T[nx1*nx2*nx3](); // allocate memory and initialize to zero
+  }
 
-//----------------------------------------------------------------------------------------
-//! \fn AthenaArray::NewAthenaArray()
-//  \brief 4d data allocation
+  //----------------------------------------------------------------------------------------
+  //! \fn AthenaArray::NewAthenaArray()
+  //  \brief 4d data allocation
 
-template<typename T>
-__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2,
-                                                             int nx1) {
-  state_ = DataStatus::allocated;
-  nx1_ = nx1;
-  nx2_ = nx2;
-  nx3_ = nx3;
-  nx4_ = nx4;
-  nx5_ = 1;
-  nx6_ = 1;
-  pdata_ = new T[nx1*nx2*nx3*nx4](); // allocate memory and initialize to zero
-}
+  template<typename T>
+    __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2,
+                                                                 int nx1) {
+    state_ = DataStatus::allocated;
+    nx1_ = nx1;
+    nx2_ = nx2;
+    nx3_ = nx3;
+    nx4_ = nx4;
+    nx5_ = 1;
+    nx6_ = 1;
+    dim_ = 4;
+    pdata_ = new T[nx1*nx2*nx3*nx4](); // allocate memory and initialize to zero
+  }
 
-//----------------------------------------------------------------------------------------
-//! \fn AthenaArray::NewAthenaArray()
-//  \brief 5d data allocation
+  //----------------------------------------------------------------------------------------
+  //! \fn AthenaArray::NewAthenaArray()
+  //  \brief 5d data allocation
 
-template<typename T>
-__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3,
-                                                             int nx2, int nx1) {
-  state_ = DataStatus::allocated;
-  nx1_ = nx1;
-  nx2_ = nx2;
-  nx3_ = nx3;
-  nx4_ = nx4;
-  nx5_ = nx5;
-  nx6_ = 1;
-  pdata_ = new T[nx1*nx2*nx3*nx4*nx5](); // allocate memory and initialize to zero
-}
+  template<typename T>
+    __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3,
+                                                                 int nx2, int nx1) {
+    state_ = DataStatus::allocated;
+    nx1_ = nx1;
+    nx2_ = nx2;
+    nx3_ = nx3;
+    nx4_ = nx4;
+    nx5_ = nx5;
+    nx6_ = 1;
+    dim_ = 5;
+    pdata_ = new T[nx1*nx2*nx3*nx4*nx5](); // allocate memory and initialize to zero
+  }
 
-//----------------------------------------------------------------------------------------
-//! \fn AthenaArray::NewAthenaArray()
-//  \brief 6d data allocation
+  //----------------------------------------------------------------------------------------
+  //! \fn AthenaArray::NewAthenaArray()
+  //  \brief 6d data allocation
 
-template<typename T>
-__attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx6, int nx5, int nx4,
-                                                             int nx3, int nx2, int nx1) {
-  state_ = DataStatus::allocated;
-  nx1_ = nx1;
-  nx2_ = nx2;
-  nx3_ = nx3;
-  nx4_ = nx4;
-  nx5_ = nx5;
-  nx6_ = nx6;
-  pdata_ = new T[nx1*nx2*nx3*nx4*nx5*nx6](); // allocate memory and initialize to zero
-}
+  template<typename T>
+    __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx6, int nx5, int nx4,
+                                                                 int nx3, int nx2, int nx1) {
+    state_ = DataStatus::allocated;
+    nx1_ = nx1;
+    nx2_ = nx2;
+    nx3_ = nx3;
+    nx4_ = nx4;
+    nx5_ = nx5;
+    nx6_ = nx6;
+    dim_ = 6;
+    pdata_ = new T[nx1*nx2*nx3*nx4*nx5*nx6](); // allocate memory and initialize to zero
+  }
 
-//----------------------------------------------------------------------------------------
-//! \fn AthenaArray::DeleteAthenaArray()
-//  \brief  free memory allocated for data array
+  //----------------------------------------------------------------------------------------
+  //! \fn AthenaArray::GetDim()
+  //  \brief  get dimension of the data in a given dimension (between 1 and 6)
+  template<typename T>
+    int AthenaArray<T>::GetDim(int const dim) const {
+    switch(dim) {
+    case 1:
+      return GetDim1();
+    case 2:
+      return GetDim2();
+    case 3:
+      return GetDim3();
+    case 4:
+      return GetDim4();
+    case 5:
+      return GetDim5();
+    case 6:
+      return GetDim6();
+    default:
+      return 0;
+    }
+  }
 
-template<typename T>
-void AthenaArray<T>::DeleteAthenaArray() {
-  // state_ is tracked partly for correctness of delete[] operation in DeleteAthenaArray()
-  switch (state_) {
+  //----------------------------------------------------------------------------------------
+  //! \fn AthenaArray::GetStride()
+  //  \brief  get stride used to access the data in a given dimension (between 1 and 6)
+  template<typename T>
+    int AthenaArray<T>::GetStride(int const dim) const {
+    switch(dim) {
+    case 1:
+      return GetStride1();
+    case 2:
+      return GetStride2();
+    case 3:
+      return GetStride3();
+    case 4:
+      return GetStride4();
+    case 5:
+      return GetStride5();
+    case 6:
+      return GetStride6();
+    default:
+      return 0;
+    }
+  }
+
+  //----------------------------------------------------------------------------------------
+  //! \fn AthenaArray::DeleteAthenaArray()
+  //  \brief  free memory allocated for data array
+
+  template<typename T>
+    void AthenaArray<T>::DeleteAthenaArray() {
+    // state_ is tracked partly for correctness of delete[] operation in DeleteAthenaArray()
+    switch (state_) {
     case DataStatus::empty:
     case DataStatus::shallow_slice:
       pdata_ = nullptr;
@@ -453,29 +533,29 @@ void AthenaArray<T>::DeleteAthenaArray() {
       pdata_ = nullptr;
       state_ = DataStatus::empty;
       break;
+    }
   }
-}
 
-//----------------------------------------------------------------------------------------
-//! \fn AthenaArray::SwapAthenaArray()
-//  \brief  swap pdata_ pointers of two equally sized AthenaArrays (shallow swap)
-// Does not allocate memory for either AthenArray
-// THIS REQUIRES THAT THE DESTINATION AND SOURCE ARRAYS BE ALREADY ALLOCATED (state_ !=
-// empty) AND HAVE THE SAME SIZES (does not explicitly check either condition)
+  //----------------------------------------------------------------------------------------
+  //! \fn AthenaArray::SwapAthenaArray()
+  //  \brief  swap pdata_ pointers of two equally sized AthenaArrays (shallow swap)
+  // Does not allocate memory for either AthenArray
+  // THIS REQUIRES THAT THE DESTINATION AND SOURCE ARRAYS BE ALREADY ALLOCATED (state_ !=
+  // empty) AND HAVE THE SAME SIZES (does not explicitly check either condition)
 
-template<typename T>
-void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
-  std::swap(pdata_, array2.pdata_);
-  return;
-}
+  template<typename T>
+    void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
+    std::swap(pdata_, array2.pdata_);
+    return;
+  }
 
-//----------------------------------------------------------------------------------------
-//! \fn AthenaArray::ZeroClear()
-//  \brief  fill the array with zero
+  //----------------------------------------------------------------------------------------
+  //! \fn AthenaArray::ZeroClear()
+  //  \brief  fill the array with zero
 
-template<typename T>
-void AthenaArray<T>::ZeroClear() {
-  switch (state_) {
+  template<typename T>
+    void AthenaArray<T>::ZeroClear() {
+    switch (state_) {
     case DataStatus::empty:
       break;
     case DataStatus::shallow_slice:
@@ -483,17 +563,17 @@ void AthenaArray<T>::ZeroClear() {
       // allocate memory and initialize to zero
       std::memset(pdata_, 0, GetSizeInBytes());
       break;
+    }
   }
-}
 
-//----------------------------------------------------------------------------------------
-//! \fn AthenaArray::AllocateData()
-//  \brief  to be called in non-default ctors, if immediate memory allocation is requested
-//          (could replace all "new[]" calls in NewAthenaArray function overloads)
+  //----------------------------------------------------------------------------------------
+  //! \fn AthenaArray::AllocateData()
+  //  \brief  to be called in non-default ctors, if immediate memory allocation is requested
+  //          (could replace all "new[]" calls in NewAthenaArray function overloads)
 
-template<typename T>
-void AthenaArray<T>::AllocateData() {
-  switch (state_) {
+  template<typename T>
+    void AthenaArray<T>::AllocateData() {
+    switch (state_) {
     case DataStatus::empty:
     case DataStatus::shallow_slice: // init=shallow_slice should never be passed to ctor
       break;
@@ -501,7 +581,7 @@ void AthenaArray<T>::AllocateData() {
       // allocate memory and initialize to zero
       pdata_ = new T[nx1_*nx2_*nx3_*nx4_*nx5_*nx6_]();
       break;
+    }
   }
-}
 
 #endif // ATHENA_ARRAYS_HPP_

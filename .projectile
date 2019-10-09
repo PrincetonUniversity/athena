@@ -2,13 +2,15 @@
 - /obj
 - /tst
 - .git
-- /outputs
 
 - *.o
+- *.x
 
 - *.athdf
 - *.xdmf
-
-- *.png
+- *.hst
+- *.tab
 - *.rst
 - *.dat
+
+- *.png

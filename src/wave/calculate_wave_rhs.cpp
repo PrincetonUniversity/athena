@@ -70,6 +70,7 @@ void Wave::WaveSommerfeld_(AthenaArray<Real> & u,
                            int const is, int const ie,
                            int const js, int const je,
                            int const ks, int const ke){
+  printf("Sommerfeld_\n");
   AthenaArray<Real> wpi;
   wpi.InitWithShallowSlice(u, NWAVE_CPT, 1, 1);
 

@@ -101,8 +101,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin){
         pwave->u(0,k,j,i) = prof(sin_x);
         pwave->u(1,k,j,i) = -direction*M_PI*c*cos_x*prof_diff(sin_x);
 
-        pwave->exact(0,k,j,i) = pwave->u(0,k,j,i);
-        pwave->error(0,k,j,i) = 0.0;
+        pwave->exact(k,j,i) = pwave->u(0,k,j,i);
+        pwave->error(k,j,i) = 0.0;
       }
 
   printf("<-wave_test_1d MeshBlock::ProblemGenerator\n");
@@ -132,7 +132,7 @@ void MeshBlock::UserWorkInLoop(){
           // left travelling clean profile
           xL = sin(M_PI * (x + c * t));
 
-          pwave->exact(0,k,j,i) = prof(xL);
+          pwave->exact(k,j,i) = prof(xL);
           break;
         case 0:
 
@@ -140,22 +140,22 @@ void MeshBlock::UserWorkInLoop(){
           xR = sin(M_PI*(x - c*t));
 
           // Average of left/right travelling
-          pwave->exact(0,k,j,i) = 0.5*(prof(xL) + prof(xR));
+          pwave->exact(k,j,i) = 0.5*(prof(xL) + prof(xR));
           break;
         case 1:
           // right travelling clean profile
           xR = sin(M_PI*(x - c*t));
 
-          pwave->exact(0,k,j,i) = prof(xR);
+          pwave->exact(k,j,i) = prof(xR);
           break;
         default:
           assert(false); // you shouldn't be here
           abort();
         }
-        pwave->error(0,k,j,i) = pwave->u(0,k,j,i) - pwave->exact(0,k,j,i);
+        pwave->error(k,j,i) = pwave->u(0,k,j,i) - pwave->exact(k,j,i);
 
-        if (std::abs(pwave->error(0,k,j,i)) > max_err){
-          max_err = std::abs(pwave->error(0,k,j,i));
+        if (std::abs(pwave->error(k,j,i)) > max_err){
+          max_err = std::abs(pwave->error(k,j,i));
           fun_err = pwave->u(0,k,j,i);
         }
       }

@@ -94,6 +94,9 @@
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
+// BD: new problem
+#include "../wave/wave.hpp"
+// -BD
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
@@ -331,6 +334,10 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   Field *pfld = pmb->pfield;
   PassiveScalars *psclr = pmb->pscalars;
   Gravity *pgrav = pmb->pgrav;
+  // BD: new problem
+  Wave *pwave = pmb->pwave;
+  // -BD
+
   num_vars_ = 0;
   OutputData *pod;
 
@@ -482,6 +489,48 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     AppendOutputDataNode(pod);
     num_vars_++;
   }
+
+  // BD: new problem
+  if (WAVE_ENABLED) {
+    if (output_params.variable.compare("wave") == 0 ||
+        output_params.variable.compare("wave_u") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "wU";
+      pod->data.InitWithShallowSlice(pwave->u, 0, 1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+
+    if (output_params.variable.compare("wave") == 0 ||
+        output_params.variable.compare("wave_pi") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "wPI";
+      pod->data.InitWithShallowSlice(pwave->u, 1, 1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+    if (output_params.variable.compare("wave") == 0 ||
+        output_params.variable.compare("wave_exact") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "wExact";
+      pod->data.InitWithShallowSlice(pwave->exact, 0, 1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+    if (output_params.variable.compare("wave") == 0 ||
+        output_params.variable.compare("wave_error") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "wError";
+      pod->data.InitWithShallowSlice(pwave->error, 0, 1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+  }
+  // -BD
 
   if (SELF_GRAVITY_ENABLED) {
     if (output_params.variable.compare("phi") == 0 ||

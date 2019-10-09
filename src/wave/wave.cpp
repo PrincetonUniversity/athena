@@ -50,18 +50,18 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
   pmb->RegisterMeshBlockData(u);
 
   // Allocate memory for the solution and its time derivative
-  u.NewAthenaArray(2, nc3, nc2, nc1);
-  u1.NewAthenaArray(2, nc3, nc2, nc1);
+  u.NewAthenaArray(Wave::NWAVE_CPT, nc3, nc2, nc1);
+  u1.NewAthenaArray(Wave::NWAVE_CPT, nc3, nc2, nc1);
 
-  rhs.NewAthenaArray(2, nc3, nc2, nc1);
+  rhs.NewAthenaArray(Wave::NWAVE_CPT, nc3, nc2, nc1);
 
-  exact.NewAthenaArray(1, nc3, nc2, nc1);
-  error.NewAthenaArray(1, nc3, nc2, nc1);
+  exact.NewAthenaArray(nc3, nc2, nc1);
+  error.NewAthenaArray(nc3, nc2, nc1);
 
   // If user-requested time integrator is type 3S* allocate additional memory
   std::string integrator = pin->GetOrAddString("time","integrator","vl2");
   if (integrator == "ssprk5_4")
-    u2.NewAthenaArray(2, nc3, nc2, nc1);
+    u2.NewAthenaArray(Wave::NWAVE_CPT, nc3, nc2, nc1);
 
   c = pin->GetOrAddReal("wave", "c", 1.0);
 

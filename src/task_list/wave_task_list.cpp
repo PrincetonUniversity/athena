@@ -402,6 +402,8 @@ TaskStatus WaveIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
 TaskStatus WaveIntegratorTaskList::CalculateWaveRHS(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->pwave->WaveRHS(pmb->pwave->u);
+
+    // hack for boundary conditions
     pmb->pwave->WaveBoundaryRHS(pmb->pwave->u);
     return TaskStatus::next;
   }
@@ -494,7 +496,6 @@ TaskStatus WaveIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
 
 
 TaskStatus WaveIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
-  // PassiveScalars *ps = pmb->pscalars;
   BoundaryValues *pbval = pmb->pbval;
 
   if (stage <= nstages) {
@@ -503,14 +504,7 @@ TaskStatus WaveIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
 
-    // BD: what is going on here?
-    // if (NSCALARS > 0)
-    //   ps->sbvar.var_cc = &(ps->r);
     pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
-
-    // ?
-    // pmb->pwave->ubvar.SetBoundaries();
-
   } else {
     return TaskStatus::fail;
   }
@@ -632,36 +626,6 @@ TaskStatus WaveIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int stage) {
 
 
 
-  //----------------------------------------------------------------------------------------
-  // Functions to communicate variables between MeshBlocks
-
-  enum TaskStatus WaveIntegratorTaskList::WaveSend(MeshBlock *pmb, int stage) {
-  if (stage <= nstages) {
-  pmb->pbval->SendCellCenteredBoundaryBuffers(pmb->pwave->u, WAVE_SOL);
-  } else {
-  return TASK_FAIL;
-  }
-  return TASK_SUCCESS;
-  }
-
-  //----------------------------------------------------------------------------------------
-  // Functions to receive variables between MeshBlocks
-
-  enum TaskStatus WaveIntegratorTaskList::WaveReceive(MeshBlock *pmb, int step) {
-  bool ret;
-  if(step <= nstages) {
-  ret=pmb->pbval->ReceiveCellCenteredBoundaryBuffers(pmb->pwave->u, WAVE_SOL);
-  } else {
-  return TASK_FAIL;
-  }
-
-  if(ret == true) {
-  return TASK_SUCCESS;
-  } else {
-  return TASK_FAIL;
-  }
-  }
-
   //--------------------------------------------------------------------------------------
   // Functions for everything else
 
@@ -685,27 +649,5 @@ TaskStatus WaveIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int stage) {
 
   return TASK_SUCCESS;
   }
-
-  enum TaskStatus WaveIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
-  Hydro *phydro=pmb->phydro;
-  Field *pfield=pmb->pfield;
-  Wave *pwave=pmb->pwave;
-  Z4c *pz4c=pmb->pz4c;
-  BoundaryValues *pbval=pmb->pbval;
-
-  if (stage <= nstages) {
-  // Time at the end of stage for (u, b) register pair
-  Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
-  // Scaled coefficient for RHS time-advance within stage
-  Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-  pbval->ApplyPhysicalBoundaries(phydro->w,  phydro->u, pwave->u, pz4c->storage.u,
-  pfield->b,  pfield->bcc, t_end_stage, dt);
-  } else {
-  return TASK_FAIL;
-  }
-
-  return TASK_SUCCESS;
-  }
-
 
 */
