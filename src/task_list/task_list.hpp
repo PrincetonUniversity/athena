@@ -330,13 +330,13 @@ public:
   TaskStatus CheckRefinement(MeshBlock *pmb, int stage);   // FLAG_AMR     [x]
   TaskStatus CalculateWaveRHS(MeshBlock *pmb, int stage);  // CALC_WAVERHS [x]
   TaskStatus IntegrateWave(MeshBlock *pmb, int stage);     // INT_WAVE     [x]
-  TaskStatus SendWave(MeshBlock *pmb, int stage);          // SEND_WAVE
-  TaskStatus ReceiveWave(MeshBlock *pmb, int stage);       // RECV_WAVE
+  TaskStatus SendWave(MeshBlock *pmb, int stage);          // SEND_WAVE    [x]
+  TaskStatus ReceiveWave(MeshBlock *pmb, int stage);       // RECV_WAVE    [x]
 
-  TaskStatus SetBoundariesWave(MeshBlock *pmb, int stage); // SETB_WAVE
+  TaskStatus SetBoundariesWave(MeshBlock *pmb, int stage); // SETB_WAVE    [x]
 
   TaskStatus Prolongation(MeshBlock *pmb, int stage);      // PROLONG      [x]
-  TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);  // PHY_BVAL
+  TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);  // PHY_BVAL     [x]
 
 private:
   IntegratorWeight stage_wghts[MAX_NSTAGE];

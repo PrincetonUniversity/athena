@@ -30,8 +30,6 @@ void CellCenteredBoundaryVariable::OutflowInnerX1(
         //   (*var_cc)(n,k,j,il-i) = (*var_cc)(n,k,j,il);
 
         for (int i = il-1; i >= il-ngh; --i) {
-          (*var_cc)(n,k,j,il-i) = (*var_cc)(n,k,j,il);
-
           // BD: debug wave outflow
           printf("OutflowInnerX1: HACK\n");
           (*var_cc)(n,k,j,i) = 4.*(*var_cc)(n,k,j,i+1) - 6.*(*var_cc)(n,k,j,i+2) +

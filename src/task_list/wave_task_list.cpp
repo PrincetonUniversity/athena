@@ -403,7 +403,7 @@ TaskStatus WaveIntegratorTaskList::CalculateWaveRHS(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->pwave->WaveRHS(pmb->pwave->u);
 
-    // hack for boundary conditions
+    // application of Sommerfeld boundary conditions
     pmb->pwave->WaveBoundaryRHS(pmb->pwave->u);
     return TaskStatus::next;
   }

@@ -137,7 +137,7 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
           for (int n=0; n<NWAVE_CPT; ++n) {
 #pragma omp simd
             for (int i=is; i<=ie; ++i) {
-              u_out(n,k,j,i) += wght*(pmb->pmy_mesh->dt)*rhs(n,k,j,i);
+              u_out(n, k, j, i) += wght*(pmb->pmy_mesh->dt)*rhs(n, k, j, i);
             }
           }
         }

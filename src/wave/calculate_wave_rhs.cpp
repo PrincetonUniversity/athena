@@ -47,6 +47,7 @@ void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
   MeshBlock * pmb = pmy_block;
 
   if(pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::outflow) {
+    printf("inner_x1 Sommerfeld activated\n");
     WaveSommerfeld_(u, pmb->is, pmb->is, pmb->js, pmb->je, pmb->ks, pmb->ke);
   }
   if(pmb->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::outflow) {
