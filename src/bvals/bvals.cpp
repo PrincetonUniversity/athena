@@ -56,14 +56,15 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   // Check BC functions for each of the 6 boundaries in turn ---------------------
   for (int i=0; i<6; i++) {
     switch (block_bcs[i]) {
-      case BoundaryFlag::reflect:
-      case BoundaryFlag::outflow:
-      case BoundaryFlag::user:
-      case BoundaryFlag::polar_wedge:
-        apply_bndry_fn_[i] = true;
-        break;
-      default: // already initialized to false in class
-        break;
+    case BoundaryFlag::reflect:
+    case BoundaryFlag::outflow:
+    case BoundaryFlag::extrapolate_outflow:
+    case BoundaryFlag::user:
+    case BoundaryFlag::polar_wedge:
+      apply_bndry_fn_[i] = true;
+      break;
+    default: // already initialized to false in class
+      break;
     }
   }
   // Inner x1
@@ -467,74 +468,99 @@ void BoundaryValues::DispatchBoundaryFunctions(
   for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
        ++bvars_it) {
     switch (block_bcs[face]) {
-      case BoundaryFlag::user: // handled above, outside loop over BoundaryVariable objs
+    case BoundaryFlag::user: // handled above, outside loop over BoundaryVariable objs
+      break;
+    case BoundaryFlag::reflect:
+      switch (face) {
+      case BoundaryFace::undef:
+        ATHENA_ERROR(msg);
+      case BoundaryFace::inner_x1:
+        (*bvars_it)->ReflectInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
         break;
-      case BoundaryFlag::reflect:
-        switch (face) {
-          case BoundaryFace::undef:
-            ATHENA_ERROR(msg);
-          case BoundaryFace::inner_x1:
-            (*bvars_it)->ReflectInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
-            break;
-          case BoundaryFace::outer_x1:
-            (*bvars_it)->ReflectOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
-            break;
-          case BoundaryFace::inner_x2:
-            (*bvars_it)->ReflectInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
-            break;
-          case BoundaryFace::outer_x2:
-            (*bvars_it)->ReflectOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
-            break;
-          case BoundaryFace::inner_x3:
-            (*bvars_it)->ReflectInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
-            break;
-          case BoundaryFace::outer_x3:
-            (*bvars_it)->ReflectOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
-            break;
-        }
+      case BoundaryFace::outer_x1:
+        (*bvars_it)->ReflectOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
         break;
-      case BoundaryFlag::outflow:
-        switch (face) {
-          case BoundaryFace::undef:
-            ATHENA_ERROR(msg);
-          case BoundaryFace::inner_x1:
-            (*bvars_it)->OutflowInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
-            break;
-          case BoundaryFace::outer_x1:
-            (*bvars_it)->OutflowOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
-            break;
-          case BoundaryFace::inner_x2:
-            (*bvars_it)->OutflowInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
-            break;
-          case BoundaryFace::outer_x2:
-            (*bvars_it)->OutflowOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
-            break;
-          case BoundaryFace::inner_x3:
-            (*bvars_it)->OutflowInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
-            break;
-          case BoundaryFace::outer_x3:
-            (*bvars_it)->OutflowOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
-            break;
-        }
+      case BoundaryFace::inner_x2:
+        (*bvars_it)->ReflectInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
         break;
-      case BoundaryFlag::polar_wedge:
-        switch (face) {
-          case BoundaryFace::undef:
-            ATHENA_ERROR(msg);
-          case BoundaryFace::inner_x2:
-            (*bvars_it)->PolarWedgeInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
-            break;
-          case BoundaryFace::outer_x2:
-            (*bvars_it)->PolarWedgeOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
-            break;
-          default:
-            std::stringstream msg_polar;
-            msg_polar << "### FATAL ERROR in DispatchBoundaryFunctions" << std::endl
-                      << "Attempting to call polar wedge boundary function on \n"
-                      << "MeshBlock boundary other than inner x2 or outer x2"
-                      << std::endl;
-            ATHENA_ERROR(msg_polar);
-        }
+      case BoundaryFace::outer_x2:
+        (*bvars_it)->ReflectOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+        break;
+      case BoundaryFace::inner_x3:
+        (*bvars_it)->ReflectInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
+        break;
+      case BoundaryFace::outer_x3:
+        (*bvars_it)->ReflectOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
+        break;
+      }
+      break;
+    case BoundaryFlag::outflow:
+      switch (face) {
+      case BoundaryFace::undef:
+        ATHENA_ERROR(msg);
+      case BoundaryFace::inner_x1:
+        (*bvars_it)->OutflowInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
+        break;
+      case BoundaryFace::outer_x1:
+        (*bvars_it)->OutflowOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
+        break;
+      case BoundaryFace::inner_x2:
+        (*bvars_it)->OutflowInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+        break;
+      case BoundaryFace::outer_x2:
+        (*bvars_it)->OutflowOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+        break;
+      case BoundaryFace::inner_x3:
+        (*bvars_it)->OutflowInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
+        break;
+      case BoundaryFace::outer_x3:
+        (*bvars_it)->OutflowOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
+        break;
+      }
+      break;
+    case BoundaryFlag::extrapolate_outflow:
+      switch (face) {
+      case BoundaryFace::undef:
+        ATHENA_ERROR(msg);
+      case BoundaryFace::inner_x1:
+        (*bvars_it)->ExtrapolateOutflowInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
+        break;
+      case BoundaryFace::outer_x1:
+        (*bvars_it)->ExtrapolateOutflowOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
+        break;
+      case BoundaryFace::inner_x2:
+        (*bvars_it)->ExtrapolateOutflowInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+        break;
+      case BoundaryFace::outer_x2:
+        (*bvars_it)->ExtrapolateOutflowOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+        break;
+      case BoundaryFace::inner_x3:
+        (*bvars_it)->ExtrapolateOutflowInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
+        break;
+      case BoundaryFace::outer_x3:
+        (*bvars_it)->ExtrapolateOutflowOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
+        break;
+      }
+      break;
+
+    case BoundaryFlag::polar_wedge:
+      switch (face) {
+      case BoundaryFace::undef:
+        ATHENA_ERROR(msg);
+      case BoundaryFace::inner_x2:
+        (*bvars_it)->PolarWedgeInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+        break;
+      case BoundaryFace::outer_x2:
+        (*bvars_it)->PolarWedgeOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+        break;
+      default:
+        std::stringstream msg_polar;
+        msg_polar << "### FATAL ERROR in DispatchBoundaryFunctions" << std::endl
+                  << "Attempting to call polar wedge boundary function on \n"
+                  << "MeshBlock boundary other than inner x2 or outer x2"
+                  << std::endl;
+        ATHENA_ERROR(msg_polar);
+      }
         break;
       default:
         std::stringstream msg_flag;

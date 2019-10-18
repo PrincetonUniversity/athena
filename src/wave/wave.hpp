@@ -36,7 +36,9 @@ public:
 
   Real c;                       // light speed
 
-  // BD: TODO - add SMR/AMR
+  // control whether radiative condition is applied for outflow  or
+  // extrapolate_outflow BC
+  bool use_Sommerfeld = false;
 
   // boundary and grid data
   CellCenteredBoundaryVariable ubvar;
@@ -44,7 +46,7 @@ public:
 
   // storage for SMR/AMR
   // TODO(KGF): remove trailing underscore or revert to private:
-  AthenaArray<Real> coarse_u_, coarse_v_;
+  AthenaArray<Real> coarse_u_;
   int refinement_idx{-1};
 
   // functions

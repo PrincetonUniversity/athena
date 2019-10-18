@@ -46,34 +46,42 @@ void Wave::WaveRHS(AthenaArray<Real> & u){
 void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
   MeshBlock * pmb = pmy_block;
 
-  if(pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::outflow) {
-    printf("inner_x1 Sommerfeld activated\n");
+  if (!use_Sommerfeld)
+    return;
+
+  if(pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::extrapolate_outflow ||
+     pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::outflow) {
     WaveSommerfeld_(u, pmb->is, pmb->is, pmb->js, pmb->je, pmb->ks, pmb->ke);
   }
-  if(pmb->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::outflow) {
+  if(pmb->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::extrapolate_outflow ||
+     pmb->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::outflow) {
     WaveSommerfeld_(u, pmb->ie, pmb->ie, pmb->js, pmb->je, pmb->ks, pmb->ke);
   }
-  if(pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::outflow) {
+  if(pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::extrapolate_outflow ||
+     pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::outflow) {
     WaveSommerfeld_(u, pmb->is, pmb->ie, pmb->js, pmb->js, pmb->ks, pmb->ke);
   }
-  if(pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::outflow) {
+  if(pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::extrapolate_outflow ||
+     pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::outflow) {
     WaveSommerfeld_(u, pmb->is, pmb->ie, pmb->je, pmb->je, pmb->ks, pmb->ke);
   }
-  if(pmb->pbval->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::outflow) {
+  if(pmb->pbval->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::extrapolate_outflow ||
+     pmb->pbval->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::outflow) {
     WaveSommerfeld_(u, pmb->is, pmb->ie, pmb->js, pmb->je, pmb->ks, pmb->ks);
   }
-  if(pmb->pbval->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::outflow) {
+  if(pmb->pbval->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::extrapolate_outflow ||
+     pmb->pbval->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::outflow) {
     WaveSommerfeld_(u, pmb->is, pmb->ie, pmb->js, pmb->je, pmb->ke, pmb->ke);
   }
+
 }
 
 void Wave::WaveSommerfeld_(AthenaArray<Real> & u,
                            int const is, int const ie,
                            int const js, int const je,
                            int const ks, int const ke){
-  printf("Sommerfeld_\n");
   AthenaArray<Real> wpi;
-  wpi.InitWithShallowSlice(u, NWAVE_CPT, 1, 1);
+  wpi.InitWithShallowSlice(u, Wave::NWAVE_CPT, 1, 1);
 
   MeshBlock * pmb = pmy_block;
   Coordinates * pco = pmb->pcoord;

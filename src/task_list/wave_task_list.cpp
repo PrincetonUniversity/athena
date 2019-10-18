@@ -226,44 +226,23 @@ WaveIntegratorTaskList::WaveIntegratorTaskList(ParameterInput *pin, Mesh *pm){
   // Save to Mesh class
   pm->cfl_number = cfl_number;
 
-  // Now assemble list of tasks for each stage of time integrator
+  // Now assemble list of tasks for each stage of wave integrator
   {using namespace WaveIntegratorTaskNames;
-    // AddWaveIntegratorTask(STARTUP_INT, NONE);
-    // AddWaveIntegratorTask(START_ALLRECV, STARTUP_INT);
-    // AddWaveIntegratorTask(CALC_WAVERHS, START_ALLRECV);
-    // AddWaveIntegratorTask(INT_WAVE, CALC_WAVERHS);
-    // AddWaveIntegratorTask(SEND_WAVE, INT_WAVE);
-    // AddWaveIntegratorTask(RECV_WAVE, START_ALLRECV);
-    // if (pm->multilevel) { // SMR or AMR
-    //   AddWaveIntegratorTask(PROLONG, (SEND_WAVE|RECV_WAVE));
-    //   AddWaveIntegratorTask(PHY_BVAL, PROLONG);
-    // }
-    // else {
-    //   AddWaveIntegratorTask(PHY_BVAL, (SEND_WAVE|RECV_WAVE));
-    // }
-    // AddWaveIntegratorTask(USERWORK, PHY_BVAL);
-    // AddWaveIntegratorTask(NEW_DT, USERWORK);
-
     AddTask(CALC_WAVERHS, NONE);
     AddTask(INT_WAVE, CALC_WAVERHS);
 
     AddTask(SEND_WAVE, INT_WAVE);
     AddTask(RECV_WAVE, NONE);
 
-    // if (pm->multilevel) { // SMR or AMR
-    //   AddTask(PROLONG, (SEND_WAVE|RECV_WAVE));
-    //   AddTask(PHY_BVAL, PROLONG);
-    // }
-    // else {
-    //   AddTask(PHY_BVAL, (SEND_WAVE|RECV_WAVE));
-    // }
-    // AddTask(PHY_BVAL, INT_WAVE);
     AddTask(SETB_WAVE, (RECV_WAVE|INT_WAVE));
 
-    // AddTask(SETB_WAVE, INT_WAVE);
-    AddTask(PHY_BVAL, SETB_WAVE);
-
-    // AddTask(PHY_BVAL, (SEND_WAVE|RECV_WAVE));
+    if (pm->multilevel) { // SMR or AMR
+      AddTask(PROLONG, (SEND_WAVE|SETB_WAVE));
+      AddTask(PHY_BVAL, PROLONG);
+    }
+    else {
+      AddTask(PHY_BVAL, SETB_WAVE);
+    }
 
     AddTask(USERWORK, PHY_BVAL);
 
@@ -317,6 +296,11 @@ void WaveIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&WaveIntegratorTaskList::SetBoundariesWave);
+      task_list_[ntasks].lb_time = true;
+    } else if (id == PROLONG) {
+      task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&WaveIntegratorTaskList::Prolongation);
       task_list_[ntasks].lb_time = true;
     } else if (id == PHY_BVAL) {
       task_list_[ntasks].TaskFunc=
@@ -624,30 +608,5 @@ TaskStatus WaveIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int stage) {
   return TASK_SUCCESS;
   }
 
-
-
-  //--------------------------------------------------------------------------------------
-  // Functions for everything else
-
-  enum TaskStatus WaveIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
-  Hydro *phydro=pmb->phydro;
-  Field *pfield=pmb->pfield;
-  Wave *pwave=pmb->pwave;
-  Z4c *pz4c=pmb->pz4c;
-  BoundaryValues *pbval=pmb->pbval;
-
-  if (stage <= nstages) {
-  // Time at the end of stage for (u, b) register pair
-  Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
-  // Scaled coefficient for RHS time-advance within stage
-  Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-  pbval->ProlongateBoundaries(phydro->w,  phydro->u, pwave->u, pz4c->storage.u,
-  pfield->b,  pfield->bcc, t_end_stage, dt);
-  } else {
-  return TASK_FAIL;
-  }
-
-  return TASK_SUCCESS;
-  }
 
 */

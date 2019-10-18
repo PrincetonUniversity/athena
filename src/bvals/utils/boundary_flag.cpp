@@ -29,6 +29,8 @@ BoundaryFlag GetBoundaryFlag(const std::string& input_string) {
     return BoundaryFlag::reflect;
   } else if (input_string == "outflow") {
     return BoundaryFlag::outflow;
+  } else if (input_string == "extrapolate_outflow") {
+    return BoundaryFlag::extrapolate_outflow;
   } else if (input_string == "user") {
     return BoundaryFlag::user;
   } else if (input_string == "periodic") {
@@ -66,6 +68,8 @@ std::string GetBoundaryString(BoundaryFlag input_flag) {
       return "none";
     case BoundaryFlag::reflect:
       return "reflecting";
+    case BoundaryFlag::extrapolate_outflow:
+      return "extrapolate_outflow";
     case BoundaryFlag::outflow:
       return "outflow";
     case BoundaryFlag::user:

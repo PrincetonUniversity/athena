@@ -358,12 +358,10 @@ namespace WaveIntegratorTaskNames {
   const TaskID RECV_WAVE(5);
   const TaskID SETB_WAVE(6);
   const TaskID PROLONG(7);
-  // const TaskID CON2PRIM(7);
   const TaskID PHY_BVAL(8);
   const TaskID USERWORK(9);
   const TaskID NEW_DT(10);
   const TaskID FLAG_AMR(11);
-  // const TaskID STARTUP_INT(12);
 }  // namespace WaveIntegratorTaskNames
 // -BD
 

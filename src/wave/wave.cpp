@@ -26,10 +26,11 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
   pmy_block(pmb),
   u(NWAVE_CPT, pmb->ncells3, pmb->ncells2, pmb->ncells1),
   empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
-  ubvar(pmb, &u, nullptr, empty_flux)
+  coarse_u_(NWAVE_CPT, pmb->ncc3, pmb->ncc2, pmb->ncc1,
+            (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
+             AthenaArray<Real>::DataStatus::empty)),
+  ubvar(pmb, &u, &coarse_u_, empty_flux)
 {
-
-  printf("->Wave::Wave(MeshBlock *pmb, ParameterInput *pin)\n");
 
   pmy_block = pmb;
   Coordinates * pco = pmb->pcoord;
@@ -59,18 +60,17 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
   error.NewAthenaArray(nc3, nc2, nc1);
 
   // If user-requested time integrator is type 3S* allocate additional memory
-  std::string integrator = pin->GetOrAddString("time","integrator","vl2");
+  std::string integrator = pin->GetOrAddString("time", "integrator", "vl2");
   if (integrator == "ssprk5_4")
     u2.NewAthenaArray(Wave::NWAVE_CPT, nc3, nc2, nc1);
 
   c = pin->GetOrAddReal("wave", "c", 1.0);
+  use_Sommerfeld = pin->GetOrAddBoolean("wave", "use_Sommerfeld", false);
 
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
-  /*
-    if (pm->multilevel) {
+  if (pm->multilevel) {
     refinement_idx = pmy_block->pmr->AddToRefinement(&u, &coarse_u_);
-    }
-  */
+  }
 
   // enroll CellCenteredBoundaryVariable object
   ubvar.bvar_index = pmb->pbval->bvars.size();
@@ -98,50 +98,49 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
     FD.idx[2] = 1.0 / pco->dx3v(0);
   }
 
-  printf("<-Wave::Wave(MeshBlock *pmb, ParameterInput *pin)\n");
 }
 
 
 // destructor
-    Wave::~Wave()
-    {
-      u.DeleteAthenaArray();
+Wave::~Wave()
+{
+  u.DeleteAthenaArray();
 
-      dt1_.DeleteAthenaArray();
-      dt2_.DeleteAthenaArray();
-      dt3_.DeleteAthenaArray();
-      u1.DeleteAthenaArray();
-      u2.DeleteAthenaArray(); // only allocated in case of 3S*-type of integrator
+  dt1_.DeleteAthenaArray();
+  dt2_.DeleteAthenaArray();
+  dt3_.DeleteAthenaArray();
+  u1.DeleteAthenaArray();
+  u2.DeleteAthenaArray(); // only allocated in case of 3S*-type of integrator
 
-      rhs.DeleteAthenaArray();
+  rhs.DeleteAthenaArray();
 
-      exact.DeleteAthenaArray();
-      error.DeleteAthenaArray();
+  exact.DeleteAthenaArray();
+  error.DeleteAthenaArray();
 
-    }
+}
 
 
-    //----------------------------------------------------------------------------------------
-    //! \fn  void Wave::AddWaveRHS
-    //  \brief Adds RHS to weighted average of variables from
-    //  previous step(s) of time integrator algorithm
+//----------------------------------------------------------------------------------------
+//! \fn  void Wave::AddWaveRHS
+//  \brief Adds RHS to weighted average of variables from
+//  previous step(s) of time integrator algorithm
 
-    void Wave::AddWaveRHS(const Real wght, AthenaArray<Real> &u_out) {
-      MeshBlock *pmb=pmy_block;
-      int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-      int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+void Wave::AddWaveRHS(const Real wght, AthenaArray<Real> &u_out) {
+  MeshBlock *pmb=pmy_block;
+  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-      for (int k=ks; k<=ke; ++k) {
-        for (int j=js; j<=je; ++j) {
-          // update variables
-          for (int n=0; n<NWAVE_CPT; ++n) {
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+      // update variables
+      for (int n=0; n<Wave::NWAVE_CPT; ++n) {
 #pragma omp simd
-            for (int i=is; i<=ie; ++i) {
-              u_out(n, k, j, i) += wght*(pmb->pmy_mesh->dt)*rhs(n, k, j, i);
-            }
-          }
+        for (int i=is; i<=ie; ++i) {
+          u_out(n, k, j, i) += wght*(pmb->pmy_mesh->dt)*rhs(n, k, j, i);
         }
       }
-
-      return;
     }
+  }
+
+  return;
+}

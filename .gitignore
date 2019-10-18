@@ -27,6 +27,7 @@ bin/
 *.exe
 *.out
 *.app
+*.x
 athena
 
 # Athena output files
