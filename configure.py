@@ -15,6 +15,7 @@
 #   --nghost=xxx      set NGHOST=xxx
 #   --nscalars=xxx    set NSCALARS=xxx
 #   -eos_table        enable EOS table
+#   -f                enable fluid
 #   -b                enable magnetic fields
 #   -s                enable special relativity
 #   -g                enable general relativity
@@ -112,6 +113,12 @@ parser.add_argument('--nghost',
 parser.add_argument('--nscalars',
                     default='0',
                     help='set number of passive scalars')
+
+# -f argument
+parser.add_argument('-f',
+                    action='store_true',
+                    default=False,
+                    help='enable fluid')
 
 # -b argument
 parser.add_argument('-b',
@@ -394,6 +401,12 @@ definitions['NUMBER_GHOST_CELLS'] = args['nghost']
 
 # --nscalars=[value] argument
 definitions['NUMBER_PASSIVE_SCALARS'] = args['nscalars']
+
+# -f argument
+if args['f']:
+    definitions['FLUID_ENABLED'] = '1'
+else:
+    definitions['FLUID_ENABLED'] = '0'
 
 # -b argument
 # set variety of macros based on whether MHD/hydro or adi/iso are defined
@@ -810,6 +823,7 @@ print('  Problem generator:          ' + args['prob'])
 print('  Coordinate system:          ' + args['coord'])
 print('  Equation of state:          ' + args['eos'])
 print('  Riemann solver:             ' + args['flux'])
+print('  Hydrodynamics:              ' + ('ON' if args['f'] else 'OFF'))
 print('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF'))
 print('  Number of scalars:          ' + args['nscalars'])
 print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))

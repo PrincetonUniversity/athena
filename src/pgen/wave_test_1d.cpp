@@ -17,8 +17,6 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "../mesh/mesh_refinement.hpp"
-
-
 #include "../wave/wave.hpp"
 
 using namespace std;
@@ -61,10 +59,10 @@ namespace {
 
   typedef Real (*unary_function)(Real);
 
-  unary_function prof = NULL;
-  unary_function prof_diff = NULL;
+  unary_function prof = nullptr;
+  unary_function prof_diff = nullptr;
 
-  int direction = 0;
+  int x1dir = 0;
 
 } // namespace
 
@@ -78,8 +76,7 @@ int RefinementCondition(MeshBlock *pmb);
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   if(adaptive==true)
     EnrollUserRefinementCondition(RefinementCondition);
   return;
@@ -90,17 +87,17 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Initialize the problem.
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin){
-  direction = pin->GetOrAddInteger("problem", "direction", 1);
-  if(abs(direction) > 1) {
-    cerr << "Invalid direction: " << direction << endl;
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
+  x1dir = pin->GetOrAddInteger("problem", "x1dir", 1);
+  if(abs(x1dir) > 1) {
+    cerr << "Invalid x1dir: " << x1dir << endl;
     cerr << "Valid values are: -1, 0, and 1" << endl;
     cerr << flush;
     abort();
   }
 
-  string profile = pin->GetOrAddString("problem", "profile", "linear");
-  if(profile == "bump") {
+  string x1prof = pin->GetOrAddString("problem", "x1prof", "linear");
+  if(x1prof == "bump") {
     prof = bump;
     prof_diff = bump_diff;
   }
@@ -108,7 +105,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin){
     prof = linear;
     prof_diff = linear_diff;
   }
-  cout<<'\n'<<direction;
+
   for(int k = ks; k <= ke; ++k)
     for(int j = js; j <= je; ++j)
       for(int i = is; i <= ie; ++i) {
@@ -117,15 +114,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin){
         Real z = pcoord->x3v(k);
         Real c = pwave->c;
 
-        //Sinusoidal initial profile
+        //Sinusoidal initial x1prof
         Real sin_x = sin(M_PI*x);
         Real cos_x = cos(M_PI*x);
 
-        // pwave->u(0,k,j,i) = prof(sin_x);
-        // pwave->u(1,k,j,i) = -direction*M_PI*c*cos_x*prof_diff(sin_x);
+        pwave->u(0,k,j,i) = prof(sin_x);
+        pwave->u(1,k,j,i) = -x1dir*M_PI*c*cos_x*prof_diff(sin_x);
 
-        pwave->u(0,k,j,i) = prof(x);
-        pwave->u(1,k,j,i) = -direction*prof_diff(sin_x);
+        // pwave->u(0,k,j,i) = prof(x);
+        // pwave->u(1,k,j,i) = -x1dir*prof_diff(sin_x);
 
         pwave->exact(k,j,i) = pwave->u(0,k,j,i);
         pwave->error(k,j,i) = 0.0;
@@ -134,12 +131,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin){
   return;
 }
 
-void MeshBlock::UserWorkInLoop(){
+void MeshBlock::WaveUserWorkInLoop() {
   Real max_err = 0;
   Real fun_err = 0;
 
+  if (prof == nullptr)
+    printf("PROBLEM INCOMING\n");
+
+
   for(int k = ks; k <= ke; ++k)
-      for(int j = js; j <= je; ++j)
+    for(int j = js; j <= je; ++j)
       for(int i = is; i <= ie; ++i) {
         Real x = pcoord->x1v(i);
         Real y = pcoord->x2v(j);
@@ -149,26 +150,27 @@ void MeshBlock::UserWorkInLoop(){
 
         Real xL, xR;
 
-        switch(direction) {
+        switch(x1dir) {
         case -1:
-          // left travelling clean profile
+          // left travelling clean x1prof
           xL = sin(M_PI * (x + c * t));
 
           pwave->exact(k,j,i) = prof(xL);
           break;
         case 0:
 
-          // xL = sin(M_PI*(x + c*t));
-          // xR = sin(M_PI*(x - c*t));
+          xL = sin(M_PI*(x + c*t));
+          xR = sin(M_PI*(x - c*t));
 
-          xL = x + c*t;
-          xR = x - c*t;
+          // xL = x + c*t;
+          // xR = x - c*t;
 
           // Average of left/right travelling
           pwave->exact(k,j,i) = 0.5*(prof(xL) + prof(xR));
+          // pwave->exact(k, j, i) = 0;
           break;
         case 1:
-          // right travelling clean profile
+          // right travelling clean x1prof
           xR = sin(M_PI*(x - c*t));
 
           pwave->exact(k,j,i) = prof(xR);
@@ -222,7 +224,7 @@ int RefinementCondition(MeshBlock *pmb){
   // Real br_x2min = 0.2;
   // Real br_x2max = 0.3;
 
-  // Slide refinement box in positive direction as time increases
+  // Slide refinement box in positive x1dir as time increases
   Real tiniref = 0.1; // time we start refining
   Real delta_x1 = 0.8; // distance to slide by
   // Real delta_x2 = -0.8;

@@ -24,6 +24,9 @@
 #define RIEMANN_SOLVER "@RSOLVER@"
 
 // configure.py dict(definitions) Boolean values:
+// evolve hydrodynamics? default=0 (false)
+#define FLUID_ENABLED @FLUID_ENABLED@
+
 // enable shearing box? default=0 (false)
 #define SHEARING_BOX @SHEARING_BOX@
 

@@ -140,7 +140,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // 3) MAGNETIC_FIELDS_ENABLED, SELF_GRAVITY_ENABLED, NSCALARS, (future) FLUID_ENABLED,
   // etc. become runtime switches
 
-  // if (FLUID_ENABLED) {
+  if (FLUID_ENABLED) {
     // if (this->hydro_block)
     phydro = new Hydro(this, pin);
     // } else
@@ -148,12 +148,14 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     // Regardless, advance MeshBlock's local counter (initialized to bvars_next_phys_id=1)
     // Greedy reservation of phys IDs (only 1 of 2 needed for Hydro if multilevel==false)
     pbval->AdvanceCounterPhysID(HydroBoundaryVariable::max_phys_id);
-    //  }
+  }
+
   if (MAGNETIC_FIELDS_ENABLED) {
     // if (this->field_block)
     pfield = new Field(this, pin);
     pbval->AdvanceCounterPhysID(FaceCenteredBoundaryVariable::max_phys_id);
   }
+
   if (SELF_GRAVITY_ENABLED) {
     // if (this->grav_block)
     pgrav = new Gravity(this, pin);
@@ -161,6 +163,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     if (SELF_GRAVITY_ENABLED == 2)
       pmg = new MGGravity(pmy_mesh->pmgrd, this);
   }
+
   if (NSCALARS > 0) {
     // if (this->scalars_block)
     pscalars = new PassiveScalars(this, pin);
@@ -170,6 +173,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // BD: new problem
   if (WAVE_ENABLED){
     pwave = new Wave(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
   // -BD
 
@@ -181,7 +185,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // Mesh::next_phys_id_ counter (including non-BoundaryVariable / per-MeshBlock reserved
   // values). Compare both private member variables via BoundaryValues::CheckCounterPhysID
 
-  peos = new EquationOfState(this, pin);
+  if (FLUID_ENABLED) {
+    peos = new EquationOfState(this, pin);
+  }
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
@@ -268,20 +274,22 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   // (re-)create physics-related objects in MeshBlock
 
-  // if (FLUID_ENABLED) {
-  // if (this->hydro_block)
-  phydro = new Hydro(this, pin);
-  // } else
-  // }
-  // Regardless, advance MeshBlock's local counter (initialized to bvars_next_phys_id=1)
-  // Greedy reservation of phys IDs (only 1 of 2 needed for Hydro if multilevel==false)
-  pbval->AdvanceCounterPhysID(HydroBoundaryVariable::max_phys_id);
-  //  }
+  if (FLUID_ENABLED) {
+    // if (this->hydro_block)
+    phydro = new Hydro(this, pin);
+    // } else
+    // }
+    // Regardless, advance MeshBlock's local counter (initialized to bvars_next_phys_id=1)
+    // Greedy reservation of phys IDs (only 1 of 2 needed for Hydro if multilevel==false)
+    pbval->AdvanceCounterPhysID(HydroBoundaryVariable::max_phys_id);
+  }
+
   if (MAGNETIC_FIELDS_ENABLED) {
     // if (this->field_block)
     pfield = new Field(this, pin);
     pbval->AdvanceCounterPhysID(FaceCenteredBoundaryVariable::max_phys_id);
   }
+
   if (SELF_GRAVITY_ENABLED) {
     // if (this->grav_block)
     pgrav = new Gravity(this, pin);
@@ -303,19 +311,23 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
   // -BD
 
-
-  peos = new EquationOfState(this, pin);
+  if (FLUID_ENABLED) {
+    peos = new EquationOfState(this, pin);
+  }
 
   InitUserMeshBlockData(pin);
 
   std::size_t os = 0;
   // NEW_OUTPUT_TYPES:
 
-  // load hydro and field data
-  std::memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
-  // load it into the other memory register(s) too
-  std::memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
-  os += phydro->u.GetSizeInBytes();
+  if (FLUID_ENABLED) {
+    // load hydro and field data
+    std::memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
+    // load it into the other memory register(s) too
+    std::memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
+    os += phydro->u.GetSizeInBytes();
+  }
+
   if (GENERAL_RELATIVITY) {
     std::memcpy(phydro->w.data(), &(mbdata[os]), phydro->w.GetSizeInBytes());
     os += phydro->w.GetSizeInBytes();
@@ -375,9 +387,9 @@ MeshBlock::~MeshBlock() {
   delete precon;
   if (pmy_mesh->multilevel) delete pmr;
 
-  delete phydro;
+  if (FLUID_ENABLED) delete phydro;
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
-  delete peos;
+  if (FLUID_ENABLED) delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
   if (NSCALARS > 0) delete pscalars;
 
@@ -470,9 +482,11 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
 //  \brief Calculate the block data size required for restart.
 
 std::size_t MeshBlock::GetBlockSizeInBytes() {
-  std::size_t size;
+  std::size_t size = 0;
   // NEW_OUTPUT_TYPES:
-  size = phydro->u.GetSizeInBytes();
+  if (FLUID_ENABLED)
+    size += phydro->u.GetSizeInBytes();
+
   if (GENERAL_RELATIVITY) {
     size += phydro->w.GetSizeInBytes();
     size += phydro->w1.GetSizeInBytes();

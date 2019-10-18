@@ -153,6 +153,13 @@ class MeshBlock {
   void UserWorkBeforeOutput(ParameterInput *pin); // called in Mesh fn (friend class)
   void UserWorkInLoop();                          // called in TimeIntegratorTaskList
 
+  // BD: new problem
+  // This is a quick fix to prevent multiple calls to 'UserWorkInLoop' if
+  // TimeIntegratorTaskList and WaveIntegratorTaskList are both running..
+  void WaveUserWorkInLoop();
+  // -BD
+
+
  private:
   // data
   Real new_block_dt_, new_block_dt_hyperbolic_, new_block_dt_parabolic_,

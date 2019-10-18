@@ -488,7 +488,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     return;
   }
 
-
   if (SELF_GRAVITY_ENABLED == 1) {
     gflag = 1; // set gravity flag
     pfgrd = new FFTGravityDriver(this, pin);
@@ -524,6 +523,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 
   if (turb_flag > 0) // TurbulenceDriver depends on the MeshBlock ctor
     ptrbd = new TurbulenceDriver(this, pin);
+
 }
 
 //----------------------------------------------------------------------------------------
@@ -669,6 +669,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     use_uniform_meshgen_fn_[X3DIR] = false;
     MeshGenerator_[X3DIR] = DefaultMeshGeneratorX3;
   }
+
 
   // Load balancing flag and parameters
 #ifdef MPI_PARALLEL
@@ -1391,12 +1392,16 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
-        pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
-                                             HydroBoundaryQuantity::cons);
-        pmb->phydro->hbvar.SendBoundaryBuffers();
+        if (FLUID_ENABLED) {
+          pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
+                                               HydroBoundaryQuantity::cons);
+          pmb->phydro->hbvar.SendBoundaryBuffers();
+        }
+
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.SendBoundaryBuffers();
         // and (conserved variable) passive scalar masses:
+
         if (NSCALARS > 0)
           pmb->pscalars->sbvar.SendBoundaryBuffers();
 
@@ -1410,7 +1415,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; pbval = pmb->pbval;
-        pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
+        if (FLUID_ENABLED)
+          pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
         if (NSCALARS > 0)
@@ -1436,23 +1442,25 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pbval->StartReceiving(BoundaryCommSubset::gr_amr);
         }
 
-        // send primitives
+        if(FLUID_ENABLED) {
+          // send primitives
 #pragma omp for private(pmb,pbval)
-        for (int i=0; i<nmb; ++i) {
-          pmb = pmb_array[i]; pbval = pmb->pbval;
-          pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
-                                               HydroBoundaryQuantity::prim);
-          pmb->phydro->hbvar.SendBoundaryBuffers();
-        }
+          for (int i=0; i<nmb; ++i) {
+            pmb = pmb_array[i]; pbval = pmb->pbval;
+            pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
+                                                 HydroBoundaryQuantity::prim);
+            pmb->phydro->hbvar.SendBoundaryBuffers();
+          }
 
-        // wait to receive AMR/SMR GR primitives
+          // wait to receive AMR/SMR GR primitives
 #pragma omp for private(pmb,pbval)
-        for (int i=0; i<nmb; ++i) {
-          pmb = pmb_array[i]; pbval = pmb->pbval;
-          pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
-          pbval->ClearBoundary(BoundaryCommSubset::gr_amr);
-          pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
-                                               HydroBoundaryQuantity::cons);
+          for (int i=0; i<nmb; ++i) {
+            pmb = pmb_array[i]; pbval = pmb->pbval;
+            pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
+            pbval->ClearBoundary(BoundaryCommSubset::gr_amr);
+            pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
+                                                 HydroBoundaryQuantity::cons);
+          }
         }
       } // multilevel
 
@@ -1463,11 +1471,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         CorrectMidpointInitialCondition(pmb_array, nmb);
       }
       // Now do prolongation, compute primitives, apply BCs
-      Hydro *ph;
-      Field *pf;
-      PassiveScalars *ps;
+      Hydro *ph = nullptr;
+      Field *pf = nullptr;
+      PassiveScalars *ps = nullptr;
       // BD: new problem
-      Wave *pw;
+      Wave *pw = nullptr;
       // -BD
 
 #pragma omp for private(pmb,pbval,ph,pf,ps)
@@ -1490,9 +1498,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           if (pbval->nblevel[0][1][1] != -1) kl -= NGHOST;
           if (pbval->nblevel[2][1][1] != -1) ku += NGHOST;
         }
-        pmb->peos->ConservedToPrimitive(ph->u, ph->w1, pf->b,
-                                        ph->w, pf->bcc, pmb->pcoord,
-                                        il, iu, jl, ju, kl, ku);
+
+        if (FLUID_ENABLED) {
+          pmb->peos->ConservedToPrimitive(ph->u, ph->w1, pf->b,
+                                          ph->w, pf->bcc, pmb->pcoord,
+                                          il, iu, jl, ju, kl, ku);
+        }
+
         if (NSCALARS > 0) {
           // r1/r_old for GR is currently unused:
           pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->w, ps->r, ps->r,
@@ -1512,20 +1524,26 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           if (pbval->nblevel[2][1][1] != -1) ku -= 1;
           // for MHD, shrink buffer by 3
           // TODO(felker): add MHD loop limit calculation for 4th order W(U)
-          pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
-                                                     ph->w, pf->bcc, pmb->pcoord,
-                                                     il, iu, jl, ju, kl, ku);
+          if (FLUID_ENABLED) {
+            pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
+                                                       ph->w, pf->bcc, pmb->pcoord,
+                                                       il, iu, jl, ju, kl, ku);
+          }
+
           if (NSCALARS > 0) {
             pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
-                                                                    ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
+              ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
           }
         }
         // --------------------------
         // end fourth-order EOS
 
-        // Swap Hydro and (possibly) passive scalar quantities in BoundaryVariable
-        // interface from conserved to primitive formulations:
-        ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
+        if (FLUID_ENABLED) {
+          // Swap Hydro and (possibly) passive scalar quantities in BoundaryVariable
+          // interface from conserved to primitive formulations:
+          ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
+        }
+
         if (NSCALARS > 0)
           ps->sbvar.var_cc = &(ps->r);
 
@@ -1536,7 +1554,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,ph,pf)
       for (int i=0; i<nmb; ++i) {
         pmb = pmb_array[i]; ph = pmb->phydro, pf = pmb->pfield;
-        if (ph->hdif.hydro_diffusion_defined)
+        if (FLUID_ENABLED && ph->hdif.hydro_diffusion_defined)
           ph->hdif.SetDiffusivity(ph->w, pf->bcc);
         if (MAGNETIC_FIELDS_ENABLED) {
           if (pf->fdif.field_diffusion_defined)
@@ -1577,10 +1595,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
   // calculate the first time step
 #pragma omp parallel for num_threads(nthreads)
   for (int i=0; i<nmb; ++i) {
-    pmb_array[i]->phydro->NewBlockTimeStep();
+    if (FLUID_ENABLED)
+      pmb_array[i]->phydro->NewBlockTimeStep();
 
     // BD: new problem
-    if(WAVE_ENABLED)
+    if (WAVE_ENABLED)
       pmb_array[i]->pwave->NewBlockTimeStep();
     // -BD
   }
@@ -1832,11 +1851,11 @@ int Mesh::ReserveTagPhysIDs(int num_phys) {
 
 void Mesh::ReserveMeshBlockPhysIDs() {
 #ifdef MPI_PARALLEL
-  // if (FLUID_ENABLED) {
-  // Advance Mesh's shared counter (initialized to next_phys_id=1 if MPI)
-  // Greedy reservation of phys IDs (only 1 of 2 needed for Hydro if multilevel==false)
-  ReserveTagPhysIDs(HydroBoundaryVariable::max_phys_id);
-  //  }
+  if (FLUID_ENABLED) {
+    // Advance Mesh's shared counter (initialized to next_phys_id=1 if MPI)
+    // Greedy reservation of phys IDs (only 1 of 2 needed for Hydro if multilevel==false)
+    ReserveTagPhysIDs(HydroBoundaryVariable::max_phys_id);
+  }
   if (MAGNETIC_FIELDS_ENABLED) {
     ReserveTagPhysIDs(FaceCenteredBoundaryVariable::max_phys_id);
   }

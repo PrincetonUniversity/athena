@@ -28,16 +28,6 @@ void CellCenteredBoundaryVariable::OutflowInnerX1(
 #pragma omp simd
         for (int i=1; i<=ngh; ++i) {
           (*var_cc)(n,k,j,il-i) = (*var_cc)(n,k,j,il);
-          // BD: TODO: remove
-
-          // for (int i = il-1; i >= il-ngh; --i) {
-        //   // BD: debug wave outflow
-        //   // BD: the order here should also switch based on ghosts...?
-        //   printf("OutflowInnerX1: HACK\n");
-        //   // extrapolate variables at 4th order
-        //   (*var_cc)(n,k,j,i) = 4.*(*var_cc)(n,k,j,i+1) - 6.*(*var_cc)(n,k,j,i+2) +
-        //     4.*(*var_cc)(n,k,j,i+3) - 1.*(*var_cc)(n,k,j,i+4);
-
         }
       }
     }

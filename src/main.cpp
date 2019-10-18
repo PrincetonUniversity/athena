@@ -326,11 +326,29 @@ int main(int argc, char *argv[]) {
   //--- Step 5. --------------------------------------------------------------------------
   // Construct and initialize TaskList
   printf("->main Step 5\n");
-  TimeIntegratorTaskList *ptlist;
-  ptlist = new TimeIntegratorTaskList(pinput, pmesh);
+  TimeIntegratorTaskList *ptlist = nullptr;
+
+#ifdef ENABLE_EXCEPTIONS
+  try {
+#endif
+    if(FLUID_ENABLED){
+      ptlist = new TimeIntegratorTaskList(pinput, pmesh);
+    }
+#ifdef ENABLE_EXCEPTIONS
+  }
+  catch(std::bad_alloc& ba) {
+    std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
+              << "in creating task list " << ba.what() << std::endl;
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
+    return(0);
+  }
+#endif // ENABLE_EXCEPTIONS
+
 
   // BD: new problem
-  WaveIntegratorTaskList *pwlist;
+  WaveIntegratorTaskList *pwlist = nullptr;
   // -BD
 
 #ifdef ENABLE_EXCEPTIONS
@@ -460,16 +478,16 @@ int main(int argc, char *argv[]) {
         pststlist->DoTaskListOneStage(pmesh,stage);
     }
 
-    if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
+    if (FLUID_ENABLED){
+      if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
 
-    for (int stage=1; stage<=ptlist->nstages; ++stage) {
-      if (SELF_GRAVITY_ENABLED == 1) // fft (flag 0 for discrete kernel, 1 for continuous)
-        pmesh->pfgrd->Solve(stage, 0);
-      else if (SELF_GRAVITY_ENABLED == 2) // multigrid
-        pmesh->pmgrd->Solve(stage);
-      // BD: debug (disable hydro task processing)
-      // ptlist->DoTaskListOneStage(pmesh, stage);
-      // -BD
+      for (int stage=1; stage<=ptlist->nstages; ++stage) {
+        if (SELF_GRAVITY_ENABLED == 1) // fft (flag 0 for discrete kernel, 1 for continuous)
+          pmesh->pfgrd->Solve(stage, 0);
+        else if (SELF_GRAVITY_ENABLED == 2) // multigrid
+          pmesh->pmgrd->Solve(stage);
+        ptlist->DoTaskListOneStage(pmesh, stage);
+      }
     }
 
     // BD: new problem
@@ -481,9 +499,7 @@ int main(int argc, char *argv[]) {
     }
     // -BD
 
-
     pmesh->UserWorkInLoop();
-
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;
     mbcnt += pmesh->nbtotal;

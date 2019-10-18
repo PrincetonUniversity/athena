@@ -28,6 +28,9 @@
 #include "../globals.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
+// BD: new problem
+#include "../wave/wave.hpp"
+// -BD
 #include "../mesh/mesh.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
@@ -35,7 +38,9 @@
 // NEW_OUTPUT_TYPES:
 
 // "3" for 1-KE, 2-KE, 3-KE additional columns (come before tot-E)
-#define NHISTORY_VARS ((NHYDRO) + (SELF_GRAVITY_ENABLED) + (NFIELD) + 3 + (NSCALARS))
+#define NHISTORY_VARS (((NHYDRO) + 3) * (FLUID_ENABLED) + (SELF_GRAVITY_ENABLED) + \
+                       (NFIELD) + (NSCALARS) + \
+                       2 * WAVE_ENABLED) // BD: new problem
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::HistoryFile()
@@ -71,6 +76,9 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     Field *pfld = pmb->pfield;
     PassiveScalars *psclr = pmb->pscalars;
     Gravity *pgrav = pmb->pgrav;
+    // BD: new problem
+    Wave  *pwave = pmb->pwave;
+    // -BD
 
     // Sum history variables over cells.  Note ghost cells are never included in sums
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
@@ -79,46 +87,58 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         for (int i=pmb->is; i<=pmb->ie; ++i) {
           // NEW_OUTPUT_TYPES:
 
-          // Hydro conserved variables:
-          Real& u_d  = phyd->u(IDN,k,j,i);
-          Real& u_mx = phyd->u(IM1,k,j,i);
-          Real& u_my = phyd->u(IM2,k,j,i);
-          Real& u_mz = phyd->u(IM3,k,j,i);
+          int isum = 0;
+          if (FLUID_ENABLED) {
+            // Hydro conserved variables:
+            Real& u_d  = phyd->u(IDN,k,j,i);
+            Real& u_mx = phyd->u(IM1,k,j,i);
+            Real& u_my = phyd->u(IM2,k,j,i);
+            Real& u_mz = phyd->u(IM3,k,j,i);
 
-          hst_data[0] += vol(i)*u_d;
-          hst_data[1] += vol(i)*u_mx;
-          hst_data[2] += vol(i)*u_my;
-          hst_data[3] += vol(i)*u_mz;
-          // + partitioned KE by coordinate direction:
-          hst_data[4] += vol(i)*0.5*SQR(u_mx)/u_d;
-          hst_data[5] += vol(i)*0.5*SQR(u_my)/u_d;
-          hst_data[6] += vol(i)*0.5*SQR(u_mz)/u_d;
+            hst_data[isum++] += vol(i)*u_d;
+            hst_data[isum++] += vol(i)*u_mx;
+            hst_data[isum++] += vol(i)*u_my;
+            hst_data[isum++] += vol(i)*u_mz;
+            // + partitioned KE by coordinate direction:
+            hst_data[isum++] += vol(i)*0.5*SQR(u_mx)/u_d;
+            hst_data[isum++] += vol(i)*0.5*SQR(u_my)/u_d;
+            hst_data[isum++] += vol(i)*0.5*SQR(u_mz)/u_d;
 
-          if (NON_BAROTROPIC_EOS) {
-            Real& u_e = phyd->u(IEN,k,j,i);;
-            hst_data[7] += vol(i)*u_e;
+            if (NON_BAROTROPIC_EOS) {
+              Real& u_e = phyd->u(IEN,k,j,i);;
+              hst_data[isum++] += vol(i)*u_e;
+            }
+            // Graviatational potential energy:
+            if (SELF_GRAVITY_ENABLED) {
+              Real& phi = pgrav->phi(k,j,i);
+              hst_data[isum++] += vol(i)*0.5*u_d*phi;
+            }
+            // Cell-centered magnetic energy, partitioned by coordinate direction:
+            if (MAGNETIC_FIELDS_ENABLED) {
+              Real& bcc1 = pfld->bcc(IB1,k,j,i);
+              Real& bcc2 = pfld->bcc(IB2,k,j,i);
+              Real& bcc3 = pfld->bcc(IB3,k,j,i);
+              // constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED;
+              hst_data[isum++] += vol(i)*0.5*bcc1*bcc1;
+              hst_data[isum++] += vol(i)*0.5*bcc2*bcc2;
+              hst_data[isum++] += vol(i)*0.5*bcc3*bcc3;
+            }
+            // (conserved variable) Passive scalars:
+            for (int n=0; n<NSCALARS; n++) {
+              Real& s = psclr->s(n,k,j,i);
+              // constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED + NFIELD;
+              hst_data[isum++] += vol(i)*s;
+            }
           }
-          // Graviatational potential energy:
-          if (SELF_GRAVITY_ENABLED) {
-            Real& phi = pgrav->phi(k,j,i);
-            hst_data[NHYDRO + 3] += vol(i)*0.5*u_d*phi;
+
+          // BD: new problem
+          if (WAVE_ENABLED) {
+            Real& wave_error = pwave->error(0,k,j,i);
+            hst_data[isum++] += vol(i)*wave_error;
+            hst_data[isum++] += vol(i)*SQR(wave_error);
           }
-          // Cell-centered magnetic energy, partitioned by coordinate direction:
-          if (MAGNETIC_FIELDS_ENABLED) {
-            Real& bcc1 = pfld->bcc(IB1,k,j,i);
-            Real& bcc2 = pfld->bcc(IB2,k,j,i);
-            Real& bcc3 = pfld->bcc(IB3,k,j,i);
-            constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED;
-            hst_data[prev_out] += vol(i)*0.5*bcc1*bcc1;
-            hst_data[prev_out + 1] += vol(i)*0.5*bcc2*bcc2;
-            hst_data[prev_out + 2] += vol(i)*0.5*bcc3*bcc3;
-          }
-          // (conserved variable) Passive scalars:
-          for (int n=0; n<NSCALARS; n++) {
-            Real& s = psclr->s(n,k,j,i);
-            constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED + NFIELD;
-            hst_data[prev_out + n] += vol(i)*s;
-          }
+          // -BD
+
         }
       }
     }
@@ -202,23 +222,32 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       std::fprintf(pfile,"# Athena++ history data\n"); // descriptor is first line
       std::fprintf(pfile,"# [%d]=time     ", iout++);
       std::fprintf(pfile,"[%d]=dt       ", iout++);
-      std::fprintf(pfile,"[%d]=mass     ", iout++);
-      std::fprintf(pfile,"[%d]=1-mom    ", iout++);
-      std::fprintf(pfile,"[%d]=2-mom    ", iout++);
-      std::fprintf(pfile,"[%d]=3-mom    ", iout++);
-      std::fprintf(pfile,"[%d]=1-KE     ", iout++);
-      std::fprintf(pfile,"[%d]=2-KE     ", iout++);
-      std::fprintf(pfile,"[%d]=3-KE     ", iout++);
-      if (NON_BAROTROPIC_EOS) std::fprintf(pfile,"[%d]=tot-E   ", iout++);
-      if (SELF_GRAVITY_ENABLED) std::fprintf(pfile,"[%d]=grav-E   ", iout++);
-      if (MAGNETIC_FIELDS_ENABLED) {
-        std::fprintf(pfile,"[%d]=1-ME    ", iout++);
-        std::fprintf(pfile,"[%d]=2-ME    ", iout++);
-        std::fprintf(pfile,"[%d]=3-ME    ", iout++);
+      if (FLUID_ENABLED) {
+        std::fprintf(pfile,"[%d]=mass     ", iout++);
+        std::fprintf(pfile,"[%d]=1-mom    ", iout++);
+        std::fprintf(pfile,"[%d]=2-mom    ", iout++);
+        std::fprintf(pfile,"[%d]=3-mom    ", iout++);
+        std::fprintf(pfile,"[%d]=1-KE     ", iout++);
+        std::fprintf(pfile,"[%d]=2-KE     ", iout++);
+        std::fprintf(pfile,"[%d]=3-KE     ", iout++);
+        if (NON_BAROTROPIC_EOS) std::fprintf(pfile,"[%d]=tot-E   ", iout++);
+        if (SELF_GRAVITY_ENABLED) std::fprintf(pfile,"[%d]=grav-E   ", iout++);
+        if (MAGNETIC_FIELDS_ENABLED) {
+          std::fprintf(pfile,"[%d]=1-ME    ", iout++);
+          std::fprintf(pfile,"[%d]=2-ME    ", iout++);
+          std::fprintf(pfile,"[%d]=3-ME    ", iout++);
+        }
+        for (int n=0; n<NSCALARS; n++) {
+          std::fprintf(pfile,"[%d]=%d-scalar    ", iout++, n);
+        }
       }
-      for (int n=0; n<NSCALARS; n++) {
-        std::fprintf(pfile,"[%d]=%d-scalar    ", iout++, n);
-      }
+
+      // BD: new problem
+      if (WAVE_ENABLED) {
+        fprintf(pfile,"[%d]=err-norm1 ", iout++);
+        fprintf(pfile,"[%d]=err-norm2 ", iout++);
+      } // -BD
+
       for (int n=0; n<pm->nuser_history_output_; n++)
         std::fprintf(pfile,"[%d]=%-8s", iout++,
                      pm->user_history_output_names_[n].c_str());

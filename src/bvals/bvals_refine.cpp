@@ -93,9 +93,13 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
   // downcast BoundaryVariable pointers to known derived class pointer types:
   // RTTI via dynamic_case
-  HydroBoundaryVariable *phbvar =
-      dynamic_cast<HydroBoundaryVariable *>(bvars_main_int[0]);
-  Hydro *ph = pmb->phydro;
+  HydroBoundaryVariable *phbvar = nullptr;
+  Hydro *ph = nullptr;
+
+  if (FLUID_ENABLED) {
+    phbvar = dynamic_cast<HydroBoundaryVariable *>(bvars_main_int[0]);
+    ph = pmb->phydro;
+  }
 
   CellCenteredBoundaryVariable *psbvar = nullptr;
   PassiveScalars *ps = nullptr;
@@ -183,7 +187,8 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
     // (temp workaround) to automatically call all BoundaryFunction_[] on coarse_prim/b
     // instead of previous targets var_cc=cons, var_fc=b
-    phbvar->var_cc = &(ph->coarse_prim_);
+    if (FLUID_ENABLED)
+      phbvar->var_cc = &(ph->coarse_prim_);
     if (MAGNETIC_FIELDS_ENABLED)
       pfbvar->var_fc = &(pf->coarse_b_);
     if (NSCALARS > 0) {
@@ -196,7 +201,8 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
     // (temp workaround) swap BoundaryVariable var_cc/fc to standard primitive variable
     // arrays (not coarse) from coarse primitive variables arrays
-    phbvar->var_cc = &(ph->w);
+    if (FLUID_ENABLED)
+      phbvar->var_cc = &(ph->w);
     if (MAGNETIC_FIELDS_ENABLED)
       pfbvar->var_fc = &(pf->b);
     if (NSCALARS > 0) {
@@ -320,7 +326,11 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
   MeshRefinement *pmr = pmb->pmr;
 
   // temporarily hardcode Hydro and Field array access:
-  Hydro *ph = pmb->phydro;
+  Hydro *ph = nullptr;
+  if (FLUID_ENABLED) {
+    ph = pmb->phydro;
+  }
+
   Field *pf = nullptr;
   if (MAGNETIC_FIELDS_ENABLED) {
     pf = pmb->pfield;
@@ -360,11 +370,14 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
   // to bind references to coarse_b_, coarse_bcc, since coarse_* are no longer members of
   // MeshRefinement that always exist (even if not allocated).
 
-  // KGF: COUPLING OF QUANTITIES (must be manually specified)
-  pmb->peos->ConservedToPrimitive(ph->coarse_cons_, ph->coarse_prim_,
-                                  pf->coarse_b_, ph->coarse_prim_,
-                                  pf->coarse_bcc_, pmr->pcoarsec,
-                                  si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
+  if (FLUID_ENABLED) {
+    // KGF: COUPLING OF QUANTITIES (must be manually specified)
+    pmb->peos->ConservedToPrimitive(ph->coarse_cons_, ph->coarse_prim_,
+                                    pf->coarse_b_, ph->coarse_prim_,
+                                    pf->coarse_bcc_, pmr->pcoarsec,
+                                    si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
+  }
+
   if (NSCALARS > 0) {
     PassiveScalars *ps = pmb->pscalars;
     pmb->peos->PassiveScalarConservedToPrimitive(ps->coarse_s_, ph->coarse_prim_,
@@ -421,7 +434,9 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
 
   // prolongate cell-centered S/AMR-enrolled quantities (hydro, radiation, scalars, ...)
   //(unique to Hydro, PassiveScalars): swap ptrs to (w, coarse_prim) from (u, coarse_cons)
-  pmr->SetHydroRefinement(HydroBoundaryQuantity::prim);
+  if (FLUID_ENABLED)
+    pmr->SetHydroRefinement(HydroBoundaryQuantity::prim);
+
   // (r, coarse_r) from (s, coarse_s)
   if (NSCALARS > 0) {
     PassiveScalars *ps = pmb->pscalars;
@@ -436,7 +451,9 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
                                       si, ei, sj, ej, sk, ek);
   }
   // swap back MeshRefinement ptrs to standard/coarse conserved variable arrays:
-  pmr->SetHydroRefinement(HydroBoundaryQuantity::cons);
+  if (FLUID_ENABLED)
+    pmr->SetHydroRefinement(HydroBoundaryQuantity::cons);
+
   if (NSCALARS > 0) {
     PassiveScalars *ps = pmb->pscalars;
     pmr->pvars_cc_[ps->refinement_idx] = std::make_tuple(&ps->s, &ps->coarse_s_);
@@ -506,7 +523,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   }
 
   // temporarily hardcode Hydro and Field array access
-  Hydro *ph = pmb->phydro;
+  Hydro *ph = nullptr;
   Field *pf = nullptr;
 
   // KGF: COUPLING OF QUANTITIES (must be manually specified)
@@ -521,8 +538,12 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
 
   // KGF: COUPLING OF QUANTITIES (must be manually specified)
   // calculate conservative variables
-  pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pmb->pcoord,
-                                  fsi, fei, fsj, fej, fsk, fek);
+  if (FLUID_ENABLED) {
+    ph = pmb->phydro;
+    pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pmb->pcoord,
+                                    fsi, fei, fsj, fej, fsk, fek);
+  }
+
   if (NSCALARS > 0) {
     PassiveScalars *ps = pmb->pscalars;
     pmb->peos->PassiveScalarPrimitiveToConserved(ps->r, ph->w, ps->s, pmb->pcoord,

@@ -59,10 +59,12 @@ public:
   Real WaveProfile(Real x, Real y, Real z);
 */
 
-  static const int NWAVE_CPT = 2;    // number of wave equation field components
+  static const int NWAVE_CPT = 2;      // num. of wave equation field components
 
 private:
-  AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
+  AthenaArray<Real> dt1_,dt2_,dt3_;    // scratch arrays used in NewTimeStep
+  // int direction_ = 0;                  // pgen propagation direction
+  // std::string profile_ = "linear";     // pgen initial profile
 
 private:
   void WaveSommerfeld_(AthenaArray<Real> & u,

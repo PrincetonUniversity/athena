@@ -54,8 +54,6 @@ WaveIntegratorTaskList::WaveIntegratorTaskList(ParameterInput *pin, Mesh *pm){
   // sequences in code, e.g. main.cpp: "Step 1: MPI"
   //
   // main.cpp invokes the tasklist in a for () loop from stage=1 to stage=ptlist->nstages
-  printf("->WaveIntegratorTaskList::WaveIntegratorTaskList(ParameterInput *pin, Mesh *pm)\n");
-
   integrator = pin->GetOrAddString("time", "integrator", "vl2");
 
   if (integrator == "vl2") {
@@ -255,7 +253,6 @@ WaveIntegratorTaskList::WaveIntegratorTaskList(ParameterInput *pin, Mesh *pm){
     }
   } // end of using namespace block
 
-  printf("<-WaveIntegratorTaskList::WaveIntegratorTaskList(ParameterInput *pin, Mesh *pm)\n");
 }
 
 //---------------------------------------------------------------------------------------
@@ -500,7 +497,7 @@ TaskStatus WaveIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
 TaskStatus WaveIntegratorTaskList::UserWork(MeshBlock *pmb, int stage) {
   if (stage != nstages) return TaskStatus::success; // only do on last stage
 
-  pmb->UserWorkInLoop();
+  pmb->WaveUserWorkInLoop();
   return TaskStatus::success;
 }
 
@@ -518,95 +515,3 @@ TaskStatus WaveIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int stage) {
   pmb->pmr->CheckRefinementCondition();
   return TaskStatus::success;
 }
-
-
-/*
-  void WaveIntegratorTaskList::AddWaveIntegratorTask(uint64_t id, uint64_t dep) {
-  task_list_[ntasks].task_id=id;
-  task_list_[ntasks].dependency=dep;
-
-  using namespace WaveIntegratorTaskNames;
-  switch((id)) {
-  case (START_ALLRECV):
-  task_list_[ntasks].TaskFunc=
-  static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-  (&WaveIntegratorTaskList::StartAllReceive);
-  break;
-  case (CLEAR_ALLBND):
-  task_list_[ntasks].TaskFunc=
-  static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-  (&WaveIntegratorTaskList::ClearAllBoundary);
-  break;
-  case (CALC_WAVERHS):
-  task_list_[ntasks].TaskFunc=
-  static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-  (&WaveIntegratorTaskList::CalculateWaveRHS);
-  break;
-  case (INT_WAVE):
-  task_list_[ntasks].TaskFunc=
-  static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-  (&WaveIntegratorTaskList::WaveIntegrate);
-  break;
-  case (SEND_WAVE):
-  task_list_[ntasks].TaskFunc=
-  static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-  (&WaveIntegratorTaskList::WaveSend);
-  break;
-  case (RECV_WAVE):
-  task_list_[ntasks].TaskFunc=
-  static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-  (&WaveIntegratorTaskList::WaveReceive);
-  break;
-  case (PROLONG):
-  task_list_[ntasks].TaskFunc=
-  static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-  (&WaveIntegratorTaskList::Prolongation);
-  break;
-  case (PHY_BVAL):
-  task_list_[ntasks].TaskFunc=
-  static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-  (&WaveIntegratorTaskList::PhysicalBoundary);
-  break;
-  case (USERWORK):
-  task_list_[ntasks].TaskFunc=
-  static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-  (&WaveIntegratorTaskList::UserWork);
-  break;
-  case (NEW_DT):
-  task_list_[ntasks].TaskFunc=
-  static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-  (&WaveIntegratorTaskList::NewBlockTimeStep);
-  break;
-  case (AMR_FLAG):
-  task_list_[ntasks].TaskFunc=
-  static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-  (&WaveIntegratorTaskList::CheckRefinement);
-  break;
-  case (STARTUP_INT):
-  task_list_[ntasks].TaskFunc=
-  static_cast<enum TaskStatus (TaskList::*)(MeshBlock*,int)>
-  (&WaveIntegratorTaskList::StartupIntegrator);
-  break;
-
-  default:
-  std::stringstream msg;
-  msg << "### FATAL ERROR in AddTimeIntegratorTask" << std::endl
-  << "Invalid Task "<< id << " is specified" << std::endl;
-  throw std::runtime_error(msg.str().c_str());
-  }
-  ntasks++;
-  return;
-  }
-
-  //----------------------------------------------------------------------------------------
-  // Functions to start/end MPI communication
-
-  enum TaskStatus WaveIntegratorTaskList::StartAllReceive(MeshBlock *pmb, int stage) {
-  Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-  Real time = pmb->pmy_mesh->time+dt;
-  pmb->pbval->StartReceivingAll(time);
-  return TASK_SUCCESS;
-  }
-
-
-*/

@@ -31,7 +31,6 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
              AthenaArray<Real>::DataStatus::empty)),
   ubvar(pmb, &u, &coarse_u_, empty_flux)
 {
-
   pmy_block = pmb;
   Coordinates * pco = pmb->pcoord;
 
@@ -66,6 +65,10 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
 
   c = pin->GetOrAddReal("wave", "c", 1.0);
   use_Sommerfeld = pin->GetOrAddBoolean("wave", "use_Sommerfeld", false);
+
+  // <problem>
+  // direction_ = pin->GetOrAddInteger("problem", "direction", 0);
+  // profile_ = pin->GetOrAddString("problem", "profile", "linear");
 
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
   if (pm->multilevel) {

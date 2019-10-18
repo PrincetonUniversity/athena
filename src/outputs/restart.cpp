@@ -27,6 +27,9 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
+// BD: new problem
+#include "../wave/wave.hpp"
+// -BD
 #include "outputs.hpp"
 
 
@@ -151,8 +154,10 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     // MeshBlock::GetBlockSizeInBytes accordingly and MeshBlock constructor for restarts.
 
     // Hydro conserved variables:
-    std::memcpy(pdata, pmb->phydro->u.data(), pmb->phydro->u.GetSizeInBytes());
-    pdata += pmb->phydro->u.GetSizeInBytes();
+    if (FLUID_ENABLED) {
+      std::memcpy(pdata, pmb->phydro->u.data(), pmb->phydro->u.GetSizeInBytes());
+      pdata += pmb->phydro->u.GetSizeInBytes();
+    }
 
     // Hydro primitive variables (at current and previous step):
     if (GENERAL_RELATIVITY) {
@@ -185,6 +190,12 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     //   std::memcpy(pdata, r.data(), r.GetSizeInBytes());
     //   pdata += r.GetSizeInBytes();
     // }
+
+    if (WAVE_ENABLED) {
+      std::memcpy(pdata, pmb->pwave->u.data(), pmb->pwave->u.GetSizeInBytes());
+      pdata += pmb->pwave->u.GetSizeInBytes();
+    }
+
 
     // User MeshBlock data:
     // integer data:
