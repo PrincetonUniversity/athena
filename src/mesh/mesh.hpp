@@ -234,7 +234,7 @@ class Mesh {
   int nlim, ncycle, ncycle_out, dt_diagnostics;
   std::string sts_integrator;
   Real sts_max_dt_ratio;
-  int sts_loc;
+  TaskType sts_loc;
   Real muj, nuj, muj_tilde, gammaj_tilde;
   int nbtotal, nbnew, nbdel;
 

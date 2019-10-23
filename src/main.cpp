@@ -433,7 +433,7 @@ int main(int argc, char *argv[]) {
       pmesh->OutputCycleDiagnostics();
 
     if (STS_ENABLED) {
-      pmesh->sts_loc = OP_SPLIT_BEFORE;
+      pmesh->sts_loc = TaskType::op_split_before;
       // compute nstages for this STS
       if (pmesh->sts_integrator == "rkl2") {
         pststlist->nstages =
@@ -450,6 +450,8 @@ int main(int argc, char *argv[]) {
       // take super-timestep
       for (int stage=1; stage<=pststlist->nstages; ++stage)
         pststlist->DoTaskListOneStage(pmesh, stage);
+
+      pmesh->sts_loc = TaskType::main_int;
     }
 
     if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
@@ -463,7 +465,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (STS_ENABLED && pmesh->sts_integrator == "rkl2") {
-      pmesh->sts_loc = OP_SPLIT_AFTER;
+      pmesh->sts_loc = TaskType::op_split_after;
       // take super-timestep
       for (int stage=1; stage<=pststlist->nstages; ++stage)
         pststlist->DoTaskListOneStage(pmesh, stage);

@@ -241,7 +241,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
     // everything else
     AddTask(PHY_BVAL,CONS2PRIM);
     if (pm->sts_integrator == "rkl2") {
-      // OP_SPLIT_AFTER tasks:
+      // TaskType::op_split_after tasks:
       AddTask(USERWORK,PHY_BVAL);
       AddTask(NEW_DT,USERWORK);
       if (pm->adaptive) {
@@ -250,7 +250,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
       } else {
         AddTask(CLEAR_ALLBND,NEW_DT);
       }
-    } else { // rkl1, no OP_SPLIT_AFTER tasks
+    } else { // rkl1, no TaskType::op_split_after tasks
       AddTask(CLEAR_ALLBND,PHY_BVAL);
     }
   } // end of using namespace block
@@ -787,7 +787,7 @@ TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage
 TaskStatus SuperTimeStepTaskList::UserWork_STS(MeshBlock *pmb, int stage) {
   if (stage != nstages) return TaskStatus::success; // only do on last stage
 
-  if (pmb->pmy_mesh->sts_loc == OP_SPLIT_AFTER)
+  if (pmb->pmy_mesh->sts_loc == TaskType::op_split_after)
     pmb->UserWorkInLoop();
   return TaskStatus::success;
 }
@@ -796,7 +796,7 @@ TaskStatus SuperTimeStepTaskList::UserWork_STS(MeshBlock *pmb, int stage) {
 TaskStatus SuperTimeStepTaskList::NewBlockTimeStep_STS(MeshBlock *pmb, int stage) {
   if (stage != nstages) return TaskStatus::success; // only do on last stage
 
-  if (pmb->pmy_mesh->sts_loc == OP_SPLIT_AFTER)
+  if (pmb->pmy_mesh->sts_loc == TaskType::op_split_after)
     pmb->phydro->NewBlockTimeStep();
   return TaskStatus::success;
 }
@@ -805,7 +805,7 @@ TaskStatus SuperTimeStepTaskList::NewBlockTimeStep_STS(MeshBlock *pmb, int stage
 TaskStatus SuperTimeStepTaskList::CheckRefinement_STS(MeshBlock *pmb, int stage) {
   if (stage != nstages) return TaskStatus::success; // only do on last stage
 
-  if (pmb->pmy_mesh->sts_loc == OP_SPLIT_AFTER)
+  if (pmb->pmy_mesh->sts_loc == TaskType::op_split_after)
     pmb->pmr->CheckRefinementCondition();
   return TaskStatus::success;
 }
