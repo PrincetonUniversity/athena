@@ -34,7 +34,8 @@ def prepare(*args, **kwargs):
 def run(**kwargs):
     for integrator in sts_integrators:
         for n in resolution_range:
-            arguments = ['job/problem_id=ScalarDiffusion_' + repr(n) + '_' + integrator,
+            arguments = ['job/problem_id=ScalarDiffusion_'
+                         + repr(n) + '_' + integrator,
                          'output2/file_type=tab', 'output2/variable=r0',
                          'output2/data_format=%24.16e', 'output2/dt={}'.format(_tf),
                          'time/cfl_number=0.8',
