@@ -101,8 +101,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   // prevent reallocation of contiguous memory space for each of 4x possible calls to
   // std::vector<BoundaryVariable *>.push_back() in Hydro, Field, Gravity, PassiveScalars
   bvars.reserve(3);
-  // TOOD(KGF): rename to "bvars_time_int"? What about a std::vector for bvars_sts?
   bvars_main_int.reserve(2);
+  if (STS_ENABLED) {
+    bvars_sts.reserve(1);
+  }
 
   // Matches initial value of Mesh::next_phys_id_
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
@@ -210,11 +212,13 @@ void BoundaryValues::CheckUserBoundaries() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceiving(BoundaryCommSubset phase)
+//! \fn void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
+//                                std::vector<BoundaryVariable *> bvars_subset)
 //  \brief initiate MPI_Irecv()
 
-void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
-  for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
+                                          std::vector<BoundaryVariable *> bvars_subset) {
+  for (auto bvars_it = bvars_subset.begin(); bvars_it != bvars_subset.end();
        ++bvars_it) {
     (*bvars_it)->StartReceiving(phase);
   }
@@ -226,7 +230,6 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
   }
   return;
 }
-
 
 void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase) {
   switch (phase) {
@@ -260,16 +263,17 @@ void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase) {
   return;
 }
 
-
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ClearBoundary(BoundaryCommSubset phase)
+//! \fn void BoundaryValues::ClearBoundary(BoundaryCommSubset phase,
+//                                         std::vector<BoundaryVariable *> bvars_subset)
 //  \brief clean up the boundary flags after each loop
 
-void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
+void BoundaryValues::ClearBoundarySubset(BoundaryCommSubset phase,
+                                         std::vector<BoundaryVariable *> bvars_subset) {
   // Note BoundaryCommSubset::mesh_init corresponds to initial exchange of conserved fluid
   // variables and magentic fields, while BoundaryCommSubset::gr_amr corresponds to fluid
   // primitive variables sent only in the case of GR with refinement
-  for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+  for (auto bvars_it = bvars_subset.begin(); bvars_it != bvars_subset.end();
        ++bvars_it) {
     (*bvars_it)->ClearBoundary(phase);
   }
@@ -277,10 +281,12 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt)
+//! \fn void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
+//                                         std::vector<BoundaryVariable *> bvars_subset)
 //  \brief Apply all the physical boundary conditions for both hydro and field
 
-void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
+void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
+                                   std::vector<BoundaryVariable *> bvars_subset) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
   int bis = pmb->is - NGHOST, bie = pmb->ie + NGHOST,
@@ -303,18 +309,18 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 
   // KGF: COUPLING OF QUANTITIES (must be manually specified)
   // downcast BoundaryVariable ptrs to known derived class types: RTTI via dynamic_cast
-  HydroBoundaryVariable *phbvar =
-      dynamic_cast<HydroBoundaryVariable *>(bvars_main_int[0]);
+  // HydroBoundaryVariable *phbvar =
+  //     dynamic_cast<HydroBoundaryVariable *>(bvars_main_int[0]);
   Hydro *ph = pmb->phydro;
 
   // TODO(KGF): passing nullptrs (pf) if no MHD (coarse_* no longer in MeshRefinement)
   // (may be fine to unconditionally directly set to pmb->pfield. See bvals_refine.cpp)
 
-  FaceCenteredBoundaryVariable *pfbvar = nullptr;
+  // FaceCenteredBoundaryVariable *pfbvar = nullptr;
   Field *pf = nullptr;
   if (MAGNETIC_FIELDS_ENABLED) {
     pf = pmb->pfield;
-    pfbvar = dynamic_cast<FaceCenteredBoundaryVariable *>(bvars_main_int[1]);
+    // pfbvar = dynamic_cast<FaceCenteredBoundaryVariable *>(bvars_main_int[1]);
   }
   PassiveScalars *ps = nullptr;
   if (NSCALARS > 0) {
@@ -325,7 +331,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
     DispatchBoundaryFunctions(pmb, pco, time, dt,
                               pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
-                              ph->w, pf->b, BoundaryFace::inner_x1);
+                              ph->w, pf->b, BoundaryFace::inner_x1,
+                              bvars_subset);
     // KGF: COUPLING OF QUANTITIES (must be manually specified)
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -344,7 +351,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
     DispatchBoundaryFunctions(pmb, pco, time, dt,
                               pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
-                              ph->w, pf->b, BoundaryFace::outer_x1);
+                              ph->w, pf->b, BoundaryFace::outer_x1,
+                              bvars_subset);
     // KGF: COUPLING OF QUANTITIES (must be manually specified)
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -364,7 +372,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, pmb->js, pmb->je, bks, bke, NGHOST,
-                                ph->w, pf->b, BoundaryFace::inner_x2);
+                                ph->w, pf->b, BoundaryFace::inner_x2,
+                                bvars_subset);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -383,7 +392,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, pmb->js, pmb->je, bks, bke, NGHOST,
-                                ph->w, pf->b, BoundaryFace::outer_x2);
+                                ph->w, pf->b, BoundaryFace::outer_x2,
+                                bvars_subset);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -407,7 +417,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
-                                ph->w, pf->b, BoundaryFace::inner_x3);
+                                ph->w, pf->b, BoundaryFace::inner_x3,
+                                bvars_subset);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -426,7 +437,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
     if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
-                                ph->w, pf->b, BoundaryFace::outer_x3);
+                                ph->w, pf->b, BoundaryFace::outer_x3,
+                                bvars_subset);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -449,7 +461,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 void BoundaryValues::DispatchBoundaryFunctions(
     MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh,
-    AthenaArray<Real> &prim, FaceField &b, BoundaryFace face) {
+    AthenaArray<Real> &prim, FaceField &b, BoundaryFace face,
+    std::vector<BoundaryVariable *> bvars_subset) {
   if (block_bcs[face] ==  BoundaryFlag::user) {  // user-enrolled BCs
     pmy_mesh_->BoundaryFunction_[face](pmb, pco, prim, b, time, dt,
                                        il, iu, jl, ju, kl, ku, NGHOST);
@@ -464,7 +477,7 @@ void BoundaryValues::DispatchBoundaryFunctions(
 
   // For any function in the BoundaryPhysics interface class, iterate over
   // BoundaryVariable pointers "enrolled"
-  for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
+  for (auto bvars_it = bvars_subset.begin(); bvars_it != bvars_subset.end();
        ++bvars_it) {
     switch (block_bcs[face]) {
       case BoundaryFlag::user: // handled above, outside loop over BoundaryVariable objs

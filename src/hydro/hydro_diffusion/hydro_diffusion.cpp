@@ -9,7 +9,12 @@
 
 // C++ headers
 #include <algorithm>  // min()
+#include <cstring>    // strcmp()
+#include <iostream>   // endl
 #include <limits>
+#include <sstream>    // sstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
 
 // Athena++ headers
 #include "../../athena.hpp"
@@ -72,6 +77,13 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
       else
         CalcCondCoeff_ = pmb_->pmy_mesh->ConductionCoeff_;
     }
+  }
+
+  if (hydro_diffusion_defined && RELATIVISTIC_DYNAMICS) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in HydroDiffusion" << std::endl
+        << "Diffusion is incompatibile with relativistic dynamics" << std::endl;
+    ATHENA_ERROR(msg);
   }
 
   if (hydro_diffusion_defined) {

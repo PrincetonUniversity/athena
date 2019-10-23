@@ -160,6 +160,7 @@ enum class HydroBoundaryQuantity {cons, prim};
 enum class BoundaryCommSubset {mesh_init, gr_amr, all};
 // TODO(felker): consider generalizing/renaming to QuantityFormulation
 enum class FluidFormulation {evolve, background, disabled}; // rename background -> fixed?
+enum class TaskType {op_split_before, main_int, op_split_after};
 enum class UserHistoryOperation {sum, max, min};
 
 //----------------------------------------------------------------------------------------

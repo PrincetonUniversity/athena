@@ -33,6 +33,7 @@ class PassiveScalars {
   // public data:
   // "conserved vars" = passive scalar mass
   AthenaArray<Real> s, s1, s2;  // (no more than MAX_NREGISTER allowed)
+  AthenaArray<Real> s0, s_fl_div;  // rkl2 STS memory registers;
   // "primitive vars" = (density-normalized) mass fraction/concentration of each species
   AthenaArray<Real> r;  // , r1;
   AthenaArray<Real> s_flux[3];  // face-averaged flux vector
@@ -53,6 +54,8 @@ class PassiveScalars {
   // public functions:
   // KGF: use inheritance for these functions / overall class?
   void AddFluxDivergence(const Real wght, AthenaArray<Real> &s_out);
+  void AddFluxDivergence_STS(const Real wght, int stage,
+                             AthenaArray<Real> &s_out, AthenaArray<Real> &s_flux_div_out);
   void CalculateFluxes(AthenaArray<Real> &s, const int order);
   void CalculateFluxes_STS();
 
