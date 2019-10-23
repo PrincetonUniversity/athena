@@ -26,7 +26,7 @@ rate_tols = [-1.99]
 def prepare(*args, **kwargs):
     logger.debug('Running test ' + __name__)
     athena.configure(prob='scalar_diff', *args,
-                     eos='isothermal',
+                     eos='isothermal', flux='roe',
                      nscalars=1, **kwargs)
     athena.make()
 
@@ -62,13 +62,13 @@ def analyze():
 
     for i in range(len(sts_integrators)):
         for n in resolution_range:
-            x1v, v2 = athena_read.tab('bin/scalar_diff_' + str(n) + '_'
+            x1v, r0 = athena_read.tab('bin/scalar_diff_' + str(n) + '_'
                                       + sts_integrators[i] + '.block0.out2.00001.tab',
                                       raw=True, dimensions=1)
             dx1 = _Lx1/len(x1v)
             analytic = (_amp/np.sqrt(4.*np.pi*_nu*(_t0+_tf))
                         * np.exp(-(x1v**2.)/(4.*_nu*(_t0+_tf))))
-            l1ERROR[i].append(sum(np.absolute(v2-analytic)*dx1))
+            l1ERROR[i].append(sum(np.absolute(r0-analytic)*dx1))
 
     # estimate L1 convergence
     analyze_status = True
