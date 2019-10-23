@@ -128,19 +128,14 @@ class MeshBlock {
   int GetNumberOfMeshBlockCells() {
     return block_size.nx1*block_size.nx2*block_size.nx3; }
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
-  void WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
-                   AthenaArray<Real> &u_in2, const Real wght[3]);
-  void WeightedAve(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
-                   const Real wght[3]);
-  void WeightedAve_STS(AthenaArray<Real> &u_out,
-                       AthenaArray<Real> &u_in1, AthenaArray<Real> &u_in2,
-                       AthenaArray<Real> &u_in3, AthenaArray<Real> &u_in4,
-                       const Real wght[4]);
-  void WeightedAve_STS(FaceField &b_out,
-                       FaceField &b_in1, FaceField &b_in2,
-                       FaceField &b_in3, FaceField &b_in4,
-                       const Real wght[4]);
-
+  void WeightedAve(AthenaArray<Real> &u_out,
+                  AthenaArray<Real> &u_in1, AthenaArray<Real> &u_in2,
+                  AthenaArray<Real> &u_in3, AthenaArray<Real> &u_in4,
+                  const Real wght[5]);
+  void WeightedAve(FaceField &b_out,
+                   FaceField &b_in1, FaceField &b_in2,
+                   FaceField &b_in3, FaceField &b_in4,
+                   const Real wght[5]);
 
   // inform MeshBlock which arrays contained in member Hydro, Field, Particles,
   // ... etc. classes are the "primary" representations of a quantity. when registered,

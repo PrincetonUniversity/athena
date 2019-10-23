@@ -578,16 +578,17 @@ TaskStatus SuperTimeStepTaskList::IntegrateHydro_STS(MeshBlock *pmb, int stage) 
 
   // update u
   if (stage <= nstages) {
-    Real ave_wghts[4];
-    ave_wghts[0] = pmb->pmy_mesh->muj;
-    ave_wghts[1] = pmb->pmy_mesh->nuj;
-    ave_wghts[2] = 0.;
+    Real ave_wghts[5];
+    ave_wghts[0] = 0.;
+    ave_wghts[1] = pmb->pmy_mesh->muj;
+    ave_wghts[2] = pmb->pmy_mesh->nuj;
     ave_wghts[3] = 0.;
+    ave_wghts[4] = 0.;
     if (pmb->pmy_mesh->sts_integrator == "rkl2") {
-      ave_wghts[2] = 1. - pmb->pmy_mesh->muj - pmb->pmy_mesh->nuj;
-      ave_wghts[3] = pmb->pmy_mesh->gammaj_tilde;
+      ave_wghts[3] = 1. - pmb->pmy_mesh->muj - pmb->pmy_mesh->nuj;
+      ave_wghts[4] = pmb->pmy_mesh->gammaj_tilde;
     }
-    pmb->WeightedAve_STS(ph->u, ph->u1, ph->u2, ph->u0, ph->fl_div, ave_wghts);
+    pmb->WeightedAve(ph->u, ph->u1, ph->u2, ph->u0, ph->fl_div, ave_wghts);
 
     Real wght = pmb->pmy_mesh->muj_tilde*pmb->pmy_mesh->dt;
     if (pmb->pmy_mesh->sts_integrator == "rkl2") {
@@ -614,17 +615,18 @@ TaskStatus SuperTimeStepTaskList::IntegrateScalars_STS(MeshBlock *pmb, int stage
 
   // update s
   if (stage <= nstages) {
-    Real ave_wghts[4];
-    ave_wghts[0] = pmb->pmy_mesh->muj;
-    ave_wghts[1] = pmb->pmy_mesh->nuj;
-    ave_wghts[2] = 0.;
+    Real ave_wghts[5];
+    ave_wghts[0] = 0.;
+    ave_wghts[1] = pmb->pmy_mesh->muj;
+    ave_wghts[2] = pmb->pmy_mesh->nuj;
     ave_wghts[3] = 0.;
+    ave_wghts[4] = 0.;
     if (pmb->pmy_mesh->sts_integrator == "rkl2") {
-      ave_wghts[2] = 1. - pmb->pmy_mesh->muj - pmb->pmy_mesh->nuj;
-      ave_wghts[3] = pmb->pmy_mesh->gammaj_tilde;
+      ave_wghts[3] = 1. - pmb->pmy_mesh->muj - pmb->pmy_mesh->nuj;
+      ave_wghts[4] = pmb->pmy_mesh->gammaj_tilde;
     }
 
-    pmb->WeightedAve_STS(ps->s, ps->s1, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
+    pmb->WeightedAve(ps->s, ps->s1, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
 
     Real wght = pmb->pmy_mesh->muj_tilde*pmb->pmy_mesh->dt;
     if (pmb->pmy_mesh->sts_integrator == "rkl2") {
@@ -661,16 +663,17 @@ TaskStatus SuperTimeStepTaskList::IntegrateField_STS(MeshBlock *pmb, int stage) 
 
   // update b
   if (stage <= nstages) {
-    Real ave_wghts[4];
-    ave_wghts[0] = pmb->pmy_mesh->muj;
-    ave_wghts[1] = pmb->pmy_mesh->nuj;
-    ave_wghts[2] = 0.;
+    Real ave_wghts[5];
+    ave_wghts[0] = 0.;
+    ave_wghts[1] = pmb->pmy_mesh->muj;
+    ave_wghts[2] = pmb->pmy_mesh->nuj;
     ave_wghts[3] = 0.;
+    ave_wghts[4] = 0.;
     if (pmb->pmy_mesh->sts_integrator == "rkl2") {
-      ave_wghts[2] = 1. - pmb->pmy_mesh->muj - pmb->pmy_mesh->nuj;
-      ave_wghts[3] = pmb->pmy_mesh->gammaj_tilde;
+      ave_wghts[3] = 1. - pmb->pmy_mesh->muj - pmb->pmy_mesh->nuj;
+      ave_wghts[4] = pmb->pmy_mesh->gammaj_tilde;
     }
-    pmb->WeightedAve_STS(pf->b, pf->b1, pf->b2, pf->b0, pf->ct_update, ave_wghts);
+    pmb->WeightedAve(pf->b, pf->b1, pf->b2, pf->b0, pf->ct_update, ave_wghts);
 
     Real wght = pmb->pmy_mesh->muj_tilde*pmb->pmy_mesh->dt;
     if (pmb->pmy_mesh->sts_integrator == "rkl2") {
