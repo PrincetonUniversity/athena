@@ -33,7 +33,8 @@ def prepare(*args, **kwargs):
 def run(**kwargs):
     for integrator in sts_integrators:
         for n in resolution_range:
-            arguments = ['job/problem_id=visc_' + repr(n) + '_' + integrator,
+            arguments = ['job/problem_id=ViscousDiffusion_'
+                         + repr(n) + '_' + integrator,
                          'output2/file_type=tab', 'output2/variable=v2',
                          'output2/data_format=%24.16e', 'output2/dt={}'.format(_tf),
                          'time/cfl_number=0.8',
@@ -61,7 +62,7 @@ def analyze():
 
     for i in range(len(sts_integrators)):
         for n in resolution_range:
-            x1v, v2 = athena_read.tab('bin/visc_' + str(n) + '_'
+            x1v, v2 = athena_read.tab('bin/ViscousDiffusion_' + str(n) + '_'
                                       + sts_integrators[i] + '.block0.out2.00001.tab',
                                       raw=True, dimensions=1)
             dx1 = _Lx1/len(x1v)

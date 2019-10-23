@@ -1,11 +1,10 @@
 <comment>
 problem   = scalar diffusion
 reference =
-configure = --prob=scalar_diffusion --eos=isothermal
-            --nscalars=1 (-sts)
+configure = --prob=scalar_diffusion --eos=isothermal --nscalars=1 (-sts)
 
 <job>
-problem_id = sclr_diff  # problem ID: basename of output filenames
+problem_id = ScalarDiffusion  # problem ID: basename of output filenames
 
 <output1>
 file_type = hst   # History data dump

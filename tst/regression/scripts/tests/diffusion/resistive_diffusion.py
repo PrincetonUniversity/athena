@@ -34,7 +34,7 @@ def prepare(*args, **kwargs):
 def run(**kwargs):
     for integrator in sts_integrators:
         for n in resolution_range:
-            arguments = ['job/problem_id=resist_' + repr(n) + '_' + integrator,
+            arguments = ['job/problem_id=ResistiveDiffusion_' + repr(n) + '_' + integrator,
                          'output2/file_type=tab', 'output2/variable=bcc2',
                          'output2/data_format=%24.16e', 'output2/dt={}'.format(_tf),
                          'time/cfl_number=0.8',
@@ -62,7 +62,7 @@ def analyze():
 
     for i in range(len(sts_integrators)):
         for n in resolution_range:
-            x1v, bcc2 = athena_read.tab('bin/resist_' + str(n) + '_'
+            x1v, bcc2 = athena_read.tab('bin/ResistiveDiffusion_' + str(n) + '_'
                                         + sts_integrators[i] + '.block0.out2.00001.tab',
                                         raw=True, dimensions=1)
             dx1 = _Lx1/len(x1v)

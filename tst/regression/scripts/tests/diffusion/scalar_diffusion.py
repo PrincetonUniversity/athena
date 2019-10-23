@@ -34,7 +34,7 @@ def prepare(*args, **kwargs):
 def run(**kwargs):
     for integrator in sts_integrators:
         for n in resolution_range:
-            arguments = ['job/problem_id=scalar_diff_' + repr(n) + '_' + integrator,
+            arguments = ['job/problem_id=ScalarDiffusion_' + repr(n) + '_' + integrator,
                          'output2/file_type=tab', 'output2/variable=r0',
                          'output2/data_format=%24.16e', 'output2/dt={}'.format(_tf),
                          'time/cfl_number=0.8',
@@ -62,7 +62,7 @@ def analyze():
 
     for i in range(len(sts_integrators)):
         for n in resolution_range:
-            x1v, r0 = athena_read.tab('bin/scalar_diff_' + str(n) + '_'
+            x1v, r0 = athena_read.tab('bin/ScalarDiffusion_' + str(n) + '_'
                                       + sts_integrators[i] + '.block0.out2.00001.tab',
                                       raw=True, dimensions=1)
             dx1 = _Lx1/len(x1v)
