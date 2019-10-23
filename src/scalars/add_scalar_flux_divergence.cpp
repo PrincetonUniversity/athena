@@ -101,21 +101,10 @@ void PassiveScalars::AddFluxDivergence(const Real wght, AthenaArray<Real> &s_out
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void PassiveScalars::AddFluxDivergence
-//  \brief Adds flux divergence to weighted average of conservative variables from
-//  previous step(s) of time integrator algorithm
-
-// TODO(felker): after the removal of AddCoordTermsDivergence() fn call from
-// Hydro::AddFluxDivergence(), the 2x fns could be trivially shared if:
-// - flux/s_flux renamed to the same class member name
-// - 7x below references of x1face_area_ ... dflx_ private class members (which are only
-// ever used in this fn and are members to prevent de/allocating each fn call)
-// - NHYDRO/NSCALARS is replaced with array_out.GetDim4()
-
-// ----> Hydro should be derived from PassiveScalars
-
-// TODO(felker): remove the following unnecessary private class member?
-// field_diffusion.cpp:66:    cell_volume_.NewAthenaArray(nc1);
+//! \fn  void PassiveScalars::AddFluxDivergence_STS
+//  \brief Adds scalar diffusive flux divergence to weighted average of conservative
+// scalar quantity from previous step of time integration algorithm.  RKL2 registers are
+// set to flux divergence update if first stage of RKL2 STS.
 
 void PassiveScalars::AddFluxDivergence_STS(const Real wght, int stage,
                                            AthenaArray<Real> &s_out,

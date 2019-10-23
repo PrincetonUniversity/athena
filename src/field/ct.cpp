@@ -118,7 +118,7 @@ void Field::CT(const Real wght, FaceField &b_out) {
 //----------------------------------------------------------------------------------------
 //! \fn  void Field::CT_STS
 //  \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
-//         for STS. RKL2 registers are set to -Curl(E) update if 1st stage of RKL2 STS.
+// for STS. RKL2 registers are set to -Curl(E) update if first stage of RKL2 STS.
 
 void Field::CT_STS(const Real wght, int stage,
                    FaceField &b_out, FaceField &ct_update_out) {
