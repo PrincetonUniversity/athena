@@ -1,54 +1,71 @@
 <comment>
 problem   = Fishbone-Moncrief equilibrium torus
 reference = Fishbone & Moncrief 1976, ApJ 207 962
-configure  = --prob=gr_torus -g -b --coord=kerr-schild -hdf5
+configure = -g -b --prob gr_torus --coord=kerr-schild --flux hlle --nghost 4 -hdf5
 
 <job>
-problem_id = fm_torus # problem ID: basename of output filenames
-
-<output1>
-file_type  = hdf5      # HDF5 data dump
-variable   = prim      # variables to be output
-id         = prim
-dt         = 1.0       # time increment between outputs
-
-<output2>
-file_type  = hdf5      # HDF5 data dump
-variable   = uov       # variables to be output
-id         = user
-dt         = 1.0       # time increment between outputs
-
-<output3>
-file_type  = rst       # Restart dump
-dt         = 100.0     # time increment between outputs
+problem_id = fm_torus  # problem ID: base name of output files
 
 <time>
-cfl_number = 0.2
-nlim       = -1
-tlim       = 1.0
+cfl_number = 0.3  # factor multiplying shortest cell crossing time
+nlim       = -1   # maximum simulation steps
+tlim       = 1.0  # maximum simulation time
 integrator = vl2  # time integration algorithm
-xorder     = 2    # order of spatial reconstruction
+xorder     = 3    # order of spatial reconstruction
 ncycle_out = 1    # interval for stdout summary info
 
-<mesh>
-nx1    = 64    # number of cells in r-direction
-x1min  = 1.96  # minimum r
-x1max  = 20.0  # maximum r
-x1rat  = 1.0   # ratio of adjacent r-widths
-ix1_bc = user  # inner boundary
-ox1_bc = user  # outer boundary
+<output1>
+file_type   = hst      # plaintext history summary
+dt          = 0.1      # time increment between outputs
+data_format = %24.16e  # output precision
 
-nx2    = 64                  # number of cells in theta-direction
-x2min  = 0.0                 # minimum theta
-x2max  = 3.1415926535897932  # maximum theta (pi)
+<output2>
+file_type = hdf5  # HDF5 data dump
+variable  = prim  # variables to be output
+id        = prim  # filename
+dt        = 1.0   # time increment between outputs
+xdmf      = 0     # flag indicating whether XML auxiliary file should be output
+
+<output3>
+file_type = hdf5  # HDF5 data dump
+variable  = uov   # variables to be output
+id        = user  # filename
+dt        = 1.0   # time increment between outputs
+xdmf      = 0     # flag indicating whether XML auxiliary file should be output
+
+<output4>
+file_type = rst    # binary restart dump
+dt        = 100.0  # time increment between outputs
+
+<mesh>
+
+# threading (OMP) control
+num_threads = 1
+
+# radial coordinate in global root grid
+nx1    = 64                  # number of cells
+x1min  = 1.7811841172555203  # minimum
+x1max  = 35.0                # maximum
+x1rat  = 1.0476319576931545  # ratio of adjacent widths
+ix1_bc = user                # inner boundary
+ox1_bc = user                # outer boundary
+
+# polar coordinate in global root grid
+nx2    = 64                  # number of cells in direction
+x2min  = 0.0                 # minimum
+x2max  = 3.1415926535897932  # maximum
 ix2_bc = polar               # upper boundary
 ox2_bc = polar               # lower boundary
 
-nx3    = 64                  # number of cells in phi-direction
-x3min  = 0.0                 # minimum phi
-x3max  = 6.2831853071795862  # maximum phi (2*pi)
+# azimuthal coordinate in global root grid
+nx3    = 64                  # number of cells in direction
+x3min  = 0.0                 # minimum
+x3max  = 6.2831853071795862  # maximum
 ix3_bc = periodic            # clockwise boundary
 ox3_bc = periodic            # counterclockwise boundary
+
+# mesh refinement control
+refinement = none
 
 <meshblock>
 nx1 = 64  # block size in r-direction
@@ -57,51 +74,63 @@ nx3 = 64  # block size in phi-direction
 
 <coord>
 m = 1.0  # black hole mass M
-a = 0.0  # black hole spin a (0 <= a/M < 1)
+a = 0.5  # black hole spin a (0 <= a/M < 1)
 
 <hydro>
-gamma     = 1.3333333333333333  # ratio of specific heats Gamma
+gamma     = 1.4444444444444444  # ratio of specific heats Gamma
 dfloor    = 1.0e-6              # floor on density rho
 pfloor    = 1.0e-8              # floor on gas pressure p_gas
-rho_min   = 1.0e-2              # floor on rho given by rho_min ...
+rho_min   = 1.0e-4              # floor on rho given by rho_min ...
 rho_pow   = -1.5                # ... * r^rho_pow
-pgas_min  = 1.0e-2              # floor on p_gas given by pgas_min ...
+pgas_min  = 1.0e-6              # floor on p_gas given by pgas_min ...
 pgas_pow  = -2.5                # ... * r^pgas_pow
 sigma_max = 100.0               # maximum allowed value of 2*p_mag/rho
 beta_min  = 0.001               # minimum allowed value of p_gas/p_mag
 gamma_max = 50.0                # ceiling on normal Lorentz factor gamma
 
 <problem>
-k_adi      = 1.0   # adiabat K, p_gas = K * rho^Gamma
-r_edge     = 6.0   # radius of inner edge of disk
-r_peak     = 12.0  # radius of pressure maximum; use l instead if negative
-l          = 0.0   # constant ang. mom. per unit mass u^t u_phi; only used if r_peak < 0
-rho_max    = 1.0   # if greater than 0, rescale density to have this peak, and rescale
-                   # pressure by same factor
-tilt_angle = 0.0   # angle (degrees) at which to incline disk spin axis relative to BH
-                   # spin axis (z-axis) in direction of x-axis (theta = pi/2, phi = 0)
 
-field_config      = normal  # normal, renorm (equalize beta then recalculate A_phi), or
-                            # vertical
-potential_cutoff  = 0.2     # amount to subtract from density when calculating potential
-                            # (field_config=normal); floor (relative to max) on potential
-                            # (field_config=renorm)
-potential_r_pow   = 0.0     # vector potential proportional to this power of radius
-potential_rho_pow = 1.0     # vector potential proportional to this power of density
-beta_min          = 100.0   # desired minimum ratio of gas pressure to magnetic pressure;
-                            # magnetic field zeroed if negative
+# torus parameters
+prograde   = true    # flag indicating disk is prograde
+r_edge     = 6.0     # radius of inner edge of disk
+r_peak     = 12.0    # radius of pressure maximum; use l instead if negative
+l          = 4.428   # constant ang. mom. per unit mass u^t u_phi; only used if r_peak < 0
+r_peak_max = 1000.0  # upper bound on r_peak if setting l and finding r_peak
+rho_max    = 1.0     # scale density to have this value at pressure maximum
 
-sample_n_r     = 64   # global grid for integrating in the field_config=renorm case and
-                      # normalizing beta: number of cells in r-direction
-sample_n_theta = 64   # number of cells in theta-direction
-sample_n_phi   = 128  # number of cells in phi-direction (only used for beta normalization
-                      # for tilted disks)
-sample_r_rat   = 1.0  # geometric ratio to use in r
-sample_cutoff  = 0.2  # density below which cells are not used for global beta rescaling
-                      # calculation
+# tilt parameter
+tilt_angle = 0.0  # angle (degrees) at which to incline disk spin axis relative to BH spin
+                  # axis (z-axis) in direction of x-axis (theta = pi/2, phi = 0)
 
+# magnetic field configuration
+field_config = density  # "density" for density isocontours, or "loops" for multiple loops
+
+# field_config == density parameters
+pot_r_pow      = 0.0  # vector potential proportional to this power of radius
+pot_rho_pow    = 1.0  # vector potential proportional to this power of density
+pot_rho_cutoff = 0.2  # amount to subtract from density
+
+# field_config == loops parameters
+pot_r_min       = 8.0                 # inner boundary of magnetized region
+pot_r_max       = 25.0                # outer boundary of magnetized region
+pot_r_num       = 1                   # number of loops in radial direction
+pot_theta_min   = 1.3089969389957472  # upper boundary of magnetized region
+pot_theta_num   = 1                   # number of loops in polar direction
+pot_pgas_pow    = 0.5                 # vector potential prop. to this power of p_gas
+pot_pgas_cutoff = 1.0e-8              # amount to subtract from p_gas
+
+# additional magnetic field parameters
+pot_samples = 5       # points per edge to use if numerically integrating potential
+pot_amp     = 0.4178  # overall scaling of potential
+
+# perturbation parameters
 pert_amp = 0.0  # amplitude of perturbations to cylindrical radial velocity \tilde{u}^R
                 # (combination of \tilde{u}^r and \tilde{u}^\theta) as fraction of
                 # azimuthal velocity \tilde{u}^\phi
 pert_kr  = 0.0  # cylindrical radial wavenumber of perturbations
 pert_kz  = 0.0  # vertical wavenumber of perturbations
+
+# history file sampling parameters
+num_flux_radii = 2                   # number of radii at which fluxes should be logged
+flux_radius_1  = 1.7970764820236862  # first radius to sample
+flux_radius_2  = 6.0                 # second radius to sample
