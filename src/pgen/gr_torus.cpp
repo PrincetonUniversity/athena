@@ -77,11 +77,11 @@ Real r_edge, r_peak, l, r_peak_max, rho_max;  // torus parameters
 Real tilt;                                    // tilt angle
 Real pert_amp, pert_kr, pert_kz;              // initial perturbations parameters
 MagneticFieldConfigs field_config;            // type of magnetic field
+Real pot_r_pow;                               // density vector potential parameters
+Real pot_rho_pow, pot_rho_cutoff;             // density vector potential parameters
 Real pot_r_min, pot_r_max, pot_r_num;         // loops vector potential parameters
 Real pot_theta_min, pot_theta_num;            // loops vector potential parameters
 Real pot_pgas_pow, pot_pgas_cutoff;           // loops vector potential parameters
-Real pot_r_pow;                               // density vector potential parameters
-Real pot_rho_pow, pot_rho_cutoff;             // density vector potential parameters
 Real pot_samples;                             // number of sample points for integrating
 Real pot_amp;                                 // vector potential amplitude
 Real log_h_edge, log_h_peak;                  // calculated torus parameters
