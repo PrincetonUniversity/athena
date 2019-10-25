@@ -35,7 +35,7 @@
 #endif
 
 // Declarations
-enum class MagneticFieldConfigs {loops, density};
+enum class MagneticFieldConfigs {density, loops};
 void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ku,
     int ngh);
