@@ -177,23 +177,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     flux_radii = new Real[num_flux_radii];
     for (int n = 0; n < num_flux_radii; ++n) {
       std::stringstream flux_name;
-      flux_name << "flux_radius_" << n+1;
+      flux_name << "flux_radius_" << n + 1;
       flux_radii[n] = pin->GetReal("problem", flux_name.str().c_str());
     }
   }
-
-  // Calculate global constants describing torus and tilt
-  if (r_peak >= 0.0) {
-    l = CalculateLFromRPeak(r_peak);
-  } else {
-    r_peak = CalculateRPeakFromL(l);
-  }
-  log_h_edge = LogHAux(r_edge, 1.0);
-  log_h_peak = LogHAux(r_peak, 1.0) - log_h_edge;
-  pgas_over_rho_peak = (gamma_adi - 1.0) / gamma_adi * (std::exp(log_h_peak) - 1.0);
-  rho_amp = rho_max / std::pow(pgas_over_rho_peak, 1.0 / (gamma_adi - 1.0));
-  sin_tilt = std::sin(tilt);
-  cos_tilt = std::cos(tilt);
 
   // Enroll user-defined functions
   EnrollUserBoundaryFunction(BoundaryFace::inner_x1, InflowBoundary);
@@ -212,6 +199,19 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
       EnrollUserHistoryOutput(n * 4 + 3, HistorySum, phi_name.str().c_str());
     }
   }
+
+  // Calculate global constants describing torus and tilt
+  if (r_peak >= 0.0) {
+    l = CalculateLFromRPeak(r_peak);
+  } else {
+    r_peak = CalculateRPeakFromL(l);
+  }
+  log_h_edge = LogHAux(r_edge, 1.0);
+  log_h_peak = LogHAux(r_peak, 1.0) - log_h_edge;
+  pgas_over_rho_peak = (gamma_adi - 1.0) / gamma_adi * (std::exp(log_h_peak) - 1.0);
+  rho_amp = rho_max / std::pow(pgas_over_rho_peak, 1.0 / (gamma_adi - 1.0));
+  sin_tilt = std::sin(tilt);
+  cos_tilt = std::cos(tilt);
   return;
 }
 
@@ -248,12 +248,17 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
     SetUserOutputVariableName(0, "gamma");
   }
 
+  // Allocate space for scratch arrays
+  AllocateRealUserMeshBlockDataField(num_flux_radii > 0 ? 5 : 2);
+  ruser_meshblock_data[0].NewAthenaArray(NMETRIC, ie + NGHOST + 1);
+  ruser_meshblock_data[1].NewAthenaArray(NMETRIC, ie + NGHOST + 1);
+
   // Allocate space for history variable computation
   if (num_flux_radii > 0) {
     AllocateRealUserMeshBlockDataField(3);
-    ruser_meshblock_data[0].NewAthenaArray(num_flux_radii);
-    ruser_meshblock_data[1].NewAthenaArray(num_flux_radii, je + 1);
-    ruser_meshblock_data[2].NewAthenaArray(num_flux_radii, 4);
+    ruser_meshblock_data[2].NewAthenaArray(num_flux_radii);
+    ruser_meshblock_data[3].NewAthenaArray(num_flux_radii, je + 1);
+    ruser_meshblock_data[4].NewAthenaArray(num_flux_radii, 4);
     AllocateIntUserMeshBlockDataField(1);
     iuser_meshblock_data[0].NewAthenaArray(num_flux_radii);
     for (int n = 0; n < num_flux_radii; ++n) {
@@ -265,12 +270,12 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
           }
         }
         iuser_meshblock_data[0](n) = i - 1;
-        ruser_meshblock_data[0](n) =
+        ruser_meshblock_data[2](n) =
             (flux_radii[n] - pcoord->x1v(i-1)) / pcoord->dx1v(i-1);
         for (int j = js; j <= je; ++j) {
           Real cos_theta_m = std::cos(pcoord->x2f(j));
           Real cos_theta_p = std::cos(pcoord->x2f(j+1));
-          ruser_meshblock_data[1](n,j) =
+          ruser_meshblock_data[3](n,j) =
               1.0/3.0 * std::abs(cos_theta_m - cos_theta_p) * pcoord->dx3f(ks)
               * (3.0 * SQR(flux_radii[n]) + SQR(a) * (SQR(cos_theta_m)
               + cos_theta_m * cos_theta_p + SQR(cos_theta_p)));
@@ -316,9 +321,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Prepare scratch arrays
-  AthenaArray<Real> g, gi;
-  g.NewAthenaArray(NMETRIC, iu + 1);
-  gi.NewAthenaArray(NMETRIC, iu + 1);
+  AthenaArray<Real> &g = ruser_meshblock_data[0];
+  AthenaArray<Real> &gi = ruser_meshblock_data[1];
 
   // Initialize primitive values
   for (int k = kl; k <= ku; ++k) {
@@ -516,7 +520,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Inputs: (none)
 // Outputs: (none)
 // Notes:
-//   Writes to ruser_meshblock_data[2] array the following quantities:
+//   Writes to ruser_meshblock_data[4] array the following quantities:
 //     n,0: mdot (mass flux across specified radius)
 //     n,1: edot (energy flux across specified radius)
 //     n,2: jdot (angular momentum flux across specified radius)
@@ -524,18 +528,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void MeshBlock::UserWorkInLoop() {
 
-  // Allocate arrays for metric
-  AthenaArray<Real> g, gi;
-  if (num_flux_radii > 0) {
-    g.NewAthenaArray(NMETRIC, ie + 1);
-    gi.NewAthenaArray(NMETRIC, ie + 1);
-  }
+  // Prepare scratch arrays
+  AthenaArray<Real> &g = ruser_meshblock_data[0];
+  AthenaArray<Real> &gi = ruser_meshblock_data[1];
 
   // Clear storage for history output accumulation
   if (num_flux_radii > 0) {
     for (int n = 0; n < num_flux_radii; ++n) {
       for (int m = 0; m < 4; ++m) {
-        ruser_meshblock_data[2](n,m) = 0.0;
+        ruser_meshblock_data[4](n,m) = 0.0;
       }
     }
   }
@@ -585,10 +586,10 @@ void MeshBlock::UserWorkInLoop() {
 
           // Check for contribution to history output
           for (int n = 0; n < num_flux_radii; ++n) {
-            if (iuser_meshblock_data[0](n) == i or iuser_meshblock_data[0](n)+1 == i) {
-              Real factor = ruser_meshblock_data[0](n);
+            if (iuser_meshblock_data[0](n) == i or iuser_meshblock_data[0](n) + 1 == i) {
+              Real factor = ruser_meshblock_data[2](n);
               if (iuser_meshblock_data[0](n) == i) {
-                factor = 1.0 - ruser_meshblock_data[0](n);
+                factor = 1.0 - ruser_meshblock_data[2](n);
               }
               Real rho = phydro->w(IDN,k,j,i);
               Real pgas = phydro->w(IPR,k,j,i);
@@ -596,11 +597,11 @@ void MeshBlock::UserWorkInLoop() {
                   - b1 * b_0;
               Real t1_3 = (rho + gamma_adi / (gamma_adi - 1.0) * pgas + b_sq) * u1 * u_3
                   - b1 * b_3;
-              Real area = ruser_meshblock_data[1](n,j);
-              ruser_meshblock_data[2](n,0) -= factor * rho * u1 * area;
-              ruser_meshblock_data[2](n,1) += factor * t1_0 * area;
-              ruser_meshblock_data[2](n,2) += factor * t1_3 * area;
-              ruser_meshblock_data[2](n,3) +=
+              Real area = ruser_meshblock_data[3](n,j);
+              ruser_meshblock_data[4](n,0) -= factor * rho * u1 * area;
+              ruser_meshblock_data[4](n,1) += factor * t1_0 * area;
+              ruser_meshblock_data[4](n,2) += factor * t1_3 * area;
+              ruser_meshblock_data[4](n,3) +=
                   factor * 0.5 * std::sqrt(4.0*PI) * std::abs(bb1) * area;
             }
           }
@@ -623,10 +624,9 @@ void MeshBlock::UserWorkInLoop() {
 
 void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
 
-  // Allocate arrays for metric
-  AthenaArray<Real> g, gi;
-  g.NewAthenaArray(NMETRIC, ie + 1);
-  gi.NewAthenaArray(NMETRIC, ie + 1);
+  // Prepare scratch arrays
+  AthenaArray<Real> &g = ruser_meshblock_data[0];
+  AthenaArray<Real> &gi = ruser_meshblock_data[1];
 
   // Go through all cells
   for (int k = ks; k <= ke; ++k) {
@@ -725,9 +725,8 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
   }
 
   // Prepare scratch arrays
-  AthenaArray<Real> g, gi;
-  g.NewAthenaArray(NMETRIC, il + 1);
-  gi.NewAthenaArray(NMETRIC, il + 1);
+  AthenaArray<Real> &g = pmb->ruser_meshblock_data[0];
+  AthenaArray<Real> &gi = pmb->ruser_meshblock_data[1];
 
   // Set B^2
   for (int k = kl; k <= ku; ++k) {
@@ -815,9 +814,8 @@ void OutflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &pri
   }
 
   // Prepare scratch arrays
-  AthenaArray<Real> g, gi;
-  g.NewAthenaArray(NMETRIC, iu + ngh + 1);
-  gi.NewAthenaArray(NMETRIC, iu + ngh + 1);
+  AthenaArray<Real> &g = pmb->ruser_meshblock_data[0];
+  AthenaArray<Real> &gi = pmb->ruser_meshblock_data[1];
 
   // Set B^2
   for (int k = kl; k <= ku; ++k) {
@@ -868,7 +866,7 @@ void OutflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &pri
 //   returned value: block sum of corresponding variable
 
 Real HistorySum(MeshBlock *pmb, int iout) {
-  return pmb->ruser_meshblock_data[2](iout/4,iout%4);
+  return pmb->ruser_meshblock_data[4](iout/4,iout%4);
 }
 
 //----------------------------------------------------------------------------------------
