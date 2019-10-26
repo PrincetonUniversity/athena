@@ -199,15 +199,17 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   EnrollUserBoundaryFunction(BoundaryFace::inner_x1, InflowBoundary);
   EnrollUserBoundaryFunction(BoundaryFace::outer_x1, OutflowBoundary);
   if (num_flux_radii > 0) {
-    AllocateUserHistoryOutput(num_flux_radii * 3);
+    AllocateUserHistoryOutput(num_flux_radii * 4);
     for (int n = 0; n < num_flux_radii; ++n) {
-      std::stringstream mdot_name, edot_name, phi_name;
+      std::stringstream mdot_name, edot_name, jdot_name, phi_name;
       mdot_name << "mdot_" << n+1;
       edot_name << "edot_" << n+1;
+      jdot_name << "jdot_" << n+1;
       phi_name << "phi_" << n+1;
-      EnrollUserHistoryOutput(n * 3, HistorySum, mdot_name.str().c_str());
-      EnrollUserHistoryOutput(n * 3 + 1, HistorySum, edot_name.str().c_str());
-      EnrollUserHistoryOutput(n * 3 + 2, HistorySum, phi_name.str().c_str());
+      EnrollUserHistoryOutput(n * 4, HistorySum, mdot_name.str().c_str());
+      EnrollUserHistoryOutput(n * 4 + 1, HistorySum, edot_name.str().c_str());
+      EnrollUserHistoryOutput(n * 4 + 2, HistorySum, jdot_name.str().c_str());
+      EnrollUserHistoryOutput(n * 4 + 3, HistorySum, phi_name.str().c_str());
     }
   }
   return;
@@ -251,7 +253,7 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
     AllocateRealUserMeshBlockDataField(3);
     ruser_meshblock_data[0].NewAthenaArray(num_flux_radii);
     ruser_meshblock_data[1].NewAthenaArray(num_flux_radii, je + 1);
-    ruser_meshblock_data[2].NewAthenaArray(num_flux_radii, 3);
+    ruser_meshblock_data[2].NewAthenaArray(num_flux_radii, 4);
     AllocateIntUserMeshBlockDataField(1);
     iuser_meshblock_data[0].NewAthenaArray(num_flux_radii);
     for (int n = 0; n < num_flux_radii; ++n) {
@@ -517,68 +519,71 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //   Writes to ruser_meshblock_data[2] array the following quantities:
 //     n,0: mdot (mass flux across specified radius)
 //     n,1: edot (energy flux across specified radius)
-//     n,2: phi (magnetic flux through specified radius)
+//     n,2: jdot (angular momentum flux across specified radius)
+//     n,3: phi (magnetic flux through specified radius)
 
 void MeshBlock::UserWorkInLoop() {
 
   // Allocate arrays for metric
   AthenaArray<Real> g, gi;
-  g.NewAthenaArray(NMETRIC, ie + 1);
-  gi.NewAthenaArray(NMETRIC, ie + 1);
+  if (num_flux_radii > 0) {
+    g.NewAthenaArray(NMETRIC, ie + 1);
+    gi.NewAthenaArray(NMETRIC, ie + 1);
+  }
 
   // Clear storage for history output accumulation
   if (num_flux_radii > 0) {
     for (int n = 0; n < num_flux_radii; ++n) {
-      for (int m = 0; m < 3; ++m) {
+      for (int m = 0; m < 4; ++m) {
         ruser_meshblock_data[2](n,m) = 0.0;
       }
     }
   }
 
   // Go through all cells
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      pcoord->CellMetric(k, j, is, ie, g, gi);
-      for (int i = is; i <= ie; ++i) {
+  if (num_flux_radii > 0) {
+    for (int k = ks; k <= ke; ++k) {
+      for (int j = js; j <= je; ++j) {
+        pcoord->CellMetric(k, j, is, ie, g, gi);
+        for (int i = is; i <= ie; ++i) {
 
-        // Calculate normal-frame Lorentz factor
-        Real uu1 = phydro->w(IVX,k,j,i);
-        Real uu2 = phydro->w(IVY,k,j,i);
-        Real uu3 = phydro->w(IVZ,k,j,i);
-        Real tmp = g(I11,i) * SQR(uu1) + 2.0 * g(I12,i) * uu1 * uu2
-            + 2.0 * g(I13,i) * uu1 * uu3 + g(I22,i) * SQR(uu2)
-            + 2.0 * g(I23,i) * uu2 * uu3 + g(I33,i) * SQR(uu3);
-        Real gamma = std::sqrt(1.0 + tmp);
+          // Calculate normal-frame Lorentz factor
+          Real uu1 = phydro->w(IVX,k,j,i);
+          Real uu2 = phydro->w(IVY,k,j,i);
+          Real uu3 = phydro->w(IVZ,k,j,i);
+          Real tmp = g(I11,i) * SQR(uu1) + 2.0 * g(I12,i) * uu1 * uu2
+              + 2.0 * g(I13,i) * uu1 * uu3 + g(I22,i) * SQR(uu2)
+              + 2.0 * g(I23,i) * uu2 * uu3 + g(I33,i) * SQR(uu3);
+          Real gamma = std::sqrt(1.0 + tmp);
 
-        // Calculate 4-velocity
-        Real alpha = std::sqrt(-1.0 / gi(I00,i));
-        Real u0 = gamma / alpha;
-        Real u1 = uu1 - alpha * gamma * gi(I01,i);
-        Real u2 = uu2 - alpha * gamma * gi(I02,i);
-        Real u3 = uu3 - alpha * gamma * gi(I03,i);
-        Real u_0, u_1, u_2, u_3;
-        pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
+          // Calculate 4-velocity
+          Real alpha = std::sqrt(-1.0 / gi(I00,i));
+          Real u0 = gamma / alpha;
+          Real u1 = uu1 - alpha * gamma * gi(I01,i);
+          Real u2 = uu2 - alpha * gamma * gi(I02,i);
+          Real u3 = uu3 - alpha * gamma * gi(I03,i);
+          Real u_0, u_1, u_2, u_3;
+          pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
 
-        // Calculate 4-magnetic field
-        Real bb1 = 0.0, bb2 = 0.0, bb3 = 0.0;
-        Real b0 = 0.0, b1 = 0.0, b2 = 0.0, b3 = 0.0;
-        Real b_0 = 0.0, b_1 = 0.0, b_2 = 0.0, b_3 = 0.0;
-        if (MAGNETIC_FIELDS_ENABLED) {
-          bb1 = pfield->bcc(IB1,k,j,i);
-          bb2 = pfield->bcc(IB2,k,j,i);
-          bb3 = pfield->bcc(IB3,k,j,i);
-          b0 = u_1 * bb1 + u_2 * bb2 + u_3 * bb3;
-          b1 = (bb1 + b0 * u1) / u0;
-          b2 = (bb2 + b0 * u2) / u0;
-          b3 = (bb3 + b0 * u3) / u0;
-          pcoord->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
-        }
+          // Calculate 4-magnetic field
+          Real bb1 = 0.0, bb2 = 0.0, bb3 = 0.0;
+          Real b0 = 0.0, b1 = 0.0, b2 = 0.0, b3 = 0.0;
+          Real b_0 = 0.0, b_1 = 0.0, b_2 = 0.0, b_3 = 0.0;
+          if (MAGNETIC_FIELDS_ENABLED) {
+            bb1 = pfield->bcc(IB1,k,j,i);
+            bb2 = pfield->bcc(IB2,k,j,i);
+            bb3 = pfield->bcc(IB3,k,j,i);
+            b0 = u_1 * bb1 + u_2 * bb2 + u_3 * bb3;
+            b1 = (bb1 + b0 * u1) / u0;
+            b2 = (bb2 + b0 * u2) / u0;
+            b3 = (bb3 + b0 * u3) / u0;
+            pcoord->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
+          }
 
-        // Calculate magnetic pressure
-        Real b_sq = b0 * b_0 + b1 * b_1 + b2 * b_2 + b3 * b_3;
+          // Calculate magnetic pressure
+          Real b_sq = b0 * b_0 + b1 * b_1 + b2 * b_2 + b3 * b_3;
 
-        // Check for contribution to history output
-        if (num_flux_radii > 0) {
+          // Check for contribution to history output
           for (int n = 0; n < num_flux_radii; ++n) {
             if (iuser_meshblock_data[0](n) == i or iuser_meshblock_data[0](n)+1 == i) {
               Real factor = ruser_meshblock_data[0](n);
@@ -589,10 +594,13 @@ void MeshBlock::UserWorkInLoop() {
               Real pgas = phydro->w(IPR,k,j,i);
               Real t1_0 = (rho + gamma_adi / (gamma_adi - 1.0) * pgas + b_sq) * u1 * u_0
                   - b1 * b_0;
+              Real t1_3 = (rho + gamma_adi / (gamma_adi - 1.0) * pgas + b_sq) * u1 * u_3
+                  - b1 * b_3;
               Real area = ruser_meshblock_data[1](n,j);
               ruser_meshblock_data[2](n,0) -= factor * rho * u1 * area;
               ruser_meshblock_data[2](n,1) += factor * t1_0 * area;
-              ruser_meshblock_data[2](n,2) +=
+              ruser_meshblock_data[2](n,2) += factor * t1_3 * area;
+              ruser_meshblock_data[2](n,3) +=
                   factor * 0.5 * std::sqrt(4.0*PI) * std::abs(bb1) * area;
             }
           }
