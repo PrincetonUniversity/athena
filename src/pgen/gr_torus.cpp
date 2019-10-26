@@ -182,9 +182,17 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     }
   }
 
+  // Read boundary conditions from file
+  std::string inner_boundary = pin->GetString("mesh", "ix1_bc");
+  std::string outer_boundary = pin->GetString("mesh", "ox1_bc");
+
   // Enroll user-defined functions
-  EnrollUserBoundaryFunction(BoundaryFace::inner_x1, InflowBoundary);
-  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, OutflowBoundary);
+  if (inner_boundary == "user") {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x1, InflowBoundary);
+  }
+  if (outer_boundary == "user") {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x1, OutflowBoundary);
+  }
   if (num_flux_radii > 0) {
     AllocateUserHistoryOutput(num_flux_radii * 4);
     for (int n = 0; n < num_flux_radii; ++n) {
