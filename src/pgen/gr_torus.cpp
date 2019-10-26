@@ -42,6 +42,7 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
 void OutflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ku,
     int ngh);
+Real ThetaGrid(Real x, RegionSize rs);
 Real HistorySum(MeshBlock *pmb, int iout);
 
 // File declarations
@@ -70,6 +71,7 @@ void VectorPotential(Real x1, Real x2, Real x3, Real *p_a_1, Real *p_a_2, Real *
 // File variables
 namespace {
 Real m, a;                                    // black hole parameters
+Real h_grid;                                  // grid compression parameter
 Real gamma_adi;                               // adiabatic index
 Real rho_min, rho_pow, pgas_min, pgas_pow;    // background parameters
 bool prograde;                                // flag indicating disk is prograde
@@ -111,6 +113,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Read coordinate parameters from input file
   m = pin->GetReal("coord", "m");
   a = pin->GetReal("coord", "a");
+  Real x2rat = pin->GetReal("mesh", "x2rat");
+  if (x2rat < 0.0) {
+    h_grid = pin->GetOrAddReal("coord", "h", 1.0);
+  }
 
   // Read fluid parameters from input file
   gamma_adi = pin->GetReal("hydro", "gamma");
@@ -193,6 +199,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (outer_boundary == "user") {
     EnrollUserBoundaryFunction(BoundaryFace::outer_x1, OutflowBoundary);
   }
+  if (x2rat < 0.0) {
+    EnrollUserMeshGenerator(X2DIR, ThetaGrid);
+  }
   if (num_flux_radii > 0) {
     AllocateUserHistoryOutput(num_flux_radii * 4);
     for (int n = 0; n < num_flux_radii; ++n) {
@@ -263,7 +272,6 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
 
   // Allocate space for history variable computation
   if (num_flux_radii > 0) {
-    AllocateRealUserMeshBlockDataField(3);
     ruser_meshblock_data[2].NewAthenaArray(num_flux_radii);
     ruser_meshblock_data[3].NewAthenaArray(num_flux_radii, je + 1);
     ruser_meshblock_data[4].NewAthenaArray(num_flux_radii, 4);
@@ -863,6 +871,21 @@ void OutflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &pri
     }
   }
   return;
+}
+
+//----------------------------------------------------------------------------------------
+// Theta-spacing function
+// Inputs:
+//   x2: internal theta-like coordinate, scaled from 0 to 1
+//   rs: region size struct
+// Outputs:
+//   returned value: corresponding theta-value
+// Notes:
+//   Implements remapping from Gammie, McKinney, & Toth 2003, ApJ 589 444.
+
+Real ThetaGrid(Real x2, RegionSize rs)
+{
+  return PI * x2 + (1.0 - h_grid) / 2.0 * std::sin(2.0*PI * x2);
 }
 
 //----------------------------------------------------------------------------------------

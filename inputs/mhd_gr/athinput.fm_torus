@@ -54,6 +54,7 @@ ox1_bc = user                # outer boundary
 nx2    = 64                  # number of cells in direction
 x2min  = 0.0                 # minimum
 x2max  = 3.1415926535897932  # maximum
+x2rat  = 1.0                 # ration of adjacent cell widths
 ix2_bc = polar               # upper boundary
 ox2_bc = polar               # lower boundary
 
@@ -75,6 +76,7 @@ nx3 = 64  # block size in phi-direction
 <coord>
 m = 1.0  # black hole mass M
 a = 0.5  # black hole spin a (0 <= a/M < 1)
+h = 1.0  # grid compression parameter
 
 <hydro>
 gamma     = 1.4444444444444444  # ratio of specific heats Gamma
