@@ -202,10 +202,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     AllocateUserHistoryOutput(num_flux_radii * 4);
     for (int n = 0; n < num_flux_radii; ++n) {
       std::stringstream mdot_name, edot_name, jdot_name, phi_name;
-      mdot_name << "mdot_" << n+1;
-      edot_name << "edot_" << n+1;
-      jdot_name << "jdot_" << n+1;
-      phi_name << "phi_" << n+1;
+      mdot_name << "mdot_" << n + 1;
+      edot_name << "edot_" << n + 1;
+      jdot_name << "jdot_" << n + 1;
+      phi_name << "phi_" << n + 1;
       EnrollUserHistoryOutput(n * 4, HistorySum, mdot_name.str().c_str());
       EnrollUserHistoryOutput(n * 4 + 1, HistorySum, edot_name.str().c_str());
       EnrollUserHistoryOutput(n * 4 + 2, HistorySum, jdot_name.str().c_str());
@@ -868,7 +868,7 @@ void OutflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &pri
 //   returned value: block sum of corresponding variable
 
 Real HistorySum(MeshBlock *pmb, int iout) {
-  return pmb->ruser_meshblock_data[2](iout/3,iout%3);
+  return pmb->ruser_meshblock_data[2](iout/4,iout%4);
 }
 
 //----------------------------------------------------------------------------------------
