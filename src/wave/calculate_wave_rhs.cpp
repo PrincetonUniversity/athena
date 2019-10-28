@@ -21,8 +21,9 @@ void Wave::WaveRHS(AthenaArray<Real> & u){
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
   AthenaArray<Real> wu, wpi;
-  wu.InitWithShallowSlice(u, NWAVE_CPT, 0, 1);
-  wpi.InitWithShallowSlice(u, NWAVE_CPT, 1, 1);
+  // internal dimension inferred
+  wu.InitWithShallowSlice(u, 0, 1);
+  wpi.InitWithShallowSlice(u, 1, 1);
 
   for(int k = ks; k <= ke; ++k) {
     for(int j = js; j <= je; ++j) {
@@ -81,7 +82,7 @@ void Wave::WaveSommerfeld_(AthenaArray<Real> & u,
                            int const js, int const je,
                            int const ks, int const ke){
   AthenaArray<Real> wpi;
-  wpi.InitWithShallowSlice(u, Wave::NWAVE_CPT, 1, 1);
+  wpi.InitWithShallowSlice(u, 1, 1);
 
   MeshBlock * pmb = pmy_block;
   Coordinates * pco = pmb->pcoord;

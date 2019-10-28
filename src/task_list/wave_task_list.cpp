@@ -227,6 +227,7 @@ WaveIntegratorTaskList::WaveIntegratorTaskList(ParameterInput *pin, Mesh *pm){
   // Now assemble list of tasks for each stage of wave integrator
   {using namespace WaveIntegratorTaskNames;
     AddTask(CALC_WAVERHS, NONE);
+
     AddTask(INT_WAVE, CALC_WAVERHS);
 
     AddTask(SEND_WAVE, INT_WAVE);
@@ -237,8 +238,7 @@ WaveIntegratorTaskList::WaveIntegratorTaskList(ParameterInput *pin, Mesh *pm){
     if (pm->multilevel) { // SMR or AMR
       AddTask(PROLONG, (SEND_WAVE|SETB_WAVE));
       AddTask(PHY_BVAL, PROLONG);
-    }
-    else {
+    } else {
       AddTask(PHY_BVAL, SETB_WAVE);
     }
 
@@ -251,6 +251,7 @@ WaveIntegratorTaskList::WaveIntegratorTaskList(ParameterInput *pin, Mesh *pm){
     } else {
       AddTask(CLEAR_ALLBND, NEW_DT);
     }
+
   } // end of using namespace block
 
 }
@@ -368,7 +369,6 @@ void WaveIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   return;
 }
 
-
 //----------------------------------------------------------------------------------------
 // Functions to end MPI communication
 
@@ -385,7 +385,7 @@ TaskStatus WaveIntegratorTaskList::CalculateWaveRHS(MeshBlock *pmb, int stage) {
     pmb->pwave->WaveRHS(pmb->pwave->u);
 
     // application of Sommerfeld boundary conditions
-    pmb->pwave->WaveBoundaryRHS(pmb->pwave->u);
+    // pmb->pwave->WaveBoundaryRHS(pmb->pwave->u);
     return TaskStatus::next;
   }
   return TaskStatus::fail;
@@ -411,6 +411,7 @@ TaskStatus WaveIntegratorTaskList::IntegrateWave(MeshBlock *pmb, int stage) {
     ave_wghts[2] = stage_wghts[stage-1].gamma_3;
 
     pmb->WeightedAve(pwave->u, pwave->u1, pwave->u2, ave_wghts);
+
     pwave->AddWaveRHS(stage_wghts[stage-1].beta, pwave->u);
 
     return TaskStatus::next;
