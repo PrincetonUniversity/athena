@@ -37,8 +37,10 @@ public:
   Real c;                       // light speed
 
   // control whether radiative condition is applied for outflow  or
-  // extrapolate_outflow BC
-  bool use_Sommerfeld = false;
+  // extrapolate_outflow BC;
+  // 0: not applied
+  // 1,2,3: applied in respective dimensions
+  int use_Sommerfeld = 0;
 
   // boundary and grid data
   CellCenteredBoundaryVariable ubvar;
@@ -61,10 +63,22 @@ private:
   AthenaArray<Real> dt1_,dt2_,dt3_;    // scratch arrays used in NewTimeStep
 
 private:
-  void WaveSommerfeld_(AthenaArray<Real> & u,
-                       int const is, int const ie,
-                       int const js, int const je,
-                       int const ks, int const ke);
+  void WaveSommerfeld_1d_L_(AthenaArray<Real> & u,
+                            int const is, int const ie,
+                            int const js, int const je,
+                            int const ks, int const ke);
+  void WaveSommerfeld_1d_R_(AthenaArray<Real> & u,
+                            int const is, int const ie,
+                            int const js, int const je,
+                            int const ks, int const ke);
+  void WaveSommerfeld_2d_(AthenaArray<Real> & u,
+                          int const is, int const ie,
+                          int const js, int const je,
+                          int const ks, int const ke);
+  void WaveSommerfeld_3d_(AthenaArray<Real> & u,
+                          int const is, int const ie,
+                          int const js, int const je,
+                          int const ks, int const ke);
 private:
   struct {
     typedef FDCenteredStencil<2, NGHOST> stencil;

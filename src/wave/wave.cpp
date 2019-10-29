@@ -64,7 +64,7 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
     u2.NewAthenaArray(Wave::NWAVE_CPT, nc3, nc2, nc1);
 
   c = pin->GetOrAddReal("wave", "c", 1.0);
-  use_Sommerfeld = pin->GetOrAddBoolean("wave", "use_Sommerfeld", false);
+  use_Sommerfeld = pin->GetOrAddInteger("wave", "use_Sommerfeld", 0);
 
   // <problem>
   // direction_ = pin->GetOrAddInteger("problem", "direction", 0);
