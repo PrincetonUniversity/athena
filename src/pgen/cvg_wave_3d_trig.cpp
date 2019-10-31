@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file wave_test.cpp
-//  \brief Initial conditions for the wave equation; rightward propagating Gaussian
+//  \brief Initial conditions for the wave equation
 
 #include <cassert> // assert
 #include <cmath> // abs, exp, sin, fmod
@@ -22,9 +22,6 @@
 using namespace std;
 
 int RefinementCondition(MeshBlock *pmb);
-
-// standard deviation of packet
-Real sigma = 1. / 16.;
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -46,24 +43,21 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
-  pwave->use_Sommerfeld = pin->GetOrAddInteger("wave", "use_Sommerfeld",
-                                               pwave->use_Sommerfeld);
-  sigma = pin->GetOrAddReal("problem", "sigma", sigma);
-
   for(int k = ks; k <= ke; ++k)
     for(int j = js; j <= je; ++j)
+#pragma omp simd
       for(int i = is; i <= ie; ++i) {
         Real x = pcoord->x1v(i);
         Real y = pcoord->x2v(j);
         Real z = pcoord->x3v(k);
+        Real c = pwave->c;
 
+        Real cos_x = cos(PI * x);
+        Real cos_y = cos(PI * y);
+        Real cos_z = cos(PI * z);
 
-        Real x_2 = SQR(x);
-        Real sigma_2 = SQR(sigma);
-        Real Gaussian = exp(-x_2 / (2. * sigma_2));
-
-        pwave->u(0,k,j,i) = Gaussian;
-        pwave->u(1,k,j,i) = x * Gaussian / sigma_2;
+        pwave->u(0,k,j,i) = cos_x * cos_y * cos_z;
+        pwave->u(1,k,j,i) = 0.;
 
         pwave->exact(k,j,i) = pwave->u(0,k,j,i);
         pwave->error(k,j,i) = 0.0;
@@ -76,20 +70,23 @@ void MeshBlock::WaveUserWorkInLoop() {
   Real max_err = 0;
   Real fun_err = 0;
 
-  for(int k = ks; k <= ke; ++k)
-    for(int j = js; j <= je; ++j)
+  for(int k = ks; k <= ke; ++k){
+    for(int j = js; j <= je; ++j){
+#pragma omp simd
       for(int i = is; i <= ie; ++i) {
         Real x = pcoord->x1v(i);
         Real y = pcoord->x2v(j);
         Real z = pcoord->x3v(k);
-
         Real t = pmy_mesh->time + pmy_mesh->dt;
-        Real c = 1.;
+        Real c = pwave->c;
 
-        Real sigma_2 = SQR(sigma);
-        Real Gaussian = exp(-SQR(t - x) / (2. * sigma_2));
+        Real cos_s3t = cos(sqrt(3) * c * PI * t);
+        Real cos_x = cos(PI * x);
+        Real cos_y = cos(PI * y);
+        Real cos_z = cos(PI * z);
 
-        pwave->exact(k,j,i) = Gaussian;
+
+        pwave->exact(k,j,i) = cos_x * cos_y * cos_z * cos_s3t;
         pwave->error(k,j,i) = pwave->u(0,k,j,i) - pwave->exact(k,j,i);
 
         if (std::abs(pwave->error(k,j,i)) > max_err){
@@ -97,8 +94,8 @@ void MeshBlock::WaveUserWorkInLoop() {
           fun_err = pwave->u(0,k,j,i);
         }
       }
-
-  // printf("MB::UWIL: (max_err, fun_err)=(%1.7f, %1.7f)\n", max_err, fun_err);
+    }
+  }
   return;
 }
 

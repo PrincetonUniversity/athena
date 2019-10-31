@@ -63,6 +63,7 @@ void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
       WaveSommerfeld_1d_L_(u, pmb->is, pmb->is, pmb->js, pmb->je, pmb->ks, pmb->ke);
       break;
     case 2:
+      WaveSommerfeld_2d_(u, pmb->is, pmb->is, pmb->js, pmb->je, pmb->ks, pmb->ke);
       break;
     case 3:
       WaveSommerfeld_3d_(u, pmb->is, pmb->is, pmb->js, pmb->je, pmb->ks, pmb->ke);
@@ -77,6 +78,7 @@ void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
       WaveSommerfeld_1d_R_(u, pmb->ie, pmb->ie, pmb->js, pmb->je, pmb->ks, pmb->ke);
       break;
     case 2:
+      WaveSommerfeld_2d_(u, pmb->ie, pmb->ie, pmb->js, pmb->je, pmb->ks, pmb->ke);
       break;
     case 3:
       WaveSommerfeld_3d_(u, pmb->ie, pmb->ie, pmb->js, pmb->je, pmb->ks, pmb->ke);
@@ -88,6 +90,7 @@ void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
      pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::outflow) {
     switch(use_Sommerfeld) {
     case 2:
+      WaveSommerfeld_2d_(u, pmb->is, pmb->ie, pmb->js, pmb->js, pmb->ks, pmb->ke);
       break;
     case 3:
       WaveSommerfeld_3d_(u, pmb->is, pmb->ie, pmb->js, pmb->js, pmb->ks, pmb->ke);
@@ -99,6 +102,7 @@ void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
      pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::outflow) {
     switch(use_Sommerfeld) {
     case 2:
+      WaveSommerfeld_2d_(u, pmb->is, pmb->ie, pmb->je, pmb->je, pmb->ks, pmb->ke);
       break;
     case 3:
       WaveSommerfeld_3d_(u, pmb->is, pmb->ie, pmb->je, pmb->je, pmb->ks, pmb->ke);
@@ -140,13 +144,11 @@ void Wave::WaveSommerfeld_1d_L_(AthenaArray<Real> & u,
   Coordinates * pco = pmb->pcoord;
   Real c = pmb->pwave->c;
 
-
   for(int k = ks; k <= ke; ++k)
     for(int j = js; j <= je; ++j)
 #pragma omp simd
       for(int i = is; i <= ie; ++i) {
-        Real const wpi_x = FD.Ds(0, wpi(k,j,i));
-        rhs(1,k,j,i) = pmb->pwave->c * wpi_x;
+        rhs(1,k,j,i) = c * FD.Ds(0, wpi(k,j,i));
       }
 }
 
@@ -169,13 +171,11 @@ void Wave::WaveSommerfeld_1d_R_(AthenaArray<Real> & u,
   Coordinates * pco = pmb->pcoord;
   Real c = pmb->pwave->c;
 
-
   for(int k = ks; k <= ke; ++k)
     for(int j = js; j <= je; ++j)
 #pragma omp simd
       for(int i = is; i <= ie; ++i) {
-        Real const wpi_x = FD.Ds(0, wpi(k,j,i));
-        rhs(1,k,j,i) = -pmb->pwave->c * wpi_x;
+        rhs(1,k,j,i) = -c * FD.Ds(0, wpi(k,j,i));
       }
 
 }
@@ -207,7 +207,7 @@ void Wave::WaveSommerfeld_2d_(AthenaArray<Real> & u,
         Real const sx = pco->x1v(i);
         Real const sy = pco->x2v(j);
 
-        rhs(1,k,j,i) = -pmb->pwave->c * (wpi(k,j,i)/rr + 2 * (sx*wpi_x + sy*wpi_y));
+        rhs(1,k,j,i) = -c * (wpi(k,j,i)/rr + 2. * (sx*wpi_x + sy*wpi_y)) / 2.;
       }
     }
   }
@@ -243,7 +243,7 @@ void Wave::WaveSommerfeld_3d_(AthenaArray<Real> & u,
         Real const sy = pco->x2v(j)/rr;
         Real const sz = pco->x3v(k)/rr;
 
-        rhs(1,k,j,i) = -pmb->pwave->c * (wpi(k,j,i)/rr + sx*wpi_x + sy*wpi_y + sz*wpi_z);
+        rhs(1,k,j,i) = -c * (wpi(k,j,i)/rr + sx*wpi_x + sy*wpi_y + sz*wpi_z);
       }
     }
   }

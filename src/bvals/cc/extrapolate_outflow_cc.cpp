@@ -32,6 +32,12 @@ void CellCenteredBoundaryVariable::ExtrapolateOutflowInnerX1(
           // extrapolate variables at 4th order
           (*var_cc)(n,k,j,i) = 4.*(*var_cc)(n,k,j,i+1) - 6.*(*var_cc)(n,k,j,i+2) +
                                4.*(*var_cc)(n,k,j,i+3) - 1.*(*var_cc)(n,k,j,i+4);
+
+          // extrapolate variables at 6th order
+          // (*var_cc)(n,k,j,i) = 6.*(*var_cc)(n,k,j,i+1) - 15.*(*var_cc)(n,k,j,i+2) +
+          //                     20.*(*var_cc)(n,k,j,i+3) - 15.*(*var_cc)(n,k,j,i+4) +
+          //                      6.*(*var_cc)(n,k,j,i+5) - 1.*(*var_cc)(n,k,j,i+6);
+
         }
       }
     }
@@ -54,6 +60,11 @@ void CellCenteredBoundaryVariable::ExtrapolateOutflowOuterX1(
           // extrapolate variables at 4th order
           (*var_cc)(n,k,j,i) = 4.*(*var_cc)(n,k,j,i-1) - 6.*(*var_cc)(n,k,j,i-2) +
                                4.*(*var_cc)(n,k,j,i-3) - 1.*(*var_cc)(n,k,j,i-4);
+
+          // extrapolate variables at 6th order
+          // (*var_cc)(n,k,j,i) = 6.*(*var_cc)(n,k,j,i-1) - 15.*(*var_cc)(n,k,j,i-2) +
+          //                     20.*(*var_cc)(n,k,j,i-3) - 15.*(*var_cc)(n,k,j,i-4) +
+          //                      6.*(*var_cc)(n,k,j,i-5) - 1.*(*var_cc)(n,k,j,i-6);
         }
 
       }
