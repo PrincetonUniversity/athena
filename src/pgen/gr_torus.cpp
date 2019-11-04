@@ -30,7 +30,7 @@
 #include "../parameter_input.hpp"          // ParameterInput
 
 // Configuration checking
-#if not GENERAL_RELATIVITY
+#if !GENERAL_RELATIVITY
 #error "This problem generator must be used with general relativity"
 #endif
 
@@ -66,7 +66,7 @@ Real IntegratedA1(Real x1_m, Real x1_p, Real x2, Real x3);
 Real IntegratedA2(Real x1, Real x2_m, Real x2_p, Real x3);
 Real IntegratedA3(Real x1, Real x2, Real x3_m, Real x3_p);
 void VectorPotential(Real x1, Real x2, Real x3, Real *p_a_1, Real *p_a_2, Real *p_a_3);
-}
+} // namespace
 
 // File variables
 namespace {
@@ -91,7 +91,7 @@ Real pgas_over_rho_peak, rho_amp;             // calculated torus parameters
 Real sin_tilt, cos_tilt;                      // calculated tilt parameters
 int num_flux_radii;                           // number of spheres to use
 Real *flux_radii;                             // locations to calculate fluxes
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for preparing Mesh
@@ -100,7 +100,6 @@ Real *flux_radii;                             // locations to calculate fluxes
 // Outputs: (none)
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
-
   // Check for Kerr-Schild coordinates
   if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") != 0) {
     std::stringstream msg;
@@ -225,7 +224,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   }
   log_h_edge = LogHAux(r_edge, 1.0);
   log_h_peak = LogHAux(r_peak, 1.0) - log_h_edge;
-  pgas_over_rho_peak = (gamma_adi - 1.0) / gamma_adi * (std::exp(log_h_peak) - 1.0);
+  pgas_over_rho_peak = (gamma_adi - 1.0) / gamma_adi * std::expm1(log_h_peak);
   rho_amp = rho_max / std::pow(pgas_over_rho_peak, 1.0 / (gamma_adi - 1.0));
   sin_tilt = std::sin(tilt);
   cos_tilt = std::cos(tilt);
@@ -254,7 +253,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 //   User arrays are metric and its inverse.
 
 void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
-
   // Allocate space for user output variables
   if (MAGNETIC_FIELDS_ENABLED) {
     AllocateUserOutputVariables(2);
@@ -278,7 +276,7 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
     AllocateIntUserMeshBlockDataField(1);
     iuser_meshblock_data[0].NewAthenaArray(num_flux_radii);
     for (int n = 0; n < num_flux_radii; ++n) {
-      if (flux_radii[n] >= pcoord->x1f(is) and flux_radii[n] < pcoord->x1f(ie+1)) {
+      if (flux_radii[n] >= pcoord->x1f(is) && flux_radii[n] < pcoord->x1f(ie+1)) {
         int i;
         for (i = is; i <= ie + 1; ++i) {
           if (pcoord->x1v(i) > flux_radii[n]) {
@@ -319,7 +317,6 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
 //   Assumes x3 is axisymmetric direction.
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-
   // Prepare index bounds
   int il = is - NGHOST;
   int iu = ie + NGHOST;
@@ -345,7 +342,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j = jl; j <= ju; ++j) {
       pcoord->CellMetric(k, j, il, iu, g, gi);
       for (int i = il; i <= iu; ++i) {
-
         // Extract preferred coordinates of cell
         Real x1 = pcoord->x1v(i);
         Real x2 = pcoord->x2v(j);
@@ -364,11 +360,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real cph_bl = std::cos(ph_bl);
 
         // Account for tilt
-        Real sth_bl_t, cth_bl_t, ph_bl_t;
+        Real sth_bl_t, cth_bl_t; // ph_bl_t;
         if (tilt == 0.0) {
           sth_bl_t = std::abs(sth_bl);
           cth_bl_t = cth_bl;
-          ph_bl_t = (sth_bl < 0.0) ? ph_bl - PI : ph_bl;
+          //ph_bl_t = (sth_bl < 0.0) ? ph_bl - PI : ph_bl;
         } else {
           Real x_bl = sth_bl * cph_bl;
           Real y_bl = sth_bl * sph_bl;
@@ -378,7 +374,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           Real z_bl_t = sin_tilt * x_bl + cos_tilt * z_bl;
           sth_bl_t = std::hypot(x_bl_t, y_bl_t);
           cth_bl_t = z_bl_t;
-          ph_bl_t = std::atan2(y_bl_t, x_bl_t);
+          //ph_bl_t = std::atan2(y_bl_t, x_bl_t);
         }
 
         // Determine if we are in the torus
@@ -400,9 +396,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
         // Overwrite primitives inside torus
         if (in_torus) {
-
           // Calculate thermodynamic variables
-          Real pgas_over_rho = (gamma_adi - 1.0) / gamma_adi * (std::exp(log_h) - 1.0);
+          Real pgas_over_rho = (gamma_adi - 1.0) / gamma_adi * std::expm1(log_h);
           rho = rho_amp * std::pow(pgas_over_rho, 1.0 / (gamma_adi - 1.0));
           pgas = pgas_over_rho * rho;
 
@@ -442,7 +437,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize magnetic fields
   if (MAGNETIC_FIELDS_ENABLED) {
-
     // Initialize B^1
     for (int k = kl; k <= ku; ++k) {
       for (int j = jl; j <= ju; ++j) {
@@ -457,8 +451,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           Real a_3_2m = IntegratedA3(x1, x2_m, x3_m, x3_p);
           Real a_3_2p = IntegratedA3(x1, x2_p, x3_m, x3_p);
           Real area = pcoord->GetFace1Area(k,j,i);
-          if (area > 0.0 and not (std::isnan(a_2_3m) or std::isnan(a_2_3p)
-                or std::isnan(a_3_2m) or std::isnan(a_3_2p))) {
+          if (area > 0.0 && !(std::isnan(a_2_3m) || std::isnan(a_2_3p)
+                || std::isnan(a_3_2m) || std::isnan(a_3_2p))) {
             pfield->b.x1f(k,j,i) = (a_3_2p - a_3_2m - a_2_3p + a_2_3m) / area;
           } else {
             pfield->b.x1f(k,j,i) = 0.0;
@@ -481,8 +475,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           Real a_3_1m = IntegratedA3(x1_m, x2, x3_m, x3_p);
           Real a_3_1p = IntegratedA3(x1_p, x2, x3_m, x3_p);
           Real area = pcoord->GetFace2Area(k,j,i);
-          if (area > 0.0 and not (std::isnan(a_1_3m) or std::isnan(a_1_3p)
-                or std::isnan(a_3_1m) or std::isnan(a_3_1p))) {
+          if (area > 0.0 && !(std::isnan(a_1_3m) || std::isnan(a_1_3p)
+                || std::isnan(a_3_1m) || std::isnan(a_3_1p))) {
             pfield->b.x2f(k,j,i) = (a_1_3p - a_1_3m - a_3_1p + a_3_1m) / area;
           } else {
             pfield->b.x2f(k,j,i) = 0.0;
@@ -505,8 +499,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           Real a_2_1m = IntegratedA2(x1_m, x2_m, x2_p, x3);
           Real a_2_1p = IntegratedA2(x1_p, x2_m, x2_p, x3);
           Real area = pcoord->GetFace3Area(k,j,i);
-          if (area > 0.0 and not (std::isnan(a_1_2m) or std::isnan(a_1_2p)
-                or std::isnan(a_2_1m) or std::isnan(a_2_1p))) {
+          if (area > 0.0 && !(std::isnan(a_1_2m) || std::isnan(a_1_2p)
+                || std::isnan(a_2_1m) || std::isnan(a_2_1p))) {
             pfield->b.x3f(k,j,i) = (a_2_1p - a_2_1m - a_1_2p + a_1_2m) / area;
           } else {
             pfield->b.x3f(k,j,i) = 0.0;
@@ -514,12 +508,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-  }
-
-  // Calculate cell-centered magnetic field
-  if (MAGNETIC_FIELDS_ENABLED) {
+    // Calculate cell-centered magnetic field
     pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pcoord, il, iu, jl, ju, kl,
-        ku);
+                                       ku);
   }
 
   // Initialize conserved values
@@ -543,27 +534,22 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //     n,3: phi (magnetic flux through specified radius)
 
 void MeshBlock::UserWorkInLoop() {
-
   // Prepare scratch arrays
   AthenaArray<Real> &g = ruser_meshblock_data[0];
   AthenaArray<Real> &gi = ruser_meshblock_data[1];
 
-  // Clear storage for history output accumulation
   if (num_flux_radii > 0) {
+    // Clear storage for history output accumulation
     for (int n = 0; n < num_flux_radii; ++n) {
       for (int m = 0; m < 4; ++m) {
         ruser_meshblock_data[4](n,m) = 0.0;
       }
     }
-  }
-
-  // Go through all cells
-  if (num_flux_radii > 0) {
+    // Go through all cells
     for (int k = ks; k <= ke; ++k) {
       for (int j = js; j <= je; ++j) {
         pcoord->CellMetric(k, j, is, ie, g, gi);
         for (int i = is; i <= ie; ++i) {
-
           // Calculate normal-frame Lorentz factor
           Real uu1 = phydro->w(IVX,k,j,i);
           Real uu2 = phydro->w(IVY,k,j,i);
@@ -602,7 +588,7 @@ void MeshBlock::UserWorkInLoop() {
 
           // Check for contribution to history output
           for (int n = 0; n < num_flux_radii; ++n) {
-            if (iuser_meshblock_data[0](n) == i or iuser_meshblock_data[0](n) + 1 == i) {
+            if (iuser_meshblock_data[0](n) == i || iuser_meshblock_data[0](n) + 1 == i) {
               Real factor = ruser_meshblock_data[2](n);
               if (iuser_meshblock_data[0](n) == i) {
                 factor = 1.0 - ruser_meshblock_data[2](n);
@@ -639,7 +625,6 @@ void MeshBlock::UserWorkInLoop() {
 //     1,k,j,i: pmag (fluid-frame magnetic pressure, if magnetic fields enabled)
 
 void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
-
   // Prepare scratch arrays
   AthenaArray<Real> &g = ruser_meshblock_data[0];
   AthenaArray<Real> &gi = ruser_meshblock_data[1];
@@ -649,7 +634,6 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
     for (int j = js; j <= je; ++j) {
       pcoord->CellMetric(k, j, is, ie, g, gi);
       for (int i = is; i <= ie; ++i) {
-
         // Calculate normal-frame Lorentz factor
         Real uu1 = phydro->w(IVX,k,j,i);
         Real uu2 = phydro->w(IVY,k,j,i);
@@ -723,7 +707,6 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
 void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ku,
     int ngh) {
-
   // Set hydro variables
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
@@ -812,7 +795,6 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
 void OutflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ku,
     int ngh) {
-
   // Set hydro variables
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
@@ -883,8 +865,7 @@ void OutflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &pri
 // Notes:
 //   Implements remapping from Gammie, McKinney, & Toth 2003, ApJ 589 444.
 
-Real ThetaGrid(Real x2, RegionSize rs)
-{
+Real ThetaGrid(Real x2, RegionSize rs) {
   return PI * x2 + (1.0 - h_grid) / 2.0 * std::sin(2.0*PI * x2);
 }
 
@@ -923,7 +904,7 @@ void GetKerrSchildCoordinates(Real x1, Real x2, Real x3, Real *p_r, Real *p_th,
   }
   return;
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for returning corresponding Boyer-Lindquist coordinates of point
@@ -948,7 +929,7 @@ void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *p_r, Real *p_
   }
   return;
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for transforming vector from Boyer-Lindquist to desired coordinates
@@ -976,7 +957,7 @@ void TransformContravariantFromBoyerLindquist(Real at_bl, Real ar_bl, Real ath_b
   }
   return;
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for transforming covector from Kerr-Schild to desired coordinates
@@ -992,7 +973,7 @@ namespace {
 void TransformCovariantFromKerrSchild(Real a_r, Real a_th, Real a_ph, Real x1, Real x2,
     Real x3, Real *p_a_1, Real *p_a_2, Real *p_a_3) {
   if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
-    Real delta = SQR(x1) - 2.0 * m * x1 + SQR(a);
+    // Real delta = SQR(x1) - 2.0 * m * x1 + SQR(a);
     *p_a_1 = a_r;
     *p_a_2 = a_th;
     *p_a_3 = a_ph;
@@ -1003,7 +984,7 @@ void TransformCovariantFromKerrSchild(Real a_r, Real a_th, Real a_ph, Real x1, R
   }
   return;
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for calculating angular momentum variable l
@@ -1034,7 +1015,7 @@ Real CalculateLFromRPeak(Real r) {
   }
   return 1.0 / r * std::sqrt(m / r) * num / denom;
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for calculating pressure maximum radius r_peak
@@ -1054,7 +1035,6 @@ Real CalculateLFromRPeak(Real r) {
 
 namespace {
 Real CalculateRPeakFromL(Real l_target) {
-
   // Parameters
   const Real tol_r = 1.0e-10;      // absolute tolerance on abscissa r_peak
   const Real tol_l = 1.0e-10;      // absolute tolerance on ordinate l
@@ -1067,28 +1047,28 @@ Real CalculateRPeakFromL(Real l_target) {
   Real l_a = CalculateLFromRPeak(r_a);
   Real l_b = CalculateLFromRPeak(r_b);
   Real l_c = CalculateLFromRPeak(r_c);
-  if (not ((l_a < l_target and l_b > l_target) or (l_a > l_target and l_b < l_target))) {
+  if (!((l_a < l_target && l_b > l_target) || (l_a > l_target && l_b < l_target))) {
     return NAN;
   }
 
   // Find root
   for (int n = 0; n < max_iterations; ++n) {
-    if (std::abs(r_b - r_a) <= 2.0 * tol_r or std::abs(l_c - l_target) <= tol_l) {
+    if (std::abs(r_b - r_a) <= 2.0 * tol_r || std::abs(l_c - l_target) <= tol_l) {
       break;
     }
-    if ((l_a < l_target and l_c < l_target) or (l_a > l_target and l_c > l_target)) {
+    if ((l_a < l_target && l_c < l_target) || (l_a > l_target && l_c > l_target)) {
       r_a = r_c;
       l_a = l_c;
     } else {
       r_b = r_c;
-      l_b = l_c;
+      //l_b = l_c;
     }
     r_c = 0.5 * (r_a + r_b);
     l_c = CalculateLFromRPeak(r_c);
   }
   return r_c;
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for helping to calculate enthalpy
@@ -1120,7 +1100,7 @@ Real LogHAux(Real r, Real sth) {
   Real var_d = -l * omega;
   return var_b + var_c + var_d;                              // (FM 3.4)
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for computing 4-velocity components at a given position inside untilted torus
@@ -1164,7 +1144,7 @@ void CalculateVelocityInTorus(Real r, Real sth, Real *p_ut, Real *p_uph) {
   *p_uph = u3;
   return;
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for computing 4-velocity components at a given position inside tilted torus
@@ -1181,7 +1161,6 @@ void CalculateVelocityInTorus(Real r, Real sth, Real *p_ut, Real *p_uph) {
 namespace {
 void CalculateVelocityInTiltedTorus(Real r, Real th, Real ph, Real *p_ut, Real *p_ur,
     Real *p_uth, Real *p_uph) {
-
   // Calculate corresponding location
   Real sth = std::sin(th);
   Real cth = std::cos(th);
@@ -1232,7 +1211,7 @@ void CalculateVelocityInTiltedTorus(Real r, Real th, Real ph, Real *p_ut, Real *
   }
   return;
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for calculating integrated 1-component of vector potential
@@ -1247,11 +1226,9 @@ void CalculateVelocityInTiltedTorus(Real r, Real th, Real ph, Real *p_ut, Real *
 
 namespace {
 Real IntegratedA1(Real x1_m, Real x1_p, Real x2, Real x3) {
-
   // Multiple loops and density isocontour configurations
   if (field_config == MagneticFieldConfigs::density
-      or field_config == MagneticFieldConfigs::loops) {
-
+      || field_config == MagneticFieldConfigs::loops) {
     // Closed form in spherical Kerr-Schild coordinates
     if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
       return 0.0;
@@ -1264,7 +1241,7 @@ Real IntegratedA1(Real x1_m, Real x1_p, Real x2, Real x3) {
             + static_cast<Real>(n) / static_cast<Real>(pot_samples - 1) * (x1_p - x1_m);
         Real a_1, a_2, a_3;
         VectorPotential(x1, x2, x3, &a_1, &a_2, &a_3);
-        a_1_sum += (n == 0 or n == pot_samples - 1) ? 0.5 * a_1 : a_1;
+        a_1_sum += (n == 0 || n == pot_samples - 1) ? 0.5 * a_1 : a_1;
       }
       return a_1_sum * (x1_p - x1_m) / (pot_samples - 1);
     }
@@ -1274,7 +1251,7 @@ Real IntegratedA1(Real x1_m, Real x1_p, Real x2, Real x3) {
     return NAN;
   }
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for calculating integrated 2-component of vector potential
@@ -1289,13 +1266,11 @@ Real IntegratedA1(Real x1_m, Real x1_p, Real x2, Real x3) {
 
 namespace {
 Real IntegratedA2(Real x1, Real x2_m, Real x2_p, Real x3) {
-
   // Multiple loops and density isocontour configurations
   if (field_config == MagneticFieldConfigs::density
-      or field_config == MagneticFieldConfigs::loops) {
-
+      || field_config == MagneticFieldConfigs::loops) {
     // Closed form for untilted disk in spherical Kerr-Schild coordinates
-    if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0 and tilt == 0.0) {
+    if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0 && tilt == 0.0) {
       return 0.0;
 
     // General form for tilted disk or other coordinate systems
@@ -1306,7 +1281,7 @@ Real IntegratedA2(Real x1, Real x2_m, Real x2_p, Real x3) {
             + static_cast<Real>(n) / static_cast<Real>(pot_samples - 1) * (x2_p - x2_m);
         Real a_1, a_2, a_3;
         VectorPotential(x1, x2, x3, &a_1, &a_2, &a_3);
-        a_2_sum += (n == 0 or n == pot_samples - 1) ? 0.5 * a_2 : a_2;
+        a_2_sum += (n == 0 || n == pot_samples - 1) ? 0.5 * a_2 : a_2;
       }
       return a_2_sum * (x2_p - x2_m) / (pot_samples - 1);
     }
@@ -1316,7 +1291,7 @@ Real IntegratedA2(Real x1, Real x2_m, Real x2_p, Real x3) {
     return NAN;
   }
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for calculating integrated 3-component of vector potential
@@ -1331,13 +1306,11 @@ Real IntegratedA2(Real x1, Real x2_m, Real x2_p, Real x3) {
 
 namespace {
 Real IntegratedA3(Real x1, Real x2, Real x3_m, Real x3_p) {
-
   // Multiple loops and density isocontour configurations
   if (field_config == MagneticFieldConfigs::density
-      or field_config == MagneticFieldConfigs::loops) {
-
+      || field_config == MagneticFieldConfigs::loops) {
     // Closed form for untilted disk in spherical Kerr-Schild coordinates
-    if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0 and tilt == 0.0) {
+    if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0 && tilt == 0.0) {
       Real a_r, a_th, a_ph;
       VectorPotential(x1, x2, 0.5 * (x3_m + x3_p), &a_r, &a_th, &a_ph);
       return a_ph * (x3_p - x3_m);
@@ -1350,7 +1323,7 @@ Real IntegratedA3(Real x1, Real x2, Real x3_m, Real x3_p) {
             + static_cast<Real>(n) / static_cast<Real>(pot_samples - 1) * (x3_p - x3_m);
         Real a_1, a_2, a_3;
         VectorPotential(x1, x2, x3, &a_1, &a_2, &a_3);
-        a_3_sum += (n == 0 or n == pot_samples - 1) ? 0.5 * a_3 : a_3;
+        a_3_sum += (n == 0 || n == pot_samples - 1) ? 0.5 * a_3 : a_3;
       }
       return a_3_sum * (x3_p - x3_m) / (pot_samples - 1);
     }
@@ -1360,7 +1333,7 @@ Real IntegratedA3(Real x1, Real x2, Real x3_m, Real x3_p) {
     return NAN;
   }
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for calculating covariant spatial components of vector potential
@@ -1384,7 +1357,6 @@ Real IntegratedA3(Real x1, Real x2, Real x3_m, Real x3_p) {
 
 namespace {
 void VectorPotential(Real x1, Real x2, Real x3, Real *p_a_1, Real *p_a_2, Real *p_a_3) {
-
   // Calculate spherical Kerr-Schild coordinates of cell
   Real r, th, ph;
   GetKerrSchildCoordinates(x1, x2, x3, &r, &th, &ph);
@@ -1438,8 +1410,8 @@ void VectorPotential(Real x1, Real x2, Real x3, Real *p_a_1, Real *p_a_2, Real *
     *p_a_3 = 0.0;
     return;
   }
-  if (field_config == MagneticFieldConfigs::loops and (r <= pot_r_min or r >= pot_r_max
-        or th_t <= pot_theta_min or th_t >= PI - pot_theta_min)) {
+  if (field_config == MagneticFieldConfigs::loops && (r <= pot_r_min || r >= pot_r_max
+        || th_t <= pot_theta_min || th_t >= PI - pot_theta_min)) {
     *p_a_1 = 0.0;
     *p_a_2 = 0.0;
     *p_a_3 = 0.0;
@@ -1447,7 +1419,7 @@ void VectorPotential(Real x1, Real x2, Real x3, Real *p_a_1, Real *p_a_2, Real *
   }
 
   // Calculate thermodynamic variables
-  Real pgas_over_rho = (gamma_adi - 1.0) / gamma_adi * (std::exp(log_h) - 1.0);
+  Real pgas_over_rho = (gamma_adi - 1.0) / gamma_adi * std::expm1(log_h);
   Real rho = rho_amp * std::pow(pgas_over_rho, 1.0 / (gamma_adi - 1.0));
   Real pgas = pgas_over_rho * rho;
 
@@ -1489,12 +1461,12 @@ void VectorPotential(Real x1, Real x2, Real x3, Real *p_a_1, Real *p_a_2, Real *
     Real z = cth;
     Real x_t = cos_tilt * x - sin_tilt * z;
     Real y_t = y;
-    Real z_t = sin_tilt * x + cos_tilt * z;
-    Real sth_t = std::hypot(x_t, y_t);
-    Real dth_t_dth = (-sin_tilt * cth * cph + cos_tilt * sth) / sth_t;
-    Real dth_t_dph = sin_tilt * sth * sph / sth_t;
-    Real dph_t_dth = -sin_tilt * sph / SQR(sth_t);
-    Real dph_t_dph = (-sin_tilt * cth * sth * cph + cos_tilt * SQR(sth)) / SQR(sth_t);
+    // Real z_t = sin_tilt * x + cos_tilt * z;
+    Real sth_tilt = std::hypot(x_t, y_t);
+    Real dth_t_dth = (-sin_tilt * cth * cph + cos_tilt * sth) / sth_tilt;
+    Real dth_t_dph = sin_tilt * sth * sph / sth_tilt;
+    Real dph_t_dth = -sin_tilt * sph / SQR(sth_tilt);
+    Real dph_t_dph = (-sin_tilt * cth * sth * cph + cos_tilt * SQR(sth)) / SQR(sth_tilt);
     a_th = dth_t_dth * a_th_t + dph_t_dth * a_ph_t;
     a_ph = dth_t_dph * a_th_t + dph_t_dph * a_ph_t;
   }
@@ -1508,4 +1480,4 @@ void VectorPotential(Real x1, Real x2, Real x3, Real *p_a_1, Real *p_a_2, Real *
   TransformCovariantFromKerrSchild(a_r, a_th, a_ph, x1, x2, x3, p_a_1, p_a_2, p_a_3);
   return;
 }
-}
+} // namespace

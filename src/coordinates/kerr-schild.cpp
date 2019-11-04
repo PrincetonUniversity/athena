@@ -151,7 +151,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
   // Calculate intermediate geometric quantities: r-direction
   for (int i=il-ng; i<=iu+ng; ++i) {
-
     // Useful quantities
     Real r_c = x1v(i);
     Real r_m = x1f(i);
@@ -187,7 +186,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     jll = jl; juu = ju;
   }
   for (int j=jll; j<=juu; ++j) {
-
     // Useful quantities
     Real theta_c = x2v(j);
     Real theta_m = x2f(j);
@@ -248,7 +246,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // Allocate and compute arrays for intermediate geometric quantities that are only
   // needed if object is NOT a coarse mesh
   if (!coarse_flag) {
-
     // Allocate arrays for intermediate geometric quantities: r-direction
     coord_vol_i1_.NewAthenaArray(nc1);
     coord_vol_i2_.NewAthenaArray(nc1);
@@ -306,7 +303,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
     // Calculate intermediate geometric quantities: r-direction
     for (int i=il-ng; i<=iu+ng; ++i) {
-
       // Useful quantities
       Real r_m = x1f(i);
       Real r_p = x1f(i+1);
@@ -334,7 +330,6 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
     // Calculate intermediate geometric quantities: theta-direction
     for (int j=jll; j<=juu; ++j) {
-
       // Useful quantities
       Real theta_c = x2v(j);
       Real theta_m = x2f(j);
