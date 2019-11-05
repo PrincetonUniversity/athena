@@ -73,6 +73,15 @@ nx1 = 64  # block size in r-direction
 nx2 = 64  # block size in theta-direction
 nx3 = 64  # block size in phi-direction
 
+<refinement1>
+level = 1                   # refinement level relative to root (0)
+x1min = 1.7811841172555203  # outermost inner boundary
+x1max = 35.0                # innermost outer boundary
+x2min = 0.9817477042468103  # lowest upper boundary
+x2max = 2.1598449493429825  # uppermost lower boundary
+x3min = 0.0                 # most counterclockwise clockwise boundary
+x3max = 6.2831853071795862  # most clockwise counterclockwise boundary
+
 <coord>
 m = 1.0  # black hole mass M
 a = 0.5  # black hole spin a (0 <= a/M < 1)
