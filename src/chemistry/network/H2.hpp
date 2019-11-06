@@ -53,13 +53,14 @@ private:
   PassiveScalars *pmy_spec_;
 	MeshBlock *pmy_mb_;
 
-	std::string species_names_all_[NSCALARS+ngs_];//all species
+	std::string species_names_all_[NSCALARS];//all species
 	//index of species
 	static const int iH_;
 	static const int iH2_;
 	static const Real kgr_;//H2 formation rate on grains
 
 	Real xi_cr_; //primary CRIR in s-1 H-1, read from input file, default 2e-16.
+  Real kcr_; //CRIR for H2 = 3*xi_cr_
 	//units 
 	Real unit_density_in_nH_; //read from input
 	Real unit_length_in_cm_; //read from input

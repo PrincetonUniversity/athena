@@ -306,6 +306,16 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
                     ) * unit_density_in_nH_ * unit_vel_in_cms_ * unit_vel_in_cms_;
 	unit_radiation_in_draine1987_ = pin->GetReal(
                                 "chemistry", "unit_radiation_in_draine1987");
+  //check whether number of frequencies equal to the input file specification
+  const int nfreq = pin->GetOrAddInteger("radiation", "n_frequency", 1);
+  std::stringstream msg; //error message
+  if (nfreq != n_freq_) {
+    msg << "### FATAL ERROR in ChemNetwork constructor" << std::endl
+      << "number of frequencies in radiation: " << nfreq 
+      << " not equal to that in chemistry: " << n_freq_  << std::endl;
+    throw std::runtime_error(msg.str().c_str());
+  }
+
   if (NON_BAROTROPIC_EOS) {
     temperature_ = 0.;
   } else {
@@ -326,13 +336,9 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   //do not apply for collisional dissociation reactions and energy equation
 	temp_max_rates_ = pin->GetOrAddReal("chemistry", "temp_max_rates", inf);
 	//CO cooling parameters
-	//default: not use LVG approximation
-	isNCOeff_LVG_ = pin->GetOrAddInteger("chemistry", "isNCOeff_LVG", 0);
 	//Maximum CO cooling length. default 100pc.
 	Leff_CO_max_ = pin->GetOrAddReal("chemistry", "Leff_CO_max", 3.0e20);
 	gradv_ = 0.;
-	NCO_ = 0.;
-	bCO_ = 0.;
 	
   //atomic abundance
   xC_ = zdg_ * xC_std_;
@@ -481,7 +487,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 
 
 void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
-  Real rad_sum, temp, NCO_sum, NH, rho, rho_floor;
+  Real rad_sum, temp, NH, rho, rho_floor;
   int nang = pmy_mb_->prad->nang;
   //density
   rho = pmy_mb_->phydro->w(IDN, k, j, i);
@@ -513,16 +519,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   }
   //CO cooling paramters
   //TODO: for six-ray, this should be in the right units
-  NCO_sum = 0;
-  for (int iang=0; iang < nang; ++iang) {
-      NCO_sum += pmy_mb_->prad->pradintegrator->col(iang, k, j, i, iNCO_);
-  }
-  NCO_ = NCO_sum/float(nang);
-  if (isNCOeff_LVG_ != 0) {
-    SetGrad_v(k, j, i);
-  } else {
-    SetbCO(k, j, i);
-  }
+  SetGrad_v(k, j, i);
 	return;
 }
 
@@ -879,12 +876,8 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
 		vth = sqrt(2. * Thermo::kb_ * T / ChemistryUtility::mCO);
 		nCO = nH_ * yprev[iCO_];
 		grad_small_ = vth/Leff_CO_max_;
-		if (isNCOeff_LVG_ != 0) {
-      gradeff = std::max(gradv_, grad_small_);
-      NCOeff = nCO / gradeff;
-		} else {
-			NCOeff = NCO_ / sqrt(bCO_*bCO_ + vth*vth);
-		}
+    gradeff = std::max(gradv_, grad_small_);
+    NCOeff = nCO / gradeff;
 		LCOR = Thermo::CoolingCOR(yprev[iCO_], nH_*yprev[igH_],  nH_*yprev[iH2_],
 				nH_*yprev[ige_],  T,  NCOeff);
 		// H2 vibration and rotation lines 
@@ -911,13 +904,8 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
                 + LH2 + LDust + LRec + LH2diss + LHIion);
 	if ( isnan(dEdt) || isinf(dEdt) ) {
     if ( isnan(LCOR) || isinf(LCOR) ) {
-      if (isNCOeff_LVG_ != 0) {
-        printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
-                NCOeff, gradeff, gradv_, vth, nH_, nCO);
-      } else {
-        printf("NCOeff=%.2e, bCO_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e, NCO_=%.2e\n",
-                NCOeff, bCO_, vth, nH_, nCO, NCO_);
-      }
+      printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
+          NCOeff, gradeff, gradv_, vth, nH_, nCO);
     }
 		printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
 				GCR , GPE , GH2gr , GH2pump , GH2diss);
@@ -977,50 +965,6 @@ Real ChemNetwork::GetStddev(Real arr[], const int len) {
   avg = sum/Real(len);
   avg_sq = sum_sq/Real(len);
   return sqrt(avg_sq - avg*avg);
-}
-
-void ChemNetwork::SetbCO(const int k, const int j, const int i) {
-  AthenaArray<Real> &w = pmy_mb_->phydro->w;
-  Real dvx, dvy, dvz, dvtot;
-  Real vx[27] = {
-                w(IVX, k, j, i),   w(IVX, k, j, i-1),   w(IVX, k, j, i+1),
-                w(IVX, k, j-1, i), w(IVX, k, j-1,i-1),  w(IVX, k, j-1, i+1),
-                w(IVX, k, j+1, i), w(IVX, k, j+1,i-1),  w(IVX, k, j+1, i+1),
-                w(IVX, k-1, j, i),   w(IVX, k-1, j, i-1),   w(IVX, k-1, j, i+1),
-                w(IVX, k-1, j-1, i), w(IVX, k-1, j-1,i-1),  w(IVX, k-1, j-1, i+1),
-                w(IVX, k-1, j+1, i), w(IVX, k-1, j+1,i-1),  w(IVX, k-1, j+1, i+1),
-                w(IVX, k+1, j, i),   w(IVX, k+1, j, i-1),   w(IVX, k+1, j, i+1),
-                w(IVX, k+1, j-1, i), w(IVX, k+1, j-1,i-1),  w(IVX, k+1, j-1, i+1),
-                w(IVX, k+1, j+1, i), w(IVX, k+1, j+1,i-1),  w(IVX, k+1, j+1, i+1),
-                };
-  Real vy[27] = {
-                w(IVY, k, j, i),   w(IVY, k, j, i-1),   w(IVY, k, j, i+1),
-                w(IVY, k, j-1, i), w(IVY, k, j-1,i-1),  w(IVY, k, j-1, i+1),
-                w(IVY, k, j+1, i), w(IVY, k, j+1,i-1),  w(IVY, k, j+1, i+1),
-                w(IVY, k-1, j, i),   w(IVY, k-1, j, i-1),   w(IVY, k-1, j, i+1),
-                w(IVY, k-1, j-1, i), w(IVY, k-1, j-1,i-1),  w(IVY, k-1, j-1, i+1),
-                w(IVY, k-1, j+1, i), w(IVY, k-1, j+1,i-1),  w(IVY, k-1, j+1, i+1),
-                w(IVY, k+1, j, i),   w(IVY, k+1, j, i-1),   w(IVY, k+1, j, i+1),
-                w(IVY, k+1, j-1, i), w(IVY, k+1, j-1,i-1),  w(IVY, k+1, j-1, i+1),
-                w(IVY, k+1, j+1, i), w(IVY, k+1, j+1,i-1),  w(IVY, k+1, j+1, i+1),
-                };
-  Real vz[27] = {
-                w(IVZ, k, j, i),   w(IVZ, k, j, i-1),   w(IVZ, k, j, i+1),
-                w(IVZ, k, j-1, i), w(IVZ, k, j-1,i-1),  w(IVZ, k, j-1, i+1),
-                w(IVZ, k, j+1, i), w(IVZ, k, j+1,i-1),  w(IVZ, k, j+1, i+1),
-                w(IVZ, k-1, j, i),   w(IVZ, k-1, j, i-1),   w(IVZ, k-1, j, i+1),
-                w(IVZ, k-1, j-1, i), w(IVZ, k-1, j-1,i-1),  w(IVZ, k-1, j-1, i+1),
-                w(IVZ, k-1, j+1, i), w(IVZ, k-1, j+1,i-1),  w(IVZ, k-1, j+1, i+1),
-                w(IVZ, k+1, j, i),   w(IVZ, k+1, j, i-1),   w(IVZ, k+1, j, i+1),
-                w(IVZ, k+1, j-1, i), w(IVZ, k+1, j-1,i-1),  w(IVZ, k+1, j-1, i+1),
-                w(IVZ, k+1, j+1, i), w(IVZ, k+1, j+1,i-1),  w(IVZ, k+1, j+1, i+1),
-                };
-  dvx = GetStddev(vx, 27);
-  dvy = GetStddev(vy, 27);
-  dvz = GetStddev(vz, 27);
-  dvtot = sqrt(dvx*dvx + dvy*dvy + dvz*dvz);
-  bCO_ = dvtot * unit_vel_in_cms_;
-  return;
 }
 
 void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {

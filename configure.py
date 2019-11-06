@@ -201,7 +201,7 @@ parser.add_argument('--fftw_path',
 # --chemistry argument
 parser.add_argument('--chemistry',
     default=None,
-    choices=["gow16"],
+    choices=["gow16", "H2"],
     help='select chemical network')
 
 # -radiation argument
@@ -586,36 +586,40 @@ if args['cxx'] == 'clang++-apple':
     makefile_options['LIBRARY_FLAGS'] = ''
 
 # -chemistry argument
-if args['chemistry'] == "gow16":
-  definitions['CHEMISTRY_OPTION'] = 'INCLUDE_CHEMISTRY'
-  definitions['NUMBER_PASSIVE_SCALARS'] = '12'
-  #ChemNetwork class header file included in species.hpp
-  definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/gow16.hpp'
-  makefile_options['CHEMNET_FILE'] = 'src/chemistry/network/' \
-                                      + args['chemistry'] + '.cpp'
-  makefile_options['CHEMISTRY_FILE'] = 'src/chemistry/*.cpp src/chemistry/utils/*.cpp'
-  makefile_options['LIBRARY_FLAGS'] += ' -lsundials_cvode -lsundials_nvecserial'
+if args['chemistry'] is not None:
+    definitions['CHEMISTRY_OPTION'] = 'INCLUDE_CHEMISTRY'
+    definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/' \
+                                        + args['chemistry'] + '.hpp'
+    makefile_options['CHEMNET_FILE'] = 'src/chemistry/network/' \
+                                        + args['chemistry'] + '.cpp'
+    makefile_options['CHEMISTRY_FILE'] = 'src/chemistry/*.cpp src/chemistry/utils/*.cpp'
+    makefile_options['LIBRARY_FLAGS'] += ' -lsundials_cvode -lsundials_nvecserial'
+    #specify the number of species for each network
+    if args['chemistry'] == "gow16":
+        definitions['NUMBER_PASSIVE_SCALARS'] = '12'
+    elif args['chemistry'] == "H2":
+        definitions['NUMBER_PASSIVE_SCALARS'] = '2'
 else:
-  definitions['CHEMISTRY_OPTION'] = 'NOT_INCLUDE_CHEMISTRY'
-  makefile_options['CHEMNET_FILE'] = ''
-  makefile_options['CHEMISTRY_FILE'] = ''
-  definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/network.hpp'
+    definitions['CHEMISTRY_OPTION'] = 'NOT_INCLUDE_CHEMISTRY'
+    makefile_options['CHEMNET_FILE'] = ''
+    makefile_options['CHEMISTRY_FILE'] = ''
+    definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/network.hpp'
 
 # --cvode_path=[path] argument
 if args['cvode_path'] != '':
-  makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['cvode_path']
-  makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['cvode_path']
-  makefile_options['LINKER_FLAGS'] += " -Wl,-rpath," + '%s/lib' % args['cvode_path']
+    makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['cvode_path']
+    makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['cvode_path']
+    makefile_options['LINKER_FLAGS'] += " -Wl,-rpath," + '%s/lib' % args['cvode_path']
 
 # -radiation argument
 if args['radiation'] != None:
-  definitions['RADIATION_ENABLED'] = '1'
-  makefile_options['RADIATION_FILE'] = args['radiation']+'.cpp'
-  definitions['RADIATION_INTEGRATOR'] = args['radiation']
+    definitions['RADIATION_ENABLED'] = '1'
+    makefile_options['RADIATION_FILE'] = args['radiation']+'.cpp'
+    definitions['RADIATION_INTEGRATOR'] = args['radiation']
 else:
-  definitions['RADIATION_ENABLED'] = '0'
-  makefile_options['RADIATION_FILE'] = 'const.cpp'
-  definitions['RADIATION_INTEGRATOR'] = 'none'
+    definitions['RADIATION_ENABLED'] = '0'
+    makefile_options['RADIATION_FILE'] = 'const.cpp'
+    definitions['RADIATION_INTEGRATOR'] = 'none'
 
 # -float argument
 if args['float']:
@@ -857,11 +861,11 @@ print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:               ' + self_grav_string)
 print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
-print('  Chemistry:               '    + (args['chemistry'] if  args['chemistry'] \
+print('  Chemistry:                  ' + (args['chemistry'] if  args['chemistry'] \
         !=  None else 'OFF'))
-print('  Radiation:               '    + (args['radiation'] if  args['radiation'] \
+print('  Radiation:                  ' + (args['radiation'] if  args['radiation'] \
         !=  None else 'OFF'))
-print('  cvode_path:          '        + args['cvode_path'])
+print('  cvode_path:                 ' + args['cvode_path'])
 print('  Shearing Box BCs:           ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF'))

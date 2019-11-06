@@ -27,6 +27,7 @@
 #include "../../parameter_input.hpp"       //ParameterInput
 #include "../../mesh/mesh.hpp"
 #include "../../hydro/hydro.hpp"
+#include "../utils/chemistry_utils.hpp"
 #include "../../defs.hpp"
 #include "../../eos/eos.hpp"
 
@@ -53,7 +54,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 	pmy_mb_ = pmb;
 
 	//set the parameters from input file
-	xi_CR_ = pin->GetOrAddReal("chemistry", "xi_CR", 2e-16);
+	xi_cr_ = pin->GetOrAddReal("chemistry", "xi_cr", 2e-16);
+  kcr_ = xi_cr_ * 3.;
   //units
 	unit_density_in_nH_ = pin->GetReal("chemistry", "unit_density_in_nH");
 	unit_length_in_cm_ = pin->GetReal("chemistry", "unit_length_in_cm");
@@ -64,3 +66,33 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 }
 
 ChemNetwork::~ChemNetwork() {}
+
+void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
+  Real rho, rho_floor;
+  //density
+  rho = pmy_mb_->phydro->w(IDN, k, j, i);
+  //apply density floor
+  rho_floor = pmy_mb_->peos->GetDensityFloor();
+  rho = (rho > rho_floor) ?  rho : rho_floor;
+  //hydrogen atom number density
+  nH_ =  rho * unit_density_in_nH_;
+  return;
+}
+
+void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
+                      Real ydot[NSCALARS]){
+  const Real rate_cr = kcr_ * y[iH2_];
+  const Real rate_gr = kgr_ * nH_ * y[iH_];
+  ydot[iH2_] = rate_gr - rate_cr;
+  ydot[iH_] = -2*rate_gr + 2*rate_cr;
+	for (int i=0; i<NSCALARS; i++) {
+    //return in code units
+		ydot[i] *= unit_time_in_s_;
+	}
+  return;
+}
+
+Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED){
+  const Real dEDdt = 0;
+  return dEDdt;
+}

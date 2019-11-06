@@ -198,13 +198,9 @@ private:
 	Real GH2diss_;
 	Real GHIion_;
 	//parameters related to CO cooling
-	int isNCOeff_LVG_; 
 	//these are needed for LVG approximation
 	Real gradv_; //abosolute value of velocity gradient in cgs, >0
 	Real Leff_CO_max_; //maximum effective length for CO cooling
-	//these are needed for assigned NCO and bCO
-	Real NCO_;
-	Real bCO_;
 	//a small number to avoid divide by zero.
 	static const Real small_;
 	
@@ -214,7 +210,6 @@ private:
 	Real CII_rec_rate_(const Real temp);
 	void OutputRates(FILE *pf) const;
   Real GetStddev(Real arr[], const int len);
-  void SetbCO(const int k, const int j, const int i); //set bCO_ for CO cooling
   //set gradients of v and nH for CO cooling
   void SetGrad_v(const int k, const int j, const int i); 
   //output properties of network. Can be used in eg. ProblemGenerator.

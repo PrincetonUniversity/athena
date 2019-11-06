@@ -76,7 +76,6 @@ unit_density_in_nH = 1.
 unit_radiation_in_draine1987 = 1
 unit_length_in_cm = 3.086e+18
 unit_vel_in_cms = 1.0e5
-isNCOeff_LVG = 0
 output_zone_sec = 1 #output diagnostic
 
 #default parameters
@@ -89,3 +88,6 @@ maxorder   = 3       #maximum order. Default 3.
 stldet     = 0       #stability limit detection. Default 0/false.
 #can also set absolute tolerance of individual species
 #abstol_H2  = 1.0e-5 #absolute tolerance of species H2, default abstol
+
+<radiation>
+n_frequency  = 8

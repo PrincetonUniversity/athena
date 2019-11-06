@@ -34,11 +34,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin)
   integrator = RADIATION_INTEGRATOR;
   pmy_block = pmb;
   //number of frequency bands
-#ifdef INCLUDE_CHEMISTRY
-  nfreq = pmb->pscalars->chemnet.n_freq_;
-#else
 	nfreq = pin->GetOrAddInteger("radiation","n_frequency",1);
-#endif // INCLUDE_CHEMISTRY
   
 	if (integrator == "six_ray") {
 		nang = 6;
