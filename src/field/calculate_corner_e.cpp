@@ -87,6 +87,7 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
           const Real &u3 = w(IVZ,k,j,i);
           Real u0 = std::sqrt(1.0 + SQR(u1) + SQR(u2) + SQR(u3));
           cc_e_(k,j,i) = (u2 * bcc(IB1,k,j,i) - u1 * bcc(IB2,k,j,i)) / u0;
+        }
 #else  // Newtonian
 #pragma omp simd
         for (int i=is-1; i<=ie+1; ++i) {
@@ -161,7 +162,7 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
           cc_e_(IB2,k,j,i) = b3 * u1 - b1 * u3;
           cc_e_(IB3,k,j,i) = b1 * u2 - b2 * u1;
         }
-#elif  // SR
+#elif RELATIVISTIC_DYNAMICS==1  // SR
 #pragma omp simd
         for (int i=is-1; i<=ie+1; ++i) {
           const Real &u1 = w(IVX,k,j,i);
