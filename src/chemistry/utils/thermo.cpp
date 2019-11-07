@@ -24,7 +24,6 @@
 
 //c++ headers
 #include <math.h>
-#include <stdio.h> //FILE, fprintf()
 
 Thermo::Thermo(){}
 
@@ -387,8 +386,6 @@ Real Thermo::CoolingCI(const Real xCI, const Real nHI,
 Real Thermo::CoolingOI(const Real xOI, const Real nHI,
 												 const Real nH2, const Real ne, const Real T) {
   //collisional rates from  Draine (2011) ISM book Appendix F Table F.6
-  printf("xOI=%.2e, nHI=%.2e, nH2=%.2e, ne=%.2e, T=%.2e\n",
-         xOI, nHI, nH2, ne, T);
   const Real T2 = T/100;
   const Real lnT2 = log(T2);
   //HI

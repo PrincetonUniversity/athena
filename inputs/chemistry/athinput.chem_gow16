@@ -1,10 +1,10 @@
 <comment>
 problem   = Read C. G. Kim's MHD_32pc vtk output, single file.
 reference =
-configure = --prob=uniform_chem --chemistry=gow16 -radiation
+configure = --prob=chem_gow16 --chemistry=gow16 --radiation=const
 
 <job>
-problem_id = uniform_chem   # problem ID: basename of output filenames
+problem_id = chem_gow16   # problem ID: basename of output filenames
 
 <output1>
 file_type  = vtk       # vtk data dump
@@ -56,7 +56,6 @@ s_init      = 1.0e-6 #initial abundances
 #chemistry network parameters
 Zdg        = 1. #metallicity, dust and gas metallicity are the same. default = 1.
 CR         = 2e-16  #Cosmic-ray ionization rate per H
-#temperature
 temperature = 20  #T in Kelvin, if const_T_flag is true.
 #chemistry solver parameters
 reltol     = 1.0e-6  #relative tolerance, default 1.0e-2
@@ -86,8 +85,6 @@ xS         = 3.5e-6 #S atom per H, this is Z=1 value, default 3.5e-6
 xSi        = 1.7e-6 #Si atom per H, this is Z=1 value, default 1.7e-6
 maxorder   = 3       #maximum order. Default 3.
 stldet     = 0       #stability limit detection. Default 0/false.
-#can also set absolute tolerance of individual species
-#abstol_H2  = 1.0e-5 #absolute tolerance of species H2, default abstol
 
 <radiation>
 n_frequency  = 8
