@@ -142,7 +142,7 @@ void EquationOfState::ConservedToPrimitive(
         v_abs = (v_abs > 0.0) ? v_abs : 0.0;                    // sets NaN to 0
         v_abs = (v_abs < max_velocity) ? v_abs : max_velocity;
 
-        // Set density, correcting only conserved density if floor applied
+        // Calculate intermediate quantities
         Real gamma_rel = 1.0 / std::sqrt(1.0 - SQR(v_abs));
         Real v_over_m = v_abs / m_abs;
         Real e_tmp = m_sq * v_over_m;
@@ -154,6 +154,7 @@ void EquationOfState::ConservedToPrimitive(
           e_tmp = 0.0;
         }
 
+        // Calculate density, correcting only conserved density if floor applied
         Real rho = d / gamma_rel;
         if (rho < density_floor_) {
           rho = density_floor_;
@@ -165,13 +166,14 @@ void EquationOfState::ConservedToPrimitive(
         Real uy = gamma_rel * my * v_over_m;
         Real uz = gamma_rel * mz * v_over_m;
 
-        // Set pressure, correcting only energy if floor applied
+        // Calculate pressure, correcting only energy if floor applied
         Real pgas = gamma_adi_minus_1 * (e - e_tmp - rho);
         if (pgas < pressure_floor_) {
           pgas = pressure_floor_;
           e = pgas/gamma_adi_minus_1 + e_tmp + rho;
         }
 
+        // Set primitives
         prim(IDN,k,j,i) = rho;
         prim(IPR,k,j,i) = pgas;
         prim(IVX,k,j,i) = ux;
