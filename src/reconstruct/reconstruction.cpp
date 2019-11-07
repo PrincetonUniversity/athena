@@ -645,6 +645,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     for (int i=0; i<kNrows; ++i) {
       delete[] beta[i];
     }
+    delete[] beta;
   } // end "if PPM or full 4th order spatial integrator"
 }
 

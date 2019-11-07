@@ -1,6 +1,6 @@
 # Regression test based on the diffusion of a Gaussian
 # magnetic field.  Convergence of L1 norm of the error
-# in b is tested.  Expected 1st order conv. for STS.
+# in bcc is tested.
 
 # Modules
 # (needed for global variables modified in run_tests.py, even w/o athena.run(), etc.)
@@ -8,8 +8,8 @@ import scripts.utils.athena as athena  # noqa
 import scripts.tests.diffusion.resistive_diffusion as resistive_diffusion
 import logging
 
-resistive_diffusion.method = 'STS'
-resistive_diffusion.rate_tols = [-0.99]
+resistive_diffusion.sts_integrators = ['rkl1', 'rkl2']
+resistive_diffusion.rate_tols = [-0.99, -1.99]
 resistive_diffusion.logger = logging.getLogger('athena' + __name__[7:])
 
 

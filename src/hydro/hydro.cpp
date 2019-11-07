@@ -71,6 +71,15 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     u2.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
   }
 
+  // If STS RKL2, allocate additional memory registers
+  if (STS_ENABLED) {
+    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl1");
+    if (sts_integrator == "rkl2") {
+      u0.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
+      fl_div.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
+    }
+  }
+
   // "Enroll" in S/AMR by adding to vector of tuples of pointers in MeshRefinement class
   if (pm->multilevel) {
     refinement_idx = pmy_block->pmr->AddToRefinement(&u, &coarse_cons_);
@@ -80,6 +89,11 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
   hbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&hbvar);
   pmb->pbval->bvars_main_int.push_back(&hbvar);
+  if (STS_ENABLED) {
+    if (hdif.hydro_diffusion_defined) {
+      pmb->pbval->bvars_sts.push_back(&hbvar);
+    }
+  }
 
   // Allocate memory for scratch arrays
   dt1_.NewAthenaArray(nc1);

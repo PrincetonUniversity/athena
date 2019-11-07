@@ -48,15 +48,12 @@ cache:
 # Must specify complete build details, or the jobs will inherit
 # the first value in the above arrays. Could encapsulate in script
 # --------------
-# History of Travis CI default osx_image (date = when used in this file)
-# (2018-10-30) xcode9.4 on macOS 10.13 High Sierra (requies softwareupdate workaround)
-# (2018-04-11) xcode8.3 on macOS 10.12 Sierra
 # TODO(felker): improve syncing of osx "softwareupdate" cmd xcode version argument in
 # tst/ci/travis/ install_mpich.sh, install_openmpi.sh (workaround for Homebrew GCC)
 matrix:
   include:
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode11.2
       compiler: clang++
       addons:
         homebrew:
@@ -82,7 +79,7 @@ matrix:
           - hdf5
           - "/usr/local/Cellar/hdf5/"
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode11.2
       compiler: clang++
       addons:
         homebrew:

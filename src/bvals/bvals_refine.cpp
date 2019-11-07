@@ -12,6 +12,7 @@
 #include <algorithm>  // min
 #include <cmath>
 #include <iterator>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -74,7 +75,8 @@
 // --- change to standard and coarse PRIMITIVE
 // (automatically switches back to conserved variables at the end of fn)
 
-void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
+void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt,
+                                          std::vector<BoundaryVariable *> bvars_subset) {
   MeshBlock *pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
 
@@ -192,7 +194,8 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     }
 
     // Step 2. Re-apply physical boundaries on the coarse boundary:
-    ApplyPhysicalBoundariesOnCoarseLevel(nb, time, dt, si, ei, sj, ej, sk, ek);
+    ApplyPhysicalBoundariesOnCoarseLevel(nb, time, dt, si, ei, sj, ej, sk, ek,
+                                         bvars_subset);
 
     // (temp workaround) swap BoundaryVariable var_cc/fc to standard primitive variable
     // arrays (not coarse) from coarse primitive variables arrays
@@ -315,7 +318,8 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
 
 void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     const NeighborBlock& nb, const Real time, const Real dt,
-    int si, int ei, int sj, int ej, int sk, int ek) {
+    int si, int ei, int sj, int ej, int sk, int ek,
+    std::vector<BoundaryVariable *> bvars_subset) {
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
 
@@ -378,36 +382,42 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
       DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
                                 pmb->cis, pmb->cie, sj, ej, sk, ek, 1,
-                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x1);
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x1,
+                                bvars_subset);
     }
     if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
       DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
                                 pmb->cis, pmb->cie, sj, ej, sk, ek, 1,
-                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x1);
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x1,
+                                bvars_subset);
     }
   }
   if (nb.ni.ox2 == 0 && pmb->block_size.nx2 > 1) {
     if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
       DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
                                 si, ei, pmb->cjs, pmb->cje, sk, ek, 1,
-                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x2);
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x2,
+                                bvars_subset);
     }
     if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
       DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
                                 si, ei, pmb->cjs, pmb->cje, sk, ek, 1,
-                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x2);
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x2,
+                                bvars_subset);
     }
   }
   if (nb.ni.ox3 == 0 && pmb->block_size.nx3 > 1) {
     if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
       DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
                                 si, ei, sj, ej, pmb->cks, pmb->cke, 1,
-                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x3);
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::inner_x3,
+                                bvars_subset);
     }
     if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
       DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
                                 si, ei, sj, ej, pmb->cks, pmb->cke, 1,
-                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x3);
+                                ph->coarse_prim_, pf->coarse_b_, BoundaryFace::outer_x3,
+                                bvars_subset);
     }
   }
   return;

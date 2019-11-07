@@ -1,4 +1,3 @@
-//========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
@@ -463,9 +462,11 @@ void SphericalPolar::AddCoordTermsDivergence(const Real dt, const AthenaArray<Re
         if (MAGNETIC_FIELDS_ENABLED) {
           m_ii += SQR(bcc(IB1,k,j,i));
         }
-        if (do_hydro_diffusion) {
-          m_ii += 0.5*(hd.visflx[X2DIR](IM2,k,j+1,i) + hd.visflx[X2DIR](IM2,k,j,i));
-          m_ii += 0.5*(hd.visflx[X3DIR](IM3,k+1,j,i) + hd.visflx[X3DIR](IM3,k,j,i));
+        if (!STS_ENABLED) {
+          if (do_hydro_diffusion) {
+            m_ii += 0.5*(hd.visflx[X2DIR](IM2,k,j+1,i) + hd.visflx[X2DIR](IM2,k,j,i));
+            m_ii += 0.5*(hd.visflx[X3DIR](IM3,k+1,j,i) + hd.visflx[X3DIR](IM3,k,j,i));
+          }
         }
 
         u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_ii;
@@ -491,8 +492,10 @@ void SphericalPolar::AddCoordTermsDivergence(const Real dt, const AthenaArray<Re
           m_pp += 0.5*( SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i))
                         - SQR(bcc(IB3,k,j,i)) );
         }
-        if (do_hydro_diffusion)
-          m_pp += 0.5*(hd.visflx[X3DIR](IM3,k+1,j,i) + hd.visflx[X3DIR](IM3,k,j,i));
+        if (!STS_ENABLED) {
+          if (do_hydro_diffusion)
+            m_pp += 0.5*(hd.visflx[X3DIR](IM3,k+1,j,i) + hd.visflx[X3DIR](IM3,k,j,i));
+        }
 
         u(IM2,k,j,i) += dt*coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
 
@@ -506,8 +509,10 @@ void SphericalPolar::AddCoordTermsDivergence(const Real dt, const AthenaArray<Re
           if (MAGNETIC_FIELDS_ENABLED) {
             m_ph -= bcc(IB3,k,j,i) * bcc(IB2,k,j,i);
           }
-          if (do_hydro_diffusion)
-            m_ph += 0.5*(hd.visflx[X2DIR](IM3,k,j+1,i) + hd.visflx[X2DIR](IM3,k,j,i));
+          if (!STS_ENABLED) {
+            if (do_hydro_diffusion)
+              m_ph += 0.5*(hd.visflx[X2DIR](IM3,k,j+1,i) + hd.visflx[X2DIR](IM3,k,j,i));
+          }
 
           u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src3_j_(j)*m_ph;
         }
@@ -515,5 +520,95 @@ void SphericalPolar::AddCoordTermsDivergence(const Real dt, const AthenaArray<Re
     }
   }
 
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Coordinate (Geometric) source term function for STS
+
+void SphericalPolar::AddCoordTermsDivergence_STS(const Real dt, int stage,
+                                   const AthenaArray<Real> *flux,
+                                   AthenaArray<Real> &u, AthenaArray<Real> &flux_div) {
+  Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
+  bool use_x2_fluxes = pmy_block->block_size.nx2 > 1;
+
+  HydroDiffusion &hd = pmy_block->phydro->hdif;
+  bool do_hydro_diffusion = (hd.hydro_diffusion_defined &&
+                             (hd.nu_iso > 0.0 || hd.nu_aniso > 0.0));
+
+  // Go through cells
+  if (do_hydro_diffusion) {
+    for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
+      for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
+#pragma omp simd
+        for (int i=pmy_block->is; i<=pmy_block->ie; ++i) {
+          // src_1 = < M_{theta theta} + M_{phi phi} ><1/r>
+          Real m_ii = 0.5*(hd.visflx[X2DIR](IM2,k,j+1,i) + hd.visflx[X2DIR](IM2,k,j,i));
+          m_ii += 0.5*(hd.visflx[X3DIR](IM3,k+1,j,i) + hd.visflx[X3DIR](IM3,k,j,i));
+
+          u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_ii;
+
+          // src_2 = -< M_{theta r} ><1/r>
+          u(IM2,k,j,i) -= dt*coord_src2_i_(i)*
+                          (coord_area1_i_(i)*flux[X1DIR](IM2,k,j,i)
+                           + coord_area1_i_(i+1)*flux[X1DIR](IM2,k,j,i+1));
+
+          // src_3 = -< M_{phi r} ><1/r>
+          u(IM3,k,j,i) -= dt*coord_src2_i_(i)*
+                          (coord_area1_i_(i)*flux[X1DIR](IM3,k,j,i)
+                           + coord_area1_i_(i+1)*flux[X1DIR](IM3,k,j,i+1));
+
+          if (stage == 1 && pmy_block->pmy_mesh->sts_integrator == "rkl2") {
+            flux_div(IM1,k,j,i) += 0.5*pmy_block->pmy_mesh->dt*coord_src1_i_(i)*m_ii;
+
+            // src_2 = -< M_{theta r} ><1/r>
+            flux_div(IM2,k,j,i) -= 0.5*pmy_block->pmy_mesh->dt*coord_src2_i_(i)*
+                            (coord_area1_i_(i)*flux[X1DIR](IM2,k,j,i)
+                             + coord_area1_i_(i+1)*flux[X1DIR](IM2,k,j,i+1));
+
+            // src_3 = -< M_{phi r} ><1/r>
+            flux_div(IM3,k,j,i) -= 0.5*pmy_block->pmy_mesh->dt*coord_src2_i_(i)*
+                            (coord_area1_i_(i)*flux[X1DIR](IM3,k,j,i)
+                             + coord_area1_i_(i+1)*flux[X1DIR](IM3,k,j,i+1));
+          }
+
+          // src_2 = < M_{phi phi} ><cot theta/r>
+          Real m_pp = 0.5*(hd.visflx[X3DIR](IM3,k+1,j,i) + hd.visflx[X3DIR](IM3,k,j,i));
+
+          u(IM2,k,j,i) += dt*coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
+
+          if (stage == 1 && pmy_block->pmy_mesh->sts_integrator == "rkl2") {
+            // src_2 = -< M_{theta r} ><1/r>
+            flux_div(IM2,k,j,i) += 0.5*pmy_block->pmy_mesh->dt
+                                   * coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
+          }
+
+          // src_3 = -< M_{phi theta} ><cot theta/r>
+          if (use_x2_fluxes) {
+            u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src2_j_(j)*
+                            (coord_area2_j_(j)*flux[X2DIR](IM3,k,j,i)
+                             + coord_area2_j_(j+1)*flux[X2DIR](IM3,k,j+1,i));
+            if (stage == 1 && pmy_block->pmy_mesh->sts_integrator == "rkl2") {
+              // src_2 = -< M_{theta r} ><1/r>
+              flux_div(IM3,k,j,i) -= 0.5*pmy_block->pmy_mesh->dt
+                                     * coord_src1_i_(i)*coord_src2_j_(j)*
+                                       (coord_area2_j_(j)*flux[X2DIR](IM3,k,j,i)
+                                        + coord_area2_j_(j+1)*flux[X2DIR](IM3,k,j+1,i));
+            }
+          } else {
+            Real m_ph = 0.5*(hd.visflx[X2DIR](IM3,k,j+1,i) + hd.visflx[X2DIR](IM3,k,j,i));
+
+            u(IM3,k,j,i) -= dt*coord_src1_i_(i)*coord_src3_j_(j)*m_ph;
+
+            if (stage == 1 && pmy_block->pmy_mesh->sts_integrator == "rkl2") {
+              // src_2 = -< M_{theta r} ><1/r>
+              flux_div(IM3,k,j,i) -= 0.5*pmy_block->pmy_mesh->dt
+                                     * coord_src1_i_(i)*coord_src3_j_(j)*m_ph;
+            }
+          }
+        }
+      }
+    }
+  }
   return;
 }
