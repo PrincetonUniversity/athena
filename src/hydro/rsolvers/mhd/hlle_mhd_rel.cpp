@@ -185,50 +185,28 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
     // Extract left primitives
     Real rho_l = prim_l(IDN,i);
     Real pgas_l = prim_l(IPR,i);
+    Real ux_l = prim_l(ivx,i);
+    Real uy_l = prim_l(ivy,i);
+    Real uz_l = prim_l(ivz,i);
     Real u_l[4];
-    if (GENERAL_RELATIVITY) {
-      Real vx_l = prim_l(ivx,i);
-      Real vy_l = prim_l(ivy,i);
-      Real vz_l = prim_l(ivz,i);
-      u_l[0] = std::sqrt(1.0 + SQR(vx_l) + SQR(vy_l) + SQR(vz_l));
-      u_l[1] = vx_l;
-      u_l[2] = vy_l;
-      u_l[3] = vz_l;
-    } else {  // SR
-      Real vx_l = prim_l(ivx,i);
-      Real vy_l = prim_l(ivy,i);
-      Real vz_l = prim_l(ivz,i);
-      u_l[0] = std::sqrt(1.0 / (1.0 - SQR(vx_l) - SQR(vy_l) - SQR(vz_l)));
-      u_l[1] = u_l[0] * vx_l;
-      u_l[2] = u_l[0] * vy_l;
-      u_l[3] = u_l[0] * vz_l;
-    }
-
+    u_l[0] = std::sqrt(1.0 + SQR(ux_l) + SQR(uy_l) + SQR(uz_l));
+    u_l[1] = ux_l;
+    u_l[2] = uy_l;
+    u_l[3] = uz_l;
     Real bb2_l = prim_l(IBY,i);
     Real bb3_l = prim_l(IBZ,i);
 
     // Extract right primitives
     Real rho_r = prim_r(IDN,i);
     Real pgas_r = prim_r(IPR,i);
+    Real ux_r = prim_r(ivx,i);
+    Real uy_r = prim_r(ivy,i);
+    Real uz_r = prim_r(ivz,i);
     Real u_r[4];
-    if (GENERAL_RELATIVITY) {
-      Real vx_r = prim_r(ivx,i);
-      Real vy_r = prim_r(ivy,i);
-      Real vz_r = prim_r(ivz,i);
-      u_r[0] = std::sqrt(1.0 + SQR(vx_r) + SQR(vy_r) + SQR(vz_r));
-      u_r[1] = vx_r;
-      u_r[2] = vy_r;
-      u_r[3] = vz_r;
-    } else {  // SR
-      Real vx_r = prim_r(ivx,i);
-      Real vy_r = prim_r(ivy,i);
-      Real vz_r = prim_r(ivz,i);
-      u_r[0] = std::sqrt(1.0 / (1.0 - SQR(vx_r) - SQR(vy_r) - SQR(vz_r)));
-      u_r[1] = u_r[0] * vx_r;
-      u_r[2] = u_r[0] * vy_r;
-      u_r[3] = u_r[0] * vz_r;
-    }
-
+    u_r[0] = std::sqrt(1.0 + SQR(ux_r) + SQR(uy_r) + SQR(uz_r));
+    u_r[1] = ux_r;
+    u_r[2] = uy_r;
+    u_r[3] = uz_r;
     Real bb2_r = prim_r(IBY,i);
     Real bb3_r = prim_r(IBZ,i);
 
@@ -299,8 +277,8 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
     flux_r[IBY] = b_r[2] * u_r[1] - b_r[1] * u_r[2];
     flux_r[IBZ] = b_r[3] * u_r[1] - b_r[1] * u_r[3];
 
-    Real lambda_diff_inv = 1.0 / (lambda_r-lambda_l);
     // Calculate conserved quantities in HLL region in GR (MB2005 9)
+    Real lambda_diff_inv = 1.0 / (lambda_r-lambda_l);
     Real cons_hll[NWAVE];
     if (GENERAL_RELATIVITY) {
       for (int n = 0; n < NWAVE; ++n) {
