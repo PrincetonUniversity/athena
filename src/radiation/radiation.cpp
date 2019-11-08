@@ -248,6 +248,8 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   // Allocate memory for unit normal and related components in coordinate frame
+  nmu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
+      pmb->ncells1);
   n0_n_mu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
       pmb->ncells1);
   n1_n_0_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
@@ -267,7 +269,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   e_cov.NewAthenaArray(4, 4);
   omega.NewAthenaArray(4, 4, 4);
 
-  // Calculate n^0 n_mu
+  // Calculate n^mu and n^0 n_mu
   for (int k = ks-NGHOST; k <= ke+NGHOST; ++k) {
     for (int j = js-NGHOST; j <= je+NGHOST; ++j) {
       for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
@@ -278,17 +280,27 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
         for (int l = zs; l <= ze; ++l) {
           for (int m = ps; m <= pe; ++m) {
             Real n0 = 0.0;
+            Real n1 = 0.0;
+            Real n2 = 0.0;
+            Real n3 = 0.0;
             Real n_0 = 0.0;
             Real n_1 = 0.0;
             Real n_2 = 0.0;
             Real n_3 = 0.0;
             for (int n = 0; n < 4; ++n) {
               n0 += e(n,0) * nh_cc(n,l,m);
+              n1 += e(n,1) * nh_cc(n,l,m);
+              n2 += e(n,2) * nh_cc(n,l,m);
+              n3 += e(n,3) * nh_cc(n,l,m);
               n_0 += e_cov(n,0) * nh_cc(n,l,m);
               n_1 += e_cov(n,1) * nh_cc(n,l,m);
               n_2 += e_cov(n,2) * nh_cc(n,l,m);
               n_3 += e_cov(n,3) * nh_cc(n,l,m);
             }
+            nmu_(0,l,m,k,j,i) = n0;
+            nmu_(1,l,m,k,j,i) = n1;
+            nmu_(2,l,m,k,j,i) = n2;
+            nmu_(3,l,m,k,j,i) = n3;
             n0_n_mu_(0,l,m,k,j,i) = n0 * n_0;
             n0_n_mu_(1,l,m,k,j,i) = n0 * n_1;
             n0_n_mu_(2,l,m,k,j,i) = n0 * n_2;
@@ -1474,6 +1486,68 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
 
             // Set to nonzero value
             dcons_dt(lm,k,j,i) = dii_dt * n0_n_mu_(0,l,m,k,j,i);
+          }
+        }
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for calculating conserved intensity corresponding to spatially constant source
+// Inputs:
+//   energy: coordinate-frame energy density
+//   u1, u2, u3: contravariant 4-velocity components of isotropic radiation frame
+// Outputs:
+//   cons_out: conserved values (n^0 n_0 I) set
+
+void Radiation::CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u3,
+    AthenaArray<Real> &cons_out) {
+
+  // Allocate scratch arrays
+  AthenaArray<Real> g, gi;
+  g.NewAthenaArray(NMETRIC, ie + 1);
+  gi.NewAthenaArray(NMETRIC, ie + 1);
+
+  // Go through cells
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      pmy_block->pcoord->CellMetric(k, j, is, ie, g, gi);
+      for (int i = is; i <= ie; ++i) {
+
+        // Calculate contravariant time component of isotropic radiation frame velocity
+        Real temp_a = g(I00,i);
+        Real temp_b = 2.0 * (g(I01,i) * u1 + g(I02,i) * u2 + g(I03,i) * u3);
+        Real temp_c = g(I11,i) * SQR(u1) + 2.0 * g(I12,i) * u1 * u2
+            + 2.0 * g(I13,i) * u1 * u3 + g(I22,i) * SQR(u2)
+            + 2.0 * g(I23,i) * u2 * u3 + g(I33,i) * SQR(u3);
+        Real u0 =
+            (-temp_b - std::sqrt(SQR(temp_b) - 4.0 * temp_a * temp_c)) / (2.0 * temp_a);
+
+        // Calculate covariant radiation velocity
+        Real u_0, u_1, u_2, u_3;
+        pmy_block->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2,
+            &u_3);
+
+        // Set conserved quantity at each angle, tracking energy density
+        Real energy_sum = 0.0;
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            Real u_n = u_0 * nmu_(0,l,m,k,j,i) + u_1 * nmu_(1,l,m,k,j,i)
+                + u_2 * nmu_(2,l,m,k,j,i) + u_3 * nmu_(3,l,m,k,j,i);
+            Real ii = 1.0 / SQR(SQR(-u_n));
+            cons_out(lm,k,j,i) = n0_n_mu_(0,l,m,k,j,i) * ii;
+            energy_sum += SQR(nmu_(0,l,m,k,j,i)) * ii * solid_angle(l,m);
+          }
+        }
+
+        // Normalize conserved quantities
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            cons_out(lm,k,j,i) *= energy / energy_sum;
           }
         }
       }

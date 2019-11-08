@@ -30,17 +30,22 @@
 #if not GENERAL_RELATIVITY
 #error "This problem generator must be used with general relativity"
 #endif
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator does not support magnetic fields"
+#endif
 
 // Global variables
 namespace {
-Real rho, pgas;   // initial thermodynamic variables for fluid
-Real ux, uy, uz;  // initial spatial components of fluid 4-velocity
-Real zs, ze;      // index bounds on zeta
-Real ps, pe;      // index bounds on psi
+Real rho, pgas;               // initial thermodynamic variables for fluid
+Real ux, uy, uz;              // initial spatial components of fluid 4-velocity
+Real e_rad;                   // initial coordinate-frame radiation energy density
+Real ux_rad, uy_rad, uz_rad;  // initial spatial components of isotropic radiation frame
+Real zs, ze;                  // index bounds on zeta
+Real ps, pe;                  // index bounds on psi
 }  // namespace
 
 // Declarations
-void TestOpacity(MeshBlock *pmb, AthenaArray<Real> &prim);
+void TestOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim);
 
 //----------------------------------------------------------------------------------------
 // Function for preparing Mesh
@@ -72,18 +77,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   ux = pin->GetReal("problem", "ux");
   uy = pin->GetReal("problem", "uy");
   uz = pin->GetReal("problem", "uz");
+  e_rad = pin->GetReal("problem", "e_rad");
+  ux_rad = pin->GetReal("problem", "ux_rad");
+  uy_rad = pin->GetReal("problem", "uy_rad");
+  uz_rad = pin->GetReal("problem", "uz_rad");
   zs = NGHOST;
   ze = zs + pin->GetInteger("radiation", "n_polar");
   ps = NGHOST;
   pe = ps + pin->GetInteger("radiation", "n_azimuthal");
-
-  // Check coordinates
-  if (COORDINATE_SYSTEM != std::string("minkowski")) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in problem generator\n";
-    msg << "unsupported coordinate system\n";
-    throw std::runtime_error(msg.str().c_str());
-  }
   return;
 }
 
@@ -96,9 +97,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
 
   // Enroll opacity
-  if(RADIATION_ENABLED) {
-    prad->EnrollOpacityFunction(TestOpacity);
-  }
+  prad->EnrollOpacityFunction(TestOpacity);
 
   // Prepare moment outputs
   AllocateUserOutputVariables(4);
@@ -135,19 +134,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is, ie, js, je, ks, ke);
 
   // Initialize radiation
-  for (int l = zs; l <= ze; ++l) {
-    for (int m = ps; m <= pe; ++m) {
-      int lm = prad->AngleInd(l, m);
-      for (int k = ks; k <= ke; ++k) {
-        for (int j = js; j <= je; ++j) {
-          for (int i = is; i <= ie; ++i) {
-            prad->prim(lm,k,j,i) = 0.0;
-            prad->cons(lm,k,j,i) = 0.0;
-          }
-        }
-      }
-    }
-  }
+  prad->CalculateConstantRadiation(e_rad, ux_rad, uy_rad, uz_rad, prad->cons);
   return;
 }
 
@@ -173,7 +160,7 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
 // Notes:
 //   Sets prad->opacity.
 
-void TestOpacity(MeshBlock *pmb, AthenaArray<Real> &prim)
+void TestOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim)
 {
   // Prepare index bounds
   int il = pmb->is - NGHOST;

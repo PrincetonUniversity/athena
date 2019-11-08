@@ -134,11 +134,14 @@ public:
   void CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real width, Real dir_1,
       Real dir_2, Real dir_3, Real spread, Real dii_dt, AthenaArray<Real> &dcons_dt,
       bool cylindrical = false, bool spherical = false);
+  void CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u3,
+      AthenaArray<Real> &cons_out);
   void SetMoments(AthenaArray<Real> &moments);
 
 private:
 
   // Data arrays
+  AthenaArray<Real> nmu_;            // n^mu at cell and angle centers
   AthenaArray<Real> n0_n_mu_;        // n^0 n_mu at cell and angle centers
   AthenaArray<Real> n1_n_0_;         // n^1 n_0 at x^1-faces and angle centers
   AthenaArray<Real> n2_n_0_;         // n^2 n_0 at x^2-faces and angle centers
