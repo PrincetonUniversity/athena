@@ -31,15 +31,17 @@ void Source(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
     AthenaArray<Real> &cons);
 
 // Global variables
-static Real pos_1, pos_2, pos_3;  // coordinates of beam origin
-static Real width;                // full proper diameter of beam
-static Real dir_1, dir_2, dir_3;  // relative direction of beam center
-static Real spread;               // full spread of beam in direction
-static Real dii_dt;               // injected I per unit time
-static Real zs, ze;               // index bounds on zeta
-static Real ps, pe;               // index bounds on psi
-static bool cylindrical;          // flag indicating cylindrical coordinates
-static bool spherical;            // flag indicating spherical coordinates
+namespace {
+Real pos_1, pos_2, pos_3;  // coordinates of beam origin
+Real width;                // full proper diameter of beam
+Real dir_1, dir_2, dir_3;  // relative direction of beam center
+Real spread;               // full spread of beam in direction
+Real dii_dt;               // injected I per unit time
+Real zs, ze;               // index bounds on zeta
+Real ps, pe;               // index bounds on psi
+bool cylindrical;          // flag indicating cylindrical coordinates
+bool spherical;            // flag indicating spherical coordinates
+}  // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for preparing Mesh

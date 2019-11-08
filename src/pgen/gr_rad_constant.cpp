@@ -7,9 +7,11 @@
 //  \brief Problem generator for GR radiation with spatially constant initial conditions
 
 // C++ headers
+#include <cstdlib>    // exit (needed for defs.hpp)
+#include <iostream>   // cout (needed for defs.hpp), endl
 #include <sstream>    // stringstream
-#include <stdexcept>  // runtime_error
-#include <string>     // c_str, string
+#include <stdexcept>  // runtime_error (needed for defs.hpp)
+#include <string>     // c_str, strcmp, string (needed for defs.hpp)
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"
@@ -30,10 +32,12 @@
 #endif
 
 // Global variables
-static Real rho, pgas;   // initial thermodynamic variables for fluid
-static Real ux, uy, uz;  // initial spatial components of fluid 4-velocity
-static Real zs, ze;      // index bounds on zeta
-static Real ps, pe;      // index bounds on psi
+namespace {
+Real rho, pgas;   // initial thermodynamic variables for fluid
+Real ux, uy, uz;  // initial spatial components of fluid 4-velocity
+Real zs, ze;      // index bounds on zeta
+Real ps, pe;      // index bounds on psi
+}  // namespace
 
 // Declarations
 void TestOpacity(MeshBlock *pmb, AthenaArray<Real> &prim);
@@ -45,6 +49,22 @@ void TestOpacity(MeshBlock *pmb, AthenaArray<Real> &prim);
 // Outputs: (none)
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
+
+  // Check coordinates
+  if (std::strcmp(COORDINATE_SYSTEM, "minkowski") != 0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Problem Generator\n"
+        << "gr_rad_constant only supports Minkowski coordinates" << std::endl;
+    ATHENA_ERROR(msg);
+    return;
+  }
+  if (pin->GetString("coord", "rad_tetrad") != "cartesian") {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Problem Generator\n"
+        << "gr_rad_constant only supports Cartesian tetrad" << std::endl;
+    ATHENA_ERROR(msg);
+    return;
+  }
 
   // Read parameters from input file
   rho = pin->GetReal("problem", "rho");

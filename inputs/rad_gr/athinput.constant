@@ -31,20 +31,20 @@ xdmf      = 0     # whether to include auxiliary metadata file
 nx1    = 16        # number of cells in x-direction
 x1min  = 0.0       # minimum x
 x1max  = 1.0       # maximum x
-ix1_bc = outflow   # left boundary
-ox1_bc = outflow   # right boundary
+ix1_bc = periodic  # left boundary
+ox1_bc = periodic  # right boundary
 
 nx2    = 16        # number of cells in y-direction
 x2min  = 0.0       # minimum y
 x2max  = 1.0       # maximum y
-ix2_bc = outflow   # front boundary
-ox2_bc = outflow   # back boundary
+ix2_bc = periodic  # front boundary
+ox2_bc = periodic  # back boundary
 
 nx3    = 4         # number of cells in z-direction
 x3min  = -0.125    # minimum z
 x3max  = 0.125     # maximum z
-ix3_bc = outflow   # bottom boundary
-ox3_bc = outflow   # top boundary
+ix3_bc = periodic  # bottom boundary
+ox3_bc = periodic  # top boundary
 
 refinement = none  # whether to use mesh refinement
 

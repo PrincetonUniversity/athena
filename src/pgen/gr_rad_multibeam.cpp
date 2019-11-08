@@ -31,20 +31,22 @@ void Source(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
     AthenaArray<Real> &cons);
 
 // Global variables
-static Real pos_a_1, pos_a_2, pos_a_3;  // coordinates of beam A origin
-static Real width_a;                    // full proper diameter of beam A
-static Real dir_a_1, dir_a_2, dir_a_3;  // relative direction of beam A center
-static Real spread_a;                   // full spread of beam A in direction
-static Real dii_dt_a;                   // injected I per unit time for beam A
-static Real pos_b_1, pos_b_2, pos_b_3;  // coordinates of beam B origin
-static Real width_b;                    // full proper diameter of beam B
-static Real dir_b_1, dir_b_2, dir_b_3;  // relative direction of beam B center
-static Real spread_b;                   // full spread of beam B in direction
-static Real dii_dt_b;                   // injected I per unit time for beam B
-static Real zs, ze;                     // index bounds on zeta
-static Real ps, pe;                     // index bounds on psi
-static bool cylindrical;                // flag indicating cylindrical coordinates
-static bool spherical;                  // flag indicating spherical coordinates
+namespace {
+Real pos_a_1, pos_a_2, pos_a_3;  // coordinates of beam A origin
+Real width_a;                    // full proper diameter of beam A
+Real dir_a_1, dir_a_2, dir_a_3;  // relative direction of beam A center
+Real spread_a;                   // full spread of beam A in direction
+Real dii_dt_a;                   // injected I per unit time for beam A
+Real pos_b_1, pos_b_2, pos_b_3;  // coordinates of beam B origin
+Real width_b;                    // full proper diameter of beam B
+Real dir_b_1, dir_b_2, dir_b_3;  // relative direction of beam B center
+Real spread_b;                   // full spread of beam B in direction
+Real dii_dt_b;                   // injected I per unit time for beam B
+Real zs, ze;                     // index bounds on zeta
+Real ps, pe;                     // index bounds on psi
+bool cylindrical;                // flag indicating cylindrical coordinates
+bool spherical;                  // flag indicating spherical coordinates
+}  // namespace
 
 //----------------------------------------------------------------------------------------
 // Function for preparing Mesh
