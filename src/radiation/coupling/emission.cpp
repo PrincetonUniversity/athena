@@ -90,11 +90,10 @@ void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
     Real dtaucsigmaa = dtau(i) * sigma_a;
     Real dtaucsigmas = dtau(i) * sigma_s;
     Real dtaucsigmap = dtau(i) * sigma_p;
-      
-    Real dtsigmaa = dt(i) * sigma_a;
-    Real dtsigmas = dt(i) * sigma_s;
-    Real dtsigmap = dt(i) * sigma_p;
-      
+
+    Real dtcsigmaa = dt(i) * sigma_a;
+    Real dtcsigmas = dt(i) * sigma_s;
+    Real dtcsigmap = dt(i) * sigma_p;
 
     // Calculate polynomial coefficients
     Real jr_cm = 0.0;
@@ -111,10 +110,10 @@ void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
     }
     Real suma3 = suma1 * (dtcsigmas - dtcsigmap);
     suma1 *= (dtcsigmaa + dtcsigmap);
-    coef[1] = (dtaucsigmaa + dtaucsigmap - (dtaucsigmaa + dtaucsigmap) * suma1 / (1.0 - suma3))
-        * arad * (gamma - 1.0) / rho;
-    coef[0] =
-        -tgas - (dtaucsigmaa + dtaucsigmap) * suma2 * (gamma - 1.0) / (rho * (1.0 - suma3));
+    coef[1] = (dtaucsigmaa + dtaucsigmap - (dtaucsigmaa + dtaucsigmap) * suma1
+        / (1.0 - suma3)) * arad * (gamma - 1.0) / rho;
+    coef[0] = -tgas - (dtaucsigmaa + dtaucsigmap) * suma2 * (gamma - 1.0)
+        / (rho * (1.0 - suma3));
 
     // Calculate new gas temperature
     bool badcell = false;

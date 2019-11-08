@@ -615,6 +615,7 @@ void TimeIntegratorTaskList::AddTask(std::uint64_t id, std::uint64_t dep) {
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
           (&TimeIntegratorTaskList::CalculateOpacity);
       task_list_[ntasks].lb_time = true;
+      break;
     case (USERWORK):
       task_list_[ntasks].TaskFunc=
           static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
