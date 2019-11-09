@@ -256,7 +256,11 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     } else {
       AddTask(INT_HYD, CALC_HYDFLX);
     }
-    AddTask(SRCTERM_HYD,INT_HYD);
+    if (RADIATION_ENABLED) {
+      AddTask(SRCTERM_HYD,INT_HYD|SRCTERM_RAD);
+    } else {
+      AddTask(SRCTERM_HYD,INT_HYD);
+    }
     AddTask(SEND_HYD,SRCTERM_HYD);
     AddTask(RECV_HYD,NONE);
     AddTask(SETB_HYD,(RECV_HYD|SRCTERM_HYD));
@@ -317,7 +321,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         AddTask(INT_RAD, CALC_RADFLX);
       }
       AddTask(SRCTERM_RAD,INT_RAD);
-      AddTask(SEND_RAD,SRCTERM_RAD);
+      AddTask(SEND_RAD,SRCTERM_RAD|SRCTERM_HYD);
       AddTask(RECV_RAD,NONE);
       AddTask(SETB_RAD,(RECV_RAD|SRCTERM_RAD));
     }
