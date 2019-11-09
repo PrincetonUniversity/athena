@@ -119,9 +119,9 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize fluid
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie; ++i) {
+  for (int k = ks-NGHOST; k <= ke+NGHOST; ++k) {
+    for (int j = js-NGHOST; j <= je+NGHOST; ++j) {
+      for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
         phydro->w(IPR,k,j,i) = phydro->w1(IPR,k,j,i) = pgas;
         phydro->w(IVX,k,j,i) = phydro->w1(IVX,k,j,i) = ux;
@@ -180,7 +180,7 @@ void TestOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim)
 
   // Set coefficients for electron scattering
   Real kappas = 0.0;
-  Real kappaa = 1.0;
+  Real kappaa = pmb->prad->kappa;
 
   // Calculate opacity
   Radiation *prad = pmb->prad;

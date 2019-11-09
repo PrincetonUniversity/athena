@@ -28,21 +28,21 @@ dt        = 0.1   # output cadence
 xdmf      = 0     # whether to include auxiliary metadata file
 
 <mesh>
-nx1    = 16        # number of cells in x-direction
+nx1    = 4         # number of cells in x-direction
 x1min  = 0.0       # minimum x
 x1max  = 1.0       # maximum x
 ix1_bc = periodic  # left boundary
 ox1_bc = periodic  # right boundary
 
-nx2    = 16        # number of cells in y-direction
+nx2    = 4         # number of cells in y-direction
 x2min  = 0.0       # minimum y
 x2max  = 1.0       # maximum y
 ix2_bc = periodic  # front boundary
 ox2_bc = periodic  # back boundary
 
 nx3    = 4         # number of cells in z-direction
-x3min  = -0.125    # minimum z
-x3max  = 0.125     # maximum z
+x3min  = -0.5      # minimum z
+x3max  = 0.5       # maximum z
 ix3_bc = periodic  # bottom boundary
 ox3_bc = periodic  # top boundary
 
@@ -51,9 +51,9 @@ refinement = none  # whether to use mesh refinement
 num_threads = 1  # number of threads per process
 
 <meshblock>
-nx1 = 16  # block size in x-direction
-nx2 = 16  # block size in y-direction
-nx3 = 4   # block size in z-direction
+nx1 = 4  # block size in x-direction
+nx2 = 4  # block size in y-direction
+nx3 = 4  # block size in z-direction
 
 <coord>
 rad_tetrad = cartesian  # choice of radiation tetrad
@@ -64,22 +64,22 @@ dfloor = 1.0e-8
 pfloor = 1.0e-8
 
 <radiation>
-n_polar     = 5     # number of polar angles in direction space
-n_azimuthal = 16    # number of azimuthal angles in direction space
-coupled     = true  # flag indicating whether radiation is coupled to matter
-planck      = true  # flag indicating whether Planck mean opacity is also used
-length_cgs  = 1.0   # code unit of length, in cm
-density_cgs = 1.0   # code unit of density, in g/cm^3
-mol_weight  = 1.0   # molecular weight of gas, in proton masses
-kappa_cgs   = 1.0   # opacity, in cm^2/g
+n_polar     = 5       # number of polar angles in direction space
+n_azimuthal = 16      # number of azimuthal angles in direction space
+coupled     = true    # flag indicating whether radiation is coupled to matter
+planck      = true    # flag indicating whether Planck mean opacity is also used
+length_cgs  = 1.0     # code unit of length, in cm
+density_cgs = 1.0     # code unit of density, in g/cm^3
+mol_weight  = 1.0     # molecular weight of gas, in proton masses
+kappa_cgs   = 1.0e-3  # opacity, in cm^2/g
 
 <problem>
 rho    = 1.0
-pgas   = 1.0
+pgas   = 1.0e-4
 ux     = 1.0
 uy     = 1.0
 uz     = 0.0
-e_rad  = 1.0
+e_rad  = 1.0e-4
 ux_rad = 1.0
 uy_rad = -1.0
 uz_rad = 0.0

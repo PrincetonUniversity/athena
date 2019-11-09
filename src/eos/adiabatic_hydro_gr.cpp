@@ -175,8 +175,6 @@ void EquationOfState::ConservedToPrimitive(
           gamma_rel = 1.0;
           gamma_sq = SQR(gamma_rel);
         }
-        // unused:
-        // Real u0 = gamma_rel/alpha;  // (N 21)
 
         // Set density and pressure
         Real rho = d/gamma_rel;  // (N 21)
@@ -403,11 +401,11 @@ void PrimitiveToConservedSingle(const AthenaArray<Real> &prim, Real gamma_prime,
 //   implements formulas assuming no magnetic field
 
 Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi) {
-  Real v_norm_sq = qq_sq / (w_guess*w_guess);        // (N 28)
+  Real v_norm_sq = qq_sq / (w_guess*w_guess);                // (N 28)
   Real gamma_sq = 1.0/(1.0 - v_norm_sq);
   Real pgas = (gamma_adi-1.0)/gamma_adi
               * (w_guess/gamma_sq - d/std::sqrt(gamma_sq));  // (N 32)
-  return -w_guess + pgas - q_n;                      // (N 29)
+  return -w_guess + pgas - q_n;                              // (N 29)
 }
 
 //----------------------------------------------------------------------------------------
@@ -424,13 +422,13 @@ Real QNResidual(Real w_guess, Real d, Real q_n, Real qq_sq, Real gamma_adi) {
 //   implements formulas assuming no magnetic field
 
 Real QNResidualPrime(Real w_guess, Real d, Real qq_sq, Real gamma_adi) {
-  Real v_norm_sq = qq_sq/SQR(w_guess);                             // (N 28)
+  Real v_norm_sq = qq_sq/SQR(w_guess);                                      // (N 28)
   Real gamma_sq = 1.0/(1.0-v_norm_sq);
   Real gamma_4 = SQR(gamma_sq);
   Real d_v_norm_sq_dw = -2.0 * qq_sq / (w_guess*SQR(w_guess));
   Real d_gamma_sq_dw = gamma_4 * d_v_norm_sq_dw;
   Real dpgas_dw = (gamma_adi-1.0)/gamma_adi / gamma_4
-                  * (gamma_sq + (0.5*d*std::sqrt(gamma_sq) - w_guess) * d_gamma_sq_dw);
+      * (gamma_sq + (0.5*d*std::sqrt(gamma_sq) - w_guess) * d_gamma_sq_dw);
   return -1.0 + dpgas_dw;
 }
 } // namespace
