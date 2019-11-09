@@ -58,6 +58,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 	const Real vx = pin->GetOrAddReal("problem", "vx", 0);
 	const Real G0 = pin->GetOrAddReal("problem", "G0", 0.);
 	const Real s_init = pin->GetOrAddReal("problem", "s_init", 0.);
+  const Real iso_cs = peos->GetIsoSoundSpeed();
+  const Real pres = nH*SQR(iso_cs);
 
 	for (int k=ks; k<=ke; ++k) {
 		for (int j=js; j<=je; ++j) {
@@ -68,14 +70,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 				phydro->u(IM1, k, j, i) = nH*vx;
         //energy
         if (NON_BAROTROPIC_EOS) {
-          phydro->u(IEN, k, j, i) = nH * 0.1 * 0.1;
+          phydro->u(IEN, k, j, i) = pres;
         }
 			}
 		}
 	}
-  //TODO: debug
-  phydro->u(IDN,4,4,4) = nH*2.;
-
 
 	//intialize radiation field
   if (RADIATION_ENABLED) {

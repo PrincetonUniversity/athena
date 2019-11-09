@@ -601,7 +601,7 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   } else if (id == INT_CHM) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::IntegrateChemistry();
+        (&TimeIntegratorTaskList::IntegrateChemistry);
     task_list_[ntasks].lb_time = true;
   } else {
     std::stringstream msg;

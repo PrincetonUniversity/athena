@@ -179,7 +179,7 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus SendScalarFlux(MeshBlock *pmb, int stage);
   TaskStatus ReceiveScalarFlux(MeshBlock *pmb, int stage);
   TaskStatus IntegrateScalars(MeshBlock *pmb, int stage);
-  TaskStatus AddSourceTermsScalars(MeshBlock *pmb, int stage);
+  TaskStatus IntegrateChemistry(MeshBlock *pmb, int stage);
   TaskStatus SendScalars(MeshBlock *pmb, int stage);
   TaskStatus ReceiveScalars(MeshBlock *pmb, int stage);
   TaskStatus SetBoundariesScalars(MeshBlock *pmb, int stage);
