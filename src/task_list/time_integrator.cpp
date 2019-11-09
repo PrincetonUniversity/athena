@@ -281,8 +281,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       } else {
         AddTask(INT_SCLR,CALC_SCLRFLX);
       }
-      AddTask(SRCTERM_SCLR,INT_SCLR);
-      AddTask(SEND_SCLR,SRCTERM_SCLR);
+      //AddTask(SEND_SCLR,INT_SCLR);
+      AddTask(INT_CHM,INT_SCLR);
+      AddTask(SEND_SCLR,INT_CHM);
       AddTask(RECV_SCLR,NONE);
       AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
       // if (SHEARING_BOX) {
@@ -577,11 +578,6 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::IntegrateScalars);
     task_list_[ntasks].lb_time = true;
-  } else if (id == SRCTERM_SCLR) {
-    task_list_[ntasks].TaskFunc=
-        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::AddSourceTermsScalars);
-    task_list_[ntasks].lb_time = true;
   } else if (id == SEND_SCLR) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -601,6 +597,11 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::DiffuseScalars);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == INT_CHM) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::IntegrateChemistry();
     task_list_[ntasks].lb_time = true;
   } else {
     std::stringstream msg;
@@ -1249,19 +1250,12 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
   return TaskStatus::fail;
 }
 
-TaskStatus TimeIntegratorTaskList::AddSourceTermsScalars(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::IntegrateChemistry(MeshBlock *pmb, int stage) {
 //integrate chemistry reactions
 #ifdef INCLUDE_CHEMISTRY
-  if (stage <= nstages) {
-    // Time at beginning of stage for u()
-    Real t_start_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage-1][0];
-    // Scaled coefficient for RHS update
-    Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-    // Evaluate the time-dependent source terms at the time at the beginning of the stage
-    pmb->pscalars->odew.Integrate(t_start_stage, dt);
-  } else {
-    return TaskStatus::fail;
-  }
+  if (stage != nstages) return TaskStatus::success; // only do on last stage
+
+  pmb->pscalars->odew.Integrate(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
 #endif
   return TaskStatus::next;
 }

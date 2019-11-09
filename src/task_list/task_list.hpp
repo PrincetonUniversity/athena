@@ -264,7 +264,7 @@ const TaskID SRCTERM_HYD(14);
 const TaskID INT_HYD(18);
 const TaskID INT_FLD(19);
 // const TaskID INT_RAD(20);
-// const TaskID INT_CHM(21);
+const TaskID INT_CHM(21);
 
 const TaskID SEND_HYD(22);
 const TaskID SEND_FLD(23);
@@ -307,7 +307,7 @@ const TaskID SEND_SCLR(53);
 const TaskID RECV_SCLR(54);
 const TaskID SETB_SCLR(55);
 const TaskID DIFFUSE_SCLR(56);
-const TaskID SRCTERM_SCLR(57);
+//const TaskID SRCTERM_SCLR(57);
 
 // const TaskID RECV_SCLRSH(57);
 // const TaskID SEND_SCLRSH(58);
