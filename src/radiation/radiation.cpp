@@ -388,7 +388,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
         Real x2 = pmb->pcoord->x2v(j);
         Real x3 = pmb->pcoord->x3v(k);
         pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
-        for (int l = zs; l <= ze+1; ++l) {
+        for (int l = zs+1; l <= ze; ++l) {
           for (int m = ps; m <= pe; ++m) {
             Real na1 = 0.0;
             for (int n = 0; n < 4; ++n) {
