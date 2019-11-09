@@ -17,7 +17,7 @@
 // created for each and every <outputN> block in the input file.
 //
 // Required parameters that must be specified in an <outputN> block are:
-//   - variable     = cons,prim,D,d,E,e,m,v
+//   - variable     = cons,prim,D,d,E,e,m,v,rad_coord
 //   - file_type    = rst,tab,vtk,hst
 //   - dt           = problem time between outputs
 //
@@ -103,6 +103,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
@@ -337,6 +338,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   Hydro *phyd = pmb->phydro;
   Field *pfld = pmb->pfield;
   PassiveScalars *psclr = pmb->pscalars;
+  Radiation *prad = pmb->prad;
   Gravity *pgrav = pmb->pgrav;
   num_vars_ = 0;
   OutputData *pod;
@@ -605,6 +607,21 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->type = "SCALARS";
         pod->name = scalar_name_prim;
         pod->data.InitWithShallowSlice(psclr->r, 4, n, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+    }
+  }
+
+  // Coordinate-frame radiation moments
+  if (output_params.variable.compare("rad_coord") == 0) {
+    std::string name_begin = "R";
+    for (int m = 0, index = 0; m < 4; ++m) {
+      for (int n = m; n < 4; ++n, ++index) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = name_begin + std::to_string(m) + std::to_string(n);
+        pod->data.InitWithShallowSlice(prad->moments_coord, 4, index, 1);
         AppendOutputDataNode(pod);
         num_vars_++;
       }

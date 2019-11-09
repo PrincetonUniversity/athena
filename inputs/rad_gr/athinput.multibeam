@@ -14,11 +14,11 @@ xorder     = 2    # order of spatial reconstruction
 ncycle_out = 1    # interval for stdout summary info
 
 <output1>
-file_type = hdf5  # output format
-variable  = uov   # choice of variables to output
-id        = user  # name of output files
-dt        = 0.2   # output cadence
-xdmf      = 0     # whether to include auxiliary metadata file
+file_type = hdf5       # output format
+variable  = rad_coord  # choice of variables to output
+id        = rad        # name of output files
+dt        = 0.2        # output cadence
+xdmf      = 0          # whether to include auxiliary metadata file
 
 <mesh>
 nx1    = 32       # number of cells in x-direction

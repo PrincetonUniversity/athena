@@ -109,13 +109,6 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
   // Calculate beam pattern
   prad->CalculateBeamSource(pos_1, pos_2, pos_3, width, dir_1, dir_2, dir_3, spread,
       dii_dt, ruser_meshblock_data[0], cylindrical, spherical);
-
-  // Prepare output variables
-  AllocateUserOutputVariables(4);
-  SetUserOutputVariableName(0, "E");
-  SetUserOutputVariableName(1, "M1");
-  SetUserOutputVariableName(2, "M2");
-  SetUserOutputVariableName(3, "M3");
   return;
 }
 
@@ -141,19 +134,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for preparing output
-// Inputs:
-//   pin: parameters (unused)
-// Outputs: (none)
-// Notes:
-//   sets user_out_var array
-
-void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
-  prad->SetMoments(user_out_var);
   return;
 }
 

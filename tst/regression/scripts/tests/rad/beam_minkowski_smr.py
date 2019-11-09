@@ -32,25 +32,25 @@ def run(**kwargs):
 def analyze():
 
     # Read data
-    data_uniform = athena_read.athdf('bin/uniform.user.00010.athdf')
-    data_refined = athena_read.athdf('bin/refined.user.00010.athdf', level=0)
-    energy_uniform = -data_uniform['E']
-    energy_refined = -data_refined['E']
+    data_uniform = athena_read.athdf('bin/uniform.rad.00010.athdf')
+    data_refined = athena_read.athdf('bin/refined.rad.00010.athdf', level=0)
+    energy_uniform = data_uniform['R00']
+    energy_refined = data_refined['R00']
 
     # Check extrema
     if np.min(energy_uniform) > 0.0 or np.min(energy_refined) > 0.0:
         logger.warning('did not find cells with no radiation')
         return False
-    if not np.isclose(np.max(energy_uniform), 0.8317357, rtol=0.01):
+    if not np.isclose(np.max(energy_uniform), 0.82753056, rtol=0.01):
         logger.warning('uniform grid has wrong maximum energy')
         return False
-    if not np.isclose(np.max(energy_refined), 0.50364983, rtol=0.01):
+    if not np.isclose(np.max(energy_refined), 0.5032955, rtol=0.01):
         logger.warning('refined grid has wrong maximum energy')
         return False
-    if np.argmax(energy_uniform) != 1860:
+    if np.argmax(energy_uniform) not in (1860, 2116):
         logger.warning('uniform grid has maximum energy in wrong location')
         return False
-    if np.argmax(energy_refined) != 1860:
+    if np.argmax(energy_refined) not in (1860, 2116):
         logger.warning('refined grid has maximum energy in wrong location')
         return False
 

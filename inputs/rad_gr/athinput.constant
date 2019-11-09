@@ -21,11 +21,11 @@ dt        = 0.1   # output cadence
 xdmf      = 0     # whether to include auxiliary metadata file
 
 <output2>
-file_type = hdf5  # output format
-variable  = uov   # choice of variables to output
-id        = user  # name of output files
-dt        = 0.1   # output cadence
-xdmf      = 0     # whether to include auxiliary metadata file
+file_type = hdf5       # output format
+variable  = rad_coord  # choice of variables to output
+id        = rad        # name of output files
+dt        = 0.1        # output cadence
+xdmf      = 0          # whether to include auxiliary metadata file
 
 <mesh>
 nx1    = 4         # number of cells in x-direction

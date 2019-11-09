@@ -95,16 +95,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 // Outputs: (none)
 
 void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
-
-  // Enroll opacity
   prad->EnrollOpacityFunction(TestOpacity);
-
-  // Prepare moment outputs
-  AllocateUserOutputVariables(4);
-  SetUserOutputVariableName(0, "E");
-  SetUserOutputVariableName(1, "M1");
-  SetUserOutputVariableName(2, "M2");
-  SetUserOutputVariableName(3, "M3");
   return;
 }
 
@@ -135,19 +126,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize radiation
   prad->CalculateConstantRadiation(e_rad, ux_rad, uy_rad, uz_rad, prad->cons);
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for preparing output
-// Inputs:
-//   pin: parameters (unused)
-// Outputs: (none)
-// Notes:
-//   sets user_out_var array
-
-void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
-  prad->SetMoments(user_out_var);
   return;
 }
 

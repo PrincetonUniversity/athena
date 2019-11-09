@@ -135,13 +135,6 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
       }
     }
   }
-
-  // Prepare output variables
-  AllocateUserOutputVariables(4);
-  SetUserOutputVariableName(0, "E");
-  SetUserOutputVariableName(1, "M1");
-  SetUserOutputVariableName(2, "M2");
-  SetUserOutputVariableName(3, "M3");
   return;
 }
 
@@ -167,19 +160,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for preparing output
-// Inputs:
-//   pin: parameters (unused)
-// Outputs: (none)
-// Notes:
-//   sets user_out_var array
-
-void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
-  prad->SetMoments(user_out_var);
   return;
 }
 

@@ -209,6 +209,9 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   // Allocate memory for opacity array
   opacity.NewAthenaArray(3, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
+  // Allocate memory for moments
+  moments_coord.NewAthenaArray(10, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+
   // Allocate memory for unit normal components in orthonormal frame
   int num_cells_zeta = ze + NGHOST;
   int num_cells_psi = pe + NGHOST;
@@ -1041,6 +1044,7 @@ void Radiation::PrimitiveToConserved(const AthenaArray<Real> &prim_in,
 // Notes:
 //   Primitives are floored at 0. Conserved quantities are adjusted to match.
 //   This should be the only place where angular ghost zones need to be set.
+//   Updates moments_coord to match conserved and primitive variables.
 
 void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
     AthenaArray<Real> &prim_out, Coordinates *pcoord, int il, int iu, int jl, int ju,
@@ -1123,6 +1127,9 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
       }
     }
   }
+
+  // Update moments
+  SetMoments();
   return;
 }
 
@@ -1559,25 +1566,16 @@ void Radiation::CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u
 //----------------------------------------------------------------------------------------
 // Function for calculating moments of radiation field
 // Inputs: (none)
-// Outputs:
-//   moments: 4D array:
-//     index 0:
-//       0: energy density (\int n^0 n_0 I d\Omega)
-//       1: 1-momentum density (\int n^0 n_1 I d\Omega)
-//       2: 2-momentum density (\int n^0 n_2 I d\Omega)
-//       3: 3-momentum density (\int n^0 n_3 I d\Omega)
-//     index 1: k
-//     index 2: j
-//     index 3: i
+// Outputs: (none)
 // Notes:
-//   Intensity defined by prim values when function is called.
+//   Populates moments_coord array with 10 components of radiation stress tensor.
 
-void Radiation::SetMoments(AthenaArray<Real> &moments) {
-  for (int n = 0; n < 4; ++n) {
+void Radiation::SetMoments() {
+  for (int n = 0; n < 10; ++n) {
     for (int k = ks; k <= ke; ++k) {
       for (int j = js; j <= je; ++j) {
         for (int i = is; i <= ie; ++i) {
-          moments(n,k,j,i) = 0.0;
+          moments_coord(n,k,j,i) = 0.0;
         }
       }
     }
@@ -1585,12 +1583,14 @@ void Radiation::SetMoments(AthenaArray<Real> &moments) {
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
       int lm = AngleInd(l, m);
-      for (int n = 0; n < 4; ++n) {
-        for (int k = ks; k <= ke; ++k) {
-          for (int j = js; j <= je; ++j) {
-            for (int i = is; i <= ie; ++i) {
-              moments(n,k,j,i) +=
-                  n0_n_mu_(n,l,m,k,j,i) * prim(lm,k,j,i) * solid_angle(l,m);
+      for (int n1 = 0, index = 0; n1 < 4; ++n1) {
+        for (int n2 = n1; n2 < 4; ++n2, ++index) {
+          for (int k = ks; k <= ke; ++k) {
+            for (int j = js; j <= je; ++j) {
+              for (int i = is; i <= ie; ++i) {
+                moments_coord(index,k,j,i) += nmu_(n1,l,m,k,j,i) * nmu_(n2,l,m,k,j,i)
+                    * prim(lm,k,j,i) * solid_angle(l,m);
+              }
             }
           }
         }
