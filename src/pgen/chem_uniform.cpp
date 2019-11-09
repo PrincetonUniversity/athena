@@ -43,20 +43,6 @@
 
 
 //======================================================================================
-//! \fn void Mesh::TerminateUserMeshProperties(void)
-//  \brief Clean up the Mesh properties
-//======================================================================================
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
-#ifdef INCLUDE_CHEMISTRY
-  FILE *pf = fopen("chem_network.dat", "w");
-  pblock->pscalars->chemnet.OutputProperties(pf);
-  fclose(pf);
-#endif
-  return;
-}
-
-//======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief initialize problem by reading in vtk file.
 //======================================================================================
@@ -69,17 +55,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   const int Nz = ke - ks + 1;
 	//read density and radiation field strength
 	const Real nH = pin->GetReal("problem", "nH");
-	const Real G0 = pin->GetReal("problem", "G0");
-	const Real s_init = pin->GetReal("problem", "s_init");
-  const Real cr_rate = pin->GetOrAddReal("chemistry", "CR", 2e-16);
-  const Real T = pin->GetOrAddReal("chemistry", "temperature", 20);
-	const Real xHe = pin->GetOrAddReal("chemistry", "xHe", 0.1);
+	const Real vx = pin->GetOrAddReal("problem", "vx", 0);
+	const Real G0 = pin->GetOrAddReal("problem", "G0", 0.);
+	const Real s_init = pin->GetOrAddReal("problem", "s_init", 0.);
 
 	for (int k=ks; k<=ke; ++k) {
 		for (int j=js; j<=je; ++j) {
 			for (int i=is; i<=ie; ++i) {
         //density
 				phydro->u(IDN, k, j, i) = nH;
+        //velocity, x direction
+				phydro->u(IM1, k, j, i) = nH*vx;
         //energy
         if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN, k, j, i) = nH * 0.1 * 0.1;
@@ -87,6 +73,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 			}
 		}
 	}
+  //TODO: debug
+  phydro->u(IDN,4,4,4) = nH*2.;
+
 
 	//intialize radiation field
   if (RADIATION_ENABLED) {
@@ -98,13 +87,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               prad->ir(k, j, i, ifreq * prad->nang + iang) = G0;
             }
           }
-#ifdef INCLUDE_CHEMISTRY
-          for (int iang=0; iang < prad->nang; ++iang) {
-            //cr rate
-            prad->ir(k, j, i,
-                pscalars->chemnet.index_cr_ * prad->nang + iang) = cr_rate;
-          }
-#endif
         }
       }
     }
@@ -117,6 +99,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         for (int i=is; i<=ie; ++i) {
           for (int ispec=0; ispec < NSCALARS; ++ispec) {
             pscalars->s(ispec, k, j, i) = s_init*nH;
+#ifdef INCLUDE_CHEMISTRY
+            Real s_ispec = pin->GetOrAddReal("problem",
+                "s_init_"+pscalars->chemnet.species_names[ispec], -1);
+            if (s_ispec >= 0.) {
+              pscalars->s(ispec, k, j, i) = s_ispec*nH;
+            }
+#endif
           }
         }
       }
