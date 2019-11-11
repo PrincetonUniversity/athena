@@ -22,7 +22,7 @@
 #include "../parameter_input.hpp"
 #include "task_list.hpp"
 
-// BD TODO: Significant code duplication with time_integrator, for now, leave decoupled
+// BD TODO: Significant code duplication with time_integrator, leave decoupled
 
 //----------------------------------------------------------------------------------------
 //  WaveIntegratorTaskList constructor

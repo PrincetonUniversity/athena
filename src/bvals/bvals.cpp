@@ -384,8 +384,12 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
                                                 bis, bie, pmb->js-NGHOST, pmb->js-1,
                                                 bks, bke);
       }
-      pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pco,
-                                      bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
+
+      if (FLUID_ENABLED) {
+        pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pco,
+                                        bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
+      }
+
       if (NSCALARS > 0) {
         pmb->peos->PassiveScalarPrimitiveToConserved(
             ps->r, ph->w, ps->s, pco, bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
