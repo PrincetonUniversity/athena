@@ -60,6 +60,9 @@
 // enable general relativity? default=0 (false)
 #define GENERAL_RELATIVITY @GENERAL_RELATIVITY@
 
+// evolve the z4c equation? default=0 (false)
+#define Z4C_ENABLED @Z4C_ENABLED@
+
 // evolve the wave equation? default=0 (false)
 #define WAVE_ENABLED @WAVE_ENABLED@
 

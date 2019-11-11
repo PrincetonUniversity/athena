@@ -31,6 +31,7 @@
 // BD: new problem
 #include "../wave/wave.hpp"
 // -BD
+#include "../z4c/z4c.hpp"
 #include "../mesh/mesh.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
@@ -79,6 +80,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // BD: new problem
     Wave  *pwave = pmb->pwave;
     // -BD
+    Z4c *pz4c = pmb->pz4c;
 
     // Sum history variables over cells.  Note ghost cells are never included in sums
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
@@ -138,6 +140,26 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             hst_data[isum++] += vol(i)*SQR(wave_error);
           }
           // -BD
+
+          if (Z4C_ENABLED) {
+            Real const H_err  = std::abs(pz4c->con.H(k,j,i));
+            Real const M2_err = std::abs(pz4c->con.M(k,j,i));
+            Real const Mx_err = std::abs(pz4c->con.M_d(0,k,j,i));
+            Real const My_err = std::abs(pz4c->con.M_d(1,k,j,i));
+            Real const Mz_err = std::abs(pz4c->con.M_d(2,k,j,i));
+            Real const Z2_err = std::abs(pz4c->con.Z(k,j,i));
+            Real const theta  = std::abs(pz4c->z4c.Theta(k,j,i));
+            Real const C2_err = std::abs(pz4c->con.C(k,j,i));
+
+            hst_data[isum++] += vol(i)*SQR(H_err);
+            hst_data[isum++] += vol(i)*M2_err; //M is already squared
+            hst_data[isum++] += vol(i)*SQR(Mx_err);
+            hst_data[isum++] += vol(i)*SQR(My_err);
+            hst_data[isum++] += vol(i)*SQR(Mz_err);
+            hst_data[isum++] += vol(i)*Z2_err; //Z is already squared
+            hst_data[isum++] += vol(i)*SQR(theta);
+            hst_data[isum++] += vol(i)*C2_err; //C is already squared
+          }
 
         }
       }
@@ -244,9 +266,21 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
       // BD: new problem
       if (WAVE_ENABLED) {
-        fprintf(pfile,"[%d]=err-norm1 ", iout++);
-        fprintf(pfile,"[%d]=err-norm2 ", iout++);
+        std::fprintf(pfile,"[%d]=err-norm1 ", iout++);
+        std::fprintf(pfile,"[%d]=err-norm2 ", iout++);
       } // -BD
+
+
+      if (Z4C_ENABLED) {
+        std::fprintf(pfile,"[%d]=H-norm2 ",     iout++);
+        std::fprintf(pfile,"[%d]=M-norm2 ",     iout++);
+        std::fprintf(pfile,"[%d]=Mx-norm2 ",    iout++);
+        std::fprintf(pfile,"[%d]=My-norm2 ",    iout++);
+        std::fprintf(pfile,"[%d]=Mz-norm2 ",    iout++);
+        std::fprintf(pfile,"[%d]=Z-norm2 ",     iout++);
+        std::fprintf(pfile,"[%d]=Theta-norm2 ", iout++);
+        std::fprintf(pfile,"[%d]=C-norm2 ",     iout++);
+      }
 
       for (int n=0; n<pm->nuser_history_output_; n++)
         std::fprintf(pfile,"[%d]=%-8s", iout++,

@@ -15,6 +15,7 @@
 // C headers
 
 // C++ headers
+#include <algorithm>  // std::fill
 #include <cstddef>  // size_t
 #include <cstring>  // memset()
 #include <utility>  // swap()
@@ -78,6 +79,8 @@ class AthenaArray {
   // public function to swap underlying data pointers of two equally-sized arrays
   void SwapAthenaArray(AthenaArray<T>& array2);
   void ZeroClear();
+  // BD: cf. lower template of ZeroClear
+  void Fill(T const val) { std::fill(pdata_, pdata_ + GetSize(), T(val)); }
 
   // functions to get array dimensions
   int GetDim1() const { return nx1_; }

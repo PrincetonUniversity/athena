@@ -20,6 +20,7 @@
 #   -s                enable special relativity
 #   -g                enable general relativity
 #   -w                enable wave equation
+#   -z                enable Z4c system
 #   -t                enable interface frame transformations for GR
 #   -shear            enable shearing periodic boundary conditions
 #   -debug            enable debug flags (-g -O0); override other compiler options
@@ -149,6 +150,12 @@ parser.add_argument("-w",
                     action='store_true',
                     default=False,
                     help='enable wave equation')
+
+# -z argument
+parser.add_argument("-z",
+                    action='store_true',
+                    default=False,
+                    help='enable Z4c system')
 
 # -t argument
 parser.add_argument('-t',
@@ -467,6 +474,18 @@ if args['w']:
   definitions['WAVE_ENABLED'] = '1'
 else:
   definitions['WAVE_ENABLED'] = '0'
+
+# -z argument
+if args['z']:
+  definitions['Z4C_ENABLED'] = '1'
+  try:
+      if not int(args['nghost']) >= 2:
+          raise Exception
+  except:
+      raise SystemExit("### CONFIGURE ERROR: Z4c requires 2 or more ghost zones")
+
+else:
+  definitions['Z4C_ENABLED'] = '0'
 
 # -shear argument
 if args['shear']:
@@ -829,6 +848,7 @@ print('  Number of scalars:          ' + args['nscalars'])
 print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
 print('  Wave equation:              ' + ('ON' if args['w'] else 'OFF'))
+print('  Z4c equations:              ' + ('ON' if args['z'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:               ' + self_grav_string)
 print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))

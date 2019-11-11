@@ -43,6 +43,8 @@
 #include "../wave/wave.hpp"
 // -BD
 
+#include "../z4c/z4c.hpp"
+
 //----------------------------------------------------------------------------------------
 // MeshBlock constructor: constructs coordinate, boundary condition, hydro, field
 //                        and mesh refinement objects.
@@ -171,11 +173,16 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   }
 
   // BD: new problem
-  if (WAVE_ENABLED){
+  if (WAVE_ENABLED) {
     pwave = new Wave(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
   // -BD
+
+  if (Z4C_ENABLED) {
+    pz4c = new Z4c(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
 
   // KGF: suboptimal solution, since developer must copy/paste BoundaryVariable derived
   // class type that is used in each PassiveScalars, Gravity, Field, Hydro, ... etc. class
@@ -311,6 +318,11 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
   // -BD
 
+  if (Z4C_ENABLED) {
+    pz4c = new Z4c(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
+
   if (FLUID_ENABLED) {
     peos = new EquationOfState(this, pin);
   }
@@ -361,6 +373,13 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
   // -BD
 
+  if (Z4C_ENABLED) {
+    std::memcpy(pz4c->storage.u.data(), &(mbdata[os]), pz4c->storage.u.GetSizeInBytes());
+    os += pz4c->storage.u.GetSizeInBytes();
+    std::memcpy(pz4c->storage.mat.data(), &(mbdata[os]), pz4c->storage.mat.GetSizeInBytes());
+    os += pz4c->storage.mat.GetSizeInBytes();
+  }
+
   // load user MeshBlock data
   for (int n=0; n<nint_user_meshblock_data_; n++) {
     std::memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
@@ -396,6 +415,8 @@ MeshBlock::~MeshBlock() {
   // BD: new problem
   if (WAVE_ENABLED) delete pwave;
   // -BD
+
+  if (Z4C_ENABLED) delete pz4c;
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
   delete pbval;
@@ -504,6 +525,10 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
     size += pwave->u.GetSizeInBytes();
   }
   // -BD
+
+  if (Z4C_ENABLED) {
+    size+=pz4c->storage.u.GetSizeInBytes();
+  }
 
   // calculate user MeshBlock data size
   for (int n=0; n<nint_user_meshblock_data_; n++)

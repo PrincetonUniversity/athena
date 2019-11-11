@@ -371,6 +371,28 @@ int main(int argc, char *argv[]) {
   }
 #endif // ENABLE_EXCEPTIONS
 
+
+  Z4cIntegratorTaskList *pz4clist = nullptr;
+
+#ifdef ENABLE_EXCEPTIONS
+  try {
+#endif
+    if(Z4C_ENABLED) { // only init. when required
+      pz4clist = new Z4cIntegratorTaskList(pinput, pmesh);
+    }
+#ifdef ENABLE_EXCEPTIONS
+  }
+  catch(std::bad_alloc& ba) {
+    std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
+              << "in creating task list " << ba.what() << std::endl;
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
+    return(0);
+  }
+#endif // ENABLE_EXCEPTIONS
+
+
   SuperTimeStepTaskList *pststlist = nullptr;
   if (STS_ENABLED) {
 #ifdef ENABLE_EXCEPTIONS
@@ -498,6 +520,13 @@ int main(int argc, char *argv[]) {
       }
     }
     // -BD
+
+    if (Z4C_ENABLED) {
+      // This effectively means hydro takes a time-step and _then_ the given problem takes one
+      for (int stage=1; stage<=pz4clist->nstages; ++stage) {
+        pz4clist->DoTaskListOneStage(pmesh, stage);
+      }
+    }
 
     pmesh->UserWorkInLoop();
     pmesh->ncycle++;

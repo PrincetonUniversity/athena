@@ -54,6 +54,7 @@ class TurbulenceDriver;
 // BD: new problem
 class Wave;
 // -BD
+class Z4c;
 
 FluidFormulation GetFluidFormulation(const std::string& input_string);
 
@@ -75,8 +76,9 @@ class MeshBlock {
   // BD: new problem
   friend class Wave;
   // -BD
+  friend class Z4c;
 
- public:
+public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
             BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag,
             bool ref_flag = false);
@@ -131,6 +133,8 @@ class MeshBlock {
   Wave *pwave;
   // -BD
 
+  Z4c *pz4c;
+
   MeshBlock *prev, *next;
 
   // functions
@@ -159,6 +163,8 @@ class MeshBlock {
   void WaveUserWorkInLoop();
   // -BD
 
+  // as above
+  void Z4cUserWorkInLoop();
 
  private:
   // data
@@ -221,6 +227,8 @@ class Mesh {
   // BD: new problem
   friend class Wave;
   // -BD
+
+  friend class Z4c;
 
  public:
   // 2x function overloads of ctor: normal and restarted simulation

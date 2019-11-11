@@ -54,6 +54,7 @@
 // BD: new problem
 #include "../wave/wave.hpp"
 // -BD
+#include "../z4c/z4c.hpp"
 
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
@@ -1409,6 +1410,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (WAVE_ENABLED)
           pmb->pwave->ubvar.SendBoundaryBuffers();
         // -BD
+
+        if (Z4C_ENABLED)
+          pmb->pz4c->ubvar.SendBoundaryBuffers();
       }
 
       // wait to receive conserved variables
@@ -1429,6 +1433,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (WAVE_ENABLED)
           pmb->pwave->ubvar.ReceiveAndSetBoundariesWithWait();
         // -BD
+
+        if (Z4C_ENABLED)
+          pmb->pz4c->ubvar.ReceiveAndSetBoundariesWithWait();
 
         pbval->ClearBoundary(BoundaryCommSubset::mesh_init);
       }
@@ -1477,6 +1484,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       // BD: new problem
       Wave *pw = nullptr;
       // -BD
+      Z4c *pz4c = nullptr;
 
 #pragma omp for private(pmb,pbval,ph,pf,ps)
       for (int i=0; i<nmb; ++i) {
@@ -1602,6 +1610,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     if (WAVE_ENABLED)
       pmb_array[i]->pwave->NewBlockTimeStep();
     // -BD
+
+    if (Z4C_ENABLED)
+      pmb_array[i]->pz4c->NewBlockTimeStep();
   }
 
   NewTimeStep();
@@ -1870,6 +1881,9 @@ void Mesh::ReserveMeshBlockPhysIDs() {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
   // -BD
+  if (Z4C_ENABLED) {
+    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+  }
 
 #endif
   return;

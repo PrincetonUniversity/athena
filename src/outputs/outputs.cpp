@@ -97,6 +97,7 @@
 // BD: new problem
 #include "../wave/wave.hpp"
 // -BD
+#include "../z4c/z4c.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
@@ -337,6 +338,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   // BD: new problem
   Wave *pwave = pmb->pwave;
   // -BD
+  Z4c *pz4c = pmb->pz4c;
 
   num_vars_ = 0;
   OutputData *pod;
@@ -531,6 +533,53 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
   }
   // -BD
+
+  if (Z4C_ENABLED) {
+    for (int v = 0; v < Z4c::N_Z4c; ++v) {
+      if (output_params.variable.compare("z4c") == 0 ||
+          output_params.variable.compare(Z4c::Z4c_names[v]) == 0) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = Z4c::Z4c_names[v];
+        pod->data.InitWithShallowSlice(pz4c->storage.u,v,1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+    }
+    for (int v = 0; v < Z4c::N_ADM; ++v) {
+      if (output_params.variable.compare("adm") == 0 ||
+          output_params.variable.compare(Z4c::ADM_names[v]) == 0) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = Z4c::ADM_names[v];
+        pod->data.InitWithShallowSlice(pz4c->storage.adm,v,1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+    }
+    for (int v = 0; v < Z4c::N_CON; ++v) {
+      if (output_params.variable.compare("con") == 0 ||
+          output_params.variable.compare(Z4c::Constraint_names[v]) == 0) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = Z4c::Constraint_names[v];
+        pod->data.InitWithShallowSlice(pz4c->storage.con,v,1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+    }
+    for (int v = 0; v < Z4c::N_MAT; ++v) {
+      if (output_params.variable.compare("mat") == 0 ||
+          output_params.variable.compare(Z4c::Matter_names[v]) == 0) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = Z4c::Matter_names[v];
+        pod->data.InitWithShallowSlice(pz4c->storage.mat,v,1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+    }
+  }
 
   if (SELF_GRAVITY_ENABLED) {
     if (output_params.variable.compare("phi") == 0 ||
