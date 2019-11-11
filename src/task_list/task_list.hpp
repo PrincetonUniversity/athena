@@ -47,11 +47,9 @@ public:
   bool operator== (const TaskID& rhs) const;
   TaskID operator| (const TaskID& rhs) const;
 
-  // BD: debug [shift back to private]
+private:
   constexpr static int kNField_ = 1;
   std::uint64_t bitfld_[kNField_];
-  // -BD
-private:
 
   friend class TaskList;
 };
@@ -364,5 +362,74 @@ namespace WaveIntegratorTaskNames {
   const TaskID FLAG_AMR(11);
 }  // namespace WaveIntegratorTaskNames
 // -BD
+
+//----------------------------------------------------------------------------------------
+
+class Z4cIntegratorTaskList : public TaskList {
+public:
+  Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm);
+
+  //--------------------------------------------------------------------------------------
+  //! \struct IntegratorWeight
+  //  \brief weights used in time integrator tasks
+
+  struct IntegratorWeight {
+    // 2S or 3S* low-storage RK coefficients, Ketchenson (2010)
+    Real delta; // low-storage coefficients to avoid double F() evaluation per substage
+    Real gamma_1, gamma_2, gamma_3; // low-storage coeff for weighted ave of registers
+    Real beta; // coeff. from bidiagonal Shu-Osher form Beta matrix, -1 diagonal terms
+  };
+
+  // data
+  std::string integrator;
+  Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
+
+  // functions
+  TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);  // CLEAR_ALLBND [x]
+  TaskStatus UserWork(MeshBlock *pmb, int stage);          // USERWORK     [x]
+  TaskStatus NewBlockTimeStep(MeshBlock *pmb, int stage);  // NEW_DT       [x]
+  TaskStatus CalculateZ4cRHS(MeshBlock *pmb, int stage);   // CALC_Z4CRHS  [x]
+  TaskStatus IntegrateZ4c(MeshBlock *pmb, int stage);      // INT_Z4C      [x]
+  TaskStatus SendZ4c(MeshBlock *pmb, int stage);           // SEND_Z4C     [x]
+  TaskStatus ReceiveZ4c(MeshBlock *pmb, int stage);        // RECV_Z4C     [x]
+  TaskStatus SetBoundariesZ4c(MeshBlock *pmb, int stage);  // SETB_Z4C     [x]
+  TaskStatus Prolongation(MeshBlock *pmb, int stage);      // PROLONG      [x]
+  TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);  // PHY_BVAL     [x]
+  TaskStatus EnforceAlgConstr(MeshBlock *pmb, int stage);  // ALG_CONSTR   [x]
+  TaskStatus Z4cToADM(MeshBlock *pmb, int stage);          // Z4C_TO_ADM   [x]
+  TaskStatus ADM_Constraints(MeshBlock *pmb, int stage);   // ADM_CONSTR   [x]
+  TaskStatus CheckRefinement(MeshBlock *pmb, int stage);   // FLAG_AMR     [x]
+
+private:
+  IntegratorWeight stage_wghts[MAX_NSTAGE];
+
+  void AddTask(const TaskID& id, const TaskID& dep) override;
+  void StartupTaskList(MeshBlock *pmb, int stage) override;
+};
+
+//----------------------------------------------------------------------------------------
+// 64-bit integers with "1" in different bit positions used to ID each z4c task.
+namespace Z4cIntegratorTaskNames {
+
+  const TaskID NONE(0);
+  const TaskID CLEAR_ALLBND(1);
+  const TaskID CALC_Z4CRHS(2);
+  const TaskID INT_Z4C(3);
+  const TaskID SEND_Z4C(4);
+  const TaskID RECV_Z4C(5);
+  const TaskID SETB_Z4C(6);
+
+  const TaskID PROLONG(7);
+  const TaskID PHY_BVAL(8);
+
+  const TaskID ALG_CONSTR(9);
+  const TaskID Z4C_TO_ADM(10);
+  const TaskID USERWORK(11);
+  const TaskID NEW_DT(12);
+
+  const TaskID ADM_CONSTR(13);
+  const TaskID FLAG_AMR(14);
+
+}  // namespace Z4cIntegratorTaskNames
 
 #endif  // TASK_LIST_TASK_LIST_HPP_
