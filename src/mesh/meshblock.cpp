@@ -43,6 +43,7 @@
 #include "../wave/wave.hpp"
 // -BD
 
+#include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -179,6 +180,11 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   }
   // -BD
 
+  if (ADVECTION_ENABLED) {
+    padv = new Advection(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
+
   if (Z4C_ENABLED) {
     pz4c = new Z4c(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
@@ -312,11 +318,16 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
 
   // BD: new problem
-  if (WAVE_ENABLED){
+  if (WAVE_ENABLED) {
     pwave = new Wave(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
   // -BD
+
+  if (ADVECTION_ENABLED) {
+    padv = new Advection(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
 
   if (Z4C_ENABLED) {
     pz4c = new Z4c(this, pin);
@@ -373,6 +384,11 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
   // -BD
 
+  if (ADVECTION_ENABLED) {
+    std::memcpy(padv->u.data(), &(mbdata[os]), padv->u.GetSizeInBytes());
+    os += padv->u.GetSizeInBytes();
+  }
+
   if (Z4C_ENABLED) {
     std::memcpy(pz4c->storage.u.data(), &(mbdata[os]), pz4c->storage.u.GetSizeInBytes());
     os += pz4c->storage.u.GetSizeInBytes();
@@ -415,6 +431,8 @@ MeshBlock::~MeshBlock() {
   // BD: new problem
   if (WAVE_ENABLED) delete pwave;
   // -BD
+
+  if (ADVECTION_ENABLED) delete padv;
 
   if (Z4C_ENABLED) delete pz4c;
 
@@ -525,6 +543,10 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
     size += pwave->u.GetSizeInBytes();
   }
   // -BD
+
+  if (ADVECTION_ENABLED) {
+    size += padv->u.GetSizeInBytes();
+  }
 
   if (Z4C_ENABLED) {
     size+=pz4c->storage.u.GetSizeInBytes();

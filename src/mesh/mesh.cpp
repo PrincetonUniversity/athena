@@ -54,6 +54,7 @@
 // BD: new problem
 #include "../wave/wave.hpp"
 // -BD
+#include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
 
 // MPI/OpenMP header
@@ -1411,6 +1412,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->pwave->ubvar.SendBoundaryBuffers();
         // -BD
 
+        if (ADVECTION_ENABLED)
+          pmb->padv->ubvar.SendBoundaryBuffers();
+
         if (Z4C_ENABLED)
           pmb->pz4c->ubvar.SendBoundaryBuffers();
       }
@@ -1433,6 +1437,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (WAVE_ENABLED)
           pmb->pwave->ubvar.ReceiveAndSetBoundariesWithWait();
         // -BD
+
+        if (ADVECTION_ENABLED)
+          pmb->padv->ubvar.ReceiveAndSetBoundariesWithWait();
 
         if (Z4C_ENABLED)
           pmb->pz4c->ubvar.ReceiveAndSetBoundariesWithWait();
@@ -1484,6 +1491,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       // BD: new problem
       Wave *pw = nullptr;
       // -BD
+      Advection *pa = nullptr;
       Z4c *pz4c = nullptr;
 
 #pragma omp for private(pmb,pbval,ph,pf,ps)
@@ -1610,6 +1618,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     if (WAVE_ENABLED)
       pmb_array[i]->pwave->NewBlockTimeStep();
     // -BD
+
+    if (ADVECTION_ENABLED)
+      pmb_array[i]->padv->NewBlockTimeStep();
 
     if (Z4C_ENABLED)
       pmb_array[i]->pz4c->NewBlockTimeStep();
@@ -1881,6 +1892,9 @@ void Mesh::ReserveMeshBlockPhysIDs() {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
   // -BD
+  if (ADVECTION_ENABLED) {
+    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+  }
   if (Z4C_ENABLED) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }

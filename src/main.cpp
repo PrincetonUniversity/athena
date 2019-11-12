@@ -371,6 +371,26 @@ int main(int argc, char *argv[]) {
   }
 #endif // ENABLE_EXCEPTIONS
 
+  AdvectionIntegratorTaskList *palist = nullptr;
+
+#ifdef ENABLE_EXCEPTIONS
+  try {
+#endif
+    if(ADVECTION_ENABLED) { // only init. when required
+      palist = new AdvectionIntegratorTaskList(pinput, pmesh);
+    }
+#ifdef ENABLE_EXCEPTIONS
+  }
+  catch(std::bad_alloc& ba) {
+    std::cout << "### FATAL ERROR in main" << std::endl << "memory allocation failed "
+              << "in creating task list " << ba.what() << std::endl;
+#ifdef MPI_PARALLEL
+    MPI_Finalize();
+#endif
+    return(0);
+  }
+#endif // ENABLE_EXCEPTIONS
+
 
   Z4cIntegratorTaskList *pz4clist = nullptr;
 
@@ -520,6 +540,13 @@ int main(int argc, char *argv[]) {
       }
     }
     // -BD
+
+    if (ADVECTION_ENABLED) {
+      // This effectively means hydro takes a time-step and _then_ the given problem takes one
+      for (int stage=1; stage<=palist->nstages; ++stage) {
+        palist->DoTaskListOneStage(pmesh, stage);
+      }
+    }
 
     if (Z4C_ENABLED) {
       // This effectively means hydro takes a time-step and _then_ the given problem takes one

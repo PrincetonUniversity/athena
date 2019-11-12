@@ -54,6 +54,7 @@ class TurbulenceDriver;
 // BD: new problem
 class Wave;
 // -BD
+class Advection;
 class Z4c;
 
 FluidFormulation GetFluidFormulation(const std::string& input_string);
@@ -76,6 +77,7 @@ class MeshBlock {
   // BD: new problem
   friend class Wave;
   // -BD
+  friend class Advection;
   friend class Z4c;
 
 public:
@@ -133,6 +135,7 @@ public:
   Wave *pwave;
   // -BD
 
+  Advection *padv;
   Z4c *pz4c;
 
   MeshBlock *prev, *next;
@@ -164,6 +167,7 @@ public:
   // -BD
 
   // as above
+  void AdvectionUserWorkInLoop();
   void Z4cUserWorkInLoop();
 
  private:
@@ -228,6 +232,7 @@ class Mesh {
   friend class Wave;
   // -BD
 
+  friend class Advection;
   friend class Z4c;
 
  public:

@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file wave_test.cpp
-//  \brief Initial conditions for the wave equation; rightward propagating Gaussian
+//! \file advection_1d_cvg_trig.cpp
+//  \brief Initial conditions for the advection equation
 
 #include <cassert> // assert
 #include <cmath> // abs, exp, sin, fmod
@@ -17,7 +17,7 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "../mesh/mesh_refinement.hpp"
-#include "../wave/wave.hpp"
+#include "../advection/advection.hpp"
 
 using namespace std;
 
@@ -27,17 +27,7 @@ int RefinementCondition(MeshBlock *pmb);
 Real sigma = 1. / 16.;
 Real phys_x1min = -1.0;
 Real phys_x1max = 1.0;
-Real amr_sigma_mul = 1;
-
-bool allow_restrict = true;
-
-// Real grPhysToFund(Real rho){
-//   return (rho - phys_x1min) / (phys_x1max - phys_x1min);
-// }
-
-// Real grFundToPhys(Real nu){
-//   return (phys_x1max - phys_x1min) * nu + phys_x1min;
-// }
+Real cx1 = 1.0;
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -59,14 +49,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
-  pwave->use_Sommerfeld = pin->GetOrAddInteger("wave", "use_Sommerfeld",
-                                               pwave->use_Sommerfeld);
   sigma = pin->GetOrAddReal("problem", "sigma", sigma);
-  // for amr
-  amr_sigma_mul = pin->GetOrAddReal("problem", "amr_sigma_mul", amr_sigma_mul);
+  cx1 = pin->GetOrAddReal("problem", "cx1", cx1);
   phys_x1min = pin->GetOrAddReal("mesh", "x1min", phys_x1min);
   phys_x1max = pin->GetOrAddReal("mesh", "x1max", phys_x1max);
-  allow_restrict = pin->GetOrAddBoolean("problem", "allow_restrict", allow_restrict);
   //-
 
   for(int k = ks; k <= ke; ++k)
@@ -76,20 +62,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real y = pcoord->x2v(j);
         Real z = pcoord->x3v(k);
 
-
         Real x_2 = SQR(x);
         Real sigma_2 = SQR(sigma);
         Real Gaussian = exp(-x_2 / (2. * sigma_2));
+        padv->u(k,j,i) = Gaussian;
 
-        pwave->u(0,k,j,i) = Gaussian;
-        pwave->u(1,k,j,i) = x * Gaussian / sigma_2;
-
-        pwave->exact(k,j,i) = pwave->u(0,k,j,i);
-        pwave->error(k,j,i) = 0.0;
+        padv->exact(k,j,i) = padv->u(k,j,i);
+        padv->error(k,j,i) = 0.0;
       }
 
   return;
 }
+
 
 // StackOverflow: 4633177
 Real wrapMax (Real x, Real max) {
@@ -103,22 +87,12 @@ Real wrapMinMax (Real x, Real min, Real max) {
   return min + wrapMax(x - min, max - min);
 }
 
-void MeshBlock::WaveUserWorkInLoop() {
+void MeshBlock::AdvectionUserWorkInLoop() {
   Real max_err = 0;
   Real fun_err = 0;
 
   Real t = pmy_mesh->time + pmy_mesh->dt;
-
-  Real c = 1.0;
   Real sigma_2 = SQR(sigma);
-
-  // for propagation
-  // Real del = (phys_x1max - phys_x1min);
-  // Real gc_x0 = phys_x1min + del / 2;
-  // // fractional distance of interval travelled [from left edge] (wrapped)
-  // Real gc_xfr = std::fmod((gc_x0 - phys_x1min) + t * c, del) / del;
-  // // propagated and wrapped physical coordinates
-  // Real gc_xc = grFundToPhys(gc_xfr);
 
   for(int k = ks; k <= ke; ++k)
     for(int j = js; j <= je; ++j)
@@ -126,23 +100,21 @@ void MeshBlock::WaveUserWorkInLoop() {
         Real x = pcoord->x1v(i);
         Real y = pcoord->x2v(j);
         Real z = pcoord->x3v(k);
+        Real t = pmy_mesh->time + pmy_mesh->dt;
 
         // wrap argument to domain
-        Real arg = wrapMinMax(x - t * c, phys_x1min, phys_x1max);
-        // Real Gaussian = exp(-SQR(x - gc_xc) / (2. * sigma_2));
+        Real arg = wrapMinMax(x - t * cx1, phys_x1min, phys_x1max);
         Real Gaussian = exp(-SQR(arg) / (2. * sigma_2));
 
-        pwave->exact(k,j,i) = Gaussian;
-        pwave->error(k,j,i) = pwave->u(0,k,j,i) - pwave->exact(k,j,i);
+        padv->exact(k,j,i) = Gaussian;
+        padv->error(k,j,i) = padv->u(k,j,i) - padv->exact(k,j,i);
 
-        if (std::abs(pwave->error(k,j,i)) > max_err){
-          max_err = std::abs(pwave->error(k,j,i));
-          fun_err = pwave->u(0,k,j,i);
-        }
+        // if (std::abs(padv->error(k,j,i)) > max_err){
+        //   max_err = std::abs(padv->error(k,j,i));
+        //   fun_err = padv->u(k,j,i);
+        // }
       }
-
   // printf("MB::UWIL: (max_err, fun_err)=(%1.7f, %1.7f)\n", max_err, fun_err);
-  return;
 }
 
 //----------------------------------------------------------------------------------------
@@ -150,54 +122,6 @@ void MeshBlock::WaveUserWorkInLoop() {
 //  \brief refinement condition: simple time-dependent test
 
 int RefinementCondition(MeshBlock *pmb){
-
-  // physical parameters
-  Real c = pmb->pwave->c;
-  Real t = pmb->pmy_mesh->time;
-  Real del = (phys_x1max - phys_x1min);
-
-  Real r_width = sigma * amr_sigma_mul;
-
-  // Gaussian refinement params
-  Real gc_x0 = phys_x1min + del / 2;
-  Real gl_x0 = phys_x1min + del / 2 - r_width;
-  Real gr_x0 = phys_x1min + del / 2 + r_width;
-
-  // // fractional distance of interval travelled [from left edge] (wrapped)
-  // Real gc_xfr = std::fmod((gc_x0 - phys_x1min) + t * c, del) / del;
-
-  // Real gl_xfr = std::fmod((gl_x0 - phys_x1min) + t * c, del) / del;
-  // Real gr_xfr = std::fmod((gr_x0 - phys_x1min) + t * c, del) / del;
-
-  // // propagated and wrapped physical coordinates
-  // Real gc_xc = grFundToPhys(gc_xfr);
-  // Real gl_xc = grFundToPhys(gl_xfr);
-  // Real gr_xc = grFundToPhys(gr_xfr);
-
-  // propagated and wrapped physical coordinates
-  Real gl_xc = wrapMinMax(gl_x0 - t * c, phys_x1min, phys_x1max);
-  Real gc_xc = wrapMinMax(gc_x0 - t * c, phys_x1min, phys_x1max);
-  Real gr_xc = wrapMinMax(gr_x0 - t * c, phys_x1min, phys_x1max);
-
-  // current block (physical) geometry
-  Real x1min = pmb->block_size.x1min;
-  Real x1max = pmb->block_size.x1max;
-
-  // if left or right edge within current box then refine
-  if ((x1min <= gl_xc) && (gl_xc <= x1max)) {
-    return 1;
-  }
-
-  if ((x1min <= gc_xc) && (gc_xc <= x1max)) {
-    return 1;
-  }
-
-  if ((x1min <= gr_xc) && (gr_xc <= x1max)) {
-    return 1;
-  }
-
-  // otherwise derefine
-  if (allow_restrict)
-    return -1;
+  // don't do anything
   return 0;
 }

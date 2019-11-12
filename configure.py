@@ -19,6 +19,7 @@
 #   -b                enable magnetic fields
 #   -s                enable special relativity
 #   -g                enable general relativity
+#   -a                enable advection equation
 #   -w                enable wave equation
 #   -z                enable Z4c system
 #   -t                enable interface frame transformations for GR
@@ -144,6 +145,12 @@ parser.add_argument('-g',
                     action='store_true',
                     default=False,
                     help='enable general relativity')
+
+# -a argument
+parser.add_argument("-a",
+                    action='store_true',
+                    default=False,
+                    help='enable advection equation')
 
 # -w argument
 parser.add_argument("-w",
@@ -468,6 +475,12 @@ if args['g']:
     makefile_options['RSOLVER_FILE'] += '_rel'
     if not args['t']:
         makefile_options['RSOLVER_FILE'] += '_no_transform'
+
+# -a argument
+if args['a']:
+  definitions['ADVECTION_ENABLED'] = '1'
+else:
+  definitions['ADVECTION_ENABLED'] = '0'
 
 # -w argument
 if args['w']:
@@ -847,6 +860,7 @@ print('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF'))
 print('  Number of scalars:          ' + args['nscalars'])
 print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
+print('  Advection equation:         ' + ('ON' if args['a'] else 'OFF'))
 print('  Wave equation:              ' + ('ON' if args['w'] else 'OFF'))
 print('  Z4c equations:              ' + ('ON' if args['z'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))

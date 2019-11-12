@@ -365,6 +365,68 @@ namespace WaveIntegratorTaskNames {
 
 //----------------------------------------------------------------------------------------
 
+class AdvectionIntegratorTaskList : public TaskList {
+public:
+  AdvectionIntegratorTaskList(ParameterInput *pin, Mesh *pm);
+
+  //--------------------------------------------------------------------------------------
+  //! \struct IntegratorWeight
+  //  \brief weights used in time integrator tasks
+
+  struct IntegratorWeight {
+    // 2S or 3S* low-storage RK coefficients, Ketchenson (2010)
+    Real delta; // low-storage coefficients to avoid double F() evaluation per substage
+    Real gamma_1, gamma_2, gamma_3; // low-storage coeff for weighted ave of registers
+    Real beta; // coeff. from bidiagonal Shu-Osher form Beta matrix, -1 diagonal terms
+  };
+
+  // data
+  std::string integrator;
+  Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
+
+  // functions
+  TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);       // CLEAR_ALLBND      [x]
+  TaskStatus UserWork(MeshBlock *pmb, int stage);               // USERWORK          [x]
+  TaskStatus NewBlockTimeStep(MeshBlock *pmb, int stage);       // NEW_DT            [x]
+  TaskStatus CheckRefinement(MeshBlock *pmb, int stage);        // FLAG_AMR          [x]
+  TaskStatus CalculateAdvectionRHS(MeshBlock *pmb, int stage);  // CALC_ADVECTIONRHS [x]
+  TaskStatus IntegrateAdvection(MeshBlock *pmb, int stage);     // INT_ADVECTION     [x]
+  TaskStatus SendAdvection(MeshBlock *pmb, int stage);          // SEND_ADVECTION    [x]
+  TaskStatus ReceiveAdvection(MeshBlock *pmb, int stage);       // RECV_ADVECTION    [x]
+
+  TaskStatus SetBoundariesAdvection(MeshBlock *pmb, int stage); // SETB_ADVECTION    [x]
+
+  TaskStatus Prolongation(MeshBlock *pmb, int stage);           // PROLONG           [x]
+  TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);       // PHY_BVAL          [x]
+
+private:
+  IntegratorWeight stage_wghts[MAX_NSTAGE];
+
+  void AddTask(const TaskID& id, const TaskID& dep) override;
+  void StartupTaskList(MeshBlock *pmb, int stage) override;
+};
+
+//----------------------------------------------------------------------------------------
+// 64-bit integers with "1" in different bit positions used to ID each wave task.
+namespace AdvectionIntegratorTaskNames {
+
+  const TaskID NONE(0);
+  const TaskID CLEAR_ALLBND(1);
+
+  const TaskID CALC_ADVECTIONRHS(2);
+  const TaskID INT_ADVECTION(3);
+  const TaskID SEND_ADVECTION(4);
+  const TaskID RECV_ADVECTION(5);
+  const TaskID SETB_ADVECTION(6);
+  const TaskID PROLONG(7);
+  const TaskID PHY_BVAL(8);
+  const TaskID USERWORK(9);
+  const TaskID NEW_DT(10);
+  const TaskID FLAG_AMR(11);
+}  // namespace AdvectionIntegratorTaskNames
+
+//----------------------------------------------------------------------------------------
+
 class Z4cIntegratorTaskList : public TaskList {
 public:
   Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm);

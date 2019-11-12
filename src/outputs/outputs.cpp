@@ -97,6 +97,7 @@
 // BD: new problem
 #include "../wave/wave.hpp"
 // -BD
+#include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
@@ -338,6 +339,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   // BD: new problem
   Wave *pwave = pmb->pwave;
   // -BD
+  Advection *padv = pmb->padv;
   Z4c *pz4c = pmb->pz4c;
 
   num_vars_ = 0;
@@ -533,6 +535,37 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
   }
   // -BD
+
+  if (ADVECTION_ENABLED) {
+    if (output_params.variable.compare("advection") == 0 ||
+        output_params.variable.compare("advection_u") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "u";
+      pod->data.InitWithShallowSlice(padv->u, 0, 1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+
+    if (output_params.variable.compare("advection") == 0 ||
+        output_params.variable.compare("advection_exact") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "uExact";
+      pod->data.InitWithShallowSlice(padv->exact, 0, 1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+    if (output_params.variable.compare("advection") == 0 ||
+        output_params.variable.compare("advection_error") == 0) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "uError";
+      pod->data.InitWithShallowSlice(padv->error, 0, 1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+  }
 
   if (Z4C_ENABLED) {
     for (int v = 0; v < Z4c::N_Z4c; ++v) {

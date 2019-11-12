@@ -57,6 +57,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/utils/*.cpp) \
 	     $(wildcard src/wave/*.cpp) \
 	     $(wildcard src/z4c/*.cpp) \
+	     $(wildcard src/advection/*.cpp) \
 	     $(MPIFFT_FILE)
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))

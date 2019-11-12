@@ -66,6 +66,9 @@
 // evolve the wave equation? default=0 (false)
 #define WAVE_ENABLED @WAVE_ENABLED@
 
+// evolve the advection equation? default=0 (false)
+#define ADVECTION_ENABLED @ADVECTION_ENABLED@
+
 // enable GR frame transformations? default=0 (false)
 #define FRAME_TRANSFORMATIONS @FRAME_TRANSFORMATIONS@
 

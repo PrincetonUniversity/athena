@@ -30,6 +30,7 @@
 // BD: new problem
 #include "../wave/wave.hpp"
 // -BD
+#include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
 #include "outputs.hpp"
 
@@ -198,6 +199,11 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
       pdata += pmb->pwave->u.GetSizeInBytes();
     }
     // -BD
+
+    if (ADVECTION_ENABLED) {
+      std::memcpy(pdata, pmb->padv->u.data(), pmb->padv->u.GetSizeInBytes());
+      pdata += pmb->padv->u.GetSizeInBytes();
+    }
 
     if (Z4C_ENABLED) {
       std::memcpy(pdata, pmb->pz4c->storage.u.data(),
