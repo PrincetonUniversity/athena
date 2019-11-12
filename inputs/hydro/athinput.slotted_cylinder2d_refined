@@ -60,7 +60,7 @@ ox3_bc     = periodic  # outer-X2 boundary flag
 num_threads = 1        # maximum number of OMP threads
 refinement  = none
 numlevel    = 4
-deref_count = 5
+derefine_count = 5
 
 <meshblock>
 nx1        = 4        # Number of zones in X1-direction
