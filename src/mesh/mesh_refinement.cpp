@@ -170,6 +170,7 @@ void MeshRefinement::RestrictCellCenteredValues(
         Real tvol = fvol_[0][0](i) + fvol_[0][0](i+1);
         coarse(n,ck,cj,ci)
           = (fine(n,k,j,i)*fvol_[0][0](i) + fine(n,k,j,i+1)*fvol_[0][0](i+1))/tvol;
+
       }
     }
   }

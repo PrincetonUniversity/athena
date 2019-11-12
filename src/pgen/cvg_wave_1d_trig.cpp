@@ -21,17 +21,6 @@
 
 using namespace std;
 
-namespace {
-
-  Real profile(Real x) {
-    Real sin_x = sin(PI*x);
-    Real cos_x = cos(PI*x);
-    return cos_x * SQR(sin_x);
-  }
-
-} // namespace
-
-
 int RefinementCondition(MeshBlock *pmb);
 
 //========================================================================================
@@ -62,12 +51,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real z = pcoord->x3v(k);
         Real c = pwave->c;
 
-        Real sin_x = sin(PI*x);
-        Real cos_x = cos(PI*x);
+        // Real cos_x = cos(PI*x);
         Real cos_2x = cos(2.*PI*x);
+        Real sqr_cos_2x = SQR(cos_2x);
+        // Real sqr_sin_x = SQR(sin(PI*x));
 
-        pwave->u(0,k,j,i) = profile(x);
-        pwave->u(1,k,j,i) = 0.;
+        pwave->u(0,k,j,i) = sqr_cos_2x;
+        pwave->u(1,k,j,i) = -cos_2x / 2.;
 
         pwave->exact(k,j,i) = pwave->u(0,k,j,i);
         pwave->error(k,j,i) = 0.0;
@@ -89,11 +79,14 @@ void MeshBlock::WaveUserWorkInLoop() {
         Real t = pmy_mesh->time + pmy_mesh->dt;
         Real c = pwave->c;
 
-        Real xL = x + c * t;
-        Real xR = x - c * t;
+        Real cos_2x = cos(2.*PI*x);
+        Real cos_4x = cos(4.*PI*x);
+        Real cos_4ct = cos(4.*PI*c*t);
+        Real sin_2ct = sin(2.*PI*c*t);
 
-        // Average of left/right travelling
-        pwave->exact(k,j,i) = (profile(xL) + profile(xR)) / 2.;
+        pwave->exact(k,j,i) = (2. + 2. * cos_4ct * cos_4x -
+                               cos_2x * sin_2ct / ( c * PI )) / 4.;
+
         pwave->error(k,j,i) = pwave->u(0,k,j,i) - pwave->exact(k,j,i);
 
         if (std::abs(pwave->error(k,j,i)) > max_err){
@@ -101,6 +94,7 @@ void MeshBlock::WaveUserWorkInLoop() {
           fun_err = pwave->u(0,k,j,i);
         }
       }
+  // printf("MB::UWIL: (max_err, fun_err)=(%1.7f, %1.7f)\n", max_err, fun_err);
   return;
 }
 
