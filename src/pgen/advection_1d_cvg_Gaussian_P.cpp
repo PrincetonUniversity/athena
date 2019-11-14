@@ -140,9 +140,9 @@ int RefinementCondition(MeshBlock *pmb){
   Real gr_x0 = phys_x1min + del / 2 + r_width;
 
   // propagated and wrapped physical coordinates
-  Real gl_xc = wrapMinMax(gl_x0 - t * cx1, phys_x1min, phys_x1max);
-  Real gc_xc = wrapMinMax(gc_x0 - t * cx1, phys_x1min, phys_x1max);
-  Real gr_xc = wrapMinMax(gr_x0 - t * cx1, phys_x1min, phys_x1max);
+  Real gl_xc = wrapMinMax(gl_x0 + t * cx1, phys_x1min, phys_x1max);
+  Real gc_xc = wrapMinMax(gc_x0 + t * cx1, phys_x1min, phys_x1max);
+  Real gr_xc = wrapMinMax(gr_x0 + t * cx1, phys_x1min, phys_x1max);
 
   // current block (physical) geometry
   Real x1min = pmb->block_size.x1min;

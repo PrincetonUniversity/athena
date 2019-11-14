@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as plta
 
 ###############################################################################
-ix_max = 41
+ix_max = 321
 ###############################################################################
 
 dir = os.path.join(uat._DIR_ATHENA, 'outputs', 'advection', 'advection_1d_cvg_Gaussian_P')
@@ -29,7 +29,7 @@ fn = lambda ix: os.path.join(dir, 'advection_1d_cvg_Gaussian_P.out1.{ix}.athdf'.
 
 def pl():
     fig = plt.figure()
-    ax = plt.axes(xlim=(-1.0, 1.0), ylim=(-0.1, 1.1))
+    ax = plt.axes(xlim=(-4.0, 4.0), ylim=(-0.1, 1.1))
     # ax = plt.semilogy(xlim=(-4.0, 4.0), ylim=(10e-16, 10))
     line, = ax.plot([], [], lw=1)
     data = {}
@@ -62,7 +62,7 @@ def pl():
 
 
 def ff(ix=0):
-    leg_lev = ['ok', 'sb', 'dg', '.r']
+    leg_lev = ['ok', 'sb', 'dg', '.r', 'dm']
     tmp = uat._ar.athdf(fn(ix), raw=True, return_levels=True)
     tmp_f = uat._ar.athdf(fn(ix))
 

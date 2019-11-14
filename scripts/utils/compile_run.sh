@@ -55,7 +55,7 @@ cd ${DIR_ATHENA}/${REL_OUTPUT}/${RUN_NAME}
 # ./${EXEC_NAME}.x -i ${DIR_ATHENA}/${REL_INPUT}/${INPUT_NAME} -m 1
 ./${EXEC_NAME}.x -i ${DIR_ATHENA}/${REL_INPUT}/${INPUT_NAME}
 
-# gdb -ex 'break calculate_advection_rhs.cpp:40' \
+# gdb -ex 'break wave_1d_cvg_Gaussian_P.cpp:200' \
 #     -ex 'info b' \
 #     -ex 'set print pretty on' \
 #     -ex=r --args ./$EXEC_NAME.x -i $DIR_ATHENA/$REL_INPUT/$INPUT_NAME

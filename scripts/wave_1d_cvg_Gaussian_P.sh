@@ -17,7 +17,7 @@ export INPUT_NAME=wave_1d_cvg_Gaussian_P.inp
 export DIR_INST=$soft/usr  # correct for location of installed libraries
 
 export COMPILE_STR="--prob=wave_1d_cvg_Gaussian_P -w --nghost=2
-                    --cxx g++ -omp
+                    --cxx g++ -omp -debug
                     -hdf5 -h5double --hdf5_path=$DIR_INST"
 
 ###############################################################################

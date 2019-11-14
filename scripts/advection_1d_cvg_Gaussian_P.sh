@@ -16,7 +16,7 @@ export INPUT_NAME=advection_1d_cvg_Gaussian_P.inp
 # if compilation is chosen
 export DIR_INST=$soft/usr  # correct for location of installed libraries
 
-export COMPILE_STR="--prob=advection_1d_cvg_Gaussian_P -a --nghost=4
+export COMPILE_STR="--prob=advection_1d_cvg_Gaussian_P -a --nghost=2
                     --cxx g++ -omp -debug
                     -hdf5 -h5double --hdf5_path=$DIR_INST"
 

@@ -174,9 +174,9 @@ int RefinementCondition(MeshBlock *pmb){
   // Real gr_xc = grFundToPhys(gr_xfr);
 
   // propagated and wrapped physical coordinates
-  Real gl_xc = wrapMinMax(gl_x0 - t * c, phys_x1min, phys_x1max);
-  Real gc_xc = wrapMinMax(gc_x0 - t * c, phys_x1min, phys_x1max);
-  Real gr_xc = wrapMinMax(gr_x0 - t * c, phys_x1min, phys_x1max);
+  Real gl_xc = wrapMinMax(gl_x0 + t * c, phys_x1min, phys_x1max);
+  Real gc_xc = wrapMinMax(gc_x0 + t * c, phys_x1min, phys_x1max);
+  Real gr_xc = wrapMinMax(gr_x0 + t * c, phys_x1min, phys_x1max);
 
   // current block (physical) geometry
   Real x1min = pmb->block_size.x1min;
@@ -196,7 +196,10 @@ int RefinementCondition(MeshBlock *pmb){
   }
 
   // otherwise derefine
-  if (allow_restrict)
+  if (allow_restrict) {
+    // printf("r @ [%1.2f, %1.2f] ~ (%1.2f, %1.2f, %1.2f)\n",
+    //        x1min, x1max, gl_xc, gc_xc, gr_xc);
     return -1;
+  }
   return 0;
 }

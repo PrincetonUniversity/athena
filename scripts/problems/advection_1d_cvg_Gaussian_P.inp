@@ -5,7 +5,7 @@ problem_id      = advection_1d_cvg_Gaussian_P
 # file_type     = tab       # Athena++ ASCII data
 file_type       = hdf5      # dump to hierarchical format
 variable        = advection      # variables to be output
-dt              = 0.1       # time increment between outputs
+dt              = 0.025       # time increment between outputs
 data_format     = %.16e
 #ghost_zones     = 1        # include ghost zones
 
@@ -20,15 +20,15 @@ data_format     = %.16e
 
 <time>
 cfl_number      = 0.1       # The Courant, Friedrichs, & Lewy (CFL) number
-tlim            = 4.0       # time limit
+tlim            = 8.0       # time limit
 integrator      = rk4       # time integrator
 
 <mesh>
-refinement      = static    # Static mesh refinement
+refinement      = adaptive    # Static mesh refinement
 
-nx1             = 512       # Number of zones in X1-direction
-x1min           = -1.0      # minimum value of X1
-x1max           =  1.0      # maximum value of X1
+nx1             = 64        # Number of zones in X1-direction
+x1min           = -4.0      # minimum value of X1
+x1max           =  4.0      # maximum value of X1
 ix1_bc          = periodic  # inner-X1 boundary flag
 ox1_bc          = periodic  # outer-X1 boundary flag
 
@@ -43,18 +43,25 @@ x3min           = -1.0      # minimum value of X3
 x3max           =  1.0      # maximum value of X3
 ix3_bc          = periodic  # inner-X3 boundary flag
 ox3_bc          = periodic  # outer-X3 boundary flag
+
 num_threads     = 2         # Number of OpenMP threads per process
+
+# for adaptive refinement
+numlevel = 5
+deref_count = 0
 
 <advection>
 
 <problem>
-cx1             = -0.5
+cx1             = 1.0
 cx2             = 0
 cx3             = 0
 sigma = 0.0625              # 1/16
+amr_sigma_mul = 8.0
+allow_restrict = true       # debug
 
 <meshblock>
-nx1             = 256       # Number of zones per MeshBlock in X1-direction
+nx1             = 32        # Number of zones per MeshBlock in X1-direction
 nx2             = 1         # Number of zones per MeshBlock in X2-direction
 nx3             = 1         # Number of zones per MeshBlock in X3-direction
 

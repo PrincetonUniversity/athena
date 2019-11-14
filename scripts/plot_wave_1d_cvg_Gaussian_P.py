@@ -62,7 +62,7 @@ def pl():
 
 
 def ff(ix=0):
-    leg_lev = ['ok', 'sb', 'dg', '.r']
+    leg_lev = ['ok', 'sb', 'dg', '.r', 'dm']
     tmp = uat._ar.athdf(fn(ix), raw=True, return_levels=True)
     tmp_f = uat._ar.athdf(fn(ix))
 
