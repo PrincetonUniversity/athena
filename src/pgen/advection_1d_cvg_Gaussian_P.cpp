@@ -29,6 +29,9 @@ Real phys_x1min = -1.0;
 Real phys_x1max = 1.0;
 Real cx1 = 1.0;
 
+Real amr_sigma_mul = 1;
+bool allow_restrict = true;
+
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
@@ -51,8 +54,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   sigma = pin->GetOrAddReal("problem", "sigma", sigma);
   cx1 = pin->GetOrAddReal("problem", "cx1", cx1);
+  // for amr
+  amr_sigma_mul = pin->GetOrAddReal("problem", "amr_sigma_mul", amr_sigma_mul);
   phys_x1min = pin->GetOrAddReal("mesh", "x1min", phys_x1min);
   phys_x1max = pin->GetOrAddReal("mesh", "x1max", phys_x1max);
+  allow_restrict = pin->GetOrAddBoolean("problem", "allow_restrict", allow_restrict);
   //-
 
   for(int k = ks; k <= ke; ++k)
@@ -122,6 +128,41 @@ void MeshBlock::AdvectionUserWorkInLoop() {
 //  \brief refinement condition: simple time-dependent test
 
 int RefinementCondition(MeshBlock *pmb){
-  // don't do anything
+  // physical parameters
+  Real t = pmb->pmy_mesh->time;
+  Real del = (phys_x1max - phys_x1min);
+
+  Real r_width = sigma * amr_sigma_mul;
+
+  // Gaussian refinement params
+  Real gc_x0 = phys_x1min + del / 2;
+  Real gl_x0 = phys_x1min + del / 2 - r_width;
+  Real gr_x0 = phys_x1min + del / 2 + r_width;
+
+  // propagated and wrapped physical coordinates
+  Real gl_xc = wrapMinMax(gl_x0 - t * cx1, phys_x1min, phys_x1max);
+  Real gc_xc = wrapMinMax(gc_x0 - t * cx1, phys_x1min, phys_x1max);
+  Real gr_xc = wrapMinMax(gr_x0 - t * cx1, phys_x1min, phys_x1max);
+
+  // current block (physical) geometry
+  Real x1min = pmb->block_size.x1min;
+  Real x1max = pmb->block_size.x1max;
+
+  // if left or right edge within current box then refine
+  if ((x1min <= gl_xc) && (gl_xc <= x1max)) {
+    return 1;
+  }
+
+  if ((x1min <= gc_xc) && (gc_xc <= x1max)) {
+    return 1;
+  }
+
+  if ((x1min <= gr_xc) && (gr_xc <= x1max)) {
+    return 1;
+  }
+
+  // otherwise derefine
+  if (allow_restrict)
+    return -1;
   return 0;
 }

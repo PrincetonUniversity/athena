@@ -150,7 +150,6 @@ void MeshBlock::WaveUserWorkInLoop() {
 //  \brief refinement condition: simple time-dependent test
 
 int RefinementCondition(MeshBlock *pmb){
-
   // physical parameters
   Real c = pmb->pwave->c;
   Real t = pmb->pmy_mesh->time;

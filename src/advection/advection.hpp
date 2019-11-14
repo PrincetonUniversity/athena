@@ -64,23 +64,6 @@ private:
   AthenaArray<Real> dt1_,dt2_,dt3_;    // scratch arrays used in NewTimeStep
 
 private:
-  void AdvectionSommerfeld_1d_L_(AthenaArray<Real> & u,
-                                 int const is, int const ie,
-                                 int const js, int const je,
-                                 int const ks, int const ke);
-  void AdvectionSommerfeld_1d_R_(AthenaArray<Real> & u,
-                                 int const is, int const ie,
-                                 int const js, int const je,
-                                 int const ks, int const ke);
-  void AdvectionSommerfeld_2d_(AthenaArray<Real> & u,
-                               int const is, int const ie,
-                               int const js, int const je,
-                               int const ks, int const ke);
-  void AdvectionSommerfeld_3d_(AthenaArray<Real> & u,
-                               int const is, int const ie,
-                               int const js, int const je,
-                               int const ks, int const ke);
-private:
   struct {
     // 1st derivative stecil
     typedef FDCenteredStencil<1, NGHOST> s1;
