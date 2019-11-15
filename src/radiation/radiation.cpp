@@ -273,9 +273,15 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   omega.NewAthenaArray(4, 4, 4);
 
   // Calculate n^mu and n^0 n_mu
-  for (int k = ks-NGHOST; k <= ke+NGHOST; ++k) {
-    for (int j = js-NGHOST; j <= je+NGHOST; ++j) {
-      for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+  int kl = ks - (pmb->ncells3 > 1 ? NGHOST : 0);
+  int ku = ke + (pmb->ncells3 > 1 ? NGHOST : 0);
+  int jl = js - (pmb->ncells2 > 1 ? NGHOST : 0);
+  int ju = je + (pmb->ncells2 > 1 ? NGHOST : 0);
+  int il = is - NGHOST;
+  int iu = ie + NGHOST;
+  for (int k = kl; k <= ku; ++k) {
+    for (int j = jl; j <= ju; ++j) {
+      for (int i = il; i <= iu; ++i) {
         Real x1 = pmb->pcoord->x1v(i);
         Real x2 = pmb->pcoord->x2v(j);
         Real x3 = pmb->pcoord->x3v(k);
