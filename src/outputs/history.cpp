@@ -44,7 +44,8 @@
 #define NHISTORY_VARS (((NHYDRO) + 3) * (FLUID_ENABLED) + (SELF_GRAVITY_ENABLED) + \
                        (NFIELD) + (NSCALARS) + \
                        2 * (WAVE_ENABLED) + \
-                       2 * (ADVECTION_ENABLED))
+                       2 * (ADVECTION_ENABLED) + \
+                       8 * (Z4C_ENABLED))
 // -BD
 
 //----------------------------------------------------------------------------------------
