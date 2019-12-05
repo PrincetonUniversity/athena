@@ -180,9 +180,12 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   Real tfinal = tinit + dt;
   Real treturn = 0;
   int flag;
-  //conserved variables
+  //primitive conserved variables
   AthenaArray<Real> &u = pmy_block_->phydro->u;
   AthenaArray<Real> &bcc = pmy_block_->pfield->bcc;
+  //constants
+  const Real gm1 = pmy_block_->peos->GetGamma() - 1.0;
+  const Real scalar_floor = pmy_block_->peos->GetScalarFloor();
   //timing of the chemistry in each cycle
   int nzones = (ie-is+1) * (je-js+1) * (ke-ks+1);
   clock_t begin, end;
@@ -190,10 +193,10 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   begin = std::clock();
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-      //copy r to r_copy
+      //copy s to r_copy
       for (int ispec=0; ispec<NSCALARS; ispec++) {
         for (int i=is; i<=ie; ++i) {
-          pmy_spec_->r_copy(i, ispec) = pmy_spec_->r(ispec, k, j, i); 
+          pmy_spec_->r_copy(i, ispec) = pmy_spec_->s(ispec,k,j,i)/u(IDN,k,j,i); 
         }
       }
       //assign internal energy, if not isothermal eos
@@ -236,15 +239,16 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
         }
       }
 
-      //copy r_copy back to r
+      //copy r_copy back to s
       for (int ispec=0; ispec<NSCALARS; ispec++) {
         for (int i=is; i<=ie; ++i) {
-					pmy_spec_->r(ispec, k, j, i) = pmy_spec_->r_copy(i, ispec);
+          Real& r_copy_i  = pmy_spec_->r_copy(i,ispec);
           //apply floor to passive scalar concentrations
-          pmy_block_->peos->ApplyPassiveScalarFloors(pmy_spec_->r,
-              ispec, k, j, i);
+          r_copy_i = (r_copy_i < scalar_floor) ?  scalar_floor : r_copy_i;
+					pmy_spec_->s(ispec,k,j,i) = r_copy_i*u(IDN,k,j,i);
         }
       }
+
       //assign internal energy, if not isothermal eos
       if (NON_BAROTROPIC_EOS) {
         for (int i=is; i<=ie; ++i) {
@@ -266,11 +270,6 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
     printf("ncycle = %d, total time in sec = %.2e, zone/sec=%.2e\n", 
         ncycle, elapsed_secs, elapsed_secs/Real(nzones) );
   }
-
-  //update conserved variable s in PassiveScalars class
-  pmy_block_->peos->PassiveScalarPrimitiveToConserved(pmy_spec_->r, 
-           pmy_block_->phydro->w, pmy_spec_->s, pmy_block_->pcoord,
-           is, ie, js, je, ks, ke);
   return;
 }
 
