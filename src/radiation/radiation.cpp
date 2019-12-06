@@ -1533,10 +1533,11 @@ void Radiation::CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u
         Real temp_a = g(I00,i);
         Real temp_b = 2.0 * (g(I01,i) * u1 + g(I02,i) * u2 + g(I03,i) * u3);
         Real temp_c = g(I11,i) * SQR(u1) + 2.0 * g(I12,i) * u1 * u2
-            + 2.0 * g(I13,i) * u1 * u3 + g(I22,i) * SQR(u2)
-            + 2.0 * g(I23,i) * u2 * u3 + g(I33,i) * SQR(u3);
+          + 2.0 * g(I13,i) * u1 * u3 + g(I22,i) * SQR(u2) + 2.0 * g(I23,i) * u2 * u3
+          + g(I33,i) * SQR(u3) + 1.0;
+        Real temp_d = std::max(SQR(temp_b) - 4.0 * temp_a * temp_c, 0.0);
         Real u0 =
-            (-temp_b - std::sqrt(SQR(temp_b) - 4.0 * temp_a * temp_c)) / (2.0 * temp_a);
+            (-temp_b - std::sqrt(temp_d)) / (2.0 * temp_a);
 
         // Calculate covariant radiation velocity
         Real u_0, u_1, u_2, u_3;

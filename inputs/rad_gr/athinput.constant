@@ -74,12 +74,12 @@ mol_weight  = 1.0     # molecular weight of gas, in proton masses
 kappa_cgs   = 1.0e-3  # opacity, in cm^2/g
 
 <problem>
-rho    = 1.0
-pgas   = 1.0e-4
-ux     = 1.0
-uy     = 1.0
-uz     = 0.0
-e_rad  = 1.0e-4
-ux_rad = 1.0
-uy_rad = -1.0
-uz_rad = 0.0
+rho    = 1.0     # initial gas density
+pgas   = 1.0e-4  # initial gas pressure
+ux     = 1.0     # initial gas 4-velocity in x-direction
+uy     = 1.0     # initial gas 4-velocity in y-direction
+uz     = 0.0     # initial gas 4-velocity in z-direction
+e_rad  = 1.0e-4  # initial radiation energy density
+ux_rad = 1.0     # initial radiation isotropic frame 4-velocity in x-direction
+uy_rad = -1.0    # initial radiation isotropic frame 4-velocity in y-direction
+uz_rad = 0.0     # initial radiation isotropic frame 4-velocity in z-direction
