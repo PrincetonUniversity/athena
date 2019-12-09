@@ -44,7 +44,10 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
 {
   // Read and set type of spatial reconstruction
   // --------------------------------
-  std::string input_recon = pin->GetOrAddString("time", "xorder", "2");
+  // NOTE: workaround for GCC bug, double free at ctor end; see #304
+  std::string *p_input_recon = new std::string(
+      pin->GetOrAddString("time", "xorder", "2"));
+  const std::string &input_recon = *p_input_recon;
 
   if (input_recon == "1") {
     xorder = 1;
@@ -647,6 +650,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     }
     delete[] beta;
   } // end "if PPM or full 4th order spatial integrator"
+  delete p_input_recon;
 }
 
 
