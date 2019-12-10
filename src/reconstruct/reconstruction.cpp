@@ -44,10 +44,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
 {
   // Read and set type of spatial reconstruction
   // --------------------------------
-  // NOTE: workaround for GCC bug, double free at ctor end; see #304
-  std::string *p_input_recon = new std::string(
-      pin->GetOrAddString("time", "xorder", "2"));
-  const std::string &input_recon = *p_input_recon;
+  std::string input_recon = pin->GetOrAddString("time", "xorder", "2");
 
   if (input_recon == "1") {
     xorder = 1;
@@ -650,7 +647,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     }
     delete[] beta;
   } // end "if PPM or full 4th order spatial integrator"
-  delete p_input_recon;
 }
 
 
@@ -669,7 +665,7 @@ namespace {
 //
 // INPUT:
 //     a: square nxn matrix A of real numbers. Must be a mutable pointer-to-pointer/rows.
-//     n: number of rows and columns in "a"
+//     n: number of rows and columns in "a", rows in pivot output
 //
 //    Also expects "const Real lu_tol >=0" file-scope variable to be defined = criterion
 //    for detecting degenerate input "a" (or nearly-degenerate).
@@ -696,9 +692,12 @@ namespace {
 
 int DoolittleLUPDecompose(Real **a, int n, int *pivot) {
   constexpr int failure = 0, success = 1;
-  // initialize unit permutation matrix P=I. In our sparse representation, pivot[n]=n
-  for (int i=0; i<=n; i++)
+  // initialize unit permutation matrix P=I
+  for (int i=0; i<n; i++)
     pivot[i] = i;
+  // In our sparse representation, could let pivot be (n+1)x1 and init. pivot[n]=n,
+  // increment for each pivot so that it equals n+s upon return, s=# permutations
+  // Useful for determinant calculation.
 
   // loop over rows of input matrix:
   for (int i=0; i<n; i++) {
