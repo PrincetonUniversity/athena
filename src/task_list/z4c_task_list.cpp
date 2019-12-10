@@ -226,31 +226,31 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
 
   // Now assemble list of tasks for each stage of z4c integrator
   {using namespace Z4cIntegratorTaskNames;
-    AddTask(CALC_Z4CRHS, NONE);
-    AddTask(INT_Z4C, CALC_Z4CRHS);
+    AddTask(CALC_Z4CRHS, NONE);                // CalculateZ4cRHS
+    AddTask(INT_Z4C, CALC_Z4CRHS);             // IntegrateZ4c
 
-    AddTask(SEND_Z4C, INT_Z4C);
-    AddTask(RECV_Z4C, NONE);
+    AddTask(SEND_Z4C, INT_Z4C);                // SendZ4c
+    AddTask(RECV_Z4C, NONE);                   // ReceiveZ4c
 
-    AddTask(SETB_Z4C, (RECV_Z4C|INT_Z4C));
+    AddTask(SETB_Z4C, (RECV_Z4C|INT_Z4C));     // SetBoundariesZ4c
     if (pm->multilevel) { // SMR or AMR
-      AddTask(PROLONG, (SEND_Z4C|SETB_Z4C));
-      AddTask(PHY_BVAL, PROLONG);
+      AddTask(PROLONG, (SEND_Z4C|SETB_Z4C));   // Prolongation
+      AddTask(PHY_BVAL, PROLONG);              // PhysicalBoundary
     } else {
-      AddTask(PHY_BVAL, SETB_Z4C);
+      AddTask(PHY_BVAL, SETB_Z4C);             // PhysicalBoundary
     }
 
-    AddTask(ALG_CONSTR, PHY_BVAL);
-    AddTask(Z4C_TO_ADM, ALG_CONSTR);
-    AddTask(ADM_CONSTR, Z4C_TO_ADM);
+    AddTask(ALG_CONSTR, PHY_BVAL);             // EnforceAlgConstr
+    AddTask(Z4C_TO_ADM, ALG_CONSTR);           // Z4cToADM
+    AddTask(ADM_CONSTR, Z4C_TO_ADM);           // ADM_Constraints
 
-    AddTask(USERWORK, ADM_CONSTR);
-    AddTask(NEW_DT, USERWORK);
+    AddTask(USERWORK, ADM_CONSTR);             // UserWork
+    AddTask(NEW_DT, USERWORK);                 // NewBlockTimeStep
     if (pm->adaptive) {
-      AddTask(FLAG_AMR, USERWORK);
-      AddTask(CLEAR_ALLBND, FLAG_AMR);
+      AddTask(FLAG_AMR, USERWORK);             // CheckRefinement
+      AddTask(CLEAR_ALLBND, FLAG_AMR);         // ClearAllBoundary
     } else {
-      AddTask(CLEAR_ALLBND, NEW_DT);
+      AddTask(CLEAR_ALLBND, NEW_DT);           // ClearAllBoundary
     }
 
   } // end of using namespace block

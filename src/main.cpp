@@ -678,6 +678,11 @@ int main(int argc, char *argv[]) {
   delete pinput;
   delete pmesh;
   delete ptlist;
+  delete palist;
+  delete pwlist;
+  // BD: new problem
+  delete pz4clist;
+  // -BD
   delete pouts;
 
 #ifdef MPI_PARALLEL

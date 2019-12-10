@@ -79,6 +79,8 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   // Allocate memory for the solution and its time derivative
   int ncells1 = pmy_block->block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
+  Mesh *pm = pmy_block->pmy_mesh;
+
   if(pmy_block->block_size.nx2 > 1) ncells2 = pmy_block->block_size.nx2 + 2*(NGHOST);
   if(pmy_block->block_size.nx3 > 1) ncells3 = pmy_block->block_size.nx3 + 2*(NGHOST);
 
@@ -88,6 +90,12 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   // // (2) (future) dumping to restart file
   // u = storage.u;
   pmb->RegisterMeshBlockData(storage.u);
+
+  // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
+  if (pm->multilevel) {
+    refinement_idx = pmy_block->pmr->AddToRefinement(&storage.u, &coarse_u_);
+  }
+
 
   /*
   // Allocate memory for the solution
