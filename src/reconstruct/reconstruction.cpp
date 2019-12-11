@@ -665,7 +665,7 @@ namespace {
 //
 // INPUT:
 //     a: square nxn matrix A of real numbers. Must be a mutable pointer-to-pointer/rows.
-//     n: number of rows and columns in "a"
+//     n: number of rows and columns in "a", rows in pivot output
 //
 //    Also expects "const Real lu_tol >=0" file-scope variable to be defined = criterion
 //    for detecting degenerate input "a" (or nearly-degenerate).
@@ -692,9 +692,12 @@ namespace {
 
 int DoolittleLUPDecompose(Real **a, int n, int *pivot) {
   constexpr int failure = 0, success = 1;
-  // initialize unit permutation matrix P=I. In our sparse representation, pivot[n]=n
-  for (int i=0; i<=n; i++)
+  // initialize unit permutation matrix P=I
+  for (int i=0; i<n; i++)
     pivot[i] = i;
+  // In our sparse representation, could let pivot be (n+1)x1 and init. pivot[n]=n,
+  // increment for each pivot so that it equals n+s upon return, s=# permutations
+  // Useful for determinant calculation.
 
   // loop over rows of input matrix:
   for (int i=0; i<n; i++) {

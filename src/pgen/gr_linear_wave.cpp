@@ -691,9 +691,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = uu2;
           phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = uu3;
         } else {  // SR
-          phydro->w(IVX,k,j,i) = phydro->w1(IVX,k,j,i) = u_local[1] / u_local[0];
-          phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = u_local[2] / u_local[0];
-          phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = u_local[3] / u_local[0];
+          phydro->w(IVX,k,j,i) = phydro->w1(IVX,k,j,i) = u_local[1];
+          phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = u_local[2];
+          phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = u_local[3];
         }
 
         // Set conserved hydro variables

@@ -191,6 +191,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
   const Real gamma_adi = pmb->peos->GetGamma();
   const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
 
+  // Allocate aligned memory
   Real cons_l[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
   Real flux_l[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
   Real cons_r[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
@@ -207,7 +208,6 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
   Real flux_c[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
   Real cons_interface[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
   Real flux_interface[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
-
   Real ptot_init[SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
   Real ptot_c[SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
   Real ptot_0[SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
@@ -231,24 +231,14 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
       // Extract left primitives
       Real rho_l = prim_l(IDN,ipm);
       Real pgas_l = prim_l(IPR,ipm);
+      Real ux_l = prim_l(ivx,ipm);
+      Real uy_l = prim_l(ivy,ipm);
+      Real uz_l = prim_l(ivz,ipm);
       Real u_l[4];
-      if (GENERAL_RELATIVITY) {
-        Real vx_l = prim_l(ivx,ipm);
-        Real vy_l = prim_l(ivy,ipm);
-        Real vz_l = prim_l(ivz,ipm);
-        u_l[0] = std::sqrt(1.0 + SQR(vx_l) + SQR(vy_l) + SQR(vz_l));
-        u_l[1] = vx_l;
-        u_l[2] = vy_l;
-        u_l[3] = vz_l;
-      } else {  // SR
-        Real vx_l = prim_l(ivx,ipm);
-        Real vy_l = prim_l(ivy,ipm);
-        Real vz_l = prim_l(ivz,ipm);
-        u_l[0] = std::sqrt(1.0 / (1.0 - SQR(vx_l) - SQR(vy_l) - SQR(vz_l)));
-        u_l[1] = u_l[0] * vx_l;
-        u_l[2] = u_l[0] * vy_l;
-        u_l[3] = u_l[0] * vz_l;
-      }
+      u_l[0] = std::sqrt(1.0 + SQR(ux_l) + SQR(uy_l) + SQR(uz_l));
+      u_l[1] = ux_l;
+      u_l[2] = uy_l;
+      u_l[3] = uz_l;
       Real bby_l = prim_l(IBY,ipm);
       Real bbz_l = prim_l(IBZ,ipm);
 
@@ -256,23 +246,13 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
       Real rho_r = prim_r(IDN,ipm);
       Real pgas_r = prim_r(IPR,ipm);
       Real u_r[4];
-      if (GENERAL_RELATIVITY) {
-        Real vx_r = prim_r(ivx,ipm);
-        Real vy_r = prim_r(ivy,ipm);
-        Real vz_r = prim_r(ivz,ipm);
-        u_r[0] = std::sqrt(1.0 + SQR(vx_r) + SQR(vy_r) + SQR(vz_r));
-        u_r[1] = vx_r;
-        u_r[2] = vy_r;
-        u_r[3] = vz_r;
-      } else {  // SR
-        Real vx_r = prim_r(ivx,ipm);
-        Real vy_r = prim_r(ivy,ipm);
-        Real vz_r = prim_r(ivz,ipm);
-        u_r[0] = std::sqrt(1.0 / (1.0 - SQR(vx_r) - SQR(vy_r) - SQR(vz_r)));
-        u_r[1] = u_r[0] * vx_r;
-        u_r[2] = u_r[0] * vy_r;
-        u_r[3] = u_r[0] * vz_r;
-      }
+      Real ux_r = prim_r(ivx,ipm);
+      Real uy_r = prim_r(ivy,ipm);
+      Real uz_r = prim_r(ivz,ipm);
+      u_r[0] = std::sqrt(1.0 + SQR(ux_r) + SQR(uy_r) + SQR(uz_r));
+      u_r[1] = ux_r;
+      u_r[2] = uy_r;
+      u_r[3] = uz_r;
       Real bby_r = prim_r(IBY,ipm);
       Real bbz_r = prim_r(IBZ,ipm);
 
