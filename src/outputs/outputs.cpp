@@ -17,7 +17,7 @@
 // created for each and every <outputN> block in the input file.
 //
 // Required parameters that must be specified in an <outputN> block are:
-//   - variable     = cons,prim,D,d,E,e,m,v,rad_coord
+//   - variable     = cons,prim,D,d,E,e,m,v,rad_coord,rad_fluid
 //   - file_type    = rst,tab,vtk,hst
 //   - dt           = problem time between outputs
 //
@@ -622,6 +622,22 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->type = "SCALARS";
         pod->name = name_begin + std::to_string(m) + std::to_string(n);
         pod->data.InitWithShallowSlice(prad->moments_coord, 4, index, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+    }
+  }
+
+  // Fluid-frame radiation moments
+  if (output_params.variable.compare("rad_fluid") == 0) {
+    std::string name_begin = "R";
+    std::string name_end = "_fluid";
+    for (int m = 0, index = 0; m < 4; ++m) {
+      for (int n = m; n < 4; ++n, ++index) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = name_begin + std::to_string(m) + std::to_string(n) + name_end;
+        pod->data.InitWithShallowSlice(prad->moments_fluid, 4, index, 1);
         AppendOutputDataNode(pod);
         num_vars_++;
       }
