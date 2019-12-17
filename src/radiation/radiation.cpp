@@ -1260,11 +1260,17 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
         for (int n = 0; n <= nzeta * npsi; ++n) {
           for (int i = is; i <= ie; ++i) {
             omega_cm_(n,i) /= weight_sum_(i);
+            intensity_cm_(n,i) *= 4.0*PI;
           }
         }
 
         // Calculate radiation-fluid coupling in fluid frame
         Coupling(prim_hydro, n_cm_, n0_, omega_cm_, dt_, dtau_, k, j, intensity_cm_);
+        for (int n = 0; n <= nzeta * npsi; ++n) {
+          for (int i = is; i <= ie; ++i) {
+            intensity_cm_(n,i) /= 4.0*PI;
+          }
+        }
 
         // Apply radiation-fluid coupling to radiation in coordinate frame
         for (int l = zs; l <= ze; ++l) {

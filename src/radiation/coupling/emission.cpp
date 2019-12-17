@@ -106,7 +106,7 @@ void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
        Real ir_weight = intensity_scr_(n) * weight_(n);
        jr_cm += ir_weight;
        suma1 += weight_(n) * vncsigma2_(n);
-       suma2 += ir_weight * vncsigma;
+       suma2 += ir_weight * n0_local * vncsigma;
     }
     Real suma3 = suma1 * (dtcsigmas - dtcsigmap);
     suma1 *= (dtcsigmaa + dtcsigmap);
