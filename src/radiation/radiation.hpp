@@ -104,6 +104,7 @@ public:
   AthenaArray<Real> coarse_cons;    // prolongation/restriction buffer
   AthenaArray<Real> opacity;        // opacity array
   AthenaArray<Real> moments_coord;  // contravariant stress tensor in coordinate frame
+  AthenaArray<Real> moments_fluid;  // contravariant stress tensor in fluid frame
 
   // Boundary communication
   RadBoundaryVariable rbvar;
@@ -118,6 +119,9 @@ public:
   void PrimitiveToConserved(const AthenaArray<Real> &prim_in, AthenaArray<Real> &cons_out,
       Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
   void ConservedToPrimitive(AthenaArray<Real> &cons_in, AthenaArray<Real> &prim_out,
+      int il, int iu, int jl, int ju, int kl, int ku);
+  void ConservedToPrimitiveWithMoments(AthenaArray<Real> &cons_in,
+      AthenaArray<Real> &prim_out, const AthenaArray<Real> &prim_hydro,
       Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
   void AddSourceTerms(const Real time, const Real dt, const AthenaArray<Real> &prim_rad,
       const AthenaArray<Real> &prim_hydro, AthenaArray<Real> &cons_rad,
@@ -137,7 +141,7 @@ public:
       bool cylindrical = false, bool spherical = false);
   void CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u3,
       AthenaArray<Real> &cons_out);
-  void SetMoments();
+  void SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pcoord);
 
 private:
 

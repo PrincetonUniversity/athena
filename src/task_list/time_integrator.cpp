@@ -1312,8 +1312,8 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
                                                    pmb->pcoord, il, iu, jl, ju, kl, ku);
     }
     if (RADIATION_ENABLED) {
-      pmb->prad->ConservedToPrimitive(prad->cons, prad->prim1, pmb->pcoord, il, iu, jl,
-          ju, kl, ku);
+      pmb->prad->ConservedToPrimitiveWithMoments(prad->cons, prad->prim1, ph->w1,
+          pmb->pcoord, il, iu, jl, ju, kl, ku);
     }
     // fourth-order EOS:
     if (pmb->precon->xorder == 4) {

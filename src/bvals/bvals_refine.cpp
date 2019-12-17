@@ -388,8 +388,8 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
                                                  sk-f3m, ek+f3p);
   }
   if (RADIATION_ENABLED) {
-    prad->ConservedToPrimitive(prad->coarse_cons, prad->coarse_prim, pmr->pcoarsec,
-        si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
+    prad->ConservedToPrimitive(prad->coarse_cons, prad->coarse_prim, si-f1m, ei+f1p,
+        sj-f2m, ej+f2p, sk-f3m, ek+f3p);
   }
 
   if (nb.ni.ox1 == 0) {

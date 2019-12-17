@@ -211,6 +211,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
 
   // Allocate memory for moments
   moments_coord.NewAthenaArray(10, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+  moments_fluid.NewAthenaArray(10, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
   // Allocate memory for unit normal components in orthonormal frame
   int num_cells_zeta = ze + NGHOST;
@@ -1043,18 +1044,15 @@ void Radiation::PrimitiveToConserved(const AthenaArray<Real> &prim_in,
 // Radiation inversion from conserved to primitive variables
 // Inputs:
 //   cons_in: conserved quantities
-//   pcoord: pointer to Coordinates
 //   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   prim_out: primitives
 // Notes:
 //   Primitives are floored at 0. Conserved quantities are adjusted to match.
 //   This should be the only place where angular ghost zones need to be set.
-//   Updates moments_coord to match conserved and primitive variables.
 
 void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
-    AthenaArray<Real> &prim_out, Coordinates *pcoord, int il, int iu, int jl, int ju,
-    int kl, int ku) {
+    AthenaArray<Real> &prim_out, int il, int iu, int jl, int ju, int kl, int ku) {
 
   // Calculate primitive intensities
   for (int l = zs; l <= ze; ++l) {
@@ -1133,9 +1131,27 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
       }
     }
   }
+  return;
+}
 
-  // Update moments
-  SetMoments();
+//----------------------------------------------------------------------------------------
+// Radiation inversion from conserved to primitive variables, including setting moments
+// Inputs:
+//   cons_in: conserved quantities
+//   prim_hydro: up-to-date primitive hydro quantities
+//   pcoord: pointer to Coordinates
+//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
+// Outputs:
+//   prim_out: primitives
+// Notes:
+//   Defers to ConservedToPrimitive() for actual inversion.
+//   Updates all relevant moments to match updated radiation variables.
+
+void Radiation::ConservedToPrimitiveWithMoments(AthenaArray<Real> &cons_in,
+    AthenaArray<Real> &prim_out, const AthenaArray<Real> &prim_hydro, Coordinates *pcoord,
+    int il, int iu, int jl, int ju, int kl, int ku) {
+  ConservedToPrimitive(cons_in, prim_out, il, iu, jl, ju, kl, ku);
+  SetMoments(prim_hydro, pcoord);
   return;
 }
 
@@ -1151,6 +1167,7 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
 // Outputs:
 //   cons: conserved intensity updated
 //   cons_hydro: conserved hydro variables updated
+
 void Radiation::AddSourceTerms(const Real time, const Real dt,
     const AthenaArray<Real> &prim_rad, const AthenaArray<Real> &prim_hydro,
     AthenaArray<Real> &cons_rad, AthenaArray<Real> &cons_hydro) {
@@ -1572,12 +1589,19 @@ void Radiation::CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u
 
 //----------------------------------------------------------------------------------------
 // Function for calculating moments of radiation field
-// Inputs: (none)
+// Inputs:
+//   prim_hydro: up-to-date primitive hydro quantities
+//   pcoord: pointer to Coordinates
 // Outputs: (none)
 // Notes:
-//   Populates moments_coord array with 10 components of radiation stress tensor.
+//   Populates moments_coord array with 10 components of radiation stress tensor in
+//       coordinate frame.
+//   Populates moments_fluid array with 10 components of radiation stress tensor in
+//       orthonormal fluid frame if radiation is coupled to matter.
 
-void Radiation::SetMoments() {
+void Radiation::SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pcoord) {
+
+  // Set coordinate-frame components
   for (int n = 0; n < 10; ++n) {
     for (int k = ks; k <= ke; ++k) {
       for (int j = js; j <= je; ++j) {
@@ -1590,13 +1614,85 @@ void Radiation::SetMoments() {
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
       int lm = AngleInd(l, m);
-      for (int n1 = 0, index = 0; n1 < 4; ++n1) {
-        for (int n2 = n1; n2 < 4; ++n2, ++index) {
+      for (int n1 = 0, n12 = 0; n1 < 4; ++n1) {
+        for (int n2 = n1; n2 < 4; ++n2, ++n12) {
           for (int k = ks; k <= ke; ++k) {
             for (int j = js; j <= je; ++j) {
               for (int i = is; i <= ie; ++i) {
-                moments_coord(index,k,j,i) += nmu_(n1,l,m,k,j,i) * nmu_(n2,l,m,k,j,i)
+                moments_coord(n12,k,j,i) += nmu_(n1,l,m,k,j,i) * nmu_(n2,l,m,k,j,i)
                     * prim(lm,k,j,i) * solid_angle(l,m);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Set fluid-frame components
+  if (coupled_to_matter) {
+    for (int n = 0; n < 10; ++n) {
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          for (int i = is; i <= ie; ++i) {
+            moments_fluid(n,k,j,i) = 0.0;
+          }
+        }
+      }
+    }
+    Real trans[4][4];
+    for (int k = ks; k <= ke; ++k) {
+      for (int j = js; j <= je; ++j) {
+        pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
+        for (int i = is; i <= ie; ++i) {
+
+          // Calculate velocity
+          Real uu1 = prim_hydro(IVX,k,j,i);
+          Real uu2 = prim_hydro(IVX,k,j,i);
+          Real uu3 = prim_hydro(IVX,k,j,i);
+          Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+              + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+          Real uu0 = std::sqrt(1.0 + temp_var);
+          Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
+          Real beta1 = -gi_(I01,i) / gi_(I00,i);
+          Real beta2 = -gi_(I02,i) / gi_(I00,i);
+          Real beta3 = -gi_(I03,i) / gi_(I00,i);
+          Real u0 = uu0 / alpha;
+          Real u1 = uu1 - beta1 / alpha * uu0;
+          Real u2 = uu2 - beta2 / alpha * uu0;
+          Real u3 = uu3 - beta3 / alpha * uu0;
+          Real u_0 = g_(I00,i) * u0 + g_(I01,i) * u1 + g_(I02,i) * u2 + g_(I03,i) * u3;
+          Real u_1 = g_(I01,i) * u0 + g_(I11,i) * u1 + g_(I12,i) * u2 + g_(I13,i) * u3;
+          Real u_2 = g_(I02,i) * u0 + g_(I12,i) * u1 + g_(I22,i) * u2 + g_(I23,i) * u3;
+          Real u_3 = g_(I03,i) * u0 + g_(I13,i) * u1 + g_(I23,i) * u2 + g_(I33,i) * u3;
+
+          // Calculate transformation
+          trans[0][0] = -u_0;
+          trans[0][1] = -u_1;
+          trans[0][2] = -u_2;
+          trans[0][3] = -u_3;
+          trans[1][0] = u1 * u_0;
+          trans[1][1] = u1 * u_1 + 1.0;
+          trans[1][2] = u1 * u_2;
+          trans[1][3] = u1 * u_3;
+          trans[2][0] = u2 * u_0;
+          trans[2][1] = u2 * u_1;
+          trans[2][2] = u2 * u_2 + 1.0;
+          trans[2][3] = u2 * u_3;
+          trans[3][0] = u3 * u_0;
+          trans[3][1] = u3 * u_1;
+          trans[3][2] = u3 * u_2;
+          trans[3][3] = u3 * u_3 + 1.0;
+
+          // Apply transformation
+          for (int n1 = 0, n12 = 0; n1 < 4; ++n1) {
+            for (int n2 = n1; n2 < 4; ++n2, ++n12) {
+              for (int n3 = 0, n34 = 0; n3 < 4; ++n3) {
+                for (int n4 = n3; n4 < 4; ++n4, ++n34) {
+                  moments_fluid(n12,k,j,i) +=
+                      trans[n1][n3] * trans[n2][n4] * moments_coord(n34,k,j,i);
+                }
               }
             }
           }

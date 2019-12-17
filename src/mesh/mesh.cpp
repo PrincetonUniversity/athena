@@ -1447,8 +1447,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                                        il, iu, jl, ju, kl, ku);
         }
         if (RADIATION_ENABLED) {
-          pr->ConservedToPrimitive(pr->cons, pr->prim, pmb->pcoord, il, iu, jl, ju, kl,
-              ku);
+          pr->ConservedToPrimitiveWithMoments(pr->cons, pr->prim, ph->w, pmb->pcoord, il,
+              iu, jl, ju, kl, ku);
         }
         // --------------------------
         int order = pmb->precon->xorder;
