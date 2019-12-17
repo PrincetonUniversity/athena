@@ -59,9 +59,9 @@ nx3 = 4  # block size in z-direction
 rad_tetrad = cartesian  # choice of radiation tetrad
 
 <hydro>
-gamma = 1.3333333333333333  # ratio of specific heats Gamma
-dfloor = 1.0e-8
-pfloor = 1.0e-8
+gamma  = 1.3333333333333333  # ratio of specific heats Gamma
+dfloor = 1.0e-8              # absolute density floor
+pfloor = 1.0e-8              # absolute gas pressure floor
 
 <radiation>
 n_polar     = 5       # number of polar angles in direction space
