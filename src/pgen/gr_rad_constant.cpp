@@ -8,7 +8,9 @@
 
 // C++ headers
 #include <cstdlib>    // exit (needed for defs.hpp)
+#include <cmath>      // abs, fmin
 #include <iostream>   // cout (needed for defs.hpp), endl
+#include <limits>     // numeric_limits
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error (needed for defs.hpp)
 #include <string>     // c_str, strcmp, string (needed for defs.hpp)
@@ -45,6 +47,7 @@ Real ps, pe;                  // index bounds on psi
 }  // namespace
 
 // Declarations
+Real CouplingTimestep(MeshBlock *pmb);
 void TestOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim);
 
 //----------------------------------------------------------------------------------------
@@ -85,6 +88,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   ze = zs + pin->GetInteger("radiation", "n_polar");
   ps = NGHOST;
   pe = ps + pin->GetInteger("radiation", "n_azimuthal");
+
+  // Enroll timestep limiter
+  if (pin->GetBoolean("problem", "limit_step")) {
+    EnrollUserTimeStepFunction(CouplingTimestep);
+  }
   return;
 }
 
@@ -133,6 +141,51 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Initialize radiation
   prad->CalculateConstantRadiation(e_rad, ux_rad, uy_rad, uz_rad, prad->cons);
   return;
+}
+
+//----------------------------------------------------------------------------------------
+// Timestep limiter
+// Inputs:
+//   pmb: pointer to MeshBlock
+// Outputs:
+//   returned value: minimum timescale for gas internal energy to change
+// Notes:
+//   Returns min(u_gas / |d(u_gas)/dt|).
+//   Uses 0th moment: d(u_gas)/dt = kappa_a * rho * c * a_rad * (T_gas^4 - T_rad^4).
+
+Real CouplingTimestep(MeshBlock *pmb)
+{
+  Real gamma_adi = pmb->peos->GetGamma();
+  Real arad = pmb->prad->arad;
+  Real dt_min = std::numeric_limits<Real>::max();
+  if (pmb->prad->coupled_to_matter) {
+    for (int k = pmb->ks; k <= pmb->ke; ++k) {
+      for (int j = pmb->js; j <= pmb->je; ++j) {
+        for (int i = pmb->is; i <= pmb->ie; ++i) {
+
+          // Extract values
+          Real rho = pmb->phydro->w(IDN,k,j,i);
+          Real pgas = pmb->phydro->w(IPR,k,j,i);
+          Real erad = pmb->prad->moments_fluid(0,k,j,i);
+          Real k_a = pmb->prad->opacity(OPAA,k,j,i);
+
+          // Calculate timescale
+          Real ugas = pgas / (gamma_adi - 1.0);
+          Real ttgas = pgas / rho;
+          Real ttgas4 = SQR(SQR(ttgas));
+          Real ttrad4 = erad / arad;
+          Real dugas_dt = k_a * arad * (ttrad4 - ttgas4);
+          Real dt = ugas / std::abs(dugas_dt);
+
+          // Minimize timescale
+          if (dt > 0.0) {
+            dt_min = std::fmin(dt_min, dt);
+          }
+        }
+      }
+    }
+  }
+  return dt_min;
 }
 
 //----------------------------------------------------------------------------------------
