@@ -174,7 +174,7 @@ void TestOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim)
         Real rho = prim(IDN,k,j,i);
         prad->opacity(OPAS,k,j,i) = rho * kappas;
         prad->opacity(OPAA,k,j,i) = rho * kappaa;
-        prad->opacity(OPAP,k,j,i) = 0.0;
+        prad->opacity(OPAP,k,j,i) = rho * kappaa;
       }
     }
   }
