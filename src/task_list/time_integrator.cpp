@@ -367,9 +367,12 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     // everything else
     AddTask(PHY_BVAL,CONS2PRIM);
-    if(RADIATION_ENABLED)
+    if (RADIATION_ENABLED) {
       AddTask(CALC_OPACITY,PHY_BVAL);
-    AddTask(USERWORK,PHY_BVAL);
+      AddTask(USERWORK,CALC_OPACITY);
+    } else {
+      AddTask(USERWORK,PHY_BVAL);
+    }
     AddTask(NEW_DT,USERWORK);
     if (pm->adaptive) {
       AddTask(FLAG_AMR,USERWORK);
