@@ -47,7 +47,7 @@ bool FourthPolyRoot(const Real coef4, const Real tconst, Real &root);
 // Outputs:
 //   intensity: fluid-frame I updated
 // Notes:
-//   Implements emission with no absorption or scattering.
+//   Accounts for emission; absorption; and isotropic, elastic scattering.
 //   n^0 is -u_\mu n^\mu, which is equal to gamma * (1 - v \dot n) in SR.
 //   n^1/n^0 is the cosine of the angle the direction makes with the fluid-frame
 //       x-direction, and similarly for n^2/n^0 and n^3/n^0.
@@ -140,7 +140,8 @@ void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
       // Note: even if tr == told, intensity can change
       for (int n = 0; n < nang_local; n++) {
         intensity_scr_(n) += ((dtcsigmas - dtcsigmap) * jr_cm + (dtcsigmaa + dtcsigmap)
-            * emission - (dtcsigmas + dtcsigmaa) * intensity_scr_(n)) * vncsigma2_(n);
+            * emission - (dtcsigmas + dtcsigmaa) * intensity_scr_(n)) * tran_coef_(n)
+            / n0(n,k,j,i) * dt(i);
       }
 
       // Copy intensity back 

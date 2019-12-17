@@ -1278,8 +1278,9 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
             int lm = AngleInd(l, m);
             int lm_alt = (l - zs) * (pe - ps + 1) + m - ps;
             for (int i = is; i <= ie; ++i) {
-              cons_rad(lm,k,j,i) = intensity_cm_(lm_alt,i) / SQR(SQR(n_cm_(0,lm_alt,i)))
-                  * n0_n_mu_(0,l,m,k,j,i);
+              Real intensity_coord =
+                  intensity_cm_(lm_alt,i) / SQR(SQR(n_cm_(0,lm_alt,i)));
+              cons_rad(lm,k,j,i) = intensity_coord * n0_n_mu_(0,l,m,k,j,i);
             }
           }
         }
