@@ -140,8 +140,7 @@ void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
       // Note: even if tr == told, intensity can change
       for (int n = 0; n < nang_local; n++) {
         intensity_scr_(n) += ((dtcsigmas - dtcsigmap) * jr_cm + (dtcsigmaa + dtcsigmap)
-            * emission - (dtcsigmas + dtcsigmaa) * intensity_scr_(n)) * tran_coef_(n)
-            / n0(n,k,j,i) * dt(i);
+            * emission - (dtcsigmas + dtcsigmaa) * intensity_scr_(n)) * vncsigma2_(n);
       }
 
       // Copy intensity back 
