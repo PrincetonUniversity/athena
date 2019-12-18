@@ -1204,8 +1204,8 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
             int lm = AngleInd(l, m);
             for (int n = 0; n < 4; ++n) {
               for (int i = is; i <= ie; ++i) {
-                moments_old_(n,i) +=
-                    n0_n_mu_(n,l,m,k,j,i) * prim_rad(lm,k,j,i) * solid_angle(l,m);
+                moments_old_(n,i) += n0_n_mu_(n,l,m,k,j,i) * cons_rad(lm,k,j,i)
+                    / n0_n_mu_(0,l,m,k,j,i) * solid_angle(l,m);
               }
             }
           }
@@ -1257,14 +1257,14 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
             }
           }
         }
+
+        // Calculate radiation-fluid coupling in fluid frame
         for (int n = 0; n <= nzeta * npsi; ++n) {
           for (int i = is; i <= ie; ++i) {
             omega_cm_(n,i) /= weight_sum_(i);
             intensity_cm_(n,i) *= 4.0*PI;
           }
         }
-
-        // Calculate radiation-fluid coupling in fluid frame
         Coupling(prim_hydro, n_cm_, n0_, omega_cm_, dt_, dtau_, k, j, intensity_cm_);
         for (int n = 0; n <= nzeta * npsi; ++n) {
           for (int i = is; i <= ie; ++i) {
