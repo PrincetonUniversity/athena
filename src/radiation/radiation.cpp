@@ -1638,15 +1638,6 @@ void Radiation::SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pco
 
   // Set fluid-frame components
   if (coupled_to_matter) {
-    for (int n = 0; n < 10; ++n) {
-      for (int k = ks; k <= ke; ++k) {
-        for (int j = js; j <= je; ++j) {
-          for (int i = is; i <= ie; ++i) {
-            moments_fluid(n,k,j,i) = 0.0;
-          }
-        }
-      }
-    }
     Real trans[4][4];
     for (int k = ks; k <= ke; ++k) {
       for (int j = js; j <= je; ++j) {
@@ -1655,8 +1646,8 @@ void Radiation::SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pco
 
           // Calculate velocity
           Real uu1 = prim_hydro(IVX,k,j,i);
-          Real uu2 = prim_hydro(IVX,k,j,i);
-          Real uu3 = prim_hydro(IVX,k,j,i);
+          Real uu2 = prim_hydro(IVY,k,j,i);
+          Real uu3 = prim_hydro(IVZ,k,j,i);
           Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
               + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
               + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
