@@ -1695,12 +1695,23 @@ void Radiation::SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pco
           // Apply transformation
           for (int n1 = 0, n12 = 0; n1 < 4; ++n1) {
             for (int n2 = n1; n2 < 4; ++n2, ++n12) {
-              for (int n3 = 0, n34 = 0; n3 < 4; ++n3) {
-                for (int n4 = n3; n4 < 4; ++n4, ++n34) {
-                  moments_fluid(n12,k,j,i) +=
-                      trans[n1][n3] * trans[n2][n4] * moments_coord(n34,k,j,i);
-                }
-              }
+              moments_fluid(n12,k,j,i) =
+                  trans[n1][0] * trans[n2][0] * moments_coord(0,k,j,i)
+                  + trans[n1][0] * trans[n2][1] * moments_coord(1,k,j,i)
+                  + trans[n1][0] * trans[n2][2] * moments_coord(2,k,j,i)
+                  + trans[n1][0] * trans[n2][3] * moments_coord(3,k,j,i)
+                  + trans[n1][1] * trans[n2][0] * moments_coord(1,k,j,i)
+                  + trans[n1][1] * trans[n2][1] * moments_coord(4,k,j,i)
+                  + trans[n1][1] * trans[n2][2] * moments_coord(5,k,j,i)
+                  + trans[n1][1] * trans[n2][3] * moments_coord(6,k,j,i)
+                  + trans[n1][2] * trans[n2][0] * moments_coord(2,k,j,i)
+                  + trans[n1][2] * trans[n2][1] * moments_coord(5,k,j,i)
+                  + trans[n1][2] * trans[n2][2] * moments_coord(7,k,j,i)
+                  + trans[n1][2] * trans[n2][3] * moments_coord(8,k,j,i)
+                  + trans[n1][3] * trans[n2][0] * moments_coord(3,k,j,i)
+                  + trans[n1][3] * trans[n2][1] * moments_coord(6,k,j,i)
+                  + trans[n1][3] * trans[n2][2] * moments_coord(8,k,j,i)
+                  + trans[n1][3] * trans[n2][3] * moments_coord(9,k,j,i);
             }
           }
         }
