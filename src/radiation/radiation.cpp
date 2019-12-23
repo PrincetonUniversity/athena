@@ -1151,7 +1151,7 @@ void Radiation::ConservedToPrimitiveWithMoments(AthenaArray<Real> &cons_in,
     AthenaArray<Real> &prim_out, const AthenaArray<Real> &prim_hydro, Coordinates *pcoord,
     int il, int iu, int jl, int ju, int kl, int ku) {
   ConservedToPrimitive(cons_in, prim_out, il, iu, jl, ju, kl, ku);
-  SetMoments(prim_hydro, pcoord);
+  SetMoments(prim_hydro, pcoord, il, iu, jl, ju, kl, ku);
   return;
 }
 
@@ -1599,6 +1599,7 @@ void Radiation::CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u
 // Inputs:
 //   prim_hydro: up-to-date primitive hydro quantities
 //   pcoord: pointer to Coordinates
+//   il,iu,jl,ju,kl,ku: index bounds of region for which moments should be calculated
 // Outputs: (none)
 // Notes:
 //   Populates moments_coord array with 10 components of radiation stress tensor in
@@ -1606,13 +1607,14 @@ void Radiation::CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u
 //   Populates moments_fluid array with 10 components of radiation stress tensor in
 //       orthonormal fluid frame if radiation is coupled to matter.
 
-void Radiation::SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pcoord) {
+void Radiation::SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pcoord,
+    int il, int iu, int jl, int ju, int kl, int ku) {
 
   // Set coordinate-frame components
   for (int n = 0; n < 10; ++n) {
-    for (int k = ks; k <= ke; ++k) {
-      for (int j = js; j <= je; ++j) {
-        for (int i = is; i <= ie; ++i) {
+    for (int k = kl; k <= ku; ++k) {
+      for (int j = jl; j <= ju; ++j) {
+        for (int i = il; i <= iu; ++i) {
           moments_coord(n,k,j,i) = 0.0;
         }
       }
@@ -1623,9 +1625,9 @@ void Radiation::SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pco
       int lm = AngleInd(l, m);
       for (int n1 = 0, n12 = 0; n1 < 4; ++n1) {
         for (int n2 = n1; n2 < 4; ++n2, ++n12) {
-          for (int k = ks; k <= ke; ++k) {
-            for (int j = js; j <= je; ++j) {
-              for (int i = is; i <= ie; ++i) {
+          for (int k = kl; k <= ku; ++k) {
+            for (int j = jl; j <= ju; ++j) {
+              for (int i = il; i <= iu; ++i) {
                 moments_coord(n12,k,j,i) += nmu_(n1,l,m,k,j,i) * nmu_(n2,l,m,k,j,i)
                     * prim(lm,k,j,i) * solid_angle(l,m);
               }
@@ -1639,10 +1641,10 @@ void Radiation::SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pco
   // Set fluid-frame components
   if (coupled_to_matter) {
     Real trans[4][4];
-    for (int k = ks; k <= ke; ++k) {
-      for (int j = js; j <= je; ++j) {
-        pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
-        for (int i = is; i <= ie; ++i) {
+    for (int k = kl; k <= ku; ++k) {
+      for (int j = jl; j <= ju; ++j) {
+        pmy_block->pcoord->CellMetric(k, j, il, iu, g_, gi_);
+        for (int i = il; i <= iu; ++i) {
 
           // Calculate velocity
           Real uu1 = prim_hydro(IVX,k,j,i);
