@@ -42,6 +42,7 @@ Real rho, pgas;               // initial thermodynamic variables for fluid
 Real ux, uy, uz;              // initial spatial components of fluid 4-velocity
 Real e_rad;                   // initial coordinate-frame radiation energy density
 Real ux_rad, uy_rad, uz_rad;  // initial spatial components of isotropic radiation frame
+Real step_limit;              // factor to use in limiting timestep
 Real zs, ze;                  // index bounds on zeta
 Real ps, pe;                  // index bounds on psi
 }  // namespace
@@ -84,13 +85,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   ux_rad = pin->GetReal("problem", "ux_rad");
   uy_rad = pin->GetReal("problem", "uy_rad");
   uz_rad = pin->GetReal("problem", "uz_rad");
+  step_limit = pin->GetReal("problem", "step_limit");
   zs = NGHOST;
   ze = zs + pin->GetInteger("radiation", "n_polar");
   ps = NGHOST;
   pe = ps + pin->GetInteger("radiation", "n_azimuthal");
 
   // Enroll timestep limiter
-  if (pin->GetBoolean("problem", "limit_step")) {
+  if (step_limit > 0.0) {
     EnrollUserTimeStepFunction(CouplingTimestep);
   }
   return;
@@ -150,7 +152,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Outputs:
 //   returned value: minimum timescale for gas internal energy to change
 // Notes:
-//   Returns min(u_gas / |d(u_gas)/dt|).
+//   Returns min(u_gas / |d(u_gas)/dt|) multiplied by step_limit.
 //   Uses 0th moment: d(u_gas)/dt = kappa_a * rho * c * a_rad * (T_gas^4 - T_rad^4).
 
 Real CouplingTimestep(MeshBlock *pmb)
@@ -185,7 +187,7 @@ Real CouplingTimestep(MeshBlock *pmb)
       }
     }
   }
-  return dt_min;
+  return dt_min * step_limit;
 }
 
 //----------------------------------------------------------------------------------------
