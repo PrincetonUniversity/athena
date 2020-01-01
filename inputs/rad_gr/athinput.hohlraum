@@ -1,0 +1,69 @@
+<comment>
+problem   = radiation in GR with hohlraum boundaries
+configure = -g -r --prob gr_rad_hohlraum --coord minkowski -hdf5
+
+<job>
+problem_id = hohlraum  # name of run
+
+<time>
+nlim       = -1   # maximum number of timesteps
+tlim       = 1.0  # maximum time to run
+cfl_number = 0.3  # fraction of Courant condition
+integrator = vl2  # time integration algorithm
+xorder     = 2    # order of spatial reconstruction
+ncycle_out = 1    # interval for stdout summary info
+
+<output1>
+file_type = hdf5       # output format
+variable  = rad_coord  # choice of variables to output
+id        = rad        # name of output files
+dt        = 0.1        # output cadence
+xdmf      = 0          # whether to include auxiliary metadata file
+
+<mesh>
+nx1    = 4     # number of cells in x-direction
+x1min  = 0.0   # minimum x
+x1max  = 1.0   # maximum x
+ix1_bc = user  # left boundary
+ox1_bc = user  # right boundary
+
+nx2    = 4         # number of cells in y-direction
+x2min  = 0.0       # minimum y
+x2max  = 1.0       # maximum y
+ix2_bc = periodic  # front boundary
+ox2_bc = periodic  # back boundary
+
+nx3    = 4         # number of cells in z-direction
+x3min  = -0.5      # minimum z
+x3max  = 0.5       # maximum z
+ix3_bc = periodic  # bottom boundary
+ox3_bc = periodic  # top boundary
+
+refinement = none  # whether to use mesh refinement
+
+num_threads = 1  # number of threads per process
+
+<meshblock>
+nx1 = 4  # block size in x-direction
+nx2 = 4  # block size in y-direction
+nx3 = 4  # block size in z-direction
+
+<coord>
+rad_tetrad = cartesian  # choice of radiation tetrad
+
+<hydro>
+gamma  = 1.3333333333333333  # ratio of specific heats Gamma
+
+<radiation>
+n_polar     = 5      # number of polar angles in direction space
+n_azimuthal = 16     # number of azimuthal angles in direction space
+coupled     = false  # flag indicating whether radiation is coupled to matter
+
+<problem>
+e_rad     = 0.0  # initial isotropic radiation energy density
+e_rad_ix1 = 1.0  # isotropic radiation energy density at left boundary
+e_rad_ox1 = 0.0  # isotropic radiation energy density at right boundary
+e_rad_ix2 = 0.0  # isotropic radiation energy density at front boundary
+e_rad_ox2 = 0.0  # isotropic radiation energy density at back boundary
+e_rad_ix3 = 0.0  # isotropic radiation energy density at bottom boundary
+e_rad_ox3 = 0.0  # isotropic radiation energy density at top boundary
