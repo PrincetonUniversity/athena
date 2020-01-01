@@ -43,8 +43,6 @@ Real ux, uy, uz;              // initial spatial components of fluid 4-velocity
 Real e_rad;                   // initial coordinate-frame radiation energy density
 Real ux_rad, uy_rad, uz_rad;  // initial spatial components of isotropic radiation frame
 Real step_limit;              // factor to use in limiting timestep
-Real zs, ze;                  // index bounds on zeta
-Real ps, pe;                  // index bounds on psi
 }  // namespace
 
 // Declarations
@@ -86,10 +84,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   uy_rad = pin->GetReal("problem", "uy_rad");
   uz_rad = pin->GetReal("problem", "uz_rad");
   step_limit = pin->GetReal("problem", "step_limit");
-  zs = NGHOST;
-  ze = zs + pin->GetInteger("radiation", "n_polar");
-  ps = NGHOST;
-  pe = ps + pin->GetInteger("radiation", "n_azimuthal");
 
   // Enroll timestep limiter
   if (step_limit > 0.0) {
@@ -235,4 +229,3 @@ void TestOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim)
   }
   return;
 }
-

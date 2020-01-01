@@ -83,5 +83,5 @@ e_rad      = 1.0e-4  # initial radiation energy density
 ux_rad     = 1.0     # initial radiation isotropic frame 4-velocity in x-direction
 uy_rad     = -1.0    # initial radiation isotropic frame 4-velocity in y-direction
 uz_rad     = 0.0     # initial radiation isotropic frame 4-velocity in z-direction
-limit_step = false   # flag indicating step size should be limited to timescale for gas
+step_limit = 0.0     # if positive, used to limit step size to this factor times time for
                      # internal energy to change by order unity
