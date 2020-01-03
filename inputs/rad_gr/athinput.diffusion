@@ -1,0 +1,85 @@
+<comment>
+problem   = diffusion of radiation in optically thick fluid in GR (flat spacetime)
+configure = -g -r --prob gr_rad_diffusion --coord minkowski -hdf5
+
+<job>
+problem_id = diffusion  # name of run
+
+<time>
+nlim       = -1    # maximum number of timesteps
+tlim       = 50.0  # maximum time to run
+cfl_number = 0.9   # fraction of Courant condition
+integrator = vl2   # time integration algorithm
+xorder     = 2     # order of spatial reconstruction
+ncycle_out = 1     # interval for stdout summary info
+
+<output1>
+file_type = hdf5  # output format
+variable  = prim  # choice of variables to output
+id        = prim  # name of output files
+dt        = 1.0   # output cadence
+xdmf      = 0     # whether to include auxiliary metadata file
+
+<output2>
+file_type = hdf5       # output format
+variable  = rad_coord  # choice of variables to output
+id        = rad        # name of output files
+dt        = 1.0        # output cadence
+xdmf      = 0          # whether to include auxiliary metadata file
+
+<mesh>
+nx1    = 256      # number of cells in x-direction
+x1min  = -0.5     # minimum x
+x1max  = 0.5      # maximum x
+ix1_bc = outflow  # left boundary
+ox1_bc = outflow  # right boundary
+
+nx2    = 1            # number of cells in y-direction
+x2min  = -0.00390625  # minimum y
+x2max  = 0.00390625   # maximum y
+ix2_bc = periodic     # front boundary
+ox2_bc = periodic     # back boundary
+
+nx3    = 1            # number of cells in z-direction
+x3min  = -0.00390625  # minimum z
+x3max  = 0.00390625   # maximum z
+ix3_bc = periodic     # bottom boundary
+ox3_bc = periodic     # top boundary
+
+refinement = none  # whether to use mesh refinement
+
+num_threads = 1  # number of threads per process
+
+<meshblock>
+nx1 = 256  # block size in x-direction
+nx2 = 1    # block size in y-direction
+nx3 = 1    # block size in z-direction
+
+<coord>
+rad_tetrad = cartesian  # choice of radiation tetrad
+
+<hydro>
+gamma  = 1.6666666666666667  # ratio of specific heats Gamma
+dfloor = 1.0e-3              # absolute density floor
+pfloor = 1.0e-5              # absolute gas pressure floor
+
+<radiation>
+n_polar     = 5                      # number of polar angles in direction space
+n_azimuthal = 16                     # number of azimuthal angles in direction space
+coupled     = true                   # flag indicating radiation is coupled to matter
+planck      = false                  # flag indicating Planck mean opacity is also used
+length_cgs  = 2.4910989546810706e11  # code unit of length, in cm
+density_cgs = 1.00357314e-12         # code unit of density, in g/cm^3
+mol_weight  = 0.5                    # molecular weight of gas, in proton masses
+kappa_cgs   = 0.4                    # opacity, in cm^2/g
+
+<problem>
+rho        = 1.0e5                # initial gas density
+pgas       = 9.18425848208954e-2  # initial gas pressure
+ux         = 0.0                  # initial gas 4-velocity in x-direction
+uy         = 0.0                  # initial gas 4-velocity in y-direction
+uz         = 0.0                  # initial gas 4-velocity in z-direction
+x0         = 0.0                  # initial location of peak
+t0         = 1.0                  # time after delta function for initial conditions
+e_rad_back = 1.0e-4               # initial background radiation energy density
+e_rad_peak = 1.0                  # initial peak radiation energy density above background
