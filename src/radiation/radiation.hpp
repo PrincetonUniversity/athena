@@ -84,27 +84,28 @@ public:
   Real kappa;  // opacity in code units
 
   // Data arrays
-  AthenaArray<Real> zetaf;          // face-centered polar radiation angles
-  AthenaArray<Real> zetav;          // volume-centered polar radiation angles
-  AthenaArray<Real> dzetaf;         // face-to-face polar radiation angle differences
-  AthenaArray<Real> psif;           // face-centered azimuthal radiation angles
-  AthenaArray<Real> psiv;           // volume-centered azimuthal radiation angles
-  AthenaArray<Real> dpsif;          // face-to-face azimuthal radiation angle differences
-  AthenaArray<Real> zeta_length;    // angular length at constant psi
-  AthenaArray<Real> psi_length;     // angular length at constant zeta
-  AthenaArray<Real> solid_angle;    // angular area of cell
-  AthenaArray<Real> prim;           // primitive intensity I
-  AthenaArray<Real> prim1;          // primitive intensity I, for substeps
-  AthenaArray<Real> cons;           // conserved intensity n^0 n_0 I
-  AthenaArray<Real> cons1;          // conserved intensity n^0 n_0 I, for substeps
-  AthenaArray<Real> cons2;          // conserved intensity n^0 n_0 I, for substeps
-  AthenaArray<Real> flux_x[3];      // spatial fluxes of intensity n^i n_0 I
-  AthenaArray<Real> flux_a[2];      // angular fluxes of intensity n^a n_0 I
-  AthenaArray<Real> coarse_prim;    // prolongation/restriction buffer
-  AthenaArray<Real> coarse_cons;    // prolongation/restriction buffer
-  AthenaArray<Real> opacity;        // opacity array
-  AthenaArray<Real> moments_coord;  // contravariant stress tensor in coordinate frame
-  AthenaArray<Real> moments_fluid;  // contravariant stress tensor in fluid frame
+  AthenaArray<Real> zetaf;           // face-centered polar radiation angles
+  AthenaArray<Real> zetav;           // volume-centered polar radiation angles
+  AthenaArray<Real> dzetaf;          // face-to-face polar radiation angle differences
+  AthenaArray<Real> psif;            // face-centered azimuthal radiation angles
+  AthenaArray<Real> psiv;            // volume-centered azimuthal radiation angles
+  AthenaArray<Real> dpsif;           // face-to-face azimuthal radiation angle differences
+  AthenaArray<Real> zeta_length;     // angular length at constant psi
+  AthenaArray<Real> psi_length;      // angular length at constant zeta
+  AthenaArray<Real> solid_angle;     // angular area of cell
+  AthenaArray<Real> prim;            // primitive intensity I
+  AthenaArray<Real> prim1;           // primitive intensity I, for substeps
+  AthenaArray<Real> cons;            // conserved intensity n^0 n_0 I
+  AthenaArray<Real> cons1;           // conserved intensity n^0 n_0 I, for substeps
+  AthenaArray<Real> cons2;           // conserved intensity n^0 n_0 I, for substeps
+  AthenaArray<Real> flux_x[3];       // spatial fluxes of intensity n^i n_0 I
+  AthenaArray<Real> flux_a[2];       // angular fluxes of intensity n^a n_0 I
+  AthenaArray<Real> coarse_prim;     // prolongation/restriction buffer
+  AthenaArray<Real> coarse_cons;     // prolongation/restriction buffer
+  AthenaArray<Real> opacity;         // opacity array
+  AthenaArray<Real> moments_coord;   // contravariant stress tensor in coordinate frame
+  AthenaArray<Real> moments_tetrad;  // contravariant stress tensor in tetrad frame
+  AthenaArray<Real> moments_fluid;   // contravariant stress tensor in fluid frame
 
   // Boundary communication
   RadBoundaryVariable rbvar;
@@ -147,6 +148,7 @@ public:
 private:
 
   // Data arrays
+  AthenaArray<Real> nh_cc_;          // n^\hat{mu} at angle centers
   AthenaArray<Real> nmu_;            // n^mu at cell and angle centers
   AthenaArray<Real> n0_n_mu_;        // n^0 n_mu at cell and angle centers
   AthenaArray<Real> n1_n_0_;         // n^1 n_0 at x^1-faces and angle centers

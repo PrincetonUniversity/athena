@@ -628,6 +628,22 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
   }
 
+  // Tetrad-frame radiation moments
+  if (output_params.variable.compare("rad_tetrad") == 0) {
+    std::string name_begin = "R";
+    std::string name_end = "_tetrad";
+    for (int m = 0, index = 0; m < 4; ++m) {
+      for (int n = m; n < 4; ++n, ++index) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = name_begin + std::to_string(m) + std::to_string(n) + name_end;
+        pod->data.InitWithShallowSlice(prad->moments_tetrad, 4, index, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+    }
+  }
+
   // Fluid-frame radiation moments
   if (output_params.variable.compare("rad_fluid") == 0) {
     std::string name_begin = "R";
