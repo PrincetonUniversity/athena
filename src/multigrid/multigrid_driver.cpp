@@ -35,7 +35,7 @@
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) :
     nvar_(invar), maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
-    mode_(0), // 2: V(1,1) FMG one sweep, 1: FMG + iterative, 2: V(1,1) iterative
+    mode_(0), // 0: V(1,1) FMG one sweep, 1: FMG + iterative, 2: V(1,1) iterative
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
     fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0),
     cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3) {
@@ -191,9 +191,9 @@ void MultigridDriver::SetupMultigrid() {
     TransferFromBlocksToRoot(true);
     RestrictFMGSourceOctets();
     mgroot_->RestrictFMGSource();
-    current_level_=0;
+    current_level_ = 0;
   } else {
-    current_level_=ntotallevel_-1;
+    current_level_ = ntotallevel_-1;
   }
 
   return;
@@ -474,7 +474,6 @@ void MultigridDriver::SolveFMGCycle() {
   std::cout << std::scientific << std::setprecision(15);
   std::cout << "after FMG def = " << def << " fas " << ffas_ << " fsub " << fsubtract_average_ << std::endl;
   if (mode_ == 1) {
-//    ffas_ = false; // MG correction is used for iteration
     fmglevel_ = ntotallevel_ - 1;
     Real def = 0.0;
     for (int v=0; v<nvar_; ++v)
@@ -498,11 +497,12 @@ void MultigridDriver::SolveIterative(Real inidef) {
   else def += TINY_NUMBER;
   std::cout << std::scientific << std::setprecision(15);
   while (def > eps_) {
-    SolveVCycle(1, 2);
+    SolveVCycle(1, 1);
     Real olddef = def;
     def = 0.0;
     for (int v=0; v<nvar_; ++v)
       def += CalculateDefectNorm(MGNormType::l2, v);
+    std::cout << "niter " << niter << " def " << def << std::endl;
     if (niter > 0 && def/olddef > 0.9) {
       if (eps_ == 0.0) break;
       if (Globals::my_rank == 0)
@@ -540,7 +540,6 @@ void MultigridDriver::SolveCoarsestGrid() {
       mgroot_->StoreOldData();
     }
     mgroot_->ZeroClearData();
-    return;
   } else {
     if (fsubtract_average_) {
       Real vol=(mgroot_->size_.x1max-mgroot_->size_.x1min)
