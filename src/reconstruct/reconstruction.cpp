@@ -9,6 +9,7 @@
 // C headers
 
 // C++ headers
+#include <algorithm>  // max()
 #include <cmath>      // abs()
 #include <cstring>    // strcmp()
 #include <iomanip>
