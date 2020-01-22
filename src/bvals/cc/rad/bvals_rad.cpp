@@ -39,7 +39,7 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
     npsi(num_psi),
     nang((nzeta + 2*NGHOST) * (npsi + 2*NGHOST)) {
 
-  // Set parameters
+  // Calculate index bounds
   zs = NGHOST;
   ze = nzeta + NGHOST - 1;
   ps = NGHOST;
@@ -50,6 +50,12 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
   je = pmb->je;
   ks = pmb->ks;
   ke = pmb->ke;
+  int il = is - NGHOST;
+  int iu = ie + NGHOST;
+  int jl = js == je ? js : js - NGHOST;
+  int ju = js == je ? je : je + NGHOST;
+  int kl = ks == ke ? ks : ks - NGHOST;
+  int ku = ks == ke ? ke : ke + NGHOST;
 
   // Allocate memory for angles
   zetaf.NewAthenaArray(nzeta + 2*NGHOST + 1);
@@ -124,8 +130,8 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
   if (pbval_->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::reflect) {
     reflect_ind_ix1_.NewAthenaArray(4, nang, pmb->ncells3, pmb->ncells2, NGHOST);
     reflect_frac_ix1_.NewAthenaArray(4, nang, pmb->ncells3, pmb->ncells2, NGHOST);
-    for (int k = ks-NGHOST; k <= ke+NGHOST; ++k) {
-      for (int j = js-NGHOST; j <= je+NGHOST; ++j) {
+    for (int k = kl; k <= ku; ++k) {
+      for (int j = jl; j <= ju; ++j) {
         for (int di = 0; di < NGHOST; ++di) {
           int i_g = is - NGHOST + di;
           int i_a = is + NGHOST - 1 - di;
@@ -189,8 +195,8 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
   if (pbval_->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::reflect) {
     reflect_ind_ox1_.NewAthenaArray(4, nang, pmb->ncells3, pmb->ncells2, NGHOST);
     reflect_frac_ox1_.NewAthenaArray(4, nang, pmb->ncells3, pmb->ncells2, NGHOST);
-    for (int k = ks-NGHOST; k <= ke+NGHOST; ++k) {
-      for (int j = js-NGHOST; j <= je+NGHOST; ++j) {
+    for (int k = kl; k <= ku; ++k) {
+      for (int j = jl; j <= ju; ++j) {
         for (int di = 0; di < NGHOST; ++di) {
           int i_g = ie + 1 + di;
           int i_a = ie - di;
@@ -254,11 +260,11 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
   if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::reflect) {
     reflect_ind_ix2_.NewAthenaArray(4, nang, pmb->ncells3, NGHOST, pmb->ncells1);
     reflect_frac_ix2_.NewAthenaArray(4, nang, pmb->ncells3, NGHOST, pmb->ncells1);
-    for (int k = ks-NGHOST; k <= ke+NGHOST; ++k) {
+    for (int k = kl; k <= ku; ++k) {
       for (int dj = 0; dj < NGHOST; ++dj) {
         int j_g = js - NGHOST + dj;
         int j_a = js + NGHOST - 1 - dj;
-        for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+        for (int i = il; i <= iu; ++i) {
           Real x1 = pmb->pcoord->x1v(i);
           Real x2_g = pmb->pcoord->x2v(j_g);
           Real x2_a = pmb->pcoord->x2v(j_a);
@@ -319,11 +325,11 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
   if (pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::reflect) {
     reflect_ind_ox2_.NewAthenaArray(4, nang, pmb->ncells3, NGHOST, pmb->ncells1);
     reflect_frac_ox2_.NewAthenaArray(4, nang, pmb->ncells3, NGHOST, pmb->ncells1);
-    for (int k = ks-NGHOST; k <= ke+NGHOST; ++k) {
+    for (int k = kl; k <= ku; ++k) {
       for (int dj = 0; dj < NGHOST; ++dj) {
         int j_g = je + 1 + dj;
         int j_a = je - dj;
-        for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+        for (int i = il; i <= iu; ++i) {
           Real x1 = pmb->pcoord->x1v(i);
           Real x2_g = pmb->pcoord->x2v(j_g);
           Real x2_a = pmb->pcoord->x2v(j_a);
@@ -387,8 +393,8 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
     for (int dk = 0; dk < NGHOST; ++dk) {
       int k_g = ks - NGHOST + dk;
       int k_a = ks + NGHOST - 1 - dk;
-      for (int j = js-NGHOST; j <= je+NGHOST; ++j) {
-        for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+      for (int j = jl; j <= ju; ++j) {
+        for (int i = il; i <= iu; ++i) {
           Real x1 = pmb->pcoord->x1v(i);
           Real x2 = pmb->pcoord->x2v(j);
           Real x3_g = pmb->pcoord->x3v(k_g);
@@ -452,8 +458,8 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
     for (int dk = 0; dk < NGHOST; ++dk) {
       int k_g = ke + 1 + dk;
       int k_a = ke - dk;
-      for (int j = js-NGHOST; j <= je+NGHOST; ++j) {
-        for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+      for (int j = jl; j <= ju; ++j) {
+        for (int i = il; i <= iu; ++i) {
           Real x1 = pmb->pcoord->x1v(i);
           Real x2 = pmb->pcoord->x2v(j);
           Real x3_g = pmb->pcoord->x3v(k_g);
@@ -518,10 +524,10 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
 
   // Calculate north transformation
   if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) {
-    for (int k = ks-NGHOST; k <= ke+NGHOST; ++k) {
+    for (int k = kl; k <= ku; ++k) {
       for (int dj = 0; dj < NGHOST; ++dj) {
         int j = js - NGHOST + dj;
-        for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+        for (int i = il; i <= iu; ++i) {
           Real x1 = pmb->pcoord->x1v(i);
           Real x2 = pmb->pcoord->x2v(j);
           Real x3 = pmb->pcoord->x3v(k);
@@ -579,10 +585,10 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
 
   // Calculate south transformation
   if (pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
-    for (int k = ks-NGHOST; k <= ke+NGHOST; ++k) {
+    for (int k = kl; k <= ku; ++k) {
       for (int dj = 0; dj < NGHOST; ++dj) {
         int j = je + 1 + dj;
-        for (int i = is-NGHOST; i <= ie+NGHOST; ++i) {
+        for (int i = il; i <= iu; ++i) {
           Real x1 = pmb->pcoord->x1v(i);
           Real x2 = pmb->pcoord->x2v(j);
           Real x3 = pmb->pcoord->x3v(k);
