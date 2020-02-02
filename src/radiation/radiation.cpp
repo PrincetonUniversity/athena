@@ -1540,43 +1540,59 @@ void Radiation::CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u
     for (int j = js; j <= je; ++j) {
       pmy_block->pcoord->CellMetric(k, j, is, ie, g, gi);
       for (int i = is; i <= ie; ++i) {
-
-        // Calculate contravariant time component of isotropic radiation frame velocity
-        Real temp_a = g(I00,i);
-        Real temp_b = 2.0 * (g(I01,i) * u1 + g(I02,i) * u2 + g(I03,i) * u3);
-        Real temp_c = g(I11,i) * SQR(u1) + 2.0 * g(I12,i) * u1 * u2
-          + 2.0 * g(I13,i) * u1 * u3 + g(I22,i) * SQR(u2) + 2.0 * g(I23,i) * u2 * u3
-          + g(I33,i) * SQR(u3) + 1.0;
-        Real temp_d = std::max(SQR(temp_b) - 4.0 * temp_a * temp_c, 0.0);
-        Real u0 =
-            (-temp_b - std::sqrt(temp_d)) / (2.0 * temp_a);
-
-        // Calculate covariant radiation velocity
-        Real u_0, u_1, u_2, u_3;
-        pmy_block->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2,
-            &u_3);
-
-        // Set conserved quantity at each angle, tracking energy density
-        Real energy_sum = 0.0;
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m);
-            Real u_n = u_0 * nmu_(0,l,m,k,j,i) + u_1 * nmu_(1,l,m,k,j,i)
-                + u_2 * nmu_(2,l,m,k,j,i) + u_3 * nmu_(3,l,m,k,j,i);
-            Real ii = 1.0 / SQR(SQR(-u_n));
-            cons_out(lm,k,j,i) = n0_n_mu_(0,l,m,k,j,i) * ii;
-            energy_sum += SQR(nmu_(0,l,m,k,j,i)) * ii * solid_angle(l,m);
-          }
-        }
-
-        // Normalize conserved quantities
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m);
-            cons_out(lm,k,j,i) *= energy / energy_sum;
-          }
-        }
+        CalculateRadiationInCell(energy, u1, u2, u3, k, j, i, g, cons_out);
       }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for calculating conserved intensity corresponding energy density and velocity
+// Inputs:
+//   energy: coordinate-frame energy density
+//   u1, u2, u3: contravariant 4-velocity components of isotropic radiation frame
+//   k, j, i: indices for cell to set
+//   g: covariant metric
+// Outputs:
+//   cons_out: conserved values (n^0 n_0 I) set in given cell
+
+void Radiation::CalculateRadiationInCell(Real energy, Real u1, Real u2, Real u3, int k,
+    int j, int i, const AthenaArray<Real> &g, AthenaArray<Real> &cons_out) {
+
+  // Calculate contravariant time component of isotropic radiation frame velocity
+  Real temp_a = g(I00,i);
+  Real temp_b = 2.0 * (g(I01,i) * u1 + g(I02,i) * u2 + g(I03,i) * u3);
+  Real temp_c = g(I11,i) * SQR(u1) + 2.0 * g(I12,i) * u1 * u2
+    + 2.0 * g(I13,i) * u1 * u3 + g(I22,i) * SQR(u2) + 2.0 * g(I23,i) * u2 * u3
+    + g(I33,i) * SQR(u3) + 1.0;
+  Real temp_d = std::max(SQR(temp_b) - 4.0 * temp_a * temp_c, 0.0);
+  Real u0 =
+      (-temp_b - std::sqrt(temp_d)) / (2.0 * temp_a);
+
+  // Calculate covariant radiation velocity
+  Real u_0, u_1, u_2, u_3;
+  pmy_block->pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2,
+      &u_3);
+
+  // Set conserved quantity at each angle, tracking energy density
+  Real energy_sum = 0.0;
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = AngleInd(l, m);
+      Real u_n = u_0 * nmu_(0,l,m,k,j,i) + u_1 * nmu_(1,l,m,k,j,i)
+          + u_2 * nmu_(2,l,m,k,j,i) + u_3 * nmu_(3,l,m,k,j,i);
+      Real ii = 1.0 / SQR(SQR(-u_n));
+      cons_out(lm,k,j,i) = n0_n_mu_(0,l,m,k,j,i) * ii;
+      energy_sum += SQR(nmu_(0,l,m,k,j,i)) * ii * solid_angle(l,m);
+    }
+  }
+
+  // Normalize conserved quantities
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = AngleInd(l, m);
+      cons_out(lm,k,j,i) *= energy / energy_sum;
     }
   }
   return;

@@ -114,12 +114,12 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize fluid
-  int kl = ks - (ncells3 > 1 ? NGHOST : 0);
-  int ku = ke + (ncells3 > 1 ? NGHOST : 0);
-  int jl = js - (ncells2 > 1 ? NGHOST : 0);
-  int ju = je + (ncells2 > 1 ? NGHOST : 0);
   int il = is - NGHOST;
   int iu = ie + NGHOST;
+  int jl = js - (ncells2 > 1 ? NGHOST : 0);
+  int ju = je + (ncells2 > 1 ? NGHOST : 0);
+  int kl = ks - (ncells3 > 1 ? NGHOST : 0);
+  int ku = ke + (ncells3 > 1 ? NGHOST : 0);
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
       for (int i = il; i <= iu; ++i) {

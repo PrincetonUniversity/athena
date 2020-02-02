@@ -1,0 +1,115 @@
+<comment>
+problem   = sinusoidal perturbations in GR (flat spacetime)
+configure = -g -b -r --prob gr_rad_linear_wave --coord minkowski -hdf5
+
+<job>
+problem_id = linear_wave  # name of run
+
+<time>
+nlim       = -1                 # maximum number of timesteps
+tlim       = 6.388135993415408  # maximum time to run
+cfl_number = 0.9                # fraction of Courant condition
+integrator = vl2                # time integration algorithm
+xorder     = 2                  # order of spatial reconstruction
+ncycle_out = 1                  # interval for stdout summary info
+
+<output1>
+file_type = hdf5           # output format
+variable  = prim           # choice of variables to output
+id        = prim           # name of output files
+dt        = 0.6388135993415408  # output cadence
+xdmf      = 0              # whether to include auxiliary metadata file
+
+<output2>
+file_type = hdf5                # output format
+variable  = rad_coord           # choice of variables to output
+id        = rad                 # name of output files
+dt        = 0.6388135993415408  # output cadence
+xdmf      = 0                   # whether to include auxiliary metadata file
+
+<mesh>
+nx1    = 128       # number of cells in x-direction
+x1min  = 0.0       # minimum x
+x1max  = 1.0       # maximum x
+ix1_bc = periodic  # left boundary
+ox1_bc = periodic  # right boundary
+
+nx2    = 1         # number of cells in y-direction
+x2min  = -0.5      # minimum y
+x2max  = 0.5       # maximum y
+ix2_bc = periodic  # front boundary
+ox2_bc = periodic  # back boundary
+
+nx3    = 1         # number of cells in z-direction
+x3min  = -0.5      # minimum z
+x3max  = 0.5       # maximum z
+ix3_bc = periodic  # bottom boundary
+ox3_bc = periodic  # top boundary
+
+refinement = none  # whether to use mesh refinement
+
+num_threads = 1  # number of threads per process
+
+<meshblock>
+nx1 = 128  # block size in x-direction
+nx2 = 1    # block size in y-direction
+nx3 = 1    # block size in z-direction
+
+<coord>
+rad_tetrad = cartesian  # choice of radiation tetrad
+
+<hydro>
+gamma  = 1.6666666666666667  # ratio of specific heats Gamma
+dfloor = 1.0e-8              # absolute density floor
+pfloor = 1.0e-8              # absolute gas pressure floor
+
+<radiation>
+n_polar     = 5                      # number of polar angles in direction space
+n_azimuthal = 16                     # number of azimuthal angles in direction space
+coupled     = true                   # flag indicating radiation is coupled to matter
+planck      = false                  # flag indicating Planck mean opacity is also used
+length_cgs  = 2.417991949450521e-14  # code unit of length, in cm
+density_cgs = 1.18313207155136e+17   # code unit of density, in g/cm^3
+mol_weight  = 1.0                    # molecular weight of gas, in proton masses
+kappa_cgs   = 0.006991042108927907   # opacity, in cm^2/g
+
+<problem>
+rho   = 1.0                 # background gas density
+pgas  = 1.4422495703074083  # background gas pressure
+ux    = 0.0                 # background gas 4-velocity in x-direction
+uy    = 0.0                 # background gas 4-velocity in y-direction
+uz    = 0.0                 # background gas 4-velocity in z-direction
+bbx   = 1.2009369551760027  # background magnetic field in x-direction
+bby   = 1.2009369551760027  # background magnetic field in y-direction
+bbz   = 0.0                 # background magnetic field in z-direction
+erad  = 4.3267487109222245  # background radiation energy density
+fxrad = 0.0                 # background radiation flux in x-direction
+fyrad = 0.0                 # background radiation flux in y-direction
+fzrad = 0.0                 # background radiation flux in z-direction
+
+drho_real   = 0.980516     # real part of density perturbation
+drho_imag   = 0.0          # imaginary part of density perturbation
+dpgas_real  = 0.00847293   # real part of pressure perturbation
+dpgas_imag  = -0.00115935  # imaginary part of pressure perturbation
+dux_real    = 0.15349      # real part of x-velocity perturbation
+dux_imag    = -0.0145452   # imaginary part of x-velocity perturbation
+duy_real    = -0.0508806   # real part of y-velocity perturbation
+duy_imag    = -0.00831436  # imaginary part of y-velocity perturbation
+duz_real    = 0.0          # real part of z-velocity perturbation
+duz_imag    = 0.0          # imaginary part of z-velocity perturbation
+dbbx_real   = 0.0          # real part of x-field perturbation
+dbbx_imag   = 0.0          # imaginary part of x-field perturbation
+dbby_real   = 0.105954     # real part of y-field perturbation
+dbby_imag   = 0.00679059   # imaginary part of y-field perturbation
+dbbz_real   = 0.0          # real part of z-field perturbation
+dbbz_imag   = 0.0          # imaginary part of z-field perturbation
+derad_real  = 0.0230965    # real part of energy density perturbation
+derad_imag  = -0.0135388   # imaginary part of energy density perturbation
+dfxrad_real = -0.00127282  # real part of x-flux perturbation
+dfxrad_imag = -0.00229245  # imaginary part of x-flux perturbation
+dfyrad_real = 7.94614e-6   # real part of y-flux perturbation
+dfyrad_imag = -6.76842e-5  # imaginary part of y-flux perturbation
+dfzrad_real = 0.0          # real part of z-flux perturbation
+dfzrad_imag = 0.0          # imaginary part of z-flux perturbation
+
+delta = 1.0e-4  # amplitude of perturbation

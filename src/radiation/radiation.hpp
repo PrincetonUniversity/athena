@@ -142,6 +142,8 @@ public:
       bool cylindrical = false, bool spherical = false);
   void CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u3,
       AthenaArray<Real> &cons_out);
+  void CalculateRadiationInCell(Real energy, Real u1, Real u2, Real u3, int k, int j,
+      int i, const AthenaArray<Real> &g, AthenaArray<Real> &cons_out);
   void SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pcoord, int il,
       int iu, int jl, int ju, int kl, int ku);
 
