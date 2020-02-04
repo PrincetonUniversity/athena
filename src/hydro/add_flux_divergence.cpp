@@ -84,7 +84,7 @@ void Hydro::AddFluxDivergence(const Real wght, AthenaArray<Real> &u_out) {
       for (int n=0; n<NHYDRO; ++n) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          u_out(n,k,j,i) -= wght*(pmb->pmy_mesh->dt)*dflx(n,i)/vol(i);
+          u_out(n,k,j,i) -= wght*dflx(n,i)/vol(i);
         }
       }
     }

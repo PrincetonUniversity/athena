@@ -903,16 +903,15 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
 // Function for updating conserved quantities
 // Inputs:
 //   prim_in: primitive intensity
-//   weight: fraction of full timestep
+//   dt: timestep for stage of integration
 // Outputs:
 //   cons_out: conserved values updated
 
-void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Real weight,
+void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Real dt,
     AthenaArray<Real> &cons_out) {
 
   // Extract Coordinates and timestep
   Coordinates *pcoord = pmy_block->pcoord;
-  Real dt = pmy_block->pmy_mesh->dt;
 
   // Calculate angle index range (including some but not all unnecessary ghost zones)
   int lms = AngleInd(zs, ps);
@@ -964,7 +963,7 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
       pcoord->CellVolume(k, j, is, ie, vol_);
       for (int lm = lms; lm <= lme; ++lm) {
         for (int i = is; i <= ie; ++i) {
-          cons_out(lm,k,j,i) -= weight * dt * flux_div_(lm,i) / vol_(i);
+          cons_out(lm,k,j,i) -= dt * flux_div_(lm,i) / vol_(i);
         }
       }
     }
@@ -1007,7 +1006,7 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
                 - zeta_length_m * flux_a[PSIDIR](lm_cl,k,j,i);
 
             // Update conserved variables
-            cons_out(lm,k,j,i) -= weight * dt * flux_div / omega;
+            cons_out(lm,k,j,i) -= dt * flux_div / omega;
           }
         }
       }

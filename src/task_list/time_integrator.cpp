@@ -973,8 +973,8 @@ TaskStatus TimeIntegratorTaskList::IntegrateRad(MeshBlock *pmb, int stage) {
     else
       prad->WeightedAve(prad->cons, prad->cons1, prad->cons2, ave_wghts);
 
-    const Real wght = stage_wghts[stage-1].beta;
-    prad->AddFluxDivergenceToAverage(prad->prim, wght, prad->cons);
+    const Real weight = stage_wghts[stage-1].beta * pmb->pmy_mesh->dt;
+    prad->AddFluxDivergenceToAverage(prad->prim, weight, prad->cons);
 
     // Hardcode an additional flux divergence weighted average for the penultimate
     // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
@@ -984,10 +984,11 @@ TaskStatus TimeIntegratorTaskList::IntegrateRad(MeshBlock *pmb, int stage) {
       ave_wghts[1] = 0.0;
       ave_wghts[2] = 0.0;
       Real beta = 0.063692468666290; // F(u^(3)) coeff.
+      const Real weight = beta * pmb->pmy_mesh->dt;
       // writing out to u2 register
       prad->WeightedAve(prad->cons2, prad->cons1, prad->cons2, ave_wghts);
 
-      prad->AddFluxDivergenceToAverage(prad->prim, beta, prad->cons2);
+      prad->AddFluxDivergenceToAverage(prad->prim, weight, prad->cons2);
     }
     return TaskStatus::next;
   }
