@@ -42,12 +42,12 @@ Real rho, pgas;               // initial thermodynamic variables for fluid
 Real ux, uy, uz;              // initial spatial components of fluid 4-velocity
 Real e_rad;                   // initial coordinate-frame radiation energy density
 Real ux_rad, uy_rad, uz_rad;  // initial spatial components of isotropic radiation frame
+Real kappa;                   // constant absorption opacity
 Real step_limit;              // factor to use in limiting timestep
 }  // namespace
 
 // Declarations
 Real CouplingTimestep(MeshBlock *pmb);
-void TestOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim);
 
 //----------------------------------------------------------------------------------------
 // Function for preparing Mesh
@@ -83,23 +83,13 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   ux_rad = pin->GetReal("problem", "ux_rad");
   uy_rad = pin->GetReal("problem", "uy_rad");
   uz_rad = pin->GetReal("problem", "uz_rad");
+  kappa = pin->GetReal("problem", "kappa");
   step_limit = pin->GetReal("problem", "step_limit");
 
   // Enroll timestep limiter
   if (step_limit > 0.0) {
     EnrollUserTimeStepFunction(CouplingTimestep);
   }
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function for preparing MeshBlock
-// Inputs:
-//   pin: input parameters (unused)
-// Outputs: (none)
-
-void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
-  prad->EnrollOpacityFunction(TestOpacity);
   return;
 }
 
@@ -136,6 +126,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Initialize radiation
   prad->CalculateConstantRadiation(e_rad, ux_rad, uy_rad, uz_rad, prad->cons);
+
+  // Initialize opacity (never changed)
+  for (int k = kl; k <= ku; ++k) {
+    for (int j = jl; j <= ju; ++j) {
+      for (int i = il; i <= iu; ++i) {
+        prad->opacity(OPAS,k,j,i) = 0.0;
+        prad->opacity(OPAA,k,j,i) = kappa;
+        prad->opacity(OPAP,k,j,i) = 0.0;
+      }
+    }
+  }
   return;
 }
 
@@ -163,7 +164,7 @@ Real CouplingTimestep(MeshBlock *pmb)
           Real rho = pmb->phydro->w(IDN,k,j,i);
           Real pgas = pmb->phydro->w(IPR,k,j,i);
           Real erad = pmb->prad->moments_fluid(0,k,j,i);
-          Real k_a = pmb->prad->opacity(OPAA,k,j,i);
+          Real k_a = rho * pmb->prad->opacity(OPAA,k,j,i);
 
           // Calculate timescale
           Real ugas = pgas / (gamma_adi - 1.0);
@@ -182,50 +183,4 @@ Real CouplingTimestep(MeshBlock *pmb)
     }
   }
   return dt_min * step_limit;
-}
-
-//----------------------------------------------------------------------------------------
-// Opacity Function
-// Inputs:
-//   pmb: pointer to MeshBlock
-//   prim: primitive variables
-// Outputs: (none)
-// Notes:
-//   Sets prad->opacity.
-
-void TestOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim)
-{
-  // Prepare index bounds
-  int il = pmb->is - NGHOST;
-  int iu = pmb->ie + NGHOST;
-  int jl = pmb->js;
-  int ju = pmb->je;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-  if (ju > jl){
-    jl -= NGHOST;
-    ju += NGHOST;
-  }
-  if (ku > kl){
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
-
-  // Set coefficients for electron scattering
-  Real kappas = 0.0;
-  Real kappaa = pmb->prad->kappa;
-
-  // Calculate opacity
-  Radiation *prad = pmb->prad;
-  for (int k = kl; k <= ku; ++k) {
-    for (int j = jl; j <= ju; ++j) {
-      for (int i = il; i <= iu; ++i) {
-        Real rho = prim(IDN,k,j,i);
-        prad->opacity(OPAS,k,j,i) = rho * kappas;
-        prad->opacity(OPAA,k,j,i) = rho * kappaa;
-        prad->opacity(OPAP,k,j,i) = rho * kappaa;
-      }
-    }
-  }
-  return;
 }

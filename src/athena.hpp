@@ -145,8 +145,8 @@ enum TriangleIndex {T00=0, T10=1, T11=2, T20=3, T21=4, T22=5, T30=6, T31=7, T32=
                     NTRIANGULAR=10};
 
 // array indices for radiation
-enum AngleDirection {ZETADIR, PSIDIR};  // meridional, azimuthal
-enum OpacityIndex {OPAS, OPAA, OPAP};   // scattering, Rosseland, Planck
+enum AngleDirection {ZETADIR, PSIDIR};       // meridional, azimuthal
+enum OpacityIndex {OPAS, OPAA, OPAP, NOPA};  // scattering, absorption, Planck - Rosseland
 
 // needed for arrays dimensioned over grid directions
 // enumerator type only used in Mesh::EnrollUserMeshGenerator()

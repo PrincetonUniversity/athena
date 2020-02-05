@@ -44,6 +44,7 @@ Real ux, uy, uz;                // background velocity
 Real bbx, bby, bbz;             // background magnetic field
 Real erad;                      // background radiation energy density
 Real fxrad, fyrad, fzrad;       // background radiation flux
+Real kappa_a, kappa_s;          // absorption and scattering opacities
 Real drho_real, drho_imag;      // density perturbation
 Real dpgas_real, dpgas_imag;    // pressure perturbation
 Real dux_real, dux_imag;        // x-velocity perturbation
@@ -97,6 +98,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   bby = pin->GetReal("problem", "bby");
   bbz = pin->GetReal("problem", "bbz");
   erad = pin->GetReal("problem", "erad");
+  kappa_a = pin->GetReal("problem", "kappa_a");
+  kappa_s = pin->GetReal("problem", "kappa_s");
   fxrad = pin->GetReal("problem", "fxrad");
   fyrad = pin->GetReal("problem", "fyrad");
   fzrad = pin->GetReal("problem", "fzrad");
@@ -239,6 +242,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
+
+  // Initialize opacity
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      for (int i = is; i <= ie; ++i) {
+        prad->opacity(OPAA,k,j,i) = kappa_a;
+        prad->opacity(OPAS,k,j,i) = kappa_s;
+        prad->opacity(OPAP,k,j,i) = 0.0;
+      }
+    }
+  }
   return;
 }
 
@@ -250,6 +264,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Outputs: (none)
 // Notes:
 //   Sets prad->opacity.
+//   Keeps absorption coefficient, rather than opacity, constant in time.
 
 void Opacity(MeshBlock *pmb, const AthenaArray<Real> &prim)
 {
@@ -263,16 +278,12 @@ void Opacity(MeshBlock *pmb, const AthenaArray<Real> &prim)
 
   // Set coefficients
   Radiation *prad = pmb->prad;
-  Real kappaa = prad->kappa;
-  Real kappas = 0.0;
-
-  // Calculate opacity
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
       for (int i = il; i <= iu; ++i) {
-        Real rho = prim(IDN,k,j,i);
-        prad->opacity(OPAA,k,j,i) = rho * kappaa;
-        prad->opacity(OPAS,k,j,i) = rho * kappas;
+        Real rho_new = prim(IDN,k,j,i);
+        prad->opacity(OPAA,k,j,i) = kappa_a * rho / rho_new;
+        prad->opacity(OPAS,k,j,i) = kappa_s * rho / rho_new;
       }
     }
   }

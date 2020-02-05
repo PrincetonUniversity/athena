@@ -41,6 +41,7 @@ Real rho, pgas;               // initial thermodynamic variables for fluid
 Real ux, uy, uz;              // initial spatial components of fluid 4-velocity
 Real x0, t0;                  // initial location of peak and time since delta function
 Real e_rad_back, e_rad_peak;  // initial radiation energy density parameters
+Real kappa;                   // constant scattering opacity
 }  // namespace
 
 //----------------------------------------------------------------------------------------
@@ -77,6 +78,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   t0 = pin->GetReal("problem", "t0");
   e_rad_back = pin->GetReal("problem", "e_rad_back");
   e_rad_peak = pin->GetReal("problem", "e_rad_peak");
+  kappa = pin->GetReal("problem", "kappa");
   return;
 }
 
@@ -104,7 +106,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is, ie, js, je, ks, ke);
 
   // Initialize radiation
-  Real kappa = prad->kappa;
   Real dd = 1.0 / (3.0 * kappa * rho);
   for (int i = is; i <= ie; ++i) {
     Real x = pcoord->x1v(i);
@@ -124,7 +125,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       for (int i = is; i <= ie; ++i) {
-        prad->opacity(OPAS,k,j,i) = rho * kappa;
+        prad->opacity(OPAS,k,j,i) = kappa;
         prad->opacity(OPAA,k,j,i) = 0.0;
         prad->opacity(OPAP,k,j,i) = 0.0;
       }

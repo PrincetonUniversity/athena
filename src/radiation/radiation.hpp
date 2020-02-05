@@ -36,7 +36,7 @@ public:
   // Flags
   bool coupled_to_matter;
   bool source_terms_defined;
-  bool using_planck_mean;
+  bool moment_fix;
 
   // Parameters
   int nzeta;     // number of polar radiation angles in active zone
@@ -60,28 +60,11 @@ public:
   Real arad_cgs = 4.0 * sigma_sb_cgs / c_cgs;  // radiation constant in erg/(cm^3*K^4)
 
   // Physical constants in code units
-  Real m_p;       // proton mass in code units
-  Real k_b;       // Boltzmann constant in code units
-  Real sigma_sb;  // Stefan-Boltzmann constant in code units
-  Real arad;      // radiation constant in code units
+  Real arad;  // radiation constant in code units
 
   // User-specified units
-  Real length_cgs;   // code unit of length in cm
   Real density_cgs;  // code unit of density in g/cm^3
   Real mol_weight;   // molecular weight of gas in proton masses
-
-  // Inferred units
-  Real time_cgs;         // code unit of time in s
-  Real pressure_cgs;     // code unit of pressure (and energy density) in dyne/cm^2
-  Real temperature_cgs;  // code unit of temperature in K
-  Real intensity_cgs;    // code unit of intensity I in erg/(cm^2*s*sr)
-  Real opacity_cgs;      // code unit of opacity in cm^2/g
-
-  // Emission, absorption, and scattering coefficients in CGS
-  Real kappa_cgs;  // opacity in cm^2/g
-
-  // Emission, absorption, and scattering coefficients in code units
-  Real kappa;  // opacity in code units
 
   // Data arrays
   AthenaArray<Real> zetaf;           // face-centered polar radiation angles

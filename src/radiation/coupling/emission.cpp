@@ -80,12 +80,12 @@ void Radiation::Coupling(const AthenaArray<Real> &prim_hydro,
       weight_(n) = omega(n,i);
     }
 
-    // Extract opacity
-    Real sigma_s = opacity(OPAS,k,j,i);
-    Real sigma_a = opacity(OPAA,k,j,i);
+    // Extract absorption coefficients
+    Real sigma_s = rho * opacity(OPAS,k,j,i);
+    Real sigma_a = rho * opacity(OPAA,k,j,i);
     Real sigma_p = 0.0;
-    if (using_planck_mean) {
-      sigma_p = opacity(OPAP,k,j,i);
+    if (moment_fix) {
+      sigma_p = rho * opacity(OPAP,k,j,i);
     }
     Real dtaucsigmaa = dtau(i) * sigma_a;
     Real dtaucsigmas = dtau(i) * sigma_s;

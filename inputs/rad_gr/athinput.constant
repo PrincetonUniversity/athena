@@ -64,24 +64,25 @@ dfloor = 1.0e-8              # absolute density floor
 pfloor = 1.0e-8              # absolute gas pressure floor
 
 <radiation>
-n_polar     = 5       # number of polar angles in direction space
-n_azimuthal = 16      # number of azimuthal angles in direction space
-coupled     = true    # flag indicating whether radiation is coupled to matter
-planck      = true    # flag indicating whether Planck mean opacity is also used
-length_cgs  = 1.0     # code unit of length, in cm
-density_cgs = 1.0     # code unit of density, in g/cm^3
-mol_weight  = 1.0     # molecular weight of gas, in proton masses
-kappa_cgs   = 1.0e-3  # opacity, in cm^2/g
+n_polar     = 5      # number of polar angles in direction space
+n_azimuthal = 16     # number of azimuthal angles in direction space
+coupled     = true   # flag indicating radiation is coupled to matter
+moment_fix  = false  # flag indicating two absorption opacity means are used
+density_cgs = 1.0    # code unit of density, in g/cm^3
+mol_weight  = 1.0    # molecular weight of gas, in proton masses
 
 <problem>
-rho        = 1.0     # initial gas density
-pgas       = 1.0e-4  # initial gas pressure
-ux         = 1.0     # initial gas 4-velocity in x-direction
-uy         = 1.0     # initial gas 4-velocity in y-direction
-uz         = 0.0     # initial gas 4-velocity in z-direction
-e_rad      = 1.0e-4  # initial radiation energy density
-ux_rad     = 1.0     # initial radiation isotropic frame 4-velocity in x-direction
-uy_rad     = -1.0    # initial radiation isotropic frame 4-velocity in y-direction
-uz_rad     = 0.0     # initial radiation isotropic frame 4-velocity in z-direction
-step_limit = 0.0     # if positive, used to limit step size to this factor times time for
-                     # internal energy to change by order unity
+rho    = 1.0     # initial gas density
+pgas   = 1.0e-4  # initial gas pressure
+ux     = 1.0     # initial gas 4-velocity in x-direction
+uy     = 1.0     # initial gas 4-velocity in y-direction
+uz     = 0.0     # initial gas 4-velocity in z-direction
+e_rad  = 1.0e-4  # initial radiation energy density
+ux_rad = 1.0     # initial radiation isotropic frame 4-velocity in x-direction
+uy_rad = -1.0    # initial radiation isotropic frame 4-velocity in y-direction
+uz_rad = 0.0     # initial radiation isotropic frame 4-velocity in z-direction
+
+kappa = 1.0e-3  # absorption opacity, in code units rather than cm^2/g
+
+step_limit = 0.0  # if positive, used to limit step size to this factor times time for
+                  # internal energy to change by order unity
