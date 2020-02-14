@@ -37,14 +37,11 @@
 #include "../eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../globals.hpp"
+#include "../utils/string_utils.hpp" //split() and trim()
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
 
-//function to split a string into a vector
-static std::vector<std::string> split(std::string str, char delimiter);
-//function to get rid of white space leading/trailing a string
-static void trim(std::string &s);
 //function to read data field from vtk file
 static void readvtk(MeshBlock *mb, std::string filename, std::string field,
                     int component, AthenaArray<Real> &data, int isjoinedvtk);
@@ -108,8 +105,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   std::string vtkfile0 = pin->GetString("problem", "vtkfile");//id0 file
   std::string str_scalers = pin->GetString("problem", "scalers");
   std::string str_vectors = pin->GetString("problem", "vectors");
-  std::vector<std::string> scaler_fields = split(str_scalers, ',');
-  std::vector<std::string> vector_fields = split(str_vectors, ',');
+  std::vector<std::string> scaler_fields = StringUtils::split(str_scalers, ',');
+  std::vector<std::string> vector_fields = StringUtils::split(str_vectors, ',');
   
   if (isjoinedvtk != 0) {
     //for joined vtk file, read with processor 0, and broadcast
@@ -365,39 +362,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   return;
 }
 
-
-//======================================================================================
-//! \fn static std::vector<std::string> split(std::string str, char delimiter)
-//  \brief split a string, and store sub strings in a vector
-//======================================================================================
-static std::vector<std::string> split(std::string str, char delimiter) {
-  std::vector<std::string> internal;
-  std::stringstream ss(str); // Turn the string into a stream.
-  std::string tok;
-  
-  while(getline(ss, tok, delimiter)) {
-    trim(tok);
-    internal.push_back(tok);
-  }
-  
-  return internal;
-}
-
-//======================================================================================
-//! \fn static void trim(std::string &s)
-//  \brief get rid of white spaces leading and trailing a string
-//======================================================================================
-static void trim(std::string &s)
-{
-  size_t p = s.find_first_not_of(" \t\n");
-  s.erase(0, p);
-
-  p = s.find_last_not_of(" \t\n");
-  if (p != std::string::npos) {
-    s.erase(p+1);
-  }
-}
-
 //======================================================================================
 //! \fn static void readvtk(MeshBlock *, std::string , std::string,
 //                          int , AthenaArray<Real> &, int)
@@ -442,7 +406,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   //get header
   fgets(cline,256,fp);
   line.assign(cline);
-  trim(line);
+  StringUtils::trim(line);
   if (SHOW_OUTPUT) {
     std::cout << line << std::endl;
   }
@@ -457,7 +421,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   //get comment field
   fgets(cline,256,fp);
   line.assign(cline);
-  trim(line);
+  StringUtils::trim(line);
   if (SHOW_OUTPUT) {
     std::cout << line << std::endl;
   }
@@ -465,7 +429,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   //get BINARY or ASCII
   fgets(cline,256,fp);
   line.assign(cline);
-  trim(line);
+  StringUtils::trim(line);
   if (SHOW_OUTPUT) {
     std::cout << line << std::endl;
   }
@@ -479,7 +443,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   //get DATASET STRUCTURED_POINTS or DATASET UNSTRUCTURED_GRID
   fgets(cline,256,fp);
   line.assign(cline);
-  trim(line);
+  StringUtils::trim(line);
   if (SHOW_OUTPUT) {
     std::cout << line << std::endl;
   }
