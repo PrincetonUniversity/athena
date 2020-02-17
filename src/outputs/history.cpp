@@ -184,7 +184,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     std::string fname;
     fname.assign(output_params.file_basename);
     fname.append(".hst");
-    PassiveScalars *psclr = pmb->pscalars;
+    PassiveScalars *psclr = pm->pblock->pscalars;
 
     // open file for output
     FILE *pfile;

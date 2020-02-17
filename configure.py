@@ -201,7 +201,7 @@ parser.add_argument('--fftw_path',
 # --chemistry argument
 parser.add_argument('--chemistry',
     default=None,
-    choices=["gow16", "H2"],
+    choices=["gow16", "H2", "kida"],
     help='select chemical network')
 
 # -radiation argument

@@ -1,0 +1,5 @@
+! the number of species must be specified in compilation time (NSCALARS)
+!          charge    enumber of atoms
+! species    e  H  He C  N  O  Si S  Fe Na Mg Cl P  F 
+H            0  1  0  0  0  0  0  0  0  0  0  0  0  0 
+H2           0  2  0  0  0  0  0  0  0  0  0  0  0  0 

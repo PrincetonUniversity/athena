@@ -34,7 +34,9 @@ namespace StringUtils {
 
     while(getline(ss, tok, delimiter)) {
       trim(tok);
-      internal.push_back(tok);
+      if (!tok.empty()) { 
+        internal.push_back(tok);
+      }
     }
 
     return internal;
