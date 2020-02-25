@@ -1,5 +1,5 @@
-#ifndef KIDA_SPECIES_H_
-#define KIDA_SPECIES_H_
+#ifndef KIDA_REACTIONS_H_
+#define KIDA_REACTIONS_H_
 
 //======================================================================================
 // Athena++ astrophysical MHD code
@@ -16,19 +16,25 @@
 //c++ header
 #include <sstream>    // stringstream
 #include <string>     // string
+#include <vector>     // vector container
 
-class KidaSpecies{
+class KidaReactions{
   friend class ChemNetwork;
-  friend class KidaNetwork;
   public:
-    KidaSpecies(std::string line, int index);
-    //starts form zero, matches the index in species name in ChemNetwork
-    const int index;
-    std::string name;
+    KidaReactions(std::string line);
   private:
-    static const int natom_ = 13;
-    int charge_;
-    int atom_count_[natom_];
+    std::vector<std::string> reactants_;
+    std::vector<std::string> products_;
+
+    int id_; //id number, has to be unique but doesn't have to be in order
+
+    int itype_; //type of reaction
+    int formula_; //type of formula
+
+    //reaction rates coefficients;
+    Real alpha_;
+    Real beta_;
+    Real gamma_;
 };
 
-#endif //KIDA_SPECIES_H_
+#endif //KIDA_REACTIONS_H_

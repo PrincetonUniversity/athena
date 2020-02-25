@@ -11,11 +11,15 @@
 //======================================================================================
 //c++ headers
 #include <string> //std::string
+#include <vector> // vector container
+#include <map>    //map
 
 // Athena++ classes headers
 #include "network.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
+#include "../utils/kida_species.hpp"
+#include "../utils/kida_reactions.hpp"
 
 //! \class ChemNetwork
 //  \brief Chemical Network that defines the reaction rates between species.
@@ -52,10 +56,16 @@ public:
 private:
   PassiveScalars *pmy_spec_;
 	MeshBlock *pmy_mb_;
+
+  std::map<std::string, int> ispec_map_;
   std::string network_dir_;
+  std::vector<KidaSpecies> species_;
+  std::vector<KidaReactions> reactions_;
+  int nr_; //number of reactions
 
   //physical quantities
 	Real xi_cr_; //primary CRIR in s-1 H-1, read from input file, default 2e-16.
+	Real zdg_; //dust and gas metallicity relative to solar, default 1.
 	Real nH_; //density, updated at InitializeNextStep from hydro variable
 
 	//units 
@@ -65,6 +75,30 @@ private:
 	Real unit_time_in_s_; //from length and velocity units
   //unit of energy density, in erg cm-3, from density and velocity units
   Real unit_E_in_cgs_; 
+
+  //reaction constants
+  //direct cosmic-ray ionization
+  int n_cr_;
+  std::vector<int> incr_;
+  std::vector<int> outcr1_;
+  std::vector<int> outcr2_;
+  std::vector<Real> kcr_base_;
+  std::vector<Real> kcr_;
+  //grain assisted reactions
+  int n_gr_;
+  std::vector<int> ingr1_;
+  std::vector<int> ingr2_;
+  std::vector<int> outgr_;
+  std::map<int, int> idmap_gr_;
+  std::vector<Real> kgr_;
+
+
+  //functions
+  void InitializeReactions(); //set up coefficients of reactions
+  void UpdateRates(const Real y[NSCALARS], const Real E); //reaction rates
+  void PrintProperties() const; //print out reactions and rates, for debug
+  void OutputRates(FILE *pf) const;//output reaction rates
+
 };
 
 #endif // KIDA_HPP

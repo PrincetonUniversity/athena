@@ -5,8 +5,8 @@
 ! err: Type of uncertainty : lognormal (logn) , normal (norm) , loguniform (logu) , uniform (unif)
 !
 ! itype: the type of reaction:
-! 1: direct CR ionization/dissociation 
-! 2: CR induced ionization/dissociation by UV photons emitted following H2 excitation.
+! 1: direct CR ionization/dissociation. Format A + CR -> B + C
+! 2: CR induced ionization/dissociation by UV photons emitted following H2 excitation. Format A + CRP -> B + C
 ! 3: FUV dissociation/ionization
 ! 4: Neutral-neutral (A + B → C + D), ion-neutral (A+ + B → C+ +D, A- + B → C- + D), anion-cation (A+ + B- → C + D) reactions and associative ionization (A + B → AB+ + e-)
 ! 5: Exchange reaction A+ + B → A + B+ and A+ + B- → A + B
@@ -24,7 +24,9 @@
 ! 4: ionpol1 
 ! 5: ionpol2 
 ! 6: Troe fall-off
-! ID: the number of reaction, the special rates are also set by this ID
+! 7: customized
+! ID: the number of reaction, the special rates are also set by this ID. ID has
+!     to be an unique integer (int type in c++), but doesn't have to match the number of the line or any order.
 ! ni: the number of (alpha, beta, gamma) in the downloaded network when several values are present in KIDA. 
 !
 ! r: Recommendation is the recommendation given by experts in KIDA. 
@@ -37,4 +39,4 @@
 ! only columns starts with "*" is used in our program, the temperature range is extrapolated.
 !   *Reactants 3x(s10+' ') + ' ' *Products 5x(s10+' ') + 2x' '                            *alpha     *beta      *gamma     F        g      err *itype Tmin  Tmax *frml  *ID ni r 
 H2         CR                     H          H                                             3.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1    1  1  1
-H          H                      H2                                                       0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  9  -9999   9999  4    2  0  1
+H          H                      H2                                                       0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  9  -9999   9999  7    2  0  1
