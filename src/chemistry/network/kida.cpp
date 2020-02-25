@@ -44,6 +44,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 	//number of species and a list of name of species
   pmy_spec_ = pmb->pscalars;
 	pmy_mb_ = pmb;
+  n_cr_ = 0;
+  n_gr_ = 0;
 
 	//set the parameters from input file
 	xi_cr_ = pin->GetOrAddReal("chemistry", "xi_cr", 2e-16);
@@ -140,7 +142,6 @@ void ChemNetwork::InitializeReactions() {
     pr = &reactions_[ir];
     //---------------- 1 - direct cosmic-ray ionization --------------
     if (pr->itype_ == 1) {
-      n_cr_ = 0;
       //check format of reaction 
       std::string in_spec; //input species
       if (pr->reactants_.size() == 2 && pr->products_.size() == 2
@@ -169,7 +170,6 @@ void ChemNetwork::InitializeReactions() {
 
     //-------------------- 9 - grain assisted reaction ----------------
     } else if (pr->itype_ == 9) {
-      n_gr_ = 0;
       //check format
       if (pr->reactants_.size() != 2 || pr->products_.size() != 1) {
         std::stringstream msg; 
