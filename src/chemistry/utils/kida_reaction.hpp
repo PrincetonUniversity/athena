@@ -1,5 +1,5 @@
-#ifndef KIDA_REACTIONS_H_
-#define KIDA_REACTIONS_H_
+#ifndef KIDA_REACTION_H_
+#define KIDA_REACTION_H_
 
 //======================================================================================
 // Athena++ astrophysical MHD code
@@ -18,10 +18,11 @@
 #include <string>     // string
 #include <vector>     // vector container
 
-class KidaReactions{
+class KidaReaction{
   friend class ChemNetwork;
   public:
-    KidaReactions(std::string line);
+    KidaReaction(std::string line);
+    void Print() const;
   private:
     std::vector<std::string> reactants_;
     std::vector<std::string> products_;
@@ -37,4 +38,4 @@ class KidaReactions{
     Real gamma_;
 };
 
-#endif //KIDA_REACTIONS_H_
+#endif //KIDA_REACTION_H_

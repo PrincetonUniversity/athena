@@ -19,7 +19,7 @@
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 #include "../utils/kida_species.hpp"
-#include "../utils/kida_reactions.hpp"
+#include "../utils/kida_reaction.hpp"
 
 //! \class ChemNetwork
 //  \brief Chemical Network that defines the reaction rates between species.
@@ -60,7 +60,7 @@ private:
   std::map<std::string, int> ispec_map_;
   std::string network_dir_;
   std::vector<KidaSpecies> species_;
-  std::vector<KidaReactions> reactions_;
+  std::vector<KidaReaction> reactions_;
   int nr_; //number of reactions
 
   //physical quantities
@@ -103,6 +103,7 @@ private:
   //functions
   void InitializeReactions(); //set up coefficients of reactions
   void UpdateRates(const Real y[NSCALARS], const Real E); //reaction rates
+  void CheckReaction(KidaReaction reaction);
   void PrintProperties() const; //print out reactions and rates, for debug
   void OutputRates(FILE *pf) const;//output reaction rates
 

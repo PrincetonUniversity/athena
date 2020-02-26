@@ -13,17 +13,17 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file kida_reactions.cpp
-//  \brief implementation of functions in class KidaReactions
+//! \file kida_reaction.cpp
+//  \brief implementation of functions in class KidaReaction
 //======================================================================================
-#include "kida_reactions.hpp"
+#include "kida_reaction.hpp"
 #include "../../utils/string_utils.hpp"
 #include <iostream>   // endl
 #include <stdexcept>  // std::runtime_error()
 #include <string>
 #include <stdio.h> //sscanf()
 
-KidaReactions::KidaReactions(std::string line) {
+KidaReaction::KidaReaction(std::string line) {
   const int nfields = 13;
   Real Tmin, Tmax; 
   int r;
@@ -35,7 +35,7 @@ KidaReactions::KidaReactions(std::string line) {
 
   if ( fields.size() != nfields ) {
     std::stringstream msg; 
-    msg << "### FATAL ERROR in KidaReactions constructor [KidaReactions]" << std::endl
+    msg << "### FATAL ERROR in KidaReaction constructor [KidaReaction]" << std::endl
       << "number of fields (" << fields.size() << ")does not match " 
       << nfields << std::endl;
     throw std::runtime_error(msg.str().c_str());
@@ -53,7 +53,7 @@ KidaReactions::KidaReactions(std::string line) {
   
   //Temperature range warning
   if ( (Tmin > 0.) || (Tmax < 9998.) ) {
-    std::cout << "### WARNING KidaReactions constructor [KidaReactions]" << std::endl
+    std::cout << "### WARNING KidaReaction constructor [KidaReaction]" << std::endl
       << "Temperature range (" << Tmin << "," << Tmax << ") for reaction (ID="  
       << id_ << "). Extrapolation outside of range will be used" << std::endl;
   }
@@ -61,9 +61,26 @@ KidaReactions::KidaReactions(std::string line) {
   //recommendation error
   if (r == 0) {
     std::stringstream msg; 
-    msg << "### FATAL ERROR in KidaReactions constructor [KidaReactions]" << std::endl
+    msg << "### FATAL ERROR in KidaReaction constructor [KidaReaction]" << std::endl
       << "reaction (ID=" << id_ << ") not recommended (r=0)." << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 
+}
+
+void KidaReaction::Print() const {
+  std::cout << "reaction ID=" << id_ << ": ";
+  for (int i=0; i<reactants_.size()-1; i++) {
+    std::cout << reactants_[i] << "+";
+  }
+  std::cout << reactants_[reactants_.size()-1]
+    << " -> ";
+
+  for (int i=0; i<products_.size()-1; i++) {
+    std::cout << products_[i] << "+";
+  }
+  std::cout << products_[products_.size()-1]
+    << std::endl;
+
+  return;
 }

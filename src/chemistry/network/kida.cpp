@@ -109,7 +109,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
     if(line.empty() || (line.find("!") == 0)) {
         continue;
     }
-    KidaReactions ri(line);
+    KidaReaction ri(line);
     if (std::find(rids.begin(), rids.end(), ri.id_) == rids.end()) {
       rids.push_back(ri.id_);
       reactions_.push_back(ri);
@@ -149,10 +149,11 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
 ChemNetwork::~ChemNetwork() {}
 
 void ChemNetwork::InitializeReactions() {
-  KidaReactions *pr = NULL;
+  KidaReaction *pr = NULL;
   //error message
   bool error=false;
   for (int ir=0; ir<nr_; ir++) {
+    CheckReaction(reactions_[ir]);
     pr = &reactions_[ir];
     //---------------- 1 - direct cosmic-ray ionization --------------
     if (pr->itype_ == 1) {
@@ -236,6 +237,55 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
   return;
 }
 
+void ChemNetwork::CheckReaction(KidaReaction reaction) {
+  int atom_count_in[KidaSpecies::natom_];
+  int atom_count_out[KidaSpecies::natom_];
+  int charge_in = 0;
+  int charge_out = 0;
+  for (int ia=0; ia<KidaSpecies::natom_; ia++) {
+    atom_count_in[ia] = 0;
+    atom_count_out[ia] = 0;
+  }
+  for (int i=0; i<reaction.reactants_.size(); i++) {
+    if (reaction.reactants_[i] == "CR" || reaction.reactants_[i] == "CRP" 
+        || reaction.reactants_[i] == "Photon") {
+      continue;
+    }
+    for (int ia=0; ia<KidaSpecies::natom_; ia++) {
+      atom_count_in[ia] +=
+        species_[ispec_map_[reaction.reactants_[i]]].atom_count_[ia];
+    }
+    charge_in += species_[ispec_map_[reaction.reactants_[i]]].charge_;
+  }
+
+  for (int i=0; i<reaction.products_.size(); i++) {
+    for (int ia=0; ia<KidaSpecies::natom_; ia++) {
+      atom_count_out[ia] +=
+        species_[ispec_map_[reaction.products_[i]]].atom_count_[ia];
+    }
+    charge_out += species_[ispec_map_[reaction.products_[i]]].charge_;
+  }
+
+  if (charge_in != charge_out) {
+    reaction.Print();
+    std::stringstream msg; 
+    msg << "### FATAL ERROR in ChemNetwork CheckReaction() [ChemNetwork] :"
+        << "charge not conserved." << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
+  for (int ia=0; ia<KidaSpecies::natom_; ia++) {
+    if (atom_count_in[ia] != atom_count_out[ia]) {
+      reaction.Print();
+      std::stringstream msg; 
+      msg << "### FATAL ERROR in ChemNetwork CheckReaction() [ChemNetwork] :"
+          << "atoms not conserved." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+  }
+  return;
+}
+
 
 void ChemNetwork::PrintProperties() const {
   //print each species.
@@ -253,19 +303,7 @@ void ChemNetwork::PrintProperties() const {
   //print each reactions.
   std::cout << "number of reactions: " << nr_ << std::endl;
   for (int i=0; i<reactions_.size(); i++) {
-    std::cout << "reaction ID=" << reactions_[i].id_ << ": ";
-    for (int j=0; j<reactions_[i].reactants_.size()-1; j++) {
-      std::cout << reactions_[i].reactants_[j] << "+";
-    }
-    std::cout << reactions_[i].reactants_[reactions_[i].reactants_.size()-1]
-              << " -> ";
-
-    for (int j=0; j<reactions_[i].products_.size()-1; j++) {
-      std::cout << reactions_[i].products_[j] << "+";
-    }
-    std::cout << reactions_[i].products_[reactions_[i].products_.size()-1]
-              << std::endl;
-
+    reactions_[i].Print();
     std::cout << "alpha=" << reactions_[i].alpha_ << "," 
               << "beta=" << reactions_[i]. beta_ << "," 
               << "gamma=" << reactions_[i].gamma_ << "," 
