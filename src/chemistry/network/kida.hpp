@@ -73,6 +73,7 @@ private:
 	Real unit_length_in_cm_; //read from input
 	Real unit_vel_in_cms_; //read from input
 	Real unit_time_in_s_; //from length and velocity units
+  Real unit_radiation_in_draine1987_; //FUV radiation unit
   //unit of energy density, in erg cm-3, from density and velocity units
   Real unit_E_in_cgs_; 
 
@@ -92,6 +93,12 @@ private:
   std::map<int, int> idmap_gr_;
   std::vector<Real> kgr_;
 
+  //radiation related reactions and variables
+  int n_ph_;
+  int n_freq_;
+  int index_gpe_;
+  int index_cr_;
+	AthenaArray<Real> rad_;
 
   //functions
   void InitializeReactions(); //set up coefficients of reactions

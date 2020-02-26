@@ -27,6 +27,7 @@
 #include "../../parameter_input.hpp"       //ParameterInput
 #include "../../mesh/mesh.hpp"
 #include "../../hydro/hydro.hpp"
+#include "../../radiation/radiation.hpp"
 #include "../utils/chemistry_utils.hpp"
 #include "../../utils/string_utils.hpp"
 #include "../../defs.hpp"
@@ -40,20 +41,18 @@
 #include <stdio.h>    // c style file
 #include <algorithm>    // std::find()
 
-ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
-	//number of species and a list of name of species
-  pmy_spec_ = pmb->pscalars;
-	pmy_mb_ = pmb;
-  n_cr_ = 0;
-  n_gr_ = 0;
+ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :  
+  pmy_spec_(pmb->pscalars), pmy_mb_(pmb), n_cr_(0), n_gr_(0), n_ph_(0),
+  n_freq_(0), index_gpe_(0), index_cr_(0) {
 
 	//set the parameters from input file
-	xi_cr_ = pin->GetOrAddReal("chemistry", "xi_cr", 2e-16);
 	zdg_ = pin->GetOrAddReal("chemistry", "Zdg", 1.);//dust and gas metallicity
   //units
 	unit_density_in_nH_ = pin->GetReal("chemistry", "unit_density_in_nH");
 	unit_length_in_cm_ = pin->GetReal("chemistry", "unit_length_in_cm");
 	unit_vel_in_cms_ = pin->GetReal("chemistry", "unit_vel_in_cms");
+	unit_radiation_in_draine1987_ = pin->GetReal(
+                                "chemistry", "unit_radiation_in_draine1987");
   unit_time_in_s_ = unit_length_in_cm_/unit_vel_in_cms_;
   unit_E_in_cgs_ = 1.67e-24 * 1.4 * unit_density_in_nH_
                            * unit_vel_in_cms_ * unit_vel_in_cms_;
@@ -126,6 +125,21 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 
   //initialize coefficients of reactions
   InitializeReactions();
+
+  //radiation related variables
+  const int nfreq = pin->GetOrAddInteger("radiation", "n_frequency", 1);
+  n_freq_ = n_ph_ + 2;
+  std::stringstream msg;
+  //check whether number of frequencies equal to the input file specification
+  if (nfreq != n_freq_) {
+    msg << "### FATAL ERROR in ChemNetwork constructor" << std::endl
+      << "number of frequencies in radiation: " << nfreq 
+      << " not equal to that in chemistry: " << n_freq_  << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  index_gpe_ = n_ph_;
+  index_cr_ = n_ph_ + 1;
+  rad_.NewAthenaArray(n_freq_);
 
 #ifdef DEBUG
   PrintProperties();
@@ -213,7 +227,7 @@ void ChemNetwork::InitializeReactions() {
 void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
 	//cosmic ray reactions
 	for (int i=0; i<n_cr_; i++) {
-		kcr_[i] = kcr_base_[i] * xi_cr_;
+		kcr_[i] = kcr_base_[i] * rad_(index_cr_);
 	}
 
 	// Grain assisted reactions
@@ -309,7 +323,8 @@ void ChemNetwork::OutputRates(FILE *pf) const {
 }
 
 void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
-  Real rho, rho_floor;
+  Real rho, rho_floor, rad_sum;
+  const int nang = pmy_mb_->prad->nang;
   //density
   rho = pmy_mb_->phydro->w(IDN, k, j, i);
   //apply density floor
@@ -317,6 +332,26 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   rho = (rho > rho_floor) ?  rho : rho_floor;
   //hydrogen atom number density
   nH_ =  rho * unit_density_in_nH_;
+  //average radiation field of all angles
+  for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
+    rad_sum = 0;
+    //radiation
+    for (int iang=0; iang < nang; ++iang) {
+      rad_sum += pmy_mb_->prad->ir(k, j, i, ifreq * nang + iang);
+    }
+    if (ifreq == index_cr_) {
+      rad_(index_cr_) = rad_sum / float(nang);
+    } else {
+      rad_(ifreq) = rad_sum * unit_radiation_in_draine1987_ / float(nang) ;
+    }
+#ifdef DEBUG
+    if (isnan(rad_(ifreq))) {
+      printf("InitializeNextStep: ");
+      printf("ifreq=%d, nang=%d, rad_sum=%.2e\n", ifreq, nang, rad_sum);
+      OutputRates(stdout);
+    }
+#endif
+  }
   return;
 }
 
@@ -347,10 +382,10 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
       }
       printf("\n");
       OutputRates(stdout);
-      //printf("rad_ = ");
-      //for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
-      //  printf("%.2e  ", rad_[ifreq]);
-      //}
+      printf("rad_ = ");
+      for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
+        printf("%.2e  ", rad_(ifreq));
+      }
       printf("\n");
       printf("nH_ = %.2e\n", nH_);
       std::stringstream msg;
@@ -396,10 +431,10 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
       }
       printf("\n");
       OutputRates(stdout);
-      //printf("rad_ = ");
-      //for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
-      //  printf("%.2e  ", rad_[ifreq]);
-      //}
+      printf("rad_ = ");
+      for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
+        printf("%.2e  ", rad_(ifreq));
+      }
       printf("\n");
       printf("nH_ = %.2e\n", nH_);
       printf("ED = %.2e\n", ED);

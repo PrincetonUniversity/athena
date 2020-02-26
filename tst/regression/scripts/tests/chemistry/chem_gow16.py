@@ -14,7 +14,7 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 
 def prepare(**kwargs):
     athena.configure(
-        prob='chem_gow16',
+        prob='chem_uniform_radcr',
         chemistry='gow16', 
         radiation='const',
         cxx = 'g++',
