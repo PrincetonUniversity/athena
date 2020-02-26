@@ -854,18 +854,25 @@ void KerrSchild::CellMetric(const int k, const int j, const int il, const int iu
     // Set covariant metric coefficients
     g(I00,i) = -(1.0 - 2.0*m*r/sigma);
     g(I01,i) = 2.0*m*r/sigma;
+    g(I02,i) = 0.0;
     g(I03,i) = -2.0*m*a*r/sigma * sin2;
     g(I11,i) = 1.0 + 2.0*m*r/sigma;
+    g(I12,i) = 0.0;
     g(I13,i) = -(1.0 + 2.0*m*r/sigma) * a * sin2;
     g(I22,i) = sigma;
+    g(I23,i) = 0.0;
     g(I33,i) = (r2 + a2 + 2.0*m*a2*r/sigma * sin2) * sin2;
 
     // Set contravariant metric coefficients
     g_inv(I00,i) = -(1.0 + 2.0*m*r/sigma);
     g_inv(I01,i) = 2.0*m*r/sigma;
+    g_inv(I02,i) = 0.0;
+    g_inv(I03,i) = 0.0;
     g_inv(I11,i) = delta/sigma;
+    g_inv(I12,i) = 0.0;
     g_inv(I13,i) = a/sigma;
     g_inv(I22,i) = 1.0/sigma;
+    g_inv(I23,i) = 0.0;
     g_inv(I33,i) = 1.0 / (sigma * sin2);
   }
   return;
@@ -901,18 +908,25 @@ void KerrSchild::Face1Metric(const int k, const int j, const int il, const int i
     // Set covariant metric coefficients
     g(I00,i) = -(1.0 - 2.0*m*r/sigma);
     g(I01,i) = 2.0*m*r/sigma;
+    g(I02,i) = 0.0;
     g(I03,i) = -2.0*m*a*r/sigma * sin2;
     g(I11,i) = 1.0 + 2.0*m*r/sigma;
+    g(I12,i) = 0.0;
     g(I13,i) = -(1.0 + 2.0*m*r/sigma) * a * sin2;
     g(I22,i) = sigma;
+    g(I23,i) = 0.0;
     g(I33,i) = (r2 + a2 + 2.0*m*a2*r/sigma * sin2) * sin2;
 
     // Set contravariant metric coefficients
     g_inv(I00,i) = -(1.0 + 2.0*m*r/sigma);
     g_inv(I01,i) = 2.0*m*r/sigma;
+    g_inv(I02,i) = 0.0;
+    g_inv(I03,i) = 0.0;
     g_inv(I11,i) = delta/sigma;
+    g_inv(I12,i) = 0.0;
     g_inv(I13,i) = a/sigma;
     g_inv(I22,i) = 1.0/sigma;
+    g_inv(I23,i) = 0.0;
     g_inv(I33,i) = 1.0 / (sigma * sin2);
   }
   return;
@@ -948,18 +962,25 @@ void KerrSchild::Face2Metric(const int k, const int j, const int il, const int i
     // Set covariant metric coefficients
     g(I00,i) = -(1.0 - 2.0*m*r/sigma);
     g(I01,i) = 2.0*m*r/sigma;
+    g(I02,i) = 0.0;
     g(I03,i) = -2.0*m*a*r/sigma * sin2;
     g(I11,i) = 1.0 + 2.0*m*r/sigma;
+    g(I12,i) = 0.0;
     g(I13,i) = -(1.0 + 2.0*m*r/sigma) * a * sin2;
     g(I22,i) = sigma;
+    g(I23,i) = 0.0;
     g(I33,i) = (r2 + a2 + 2.0*m*a2*r/sigma * sin2) * sin2;
 
     // Set contravariant metric coefficients
     g_inv(I00,i) = -(1.0 + 2.0*m*r/sigma);
     g_inv(I01,i) = 2.0*m*r/sigma;
+    g_inv(I02,i) = 0.0;
+    g_inv(I03,i) = 0.0;
     g_inv(I11,i) = delta/sigma;
+    g_inv(I12,i) = 0.0;
     g_inv(I13,i) = a/sigma;
     g_inv(I22,i) = 1.0/sigma;
+    g_inv(I23,i) = 0.0;
     g_inv(I33,i) = 1.0 / (sigma * sin2);
   }
   return;
@@ -995,18 +1016,25 @@ void KerrSchild::Face3Metric(const int k, const int j, const int il, const int i
     // Set covariant metric coefficients
     g(I00,i) = -(1.0 - 2.0*m*r/sigma);
     g(I01,i) = 2.0*m*r/sigma;
+    g(I02,i) = 0.0;
     g(I03,i) = -2.0*m*a*r/sigma * sin2;
     g(I11,i) = 1.0 + 2.0*m*r/sigma;
+    g(I12,i) = 0.0;
     g(I13,i) = -(1.0 + 2.0*m*r/sigma) * a * sin2;
     g(I22,i) = sigma;
+    g(I23,i) = 0.0;
     g(I33,i) = (r2 + a2 + 2.0*m*a2*r/sigma * sin2) * sin2;
 
     // Set contravariant metric coefficients
     g_inv(I00,i) = -(1.0 + 2.0*m*r/sigma);
     g_inv(I01,i) = 2.0*m*r/sigma;
+    g_inv(I02,i) = 0.0;
+    g_inv(I03,i) = 0.0;
     g_inv(I11,i) = delta/sigma;
+    g_inv(I12,i) = 0.0;
     g_inv(I13,i) = a/sigma;
     g_inv(I22,i) = 1.0/sigma;
+    g_inv(I23,i) = 0.0;
     g_inv(I33,i) = 1.0 / (sigma * sin2);
   }
   return;

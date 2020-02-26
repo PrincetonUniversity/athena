@@ -113,12 +113,24 @@ void Minkowski::CellMetric(const int k, const int j, const int il, const int iu,
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     g(I00,i) = -1.0;
+    g(I01,i) = 0.0;
+    g(I02,i) = 0.0;
+    g(I03,i) = 0.0;
     g(I11,i) = 1.0;
+    g(I12,i) = 0.0;
+    g(I13,i) = 0.0;
     g(I22,i) = 1.0;
+    g(I23,i) = 0.0;
     g(I33,i) = 1.0;
     g_inv(I00,i) = -1.0;
+    g_inv(I01,i) = 0.0;
+    g_inv(I02,i) = 0.0;
+    g_inv(I03,i) = 0.0;
     g_inv(I11,i) = 1.0;
+    g_inv(I12,i) = 0.0;
+    g_inv(I13,i) = 0.0;
     g_inv(I22,i) = 1.0;
+    g_inv(I23,i) = 0.0;
     g_inv(I33,i) = 1.0;
   }
   return;
@@ -138,12 +150,24 @@ void Minkowski::Face1Metric(const int k, const int j, const int il, const int iu
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     g(I00,i) = -1.0;
+    g(I01,i) = 0.0;
+    g(I02,i) = 0.0;
+    g(I03,i) = 0.0;
     g(I11,i) = 1.0;
+    g(I12,i) = 0.0;
+    g(I13,i) = 0.0;
     g(I22,i) = 1.0;
+    g(I23,i) = 0.0;
     g(I33,i) = 1.0;
     g_inv(I00,i) = -1.0;
+    g_inv(I01,i) = 0.0;
+    g_inv(I02,i) = 0.0;
+    g_inv(I03,i) = 0.0;
     g_inv(I11,i) = 1.0;
+    g_inv(I12,i) = 0.0;
+    g_inv(I13,i) = 0.0;
     g_inv(I22,i) = 1.0;
+    g_inv(I23,i) = 0.0;
     g_inv(I33,i) = 1.0;
   }
   return;
@@ -154,12 +178,24 @@ void Minkowski::Face2Metric(const int k, const int j, const int il, const int iu
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     g(I00,i) = -1.0;
+    g(I01,i) = 0.0;
+    g(I02,i) = 0.0;
+    g(I03,i) = 0.0;
     g(I11,i) = 1.0;
+    g(I12,i) = 0.0;
+    g(I13,i) = 0.0;
     g(I22,i) = 1.0;
+    g(I23,i) = 0.0;
     g(I33,i) = 1.0;
     g_inv(I00,i) = -1.0;
+    g_inv(I01,i) = 0.0;
+    g_inv(I02,i) = 0.0;
+    g_inv(I03,i) = 0.0;
     g_inv(I11,i) = 1.0;
+    g_inv(I12,i) = 0.0;
+    g_inv(I13,i) = 0.0;
     g_inv(I22,i) = 1.0;
+    g_inv(I23,i) = 0.0;
     g_inv(I33,i) = 1.0;
   }
   return;
@@ -170,12 +206,24 @@ void Minkowski::Face3Metric(const int k, const int j, const int il, const int iu
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
     g(I00,i) = -1.0;
+    g(I01,i) = 0.0;
+    g(I02,i) = 0.0;
+    g(I03,i) = 0.0;
     g(I11,i) = 1.0;
+    g(I12,i) = 0.0;
+    g(I13,i) = 0.0;
     g(I22,i) = 1.0;
+    g(I23,i) = 0.0;
     g(I33,i) = 1.0;
     g_inv(I00,i) = -1.0;
+    g_inv(I01,i) = 0.0;
+    g_inv(I02,i) = 0.0;
+    g_inv(I03,i) = 0.0;
     g_inv(I11,i) = 1.0;
+    g_inv(I12,i) = 0.0;
+    g_inv(I13,i) = 0.0;
     g_inv(I22,i) = 1.0;
+    g_inv(I23,i) = 0.0;
     g_inv(I33,i) = 1.0;
   }
   return;

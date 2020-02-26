@@ -538,25 +538,27 @@ void MinkowskiSph::CellMetric(const int k, const int j, const int il, const int 
     const Real &r = x1v(i);
     Real r_sq = SQR(r);
 
-    // Extract metric terms
-    Real &g00 = g(I00,i);
-    Real &g11 = g(I11,i);
-    Real &g22 = g(I22,i);
-    Real &g33 = g(I33,i);
-    Real &gi00 = g_inv(I00,i);
-    Real &gi11 = g_inv(I11,i);
-    Real &gi22 = g_inv(I22,i);
-    Real &gi33 = g_inv(I33,i);
-
     // Set metric terms
-    g00 = -1.0;
-    g11 = 1.0;
-    g22 = r_sq;
-    g33 = r_sq * sin_sq_theta;
-    gi00 = -1.0;
-    gi11 = 1.0;
-    gi22 = 1.0/r_sq;
-    gi33 = 1.0 / (r_sq * sin_sq_theta);
+    g(I00,i) = -1.0;
+    g(I01,i) = 0.0;
+    g(I02,i) = 0.0;
+    g(I03,i) = 0.0;
+    g(I11,i) = 1.0;
+    g(I12,i) = 0.0;
+    g(I13,i) = 0.0;
+    g(I22,i) = r_sq;
+    g(I23,i) = 0.0;
+    g(I33,i) = r_sq * sin_sq_theta;
+    g_inv(I00,i) = -1.0;
+    g_inv(I01,i) = 0.0;
+    g_inv(I02,i) = 0.0;
+    g_inv(I03,i) = 0.0;
+    g_inv(I11,i) = 1.0;
+    g_inv(I12,i) = 0.0;
+    g_inv(I13,i) = 0.0;
+    g_inv(I22,i) = 1.0/r_sq;
+    g_inv(I23,i) = 0.0;
+    g_inv(I33,i) = 1.0 / (r_sq * sin_sq_theta);
   }
   return;
 }
@@ -584,25 +586,27 @@ void MinkowskiSph::Face1Metric(const int k, const int j, const int il, const int
     const Real &r = x1f(i);
     Real r_sq = SQR(r);
 
-    // Extract metric terms
-    Real &g00 = g(I00,i);
-    Real &g11 = g(I11,i);
-    Real &g22 = g(I22,i);
-    Real &g33 = g(I33,i);
-    Real &gi00 = g_inv(I00,i);
-    Real &gi11 = g_inv(I11,i);
-    Real &gi22 = g_inv(I22,i);
-    Real &gi33 = g_inv(I33,i);
-
     // Set metric terms
-    g00 = -1.0;
-    g11 = 1.0;
-    g22 = r_sq;
-    g33 = r_sq * sin_sq_theta;
-    gi00 = -1.0;
-    gi11 = 1.0;
-    gi22 = 1.0/r_sq;
-    gi33 = 1.0 / (r_sq * sin_sq_theta);
+    g(I00,i) = -1.0;
+    g(I01,i) = 0.0;
+    g(I02,i) = 0.0;
+    g(I03,i) = 0.0;
+    g(I11,i) = 1.0;
+    g(I12,i) = 0.0;
+    g(I13,i) = 0.0;
+    g(I22,i) = r_sq;
+    g(I23,i) = 0.0;
+    g(I33,i) = r_sq * sin_sq_theta;
+    g_inv(I00,i) = -1.0;
+    g_inv(I01,i) = 0.0;
+    g_inv(I02,i) = 0.0;
+    g_inv(I03,i) = 0.0;
+    g_inv(I11,i) = 1.0;
+    g_inv(I12,i) = 0.0;
+    g_inv(I13,i) = 0.0;
+    g_inv(I22,i) = 1.0/r_sq;
+    g_inv(I23,i) = 0.0;
+    g_inv(I33,i) = 1.0 / (r_sq * sin_sq_theta);
   }
   return;
 }
@@ -630,25 +634,27 @@ void MinkowskiSph::Face2Metric(const int k, const int j, const int il, const int
     const Real &r = x1v(i);
     Real r_sq = SQR(r);
 
-    // Extract metric terms
-    Real &g00 = g(I00,i);
-    Real &g11 = g(I11,i);
-    Real &g22 = g(I22,i);
-    Real &g33 = g(I33,i);
-    Real &gi00 = g_inv(I00,i);
-    Real &gi11 = g_inv(I11,i);
-    Real &gi22 = g_inv(I22,i);
-    Real &gi33 = g_inv(I33,i);
-
     // Set metric terms
-    g00 = -1.0;
-    g11 = 1.0;
-    g22 = r_sq;
-    g33 = r_sq * sin_sq_theta;
-    gi00 = -1.0;
-    gi11 = 1.0;
-    gi22 = 1.0/r_sq;
-    gi33 = 1.0 / (r_sq * sin_sq_theta);
+    g(I00,i) = -1.0;
+    g(I01,i) = 0.0;
+    g(I02,i) = 0.0;
+    g(I03,i) = 0.0;
+    g(I11,i) = 1.0;
+    g(I12,i) = 0.0;
+    g(I13,i) = 0.0;
+    g(I22,i) = r_sq;
+    g(I23,i) = 0.0;
+    g(I33,i) = r_sq * sin_sq_theta;
+    g_inv(I00,i) = -1.0;
+    g_inv(I01,i) = 0.0;
+    g_inv(I02,i) = 0.0;
+    g_inv(I03,i) = 0.0;
+    g_inv(I11,i) = 1.0;
+    g_inv(I12,i) = 0.0;
+    g_inv(I13,i) = 0.0;
+    g_inv(I22,i) = 1.0/r_sq;
+    g_inv(I23,i) = 0.0;
+    g_inv(I33,i) = 1.0 / (r_sq * sin_sq_theta);
   }
   return;
 }
@@ -676,25 +682,27 @@ void MinkowskiSph::Face3Metric(const int k, const int j, const int il, const int
     const Real &r = x1v(i);
     Real r_sq = SQR(r);
 
-    // Extract metric terms
-    Real &g00 = g(I00,i);
-    Real &g11 = g(I11,i);
-    Real &g22 = g(I22,i);
-    Real &g33 = g(I33,i);
-    Real &gi00 = g_inv(I00,i);
-    Real &gi11 = g_inv(I11,i);
-    Real &gi22 = g_inv(I22,i);
-    Real &gi33 = g_inv(I33,i);
-
     // Set metric terms
-    g00 = -1.0;
-    g11 = 1.0;
-    g22 = r_sq;
-    g33 = r_sq * sin_sq_theta;
-    gi00 = -1.0;
-    gi11 = 1.0;
-    gi22 = 1.0/r_sq;
-    gi33 = 1.0 / (r_sq * sin_sq_theta);
+    g(I00,i) = -1.0;
+    g(I01,i) = 0.0;
+    g(I02,i) = 0.0;
+    g(I03,i) = 0.0;
+    g(I11,i) = 1.0;
+    g(I12,i) = 0.0;
+    g(I13,i) = 0.0;
+    g(I22,i) = r_sq;
+    g(I23,i) = 0.0;
+    g(I33,i) = r_sq * sin_sq_theta;
+    g_inv(I00,i) = -1.0;
+    g_inv(I01,i) = 0.0;
+    g_inv(I02,i) = 0.0;
+    g_inv(I03,i) = 0.0;
+    g_inv(I11,i) = 1.0;
+    g_inv(I12,i) = 0.0;
+    g_inv(I13,i) = 0.0;
+    g_inv(I22,i) = 1.0/r_sq;
+    g_inv(I23,i) = 0.0;
+    g_inv(I33,i) = 1.0 / (r_sq * sin_sq_theta);
   }
   return;
 }
