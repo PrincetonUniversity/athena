@@ -1,5 +1,5 @@
 #regression test for equilibrium chemistry and temperature
-#with chemical network gow16, compare to know solution.
+#with chemical network gow17, compare to know solution.
 
 # Modules
 import logging
@@ -15,7 +15,7 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 def prepare(**kwargs):
     athena.configure(
         prob='chem_uniform_radcr',
-        chemistry='gow16', 
+        chemistry='gow17', 
         radiation='const',
         cxx = 'g++',
         cvode_path=os.environ['CVODE_PATH']
@@ -26,15 +26,15 @@ def run(**kwargs):
     arguments = [ 
             'problem/G0=1e-6',
             ]
-    athena.run('chemistry/athinput.chem_gow16', arguments)
+    athena.run('chemistry/athinput.chem_gow17', arguments)
 
 def analyze():
     err_control = 1e-6
     gam1 = 1.666666666666667 - 1.
     nH = 1.0921e+02
     unit_E_cgs = 1.67e-24 * 1.4070876 * 1e10
-    _,_,_,data_ref = athena_read.vtk('data/chem_gow16_G1e-6.vtk')
-    _,_,_,data_new = athena_read.vtk('bin/chem_gow16.block0.out1.00010.vtk')
+    _,_,_,data_ref = athena_read.vtk('data/chem_gow17_G1e-6.vtk')
+    _,_,_,data_new = athena_read.vtk('bin/chem_gow17.block0.out1.00010.vtk')
     species = ["He+", "OHx", "CHx", "CO", "C+", "HCO+", "H2", "H+", "H3+", "H2+", 
                "O+", "Si+"]
     ns = len(species)

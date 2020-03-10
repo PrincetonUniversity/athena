@@ -13,13 +13,13 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file gow16.cpp
-//  \brief implementation of functions in class ChemNetwork, using the GOW16
-//  network, see paper by Gong, Ostriker, Wolfire 2016 
+//! \file gow17.cpp
+//  \brief implementation of functions in class ChemNetwork, using the GOW17
+//  network, see paper by Gong, Ostriker, Wolfire 2017 
 //======================================================================================
 
 // this class header
-#include "gow16.hpp"
+#include "gow17.hpp"
 
 //athena++ header
 #include "network.hpp"
@@ -407,7 +407,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
       printf("\n");
       printf("nH_ = %.2e\n", nH_);
       std::stringstream msg;
-      msg << "ChemNetwork (gow16): RHS(yprev): nan or inf" << std::endl;
+      msg << "ChemNetwork (gow17): RHS(yprev): nan or inf" << std::endl;
       ATHENA_ERROR(msg);
     }
   }
@@ -477,7 +477,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
       printf("unit_E_in_cgs_ = %.2e\n", unit_E_in_cgs_);
       printf("T = %.2e\n", E_ergs/Thermo::CvCold(yprev0[iH2_], xHe_, yprev0[ige_]));
       std::stringstream msg;
-      msg << "ChemNetwork (gow16): RHS(ydot): nan or inf" << std::endl;
+      msg << "ChemNetwork (gow17): RHS(ydot): nan or inf" << std::endl;
       ATHENA_ERROR(msg);
     }
   }
@@ -521,33 +521,6 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   //TODO: for six-ray, this should be in the right units
   SetGrad_v(k, j, i);
 	return;
-}
-
-void ChemNetwork::OutputProperties(FILE *pf) const {
-  //output the reactions and base rates
-	for (int i=0; i<n_cr_; i++) {
-		fprintf(pf, "cr  + %4s -> %4s,     kcr = %.2e ksi s-1 H-1\n", 
-		 species_names_all_[incr_[i]].c_str(), species_names_all_[outcr_[i]].c_str(),
-		 kcr_base_[i]);
-	}
-	for (int i=0; i<n_2body_; i++) {
-		fprintf(pf, "%4s  + %4s -> %4s  + %4s,     k2body = %.1e T^%.2f cm3 s-1 H-1\n", 
-		 species_names_all_[in2body1_[i]].c_str(),
-		 species_names_all_[in2body2_[i]].c_str(),
-		 species_names_all_[out2body1_[i]].c_str(),
-		 species_names_all_[out2body2_[i]].c_str(),
-		 k2body_base_[i], k2Texp_[i]);
-	}
-	for (int i=0; i<n_ph_; i++) {
-		fprintf(pf, "h nu  + %4s -> %4s,     kph = %.1e G0 exp(-%.1f Av) s-1 H-1\n", 
-		 species_names_all_[inph_[i]].c_str(), species_names_all_[outph1_[i]].c_str(),
-		 kph_base_[i], kph_avfac_[i]);
-	}
-	for (int i=0; i<n_gr_; i++) {
-		fprintf(pf, "gr  + %4s -> %4s\n", 
-		 species_names_all_[ingr_[i]].c_str(), species_names_all_[outgr_[i]].c_str());
-	}
-  return;
 }
 
 void ChemNetwork::GetGhostSpecies(const Real *y, Real yghost[NSCALARS+ngs_]) {
@@ -920,7 +893,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
 		}
 		printf("\n");
     std::stringstream msg;
-    msg << "ChemNetwork (gow16): dEdt: nan or inf number" << std::endl;
+    msg << "ChemNetwork (gow17): dEdt: nan or inf number" << std::endl;
     ATHENA_ERROR(msg);
 	}
   //return in code units

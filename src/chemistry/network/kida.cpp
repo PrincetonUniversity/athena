@@ -30,6 +30,7 @@
 #include "../../radiation/radiation.hpp"
 #include "../utils/chemistry_utils.hpp"
 #include "../../utils/string_utils.hpp"
+#include "../utils/thermo.hpp"
 #include "../../defs.hpp"
 #include "../../eos/eos.hpp"
 
@@ -42,8 +43,8 @@
 #include <algorithm>    // std::find()
 
 ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :  
-  pmy_spec_(pmb->pscalars), pmy_mb_(pmb), n_cr_(0), n_gr_(0), n_ph_(0),
-  n_freq_(0), index_gpe_(0), index_cr_(0) {
+  pmy_spec_(pmb->pscalars), pmy_mb_(pmb), n_cr_(0), n_crp_(0), n_ph_(0), n_2body_(0),
+  n_gr_(0), n_sr_(0), n_freq_(0), index_gpe_(0), index_cr_(0) {
 
 	//set the parameters from input file
 	zdg_ = pin->GetOrAddReal("chemistry", "Zdg", 1.);//dust and gas metallicity
@@ -56,6 +57,15 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   unit_time_in_s_ = unit_length_in_cm_/unit_vel_in_cms_;
   unit_E_in_cgs_ = 1.67e-24 * 1.4 * unit_density_in_nH_
                            * unit_vel_in_cms_ * unit_vel_in_cms_;
+  //temperature
+  if (NON_BAROTROPIC_EOS) {
+    temperature_ = 0.;
+  } else {
+    //isothermal
+    temperature_ = pin->GetReal("chemistry", "temperature");
+  }
+	//minimum temperature for reaction rates, also applied to energy equation
+	temp_min_rates_ = pin->GetOrAddReal("chemistry", "temp_min_rates", 1.);
   //folder of the network
   network_dir_ = pin->GetString("chemistry", "network_dir");
 
@@ -179,6 +189,138 @@ void ChemNetwork::InitializeReactions() {
         kcr_base_.push_back(pr->alpha_);
         kcr_.push_back(0.);
         n_cr_++;
+      } else if (pr->formula_ == 7) {
+        incr_.push_back(ispec_map_[in_spec]);
+        outcr1_.push_back(ispec_map_[ pr->products_[0]]);
+        outcr2_.push_back(ispec_map_[ pr->products_[1]]);
+        idmap_cr_[pr->id_] = n_cr_;
+        kcr_base_.push_back(0.);
+        kcr_.push_back(0.);
+        n_cr_++;
+      } else {
+        error = true;
+      }
+
+    //---------------- 2 - cosmic-ray induced photo ionization --------
+    } else if (pr->itype_ == 2) {
+      //check format of reaction 
+      std::string in_spec; //input species
+      if (pr->reactants_.size() == 2 && pr->products_.size() == 2
+          && (pr->reactants_[0] == "CRP" || pr->reactants_[1] == "CRP") ) {
+        if (pr->reactants_[0] == "CRP") {
+          in_spec = pr->reactants_[1];
+        } else {
+          in_spec = pr->reactants_[0];
+        }
+      } else {
+        std::stringstream msg; 
+        msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
+           << std::endl << "Wrong format in CRP reaction ID=" << pr->id_ << std::endl;
+      }
+      //set indexing arrays
+      if (pr->formula_ == 1) {
+        incrp_.push_back(ispec_map_[in_spec]);
+        outcrp1_.push_back(ispec_map_[ pr->products_[0]]);
+        outcrp2_.push_back(ispec_map_[ pr->products_[1]]);
+        kcrp_base_.push_back(pr->alpha_);
+        kcrp_.push_back(0.);
+        n_crp_++;
+      } else if (pr->formula_ == 7) {
+        incrp_.push_back(ispec_map_[in_spec]);
+        outcrp1_.push_back(ispec_map_[ pr->products_[0]]);
+        outcrp2_.push_back(ispec_map_[ pr->products_[1]]);
+        idmap_crp_[pr->id_] = n_crp_;
+        kcrp_base_.push_back(0.);
+        kcrp_.push_back(0.);
+        n_crp_++;
+      } else {
+        error = true;
+      }
+
+    //---------------- 3 - FUV ionization/dissociation ----------------
+    } else if (pr->itype_ == 3) {
+      //check format of reaction 
+      std::string in_spec; //input species
+      if (pr->reactants_.size() == 2 && pr->products_.size() == 2
+          && (pr->reactants_[0] == "Photon" || pr->reactants_[1] == "Photon") ) {
+        if (pr->reactants_[0] == "Photon") {
+          in_spec = pr->reactants_[1];
+        } else {
+          in_spec = pr->reactants_[0];
+        }
+      } else {
+        std::stringstream msg; 
+        msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
+           << std::endl << "Wrong format in FUV reaction ID=" << pr->id_ << std::endl;
+      }
+      //set indexing arrays
+      if (pr->formula_ == 2) {
+        inph_.push_back(ispec_map_[in_spec]);
+        outph1_.push_back(ispec_map_[ pr->products_[0]]);
+        outph2_.push_back(ispec_map_[ pr->products_[1]]);
+        kph_base_.push_back(pr->alpha_);
+        kph_avfac_.push_back(pr->gamma_);
+        smap_ph_[in_spec] = n_ph_;
+        kph_.push_back(0.);
+        n_ph_++;
+      } else {
+        error = true;
+      }
+    //---------------- 4-8 - 2body reaction ---------------------------
+    } else if (pr->itype_ == 4 || pr->itype_ == 5 || pr->itype_ == 6 
+               || pr->itype_ == 7 || pr->itype_ == 8) {
+      //check format
+      if (pr->reactants_.size() != 2 || 
+          (pr->products_.size() != 1 && pr->products_.size() != 2
+           && pr->products_.size() != 3)) {
+        std::stringstream msg; 
+        msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
+            << std::endl << "Wrong format in 2body reaction ID=" << pr->id_
+            << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      //set indexing arrays
+      if (pr->formula_ == 3 || pr->formula_ == 4 || pr->formula_ == 5) {
+        in2body1_.push_back(ispec_map_[ pr->reactants_[0]]);
+        in2body2_.push_back(ispec_map_[ pr->reactants_[1]]);
+        out2body1_.push_back(ispec_map_[ pr->products_[0]]);
+        if (pr->products_.size() >= 2) {
+          out2body2_.push_back(ispec_map_[ pr->products_[1]]);
+        } else {
+          out2body2_.push_back(-1);
+        }
+        if (pr->products_.size() == 3) {
+          out2body3_.push_back(ispec_map_[ pr->products_[2]]);
+        } else {
+          out2body3_.push_back(-1);
+        }
+        frml_2body_.push_back(pr->formula_);
+        a2body_.push_back(pr->alpha_);
+        b2body_.push_back(pr->beta_);
+        c2body_.push_back(pr->gamma_);
+        k2body_.push_back(0.);
+        n_2body_++;
+      } else if (pr->formula_ == 7) {
+        in2body1_.push_back(ispec_map_[ pr->reactants_[0]]);
+        in2body2_.push_back(ispec_map_[ pr->reactants_[1]]);
+        out2body1_.push_back(ispec_map_[ pr->products_[0]]);
+        if (pr->products_.size() >= 2) {
+          out2body2_.push_back(ispec_map_[ pr->products_[1]]);
+        } else {
+          out2body2_.push_back(-1);
+        }
+        if (pr->products_.size() == 3) {
+          out2body3_.push_back(ispec_map_[ pr->products_[2]]);
+        } else {
+          out2body3_.push_back(-1);
+        }
+        frml_2body_.push_back(pr->formula_);
+        a2body_.push_back(0.);
+        b2body_.push_back(0.);
+        c2body_.push_back(0.);
+        k2body_.push_back(0.);
+        idmap_2body_[pr->id_] = n_2body_;
+        n_2body_++;
       } else {
         error = true;
       }
@@ -192,10 +334,10 @@ void ChemNetwork::InitializeReactions() {
             << std::endl << "Wrong format in gr reaction ID=" << pr->id_ << std::endl;
         ATHENA_ERROR(msg);
       }
-      if (pr->reactants_[1] != "e" && pr->reactants_[1] != "H") {
+      if (pr->reactants_[1] != "e-" && pr->reactants_[1] != "H") {
         std::stringstream msg; 
         msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
-            << std::endl << "second reactant must be H or e." << std::endl;
+            << std::endl << "second reactant must be H or e-." << std::endl;
         ATHENA_ERROR(msg);
       }
       //set indexing arrays
@@ -209,9 +351,51 @@ void ChemNetwork::InitializeReactions() {
       } else{
         error = true;
       }
+
+    //------------------ 10 - special reactions -----------------------
+    } else if (pr->itype_ == 10) {
+      if (pr->reactants_.size() > n_insr_ || pr->products_.size() > n_outsr_) {
+        std::stringstream msg; 
+        msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
+            << std::endl << "Wrong format in special reaction ID=" << pr->id_ 
+            << std::endl;
+      }
+      if (pr->formula_ == 7) {
+        idmap_sr_[pr->id_] = n_sr_;
+        ksr_.push_back(0.);
+        pr_sr_.push_back(pr);
+        n_sr_++;
+      } else {
+        error = true;
+      }
+
+    //------------------ type not recogonized -------------------------
     } else{
       error = true;
     }
+
+    //special reaction coefficients
+    if (n_sr_ > 0) {
+      insr_.NewAthenaArray(n_sr_, n_insr_);
+      outsr_.NewAthenaArray(n_sr_, n_outsr_);
+    }
+    for (int i=0; i<n_sr_; i++) {
+      for (int jin=0; jin<n_insr_; jin++) {
+        if (jin < pr_sr_[i]->reactants_.size()) {
+          insr_(i, jin) = ispec_map_[pr_sr_[i]->reactants_[jin]];
+        } else {
+          insr_(i, jin) = -1;
+        }
+      }
+      for (int jout=0; jout<n_outsr_; jout++) {
+        if (jout < pr_sr_[i]->products_.size()) {
+          outsr_(i, jout) = ispec_map_[pr_sr_[i]->products_[jout]];
+        } else {
+          outsr_(i, jout) = -1;
+        }
+      }
+    }
+
 
     if (error) {
       std::stringstream msg; 
@@ -226,14 +410,46 @@ void ChemNetwork::InitializeReactions() {
 }
 
 void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
+  const Real y_H2 = y[ispec_map_["H2"]];
+  const Real y_H = y[ispec_map_["H"]];
+  const Real y_e = y[ispec_map_["e-"]];
+  Real T;
+  if (NON_BAROTROPIC_EOS) {
+    T = E / Thermo::CvCold(y_H2, xHe_, y_e);
+  } else {
+    //isohermal EOS
+    T = temperature_;
+  }
 	//cosmic ray reactions
 	for (int i=0; i<n_cr_; i++) {
 		kcr_[i] = kcr_base_[i] * rad_(index_cr_);
 	}
 
-	// Grain assisted reactions
-	//(2) H + H + gr -> H2 + gr , from Draine book chapter 31.2 page 346, Jura 1975
-	kgr_[idmap_gr_[2]] = 3.0e-17 * nH_ * zdg_;
+	//cosmic ray induced photo reactions
+	for (int i=0; i<n_crp_; i++) {
+		kcrp_[i] = kcrp_base_[i] * rad_(index_cr_) * 2*y_H2;
+	}
+
+	//FUV reactions
+	for (int i=0; i<n_ph_; i++) {
+    kph_[i] = kph_base_[i] * rad_(i);
+	}
+
+  //2body reactions
+	for (int i=0; i<n_2body_; i++) {
+    if (frml_2body_[i] == 3) {
+      k2body_[i] = a2body_[i]*pow(T/300., b2body_[i])*exp(-c2body_[i]/T) * nH_;
+    } else if (frml_2body_[i] == 4) {
+      k2body_[i] = a2body_[i]*b2body_[i]*( 0.62 
+                                          + 0.4767*c2body_[i]*sqrt(300./T) ) * nH_;
+    } else if (frml_2body_[i] == 5) {
+      k2body_[i] = a2body_[i]*b2body_[i]*( 1 + 0.0967*c2body_[i]*sqrt(300./T) 
+                                            + 28.501*c2body_[i]*c2body_[i]/T ) * nH_;
+    }
+  }
+
+  //special rates and grain assisted reactions
+  UpdateRatesSpecial(y, E);
   return;
 }
 
@@ -312,12 +528,67 @@ void ChemNetwork::PrintProperties() const {
   }
 
   //print reaction coefficients
+  //cosmic-ray reactions
   std::cout << "CR reations:" << std::endl;
   for (int i=0; i<n_cr_; i++) {
     std::cout<< species_names[incr_[i]] << " + CR -> "
       << species_names[outcr1_[i]] << " + " << species_names[outcr2_[i]] << ", "
       << "kcr_base_=" << kcr_base_[i] << std::endl;
   }
+  std::cout << "idmap_cr_: " << std::endl;
+  for (std::map<int,int>::const_iterator it=idmap_cr_.begin();
+       it!=idmap_cr_.end(); it++) {
+    std::cout << it->first << " => " << it->second << std::endl;
+  }
+
+  //cosmic-ray induced photo reactions
+  std::cout << "CRP reations:" << std::endl;
+  for (int i=0; i<n_crp_; i++) {
+    std::cout<< species_names[incrp_[i]] << " + CRP -> "
+      << species_names[outcrp1_[i]] << " + " << species_names[outcrp2_[i]] << ", "
+      << "kcrp_base_=" << kcrp_base_[i] << std::endl;
+  }
+  std::cout << "idmap_crp_: " << std::endl;
+  for (std::map<int,int>::const_iterator it=idmap_crp_.begin();
+       it!=idmap_crp_.end(); it++) {
+    std::cout << it->first << " => " << it->second << std::endl;
+  }
+
+  //FUV reactions
+  std::cout << "FUV photo- ionization/dissociation:" << std::endl;
+  for (int i=0; i<n_ph_; i++) {
+    std::cout<< species_names[inph_[i]] << " + Photon -> "
+      << species_names[outph1_[i]] << " + " << species_names[outph2_[i]] << ", "
+      << "kph_base_=" << kph_base_[i] << ", kph_avfac_=" << kph_avfac_[i]
+      << std::endl;
+  }
+  std::cout << "smap_ph_: " << std::endl;
+  for (std::map<std::string,int>::const_iterator it=smap_ph_.begin();
+       it!=smap_ph_.end(); it++) {
+    std::cout << it->first << " => " << it->second << std::endl;
+  }
+
+  //2body reactions
+  std::cout << "2body reactions:" << std::endl;
+  for (int i=0; i<n_2body_; i++) {
+    std::cout<< species_names[in2body1_[i]] << " + "
+      << species_names[in2body2_[i]]<< " -> " << species_names[out2body1_[i]];
+    if (out2body2_[i] >= 0) {
+      std::cout<< " + " << species_names[out2body2_[i]];
+    }
+    if (out2body3_[i] >= 0) {
+      std::cout<< " + " << species_names[out2body3_[i]];
+    }
+    std::cout<< ", " << "alpha=" << a2body_[i] << ", beta=" << b2body_[i]
+      << ", gamma=" << c2body_[i] << std::endl;
+  }
+  std::cout << "idmap_2body_: " << std::endl;
+  for (std::map<int,int>::const_iterator it=idmap_2body_.begin();
+       it!=idmap_2body_.end(); it++) {
+    std::cout << it->first << " => " << it->second << std::endl;
+  }
+
+  //grain assisted reactions
   std::cout << "gr reations:" << std::endl;
   for (int i=0; i<n_gr_; i++) {
     std::cout<< species_names[ingr1_[i]] << " + " << species_names[ingr2_[i]] 
@@ -329,34 +600,92 @@ void ChemNetwork::PrintProperties() const {
     std::cout << it->first << " => " << it->second << std::endl;
   }
 
+  //special reactions
+  std::cout << "special reations:" << std::endl;
+  for (int i=0; i<n_sr_; i++) {
+    for (int jin=0; jin<n_insr_; jin++) {
+      if (insr_(i, jin) >= 0) {
+        std::cout << species_names[insr_(i, jin)];
+        if (jin < n_insr_-1 && insr_(i, jin+1) >= 0) {
+          std::cout << " + ";
+        }
+      }
+    }
+    std::cout << " -> ";
+    for (int jout=0; jout<n_outsr_; jout++) {
+      if (outsr_(i, jout) >= 0) {
+        std::cout << species_names[outsr_(i, jout)];
+        if (jout < n_outsr_-1 && outsr_(i, jout+1) >= 0) {
+          std::cout << " + ";
+        }
+      }
+    }
+    std::cout << std::endl;
+  }
+  std::cout << "idmap_sr_: " << std::endl;
+  for (std::map<int,int>::const_iterator it=idmap_sr_.begin();
+       it!=idmap_sr_.end(); it++) {
+    std::cout << it->first << " => " << it->second << std::endl;
+  }
+
   return;
 }
 
 void ChemNetwork::OutputRates(FILE *pf) const {
-  //output the reactions and base rates
+  //output the reactions and rates
 	for (int i=0; i<n_cr_; i++) {
 		fprintf(pf, "%4s + CR -> %4s + %4s,     kcr = %.2e\n", 
 		 species_names[incr_[i]].c_str(), species_names[outcr1_[i]].c_str(),
      species_names[outcr2_[i]].c_str(), kcr_[i]);
 	}
-	//for (int i=0; i<n_2body_; i++) {
-	//	fprintf(pf, "%4s  + %4s -> %4s  + %4s,     k2body = %.2e\n", 
-	//	 species_names[in2body1_[i]].c_str(),
-	//	 species_names[in2body2_[i]].c_str(),
-	//	 species_names[out2body1_[i]].c_str(),
-	//	 species_names[out2body2_[i]].c_str(),
-	//	 k2body_[i]);
-	//}
-	//for (int i=0; i<n_ph_; i++) {
-	//	fprintf(pf, "%4s + h nu -> %4s,     kph = %.2e\n", 
-	//	 species_names[inph_[i]].c_str(), species_names[outph1_[i]].c_str(),
-	//	 kph_[i]);
-	//}
+	for (int i=0; i<n_crp_; i++) {
+		fprintf(pf, "%4s + CRP -> %4s + %4s,     kcr = %.2e\n", 
+		 species_names[incrp_[i]].c_str(), species_names[outcrp1_[i]].c_str(),
+     species_names[outcrp2_[i]].c_str(), kcrp_[i]);
+	}
+	for (int i=0; i<n_ph_; i++) {
+		fprintf(pf, "%4s + Photon -> %4s + %4s,     kcr = %.2e\n", 
+		 species_names[inph_[i]].c_str(), species_names[outph1_[i]].c_str(),
+     species_names[outph2_[i]].c_str(), kph_[i]);
+	}
+	for (int i=0; i<n_2body_; i++) {
+    fprintf(pf, "%4s + %4s -> %4s",
+        species_names[in2body1_[i]].c_str(),
+        species_names[in2body2_[i]].c_str(),
+        species_names[out2body1_[i]].c_str());
+    if (out2body2_[i] >= 0) {
+      fprintf(pf, " + %4s", species_names[out2body2_[i]].c_str());
+    }
+    if (out2body3_[i] >= 0) {
+      fprintf(pf, " + %4s", species_names[out2body3_[i]].c_str());
+    }
+    fprintf(pf,   ",     k2body = %.2e\n", k2body_[i]);
+	}
 	for (int i=0; i<n_gr_; i++) {
 		fprintf(pf, "%4s + %4s (+ gr) -> %4s (+ gr),       kgr = %.2e\n", 
 		 species_names[ingr1_[i]].c_str(), species_names[ingr2_[i]].c_str(),
      species_names[outgr_[i]].c_str(), kgr_[i]);
 	}
+  for (int i=0; i<n_sr_; i++) {
+    for (int jin=0; jin<n_insr_; jin++) {
+      if (insr_(i, jin) >= 0) {
+        fprintf(pf, "%4s", species_names[insr_(i, jin)].c_str());
+        if (jin < n_insr_-1 && insr_(i, jin+1) >= 0) {
+          fprintf(pf, " + ");
+        }
+      }
+    }
+    fprintf(pf, " -> ");
+    for (int jout=0; jout<n_outsr_; jout++) {
+      if (outsr_(i, jout) >= 0) {
+        fprintf(pf, "%4s", species_names[outsr_(i, jout)].c_str());
+        if (jout < n_outsr_-1 && outsr_(i, jout+1) >= 0) {
+          fprintf(pf, " + ");
+        }
+      }
+    }
+		fprintf(pf, ",       ksr = %.2e\n", ksr_[i]);
+  }
   return;
 }
 
@@ -442,12 +771,60 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
     ydotg[outcr2_[i]] += rate;
   }
 
+  //cosmic ray induced photo reactions
+  for (int i=0; i<n_crp_; i++) {
+    rate = kcrp_[i] * y[incrp_[i]];
+    ydotg[incrp_[i]] -= rate;
+    ydotg[outcrp1_[i]] += rate;
+    ydotg[outcrp2_[i]] += rate;
+  }
+
+  //cosmic ray induced photo reactions
+  for (int i=0; i<n_ph_; i++) {
+    rate = kph_[i] * y[inph_[i]];
+    ydotg[inph_[i]] -= rate;
+    ydotg[outph1_[i]] += rate;
+    ydotg[outph2_[i]] += rate;
+  }
+
+  //2body reactions
+  for (int i=0; i<n_2body_; i++) {
+    rate =  k2body_[i] * y[in2body1_[i]] * y[in2body2_[i]];
+    if (y[in2body1_[i]] < 0 && y[in2body2_[i]] < 0) {
+      rate *= -1.;
+    }
+    ydotg[in2body1_[i]] -= rate;
+    ydotg[in2body2_[i]] -= rate;
+    ydotg[out2body1_[i]] += rate;
+    if (out2body2_[i] >= 0) {
+      ydotg[out2body2_[i]] += rate;
+    }
+    if (out2body3_[i] >= 0) {
+      ydotg[out2body3_[i]] += rate;
+    }
+  }
+
   //grain assisted reactions
   for (int i=0; i<n_gr_; i++) {
     rate = kgr_[i] * y[ingr1_[i]];
     ydotg[ingr1_[i]] -= rate;
     ydotg[ingr2_[i]] -= rate;
     ydotg[outgr_[i]] += rate;
+  }
+
+  //special reactions
+  for (int i=0; i<n_sr_; i++) {
+    rate = ksr_[i];
+    for (int jin=0; jin<n_insr_; jin++) {
+      if (insr_(i, jin) >= 0) {
+        ydotg[insr_(i, jin)] -= rate;
+      }
+    }
+    for (int jout=0; jout<n_outsr_; jout++) {
+      if (outsr_(i, jout) >= 0) {
+        ydotg[outsr_(i, jout)] += rate;
+      }
+    }
   }
 
 	//set ydot to return
@@ -491,4 +868,12 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED){
   const Real dEDdt = 0;
   return dEDdt;
+}
+
+
+//default: no special rates
+void __attribute__((weak)) ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS],
+                                                           const Real E) {
+  // do nothing
+  return;
 }

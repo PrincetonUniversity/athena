@@ -1,11 +1,11 @@
-#ifndef GOW16_HPP
-#define GOW16_HPP
+#ifndef GOW17_HPP
+#define GOW17_HPP
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
 // See LICENSE file for full public license information.
 //======================================================================================
-//! \file gow16.hpp
+//! \file gow17.hpp
 //  \brief definitions for chemical network in Gong, Osriker and Wolfire 2016
 //======================================================================================
 
@@ -212,8 +212,6 @@ private:
   Real GetStddev(Real arr[], const int len);
   //set gradients of v and nH for CO cooling
   void SetGrad_v(const int k, const int j, const int i); 
-  //output properties of network. Can be used in eg. ProblemGenerator.
-  void OutputProperties(FILE *pf) const;
 };
 
-#endif // GOW16_HPP
+#endif // GOW17_HPP

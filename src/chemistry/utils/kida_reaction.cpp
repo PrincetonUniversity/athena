@@ -71,13 +71,13 @@ KidaReaction::KidaReaction(std::string line) {
 void KidaReaction::Print() const {
   std::cout << "reaction ID=" << id_ << ": ";
   for (int i=0; i<reactants_.size()-1; i++) {
-    std::cout << reactants_[i] << "+";
+    std::cout << reactants_[i] << " + ";
   }
   std::cout << reactants_[reactants_.size()-1]
     << " -> ";
 
   for (int i=0; i<products_.size()-1; i++) {
-    std::cout << products_[i] << "+";
+    std::cout << products_[i] << " + ";
   }
   std::cout << products_[products_.size()-1]
     << std::endl;

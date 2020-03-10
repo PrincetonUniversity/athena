@@ -64,9 +64,11 @@ private:
   int nr_; //number of reactions
 
   //physical quantities
-	Real xi_cr_; //primary CRIR in s-1 H-1, read from input file, default 2e-16.
+  const Real xHe_ = 0.1;//Helium abundance
 	Real zdg_; //dust and gas metallicity relative to solar, default 1.
 	Real nH_; //density, updated at InitializeNextStep from hydro variable
+  Real temperature_; //temperature of the gas if isothermal 
+  Real temp_min_rates_; //temperature floor for reaction rates
 
 	//units 
 	Real unit_density_in_nH_; //read from input
@@ -83,8 +85,40 @@ private:
   std::vector<int> incr_;
   std::vector<int> outcr1_;
   std::vector<int> outcr2_;
+  std::map<int, int> idmap_cr_;
   std::vector<Real> kcr_base_;
   std::vector<Real> kcr_;
+  //cosmic-ray induced photo ionization
+  int n_crp_;
+  std::vector<int> incrp_;
+  std::vector<int> outcrp1_;
+  std::vector<int> outcrp2_;
+  std::map<int, int> idmap_crp_;
+  std::vector<Real> kcrp_base_;
+  std::vector<Real> kcrp_;
+  //photo reactions
+  int n_ph_;
+  std::vector<int> inph_;
+  std::vector<int> outph1_;
+  std::vector<int> outph2_;
+  //reactant species name map, for radiation calculation
+  std::map<std::string, int> smap_ph_; 
+  std::vector<Real> kph_base_;
+  std::vector<Real> kph_avfac_;
+  std::vector<Real> kph_;
+  //2body reactions
+  int n_2body_;
+  std::vector<int> in2body1_;
+  std::vector<int> in2body2_;
+  std::vector<int> out2body1_;
+  std::vector<int> out2body2_;
+  std::vector<int> out2body3_;
+  std::vector<int> frml_2body_;
+  std::map<int, int> idmap_2body_;
+  std::vector<Real> a2body_; //alpha
+  std::vector<Real> b2body_; //beta
+  std::vector<Real> c2body_; //gamma
+  std::vector<Real> k2body_;
   //grain assisted reactions
   int n_gr_;
   std::vector<int> ingr1_;
@@ -92,9 +126,17 @@ private:
   std::vector<int> outgr_;
   std::map<int, int> idmap_gr_;
   std::vector<Real> kgr_;
+  //special reactions
+  int n_sr_;
+  const int n_insr_ = 3;
+  const int n_outsr_ = 5;
+  std::vector<KidaReaction*> pr_sr_;
+  AthenaArray<int> insr_;
+  AthenaArray<int> outsr_;
+  std::map<int, int> idmap_sr_;
+  std::vector<Real> ksr_;
 
   //radiation related reactions and variables
-  int n_ph_;
   int n_freq_;
   int index_gpe_;
   int index_cr_;
@@ -103,6 +145,7 @@ private:
   //functions
   void InitializeReactions(); //set up coefficients of reactions
   void UpdateRates(const Real y[NSCALARS], const Real E); //reaction rates
+  void UpdateRatesSpecial(const Real y[NSCALARS], const Real E); //formula = 7
   void CheckReaction(KidaReaction reaction);
   void PrintProperties() const; //print out reactions and rates, for debug
   void OutputRates(FILE *pf) const;//output reaction rates

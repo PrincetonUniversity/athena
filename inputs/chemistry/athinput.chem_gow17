@@ -1,10 +1,10 @@
 <comment>
 problem   = Read C. G. Kim's MHD_32pc vtk output, single file.
 reference =
-configure = --prob=chem_gow16 --chemistry=gow16 --radiation=const
+configure = --prob=chem_gow17 --chemistry=gow17 --radiation=const
 
 <job>
-problem_id = chem_gow16   # problem ID: basename of output filenames
+problem_id = chem_gow17   # problem ID: basename of output filenames
 
 <output1>
 file_type  = vtk       # vtk data dump

@@ -52,7 +52,7 @@ static void ath_bswap(void *vdat, int len, int cnt);
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
   FILE *pf = fopen("chem_network.dat", "w");
-  pblock->pspec->pchemnet->OutputProperties(pf);
+  pblock->pspec->pchemnet->OutputRates(pf);
   fclose(pf);
   return;
 }

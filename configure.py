@@ -31,6 +31,7 @@
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
 #   --grav=xxx        use xxx as the self-gravity solver
 #   --chemistry=choice enable chemistry, use choice as chemical network
+#   --kida_rates=choice add special rates to kida network
 #   --cvode_path=path  path to CVODE libraries (chemistry requires the cvode library)
 #   --radiation=choice  enable radiative transfer, use choice for integrator
 #   --cxx=xxx         use xxx as the C++ compiler
@@ -201,8 +202,14 @@ parser.add_argument('--fftw_path',
 # --chemistry argument
 parser.add_argument('--chemistry',
     default=None,
-    choices=["gow16", "H2", "kida"],
+    choices=["gow17", "H2", "kida"],
     help='select chemical network')
+
+# --kida_rates argument
+parser.add_argument('--kida_rates',
+    default=None,
+    choices=["gow17"],
+    help='select special rates for kida network')
 
 # -radiation argument
 parser.add_argument('--radiation',
@@ -595,7 +602,7 @@ if args['chemistry'] is not None:
     makefile_options['CHEMISTRY_FILE'] = 'src/chemistry/*.cpp src/chemistry/utils/*.cpp'
     makefile_options['LIBRARY_FLAGS'] += ' -lsundials_cvode -lsundials_nvecserial'
     #specify the number of species for each network
-    if args['chemistry'] == "gow16":
+    if args['chemistry'] == "gow17":
         definitions['NUMBER_PASSIVE_SCALARS'] = '12'
     elif args['chemistry'] == "H2":
         definitions['NUMBER_PASSIVE_SCALARS'] = '2'
@@ -604,6 +611,11 @@ else:
     makefile_options['CHEMNET_FILE'] = ''
     makefile_options['CHEMISTRY_FILE'] = ''
     definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/network.hpp'
+
+if args['kida_rates'] is not None:
+    if args['chemistry'] == "kida":
+        makefile_options['CHEMNET_FILE'] += (' src/chemistry/network/kida_network_files/'
+           +args['kida_rates']+'/kida_'+args['kida_rates']+'.cpp')
 
 # --cvode_path=[path] argument
 if args['cvode_path'] != '':
@@ -862,6 +874,8 @@ print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:               ' + self_grav_string)
 print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
 print('  Chemistry:                  ' + (args['chemistry'] if  args['chemistry'] \
+        !=  None else 'OFF'))
+print('  kida_rates:                 ' + (args['kida_rates'] if args['kida_rates'] \
         !=  None else 'OFF'))
 print('  Radiation:                  ' + (args['radiation'] if  args['radiation'] \
         !=  None else 'OFF'))
