@@ -167,8 +167,74 @@ void ChemNetwork::InitializeReactions() {
   //error message
   bool error=false;
   ReactionType rtype;
+  //count reactions
   for (int ir=0; ir<nr_; ir++) {
     CheckReaction(reactions_[ir]);
+    pr = &reactions_[ir];
+    rtype = SortReaction(pr);
+    switch(rtype) {
+      case ReactionType::cr: n_cr_++; break;
+      case ReactionType::crp: n_crp_++; break;
+      case ReactionType::photo: n_ph_++; break;
+      case ReactionType::twobody: n_2body_++; break;
+      case ReactionType::grain: n_gr_++; break;
+      case ReactionType::special: n_sr_++; break;
+      default: std::stringstream msg; 
+               msg << "### FATAL ERROR in ChemNetwork InitializeReactions()"
+                 << " [ChemNetwork]: reaction type not recognized." << std::endl;
+               ATHENA_ERROR(msg);
+               break;
+    }
+  }
+  //create arrays
+  if (n_cr_ > 0) {
+    incr_.NewAthenaArray(n_cr_);
+    outcr1_.NewAthenaArray(n_cr_);
+    outcr2_.NewAthenaArray(n_cr_);
+    kcr_base_.NewAthenaArray(n_cr_);
+    kcr_.NewAthenaArray(n_cr_);
+  }
+  if (n_crp_ > 0) {
+    incrp_.NewAthenaArray(n_crp_);
+    outcrp1_.NewAthenaArray(n_crp_);
+    outcrp2_.NewAthenaArray(n_crp_);
+    kcrp_base_.NewAthenaArray(n_crp_);
+    kcrp_.NewAthenaArray(n_crp_);
+  }
+  if (n_ph_ > 0) {
+    inph_.NewAthenaArray(n_ph_);
+    outph1_.NewAthenaArray(n_ph_);
+    outph2_.NewAthenaArray(n_ph_);
+    kph_base_.NewAthenaArray(n_ph_);
+    kph_avfac_.NewAthenaArray(n_ph_);
+    kph_.NewAthenaArray(n_ph_);
+  }
+  if (n_2body_ > 0) {
+    in2body1_.NewAthenaArray(n_2body_);
+    in2body2_.NewAthenaArray(n_2body_);
+    out2body1_.NewAthenaArray(n_2body_);
+    out2body2_.NewAthenaArray(n_2body_);
+    out2body3_.NewAthenaArray(n_2body_);
+    frml_2body_.NewAthenaArray(n_2body_);
+    a2body_.NewAthenaArray(n_2body_);
+    b2body_.NewAthenaArray(n_2body_);
+    c2body_.NewAthenaArray(n_2body_);
+    k2body_.NewAthenaArray(n_2body_);
+  }
+  if (n_gr_ > 0) {
+    ingr1_.NewAthenaArray(n_gr_);
+    ingr2_.NewAthenaArray(n_gr_);
+    outgr_.NewAthenaArray(n_gr_);
+    kgr_.NewAthenaArray(n_gr_);
+  }
+  if (n_sr_ > 0) {
+    insr_.NewAthenaArray(n_sr_, n_insr_);
+    outsr_.NewAthenaArray(n_sr_, n_outsr_);
+    ksr_.NewAthenaArray(n_sr_);
+  }
+  
+  int icr=0, icrp=0, iph=0, i2body=0, igr=0, isr=0;
+  for (int ir=0; ir<nr_; ir++) {
     pr = &reactions_[ir];
     rtype = SortReaction(pr);
     //---------------- cr - direct cosmic-ray ionization --------------
@@ -180,20 +246,20 @@ void ChemNetwork::InitializeReactions() {
         in_spec = pr->reactants_[0];
       }
       if (pr->formula_ == 1) {
-        incr_.push_back(ispec_map_[in_spec]);
-        outcr1_.push_back(ispec_map_[ pr->products_[0]]);
-        outcr2_.push_back(ispec_map_[ pr->products_[1]]);
-        kcr_base_.push_back(pr->alpha_);
-        kcr_.push_back(0.);
-        n_cr_++;
+        incr_(icr) = ispec_map_[in_spec];
+        outcr1_(icr) = ispec_map_[ pr->products_[0]];
+        outcr2_(icr) = ispec_map_[ pr->products_[1]];
+        kcr_base_(icr) = pr->alpha_;
+        kcr_(icr) = 0.;
+        icr++;
       } else if (pr->formula_ == 7) {
-        incr_.push_back(ispec_map_[in_spec]);
-        outcr1_.push_back(ispec_map_[ pr->products_[0]]);
-        outcr2_.push_back(ispec_map_[ pr->products_[1]]);
-        idmap_cr_[pr->id_] = n_cr_;
-        kcr_base_.push_back(0.);
-        kcr_.push_back(0.);
-        n_cr_++;
+        incr_(icr) = ispec_map_[in_spec];
+        outcr1_(icr) = ispec_map_[ pr->products_[0]];
+        outcr2_(icr) = ispec_map_[ pr->products_[1]];
+        idmap_cr_[pr->id_] = icr;
+        kcr_base_(icr) = 0.;
+        kcr_(icr) = 0.;
+        icr++;
       } else {
         error = true;
       }
@@ -207,20 +273,20 @@ void ChemNetwork::InitializeReactions() {
         in_spec = pr->reactants_[0];
       }
       if (pr->formula_ == 1) {
-        incrp_.push_back(ispec_map_[in_spec]);
-        outcrp1_.push_back(ispec_map_[ pr->products_[0]]);
-        outcrp2_.push_back(ispec_map_[ pr->products_[1]]);
-        kcrp_base_.push_back(pr->alpha_);
-        kcrp_.push_back(0.);
-        n_crp_++;
+        incrp_(icrp) = ispec_map_[in_spec];
+        outcrp1_(icrp) = ispec_map_[ pr->products_[0]];
+        outcrp2_(icrp) = ispec_map_[ pr->products_[1]];
+        kcrp_base_(icrp) = pr->alpha_;
+        kcrp_(icrp) = 0.;
+        icrp++;
       } else if (pr->formula_ == 7) {
-        incrp_.push_back(ispec_map_[in_spec]);
-        outcrp1_.push_back(ispec_map_[ pr->products_[0]]);
-        outcrp2_.push_back(ispec_map_[ pr->products_[1]]);
-        idmap_crp_[pr->id_] = n_crp_;
-        kcrp_base_.push_back(0.);
-        kcrp_.push_back(0.);
-        n_crp_++;
+        incrp_(icrp) = ispec_map_[in_spec];
+        outcrp1_(icrp) = ispec_map_[ pr->products_[0]];
+        outcrp2_(icrp) = ispec_map_[ pr->products_[1]];
+        idmap_crp_[pr->id_] = icrp;
+        kcrp_base_(icrp) = 0.;
+        kcrp_(icrp) = 0.;
+        icrp++;
       } else {
         error = true;
       }
@@ -234,60 +300,61 @@ void ChemNetwork::InitializeReactions() {
         in_spec = pr->reactants_[0];
       }
       if (pr->formula_ == 2) {
-        inph_.push_back(ispec_map_[in_spec]);
-        outph1_.push_back(ispec_map_[ pr->products_[0]]);
-        outph2_.push_back(ispec_map_[ pr->products_[1]]);
-        kph_base_.push_back(pr->alpha_);
-        kph_avfac_.push_back(pr->gamma_);
-        smap_ph_[in_spec] = n_ph_;
-        kph_.push_back(0.);
-        n_ph_++;
+        inph_(iph) = ispec_map_[in_spec];
+        outph1_(iph) = ispec_map_[ pr->products_[0]];
+        outph2_(iph) = ispec_map_[ pr->products_[1]];
+        kph_base_(iph) = pr->alpha_;
+        kph_avfac_(iph) = pr->gamma_;
+        smap_ph_[in_spec] = iph;
+        kph_(iph) = 0.;
+        iph++;
       } else {
         error = true;
       }
+
     //---------------- twobody - 2body reaction ---------------------------
     } else if (rtype == ReactionType::twobody) {
       if (pr->formula_ == 3 || pr->formula_ == 4 || pr->formula_ == 5) {
-        in2body1_.push_back(ispec_map_[ pr->reactants_[0]]);
-        in2body2_.push_back(ispec_map_[ pr->reactants_[1]]);
-        out2body1_.push_back(ispec_map_[ pr->products_[0]]);
+        in2body1_(i2body) = ispec_map_[ pr->reactants_[0]];
+        in2body2_(i2body) = ispec_map_[ pr->reactants_[1]];
+        out2body1_(i2body) = ispec_map_[ pr->products_[0]];
         if (pr->products_.size() >= 2) {
-          out2body2_.push_back(ispec_map_[ pr->products_[1]]);
+          out2body2_(i2body) = ispec_map_[ pr->products_[1]];
         } else {
-          out2body2_.push_back(-1);
+          out2body2_(i2body) = -1;
         }
         if (pr->products_.size() == 3) {
-          out2body3_.push_back(ispec_map_[ pr->products_[2]]);
+          out2body3_(i2body) = ispec_map_[ pr->products_[2]];
         } else {
-          out2body3_.push_back(-1);
+          out2body3_(i2body) = -1;
         }
-        frml_2body_.push_back(pr->formula_);
-        a2body_.push_back(pr->alpha_);
-        b2body_.push_back(pr->beta_);
-        c2body_.push_back(pr->gamma_);
-        k2body_.push_back(0.);
-        n_2body_++;
+        frml_2body_(i2body) = pr->formula_;
+        a2body_(i2body) = pr->alpha_;
+        b2body_(i2body) = pr->beta_;
+        c2body_(i2body) = pr->gamma_;
+        k2body_(i2body) = 0.;
+        i2body++;
       } else if (pr->formula_ == 7) {
-        in2body1_.push_back(ispec_map_[ pr->reactants_[0]]);
-        in2body2_.push_back(ispec_map_[ pr->reactants_[1]]);
-        out2body1_.push_back(ispec_map_[ pr->products_[0]]);
+        in2body1_(i2body) = ispec_map_[ pr->reactants_[0]];
+        in2body2_(i2body) = ispec_map_[ pr->reactants_[1]];
+        out2body1_(i2body) = ispec_map_[ pr->products_[0]];
         if (pr->products_.size() >= 2) {
-          out2body2_.push_back(ispec_map_[ pr->products_[1]]);
+          out2body2_(i2body) = ispec_map_[ pr->products_[1]];
         } else {
-          out2body2_.push_back(-1);
+          out2body2_(i2body) = -1;
         }
         if (pr->products_.size() == 3) {
-          out2body3_.push_back(ispec_map_[ pr->products_[2]]);
+          out2body3_(i2body) = ispec_map_[ pr->products_[2]];
         } else {
-          out2body3_.push_back(-1);
+          out2body3_(i2body) = -1;
         }
-        frml_2body_.push_back(pr->formula_);
-        a2body_.push_back(0.);
-        b2body_.push_back(0.);
-        c2body_.push_back(0.);
-        k2body_.push_back(0.);
-        idmap_2body_[pr->id_] = n_2body_;
-        n_2body_++;
+        frml_2body_(i2body) = pr->formula_;
+        a2body_(i2body) = 0.;
+        b2body_(i2body) = 0.;
+        c2body_(i2body) = 0.;
+        k2body_(i2body) = 0.;
+        idmap_2body_[pr->id_] = i2body;
+        i2body++;
       } else {
         error = true;
       }
@@ -295,12 +362,12 @@ void ChemNetwork::InitializeReactions() {
     //-------------------- grain - grain assisted reaction ----------------
     } else if (rtype == ReactionType::grain) {
       if (pr->formula_ == 7) {
-        ingr1_.push_back(ispec_map_[pr->reactants_[0]]);
-        ingr2_.push_back(ispec_map_[pr->reactants_[1]]);
-        outgr_.push_back(ispec_map_[pr->products_[0]]);
-        idmap_gr_[pr->id_] = n_gr_;
-        kgr_.push_back(0.);
-        n_gr_++;
+        ingr1_(igr) = ispec_map_[pr->reactants_[0]];
+        ingr2_(igr) = ispec_map_[pr->reactants_[1]];
+        outgr_(igr) = ispec_map_[pr->products_[0]];
+        idmap_gr_[pr->id_] = igr;
+        kgr_(igr) = 0.;
+        igr++;
       } else{
         error = true;
       }
@@ -308,10 +375,23 @@ void ChemNetwork::InitializeReactions() {
     //------------------ special - special reactions -----------------------
     } else if (rtype == ReactionType::special) {
       if (pr->formula_ == 7) {
-        idmap_sr_[pr->id_] = n_sr_;
-        ksr_.push_back(0.);
-        pr_sr_.push_back(pr);
-        n_sr_++;
+        idmap_sr_[pr->id_] = isr;
+        ksr_(isr) = 0.;
+        for (int jin=0; jin<n_insr_; jin++) {
+          if (jin < pr->reactants_.size()) {
+            insr_(isr, jin) = ispec_map_[pr->reactants_[jin]];
+          } else {
+            insr_(isr, jin) = -1;
+          }
+        }
+        for (int jout=0; jout<n_outsr_; jout++) {
+          if (jout < pr->products_.size()) {
+            outsr_(isr, jout) = ispec_map_[pr->products_[jout]];
+          } else {
+            outsr_(isr, jout) = -1;
+          }
+        }
+        isr++;
       } else {
         error = true;
       }
@@ -328,29 +408,15 @@ void ChemNetwork::InitializeReactions() {
           << " and forumla=" << pr->formula_ << " undefined." << std::endl;
       ATHENA_ERROR(msg);
     }
+  }
 
-    //special reaction coefficients
-    if (n_sr_ > 0) {
-      insr_.NewAthenaArray(n_sr_, n_insr_);
-      outsr_.NewAthenaArray(n_sr_, n_outsr_);
-    }
-    for (int i=0; i<n_sr_; i++) {
-      for (int jin=0; jin<n_insr_; jin++) {
-        if (jin < pr_sr_[i]->reactants_.size()) {
-          insr_(i, jin) = ispec_map_[pr_sr_[i]->reactants_[jin]];
-        } else {
-          insr_(i, jin) = -1;
-        }
-      }
-      for (int jout=0; jout<n_outsr_; jout++) {
-        if (jout < pr_sr_[i]->products_.size()) {
-          outsr_(i, jout) = ispec_map_[pr_sr_[i]->products_[jout]];
-        } else {
-          outsr_(i, jout) = -1;
-        }
-      }
-    }
-
+  //sanity check
+  if (icr != n_cr_ || icrp != n_crp_ || iph != n_ph_ || i2body != n_2body_ 
+      || igr != n_gr_ || isr != n_sr_) {
+    std::stringstream msg; 
+    msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
+      << ": counts of reactions does not match." << std::endl;
+    ATHENA_ERROR(msg);
   }
   return;
 }
@@ -368,29 +434,29 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
   }
 	//cosmic ray reactions
 	for (int i=0; i<n_cr_; i++) {
-		kcr_[i] = kcr_base_[i] * rad_(index_cr_);
+		kcr_(i) = kcr_base_(i) * rad_(index_cr_);
 	}
 
 	//cosmic ray induced photo reactions
 	for (int i=0; i<n_crp_; i++) {
-		kcrp_[i] = kcrp_base_[i] * rad_(index_cr_) * 2*y_H2;
+		kcrp_(i) = kcrp_base_(i) * rad_(index_cr_) * 2*y_H2;
 	}
 
 	//FUV reactions
 	for (int i=0; i<n_ph_; i++) {
-    kph_[i] = kph_base_[i] * rad_(i);
+    kph_(i) = kph_base_(i) * rad_(i);
 	}
 
   //2body reactions
 	for (int i=0; i<n_2body_; i++) {
-    if (frml_2body_[i] == 3) {
-      k2body_[i] = a2body_[i]*pow(T/300., b2body_[i])*exp(-c2body_[i]/T) * nH_;
-    } else if (frml_2body_[i] == 4) {
-      k2body_[i] = a2body_[i]*b2body_[i]*( 0.62 
-                                          + 0.4767*c2body_[i]*sqrt(300./T) ) * nH_;
-    } else if (frml_2body_[i] == 5) {
-      k2body_[i] = a2body_[i]*b2body_[i]*( 1 + 0.0967*c2body_[i]*sqrt(300./T) 
-                                            + 28.501*c2body_[i]*c2body_[i]/T ) * nH_;
+    if (frml_2body_(i) == 3) {
+      k2body_(i) = a2body_(i)*pow(T/300., b2body_(i))*exp(-c2body_(i)/T) * nH_;
+    } else if (frml_2body_(i) == 4) {
+      k2body_(i) = a2body_(i)*b2body_(i)*( 0.62 
+                                          + 0.4767*c2body_(i)*sqrt(300./T) ) * nH_;
+    } else if (frml_2body_(i) == 5) {
+      k2body_(i) = a2body_(i)*b2body_(i)*( 1 + 0.0967*c2body_(i)*sqrt(300./T) 
+                                            + 28.501*c2body_(i)*c2body_(i)/T ) * nH_;
     }
   }
 
@@ -568,9 +634,9 @@ void ChemNetwork::PrintProperties() const {
   //cosmic-ray reactions
   std::cout << "CR reations:" << std::endl;
   for (int i=0; i<n_cr_; i++) {
-    std::cout<< species_names[incr_[i]] << " + CR -> "
-      << species_names[outcr1_[i]] << " + " << species_names[outcr2_[i]] << ", "
-      << "kcr_base_=" << kcr_base_[i] << std::endl;
+    std::cout<< species_names[incr_(i)] << " + CR -> "
+      << species_names[outcr1_(i)] << " + " << species_names[outcr2_(i)] << ", "
+      << "kcr_base_=" << kcr_base_(i) << std::endl;
   }
   std::cout << "idmap_cr_: " << std::endl;
   for (std::map<int,int>::const_iterator it=idmap_cr_.begin();
@@ -581,9 +647,9 @@ void ChemNetwork::PrintProperties() const {
   //cosmic-ray induced photo reactions
   std::cout << "CRP reations:" << std::endl;
   for (int i=0; i<n_crp_; i++) {
-    std::cout<< species_names[incrp_[i]] << " + CRP -> "
-      << species_names[outcrp1_[i]] << " + " << species_names[outcrp2_[i]] << ", "
-      << "kcrp_base_=" << kcrp_base_[i] << std::endl;
+    std::cout<< species_names[incrp_(i)] << " + CRP -> "
+      << species_names[outcrp1_(i)] << " + " << species_names[outcrp2_(i)] << ", "
+      << "kcrp_base_=" << kcrp_base_(i) << std::endl;
   }
   std::cout << "idmap_crp_: " << std::endl;
   for (std::map<int,int>::const_iterator it=idmap_crp_.begin();
@@ -594,9 +660,9 @@ void ChemNetwork::PrintProperties() const {
   //FUV reactions
   std::cout << "FUV photo- ionization/dissociation:" << std::endl;
   for (int i=0; i<n_ph_; i++) {
-    std::cout<< species_names[inph_[i]] << " + Photon -> "
-      << species_names[outph1_[i]] << " + " << species_names[outph2_[i]] << ", "
-      << "kph_base_=" << kph_base_[i] << ", kph_avfac_=" << kph_avfac_[i]
+    std::cout<< species_names[inph_(i)] << " + Photon -> "
+      << species_names[outph1_(i)] << " + " << species_names[outph2_(i)] << ", "
+      << "kph_base_=" << kph_base_(i) << ", kph_avfac_=" << kph_avfac_(i)
       << std::endl;
   }
   std::cout << "smap_ph_: " << std::endl;
@@ -608,16 +674,16 @@ void ChemNetwork::PrintProperties() const {
   //2body reactions
   std::cout << "2body reactions:" << std::endl;
   for (int i=0; i<n_2body_; i++) {
-    std::cout<< species_names[in2body1_[i]] << " + "
-      << species_names[in2body2_[i]]<< " -> " << species_names[out2body1_[i]];
-    if (out2body2_[i] >= 0) {
-      std::cout<< " + " << species_names[out2body2_[i]];
+    std::cout<< species_names[in2body1_(i)] << " + "
+      << species_names[in2body2_(i)]<< " -> " << species_names[out2body1_(i)];
+    if (out2body2_(i) >= 0) {
+      std::cout<< " + " << species_names[out2body2_(i)];
     }
-    if (out2body3_[i] >= 0) {
-      std::cout<< " + " << species_names[out2body3_[i]];
+    if (out2body3_(i) >= 0) {
+      std::cout<< " + " << species_names[out2body3_(i)];
     }
-    std::cout<< ", " << "alpha=" << a2body_[i] << ", beta=" << b2body_[i]
-      << ", gamma=" << c2body_[i] << std::endl;
+    std::cout<< ", " << "alpha=" << a2body_(i) << ", beta=" << b2body_(i)
+      << ", gamma=" << c2body_(i) << std::endl;
   }
   std::cout << "idmap_2body_: " << std::endl;
   for (std::map<int,int>::const_iterator it=idmap_2body_.begin();
@@ -628,8 +694,8 @@ void ChemNetwork::PrintProperties() const {
   //grain assisted reactions
   std::cout << "gr reations:" << std::endl;
   for (int i=0; i<n_gr_; i++) {
-    std::cout<< species_names[ingr1_[i]] << " + " << species_names[ingr2_[i]] 
-      <<" -> " << species_names[outgr_[i]] << std::endl;
+    std::cout<< species_names[ingr1_(i)] << " + " << species_names[ingr2_(i)] 
+      <<" -> " << species_names[outgr_(i)] << std::endl;
   }
   std::cout << "idmap_gr_: " << std::endl;
   for (std::map<int,int>::const_iterator it=idmap_gr_.begin();
@@ -672,36 +738,36 @@ void ChemNetwork::OutputRates(FILE *pf) const {
   //output the reactions and rates
 	for (int i=0; i<n_cr_; i++) {
 		fprintf(pf, "%4s + CR -> %4s + %4s,     kcr = %.2e\n", 
-		 species_names[incr_[i]].c_str(), species_names[outcr1_[i]].c_str(),
-     species_names[outcr2_[i]].c_str(), kcr_[i]);
+		 species_names[incr_(i)].c_str(), species_names[outcr1_(i)].c_str(),
+     species_names[outcr2_(i)].c_str(), kcr_(i));
 	}
 	for (int i=0; i<n_crp_; i++) {
 		fprintf(pf, "%4s + CRP -> %4s + %4s,     kcrp = %.2e\n", 
-		 species_names[incrp_[i]].c_str(), species_names[outcrp1_[i]].c_str(),
-     species_names[outcrp2_[i]].c_str(), kcrp_[i]);
+		 species_names[incrp_(i)].c_str(), species_names[outcrp1_(i)].c_str(),
+     species_names[outcrp2_(i)].c_str(), kcrp_(i));
 	}
 	for (int i=0; i<n_ph_; i++) {
 		fprintf(pf, "%4s + Photon -> %4s + %4s,     kph = %.2e\n", 
-		 species_names[inph_[i]].c_str(), species_names[outph1_[i]].c_str(),
-     species_names[outph2_[i]].c_str(), kph_[i]);
+		 species_names[inph_(i)].c_str(), species_names[outph1_(i)].c_str(),
+     species_names[outph2_(i)].c_str(), kph_(i));
 	}
 	for (int i=0; i<n_2body_; i++) {
     fprintf(pf, "%4s + %4s -> %4s",
-        species_names[in2body1_[i]].c_str(),
-        species_names[in2body2_[i]].c_str(),
-        species_names[out2body1_[i]].c_str());
-    if (out2body2_[i] >= 0) {
-      fprintf(pf, " + %4s", species_names[out2body2_[i]].c_str());
+        species_names[in2body1_(i)].c_str(),
+        species_names[in2body2_(i)].c_str(),
+        species_names[out2body1_(i)].c_str());
+    if (out2body2_(i) >= 0) {
+      fprintf(pf, " + %4s", species_names[out2body2_(i)].c_str());
     }
-    if (out2body3_[i] >= 0) {
-      fprintf(pf, " + %4s", species_names[out2body3_[i]].c_str());
+    if (out2body3_(i) >= 0) {
+      fprintf(pf, " + %4s", species_names[out2body3_(i)].c_str());
     }
-    fprintf(pf,   ",     k2body = %.2e\n", k2body_[i]);
+    fprintf(pf,   ",     k2body = %.2e\n", k2body_(i));
 	}
 	for (int i=0; i<n_gr_; i++) {
 		fprintf(pf, "%4s + %4s (+ gr) -> %4s (+ gr),       kgr = %.2e\n", 
-		 species_names[ingr1_[i]].c_str(), species_names[ingr2_[i]].c_str(),
-     species_names[outgr_[i]].c_str(), kgr_[i]);
+		 species_names[ingr1_(i)].c_str(), species_names[ingr2_(i)].c_str(),
+     species_names[outgr_(i)].c_str(), kgr_(i));
 	}
   for (int i=0; i<n_sr_; i++) {
     for (int jin=0; jin<n_insr_; jin++) {
@@ -721,7 +787,7 @@ void ChemNetwork::OutputRates(FILE *pf) const {
         }
       }
     }
-		fprintf(pf, ",       ksr = %.2e\n", ksr_[i]);
+		fprintf(pf, ",       ksr = %.2e\n", ksr_(i));
   }
   return;
 }
@@ -811,56 +877,56 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 
   //cosmic ray reactions
   for (int i=0; i<n_cr_; i++) {
-    rate = kcr_[i] * y[incr_[i]];
-    ydotg[incr_[i]] -= rate;
-    ydotg[outcr1_[i]] += rate;
-    ydotg[outcr2_[i]] += rate;
+    rate = kcr_(i) * y[incr_(i)];
+    ydotg[incr_(i)] -= rate;
+    ydotg[outcr1_(i)] += rate;
+    ydotg[outcr2_(i)] += rate;
   }
 
   //cosmic ray induced photo reactions
   for (int i=0; i<n_crp_; i++) {
-    rate = kcrp_[i] * y[incrp_[i]];
-    ydotg[incrp_[i]] -= rate;
-    ydotg[outcrp1_[i]] += rate;
-    ydotg[outcrp2_[i]] += rate;
+    rate = kcrp_(i) * y[incrp_(i)];
+    ydotg[incrp_(i)] -= rate;
+    ydotg[outcrp1_(i)] += rate;
+    ydotg[outcrp2_(i)] += rate;
   }
 
   //cosmic ray induced photo reactions
   for (int i=0; i<n_ph_; i++) {
-    rate = kph_[i] * y[inph_[i]];
-    ydotg[inph_[i]] -= rate;
-    ydotg[outph1_[i]] += rate;
-    ydotg[outph2_[i]] += rate;
+    rate = kph_(i) * y[inph_(i)];
+    ydotg[inph_(i)] -= rate;
+    ydotg[outph1_(i)] += rate;
+    ydotg[outph2_(i)] += rate;
   }
 
   //2body reactions
   for (int i=0; i<n_2body_; i++) {
-    rate =  k2body_[i] * y[in2body1_[i]] * y[in2body2_[i]];
-    if (y[in2body1_[i]] < 0 && y[in2body2_[i]] < 0) {
+    rate =  k2body_(i) * y[in2body1_(i)] * y[in2body2_(i)];
+    if (y[in2body1_(i)] < 0 && y[in2body2_(i)] < 0) {
       rate *= -1.;
     }
-    ydotg[in2body1_[i]] -= rate;
-    ydotg[in2body2_[i]] -= rate;
-    ydotg[out2body1_[i]] += rate;
-    if (out2body2_[i] >= 0) {
-      ydotg[out2body2_[i]] += rate;
+    ydotg[in2body1_(i)] -= rate;
+    ydotg[in2body2_(i)] -= rate;
+    ydotg[out2body1_(i)] += rate;
+    if (out2body2_(i) >= 0) {
+      ydotg[out2body2_(i)] += rate;
     }
-    if (out2body3_[i] >= 0) {
-      ydotg[out2body3_[i]] += rate;
+    if (out2body3_(i) >= 0) {
+      ydotg[out2body3_(i)] += rate;
     }
   }
 
   //grain assisted reactions
   for (int i=0; i<n_gr_; i++) {
-    rate = kgr_[i] * y[ingr1_[i]];
-    ydotg[ingr1_[i]] -= rate;
-    ydotg[ingr2_[i]] -= rate;
-    ydotg[outgr_[i]] += rate;
+    rate = kgr_(i) * y[ingr1_(i)];
+    ydotg[ingr1_(i)] -= rate;
+    ydotg[ingr2_(i)] -= rate;
+    ydotg[outgr_(i)] += rate;
   }
 
   //special reactions
   for (int i=0; i<n_sr_; i++) {
-    rate = ksr_[i];
+    rate = ksr_(i);
     for (int jin=0; jin<n_insr_; jin++) {
       if (insr_(i, jin) >= 0) {
         ydotg[insr_(i, jin)] -= rate;

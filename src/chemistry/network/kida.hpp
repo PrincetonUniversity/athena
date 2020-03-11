@@ -85,59 +85,58 @@ private:
   //reaction constants
   //direct cosmic-ray ionization
   int n_cr_;
-  std::vector<int> incr_;
-  std::vector<int> outcr1_;
-  std::vector<int> outcr2_;
+  AthenaArray<int> incr_;
+  AthenaArray<int> outcr1_;
+  AthenaArray<int> outcr2_;
   std::map<int, int> idmap_cr_;
-  std::vector<Real> kcr_base_;
-  std::vector<Real> kcr_;
+  AthenaArray<Real> kcr_base_;
+  AthenaArray<Real> kcr_;
   //cosmic-ray induced photo ionization
   int n_crp_;
-  std::vector<int> incrp_;
-  std::vector<int> outcrp1_;
-  std::vector<int> outcrp2_;
+  AthenaArray<int> incrp_;
+  AthenaArray<int> outcrp1_;
+  AthenaArray<int> outcrp2_;
   std::map<int, int> idmap_crp_;
-  std::vector<Real> kcrp_base_;
-  std::vector<Real> kcrp_;
+  AthenaArray<Real> kcrp_base_;
+  AthenaArray<Real> kcrp_;
   //photo reactions
   int n_ph_;
-  std::vector<int> inph_;
-  std::vector<int> outph1_;
-  std::vector<int> outph2_;
+  AthenaArray<int> inph_;
+  AthenaArray<int> outph1_;
+  AthenaArray<int> outph2_;
   //reactant species name map, for radiation calculation
   std::map<std::string, int> smap_ph_; 
-  std::vector<Real> kph_base_;
-  std::vector<Real> kph_avfac_;
-  std::vector<Real> kph_;
+  AthenaArray<Real> kph_base_;
+  AthenaArray<Real> kph_avfac_;
+  AthenaArray<Real> kph_;
   //2body reactions
   int n_2body_;
-  std::vector<int> in2body1_;
-  std::vector<int> in2body2_;
-  std::vector<int> out2body1_;
-  std::vector<int> out2body2_;
-  std::vector<int> out2body3_;
-  std::vector<int> frml_2body_;
+  AthenaArray<int> in2body1_;
+  AthenaArray<int> in2body2_;
+  AthenaArray<int> out2body1_;
+  AthenaArray<int> out2body2_;
+  AthenaArray<int> out2body3_;
+  AthenaArray<int> frml_2body_;
   std::map<int, int> idmap_2body_;
-  std::vector<Real> a2body_; //alpha
-  std::vector<Real> b2body_; //beta
-  std::vector<Real> c2body_; //gamma
-  std::vector<Real> k2body_;
+  AthenaArray<Real> a2body_; //alpha
+  AthenaArray<Real> b2body_; //beta
+  AthenaArray<Real> c2body_; //gamma
+  AthenaArray<Real> k2body_;
   //grain assisted reactions
   int n_gr_;
-  std::vector<int> ingr1_;
-  std::vector<int> ingr2_;
-  std::vector<int> outgr_;
+  AthenaArray<int> ingr1_;
+  AthenaArray<int> ingr2_;
+  AthenaArray<int> outgr_;
   std::map<int, int> idmap_gr_;
-  std::vector<Real> kgr_;
+  AthenaArray<Real> kgr_;
   //special reactions
   int n_sr_;
   const int n_insr_ = 3;
   const int n_outsr_ = 5;
-  std::vector<KidaReaction*> pr_sr_;
   AthenaArray<int> insr_;
   AthenaArray<int> outsr_;
   std::map<int, int> idmap_sr_;
-  std::vector<Real> ksr_;
+  AthenaArray<Real> ksr_;
 
   //radiation related reactions and variables
   int n_freq_;
