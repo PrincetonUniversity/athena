@@ -21,6 +21,9 @@
 #include "../utils/kida_species.hpp"
 #include "../utils/kida_reaction.hpp"
 
+//reaction types
+enum class ReactionType {cr, crp, photo, twobody, grain, special};
+
 //! \class ChemNetwork
 //  \brief Chemical Network that defines the reaction rates between species.
 //  Note: This is a template for chemistry network.
@@ -146,10 +149,12 @@ private:
   void InitializeReactions(); //set up coefficients of reactions
   void UpdateRates(const Real y[NSCALARS], const Real E); //reaction rates
   void UpdateRatesSpecial(const Real y[NSCALARS], const Real E); //formula = 7
+  ReactionType SortReaction(KidaReaction* pr) const;
   void CheckReaction(KidaReaction reaction);
   void PrintProperties() const; //print out reactions and rates, for debug
   void OutputRates(FILE *pf) const;//output reaction rates
 
 };
+
 
 #endif // KIDA_HPP

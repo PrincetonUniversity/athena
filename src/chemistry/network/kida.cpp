@@ -166,26 +166,19 @@ void ChemNetwork::InitializeReactions() {
   KidaReaction *pr = NULL;
   //error message
   bool error=false;
+  ReactionType rtype;
   for (int ir=0; ir<nr_; ir++) {
     CheckReaction(reactions_[ir]);
     pr = &reactions_[ir];
-    //---------------- 1 - direct cosmic-ray ionization --------------
-    if (pr->itype_ == 1) {
-      //check format of reaction 
+    rtype = SortReaction(pr);
+    //---------------- cr - direct cosmic-ray ionization --------------
+    if (rtype == ReactionType::cr) {
       std::string in_spec; //input species
-      if (pr->reactants_.size() == 2 && pr->products_.size() == 2
-          && (pr->reactants_[0] == "CR" || pr->reactants_[1] == "CR") ) {
-        if (pr->reactants_[0] == "CR") {
-          in_spec = pr->reactants_[1];
-        } else {
-          in_spec = pr->reactants_[0];
-        }
+      if (pr->reactants_[0] == "CR") {
+        in_spec = pr->reactants_[1];
       } else {
-        std::stringstream msg; 
-        msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
-            << std::endl << "Wrong format in CR reaction ID=" << pr->id_ << std::endl;
+        in_spec = pr->reactants_[0];
       }
-      //set indexing arrays
       if (pr->formula_ == 1) {
         incr_.push_back(ispec_map_[in_spec]);
         outcr1_.push_back(ispec_map_[ pr->products_[0]]);
@@ -205,23 +198,14 @@ void ChemNetwork::InitializeReactions() {
         error = true;
       }
 
-    //---------------- 2 - cosmic-ray induced photo ionization --------
-    } else if (pr->itype_ == 2) {
-      //check format of reaction 
+    //---------------- crp - cosmic-ray induced photo ionization --------
+    } else if (rtype == ReactionType::crp) {
       std::string in_spec; //input species
-      if (pr->reactants_.size() == 2 && pr->products_.size() == 2
-          && (pr->reactants_[0] == "CRP" || pr->reactants_[1] == "CRP") ) {
-        if (pr->reactants_[0] == "CRP") {
-          in_spec = pr->reactants_[1];
-        } else {
-          in_spec = pr->reactants_[0];
-        }
+      if (pr->reactants_[0] == "CRP") {
+        in_spec = pr->reactants_[1];
       } else {
-        std::stringstream msg; 
-        msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
-           << std::endl << "Wrong format in CRP reaction ID=" << pr->id_ << std::endl;
+        in_spec = pr->reactants_[0];
       }
-      //set indexing arrays
       if (pr->formula_ == 1) {
         incrp_.push_back(ispec_map_[in_spec]);
         outcrp1_.push_back(ispec_map_[ pr->products_[0]]);
@@ -241,23 +225,14 @@ void ChemNetwork::InitializeReactions() {
         error = true;
       }
 
-    //---------------- 3 - FUV ionization/dissociation ----------------
-    } else if (pr->itype_ == 3) {
-      //check format of reaction 
+    //---------------- photo - FUV ionization/dissociation ----------------
+    } else if (rtype == ReactionType::photo) {
       std::string in_spec; //input species
-      if (pr->reactants_.size() == 2 && pr->products_.size() == 2
-          && (pr->reactants_[0] == "Photon" || pr->reactants_[1] == "Photon") ) {
-        if (pr->reactants_[0] == "Photon") {
-          in_spec = pr->reactants_[1];
-        } else {
-          in_spec = pr->reactants_[0];
-        }
+      if (pr->reactants_[0] == "Photon") {
+        in_spec = pr->reactants_[1];
       } else {
-        std::stringstream msg; 
-        msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
-           << std::endl << "Wrong format in FUV reaction ID=" << pr->id_ << std::endl;
+        in_spec = pr->reactants_[0];
       }
-      //set indexing arrays
       if (pr->formula_ == 2) {
         inph_.push_back(ispec_map_[in_spec]);
         outph1_.push_back(ispec_map_[ pr->products_[0]]);
@@ -270,20 +245,8 @@ void ChemNetwork::InitializeReactions() {
       } else {
         error = true;
       }
-    //---------------- 4-8 - 2body reaction ---------------------------
-    } else if (pr->itype_ == 4 || pr->itype_ == 5 || pr->itype_ == 6 
-               || pr->itype_ == 7 || pr->itype_ == 8) {
-      //check format
-      if (pr->reactants_.size() != 2 || 
-          (pr->products_.size() != 1 && pr->products_.size() != 2
-           && pr->products_.size() != 3)) {
-        std::stringstream msg; 
-        msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
-            << std::endl << "Wrong format in 2body reaction ID=" << pr->id_
-            << std::endl;
-        ATHENA_ERROR(msg);
-      }
-      //set indexing arrays
+    //---------------- twobody - 2body reaction ---------------------------
+    } else if (rtype == ReactionType::twobody) {
       if (pr->formula_ == 3 || pr->formula_ == 4 || pr->formula_ == 5) {
         in2body1_.push_back(ispec_map_[ pr->reactants_[0]]);
         in2body2_.push_back(ispec_map_[ pr->reactants_[1]]);
@@ -329,22 +292,8 @@ void ChemNetwork::InitializeReactions() {
         error = true;
       }
 
-    //-------------------- 9 - grain assisted reaction ----------------
-    } else if (pr->itype_ == 9) {
-      //check format
-      if (pr->reactants_.size() != 2 || pr->products_.size() != 1) {
-        std::stringstream msg; 
-        msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
-            << std::endl << "Wrong format in gr reaction ID=" << pr->id_ << std::endl;
-        ATHENA_ERROR(msg);
-      }
-      if (pr->reactants_[1] != "e-" && pr->reactants_[1] != "H") {
-        std::stringstream msg; 
-        msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
-            << std::endl << "second reactant must be H or e-." << std::endl;
-        ATHENA_ERROR(msg);
-      }
-      //set indexing arrays
+    //-------------------- grain - grain assisted reaction ----------------
+    } else if (rtype == ReactionType::grain) {
       if (pr->formula_ == 7) {
         ingr1_.push_back(ispec_map_[pr->reactants_[0]]);
         ingr2_.push_back(ispec_map_[pr->reactants_[1]]);
@@ -356,14 +305,8 @@ void ChemNetwork::InitializeReactions() {
         error = true;
       }
 
-    //------------------ 10 - special reactions -----------------------
-    } else if (pr->itype_ == 10) {
-      if (pr->reactants_.size() > n_insr_ || pr->products_.size() > n_outsr_) {
-        std::stringstream msg; 
-        msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
-            << std::endl << "Wrong format in special reaction ID=" << pr->id_ 
-            << std::endl;
-      }
+    //------------------ special - special reactions -----------------------
+    } else if (rtype == ReactionType::special) {
       if (pr->formula_ == 7) {
         idmap_sr_[pr->id_] = n_sr_;
         ksr_.push_back(0.);
@@ -373,9 +316,17 @@ void ChemNetwork::InitializeReactions() {
         error = true;
       }
 
-    //------------------ type not recogonized -------------------------
+    //------------------ formula not recogonized -------------------------
     } else{
       error = true;
+    }
+    if (error) {
+      std::stringstream msg; 
+      msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
+          << std::endl
+          << "reaction ID=" << pr->id_ << ", itype=" << pr->itype_ 
+          << " and forumla=" << pr->formula_ << " undefined." << std::endl;
+      ATHENA_ERROR(msg);
     }
 
     //special reaction coefficients
@@ -400,15 +351,6 @@ void ChemNetwork::InitializeReactions() {
       }
     }
 
-
-    if (error) {
-      std::stringstream msg; 
-      msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
-          << std::endl
-          << "reaction ID=" << pr->id_ << ", itype=" << pr->itype_ 
-          << " and forumla=" << pr->formula_ << " undefined." << std::endl;
-      ATHENA_ERROR(msg);
-    }
   }
   return;
 }
@@ -455,6 +397,97 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
   //special rates and grain assisted reactions
   UpdateRatesSpecial(y, E);
   return;
+}
+
+//sort the type of the reaction, check format
+ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
+  //---------------- 1 - direct cosmic-ray ionization --------------
+  if (pr->itype_ == 1) {
+    //check format of reaction 
+    if (pr->reactants_.size() == 2 && pr->products_.size() == 2
+        && (pr->reactants_[0] == "CR" || pr->reactants_[1] == "CR") ) {
+    } else {
+      std::stringstream msg; 
+      msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
+          << std::endl << "Wrong format in CR reaction ID=" << pr->id_ << std::endl;
+    }
+    return ReactionType::cr;
+
+  //---------------- 2 - cosmic-ray induced photo ionization --------
+  } else if (pr->itype_ == 2) {
+    //check format of reaction 
+    if (pr->reactants_.size() == 2 && pr->products_.size() == 2
+        && (pr->reactants_[0] == "CRP" || pr->reactants_[1] == "CRP") ) {
+    } else {
+      std::stringstream msg; 
+      msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
+         << std::endl << "Wrong format in CRP reaction ID=" << pr->id_ << std::endl;
+    }
+    return ReactionType::crp;
+
+  //---------------- 3 - FUV ionization/dissociation ----------------
+  } else if (pr->itype_ == 3) {
+    //check format of reaction 
+    if (pr->reactants_.size() == 2 && pr->products_.size() == 2
+        && (pr->reactants_[0] == "Photon" || pr->reactants_[1] == "Photon") ) {
+    } else {
+      std::stringstream msg; 
+      msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
+         << std::endl << "Wrong format in FUV reaction ID=" << pr->id_ << std::endl;
+    }
+    return ReactionType::photo;
+
+  //---------------- 4-8 - 2body reaction ---------------------------
+  } else if (pr->itype_ == 4 || pr->itype_ == 5 || pr->itype_ == 6 
+             || pr->itype_ == 7 || pr->itype_ == 8) {
+    //check format
+    if (pr->reactants_.size() != 2 || 
+        (pr->products_.size() != 1 && pr->products_.size() != 2
+         && pr->products_.size() != 3)) {
+      std::stringstream msg; 
+      msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
+          << std::endl << "Wrong format in 2body reaction ID=" << pr->id_
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    return ReactionType::twobody;
+
+  //-------------------- 9 - grain assisted reaction ----------------
+  } else if (pr->itype_ == 9) {
+    //check format
+    if (pr->reactants_.size() != 2 || pr->products_.size() != 1) {
+      std::stringstream msg; 
+      msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
+          << std::endl << "Wrong format in gr reaction ID=" << pr->id_ << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    if (pr->reactants_[1] != "e-" && pr->reactants_[1] != "H") {
+      std::stringstream msg; 
+      msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
+          << std::endl << "second reactant must be H or e-." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    return ReactionType::grain;
+
+  //------------------ 10 - special reactions -----------------------
+  } else if (pr->itype_ == 10) {
+    if (pr->reactants_.size() > n_insr_ || pr->products_.size() > n_outsr_) {
+      std::stringstream msg; 
+      msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
+          << std::endl << "Wrong format in special reaction ID=" << pr->id_ 
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    return ReactionType::special;
+
+  //------------------ type not recogonized -------------------------
+  } else{
+    std::stringstream msg; 
+    msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
+      << std::endl << "Wrong format in special reaction ID=" << pr->id_ 
+      << std::endl;
+    ATHENA_ERROR(msg);
+  }
 }
 
 void ChemNetwork::CheckReaction(KidaReaction reaction) {
