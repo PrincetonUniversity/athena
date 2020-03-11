@@ -48,16 +48,6 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
 //swap bytes
 static void ath_bswap(void *vdat, int len, int cnt);
 
-#ifdef INCLUDE_CHEMISTRY
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
-  FILE *pf = fopen("chem_network.dat", "w");
-  pblock->pspec->pchemnet->OutputRates(pf);
-  fclose(pf);
-  return;
-}
-#endif
-
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief initialize problem by reading in vtk file.

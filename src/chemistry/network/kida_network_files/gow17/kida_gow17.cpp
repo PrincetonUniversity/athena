@@ -165,7 +165,8 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   const Real t1_CHx = A_kCHx * pow( 300./T, n_kCHx);
   const Real t2_CHx = c_kCHx[0] * exp(-Ti_kCHx[0]/T) + c_kCHx[1] * exp(-Ti_kCHx[1]/T)
            + c_kCHx[2]*exp(-Ti_kCHx[2]/T) + c_kCHx[3] *exp(-Ti_kCHx[3]/T);
-  k2body_[idmap_sr_[20]] = (t1_CHx + pow(T, -1.5) * t2_CHx) * nH_;
+  ksr_[idmap_sr_[20]] = (t1_CHx + pow(T, -1.5) * t2_CHx) * nH_ 
+                          * y[ispec_map_["C"]] * y[ispec_map_["H3+"]];
   //--- H2O+ + e branching--
   //(21) O + H3+ e- -> H2 + OHx
   //(22) O + H3+ e- -> H2 + O + H
@@ -179,14 +180,20 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
 	}
   fac_H2Oplus_H2 = h2oplus_ratio / (h2oplus_ratio + 1.);
   fac_H2Oplus_e = 1. / (h2oplus_ratio + 1.);
-  k2body_[idmap_sr_[21]] = 1.99e-9 * pow(T, -0.190) * fac_H2Oplus_H2 * nH_;
-  k2body_[idmap_sr_[22]] = 1.99e-9 * pow(T, -0.190) * fac_H2Oplus_e * nH_;
-  k2body_[idmap_sr_[23]] = 1.6e-9 * fac_H2Oplus_H2 * nH_;
-  k2body_[idmap_sr_[24]] = 1.6e-9 * fac_H2Oplus_e * nH_;
+  ksr_[idmap_sr_[21]] = 1.99e-9 * pow(T, -0.190) * fac_H2Oplus_H2 * nH_
+                         * y[ispec_map_["O"]] * y[ispec_map_["H3+"]];
+  ksr_[idmap_sr_[22]] = 1.99e-9 * pow(T, -0.190) * fac_H2Oplus_e * nH_
+                         * y[ispec_map_["O"]] * y[ispec_map_["H3+"]];
+  ksr_[idmap_sr_[23]] = 1.6e-9 * fac_H2Oplus_H2 * nH_
+                         * y[ispec_map_["H2"]] * y[ispec_map_["O+"]];
+  ksr_[idmap_sr_[24]] = 1.6e-9 * fac_H2Oplus_e * nH_
+                         * y[ispec_map_["H2"]] * y[ispec_map_["O+"]];
   //(28) H2 + C+ + e- -> CHx + H        -- schematic reaction for C+ + H2 -> CH2+
   //(29) H2 + C+ + e- -> C + H + H      -- schematic reaction for C+ + H2 -> CH2+
-  k2body_[idmap_sr_[28]] = 2.31e-13 * pow(T, -1.3) * exp(-23./T) * nH_;
-  k2body_[idmap_sr_[29]] = 0.99e-13 * pow(T, -1.3) * exp(-23./T) * nH_;
+  ksr_[idmap_sr_[28]] = 2.31e-13 * pow(T, -1.3) * exp(-23./T) * nH_
+                         * y[ispec_map_["H2"]] * y[ispec_map_["C+"]];
+  ksr_[idmap_sr_[29]] = 0.99e-13 * pow(T, -1.3) * exp(-23./T) * nH_
+                         * y[ispec_map_["H2"]] * y[ispec_map_["C+"]];
   return;
 }
 

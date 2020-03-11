@@ -42,6 +42,10 @@
 #include <stdio.h>    // c style file
 #include <algorithm>    // std::find()
 
+#ifdef DEBUG
+static bool output_flag = true;
+#endif
+
 ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :  
   pmy_spec_(pmb->pscalars), pmy_mb_(pmb), n_cr_(0), n_crp_(0), n_ph_(0), n_2body_(0),
   n_gr_(0), n_sr_(0), n_freq_(0), index_gpe_(0), index_cr_(0) {
@@ -639,12 +643,12 @@ void ChemNetwork::OutputRates(FILE *pf) const {
      species_names[outcr2_[i]].c_str(), kcr_[i]);
 	}
 	for (int i=0; i<n_crp_; i++) {
-		fprintf(pf, "%4s + CRP -> %4s + %4s,     kcr = %.2e\n", 
+		fprintf(pf, "%4s + CRP -> %4s + %4s,     kcrp = %.2e\n", 
 		 species_names[incrp_[i]].c_str(), species_names[outcrp1_[i]].c_str(),
      species_names[outcrp2_[i]].c_str(), kcrp_[i]);
 	}
 	for (int i=0; i<n_ph_; i++) {
-		fprintf(pf, "%4s + Photon -> %4s + %4s,     kcr = %.2e\n", 
+		fprintf(pf, "%4s + Photon -> %4s + %4s,     kph = %.2e\n", 
 		 species_names[inph_[i]].c_str(), species_names[outph1_[i]].c_str(),
      species_names[outph2_[i]].c_str(), kph_[i]);
 	}
@@ -762,6 +766,15 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
   }
 
   UpdateRates(yprev0, E_ergs);
+
+#ifdef DEBUG
+  if (output_flag) {
+    FILE *pf = fopen("chem_network.dat", "w");
+    OutputRates(pf);
+    fclose(pf);
+    output_flag = false;
+  }
+#endif
 
   //cosmic ray reactions
   for (int i=0; i<n_cr_; i++) {

@@ -46,7 +46,6 @@
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief initialize problem by reading in vtk file.
 //======================================================================================
-
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
   //dimensions of meshblock

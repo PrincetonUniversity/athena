@@ -42,6 +42,10 @@
 #include <stdio.h> //FILE, fprintf()
 #include <limits> //inf
 
+#ifdef DEBUG
+static bool output_flag = true;
+#endif
+
 //constants
 const Real ChemNetwork::temp_coll_ = 7.0e2;
 //small number
@@ -413,6 +417,15 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
   }
 
   UpdateRates(yprev0, E_ergs);
+
+#ifdef DEBUG
+  if (output_flag) {
+    FILE *pf = fopen("chem_network.dat", "w");
+    OutputRates(pf);
+    fclose(pf);
+    output_flag = false;
+  }
+#endif
 
   //cosmic ray reactions
   for (int i=0; i<n_cr_; i++) {
