@@ -1,5 +1,4 @@
-#regression test for equilibrium chemistry and temperature
-#with chemical network gow16, compare to know solution.
+#regression test for time dependent H2 chemistry
 
 # Modules
 import logging

@@ -1,0 +1,73 @@
+<comment>
+problem   = Read C. G. Kim's MHD_32pc vtk output, single file.
+reference =
+configure = --prob=chem_uniform --chemistry=H2 
+
+<job>
+problem_id = chem_H2   # problem ID: basename of output filenames
+
+#<output1>
+#file_type  = vtk       # vtk data dump
+#variable   = prim      # variables to be output
+#dt         = 1         # time increment between outputs
+#
+#<output2>
+#file_type  = hst       # vtk data dump
+#dt         = 0.05      # time increment between outputs
+
+<time>
+cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1        # cycle limit
+tlim       = 5         # time limit
+integrator = rk2
+xorder     = 2
+
+<mesh>
+nx1        = 400        # Number of zones in X1-direction
+x1min      = 0      # minimum value of X1
+x1max      = 2       # maximum value of X1
+ix1_bc     = periodic  # ner-X1 boundary flag
+ox1_bc     = periodic  # outer-X1 boundary flag
+
+nx2        = 1        # Number of zones in X2-direction
+x2min      = -0.1      # minimum value of X2
+x2max      = 0.1       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
+
+nx3        = 1         # Number of zones in X3-direction
+x3min      = -0.01      # minimum value of X3
+x3max      = 0.01       # maximum value of X3
+ix3_bc     = periodic  # inner-X3 boundary flag
+ox3_bc     = periodic  # outer-X3 boundary flag
+
+<meshblock>
+nx1        =    32
+nx2        =    1
+nx3        =    1
+
+#hydro block is mendatory
+<hydro>
+gamma = 1.666666666666667 # gamma = C_p/C_v
+iso_sound_speed = 1.0     # isothermal sound speed
+sfloor   =   0            # passive scalar floor
+active   =   background   # post-processing
+
+<problem>
+nH         = 100 #initial density
+vx         = 0.2  #initial x-velocity
+compute_error = true
+
+<chemistry>
+#chemistry solver parameters
+reltol     = 1.0e-10     #relative tolerance, default 1.0e-2
+abstol     = 1.0e-20    #absolute tolerance, default 1.0e-12
+#abstol_H2   = 1.0e-10   #set absolute tolerance to a certain species
+user_jac   = 0          #flag for whether use user provided Jacobian. default false/0
+maxsteps   = 100000     #maximum number of steps in one integration. default 10000
+h_init      = 1e-5      #first step of first zone. Default 0/CVODE algorithm.
+#output_zone_sec = 1     #output diagnostic
+#code units
+unit_density_in_nH = 1.
+unit_length_in_cm = 3.086e+18
+unit_vel_in_cms = 1.0e5
