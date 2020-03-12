@@ -22,7 +22,7 @@
 #include "../utils/kida_reaction.hpp"
 
 //reaction types
-enum class ReactionType {cr, crp, photo, twobody, grain, special};
+enum class ReactionType {none, cr, crp, photo, twobody, grain, special};
 
 //! \class ChemNetwork
 //  \brief Chemical Network that defines the reaction rates between species.
@@ -83,12 +83,15 @@ private:
   Real unit_E_in_cgs_; 
 
   //reaction constants
+  //special rates index map
+  int idmax_;
+  AthenaArray<int> idmap_;
+  AthenaArray<ReactionType> idtype_;
   //direct cosmic-ray ionization
   int n_cr_;
   AthenaArray<int> incr_;
   AthenaArray<int> outcr1_;
   AthenaArray<int> outcr2_;
-  std::map<int, int> idmap_cr_;
   AthenaArray<Real> kcr_base_;
   AthenaArray<Real> kcr_;
   //cosmic-ray induced photo ionization
@@ -96,7 +99,6 @@ private:
   AthenaArray<int> incrp_;
   AthenaArray<int> outcrp1_;
   AthenaArray<int> outcrp2_;
-  std::map<int, int> idmap_crp_;
   AthenaArray<Real> kcrp_base_;
   AthenaArray<Real> kcrp_;
   //photo reactions
@@ -117,7 +119,6 @@ private:
   AthenaArray<int> out2body2_;
   AthenaArray<int> out2body3_;
   AthenaArray<int> frml_2body_;
-  std::map<int, int> idmap_2body_;
   AthenaArray<Real> a2body_; //alpha
   AthenaArray<Real> b2body_; //beta
   AthenaArray<Real> c2body_; //gamma
@@ -127,7 +128,6 @@ private:
   AthenaArray<int> ingr1_;
   AthenaArray<int> ingr2_;
   AthenaArray<int> outgr_;
-  std::map<int, int> idmap_gr_;
   AthenaArray<Real> kgr_;
   //special reactions
   int n_sr_;
@@ -135,7 +135,6 @@ private:
   const int n_outsr_ = 5;
   AthenaArray<int> insr_;
   AthenaArray<int> outsr_;
-  std::map<int, int> idmap_sr_;
   AthenaArray<Real> ksr_;
 
   //radiation related reactions and variables

@@ -47,8 +47,8 @@ static bool output_flag = true;
 #endif
 
 ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :  
-  pmy_spec_(pmb->pscalars), pmy_mb_(pmb), n_cr_(0), n_crp_(0), n_ph_(0), n_2body_(0),
-  n_gr_(0), n_sr_(0), n_freq_(0), index_gpe_(0), index_cr_(0) {
+  pmy_spec_(pmb->pscalars), pmy_mb_(pmb), idmax_(0), n_cr_(0), n_crp_(0), n_ph_(0),
+  n_2body_(0), n_gr_(0), n_sr_(0), n_freq_(0), index_gpe_(0), index_cr_(0) {
 
 	//set the parameters from input file
 	zdg_ = pin->GetOrAddReal("chemistry", "Zdg", 1.);//dust and gas metallicity
@@ -124,18 +124,29 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
         continue;
     }
     KidaReaction ri(line);
-    if (std::find(rids.begin(), rids.end(), ri.id_) == rids.end()) {
+    if (std::find(rids.begin(), rids.end(), ri.id_) == rids.end() && ri.id_ > 0) {
       rids.push_back(ri.id_);
+      if (ri.id_ > idmax_) {
+        idmax_ = ri.id_;
+      }
       reactions_.push_back(ri);
     } else {
       std::stringstream msg; //error message
       msg << "### FATAL ERROR in ChemNetwork constructor [ChemNetwork]" << std::endl
-        << "reaction ID ( " << ri.id_ << ") not unique" << std::endl;
+        << "reaction ID ( " << ri.id_ << ") not unique or not positive" << std::endl;
       ATHENA_ERROR(msg);
     }
     nline++;
   }
   nr_ = nline; //number of reactions
+  if (idmax_ > 0) {
+    idmap_.NewAthenaArray(idmax_+1);
+    idtype_.NewAthenaArray(idmax_+1);
+    for (int i=0; i<idmax_+1; i++) {
+      idmap_(i) = -1;
+      idtype_(i) = ReactionType::none;
+    }
+  }
 
   //initialize coefficients of reactions
   InitializeReactions();
@@ -256,7 +267,8 @@ void ChemNetwork::InitializeReactions() {
         incr_(icr) = ispec_map_[in_spec];
         outcr1_(icr) = ispec_map_[ pr->products_[0]];
         outcr2_(icr) = ispec_map_[ pr->products_[1]];
-        idmap_cr_[pr->id_] = icr;
+        idmap_(pr->id_) = icr;
+        idtype_(pr->id_) = ReactionType::cr;
         kcr_base_(icr) = 0.;
         kcr_(icr) = 0.;
         icr++;
@@ -283,7 +295,8 @@ void ChemNetwork::InitializeReactions() {
         incrp_(icrp) = ispec_map_[in_spec];
         outcrp1_(icrp) = ispec_map_[ pr->products_[0]];
         outcrp2_(icrp) = ispec_map_[ pr->products_[1]];
-        idmap_crp_[pr->id_] = icrp;
+        idmap_(pr->id_) = icrp;
+        idtype_(pr->id_) = ReactionType::crp;
         kcrp_base_(icrp) = 0.;
         kcrp_(icrp) = 0.;
         icrp++;
@@ -353,7 +366,8 @@ void ChemNetwork::InitializeReactions() {
         b2body_(i2body) = 0.;
         c2body_(i2body) = 0.;
         k2body_(i2body) = 0.;
-        idmap_2body_[pr->id_] = i2body;
+        idmap_(pr->id_) = i2body;
+        idtype_(pr->id_) = ReactionType::twobody;
         i2body++;
       } else {
         error = true;
@@ -365,7 +379,8 @@ void ChemNetwork::InitializeReactions() {
         ingr1_(igr) = ispec_map_[pr->reactants_[0]];
         ingr2_(igr) = ispec_map_[pr->reactants_[1]];
         outgr_(igr) = ispec_map_[pr->products_[0]];
-        idmap_gr_[pr->id_] = igr;
+        idmap_(pr->id_) = igr;
+        idtype_(pr->id_) = ReactionType::grain;
         kgr_(igr) = 0.;
         igr++;
       } else{
@@ -375,7 +390,8 @@ void ChemNetwork::InitializeReactions() {
     //------------------ special - special reactions -----------------------
     } else if (rtype == ReactionType::special) {
       if (pr->formula_ == 7) {
-        idmap_sr_[pr->id_] = isr;
+        idmap_(pr->id_) = isr;
+        idtype_(pr->id_) = ReactionType::special;
         ksr_(isr) = 0.;
         for (int jin=0; jin<n_insr_; jin++) {
           if (jin < pr->reactants_.size()) {
@@ -638,11 +654,6 @@ void ChemNetwork::PrintProperties() const {
       << species_names[outcr1_(i)] << " + " << species_names[outcr2_(i)] << ", "
       << "kcr_base_=" << kcr_base_(i) << std::endl;
   }
-  std::cout << "idmap_cr_: " << std::endl;
-  for (std::map<int,int>::const_iterator it=idmap_cr_.begin();
-       it!=idmap_cr_.end(); it++) {
-    std::cout << it->first << " => " << it->second << std::endl;
-  }
 
   //cosmic-ray induced photo reactions
   std::cout << "CRP reations:" << std::endl;
@@ -650,11 +661,6 @@ void ChemNetwork::PrintProperties() const {
     std::cout<< species_names[incrp_(i)] << " + CRP -> "
       << species_names[outcrp1_(i)] << " + " << species_names[outcrp2_(i)] << ", "
       << "kcrp_base_=" << kcrp_base_(i) << std::endl;
-  }
-  std::cout << "idmap_crp_: " << std::endl;
-  for (std::map<int,int>::const_iterator it=idmap_crp_.begin();
-       it!=idmap_crp_.end(); it++) {
-    std::cout << it->first << " => " << it->second << std::endl;
   }
 
   //FUV reactions
@@ -685,22 +691,12 @@ void ChemNetwork::PrintProperties() const {
     std::cout<< ", " << "alpha=" << a2body_(i) << ", beta=" << b2body_(i)
       << ", gamma=" << c2body_(i) << std::endl;
   }
-  std::cout << "idmap_2body_: " << std::endl;
-  for (std::map<int,int>::const_iterator it=idmap_2body_.begin();
-       it!=idmap_2body_.end(); it++) {
-    std::cout << it->first << " => " << it->second << std::endl;
-  }
 
   //grain assisted reactions
   std::cout << "gr reations:" << std::endl;
   for (int i=0; i<n_gr_; i++) {
     std::cout<< species_names[ingr1_(i)] << " + " << species_names[ingr2_(i)] 
       <<" -> " << species_names[outgr_(i)] << std::endl;
-  }
-  std::cout << "idmap_gr_: " << std::endl;
-  for (std::map<int,int>::const_iterator it=idmap_gr_.begin();
-       it!=idmap_gr_.end(); it++) {
-    std::cout << it->first << " => " << it->second << std::endl;
   }
 
   //special reactions
@@ -725,10 +721,25 @@ void ChemNetwork::PrintProperties() const {
     }
     std::cout << std::endl;
   }
-  std::cout << "idmap_sr_: " << std::endl;
-  for (std::map<int,int>::const_iterator it=idmap_sr_.begin();
-       it!=idmap_sr_.end(); it++) {
-    std::cout << it->first << " => " << it->second << std::endl;
+  
+  for (int i=0; i<idmax_+1; i++) {
+    if (idmap_(i) >= 0) {
+      std::cout << i << " => " << idmap_(i) << ", ";
+      switch (idtype_(i)){
+        case ReactionType::cr: std::cout << "cr"; break;
+        case ReactionType::crp: std::cout << "crp"; break;
+        case ReactionType::twobody: std::cout << "2body"; break;
+        case ReactionType::grain: std::cout << "gr"; break;
+        case ReactionType::special: std::cout << "sr"; break;
+        default: std::stringstream msg; 
+                 msg << "### FATAL ERROR in ChemNetwork PrintPropeties() "
+                   << "[ChemNetwork]: reaction type not recognized for special rate."
+                   << std::endl;
+                 ATHENA_ERROR(msg);
+                 break;
+      }
+      std::cout << std::endl;
+    }
   }
 
   return;
