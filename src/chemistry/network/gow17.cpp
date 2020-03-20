@@ -43,7 +43,8 @@
 #include <limits> //inf
 
 #ifdef DEBUG
-static bool output_flag = true;
+static bool output_rates = true;
+static bool output_thermo = true;
 #endif
 
 //constants
@@ -305,9 +306,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 	unit_length_in_cm_ = pin->GetReal("chemistry", "unit_length_in_cm");
 	unit_vel_in_cms_ = pin->GetReal("chemistry", "unit_vel_in_cms");
   unit_time_in_s_ = unit_length_in_cm_/unit_vel_in_cms_;
-  unit_E_in_cgs_ = 1.67e-24 * (
-                            1 + xHe_*4 + xC_std_*12 + xO_std_*16 + xSi_std_*28
-                    ) * unit_density_in_nH_ * unit_vel_in_cms_ * unit_vel_in_cms_;
+  unit_E_in_cgs_ = 1.67e-24 * 1.4 * unit_density_in_nH_
+                      * unit_vel_in_cms_ * unit_vel_in_cms_;
 	unit_radiation_in_draine1987_ = pin->GetReal(
                                 "chemistry", "unit_radiation_in_draine1987");
   //check whether number of frequencies equal to the input file specification
@@ -419,11 +419,11 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
   UpdateRates(yprev0, E_ergs);
 
 #ifdef DEBUG
-  if (output_flag) {
+  if (output_rates) {
     FILE *pf = fopen("chem_network.dat", "w");
     OutputRates(pf);
     fclose(pf);
-    output_flag = false;
+    output_rates = false;
   }
 #endif
 
@@ -888,6 +888,8 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
   dEdt = (GCR + GPE + GH2gr + GH2pump + GH2diss)
             - (LCII + LCI + LOI + LHotGas + LCOR 
                 + LH2 + LDust + LRec + LH2diss + LHIion);
+  //return in code units
+  Real dEDdt = dEdt * nH_ / unit_E_in_cgs_ * unit_time_in_s_;
 	if ( isnan(dEdt) || isinf(dEdt) ) {
     if ( isnan(LCOR) || isinf(LCOR) ) {
       printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
@@ -899,8 +901,9 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
 				LCII , LCI , LOI , LHotGas , LCOR);
 		printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
 				LH2 , LDust , LRec , LH2diss , LHIion);
-		printf("T=%.2e, dEdt=%.2e, E=%.2e, Cv=%.2e, nH=%.2e\n", T, dEdt, E_ergs,
-				Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]), nH_);
+		printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
+            T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]),
+            nH_);
 		for (int i=0; i<NSCALARS+ngs_; i++) {
 			printf("%s: %.2e  ", species_names_all_[i].c_str(), yprev[i]);
 		}
@@ -909,8 +912,26 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
     msg << "ChemNetwork (gow17): dEdt: nan or inf number" << std::endl;
     ATHENA_ERROR(msg);
 	}
-  //return in code units
-  Real dEDdt = dEdt * nH_ / unit_E_in_cgs_ * unit_time_in_s_;
+#ifdef DEBUG
+  if (output_thermo) {
+      printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
+          NCOeff, gradeff, gradv_, vth, nH_, nCO);
+		printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
+				GCR , GPE , GH2gr , GH2pump , GH2diss);
+		printf("LCII=%.2e, LCI=%.2e, LOI=%.2e, LHotGas=%.2e, LCOR=%.2e\n",
+				LCII , LCI , LOI , LHotGas , LCOR);
+		printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
+				LH2 , LDust , LRec , LH2diss , LHIion);
+		printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
+            T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]),
+            nH_);
+		for (int i=0; i<NSCALARS+ngs_; i++) {
+			printf("%s: %.2e  ", species_names_all_[i].c_str(), yprev[i]);
+		}
+		printf("\n");
+    output_thermo = false;
+  }
+#endif
   return dEDdt;
 }
 

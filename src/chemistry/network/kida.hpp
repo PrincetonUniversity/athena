@@ -72,6 +72,8 @@ private:
 	Real nH_; //density, updated at InitializeNextStep from hydro variable
   Real temperature_; //temperature of the gas if isothermal 
   Real temp_min_rates_; //temperature floor for reaction rates
+  Real temp_min_cool_; //temperature minimum for cooling
+  Real temp_dust_thermo_; //dust temperature for dust thermo cooling 
 
 	//units 
 	Real unit_density_in_nH_; //read from input
@@ -94,6 +96,10 @@ private:
   AthenaArray<int> outcr2_;
   AthenaArray<Real> kcr_base_;
   AthenaArray<Real> kcr_;
+  //index for cr ionization rates for CR heating
+  int icr_H_;  
+  int icr_H2_;
+  int icr_He_;
   //cosmic-ray induced photo ionization
   int n_crp_;
   AthenaArray<int> incrp_;
@@ -111,6 +117,8 @@ private:
   AthenaArray<Real> kph_base_;
   AthenaArray<Real> kph_avfac_;
   AthenaArray<Real> kph_;
+  //index for H2 photodissociation for H2 UV pumping and dissociation heating
+  int iph_H2_; 
   //2body reactions
   int n_2body_;
   AthenaArray<int> in2body1_;
@@ -123,12 +131,16 @@ private:
   AthenaArray<Real> b2body_; //beta
   AthenaArray<Real> c2body_; //gamma
   AthenaArray<Real> k2body_;
+  int i2body_H2_H_; //index for H2+H collisional dissociation, for cooling
+  int i2body_H2_H2_; //index for H2+H2 collisional dissociation, for cooling
+  int i2body_H_e_; //index for H+e collisional ionization, for cooling
   //grain assisted reactions
   int n_gr_;
   AthenaArray<int> ingr1_;
   AthenaArray<int> ingr2_;
   AthenaArray<int> outgr_;
   AthenaArray<Real> kgr_;
+  int igr_H_;//index for gr fromation of H2 for its heating
   //special reactions
   int n_sr_;
   const int n_insr_ = 3;
@@ -143,6 +155,11 @@ private:
   int index_cr_;
 	AthenaArray<Real> rad_;
 
+	//parameters related to CO cooling
+	//these are needed for LVG approximation
+	Real Leff_CO_max_; //maximum effective length in cm for CO cooling
+	Real gradv_; //abosolute value of velocity gradient in cgs, >0
+
   //functions
   void InitializeReactions(); //set up coefficients of reactions
   void UpdateRates(const Real y[NSCALARS], const Real E); //reaction rates
@@ -151,6 +168,8 @@ private:
   void CheckReaction(KidaReaction reaction);
   void PrintProperties() const; //print out reactions and rates, for debug
   void OutputRates(FILE *pf) const;//output reaction rates
+  //set gradients of v and nH for CO cooling
+  void SetGrad_v(const int k, const int j, const int i); 
 
 };
 

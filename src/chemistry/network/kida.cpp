@@ -43,12 +43,16 @@
 #include <algorithm>    // std::find()
 
 #ifdef DEBUG
-static bool output_flag = true;
+static bool output_rates = true;
+static bool output_thermo = true;
 #endif
 
 ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :  
-  pmy_spec_(pmb->pscalars), pmy_mb_(pmb), idmax_(0), n_cr_(0), n_crp_(0), n_ph_(0),
-  n_2body_(0), n_gr_(0), n_sr_(0), n_freq_(0), index_gpe_(0), index_cr_(0) {
+  pmy_spec_(pmb->pscalars), pmy_mb_(pmb), idmax_(0), n_cr_(0),
+  icr_H_(-1), icr_H2_(-1), icr_He_(-1), n_crp_(0), n_ph_(0), iph_H2_(-1), 
+  n_2body_(0), i2body_H2_H_(-1), i2body_H2_H2_(-1), i2body_H_e_(-1),
+  n_gr_(0), igr_H_(-1), n_sr_(0),
+  n_freq_(0), index_gpe_(0), index_cr_(0), gradv_(0.) {
 
 	//set the parameters from input file
 	zdg_ = pin->GetOrAddReal("chemistry", "Zdg", 1.);//dust and gas metallicity
@@ -70,8 +74,15 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   }
 	//minimum temperature for reaction rates, also applied to energy equation
 	temp_min_rates_ = pin->GetOrAddReal("chemistry", "temp_min_rates", 1.);
+  //minimum temperature below which cooling is turned off
+	temp_min_cool_ = pin->GetOrAddReal("chemistry", "temp_min_cool", 1.);
+  //dust temperature for dust thermo cooling of the gas at high densities
+  temp_dust_thermo_ = pin->GetOrAddReal("chemistry", "temp_dust_thermo", 10.);
   //folder of the network
   network_dir_ = pin->GetString("chemistry", "network_dir");
+	//CO cooling parameters
+	//Maximum CO cooling length in cm. default 100pc.
+	Leff_CO_max_ = pin->GetOrAddReal("chemistry", "Leff_CO_max", 3.0e20);
 
   //read in the species
   std::string species_file_name = network_dir_ + "/species.dat";
@@ -256,6 +267,13 @@ void ChemNetwork::InitializeReactions() {
       } else {
         in_spec = pr->reactants_[0];
       }
+      if (in_spec == "H") {
+        icr_H_ = icr;
+      } else if (in_spec == "H2") {
+        icr_H2_ = icr;
+      } else if (in_spec == "He") {
+        icr_He_ = icr;
+      }
       if (pr->formula_ == 1) {
         incr_(icr) = ispec_map_[in_spec];
         outcr1_(icr) = ispec_map_[ pr->products_[0]];
@@ -312,6 +330,9 @@ void ChemNetwork::InitializeReactions() {
       } else {
         in_spec = pr->reactants_[0];
       }
+      if (in_spec == "H2" && pr->products_[0] == "H" && pr->products_[1] == "H") {
+        iph_H2_ = iph;
+      }
       if (pr->formula_ == 2) {
         inph_(iph) = ispec_map_[in_spec];
         outph1_(iph) = ispec_map_[ pr->products_[0]];
@@ -327,6 +348,15 @@ void ChemNetwork::InitializeReactions() {
 
     //---------------- twobody - 2body reaction ---------------------------
     } else if (rtype == ReactionType::twobody) {
+      if (pr->reactants_[0] == "H2" && pr->reactants_[1] == "H") {
+        i2body_H2_H_ = i2body;
+      }
+      if (pr->reactants_[0] == "H2" && pr->reactants_[1] == "H2") {
+        i2body_H2_H2_ = i2body;
+      }
+      if (pr->reactants_[0] == "H" && pr->reactants_[1] == "e-") {
+        i2body_H_e_ = i2body;
+      }
       if (pr->formula_ == 3 || pr->formula_ == 4 || pr->formula_ == 5) {
         in2body1_(i2body) = ispec_map_[ pr->reactants_[0]];
         in2body2_(i2body) = ispec_map_[ pr->reactants_[1]];
@@ -375,6 +405,9 @@ void ChemNetwork::InitializeReactions() {
 
     //-------------------- grain - grain assisted reaction ----------------
     } else if (rtype == ReactionType::grain) {
+      if (pr->reactants_[0] == "H" && pr->reactants_[1] == "H") {
+        igr_H_ = igr;
+      }
       if (pr->formula_ == 7) {
         ingr1_(igr) = ispec_map_[pr->reactants_[0]];
         ingr2_(igr) = ispec_map_[pr->reactants_[1]];
@@ -440,7 +473,13 @@ void ChemNetwork::InitializeReactions() {
 void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
   const Real y_H2 = y[ispec_map_["H2"]];
   const Real y_H = y[ispec_map_["H"]];
-  const Real y_e = y[ispec_map_["e-"]];
+  Real y_e;
+  if (ispec_map_.find("e-") != ispec_map_.end()) {
+    y_e = y[ispec_map_["e-"]];
+  } else {
+    y_e = 0.;
+  }
+
   Real T;
   if (NON_BAROTROPIC_EOS) {
     T = E / Thermo::CvCold(y_H2, xHe_, y_e);
@@ -448,6 +487,10 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
     //isohermal EOS
     T = temperature_;
   }
+	//cap T above some minimum temperature
+	if (T < temp_min_rates_) {
+		T = temp_min_rates_;
+	} 
 	//cosmic ray reactions
 	for (int i=0; i<n_cr_; i++) {
 		kcr_(i) = kcr_base_(i) * rad_(index_cr_);
@@ -833,6 +876,8 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
     }
 #endif
   }
+  //CO cooling paramters
+  SetGrad_v(k, j, i);
   return;
 }
 
@@ -841,7 +886,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 	Real rate = 0;
   Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
 	//store previous y includeing negative abundance correction
-	Real yprev0[NSCALARS];//correct negative abundance, only for UpdateRates()
+	Real y0[NSCALARS];//correct negative abundance, only for UpdateRates()
 	Real ydotg[NSCALARS];
 
 	for(int i=0; i<NSCALARS; i++) {
@@ -851,9 +896,9 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
   //correct negative abundance to zero, used in rate update
   for (int i=0; i<NSCALARS; i++) {
     if (y[i] < 0) {
-      yprev0[i] = 0;
+      y0[i] = 0;
     } else {
-      yprev0[i] = y[i];
+      y0[i] = y[i];
     }
     //throw error if nan, or inf, or large negative value occurs
     if ( isnan(y[i]) || isinf(y[i]) ) {
@@ -875,14 +920,14 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
     }
   }
 
-  UpdateRates(yprev0, E_ergs);
+  UpdateRates(y0, E_ergs);
 
 #ifdef DEBUG
-  if (output_flag) {
+  if (output_rates) {
     FILE *pf = fopen("chem_network.dat", "w");
     OutputRates(pf);
     fclose(pf);
-    output_flag = false;
+    output_rates = false;
   }
 #endif
 
@@ -978,7 +1023,13 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
       printf("ED = %.2e\n", ED);
       printf("E_ergs = %.2e\n", E_ergs);
       printf("unit_E_in_cgs_ = %.2e\n", unit_E_in_cgs_);
-      //printf("T = %.2e\n", E_ergs/Thermo::CvCold(yprev0[iH2_], xHe_, yprev0[ige_]));
+      Real y_e;
+      if (ispec_map_.find("e-") != ispec_map_.end()) {
+        y_e = y0[ispec_map_["e-"]];
+      } else {
+        y_e = 0.;
+      }
+      printf("T = %.2e\n", E_ergs/Thermo::CvCold(y0[ispec_map_["H2"]], xHe_, y_e));
       std::stringstream msg;
       msg << "ChemNetwork (kida): RHS(ydot): nan or inf" << std::endl;
       ATHENA_ERROR(msg);
@@ -989,8 +1040,244 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 }
 
 Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED){
-  const Real dEDdt = 0;
+  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
+  //isothermal
+  if (!NON_BAROTROPIC_EOS) {
+    return 0;
+  }
+  Real T = 0.;
+  Real dEdt = 0.;
+	Real y0[NSCALARS];
+  //correct negative abundance to zero
+  for (int i=0; i<NSCALARS; i++) {
+    if (y[i] < 0) {
+      y0[i] = 0;
+    } else {
+      y0[i] = y[i];
+    }
+  }
+  //abundances
+  const Real y_H2 = y0[ispec_map_["H2"]];
+  const Real y_H = y0[ispec_map_["H"]];
+  Real y_e, y_He, y_Hplus, kcr_H, kcr_H2, kcr_He, kgr_H, kph_H2;
+  if (ispec_map_.find("e-") != ispec_map_.end()) {
+    y_e = y0[ispec_map_["e-"]];
+  } else {
+    y_e = 0.;
+  }
+  if (ispec_map_.find("He") != ispec_map_.end()) {
+    y_He = y0[ispec_map_["He"]];
+  } else {
+    y_He = 0.;
+  }
+  if (ispec_map_.find("H+") != ispec_map_.end()) {
+    y_Hplus = y0[ispec_map_["H+"]];
+  } else {
+    y_Hplus = 0.;
+  }
+  if (icr_H_ >= 0) {
+    kcr_H = kcr_(icr_H_);
+  } else {
+    kcr_H = 0.;
+  }
+  if (icr_H2_ >= 0) {
+    kcr_H2 = kcr_(icr_H2_);
+  } else {
+    kcr_H2 = 0.;
+  }
+  if (icr_He_ >= 0) {
+    kcr_He = kcr_(icr_He_);
+  } else {
+    kcr_He = 0.;
+  }
+  if (igr_H_ >= 0) {
+    kgr_H = kgr_(igr_H_);
+  } else {
+    kgr_H = 0.;
+  }
+  if (iph_H2_ >= 0) {
+    kph_H2 = kph_(iph_H2_);
+  } else {
+    kph_H2 = 0.;
+  }
+  //temperature
+  T = E_ergs / Thermo::CvCold(y_H2, xHe_, y_e);
+  //apply temperature floor, incase of very small or negative energy
+	if (T < temp_min_rates_) {
+		T = temp_min_rates_;
+  }
+
+
+  //--------------------------heating-----------------------------
+	Real GCR, GPE, GH2gr, dot_xH2_photo, GH2pump, GH2diss;
+  //CR heating
+  GCR = Thermo::HeatingCr(y_e,  nH_, y_H,  y_He,  y_H2, kcr_H, kcr_He, kcr_H2);
+  //photo electric effect on dust
+  GPE = Thermo::HeatingPE(rad_(index_gpe_), zdg_, T, nH_*y_e);
+  //H2 formation on dust grains
+  GH2gr = Thermo::HeatingH2gr(y_H,  y_H2, nH_, T, kgr_H);
+  //H2 UV pumping
+  dot_xH2_photo = kph_H2 * y_H2;
+  GH2pump = Thermo::HeatingH2pump(y_H,  y_H2, nH_, T, dot_xH2_photo);
+  //H2 photo dissiociation.
+  GH2diss = Thermo::HeatingH2diss(dot_xH2_photo);
+
+  //--------------------------cooling-----------------------------
+	Real LCII, LCI, LOI, LHotGas, LCOR, LH2, LDust, LRec, LH2diss, LHIion;
+	Real vth, nCO, grad_small;
+  Real NCOeff, gradeff;
+  Real k2body_H2_H, k2body_H2_H2, k2body_H_e;
+  if (i2body_H2_H_ >= 0) {
+    k2body_H2_H = k2body_(i2body_H2_H_);
+  } else {
+    k2body_H2_H = 0.;
+  }
+  if (i2body_H2_H2_ >= 0) {
+    k2body_H2_H2 = k2body_(i2body_H2_H2_);
+  } else {
+    k2body_H2_H2 = 0.;
+  }
+  if (i2body_H_e_ >= 0) {
+    k2body_H_e = k2body_(i2body_H_e_);
+  } else {
+    k2body_H_e = 0.;
+  }
+	if (T < temp_min_cool_) {
+		LCII = 0.;
+		LCI = 0;
+		LOI = 0.;
+		LHotGas = 0;
+		LCOR = 0;
+		LH2 = 0;
+		LDust = 0;
+		LRec = 0;
+		LH2diss = 0;
+		LHIion = 0;
+	} else {
+		// C+ fine structure line 
+    if (ispec_map_.find("C+") != ispec_map_.end()) {
+      LCII = Thermo::CoolingCII(y0[ispec_map_["C+"]],
+                                nH_*y_H,  nH_*y_H2, nH_*y_e, T);
+    } else {
+      LCII = 0.;
+    }
+		// CI fine structure line 
+    if (ispec_map_.find("C") != ispec_map_.end()) {
+      LCI = Thermo::CoolingCI(y0[ispec_map_["C"]], nH_*y_H, nH_*y_H2, nH_*y_e, T);
+    } else {
+      LCI = 0.;
+    }
+		// OI fine structure line 
+    if (ispec_map_.find("O") != ispec_map_.end()) {
+      LOI = Thermo::CoolingOI(y0[ispec_map_["O"]], nH_*y_H, nH_*y_H2, nH_*y_e, T);
+    } else {
+      LOI = 0.;
+    }
+		// cooling of hot gas: radiative cooling, free-free.
+		LHotGas = Thermo::CoolingHotGas(nH_, T, zdg_);
+		// CO rotational lines 
+    if (ispec_map_.find("CO") != ispec_map_.end()) {
+      // Calculate effective CO column density
+      Real y_CO = y0[ispec_map_["CO"]];
+      vth = sqrt(2. * Thermo::kb_ * T / ChemistryUtility::mCO);
+      nCO = nH_ * y_CO;
+      grad_small = vth/Leff_CO_max_;
+      gradeff = std::max(gradv_, grad_small);
+      NCOeff = nCO / gradeff;
+      LCOR = Thermo::CoolingCOR(y_CO, nH_*y_H,  nH_*y_H2, nH_*y_e, T, NCOeff);
+    } else {
+      LCOR = 0.;
+    }
+		// H2 vibration and rotation lines 
+    LH2 = Thermo::CoolingH2(y_H2, nH_*y_H, nH_*y_H2, nH_*y_He,
+                            nH_*y_Hplus, nH_*y_e, T);
+		// dust thermo emission 
+		LDust = Thermo::CoolingDustTd(zdg_, nH_, T, temp_dust_thermo_);
+		// reconbination of e on PAHs 
+		LRec = Thermo::CoolingRec(zdg_, T,  nH_*y_e, rad_(index_gpe_));
+		// collisional dissociation of H2 
+		LH2diss = Thermo::CoolingH2diss(y_H, y_H2, k2body_H2_H, k2body_H2_H2);
+		// collisional ionization of HI 
+		LHIion = Thermo::CoolingHIion(y_H,  y_e, k2body_H_e);
+  }
+
+  dEdt = (GCR + GPE + GH2gr + GH2pump + GH2diss)
+          - (LCII + LCI + LOI + LHotGas + LCOR 
+              + LH2 + LDust + LRec + LH2diss + LHIion);
+  //return in code units
+  Real dEDdt = dEdt * nH_ / unit_E_in_cgs_ * unit_time_in_s_;
+	if ( isnan(dEdt) || isinf(dEdt) ) {
+    if ( isnan(LCOR) || isinf(LCOR) ) {
+      printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
+          NCOeff, gradeff, gradv_, vth, nH_, nCO);
+    }
+		printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
+				GCR , GPE , GH2gr , GH2pump , GH2diss);
+		printf("LCII=%.2e, LCI=%.2e, LOI=%.2e, LHotGas=%.2e, LCOR=%.2e\n",
+				LCII , LCI , LOI , LHotGas , LCOR);
+		printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
+				LH2 , LDust , LRec , LH2diss , LHIion);
+		printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
+        T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(y_H2, xHe_, y_e), nH_);
+		for (int i=0; i<NSCALARS; i++) {
+			printf("%s: %.2e  ", species_names[i].c_str(), y0[i]);
+		}
+		printf("\n");
+    std::stringstream msg;
+    msg << "ChemNetwork (kida): dEdt: nan or inf number" << std::endl;
+    ATHENA_ERROR(msg);
+	}
+#ifdef DEBUG
+  if (output_thermo) {
+    printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
+        NCOeff, gradeff, gradv_, vth, nH_, nCO);
+		printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
+				GCR , GPE , GH2gr , GH2pump , GH2diss);
+		printf("LCII=%.2e, LCI=%.2e, LOI=%.2e, LHotGas=%.2e, LCOR=%.2e\n",
+				LCII , LCI , LOI , LHotGas , LCOR);
+		printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
+				LH2 , LDust , LRec , LH2diss , LHIion);
+		printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
+        T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(y_H2, xHe_, y_e), nH_);
+		for (int i=0; i<NSCALARS; i++) {
+			printf("%s: %.2e  ", species_names[i].c_str(), y0[i]);
+		}
+		printf("\n");
+    output_thermo = false;
+  }
+#endif
   return dEDdt;
+}
+
+void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
+  AthenaArray<Real> &w = pmy_mb_->phydro->w;
+  Real dvdx, dvdy, dvdz, dvdr_avg, di1, di2;
+  Real dx1, dx2, dy1, dy2, dz1, dz2;
+  Real dndx, dndy, dndz, gradn;
+  //velocity gradient, same as LVG approximation in RADMC-3D when calculating
+  //CO line emission.
+  //vx
+  di1 = w(IVX, k, j, i+1) - w(IVX, k, j, i);
+  dx1 = ( pmy_mb_->pcoord->dx1f(i+1)+pmy_mb_->pcoord->dx1f(i) )/2.;
+  di2 = w(IVX, k, j, i) - w(IVX, k, j, i-1);
+  dx2 = ( pmy_mb_->pcoord->dx1f(i)+pmy_mb_->pcoord->dx1f(i-1) )/2.;
+  dvdx = (di1/dx1 + di2/dx2)/2.;
+  //vy
+  di1 = w(IVY, k, j+1, i) - w(IVY, k, j, i);
+  dy1 = ( pmy_mb_->pcoord->dx2f(j+1)+pmy_mb_->pcoord->dx2f(j) )/2.;
+  di2 = w(IVY, k, j, i) - w(IVY, k, j-1, i);
+  dy2 = ( pmy_mb_->pcoord->dx2f(j)+pmy_mb_->pcoord->dx2f(j-1) )/2.;
+  dvdy = (di1/dy1 + di2/dy2)/2.;
+  //vz
+  di1 = w(IVZ, k+1, j, i) - w(IVZ, k, j, i);
+  dz1 = ( pmy_mb_->pcoord->dx3f(k+1)+pmy_mb_->pcoord->dx3f(k) )/2.;
+  di2 = w(IVZ, k, j, i) - w(IVZ, k-1, j, i);
+  dz2 = ( pmy_mb_->pcoord->dx3f(k)+pmy_mb_->pcoord->dx3f(k-1) )/2.;
+  dvdz = (di1/dz1 + di2/dz2)/2.;
+  dvdr_avg = ( fabs(dvdx) + fabs(dvdy) + fabs(dvdz) ) / 3.;
+  //asign gradv_, in cgs.
+  gradv_ = dvdr_avg * unit_vel_in_cms_ / unit_length_in_cm_;
+  return;
 }
 
 

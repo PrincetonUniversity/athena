@@ -181,22 +181,6 @@ private:
 	static const Real cSip_[7]; 
 	//factor to calculate psi in H+ recombination on grain
 	Real psi_gr_fac_;
-	//--------------heating and cooling--------
-	Real LCR_;
-	Real LPE_;
-	Real LH2gr_;
-	Real LH2pump_;
-	Real LH2diss_;
-	Real GCII_;
-	Real GCI_;
-	Real GOI_;
-	Real GLya_;
-	Real GCOR_;
-	Real GH2_;
-	Real GDust_;
-	Real GRec_;
-	Real GH2diss_;
-	Real GHIion_;
 	//parameters related to CO cooling
 	//these are needed for LVG approximation
 	Real gradv_; //abosolute value of velocity gradient in cgs, >0

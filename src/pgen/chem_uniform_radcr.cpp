@@ -56,7 +56,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 	const Real nH = pin->GetReal("problem", "nH");
 	const Real vx = pin->GetOrAddReal("problem", "vx", 0);
 	const Real s_init = pin->GetReal("problem", "s_init");
-  const Real iso_cs = peos->GetIsoSoundSpeed();
+  const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   const Real pres = nH*SQR(iso_cs);
 
 	for (int k=ks; k<=ke; ++k) {
