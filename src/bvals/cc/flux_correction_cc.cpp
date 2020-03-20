@@ -42,6 +42,7 @@
 //  \brief Restrict, pack and send the surface flux to the coarse neighbor(s)
 
 void CellCenteredBoundaryVariable::SendFluxCorrection() {
+  coutBoldGreen("CellCenteredBoundaryVariable::SendFluxCorrection\n");
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
 
@@ -154,6 +155,7 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
 //  \brief Receive and apply the surface flux from the finer neighbor(s)
 
 bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
+  coutBoldGreen("CellCenteredBoundaryVariable::ReceiveFluxCorrection\n");
   MeshBlock *pmb = pmy_block_;
   bool bflag=true;
 

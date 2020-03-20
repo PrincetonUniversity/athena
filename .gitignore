@@ -5,6 +5,10 @@ src/defs.hpp
 # Object and binary directories
 obj/
 bin/
+src/*/bk/
+scripts/__pycache__/
+scripts/utils/__pycache__/
+deprecated/
 
 # Compiled object files
 *.slo

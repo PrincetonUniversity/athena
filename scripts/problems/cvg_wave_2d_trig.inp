@@ -1,0 +1,72 @@
+<job>
+problem_id      = cvg_wave_2d_trig   # Basename of output filenames
+
+<problem>
+x1prof          = linear    # Either 'linear' or 'bump'
+
+x1dir           = 0         # Allowed values are -1, 0, 1 and correspond to
+                            # Left, LC Left+Right, Right propagation resp.
+
+# <output1>
+# # file_type     = tab       # Athena++ ASCII data
+# file_type       = hdf5      # dump to hierarchical format
+# variable        = wave      # variables to be output
+# dt              = 0.2       # time increment between outputs
+# data_format     = %.16e
+# #ghost_zones     = 1         # include ghost zones
+
+# <output2>
+# file_type       = hst       # History data
+# dt              = 0.1       # time increment between outputs
+# data_format     = %.16e
+
+# <output3>
+# file_type       = rst       # restart data
+# dt              = 0.1       # control frequency via time-step
+
+<time>
+cfl_number      = 0.2       # The Courant, Friedrichs, & Lewy (CFL) number
+tlim            = 0.01       # time limit
+integrator      = rk4       # time integrator
+
+<mesh>
+refinement      = none    # Static mesh refinement
+
+nx1             = 4      # Number of zones in X1-direction
+x1min           = -1.0      # minimum value of X1
+x1max           =  1.0      # maximum value of X1
+ix1_bc          = periodic  # inner-X1 boundary flag
+ox1_bc          = periodic  # outer-X1 boundary flag
+
+nx2             = 4         # Number of zones in X2-direction
+x2min           = -1.0      # minimum value of X2
+x2max           =  1.0      # maximum value of X2
+ix2_bc          = periodic  # inner-X2 boundary flag
+ox2_bc          = periodic  # outer-X2 boundary flag
+
+nx3             = 1         # Number of zones in X3-direction
+x3min           = -1.0      # minimum value of X3
+x3max           =  1.0      # maximum value of X3
+ix3_bc          = periodic  # inner-X3 boundary flag
+ox3_bc          = periodic  # outer-X3 boundary flag
+
+num_threads = 1        # Number of OpenMP threads per process
+
+<wave>
+c               = 1.0
+use_Sommerfeld  = 0         # type of Sommerfeld condition to apply (if any)
+
+<meshblock>
+nx1        = 4        # Number of zones per MeshBlock in X1-direction
+nx2        = 4         # Number of zones per MeshBlock in X2-direction
+nx3        = 1         # Number of zones per MeshBlock in X3-direction
+
+
+#<refinement1>
+#x1min = -0.9
+#x1max =  0.9
+#x2min = -0.25
+#x2max = -0.01
+#x3min = -1.0
+#x3max =  1.0
+#level = 3

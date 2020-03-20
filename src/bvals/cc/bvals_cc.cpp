@@ -31,10 +31,17 @@
 #include "../bvals.hpp"
 #include "bvals_cc.hpp"
 
+
 // MPI header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
+
+namespace {
+  int oI = 1;
+  int oJ = 0;
+  bool test_ret = false;
+}
 
 // constructor
 
@@ -133,6 +140,7 @@ CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
 
 int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,
                                                             int cng) {
+  coutYellow("CellCenteredBoundaryVariable::ComputeVariableBufferSize\n");
   MeshBlock *pmb = pmy_block_;
   int cng1, cng2, cng3;
   cng1 = cng;
@@ -140,24 +148,28 @@ int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
   cng3 = cng*(pmb->block_size.nx3 > 1 ? 1 : 0);
 
   int size = ((ni.ox1 == 0) ? pmb->block_size.nx1 : NGHOST)
-           *((ni.ox2 == 0) ? pmb->block_size.nx2 : NGHOST)
-           *((ni.ox3 == 0) ? pmb->block_size.nx3 : NGHOST);
+    *((ni.ox2 == 0) ? pmb->block_size.nx2 : NGHOST)
+    *((ni.ox3 == 0) ? pmb->block_size.nx3 : NGHOST);
   if (pmy_mesh_->multilevel) {
     int f2c = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2) : NGHOST)
-            *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2) : NGHOST)
-            *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2) : NGHOST);
+      *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2) : NGHOST)
+      *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2) : NGHOST);
     int c2f = ((ni.ox1 == 0) ?((pmb->block_size.nx1+1)/2 + cng1) : cng)
-            *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2 + cng2) : cng)
-            *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2 + cng3) : cng);
+      *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2 + cng2) : cng)
+      *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2 + cng3) : cng);
     size = std::max(size, c2f);
     size = std::max(size, f2c);
   }
   size *= nu_ + 1;
+
+  printf("size = %d\n", size);
+
   return size;
 }
 
 int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
     const NeighborIndexes& ni, int cng) {
+  coutYellow("CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize\n");
   MeshBlock *pmb = pmy_block_;
   int size = 0;
   if (ni.ox1 != 0)
@@ -176,8 +188,14 @@ int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
                                                               const NeighborBlock& nb) {
+  coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel\n");
+  nb.print_all();
+
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
+
+  coutBoldRed("x1f:\n");
+  pmb->pcoord->x1f.print_all();
 
   si = (nb.ni.ox1 > 0) ? (pmb->ie - NGHOST + 1) : pmb->is;
   ei = (nb.ni.ox1 < 0) ? (pmb->is + NGHOST - 1) : pmb->ie;
@@ -187,9 +205,77 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   ek = (nb.ni.ox3 < 0) ? (pmb->ks + NGHOST - 1) : pmb->ke;
   int p = 0;
   AthenaArray<Real> &var = *var_cc;
+  coutBoldRed("var_cc, buf");
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
-  return p;
+
+  printf("pmb->gid=%d\n", pmb->gid);
+
+  //////////////////////////////////////////////////////////////////////////////
+  // inspect branching logic SL
+  //
+  // [complementary fcn] -> (current fcn)
+  // (LoadBoundaryBufferSameLevel) -> [SetBoundarySameLevel]
+  //
+  // semi-circular indicate current scope
+  // square indicate complementary function condition
+
+  // modifies si, ei
+  if (nb.ni.ox1 == 0) {
+    // (ox1=0, ox2, ox3) [ox1=0, -ox2, -ox3]
+    //
+    // (si, ei) = (is, ie)
+    true;
+  } else if (nb.ni.ox1 > 0) {
+    // (ox1>0, ox2, ox3) [ox1<0, -ox2, -ox3]
+    //
+    // (si, ei) = (ie - NGHOST + 1, ie)
+    true;
+  } else {
+    // (ox1<0, ox2, ox3) [ox1>0, -ox2, -ox3]
+    //
+    // (si, ei) = (is, is + NGHOST - 1)
+    true;
+  }
+
+  // modifies sj, ej
+  if (nb.ni.ox2 == 0) {
+    // (ox1, ox2=0, ox3) [-ox1, ox2=0, -ox3]
+    //
+    // (sj, ej) = (js, je)
+    true;
+  } else if (nb.ni.ox2 > 0) {
+    // (ox1, ox2>0, ox3) [-ox1, ox2<0, -ox3]
+    //
+    // (sj, ej) = (je - NGHOST + 1, je)
+    true;
+  } else {
+    // (ox1, ox2<0, ox3) [-ox1, ox2>0, -ox3]
+    //
+    // (sj, ej) = (js, js + NGHOST - 1)
+    true;
+  }
+
+  // modifies sk, ek
+  if (nb.ni.ox3 == 0) {
+    // (ox1, ox2, ox3=0) [-ox1, -ox2, ox3=0]
+    //
+    // (sk, ek) = (ks, ke)
+    true;
+  } else if (nb.ni.ox3 > 0) {
+    // (ox1, ox2, ox3>0) [-ox1, -ox2, ox3<0]
+    //
+    // (sk, ek) = (ke - NGHOST + 1, ke)
+    true;
+  } else {
+    // (ox1, ox2, ox3<0) [-ox1, -ox2, ox3>0]
+    //
+    // (sk, ek) = (ks, ks + NGHOST - 1)
+    true;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+
+    return p;
 }
 
 //----------------------------------------------------------------------------------------
@@ -199,12 +285,18 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
                                                               const NeighborBlock& nb) {
+  coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser\n");
+  nb.print_all();
+
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
   int si, sj, sk, ei, ej, ek;
   int cn = NGHOST - 1;
   AthenaArray<Real> &var = *var_cc;
   AthenaArray<Real> &coarse_var = *coarse_buf;
+
+  coutBoldRed("x1f:\n");
+  pmb->pcoord->x1f.print_all();
 
   si = (nb.ni.ox1 > 0) ? (pmb->cie - cn) : pmb->cis;
   ei = (nb.ni.ox1 < 0) ? (pmb->cis + cn) : pmb->cie;
@@ -214,8 +306,78 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   ek = (nb.ni.ox3 < 0) ? (pmb->cks + cn) : pmb->cke;
 
   int p = 0;
+  coutBoldRed("var_cc\n");
+  var.print_all();
+
+  coutBoldRed("coarse_buf\n");
+  coarse_var.print_all();
+
   pmr->RestrictCellCenteredValues(var, coarse_var, nl_, nu_, si, ei, sj, ej, sk, ek);
+  coutBoldRed("coarse_buf, buf");
   BufferUtility::PackData(coarse_var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+
+  printf("(cims, cime, civs, ciis, cigs, cige, ciie, cive, cips, cipe)="
+         "(%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)\n",
+         pmb->cims, pmb->cime, pmb->civs, pmb->ciis, pmb->cigs,
+         pmb->cige, pmb->ciie, pmb->cive, pmb->cips, pmb->cipe);
+
+  //////////////////////////////////////////////////////////////////////////////
+  // inspect branching logic Fine2Coarse
+  //
+  // [complementary fcn] -> (current fcn)
+  // (LoadBoundaryBufferToCoarser) -> [SetBoundaryFromFiner]
+  //
+  // semi-circular indicate current scope
+  // square indicate complementary function condition
+
+  // [1d] modifies si, ei
+  if (nb.ni.ox1 == 0) {
+    //
+    // (si, ei) = (cis, cie)
+  } else if (nb.ni.ox1 > 0)  {
+    //
+    // (si, ei) = (cie - NGHOST + 1, cie)
+    true;
+  } else {
+    //
+    // (si, ei) = (cis, cis + NGHOST - 1)
+    true;
+  }
+
+  // [2d] modifies sj, ej
+  if (nb.ni.ox2 == 0) {
+    //
+    // (sj, ej) = (cjs, cje)
+  } else if (nb.ni.ox2 > 0) {
+    //
+    // (sj, ej) = (cje - NGHOST + 1, cje)
+    true;
+  } else {
+    //
+    // (sj, ej) = (cjs, cjs + NGHOST - 1)
+    true;
+  }
+
+  // [3d] modifies sk, ek
+  if (nb.ni.ox3 == 0) {
+    //
+    // (sk, ek) = (cks, cke)
+  } else if (nb.ni.ox3 > 0)  {
+    //
+    // (sk, ek) = (cke - NGHOST + 1, cke)
+    true;
+  } else {
+    //
+    // (sk, ek) = (cks, cks + NGHOST - 1)
+    true;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+
+
+
+  // if (nb.ni.ox1 == -1)
+  //   coutBoldBlue("blk\n"), Q();
+
   return p;
 }
 
@@ -226,10 +388,16 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
                                                             const NeighborBlock& nb) {
+  coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner\n");
+  nb.print_all();
+
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int cn = pmb->cnghost - 1;
   AthenaArray<Real> &var = *var_cc;
+
+  coutBoldRed("x1f:\n");
+  pmb->pcoord->x1f.print_all();
 
   si = (nb.ni.ox1 > 0) ? (pmb->ie - cn) : pmb->is;
   ei = (nb.ni.ox1 < 0) ? (pmb->is + cn) : pmb->ie;
@@ -264,7 +432,122 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
   }
 
   int p = 0;
+
+  coutBoldRed("var_cc, buf");
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+
+  //////////////////////////////////////////////////////////////////////////////
+  // inspect branching logic Coarse2Fine
+  //
+  // [complementary fcn] -> (current fcn)
+  // (LoadBoundaryBufferToFiner) -> [SetBoundaryFromCoarser]
+  //
+  // semi-circular indicate current scope
+  // square indicate complementary function condition
+
+  // [1d] modifies si, ei
+  if (nb.ni.ox1 == 0) {
+    if (nb.ni.fi1 == 1) {
+      // (ox1=0, ~(ox2=0 /\ ox3=0), fi1=1, fi2)
+      //
+      // (si, ei) = (is + block_size.nx1 / 2 - cnghost, ie)
+      true;
+    } else {
+      // (ox1=0, ~(ox2=0 /\ ox3=0), fi1=0, fi2)
+      //
+      // (si, ei) = (is, ie - block_size.nx1 / 2 + cnghost)
+      true;
+    }
+  } else if (nb.ni.ox1 > 0) {
+    // (ox1>0, ox2, ox3, fi1, fi2)
+    //
+    // (si, ei) = (ie - cnghost + 1, ie)
+    true;
+  } else {
+    // (ox1<0, ox2, ox3, fi1, fi2)
+    // (si, ei) = (is, is + cnghost - 1)
+    true;
+  }
+
+  // [2d] modifies sj, ej
+  if (nb.ni.ox2 == 0 && pmb->block_size.nx2 > 1) {
+    if (nb.ni.ox1 != 0) {
+      if (nb.ni.fi1 == 1) {
+        // (ox1!=0, ox2=0, ox3, fi1=1, fi2)
+        //
+        // (sj, ej) = (js + block_size.nx2 / 2 - cnghost, je)
+        true;
+      } else {
+        // (ox1!=0, ox2=0, ox3, fi1=0, fi2)
+        //
+        // (sj, ej) = (js, je - block_size.nx2 / 2 + cnghost)
+        true;
+      }
+    } else {
+      if (nb.ni.fi2 == 1) {
+        // (ox1=0, ox2=0, ox3!=0, fi1, fi2=1)
+        //
+        // (sj, ej) = (js + block_size.nx2 / 2 - cnghost, je)
+        true;
+      } else {
+        // (ox1=0, ox2=0, ox3!=0, fi1, fi2=0)
+        //
+        // (sj, ej) = (js, je - block_size.nx2 / 2 + cnghost)
+        true;
+      }
+    }
+  } else if (nb.ni.ox2 > 0) {
+    // (ox1, ox2>0, ox3, fi1, fi2)
+    //
+    // (sj, ej) = (je - cnghost + 1, je)
+    true;
+  } else {
+    // (ox1, ox2<0, ox3, fi1, fi2)
+    //
+    // (sj, ej) = (js, js + cnghost - 1)
+    true;
+  }
+
+  // [3d] modifies sj, ek
+  if (nb.ni.ox3 == 0 && pmb->block_size.nx3 > 1) {
+    if (nb.ni.ox1 != 0 && nb.ni.ox2 != 0) {
+      if (nb.ni.fi1 == 1) {
+        // (ox1!=0, ox2!=0, ox3=0, fi1=1, fi2)
+        //
+        // (sk, ek)= (ks + block_size.nx3 / 2 - cnghost, ke)
+        true;
+      } else {
+        // (ox1!=0, ox2!=0, ox3=0, fi1=0, fi2)
+        //
+        // (sk, ek)= (ks, ke - block_size.nx3 / 2 + cnghost)
+        true;
+      }
+    } else {
+      if (nb.ni.fi2 == 1) {
+        // (~(ox1!=0 /\ ox2!=0), ox3=0, fi1, fi2=1)
+        //
+        // (sk, ek)= (ks + block_size.nx3 / 2 - cnghost, ke)
+        true;
+      } else {
+        // (~(ox1!=0 /\ ox2!=0), ox3=0, fi1, fi2=0)
+        //
+        // (sk, ek)= (ks, ke - block_size.nx3 / 2 + cnghost)
+        true;
+      }
+    }
+  } else if (nb.ni.ox3 > 0) {
+    // (ox1, ox2, ox3>0, fi1, fi2)
+    //
+    // (sk, ek) = (ke - cnghost + 1, ke)
+    true;
+  } else {
+    // (ox1, ox2, ox3<0, fi1, fi2)
+    //
+    // (sk, ek) = (ks, ks + cnghost - 1)
+    true;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+
   return p;
 }
 
@@ -276,6 +559,9 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 
 void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
                                                         const NeighborBlock& nb) {
+  coutYellow("CellCenteredBoundaryVariable::SetBoundarySameLevel\n");
+  nb.print_all();
+
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   AthenaArray<Real> &var = *var_cc;
@@ -290,6 +576,8 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else if (nb.ni.ox3 > 0) sk = pmb->ke + 1,      ek = pmb->ke + NGHOST;
   else              sk = pmb->ks - NGHOST, ek = pmb->ks - 1;
 
+  //////////////////////////////////////////////////////////////////////////////
+  // inject actual solution (see below)
   int p = 0;
 
   if (nb.polar) {
@@ -306,8 +594,20 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       }
     }
   } else {
+
+    coutBoldRed("buf, var_cc");
     BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
+
+  // printf("unpacking: (p, si, ei)=(%d, %d, %d)\n", p, si, ei);
+  // //printf("%d, %d\n", nl_, nu_);
+
+  // for (int kk=0; kk<NGHOST; kk++){
+  //   printf("%1.3f, ", buf[kk]);
+  // };
+  // printf("\n");
+
+  // var.print_data();
 
   if (SHEARING_BOX) {
     // 2D shearing box in x-z plane: additional step to shift azimuthal velocity
@@ -331,6 +631,79 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       }
     }
   } // end KGF: shearing box in SetBoundarySameLevel
+  //////////////////////////////////////////////////////////////////////////////
+
+
+  //////////////////////////////////////////////////////////////////////////////
+  // inspect branching logic SL
+  //
+  // [complementary fcn] -> (current fcn)
+  // [LoadBoundaryBufferSameLevel] -> (SetBoundarySameLevel)
+  //
+  // semi-circular indicate current scope
+  // square indicate complementary function condition
+
+  // modifies si, ei
+  if (nb.ni.ox1 == 0) {
+    // (ox1=0, ox2, ox3)                [ox1=0, -ox2, -ox3]
+    //
+    // (si, ei) = (is, ie)               [is, ie]
+    true;
+  } else if (nb.ni.ox1 > 0) {
+    // (ox1>0, ox2, ox3)                [ox1<0, -ox2, -ox3]
+    //
+    // (si, ei) = (ie + 1, ie + NGHOST)  [is, is + NGHOST - 1]
+    true;
+  } else {
+    // (ox1<0, ox2, ox3)                [ox1>0, -ox2, -ox3]
+    //
+    // (si, ei) = (is - NGHOST, is - 1)  [ie - NGHOST + 1, ie]
+    true;
+  }
+
+  // modifies sj, ej
+  if (nb.ni.ox2 == 0) {
+    // (ox1, ox2=0, ox3)                [-ox1, ox2=0, -ox3]
+    //
+    // (sj, ej) = (js, je)               [js, je]
+    true;
+  } else if (nb.ni.ox2 > 0) {
+    // (ox1, ox2>0, ox3)                [-ox1, ox2<0, -ox3]
+    //
+    // (sj, ej) = (je + 1, je + NGHOST)  [js, js + NGHOST - 1]
+    true;
+  } else {
+    // (ox1, ox2<0, ox3)                [-ox1, ox2>0, -ox3]
+    //
+    // (sj, ej) = (js - NGHOST, js - 1)  [je - NGHOST + 1, je]
+    true;
+  }
+
+  // modifies sk, ek
+  if (nb.ni.ox3 == 0) {
+    // (ox1, ox2, ox3=0)                [-ox1, -ox2, ox3=0]
+    //
+    // (sk, ek) = (ks, ke)               [ks, ke]
+    true;
+  } else if (nb.ni.ox3 > 0) {
+    // (ox1, ox2, ox3>0)                [-ox1, -ox2, ox3<0]
+    //
+    // (sk, ek) = (ke + 1, ke + NGHOST)  [ks, ks + NGHOST - 1]
+    true;
+  } else {
+    // (ox1, ox2, ox3<0)                [-ox1, -ox2, ox3>0]
+    //
+    // (sk, ek) = (ks - NGHOST, ks - 1)  [ke - NGHOST + 1, ke]
+    true;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////////////
+  // BD: debug - populate based on solution
+  if (FILL_WAVE_BND_SL) {
+    pmb->DebugWaveMeshBlock(var, si, ei, sj, ej, sk, ek, false);
+  }
+  //////////////////////////////////////////////////////////////////////////////
   return;
 }
 
@@ -341,6 +714,9 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
 
 void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
                                                           const NeighborBlock& nb) {
+  coutYellow("CellCenteredBoundaryVariable::SetBoundaryFromCoarser\n");
+  nb.print_all();
+
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int cng = pmb->cnghost;
@@ -378,6 +754,8 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
     sk = pmb->cks - cng, ek = pmb->cks - 1;
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  // inject actual solution (see below)
   int p = 0;
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
@@ -392,8 +770,123 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       }
     }
   } else {
+
+    coutBoldRed("buf, coarse_buf");
     BufferUtility::UnpackData(buf, coarse_var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+
+    // coutBoldRed("buf\n");
+    // for (int kk=0; kk<NGHOST; kk++){
+    //   printf("%1.3f, ", buf[kk]);
+    // };
+    // printf("\n");
   }
+  //////////////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////////////
+  // inspect branching logic Coarse2Fine
+  //
+  // [complementary fcn] -> (current fcn)
+  // [LoadBoundaryBufferToFiner] -> (SetBoundaryFromCoarser)
+  //
+  // semi-circular indicate current scope
+  // square indicate complementary function condition
+
+  // note: non-coarse indices for fill_wave debug
+
+  // [1d] modifies si, ei
+  if (nb.ni.ox1 == 0) {
+    //
+    // (si, ei)= (cis, cie)
+    if ((pmb->loc.lx1 & 1LL) == 0LL) {
+      //
+      // (si, ei) = (cis, cie + cnghost)
+      si = pmb->is;
+      ei = pmb->ie + NGHOST;
+    } else {
+      //
+      // (si, ei) = (cis - cnghost, cie)
+      si = pmb->is - NGHOST;
+      ei = pmb->ie;
+    }
+  } else if (nb.ni.ox1 > 0)  {
+    //
+    // (si, ei) = (cie + 1, cie + cnghost)
+    si = pmb->ie + 1;
+    ei = pmb->ie + NGHOST;
+  } else {
+    //
+    // (si, ei) = (cis - cnghost, cis - 1)
+    si = pmb->is - NGHOST;
+    ei = pmb->is - 1;
+  }
+
+  // [2d] modifies sj, ej
+  if (nb.ni.ox2 == 0) {
+    //
+    // (sj, ej) = (cjs, cje)
+    if (pmb->block_size.nx2 > 1) {
+      if ((pmb->loc.lx2 & 1LL) == 0LL) {
+        //
+        // (sj, ej) = (cjs, cje + cnghost)
+        sj = pmb->js;
+        ej = pmb->je + NGHOST;
+      } else {
+        //
+        // (sj, ej) = (cjs - cnghost, cje)
+        sj = pmb->js - NGHOST;
+        ej = pmb->je;
+      }
+    }
+  } else if (nb.ni.ox2 > 0) {
+    //
+    // (sj, ej) = (cje + 1, cje + cnghost)
+    sj = pmb->je + 1;
+    ej = pmb->je + NGHOST;
+  } else {
+    //
+    // (sj, ej) = (cjs - cnghost, cjs - 1)
+    sj = pmb->js - NGHOST;
+    ej = pmb->js - 1;
+  }
+
+  // [3d] modifies sk, ek
+  if (nb.ni.ox3 == 0) {
+    //
+    // (sk, ek) = (cks, cke)
+    if (pmb->block_size.nx3 > 1) {
+      if ((pmb->loc.lx3 & 1LL) == 0LL) {
+        //
+        // (sk, ek) = (cks, cke + cnghost)
+        sk = pmb->ks;
+        ek = pmb->ke + NGHOST;
+      } else {
+        //
+        // (sk, ek) = (cks - cnghost, cke)
+        sk = pmb->ks - NGHOST;
+        ek = pmb->ke;
+      }
+    }
+  } else if (nb.ni.ox3 > 0)  {
+    //
+    // (sk, ek) = (cke + 1, cke + cnghost)
+    sk = pmb->ke + 1;
+    ek = pmb->ke + NGHOST;
+  } else {
+    //
+    // (sk, ek) = (cks - cnghost, cks - 1)
+    sk = pmb->ks - NGHOST;
+    ek = pmb->ks - 1;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////////////
+  // BD: debug - populate based on solution
+  // [note we directly modify fund. not coarse]
+  if (FILL_WAVE_BND_FRC) {
+    AthenaArray<Real> &var = *var_cc;
+    pmb->DebugWaveMeshBlock(var, si, ei, sj, ej, sk, ek, false);
+  }
+  //////////////////////////////////////////////////////////////////////////////
   return;
 }
 
@@ -405,6 +898,9 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 
 void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
                                                         const NeighborBlock& nb) {
+  coutYellow("CellCenteredBoundaryVariable::SetBoundaryFromFiner\n");
+  nb.print_all();
+
   MeshBlock *pmb = pmy_block_;
   AthenaArray<Real> &var = *var_cc;
   // receive already restricted data
@@ -452,6 +948,8 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
     sk = pmb->ks - NGHOST, ek = pmb->ks - 1;
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  // inject actual solution (see below)
   int p = 0;
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
@@ -466,10 +964,143 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       }
     }
   } else {
+
+    coutBoldRed("buf, var_cc");
     BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+
   }
+  //////////////////////////////////////////////////////////////////////////////
+
+
+  //////////////////////////////////////////////////////////////////////////////
+  // inspect branching logic Fine2Coarse
+  //
+  // [complementary fcn] -> (current fcn)
+  // [LoadBoundaryBufferToCoarser] -> (SetBoundaryFromFiner)
+  //
+  // semi-circular indicate current scope
+  // square indicate complementary function condition
+
+  // [1d] modifies si, ei
+  if (nb.ni.ox1 == 0) {
+    if (nb.ni.fi1 == 1) {
+      // (ox1=0, ~(ox2=0 /\ ox3=0), fi1=1, fi2)
+      //
+      // (si, ei) = (is + block_size.nx1 / 2, ie)
+      true;
+    } else {
+      // (ox1=0, ~(ox2=0 /\ ox3=0), fi1=0, fi2)
+      //
+      // (si, ei) = (is, ie - block_size.nx1 / 2)
+      true;
+    }
+  } else if (nb.ni.ox1 > 0) {
+    // (ox1>0, ox2, ox3, fi1, fi2)
+    //
+    // (si, ei) = (ie + 1, ie + NGHOST)
+    true;
+  } else {
+    // (ox1<0, ox2, ox3, fi1, fi2)
+    //
+    // (si, ei) = (is - NGHOST, is - 1)
+    true;
+  }
+
+  // [2d] modifies sj, ej
+  if (nb.ni.ox2 == 0 && pmb->block_size.nx2 > 1) {
+    if (nb.ni.ox1 != 0) {
+      if (nb.ni.fi1 == 1) {
+        // (ox1!=0, ox2=0, ox3, fi1=1, fi2)
+        //
+        // (sj, ej) = (js + block_size.nx2 / 2, je)
+        true;
+      } else {
+        // (ox1!=0, ox2=0, ox3, fi1=0, fi2)
+        //
+        // (sj, ej) = (js, je - block_size.nx2 / 2)
+        true;
+      }
+    } else {
+      if (nb.ni.fi2 == 1) {
+        // (ox1=0, ox2=0, ox3!=0, fi1, fi2=1)
+        //
+        // (sj, ej) = (js + block_size.nx2 / 2, je)
+        true;
+      } else {
+        // (ox1=0, ox2=0, ox3!=0, fi1, fi2=0)
+        //
+        // (sj, ej) = (js, je - block_size.nx2 / 2)
+        true;
+      }
+    }
+  } else if (nb.ni.ox2 > 0) {
+    // (ox1, ox2>0, ox3, fi1, fi2)
+    //
+    // (sj, ej) = (je + 1, je + NGHOST)
+    true;
+  } else {
+    // (ox1, ox2<0, ox3, fi1, fi2)
+    //
+    // (sj, ej) = (js - NGHOST, js - 1)
+    true;
+  }
+
+  // [3d] modifies sj, ek
+  if (nb.ni.ox3 == 0 && pmb->block_size.nx3 > 1) {
+    if (nb.ni.ox1 != 0 && nb.ni.ox2 != 0) {
+      if (nb.ni.fi1 == 1) {
+        // (ox1!=0, ox2!=0, ox3=0, fi1=1, fi2)
+        //
+        // (sk, ek) = (ks + block_size.nx3 / 2, ke)
+        true;
+      } else {
+        // (ox1!=0, ox2!=0, ox3=0, fi1=0, fi2)
+        //
+        // (sk, ek) = (ks, ke - block_size.nx3 / 2)
+        true;
+      }
+    } else {
+      if (nb.ni.fi2 == 1) {
+        // (~(ox1!=0 /\ ox2!=0), ox3=0, fi1, fi2=1)
+        //
+        // (sk, ek) = (ks + block_size.nx3 / 2, ke)
+        true;
+      } else {
+        // (~(ox1!=0 /\ ox2!=0), ox3=0, fi1, fi2=0)
+        //
+        // (sk, ek) = (ks, ke - block_size.nx3 / 2)
+        true;
+      }
+    }
+  } else if (nb.ni.ox3 > 0) {
+    // (ox1, ox2, ox3>0, fi1, fi2)
+    //
+    // (sk, ek) = (ke + 1, ke + NGHOST)
+    true;
+  } else {
+    // (ox1, ox2, ox3<0, fi1, fi2)
+    //
+    // (sk, ek) = (ks - NGHOST, ks - 1)
+    true;
+  }
+  //////////////////////////////////////////////////////////////////////////////
+
+
+  // if (nb.ni.ox1 == -1)
+  //   Q();
+  // if ((nb.ni.ox1 == -1) and (nb.ni.ox2 == 0))
+  //   Q();
+
+  //////////////////////////////////////////////////////////////////////////////
+  // BD: debug - populate based on solution
+  if (FILL_WAVE_BND_FRF) {
+    pmb->DebugWaveMeshBlock(var, si, ei, sj, ej, sk, ek, false);
+  }
+  //////////////////////////////////////////////////////////////////////////////
+
+
   return;
-}
+  }
 
 
 //----------------------------------------------------------------------------------------
@@ -477,6 +1108,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 // \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
 
 void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
+  coutYellow("CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock\n");
   MeshBlock *pmb = pmy_block_;
 
   if (pmb->loc.level  ==  pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
@@ -521,6 +1153,7 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
 
 void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 #ifdef MPI_PARALLEL
+  coutYellow("CellCenteredBoundaryVariable::SetupPersistentMPI\n");
   MeshBlock* pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
 
@@ -604,6 +1237,7 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 
 void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
+  coutYellow("CellCenteredBoundaryVariable::StartReceiving\n");
   MeshBlock *pmb = pmy_block_;
   int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
@@ -621,6 +1255,7 @@ void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 
 
 void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
+  coutYellow("CellCenteredBoundaryVariable::ClearBoundary\n");
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;

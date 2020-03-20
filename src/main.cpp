@@ -462,6 +462,7 @@ int main(int argc, char *argv[]) {
   //--- Step 7. --------------------------------------------------------------------------
   // Change to run directory, initialize outputs object, and make output of ICs
   printf("->main Step 7\n");
+  // Q();
 
   Outputs *pouts;
 #ifdef ENABLE_EXCEPTIONS
@@ -592,6 +593,8 @@ int main(int argc, char *argv[]) {
     if (SignalHandler::CheckSignalFlags() != 0) {
       break;
     }
+
+
   } // END OF MAIN INTEGRATION LOOP ======================================================
   // Make final outputs, print diagnostics, clean up and terminate
 

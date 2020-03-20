@@ -36,5 +36,14 @@ template <typename T> void UnpackData(T *buf, AthenaArray<T> &dst,
 template <typename T> void UnpackData(T *buf, AthenaArray<T> &dst,
                                       int si, int ei, int sj, int ej, int sk, int ek,
                                       int &offset);
+// 4D
+template <typename T> void UnpackDataAdd(T *buf, AthenaArray<T> &dst,
+                                         int sn, int en,
+                                         int si, int ei, int sj, int ej, int sk, int ek,
+                                         int &offset);
+// 3D
+template <typename T> void UnpackDataAdd(T *buf, AthenaArray<T> &dst,
+                                         int si, int ei, int sj, int ej, int sk, int ek,
+                                         int &offset);
 } // namespace BufferUtility
 #endif // UTILS_BUFFER_UTILS_HPP_

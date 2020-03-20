@@ -12,6 +12,8 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../finite_differencing.hpp"
+
+#include "../bvals/vc/bvals_vc.hpp"
 #include "../bvals/cc/bvals_cc.hpp"
 
 class MeshBlock;
@@ -27,14 +29,16 @@ public:
 
   // data
   MeshBlock *pmy_block;         // ptr to MeshBlock containing this Wave
+
   AthenaArray<Real> u;          // solution of the wave equation
   AthenaArray<Real> u1, u2;     // auxiliary arrays at intermediate steps
   AthenaArray<Real> rhs;        // wave equation rhs
 
   AthenaArray<Real> exact;      // exact solution of of the wave equation
   AthenaArray<Real> error;      // error with respect to the exact solution
+  //#endif
 
-  Real c;                       // light speed
+  Real c;                       // characteristic speed
 
   // control whether radiative condition is applied for outflow  or
   // extrapolate_outflow BC;
@@ -43,7 +47,12 @@ public:
   int use_Sommerfeld = 0;
 
   // boundary and grid data
+#if PREFER_VC
+  VertexCenteredBoundaryVariable ubvar;
+#else
   CellCenteredBoundaryVariable ubvar;
+#endif
+
   AthenaArray<Real> empty_flux[3];
 
   // storage for SMR/AMR
@@ -59,26 +68,29 @@ public:
 
   static const int NWAVE_CPT = 2;      // num. of wave equation field components
 
+  struct MB_info {
+    int il, iu, jl, ju, kl, ku;        // local block iter.
+    int nn1, nn2, nn3;                 // number of nodes (simplify switching)
+
+    AthenaArray<Real> x1, x2, x3;      // for CC / VC grid switch
+    AthenaArray<Real> cx1, cx2, cx3;   // for CC / VC grid switch (coarse)
+
+    // provide coarse analogues of the above
+    int cnn1, cnn2, cnn3;
+    int cil, ciu, cjl, cju, ckl, cku;
+  };
+
+  MB_info mbi;
+
+
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;    // scratch arrays used in NewTimeStep
 
 private:
-  void WaveSommerfeld_1d_L_(AthenaArray<Real> & u,
-                            int const is, int const ie,
-                            int const js, int const je,
-                            int const ks, int const ke);
-  void WaveSommerfeld_1d_R_(AthenaArray<Real> & u,
-                            int const is, int const ie,
-                            int const js, int const je,
-                            int const ks, int const ke);
-  void WaveSommerfeld_2d_(AthenaArray<Real> & u,
-                          int const is, int const ie,
-                          int const js, int const je,
-                          int const ks, int const ke);
-  void WaveSommerfeld_3d_(AthenaArray<Real> & u,
-                          int const is, int const ie,
-                          int const js, int const je,
-                          int const ks, int const ke);
+  void WaveSommerfeld_1d_L_(AthenaArray<Real> & u);
+  void WaveSommerfeld_1d_R_(AthenaArray<Real> & u);
+  void WaveSommerfeld_2d_(AthenaArray<Real> & u);
+  void WaveSommerfeld_3d_(AthenaArray<Real> & u);
 private:
   struct {
     typedef FDCenteredStencil<2, NGHOST> stencil;

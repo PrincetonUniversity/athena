@@ -123,6 +123,9 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void ApplyPhysicalBoundaries(const Real time, const Real dt);
   void ProlongateBoundaries(const Real time, const Real dt);
 
+  // New logic for vertex-centering
+  void ProlongateVertexCenteredBoundaries(const Real time, const Real dt);
+
   // compute the shear at each integrator stage
   // TODO(felker): consider making this fn private again if calling within StartRecv()
   void FindShearBlock(const Real time);
@@ -179,6 +182,10 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void ProlongateGhostCells(const NeighborBlock& nb,
                             int si, int ei, int sj, int ej, int sk, int ek);
 
+  void ProlongateVertexCenteredGhosts(
+      const NeighborBlock& nb,
+      int si, int ei, int sj, int ej, int sk, int ek);
+
   void DispatchBoundaryFunctions(
       MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
       int il, int iu, int jl, int ju, int kl, int ku, int ngh,
@@ -195,6 +202,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   friend class FaceCenteredBoundaryVariable;  // needs nface_, nedge_, num_north/south_...
   // TODO(KGF): consider removing these friendship designations:
   friend class CellCenteredBoundaryVariable;
+  friend class VertexCenteredBoundaryVariable;
   friend class HydroBoundaryVariable;  // needed for shearing box quantities
 };
 #endif // BVALS_BVALS_HPP_

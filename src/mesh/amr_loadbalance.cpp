@@ -911,6 +911,7 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
 
 void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
                                        LogicalLocation &newloc) {
+  coutBoldCyan("Mesh::FillSameRankCoarseToFineAMR\n");
   MeshRefinement *pmr = pmb->pmr;
   int il = pob->cis - 1, iu = pob->cie + 1, jl = pob->cjs - f2,
       ju = pob->cje + f2, kl = pob->cks - f3, ku = pob->cke + f3;

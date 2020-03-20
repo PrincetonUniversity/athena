@@ -36,6 +36,7 @@ class MeshRefinement;
 class MeshBlockTree;
 class BoundaryValues;
 class CellCenteredBoundaryVariable;
+class VertexCenteredBoundaryVariable;
 class FaceCenteredBoundaryVariable;
 class TaskList;
 struct TaskStates;
@@ -67,6 +68,7 @@ class MeshBlock {
   friend class RestartOutput;
   friend class BoundaryValues;
   friend class CellCenteredBoundaryVariable;
+  friend class VertexCenteredBoundaryVariable;
   friend class FaceCenteredBoundaryVariable;
   friend class Mesh;
   friend class Hydro;
@@ -98,10 +100,50 @@ public:
   int ncells1, ncells2, ncells3;
   // on 1x coarser level MeshBlock (i.e. ncc2=nx2/2 + 2*NGHOST, if nx2>1)
   int ncc1, ncc2, ncc3;
+
   int is, ie, js, je, ks, ke;
   int gid, lid;
   int cis, cie, cjs, cje, cks, cke, cnghost;
   int gflag;
+
+  // convenience for vertices
+  int nverts1, nverts2, nverts3;   // number of vertices (cells + 1)
+  int ncv1, ncv2, ncv3;            // coarse analogue
+  int iv, jv, kv;                  // upper idx for vertices
+  int civ, cjv, ckv;               // upper idx (coarse) for vertices
+
+  int ims, ime, ips, ipe;          // -/+ (communication) ghost-zone idx
+  int ivs, ive;                    // shared vertices
+  int igs, ige;                    // shared to ghost
+  int iis, iie;                    // internal idx
+
+  int jms, jme, jps, jpe;          // -/+ (communication) ghost-zone idx
+  int jvs, jve;                    // shared vertices
+  int jgs, jge;                    // shared to ghost
+  int jis, jie;                    // internal idx
+
+  int kms, kme, kps, kpe;          // -/+ (communication) ghost-zone idx
+  int kvs, kve;                    // shared vertices
+  int kgs, kge;                    // shared to ghost
+  int kis, kie;                    // internal idx
+
+  // for multi-level
+  int cims, cime, cips, cipe;          // -/+ (communication) ghost-zone idx
+  int civs, cive;                      // shared vertices
+  int cigs, cige;                      // shared to ghost
+  int ciis, ciie;                      // internal idx
+
+  int cjms, cjme, cjps, cjpe;          // -/+ (communication) ghost-zone idx
+  int cjvs, cjve;                      // shared vertices
+  int cjgs, cjge;                      // shared to ghost
+  int cjis, cjie;                      // internal idx
+
+  int ckms, ckme, ckps, ckpe;          // -/+ (communication) ghost-zone idx
+  int ckvs, ckve;                      // shared vertices
+  int ckgs, ckge;                      // shared to ghost
+  int ckis, ckie;                      // internal idx
+
+
   // At every cycle n, hydro and field registers (u, b) are advanced from t^n -> t^{n+1},
   // the time-integration scheme may partially substep several storage register pairs
   // (u,b), (u1,b1), (u2, b2), ..., (um, bm) through the dt interval. Track their time
@@ -153,7 +195,7 @@ public:
   // inform MeshBlock which arrays contained in member Hydro, Field, Particles,
   // ... etc. classes are the "primary" representations of a quantity. when registered,
   // that data are used for (1) load balancing (2) (future) dumping to restart file
-  void RegisterMeshBlockData(AthenaArray<Real> &pvar_cc);
+  void RegisterMeshBlockData(AthenaArray<Real> &pvar_in);
   void RegisterMeshBlockData(FaceField &pvar_fc);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
@@ -170,7 +212,19 @@ public:
   void AdvectionUserWorkInLoop();
   void Z4cUserWorkInLoop();
 
- private:
+  //-- Debug
+  // Output information about full solution
+  void DebugWaveMeshBlockSolution();
+  // Populate MeshBlock subset based on input indices
+  void DebugWaveMeshBlock(AthenaArray<Real> &u_wave,
+                          int il, int iu,
+                          int jl, int ju,
+                          int kl, int ku,
+                          bool is_additive=false,
+                          bool is_coarse=false);
+  //--
+
+private:
   // data
   Real new_block_dt_, new_block_dt_hyperbolic_, new_block_dt_parabolic_,
     new_block_dt_user_;
@@ -180,6 +234,7 @@ public:
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
   std::vector<std::reference_wrapper<AthenaArray<Real>>> vars_cc_;
   std::vector<std::reference_wrapper<FaceField>> vars_fc_;
+  std::vector<std::reference_wrapper<AthenaArray<Real>>> vars_vc_;
 
   // functions
   void AllocateRealUserMeshBlockDataField(int n);
@@ -211,6 +266,7 @@ class Mesh {
   friend class BoundaryBase;
   friend class BoundaryValues;
   friend class CellCenteredBoundaryVariable;
+  friend class VertexCenteredBoundaryVariable;
   friend class FaceCenteredBoundaryVariable;
   friend class MGBoundaryValues;
   friend class Coordinates;

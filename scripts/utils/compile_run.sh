@@ -34,6 +34,11 @@ function compile {
 if [[ $TO_COMPILE =~ ^[Yy]$ ]]
 then
     compile
+#else
+    # only recompile what is required
+#    cd ${DIR_ATHENA}
+#    make -j6
+#    mv bin/athena bin/${BIN_NAME}
 fi
 
 ###############################################################################
@@ -53,17 +58,25 @@ echo "> Using input: ${REL_INPUT}/${INPUT_NAME} ..."
 
 cd ${DIR_ATHENA}/${REL_OUTPUT}/${RUN_NAME}
 # ./${EXEC_NAME}.x -i ${DIR_ATHENA}/${REL_INPUT}/${INPUT_NAME} -m 1
-./${EXEC_NAME}.x -i ${DIR_ATHENA}/${REL_INPUT}/${INPUT_NAME}
+# ./${EXEC_NAME}.x -i ${DIR_ATHENA}/${REL_INPUT}/${INPUT_NAME}
 
-# gdb -ex 'break wave_1d_cvg_Gaussian_P.cpp:200' \
+# gdb -ex 'break wave_1d_cvg_trig.cpp:70' \
 #     -ex 'info b' \
 #     -ex 'set print pretty on' \
 #     -ex=r --args ./$EXEC_NAME.x -i $DIR_ATHENA/$REL_INPUT/$INPUT_NAME
 
 
+# gdb -ex 'break wave_1d_cvg_trig.cpp:104' \
+gdb -q \
+    -ex 'break bvals_refine.cpp:227' \
+    -ex 'info b' \
+    -ex 'set print pretty on' \
+    -ex=r --args ./$EXEC_NAME.x -i $DIR_ATHENA/$REL_INPUT/$INPUT_NAME
+
+
 # make call log [inspect with qcachegrind]
 # valgrind --tool=callgrind --log-file=callgrind.log ./${EXEC_NAME}.x -i ${DIR_ATHENA}/${REL_INPUT}/${INPUT_NAME}
-# valgrind --leak-check=full --show-leak-kinds=all ./${EXEC_NAME}.x -i ${DIR_ATHENA}/${REL_INPUT}/${INPUT_NAME}
+#valgrind --leak-check=full -s --show-leak-kinds=all ./${EXEC_NAME}.x -i ${DIR_ATHENA}/${REL_INPUT}/${INPUT_NAME}
 # valgrind --leak-check=full -s ./${EXEC_NAME}.x -i ${DIR_ATHENA}/${REL_INPUT}/${INPUT_NAME}
 
 echo "Done >:D"

@@ -15,11 +15,11 @@
 // C headers
 
 // C++ headers
-#include <algorithm>  // std::fill
-#include <cstddef>  // size_t
-#include <cstring>  // memset()
-#include <utility>  // swap()
-
+#include <algorithm> // std::fill
+#include <cstddef>   // size_t
+#include <cstring>   // memset()
+#include <utility>   // swap()
+#include <cstdio>    // debug
 // Athena++ headers
 
 template <typename T>
@@ -169,6 +169,74 @@ class AthenaArray {
 
   // make use of internal dim if not provided
   void InitWithShallowSlice(AthenaArray<T> &src, const int indx, const int nvar);
+
+  // ----------------------------------------------
+  // dump various information of array and contents
+  void print_dim() const {
+    printf("  (dim_, nx1_, [2], [3], [4], [5], [6]) = "
+           "(%d, %d, %d, %d, %d, %d, %d)\n",
+           dim_, nx1_, nx2_, nx3_, nx4_, nx5_, nx6_);
+  };
+
+  void print_data_1d(const char fpr[] = "%1.2f", bool print_idx = false,
+                     int j=0, int k=0, int l=0) const {
+
+    printf("  ");
+    for(int i = 0; i < nx1_; ++i) {
+      if (print_idx)
+        printf("i=%d, ", i);
+
+      // printf(fpr, pdata_[i + nx1_*(j + nx2_*(k))]);
+      printf(fpr, pdata_[i + nx1_*(j + nx2_*(k + nx3_ * (l)))]);
+
+      if (i < nx1_ - 1) {
+        printf(", ");
+      } else {
+        printf("\n");
+      }
+    }
+  };
+
+  void print_data(const char fpr[] = "%1.2f", bool print_idx = false,
+                  bool flip_idx = false) const {
+    //for(int l =0; l < nx4_; ++l){
+    int lmax = nx4_;
+    lmax = 1;
+    for(int l =0; l < lmax; ++l){
+      if (lmax > 1)
+        printf("  l=%d  :", l); // slab for readability
+
+      if (flip_idx) {
+          for(int j = 0; j < nx2_; ++j) {
+            if (nx2_ > 1)
+              printf("\nj=%d:\n", j); // slab for readability
+
+            for(int k = 0; k < nx3_; ++k) {
+              print_data_1d(fpr, print_idx, j, k, l);
+            }
+        }
+
+      } else {
+
+        for(int k = 0; k < nx3_; ++k) {
+          if (nx3_ > 1)
+            printf("\nk=%d:\n", k); // slab for readability
+
+          for(int j = 0; j < nx2_; ++j) {
+            print_data_1d(fpr, print_idx, j, k, l);
+          }
+        }
+
+      }
+
+    }
+  };
+
+  void print_all(const char fpr[] = "%1.3f", bool print_idx = false,
+                 bool flip_idx = false) const {
+    print_dim();
+    print_data(fpr, print_idx, flip_idx);
+  };
 
 private:
   T *pdata_;

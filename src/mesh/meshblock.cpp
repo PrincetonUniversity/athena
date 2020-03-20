@@ -46,6 +46,7 @@
 #include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
 
+
 //----------------------------------------------------------------------------------------
 // MeshBlock constructor: constructs coordinate, boundary condition, hydro, field
 //                        and mesh refinement objects.
@@ -58,21 +59,64 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     new_block_dt_{}, new_block_dt_hyperbolic_{}, new_block_dt_parabolic_{},
     new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(1.0) {
+  coutGreen("MeshBlock::MeshBlock\n");
+
   // initialize grid indices
   is = NGHOST;
   ie = is + block_size.nx1 - 1;
 
   ncells1 = block_size.nx1 + 2*NGHOST;
   ncc1 = block_size.nx1/2 + 2*NGHOST;
+
+
+  iv = ie + 1;
+
+  nverts1 = ncells1 + 1;
+  ncv1 = ncc1 + 1;
+
+  // add vertex-pertinent idxs
+  // Ghost zones
+  ims = 0; ime = NGHOST - 1;
+  ips = block_size.nx1 + NGHOST + 1; ipe = block_size.nx1 + 2 * NGHOST;
+  // Shared vertices
+  ivs = NGHOST; ive = block_size.nx1 + NGHOST;
+  // internal vertices
+  iis = NGHOST + 1; iie = block_size.nx1 + NGHOST - 1;
+  // internal shared to ghost
+  igs = ivs + NGHOST; ige = ive - NGHOST;
+
   if (pmy_mesh->f2) {
     js = NGHOST;
     je = js + block_size.nx2 - 1;
     ncells2 = block_size.nx2 + 2*NGHOST;
     ncc2 = block_size.nx2/2 + 2*NGHOST;
+
+    jv = je + 1;
+    nverts2 = ncells2 + 1;
+    ncv2 = ncc2 + 1;
+
+    // vertex-pertinent idx (see desc. above)
+    jms = 0; jme = NGHOST - 1;
+    jps = block_size.nx2 + NGHOST + 1; jpe = block_size.nx2 + 2 * NGHOST;
+    jvs = NGHOST; jve = block_size.nx2 + NGHOST;
+    jis = NGHOST + 1; jie = block_size.nx2 + NGHOST - 1;
+    jgs = jvs + NGHOST; jge = jve - NGHOST;
+
   } else {
     js = je = 0;
     ncells2 = 1;
     ncc2 = 1;
+
+    jv = 0;
+    nverts2 = 1;
+    ncv2 = 1;
+
+    // vertex-pertinent idx
+    jms = 0; jme = 0;
+    jps = 0; jpe = 0;
+    jvs = 0; jve = 0;
+    jis = 0; jie = 0;
+    jgs = 0; jge = 0;
   }
 
   if (pmy_mesh->f3) {
@@ -80,25 +124,108 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     ke = ks + block_size.nx3 - 1;
     ncells3 = block_size.nx3 + 2*NGHOST;
     ncc3 = block_size.nx3/2 + 2*NGHOST;
+
+    kv = ke + 1;
+    nverts3 = ncells3 + 1;
+    ncv3 = ncc3 + 1;
+
+    // vertex-pertinent idx (see desc. above)
+    kms = 0; kme = NGHOST - 1;
+    kps = block_size.nx3 + NGHOST + 1; kpe = block_size.nx3 + 2 * NGHOST;
+    kvs = NGHOST; kve = block_size.nx3 + NGHOST;
+    kis = NGHOST + 1; kie = block_size.nx3 + NGHOST - 1;
+    kgs = kvs + NGHOST; kge = kve - NGHOST;
   } else {
     ks = ke = 0;
     ncells3 = 1;
     ncc3 = 1;
+
+    kv = 0;
+    nverts3 = 1;
+    ncv3 = 1;
+
+    // vertex-pertinent idx
+    kms = 0; kme = 0;
+    kps = 0; kpe = 0;
+    kvs = 0; kve = 0;
+    kis = 0; kie = 0;
+    kgs = 0; kge = 0;
   }
 
   if (pm->multilevel) {
     cnghost = (NGHOST + 1)/2 + 1;
     cis = NGHOST; cie = cis + block_size.nx1/2 - 1;
     cjs = cje = cks = cke = 0;
-    if (pmy_mesh->f2) // 2D or 3D
+
+    civ = cie + 1;
+
+    // Ghost zones
+    cims = 0; cime = NGHOST - 1;
+    cips = block_size.nx1 / 2 + NGHOST + 1;
+    cipe = block_size.nx1 / 2 + 2 * NGHOST;
+    // Shared vertices
+    civs = NGHOST;
+    cive = block_size.nx1 / 2 + NGHOST;
+    // internal vertices
+    ciis = NGHOST + 1;
+    ciie = block_size.nx1 / 2 + NGHOST - 1;
+    // internal shared to ghost
+    cigs = civs + NGHOST;
+    cige = cive - NGHOST;
+
+    // zero out others
+    cjms = cjme = cjps = cjpe = 0;
+    cjvs = cjve = 0;
+    cjgs = cjge = 0;
+
+    cjms = cjme = cjps = cjpe = 0;
+    cjvs = cjve = 0;
+    cjgs = cjge = 0;
+
+    if (pmy_mesh->f2) {// 2D or 3D
       cjs = NGHOST, cje = cjs + block_size.nx2/2 - 1;
-    if (pmy_mesh->f3) // 3D
+
+      cjv = cje + 1;
+
+      // Ghost zones
+      cjms = 0; cjme = NGHOST - 1;
+      cjps = block_size.nx2 / 2 + NGHOST + 1;
+      cjpe = block_size.nx2 / 2 + 2 * NGHOST;
+      // Shared vertices
+      cjvs = NGHOST;
+      cjve = block_size.nx2 / 2 + NGHOST;
+      // internal vertices
+      cjis = NGHOST + 1;
+      cjie = block_size.nx2 / 2 + NGHOST - 1;
+      // internal shared to ghost
+      cjgs = cjvs + NGHOST;
+      cjge = cjve - NGHOST;
+    }
+    if (pmy_mesh->f3) {// 3D
       cks = NGHOST, cke = cks + block_size.nx3/2 - 1;
+
+      ckv = cke + 1;
+
+      // Ghost zones
+      ckms = 0; ckme = NGHOST - 1;
+      ckps = block_size.nx3 / 2 + NGHOST + 1;
+      ckpe = block_size.nx3 / 2 + 2 * NGHOST;
+      // Shared vertices
+      ckvs = NGHOST;
+      ckve = block_size.nx3 / 2 + NGHOST;
+      // internal vertices
+      ckis = NGHOST + 1;
+      ckie = block_size.nx3 / 2 + NGHOST - 1;
+      // internal shared to ghost
+      ckgs = ckvs + NGHOST;
+      ckge = ckve - NGHOST;
+    }
   }
 
   // (probably don't need to preallocate space for references in these vectors)
   vars_cc_.reserve(3);
   vars_fc_.reserve(3);
+  vars_vc_.reserve(3);
 
   // construct objects stored in MeshBlock class.  Note in particular that the initial
   // conditions for the simulation are set in problem generator called from main, not
@@ -176,7 +303,11 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // BD: new problem
   if (WAVE_ENABLED) {
     pwave = new Wave(this, pin);
-    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+    if (PREFER_VC) {
+      pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
+    } else {
+      pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+    }
   }
   // -BD
 
@@ -220,21 +351,37 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     new_block_dt_{}, new_block_dt_hyperbolic_{}, new_block_dt_parabolic_{},
     new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(icost) {
+  coutGreen("MeshBlock::MeshBlock\n");
+
   // initialize grid indices
   is = NGHOST;
   ie = is + block_size.nx1 - 1;
 
   ncells1 = block_size.nx1 + 2*NGHOST;
   ncc1 = block_size.nx1/2 + 2*NGHOST;
+
+  iv = ie + 1;
+
+  nverts1 = ncells1 + 1;
+  ncv1 = ncc1 + 1;
+
   if (pmy_mesh->f2) {
     js = NGHOST;
     je = js + block_size.nx2 - 1;
     ncells2 = block_size.nx2 + 2*NGHOST;
     ncc2 = block_size.nx2/2 + 2*NGHOST;
+
+    jv = je + 1;
+    nverts2 = ncells2 + 1;
+    ncv2 = ncc2 + 1;
   } else {
     js = je = 0;
     ncells2 = 1;
     ncc2 = 1;
+
+    jv = 0;
+    nverts2 = 1;
+    ncv2 = 1;
   }
 
   if (pmy_mesh->f3) {
@@ -242,10 +389,18 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     ke = ks + block_size.nx3 - 1;
     ncells3 = block_size.nx3 + 2*NGHOST;
     ncc3 = block_size.nx3/2 + 2*NGHOST;
+
+    kv = ke + 1;
+    nverts3 = ncells3 + 1;
+    ncv3 = ncc3 + 1;
   } else {
     ks = ke = 0;
     ncells3 = 1;
     ncc3 = 1;
+
+    kv = 0;
+    nverts3 = 1;
+    ncv3 = 1;
   }
 
   if (pm->multilevel) {
@@ -320,7 +475,11 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // BD: new problem
   if (WAVE_ENABLED) {
     pwave = new Wave(this, pin);
-    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+    if (PREFER_VC) {
+      pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
+    } else {
+      pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+    }
   }
   // -BD
 
@@ -415,6 +574,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 // MeshBlock destructor
 
 MeshBlock::~MeshBlock() {
+  coutGreen("MeshBlock::~MeshBlock\n");
   if (prev != nullptr) prev->next = next;
   if (next != nullptr) next->prev = prev;
 
@@ -452,6 +612,7 @@ MeshBlock::~MeshBlock() {
 //  \brief Allocate Real AthenaArrays for user-defned data in MeshBlock
 
 void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
+  coutGreen("MeshBlock::AllocateRealUserMeshBlockDataField\n");
   if (nreal_user_meshblock_data_ != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateRealUserMeshBlockDataField"
@@ -468,6 +629,7 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
 //  \brief Allocate integer AthenaArrays for user-defned data in MeshBlock
 
 void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
+  coutGreen("MeshBlock::AllocateIntUserMeshBlockDataField\n");
   if (nint_user_meshblock_data_ != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateIntusermeshblockDataField"
@@ -485,6 +647,7 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
 //  \brief Allocate user-defined output variables
 
 void MeshBlock::AllocateUserOutputVariables(int n) {
+  coutGreen("MeshBlock::AllocateUserOutputVariables\n");
   if (n <= 0) return;
   if (nuser_out_var != 0) {
     std::stringstream msg;
@@ -505,6 +668,7 @@ void MeshBlock::AllocateUserOutputVariables(int n) {
 //  \brief set the user-defined output variable name
 
 void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
+  coutGreen("MeshBlock::SetUserOutputVariableName\n");
   if (n >= nuser_out_var) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::SetUserOutputVariableName"
@@ -521,6 +685,7 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
 //  \brief Calculate the block data size required for restart.
 
 std::size_t MeshBlock::GetBlockSizeInBytes() {
+  coutGreen("MeshBlock::GetBlockSizeInBytes\n");
   std::size_t size = 0;
   // NEW_OUTPUT_TYPES:
   if (FLUID_ENABLED)
@@ -549,6 +714,7 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
   }
 
   if (Z4C_ENABLED) {
+    // BD: this should be checked..
     size+=pz4c->storage.u.GetSizeInBytes();
   }
 
@@ -566,6 +732,7 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
 //  \brief stop time measurement and accumulate it in the MeshBlock cost
 
 void MeshBlock::SetCostForLoadBalancing(double cost) {
+  coutGreen("MeshBlock::SetCostForLoadBalancing\n");
   if (pmy_mesh->lb_manual_) {
     cost_ = std::min(cost, TINY_NUMBER);
     pmy_mesh->lb_flag_ = true;
@@ -577,6 +744,7 @@ void MeshBlock::SetCostForLoadBalancing(double cost) {
 //  \brief reset the MeshBlock cost for automatic load balancing
 
 void MeshBlock::ResetTimeMeasurement() {
+  coutGreen("MeshBlock::ResetTimeMeasurement\n");
   if (pmy_mesh->lb_automatic_) cost_ = TINY_NUMBER;
 }
 
@@ -585,6 +753,7 @@ void MeshBlock::ResetTimeMeasurement() {
 //  \brief start time measurement for automatic load balancing
 
 void MeshBlock::StartTimeMeasurement() {
+  // coutGreen("MeshBlock::StartTimeMeasurement\n");
   if (pmy_mesh->lb_automatic_) {
 #ifdef OPENMP_PARALLEL
     lb_time_ = omp_get_wtime();
@@ -599,6 +768,7 @@ void MeshBlock::StartTimeMeasurement() {
 //  \brief stop time measurement and accumulate it in the MeshBlock cost
 
 void MeshBlock::StopTimeMeasurement() {
+  // coutGreen("MeshBlock::StopTimeMeasurement\n");
   if (pmy_mesh->lb_automatic_) {
 #ifdef OPENMP_PARALLEL
     lb_time_ = omp_get_wtime() - lb_time_;
@@ -610,17 +780,23 @@ void MeshBlock::StopTimeMeasurement() {
 }
 
 
-void MeshBlock::RegisterMeshBlockData(AthenaArray<Real> &pvar_cc) {
-  vars_cc_.push_back(pvar_cc);
+void MeshBlock::RegisterMeshBlockData(AthenaArray<Real> &pvar_in) {
+  coutGreen("MeshBlock::RegisterMeshBlockData\n");
+  // BD: TODO: one should do this differently...
+  if (PREFER_VC) {
+    vars_vc_.push_back(pvar_in);
+  } else {
+    vars_cc_.push_back(pvar_in);
+  }
   return;
 }
 
 
 void MeshBlock::RegisterMeshBlockData(FaceField &pvar_fc) {
+  coutGreen("MeshBlock::RegisterMeshBlockData\n");
   vars_fc_.push_back(pvar_fc);
   return;
 }
-
 
 // TODO(felker): consider merging the MeshRefinement::pvars_cc/fc_ into the
 // MeshBlock::pvars_cc/fc_. Would need to weaken the MeshBlock std::vector to use tuples

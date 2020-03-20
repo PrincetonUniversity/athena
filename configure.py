@@ -7,41 +7,49 @@
 # Makefile.in and src/defs.hpp.in respectively.
 #
 # The following options are implememted:
-#   -h  --help        help message
-#   --prob=name       use src/pgen/name.cpp as the problem generator
-#   --coord=xxx       use xxx as the coordinate system
-#   --eos=xxx         use xxx as the equation of state
-#   --flux=xxx        use xxx as the Riemann solver
-#   --nghost=xxx      set NGHOST=xxx
-#   --nscalars=xxx    set NSCALARS=xxx
-#   -eos_table        enable EOS table
-#   -f                enable fluid
-#   -b                enable magnetic fields
-#   -s                enable special relativity
-#   -g                enable general relativity
-#   -a                enable advection equation
-#   -w                enable wave equation
-#   -z                enable Z4c system
-#   -t                enable interface frame transformations for GR
-#   -shear            enable shearing periodic boundary conditions
-#   -debug            enable debug flags (-g -O0); override other compiler options
-#   -coverage         enable compiler-dependent code coverage flags
-#   -float            enable single precision (default is double)
-#   -mpi              enable parallelization with MPI
-#   -omp              enable parallelization with OpenMP
-#   -hdf5             enable HDF5 output (requires the HDF5 library)
-#   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
-#   -fft              enable FFT (requires the FFTW library)
-#   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
-#   --grav=xxx        use xxx as the self-gravity solver
-#   --cxx=xxx         use xxx as the C++ compiler
-#   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
-#   --mpiccmd=name    use name as the command to call the MPI C++ compiler
-#   --gcovcmd=name    use name as the command to call the gcov utility
-#   --cflag=string    append string whenever invoking compiler/linker
-#   --include=path    use -Ipath when compiling
-#   --lib_path=path   use -Lpath when linking
-#   --lib=xxx         use -lxxx when linking
+#   -h  --help          help message
+#   --prob=name         use src/pgen/name.cpp as the problem generator
+#   --coord=xxx         use xxx as the coordinate system
+#   --eos=xxx           use xxx as the equation of state
+#   --flux=xxx          use xxx as the Riemann solver
+#   --nghost=xxx        set NGHOST=xxx
+#   --nscalars=xxx      set NSCALARS=xxx
+#   -eos_table          enable EOS table
+#   -f                  enable fluid
+#   -b                  enable magnetic fields
+#   -s                  enable special relativity
+#   -g                  enable general relativity
+#   -a                  enable advection equation
+#   -w                  enable wave equation
+#   -z                  enable Z4c system
+#   -t                  enable interface frame transformations for GR
+#   -vertex             prefer vertex-centered (where available)
+#   -fill_wave_interor  fill MeshBlock interior with exact solution
+#   -fill_wave_bnd_sl   fill MeshBlock boundaries [same level] with exact solution
+#   -fill_wave_bnd_frf  fill MeshBlock boundaries [from fine] with exact solution
+#   -fill_wave_bnd_frc  fill MeshBlock boundaries [from coarse] with exact solution
+#   -fill_wave_vertices fill shared vertices with exact solution (where available)
+#   -fill_wave_coarse_p fill coarse buffer prior to prolongation
+#   -dbg_vc_consistency inspect consistency conditions [using with all fill flags]
+#   -shear              enable shearing periodic boundary conditions
+#   -debug              enable debug flags (-g -O0); override other compiler options
+#   -coverage           enable compiler-dependent code coverage flags
+#   -float              enable single precision (default is double)
+#   -mpi                enable parallelization with MPI
+#   -omp                enable parallelization with OpenMP
+#   -hdf5               enable HDF5 output (requires the HDF5 library)
+#   --hdf5_path=path    path to HDF5 libraries (requires the HDF5 library)
+#   -fft                enable FFT (requires the FFTW library)
+#   --fftw_path=path    path to FFTW libraries (requires the FFTW library)
+#   --grav=xxx          use xxx as the self-gravity solver
+#   --cxx=xxx           use xxx as the C++ compiler
+#   --ccmd=name         use name as the command to call the (non-MPI) C++ compiler
+#   --mpiccmd=name      use name as the command to call the MPI C++ compiler
+#   --gcovcmd=name      use name as the command to call the gcov utility
+#   --cflag=string      append string whenever invoking compiler/linker
+#   --include=path      use -Ipath when compiling
+#   --lib_path=path     use -Lpath when linking
+#   --lib=xxx           use -lxxx when linking
 # ----------------------------------------------------------------------------------------
 
 # Modules
@@ -169,6 +177,54 @@ parser.add_argument('-t',
                     action='store_true',
                     default=False,
                     help='enable interface frame transformations for GR')
+
+# -vertex argument
+parser.add_argument('-vertex',
+                    action='store_true',
+                    default=False,
+                    help='prefer vertex-centering')
+
+# -fill_wave_interior argument
+parser.add_argument('-fill_wave_interior',
+                    action='store_true',
+                    default=False,
+                    help='fill MeshBlock interior with exact solution')
+
+# -fill_wave_bnd_sl argument
+parser.add_argument('-fill_wave_bnd_sl',
+                    action='store_true',
+                    default=False,
+                    help='fill MeshBlock boundary [same level] with exact solution')
+
+# -fill_wave_bnd_frf argument
+parser.add_argument('-fill_wave_bnd_frf',
+                    action='store_true',
+                    default=False,
+                    help='fill MeshBlock boundary [from fine] with exact solution')
+
+# -fill_wave_bnd_frc argument
+parser.add_argument('-fill_wave_bnd_frc',
+                    action='store_true',
+                    default=False,
+                    help='fill MeshBlock boundary [from coarse] with exact solution')
+
+# -fill_wave_vertices argument
+parser.add_argument('-fill_wave_vertices',
+                    action='store_true',
+                    default=False,
+                    help='fill shared vertices with exact solution')
+
+# -fill_wave_coarse_p argument
+parser.add_argument('-fill_wave_coarse_p',
+                    action='store_true',
+                    default=False,
+                    help='fill coarse buffer prior to prolongation')
+
+# -dbg_vc_consistency argument
+parser.add_argument('-dbg_vc_consistency',
+                    action='store_true',
+                    default=False,
+                    help='inspect consistency conditions')
 
 # -shear argument
 parser.add_argument('-shear',
@@ -499,6 +555,55 @@ if args['z']:
 
 else:
   definitions['Z4C_ENABLED'] = '0'
+
+# -vertex argument
+if args['vertex']:
+    definitions['PREFER_VC'] = '1'
+else:
+    definitions['PREFER_VC'] = '0'
+
+# -fill_wave_interior argument
+if args['fill_wave_interior']:
+    definitions['FILL_WAVE_INTERIOR'] = '1'
+else:
+    definitions['FILL_WAVE_INTERIOR'] = '0'
+
+# -fill_wave_bnd_sl argument
+if args['fill_wave_bnd_sl']:
+    definitions['FILL_WAVE_BND_SL'] = '1'
+else:
+    definitions['FILL_WAVE_BND_SL'] = '0'
+
+# -fill_wave_bnd_frf argument
+if args['fill_wave_bnd_frf']:
+    definitions['FILL_WAVE_BND_FRF'] = '1'
+else:
+    definitions['FILL_WAVE_BND_FRF'] = '0'
+
+# -fill_wave_bnd_frc argument
+if args['fill_wave_bnd_frc']:
+    definitions['FILL_WAVE_BND_FRC'] = '1'
+else:
+    definitions['FILL_WAVE_BND_FRC'] = '0'
+
+# -fill_wave_vertices argument
+if args['fill_wave_vertices']:
+    definitions['FILL_WAVE_VERTICES'] = '1'
+else:
+    definitions['FILL_WAVE_VERTICES'] = '0'
+
+# -fill_wave_coarse_p argument
+if args['fill_wave_coarse_p']:
+    definitions['FILL_WAVE_COARSE_P'] = '1'
+else:
+    definitions['FILL_WAVE_COARSE_P'] = '0'
+
+# -dbg_vc_consistency argument
+if args['dbg_vc_consistency']:
+    definitions['DBG_VC_CONSISTENCY'] = '1'
+else:
+    definitions['DBG_VC_CONSISTENCY'] = '0'
+
 
 # -shear argument
 if args['shear']:
@@ -866,6 +971,21 @@ print('  Z4c equations:              ' + ('ON' if args['z'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:               ' + self_grav_string)
 print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
+print('  Vertex-centering preferred: ' + ('ON' if args['vertex'] else 'OFF'))
+print('  fill_wave_interior:         '
+      + ('ON' if args['fill_wave_interior'] else 'OFF'))
+print('  fill_wave_bnd_sl:           '
+      + ('ON' if args['fill_wave_bnd_sl'] else 'OFF'))
+print('  fill_wave_bnd_frf:          '
+      + ('ON' if args['fill_wave_bnd_frf'] else 'OFF'))
+print('  fill_wave_bnd_frc:          '
+      + ('ON' if args['fill_wave_bnd_frc'] else 'OFF'))
+print('  fill_wave_vertices:         '
+      + ('ON' if args['fill_wave_vertices'] else 'OFF'))
+print('  fill_wave_coarse_p:         '
+      + ('ON' if args['fill_wave_coarse_p'] else 'OFF'))
+print('  dbg_vc_consistency:         '
+      + ('ON' if args['dbg_vc_consistency'] else 'OFF'))
 print('  Shearing Box BCs:           ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF'))

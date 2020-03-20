@@ -9,6 +9,7 @@
 // C headers
 
 // C++ headers
+#include <iostream>  // for debug
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -25,6 +26,11 @@ template <typename T> void PackData(AthenaArray<T> &src, T *buf,
                                     int sn, int en,
                                     int si, int ei, int sj, int ej, int sk, int ek,
                                     int &offset) {
+  // add debug
+  coutBoldBlue("\npd4:");
+  src.print_all();
+  //-
+
   for (int n=sn; n<=en; ++n) {
     for (int k=sk; k<=ek; k++) {
       for (int j=sj; j<=ej; j++) {
@@ -34,6 +40,21 @@ template <typename T> void PackData(AthenaArray<T> &src, T *buf,
       }
     }
   }
+
+  // add debug
+  coutBoldBlue("\nbuf: ");
+  for (int kk=0; kk<offset; kk++) {
+    if (kk < offset - 1)
+      printf("%1.3f, ", buf[kk]);
+    else
+      printf("%1.3f\n", buf[kk]);
+  }
+
+  coutBoldBlue("\nix: ");
+  printf("(p, sn, en, si, ei, sj, ej, sk, ek)="
+         "(%d, %d, %d, %d, %d, %d, %d, %d, %d)\n",
+         offset, sn, en, si, ei, sj, ej, sk, ek);
+  //-
 }
 
 //----------------------------------------------------------------------------------------
@@ -44,6 +65,11 @@ template <typename T> void PackData(AthenaArray<T> &src, T *buf,
 template <typename T> void PackData(AthenaArray<T> &src, T *buf,
                                     int si, int ei, int sj, int ej, int sk, int ek,
                                     int &offset) {
+  // add debug
+  coutBoldBlue("\npd3 ");
+  src.print_all();
+  //-
+
   for (int k=sk; k<=ek; k++) {
     for (int j=sj; j<=ej; j++) {
 #pragma omp simd
@@ -51,6 +77,13 @@ template <typename T> void PackData(AthenaArray<T> &src, T *buf,
         buf[offset++] = src(k, j, i);
     }
   }
+
+  // add debug
+  coutBoldBlue("\nix: ");
+  printf("(p, si, ei, sj, ej, sk, ek)="
+         "(%d, %d, %d, %d, %d, %d, %d)\n",
+         offset, si, ei, sj, ej, sk, ek);
+  //-
   return;
 }
 
@@ -63,6 +96,11 @@ template <typename T> void UnpackData(T *buf, AthenaArray<T> &dst,
                                       int sn, int en,
                                       int si, int ei, int sj, int ej, int sk, int ek,
                                       int &offset) {
+  // add debug
+  coutBoldBlue("\nud4 [pre]");
+  dst.print_all();
+  //-
+
   for (int n=sn; n<=en; ++n) {
     for (int k=sk; k<=ek; ++k) {
       for (int j=sj; j<=ej; ++j) {
@@ -72,6 +110,16 @@ template <typename T> void UnpackData(T *buf, AthenaArray<T> &dst,
       }
     }
   }
+
+  // add debug
+  coutBoldBlue("\nud4 [post]");
+  dst.print_all();
+
+  coutBoldBlue("\nix: ");
+  printf("(p, sn, en, si, ei, sj, ej, sk, ek)="
+         "(%d, %d, %d, %d, %d, %d, %d, %d, %d)\n",
+         offset, sn, en, si, ei, sj, ej, sk, ek);
+  //-
   return;
 }
 
@@ -83,6 +131,11 @@ template <typename T> void UnpackData(T *buf, AthenaArray<T> &dst,
 template <typename T> void UnpackData(T *buf, AthenaArray<T> &dst,
                                       int si, int ei, int sj, int ej, int sk, int ek,
                                       int &offset) {
+  // add debug
+  coutBoldBlue("\nud3 [pre]");
+  dst.print_all();
+  //-
+
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
 #pragma omp simd
@@ -90,6 +143,87 @@ template <typename T> void UnpackData(T *buf, AthenaArray<T> &dst,
         dst(k,j,i) = buf[offset++];
     }
   }
+
+  // add debug
+  coutBoldBlue("\nud3 [post]");
+  dst.print_all();
+
+  coutBoldBlue("\nix: ");
+  printf("(p, si, ei, sj, ej, sk, ek)="
+         "(%d, %d, %d, %d, %d, %d, %d)\n",
+         offset, si, ei, sj, ej, sk, ek);
+  //-
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn template <typename T> void UnpackDataAdd(T *buf, AthenaArray<T> &dst, int sn, int en,
+//                        int si, int ei, int sj, int ej, int sk, int ek, int &offset)
+//  \brief unpack a one-dimensional buffer into a 4D AthenaArray additively
+
+template <typename T> void UnpackDataAdd(T *buf, AthenaArray<T> &dst,
+                                         int sn, int en,
+                                         int si, int ei, int sj, int ej, int sk, int ek,
+                                         int &offset) {
+  // add debug
+  coutBoldBlue("\nud4avg [pre]");
+  dst.print_all();
+  //-
+
+  for (int n=sn; n<=en; ++n) {
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma omp simd
+        for (int i=si; i<=ei; ++i)
+          dst(n,k,j,i) += buf[offset++];
+      }
+    }
+  }
+
+  // add debug
+  coutBoldBlue("\nud4avg [post]");
+  dst.print_all();
+
+  coutBoldBlue("\nix: ");
+  printf("(p, sn, en, si, ei, sj, ej, sk, ek)="
+         "(%d, %d, %d, %d, %d, %d, %d, %d, %d)\n",
+         offset, sn, en, si, ei, sj, ej, sk, ek);
+  //-
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn template <typename T> void UnpackDataAdd(T *buf, AthenaArray<T> &dst,
+//                        int si, int ei, int sj, int ej, int sk, int ek, int &offset)
+//  \brief unpack a one-dimensional buffer into a 3D AthenaArray additively
+
+template <typename T> void UnpackDataAdd(T *buf, AthenaArray<T> &dst,
+                                         int si, int ei, int sj, int ej, int sk, int ek,
+                                         int &offset) {
+  // add debug
+  coutBoldBlue("\nud3avg [pre]");
+  dst.print_all();
+  //-
+
+  for (int k=sk; k<=ek; ++k) {
+    for (int j=sj; j<=ej; ++j) {
+#pragma omp simd
+      for (int i=si; i<=ei; ++i)
+        dst(k,j,i) += buf[offset++];
+    }
+  }
+
+  // add debug
+  coutBoldBlue("\nud3avg [post]");
+  dst.print_all();
+
+  coutBoldBlue("\nix: ");
+  printf("(p, si, ei, sj, ej, sk, ek)="
+         "(%d, %d, %d, %d, %d, %d, %d)\n",
+         offset, si, ei, sj, ej, sk, ek);
+  //-
+
   return;
 }
 
@@ -103,6 +237,12 @@ template void UnpackData<Real>(Real *, AthenaArray<Real> &, int, int, int, int, 
                                int &);
 template void UnpackData<Real>(Real *, AthenaArray<Real> &, int, int, int, int, int, int,
                                int &);
+
+template void UnpackDataAdd<Real>(Real *, AthenaArray<Real> &, int, int, int, int, int, int,
+                                  int, int,
+                                  int &);
+template void UnpackDataAdd<Real>(Real *, AthenaArray<Real> &, int, int, int, int, int, int,
+                                  int &);
 
 template void PackData<Real>(AthenaArray<Real> &, Real *, int, int, int, int, int, int,
                              int, int,

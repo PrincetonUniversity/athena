@@ -25,19 +25,29 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
   // consider every possible simplified form of weighted sum operator:
   // U = a*U + b*U1 + c*U2
 
-  // assuming all 3x arrays are of the same size (or at least u_out is equal or larger
-  // than each input array) in each array dimension, and full range is desired:
+  // assuming all 3x arrays are of the same size (or at least u_out il equal or larger
+  // than each input array) in each array dimension, and full range il desired:
   // nx4*(3D real MeshBlock cells)
   const int nu = u_out.GetDim4() - 1;
+
+  // This property would be better to derive based on general input type...
+  int il = is, jl = js, kl = ks;
+  int iu, ju, ku;
+
+  if (PREFER_VC) {
+    iu = iv, ju = jv, ku = kv;
+  } else {
+    iu = ie, ju = je, ku = ke;
+  }
 
   // u_in2 may be an unallocated AthenaArray if using a 2S time integrator
   if (wght[0] == 1.0) {
     if (wght[2] != 0.0) {
       for (int n=0; n<=nu; ++n) {
-        for (int k=ks; k<=ke; ++k) {
-          for (int j=js; j<=je; ++j) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-            for (int i=is; i<=ie; ++i) {
+            for (int i=il; i<=iu; ++i) {
               u_out(n,k,j,i) += wght[1]*u_in1(n,k,j,i) + wght[2]*u_in2(n,k,j,i);
             }
           }
@@ -46,10 +56,10 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
     } else { // do not dereference u_in2
       if (wght[1] != 0.0) {
         for (int n=0; n<=nu; ++n) {
-          for (int k=ks; k<=ke; ++k) {
-            for (int j=js; j<=je; ++j) {
+          for (int k=kl; k<=ku; ++k) {
+            for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-              for (int i=is; i<=ie; ++i) {
+              for (int i=il; i<=iu; ++i) {
                 u_out(n,k,j,i) += wght[1]*u_in1(n,k,j,i);
               }
             }
@@ -60,10 +70,10 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
   } else if (wght[0] == 0.0) {
     if (wght[2] != 0.0) {
       for (int n=0; n<=nu; ++n) {
-        for (int k=ks; k<=ke; ++k) {
-          for (int j=js; j<=je; ++j) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-            for (int i=is; i<=ie; ++i) {
+            for (int i=il; i<=iu; ++i) {
               u_out(n,k,j,i) = wght[1]*u_in1(n,k,j,i) + wght[2]*u_in2(n,k,j,i);
             }
           }
@@ -72,10 +82,10 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
     } else if (wght[1] == 1.0) {
       // just deep copy
       for (int n=0; n<=nu; ++n) {
-        for (int k=ks; k<=ke; ++k) {
-          for (int j=js; j<=je; ++j) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-            for (int i=is; i<=ie; ++i) {
+            for (int i=il; i<=iu; ++i) {
               u_out(n,k,j,i) = u_in1(n,k,j,i);
             }
           }
@@ -83,10 +93,10 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
       }
     } else {
       for (int n=0; n<=nu; ++n) {
-        for (int k=ks; k<=ke; ++k) {
-          for (int j=js; j<=je; ++j) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-            for (int i=is; i<=ie; ++i) {
+            for (int i=il; i<=iu; ++i) {
               u_out(n,k,j,i) = wght[1]*u_in1(n,k,j,i);
             }
           }
@@ -96,10 +106,10 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
   } else {
     if (wght[2] != 0.0) {
       for (int n=0; n<=nu; ++n) {
-        for (int k=ks; k<=ke; ++k) {
-          for (int j=js; j<=je; ++j) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-            for (int i=is; i<=ie; ++i) {
+            for (int i=il; i<=iu; ++i) {
               u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i) + wght[1]*u_in1(n,k,j,i)
                                + wght[2]*u_in2(n,k,j,i);
             }
@@ -109,10 +119,10 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
     } else { // do not dereference u_in2
       if (wght[1] != 0.0) {
         for (int n=0; n<=nu; ++n) {
-          for (int k=ks; k<=ke; ++k) {
-            for (int j=js; j<=je; ++j) {
+          for (int k=kl; k<=ku; ++k) {
+            for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-              for (int i=is; i<=ie; ++i) {
+              for (int i=il; i<=iu; ++i) {
                 u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i) + wght[1]*u_in1(n,k,j,i);
               }
             }
@@ -120,10 +130,10 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
         }
       } else { // do not dereference u_in1
         for (int n=0; n<=nu; ++n) {
-          for (int k=ks; k<=ke; ++k) {
-            for (int j=js; j<=je; ++j) {
+          for (int k=kl; k<=ku; ++k) {
+            for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
-              for (int i=is; i<=ie; ++i) {
+              for (int i=il; i<=iu; ++i) {
                 u_out(n,k,j,i) *= wght[0];
               }
             }

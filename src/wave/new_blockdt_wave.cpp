@@ -22,8 +22,6 @@
 Real Wave::NewBlockTimeStep(void) {
   MeshBlock * pmb = pmy_block;
   int tid = 0;
-  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
-  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
   Real real_max = std::numeric_limits<Real>::max();
   Real min_dt = real_max;
@@ -36,30 +34,31 @@ Real Wave::NewBlockTimeStep(void) {
   // Just slice dt1_, dt2_, dt3_ directly
   AthenaArray<Real> &dt1 = dt1_, &dt2 = dt2_, &dt3 = dt3_;  // (x1 slices)
 
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
+  for (int k = mbi.kl; k <= mbi.ku; ++k) {
+    for (int j = mbi.jl; j <= mbi.ju; ++j) {
 
-      pmb->pcoord->CenterWidth1(k, j, is, ie, dt1);
-      pmb->pcoord->CenterWidth2(k, j, is, ie, dt2);
-      pmb->pcoord->CenterWidth3(k, j, is, ie, dt3);
+      // Note: these should be uniform for Cart. and equiv. to dxn
+      pmb->pcoord->CenterWidth1(k, j, mbi.il, mbi.iu, dt1);
+      pmb->pcoord->CenterWidth2(k, j, mbi.il, mbi.iu, dt2);
+      pmb->pcoord->CenterWidth3(k, j, mbi.il, mbi.iu, dt3);
 
-      for (int i = is; i <= ie; ++i) {
+      for (int i = mbi.il; i <= mbi.iu; ++i) {
         dt1(i) /= c;
         dt2(i) /= c;
         dt3(i) /= c;
       }
-      for (int i = is; i <= ie; ++i) {
+      for (int i = mbi.il; i <= mbi.iu; ++i) {
         Real & dt_1 = dt1(i);
         min_dt = std::min(min_dt, dt_1);
       }
       if (pmb->block_size.nx2 > 1) {
-        for (int i = is; i <= ie; ++i) {
+        for (int i = mbi.il; i <= mbi.iu; ++i) {
           Real & dt_2 = dt2(i);
           min_dt = std::min(min_dt, dt_2);
         }
       }
       if (pmb->block_size.nx3 > 1) {
-        for (int i = is; i <= ie; ++i) {
+        for (int i = mbi.il; i <= mbi.iu; ++i) {
           Real & dt_3 = dt3(i);
           min_dt = std::min(min_dt, dt_3);
         }

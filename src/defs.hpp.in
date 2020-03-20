@@ -27,6 +27,18 @@
 // evolve hydrodynamics? default=0 (false)
 #define FLUID_ENABLED @FLUID_ENABLED@
 
+// prefer vertex-centering default=0 (false)
+#define PREFER_VC @PREFER_VC@
+
+// fill different portions of block with exact solution [for debug]
+#define FILL_WAVE_INTERIOR @FILL_WAVE_INTERIOR@
+#define FILL_WAVE_BND_SL @FILL_WAVE_BND_SL@
+#define FILL_WAVE_BND_FRF @FILL_WAVE_BND_FRF@
+#define FILL_WAVE_BND_FRC @FILL_WAVE_BND_FRC@
+#define FILL_WAVE_VERTICES @FILL_WAVE_VERTICES@
+#define FILL_WAVE_COARSE_P @FILL_WAVE_COARSE_P@
+#define DBG_VC_CONSISTENCY @DBG_VC_CONSISTENCY@
+
 // enable shearing box? default=0 (false)
 #define SHEARING_BOX @SHEARING_BOX@
 
@@ -123,6 +135,7 @@
 #define PI 3.1415926535897932
 #define TWO_PI 6.2831853071795862
 #define SQRT2 1.4142135623730951
+#define SQRT3 1.7320508075688773
 #define SQRT_PI 1.77245385090551603
 #define ONE_OVER_SQRT2 0.70710678118654752
 #define ONE_3RD 0.33333333333333333

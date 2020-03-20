@@ -18,6 +18,8 @@
 #include "athena_arrays.hpp"
 #include "defs.hpp"
 
+#include "debug.hpp"
+
 // primitive type alias that allows code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED
 using Real = float;
@@ -112,8 +114,7 @@ struct EdgeField {
       x3e(ncells3, ncells2+1, ncells1+1, init) {}
 };
 
-//----------------------------------------------------------------------------------------
-// enums used everywhere
+//------------------------------------------------------------------------------------// enums used everywhere
 // (not specifying underlying integral type (C++11) for portability & performance)
 
 // TODO(felker): C++ Core Guidelines Enum.5: Don’t use ALL_CAPS for enumerators
@@ -155,7 +156,7 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 //------------------
 // KGF: Except for the 2x MG* enums, these may be unnessary w/ the new class inheritance
 // Now, only passed to BoundaryVariable::InitBoundaryData(); could replace w/ bool switch
-enum class BoundaryQuantity {cc, fc, cc_flcor, fc_flcor, mggrav, mggrav_f};
+enum class BoundaryQuantity {cc, fc, vc, cc_flcor, fc_flcor, mggrav, mggrav_f};
 enum class HydroBoundaryQuantity {cons, prim};
 enum class BoundaryCommSubset {mesh_init, gr_amr, all};
 // TODO(felker): consider generalizing/renaming to QuantityFormulation

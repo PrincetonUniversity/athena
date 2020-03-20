@@ -365,6 +365,7 @@ void WaveIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 
   }
 
+  printf("StartupTaskList\n");
   pmb->pbval->StartReceiving(BoundaryCommSubset::all);
   return;
 }
@@ -396,6 +397,21 @@ TaskStatus WaveIntegratorTaskList::CalculateWaveRHS(MeshBlock *pmb, int stage) {
 
 TaskStatus WaveIntegratorTaskList::IntegrateWave(MeshBlock *pmb, int stage) {
   Wave *pwave = pmb->pwave;
+
+  //////////////////////////////////////////////////////////////////////////////
+  // coutBoldGreen("STAGE=\n");
+  // printf("%d\n", stage);
+  if (FILL_WAVE_INTERIOR){
+    if (stage <= nstages) {
+      int il = pwave->mbi.il, iu = pwave->mbi.iu;
+      int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
+      int jl = pwave->mbi.jl, ju = pwave->mbi.ju;
+      pmb->DebugWaveMeshBlock(pwave->u,
+                              il, iu, jl, ju, kl, ku, false);
+      return TaskStatus::next;
+    }
+  }
+  //////////////////////////////////////////////////////////////////////////////
 
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical
@@ -451,7 +467,17 @@ TaskStatus WaveIntegratorTaskList::ReceiveWave(MeshBlock *pmb, int stage) {
 
 TaskStatus WaveIntegratorTaskList::SetBoundariesWave(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
+
+    // coutBoldRed("|| pre[TaskList]: pmb->pwave->u\n");
+    // pmb->pwave->u.print_data();
+    // coutBoldRed("||\n");
+
     pmb->pwave->ubvar.SetBoundaries();
+
+    // coutBoldRed("|| post: pmb->pwave->u\n");
+    // pmb->pwave->u.print_data();
+    // coutBoldRed("||\n");
+
     return TaskStatus::success;
   }
   return TaskStatus::fail;
@@ -468,7 +494,17 @@ TaskStatus WaveIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
     Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+
+    // coutBoldRed("|| pre[TaskList,Prolongation]: pmb->pwave->u\n");
+    // pmb->pwave->u.print_data();
+    // coutBoldRed("||\n");
+
     pbval->ProlongateBoundaries(t_end_stage, dt);
+
+    // coutBoldRed("|| post[TaskList,Prolongation]: pmb->pwave->u\n");
+    // pmb->pwave->u.print_data();
+    // coutBoldRed("||\n");
+
   } else {
     return TaskStatus::fail;
   }
@@ -480,6 +516,8 @@ TaskStatus WaveIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
 TaskStatus WaveIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   BoundaryValues *pbval = pmb->pbval;
 
+  pmb->pwave->u.print_all("%1.2f");
+
   if (stage <= nstages) {
     // Time at the end of stage for (u, b) register pair
     Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
@@ -489,6 +527,39 @@ TaskStatus WaveIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
   } else {
     return TaskStatus::fail;
+  }
+
+  if (DBG_VC_CONSISTENCY) {
+    // BD: Debug- vertex consistency
+    Real err_test = 0;
+
+    int il = 0, iu = pmb->pwave->mbi.nn1 - 1;
+    int jl = 0, ju = pmb->pwave->mbi.nn2 - 1;
+    int kl = 0, ku = pmb->pwave->mbi.nn3 - 1;
+
+    for(int k = kl; k <= ku; ++k)
+      for(int j = jl; j <= ju; ++j)
+        for(int i = il; i <= iu; ++i) {
+          Real err_u_0 = std::abs(pmb->pwave->u(0, k, j, i) - 1);
+          Real err_u_1 = std::abs(pmb->pwave->u(1, k, j, i) - 1);
+
+          err_test = err_u_0 > err_test ? err_u_0 : err_test;
+          err_test = err_u_1 > err_test ? err_u_1 : err_test;
+        }
+
+    if (err_test > 0.1) {
+      coutBoldRed("\nWaveIntegratorTaskList::PhysicalBoundary\n");
+      printf("dbg_vc_consistency failed\n");
+      coutBoldRed("MB::UWIL gid = ");
+      printf("%d\n", pmb->gid);
+
+      printf("pmb->pwave->u:\n");
+      pmb->pwave->u.print_all("%1.2f");
+
+      coutBoldRed("TERMINATING...\n");
+      Q();
+    }
+    //-
   }
 
   return TaskStatus::success;

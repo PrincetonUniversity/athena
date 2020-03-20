@@ -31,6 +31,7 @@ int RefinementCondition(MeshBlock *pmb);
 //========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
+  printf("M:IUMD\n");
   if(adaptive==true)
     EnrollUserRefinementCondition(RefinementCondition);
   return;
@@ -42,14 +43,21 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
+  printf("MB:PG\n");
 
-  for(int k = ks; k <= ke; ++k)
-    for(int j = js; j <= je; ++j)
-      for(int i = is; i <= ie; ++i) {
-        Real x = pcoord->x1v(i);
-        Real y = pcoord->x2v(j);
-        Real z = pcoord->x3v(k);
-        Real c = pwave->c;
+  int il = pwave->mbi.il, iu = pwave->mbi.iu;
+  int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
+  int jl = pwave->mbi.jl, ju = pwave->mbi.ju;
+
+  Real c = pwave->c;
+
+  for(int k = kl; k <= ku; ++k)
+    for(int j = jl; j <= ju; ++j)
+      for(int i = il; i <= iu; ++i) {
+
+        Real x = pwave->mbi.x1(i);
+        Real y = pwave->mbi.x2(j);
+        Real z = pwave->mbi.x3(k);
 
         // Real cos_x = cos(PI*x);
         Real cos_2x = cos(2.*PI*x);
@@ -59,9 +67,28 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         pwave->u(0,k,j,i) = sqr_cos_2x;
         pwave->u(1,k,j,i) = -cos_2x / 2.;
 
+        // dummy const. init
+        // pwave->u(0,k,j,i) = 1.0 * i;
+        // pwave->u(1,k,j,i) = -1.0 * i;
+        // pwave->u(0,k,j,i) = x + 2;
+        // pwave->u(1,k,j,i) = -x;
+        // pwave->u(0,k,j,i) = 1;
+        // pwave->u(1,k,j,i) = 0;
+
+        // pwave->u(0,k,j,i) = i + 1 + 100 * (gid + 1);
+        // pwave->u(1,k,j,i) = -(i + 1 + 100 * (gid + 1));
+
+        if (DBG_VC_CONSISTENCY) {
+          // BD: Debug- vertex consistency
+          pwave->u(0,k,j,i) = 1;
+          pwave->u(1,k,j,i) = 1;
+          //-
+        }
+
         pwave->exact(k,j,i) = pwave->u(0,k,j,i);
         pwave->error(k,j,i) = 0.0;
       }
+
 
   return;
 }
@@ -70,20 +97,35 @@ void MeshBlock::WaveUserWorkInLoop() {
   Real max_err = 0;
   Real fun_err = 0;
 
-  for(int k = ks; k <= ke; ++k)
-    for(int j = js; j <= je; ++j)
-      for(int i = is; i <= ie; ++i) {
-        Real x = pcoord->x1v(i);
-        Real y = pcoord->x2v(j);
-        Real z = pcoord->x3v(k);
-        Real t = pmy_mesh->time + pmy_mesh->dt;
-        Real c = pwave->c;
+  // int il = pwave->mbi.il, iu = pwave->mbi.iu;
+  // int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
+  // int jl = pwave->mbi.jl, ju = pwave->mbi.ju;
+
+  Real c = pwave->c;
+  Real t = pmy_mesh->time + pmy_mesh->dt;
+
+  // DebugWaveMeshBlock(pwave->u,
+  //                    il, iu, jl, ju, kl, ku, false);
+
+  int il = 0, iu = pwave->mbi.nn1 - 1;
+  int jl = 0, ju = pwave->mbi.nn2 - 1;
+  int kl = 0, ku = pwave->mbi.nn3 - 1;
+
+  for(int k = kl; k <= ku; ++k)
+    for(int j = jl; j <= ju; ++j)
+      for(int i = il; i <= iu; ++i) {
+
+        Real x = pwave->mbi.x1(i);
+        Real y = pwave->mbi.x2(j);
+        Real z = pwave->mbi.x3(k);
 
         Real cos_2x = cos(2.*PI*x);
         Real cos_4x = cos(4.*PI*x);
         Real cos_4ct = cos(4.*PI*c*t);
         Real sin_2ct = sin(2.*PI*c*t);
 
+        // pwave->u(0,k,j,i) = i + 1 + 100 * gid;
+        // pwave->u(1,k,j,i) = 0;
         pwave->exact(k,j,i) = (2. + 2. * cos_4ct * cos_4x -
                                cos_2x * sin_2ct / ( c * PI )) / 4.;
 
@@ -94,7 +136,32 @@ void MeshBlock::WaveUserWorkInLoop() {
           fun_err = pwave->u(0,k,j,i);
         }
       }
-  // printf("MB::UWIL: (max_err, fun_err)=(%1.7f, %1.7f)\n", max_err, fun_err);
+
+  printf(">>>\n");
+  coutBoldRed("MB::UWIL gid = ");
+  printf("%d\n", gid);
+  printf("(max_err, fun_max, t)=(%1.10f, %1.10f, %1.10f)\n",
+         max_err, fun_err, t);
+
+  printf("pwave->error:\n");
+  pwave->error.print_all("%1.5f");
+
+  printf("pwave->u:\n");
+  pwave->u.print_all("%1.5f");
+
+  printf("pwave->exact:\n");
+  pwave->exact.print_all("%1.5f");
+  // coutBoldGreen("x1\n");
+  // pwave->mbi.x1.print_all("%1.4f");
+  // coutBoldGreen("u\n");
+  // pwave->u.print_all("%1.4f");
+  // coutBoldGreen("exact\n");
+  // pwave->exact.print_all("%1.4f");
+  // coutRed("error\n");
+  // pwave->error.print_all("%1.4f");
+
+  //Q();
+  printf("<<<\n");
   return;
 }
 
@@ -105,4 +172,166 @@ void MeshBlock::WaveUserWorkInLoop() {
 int RefinementCondition(MeshBlock *pmb){
   // don't do anything
   return 0;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn
+//  \brief debug for vertex dev
+void MeshBlock::DebugWaveMeshBlock(AthenaArray<Real> &u_wave,
+                                   int il, int iu,
+                                   int jl, int ju,
+                                   int kl, int ku,
+                                   bool is_additive,
+                                   bool is_coarse) {
+  Mesh *pm = pmy_mesh;
+
+  // compute next time-step (ensure not past limit)
+  // not initially available from mesh
+  Real dt = new_block_dt_;
+  if (pm->time < pm->tlim && (pm->tlim - pm->time) < dt)
+    dt = pm->tlim - pm->time;
+
+  Real c = pwave->c;
+  Real t = pm->time + dt;
+
+  // u_wave.ZeroClear(); // kill all data
+  // u_wave.print_all();
+
+  // solution on fundamental grid of block
+  for(int k = kl; k <= ku; ++k)
+    for(int j = jl; j <= ju; ++j)
+      for(int i = il; i <= iu; ++i) {
+
+        Real x, y, z;
+
+        if (is_coarse) {
+          x = pwave->mbi.cx1(i);
+          y = pwave->mbi.cx2(j);
+          z = pwave->mbi.cx3(k);
+        } else {
+          x = pwave->mbi.x1(i);
+          y = pwave->mbi.x2(j);
+          z = pwave->mbi.x3(k);
+        }
+
+        Real cos_2x = cos(2.*PI*x);
+        Real cos_4x = cos(4.*PI*x);
+        Real cos_4ct = cos(4.*PI*c*t);
+        Real sin_2ct = sin(2.*PI*c*t);
+
+        Real dt_cos_4ct = -4.*PI*c*sin(4.*PI*c*t);
+        Real dt_sin_2ct = 2.*PI*c*cos(2.*PI*c*t);
+
+        pwave->exact(k,j,i) = (2. + 2. * cos_4ct * cos_4x -
+                               cos_2x * sin_2ct / ( c * PI )) / 4.;
+
+        Real u_0 = pwave->exact(k,j,i);
+        Real u_1 = (2. * dt_cos_4ct * cos_4x -
+                    cos_2x * dt_sin_2ct / ( c * PI )) / 4.;
+
+
+        if (DBG_VC_CONSISTENCY) {
+          // BD: Debug- vertex consistency
+          u_0 = 1;
+          u_1 = 1;
+          //-
+        }
+
+        // unpack buffer additive logic emu
+        if (is_additive) {
+          u_wave(0, k, j, i) += u_0;
+          u_wave(1, k, j, i) += u_1;
+        } else {
+          u_wave(0, k, j, i) = u_0;
+          u_wave(1, k, j, i) = u_1;
+        }
+
+      }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn
+//  \brief debug for vertex dev
+void MeshBlock::DebugWaveMeshBlockSolution() {
+  // calculate exact solution over current mesh block on fundamental and coarse
+  // grids
+  Mesh *pm = pmy_mesh;
+
+
+  Real c = pwave->c;
+  Real t = pm->time; // + pmy_mesh->dt;
+
+  int il = pwave->mbi.il, iu = pwave->mbi.iu;
+  int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
+  int jl = pwave->mbi.jl, ju = pwave->mbi.ju;
+  AthenaArray<Real> soln;
+  AthenaArray<Real> coarse_soln;
+  soln.NewAthenaArray(pwave->mbi.nn3, pwave->mbi.nn2, pwave->mbi.nn1);
+
+  int cil = pwave->mbi.cil, ciu = pwave->mbi.ciu;
+  int ckl = pwave->mbi.ckl, cku = pwave->mbi.cku;
+  int cjl = pwave->mbi.cjl, cju = pwave->mbi.cju;
+  if (pm->multilevel) {
+    coarse_soln.NewAthenaArray(pwave->mbi.cnn3,
+                               pwave->mbi.cnn2,
+                               pwave->mbi.cnn1);
+  }
+
+
+  // solution on fundamental grid of block
+  for(int k = kl; k <= ku; ++k)
+    for(int j = jl; j <= ju; ++j)
+      for(int i = il; i <= iu; ++i) {
+
+        Real x = pwave->mbi.x1(i);
+        Real y = pwave->mbi.x2(j);
+        Real z = pwave->mbi.x3(k);
+
+        Real cos_2x = cos(2.*PI*x);
+        Real cos_4x = cos(4.*PI*x);
+        Real cos_4ct = cos(4.*PI*c*t);
+        Real sin_2ct = sin(2.*PI*c*t);
+
+        soln(k, j, i) = (2. + 2. * cos_4ct * cos_4x -
+                         cos_2x * sin_2ct / ( c * PI )) / 4.;
+      }
+
+  if (pm->multilevel) {
+    // solution on coarse grid of block
+    for(int ck = ckl; ck <= cku; ++ck)
+      for(int cj = cjl; cj <= cju; ++cj)
+        for(int ci = cil; ci <= ciu; ++ci) {
+
+          // conver to fine indices
+          int fk = (ck - NGHOST)*2 + NGHOST;
+          int fj = (cj - NGHOST)*2 + NGHOST;
+          int fi = (ci - NGHOST)*2 + NGHOST;
+
+          Real x = pwave->mbi.x1(fi);
+          Real y = pwave->mbi.x2(fj);
+          Real z = pwave->mbi.x3(fk);
+
+          Real cos_2x = cos(2.*PI*x);
+          Real cos_4x = cos(4.*PI*x);
+          Real cos_4ct = cos(4.*PI*c*t);
+          Real sin_2ct = sin(2.*PI*c*t);
+
+          coarse_soln(ck, cj, ci) = (2. + 2. * cos_4ct * cos_4x -
+                                     cos_2x * sin_2ct / ( c * PI )) / 4.;
+        }
+  }
+  // diagnostic for current block solution
+  coutBoldBlue("DebugWaveMeshBlockSolution:\n");
+
+  printf("soln:\n");
+  soln.print_all();
+  if (pm->multilevel) {
+    printf("coarse_soln:\n");
+    coarse_soln.print_all();
+  }
+  // clean up
+  soln.DeleteAthenaArray();
+  if (pm->multilevel) {
+    coarse_soln.DeleteAthenaArray();
+  }
 }

@@ -12,8 +12,9 @@
 // TODO(felker): consider moving enums and structs in a new file? bvals_structs.hpp?
 
 // C++ headers
-#include <string>   // string
-#include <vector>   // vector
+#include <iostream>  // for debug
+#include <string>    // string
+#include <vector>    // vector
 
 // Athena++ classes headers
 #include "../athena.hpp"
@@ -137,6 +138,26 @@ struct NeighborBlock { // aggregate and POD type. Inheritance breaks standard-la
   void SetNeighbor(int irank, int ilevel, int igid, int ilid, int iox1, int iox2,
                    int iox3, NeighborConnect itype, int ibid, int itargetid,
                    bool ipolar, bool ishear, int ifi1=0, int ifi2=0);
+
+
+  void print_all() const {
+    coutBoldRed("NeighborIndexes.(ox1, ox2, ox3, fi1, fi2)=");
+    printf("(%d, %d, %d, %d, %d)\n", ni.ox1, ni.ox2, ni.ox3, ni.fi1, ni.fi2);
+
+    if (ni.type == NeighborConnect::corner)
+      coutBoldRed("NeighborIndexes.type = NeighborConnect::corner\n");
+
+    if (ni.type == NeighborConnect::edge)
+      coutBoldRed("NeighborIndexes.type = NeighborConnect::edge\n");
+
+    if (ni.type == NeighborConnect::face)
+      coutBoldRed("NeighborIndexes.type = NeighborConnect::face\n");
+    coutBoldRed("(bufid, eid, targetid, snb.gid, snb.level)=");
+    printf("(%d, %d, %d, %d, %d)\n", bufid, eid, targetid,
+           snb.gid, snb.level);
+
+    return;
+  }
 };
 
 //----------------------------------------------------------------------------------------
