@@ -25,7 +25,6 @@
 
 KidaReaction::KidaReaction(std::string line) {
   const int nfields = 13;
-  Real Tmin, Tmax; 
   int r;
 
   //read the reaction
@@ -45,17 +44,17 @@ KidaReaction::KidaReaction(std::string line) {
   beta_ = std::stof(fields[1]);
   gamma_ = std::stof(fields[2]);
   itype_ = std::stoi(fields[6]);
-  Tmin = std::stof(fields[7]);
-  Tmax = std::stof(fields[8]);
+  Tmin_ = std::stof(fields[7]);
+  Tmax_ = std::stof(fields[8]);
   formula_ = std::stoi(fields[9]);
   id_ = std::stoi(fields[10]);
   r = std::stoi(fields[12]);
   
   //Temperature range warning
-  if ( (Tmin > 0.) || (Tmax < 9998.) ) {
+  if ( (Tmin_ > 0.) || (Tmax_ < 9998.) ) {
     std::cout << "### WARNING KidaReaction constructor [KidaReaction]" << std::endl
-      << "Temperature range (" << Tmin << "," << Tmax << ") for reaction (ID="  
-      << id_ << "). Extrapolation outside of range will be used" << std::endl;
+      << "Temperature range (" << Tmin_ << "," << Tmax_ << ") for reaction (ID="  
+      << id_ << "). Extrapolation or temperature cap will be used" << std::endl;
   }
 
   //recommendation error

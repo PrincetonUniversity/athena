@@ -72,6 +72,9 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
     //isothermal
     temperature_ = pin->GetReal("chemistry", "temperature");
   }
+  //whether to cap temperature if the reaction is outside of the temperature range
+  //only for 2 body reactions
+  is_Tcap_2body_ = pin->GetOrAddBoolean("chemistry", "is_Tcap_2body", false);
 	//minimum temperature for reaction rates, also applied to energy equation
 	temp_min_rates_ = pin->GetOrAddReal("chemistry", "temp_min_rates", 1.);
   //minimum temperature below which cooling is turned off
@@ -241,6 +244,8 @@ void ChemNetwork::InitializeReactions() {
     a2body_.NewAthenaArray(n_2body_);
     b2body_.NewAthenaArray(n_2body_);
     c2body_.NewAthenaArray(n_2body_);
+    Tmin_2body_.NewAthenaArray(n_2body_);
+    Tmax_2body_.NewAthenaArray(n_2body_);
     k2body_.NewAthenaArray(n_2body_);
   }
   if (n_gr_ > 0) {
@@ -375,6 +380,8 @@ void ChemNetwork::InitializeReactions() {
         a2body_(i2body) = pr->alpha_;
         b2body_(i2body) = pr->beta_;
         c2body_(i2body) = pr->gamma_;
+        Tmin_2body_(i2body) = pr->Tmin_;
+        Tmax_2body_(i2body) = pr->Tmax_;
         k2body_(i2body) = 0.;
         i2body++;
       } else if (pr->formula_ == 7) {
@@ -395,6 +402,8 @@ void ChemNetwork::InitializeReactions() {
         a2body_(i2body) = 0.;
         b2body_(i2body) = 0.;
         c2body_(i2body) = 0.;
+        Tmin_2body_(i2body) = pr->Tmin_;
+        Tmax_2body_(i2body) = pr->Tmax_;
         k2body_(i2body) = 0.;
         idmap_(pr->id_) = i2body;
         idtype_(pr->id_) = ReactionType::twobody;
@@ -480,7 +489,7 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
     y_e = 0.;
   }
 
-  Real T;
+  Real T, Tcap;
   if (NON_BAROTROPIC_EOS) {
     T = E / Thermo::CvCold(y_H2, xHe_, y_e);
   } else {
@@ -507,15 +516,36 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
 	}
 
   //2body reactions
-	for (int i=0; i<n_2body_; i++) {
-    if (frml_2body_(i) == 3) {
-      k2body_(i) = a2body_(i)*pow(T/300., b2body_(i))*exp(-c2body_(i)/T) * nH_;
-    } else if (frml_2body_(i) == 4) {
-      k2body_(i) = a2body_(i)*b2body_(i)*( 0.62 
-                                          + 0.4767*c2body_(i)*sqrt(300./T) ) * nH_;
-    } else if (frml_2body_(i) == 5) {
-      k2body_(i) = a2body_(i)*b2body_(i)*( 1 + 0.0967*c2body_(i)*sqrt(300./T) 
-                                            + 28.501*c2body_(i)*c2body_(i)/T ) * nH_;
+  if (is_Tcap_2body_) {
+    for (int i=0; i<n_2body_; i++) {
+      if (T < Tmin_2body_(i)) {
+        Tcap = Tmin_2body_(i);
+      } else if (T > Tmax_2body_(i)) {
+        Tcap = Tmax_2body_(i);
+      } else {
+        Tcap = T;
+      }
+      if (frml_2body_(i) == 3) {
+        k2body_(i) = a2body_(i)*pow(Tcap/300., b2body_(i))*exp(-c2body_(i)/Tcap) * nH_;
+      } else if (frml_2body_(i) == 4) {
+        k2body_(i) = a2body_(i)*b2body_(i)*( 0.62 
+                                          + 0.4767*c2body_(i)*sqrt(300./Tcap) ) * nH_;
+      } else if (frml_2body_(i) == 5) {
+        k2body_(i) = a2body_(i)*b2body_(i)*( 1 + 0.0967*c2body_(i)*sqrt(300./Tcap) 
+                                           + 28.501*c2body_(i)*c2body_(i)/Tcap ) * nH_;
+      }
+    }
+  } else {
+    for (int i=0; i<n_2body_; i++) {
+      if (frml_2body_(i) == 3) {
+        k2body_(i) = a2body_(i)*pow(T/300., b2body_(i))*exp(-c2body_(i)/T) * nH_;
+      } else if (frml_2body_(i) == 4) {
+        k2body_(i) = a2body_(i)*b2body_(i)*( 0.62 
+                                            + 0.4767*c2body_(i)*sqrt(300./T) ) * nH_;
+      } else if (frml_2body_(i) == 5) {
+        k2body_(i) = a2body_(i)*b2body_(i)*( 1 + 0.0967*c2body_(i)*sqrt(300./T) 
+                                             + 28.501*c2body_(i)*c2body_(i)/T ) * nH_;
+      }
     }
   }
 
@@ -685,6 +715,8 @@ void ChemNetwork::PrintProperties() const {
     std::cout << "alpha=" << reactions_[i].alpha_ << "," 
               << "beta=" << reactions_[i]. beta_ << "," 
               << "gamma=" << reactions_[i].gamma_ << "," 
+              << "Tmin=" << reactions_[i].Tmin_ << "," 
+              << "Tmax=" << reactions_[i].Tmax_ << "," 
               << "itype=" << reactions_[i].itype_ << ","
               << "forumla=" << reactions_[i].formula_ << std::endl;
   }
@@ -732,7 +764,8 @@ void ChemNetwork::PrintProperties() const {
       std::cout<< " + " << species_names[out2body3_(i)];
     }
     std::cout<< ", " << "alpha=" << a2body_(i) << ", beta=" << b2body_(i)
-      << ", gamma=" << c2body_(i) << std::endl;
+      << ", gamma=" << c2body_(i) << ", Trange=[" << Tmin_2body_(i) << "," 
+      << Tmax_2body_(i) << "]" << std::endl;
   }
 
   //grain assisted reactions

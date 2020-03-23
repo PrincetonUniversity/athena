@@ -68,6 +68,9 @@ private:
 
   //physical quantities
   const Real xHe_ = 0.1;//Helium abundance
+  //whether to cap temperature if the reaction is outside of the temperature range
+  //only for 2body reactions. Default is false, which means extrapolation
+  bool is_Tcap_2body_; 
 	Real zdg_; //dust and gas metallicity relative to solar, default 1.
 	Real nH_; //density, updated at InitializeNextStep from hydro variable
   Real temperature_; //temperature of the gas if isothermal 
@@ -130,6 +133,8 @@ private:
   AthenaArray<Real> a2body_; //alpha
   AthenaArray<Real> b2body_; //beta
   AthenaArray<Real> c2body_; //gamma
+  AthenaArray<Real> Tmin_2body_; //minimum temperature for reaction rates
+  AthenaArray<Real> Tmax_2body_; //maximum temperature for reaction rates
   AthenaArray<Real> k2body_;
   int i2body_H2_H_; //index for H2+H collisional dissociation, for cooling
   int i2body_H2_H2_; //index for H2+H2 collisional dissociation, for cooling

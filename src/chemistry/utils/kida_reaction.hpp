@@ -36,6 +36,8 @@ class KidaReaction{
     Real alpha_;
     Real beta_;
     Real gamma_;
+    Real Tmin_;
+    Real Tmax_;
 };
 
 #endif //KIDA_REACTION_H_
