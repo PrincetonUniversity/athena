@@ -1259,6 +1259,39 @@ void MeshRefinement::ProlongateInternalField(
   return;
 }
 
+// Helper class for VertexCenteredProlonagtion
+// This is not used anywhere else in the code, so we declare it directly here
+// NOTE - This assumes constant grid spacing
+template<int nghost_>
+class VertexProlongation {
+  public:
+    enum {nghost = nghost_};
+    enum {order = 2*nghost_};
+    enum {npoints = 2*nghost_};
+    static Real const coeff[2][npoints];
+};
+
+template<>
+Real const VertexProlongation<1>::coeff[2][2] = {
+  1, 0,
+  0.5, 0.5,
+};
+template<>
+Real const VertexProlongation<2>::coeff[2][4] = {
+  0, 1, 0, 0,
+  -1./16., 9./16., 9./16., -1./16.,
+};
+template<>
+Real const VertexProlongation<3>::coeff[2][6] = {
+  0, 0, 1, 0, 0, 0,
+  3./256., -25./256., 75./128., 75./128., -25./256., 3./256.,
+};
+template<>
+Real const VertexProlongation<4>::coeff[2][8] = {
+  0, 0, 0, 1, 0, 0, 0, 0,
+  -5./2048., 49./2048., -245./2048., 1225./2048., 1225./2048., -245./2048., 49./2048., -5./2048.,
+};
+
 // Temporary for poly interpolation [mma]
 // InterpolatingPolynomial[{{x0, x1, x2}, {f0, f1, f2}} // Transpose, x] /. x -> fn
 // InputForm[%]
@@ -1301,6 +1334,7 @@ Real interp1_4(Real fn,
 //        const AthenaArray<Real> &coarse,AthenaArray<Real> &fine, int sn, int en,,
 //        int si, int ei, int sj, int ej, int sk, int ek)
 //  \brief Prolongate vertex centered values
+// The end index should correspond to the outermost vertex to be prolongated
 
 void MeshRefinement::ProlongateVertexCenteredValues(
     const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
@@ -1310,6 +1344,115 @@ void MeshRefinement::ProlongateVertexCenteredValues(
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
 
+  // NEW CODE - Assumes that all the coarse data that is needed is available
+  // TODO - Check if restriction is needed before prolongation
+  // NOTE - This assumes constant grid spacing
+
+  if (pmb->pmy_mesh->ndim == 1) {
+    int const k = pmb->cks;
+    int const fk = pmb->ks;
+    int const j = pmb->cjs;
+    int const fj = pmb->js;
+    for (int n = sn; n <= en; ++n) {
+      for (int i = si; i <=  ei; ++i) {
+        int fi = (i - pmb->cis)*2 + pmb->is;
+        // Loop over points to be prolonged to
+        for (int oi = 0; oi < (i == ei ? 1 : 2); ++oi) {
+          // Interpolation loop
+          fine(n, fk, fj, fi + oi) = 0;
+          for (int di = 0; di < NGHOST; ++di) {
+            // Explicitly enforce symmetry
+            int const il = i - NGHOST + 1 + di;
+            int const ir = i + NGHOST - di;
+            fine(n, fk, fj, fi + oi) += 
+              VertexProlongation<NGHOST>::coeff[oi][di] *
+                (coarse(n, k, j, il) + coarse(n, k, j, ir));
+          }
+        }
+      }
+    }
+  }
+  else if (pmb->pmy_mesh->ndim == 2) {
+    int const k = pmb->cks;
+    int const fk = pmb->ks;
+    for (int n = sn; n <= en; ++n) {
+      for (int j = sj; j <= ej; ++j)
+      for (int i = si; i <= ei; ++i) {
+        int fi = (i - pmb->cis)*2 + pmb->is;
+        int fj = (j - pmb->cjs)*2 + pmb->js;
+        // Loop over points to be prolonged to
+        for (int oj = 0; oj < (j == ej ? 1 : 2); ++oj)
+        for (int oi = 0; oi < (i == ei ? 1 : 2); ++oi) {
+          // Interpolation loop
+          fine(n, fk, fj + oj, fi + oi) = 0;
+          for (int dj = 0; dj < NGHOST; ++dj)
+          for (int di = 0; di < NGHOST; ++di) {
+            // Explicitly enforce symmetry
+            int const jl = j - NGHOST + 1 + dj;
+            int const jr = j + NGHOST - dj;
+            int const il = i - NGHOST + 1 + di;
+            int const ir = i + NGHOST - di;
+            Real const ull = coarse(n, k, jl, il);
+            Real const ulr = coarse(n, k, jl, ir);
+            Real const url = coarse(n, k, jr, il);
+            Real const urr = coarse(n, k, jr, ir);
+            fine(n, fk, fj + oj, fi + oi) += 
+              VertexProlongation<NGHOST>::coeff[oj][dj] *
+              VertexProlongation<NGHOST>::coeff[oi][di] *
+                ((ulr + ull) + (url + urr));
+          }
+        }
+      }
+    }
+  }
+  else if (pmb->pmy_mesh->ndim == 3) {
+    for (int n = sn; n <= en; ++n) {
+      for (int k = sk; k <= ek; ++k)
+      for (int j = sj; j <= ej; ++j)
+      for (int i = si; i <= ei; ++i) {
+        int fi = (i - pmb->cis)*2 + pmb->is;
+        int fj = (j - pmb->cjs)*2 + pmb->js;
+        int fk = (k - pmb->cks)*2 + pmb->ks;
+        // Loop over points to be prolonged to
+        for (int ok = 0; ok < (k == ek ? 1 : 2); ++ok)
+        for (int oj = 0; oj < (j == ej ? 1 : 2); ++oj)
+        for (int oi = 0; oi < (i == ei ? 1 : 2); ++oi) {
+          // Interpolation loop
+          fine(n, fk + ok, fj + oj, fi + oi) = 0;
+          for (int dk = 0; dk < NGHOST; ++dk)
+          for (int dj = 0; dj < NGHOST; ++dj)
+          for (int di = 0; di < NGHOST; ++di) {
+            // Explicitly enforce symmetry
+            int const kl = k - NGHOST + 1 + dk;
+            int const kr = k + NGHOST - dk;
+            int const jl = j - NGHOST + 1 + dj;
+            int const jr = j + NGHOST - dj;
+            int const il = i - NGHOST + 1 + di;
+            int const ir = i + NGHOST - di;
+            Real const ulll = coarse(n, kl, jl, il);
+            Real const ullr = coarse(n, kl, jl, ir);
+            Real const ulrl = coarse(n, kl, jr, il);
+            Real const ulrr = coarse(n, kl, jr, ir);
+            Real const urll = coarse(n, kr, jl, il);
+            Real const urlr = coarse(n, kr, jl, ir);
+            Real const urrl = coarse(n, kr, jr, il);
+            Real const urrr = coarse(n, kr, jr, ir);
+            fine(n, fk + ok, fj + oj, fi + oi) +=
+              VertexProlongation<NGHOST>::coeff[ok][dk] *
+              VertexProlongation<NGHOST>::coeff[oj][dj] *
+              VertexProlongation<NGHOST>::coeff[oi][di] *
+                (((ulll + ullr) + (ulrl + ulrr)) +
+                 ((urll + urlr) + (urrl + urrr)));
+          }
+        }
+      }
+    }
+  }
+  else {
+    assert(false); // 4+ dimensional meshes are not supported!
+  }
+
+/* OLD CODE
 
   // BD debug: re-populate coarse grid with exact solution
   // need mutable
@@ -1764,7 +1907,7 @@ void MeshRefinement::ProlongateVertexCenteredValues(
   coutBoldRed("[post]fine\n");
   fine.print_all();
   //---
-
+*/
 }
 
 //----------------------------------------------------------------------------------------
