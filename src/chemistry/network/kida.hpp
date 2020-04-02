@@ -22,7 +22,7 @@
 #include "../utils/kida_reaction.hpp"
 
 //reaction types
-enum class ReactionType {none, cr, crp, photo, twobody, grain, special};
+enum class ReactionType {none, cr, crp, photo, twobody, twobodytr, grain, special};
 
 //! \class ChemNetwork
 //  \brief Chemical Network that defines the reaction rates between species.
@@ -64,6 +64,7 @@ private:
   std::string network_dir_;
   std::vector<KidaSpecies> species_;
   std::vector<KidaReaction> reactions_;
+  std::vector<int> id_2bodytr_;
   int nr_; //number of reactions
 
   //physical quantities
@@ -89,9 +90,9 @@ private:
 
   //reaction constants
   //special rates index map
-  int idmax_;
-  AthenaArray<int> idmap_;
-  AthenaArray<ReactionType> idtype_;
+  int id7max_;
+  AthenaArray<int> id7map_;
+  AthenaArray<ReactionType> id7type_;
   //direct cosmic-ray ionization
   int n_cr_;
   AthenaArray<int> incr_;
@@ -140,6 +141,23 @@ private:
   int i2body_H2_H_; //index for H2+H collisional dissociation, for cooling
   int i2body_H2_H2_; //index for H2+H2 collisional dissociation, for cooling
   int i2body_H_e_; //index for H+e collisional ionization, for cooling
+  //2body reactions with temperature dependent rates
+  //they have to be the same reaction, same ID, and arranged next to each other
+  //with accending temperature ranges
+  int n_2bodytr_;
+  const int n_range_ = 3; //maximum number of temperature ranges
+  AthenaArray<int> in2bodytr1_;
+  AthenaArray<int> in2bodytr2_;
+  AthenaArray<int> out2bodytr1_;
+  AthenaArray<int> out2bodytr2_;
+  AthenaArray<int> nr_2bodytr_;
+  AthenaArray<int> frml_2bodytr_;
+  AthenaArray<Real> a2bodytr_; //alpha
+  AthenaArray<Real> b2bodytr_; //beta
+  AthenaArray<Real> c2bodytr_; //gamma
+  AthenaArray<Real> Tmin_2bodytr_; //minimum temperature for reaction rates
+  AthenaArray<Real> Tmax_2bodytr_; //maximum temperature for reaction rates
+  AthenaArray<Real> k2bodytr_;
   //grain assisted reactions
   int n_gr_;
   AthenaArray<int> ingr1_;

@@ -41,6 +41,7 @@
 #include <fstream>   //file()
 #include <stdio.h>    // c style file
 #include <algorithm>    // std::find()
+#include <iterator>     // std::distance()
 
 #ifdef DEBUG
 static bool output_rates = true;
@@ -48,10 +49,10 @@ static bool output_thermo = true;
 #endif
 
 ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :  
-  pmy_spec_(pmb->pscalars), pmy_mb_(pmb), idmax_(0), n_cr_(0),
+  pmy_spec_(pmb->pscalars), pmy_mb_(pmb), id7max_(0), n_cr_(0),
   icr_H_(-1), icr_H2_(-1), icr_He_(-1), n_crp_(0), n_ph_(0), iph_H2_(-1), 
   n_2body_(0), i2body_H2_H_(-1), i2body_H2_H2_(-1), i2body_H_e_(-1),
-  n_gr_(0), igr_H_(-1), n_sr_(0),
+  n_2bodytr_(0), n_gr_(0), igr_H_(-1), n_sr_(0),
   n_freq_(0), index_gpe_(0), index_cr_(0), gradv_(0.) {
 
 	//set the parameters from input file
@@ -138,27 +139,66 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
         continue;
     }
     KidaReaction ri(line);
-    if (std::find(rids.begin(), rids.end(), ri.id_) == rids.end() && ri.id_ > 0) {
+    if (ri.id_ <= 0) {
+      std::stringstream msg; //error message
+      msg << "### FATAL ERROR in ChemNetwork constructor [ChemNetwork]" << std::endl
+        << "reaction ID ( " << ri.id_ << ") not positive" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    auto itr = std::find(rids.rbegin(), rids.rend(), ri.id_); 
+    const int ifind = rids.rend() - itr - 1;
+    if (ifind < 0) {
       rids.push_back(ri.id_);
-      if (ri.id_ > idmax_) {
-        idmax_ = ri.id_;
+      if (ri.id_ > id7max_ && ri.formula_ == 7) {
+        id7max_ = ri.id_;
       }
       reactions_.push_back(ri);
     } else {
-      std::stringstream msg; //error message
-      msg << "### FATAL ERROR in ChemNetwork constructor [ChemNetwork]" << std::endl
-        << "reaction ID ( " << ri.id_ << ") not unique or not positive" << std::endl;
-      ATHENA_ERROR(msg);
+      if (reactions_[ifind].reactants_ == ri.reactants_ 
+          && reactions_[ifind].products_ == ri.products_
+          && reactions_[ifind].itype_ == ri.itype_ 
+          && reactions_[ifind].Tmax_ < ri.Tmin_
+          && reactions_[ifind].formula_ != 7 && ri.formula_ != 7
+          && ri.itype_ >= 4 && ri.itype_<= 8 ) {
+        if (ifind != nline - 1) {
+          std::stringstream msg; //error message
+          msg << "### FATAL ERROR in ChemNetwork constructor [ChemNetwork]"
+            << std::endl << "reactions ID ( " << ri.id_ << " ) of different" 
+            << " temperature ranges are not arranged next to each other."
+            << std::endl;
+          ATHENA_ERROR(msg);
+        }
+        rids.push_back(ri.id_);
+        reactions_.push_back(ri);
+        const int nprev = std::count(id_2bodytr_.begin(), id_2bodytr_.end(), ri.id_);
+        if (nprev == 0) {
+          id_2bodytr_.push_back(ri.id_);
+          n_2bodytr_++;
+        } else if (nprev < n_range_ - 1) {
+          id_2bodytr_.push_back(ri.id_);
+        } else {
+          std::stringstream msg; //error message
+          msg << "### FATAL ERROR in ChemNetwork constructor [ChemNetwork]"
+            << std::endl << "reaction ID ( " << ri.id_ << " )" 
+            << "too many temperature ranges" << std::endl;
+          ATHENA_ERROR(msg);
+        }
+      } else {
+        std::stringstream msg; //error message
+        msg << "### FATAL ERROR in ChemNetwork constructor [ChemNetwork]"
+          << std::endl << "reaction ID ( " << ri.id_ << ") not unique" << std::endl;
+        ATHENA_ERROR(msg);
+      }
     }
     nline++;
   }
   nr_ = nline; //number of reactions
-  if (idmax_ > 0) {
-    idmap_.NewAthenaArray(idmax_+1);
-    idtype_.NewAthenaArray(idmax_+1);
-    for (int i=0; i<idmax_+1; i++) {
-      idmap_(i) = -1;
-      idtype_(i) = ReactionType::none;
+  if (id7max_ > 0) {
+    id7map_.NewAthenaArray(id7max_+1);
+    id7type_.NewAthenaArray(id7max_+1);
+    for (int i=0; i<id7max_+1; i++) {
+      id7map_(i) = -1;
+      id7type_(i) = ReactionType::none;
     }
   }
 
@@ -202,6 +242,7 @@ void ChemNetwork::InitializeReactions() {
       case ReactionType::crp: n_crp_++; break;
       case ReactionType::photo: n_ph_++; break;
       case ReactionType::twobody: n_2body_++; break;
+      case ReactionType::twobodytr: break;
       case ReactionType::grain: n_gr_++; break;
       case ReactionType::special: n_sr_++; break;
       default: std::stringstream msg; 
@@ -249,6 +290,20 @@ void ChemNetwork::InitializeReactions() {
     Tmax_2body_.NewAthenaArray(n_2body_);
     k2body_.NewAthenaArray(n_2body_);
   }
+  if (n_2bodytr_ > 0) {
+    in2bodytr1_.NewAthenaArray(n_2bodytr_);
+    in2bodytr2_.NewAthenaArray(n_2bodytr_);
+    out2bodytr1_.NewAthenaArray(n_2bodytr_);
+    out2bodytr2_.NewAthenaArray(n_2bodytr_);
+    nr_2bodytr_.NewAthenaArray(n_2bodytr_);
+    frml_2bodytr_.NewAthenaArray(n_2bodytr_, n_range_);
+    a2bodytr_.NewAthenaArray(n_2bodytr_, n_range_);
+    b2bodytr_.NewAthenaArray(n_2bodytr_, n_range_);
+    c2bodytr_.NewAthenaArray(n_2bodytr_, n_range_);
+    Tmin_2bodytr_.NewAthenaArray(n_2bodytr_, n_range_);
+    Tmax_2bodytr_.NewAthenaArray(n_2bodytr_, n_range_);
+    k2bodytr_.NewAthenaArray(n_2bodytr_);
+  }
   if (n_gr_ > 0) {
     ingr1_.NewAthenaArray(n_gr_);
     ingr2_.NewAthenaArray(n_gr_);
@@ -261,7 +316,8 @@ void ChemNetwork::InitializeReactions() {
     ksr_.NewAthenaArray(n_sr_);
   }
   
-  int icr=0, icrp=0, iph=0, i2body=0, igr=0, isr=0;
+  int icr=0, icrp=0, iph=0, i2body=0, i2bodytr=0, igr=0, isr=0;
+  std::vector<int> idtr;
   for (int ir=0; ir<nr_; ir++) {
     pr = &reactions_[ir];
     rtype = SortReaction(pr);
@@ -291,8 +347,8 @@ void ChemNetwork::InitializeReactions() {
         incr_(icr) = ispec_map_[in_spec];
         outcr1_(icr) = ispec_map_[ pr->products_[0]];
         outcr2_(icr) = ispec_map_[ pr->products_[1]];
-        idmap_(pr->id_) = icr;
-        idtype_(pr->id_) = ReactionType::cr;
+        id7map_(pr->id_) = icr;
+        id7type_(pr->id_) = ReactionType::cr;
         kcr_base_(icr) = 0.;
         kcr_(icr) = 0.;
         icr++;
@@ -319,8 +375,8 @@ void ChemNetwork::InitializeReactions() {
         incrp_(icrp) = ispec_map_[in_spec];
         outcrp1_(icrp) = ispec_map_[ pr->products_[0]];
         outcrp2_(icrp) = ispec_map_[ pr->products_[1]];
-        idmap_(pr->id_) = icrp;
-        idtype_(pr->id_) = ReactionType::crp;
+        id7map_(pr->id_) = icrp;
+        id7type_(pr->id_) = ReactionType::crp;
         kcrp_base_(icrp) = 0.;
         kcrp_(icrp) = 0.;
         icrp++;
@@ -416,12 +472,35 @@ void ChemNetwork::InitializeReactions() {
         Tmin_2body_(i2body) = pr->Tmin_;
         Tmax_2body_(i2body) = pr->Tmax_;
         k2body_(i2body) = 0.;
-        idmap_(pr->id_) = i2body;
-        idtype_(pr->id_) = ReactionType::twobody;
+        id7map_(pr->id_) = i2body;
+        id7type_(pr->id_) = ReactionType::twobody;
         i2body++;
       } else {
         error = true;
       }
+    //------- twobodytr - 2body reaction with temperature range ----------
+    } else if (rtype == ReactionType::twobodytr) {
+      const int nprev = std::count(idtr.begin(), idtr.end(), pr->id_);
+      if (nprev == 0) {
+        in2bodytr1_(i2bodytr) = ispec_map_[ pr->reactants_[0]];
+        in2bodytr2_(i2bodytr) = ispec_map_[ pr->reactants_[1]];
+        out2bodytr1_(i2bodytr) = ispec_map_[ pr->products_[0]];
+        if (pr->products_.size() >= 2) {
+          out2bodytr2_(i2bodytr) = ispec_map_[ pr->products_[1]];
+        } else {
+          out2bodytr2_(i2bodytr) = -1;
+        }
+        k2bodytr_(i2bodytr) = 0.;
+        i2bodytr++;
+      } 
+      nr_2bodytr_(i2bodytr-1) = nprev + 1;
+      frml_2bodytr_(i2bodytr-1, nprev) = pr->formula_;
+      a2bodytr_(i2bodytr-1, nprev) = pr->alpha_;
+      b2bodytr_(i2bodytr-1, nprev) = pr->beta_;
+      c2bodytr_(i2bodytr-1, nprev) = pr->gamma_;
+      Tmin_2bodytr_(i2bodytr-1, nprev) = pr->Tmin_;
+      Tmax_2bodytr_(i2bodytr-1, nprev) = pr->Tmax_;
+      idtr.push_back(pr->id_);
 
     //-------------------- grain - grain assisted reaction ----------------
     } else if (rtype == ReactionType::grain) {
@@ -432,8 +511,8 @@ void ChemNetwork::InitializeReactions() {
         ingr1_(igr) = ispec_map_[pr->reactants_[0]];
         ingr2_(igr) = ispec_map_[pr->reactants_[1]];
         outgr_(igr) = ispec_map_[pr->products_[0]];
-        idmap_(pr->id_) = igr;
-        idtype_(pr->id_) = ReactionType::grain;
+        id7map_(pr->id_) = igr;
+        id7type_(pr->id_) = ReactionType::grain;
         kgr_(igr) = 0.;
         igr++;
       } else{
@@ -443,8 +522,8 @@ void ChemNetwork::InitializeReactions() {
     //------------------ special - special reactions -----------------------
     } else if (rtype == ReactionType::special) {
       if (pr->formula_ == 7) {
-        idmap_(pr->id_) = isr;
-        idtype_(pr->id_) = ReactionType::special;
+        id7map_(pr->id_) = isr;
+        id7type_(pr->id_) = ReactionType::special;
         ksr_(isr) = 0.;
         for (int jin=0; jin<n_insr_; jin++) {
           if (jin < pr->reactants_.size()) {
@@ -481,7 +560,7 @@ void ChemNetwork::InitializeReactions() {
 
   //sanity check
   if (icr != n_cr_ || icrp != n_crp_ || iph != n_ph_ || i2body != n_2body_ 
-      || igr != n_gr_ || isr != n_sr_) {
+      || i2bodytr != n_2bodytr_ || igr != n_gr_ || isr != n_sr_) {
     std::stringstream msg; 
     msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
       << ": counts of reactions does not match." << std::endl;
@@ -560,6 +639,150 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
     }
   }
 
+  //2bodytr reactions
+  if (is_Tcap_2body_) {
+    for (int i=0; i<n_2bodytr_; i++) {
+      int nr = nr_2bodytr_(i);
+      int irange1 = 0;
+      int irange2 = 0;
+      Real rate1 = 0.;
+      Real rate2 = 0.;
+      if ( T < Tmin_2bodytr_(i,0) ) {
+        Tcap = Tmin_2bodytr_(i,0);
+      } else if ( T > Tmax_2bodytr_(i,nr-1) ) {
+        Tcap = Tmax_2bodytr_(i,nr-1);
+      } else {
+        Tcap = T;
+      }
+      //select which temperature range to use
+      if ( Tcap <= Tmax_2bodytr_(i,0) ) {
+        irange1 = 0;
+        irange2 = 0;
+      } else if ( Tcap <= Tmin_2bodytr_(i,1) ) {
+        irange1 = 0;
+        irange2 = 1;
+      } else if ( Tcap <= Tmax_2bodytr_(i,1) ) {
+        irange1 = 1;
+        irange2 = 1;
+      } else {
+        if (nr == 2) {
+          irange1 = 1;
+          irange2 = 1;
+        } else if (nr == 3) {
+          if ( Tcap <= Tmin_2bodytr_(i,2) ) {
+            irange1 = 1;
+            irange2 = 2;
+          } else {
+            irange1 = 2;
+            irange2 = 2;
+          }
+        } else {
+          std::stringstream msg; 
+          msg << "### fatal error in chemnetwork UpdateRates() [chemnetwork]: "
+            << "2bodytr reaction with more than 3 temperature ranges not implemented."
+            << std::endl; 
+          ATHENA_ERROR(msg);
+        }
+      }
+      //calculate rates
+      if (frml_2bodytr_(i,irange1) == 3) {
+        rate1 = a2bodytr_(i,irange1)*pow(Tcap/300., b2bodytr_(i,irange1))
+                    *exp(-c2bodytr_(i,irange1)/Tcap) * nH_;
+      } else if (frml_2bodytr_(i,irange1) == 4) {
+        rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*( 0.62 
+                               + 0.4767*c2bodytr_(i,irange1)*sqrt(300./Tcap) ) * nH_;
+      } else if (frml_2bodytr_(i,irange1) == 5) {
+        rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*(
+            1 + 0.0967*c2bodytr_(i,irange1)*sqrt(300./Tcap) 
+              + 28.501*c2bodytr_(i,irange1)*c2bodytr_(i,irange1)/Tcap ) * nH_;
+      }
+      if (irange1 == irange2) {
+        rate2 = rate1;
+      } else {
+        if (frml_2bodytr_(i,irange2) == 3) {
+          rate2 = a2bodytr_(i,irange2)*pow(Tcap/300., b2bodytr_(i,irange2))
+                      *exp(-c2bodytr_(i,irange2)/Tcap) * nH_;
+        } else if (frml_2bodytr_(i,irange2) == 4) {
+          rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*( 0.62 
+                                 + 0.4767*c2bodytr_(i,irange2)*sqrt(300./Tcap) ) * nH_;
+        } else if (frml_2bodytr_(i,irange2) == 5) {
+          rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*(
+              1 + 0.0967*c2bodytr_(i,irange2)*sqrt(300./Tcap) 
+                + 28.501*c2bodytr_(i,irange2)*c2bodytr_(i,irange2)/Tcap ) * nH_;
+        }
+      }
+      //assign reaction rate
+      k2bodytr_(i) = (rate1 + rate2) * 0.5;
+    }
+  } else {
+    for (int i=0; i<n_2bodytr_; i++) {
+      int nr = nr_2bodytr_(i);
+      int irange1 = 0;
+      int irange2 = 0;
+      Real rate1 = 0.;
+      Real rate2 = 0.;
+      //select which temperature range to use
+      if ( T <= Tmax_2bodytr_(i,0) ) {
+        irange1 = 0;
+        irange2 = 0;
+      } else if ( T <= Tmin_2bodytr_(i,1) ) {
+        irange1 = 0;
+        irange2 = 1;
+      } else if ( T <= Tmax_2bodytr_(i,1) ) {
+        irange1 = 1;
+        irange2 = 1;
+      } else {
+        if (nr == 2) {
+          irange1 = 1;
+          irange2 = 1;
+        } else if (nr == 3) {
+          if ( T <= Tmin_2bodytr_(i,2) ) {
+            irange1 = 1;
+            irange2 = 2;
+          } else {
+            irange1 = 2;
+            irange2 = 2;
+          }
+        } else {
+          std::stringstream msg; 
+          msg << "### fatal error in chemnetwork UpdateRates() [chemnetwork]: "
+            << "2bodytr reaction with more than 3 temperature ranges not implemented."
+            << std::endl; 
+          ATHENA_ERROR(msg);
+        }
+      }
+      //calculate rates
+      if (frml_2bodytr_(i,irange1) == 3) {
+        rate1 = a2bodytr_(i,irange1)*pow(T/300., b2bodytr_(i,irange1))
+                    *exp(-c2bodytr_(i,irange1)/T) * nH_;
+      } else if (frml_2bodytr_(i,irange1) == 4) {
+        rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*( 0.62 
+                               + 0.4767*c2bodytr_(i,irange1)*sqrt(300./T) ) * nH_;
+      } else if (frml_2bodytr_(i,irange1) == 5) {
+        rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*(
+            1 + 0.0967*c2bodytr_(i,irange1)*sqrt(300./T) 
+              + 28.501*c2bodytr_(i,irange1)*c2bodytr_(i,irange1)/T ) * nH_;
+      }
+      if (irange1 == irange2) {
+        rate2 = rate1;
+      } else {
+        if (frml_2bodytr_(i,irange2) == 3) {
+          rate2 = a2bodytr_(i,irange2)*pow(T/300., b2bodytr_(i,irange2))
+                      *exp(-c2bodytr_(i,irange2)/T) * nH_;
+        } else if (frml_2bodytr_(i,irange2) == 4) {
+          rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*( 0.62 
+                                 + 0.4767*c2bodytr_(i,irange2)*sqrt(300./T) ) * nH_;
+        } else if (frml_2bodytr_(i,irange2) == 5) {
+          rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*(
+              1 + 0.0967*c2bodytr_(i,irange2)*sqrt(300./T) 
+                + 28.501*c2bodytr_(i,irange2)*c2bodytr_(i,irange2)/T ) * nH_;
+        }
+      }
+      //assign reaction rate
+      k2bodytr_(i) = (rate1 + rate2) * 0.5;
+    }
+  }
+
   //special rates and grain assisted reactions
   UpdateRatesSpecial(y, E);
   return;
@@ -574,8 +797,9 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
         && (pr->reactants_[0] == "CR" || pr->reactants_[1] == "CR") ) {
     } else {
       std::stringstream msg; 
-      msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
-          << std::endl << "Wrong format in CR reaction ID=" << pr->id_ << std::endl;
+      msg << "### fatal error in chemnetwork sortreaction() [chemnetwork]"
+          << std::endl << "wrong format in cr reaction id=" << pr->id_ << std::endl;
+      ATHENA_ERROR(msg);
     }
     return ReactionType::cr;
 
@@ -588,6 +812,7 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
       std::stringstream msg; 
       msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
          << std::endl << "Wrong format in CRP reaction ID=" << pr->id_ << std::endl;
+      ATHENA_ERROR(msg);
     }
     return ReactionType::crp;
 
@@ -600,23 +825,36 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
       std::stringstream msg; 
       msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
          << std::endl << "Wrong format in FUV reaction ID=" << pr->id_ << std::endl;
+      ATHENA_ERROR(msg);
     }
     return ReactionType::photo;
 
   //---------------- 4-8 - 2body reaction ---------------------------
-  } else if (pr->itype_ == 4 || pr->itype_ == 5 || pr->itype_ == 6 
-             || pr->itype_ == 7 || pr->itype_ == 8) {
+  } else if (pr->itype_ >= 4 && pr->itype_ <= 8) {
     //check format
-    if (pr->reactants_.size() != 2 || 
-        (pr->products_.size() != 1 && pr->products_.size() != 2
-         && pr->products_.size() != 3 && pr->products_.size() != 4)) {
-      std::stringstream msg; 
-      msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
-          << std::endl << "Wrong format in 2body reaction ID=" << pr->id_
-          << std::endl;
-      ATHENA_ERROR(msg);
+    if (std::find(id_2bodytr_.begin(), id_2bodytr_.end(), pr->id_)
+                  == id_2bodytr_.end()) {
+      if (pr->reactants_.size() != 2 || 
+          (pr->products_.size() != 1 && pr->products_.size() != 2
+           && pr->products_.size() != 3 && pr->products_.size() != 4)) {
+        std::stringstream msg; 
+        msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
+            << std::endl << "Wrong format in 2body reaction ID=" << pr->id_
+            << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      return ReactionType::twobody;
+    } else { //2 body reaction with temperature range
+      if (pr->reactants_.size() != 2 || 
+          (pr->products_.size() != 1 && pr->products_.size() != 2)) {
+        std::stringstream msg; 
+        msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
+            << std::endl << "Wrong format in 2bodytr reaction ID=" << pr->id_
+            << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      return ReactionType::twobodytr;
     }
-    return ReactionType::twobody;
 
   //-------------------- 9 - grain assisted reaction ----------------
   } else if (pr->itype_ == 9) {
@@ -782,6 +1020,23 @@ void ChemNetwork::PrintProperties() const {
       << Tmax_2body_(i) << "]" << std::endl;
   }
 
+  //2body reactions with temperature ranges
+  std::cout << "2bodytr reactions:" << std::endl;
+  for (int i=0; i<n_2bodytr_; i++) {
+    std::cout<< species_names[in2bodytr1_(i)] << " + "
+      << species_names[in2bodytr2_(i)]<< " -> " << species_names[out2bodytr1_(i)];
+    if (out2bodytr2_(i) >= 0) {
+      std::cout<< " + " << species_names[out2bodytr2_(i)];
+    }
+    std::cout << "    ,nr_2bodytr_=" << nr_2bodytr_(i) << std::endl;
+    for (int j=0; j<nr_2bodytr_(i); j++) {
+      std::cout<< "alpha=" << a2bodytr_(i, j) << ", beta=" 
+        << b2bodytr_(i, j) << ", gamma=" << c2bodytr_(i, j) 
+        << ", Trange=[" << Tmin_2bodytr_(i, j) << "," << Tmax_2bodytr_(i, j) 
+        << "], formula=" << frml_2bodytr_(i, j) << std::endl;
+    }
+  }
+
   //grain assisted reactions
   std::cout << "gr reations:" << std::endl;
   for (int i=0; i<n_gr_; i++) {
@@ -812,10 +1067,10 @@ void ChemNetwork::PrintProperties() const {
     std::cout << std::endl;
   }
   
-  for (int i=0; i<idmax_+1; i++) {
-    if (idmap_(i) >= 0) {
-      std::cout << i << " => " << idmap_(i) << ", ";
-      switch (idtype_(i)){
+  for (int i=0; i<id7max_+1; i++) {
+    if (id7map_(i) >= 0) {
+      std::cout << i << " => " << id7map_(i) << ", ";
+      switch (id7type_(i)){
         case ReactionType::cr: std::cout << "cr"; break;
         case ReactionType::crp: std::cout << "crp"; break;
         case ReactionType::twobody: std::cout << "2body"; break;
@@ -867,6 +1122,16 @@ void ChemNetwork::OutputRates(FILE *pf) const {
       fprintf(pf, " + %4s", species_names[out2body4_(i)].c_str());
     }
     fprintf(pf,   ",     k2body = %.2e\n", k2body_(i));
+	}
+	for (int i=0; i<n_2bodytr_; i++) {
+    fprintf(pf, "%4s + %4s -> %4s",
+        species_names[in2bodytr1_(i)].c_str(),
+        species_names[in2bodytr2_(i)].c_str(),
+        species_names[out2bodytr1_(i)].c_str());
+    if (out2bodytr2_(i) >= 0) {
+      fprintf(pf, " + %4s", species_names[out2bodytr2_(i)].c_str());
+    }
+    fprintf(pf,   ",     k2bodytr = %.2e\n", k2bodytr_(i));
 	}
 	for (int i=0; i<n_gr_; i++) {
 		fprintf(pf, "%4s + %4s (+ gr) -> %4s (+ gr),       kgr = %.2e\n", 
@@ -1022,6 +1287,20 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
     }
     if (out2body4_(i) >= 0) {
       ydotg[out2body4_(i)] += rate;
+    }
+  }
+
+  //2bodytr reactions
+  for (int i=0; i<n_2bodytr_; i++) {
+    rate =  k2bodytr_(i) * y[in2bodytr1_(i)] * y[in2bodytr2_(i)];
+    if (y[in2bodytr1_(i)] < 0 && y[in2bodytr2_(i)] < 0) {
+      rate *= -1.;
+    }
+    ydotg[in2bodytr1_(i)] -= rate;
+    ydotg[in2bodytr2_(i)] -= rate;
+    ydotg[out2bodytr1_(i)] += rate;
+    if (out2bodytr2_(i) >= 0) {
+      ydotg[out2bodytr2_(i)] += rate;
     }
   }
 
