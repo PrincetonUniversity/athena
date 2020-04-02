@@ -31,17 +31,10 @@
 #include "../bvals.hpp"
 #include "bvals_cc.hpp"
 
-
 // MPI header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
-
-namespace {
-  int oI = 1;
-  int oJ = 0;
-  bool test_ret = false;
-}
 
 // constructor
 
@@ -140,7 +133,9 @@ CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
 
 int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,
                                                             int cng) {
-  coutYellow("CellCenteredBoundaryVariable::ComputeVariableBufferSize\n");
+  if (DBGPR_BVALS_CC)
+    coutYellow("CellCenteredBoundaryVariable::ComputeVariableBufferSize\n");
+
   MeshBlock *pmb = pmy_block_;
   int cng1, cng2, cng3;
   cng1 = cng;
@@ -162,14 +157,17 @@ int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
   }
   size *= nu_ + 1;
 
-  printf("size = %d\n", size);
+  if (DBGPR_BVALS_CC)
+    printf("size = %d\n", size);
 
   return size;
 }
 
 int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
     const NeighborIndexes& ni, int cng) {
-  coutYellow("CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize\n");
+  if (DBGPR_BVALS_CC)
+    coutYellow("CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize\n");
+
   MeshBlock *pmb = pmy_block_;
   int size = 0;
   if (ni.ox1 != 0)
@@ -188,14 +186,18 @@ int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
                                                               const NeighborBlock& nb) {
-  coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel\n");
-  nb.print_all();
+  if (DBGPR_BVALS_CC) {
+    coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel\n");
+    nb.print_all();
+  }
 
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
-  coutBoldRed("x1f:\n");
-  pmb->pcoord->x1f.print_all();
+  if (DBGPR_BVALS_CC) {
+    coutBoldRed("x1f:\n");
+    pmb->pcoord->x1f.print_all();
+  }
 
   si = (nb.ni.ox1 > 0) ? (pmb->ie - NGHOST + 1) : pmb->is;
   ei = (nb.ni.ox1 < 0) ? (pmb->is + NGHOST - 1) : pmb->ie;
@@ -205,11 +207,14 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   ek = (nb.ni.ox3 < 0) ? (pmb->ks + NGHOST - 1) : pmb->ke;
   int p = 0;
   AthenaArray<Real> &var = *var_cc;
-  coutBoldRed("var_cc, buf");
+
+  if (DBGPR_BVALS_CC)
+    coutBoldRed("var_cc, buf");
+
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
-
-  printf("pmb->gid=%d\n", pmb->gid);
+  if (DBGPR_BVALS_CC)
+    printf("pmb->gid=%d\n", pmb->gid);
 
   //////////////////////////////////////////////////////////////////////////////
   // inspect branching logic SL
@@ -285,8 +290,10 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
                                                               const NeighborBlock& nb) {
-  coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser\n");
-  nb.print_all();
+  if (DBGPR_BVALS_CC) {
+    coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser\n");
+    nb.print_all();
+  }
 
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
@@ -295,8 +302,10 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   AthenaArray<Real> &var = *var_cc;
   AthenaArray<Real> &coarse_var = *coarse_buf;
 
-  coutBoldRed("x1f:\n");
-  pmb->pcoord->x1f.print_all();
+  if (DBGPR_BVALS_CC) {
+    coutBoldRed("x1f:\n");
+    pmb->pcoord->x1f.print_all();
+  }
 
   si = (nb.ni.ox1 > 0) ? (pmb->cie - cn) : pmb->cis;
   ei = (nb.ni.ox1 < 0) ? (pmb->cis + cn) : pmb->cie;
@@ -306,20 +315,26 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   ek = (nb.ni.ox3 < 0) ? (pmb->cks + cn) : pmb->cke;
 
   int p = 0;
-  coutBoldRed("var_cc\n");
-  var.print_all();
+  if (DBGPR_BVALS_CC) {
+    coutBoldRed("var_cc\n");
+    var.print_all();
 
-  coutBoldRed("coarse_buf\n");
-  coarse_var.print_all();
+    coutBoldRed("coarse_buf\n");
+    coarse_var.print_all();
+  }
 
   pmr->RestrictCellCenteredValues(var, coarse_var, nl_, nu_, si, ei, sj, ej, sk, ek);
-  coutBoldRed("coarse_buf, buf");
+
+  if (DBGPR_BVALS_CC)
+    coutBoldRed("coarse_buf, buf");
+
   BufferUtility::PackData(coarse_var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
-  printf("(cims, cime, civs, ciis, cigs, cige, ciie, cive, cips, cipe)="
-         "(%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)\n",
-         pmb->cims, pmb->cime, pmb->civs, pmb->ciis, pmb->cigs,
-         pmb->cige, pmb->ciie, pmb->cive, pmb->cips, pmb->cipe);
+  if (DBGPR_BVALS_CC)
+    printf("(cims, cime, civs, ciis, cigs, cige, ciie, cive, cips, cipe)="
+          "(%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)\n",
+          pmb->cims, pmb->cime, pmb->civs, pmb->ciis, pmb->cigs,
+          pmb->cige, pmb->ciie, pmb->cive, pmb->cips, pmb->cipe);
 
   //////////////////////////////////////////////////////////////////////////////
   // inspect branching logic Fine2Coarse
@@ -388,16 +403,20 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
                                                             const NeighborBlock& nb) {
-  coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner\n");
-  nb.print_all();
+  if (DBGPR_BVALS_CC) {
+    coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner\n");
+    nb.print_all();
+  }
 
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int cn = pmb->cnghost - 1;
   AthenaArray<Real> &var = *var_cc;
 
-  coutBoldRed("x1f:\n");
-  pmb->pcoord->x1f.print_all();
+  if (DBGPR_BVALS_CC) {
+    coutBoldRed("x1f:\n");
+    pmb->pcoord->x1f.print_all();
+  }
 
   si = (nb.ni.ox1 > 0) ? (pmb->ie - cn) : pmb->is;
   ei = (nb.ni.ox1 < 0) ? (pmb->is + cn) : pmb->ie;
@@ -433,8 +452,15 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 
   int p = 0;
 
-  coutBoldRed("var_cc, buf");
+  if (DBGPR_BVALS_CC)
+    coutBoldRed("var_cc, buf");
+
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+
+  // if ((nb.ni.fi1 == 1) && (nb.ni.ox1 == 0) && (nb.ni.ox2 > 0))
+  //   Q();
+  // if ((nb.ni.ox1 == 0) && (nb.ni.ox2 < 0) && (nb.ni.fi1 == 1))
+  //   Q();
 
   //////////////////////////////////////////////////////////////////////////////
   // inspect branching logic Coarse2Fine
@@ -559,8 +585,10 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 
 void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
                                                         const NeighborBlock& nb) {
-  coutYellow("CellCenteredBoundaryVariable::SetBoundarySameLevel\n");
-  nb.print_all();
+  if (DBGPR_BVALS_CC) {
+    coutYellow("CellCenteredBoundaryVariable::SetBoundarySameLevel\n");
+    nb.print_all();
+  }
 
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
@@ -594,8 +622,9 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       }
     }
   } else {
+    if (DBGPR_BVALS_CC)
+      coutBoldRed("buf, var_cc");
 
-    coutBoldRed("buf, var_cc");
     BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
 
@@ -714,8 +743,10 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
 
 void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
                                                           const NeighborBlock& nb) {
-  coutYellow("CellCenteredBoundaryVariable::SetBoundaryFromCoarser\n");
-  nb.print_all();
+  if (DBGPR_BVALS_CC) {
+    coutYellow("CellCenteredBoundaryVariable::SetBoundaryFromCoarser\n");
+    nb.print_all();
+  }
 
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
@@ -770,8 +801,9 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       }
     }
   } else {
-
-    coutBoldRed("buf, coarse_buf");
+    if (DBGPR_BVALS_CC)
+      coutBoldRed("buf, coarse_buf");
+ 
     BufferUtility::UnpackData(buf, coarse_var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
     // coutBoldRed("buf\n");
@@ -781,6 +813,9 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
     // printf("\n");
   }
   //////////////////////////////////////////////////////////////////////////////
+  // if ((nb.ni.ox1 == 0) && (nb.ni.ox2 > 0))
+  //   Q();
+
 
   //////////////////////////////////////////////////////////////////////////////
   // inspect branching logic Coarse2Fine
@@ -898,8 +933,10 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 
 void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
                                                         const NeighborBlock& nb) {
-  coutYellow("CellCenteredBoundaryVariable::SetBoundaryFromFiner\n");
-  nb.print_all();
+  if (DBGPR_BVALS_CC) {
+    coutYellow("CellCenteredBoundaryVariable::SetBoundaryFromFiner\n");
+    nb.print_all();
+  }
 
   MeshBlock *pmb = pmy_block_;
   AthenaArray<Real> &var = *var_cc;
@@ -964,8 +1001,9 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       }
     }
   } else {
+    if (DBGPR_BVALS_CC)
+      coutBoldRed("buf, var_cc");
 
-    coutBoldRed("buf, var_cc");
     BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
   }
@@ -1108,7 +1146,9 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 // \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
 
 void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
-  coutYellow("CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock\n");
+  if (DBGPR_BVALS_CC)
+    coutYellow("CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock\n");
+
   MeshBlock *pmb = pmy_block_;
 
   if (pmb->loc.level  ==  pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
@@ -1255,7 +1295,9 @@ void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 
 
 void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
-  coutYellow("CellCenteredBoundaryVariable::ClearBoundary\n");
+  if (DBGPR_BVALS_CC)
+    coutYellow("CellCenteredBoundaryVariable::ClearBoundary\n");
+
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;

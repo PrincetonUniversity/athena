@@ -28,16 +28,22 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
   RegionSize& mesh_size  = pmy_block->pmy_mesh->mesh_size;
   RegionSize& block_size = pmy_block->block_size;
 
+  // BD:
+  // if lagrange interpolation order requires more ghosts then it can be useful
+  // to also have the coarse grid coordinate objects match the specified size.
+  //
+  // Replace: NGHOST -> cng, ng depending on flag
+
   // Set indices
   if (coarse_flag) {
     il = pmb->cis; jl = pmb->cjs; kl = pmb->cks;
     iu = pmb->cie; ju = pmb->cje; ku = pmb->cke;
-    ng = NGHOST;
+    ng = pmb->cng;
     nc1 = pmy_block->ncc1, nc2 = pmy_block->ncc2, nc3 = pmy_block->ncc3;
   } else {
     il = pmb->is; jl = pmb->js; kl = pmb->ks;
     iu = pmb->ie; ju = pmb->je; ku = pmb->ke;
-    ng = NGHOST;
+    ng = pmb->ng;
     nc1 = pmy_block->ncells1, nc2 = pmy_block->ncells2, nc3 = pmy_block->ncells3;
   }
 

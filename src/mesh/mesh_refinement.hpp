@@ -60,6 +60,11 @@ class MeshRefinement {
   void RestrictVertexCenteredValues(const AthenaArray<Real> &fine,
                                     AthenaArray<Real> &coarse, int sn, int en,
                                     int csi, int cei, int csj, int cej, int csk, int cek);
+  void RestrictTwiceToBufferVertexCenteredValues(
+    const AthenaArray<Real> &fine,
+    Real *buf,
+    int sn, int en,
+    int csi, int cei, int csj, int cej, int csk, int cek, int &offset);
   void ProlongateCellCenteredValues(const AthenaArray<Real> &coarse,
                                     AthenaArray<Real> &fine, int sn, int en,
                                     int si, int ei, int sj, int ej, int sk, int ek);
@@ -86,6 +91,7 @@ class MeshRefinement {
 
   // BD debug: shift back to private, this is for testing wave eqn.
   Coordinates *pcoarsec;
+
   //---
  private:
   // data

@@ -44,8 +44,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   int il = pwave->mbi.il, iu = pwave->mbi.iu;
-  int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
   int jl = pwave->mbi.jl, ju = pwave->mbi.ju;
+  int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
 
   Real c = pwave->c;
 
@@ -64,9 +64,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         pwave->u(1,k,j,i) = 0.;
 
         // pwave->u(0,k,j,i) = 100 * j + i;
-        // pwave->u(1,k,j,i) = 0; // -(x + y);
+        // pwave->u(1,k,j,i) = -pwave->u(0,k,j,i); // -(x + y);
 
         // pwave->u(0,k,j,i) = 1 + i + 100 * j + 1000 * (gid + 1);
+        // pwave->u(1,k,j,i) = 1 + i + 100 * j + 1000 * (gid + 1);
         // pwave->u(1,k,j,i) = -(pwave->u(0,k,j,i));
         // pwave->u(0,k,j,i) = y;
         // pwave->u(0,k,j,i) = 1;
@@ -131,18 +132,19 @@ void MeshBlock::WaveUserWorkInLoop() {
   printf("%d\n", gid);
   printf("(max_err, fun_max, t)=(%1.10f, %1.10f, %1.10f)\n",
          max_err, fun_err, t);
+
   if (max_err > 0.1) {
-    coutBoldGreen("u\n");
-    pwave->u.print_all();
-    coutBoldGreen("exact\n");
-    pwave->exact.print_all();
-    coutRed("error\n");
-    pwave->error.print_all();
+    printf("pwave->u:\n");
+    pwave->u.print_all("%1.5f");
+
+    printf("pwave->exact:\n");
+    pwave->exact.print_all("%1.5f");
+
+    printf("pwave->error:\n");
+    pwave->error.print_all("%1.5f");
 
     Q();
   }
-  // coutBoldGreen("x1\n");
-  // pwave->mbi.x1.print_all();
   printf("<<<\n");
   return;
 }
@@ -228,5 +230,6 @@ void MeshBlock::DebugWaveMeshBlock(AthenaArray<Real> &u_wave,
         // u_wave(0,k,j,i) = 1 + i + 100 * j + 1000 * (gid + 1);
         // u_wave(1,k,j,i) = -(u_wave(0,k,j,i));
       }
+
 }
 

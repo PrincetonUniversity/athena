@@ -35,7 +35,7 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
   int iu, ju, ku;
 
   if (PREFER_VC) {
-    iu = iv, ju = jv, ku = kv;
+    iu = ive, ju = jve, ku = kve;
   } else {
     iu = ie, ju = je, ku = ke;
   }

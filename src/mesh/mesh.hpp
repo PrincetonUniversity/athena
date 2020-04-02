@@ -95,6 +95,10 @@ public:
   Mesh *pmy_mesh;  // ptr to Mesh containing this MeshBlock
   LogicalLocation loc;
   RegionSize block_size;
+
+  int ng, cng;  // distrinct ghost specification allowed
+  int rcng;     // ghosts that may be restricted [minimise communication]
+
   // for convenience: "max" # of real+ghost cells along each dir for allocating "standard"
   // sized MeshBlock arrays, depending on ndim (i.e. ncells2=nx2+2*NGHOST if nx2>1)
   int ncells1, ncells2, ncells3;
@@ -109,23 +113,29 @@ public:
   // convenience for vertices
   int nverts1, nverts2, nverts3;   // number of vertices (cells + 1)
   int ncv1, ncv2, ncv3;            // coarse analogue
-  int iv, jv, kv;                  // upper idx for vertices
-  int civ, cjv, ckv;               // upper idx (coarse) for vertices
+  // int iv, jv, kv;                  // upper idx for vertices
+  // int civ, cjv, ckv;               // upper idx (coarse) for vertices
 
   int ims, ime, ips, ipe;          // -/+ (communication) ghost-zone idx
   int ivs, ive;                    // shared vertices
   int igs, ige;                    // shared to ghost
   int iis, iie;                    // internal idx
 
+  int imp;                         // mid-point idx
+
   int jms, jme, jps, jpe;          // -/+ (communication) ghost-zone idx
   int jvs, jve;                    // shared vertices
   int jgs, jge;                    // shared to ghost
   int jis, jie;                    // internal idx
 
+  int jmp;                         // mid-point idx
+
   int kms, kme, kps, kpe;          // -/+ (communication) ghost-zone idx
   int kvs, kve;                    // shared vertices
   int kgs, kge;                    // shared to ghost
   int kis, kie;                    // internal idx
+
+  int kmp;                         // mid-point idx
 
   // for multi-level
   int cims, cime, cips, cipe;          // -/+ (communication) ghost-zone idx
@@ -133,16 +143,21 @@ public:
   int cigs, cige;                      // shared to ghost
   int ciis, ciie;                      // internal idx
 
+  int cimp;                            // mid-point idx
+
   int cjms, cjme, cjps, cjpe;          // -/+ (communication) ghost-zone idx
   int cjvs, cjve;                      // shared vertices
   int cjgs, cjge;                      // shared to ghost
   int cjis, cjie;                      // internal idx
+
+  int cjmp;                            // mid-point idx
 
   int ckms, ckme, ckps, ckpe;          // -/+ (communication) ghost-zone idx
   int ckvs, ckve;                      // shared vertices
   int ckgs, ckge;                      // shared to ghost
   int ckis, ckie;                      // internal idx
 
+  int ckmp;                            // mid-point idx
 
   // At every cycle n, hydro and field registers (u, b) are advanced from t^n -> t^{n+1},
   // the time-integration scheme may partially substep several storage register pairs
@@ -237,6 +252,21 @@ private:
   std::vector<std::reference_wrapper<AthenaArray<Real>>> vars_vc_;
 
   // functions
+  void SetAllIndicialParameters();
+  void SetIndicialParameters(int num_ghost,
+                             int block_size, 
+                             int &ix_s, int &ix_e,
+                             int &ncells,                 // CC end
+                             int &ix_vs, int &ix_ve,      // bnd vert
+                             int &ix_ms, int &ix_me,      // neg
+                             int &ix_ps, int &ix_pe,      // pos
+                             int &ix_is, int &ix_ie,      // internal
+                             int &ix_gs, int &ix_ge,      // int. g
+                             int &ix_mp,
+                             int &nverts,                 // VC end
+                             bool populate_ix,
+                             bool is_dim_nontrivial);
+
   void AllocateRealUserMeshBlockDataField(int n);
   void AllocateIntUserMeshBlockDataField(int n);
   void AllocateUserOutputVariables(int n);

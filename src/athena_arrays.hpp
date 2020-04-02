@@ -232,7 +232,7 @@ class AthenaArray {
     }
   };
 
-  void print_all(const char fpr[] = "%1.3f", bool print_idx = false,
+  void print_all(const char fpr[] = "%1.2f", bool print_idx = false,
                  bool flip_idx = false) const {
     print_dim();
     print_data(fpr, print_idx, flip_idx);

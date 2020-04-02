@@ -36,7 +36,9 @@ int MeshBlockTree::nleaf_;
 //  \brief constructor for the logical root
 
 MeshBlockTree::MeshBlockTree(Mesh* pmesh) : pleaf_(nullptr), gid_(-1) {
-  coutCyan("MeshBlockTree::MeshBlockTree(Mesh* pmesh)\n");
+  if (DBGPR_MESHBLOCK_TREE)
+    coutCyan("MeshBlockTree::MeshBlockTree(Mesh* pmesh)\n");
+
   pmesh_ = pmesh;
   proot_ = this;
   loc_.lx1 = 0;
@@ -51,7 +53,9 @@ MeshBlockTree::MeshBlockTree(Mesh* pmesh) : pleaf_(nullptr), gid_(-1) {
 
 MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox1, int ox2, int ox3)
                            : pleaf_(nullptr), gid_(parent->gid_) {
-  coutCyan("MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, ...)\n");
+  if (DBGPR_MESHBLOCK_TREE)
+    coutCyan("MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, ...)\n");
+
   loc_.lx1 = (parent->loc_.lx1<<1)+ox1;
   loc_.lx2 = (parent->loc_.lx2<<1)+ox2;
   loc_.lx3 = (parent->loc_.lx3<<1)+ox3;
@@ -64,7 +68,9 @@ MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox1, int ox2, int ox3)
 //  \brief destructor (for both root and leaves)
 
 MeshBlockTree::~MeshBlockTree() {
-  coutCyan("MeshBlockTree::~MeshBlockTree()\n");
+  if (DBGPR_MESHBLOCK_TREE)
+    coutCyan("MeshBlockTree::~MeshBlockTree()\n");
+
   if (pleaf_ != nullptr) {
     for (int i=0; i<nleaf_; i++)
       delete pleaf_[i];
@@ -78,7 +84,9 @@ MeshBlockTree::~MeshBlockTree() {
 //  \brief create the root grid; the root grid can be incomplete (less than 8 leaves)
 
 void MeshBlockTree::CreateRootGrid() {
-  coutCyan("MeshBlockTree::CreateRootGrid()\n");
+  if (DBGPR_MESHBLOCK_TREE)
+    coutCyan("MeshBlockTree::CreateRootGrid()\n");
+
   if (loc_.level == 0) {
     nleaf_ = 2;
     if (pmesh_->f2) nleaf_ = 4;
@@ -108,7 +116,9 @@ void MeshBlockTree::CreateRootGrid() {
 //  \brief add a MeshBlock to the tree, also creates neighboring blocks
 
 void MeshBlockTree::AddMeshBlock(LogicalLocation rloc, int &nnew) {
-  coutCyan("MeshBlockTree::AddMeshBlock\n");
+  if (DBGPR_MESHBLOCK_TREE)
+    coutCyan("MeshBlockTree::AddMeshBlock\n");
+
   if (loc_.level == rloc.level) return; // done
 
   if (pleaf_ == nullptr) // leaf -> create the finer level
@@ -131,7 +141,9 @@ void MeshBlockTree::AddMeshBlock(LogicalLocation rloc, int &nnew) {
 //  \brief add a MeshBlock to the tree without refinement, used in restarting.
 //         MeshBlockTree::CreateRootGrid must be called before this method
 void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc) {
-  coutCyan("MeshBlockTree::AddMeshBlockWithoutRefine\n");
+  if (DBGPR_MESHBLOCK_TREE)
+    coutCyan("MeshBlockTree::AddMeshBlockWithoutRefine\n");
+
   if (loc_.level == rloc.level) // done
     return;
 
@@ -160,7 +172,9 @@ void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc) {
 //  \brief make finer leaves
 
 void MeshBlockTree::Refine(int &nnew) {
-  coutCyan("MeshBlockTree::Refine\n");
+  if (DBGPR_MESHBLOCK_TREE)
+    coutCyan("MeshBlockTree::Refine\n");
+
   if (pleaf_ != nullptr) return;
 
   pleaf_ = new MeshBlockTree*[nleaf_];
@@ -256,7 +270,9 @@ void MeshBlockTree::Refine(int &nnew) {
 //  \brief destroy leaves and make this block a leaf
 
 void MeshBlockTree::Derefine(int &ndel) {
-  coutCyan("MeshBlockTree::Derefine\n");
+  if (DBGPR_MESHBLOCK_TREE)
+    coutCyan("MeshBlockTree::Derefine\n");
+
   int s2=0, e2=0, s3=0, e3=0;
   if (pmesh_->f2) s2=-1, e2=1;
   if (pmesh_->f3) s3=-1, e3=1;
@@ -312,7 +328,9 @@ void MeshBlockTree::Derefine(int &ndel) {
 //  \brief creates the Location list sorted by Z-ordering
 
 void MeshBlockTree::CountMeshBlock(int& count) {
-  coutCyan("MeshBlockTree::CountMeshBlock\n");
+  if (DBGPR_MESHBLOCK_TREE)
+    coutCyan("MeshBlockTree::CountMeshBlock\n");
+
   if (loc_.level == 0) count=0;
 
   if (pleaf_ == nullptr) {
@@ -332,7 +350,8 @@ void MeshBlockTree::CountMeshBlock(int& count) {
 //  \brief creates the Location list sorted by Z-ordering
 
 void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& count) {
-  coutCyan("MeshBlockTree::GetMeshBlockList\n");
+  if (DBGPR_MESHBLOCK_TREE)
+    coutCyan("MeshBlockTree::GetMeshBlockList\n");
 
   if (loc_.level == 0) count=0;
 
@@ -361,7 +380,8 @@ void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& co
 
 MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
                                            int ox1, int ox2, int ox3, bool amrflag) {
-  coutCyan("MeshBlockTree::FindNeighbor\n");
+  if (DBGPR_MESHBLOCK_TREE)
+    coutCyan("MeshBlockTree::FindNeighbor\n");
 
   std::stringstream msg;
   std::int64_t lx, ly, lz;
@@ -470,7 +490,8 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
 //  \brief find MeshBlock with LogicalLocation tloc and return a pointer
 
 MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc) {
-  coutCyan("MeshBlockTree::FindMeshBlock\n");
+  if (DBGPR_MESHBLOCK_TREE)
+    coutCyan("MeshBlockTree::FindMeshBlock\n");
 
   if (tloc.level == loc_.level) return this;
   // get leaf indexes

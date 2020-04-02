@@ -131,22 +131,22 @@ class LagrangeInterp1D {
         int const stride
         ) const {
 
-      // BD: debug
-      coutBoldYellow("LagrangeInterp1D.eval:\n");
-      coutBoldYellow("  (origin, delta, coord) = ");
-      printf("(%1.5f, %1.5f, %1.5f)\n", m_origin, m_delta, m_coord);
-      coutBoldYellow("  (m_siz, m_npoint, order) = ");
-      printf("(%d, %d, %d)\n", m_siz, m_npoint, order);
-      coutBoldYellow("  m_out_of_bounds = ");
-      printf("%d\n", m_out_of_bounds);
-      coutBoldYellow("  m_mid_flag = ");
-      printf("%d\n", m_mid_flag);
-      coutBoldYellow("  LOCALINTERP_SYMMETRIC = ");
-#ifdef LOCALINTERP_SYMMETRIC
-      printf("%d\n", true);
-#else
-      printf("%d\n", false);
-#endif
+//       // BD: debug
+//       coutBoldYellow("LagrangeInterp1D.eval:\n");
+//       coutBoldYellow("  (origin, delta, coord) = ");
+//       printf("(%1.5f, %1.5f, %1.5f)\n", m_origin, m_delta, m_coord);
+//       coutBoldYellow("  (m_siz, m_npoint, order) = ");
+//       printf("(%d, %d, %d)\n", m_siz, m_npoint, order);
+//       coutBoldYellow("  m_out_of_bounds = ");
+//       printf("%d\n", m_out_of_bounds);
+//       coutBoldYellow("  m_mid_flag = ");
+//       printf("%d\n", m_mid_flag);
+//       coutBoldYellow("  LOCALINTERP_SYMMETRIC = ");
+// #ifdef LOCALINTERP_SYMMETRIC
+//       printf("%d\n", true);
+// #else
+//       printf("%d\n", false);
+// #endif
 
       //-
 

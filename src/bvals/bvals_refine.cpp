@@ -26,8 +26,6 @@
 #include "fc/bvals_fc.hpp"
 #include "vc/bvals_vc.hpp"
 
-#include "../debug.hpp"
-
 // -----------
 // NOTE ON SWITCHING BETWEEN PRIMITIVE VS. CONSERVED AND STANDARD VS. COARSE BUFFERS HERE:
 // -----------
@@ -77,10 +75,10 @@
 // --- change to standard and coarse PRIMITIVE
 // (automatically switches back to conserved variables at the end of fn)
 
-// int I = 0;
-
 void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
-  coutBlue("BoundaryValues::ProlongateBoundaries\n");
+
+  if (DBGPR_BVALS_REFINE)
+    coutBlue("BoundaryValues::ProlongateBoundaries\n");
 
   MeshBlock *pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
@@ -93,6 +91,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     return;
   }
   ProlongateVertexCenteredBoundaries(time, dt);
+
   //--
   //////////////////////////////////////////////////////////////////////////////
 
@@ -232,7 +231,9 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     ProlongateGhostCells(nb, si, ei, sj, ej, sk, ek);
 
   } // end loop over nneighbor
-  coutBlue("< BoundaryValues::ProlongateBoundaries\n");
+
+  if (DBGPR_BVALS_REFINE)
+    coutBlue("< BoundaryValues::ProlongateBoundaries\n");
 
   return;
 }
@@ -240,7 +241,9 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
 void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int nk,
                                                    int nj, int ni) {
-  coutBlue("BoundaryValues::RestrictGhostCellsOnSameLevel\n");
+
+  if (DBGPR_BVALS_REFINE)
+    coutBlue("BoundaryValues::RestrictGhostCellsOnSameLevel\n");
 
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
@@ -282,19 +285,8 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
     int nu = var_cc->GetDim4() - 1;
-
-    coutBoldYellow("[pre]var_cc\n");
-    (*var_cc).print_all();
-    coutBoldYellow("[pre]coarse_cc\n");
-    (*coarse_cc).print_all();
-
     pmb->pmr->RestrictCellCenteredValues(*var_cc, *coarse_cc, 0, nu,
                                          ris, rie, rjs, rje, rks, rke);
-
-    coutBoldYellow("[post]var_cc\n");
-    (*var_cc).print_all();
-    coutBoldYellow("[post]coarse_cc\n");
-    (*coarse_cc).print_all();
   }
   // (unique to Hydro) also restrict primitive values in ghost zones when GR + multilevel
   if (GENERAL_RELATIVITY) {
@@ -345,18 +337,8 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
     }
   } // end loop over pvars_fc_
 
-  // deal with vertex centered
-  // .. need to deal with ix calculation here...
-  // for (auto vc_pair : pmr->pvars_vc_) {
-  //   coutBoldGreen("ITERITER\n");
-  //   AthenaArray<Real> *var_vc = std::get<0>(vc_pair);
-  //   AthenaArray<Real> *coarse_vc = std::get<1>(vc_pair);
-  //   int nu = var_vc->GetDim4() - 1;
-  //   pmb->pmr->RestrictVertexCenteredValues(*var_vc, *coarse_vc, 0, nu,
-  //                                          ris, rie, rjs, rje, rks, rke);
-  // }
-
-  coutBlue("< BoundaryValues::RestrictGhostCellsOnSameLevel\n");
+  if (DBGPR_BVALS_REFINE)
+    coutBlue("< BoundaryValues::RestrictGhostCellsOnSameLevel\n");
   return;
 }
 
@@ -369,7 +351,9 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
 void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     const NeighborBlock& nb, const Real time, const Real dt,
     int si, int ei, int sj, int ej, int sk, int ek) {
-  coutBlue("BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel\n");
+
+  if (DBGPR_BVALS_REFINE)
+    coutBlue("BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel\n");
 
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
@@ -478,14 +462,14 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
 void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
                                           int si, int ei, int sj, int ej,
                                           int sk, int ek) {
-  coutBlue("BoundaryValues::ProlongateGhostCells\n");
-  // add debug
-  coutBoldRed("\nix: ");
-  printf("(si, ei, sj, ej, sk, ek)="
-         "(%d, %d, %d, %d, %d, %d)\n",
-         si, ei, sj, ej, sk, ek);
-  nb.print_all();
-  //-
+  if (DBGPR_BVALS_REFINE) {
+    coutBlue("BoundaryValues::ProlongateGhostCells\n");
+    coutBoldRed("\nix: ");
+    printf("(si, ei, sj, ej, sk, ek)="
+          "(%d, %d, %d, %d, %d, %d)\n",
+          si, ei, sj, ej, sk, ek);
+    nb.print_all();
+  }
 
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
@@ -508,6 +492,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
 
     pmr->ProlongateCellCenteredValues(*coarse_cc, *var_cc, 0, nu,
                                       si, ei, sj, ej, sk, ek);
+
   }
   // swap back MeshRefinement ptrs to standard/coarse conserved variable arrays:
   if (FLUID_ENABLED)
@@ -610,36 +595,47 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   }
 
 
-  // prolongate vertex centered variables
-  // idx adjustment
-  // if (nb.ni.ox1 > 0) {
-  //   si = si + 1;
-  //   ei = ei + 1;
-  // }
-
-
-  // check behaviour for == 0
-
-  // for (auto vc_pair : pmr->pvars_vc_) {
-  //   AthenaArray<Real> *var_vc = std::get<0>(vc_pair);
-  //   AthenaArray<Real> *coarse_vc = std::get<1>(vc_pair);
-  //   int nu = var_vc->GetDim4() - 1;
-  //   pmr->ProlongateVertexCenteredValues(*coarse_vc, *var_vc, 0, nu,
-  //                                       si, ei, sj, ej, sk, ek);
-  // }
-
-  // if (nb.ni.ox1 < 0)
-  //   Q();
-  coutBlue("< BoundaryValues::ProlongateGhostCells\n");
+  if (DBGPR_BVALS_REFINE)
+    coutBlue("< BoundaryValues::ProlongateGhostCells\n");
   return;
 }
 
-//------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//
+// Logic for calculation of (coarse) indicial ranges for boundary prolongation
+inline void BoundaryValues::CalculateVertexProlongationIndices(
+  std::int64_t &lx, int ox, int pcng, int cix_vs, int cix_ve,
+  int &set_ix_vs, int &set_ix_ve,
+  bool is_dim_nontrivial) {
+
+    if (ox > 0) {
+      set_ix_vs = cix_ve+1;
+      set_ix_ve = cix_ve+pcng;
+    } else if (ox < 0) {
+      set_ix_vs = cix_vs-pcng;
+      set_ix_ve = cix_vs-1;
+    } else {  // ox == 0
+      set_ix_vs = cix_vs;
+      set_ix_ve = cix_ve;
+      if (is_dim_nontrivial) {
+        std::int64_t &lx_ = lx;
+        if ((lx_ & 1LL) == 0LL) {
+          set_ix_ve += pcng;
+        } else {
+          set_ix_vs -= pcng;
+        }
+      }
+    }
+}
+
+//-----------------------------------------------------------------------------
 //
 // Partition out logic for vertex-centered nodes
 void BoundaryValues::ProlongateVertexCenteredBoundaries(
-    const Real time, const Real dt) {
-  coutBlue("BoundaryValues::ProlongateVertexCenteredBoundaries\n");
+  const Real time, const Real dt) {
+
+  if (DBGPR_BVALS_REFINE)
+    coutBlue("BoundaryValues::ProlongateVertexCenteredBoundaries\n");
 
   MeshBlock *pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
@@ -648,8 +644,24 @@ void BoundaryValues::ProlongateVertexCenteredBoundaries(
     NeighborBlock& nb = neighbor[n];
     if (nb.snb.level >= mylevel) continue;
 
+    // calculate the loop limits for the ghost zones
+    int pcng = pmb->ng / 2;
+    int si, ei, sj, ej, sk, ek;
+
+    CalculateVertexProlongationIndices(pmb->loc.lx1, nb.ni.ox1, pcng,
+                                       pmb->civs, pmb->cive, si, ei,
+                                       true);
+    CalculateVertexProlongationIndices(pmb->loc.lx2, nb.ni.ox2, pcng,
+                                       pmb->cjvs, pmb->cjve, sj, ej,
+                                       pmb->block_size.nx2 > 1);
+    CalculateVertexProlongationIndices(pmb->loc.lx3, nb.ni.ox3, pcng,
+                                       pmb->ckvs, pmb->ckve, sk, ek,
+                                       pmb->block_size.nx3 > 1);
+
+    ProlongateVertexCenteredGhosts(nb, si, ei, sj, ej, sk, ek);
 
     // calculate the loop limits for the ghost zones
+    /*
     int cn = pmb->cnghost - 1;
     int si, ei, sj, ej, sk, ek;
     if (nb.ni.ox1 == 0) {
@@ -677,9 +689,52 @@ void BoundaryValues::ProlongateVertexCenteredBoundaries(
       }
     } else if (nb.ni.ox3 > 0) { sk = pmb->cke + 1,  ek = pmb->cke + cn;}
     else              sk = pmb->cks-cn, ek = pmb->cks-1;
+    */
+
+    // int cn = pmb->cnghost - 1;
+    /*
+    if (nb.ni.ox1 > 0) {
+      si = pmb->cive+1, ei = pmb->cive+cn;
+    } else if (nb.ni.ox1 < 0) {
+      si = pmb->civs-cn, ei = pmb->civs-1;
+    } else {
+      // 0
+      si = pmb->civs, ei = pmb->cive;
+      std::int64_t &lx1 = pmb->loc.lx1;
+      if ((lx1 & 1LL) == 0LL) ei += cn;
+      else             si -= cn;
+    }
+
+    if (nb.ni.ox2 > 0) {
+      sj = pmb->cjve+1, ej = pmb->cjve+cn;
+    } else if (nb.ni.ox2 < 0) {
+      sj = pmb->cjvs-cn, ej = pmb->cjvs-1;
+    } else {
+      // 0
+      sj = pmb->cjvs, ej = pmb->cjve;
+      if (pmb->block_size.nx2 > 1) {
+        std::int64_t &lx2 = pmb->loc.lx2;
+        if ((lx2 & 1LL) == 0LL) ej += cn;
+        else             sj -= cn;
+      }
+    }
+
+    if (nb.ni.ox3 > 0) {
+      sk = pmb->ckve+1, ej = pmb->ckve+cn;
+    } else if (nb.ni.ox3 < 0) {
+      sk = pmb->ckvs-cn, ej = pmb->ckvs-1;
+    } else {
+      // 0
+      sk = pmb->ckvs, ej = pmb->ckve;
+      if (pmb->block_size.nx3 > 1) {
+        std::int64_t &lx3 = pmb->loc.lx3;
+        if ((lx3 & 1LL) == 0LL) ej += cn;
+        else             sk -= cn;
+      }
+    }
+    */
 
 
-    ProlongateVertexCenteredGhosts(nb, si, ei, sj, ej, sk, ek);
 
   }
 
@@ -692,35 +747,19 @@ void BoundaryValues::ProlongateVertexCenteredGhosts(
     const NeighborBlock& nb,
     int si, int ei, int sj, int ej,
     int sk, int ek) {
-  coutBlue("BoundaryValues::ProlongateVertexCenteredGhosts\n");
-  // add debug
-  coutBoldRed("\nix: ");
-  printf("(si, ei, sj, ej, sk, ek)="
-         "(%d, %d, %d, %d, %d, %d)\n",
-         si, ei, sj, ej, sk, ek);
-  nb.print_all();
-  //-
+
+  if (DBGPR_BVALS_REFINE) {
+    coutBlue("BoundaryValues::ProlongateVertexCenteredGhosts\n");
+
+    coutBoldRed("\nix: ");
+    printf("(si, ei, sj, ej, sk, ek)="
+          "(%d, %d, %d, %d, %d, %d)\n",
+          si, ei, sj, ej, sk, ek);
+    nb.print_all();
+  }
 
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
-
-
-  // prolongate vertex centered variables
-  // idx adjustment
-
-  if (nb.ni.ox1 > 0) {
-    si = pmb->cips-1,  ei = pmb->cipe-1;
-  } else {
-    si = pmb->cims+1, ei = pmb->cime+1;
-  }
-
-  if (nb.ni.ox2 > 0) {
-    //sj = pmb->cjps-1,  ej = pmb->cjpe-1;
-  } else {
-    //sj = pmb->cjms+1, ej = pmb->cjme+1;
-  }
-
-  // check behaviour for == 0
 
   for (auto vc_pair : pmr->pvars_vc_) {
     AthenaArray<Real> *var_vc = std::get<0>(vc_pair);
@@ -730,8 +769,8 @@ void BoundaryValues::ProlongateVertexCenteredGhosts(
                                         si, ei, sj, ej, sk, ek);
   }
 
-  // if (nb.ni.ox1 < 0)
-  //   Q();
- coutBlue("< BoundaryValues::ProlongateGhostCells\n");
+  if (DBGPR_BVALS_REFINE) {
+    coutBlue("< BoundaryValues::ProlongateGhostCells\n");
+  }
   return;
 }

@@ -51,7 +51,9 @@ void VertexCenteredBoundaryVariable::ErrorUnknownMultiplicity() {
 //  \brief zero out ghost zones
 
 void VertexCenteredBoundaryVariable::ZeroVertexGhosts() {
-  coutYellow("VertexCenteredBoundaryVariable::ZeroVertexGhosts\n");
+  if (DBGPR_CONSISTENCY_CONDITIONS_VC)
+    coutYellow("VertexCenteredBoundaryVariable::ZeroVertexGhosts\n");
+
   // additive unpack used to populate ghosts entails that old ghost data needs
   // to be cleaned
 
@@ -1010,6 +1012,198 @@ void VertexCenteredBoundaryVariable::_FinalizeVertexConsistency3(
 
 }
 
+void VertexCenteredBoundaryVariable::_FinalizeVert3s(){
+  MeshBlock *pmb = pmy_block_;
+  AthenaArray<Real> &var = *var_vc;
+  AthenaArray<Real> &coarse_var = *coarse_buf;
+
+  int &lev = pmb->loc.level;
+
+
+  const int ng = NGHOST;
+  short int node_mult[7][7][7] = {{{0}}};
+
+  const int tk_c[7] = {pmb->kms, pmb->kvs,
+                       pmb->kis,
+                       pmb->kvs+pmb->block_size.nx3/2,
+                       pmb->kie,
+                       pmb->kve, pmb->kpe};
+  const int tj_c[7] = {pmb->jms, pmb->jvs,
+                       pmb->jis,
+                       pmb->jvs+pmb->block_size.nx2/2,
+                       pmb->jie,
+                       pmb->jve, pmb->jpe};
+  const int ti_c[7] = {pmb->ims, pmb->ivs,
+                       pmb->iis,
+                       pmb->ivs+pmb->block_size.nx1/2,
+                       pmb->iie,
+                       pmb->ive, pmb->ipe};
+
+
+  for (int k=0; k<7; ++k)
+    for (int j=0; j<7; ++j)
+      for (int i=0; i<7; ++i)
+        node_mult[k][j][i] = (int) (var(0, tk_c[k], tj_c[j], ti_c[i]) + 0.5);
+
+  //-- print
+  for (int k=0; k<7; k++) {
+    printf("\nk=%d:\n", k); // slab for readability
+    for (int j=0; j<7; j++) {
+      for (int i=0; i<7; i++) {
+        printf("%d, ", node_mult[k][j][i]);
+      }
+      printf("\n");
+    }
+  }
+
+  // direct computation of multiplicity array
+  short int nm[7][7][7];
+
+  for (int k=0; k<7; ++k)
+    for (int j=0; j<7; ++j)
+      for (int i=0; i<7; ++i)
+        nm[k][j][i] = 1;
+
+
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+
+    // only refined and equal-level blocks contribute
+    if (nb.snb.level >= lev) {
+      coutMagenta("iterating over neighbors; (n, pbval_->nneighbor)=");
+      printf("(%d, %d)\n", n, pbval_->nneighbor);
+
+      // retain the type of neighbor connect
+      NeighborConnect nb_t = nb.ni.type;
+
+      int ox3 = nb.ni.ox3, ox2 = nb.ni.ox2, ox1 = nb.ni.ox1;
+
+      if (nb_t == NeighborConnect::face) {
+        // two of {ox1, ox2, ox3} == 0
+        // remainder non-zero
+        printf("NC : face\n");
+        // printf("f: (ox1, ox2, ox3, l)=(%d, %d, %d, %d)\n",
+        //        nb.ni.ox1, nb.ni.ox2, nb.ni.ox3,
+        //        pmb->pbval->nblevel[ix_ox3][ix_ox2][ix_ox1]);
+
+      } else if (nb_t == NeighborConnect::edge) {
+        // one of ox1 == 0 | ox2 == 0 | ox3 == 0
+        // remainder non-zero
+        printf("NC : edge\n");
+
+        // printf("e: (ox1, ox2, ox3, l)=(%d, %d, %d, %d)\n",
+        //        nb.ni.ox1, nb.ni.ox2, nb.ni.ox3,
+        //        pmb->pbval->nblevel[ox3+1][iox2][iox1]);
+
+
+      } else if (nb_t == NeighborConnect::corner) {
+        // ox1, ox2, ox3 all non-zero
+        // int K = 2*(ox3 + 1), J = 2 * (ox2 + 1), I = 2 * (ox1 + 1);
+        printf("NC : corner\n");
+
+        int K = 3 * (ox3 + 1);
+        int J = 3 * (ox2 + 1);
+        int I = 3 * (ox1 + 1);
+
+        for (int k=0; k<3; ++k)
+          for (int j=0; j<3; ++j)
+            for (int i=0; i<3; ++i) {
+              nm[K - k * ox3][J - j * ox2][I - i * ox1]++;
+              printf("K,J,I, k,j,i, ox3,ox2,ox1; ix1, ix2, ix1 ");
+              printf("%d,%d,%d %d,%d,%d; %d,%d,%d; %d,%d,%d\n",
+                     K,J,I, k, j, i, ox3, ox2, ox1,
+                     K-k*ox3, J-j*ox2, I-i*ox1);
+            }
+
+      }
+
+    }
+
+  }
+
+  //-- print
+  for (int k=0; k<7; k++) {
+    printf("\nk=%d:\n", k); // slab for readability
+    for (int j=0; j<7; j++) {
+      for (int i=0; i<7; i++) {
+        printf("%d, ", (int) nm[k][j][i]);
+      }
+      printf("\n");
+    }
+  }
+
+  //-- print
+  for (int k=0; k<7; k++) {
+    for (int j=0; j<7; j++) {
+      for (int i=0; i<7; i++) {
+        if (nm[k][j][i] != node_mult[k][j][i]) {
+          printf("Problem @ (k,j,i)=(%d,%d,%d)\n",
+                 k, j, i);
+          Q();
+        }
+      }
+    }
+  }
+
+
+    // if (pmb->gid == 0) {
+    //   var.print_all("%1.0f");
+    //   Q();
+    // }
+
+  short int ufac;
+
+  for (int K=0; K<7; ++K)
+    for (int J=0; J<7; ++J)
+      for (int I=0; I<7; ++I) {
+        ufac = node_mult[K][J][I];
+
+        if (ufac > 1) {
+
+          int il, iu;
+          if (I % 2 == 0) {
+            if (I > 3)
+              il = ti_c[I-1]+1, iu = ti_c[I];
+            else
+              il = ti_c[I], iu = ti_c[I+1] - 1;
+          } else {
+            il = iu = ti_c[I];
+          }
+
+          int jl, ju;
+          if (J % 2 == 0) {
+            if (J > 3)
+              jl = tj_c[J-1]+1, ju = tj_c[J];
+            else
+              jl = tj_c[J], ju = tj_c[J+1] - 1;
+          } else {
+            jl = ju = tj_c[J];
+          }
+
+          int kl, ku;
+          if (K % 2 == 0) {
+            if (K > 3)
+              kl = tk_c[K-1]+1, ku = tk_c[K];
+            else
+              kl = tk_c[K], ku = tk_c[K+1] - 1;
+          } else {
+            kl = ku = tk_c[K];
+          }
+
+          for (int n_=nl_; n_<=nu_; ++n_)
+            for (int k=kl; k<=ku; ++k)
+              for (int j=jl; j<=ju; ++j)
+#pragma omp simd
+                for (int i=il; i<=iu; ++i)
+                  var(n_, k, j, i) /= ufac;
+
+
+        }
+      }
+
+
+}
+
 void VertexCenteredBoundaryVariable::_FinalizeVert3a(){
 
   MeshBlock *pmb = pmy_block_;
@@ -1125,6 +1319,131 @@ void VertexCenteredBoundaryVariable::_FinalizeVert3a(){
     }
   }
 
+
+  //
+  short int ufac, ufac_;
+
+  // int K = k_c[0] - ng;
+
+  // printf("\n");
+  // for (int i=ti_c[0]; i<=ti_c[4]; ++i) {
+  //   int j = i / ti_c[1];
+  //   printf("(i,j)=(%d,%d)\n", i, j);
+  // }
+
+  for (int K=0; K<5; ++K)
+  for (int J=0; J<5; ++J)
+  for (int I=0; I<5; ++I) {
+    ufac = node_mult[K][J][I];
+
+    if (ufac > 1) {
+      // ufac_ = (ufac % 2 == 0) ? ufac : ufac - 1;
+
+      // discriminate between ranges (corners) and single nodes (l,m,r)
+      const unsigned int Idiv4 = I / 4;
+      int il, iu;
+      if (I % 4 == 0) {
+        il = ti_c[I-Idiv4] + Idiv4;
+        iu = ti_c[I-Idiv4] + ng - (1-Idiv4);
+      } else {
+        il = ti_c[I], iu = ti_c[I];
+      }
+
+      const unsigned int Jdiv4 = J / 4;
+      int jl, ju;
+      if (J % 4 == 0) {
+        jl = tj_c[J-Jdiv4] + Jdiv4;
+        ju = tj_c[J-Jdiv4] + ng - (1-Jdiv4);
+      } else {
+        jl = tj_c[J], ju = tj_c[J];
+      }
+
+      const unsigned int Kdiv4 = K / 4;
+      int kl, ku;
+      if (K % 4 == 0) {
+        kl = tk_c[K-Kdiv4] + Kdiv4;
+        ku = tk_c[K-Kdiv4] + ng - (1-Kdiv4);
+      } else {
+        kl = tk_c[K], ku = tk_c[K];
+      }
+
+
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j){
+          // vectorize instr. here
+          for (int i=il; i<=iu; ++i) {
+            var(0, k, j, i) /= ufac;
+            // printf("(I, i, ufac, ufac_) = (%d, %d, %d, %d)\n",
+            //        I, i, node_mult[0][0][I], ufac_);
+          }
+        }
+      }
+
+      
+      if (false)
+      if (ufac > 2)
+      if ((I == 2) && (J == 2)) {
+        const int ix_l = ti_c[I-1] + 1;
+        const int ix_m = ti_c[I];
+        const int ix_r = ti_c[I+1];
+        ufac_ = ufac - 2;
+        for (int k=kl; k<=ku; ++k)
+          for (int j=jl; j<=ju; ++j) {
+            for (int i=ix_l; i<ix_m; ++i)
+              var(0, k, j, i) /= ufac_;
+
+            for (int i=ix_m+1; i<ix_r; ++i)
+              var(0, k, j, i) /= ufac_;
+          }
+
+      }
+
+      if (false)
+      if (ufac > 2)
+      if (I == 2) {
+        const int ix_l = ti_c[I-1] + 1;
+        const int ix_m = ti_c[I];
+        const int ix_r = ti_c[I+1];
+        ufac_ = ufac - (I == 2) - (J == 2);
+        for (int k=tk_c[K]; k<tk_c[K+1]; ++k)
+          for (int j=tj_c[J]; j<tj_c[J+1]; ++j) {
+            for (int i=ix_l; i<ix_m; ++i)
+              var(0, k, j, i) /= ufac_;
+
+            for (int i=ix_m+1; i<ix_r; ++i)
+              var(0, k, j, i) /= ufac_;
+          }
+
+      }
+
+      // if ((I == 2) && (ufac > 2)) {
+      //   const int ix_l = ti_c[I-1] + 1;
+      //   const int ix_m = ti_c[I];
+      //   const int ix_r = ti_c[I+1];
+      //   ufac_ = ufac - 1;
+      //   for (int k=tk_c[0]; k<tk_c[1]; ++k)
+      //     for (int j=tj_c[J]; j<tj_c[J+1]; ++j) {
+      //       for (int i=ix_l; i<ix_m; ++i)
+      //         var(0, 0, j, i) /= ufac_;
+
+      //       for (int i=ix_m+1; i<ix_r; ++i)
+      //         var(0, 0, j, i) /= ufac_;
+      //     }
+
+      // }
+
+    }
+
+  }
+
+
+  if (node_mult[1][2][2] > 2) {
+    var.print_all("%1.0f");
+    Q();
+  }
+
+
+  return;
 
   //----------------------------------------------------------------------------
   // apply node multiplicity factors
@@ -2038,17 +2357,25 @@ void VertexCenteredBoundaryVariable::FinalizeVertexConsistency() {
   printf("pre-application:\n");
   var.print_all("%1.0f");
 
-  if(pmb->gid == 3)
-    Q();
+  // if(pmb->gid == 3)
+  //   Q();
 
   // different conditions in different dimensions
   if (pmb->block_size.nx3 > 1)
-    _FinalizeVert3a();
+    _FinalizeVert3s();
+    // _FinalizeVert3a();
     // _FinalizeVert3noref();
   else if (pmb->block_size.nx2 > 1)
     _FinalizeVert2();
   else
     _FinalizeVert1();
+
+
+  var.print_all("%1.0f");
+
+  // if(pmb->gid == 1)
+  //   Q();
+
 
   return;
 
@@ -2242,8 +2569,6 @@ void VertexCenteredBoundaryVariable::FinalizeVertexConsistency() {
   //   Q();
   // }
 
-  // if(pmb->gid == 5)
-  //   Q();
   // if(pmb->gid == 515)
   //   Q();
 

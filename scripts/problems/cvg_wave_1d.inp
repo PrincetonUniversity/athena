@@ -20,7 +20,7 @@ problem_id      = wave_1d   # Basename of output filenames
 
 <time>
 cfl_number      = 0.2       # The Courant, Friedrichs, & Lewy (CFL) number
-tlim            = 0.1       # time limit
+tlim            = 0.01       # time limit
 integrator      = rk4       # time integrator
 
 <mesh>
@@ -62,7 +62,7 @@ x2min = -1.0
 x2max = -1.0
 x3min = -1.0
 x3max =  1.0
-level = 2
+level = 1
 
 # <refinement2>
 # x1min =  0.7

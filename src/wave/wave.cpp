@@ -72,7 +72,7 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
   // convenience for per-block iteration (private Wave scope)
   mbi.il = pmb->is; mbi.jl = pmb->js; mbi.kl = pmb->ks;
   if (PREFER_VC) {
-    mbi.iu = pmb->iv; mbi.ju = pmb->jv; mbi.ku = pmb->kv;
+    mbi.iu = pmb->ive; mbi.ju = pmb->jve; mbi.ku = pmb->kve;
   } else {
     mbi.iu = pmb->ie; mbi.ju = pmb->je; mbi.ku = pmb->ke;
   }
@@ -110,14 +110,14 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
   if (FILL_WAVE_COARSE_P)
   if (PREFER_VC) {
     printf("slice coords for vc\n");
-    mbi.cx1.InitWithShallowSlice(pmb->pmr->pcoarsec->x1f, 1, 0);
-    mbi.cx2.InitWithShallowSlice(pmb->pmr->pcoarsec->x2f, 1, 0);
-    mbi.cx3.InitWithShallowSlice(pmb->pmr->pcoarsec->x3f, 1, 0);
+    mbi.cx1.InitWithShallowSlice(pmb->pmr->pcoarsec->x1f, 0, 1);
+    mbi.cx2.InitWithShallowSlice(pmb->pmr->pcoarsec->x2f, 0, 1);
+    mbi.cx3.InitWithShallowSlice(pmb->pmr->pcoarsec->x3f, 0, 1);
   } else {
     printf("slice coords for cc\n");
-    mbi.cx1.InitWithShallowSlice(pmb->pmr->pcoarsec->x1v, 1, 0);
-    mbi.cx2.InitWithShallowSlice(pmb->pmr->pcoarsec->x2v, 1, 0);
-    mbi.cx3.InitWithShallowSlice(pmb->pmr->pcoarsec->x3v, 1, 0);
+    mbi.cx1.InitWithShallowSlice(pmb->pmr->pcoarsec->x1v, 0, 1);
+    mbi.cx2.InitWithShallowSlice(pmb->pmr->pcoarsec->x2v, 0, 1);
+    mbi.cx3.InitWithShallowSlice(pmb->pmr->pcoarsec->x3v, 0, 1);
   }
 
   // inform MeshBlock that this array is the "primary" representation

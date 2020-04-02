@@ -131,12 +131,14 @@ void MeshBlock::WaveUserWorkInLoop() {
          max_err, fun_err, t);
 
   if (max_err > 0.1) {
-    coutBoldGreen("u\n");
-    pwave->u.print_all();
-    coutBoldGreen("exact\n");
-    pwave->exact.print_all();
-    // coutRed("error\n");
-    // pwave->error.print_all();
+    printf("pwave->u:\n");
+    pwave->u.print_all("%1.5f");
+
+    printf("pwave->exact:\n");
+    pwave->exact.print_all("%1.5f");
+
+    printf("pwave->error:\n");
+    pwave->error.print_all("%1.5f");
 
     Q();
   }

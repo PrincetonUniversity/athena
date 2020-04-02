@@ -20,22 +20,22 @@ export COMPILE_STR="--prob=wave_3d_cvg_trig -w --nghost=2
                     --cxx g++ -omp -debug -vertex"
 
 # fill MeshBlock interior with exact solution
-export COMPILE_STR="${COMPILE_STR} -fill_wave_interior"
+# export COMPILE_STR="${COMPILE_STR} -fill_wave_interior"
 
 # fill MeshBlock boundaries [same level] with exact solution
-export COMPILE_STR="${COMPILE_STR} -fill_wave_bnd_sl"
+# export COMPILE_STR="${COMPILE_STR} -fill_wave_bnd_sl"
 
-# fill MeshBlock boundaries [from coarse] with exact solution
-export COMPILE_STR="${COMPILE_STR} -fill_wave_bnd_frf"
+# fill MeshBlock boundaries [from finer] with exact solution
+# export COMPILE_STR="${COMPILE_STR} -fill_wave_bnd_frf"
 
-# fill MeshBlock boundaries [from fine] with exact solution
-export COMPILE_STR="${COMPILE_STR} -fill_wave_bnd_frc"
+# fill MeshBlock boundaries [from coarser] with exact solution
+# export COMPILE_STR="${COMPILE_STR} -fill_wave_bnd_frc"
 
 # fill MeshBlock coarse buffer with exact solution (prior to prolongation)
 # export COMPILE_STR="${COMPILE_STR} -fill_wave_coarse_p"
 
 # debug vertex consistency
-export COMPILE_STR="${COMPILE_STR} -dbg_vc_consistency"
+# export COMPILE_STR="${COMPILE_STR} -dbg_vc_consistency"
 
 ###############################################################################
 

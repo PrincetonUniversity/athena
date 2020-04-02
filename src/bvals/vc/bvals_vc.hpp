@@ -66,11 +66,13 @@ class VertexCenteredBoundaryVariable : public BoundaryVariable {
 
   // VC
   // BoundaryBuffer:
+  void SendBoundaryBuffers() override;
   void ReceiveAndSetBoundariesWithWait() override;
   void SetBoundaries() override;
   void SendFluxCorrection() {return;};
   bool ReceiveFluxCorrection() {return false;};
 
+  void RestrictNonGhost();
   void ZeroVertexGhosts();
   void FinalizeVertexConsistency();
 
@@ -163,6 +165,7 @@ private:
   void _FinalizeVertexConsistency3(int ox1, int ox2, int ox3);
   void _FinalizeVert3();
   void _FinalizeVert3a();
+  void _FinalizeVert3s();
 
   void _FinalizeVert3noref();
   void _FinalizeVert2();

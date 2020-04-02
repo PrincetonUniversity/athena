@@ -11,6 +11,18 @@
 //  file contains Athena++ specific cpp macros and definitions set by configure.
 
 //----------------------------------------------------------------------------------------
+// control debug (printing) for various parts of the codebase
+#define DBGPR_MESH false
+#define DBGPR_MESHBLOCK false
+#define DBGPR_MESHBLOCK_TREE false
+#define DBGPR_MESH_REFINEMENT false
+#define DBGPR_BVALS_VAR false
+#define DBGPR_BVALS_REFINE false
+#define DBGPR_BVALS_CC false
+#define DBGPR_BVALS_VC false
+#define DBGPR_CONSISTENCY_CONDITIONS_VC false
+
+//----------------------------------------------------------------------------------------
 // macros which define physics and algorithms
 
 // configure.py dict(definitions) string values:

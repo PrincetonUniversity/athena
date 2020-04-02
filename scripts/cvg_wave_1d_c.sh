@@ -33,10 +33,10 @@ export COMPILE_STR="--prob=wave_1d_cvg_trig -w --nghost=2
 # fill MeshBlock boundaries [same level] with exact solution
 # export COMPILE_STR="${COMPILE_STR} -fill_wave_bnd_sl"
 
-# fill MeshBlock boundaries [from coarse] with exact solution
+# fill MeshBlock boundaries [from finer] with exact solution
 # export COMPILE_STR="${COMPILE_STR} -fill_wave_bnd_frf"
 
-# fill MeshBlock boundaries [from fine] with exact solution
+# fill MeshBlock boundaries [from coarser] with exact solution
 # export COMPILE_STR="${COMPILE_STR} -fill_wave_bnd_frc"
 
 # fill MeshBlock coarse buffer with exact solution (prior to prolongation)

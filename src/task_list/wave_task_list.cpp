@@ -516,8 +516,6 @@ TaskStatus WaveIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
 TaskStatus WaveIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   BoundaryValues *pbval = pmb->pbval;
 
-  pmb->pwave->u.print_all("%1.2f");
-
   if (stage <= nstages) {
     // Time at the end of stage for (u, b) register pair
     Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
