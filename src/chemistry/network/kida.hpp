@@ -129,6 +129,7 @@ private:
   AthenaArray<int> out2body1_;
   AthenaArray<int> out2body2_;
   AthenaArray<int> out2body3_;
+  AthenaArray<int> out2body4_;
   AthenaArray<int> frml_2body_;
   AthenaArray<Real> a2body_; //alpha
   AthenaArray<Real> b2body_; //beta

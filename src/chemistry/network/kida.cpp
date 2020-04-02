@@ -240,6 +240,7 @@ void ChemNetwork::InitializeReactions() {
     out2body1_.NewAthenaArray(n_2body_);
     out2body2_.NewAthenaArray(n_2body_);
     out2body3_.NewAthenaArray(n_2body_);
+    out2body4_.NewAthenaArray(n_2body_);
     frml_2body_.NewAthenaArray(n_2body_);
     a2body_.NewAthenaArray(n_2body_);
     b2body_.NewAthenaArray(n_2body_);
@@ -371,10 +372,15 @@ void ChemNetwork::InitializeReactions() {
         } else {
           out2body2_(i2body) = -1;
         }
-        if (pr->products_.size() == 3) {
+        if (pr->products_.size() >= 3) {
           out2body3_(i2body) = ispec_map_[ pr->products_[2]];
         } else {
           out2body3_(i2body) = -1;
+        }
+        if (pr->products_.size() == 4) {
+          out2body4_(i2body) = ispec_map_[ pr->products_[3]];
+        } else {
+          out2body4_(i2body) = -1;
         }
         frml_2body_(i2body) = pr->formula_;
         a2body_(i2body) = pr->alpha_;
@@ -393,10 +399,15 @@ void ChemNetwork::InitializeReactions() {
         } else {
           out2body2_(i2body) = -1;
         }
-        if (pr->products_.size() == 3) {
+        if (pr->products_.size() >= 3) {
           out2body3_(i2body) = ispec_map_[ pr->products_[2]];
         } else {
           out2body3_(i2body) = -1;
+        }
+        if (pr->products_.size() == 4) {
+          out2body4_(i2body) = ispec_map_[ pr->products_[3]];
+        } else {
+          out2body4_(i2body) = -1;
         }
         frml_2body_(i2body) = pr->formula_;
         a2body_(i2body) = 0.;
@@ -598,7 +609,7 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
     //check format
     if (pr->reactants_.size() != 2 || 
         (pr->products_.size() != 1 && pr->products_.size() != 2
-         && pr->products_.size() != 3)) {
+         && pr->products_.size() != 3 && pr->products_.size() != 4)) {
       std::stringstream msg; 
       msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
           << std::endl << "Wrong format in 2body reaction ID=" << pr->id_
@@ -763,6 +774,9 @@ void ChemNetwork::PrintProperties() const {
     if (out2body3_(i) >= 0) {
       std::cout<< " + " << species_names[out2body3_(i)];
     }
+    if (out2body4_(i) >= 0) {
+      std::cout<< " + " << species_names[out2body4_(i)];
+    }
     std::cout<< ", " << "alpha=" << a2body_(i) << ", beta=" << b2body_(i)
       << ", gamma=" << c2body_(i) << ", Trange=[" << Tmin_2body_(i) << "," 
       << Tmax_2body_(i) << "]" << std::endl;
@@ -848,6 +862,9 @@ void ChemNetwork::OutputRates(FILE *pf) const {
     }
     if (out2body3_(i) >= 0) {
       fprintf(pf, " + %4s", species_names[out2body3_(i)].c_str());
+    }
+    if (out2body4_(i) >= 0) {
+      fprintf(pf, " + %4s", species_names[out2body4_(i)].c_str());
     }
     fprintf(pf,   ",     k2body = %.2e\n", k2body_(i));
 	}
@@ -1002,6 +1019,9 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
     }
     if (out2body3_(i) >= 0) {
       ydotg[out2body3_(i)] += rate;
+    }
+    if (out2body4_(i) >= 0) {
+      ydotg[out2body4_(i)] += rate;
     }
   }
 
