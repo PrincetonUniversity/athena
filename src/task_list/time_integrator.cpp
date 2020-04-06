@@ -365,13 +365,17 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     // everything else
     AddTask(PHY_BVAL,CONS2PRIM);
-    AddTask(USERWORK,PHY_BVAL);
-    AddTask(NEW_DT,USERWORK);
-    if (pm->adaptive) {
-      AddTask(FLAG_AMR,USERWORK);
-      AddTask(CLEAR_ALLBND,FLAG_AMR);
+    if (!STS_ENABLED || pm->sts_integrator == "rkl1") {
+      AddTask(USERWORK,PHY_BVAL);
+      AddTask(NEW_DT,USERWORK);
+      if (pm->adaptive) {
+        AddTask(FLAG_AMR,USERWORK);
+        AddTask(CLEAR_ALLBND,FLAG_AMR);
+      } else {
+        AddTask(CLEAR_ALLBND,NEW_DT);
+      }
     } else {
-      AddTask(CLEAR_ALLBND,NEW_DT);
+      AddTask(CLEAR_ALLBND,PHY_BVAL);
     }
   } // end of using namespace block
 }
@@ -658,7 +662,7 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     Real time = pmb->pmy_mesh->time+dt;
     pmb->pbval->ComputeShear(time);
   }
-  pmb->pbval->StartReceiving(BoundaryCommSubset::all);
+  pmb->pbval->StartReceivingSubset(BoundaryCommSubset::all, pmb->pbval->bvars_main_int);
 
   return;
 }
@@ -667,7 +671,8 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 // Functions to end MPI communication
 
 TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
-  pmb->pbval->ClearBoundary(BoundaryCommSubset::all);
+  pmb->pbval->ClearBoundarySubset(BoundaryCommSubset::all,
+                                  pmb->pbval->bvars_main_int);
   return TaskStatus::success;
 }
 
@@ -743,11 +748,13 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
 
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to FieldInt
-    Real ave_wghts[3];
+    Real ave_wghts[5];
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
-    pmb->WeightedAve(ph->u1, ph->u, ph->u2, ave_wghts);
+    ave_wghts[3] = 0.0;
+    ave_wghts[4] = 0.0;
+    pmb->WeightedAve(ph->u1, ph->u, ph->u2, ph->u0, ph->fl_div, ave_wghts);
 
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
@@ -755,7 +762,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
     if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
       ph->u.SwapAthenaArray(ph->u1);
     else
-      pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
+      pmb->WeightedAve(ph->u, ph->u1, ph->u2, ph->u0, ph->fl_div, ave_wghts);
 
     const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
     ph->AddFluxDivergence(wght, ph->u);
@@ -772,7 +779,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
       const Real beta = 0.063692468666290; // F(u^(3)) coeff.
       const Real wght_ssp = beta*pmb->pmy_mesh->dt;
       // writing out to u2 register
-      pmb->WeightedAve(ph->u2, ph->u1, ph->u2, ave_wghts);
+      pmb->WeightedAve(ph->u2, ph->u1, ph->u2, ph->u0, ph->fl_div, ave_wghts);
       ph->AddFluxDivergence(wght_ssp, ph->u2);
       // add coordinate (geometric) source terms
       pmb->pcoord->AddCoordTermsDivergence(wght_ssp, ph->flux, ph->w, pf->bcc, ph->u2);
@@ -790,11 +797,13 @@ TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
 
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to HydroInt
-    Real ave_wghts[3];
+    Real ave_wghts[5];
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
-    pmb->WeightedAve(pf->b1, pf->b, pf->b2, ave_wghts);
+    ave_wghts[3] = 0.0;
+    ave_wghts[4] = 0.0;
+    pmb->WeightedAve(pf->b1, pf->b, pf->b2, pf->b0, pf->ct_update, ave_wghts);
 
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
@@ -804,7 +813,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
       pf->b.x2f.SwapAthenaArray(pf->b1.x2f);
       pf->b.x3f.SwapAthenaArray(pf->b1.x3f);
     } else {
-      pmb->WeightedAve(pf->b, pf->b1, pf->b2, ave_wghts);
+      pmb->WeightedAve(pf->b, pf->b1, pf->b2, pf->b0, pf->ct_update, ave_wghts);
     }
 
     pf->CT(stage_wghts[stage-1].beta*pmb->pmy_mesh->dt, pf->b);
@@ -1039,7 +1048,7 @@ TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
     Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-    pbval->ProlongateBoundaries(t_end_stage, dt);
+    pbval->ProlongateBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
   } else {
     return TaskStatus::fail;
   }
@@ -1124,7 +1133,7 @@ TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
     if (NSCALARS > 0)
       ps->sbvar.var_cc = &(ps->r);
-    pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
+    pbval->ApplyPhysicalBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
   } else {
     return TaskStatus::fail;
   }
@@ -1189,14 +1198,17 @@ TaskStatus TimeIntegratorTaskList::ReceiveScalarFlux(MeshBlock *pmb, int stage) 
 
 TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
   PassiveScalars *ps = pmb->pscalars;
+
   if (stage <= nstages) {
     // This time-integrator-specific averaging operation logic is identical to
     // IntegrateHydro, IntegrateField
-    Real ave_wghts[3];
+    Real ave_wghts[5];
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
-    pmb->WeightedAve(ps->s1, ps->s, ps->s2, ave_wghts);
+    ave_wghts[3] = 0.0;
+    ave_wghts[4] = 0.0;
+    pmb->WeightedAve(ps->s1, ps->s, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
 
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
@@ -1204,7 +1216,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
     if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
       ps->s.SwapAthenaArray(ps->s1);
     else
-      pmb->WeightedAve(ps->s, ps->s1, ps->s2, ave_wghts);
+      pmb->WeightedAve(ps->s, ps->s1, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
 
     const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
     ps->AddFluxDivergence(wght, ps->s);
@@ -1219,7 +1231,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
       const Real beta = 0.063692468666290; // F(u^(3)) coeff.
       const Real wght_ssp = beta*pmb->pmy_mesh->dt;
       // writing out to s2 register
-      pmb->WeightedAve(ps->s2, ps->s1, ps->s2, ave_wghts);
+      pmb->WeightedAve(ps->s2, ps->s1, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
       ps->AddFluxDivergence(wght_ssp, ps->s2);
     }
     return TaskStatus::next;

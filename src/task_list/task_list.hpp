@@ -13,6 +13,7 @@
 // C++ headers
 #include <cstdint>      // std::uint64_t
 #include <string>       // std::string
+#include <vector>     // std::vector
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -199,7 +200,15 @@ class SuperTimeStepTaskList : public TaskList {
   SuperTimeStepTaskList(ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist);
   const Real sts_max_dt_ratio;
 
+  // subset of NHYDRO indices
+  bool do_sts_hydro;
+  bool do_sts_field;
+  bool do_sts_scalar;
+  std::vector<int> sts_idx_subset;
+
   // functions
+  TaskStatus ClearAllBoundary_STS(MeshBlock *pmb, int stage);
+
   TaskStatus CalculateHydroFlux_STS(MeshBlock *pmb, int stage);
   TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);
   TaskStatus CalculateScalarFlux_STS(MeshBlock *pmb, int stage);
@@ -208,7 +217,13 @@ class SuperTimeStepTaskList : public TaskList {
   TaskStatus IntegrateField_STS(MeshBlock *pmb, int stage);
   TaskStatus IntegrateScalars_STS(MeshBlock *pmb, int stage);
 
+  TaskStatus Prolongation_STS(MeshBlock *pmb, int stage);
+  TaskStatus Primitives_STS(MeshBlock *pmb, int stage);
   TaskStatus PhysicalBoundary_STS(MeshBlock *pmb, int stage);
+  TaskStatus UserWork_STS(MeshBlock *pmb, int stage);
+  TaskStatus NewBlockTimeStep_STS(MeshBlock *pmb, int stage);
+  TaskStatus CheckRefinement_STS(MeshBlock *pmb, int stage);
+
 
  private:
   // currently intiialized but unused. May use it for direct calls to TimeIntegrator fns:

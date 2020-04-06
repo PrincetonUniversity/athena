@@ -118,15 +118,67 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     }
   }
 
-  // Allocate and compute arrays for intermediate geometric quantities always needed
+  // Allocate arrays for intermediate geometric quantities: r-direction
+  coord_area1_i1_.NewAthenaArray(nc1+1);
+  coord_area2_i1_.NewAthenaArray(nc1);
+  coord_area2_i2_.NewAthenaArray(nc1);
+  coord_area3_i1_.NewAthenaArray(nc1);
+  coord_area3_i2_.NewAthenaArray(nc1);
   metric_cell_i1_.NewAthenaArray(nc1);
+  metric_face1_i1_.NewAthenaArray(nc1+1);
+  metric_face2_i1_.NewAthenaArray(nc1);
+  metric_face3_i1_.NewAthenaArray(nc1);
+
+  // Allocate arrays for intermediate geometric quantities: theta-direction
+  coord_area1_j1_.NewAthenaArray(nc2);
+  coord_area1_j2_.NewAthenaArray(nc2);
+  coord_area2_j1_.NewAthenaArray(nc2+1);
+  coord_area2_j2_.NewAthenaArray(nc2+1);
+  coord_area3_j1_.NewAthenaArray(nc2);
+  coord_area3_j2_.NewAthenaArray(nc2);
   metric_cell_j1_.NewAthenaArray(nc2);
   metric_cell_j2_.NewAthenaArray(nc2);
+  metric_face1_j1_.NewAthenaArray(nc2);
+  metric_face1_j2_.NewAthenaArray(nc2);
+  metric_face2_j1_.NewAthenaArray(nc2+1);
+  metric_face2_j2_.NewAthenaArray(nc2+1);
+  metric_face3_j1_.NewAthenaArray(nc2);
+  metric_face3_j2_.NewAthenaArray(nc2);
+
+  // Allocate arrays for intermediate geometric quantities: phi-direction
+  coord_area1_k1_.NewAthenaArray(nc3);
+  coord_area2_k1_.NewAthenaArray(nc3);
+
+  // Calculate intermediate geometric quantities: r-direction
   for (int i=il-ng; i<=iu+ng; ++i) {
+    // Useful quantities
     Real r_c = x1v(i);
+    Real r_m = x1f(i);
+    Real r_p = x1f(i+1);
+    Real r_m_sq = SQR(r_m);
+    Real r_p_sq = SQR(r_p);
+
+    // Areas
+    coord_area1_i1_(i) = SQR(r_m);
+    if (i == (iu+ng)) {
+      coord_area1_i1_(i+1) = SQR(r_p);
+    }
+    coord_area2_i1_(i) = dx1f(i);
+    coord_area2_i2_(i) = r_m_sq + r_m * r_p + r_p_sq;
+    coord_area3_i1_(i) = dx1f(i);
+    coord_area3_i2_(i) = r_m_sq + r_m * r_p + r_p_sq;
+
+    // Metric coefficients
     metric_cell_i1_(i) = r_c;
+    metric_face1_i1_(i) = r_m;
+    if (i == (iu+ng)) {
+      metric_face1_i1_(i+1) = r_p;
+    }
+    metric_face2_i1_(i) = r_c;
+    metric_face3_i1_(i) = r_c;
   }
 
+  // Calculate intermediate geometric quantities: theta-direction
   int jll, juu;
   if (pmb->block_size.nx2 > 1) {
     jll = jl - ng; juu = ju + ng;
@@ -134,13 +186,61 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     jll = jl; juu = ju;
   }
   for (int j=jll; j<=juu; ++j) {
+    // Useful quantities
     Real theta_c = x2v(j);
+    Real theta_m = x2f(j);
+    Real theta_p = x2f(j+1);
     Real sin_c = std::sin(theta_c);
+    Real sin_m = std::sin(theta_m);
+    Real sin_p = std::sin(theta_p);
     Real cos_c = std::cos(theta_c);
+    Real cos_m = std::cos(theta_m);
+    Real cos_p = std::cos(theta_p);
     Real sin_c_sq = SQR(sin_c);
+    Real sin_m_sq = SQR(sin_m);
+    Real sin_p_sq = SQR(sin_p);
     Real cos_c_sq = SQR(cos_c);
+    Real cos_m_sq = SQR(cos_m);
+    Real cos_p_sq = SQR(cos_p);
+
+    // Areas
+    coord_area1_j1_(j) = std::abs(cos_m - cos_p);
+    coord_area1_j2_(j) = SQR(a) * (cos_m_sq + cos_m * cos_p + cos_p_sq);
+    coord_area2_j1_(j) = std::abs(sin_m);
+    coord_area2_j2_(j) = SQR(a) * cos_m_sq;
+    if (j == juu) {
+      coord_area2_j1_(j+1) = std::abs(sin_p);
+      coord_area2_j2_(j+1) = SQR(a) * cos_p_sq;
+    }
+    coord_area3_j1_(j) = std::abs(cos_m - cos_p);
+    coord_area3_j2_(j) = SQR(a) * (cos_m_sq + cos_m * cos_p + cos_p_sq);
+
+    // Metric coefficients
     metric_cell_j1_(j) = sin_c_sq;
     metric_cell_j2_(j) = cos_c_sq;
+    metric_face1_j1_(j) = sin_c_sq;
+    metric_face1_j2_(j) = cos_c_sq;
+    metric_face2_j1_(j) = sin_m_sq;
+    metric_face2_j2_(j) = cos_m_sq;
+    if (j == juu) {
+      metric_face2_j1_(j) = sin_p_sq;
+      metric_face2_j2_(j) = cos_p_sq;
+    }
+    metric_face3_j1_(j) = sin_c_sq;
+    metric_face3_j2_(j) = cos_c_sq;
+  }
+
+  // Calculate intermediate geometric quantities: phi-direction
+  int kll, kuu;
+  if (pmb->block_size.nx3 > 1) {
+    kll = kl - ng; kuu = ku + ng;
+  } else {
+    kll = kl; kuu = ku;
+  }
+  for (int k=kll; k<=kuu; ++k) {
+    // Areas
+    coord_area1_k1_(k) = dx3f(k);
+    coord_area2_k1_(k) = dx3f(k);
   }
 
   // Allocate and compute arrays for intermediate geometric quantities that are only
@@ -149,32 +249,18 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     // Allocate arrays for intermediate geometric quantities: r-direction
     coord_vol_i1_.NewAthenaArray(nc1);
     coord_vol_i2_.NewAthenaArray(nc1);
-    coord_area1_i1_.NewAthenaArray(nc1+1);
-    coord_area2_i1_.NewAthenaArray(nc1);
-    coord_area2_i2_.NewAthenaArray(nc1);
-    coord_area3_i1_.NewAthenaArray(nc1);
-    coord_area3_i2_.NewAthenaArray(nc1);
     coord_len1_i1_.NewAthenaArray(nc1);
     coord_len1_i2_.NewAthenaArray(nc1);
     coord_len2_i1_.NewAthenaArray(nc1+1);
     coord_len3_i1_.NewAthenaArray(nc1+1);
     coord_width1_i1_.NewAthenaArray(nc1);
     coord_width2_i1_.NewAthenaArray(nc1);
-    metric_face1_i1_.NewAthenaArray(nc1+1);
-    metric_face2_i1_.NewAthenaArray(nc1);
-    metric_face3_i1_.NewAthenaArray(nc1);
     g_.NewAthenaArray(NMETRIC, nc1+1);
     gi_.NewAthenaArray(NMETRIC, nc1+1);
 
     // Allocate arrays for intermediate geometric quantities: theta-direction
     coord_vol_j1_.NewAthenaArray(nc2);
     coord_vol_j2_.NewAthenaArray(nc2);
-    coord_area1_j1_.NewAthenaArray(nc2);
-    coord_area1_j2_.NewAthenaArray(nc2);
-    coord_area2_j1_.NewAthenaArray(nc2+1);
-    coord_area2_j2_.NewAthenaArray(nc2+1);
-    coord_area3_j1_.NewAthenaArray(nc2);
-    coord_area3_j2_.NewAthenaArray(nc2);
     coord_len1_j1_.NewAthenaArray(nc2+1);
     coord_len1_j2_.NewAthenaArray(nc2+1);
     coord_len2_j1_.NewAthenaArray(nc2);
@@ -187,17 +273,9 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     coord_width3_j3_.NewAthenaArray(nc2);
     coord_src_j1_.NewAthenaArray(nc2);
     coord_src_j2_.NewAthenaArray(nc2);
-    metric_face1_j1_.NewAthenaArray(nc2);
-    metric_face1_j2_.NewAthenaArray(nc2);
-    metric_face2_j1_.NewAthenaArray(nc2+1);
-    metric_face2_j2_.NewAthenaArray(nc2+1);
-    metric_face3_j1_.NewAthenaArray(nc2);
-    metric_face3_j2_.NewAthenaArray(nc2);
 
     // Allocate arrays for intermediate geometric quantities: phi-direction
     coord_vol_k1_.NewAthenaArray(nc3);
-    coord_area1_k1_.NewAthenaArray(nc3);
-    coord_area2_k1_.NewAthenaArray(nc3);
     coord_len3_k1_.NewAthenaArray(nc3);
     coord_width3_k1_.NewAthenaArray(nc3);
 
@@ -226,47 +304,28 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     // Calculate intermediate geometric quantities: r-direction
     for (int i=il-ng; i<=iu+ng; ++i) {
       // Useful quantities
-      Real r_c = x1v(i);
       Real r_m = x1f(i);
       Real r_p = x1f(i+1);
-      //Real r_c_sq = SQR(r_c);
       Real r_m_sq = SQR(r_m);
       Real r_p_sq = SQR(r_p);
-      //Real r_m_cu = r_m * r_m_sq;
       Real rm_m = std::sqrt(r_m_sq + SQR(m));
       Real rm_p = std::sqrt(r_p_sq + SQR(m));
 
-      // Volumes, areas, lengths, and widths
+      // Volumes, lengths, and widths
       coord_vol_i1_(i) = dx1f(i);
       coord_vol_i2_(i) = r_m_sq + r_m * r_p + r_p_sq;
-      coord_area1_i1_(i) = SQR(r_m);
-      if (i == (iu+ng)) {
-        coord_area1_i1_(i+1) = SQR(r_p);
-      }
-      coord_area2_i1_(i) = coord_vol_i1_(i);
-      coord_area2_i2_(i) = coord_vol_i2_(i);
-      coord_area3_i1_(i) = coord_vol_i1_(i);
-      coord_area3_i2_(i) = coord_vol_i2_(i);
       coord_len1_i1_(i) = coord_vol_i1_(i);
       coord_len1_i2_(i) = coord_vol_i2_(i);
-      coord_len2_i1_(i) = coord_area1_i1_(i);
+      coord_len2_i1_(i) = SQR(r_m);
       if (i == (iu+ng)) {
-        coord_len2_i1_(i+1) = coord_area1_i1_(i+1);
+        coord_len2_i1_(i+1) = SQR(r_p);
       }
-      coord_len3_i1_(i) = coord_area1_i1_(i);
+      coord_len3_i1_(i) = SQR(r_m);
       if (i == (iu+ng)) {
-        coord_len3_i1_(i+1) = coord_area1_i1_(i+1);
+        coord_len3_i1_(i+1) = SQR(r_p);
       }
       coord_width1_i1_(i) = rm_p - rm_m + m * std::log((rm_p + r_p) / (rm_m + r_m));
       coord_width2_i1_(i) = x1v(i);
-
-      // Metric coefficients
-      metric_face1_i1_(i) = r_m;
-      if (i == (iu+ng)) {
-        metric_face1_i1_(i+1) = r_p;
-      }
-      metric_face2_i1_(i) = r_c;
-      metric_face3_i1_(i) = r_c;
     }
 
     // Calculate intermediate geometric quantities: theta-direction
@@ -282,40 +341,26 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       Real cos_m = std::cos(theta_m);
       Real cos_p = std::cos(theta_p);
       Real sin_c_sq = SQR(sin_c);
-      Real sin_m_sq = SQR(sin_m);
-      Real sin_p_sq = SQR(sin_p);
       Real cos_c_sq = SQR(cos_c);
       Real cos_m_sq = SQR(cos_m);
       Real cos_p_sq = SQR(cos_p);
-      // Real sin_m_cu = sin_m_sq*sin_m;
-      // Real sin_p_cu = SQR(sin_p)*sin_p;
 
-      // Volumes, areas, lengths, and widths
+      // Volumes, lengths, and widths
       coord_vol_j1_(j) = std::abs(cos_m - cos_p);
       coord_vol_j2_(j) = SQR(a) * (cos_m_sq + cos_m * cos_p + cos_p_sq);
-      coord_area1_j1_(j) = coord_vol_j1_(j);
-      coord_area1_j2_(j) = coord_vol_j2_(j);
-      coord_area2_j1_(j) = std::abs(sin_m);
-      coord_area2_j2_(j) = SQR(a) * cos_m_sq;
+      coord_len1_j1_(j) = std::abs(sin_m);
+      coord_len1_j2_(j) = SQR(a) * cos_m_sq;
       if (j == juu) {
-        coord_area2_j1_(j+1) = std::abs(sin_p);
-        coord_area2_j2_(j+1) = SQR(a) * cos_p_sq;
-      }
-      coord_area3_j1_(j) = coord_vol_j1_(j);
-      coord_area3_j2_(j) = coord_vol_j2_(j);
-      coord_len1_j1_(j) = coord_area2_j1_(j);
-      coord_len1_j2_(j) = coord_area2_j2_(j);
-      if (j == juu) {
-        coord_len1_j1_(j+1) = coord_area2_j1_(j+1);
-        coord_len1_j2_(j+1) = coord_area2_j2_(j+1);
+        coord_len1_j1_(j+1) = std::abs(sin_p);
+        coord_len1_j2_(j+1) = SQR(a) * cos_p_sq;
       }
       coord_len2_j1_(j) = coord_vol_j1_(j);
       coord_len2_j2_(j) = coord_vol_j2_(j);
-      coord_len3_j1_(j) = coord_area2_j1_(j);
-      coord_len3_j2_(j) = coord_area2_j2_(j);
+      coord_len3_j1_(j) = std::abs(sin_m);
+      coord_len3_j2_(j) = SQR(a) * cos_m_sq;
       if (j == juu) {
-        coord_len3_j1_(j+1) = coord_area2_j1_(j+1);
-        coord_len3_j2_(j+1) = coord_area2_j2_(j+1);
+        coord_len3_j1_(j+1) = std::abs(sin_p);
+        coord_len3_j2_(j+1) = SQR(a) * cos_p_sq;
       }
       coord_width2_j1_(j) = dx2f(j);
       coord_width3_j1_(j) = std::abs(sin_c);
@@ -325,32 +370,12 @@ KerrSchild::KerrSchild(MeshBlock *pmb, ParameterInput *pin, bool flag)
       // Source terms
       coord_src_j1_(j) = sin_c;
       coord_src_j2_(j) = cos_c;
-
-      // Metric coefficients
-      metric_face1_j1_(j) = sin_c_sq;
-      metric_face1_j2_(j) = cos_c_sq;
-      metric_face2_j1_(j) = sin_m_sq;
-      metric_face2_j2_(j) = cos_m_sq;
-      if (j == juu) {
-        metric_face2_j1_(j) = sin_p_sq;
-        metric_face2_j2_(j) = cos_p_sq;
-      }
-      metric_face3_j1_(j) = sin_c_sq;
-      metric_face3_j2_(j) = cos_c_sq;
     }
 
     // Calculate intermediate geometric quantities: phi-direction
-    int kll, kuu;
-    if (pmb->block_size.nx3 > 1) {
-      kll = kl - ng; kuu = ku + ng;
-    } else {
-      kll = kl; kuu = ku;
-    }
     for (int k=kll; k<=kuu; ++k) {
-      // Volumes, areas, lengths, and widths
+      // Volumes, lengths, and widths
       coord_vol_k1_(k) = dx3f(k);
-      coord_area1_k1_(k) = coord_vol_k1_(k);
-      coord_area2_k1_(k) = coord_vol_k1_(k);
       coord_len3_k1_(k) = coord_vol_k1_(k);
       coord_width3_k1_(k) = coord_vol_k1_(k);
     }

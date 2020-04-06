@@ -91,17 +91,9 @@ void EquationOfState::ConservedToPrimitive(
         // Extract conserved quantities
         Real &d = cons(IDN,k,j,i);
         Real &e = cons(IEN,k,j,i);
-
         Real mx = cons(IVX,k,j,i);
         Real my = cons(IVY,k,j,i);
         Real mz = cons(IVZ,k,j,i);
-
-        // Extract primitives quantities
-        Real rho = prim(IDN,k,j,i);
-        Real pgas = prim(IPR,k,j,i);
-        Real vx = prim(IVX,k,j,i);
-        Real vy = prim(IVY,k,j,i);
-        Real vz = prim(IVZ,k,j,i);
 
         // Calculate total momentum
         Real m_sq = SQR(mx) + SQR(my) + SQR(mz);
@@ -150,7 +142,7 @@ void EquationOfState::ConservedToPrimitive(
         v_abs = (v_abs > 0.0) ? v_abs : 0.0;                    // sets NaN to 0
         v_abs = (v_abs < max_velocity) ? v_abs : max_velocity;
 
-        // Set density, correcting only conserved density if floor applied
+        // Calculate intermediate quantities
         Real gamma_rel = 1.0 / std::sqrt(1.0 - SQR(v_abs));
         Real v_over_m = v_abs / m_abs;
         Real e_tmp = m_sq * v_over_m;
@@ -162,32 +154,31 @@ void EquationOfState::ConservedToPrimitive(
           e_tmp = 0.0;
         }
 
-        rho = d / gamma_rel;
+        // Calculate density, correcting only conserved density if floor applied
+        Real rho = d / gamma_rel;
         if (rho < density_floor_) {
           rho = density_floor_;
           d = gamma_rel * rho;
         }
 
         // Set velocity
-        vx = mx * v_over_m;
-        vy = my * v_over_m;
-        vz = mz * v_over_m;
+        Real ux = gamma_rel * mx * v_over_m;
+        Real uy = gamma_rel * my * v_over_m;
+        Real uz = gamma_rel * mz * v_over_m;
 
-        // Set pressure, correcting only energy if floor applied
-        pgas = gamma_adi_minus_1 * (e - e_tmp - rho);
+        // Calculate pressure, correcting only energy if floor applied
+        Real pgas = gamma_adi_minus_1 * (e - e_tmp - rho);
         if (pgas < pressure_floor_) {
           pgas = pressure_floor_;
           e = pgas/gamma_adi_minus_1 + e_tmp + rho;
         }
 
-        // cons(IDN,k,j,i) = d;
-        // cons(IEN,k,j,i) = e;
-
+        // Set primitives
         prim(IDN,k,j,i) = rho;
         prim(IPR,k,j,i) = pgas;
-        prim(IVX,k,j,i) = vx;
-        prim(IVY,k,j,i) = vy;
-        prim(IVZ,k,j,i) = vz;
+        prim(IVX,k,j,i) = ux;
+        prim(IVY,k,j,i) = uy;
+        prim(IVZ,k,j,i) = uz;
       }
     }
   }
@@ -203,9 +194,6 @@ void EquationOfState::ConservedToPrimitive(
 //   il,iu,jl,ju,kl,ku: index bounds of region to be updated
 // Outputs:
 //   cons: conserved variables
-// Notes:
-//   single-cell function exists for other purposes; call made to that function rather
-//       than having duplicate code
 
 void EquationOfState::PrimitiveToConserved(
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bb_cc,
@@ -222,15 +210,12 @@ void EquationOfState::PrimitiveToConserved(
         // Extract primitives
         Real rho = prim(IDN,k,j,i);
         Real pgas = prim(IPR,k,j,i);
-        Real v1 = prim(IVX,k,j,i);
-        Real v2 = prim(IVY,k,j,i);
-        Real v3 = prim(IVZ,k,j,i);
+        Real u1 = prim(IVX,k,j,i);
+        Real u2 = prim(IVY,k,j,i);
+        Real u3 = prim(IVZ,k,j,i);
 
-        // Calculate 4-velocity
-        Real u0 = 1.0 / std::sqrt(1.0 - SQR(v1) - SQR(v2) - SQR(v3));
-        Real u1 = u0 * v1;
-        Real u2 = u0 * v2;
-        Real u3 = u0 * v3;
+        // Calculate Lorentz factor
+        Real u0 = std::sqrt(1.0 + SQR(u1) + SQR(u2) + SQR(u3));
 
         // Set conserved quantities
         Real wgas_u0 = (rho + gamma_prime * pgas) * u0;
@@ -239,7 +224,6 @@ void EquationOfState::PrimitiveToConserved(
         Real m1 = wgas_u0 * u1;
         Real m2 = wgas_u0 * u2;
         Real m3 = wgas_u0 * u3;
-
         cons(IDN,k,j,i) = d;
         cons(IEN,k,j,i) = e;
         cons(IM1,k,j,i) = m1;

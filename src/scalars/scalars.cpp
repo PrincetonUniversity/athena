@@ -65,6 +65,15 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     // future extension may add "int nregister" to Hydro class
     s2.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
 
+  // If STS RKL2, allocate additional memory registers
+  if (STS_ENABLED) {
+    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl1");
+    if (sts_integrator == "rkl2") {
+      s0.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+      s_fl_div.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    }
+  }
+
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
   if (pm->multilevel) {
     refinement_idx = pmy_block->pmr->AddToRefinement(&s, &coarse_s_);
@@ -74,6 +83,11 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   sbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&sbvar);
   pmb->pbval->bvars_main_int.push_back(&sbvar);
+  if (STS_ENABLED) {
+    if (scalar_diffusion_defined) {
+      pmb->pbval->bvars_sts.push_back(&sbvar);
+    }
+  }
 
   // Allocate memory for scratch arrays
   rl_.NewAthenaArray(NSCALARS, nc1);

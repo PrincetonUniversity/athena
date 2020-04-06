@@ -30,7 +30,7 @@
 #   -fft              enable FFT (requires the FFTW library)
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
 #   --grav=xxx        use xxx as the self-gravity solver
-#   --cxx=xxx         use xxx as the C++ compiler
+#   --cxx=xxx         use xxx as the C++ compiler (works w/ or w/o -mpi)
 #   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
 #   --mpiccmd=name    use name as the command to call the MPI C++ compiler
 #   --gcovcmd=name    use name as the command to call the gcov utility
@@ -251,7 +251,7 @@ parser.add_argument(
     default='g++',
     type=c_to_cpp,
     choices=cxx_choices,
-    help='select C++ compiler and default set of flags')
+    help='select C++ compiler and default set of flags (works w/ or w/o -mpi)')
 
 # --ccmd=[name] argument
 parser.add_argument('--ccmd',
@@ -343,7 +343,7 @@ if args['eos'][:8] == 'general/':
     if args['s'] or args['g']:
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with relativity')
-    if args['flux'] not in ['hllc', 'hlld', 'hlle']:
+    if args['flux'] not in ['hllc', 'hlld']:
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with flux ' + args['flux'])
 
