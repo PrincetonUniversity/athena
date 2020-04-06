@@ -24,7 +24,7 @@ tlim            = 0.01       # time limit
 integrator      = rk4       # time integrator
 
 <mesh>
-refinement      = static      # Static mesh refinement
+refinement      = none      # Static mesh refinement
 
 nx1             = 24        # Number of zones in X1-direction
 x1min           = -1.0      # minimum value of X1

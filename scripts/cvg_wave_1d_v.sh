@@ -44,7 +44,7 @@ export COMPILE_STR="--prob=wave_1d_cvg_trig -w --nghost=2
 # export COMPILE_STR="${COMPILE_STR} -fill_wave_coarse_p"
 
 # debug vertex consistency
-#export COMPILE_STR="${COMPILE_STR} -dbg_vc_consistency"
+# export COMPILE_STR="${COMPILE_STR} -dbg_vc_consistency"
 
 
 

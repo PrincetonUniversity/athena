@@ -417,7 +417,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
                         is, ie, ncells1,
                         ivs, ive,
                         ims, ime, ips, ipe,
-                        iis, iie, igs, ige, imp,
+                        igs, ige, imp,
                         nverts1,
                         true, true);
 
@@ -425,7 +425,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
                         js, je, ncells2,
                         jvs, jve,
                         jms, jme, jps, jpe,
-                        jis, jie, jgs, jge, jmp,
+                        jgs, jge, jmp,
                         nverts2,
                         true, pmy_mesh->f2);
 
@@ -433,7 +433,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
                         ks, ke, ncells3,
                         kvs, kve,
                         kms, kme, kps, kpe,
-                        kis, kie, kgs, kge, kmp,
+                        kgs, kge, kmp,
                         nverts3,
                         true, pmy_mesh->f3);
 
@@ -442,7 +442,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
                         cis, cie, ncc1,
                         civs, cive,
                         cims, cime, cips, cipe,
-                        ciis, ciie, cigs, cige, cimp,
+                        cigs, cige, cimp,
                         ncv1,
                         pmy_mesh->multilevel, true);
 
@@ -450,7 +450,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
                         cjs, cje, ncc2,
                         cjvs, cjve,
                         cjms, cjme, cjps, cjpe,
-                        cjis, cjie, cjgs, cjge, cjmp,
+                        cjgs, cjge, cjmp,
                         ncv2,
                         pmy_mesh->multilevel, pmy_mesh->f2);
 
@@ -458,7 +458,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
                         cks, cke, ncc3,
                         ckvs, ckve,
                         ckms, ckme, ckps, ckpe,
-                        ckis, ckie, ckgs, ckge, ckmp,
+                        ckgs, ckge, ckmp,
                         ncv3,
                         pmy_mesh->multilevel, pmy_mesh->f3);
 
@@ -475,7 +475,6 @@ inline void MeshBlock::SetIndicialParameters(int num_ghost,
                                              int &ix_vs, int &ix_ve, // bnd
                                              int &ix_ms, int &ix_me, // neg
                                              int &ix_ps, int &ix_pe, // pos
-                                             int &ix_is, int &ix_ie, // int(..)
                                              int &ix_gs, int &ix_ge, // int. g
                                              int &ix_mp,
                                              int &nverts,            // VC end
@@ -503,9 +502,6 @@ inline void MeshBlock::SetIndicialParameters(int num_ghost,
       ix_ps = block_size + num_ghost + 1;
       ix_pe = block_size + 2 * num_ghost;
 
-      ix_is = num_ghost + 1;
-      ix_ie = block_size + num_ghost - 1;
-
       ix_gs = ix_vs + num_ghost;
       ix_ge = ix_ve - num_ghost;
 
@@ -522,7 +518,6 @@ inline void MeshBlock::SetIndicialParameters(int num_ghost,
       ix_vs = ix_ve = 0;
 
       ix_ms = ix_me = ix_ps = ix_pe = 0;
-      ix_is = ix_ie = 0;
       ix_gs = ix_ge = 0;
       ix_mp = 0;
     }

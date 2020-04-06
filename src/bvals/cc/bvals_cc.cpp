@@ -331,10 +331,10 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   BufferUtility::PackData(coarse_var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
   if (DBGPR_BVALS_CC)
-    printf("(cims, cime, civs, ciis, cigs, cige, ciie, cive, cips, cipe)="
-          "(%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)\n",
-          pmb->cims, pmb->cime, pmb->civs, pmb->ciis, pmb->cigs,
-          pmb->cige, pmb->ciie, pmb->cive, pmb->cips, pmb->cipe);
+    printf("(cims, cime, civs, cigs, cige, cive, cips, cipe)="
+          "(%d,%d,%d,%d,%d,%d,%d,%d)\n",
+          pmb->cims, pmb->cime, pmb->civs, pmb->cigs,
+          pmb->cige, pmb->cive, pmb->cips, pmb->cipe);
 
   //////////////////////////////////////////////////////////////////////////////
   // inspect branching logic Fine2Coarse

@@ -119,21 +119,18 @@ public:
   int ims, ime, ips, ipe;          // -/+ (communication) ghost-zone idx
   int ivs, ive;                    // shared vertices
   int igs, ige;                    // shared to ghost
-  int iis, iie;                    // internal idx
 
   int imp;                         // mid-point idx
 
   int jms, jme, jps, jpe;          // -/+ (communication) ghost-zone idx
   int jvs, jve;                    // shared vertices
   int jgs, jge;                    // shared to ghost
-  int jis, jie;                    // internal idx
 
   int jmp;                         // mid-point idx
 
   int kms, kme, kps, kpe;          // -/+ (communication) ghost-zone idx
   int kvs, kve;                    // shared vertices
   int kgs, kge;                    // shared to ghost
-  int kis, kie;                    // internal idx
 
   int kmp;                         // mid-point idx
 
@@ -141,21 +138,18 @@ public:
   int cims, cime, cips, cipe;          // -/+ (communication) ghost-zone idx
   int civs, cive;                      // shared vertices
   int cigs, cige;                      // shared to ghost
-  int ciis, ciie;                      // internal idx
 
   int cimp;                            // mid-point idx
 
   int cjms, cjme, cjps, cjpe;          // -/+ (communication) ghost-zone idx
   int cjvs, cjve;                      // shared vertices
   int cjgs, cjge;                      // shared to ghost
-  int cjis, cjie;                      // internal idx
 
   int cjmp;                            // mid-point idx
 
   int ckms, ckme, ckps, ckpe;          // -/+ (communication) ghost-zone idx
   int ckvs, ckve;                      // shared vertices
   int ckgs, ckge;                      // shared to ghost
-  int ckis, ckie;                      // internal idx
 
   int ckmp;                            // mid-point idx
 
@@ -252,6 +246,7 @@ private:
   std::vector<std::reference_wrapper<AthenaArray<Real>>> vars_vc_;
 
   // functions
+  // helper functions for assigning indices (inlined on definition)
   void SetAllIndicialParameters();
   void SetIndicialParameters(int num_ghost,
                              int block_size, 
@@ -260,7 +255,6 @@ private:
                              int &ix_vs, int &ix_ve,      // bnd vert
                              int &ix_ms, int &ix_me,      // neg
                              int &ix_ps, int &ix_pe,      // pos
-                             int &ix_is, int &ix_ie,      // internal
                              int &ix_gs, int &ix_ge,      // int. g
                              int &ix_mp,
                              int &nverts,                 // VC end

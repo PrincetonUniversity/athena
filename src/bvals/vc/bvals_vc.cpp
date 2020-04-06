@@ -69,67 +69,21 @@ VertexCenteredBoundaryVariable::VertexCenteredBoundaryVariable(
 #endif
   }
 
-// VC
-//   if (SHEARING_BOX) {
-// #ifdef MPI_PARALLEL
-//     shear_cc_phys_id_ = cc_phys_id_ + 2;
-// #endif
-//     if (pbval_->ShBoxCoord_ == 1) {
-//       int nc2 = pmb->ncells2;
-//       int nc3 = pmb->ncells3;
-//       for (int upper=0; upper<2; upper++) {
-//         if (pbval_->is_shear[upper]) {
-//           shear_cc_[upper].NewAthenaArray(nu_+1, nc3, nc2, NGHOST);
-//           shear_flx_cc_[upper].NewAthenaArray(nc2);
+  // node multiplicities-------------------------------------------------------
+  AllocateNodeMult();
+  //---------------------------------------------------------------------------
 
-//           // TODO(KGF): the rest of this should be a part of InitBoundaryData()
-
-//           // attach corner cells from L/R side
-//           int size = (pmb->block_size.nx2 + NGHOST)*pbval_->ssize_*(nu_ + 1);
-//           for (int n=0; n<2; n++) {
-//             shear_bd_var_[upper].send[n] = new Real[size];
-//             shear_bd_var_[upper].recv[n] = new Real[size];
-//             shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
-// #ifdef MPI_PARALLEL
-//             shear_bd_var_[upper].req_send[n] = MPI_REQUEST_NULL;
-//             shear_bd_var_[upper].req_recv[n] = MPI_REQUEST_NULL;
-// #endif
-//           }
-//           // corner cells only
-//           size = NGHOST*pbval_->ssize_*(nu_ + 1);
-//           for (int n=2; n<4; n++) {
-//             shear_bd_var_[upper].send[n] = new Real[size];
-//             shear_bd_var_[upper].recv[n] = new Real[size];
-//             shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
-// #ifdef MPI_PARALLEL
-//             shear_bd_var_[upper].req_send[n] = MPI_REQUEST_NULL;
-//             shear_bd_var_[upper].req_recv[n] = MPI_REQUEST_NULL;
-// #endif
-//           }
-//         } // end "if is a shearing boundary"
-//       }  // end loop over inner, outer shearing boundaries
-//     } // end "if (pbval_->ShBoxCoord_ == 1)"
-//   } // end shearing box component of ctor
 }
 
 // destructor
-
 VertexCenteredBoundaryVariable::~VertexCenteredBoundaryVariable() {
   DestroyBoundaryData(bd_var_);
-  if (pmy_mesh_->multilevel)
-    DestroyBoundaryData(bd_var_flcor_);
+ // if (pmy_mesh_->multilevel)
+ //   DestroyBoundaryData(bd_var_flcor_);
 
-  // // TODO(KGF): this should be a part of DestroyBoundaryData()
-  // if (SHEARING_BOX) {
-  //   for (int upper=0; upper<2; upper++) {
-  //     if (pbval_->is_shear[upper]) { // if true for shearing inner blocks
-  //       for (int n=0; n<4; n++) {
-  //         delete[] shear_bd_var_[upper].send[n];
-  //         delete[] shear_bd_var_[upper].recv[n];
-  //       }
-  //     }
-  //   }
-  // }
+  // node multiplicities-------------------------------------------------------
+  node_mult.DeleteAthenaArray();
+  //---------------------------------------------------------------------------
 }
 
 void VertexCenteredBoundaryVariable::ErrorIfPolarNotImplemented(
@@ -222,7 +176,6 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   ek = (nb.ni.ox3 < 0) ? pmb->kgs : pmb->kve;
 
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
-
 
   //////////////////////////////////////////////////////////////////////////////
   // if multilevel make use of pre-restricted internal data
@@ -390,67 +343,6 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
   int cn = pmb->cnghost - 1;
   AthenaArray<Real> &var = *var_vc;
 
-  // si = (nb.ni.ox1 > 0) ? (pmb->ie - cn) : pmb->is;
-  // ei = (nb.ni.ox1 < 0) ? (pmb->is + cn) : pmb->ie;
-  // sj = (nb.ni.ox2 > 0) ? (pmb->je - cn) : pmb->js;
-  // ej = (nb.ni.ox2 < 0) ? (pmb->js + cn) : pmb->je;
-  // sk = (nb.ni.ox3 > 0) ? (pmb->ke - cn) : pmb->ks;
-  // ek = (nb.ni.ox3 < 0) ? (pmb->ks + cn) : pmb->ke;
-
-  // si = (nb.ni.ox1 > 0) ? (pmb->ive - 1 - cn) : pmb->is;
-  // ei = (nb.ni.ox1 < 0) ? (pmb->is + 1 + cn) : pmb->ive;
-
-  // sj = (nb.ni.ox2 > 0) ? (pmb->jve - 1 - cn) : pmb->js;
-  // ej = (nb.ni.ox2 < 0) ? (pmb->js + 1 + cn) : pmb->jve;
-
-  // sk = (nb.ni.ox3 > 0) ? (pmb->kve - 1 - cn) : pmb->ks;
-  // ek = (nb.ni.ox3 < 0) ? (pmb->ks + 1 + cn) : pmb->kve;
-  // send the data first and later prolongate on the target block
-
-  // need to add edges for faces, add corners for edges
-  // if (nb.ni.ox1 == 0) {
-  //   if (nb.ni.fi1 == 1)   si += pmb->block_size.nx1/2;
-  //   else            ei -= pmb->block_size.nx1/2 - pmb->cnghost;
-  // }
-  // if (nb.ni.ox2 == 0 && pmb->block_size.nx2 > 1) {
-  //   if (nb.ni.ox1 != 0) {
-  //     if (nb.ni.fi1 == 1) sj += pmb->block_size.nx2/2 - pmb->cnghost;
-  //     else          ej -= pmb->block_size.nx2/2 - pmb->cnghost;
-  //   } else {
-  //     if (nb.ni.fi2 == 1) sj += pmb->block_size.nx2/2 - pmb->cnghost;
-  //     else          ej -= pmb->block_size.nx2/2 - pmb->cnghost;
-  //   }
-  // }
-  // if (nb.ni.ox3 == 0 && pmb->block_size.nx3 > 1) {
-  //   if (nb.ni.ox1 != 0 && nb.ni.ox2 != 0) {
-  //     if (nb.ni.fi1 == 1) sk += pmb->block_size.nx3/2 - pmb->cnghost;
-  //     else          ek -= pmb->block_size.nx3/2 - pmb->cnghost;
-  //   } else {
-  //     if (nb.ni.fi2 == 1) sk += pmb->block_size.nx3/2 - pmb->cnghost;
-  //     else          ek -= pmb->block_size.nx3/2 - pmb->cnghost;
-  //   }
-  // }
-
-  // modify for vc [this needs to be checked for 2/3d]
-  // int io = 1; // offset for x1 to avoid edge vertices
-
-  // if (nb.ni.ox1 > 0) {
-  //   si = pmb->iv - cn - io;
-  //   ei = pmb->iv - io;
-  // } else {
-  //   si = pmb->is + io;
-  //   ei = pmb->is + cn + io;
-  // }
-
-  // si = (nb.ni.ox1 > 0) ? (pmb->ive - 1 - cn) : pmb->is;
-  // ei = (nb.ni.ox1 < 0) ? (pmb->is + 1 + cn) : pmb->ive;
-
-  // sj = (nb.ni.ox2 > 0) ? (pmb->jve - 1 - cn) : pmb->js;
-  // ej = (nb.ni.ox2 < 0) ? (pmb->js + 1 + cn) : pmb->jve;
-
-  // sk = (nb.ni.ox3 > 0) ? (pmb->kve - 1 - cn) : pmb->ks;
-  // ek = (nb.ni.ox3 < 0) ? (pmb->ks + 1 + cn) : pmb->kve;
-
   // BD: debug - correct the prol
   // note:
   // we use a fundamental variable to populate a coarse variable
@@ -532,27 +424,33 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
-  // if ((nb.ni.ox1 < 0) && (nb.ni.ox2 == 0))
-  //   Q();
-
-  // Q();
-  // if ((nb.ni.ox1 == 0) && (nb.ni.ox2 < 0))
-  //   Q();
-
-  // printf("x1f: ");
-  // pmb->pcoord->x1f.print_data("%1.2f");
 
   if (DBGPR_BVALS_VC) {
     coutBoldRed("MB::UWIL gid = ");
     printf("%d\n", pmb->gid);
   }
 
-  // if (nb.ni.ox1 > 0)
-  //   Q();
-  // if ((nb.ni.ox1 == 1) and (nb.ni.ox2 == -1))
-  //   Q();
-
   return p;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn inline void MeshBlock::SetIndexRangesSBSL(...)
+//  \brief Set index ranges for a given dimension
+inline void VertexCenteredBoundaryVariable::SetIndexRangesSBSL(
+  int ox, int &ix_s, int &ix_e,
+  int ix_vs, int ix_ve, int ix_ms, int ix_pe) {
+
+  if (ox == 0) {
+    ix_s = ix_vs;
+    ix_e = ix_ve;
+  } else if (ox > 0) {
+    ix_s = ix_ve;
+    ix_e = ix_pe;
+  } else {
+    ix_s = ix_ms;
+    ix_e = ix_vs;
+  }
+  return;
 }
 
 //----------------------------------------------------------------------------------------
@@ -576,32 +474,30 @@ void VertexCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   ErrorIfPolarNotImplemented(nb);
   ErrorIfShearingBoxNotImplemented();
 
-
   // unpack all data additively
   // defer imposition (via suitable averaging) of consistency condition
-  if (nb.ni.ox1 == 0) {
-    si = pmb->ivs; ei = pmb->ive;
-  } else if (nb.ni.ox1 > 0) {
-    si = pmb->ive; ei = pmb->ipe;
-  } else {
-    si = pmb->ims; ei = pmb->ivs;
-  }
+  SetIndexRangesSBSL(nb.ni.ox1, si, ei,
+                     pmb->ivs, pmb->ive, pmb->ims, pmb->ipe);
+  SetIndexRangesSBSL(nb.ni.ox2, sj, ej,
+                     pmb->jvs, pmb->jve, pmb->jms, pmb->jpe);
+  SetIndexRangesSBSL(nb.ni.ox3, sk, ek,
+                     pmb->kvs, pmb->kve, pmb->kms, pmb->kpe);
 
-  if (nb.ni.ox2 == 0) {
-    sj = pmb->jvs; ej = pmb->jve;
-  } else if (nb.ni.ox2 > 0) {
-    sj = pmb->jve; ej = pmb->jpe;
-  } else {
-    sj = pmb->jms; ej = pmb->jvs;
-  }
 
-  if (nb.ni.ox3 == 0) {
-    sk = pmb->kvs; ek = pmb->kve;
-  } else if (nb.ni.ox3 > 0) {
-    sk = pmb->kve; ek = pmb->kpe;
-  } else {
-    sk = pmb->kms; ek = pmb->kvs;
+  // vertex consistency--------------------------------------------------------
+  if (!node_mult_assembled) {
+    int c_si, c_ei, c_sj, c_ej, c_sk, c_ek;
+
+    SetIndexRangesSBSL(nb.ni.ox1, c_si, c_ei, c_ivs, c_ive, c_ims, c_ipe);
+    SetIndexRangesSBSL(nb.ni.ox2, c_sj, c_ej, c_jvs, c_jve, c_jms, c_jpe);
+    SetIndexRangesSBSL(nb.ni.ox3, c_sk, c_ek, c_kvs, c_kve, c_kms, c_kpe);
+
+    for (int k=c_sk; k<=c_ek; ++k)
+      for (int j=c_sj; j<=c_ej; ++j)
+        for (int i=c_si; i<=c_ei; ++i)
+          node_mult(0, k, j, i) += 1;
   }
+  //---------------------------------------------------------------------------
 
   //////////////////////////////////////////////////////////////////////////////
   // BD: debug - populate based on solution
@@ -626,10 +522,9 @@ void VertexCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     if (DBGPR_BVALS_VC)
       var.print_all();
 
-    // Q();
   } else {
-    // BufferUtility::UnpackDataAdd(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
-    BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackDataAdd(buf, var, nl_, nu_,
+                                 si, ei, sj, ej, sk, ek, p);
   }
   //////////////////////////////////////////////////////////////////////////////
 
@@ -641,37 +536,17 @@ void VertexCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     MeshRefinement *pmr = pmb->pmr;
     AthenaArray<Real> &coarse_var = *coarse_buf;
 
-    if (nb.ni.ox1 == 0) {
-      si = pmb->civs; ei = pmb->cive;
-    } else if (nb.ni.ox1 > 0) {
-      si = pmb->cive; ei = pmb->cipe;
-    } else {
-      si = pmb->cims; ei = pmb->civs;
-    }
+    SetIndexRangesSBSL(nb.ni.ox1, si, ei,
+                       pmb->civs, pmb->cive, pmb->cims, pmb->cipe);
+    SetIndexRangesSBSL(nb.ni.ox2, sj, ej,
+                       pmb->cjvs, pmb->cjve, pmb->cjms, pmb->cjpe);
+    SetIndexRangesSBSL(nb.ni.ox3, sk, ek,
+                       pmb->ckvs, pmb->ckve, pmb->ckms, pmb->ckpe);
 
-    if (nb.ni.ox2 == 0) {
-      sj = pmb->cjvs; ej = pmb->cjve;
-    } else if (nb.ni.ox2 > 0) {
-      sj = pmb->cjve; ej = pmb->cjpe;
-    } else {
-      sj = pmb->cjms; ej = pmb->cjvs;
-    }
+    BufferUtility::UnpackDataAdd(buf, coarse_var, nl_, nu_,
+                                 si, ei, sj, ej, sk, ek, p);
 
-    if (nb.ni.ox3 == 0) {
-      sk = pmb->ckvs; ek = pmb->ckve;
-    } else if (nb.ni.ox3 > 0) {
-      sk = pmb->ckve; ek = pmb->ckpe;
-    } else {
-      sk = pmb->ckms; ek = pmb->ckvs;
-    }
 
-    // BufferUtility::UnpackDataAdd(buf, coarse_var, nl_, nu_,
-    //                              si, ei, sj, ej, sk, ek, p);
-    BufferUtility::UnpackData(buf, coarse_var, nl_, nu_,
-                              si, ei, sj, ej, sk, ek, p);
-
-    // if ((nb.ni.ox1 < 0) and (nb.ni.ox2 == 0))
-    //   Q();
     /*
     // immediately restrict newly populated ghost-zones to coarse buffer
     // first restrict data communicated on fundamental representation
@@ -991,12 +866,45 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn inline void MeshBlock::SetIndexRangesSBFF(...)
+//  \brief Set index ranges for a given dimension
+inline void VertexCenteredBoundaryVariable::SetIndexRangesSBFF(
+  int ox, int &ix_s, int &ix_e, int ix_vs, int ix_ve, int ix_ms, int ix_pe,
+  int fi1, int fi2, int axis_half_size, bool size_flag, bool offset_flag) {
+
+  if (ox == 0) {
+    ix_s = ix_vs;
+    ix_e = ix_ve;
+
+    if (size_flag)
+      if (offset_flag) {
+        if (fi1 == 1) {
+          ix_s += axis_half_size;
+        } else {
+          ix_e -= axis_half_size;
+        }
+      } else {
+        if (fi2 == 1) {
+          ix_s += axis_half_size;
+        } else {
+          ix_e -= axis_half_size;
+        }
+      }
+  } else if (ox > 0) {
+    ix_s = ix_ve;
+    ix_e = ix_pe;
+  } else {
+    ix_s = ix_ms;
+    ix_e = ix_vs;
+  }
+  return;
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void VertexCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 //                                                              const NeighborBlock& nb)
 //  \brief Set vertex-centered boundary received from a block on a finer level
-
 void VertexCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
                                                           const NeighborBlock& nb) {
   // populating from finer level; shared vertices are corrected
@@ -1009,121 +917,13 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   AthenaArray<Real> &var = *var_vc;
   // receive already restricted data
   int si, sj, sk, ei, ej, ek;
-
-  // if (nb.ni.ox1 == 0) {
-  //   si = pmb->is, ei = pmb->ie;
-  //   if (nb.ni.fi1 == 1)   si += pmb->block_size.nx1/2;
-  //   else            ei -= pmb->block_size.nx1/2;
-  // } else if (nb.ni.ox1 > 0) {
-  //   si = pmb->ie + 1,      ei = pmb->ie + NGHOST;
-  // } else {
-  //   si = pmb->is - NGHOST, ei = pmb->is - 1;
-  // }
-  // if (nb.ni.ox2 == 0) {
-  //   sj = pmb->js, ej = pmb->je;
-  //   if (pmb->block_size.nx2 > 1) {
-  //     if (nb.ni.ox1 != 0) {
-  //       if (nb.ni.fi1 == 1) sj += pmb->block_size.nx2/2;
-  //       else          ej -= pmb->block_size.nx2/2;
-  //     } else {
-  //       if (nb.ni.fi2 == 1) sj += pmb->block_size.nx2/2;
-  //       else          ej -= pmb->block_size.nx2/2;
-  //     }
-  //   }
-  // } else if (nb.ni.ox2 > 0) {
-  //   sj = pmb->je + 1,      ej = pmb->je + NGHOST;
-  // } else {
-  //   sj = pmb->js - NGHOST, ej = pmb->js - 1;
-  // }
-  // if (nb.ni.ox3 == 0) {
-  //   sk = pmb->ks, ek = pmb->ke;
-  //   if (pmb->block_size.nx3 > 1) {
-  //     if (nb.ni.ox1 != 0 && nb.ni.ox2 != 0) {
-  //       if (nb.ni.fi1 == 1) sk += pmb->block_size.nx3/2;
-  //       else          ek -= pmb->block_size.nx3/2;
-  //     } else {
-  //       if (nb.ni.fi2 == 1) sk += pmb->block_size.nx3/2;
-  //       else          ek -= pmb->block_size.nx3/2;
-  //     }
-  //   }
-  // } else if (nb.ni.ox3 > 0) {
-  //   sk = pmb->ke + 1,      ek = pmb->ke + NGHOST;
-  // } else {
-  //   sk = pmb->ks - NGHOST, ek = pmb->ks - 1;
-  // }
-
-
-  // modify for vc [this needs to be checked for 2/3d]
-  // if (nb.ni.ox1 > 0) {
-  //   si = pmb->iv + 1,      ei = pmb->iv + NGHOST;
-  // } else {
-  //   si = pmb->is - NGHOST, ei = pmb->is - 1;
-  // }
-
   int p = 0;
 
   // BD: TODO implement
-  // if (nb.polar) {
   ErrorIfPolarNotImplemented(nb);
-  // } else {
-  //   BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
-  // }
 
+  // refactor (see below)
   /*
-  if (nb.ni.ox1 == 0) {
-    si = pmb->is, ei = pmb->iv;
-    // how to treat this? [overwrite shared vertex for now]
-    if (nb.ni.fi1 == 1)   si += pmb->block_size.nx1/2;  // +1 to avoid vert;
-    else            ei -= pmb->block_size.nx1/2;        // +1 to avoid vert
-  } else if (nb.ni.ox1 > 0) {
-    si = pmb->iv,      ei = pmb->iv + NGHOST;
-  } else {
-    si = pmb->is - NGHOST, ei = pmb->is;
-  }
-
-  if (nb.ni.ox2 == 0) {
-    sj = pmb->js, ej = pmb->jv;
-    // if (pmb->block_size.nx2 > 1) {
-    //   if (nb.ni.ox1 != 0) {
-    //     if (nb.ni.fi1 == 1) sj += pmb->block_size.nx2/2;
-    //     else          ej -= pmb->block_size.nx2/2;
-    //   } else {
-    //     if (nb.ni.fi2 == 1) sj += pmb->block_size.nx2/2;
-    //     else          ej -= pmb->block_size.nx2/2;
-    //   }
-    // }
-  } else if (nb.ni.ox2 > 0) {
-    sj = pmb->jv,      ej = pmb->jv + NGHOST;
-  } else {
-    sj = pmb->js - 82HOST, ej = pmb->js;
-  }
-  2/
-  // DEBUG: prefill ghosts + shared vertices
-  /*
-  if (false)
-    if (pmb->block_size.nx3 > 1) {
-      //...
-    } else if (3m2->+0oc-_size.nx2 > 1) {
-      for (int j_ix=0; j_ix<=NGHOST; j_ix++){
-        pco->x1f(2)0- i_ix<=NGHOST; i_ix++ / 2.){
-          var(j_ix, i_ix) = 3;
-          var(j_ix,
-              interp_order+pmb->block_size.nx1 - i_ix) = 6;
-          var(2*NGHOST+pmb->block_size.nx2 - j_ix, i_ix) = 8;
-          var(2*NGHOST+pmb->blockinterp_ordersize.nx2 - j_ix,
-              2*NGHOST+pmb->block_size.nx1 - i_ix) = 9;
-        }
-      }
-    } else {
-      for (int i_ix=0; i_ix<=NGHOST; i_ix++){
-        var(i_ix) = 3;
-        var(2*NGHOST+pmb->block_size.nx1 - i_ix) = 3;
-      }
-    }
-  */
-
-  bool flag = false;
-
   // [1d] modifies si, ei
   if (nb.ni.ox1 == 0) {
     si = pmb->ivs;
@@ -1242,35 +1042,81 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
     sk = pmb->kms;
     ek = pmb->kvs;
   }
+  */
+
+  SetIndexRangesSBFF(nb.ni.ox1, si, ei,
+                     pmb->ivs, pmb->ive, pmb->ims, pmb->ipe,
+                     nb.ni.fi1, nb.ni.fi2,
+                     pmb->block_size.nx1 / 2,
+                     true,
+                     true);
+
+  SetIndexRangesSBFF(nb.ni.ox2, sj, ej,
+                     pmb->jvs, pmb->jve, pmb->jms, pmb->jpe,
+                     nb.ni.fi1, nb.ni.fi2,
+                     pmb->block_size.nx2 / 2,
+                     (pmb->block_size.nx2 > 1),
+                     (nb.ni.ox1 != 0));
+
+  SetIndexRangesSBFF(nb.ni.ox3, sk, ek,
+                     pmb->kvs, pmb->kve, pmb->kms, pmb->kpe,
+                     nb.ni.fi1, nb.ni.fi2,
+                     pmb->block_size.nx3 / 2,
+                     (pmb->block_size.nx3 > 1),
+                     (nb.ni.ox1 != 0 && nb.ni.ox2 != 0));
+
   //////////////////////////////////////////////////////////////////////////////
-
-
 
   if (FILL_WAVE_BND_FRF) {
     if (DBGPR_BVALS_VC)
       var.print_all();
 
-    //var.ZeroClear();
-    // BD: debug: current disable additive unpack
-    // pmb->DebugWaveMeshBlock(var, si, ei, sj, ej, sk, ek, true);
-    pmb->DebugWaveMeshBlock(var, si, ei, sj, ej, sk, ek, false);
+    pmb->DebugWaveMeshBlock(var, si, ei, sj, ej, sk, ek, true);
 
     if (DBGPR_BVALS_VC)
       var.print_all();
 
-    if (flag)
-      Q();
   } else {
 
     if (DBGPR_BVALS_VC)
       coutBoldRed("buf, var_vc");
 
-    // BufferUtility::UnpackDataAdd(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
-    BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
-
+    BufferUtility::UnpackDataAdd(buf, var, nl_, nu_,
+                                 si, ei, sj, ej, sk, ek, p);
   }
 
-  //////////////////////////////////////////////////////////////////////////////
+  // vertex consistency--------------------------------------------------------
+  if (!node_mult_assembled) {
+    int c_si, c_ei, c_sj, c_ej, c_sk, c_ek;
+
+    SetIndexRangesSBFF(nb.ni.ox1, c_si, c_ei,
+                      c_ivs, c_ive, c_ims, c_ipe,
+                      nb.ni.fi1, nb.ni.fi2,
+                      2,
+                      true,
+                      true);
+
+    SetIndexRangesSBFF(nb.ni.ox2, c_sj, c_ej,
+                      c_jvs, c_jve, c_jms, c_jpe,
+                      nb.ni.fi1, nb.ni.fi2,
+                      2,
+                      (pmb->block_size.nx2 > 1),
+                      (nb.ni.ox1 != 0));
+
+    SetIndexRangesSBFF(nb.ni.ox3, c_sk, c_ek,
+                      c_kvs, c_kve, c_kms, c_kpe,
+                      nb.ni.fi1, nb.ni.fi2,
+                      2,
+                      (pmb->block_size.nx3 > 1),
+                      (nb.ni.ox1 != 0 && nb.ni.ox2 != 0));
+
+    for (int k=c_sk; k<=c_ek; ++k)
+      for (int j=c_sj; j<=c_ej; ++j)
+        for (int i=c_si; i<=c_ei; ++i)
+          node_mult(0, k, j, i) += 1;
+  }
+  //---------------------------------------------------------------------------
+
   if (pmy_mesh_->multilevel) {
     AthenaArray<Real> &coarse_var = *coarse_buf;
 
@@ -1279,91 +1125,34 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       coarse_var.print_all();
     }
 
-    if (nb.ni.ox1 == 0) {
-      si = pmb->civs; ei = pmb->cive;
-      if (nb.ni.fi1 == 1)
-        si += pmb->block_size.nx1 / 4;
-      else
-        ei -= pmb->block_size.nx1 / 4;
-    } else if (nb.ni.ox1 > 0) {
-      si = pmb->cive; ei = pmb->cipe;
-    } else {
-      si = pmb->cims; ei = pmb->civs;
-    }
+    SetIndexRangesSBFF(nb.ni.ox1, si, ei,
+                       pmb->civs, pmb->cive, pmb->cims, pmb->cipe,
+                       nb.ni.fi1, nb.ni.fi2,
+                       pmb->block_size.nx1 / 4,
+                       true,
+                       true);
 
-    if (nb.ni.ox2 == 0) {
-      sj = pmb->cjvs; ej = pmb->cjve;
+    SetIndexRangesSBFF(nb.ni.ox2, sj, ej,
+                       pmb->cjvs, pmb->cjve, pmb->cjms, pmb->cjpe,
+                       nb.ni.fi1, nb.ni.fi2,
+                       pmb->block_size.nx2 / 4,
+                       (pmb->block_size.nx2 > 1),
+                       (nb.ni.ox1 != 0));
 
-      if (pmb->block_size.nx2 > 1)
-        if (nb.ni.ox1 != 0) {
-          if (nb.ni.fi1 == 1)
-            sj += pmb->block_size.nx2 / 4;
-          else
-            ej -= pmb->block_size.nx2 / 4;
-        } else {
-          if (nb.ni.fi2 == 1)
-            sj += pmb->block_size.nx2 / 4;
-          else
-            ej -= pmb->block_size.nx2 / 4;
-        }
-    } else if (nb.ni.ox2 > 0) {
-      sj = pmb->cjve; ej = pmb->cjpe;
-    } else {
-      sj = pmb->cjms; ej = pmb->cjvs;
-    }
-
-    if (nb.ni.ox3 == 0) {
-      sk = pmb->ckvs; ek = pmb->ckve;
-
-      if (pmb->block_size.nx3 > 1)
-        if (nb.ni.ox1 != 0 && nb.ni.ox2 != 0) {
-          if (nb.ni.fi1 == 1)
-            sk += pmb->block_size.nx3 / 4;
-          else
-            ek -= pmb->block_size.nx3 / 4;
-        } else {
-          if (nb.ni.fi2 == 1)
-            sk += pmb->block_size.nx3 / 4;
-          else
-            ek -= pmb->block_size.nx3 / 4;
-        }
-    } else if (nb.ni.ox3 > 0) {
-      sk = pmb->ckve; ek = pmb->ckpe;
-    } else {
-      sk = pmb->ckms; ek = pmb->ckvs;
-    }
+    SetIndexRangesSBFF(nb.ni.ox3, sk, ek,
+                       pmb->ckvs, pmb->ckve, pmb->ckms, pmb->ckpe,
+                       nb.ni.fi1, nb.ni.fi2,
+                       pmb->block_size.nx3 / 4,
+                       (pmb->block_size.nx3 > 1),
+                       (nb.ni.ox1 != 0 && nb.ni.ox2 != 0));
 
     if (DBGPR_BVALS_VC)
       coutBoldRed("buf, coarse_var");
 
-    // BufferUtility::UnpackDataAdd(buf, coarse_var, nl_, nu_,
-    //                              si, ei, sj, ej, sk, ek, p);
-    BufferUtility::UnpackData(buf, coarse_var, nl_, nu_,
-                              si, ei, sj, ej, sk, ek, p);
+    BufferUtility::UnpackDataAdd(buf, coarse_var, nl_, nu_,
+                                 si, ei, sj, ej, sk, ek, p);
 
   }
-  //////////////////////////////////////////////////////////////////////////////
-
-  //AthenaArray<Real> &coarse_var = *coarse_buf;
-  // coarse_var.print_all();
-  // if ((nb.ni.ox1 < 0) and (nb.ni.ox2 < 0))
-  //   Q();
-
-  // AthenaArray<Real> &coarse_var = *coarse_buf;
-  // coarse_var.print_all();
-
-  // if ((nb.ni.ox2 > 0) && (pmb->gid==5)) {
-  //   coutBoldRed("MB::UWIL gid = ");
-  //   printf("%d\n", pmb->gid);
-
-  //   // Q();
-  // }
-  // if ((nb.ni.ox1 > 0) and (nb.ni.ox2 > 0))
-  //   if ((nb.ni.fi1 == 1) or (nb.ni.fi2 == 1))
-  //     Q();
-
-  // printf("x1f: ");
-  // pmb->pcoord->x1f.print_data("%1.2f");
 
   return;
 }
@@ -1395,9 +1184,16 @@ void VertexCenteredBoundaryVariable::RestrictNonGhost() {
 
 
 void VertexCenteredBoundaryVariable::SendBoundaryBuffers() {
+  if (!node_mult_assembled)
+    PrepareNodeMult();
+
   // restrict all data (except ghosts) to coarse buffer
-  if (pmy_mesh_->multilevel)
+  if (pmy_mesh_->multilevel) {
+    AthenaArray<Real> &coarse_var = *coarse_buf;
+    coarse_var.ZeroClear();
+
     RestrictNonGhost();
+  }
   BoundaryVariable::SendBoundaryBuffers();
 }
 
@@ -1411,19 +1207,9 @@ void VertexCenteredBoundaryVariable::SetBoundaries() {
 
   ZeroVertexGhosts();
   BoundaryVariable::SetBoundaries();
-  // FinalizeVertexConsistency();
+  FinalizeVertexConsistency();
 
   MeshBlock *pmb = pmy_block_;
-
-  if (DBGPR_BVALS_VC) {
-    coutBoldBlue("res:\n");
-    AthenaArray<Real> &var = *var_vc;
-    AthenaArray<Real> &coarse_var = *coarse_buf;
-
-    var.print_all();
-    printf("\n");
-    coarse_var.print_all();
-  }
 
   return;
 }
@@ -1440,7 +1226,7 @@ void VertexCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
   ZeroVertexGhosts();
 
   BoundaryVariable::ReceiveAndSetBoundariesWithWait();
-  // FinalizeVertexConsistency();
+  FinalizeVertexConsistency();
   return;
 }
 
@@ -1567,10 +1353,6 @@ void VertexCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
     bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
     bd_var_.sflag[nb.bufid] = BoundaryStatus::waiting;
 
-    // if (nb.ni.type == NeighborConnect::face) {
-    //   bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::waiting;
-    //   bd_var_flcor_.sflag[nb.bufid] = BoundaryStatus::waiting;
-    // }
 #ifdef MPI_PARALLEL
     MeshBlock *pmb = pmy_block_;
     int mylevel = pmb->loc.level;
@@ -1584,23 +1366,5 @@ void VertexCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
 #endif
   }
 
-// VC
-//   // clear shearing box boundary communications
-//   if (SHEARING_BOX) {
-//     // TODO(KGF): clear sflag arrays
-//     for (int upper=0; upper<2; upper++) {
-//       if (pbval_->is_shear[upper]) {
-//         for (int n=0; n<4; n++) {
-//           if (pbval_->shear_send_neighbor_[upper][n].rank == -1) continue;
-//           shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
-// #ifdef MPI_PARALLEL
-//           if (pbval_->shear_send_neighbor_[upper][n].rank != Globals::my_rank) {
-//             MPI_Wait(&shear_bd_var_[upper].req_send[n], MPI_STATUS_IGNORE);
-//           }
-// #endif
-//         }
-//       }
-//     }
-//   }
   return;
 }

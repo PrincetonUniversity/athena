@@ -31,7 +31,7 @@
 class VertexCenteredBoundaryVariable : public BoundaryVariable {
  public:
   VertexCenteredBoundaryVariable(MeshBlock *pmb,
-                               AthenaArray<Real> *var, AthenaArray<Real> *coarse_var,
+                                 AthenaArray<Real> *var, AthenaArray<Real> *coarse_var,
                                  AthenaArray<Real> *var_flux);
   ~VertexCenteredBoundaryVariable();
 
@@ -81,10 +81,6 @@ class VertexCenteredBoundaryVariable : public BoundaryVariable {
   inline int IncrementIfNonzero(int idx) {
     return (idx > 0) ? idx + 1 : idx;
   }
-
-  // // Shearing box
-  // void SendShearingBoxBoundaryBuffers();
-  // bool ReceiveShearingBoxBoundaryBuffers();
 
   // BoundaryPhysics:
   void ReflectInnerX1(Real time, Real dt,
@@ -141,9 +137,6 @@ protected:
   int nl_, nu_;
   const bool *flip_across_pole_;
 
-  // shearing box:
-  // working arrays of remapped quantities
-  // AthenaArray<Real>  shear_cc_[2];
 
 private:
   // BoundaryBuffer:
@@ -158,40 +151,50 @@ private:
 
   void PolarBoundarySingleAzimuthalBlock() override;
 
-  void ErrorUnknownMultiplicity();
   void ErrorIfPolarNotImplemented(const NeighborBlock& nb);
   void ErrorIfShearingBoxNotImplemented();
 
-  void _FinalizeVertexConsistency3(int ox1, int ox2, int ox3);
-  void _FinalizeVert3();
-  void _FinalizeVert3a();
-  void _FinalizeVert3s();
+  // helper functions for assigning indices (inlined on definition)
+  void SetIndexRangesSBSL(int ox, int &ix_s, int &ix_e,
+                          int ix_vs, int ix_ve, int ix_ms, int ix_pe);
 
-  void _FinalizeVert3noref();
-  void _FinalizeVert2();
-  void _FinalizeVert1();
+  void SetIndexRangesSBFF(int ox, int &ix_s, int &ix_e,
+                          int ix_vs, int ix_ve, int ix_ms, int ix_pe,
+                          int fi1, int fi2, int axis_half_size,
+                          bool size_flag, bool offset_flag);
+
+  // functions pertaining to vertex consistency
+  void AllocateNodeMult();
+  void PrepareNodeMult();
+
+  void ApplyNodeMultiplicitesDim3(
+    AthenaArray<Real> &var,
+    int ims, int ivs, int ive, int ipe, int axis_half_size_x1,
+    int jms, int jvs, int jve, int jpe, int axis_half_size_x2,
+    int kms, int kvs, int kve, int kpe, int axis_half_size_x3);
+
+  void ApplyNodeMultiplicitesDim2(
+    AthenaArray<Real> &var,
+    int ims, int ivs, int ive, int ipe, int axis_half_size_x1,
+    int jms, int jvs, int jve, int jpe, int axis_half_size_x2);
+
+  void ApplyNodeMultiplicitesDim1(
+    AthenaArray<Real> &var,
+    int ims, int ivs, int ive, int ipe, int axis_half_size_x1);
+
+  // node multiplicities ------------------------------------------------------
+  AthenaArray<unsigned short int> node_mult;
+  // BD: TODO - flip/flop based on neighbour changes during AMR?
+  bool node_mult_assembled = false;
+
+  int c_ims = 0, c_ivs = 1, c_ive = 5, c_ipe = 6;
+  int c_jms = 0, c_jvs = 1, c_jve = 5, c_jpe = 6;
+  int c_kms = 0, c_kvs = 1, c_kve = 5, c_kpe = 6;
+  //---------------------------------------------------------------------------
 
 #ifdef MPI_PARALLEL
   int vc_phys_id_; //, cc_flx_phys_id_;
 #endif
-// VC
-//   // shearing box:
-//   // flux from conservative remapping
-//   AthenaArray<Real>  shear_flx_cc_[2];
-//   // KGF: these should probably be combined into a struct or array with send/recv switch
-//   int shear_send_count_cc_[2][4], shear_recv_count_cc_[2][4]; // buffer sizes
-
-// #ifdef MPI_PARALLEL
-//   int shear_cc_phys_id_;
-// #endif
-
-//   void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);
-//   virtual void ShearQuantities(AthenaArray<Real> &shear_cc_, bool upper) {}
-//   void SetShearingBoxBoundarySameLevel(Real *buf, const int nb);
-//   // KGF: AthenaArray<Real>: shboxvar_inner/outer_hydro_, flx_inner/outer_hydro_
-//   void RemapFlux(const int n, const int k, const int jinner, const int jouter,
-//                  const int i, const Real eps, const AthenaArray<Real> &var,
-//                  AthenaArray<Real> &flux);
 };
 
 #endif // BVALS_VC_BVALS_VC_HPP_
