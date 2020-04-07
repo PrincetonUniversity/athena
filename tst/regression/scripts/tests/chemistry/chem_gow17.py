@@ -32,7 +32,7 @@ def analyze():
     err_control = 1e-6
     gam1 = 1.666666666666667 - 1.
     nH = 1.0921e+02
-    unit_E_cgs = 1.67e-24 * 1.4070876 * 1e10
+    unit_E_cgs = 1.67e-24 * 1.4 * 1e10
     _,_,_,data_ref = athena_read.vtk('data/chem_gow17_G1e-6.vtk')
     _,_,_,data_new = athena_read.vtk('bin/chem_gow17.block0.out1.00010.vtk')
     species = ["He+", "OHx", "CHx", "CO", "C+", "HCO+", "H2", "H+", "H3+", "H2+", 
