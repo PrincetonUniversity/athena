@@ -208,7 +208,7 @@ parser.add_argument('--chemistry',
 # --kida_rates argument
 parser.add_argument('--kida_rates',
     default=None,
-    choices=["gow17"],
+    choices=["gow17", "nitrogen"],
     help='select special rates for kida network')
 
 # -radiation argument

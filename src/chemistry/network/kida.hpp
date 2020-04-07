@@ -150,6 +150,7 @@ private:
   AthenaArray<int> in2bodytr2_;
   AthenaArray<int> out2bodytr1_;
   AthenaArray<int> out2bodytr2_;
+  AthenaArray<int> out2bodytr3_;
   AthenaArray<int> nr_2bodytr_;
   AthenaArray<int> frml_2bodytr_;
   AthenaArray<Real> a2bodytr_; //alpha
