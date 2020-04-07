@@ -49,9 +49,9 @@ void EquationOfState::ConservedToPrimitive(
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real& u_d  = cons(IDN,k,j,i);
-        Real& u_m1 = cons(IMX,k,j,i);
-        Real& u_m2 = cons(IMY,k,j,i);
-        Real& u_m3 = cons(IMZ,k,j,i);
+        Real& u_m1 = cons(IVX,k,j,i);
+        Real& u_m2 = cons(IVY,k,j,i);
+        Real& u_m3 = cons(IVZ,k,j,i);
 
         Real& w_d  = prim(IDN,k,j,i);
         Real& w_vx = prim(IVX,k,j,i);
