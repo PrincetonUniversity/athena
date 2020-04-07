@@ -279,7 +279,7 @@ parser.add_argument(
     default='g++',
     type=c_to_cpp,
     choices=cxx_choices,
-    help='select C++ compiler and default set of flags')
+    help='select C++ compiler and default set of flags (works w/ or w/o -mpi)')
 
 # --ccmd=[name] argument
 parser.add_argument('--ccmd',

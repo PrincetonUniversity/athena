@@ -96,7 +96,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
   pmb->pbval->bvars_main_int.push_back(&fbvar);
   if (STS_ENABLED) {
     if (fdif.field_diffusion_defined) {
-      if (pmb->phydro->hdif.hydro_diffusion_defined && NON_BAROTROPIC_EOS) {
+      if (!pmb->phydro->hdif.hydro_diffusion_defined && NON_BAROTROPIC_EOS) {
         pmb->pbval->bvars_sts.push_back(pmb->pbval->bvars_main_int[0]);
       }
       pmb->pbval->bvars_sts.push_back(&fbvar);
