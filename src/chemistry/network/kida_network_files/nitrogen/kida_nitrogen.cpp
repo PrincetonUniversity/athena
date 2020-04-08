@@ -194,6 +194,11 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
     k2body_(id7map_(14)) = 0.;
     k2body_(id7map_(15)) = 0.;
   }
+  //(20) H2 + N+ -> H + NH+      -- depends on o/p, Dislaire et al. (2012)
+  const Real x_oH2 = o2pH2_ / (1. + o2pH2_);
+  const Real ko = 4.2e-10 * pow(T/300., -0.17) * exp(-44.5/T);
+  const Real kp = 8.35e-10 * exp(-168.5/T);
+  k2body_(id7map_(20)) = ( x_oH2*ko + (1.-x_oH2)*kp ) * nH_;
 
   //sanity check
   if (check_index) {

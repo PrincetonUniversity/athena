@@ -74,6 +74,7 @@ private:
   bool is_Tcap_2body_; 
 	Real zdg_; //dust and gas metallicity relative to solar, default 1.
 	Real nH_; //density, updated at InitializeNextStep from hydro variable
+  Real o2pH2_;//ortho to para H2 ratio, default 3:1
   Real temperature_; //temperature of the gas if isothermal 
   Real temp_min_rates_; //temperature floor for reaction rates
   Real temp_min_cool_; //temperature minimum for cooling
