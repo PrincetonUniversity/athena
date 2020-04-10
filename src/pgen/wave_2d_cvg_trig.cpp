@@ -130,7 +130,7 @@ void MeshBlock::WaveUserWorkInLoop() {
   coutBoldRed("MB::UWIL\n");
   coutBoldRed("MB::UWIL gid = ");
   printf("%d\n", gid);
-  printf("(max_err, fun_max, t)=(%1.10f, %1.10f, %1.10f)\n",
+  printf("(max_err, fun_max, t)=(%1.18f, %1.18f, %1.18f)\n",
          max_err, fun_err, t);
 
   if (max_err > 0.1) {

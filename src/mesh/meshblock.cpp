@@ -409,7 +409,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
   cnghost = (NGHOST + 1)/2 + 1;
 
   // allow decoupling of coarse ghosts for vertex-centered
-  cng = NGHOST+1;
+  cng = NGHOST + 1;
   rcng = ng / 2;
 
   // fundamental grid indicial parameters

@@ -49,8 +49,6 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
   empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
   ubvar(pmb, &u, &coarse_u_, empty_flux)
 {
-  printf("Wave spawned\n");
-
   Mesh *pm = pmb->pmy_mesh;
   Coordinates * pco = pmb->pcoord;
   // each wave obj. should have an associated block [now in initializer]
@@ -80,12 +78,10 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
 
   // point to appropriate grid
   if (PREFER_VC) {
-    printf("slice coords for vc\n");
     mbi.x1.InitWithShallowSlice(pco->x1f, 1, 0, nn1);
     mbi.x2.InitWithShallowSlice(pco->x2f, 1, 0, nn2);
     mbi.x3.InitWithShallowSlice(pco->x3f, 1, 0, nn3);
   } else {
-    printf("slice coords for cc\n");
     mbi.x1.InitWithShallowSlice(pco->x1v, 1, 0, nn1);
     mbi.x2.InitWithShallowSlice(pco->x2v, 1, 0, nn2);
     mbi.x3.InitWithShallowSlice(pco->x3v, 1, 0, nn3);

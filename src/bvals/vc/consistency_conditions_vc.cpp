@@ -48,6 +48,7 @@ void VertexCenteredBoundaryVariable::PrepareNodeMult() {
     for (int j = c_jvs; j <= c_jve; ++j)
       for (int i = c_ivs; i <= c_ive; ++i)
         node_mult(0, k, j, i) = 1;
+
 }
 
 //----------------------------------------------------------------------------------------
@@ -61,7 +62,6 @@ void VertexCenteredBoundaryVariable::ZeroVertexGhosts() {
   // additive unpack used to populate ghosts entails that old ghost data needs
   // to be cleaned
 
-  // BD: TODO coarse_buf needs to be zerod also...
   MeshBlock *pmb = pmy_block_;
   AthenaArray<Real> &var = *var_vc;
   if (pmb->block_size.nx3 > 1) {
@@ -140,10 +140,10 @@ inline void VertexCenteredBoundaryVariable::ApplyNodeMultiplicitesDim3(
 
   // provide indices
   int const tk_c[7] = {kms, kvs, kvs + 1,
-                       kvs  + axis_half_size_x3,
+                       kvs + axis_half_size_x3,
                        kve - 1, kve, kpe};
   int const tj_c[7] = {jms, jvs, jvs + 1,
-                       jvs  + axis_half_size_x2,
+                       jvs + axis_half_size_x2,
                        jve - 1, jve, jpe};
   int const ti_c[7] = {ims, ivs, ivs + 1,
                        ivs + axis_half_size_x1,
@@ -213,7 +213,7 @@ inline void VertexCenteredBoundaryVariable::ApplyNodeMultiplicitesDim2(
 
   // provide indices
   int const tj_c[7] = {jms, jvs, jvs + 1,
-                       jvs  + axis_half_size_x2,
+                       jvs + axis_half_size_x2,
                        jve - 1, jve, jpe};
   int const ti_c[7] = {ims, ivs, ivs + 1,
                        ivs + axis_half_size_x1,

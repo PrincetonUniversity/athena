@@ -158,6 +158,10 @@ private:
   void SetIndexRangesSBSL(int ox, int &ix_s, int &ix_e,
                           int ix_vs, int ix_ve, int ix_ms, int ix_pe);
 
+  void SetIndexRangesSBFC(int ox, int &ix_s, int &ix_e,
+                          int ix_cvs, int ix_cve, int ix_cms, int ix_cme,
+                          int ix_cps, int ix_cpe, bool level_flag);
+
   void SetIndexRangesSBFF(int ox, int &ix_s, int &ix_e,
                           int ix_vs, int ix_ve, int ix_ms, int ix_pe,
                           int fi1, int fi2, int axis_half_size,

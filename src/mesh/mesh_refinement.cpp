@@ -28,6 +28,8 @@
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
 
+#include "../utils/interp_univariate.hpp"
+
 // BD: for comparison
 #include "../lagrange_interp.hpp"
 //-
@@ -1324,38 +1326,45 @@ void MeshRefinement::ProlongateInternalField(
   return;
 }
 
-// Helper class for VertexCenteredProlonagtion
-// This is not used anywhere else in the code, so we declare it directly here
-// NOTE - This assumes constant grid spacing
-template<int nghost_>
-class VertexProlongation {
-  public:
-    enum {nghost = nghost_};
-    enum {order = 2*nghost_};
-    enum {npoints = 2*nghost_};
-    static Real const coeff[2][npoints];
-};
+//----------------------------------------------------------------------------------------
+//! \fn inline void MeshRefinement::ProlongateVertexCenteredIndicialHelper(...)
+//  \brief De-duplicate some indicial logic
+inline void MeshRefinement::ProlongateVertexCenteredIndicialHelper(
+  int hs_sz, int ix,
+  int ix_cvs, int ix_cve, int ix_cmp,
+  int ix_vs, int ix_ve,
+  int &f_ix, int &ix_b, int &ix_so, int &ix_eo, int &ix_l, int &ix_u) {
 
-template<>
-Real const VertexProlongation<1>::coeff[2][2] = {
-  1, 0,
-  0.5, 0.5,
-};
-template<>
-Real const VertexProlongation<2>::coeff[2][4] = {
-  0, 1, 0, 0,
-  -1./16., 9./16., 9./16., -1./16.,
-};
-template<>
-Real const VertexProlongation<3>::coeff[2][6] = {
-  0, 0, 1, 0, 0, 0,
-  3./256., -25./256., 75./128., 75./128., -25./256., 3./256.,
-};
-template<>
-Real const VertexProlongation<4>::coeff[2][8] = {
-  0, 0, 0, 1, 0, 0, 0, 0,
-  -5./2048., 49./2048., -245./2048., 1225./2048., 1225./2048., -245./2048., 49./2048., -5./2048.,
-};
+  // map for fine-index
+  if (ix < ix_cvs) {
+    f_ix = ix_vs - 2 * (ix_cvs - ix);
+  } else if (ix > ix_cve) {
+    f_ix = ix_ve + 2 * (ix - ix_cve);
+  } else { // map to interior+boundary nodes
+    f_ix = 2 * (ix - ix_cvs) + ix_vs;
+  }
+
+  // bias direction [nb. stencil still symmetric!]
+  if (ix < ix_cmp) {
+    ix_b = 1;
+    ix_so = 0;
+    ix_eo = 1;
+  } else if (ix > ix_cmp) {
+    ix_b = -1;
+    ix_so = -1;
+    ix_eo = 0;
+  } else {
+    // central node is unbiased, coincident, inject with no neighbors
+    ix_so = ix_eo = 0;
+    ix_b = -1;
+  }
+
+  ix_l = ix - hs_sz + 1 - (1 - ix_b) / 2;
+  ix_u = ix + hs_sz - (1 - ix_b) / 2;
+
+  return;
+
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::ProlongateVertexCenteredValues(
@@ -1373,66 +1382,20 @@ void MeshRefinement::ProlongateVertexCenteredValues(
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
 
+
+  if (DBGPR_MESH_REFINEMENT) {
+    coutBoldRed("(block_size.nx1, pmb->is, pmb->cis, si, ei) = ");
+    printf("(%d, %d, %d, %d, %d)\n\n",
+          pmb->block_size.nx1, pmb->is, pmb->cis, si, ei);
+
+    coutBoldRed("(block_size.nx2, pmb->js, pmb->cjs, sj, ej) = ");
+    printf("(%d, %d, %d, %d, %d)\n\n",
+          pmb->block_size.nx2, pmb->js, pmb->cjs, sj, ej);
+  }
+
   if (DBGPR_MESH_REFINEMENT) {
     coutBoldRed("[pre]fine\n");
     fine.print_all();
-  }
-
-  // Prolongation based on Lagrange interpolation on uniform grids.
-  // Coarse variable assumed to be densely populated over required nodes
-
-  // This needs to be fixed...
-  int const Iord = NGHOST;
-  if (false)
-  if (pmb->pmy_mesh->ndim == 1) {
-    int const k = pmb->ckvs;
-    int const fk = pmb->kvs;
-    int const j = pmb->cjvs;
-    int const fj = pmb->jvs;
-    for (int n = sn; n <= en; ++n) {
-      for (int i = si; i <=  ei; ++i) {
-        int fi = (i - pmb->civs) * 2 + pmb->ivs;
-        // Loop over points to be prolonged to
-        // for (int oi = 0; oi < (i == ei ? 1 : 2); ++oi) {
-        for (int oi = 0; oi < 2; ++oi) {
-          // Interpolation loop
-          fine(n, fk, fj, fi + oi) = 0;
-          for (int di = 0; di < Iord; ++di) {
-            // Explicitly enforce symmetry
-            int const il = i - Iord + 1 + di;
-            int const ir = i + Iord - di;
-            fine(n, fk, fj, fi + oi) += 
-              VertexProlongation<Iord>::coeff[oi][di] *
-                (coarse(n, k, j, il) + coarse(n, k, j, ir));
-
-            if (n == 0) {
-              printf("i, fi, oi, di: il, ir: si, ei=%d, %d, %d, %d, %d, %d, %d. %d\n",
-                     i, fi, oi, di, il, ir, si, ei);
-            }
-
-          }
-        }
-      }
-    }
-
-    if (DBGPR_MESH_REFINEMENT) {
-      coutBoldRed("\npcoarsec->x1f\n");
-      pcoarsec->x1f.print_all();
-
-      coutBoldRed("pco->x1f\n");
-      pco->x1f.print_all();
-
-      coutBoldRed("[post]coarse\n");
-      coarse.print_all();
-      coutBoldRed("[post]fine\n");
-      fine.print_all();
-
-      coutBoldRed("[exact]fine\n");
-      pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, 0, 0, 0, 0, false);
-      fine.print_all();
-      Q();
-    }
-    return;
   }
 
   // BD debug: re-populate coarse grid with exact solution
@@ -1502,409 +1465,364 @@ void MeshRefinement::ProlongateVertexCenteredValues(
       Q();
     }
   }
-  // pmb->pmr->RestrictVertexCenteredValues(fine, coarse_, sn, en,
-  //                                        pmb->civs, pmb->cive, 0, 0, 0, 0);
 
-  //--
+  // Prolongation based on Lagrange interpolation on uniform grids.
+  // Coarse variable assumed to be densely populated over required nodes
 
+  // For uniform grids:.
+  // At the roots (of the interpolation polynomial) the operation degenerates
+  // to injection from the coarse variable.
 
-  if (DBGPR_MESH_REFINEMENT) {
-    coutBoldRed("(block_size.nx1, pmb->is, pmb->cis, si, ei) = ");
-    printf("(%d, %d, %d, %d, %d)\n\n",
-          pmb->block_size.nx1, pmb->is, pmb->cis, si, ei);
+  // This needs to be fixed...
 
-    coutBoldRed("(block_size.nx2, pmb->js, pmb->cjs, sj, ej) = ");
-    printf("(%d, %d, %d, %d, %d)\n\n",
-          pmb->block_size.nx2, pmb->js, pmb->cjs, sj, ej);
-  }
+  int const hs_sz = NGHOST;
 
-  // coarse_.print_all();
-  // Q();
-  // note:
-  // once done, branch with
-  // pmb->block_size.nx3, nx2, n1 > 1 condition
-
-
-  // 1d- LagrangeInterpND
-  if (true)
   if (pmb->pmy_mesh->ndim == 1) {
-    // BD debug
-    bool debug = false;
-    int debug_block_id = 0;
-    //---
+    int const k = pmb->ckvs;
+    int const fk = pmb->kvs;
+    int const j = pmb->cjvs;
+    int const fj = pmb->jvs;
 
-    int k = pmb->cks, fk = pmb->ks, j = pmb->cjs, fj = pmb->js;
+    for (int n = sn; n <= en; ++n) {
+      for (int i = si; i <= ei; ++i) {
 
-    // BD debug: print additional info
-    if (debug) {
+        int fi, ib, sio, eio, il, iu;
+
+        ProlongateVertexCenteredIndicialHelper(
+          hs_sz, i,
+          pmb->civs, pmb->cive, pmb->cimp,
+          pmb->ivs, pmb->ive,
+          fi, ib, sio, eio, il, iu);
+
+        for (int io = sio; io <= eio; ++io) {
+          int const fio = fi + io;
+
+          // edge correction (odd ghosts require initial interp not inj.)
+          if ((fio >= pmb->ims) and (fio <= pmb->ipe)) {
+            fine(n, fk, fj, fio) = 0;
+
+            for (int di = 0; di < hs_sz; ++di) {
+              Real const lc_il = InterpolateLagrangeUniform<hs_sz>::coeff[io-ib+1][di];
+              Real const lc_iu = InterpolateLagrangeUniform<hs_sz>::coeff[io-ib+1][2 * hs_sz-di-1];
+
+              fine(n, fk, fj, fio) +=
+                lc_il * coarse(n, k, j, il + di) +
+                lc_iu * coarse(n, k, j, iu - di);
+
+              // if (n == 0) {
+              //   printf("i, fi, io, di, lc_il, lc_iu => %d, %d, %d, %d, %1.3f, %1.3f\n",
+              //           i, fi, io, di, lc_il, lc_iu);
+              // }
+
+            }
+          }
+        }
+
+
+
+      }
+    }
+
+    if (DBGPR_MESH_REFINEMENT) {
       coutBoldRed("\npcoarsec->x1f\n");
       pcoarsec->x1f.print_all();
 
       coutBoldRed("pco->x1f\n");
       pco->x1f.print_all();
 
-      coutBoldRed("[pre]coarse\n");
-      coarse_.print_all();
-
-      coutBoldRed("[pre]fine\n");
+      coutBoldRed("[post]coarse\n");
+      coarse.print_all();
+      coutBoldRed("[post]fine\n");
       fine.print_all();
+
+      // coutBoldRed("[exact]fine [WARNING SOLN OVERWRITTEN]\n");
+      // pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, 0, 0, 0, 0, false);
+      // fine.print_all();
+      // Q();
     }
-    //---
+    return;
+  } else if (pmb->pmy_mesh->ndim == 2) {
+    int const k = pmb->ckvs;
+    int const fk = pmb->kvs;
+
+    for (int n = sn; n <= en; ++n) {
+      for (int j = sj; j <= ej; ++j) {
+        int fj, jb, sjo, ejo, jl, ju;
+        ProlongateVertexCenteredIndicialHelper(
+          hs_sz, j,
+          pmb->cjvs, pmb->cjve, pmb->cjmp,
+          pmb->jvs, pmb->jve,
+          fj, jb, sjo, ejo, jl, ju);
+
+
+        for (int i = si; i <= ei; ++i) {
+          int fi, ib, sio, eio, il, iu;
+          ProlongateVertexCenteredIndicialHelper(
+            hs_sz, i,
+            pmb->civs, pmb->cive, pmb->cimp,
+            pmb->ivs, pmb->ive,
+            fi, ib, sio, eio, il, iu);
+
+          for (int jo = sjo; jo <= ejo; ++jo) {
+            int const fjo = fj + jo;
+
+            for (int io = sio; io <= eio; ++io) {
+              int const fio = fi + io;
+
+              // edge correction (odd ghosts require initial interp not inj.)
+              if ((fjo >= pmb->jms) and (fjo <= pmb->jpe) and
+                  (fio >= pmb->ims) and (fio <= pmb->ipe)) {
+                fine(n, fk, fjo, fio) = 0;
+
+                for (int dj = 0; dj < hs_sz; ++dj) {
+                  for (int di = 0; di < hs_sz; ++di) {
+                    Real const lc_jl = InterpolateLagrangeUniform<hs_sz>::coeff[jo-jb+1][dj];
+                    Real const lc_ju = InterpolateLagrangeUniform<hs_sz>::coeff[jo-jb+1][2 * hs_sz-dj-1];
+
+                    Real const lc_il = InterpolateLagrangeUniform<hs_sz>::coeff[io-ib+1][di];
+                    Real const lc_iu = InterpolateLagrangeUniform<hs_sz>::coeff[io-ib+1][2 * hs_sz-di-1];
+
+                    Real const fc_ll = coarse(n, k, jl + dj, il + di);
+                    Real const fc_lu = coarse(n, k, jl + dj, iu - di);
+                    Real const fc_ul = coarse(n, k, ju - dj, il + di);
+                    Real const fc_uu = coarse(n, k, ju - dj, iu - di);
+
+                    fine(n, fk, fjo, fio) +=
+                      lc_jl * lc_il * fc_ll +
+                      lc_jl * lc_iu * fc_lu +
+                      lc_ju * lc_il * fc_ul +
+                      lc_ju * lc_iu * fc_uu;
 
-    // settings for interpolator
-    const int interp_order = 2 * NGHOST;
-    const int interp_dim = 1;
 
-    Real origin[1] = {pcoarsec->x1f(0)};
-    Real delta[1] = {pcoarsec->dx1f(0)};
-    int size[1] = {pmb->ncv1};
-
-
-    int il, iu;
-
-    for (int i=si; i<=ei; ++i) {
-      if (i < pmb->cimp)
-        il = 0, iu = 1;
-      else if (i > pmb->cimp)
-        il = -1, iu = 0;
-      else
-        il = iu = 0;
-
-      for (int ii=il; ii<=iu; ++ii) {
-        // fine idx
-        int fi = (i - pmb->civs) * 2 + pmb->ivs + ii;
-
-        // target coord
-        Real coord[1] = {pco->x1f(fi)};
-
-        // set up n-dimensional interpolator
-        LagrangeInterpND<interp_order, interp_dim> * pinterp = nullptr;
-        pinterp = new LagrangeInterpND<interp_order, interp_dim>(origin, delta,
-                                                                 size, coord);
-
-
-        // test interpolation to point on first component
-        AthenaArray<Real> src;
-        for (int n=sn; n<=en; n++) {
-          src.InitWithShallowSlice(coarse_, n, 1);
-          fine(n, fk, fj, fi) = pinterp->eval(src.data());
-        }
-
-        // clean-up
-        delete pinterp;
-        // printf("(i, ii, fi)=(%d, %d, %d)\n", i, ii, fi);
-        // BD debug: overwrite with soln
-        // pmb->DebugWaveMeshBlock(fine, fi, fi, fj, fj, fk, fk, false);
-        //---
-      }
-    }
-
-    // kill on MeshBlock id
-    if (debug)
-      // if (pmb->gid == debug_block_id) {
-      if (true) {
-        coutBoldRed("\npcoarsec->x1f\n");
-        pcoarsec->x1f.print_all();
-
-        coutBoldRed("pco->x1f\n");
-        pco->x1f.print_all();
-
-
-        coutBoldRed("[post]coarse\n");
-        coarse_.print_all();
-        coutBoldRed("[post]fine\n");
-        fine.print_all();
-
-        coutBoldRed("[exact]fine\n");
-        pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, 0, 0, 0, 0, false);
-        fine.print_all();
-
-        //Q();
-      }
-
-  }
-
-  // 2d LagrangeInterpND
-  if (pmb->pmy_mesh->ndim == 2) {
-    // BD debug
-    bool debug = false;
-    int debug_block_id = 4;
-    //---
-
-    int k = pmb->cks, fk = pmb->ks;
-
-    // BD debug: print additional info
-    if (debug) {
-      coutBoldRed("\npcoarsec->x1f\n");
-      pcoarsec->x1f.print_all();
-
-      coutBoldRed("\npcoarsec->x2f\n");
-      pcoarsec->x2f.print_all();
-
-      coutBoldRed("pco->x2f\n");
-      pco->x2f.print_all();
-
-      coutBoldRed("[pre]coarse\n");
-      coarse_.print_all();
-
-      coutBoldRed("[pre]fine\n");
-      fine.print_all();
-    }
-    //---
-
-    AthenaArray<Real>& coarse_ = const_cast<AthenaArray<Real>&>(coarse);
-
-    // settings for interpolator
-    const int interp_order = 2*NGHOST; //2 * NGHOST + 1;
-    const int interp_dim = 2;
-
-    Real origin[2] = {pcoarsec->x1f(0), pcoarsec->x2f(0)};
-    Real delta[2] = {pcoarsec->dx1f(0), pcoarsec->dx2f(0)};
-    int size[2] = {pmb->ncv1, pmb->ncv2};
-
-    // for interpolation bias switching
-    // int bi = pmb->cnghost + pmb->block_size.nx1 / 4; // block_size is fine no.
-    // int bj = pmb->cnghost + pmb->block_size.nx2 / 4; // block_size is fine no.
-
-    // printf("  bi, bj = %d, %d\n", bi, bj);
-
-    int il, iu, jl, ju;
-
-    for (int n=sn; n<=en; ++n) {
-      for (int j=sj; j<=ej; ++j) {
-        if (j < pmb->cjmp)
-          jl = 0, ju = 1;
-        else if (j > pmb->cjmp)
-          jl = -1, ju = 0;
-        else
-          jl = ju = 0;
-
-        for (int jj=jl; jj<=ju; ++jj) {
-          // current fine index
-          int fj = (j - pmb->cjvs)*2 + pmb->jvs + jj;
-
-          for (int i=si; i<=ei; ++i) {
-            if (i < pmb->cimp)
-              il = 0, iu = 1;
-            else if (i > pmb->cimp)
-              il = -1, iu = 0;
-            else
-              il = iu = 0;
-
-            for (int ii=il; ii<=iu; ++ii) {
-              // current coarse index
-              int fi = (i - pmb->civs)*2 + pmb->ivs + ii;
-
-              // target coord
-              Real coord[2] = {pco->x1f(fi), pco->x2f(fj)};
-
-              // set up n-dimensional interpolator
-              LagrangeInterpND<interp_order, interp_dim> * pinterp = nullptr;
-              pinterp = new LagrangeInterpND<interp_order, interp_dim>(origin, delta,
-                                                                       size, coord);
-
-              // test interpolation to point on variable first component
-              AthenaArray<Real> src;
-              for (int n=sn; n<=en; n++) {
-                src.InitWithShallowSlice(coarse_, n, 1);
-                fine(n, fk, fj, fi) = pinterp->eval(src.data());
-                // fine(n, fk, fj, fi) = 10;
-              }
-
-              // clean-up
-              delete pinterp;
-
-              // BD debug: overwrite with soln
-              // pmb->DebugWaveMeshBlock(fine, fi, fi, fj, fj, fk, fk, false);
-              //---
-
-            }
-
-          }
-
-
-        }
-      }
-    }
-
-    // kill on MeshBlock id
-    if (debug)
-      if (pmb->gid == debug_block_id) {
-        coutBoldRed("\npcoarsec->x1f\n");
-        pcoarsec->x1f.print_all();
-
-        coutBoldRed("pco->x1f\n");
-        pco->x1f.print_all();
-
-        coutBoldRed("\npcoarsec->x2f\n");
-        pcoarsec->x2f.print_all();
-
-        coutBoldRed("pco->x2f\n");
-        pco->x2f.print_all();
-
-        coutBoldRed("[post]coarse\n");
-        coarse_.print_all();
-        coutBoldRed("[post]fine\n");
-        fine.print_all();
-
-        coutBoldRed("[exact]fine\n");
-        pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, pmb->jms, pmb->jpe,
-                                0, 0, false);
-        fine.print_all();
-
-        Q();
-      }
-
-
-  }
-
-  // 3d LagrangeInterpND
-  if (pmb->pmy_mesh->ndim == 3) {
-    // BD debug
-    bool debug = false;
-    int debug_block_id = 4;
-    //---
-
-    // BD debug: print additional info
-    if (debug) {
-      coutBoldRed("\npcoarsec->x1f\n");
-      pcoarsec->x1f.print_all();
-
-      coutBoldRed("\npcoarsec->x2f\n");
-      pcoarsec->x2f.print_all();
-
-      coutBoldRed("pco->x2f\n");
-      pco->x2f.print_all();
-
-      coutBoldRed("[pre]coarse\n");
-      coarse_.print_all();
-
-      coutBoldRed("[pre]fine\n");
-      fine.print_all();
-    }
-    //---
-
-    AthenaArray<Real>& coarse_ = const_cast<AthenaArray<Real>&>(coarse);
-
-    // settings for interpolator
-    const int interp_order = 2 * NGHOST;
-    const int interp_dim = 3;
-
-    Real origin[3] = {pcoarsec->x1f(0), pcoarsec->x2f(0), pcoarsec->x3f(0)};
-    Real delta[3] = {pcoarsec->dx1f(0), pcoarsec->dx2f(0), pcoarsec->dx3f(0)};
-    int size[3] = {pmb->ncv1, pmb->ncv2, pmb->ncv3};
-
-
-    int il, iu, jl, ju, kl, ku;
-
-    for (int n=sn; n<=en; ++n) {
-      for (int k=sk; k<=ek; ++k) {
-        if (k < pmb->ckmp)
-          kl = 0, ku = 1;
-        else if (k > pmb->ckmp)
-          kl = -1, ku = 0;
-        else
-          kl = ku = 0;
-
-        for (int kk=kl; kk<=ku; ++kk) {
-          // current fine index
-          int fk = (k - pmb->ckvs)*2 + pmb->kvs + kk;
-
-          for (int j=sj; j<=ej; ++j) {
-            if (j < pmb->cjmp)
-              jl = 0, ju = 1;
-            else if (j > pmb->cjmp)
-              jl = -1, ju = 0;
-            else
-              jl = ju = 0;
-
-            for (int jj=jl; jj<=ju; ++jj) {
-              // current fine index
-              int fj = (j - pmb->cjvs)*2 + pmb->jvs + jj;
-
-              for (int i=si; i<=ei; ++i) {
-                if (i < pmb->cimp)
-                  il = 0, iu = 1;
-                else if (i > pmb->cimp)
-                  il = -1, iu = 0;
-                else
-                  il = iu = 0;
-
-                for (int ii=il; ii<=iu; ++ii) {
-                  // current coarse index
-                  int fi = (i - pmb->civs)*2 + pmb->ivs + ii;
-
-                  // target coord
-                  Real coord[3] = {pco->x1f(fi), pco->x2f(fj), pco->x3f(fk)};
-
-                  // set up n-dimensional interpolator
-                  LagrangeInterpND<interp_order, interp_dim> * pinterp = nullptr;
-                  pinterp = new LagrangeInterpND<interp_order, interp_dim>(origin, delta,
-                                                                          size, coord);
-
-                  // test interpolation to point on variable first component
-                  AthenaArray<Real> src;
-                  for (int n=sn; n<=en; n++) {
-                    src.InitWithShallowSlice(coarse_, n, 1);
-                    fine(n, fk, fj, fi) = pinterp->eval(src.data());
                   }
-
-                  // clean-up
-                  delete pinterp;
-
                 }
-
               }
-
-
             }
           }
+
+
+
         }
       }
 
     }
 
-    // kill on MeshBlock id
-    if (debug)
-      if (pmb->gid == debug_block_id) {
-        coutBoldRed("\npcoarsec->x1f\n");
-        pcoarsec->x1f.print_all();
+    if (DBGPR_MESH_REFINEMENT) {
+      coutBoldRed("\npcoarsec->x1f\n");
+      pcoarsec->x1f.print_all();
 
-        coutBoldRed("pco->x1f\n");
-        pco->x1f.print_all();
+      coutBoldRed("pco->x1f\n");
+      pco->x1f.print_all();
 
-        coutBoldRed("\npcoarsec->x2f\n");
-        pcoarsec->x2f.print_all();
+      coutBoldRed("[post]coarse\n");
+      coarse.print_all();
+      coutBoldRed("[post]fine\n");
+      fine.print_all();
 
-        coutBoldRed("pco->x2f\n");
-        pco->x2f.print_all();
+      // coutBoldRed("[exact]fine [WARNING SOLN OVERWRITTEN]\n");
+      // pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, pmb->jms, pmb->jpe, 0, 0, false);
+      // fine.print_all();
+    }
+    return;
+  } else if (pmb->pmy_mesh->ndim == 3) {
+    for (int n = sn; n <= en; ++n) {
+      for (int k = sk; k <= ek; ++k) {
+        int fk, kb, sko, eko, kl, ku;
+        ProlongateVertexCenteredIndicialHelper(
+          hs_sz, k,
+          pmb->ckvs, pmb->ckve, pmb->ckmp,
+          pmb->kvs, pmb->kve,
+          fk, kb, sko, eko, kl, ku);
 
-        coutBoldRed("[post]coarse\n");
-        coarse_.print_all();
-        coutBoldRed("[post]fine\n");
-        fine.print_all();
+        for (int j = sj; j <= ej; ++j) {
+          int fj, jb, sjo, ejo, jl, ju;
+          ProlongateVertexCenteredIndicialHelper(
+            hs_sz, j,
+            pmb->cjvs, pmb->cjve, pmb->cjmp,
+            pmb->jvs, pmb->jve,
+            fj, jb, sjo, ejo, jl, ju);
 
-        coutBoldRed("[exact]fine\n");
-        pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, pmb->jms, pmb->jpe,
-                                0, 0, false);
-        fine.print_all();
 
-        Q();
+          for (int i = si; i <= ei; ++i) {
+            int fi, ib, sio, eio, il, iu;
+            ProlongateVertexCenteredIndicialHelper(
+              hs_sz, i,
+              pmb->civs, pmb->cive, pmb->cimp,
+              pmb->ivs, pmb->ive,
+              fi, ib, sio, eio, il, iu);
+
+            for (int ko = sko; ko <= eko; ++ko) {
+              int const fko = fk + ko;
+
+              for (int jo = sjo; jo <= ejo; ++jo) {
+                int const fjo = fj + jo;
+
+                for (int io = sio; io <= eio; ++io) {
+                  int const fio = fi + io;
+
+                  // edge correction (odd ghosts require initial interp not inj.)
+                  if ((fko >= pmb->kms) and (fko <= pmb->kpe) and
+                      (fjo >= pmb->jms) and (fjo <= pmb->jpe) and
+                      (fio >= pmb->ims) and (fio <= pmb->ipe)) {
+                    fine(n, fko, fjo, fio) = 0;
+
+                    for (int dk = 0; dk < hs_sz; ++dk) {
+                      for (int dj = 0; dj < hs_sz; ++dj) {
+                        for (int di = 0; di < hs_sz; ++di) {
+                          Real const lc_kl = InterpolateLagrangeUniform<hs_sz>::coeff[ko-kb+1][dk];
+                          Real const lc_ku = InterpolateLagrangeUniform<hs_sz>::coeff[ko-kb+1][2 * hs_sz-dk-1];
+
+                          Real const lc_jl = InterpolateLagrangeUniform<hs_sz>::coeff[jo-jb+1][dj];
+                          Real const lc_ju = InterpolateLagrangeUniform<hs_sz>::coeff[jo-jb+1][2 * hs_sz-dj-1];
+
+                          Real const lc_il = InterpolateLagrangeUniform<hs_sz>::coeff[io-ib+1][di];
+                          Real const lc_iu = InterpolateLagrangeUniform<hs_sz>::coeff[io-ib+1][2 * hs_sz-di-1];
+
+                          Real const fc_lll = coarse(n, kl + dk, jl + dj, il + di);
+                          Real const fc_llu = coarse(n, kl + dk, jl + dj, iu - di);
+                          Real const fc_lul = coarse(n, kl + dk, ju - dj, il + di);
+                          Real const fc_luu = coarse(n, kl + dk, ju - dj, iu - di);
+                          Real const fc_ull = coarse(n, ku - dk, jl + dj, il + di);
+                          Real const fc_ulu = coarse(n, ku - dk, jl + dj, iu - di);
+                          Real const fc_uul = coarse(n, ku - dk, ju - dj, il + di);
+                          Real const fc_uuu = coarse(n, ku - dk, ju - dj, iu - di);
+
+
+                          fine(n, fko, fjo, fio) +=
+                            lc_kl * lc_jl * lc_il * fc_lll +
+                            lc_kl * lc_jl * lc_iu * fc_llu +
+                            lc_kl * lc_ju * lc_il * fc_lul +
+                            lc_kl * lc_ju * lc_iu * fc_luu +
+                            lc_ku * lc_jl * lc_il * fc_ull +
+                            lc_ku * lc_jl * lc_iu * fc_ulu +
+                            lc_ku * lc_ju * lc_il * fc_uul +
+                            lc_ku * lc_ju * lc_iu * fc_uuu;
+
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+
+          }
+        }
       }
+    }
 
+    if (DBGPR_MESH_REFINEMENT) {
+      coutBoldRed("\npcoarsec->x1f\n");
+      pcoarsec->x1f.print_all();
 
+      coutBoldRed("pco->x1f\n");
+      pco->x1f.print_all();
+
+      coutBoldRed("[post]coarse\n");
+      coarse.print_all();
+      coutBoldRed("[post]fine\n");
+      fine.print_all();
+
+      // coutBoldRed("[exact]fine [WARNING SOLN OVERWRITTEN]\n");
+      // pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, pmb->jms, pmb->jpe, 0, 0, false);
+      // fine.print_all();
+    }
+    return;
   }
 
+  // if (pmb->pmy_mesh->ndim == 1) {
+  //   int const k = pmb->ckvs;
+  //   int const fk = pmb->kvs;
+  //   int const j = pmb->cjvs;
+  //   int const fj = pmb->jvs;
 
-  // BD debug: dump regardless of break
-  if (DBGPR_MESH_REFINEMENT) {
-    coutBoldRed("[post]coarse\n");
-    coarse_.print_all();
+  //   for (int n = sn; n <= en; ++n) {
+  //     for (int i = si; i <= ei; ++i) {
 
-    coutBoldRed("[post]fine\n");
-    fine.print_all();
-  }
-  //---
+  //       int fi, ib = 0;
+  //       int sio=0, eio=1;
+
+  //       // map for fine-index
+  //       if (i < pmb->civs) {
+  //         fi = pmb->ivs - 2 * (pmb->civs - i);
+  //       } else if (i > pmb->cive) {
+  //         fi = pmb->ive + 2 * (i - pmb->cive);
+  //       } else { // map to interior+boundary nodes
+  //         fi = 2 * (i - pmb->civs) + pmb->ivs;
+  //       }
+
+  //       // bias direction [nb. stencil still symmetric!]
+  //       if (i < pmb->cimp) {
+  //         ib = 1;
+  //         sio = 0;
+  //         eio = 1;
+  //       } else if (i > pmb->cimp) {
+  //         ib = -1;
+  //         sio = -1;
+  //         eio = 0;
+  //       } else {
+  //         // central node is unbiased, coincident, inject with no neighbors
+  //         sio = eio = 1;
+  //         ib = 1;
+  //       }
+
+  //       int il = i - hs_sz + 1 - (1 - ib) / 2;
+  //       int iu = i + hs_sz - (1 - ib) / 2;
+
+  //       // int slc_io = 0;
+  //       // if (il < pmb->cims)
+  //       //   slc_io = il;
+  //       // else if (iu > pmb->cipe)
+  //       //   slc_io = iu - pmb->cipe;
+
+  //       for (int io = sio; io <= eio; ++io) {
+  //         int const fio = fi + io;
+
+  //         // edge correction (odd ghosts require initial interp not inj.)
+  //         if ((fio >= pmb->ims) and (fio <= pmb->ipe)) {
+  //           fine(n, fk, fj, fio) = 0;
+
+  //           for (int di = 0; di < hs_sz; ++di) {
+  //             Real const lc_il = UniformInterp<hs_sz>::coeff[io-ib+1][di];
+  //             Real const lc_iu = UniformInterp<hs_sz>::coeff[io-ib+1][2 * hs_sz-di-1];
+
+  //             fine(n, fk, fj, fio) +=
+  //               lc_il * coarse(n, k, j, il + di) +
+  //               lc_iu * coarse(n, k, j, iu - di);
+
+  //             // if (n == 0) {
+  //             //   printf("i, fi, io, di, lc_il, lc_iu => %d, %d, %d, %d, %1.3f, %1.3f\n",
+  //             //           i, fi, io, di, lc_il, lc_iu);
+  //             // }
+
+  //           }
+  //         }
+  //       }
+
+
+
+  //     }
+  //   }
+
+  //   if (DBGPR_MESH_REFINEMENT) {
+  //     coutBoldRed("\npcoarsec->x1f\n");
+  //     pcoarsec->x1f.print_all();
+
+  //     coutBoldRed("pco->x1f\n");
+  //     pco->x1f.print_all();
+
+  //     coutBoldRed("[post]coarse\n");
+  //     coarse.print_all();
+  //     coutBoldRed("[post]fine\n");
+  //     fine.print_all();
+
+  //     // coutBoldRed("[exact]fine [WARNING SOLN OVERWRITTEN]\n");
+  //     // pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, 0, 0, 0, 0, false);
+  //     // fine.print_all();
+  //   }
+  //   return;
+  // }
 
 }
 

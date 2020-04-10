@@ -103,6 +103,12 @@ class MeshRefinement {
   // functions
   AMRFlagFunc AMRFlag_; // duplicate of Mesh class member
 
+  void ProlongateVertexCenteredIndicialHelper(
+    int hs_sz, int ix,
+    int ix_cvs, int ix_cve, int ix_cmp,
+    int ix_vs, int ix_ve,
+    int &f_ix, int &ix_b, int &ix_so, int &ix_eo, int &ix_l, int &ix_u);
+
   // tuples of references to AMR-enrolled arrays (quantity, coarse_quantity)
   std::vector<std::tuple<AthenaArray<Real> *, AthenaArray<Real> *>> pvars_cc_;
   std::vector<std::tuple<FaceField *, FaceField *>> pvars_fc_;

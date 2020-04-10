@@ -626,6 +626,31 @@ void VertexCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
+//! \fn inline void MeshBlock::SetIndexRangesSBFC(...)
+//  \brief Set index ranges for a given dimension
+inline void VertexCenteredBoundaryVariable::SetIndexRangesSBFC(
+  int ox, int &ix_s, int &ix_e,
+  int ix_cvs, int ix_cve, int ix_cms, int ix_cme, int ix_cps, int ix_cpe,
+  bool level_flag) {
+
+  if (ox == 0) {
+    ix_s = ix_cvs; ix_e = ix_cve;
+    if (level_flag) {
+      ix_s = ix_cvs; ix_e = ix_cpe;
+    } else {
+      ix_s = ix_cms; ix_e = ix_cve;
+    }
+  } else if (ox > 0)  {
+    ix_s = ix_cps; ix_e = ix_cpe;
+  } else {
+    ix_s = ix_cms; ix_e = ix_cme;
+  }
+
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void VertexCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 //                                                                const NeighborBlock& nb)
 //  \brief Set vertex-centered prolongation buffer received from a block on a coarser level
@@ -649,55 +674,74 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   // BD: TODO implement
   ErrorIfPolarNotImplemented(nb);
 
-  // [1d] modifies si, ei
-  if (nb.ni.ox1 == 0) {
-    si = pmb->civs; ei = pmb->cive;
-    if ((pmb->loc.lx1 & 1LL) == 0LL) {
-      si = pmb->civs; ei = pmb->cipe;
-    } else {
-      si = pmb->cims; ei = pmb->cive;
-    }
-  } else if (nb.ni.ox1 > 0)  {
-    si = pmb->cips; ei = pmb->cipe;
-  } else {
-    si = pmb->cims; ei = pmb->cime;
-  }
+  // // [1d] modifies si, ei
+  // if (nb.ni.ox1 == 0) {
+  //   si = pmb->civs; ei = pmb->cive;
+  //   if ((pmb->loc.lx1 & 1LL) == 0LL) {
+  //     si = pmb->civs; ei = pmb->cipe;
+  //   } else {
+  //     si = pmb->cims; ei = pmb->cive;
+  //   }
+  // } else if (nb.ni.ox1 > 0)  {
+  //   si = pmb->cips; ei = pmb->cipe;
+  // } else {
+  //   si = pmb->cims; ei = pmb->cime;
+  // }
 
+
+  // [1d] modifies si, ei
+  SetIndexRangesSBFC(nb.ni.ox1, si, ei,
+                     pmb->civs, pmb->cive, pmb->cims, pmb->cime,
+                     pmb->cips, pmb->cipe, (pmb->loc.lx1 & 1LL) == 0LL);
 
   // [2d] modifies sj, ej
-  if (nb.ni.ox2 == 0) {
-    sj = pmb->cjvs; ej = pmb->cjve;
-    if (pmb->block_size.nx2 > 1) {
-      if ((pmb->loc.lx2 & 1LL) == 0LL) {
-        sj = pmb->cjvs; ej = pmb->cjpe;
-      } else {
-        sj = pmb->cjms; ej = pmb->cjve;
-      }
-    }
-  } else if (nb.ni.ox2 > 0) {
-    sj = pmb->cjps; ej = pmb->cjpe;
-  } else {
-    sj = pmb->cjms; ej = pmb->cjme;
-  }
+  SetIndexRangesSBFC(nb.ni.ox2, sj, ej,
+                     pmb->cjvs, pmb->cjve, pmb->cjms, pmb->cjme,
+                     pmb->cjps, pmb->cjpe, (pmb->loc.lx2 & 1LL) == 0LL);
 
   // [3d] modifies sk, ek
-  if (nb.ni.ox3 == 0) {
-    sk = pmb->ckvs; ek = pmb->ckve;
-    if (pmb->block_size.nx3 > 1) {
-      if ((pmb->loc.lx3 & 1LL) == 0LL) {
-        sk = pmb->ckvs; ek = pmb->ckpe;
-      } else {
-        sk = pmb->ckms; ek = pmb->ckve;
-      }
-    }
-  } else if (nb.ni.ox3 > 0) {
-    sk = pmb->ckps; ek = pmb->ckpe;
-  } else {
-    sk = pmb->ckms; ek = pmb->ckme;
-  }
+  SetIndexRangesSBFC(nb.ni.ox3, sk, ek,
+                     pmb->ckvs, pmb->ckve, pmb->ckms, pmb->ckme,
+                     pmb->ckps, pmb->ckpe, (pmb->loc.lx3 & 1LL) == 0LL);
 
 
   //------
+
+  // vertex consistency--------------------------------------------------------
+  if (!node_mult_assembled) {
+    int c_si, c_ei, c_sj, c_ej, c_sk, c_ek;
+
+    int const c_ime = c_ims;
+    int const c_ips = c_ipe;
+
+    int const c_jme = c_jms;
+    int const c_jps = c_jpe;
+
+    int const c_kme = c_kms;
+    int const c_kps = c_kpe;
+
+    // [1d] modifies si, ei
+    SetIndexRangesSBFC(nb.ni.ox1, c_si, c_ei,
+                      c_ivs, c_ive, c_ims, c_ime,
+                      c_ips, c_ipe, (pmb->loc.lx1 & 1LL) == 0LL);
+
+    // [2d] modifies sj, ej
+    SetIndexRangesSBFC(nb.ni.ox2, c_sj, c_ej,
+                      c_jvs, c_jve, c_jms, c_jme,
+                      c_jps, c_jpe, (pmb->loc.lx2 & 1LL) == 0LL);
+
+    // [3d] modifies sk, ek
+    SetIndexRangesSBFC(nb.ni.ox3, c_sk, c_ek,
+                      c_kvs, c_kve, c_kms, c_kme,
+                      c_kps, c_kpe, (pmb->loc.lx3 & 1LL) == 0LL);
+
+    for (int k=c_sk; k<=c_ek; ++k)
+      for (int j=c_sj; j<=c_ej; ++j)
+        for (int i=c_si; i<=c_ei; ++i)
+          node_mult(0, k, j, i) += 1;
+  }
+  //---------------------------------------------------------------------------
+
 
   // write like this to regroup idx logic for debug
   if (!FILL_WAVE_BND_FRC) {
@@ -1227,6 +1271,8 @@ void VertexCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
 
   BoundaryVariable::ReceiveAndSetBoundariesWithWait();
   FinalizeVertexConsistency();
+
+
   return;
 }
 

@@ -246,7 +246,7 @@ private:
   std::vector<std::reference_wrapper<AthenaArray<Real>>> vars_vc_;
 
   // functions
-  // helper functions for assigning indices (inlined on definition)
+  // helper functions for assigning / testing indices (inlined on definition)
   void SetAllIndicialParameters();
   void SetIndicialParameters(int num_ghost,
                              int block_size, 
@@ -260,6 +260,7 @@ private:
                              int &nverts,                 // VC end
                              bool populate_ix,
                              bool is_dim_nontrivial);
+  //---------------------------------------------------------------------------
 
   void AllocateRealUserMeshBlockDataField(int n);
   void AllocateIntUserMeshBlockDataField(int n);

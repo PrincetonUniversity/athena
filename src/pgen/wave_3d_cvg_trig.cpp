@@ -87,7 +87,7 @@ void MeshBlock::WaveUserWorkInLoop() {
 
   // int il = pwave->mbi.il, iu = pwave->mbi.iu;
   // int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
-  // int jl = pwave->mbi.jl, ju = pwave->mbi.Real;
+  // int jl = pwave->mbi.jl, ju = pwave->mbi.ju;
 
   Real c = pwave->c;
   Real t = pmy_mesh->time + pmy_mesh->dt;
@@ -127,18 +127,18 @@ void MeshBlock::WaveUserWorkInLoop() {
 
   coutBoldRed("MB::UWIL gid = ");
   printf("%d\n", gid);
-  printf("(max_err, fun_max, t)=(%1.10f, %1.10f, %1.10f)\n",
+  printf("(max_err, fun_max, t)=(%1.18f, %1.18f, %1.18f)\n",
          max_err, fun_err, t);
 
   if (max_err > 0.1) {
     printf("pwave->u:\n");
-    pwave->u.print_all("%1.5f");
+    pwave->u.print_all("%1.2f");
 
     printf("pwave->exact:\n");
-    pwave->exact.print_all("%1.5f");
+    pwave->exact.print_all("%1.2f");
 
     printf("pwave->error:\n");
-    pwave->error.print_all("%1.5f");
+    pwave->error.print_all("%1.2f");
 
     Q();
   }

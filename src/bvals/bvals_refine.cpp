@@ -645,7 +645,7 @@ void BoundaryValues::ProlongateVertexCenteredBoundaries(
     if (nb.snb.level >= mylevel) continue;
 
     // calculate the loop limits for the ghost zones
-    int pcng = pmb->ng / 2;
+    int pcng = pmb->ng / 2 + (pmb->ng % 2 != 0);  // for odd/even ghosts
     int si, ei, sj, ej, sk, ek;
 
     CalculateVertexProlongationIndices(pmb->loc.lx1, nb.ni.ox1, pcng,
@@ -767,10 +767,20 @@ void BoundaryValues::ProlongateVertexCenteredGhosts(
     int nu = var_vc->GetDim4() - 1;
     pmr->ProlongateVertexCenteredValues(*coarse_vc, *var_vc, 0, nu,
                                         si, ei, sj, ej, sk, ek);
+
+    // // test prolongation on full block
+    // int pcng = pmb->ng / 2 + (pmb->ng % 2 != 0);
+    // pmr->ProlongateVertexCenteredValues(*coarse_vc, *var_vc, 0, nu,
+    //                                     pmb->civs-pcng, pmb->cive+pcng,
+    //                                     sj, ej, sk, ek);
   }
 
   if (DBGPR_BVALS_REFINE) {
     coutBlue("< BoundaryValues::ProlongateGhostCells\n");
   }
+
+  // if (pmb->gid==7)
+  //   Q();
+
   return;
 }
