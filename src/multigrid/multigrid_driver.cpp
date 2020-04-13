@@ -652,7 +652,8 @@ void MultigridDriver::RestrictFMGSourceOctets() {
       const LogicalLocation &loc = octets_[0][o].loc;
       mgroot_->Restrict(cbuf_, octets_[0][o].src, os_, oe_, os_, oe_, os_, oe_);
       for (int v=0; v<nvar_; ++v)
-        mgroot_->SetData(MGVariable::src, v, loc.lx3, loc.lx2, loc.lx1,
+        mgroot_->SetData(MGVariable::src, v, static_cast<int>(loc.lx3),
+                         static_cast<int>(loc.lx2), static_cast<int>(loc.lx1),
                          cbuf_(v, ngh, ngh, ngh));
     }
   }
@@ -695,9 +696,9 @@ void MultigridDriver::RestrictOctets() {
   } else { // octets to the root grid
     for (int o=0; o<noctets_[0]; ++o) {
       const LogicalLocation &loc = octets_[0][o].loc;
-      int ri = loc.lx1;
-      int rj = loc.lx2;
-      int rk = loc.lx3;
+      int ri = static_cast<int>(loc.lx1);
+      int rj = static_cast<int>(loc.lx2);
+      int rk = static_cast<int>(loc.lx3);
       mgroot_->CalculateDefect(octets_[0][o].def, octets_[0][o].u,
                                octets_[0][o].src, 1, os_, oe_, os_, oe_, os_, oe_);
       mgroot_->Restrict(cbuf_, octets_[0][o].def, os_, oe_, os_, oe_, os_, oe_);
@@ -1017,8 +1018,8 @@ void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
     }
   }
   for (int v=0; v<nvar_; ++v)
-    cbuf_(v,ck,cj,ci) = fac*(un(v,l,l,l)+un(v,l,l,r)+un(v,l,r,l)+un(v,r,l,l)
-                            +un(v,r,r,l)+un(v,r,l,r)+un(v,l,r,r)+un(v,r,r,r));
+    cbuf_(v,ck,cj,ci) = fac*(un(v,l,l,l) + un(v,l,l,r) + un(v,l,r,l) + un(v,r,l,l)
+                             + un(v,r,r,l) + un(v,r,l,r) + un(v,l,r,r) + un(v,r,r,r));
   if (folddata) {
     for (int v=0; v<nvar_; ++v) {
       for (int k=ks, nk=nks; k<=ke; ++k, ++nk) {
@@ -1030,8 +1031,8 @@ void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
     }
     for (int v=0; v<nvar_; ++v)
       cbufold_(v,ck,cj,ci) = fac*
-              (unold(v,l,l,l)+unold(v,l,l,r)+unold(v,l,r,l)+unold(v,r,l,l)
-              +unold(v,r,r,l)+unold(v,r,l,r)+unold(v,l,r,r)+unold(v,r,r,r));
+              (unold(v,l,l,l)+unold(v,l,l,r) + unold(v,l,r,l) + unold(v,r,l,l)
+               + unold(v,r,r,l)+unold(v,r,l,r) + unold(v,l,r,r) + unold(v,r,r,r));
   }
 
   return;
@@ -1051,9 +1052,9 @@ void MultigridDriver::SetOctetBoundaryFromCoarser(const AthenaArray<Real> &un,
   int ci, cj, ck;
   if (loc.level == locrootlevel_) { // from root
     // given loc is neighbor's location
-    ci = loc.lx1 + ngh;
-    cj = loc.lx2 + ngh;
-    ck = loc.lx3 + ngh;
+    ci = static_cast<int>(loc.lx1) + ngh;
+    cj = static_cast<int>(loc.lx2) + ngh;
+    ck = static_cast<int>(loc.lx3) + ngh;
   } else { // from a neighbor octet
     // given loc is my location
     int ix1 = (static_cast<int>(loc.lx1) & 1);
@@ -1179,7 +1180,8 @@ void MultigridDriver::RestrictOctetsBeforeTransfer() {
     const LogicalLocation &loc = octets_[0][o].loc;
     mgroot_->Restrict(cbuf_, octets_[0][o].u, os_, oe_, os_, oe_, os_, oe_);
     for (int v=0; v<nvar_; ++v)
-      mgroot_->SetData(MGVariable::u, v, loc.lx3, loc.lx2, loc.lx1,
+      mgroot_->SetData(MGVariable::u, v, static_cast<int>(loc.lx3),
+                       static_cast<int>(loc.lx2), static_cast<int>(loc.lx1),
                        cbuf_(v, ngh, ngh, ngh));
   }
 
