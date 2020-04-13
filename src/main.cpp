@@ -575,8 +575,8 @@ int main(int argc, char *argv[]) {
     clock_t tstop = clock();
     double cpu_time = (tstop>tstart ? static_cast<double> (tstop-tstart) :
                        1.0)/static_cast<double> (CLOCKS_PER_SEC);
-    std::uint64_t zonecycles =
-        mbcnt*static_cast<std::uint64_t> (pmesh->pblock->GetNumberOfMeshBlockCells());
+    std::uint64_t zonecycles = mbcnt
+      *static_cast<std::uint64_t> (pmesh->my_blocks(0)->GetNumberOfMeshBlockCells());
     double zc_cpus = static_cast<double> (zonecycles) / cpu_time;
 
     std::cout << std::endl << "zone-cycles = " << zonecycles << std::endl;

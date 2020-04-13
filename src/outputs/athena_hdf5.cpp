@@ -87,7 +87,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   H5Real *x3v_mesh;                            // array of x3 values on Mesh
   H5Real **data_buffers;                       // array of data buffers
 
-  MeshBlock *pmb = pm->pblock;
+  MeshBlock *pmb = pm->my_blocks(0);
   OutputData* pod;
   int max_blocks_global = pm->nbtotal;
   int max_blocks_local = pm->nblist[Globals::my_rank];
@@ -198,8 +198,8 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   if (output_params.output_slicex1 || output_params.output_slicex2
       || output_params.output_slicex3) {
     int nb = 0, nba = 0;
-    pmb = pm->pblock;
-    while (pmb != nullptr) {
+    for (int b=0; b<pm->nblocal; ++b) {
+      pmb = pm->my_blocks(b);
       if (output_params.output_slicex1) {
         if (pmb->block_size.x1min >  output_params.x1_slice
             || pmb->block_size.x1max <= output_params.x1_slice)
@@ -217,7 +217,6 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       }
       if (active_flags[nb]) nba++;
       nb++;
-      pmb = pmb->next;
     }
 #ifdef MPI_PARALLEL
     int *n_active = new int[Globals::nranks];
@@ -239,7 +238,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     num_blocks_local = max_blocks_local;
   }
 
-  pmb = pm->pblock;
+  pm->my_blocks(0);
   // set output size
   nx1 = pmb->block_size.nx1;
   nx2 = pmb->block_size.nx2;
@@ -270,7 +269,8 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     data_buffers[n] = new H5Real[num_variables[n]*num_blocks_local*nx3*nx2*nx1];
 
   int nb = 0, nba = 0;
-  while (pmb != nullptr) {
+  for (int b=0; b<pm->nblocal; ++b) {
+    pmb = pm->my_blocks(b);
     // Load the output data
     if (active_flags[nb]) {
       // set the default size because TransformOutputData will override it
@@ -411,7 +411,6 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       ClearOutputData();  // required when LoadOutputData() is used.
     }
     nb++;
-    pmb = pmb->next;
   }
 
   // Define output filename

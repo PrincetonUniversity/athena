@@ -101,11 +101,8 @@ MGGravity::~MGGravity() {
 void MGGravityDriver::Solve(int stage) {
   // Construct the Multigrid array
   vmg_.clear();
-  MeshBlock *pmb = pmy_mesh_->pblock;
-  while (pmb != nullptr) {
-    vmg_.push_back(pmb->pmg);
-    pmb = pmb->next;
-  }
+  for (int i=0; i<=pmy_mesh_->nblocal; ++i)
+    vmg_.push_back(pmy_mesh_->my_blocks(i)->pmg);
 
   // load the source
   for (Multigrid* pmg : vmg_) {

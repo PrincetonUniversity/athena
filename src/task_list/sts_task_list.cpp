@@ -55,11 +55,12 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
     ATHENA_ERROR(msg);
   }
 
+  MeshBlock *pmb = pm->my_blocks(0);
   // Check for STS incompatiblities:
-  if (!(pm->pblock->phydro->hdif.hydro_diffusion_defined)
+  if (!(pmb->phydro->hdif.hydro_diffusion_defined)
       // short-circuit evaluation makes these safe (won't dereference pscalars=nullptr):
-      && !(MAGNETIC_FIELDS_ENABLED && pm->pblock->pfield->fdif.field_diffusion_defined)
-      && !(NSCALARS > 0 && pm->pblock->pscalars->scalar_diffusion_defined)) {
+      && !(MAGNETIC_FIELDS_ENABLED && pmb->pfield->fdif.field_diffusion_defined)
+      && !(NSCALARS > 0 && pmb->pscalars->scalar_diffusion_defined)) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping requires setting parameters for "
@@ -81,10 +82,10 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
   do_sts_hydro = false;
   do_sts_field = false;
   do_sts_scalar = false;
-  if (pm->pblock->phydro->hdif.hydro_diffusion_defined) {
+  if (pmb->phydro->hdif.hydro_diffusion_defined) {
     do_sts_hydro = true;
-    if (pm->pblock->phydro->hdif.nu_iso > 0.0
-        || pm->pblock->phydro->hdif.nu_aniso > 0.0) {
+    if (pmb->phydro->hdif.nu_iso > 0.0
+        || pmb->phydro->hdif.nu_aniso > 0.0) {
       sts_idx_subset.push_back(IM1);
       sts_idx_subset.push_back(IM2);
       sts_idx_subset.push_back(IM3);
@@ -92,15 +93,15 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
         sts_idx_subset.push_back(IEN);
       }
     }
-    if (pm->pblock->phydro->hdif.kappa_iso > 0.0
-        || pm->pblock->phydro->hdif.kappa_aniso > 0.0) {
+    if (pmb->phydro->hdif.kappa_iso > 0.0
+        || pmb->phydro->hdif.kappa_aniso > 0.0) {
       if (!std::binary_search(sts_idx_subset.begin(), sts_idx_subset.end(), IEN)) {
         sts_idx_subset.push_back(IEN);
       }
     }
   }
   if (MAGNETIC_FIELDS_ENABLED) {
-    if (pm->pblock->pfield->fdif.field_diffusion_defined) {
+    if (pmb->pfield->fdif.field_diffusion_defined) {
       do_sts_field = true;
       if (NON_BAROTROPIC_EOS) {
         // Below designations are needed to account for Poynting flux
@@ -112,7 +113,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
     }
   }
   if (NSCALARS > 0) {
-    if (pm->pblock->pscalars->scalar_diffusion_defined) {
+    if (pmb->pscalars->scalar_diffusion_defined) {
       do_sts_scalar = true;
     }
   }

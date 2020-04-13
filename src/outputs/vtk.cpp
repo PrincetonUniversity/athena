@@ -55,11 +55,11 @@ inline void Swap4Bytes(void *vdat) {
 //         MeshBlock per file
 
 void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
-  MeshBlock *pmb = pm->pblock;
   int big_end = IsBigEndian(); // =1 on big endian machine
 
   // Loop over MeshBlocks
-  while (pmb != nullptr) {
+  for (int b=0; b<pm->nblocal; ++b) {
+    MeshBlock *pmb = pm->my_blocks(b);
     // set start/end array indices depending on whether ghost zones are included
     out_is = pmb->is; out_ie = pmb->ie;
     out_js = pmb->js; out_je = pmb->je;
@@ -75,7 +75,6 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     LoadOutputData(pmb);
     if (!TransformOutputData(pmb)) {
       ClearOutputData();  // required when LoadOutputData() is used.
-      pmb = pmb->next;
       continue;
     } // skip if slice was out of range
 
@@ -208,7 +207,6 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     std::fclose(pfile);
     ClearOutputData();  // required when LoadOutputData() is used.
     delete [] data;
-    pmb = pmb->next;
   }  // end loop over MeshBlocks
 
   // increment counters

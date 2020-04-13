@@ -65,21 +65,13 @@ TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskStat
 
 void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
   int nthreads = pmesh->GetNumMeshThreads();
-  int nmb = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
-
-  // construct the MeshBlock array on this process
-  MeshBlock **pmb_array = new MeshBlock*[nmb];
-  MeshBlock *pmb = pmesh->pblock;
-  for (int n=0; n < nmb; ++n) {
-    pmb_array[n] = pmb;
-    pmb = pmb->next;
-  }
+  int nmb = pmesh->nblocal;
 
   // clear the task states, startup the integrator and initialize mpi calls
 #pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
   for (int i=0; i<nmb; ++i) {
-    pmb_array[i]->tasks.Reset(ntasks);
-    StartupTaskList(pmb_array[i], stage);
+    pmesh->my_blocks(i)->tasks.Reset(ntasks);
+    StartupTaskList(pmesh->my_blocks(i), stage);
   }
 
   int nmb_left = nmb;
@@ -88,12 +80,11 @@ void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
     // KNOWN ISSUE: Workaround for unknown OpenMP race condition. See #183 on GitHub.
 #pragma omp parallel for reduction(- : nmb_left) num_threads(nthreads) schedule(dynamic,1)
     for (int i=0; i<nmb; ++i) {
-      if (DoAllAvailableTasks(pmb_array[i],stage,pmb_array[i]->tasks)
+      if (DoAllAvailableTasks(pmesh->my_blocks(i), stage, pmesh->my_blocks(i)->tasks)
           == TaskListStatus::complete) {
         nmb_left--;
       }
     }
   }
-  delete [] pmb_array;
   return;
 }

@@ -121,8 +121,6 @@ class MeshBlock {
   PassiveScalars *pscalars;
   EquationOfState *peos;
 
-  MeshBlock *prev, *next;
-
   // functions
   std::size_t GetBlockSizeInBytes();
   int GetNumberOfMeshBlockCells() {
@@ -213,10 +211,9 @@ class Mesh {
   ~Mesh();
 
   // accessors
-  int GetNumMeshBlocksThisRank(int my_rank) {return nblist[my_rank];}
   int GetNumMeshThreads() const {return num_mesh_threads_;}
   std::int64_t GetTotalCells() {return static_cast<std::int64_t> (nbtotal)*
-        pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;}
+  my_blocks(0)->block_size.nx1*my_blocks(0)->block_size.nx2*my_blocks(0)->block_size.nx3;}
 
   // data
   RegionSize mesh_size;
@@ -231,7 +228,7 @@ class Mesh {
   Real sts_max_dt_ratio;
   TaskType sts_loc;
   Real muj, nuj, muj_tilde, gammaj_tilde;
-  int nbtotal, nbnew, nbdel;
+  int nbtotal, nblocal, nbnew, nbdel;
 
   int step_since_lb;
   int gflag;
@@ -239,8 +236,7 @@ class Mesh {
   bool amr_updated;
   EosTable *peos_table;
 
-  // ptr to first MeshBlock (node) in linked list of blocks belonging to this MPI rank:
-  MeshBlock *pblock;
+  AthenaArray<MeshBlock*> my_blocks;
 
   TurbulenceDriver *ptrbd;
   FFTGravityDriver *pfgrd;
@@ -273,6 +269,7 @@ class Mesh {
   int next_phys_id_; // next unused value for encoding final component of MPI tag bitfield
   int root_level, max_level, current_level;
   int num_mesh_threads_;
+  int gids_, gide_;
   int *nslist, *ranklist, *nblist;
   double *costlist;
   // 8x arrays used exclusively for AMR (not SMR):
@@ -325,7 +322,7 @@ class Mesh {
   void CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist, int nb);
   void ResetLoadBalanceVariables();
 
-  void CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb);
+  void CorrectMidpointInitialCondition();
   void ReserveMeshBlockPhysIDs();
 
   // Mesh::LoadBalancingAndAdaptiveMeshRefinement() helper functions:

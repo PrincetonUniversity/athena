@@ -32,10 +32,9 @@
 //         Writes one file per MeshBlock
 
 void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
-  MeshBlock *pmb = pm->pblock;
-
   // Loop over MeshBlocks
-  while (pmb != nullptr) {
+  for (int b=0; b<pm->nblocal; ++b) {
+    MeshBlock *pmb = pm->my_blocks(b);
     // set start/end array indices depending on whether ghost zones are included
     out_is = pmb->is; out_ie = pmb->ie;
     out_js = pmb->js; out_je = pmb->je;
@@ -51,7 +50,6 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     LoadOutputData(pmb);
     if (!TransformOutputData(pmb)) {
       ClearOutputData();  // required when LoadOutputData() is used.
-      pmb = pmb->next;
       continue;
     } // skip if slice was out of range
 
@@ -140,7 +138,6 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     // don't forget to close the output file and clean up ptrs to data in OutputData
     std::fclose(pfile);
     ClearOutputData(); // required when LoadOutputData() is used.
-    pmb = pmb->next;
   }  // end loop over MeshBlocks
 
   // increment counters

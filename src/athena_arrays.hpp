@@ -77,6 +77,8 @@ class AthenaArray {
 
   // public function to swap underlying data pointers of two equally-sized arrays
   void SwapAthenaArray(AthenaArray<T>& array2);
+  // public function to exchange two arrays
+  void ExchangeAthenaArray(AthenaArray<T>& array2);
   void ZeroClear();
 
   // functions to get array dimensions
@@ -468,6 +470,27 @@ void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
   std::swap(pdata_, array2.pdata_);
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn AthenaArray::ExchangeAthenaArray()
+//  \brief  exchange two AthenaArrays including the size information
+// Does not allocate memory for either AthenArray
+// THIS REQUIRES THAT THE DESTINATION AND SOURCE ARRAYS BE ALREADY ALLOCATED (state_ !=
+// empty) BUT THEIR SIZES CAN BE DIFFERENT (but no check)
+
+template<typename T>
+void AthenaArray<T>::ExchangeAthenaArray(AthenaArray<T>& array2) {
+  std::swap(nx1_, array2.nx1_);
+  std::swap(nx2_, array2.nx2_);
+  std::swap(nx3_, array2.nx3_);
+  std::swap(nx4_, array2.nx4_);
+  std::swap(nx5_, array2.nx5_);
+  std::swap(nx6_, array2.nx6_);
+  std::swap(state_, array2.state_);
+  std::swap(pdata_, array2.pdata_);
+  return;
+}
+
 
 //----------------------------------------------------------------------------------------
 //! \fn AthenaArray::ZeroClear()
