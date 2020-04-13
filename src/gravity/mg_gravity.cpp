@@ -9,6 +9,7 @@
 // C headers
 
 // C++ headers
+#include <algorithm>
 #include <iostream>
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
@@ -180,7 +181,7 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void MGGravity::CalculateDefect(AthenaArray<Real> &def, 
+//! \fn  void MGGravity::CalculateDefect(AthenaArray<Real> &def,
 //                       const AthenaArray<Real> &u, const AthenaArray<Real> &src,
 //                       int rlev, int il, int iu, int jl, int ju, int kl, int ku)
 //  \brief Implementation of the Defect calculation

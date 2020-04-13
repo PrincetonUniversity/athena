@@ -9,6 +9,7 @@
 // C headers
 
 // C++ headers
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>    // memcpy()
@@ -718,7 +719,7 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(BoundaryQuantity type,
     }
     if (nb.snb.level == loc.level) {
       SetMultigridBoundarySameLevel(bdata_.recv[nb.bufid], nb, folddata);
-    } else if (nb.snb.level < loc.level) { 
+    } else if (nb.snb.level < loc.level) {
       if (type == BoundaryQuantity::mggrav_f)
         SetMultigridBoundaryFromCoarserFluxCons(bdata_.recv[nb.bufid], nb);
       else
@@ -770,20 +771,29 @@ void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata) {
       si = cs, ei = ce;
       if ((loc.lx1 & 1LL) == 0LL) ei += cn;
       else                        si -= cn;
-    } else if (nb.ni.ox1 > 0) si = ce + 1,  ei = ce + cn;
-    else                      si = cs-cn,   ei = cs-1;
+    } else if (nb.ni.ox1 > 0) {
+      si = ce + 1,  ei = ce + cn;
+    } else {
+      si = cs-cn,   ei = cs-1;
+    }
     if (nb.ni.ox2 == 0) {
       sj = cs, ej = ce;
       if ((loc.lx2 & 1LL) == 0LL) ej += cn;
       else                        sj -= cn;
-    } else if (nb.ni.ox2 > 0) sj = ce + 1,  ej = ce + cn;
-    else                      sj = cs-cn,   ej = cs-1;
+    } else if (nb.ni.ox2 > 0) {
+      sj = ce + 1,  ej = ce + cn;
+    } else {
+      sj = cs-cn,   ej = cs-1;
+    }
     if (nb.ni.ox3 == 0) {
       sk = cs, ek = ce;
       if ((loc.lx3 & 1LL) == 0LL) ek += cn;
       else                        sk -= cn;
-    } else if (nb.ni.ox3 > 0) sk = ce + 1,  ek = ce + cn;
-    else                      sk = cs-cn,   ek = cs-1;
+    } else if (nb.ni.ox3 > 0) {
+      sk = ce + 1,  ek = ce + cn;
+    } else {
+      sk = cs-cn,   ek = cs-1;
+    }
 
     // Prolongation using tri-linear interpolation
     int fsi = (si - ngh)*2 + ngh;

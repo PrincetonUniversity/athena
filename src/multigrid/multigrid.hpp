@@ -11,8 +11,8 @@
 // C headers
 
 // C++ headers
-#include <cstdio> // std::size_t
 #include <cstdint>  // std::int64_t
+#include <cstdio> // std::size_t
 #include <iostream>
 #include <unordered_map>
 #include <vector>

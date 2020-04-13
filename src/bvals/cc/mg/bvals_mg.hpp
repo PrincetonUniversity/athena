@@ -96,7 +96,7 @@ class MGBoundaryValues : public BoundaryBase {
 class MGGravityBoundaryValues : public MGBoundaryValues {
  public:
   MGGravityBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs)
-   : MGBoundaryValues(pmg, input_bcs) {} ;
+    : MGBoundaryValues(pmg, input_bcs) {}
  private:
   int LoadMultigridBoundaryBufferToCoarserFluxCons(Real *buf,
                                                    const NeighborBlock& nb) final;

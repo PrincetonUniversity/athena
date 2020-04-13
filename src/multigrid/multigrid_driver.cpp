@@ -12,8 +12,8 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>    // abs
-#include <iostream>   // endl
 #include <iomanip>    // setprecision
+#include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -472,7 +472,8 @@ void MultigridDriver::SolveFMGCycle() {
   for (int v=0; v<nvar_; ++v)
     def += CalculateDefectNorm(MGNormType::l2, v);
   std::cout << std::scientific << std::setprecision(15);
-  std::cout << "after FMG def = " << def << " fas " << ffas_ << " fsub " << fsubtract_average_ << std::endl;
+//  std::cout << "after FMG def = " << def << " fas " << ffas_ << " fsub "
+//            << fsubtract_average_ << std::endl;
   if (mode_ == 1) {
     fmglevel_ = ntotallevel_ - 1;
     Real def = 0.0;
@@ -493,8 +494,10 @@ void MultigridDriver::SolveFMGCycle() {
 void MultigridDriver::SolveIterative(Real inidef) {
   int niter = 0;
   Real def = inidef;
-  if (def != 0.0) def += inidef * 1e-10;
-  else def += TINY_NUMBER;
+  if (def != 0.0)
+    def += inidef * 1e-10;
+  else
+    def += TINY_NUMBER;
   std::cout << std::scientific << std::setprecision(15);
   while (def > eps_) {
     SolveVCycle(1, 1);
@@ -535,7 +538,7 @@ void MultigridDriver::SolveCoarsestGrid() {
   int ni = (std::max(nrbx1_, std::max(nrbx2_, nrbx3_))
             >> (nrootlevel_-1));
   if (fsubtract_average_ && ni == 1) { // trivial case - all zero
-    if (ffas_) { 
+    if (ffas_) {
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
       mgroot_->StoreOldData();
     }
@@ -902,38 +905,45 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
       if (nloc.lx3 < 0) {
         if (MGBoundaryFunction_[BoundaryFace::inner_x3] == MGPeriodicInnerX3)
           nloc.lx3 = (nrbx3_ << lev) - 1;
-        else continue;
+        else
+          continue;
       }
       if (nloc.lx3 >= (nrbx3_ << lev)) {
         if (MGBoundaryFunction_[BoundaryFace::outer_x3] == MGPeriodicOuterX3)
           nloc.lx3 = 0;
-        else continue;
+        else
+          continue;
       }
       for (int ox2=-1; ox2<=1; ++ox2) {
         nloc.lx2 = loc.lx2 + ox2;
         if (nloc.lx2 < 0) {
           if (MGBoundaryFunction_[BoundaryFace::inner_x2] == MGPeriodicInnerX2)
             nloc.lx2 = (nrbx2_ << lev) - 1;
-          else continue;
+          else
+            continue;
         }
         if (nloc.lx2 >= (nrbx2_ << lev)) {
           if (MGBoundaryFunction_[BoundaryFace::outer_x2] == MGPeriodicOuterX2)
             nloc.lx2 = 0;
-          else continue;
+          else
+            continue;
         }
         for (int ox1=-1; ox1<=1; ++ox1) {
-          if (ox1 == 0 && ox2 == 0 && ox3 == 0) continue;
+          if (ox1 == 0 && ox2 == 0 && ox3 == 0)
+            continue;
           // find a neighboring octet - either on the same or coarser level
           nloc.lx1 = loc.lx1 + ox1;
           if (nloc.lx1 < 0) {
             if (MGBoundaryFunction_[BoundaryFace::inner_x1] == MGPeriodicInnerX1)
               nloc.lx1 = (nrbx1_ << lev) - 1;
-            else continue;
+            else
+              continue;
           }
           if (nloc.lx1 >= (nrbx1_ << lev)) {
             if (MGBoundaryFunction_[BoundaryFace::outer_x1] == MGPeriodicOuterX1)
               nloc.lx1 = 0;
-            else continue;
+            else
+              continue;
           }
           if (octetmap_[lev].count(nloc) == 1) { // on the same level
             int nid = octetmap_[lev][nloc];
@@ -989,13 +999,13 @@ void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
   int is, ie, js, je, ks, ke, nis, njs, nks;
   if (ox1 == 0)     is = ngh,   ie = ngh+1, nis = ngh;
   else if (ox1 < 0) is = 0,     ie = ngh-1, nis = ngh+1;
-  else              is = ngh+2, ie = ngh+2, nis = ngh; 
+  else              is = ngh+2, ie = ngh+2, nis = ngh;
   if (ox2 == 0)     js = ngh,   je = ngh+1, njs = ngh;
   else if (ox2 < 0) js = 0,     je = ngh-1, njs = ngh+1;
-  else              js = ngh+2, je = ngh+2, njs = ngh; 
+  else              js = ngh+2, je = ngh+2, njs = ngh;
   if (ox3 == 0)     ks = ngh,   ke = ngh+1, nks = ngh;
   else if (ox3 < 0) ks = 0,     ke = ngh-1, nks = ngh+1;
-  else              ks = ngh+2, ke = ngh+2, nks = ngh; 
+  else              ks = ngh+2, ke = ngh+2, nks = ngh;
   int ci = ox1 + ngh, cj = ox2 + ngh, ck = ox3 + ngh;
   for (int v=0; v<nvar_; ++v) {
     for (int k=ks, nk=nks; k<=ke; ++k, ++nk) {
@@ -1051,9 +1061,9 @@ void MultigridDriver::SetOctetBoundaryFromCoarser(const AthenaArray<Real> &un,
     if (ox1 == 0) ci = ix1 + ngh;
     else          ci = (ix1^1) + ngh;
     if (ox2 == 0) cj = ix2 + ngh;
-    else          cj = (ix2^1) + ngh; 
+    else          cj = (ix2^1) + ngh;
     if (ox3 == 0) ck = ix3 + ngh;
-    else          ck = (ix3^1) + ngh; 
+    else          ck = (ix3^1) + ngh;
   }
   int i = ngh + ox1, j = ngh + ox2, k = ngh + ox3;
   for (int v=0; v<nvar_; ++v)
@@ -1168,7 +1178,8 @@ void MultigridDriver::RestrictOctetsBeforeTransfer() {
     const LogicalLocation &loc = octets_[0][o].loc;
     mgroot_->Restrict(cbuf_, octets_[0][o].u, os_, oe_, os_, oe_, os_, oe_);
     for (int v=0; v<nvar_; ++v)
-      mgroot_->SetData(MGVariable::u, v, loc.lx3, loc.lx2, loc.lx1, cbuf_(v, ngh, ngh, ngh));
+      mgroot_->SetData(MGVariable::u, v, loc.lx3, loc.lx2, loc.lx1,
+                       cbuf_(v, ngh, ngh, ngh));
   }
 
   return;
@@ -1216,24 +1227,28 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
       if (nloc.lx3 < 0) {
         if (MGBoundaryFunction_[BoundaryFace::inner_x3] == MGPeriodicInnerX3)
           nloc.lx3 = (nrbx3_ << lev) - 1;
-        else continue;
+        else
+          continue;
       }
       if (nloc.lx3 >= (nrbx3_ << lev)) {
         if (MGBoundaryFunction_[BoundaryFace::outer_x3] == MGPeriodicOuterX3)
           nloc.lx3 = 0;
-        else continue;
+        else
+          continue;
       }
       for (int ox2=-1; ox2<=1; ++ox2) {
         nloc.lx2 = loc.lx2 + ox2;
         if (nloc.lx2 < 0) {
           if (MGBoundaryFunction_[BoundaryFace::inner_x2] == MGPeriodicInnerX2)
             nloc.lx2 = (nrbx2_ << lev) - 1;
-          else continue;
+          else
+            continue;
         }
         if (nloc.lx2 >= (nrbx2_ << lev)) {
           if (MGBoundaryFunction_[BoundaryFace::outer_x2] == MGPeriodicOuterX2)
             nloc.lx2 = 0;
-          else continue;
+          else
+            continue;
         }
         for (int ox1=-1; ox1<=1; ++ox1) {
           if (ox1 == 0 && ox2 == 0 && ox3 == 0) continue;
@@ -1241,12 +1256,14 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
           if (nloc.lx1 < 0) {
             if (MGBoundaryFunction_[BoundaryFace::inner_x1] == MGPeriodicInnerX1)
               nloc.lx1 = (nrbx1_ << lev) - 1;
-            else continue;
+            else
+              continue;
           }
           if (nloc.lx1 >= (nrbx1_ << lev)) {
             if (MGBoundaryFunction_[BoundaryFace::outer_x1] == MGPeriodicOuterX1)
               nloc.lx1 = 0;
-            else continue;
+            else
+              continue;
           }
           if (octetmap_[lev].count(nloc) == 1) { // same or finer
             int nid = octetmap_[lev][nloc];
@@ -1308,7 +1325,7 @@ void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
                               (uold(v,l,l,l)+uold(v,l,l,r)+uold(v,l,r,l)+uold(v,r,l,l)
                               +uold(v,r,r,l)+uold(v,r,l,r)+uold(v,l,r,r)+uold(v,r,r,r));
   }
- 
+
   for (int ox3=-1; ox3<=1; ++ox3) {
     for (int ox2=-1; ox2<=1; ++ox2) {
       for (int ox1=-1; ox1<=1; ++ox1) {

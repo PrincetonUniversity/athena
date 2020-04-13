@@ -498,7 +498,7 @@ void MeshBlockTree::CountMGOctets(int *noct) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void MeshBlockTree::GetMGOctetList(std::vector<MGOctet> *oct, 
+//! \fn void MeshBlockTree::GetMGOctetList(std::vector<MGOctet> *oct,
 //      std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octmap, int *noct)
 //  \brief construct lists of octets Multigrid with mesh refinement
 

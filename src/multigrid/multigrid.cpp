@@ -29,7 +29,7 @@
 //! \fn Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost)
 //  \brief Multigrid constructor
 
-Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost) : 
+Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost) :
   pmy_driver_(pmd), pmy_block_(pmb), ngh_(nghost), nvar_(invar), defscale_(1.0) {
   if (pmy_block_ != nullptr) {
     loc_ = pmy_block_->loc;
@@ -571,7 +571,7 @@ Real Multigrid::GetCoarsestData(MGVariable type, int n) {
 //  \brief set a value to a cell on the current level
 
 void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v) {
-  AthenaArray<Real> &dst = 
+  AthenaArray<Real> &dst =
                     (type == MGVariable::src) ? src_[current_level_] : u_[current_level_];
   dst(n, ngh_+k, ngh_+j, ngh_+i) = v;
 

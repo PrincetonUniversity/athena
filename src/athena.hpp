@@ -68,7 +68,6 @@ struct LogicalLocation { // aggregate and POD type
   static bool Greater(const LogicalLocation & left, const LogicalLocation &right) {
     return left.level > right.level;
   }
-
 };
 
 // prototype for overloading the comparison operator (defined in meshblock_tree.cpp)
