@@ -466,9 +466,9 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToFiner(Real *buf,
 bool MGBoundaryValues::SendMultigridBoundaryBuffers(BoundaryQuantity type,
                                                     bool folddata) {
   bool bflag = true;
+  Multigrid *pmg = nullptr;
 
   for (int n=0; n<nneighbor; n++) {
-    Multigrid *pmg;
     NeighborBlock& nb = neighbor[n];
     if (bdata_.sflag[nb.bufid] == BoundaryStatus::completed) continue;
     if (type == BoundaryQuantity::mggrav_f && nb.snb.level < loc.level
