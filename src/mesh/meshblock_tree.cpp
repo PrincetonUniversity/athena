@@ -507,7 +507,7 @@ void MeshBlockTree::GetMGOctetList(std::vector<MGOctet> *oct,
   if (pleaf_ == nullptr) return;
 
   int lev = loc_.level - pmesh_->root_level;
-  int oid;
+  int oid = 0;
   if (lev >= 0) {
     oid = noct[lev];
     oct[lev][oid].loc = loc_;
