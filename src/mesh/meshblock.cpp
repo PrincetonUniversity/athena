@@ -409,11 +409,11 @@ inline void MeshBlock::SetAllIndicialParameters() {
   cnghost = (NGHOST + 1)/2 + 1;
 
   // allow decoupling of coarse ghosts for vertex-centered
-  cng = NGHOST + 1;
+  cng = NCGHOST;
   rcng = ng / 2;
 
   // fundamental grid indicial parameters
-  SetIndicialParameters(ng, block_size.nx1, 
+  SetIndicialParameters(ng, block_size.nx1,
                         is, ie, ncells1,
                         ivs, ive,
                         ims, ime, ips, ipe,
@@ -421,7 +421,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
                         nverts1,
                         true, true);
 
-  SetIndicialParameters(ng, block_size.nx2, 
+  SetIndicialParameters(ng, block_size.nx2,
                         js, je, ncells2,
                         jvs, jve,
                         jms, jme, jps, jpe,
@@ -429,7 +429,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
                         nverts2,
                         true, pmy_mesh->f2);
 
-  SetIndicialParameters(ng, block_size.nx3, 
+  SetIndicialParameters(ng, block_size.nx3,
                         ks, ke, ncells3,
                         kvs, kve,
                         kms, kme, kps, kpe,
@@ -438,7 +438,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
                         true, pmy_mesh->f3);
 
   // coarse grid indicial parameters
-  SetIndicialParameters(cng, block_size.nx1 / 2, 
+  SetIndicialParameters(cng, block_size.nx1 / 2,
                         cis, cie, ncc1,
                         civs, cive,
                         cims, cime, cips, cipe,
@@ -446,7 +446,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
                         ncv1,
                         pmy_mesh->multilevel, true);
 
-  SetIndicialParameters(cng, block_size.nx2 / 2, 
+  SetIndicialParameters(cng, block_size.nx2 / 2,
                         cjs, cje, ncc2,
                         cjvs, cjve,
                         cjms, cjme, cjps, cjpe,
@@ -454,7 +454,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
                         ncv2,
                         pmy_mesh->multilevel, pmy_mesh->f2);
 
-  SetIndicialParameters(cng, block_size.nx3 / 2, 
+  SetIndicialParameters(cng, block_size.nx3 / 2,
                         cks, cke, ncc3,
                         ckvs, ckve,
                         ckms, ckme, ckps, ckpe,
@@ -469,7 +469,7 @@ inline void MeshBlock::SetAllIndicialParameters() {
 //! \fn inline void MeshBlock::SetIndicialParameters(...)
 //  \brief Set indicial parameters for a given dimension
 inline void MeshBlock::SetIndicialParameters(int num_ghost,
-                                             int block_size, 
+                                             int block_size,
                                              int &ix_s, int &ix_e,
                                              int &ncells,            // CC end
                                              int &ix_vs, int &ix_ve, // bnd

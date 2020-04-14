@@ -13,6 +13,8 @@
 #   --eos=xxx           use xxx as the equation of state
 #   --flux=xxx          use xxx as the Riemann solver
 #   --nghost=xxx        set NGHOST=xxx
+#   --ncghost=xxx       set NCGHOST=xxx
+#   --nextrapolate=xxx  set NEXTRAPOLATE=xxx  [for ouflow conditions]
 #   --nscalars=xxx      set NSCALARS=xxx
 #   -eos_table          enable EOS table
 #   -f                  enable fluid
@@ -118,6 +120,16 @@ parser.add_argument('--flux',
 parser.add_argument('--nghost',
                     default='2',
                     help='set number of ghost zones')
+
+# --ncghost=[value] argument
+parser.add_argument('--ncghost',
+                    default='3',
+                    help='set number of coarse ghost zones (for vertex centered)')
+
+# --nextrapolate=[value] argument
+parser.add_argument('--nextrapolate',
+                    default='4',
+                    help='number of points to use for outflow extrapolation')
 
 # --nscalars=[value] argument
 parser.add_argument('--nscalars',
@@ -468,6 +480,12 @@ definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
 
 # --nghost=[value] argument
 definitions['NUMBER_GHOST_CELLS'] = args['nghost']
+
+# --cnghost=[value] argument
+definitions['NUMBER_COARSE_GHOSTS'] = args['ncghost']
+
+# --nextrapolate=[value] argument
+definitions['NUMBER_EXTRAPOLATION_POINTS'] = args['nextrapolate']
 
 # --nscalars=[value] argument
 definitions['NUMBER_PASSIVE_SCALARS'] = args['nscalars']
@@ -956,49 +974,51 @@ elif args['grav'] == 'mg':
     self_grav_string = 'Multigrid'
 
 print('Your Athena++ distribution has now been configured with the following options:')
-print('  Problem generator:          ' + args['prob'])
-print('  Coordinate system:          ' + args['coord'])
-print('  Equation of state:          ' + args['eos'])
-print('  Riemann solver:             ' + args['flux'])
-print('  Hydrodynamics:              ' + ('ON' if args['f'] else 'OFF'))
-print('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF'))
-print('  Number of scalars:          ' + args['nscalars'])
-print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))
-print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
-print('  Advection equation:         ' + ('ON' if args['a'] else 'OFF'))
-print('  Wave equation:              ' + ('ON' if args['w'] else 'OFF'))
-print('  Z4c equations:              ' + ('ON' if args['z'] else 'OFF'))
-print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
-print('  Self-Gravity:               ' + self_grav_string)
-print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
-print('  Vertex-centering preferred: ' + ('ON' if args['vertex'] else 'OFF'))
-print('  fill_wave_interior:         '
+print('  Problem generator:            ' + args['prob'])
+print('  Coordinate system:            ' + args['coord'])
+print('  Equation of state:            ' + args['eos'])
+print('  Riemann solver:               ' + args['flux'])
+print('  Hydrodynamics:                ' + ('ON' if args['f'] else 'OFF'))
+print('  Magnetic fields:              ' + ('ON' if args['b'] else 'OFF'))
+print('  Number of scalars:            ' + args['nscalars'])
+print('  Special relativity:           ' + ('ON' if args['s'] else 'OFF'))
+print('  General relativity:           ' + ('ON' if args['g'] else 'OFF'))
+print('  Advection equation:           ' + ('ON' if args['a'] else 'OFF'))
+print('  Wave equation:                ' + ('ON' if args['w'] else 'OFF'))
+print('  Z4c equations:                ' + ('ON' if args['z'] else 'OFF'))
+print('  Frame transformations:        ' + ('ON' if args['t'] else 'OFF'))
+print('  Self-Gravity:                 ' + self_grav_string)
+print('  Super-Time-Stepping:          ' + ('ON' if args['sts'] else 'OFF'))
+print('  Vertex-centering preferred:   ' + ('ON' if args['vertex'] else 'OFF'))
+print('  fill_wave_interior:           '
       + ('ON' if args['fill_wave_interior'] else 'OFF'))
-print('  fill_wave_bnd_sl:           '
+print('  fill_wave_bnd_sl:             '
       + ('ON' if args['fill_wave_bnd_sl'] else 'OFF'))
-print('  fill_wave_bnd_frf:          '
+print('  fill_wave_bnd_frf:            '
       + ('ON' if args['fill_wave_bnd_frf'] else 'OFF'))
-print('  fill_wave_bnd_frc:          '
+print('  fill_wave_bnd_frc:            '
       + ('ON' if args['fill_wave_bnd_frc'] else 'OFF'))
-print('  fill_wave_vertices:         '
+print('  fill_wave_vertices:           '
       + ('ON' if args['fill_wave_vertices'] else 'OFF'))
-print('  fill_wave_coarse_p:         '
+print('  fill_wave_coarse_p:           '
       + ('ON' if args['fill_wave_coarse_p'] else 'OFF'))
-print('  dbg_vc_consistency:         '
+print('  dbg_vc_consistency:           '
       + ('ON' if args['dbg_vc_consistency'] else 'OFF'))
-print('  Shearing Box BCs:           ' + ('ON' if args['shear'] else 'OFF'))
-print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))
-print('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF'))
-print('  Linker flags:               ' + makefile_options['LINKER_FLAGS'] + ' '
+print('  Shearing Box BCs:             ' + ('ON' if args['shear'] else 'OFF'))
+print('  Debug flags:                  ' + ('ON' if args['debug'] else 'OFF'))
+print('  Code coverage flags:          ' + ('ON' if args['coverage'] else 'OFF'))
+print('  Linker flags:                 ' + makefile_options['LINKER_FLAGS'] + ' '
       + makefile_options['LIBRARY_FLAGS'])
-print('  Floating-point precision:   ' + ('single' if args['float'] else 'double'))
-print('  Number of ghost cells:      ' + args['nghost'])
-print('  MPI parallelism:            ' + ('ON' if args['mpi'] else 'OFF'))
-print('  OpenMP parallelism:         ' + ('ON' if args['omp'] else 'OFF'))
-print('  FFT:                        ' + ('ON' if args['fft'] else 'OFF'))
-print('  HDF5 output:                ' + ('ON' if args['hdf5'] else 'OFF'))
+print('  Floating-point precision:     ' + ('single' if args['float'] else 'double'))
+print('  Number of ghost cells:        ' + args['nghost'])
+print('  Number of coarse ghosts (VC): ' + args['ncghost'])
+print('  Total # extrapolation points: ' + args['nextrapolate'])
+print('  MPI parallelism:              ' + ('ON' if args['mpi'] else 'OFF'))
+print('  OpenMP parallelism:           ' + ('ON' if args['omp'] else 'OFF'))
+print('  FFT:                          ' + ('ON' if args['fft'] else 'OFF'))
+print('  HDF5 output:                  ' + ('ON' if args['hdf5'] else 'OFF'))
 if args['hdf5']:
-    print('  HDF5 precision:             ' + ('double' if args['h5double'] else 'single'))
-print('  Compiler:                   ' + args['cxx'])
-print('  Compilation command:        ' + makefile_options['COMPILER_COMMAND'] + ' '
+    print('  HDF5 precision:               ' + ('double' if args['h5double'] else 'single'))
+print('  Compiler:                     ' + args['cxx'])
+print('  Compilation command:          ' + makefile_options['COMPILER_COMMAND'] + ' '
       + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])

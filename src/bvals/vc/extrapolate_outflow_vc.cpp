@@ -22,8 +22,6 @@
 
 #include "../../utils/interp_univariate.hpp"
 
-int const NEXTRAPOLATE = 6;
-
 //----------------------------------------------------------------------------------------
 //! \fn void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX1(
 //          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)

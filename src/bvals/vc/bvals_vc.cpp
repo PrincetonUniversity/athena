@@ -141,7 +141,7 @@ int VertexCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborInde
 
   // During debug just allow the buffer to grow to mod this out as a potential
   // source of error
-  int size = 10 * nu_* (pmb->block_size.nx1) * (pmb->block_size.nx2) * 
+  int size = 10 * nu_* (pmb->block_size.nx1) * (pmb->block_size.nx2) *
          (pmb->block_size.nx3);
   if (DBGPR_BVALS_VC)
     printf("size = %d\n", size);
@@ -747,7 +747,7 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   if (!FILL_WAVE_BND_FRC) {
     if (DBGPR_BVALS_VC)
       coarse_var.print_all();
-  
+
     BufferUtility::UnpackData(buf, coarse_var, nl_, nu_,
                               si, ei, sj, ej, sk, ek, p);
 
@@ -872,9 +872,9 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
     AthenaArray<Real> &var = *var_vc;
     if (DBGPR_BVALS_VC)
       var.print_all();
-  
+
     pmb->DebugWaveMeshBlock(var, si, ei, sj, ej, sk, ek, false);
-  
+
     if (DBGPR_BVALS_VC)
       var.print_all();
     // pmb->DebugWaveMeshBlock(var,
@@ -904,8 +904,6 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   // if ((nb.ni.ox1 == 1) and (nb.ni.ox2 == -1))
   //   Q();
 
-  // pmb->DebugWaveMeshBlockSolution();
-  // Q();
 
   return;
 }
