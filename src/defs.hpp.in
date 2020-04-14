@@ -21,6 +21,7 @@
 #define DBGPR_BVALS_CC false
 #define DBGPR_BVALS_VC false
 #define DBGPR_CONSISTENCY_CONDITIONS_VC false
+#define DBGPR_WAVEINTEGRATORTASKLIST false
 
 //----------------------------------------------------------------------------------------
 // macros which define physics and algorithms

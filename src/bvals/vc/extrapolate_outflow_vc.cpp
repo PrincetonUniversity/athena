@@ -6,6 +6,11 @@
 //! \file extrapolate_outflow_vc.cpp
 //  \brief implementation of extrapolated outflow BCs in each dimension for
 //         vertex-centered AthenaArray
+//
+//  Notes:
+//  - data is copied from extremal [boundary] vertices out to ghosts
+//  - OuterXn conditions expect the same input idx arguments as outflow_cc but
+//    are adjusted to work with VC
 
 // C, C++ headers
 #include <iostream>
@@ -16,7 +21,6 @@
 #include "bvals_vc.hpp"
 
 // BD: TODO - extrapolation order should probably be modified based on ghosts
-// BD: TODO - outer limit needs correction
 
 //----------------------------------------------------------------------------------------
 //! \fn void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX1(
@@ -25,6 +29,10 @@
 
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX1(
     Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
+
+  ju = IncrementIfNonzero(ju);
+  ku = IncrementIfNonzero(ku);
+
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -53,6 +61,11 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX1(
 
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX1(
     Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
+
+  iu = IncrementIfNonzero(iu);
+  ju = IncrementIfNonzero(ju);
+  ku = IncrementIfNonzero(ku);
+
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -81,6 +94,10 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX1(
 
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
+
+  iu = IncrementIfNonzero(iu);
+  ku = IncrementIfNonzero(ku);
+
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl-1; j>=jl-ngh; --j) {
@@ -103,6 +120,11 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX2(
 
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
+
+  iu = IncrementIfNonzero(iu);
+  ju = IncrementIfNonzero(ju);
+  ku = IncrementIfNonzero(ku);
+
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=ju+1; j<=ju+ngh; ++j) {
@@ -125,6 +147,10 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX2(
 
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
+
+  iu = IncrementIfNonzero(iu);
+  ju = IncrementIfNonzero(ju);
+
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl-1; k>=kl-ngh; --k) {
       for (int j=jl; j<=ju; ++j) {
@@ -147,6 +173,11 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX3(
 
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {
+
+  iu = IncrementIfNonzero(iu);
+  ju = IncrementIfNonzero(ju);
+  ku = IncrementIfNonzero(ku);
+
   for (int n=0; n<=nu_; ++n) {
     for (int k=ku+1; k<=ku+ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {

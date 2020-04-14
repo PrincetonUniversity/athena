@@ -113,8 +113,6 @@ public:
   // convenience for vertices
   int nverts1, nverts2, nverts3;   // number of vertices (cells + 1)
   int ncv1, ncv2, ncv3;            // coarse analogue
-  // int iv, jv, kv;                  // upper idx for vertices
-  // int civ, cjv, ckv;               // upper idx (coarse) for vertices
 
   int ims, ime, ips, ipe;          // -/+ (communication) ghost-zone idx
   int ivs, ive;                    // shared vertices
@@ -222,8 +220,6 @@ public:
   void Z4cUserWorkInLoop();
 
   //-- Debug
-  // Output information about full solution
-  void DebugWaveMeshBlockSolution();
   // Populate MeshBlock subset based on input indices
   void DebugWaveMeshBlock(AthenaArray<Real> &u_wave,
                           int il, int iu,
@@ -249,7 +245,7 @@ private:
   // helper functions for assigning / testing indices (inlined on definition)
   void SetAllIndicialParameters();
   void SetIndicialParameters(int num_ghost,
-                             int block_size, 
+                             int block_size,
                              int &ix_s, int &ix_e,
                              int &ncells,                 // CC end
                              int &ix_vs, int &ix_ve,      // bnd vert

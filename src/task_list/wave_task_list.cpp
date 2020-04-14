@@ -365,7 +365,8 @@ void WaveIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 
   }
 
-  printf("StartupTaskList\n");
+  if (DBGPR_WAVEINTEGRATORTASKLIST)
+    printf("StartupTaskList\n");
   pmb->pbval->StartReceiving(BoundaryCommSubset::all);
   return;
 }
