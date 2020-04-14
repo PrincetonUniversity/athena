@@ -20,7 +20,9 @@
 #include "../../athena_arrays.hpp"
 #include "bvals_vc.hpp"
 
-// BD: TODO - extrapolation order should probably be modified based on ghosts
+#include "../../utils/interp_univariate.hpp"
+
+int const NEXTRAPOLATE = 6;
 
 //----------------------------------------------------------------------------------------
 //! \fn void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX1(
@@ -38,14 +40,13 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX1(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i = il-1; i >= il-ngh; --i) {
-          // extrapolate variables at 4th order
-          (*var_vc)(n,k,j,i) = 4.*(*var_vc)(n,k,j,i+1) - 6.*(*var_vc)(n,k,j,i+2) +
-                               4.*(*var_vc)(n,k,j,i+3) - 1.*(*var_vc)(n,k,j,i+4);
+          (*var_vc)(n,k,j,i) = 0;
 
-          // extrapolate variables at 6th order
-          // (*var_vc)(n,k,j,i) = 6.*(*var_vc)(n,k,j,i+1) - 15.*(*var_vc)(n,k,j,i+2) +
-          //                     20.*(*var_vc)(n,k,j,i+3) - 15.*(*var_vc)(n,k,j,i+4) +
-          //                      6.*(*var_vc)(n,k,j,i+5) - 1.*(*var_vc)(n,k,j,i+6);
+          for (int ix_e=0; ix_e < NEXTRAPOLATE; ++ix_e) {
+            Real const extr_coeff = \
+              InterpolateLagrangeUniformBiasR<NEXTRAPOLATE>::coeff[ix_e];
+            (*var_vc)(n,k,j,i) += extr_coeff * (*var_vc)(n,k,j,i+ix_e+1);
+          }
 
         }
       }
@@ -71,14 +72,14 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX1(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=iu+1; i<=iu+ngh; ++i) {
-          // extrapolate variables at 4th order
-          (*var_vc)(n,k,j,i) = 4.*(*var_vc)(n,k,j,i-1) - 6.*(*var_vc)(n,k,j,i-2) +
-                               4.*(*var_vc)(n,k,j,i-3) - 1.*(*var_vc)(n,k,j,i-4);
+          (*var_vc)(n,k,j,i) = 0;
 
-          // extrapolate variables at 6th order
-          // (*var_vc)(n,k,j,i) = 6.*(*var_vc)(n,k,j,i-1) - 15.*(*var_vc)(n,k,j,i-2) +
-          //                     20.*(*var_vc)(n,k,j,i-3) - 15.*(*var_vc)(n,k,j,i-4) +
-          //                      6.*(*var_vc)(n,k,j,i-5) - 1.*(*var_vc)(n,k,j,i-6);
+          for (int ix_e=0; ix_e < NEXTRAPOLATE; ++ix_e) {
+            Real const extr_coeff = \
+              InterpolateLagrangeUniformBiasR<NEXTRAPOLATE>::coeff[ix_e];
+            (*var_vc)(n,k,j,i) += extr_coeff * (*var_vc)(n,k,j,i-ix_e-1);
+          }
+
         }
 
       }
@@ -103,9 +104,14 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX2(
       for (int j=jl-1; j>=jl-ngh; --j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          // extrapolate variables at 4th order
-          (*var_vc)(n,k,j,i) = 4.*(*var_vc)(n,k,j+1,i) - 6.*(*var_vc)(n,k,j+2,i) +
-                               4.*(*var_vc)(n,k,j+3,i) - 1.*(*var_vc)(n,k,j+4,i);
+          (*var_vc)(n,k,j,i) = 0;
+
+          for (int ix_e=0; ix_e < NEXTRAPOLATE; ++ix_e) {
+            Real const extr_coeff = \
+              InterpolateLagrangeUniformBiasR<NEXTRAPOLATE>::coeff[ix_e];
+            (*var_vc)(n,k,j,i) += extr_coeff * (*var_vc)(n,k,j+ix_e+1,i);
+          }
+
         }
       }
     }
@@ -130,9 +136,13 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX2(
       for (int j=ju+1; j<=ju+ngh; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          // extrapolate variables at 4th order
-          (*var_vc)(n,k,j,i) = 4.*(*var_vc)(n,k,j-1,i) - 6.*(*var_vc)(n,k,j-2,i) +
-                               4.*(*var_vc)(n,k,j-3,i) - 1.*(*var_vc)(n,k,j-4,i);
+          (*var_vc)(n,k,j,i) = 0;
+
+          for (int ix_e=0; ix_e < NEXTRAPOLATE; ++ix_e) {
+            Real const extr_coeff = \
+              InterpolateLagrangeUniformBiasR<NEXTRAPOLATE>::coeff[ix_e];
+            (*var_vc)(n,k,j,i) += extr_coeff * (*var_vc)(n,k,j-ix_e-1,i);
+          }
         }
       }
     }
@@ -156,9 +166,13 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX3(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          // extrapolate variables at 4th order
-          (*var_vc)(n,k,j,i) = 4.*(*var_vc)(n,k+1,j,i) - 6.*(*var_vc)(n,k+2,j,i) +
-                               4.*(*var_vc)(n,k+3,j,i) - 1.*(*var_vc)(n,k+4,j,i);
+          (*var_vc)(n,k,j,i) = 0;
+
+          for (int ix_e=0; ix_e < NEXTRAPOLATE; ++ix_e) {
+            Real const extr_coeff = \
+              InterpolateLagrangeUniformBiasR<NEXTRAPOLATE>::coeff[ix_e];
+            (*var_vc)(n,k,j,i) += extr_coeff * (*var_vc)(n,k+ix_e+1,j,i);
+          }
         }
       }
     }
@@ -183,9 +197,13 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX3(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          // extrapolate variables at 4th order
-          (*var_vc)(n,k,j,i) = 4.*(*var_vc)(n,k-1,j,i) - 6.*(*var_vc)(n,k-2,j,i) +
-                               4.*(*var_vc)(n,k-3,j,i) - 1.*(*var_vc)(n,k-4,j,i);
+          (*var_vc)(n,k,j,i) = 0;
+
+          for (int ix_e=0; ix_e < NEXTRAPOLATE; ++ix_e) {
+            Real const extr_coeff = \
+              InterpolateLagrangeUniformBiasR<NEXTRAPOLATE>::coeff[ix_e];
+            (*var_vc)(n,k,j,i) += extr_coeff * (*var_vc)(n,k-ix_e-1,j,i);
+          }
         }
       }
     }

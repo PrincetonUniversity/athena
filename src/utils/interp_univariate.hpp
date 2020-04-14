@@ -28,5 +28,23 @@ class InterpolateLagrangeUniform {
     static Real const coeff[3][npoints];
 };
 
+// uniform grid; stencil fully biased towards right (target left)
+// use for extrapolation
+template<int stencil_size_>
+class InterpolateLagrangeUniformBiasR {
+  public:
+    enum {interpolation_order = stencil_size_ - 1};
+    enum {npoints = stencil_size_};
+    static Real const coeff[npoints];
+};
+// fully bias left (target right)
+template<int stencil_size_>
+class InterpolateLagrangeUniformBiasL {
+  public:
+    enum {interpolation_order = stencil_size_ - 1};
+    enum {npoints = stencil_size_};
+    static Real const coeff[npoints];
+};
+
 
 #endif
