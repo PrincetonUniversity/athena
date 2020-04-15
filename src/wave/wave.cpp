@@ -7,6 +7,8 @@
 //  \brief implementation of functions in the Wave class
 
 // C++ headers
+#include <iostream>
+#include <string>
 // #include <algorithm>  // min()
 // #include <cmath>      // fabs(), sqrt()
 #include <limits>
@@ -51,9 +53,6 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
 {
   Mesh *pm = pmb->pmy_mesh;
   Coordinates * pco = pmb->pcoord;
-  // each wave obj. should have an associated block [now in initializer]
-  // pmy_block = pmb;
-
 
   // dimensions required for data allocation
   if (PREFER_VC) {
@@ -137,7 +136,78 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
     u2.NewAthenaArray(NWAVE_CPT, nn3, nn2, nn1);
 
   c = pin->GetOrAddReal("wave", "c", 1.0);
-  use_Sommerfeld = pin->GetOrAddInteger("wave", "use_Sommerfeld", 0);
+
+  // Additional boundary condition control
+  std::string boundary_type = pin->GetOrAddString("wave", "boundary_type", "none");
+
+  if (boundary_type == "Dirichlet") {
+    use_Dirichlet = true;
+
+    if (pmb->pmy_mesh->ndim == 1) {
+
+      Lx1_ = pin->GetOrAddReal("wave", "Lx1", 1.);
+      M_ = pin->GetOrAddInteger("wave", "M_cutoff", 1.);
+
+      A_.NewAthenaArray(M_);
+      B_.NewAthenaArray(M_);
+
+      for (int m=1; m<=M_; ++m) {
+        std::string m_str = std::to_string(m);
+        A_(m-1) = pin->GetOrAddReal("wave", "A_" + m_str, 0.);
+        B_(m-1) = pin->GetOrAddReal("wave", "B_" + m_str, 0.);
+      }
+
+    } else if (pmb->pmy_mesh->ndim == 2) {
+
+      Lx1_ = pin->GetOrAddReal("wave", "Lx1", 1.);
+      Lx2_ = pin->GetOrAddReal("wave", "Lx2", 1.);
+
+      M_ = pin->GetOrAddInteger("wave", "M_cutoff", 1.);
+      N_ = pin->GetOrAddInteger("wave", "N_cutoff", 1.);
+
+      A_.NewAthenaArray(M_, N_);
+      B_.NewAthenaArray(M_, N_);
+
+      for (int n=1; n<=N_; ++n) {
+        std::string n_str = std::to_string(n);
+
+        for (int m=1; m<=M_; ++m) {
+          std::string m_str = std::to_string(m);
+          A_(m-1, n-1) = pin->GetOrAddReal("wave", "A_" + m_str + n_str, 0.);
+          B_(m-1, n-1) = pin->GetOrAddReal("wave", "B_" + m_str + n_str, 0.);
+        }
+      }
+
+    } else {
+      Lx1_ = pin->GetOrAddReal("wave", "Lx1", 1.);
+      Lx2_ = pin->GetOrAddReal("wave", "Lx2", 1.);
+      Lx3_ = pin->GetOrAddReal("wave", "Lx3", 1.);
+
+      M_ = pin->GetOrAddInteger("wave", "M_cutoff", 1.);
+      N_ = pin->GetOrAddInteger("wave", "N_cutoff", 1.);
+      O_ = pin->GetOrAddInteger("wave", "O_cutoff", 1.);
+
+      A_.NewAthenaArray(M_, N_, O_);
+      B_.NewAthenaArray(M_, N_, O_);
+
+      for (int o=1; o<=O_; ++o) {
+        std::string o_str = std::to_string(o);
+        for (int n=1; n<=N_; ++n) {
+          std::string n_str = std::to_string(n);
+          for (int m=1; m<=M_; ++m) {
+            std::string m_str = std::to_string(m);
+            A_(m-1, n-1, o-1) = pin->GetOrAddReal(
+              "wave", "A_" + m_str + n_str + o_str, 0.);
+            B_(m-1, n-1, o-1) = pin->GetOrAddReal(
+              "wave", "B_" + m_str + n_str + o_str, 0.);
+          }
+        }
+      }
+
+    }
+
+  } else if (boundary_type == "Sommerfeld")
+    use_Sommerfeld = true;
 
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
   if (pm->multilevel) {
@@ -196,6 +266,11 @@ Wave::~Wave()
 
   exact.DeleteAthenaArray();
   error.DeleteAthenaArray();
+
+  if (use_Dirichlet) {
+    A_.DeleteAthenaArray();
+    B_.DeleteAthenaArray();
+  }
 
   // note: do not include x1_, x2_, x3_
 }

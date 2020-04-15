@@ -474,6 +474,91 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
 }
 
 
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::ApplyPhysicalVertexCenteredBoundaries(const Real time, const Real dt)
+//  \brief Apply all the physical boundary conditions vertex centered fields
+
+void BoundaryValues::ApplyPhysicalVertexCenteredBoundaries(const Real time, const Real dt) {
+  MeshBlock *pmb = pmy_block_;
+  Coordinates *pco = pmb->pcoord;
+  int bis = pmb->ivs - NGHOST, bie = pmb->ive + NGHOST,
+      bjs = pmb->jvs, bje = pmb->jve,
+      bks = pmb->kvs, bke = pmb->kve;
+
+  // Extend the transverse limits that correspond to periodic boundaries as they are
+  // updated: x1, then x2, then x3
+  if (!apply_bndry_fn_[BoundaryFace::inner_x2] && pmb->block_size.nx2 > 1)
+    bjs = pmb->jvs - NGHOST;
+  if (!apply_bndry_fn_[BoundaryFace::outer_x2] && pmb->block_size.nx2 > 1)
+    bje = pmb->jve + NGHOST;
+  if (!apply_bndry_fn_[BoundaryFace::inner_x3] && pmb->block_size.nx3 > 1)
+    bks = pmb->kvs - NGHOST;
+  if (!apply_bndry_fn_[BoundaryFace::outer_x3] && pmb->block_size.nx3 > 1)
+    bke = pmb->kve + NGHOST;
+
+  // KGF: temporarily hardcode Hydro and Field access for coupling in EOS U(W) + calc bcc
+  // and when passed to user-defined boundary function stored in function pointer array
+
+  // KGF: COUPLING OF QUANTITIES (must be manually specified)
+  // downcast BoundaryVariable ptrs to known derived class types: RTTI via dynamic_cast
+  HydroBoundaryVariable *phbvar = nullptr;
+  Hydro *ph = nullptr;
+  FaceCenteredBoundaryVariable *pfbvar = nullptr;
+  Field *pf = nullptr;
+  PassiveScalars *ps = nullptr;
+
+
+  // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
+  if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
+    DispatchBoundaryFunctions(pmb, pco, time, dt,
+                              pmb->ivs, pmb->ive, bjs, bje, bks, bke, NGHOST,
+                              ph->w, pf->b, BoundaryFace::inner_x1);
+  }
+
+  // Apply boundary function on outer-x1 and update W,bcc (if not periodic)
+  if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
+    DispatchBoundaryFunctions(pmb, pco, time, dt,
+                              pmb->ivs, pmb->ive, bjs, bje, bks, bke, NGHOST,
+                              ph->w, pf->b, BoundaryFace::outer_x1);
+  }
+
+  if (pmb->block_size.nx2 > 1) { // 2D or 3D
+    // Apply boundary function on inner-x2 and update W,bcc (if not periodic)
+    if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
+      DispatchBoundaryFunctions(pmb, pco, time, dt,
+                                bis, bie, pmb->jvs, pmb->jve, bks, bke, NGHOST,
+                                ph->w, pf->b, BoundaryFace::inner_x2);
+    }
+
+    // Apply boundary function on outer-x2 and update W,bcc (if not periodic)
+    if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
+      DispatchBoundaryFunctions(pmb, pco, time, dt,
+                                bis, bie, pmb->jvs, pmb->jve, bks, bke, NGHOST,
+                                ph->w, pf->b, BoundaryFace::outer_x2);
+    }
+  }
+
+  if (pmb->block_size.nx3 > 1) { // 3D
+    bjs = pmb->jvs - NGHOST;
+    bje = pmb->jve + NGHOST;
+
+    // Apply boundary function on inner-x3 and update W,bcc (if not periodic)
+    if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
+      DispatchBoundaryFunctions(pmb, pco, time, dt,
+                                bis, bie, bjs, bje, pmb->kvs, pmb->kve, NGHOST,
+                                ph->w, pf->b, BoundaryFace::inner_x3);
+    }
+
+    // Apply boundary function on outer-x3 and update W,bcc (if not periodic)
+    if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
+      DispatchBoundaryFunctions(pmb, pco, time, dt,
+                                bis, bie, bjs, bje, pmb->kvs, pmb->kve, NGHOST,
+                                ph->w, pf->b, BoundaryFace::outer_x3);
+    }
+  }
+  return;
+}
+
 // KGF: should "bvars_it" be fixed in this class member function? Or passed as argument?
 void BoundaryValues::DispatchBoundaryFunctions(
     MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
@@ -481,7 +566,7 @@ void BoundaryValues::DispatchBoundaryFunctions(
     AthenaArray<Real> &prim, FaceField &b, BoundaryFace face) {
   if (block_bcs[face] ==  BoundaryFlag::user) {  // user-enrolled BCs
     pmy_mesh_->BoundaryFunction_[face](pmb, pco, prim, b, time, dt,
-                                       il, iu, jl, ju, kl, ku, NGHOST);
+                                       il, iu, jl, ju, kl, ku, ngh);
   }
   // KGF: this is only to silence the compiler -Wswitch warnings about not handling the
   // "undef" case when considering all possible BoundaryFace enumerator values. If "undef"
@@ -503,22 +588,22 @@ void BoundaryValues::DispatchBoundaryFunctions(
       case BoundaryFace::undef:
         ATHENA_ERROR(msg);
       case BoundaryFace::inner_x1:
-        (*bvars_it)->ReflectInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
+        (*bvars_it)->ReflectInnerX1(time, dt, il, jl, ju, kl, ku, ngh);
         break;
       case BoundaryFace::outer_x1:
-        (*bvars_it)->ReflectOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
+        (*bvars_it)->ReflectOuterX1(time, dt, iu, jl, ju, kl, ku, ngh);
         break;
       case BoundaryFace::inner_x2:
-        (*bvars_it)->ReflectInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+        (*bvars_it)->ReflectInnerX2(time, dt, il, iu, jl, kl, ku, ngh);
         break;
       case BoundaryFace::outer_x2:
-        (*bvars_it)->ReflectOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+        (*bvars_it)->ReflectOuterX2(time, dt, il, iu, ju, kl, ku, ngh);
         break;
       case BoundaryFace::inner_x3:
-        (*bvars_it)->ReflectInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
+        (*bvars_it)->ReflectInnerX3(time, dt, il, iu, jl, ju, kl, ngh);
         break;
       case BoundaryFace::outer_x3:
-        (*bvars_it)->ReflectOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
+        (*bvars_it)->ReflectOuterX3(time, dt, il, iu, jl, ju, ku, ngh);
         break;
       }
       break;
@@ -527,22 +612,22 @@ void BoundaryValues::DispatchBoundaryFunctions(
       case BoundaryFace::undef:
         ATHENA_ERROR(msg);
       case BoundaryFace::inner_x1:
-        (*bvars_it)->OutflowInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
+        (*bvars_it)->OutflowInnerX1(time, dt, il, jl, ju, kl, ku, ngh);
         break;
       case BoundaryFace::outer_x1:
-        (*bvars_it)->OutflowOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
+        (*bvars_it)->OutflowOuterX1(time, dt, iu, jl, ju, kl, ku, ngh);
         break;
       case BoundaryFace::inner_x2:
-        (*bvars_it)->OutflowInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+        (*bvars_it)->OutflowInnerX2(time, dt, il, iu, jl, kl, ku, ngh);
         break;
       case BoundaryFace::outer_x2:
-        (*bvars_it)->OutflowOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+        (*bvars_it)->OutflowOuterX2(time, dt, il, iu, ju, kl, ku, ngh);
         break;
       case BoundaryFace::inner_x3:
-        (*bvars_it)->OutflowInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
+        (*bvars_it)->OutflowInnerX3(time, dt, il, iu, jl, ju, kl, ngh);
         break;
       case BoundaryFace::outer_x3:
-        (*bvars_it)->OutflowOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
+        (*bvars_it)->OutflowOuterX3(time, dt, il, iu, jl, ju, ku, ngh);
         break;
       }
       break;
@@ -551,22 +636,22 @@ void BoundaryValues::DispatchBoundaryFunctions(
       case BoundaryFace::undef:
         ATHENA_ERROR(msg);
       case BoundaryFace::inner_x1:
-        (*bvars_it)->ExtrapolateOutflowInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
+        (*bvars_it)->ExtrapolateOutflowInnerX1(time, dt, il, jl, ju, kl, ku, ngh);
         break;
       case BoundaryFace::outer_x1:
-        (*bvars_it)->ExtrapolateOutflowOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
+        (*bvars_it)->ExtrapolateOutflowOuterX1(time, dt, iu, jl, ju, kl, ku, ngh);
         break;
       case BoundaryFace::inner_x2:
-        (*bvars_it)->ExtrapolateOutflowInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+        (*bvars_it)->ExtrapolateOutflowInnerX2(time, dt, il, iu, jl, kl, ku, ngh);
         break;
       case BoundaryFace::outer_x2:
-        (*bvars_it)->ExtrapolateOutflowOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+        (*bvars_it)->ExtrapolateOutflowOuterX2(time, dt, il, iu, ju, kl, ku, ngh);
         break;
       case BoundaryFace::inner_x3:
-        (*bvars_it)->ExtrapolateOutflowInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
+        (*bvars_it)->ExtrapolateOutflowInnerX3(time, dt, il, iu, jl, ju, kl, ngh);
         break;
       case BoundaryFace::outer_x3:
-        (*bvars_it)->ExtrapolateOutflowOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
+        (*bvars_it)->ExtrapolateOutflowOuterX3(time, dt, il, iu, jl, ju, ku, ngh);
         break;
       }
       break;
@@ -576,10 +661,10 @@ void BoundaryValues::DispatchBoundaryFunctions(
       case BoundaryFace::undef:
         ATHENA_ERROR(msg);
       case BoundaryFace::inner_x2:
-        (*bvars_it)->PolarWedgeInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+        (*bvars_it)->PolarWedgeInnerX2(time, dt, il, iu, jl, kl, ku, ngh);
         break;
       case BoundaryFace::outer_x2:
-        (*bvars_it)->PolarWedgeOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+        (*bvars_it)->PolarWedgeOuterX2(time, dt, il, iu, ju, kl, ku, ngh);
         break;
       default:
         std::stringstream msg_polar;

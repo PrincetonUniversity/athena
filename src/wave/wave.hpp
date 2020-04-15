@@ -36,15 +36,11 @@ public:
 
   AthenaArray<Real> exact;      // exact solution of of the wave equation
   AthenaArray<Real> error;      // error with respect to the exact solution
-  //#endif
 
   Real c;                       // characteristic speed
 
-  // control whether radiative condition is applied for outflow  or
-  // extrapolate_outflow BC;
-  // 0: not applied
-  // 1,2,3: applied in respective dimensions
-  int use_Sommerfeld = 0;
+  bool use_Dirichlet = false;
+  bool use_Sommerfeld = false;
 
   // boundary and grid data
 #if PREFER_VC
@@ -82,6 +78,14 @@ public:
 
   MB_info mbi;
 
+  // For Dirichlet problem [need to be exposed for pgen]
+  int M_, N_, O_;                      // max eigenfunction indices
+  AthenaArray<Real> A_;                // field @ initial time
+  AthenaArray<Real> B_;                // time-derivative @ initial time
+
+  Real Lx1_;
+  Real Lx2_;
+  Real Lx3_;
 
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;    // scratch arrays used in NewTimeStep
@@ -91,6 +95,10 @@ private:
   void WaveSommerfeld_1d_R_(AthenaArray<Real> & u);
   void WaveSommerfeld_2d_(AthenaArray<Real> & u);
   void WaveSommerfeld_3d_(AthenaArray<Real> & u);
+
+  void WaveBoundaryDirichlet_(AthenaArray<Real> & u,
+                              int il, int iu, int jl, int ju, int kl, int ku);
+
 private:
   struct {
     typedef FDCenteredStencil<2, NGHOST> stencil;
@@ -102,6 +110,7 @@ private:
       Real * pu = &u;
       return 0.5 * idx[dir] * (pu[stride[dir]] - pu[-stride[dir]]);
     }
+
     inline Real Dxx(int dir, Real & u) {
       Real * pu = &u - stencil::offset*stride[dir];
 

@@ -123,8 +123,10 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void ApplyPhysicalBoundaries(const Real time, const Real dt);
   void ProlongateBoundaries(const Real time, const Real dt);
 
-  // New logic for vertex-centering
+  //--New logic for vertex-centering
+  void ApplyPhysicalVertexCenteredBoundaries(const Real time, const Real dt);
   void ProlongateVertexCenteredBoundaries(const Real time, const Real dt);
+  //---------------------------------------------------------------------------
 
   // compute the shear at each integrator stage
   // TODO(felker): consider making this fn private again if calling within StartRecv()

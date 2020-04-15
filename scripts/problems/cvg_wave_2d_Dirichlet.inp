@@ -1,0 +1,96 @@
+<job>
+problem_id      = wave_1d     # Basename of output filenames
+
+#<output1>
+# file_type     = tab         # Athena++ ASCII data
+#file_type       = hdf5       # dump to hierarchical format
+#variable        = wave       # variables to be output
+#dt              = 0.01       # time increment between outputs
+#data_format     = %.16e
+#ghost_zones     = 1          # include ghost zones
+
+#<output2>
+#file_type       = hst        # History data
+#dt              = 0.01       # time increment between outputs
+#data_format     = %.16e
+
+# <output3>
+# file_type       = rst       # restart data
+# dt              = 0.1       # control frequency via time-step
+
+<time>
+cfl_number      = 0.2         # The Courant, Friedrichs, & Lewy (CFL) number
+tlim            = 1         # time limit
+integrator      = rk4         # time integrator
+
+<mesh>
+refinement      = none                 # one of 'static', 'adaptive', 'none'
+
+nx1             = 32                   # Number of zones in X1-direction
+x1min           = 0                    # minimum value of X1: must be 0
+x1max           = 2.0                  # maximum value of X1: match below
+ix1_bc          = extrapolate_outflow  # inner-X1 boundary flag
+ox1_bc          = extrapolate_outflow  # outer-X1 boundary flag
+
+nx2             = 32                   # Number of zones in X2-direction
+x2min           = 0                    # minimum value of X2
+x2max           = 3.0                  # maximum value of X2
+ix2_bc          = extrapolate_outflow  # inner-X2 boundary flag
+ox2_bc          = extrapolate_outflow  # outer-X2 boundary flag
+
+nx3             = 1                    # Number of zones in X3-direction
+x3min           = -1.0                 # minimum value of X3
+x3max           =  1.0                 # maximum value of X3
+ix3_bc          = periodic             # inner-X3 boundary flag
+ox3_bc          = periodic             # outer-X3 boundary flag
+
+num_threads     = 1                    # Number of OpenMP threads per process
+
+<wave>
+c               = 1.0
+Lx1             = 2.0          # choose to be compatible with physical extent
+Lx2             = 3.0
+boundary_type   = Dirichlet    # one of 'Dirichlet', 'Sommerfeld' else ignored
+
+# initial data coefficient choices [finite LC of eigenfunctions]
+M_cutoff        = 3            # max eigenfunction index to consider
+N_cutoff        = 3
+A_11            = 1
+A_32            = 1.2
+
+B_11            = 0.1
+B_21            = 1.1
+B_32            = 2.3
+
+
+<meshblock>
+nx1        = 8         # Number of zones per MeshBlock in X1-direction
+nx2        = 8         # Number of zones per MeshBlock in X2-direction
+nx3        = 1         # Number of zones per MeshBlock in X3-direction
+
+<refinement1>
+x1min =  0.1
+x1max =  0.3
+x2min =  0.4
+x2max =  0.7
+x3min = -1.0
+x3max =  1.0
+level = 2
+
+<refinement2>
+x1min =  0.7
+x1max =  0.8
+x2min =  1.2
+x2max =  1.4
+x3min = -1.0
+x3max =  1.0
+level = 2
+
+# <refinement3>
+# x1min =  -0.3
+# x1max =  0.3
+# x2min = -1.0
+# x2max = -1.0
+# x3min = -1.0
+# x3max =  1.0
+# level = 3

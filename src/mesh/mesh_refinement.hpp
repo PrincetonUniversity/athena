@@ -103,6 +103,12 @@ class MeshRefinement {
   // functions
   AMRFlagFunc AMRFlag_; // duplicate of Mesh class member
 
+  void RestrictVertexCenteredIndicialHelper(
+    int ix,
+    int ix_cvs, int ix_cve,
+    int ix_vs, int ix_ve,
+    int &f_ix);
+
   void ProlongateVertexCenteredIndicialHelper(
     int hs_sz, int ix,
     int ix_cvs, int ix_cve, int ix_cmp,

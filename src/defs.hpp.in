@@ -160,6 +160,7 @@
 #define SQR(x) ( (x)*(x) )
 #define POW3(x) ( (x)*(x)*(x) )
 #define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
+#define SQRT(x) (std::sqrt(x))
 
 #ifdef ENABLE_EXCEPTIONS
 #define ATHENA_ERROR(x) throw std::runtime_error(x.str().c_str())

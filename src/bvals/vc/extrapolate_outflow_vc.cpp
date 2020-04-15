@@ -8,9 +8,7 @@
 //         vertex-centered AthenaArray
 //
 //  Notes:
-//  - data is copied from extremal [boundary] vertices out to ghosts
-//  - OuterXn conditions expect the same input idx arguments as outflow_cc but
-//    are adjusted to work with VC
+//  Internal data is extrapolated out to ghost zones
 
 // C, C++ headers
 #include <iostream>
@@ -30,15 +28,12 @@
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX1(
     Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
 
-  ju = IncrementIfNonzero(ju);
-  ku = IncrementIfNonzero(ku);
-
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i = il-1; i >= il-ngh; --i) {
-          (*var_vc)(n,k,j,i) = 0;
+          (*var_vc)(n,k,j,i) = 0.;
 
           for (int ix_e=0; ix_e < NEXTRAPOLATE; ++ix_e) {
             Real const extr_coeff = \
@@ -61,20 +56,18 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX1(
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX1(
     Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
 
-  iu = IncrementIfNonzero(iu);
-  ju = IncrementIfNonzero(ju);
-  ku = IncrementIfNonzero(ku);
-
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=iu+1; i<=iu+ngh; ++i) {
-          (*var_vc)(n,k,j,i) = 0;
+          (*var_vc)(n,k,j,i) = 0.;
 
           for (int ix_e=0; ix_e < NEXTRAPOLATE; ++ix_e) {
+            // Real const extr_coeff = \
+            //   InterpolateLagrangeUniformBiasR<NEXTRAPOLATE>::coeff[ix_e];
             Real const extr_coeff = \
-              InterpolateLagrangeUniformBiasR<NEXTRAPOLATE>::coeff[ix_e];
+              InterpolateLagrangeUniformBiasL<NEXTRAPOLATE>::coeff[NEXTRAPOLATE-ix_e-1];
             (*var_vc)(n,k,j,i) += extr_coeff * (*var_vc)(n,k,j,i-ix_e-1);
           }
 
@@ -94,15 +87,12 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX1(
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
 
-  iu = IncrementIfNonzero(iu);
-  ku = IncrementIfNonzero(ku);
-
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl-1; j>=jl-ngh; --j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          (*var_vc)(n,k,j,i) = 0;
+          (*var_vc)(n,k,j,i) = 0.;
 
           for (int ix_e=0; ix_e < NEXTRAPOLATE; ++ix_e) {
             Real const extr_coeff = \
@@ -125,20 +115,16 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX2(
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
 
-  iu = IncrementIfNonzero(iu);
-  ju = IncrementIfNonzero(ju);
-  ku = IncrementIfNonzero(ku);
-
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=ju+1; j<=ju+ngh; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          (*var_vc)(n,k,j,i) = 0;
+          (*var_vc)(n,k,j,i) = 0.;
 
           for (int ix_e=0; ix_e < NEXTRAPOLATE; ++ix_e) {
             Real const extr_coeff = \
-              InterpolateLagrangeUniformBiasR<NEXTRAPOLATE>::coeff[ix_e];
+              InterpolateLagrangeUniformBiasL<NEXTRAPOLATE>::coeff[NEXTRAPOLATE-ix_e-1];
             (*var_vc)(n,k,j,i) += extr_coeff * (*var_vc)(n,k,j-ix_e-1,i);
           }
         }
@@ -156,15 +142,12 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX2(
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
 
-  iu = IncrementIfNonzero(iu);
-  ju = IncrementIfNonzero(ju);
-
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl-1; k>=kl-ngh; --k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          (*var_vc)(n,k,j,i) = 0;
+          (*var_vc)(n,k,j,i) = 0.;
 
           for (int ix_e=0; ix_e < NEXTRAPOLATE; ++ix_e) {
             Real const extr_coeff = \
@@ -186,25 +169,22 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX3(
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {
 
-  iu = IncrementIfNonzero(iu);
-  ju = IncrementIfNonzero(ju);
-  ku = IncrementIfNonzero(ku);
-
   for (int n=0; n<=nu_; ++n) {
     for (int k=ku+1; k<=ku+ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          (*var_vc)(n,k,j,i) = 0;
+          (*var_vc)(n,k,j,i) = 0.;
 
           for (int ix_e=0; ix_e < NEXTRAPOLATE; ++ix_e) {
             Real const extr_coeff = \
-              InterpolateLagrangeUniformBiasR<NEXTRAPOLATE>::coeff[ix_e];
+              InterpolateLagrangeUniformBiasL<NEXTRAPOLATE>::coeff[NEXTRAPOLATE-ix_e-1];
             (*var_vc)(n,k,j,i) += extr_coeff * (*var_vc)(n,k-ix_e-1,j,i);
           }
         }
       }
     }
   }
+
   return;
 }

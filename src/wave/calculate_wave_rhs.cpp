@@ -47,8 +47,36 @@ void Wave::WaveRHS(AthenaArray<Real> & u){
 void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
   MeshBlock * pmb = pmy_block;
 
-  if (use_Sommerfeld == 0)
+  if (use_Dirichlet) {
+
+    if(pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::extrapolate_outflow ||
+       pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::outflow)
+        WaveBoundaryDirichlet_(u, mbi.il, mbi.il, mbi.jl, mbi.ju, mbi.kl, mbi.ku);
+    if(pmb->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::extrapolate_outflow ||
+       pmb->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::outflow)
+        WaveBoundaryDirichlet_(u, mbi.iu, mbi.iu, mbi.jl, mbi.ju, mbi.kl, mbi.ku);
+
+    if(pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::extrapolate_outflow ||
+       pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::outflow)
+        WaveBoundaryDirichlet_(u, mbi.il, mbi.iu, mbi.jl, mbi.jl, mbi.kl, mbi.ku);
+    if(pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::extrapolate_outflow ||
+       pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::outflow)
+        WaveBoundaryDirichlet_(u, mbi.il, mbi.iu, mbi.ju, mbi.ju, mbi.kl, mbi.ku);
+
+    if(pmb->pbval->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::extrapolate_outflow ||
+       pmb->pbval->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::outflow)
+        WaveBoundaryDirichlet_(u, mbi.il, mbi.iu, mbi.jl, mbi.ju, mbi.kl, mbi.kl);
+    if(pmb->pbval->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::extrapolate_outflow ||
+       pmb->pbval->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::outflow)
+        WaveBoundaryDirichlet_(u, mbi.il, mbi.iu, mbi.jl, mbi.ju, mbi.ku, mbi.ku);
+
+  } else if (use_Sommerfeld) {
+    //..
+  } else {
     return;
+  }
+
+  return;
 
   // the appropriate condition to apply depends on dimension
   // an assumption is made that any present Sommerfeld conditions are order as
@@ -56,7 +84,7 @@ void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
 
   if(pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::outflow) {
-    switch(use_Sommerfeld) {
+    switch(pmb->pmy_mesh->ndim) {
     case 1:
       WaveSommerfeld_1d_L_(u);
       break;
@@ -70,7 +98,7 @@ void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
   }
   if(pmb->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::outflow) {
-    switch(use_Sommerfeld) {
+    switch(pmb->pmy_mesh->ndim) {
     case 1:
       WaveSommerfeld_1d_R_(u);
       break;
@@ -84,7 +112,7 @@ void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
   }
   if(pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::outflow) {
-    switch(use_Sommerfeld) {
+    switch(pmb->pmy_mesh->ndim) {
     case 2:
       WaveSommerfeld_2d_(u);
       break;
@@ -95,7 +123,7 @@ void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
   }
   if(pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::outflow) {
-    switch(use_Sommerfeld) {
+    switch(pmb->pmy_mesh->ndim) {
     case 2:
       WaveSommerfeld_2d_(u);
       break;
@@ -106,17 +134,56 @@ void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
   }
   if(pmb->pbval->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::outflow) {
-    if(use_Sommerfeld == 3)
+    if(pmb->pmy_mesh->ndim == 3)
       WaveSommerfeld_3d_(u);
   }
   if(pmb->pbval->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::outflow) {
-    if(use_Sommerfeld == 3)
+    if(pmb->pmy_mesh->ndim == 3)
       WaveSommerfeld_3d_(u);
   }
 
+
+  // coutBoldGreen("wu:\n");
+  // AthenaArray<Real> wu;
+  // wu.InitWithShallowSlice(u, 0, 1);
+  // wu.print_all("%1.10f");
+  // printf("\n");
+
+  // coutBoldGreen("wpi:\n");
+
+  // AthenaArray<Real> wpi;
+  // wpi.InitWithShallowSlice(u, 1, 1);
+  // wpi.print_all("%1.10f");
+  // printf("\n");
+
+
+  // coutBoldGreen("rhs(0,:,:,:):\n");
+  // AthenaArray<Real> rh_0;
+  // rh_0.InitWithShallowSlice(rhs, 0, 1);
+  // rh_0.print_all("%1.10f");
+  // printf("\n");
+
+  // coutBoldGreen("rhs(1,:,:,:):\n");
+  // AthenaArray<Real> rhs_1;
+  // rhs_1.InitWithShallowSlice(rhs, 1, 1);
+  // rhs_1.print_all("%1.10f");
+  // printf("\n");
+
 }
 
+void Wave::WaveBoundaryDirichlet_(AthenaArray<Real> & u, int il, int iu,
+                                  int jl, int ju, int kl, int ku) {
+  for(int k = kl; k <= ku; ++k)
+    for(int j = jl; j <= ju; ++j)
+#pragma omp simd
+      for(int i = il; i <= iu; ++i) {
+        rhs(0,k,j,i) = 0.;
+        rhs(1,k,j,i) = 0.;
+        // rhs(0,k,j,i) = std::numeric_limits<double>::quiet_NaN();
+        // rhs(1,k,j,i) = std::numeric_limits<double>::quiet_NaN();
+      }
+}
 
 void Wave::WaveSommerfeld_1d_L_(AthenaArray<Real> & u){
   // For u_tt = c^2 (u_xx1 + .. + u_xxd) with r = sqrt(xx1 ^ 2 + ... + xxd ^2)
@@ -131,7 +198,7 @@ void Wave::WaveSommerfeld_1d_L_(AthenaArray<Real> & u){
   for(int k = mbi.kl; k <= mbi.ku; ++k)
     for(int j = mbi.jl; j <= mbi.ju; ++j)
 #pragma omp simd
-      for(int i = mbi.il; i <= mbi.iu; ++i) {
+      for(int i = mbi.il; i <= mbi.il; ++i) {
         rhs(1,k,j,i) = c * FD.Ds(0, wpi(k,j,i));
       }
 }
@@ -150,7 +217,7 @@ void Wave::WaveSommerfeld_1d_R_(AthenaArray<Real> & u){
   for(int k = mbi.kl; k <= mbi.ku; ++k)
     for(int j = mbi.jl; j <= mbi.ju; ++j)
 #pragma omp simd
-      for(int i = mbi.il; i <= mbi.iu; ++i) {
+      for(int i = mbi.iu; i <= mbi.iu; ++i) {
         rhs(1,k,j,i) = -c * FD.Ds(0, wpi(k,j,i));
       }
 

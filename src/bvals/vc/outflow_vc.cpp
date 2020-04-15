@@ -8,8 +8,6 @@
 //
 //  Notes:
 //  - data is copied from extremal [boundary] vertices out to ghosts
-//  - OuterXn conditions expect the same input idx arguments as outflow_cc but
-//    are adjusted to work with VC
 
 // C headers
 
@@ -27,9 +25,6 @@
 
 void VertexCenteredBoundaryVariable::OutflowInnerX1(
     Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
-
-  ju = IncrementIfNonzero(ju);
-  ku = IncrementIfNonzero(ku);
 
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
@@ -52,10 +47,6 @@ void VertexCenteredBoundaryVariable::OutflowInnerX1(
 void VertexCenteredBoundaryVariable::OutflowOuterX1(
     Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
 
-  iu = IncrementIfNonzero(iu);
-  ju = IncrementIfNonzero(ju);
-  ku = IncrementIfNonzero(ku);
-
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -76,9 +67,6 @@ void VertexCenteredBoundaryVariable::OutflowOuterX1(
 
 void VertexCenteredBoundaryVariable::OutflowInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
-
-  iu = IncrementIfNonzero(iu);
-  ku = IncrementIfNonzero(ku);
 
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
@@ -102,10 +90,6 @@ void VertexCenteredBoundaryVariable::OutflowInnerX2(
 void VertexCenteredBoundaryVariable::OutflowOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
 
-  iu = IncrementIfNonzero(iu);
-  ju = IncrementIfNonzero(ju);
-  ku = IncrementIfNonzero(ku);
-
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
@@ -127,9 +111,6 @@ void VertexCenteredBoundaryVariable::OutflowOuterX2(
 void VertexCenteredBoundaryVariable::OutflowInnerX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
 
-  iu = IncrementIfNonzero(iu);
-  ju = IncrementIfNonzero(ju);
-
   for (int n=0; n<=nu_; ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -150,10 +131,6 @@ void VertexCenteredBoundaryVariable::OutflowInnerX3(
 
 void VertexCenteredBoundaryVariable::OutflowOuterX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {
-
-  iu = IncrementIfNonzero(iu);
-  ju = IncrementIfNonzero(ju);
-  ku = IncrementIfNonzero(ku);
 
   for (int n=0; n<=nu_; ++n) {
     for (int k=1; k<=ngh; ++k) {

@@ -76,12 +76,6 @@ class VertexCenteredBoundaryVariable : public BoundaryVariable {
   void ZeroVertexGhosts();
   void FinalizeVertexConsistency();
 
-  // Internally increment Outflow / etc conditions to avoid interface changes
-  // elsewhere
-  inline int IncrementIfNonzero(int idx) {
-    return (idx > 0) ? idx + 1 : idx;
-  }
-
   // BoundaryPhysics:
   void ReflectInnerX1(Real time, Real dt,
                       int il, int jl, int ju, int kl, int ku, int ngh) override;

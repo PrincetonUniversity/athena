@@ -475,6 +475,27 @@ void MeshRefinement::RestrictFieldX3(
 }
 
 //----------------------------------------------------------------------------------------
+//! \fn inline void MeshRefinement::RestrictVertexCenteredIndicialHelper(...)
+//  \brief De-duplicate some indicial logic
+inline void MeshRefinement::RestrictVertexCenteredIndicialHelper(
+  int ix,
+  int ix_cvs, int ix_cve,
+  int ix_vs, int ix_ve,
+  int &f_ix) {
+
+  // map for fine-index
+  if (ix < ix_cvs) {
+    f_ix = ix_vs - 2 * (ix_cvs - ix);
+  } else if (ix > ix_cve) {
+    f_ix = ix_ve + 2 * (ix - ix_cve);
+  } else { // map to interior+boundary nodes
+    f_ix = 2 * (ix - ix_cvs) + ix_vs;
+  }
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::RestrictVertexCenteredValues(const AthenaArray<Real> &fine,
 //                           AthenaArray<Real> &coarse, int sn, int en,
 //                           int csi, int cei, int csj, int cej, int csk, int cek)
@@ -492,13 +513,20 @@ void MeshRefinement::RestrictVertexCenteredValues(
 
   // store the restricted data in the prolongation buffer for later use
   if (pmb->block_size.nx3 > 1) {
+    int k, j, i;
     for (int n=sn; n<=en; ++n){
       for (int ck=csk; ck<=cek; ck++) {
-        int k = (ck - pmb->ckvs)*2 + pmb->kvs;
+        // int k = (ck - pmb->ckvs)*2 + pmb->kvs;
+        RestrictVertexCenteredIndicialHelper(ck, pmb->ckvs, pmb->ckve,
+                                             pmb->kvs, pmb->kve, k);
         for (int cj=csj; cj<=cej; cj++) {
-          int j = (cj - pmb->cjvs)*2 + pmb->jvs;
+          // int j = (cj - pmb->cjvs)*2 + pmb->jvs;
+          RestrictVertexCenteredIndicialHelper(cj, pmb->cjvs, pmb->cjve,
+                                              pmb->jvs, pmb->jve, j);
           for (int ci=csi; ci<=cei; ci++) {
-            int i = (ci - pmb->civs)*2 + pmb->ivs;
+            // int i = (ci - pmb->civs)*2 + pmb->ivs;
+            RestrictVertexCenteredIndicialHelper(ci, pmb->civs, pmb->cive,
+                                                pmb->ivs, pmb->ive, i);
             coarse(n, ck, cj, ci) = fine(n, k, j, i);
           }
         }
@@ -506,20 +534,29 @@ void MeshRefinement::RestrictVertexCenteredValues(
     }
   } else if (pmb->block_size.nx2 > 1) {
     int k = pmb->kvs, ck = pmb->ckvs;
+    int j, i;
+
     for (int n=sn; n<=en; ++n){
       for (int cj=csj; cj<=cej; cj++) {
-        int j = (cj - pmb->cjvs)*2 + pmb->jvs;
+        // int j = (cj - pmb->cjvs)*2 + pmb->jvs;
+        RestrictVertexCenteredIndicialHelper(cj, pmb->cjvs, pmb->cjve,
+                                             pmb->jvs, pmb->jve, j);
         for (int ci=csi; ci<=cei; ci++) {
-          int i = (ci - pmb->civs)*2 + pmb->ivs;
+          // int i = (ci - pmb->civs)*2 + pmb->ivs;
+          RestrictVertexCenteredIndicialHelper(ci, pmb->civs, pmb->cive,
+                                               pmb->ivs, pmb->ive, i);
           coarse(n, ck, cj, ci) = fine(n, k, j, i);
         }
       }
     }
   } else {
     int j = pmb->jvs, cj = pmb->cjvs, k = pmb->kvs, ck = pmb->ckvs;
+    int i;
     for (int n=sn; n<=en; ++n) {
       for (int ci=csi; ci<=cei; ci++) {
-        int i = (ci - pmb->civs)*2 + pmb->ivs;
+        // int i = (ci - pmb->civs)*2 + pmb->ivs;
+        RestrictVertexCenteredIndicialHelper(ci, pmb->civs, pmb->cive,
+                                              pmb->ivs, pmb->ive, i);
         coarse(n, ck, cj, ci) = fine(n, k, j, i);
       }
     }
@@ -545,13 +582,20 @@ void MeshRefinement::RestrictTwiceToBufferVertexCenteredValues(
 
   // store the restricted data within input buffer
   if (pmb->block_size.nx3 > 1) { // 3D
+    int k, j, i;
     for (int n=sn; n<=en; ++n){
       for (int ck=csk; ck<=cek; ck+=2) {
-        int k = (ck - pmb->ckvs)*2 + pmb->kvs;
+        // int k = (ck - pmb->ckvs)*2 + pmb->kvs;
+        RestrictVertexCenteredIndicialHelper(ck, pmb->ckvs, pmb->ckve,
+                                             pmb->kvs, pmb->kve, k);
         for (int cj=csj; cj<=cej; cj+=2) {
-          int j = (cj - pmb->cjvs)*2 + pmb->jvs;
+          // int j = (cj - pmb->cjvs)*2 + pmb->jvs;
+          RestrictVertexCenteredIndicialHelper(cj, pmb->cjvs, pmb->cjve,
+                                              pmb->jvs, pmb->jve, j);
           for (int ci=csi; ci<=cei; ci+=2) {
-            int i = (ci - pmb->civs)*2 + pmb->ivs;
+            // int i = (ci - pmb->civs)*2 + pmb->ivs;
+            RestrictVertexCenteredIndicialHelper(ci, pmb->civs, pmb->cive,
+                                                pmb->ivs, pmb->ive, i);
             buf[offset++] = fine(n, k, j, i);
           }
         }
@@ -560,11 +604,16 @@ void MeshRefinement::RestrictTwiceToBufferVertexCenteredValues(
 
   } else if (pmb->block_size.nx2 > 1) { // 2D
     int k = pmb->kvs;
+    int j, i;
     for (int n=sn; n<=en; ++n){
       for (int cj=csj; cj<=cej; cj+=2) {
-        int j = (cj - pmb->cjvs)*2 + pmb->jvs;
+        // int j = (cj - pmb->cjvs)*2 + pmb->jvs;
+        RestrictVertexCenteredIndicialHelper(cj, pmb->cjvs, pmb->cjve,
+                                             pmb->jvs, pmb->jve, j);
         for (int ci=csi; ci<=cei; ci+=2) {
-          int i = (ci - pmb->civs)*2 + pmb->ivs;
+          // int i = (ci - pmb->civs)*2 + pmb->ivs;
+          RestrictVertexCenteredIndicialHelper(ci, pmb->civs, pmb->cive,
+                                               pmb->ivs, pmb->ive, i);
           buf[offset++] = fine(n, k, j, i);
         }
       }
@@ -572,9 +621,12 @@ void MeshRefinement::RestrictTwiceToBufferVertexCenteredValues(
 
   } else { // 1D
     int j = pmb->jvs, k = pmb->kvs;
+    int i;
     for (int n=sn; n<=en; ++n) {
       for (int ci=csi; ci<=cei; ci+=2) {
-        int i = (ci - pmb->civs)*2 + pmb->ivs;
+        // int i = (ci - pmb->civs)*2 + pmb->ivs;
+        RestrictVertexCenteredIndicialHelper(ci, pmb->civs, pmb->cive,
+                                             pmb->ivs, pmb->ive, i);
         buf[offset++] = fine(n, k, j, i);
       }
     }
@@ -625,7 +677,7 @@ void MeshRefinement::ProlongateCellCenteredValues(
                             pmb->cjme, pmb->cjpe,
                             pmb->ckme, pmb->ckpe,
                             false, true);
-  
+
     if (DBGPR_MESH_REFINEMENT)
       coutBoldRed("Warning: coarse buffer overridden..\n");
   }
@@ -1592,7 +1644,8 @@ void MeshRefinement::ProlongateVertexCenteredValues(
                       lc_jl * lc_iu * fc_lu +
                       lc_ju * lc_il * fc_ul +
                       lc_ju * lc_iu * fc_uu;
-
+                    // if (pmb->gid == 11)
+                    //   fine(n, fk, fjo, fio) = 11.;
 
                   }
                 }

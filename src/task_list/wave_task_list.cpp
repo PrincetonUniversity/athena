@@ -468,17 +468,7 @@ TaskStatus WaveIntegratorTaskList::ReceiveWave(MeshBlock *pmb, int stage) {
 
 TaskStatus WaveIntegratorTaskList::SetBoundariesWave(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-
-    // coutBoldRed("|| pre[TaskList]: pmb->pwave->u\n");
-    // pmb->pwave->u.print_data();
-    // coutBoldRed("||\n");
-
     pmb->pwave->ubvar.SetBoundaries();
-
-    // coutBoldRed("|| post: pmb->pwave->u\n");
-    // pmb->pwave->u.print_data();
-    // coutBoldRed("||\n");
-
     return TaskStatus::success;
   }
   return TaskStatus::fail;
@@ -495,17 +485,7 @@ TaskStatus WaveIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
     Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-
-    // coutBoldRed("|| pre[TaskList,Prolongation]: pmb->pwave->u\n");
-    // pmb->pwave->u.print_data();
-    // coutBoldRed("||\n");
-
     pbval->ProlongateBoundaries(t_end_stage, dt);
-
-    // coutBoldRed("|| post[TaskList,Prolongation]: pmb->pwave->u\n");
-    // pmb->pwave->u.print_data();
-    // coutBoldRed("||\n");
-
   } else {
     return TaskStatus::fail;
   }
@@ -522,8 +502,12 @@ TaskStatus WaveIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+    if (PREFER_VC) {
+      pbval->ApplyPhysicalVertexCenteredBoundaries(t_end_stage, dt);
+    } else {
+      pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
+    }
 
-    pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
   } else {
     return TaskStatus::fail;
   }
