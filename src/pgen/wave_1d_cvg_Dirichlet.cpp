@@ -93,14 +93,14 @@ void MeshBlock::WaveUserWorkInLoop() {
   Real max_err = 0;
   Real fun_err = 0;
 
-  // int il = pwave->mbi.il, iu = pwave->mbi.iu;
-  // int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
-  // int jl = pwave->mbi.jl, ju = pwave->mbi.ju;
+  int il = pwave->mbi.il, iu = pwave->mbi.iu;
+  int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
+  int jl = pwave->mbi.jl, ju = pwave->mbi.ju;
 
   // test full block
-  int il = 0, iu = pwave->mbi.nn1 - 1;
-  int jl = 0, ju = pwave->mbi.nn2 - 1;
-  int kl = 0, ku = pwave->mbi.nn3 - 1;
+  // int il = 0, iu = pwave->mbi.nn1 - 1;
+  // int jl = 0, ju = pwave->mbi.nn2 - 1;
+  // int kl = 0, ku = pwave->mbi.nn3 - 1;
 
   Real const c = pwave->c;
   Real const t = pmy_mesh->time + pmy_mesh->dt;

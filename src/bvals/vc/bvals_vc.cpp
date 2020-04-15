@@ -756,19 +756,6 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       printf("%d,%d,%d\n", pmb->ng, pmb->cng, pmb->cnghost);
     }
 
-    // pmb->DebugWaveMeshBlock(coarse_var,
-    //                         pmb->cims, pmb->cipe,
-    //                         pmb->cjms, pmb->cjpe,
-    //                         pmb->ckms, pmb->ckpe,
-    //                         false, true);
-
-    // coarse_var.print_all();
-
-    // if ((nb.ni.ox1 < 0) && (nb.ni.ox2 < 0) && (pmb->gid == 4))
-    // if (pmb->gid == 4)
-    //     Q();
-      // if ((nb.ni.fi1 == 0) or (nb.ni.fi2 == 0))
-
     return;
   }
 
@@ -1229,6 +1216,8 @@ void VertexCenteredBoundaryVariable::SendBoundaryBuffers() {
   if (!node_mult_assembled)
     PrepareNodeMult();
 
+  MeshBlock *pmb = pmy_block_;
+
   // restrict all data (except ghosts) to coarse buffer
   if (pmy_mesh_->multilevel) {
     AthenaArray<Real> &coarse_var = *coarse_buf;
@@ -1251,8 +1240,6 @@ void VertexCenteredBoundaryVariable::SetBoundaries() {
   BoundaryVariable::SetBoundaries();
   FinalizeVertexConsistency();
 
-  MeshBlock *pmb = pmy_block_;
-
   return;
 }
 
@@ -1269,7 +1256,6 @@ void VertexCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
 
   BoundaryVariable::ReceiveAndSetBoundariesWithWait();
   FinalizeVertexConsistency();
-
 
   return;
 }

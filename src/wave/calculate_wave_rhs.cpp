@@ -174,14 +174,16 @@ void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
 
 void Wave::WaveBoundaryDirichlet_(AthenaArray<Real> & u, int il, int iu,
                                   int jl, int ju, int kl, int ku) {
+
+  // BD: for debug
+  Real const dconst = (DBG_VC_CONSISTENCY) ? 1.0 : 0.;
+
   for(int k = kl; k <= ku; ++k)
     for(int j = jl; j <= ju; ++j)
 #pragma omp simd
       for(int i = il; i <= iu; ++i) {
-        rhs(0,k,j,i) = 0.;
-        rhs(1,k,j,i) = 0.;
-        // rhs(0,k,j,i) = std::numeric_limits<double>::quiet_NaN();
-        // rhs(1,k,j,i) = std::numeric_limits<double>::quiet_NaN();
+        rhs(0,k,j,i) = dconst;
+        rhs(1,k,j,i) = dconst;
       }
 }
 

@@ -20,7 +20,7 @@ export COMPILE_STR="--prob=wave_1d_cvg_Dirichlet -w
                     --cxx g++ -omp -debug -vertex
                     --nghost=2
                     --ncghost=2
-                    --nextrapolate=4"
+                    --nextrapolate=6"
 
 # fill MeshBlock interior with exact solution
 # export COMPILE_STR="${COMPILE_STR} -fill_wave_interior"

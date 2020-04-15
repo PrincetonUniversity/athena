@@ -24,15 +24,15 @@ tlim            = 1         # time limit
 integrator      = rk4         # time integrator
 
 <mesh>
-refinement      = none                 # one of 'static', 'adaptive', 'none'
+refinement      = static               # one of 'static', 'adaptive', 'none'
 
-nx1             = 32                   # Number of zones in X1-direction
+nx1             = 64                   # Number of zones in X1-direction
 x1min           = 0                    # minimum value of X1: must be 0
 x1max           = 2.0                  # maximum value of X1: match below
 ix1_bc          = extrapolate_outflow  # inner-X1 boundary flag
 ox1_bc          = extrapolate_outflow  # outer-X1 boundary flag
 
-nx2             = 32                   # Number of zones in X2-direction
+nx2             = 64                   # Number of zones in X2-direction
 x2min           = 0                    # minimum value of X2
 x2max           = 3.0                  # maximum value of X2
 ix2_bc          = extrapolate_outflow  # inner-X2 boundary flag
@@ -64,8 +64,8 @@ B_32            = 2.3
 
 
 <meshblock>
-nx1        = 8         # Number of zones per MeshBlock in X1-direction
-nx2        = 8         # Number of zones per MeshBlock in X2-direction
+nx1        = 32        # Number of zones per MeshBlock in X1-direction
+nx2        = 32        # Number of zones per MeshBlock in X2-direction
 nx3        = 1         # Number of zones per MeshBlock in X3-direction
 
 <refinement1>

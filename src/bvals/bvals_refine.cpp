@@ -26,6 +26,10 @@
 #include "fc/bvals_fc.hpp"
 #include "vc/bvals_vc.hpp"
 
+// BD: new problem
+#include "../wave/wave.hpp"
+// -BD
+
 // -----------
 // NOTE ON SWITCHING BETWEEN PRIMITIVE VS. CONSERVED AND STANDARD VS. COARSE BUFFERS HERE:
 // -----------
@@ -85,13 +89,29 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
 
   //////////////////////////////////////////////////////////////////////////////
-  //--debug
-  if (FILL_WAVE_BND_FRC) {
-    // populate based on solution instead of opers.
-    return;
+  // Vertex-centered logic
+  //
+  // Ensure coarse buffer has physical boundaries applied
+  // (temp workaround) to automatically call all BoundaryFunction_[] on coarse var
+
+  Wave *pw = nullptr;
+  if (WAVE_ENABLED) {
+    pw = pmb->pwave;
+    pw->ubvar.var_vc = &(pw->coarse_u_);
   }
+
+  ApplyPhysicalVertexCenteredBoundariesOnCoarseLevel(time, dt);
+
+  // switch back
+  if (WAVE_ENABLED) {
+    pw->ubvar.var_vc = &(pw->u);
+  }
+
+  // Prolongate
   ProlongateVertexCenteredBoundaries(time, dt);
 
+  // BD: debug - temporarily fix (bvars_main_int needs decoupling)
+  return;
   //--
   //////////////////////////////////////////////////////////////////////////////
 
@@ -600,6 +620,84 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::ApplyPhysicalVertexCenteredBoundariesOnCoarseLevel(
+//        const Real time, const Real dt)
+//  \brief Apply all the physical boundary conditions vertex centered fields
+
+void BoundaryValues::ApplyPhysicalVertexCenteredBoundariesOnCoarseLevel(const Real time, const Real dt) {
+  MeshBlock *pmb = pmy_block_;
+  MeshRefinement *pmr = pmb->pmr;
+  int bis = pmb->civs - NCGHOST, bie = pmb->cive + NCGHOST,
+      bjs = pmb->cjvs, bje = pmb->cjve,
+      bks = pmb->ckvs, bke = pmb->ckve;
+
+  // Extend the transverse limits that correspond to periodic boundaries as they are
+  // updated: x1, then x2, then x3
+  if (!apply_bndry_fn_[BoundaryFace::inner_x2] && pmb->block_size.nx2 > 1)
+    bjs = pmb->cjvs - NCGHOST;
+  if (!apply_bndry_fn_[BoundaryFace::outer_x2] && pmb->block_size.nx2 > 1)
+    bje = pmb->cjve + NCGHOST;
+  if (!apply_bndry_fn_[BoundaryFace::inner_x3] && pmb->block_size.nx3 > 1)
+    bks = pmb->ckvs - NCGHOST;
+  if (!apply_bndry_fn_[BoundaryFace::outer_x3] && pmb->block_size.nx3 > 1)
+    bke = pmb->ckve + NCGHOST;
+
+  // prevent modification of dispatch
+  Hydro *ph = nullptr;
+  Field *pf = nullptr;
+
+  // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
+  if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
+    DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                              pmb->civs, pmb->cive, bjs, bje, bks, bke, NCGHOST,
+                              ph->w, pf->b, BoundaryFace::inner_x1);
+  }
+
+  // Apply boundary function on outer-x1 and update W,bcc (if not periodic)
+  if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
+    DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                              pmb->civs, pmb->cive, bjs, bje, bks, bke, NCGHOST,
+                              ph->w, pf->b, BoundaryFace::outer_x1);
+  }
+
+  if (pmb->block_size.nx2 > 1) { // 2D or 3D
+    // Apply boundary function on inner-x2 and update W,bcc (if not periodic)
+    if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                bis, bie, pmb->cjvs, pmb->cjve, bks, bke, NCGHOST,
+                                ph->w, pf->b, BoundaryFace::inner_x2);
+    }
+
+    // Apply boundary function on outer-x2 and update W,bcc (if not periodic)
+    if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                bis, bie, pmb->cjvs, pmb->cjve, bks, bke, NCGHOST,
+                                ph->w, pf->b, BoundaryFace::outer_x2);
+    }
+  }
+
+  if (pmb->block_size.nx3 > 1) { // 3D
+    bjs = pmb->cjvs - NCGHOST;
+    bje = pmb->cjve + NCGHOST;
+
+    // Apply boundary function on inner-x3 and update W,bcc (if not periodic)
+    if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                bis, bie, bjs, bje, pmb->ckvs, pmb->ckve, NCGHOST,
+                                ph->w, pf->b, BoundaryFace::inner_x3);
+    }
+
+    // Apply boundary function on outer-x3 and update W,bcc (if not periodic)
+    if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
+      DispatchBoundaryFunctions(pmb, pmr->pcoarsec, time, dt,
+                                bis, bie, bjs, bje, pmb->ckvs, pmb->ckve, NCGHOST,
+                                ph->w, pf->b, BoundaryFace::outer_x3);
+    }
+  }
+  return;
+}
+
 //-----------------------------------------------------------------------------
 //
 // Logic for calculation of (coarse) indicial ranges for boundary prolongation
@@ -778,9 +876,6 @@ void BoundaryValues::ProlongateVertexCenteredGhosts(
   if (DBGPR_BVALS_REFINE) {
     coutBlue("< BoundaryValues::ProlongateGhostCells\n");
   }
-
-  // if (pmb->gid==7)
-  //   Q();
 
   return;
 }

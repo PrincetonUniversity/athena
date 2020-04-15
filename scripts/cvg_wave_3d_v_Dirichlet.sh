@@ -18,9 +18,9 @@ export DIR_INST=$soft/usr  # correct for location of installed libraries
 
 export COMPILE_STR="--prob=wave_3d_cvg_Dirichlet -w
                     --cxx g++ -omp -debug -vertex
-                    --nghost=2
-                    --ncghost=2
-                    --nextrapolate=6"
+                    --nghost=3
+                    --ncghost=4
+                    --nextrapolate=7"
 
 # fill MeshBlock interior with exact solution
 # export COMPILE_STR="${COMPILE_STR} -fill_wave_interior"

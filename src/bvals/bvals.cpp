@@ -501,12 +501,8 @@ void BoundaryValues::ApplyPhysicalVertexCenteredBoundaries(const Real time, cons
 
   // KGF: COUPLING OF QUANTITIES (must be manually specified)
   // downcast BoundaryVariable ptrs to known derived class types: RTTI via dynamic_cast
-  HydroBoundaryVariable *phbvar = nullptr;
   Hydro *ph = nullptr;
-  FaceCenteredBoundaryVariable *pfbvar = nullptr;
   Field *pf = nullptr;
-  PassiveScalars *ps = nullptr;
-
 
   // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
   if (apply_bndry_fn_[BoundaryFace::inner_x1]) {

@@ -184,6 +184,9 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void ProlongateGhostCells(const NeighborBlock& nb,
                             int si, int ei, int sj, int ej, int sk, int ek);
 
+  void ApplyPhysicalVertexCenteredBoundariesOnCoarseLevel(
+      const Real time, const Real dt);
+
   void CalculateVertexProlongationIndices(std::int64_t &lx, int ox, int pcng,
                                          int cix_vs, int cix_ve,
                                          int &set_ix_vs, int &set_ix_ve,

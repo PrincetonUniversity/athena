@@ -182,7 +182,7 @@ void MeshBlock::WaveUserWorkInLoop() {
   printf("(max_err, fun_max, t)=(%1.18f, %1.18f, %1.18f)\n",
          max_err, fun_err, t);
 
-  if (max_err > 1) {
+  if (max_err > 0.1) {
     printf("pwave->u:\n");
     pwave->u.print_all("%1.5f");
 

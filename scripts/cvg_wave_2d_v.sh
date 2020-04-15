@@ -16,9 +16,11 @@ export INPUT_NAME=cvg_wave_2d.inp
 # if compilation is chosen
 export DIR_INST=$soft/usr  # correct for location of installed libraries
 
-export COMPILE_STR="--prob=wave_2d_cvg_trig -w --nghost=2
-                    --cxx g++ -omp -debug -vertex"
-#                    -hdf5 -h5double --hdf5_path=$DIR_INST"
+export COMPILE_STR="--prob=wave_2d_cvg_trig -w
+                    --cxx g++ -omp -debug -vertex
+                    --nghost=2
+                    --ncghost=3
+                    --nextrapolate=6"
 
 # fill MeshBlock interior with exact solution
 # export COMPILE_STR="${COMPILE_STR} -fill_wave_interior"

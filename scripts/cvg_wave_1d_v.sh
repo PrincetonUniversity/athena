@@ -25,7 +25,7 @@ export DIR_INST=$soft/usr  # correct for location of installed libraries
 #                     -dbg_vc_consistency"
 
 
-export COMPILE_STR="--prob=wave_1d_cvg_trig -w --nghost=2
+export COMPILE_STR="--prob=wave_1d_cvg_trig -w --nghost=2 --ncghost=3
                     --cxx g++ -omp -debug -vertex"
 
 # fill MeshBlock interior with exact solution
@@ -48,8 +48,8 @@ export COMPILE_STR="--prob=wave_1d_cvg_trig -w --nghost=2
 
 
 
-
-#                    -hdf5 -h5double --hdf5_path=$DIR_INST"
+# add hdf5 support
+export COMPILE_STR="${COMPILE_STR} -hdf5 -h5double --hdf5_path=$DIR_INST"
 
 ###############################################################################
 
