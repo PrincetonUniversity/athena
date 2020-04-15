@@ -104,6 +104,8 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   std::vector<BoundaryVariable *> bvars;
   // subset of bvars that are exchanged in the main TimeIntegratorTaskList
   std::vector<BoundaryVariable *> bvars_main_int;
+  // as above but particular to vertex-centered
+  std::vector<BoundaryVariable *> bvars_main_int_vc;
 
   // inherited functions (interface shared with BoundaryVariable objects):
   // ------
@@ -199,7 +201,8 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void DispatchBoundaryFunctions(
       MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
       int il, int iu, int jl, int ju, int kl, int ku, int ngh,
-      AthenaArray<Real> &prim, FaceField &b, BoundaryFace face);
+      AthenaArray<Real> &prim, FaceField &b, BoundaryFace face,
+      std::vector<BoundaryVariable *> &bvars_main);
 
   void CheckPolarBoundaries();  // called in BoundaryValues() ctor
 

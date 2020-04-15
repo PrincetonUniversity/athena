@@ -217,7 +217,11 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
   // enroll CellCenteredBoundaryVariable / VertexCenteredBoundaryVariable object
   ubvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&ubvar);
-  pmb->pbval->bvars_main_int.push_back(&ubvar);
+  if (PREFER_VC) {
+    pmb->pbval->bvars_main_int_vc.push_back(&ubvar);
+  } else {
+    pmb->pbval->bvars_main_int.push_back(&ubvar);
+  }
 
   // Allocate memory for scratch arrays
   dt1_.NewAthenaArray(nn1);
