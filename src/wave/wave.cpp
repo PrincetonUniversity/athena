@@ -86,20 +86,20 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
     mbi.x3.InitWithShallowSlice(pco->x3v, 1, 0, nn3);
   }
 
-  if (pm->multilevel) {
-    // analogously construct coarse grid information as required
-    mbi.cil = pmb->civs; mbi.cjl = pmb->cjvs; mbi.ckl = pmb->ckvs;
+  // if (pm->multilevel) {
+  //   // analogously construct coarse grid information as required
+  //   mbi.cil = pmb->civs; mbi.cjl = pmb->cjvs; mbi.ckl = pmb->ckvs;
 
-    if (PREFER_VC) {
-      mbi.ciu = pmb->cive; mbi.cju = pmb->cjve; mbi.cku = pmb->ckve;
+  //   if (PREFER_VC) {
+  //     mbi.ciu = pmb->cive; mbi.cju = pmb->cjve; mbi.cku = pmb->ckve;
 
-      mbi.cnn1 = pmb->ncv1; mbi.cnn2 = pmb->ncv2; mbi.cnn3 = pmb->ncv3;
-    } else {
-      mbi.ciu = pmb->cie; mbi.cju = pmb->cje; mbi.cku = pmb->cke;
+  //     mbi.cnn1 = pmb->ncv1; mbi.cnn2 = pmb->ncv2; mbi.cnn3 = pmb->ncv3;
+  //   } else {
+  //     mbi.ciu = pmb->cie; mbi.cju = pmb->cje; mbi.cku = pmb->cke;
 
-      mbi.cnn1 = pmb->ncc1; mbi.cnn2 = pmb->ncc2; mbi.cnn3 = pmb->ncc3;
-    }
-  }
+  //     mbi.cnn1 = pmb->ncc1; mbi.cnn2 = pmb->ncc2; mbi.cnn3 = pmb->ncc3;
+  //   }
+  // }
 
   // point to appropriate grid
   if (FILL_WAVE_COARSE_P)

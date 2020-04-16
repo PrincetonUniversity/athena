@@ -20,13 +20,13 @@ problem_id      = wave_1d     # Basename of output filenames
 
 <time>
 cfl_number      = 0.2         # The Courant, Friedrichs, & Lewy (CFL) number
-tlim            = 1         # time limit
+tlim            = 0.2         # time limit
 integrator      = rk4         # time integrator
 
 <mesh>
 refinement      = static               # one of 'static', 'adaptive', 'none'
 
-nx1             = 64                   # Number of zones in X1-direction
+nx1             = 64                  # Number of zones in X1-direction
 x1min           = 0                    # minimum value of X1: must be 0
 x1max           = 2.0                  # maximum value of X1: match below
 ix1_bc          = extrapolate_outflow  # inner-X1 boundary flag

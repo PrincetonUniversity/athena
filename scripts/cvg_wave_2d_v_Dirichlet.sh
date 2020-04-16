@@ -40,7 +40,6 @@ export COMPILE_STR="--prob=wave_2d_cvg_Dirichlet -w
 # debug vertex consistency
 # export COMPILE_STR="${COMPILE_STR} -dbg_vc_consistency"
 
-
 # add hdf5 support
 export COMPILE_STR="${COMPILE_STR} -hdf5 -h5double --hdf5_path=$DIR_INST"
 

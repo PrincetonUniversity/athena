@@ -72,8 +72,8 @@ public:
     AthenaArray<Real> cx1, cx2, cx3;   // for CC / VC grid switch (coarse)
 
     // provide coarse analogues of the above
-    int cnn1, cnn2, cnn3;
-    int cil, ciu, cjl, cju, ckl, cku;
+    // int cnn1, cnn2, cnn3;
+    // int cil, ciu, cjl, cju, ckl, cku;
   };
 
   MB_info mbi;

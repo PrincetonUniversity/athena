@@ -1506,17 +1506,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
         // BD: new problem
         if (WAVE_ENABLED) {
-          // coutBoldRed("|| pre: pmb->pwave->u\n");
-          // pmb->pwave->u.print_data();
-          // coutBoldRed("||\n");
-
           pmb->pwave->ubvar.ReceiveAndSetBoundariesWithWait();
-
-          // coutBoldRed("|| post: pmb->pwave->u\n");
-          // pmb->pwave->u.print_data();
-          // coutBoldRed("||\n");
-          // Q();
-
         }
         // -BD
 
@@ -1997,7 +1987,11 @@ void Mesh::ReserveMeshBlockPhysIDs() {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
   if (Z4C_ENABLED) {
-    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+    if (PREFER_VC) {
+      ReserveTagPhysIDs(VertexCenteredBoundaryVariable::max_phys_id);
+    } else {
+      ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+    }
   }
 
 #endif

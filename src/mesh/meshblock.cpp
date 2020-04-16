@@ -165,7 +165,11 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   if (Z4C_ENABLED) {
     pz4c = new Z4c(this, pin);
-    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+    if (PREFER_VC) {
+      pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
+    } else {
+      pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+    }
   }
 
   // KGF: suboptimal solution, since developer must copy/paste BoundaryVariable derived
@@ -282,7 +286,11 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   if (Z4C_ENABLED) {
     pz4c = new Z4c(this, pin);
-    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+    if (PREFER_VC) {
+      pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
+    } else {
+      pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+    }
   }
 
   if (FLUID_ENABLED) {

@@ -1,0 +1,82 @@
+<job>
+problem_id      = one_puncture         # Basename of output filenames
+
+<problem>
+puncture        = one_puncture
+
+<z4c>
+lapse_harmonic  = 0.0       # Harmonic lapse parameter mu_L
+lapse_oplog     = 1.0       # 1+log lapse parameter
+shift_eta       = 2.0       # Shift damping term
+diss            = 0.5       # Kreiss-Oliger dissipation parameter
+chi_div_floor   = 0.00001
+damp_kappa1     = 0.00      # Constraint damping factor 1
+damp_kappa2     = 0.01      # Constraint damping factor 2
+
+<initial_data>
+punc_ADM_mass    = 1.0
+
+# <output1>
+# file_type       = hdf5                 # Athena++ hdf5 data
+# variable        = z4c                  # variables to be output
+# dt              = 1                  # time increment between outputs
+# data_format     = %.16e
+
+<output1>
+file_type       = hdf5                 # Athena++ hdf5 data
+variable        = adm                  # variables to be output
+dt              = 0.1                  # time increment between outputs
+data_format     = %.16e
+
+# <output3>
+# file_type       = hdf5                 # Athena++ hdf5 data
+# variable        = con                  # variables to be output
+# dt              = 1                  # time increment between outputs
+# data_format     = %.16e
+
+# <output4>
+# file_type       = hst       # History data
+# dt              = 0.1      # time increment between outputs
+# data_format     = %.16e
+
+<time>
+cfl_number      = 0.25                 # The Courant, Friedrichs, & Lewy (CFL) number
+tlim            = 1.                   # time limit
+integrator      = rk4                  # time integrator
+
+<mesh>
+refinement      = none               # Static mesh refinement
+
+nx1             = 32                    # Number of zones in X1-direction
+x1min           = -192                  # minimum value of X1
+x1max           =  192                  # maximum value of X1
+ix1_bc          = extrapolate_outflow  # inner-X1 boundary flag
+ox1_bc          = extrapolate_outflow  # inner-X1 boundary flag
+
+nx2             = 32                    # Number of zones in X2-direction
+x2min           = -192                  # minimum value of X2
+x2max           =  192                  # maximum value of X2
+ix2_bc          = extrapolate_outflow  # inner-X2 boundary flag
+ox2_bc          = extrapolate_outflow  # inner-X2 boundary flag
+
+nx3             = 32                    # Number of zones in X3-direction
+x3min           = -192                  # minimum value of X3
+x3max           =  192                  # maximum value of X3
+ix3_bc          = extrapolate_outflow  # inner-X3 boundary flag
+ox3_bc          = extrapolate_outflow  # inner-X3 boundary flag
+
+num_threads = 1                      # Number of OpenMP threads per process
+
+<meshblock>
+nx1             = 16
+nx2             = 16
+nx3             = 16
+
+<refinement1>
+x1min           = -1.828125
+x1max           = 1.828125
+x2min           = -1.828125
+x2max           = 1.828125
+x3min           = -1.828125
+x3max           = 1.828125
+level           = 3

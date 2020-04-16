@@ -29,6 +29,7 @@
 // BD: new problem
 #include "../wave/wave.hpp"
 // -BD
+#include "../z4c/z4c.hpp"
 
 // -----------
 // NOTE ON SWITCHING BETWEEN PRIMITIVE VS. CONSERVED AND STANDARD VS. COARSE BUFFERS HERE:
@@ -95,9 +96,16 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   // Ensure coarse buffer has physical boundaries applied
   // (temp workaround) to automatically call all BoundaryFunction_[] on coarse var
     Wave *pw = nullptr;
+    Z4c *pz4c = nullptr;
+
     if (WAVE_ENABLED) {
       pw = pmb->pwave;
       pw->ubvar.var_vc = &(pw->coarse_u_);
+    }
+
+    if (Z4C_ENABLED) {
+      pz4c = pmb->pz4c;
+      pz4c->ubvar.var_vc = &(pz4c->coarse_u_);
     }
 
     ApplyPhysicalVertexCenteredBoundariesOnCoarseLevel(time, dt);
@@ -105,6 +113,10 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     // switch back
     if (WAVE_ENABLED) {
       pw->ubvar.var_vc = &(pw->u);
+    }
+
+    if (Z4C_ENABLED) {
+      pz4c->ubvar.var_vc = &(pz4c->storage.u);
     }
 
     // Prolongate

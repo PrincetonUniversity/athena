@@ -18,9 +18,9 @@
 #include "../athena_arrays.hpp"
 #include "../athena_tensor.hpp"
 #include "../finite_differencing.hpp"
-// BD: Debug
+
 #include "../bvals/cc/bvals_cc.hpp"
-// #include "../task_list/task_list.hpp"
+#include "../bvals/vc/bvals_vc.hpp"
 
 class MeshBlock;
 class ParameterInput;
@@ -165,20 +165,29 @@ public:
   } opt;
 
 
-  // BD: Debug
-  // tmp for port
-
   // boundary and grid data
-  // AthenaArray<Real> u;     // solution of Z4c evolution system
+#if PREFER_VC
+  VertexCenteredBoundaryVariable ubvar;
+#else
   CellCenteredBoundaryVariable ubvar;
+#endif
   AthenaArray<Real> empty_flux[3];
 
   // storage for SMR/AMR
-  // TODO(KGF): remove trailing underscore or revert to private:
+  // BD: this should perhaps be combined with the above stuct.
   AthenaArray<Real> coarse_u_;
   int refinement_idx{-1};
 
-  // -BD
+  // for seamless CC/VC switching
+  struct MB_info {
+    int il, iu, jl, ju, kl, ku;        // local block iter.
+    int nn1, nn2, nn3;                 // number of nodes (simplify switching)
+
+    AthenaArray<Real> x1, x2, x3;      // for CC / VC grid switch
+    AthenaArray<Real> cx1, cx2, cx3;   // for CC / VC grid switch (coarse)
+  };
+
+  MB_info mbi;
 
 public:
   // scheduled functions

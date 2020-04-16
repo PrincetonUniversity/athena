@@ -16,8 +16,6 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 
-#define SQ(X) ((X)*(X))
-
 // constructor, initializes data structures and parameters
 
 char const * const Z4c::Z4c_names[Z4c::N_Z4c] = {
@@ -363,7 +361,7 @@ void Z4c::SetZ4cAliases(AthenaArray<Real> & u, Z4c::Z4c_vars & z4c)
 Real Z4c::SpatialDet(Real const gxx, Real const gxy, Real const gxz,
                      Real const gyy, Real const gyz, Real const gzz)
 {
-  return - SQ(gxz)*gyy + 2*gxy*gxz*gyz - gxx*SQ(gyz) - SQ(gxy)*gzz + gxx*gyy*gzz;
+  return - SQR(gxz)*gyy + 2*gxy*gxz*gyz - gxx*SQR(gyz) - SQR(gxy)*gzz + gxx*gyy*gzz;
 }
 
 //----------------------------------------------------------------------------------------
@@ -380,12 +378,12 @@ void Z4c::SpatialInv(Real const detginv,
                      Real * uxx, Real * uxy, Real * uxz,
                      Real * uyy, Real * uyz, Real * uzz)
 {
-  *uxx = (-SQ(gyz) + gyy*gzz)*detginv;
+  *uxx = (-SQR(gyz) + gyy*gzz)*detginv;
   *uxy = (gxz*gyz  - gxy*gzz)*detginv;
-  *uyy = (-SQ(gxz) + gxx*gzz)*detginv;
+  *uyy = (-SQR(gxz) + gxx*gzz)*detginv;
   *uxz = (-gxz*gyy + gxy*gyz)*detginv;
   *uyz = (gxy*gxz  - gxx*gyz)*detginv;
-  *uzz = (-SQ(gxy) + gxx*gyy)*detginv;
+  *uzz = (-SQR(gxy) + gxx*gyy)*detginv;
   return;
 }
 
@@ -402,7 +400,7 @@ Real Z4c::Trace(Real const detginv,
   return (detginv*(
        - 2.*Ayz*gxx*gyz + Axx*gyy*gzz +  gxx*(Azz*gyy + Ayy*gzz)
        + 2.*(gxz*(Ayz*gxy - Axz*gyy + Axy*gyz) + gxy*(Axz*gyz - Axy*gzz))
-       - Azz*SQ(gxy) - Ayy*SQ(gxz) - Axx*SQ(gyz)
+       - Azz*SQR(gxy) - Ayy*SQR(gxz) - Axx*SQR(gyz)
        ));
 }
 
