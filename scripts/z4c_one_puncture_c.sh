@@ -15,9 +15,13 @@ export INPUT_NAME=z4c_one_puncture.inp
 
 # if compilation is chosen
 export DIR_INST=$soft/usr  # correct for location of installed libraries
-export COMPILE_STR="--prob=z4c_one_puncture -z --nghost=2
+export COMPILE_STR="--prob=z4c_one_puncture -z
                     --cxx g++ -omp -debug
-                    -hdf5 -h5double --hdf5_path=$DIR_INST"
+                    --nghost=2"
+
+# add hdf5 support
+export COMPILE_STR="${COMPILE_STR} -hdf5 -h5double --hdf5_path=$DIR_INST"
+
 ###############################################################################
 
 ###############################################################################

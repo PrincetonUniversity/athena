@@ -69,6 +69,5 @@ Real Wave::NewBlockTimeStep(void) {
   min_dt *= pmb->pmy_mesh->cfl_number;
 
   pmb->new_block_dt_ = min_dt;
-
   return min_dt;
 }

@@ -16,28 +16,28 @@ damp_kappa2     = 0.01      # Constraint damping factor 2
 <initial_data>
 punc_ADM_mass    = 1.0
 
-# <output1>
-# file_type       = hdf5                 # Athena++ hdf5 data
-# variable        = z4c                  # variables to be output
-# dt              = 1                  # time increment between outputs
-# data_format     = %.16e
-
 <output1>
+file_type       = hdf5                 # Athena++ hdf5 data
+variable        = z4c                  # variables to be output
+dt              = 1                  # time increment between outputs
+data_format     = %.16e
+
+<output2>
 file_type       = hdf5                 # Athena++ hdf5 data
 variable        = adm                  # variables to be output
 dt              = 0.1                  # time increment between outputs
 data_format     = %.16e
 
-# <output3>
-# file_type       = hdf5                 # Athena++ hdf5 data
-# variable        = con                  # variables to be output
-# dt              = 1                  # time increment between outputs
-# data_format     = %.16e
+<output3>
+file_type       = hdf5                 # Athena++ hdf5 data
+variable        = con                  # variables to be output
+dt              = 1                  # time increment between outputs
+data_format     = %.16e
 
-# <output4>
-# file_type       = hst       # History data
-# dt              = 0.1      # time increment between outputs
-# data_format     = %.16e
+<output4>
+file_type       = hst       # History data
+dt              = 0.1      # time increment between outputs
+data_format     = %.16e
 
 <time>
 cfl_number      = 0.25                 # The Courant, Friedrichs, & Lewy (CFL) number
@@ -68,9 +68,9 @@ ox3_bc          = extrapolate_outflow  # inner-X3 boundary flag
 num_threads = 1                      # Number of OpenMP threads per process
 
 <meshblock>
-nx1             = 16
-nx2             = 16
-nx3             = 16
+nx1             = 32
+nx2             = 32
+nx3             = 32
 
 <refinement1>
 x1min           = -1.828125

@@ -89,9 +89,6 @@ public:
     AthenaArray<Real> u1;    // solution at intermediate steps
     AthenaArray<Real> u2;    // solution at intermediate steps
     AthenaArray<Real> rhs;   // Z4c rhs
-    //DEBUG Needed for Traditional RK4
-    AthenaArray<Real> rhs1;    // intermediate storage
-    //ENDDEBUG
     AthenaArray<Real> adm;   // ADM variables
     AthenaArray<Real> con;   // constraints
     AthenaArray<Real> mat;   // matter variables

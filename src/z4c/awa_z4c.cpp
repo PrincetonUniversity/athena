@@ -40,10 +40,11 @@ std::uniform_real_distribution<double> distribution(-1.,1.);
 // Note the amplitude of the noise (~1e-10) should be also rescaled by
 // the square of the rho parameter
 
-void Z4c::ADMRobustStability(AthenaArray<Real> & u_adm)
-{
+void Z4c::ADMRobustStability(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
+
+  Real const amp = opt.AwA_amplitude;
 
   // Flat spacetime
   ADMMinkowski(u_adm);
@@ -53,14 +54,14 @@ void Z4c::ADMRobustStability(AthenaArray<Real> & u_adm)
     for(int a = 0; a < NDIM; ++a)
       for(int b = a; b < NDIM; ++b) {
         GLOOP1(i) {
-          adm.g_dd(a,b,k,j,i) += RANDOMNUMBER*opt.AwA_amplitude;
+          adm.g_dd(a,b,k,j,i) += RANDOMNUMBER * amp;
         }
       }
     // K_ab
     for(int a = 0; a < NDIM; ++a)
       for(int b = a; b < NDIM; ++b) {
         GLOOP1(i) {
-          adm.K_dd(a,b,k,j,i) += RANDOMNUMBER*opt.AwA_amplitude;
+          adm.K_dd(a,b,k,j,i) += RANDOMNUMBER * amp;
         }
       }
   }
@@ -70,24 +71,22 @@ void Z4c::ADMRobustStability(AthenaArray<Real> & u_adm)
 // \!fn void Z4c::GaugeRobStab(AthenaArray<Real> & u, bool shifted)
 // \brief Initialize lapse and shift for Robust Stability test
 
-void Z4c::GaugeRobStab(AthenaArray<Real> & u)
-{
+void Z4c::GaugeRobStab(AthenaArray<Real> & u) {
   Z4c_vars z4c;
   SetZ4cAliases(u, z4c);
   z4c.alpha.Fill(1.);
   z4c.beta_u.Fill(0.);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
+  Real const amp = opt.AwA_amplitude;
 
   GLOOP2(k,j) {
     GLOOP1(i) {
       // lapse
-      z4c.alpha(k,j,i) += RANDOMNUMBER*opt.AwA_amplitude;
+      z4c.alpha(k,j,i) += RANDOMNUMBER * amp;
       // shift
-      z4c.beta_u(0,k,j,i) += RANDOMNUMBER*opt.AwA_amplitude;
-      z4c.beta_u(1,k,j,i) += RANDOMNUMBER*opt.AwA_amplitude;
-      z4c.beta_u(2,k,j,i) += RANDOMNUMBER*opt.AwA_amplitude;
+      z4c.beta_u(0,k,j,i) += RANDOMNUMBER * amp;
+      z4c.beta_u(1,k,j,i) += RANDOMNUMBER * amp;
+      z4c.beta_u(2,k,j,i) += RANDOMNUMBER * amp;
     }
   }
 }
@@ -96,34 +95,34 @@ void Z4c::GaugeRobStab(AthenaArray<Real> & u)
 // \!fn void Z4c::LinearWave1(AthenaArray<Real> & u)
 // \brief Initialize ADM vars for linear wave test in 1d
 
-void Z4c::ADMLinearWave1(AthenaArray<Real> & u_adm)
-{
+void Z4c::ADMLinearWave1(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
-  
+  Real const amp = opt.AwA_amplitude;
+  Real const d_x = opt.AwA_d_x;
+  Real const d_y = opt.AwA_d_y;
+
   // Flat spacetime
   ADMMinkowski(u_adm);
-  
+
   // For propagation along x ...
-  GLOOP2(k,j) {    
+  GLOOP2(k,j) {
     // g_yy
     GLOOP1(i) {
-      adm.g_dd(1,1,k,j,i) += SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.);
+      adm.g_dd(1,1,k,j,i) += SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
     }
     // g_zz
     GLOOP1(i) {
-      adm.g_dd(2,2,k,j,i) -= SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.);
+      adm.g_dd(2,2,k,j,i) -= SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
     }
     // K_yy
     GLOOP1(i) {
-      adm.K_dd(1,1,k,j,i) += 0.5*DSINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.);
+      adm.K_dd(1,1,k,j,i) += 0.5*DSINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
     }
     // K_zz
     GLOOP1(i) {
-      adm.K_dd(2,2,k,j,i) -= 0.5*DSINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.);
+      adm.K_dd(2,2,k,j,i) -= 0.5*DSINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
     }
   }
 }
@@ -135,13 +134,13 @@ void Z4c::ADMLinearWave1(AthenaArray<Real> & u_adm)
 // Note we use the same macro as for the 1d,
 // so there's a factor of sqrt(2) in the normalization different from literature
 
-void Z4c::ADMLinearWave2(AthenaArray<Real> & u_adm)
-{
+void Z4c::ADMLinearWave2(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
+  Real const amp = opt.AwA_amplitude;
+  Real const d_x = opt.AwA_d_x;
+  Real const d_y = opt.AwA_d_y;
 
   // Flat spacetime
   ADMMinkowski(u_adm);
@@ -150,27 +149,32 @@ void Z4c::ADMLinearWave2(AthenaArray<Real> & u_adm)
     // g_xx, g_yy
     for(int a = 0; a < NDIM-1; ++a) {
       GLOOP1(i) {
-        adm.g_dd(a,a,k,j,i) += 0.5*SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),pco->x2v(j));
+        adm.g_dd(a,a,k,j,i) += 0.5*SINWAVE(amp, d_x, d_y,
+                                           mbi.x1(i), mbi.x2(j));
       }
     }
 
     // g_xy, g_zz
     GLOOP1(i) {
-      adm.g_dd(0,1,k,j,i)  = 0.5*SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),pco->x2v(j));
-      adm.g_dd(2,2,k,j,i) -=     SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),pco->x2v(j));
+      adm.g_dd(0,1,k,j,i)  = 0.5*SINWAVE(amp, d_x, d_y,
+                                         mbi.x1(i), mbi.x2(j));
+      adm.g_dd(2,2,k,j,i) -=     SINWAVE(amp, d_x, d_y,
+                                         mbi.x1(i), mbi.x2(j));
     }
 
     // K_xx, K_xy, K_yy
     for(int a = 0; a < NDIM-1; ++a) {
       for(int b = a; b < NDIM-1; ++b) {
         GLOOP1(i) {
-          adm.K_dd(a,b,k,j,i) = 0.25*DSINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),pco->x2v(j));
+          adm.K_dd(a,b,k,j,i) = 0.25*DSINWAVE(amp, d_x, d_y,
+                                              mbi.x1(i), mbi.x2(j));
         }
       }
     }
     // K_zz
     GLOOP1(i) {
-      adm.K_dd(2,2,k,j,i) = -0.5*DSINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),pco->x2v(j));
+      adm.K_dd(2,2,k,j,i) = -0.5*DSINWAVE(amp, d_x, d_y,
+                                          mbi.x1(i), mbi.x2(j));
     }
   }
 }
@@ -180,21 +184,23 @@ void Z4c::ADMLinearWave2(AthenaArray<Real> & u_adm)
 // \!fn void Z4c::GaugeSimpleGaugeWave(AthenaArray<Real> & u)
 // \brief Initializes lapse for simple 3D gauge wave test
 
-void Z4c::GaugeSimpleGaugeWave(AthenaArray<Real> & u)
-{
+void Z4c::GaugeSimpleGaugeWave(AthenaArray<Real> & u) {
   Z4c_vars z4c;
   SetZ4cAliases(u, z4c);
   z4c.alpha.Fill(1.);
   z4c.beta_u.Fill(0.);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
+  Real const amp = opt.AwA_amplitude;
+  Real const d_x = opt.AwA_d_x;
 
   GLOOP2(k,j) {
       GLOOP1(i) {
         // lapse
-        //z4c.alpha(k,j,i) += GAUSSIAN(opt.AwA_amplitude,opt.AwA_d_x,pco->x1v(i),pco->x2v(j),pco->x3v(k));
-        z4c.alpha(k,j,i) += opt.AwA_amplitude*pow(sin(2.*M_PI*pco->x1v(i)),6)*pow(sin(2.*M_PI*pco->x2v(j)),6)*pow(sin(2.*M_PI*pco->x3v(k)),6);
+        // z4c.alpha(k,j,i) += GAUSSIAN(amp, d_x,
+        //                              mbi.x1(i), mbi.x2(j), mbi.x3(k));
+        z4c.alpha(k,j,i) += amp * pow(sin(2. * M_PI * mbi.x1(i)) , 6) *
+                                  pow(sin(2. * M_PI * mbi.x2(j)) , 6) *
+                                  pow(sin(2. * M_PI * mbi.x3(k)) , 6);
       }
   }
 }
@@ -204,13 +210,13 @@ void Z4c::GaugeSimpleGaugeWave(AthenaArray<Real> & u)
 // \!fn void Z4c::ADMGaugeWave1(AthenaArray<Real> & u)
 // \brief Initialize ADM vars for 1D gauge wave test
 
-void Z4c::ADMGaugeWave1(AthenaArray<Real> & u_adm)
-{
+void Z4c::ADMGaugeWave1(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
+  Real const amp = opt.AwA_amplitude;
+  Real const d_x = opt.AwA_d_x;
+  Real const d_y = opt.AwA_d_y;
 
   // Flat spacetime
   ADMMinkowski(u_adm);
@@ -219,11 +225,11 @@ void Z4c::ADMGaugeWave1(AthenaArray<Real> & u_adm)
   GLOOP2(k,j) {
      GLOOP1(i) {
         // g_xx
-        adm.g_dd(0,0,k,j,i) -= SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.);
+        adm.g_dd(0,0,k,j,i) -= SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
         // K_xx
         adm.K_dd(0,0,k,j,i) =
-                   0.5*DSINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.)/
-        std::sqrt(1.0 - SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.));
+                   0.5*DSINWAVE(amp, d_x, d_y, mbi.x1(i), 0.)/
+        std::sqrt(1.0 - SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.));
       }
   }
 }
@@ -233,20 +239,21 @@ void Z4c::ADMGaugeWave1(AthenaArray<Real> & u_adm)
 // \!fn void Z4c::GaugeGaugeWave1(AthenaArray<Real> & u)
 // \brief Initialize lapse for 1D gauge wave test
 
-void Z4c::GaugeGaugeWave1(AthenaArray<Real> & u)
-{
+void Z4c::GaugeGaugeWave1(AthenaArray<Real> & u) {
   Z4c_vars z4c;
   SetZ4cAliases(u, z4c);
   z4c.alpha.Fill(1.);
   z4c.beta_u.Fill(0.);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
+  Real const amp = opt.AwA_amplitude;
+  Real const d_x = opt.AwA_d_x;
+  Real const d_y = opt.AwA_d_y;
 
   GLOOP2(k,j) {
      GLOOP1(i) {
        // lapse
-       z4c.alpha(k,j,i) = std::sqrt(1.0 - SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.));
+       z4c.alpha(k,j,i) = std::sqrt(1.0 - SINWAVE(amp, d_x, d_y,
+                                                  mbi.x1(i), 0.));
      }
   }
 }
@@ -256,13 +263,13 @@ void Z4c::GaugeGaugeWave1(AthenaArray<Real> & u)
 // \!fn void Z4c::ADMGaugeWave1_shifted(AthenaArray<Real> & u)
 // \brief Initialize ADM vars for shifted 1D gauge wave test
 
-void Z4c::ADMGaugeWave1_shifted(AthenaArray<Real> & u_adm)
-{
+void Z4c::ADMGaugeWave1_shifted(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
+  Real const amp = opt.AwA_amplitude;
+  Real const d_x = opt.AwA_d_x;
+  Real const d_y = opt.AwA_d_y;
 
   // Flat spacetime
   ADMMinkowski(u_adm);
@@ -271,11 +278,11 @@ void Z4c::ADMGaugeWave1_shifted(AthenaArray<Real> & u_adm)
   GLOOP2(k,j) {
      GLOOP1(i) {
         // g_xx
-        adm.g_dd(0,0,k,j,i) += SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.);
+        adm.g_dd(0,0,k,j,i) += SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
         // K_xx
         adm.K_dd(0,0,k,j,i) =
-                   0.5*DSINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.)/
-        std::sqrt(1.0 + SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.));
+                   0.5*DSINWAVE(amp, d_x, d_y, mbi.x1(i), 0.)/
+        std::sqrt(1.0 + SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.));
     }
   }
 }
@@ -285,23 +292,24 @@ void Z4c::ADMGaugeWave1_shifted(AthenaArray<Real> & u_adm)
 // \!fn void Z4c::GaugeGaugeWave1_shifted(AthenaArray<Real> & u)
 // \brief Initialize lapse and shift for shifted 1D gauge wave test
 
-void Z4c::GaugeGaugeWave1_shifted(AthenaArray<Real> & u)
-{
+void Z4c::GaugeGaugeWave1_shifted(AthenaArray<Real> & u) {
   Z4c_vars z4c;
   SetZ4cAliases(u, z4c);
   z4c.alpha.Fill(1.);
   z4c.beta_u.Fill(0.);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
+  Real const amp = opt.AwA_amplitude;
+  Real const d_x = opt.AwA_d_x;
+  Real const d_y = opt.AwA_d_y;
 
   GLOOP2(k,j) {
      GLOOP1(i) {
         // lapse
-        z4c.alpha(k,j,i) = 1.0/(std::sqrt(1.0 + SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.)));
+        z4c.alpha(k,j,i) = 1.0/(std::sqrt(1.0 + SINWAVE(amp, d_x, d_y,
+                                                        mbi.x1(i),0.)));
         // shift
-        z4c.beta_u(0,k,j,i) = - SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.)/
-                          (1. + SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),0.));
+        z4c.beta_u(0,k,j,i) = - SINWAVE(amp, d_x, d_y, mbi.x1(i),0.)/
+                          (1. + SINWAVE(amp, d_x, d_y, mbi.x1(i),0.));
       }
   }
 }
@@ -314,13 +322,13 @@ void Z4c::GaugeGaugeWave1_shifted(AthenaArray<Real> & u)
 // Note we use the same macro as for the 1d,
 // so there's a factor of sqrt(2) in the normalization different from literature
 
-void Z4c::ADMGaugeWave2(AthenaArray<Real> & u_adm)
-{
+void Z4c::ADMGaugeWave2(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
+  Real const amp = opt.AwA_amplitude;
+  Real const d_x = opt.AwA_d_x;
+  Real const d_y = opt.AwA_d_y;
 
   // Flat spacetime
   ADMMinkowski(u_adm);
@@ -329,29 +337,30 @@ void Z4c::ADMGaugeWave2(AthenaArray<Real> & u_adm)
     // g_xx, g_yy
     for(int a = 0; a < NDIM-1; ++a) {
       GLOOP1(i) {
-        adm.g_dd(a,a,k,j,i) -= 0.5*SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),pco->x2v(j));
+        adm.g_dd(a,a,k,j,i) -= 0.5*SINWAVE(amp, d_y, d_y,
+                                           mbi.x1(i), mbi.x2(j));
       }
     }
 
     // g_xy
     GLOOP1(i) {
-      adm.g_dd(0,1,k,j,i) = 0.5*SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),pco->x2v(j));
+      adm.g_dd(0,1,k,j,i) = 0.5*SINWAVE(amp, d_y, d_y, mbi.x1(i), mbi.x2(j));
     }
 
     // K_xx, K_yy
     for(int a = 0; a < NDIM-1; ++a) {
       GLOOP1(i) {
         adm.K_dd(a,a,k,j,i) =
-                  0.25*DSINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),pco->x2v(j))/
-          std::sqrt(1.0-SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),pco->x2v(j)));
+                  0.25*DSINWAVE(amp, d_y, d_y, mbi.x1(i), mbi.x2(j))/
+          std::sqrt(1.0-SINWAVE(amp, d_y, d_y, mbi.x1(i), mbi.x2(j)));
       }
     }
 
     // K_xy, K_zz
     GLOOP1(i) {
       adm.K_dd(0,1,k,j,i) = - adm.K_dd(0,0,k,j,i);
-      adm.K_dd(2,2,k,j,i) = -0.5*DSINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),pco->x2v(j));
-    }    
+      adm.K_dd(2,2,k,j,i) = -0.5*DSINWAVE(amp, d_y, d_y, mbi.x1(i), mbi.x2(j));
+    }
   }
 }
 
@@ -359,21 +368,21 @@ void Z4c::ADMGaugeWave2(AthenaArray<Real> & u_adm)
 // \!fn void Z4c::GaugeGaugeWave2(AthenaArray<Real> & u)
 // \brief Initialize lapse for 2D gauge wave test
 
-void Z4c::GaugeGaugeWave2(AthenaArray<Real> & u)
-{
+void Z4c::GaugeGaugeWave2(AthenaArray<Real> & u) {
   Z4c_vars z4c;
   SetZ4cAliases(u, z4c);
   z4c.alpha.Fill(1.);
   z4c.beta_u.Fill(0.);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
+  Real const amp = opt.AwA_amplitude;
+  Real const d_x = opt.AwA_d_x;
+  Real const d_y = opt.AwA_d_y;
 
   GLOOP2(k,j) {
      GLOOP1(i) {
         // lapse
-        z4c.alpha(k,j,i) = std::sqrt(1.0 - SINWAVE(opt.AwA_amplitude,opt.AwA_d_x,opt.AwA_d_y,pco->x1v(i),pco->x2v(j)));
+        z4c.alpha(k,j,i) = std::sqrt(1.0 - SINWAVE(amp, d_x, d_y,
+                                                   mbi.x1(i), mbi.x2(j)));
       }
   }
 }
-

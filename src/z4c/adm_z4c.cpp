@@ -39,8 +39,7 @@
 // The Z4c variables will be set on the whole MeshBlock with the exception of
 // the Gamma's that can only be set in the interior of the MeshBlock.
 
-void Z4c::ADMToZ4c(AthenaArray<Real> & u_adm, AthenaArray<Real> & u)
-{
+void Z4c::ADMToZ4c(AthenaArray<Real> & u_adm, AthenaArray<Real> & u) {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
   Z4c_vars z4c;
@@ -50,14 +49,14 @@ void Z4c::ADMToZ4c(AthenaArray<Real> & u_adm, AthenaArray<Real> & u)
   // Conformal factor, conformal metric, and trace of extrinsic curvature
   //
   GLOOP2(k,j) {
-    
+
     // Conformal factor
     GLOOP1(i) {
       detg(i)   = SpatialDet(adm.g_dd, k, j, i);
       oopsi4(i) = pow(detg(i), -1./3.);
       z4c.chi(k,j,i) = pow(detg(i), 1./12.*opt.chi_psi_power);
     }
-    
+
     // Conformal metric and extrinsic curvature
     for(int a = 0; a < NDIM; ++a)
     for(int b = a; b < NDIM; ++b) {
@@ -76,7 +75,7 @@ void Z4c::ADMToZ4c(AthenaArray<Real> & u_adm, AthenaArray<Real> & u)
           Kt_dd(0,0,i), Kt_dd(0,1,i), Kt_dd(0,2,i),
           Kt_dd(1,1,i), Kt_dd(1,2,i), Kt_dd(2,2,i));
     }
-    
+
     // Conformal traceless extrinsic curvatore
     for(int a = 0; a < NDIM; ++a)
     for(int b = a; b < NDIM; ++b) {
@@ -90,12 +89,8 @@ void Z4c::ADMToZ4c(AthenaArray<Real> & u_adm, AthenaArray<Real> & u)
   // Gamma's
   //
   // Allocate temporary memory for the inverse conformal metric
-  int ncells1 = pmy_block->block_size.nx1 + 2*(NGHOST);
-  int ncells2 = 1, ncells3 = 1;
-  if(pmy_block->block_size.nx2 > 1) ncells2 = pmy_block->block_size.nx2 + 2*(NGHOST);
-  if(pmy_block->block_size.nx3 > 1) ncells3 = pmy_block->block_size.nx3 + 2*(NGHOST);
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 2> g_uu;
-  g_uu.NewAthenaTensor(ncells3, ncells2, ncells1);
+  g_uu.NewAthenaTensor(mbi.nn3, mbi.nn2, mbi.nn1);
 
   // Inverse conformal metric
   GLOOP3(k,j,i) {
@@ -138,8 +133,7 @@ void Z4c::ADMToZ4c(AthenaArray<Real> & u_adm, AthenaArray<Real> & u)
 //
 // This sets the ADM variables everywhere in the MeshBlock
 
-void Z4c::Z4cToADM(AthenaArray<Real> & u, AthenaArray<Real> & u_adm)
-{
+void Z4c::Z4cToADM(AthenaArray<Real> & u, AthenaArray<Real> & u_adm) {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
   Z4c_vars z4c;
@@ -182,9 +176,9 @@ void Z4c::Z4cToADM(AthenaArray<Real> & u, AthenaArray<Real> & u_adm)
 // The constraints are set only in the MeshBlock interior, because derivatives
 // of the ADM quantities are neded to compute them.
 
-void Z4c::ADMConstraints(AthenaArray<Real> & u_con, AthenaArray<Real> & u_adm,
-                         AthenaArray<Real> & u_mat, AthenaArray<Real> & u_z4c)
-{
+void Z4c::ADMConstraints(
+  AthenaArray<Real> & u_con, AthenaArray<Real> & u_adm,
+  AthenaArray<Real> & u_mat, AthenaArray<Real> & u_z4c) {
   u_con.ZeroClear();
 
   Constraint_vars con;
@@ -404,8 +398,7 @@ void Z4c::ADMConstraints(AthenaArray<Real> & u_con, AthenaArray<Real> & u_adm,
 // \!fn void Z4c::ADMMinkowski(AthenaArray<Real> & u)
 // \brief Initialize ADM vars to Minkowski
 
-void Z4c::ADMMinkowski(AthenaArray<Real> & u_adm)
-{
+void Z4c::ADMMinkowski(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
   adm.psi4.Fill(1.);
@@ -423,8 +416,7 @@ void Z4c::ADMMinkowski(AthenaArray<Real> & u_adm)
 // \!fn void Z4c::GaugeGeodesic(AthenaArray<Real> & u)
 // \brief Initialize lapse to 1 and shift to 0
 
-void Z4c::GaugeGeodesic(AthenaArray<Real> & u)
-{
+void Z4c::GaugeGeodesic(AthenaArray<Real> & u) {
   Z4c_vars z4c;
   SetZ4cAliases(u, z4c);
   z4c.alpha.Fill(1.);
@@ -435,7 +427,6 @@ void Z4c::GaugeGeodesic(AthenaArray<Real> & u)
 // \!fn void Z4c::MatterVacuum(AthenaArray<Real> & u_mat)
 // \brief Initialize ADM vars to vacuum
 
-void Z4c::MatterVacuum(AthenaArray<Real> & u_mat)
-{
+void Z4c::MatterVacuum(AthenaArray<Real> & u_mat) {
   u_mat.ZeroClear();
 }

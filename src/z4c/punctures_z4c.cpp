@@ -19,13 +19,9 @@
 // \!fn void Z4c::ADMOnePuncture(AthenaArray<Real> & u)
 // \brief Initialize ADM vars to single puncture (no spin)
 
-void Z4c::ADMOnePuncture(AthenaArray<Real> & u_adm)
-{
+void Z4c::ADMOnePuncture(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
-
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
 
   // Flat spacetime
   ADMMinkowski(u_adm);
@@ -33,7 +29,7 @@ void Z4c::ADMOnePuncture(AthenaArray<Real> & u_adm)
   GLOOP2(k,j) {
     // Isotropic radius
     GLOOP1(i) {
-      r(i) = std::sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k)));
+      r(i) = std::sqrt(SQR(mbi.x1(i)) + SQR(mbi.x2(j)) + SQR(mbi.x3(k)));
     }
     // psi4
     GLOOP1(i) {
@@ -54,20 +50,16 @@ void Z4c::ADMOnePuncture(AthenaArray<Real> & u_adm)
 // \!fn void Z4c::GaugePreCollapsedLapse(AthenaArray<Real> & u)
 // \brief Initialize precollapsed lapse and zero shift for single punture evolution
 
-void Z4c::GaugePreCollapsedLapse(AthenaArray<Real> & u)
-{
+void Z4c::GaugePreCollapsedLapse(AthenaArray<Real> & u) {
   Z4c_vars z4c;
   SetZ4cAliases(u, z4c);
   z4c.alpha.Fill(1.);
   z4c.beta_u.Fill(0.);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
-
   GLOOP2(k,j) {
     // Isotropic radius
     GLOOP1(i) {
-      r(i) = std::sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k)));
+      r(i) = std::sqrt(SQR(mbi.x1(i)) + SQR(mbi.x2(j)) + SQR(mbi.x3(k)));
     }
     // lapse
     GLOOP1(i) {
@@ -80,8 +72,7 @@ void Z4c::GaugePreCollapsedLapse(AthenaArray<Real> & u)
 // \!fn void Z4c::ADMOnePunctureSpin(AthenaArray<Real> & u)
 // \brief Initialize ADM vars to single puncture with spin
 
-void Z4c::ADMOnePunctureSpin(AthenaArray<Real> & u_adm)
-{
+void Z4c::ADMOnePunctureSpin(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
 
@@ -93,8 +84,7 @@ void Z4c::ADMOnePunctureSpin(AthenaArray<Real> & u_adm)
 // \!fn void Z4c::ADMTwoPunctures(AthenaArray<Real> & u)
 // \brief Initialize ADM vars to two punctures
 
-void Z4c::ADMTwoPunctures(AthenaArray<Real> & u_adm)
-{
+void Z4c::ADMTwoPunctures(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
 

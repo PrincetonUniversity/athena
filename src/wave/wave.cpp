@@ -74,7 +74,6 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
     mbi.iu = pmb->ie; mbi.ju = pmb->je; mbi.ku = pmb->ke;
   }
 
-
   // point to appropriate grid
   if (PREFER_VC) {
     mbi.x1.InitWithShallowSlice(pco->x1f, 1, 0, nn1);
@@ -86,6 +85,7 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
     mbi.x3.InitWithShallowSlice(pco->x3v, 1, 0, nn3);
   }
 
+  // BD: debug remove after tests pass
   // if (pm->multilevel) {
   //   // analogously construct coarse grid information as required
   //   mbi.cil = pmb->civs; mbi.cjl = pmb->cjvs; mbi.ckl = pmb->ckvs;

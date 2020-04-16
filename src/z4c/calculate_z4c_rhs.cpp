@@ -25,8 +25,8 @@
 //
 // This function operates only on the interior points of the MeshBlock
 
-void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, AthenaArray<Real> & u_rhs)
-{
+void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
+                 AthenaArray<Real> & u_rhs) {
 
   Z4c_vars z4c, rhs;
   SetZ4cAliases(u, z4c);
@@ -35,13 +35,8 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, AthenaArray<R
   Matter_vars mat;
   SetMatterAliases(u_mat, mat);
 
-  // DEBUG
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
-  // END DEBUG
-
 #if (0)  //DEBUG (for output in y-direction, to be read by Mathematica)
-  Real i_test = pmy_block->is; //where to evaluate things
+  Real i_test = mbi.il; //where to evaluate things
   std::cout << "Writing test output to file..." << std::endl;
   std::ofstream outdata;
   outdata.open ("output.dat");
@@ -319,7 +314,7 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, AthenaArray<R
     // 2nd covariant derivative of the lapse
     //
     for(int a = 0; a < NDIM; ++a)
-    for(int b = 0; b < NDIM; ++b) { 
+    for(int b = 0; b < NDIM; ++b) {
       ILOOP1(i) {
         Ddalpha_dd(a,b,i) = ddalpha_dd(a,b,i)
                           - 2.*(dphi_d(a,i)*dalpha_d(b,i) + dphi_d(b,i)*dalpha_d(a,i));
@@ -398,7 +393,7 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, AthenaArray<R
         R(i) += oopsi4(i) * g_uu(a,b,i) * (R_dd(a,b,i) + Rphi_dd(a,b,i));
       }
     }
-    
+
     // -----------------------------------------------------------------------------------
     // Hamiltonian constraint
     //
@@ -530,14 +525,14 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, AthenaArray<R
       << z4c.alpha(k,j,i_test) << " "
       << dalpha_d(0,i_test) << " "
       << dalpha_d(1,i_test) << " "
-      << pco->x2v(j) //y-grid
+      << mbi.x2(j) //y-grid
       << std::endl;
 #endif// END DEBUG
 
 #if (0) // DEBUG (output in x-direction, to be read by Mathematica)
-    if (j == pmy_block->je) {
+    if (j == mbi.ju) {
       std::cout << "---> Writing test output to file..." << std::endl;
-      std::cout << "(j,y(j)) = (" << j << "," << pco->x2v(j) << ")" << std::endl;
+      std::cout << "(j,y(j)) = (" << j << "," << mbi.x2(j) << ")" << std::endl;
 
       std::ofstream outdata;
       outdata.open ("output.dat");
@@ -558,18 +553,18 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, AthenaArray<R
         << rhs.alpha(k,j,i) << " "
         << rhs.beta_u(0,k,j,i) << " "
 
-        << pco->x1v(i) //x-grid
+        << mbi.x1(i) //x-grid
         << std::endl;
       }
       outdata // To evaluate Mathematica functions
       << 0. << " "   // t
-      << pco->x2v(j) // y
+      << mbi.x2(j) // y
       << std::endl;
       outdata.close();
     }
     outdata // To evaluate Mathematica functions
     << 0. << " "   // t
-    << pco->x1v(i_test) // x
+    << mbi.x1(i_test) // x
     << std::endl;
     outdata.close();
 #endif  // ENDDEBUG
@@ -599,27 +594,27 @@ void Z4c::Z4cBoundaryRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, Athen
   MeshBlock * pmb = pmy_block;
   if(pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::outflow) {
-    Z4cSommerfeld_(u, u_rhs, pmb->is, pmb->is, pmb->js, pmb->je, pmb->ks, pmb->ke);
+    Z4cSommerfeld_(u, u_rhs, mbi.il, mbi.il, mbi.jl, mbi.ju, mbi.kl, mbi.ku);
   }
   if(pmb->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::outflow) {
-    Z4cSommerfeld_(u, u_rhs, pmb->ie, pmb->ie, pmb->js, pmb->je, pmb->ks, pmb->ke);
+    Z4cSommerfeld_(u, u_rhs, mbi.iu, mbi.iu, mbi.jl, mbi.ju, mbi.kl, mbi.ku);
   }
   if(pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::outflow) {
-    Z4cSommerfeld_(u, u_rhs, pmb->is, pmb->ie, pmb->js, pmb->js, pmb->ks, pmb->ke);
+    Z4cSommerfeld_(u, u_rhs, mbi.il, mbi.iu, mbi.jl, mbi.jl, mbi.kl, mbi.ku);
   }
   if(pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::outflow) {
-    Z4cSommerfeld_(u, u_rhs, pmb->is, pmb->ie, pmb->je, pmb->je, pmb->ks, pmb->ke);
+    Z4cSommerfeld_(u, u_rhs, mbi.il, mbi.iu, mbi.ju, mbi.ju, mbi.kl, mbi.ku);
   }
   if(pmb->pbval->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::outflow) {
-    Z4cSommerfeld_(u, u_rhs, pmb->is, pmb->ie, pmb->js, pmb->je, pmb->ks, pmb->ks);
+    Z4cSommerfeld_(u, u_rhs, mbi.il, mbi.iu, mbi.jl, mbi.ju, mbi.kl, mbi.kl);
   }
   if(pmb->pbval->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::outflow) {
-    Z4cSommerfeld_(u, u_rhs, pmb->is, pmb->ie, pmb->js, pmb->je, pmb->ke, pmb->ke);
+    Z4cSommerfeld_(u, u_rhs, mbi.il, mbi.iu, mbi.jl, mbi.ju, mbi.ku, mbi.ku);
   }
 }
 
@@ -630,14 +625,13 @@ void Z4c::Z4cBoundaryRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, Athen
 //
 
 void Z4c::Z4cSommerfeld_(AthenaArray<Real> & u, AthenaArray<Real> & u_rhs,
-  int const is, int const ie, int const js, int const je, int const ks, int const ke)
-{
+  int const is, int const ie,
+  int const js, int const je,
+  int const ks, int const ke) {
+
   Z4c_vars z4c, rhs;
   SetZ4cAliases(u, z4c);
   SetZ4cAliases(u_rhs, rhs);
-
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
 
   for(int k = ks; k <= ke; ++k)
   for(int j = js; j <= je; ++j) {
@@ -676,10 +670,10 @@ void Z4c::Z4cSommerfeld_(AthenaArray<Real> & u, AthenaArray<Real> & u_rhs,
 #pragma omp simd
     for(int i = is; i <= ie; ++i) {
       // NOTE: this will need to be changed if the Z4c variables become vertex center
-      r(i) = std::sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k)));
-      s_u(0,i) = pco->x1v(i)/r(i);
-      s_u(1,i) = pco->x2v(j)/r(i);
-      s_u(2,i) = pco->x3v(k)/r(i);
+      r(i) = std::sqrt(SQR(mbi.x1(i)) + SQR(mbi.x2(j)) + SQR(mbi.x3(k)));
+      s_u(0,i) = mbi.x1(i)/r(i);
+      s_u(1,i) = mbi.x2(j)/r(i);
+      s_u(2,i) = mbi.x3(k)/r(i);
     }
 
     // -----------------------------------------------------------------------------------
