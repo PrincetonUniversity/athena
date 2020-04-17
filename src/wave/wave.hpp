@@ -91,10 +91,14 @@ private:
   AthenaArray<Real> dt1_,dt2_,dt3_;    // scratch arrays used in NewTimeStep
 
 private:
-  void WaveSommerfeld_1d_L_(AthenaArray<Real> & u);
-  void WaveSommerfeld_1d_R_(AthenaArray<Real> & u);
-  void WaveSommerfeld_2d_(AthenaArray<Real> & u);
-  void WaveSommerfeld_3d_(AthenaArray<Real> & u);
+  void WaveSommerfeld_1d_L_(AthenaArray<Real> & u,
+                            int il, int iu, int jl, int ju, int kl, int ku);
+  void WaveSommerfeld_1d_R_(AthenaArray<Real> & u,
+                            int il, int iu, int jl, int ju, int kl, int ku);
+  void WaveSommerfeld_2d_(AthenaArray<Real> & u,
+                          int il, int iu, int jl, int ju, int kl, int ku);
+  void WaveSommerfeld_3d_(AthenaArray<Real> & u,
+                          int il, int iu, int jl, int ju, int kl, int ku);
 
   void WaveBoundaryDirichlet_(AthenaArray<Real> & u,
                               int il, int iu, int jl, int ju, int kl, int ku);
