@@ -46,7 +46,6 @@ void Wave::WaveRHS(AthenaArray<Real> & u){
 //   \brief Calculate the boundary RHS
 void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
   MeshBlock * pmb = pmy_block;
-
   if (use_Dirichlet) {
 
     if(pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::extrapolate_outflow ||
@@ -127,6 +126,8 @@ void Wave::WaveBoundaryRHS(AthenaArray<Real> & u){
 
 void Wave::WaveBoundaryDirichlet_(AthenaArray<Real> & u, int il, int iu,
                                   int jl, int ju, int kl, int ku) {
+  // u(x; t)|_boundary = 0 for all t
+  // => set u_x^n(x; t)|_boundary = 0 for all t
 
   // BD: for debug
   Real const dconst = (DBG_VC_CONSISTENCY) ? 1.0 : 0.;

@@ -548,7 +548,7 @@ void BoundaryValues::ApplyPhysicalVertexCenteredBoundaries(const Real time, cons
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, pmb->jvs, pmb->jve, bks, bke, NGHOST,
                                 ph->w, pf->b, BoundaryFace::inner_x2,
-                              bvars_main_int_vc);
+                                bvars_main_int_vc);
     }
 
     // Apply boundary function on outer-x2 and update W,bcc (if not periodic)
@@ -556,7 +556,7 @@ void BoundaryValues::ApplyPhysicalVertexCenteredBoundaries(const Real time, cons
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, pmb->jvs, pmb->jve, bks, bke, NGHOST,
                                 ph->w, pf->b, BoundaryFace::outer_x2,
-                              bvars_main_int_vc);
+                                bvars_main_int_vc);
     }
   }
 
@@ -569,7 +569,7 @@ void BoundaryValues::ApplyPhysicalVertexCenteredBoundaries(const Real time, cons
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, bjs, bje, pmb->kvs, pmb->kve, NGHOST,
                                 ph->w, pf->b, BoundaryFace::inner_x3,
-                              bvars_main_int_vc);
+                                bvars_main_int_vc);
     }
 
     // Apply boundary function on outer-x3 and update W,bcc (if not periodic)
@@ -577,7 +577,7 @@ void BoundaryValues::ApplyPhysicalVertexCenteredBoundaries(const Real time, cons
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, bjs, bje, pmb->kvs, pmb->kve, NGHOST,
                                 ph->w, pf->b, BoundaryFace::outer_x3,
-                              bvars_main_int_vc);
+                                bvars_main_int_vc);
     }
   }
   return;

@@ -252,6 +252,7 @@ WaveIntegratorTaskList::WaveIntegratorTaskList(ParameterInput *pin, Mesh *pm){
       AddTask(CLEAR_ALLBND, NEW_DT);
     }
 
+
   } // end of using namespace block
 
 }
@@ -332,7 +333,21 @@ void WaveIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
 
 
 void WaveIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
+  pmb->pwave->WaveBoundaryRHS(pmb->pwave->u);
+
+  BoundaryValues *pbval = pmb->pbval;
+  Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
+  // Scaled coefficient for RHS time-advance within stage
+  Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+  if (PREFER_VC) {
+    pbval->ApplyPhysicalVertexCenteredBoundaries(t_end_stage, dt);
+  } else {
+    pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
+  }
+
   if (stage == 1) {
+    pmb->pwave->WaveBoundaryRHS(pmb->pwave->u);
+
     // For each Meshblock, initialize time abscissae of each memory register pair (u,b)
     // at stage=0 to correspond to the beginning of the interval [t^n, t^{n+1}]
     pmb->stage_abscissae[0][0] = 0.0;
@@ -383,11 +398,13 @@ TaskStatus WaveIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
 // Functions to calculate the RHS
 
 TaskStatus WaveIntegratorTaskList::CalculateWaveRHS(MeshBlock *pmb, int stage) {
+  BoundaryValues *pbval = pmb->pbval;
   if (stage <= nstages) {
     pmb->pwave->WaveRHS(pmb->pwave->u);
 
     // application of Sommerfeld boundary conditions
     pmb->pwave->WaveBoundaryRHS(pmb->pwave->u);
+
     return TaskStatus::next;
   }
   return TaskStatus::fail;
@@ -465,7 +482,7 @@ TaskStatus WaveIntegratorTaskList::ReceiveWave(MeshBlock *pmb, int stage) {
   }
 }
 
-
+// Sets boundary buffer data
 TaskStatus WaveIntegratorTaskList::SetBoundariesWave(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->pwave->ubvar.SetBoundaries();
@@ -496,7 +513,6 @@ TaskStatus WaveIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
 
 TaskStatus WaveIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   BoundaryValues *pbval = pmb->pbval;
-
   if (stage <= nstages) {
     // Time at the end of stage for (u, b) register pair
     Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];

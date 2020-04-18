@@ -27,7 +27,6 @@
 
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX1(
     Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
-
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -55,7 +54,6 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX1(
 
 void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX1(
     Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
-
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
