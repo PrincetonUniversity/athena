@@ -254,6 +254,22 @@ Real Thermo::HeatingPE(const Real G, const Real Zd, const Real T,
   return heating;
 }
 
+Real Thermo::HeatingPE_W03(const Real G, const Real Z_PAH, const Real T,
+                           const Real ne, const Real phi_PAH){
+	const double small_ = 1e-10;
+	if (ne < small_) {
+		return 0.;
+	}
+  if (phi_PAH < small_) {
+    return 0.;
+  }
+  const Real psi = (1.7 * G * sqrt(T)/ne + 50.)/phi_PAH;
+  const Real fac = 4.9e-2/(1+4.0e-3*pow(psi, 0.73)) 
+                    + 3.7e-2*pow(T/1e4, 0.7)/(1 + 2.0e-4*psi);
+  const Real heating = 2.2e-24 * G * Z_PAH * fac;
+  return heating;
+}
+
 Real Thermo::Cooling2Level_(const Real q01, const Real q10,
 															const Real A10, const Real E10,
 															const Real xs) {
@@ -568,6 +584,18 @@ Real Thermo::CoolingRec(const Real Zd, const Real T, const Real ne,
   const Real cooling = 1.0e-28 * ne * pow(T, DPE_[0] + DPE_[1]/lnx) 
                           * exp( DPE_[2] + (DPE_[3] - DPE_[4]*lnx)*lnx );
   return cooling * Zd;
+}
+
+Real Thermo::CoolingRec_W03(const Real Z_PAH, const Real T, const Real ne, 
+                            const Real G, const Real phi_PAH) {
+	const double small_ = 1e-10;
+  if (phi_PAH < small_) {
+    return 0.;
+  }
+  const Real psi = (1.7 * G * sqrt(T)/(ne+1e-50) + 50.)/phi_PAH;
+  const Real beta  = 0.74/pow(T, 0.068);
+  const Real cooling = 4.65e-30 * pow(T, 0.94) * pow(psi, beta) * ne * phi_PAH;
+  return cooling * Z_PAH;
 }
 
 Real Thermo::CoolingH2diss(const Real xHI, const Real xH2,

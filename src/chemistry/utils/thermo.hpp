@@ -41,6 +41,18 @@ class Thermo {
 		// Photo electric by dust heating rate in erg H^-1 s^-1.
 		static Real HeatingPE(const Real G, const Real Zd, const Real T,
                             const Real ne);
+		// Heating by photo electric effect on dust, including collsional cooling. 
+    // Wolfire et al. 2003 Equation (19)
+		// Arguments:
+		// G: UV radiation scaled by solar neighbourhood value, including
+    // extinction.  G=G0 * exp(-NH*sigmaPE_) at one line of sight.
+		// Z_PAH: dust (PAH) abundance scaled by solar neighbourhood value.
+    // T: temperature in K
+    // ne: electron number density in cm^-3.
+		// Return:
+		// Photo electric by dust heating rate in erg H^-1 s^-1.
+		static Real HeatingPE_W03(const Real G, const Real Z_PAH, const Real T,
+                              const Real ne, const Real phi_PAH);
     // Heating by H2 formation on dust grains.
     // From Hollenbach + McKee 1979
     // (0) *H + *H + gr -> H2 + gr
@@ -178,6 +190,18 @@ class Thermo {
     // Cooling rate for  recombination of e on PAHs in erg H^-1 s^-1 
     static Real CoolingRec(const Real Zd, const Real T, const Real ne, 
                              const Real G);
+    // Cooling by reconbination of e on PAHs.
+    // Wolfire et al. (2003) eq. (21)
+    // Arguments:
+    // Z_PAH: dust (PAH) metalicity compared to solar neighbourhood.
+    // T: temperature in K.
+    // ne: number denstiy of electrons.
+		// G: UV radiation scaled by solar neighbourhood value, including
+    // extinction. G=G0 * exp(-NH*sigmaPE_) at one line of sight.
+    // Return:
+    // Cooling rate for  recombination of e on PAHs in erg H^-1 s^-1 
+    static Real CoolingRec_W03(const Real Z_PAH, const Real T, const Real ne, 
+                               const Real G, const Real phi_PAH);
     // Cooling by collisional dissociation of H2
     //  H2 + *H -> 3 *H 
     //  H2 + H2 -> H2 + 2 *H
