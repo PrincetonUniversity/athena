@@ -333,6 +333,7 @@ void WaveIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
 
 
 void WaveIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
+  // BD: debug-
   pmb->pwave->WaveBoundaryRHS(pmb->pwave->u);
 
   BoundaryValues *pbval = pmb->pbval;
@@ -344,6 +345,7 @@ void WaveIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   } else {
     pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
   }
+  //-----------------------
 
   if (stage == 1) {
     pmb->pwave->WaveBoundaryRHS(pmb->pwave->u);

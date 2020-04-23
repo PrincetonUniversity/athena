@@ -46,6 +46,7 @@ void VertexCenteredBoundaryVariable::PrepareNodeMult() {
 
   for (int k = c_kvs; k <= c_kve; ++k)
     for (int j = c_jvs; j <= c_jve; ++j)
+#pragma omp simd
       for (int i = c_ivs; i <= c_ive; ++i)
         node_mult(0, k, j, i) = 1;
 

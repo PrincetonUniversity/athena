@@ -37,7 +37,7 @@ void Z4c::AddZ4cRHS(AthenaArray<Real> & rhs, Real const wght, AthenaArray<Real> 
 //  This function operates on the interior points of the MeshBlock
 
 void Z4c::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
-                       AthenaArray<Real> &u_in2, const Real wght[3]) {
+                      AthenaArray<Real> &u_in2, const Real wght[3]) {
   // consider every possible simplified form of weighted sum operator:
   // U = a*U + b*U1 + c*U2
   // if c=0, c=b=0, or c=b=a=0 (in that order) to avoid extra FMA operations

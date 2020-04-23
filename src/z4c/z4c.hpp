@@ -326,7 +326,7 @@ private:
   AthenaTensor<Real, TensorSymm::ISYM2, NDIM, 3> ddbeta_ddu; // shift 2nd drvts
   AthenaTensor<Real, TensorSymm::SYM22, NDIM, 4> ddg_dddd;   // metric 2nd drvts
 
-  // auxialiry Lie derivatives along the shift vector
+  // auxiliary Lie derivatives along the shift vector
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> Lchi;        // Lie derivative of chi
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> LKhat;       // Lie derivative of Khat
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> LTheta;      // Lie derivative of Theta
@@ -380,7 +380,6 @@ private:
         out += (c1 + c2);
       }
       out += s1::coeff[s1::nghost] * pu[s1::nghost*stride[dir]];
-
       return out * idx[dir];
     }
     // 1st derivative 2nd order centered
@@ -405,7 +404,6 @@ private:
       for(int n = sr::width-1; n >= 0; --n) {
         dr += sr::coeff[n] * pu[(n - sr::offset)*stride[dir]];
       }
-
       return ((vx < 0) ? (vx * dl) : (vx * dr)) * idx[dir];
     }
     // Homogeneous 2nd derivative
@@ -420,7 +418,6 @@ private:
         out += (c1 + c2);
       }
       out += s2::coeff[s2::nghost] * pu[s2::nghost*stride[dir]];
-
       return out * SQR(idx[dir]);
     }
     // Mixed 2nd derivative

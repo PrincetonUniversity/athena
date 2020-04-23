@@ -589,8 +589,7 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
 // This function operates only on a thin layer of points at the physical
 // boundary of the domain.
 
-void Z4c::Z4cBoundaryRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, AthenaArray<Real> & u_rhs)
-{
+void Z4c::Z4cBoundaryRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, AthenaArray<Real> & u_rhs) {
   MeshBlock * pmb = pmy_block;
   if(pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::outflow) {
