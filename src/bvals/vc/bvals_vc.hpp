@@ -149,7 +149,29 @@ private:
   void idxLoadToFinerRanges(const NeighborIndexes& ni,
     int &si, int &ei, int &sj, int &ej, int &sk, int &ek);
 
+  void idxSetSameLevelRanges(const NeighborIndexes& ni,
+    int &si, int &ei, int &sj, int &ej, int &sk, int &ek,
+    int type);
+
+  void idxSetFromCoarserRanges(const NeighborIndexes& ni,
+    int &si, int &ei, int &sj, int &ej, int &sk, int &ek,
+    bool is_node_mult);
+
+  void idxSetFromFinerRanges(const NeighborIndexes& ni,
+    int &si, int &ei, int &sj, int &ej, int &sk, int &ek,
+    int type);
+
   int NeighborVariableBufferSize(const NeighborIndexes& ni);
+
+  int MPI_BufferSizeSameLevel(const NeighborIndexes& ni,
+    bool is_send);
+
+  int MPI_BufferSizeToCoarser(const NeighborIndexes& ni);
+  int MPI_BufferSizeFromCoarser(const NeighborIndexes& ni);
+
+  int MPI_BufferSizeToFiner(const NeighborIndexes& ni);
+  int MPI_BufferSizeFromFiner(const NeighborIndexes& ni);
+
 
   // BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;

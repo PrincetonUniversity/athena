@@ -21,9 +21,9 @@
 #include "bvals_vc.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn void VertexCenteredBoundaryVariable::AccumulateBufferSize(...)
+//! \fn inline void VertexCenteredBoundaryVariable::AccumulateBufferSize(...)
 //  \brief Buffer size accumulator
-void VertexCenteredBoundaryVariable::AccumulateBufferSize(
+inline void VertexCenteredBoundaryVariable::AccumulateBufferSize(
   int sn, int en,
   int si, int ei, int sj, int ej, int sk, int ek,
   int &offset, int ijk_step=1) {
@@ -189,6 +189,254 @@ void VertexCenteredBoundaryVariable::idxLoadToFinerRanges(
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn inline void MeshBlock::SetIndexRangesSBSL(...)
+//  \brief Set index ranges for a given dimension
+inline void VertexCenteredBoundaryVariable::SetIndexRangesSBSL(
+  int ox, int &ix_s, int &ix_e,
+  int ix_vs, int ix_ve, int ix_ms, int ix_pe) {
+
+  if (ox == 0) {
+    ix_s = ix_vs;
+    ix_e = ix_ve;
+  } else if (ox > 0) {
+    ix_s = ix_ve;
+    ix_e = ix_pe;
+  } else {
+    ix_s = ix_ms;
+    ix_e = ix_vs;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void VertexCenteredBoundaryVariable::idxSetSameLevelRanges(...)
+//  \brief Compute indicial ranges for SetBoundarySameLevel
+void VertexCenteredBoundaryVariable::idxSetSameLevelRanges(
+  const NeighborIndexes& ni,
+  int &si, int &ei, int &sj, int &ej, int &sk, int &ek,
+  int type) {
+  // type = 1 for fundamental, 2 for coarse, 3 for node_mult
+
+  MeshBlock *pmb = pmy_block_;
+
+  if (type == 1) {
+    SetIndexRangesSBSL(ni.ox1, si, ei,
+                       pmb->ivs, pmb->ive, pmb->ims, pmb->ipe);
+    SetIndexRangesSBSL(ni.ox2, sj, ej,
+                       pmb->jvs, pmb->jve, pmb->jms, pmb->jpe);
+    SetIndexRangesSBSL(ni.ox3, sk, ek,
+                       pmb->kvs, pmb->kve, pmb->kms, pmb->kpe);
+  } else if (type == 2) {
+    SetIndexRangesSBSL(ni.ox1, si, ei,
+                       pmb->civs, pmb->cive, pmb->cims, pmb->cipe);
+    SetIndexRangesSBSL(ni.ox2, sj, ej,
+                       pmb->cjvs, pmb->cjve, pmb->cjms, pmb->cjpe);
+    SetIndexRangesSBSL(ni.ox3, sk, ek,
+                       pmb->ckvs, pmb->ckve, pmb->ckms, pmb->ckpe);
+  } else if (type == 3) {
+    SetIndexRangesSBSL(ni.ox1, si, ei, c_ivs, c_ive, c_ims, c_ipe);
+    SetIndexRangesSBSL(ni.ox2, sj, ej, c_jvs, c_jve, c_jms, c_jpe);
+    SetIndexRangesSBSL(ni.ox3, sk, ek, c_kvs, c_kve, c_kms, c_kpe);
+  }
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn inline void MeshBlock::SetIndexRangesSBFC(...)
+//  \brief Set index ranges for a given dimension
+inline void VertexCenteredBoundaryVariable::SetIndexRangesSBFC(
+  int ox, int &ix_s, int &ix_e,
+  int ix_cvs, int ix_cve, int ix_cms, int ix_cme, int ix_cps, int ix_cpe,
+  bool level_flag) {
+
+  if (ox == 0) {
+    ix_s = ix_cvs; ix_e = ix_cve;
+    if (level_flag) {
+      ix_s = ix_cvs; ix_e = ix_cpe;
+    } else {
+      ix_s = ix_cms; ix_e = ix_cve;
+    }
+  } else if (ox > 0)  {
+    ix_s = ix_cps; ix_e = ix_cpe;
+  } else {
+    ix_s = ix_cms; ix_e = ix_cme;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void VertexCenteredBoundaryVariable::idxSetFromCoarserRanges(...)
+//  \brief Compute indicial ranges for SetBoundaryFromCoarser
+void VertexCenteredBoundaryVariable::idxSetFromCoarserRanges(
+  const NeighborIndexes& ni,
+  int &si, int &ei, int &sj, int &ej, int &sk, int &ek,
+  bool is_node_mult=false) {
+
+  MeshBlock *pmb = pmy_block_;
+
+  if (!is_node_mult) {
+    // [1d] modifies si, ei
+    SetIndexRangesSBFC(ni.ox1, si, ei,
+                       pmb->civs, pmb->cive, pmb->cims, pmb->cime,
+                       pmb->cips, pmb->cipe, (pmb->loc.lx1 & 1LL) == 0LL);
+
+    // [2d] modifies sj, ej
+    SetIndexRangesSBFC(ni.ox2, sj, ej,
+                       pmb->cjvs, pmb->cjve, pmb->cjms, pmb->cjme,
+                       pmb->cjps, pmb->cjpe, (pmb->loc.lx2 & 1LL) == 0LL);
+
+    // [3d] modifies sk, ek
+    SetIndexRangesSBFC(ni.ox3, sk, ek,
+                       pmb->ckvs, pmb->ckve, pmb->ckms, pmb->ckme,
+                       pmb->ckps, pmb->ckpe, (pmb->loc.lx3 & 1LL) == 0LL);
+  } else {
+    int const c_ime = c_ims;
+    int const c_ips = c_ipe;
+
+    int const c_jme = c_jms;
+    int const c_jps = c_jpe;
+
+    int const c_kme = c_kms;
+    int const c_kps = c_kpe;
+
+    // [1d] modifies si, ei
+    SetIndexRangesSBFC(ni.ox1, si, ei,
+                       c_ivs, c_ive, c_ims, c_ime,
+                       c_ips, c_ipe, (pmb->loc.lx1 & 1LL) == 0LL);
+
+    // [2d] modifies sj, ej
+    SetIndexRangesSBFC(ni.ox2, sj, ej,
+                       c_jvs, c_jve, c_jms, c_jme,
+                       c_jps, c_jpe, (pmb->loc.lx2 & 1LL) == 0LL);
+
+    // [3d] modifies sk, ek
+    SetIndexRangesSBFC(ni.ox3, sk, ek,
+                       c_kvs, c_kve, c_kms, c_kme,
+                       c_kps, c_kpe, (pmb->loc.lx3 & 1LL) == 0LL);
+  }
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn inline void MeshBlock::SetIndexRangesSBFF(...)
+//  \brief Set index ranges for a given dimension
+inline void VertexCenteredBoundaryVariable::SetIndexRangesSBFF(
+  int ox, int &ix_s, int &ix_e, int ix_vs, int ix_ve, int ix_ms, int ix_pe,
+  int fi1, int fi2, int axis_half_size, bool size_flag, bool offset_flag) {
+
+  if (ox == 0) {
+    ix_s = ix_vs;
+    ix_e = ix_ve;
+
+    if (size_flag)
+      if (offset_flag) {
+        if (fi1 == 1) {
+          ix_s += axis_half_size;
+        } else {
+          ix_e -= axis_half_size;
+        }
+      } else {
+        if (fi2 == 1) {
+          ix_s += axis_half_size;
+        } else {
+          ix_e -= axis_half_size;
+        }
+      }
+  } else if (ox > 0) {
+    ix_s = ix_ve;
+    ix_e = ix_pe;
+  } else {
+    ix_s = ix_ms;
+    ix_e = ix_vs;
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void VertexCenteredBoundaryVariable::idxSetFromFinerRanges(...)
+//  \brief Compute indicial ranges for SetBoundaryFromFiner
+void VertexCenteredBoundaryVariable::idxSetFromFinerRanges(
+  const NeighborIndexes& ni,
+  int &si, int &ei, int &sj, int &ej, int &sk, int &ek,
+  int type) {
+  // type = 1 for fundamental, 2 for coarse, 3 for node_mult
+
+  MeshBlock *pmb = pmy_block_;
+
+  if (type == 1) {
+    SetIndexRangesSBFF(ni.ox1, si, ei,
+                       pmb->ivs, pmb->ive, pmb->ims, pmb->ipe,
+                       ni.fi1, ni.fi2,
+                       pmb->block_size.nx1 / 2,
+                       true,
+                       true);
+
+    SetIndexRangesSBFF(ni.ox2, sj, ej,
+                       pmb->jvs, pmb->jve, pmb->jms, pmb->jpe,
+                       ni.fi1, ni.fi2,
+                       pmb->block_size.nx2 / 2,
+                       (pmb->block_size.nx2 > 1),
+                       (ni.ox1 != 0));
+
+    SetIndexRangesSBFF(ni.ox3, sk, ek,
+                       pmb->kvs, pmb->kve, pmb->kms, pmb->kpe,
+                       ni.fi1, ni.fi2,
+                       pmb->block_size.nx3 / 2,
+                       (pmb->block_size.nx3 > 1),
+                       (ni.ox1 != 0 && ni.ox2 != 0));
+
+  } else if (type == 2) {
+    SetIndexRangesSBFF(ni.ox1, si, ei,
+                       pmb->civs, pmb->cive, pmb->cims, pmb->cipe,
+                       ni.fi1, ni.fi2,
+                       pmb->block_size.nx1 / 4,
+                       true,
+                       true);
+
+    SetIndexRangesSBFF(ni.ox2, sj, ej,
+                       pmb->cjvs, pmb->cjve, pmb->cjms, pmb->cjpe,
+                       ni.fi1, ni.fi2,
+                       pmb->block_size.nx2 / 4,
+                       (pmb->block_size.nx2 > 1),
+                       (ni.ox1 != 0));
+
+    SetIndexRangesSBFF(ni.ox3, sk, ek,
+                       pmb->ckvs, pmb->ckve, pmb->ckms, pmb->ckpe,
+                       ni.fi1, ni.fi2,
+                       pmb->block_size.nx3 / 4,
+                       (pmb->block_size.nx3 > 1),
+                       (ni.ox1 != 0 && ni.ox2 != 0));
+
+  } else if (type == 3) {
+    SetIndexRangesSBFF(ni.ox1, si, ei,
+                       c_ivs, c_ive, c_ims, c_ipe,
+                       ni.fi1, ni.fi2,
+                       2,
+                       true,
+                       true);
+
+    SetIndexRangesSBFF(ni.ox2, sj, ej,
+                       c_jvs, c_jve, c_jms, c_jpe,
+                       ni.fi1, ni.fi2,
+                       2,
+                       (pmb->block_size.nx2 > 1),
+                       (ni.ox1 != 0));
+
+    SetIndexRangesSBFF(ni.ox3, sk, ek,
+                       c_kvs, c_kve, c_kms, c_kpe,
+                       ni.fi1, ni.fi2,
+                       2,
+                       (pmb->block_size.nx3 > 1),
+                       (ni.ox1 != 0 && ni.ox2 != 0));
+
+  }
+
+  return;
+}
+
 // For calculation of buffer sizes based on neighbor index information
 int VertexCenteredBoundaryVariable::NeighborVariableBufferSize(const NeighborIndexes& ni) {
   MeshBlock *pmb = pmy_block_;
@@ -220,3 +468,96 @@ int VertexCenteredBoundaryVariable::NeighborVariableBufferSize(const NeighborInd
 
   return size;
 }
+
+//----------------------------------------------------------------------------------------
+// MPI buffer sizes
+#ifdef MPI_PARALLEL
+
+int VertexCenteredBoundaryVariable::MPI_BufferSizeSameLevel(
+  const NeighborIndexes& ni,
+  bool is_send=true) {
+
+  MeshBlock *pmb = pmy_block_;
+  int si, sj, sk, ei, ej, ek;
+  int size = 0;
+
+  if (is_send) {
+    idxLoadSameLevelRanges(ni, si, ei, sj, ej, sk, ek, false);
+    AccumulateBufferSize(nl_, nu_, si, ei, sj, ej, sk, ek, size);
+
+    if (pmy_mesh_->multilevel) {
+      idxLoadSameLevelRanges(ni, si, ei, sj, ej, sk, ek, true);
+      AccumulateBufferSize(nl_, nu_, si, ei, sj, ej, sk, ek, size);
+    }
+  } else {
+    idxSetSameLevelRanges(ni, si, ei, sj, ej, sk, ek, 1);
+    AccumulateBufferSize(nl_, nu_, si, ei, sj, ej, sk, ek, size);
+
+    if (pmy_mesh_->multilevel) {
+      idxSetSameLevelRanges(ni, si, ei, sj, ej, sk, ek, 2);
+      AccumulateBufferSize(nl_, nu_, si, ei, sj, ej, sk, ek, size);
+    }
+  }
+
+  return size;
+}
+
+int VertexCenteredBoundaryVariable::MPI_BufferSizeToCoarser(
+  const NeighborIndexes& ni) {
+
+  MeshBlock *pmb = pmy_block_;
+  int si, sj, sk, ei, ej, ek;
+  int size = 0;
+
+  idxLoadToCoarserRanges(ni, si, ei, sj, ej, sk, ek, false);
+  AccumulateBufferSize(nl_, nu_, si, ei, sj, ej, sk, ek, size);
+  idxLoadToCoarserRanges(ni, si, ei, sj, ej, sk, ek, true);
+  // double restrict means spatial indices jump by two per iterate here
+  AccumulateBufferSize(nl_, nu_, si, ei, sj, ej, sk, ek, size, 2);
+
+  return size;
+}
+
+int VertexCenteredBoundaryVariable::MPI_BufferSizeFromCoarser(
+  const NeighborIndexes& ni) {
+
+  MeshBlock *pmb = pmy_block_;
+  int si, sj, sk, ei, ej, ek;
+  int size = 0;
+
+  idxSetFromCoarserRanges(ni, si, ei, sj, ej, sk, ek, false);
+  AccumulateBufferSize(nl_, nu_, si, ei, sj, ej, sk, ek, size);
+
+  return size;
+}
+
+int VertexCenteredBoundaryVariable::MPI_BufferSizeToFiner(
+  const NeighborIndexes& ni) {
+
+  MeshBlock *pmb = pmy_block_;
+  int si, sj, sk, ei, ej, ek;
+  int size = 0;
+
+  idxLoadToFinerRanges(ni, si, ei, sj, ej, sk, ek);
+  AccumulateBufferSize(nl_, nu_, si, ei, sj, ej, sk, ek, size);
+
+  return size;
+}
+
+int VertexCenteredBoundaryVariable::MPI_BufferSizeFromFiner(
+  const NeighborIndexes& ni) {
+
+  MeshBlock *pmb = pmy_block_;
+  int si, sj, sk, ei, ej, ek;
+  int size = 0;
+
+  idxSetFromFinerRanges(ni, si, ei, sj, ej, sk, ek, 1);
+  AccumulateBufferSize(nl_, nu_, si, ei, sj, ej, sk, ek, size);
+
+  idxSetFromFinerRanges(ni, si, ei, sj, ej, sk, ek, 2);
+  AccumulateBufferSize(nl_, nu_, si, ei, sj, ej, sk, ek, size);
+
+  return size;
+}
+
+#endif

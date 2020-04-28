@@ -266,26 +266,6 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn inline void MeshBlock::SetIndexRangesSBSL(...)
-//  \brief Set index ranges for a given dimension
-inline void VertexCenteredBoundaryVariable::SetIndexRangesSBSL(
-  int ox, int &ix_s, int &ix_e,
-  int ix_vs, int ix_ve, int ix_ms, int ix_pe) {
-
-  if (ox == 0) {
-    ix_s = ix_vs;
-    ix_e = ix_ve;
-  } else if (ox > 0) {
-    ix_s = ix_ve;
-    ix_e = ix_pe;
-  } else {
-    ix_s = ix_ms;
-    ix_e = ix_vs;
-  }
-  return;
-}
-
-//----------------------------------------------------------------------------------------
 //! \fn void VertexCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
 //                                                              const NeighborBlock& nb)
 //  \brief Set vertex-centered boundary received from a block on the same level
@@ -306,23 +286,13 @@ void VertexCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   ErrorIfPolarNotImplemented(nb);
   ErrorIfShearingBoxNotImplemented();
 
-  // unpack all data additively
-  // defer imposition (via suitable averaging) of consistency condition
-  SetIndexRangesSBSL(nb.ni.ox1, si, ei,
-                     pmb->ivs, pmb->ive, pmb->ims, pmb->ipe);
-  SetIndexRangesSBSL(nb.ni.ox2, sj, ej,
-                     pmb->jvs, pmb->jve, pmb->jms, pmb->jpe);
-  SetIndexRangesSBSL(nb.ni.ox3, sk, ek,
-                     pmb->kvs, pmb->kve, pmb->kms, pmb->kpe);
-
+  idxSetSameLevelRanges(nb.ni, si, ei, sj, ej, sk, ek, 1);
 
   // vertex consistency--------------------------------------------------------
   if (!node_mult_assembled) {
     int c_si, c_ei, c_sj, c_ej, c_sk, c_ek;
 
-    SetIndexRangesSBSL(nb.ni.ox1, c_si, c_ei, c_ivs, c_ive, c_ims, c_ipe);
-    SetIndexRangesSBSL(nb.ni.ox2, c_sj, c_ej, c_jvs, c_jve, c_jms, c_jpe);
-    SetIndexRangesSBSL(nb.ni.ox3, c_sk, c_ek, c_kvs, c_kve, c_kms, c_kpe);
+    idxSetSameLevelRanges(nb.ni, c_si, c_ei, c_sj, c_ej, c_sk, c_ek, 3);
 
     for (int k=c_sk; k<=c_ek; ++k)
       for (int j=c_sj; j<=c_ej; ++j)
@@ -355,6 +325,8 @@ void VertexCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       var.print_all();
 
   } else {
+    // unpack all data additively
+    // defer imposition (via suitable averaging) of consistency condition
     BufferUtility::UnpackDataAdd(buf, var, nl_, nu_,
                                  si, ei, sj, ej, sk, ek, p);
   }
@@ -368,12 +340,7 @@ void VertexCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     MeshRefinement *pmr = pmb->pmr;
     AthenaArray<Real> &coarse_var = *coarse_buf;
 
-    SetIndexRangesSBSL(nb.ni.ox1, si, ei,
-                       pmb->civs, pmb->cive, pmb->cims, pmb->cipe);
-    SetIndexRangesSBSL(nb.ni.ox2, sj, ej,
-                       pmb->cjvs, pmb->cjve, pmb->cjms, pmb->cjpe);
-    SetIndexRangesSBSL(nb.ni.ox3, sk, ek,
-                       pmb->ckvs, pmb->ckve, pmb->ckms, pmb->ckpe);
+    idxSetSameLevelRanges(nb.ni, si, ei, sj, ej, sk, ek, 2);
 
     BufferUtility::UnpackDataAdd(buf, coarse_var, nl_, nu_,
                                  si, ei, sj, ej, sk, ek, p);
@@ -458,31 +425,6 @@ void VertexCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn inline void MeshBlock::SetIndexRangesSBFC(...)
-//  \brief Set index ranges for a given dimension
-inline void VertexCenteredBoundaryVariable::SetIndexRangesSBFC(
-  int ox, int &ix_s, int &ix_e,
-  int ix_cvs, int ix_cve, int ix_cms, int ix_cme, int ix_cps, int ix_cpe,
-  bool level_flag) {
-
-  if (ox == 0) {
-    ix_s = ix_cvs; ix_e = ix_cve;
-    if (level_flag) {
-      ix_s = ix_cvs; ix_e = ix_cpe;
-    } else {
-      ix_s = ix_cms; ix_e = ix_cve;
-    }
-  } else if (ox > 0)  {
-    ix_s = ix_cps; ix_e = ix_cpe;
-  } else {
-    ix_s = ix_cms; ix_e = ix_cme;
-  }
-
-
-  return;
-}
-
-//----------------------------------------------------------------------------------------
 //! \fn void VertexCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 //                                                                const NeighborBlock& nb)
 //  \brief Set vertex-centered prolongation buffer received from a block on a coarser level
@@ -520,52 +462,13 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   //   si = pmb->cims; ei = pmb->cime;
   // }
 
-
-  // [1d] modifies si, ei
-  SetIndexRangesSBFC(nb.ni.ox1, si, ei,
-                     pmb->civs, pmb->cive, pmb->cims, pmb->cime,
-                     pmb->cips, pmb->cipe, (pmb->loc.lx1 & 1LL) == 0LL);
-
-  // [2d] modifies sj, ej
-  SetIndexRangesSBFC(nb.ni.ox2, sj, ej,
-                     pmb->cjvs, pmb->cjve, pmb->cjms, pmb->cjme,
-                     pmb->cjps, pmb->cjpe, (pmb->loc.lx2 & 1LL) == 0LL);
-
-  // [3d] modifies sk, ek
-  SetIndexRangesSBFC(nb.ni.ox3, sk, ek,
-                     pmb->ckvs, pmb->ckve, pmb->ckms, pmb->ckme,
-                     pmb->ckps, pmb->ckpe, (pmb->loc.lx3 & 1LL) == 0LL);
-
-
-  //------
+  idxSetFromCoarserRanges(nb.ni, si, ei, sj, ej, sk, ek, false);
 
   // vertex consistency--------------------------------------------------------
   if (!node_mult_assembled) {
     int c_si, c_ei, c_sj, c_ej, c_sk, c_ek;
 
-    int const c_ime = c_ims;
-    int const c_ips = c_ipe;
-
-    int const c_jme = c_jms;
-    int const c_jps = c_jpe;
-
-    int const c_kme = c_kms;
-    int const c_kps = c_kpe;
-
-    // [1d] modifies si, ei
-    SetIndexRangesSBFC(nb.ni.ox1, c_si, c_ei,
-                      c_ivs, c_ive, c_ims, c_ime,
-                      c_ips, c_ipe, (pmb->loc.lx1 & 1LL) == 0LL);
-
-    // [2d] modifies sj, ej
-    SetIndexRangesSBFC(nb.ni.ox2, c_sj, c_ej,
-                      c_jvs, c_jve, c_jms, c_jme,
-                      c_jps, c_jpe, (pmb->loc.lx2 & 1LL) == 0LL);
-
-    // [3d] modifies sk, ek
-    SetIndexRangesSBFC(nb.ni.ox3, c_sk, c_ek,
-                      c_kvs, c_kve, c_kms, c_kme,
-                      c_kps, c_kpe, (pmb->loc.lx3 & 1LL) == 0LL);
+    idxSetFromCoarserRanges(nb.ni, c_si, c_ei, c_sj, c_ej, c_sk, c_ek, true);
 
     for (int k=c_sk; k<=c_ek; ++k)
       for (int j=c_sj; j<=c_ej; ++j)
@@ -712,53 +615,6 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
     printf("%d\n", pmb->gid);
   }
 
-  // if (nb.ni.ox1 < 0)
-  //   Q();
-
-  // printf("x1f: ");
-  // pmb->pcoord->x1f.print_data("%1.2f");
-
-  // if (nb.ni.ox1 == -1)
-  //   Q();
-  // if ((nb.ni.ox1 == 1) and (nb.ni.ox2 == -1))
-  //   Q();
-
-
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn inline void MeshBlock::SetIndexRangesSBFF(...)
-//  \brief Set index ranges for a given dimension
-inline void VertexCenteredBoundaryVariable::SetIndexRangesSBFF(
-  int ox, int &ix_s, int &ix_e, int ix_vs, int ix_ve, int ix_ms, int ix_pe,
-  int fi1, int fi2, int axis_half_size, bool size_flag, bool offset_flag) {
-
-  if (ox == 0) {
-    ix_s = ix_vs;
-    ix_e = ix_ve;
-
-    if (size_flag)
-      if (offset_flag) {
-        if (fi1 == 1) {
-          ix_s += axis_half_size;
-        } else {
-          ix_e -= axis_half_size;
-        }
-      } else {
-        if (fi2 == 1) {
-          ix_s += axis_half_size;
-        } else {
-          ix_e -= axis_half_size;
-        }
-      }
-  } else if (ox > 0) {
-    ix_s = ix_ve;
-    ix_e = ix_pe;
-  } else {
-    ix_s = ix_ms;
-    ix_e = ix_vs;
-  }
   return;
 }
 
@@ -905,27 +761,7 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   }
   */
 
-  SetIndexRangesSBFF(nb.ni.ox1, si, ei,
-                     pmb->ivs, pmb->ive, pmb->ims, pmb->ipe,
-                     nb.ni.fi1, nb.ni.fi2,
-                     pmb->block_size.nx1 / 2,
-                     true,
-                     true);
-
-  SetIndexRangesSBFF(nb.ni.ox2, sj, ej,
-                     pmb->jvs, pmb->jve, pmb->jms, pmb->jpe,
-                     nb.ni.fi1, nb.ni.fi2,
-                     pmb->block_size.nx2 / 2,
-                     (pmb->block_size.nx2 > 1),
-                     (nb.ni.ox1 != 0));
-
-  SetIndexRangesSBFF(nb.ni.ox3, sk, ek,
-                     pmb->kvs, pmb->kve, pmb->kms, pmb->kpe,
-                     nb.ni.fi1, nb.ni.fi2,
-                     pmb->block_size.nx3 / 2,
-                     (pmb->block_size.nx3 > 1),
-                     (nb.ni.ox1 != 0 && nb.ni.ox2 != 0));
-
+  idxSetFromFinerRanges(nb.ni, si, ei, sj, ej, sk, ek, 1);
   //////////////////////////////////////////////////////////////////////////////
 
   if (FILL_WAVE_BND_FRF) {
@@ -950,26 +786,7 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   if (!node_mult_assembled) {
     int c_si, c_ei, c_sj, c_ej, c_sk, c_ek;
 
-    SetIndexRangesSBFF(nb.ni.ox1, c_si, c_ei,
-                      c_ivs, c_ive, c_ims, c_ipe,
-                      nb.ni.fi1, nb.ni.fi2,
-                      2,
-                      true,
-                      true);
-
-    SetIndexRangesSBFF(nb.ni.ox2, c_sj, c_ej,
-                      c_jvs, c_jve, c_jms, c_jpe,
-                      nb.ni.fi1, nb.ni.fi2,
-                      2,
-                      (pmb->block_size.nx2 > 1),
-                      (nb.ni.ox1 != 0));
-
-    SetIndexRangesSBFF(nb.ni.ox3, c_sk, c_ek,
-                      c_kvs, c_kve, c_kms, c_kpe,
-                      nb.ni.fi1, nb.ni.fi2,
-                      2,
-                      (pmb->block_size.nx3 > 1),
-                      (nb.ni.ox1 != 0 && nb.ni.ox2 != 0));
+    idxSetFromFinerRanges(nb.ni, c_si, c_ei, c_sj, c_ej, c_sk, c_ek, 3);
 
     for (int k=c_sk; k<=c_ek; ++k)
       for (int j=c_sj; j<=c_ej; ++j)
@@ -986,26 +803,8 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       coarse_var.print_all();
     }
 
-    SetIndexRangesSBFF(nb.ni.ox1, si, ei,
-                       pmb->civs, pmb->cive, pmb->cims, pmb->cipe,
-                       nb.ni.fi1, nb.ni.fi2,
-                       pmb->block_size.nx1 / 4,
-                       true,
-                       true);
 
-    SetIndexRangesSBFF(nb.ni.ox2, sj, ej,
-                       pmb->cjvs, pmb->cjve, pmb->cjms, pmb->cjpe,
-                       nb.ni.fi1, nb.ni.fi2,
-                       pmb->block_size.nx2 / 4,
-                       (pmb->block_size.nx2 > 1),
-                       (nb.ni.ox1 != 0));
-
-    SetIndexRangesSBFF(nb.ni.ox3, sk, ek,
-                       pmb->ckvs, pmb->ckve, pmb->ckms, pmb->ckpe,
-                       nb.ni.fi1, nb.ni.fi2,
-                       pmb->block_size.nx3 / 4,
-                       (pmb->block_size.nx3 > 1),
-                       (nb.ni.ox1 != 0 && nb.ni.ox2 != 0));
+    idxSetFromFinerRanges(nb.ni, si, ei, sj, ej, sk, ek, 2);
 
     if (DBGPR_BVALS_VC)
       coutBoldRed("buf, coarse_var");
@@ -1109,10 +908,11 @@ void VertexCenteredBoundaryVariable::SetupPersistentMPI() {
   int &mylevel = pmb->loc.level;
 
   int f2 = pmy_mesh_->f2, f3 = pmy_mesh_->f3;
-  int cng, cng1, cng2, cng3;
-  cng  = cng1 = pmb->cnghost;
-  cng2 = cng*f2;
-  cng3 = cng*f3;
+  // int cng, cng1, cng2, cng3;
+  // cng  = cng1 = pmb->cnghost;
+  // cng2 = cng*f2;
+  // cng3 = cng*f3;
+
   int ssize, rsize;
   int tag;
   // Initialize non-polar neighbor communications to other ranks
@@ -1120,67 +920,29 @@ void VertexCenteredBoundaryVariable::SetupPersistentMPI() {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.snb.rank != Globals::my_rank) {
       if (nb.snb.level == mylevel) { // same
-        ssize = rsize = ((nb.ni.ox1 == 0) ? pmb->block_size.nx1 : NGHOST)
-              *((nb.ni.ox2 == 0) ? pmb->block_size.nx2 : NGHOST)
-              *((nb.ni.ox3 == 0) ? pmb->block_size.nx3 : NGHOST);
+        ssize = MPI_BufferSizeSameLevel(nb.ni, true);
+        rsize = MPI_BufferSizeSameLevel(nb.ni, false);
       } else if (nb.snb.level < mylevel) { // coarser
-        ssize = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1 + 1)/2) : NGHOST)
-              *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2 + 1)/2) : NGHOST)
-              *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3 + 1)/2) : NGHOST);
-        rsize = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1 + 1)/2 + cng1) : cng1)
-              *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2 + 1)/2 + cng2) : cng2)
-              *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3 + 1)/2 + cng3) : cng3);
+        ssize = MPI_BufferSizeToCoarser(nb.ni);
+        rsize = MPI_BufferSizeFromCoarser(nb.ni);
       } else { // finer
-        ssize = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1 + 1)/2 + cng1) : cng1)
-              *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2 + 1)/2 + cng2) : cng2)
-              *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3 + 1)/2 + cng3) : cng3);
-        rsize = ((nb.ni.ox1 == 0) ? ((pmb->block_size.nx1 + 1)/2) : NGHOST)
-              *((nb.ni.ox2 == 0) ? ((pmb->block_size.nx2 + 1)/2) : NGHOST)
-              *((nb.ni.ox3 == 0) ? ((pmb->block_size.nx3 + 1)/2) : NGHOST);
+        ssize = MPI_BufferSizeToFiner(nb.ni);
+        rsize = MPI_BufferSizeFromFiner(nb.ni);
       }
-      ssize *= (nu_ + 1); rsize *= (nu_ + 1);
       // specify the offsets in the view point of the target block: flip ox? signs
 
       // Initialize persistent communication requests attached to specific BoundaryData
-      // vertex-centered hydro: bd_hydro_
-      tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_phys_id_);
+      // vertex-centered
+      tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, vc_phys_id_);
       if (bd_var_.req_send[nb.bufid] != MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_send[nb.bufid]);
       MPI_Send_init(bd_var_.send[nb.bufid], ssize, MPI_ATHENA_REAL,
                     nb.snb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_send[nb.bufid]));
-      tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_phys_id_);
+      tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, vc_phys_id_);
       if (bd_var_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
         MPI_Request_free(&bd_var_.req_recv[nb.bufid]);
       MPI_Recv_init(bd_var_.recv[nb.bufid], rsize, MPI_ATHENA_REAL,
                     nb.snb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_recv[nb.bufid]));
-
-      // hydro flux correction: bd_var_flcor_
-      // if (pmy_mesh_->multilevel && nb.ni.type == NeighborConnect::face) {
-      //   int size;
-      //   if (nb.fid == 0 || nb.fid == 1)
-      //     size = ((pmb->block_size.nx2 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
-      //   else if (nb.fid == 2 || nb.fid == 3)
-      //     size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
-      //   else // (nb.fid == 4 || nb.fid == 5)
-      //     size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx2 + 1)/2);
-      //   size *= (nu_ + 1);
-      //   if (nb.snb.level < mylevel) { // send to coarser
-      //     tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_flx_phys_id_);
-      //     // if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
-      //     //   MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
-      //     // MPI_Send_init(bd_var_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL,
-      //     //               nb.snb.rank, tag, MPI_COMM_WORLD,
-      //     //               &(bd_var_flcor_.req_send[nb.bufid]));
-      //   } else if (nb.snb.level > mylevel) { // receive from finer
-      //     tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
-      //     if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
-      //       MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
-      //     MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL,
-      //                   nb.snb.rank, tag, MPI_COMM_WORLD,
-      //                   &(bd_var_flcor_.req_recv[nb.bufid]));
-      //   }
-      // }
-
 
     }
   }
@@ -1198,11 +960,9 @@ void VertexCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.snb.rank != Globals::my_rank) {
       MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-      // if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face
-      //     && nb.snb.level > mylevel) // opposite condition in ClearBoundary()
-      //   MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
     }
   }
+  coutYellow("ret. VertexCenteredBoundaryVariable::StartReceiving\n");
 #endif
   return;
 }
@@ -1223,9 +983,6 @@ void VertexCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
     if (nb.snb.rank != Globals::my_rank) {
       // Wait for Isend
       MPI_Wait(&(bd_var_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
-      // if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face
-      //     && nb.snb.level < mylevel)
-      //   MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
     }
 #endif
   }
