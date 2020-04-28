@@ -110,7 +110,7 @@ void VertexCenteredBoundaryVariable::ZeroVertexGhosts() {
 #pragma omp simd
         for (int i=0; i<pmb->ng; i++) {
           var(n, 0, j, i) = 0;
-          var(n, 0, j, pmb->jps + i) = 0;
+          var(n, 0, j, pmb->ips + i) = 0;
         }
       }
     }

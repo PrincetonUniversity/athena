@@ -903,15 +903,8 @@ void VertexCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
 
 void VertexCenteredBoundaryVariable::SetupPersistentMPI() {
 #ifdef MPI_PARALLEL
-  coutYellow("VertexCenteredBoundaryVariable::SetupPersistentMPI\n");
   MeshBlock* pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
-
-  int f2 = pmy_mesh_->f2, f3 = pmy_mesh_->f3;
-  // int cng, cng1, cng2, cng3;
-  // cng  = cng1 = pmb->cnghost;
-  // cng2 = cng*f2;
-  // cng3 = cng*f3;
 
   int ssize, rsize;
   int tag;
@@ -952,8 +945,6 @@ void VertexCenteredBoundaryVariable::SetupPersistentMPI() {
 
 void VertexCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
-  coutYellow("VertexCenteredBoundaryVariable::StartReceiving\n");
-
   MeshBlock *pmb = pmy_block_;
   int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
@@ -962,7 +953,6 @@ void VertexCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
       MPI_Start(&(bd_var_.req_recv[nb.bufid]));
     }
   }
-  coutYellow("ret. VertexCenteredBoundaryVariable::StartReceiving\n");
 #endif
   return;
 }
