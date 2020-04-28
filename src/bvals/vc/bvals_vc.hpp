@@ -133,6 +133,24 @@ protected:
 
 
 private:
+  // buffer / index calculators
+  void AccumulateBufferSize(int sn, int en,
+                            int si, int ei, int sj, int ej, int sk, int ek,
+                            int &offset, int ijk_step);
+
+  void idxLoadSameLevelRanges(const NeighborIndexes& ni,
+    int &si, int &ei, int &sj, int &ej, int &sk, int &ek,
+    bool is_coarse);
+
+  void idxLoadToCoarserRanges(const NeighborIndexes& ni,
+    int &si, int &ei, int &sj, int &ej, int &sk, int &ek,
+    bool is_coarse);
+
+  void idxLoadToFinerRanges(const NeighborIndexes& ni,
+    int &si, int &ei, int &sj, int &ej, int &sk, int &ek);
+
+  int NeighborVariableBufferSize(const NeighborIndexes& ni);
+
   // BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;
   void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;

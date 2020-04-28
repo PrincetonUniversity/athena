@@ -111,41 +111,8 @@ void VertexCenteredBoundaryVariable::ErrorIfShearingBoxNotImplemented() {
 
 int VertexCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,
                                                               int cng) {
-  if (DBGPR_BVALS_VC)
-    coutYellow("VertexCenteredBoundaryVariable::ComputeVariableBufferSize\n");
-  MeshBlock *pmb = pmy_block_;
-  /*
-  int cng1, cng2, cng3;
-  cng1 = cng;
-  cng2 = cng*(pmb->block_size.nx2 > 1 ? 1 : 0);
-  cng3 = cng*(pmb->block_size.nx3 > 1 ? 1 : 0);
-
-  // BD: TODO- CALCULATE CAREFULLY
-  int size = ((ni.ox1 == 0) ? pmb->nverts1 : NGHOST)
-    *((ni.ox2 == 0) ? pmb->nverts2 : NGHOST)
-    *((ni.ox3 == 0) ? pmb->nverts3 : NGHOST);
-
-  if (pmy_mesh_->multilevel) {
-    int f2c = ((ni.ox1 == 0) ? ((pmb->block_size.nx1+1)/2) : NGHOST)
-      *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2) : NGHOST)
-      *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2) : NGHOST);
-    int c2f = ((ni.ox1 == 0) ?((pmb->block_size.nx1+1)/2 + cng1) : cng)
-      *((ni.ox2 == 0) ? ((pmb->block_size.nx2+1)/2 + cng2) : cng)
-      *((ni.ox3 == 0) ? ((pmb->block_size.nx3+1)/2 + cng3) : cng);
-    size = std::max(size, c2f);
-    size = std::max(size, f2c);
-  }
-  size *= nu_ + 1;
-  */
-
-
-  // During debug just allow the buffer to grow to mod this out as a potential
-  // source of error
-  int size = 10 * nu_* (pmb->block_size.nx1) * (pmb->block_size.nx2) *
-         (pmb->block_size.nx3);
-  if (DBGPR_BVALS_VC)
-    printf("size = %d\n", size);
-  return size;
+  // 'cng' to preserve function signature but is a dummy slot
+  return NeighborVariableBufferSize(ni);
 }
 
 //----------------------------------------------------------------------------------------
@@ -165,19 +132,9 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   int p = 0;
   AthenaArray<Real> &var = *var_vc;
 
-  // shared vertex is packed
-  si = (nb.ni.ox1 > 0) ? pmb->ige : pmb->ivs;
-  ei = (nb.ni.ox1 < 0) ? pmb->igs : pmb->ive;
-
-  sj = (nb.ni.ox2 > 0) ? pmb->jge : pmb->jvs;
-  ej = (nb.ni.ox2 < 0) ? pmb->jgs : pmb->jve;
-
-  sk = (nb.ni.ox3 > 0) ? pmb->kge : pmb->kvs;
-  ek = (nb.ni.ox3 < 0) ? pmb->kgs : pmb->kve;
-
+  idxLoadSameLevelRanges(nb.ni, si, ei, sj, ej, sk, ek, false);
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
-  //////////////////////////////////////////////////////////////////////////////
   // if multilevel make use of pre-restricted internal data
   if (pmy_mesh_->multilevel) {
     if (DBGPR_BVALS_VC)
@@ -186,14 +143,14 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
     // convert to coarse indices
     AthenaArray<Real> &coarse_var = *coarse_buf;
 
-    si = (nb.ni.ox1 > 0) ? pmb->cige : pmb->civs;
-    ei = (nb.ni.ox1 < 0) ? pmb->cigs : pmb->cive;
+    // si = (nb.ni.ox1 > 0) ? pmb->cige : pmb->civs;
+    // ei = (nb.ni.ox1 < 0) ? pmb->cigs : pmb->cive;
 
-    sj = (nb.ni.ox2 > 0) ? pmb->cjge : pmb->cjvs;
-    ej = (nb.ni.ox2 < 0) ? pmb->cjgs : pmb->cjve;
+    // sj = (nb.ni.ox2 > 0) ? pmb->cjge : pmb->cjvs;
+    // ej = (nb.ni.ox2 < 0) ? pmb->cjgs : pmb->cjve;
 
-    sk = (nb.ni.ox3 > 0) ? pmb->ckge : pmb->ckvs;
-    ek = (nb.ni.ox3 < 0) ? pmb->ckgs : pmb->ckve;
+    // sk = (nb.ni.ox3 > 0) ? pmb->ckge : pmb->ckvs;
+    // ek = (nb.ni.ox3 < 0) ? pmb->ckgs : pmb->ckve;
 
     // for partial restrict / partial pack
     // this would still miss a "strip"
@@ -226,10 +183,10 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
       coarse_var.print_all();
     }
 
+    idxLoadSameLevelRanges(nb.ni, si, ei, sj, ej, sk, ek, true);
     BufferUtility::PackData(coarse_var, buf, nl_, nu_,
                             si, ei, sj, ej, sk, ek, p);
   }
-  //////////////////////////////////////////////////////////////////////////////
 
   return p;
 }
@@ -250,32 +207,13 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
   int si, sj, sk, ei, ej, ek;
+  int p = 0;
 
   AthenaArray<Real> &var = *var_vc;
   AthenaArray<Real> &coarse_var = *coarse_buf;
 
   // vertices that are shared with adjacent MeshBlocks are to be copied to coarser level
-  int ng = pmb->ng;
-
-  si = (nb.ni.ox1 > 0) ? (pmb->cive - ng) : pmb->civs;
-  ei = (nb.ni.ox1 < 0) ? (pmb->civs + ng) : pmb->cive;
-
-  sj = (nb.ni.ox2 > 0) ? (pmb->cjve - ng) : pmb->cjvs;
-  ej = (nb.ni.ox2 < 0) ? (pmb->cjvs + ng) : pmb->cjve;
-
-  sk = (nb.ni.ox3 > 0) ? (pmb->ckve - ng) : pmb->ckvs;
-  ek = (nb.ni.ox3 < 0) ? (pmb->ckvs + ng) : pmb->ckve;
-
-  int p = 0;
-
-  if (DBGPR_BVALS_VC) {
-    coutBoldRed("var_vc\n");
-    var.print_all();
-
-    coutBoldRed("coarse_buf\n");
-    coarse_var.print_all();
-  }
-
+  idxLoadToCoarserRanges(nb.ni, si, ei, sj, ej, sk, ek, false);
   pmr->RestrictVertexCenteredValues(var, coarse_var, nl_, nu_,
                                     si, ei, sj, ej, sk, ek);
 
@@ -285,45 +223,14 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 
   BufferUtility::PackData(coarse_var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
-  //////////////////////////////////////////////////////////////////////////////
-  int tmp_p = p;  // for debug
-
   if (pmy_mesh_->multilevel) {
     // double restrict required to populate coarse buffer of coarser level
-    int cng = 2 * pmb->cng;  // "2 for coarse-coarse"
-    si = (nb.ni.ox1 > 0) ? (pmb->cive - cng) : pmb->civs;
-    ei = (nb.ni.ox1 < 0) ? (pmb->civs + cng) : pmb->cive;
-
-    sj = (nb.ni.ox2 > 0) ? (pmb->cjve - cng) : pmb->cjvs;
-    ej = (nb.ni.ox2 < 0) ? (pmb->cjvs + cng) : pmb->cjve;
-
-    sk = (nb.ni.ox3 > 0) ? (pmb->ckve - cng) : pmb->ckvs;
-    ek = (nb.ni.ox3 < 0) ? (pmb->ckvs + cng) : pmb->ckve;
-
+    idxLoadToCoarserRanges(nb.ni, si, ei, sj, ej, sk, ek, true);
     pmr->RestrictTwiceToBufferVertexCenteredValues(var, buf, nl_, nu_,
                                                    si, ei, sj, ej, sk, ek, p);
   }
 
-
-  if (DBGPR_BVALS_VC) {
-    coutBoldBlue("\nbuf: ");
-    for (int it=tmp_p; it<p; ++it) {
-        printf("%1.3f, ", buf[it]);
-    }
-    printf("\n");
-
-    coutBoldRed("si,ei,sj,ej,sk,ek=");
-    printf("%d,%d,%d,%d,%d,%d\n",
-          si,ei,sj,ej,sk,ek);
-    // if (nb.ni.ox1 > 0)
-    //   Q();
-    // if ((nb.ni.ox1 > 0) and (nb.ni.ox2 == 0))
-    //   Q();
-  }
-
   return p;
-
-
 }
 
 //----------------------------------------------------------------------------------------
@@ -339,89 +246,14 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
   }
 
   MeshBlock *pmb = pmy_block_;
-  int si, sj, sk, ei, ej, ek;
-  int cn = pmb->cnghost - 1;
   AthenaArray<Real> &var = *var_vc;
-
-  // BD: debug - correct the prol
-  // note:
-  // we use a fundamental variable to populate a coarse variable
-  // therefore care needs to be taken as ghosts may vary across levels
-
-  int ng = pmb->ng;
-  int cng = pmb->cng;
-
-  int tmp = cng;
-
-  if (nb.ni.ox1 > 0) {
-    si = pmb->ive-cng, ei = pmb->ive-1;
-  } else if (nb.ni.ox1 < 0) {
-    si = pmb->ivs+1, ei = pmb->ivs+cng;
-  } else {
-    // == 0
-    si = pmb->ivs, ei = pmb->ive;
-    if (nb.ni.fi1 == 1)
-      si += pmb->block_size.nx1/2 - tmp;
-    else
-      ei -= pmb->block_size.nx1/2 - tmp;
-
-  }
-
-
-  if (nb.ni.ox2 > 0) {
-    sj = pmb->jve-cng, ej = pmb->jve-1;
-  } else if (nb.ni.ox2 < 0) {
-    sj = pmb->jvs+1, ej = pmb->jvs+cng;
-  } else {
-    // == 0
-    sj = pmb->jvs, ej = pmb->jve;
-
-    if (pmb->block_size.nx2 > 1)
-      if (nb.ni.ox1 != 0) {
-        if (nb.ni.fi1 == 1)
-          sj += pmb->block_size.nx2/2 - tmp;
-        else
-          ej -= pmb->block_size.nx2/2 - tmp;
-      } else {
-        if (nb.ni.fi2 == 1)
-          sj += pmb->block_size.nx2/2 - tmp;
-        else
-          ej -= pmb->block_size.nx2/2 - tmp;
-
-      }
-  }
-
-
-  if (nb.ni.ox3 > 0) {
-    sk = pmb->kve-cng, ek = pmb->kve-1;
-  } else if (nb.ni.ox3 < 0) {
-    sk = pmb->kvs+1, ek = pmb->kvs+cng;
-  } else {
-    // == 0
-    sk = pmb->kvs, ek = pmb->kve;
-
-    if (pmb->block_size.nx3 > 1)
-      if ((nb.ni.ox1 != 0) && (nb.ni.ox2 != 0)) {
-        if (nb.ni.fi1 == 1)
-          sk += pmb->block_size.nx3/2 - tmp;
-        else
-          ek -= pmb->block_size.nx3/2 - tmp;
-      } else {
-        if (nb.ni.fi2 == 1)
-          sk += pmb->block_size.nx3/2 - tmp;
-        else
-          ek -= pmb->block_size.nx3/2 - tmp;
-
-      }
-  }
-  //----
-
-
+  int si, sj, sk, ei, ej, ek;
   int p = 0;
 
   if (DBGPR_BVALS_VC)
     coutBoldRed("var_vc, buf");
 
+  idxLoadToFinerRanges(nb.ni, si, ei, sj, ej, sk, ek);
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
 
@@ -1323,31 +1155,33 @@ void VertexCenteredBoundaryVariable::SetupPersistentMPI() {
                     nb.snb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_recv[nb.bufid]));
 
       // hydro flux correction: bd_var_flcor_
-      if (pmy_mesh_->multilevel && nb.ni.type == NeighborConnect::face) {
-        int size;
-        if (nb.fid == 0 || nb.fid == 1)
-          size = ((pmb->block_size.nx2 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
-        else if (nb.fid == 2 || nb.fid == 3)
-          size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
-        else // (nb.fid == 4 || nb.fid == 5)
-          size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx2 + 1)/2);
-        size *= (nu_ + 1);
-        if (nb.snb.level < mylevel) { // send to coarser
-          tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_flx_phys_id_);
-          // if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
-          //   MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
-          // MPI_Send_init(bd_var_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL,
-          //               nb.snb.rank, tag, MPI_COMM_WORLD,
-          //               &(bd_var_flcor_.req_send[nb.bufid]));
-        } else if (nb.snb.level > mylevel) { // receive from finer
-          tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
-          if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
-            MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
-          MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL,
-                        nb.snb.rank, tag, MPI_COMM_WORLD,
-                        &(bd_var_flcor_.req_recv[nb.bufid]));
-        }
-      }
+      // if (pmy_mesh_->multilevel && nb.ni.type == NeighborConnect::face) {
+      //   int size;
+      //   if (nb.fid == 0 || nb.fid == 1)
+      //     size = ((pmb->block_size.nx2 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
+      //   else if (nb.fid == 2 || nb.fid == 3)
+      //     size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
+      //   else // (nb.fid == 4 || nb.fid == 5)
+      //     size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx2 + 1)/2);
+      //   size *= (nu_ + 1);
+      //   if (nb.snb.level < mylevel) { // send to coarser
+      //     tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_flx_phys_id_);
+      //     // if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
+      //     //   MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
+      //     // MPI_Send_init(bd_var_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL,
+      //     //               nb.snb.rank, tag, MPI_COMM_WORLD,
+      //     //               &(bd_var_flcor_.req_send[nb.bufid]));
+      //   } else if (nb.snb.level > mylevel) { // receive from finer
+      //     tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
+      //     if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
+      //       MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
+      //     MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL,
+      //                   nb.snb.rank, tag, MPI_COMM_WORLD,
+      //                   &(bd_var_flcor_.req_recv[nb.bufid]));
+      //   }
+      // }
+
+
     }
   }
 #endif
