@@ -26,13 +26,6 @@
 #   -z                  enable Z4c system
 #   -t                  enable interface frame transformations for GR
 #   -vertex             prefer vertex-centered (where available)
-#   -fill_wave_interor  fill MeshBlock interior with exact solution
-#   -fill_wave_bnd_sl   fill MeshBlock boundaries [same level] with exact solution
-#   -fill_wave_bnd_frf  fill MeshBlock boundaries [from fine] with exact solution
-#   -fill_wave_bnd_frc  fill MeshBlock boundaries [from coarse] with exact solution
-#   -fill_wave_vertices fill shared vertices with exact solution (where available)
-#   -fill_wave_coarse_p fill coarse buffer prior to prolongation
-#   -dbg_vc_consistency inspect consistency conditions [using with all fill flags]
 #   -shear              enable shearing periodic boundary conditions
 #   -debug              enable debug flags (-g -O0); override other compiler options
 #   -coverage           enable compiler-dependent code coverage flags
@@ -43,6 +36,8 @@
 #   --hdf5_path=path    path to HDF5 libraries (requires the HDF5 library)
 #   -fft                enable FFT (requires the FFTW library)
 #   --fftw_path=path    path to FFTW libraries (requires the FFTW library)
+#   -gsl                enable GNU scientific library (requires the gsl library)
+#   --gsl_path=path     path to gsl libraries (requires the gsl library)
 #   --grav=xxx          use xxx as the self-gravity solver
 #   --cxx=xxx           use xxx as the C++ compiler
 #   --ccmd=name         use name as the command to call the (non-MPI) C++ compiler
@@ -196,48 +191,6 @@ parser.add_argument('-vertex',
                     default=False,
                     help='prefer vertex-centering')
 
-# -fill_wave_interior argument
-parser.add_argument('-fill_wave_interior',
-                    action='store_true',
-                    default=False,
-                    help='fill MeshBlock interior with exact solution')
-
-# -fill_wave_bnd_sl argument
-parser.add_argument('-fill_wave_bnd_sl',
-                    action='store_true',
-                    default=False,
-                    help='fill MeshBlock boundary [same level] with exact solution')
-
-# -fill_wave_bnd_frf argument
-parser.add_argument('-fill_wave_bnd_frf',
-                    action='store_true',
-                    default=False,
-                    help='fill MeshBlock boundary [from fine] with exact solution')
-
-# -fill_wave_bnd_frc argument
-parser.add_argument('-fill_wave_bnd_frc',
-                    action='store_true',
-                    default=False,
-                    help='fill MeshBlock boundary [from coarse] with exact solution')
-
-# -fill_wave_vertices argument
-parser.add_argument('-fill_wave_vertices',
-                    action='store_true',
-                    default=False,
-                    help='fill shared vertices with exact solution')
-
-# -fill_wave_coarse_p argument
-parser.add_argument('-fill_wave_coarse_p',
-                    action='store_true',
-                    default=False,
-                    help='fill coarse buffer prior to prolongation')
-
-# -dbg_vc_consistency argument
-parser.add_argument('-dbg_vc_consistency',
-                    action='store_true',
-                    default=False,
-                    help='inspect consistency conditions')
-
 # -shear argument
 parser.add_argument('-shear',
                     action='store_true',
@@ -307,6 +260,17 @@ parser.add_argument('-h5double',
 parser.add_argument('--hdf5_path',
                     default='',
                     help='path to HDF5 libraries')
+
+# -gsl argument
+parser.add_argument('-gsl',
+                    action='store_true',
+                    default=False,
+                    help='enable GNU scientific library')
+
+# --gsl_path argument
+parser.add_argument('--gsl_path',
+                    default='',
+                    help='path to gsl libraries')
 
 # The main choices for --cxx flag, using "ctype[-suffix]" formatting, where "ctype" is the
 # major family/suite/group of compilers and "suffix" may represent variants of the
@@ -580,49 +544,6 @@ if args['vertex']:
 else:
     definitions['PREFER_VC'] = '0'
 
-# -fill_wave_interior argument
-if args['fill_wave_interior']:
-    definitions['FILL_WAVE_INTERIOR'] = '1'
-else:
-    definitions['FILL_WAVE_INTERIOR'] = '0'
-
-# -fill_wave_bnd_sl argument
-if args['fill_wave_bnd_sl']:
-    definitions['FILL_WAVE_BND_SL'] = '1'
-else:
-    definitions['FILL_WAVE_BND_SL'] = '0'
-
-# -fill_wave_bnd_frf argument
-if args['fill_wave_bnd_frf']:
-    definitions['FILL_WAVE_BND_FRF'] = '1'
-else:
-    definitions['FILL_WAVE_BND_FRF'] = '0'
-
-# -fill_wave_bnd_frc argument
-if args['fill_wave_bnd_frc']:
-    definitions['FILL_WAVE_BND_FRC'] = '1'
-else:
-    definitions['FILL_WAVE_BND_FRC'] = '0'
-
-# -fill_wave_vertices argument
-if args['fill_wave_vertices']:
-    definitions['FILL_WAVE_VERTICES'] = '1'
-else:
-    definitions['FILL_WAVE_VERTICES'] = '0'
-
-# -fill_wave_coarse_p argument
-if args['fill_wave_coarse_p']:
-    definitions['FILL_WAVE_COARSE_P'] = '1'
-else:
-    definitions['FILL_WAVE_COARSE_P'] = '0'
-
-# -dbg_vc_consistency argument
-if args['dbg_vc_consistency']:
-    definitions['DBG_VC_CONSISTENCY'] = '1'
-else:
-    definitions['DBG_VC_CONSISTENCY'] = '0'
-
-
 # -shear argument
 if args['shear']:
     definitions['SHEARING_BOX'] = '1'
@@ -635,7 +556,7 @@ if args['cxx'] == 'g++':
     definitions['COMPILER_CHOICE'] = 'g++'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'g++'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
-    makefile_options['COMPILER_FLAGS'] = '-O2 -std=c++11'
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11'
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'g++-simd':
@@ -916,6 +837,15 @@ if args['h5double']:
 else:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
 
+definitions['GSL_OPTION'] = 'NO_GSL'
+if args['gsl']:
+    definitions['GSL_OPTION'] = 'GSL'
+    if args['gsl_path'] != '':
+        makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
+            args['gsl_path'])
+        makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['gsl_path'])
+    makefile_options['LIBRARY_FLAGS'] += ' -lgsl -lgslcblas'
+
 # --cflag=[string] argument
 if args['cflag'] is not None:
     makefile_options['COMPILER_FLAGS'] += ' '+args['cflag']
@@ -990,20 +920,6 @@ print('  Frame transformations:        ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:                 ' + self_grav_string)
 print('  Super-Time-Stepping:          ' + ('ON' if args['sts'] else 'OFF'))
 print('  Vertex-centering preferred:   ' + ('ON' if args['vertex'] else 'OFF'))
-print('  fill_wave_interior:           '
-      + ('ON' if args['fill_wave_interior'] else 'OFF'))
-print('  fill_wave_bnd_sl:             '
-      + ('ON' if args['fill_wave_bnd_sl'] else 'OFF'))
-print('  fill_wave_bnd_frf:            '
-      + ('ON' if args['fill_wave_bnd_frf'] else 'OFF'))
-print('  fill_wave_bnd_frc:            '
-      + ('ON' if args['fill_wave_bnd_frc'] else 'OFF'))
-print('  fill_wave_vertices:           '
-      + ('ON' if args['fill_wave_vertices'] else 'OFF'))
-print('  fill_wave_coarse_p:           '
-      + ('ON' if args['fill_wave_coarse_p'] else 'OFF'))
-print('  dbg_vc_consistency:           '
-      + ('ON' if args['dbg_vc_consistency'] else 'OFF'))
 print('  Shearing Box BCs:             ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:                  ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:          ' + ('ON' if args['coverage'] else 'OFF'))
@@ -1019,6 +935,7 @@ print('  FFT:                          ' + ('ON' if args['fft'] else 'OFF'))
 print('  HDF5 output:                  ' + ('ON' if args['hdf5'] else 'OFF'))
 if args['hdf5']:
     print('  HDF5 precision:               ' + ('double' if args['h5double'] else 'single'))
+print('  GSL enabled:                  ' + ('ON' if args['gsl'] else 'OFF'))
 print('  Compiler:                     ' + args['cxx'])
 print('  Compilation command:          ' + makefile_options['COMPILER_COMMAND'] + ' '
       + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])

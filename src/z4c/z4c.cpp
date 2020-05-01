@@ -153,12 +153,13 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   opt.damp_kappa1 = pin->GetOrAddReal("z4c", "damp_kappa1", 0.0);
   opt.damp_kappa2 = pin->GetOrAddReal("z4c", "damp_kappa2", 0.0);
   // Gauge conditions (default to moving puncture gauge)
-  opt.lapse_oplog = pin->GetOrAddReal("z4c", "lapse_oplog", 1.0);
-  opt.lapse_harmonicf = pin->GetOrAddReal("z4c", "lapse_harmonicf", 2.0);
+  opt.lapse_harmonicf = pin->GetOrAddReal("z4c", "lapse_harmonicf", 1.0);
   opt.lapse_harmonic = pin->GetOrAddReal("z4c", "lapse_harmonic", 0.0);
+  opt.lapse_oplog = pin->GetOrAddReal("z4c", "lapse_oplog", 2.0);
   opt.lapse_advect = pin->GetOrAddReal("z4c", "lapse_advect", 1.0);
+
+  opt.shift_eta = pin->GetOrAddReal("z4c", "shift_eta", 2.0);
   opt.shift_advect = pin->GetOrAddReal("z4c", "shift_advect", 1.0);
-  opt.shift_eta = pin->GetOrAddReal("z4c", "shift_eta", 0.0);
   // Single puncture parameters
   opt.punc_ADM_mass = pin->GetOrAddReal("z4c", "punc_ADM_mass", 1.0);
   // AwA parameters (default to linear wave test)

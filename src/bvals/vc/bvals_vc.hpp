@@ -163,6 +163,7 @@ private:
 
   int NeighborVariableBufferSize(const NeighborIndexes& ni);
 
+#ifdef MPI_PARALLEL
   int MPI_BufferSizeSameLevel(const NeighborIndexes& ni,
     bool is_send);
 
@@ -171,7 +172,7 @@ private:
 
   int MPI_BufferSizeToFiner(const NeighborIndexes& ni);
   int MPI_BufferSizeFromFiner(const NeighborIndexes& ni);
-
+#endif
 
   // BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;

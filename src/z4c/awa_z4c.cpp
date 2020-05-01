@@ -33,6 +33,11 @@ std::uniform_real_distribution<double> distribution(-1.,1.);
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 
+// External libraries
+#ifdef GSL
+#include <gsl/gsl_sf_bessel.h>   // Bessel functions
+#endif
+
 //----------------------------------------------------------------------------------------
 // \!fn void Z4c::ADMRobustStability(AthenaArray<Real> & u)
 // \brief Initialize ADM vars for robust stability test
@@ -386,3 +391,130 @@ void Z4c::GaugeGaugeWave2(AthenaArray<Real> & u) {
       }
   }
 }
+
+#ifdef GSL
+//----------------------------------------------------------------------------------------
+// \!fn void Z4c::GaugePolarisedGowdy(...)
+// \brief ...
+
+void Z4c::GaugePolarisedGowdy(AthenaArray<Real> & u) {
+  Z4c_vars z4c;
+  SetZ4cAliases(u, z4c);
+  z4c.alpha.Fill(1.);
+  z4c.beta_u.Fill(0.);
+
+  // compute info for \Lambda--------------------------------------------------
+  Real t = 9.8753205829098;
+
+  Real J0 = gsl_sf_bessel_J0(2. * PI);
+  Real J1 = gsl_sf_bessel_J1(2. * PI);
+  Real sqr_J0 = SQR(J0);
+  Real sqr_J1 = SQR(J1);
+
+  Real J0_t = gsl_sf_bessel_J0(2. * PI * t);
+  Real J1_t = gsl_sf_bessel_J1(2. * PI * t);
+  Real sqr_J0_t = SQR(J0_t);
+  Real sqr_J1_t = SQR(J1_t);
+
+  Real dt_J0_t = -2. * PI * J1_t;
+  Real dt_J1_t = 2. * PI * J0_t - J1_t / t;
+
+  Real sqr_pi = SQR(PI);
+  Real sqr_t = SQR(t);
+
+  // Real L = -2. * PI * t * J0_t * J1_t * sqr_cos_x;
+  // L += 2. * sqr_pi * sqr_t * (sqr_J0_t + sqr_J1_t);
+  // L -= 1. / 2. * (4. * sqr_pi * (sqr_J0 + sqr_J1) - 2. * PI * J0 * J1);
+
+  Real pow_t_m_1_4 = std::pow(t, -1./4.);
+  //-----------
+
+
+  GLOOP3(k,j,i) {
+    Real cos_x = std::cos(2. * PI * mbi.x1(i));
+    Real sqr_cos_x = SQR(cos_x);
+
+    Real L = -2. * PI * t * J0_t * J1_t * sqr_cos_x;
+    L += 2. * sqr_pi * sqr_t * (sqr_J0_t + sqr_J1_t);
+    L -= 1. / 2. * (4. * sqr_pi * (sqr_J0 + sqr_J1) - 2. * PI * J0 * J1);
+
+    z4c.alpha(k,j,i) = pow_t_m_1_4 * std::exp(L / 4.);
+  }
+
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn void Z4c::ADMPolarisedGowdy(AthenaArray<Real> & u)
+// \brief ...
+
+void Z4c::ADMPolarisedGowdy(AthenaArray<Real> & u_adm) {
+  ADM_vars adm;
+  SetADMAliases(u_adm, adm);
+
+  // Flat spacetime
+  ADMMinkowski(u_adm);
+
+  // compute P, \Lambda factors and derivatives--------------------------------
+  Real sign_K = 1.;   // +1 expanding, -1 collapsing
+
+  Real t = 9.8753205829098;
+
+  Real J0 = gsl_sf_bessel_J0(2. * PI);
+  Real J1 = gsl_sf_bessel_J1(2. * PI);
+  Real sqr_J0 = SQR(J0);
+  Real sqr_J1 = SQR(J1);
+
+  Real J0_t = gsl_sf_bessel_J0(2. * PI * t);
+  Real J1_t = gsl_sf_bessel_J1(2. * PI * t);
+  Real sqr_J0_t = SQR(J0_t);
+  Real sqr_J1_t = SQR(J1_t);
+
+  Real dt_J0_t = -2. * PI * J1_t;
+  Real dt_J1_t = 2. * PI * J0_t - J1_t / t;
+
+  Real sqr_pi = SQR(PI);
+  Real sqr_t = SQR(t);
+
+  Real pow_t_m_1_4 = std::pow(t, -1./4.);
+  Real pow_t_p_1_4 = std::pow(t, 1./4.);
+  Real pow_t_m_1_2 = std::pow(t, -1./2.);
+  //---------------------------------------------------------------------------
+
+  GLOOP3(k,j,i) {
+    Real cos_x = std::cos(2. * PI * mbi.x1(i));
+    Real sqr_cos_x = SQR(cos_x);
+
+    Real P = J0_t * cos_x;
+    Real L = -2. * PI * t * J0_t * J1_t * sqr_cos_x;
+    L += 2. * sqr_pi * sqr_t * (sqr_J0_t + sqr_J1_t);
+    L -= 1. / 2. * (4. * sqr_pi * (sqr_J0 + sqr_J1) - 2. * PI * J0 * J1 );
+
+    Real dt_P = dt_J0_t * cos_x;
+    Real dt_L = - 2. * PI * sqr_cos_x * (t * J1_t * dt_J0_t +
+                                        J0_t * (J1_t + t * dt_J1_t));
+    dt_L += 4. * sqr_pi * t * (sqr_J0_t + t * J0_t * dt_J0_t +
+                              J1_t * (J1_t + t * dt_J1_t));
+
+    // g_xx
+    adm.g_dd(0,0,k,j,i) = pow_t_m_1_2 * std::exp(L / 2.);
+    // g_yy
+    adm.g_dd(1,1,k,j,i) = t * std::exp(P);
+    // g_zz
+    adm.g_dd(2,2,k,j,i) = t * std::exp(-P);
+
+    // K_xx
+    adm.K_dd(0,0,k,j,i) = sign_K / 4. * pow_t_m_1_4 * std::exp(L / 4.) *
+      (1. / t - dt_L);
+
+    // K_yy
+    adm.K_dd(1,1,k,j,i) = sign_K / 2. * pow_t_p_1_4 * std::exp(-L / 4.) *
+      std::exp(P) * (-1. - t * dt_P);
+
+    // K_zz
+    adm.K_dd(2,2,k,j,i) = sign_K / 2. * pow_t_p_1_4 * std::exp(-L / 4.) *
+      std::exp(-P) * (-1. + t * dt_P);
+  }
+
+}
+
+#endif //GSL

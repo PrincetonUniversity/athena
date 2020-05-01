@@ -43,14 +43,15 @@
 // prefer vertex-centering default=0 (false)
 #define PREFER_VC @PREFER_VC@
 
-// fill different portions of block with exact solution [for debug]
-#define FILL_WAVE_INTERIOR @FILL_WAVE_INTERIOR@
-#define FILL_WAVE_BND_SL @FILL_WAVE_BND_SL@
-#define FILL_WAVE_BND_FRF @FILL_WAVE_BND_FRF@
-#define FILL_WAVE_BND_FRC @FILL_WAVE_BND_FRC@
-#define FILL_WAVE_VERTICES @FILL_WAVE_VERTICES@
-#define FILL_WAVE_COARSE_P @FILL_WAVE_COARSE_P@
-#define DBG_VC_CONSISTENCY @DBG_VC_CONSISTENCY@
+// deprecated: fill different portions of block with exact solution [for debug]
+#define FILL_WAVE_INTERIOR 0
+#define FILL_WAVE_BND_SL 0
+#define FILL_WAVE_BND_FRF 0
+#define FILL_WAVE_BND_FRC 0
+#define FILL_WAVE_VERTICES 0
+#define FILL_WAVE_COARSE_P 0
+#define DBG_VC_CONSISTENCY 0
+//------
 
 // enable shearing box? default=0 (false)
 #define SHEARING_BOX @SHEARING_BOX@
@@ -118,6 +119,9 @@
 // HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
 
+// make use of GSL? (GSL or NO_GSL)
+#define @GSL_OPTION@
+
 // debug build macros (DEBUG or NOT_DEBUG)
 #define @DEBUG_OPTION@
 
@@ -158,7 +162,9 @@
 #define TINY_NUMBER 1.0e-20
 #define HUGE_NUMBER 1.0e+36
 #define SQR(x) ( (x)*(x) )
+#define POW2(x) ( (x)*(x) )
 #define POW3(x) ( (x)*(x)*(x) )
+#define POW4(x) ( POW2(x) * POW2(x) )
 #define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
 #define SQRT(x) (std::sqrt(x))
 

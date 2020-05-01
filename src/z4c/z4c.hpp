@@ -264,6 +264,11 @@ public:
   void GaugeGaugeWave2(AthenaArray<Real> & u);
   void GaugeSimpleGaugeWave(AthenaArray<Real> & u);
 
+#ifdef GSL
+  void ADMPolarisedGowdy(AthenaArray<Real> & u_adm);
+  void GaugePolarisedGowdy(AthenaArray<Real> & u);
+#endif
+
   // initial data for a single BH
   void ADMOnePuncture(AthenaArray<Real> & u_adm);
   void GaugePreCollapsedLapse(AthenaArray<Real> & u);
