@@ -45,16 +45,16 @@
 ! CR reactions. Note that here we define the rates according to the H ionization rate, not H2, which is 1/0.46 times larger than the kida rates
 H          CR                     H+         e-                                            9.200e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1     1 1  1
 H2         CR                     H2+        e-                                            1.860e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1     2 1  1
-H2         CR                     H          H                                             2.170e-01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8002 1  1
+H2         CR                     H          H                                             2.000e-01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8002 1  1
 !added additional CR reaction which is imoprtant for H+ formation
-H2         CR                     H          H+         e-                                 4.783e-02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8003 1  1
-He         CR                     He+        e-                                            1.100e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8004 1  1
-C          CR                     C+         e-                                            3.850e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8005 1  1
-N          CR                     N+         e-                                            4.565e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8006 1  1
-N2         CR                     N          N                                             1.087e+01  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  1  -9999   9999  1  8007 1  1
-O          CR                     O+         e-                                            6.087e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8008 1  1
-CO         CR                     C          O                                             1.087e+01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8009 1  1
-CO         CR                     CO+        e-                                            6.520e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8010 1  1
+H2         CR                     H          H+         e-                                 4.400e-02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8003 1  1
+He         CR                     He+        e-                                            1.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8004 1  1
+!C          CR                     C+         e-                                            3.850e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8005 1  1
+N          CR                     N+         e-                                            4.200e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8006 1  1
+N2         CR                     N          N                                             1.000e+01  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  1  -9999   9999  1  8007 1  1
+O          CR                     O+         e-                                            5.600e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8008 1  1
+CO         CR                     C          O                                             1.000e+01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8009 1  1
+CO         CR                     CO+        e-                                            6.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8010 1  1
 ! CRP reactions are from Heays et al. (2017). Here we define rates according to the H ionization rate, not H2, which is 2 times larger.
 C          CRP                    C+         e-                                            5.200e+02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8011 1  1
 CH         CRP                    C          H                                             2.200e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8012 1  2
