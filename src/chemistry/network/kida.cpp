@@ -226,7 +226,11 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
 #endif
 }
 
-ChemNetwork::~ChemNetwork() {}
+ChemNetwork::~ChemNetwork() {
+  FILE *pf = fopen("chem_network.dat", "w");
+  OutputRates(pf);
+  fclose(pf);
+}
 
 void ChemNetwork::InitializeReactions() {
   KidaReaction *pr = NULL;
@@ -258,6 +262,7 @@ void ChemNetwork::InitializeReactions() {
     incr_.NewAthenaArray(n_cr_);
     outcr1_.NewAthenaArray(n_cr_);
     outcr2_.NewAthenaArray(n_cr_);
+    outcr3_.NewAthenaArray(n_cr_);
     kcr_base_.NewAthenaArray(n_cr_);
     kcr_.NewAthenaArray(n_cr_);
   }
@@ -342,6 +347,11 @@ void ChemNetwork::InitializeReactions() {
         incr_(icr) = ispec_map_[in_spec];
         outcr1_(icr) = ispec_map_[ pr->products_[0]];
         outcr2_(icr) = ispec_map_[ pr->products_[1]];
+        if (pr->products_.size() == 3) {
+          outcr3_(icr) = ispec_map_[ pr->products_[2]];
+        } else {
+          outcr3_(icr) = -1;
+        }
         kcr_base_(icr) = pr->alpha_;
         kcr_(icr) = 0.;
         icr++;
@@ -349,6 +359,11 @@ void ChemNetwork::InitializeReactions() {
         incr_(icr) = ispec_map_[in_spec];
         outcr1_(icr) = ispec_map_[ pr->products_[0]];
         outcr2_(icr) = ispec_map_[ pr->products_[1]];
+        if (pr->products_.size() == 3) {
+          outcr3_(icr) = ispec_map_[ pr->products_[2]];
+        } else {
+          outcr3_(icr) = -1;
+        }
         id7map_(pr->id_) = icr;
         id7type_(pr->id_) = ReactionType::cr;
         kcr_base_(icr) = 0.;
@@ -800,7 +815,8 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
   //---------------- 1 - direct cosmic-ray ionization --------------
   if (pr->itype_ == 1) {
     //check format of reaction 
-    if (pr->reactants_.size() == 2 && pr->products_.size() == 2
+    if (pr->reactants_.size() == 2 
+        && (pr->products_.size() == 2 || pr->products_.size() == 3)
         && (pr->reactants_[0] == "CR" || pr->reactants_[1] == "CR") ) {
     } else {
       std::stringstream msg; 
@@ -983,8 +999,11 @@ void ChemNetwork::PrintProperties() const {
   std::cout << "CR reations:" << std::endl;
   for (int i=0; i<n_cr_; i++) {
     std::cout<< species_names[incr_(i)] << " + CR -> "
-      << species_names[outcr1_(i)] << " + " << species_names[outcr2_(i)] << ", "
-      << "kcr_base_=" << kcr_base_(i) << std::endl;
+      << species_names[outcr1_(i)] << " + " << species_names[outcr2_(i)];
+    if (outcr3_(i) >= 0) {
+      std::cout<< " + " << species_names[outcr3_(i)];
+    }
+    std::cout << ", kcr_base_=" << kcr_base_(i) << std::endl;
   }
 
   //cosmic-ray induced photo reactions
@@ -1104,9 +1123,13 @@ void ChemNetwork::PrintProperties() const {
 void ChemNetwork::OutputRates(FILE *pf) const {
   //output the reactions and rates
 	for (int i=0; i<n_cr_; i++) {
-		fprintf(pf, "%4s + CR -> %4s + %4s,     kcr = %.2e\n", 
+		fprintf(pf, "%4s + CR -> %4s + %4s", 
 		 species_names[incr_(i)].c_str(), species_names[outcr1_(i)].c_str(),
-     species_names[outcr2_(i)].c_str(), kcr_(i));
+     species_names[outcr2_(i)].c_str());
+    if (outcr3_(i) >= 0) {
+      fprintf(pf, " + %4s", species_names[outcr3_(i)].c_str());
+    }
+    fprintf(pf,   ",     kcr = %.2e\n", kcr_(i));
 	}
 	for (int i=0; i<n_crp_; i++) {
 		fprintf(pf, "%4s + CRP -> %4s + %4s,     kcrp = %.2e\n", 
@@ -1253,7 +1276,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 
 #ifdef DEBUG
   if (output_rates) {
-    FILE *pf = fopen("chem_network.dat", "w");
+    FILE *pf = fopen("chem_network_init.dat", "w");
     OutputRates(pf);
     fclose(pf);
     output_rates = false;
@@ -1266,6 +1289,9 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
     ydotg[incr_(i)] -= rate;
     ydotg[outcr1_(i)] += rate;
     ydotg[outcr2_(i)] += rate;
+    if (outcr3_(i) >= 0) {
+      ydotg[outcr3_(i)] += rate;
+    }
   }
 
   //cosmic ray induced photo reactions

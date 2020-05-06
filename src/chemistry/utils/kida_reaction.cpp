@@ -51,11 +51,11 @@ KidaReaction::KidaReaction(std::string line) {
   r = std::stoi(fields[12]);
   
   //Temperature range warning
-  if ( (Tmin_ > 0.) || (Tmax_ < 9998.) ) {
-    std::cout << "### WARNING KidaReaction constructor [KidaReaction]" << std::endl
-      << "Temperature range (" << Tmin_ << "," << Tmax_ << ") for reaction (ID="  
-      << id_ << "). Extrapolation or temperature cap will be used" << std::endl;
-  }
+  //if ( (Tmin_ > 0.) || (Tmax_ < 9998.) ) {
+  //  std::cout << "### WARNING KidaReaction constructor [KidaReaction]" << std::endl
+  //    << "Temperature range (" << Tmin_ << "," << Tmax_ << ") for reaction (ID="  
+  //    << id_ << "). Extrapolation or temperature cap will be used" << std::endl;
+  //}
 
   //recommendation error
   if (r == 0) {

@@ -99,6 +99,7 @@ private:
   AthenaArray<int> incr_;
   AthenaArray<int> outcr1_;
   AthenaArray<int> outcr2_;
+  AthenaArray<int> outcr3_;
   AthenaArray<Real> kcr_base_;
   AthenaArray<Real> kcr_;
   //index for cr ionization rates for CR heating

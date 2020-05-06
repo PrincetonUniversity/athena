@@ -1,0 +1,1202 @@
+! comment start with '!', add reactions to each line, definitions see http://kida.obs.u-bordeaux1.fr/help
+! alpha, beta, gamma: coefficients of reaction rates
+! F: the uncertainty factor on the rate coefficient
+! g: the temperature dependence of the uncertainty factor F
+! err: Type of uncertainty : lognormal (logn) , normal (norm) , loguniform (logu) , uniform (unif)
+!
+! itype: the type of reaction:
+! 1: direct CR ionization/dissociation. Format A + CR -> B + C
+! 2: CR induced ionization/dissociation by UV photons emitted following H2 excitation. Format A + CRP -> B + C
+! 3: FUV dissociation/ionization
+! 4: Neutral-neutral (A + B → C + D), ion-neutral (A+ + B → C+ +D, A- + B → C- + D), anion-cation (A+ + B- → C + D) reactions and associative ionization (A + B → AB+ + e-)
+! 5: Exchange reaction A+ + B → A + B+ and A+ + B- → A + B
+! 6: Association reactions between two species (neutral or ionized) stabilized by the emission of a photon (A + B → AB + photon or A+ + B → AB+ + photon).
+! 7: Association of a neutral species and an anion, resulting in the ejection of the extra electron (A- + B → AB + e-).
+! 8: Recombination of a positive ion with an electron resulting in the dissociation of the molecule (AB+ + e- → A + B) or the emission of a photon
+!    (AB+ + e- → AB + photon) or the attachment of the electron (A + e- → A- + photon)
+! 9: grain assisted reactions (H2 formation, recombination)
+! 10: other special reactions, up to 3 reactants and 5 products
+! Tmin, Tmax: temperature range. When we do not have information on Trange, default values are used: -9999,9999.
+!
+! frml: formular for reaction rates:
+! 1: Cosmic-ray ionization (direct and undirect)
+! 2: Photo-dissociation (Draine)
+! 3: Kooij 
+! 4: ionpol1 
+! 5: ionpol2 
+! 6: Troe fall-off
+! 7: customized
+! ID: the number of reaction, the special rates are also set by this ID. ID has
+!     to be an unique integer (int type in c++), but doesn't have to match the number of the line or any order.
+! ni: the number of (alpha, beta, gamma) in the downloaded network when several values are present in KIDA. 
+!
+! r: Recommendation is the recommendation given by experts in KIDA. 
+! 0: the value is not recommended. 
+! 1: means that there is no recommendation (experts have not looked at the data). 
+! 2: means that the value has been validated by experts over the Trange
+! 3: means that it is the recommended value over Trange.
+! 4: other (set in code. alpha, beta and gamma are irrelevant in this case)
+! 5: new rates from Le Gal et al. 2014
+! 6: new rates from UMIST12
+!
+! only columns starts with "*" is used in our program, the temperature range is extrapolated.
+!   *Reactants 3x(s10+' ') + ' ' *Products 5x(s10+' ') + 2x' '                            *alpha     *beta      *gamma     F        g      err *itype Tmin  Tmax *frml  *ID ni r 
+! Nitrogen network for NH3 and N2H+
+! CR reactions. Note that here we define the rates according to the H ionization rate, not H2, which is 1/0.46 times larger than the kida rates
+H          CR                     H+         e-                                            9.200e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1     1 1  1
+H2         CR                     H2+        e-                                            1.860e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1     2 1  1
+H2         CR                     H          H                                             2.170e-01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8002 1  1
+!added additional CR reaction which is imoprtant for H+ formation
+H2         CR                     H          H+         e-                                 4.783e-02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8003 1  1
+He         CR                     He+        e-                                            1.100e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8004 1  1
+C          CR                     C+         e-                                            3.850e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8005 1  1
+N          CR                     N+         e-                                            4.565e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8006 1  1
+N2         CR                     N          N                                             1.087e+01  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  1  -9999   9999  1  8007 1  1
+O          CR                     O+         e-                                            6.087e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8008 1  1
+CO         CR                     C          O                                             1.087e+01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8009 1  1
+CO         CR                     CO+        e-                                            6.520e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8010 1  1
+! CRP reactions are from Heays et al. (2017). Here we define rates according to the H ionization rate, not H2, which is 2 times larger.
+C          CRP                    C+         e-                                            5.200e+02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8011 1  1
+CH         CRP                    C          H                                             2.200e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8012 1  2
+CH         CRP                    CH+        e-                                            1.160e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8013 1  2
+CH2        CRP                    CH2+       e-                                            5.000e+02  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  2  -9999   9999  1    68 1  1
+CH2        CRP                    H          CH                                            5.800e+02  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  2  -9999   9999  1  8014 1  1
+CH3        CRP                    H          CH2                                           5.600e+02  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  2  -9999   9999  1  8015 1  1
+CH3        CRP                    CH3+       e-                                            7.600e+02  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  2  -9999   9999  1  8016 1  1
+CH4        CRP                    H2         CH2                                           3.000e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8017 1  1
+CH4        CRP                    CH4+       e-                                            4.400e+01  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  2  -9999   9999  1  8046 1  1
+N2         CRP                    N          N                                             7.800e+01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8018 1  1
+NH         CRP                    H          N                                             7.400e+02  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  2  -9999   9999  1  8019 1  1
+NH         CRP                    NH+        e-                                            1.420e+01  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  2  -9999   9999  1  8055 1  1
+NH2        CRP                    H          NH                                            1.440e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8020 1  1
+NH2        CRP                    NH2+       e-                                            2.800e+02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8021 1  1
+NH3        CRP                    H2         NH                                            1.240e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8022 1  1
+NH3        CRP                    H          NH2                                           7.800e+02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8023 1  1
+NH3        CRP                    NH3+       e-                                            4.400e+02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8024 1  1
+O          CRP                    O+         e-                                            5.400e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8025 1  1
+O2         CRP                    O          O                                             1.560e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8026 1  1
+O2         CRP                    O2+        e-                                            5.600e+01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8027 1  1
+OH         CRP                    H          O                                             9.400e+02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8028 1  2
+H2O        CRP                    H          OH                                            1.560e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8029 1  1
+H2O        CRP                    O          H2                                            4.400e+02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8049 1  1
+H2O        CRP                    H2O+       e-                                            4.600e+01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8050 1  1
+CO         CRP                    C          O                                             9.200e+01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8030 1  1
+CO         CRP                    CO+        e-                                            2.800e+01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8031 1  1
+CO2        CRP                    O          CO                                            1.200e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8032 1  1
+CO2        CRP                    CO2+       e-                                            1.640e+01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8053 1  1
+NO         CRP                    N          O                                             6.000e+02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8033 1  1
+NO         CRP                    NO+        e-                                            4.800e+02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8034 1  1
+CN         CRP                    C          N                                             9.000e+02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8035 1  1
+CN         CRP                    CN+        e-                                            1.660e+01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8036 1  1
+HCN        CRP                    H          CN                                            4.000e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8037 1  1
+HCN        CRP                    HCN+       e-                                            2.800e+01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8038 1  1
+HNC        CRP                    H          CN                                            6.000e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8039 1  1
+HCO        CRP                    H          CO                                            1.060e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1    74 1  1
+HCO        CRP                    HCO+       e-                                            2.340e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1    75 1  1
+HNO        CRP                    HNO+       e-                                            2.000e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1    80 1  1
+Mg         CRP                    Mg+        e-                                            2.200e+02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8040 1  1
+Fe         CRP                    Fe+        e-                                            9.600e+02  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  2  -9999   9999  1  8041 1  1
+H2+        CRP                    H          H+                                            1.220e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1  8042 1  1
+CH+        CRP                    H          C+                                            2.820e+02  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  2  -9999   9999  1  8043 1  1
+CH+        CRP                    C          H+                                            1.580e+02  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  2  -9999   9999  1  8044 1  1
+CH2+       CRP                    H          CH+                                           1.780e+02  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  2  -9999   9999  1  8045 1  1
+CH4+       CRP                    H          CH3+                                          5.400e+02  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  2  -9999   9999  1  8047 1  1
+OH+        CRP                    H          O+                                            1.720e+01  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  2  -9999   9999  1  8048 1  1
+O2+        CRP                    O          O+                                            1.400e+02  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  2  -9999   9999  1  8051 1  1
+CO+        CRP                    O          C+                                            1.540e+02  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  2  -9999   9999  1  8052 1  1
+HCO+       CRP                    H          CO+                                           6.600e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  2  -9999   9999  1  8054 1  1
+NH+        CRP                    H          N+                                            4.400e+01  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  2  -9999   9999  1  8056 1  1
+! FUV photo ionization/dissociation, this is not included in zcl18
+H2         Photon                 H          H                                             5.700e-11  0.000e+00  4.180e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8101 1  1
+C          Photon                 C+         e-                                            3.500e-10  0.000e+00  3.760e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8102 1  2
+CH         Photon                 C          H                                             9.100e-10  0.000e+00  2.120e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8103 1  2
+CH         Photon                 CH+        e-                                            7.600e-10  0.000e+00  3.280e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8104 1  2
+CH2        Photon                 H          CH                                            5.800e-10  0.000e+00  2.020e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8105 1  2
+CH2        Photon                 CH2+       e-                                            1.000e-09  0.000e+00  2.300e+00 1.00e+01 0.00e+00 logn  3  -9999   9999  2  8106 1  1
+CH3        Photon                 CH         H2                                            1.350e-10  0.000e+00  2.270e+00 1.00e+01 0.00e+00 logn  3  -9999   9999  2  8107 1  2
+CH3        Photon                 H          CH2                                           1.350e-10  0.000e+00  2.270e+00 1.00e+01 0.00e+00 logn  3  -9999   9999  2  8108 1  2
+CH3        Photon                 CH3+       e-                                            1.000e-10  0.000e+00  2.100e+00 1.00e+01 0.00e+00 logn  3  -9999   9999  2  8109 1  2
+CH4        Photon                 CH4+       e-                                            6.800e-12  0.000e+00  3.940e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8110 1  2
+CH4        Photon                 H2         CH2                                           7.200e-10  0.000e+00  2.590e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8111 1  2
+CH4        Photon                 H          CH3                                           2.400e-10  0.000e+00  2.590e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8112 1  2
+N2         Photon                 N          N                                             2.300e-10  0.000e+00  3.880e+00 1.00e+01 0.00e+00 logn  3  -9999   9999  2  8113 1  2
+NH         Photon                 H          N                                             5.000e-10  0.000e+00  2.330e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8114 1  2
+NH         Photon                 NH+        e-                                            1.000e-11  0.000e+00  2.000e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8115 1  1
+NH2        Photon                 H          NH                                            7.500e-10  0.000e+00  2.000e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8116 1  2
+NH2        Photon                 NH2+       e-                                            1.730e-10  0.000e+00  2.590e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8117 1  1
+NH3        Photon                 H          NH2                                           8.400e-10  0.000e+00  2.120e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8118 1  2
+NH3        Photon                 NH3+       e-                                            2.800e-10  0.000e+00  3.120e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8119 1  2
+NH3        Photon                 H2         NH                                            3.600e-10  0.000e+00  2.120e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8120 1  2
+O2         Photon                 O          O                                             7.900e-10  0.000e+00  2.130e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8121 1  2
+O2         Photon                 O2+        e-                                            7.600e-11  0.000e+00  3.870e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8122 1  2
+OH         Photon                 H          O                                             3.800e-10  0.000e+00  2.660e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8123 1  2
+OH         Photon                 OH+        e-                                            1.600e-12  0.000e+00  3.100e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8124 1  1
+H2O        Photon                 H          OH                                            8.000e-10  0.000e+00  2.200e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8125 1  2
+H2O        Photon                 H2O+       e-                                            3.100e-11  0.000e+00  3.900e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8126 1  2
+CO         Photon                 C          O                                             2.400e-10  0.000e+00  3.880e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8127 1  2
+CO2        Photon                 O          CO                                            8.900e-10  0.000e+00  3.000e+00 1.00e+01 0.00e+00 logn  3  -9999   9999  2  8128 1  2
+NO         Photon                 N          O                                             4.700e-10  0.000e+00  2.120e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8129 1  2
+NO         Photon                 NO+        e-                                            2.600e-10  0.000e+00  2.930e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8130 1  2
+CN         Photon                 C          N                                             2.900e-10  0.000e+00  3.540e+00 1.00e+01 0.00e+00 logn  3  -9999   9999  2  8131 1  2
+HCN        Photon                 H          CN                                            1.600e-09  0.000e+00  2.690e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8132 1  2
+HNC        Photon                 H          CN                                            1.600e-09  0.000e+00  2.690e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8133 1  2
+HCO        Photon                 H          CO                                            1.100e-09  0.000e+00  1.090e+00 1.00e+01 0.00e+00 logn  3  -9999   9999  2   348 1  2
+HCO        Photon                 HCO+       e-                                            2.460e-10  0.000e+00  2.110e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2   349 1  2
+HNO        Photon                 H          NO                                            1.700e-10  0.000e+00  5.300e-01 2.00e+00 0.00e+00 logn  3  -9999   9999  2   351 1  1
+Fe         Photon                 Fe+        e-                                            2.800e-10  0.000e+00  2.200e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8134 1  2
+Mg         Photon                 Mg+        e-                                            7.900e-11  0.000e+00  2.080e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8135 1  2
+H2+        Photon                 H          H+                                            5.700e-10  0.000e+00  2.370e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8136 1  2
+H3+        Photon                 H2         H+                                            2.000e-08  0.000e+00  1.800e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8137 1  1
+H3+        Photon                 H          H2+                                           7.900e-09  0.000e+00  2.300e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8138 1  1
+CH+        Photon                 C          H+                                            2.500e-10  0.000e+00  2.940e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8139 1  2
+CH2+       Photon                 H          CH+                                           1.400e-10  0.000e+00  2.210e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8140 1  2
+CH3+       Photon                 H2         CH+                                           1.000e-09  0.000e+00  1.700e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8141 1  1
+CH3+       Photon                 H          CH2+                                          1.000e-09  0.000e+00  1.700e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8142 1  1
+OH+        Photon                 O          H+                                            1.100e-11  0.000e+00  3.500e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8143 1  2
+! additional reactions
+H2         N+                     H          NH+                                           0.000e+00  0.000e+00  0.000e+00 1.30e+00 0.00e+00 logn  4  -9999   9999  7    20 1  1
+! wierd reactions in Olli's network
+H          H                      H2                                                       4.950e-13  5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  7018 1  1
+! new rates
+H2         NH+                    H          NH2+                                          1.270e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3136 1  5
+NH2+       e-                     H          H          N                                  1.710e-07 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6586 1  5
+NH2+       e-                     H          NH                                            1.170e-07 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6587 1  5
+H2         NH2+                   H          NH3+                                          2.700e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3345 1  5
+H2         NH3+                   H          NH4+                                          3.090e-13  1.080e+00 -5.090e+01 1.50e+00 0.00e+00 logn  4     10  41000  3  2861 1  6
+NH4+       e-                     H          H          NH2                                1.220e-07 -6.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6928 1  5
+NH4+       e-                     H2         NH2                                           1.880e-08 -6.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6929 1  5
+NH4+       e-                     H          NH3                                           8.000e-07 -6.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6930 1  5
+!HOC+ sinks
+CO         H3+                    H2         HCO+                                          1.000e+00  1.990e-09  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  2180 1  1
+H2O        C+                     H          HCO+                                          1.000e+00  1.030e-09  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4   586 1  1
+O          CH3+                   H2         HCO+                                          4.100e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3256 1  1
+H2         CO+                    H          HCO+                                          1.500e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   751 1  1
+!temperature range
+C          O2                     O          CO                                            4.900e-11 -3.200e-01  0.000e+00 1.30e+00 0.00e+00 logn  4     10    295  3  3470 1  2
+N          O2                     O          NO                                            3.100e-12  1.010e+00  3.120e+03 1.60e+00 0.00e+00 logn  4     10   5000  3  2034 1  2
+CN         O2                     CO         NO                                            4.980e-12 -6.300e-01  0.000e+00 1.30e+00 0.00e+00 logn  4     10    295  3   899 1  2
+! ion-electron/neutral reactions
+!H+ --------------
+H+         e-                     H                                                        3.500e-12 -7.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6770 1  1
+H          H+                     H2+                                                      2.000e-20  1.000e+00  0.000e+00 1.00e+01 0.00e+00 logn  6     10    300  3  6147 1  1
+H2         H+                     H          H          H+                                 3.000e-11  5.000e-01  5.200e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4865 1  1
+H2         H+                     H          H2+                                           6.400e-10  0.000e+00  2.130e+04 2.00e+00 0.00e+00 logn  5     10    800  3  6119 1  1
+C          H+                     H          C+                                            1.000e-14  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    800  3  6140 1  1
+CH         H+                     H          CH+                                           1.000e+00  3.540e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5204 1  1
+CH2        H+                     H2         CH+                                           5.000e-01  3.530e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  2498 1  1
+CH2        H+                     H2         CH+                                           5.000e-01  3.530e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  2498 2  1
+CH2        H+                     H          CH2+                                          5.000e-01  3.530e-09  1.410e+00 2.00e+00 0.00e+00 logn  5     10    149  4  5503 1  1
+CH2        H+                     H          CH2+                                          5.000e-01  3.530e-09  1.410e+00 2.00e+00 0.00e+00 logn  5    150    800  5  5503 2  1
+CH3        H+                     H          CH3+                                          3.400e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5271 1  1
+CH4        H+                     H2         CH3+                                          2.300e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2929 1  1
+CH4        H+                     H          CH4+                                          1.500e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5511 1  1
+N          H+                     H          N+                                            9.820e-12 -2.300e-01  2.620e+02 2.00e+00 0.00e+00 logn  5     10    800  3  6141 1  1
+NH         H+                     H          NH+                                           1.000e+00  2.910e-09  4.400e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5208 1  1
+NH2        H+                     H          NH2+                                          1.000e+00  3.220e-09  4.600e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5264 1  1
+NH3        H+                     H          NH3+                                          1.000e+00  3.480e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5274 1  1
+O          H+                     H          O+                                            7.000e-10  0.000e+00  2.320e+02 1.50e+00 0.00e+00 logn  5     10    300  3  5199 1  1
+O2         H+                     H          O2+                                           1.200e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5211 1  1
+OH         H+                     H          OH+                                           1.000e+00  2.500e-09  5.500e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5212 1  1
+H2O        H+                     H          H2O+                                          1.000e+00  2.850e-09  5.410e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5226 1  1
+CN         H+                     H          CN+                                           2.100e-09  0.000e+00  6.150e+03 2.00e+00 0.00e+00 logn  5     10    800  3  6132 1  1
+HCN        H+                     H          HNC+                                          1.000e+00  3.770e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  4759 1  2
+HNC        H+                     H          HNC+                                          1.000e+00  3.940e-09  6.500e+00 2.00e+00 0.00e+00 logn  5     10    800  4  6142 1  2
+HCO        H+                     H2         CO+                                           3.330e-01  3.790e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2500 1  1
+HCO        H+                     CO         H2+                                           3.330e-01  3.790e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2501 1  1
+HCO        H+                     H          HCO+                                          3.330e-01  3.790e-09  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5543 1  1
+HNO        H+                     H2         NO+                                           1.000e+00  3.490e-09  3.990e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2901 1  1
+CO2        H+                     O          HCO+                                          3.000e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2499 1  1
+NO         H+                     H          NO+                                           1.000e+00  3.100e-09  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5209 1  1
+NO         H+                     H          NO+                                           1.000e+00  3.100e-09  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5209 2  1
+Mg         H+                     H          Mg+                                           1.100e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5197 1  1
+Fe         H+                     H          Fe+                                           7.400e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5196 1  1
+!H2+ --------------
+H2+        e-                     H2                                                       2.250e-07 -4.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6506 1  1
+H2+        e-                     H          H                                             2.530e-07 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6507 1  1
+H          H2+                    H2         H+                                            6.400e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5102 1  1
+H2         H2+                    H          H3+                                           2.100e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   980 1  1
+C          H2+                    H          CH+                                           2.400e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   973 1  1
+CH         H2+                    H          CH2+                                          5.000e-01  2.590e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4   977 1  1
+CH         H2+                    H2         CH+                                           5.000e-01  2.590e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5407 1  1
+CH2        H2+                    H          CH3+                                          5.000e-01  2.580e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4   987 1  1
+CH2        H2+                    H          CH3+                                          5.000e-01  2.580e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5   987 2  1
+CH2        H2+                    H2         CH2+                                          5.000e-01  2.580e-09  1.410e+00 2.00e+00 0.00e+00 logn  5     10    149  4  5462 1  1
+CH2        H2+                    H2         CH2+                                          5.000e-01  2.580e-09  1.410e+00 2.00e+00 0.00e+00 logn  5    150    800  5  5462 2  1
+CH4        H2+                    H          H2         CH3+                               2.300e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   996 1  1
+CH4        H2+                    H          CH5+                                          1.100e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   997 1  1
+CH4        H2+                    H2         CH4+                                          1.400e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5542 1  1
+N          H2+                    H          NH+                                           1.900e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   974 1  1
+N2         H2+                    H          N2H+                                          2.000e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   981 1  1
+NH         H2+                    H          NH2+                                          5.000e-01  2.120e-09  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4   982 1  1
+NH         H2+                    H2         NH+                                           5.000e-01  2.120e-09  4.400e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5457 1  1
+NH2        H2+                    H2         NH2+                                          1.000e+00  2.340e-09  4.600e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5104 1  1
+NH3        H2+                    H2         NH3+                                          1.000e+00  2.530e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5105 1  1
+O          H2+                    H          OH+                                           1.500e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   975 1  1
+O2         H2+                    H          HO2+                                          1.900e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   984 1  1
+O2         H2+                    H2         O2+                                           8.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5459 1  1
+OH         H2+                    H          H2O+                                          5.000e-01  1.810e-09  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4   985 1  1
+OH         H2+                    H2         OH+                                           5.000e-01  1.810e-09  5.500e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5460 1  1
+H2O        H2+                    H          H3O+                                          4.660e-01  2.070e-09  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4   990 1  1
+H2O        H2+                    H2         H2O+                                          5.340e-01  2.070e-09  5.410e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5463 1  1
+CN         H2+                    H          HCN+                                          5.000e-01  2.920e-09  2.840e+00 2.00e+00 0.00e+00 logn  4     10    606  4   978 1  1
+CN         H2+                    H          HCN+                                          5.000e-01  2.920e-09  2.840e+00 2.00e+00 0.00e+00 logn  4    607    800  5   978 2  1
+CN         H2+                    H2         CN+                                           5.000e-01  2.920e-09  2.840e+00 2.00e+00 0.00e+00 logn  5     10    606  4  5408 1  1
+CN         H2+                    H2         CN+                                           5.000e-01  2.920e-09  2.840e+00 2.00e+00 0.00e+00 logn  5    607    800  5  5408 2  1
+HCN        H2+                    H2         HCN+                                          1.000e+00  2.710e-09  6.610e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5103 1  1
+HCO        H2+                    CO         H3+                                           5.000e-01  2.730e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4   993 1  1
+HCO        H2+                    H2         HCO+                                          5.000e-01  2.730e-09  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5465 1  1
+CO         H2+                    H          HCO+                                          7.860e-01  2.390e-09  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5   979 1  1
+CO         H2+                    H2         CO+                                           2.140e-01  2.390e-09  2.510e-01 2.00e+00 0.00e+00 logn  5     10    800  5  5409 1  1
+CO2        H2+                    H2O        CO+                                           1.400e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   988 1  1
+CO2        H2+                    H          HOCO+                                         2.350e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   989 1  1
+CO2        H2+                    H2         CO2+                                          1.400e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5513 1  1
+NO         H2+                    H          HNO+                                          5.000e-01  2.220e-09  4.110e-01 2.00e+00 0.00e+00 logn  4     10     12  4   983 1  1
+NO         H2+                    H          HNO+                                          5.000e-01  2.220e-09  4.110e-01 2.00e+00 0.00e+00 logn  4     13    800  5   983 2  1
+NO         H2+                    H2         NO+                                           5.000e-01  2.220e-09  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5458 1  1
+NO         H2+                    H2         NO+                                           5.000e-01  2.220e-09  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5458 2  1
+!H3+ --------------
+H3+        e-                     H          H          H                                  4.360e-08 -5.200e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6558 1  1
+H3+        e-                     H          H2                                            2.340e-08 -5.200e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6559 1  1
+H          H3+                    H2         H2+                                           2.100e-09  0.000e+00  2.000e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4739 1  1
+H2         H3+                    H          H          H3+                                3.000e-11  5.000e-01  5.200e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4844 1  1
+C          H3+                    H2         CH+                                           2.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2166 1  1
+CH         H3+                    H2         CH2+                                          1.000e+00  2.180e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2178 1  1
+CH2        H3+                    H2         CH3+                                          1.000e+00  2.170e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  2211 1  1
+CH2        H3+                    H2         CH3+                                          1.000e+00  2.170e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  2211 2  1
+CH3        H3+                    H2         CH4+                                          2.100e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2243 1  1
+CH4        H3+                    H2         CH5+                                          2.400e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1630 1  1
+N2         H3+                    H2         N2H+                                          1.700e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2188 1  1
+NH         H3+                    H2         NH2+                                          1.000e+00  1.780e-09  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2190 1  1
+NH2        H3+                    H2         NH3+                                          1.000e+00  1.970e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2226 1  1
+NH3        H3+                    H2         NH4+                                          1.000e+00  2.120e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2249 1  1
+O          H3+                    H          H2O+                                          3.420e-10 -1.560e-01  1.410e+00 1.40e+00 0.00e+00 logn  4     10    300  3  2172 1  3
+O          H3+                    H2         OH+                                           7.980e-10 -1.560e-01  1.410e+00 1.40e+00 0.00e+00 logn  4     10    300  3  2173 1  3
+O2         H3+                    H2         HO2+                                          6.400e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2193 1  1
+OH         H3+                    H2         H2O+                                          1.000e+00  1.520e-09  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2194 1  1
+H2O        H3+                    H2         H3O+                                          1.000e+00  1.730e-09  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2213 1  1
+CN         H3+                    H2         HCN+                                          1.000e+00  2.420e-09  2.840e+00 2.00e+00 0.00e+00 logn  4     10    606  4  2179 1  1
+CN         H3+                    H2         HCN+                                          1.000e+00  2.420e-09  2.840e+00 2.00e+00 0.00e+00 logn  4    607    800  5  2179 2  1
+HCN        H3+                    H2         HCNH+                                         1.000e+00  2.250e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2215 1  1
+HNC        H3+                    H2         HCNH+                                         1.000e+00  2.350e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2220 1  1
+CO2        H3+                    H2         HOCO+                                         1.900e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2212 1  1
+NO         H3+                    H2         HNO+                                          1.000e+00  1.840e-09  4.110e-01 2.00e+00 0.00e+00 logn  4     10     12  4  2191 1  1
+NO         H3+                    H2         HNO+                                          1.000e+00  1.840e-09  4.110e-01 2.00e+00 0.00e+00 logn  4     13    800  5  2191 2  1
+Mg         H3+                    H          H2         Mg+                                1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2169 1  1
+Fe         H3+                    H          H2         Fe+                                4.900e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2168 1  1
+!He+ --------------
+He+        e-                     He                                                       4.500e-12 -6.700e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6771 1  1
+H          He+                    He         H+                                            1.900e-15  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5149 1  1
+H2         He+                    H          H          He+                                3.000e-11  5.000e-01  5.200e+04 2.00e+00 0.00e+00 logn  4     10    800  3  1217 1  1
+H2         He+                    H          He         H+                                 3.300e-15  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1218 1  1
+H2         He+                    He         H2+                                           9.600e-15  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5473 1  1
+CH         He+                    H          He         C+                                 5.000e-01  1.950e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1208 1  1
+CH         He+                    He         CH+                                           5.000e-01  1.950e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5472 1  1
+CH2        He+                    He         H2         C+                                 5.000e-01  1.930e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  1261 1  1
+CH2        He+                    He         H2         C+                                 5.000e-01  1.930e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  1261 2  1
+CH2        He+                    H          He         CH+                                5.000e-01  1.930e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  1262 1  1
+CH2        He+                    H          He         CH+                                5.000e-01  1.930e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  1262 2  1
+CH3        He+                    He         H2         CH+                                1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1344 1  1
+CH3        He+                    H          He         CH2+                               1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1345 1  1
+CH4        He+                    H          He         CH3+                               8.500e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1074 1  1
+CH4        He+                    He         CH3        H+                                 4.800e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1075 1  1
+CH4        He+                    H          He         H2         CH+                     2.400e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1076 1  1
+CH4        He+                    He         H2         CH2+                               9.500e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1077 1  1
+CH4        He+                    He         CH4+                                          5.100e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5540 1  1
+N2         He+                    He         N          N+                                 8.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1223 1  1
+N2         He+                    He         N2+                                           4.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5474 1  1
+NH         He+                    H          He         N+                                 1.000e+00  1.580e-09  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1225 1  1
+NH2        He+                    He         H2         N+                                 5.000e-01  1.750e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1299 1  1
+NH2        He+                    H          He         NH+                                5.000e-01  1.750e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1300 1  1
+NH3        He+                    He         H2         NH+                                7.990e-02  1.880e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1022 1  1
+NH3        He+                    H          He         NH2+                               7.990e-01  1.880e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1023 1  1
+NH3        He+                    He         NH3+                                          1.210e-01  1.880e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5515 1  1
+O2         He+                    He         O          O+                                 1.000e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1230 1  1
+O2         He+                    He         O2+                                           3.300e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5475 1  1
+OH         He+                    H          He         O+                                 1.000e+00  1.350e-09  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1231 1  1
+H2O        He+                    He         OH         H+                                 3.330e-01  1.540e-09  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1267 1  1
+H2O        He+                    H          He         OH+                                3.330e-01  1.540e-09  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1268 1  1
+H2O        He+                    He         H2O+                                          3.330e-01  1.540e-09  5.410e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5427 1  1
+CN         He+                    C          He         N+                                 5.000e-01  2.140e-09  2.840e+00 2.00e+00 0.00e+00 logn  4     10    606  4  1210 1  1
+CN         He+                    C          He         N+                                 5.000e-01  2.140e-09  2.840e+00 2.00e+00 0.00e+00 logn  4    607    800  5  1210 2  1
+CN         He+                    He         N          C+                                 5.000e-01  2.140e-09  2.840e+00 2.00e+00 0.00e+00 logn  4     10    606  4  1211 1  1
+CN         He+                    He         N          C+                                 5.000e-01  2.140e-09  2.840e+00 2.00e+00 0.00e+00 logn  4    607    800  5  1211 2  1
+HCN        He+                    He         CH         N+                                 6.800e-02  1.980e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1271 1  1
+HCN        He+                    He         N          CH+                                2.110e-01  1.980e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1272 1  1
+HCN        He+                    H          He         CN+                                4.690e-01  1.980e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1273 1  1
+HCN        He+                    H          He         N          C+                      2.520e-01  1.980e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1274 1  1
+HNC        He+                    H          He         N          C+                      3.330e-01  2.070e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1284 1  1
+HNC        He+                    H          He         CN+                                3.330e-01  2.070e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1285 1  1
+HNC        He+                    C          He         NH+                                3.330e-01  2.070e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1286 1  1
+HCO        He+                    He         O          CH+                                3.330e-01  1.990e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1275 1  1
+HCO        He+                    H          He         CO+                                3.330e-01  1.990e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1276 1  1
+HNO        He+                    H          He         NO+                                5.000e-01  1.830e-09  3.990e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1287 1  1
+HNO        He+                    He         NO         H+                                 5.000e-01  1.830e-09  3.990e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1288 1  1
+CO         He+                    He         O          C+                                 1.000e+00  1.750e-09  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  1212 1  1
+CO2        He+                    He         O2         C+                                 4.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1263 1  1
+CO2        He+                    He         CO         O+                                 2.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1264 1  1
+CO2        He+                    He         O          CO+                                8.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1265 1  1
+CO2        He+                    C          He         O2+                                1.100e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1266 1  1
+CO2        He+                    He         CO2+                                          1.210e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5476 1  1
+NO         He+                    He         O          N+                                 8.650e-01  1.620e-09  4.110e-01 2.00e+00 0.00e+00 logn  4     10     12  4  1226 1  1
+NO         He+                    He         O          N+                                 8.650e-01  1.620e-09  4.110e-01 2.00e+00 0.00e+00 logn  4     13    800  5  1226 2  1
+NO         He+                    He         N          O+                                 1.350e-01  1.620e-09  4.110e-01 2.00e+00 0.00e+00 logn  4     10     12  4  1227 1  1
+NO         He+                    He         N          O+                                 1.350e-01  1.620e-09  4.110e-01 2.00e+00 0.00e+00 logn  4     13    800  5  1227 2  1
+!C+ --------------
+C+         e-                     C                                                        4.400e-12 -6.100e-01  0.000e+00 1.50e+00 0.00e+00 logn  8     10    300  3  6767 1  1
+H          C+                     C          H+                                            9.280e-19  1.300e+00  1.590e+04 2.00e+00 0.00e+00 logn  5     10    800  3  6137 1  1
+H          C+                     CH+                                                      1.700e-17  0.000e+00  0.000e+00 1.00e+01 0.00e+00 logn  6     10    300  3  6143 1  1
+H2         C+                     H          CH+                                           1.500e-10  0.000e+00  4.640e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4735 1  1
+H2         C+                     CH2+                                                     2.000e-16 -1.300e+00  2.300e+01 3.00e+00 0.00e+00 logn  6     10    298  3  6145 1  3
+CH         C+                     C          CH+                                           5.300e-01  1.370e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5368 1  2
+CH2        C+                     C          CH2+                                          5.000e-01  1.340e-09  1.410e+00 2.00e+00 0.00e+00 logn  5     10    149  4  5374 1  1
+CH2        C+                     C          CH2+                                          5.000e-01  1.340e-09  1.410e+00 2.00e+00 0.00e+00 logn  5    150    800  5  5374 2  1
+CH3        C+                     C          CH3+                                          1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5382 1  1
+NH         C+                     H          CN+                                           1.000e+00  1.090e-09  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4   566 1  1
+NH2        C+                     H          HCN+                                          1.000e+00  1.190e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4   596 1  1
+NH3        C+                     H2         HNC+                                          5.030e-02  1.280e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4   618 1  2
+NH3        C+                     H          HCNH+                                         6.330e-01  1.280e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4   619 1  2
+NH3        C+                     C          NH3+                                          3.170e-01  1.280e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5384 1  2
+O          C+                     CO+                                                      2.500e-18  0.000e+00  0.000e+00 1.00e+01 0.00e+00 logn  6     10    300  3  6144 1  1
+O2         C+                     CO         O+                                            4.530e-10  0.000e+00  0.000e+00 1.20e+00 0.00e+00 logn  4     10    300  3   568 1  2
+O2         C+                     O          CO+                                           3.420e-10  0.000e+00  0.000e+00 1.30e+00 0.00e+00 logn  4     10    300  3   569 1  2
+OH         C+                     H          CO+                                           1.000e+00  9.150e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4   570 1  1
+HCO        C+                     CO         CH+                                           5.000e-01  1.280e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4   590 1  1
+HCO        C+                     C          HCO+                                          5.000e-01  1.280e-09  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5376 1  1
+CO2        C+                     CO         CO+                                           1.100e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   585 1  1
+NO         C+                     CO         N+                                            9.020e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4763 1  1
+NO         C+                     C          NO+                                           1.000e+00  1.040e-09  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5071 1  1
+NO         C+                     C          NO+                                           1.000e+00  1.040e-09  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5071 2  1
+Mg         C+                     C          Mg+                                           1.100e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5063 1  1
+Fe         C+                     C          Fe+                                           2.600e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5062 1  1
+!CH+ --------------
+CH+        e-                     C          H                                             7.000e-08 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6500 1  1
+H          CH+                    H2         C+                                            7.500e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3064 1  1
+H2         CH+                    H          CH2+                                          1.200e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3076 1  1
+N          CH+                    H          CN+                                           1.900e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3065 1  1
+NH         CH+                    H2         CN+                                           1.000e+00  1.070e-09  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3077 1  1
+NH2        CH+                    H2         HCN+                                          1.000e+00  1.170e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3097 1  1
+NH3        CH+                    H2         H2NC+                                         6.800e-01  1.250e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3105 1  1
+NH3        CH+                    C          NH4+                                          1.500e-01  1.250e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3106 1  1
+NH3        CH+                    CH         NH3+                                          1.700e-01  1.250e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5559 1  1
+O          CH+                    H          CO+                                           3.500e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3066 1  1
+O2         CH+                    OH         CO+                                           1.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3078 1  1
+O2         CH+                    O          HCO+                                          9.700e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3079 1  1
+O2         CH+                    HCO        O+                                            1.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3080 1  1
+OH         CH+                    H2         CO+                                           1.000e+00  8.940e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3081 1  1
+H2O        CH+                    H2         HCO+                                          7.140e-01  1.010e-09  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3087 1  1
+H2O        CH+                    C          H3O+                                          1.430e-01  1.010e-09  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3089 1  1
+HCN        CH+                    C          HCNH+                                         8.000e-01  1.250e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3094 1  1
+HNC        CH+                    C          HCNH+                                         1.000e+00  1.310e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3096 1  1
+HCO        CH+                    CO         CH2+                                          5.000e-01  1.250e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3095 1  1
+HCO        CH+                    CH         HCO+                                          5.000e-01  1.250e-09  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5558 1  1
+CO2        CH+                    CO         HCO+                                          1.600e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3086 1  1
+NO         CH+                    CH         NO+                                           1.000e+00  1.010e-09  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5303 1  1
+NO         CH+                    CH         NO+                                           1.000e+00  1.010e-09  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5303 2  1
+Mg         CH+                    CH         Mg+                                           3.600e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5300 1  1
+Fe         CH+                    CH         Fe+                                           2.600e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5299 1  1
+!CH2+ --------------
+CH2+       e-                     C          H2                                            7.700e-08 -6.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6540 1  1
+CH2+       e-                     H          CH                                            1.600e-07 -6.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6541 1  1
+CH2+       e-                     C          H          H                                  4.000e-07 -6.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6542 1  1
+H          CH2+                   H2         CH+                                           1.200e-09  0.000e+00  2.700e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4736 1  1
+H2         CH2+                   H          CH3+                                          1.200e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1442 1  1
+N          CH2+                   H          HCN+                                          2.200e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1437 1  1
+NH         CH2+                   H          HCNH+                                         1.000e+00  1.050e-09  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1443 1  1
+NH2        CH2+                   H2         HCNH+                                         1.000e+00  1.140e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1457 1  1
+NH3        CH2+                   CH         NH4+                                          4.640e-01  1.220e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1463 1  1
+O          CH2+                   H          HCO+                                          7.500e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1438 1  1
+O2         CH2+                   OH         HCO+                                          9.100e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1444 1  1
+O2         CH2+                   H          HOCO+                                         4.700e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1445 1  1
+HCO        CH2+                   CO         CH3+                                          5.000e-01  1.210e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1455 1  1
+NO         CH2+                   CH2        NO+                                           1.000e+00  9.860e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5163 1  1
+NO         CH2+                   CH2        NO+                                           1.000e+00  9.860e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5163 2  1
+!CH3+ --------------
+CH3+       e-                     C          H          H2                                 3.000e-07 -3.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6804 1  1
+CH3+       e-                     H          H          CH                                 1.600e-07 -3.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6805 1  1
+CH3+       e-                     CH         H2                                            1.400e-07 -3.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6806 1  1
+CH3+       e-                     H          CH2                                           4.000e-07 -3.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6807 1  1
+CH3+       e-                     CH3                                                      1.100e-10 -7.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6808 1  1
+H          CH3+                   H2         CH2+                                          7.000e-10  0.000e+00  1.060e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4737 1  1
+H2         CH3+                   H          CH4+                                          2.000e-10  0.000e+00  3.250e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4738 1  1
+H2         CH3+                   CH5+                                                     3.780e-16 -2.300e+00  2.150e+01 3.00e+00 0.00e+00 logn  6     10    298  3  6193 1  3
+N          CH3+                   H2         HCN+                                          3.300e-11  0.000e+00  0.000e+00 2.00e+00 1.00e+02 logn  4     10    300  3  3253 1  2
+N          CH3+                   H          H2NC+                                         6.100e-11  0.000e+00  0.000e+00 2.00e+00 1.00e+02 logn  4     10    300  3  3254 1  2
+NH         CH3+                   H2         HCNH+                                         1.000e+00  1.030e-09  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3267 1  1
+NH3        CH3+                   CH2        NH4+                                          1.490e-01  1.200e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3285 1  1
+HCO        CH3+                   CO         CH4+                                          5.000e-01  1.190e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3278 1  1
+HCO        CH3+                   CH3        HCO+                                          5.000e-01  1.190e-09  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5453 1  1
+NO         CH3+                   CH3        NO+                                           1.000e+00  9.630e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5343 1  1
+NO         CH3+                   CH3        NO+                                           1.000e+00  9.630e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5343 2  1
+Mg         CH3+                   CH3        Mg+                                           3.500e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5341 1  1
+Fe         CH3+                   CH3        Fe+                                           2.400e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5340 1  1
+!CH4+ --------------
+CH4+       e-                     H          H          CH2                                3.000e-07 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6913 1  1
+CH4+       e-                     H          CH3                                           3.000e-07 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6914 1  1
+H          CH4+                   H2         CH3+                                          1.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2277 1  1
+H2         CH4+                   H          CH5+                                          3.500e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2280 1  1
+CH4        CH4+                   CH3        CH5+                                          1.500e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2291 1  1
+NH3        CH4+                   CH3        NH4+                                          4.780e-01  1.180e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2289 1  1
+NH3        CH4+                   NH2        CH5+                                          2.170e-02  1.180e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2290 1  1
+NH3        CH4+                   CH4        NH3+                                          5.000e-01  1.180e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5412 1  1
+O          CH4+                   OH         CH3+                                          1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2278 1  1
+O2         CH4+                   CH4        O2+                                           4.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5190 1  1
+H2O        CH4+                   CH3        H3O+                                          1.000e+00  9.540e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2282 1  1
+CO         CH4+                   CH3        HCO+                                          1.000e+00  1.020e-09  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  2279 1  1
+CO2        CH4+                   CH3        HOCO+                                         1.200e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2281 1  1
+!CH5+ --------------
+CH5+       e-                     H          H2         CH2                                4.800e-08 -5.200e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6395 1  1
+CH5+       e-                     CH         H2         H2                                 3.000e-09 -5.200e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6396 1  1
+CH5+       e-                     H2         CH3                                           1.400e-08 -5.200e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6397 1  1
+CH5+       e-                     H          CH4                                           1.400e-08 -5.200e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6398 1  1
+CH5+       e-                     H          H          CH3                                1.950e-07 -5.200e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6399 1  1
+H          CH5+                   H2         CH4+                                          1.500e-10  0.000e+00  4.810e+02 1.25e+00 0.00e+00 logn  4     10    300  3  1819 1  1
+C          CH5+                   CH4        CH+                                           1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1816 1  1
+CH         CH5+                   CH4        CH2+                                          1.000e+00  1.260e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1827 1  1
+CH2        CH5+                   CH4        CH3+                                          1.000e+00  1.230e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  1832 1  1
+CH2        CH5+                   CH4        CH3+                                          1.000e+00  1.230e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  1832 2  1
+NH         CH5+                   CH4        NH2+                                          1.000e+00  9.980e-10  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1829 1  1
+NH2        CH5+                   CH4        NH3+                                          1.000e+00  1.090e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1837 1  1
+NH3        CH5+                   CH4        NH4+                                          1.000e+00  1.160e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1840 1  1
+O          CH5+                   CH2        H3O+                                          2.200e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1821 1  1
+OH         CH5+                   CH4        H2O+                                          1.000e+00  8.320e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1830 1  1
+H2O        CH5+                   CH4        H3O+                                          1.000e+00  9.390e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1833 1  1
+HCN        CH5+                   CH4        HCNH+                                         1.000e+00  1.150e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1834 1  1
+HNC        CH5+                   CH4        HCNH+                                         1.000e+00  1.200e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1836 1  1
+CO         CH5+                   CH4        HCO+                                          1.000e+00  1.000e-09  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  1828 1  1
+Mg         CH5+                   H          CH4        Mg+                                1.400e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1820 1  1
+!N+ --------------
+N+         e-                     N                                                        3.800e-12 -6.200e-01  0.000e+00 1.50e+00 0.00e+00 logn  8     10    300  3  6773 1  1
+H          N+                     N          H+                                            3.130e-12 -3.100e-01  5.080e+02 2.00e+00 0.00e+00 logn  5     10    800  3  6138 1  1
+CH         N+                     H          CN+                                           5.000e-01  1.310e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2702 1  1
+CH         N+                     N          CH+                                           5.000e-01  1.310e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5419 1  1
+CH2        N+                     N          CH2+                                          1.000e+00  1.290e-09  1.410e+00 2.00e+00 0.00e+00 logn  5     10    149  4  5239 1  1
+CH2        N+                     N          CH2+                                          1.000e+00  1.290e-09  1.410e+00 2.00e+00 0.00e+00 logn  5    150    800  5  5239 2  1
+CH4        N+                     H          H2         HCN+                               5.600e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2718 1  1
+CH4        N+                     H          N          CH3+                               4.700e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2719 1  1
+CH4        N+                     NH         CH3+                                          4.700e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2720 1  1
+CH4        N+                     H          H          HCNH+                              3.800e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2721 1  1
+CH4        N+                     H2         HCNH+                                         3.800e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2722 1  1
+CH4        N+                     N          CH4+                                          2.800e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5496 1  1
+NH         N+                     H          N2+                                           5.000e-01  1.050e-09  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2704 1  1
+NH         N+                     N          NH+                                           5.000e-01  1.050e-09  4.400e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5485 1  1
+NH2        N+                     N          NH2+                                          1.000e+00  1.140e-09  4.600e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5242 1  1
+NH3        N+                     H2         N2H+                                          9.020e-02  1.220e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2716 1  1
+NH3        N+                     NH         NH2+                                          9.020e-02  1.220e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2717 1  1
+NH3        N+                     N          NH3+                                          8.200e-01  1.220e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5545 1  1
+O2         N+                     NO         O+                                            3.600e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2706 1  1
+O2         N+                     O          NO+                                           1.700e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2707 1  1
+O2         N+                     N          O2+                                           4.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5504 1  1
+OH         N+                     H          NO+                                           5.000e-01  8.750e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2708 1  1
+OH         N+                     N          OH+                                           5.000e-01  8.750e-10  5.500e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5420 1  1
+H2O        N+                     N          H2O+                                          1.000e+00  9.890e-10  5.410e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5240 1  1
+CN         N+                     N          CN+                                           1.000e+00  1.320e-09  2.840e+00 2.00e+00 0.00e+00 logn  5     10    606  4  5236 1  1
+CN         N+                     N          CN+                                           1.000e+00  1.320e-09  2.840e+00 2.00e+00 0.00e+00 logn  5    607    800  5  5236 2  1
+HCN        N+                     N          HCN+                                          1.000e+00  1.220e-09  6.610e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5241 1  1
+HCO        N+                     CO         NH+                                           5.000e-01  1.210e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2711 1  1
+HCO        N+                     N          HCO+                                          5.000e-01  1.210e-09  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5505 1  1
+CO         N+                     NO         C+                                            9.020e-10  0.000e+00  1.540e+04 2.00e+00 0.00e+00 logn  4     10    800  3  3519 1  1
+CO         N+                     C          NO+                                           1.090e-01  1.070e-09  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  3520 1  1
+CO         N+                     N          CO+                                           8.910e-01  1.070e-09  2.510e-01 2.00e+00 0.00e+00 logn  5     10    800  5  5237 1  1
+CO2        N+                     NO         CO+                                           2.500e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2709 1  1
+CO2        N+                     N          CO2+                                          1.100e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5495 1  1
+NO         N+                     O          N2+                                           8.930e-02  9.860e-10  4.110e-01 2.00e+00 0.00e+00 logn  4     10     12  4  2705 1  1
+NO         N+                     O          N2+                                           8.930e-02  9.860e-10  4.110e-01 2.00e+00 0.00e+00 logn  4     13    800  5  2705 2  1
+NO         N+                     N          NO+                                           9.110e-01  9.860e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5494 1  1
+NO         N+                     N          NO+                                           9.110e-01  9.860e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5494 2  1
+Mg         N+                     N          Mg+                                           1.200e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5234 1  1
+Fe         N+                     N          Fe+                                           1.500e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5233 1  1
+!N2+ --------------
+N2+        e-                     N          N                                             1.800e-07 -3.900e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6512 1  1
+H          N2+                    N2         H+                                            1.200e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5114 1  1
+H2         N2+                    H          N2H+                                          1.700e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3114 1  1
+C          N2+                    N2         C+                                            1.100e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5112 1  1
+CH         N2+                    N2         CH+                                           1.000e+00  1.140e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5313 1  1
+CH2        N2+                    N2         CH2+                                          1.000e+00  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  5     10    149  4  5321 1  1
+CH2        N2+                    N2         CH2+                                          1.000e+00  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  5    150    800  5  5321 2  1
+CH4        N2+                    H2         N2         CH2+                               7.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3121 1  1
+CH4        N2+                    H          N2         CH3+                               9.300e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3122 1  1
+N          N2+                    N2         N+                                            1.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5116 1  1
+NH         N2+                    N2         NH+                                           1.000e+00  9.010e-10  4.400e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5316 1  1
+NH2        N2+                    N2         NH2+                                          1.000e+00  9.790e-10  4.600e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5324 1  1
+NH3        N2+                    N2         NH3+                                          1.000e+00  1.040e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5325 1  1
+O          N2+                    N          NO+                                           1.400e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3113 1  1
+O          N2+                    N2         O+                                            1.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5608 1  1
+O2         N2+                    N2         O2+                                           5.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5318 1  1
+OH         N2+                    N2         OH+                                           1.000e+00  7.450e-10  5.500e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5319 1  1
+H2O        N2+                    OH         N2H+                                          4.760e-01  8.370e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3115 1  1
+H2O        N2+                    N2         H2O+                                          5.240e-01  8.370e-10  5.410e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5609 1  1
+CN         N2+                    N2         CN+                                           1.000e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5314 1  1
+HCN        N2+                    N2         HCN+                                          1.000e+00  1.000e-09  6.610e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5323 1  1
+HCO        N2+                    CO         N2H+                                          5.000e-01  9.900e-10  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3118 1  1
+HCO        N2+                    N2         HCO+                                          5.000e-01  9.900e-10  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5561 1  1
+CO         N2+                    N2         CO+                                           7.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5315 1  1
+CO2        N2+                    N2         CO2+                                          9.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5322 1  1
+NO         N2+                    N2         NO+                                           1.000e+00  8.000e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5317 1  1
+NO         N2+                    N2         NO+                                           1.000e+00  8.000e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5317 2  1
+Mg         N2+                    N2         Mg+                                           7.000e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5115 1  1
+Fe         N2+                    N2         Fe+                                           4.300e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5113 1  1
+!N2H+ --------------
+N2H+       e-                     N          NH                                            1.300e-08 -8.400e-01  0.000e+00 1.60e+00 0.00e+00 logn  8     10   1000  3  6581 1  3
+N2H+       e-                     H          N2                                            2.470e-07 -8.400e-01  0.000e+00 1.60e+00 0.00e+00 logn  8     10   1000  3  6582 1  3
+H          N2H+                   H2         N2+                                           2.100e-09  0.000e+00  3.030e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4757 1  1
+H2         N2H+                   N2         H3+                                           1.800e-09  0.000e+00  8.300e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4758 1  1
+C          N2H+                   N2         CH+                                           1.100e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2627 1  1
+CH         N2H+                   N2         CH2+                                          1.000e+00  1.140e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2630 1  1
+CH2        N2H+                   N2         CH3+                                          1.000e+00  1.110e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  2635 1  1
+CH2        N2H+                   N2         CH3+                                          1.000e+00  1.110e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  2635 2  1
+CH4        N2H+                   N2         CH5+                                          9.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2645 1  1
+NH         N2H+                   N2         NH2+                                          1.000e+00  8.960e-10  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2632 1  1
+NH2        N2H+                   N2         NH3+                                          1.000e+00  9.740e-10  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2641 1  1
+NH3        N2H+                   N2         NH4+                                          1.000e+00  1.030e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2644 1  1
+O          N2H+                   N2         OH+                                           1.400e-10  0.000e+00  3.400e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4765 1  1
+OH         N2H+                   N2         H2O+                                          1.000e+00  7.420e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2633 1  1
+H2O        N2H+                   N2         H3O+                                          1.000e+00  8.340e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2637 1  1
+HCN        N2H+                   N2         HCNH+                                         1.000e+00  9.890e-10  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2638 1  1
+HNC        N2H+                   N2         HCNH+                                         1.000e+00  1.030e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2640 1  1
+CO         N2H+                   N2         HCO+                                          1.000e+00  8.680e-10  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  2631 1  1
+CO2        N2H+                   N2         HOCO+                                         9.200e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2636 1  1
+NO         N2H+                   N2         HNO+                                          3.400e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4769 1  1
+!NH+ --------------
+NH+        e-                     H          N                                             1.180e-07 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6513 1  1
+H          NH+                    H2         N+                                            6.520e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4752 1  1
+H2         NH+                    N          H3+                                           2.250e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3135 1  1
+C          NH+                    N          CH+                                           1.600e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3123 1  1
+CH         NH+                    N          CH2+                                          1.000e+00  1.290e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3131 1  1
+CH2        NH+                    N          CH3+                                          1.000e+00  1.270e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  3144 1  1
+CH2        NH+                    N          CH3+                                          1.000e+00  1.270e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  3144 2  1
+N          NH+                    H          N2+                                           1.300e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3124 1  1
+N2         NH+                    N          N2H+                                          1.500e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3137 1  1
+NH         NH+                    N          NH2+                                          1.000e+00  1.030e-09  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3138 1  1
+NH2        NH+                    N          NH3+                                          1.000e+00  1.120e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3155 1  1
+NH3        NH+                    N          NH4+                                          2.500e-01  1.200e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3158 1  1
+NH3        NH+                    NH         NH3+                                          7.500e-01  1.200e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5613 1  1
+O          NH+                    N          OH+                                           1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3125 1  1
+O2         NH+                    OH         NO+                                           2.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3140 1  1
+O2         NH+                    N          HO2+                                          1.600e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3141 1  1
+O2         NH+                    NH         O2+                                           4.500e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5539 1  1
+OH         NH+                    N          H2O+                                          1.000e+00  8.590e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3142 1  1
+H2O        NH+                    H2         HNO+                                          7.690e-02  9.710e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3148 1  1
+H2O        NH+                    OH         NH2+                                          1.920e-01  9.710e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3149 1  1
+H2O        NH+                    N          H3O+                                          4.620e-01  9.710e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3150 1  1
+H2O        NH+                    O          NH3+                                          3.850e-02  9.710e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3151 1  1
+H2O        NH+                    NH         H2O+                                          2.310e-01  9.710e-10  5.410e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5611 1  1
+CN         NH+                    N          HCN+                                          1.000e+00  1.290e-09  2.840e+00 2.00e+00 0.00e+00 logn  4     10    606  4  3132 1  1
+CN         NH+                    N          HCN+                                          1.000e+00  1.290e-09  2.840e+00 2.00e+00 0.00e+00 logn  4    607    800  5  3132 2  1
+HCN        NH+                    N          HCNH+                                         1.000e+00  1.190e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3152 1  1
+HNC        NH+                    N          HCNH+                                         1.000e+00  1.250e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3154 1  1
+CO         NH+                    N          HCO+                                          7.480e-01  1.050e-09  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  3133 1  1
+CO2        NH+                    HCO        NO+                                           3.300e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3145 1  1
+CO2        NH+                    CO         HNO+                                          3.850e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3146 1  1
+CO2        NH+                    N          HOCO+                                         3.900e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3147 1  1
+NO         NH+                    O          N2H+                                          2.000e-01  9.630e-10  4.110e-01 2.00e+00 0.00e+00 logn  4     10     12  4  3139 1  1
+NO         NH+                    O          N2H+                                          2.000e-01  9.630e-10  4.110e-01 2.00e+00 0.00e+00 logn  4     13    800  5  3139 2  1
+NO         NH+                    NH         NO+                                           8.000e-01  9.630e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5527 1  1
+NO         NH+                    NH         NO+                                           8.000e-01  9.630e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5527 2  1
+!NH2+ --------------
+H          NH2+                   H2         NH+                                           1.270e-09  0.000e+00  2.400e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4753 1  1
+CH         NH2+                   NH         CH2+                                          5.000e-01  1.270e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3342 1  1
+CH         NH2+                   NH2        CH+                                           5.000e-01  1.270e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5577 1  1
+CH2        NH2+                   NH         CH3+                                          5.000e-01  1.250e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  3350 1  1
+CH2        NH2+                   NH         CH3+                                          5.000e-01  1.250e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  3350 2  1
+CH2        NH2+                   NH2        CH2+                                          5.000e-01  1.250e-09  1.410e+00 2.00e+00 0.00e+00 logn  5     10    149  4  5524 1  1
+CH2        NH2+                   NH2        CH2+                                          5.000e-01  1.250e-09  1.410e+00 2.00e+00 0.00e+00 logn  5    150    800  5  5524 2  1
+N          NH2+                   H          N2H+                                          9.100e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3337 1  1
+NH         NH2+                   N          NH3+                                          1.000e+00  1.010e-09  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3346 1  1
+NH2        NH2+                   NH         NH3+                                          1.000e+00  1.110e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3360 1  1
+NH3        NH2+                   NH         NH4+                                          4.000e-01  1.180e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3363 1  1
+NH3        NH2+                   NH2        NH3+                                          6.000e-01  1.180e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5526 1  1
+O          NH2+                   H          HNO+                                          7.200e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3338 1  1
+O2         NH2+                   OH         HNO+                                          2.100e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3347 1  1
+H2O        NH2+                   NH         H3O+                                          9.250e-01  9.540e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3351 1  1
+H2O        NH2+                   OH         NH3+                                          5.780e-02  9.540e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3352 1  1
+H2O        NH2+                   O          NH4+                                          1.730e-02  9.540e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3353 1  1
+CN         NH2+                   N          HCNH+                                         1.000e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3343 1  1
+CN         NH2+                   N          H2NC+                                         1.000e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3344 1  1
+HCN        NH2+                   NH         HCNH+                                         1.000e+00  1.170e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3358 1  1
+HNC        NH2+                   NH         HCNH+                                         1.000e+00  1.220e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3359 1  1
+HCO        NH2+                   NH2        HCO+                                          1.000e+00  1.160e-09  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5349 1  1
+CO         NH2+                   NH         HCO+                                          6.400e-10  0.000e+00  6.100e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4761 1  1
+NO         NH2+                   NH2        NO+                                           1.000e+00  9.450e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5348 1  1
+NO         NH2+                   NH2        NO+                                           1.000e+00  9.450e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5348 2  1
+!NH3+ --------------
+NH3+       e-                     H          H          NH                                 1.550e-07 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6852 1  1
+NH3+       e-                     H          NH2                                           1.550e-07 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6853 1  1
+H          NH3+                   H2         NH2+                                          2.250e-10  0.000e+00  1.280e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4754 1  1
+CH         NH3+                   C          NH4+                                          1.000e+00  1.260e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2860 1  1
+CH2        NH3+                   NH2        CH3+                                          1.000e+00  1.230e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  2864 1  1
+CH2        NH3+                   NH2        CH3+                                          1.000e+00  1.230e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  2864 2  1
+CH4        NH3+                   CH3        NH4+                                          3.900e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2871 1  1
+NH         NH3+                   N          NH4+                                          1.000e+00  9.980e-10  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2862 1  1
+NH2        NH3+                   NH         NH4+                                          1.000e+00  1.090e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2868 1  1
+NH3        NH3+                   NH2        NH4+                                          1.000e+00  1.160e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2870 1  1
+O          NH3+                   H2         HNO+                                          1.000e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2857 1  1
+OH         NH3+                   O          NH4+                                          1.000e+00  8.320e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2863 1  1
+H2O        NH3+                   OH         NH4+                                          1.000e+00  9.390e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2865 1  1
+HCO        NH3+                   CO         NH4+                                          5.000e-01  1.140e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2867 1  1
+HCO        NH3+                   NH3        HCO+                                          5.000e-01  1.140e-09  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5581 1  1
+NO         NH3+                   NH3        NO+                                           1.000e+00  9.230e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5262 1  1
+NO         NH3+                   NH3        NO+                                           1.000e+00  9.230e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5262 2  1
+Mg         NH3+                   NH3        Mg+                                           3.300e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5259 1  1
+Fe         NH3+                   NH3        Fe+                                           2.300e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5258 1  1
+!NH4+ --------------
+H          NH4+                   H2         NH3+                                          1.000e-09  0.000e+00  1.100e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4755 1  1
+H2         NH4+                   H          H          NH4+                               3.000e-11  5.000e-01  5.200e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4849 1  1
+C          NH4+                   H2         HCNH+                                         1.000e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2299 1  1
+C          NH4+                   H2         H2NC+                                         1.000e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2300 1  1
+N2         NH4+                   NH3        N2H+                                          2.300e-09  0.000e+00  4.400e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4768 1  1
+OH         NH4+                   H2O        NH3+                                          2.500e-10  0.000e+00  3.400e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4764 1  1
+Mg         NH4+                   H          NH3        Mg+                                1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4857 1  1
+Fe         NH4+                   H          NH3        Fe+                                1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4852 1  1
+!O+ --------------
+O+         e-                     O                                                        3.400e-12 -6.300e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6775 1  1
+H          O+                     O          H+                                            7.000e-10  0.000e+00  0.000e+00 1.50e+00 0.00e+00 logn  5     10    300  3  5244 1  1
+H2         O+                     H          OH+                                           1.600e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2730 1  1
+CH         O+                     H          CO+                                           5.000e-01  1.270e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2728 1  1
+CH         O+                     O          CH+                                           5.000e-01  1.270e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5546 1  1
+CH2        O+                     O          CH2+                                          1.000e+00  1.250e-09  1.410e+00 2.00e+00 0.00e+00 logn  5     10    149  4  5247 1  1
+CH2        O+                     O          CH2+                                          1.000e+00  1.250e-09  1.410e+00 2.00e+00 0.00e+00 logn  5    150    800  5  5247 2  1
+CH4        O+                     OH         CH3+                                          1.100e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2746 1  1
+CH4        O+                     O          CH4+                                          8.900e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5507 1  1
+N2         O+                     N          NO+                                           1.200e-12  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2731 1  1
+NH         O+                     H          NO+                                           5.000e-01  1.010e-09  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2732 1  1
+NH         O+                     O          NH+                                           5.000e-01  1.010e-09  4.400e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5547 1  1
+NH2        O+                     O          NH2+                                          1.000e+00  1.110e-09  4.600e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5249 1  1
+NH3        O+                     O          NH3+                                          1.000e+00  1.180e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5251 1  1
+O2         O+                     O          O2+                                           3.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5246 1  1
+OH         O+                     H          O2+                                           5.000e-01  8.450e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2733 1  1
+OH         O+                     O          OH+                                           5.000e-01  8.450e-10  5.500e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5446 1  1
+H2O        O+                     O          H2O+                                          1.000e+00  9.540e-10  5.410e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5248 1  1
+CN         O+                     C          NO+                                           1.000e+00  1.260e-09  2.840e+00 2.00e+00 0.00e+00 logn  4     10    606  4  2729 1  1
+CN         O+                     C          NO+                                           1.000e+00  1.260e-09  2.840e+00 2.00e+00 0.00e+00 logn  4    607    800  5  2729 2  1
+HCN        O+                     NH         CO+                                           3.330e-01  1.170e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2738 1  1
+HCN        O+                     CH         NO+                                           3.330e-01  1.170e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2739 1  1
+HCN        O+                     N          HCO+                                          3.330e-01  1.170e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2740 1  1
+HCO        O+                     CO         OH+                                           5.000e-01  1.160e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2741 1  1
+HCO        O+                     O          HCO+                                          5.000e-01  1.160e-09  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5423 1  1
+CO2        O+                     CO         O2+                                           1.100e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2735 1  1
+NO         O+                     O          NO+                                           1.700e-12  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5245 1  1
+Fe         O+                     O          Fe+                                           2.900e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5243 1  1
+!O2+ --------------
+O2+        e-                     O          O                                             1.950e-07 -7.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6516 1  1
+H2         O2+                    H          H          O2+                                3.000e-11  5.000e-01  5.200e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4851 1  1
+C          O2+                    O          CO+                                           5.200e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3160 1  1
+C          O2+                    O2         C+                                            5.200e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5528 1  1
+CH         O2+                    O          HCO+                                          5.000e-01  1.120e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3164 1  1
+CH         O2+                    O2         CH+                                           5.000e-01  1.120e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5614 1  1
+CH2        O2+                    O2         CH2+                                          5.000e-01  1.090e-09  1.410e+00 2.00e+00 0.00e+00 logn  5     10    149  4  5615 1  1
+CH2        O2+                    O2         CH2+                                          5.000e-01  1.090e-09  1.410e+00 2.00e+00 0.00e+00 logn  5    150    800  5  5615 2  1
+N          O2+                    O          NO+                                           1.800e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3161 1  1
+NH         O2+                    O          HNO+                                          5.000e-01  8.820e-10  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3165 1  1
+NH2        O2+                    O2         NH2+                                          1.000e+00  9.560e-10  4.600e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5336 1  1
+NH3        O2+                    O2         NH3+                                          1.000e+00  1.020e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5338 1  1
+HCO        O2+                    CO         HO2+                                          5.000e-01  9.570e-10  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3168 1  1
+HCO        O2+                    O2         HCO+                                          5.000e-01  9.570e-10  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5616 1  1
+NO         O2+                    O2         NO+                                           1.000e+00  7.740e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5334 1  1
+NO         O2+                    O2         NO+                                           1.000e+00  7.740e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5334 2  1
+Mg         O2+                    O2         Mg+                                           1.200e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5331 1  1
+Fe         O2+                    O2         Fe+                                           1.100e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5330 1  1
+!HO2+ --------------
+HO2+       e-                     H          O2                                            3.000e-07 -5.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6589 1  1
+H2         HO2+                   O2         H3+                                           3.200e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3374 1  1
+C          HO2+                   O2         CH+                                           1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3366 1  1
+CH         HO2+                   O2         CH2+                                          1.000e+00  1.120e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3371 1  1
+CH2        HO2+                   O2         CH3+                                          1.000e+00  1.090e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  3380 1  1
+CH2        HO2+                   O2         CH3+                                          1.000e+00  1.090e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  3380 2  1
+N2         HO2+                   O2         N2H+                                          7.900e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3375 1  1
+NH         HO2+                   O2         NH2+                                          1.000e+00  8.780e-10  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3376 1  1
+NH2        HO2+                   O2         NH3+                                          1.000e+00  9.510e-10  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3386 1  1
+NH3        HO2+                   O2         NH4+                                          1.000e+00  1.010e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3388 1  1
+O          HO2+                   O2         OH+                                           6.200e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3368 1  1
+OH         HO2+                   O2         H2O+                                          1.000e+00  7.250e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3378 1  1
+H2O        HO2+                   O2         H3O+                                          1.000e+00  8.150e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3382 1  1
+CN         HO2+                   O2         HCN+                                          1.000e+00  1.040e-09  2.840e+00 2.00e+00 0.00e+00 logn  4     10    606  4  3372 1  1
+CN         HO2+                   O2         HCN+                                          1.000e+00  1.040e-09  2.840e+00 2.00e+00 0.00e+00 logn  4    607    800  5  3372 2  1
+HCN        HO2+                   O2         HCNH+                                         1.000e+00  9.590e-10  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3383 1  1
+HNC        HO2+                   O2         HCNH+                                         1.000e+00  1.000e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3385 1  1
+CO         HO2+                   O2         HCO+                                          1.000e+00  8.420e-10  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  3373 1  1
+CO2        HO2+                   O2         HOCO+                                         1.100e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3381 1  1
+NO         HO2+                   O2         HNO+                                          1.000e+00  7.690e-10  4.110e-01 2.00e+00 0.00e+00 logn  4     10     12  4  3377 1  1
+NO         HO2+                   O2         HNO+                                          1.000e+00  7.690e-10  4.110e-01 2.00e+00 0.00e+00 logn  4     13    800  5  3377 2  1
+!OH+ --------------
+OH+        e-                     H          O                                             6.300e-09 -4.800e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6517 1  1
+H2         OH+                    H          H2O+                                          1.100e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3182 1  1
+C          OH+                    O          CH+                                           1.200e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3172 1  1
+CH         OH+                    O          CH2+                                          5.000e-01  1.260e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3179 1  1
+CH         OH+                    OH         CH+                                           5.000e-01  1.260e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5567 1  1
+CH2        OH+                    O          CH3+                                          5.000e-01  1.230e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  3191 1  1
+CH2        OH+                    O          CH3+                                          5.000e-01  1.230e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  3191 2  1
+CH2        OH+                    OH         CH2+                                          5.000e-01  1.230e-09  1.410e+00 2.00e+00 0.00e+00 logn  5     10    149  4  5569 1  1
+CH2        OH+                    OH         CH2+                                          5.000e-01  1.230e-09  1.410e+00 2.00e+00 0.00e+00 logn  5    150    800  5  5569 2  1
+CH4        OH+                    O          CH5+                                          1.950e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1351 1  1
+CH4        OH+                    CH2        H3O+                                          1.400e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1352 1  1
+N          OH+                    H          NO+                                           8.900e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3173 1  1
+N2         OH+                    O          N2H+                                          3.600e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3183 1  1
+NH         OH+                    O          NH2+                                          1.000e+00  9.980e-10  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3184 1  1
+NH2        OH+                    O          NH3+                                          5.000e-01  1.090e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3199 1  1
+NH2        OH+                    OH         NH2+                                          5.000e-01  1.090e-09  4.600e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5573 1  1
+NH3        OH+                    O          NH4+                                          5.000e-01  1.160e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3201 1  1
+NH3        OH+                    OH         NH3+                                          5.000e-01  1.160e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5521 1  1
+O          OH+                    H          O2+                                           7.100e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3174 1  1
+O2         OH+                    OH         O2+                                           5.900e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5339 1  1
+OH         OH+                    O          H2O+                                          1.000e+00  8.320e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3186 1  1
+H2O        OH+                    O          H3O+                                          4.640e-01  9.390e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3193 1  1
+H2O        OH+                    OH         H2O+                                          5.360e-01  9.390e-10  5.410e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5570 1  1
+CN         OH+                    O          HCN+                                          1.000e+00  1.240e-09  2.840e+00 2.00e+00 0.00e+00 logn  4     10    606  4  3180 1  1
+CN         OH+                    O          HCN+                                          1.000e+00  1.240e-09  2.840e+00 2.00e+00 0.00e+00 logn  4    607    800  5  3180 2  1
+HCN        OH+                    O          HCNH+                                         1.000e+00  1.150e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3195 1  1
+HNC        OH+                    O          HCNH+                                         1.000e+00  1.200e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3198 1  1
+HCO        OH+                    CO         H2O+                                          3.330e-01  1.140e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3196 1  1
+HCO        OH+                    OH         HCO+                                          3.330e-01  1.140e-09  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5572 1  1
+CO         OH+                    O          HCO+                                          1.000e+00  1.000e-09  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  3181 1  1
+CO2        OH+                    O          HOCO+                                         1.400e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3192 1  1
+NO         OH+                    O          HNO+                                          6.290e-01  9.230e-10  4.110e-01 2.00e+00 0.00e+00 logn  4     10     12  4  3185 1  1
+NO         OH+                    O          HNO+                                          6.290e-01  9.230e-10  4.110e-01 2.00e+00 0.00e+00 logn  4     13    800  5  3185 2  1
+NO         OH+                    OH         NO+                                           3.710e-01  9.230e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5512 1  1
+NO         OH+                    OH         NO+                                           3.710e-01  9.230e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5512 2  1
+!H2O+ --------------
+H2O+       e-                     O          H2                                            3.900e-08 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6552 1  1
+H2O+       e-                     H          OH                                            8.600e-08 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6553 1  1
+H2O+       e-                     H          H          O                                  3.050e-07 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6554 1  1
+H2         H2O+                   H          H3O+                                          6.100e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2142 1  1
+C          H2O+                   OH         CH+                                           1.100e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1479 1  1
+CH         H2O+                   OH         CH2+                                          5.000e-01  1.240e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2140 1  1
+CH         H2O+                   H2O        CH+                                           5.000e-01  1.240e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5480 1  1
+CH2        H2O+                   OH         CH3+                                          5.000e-01  1.210e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  2146 1  1
+CH2        H2O+                   OH         CH3+                                          5.000e-01  1.210e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  2146 2  1
+CH2        H2O+                   H2O        CH2+                                          5.000e-01  1.210e-09  1.410e+00 2.00e+00 0.00e+00 logn  5     10    149  4  5482 1  1
+CH2        H2O+                   H2O        CH2+                                          5.000e-01  1.210e-09  1.410e+00 2.00e+00 0.00e+00 logn  5    150    800  5  5482 2  1
+CH4        H2O+                   CH3        H3O+                                          1.300e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2157 1  1
+N          H2O+                   H          HNO+                                          1.900e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1480 1  1
+NH         H2O+                   N          H3O+                                          1.000e+00  9.850e-10  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2143 1  1
+NH2        H2O+                   OH         NH3+                                          5.000e-01  1.070e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2154 1  1
+NH2        H2O+                   H2O        NH2+                                          5.000e-01  1.070e-09  4.600e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5486 1  1
+NH3        H2O+                   OH         NH4+                                          2.900e-01  1.140e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2156 1  1
+NH3        H2O+                   H2O        NH3+                                          7.100e-01  1.140e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5410 1  1
+O          H2O+                   H2         O2+                                           4.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1481 1  1
+O2         H2O+                   H2O        O2+                                           4.300e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5182 1  1
+OH         H2O+                   O          H3O+                                          1.000e+00  8.210e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2144 1  1
+H2O        H2O+                   OH         H3O+                                          1.000e+00  9.260e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2147 1  1
+HCN        H2O+                   OH         HCNH+                                         1.000e+00  1.130e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2150 1  1
+HNC        H2O+                   OH         HCNH+                                         1.000e+00  1.180e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2153 1  1
+HCO        H2O+                   CO         H3O+                                          3.330e-01  1.120e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2152 1  1
+HCO        H2O+                   H2O        HCO+                                          3.330e-01  1.120e-09  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5484 1  1
+CO         H2O+                   OH         HCO+                                          1.000e+00  9.860e-10  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  2141 1  1
+NO         H2O+                   H2O        NO+                                           1.000e+00  9.100e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5181 1  1
+NO         H2O+                   H2O        NO+                                           1.000e+00  9.100e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5181 2  1
+Mg         H2O+                   H2O        Mg+                                           2.200e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5169 1  1
+Fe         H2O+                   H2O        Fe+                                           1.500e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5168 1  1
+!H3O+ --------------
+H3O+       e-                     H          H          OH                                 2.600e-07 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6831 1  2
+H3O+       e-                     H          H2O                                           1.100e-07 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6832 1  2
+H3O+       e-                     H2         OH                                            6.000e-08 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6833 1  2
+H3O+       e-                     H          O          H2                                 5.600e-09 -5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6834 1  2
+H          H3O+                   H2         H2O+                                          6.100e-10  0.000e+00  2.050e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4740 1  1
+H2         H3O+                   H          H          H3O+                               3.000e-11  5.000e-01  5.200e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4845 1  1
+C          H3O+                   H2         HCO+                                          1.000e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2775 1  1
+CH         H3O+                   H2O        CH2+                                          1.000e+00  1.230e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2779 1  1
+CH2        H3O+                   H2O        CH3+                                          1.000e+00  1.200e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  2791 1  1
+CH2        H3O+                   H2O        CH3+                                          1.000e+00  1.200e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  2791 2  1
+NH2        H3O+                   H2O        NH3+                                          1.000e+00  1.060e-09  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2799 1  1
+NH3        H3O+                   H2O        NH4+                                          1.000e+00  1.130e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2814 1  1
+CN         H3O+                   OH         HCNH+                                         4.500e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4760 1  1
+HCN        H3O+                   H2O        HCNH+                                         1.000e+00  1.110e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2793 1  1
+HNC        H3O+                   H2O        HCNH+                                         1.000e+00  1.160e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2796 1  1
+Mg         H3O+                   H          H2O        Mg+                                1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4856 1  1
+Fe         H3O+                   H          H2O        Fe+                                3.100e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4751 1  1
+!CN+ --------------
+CN+        e-                     C          N                                             3.380e-07 -5.500e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6502 1  1
+H          CN+                    CN         H+                                            6.400e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5305 1  1
+H2         CN+                    H          HCN+                                          7.500e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   753 1  1
+H2         CN+                    H          HNC+                                          7.500e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   754 1  1
+C          CN+                    CN         C+                                            1.100e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5304 1  1
+CH         CN+                    CN         CH+                                           1.000e+00  1.160e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5309 1  1
+CH2        CN+                    CN         CH2+                                          1.000e+00  1.130e-09  1.410e+00 2.00e+00 0.00e+00 logn  5     10    149  4  5085 1  1
+CH2        CN+                    CN         CH2+                                          1.000e+00  1.130e-09  1.410e+00 2.00e+00 0.00e+00 logn  5    150    800  5  5085 2  1
+NH         CN+                    CN         NH+                                           1.000e+00  9.140e-10  4.400e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5082 1  1
+NH2        CN+                    CN         NH2+                                          1.000e+00  9.940e-10  4.600e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5086 1  1
+O          CN+                    CN         O+                                            6.500e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5306 1  1
+O2         CN+                    CO         NO+                                           8.600e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   942 1  1
+O2         CN+                    CN         O2+                                           7.800e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5390 1  1
+OH         CN+                    CN         OH+                                           1.000e+00  7.560e-10  5.500e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5083 1  1
+H2O        CN+                    OH         HCN+                                          5.560e-01  8.530e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4   946 1  1
+H2O        CN+                    NH         HCO+                                          5.560e-02  8.530e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4   947 1  1
+H2O        CN+                    O          H2NC+                                         1.670e-01  8.530e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4   948 1  1
+HCN        CN+                    CN         HCN+                                          8.840e-01  1.020e-09  6.610e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5392 1  1
+HCO        CN+                    CO         HCN+                                          5.000e-01  1.010e-09  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4   951 1  1
+HCO        CN+                    CN         HCO+                                          5.000e-01  1.010e-09  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5393 1  1
+CO         CN+                    CN         CO+                                           1.000e+00  8.900e-10  2.510e-01 2.00e+00 0.00e+00 logn  5     10    800  5  5310 1  1
+CO2        CN+                    CN         CO2+                                          4.500e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5391 1  1
+NO         CN+                    CN         NO+                                           8.100e-01  8.170e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5389 1  1
+NO         CN+                    CN         NO+                                           8.100e-01  8.170e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5389 2  1
+!HCN+ --------------
+HCN+       e-                     H          CN                                            2.000e-07 -5.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6560 1  1
+H2         HCN+                   H          HCNH+                                         9.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1697 1  1
+C          HCN+                   CN         CH+                                           1.100e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1692 1  1
+CH         HCN+                   CN         CH2+                                          1.000e+00  1.150e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1695 1  1
+CH2        HCN+                   CN         CH3+                                          1.000e+00  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  1701 1  1
+CH2        HCN+                   CN         CH3+                                          1.000e+00  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  1701 2  1
+CH4        HCN+                   CH3        HCNH+                                         1.040e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1711 1  1
+NH         HCN+                   CN         NH2+                                          1.000e+00  9.070e-10  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1698 1  1
+NH2        HCN+                   CN         NH3+                                          1.000e+00  9.890e-10  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1708 1  1
+NH3        HCN+                   NH2        HCNH+                                         3.310e-01  1.050e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1710 1  1
+NH3        HCN+                   HCN        NH3+                                          6.690e-01  1.050e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5437 1  1
+O          HCN+                   HCN        O+                                            6.500e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5174 1  1
+O2         HCN+                   HCN        O2+                                           3.200e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5176 1  1
+OH         HCN+                   CN         H2O+                                          1.000e+00  7.520e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1699 1  1
+H2O        HCN+                   CN         H3O+                                          3.210e-01  8.450e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1703 1  1
+H2O        HCN+                   HCN        H2O+                                          6.790e-01  8.450e-10  5.410e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5436 1  1
+HCN        HCN+                   CN         HCNH+                                         1.000e+00  1.010e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1704 1  1
+HNC        HCN+                   CN         HCNH+                                         1.000e+00  1.050e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1707 1  1
+HCO        HCN+                   CO         HCNH+                                         5.000e-01  9.970e-10  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1705 1  1
+CO         HCN+                   CN         HCO+                                          1.000e+00  8.840e-10  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  1696 1  1
+CO2        HCN+                   CN         HOCO+                                         2.100e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1702 1  1
+NO         HCN+                   HCN        NO+                                           1.000e+00  8.080e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5175 1  1
+NO         HCN+                   HCN        NO+                                           1.000e+00  8.080e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5175 2  1
+!HNC+ --------------
+HNC+       e-                     H          CN                                            2.000e-07 -5.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6566 1  1
+H2         HNC+                   H          HCNH+                                         7.000e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2589 1  1
+C          HNC+                   CN         CH+                                           1.100e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2585 1  1
+CH         HNC+                   CN         CH2+                                          1.000e+00  1.150e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2588 1  1
+CH2        HNC+                   CN         CH3+                                          1.000e+00  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  2594 1  1
+CH2        HNC+                   CN         CH3+                                          1.000e+00  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  2594 2  1
+NH         HNC+                   CN         NH2+                                          1.000e+00  9.070e-10  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2590 1  1
+NH2        HNC+                   CN         NH3+                                          1.000e+00  9.890e-10  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2599 1  1
+NH3        HNC+                   HNC        NH3+                                          1.000e+00  1.050e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5230 1  1
+O2         HNC+                   HCO        NO+                                           9.000e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2591 1  1
+OH         HNC+                   CN         H2O+                                          1.000e+00  7.520e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2592 1  1
+H2O        HNC+                   CN         H3O+                                          1.000e+00  8.450e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2595 1  1
+HCN        HNC+                   CN         HCNH+                                         1.000e+00  1.010e-09  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2596 1  1
+HCO        HNC+                   CO         HCNH+                                         5.000e-01  9.970e-10  3.580e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2597 1  1
+NO         HNC+                   HNC        NO+                                           1.000e+00  8.080e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5229 1  1
+NO         HNC+                   HNC        NO+                                           1.000e+00  8.080e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5229 2  1
+!HCNH+ --------------
+HCNH+      e-                     H          H          CN                                 9.056e-08 -6.500e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10   1000  3  6810 1  3
+HCNH+      e-                     H          HCN                                           9.622e-08 -6.500e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10   1000  3  6811 1  3
+HCNH+      e-                     H          HNC                                           9.622e-08 -6.500e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10   1000  3  6812 1  3
+H          HCNH+                  H2         HCN+                                          9.800e-10  0.000e+00  3.440e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4756 1  1
+CH         HCNH+                  HCN        CH2+                                          1.000e+00  1.140e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3323 1  1
+CH2        HCNH+                  HCN        CH3+                                          5.000e-01  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  3324 1  1
+CH2        HCNH+                  HCN        CH3+                                          5.000e-01  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  3324 2  1
+CH2        HCNH+                  HNC        CH3+                                          5.000e-01  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  3325 1  1
+CH2        HCNH+                  HNC        CH3+                                          5.000e-01  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  3325 2  1
+NH2        HCNH+                  HCN        NH3+                                          5.000e-01  9.790e-10  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3326 1  1
+NH2        HCNH+                  HNC        NH3+                                          5.000e-01  9.790e-10  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3327 1  1
+NH3        HCNH+                  HCN        NH4+                                          5.000e-01  1.040e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3329 1  1
+NH3        HCNH+                  HNC        NH4+                                          5.000e-01  1.040e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  3330 1  1
+H2O        HCNH+                  HNC        H3O+                                          4.500e-09  0.000e+00  1.030e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4574 1  1
+H2O        HCNH+                  HCN        H3O+                                          4.500e-09  0.000e+00  2.460e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4575 1  1
+Mg         HCNH+                  H          HCN        Mg+                                1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4858 1  1
+Mg         HCNH+                  H          HNC        Mg+                                1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4859 1  1
+Fe         HCNH+                  H          HCN        Fe+                                1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4853 1  1
+Fe         HCNH+                  H          HNC        Fe+                                1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4854 1  1
+!H2NC+ --------------
+H2NC+      e-                     H          HNC                                           6.600e-08 -5.000e-01  0.000e+00 3.00e+00 1.00e+02 logn  8     10    300  3  6820 1  2
+H2NC+      e-                     H          HCN                                           6.600e-08 -5.000e-01  0.000e+00 3.00e+00 1.00e+02 logn  8     10    300  3  6821 1  2
+H2NC+      e-                     H          H          CN                                 6.500e-08 -5.000e-01  0.000e+00 3.00e+00 1.00e+02 logn  8     10    300  3  6822 1  2
+!CO+ --------------
+CO+        e-                     C          O                                             2.750e-07 -5.500e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6503 1  1
+H          CO+                    CO         H+                                            4.000e-10  0.000e+00  0.000e+00 1.50e+00 0.00e+00 logn  5     10    300  3  5088 1  1
+C          CO+                    CO         C+                                            1.100e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5087 1  1
+CH         CO+                    C          HCO+                                          5.000e-01  1.140e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4   954 1  1
+CH         CO+                    CO         CH+                                           5.000e-01  1.140e-09  3.330e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5395 1  1
+CH2        CO+                    CH         HCO+                                          5.000e-01  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4   958 1  1
+CH2        CO+                    CH         HCO+                                          5.000e-01  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5   958 2  1
+CH2        CO+                    CO         CH2+                                          5.000e-01  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  5     10    149  4  5399 1  1
+CH2        CO+                    CO         CH2+                                          5.000e-01  1.120e-09  1.410e+00 2.00e+00 0.00e+00 logn  5    150    800  5  5399 2  1
+CH4        CO+                    CH3        HCO+                                          4.550e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   965 1  1
+CH4        CO+                    CO         CH4+                                          7.930e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5405 1  1
+N          CO+                    C          NO+                                           8.100e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   953 1  1
+NH         CO+                    N          HCO+                                          5.000e-01  9.010e-10  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4   955 1  1
+NH         CO+                    CO         NH+                                           5.000e-01  9.010e-10  4.400e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5396 1  1
+NH2        CO+                    NH         HCO+                                          5.000e-01  9.790e-10  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4   961 1  1
+NH2        CO+                    CO         NH2+                                          5.000e-01  9.790e-10  4.600e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5402 1  1
+NH3        CO+                    NH2        HCO+                                          2.000e-02  1.040e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4   964 1  1
+NH3        CO+                    CO         NH3+                                          9.800e-01  1.040e-09  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5404 1  1
+O          CO+                    CO         O+                                            1.400e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5089 1  1
+O2         CO+                    CO         O2+                                           1.200e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5093 1  1
+OH         CO+                    O          HCO+                                          5.000e-01  7.450e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4   956 1  1
+OH         CO+                    CO         OH+                                           5.000e-01  7.450e-10  5.500e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5397 1  1
+H2O        CO+                    OH         HCO+                                          3.410e-01  8.370e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4   959 1  1
+H2O        CO+                    CO         H2O+                                          6.590e-01  8.370e-10  5.410e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5400 1  1
+HCN        CO+                    CO         HCN+                                          3.400e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5095 1  1
+HCO        CO+                    CO         HCO+                                          1.000e+00  9.900e-10  3.580e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5096 1  1
+CO2        CO+                    CO         CO2+                                          1.100e-09  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5094 1  1
+NO         CO+                    CO         NO+                                           1.000e+00  8.000e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5092 1  1
+NO         CO+                    CO         NO+                                           1.000e+00  8.000e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5092 2  1
+!HCO+ --------------
+HCO+       e-                     H          CO                                            2.800e-07 -6.900e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6561 1  1
+H          HCO+                   H2         CO+                                           1.300e-09  0.000e+00  2.450e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4741 1  1
+H2         HCO+                   H          H          HCO+                               3.000e-11  5.000e-01  5.200e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4847 1  1
+C          HCO+                   CO         CH+                                           1.100e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1713 1  1
+CH         HCO+                   CO         CH2+                                          1.000e+00  1.140e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1718 1  1
+CH2        HCO+                   CO         CH3+                                          1.000e+00  1.110e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  1742 1  1
+CH2        HCO+                   CO         CH3+                                          1.000e+00  1.110e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  1742 2  1
+CH3        HCO+                   CO         CH4+                                          1.400e-09  0.000e+00  9.060e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4742 1  1
+CH4        HCO+                   CO         CH5+                                          9.900e-10  0.000e+00  4.920e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4743 1  1
+N2         HCO+                   CO         N2H+                                          8.800e-10  0.000e+00  1.120e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4766 1  1
+NH         HCO+                   CO         NH2+                                          1.000e+00  8.960e-10  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1724 1  1
+NH2        HCO+                   CO         NH3+                                          1.000e+00  9.740e-10  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1755 1  1
+NH3        HCO+                   CO         NH4+                                          1.000e+00  1.030e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2509 1  1
+O2         HCO+                   O          HOCO+                                         1.000e-09  0.000e+00  1.450e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4744 1  1
+OH         HCO+                   CO         H2O+                                          5.000e-01  7.420e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1726 1  1
+OH         HCO+                   H          HOCO+                                         5.000e-01  7.420e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1727 1  1
+H2O        HCO+                   CO         H3O+                                          1.000e+00  8.340e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1743 1  1
+HCN        HCO+                   CO         HCNH+                                         1.000e+00  9.890e-10  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1745 1  1
+HNC        HCO+                   CO         HCNH+                                         1.000e+00  1.030e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1749 1  1
+CO2        HCO+                   CO         HOCO+                                         1.000e-09  0.000e+00  5.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4746 1  1
+Mg         HCO+                   HCO        Mg+                                           2.900e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5178 1  1
+Fe         HCO+                   H          CO         Fe+                                9.500e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4750 1  1
+Fe         HCO+                   HCO        Fe+                                           1.900e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5177 1  1
+!CO2+ --------------
+CO2+       e-                     O          CO                                            4.200e-07 -7.500e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6547 1  1
+H          CO2+                   O          HCO+                                          2.900e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1472 1  1
+H          CO2+                   CO2        H+                                            1.000e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5431 1  1
+H2         CO2+                   H          HOCO+                                         8.700e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1474 1  1
+CH4        CO2+                   CH3        HOCO+                                         5.500e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1476 1  1
+CH4        CO2+                   CO2        CH4+                                          5.500e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5434 1  1
+NH3        CO2+                   CO2        NH3+                                          1.000e+00  9.650e-10  3.650e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5167 1  1
+O          CO2+                   CO         O2+                                           1.640e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  1473 1  1
+O          CO2+                   CO2        O+                                            9.620e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5432 1  1
+O2         CO2+                   CO2        O2+                                           5.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3  5165 1  1
+H2O        CO2+                   OH         HOCO+                                         2.700e-01  7.760e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  1475 1  1
+H2O        CO2+                   CO2        H2O+                                          7.300e-01  7.760e-10  5.410e+00 2.00e+00 0.00e+00 logn  5     10    800  4  5433 1  1
+NO         CO2+                   CO2        NO+                                           1.000e+00  7.220e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5164 1  1
+NO         CO2+                   CO2        NO+                                           1.000e+00  7.220e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5164 2  1
+!HOCO+ --------------
+HOCO+      e-                     H          O          CO                                 8.100e-07 -6.400e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6839 1  1
+HOCO+      e-                     CO         OH                                            3.200e-07 -6.400e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6840 1  1
+HOCO+      e-                     H          CO2                                           6.000e-08 -6.400e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6841 1  1
+H          HOCO+                  OH         HCO+                                          1.000e-09  0.000e+00  7.500e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4745 1  1
+C          HOCO+                  CO2        CH+                                           1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2847 1  1
+CH4        HOCO+                  CO2        CH5+                                          7.800e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2853 1  1
+N2         HOCO+                  CO2        N2H+                                          1.400e-09  0.000e+00  6.400e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4767 1  1
+NH3        HOCO+                  CO2        NH4+                                          1.000e+00  9.650e-10  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2852 1  1
+O          HOCO+                  O2         HCO+                                          1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2848 1  1
+H2O        HOCO+                  CO2        H3O+                                          1.000e+00  7.730e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2850 1  1
+CO         HOCO+                  CO2        HCO+                                          1.000e+00  7.860e-10  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  2849 1  1
+NO         HOCO+                  CO2        HNO+                                          1.000e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4762 1  1
+!NO+ --------------
+NO+        e-                     N          O                                             4.100e-07 -1.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6514 1  1
+Mg         NO+                    NO         Mg+                                           8.100e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5327 1  1
+Fe         NO+                    NO         Fe+                                           9.200e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3  5326 1  1
+!HNO+ --------------
+HNO+       e-                     H          NO                                            3.000e-07 -5.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6567 1  1
+C          HNO+                   NO         CH+                                           1.000e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  2601 1  1
+CH         HNO+                   NO         CH2+                                          1.000e+00  1.130e-09  3.330e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2605 1  1
+CH2        HNO+                   NO         CH3+                                          1.000e+00  1.100e-09  1.410e+00 2.00e+00 0.00e+00 logn  4     10    149  4  2610 1  1
+CH2        HNO+                   NO         CH3+                                          1.000e+00  1.100e-09  1.410e+00 2.00e+00 0.00e+00 logn  4    150    800  5  2610 2  1
+CH4        HNO+                   NO         CH5+                                          1.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2619 1  1
+NH         HNO+                   NO         NH2+                                          1.000e+00  8.860e-10  4.400e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2607 1  1
+NH2        HNO+                   NO         NH3+                                          1.000e+00  9.600e-10  4.600e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2616 1  1
+NH3        HNO+                   NO         NH4+                                          1.000e+00  1.020e-09  3.650e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2618 1  1
+OH         HNO+                   NO         H2O+                                          1.000e+00  7.310e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2608 1  1
+H2O        HNO+                   NO         H3O+                                          1.000e+00  8.220e-10  5.410e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2612 1  1
+HCN        HNO+                   NO         HCNH+                                         1.000e+00  9.750e-10  6.610e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2613 1  1
+HNC        HNO+                   NO         HCNH+                                         1.000e+00  1.020e-09  6.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4  2615 1  1
+CO         HNO+                   NO         HCO+                                          1.000e+00  8.530e-10  2.510e-01 2.00e+00 0.00e+00 logn  4     10    800  5  2606 1  1
+CO2        HNO+                   NO         HOCO+                                         1.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  2611 1  1
+NO         HNO+                   HNO        NO+                                           1.000e+00  7.810e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     10     12  4  5231 1  1
+NO         HNO+                   HNO        NO+                                           1.000e+00  7.810e-10  4.110e-01 2.00e+00 0.00e+00 logn  5     13    800  5  5231 2  1
+!Mg+ --------------
+Mg+        e-                     Mg                                                       2.800e-12 -8.600e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6772 1  1
+!Fe+ --------------
+Fe+        e-                     Fe                                                       3.700e-12 -6.500e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3  6769 1  1
+H2         Fe+                    H          H          Fe+                                3.000e-11  5.000e-01  5.200e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4848 1  1
+! neutral-neutral reactions
+!H --------------
+H          H2                     H          H          H                                  1.000e-10  0.000e+00  5.200e+04 2.00e+00 0.00e+00 logn  4     10    800  3  5021 1  1
+H          CH                     C          H2                                            1.240e-10  2.600e-01  0.000e+00 3.00e+00 1.40e+01 logn  4     10    500  3  1988 1  3
+H          CH2                    CH         H2                                            2.200e-10  0.000e+00  0.000e+00 2.00e+00 7.00e+00 logn  4     10    298  3  1989 1  3
+H          CH3                    H2         CH2                                           1.000e-10  0.000e+00  7.600e+03 2.00e+00 0.00e+00 logn  4     10    300  3  1990 1  1
+H          CH4                    H2         CH3                                           7.340e-12  0.000e+00  4.410e+03 2.00e+00 0.00e+00 logn  4     10    300  3  1991 1  1
+H          NH                     N          H2                                            1.730e-11  5.000e-01  2.400e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4530 1  1
+H          NH2                    H2         NH                                            5.250e-12  7.900e-01  2.200e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4896 1  1
+H          NH3                    H2         NH2                                           6.540e-13  2.760e+00  5.170e+03 2.00e+00 0.00e+00 logn  4     10    300  3  1993 1  1
+H          O                      OH                                                       9.900e-19 -3.800e-01  0.000e+00 1.00e+01 0.00e+00 logn  6     10    300  3  6170 1  1
+H          O2                     O          OH                                            2.940e-10  0.000e+00  8.380e+03 2.00e+00 0.00e+00 logn  4     10    300  3  2002 1  1
+H          OH                     O          H2                                            6.860e-14  2.800e+00  1.950e+03 2.00e+00 0.00e+00 logn  4     10    300  3  1992 1  1
+H          OH                     H2O                                                      4.000e-18 -2.000e+00  0.000e+00 1.00e+01 0.00e+00 logn  6     10    300  3  6179 1  1
+H          H2O                    H2         OH                                            6.820e-12  1.600e+00  9.720e+03 2.00e+00 0.00e+00 logn  4     10    300  3  1994 1  1
+H          HCN                    CN         H2                                            6.190e-10  0.000e+00  1.250e+04 2.00e+00 0.00e+00 logn  4     10    300  3  1995 1  1
+H          HNC                    H          HCN                                           1.000e-10  0.000e+00  2.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4950 1  1
+H          HCO                    CO         H2                                            1.500e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1981 1  1
+H          HCO                    O          CH2                                           6.610e-11  0.000e+00  5.160e+04 2.00e+00 0.00e+00 logn  4     10    300  3  1982 1  1
+H          HNO                    NH         OH                                            2.410e-09 -5.000e-01  9.010e+03 2.00e+00 0.00e+00 logn  4     10    300  3  1999 1  1
+H          HNO                    H2         NO                                            5.630e-11  6.200e-01  1.790e+02 2.00e+00 0.00e+00 logn  4     10    800  3  2000 1  1
+H          HNO                    O          NH2                                           1.050e-09 -3.000e-01  1.470e+04 2.00e+00 0.00e+00 logn  4     10    300  3  2001 1  1
+H          CO                     C          OH                                            1.100e-10  5.000e-01  7.770e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4895 1  1
+H          CO2                    CO         OH                                            2.510e-10  0.000e+00  1.330e+04 2.00e+00 0.00e+00 logn  4     10    300  3  2009 1  1
+H          NO                     O          NH                                            9.300e-10 -1.000e-01  3.520e+04 2.00e+00 0.00e+00 logn  4     10    300  3  1996 1  1
+H          NO                     N          OH                                            3.600e-10  0.000e+00  2.490e+04 2.00e+00 0.00e+00 logn  4     10    300  3  1997 1  1
+!H2 --------------
+H2         H2                     H          H          H2                                 1.250e-11  0.000e+00  5.200e+04 2.00e+00 0.00e+00 logn  4     10    800  3  5023 1  1
+H2         CH2                    H          CH3                                           5.000e-11  0.000e+00  4.870e+03 2.00e+00 0.00e+00 logn  4     10    300  3  2016 1  1
+H2         CH3                    H          CH4                                           2.510e-13  0.000e+00  4.210e+03 2.00e+00 0.00e+00 logn  4     10    300  3  2017 1  1
+H2         NH                     H          NH2                                           5.960e-11  0.000e+00  7.780e+03 2.00e+00 0.00e+00 logn  4     10    300  3  2021 1  1
+H2         NH2                    H          NH3                                           1.760e-13  2.230e+00  3.610e+03 2.00e+00 0.00e+00 logn  4     10    300  3  2022 1  1
+H2         O2                     OH         OH                                            3.160e-10  0.000e+00  2.190e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4904 1  1
+H2         OH                     H          H2O                                           8.400e-13  0.000e+00  1.040e+03 2.00e+00 0.00e+00 logn  4     10    300  3  2019 1  1
+!He --------------
+He         H2                     H          H          He                                 1.000e-11  0.000e+00  5.200e+04 2.00e+00 0.00e+00 logn  4     10    800  3  5022 1  1
+!C --------------
+C          H                      CH                                                       1.000e-17  0.000e+00  0.000e+00 1.00e+01 0.00e+00 logn  6     10    300  3  6166 1  1
+C          H2                     H          CH                                            6.640e-10  0.000e+00  1.170e+04 2.00e+00 0.00e+00 logn  4     10    300  3  2014 1  1
+C          H2                     CH2                                                      1.000e-17  0.000e+00  0.000e+00 1.00e+01 0.00e+00 logn  6     10    300  3  6169 1  1
+C          CH2                    CH         CH                                            2.690e-12  0.000e+00  2.360e+04 2.00e+00 0.00e+00 logn  4     10    300  3  1973 1  1
+C          N                      CN                                                       1.000e-17  0.000e+00  0.000e+00 1.00e+01 0.00e+00 logn  6     10     39  3  6167 1  1
+C          N                      CN                                                       7.764e-19  1.404e-01  1.802e-01 0.00e+00 0.00e+00 logn  6     40    399  3  6167 2  2
+C          N                      CN                                                       9.330e-19  6.835e-03  6.037e+01 0.00e+00 0.00e+00 logn  6    400   2000  3  6167 3  2
+C          N2                     N          CN                                            8.700e-11  0.000e+00  2.260e+04 2.00e+00 0.00e+00 logn  4     10    300  3  1978 1  1
+C          NH                     H          CN                                            1.200e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3464 1  1
+C          NH                     N          CH                                            1.730e-11  5.000e-01  4.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3  3465 1  1
+C          NH2                    H          HNC                                           3.000e-11 -2.000e-01 -6.000e+00 1.50e+00 0.00e+00 logn  4     10    300  3  1975 1  3
+C          NH2                    H          HCN                                           3.000e-11 -2.000e-01 -6.000e+00 1.50e+00 0.00e+00 logn  4     10    300  3  1976 1  3
+C          O                      CO                                                       2.100e-19  0.000e+00  0.000e+00 1.00e+01 0.00e+00 logn  6     10    300  3  6168 1  1
+C          OH                     O          CH                                            2.250e-11  5.000e-01  1.480e+04 2.00e+00 0.00e+00 logn  4     10    800  3  3471 1  1
+C          OH                     H          CO                                            1.150e-10 -3.390e-01 -1.080e-01 2.00e+00 0.00e+00 norm  4     10    500  3  3472 1  2
+C          HNC                    C          HCN                                           1.600e-10  0.000e+00  0.000e+00 3.00e+00 0.00e+00 logn  4     10    300  3  5047 1  2
+C          HCO                    CH         CO                                            1.000e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3478 1  1
+C          NO                     O          CN                                            6.000e-11 -1.600e-01  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  3466 1  1
+C          NO                     N          CO                                            9.000e-11 -1.600e-01  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3467 1  1
+!CH --------------
+CH         H2                     H          CH2                                           3.750e-10  0.000e+00  1.660e+03 2.00e+00 0.00e+00 logn  4     10    300  3  2015 1  1
+CH         H2                     CH3                                                      3.250e-17 -6.000e-01  0.000e+00 1.00e+01 0.00e+00 logn  6     10    300  3  6174 1  1
+CH         N2                     N          HCN                                           5.600e-13  8.800e-01  1.010e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4870 1  1
+CH         NH                     H          HCN                                           5.000e-11  0.000e+00  0.000e+00 3.00e+00 0.00e+00 logn  4     10    300  3  5051 1  2
+CH         NH                     H          HNC                                           5.000e-11  0.000e+00  0.000e+00 3.00e+00 0.00e+00 logn  4     10    300  3  5052 1  2
+CH         NH3                    NH         CH3                                           8.000e-12 -5.000e-02  0.000e+00 1.20e+00 2.00e+00 logn  4     10    300  3  4533 1  3
+CH         O2                     CO         OH                                            3.800e-11 -4.800e-01  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   868 1  1
+CH         O2                     O          HCO                                           1.440e-11  7.000e-01  3.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3   869 1  1
+CH         OH                     H          HCO                                           1.440e-11  5.000e-01  5.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4873 1  1
+CH         HCO                    CO         CH2                                           2.870e-12  7.000e-01  5.000e+02 2.00e+00 0.00e+00 logn  4     10    800  3  4869 1  1
+CH         HNO                    NO         CH2                                           1.730e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   870 1  1
+CH         CO2                    CO         HCO                                           2.940e-13  5.000e-01  3.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4945 1  1
+CH         NO                     CN         OH                                            2.320e-26  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3   865 1  1
+CH         NO                     N          HCO                                           2.700e-11  0.000e+00  5.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3   866 1  1
+CH         NO                     O          HCN                                           1.200e-11 -1.300e-01  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   867 1  1
+!CH2 --------------
+CH2        CH2                    CH         CH3                                           4.000e-10  0.000e+00  5.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4514 1  1
+CH2        CH4                    CH3        CH3                                           7.130e-12  0.000e+00  5.050e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4517 1  1
+CH2        HCO                    CO         CH3                                           3.000e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4556 1  1
+CH2        HNO                    NO         CH3                                           1.700e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1944 1  1
+!CH3 --------------
+CH3        CH3                    CH2        CH4                                           7.130e-12  0.000e+00  5.050e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4519 1  1
+CH3        NH3                    NH2        CH4                                           9.550e-14  0.000e+00  4.890e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4534 1  1
+!CH4 --------------
+!N --------------
+N          H2                     H          NH                                            2.660e-10  0.000e+00  1.265e+04 2.00e+00 0.00e+00 logn  4     10   2850  3  2020 1  2
+N          CH                     H          CN                                            1.600e-10  1.700e-01  0.000e+00 1.60e+00 7.00e+00 logn  4     10    300  3  2025 1  2
+N          CH                     C          NH                                            3.030e-11  6.500e-01  1.210e+03 2.00e+00 0.00e+00 logn  4     10    800  3  2026 1  1
+N          CH2                    H          HCN                                           5.000e-11  1.700e-01  0.000e+00 1.50e+00 0.00e+00 logn  4     10    300  3  2043 1  3
+N          CH2                    H          HNC                                           3.000e-11  1.700e-01  0.000e+00 1.50e+00 0.00e+00 logn  4     10    300  3  2044 1  3
+N          CH2                    CH         NH                                            9.960e-13  0.000e+00  2.040e+04 2.00e+00 0.00e+00 logn  4     10    800  3  2045 1  1
+N          CH3                    H          H          HCN                                6.000e-12  1.700e-01  0.000e+00 2.00e+00 7.00e+00 logn  4     10    300  3  2062 1  2
+N          NH                     H          N2                                            5.000e-11  1.000e-01  0.000e+00 2.00e+00 6.00e+00 logn  4     10    500  3  2030 1  3
+N          NH2                    H          H          N2                                 1.200e-10  0.000e+00  0.000e+00 1.30e+00 6.00e+00 logn  4     10    500  3  4589 1  3
+N          OH                     H          NO                                            5.000e-11  0.000e+00  6.000e+00 1.40e+00 7.00e+00 logn  4     10    300  3  2033 1  3
+N          H2O                    NH         OH                                            6.080e-11  1.200e+00  1.930e+04 2.00e+00 0.00e+00 logn  4     10    800  3  5036 1  1
+N          CN                     C          N2                                            8.800e-11  4.200e-01  0.000e+00 1.40e+00 1.50e+00 logn  4     10    300  3  2027 1  3
+N          HCO                    CO         NH                                            5.710e-12  5.000e-01  1.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3  2047 1  1
+N          HNO                    NH         NO                                            2.940e-12  5.000e-01  1.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4910 1  1
+N          CO2                    CO         NO                                            3.200e-13  0.000e+00  1.710e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4947 1  1
+N          NO                     O          N2                                            4.000e-11 -2.000e-01  2.000e+01 1.40e+00 1.00e+01 logn  4     10    300  3  2031 1  3
+!N2 --------------
+!NH --------------
+NH         CH2                    H          H          HCN                                3.000e-11  0.000e+00  0.000e+00 3.00e+00 2.10e+01 logn  4     10    300  3  5056 1  2
+NH         CH2                    H2         HNC                                           5.000e-12  0.000e+00  0.000e+00 4.00e+00 2.10e+01 logn  4     10    300  3  5057 1  2
+NH         NH                     H2         N2                                            1.700e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3   917 1  1
+NH         NH                     H          H          N2                                 1.000e-10  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   918 1  1
+NH         NH                     N          NH2                                           4.350e-13  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3   919 1  1
+NH         OH                     H          HNO                                           3.320e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4918 1  1
+NH         OH                     O          NH2                                           2.930e-12  1.000e-01  5.800e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4919 1  1
+NH         OH                     N          H2O                                           3.110e-12  1.200e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4920 1  1
+NH         H2O                    OH         NH2                                           1.830e-12  1.600e+00  1.410e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4915 1  1
+NH         NO                     N2         OH                                            1.460e-11 -5.800e-01  3.700e+01 2.00e+00 0.00e+00 logn  4     10    800  3   920 1  1
+NH         NO                     H          O          N2                                 4.700e-11  5.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3   921 1  1
+!NH2 --------------
+!NH3 --------------
+!O --------------
+O          H2                     H          OH                                            3.440e-13  2.670e+00  3.160e+03 2.00e+00 0.00e+00 logn  4     10    300  3  2018 1  1
+O          CH                     C          OH                                            2.520e-11  0.000e+00  2.380e+03 2.00e+00 0.00e+00 logn  4     10    800  3  3459 1  1
+O          CH                     H          CO                                            7.000e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  3460 1  2
+O          CH2                    H          HCO                                           2.000e-12  0.000e+00  0.000e+00 3.00e+00 3.00e+00 logn  4     10    800  3   767 1  3
+O          CH2                    CO         H2                                            4.000e-11  0.000e+00  0.000e+00 1.60e+00 3.00e+00 logn  4     10    800  3   768 1  3
+O          CH2                    CO         H          H                                  1.000e-10  0.000e+00  0.000e+00 1.40e+00 3.00e+00 logn  4     10    800  3   769 1  3
+O          CH3                    H          CO         H2                                 1.800e-10  5.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3   808 1  1
+O          CH4                    OH         CH3                                           2.290e-12  2.200e+00  3.820e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4538 1  1
+O          N2                     N          NO                                            2.510e-10  0.000e+00  3.860e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4929 1  1
+O          NH                     H          NO                                            6.600e-11  0.000e+00  0.000e+00 3.00e+00 2.97e+00 logn  4     10    298  3  2123 1  3
+O          NH2                    NH         OH                                            7.000e-12 -1.000e-01  0.000e+00 2.00e+00 4.00e+00 logn  4     10    298  3   781 1  3
+O          NH2                    H          HNO                                           6.300e-11 -1.000e-01  0.000e+00 2.00e+00 4.00e+00 logn  4     10    298  3   782 1  3
+O          NH3                    OH         NH2                                           1.890e-11  0.000e+00  4.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4546 1  1
+O          O                      O2                                                       4.900e-20  1.580e+00  0.000e+00 1.00e+01 0.00e+00 logn  6     10    300  3  6171 1  1
+O          OH                     H          O2                                            4.000e-11  0.000e+00  0.000e+00 3.00e+00 0.00e+00 logn  4     10     50  3  2126 1  3
+O          OH                     H          O2                                            3.500e-11  0.000e+00  0.000e+00 1.29e+00 0.00e+00 logn  4     51    139  3  2126 2  2
+O          OH                     H          O2                                            2.400e-11  0.000e+00 -1.100e+02 1.20e+00 5.00e+01 logn  4    150    500  3  2126 3  3
+O          H2O                    OH         OH                                            1.850e-11  9.500e-01  8.570e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4928 1  1
+O          CN                     N          CO                                            5.000e-11  0.000e+00  0.000e+00 3.00e+00 0.00e+00 logn  4     10    300  3  2116 1  3
+O          CN                     C          NO                                            3.810e-11  5.000e-01  1.450e+04 2.00e+00 0.00e+00 logn  4     10    800  3  2117 1  1
+O          HCN                    CO         NH                                            7.300e-13  1.140e+00  3.740e+03 2.00e+00 0.00e+00 logn  4     10    800  3   772 1  1
+O          HCN                    CN         OH                                            6.210e-10  0.000e+00  1.240e+04 2.00e+00 0.00e+00 logn  4     10    800  3   773 1  1
+O          HNC                    CO         NH                                            7.640e-12  0.000e+00  1.130e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4951 1  1
+O          HCO                    H          CO2                                           5.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   770 1  1
+O          HCO                    CO         OH                                            5.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   771 1  1
+O          HNO                    NO         OH                                            3.770e-11 -8.000e-02  0.000e+00 2.00e+00 7.00e+00 logn  4     10    298  3   779 1  3
+O          CO2                    CO         O2                                            2.460e-11  0.000e+00  2.660e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4926 1  1
+O          NO                     N          O2                                            8.930e-13  1.000e+00  1.950e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4932 1  1
+!O2 --------------
+O2         CH2                    CO         H2O                                           2.480e-10 -3.300e+00  1.440e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4875 1  1
+O2         CH2                    H2         CO2                                           2.920e-11 -3.300e+00  1.440e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4876 1  1
+O2         CH2                    OH         HCO                                           4.100e-11  0.000e+00  7.500e+02 2.00e+00 0.00e+00 logn  4     10    800  3  4877 1  1
+O2         CH2                    H          H          CO2                                3.650e-11 -3.300e+00  1.440e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4879 1  1
+O2         CH3                    H2O        HCO                                           1.660e-12  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4882 1  1
+O2         HNC                    NH         CO2                                           2.000e-11  5.000e-01  2.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4952 1  1
+O2         HCO                    OH         CO2                                           7.600e-13  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4581 1  1
+!OH --------------
+OH         CH2                    CH         H2O                                           1.440e-11  5.000e-01  3.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3   928 1  1
+OH         CH2                    O          CH3                                           1.440e-11  5.000e-01  3.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3   929 1  1
+OH         CH3                    O          CH4                                           3.270e-14  2.200e+00  2.240e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4549 1  1
+OH         CH3                    CH2        H2O                                           1.200e-10  0.000e+00  1.400e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4550 1  1
+OH         CH4                    H2O        CH3                                           3.770e-13  2.420e+00  1.160e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4551 1  1
+OH         NH2                    NH         H2O                                           1.500e-12  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   934 1  1
+OH         NH2                    O          NH3                                           9.180e-14  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   935 1  1
+OH         NH3                    H2O        NH2                                           1.470e-13  2.050e+00  7.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4579 1  1
+OH         OH                     O          H2O                                           1.650e-12  1.140e+00  5.000e+01 2.00e+00 0.00e+00 logn  4     10    199  3   927 1  1
+OH         OH                     O          H2O                                           6.200e-14  2.620e+00 -9.450e+02 1.20e+00 1.25e+02 logn  4    200    350  3   927 1  3
+OH         HCN                    CO         NH2                                           1.070e-13  0.000e+00  5.890e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4938 1  1
+OH         HCN                    CN         H2O                                           1.870e-13  1.500e+00  3.890e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4939 1  1
+OH         HCO                    CO         H2O                                           1.690e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   932 1  1
+OH         HNO                    NO         H2O                                           8.000e-11  0.000e+00  5.000e+02 2.00e+00 0.00e+00 logn  4     10    300  3   933 1  1
+!H2O --------------
+H2O        CH3                    OH         CH4                                           2.300e-15  3.470e+00  6.680e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4555 1  1
+H2O        NH2                    OH         NH3                                           2.110e-13  1.900e+00  5.720e+03 2.00e+00 0.00e+00 logn  4     10    800  3  5035 1  1
+!CN --------------
+CN         H2                     H          HCN                                           4.040e-13  2.870e+00  8.200e+02 2.00e+00 0.00e+00 logn  4     10    800  3  4535 1  1
+CN         CH2                    CH         HCN                                           5.300e-12  0.000e+00  2.500e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4874 1  1
+CN         CH4                    HCN        CH3                                           3.140e-12  1.530e+00  5.040e+02 2.00e+00 0.00e+00 logn  4     10    800  3  4536 1  1
+CN         NH                     N          HCN                                           2.940e-12  5.000e-01  1.000e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4914 1  1
+CN         NH3                    HCN        NH2                                           2.770e-11 -8.500e-01  0.000e+00 1.20e+00 1.60e+00 logn  4     10    298  3   905 1  3
+CN         OH                     O          HCN                                           1.000e-11  0.000e+00  1.000e+03 2.00e+00 0.00e+00 logn  4     10    300  3   902 1  1
+CN         HCO                    CO         HCN                                           1.000e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   900 1  1
+CN         HNO                    NO         HCN                                           3.000e-11  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3   903 1  1
+CN         NO                     CO         N2                                            1.600e-13  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   897 1  1
+!HCN --------------
+!HNC --------------
+!HCO --------------
+HCO        CH3                    CO         CH4                                           4.400e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1947 1  1
+!HNO --------------
+HNO        CH3                    NO         CH4                                           3.320e-12  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3  1948 1  1
+!CO --------------
+CO         O2                     O          CO2                                           5.990e-12  0.000e+00  2.410e+04 2.00e+00 0.00e+00 logn  4     10    800  3  4892 1  1
+CO         OH                     H          CO2                                           2.810e-13  0.000e+00  1.760e+02 2.00e+00 0.00e+00 logn  4     10    300  3   914 1  1
+CO         HNO                    NH         CO2                                           3.320e-12  0.000e+00  6.170e+03 1.25e+00 0.00e+00 logn  4     10    300  3   915 1  1
+!CO2 --------------
+!NO --------------
+NO         CH2                    OH         HCN                                           8.320e-13  0.000e+00  1.440e+03 2.00e+00 0.00e+00 logn  4     10    800  3  4584 1  1
+NO         NH2                    N2         H2O                                           1.700e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3   923 1  1
+NO         NH2                    H          N2         OH                                 1.490e-12  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3   924 1  1
+NO         HCO                    CO         HNO                                           1.200e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    800  3  4908 1  1
+!Mg --------------
+!Fe --------------
+! neutral-electron reactions
+H2         e-                     H          H          e-                                 2.000e-09  5.000e-01  1.160e+05 2.00e+00 0.00e+00 logn  4     10    800  3  5020 1  1
