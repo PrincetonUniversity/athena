@@ -1526,7 +1526,7 @@ void Radiation::CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u
     for (int j = js; j <= je; ++j) {
       pmy_block->pcoord->CellMetric(k, j, is, ie, g, gi);
       for (int i = is; i <= ie; ++i) {
-        CalculateRadiationInCell(energy, u1, u2, u3, k, j, i, g, cons_out);
+        CalculateRadiationInCellM1(energy, u1, u2, u3, k, j, i, g, cons_out);
       }
     }
   }
@@ -1534,7 +1534,7 @@ void Radiation::CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u
 }
 
 //----------------------------------------------------------------------------------------
-// Function for calculating conserved intensity corresponding energy density and velocity
+// Function for calculating conserved intensity from energy density and velocity
 // Inputs:
 //   energy: coordinate-frame energy density
 //   u1, u2, u3: contravariant 4-velocity components of isotropic radiation frame
@@ -1542,8 +1542,10 @@ void Radiation::CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u
 //   g: covariant metric
 // Outputs:
 //   cons_out: conserved values (n^0 n_0 I) set in given cell
+// Notes:
+//   Assumes intensity field associated with M1 closure.
 
-void Radiation::CalculateRadiationInCell(Real energy, Real u1, Real u2, Real u3, int k,
+void Radiation::CalculateRadiationInCellM1(Real energy, Real u1, Real u2, Real u3, int k,
     int j, int i, const AthenaArray<Real> &g, AthenaArray<Real> &cons_out) {
 
   // Calculate contravariant time component of isotropic radiation frame velocity
@@ -1579,6 +1581,78 @@ void Radiation::CalculateRadiationInCell(Real energy, Real u1, Real u2, Real u3,
     for (int m = ps; m <= pe; ++m) {
       int lm = AngleInd(l, m);
       cons_out(lm,k,j,i) *= energy / energy_sum;
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for calculating conserved intensity from energy density and velocity
+// Inputs:
+//   ee_f: fluid-frame energy density
+//   ff1_f, ff2_f, ff3_f: fluid-frame flux
+//   uu1, uu2, uu3: normal-frame fluid 4-velocity
+//   k, j, i: indices for cell to set
+//   g: covariant metric
+// Outputs:
+//   cons_out: conserved values (n^0 n_0 I) set in given cell
+// Notes:
+//   Assumes intensity field from Minerbo that is linear in cosine of angle with respect
+//       to preferred direction.
+//   Satisfies Eddington approximation in fluid frame so long as magnitude of F_f is less
+//       than E_f/3.
+
+void Radiation::CalculateRadiationInCellLinear(Real ee_f, Real ff1_f, Real ff2_f,
+    Real ff3_f, Real uu1, Real uu2, Real uu3, int k, int j, int i,
+    const AthenaArray<Real> &g, AthenaArray<Real> &cons_out) {
+
+  // Calculate normalized flux in fluid frame
+  Real ff_f = std::sqrt(SQR(ff1_f) + SQR(ff2_f) + SQR(ff3_f));
+  Real f_f = ff_f / ee_f;
+  Real f1_f = ff1_f / ff_f;
+  Real f2_f = ff2_f / ff_f;
+  Real f3_f = ff3_f / ff_f;
+
+  // Calculate fluid velocity in tetrad frame
+  Real temp_var = g(I11,i) * SQR(uu1) + 2.0 * g(I12,i) * uu1 * uu2
+      + 2.0 * g(I13,i) * uu1 * uu3 + g(I22) * SQR(uu2)
+      + 2.0 * g(I23,i) * uu2 * uu3 + g(I33,i) * SQR(uu3);
+  Real uu0 = std::sqrt(1.0 + temp_var);
+  Real u0_t = norm_to_tet_(0,0,k,j,i) * uu0 + norm_to_tet_(0,1,k,j,i) * uu1
+      + norm_to_tet_(0,2,k,j,i) * uu2 + norm_to_tet_(0,3,k,j,i) * uu3;
+  Real u1_t = norm_to_tet_(1,0,k,j,i) * uu0 + norm_to_tet_(1,1,k,j,i) * uu1
+      + norm_to_tet_(1,2,k,j,i) * uu2 + norm_to_tet_(1,3,k,j,i) * uu3;
+  Real u2_t = norm_to_tet_(2,0,k,j,i) * uu0 + norm_to_tet_(2,1,k,j,i) * uu1
+      + norm_to_tet_(2,2,k,j,i) * uu2 + norm_to_tet_(2,3,k,j,i) * uu3;
+  Real u3_t = norm_to_tet_(3,0,k,j,i) * uu0 + norm_to_tet_(3,1,k,j,i) * uu1
+      + norm_to_tet_(3,2,k,j,i) * uu2 + norm_to_tet_(3,3,k,j,i) * uu3;
+
+  // Go through each angle
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = AngleInd(l, m);
+
+      // Calculate direction in fluid frame
+      Real un_t = u1_t * nh_cc_(1,l,m) + u2_t * nh_cc_(2,l,m) + u3_t * nh_cc_(3,l,m);
+      Real n0_f = u0_t * nh_cc_(0,l,m) - un_t;
+      Real n1_f = -u1_t * nh_cc_(0,l,m) + u1_t / (u0_t + 1.0) * un_t + nh_cc_(1,l,m);
+      Real n2_f = -u2_t * nh_cc_(0,l,m) + u2_t / (u0_t + 1.0) * un_t + nh_cc_(2,l,m);
+      Real n3_f = -u3_t * nh_cc_(0,l,m) + u3_t / (u0_t + 1.0) * un_t + nh_cc_(3,l,m);
+
+      // Calculate intensity in fluid frame
+      Real fn_f = f1_f * n1_f + f2_f * n2_f + f3_f * n3_f;
+      Real ii_f = 0.0;
+      if (f_f <= 1.0/3.0) {
+        ii_f = ee_f / (4.0*PI) * (1.0 + 3.0 * f_f * fn_f);
+      } else {
+        ii_f = ee_f / (9.0*PI) * (fn_f - 3.0 * f_f + 2.0) / SQR(1.0 - f_f);
+      }
+
+      // Calculate intensity in tetrad frame
+      Real ii = ii_f / SQR(SQR(n0_f));
+
+      // Store conserved quantity in output
+      cons_out(lm,k,j,i) = n0_n_mu_(0,l,m,k,j,i) * ii;
     }
   }
   return;

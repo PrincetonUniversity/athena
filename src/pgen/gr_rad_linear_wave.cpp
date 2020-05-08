@@ -220,25 +220,27 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j = js; j <= je; ++j) {
       pcoord->CellMetric(k, j, is, ie, g, gi);
       for (int i = is; i <= ie; ++i) {
+
+        // Calculate location
         Real x = pcoord->x1v(i);
         Real s = std::sin(2.0*PI * x / lambda);
         Real c = std::cos(2.0*PI * x / lambda);
-        Real e = erad + delta * (derad_real * c - derad_imag * s);
-        Real fx = fxrad + delta * (dfxrad_real * c - dfxrad_imag * s);
-        Real fy = fyrad + delta * (dfyrad_real * c - dfyrad_imag * s);
-        Real fz = fzrad + delta * (dfzrad_real * c - dfzrad_imag * s);
-        Real f = std::sqrt(SQR(fx) + SQR(fy) + SQR(fz)) / e;
-        f = std::min(std::max(f, 0.0), 1.0);
-        Real ux = 0.0, uy = 0.0, uz = 0.0;
-        if (f > 0.0) {
-          Real v = (2.0 - std::sqrt(4.0 - 3.0 * SQR(f))) / f;
-          v = std::min(std::max(v, 0.0), 1.0);
-          Real gamma = 1.0 / std::sqrt(1.0 - SQR(v));
-          ux = gamma * v * fx / (f * e);
-          uy = gamma * v * fy / (f * e);
-          uz = gamma * v * fz / (f * e);
-        }
-        prad->CalculateRadiationInCell(e, ux, uy, uz, k, j, i, g, prad->cons);
+
+        // Calculate coordinate-frame fluid velocity
+        Real uxc_f = ux + delta * (dux_real * c - dux_imag * s);
+        Real uyc_f = uy + delta * (duy_real * c - duy_imag * s);
+        Real uzc_f = uz + delta * (duz_real * c - duz_imag * s);
+        Real utc_f = std::sqrt(1.0 + SQR(uxc_f) + SQR(uyc_f) + SQR(uzc_f));
+
+        // Calculate fluid-frame radiation field
+        Real ef = erad + delta * (derad_real * c - derad_imag * s);
+        Real fxf = fxrad + delta * (dfxrad_real * c - dfxrad_imag * s);
+        Real fyf = fyrad + delta * (dfyrad_real * c - dfyrad_imag * s);
+        Real fzf = fzrad + delta * (dfzrad_real * c - dfzrad_imag * s);
+
+        // Initialize radiation based on fluid velocity and fluid-frame quantities
+        prad->CalculateRadiationInCellLinear(ef, fxf, fyf, fzf, uxc_f, uyc_f, uzc_f, k, j,
+            i, g, prad->cons);
       }
     }
   }
