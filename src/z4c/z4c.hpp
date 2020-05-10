@@ -22,6 +22,11 @@
 #include "../bvals/cc/bvals_cc.hpp"
 #include "../bvals/vc/bvals_vc.hpp"
 
+#ifdef TWO_PUNCTURES
+// twopuncturesc: Stand-alone library ripped from Cactus
+#include "TwoPunctures.h"
+#endif
+
 class MeshBlock;
 class ParameterInput;
 
@@ -270,6 +275,9 @@ public:
   // initial data for a single BH
   void ADMOnePuncture(ParameterInput *pin, AthenaArray<Real> & u_adm);
   void GaugePreCollapsedLapse(AthenaArray<Real> & u_adm, AthenaArray<Real> & u);
+#ifdef TWO_PUNCTURES
+  void ADMTwoPunctures(ParameterInput *pin, AthenaArray<Real> & u_adm, ini_data * data);
+#endif 
 
   // initial data for binary BHs
   void ADMTwoPunctures(AthenaArray<Real> & u_adm);
