@@ -23,7 +23,7 @@ void Z4c::ADMOnePuncture(ParameterInput *pin, AthenaArray<Real> & u_adm)
 {
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
-  Real ADM_mass = pin->GetOrAddReal("initial_data", "punc_ADM_mass", 1.);
+  Real ADM_mass = pin->GetOrAddReal("problem", "punc_ADM_mass", 1.);
    
   MeshBlock * pmb = pmy_block;
   Coordinates * pco = pmb->pcoord;
