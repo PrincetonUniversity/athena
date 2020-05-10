@@ -46,6 +46,11 @@ void ShowConfig() {
   } else {
     std::cout<<"  General relativity:         OFF " << std::endl;
   }
+  if (PREFER_VC) {
+    std::cout<<"  Vertex-centering preferred: ON " << std::endl;
+  } else {
+    std::cout<<"  Vertex-centering preferred: OFF " << std::endl;
+  }
   if (WAVE_ENABLED) {
     std::cout<<"  Wave equation:              ON" << std::endl;
   } else {
