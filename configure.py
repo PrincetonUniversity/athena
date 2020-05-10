@@ -53,7 +53,8 @@
 import argparse
 import glob
 import re
-
+import os
+import subprocess
 
 # Set template and output filenames
 makefile_input = 'Makefile.in'
@@ -260,6 +261,11 @@ parser.add_argument('-h5double',
 parser.add_argument('--hdf5_path',
                     default='',
                     help='path to HDF5 libraries')
+
+## two_punctures_argument
+parser.add_argument('--two_punctures_path',
+                    default='./extern/initial_data/two_punctures',
+                    help='path to two_punctures library')
 
 # -gsl argument
 parser.add_argument('-gsl',
@@ -837,6 +843,42 @@ if args['h5double']:
 else:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
 
+# -two_punctures argument
+if args['prob'] == "two_punctures":
+    definitions['TWO_PUNCTURES_OPTION'] = 'TWO_PUNCTURES'
+    
+    os.system('mkdir -p extern/initial_data')
+    if os.path.exists('../twopuncturesc'):
+        os.system('ln -s ../twopuncturesc extern/initial_data/two_punctures')
+    else:
+        raise SystemExit('### CONFIGURE ERROR: To compile with two punctures, it is necessary to have external initial data two_punctures library ../twopuncturesc.')
+    
+    if args['two_punctures_path'] != '':
+        makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/src'.format(
+            args['two_punctures_path'])
+        makefile_options['LINKER_FLAGS'] += ' -L{0}/obj'.format(
+            args['two_punctures_path'])
+    if (args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray'
+            or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi'
+            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
+            or args['cxx'] == 'bgxl'):
+
+        obj_dir = args['two_punctures_path'] + '/obj/'
+        so_names = ['TwoPunctures.o', 'TP_CoordTransf.o', 'TP_Equations.o',
+                    'TP_FuncAndJacobian.o', 'TP_Newton.o', 'TP_Utilities.o']
+        
+        ## Check the external library has been compiled
+        for so in so_names:
+            if not os.path.isfile(obj_dir + so):
+                raise SystemExit('### CONFIGURE ERROR: It appears that library ../twopuncturesc has not been compiled yet.')
+        
+        for n in so_names:
+            makefile_options['LIBRARY_FLAGS'] += ' ' + obj_dir + n
+
+        makefile_options['LIBRARY_FLAGS'] += ' -lgsl -lgslcblas'
+else:
+    definitions['TWO_PUNCTURES_OPTION'] = 'NO_TWO_PUNCTURES'
+
 definitions['GSL_OPTION'] = 'NO_GSL'
 if args['gsl']:
     definitions['GSL_OPTION'] = 'GSL'
@@ -881,6 +923,18 @@ with open(defsfile_input, 'r') as current_file:
     defsfile_template = current_file.read()
 with open(makefile_input, 'r') as current_file:
     makefile_template = current_file.read()
+
+#TODO
+files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs', 'gauge']#, 'trackers']
+if args['prob'] == "z4c_two_punctures":
+    pass
+#    files.append('two_punctures_z4c')
+elif args['prob'] == "z4c_one_puncture":
+    files.append('one_puncture_z4c')
+elif args['prob'] == "awa_test":
+    files.append('awa_z4c')
+aux = ["             $(wildcard src/z4c/{}.cpp) \\".format(f) for f in files]
+makefile_options['Z4C_FILES'] = '\n'.join(aux) + '\n'
 
 # Make substitutions
 for key, val in definitions.items():

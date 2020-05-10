@@ -13,13 +13,13 @@ MPIFFT_FILE = @MPIFFT_FILE@
 
 # General compiler specifications
 
-# CXX := @COMPILER_COMMAND@
-CXX := ccache @COMPILER_COMMAND@
+CXX := @COMPILER_COMMAND@
+#CXX := ccache @COMPILER_COMMAND@
 CPPFLAGS := @PREPROCESSOR_FLAGS@
 CXXFLAGS := @COMPILER_FLAGS@ #-fdebug-prefix-map=${PWD}=. @COMPILER_FLAGS@ #-fsanitize=thread #-fsanitize=bounds-strict -fsanitize=address -fsanitize=leak -Wpedantic -fsanitize=undefined -fsanitize-address-use-after-scope
 LDFLAGS := @LINKER_FLAGS@
-# LDLIBS := @LIBRARY_FLAGS@
-LDLIBS := -fuse-ld=gold @LIBRARY_FLAGS@
+LDLIBS := @LIBRARY_FLAGS@
+#LDLIBS := -fuse-ld=gold @LIBRARY_FLAGS@
 GCOV_CMD := @GCOV_COMMAND@
 
 # Preliminary definitions
@@ -58,8 +58,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
   	     $(wildcard src/scalars/*.cpp) \
   	     $(wildcard src/task_list/*.cpp) \
   	     $(wildcard src/utils/*.cpp) \
-  	     $(wildcard src/wave/*.cpp) \
-  	     $(wildcard src/z4c/*.cpp) \
+@Z4C_FILES@            $(wildcard src/wave/*.cpp) \
   	     $(wildcard src/advection/*.cpp) \
   	     $(MPIFFT_FILE)
 OBJ_DIR := obj/

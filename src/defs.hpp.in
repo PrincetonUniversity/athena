@@ -104,6 +104,9 @@
 // use double precision for HDF5 output? default=0 (false; write out binary32)
 #define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
 
+// two_punctures
+#define @TWO_PUNCTURES_OPTION@
+
 
 // configure.py dict(definitions) Boolean string macros:
 // (these options have the latter (false) option as defaults, unless noted otherwise)
