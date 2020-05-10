@@ -844,12 +844,12 @@ else:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
 
 # -two_punctures argument
-if args['prob'] == "two_punctures":
+if args['prob'] == "z4c_two_punctures":
     definitions['TWO_PUNCTURES_OPTION'] = 'TWO_PUNCTURES'
-    
     os.system('mkdir -p extern/initial_data')
     if os.path.exists('../twopuncturesc'):
-        os.system('ln -s ../twopuncturesc extern/initial_data/two_punctures')
+        os.system('rm extern/initial_data/two_punctures') 
+        os.system('ln -s ../../../twopuncturesc extern/initial_data/two_punctures')
     else:
         raise SystemExit('### CONFIGURE ERROR: To compile with two punctures, it is necessary to have external initial data two_punctures library ../twopuncturesc.')
     
@@ -870,7 +870,8 @@ if args['prob'] == "two_punctures":
         ## Check the external library has been compiled
         for so in so_names:
             if not os.path.isfile(obj_dir + so):
-                raise SystemExit('### CONFIGURE ERROR: It appears that library ../twopuncturesc has not been compiled yet.')
+                print(obj_dir + so)
+                raise SystemExit('### CONFIGURE ERROR: It appears that library ../twopuncturesc has not been compiled yet: some objects files are missing.')
         
         for n in so_names:
             makefile_options['LIBRARY_FLAGS'] += ' ' + obj_dir + n
@@ -924,11 +925,10 @@ with open(defsfile_input, 'r') as current_file:
 with open(makefile_input, 'r') as current_file:
     makefile_template = current_file.read()
 
-#TODO
 files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs', 'gauge']#, 'trackers']
 if args['prob'] == "z4c_two_punctures":
     pass
-#    files.append('two_punctures_z4c')
+    files.append('two_punctures_z4c')
 elif args['prob'] == "z4c_one_puncture":
     files.append('one_puncture_z4c')
 elif args['prob'] == "awa_test":
