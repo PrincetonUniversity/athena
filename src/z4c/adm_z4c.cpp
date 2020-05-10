@@ -413,17 +413,6 @@ void Z4c::ADMMinkowski(AthenaArray<Real> & u_adm) {
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void Z4c::GaugeGeodesic(AthenaArray<Real> & u)
-// \brief Initialize lapse to 1 and shift to 0
-
-void Z4c::GaugeGeodesic(AthenaArray<Real> & u) {
-  Z4c_vars z4c;
-  SetZ4cAliases(u, z4c);
-  z4c.alpha.Fill(1.);
-  z4c.beta_u.ZeroClear();
-}
-
-//----------------------------------------------------------------------------------------
 // \!fn void Z4c::MatterVacuum(AthenaArray<Real> & u_mat)
 // \brief Initialize ADM vars to vacuum
 

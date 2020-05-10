@@ -157,15 +157,17 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   opt.lapse_harmonic = pin->GetOrAddReal("z4c", "lapse_harmonic", 0.0);
   opt.lapse_oplog = pin->GetOrAddReal("z4c", "lapse_oplog", 2.0);
   opt.lapse_advect = pin->GetOrAddReal("z4c", "lapse_advect", 1.0);
-
   opt.shift_eta = pin->GetOrAddReal("z4c", "shift_eta", 2.0);
   opt.shift_advect = pin->GetOrAddReal("z4c", "shift_advect", 1.0);
-  // Single puncture parameters
-  opt.punc_ADM_mass = pin->GetOrAddReal("z4c", "punc_ADM_mass", 1.0);
+  
+  // Problem-specific parameters
+  // Two punctures parameters
+
   // AwA parameters (default to linear wave test)
-  opt.AwA_amplitude = pin->GetOrAddReal("z4c", "AwA_amplitude", 1e-10);
-  opt.AwA_d_x = pin->GetOrAddReal("z4c", "AwA_d_x", 1.0);
-  opt.AwA_d_y = pin->GetOrAddReal("z4c", "AwA_d_y", 1.0);
+  opt.AwA_amplitude = pin->GetOrAddReal("problem", "AwA_amplitude", 1e-10);
+  opt.AwA_d_x = pin->GetOrAddReal("problem", "AwA_d_x", 1.0);
+  opt.AwA_d_y = pin->GetOrAddReal("problem", "AwA_d_y", 1.0);
+
   //---------------------------------------------------------------------------
 
   // Set aliases

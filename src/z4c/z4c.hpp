@@ -151,8 +151,6 @@ public:
     // Gauge condition for the shift
     Real shift_advect;
     Real shift_eta;
-    // Single puncture parameters
-    Real punc_ADM_mass;
     // AwA parameters
     Real AwA_amplitude; // amplitude parameter
     Real AwA_d_x; // d_x (width) parameter
@@ -270,9 +268,8 @@ public:
 #endif
 
   // initial data for a single BH
-  void ADMOnePuncture(AthenaArray<Real> & u_adm);
-  void GaugePreCollapsedLapse(AthenaArray<Real> & u);
-  void ADMOnePunctureSpin(AthenaArray<Real> & u_adm);
+  void ADMOnePuncture(ParameterInput *pin, AthenaArray<Real> & u_adm);
+  void GaugePreCollapsedLapse(AthenaArray<Real> & u_adm, AthenaArray<Real> & u);
 
   // initial data for binary BHs
   void ADMTwoPunctures(AthenaArray<Real> & u_adm);

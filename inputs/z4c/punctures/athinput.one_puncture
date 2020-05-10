@@ -1,0 +1,63 @@
+<comment>
+problem         = One puncture 
+configure       = --prob=one_puncture -z
+
+<job>
+problem_id      = OnePuncture
+
+<z4c>
+#lapse_harmonic  = 0.0       # Harmonic lapse parameter mu_L
+#lapse_oplog     = 1.0       # 1+log lapse parameter
+#shift_eta       = 2.0       # Shift damping term
+#diss            = 0.1       # Kreiss-Oliger dissipation parameter
+#damp_kappa1     = 0.0       # Constraint damping factor 1
+#damp_kappa2     = 0.0       # Constraint damping factor 2
+
+<problem>
+punc_ADM_mass   = 1.0
+
+<output1>
+file_type       = tab       # Athena++ ASCII data
+variable        = z4c       # variables to be output
+dt              = 5.      # time increment between outputs
+data_format     = %.16e
+
+<time>
+cfl_number      = 0.25      # The Courant, Friedrichs, & Lewy (CFL) number
+tlim            = 20.       # time limit
+integrator      = rk4       # time integrator
+
+<mesh>
+refinement      = static    # Static mesh refinement
+
+nx1             = 40       # Number of zones in X1-direction
+x1min           = -20      # minimum value of X1
+x1max           =  20      # maximum value of X1
+ix1_bc          = periodic  # inner-X1 boundary flag
+ox1_bc          = periodic  # inner-X1 boundary flag
+
+nx2             = 40         # Number of zones in X2-direction
+x2min           = -20      # minimum value of X2
+x2max           =  20      # maximum value of X2
+ix2_bc          = periodic  # inner-X2 boundary flag
+ox2_bc          = periodic  # inner-X2 boundary flag
+
+nx3             = 40         # Number of zones in X3-direction
+x3min           = -20      # minimum value of X3
+x3max           =  20      # maximum value of X3
+ix3_bc          = periodic  # inner-X3 boundary flag
+ox3_bc          = periodic  # inner-X3 boundary flag
+
+<meshblock>
+nx1             = 20
+nx2             = 20
+nx3             = 20
+
+#<refinement1>
+#x1min           = -1.25
+#x1max           = 1.25
+#x2min           = -1.25
+#x2max           = 1.25
+#x3min           = -1.25
+#x3max           = 1.25
+#level           = 4
