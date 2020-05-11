@@ -57,6 +57,8 @@ class Wave;
 // -BD
 class Advection;
 class Z4c;
+class Tracker;
+class TrackerLocal;
 
 FluidFormulation GetFluidFormulation(const std::string& input_string);
 
@@ -186,6 +188,8 @@ public:
 
   Advection *padv;
   Z4c *pz4c;
+  // Tracker evolution
+  TrackerLocal * pz4c_tracker_loc;
 
   MeshBlock *prev, *next;
 
@@ -347,6 +351,8 @@ class Mesh {
   TurbulenceDriver *ptrbd;
   FFTGravityDriver *pfgrd;
   MGGravityDriver *pmgrd;
+  
+  Tracker * pz4c_tracker;
 
   AthenaArray<Real> *ruser_mesh_data;
   AthenaArray<int> *iuser_mesh_data;

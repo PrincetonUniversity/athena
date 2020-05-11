@@ -56,6 +56,7 @@
 // -BD
 #include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
+#include "../z4c/trackers.hpp"
 
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
@@ -294,6 +295,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
   } else {
     max_level = 63;
   }
+
+  if (Z4C_ENABLED) pz4c_tracker = new Tracker(this, pin);
 
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
@@ -703,6 +706,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   } else {
     max_level = 63;
   }
+  
+  if (Z4C_ENABLED) pz4c_tracker = new Tracker(this, pin);
 
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
@@ -902,6 +907,7 @@ Mesh::~Mesh() {
   if (SELF_GRAVITY_ENABLED == 1) delete pfgrd;
   else if (SELF_GRAVITY_ENABLED == 2) delete pmgrd;
   if (turb_flag > 0) delete ptrbd;
+  if (Z4C_ENABLED) delete pz4c_tracker;
   if (adaptive) { // deallocate arrays for AMR
     delete [] nref;
     delete [] nderef;

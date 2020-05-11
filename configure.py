@@ -925,7 +925,7 @@ with open(defsfile_input, 'r') as current_file:
 with open(makefile_input, 'r') as current_file:
     makefile_template = current_file.read()
 
-files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs', 'gauge']#, 'trackers']
+files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs', 'gauge', 'trackers']
 if args['prob'] == "z4c_two_punctures":
     pass
     files.append('two_punctures_z4c')

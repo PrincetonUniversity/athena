@@ -43,6 +43,7 @@
 #include "../wave/wave.hpp"
 // -BD
 
+#include "../z4c/trackers.hpp"
 #include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
 
@@ -165,6 +166,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   if (Z4C_ENABLED) {
     pz4c = new Z4c(this, pin);
+    pz4c_tracker_loc = new TrackerLocal(this, pin);
     if (PREFER_VC) {
       pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
     } else {
@@ -286,6 +288,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   if (Z4C_ENABLED) {
     pz4c = new Z4c(this, pin);
+    pz4c_tracker_loc = new TrackerLocal(this, pin);
     if (PREFER_VC) {
       pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
     } else {
@@ -396,7 +399,10 @@ MeshBlock::~MeshBlock() {
 
   if (ADVECTION_ENABLED) delete padv;
 
-  if (Z4C_ENABLED) delete pz4c;
+  if (Z4C_ENABLED) { 
+    delete pz4c;
+    delete pz4c_tracker_loc;
+  }
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
   delete pbval;
