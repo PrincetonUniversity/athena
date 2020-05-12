@@ -46,7 +46,7 @@
 H          CR                     H+         e-                                            9.200e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1     1 1  1
 H2         CR                     H2+        e-                                            1.860e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1     2 1  1
 H2         CR                     H          H                                             2.000e-01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8002 1  1
-!added additional CR reaction which is imoprtant for H+ formation
+!added additional CR reaction which is important for H+ formation
 H2         CR                     H          H+         e-                                 4.400e-02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8003 1  1
 He         CR                     He+        e-                                            1.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8004 1  1
 !C          CR                     C+         e-                                            3.850e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1  8005 1  1
@@ -154,7 +154,7 @@ CH3+       Photon                 H2         CH+                                
 CH3+       Photon                 H          CH2+                                          1.000e-09  0.000e+00  1.700e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  8142 1  1
 OH+        Photon                 O          H+                                            1.100e-11  0.000e+00  3.500e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2  8143 1  2
 ! additional reactions
-H2         N+                     H          NH+                                           0.000e+00  0.000e+00  0.000e+00 1.30e+00 0.00e+00 logn  4  -9999   9999  7    20 1  1
+H2         N+                     H          NH+                                           0.000e+00  0.000e+00  0.000e+00 1.30e+00 0.00e+00 logn  4  -9999   9999  7    17 1  1
 ! wierd reactions in Olli's network
 H          H                      H2                                                       4.950e-13  5.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  4     10    300  3  7018 1  1
 ! new rates

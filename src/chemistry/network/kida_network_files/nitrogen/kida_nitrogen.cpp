@@ -55,14 +55,6 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
 	const Real lnTe = log(T * 8.6173e-5);
   const Real sqrtT = sqrt(T);
   const Real kcr_H_fac = 2.3*y_H2 + 1.5 * y_H; //ratio of total to primary rate
-  //grain assisted reactions
-  const Real GPE0 = rad_(index_gpe_);
-	const Real psi_gr_fac = 1.7 * GPE0 * sqrt(T) / nH_; 
-  const Real psi = psi_gr_fac / y_e;
-  const Real cHp[7] = {12.25, 8.074e-6, 1.378, 5.087e2, 1.586e-2, 0.4723, 1.102e-5}; 
-  const Real cCp[7] = {45.58, 6.089e-3, 1.128, 4.331e2, 4.845e-2, 0.8120, 1.333e-4};
-  const Real cHep[7] = {5.572, 3.185e-7, 1.512, 5.115e3, 3.903e-7, 0.4956, 5.494e-7};
-  const Real cSip[7] = {2.166, 5.678e-8, 1.874, 4.375e4, 1.635e-6, 0.8964, 7.538e-5};
 
 	//cosmic ray reactions
   const int ns_cr = 2;
@@ -73,40 +65,16 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   kcr_(id7map_(2)) = 2. * kcr_H_fac * rad_(index_cr_); 
 
 	// Grain assisted reactions
-  const int ns_gr = 4;
-  const int indices_gr[ns_gr] = {16, 17, 18, 19};
+  const int ns_gr = 1;
+  const int indices_gr[ns_gr] = {16};
 	//(16) H + H + gr -> H2 + gr , from Draine book chapter 31.2 page 346, Jura 1975
-	kgr_(id7map_(16)) = 3.0e-17 * nH_ * zdg_;
-	//(17) H+ + e- + gr -> H + gr
-  kgr_(id7map_(17)) = 1.0e-14 * cHp[0] / 
-               (
-                 1.0 + cHp[1]*pow(psi, cHp[2]) * 
-                   (1.0 + cHp[3] * pow(T, cHp[4])
-                                 *pow( psi, -cHp[5]-cHp[6]*log(T) ) 
-                   ) 
-                ) * nH_ * zdg_;
-	//(18) C+ + e- + gr -> C + gr
-  kgr_(id7map_(18)) = 1.0e-14 * cCp[0] / 
-               (
-                 1.0 + cCp[1]*pow(psi, cCp[2]) * 
-                   (1.0 + cCp[3] * pow(T, cCp[4])
-                                 *pow( psi, -cCp[5]-cCp[6]*log(T) ) 
-                   ) 
-                ) * nH_ * zdg_;
-	//(19) He+ + e- + gr -> He + gr
-  kgr_(id7map_(19)) = 1.0e-14 * cHep[0] / 
-               (
-                 1.0 + cHep[1]*pow(psi, cHep[2]) * 
-                   (1.0 + cHep[3] * pow(T, cHep[4])
-                                 *pow( psi, -cHep[5]-cHep[6]*log(T) ) 
-                   ) 
-                ) * nH_ * zdg_;
+	kgr_(id7map_(16)) = 3.0e-17 * nH_ * (0.5*Z_PAH_ + 0.5 * Z_d_);
 
   //2body reactions
-  const int ns_2body = 13;
+  const int ns_2body = 14;
   const int indices_2body[ns_2body] = {3, 4, 5, 6, 7,
                                        8, 9, 10, 11, 12,
-                                       13, 14, 15};
+                                       13, 14, 15, 17};
   //(3) H+ + e- -> H  -- Case B
 	k2body_(id7map_(3)) = 2.753e-14 * pow( 315614.0 / T, 1.5) 
 									 * pow(  1.0 + pow( 115188.0 / T, 0.407) , -2.242 ) * nH_;
@@ -194,11 +162,11 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
     k2body_(id7map_(14)) = 0.;
     k2body_(id7map_(15)) = 0.;
   }
-  //(20) H2 + N+ -> H + NH+      -- depends on o/p, Dislaire et al. (2012)
+  //(17) H2 + N+ -> H + NH+      -- depends on o/p, Dislaire et al. (2012)
   const Real x_oH2 = o2pH2_ / (1. + o2pH2_);
   const Real ko = 4.2e-10 * pow(T/300., -0.17) * exp(-44.5/T);
   const Real kp = 8.35e-10 * exp(-168.5/T);
-  k2body_(id7map_(20)) = ( x_oH2*ko + (1.-x_oH2)*kp ) * nH_;
+  k2body_(id7map_(17)) = ( x_oH2*ko + (1.-x_oH2)*kp ) * nH_;
 
   //sanity check
   if (check_index) {

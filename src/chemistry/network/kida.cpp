@@ -56,7 +56,11 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   n_freq_(0), index_gpe_(0), index_cr_(0), gradv_(0.) {
 
 	//set the parameters from input file
-	zdg_ = pin->GetOrAddReal("chemistry", "Zdg", 1.);//dust and gas metallicity
+	Z_g_ = pin->GetOrAddReal("chemistry", "Z_g", 1.);//dust and gas metallicity
+	Z_PAH_ = pin->GetOrAddReal("chemistry", "Z_PAH", 1.);//dust and gas metallicity
+	Z_d_ = pin->GetOrAddReal("chemistry", "Z_d", 1.);//dust and gas metallicity
+  //PAH recombination efficiency 
+	phi_PAH_ = pin->GetOrAddReal("chemistry", "phi_PAH", 0.4);
   o2pH2_ = pin->GetOrAddReal("chemistry", "o2pH2", 3.);//ortho to para H2 ratio
   //units
 	unit_density_in_nH_ = pin->GetReal("chemistry", "unit_density_in_nH");
@@ -1488,7 +1492,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED){
   //CR heating
   GCR = Thermo::HeatingCr(y_e,  nH_, y_H,  y_He,  y_H2, kcr_H, kcr_He, kcr_H2);
   //photo electric effect on dust
-  GPE = Thermo::HeatingPE(rad_(index_gpe_), zdg_, T, nH_*y_e);
+  GPE = Thermo::HeatingPE_W03(rad_(index_gpe_), Z_PAH_, T, nH_*y_e, phi_PAH_);
   //H2 formation on dust grains
   GH2gr = Thermo::HeatingH2gr(y_H,  y_H2, nH_, T, kgr_H);
   //H2 UV pumping
@@ -1549,7 +1553,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED){
       LOI = 0.;
     }
 		// cooling of hot gas: radiative cooling, free-free.
-		LHotGas = Thermo::CoolingHotGas(nH_, T, zdg_);
+		LHotGas = Thermo::CoolingHotGas(nH_, T, Z_g_);
 		// CO rotational lines 
     if (ispec_map_.find("CO") != ispec_map_.end()) {
       // Calculate effective CO column density
@@ -1567,9 +1571,10 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED){
     LH2 = Thermo::CoolingH2(y_H2, nH_*y_H, nH_*y_H2, nH_*y_He,
                             nH_*y_Hplus, nH_*y_e, T);
 		// dust thermo emission 
-		LDust = Thermo::CoolingDustTd(zdg_, nH_, T, temp_dust_thermo_);
+		LDust = Thermo::CoolingDustTd(Z_d_, nH_, T, temp_dust_thermo_);
 		// reconbination of e on PAHs 
-		LRec = Thermo::CoolingRec(zdg_, T,  nH_*y_e, rad_(index_gpe_));
+		LRec = Thermo::CoolingRec_W03(Z_PAH_, T,  nH_*y_e, rad_(index_gpe_),
+                                  phi_PAH_);
 		// collisional dissociation of H2 
 		LH2diss = Thermo::CoolingH2diss(y_H, y_H2, k2body_H2_H, k2body_H2_H2);
 		// collisional ionization of HI 

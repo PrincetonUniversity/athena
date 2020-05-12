@@ -72,7 +72,10 @@ private:
   //whether to cap temperature if the reaction is outside of the temperature range
   //only for 2body reactions. Default is false, which means extrapolation
   bool is_Tcap_2body_; 
-	Real zdg_; //dust and gas metallicity relative to solar, default 1.
+	Real Z_g_; //gas metallicity relative to solar, default 1.
+	Real Z_PAH_; //PAH metallicity relative to solar, default 1.
+	Real Z_d_; //larger dust grain metallicity relative to solar, default 1.
+	Real phi_PAH_; //PAH recombination efficiency, default 0.4
 	Real nH_; //density, updated at InitializeNextStep from hydro variable
   Real o2pH2_;//ortho to para H2 ratio, default 3:1
   Real temperature_; //temperature of the gas if isothermal 
