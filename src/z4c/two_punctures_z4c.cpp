@@ -54,9 +54,12 @@ void Z4c::ADMTwoPunctures(ParameterInput *pin, AthenaArray<Real> & u_adm, ini_da
   int imin[3] = {0, 0, 0};
 
   // dimensions of block in each direction
-  int n[3] = {(*pmb).block_size.nx1 + 2 * GSIZEI,
-              (*pmb).block_size.nx2 + 2 * GSIZEJ,
-              (*pmb).block_size.nx3 + 2 * GSIZEK};
+  //int n[3] = {(*pmb).block_size.nx1 + 2 * GSIZEI,
+  //            (*pmb).block_size.nx2 + 2 * GSIZEJ,
+  //            (*pmb).block_size.nx3 + 2 * GSIZEK};
+  int n[3] = {mbi.nn1 + 2 * GSIZEI,
+              mbi.nn2 + 2 * GSIZEJ,
+              mbi.nn3 + 2 * GSIZEK};
 
   int sz = n[0] * n[1] * n[2];
   // this could be done instead by accessing and casting the Athena vars but
@@ -76,15 +79,18 @@ void Z4c::ADMTwoPunctures(ParameterInput *pin, AthenaArray<Real> & u_adm, ini_da
 
   // need to populate coordinates
   for(int ix_I = 0; ix_I < n[0]; ix_I++){
-    x[ix_I] = pco->x1v(ix_I);
+    //x[ix_I] = pco->x1v(ix_I);
+    x[ix_I] = mbi.x1(ix_I);
   }
 
   for(int ix_J = 0; ix_J < n[1]; ix_J++){
-    y[ix_J] = pco->x2v(ix_J);
+    //y[ix_J] = pco->x2v(ix_J);
+    y[ix_J] = mbi.x2(ix_J);
   }
 
   for(int ix_K = 0; ix_K < n[2]; ix_K++){
-    z[ix_K] = pco->x3v(ix_K);
+    //z[ix_K] = pco->x3v(ix_K);
+    z[ix_K] = mbi.x3(ix_K);
   }
 
   TwoPunctures_Cartesian_interpolation

@@ -25,8 +25,6 @@ void Z4c::ADMOnePuncture(ParameterInput *pin, AthenaArray<Real> & u_adm)
   SetADMAliases(u_adm, adm);
   Real ADM_mass = pin->GetOrAddReal("problem", "punc_ADM_mass", 1.);
    
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
 
   // Flat spacetime
   ADMMinkowski(u_adm);
@@ -34,7 +32,7 @@ void Z4c::ADMOnePuncture(ParameterInput *pin, AthenaArray<Real> & u_adm)
   GLOOP2(k,j) {
     // Isotropic radius
     GLOOP1(i) {
-      r(i) = std::sqrt(SQR(pco->x1v(i)) + SQR(pco->x2v(j)) + SQR(pco->x3v(k)));
+      r(i) = std::sqrt(SQR(mbi.x1(i)) + SQR(mbi.x2(j)) + SQR(mbi.x3(k)));
     }
     // psi4
     GLOOP1(i) {
