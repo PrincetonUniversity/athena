@@ -63,10 +63,10 @@ Tracker::Tracker(Mesh * pmesh, ParameterInput * pin):
 void Tracker::Initialize(Mesh * pmesh, ParameterInput * pin){
     
   // Initialize position for twopunctures, TODO generalize
-  Real par_b = pin->GetOrAddReal("initial_data", "par_b", 2.);
-  Real of1 = pin->GetOrAddReal("initial_data", "center_offset1", 0.);
-  Real of2 = pin->GetOrAddReal("initial_data", "center_offset2", 0.);
-  Real of3 = pin->GetOrAddReal("initial_data", "center_offset3", 0.);
+  Real par_b = pin->GetOrAddReal("problem", "par_b", 2.);
+  Real of1 = pin->GetOrAddReal("problem", "center_offset1", 0.);
+  Real of2 = pin->GetOrAddReal("problem", "center_offset2", 0.);
+  Real of3 = pin->GetOrAddReal("problem", "center_offset3", 0.);
 
   //TODO: to be generalized for many punctures, this is written for twopunctures
   for (int i_punc = 0; i_punc < npunct; ++i_punc) {    
@@ -228,15 +228,42 @@ void TrackerLocal::StoreBetaPrev(Betap_vars betap[2], AthenaArray<Real> & u, int
   }
   else {
     betap[body].inblock = 1;
-    origin[0] = pmc->x1v(0);
-    origin[1] = pmc->x2v(0);
-    origin[2] = pmc->x3v(0);
-    size[0] = pmb->block_size.nx1 + 2*(NGHOST);
-    size[1] = pmb->block_size.nx2 + 2*(NGHOST);
-    size[2] = pmb->block_size.nx3 + 2*(NGHOST);
+//#if PREFER_VC
+//    origin[0] = pmc->x1f(0);
+//    origin[1] = pmc->x2f(0);
+//    origin[2] = pmc->x3f(0);
+//    size[0] = pmb->block_size.nx1 + 2*(NGHOST) + 1;
+//    size[1] = pmb->block_size.nx2 + 2*(NGHOST) + 1;
+//    size[2] = pmb->block_size.nx3 + 2*(NGHOST) + 1;
+//    delta[0] = pmc->dx1f(0);
+//    delta[1] = pmc->dx2f(0);
+//    delta[2] = pmc->dx3f(0);
+//#else
+//    origin[0] = pmc->x1v(0);
+//    origin[1] = pmc->x2v(0);
+//    origin[2] = pmc->x3v(0);
+//    size[0] = pmb->block_size.nx1 + 2*(NGHOST);
+//    size[1] = pmb->block_size.nx2 + 2*(NGHOST);
+//    size[2] = pmb->block_size.nx3 + 2*(NGHOST);
+//    delta[0] = pmc->dx1v(0);
+//    delta[1] = pmc->dx2v(0);
+//    delta[2] = pmc->dx3v(0);
+//#endif
+    origin[0] = pmb->pz4c->mbi.x1(0);
+    origin[1] = pmb->pz4c->mbi.x2(0);
+    origin[2] = pmb->pz4c->mbi.x3(0);
+    size[0] = pmb->pz4c->mbi.nn1 + 2*(NGHOST);
+    size[1] = pmb->pz4c->mbi.nn2 + 2*(NGHOST);
+    size[2] = pmb->pz4c->mbi.nn3 + 2*(NGHOST);
+#if PREFER_VC
+    delta[0] = pmc->dx1f(0);
+    delta[1] = pmc->dx2f(0);
+    delta[2] = pmc->dx3f(0);
+#else
     delta[0] = pmc->dx1v(0);
     delta[1] = pmc->dx2v(0);
     delta[2] = pmc->dx3v(0);
+#endif
     
     for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
       coord[i_dim] = ptracker->pos_body[body].pos[i_dim];
