@@ -1,7 +1,7 @@
 <comment>
 problem   = MHD Kelvin-Helmholtz instability
 reference = "Lecoanet" test
-configure = --prob=kh -b
+configure = --prob=kh -b --nscalars=1
 
 <job>
 problem_id = kh-shear  # problem ID: basename of output filenames
