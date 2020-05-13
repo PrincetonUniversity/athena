@@ -57,7 +57,7 @@ def run(**kwargs):
 
 
 def analyze():
-    l1ERROR = [[] for l in range(0, len(sts_integrators))]
+    l1ERROR = [[] for err in range(0, len(sts_integrators))]
     conv = []
 
     for i in range(len(sts_integrators)):

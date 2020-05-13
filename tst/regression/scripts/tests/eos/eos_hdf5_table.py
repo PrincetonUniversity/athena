@@ -121,9 +121,9 @@ def analyze():
     tol = [3e-3, 7e-4]
     for i, t in enumerate([10, 25]):
         x_ref, _, _, data_ref = athena_read.vtk(
-            'bin/Sod_eos_H.block0.out1.{1:05d}.vtk'.format(i, t))
+            'bin/Sod_eos_H.block0.out1.{:05d}.vtk'.format(t))
         x_new, _, _, data_new = athena_read.vtk(
-            'bin/Sod_eos_H_hdf5.block0.out1.{1:05d}.vtk'.format(i, t))
+            'bin/Sod_eos_H_hdf5.block0.out1.{:05d}.vtk'.format(t))
         loc = tuple([0, 0, slice(None)])
         for var in ['rho', 'press']:
             norm = comparison.l1_norm(x_ref, data_ref[var][loc])
