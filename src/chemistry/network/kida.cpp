@@ -61,6 +61,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
 	Z_d_ = pin->GetOrAddReal("chemistry", "Z_d", 1.);//dust and gas metallicity
   //PAH recombination efficiency 
 	phi_PAH_ = pin->GetOrAddReal("chemistry", "phi_PAH", 0.4);
+  //size of the dust grain in cm, default 0.1 micron
+	a_d_ = pin->GetOrAddReal("chemistry", "a_d", 1e-5);
   o2pH2_ = pin->GetOrAddReal("chemistry", "o2pH2", 3.);//ortho to para H2 ratio
   //units
 	unit_density_in_nH_ = pin->GetReal("chemistry", "unit_density_in_nH");
