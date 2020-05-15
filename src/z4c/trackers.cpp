@@ -29,8 +29,8 @@ Tracker::Tracker(Mesh * pmesh, ParameterInput * pin):
     pmesh(pmesh), pofile(NULL) {
   int punct_idx;
   std::cout<<"Tracker is being constructed\n";
-  ofname = pin->GetOrAddString("z4c", "tracker_filename", "punctures_position.txt");
-  npunct = pin->GetOrAddInteger("z4c", "n_punct", 2);
+  ofname = pin->GetOrAddString("problem", "tracker_filename", "punctures_position.txt");
+  npunct = pin->GetOrAddInteger("problem", "n_punct", 2);
 
   Initialize(pmesh, pin);
   std::cout<<pos_body[0].pos[0]<<"\n";
@@ -61,18 +61,44 @@ Tracker::Tracker(Mesh * pmesh, ParameterInput * pin):
 }
 
 void Tracker::Initialize(Mesh * pmesh, ParameterInput * pin){
-    
+  std::cout<<"Npunct = "<<npunct<<std::endl;
+  switch(npunct) {
+	  case 1 : std::cout<<"One puncture initialization has not been implemented yet.\n";
+	     break;
+    case 2 : InitializeTwopuncture(pmesh, pin);
+	     break;
+    default : std::cout<<"This case has not been implemented yet.\n";
+  }	  
+}
+
+void Tracker::InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin){
+
   // Initialize position for twopunctures, TODO generalize
   Real par_b = pin->GetOrAddReal("problem", "par_b", 2.);
   Real of1 = pin->GetOrAddReal("problem", "center_offset1", 0.);
   Real of2 = pin->GetOrAddReal("problem", "center_offset2", 0.);
   Real of3 = pin->GetOrAddReal("problem", "center_offset3", 0.);
 
-  //TODO: to be generalized for many punctures, this is written for twopunctures
-  for (int i_punc = 0; i_punc < npunct; ++i_punc) {    
+  for (int i_punc = 0; i_punc < npunct; ++i_punc) {
     pos_body[i_punc].pos[0] = pow(-1, i_punc)*par_b + of1;
     pos_body[i_punc].pos[1] = of2;
     pos_body[i_punc].pos[2] = of3;
+    
+    //It does not matter how it is initialized because betap is used only from 
+    //the first iteration 
+    pos_body[i_punc].betap[0] = 0.;
+    pos_body[i_punc].betap[1] = 0.;
+    pos_body[i_punc].betap[2] = 0.;
+  }
+}
+
+void Tracker::InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin){
+  //Currently the one puncture is set at the origin and so its position
+  //but this will need to be changed
+  for (int i_punc = 0; i_punc < npunct; ++i_punc) {
+    pos_body[i_punc].pos[0] = 0.;
+    pos_body[i_punc].pos[1] = 0.;
+    pos_body[i_punc].pos[2] = 0.;
 
     pos_body[i_punc].betap[0] = 0.;
     pos_body[i_punc].betap[1] = 0.;
@@ -141,10 +167,12 @@ void Tracker::EvolveTracker()
         times_in_block[i_punc] = (times_in_block[i_punc]==0) ? 1 : times_in_block[i_punc]; 
         pos_body[i_punc].betap[i_dim] /= times_in_block[i_punc]; 
       }
+      std::cout<<RESET<<CYAN;
       std::cout<<'\n'<<"===== puncture "<<i_punc<<" ====="<<'\n';
       std::cout<<"I was in a block "<<times_in_block[i_punc]<<" times.\n";
       std::cout<<"beta0 = "<<pos_body[i_punc].betap[0]<<'\n';
       std::cout<<"====================\n";
+      std::cout<<RESET;
     }
   EvolveTrackerIntegrateEuler();
   }
@@ -218,9 +246,8 @@ void TrackerLocal::StoreBetaPrev(Betap_vars betap[2], AthenaArray<Real> & u, int
   Coordinates const * pmc = pmy_block->pcoord;
   
   std::cout<<"In StoreBetaPrev\n";
-  if (!((pmy_block->block_size.x1min <= ptracker->pos_body[body].pos[0]) && (ptracker->pos_body[body].pos[0] <= pmy_block->block_size.x1max) &&
-      (pmy_block->block_size.x2min <= ptracker->pos_body[body].pos[1]) && (ptracker->pos_body[body].pos[1] <= pmy_block->block_size.x2max) &&
-      (pmy_block->block_size.x3min <= ptracker->pos_body[body].pos[2]) && (ptracker->pos_body[body].pos[2] <= pmy_block->block_size.x3max))) {   
+  
+  if (!InBlock(body)) { 
     for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
       betap[body].betap[i_dim] = std::nan("1");
       betap[body].inblock = 0;
@@ -228,51 +255,35 @@ void TrackerLocal::StoreBetaPrev(Betap_vars betap[2], AthenaArray<Real> & u, int
   }
   else {
     betap[body].inblock = 1;
-//#if PREFER_VC
-//    origin[0] = pmc->x1f(0);
-//    origin[1] = pmc->x2f(0);
-//    origin[2] = pmc->x3f(0);
-//    size[0] = pmb->block_size.nx1 + 2*(NGHOST) + 1;
-//    size[1] = pmb->block_size.nx2 + 2*(NGHOST) + 1;
-//    size[2] = pmb->block_size.nx3 + 2*(NGHOST) + 1;
-//    delta[0] = pmc->dx1f(0);
-//    delta[1] = pmc->dx2f(0);
-//    delta[2] = pmc->dx3f(0);
-//#else
-//    origin[0] = pmc->x1v(0);
-//    origin[1] = pmc->x2v(0);
-//    origin[2] = pmc->x3v(0);
-//    size[0] = pmb->block_size.nx1 + 2*(NGHOST);
-//    size[1] = pmb->block_size.nx2 + 2*(NGHOST);
-//    size[2] = pmb->block_size.nx3 + 2*(NGHOST);
-//    delta[0] = pmc->dx1v(0);
-//    delta[1] = pmc->dx2v(0);
-//    delta[2] = pmc->dx3v(0);
-//#endif
+    
     origin[0] = pmb->pz4c->mbi.x1(0);
     origin[1] = pmb->pz4c->mbi.x2(0);
     origin[2] = pmb->pz4c->mbi.x3(0);
-    size[0] = pmb->pz4c->mbi.nn1 + 2*(NGHOST);
-    size[1] = pmb->pz4c->mbi.nn2 + 2*(NGHOST);
-    size[2] = pmb->pz4c->mbi.nn3 + 2*(NGHOST);
-#if PREFER_VC
+    size[0] = pmb->pz4c->mbi.nn1;
+    size[1] = pmb->pz4c->mbi.nn2;
+    size[2] = pmb->pz4c->mbi.nn3;
     delta[0] = pmc->dx1f(0);
     delta[1] = pmc->dx2f(0);
     delta[2] = pmc->dx3f(0);
-#else
-    delta[0] = pmc->dx1v(0);
-    delta[1] = pmc->dx2v(0);
-    delta[2] = pmc->dx3v(0);
-#endif
-    
+
+    std::cout<<RESET<<BLUE;
+    std::cout<<"\n< ================== >"<<std::endl;
+    std::cout<<"\nOrigin0 = "<<origin[0]<<" Size0 = "<<size[0]<<" Delta0 = "<<delta[0]<<std::endl;
+    std::cout<<'\n';
+    std::cout<<"Dim beta = "<<u.GetDim1()<<std::endl;
+    std::cout<<"\n< ================== >"<<std::endl;
+    std::cout<<RESET;
+
     for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
       coord[i_dim] = ptracker->pos_body[body].pos[i_dim];
     }
-
+    
+    std::cout<<RESET<<GREEN;
     std::cout<<"\nPunc position: x ="<<coord[0]<<", y = "<<coord[1]<<", z = "<<coord[2]<<'\n';
     std::cout<<"Edges:\n"<<pmy_block->block_size.x1min<<"<=x<="<<pmy_block->block_size.x1max<<'\n';
     std::cout<<pmy_block->block_size.x2min<<"<=y<="<<pmy_block->block_size.x2max<<'\n';
     std::cout<<pmy_block->block_size.x3min<<"<=z<="<<pmy_block->block_size.x3max<<'\n';
+    std::cout<<RESET;
     pinterp = new LagrangeInterpND<2*NGHOST-1, 3>(origin, delta, size, coord);
     
     for (int iv = 19; iv < nvars; ++iv) {
@@ -285,7 +296,20 @@ void TrackerLocal::StoreBetaPrev(Betap_vars betap[2], AthenaArray<Real> & u, int
   }
 
 }
-                                                                                      
+
+bool TrackerLocal::InBlock(int body) {
+  MeshBlock * pmb = pmy_block;
+  Tracker * ptracker = pmb->pmy_mesh->pz4c_tracker;
+  
+  if ((pmy_block->block_size.x1min <= ptracker->pos_body[body].pos[0]) && (ptracker->pos_body[body].pos[0] <= pmy_block->block_size.x1max) &&
+      (pmy_block->block_size.x2min <= ptracker->pos_body[body].pos[1]) && (ptracker->pos_body[body].pos[1] <= pmy_block->block_size.x2max) &&
+      (pmy_block->block_size.x3min <= ptracker->pos_body[body].pos[2]) && (ptracker->pos_body[body].pos[2] <= pmy_block->block_size.x3max))
+    return 1;
+  else
+    return 0;
+
+  }
+
 TrackerLocal::~TrackerLocal() {
   std::cout<<"Tracker Local is being deleted\n";
 }

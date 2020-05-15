@@ -39,6 +39,8 @@ class Tracker {
     //! Destructor (will close output file)
     ~Tracker();
     void Initialize(Mesh * pmesh, ParameterInput * pin);
+    void InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin);
+    void InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin);
     void ReduceTracker();
     //! Reduces the data from all of the SphericalPatches
     void EvolveTracker();
@@ -75,6 +77,7 @@ class TrackerLocal {
     //void EvolveTracker(Position_vars pos_gen[2]);
     //void EvolveTrackerIntegrate(Position_vars pos_gen[2]); 
     //void InitializeTracker(ParameterInput * pin, Position_vars pos_gen[2], int body);
+    bool InBlock(int body);
     void StoreBetaPrev(Betap_vars betap[2], AthenaArray<Real> & u, int body);
   private:
     //AthenaArray<Real> data;
