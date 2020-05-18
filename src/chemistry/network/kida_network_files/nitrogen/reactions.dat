@@ -39,6 +39,7 @@
 ! 5: new rates from Le Gal et al. 2014
 ! 6: new rates from UMIST12
 ! 7: new rates from Gong, Ostriker and Wolfire 2017
+! 8: N2H+ recombination, rate from Shapoko+2020 and branching ratio from Virgen+2012
 !
 ! only columns starts with "*" is used in our program, the temperature range is extrapolated.
 !   *Reactants 3x(s10+' ') + ' ' *Products 5x(s10+' ') + 2x' '                            *alpha     *beta      *gamma     F        g      err *itype Tmin  Tmax *frml  *ID ni r 
@@ -182,8 +183,10 @@ H2         NH3+                   H          NH4+                               
 NH4+       e-                     H          H          NH2                                1.220e-07 -6.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6928 1  5
 NH4+       e-                     H2         NH2                                           1.880e-08 -6.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6929 1  5
 NH4+       e-                     H          NH3                                           8.000e-07 -6.000e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3  6930 1  5
-N2H+       e-                     N          NH                                            2.090e-08 -5.000e-01  0.000e+00 1.60e+00 0.00e+00 logn  8     10   1000  3  6581 1  5
-N2H+       e-                     H          N2                                            2.770e-07 -5.000e-01  0.000e+00 1.60e+00 0.00e+00 logn  8     10   1000  3  6582 1  5
+N2H+       e-                     H          N2                                            3.060e-07 -6.000e-02  0.000e+00 1.60e+00 0.00e+00 logn  8     10    250  3  6582 1  8
+N2H+       e-                     H          N2                                            2.610e-07 -8.100e-01  0.000e+00 1.60e+00 0.00e+00 logn  8    251   9999  3  6582 1  8
+N2H+       e-                     N          NH                                            2.300e-08 -6.000e-02  0.000e+00 1.60e+00 0.00e+00 logn  8     10    250  3  6581 1  8
+N2H+       e-                     N          NH                                            2.000e-08 -8.100e-01  0.000e+00 1.60e+00 0.00e+00 logn  8    251   9999  3  6581 1  8
 NH3        N2H+                   N2         NH4+                                          2.300e-09 -5.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  4     10  41000  3  2644 1  6
 NH         HCO+                   CO         NH2+                                          6.400e-10 -5.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  4     10  41000  3  1724 1  6
 NH2        HCO+                   CO         NH3+                                          8.900e-10 -5.000e-01  0.000e+00 2.00e+00 0.00e+00 logn  4     10  41000  3  1755 1  6
