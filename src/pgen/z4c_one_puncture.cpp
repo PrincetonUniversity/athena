@@ -26,8 +26,7 @@ using namespace std;
 //  \brief Sets the initial conditions.
 //========================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   string puncture = pin->GetOrAddString("problem", "puncture", "one_puncture");
 
   pz4c->ADMOnePuncture(pz4c->storage.adm);
@@ -40,6 +39,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   std::cout << "z4c vars generated." << std::endl;
   return;
 }
+
+// void MeshBlock::Z4cUserWorkInLoop() {
+//   coutBoldRed("T\n");
+//   pz4c->storage.u.print_dim();
+// //  pz4c->con.H
+
+// }
 
 /*
 void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
