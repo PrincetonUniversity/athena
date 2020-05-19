@@ -69,8 +69,9 @@ matrix:
           - "/usr/local/Cellar/open-mpi/"
           - "/usr/local/Cellar/libevent/"
           - "/usr/local/Cellar/szip/"
-          # Cached Homebrew install of OpenMPI needs libevent 2.1.6 symlink:
-          - "/usr/local/opt/libevent"
+          - "/usr/local/Cellar/hwloc/"
+          # Cached Homebrew install of OpenMPI needs libevent 2.* symlink:
+          #- "/usr/local/opt/libevent"  # Travis CI won't cache symlink
           # For caching macOS Homebrew installation symlinks:
           - openmpi
           - mpich
