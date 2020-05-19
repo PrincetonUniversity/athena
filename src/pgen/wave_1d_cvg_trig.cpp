@@ -31,7 +31,6 @@ int RefinementCondition(MeshBlock *pmb);
 //========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
-  printf("M:IUMD\n");
   if(adaptive==true)
     EnrollUserRefinementCondition(RefinementCondition);
   return;
@@ -43,7 +42,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  printf("MB:PG\n");
 
   int il = pwave->mbi.il, iu = pwave->mbi.iu;
   int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
@@ -95,7 +93,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void MeshBlock::WaveUserWorkInLoop() {
   Real max_err = 0;
-  Real fun_err = 0;
+  Real fun_max = 0;
 
   // int il = pwave->mbi.il, iu = pwave->mbi.iu;
   // int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
@@ -103,6 +101,8 @@ void MeshBlock::WaveUserWorkInLoop() {
 
   Real c = pwave->c;
   Real t = pmy_mesh->time + pmy_mesh->dt;
+  bool const debug_inspect_error = pwave->debug_inspect_error;
+  Real const debug_abort_threshold = pwave->debug_abort_threshold;
 
   // DebugWaveMeshBlock(pwave->u,
   //                    il, iu, jl, ju, kl, ku, false);
@@ -133,30 +133,32 @@ void MeshBlock::WaveUserWorkInLoop() {
 
         if (std::abs(pwave->error(k,j,i)) > max_err){
           max_err = std::abs(pwave->error(k,j,i));
-          fun_err = pwave->u(0,k,j,i);
+          fun_max = pwave->u(0,k,j,i);
         }
       }
 
-  printf(">>>\n");
-  coutBoldRed("MB::UWIL gid = ");
-  printf("%d\n", gid);
-  printf("(max_err, fun_max, t)=(%1.18f, %1.18f, %1.18f)\n",
-         max_err, fun_err, t);
+  if (debug_inspect_error) {
+    printf(">>>\n");
+    coutBoldRed("MB::UWIL gid = ");
+    printf("%d\n", gid);
+    printf("(max_err, fun_max, t)=(%1.18f, %1.18f, %1.18f)\n",
+          max_err, fun_max, t);
 
-  if (max_err > 0.1) {
-    printf("pwave->u:\n");
-    pwave->u.print_all("%1.5f");
+    if (max_err > debug_abort_threshold) {
+      printf("pwave->u:\n");
+      pwave->u.print_all("%1.5f");
 
-    printf("pwave->exact:\n");
-    pwave->exact.print_all("%1.5f");
+      printf("pwave->exact:\n");
+      pwave->exact.print_all("%1.5f");
 
-    printf("pwave->error:\n");
-    pwave->error.print_all("%1.5f");
+      printf("pwave->error:\n");
+      pwave->error.print_all("%1.5f");
 
-    Q();
+      Q();
+    }
+
+    printf("<<<\n");
   }
-
-  printf("<<<\n");
   return;
 }
 

@@ -166,6 +166,9 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   opt.AwA_amplitude = pin->GetOrAddReal("z4c", "AwA_amplitude", 1e-10);
   opt.AwA_d_x = pin->GetOrAddReal("z4c", "AwA_d_x", 1.0);
   opt.AwA_d_y = pin->GetOrAddReal("z4c", "AwA_d_y", 1.0);
+  opt.AwA_Gaussian_w = pin->GetOrAddReal("z4c", "AwA_Gaussian_w", 0.5);
+  opt.AwA_polarised_Gowdy_t0 = pin->GetOrAddReal("z4c",
+    "AwA_polarised_Gowdy_t0", 9.8753205829098);
   //---------------------------------------------------------------------------
 
   // Set aliases

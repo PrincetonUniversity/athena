@@ -134,6 +134,7 @@ public:
   };
   Matter_vars mat;
 
+  // BD: this should be refactored
   // user settings and options
   struct {
     Real chi_psi_power;   // chi = psi^N, N = chi_psi_power
@@ -157,8 +158,8 @@ public:
     Real AwA_amplitude; // amplitude parameter
     Real AwA_d_x; // d_x (width) parameter
     Real AwA_d_y; // d_y (width) parameter
-    int AwA_rho; // Resolution index
-    int AwA_direction; // direction of the test
+    Real AwA_Gaussian_w; // 1d Gaussian parameter
+    Real AwA_polarised_Gowdy_t0; // seed time for pG test
   } opt;
 
 
@@ -255,6 +256,7 @@ public:
   void ADMRobustStability(AthenaArray<Real> & u_adm);
   void GaugeRobStab(AthenaArray<Real> & u);
   void ADMLinearWave1(AthenaArray<Real> & u_adm);
+  void ADMLinearWave1Gaussian(AthenaArray<Real> & u_adm);
   void ADMLinearWave2(AthenaArray<Real> & u_adm);
   void ADMGaugeWave1(AthenaArray<Real> & u_adm);
   void ADMGaugeWave1_shifted(AthenaArray<Real> & u_adm);

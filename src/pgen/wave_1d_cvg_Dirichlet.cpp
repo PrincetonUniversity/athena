@@ -91,19 +91,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void MeshBlock::WaveUserWorkInLoop() {
   Real max_err = 0;
-  Real fun_err = 0;
+  Real fun_max = 0;
 
   int il = pwave->mbi.il, iu = pwave->mbi.iu;
   int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
   int jl = pwave->mbi.jl, ju = pwave->mbi.ju;
 
-  // test full block
+  // // test full block
   // int il = 0, iu = pwave->mbi.nn1 - 1;
   // int jl = 0, ju = pwave->mbi.nn2 - 1;
   // int kl = 0, ku = pwave->mbi.nn3 - 1;
 
   Real const c = pwave->c;
   Real const t = pmy_mesh->time + pmy_mesh->dt;
+  Real const debug_abort_threshold = pwave->debug_abort_threshold;
 
   int const num_ix = pwave->A_.GetDim1();
   Real const Lx1 = pwave->Lx1_;
@@ -117,7 +118,11 @@ void MeshBlock::WaveUserWorkInLoop() {
         Real const z = pwave->mbi.x3(k);
 
         pwave->exact(k,j,i) = 0.;
-
+        if(false)
+        if (i<pwave->mbi.il+NGHOST+1 || i>pwave->mbi.iu-NGHOST-1) {
+          pwave->u(0,k,j,i) = 0.;
+          pwave->u(1,k,j,i) = 0.;
+        }
         for(int ix_s=1; ix_s<=num_ix; ++ix_s) {
           Real const beta_ix_s = PI * ix_s / Lx1;
           Real const cos_beta_ct = cos(beta_ix_s * c * t);
@@ -126,39 +131,52 @@ void MeshBlock::WaveUserWorkInLoop() {
 
           Real const A = pwave->A_(ix_s-1);
           Real const B = pwave->B_(ix_s-1);
+          Real sol = (A * cos_beta_ct +
+                      B * sin_beta_ct) * sin_beta_x;
+          pwave->exact(k,j,i) += sol;
 
-          pwave->exact(k,j,i) += (A * cos_beta_ct +
-                                  B * sin_beta_ct) * sin_beta_x;
+          // BD: debug
+          if(false)
+          if (i<pwave->mbi.il+NGHOST+1 || i>pwave->mbi.iu-NGHOST-1) {
+            Real dt_cos_beta_ct = -beta_ix_s * c * sin_beta_ct;
+            Real dt_sin_beta_ct = beta_ix_s * c * cos_beta_ct;
+            Real dt_sol = (A * dt_cos_beta_ct +
+                           B * dt_sin_beta_ct) * sin_beta_x;
+            pwave->u(0,k,j,i) += sol;
+            pwave->u(1,k,j,i) += dt_sol;
+          }
         }
 
         pwave->error(k,j,i) = pwave->u(0,k,j,i) - pwave->exact(k,j,i);
 
         if (std::abs(pwave->error(k,j,i)) > max_err){
           max_err = std::abs(pwave->error(k,j,i));
-          fun_err = pwave->u(0,k,j,i);
+          fun_max = pwave->u(0,k,j,i);
         }
       }
 
-  printf(">>>\n");
-  coutBoldRed("MB::UWIL gid = ");
-  printf("%d\n", gid);
-  printf("(max_err, fun_max, t)=(%1.18f, %1.18f, %1.18f)\n",
-         max_err, fun_err, t);
+  if (max_err > debug_abort_threshold) {
+    printf(">>>\n");
+    coutBoldRed("MB::UWIL gid = ");
+    printf("%d\n", gid);
+    printf("(max_err, fun_max, t)=(%1.18f, %1.18f, %1.18f)\n",
+          max_err, fun_max, t);
 
-  if (max_err > 0.1) {
-    printf("pwave->u:\n");
-    pwave->u.print_all("%1.5f");
+    if (max_err > 0.1) {
+      printf("pwave->u:\n");
+      pwave->u.print_all("%1.5f");
 
-    printf("pwave->exact:\n");
-    pwave->exact.print_all("%1.5f");
+      printf("pwave->exact:\n");
+      pwave->exact.print_all("%1.5f");
 
-    printf("pwave->error:\n");
-    pwave->error.print_all("%1.5f");
+      printf("pwave->error:\n");
+      pwave->error.print_all("%1.5f");
 
-    Q();
+      Q();
+    }
+
+    printf("<<<\n");
   }
-
-  printf("<<<\n");
   return;
 }
 
