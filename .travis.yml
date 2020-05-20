@@ -97,7 +97,7 @@ matrix:
           - "/usr/local/Cellar/open-mpi/"
           - "/usr/local/Cellar/libevent/"
           - "/usr/local/Cellar/szip/"
-          - "/usr/local/opt/libevent"
+          - "/usr/local/Cellar/hwloc/"
           - openmpi
           - mpich
           - fftw
