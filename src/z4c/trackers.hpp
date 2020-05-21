@@ -15,7 +15,6 @@
 #include "../athena_tensor.hpp"
 
 #define NDIM (3)
-#define NPUNCT (2)
 
 // Forward declaration
 class Mesh;
@@ -33,6 +32,7 @@ class Tracker {
       Real betap[NDIM];       // position body one
       };
     Position_vars pos_body[NPUNCT];
+    int npunct;
   public:
     //! Creates the WaveExtract object
     Tracker(Mesh * pmesh, ParameterInput * pin);
@@ -50,7 +50,6 @@ class Tracker {
     void WriteTracker(int iter, Real time) const;
   private:
     int root;
-    int npunct;
     Real times_in_block[NPUNCT];
     bool ioproc;
     std::string ofname;
