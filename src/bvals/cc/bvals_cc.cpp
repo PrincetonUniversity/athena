@@ -1193,7 +1193,7 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
 
 void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 #ifdef MPI_PARALLEL
-  coutYellow("CellCenteredBoundaryVariable::SetupPersistentMPI\n");
+  //coutYellow("CellCenteredBoundaryVariable::SetupPersistentMPI\n");
   MeshBlock* pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
 
@@ -1277,7 +1277,7 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 
 void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
-  coutYellow("CellCenteredBoundaryVariable::StartReceiving\n");
+  //coutYellow("CellCenteredBoundaryVariable::StartReceiving\n");
   MeshBlock *pmb = pmy_block_;
   int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
