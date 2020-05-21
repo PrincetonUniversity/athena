@@ -24,14 +24,16 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "../lagrange_interp.hpp"
+#include "../defs.hpp"
 
 Tracker::Tracker(Mesh * pmesh, ParameterInput * pin):
     pmesh(pmesh), pofile(NULL) {
   int punct_idx;
-  std::cout<<"Tracker is being constructed\n";
   ofname = pin->GetOrAddString("problem", "tracker_filename", "punctures_position.txt");
-  npunct = pin->GetOrAddInteger("problem", "n_punct", 2);
-
+  //npunct = pin->GetOrAddInteger("problem", "n_punct", 2);
+  //TODO the number of punctures is decided not at parfile level, but at configure/defs level
+  //Is it ok?
+  npunct = NPUNCT;
   Initialize(pmesh, pin);
   std::cout<<pos_body[0].pos[0]<<"\n";
 //  root = pin->GetOrAddInteger("wave", "mpi_root", 0);
@@ -63,7 +65,7 @@ Tracker::Tracker(Mesh * pmesh, ParameterInput * pin):
 void Tracker::Initialize(Mesh * pmesh, ParameterInput * pin){
   std::cout<<"Npunct = "<<npunct<<std::endl;
   switch(npunct) {
-	  case 1 : std::cout<<"One puncture initialization has not been implemented yet.\n";
+    case 1 : std::cout<<"One puncture initialization has not been implemented yet.\n";
 	     break;
     case 2 : InitializeTwopuncture(pmesh, pin);
 	     break;
@@ -214,7 +216,6 @@ Tracker::~Tracker() {
   if (ioproc) {
      fclose(pofile);
   }
-  std::cout<<"Tracker is being deleted\n";
 }
 
 
@@ -223,7 +224,6 @@ Tracker::~Tracker() {
 TrackerLocal::TrackerLocal(MeshBlock * pmb, ParameterInput * pin) {
   pmy_block = pmb;
   Coordinates * pco = pmb->pcoord;
-  std::cout<<"Tracker Local is being constructed\n";
 }
 
 //----------------------------------------------------------------------------------------
@@ -311,5 +311,4 @@ bool TrackerLocal::InBlock(int body) {
   }
 
 TrackerLocal::~TrackerLocal() {
-  std::cout<<"Tracker Local is being deleted\n";
 }
