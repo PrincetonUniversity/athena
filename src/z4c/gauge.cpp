@@ -33,7 +33,7 @@ void Z4c::GaugePreCollapsedLapse(AthenaArray<Real> & u_adm, AthenaArray<Real> & 
 
   GLOOP2(k,j) {
     GLOOP1(i) {
-      z4c.alpha(k,j,i) = std::pow(adm.psi4(k,j,i),-2);
+      z4c.alpha(k,j,i) = std::pow(adm.psi4(k,j,i),-0.5);
     }
   }
 }
