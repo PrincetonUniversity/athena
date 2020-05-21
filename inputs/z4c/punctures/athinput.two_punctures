@@ -60,19 +60,13 @@ initial_lapse_psi_exponent = -2.0
 # so that the black holes are separated in the z direction
 swap_xz = false
 
-
 <output1>
-file_type       = tab       # Athena++ ASCII data
-variable        = z4c       # variables to be output
-dt              = 5.      # time increment between outputs
+file_type       = hdf5                  # Athena++ hdf5 data
+variable        = z4c                  # variables to be output
+dt              = 0.5                  # time increment between outputs
 data_format     = %.16e
+id              = z4c
 
-#<output1>
-#file_type       = hdf5                  # Athena++ hdf5 data
-#variable        = z4c                  # variables to be output
-#dt              = 0.5                  # time increment between outputs
-#data_format     = %.16e
-#id              = z4c
 #
 #<output2>
 #file_type       = hdf5                  # Athena++ hdf5 data

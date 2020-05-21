@@ -843,9 +843,10 @@ if args['h5double']:
 else:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
 
+# TODO change/improve NPUNCT handling
 # -two_punctures argument
 if args['prob'] == "z4c_two_punctures":
-    definitions['TWO_PUNCTURES_OPTION'] = 'TWO_PUNCTURES'
+    definitions['TWO_PUNCTURES_OPTION'] = 'TWO_PUNCTURES' + '\n#define NPUNCT (2)'
     os.system('mkdir -p extern/initial_data')
     if os.path.exists('../twopuncturesc'):
         os.system('rm extern/initial_data/two_punctures') 
@@ -879,6 +880,9 @@ if args['prob'] == "z4c_two_punctures":
         makefile_options['LIBRARY_FLAGS'] += ' -lgsl -lgslcblas'
 else:
     definitions['TWO_PUNCTURES_OPTION'] = 'NO_TWO_PUNCTURES'
+    if args['prob'] == 'z4c_one_puncture': 
+        definitions['TWO_PUNCTURES_OPTION'] = definitions['TWO_PUNCTURES_OPTION'] + '\n#define NPUNCT (1)'
+
 
 definitions['GSL_OPTION'] = 'NO_GSL'
 if args['gsl']:
