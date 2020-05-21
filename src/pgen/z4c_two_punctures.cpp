@@ -16,13 +16,14 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "../z4c/z4c.hpp"
-//#include "../z4c/trackers.hpp"
+#include "../z4c/trackers.hpp"
 
 // twopuncturesc: Stand-alone library ripped from Cactus
 #include "TwoPunctures.h"
 
 using namespace std;
 
+int RefinementCondition(MeshBlock *pmb);
 // QUESTION: is it better to setup two different problems instead of using ifdef?
 static ini_data *data;
 
@@ -137,6 +138,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
                                  pin->GetOrAddBoolean(set_name, "swap_xz", 0));
     data = TwoPunctures_make_initial_data();
     
+    if(adaptive==true)
+      EnrollUserRefinementCondition(RefinementCondition);
+    
     return;
 }
 
@@ -161,15 +165,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   // collapse in both cases
   pz4c->GaugePreCollapsedLapse(pz4c->storage.adm, pz4c->storage.u);
 
-  std::cout << "Two punctures initialized." << std::endl;
-  //for (int i_punc = 0; i_punc<2; i_punc++) { //TODO NPUNCT
-  //  pz4c_tracker_loc->InitializeTracker(pin, pz4c_tracker_loc->pos_body, i_punc);
-  //}
-  //END DEBUG
-  //
-  //  std::cout << "Trackers initialized." << std::endl;
+  //std::cout << "Two punctures initialized." << std::endl;
   pz4c->ADMToZ4c(pz4c->storage.adm, pz4c->storage.u);
 
 
   return;
+}
+
+int RefinementCondition(MeshBlock *pmb)
+{ 
+  for (int i_punct = 0; i_punct < NPUNCT; ++i_punct) {
+    if (pmb->pz4c_tracker_loc->InBlock(i_punct))
+      return 1;
+    else
+      return -1;
+  }
+  return 0;
 }
