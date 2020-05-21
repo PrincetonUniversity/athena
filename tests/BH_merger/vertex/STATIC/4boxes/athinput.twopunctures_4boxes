@@ -1,0 +1,165 @@
+<job>
+problem_id      = two_punctures        # Basename of output filenames
+
+<z4c>
+lapse_harmonic  = 0.0                 # Harmonic lapse parameter mu_L
+lapse_oplog     = 1.0                 # 1+log lapse parameter
+shift_eta       = 2.0                 # Shift damping term
+diss            = 0.1                 # Kreiss-Oliger dissipation parameter
+chi_div_floor   = 0.00001
+damp_kappa1     = 0.00      # Constraint damping factor 1
+damp_kappa2     = 0.02
+
+<problem>
+# the following are defaults and descriptions
+verbose = false
+par_b = 3.257                            # x coordinate of the m+ puncture
+par_m_plus = 0.483                       # mass of the m+ puncture
+par_m_minus = 0.483                      # mass of the m- puncture
+target_M_plus = 0.505                    # target ADM mass for m+
+target_M_minus = 0.505                   # target ADM mass for m-
+par_P_plus1 = 0.                      # momentum of the m+ puncture
+par_P_plus2 = 0.133
+par_P_plus3 = 0.0
+par_P_minus1 = 0.                     # momentum of the m- puncture
+par_P_minus2 = -0.133
+par_P_minus3 = 0.0
+par_S_plus1 = 0.0                      # spin of the m+ puncture
+par_S_plus2 = 0.0
+par_S_plus3 = 0.0
+par_S_minus1 = 0.0                     # spin of the m- puncture
+par_S_minus2 = 0.0
+par_S_minus3 = 0.0
+center_offset1 = 0.0                   # offset b=0 to position (x,y,z)
+center_offset2 = 0.0
+center_offset3 = 0.0
+give_bare_mass = true                  # User provides bare masses not target M_ADM
+npoints_A = 30                         # No. coeff in the compactified radial dir.
+npoints_B = 30                         # No. coeff in the angular dir.
+npoints_phi = 16                       # no. coeff in the phi dir.
+Newton_tol = 1e-10                     # Tolerance for Newton solver
+Newton_maxit = 5                       # Maximum number of Newton iterations
+# A small number to smooth out singularities at the puncture locations
+TP_epsilon = 0.0
+# Tiny number to avoid nans near or at the pucture locations
+TP_Tiny = 0.0
+# Radius of an extended spacetime instead of the puncture
+TP_Extend_Radius = 0
+# Tolerance of ADM masses when give_bare_mass=no
+adm_tol = 1e-10
+# Output debug information about the residuum
+do_residuum_debug_output = false
+# Output debug information about initial guess
+do_initial_debug_output = false
+# Solve for momentum constraint?
+solve_momentum_constraint = false
+# Interpolation
+# Exponent n for psi^-n initial lapse profile (<0)
+initial_lapse_psi_exponent = -2.0
+# Swap x and z coordinates when interpolating,
+# so that the black holes are separated in the z direction
+swap_xz = false
+n_punct = 2
+
+#<output1>
+#file_type   = hst       # VTK data dump
+#dt          = 0.1
+
+<output1>
+file_type       = hdf5       # Athena++ ASCII data
+id              = z4c_x1
+variable        = z4c       # variables to be output
+dt              = 1.     # time increment between outputs
+data_format     = %.8e
+ghost_zones     = true
+x2_slice        = 0.
+x3_slice        = 0.
+
+<output2>
+file_type       = hdf5       # Athena++ ASCII data
+id              = z4c_x2
+variable        = z4c       # variables to be output
+dt              = 1.     # time increment between outputs
+data_format     = %.8e
+ghost_zones     = true
+x1_slice        = 0.
+x3_slice        = 0.
+
+<output3>
+file_type       = hdf5       # Athena++ ASCII data
+id              = z4c_x1x2
+variable        = z4c       # variables to be output
+dt              = 1.     # time increment between outputs
+data_format     = %.8e
+ghost_zones     = true
+x3_slice        = 0.
+
+<time>
+cfl_number      = 0.5                 # The Courant, Friedrichs, & Lewy (CFL) number
+tlim            = 500                  # time limit
+integrator      = rk4                  # time integrator
+#nlim            = 100
+
+<mesh>
+refinement      = static
+num_threads     = 8 
+
+nx1             = 40       # Number of zones in X1-direction
+x1min           = -10      # minimum value of X1
+x1max           =  10      # maximum value of X1
+ix1_bc          = outflow  # inner-X1 boundary flag
+ox1_bc          = outflow  # inner-X1 boundary flag
+
+nx2             = 40       # Number of zones in X2-direction
+x2min           = -10      # minimum value of X2
+x2max           =  10      # maximum value of X2
+ix2_bc          = outflow  # inner-X2 boundary flag
+ox2_bc          = outflow  # inner-X2 boundary flag
+
+nx3             = 40         # Number of zones in X3-direction
+x3min           = -10      # minimum value of X3
+x3max           =  10      # maximum value of X3
+ix3_bc          = outflow  # inner-X3 boundary flag
+ox3_bc          = outflow  # inner-X3 boundary flag
+
+<meshblock>
+nx1             = 20
+nx2             = 20
+nx3             = 20
+#
+<refinement1>
+x1min           = 2.257
+x1max           = 4.257
+x2min           = -1.
+x2max           = 1.
+x3min           = -1.
+x3max           = 1.
+level           = 3
+
+<refinement2>
+x1min           = -4.257
+x1max           = -2.257
+x2min           = -1.
+x2max           = 1.
+x3min           = -1.
+x3max           = 1.
+level           = 3
+
+<refinement3>
+x2min           = 2.257
+x2max           = 4.257
+x1min           = -1.
+x1max           = 1.
+x3min           = -1.
+x3max           = 1.
+level           = 3
+
+<refinement4>
+x2min           = -4.257
+x2max           = -2.257
+x1min           = -1.
+x1max           = 1.
+x3min           = -1.
+x3max           = 1.
+level           = 3
+
