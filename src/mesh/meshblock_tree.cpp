@@ -467,6 +467,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
 
 MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc) {
   if (tloc.level == loc_.level) return this;
+  if (pleaf_ == nullptr) return nullptr;
   // get leaf index
   int sh = tloc.level - loc_.level - 1;
   int mx = (((tloc.lx1>>sh) & 1LL) == 1LL);
