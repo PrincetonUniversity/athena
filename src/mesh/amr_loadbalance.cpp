@@ -36,6 +36,9 @@
 // \brief Main function for adaptive mesh refinement
 
 void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::LoadBalancingAndAdaptiveMeshRefinement\n");
+
   int nnew = 0, ndel = 0;
 
   if (adaptive) {
@@ -66,6 +69,9 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
 
 void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist,
                                 int nb) {
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::CalculateLoadBalance\n");
+
   std::stringstream msg;
   double real_max  =  std::numeric_limits<double>::max();
   double totalcost = 0, maxcost = 0.0, mincost = (real_max);
@@ -136,6 +142,9 @@ void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlis
 // \brief reset counters and flags for load balancing
 
 void Mesh::ResetLoadBalanceVariables() {
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::ResetLoadBalanceVariables\n");
+
   if (lb_automatic_) {
     MeshBlock *pmb = pblock;
     while (pmb != nullptr) {
@@ -153,6 +162,9 @@ void Mesh::ResetLoadBalanceVariables() {
 // \brief update the cost list
 
 void Mesh::UpdateCostList() {
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::UpdateCostList\n");
+
   MeshBlock *pmb = pblock;
   if (lb_automatic_) {
     double w = static_cast<double>(lb_interval_-1)/static_cast<double>(lb_interval_);
@@ -173,6 +185,9 @@ void Mesh::UpdateCostList() {
 // \brief collect refinement flags and manipulate the MeshBlockTree
 
 void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::UpdateMeshBlockTree\n");
+
   // compute nleaf= number of leaf MeshBlocks per refined block
   MeshBlock *pmb;
   int nleaf = 2, dim = 1;
@@ -317,6 +332,9 @@ void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
 // \brief collect the cost from MeshBlocks and check the load balance
 
 bool Mesh::GatherCostListAndCheckBalance() {
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::GatherCostListAndCheckBalance\n");
+
   if (lb_manual_ || lb_automatic_) {
 #ifdef MPI_PARALLEL
     MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_DOUBLE, costlist, nblist,
@@ -349,6 +367,9 @@ bool Mesh::GatherCostListAndCheckBalance() {
 // \brief redistribute MeshBlocks according to the new load balance
 
 void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::RedistributeAndRefineMeshBlocks\n");
+
   // compute nleaf= number of leaf MeshBlocks per refined block
   int nleaf = 2;
   if (mesh_size.nx2 > 1) nleaf = 4;
@@ -453,6 +474,12 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
     nx4_tot += var_cc.GetDim4();
   }
 
+  // BD: add VC functionality
+  int nx4_vc_tot = 0;
+  for (AthenaArray<Real> &var_vc : pblock->vars_vc_) {
+    nx4_vc_tot += var_vc.GetDim4();
+  }
+
   // cell-centered quantities enrolled in SMR/AMR
   int bssame = bnx1*bnx2*bnx3*nx4_tot;
   int bsf2c = (bnx1/2)*((bnx2 + 1)/2)*((bnx3 + 1)/2)*nx4_tot;
@@ -466,6 +493,25 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   bsc2f += num_fc*(((bnx1/2) + 1 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
                    + (bnx1/2 + 2)*(((bnx2 + 1)/2) + f2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
                    + (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*(((bnx3 + 1)/2) + f3 + 2*f3));
+
+  // vertex-centered quantities enrolled in SMR/AMR
+  int const vbnx1 = bnx1 + 1;
+  int const vbnx2 = (bnx2 > 1) ? bnx2 + 1 : 1;
+  int const vbnx3 = (bnx3 > 1) ? bnx3 + 1 : 1;
+
+  int const hbnx1 = bnx1 / 2 + 1;
+  int const hbnx2 = bnx2 / 2 + 1;
+  int const hbnx3 = bnx3 / 2 + 1;
+
+  int const ndg1 = NCGHOST;
+  int const ndg2 = (f2 > 0) ? NCGHOST : 0;
+  int const ndg3 = (f3 > 0) ? NCGHOST : 0;
+
+  bssame += vbnx1 * vbnx2 * vbnx3 * nx4_vc_tot;
+  // bsc2f += (hbnx1 + 2 * ndg1) * (hbnx2 + 2 * ndg2) * (hbnx3 + 2* ndg3) *
+  //   nx4_vc_tot;
+  // bsf2c += (bnx1 / 2 + 1) * (bnx2 / 2 + 1)*(bnx3 / 2 + 1) * nx4_vc_tot;
+
   // add one more element to buffer size for storing the derefinement counter
   bssame++;
 
@@ -697,6 +743,9 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
 // AMR: step 6, branch 1 (same2same: just pack+send)
 
 void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::PrepareSendSameLevel\n");
+
   // pack
   int p = 0;
 
@@ -722,6 +771,15 @@ void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
     BufferUtility::PackData(var_fc.x3f, sendbuf,
                             pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
   }
+  // BD: add VC functionality
+  for (AthenaArray<Real> &var_vc : pb->vars_vc_) {
+    int nu = var_vc.GetDim4() - 1;
+    BufferUtility::PackData(var_vc, sendbuf, 0, nu,
+                            pb->ivs, pb->ive,
+                            pb->jvs, pb->jve,
+                            pb->kvs, pb->kve, p);
+  }
+
   // WARNING(felker): casting from "Real *" to "int *" in order to append single integer
   // to send buffer is slightly unsafe (especially if sizeof(int) > sizeof(Real))
   if (adaptive) {
@@ -736,6 +794,9 @@ void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
 
 void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
                                       LogicalLocation &lloc) {
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::PrepareSendCoarseToFineAMR\n");
+
   int ox1 = ((lloc.lx1 & 1LL) == 1LL), ox2 = ((lloc.lx2 & 1LL) == 1LL),
       ox3 = ((lloc.lx3 & 1LL) == 1LL);
   // pack
@@ -762,12 +823,50 @@ void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
     BufferUtility::PackData((*var_fc).x3f, sendbuf,
                             il, iu, jl, ju, kl, ku+f3, p);
   }
+
+  // // BD: add VC functionality
+  // int ndg1 = NCGHOST;
+  // int ndg2 = (f2 > 0) ? NCGHOST : 0;
+  // int ndg3 = (f3 > 0) ? NCGHOST : 0;
+
+  // if (ox1 == 0) {
+  //   il = pb->ivs - ndg1;
+  //   iu = pb->ivs + pb->block_size.nx1/2;
+  // } else {
+  //   il = pb->ivs + pb->block_size.nx1/2 - ndg1;
+  //   iu = pb->ive + ndg1;
+  // }
+  // if (ox2 == 0) {
+  //   jl = pb->jvs - ndg2;
+  //   ju = pb->jvs + pb->block_size.nx2/2;
+  // } else {
+  //   jl = pb->jvs + pb->block_size.nx2/2 - ndg2;
+  //   ju = pb->jve + ndg2;
+  // }
+  // if (ox3 == 0) {
+  //   kl = pb->kvs - ndg3;
+  //   ku = pb->kvs + pb->block_size.nx3/2;
+  // } else {
+  //   kl = pb->kvs + pb->block_size.nx3/2 - ndg3;
+  //   ku = pb->kve + ndg3;
+  // }
+
+  // for (auto vc_pair : pb->pmr->pvars_vc_) {
+  //   AthenaArray<Real> *var_vc = std::get<0>(vc_pair);
+  //   int nu = var_vc->GetDim4() - 1;
+  //   BufferUtility::PackData(*var_vc, sendbuf, 0, nu,
+  //                           il, iu, jl, ju, kl, ku, p);
+  // }
+
   return;
 }
 
 // step 6, branch 3 (f2c: restrict, pack, send)
 
 void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::PrepareSendFineToCoarseAMR\n");
+
   // restrict and pack
   MeshRefinement *pmr = pb->pmr;
   int p = 0;
@@ -813,6 +912,23 @@ void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
                             pb->cjs, pb->cje,
                             pb->cks, pb->cke+f3, p);
   }
+
+  // // BD: add VC functionality
+  // for (auto vc_pair : pmr->pvars_vc_) {
+  //   AthenaArray<Real> *var_vc = std::get<0>(vc_pair);
+  //   AthenaArray<Real> *coarse_vc = std::get<1>(vc_pair);
+  //   int nu = var_vc->GetDim4() - 1;
+  //   pmr->RestrictCellCenteredValues(*var_vc, *coarse_vc,
+  //                                   0, nu,
+  //                                   pb->civs, pb->cive,
+  //                                   pb->cjvs, pb->cjve,
+  //                                   pb->ckvs, pb->ckve);
+  //   BufferUtility::PackData(*coarse_vc, sendbuf, 0, nu,
+  //                           pb->civs, pb->cive,
+  //                           pb->cjvs, pb->cjve,
+  //                           pb->ckvs, pb->ckve, p);
+
+  // }
   return;
 }
 
@@ -820,6 +936,10 @@ void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
 
 void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
                                        LogicalLocation &loc) {
+
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::FillSameRankFineToCoarseAMR\n");
+
   MeshRefinement *pmr = pob->pmr;
   int il = pmb->is + ((loc.lx1 & 1LL) == 1LL)*pmb->block_size.nx1/2;
   int jl = pmb->js + ((loc.lx2 & 1LL) == 1LL)*pmb->block_size.nx2/2;
@@ -904,6 +1024,39 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
     }
     pmb_fc_it++;
   }
+
+  // BD: add VC functionality
+  il = pmb->ivs + ((loc.lx1 & 1LL) == 1LL)*pmb->block_size.nx1/2;
+  jl = pmb->jvs + ((loc.lx2 & 1LL) == 1LL)*pmb->block_size.nx2/2;
+  kl = pmb->kvs + ((loc.lx3 & 1LL) == 1LL)*pmb->block_size.nx3/2;
+
+  auto pmb_vc_it = pmb->pmr->pvars_vc_.begin();
+  // iterate MeshRefinement std::vectors on pob
+  for (auto vc_pair : pmr->pvars_vc_) {
+    AthenaArray<Real> *var_vc = std::get<0>(vc_pair);
+    AthenaArray<Real> *coarse_vc = std::get<1>(vc_pair);
+    int nu = var_vc->GetDim4() - 1;
+
+    pmr->RestrictVertexCenteredValues(*var_vc, *coarse_vc,
+                                      0, nu,
+                                      pob->civs, pob->cive,
+                                      pob->cjvs, pob->cjve,
+                                      pob->ckvs, pob->ckve);
+    // copy from old/original/other MeshBlock (pob) to newly created block (pmb)
+    AthenaArray<Real> &src = *coarse_vc;
+    AthenaArray<Real> &dst = *std::get<0>(*pmb_vc_it);
+    for (int nv=0; nv<=nu; nv++) {
+      for (int k=kl, fk=pob->ckvs; fk<=pob->ckve; k++, fk++) {
+        for (int j=jl, fj=pob->cjvs; fj<=pob->cjve; j++, fj++) {
+          for (int i=il, fi=pob->civs; fi<=pob->cive; i++, fi++)
+            dst(nv, k, j, i) = src(nv, fk, fj, fi);
+        }
+      }
+    }
+    pmb_vc_it++;
+
+  }
+
   return;
 }
 
@@ -911,7 +1064,9 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
 
 void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
                                        LogicalLocation &newloc) {
-  coutBoldCyan("Mesh::FillSameRankCoarseToFineAMR\n");
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::FillSameRankCoarseToFineAMR\n");
+
   MeshRefinement *pmr = pmb->pmr;
   int il = pob->cis - 1, iu = pob->cie + 1, jl = pob->cjs - f2,
       ju = pob->cje + f2, kl = pob->cks - f3, ku = pob->cke + f3;
@@ -982,11 +1137,54 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
         pob->cjs, pob->cje, pob->cks, pob->cke);
     pob_fc_it++;
   }
+
+  // BD: add VC functionality
+  int ndg1 = NCGHOST;
+  int ndg2 = (f2 > 0) ? NCGHOST : 0;
+  int ndg3 = (f3 > 0) ? NCGHOST : 0;
+
+  il = pob->civs - ndg1, iu = pob->cive + ndg1;
+  jl = pob->cjvs - ndg2, ju = pob->cjve + ndg2;
+  kl = pob->ckvs - ndg3, ku = pob->ckve + ndg3;
+  cis = ((newloc.lx1 & 1LL) == 1LL)*pob->block_size.nx1/2 + pob->ivs - ndg1;
+  cjs = ((newloc.lx2 & 1LL) == 1LL)*pob->block_size.nx2/2 + pob->jvs - ndg2;
+  cks = ((newloc.lx3 & 1LL) == 1LL)*pob->block_size.nx3/2 + pob->kvs - ndg3;
+
+  auto pob_vc_it = pob->pmr->pvars_vc_.begin();
+  // iterate MeshRefinement std::vectors on new pmb
+  for (auto vc_pair : pmr->pvars_vc_) {
+    AthenaArray<Real> *var_vc = std::get<0>(vc_pair);
+    AthenaArray<Real> *coarse_vc = std::get<1>(vc_pair);
+    int nu = var_vc->GetDim4() - 1;
+
+    AthenaArray<Real> &src = *std::get<0>(*pob_vc_it);
+    AthenaArray<Real> &dst = *coarse_vc;
+
+    // fill the coarse buffer
+    for (int nv=0; nv<=nu; nv++) {
+      for (int k=kl, ck=cks; k<=ku; k++, ck++) {
+        for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
+          for (int i=il, ci=cis; i<=iu; i++, ci++)
+            dst(nv, k, j, i) = src(nv, ck, cj, ci);
+        }
+      }
+    }
+
+    pmr->ProlongateVertexCenteredValues(
+        dst, *var_vc, 0, nu,
+        pob->civs, pob->cive, pob->cjvs, pob->cjve, pob->ckvs, pob->ckve);
+    pob_vc_it++;
+
+  }
+
   return;
 }
 
 // step 8 (receive and load), branch 1 (same2same: unpack)
 void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::FinishRecvSameLevel\n");
+
   int p = 0;
   for (AthenaArray<Real> &var_cc : pb->vars_cc_) {
     int nu = var_cc.GetDim4() - 1;
@@ -1011,6 +1209,16 @@ void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
       }
     }
   }
+
+  // BD: add VC functionality
+  for (AthenaArray<Real> &var_vc : pb->vars_vc_) {
+    int nu = var_vc.GetDim4() - 1;
+    BufferUtility::UnpackData(recvbuf, var_vc, 0, nu,
+                              pb->ivs, pb->ive,
+                              pb->jvs, pb->jve,
+                              pb->kvs, pb->kve, p);
+  }
+
   // WARNING(felker): casting from "Real *" to "int *" in order to read single
   // appended integer from received buffer is slightly unsafe
   if (adaptive) {
@@ -1023,6 +1231,10 @@ void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
 // step 8 (receive and load), branch 2 (f2c: unpack)
 void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
                                      LogicalLocation &lloc) {
+
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::FinishRecvFineToCoarseAMR\n");
+
   int ox1 = ((lloc.lx1 & 1LL) == 1LL), ox2 = ((lloc.lx2 & 1LL) == 1LL),
       ox3 = ((lloc.lx3 & 1LL) == 1LL);
   int p = 0, il, iu, jl, ju, kl, ku;
@@ -1064,6 +1276,10 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
 
 // step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
 void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
+
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::FinishRecvCoarseToFineAMR\n");
+
   MeshRefinement *pmr = pb->pmr;
   int p = 0;
   int il = pb->cis - 1, iu = pb->cie+1, jl = pb->cjs - f2,
@@ -1101,6 +1317,28 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
         *var_fc, pb->cis, pb->cie,
         pb->cjs, pb->cje, pb->cks, pb->cke);
   }
+
+  // BD: add VC functionality
+  // int ndg1 = NCGHOST;
+  // int ndg2 = (f2 > 0) ? NCGHOST : 0;
+  // int ndg3 = (f3 > 0) ? NCGHOST : 0;
+
+  // il = pb->civs - ndg1, iu = pb->cive + ndg1;
+  // jl = pb->cjvs - ndg2, ju = pb->cjve + ndg2;
+  // kl = pb->ckvs - ndg3, ku = pb->ckve + ndg3;
+
+  // for (auto vc_pair : pmr->pvars_vc_) {
+  //   AthenaArray<Real> *var_vc = std::get<0>(vc_pair);
+  //   AthenaArray<Real> *coarse_vc = std::get<1>(vc_pair);
+  //   int nu = var_vc->GetDim4() - 1;
+  //   BufferUtility::UnpackData(recvbuf, *coarse_vc,
+  //                             0, nu, il, iu, jl, ju, kl, ku, p);
+
+  //   pmr->ProlongateVertexCenteredValues(
+  //       *coarse_vc, *var_vc, 0, nu,
+  //       pb->civs, pb->cive, pb->cjvs, pb->cjve, pb->ckvs, pb->ckve);
+  // }
+
   return;
 }
 
@@ -1113,6 +1351,10 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
 // See comments on BoundaryBase::CreateBvalsMPITag()
 
 int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3) {
+
+  if (DBGPR_AMR_LOADBALANCE)
+    coutYellow("Mesh::CreateAMRMPITag\n");
+
   // former "AthenaTagMPI" AthenaTagMPI::amr=8 redefined to 0
   return (lid<<8) | (ox1<<7)| (ox2<<6) | (ox3<<5) | 0;
 }
