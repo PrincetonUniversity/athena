@@ -179,7 +179,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
       }
     }
     for (int i=0; i<ns_gr; i++) {
-      if (id7type_(indices_gr[i]) != ReactionType::grain) {
+      if (id7type_(indices_gr[i]) != ReactionType::grain_implicit) {
         ATHENA_ERROR(msg);
       }
     }

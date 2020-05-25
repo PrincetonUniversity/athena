@@ -20,8 +20,10 @@ namespace ChemistryUtility
 	//physical constants
 	const Real kB = 1.380658e-16;
 	const Real mH = 1.6733e-24; 
+	const Real me = 9.1093897e-28;//electron mass
 	const Real mCO = 4.68e-23;
   const Real pc = 3.085678e18; //parsec in cm
+  const Real qe = 4.803206e-10; //elementary charge
 	//units
 	const Real unitL = pc;
 	const Real unitD = muH * mH;

@@ -21,6 +21,11 @@
 #include <iostream>   // endl
 #include <stdexcept>  // std::runtime_error()
 
+//atom masses
+const Real KidaSpecies::ma_atom_[natom_] = 
+{1., 4., 12., 14., 16., 28., 32., 55.8, 23., 24.3, 35.5, 31., 19. };
+//H  He   C    N    O   Si   S    Fe    Na   Mg    Cl    P    F
+
 KidaSpecies::KidaSpecies(std::string line, int index) :
   index(index) {
   std::stringstream msg; //error message
@@ -33,8 +38,12 @@ KidaSpecies::KidaSpecies(std::string line, int index) :
   }
   name = fields[0];
   charge_ = std::stoi(fields[1]);
+  mass_ = 0.;
   for (int i=0; i < natom_; i++) {
     atom_count_[i] = std::stoi(fields[i+2]);
+    mass_ += float(atom_count_[i]) * ma_atom_[i] * ChemistryUtility::mH;
   }
+  //electron mass
+  mass_ += float(-charge_) * ChemistryUtility::me;
 }
 

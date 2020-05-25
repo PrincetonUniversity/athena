@@ -42,9 +42,10 @@
 #include <stdio.h>    // c style file
 #include <algorithm>    // std::find()
 #include <iterator>     // std::distance()
+#include <cmath>       //M_PI
 
-#ifdef DEBUG
 static bool output_rates = true;
+#ifdef DEBUG
 static bool output_thermo = true;
 #endif
 
@@ -52,7 +53,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   pmy_spec_(pmb->pscalars), pmy_mb_(pmb), id7max_(0), n_cr_(0),
   icr_H_(-1), icr_H2_(-1), icr_He_(-1), n_crp_(0), n_ph_(0), iph_H2_(-1), 
   n_2body_(0), i2body_H2_H_(-1), i2body_H2_H2_(-1), i2body_H_e_(-1),
-  n_2bodytr_(0), n_gr_(0), igr_H_(-1), n_sr_(0),
+  n_2bodytr_(0), n_gr_(0), igr_H_(-1), n_sr_(0), n_gc_(0),
   n_freq_(0), index_gpe_(0), index_cr_(0), gradv_(0.) {
 
 	//set the parameters from input file
@@ -254,8 +255,9 @@ void ChemNetwork::InitializeReactions() {
       case ReactionType::photo: n_ph_++; break;
       case ReactionType::twobody: n_2body_++; break;
       case ReactionType::twobodytr: break;
-      case ReactionType::grain: n_gr_++; break;
+      case ReactionType::grain_implicit: n_gr_++; break;
       case ReactionType::special: n_sr_++; break;
+      case ReactionType::grain_charge: n_gc_++; break;
       default: std::stringstream msg; 
                msg << "### FATAL ERROR in ChemNetwork InitializeReactions()"
                  << " [ChemNetwork]: reaction type not recognized." << std::endl;
@@ -328,8 +330,16 @@ void ChemNetwork::InitializeReactions() {
     outsr_.NewAthenaArray(n_sr_, n_outsr_);
     ksr_.NewAthenaArray(n_sr_);
   }
+  if (n_gc_ > 0) {
+    ingc_.NewAthenaArray(n_gc_, n_ingc_);
+    outgc_.NewAthenaArray(n_gc_, n_outgc_);
+    nu_gc_.NewAthenaArray(n_gc_);
+    r1_gc_.NewAthenaArray(n_gc_);
+    t1_gc_.NewAthenaArray(n_gc_);
+    kgc_.NewAthenaArray(n_gc_);
+  }
   
-  int icr=0, icrp=0, iph=0, i2body=0, i2bodytr=0, igr=0, isr=0;
+  int icr=0, icrp=0, iph=0, i2body=0, i2bodytr=0, igr=0, isr=0, igc=0;
   std::vector<int> idtr;
   for (int ir=0; ir<nr_; ir++) {
     pr = &reactions_[ir];
@@ -530,8 +540,8 @@ void ChemNetwork::InitializeReactions() {
       Tmax_2bodytr_(i2bodytr-1, nprev) = pr->Tmax_;
       idtr.push_back(pr->id_);
 
-    //-------------------- grain - grain assisted reaction ----------------
-    } else if (rtype == ReactionType::grain) {
+    //----------- grain_implicit - implicit grain assisted reaction -------
+    } else if (rtype == ReactionType::grain_implicit) {
       if (pr->reactants_[0] == "H" && pr->reactants_[1] == "H") {
         igr_H_ = igr;
       }
@@ -540,7 +550,7 @@ void ChemNetwork::InitializeReactions() {
         ingr2_(igr) = ispec_map_[pr->reactants_[1]];
         outgr_(igr) = ispec_map_[pr->products_[0]];
         id7map_(pr->id_) = igr;
-        id7type_(pr->id_) = ReactionType::grain;
+        id7type_(pr->id_) = ReactionType::grain_implicit;
         kgr_(igr) = 0.;
         igr++;
       } else{
@@ -572,6 +582,46 @@ void ChemNetwork::InitializeReactions() {
         error = true;
       }
 
+    //------------- grain_charge - grain - electron/ion reactions -----------
+    } else if (rtype == ReactionType::grain_charge) {
+      if (pr->formula_ == 8) {
+        const Real br = pr->alpha_;
+        const Real se = pr->beta_;
+        const Real ag = pr->gamma_;
+        const Real mi = species_[ispec_map_[pr->reactants_[1]]].mass_;
+        const Real q_charge = species_[ispec_map_[pr->reactants_[1]]].charge_;
+        const Real qi = q_charge * ChemistryUtility::qe;
+        for (int jin=0; jin<n_ingc_; jin++) {
+          if (jin < pr->reactants_.size()) {
+            ingc_(igc, jin) = ispec_map_[pr->reactants_[jin]];
+          } else {
+            ingc_(igc, jin) = -1;
+          }
+        }
+        for (int jout=0; jout<n_outgc_; jout++) {
+          if (jout < pr->products_.size()) {
+            outgc_(igc, jout) = ispec_map_[pr->products_[jout]];
+          } else {
+            outgc_(igc, jout) = -1;
+          }
+        }
+        kgc_(igc) = 0.;
+        if (q_charge != 1 && q_charge != -1) {
+          std::stringstream msg; 
+          msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
+            << std::endl
+            << "grain charge reaction: charge of electron/ion != +-1, " 
+            << "reaction ID=" << std::endl;
+          ATHENA_ERROR(msg);
+        }
+        nu_gc_(igc) = species_[ispec_map_[pr->reactants_[0]]].charge_ / q_charge;
+        r1_gc_(igc) = br*se* M_PI *ag*ag * sqrt( 8.*Thermo::kb_/(M_PI*mi) );
+        t1_gc_(igc) = ag * Thermo::kb_ / (qi*qi);
+        igc++;
+      } else {
+        error = true;
+      }
+
     //------------------ formula not recogonized -------------------------
     } else{
       error = true;
@@ -588,7 +638,7 @@ void ChemNetwork::InitializeReactions() {
 
   //sanity check
   if (icr != n_cr_ || icrp != n_crp_ || iph != n_ph_ || i2body != n_2body_ 
-      || i2bodytr != n_2bodytr_ || igr != n_gr_ || isr != n_sr_) {
+      || i2bodytr != n_2bodytr_ || igr != n_gr_ || isr != n_sr_ || igc != n_gc_) {
     std::stringstream msg; 
     msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
       << ": counts of reactions does not match." << std::endl;
@@ -599,7 +649,6 @@ void ChemNetwork::InitializeReactions() {
 
 void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
   const Real y_H2 = y[ispec_map_["H2"]];
-  const Real y_H = y[ispec_map_["H"]];
   Real y_e;
   if (ispec_map_.find("e-") != ispec_map_.end()) {
     y_e = y[ispec_map_["e-"]];
@@ -632,6 +681,22 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
 	for (int i=0; i<n_ph_; i++) {
     kph_(i) = kph_base_(i) * rad_(i);
 	}
+
+  //grain charge reactions
+	for (int i=0; i<n_gc_; i++) {
+    if (nu_gc_(i) == 0) { //polarisation
+      kgc_(i) = r1_gc_(i) * sqrt(T) * (1. + sqrt( M_PI/(2*t1_gc_(i)*T) ) ) * nH_;
+    } else if (nu_gc_(i) == -1) { //Coloumn focusing
+      kgc_(i) = r1_gc_(i) * sqrt(T) * (1. + 1./(t1_gc_(i)*T) ) 
+                * (1. + sqrt( 2./(2. + t1_gc_(i)*T) ) ) * nH_;
+    } else {
+      std::stringstream msg; 
+      msg << "### fatal error in chemnetwork UpdateRates() [chemnetwork]: "
+        << "grain charge reaction type not implemented."
+        << std::endl; 
+      ATHENA_ERROR(msg);
+    }
+  }
 
   //2body reactions
   if (is_Tcap_2body_) {
@@ -892,7 +957,8 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
     if (pr->reactants_.size() != 2 || pr->products_.size() != 1) {
       std::stringstream msg; 
       msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
-          << std::endl << "Wrong format in gr reaction ID=" << pr->id_ << std::endl;
+          << std::endl << "Wrong format in implicit grain reaction ID=" 
+          << pr->id_ << std::endl;
       ATHENA_ERROR(msg);
     }
     if (pr->reactants_[1] != "e-" && pr->reactants_[1] != "H") {
@@ -901,7 +967,7 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
           << std::endl << "second reactant must be H or e-." << std::endl;
       ATHENA_ERROR(msg);
     }
-    return ReactionType::grain;
+    return ReactionType::grain_implicit;
 
   //------------------ 10 - special reactions -----------------------
   } else if (pr->itype_ == 10) {
@@ -913,6 +979,26 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
       ATHENA_ERROR(msg);
     }
     return ReactionType::special;
+
+  //-------11 - grain charge reactions with electron/ion  -----------
+  } else if (pr->itype_ == 11) {
+    if (pr->reactants_.size() != 2 || (pr->products_.size() != 1 && 
+          pr->products_.size() != 2 && pr->products_.size() != 3)) {
+      std::stringstream msg; 
+      msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
+        << std::endl << "Wrong format in grain charge reaction ID="
+        << pr->id_ << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    if (pr->reactants_[1] != "e-" && pr->reactants_[1].back() != '+' ) {
+      std::stringstream msg; 
+      msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
+        << std::endl << "grain charge reactions must be with e- or ion."
+        << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    return ReactionType::grain_charge;
+
 
   //------------------ type not recogonized -------------------------
   } else{
@@ -1102,6 +1188,29 @@ void ChemNetwork::PrintProperties() const {
     }
     std::cout << std::endl;
   }
+
+  //grain charge reactions
+  std::cout << "grain charge reactions:" << std::endl;
+  for (int i=0; i<n_gc_; i++) {
+    for (int jin=0; jin<n_ingc_; jin++) {
+      if (ingc_(i, jin) >= 0) {
+        std::cout << species_names[ingc_(i, jin)];
+        if (jin < n_ingc_-1 && ingc_(i, jin+1) >= 0) {
+          std::cout << " + ";
+        }
+      }
+    }
+    std::cout << " -> ";
+    for (int jout=0; jout<n_outgc_; jout++) {
+      if (outgc_(i, jout) >= 0) {
+        std::cout << species_names[outgc_(i, jout)];
+        if (jout < n_outgc_-1 && outgc_(i, jout+1) >= 0) {
+          std::cout << " + ";
+        }
+      }
+    }
+    std::cout << ", r1_gc_=" << r1_gc_(i) << ", t1_gc_=" << t1_gc_(i) << std::endl;
+  }
   
   for (int i=0; i<id7max_+1; i++) {
     if (id7map_(i) >= 0) {
@@ -1110,7 +1219,7 @@ void ChemNetwork::PrintProperties() const {
         case ReactionType::cr: std::cout << "cr"; break;
         case ReactionType::crp: std::cout << "crp"; break;
         case ReactionType::twobody: std::cout << "2body"; break;
-        case ReactionType::grain: std::cout << "gr"; break;
+        case ReactionType::grain_implicit: std::cout << "gr"; break;
         case ReactionType::special: std::cout << "sr"; break;
         default: std::stringstream msg; 
                  msg << "### FATAL ERROR in ChemNetwork PrintPropeties() "
@@ -1177,7 +1286,7 @@ void ChemNetwork::OutputRates(FILE *pf) const {
     fprintf(pf,   ",     k2bodytr = %.2e\n", k2bodytr_(i));
 	}
 	for (int i=0; i<n_gr_; i++) {
-		fprintf(pf, "%4s + %4s (+ gr) -> %4s (+ gr),       kgr = %.2e\n", 
+		fprintf(pf, "%4s + %4s -> %4s,       kgr = %.2e\n", 
 		 species_names[ingr1_(i)].c_str(), species_names[ingr2_(i)].c_str(),
      species_names[outgr_(i)].c_str(), kgr_(i));
 	}
@@ -1200,6 +1309,26 @@ void ChemNetwork::OutputRates(FILE *pf) const {
       }
     }
 		fprintf(pf, ",       ksr = %.2e\n", ksr_(i));
+  }
+  for (int i=0; i<n_gc_; i++) {
+    for (int jin=0; jin<n_ingc_; jin++) {
+      if (ingc_(i, jin) >= 0) {
+        fprintf(pf, "%4s", species_names[ingc_(i, jin)].c_str());
+        if (jin < n_ingc_-1 && ingc_(i, jin+1) >= 0) {
+          fprintf(pf, " + ");
+        }
+      }
+    }
+    fprintf(pf, " -> ");
+    for (int jout=0; jout<n_outgc_; jout++) {
+      if (outgc_(i, jout) >= 0) {
+        fprintf(pf, "%4s", species_names[outgc_(i, jout)].c_str());
+        if (jout < n_outgc_-1 && outgc_(i, jout+1) >= 0) {
+          fprintf(pf, " + ");
+        }
+      }
+    }
+		fprintf(pf, ",       kgc = %.2e\n", kgc_(i));
   }
   return;
 }
@@ -1280,14 +1409,12 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 
   UpdateRates(y0, E_ergs);
 
-#ifdef DEBUG
   if (output_rates) {
     FILE *pf = fopen("chem_network_init.dat", "w");
     OutputRates(pf);
     fclose(pf);
     output_rates = false;
   }
-#endif
 
   //cosmic ray reactions
   for (int i=0; i<n_cr_; i++) {
@@ -1372,6 +1499,24 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
     for (int jout=0; jout<n_outsr_; jout++) {
       if (outsr_(i, jout) >= 0) {
         ydotg[outsr_(i, jout)] += rate;
+      }
+    }
+  }
+
+  //grain charge reactions
+  for (int i=0; i<n_gc_; i++) {
+    rate =  kgc_(i) * y[ingc_(i, 0)] * y[ingc_(i, 1)];
+    if (y[ingc_(i, 0)] < 0 && y[ingc_(i, 1)] < 0) {
+      rate *= -1.;
+    }
+    for (int jin=0; jin<n_ingc_; jin++) {
+      if (ingc_(i, jin) >= 0) {
+        ydotg[ingc_(i, jin)] -= rate;
+      }
+    }
+    for (int jout=0; jout<n_outgc_; jout++) {
+      if (outgc_(i, jout) >= 0) {
+        ydotg[outgc_(i, jout)] += rate;
       }
     }
   }

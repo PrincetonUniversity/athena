@@ -12,6 +12,7 @@
 
 // Athena++ classes headers
 #include "../../athena.hpp"
+#include "chemistry_utils.hpp"
 
 //c++ header
 #include <sstream>    // stringstream
@@ -27,8 +28,12 @@ class KidaSpecies{
     std::string name;
   private:
     static const int natom_ = 13;
+    static const Real ma_atom_[natom_];//mass of atoms in u
     int charge_;
     int atom_count_[natom_];
+    //mass of the species in g, used in grain - molecule reactions.
+    //mass is automatically calculated using the number of atoms
+    Real mass_; 
 };
 
 #endif //KIDA_SPECIES_H_

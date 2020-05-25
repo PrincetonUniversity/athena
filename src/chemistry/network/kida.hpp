@@ -22,7 +22,8 @@
 #include "../utils/kida_reaction.hpp"
 
 //reaction types
-enum class ReactionType {none, cr, crp, photo, twobody, twobodytr, grain, special};
+enum class ReactionType {none, cr, crp, photo, twobody, twobodytr,
+                         grain_implicit, special, grain_charge};
 
 //! \class ChemNetwork
 //  \brief Chemical Network that defines the reaction rates between species.
@@ -179,6 +180,17 @@ private:
   AthenaArray<int> insr_;
   AthenaArray<int> outsr_;
   AthenaArray<Real> ksr_;
+  //grain collision: grain - electron/ion reactions
+  int n_gc_;
+  const int n_ingc_ = 2;
+  const int n_outgc_ = 3;
+  AthenaArray<int> ingc_;
+  AthenaArray<int> outgc_;
+  AthenaArray<int> nu_gc_; //nu={0, -1} for rate formula
+  //effective rate at 1K: pi a_g^2 s_i sqrt( 8k_B/(pi m_i) )*branch_ratio
+  AthenaArray<Real> r1_gc_; 
+  AthenaArray<Real> t1_gc_; //tau at 1K: a_g k_B/qi^2
+  AthenaArray<Real> kgc_;
 
   //radiation related reactions and variables
   int n_freq_;
