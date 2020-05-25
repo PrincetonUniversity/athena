@@ -16,6 +16,7 @@
 #define DBGPR_MESHBLOCK false
 #define DBGPR_MESHBLOCK_TREE false
 #define DBGPR_MESH_REFINEMENT false
+#define DBGPR_AMR_LOADBALANCE true
 #define DBGPR_BVALS_VAR false
 #define DBGPR_BVALS_REFINE false
 #define DBGPR_BVALS_CC false

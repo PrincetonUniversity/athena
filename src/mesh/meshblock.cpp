@@ -99,9 +99,11 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pcoord = new GRUser(this, pin, false);
   }
 
-  // Reconstruction: constructor may implicitly depend on Coordinates, and PPM variable
-  // floors depend on EOS, but EOS isn't needed in Reconstruction constructor-> this is ok
-  precon = new Reconstruction(this, pin);
+  if (FLUID_ENABLED) {
+    // Reconstruction: constructor may implicitly depend on Coordinates, and PPM variable
+    // floors depend on EOS, but EOS isn't needed in Reconstruction constructor-> this is ok
+    precon = new Reconstruction(this, pin);
+  }
 
   if (pm->multilevel) pmr = new MeshRefinement(this, pin);
 
@@ -231,8 +233,10 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     pcoord = new GRUser(this, pin, false);
   }
 
-  // Reconstruction (constructor may implicitly depend on Coordinates)
-  precon = new Reconstruction(this, pin);
+  if (FLUID_ENABLED) {
+    // Reconstruction (constructor may implicitly depend on Coordinates)
+    precon = new Reconstruction(this, pin);
+  }
 
   if (pm->multilevel) pmr = new MeshRefinement(this, pin);
 
@@ -381,7 +385,7 @@ MeshBlock::~MeshBlock() {
   if (next != nullptr) next->prev = prev;
 
   delete pcoord;
-  delete precon;
+  if (FLUID_ENABLED) delete precon;
   if (pmy_mesh->multilevel) delete pmr;
 
   if (FLUID_ENABLED) delete phydro;
