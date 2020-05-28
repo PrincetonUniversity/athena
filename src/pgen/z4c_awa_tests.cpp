@@ -35,6 +35,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     pz4c->ADMLinearWave1(pz4c->storage.adm);
     pz4c->GaugeGeodesic(pz4c->storage.u);
     std::cout << "Linear 1D wave test initialized" << std::endl;
+  } else if(test == "linear_wave1_Gaussian") {
+    pz4c->ADMLinearWave1Gaussian(pz4c->storage.adm);
+    pz4c->GaugeGeodesic(pz4c->storage.u);
+    std::cout << "Linear 1D Gaussian wave test initialized" << std::endl;
   } else if(test == "linear_wave2") {
     pz4c->ADMLinearWave2(pz4c->storage.adm);
     pz4c->GaugeGeodesic(pz4c->storage.u);
@@ -57,10 +61,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     std::cout << "Gauge 2D wave initialized with no shift" << std::endl;
 #ifdef GSL
   } else if (test == "polarised_Gowdy") {
-      pz4c->ADMPolarisedGowdy(pz4c->storage.adm);
-      pz4c->GaugePolarisedGowdy(pz4c->storage.u);
-      std::cout << "Polarised Gowdy initialized with ";
-      std::cout << "analytical lapse and no shift" << std::endl;
+    pz4c->ADMPolarisedGowdy(pz4c->storage.adm);
+    pz4c->GaugePolarisedGowdy(pz4c->storage.u);
+    std::cout << "Polarised Gowdy initialized with ";
+    std::cout << "analytical lapse and no shift" << std::endl;
 #endif // GSL
   } else {
     pz4c->ADMMinkowski(pz4c->storage.adm);

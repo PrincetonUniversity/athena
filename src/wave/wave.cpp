@@ -137,6 +137,11 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
 
   c = pin->GetOrAddReal("wave", "c", 1.0);
 
+  // debug control
+  debug_inspect_error = pin->GetOrAddBoolean("wave", "debug_inspect_err", false);
+  debug_abort_threshold = pin->GetOrAddReal("wave", "debug_abort_threshold",
+    std::numeric_limits<Real>::max());
+
   // Additional boundary condition control
   std::string boundary_type = pin->GetOrAddString("wave", "boundary_type", "none");
 

@@ -1559,11 +1559,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       if (DBGPR_MESH)
         coutBoldGreen("Boundary communication complete; processing...\n");
 
-      // perform fourth-order correction of midpoint initial condition:
-      // (correct IC on all MeshBlocks or none; switch cannot be toggled independently)
-      bool correct_ic = pmb_array[0]->precon->correct_ic;
-      if (correct_ic){
-        CorrectMidpointInitialCondition(pmb_array, nmb);
+      if (FLUID_ENABLED) {
+        // perform fourth-order correction of midpoint initial condition:
+        // (correct IC on all MeshBlocks or none; switch cannot be toggled independently)
+        bool correct_ic = pmb_array[0]->precon->correct_ic;
+        if (correct_ic){
+          CorrectMidpointInitialCondition(pmb_array, nmb);
+        }
       }
       // Now do prolongation, compute primitives, apply BCs
       Hydro *ph = nullptr;
@@ -1609,29 +1611,29 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                                        il, iu, jl, ju, kl, ku);
         }
         // --------------------------
-        int order = pmb->precon->xorder;
-        if (order == 4) {
-          // fourth-order EOS:
-          // for hydro, shrink buffer by 1 on all sides
-          if (pbval->nblevel[1][1][0] != -1) il += 1;
-          if (pbval->nblevel[1][1][2] != -1) iu -= 1;
-          if (pbval->nblevel[1][0][1] != -1) jl += 1;
-          if (pbval->nblevel[1][2][1] != -1) ju -= 1;
-          if (pbval->nblevel[0][1][1] != -1) kl += 1;
-          if (pbval->nblevel[2][1][1] != -1) ku -= 1;
-          // for MHD, shrink buffer by 3
-          // TODO(felker): add MHD loop limit calculation for 4th order W(U)
-          if (FLUID_ENABLED) {
+        if (FLUID_ENABLED) {
+          int order = pmb->precon->xorder;
+          if (order == 4) {
+            // fourth-order EOS:
+            // for hydro, shrink buffer by 1 on all sides
+            if (pbval->nblevel[1][1][0] != -1) il += 1;
+            if (pbval->nblevel[1][1][2] != -1) iu -= 1;
+            if (pbval->nblevel[1][0][1] != -1) jl += 1;
+            if (pbval->nblevel[1][2][1] != -1) ju -= 1;
+            if (pbval->nblevel[0][1][1] != -1) kl += 1;
+            if (pbval->nblevel[2][1][1] != -1) ku -= 1;
+            // for MHD, shrink buffer by 3
+            // TODO(felker): add MHD loop limit calculation for 4th order W(U)
             pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
-                                                       ph->w, pf->bcc, pmb->pcoord,
-                                                       il, iu, jl, ju, kl, ku);
-          }
+                                                        ph->w, pf->bcc, pmb->pcoord,
+                                                        il, iu, jl, ju, kl, ku);
 
-          if (NSCALARS > 0) {
-            pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
-              ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
+            if (NSCALARS > 0) {
+              pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
+                ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);
+            }
           }
-        }
+          }
         // --------------------------
         // end fourth-order EOS
 

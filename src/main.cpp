@@ -676,7 +676,7 @@ int main(int argc, char *argv[]) {
     double zc_cpus = static_cast<double> (zonecycles) / cpu_time;
 
     std::cout << std::endl << "zone-cycles = " << zonecycles << std::endl;
-    std::cout << "cpu time used  = " << cpu_time << std::endl;
+    std::cout << "cpu time used = " << cpu_time << std::endl;
     std::cout << "zone-cycles/cpu_second = " << zc_cpus << std::endl;
 #ifdef OPENMP_PARALLEL
     double zc_omps = static_cast<double> (zonecycles) / omp_time;

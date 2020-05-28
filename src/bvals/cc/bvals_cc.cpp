@@ -157,9 +157,6 @@ int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
   }
   size *= nu_ + 1;
 
-  if (DBGPR_BVALS_CC)
-    printf("size = %d\n", size);
-
   return size;
 }
 
@@ -188,16 +185,16 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
                                                               const NeighborBlock& nb) {
   if (DBGPR_BVALS_CC) {
     coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel\n");
-    nb.print_all();
+    // nb.print_all();
   }
 
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
-  if (DBGPR_BVALS_CC) {
-    coutBoldRed("x1f:\n");
-    pmb->pcoord->x1f.print_all();
-  }
+  // if (DBGPR_BVALS_CC) {
+  //   coutBoldRed("x1f:\n");
+  //   pmb->pcoord->x1f.print_all();
+  // }
 
   si = (nb.ni.ox1 > 0) ? (pmb->ie - NGHOST + 1) : pmb->is;
   ei = (nb.ni.ox1 < 0) ? (pmb->is + NGHOST - 1) : pmb->ie;
@@ -208,13 +205,13 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   int p = 0;
   AthenaArray<Real> &var = *var_cc;
 
-  if (DBGPR_BVALS_CC)
-    coutBoldRed("var_cc, buf");
+  // if (DBGPR_BVALS_CC)
+  //   coutBoldRed("var_cc, buf");
 
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
-  if (DBGPR_BVALS_CC)
-    printf("pmb->gid=%d\n", pmb->gid);
+  // if (DBGPR_BVALS_CC)
+  //   printf("pmb->gid=%d\n", pmb->gid);
 
   //////////////////////////////////////////////////////////////////////////////
   // inspect branching logic SL
@@ -292,7 +289,7 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
                                                               const NeighborBlock& nb) {
   if (DBGPR_BVALS_CC) {
     coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser\n");
-    nb.print_all();
+    // nb.print_all();
   }
 
   MeshBlock *pmb = pmy_block_;
@@ -302,10 +299,10 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   AthenaArray<Real> &var = *var_cc;
   AthenaArray<Real> &coarse_var = *coarse_buf;
 
-  if (DBGPR_BVALS_CC) {
-    coutBoldRed("x1f:\n");
-    pmb->pcoord->x1f.print_all();
-  }
+  // if (DBGPR_BVALS_CC) {
+  //   coutBoldRed("x1f:\n");
+  //   pmb->pcoord->x1f.print_all();
+  // }
 
   si = (nb.ni.ox1 > 0) ? (pmb->cie - cn) : pmb->cis;
   ei = (nb.ni.ox1 < 0) ? (pmb->cis + cn) : pmb->cie;
@@ -315,26 +312,26 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
   ek = (nb.ni.ox3 < 0) ? (pmb->cks + cn) : pmb->cke;
 
   int p = 0;
-  if (DBGPR_BVALS_CC) {
-    coutBoldRed("var_cc\n");
-    var.print_all();
+  // if (DBGPR_BVALS_CC) {
+  //   coutBoldRed("var_cc\n");
+  //   var.print_all();
 
-    coutBoldRed("coarse_buf\n");
-    coarse_var.print_all();
-  }
+  //   coutBoldRed("coarse_buf\n");
+  //   coarse_var.print_all();
+  // }
 
   pmr->RestrictCellCenteredValues(var, coarse_var, nl_, nu_, si, ei, sj, ej, sk, ek);
 
-  if (DBGPR_BVALS_CC)
-    coutBoldRed("coarse_buf, buf");
+  // if (DBGPR_BVALS_CC)
+  //   coutBoldRed("coarse_buf, buf");
 
   BufferUtility::PackData(coarse_var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
-  if (DBGPR_BVALS_CC)
-    printf("(cims, cime, civs, cigs, cige, cive, cips, cipe)="
-          "(%d,%d,%d,%d,%d,%d,%d,%d)\n",
-          pmb->cims, pmb->cime, pmb->civs, pmb->cigs,
-          pmb->cige, pmb->cive, pmb->cips, pmb->cipe);
+  // if (DBGPR_BVALS_CC)
+  //   printf("(cims, cime, civs, cigs, cige, cive, cips, cipe)="
+  //         "(%d,%d,%d,%d,%d,%d,%d,%d)\n",
+  //         pmb->cims, pmb->cime, pmb->civs, pmb->cigs,
+  //         pmb->cige, pmb->cive, pmb->cips, pmb->cipe);
 
   //////////////////////////////////////////////////////////////////////////////
   // inspect branching logic Fine2Coarse
@@ -405,7 +402,7 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
                                                             const NeighborBlock& nb) {
   if (DBGPR_BVALS_CC) {
     coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner\n");
-    nb.print_all();
+    // nb.print_all();
   }
 
   MeshBlock *pmb = pmy_block_;
@@ -413,10 +410,10 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
   int cn = pmb->cnghost - 1;
   AthenaArray<Real> &var = *var_cc;
 
-  if (DBGPR_BVALS_CC) {
-    coutBoldRed("x1f:\n");
-    pmb->pcoord->x1f.print_all();
-  }
+  // if (DBGPR_BVALS_CC) {
+  //   coutBoldRed("x1f:\n");
+  //   pmb->pcoord->x1f.print_all();
+  // }
 
   si = (nb.ni.ox1 > 0) ? (pmb->ie - cn) : pmb->is;
   ei = (nb.ni.ox1 < 0) ? (pmb->is + cn) : pmb->ie;
@@ -452,8 +449,8 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 
   int p = 0;
 
-  if (DBGPR_BVALS_CC)
-    coutBoldRed("var_cc, buf");
+  // if (DBGPR_BVALS_CC)
+  //   coutBoldRed("var_cc, buf");
 
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
 
@@ -587,7 +584,6 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
                                                         const NeighborBlock& nb) {
   if (DBGPR_BVALS_CC) {
     coutYellow("CellCenteredBoundaryVariable::SetBoundarySameLevel\n");
-    nb.print_all();
   }
 
   MeshBlock *pmb = pmy_block_;
@@ -622,8 +618,8 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       }
     }
   } else {
-    if (DBGPR_BVALS_CC)
-      coutBoldRed("buf, var_cc");
+    // if (DBGPR_BVALS_CC)
+    //   coutBoldRed("buf, var_cc");
 
     BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
@@ -745,7 +741,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
                                                           const NeighborBlock& nb) {
   if (DBGPR_BVALS_CC) {
     coutYellow("CellCenteredBoundaryVariable::SetBoundaryFromCoarser\n");
-    nb.print_all();
+    // nb.print_all();
   }
 
   MeshBlock *pmb = pmy_block_;
@@ -801,16 +797,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
       }
     }
   } else {
-    if (DBGPR_BVALS_CC)
-      coutBoldRed("buf, coarse_buf");
- 
     BufferUtility::UnpackData(buf, coarse_var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
-
-    // coutBoldRed("buf\n");
-    // for (int kk=0; kk<NGHOST; kk++){
-    //   printf("%1.3f, ", buf[kk]);
-    // };
-    // printf("\n");
   }
   //////////////////////////////////////////////////////////////////////////////
   // if ((nb.ni.ox1 == 0) && (nb.ni.ox2 > 0))
@@ -935,7 +922,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
                                                         const NeighborBlock& nb) {
   if (DBGPR_BVALS_CC) {
     coutYellow("CellCenteredBoundaryVariable::SetBoundaryFromFiner\n");
-    nb.print_all();
+    // nb.print_all();
   }
 
   MeshBlock *pmb = pmy_block_;
@@ -1001,11 +988,7 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
       }
     }
   } else {
-    if (DBGPR_BVALS_CC)
-      coutBoldRed("buf, var_cc");
-
     BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
-
   }
   //////////////////////////////////////////////////////////////////////////////
 
@@ -1193,7 +1176,9 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
 
 void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 #ifdef MPI_PARALLEL
-  //coutYellow("CellCenteredBoundaryVariable::SetupPersistentMPI\n");
+  if (DBGPR_BVALS_CC)
+    coutYellow("CellCenteredBoundaryVariable::SetupPersistentMPI\n");
+
   MeshBlock* pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
 
@@ -1243,32 +1228,35 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
       MPI_Recv_init(bd_var_.recv[nb.bufid], rsize, MPI_ATHENA_REAL,
                     nb.snb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_recv[nb.bufid]));
 
-      // hydro flux correction: bd_var_flcor_
-      if (pmy_mesh_->multilevel && nb.ni.type == NeighborConnect::face) {
-        int size;
-        if (nb.fid == 0 || nb.fid == 1)
-          size = ((pmb->block_size.nx2 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
-        else if (nb.fid == 2 || nb.fid == 3)
-          size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
-        else // (nb.fid == 4 || nb.fid == 5)
-          size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx2 + 1)/2);
-        size *= (nu_ + 1);
-        if (nb.snb.level < mylevel) { // send to coarser
-          tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_flx_phys_id_);
-          if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
-            MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
-          MPI_Send_init(bd_var_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL,
-                        nb.snb.rank, tag, MPI_COMM_WORLD,
-                        &(bd_var_flcor_.req_send[nb.bufid]));
-        } else if (nb.snb.level > mylevel) { // receive from finer
-          tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
-          if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
-            MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
-          MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL,
-                        nb.snb.rank, tag, MPI_COMM_WORLD,
-                        &(bd_var_flcor_.req_recv[nb.bufid]));
+      if (FLUID_ENABLED) {
+        // hydro flux correction: bd_var_flcor_
+        if (pmy_mesh_->multilevel && nb.ni.type == NeighborConnect::face) {
+          int size;
+          if (nb.fid == 0 || nb.fid == 1)
+            size = ((pmb->block_size.nx2 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
+          else if (nb.fid == 2 || nb.fid == 3)
+            size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
+          else // (nb.fid == 4 || nb.fid == 5)
+            size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx2 + 1)/2);
+          size *= (nu_ + 1);
+          if (nb.snb.level < mylevel) { // send to coarser
+            tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_flx_phys_id_);
+            if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
+              MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
+            MPI_Send_init(bd_var_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL,
+                          nb.snb.rank, tag, MPI_COMM_WORLD,
+                          &(bd_var_flcor_.req_send[nb.bufid]));
+          } else if (nb.snb.level > mylevel) { // receive from finer
+            tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
+            if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
+              MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
+            MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL,
+                          nb.snb.rank, tag, MPI_COMM_WORLD,
+                          &(bd_var_flcor_.req_recv[nb.bufid]));
+          }
         }
       }
+
     }
   }
 #endif
@@ -1277,17 +1265,22 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 
 void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
-  //coutYellow("CellCenteredBoundaryVariable::StartReceiving\n");
+  if (DBGPR_BVALS_CC)
+    coutYellow("CellCenteredBoundaryVariable::StartReceiving\n");
+
   MeshBlock *pmb = pmy_block_;
   int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.snb.rank != Globals::my_rank) {
       MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-      if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face
-          && nb.snb.level > mylevel) // opposite condition in ClearBoundary()
-        MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
+      if(FLUID_ENABLED) {
+        if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face
+            && nb.snb.level > mylevel) // opposite condition in ClearBoundary()
+          MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
+      }
     }
+
   }
 #endif
   return;
@@ -1303,20 +1296,28 @@ void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
     bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
     bd_var_.sflag[nb.bufid] = BoundaryStatus::waiting;
 
-    if (nb.ni.type == NeighborConnect::face) {
-      bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::waiting;
-      bd_var_flcor_.sflag[nb.bufid] = BoundaryStatus::waiting;
+    if (FLUID_ENABLED) {
+      if (nb.ni.type == NeighborConnect::face) {
+        bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::waiting;
+        bd_var_flcor_.sflag[nb.bufid] = BoundaryStatus::waiting;
+      }
     }
+
 #ifdef MPI_PARALLEL
     MeshBlock *pmb = pmy_block_;
     int mylevel = pmb->loc.level;
     if (nb.snb.rank != Globals::my_rank) {
       // Wait for Isend
       MPI_Wait(&(bd_var_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
-      if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face
-          && nb.snb.level < mylevel)
-        MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
+
+      if (FLUID_ENABLED) {
+        if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face
+            && nb.snb.level < mylevel)
+          MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
+      }
+
     }
+
 #endif
   }
 

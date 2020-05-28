@@ -19,6 +19,11 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 
+// External libraries
+#ifdef GSL
+#include <gsl/gsl_sf_bessel.h>   // Bessel functions
+#endif
+
 //----------------------------------------------------------------------------------------
 // \!fn void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, AthenaArray<Real> & u_rhs)
 // \brief compute the RHS given the state vector and matter state
@@ -510,6 +515,58 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
         rhs.beta_u(a,k,j,i) -= opt.shift_eta * z4c.beta_u(a,k,j,i);
       }
     }
+
+#if (0)// DEBUG (force analytical polarised Gowdy lapse, zero shift)
+#ifdef GSL
+
+  // compute info for \Lambda--------------------------------------------------
+  Real t = opt.AwA_polarised_Gowdy_t0;
+
+  Real J0 = gsl_sf_bessel_J0(2. * PI);
+  Real J1 = gsl_sf_bessel_J1(2. * PI);
+  Real sqr_J0 = SQR(J0);
+  Real sqr_J1 = SQR(J1);
+
+  Real J0_t = gsl_sf_bessel_J0(2. * PI * t);
+  Real J1_t = gsl_sf_bessel_J1(2. * PI * t);
+  Real sqr_J0_t = SQR(J0_t);
+  Real sqr_J1_t = SQR(J1_t);
+
+  Real dt_J0_t = -2. * PI * J1_t;
+  Real dt_J1_t = 2. * PI * J0_t - J1_t / t;
+
+  Real sqr_pi = SQR(PI);
+  Real sqr_t = SQR(t);
+
+  // Real L = -2. * PI * t * J0_t * J1_t * sqr_cos_x;
+  // L += 2. * sqr_pi * sqr_t * (sqr_J0_t + sqr_J1_t);
+  // L -= 1. / 2. * (4. * sqr_pi * (sqr_J0 + sqr_J1) - 2. * PI * J0 * J1);
+
+  Real pow_t_m_1_4 = std::pow(t, -1./4.);
+  //-----------
+
+
+  GLOOP3(k,j,i) {
+    Real cos_x = std::cos(2. * PI * mbi.x1(i));
+    Real sqr_cos_x = SQR(cos_x);
+
+    Real L = -2. * PI * t * J0_t * J1_t * sqr_cos_x;
+    L += 2. * sqr_pi * sqr_t * (sqr_J0_t + sqr_J1_t);
+    L -= 1. / 2. * (4. * sqr_pi * (sqr_J0 + sqr_J1) - 2. * PI * J0 * J1);
+
+    rhs.alpha(k,j,i) = pow_t_m_1_4 * std::exp(L / 4.);
+  }
+
+
+  ILOOP2(k,j) {
+    for(int a = 0; a < NDIM; ++a) {
+      ILOOP1(i) {
+        rhs.beta_u(a,k,j,i) = 0.;
+      }
+    }
+  }
+#endif // ENDGSL
+#endif // ENDDEBUG
 
 #if (0)// DEBUG (forcing zero shift)
     for(int a = 0; a < NDIM; ++a) {

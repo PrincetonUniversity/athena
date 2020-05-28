@@ -16,7 +16,7 @@
 #include <fstream>
 
 // Random number in [-1,1]
-std::default_random_engine generator;
+std::default_random_engine generator{137};
 std::uniform_real_distribution<double> distribution(-1.,1.);
 #define RANDOMNUMBER (distribution(generator))
 
@@ -26,6 +26,11 @@ std::uniform_real_distribution<double> distribution(-1.,1.);
 
 // Gaussian profile for simple 3D gauge wave test
 #define  GAUSSIAN(a,d,x,y,z) (           (a)*std::exp(-(SQR(x)+SQR(y)+SQR(z))/SQR(d)) )
+
+// Gaussian profile for 1d linear test
+#define   GAUSSIAN1(a,w,x) (               (a)*std::exp(-SQR(x)/(2 * SQR(w))) )
+#define  DGAUSSIAN1(a,w,x) (  (a * x / SQR(W))*std::exp(-SQR(x)/(2 * SQR(w))) )
+
 
 // Athena++ headers
 #include "z4c.hpp"
@@ -106,7 +111,8 @@ void Z4c::ADMLinearWave1(AthenaArray<Real> & u_adm) {
 
   Real const amp = opt.AwA_amplitude;
   Real const d_x = opt.AwA_d_x;
-  Real const d_y = opt.AwA_d_y;
+  // y = 0 and d_y should therefore be irrelevant (set to non-zero to prevent nan)
+  Real const d_y = 1;
 
   // Flat spacetime
   ADMMinkowski(u_adm);
@@ -133,11 +139,46 @@ void Z4c::ADMLinearWave1(AthenaArray<Real> & u_adm) {
 }
 
 //----------------------------------------------------------------------------------------
+// \!fn void Z4c::LinearWave1Gaussian(AthenaArray<Real> & u)
+// \brief Initialize ADM vars for Gaussian linear wave test in 1d
+
+void Z4c::ADMLinearWave1Gaussian(AthenaArray<Real> & u_adm) {
+  ADM_vars adm;
+  SetADMAliases(u_adm, adm);
+
+  Real const amp = opt.AwA_amplitude;
+  Real const w = opt.AwA_Gaussian_w;
+
+  // Flat spacetime
+  ADMMinkowski(u_adm);
+
+  // For propagation along x ...
+  GLOOP2(k,j) {
+    // g_yy
+    GLOOP1(i) {
+      adm.g_dd(1,1,k,j,i) += GAUSSIAN1(amp, w, mbi.x1(i));
+    }
+    // g_zz
+    GLOOP1(i) {
+      adm.g_dd(2,2,k,j,i) -= GAUSSIAN1(amp, w, mbi.x1(i));
+    }
+    // K_yy
+    GLOOP1(i) {
+      adm.K_dd(1,1,k,j,i) += 0.5*GAUSSIAN1(amp, w, mbi.x1(i));
+    }
+    // K_zz
+    GLOOP1(i) {
+      adm.K_dd(2,2,k,j,i) -= 0.5*GAUSSIAN1(amp, w, mbi.x1(i));
+    }
+  }
+}
+//----------------------------------------------------------------------------------------
 // \!fn void Z4c::LinearWave2(AthenaArray<Real> & u)
 // \brief Initialize ADM vars for linear wave test in 2d
 
-// Note we use the same macro as for the 1d,
-// so there's a factor of sqrt(2) in the normalization different from literature
+// BD:
+// Note below SQRT2 factors added to have normalization coincide with testbed
+// papers.
 
 void Z4c::ADMLinearWave2(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
@@ -171,15 +212,15 @@ void Z4c::ADMLinearWave2(AthenaArray<Real> & u_adm) {
     for(int a = 0; a < NDIM-1; ++a) {
       for(int b = a; b < NDIM-1; ++b) {
         GLOOP1(i) {
-          adm.K_dd(a,b,k,j,i) = 0.25*DSINWAVE(amp, d_x, d_y,
-                                              mbi.x1(i), mbi.x2(j));
+          adm.K_dd(a,b,k,j,i) = 0.25 * SQRT2 * DSINWAVE(amp, d_x, d_y,
+            mbi.x1(i), mbi.x2(j));
         }
       }
     }
     // K_zz
     GLOOP1(i) {
-      adm.K_dd(2,2,k,j,i) = -0.5*DSINWAVE(amp, d_x, d_y,
-                                          mbi.x1(i), mbi.x2(j));
+      adm.K_dd(2,2,k,j,i) = -0.5 * SQRT2 * DSINWAVE(amp, d_x, d_y,
+        mbi.x1(i), mbi.x2(j));
     }
   }
 }
@@ -324,8 +365,9 @@ void Z4c::GaugeGaugeWave1_shifted(AthenaArray<Real> & u) {
 // \!fn void Z4c::ADMGaugeWave2(AthenaArray<Real> & u, bool shifted)
 // \brief Initialize ADM vars for 2D gauge wave test
 
-// Note we use the same macro as for the 1d,
-// so there's a factor of sqrt(2) in the normalization different from literature
+// BD:
+// Note below SQRT2 factors added to have normalization coincide with testbed
+// papers.
 
 void Z4c::ADMGaugeWave2(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
@@ -356,7 +398,7 @@ void Z4c::ADMGaugeWave2(AthenaArray<Real> & u_adm) {
     for(int a = 0; a < NDIM-1; ++a) {
       GLOOP1(i) {
         adm.K_dd(a,a,k,j,i) =
-                  0.25*DSINWAVE(amp, d_y, d_y, mbi.x1(i), mbi.x2(j))/
+                  0.25 * SQRT2 * DSINWAVE(amp, d_y, d_y, mbi.x1(i), mbi.x2(j))/
           std::sqrt(1.0-SINWAVE(amp, d_y, d_y, mbi.x1(i), mbi.x2(j)));
       }
     }
@@ -364,7 +406,8 @@ void Z4c::ADMGaugeWave2(AthenaArray<Real> & u_adm) {
     // K_xy, K_zz
     GLOOP1(i) {
       adm.K_dd(0,1,k,j,i) = - adm.K_dd(0,0,k,j,i);
-      adm.K_dd(2,2,k,j,i) = -0.5*DSINWAVE(amp, d_y, d_y, mbi.x1(i), mbi.x2(j));
+      adm.K_dd(2,2,k,j,i) = -0.5 * SQRT2 * DSINWAVE(amp, d_y, d_y,
+        mbi.x1(i), mbi.x2(j));
     }
   }
 }
@@ -394,8 +437,8 @@ void Z4c::GaugeGaugeWave2(AthenaArray<Real> & u) {
 
 #ifdef GSL
 //----------------------------------------------------------------------------------------
-// \!fn void Z4c::GaugePolarisedGowdy(...)
-// \brief ...
+// \!fn void Z4c::GaugePolarisedGowdy(AthenaArray<Real> & u)
+// \brief Seed lapse for polarised Gowdy test.
 
 void Z4c::GaugePolarisedGowdy(AthenaArray<Real> & u) {
   Z4c_vars z4c;
@@ -404,7 +447,7 @@ void Z4c::GaugePolarisedGowdy(AthenaArray<Real> & u) {
   z4c.beta_u.Fill(0.);
 
   // compute info for \Lambda--------------------------------------------------
-  Real t = 9.8753205829098;
+  Real t = opt.AwA_polarised_Gowdy_t0;
 
   Real J0 = gsl_sf_bessel_J0(2. * PI);
   Real J1 = gsl_sf_bessel_J1(2. * PI);
@@ -445,7 +488,7 @@ void Z4c::GaugePolarisedGowdy(AthenaArray<Real> & u) {
 
 //----------------------------------------------------------------------------------------
 // \!fn void Z4c::ADMPolarisedGowdy(AthenaArray<Real> & u)
-// \brief ...
+// \brief Seed ADM variables for polarised Gowdy test.
 
 void Z4c::ADMPolarisedGowdy(AthenaArray<Real> & u_adm) {
   ADM_vars adm;
@@ -457,7 +500,7 @@ void Z4c::ADMPolarisedGowdy(AthenaArray<Real> & u_adm) {
   // compute P, \Lambda factors and derivatives--------------------------------
   Real sign_K = 1.;   // +1 expanding, -1 collapsing
 
-  Real t = 9.8753205829098;
+  Real t = opt.AwA_polarised_Gowdy_t0;
 
   Real J0 = gsl_sf_bessel_J0(2. * PI);
   Real J1 = gsl_sf_bessel_J1(2. * PI);
@@ -469,8 +512,8 @@ void Z4c::ADMPolarisedGowdy(AthenaArray<Real> & u_adm) {
   Real sqr_J0_t = SQR(J0_t);
   Real sqr_J1_t = SQR(J1_t);
 
-  Real dt_J0_t = -2. * PI * J1_t;
-  Real dt_J1_t = 2. * PI * J0_t - J1_t / t;
+  // Real dt_J0_t = -2. * PI * J1_t;
+  // Real dt_J1_t = 2. * PI * J0_t - J1_t / t;
 
   Real sqr_pi = SQR(PI);
   Real sqr_t = SQR(t);
@@ -484,16 +527,23 @@ void Z4c::ADMPolarisedGowdy(AthenaArray<Real> & u_adm) {
     Real cos_x = std::cos(2. * PI * mbi.x1(i));
     Real sqr_cos_x = SQR(cos_x);
 
+    Real sin_x = std::sin(2. * PI * mbi.x1(i));
+    Real sqr_sin_x = SQR(sin_x);
+
+
     Real P = J0_t * cos_x;
     Real L = -2. * PI * t * J0_t * J1_t * sqr_cos_x;
     L += 2. * sqr_pi * sqr_t * (sqr_J0_t + sqr_J1_t);
     L -= 1. / 2. * (4. * sqr_pi * (sqr_J0 + sqr_J1) - 2. * PI * J0 * J1 );
 
-    Real dt_P = dt_J0_t * cos_x;
-    Real dt_L = - 2. * PI * sqr_cos_x * (t * J1_t * dt_J0_t +
-                                        J0_t * (J1_t + t * dt_J1_t));
-    dt_L += 4. * sqr_pi * t * (sqr_J0_t + t * J0_t * dt_J0_t +
-                              J1_t * (J1_t + t * dt_J1_t));
+    // Real dt_P = dt_J0_t * cos_x;
+    // Real dt_L = - 2. * PI * sqr_cos_x * (t * J1_t * dt_J0_t +
+    //                                     J0_t * (J1_t + t * dt_J1_t));
+    // dt_L += 4. * sqr_pi * t * (sqr_J0_t + t * J0_t * dt_J0_t +
+    //                           J1_t * (J1_t + t * dt_J1_t));
+
+    Real dt_P = - 2 * PI * J1_t * cos_x;
+    Real dt_L = 4 * sqr_pi * t * (sqr_J1_t * sqr_cos_x + sqr_J0_t * sqr_sin_x);
 
     // g_xx
     adm.g_dd(0,0,k,j,i) = pow_t_m_1_2 * std::exp(L / 2.);
@@ -513,6 +563,10 @@ void Z4c::ADMPolarisedGowdy(AthenaArray<Real> & u_adm) {
     // K_zz
     adm.K_dd(2,2,k,j,i) = sign_K / 2. * pow_t_p_1_4 * std::exp(-L / 4.) *
       std::exp(-P) * (-1. + t * dt_P);
+
+    //psi4 [though this is inferred]
+    adm.psi4(k,j,i) = std::pow(adm.g_dd(0,0,k,j,i) * adm.g_dd(1,1,k,j,i) *
+      adm.g_dd(2,2,k,j,i), -1./3.);
   }
 
 }

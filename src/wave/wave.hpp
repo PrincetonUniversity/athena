@@ -39,6 +39,9 @@ public:
 
   Real c;                       // characteristic speed
 
+  bool debug_inspect_error;     // allow for error inspection in work loop
+  Real debug_abort_threshold;   // std.out & terminate on analytical compare >
+
   bool use_Dirichlet = false;
   bool use_Sommerfeld = false;
 

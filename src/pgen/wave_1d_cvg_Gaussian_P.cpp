@@ -141,7 +141,7 @@ void MeshBlock::WaveUserWorkInLoop() {
         }
       }
 
-  // printf("MB::UWIL: (max_err, fun_err)=(%1.7f, %1.7f)\n", max_err, fun_err);
+  printf("MB::UWIL: (max_err, fun_err)=(%1.7f, %1.7f)\n", max_err, fun_err);
   return;
 }
 
