@@ -39,8 +39,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   
       
     string set_name = "problem"; 
-    
+    printf("BeforeSetDefault\n");    
     TwoPunctures_params_set_default();
+    printf("AfterSetDefault\n");
     TwoPunctures_params_set_Boolean((char *) "verbose",
                                 pin->GetOrAddBoolean(set_name, "verbose", 0));
     TwoPunctures_params_set_Real((char *) "par_b",
@@ -136,7 +137,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
     
     TwoPunctures_params_set_Boolean((char *) "swap_xz",
                                  pin->GetOrAddBoolean(set_name, "swap_xz", 0));
+    printf("AfterParSetting\n");
     data = TwoPunctures_make_initial_data();
+    printf("AfterMakeInitData\n");
     
     if(adaptive==true)
       EnrollUserRefinementCondition(RefinementCondition);
@@ -173,12 +176,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 }
 
 int RefinementCondition(MeshBlock *pmb)
-{ 
+{ printf("Call RefCond\n");
   for (int i_punct = 0; i_punct < NPUNCT; ++i_punct) {
-    if (pmb->pz4c_tracker_loc->InBlock(i_punct))
+    if (pmb->pz4c_tracker_loc->InBlock(i_punct)) {
+      printf("Punc %d: Refine\n", i_punct);
       return 1;
-    else
-      return -1;
+      }
   }
-  return 0;
+  return -1;
 }
