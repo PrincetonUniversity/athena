@@ -22,29 +22,33 @@ class MeshBlock;
 class ParameterInput;
 
 //! \class Tracker
-//! \brief Evolves the position of the compact objects
+//! \brief Evolve the positions of the compact objects
 //! This class performs the global reduction
 class Tracker {
   public:
-    //! Monopole term
+    //! Tracker position and velocity for each body
     struct Position_vars {
       Real pos[NDIM];
-      Real betap[NDIM];       // position body one
+      Real betap[NDIM];
       };
     Position_vars pos_body[NPUNCT];
     int npunct;
   public:
-    //! Creates the WaveExtract object
+    //! Creates the Tracker object
     Tracker(Mesh * pmesh, ParameterInput * pin);
     //! Destructor (will close output file)
     ~Tracker();
+    //! Call different initializations
     void Initialize(Mesh * pmesh, ParameterInput * pin);
+    //! Initialize for one puncture case
     void InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin);
+    //! Initialize for two punctures case
     void InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin);
+    //! Reduces the data from all meshblocks and ranks 
     void ReduceTracker();
-    //! Reduces the data from all of the SphericalPatches
+    //! Call different integrators
     void EvolveTracker();
-    //void EvolveTrackerIntegrate(Position_vars pos_gen[2]);
+    //! Euler integrator
     void EvolveTrackerIntegrateEuler();
     //! Write data to file
     void WriteTracker(int iter, Real time) const;
@@ -58,11 +62,12 @@ class Tracker {
 };
 
 //! \class TrackerLocal
-//! \brief Evolve tracker positions in corresponding meshblocks
-//! This class performs the reduction on each TODO
+//! \brief Interpolate beta in current meshblock
+//! This class performs interpolation of beta in current meshblock and check if block contains position
 class TrackerLocal {
   MeshBlock * pmy_block;
   public:
+    //! Store beta at previous timestep and presence in block
     struct Betap_vars {
       Real betap[NDIM];
       int  inblock;
@@ -71,17 +76,11 @@ class TrackerLocal {
   public:
     //! Creates the TrackerLocal object
     TrackerLocal(MeshBlock * pmb, ParameterInput * pin);
-    ~TrackerLocal();
-    //! Evolve Tracker in correspondin meshblocks
-    //void EvolveTracker(Position_vars pos_gen[2]);
-    //void EvolveTrackerIntegrate(Position_vars pos_gen[2]); 
-    //void InitializeTracker(ParameterInput * pin, Position_vars pos_gen[2], int body);
+     ~TrackerLocal();
+    //! Check body's presence in block
     bool InBlock(int body);
-    void StoreBetaPrev(Betap_vars betap[2], AthenaArray<Real> & u, int body);
-  private:
-    //AthenaArray<Real> data;
-    //AthenaArray<Real> weight;
-    //Real rad;
+    //! Interpolate and store beta at previous timestep
+    void StoreBetaPrev(Betap_vars betap[NPUNCT], AthenaArray<Real> & u, int body);
 };
 
 #endif
