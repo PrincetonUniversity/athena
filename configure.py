@@ -952,7 +952,7 @@ if args['ccache']:
 
 
 # use gold linker
-if args['link_gold'] is not None:
+if args['link_gold']:
     makefile_options['LIBRARY_FLAGS'] += ' -fuse-ld=gold'
 
 # --- Step 4. Create new files, finish up --------------------------------
