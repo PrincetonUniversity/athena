@@ -36,10 +36,10 @@ static ini_data *data;
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
-  
-      
-    string set_name = "problem"; 
-    printf("BeforeSetDefault\n");    
+
+
+    string set_name = "problem";
+    printf("BeforeSetDefault\n");
     TwoPunctures_params_set_default();
     printf("AfterSetDefault\n");
     TwoPunctures_params_set_Boolean((char *) "verbose",
@@ -54,7 +54,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
     TwoPunctures_params_set_Real((char *) "target_M_plus",
                                  pin->GetOrAddReal(set_name, "target_M_plus", 1.));
 
-    TwoPunctures_params_set_Real((char *) "target_M_minus", 
+    TwoPunctures_params_set_Real((char *) "target_M_minus",
                                  pin->GetOrAddReal(set_name, "target_M_minus", 1.));
 
     TwoPunctures_params_set_Real((char *) "par_P_plus1",
@@ -134,16 +134,16 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
     TwoPunctures_params_set_Real((char *) "initial_lapse_psi_exponent",
                                  pin->GetOrAddReal(set_name, "initial_lapse_psi_exponent", -2.0));
-    
+
     TwoPunctures_params_set_Boolean((char *) "swap_xz",
                                  pin->GetOrAddBoolean(set_name, "swap_xz", 0));
     printf("AfterParSetting\n");
     data = TwoPunctures_make_initial_data();
     printf("AfterMakeInitData\n");
-    
+
     if(adaptive==true)
       EnrollUserRefinementCondition(RefinementCondition);
-    
+
     return;
 }
 

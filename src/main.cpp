@@ -43,7 +43,10 @@
 #include "outputs/outputs.hpp"
 #include "parameter_input.hpp"
 #include "utils/utils.hpp"
+
+#ifdef Z4C_TRACKER
 #include "z4c/trackers.hpp"
+#endif // Z4C_TRACKER
 
 // MPI/OpenMP headers
 #ifdef MPI_PARALLEL
@@ -556,12 +559,12 @@ int main(int argc, char *argv[]) {
         pz4clist->DoTaskListOneStage(pmesh, stage);
       }
     }
+#ifdef Z4C_TRACKER
     //Tracker
-    if (Z4C_ENABLED) {
-      pmesh->pz4c_tracker->ReduceTracker();
-      pmesh->pz4c_tracker->EvolveTracker();
-      pmesh->pz4c_tracker->WriteTracker(pmesh->ncycle, pmesh->time);
-    }
+    pmesh->pz4c_tracker->ReduceTracker();
+    pmesh->pz4c_tracker->EvolveTracker();
+    pmesh->pz4c_tracker->WriteTracker(pmesh->ncycle, pmesh->time);
+#endif // Z4C_TRACKER
 
     pmesh->UserWorkInLoop();
     pmesh->ncycle++;

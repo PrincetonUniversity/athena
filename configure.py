@@ -24,6 +24,7 @@
 #   -a                  enable advection equation
 #   -w                  enable wave equation
 #   -z                  enable Z4c system
+#   -z_tracker          enable Z4c tracker functionality
 #   -t                  enable interface frame transformations for GR
 #   -vertex             prefer vertex-centered (where available)
 #   -shear              enable shearing periodic boundary conditions
@@ -47,6 +48,8 @@
 #   --include=path      use -Ipath when compiling
 #   --lib_path=path     use -Lpath when linking
 #   --lib=xxx           use -lxxx when linking
+#   -ccache             use caching-compiler (prepend command to chosen compiler)
+#   -link_gold          use gold linker
 # ----------------------------------------------------------------------------------------
 
 # Modules
@@ -180,6 +183,12 @@ parser.add_argument("-z",
                     default=False,
                     help='enable Z4c system')
 
+# -z_tracker argument
+parser.add_argument("-z_tracker",
+                    action='store_true',
+                    default=False,
+                    help='enable Z4c tracker')
+
 # -t argument
 parser.add_argument('-t',
                     action='store_true',
@@ -277,6 +286,19 @@ parser.add_argument('-gsl',
 parser.add_argument('--gsl_path',
                     default='',
                     help='path to gsl libraries')
+
+# -ccache argument
+parser.add_argument('-ccache',
+                    action='store_true',
+                    default=False,
+                    help='enable caching compiler')
+
+# -link_gold argument
+parser.add_argument('-link_gold',
+                    action='store_true',
+                    default=False,
+                    help='use gold linker')
+
 
 # The main choices for --cxx flag, using "ctype[-suffix]" formatting, where "ctype" is the
 # major family/suite/group of compilers and "suffix" may represent variants of the
@@ -543,6 +565,14 @@ if args['z']:
 
 else:
   definitions['Z4C_ENABLED'] = '0'
+
+# -z_tracker argument
+if args['z_tracker']:
+    if not args['z']:
+        raise SystemExit("### CONFIGURE ERROR: z_tracker requires z flag")
+    definitions['Z4C_TRACKER'] = 'Z4C_TRACKER'
+else:
+  definitions['Z4C_TRACKER'] = 'NO_Z4C_TRACKER'
 
 # -vertex argument
 if args['vertex']:
@@ -849,11 +879,11 @@ if args['prob'] == "z4c_two_punctures":
     definitions['TWO_PUNCTURES_OPTION'] = 'TWO_PUNCTURES' + '\n#define NPUNCT (2)'
     os.system('mkdir -p extern/initial_data')
     if os.path.exists('../twopuncturesc'):
-        os.system('rm extern/initial_data/two_punctures') 
+        os.system('rm extern/initial_data/two_punctures')
         os.system('ln -s ../../../twopuncturesc extern/initial_data/two_punctures')
     else:
         raise SystemExit('### CONFIGURE ERROR: To compile with two punctures, it is necessary to have external initial data two_punctures library ../twopuncturesc.')
-    
+
     if args['two_punctures_path'] != '':
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/src'.format(
             args['two_punctures_path'])
@@ -867,20 +897,18 @@ if args['prob'] == "z4c_two_punctures":
         obj_dir = args['two_punctures_path'] + '/obj/'
         so_names = ['TwoPunctures.o', 'TP_CoordTransf.o', 'TP_Equations.o',
                     'TP_FuncAndJacobian.o', 'TP_Newton.o', 'TP_Utilities.o']
-        
+
         ## Check the external library has been compiled
         for so in so_names:
             if not os.path.isfile(obj_dir + so):
                 print(obj_dir + so)
                 raise SystemExit('### CONFIGURE ERROR: It appears that library ../twopuncturesc has not been compiled yet: some objects files are missing.')
-        
+
         for n in so_names:
             makefile_options['LIBRARY_FLAGS'] += ' ' + obj_dir + n
-
-        makefile_options['LIBRARY_FLAGS'] += ' -lgsl -lgslcblas'
 else:
     definitions['TWO_PUNCTURES_OPTION'] = 'NO_TWO_PUNCTURES'
-    if args['prob'] == 'z4c_one_puncture': 
+    if args['prob'] == 'z4c_one_puncture':
         definitions['TWO_PUNCTURES_OPTION'] = definitions['TWO_PUNCTURES_OPTION'] + '\n#define NPUNCT (1)'
 
 
@@ -914,6 +942,19 @@ definitions['COMPILER_FLAGS'] = ' '.join(
     [makefile_options[opt+'_FLAGS'] for opt in
      ['PREPROCESSOR', 'COMPILER', 'LINKER', 'LIBRARY']])
 
+# incorporate ccache via prepend
+if args['ccache']:
+    makefile_options['COMPILER_COMMAND'] = ('ccache ' +
+        makefile_options['COMPILER_COMMAND'])
+
+    definitions['COMPILER_COMMAND'] = ('ccache ' +
+        definitions['COMPILER_COMMAND'])
+
+
+# use gold linker
+if args['link_gold'] is not None:
+    makefile_options['LIBRARY_FLAGS'] += ' -fuse-ld=gold'
+
 # --- Step 4. Create new files, finish up --------------------------------
 
 # Terminate all filenames with .cpp extension
@@ -929,15 +970,19 @@ with open(defsfile_input, 'r') as current_file:
 with open(makefile_input, 'r') as current_file:
     makefile_template = current_file.read()
 
-files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs', 'gauge', 'trackers']
-if args['prob'] == "z4c_two_punctures":
-    pass
-    files.append('two_punctures_z4c')
-elif args['prob'] == "z4c_one_puncture":
-    files.append('one_puncture_z4c')
-elif args['prob'] == "awa_test":
-    files.append('awa_z4c')
-aux = ["             $(wildcard src/z4c/{}.cpp) \\".format(f) for f in files]
+# Populate makefile with z4c specific src
+files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs', 'gauge']
+if args['z']:
+    if args['z_tracker']:
+        files.append('trackers')
+    if args['prob'] == "z4c_two_punctures":
+        files.append('two_punctures_z4c')
+    elif args['prob'] == "z4c_one_puncture":
+        files.append('one_puncture_z4c')
+    elif args['prob'] == "awa_test":
+        files.append('awa_z4c')
+
+aux = ["		$(wildcard src/z4c/{}.cpp) \\".format(f) for f in files]
 makefile_options['Z4C_FILES'] = '\n'.join(aux) + '\n'
 
 # Make substitutions
@@ -974,6 +1019,7 @@ print('  General relativity:           ' + ('ON' if args['g'] else 'OFF'))
 print('  Advection equation:           ' + ('ON' if args['a'] else 'OFF'))
 print('  Wave equation:                ' + ('ON' if args['w'] else 'OFF'))
 print('  Z4c equations:                ' + ('ON' if args['z'] else 'OFF'))
+print('  Z4c tracker:                  ' + ('ON' if args['z_tracker'] else 'OFF'))
 print('  Frame transformations:        ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:                 ' + self_grav_string)
 print('  Super-Time-Stepping:          ' + ('ON' if args['sts'] else 'OFF'))

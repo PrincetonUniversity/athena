@@ -13,7 +13,7 @@ function compile {
     rm -f ${DIR_ATHENA}/${REL_OUTPUT}/${RUN_NAME}/${EXEC_NAME}.x \
        > /dev/null 2>&1
     make clean
-    python configure.py $COMPILE_STR
+    python configure.py ${COMPILE_STR}
     make -j8
     mv bin/athena bin/${BIN_NAME}
 } # &> /dev/null

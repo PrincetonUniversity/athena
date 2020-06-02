@@ -19,7 +19,9 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../z4c/z4c.hpp"
+#ifdef Z4C_TRACKER
 #include "../z4c/trackers.hpp"
+#endif // Z4C_TRACKER
 #include "../parameter_input.hpp"
 #include "task_list.hpp"
 
@@ -418,12 +420,16 @@ TaskStatus Z4cIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
 // Functions to calculate the RHS
 
 TaskStatus Z4cIntegratorTaskList::CalculateZ4cRHS(MeshBlock *pmb, int stage) {
+
+#ifdef Z4C_TRACKER
   // Tracker: interpolate beta at puncture position before evolution
   if (stage==1) {
     for (int i_punc = 0; i_punc<NPUNCT; i_punc++) {
       pmb->pz4c_tracker_loc->StoreBetaPrev(pmb->pz4c_tracker_loc->betap, pmb->pz4c->storage.u, i_punc);
     }
   }
+#endif // Z4C_TRACKER
+
   if (stage <= nstages) {
     pmb->pz4c->Z4cRHS(pmb->pz4c->storage.u,
                       pmb->pz4c->storage.mat,

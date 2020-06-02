@@ -108,6 +108,8 @@
 // two_punctures
 #define @TWO_PUNCTURES_OPTION@
 
+// allow control over whether tracker enabled
+#define @Z4C_TRACKER@
 
 // configure.py dict(definitions) Boolean string macros:
 // (these options have the latter (false) option as defaults, unless noted otherwise)
