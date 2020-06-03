@@ -190,6 +190,14 @@ void Tracker::EvolveTracker()
     }
   EvolveTrackerIntegrateEuler();
   }
+  // Communicate position to all ranks
+#ifdef MPI_PARALLEL
+  for (int i_punc = 0; i_punc < npunct; ++i_punc) {
+    for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
+      MPI_Bcast(&pos_body[i_punc].pos[i_dim], 1, MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
+    }
+  }
+#endif
 }
 
 //----------------------------------------------------------------------------------------
