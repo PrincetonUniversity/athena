@@ -86,7 +86,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
     TwoPunctures_params_set_Real((char *) "par_S_minus2",
                                  pin->GetOrAddReal(set_name, "par_S_minus2", 0.));
     TwoPunctures_params_set_Real((char *) "par_S_minus3",
-                                 pin->GetOrAddReal(set_name, "par_S_minus3", 0.)); 
+                                 pin->GetOrAddReal(set_name, "par_S_minus3", 0.));
     TwoPunctures_params_set_Real((char *) "center_offset1",
                                  pin->GetOrAddReal(set_name, "center_offset1", 0.));
 
@@ -148,7 +148,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 }
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{ 
+{
   TwoPunctures_finalise(data);
   return;
 }

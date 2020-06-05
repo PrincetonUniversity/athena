@@ -365,6 +365,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if (Z4C_ENABLED) {
     std::memcpy(pz4c->storage.u.data(), &(mbdata[os]), pz4c->storage.u.GetSizeInBytes());
     os += pz4c->storage.u.GetSizeInBytes();
+
+    // BD: TODO: extend as new data structures added
     std::memcpy(pz4c->storage.mat.data(), &(mbdata[os]), pz4c->storage.mat.GetSizeInBytes());
     os += pz4c->storage.mat.GetSizeInBytes();
   }
@@ -669,8 +671,9 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
   }
 
   if (Z4C_ENABLED) {
-    // BD: this should be checked..
+    // BD: TODO: extend as new data structures added
     size+=pz4c->storage.u.GetSizeInBytes();
+    size+=pz4c->storage.mat.GetSizeInBytes();
   }
 
   // calculate user MeshBlock data size

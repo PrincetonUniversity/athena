@@ -35,6 +35,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
   // Constructing Z4c vars from ADM ones
   pz4c->ADMToZ4c(pz4c->storage.adm, pz4c->storage.u);
-  
+
+  return;
+}
+
+
+void MeshBlock::Z4cUserWorkInLoop() {
+
+  // BD: debug
+  // pz4c->storage.u.print_all();
+
   return;
 }

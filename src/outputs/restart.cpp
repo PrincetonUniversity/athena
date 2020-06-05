@@ -209,6 +209,8 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
       std::memcpy(pdata, pmb->pz4c->storage.u.data(),
                   pmb->pz4c->storage.u.GetSizeInBytes());
       pdata += pmb->pz4c->storage.u.GetSizeInBytes();
+
+    // BD: TODO: extend as new data structures added
       std::memcpy(pdata, pmb->pz4c->storage.mat.data(),
                   pmb->pz4c->storage.mat.GetSizeInBytes());
       pdata += pmb->pz4c->storage.mat.GetSizeInBytes();

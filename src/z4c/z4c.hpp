@@ -279,7 +279,7 @@ public:
   void GaugePreCollapsedLapse(AthenaArray<Real> & u_adm, AthenaArray<Real> & u);
 #ifdef TWO_PUNCTURES
   void ADMTwoPunctures(ParameterInput *pin, AthenaArray<Real> & u_adm, ini_data * data);
-#endif 
+#endif
 
   // initial data for binary BHs
   void ADMTwoPunctures(AthenaArray<Real> & u_adm);

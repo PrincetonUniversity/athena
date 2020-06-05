@@ -44,7 +44,7 @@ class Tracker {
     void InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin);
     //! Initialize for two punctures case
     void InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin);
-    //! Reduces the data from all meshblocks and ranks 
+    //! Reduces the data from all meshblocks and ranks
     void ReduceTracker();
     //! Call different integrators
     void EvolveTracker();
@@ -72,7 +72,7 @@ class TrackerLocal {
       Real betap[NDIM];
       int  inblock;
      };
-     Betap_vars betap[NPUNCT]; 
+     Betap_vars betap[NPUNCT];
   public:
     //! Creates the TrackerLocal object
     TrackerLocal(MeshBlock * pmb, ParameterInput * pin);
