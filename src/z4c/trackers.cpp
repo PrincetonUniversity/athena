@@ -34,6 +34,8 @@ Tracker::Tracker(Mesh * pmesh, ParameterInput * pin):
   npunct = NPUNCT;
   Initialize(pmesh, pin);
   root = 0;
+  root_lev = pmesh->root_level;
+  L_grid = (pmesh->mesh_size.x1max - pmesh->mesh_size.x1min)/2.-pin->GetOrAddReal("problem", "par_b", 1.);
 #ifdef MPI_PARALLEL
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -151,6 +153,10 @@ void Tracker::ReduceTracker() {
 #ifdef DEBUG
   std::cout<<"\n<================================>\nI am rank "<<rank<<"\n<=============================>\n\n";
 #endif
+  std::cout<<RESET<<CYAN;
+  std::cout<<"Before. Rank "<<rank<<", Inblock0: "<<times_in_block[0]<<", Inblock1: "<<times_in_block[1]<<"\n";
+  std::cout<<"Before. Rank "<<rank<<", Beta0x: "<<pos_body[0].betap[0]<<", Beta1x: "<<pos_body[1].betap[0]<<"\n";
+  std::cout<<RESET;
   for (int i_punc = 0; i_punc < npunct; ++i_punc) {
     for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
       if (root == rank) {
@@ -164,6 +170,10 @@ void Tracker::ReduceTracker() {
 	
     }
   }
+  std::cout<<RED;
+  std::cout<<"After. Rank "<<rank<<", Inblock0: "<<times_in_block[0]<<", Inblock1: "<<times_in_block[1]<<"\n";
+  std::cout<<"After. Rank "<<rank<<", Beta0x: "<<pos_body[0].betap[0]<<", Beta1x: "<<pos_body[1].betap[0]<<"\n";
+  std::cout<<RESET;
 #endif
 }
 
@@ -174,6 +184,12 @@ void Tracker::ReduceTracker() {
 void Tracker::EvolveTracker() 
 {
   if (ioproc) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    std::cout<<YELLOW;
+    std::cout<<"Evolve. Rank "<<rank<<", Inblock0: "<<times_in_block[0]<<", Inblock1: "<<times_in_block[1]<<"\n";
+    std::cout<<"Evolve. Rank "<<rank<<", Beta0x: "<<pos_body[0].betap[0]<<", Beta1x: "<<pos_body[1].betap[0]<<"\n";
+    std::cout<<RESET;
     for (int i_punc = 0; i_punc < npunct; ++i_punc) {
       for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
         //times_in_block[i_punc] = (times_in_block[i_punc]==0) ? 1 : times_in_block[i_punc]; 
@@ -190,7 +206,6 @@ void Tracker::EvolveTracker()
     }
   EvolveTrackerIntegrateEuler();
   }
-  // Communicate position to all ranks
 #ifdef MPI_PARALLEL
   for (int i_punc = 0; i_punc < npunct; ++i_punc) {
     for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
@@ -211,6 +226,16 @@ void Tracker::EvolveTrackerIntegrateEuler()
 #endif  
   Real dt = pmesh->dt;
   Tracker * ptracker = pmesh->pz4c_tracker;
+  int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    std::cout<<"\ndt = "<<dt<<"\n";
+    std::cout<<BLUE;
+    std::cout<<"Integrate. Rank "<<rank<<", Inblock0: "<<times_in_block[0]<<", Inblock1: "<<times_in_block[1]<<"\n";
+    std::cout<<"Integrate. Rank "<<rank<<", Beta0x: "<<pos_body[0].betap[0]<<", Beta1x: "<<pos_body[1].betap[0]<<"\n";
+    std::cout<<"Integrate. Rank "<<rank<<", Beta0x: "<<ptracker->pos_body[0].betap[0]<<", Beta1x: "<<ptracker->pos_body[1].betap[0]<<"\n";
+    std::cout<<"Integrate. Rank "<<rank<<", Pos0x: "<<pos_body[0].pos[0]<<", Pos1x: "<<pos_body[1].pos[0]<<"\n";
+    std::cout<<"Integrate. Rank "<<rank<<", Pos0x: "<<ptracker->pos_body[0].pos[0]<<", Pos1x: "<<ptracker->pos_body[1].pos[0]<<"\n";
+    std::cout<<RESET;
   for(int i_punct = 0; i_punct < NPUNCT; ++i_punct) {
     for(int i_dim = 0; i_dim < NDIM; ++i_dim) {
       // Euler timestep	
@@ -222,6 +247,10 @@ void Tracker::EvolveTrackerIntegrateEuler()
     std::cout<<"; Betap: "<<pos_body[i_punct].betap[0]<<'\n';
 #endif
   }
+    std::cout<<GREEN;
+    std::cout<<"Integrate. Rank "<<rank<<", Pos0x: "<<pos_body[0].pos[0]<<", Pos1x: "<<pos_body[1].pos[0]<<"\n";
+    std::cout<<"Integrate. Rank "<<rank<<", Pos0x: "<<ptracker->pos_body[0].pos[0]<<", Pos1x: "<<ptracker->pos_body[1].pos[0]<<"\n";
+    std::cout<<RESET;
 }
 
 void Tracker::WriteTracker(int iter, Real time) const {
@@ -304,14 +333,17 @@ void TrackerLocal::StoreBetaPrev(Betap_vars betap[NPUNCT], AthenaArray<Real> & u
       coord[i_dim] = ptracker->pos_body[body].pos[i_dim];
     }
 
-#ifdef DEBUG
+//#ifdef DEBUG
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     std::cout<<RESET<<GREEN;
+    std::cout<<"Rank "<<rank;
     std::cout<<"\nPunc position: x ="<<coord[0]<<", y = "<<coord[1]<<", z = "<<coord[2]<<'\n';
     std::cout<<"Edges:\n"<<pmy_block->block_size.x1min<<"<=x<="<<pmy_block->block_size.x1max<<'\n';
     std::cout<<pmy_block->block_size.x2min<<"<=y<="<<pmy_block->block_size.x2max<<'\n';
     std::cout<<pmy_block->block_size.x3min<<"<=z<="<<pmy_block->block_size.x3max<<'\n';
     std::cout<<RESET;
-#endif
+//#endif
     // Construct interpolator
     pinterp = new LagrangeInterpND<2*NGHOST-1, 3>(origin, delta, size, coord);
     

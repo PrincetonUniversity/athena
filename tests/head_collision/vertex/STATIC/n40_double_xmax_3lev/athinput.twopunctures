@@ -83,7 +83,7 @@ integrator      = rk4                  # time integrator
 
 <mesh>
 refinement      = static
-num_threads     = 4
+num_threads     = 6
 
 nx1             = 40       # Number of zones in X1-direction
 x1min           = -10      # minimum value of X1

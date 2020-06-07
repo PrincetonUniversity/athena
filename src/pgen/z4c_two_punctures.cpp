@@ -176,7 +176,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 }
 
 int RefinementCondition(MeshBlock *pmb)
-{ printf("Call RefCond\n");
+{ Real L = (pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min)/2.;
+  int lev = pmb->loc.level;
+  printf("L = %g\n",L);
+  printf("lev = %d\n",lev);
+  printf("Call RefCond\n");
   for (int i_punct = 0; i_punct < NPUNCT; ++i_punct) {
     if (pmb->pz4c_tracker_loc->InBlock(i_punct)) {
       printf("Punc %d: Refine\n", i_punct);
