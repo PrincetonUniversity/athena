@@ -321,7 +321,10 @@ class Mesh {
 
   friend class Advection;
   friend class Z4c;
-
+#ifdef Z4C_TRACKER
+  friend class Tracker;
+#endif
+ 
  public:
   // 2x function overloads of ctor: normal and restarted simulation
   explicit Mesh(ParameterInput *pin, int test_flag=0);
