@@ -19,6 +19,9 @@
 // Forward declaration
 class Mesh;
 class MeshBlock;
+class MeshBlockTree;
+class ParameterInput;
+class Coordinates;
 class ParameterInput;
 
 //! \class Tracker
@@ -33,6 +36,8 @@ class Tracker {
       };
     Position_vars pos_body[NPUNCT];
     int npunct;
+    int root_lev;
+    Real L_grid;
   public:
     //! Creates the Tracker object
     Tracker(Mesh * pmesh, ParameterInput * pin);
