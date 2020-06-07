@@ -176,16 +176,103 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 }
 
 int RefinementCondition(MeshBlock *pmb)
-{ Real L = (pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min)/2.;
-  int lev = pmb->loc.level;
+{ 
+  Real L = pmb->pmy_mesh->pz4c_tracker->L_grid;
+  int root_lev = pmb->pmy_mesh->pz4c_tracker->root_lev;
+  printf("Root lev = %d\n", root_lev);
+  //Real L = (pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min)/2.-pmb->pmy_mesh->pin->GetOrAddReal("problem", "par_b", 1.);
+  // Coords of center of block
+  Real xv[24];
+  printf("Max x = %g\n", pmb->block_size.x1max);
+  printf("Min x = %g\n", pmb->block_size.x1min);
+
+  Real x1sum_sup = (5*pmb->block_size.x1max+3*pmb->block_size.x1min)/8.;
+  Real x1sum_inf = (3*pmb->block_size.x1max+5*pmb->block_size.x1min)/8.;
+  Real x2sum_sup = (5*pmb->block_size.x2max+3*pmb->block_size.x2min)/8.;
+  Real x2sum_inf = (3*pmb->block_size.x2max+5*pmb->block_size.x2min)/8.;
+  Real x3sum_sup = (5*pmb->block_size.x3max+3*pmb->block_size.x3min)/8.;
+  Real x3sum_inf = (3*pmb->block_size.x3max+5*pmb->block_size.x3min)/8.;
+   
+  xv[0] = x1sum_sup;
+  xv[1] = x2sum_sup;
+  xv[2] = x3sum_sup;
+
+  xv[3] = x1sum_sup;
+  xv[4] = x2sum_sup;
+  xv[5] = x3sum_inf;
+
+  xv[6] = x1sum_sup;
+  xv[7] = x2sum_inf;
+  xv[8] = x3sum_sup;
+
+  xv[9] = x1sum_sup;
+  xv[10] = x2sum_inf;
+  xv[11] = x3sum_inf;
+
+  xv[12] = x1sum_inf;
+  xv[13] = x2sum_sup;
+  xv[14] = x3sum_sup;
+
+  xv[15] = x1sum_inf;
+  xv[16] = x2sum_sup;
+  xv[17] = x3sum_inf;
+
+  xv[18] = x1sum_inf;
+  xv[19] = x2sum_inf;
+  xv[20] = x3sum_sup;
+
+  xv[21] = x1sum_inf;
+  xv[22] = x2sum_inf;
+  xv[23] = x3sum_inf;
+
+  printf("\n<===================================================>\n");
+  int level = pmb->loc.level-root_lev;
   printf("L = %g\n",L);
-  printf("lev = %d\n",lev);
-  printf("Call RefCond\n");
+  printf("lev = %d\n",level);
+  // Calc max dist, TO TEST <<<----- 
+  // Min distance between the two punctures
+  Real d = 1000000;
   for (int i_punct = 0; i_punct < NPUNCT; ++i_punct) {
-    if (pmb->pz4c_tracker_loc->InBlock(i_punct)) {
-      printf("Punc %d: Refine\n", i_punct);
-      return 1;
+    // Abs difference
+    Real diff;
+    // Max norm_inf
+    Real dmin_punct = 1000000;
+    printf("==> Punc = %d\n", i_punct);
+    for (int i_vert = 0; i_vert < 8; ++i_vert) {
+      // Norm_inf
+      Real norm_inf = -1;
+      for (int i_diff = 0; i_diff < 3; ++ i_diff) {
+        diff = std::abs(pmb->pmy_mesh->pz4c_tracker->pos_body[i_punct].pos[i_diff] - xv[i_vert*3+i_diff]);
+        printf("======> Coordpos = %g, coordblock = %g\n",pmb->pmy_mesh->pz4c_tracker->pos_body[i_punct].pos[i_diff], xv[i_vert*3+i_diff]);
+        if (diff > norm_inf) {
+          norm_inf = diff;
+        }
+	printf("======> Dist = %g\n", diff);
       }
+      printf("====> Inf norm = %g\n", norm_inf);
+      if (dmin_punct > norm_inf) {
+        dmin_punct = norm_inf;
+      }
+    }
+    printf("====> dmin_punct = %g\n", dmin_punct);
+    if (d > dmin_punct) {
+      d = dmin_punct;
+    }
   }
-  return -1;
+  printf("Min dist = %g\n", d);
+  // ---->> FINISH CODE TO BE TESTED
+  Real ratio = L/d;
+  if (ratio < 1) return -1;
+  Real th_level = std::log2(ratio);
+  printf("Level = %d, th_level = %g, ceil(th_level) = %g\n", level, th_level, std::ceil(th_level));
+  printf("<===================================================>\n");
+  if (std::ceil(th_level) > level) {
+    printf("Refine\n");
+    return 1;
+  } else if (std::ceil(th_level) < level) {
+    printf("Derefine\n");
+    return -1;
+  } else 
+    printf("Do nothing\n");
+    return 0;
 }
