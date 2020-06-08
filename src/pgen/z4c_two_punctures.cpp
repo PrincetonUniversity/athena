@@ -179,13 +179,15 @@ int RefinementCondition(MeshBlock *pmb)
 { 
   Real L = pmb->pmy_mesh->pz4c_tracker->L_grid;
   int root_lev = pmb->pmy_mesh->pz4c_tracker->root_lev;
+#ifdef DEBUG
   printf("Root lev = %d\n", root_lev);
-  //Real L = (pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min)/2.-pmb->pmy_mesh->pin->GetOrAddReal("problem", "par_b", 1.);
+#endif
   // Coords of center of block
   Real xv[24];
+#ifdef DEBUG
   printf("Max x = %g\n", pmb->block_size.x1max);
   printf("Min x = %g\n", pmb->block_size.x1min);
-
+#endif
   Real x1sum_sup = (5*pmb->block_size.x1max+3*pmb->block_size.x1min)/8.;
   Real x1sum_inf = (3*pmb->block_size.x1max+5*pmb->block_size.x1min)/8.;
   Real x2sum_sup = (5*pmb->block_size.x2max+3*pmb->block_size.x2min)/8.;
@@ -225,10 +227,12 @@ int RefinementCondition(MeshBlock *pmb)
   xv[22] = x2sum_inf;
   xv[23] = x3sum_inf;
 
-  printf("\n<===================================================>\n");
   int level = pmb->loc.level-root_lev;
+#ifdef DEBUG
+  printf("\n<===================================================>\n");
   printf("L = %g\n",L);
   printf("lev = %d\n",level);
+#endif
   // Calc max dist, TO TEST <<<----- 
   // Min distance between the two punctures
   Real d = 1000000;
@@ -237,42 +241,62 @@ int RefinementCondition(MeshBlock *pmb)
     Real diff;
     // Max norm_inf
     Real dmin_punct = 1000000;
+#ifdef DEBUG
     printf("==> Punc = %d\n", i_punct);
+#endif
     for (int i_vert = 0; i_vert < 8; ++i_vert) {
       // Norm_inf
       Real norm_inf = -1;
       for (int i_diff = 0; i_diff < 3; ++ i_diff) {
         diff = std::abs(pmb->pmy_mesh->pz4c_tracker->pos_body[i_punct].pos[i_diff] - xv[i_vert*3+i_diff]);
+#ifdef DEBUG
         printf("======> Coordpos = %g, coordblock = %g\n",pmb->pmy_mesh->pz4c_tracker->pos_body[i_punct].pos[i_diff], xv[i_vert*3+i_diff]);
+#endif
         if (diff > norm_inf) {
           norm_inf = diff;
         }
+#ifdef DEBUG
 	printf("======> Dist = %g\n", diff);
+#endif
       }
+#ifdef DEBUG
       printf("====> Inf norm = %g\n", norm_inf);
+#endif
       if (dmin_punct > norm_inf) {
         dmin_punct = norm_inf;
       }
     }
+#ifdef DEBUG
     printf("====> dmin_punct = %g\n", dmin_punct);
+#endif
     if (d > dmin_punct) {
       d = dmin_punct;
     }
   }
+#ifdef DEBUG
   printf("Min dist = %g\n", d);
+#endif
   // ---->> FINISH CODE TO BE TESTED
   Real ratio = L/d;
   if (ratio < 1) return -1;
   Real th_level = std::log2(ratio);
+#ifdef DEBUG
   printf("Level = %d, th_level = %g, ceil(th_level) = %g\n", level, th_level, std::ceil(th_level));
   printf("<===================================================>\n");
-  if (std::ceil(th_level) > level) {
+#endif
+  if (std::floor(th_level) > level) {
+#ifdef DEBUG
     printf("Refine\n");
+#endif
     return 1;
-  } else if (std::ceil(th_level) < level) {
+  } else if (std::floor(th_level) < level) {
+#ifdef DEBUG
     printf("Derefine\n");
+#endif
     return -1;
   } else 
+#ifdef DEBUG
     printf("Do nothing\n");
+#endif
     return 0;
 }
