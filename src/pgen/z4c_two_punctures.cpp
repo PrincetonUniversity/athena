@@ -176,18 +176,21 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 }
 
 int RefinementCondition(MeshBlock *pmb)
-{ 
+{
+  //Initial distance between one of the punctures and the edge of the full mesh, needed to
+  //calculate the box-in-box grid structure 
   Real L = pmb->pmy_mesh->pz4c_tracker->L_grid;
   int root_lev = pmb->pmy_mesh->pz4c_tracker->root_lev;
 #ifdef DEBUG
   printf("Root lev = %d\n", root_lev);
 #endif
-  // Coords of center of block
   Real xv[24];
 #ifdef DEBUG
   printf("Max x = %g\n", pmb->block_size.x1max);
   printf("Min x = %g\n", pmb->block_size.x1min);
 #endif
+  //Needed to calculate coordinates of vertices of a block with same center but 
+  //edge of 1/8th of the original size
   Real x1sum_sup = (5*pmb->block_size.x1max+3*pmb->block_size.x1min)/8.;
   Real x1sum_inf = (3*pmb->block_size.x1max+5*pmb->block_size.x1min)/8.;
   Real x2sum_sup = (5*pmb->block_size.x2max+3*pmb->block_size.x2min)/8.;
@@ -227,13 +230,13 @@ int RefinementCondition(MeshBlock *pmb)
   xv[22] = x2sum_inf;
   xv[23] = x3sum_inf;
 
+  //Level of current block
   int level = pmb->loc.level-root_lev;
 #ifdef DEBUG
   printf("\n<===================================================>\n");
   printf("L = %g\n",L);
   printf("lev = %d\n",level);
 #endif
-  // Calc max dist, TO TEST <<<----- 
   // Min distance between the two punctures
   Real d = 1000000;
   for (int i_punct = 0; i_punct < NPUNCT; ++i_punct) {
@@ -262,6 +265,7 @@ int RefinementCondition(MeshBlock *pmb)
 #ifdef DEBUG
       printf("====> Inf norm = %g\n", norm_inf);
 #endif
+      //Calculate minimum of the distances of the 8 vertices above
       if (dmin_punct > norm_inf) {
         dmin_punct = norm_inf;
       }
@@ -269,6 +273,7 @@ int RefinementCondition(MeshBlock *pmb)
 #ifdef DEBUG
     printf("====> dmin_punct = %g\n", dmin_punct);
 #endif
+    //Calculate minimum of the distances between the n punctures
     if (d > dmin_punct) {
       d = dmin_punct;
     }
@@ -276,20 +281,20 @@ int RefinementCondition(MeshBlock *pmb)
 #ifdef DEBUG
   printf("Min dist = %g\n", d);
 #endif
-  // ---->> FINISH CODE TO BE TESTED
   Real ratio = L/d;
   if (ratio < 1) return -1;
-  Real th_level = std::log2(ratio);
+  //Calculate level that the block should be in, given a box-in-box theoretical structure of the grid
+  Real th_level = std::floor(std::log2(ratio));
 #ifdef DEBUG
-  printf("Level = %d, th_level = %g, ceil(th_level) = %g\n", level, th_level, std::ceil(th_level));
+  printf("Level = %d, th_level = %g\n", level, th_level);
   printf("<===================================================>\n");
 #endif
-  if (std::floor(th_level) > level) {
+  if (th_level > level) {
 #ifdef DEBUG
     printf("Refine\n");
 #endif
     return 1;
-  } else if (std::floor(th_level) < level) {
+  } else if (th_level < level) {
 #ifdef DEBUG
     printf("Derefine\n");
 #endif
