@@ -273,7 +273,7 @@ parser.add_argument('--hdf5_path',
 
 ## two_punctures_argument
 parser.add_argument('--two_punctures_path',
-                    default='./extern/initial_data/two_punctures',
+                    default='',
                     help='path to two_punctures library')
 
 # -gsl argument
@@ -876,13 +876,18 @@ else:
 # TODO change/improve NPUNCT handling
 # -two_punctures argument
 if args['prob'] == "z4c_two_punctures":
+    if not args['gsl']:
+        raise SystemExit('### CONFIGURE ERROR: To compile with two punctures -gsl is required.')
+
     definitions['TWO_PUNCTURES_OPTION'] = 'TWO_PUNCTURES' + '\n#define NPUNCT (2)'
-    os.system('mkdir -p extern/initial_data')
-    if os.path.exists('../twopuncturesc'):
-        os.system('rm extern/initial_data/two_punctures')
-        os.system('ln -s ../../../twopuncturesc extern/initial_data/two_punctures')
-    else:
-        raise SystemExit('### CONFIGURE ERROR: To compile with two punctures, it is necessary to have external initial data two_punctures library ../twopuncturesc.')
+
+    if args['two_punctures_path'] == '':
+        os.system('mkdir -p extern/initial_data')
+        if os.path.exists('../twopuncturesc'):
+            os.system('rm extern/initial_data/two_punctures')
+            os.system('ln -s ../../../twopuncturesc extern/initial_data/two_punctures')
+        else:
+            raise SystemExit('### CONFIGURE ERROR: To compile with two punctures, it is necessary to have external initial data two_punctures library ../twopuncturesc.')
 
     if args['two_punctures_path'] != '':
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/src'.format(

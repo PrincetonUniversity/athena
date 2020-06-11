@@ -54,7 +54,7 @@ Tracker::Tracker(Mesh * pmesh, ParameterInput * pin):
     }
     fprintf(pofile, "#%-12s%-13s", "1:iter", "2:time");
     for (int i_file = 1; i_file <= npunct; ++i_file) {
-      punct_idx = 3*(i_file);   
+      punct_idx = 3*(i_file);
       fprintf(pofile, "%d:P-x-%-7d%d:P-y-%-7d%d:P-z-%-7d", punct_idx, i_file, punct_idx+1, i_file, punct_idx+2, i_file);
     }
     fprintf(pofile, "\n");
@@ -72,7 +72,7 @@ void Tracker::Initialize(Mesh * pmesh, ParameterInput * pin){
     case 2 : InitializeTwopuncture(pmesh, pin);
 	     break;
     default : std::cout<<"This case has not been implemented yet.\n";
-  }	  
+  }
 }
 
 //----------------------------------------------------------------------------------------
@@ -108,9 +108,9 @@ void Tracker::InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin){
     pos_body[i_punc].pos[0] = pow(-1, i_punc)*par_b + of1;
     pos_body[i_punc].pos[1] = of2;
     pos_body[i_punc].pos[2] = of3;
-    
-    //It does not matter how it is initialized because betap is used only from 
-    //the first iteration 
+
+    //It does not matter how it is initialized because betap is used only from
+    //the first iteration
     pos_body[i_punc].betap[0] = 0.;
     pos_body[i_punc].betap[1] = 0.;
     pos_body[i_punc].betap[2] = 0.;
@@ -132,11 +132,11 @@ void Tracker::ReduceTracker() {
       pos_body[i_punc].betap[i_dim] = 0.;
     }
   }
-  
+
   // Loop over all meshblocks to sum all the local contributions to beta previous
   while (pmb != NULL) {
     for (int i_punc = 0; i_punc < npunct; ++i_punc) {
-      if (pmb->pz4c_tracker_loc->betap[i_punc].inblock) {  
+      if (pmb->pz4c_tracker_loc->betap[i_punc].inblock) {
         for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
           pos_body[i_punc].betap[i_dim] += pmb->pz4c_tracker_loc->betap[i_punc].betap[i_dim];
         }
@@ -145,8 +145,8 @@ void Tracker::ReduceTracker() {
     }
     pmb = pmb->next;
   }
-  
-  //Collect contributions from all MPI ranks  
+
+  //Collect contributions from all MPI ranks
 #ifdef MPI_PARALLEL
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -167,7 +167,7 @@ void Tracker::ReduceTracker() {
 	if (i_dim == 0) MPI_Reduce(&times_in_block[i_punc], &times_in_block[i_punc], 1, MPI_ATHENA_REAL, MPI_SUM, root, MPI_COMM_WORLD);
         MPI_Reduce(&pos_body[i_punc].betap[i_dim], &pos_body[i_punc].betap[i_dim], 1, MPI_ATHENA_REAL, MPI_SUM, root, MPI_COMM_WORLD);
       }
-	
+
     }
   }
 #ifdef DEBUG
@@ -183,12 +183,14 @@ void Tracker::ReduceTracker() {
 // \!fn void Tracker::EvolveTracker()
 // \brief Average betap over total number of meshblocks and call time integrator
 //
-void Tracker::EvolveTracker() 
+void Tracker::EvolveTracker()
 {
   if (ioproc) {
 #ifdef DEBUG
-    int rank;
+    int rank=0;
+#ifdef MPI_PARALLEL
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif // MPI_PARALLEL
     std::cout<<YELLOW;
     std::cout<<"Evolve. Rank "<<rank<<", Inblock0: "<<times_in_block[0]<<", Inblock1: "<<times_in_block[1]<<"\n";
     std::cout<<"Evolve. Rank "<<rank<<", Beta0x: "<<pos_body[0].betap[0]<<", Beta1x: "<<pos_body[1].betap[0]<<"\n";
@@ -196,8 +198,8 @@ void Tracker::EvolveTracker()
 #endif
     for (int i_punc = 0; i_punc < npunct; ++i_punc) {
       for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
-        //times_in_block[i_punc] = (times_in_block[i_punc]==0) ? 1 : times_in_block[i_punc]; 
-        pos_body[i_punc].betap[i_dim] /= times_in_block[i_punc]; 
+        //times_in_block[i_punc] = (times_in_block[i_punc]==0) ? 1 : times_in_block[i_punc];
+        pos_body[i_punc].betap[i_dim] /= times_in_block[i_punc];
       }
 #ifdef DEBUG
       std::cout<<RESET<<CYAN;
@@ -225,13 +227,15 @@ void Tracker::EvolveTracker()
 //
 void Tracker::EvolveTrackerIntegrateEuler()
 {
-#ifdef DEBUG	
+#ifdef DEBUG
   std::cout<<"In EvolveTrackerIntegrate Euler\n";
-#endif  
+#endif
   Real dt = pmesh->dt;
   Tracker * ptracker = pmesh->pz4c_tracker;
-  int rank;
+  int rank=0;
+#ifdef MPI_PARALLEL
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif // MPI_PARALLEL
 #ifdef DEBUG
     std::cout<<"\ndt = "<<dt<<"\n";
     std::cout<<BLUE;
@@ -244,7 +248,7 @@ void Tracker::EvolveTrackerIntegrateEuler()
 #endif
   for(int i_punct = 0; i_punct < NPUNCT; ++i_punct) {
     for(int i_dim = 0; i_dim < NDIM; ++i_dim) {
-      // Euler timestep	
+      // Euler timestep
       ptracker->pos_body[i_punct].pos[i_dim] += dt * (-ptracker->pos_body[i_punct].betap[i_dim]);
     }
 #ifdef DEBUG
@@ -278,14 +282,14 @@ Tracker::~Tracker() {
 }
 
 
-//TrackerLocal class 
+//TrackerLocal class
 TrackerLocal::TrackerLocal(MeshBlock * pmb, ParameterInput * pin) {
   pmy_block = pmb;
   Coordinates * pco = pmb->pcoord;
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn TrackerLocal::StoreBetaPrev(Betap_vars betap[NPUNCT], AthenaArray<Real> & u, int body) 
+// \!fn TrackerLocal::StoreBetaPrev(Betap_vars betap[NPUNCT], AthenaArray<Real> & u, int body)
 // \brief Interpolate and store Beta at previous timestep.
 //
 void TrackerLocal::StoreBetaPrev(Betap_vars betap[NPUNCT], AthenaArray<Real> & u, int body)
@@ -298,17 +302,17 @@ void TrackerLocal::StoreBetaPrev(Betap_vars betap[NPUNCT], AthenaArray<Real> & u
   AthenaArray<Real> mySrc;
   int const nvars = u.GetDim4();
   LagrangeInterpND<2*NGHOST-1, 3> * pinterp = nullptr;
-   
+
   MeshBlock * pmb = pmy_block;
   Tracker * ptracker = pmb->pmy_mesh->pz4c_tracker;
   Coordinates const * pmc = pmy_block->pcoord;
 
-#ifdef DEBUG  
+#ifdef DEBUG
   std::cout<<"In StoreBetaPrev\n";
 #endif
 
   //Fill with NaN if block does not contain puncture
-  if (!InBlock(body)) { 
+  if (!InBlock(body)) {
     for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
       betap[body].betap[i_dim] = std::nan("1");
       betap[body].inblock = 0;
@@ -316,7 +320,7 @@ void TrackerLocal::StoreBetaPrev(Betap_vars betap[NPUNCT], AthenaArray<Real> & u
   }
   else {
     betap[body].inblock = 1;
-    
+
     origin[0] = pmb->pz4c->mbi.x1(0);
     origin[1] = pmb->pz4c->mbi.x2(0);
     origin[2] = pmb->pz4c->mbi.x3(0);
@@ -342,8 +346,10 @@ void TrackerLocal::StoreBetaPrev(Betap_vars betap[NPUNCT], AthenaArray<Real> & u
     }
 
 #ifdef DEBUG
-    int rank;
+    int rank=0;
+#ifdef MPI_PARALLEL
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif // MPI_PARALLEL
     std::cout<<RESET<<GREEN;
     std::cout<<"Rank "<<rank;
     std::cout<<"\nPunc position: x ="<<coord[0]<<", y = "<<coord[1]<<", z = "<<coord[2]<<'\n';
@@ -354,7 +360,7 @@ void TrackerLocal::StoreBetaPrev(Betap_vars betap[NPUNCT], AthenaArray<Real> & u
 #endif
     // Construct interpolator
     pinterp = new LagrangeInterpND<2*NGHOST-1, 3>(origin, delta, size, coord);
-    
+
     // Interpolate
     for (int iv = 19; iv < nvars; ++iv) {
       mySrc.InitWithShallowSlice(const_cast<AthenaArray<Real>&>(u), iv, 1);
@@ -368,13 +374,13 @@ void TrackerLocal::StoreBetaPrev(Betap_vars betap[NPUNCT], AthenaArray<Real> & u
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn TrackerLocal::InBlock(int body) 
+// \!fn TrackerLocal::InBlock(int body)
 // \brief Check if body is in current meshblock.
 //
 bool TrackerLocal::InBlock(int body) {
   MeshBlock * pmb = pmy_block;
   Tracker * ptracker = pmb->pmy_mesh->pz4c_tracker;
-  
+
   if ((pmy_block->block_size.x1min <= ptracker->pos_body[body].pos[0]) && (ptracker->pos_body[body].pos[0] <= pmy_block->block_size.x1max) &&
       (pmy_block->block_size.x2min <= ptracker->pos_body[body].pos[1]) && (ptracker->pos_body[body].pos[1] <= pmy_block->block_size.x2max) &&
       (pmy_block->block_size.x3min <= ptracker->pos_body[body].pos[2]) && (ptracker->pos_body[body].pos[2] <= pmy_block->block_size.x3max))

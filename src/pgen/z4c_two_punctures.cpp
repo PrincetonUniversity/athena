@@ -178,7 +178,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 int RefinementCondition(MeshBlock *pmb)
 {
   //Initial distance between one of the punctures and the edge of the full mesh, needed to
-  //calculate the box-in-box grid structure 
+  //calculate the box-in-box grid structure
   Real L = pmb->pmy_mesh->pz4c_tracker->L_grid;
   int root_lev = pmb->pmy_mesh->pz4c_tracker->root_lev;
 #ifdef DEBUG
@@ -189,7 +189,7 @@ int RefinementCondition(MeshBlock *pmb)
   printf("Max x = %g\n", pmb->block_size.x1max);
   printf("Min x = %g\n", pmb->block_size.x1min);
 #endif
-  //Needed to calculate coordinates of vertices of a block with same center but 
+  //Needed to calculate coordinates of vertices of a block with same center but
   //edge of 1/8th of the original size
   Real x1sum_sup = (5*pmb->block_size.x1max+3*pmb->block_size.x1min)/8.;
   Real x1sum_inf = (3*pmb->block_size.x1max+5*pmb->block_size.x1min)/8.;
@@ -197,7 +197,7 @@ int RefinementCondition(MeshBlock *pmb)
   Real x2sum_inf = (3*pmb->block_size.x2max+5*pmb->block_size.x2min)/8.;
   Real x3sum_sup = (5*pmb->block_size.x3max+3*pmb->block_size.x3min)/8.;
   Real x3sum_inf = (3*pmb->block_size.x3max+5*pmb->block_size.x3min)/8.;
-   
+
   xv[0] = x1sum_sup;
   xv[1] = x2sum_sup;
   xv[2] = x3sum_sup;
@@ -299,7 +299,7 @@ int RefinementCondition(MeshBlock *pmb)
     printf("Derefine\n");
 #endif
     return -1;
-  } else 
+  } else
 #ifdef DEBUG
     printf("Do nothing\n");
 #endif
