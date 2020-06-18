@@ -47,3 +47,8 @@ KidaSpecies::KidaSpecies(std::string line, int index) :
   mass_ += float(-charge_) * ChemistryUtility::me;
 }
 
+void KidaSpecies::SetMass(Real mass) {
+  mass_ = mass;
+  return;
+}
+

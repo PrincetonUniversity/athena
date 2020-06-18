@@ -23,7 +23,7 @@
 
 //reaction types
 enum class ReactionType {none, cr, crp, photo, twobody, twobodytr,
-                         grain_implicit, special, grain_charge};
+                         grain_implicit, special, grain_collision};
 
 //! \class ChemNetwork
 //  \brief Chemical Network that defines the reaction rates between species.
@@ -65,8 +65,10 @@ private:
   std::string network_dir_;
   std::vector<KidaSpecies> species_;
   std::vector<KidaReaction> reactions_;
+  AthenaArray<int> id_ices_;//species index for ices
   std::vector<int> id_2bodytr_;
   int nr_; //number of reactions
+  int nices_;//number of ice species
 
   //physical quantities
   const Real xHe_ = 0.1;//Helium abundance
@@ -78,12 +80,16 @@ private:
 	Real Z_d_; //larger dust grain metallicity relative to solar, default 1.
 	Real phi_PAH_; //PAH recombination efficiency, default 0.4
 	Real a_d_; //size of the dust grain in cm, default 1e-5 (0.1 micron)
+	Real rho_d_; //density of grain in cgs, default 2 g/cm3
+	Real m_d_; //mass of the dust grain in g
+	Real x_d_; //relative abundance of all dust
 	Real nH_; //density, updated at InitializeNextStep from hydro variable
   Real o2pH2_;//ortho to para H2 ratio, default 3:1
+  Real Yi_;//Yield for crp desorption, default 1e-3
   Real temperature_; //temperature of the gas if isothermal 
   Real temp_min_rates_; //temperature floor for reaction rates
   Real temp_min_cool_; //temperature minimum for cooling
-  Real temp_dust_thermo_; //dust temperature for dust thermo cooling 
+  Real temp_dust_thermo_; //dust temperature for dust thermo cooling and desorption 
 
 	//units 
 	Real unit_density_in_nH_; //read from input
@@ -171,7 +177,10 @@ private:
   AthenaArray<int> ingr1_;
   AthenaArray<int> ingr2_;
   AthenaArray<int> outgr_;
+  AthenaArray<int> frml_gr_;//7: special, 10: desorption
   AthenaArray<Real> kgr_;
+  AthenaArray<Real> TDgr_;//desorption/binding energy/temperature in K
+  AthenaArray<Real> nu0gr_;//vibrational frequency for desorption
   int igr_H_;//index for gr fromation of H2 for its heating
   //special reactions
   int n_sr_;

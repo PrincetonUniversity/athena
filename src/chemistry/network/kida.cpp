@@ -64,7 +64,13 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
 	phi_PAH_ = pin->GetOrAddReal("chemistry", "phi_PAH", 0.4);
   //size of the dust grain in cm, default 0.1 micron
 	a_d_ = pin->GetOrAddReal("chemistry", "a_d", 1e-5);
+  //density of grain in cgs, default 2 g/cm3
+	rho_d_ = pin->GetOrAddReal("chemistry", "rho_d", 2.);
+  //mass of the dust grain in g, assuming density of 2 g/cm3
+  m_d_ = rho_d_ * 4.*M_PI * a_d_*a_d_*a_d_ / 3.;
+  x_d_ = 0.013 * 1.67e-24 / m_d_; //relative abundance of all dust
   o2pH2_ = pin->GetOrAddReal("chemistry", "o2pH2", 3.);//ortho to para H2 ratio
+  Yi_ = pin->GetOrAddReal("chemistry", "Yi", 1e-3);//ortho to para H2 ratio
   //units
 	unit_density_in_nH_ = pin->GetReal("chemistry", "unit_density_in_nH");
 	unit_length_in_cm_ = pin->GetReal("chemistry", "unit_length_in_cm");
@@ -107,6 +113,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   }
   std::string line;
   int nline = 0;
+  int nices = 0;
   while (getline(species_file, line)) {
     //trim white spaces
     StringUtils::trim(line);
@@ -115,9 +122,17 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
         continue;
     }
     KidaSpecies si(line, nline);
-    species_.push_back(si);
+    //set mass for dust grains
+    if (si.name.find("g") == 0) {
+      si.SetMass(m_d_);
+    }
     species_names[nline] = si.name;
     ispec_map_[si.name] = nline;
+    //cound ice species
+    if (si.name.find("s") == 0) {
+      nices++;
+    }
+    species_.push_back(si);
     nline++;
   }
   if (nline != NSCALARS) {
@@ -126,6 +141,16 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
       << "number of species in species.dat does not match the number of scalars (" 
       << NSCALARS << ")" << std::endl;
     ATHENA_ERROR(msg);
+  }
+  //set ice species index
+  nices_ = nices;
+  id_ices_.NewAthenaArray(nices);
+  nices = 0;
+  for (int i=0; i<NSCALARS; i++) {
+    if (species_[i].name.find("s") == 0) {
+      id_ices_(nices) = i;
+      nices++;
+    }
   }
 
   //read in the reactions
@@ -257,7 +282,7 @@ void ChemNetwork::InitializeReactions() {
       case ReactionType::twobodytr: break;
       case ReactionType::grain_implicit: n_gr_++; break;
       case ReactionType::special: n_sr_++; break;
-      case ReactionType::grain_charge: n_gc_++; break;
+      case ReactionType::grain_collision: n_gc_++; break;
       default: std::stringstream msg; 
                msg << "### FATAL ERROR in ChemNetwork InitializeReactions()"
                  << " [ChemNetwork]: reaction type not recognized." << std::endl;
@@ -323,7 +348,10 @@ void ChemNetwork::InitializeReactions() {
     ingr1_.NewAthenaArray(n_gr_);
     ingr2_.NewAthenaArray(n_gr_);
     outgr_.NewAthenaArray(n_gr_);
+    frml_gr_.NewAthenaArray(n_gr_);
     kgr_.NewAthenaArray(n_gr_);
+    TDgr_.NewAthenaArray(n_gr_);
+    nu0gr_.NewAthenaArray(n_gr_);
   }
   if (n_sr_ > 0) {
     insr_.NewAthenaArray(n_sr_, n_insr_);
@@ -545,13 +573,28 @@ void ChemNetwork::InitializeReactions() {
       if (pr->reactants_[0] == "H" && pr->reactants_[1] == "H") {
         igr_H_ = igr;
       }
-      if (pr->formula_ == 7) {
+      if (pr->formula_ == 7) { //special rates
         ingr1_(igr) = ispec_map_[pr->reactants_[0]];
-        ingr2_(igr) = ispec_map_[pr->reactants_[1]];
+        if (pr->reactants_.size() == 2) {
+          ingr2_(igr) = ispec_map_[pr->reactants_[1]];
+        } else {
+          ingr2_(igr) = -1;
+        }
         outgr_(igr) = ispec_map_[pr->products_[0]];
         id7map_(pr->id_) = igr;
         id7type_(pr->id_) = ReactionType::grain_implicit;
+        frml_gr_(igr) = pr->formula_;
         kgr_(igr) = 0.;
+        igr++;
+      } else if (pr->formula_ == 10 && pr->reactants_.size() == 1) { //desorption
+        const Real mi = species_[ispec_map_[pr->reactants_[0]]].mass_;
+        ingr1_(igr) = ispec_map_[pr->reactants_[0]];
+        ingr2_(igr) = -1;
+        outgr_(igr) = ispec_map_[pr->products_[0]];
+        frml_gr_(igr) = pr->formula_;
+        kgr_(igr) = 0.;
+        TDgr_(igr) = pr->gamma_;
+        nu0gr_(igr) = sqrt( 3.0e15*pr->gamma_*Thermo::kb_/(M_PI*M_PI*mi) );
         igr++;
       } else{
         error = true;
@@ -582,9 +625,9 @@ void ChemNetwork::InitializeReactions() {
         error = true;
       }
 
-    //------------- grain_charge - grain - electron/ion reactions -----------
-    } else if (rtype == ReactionType::grain_charge) {
-      if (pr->formula_ == 8) {
+    //------------- grain_collision - grain collisional reactions -----------
+    } else if (rtype == ReactionType::grain_collision) {
+      if (pr->formula_ == 8) { //electron and ion
         const Real br = pr->alpha_;
         const Real se = pr->beta_;
         const Real ag = pr->gamma_;
@@ -610,13 +653,35 @@ void ChemNetwork::InitializeReactions() {
           std::stringstream msg; 
           msg << "### FATAL ERROR in ChemNetwork InitializeReactions() [ChemNetwork]"
             << std::endl
-            << "grain charge reaction: charge of electron/ion != +-1, " 
+            << "grain collsion reaction: charge of electron/ion != +-1, " 
             << "reaction ID=" << std::endl;
           ATHENA_ERROR(msg);
         }
         nu_gc_(igc) = species_[ispec_map_[pr->reactants_[0]]].charge_ / q_charge;
         r1_gc_(igc) = br*se* M_PI *ag*ag * sqrt( 8.*Thermo::kb_/(M_PI*mi) );
         t1_gc_(igc) = ag * Thermo::kb_ / (qi*qi);
+        igc++;
+      } else if (pr->formula_ == 9) { //neutral freeze-out
+        const Real ag = pr->gamma_;
+        const Real mi = species_[ispec_map_[pr->reactants_[1]]].mass_;
+        for (int jin=0; jin<n_ingc_; jin++) {
+          if (jin < pr->reactants_.size()) {
+            ingc_(igc, jin) = ispec_map_[pr->reactants_[jin]];
+          } else {
+            ingc_(igc, jin) = -1;
+          }
+        }
+        for (int jout=0; jout<n_outgc_; jout++) {
+          if (jout < pr->products_.size()) {
+            outgc_(igc, jout) = ispec_map_[pr->products_[jout]];
+          } else {
+            outgc_(igc, jout) = -1;
+          }
+        }
+        kgc_(igc) = 0.;
+        nu_gc_(igc) = 9; //flag for freeze-out reaction
+        r1_gc_(igc) = M_PI *ag*ag * sqrt( 8.*Thermo::kb_/(M_PI*mi) );
+        t1_gc_(igc) = 0.;
         igc++;
       } else {
         error = true;
@@ -682,19 +747,43 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
     kph_(i) = kph_base_(i) * rad_(i);
 	}
 
-  //grain charge reactions
+  //grain collision reactions
 	for (int i=0; i<n_gc_; i++) {
     if (nu_gc_(i) == 0) { //polarisation
       kgc_(i) = r1_gc_(i) * sqrt(T) * (1. + sqrt( M_PI/(2*t1_gc_(i)*T) ) ) * nH_;
     } else if (nu_gc_(i) == -1) { //Coloumn focusing
       kgc_(i) = r1_gc_(i) * sqrt(T) * (1. + 1./(t1_gc_(i)*T) ) 
                 * (1. + sqrt( 2./(2. + t1_gc_(i)*T) ) ) * nH_;
+    } else if (nu_gc_(i) == 9) { //freeze-out
+      kgc_(i) = r1_gc_(i) * sqrt(T) * nH_;
     } else {
       std::stringstream msg; 
       msg << "### fatal error in chemnetwork UpdateRates() [chemnetwork]: "
-        << "grain charge reaction type not implemented."
+        << "grain collsion reaction type not implemented."
         << std::endl; 
       ATHENA_ERROR(msg);
+    }
+  }
+
+  //freeze-out reactions
+  Real kth, kcr, kcrp, kFUV, y_ices, Nl, fl;
+  y_ices = 0; //total ice abundance
+  for (int i=0; i<nices_; i++) {
+    y_ices += y[id_ices_(i)];
+  }
+  Nl = y_ices / (6.0e15*M_PI*a_d_*a_d_*x_d_); //number of layers
+  if (Nl <= 1.) {
+    fl = 1.;
+  } else {
+    fl = 1./Nl;
+  }
+	for (int i=0; i<n_gr_; i++) {
+    if (frml_gr_(i) == 10) {
+      kth = nu0gr_(i) * exp( -TDgr_(i)/T );
+      kcr = 0.108 * rad_(index_cr_) * nu0gr_(i) * exp( -TDgr_(i)/70. );
+      kcrp = 1.037e5 * rad_(index_cr_) * Yi_;
+      kFUV = 3.23e-11 * rad_(index_gpe_);
+      kgr_(i) = (kth + kcr + kcrp + kFUV) * fl;
     }
   }
 
@@ -954,17 +1043,12 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
   //-------------------- 9 - grain assisted reaction ----------------
   } else if (pr->itype_ == 9) {
     //check format
-    if (pr->reactants_.size() != 2 || pr->products_.size() != 1) {
+    if ( (pr->reactants_.size() != 1 && pr->reactants_.size() != 2)
+        || pr->products_.size() != 1 ) {
       std::stringstream msg; 
       msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
           << std::endl << "Wrong format in implicit grain reaction ID=" 
           << pr->id_ << std::endl;
-      ATHENA_ERROR(msg);
-    }
-    if (pr->reactants_[1] != "e-" && pr->reactants_[1] != "H") {
-      std::stringstream msg; 
-      msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
-          << std::endl << "second reactant must be H or e-." << std::endl;
       ATHENA_ERROR(msg);
     }
     return ReactionType::grain_implicit;
@@ -980,24 +1064,24 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
     }
     return ReactionType::special;
 
-  //-------11 - grain charge reactions with electron/ion  -----------
+  //-------11 - grain collision reactions with electron/ion  -----------
   } else if (pr->itype_ == 11) {
     if (pr->reactants_.size() != 2 || (pr->products_.size() != 1 && 
           pr->products_.size() != 2 && pr->products_.size() != 3)) {
       std::stringstream msg; 
       msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
-        << std::endl << "Wrong format in grain charge reaction ID="
+        << std::endl << "Wrong format in grain collsion reaction ID="
         << pr->id_ << std::endl;
       ATHENA_ERROR(msg);
     }
-    if (pr->reactants_[1] != "e-" && pr->reactants_[1].back() != '+' ) {
+    if (pr->reactants_[0].find("g") != 0 && pr->reactants_[0].find("PAH") != 0) {
       std::stringstream msg; 
       msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
-        << std::endl << "grain charge reactions must be with e- or ion."
+        << std::endl << "grain collision reactions must be with g or PAH."
         << std::endl;
       ATHENA_ERROR(msg);
     }
-    return ReactionType::grain_charge;
+    return ReactionType::grain_collision;
 
 
   //------------------ type not recogonized -------------------------
@@ -1162,8 +1246,11 @@ void ChemNetwork::PrintProperties() const {
   //grain assisted reactions
   std::cout << "gr reations:" << std::endl;
   for (int i=0; i<n_gr_; i++) {
-    std::cout<< species_names[ingr1_(i)] << " + " << species_names[ingr2_(i)] 
-      <<" -> " << species_names[outgr_(i)] << std::endl;
+    std::cout << species_names[ingr1_(i)];
+    if (ingr2_(i) >= 0) {
+      std::cout << " + " << species_names[ingr2_(i)]; 
+    }
+    std::cout <<" -> " << species_names[outgr_(i)] << std::endl;
   }
 
   //special reactions
@@ -1189,8 +1276,8 @@ void ChemNetwork::PrintProperties() const {
     std::cout << std::endl;
   }
 
-  //grain charge reactions
-  std::cout << "grain charge reactions:" << std::endl;
+  //grain collision reactions
+  std::cout << "grain collsion reactions:" << std::endl;
   for (int i=0; i<n_gc_; i++) {
     for (int jin=0; jin<n_ingc_; jin++) {
       if (ingc_(i, jin) >= 0) {
@@ -1286,9 +1373,15 @@ void ChemNetwork::OutputRates(FILE *pf) const {
     fprintf(pf,   ",     k2bodytr = %.2e\n", k2bodytr_(i));
 	}
 	for (int i=0; i<n_gr_; i++) {
-		fprintf(pf, "%4s + %4s -> %4s,       kgr = %.2e\n", 
-		 species_names[ingr1_(i)].c_str(), species_names[ingr2_(i)].c_str(),
-     species_names[outgr_(i)].c_str(), kgr_(i));
+    if (ingr2_(i) >= 0) {
+      fprintf(pf, "%4s + %4s -> %4s,       kgr = %.2e\n", 
+          species_names[ingr1_(i)].c_str(), species_names[ingr2_(i)].c_str(),
+          species_names[outgr_(i)].c_str(), kgr_(i));
+    } else {
+      fprintf(pf, "%4s -> %4s,       kgr = %.2e\n", 
+          species_names[ingr1_(i)].c_str(), 
+          species_names[outgr_(i)].c_str(), kgr_(i));
+    }
 	}
   for (int i=0; i<n_sr_; i++) {
     for (int jin=0; jin<n_insr_; jin++) {
@@ -1484,7 +1577,9 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
   for (int i=0; i<n_gr_; i++) {
     rate = kgr_(i) * y[ingr1_(i)];
     ydotg[ingr1_(i)] -= rate;
-    ydotg[ingr2_(i)] -= rate;
+    if (ingr2_(i) >= 0) {
+      ydotg[ingr2_(i)] -= rate;
+    }
     ydotg[outgr_(i)] += rate;
   }
 
@@ -1503,7 +1598,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
     }
   }
 
-  //grain charge reactions
+  //grain collision reactions
   for (int i=0; i<n_gc_; i++) {
     rate =  kgc_(i) * y[ingc_(i, 0)] * y[ingc_(i, 1)];
     if (y[ingc_(i, 0)] < 0 && y[ingc_(i, 1)] < 0) {

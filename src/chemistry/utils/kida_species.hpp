@@ -34,6 +34,7 @@ class KidaSpecies{
     //mass of the species in g, used in grain - molecule reactions.
     //mass is automatically calculated using the number of atoms
     Real mass_; 
+    void SetMass(Real mass);//set the mass of species. used for grains.
 };
 
 #endif //KIDA_SPECIES_H_
