@@ -1,19 +1,10 @@
 What is this:
 
-This branch seeks to implement vertex centering (VC) for variable representation.
-The prototype problem is the wave equation.
-
+Development branch has features built on the latest public Athena++ release.
 
 * What is to be done?
 
-** Consistency conditions need to be completed for 3D.
-** Prolongation operation for VC is bugged.
-   This is most likely an issue during buffer packing.
-** Buffer size should be computed carefully.
-** I/O needs to be addressed.
-
-* How to?
-
-See auto_cvg_wave.sh together with scripts folder.
-
-Note that a caching compiler with g++ is assumed to be used.
+** I/O needs to be cleaned up for VC.
+** Buffer communication for VC could be optimised.
+** Add warning for meshblock minimum N in VC (A)SMR tied to NGHOST
+   Currently this can be silently misconfigured and spurious behaviour is possible.

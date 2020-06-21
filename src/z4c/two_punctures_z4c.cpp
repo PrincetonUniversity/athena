@@ -57,9 +57,7 @@ void Z4c::ADMTwoPunctures(ParameterInput *pin, AthenaArray<Real> & u_adm, ini_da
   //int n[3] = {(*pmb).block_size.nx1 + 2 * GSIZEI,
   //            (*pmb).block_size.nx2 + 2 * GSIZEJ,
   //            (*pmb).block_size.nx3 + 2 * GSIZEK};
-  int n[3] = {mbi.nn1 + 2 * GSIZEI,
-              mbi.nn2 + 2 * GSIZEJ,
-              mbi.nn3 + 2 * GSIZEK};
+  int n[3] = {mbi.nn1, mbi.nn2, mbi.nn3};
 
   int sz = n[0] * n[1] * n[2];
   // this could be done instead by accessing and casting the Athena vars but
