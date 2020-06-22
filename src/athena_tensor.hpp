@@ -77,6 +77,11 @@ public:
   void Fill(T const val) { data_.Fill(val); }
   void ZeroClear() { data_.ZeroClear(); }
 
+  // check values
+  bool is_finite() { return data_.is_finite(); }
+  bool is_nan() { return data_.is_nan(); }
+  bool is_inf() { return data_.is_inf(); }
+
   // operators to access the data
   AthenaArray<Real> const & operator()() {
     return data_;
@@ -170,6 +175,11 @@ public:
   // fill a tensor field with a constant value
   void Fill(T const val) { data_.Fill(val); }
   void ZeroClear() { data_.ZeroClear(); }
+
+  // check values
+  bool is_finite() { return data_.is_finite(); }
+  bool is_nan() { return data_.is_nan(); }
+  bool is_inf() { return data_.is_inf(); }
 
   // operators to access the data
   AthenaArray<Real> const & operator()(int const a) {
@@ -268,6 +278,11 @@ public:
   // fill a tensor field with a constant value
   void Fill(T const val) { data_.Fill(val); }
   void ZeroClear() { data_.ZeroClear(); }
+
+  // check values
+  bool is_finite() { return data_.is_finite(); }
+  bool is_nan() { return data_.is_nan(); }
+  bool is_inf() { return data_.is_inf(); }
 
   // operators to access the data
   AthenaArray<Real> const & operator()(int const a, int const b) {
@@ -371,6 +386,11 @@ public:
   void Fill(T const val) { data_.Fill(val); }
   void ZeroClear() { data_.ZeroClear(); }
 
+  // check values
+  bool is_finite() { return data_.is_finite(); }
+  bool is_nan() { return data_.is_nan(); }
+  bool is_inf() { return data_.is_inf(); }
+
   // operators to access the data
   AthenaArray<Real> const & operator()(int const a, int const b, int const c) {
     slice_.InitWithShallowSlice(data_, idxmap_[a][b][c], 1);
@@ -470,6 +490,11 @@ public:
   // fill a tensor field with a constant value
   void Fill(T const val) { data_.Fill(val); }
   void ZeroClear() { data_.ZeroClear(); }
+
+  // check values
+  bool is_finite() { return data_.is_finite(); }
+  bool is_nan() { return data_.is_nan(); }
+  bool is_inf() { return data_.is_inf(); }
 
   // operators to access the data
   AthenaArray<Real> const & operator()(int const a, int const b, int const c, int const d) {

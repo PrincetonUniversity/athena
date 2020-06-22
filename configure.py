@@ -25,6 +25,7 @@
 #   -w                  enable wave equation
 #   -z                  enable Z4c system
 #   -z_tracker          enable Z4c tracker functionality
+#   -z_assert_is_finite enable checking for nan/inf within Z4c tasklist
 #   -t                  enable interface frame transformations for GR
 #   -vertex             prefer vertex-centered (where available)
 #   -shear              enable shearing periodic boundary conditions
@@ -188,6 +189,12 @@ parser.add_argument("-z_tracker",
                     action='store_true',
                     default=False,
                     help='enable Z4c tracker')
+
+# -z_assert_is_finite argument
+parser.add_argument("-z_assert_is_finite",
+                    action='store_true',
+                    default=False,
+                    help='enable Z4c assert is_finite checks')
 
 # -t argument
 parser.add_argument('-t',
@@ -573,6 +580,14 @@ if args['z_tracker']:
     definitions['Z4C_TRACKER'] = 'Z4C_TRACKER'
 else:
   definitions['Z4C_TRACKER'] = 'NO_Z4C_TRACKER'
+
+# -z_assert_is_finite argument
+if args['z_assert_is_finite']:
+    if not args['z']:
+        raise SystemExit("### CONFIGURE ERROR: z_assert_is_finite requires z flag")
+    definitions['Z4C_ASSERT_FINITE'] = 'Z4C_ASSERT_FINITE'
+else:
+  definitions['Z4C_ASSERT_FINITE'] = 'NO_Z4C_ASSERT_FINITE'
 
 # -vertex argument
 if args['vertex']:
@@ -976,7 +991,8 @@ with open(makefile_input, 'r') as current_file:
     makefile_template = current_file.read()
 
 # Populate makefile with z4c specific src
-files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs', 'gauge']
+files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs',
+         'gauge', 'z4c_utils']
 if args['z']:
     if args['z_tracker']:
         files.append('trackers')
@@ -1025,6 +1041,7 @@ print('  Advection equation:           ' + ('ON' if args['a'] else 'OFF'))
 print('  Wave equation:                ' + ('ON' if args['w'] else 'OFF'))
 print('  Z4c equations:                ' + ('ON' if args['z'] else 'OFF'))
 print('  Z4c tracker:                  ' + ('ON' if args['z_tracker'] else 'OFF'))
+print('  Z4c assert is_finite:         ' + ('ON' if args['z_assert_is_finite'] else 'OFF'))
 print('  Frame transformations:        ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:                 ' + self_grav_string)
 print('  Super-Time-Stepping:          ' + ('ON' if args['sts'] else 'OFF'))

@@ -28,10 +28,16 @@ using namespace std;
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
+  // pre-fill fields with NAN
+  pz4c->storage.adm.Fill(NAN);
+  pz4c->storage.u.Fill(NAN);
+  pz4c->z4c.chi.Fill(NAN);
+
   pz4c->ADMOnePuncture(pin, pz4c->storage.adm);
   pz4c->GaugePreCollapsedLapse(pz4c->storage.adm, pz4c->storage.u);
 
-  std::cout << "One puncture initialized." << std::endl;
+  std::cout << "One puncture initialized ";
+  std::cout << "@ pmb.gid = " << gid << std::endl;
 
   // Constructing Z4c vars from ADM ones
   pz4c->ADMToZ4c(pz4c->storage.adm, pz4c->storage.u);

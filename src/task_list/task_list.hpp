@@ -462,6 +462,12 @@ public:
   TaskStatus ADM_Constraints(MeshBlock *pmb, int stage);   // ADM_CONSTR   [x]
   TaskStatus CheckRefinement(MeshBlock *pmb, int stage);   // FLAG_AMR     [x]
 
+#ifdef Z4C_ASSERT_FINITE
+  // monitor
+  TaskStatus AssertFinite(MeshBlock *pmb, int stage);      // ASSERT_FIN   [x]
+#endif // Z4C_ASSERT_FINITE
+
+
 private:
   IntegratorWeight stage_wghts[MAX_NSTAGE];
 
@@ -491,6 +497,10 @@ namespace Z4cIntegratorTaskNames {
 
   const TaskID ADM_CONSTR(13);
   const TaskID FLAG_AMR(14);
+
+#ifdef Z4C_ASSERT_FINITE
+  const TaskID ASSERT_FIN(15);
+#endif //Z4C_ASSERT_FINITE
 
 }  // namespace Z4cIntegratorTaskNames
 

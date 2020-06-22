@@ -111,6 +111,9 @@
 // allow control over whether tracker enabled
 #define @Z4C_TRACKER@
 
+// assert is_finite for z4c field variables during evolution ?
+#define @Z4C_ASSERT_FINITE@
+
 // configure.py dict(definitions) Boolean string macros:
 // (these options have the latter (false) option as defaults, unless noted otherwise)
 // make use of FFT? (FFT or NO_FFT)

@@ -177,6 +177,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
 int RefinementCondition(MeshBlock *pmb)
 {
+#ifdef Z4C_TRACKER
   //Initial distance between one of the punctures and the edge of the full mesh, needed to
   //calculate the box-in-box grid structure
   Real L = pmb->pmy_mesh->pz4c_tracker->L_grid;
@@ -304,4 +305,6 @@ int RefinementCondition(MeshBlock *pmb)
     printf("Do nothing\n");
 #endif
     return 0;
+
+#endif // Z4C_TRACKER
 }

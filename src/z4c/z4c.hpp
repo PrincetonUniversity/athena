@@ -284,6 +284,19 @@ public:
   // initial data for binary BHs
   void ADMTwoPunctures(AthenaArray<Real> & u_adm);
 
+  //---------------------------------------------------------------------------
+  // functions for debugging and monitoring
+  bool is_finite_adm();
+  bool is_finite_con();
+  bool is_finite_mat();
+  bool is_finite_z4c();
+
+  void assert_is_finite_adm();
+  void assert_is_finite_con();
+  void assert_is_finite_mat();
+  void assert_is_finite_z4c();
+  //---------------------------------------------------------------------------
+
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
 

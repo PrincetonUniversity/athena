@@ -257,6 +257,10 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
       AddTask(CLEAR_ALLBND, NEW_DT);           // ClearAllBoundary
     }
 
+#ifdef Z4C_ASSERT_FINITE
+    AddTask(ASSERT_FIN, CLEAR_ALLBND);         // AssertFinite
+#endif // Z4C_ASSERT_FINITE
+
   } // end of using namespace block
 
 }
@@ -341,7 +345,16 @@ void Z4cIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&Z4cIntegratorTaskList::CheckRefinement);
       task_list_[ntasks].lb_time = true;
-    } else {
+    }
+#ifdef Z4C_ASSERT_FINITE
+    else if (id == ASSERT_FIN) {
+      task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&Z4cIntegratorTaskList::AssertFinite);
+      task_list_[ntasks].lb_time = false;
+    }
+#endif // Z4C_ASSERT_FINITE
+    else {
       std::stringstream msg;
       msg << "### FATAL ERROR in AddTask" << std::endl
           << "Invalid Task is specified" << std::endl;
@@ -526,7 +539,6 @@ TaskStatus Z4cIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
   return TaskStatus::success;
 }
 
-
 TaskStatus Z4cIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   BoundaryValues *pbval = pmb->pbval;
 
@@ -593,3 +605,16 @@ TaskStatus Z4cIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int stage) {
   pmb->pmr->CheckRefinementCondition();
   return TaskStatus::success;
 }
+
+#ifdef Z4C_ASSERT_FINITE
+TaskStatus Z4cIntegratorTaskList::AssertFinite(MeshBlock *pmb, int stage) {
+  if (stage != nstages) return TaskStatus::success; // only do on last stage
+
+  pmb->pz4c->assert_is_finite_adm();
+  pmb->pz4c->assert_is_finite_con();
+  pmb->pz4c->assert_is_finite_mat();
+  pmb->pz4c->assert_is_finite_z4c();
+
+  return TaskStatus::success;
+}
+#endif // Z4C_ASSERT_FINITE

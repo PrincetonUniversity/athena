@@ -170,7 +170,7 @@ class AthenaArray {
   // make use of internal dim if not provided
   void InitWithShallowSlice(AthenaArray<T> &src, const int indx, const int nvar);
 
-  // ----------------------------------------------
+  // --------------------------------------------------------------------------
   // dump various information of array and contents
   void print_dim() const {
     printf("  (dim_, nx1_, [2], [3], [4], [5], [6]) = "
@@ -237,6 +237,44 @@ class AthenaArray {
     print_dim();
     print_data(fpr, print_idx, flip_idx);
   };
+  // --------------------------------------------------------------------------
+
+  // --------------------------------------------------------------------------
+  // for monitoring data / debug
+  bool is_finite() {
+    bool finite = true;
+    std::size_t size = nx1_ * nx2_ * nx3_ * nx4_ * nx5_;
+    for (std::size_t i=0; i<size; ++i) {
+      finite = finite and (std::isfinite(pdata_[i]));
+      if (not finite)
+        break;
+    }
+    return finite;
+  };
+
+  bool is_nan() {
+    bool bnan = true;
+    std::size_t size = nx1_ * nx2_ * nx3_ * nx4_ * nx5_;
+    for (std::size_t i=0; i<size; ++i) {
+      bnan = bnan and (std::isnan(pdata_[i]));
+      if (not bnan)
+        break;
+    }
+    return bnan;
+  };
+
+  bool is_inf() {
+    bool binf = true;
+    std::size_t size = nx1_ * nx2_ * nx3_ * nx4_ * nx5_;
+    for (std::size_t i=0; i<size; ++i) {
+      binf = binf and (std::isinf(pdata_[i]));
+      if (not binf)
+        break;
+    }
+    return binf;
+  };
+  //---------------------------------------------------------------------------
+
 
 private:
   T *pdata_;
