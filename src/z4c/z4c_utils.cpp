@@ -44,6 +44,7 @@ bool Z4c::is_finite_mat() {
   finite &= mat.rho.is_finite();
   finite &= mat.S_d.is_finite();
   finite &= mat.S_dd.is_finite();
+  return finite;
 }
 
 //----------------------------------------------------------------------------------------
