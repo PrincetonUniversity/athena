@@ -1527,7 +1527,7 @@ void MeshRefinement::ProlongateVertexCenteredValues(
 
   // This needs to be fixed...
 
-  int const hs_sz = NGHOST;
+  int const hs_sz = NGHOST-1;
 
   if (pmb->pmy_mesh->ndim == 1) {
     int const k = pmb->ckvs;
@@ -1562,8 +1562,8 @@ void MeshRefinement::ProlongateVertexCenteredValues(
                 lc_iu * coarse(n, k, j, iu - di);
 
               // if (n == 0) {
-              //   printf("i, fi, io, di, lc_il, lc_iu => %d, %d, %d, %d, %1.3f, %1.3f\n",
-              //           i, fi, io, di, lc_il, lc_iu);
+              //   printf("i, fio, io, di, lc_il, lc_iu => %d, %d, %d, %d, %1.3f, %1.3f\n",
+              //           i, fio, io, di, lc_il, lc_iu);
               // }
 
             }
