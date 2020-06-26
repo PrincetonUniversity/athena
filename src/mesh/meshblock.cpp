@@ -211,7 +211,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     new_block_dt_{}, new_block_dt_hyperbolic_{}, new_block_dt_parabolic_{},
     new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(icost) {
-  coutGreen("MeshBlock::MeshBlock\n");
+  if (DBGPR_MESHBLOCK)
+    coutGreen("MeshBlock::MeshBlock\n");
 
   // BD:
   // As this needs to be done twice (here and restarts), is verbose and prone
