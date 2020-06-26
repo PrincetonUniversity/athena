@@ -249,6 +249,22 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     ATHENA_ERROR(msg);
   }
 
+  if (PREFER_VC && multilevel) {
+    // MeshBlock minimum size is constrained in multilevel due to double-restrict
+    int const min_mb_nx = std::max(4, 4 * NCGHOST - 2);
+
+    if (block_size.nx1 < min_mb_nx
+        || (block_size.nx2 < min_mb_nx && f2)
+        || (block_size.nx3 < min_mb_nx && f3)) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "for multilevel with '-vertex' and NCGHOST = " << NCGHOST << ", "
+          << "block_size must be at least " << min_mb_nx << std::endl
+          << "Criterion: max(4, 4 * NCGHOST - 2)" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+  }
+
+
   // calculate the number of the blocks
   nrbx1 = mesh_size.nx1/block_size.nx1;
   nrbx2 = mesh_size.nx2/block_size.nx2;
