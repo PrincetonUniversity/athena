@@ -160,7 +160,32 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  // we shall default to one_puncture
+
+#ifdef Z4C_ASSERT_FINITE
+  // as a sanity check (these should be over-written)
+  pz4c->adm.psi4.Fill(NAN);
+  pz4c->adm.g_dd.Fill(NAN);
+  pz4c->adm.K_dd.Fill(NAN);
+
+  pz4c->z4c.chi.Fill(NAN);
+  pz4c->z4c.Khat.Fill(NAN);
+  pz4c->z4c.Theta.Fill(NAN);
+  pz4c->z4c.alpha.Fill(NAN);
+  pz4c->z4c.Gam_u.Fill(NAN);
+  pz4c->z4c.beta_u.Fill(NAN);
+  pz4c->z4c.g_dd.Fill(NAN);
+  pz4c->z4c.A_dd.Fill(NAN);
+
+  /*
+  pz4c->con.C.Fill(NAN);
+  pz4c->con.H.Fill(NAN);
+  pz4c->con.M.Fill(NAN);
+  pz4c->con.Z.Fill(NAN);
+  pz4c->con.M_d.Fill(NAN);
+
+  */
+#endif //Z4C_ASSERT_FINITE
+  //---------------------------------------------------------------------------
 
   // call the interpolation
   pz4c->ADMTwoPunctures(pin, pz4c->storage.adm, data);
@@ -171,6 +196,21 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   //std::cout << "Two punctures initialized." << std::endl;
   pz4c->ADMToZ4c(pz4c->storage.adm, pz4c->storage.u);
 
+  // debug!
+  /*
+  pz4c->Z4cToADM(pz4c->storage.u, pz4c->storage.adm);
+
+  pz4c->ADMConstraints(pz4c->storage.con, pz4c->storage.adm,
+                       pz4c->storage.mat, pz4c->storage.u);
+
+  */
+
+#ifdef Z4C_ASSERT_FINITE
+  pz4c->assert_is_finite_adm();
+  pz4c->assert_is_finite_con();
+  pz4c->assert_is_finite_mat();
+  pz4c->assert_is_finite_z4c();
+#endif //Z4C_ASSERT_FINITE
 
   return;
 }
@@ -306,5 +346,7 @@ int RefinementCondition(MeshBlock *pmb)
 #endif
     return 0;
 
+#else // Z4C_TRACKER
+  return 0;
 #endif // Z4C_TRACKER
 }

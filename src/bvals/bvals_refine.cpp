@@ -765,7 +765,7 @@ void BoundaryValues::ProlongateVertexCenteredBoundaries(
     if (nb.snb.level >= mylevel) continue;
 
     // calculate the loop limits for the ghost zones
-    int pcng = pmb->ng / 2 + (pmb->ng % 2 != 0);  // for odd/even ghosts
+    int const pcng = pmb->ng / 2 + (pmb->ng % 2 != 0);  // for odd/even ghosts
     int si, ei, sj, ej, sk, ek;
 
     CalculateVertexProlongationIndices(pmb->loc.lx1, nb.ni.ox1, pcng,

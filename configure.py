@@ -1000,7 +1000,7 @@ if args['z']:
         files.append('two_punctures_z4c')
     elif args['prob'] == "z4c_one_puncture":
         files.append('one_puncture_z4c')
-    elif args['prob'] == "awa_test":
+    elif args['prob'] == "z4c_awa_tests":
         files.append('awa_z4c')
 
 aux = ["		$(wildcard src/z4c/{}.cpp) \\".format(f) for f in files]
