@@ -59,7 +59,6 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
 	//set the parameters from input file
 	Z_g_ = pin->GetOrAddReal("chemistry", "Z_g", 1.);//dust and gas metallicity
 	Z_PAH_ = pin->GetOrAddReal("chemistry", "Z_PAH", 1.);//dust and gas metallicity
-	Z_d_ = pin->GetOrAddReal("chemistry", "Z_d", 1.);//dust and gas metallicity
   //PAH recombination efficiency 
 	phi_PAH_ = pin->GetOrAddReal("chemistry", "phi_PAH", 0.4);
   //size of the dust grain in cm, default 0.1 micron
@@ -68,7 +67,16 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
 	rho_d_ = pin->GetOrAddReal("chemistry", "rho_d", 2.);
   //mass of the dust grain in g, assuming density of 2 g/cm3
   m_d_ = rho_d_ * 4.*M_PI * a_d_*a_d_*a_d_ / 3.;
-  x_d_ = 0.013 * 1.4 * 1.67e-24 / m_d_; //relative abundance of all dust
+  //grain abundance, read from initialization 
+  const Real sinit = pin->GetOrAddReal("problem", "s_init", 0.);
+  const Real xg0 = pin->GetOrAddReal("problem", "s_init_g0", sinit);
+  const Real xgp = pin->GetOrAddReal("problem", "s_init_g+", sinit);
+  const Real xgm = pin->GetOrAddReal("problem", "s_init_g-", sinit);
+  x_d_ = xg0 + xgp + xgm; //total dust abundance
+  //relative abundance of all dust at Zd=1
+  const Real xdZ1 = 0.013 * 1.4 * 1.67e-24 / m_d_; 
+  Z_d_ = x_d_ / xdZ1;
+  std::cout << "Z_d=" << Z_d_ << std::endl;
   o2pH2_ = pin->GetOrAddReal("chemistry", "o2pH2", 3.);//ortho to para H2 ratio
   Yi_ = pin->GetOrAddReal("chemistry", "Yi", 1e-3);//ortho to para H2 ratio
   //units
@@ -767,15 +775,21 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
 
   //freeze-out reactions
   Real kth, kcr, kcrp, kFUV, y_ices, Nl, fl;
+  const Real eps = 1e-50;
   y_ices = 0; //total ice abundance
   for (int i=0; i<nices_; i++) {
     y_ices += y[id_ices_(i)];
   }
-  Nl = y_ices / (6.0e15*M_PI*a_d_*a_d_*x_d_); //number of layers
-  if (Nl <= 1.) {
-    fl = 1.;
+  //control for very small dust abundance
+  if (x_d_ < eps) {
+    fl = 0.;
   } else {
-    fl = 1./Nl;
+    Nl = y_ices / (6.0e15*M_PI*a_d_*a_d_*x_d_); //number of layers
+    if (Nl <= 1.) {
+      fl = 1.;
+    } else {
+      fl = 1./Nl;
+    }
   }
 	for (int i=0; i<n_gr_; i++) {
     if (frml_gr_(i) == 10) {
