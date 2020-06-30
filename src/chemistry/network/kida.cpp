@@ -68,7 +68,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
 	rho_d_ = pin->GetOrAddReal("chemistry", "rho_d", 2.);
   //mass of the dust grain in g, assuming density of 2 g/cm3
   m_d_ = rho_d_ * 4.*M_PI * a_d_*a_d_*a_d_ / 3.;
-  x_d_ = 0.013 * 1.67e-24 / m_d_; //relative abundance of all dust
+  x_d_ = 0.013 * 1.4 * 1.67e-24 / m_d_; //relative abundance of all dust
   o2pH2_ = pin->GetOrAddReal("chemistry", "o2pH2", 3.);//ortho to para H2 ratio
   Yi_ = pin->GetOrAddReal("chemistry", "Yi", 1e-3);//ortho to para H2 ratio
   //units
