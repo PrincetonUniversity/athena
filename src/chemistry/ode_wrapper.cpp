@@ -38,10 +38,16 @@
 ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   int flag;
   pmy_block_ = pmb;
-  dense_matrix_ = NULL,
-  dense_ls_ = NULL,
+  dense_matrix_ = NULL;
+  dense_ls_ = NULL;
+  if (NON_BAROTROPIC_EOS) {
+    dim_ = NSCALARS + 1;
+  } else {
+    dim_ = NSCALARS;
+  }
+  abstol_.NewAthenaArray(dim_);
   //allocate y_
-  y_ = N_VNew_Serial(NSCALARS+1);
+  y_ = N_VNew_Serial(dim_);
   CheckFlag((void *)y_, "N_VNew_Serial", 0);
   ydata_ = NV_DATA_S(y_);
   reltol_ = pin->GetOrAddReal("chemistry", "reltol", 1.0e-2);
@@ -64,16 +70,18 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
 
   //tolerance
   Real abstol_all = pin->GetOrAddReal("chemistry", "abstol", 1.0e-12);
-  for (int i=0; i<NSCALARS; i++) {
-    abstol_[i] = pin->GetOrAddReal("chemistry",
+  for (int i=0; i<dim_; i++) {
+    abstol_(i) = pin->GetOrAddReal("chemistry",
         "abstol_"+pmy_spec_->chemnet.species_names[i], -1);
-    if (abstol_[i] < 0) {
-      abstol_[i] = abstol_all;
+    if (abstol_(i) < 0) {
+      abstol_(i) = abstol_all;
     }
   }
-  abstol_[NSCALARS] = pin->GetOrAddReal("chemistry", "abstol_E", -1);
-  if (abstol_[NSCALARS] < 0) {
-    abstol_[NSCALARS] = abstol_all;
+  if (NON_BAROTROPIC_EOS) {
+    abstol_(dim_-1) = pin->GetOrAddReal("chemistry", "abstol_E", -1);
+    if (abstol_(dim_-1) < 0) {
+      abstol_(dim_-1) = abstol_all;
+    }
   }
   //read initial step
   h_init_ = pin->GetOrAddReal("chemistry", "h_init", 0.);
@@ -91,10 +99,10 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   int stldet = pin->GetOrAddInteger("chemistry", "stldet", 0);
 
   // -----------Initialize absolute value vector----------
-  N_Vector abstol_vec = N_VNew_Serial(NSCALARS+1);
+  N_Vector abstol_vec = N_VNew_Serial(dim_);
   CheckFlag((void *)abstol_vec, "N_VNew_Serial", 0);
-  for (int i=0; i<NSCALARS+1; i++) {
-    NV_Ith_S(abstol_vec, i) = abstol_[i];
+  for (int i=0; i<dim_; i++) {
+    NV_Ith_S(abstol_vec, i) = abstol_(i);
   }
 
   //-------------initialize CVODE------------------
@@ -120,7 +128,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   CheckFlag(&flag, "CVodeSVtolerances", 1);
 
   // Create dense SUNMatrix for use in linear solves 
-  dense_matrix_ = SUNDenseMatrix(NSCALARS+1, NSCALARS+1);
+  dense_matrix_ = SUNDenseMatrix(dim_, dim_);
   CheckFlag((void *)dense_matrix_, "SUNDenseMatrix", 0);
 
   /* Create dense SUNLinearSolver object for use by CVode */
@@ -214,7 +222,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
       //loop over each cell
       for (int i=is; i<=ie; ++i) {
         //step 1: initialize chemistry network, eg: density, radiation
-        NV_DATA_S(y_) = pdata_r_copy + i*(NSCALARS+1);
+        NV_DATA_S(y_) = pdata_r_copy + i*dim_;
         pmy_spec_->chemnet.InitializeNextStep(k, j, i);
         //step 2: re-initialize CVODE with starting time t, and vector y
         //allocate r_copy(i, *) to y_.
