@@ -268,7 +268,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
     elapsed_secs = Real(end - begin) / CLOCKS_PER_SEC;
     printf("chemistry ODE integration: ");
     printf("ncycle = %d, total time in sec = %.2e, zone/sec=%.2e\n", 
-        ncycle, elapsed_secs, elapsed_secs/Real(nzones) );
+        ncycle, elapsed_secs, Real(nzones)/elapsed_secs);
   }
   return;
 }
