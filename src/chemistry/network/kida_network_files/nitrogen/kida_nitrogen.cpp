@@ -77,16 +77,16 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
                                        13, 14, 15, 17};
   //(3) H+ + e- -> H  -- Case B
 	k2body_(id7map_(3)) = 2.753e-14 * pow( 315614.0 / T, 1.5) 
-									 * pow(  1.0 + pow( 115188.0 / T, 0.407) , -2.242 ) * nH_;
+									 * pow(  1.0 + pow( 115188.0 / T, 0.407) , -2.242 );
   //(4) O + H+ -> H + O+
   //(10) H + O+ -> O + H+
   k2body_(id7map_(4)) = ( 1.1e-11 * pow(T, 0.517) + 4.0e-10 * pow(T, 6.69e-3) 
-                             ) * exp(-227./T) * nH_;
+                             ) * exp(-227./T);
   k2body_(id7map_(10)) = (4.99e-11* pow(T, 0.405) + 7.5e-10 * pow(T, -0.458) 
-                             )* nH_;
+                             );
 
   //(5) H2 + H2+ -> H + H3+
-  k2body_(id7map_(5)) = 1.76e-9 * pow(T, 0.042) * exp(- T/46600.) * nH_; 
+  k2body_(id7map_(5)) = 1.76e-9 * pow(T, 0.042) * exp(- T/46600.); 
 
   //(6) C + H3+ -> H2 + CH+       --Vissapragada2016 new rates
   //(7) C + H3+ -> H + CH2+       --Vissapragada2016 new rates
@@ -106,13 +106,13 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   const Real t2_CH2p = c_kCH2p[0] * exp(-Ti_kCH2p[0]/T)
            + c_kCH2p[1] * exp(-Ti_kCH2p[1]/T)
            + c_kCH2p[2]*exp(-Ti_kCH2p[2]/T) + c_kCH2p[3] *exp(-Ti_kCH2p[3]/T);
-  k2body_(id7map_(6)) = (t1_CHp + pow(T, -1.5) * t2_CHp) * nH_;
-  k2body_(id7map_(7)) = (t1_CH2p + pow(T, -1.5) * t2_CH2p) * nH_;
+  k2body_(id7map_(6)) = (t1_CHp + pow(T, -1.5) * t2_CHp);
+  k2body_(id7map_(7)) = (t1_CH2p + pow(T, -1.5) * t2_CH2p);
   //(8) He+ + e- -> He  -- Case B
 	k2body_(id7map_(8)) = 1e-11*pow(T, -0.5)*(11.19 + 
-                             (-1.676 + (-0.2852 + 0.04433*logT) * logT )* logT) * nH_;
+                             (-1.676 + (-0.2852 + 0.04433*logT) * logT )* logT);
   //(9) C+ + e- -> C    -- Include RR and DR, Badnell2003, 2006.
-  k2body_(id7map_(9)) = CII_rec_rate(T) * nH_;
+  k2body_(id7map_(9)) = CII_rec_rate(T);
 
   //(11)O + H3+ -> H2 + OH+       --de Routte et al. (2016) new rates
   //(12)O + H3+ -> H + H2O+       --de Routte et al. (2016) new rates
@@ -121,9 +121,9 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   const Real a0_H2Op = 4.2253e-10;
   const Real b_H2Op[3] = {3.4977e-3, -1.4126e-4, 6.3584e-5};
   k2body_(id7map_(11)) = (a_OHp[0] + a_OHp[1]*sqrtT + a_OHp[2]*T) / (
-        pow(T,1./6.) + b_OHp[0]*sqrtT + b_OHp[1]*T + b_OHp[2]*T*sqrtT) * nH_;
+        pow(T,1./6.) + b_OHp[0]*sqrtT + b_OHp[1]*T + b_OHp[2]*T*sqrtT);
   k2body_(id7map_(12)) = a0_H2Op / (
-        pow(T,1./6.) + b_H2Op[0]*sqrtT + b_H2Op[1]*T + b_H2Op[2]*T*sqrtT) * nH_;
+        pow(T,1./6.) + b_H2Op[0]*sqrtT + b_H2Op[1]*T + b_H2Op[2]*T*sqrtT);
 
   //Collisional dissociation, k>~1.0e-30 at T>~5e2.
   //(13) H + e- -> H+ + e- + e-
@@ -151,12 +151,12 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
                       (1.35365560e1 + (- 5.73932875 + (1.56315498 
                     + (- 2.877056e-1 + (3.48255977e-2 + (- 2.63197617e-3
                     + (1.11954395e-4 + (-2.03914985e-6)
-                       *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe) *lnTe) * nH_;
+                       *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe) *lnTe);
 
     k2body_(id7map_(14)) = pow(10, log10(k9h) *  n2ncr/(1. + n2ncr) 
-                         + log10(k9l) / (1. + n2ncr)) * nH_;
+                         + log10(k9l) / (1. + n2ncr));
     k2body_(id7map_(15)) = pow(10, log10(k10h) *  n2ncr/(1. + n2ncr) 
-                         + log10(k10l) / (1. + n2ncr)) * nH_;
+                         + log10(k10l) / (1. + n2ncr));
   } else {
     k2body_(id7map_(13)) = 0.;
     k2body_(id7map_(14)) = 0.;
@@ -166,7 +166,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   const Real x_oH2 = o2pH2_ / (1. + o2pH2_);
   const Real ko = 4.2e-10 * pow(T/300., -0.17) * exp(-44.5/T);
   const Real kp = 8.35e-10 * exp(-168.5/T);
-  k2body_(id7map_(17)) = ( x_oH2*ko + (1.-x_oH2)*kp ) * nH_;
+  k2body_(id7map_(17)) = ( x_oH2*ko + (1.-x_oH2)*kp );
 
   //sanity check
   if (check_index) {
