@@ -75,6 +75,9 @@ private:
   //whether to cap temperature if the reaction is outside of the temperature range
   //only for 2body reactions. Default is false, which means extrapolation
   bool is_Tcap_2body_; 
+  //flag for in isothermal EOS only temperature related rates are
+  //calculated only once in the beginning
+  bool flag_T_rates_; 
 	Real Z_g_; //gas metallicity relative to solar, default 1.
 	Real Z_PAH_; //PAH metallicity relative to solar, default 1.
 	Real Z_d_; //larger dust grain metallicity relative to solar, default 1.

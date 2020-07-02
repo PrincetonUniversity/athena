@@ -54,7 +54,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   icr_H_(-1), icr_H2_(-1), icr_He_(-1), n_crp_(0), n_ph_(0), iph_H2_(-1), 
   n_2body_(0), i2body_H2_H_(-1), i2body_H2_H2_(-1), i2body_H_e_(-1),
   n_2bodytr_(0), n_gr_(0), igr_H_(-1), n_sr_(0), n_gc_(0),
-  n_freq_(0), index_gpe_(0), index_cr_(0), gradv_(0.) {
+  n_freq_(0), index_gpe_(0), index_cr_(0), gradv_(0.), flag_T_rates_(true) {
 
 	//set the parameters from input file
 	Z_g_ = pin->GetOrAddReal("chemistry", "Z_g", 1.);//dust and gas metallicity
@@ -740,6 +740,7 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
 	if (T < temp_min_rates_) {
 		T = temp_min_rates_;
 	} 
+
 	//cosmic ray reactions
 	for (int i=0; i<n_cr_; i++) {
 		kcr_(i) = kcr_base_(i) * rad_(index_cr_);
@@ -756,20 +757,22 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
 	}
 
   //grain collision reactions
-	for (int i=0; i<n_gc_; i++) {
-    if (nu_gc_(i) == 0) { //polarisation
-      kgc_(i) = r1_gc_(i) * sqrt(T) * (1. + sqrt( M_PI/(2*t1_gc_(i)*T) ) ) * nH_;
-    } else if (nu_gc_(i) == -1) { //Coloumn focusing
-      kgc_(i) = r1_gc_(i) * sqrt(T) * (1. + 1./(t1_gc_(i)*T) ) 
-                * (1. + sqrt( 2./(2. + t1_gc_(i)*T) ) ) * nH_;
-    } else if (nu_gc_(i) == 9) { //freeze-out
-      kgc_(i) = r1_gc_(i) * sqrt(T) * nH_;
-    } else {
-      std::stringstream msg; 
-      msg << "### fatal error in chemnetwork UpdateRates() [chemnetwork]: "
-        << "grain collsion reaction type not implemented."
-        << std::endl; 
-      ATHENA_ERROR(msg);
+  if (flag_T_rates_) {
+    for (int i=0; i<n_gc_; i++) {
+      if (nu_gc_(i) == 0) { //polarisation
+        kgc_(i) = r1_gc_(i) * sqrt(T) * (1. + sqrt( M_PI/(2*t1_gc_(i)*T) ) );
+      } else if (nu_gc_(i) == -1) { //Coloumn focusing
+        kgc_(i) = r1_gc_(i) * sqrt(T) * (1. + 1./(t1_gc_(i)*T) ) 
+                  * (1. + sqrt( 2./(2. + t1_gc_(i)*T) ) );
+      } else if (nu_gc_(i) == 9) { //freeze-out
+        kgc_(i) = r1_gc_(i) * sqrt(T);
+      } else {
+        std::stringstream msg; 
+        msg << "### fatal error in chemnetwork UpdateRates() [chemnetwork]: "
+          << "grain collsion reaction type not implemented."
+          << std::endl; 
+        ATHENA_ERROR(msg);
+      }
     }
   }
 
@@ -802,185 +805,195 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
   }
 
   //2body reactions
-  if (is_Tcap_2body_) {
-    for (int i=0; i<n_2body_; i++) {
-      if (T < Tmin_2body_(i)) {
-        Tcap = Tmin_2body_(i);
-      } else if (T > Tmax_2body_(i)) {
-        Tcap = Tmax_2body_(i);
-      } else {
-        Tcap = T;
+  if (flag_T_rates_) {
+    if (is_Tcap_2body_) {
+      for (int i=0; i<n_2body_; i++) {
+        if (T < Tmin_2body_(i)) {
+          Tcap = Tmin_2body_(i);
+        } else if (T > Tmax_2body_(i)) {
+          Tcap = Tmax_2body_(i);
+        } else {
+          Tcap = T;
+        }
+        if (frml_2body_(i) == 3) {
+          k2body_(i) = a2body_(i)*pow(Tcap/300., b2body_(i))*exp(-c2body_(i)/Tcap);
+        } else if (frml_2body_(i) == 4) {
+          k2body_(i) = a2body_(i)*b2body_(i)*( 0.62 
+                                            + 0.4767*c2body_(i)*sqrt(300./Tcap) );
+        } else if (frml_2body_(i) == 5) {
+          k2body_(i) = a2body_(i)*b2body_(i)*( 1 + 0.0967*c2body_(i)*sqrt(300./Tcap) 
+                                             + 28.501*c2body_(i)*c2body_(i)/Tcap );
+        }
       }
-      if (frml_2body_(i) == 3) {
-        k2body_(i) = a2body_(i)*pow(Tcap/300., b2body_(i))*exp(-c2body_(i)/Tcap) * nH_;
-      } else if (frml_2body_(i) == 4) {
-        k2body_(i) = a2body_(i)*b2body_(i)*( 0.62 
-                                          + 0.4767*c2body_(i)*sqrt(300./Tcap) ) * nH_;
-      } else if (frml_2body_(i) == 5) {
-        k2body_(i) = a2body_(i)*b2body_(i)*( 1 + 0.0967*c2body_(i)*sqrt(300./Tcap) 
-                                           + 28.501*c2body_(i)*c2body_(i)/Tcap ) * nH_;
-      }
-    }
-  } else {
-    for (int i=0; i<n_2body_; i++) {
-      if (frml_2body_(i) == 3) {
-        k2body_(i) = a2body_(i)*pow(T/300., b2body_(i))*exp(-c2body_(i)/T) * nH_;
-      } else if (frml_2body_(i) == 4) {
-        k2body_(i) = a2body_(i)*b2body_(i)*( 0.62 
-                                            + 0.4767*c2body_(i)*sqrt(300./T) ) * nH_;
-      } else if (frml_2body_(i) == 5) {
-        k2body_(i) = a2body_(i)*b2body_(i)*( 1 + 0.0967*c2body_(i)*sqrt(300./T) 
-                                             + 28.501*c2body_(i)*c2body_(i)/T ) * nH_;
+    } else {
+      for (int i=0; i<n_2body_; i++) {
+        if (frml_2body_(i) == 3) {
+          k2body_(i) = a2body_(i)*pow(T/300., b2body_(i))*exp(-c2body_(i)/T);
+        } else if (frml_2body_(i) == 4) {
+          k2body_(i) = a2body_(i)*b2body_(i)*( 0.62 
+                                              + 0.4767*c2body_(i)*sqrt(300./T) );
+        } else if (frml_2body_(i) == 5) {
+          k2body_(i) = a2body_(i)*b2body_(i)*( 1 + 0.0967*c2body_(i)*sqrt(300./T) 
+                                               + 28.501*c2body_(i)*c2body_(i)/T );
+        }
       }
     }
   }
 
   //2bodytr reactions
-  if (is_Tcap_2body_) {
-    for (int i=0; i<n_2bodytr_; i++) {
-      int nr = nr_2bodytr_(i);
-      int irange1 = 0;
-      int irange2 = 0;
-      Real rate1 = 0.;
-      Real rate2 = 0.;
-      if ( T < Tmin_2bodytr_(i,0) ) {
-        Tcap = Tmin_2bodytr_(i,0);
-      } else if ( T > Tmax_2bodytr_(i,nr-1) ) {
-        Tcap = Tmax_2bodytr_(i,nr-1);
-      } else {
-        Tcap = T;
-      }
-      //select which temperature range to use
-      if ( Tcap <= Tmax_2bodytr_(i,0) ) {
-        irange1 = 0;
-        irange2 = 0;
-      } else if ( Tcap <= Tmin_2bodytr_(i,1) ) {
-        irange1 = 0;
-        irange2 = 1;
-      } else if ( Tcap <= Tmax_2bodytr_(i,1) ) {
-        irange1 = 1;
-        irange2 = 1;
-      } else {
-        if (nr == 2) {
+  if (flag_T_rates_) {
+    if (is_Tcap_2body_) {
+      for (int i=0; i<n_2bodytr_; i++) {
+        int nr = nr_2bodytr_(i);
+        int irange1 = 0;
+        int irange2 = 0;
+        Real rate1 = 0.;
+        Real rate2 = 0.;
+        if ( T < Tmin_2bodytr_(i,0) ) {
+          Tcap = Tmin_2bodytr_(i,0);
+        } else if ( T > Tmax_2bodytr_(i,nr-1) ) {
+          Tcap = Tmax_2bodytr_(i,nr-1);
+        } else {
+          Tcap = T;
+        }
+        //select which temperature range to use
+        if ( Tcap <= Tmax_2bodytr_(i,0) ) {
+          irange1 = 0;
+          irange2 = 0;
+        } else if ( Tcap <= Tmin_2bodytr_(i,1) ) {
+          irange1 = 0;
+          irange2 = 1;
+        } else if ( Tcap <= Tmax_2bodytr_(i,1) ) {
           irange1 = 1;
           irange2 = 1;
-        } else if (nr == 3) {
-          if ( Tcap <= Tmin_2bodytr_(i,2) ) {
-            irange1 = 1;
-            irange2 = 2;
-          } else {
-            irange1 = 2;
-            irange2 = 2;
-          }
         } else {
-          std::stringstream msg; 
-          msg << "### fatal error in chemnetwork UpdateRates() [chemnetwork]: "
-            << "2bodytr reaction with more than 3 temperature ranges not implemented."
-            << std::endl; 
-          ATHENA_ERROR(msg);
+          if (nr == 2) {
+            irange1 = 1;
+            irange2 = 1;
+          } else if (nr == 3) {
+            if ( Tcap <= Tmin_2bodytr_(i,2) ) {
+              irange1 = 1;
+              irange2 = 2;
+            } else {
+              irange1 = 2;
+              irange2 = 2;
+            }
+          } else {
+            std::stringstream msg; 
+            msg << "### fatal error in chemnetwork UpdateRates() [chemnetwork]: "
+              << "2bodytr reaction with more than 3 temperature ranges not implemented."
+              << std::endl; 
+            ATHENA_ERROR(msg);
+          }
         }
-      }
-      //calculate rates
-      if (frml_2bodytr_(i,irange1) == 3) {
-        rate1 = a2bodytr_(i,irange1)*pow(Tcap/300., b2bodytr_(i,irange1))
-                    *exp(-c2bodytr_(i,irange1)/Tcap) * nH_;
-      } else if (frml_2bodytr_(i,irange1) == 4) {
-        rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*( 0.62 
-                               + 0.4767*c2bodytr_(i,irange1)*sqrt(300./Tcap) ) * nH_;
-      } else if (frml_2bodytr_(i,irange1) == 5) {
-        rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*(
-            1 + 0.0967*c2bodytr_(i,irange1)*sqrt(300./Tcap) 
-              + 28.501*c2bodytr_(i,irange1)*c2bodytr_(i,irange1)/Tcap ) * nH_;
-      }
-      if (irange1 == irange2) {
-        rate2 = rate1;
-      } else {
-        if (frml_2bodytr_(i,irange2) == 3) {
-          rate2 = a2bodytr_(i,irange2)*pow(Tcap/300., b2bodytr_(i,irange2))
-                      *exp(-c2bodytr_(i,irange2)/Tcap) * nH_;
-        } else if (frml_2bodytr_(i,irange2) == 4) {
-          rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*( 0.62 
-                                 + 0.4767*c2bodytr_(i,irange2)*sqrt(300./Tcap) ) * nH_;
-        } else if (frml_2bodytr_(i,irange2) == 5) {
-          rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*(
-              1 + 0.0967*c2bodytr_(i,irange2)*sqrt(300./Tcap) 
-                + 28.501*c2bodytr_(i,irange2)*c2bodytr_(i,irange2)/Tcap ) * nH_;
+        //calculate rates
+        if (frml_2bodytr_(i,irange1) == 3) {
+          rate1 = a2bodytr_(i,irange1)*pow(Tcap/300., b2bodytr_(i,irange1))
+                      *exp(-c2bodytr_(i,irange1)/Tcap);
+        } else if (frml_2bodytr_(i,irange1) == 4) {
+          rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*( 0.62 
+                                 + 0.4767*c2bodytr_(i,irange1)*sqrt(300./Tcap) );
+        } else if (frml_2bodytr_(i,irange1) == 5) {
+          rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*(
+              1 + 0.0967*c2bodytr_(i,irange1)*sqrt(300./Tcap) 
+                + 28.501*c2bodytr_(i,irange1)*c2bodytr_(i,irange1)/Tcap );
         }
+        if (irange1 == irange2) {
+          rate2 = rate1;
+        } else {
+          if (frml_2bodytr_(i,irange2) == 3) {
+            rate2 = a2bodytr_(i,irange2)*pow(Tcap/300., b2bodytr_(i,irange2))
+                        *exp(-c2bodytr_(i,irange2)/Tcap);
+          } else if (frml_2bodytr_(i,irange2) == 4) {
+            rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*( 0.62 
+                                   + 0.4767*c2bodytr_(i,irange2)*sqrt(300./Tcap) );
+          } else if (frml_2bodytr_(i,irange2) == 5) {
+            rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*(
+                1 + 0.0967*c2bodytr_(i,irange2)*sqrt(300./Tcap) 
+                  + 28.501*c2bodytr_(i,irange2)*c2bodytr_(i,irange2)/Tcap );
+          }
+        }
+        //assign reaction rate
+        k2bodytr_(i) = (rate1 + rate2) * 0.5;
       }
-      //assign reaction rate
-      k2bodytr_(i) = (rate1 + rate2) * 0.5;
-    }
-  } else {
-    for (int i=0; i<n_2bodytr_; i++) {
-      int nr = nr_2bodytr_(i);
-      int irange1 = 0;
-      int irange2 = 0;
-      Real rate1 = 0.;
-      Real rate2 = 0.;
-      //select which temperature range to use
-      if ( T <= Tmax_2bodytr_(i,0) ) {
-        irange1 = 0;
-        irange2 = 0;
-      } else if ( T <= Tmin_2bodytr_(i,1) ) {
-        irange1 = 0;
-        irange2 = 1;
-      } else if ( T <= Tmax_2bodytr_(i,1) ) {
-        irange1 = 1;
-        irange2 = 1;
-      } else {
-        if (nr == 2) {
+    } else {
+      for (int i=0; i<n_2bodytr_; i++) {
+        int nr = nr_2bodytr_(i);
+        int irange1 = 0;
+        int irange2 = 0;
+        Real rate1 = 0.;
+        Real rate2 = 0.;
+        //select which temperature range to use
+        if ( T <= Tmax_2bodytr_(i,0) ) {
+          irange1 = 0;
+          irange2 = 0;
+        } else if ( T <= Tmin_2bodytr_(i,1) ) {
+          irange1 = 0;
+          irange2 = 1;
+        } else if ( T <= Tmax_2bodytr_(i,1) ) {
           irange1 = 1;
           irange2 = 1;
-        } else if (nr == 3) {
-          if ( T <= Tmin_2bodytr_(i,2) ) {
-            irange1 = 1;
-            irange2 = 2;
-          } else {
-            irange1 = 2;
-            irange2 = 2;
-          }
         } else {
-          std::stringstream msg; 
-          msg << "### fatal error in chemnetwork UpdateRates() [chemnetwork]: "
-            << "2bodytr reaction with more than 3 temperature ranges not implemented."
-            << std::endl; 
-          ATHENA_ERROR(msg);
+          if (nr == 2) {
+            irange1 = 1;
+            irange2 = 1;
+          } else if (nr == 3) {
+            if ( T <= Tmin_2bodytr_(i,2) ) {
+              irange1 = 1;
+              irange2 = 2;
+            } else {
+              irange1 = 2;
+              irange2 = 2;
+            }
+          } else {
+            std::stringstream msg; 
+            msg << "### fatal error in chemnetwork UpdateRates() [chemnetwork]: "
+              << "2bodytr reaction with more than 3 temperature ranges not implemented."
+              << std::endl; 
+            ATHENA_ERROR(msg);
+          }
         }
-      }
-      //calculate rates
-      if (frml_2bodytr_(i,irange1) == 3) {
-        rate1 = a2bodytr_(i,irange1)*pow(T/300., b2bodytr_(i,irange1))
-                    *exp(-c2bodytr_(i,irange1)/T) * nH_;
-      } else if (frml_2bodytr_(i,irange1) == 4) {
-        rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*( 0.62 
-                               + 0.4767*c2bodytr_(i,irange1)*sqrt(300./T) ) * nH_;
-      } else if (frml_2bodytr_(i,irange1) == 5) {
-        rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*(
-            1 + 0.0967*c2bodytr_(i,irange1)*sqrt(300./T) 
-              + 28.501*c2bodytr_(i,irange1)*c2bodytr_(i,irange1)/T ) * nH_;
-      }
-      if (irange1 == irange2) {
-        rate2 = rate1;
-      } else {
-        if (frml_2bodytr_(i,irange2) == 3) {
-          rate2 = a2bodytr_(i,irange2)*pow(T/300., b2bodytr_(i,irange2))
-                      *exp(-c2bodytr_(i,irange2)/T) * nH_;
-        } else if (frml_2bodytr_(i,irange2) == 4) {
-          rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*( 0.62 
-                                 + 0.4767*c2bodytr_(i,irange2)*sqrt(300./T) ) * nH_;
-        } else if (frml_2bodytr_(i,irange2) == 5) {
-          rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*(
-              1 + 0.0967*c2bodytr_(i,irange2)*sqrt(300./T) 
-                + 28.501*c2bodytr_(i,irange2)*c2bodytr_(i,irange2)/T ) * nH_;
+        //calculate rates
+        if (frml_2bodytr_(i,irange1) == 3) {
+          rate1 = a2bodytr_(i,irange1)*pow(T/300., b2bodytr_(i,irange1))
+                      *exp(-c2bodytr_(i,irange1)/T) ;
+        } else if (frml_2bodytr_(i,irange1) == 4) {
+          rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*( 0.62 
+                                 + 0.4767*c2bodytr_(i,irange1)*sqrt(300./T) );
+        } else if (frml_2bodytr_(i,irange1) == 5) {
+          rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*(
+              1 + 0.0967*c2bodytr_(i,irange1)*sqrt(300./T) 
+                + 28.501*c2bodytr_(i,irange1)*c2bodytr_(i,irange1)/T );
         }
+        if (irange1 == irange2) {
+          rate2 = rate1;
+        } else {
+          if (frml_2bodytr_(i,irange2) == 3) {
+            rate2 = a2bodytr_(i,irange2)*pow(T/300., b2bodytr_(i,irange2))
+                        *exp(-c2bodytr_(i,irange2)/T);
+          } else if (frml_2bodytr_(i,irange2) == 4) {
+            rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*( 0.62 
+                                   + 0.4767*c2bodytr_(i,irange2)*sqrt(300./T) );
+          } else if (frml_2bodytr_(i,irange2) == 5) {
+            rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*(
+                1 + 0.0967*c2bodytr_(i,irange2)*sqrt(300./T) 
+                  + 28.501*c2bodytr_(i,irange2)*c2bodytr_(i,irange2)/T );
+          }
+        }
+        //assign reaction rate
+        k2bodytr_(i) = (rate1 + rate2) * 0.5;
       }
-      //assign reaction rate
-      k2bodytr_(i) = (rate1 + rate2) * 0.5;
     }
   }
 
   //special rates and grain assisted reactions
   UpdateRatesSpecial(y, E);
+
+  //isothermal case: temperature dependent rates only calculated once
+  if (!NON_BAROTROPIC_EOS) {
+    flag_T_rates_ = false;
+  }
+
   return;
 }
 
@@ -1371,7 +1384,7 @@ void ChemNetwork::OutputRates(FILE *pf) const {
     if (out2body4_(i) >= 0) {
       fprintf(pf, " + %4s", species_names[out2body4_(i)].c_str());
     }
-    fprintf(pf,   ",     k2body = %.2e\n", k2body_(i));
+    fprintf(pf,   ",     nk2body = %.2e\n", k2body_(i)*nH_);
 	}
 	for (int i=0; i<n_2bodytr_; i++) {
     fprintf(pf, "%4s + %4s -> %4s",
@@ -1384,7 +1397,7 @@ void ChemNetwork::OutputRates(FILE *pf) const {
     if (out2bodytr3_(i) >= 0) {
       fprintf(pf, " + %4s", species_names[out2bodytr3_(i)].c_str());
     }
-    fprintf(pf,   ",     k2bodytr = %.2e\n", k2bodytr_(i));
+    fprintf(pf,   ",     nk2bodytr = %.2e\n", k2bodytr_(i)*nH_);
 	}
 	for (int i=0; i<n_gr_; i++) {
     if (ingr2_(i) >= 0) {
@@ -1435,7 +1448,7 @@ void ChemNetwork::OutputRates(FILE *pf) const {
         }
       }
     }
-		fprintf(pf, ",       kgc = %.2e\n", kgc_(i));
+		fprintf(pf, ",       nkgc = %.2e\n", kgc_(i)*nH_);
   }
   return;
 }
@@ -1552,7 +1565,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 
   //2body reactions
   for (int i=0; i<n_2body_; i++) {
-    rate =  k2body_(i) * y[in2body1_(i)] * y[in2body2_(i)];
+    rate =  k2body_(i) * y[in2body1_(i)] * y[in2body2_(i)] * nH_;
     if (y[in2body1_(i)] < 0 && y[in2body2_(i)] < 0) {
       rate *= -1.;
     }
@@ -1572,7 +1585,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 
   //2bodytr reactions
   for (int i=0; i<n_2bodytr_; i++) {
-    rate =  k2bodytr_(i) * y[in2bodytr1_(i)] * y[in2bodytr2_(i)];
+    rate =  k2bodytr_(i) * y[in2bodytr1_(i)] * y[in2bodytr2_(i)] * nH_;
     if (y[in2bodytr1_(i)] < 0 && y[in2bodytr2_(i)] < 0) {
       rate *= -1.;
     }
@@ -1614,7 +1627,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 
   //grain collision reactions
   for (int i=0; i<n_gc_; i++) {
-    rate =  kgc_(i) * y[ingc_(i, 0)] * y[ingc_(i, 1)];
+    rate =  kgc_(i) * y[ingc_(i, 0)] * y[ingc_(i, 1)] * nH_;
     if (y[ingc_(i, 0)] < 0 && y[ingc_(i, 1)] < 0) {
       rate *= -1.;
     }
