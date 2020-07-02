@@ -58,7 +58,6 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
 
 	//set the parameters from input file
 	Z_g_ = pin->GetOrAddReal("chemistry", "Z_g", 1.);//dust and gas metallicity
-	Z_PAH_ = pin->GetOrAddReal("chemistry", "Z_PAH", 1.);//dust and gas metallicity
   //PAH recombination efficiency 
 	phi_PAH_ = pin->GetOrAddReal("chemistry", "phi_PAH", 0.4);
   //size of the dust grain in cm, default 0.1 micron
@@ -1708,6 +1707,10 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED){
   const Real y_H2 = y0[ispec_map_["H2"]];
   const Real y_H = y0[ispec_map_["H"]];
   Real y_e, y_He, y_Hplus, kcr_H, kcr_H2, kcr_He, kgr_H, kph_H2;
+  //explicit PAH abundance for heating and cooling
+  const Real y_PAH = y0[ispec_map_["PAH0"]] + y0[ispec_map_["PAH+"]] 
+                     + y0[ispec_map_["PAH-"]];
+  const Real Z_PAH = y_PAH/6e-7;
   if (ispec_map_.find("e-") != ispec_map_.end()) {
     y_e = y0[ispec_map_["e-"]];
   } else {
@@ -1761,7 +1764,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED){
   //CR heating
   GCR = Thermo::HeatingCr(y_e,  nH_, y_H,  y_He,  y_H2, kcr_H, kcr_He, kcr_H2);
   //photo electric effect on dust
-  GPE = Thermo::HeatingPE_W03(rad_(index_gpe_), Z_PAH_, T, nH_*y_e, phi_PAH_);
+  GPE = Thermo::HeatingPE_W03(rad_(index_gpe_), Z_PAH, T, nH_*y_e, phi_PAH_);
   //H2 formation on dust grains
   GH2gr = Thermo::HeatingH2gr(y_H,  y_H2, nH_, T, kgr_H);
   //H2 UV pumping
@@ -1842,7 +1845,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED){
 		// dust thermo emission 
 		LDust = Thermo::CoolingDustTd(Z_d_, nH_, T, temp_dust_thermo_);
 		// reconbination of e on PAHs 
-		LRec = Thermo::CoolingRec_W03(Z_PAH_, T,  nH_*y_e, rad_(index_gpe_),
+		LRec = Thermo::CoolingRec_W03(Z_PAH, T,  nH_*y_e, rad_(index_gpe_),
                                   phi_PAH_);
 		// collisional dissociation of H2 
 		LH2diss = Thermo::CoolingH2diss(y_H, y_H2, k2body_H2_H, k2body_H2_H2);

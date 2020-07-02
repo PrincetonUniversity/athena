@@ -68,7 +68,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   const int ns_gr = 1;
   const int indices_gr[ns_gr] = {16};
 	//(16) H + H + gr -> H2 + gr , from Draine book chapter 31.2 page 346, Jura 1975
-	kgr_(id7map_(16)) = 3.0e-17 * nH_ * ( 0.5*Z_PAH_ + 0.5*Z_d_ / (a_d_/1e-5) );
+	kgr_(id7map_(16)) = 3.0e-17 * nH_ * Z_d_ / (a_d_/1e-5);
 
   //2body reactions
   const int ns_2body = 14;

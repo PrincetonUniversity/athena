@@ -79,7 +79,6 @@ private:
   //calculated only once in the beginning
   bool flag_T_rates_; 
 	Real Z_g_; //gas metallicity relative to solar, default 1.
-	Real Z_PAH_; //PAH metallicity relative to solar, default 1.
 	Real Z_d_; //larger dust grain metallicity relative to solar, default 1.
 	Real phi_PAH_; //PAH recombination efficiency, default 0.4
 	Real a_d_; //size of the dust grain in cm, default 1e-5 (0.1 micron)
