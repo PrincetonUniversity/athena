@@ -898,12 +898,12 @@ if args['prob'] == "z4c_two_punctures":
 
     if args['two_punctures_path'] == '':
         os.system('mkdir -p extern/initial_data')
+	args['two_punctures_path'] = 'extern/initial_data/two_punctures'
         if os.path.exists('../twopuncturesc'):
-            os.system('rm extern/initial_data/two_punctures')
-            os.system('ln -s ../../../twopuncturesc extern/initial_data/two_punctures')
+            os.system('rm {}'.format(args['two_punctures_path']))
+            os.system('ln -s ../../../twopuncturesc {}'.format(args['two_punctures_path']))
         else:
             raise SystemExit('### CONFIGURE ERROR: To compile with two punctures, it is necessary to have external initial data two_punctures library ../twopuncturesc.')
-
     if args['two_punctures_path'] != '':
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/src'.format(
             args['two_punctures_path'])
