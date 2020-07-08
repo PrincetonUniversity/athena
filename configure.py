@@ -898,7 +898,7 @@ if args['prob'] == "z4c_two_punctures":
 
     if args['two_punctures_path'] == '':
         os.system('mkdir -p extern/initial_data')
-	args['two_punctures_path'] = 'extern/initial_data/two_punctures'
+        args['two_punctures_path'] = 'extern/initial_data/two_punctures'
         if os.path.exists('../twopuncturesc'):
             os.system('rm {}'.format(args['two_punctures_path']))
             os.system('ln -s ../../../twopuncturesc {}'.format(args['two_punctures_path']))

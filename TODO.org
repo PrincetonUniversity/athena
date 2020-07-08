@@ -6,5 +6,5 @@ Development branch has features built on the latest public Athena++ release.
 
 ** I/O needs to be cleaned up for VC.
 ** Buffer communication for VC could be optimised.
-** Add warning for meshblock minimum N in VC (A)SMR tied to NGHOST
-   Currently this can be silently misconfigured and spurious behaviour is possible.
+** Should clean up hard-coding of stencils / allow for order reduction towards boundary
+ [this could allow for communication reduction]
