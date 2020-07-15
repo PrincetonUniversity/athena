@@ -193,8 +193,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // Initialize errors to zero
   Real l1_err[NHYDRO+NFIELD]{}, max_err[NHYDRO+NFIELD]{};
 
-  MeshBlock *pmb = pblock;
-  while (pmb != nullptr) {
+  for (int b=0; b<nblocal; ++b) {
+    MeshBlock *pmb = my_blocks(b);
     BoundaryValues *pbval = pmb->pbval;
     int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
         kl = pmb->ks, ku = pmb->ke;
@@ -341,7 +341,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         }
       }
     }
-    pmb = pmb->next;
   }
   Real rms_err = 0.0, max_max_over_l1 = 0.0;
 

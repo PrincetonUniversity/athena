@@ -37,7 +37,7 @@ def analyze():
     fn_ref = 'data/chem_H2-errors_rk2_plm_rtol-5.dat'
     fn_new = 'bin/chem_H2-errors.dat'
     #maximum error allowed
-    err_control = 1.0e-5
+    err_control = 1.0e-1
 
     data_ref = np.genfromtxt(fn_ref, names=True)
     data_new = np.genfromtxt(fn_new, names=True)

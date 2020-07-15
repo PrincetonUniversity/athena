@@ -23,7 +23,7 @@ integrator = rk2
 xorder     = 2
 
 <mesh>
-nx1        = 400        # Number of zones in X1-direction
+nx1        = 512        # Number of zones in X1-direction
 x1min      = 0      # minimum value of X1
 x1max      = 2       # maximum value of X1
 ix1_bc     = periodic  # ner-X1 boundary flag

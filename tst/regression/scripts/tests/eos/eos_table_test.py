@@ -135,11 +135,11 @@ def analyze():
     tol = .004
     for t in [10, 25]:
         x_ref, _, _, data_ref = athena_read.vtk(
-            'bin/Sod_eos_H.block0.out1.{1:05d}.vtk'.format(i, t))
+            'bin/Sod_eos_H.block0.out1.{:05d}.vtk'.format(t))
         x_new, _, _, data_new = athena_read.vtk(
-            'bin/Sod_eos_H_binary.block0.out1.{1:05d}.vtk'.format(i, t))
+            'bin/Sod_eos_H_binary.block0.out1.{:05d}.vtk'.format(t))
         x_ascii, _, _, data_ascii = athena_read.vtk(
-            'bin/Sod_eos_H_ascii.block0.out1.{1:05d}.vtk'.format(i, t))
+            'bin/Sod_eos_H_ascii.block0.out1.{:05d}.vtk'.format(t))
         loc = tuple([0, 0, slice(None)])
         for var in ['rho', 'press']:
             norm = comparison.l1_norm(x_ref, data_ref[var][loc])

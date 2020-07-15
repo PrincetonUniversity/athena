@@ -478,11 +478,11 @@ int main(int argc, char *argv[]) {
     if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
 
     for (int stage=1; stage<=ptlist->nstages; ++stage) {
+      ptlist->DoTaskListOneStage(pmesh, stage);
       if (SELF_GRAVITY_ENABLED == 1) // fft (flag 0 for discrete kernel, 1 for continuous)
         pmesh->pfgrd->Solve(stage, 0);
       else if (SELF_GRAVITY_ENABLED == 2) // multigrid
         pmesh->pmgrd->Solve(stage);
-      ptlist->DoTaskListOneStage(pmesh, stage);
     }
 
     //radiation
@@ -601,8 +601,8 @@ int main(int argc, char *argv[]) {
     clock_t tstop = clock();
     double cpu_time = (tstop>tstart ? static_cast<double> (tstop-tstart) :
                        1.0)/static_cast<double> (CLOCKS_PER_SEC);
-    std::uint64_t zonecycles =
-        mbcnt*static_cast<std::uint64_t> (pmesh->pblock->GetNumberOfMeshBlockCells());
+    std::uint64_t zonecycles = mbcnt
+      *static_cast<std::uint64_t> (pmesh->my_blocks(0)->GetNumberOfMeshBlockCells());
     double zc_cpus = static_cast<double> (zonecycles) / cpu_time;
 
     std::cout << std::endl << "zone-cycles = " << zonecycles << std::endl;

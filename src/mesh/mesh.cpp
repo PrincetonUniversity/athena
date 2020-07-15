@@ -95,9 +95,10 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     sts_loc(TaskType::main_int),
     muj(), nuj(), muj_tilde(), gammaj_tilde(),
     nbnew(), nbdel(),
-    step_since_lb(), gflag(), turb_flag(),
+    step_since_lb(), gflag(), turb_flag(), amr_updated(multilevel),
     // private members:
     next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
+    gids_(), gide_(),
     tree(this),
     use_uniform_meshgen_fn_{true, true, true},
     nreal_user_mesh_data_(), nint_user_mesh_data_(), nuser_history_output_(),
@@ -438,6 +439,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     }
   }
 
+  if (!adaptive) max_level = current_level;
+
   // initial mesh hierarchy construction is completed here
   tree.CountMeshBlock(nbtotal);
   loclist = new LogicalLocation[nbtotal];
@@ -499,25 +502,17 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
   //    gflag = 2;
 
   // create MeshBlock list for this process
-  int nbs = nslist[Globals::my_rank];
-  int nbe = nbs + nblist[Globals::my_rank] - 1;
-  // create MeshBlock list for this process
-  for (int i=nbs; i<=nbe; i++) {
+  gids_ = nslist[Globals::my_rank];
+  gide_ = gids_ + nblist[Globals::my_rank] - 1;
+  nblocal = nblist[Globals::my_rank];
+  my_blocks.NewAthenaArray(nblocal);
+  // create MeshBlocks for this node
+  for (int i=gids_; i<=gide_; i++) {
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
-    // create a block and add into the link list
-    if (i == nbs) {
-      pblock = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs, this,
-                             pin, gflag);
-      pfirst = pblock;
-    } else {
-      pblock->next = new MeshBlock(i, i-nbs, loclist[i], block_size, block_bcs,
-                                   this, pin, gflag);
-      pblock->next->prev = pblock;
-      pblock = pblock->next;
-    }
-    pblock->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
+    my_blocks(i-gids_) = new MeshBlock(i, i-gids_, loclist[i], block_size, block_bcs,
+                                       this, pin, gflag);
+    my_blocks(i-gids_)->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
-  pblock = pfirst;
 
   ResetLoadBalanceVariables();
 
@@ -565,9 +560,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     sts_loc(TaskType::main_int),
     muj(), nuj(), muj_tilde(), gammaj_tilde(),
     nbnew(), nbdel(),
-    step_since_lb(), gflag(), turb_flag(),
+    step_since_lb(), gflag(), turb_flag(), amr_updated(multilevel),
     // private members:
     next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
+    gids_(), gide_(),
     tree(this),
     use_uniform_meshgen_fn_{true, true, true},
     nreal_user_mesh_data_(), nint_user_mesh_data_(), nuser_history_output_(),
@@ -758,6 +754,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   }
   delete [] idlist;
 
+  if (!adaptive) max_level = current_level;
+
   // calculate the header offset and seek
   headeroffset += headersize + udsize + listsize*nbtotal;
   if (Globals::my_rank != 0)
@@ -825,39 +823,30 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   //    gflag=2;
 
   // allocate data buffer
-  int nb = nblist[Globals::my_rank];
-  int nbs = nslist[Globals::my_rank];
-  int nbe = nbs + nb - 1;
-  char *mbdata = new char[datasize*nb];
+  nblocal = nblist[Globals::my_rank];
+  gids_ = nslist[Globals::my_rank];
+  gide_ = gids_ + nblocal - 1;
+  char *mbdata = new char[datasize*nblocal];
+  my_blocks.NewAthenaArray(nblocal);
   // load MeshBlocks (parallel)
-  if (resfile.Read_at_all(mbdata, datasize, nb, headeroffset+nbs*datasize) !=
-      static_cast<unsigned int>(nb)) {
+  if (resfile.Read_at_all(mbdata, datasize, nblocal, headeroffset+gids_*datasize) !=
+      static_cast<unsigned int>(nblocal)) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restart file is broken or input parameters are inconsistent."
         << std::endl;
     ATHENA_ERROR(msg);
   }
-  for (int i=nbs; i<=nbe; i++) {
+  for (int i=gids_; i<=gide_; i++) {
     // Match fixed-width integer precision of IOWrapperSizeT datasize
-    std::uint64_t buff_os = datasize * (i-nbs);
+    std::uint64_t buff_os = datasize * (i-gids_);
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
-    // create a block and add into the link list
-    if (i == nbs) {
-      pblock = new MeshBlock(i, i-nbs, this, pin, loclist[i], block_size,
-                             block_bcs, costlist[i], mbdata+buff_os, gflag);
-      pfirst = pblock;
-    } else {
-      pblock->next = new MeshBlock(i, i-nbs, this, pin, loclist[i], block_size,
-                                   block_bcs, costlist[i], mbdata+buff_os, gflag);
-      pblock->next->prev = pblock;
-      pblock = pblock->next;
-    }
-    pblock->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
+    my_blocks(i-gids_) = new MeshBlock(i, i-gids_, this, pin, loclist[i], block_size,
+                                       block_bcs, costlist[i], mbdata+buff_os, gflag);
+    my_blocks(i-gids_)->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
-  pblock = pfirst;
   delete [] mbdata;
   // check consistency
-  if (datasize != pblock->GetBlockSizeInBytes()) {
+  if (datasize != my_blocks(0)->GetBlockSizeInBytes()) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
         << "The restart file is broken or input parameters are inconsistent."
         << std::endl;
@@ -877,11 +866,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 // destructor
 
 Mesh::~Mesh() {
-  while (pblock->prev != nullptr) // should not be true
-    delete pblock->prev;
-  while (pblock->next != nullptr)
-    delete pblock->next;
-  delete pblock;
+  for (int b=0; b<nblocal; ++b)
+    delete my_blocks(b);
   delete [] nslist;
   delete [] nblist;
   delete [] ranklist;
@@ -1071,7 +1057,7 @@ void Mesh::NewTimeStep() {
     dt = tlim/nlim;
     return;
   }
-  MeshBlock *pmb = pblock;
+  MeshBlock *pmb = my_blocks(0);
 
   // prevent timestep from growing too fast in between 2x cycles (even if every MeshBlock
   // has new_block_dt > 2.0*dt_old)
@@ -1081,14 +1067,13 @@ void Mesh::NewTimeStep() {
   dt_hyperbolic = pmb->new_block_dt_hyperbolic_;
   dt_parabolic = pmb->new_block_dt_parabolic_;
   dt_user = pmb->new_block_dt_user_;
-  pmb = pmb->next;
 
-  while (pmb != nullptr)  {
+  for (int i=0; i<nblocal; ++i) {
+    pmb = my_blocks(i);
     dt = std::min(dt, pmb->new_block_dt_);
     dt_hyperbolic  = std::min(dt_hyperbolic, pmb->new_block_dt_hyperbolic_);
     dt_parabolic  = std::min(dt_parabolic, pmb->new_block_dt_parabolic_);
     dt_user  = std::min(dt_user, pmb->new_block_dt_user_);
-    pmb = pmb->next;
   }
 
 #ifdef MPI_PARALLEL
@@ -1328,11 +1313,8 @@ void Mesh::AllocateIntUserMeshDataField(int n) {
 // \brief Apply MeshBlock::UserWorkBeforeOutput
 
 void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
-  MeshBlock *pmb = pblock;
-  while (pmb != nullptr)  {
-    pmb->UserWorkBeforeOutput(pin);
-    pmb = pmb->next;
-  }
+  for (int i=0; i<nblocal; ++i)
+    my_blocks(i)->UserWorkBeforeOutput(pin);
 }
 
 //----------------------------------------------------------------------------------------
@@ -1343,23 +1325,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
   bool iflag = true;
   int inb = nbtotal;
   int nthreads = GetNumMeshThreads();
-  int nmb = GetNumMeshBlocksThisRank(Globals::my_rank);
-  std::vector<MeshBlock*> pmb_array(nmb);
 
   do {
-    // initialize a vector of MeshBlock pointers
-    nmb = GetNumMeshBlocksThisRank(Globals::my_rank);
-    if (static_cast<unsigned int>(nmb) != pmb_array.size()) pmb_array.resize(nmb);
-    MeshBlock *pmbl = pblock;
-    for (int i=0; i<nmb; ++i) {
-      pmb_array[i] = pmbl;
-      pmbl = pmbl->next;
-    }
-
     if (res_flag == 0) {
 #pragma omp parallel for num_threads(nthreads)
-      for (int i=0; i<nmb; ++i) {
-        MeshBlock *pmb = pmb_array[i];
+      for (int i=0; i<nblocal; ++i) {
+        MeshBlock *pmb = my_blocks(i);
         pmb->ProblemGenerator(pin);
         pmb->pbval->CheckUserBoundaries();
       }
@@ -1371,16 +1342,16 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
     //initialize ODE solver for chemistry
 #ifdef INCLUDE_CHEMISTRY
-    for (int i=0; i<nmb; ++i) {
-      MeshBlock *pmb = pmb_array[i];
+    for (int i=0; i<nblocal; ++i) {
+      MeshBlock *pmb = my_blocks(i);
       pmb->pscalars->odew.Initialize(pin);
     }
 #endif //INCLUDE_CHEMISTRY
 
     // Create send/recv MPI_Requests for all BoundaryData objects
 #pragma omp parallel for num_threads(nthreads)
-    for (int i=0; i<nmb; ++i) {
-      MeshBlock *pmb = pmb_array[i];
+    for (int i=0; i<nblocal; ++i) {
+      MeshBlock *pmb = my_blocks(i);
       // BoundaryVariable objects evolved in main TimeIntegratorTaskList:
       pmb->pbval->SetupPersistentMPI();
       // other BoundaryVariable objects:
@@ -1401,8 +1372,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
       // prepare to receive conserved variables
 #pragma omp for private(pmb,pbval)
-      for (int i=0; i<nmb; ++i) {
-        pmb = pmb_array[i]; pbval = pmb->pbval;
+      for (int i=0; i<nblocal; ++i) {
+        pmb = my_blocks(i); pbval = pmb->pbval;
         if (SHEARING_BOX) {
           pbval->ComputeShear(time);
         }
@@ -1412,8 +1383,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
       // send conserved variables
 #pragma omp for private(pmb,pbval)
-      for (int i=0; i<nmb; ++i) {
-        pmb = pmb_array[i]; pbval = pmb->pbval;
+      for (int i=0; i<nblocal; ++i) {
+        pmb = my_blocks(i); pbval = pmb->pbval;
         pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                                HydroBoundaryQuantity::cons);
         pmb->phydro->hbvar.SendBoundaryBuffers();
@@ -1426,8 +1397,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
       // wait to receive conserved variables
 #pragma omp for private(pmb,pbval)
-      for (int i=0; i<nmb; ++i) {
-        pmb = pmb_array[i]; pbval = pmb->pbval;
+      for (int i=0; i<nblocal; ++i) {
+        pmb = my_blocks(i); pbval = pmb->pbval;
         pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
@@ -1444,16 +1415,16 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       if (GENERAL_RELATIVITY && multilevel) {
         // prepare to receive primitives
 #pragma omp for private(pmb,pbval)
-        for (int i=0; i<nmb; ++i) {
-          pmb = pmb_array[i]; pbval = pmb->pbval;
+        for (int i=0; i<nblocal; ++i) {
+          pmb = my_blocks(i); pbval = pmb->pbval;
           pbval->StartReceivingSubset(BoundaryCommSubset::gr_amr,
                                       pbval->bvars_main_int);
         }
 
         // send primitives
 #pragma omp for private(pmb,pbval)
-        for (int i=0; i<nmb; ++i) {
-          pmb = pmb_array[i]; pbval = pmb->pbval;
+        for (int i=0; i<nblocal; ++i) {
+          pmb = my_blocks(i); pbval = pmb->pbval;
           pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
                                                HydroBoundaryQuantity::prim);
           pmb->phydro->hbvar.SendBoundaryBuffers();
@@ -1461,8 +1432,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
         // wait to receive AMR/SMR GR primitives
 #pragma omp for private(pmb,pbval)
-        for (int i=0; i<nmb; ++i) {
-          pmb = pmb_array[i]; pbval = pmb->pbval;
+        for (int i=0; i<nblocal; ++i) {
+          pmb = my_blocks(i); pbval = pmb->pbval;
           pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
           pbval->ClearBoundarySubset(BoundaryCommSubset::gr_amr,
                                      pbval->bvars_main_int);
@@ -1473,17 +1444,17 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
       // perform fourth-order correction of midpoint initial condition:
       // (correct IC on all MeshBlocks or none; switch cannot be toggled independently)
-      bool correct_ic = pmb_array[0]->precon->correct_ic;
+      bool correct_ic = my_blocks(0)->precon->correct_ic;
       if (correct_ic)
-        CorrectMidpointInitialCondition(pmb_array, nmb);
+        CorrectMidpointInitialCondition();
 
       // Now do prolongation, compute primitives, apply BCs
       Hydro *ph;
       Field *pf;
       PassiveScalars *ps;
 #pragma omp for private(pmb,pbval,ph,pf,ps)
-      for (int i=0; i<nmb; ++i) {
-        pmb = pmb_array[i];
+      for (int i=0; i<nblocal; ++i) {
+        pmb = my_blocks(i);
         pbval = pmb->pbval, ph = pmb->phydro, pf = pmb->pfield, ps = pmb->pscalars;
         if (multilevel)
           pbval->ProlongateBoundaries(time, 0.0, pbval->bvars_main_int);
@@ -1545,8 +1516,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
       // Calc initial diffusion coefficients
 #pragma omp for private(pmb,ph,pf)
-      for (int i=0; i<nmb; ++i) {
-        pmb = pmb_array[i]; ph = pmb->phydro, pf = pmb->pfield;
+      for (int i=0; i<nblocal; ++i) {
+        pmb = my_blocks(i); ph = pmb->phydro, pf = pmb->pfield;
         if (ph->hdif.hydro_diffusion_defined)
           ph->hdif.SetDiffusivity(ph->w, pf->bcc);
         if (MAGNETIC_FIELDS_ENABLED) {
@@ -1557,8 +1528,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
       if (!res_flag && adaptive) {
 #pragma omp for
-        for (int i=0; i<nmb; ++i) {
-          pmb_array[i]->pmr->CheckRefinementCondition();
+        for (int i=0; i<nblocal; ++i) {
+          my_blocks(i)->pmr->CheckRefinementCondition();
         }
       }
     } // omp parallel
@@ -1567,6 +1538,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       iflag = false;
       int onb = nbtotal;
       LoadBalancingAndAdaptiveMeshRefinement(pin);
+      amr_updated = true;
       if (nbtotal == onb) {
         iflag = true;
       } else if (nbtotal < onb && Globals::my_rank == 0) {
@@ -1587,8 +1559,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
   // calculate the first time step
 #pragma omp parallel for num_threads(nthreads)
-  for (int i=0; i<nmb; ++i) {
-    pmb_array[i]->phydro->NewBlockTimeStep();
+  for (int i=0; i<nblocal; ++i) {
+    my_blocks(i)->phydro->NewBlockTimeStep();
   }
 
   NewTimeStep();
@@ -1600,13 +1572,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 //  \brief return the MeshBlock whose gid is tgid
 
 MeshBlock* Mesh::FindMeshBlock(int tgid) {
-  MeshBlock *pbl = pblock;
-  while (pbl != nullptr) {
-    if (pbl->gid == tgid)
-      break;
-    pbl = pbl->next;
-  }
-  return pbl;
+  if (tgid >= gids_ && tgid <= gide_)
+    return my_blocks(tgid - gids_);
+  return nullptr;
 }
 
 //----------------------------------------------------------------------------------------
@@ -1700,13 +1668,13 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
 }
 
 
-void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb) {
+void Mesh::CorrectMidpointInitialCondition() {
   MeshBlock *pmb;
   Hydro *ph;
   PassiveScalars *ps;
 #pragma omp for private(pmb, ph, ps)
-  for (int nb=0; nb<nmb; ++nb) {
-    pmb = pmb_array[nb];
+  for (int nb=0; nb<nblocal; ++nb) {
+    pmb = my_blocks(nb);
     ph = pmb->phydro;
     ps = pmb->pscalars;
 
@@ -1771,8 +1739,8 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
   BoundaryValues *pbval;
   // prepare to receive conserved variables
 #pragma omp for private(pmb,pbval)
-  for (int i=0; i<nmb; ++i) {
-    pmb = pmb_array[i]; pbval = pmb->pbval;
+  for (int i=0; i<nblocal; ++i) {
+    pmb = my_blocks(i); pbval = pmb->pbval;
     if (SHEARING_BOX) {
       pbval->ComputeShear(time);
     }
@@ -1782,10 +1750,10 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
   }
 
 #pragma omp for private(pmb,pbval)
-  for (int i=0; i<nmb; ++i) {
-    pmb = pmb_array[i];
+  for (int i=0; i<nblocal; ++i) {
+    pmb = my_blocks(i);
     pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
-                                           HydroBoundaryQuantity::cons);
+                                         HydroBoundaryQuantity::cons);
     pmb->phydro->hbvar.SendBoundaryBuffers();
     if (MAGNETIC_FIELDS_ENABLED)
       pmb->pfield->fbvar.SendBoundaryBuffers();
@@ -1796,10 +1764,10 @@ void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, i
 
   // wait to receive conserved variables
 #pragma omp for private(pmb,pbval)
-  for (int i=0; i<nmb; ++i) {
-    pmb = pmb_array[i]; pbval = pmb->pbval;
+  for (int i=0; i<nblocal; ++i) {
+    pmb = my_blocks(i); pbval = pmb->pbval;
     pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
-                                           HydroBoundaryQuantity::cons);
+                                         HydroBoundaryQuantity::cons);
     pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
     if (MAGNETIC_FIELDS_ENABLED)
       pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();

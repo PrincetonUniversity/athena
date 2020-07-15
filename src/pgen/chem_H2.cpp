@@ -199,8 +199,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // Initialize errors to zero
   Real l1_err[NSCALARS]{}, max_err[NSCALARS]{}, cons_err[1]{};
 
-  MeshBlock *pmb = pblock;
-  while (pmb != nullptr) {
+  for (int b=0; b<nblocal; ++b) {
+    MeshBlock *pmb = my_blocks(b);
     int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
         kl = pmb->ks, ku = pmb->ke;
     //  Compute errors at cell centers
@@ -231,7 +231,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         }
       }
     }
-    pmb = pmb->next;
   }
 
 #ifdef MPI_PARALLEL

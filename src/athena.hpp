@@ -61,11 +61,7 @@ struct LogicalLocation { // aggregate and POD type
   // 1*2^31 > INT_MAX = 2^31 -1 for most 32-bit signed integer type impelementations
   std::int64_t lx1, lx2, lx3;
   int level;
-
-  // operators useful for sorting
-  bool operator==(LogicalLocation &ll) {
-    return ((ll.level == level) && (ll.lx1 == lx1) && (ll.lx2 == lx2) && (ll.lx3 == lx3));
-  }
+  // comparison functions for sorting
   static bool Lesser(const LogicalLocation &left, const LogicalLocation &right) {
     return left.level < right.level;
   }
@@ -73,6 +69,9 @@ struct LogicalLocation { // aggregate and POD type
     return left.level > right.level;
   }
 };
+
+// prototype for overloading the comparison operator (defined in meshblock_tree.cpp)
+bool operator==(const LogicalLocation &l1, const LogicalLocation &l2);
 
 //----------------------------------------------------------------------------------------
 //! \struct RegionSize

@@ -73,8 +73,10 @@ int NetworkWrapper::WrapRHS(const realtype t, const N_Vector y,
   for (int i=0; i<NSCALARS; i++) {
 		y1[i] = NV_Ith_S(y, i);
   }
-  //set energy
-  E1 = NV_Ith_S(y, NSCALARS);
+  if (NON_BAROTROPIC_EOS) {
+    //set energy
+    E1 = NV_Ith_S(y, NSCALARS);
+  }
   //temporary storage for return
   Real ydot1[NSCALARS];
   NetworkWrapper *meptr = (NetworkWrapper*) user_data;
@@ -83,8 +85,10 @@ int NetworkWrapper::WrapRHS(const realtype t, const N_Vector y,
   for (int i=0; i<NSCALARS; i++) {
 		NV_Ith_S(ydot, i) = ydot1[i];
   }
-  //set dEdt
-  NV_Ith_S(ydot, NSCALARS) = meptr->Edot(t1, y1, E1);
+  if (NON_BAROTROPIC_EOS) {
+    //set dEdt
+    NV_Ith_S(ydot, NSCALARS) = meptr->Edot(t1, y1, E1);
+  }
   return 0;
 }
 

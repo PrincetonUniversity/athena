@@ -48,7 +48,7 @@ Real press(Real rho, Real T) {
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  MeshBlock *pmb = pblock;
+  MeshBlock *pmb = my_blocks(0);
 
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
 

@@ -52,19 +52,26 @@ class MultigridTaskList {
 
   // functions
   TaskStatus StartReceive(Multigrid *pmg);
-  TaskStatus StartReceiveFace(Multigrid *pmg);
+  TaskStatus StartReceiveFluxCons(Multigrid *pmg);
+  TaskStatus StartReceiveForProlongation(Multigrid *pmg);
   TaskStatus ClearBoundary(Multigrid *pmg);
-  TaskStatus ClearBoundaryFace(Multigrid *pmg);
+  TaskStatus ClearBoundaryFluxCons(Multigrid *pmg);
   TaskStatus SendBoundary(Multigrid *pmg);
-  TaskStatus SendBoundaryFace(Multigrid *pmg);
+  TaskStatus SendBoundaryFluxCons(Multigrid *pmg);
+  TaskStatus SendBoundaryForProlongation(Multigrid *pmg);
   TaskStatus ReceiveBoundary(Multigrid *pmg);
-  TaskStatus ReceiveBoundaryFace(Multigrid *pmg);
+  TaskStatus ReceiveBoundaryFluxCons(Multigrid *pmg);
+  TaskStatus ReceiveBoundaryForProlongation(Multigrid *pmg);
   TaskStatus SmoothRed(Multigrid *pmg);
   TaskStatus SmoothBlack(Multigrid *pmg);
   TaskStatus PhysicalBoundary(Multigrid *pmg);
   TaskStatus Restrict(Multigrid *pmg);
   TaskStatus Prolongate(Multigrid *pmg);
   TaskStatus FMGProlongate(Multigrid *pmg);
+  TaskStatus ProlongateBoundary(Multigrid *pmg);
+  TaskStatus ProlongateBoundaryForProlongation(Multigrid *pmg);
+  TaskStatus CalculateFASRHS(Multigrid *pmg);
+  TaskStatus StoreOldData(Multigrid *pmg);
 
   void SetMGTaskListToFiner(int nsmooth, int ngh, int flag = 0);
   void SetMGTaskListToCoarser(int nsmooth, int ngh);
@@ -72,7 +79,7 @@ class MultigridTaskList {
 
  private:
   MultigridDriver* pmy_mgdriver_;
-  MGTask task_list_[64];
+  MGTask task_list_[64*TaskID::kNField_];
 
   void AddMultigridTask(const TaskID& id, const TaskID& dep);
 };
@@ -83,46 +90,54 @@ class MultigridTaskList {
 namespace MultigridTaskNames {
 const TaskID NONE(0);
 const TaskID MG_STARTRECV0(1);
-const TaskID MG_STARTRECV0F(2);
-const TaskID MG_STARTRECV1R(3);
-const TaskID MG_STARTRECV1B(4);
-const TaskID MG_STARTRECV2R(5);
-const TaskID MG_STARTRECV2B(6);
+const TaskID MG_STARTRECV1R(2);
+const TaskID MG_STARTRECV1B(3);
+const TaskID MG_STARTRECV2R(4);
+const TaskID MG_STARTRECV2B(5);
+const TaskID MG_STARTRECVP(6);
 const TaskID MG_STARTRECVL(7);
 const TaskID MG_CLEARBND0(8);
-const TaskID MG_CLEARBND0F(9);
-const TaskID MG_CLEARBND1R(10);
-const TaskID MG_CLEARBND1B(11);
-const TaskID MG_CLEARBND2R(12);
-const TaskID MG_CLEARBND2B(13);
+const TaskID MG_CLEARBND1R(9);
+const TaskID MG_CLEARBND1B(10);
+const TaskID MG_CLEARBND2R(11);
+const TaskID MG_CLEARBND2B(12);
+const TaskID MG_CLEARBNDP(13);
 const TaskID MG_CLEARBNDL(14);
 const TaskID MG_SENDBND0(15);
-const TaskID MG_SENDBND0F(16);
-const TaskID MG_SENDBND1R(17);
-const TaskID MG_SENDBND1B(18);
-const TaskID MG_SENDBND2R(19);
-const TaskID MG_SENDBND2B(20);
+const TaskID MG_SENDBND1R(16);
+const TaskID MG_SENDBND1B(17);
+const TaskID MG_SENDBND2R(18);
+const TaskID MG_SENDBND2B(19);
+const TaskID MG_SENDBNDP(20);
 const TaskID MG_SENDBNDL(21);
 const TaskID MG_RECVBND0(22);
-const TaskID MG_RECVBND0F(23);
-const TaskID MG_RECVBND1R(24);
-const TaskID MG_RECVBND1B(25);
-const TaskID MG_RECVBND2R(26);
-const TaskID MG_RECVBND2B(27);
+const TaskID MG_RECVBND1R(23);
+const TaskID MG_RECVBND1B(24);
+const TaskID MG_RECVBND2R(25);
+const TaskID MG_RECVBND2B(26);
+const TaskID MG_RECVBNDP(27);
 const TaskID MG_RECVBNDL(28);
-const TaskID MG_SMOOTH1R(29);
-const TaskID MG_SMOOTH1B(30);
-const TaskID MG_SMOOTH2R(31);
-const TaskID MG_SMOOTH2B(32);
-const TaskID MG_PHYSBND0(33);
-const TaskID MG_PHYSBND1R(34);
-const TaskID MG_PHYSBND1B(35);
-const TaskID MG_PHYSBND2R(36);
-const TaskID MG_PHYSBND2B(37);
-const TaskID MG_PHYSBNDL(38);
-const TaskID MG_RESTRICT(39);
-const TaskID MG_PROLONG(40);
-const TaskID MG_FMGPROLONG(41);
+const TaskID MG_PRLNGBNDP(29);
+const TaskID MG_PRLNGFC0(30);
+const TaskID MG_PRLNGFC1R(31);
+const TaskID MG_PRLNGFC1B(32);
+const TaskID MG_PRLNGFC2R(33);
+const TaskID MG_PRLNGFC2B(34);
+const TaskID MG_PRLNGFCL(35);
+const TaskID MG_SMOOTH1R(36);
+const TaskID MG_SMOOTH1B(37);
+const TaskID MG_SMOOTH2R(38);
+const TaskID MG_SMOOTH2B(39);
+const TaskID MG_PHYSBND0(40);
+const TaskID MG_PHYSBND1R(41);
+const TaskID MG_PHYSBND1B(42);
+const TaskID MG_PHYSBND2R(43);
+const TaskID MG_PHYSBND2B(44);
+const TaskID MG_PHYSBNDL(45);
+const TaskID MG_RESTRICT(46);
+const TaskID MG_PROLONG(47);
+const TaskID MG_FMGPROLONG(48);
+const TaskID MG_CALCFASRHS(49);
 } // namespace MultigridTaskNames
 
 #endif // TASK_LIST_MG_TASK_LIST_HPP_
