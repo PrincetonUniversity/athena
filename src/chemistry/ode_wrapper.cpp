@@ -70,7 +70,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
 
   //tolerance
   Real abstol_all = pin->GetOrAddReal("chemistry", "abstol", 1.0e-12);
-  for (int i=0; i<dim_; i++) {
+  for (int i=0; i<NSCALARS; i++) {
     abstol_(i) = pin->GetOrAddReal("chemistry",
         "abstol_"+pmy_spec_->chemnet.species_names[i], -1);
     if (abstol_(i) < 0) {

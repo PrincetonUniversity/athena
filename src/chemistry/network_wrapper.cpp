@@ -26,6 +26,7 @@
 //c++ header
 #include <iostream>   // endl, ostream
 #include <sstream>    // stringstream
+#include <stdexcept>    // runtime_error
 
 NetworkWrapper::NetworkWrapper() {}
 

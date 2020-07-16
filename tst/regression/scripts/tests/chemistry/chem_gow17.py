@@ -13,11 +13,15 @@ import os
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 def prepare(**kwargs):
+    if os.environ['CXX']:
+        cxx = os.environ['CXX']
+    else:
+        cxx = 'g++'
     athena.configure(
         prob='chem_uniform_radcr',
         chemistry='gow17', 
         radiation='const',
-        cxx = 'g++',
+        cxx=cxx,
         cvode_path=os.environ['CVODE_PATH']
         )
     athena.make()
