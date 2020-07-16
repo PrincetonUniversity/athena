@@ -58,6 +58,7 @@ Tracker::Tracker(Mesh * pmesh, ParameterInput * pin):
       fprintf(pofile, "%d:P-x-%-7d%d:P-y-%-7d%d:P-z-%-7d", punct_idx, i_file, punct_idx+1, i_file, punct_idx+2, i_file);
     }
     fprintf(pofile, "\n");
+  fclose(pofile);
   }
 }
 
@@ -267,18 +268,19 @@ void Tracker::EvolveTrackerIntegrateEuler()
 
 void Tracker::WriteTracker(int iter, Real time) const {
   if (ioproc) {
-    fprintf(pofile, "%-13d%-13.5e", iter, time);
+    std::cout<<ofname<<std::endl;
+    FILE *pfile;
+    pfile = fopen(ofname.c_str(), "a");
+    fprintf(pfile, "%-13d%-13.5e", iter, time);
     for (int i_file = 0; i_file < npunct; ++i_file) {
-      fprintf(pofile, "%-13.5e%-13.5e%-13.5e", pos_body[i_file].pos[0], pos_body[i_file].pos[1], pos_body[i_file].pos[2]);
+      fprintf(pfile, "%-13.5e%-13.5e%-13.5e", pos_body[i_file].pos[0], pos_body[i_file].pos[1], pos_body[i_file].pos[2]);
     }
-    fprintf(pofile, "\n");
+    fprintf(pfile, "\n");
+  fclose(pfile);
   }
 }
 
 Tracker::~Tracker() {
-  if (ioproc) {
-     fclose(pofile);
-  }
 }
 
 
