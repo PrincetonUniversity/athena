@@ -33,7 +33,7 @@ def prepare(**kwargs):
 def run(**kwargs):
     for nx1 in [32, 64, 128, 256, 512, 1024]:
         arguments = [ 
-                'chemistry/reltol=1e-5',
+                'chemistry/reltol=1e-15',
                 'time/integrator=rk2',
                 'time/xorder=2',
                 'mesh/nx1=' + str(nx1)
@@ -41,7 +41,7 @@ def run(**kwargs):
         athena.run('chemistry/athinput.chem_H2_gaussian', arguments)
 
 def analyze():
-    fn_ref = 'data/chem_H2-errors_rk2_plm_rtol-5.dat'
+    fn_ref = 'data/chem_H2-errors_rk2_plm_rtol-15.dat'
     fn_new = 'bin/chem_H2-errors.dat'
     #maximum error allowed
     err_control = 1.0e-1

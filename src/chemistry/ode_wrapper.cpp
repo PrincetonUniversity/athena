@@ -52,6 +52,7 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   ydata_ = NV_DATA_S(y_);
   reltol_ = pin->GetOrAddReal("chemistry", "reltol", 1.0e-2);
   output_zone_sec_ = pin->GetOrAddInteger("chemistry", "output_zone_sec", 0);
+  fac_dtmax_ = pin->GetOrAddReal("chemistry", "fac_dtmax", 10.);
 }
 
 ODEWrapper::~ODEWrapper() {
@@ -236,6 +237,9 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
         } else {
           SetInitStep(pmy_spec_->h(k, j, i));
         }
+        //set maximum step to be a factor times dt
+        flag = CVodeSetMaxStep(cvode_mem_, dt*fac_dtmax_);
+        CheckFlag(&flag, "CVodeSetMaxStep", 1);
         //step 3: integration. update array abundance over time dt
         //in CV_NORMAL model, treturn=tfinal (the time of output)
         flag = CVode(cvode_mem_, tfinal, y_, &treturn, CV_NORMAL);
