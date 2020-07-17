@@ -44,6 +44,12 @@
 #include "parameter_input.hpp"
 #include "utils/utils.hpp"
 
+//WGC wext
+#ifdef Z4C_WEXT
+#include "z4c/wave_extract.hpp"
+#endif
+//WGC end
+
 #ifdef Z4C_TRACKER
 #include "z4c/trackers.hpp"
 #endif // Z4C_TRACKER
@@ -558,6 +564,13 @@ int main(int argc, char *argv[]) {
       for (int stage=1; stage<=pz4clist->nstages; ++stage) {
         pz4clist->DoTaskListOneStage(pmesh, stage);
       }
+//WGC wext
+#ifdef Z4C_WEXT
+pmesh->pwave_extr->ReduceMultipole();
+pmesh->pwave_extr->Write(pmesh->ncycle, pmesh->time); 
+#endif
+//WGC end
+
     }
 #ifdef Z4C_TRACKER
     //Tracker

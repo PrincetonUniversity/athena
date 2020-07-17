@@ -461,6 +461,8 @@ public:
   TaskStatus Z4cToADM(MeshBlock *pmb, int stage);          // Z4C_TO_ADM   [x]
   TaskStatus ADM_Constraints(MeshBlock *pmb, int stage);   // ADM_CONSTR   [x]
   TaskStatus CheckRefinement(MeshBlock *pmb, int stage);   // FLAG_AMR     [x]
+  TaskStatus Z4c_Weyl(MeshBlock *pmb, int stage);          // Z4C_WEYL     [x]
+  TaskStatus WaveExtract(MeshBlock *pmb, int stage);       // WAVE_EXTR    [x]
 
 #ifdef Z4C_ASSERT_FINITE
   // monitor
@@ -501,6 +503,8 @@ namespace Z4cIntegratorTaskNames {
 #ifdef Z4C_ASSERT_FINITE
   const TaskID ASSERT_FIN(15);
 #endif //Z4C_ASSERT_FINITE
+  const TaskID Z4C_WEYL(16);
+  const TaskID WAVE_EXTR(17);
 
 }  // namespace Z4cIntegratorTaskNames
 

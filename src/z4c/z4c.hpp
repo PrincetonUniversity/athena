@@ -81,7 +81,15 @@ public:
   };
   // Names of matter variables
   static char const * const Matter_names[N_MAT];
-
+//WGC wext
+  // Indexes of Weyl scalars
+  enum {
+    I_WEY_rpsi4, I_WEY_ipsi4,
+    N_WEY
+  };
+  // Names of Weyl scalars
+  static char const * const Weyl_names[N_WEY];
+//WGC end
 public:
   Z4c(MeshBlock *pmb, ParameterInput *pin);
   ~Z4c();
@@ -97,6 +105,9 @@ public:
     AthenaArray<Real> adm;   // ADM variables
     AthenaArray<Real> con;   // constraints
     AthenaArray<Real> mat;   // matter variables
+//WGC wext  
+    AthenaArray<Real> weyl;  // weyl scalars
+//WGC end
   } storage;
 
   // aliases for variables and RHS
@@ -138,7 +149,14 @@ public:
     AthenaTensor<Real, TensorSymm::SYM2, NDIM, 2> S_dd;      // matter stress tensor
   };
   Matter_vars mat;
-
+//WGC wext - NB check symmetries for pseudoscalar if using refl BCs?
+  // aliases for the Weyl scalars
+  struct Weyl_vars {
+    AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> rpsi4;       // Real part of Psi_4
+    AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> ipsi4;       // Imaginary part of Psi_4
+  };
+  Weyl_vars weyl;
+//WGC end
   // BD: this should be refactored
   // user settings and options
   struct {
@@ -213,7 +231,11 @@ public:
   // compute ADM constraints
   void ADMConstraints(AthenaArray<Real> & u_con, AthenaArray<Real> & u_adm,
                       AthenaArray<Real> & u_mat, AthenaArray<Real> & u_z4c);
-
+//WGC wext
+  // calculate weyl scalars
+  void Z4cWeyl(AthenaArray<Real> & u_adm, AthenaArray<Real> & u_mat,
+                      AthenaArray<Real> & u_weyl);
+//WGC end
   // utility functions
   //
   // set ADM aliases given u_adm
@@ -224,7 +246,10 @@ public:
   void SetMatterAliases(AthenaArray<Real> & u_mat, Matter_vars & mat);
   // set Z4c aliases given a state
   void SetZ4cAliases(AthenaArray<Real> & u, Z4c_vars & z4c);
-
+//WGC wext
+  // set weyl aliases
+  void SetWeylAliases(AthenaArray<Real> & u_weyl, Weyl_vars & weyl);
+//WGC end
   // compute spatial determinant of a 3x3  matrix
   Real SpatialDet(Real const gxx, Real const gxy, Real const gxz,
       Real const gyy, Real const gyz, Real const gzz);
@@ -360,6 +385,20 @@ private:
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 1> Lbeta_u;     // Lie derivative of the shift
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 2> Lg_dd;       // Lie derivative of conf. 3-metric
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 2> LA_dd;       // Lie derivative of A
+
+//WGC wext - TODO fix tensor index symmetries
+  //auxiliary wave extraction tensors
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 1> uvec;        // radial vector in tetrad
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 1> vvec;        // theta vector in tetrad
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 1> wvec;        // phi vector in tetrad
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> dotp1;       // dot product in Gram-Schmidt orthonormalisation
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> dotp2;       // second dot product in G-S orthonormalisation
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 4> Riem3_dddd;  // 3D Riemann tensor
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 4> Riemm4_dddd; // 4D Riemann tensor
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 3> Riemm4_ddd;  // 4D Riemann * n^a
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 2> Riemm4_dd;   // 4D Riemann *n^a*n^c
+  //WGC end
+
 
 private:
   void Z4cSommerfeld_(AthenaArray<Real> & u, AthenaArray<Real> & rhs,

@@ -60,7 +60,11 @@
 #ifdef Z4C_TRACKER
 #include "../z4c/trackers.hpp"
 #endif // Z4C_TRACKER
-
+// WGC: wave ext
+#ifdef Z4C_WEXT
+#include "../z4c/wave_extract.hpp"
+#endif
+//WGC: wext end
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
@@ -314,11 +318,16 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
   } else {
     max_level = 63;
   }
-
+//WGC wext
+if (Z4C_ENABLED){
+#ifdef Z4C_WEXT
+   pwave_extr = new WaveExtract(this, pin);
+#endif
+// WGC end
 #ifdef Z4C_TRACKER
   pz4c_tracker = new Tracker(this, pin);
 #endif // Z4C_TRACKER
-
+  }
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
 
@@ -727,11 +736,17 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   } else {
     max_level = 63;
   }
+//WGC wext
+  if (Z4C_ENABLED){
+#ifdef Z4C_WEXT   
+ pwave_extr = new WaveExtract(this, pin);
+#endif
+//WGC end
 
 #ifdef Z4C_TRACKER
   pz4c_tracker = new Tracker(this, pin);
 #endif
-
+  }
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
 

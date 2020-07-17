@@ -50,6 +50,11 @@
 #include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
 
+// WGC wext
+#ifdef Z4C_WEXT
+#include "../z4c/wave_extract.hpp"  
+#endif
+// WGC end
 
 //----------------------------------------------------------------------------------------
 // MeshBlock constructor: constructs coordinate, boundary condition, hydro, field
@@ -171,6 +176,11 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   if (Z4C_ENABLED) {
     pz4c = new Z4c(this, pin);
+//WGC wext
+#ifdef Z4C_WEXT
+    pwave_extr_loc = new WaveExtractLocal(this->pmy_mesh->pwave_extr->psphere, this, pin); 
+#endif
+//WGC end
 #ifdef Z4C_TRACKER
     pz4c_tracker_loc = new TrackerLocal(this, pin);
 #endif // Z4C_TRACKER
@@ -298,6 +308,11 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   if (Z4C_ENABLED) {
     pz4c = new Z4c(this, pin);
+//WGC wext
+#ifdef Z4C_WEXT
+    pwave_extr_loc = new WaveExtractLocal(this->pmy_mesh->pwave_extr->psphere, this, pin);  
+#endif
+//WGC end
 #ifdef Z4C_TRACKER
     pz4c_tracker_loc = new TrackerLocal(this, pin);
 #endif // Z4C_TRACKER
@@ -415,6 +430,11 @@ MeshBlock::~MeshBlock() {
 
   if (Z4C_ENABLED) {
     delete pz4c;
+//WGC wext
+#ifdef Z4C_WEXT
+    delete pwave_extr_loc;
+#endif
+//WGC end
 #ifdef Z4C_TRACKER
     delete pz4c_tracker_loc;
 #endif // Z4C_TRACKER

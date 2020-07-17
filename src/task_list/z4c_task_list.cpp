@@ -19,6 +19,11 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../z4c/z4c.hpp"
+//WGC wext
+#ifdef Z4C_WEXT
+#include "../z4c/wave_extract.hpp"
+#endif
+//WGC end
 #ifdef Z4C_TRACKER
 #include "../z4c/trackers.hpp"
 #endif // Z4C_TRACKER
@@ -246,7 +251,10 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
     AddTask(ALG_CONSTR, PHY_BVAL);             // EnforceAlgConstr
     AddTask(Z4C_TO_ADM, ALG_CONSTR);           // Z4cToADM
     AddTask(ADM_CONSTR, Z4C_TO_ADM);           // ADM_Constraints
-
+//WGC wext
+    AddTask(Z4C_WEYL, Z4C_TO_ADM);           // Calc Psi4
+    AddTask(WAVE_EXTR, Z4C_WEYL);           // Project Psi4 multipoles
+//WGC end
     AddTask(USERWORK, ADM_CONSTR);             // UserWork
 
     AddTask(NEW_DT, USERWORK);                 // NewBlockTimeStep
@@ -335,6 +343,18 @@ void Z4cIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&Z4cIntegratorTaskList::ADM_Constraints);
       task_list_[ntasks].lb_time = true;
+//WGC wext
+    } else if (id == Z4C_WEYL) {
+      task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&Z4cIntegratorTaskList::Z4c_Weyl);
+      task_list_[ntasks].lb_time = true;
+    } else if (id == WAVE_EXTR) {
+      task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&Z4cIntegratorTaskList::WaveExtract);
+      task_list_[ntasks].lb_time = true;
+//WGC end
     } else if (id == NEW_DT) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -582,6 +602,36 @@ TaskStatus Z4cIntegratorTaskList::Z4cToADM(MeshBlock *pmb, int stage) {
   }
   return TaskStatus::fail;
 }
+//WGC wext
+TaskStatus Z4cIntegratorTaskList::Z4c_Weyl(MeshBlock *pmb, int stage) {
+ if (stage <= nstages) { 
+#ifdef Z4C_WEXT
+ pmb->pz4c->Z4cWeyl(pmb->pz4c->storage.adm, pmb->pz4c->storage.mat,
+    pmb->pz4c->storage.weyl);
+#endif
+   return TaskStatus::success;
+ }
+ else {
+ return TaskStatus::fail;
+ }
+}  
+
+
+TaskStatus Z4cIntegratorTaskList::WaveExtract(MeshBlock *pmb, int stage) {
+ if (stage != nstages) return TaskStatus::success;  
+#ifdef Z4C_WEXT
+ AthenaArray<Real> u_R;
+ AthenaArray<Real> u_I;
+ u_R.InitWithShallowSlice(pmb->pz4c->storage.weyl, Z4c::I_WEY_rpsi4, 1);
+ u_I.InitWithShallowSlice(pmb->pz4c->storage.weyl, Z4c::I_WEY_ipsi4, 1);
+ pmb->pwave_extr_loc->Decompose_multipole(u_R,u_I);
+#endif
+  return TaskStatus::success;
+  }
+
+
+//WGC end
+
 
 TaskStatus Z4cIntegratorTaskList::ADM_Constraints(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {

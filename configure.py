@@ -25,6 +25,7 @@
 #   -w                  enable wave equation
 #   -z                  enable Z4c system
 #   -z_tracker          enable Z4c tracker functionality
+#   -z_wext             enable wave extraction
 #   -z_assert_is_finite enable checking for nan/inf within Z4c tasklist
 #   -t                  enable interface frame transformations for GR
 #   -vertex             prefer vertex-centered (where available)
@@ -183,6 +184,13 @@ parser.add_argument("-z",
                     action='store_true',
                     default=False,
                     help='enable Z4c system')
+
+# -z_wext argument
+parser.add_argument("-z_wext",
+                    action='store_true',
+                    default=False,
+                    help='enable Z4c Wave extraction')
+
 
 # -z_tracker argument
 parser.add_argument("-z_tracker",
@@ -572,6 +580,15 @@ if args['z']:
 
 else:
   definitions['Z4C_ENABLED'] = '0'
+
+# -z_wext argument
+if args['z_wext']:
+    if not args['z']:
+        raise SystemExit("### CONFIGURE ERROR: z_wext requires z flag")
+    definitions['Z4C_WEXT'] = 'Z4C_WEXT'
+else:
+  definitions['Z4C_WEXT'] = 'NO_Z4C_WEXT'
+
 
 # -z_tracker argument
 if args['z_tracker']:
@@ -994,6 +1011,9 @@ with open(makefile_input, 'r') as current_file:
 files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs',
          'gauge', 'z4c_utils']
 if args['z']:
+    if args['z_wext']:
+        files.append('calculate_weyl_scalars')
+        files.append('wave_extract')
     if args['z_tracker']:
         files.append('trackers')
     if args['prob'] == "z4c_two_punctures":
@@ -1040,6 +1060,7 @@ print('  General relativity:           ' + ('ON' if args['g'] else 'OFF'))
 print('  Advection equation:           ' + ('ON' if args['a'] else 'OFF'))
 print('  Wave equation:                ' + ('ON' if args['w'] else 'OFF'))
 print('  Z4c equations:                ' + ('ON' if args['z'] else 'OFF'))
+print('  Z4c wave extraction:          ' + ('ON' if args['z_wext'] else 'OFF'))
 print('  Z4c tracker:                  ' + ('ON' if args['z_tracker'] else 'OFF'))
 print('  Z4c assert is_finite:         ' + ('ON' if args['z_assert_is_finite'] else 'OFF'))
 print('  Frame transformations:        ' + ('ON' if args['t'] else 'OFF'))

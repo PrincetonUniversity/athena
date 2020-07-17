@@ -48,7 +48,11 @@ char const * const Z4c::Matter_names[Z4c::N_MAT] = {
   "mat.Sx", "mat.Sy", "mat.Sz",
   "mat.Sxx", "mat.Sxy", "mat.Sxz", "mat.Syy", "mat.Syz", "mat.Szz",
 };
-
+// WGC wext
+char const * const Z4c::Weyl_names[Z4c::N_WEY] = {
+  "weyl.rpsi4","weyl.ipsi4",
+};
+//WGC end
 Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   pmy_block(pmb),
 #if PREFER_VC
@@ -62,6 +66,9 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
           {N_ADM, pmb->nverts3, pmb->nverts2, pmb->nverts1}, // adm
           {N_CON, pmb->nverts3, pmb->nverts2, pmb->nverts1}, // con
           {N_MAT, pmb->nverts3, pmb->nverts2, pmb->nverts1}, // mat
+//WGC wext
+          {N_WEY, pmb->nverts3, pmb->nverts2, pmb->nverts1}, // weyl
+//WGC end
   },
 #else
   coarse_u_(N_Z4c, pmb->ncc3, pmb->ncc2, pmb->ncc1,
@@ -74,6 +81,9 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
           {N_ADM, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // adm
           {N_CON, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // con
           {N_MAT, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // mat
+//WGC wext
+          {N_WEY, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // weyl
+//WGC end
   },
 #endif
   empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
@@ -179,7 +189,9 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   SetMatterAliases(storage.mat, mat);
   SetZ4cAliases(storage.rhs, rhs);
   SetZ4cAliases(storage.u, z4c);
-
+//WGC wext
+  SetWeylAliases(storage.weyl, weyl);
+//WGC end
   // Allocate memory for aux 1D vars
   r.NewAthenaTensor(nn1);
   detg.NewAthenaTensor(nn1);
@@ -239,6 +251,18 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   Lg_dd.NewAthenaTensor(nn1);
   LA_dd.NewAthenaTensor(nn1);
 
+//WGC wext
+  uvec.NewAthenaTensor(nn1);
+  vvec.NewAthenaTensor(nn1);
+  wvec.NewAthenaTensor(nn1);
+  dotp1.NewAthenaTensor(nn1);
+  dotp2.NewAthenaTensor(nn1);
+  Riem3_dddd.NewAthenaTensor(nn1);
+  Riemm4_dddd.NewAthenaTensor(nn1);
+  Riemm4_ddd.NewAthenaTensor(nn1);
+  Riemm4_dd.NewAthenaTensor(nn1);
+//WGC end
+//
   // Set up finite difference operators
   Real dx1, dx2, dx3;
   if (PREFER_VC) {
@@ -275,7 +299,9 @@ Z4c::~Z4c()
   storage.adm.DeleteAthenaArray();
   storage.con.DeleteAthenaArray();
   storage.mat.DeleteAthenaArray();
-
+//WGC wext
+  storage.weyl.DeleteAthenaArray();
+//WGC end
   dt1_.DeleteAthenaArray();
   dt2_.DeleteAthenaArray();
   dt3_.DeleteAthenaArray();
@@ -337,6 +363,17 @@ Z4c::~Z4c()
   Lbeta_u.DeleteAthenaTensor();
   Lg_dd.DeleteAthenaTensor();
   LA_dd.DeleteAthenaTensor();
+//WGC wext
+  uvec.DeleteAthenaTensor();
+  vvec.DeleteAthenaTensor();
+  wvec.DeleteAthenaTensor();
+  dotp1.DeleteAthenaTensor();
+  dotp2.DeleteAthenaTensor();
+  Riem3_dddd.DeleteAthenaTensor();
+  Riemm4_dddd.DeleteAthenaTensor();
+  Riemm4_ddd.DeleteAthenaTensor();
+  Riemm4_dd.DeleteAthenaTensor();
+//WGC end
 }
 
 //----------------------------------------------------------------------------------------
@@ -389,6 +426,17 @@ void Z4c::SetZ4cAliases(AthenaArray<Real> & u, Z4c::Z4c_vars & z4c)
   z4c.g_dd.InitWithShallowSlice(u, I_Z4c_gxx);
   z4c.A_dd.InitWithShallowSlice(u, I_Z4c_Axx);
 }
+//WGC wext
+//----------------------------------------------------------------------------------------
+// \!fn void Z4c::SetWeylAliases(AthenaArray<Real> & u, Weyl_vars & weyl)
+// \brief Set Weyl aliases
+
+void Z4c::SetWeylAliases(AthenaArray<Real> & u, Z4c::Weyl_vars & weyl)
+{
+  weyl.rpsi4.InitWithShallowSlice(u, I_WEY_rpsi4);
+  weyl.ipsi4.InitWithShallowSlice(u, I_WEY_ipsi4);
+}
+//WGC end
 
 //----------------------------------------------------------------------------------------
 // \!fn Real Z4c::SpatialDet(Real gxx, ... , Real gzz)
