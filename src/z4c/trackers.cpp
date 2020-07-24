@@ -268,7 +268,6 @@ void Tracker::EvolveTrackerIntegrateEuler()
 
 void Tracker::WriteTracker(int iter, Real time) const {
   if (ioproc) {
-    std::cout<<ofname<<std::endl;
     FILE *pfile;
     pfile = fopen(ofname.c_str(), "a");
     fprintf(pfile, "%-13d%-13.5e", iter, time);
