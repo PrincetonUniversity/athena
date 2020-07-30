@@ -63,7 +63,7 @@ class Tracker {
     bool ioproc;
     std::string ofname;
     Mesh const * pmesh;
-    FILE * pofile;
+    FILE * pofile[NPUNCT];
 };
 
 //! \class TrackerLocal
