@@ -566,8 +566,10 @@ int main(int argc, char *argv[]) {
       }
 //WGC wext
 #ifdef Z4C_WEXT
-pmesh->pwave_extr->ReduceMultipole();
-pmesh->pwave_extr->Write(pmesh->ncycle, pmesh->time); 
+for (int n = 0;n<NRAD;++n){
+pmesh->pwave_extr[n]->ReduceMultipole();
+pmesh->pwave_extr[n]->Write(pmesh->ncycle, pmesh->time); 
+}
 #endif
 //WGC end
 

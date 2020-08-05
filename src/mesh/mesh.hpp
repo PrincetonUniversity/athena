@@ -198,7 +198,7 @@ public:
   Z4c *pz4c;
 //WGC wext
 #ifdef Z4C_WEXT
-  WaveExtractLocal * pwave_extr_loc;
+    WaveExtractLocal * pwave_extr_loc[NRAD];
 #endif
 //WGC end
 #ifdef Z4C_TRACKER
@@ -371,7 +371,7 @@ class Mesh {
   MGGravityDriver *pmgrd;
 //WGC wext
 #ifdef Z4C_WEXT
-  WaveExtract * pwave_extr;
+  WaveExtract * pwave_extr[NRAD];
 #endif
 //WGC end
 

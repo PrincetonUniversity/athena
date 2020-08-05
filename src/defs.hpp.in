@@ -159,6 +159,7 @@
 #define NEXTRAPOLATE @NUMBER_EXTRAPOLATION_POINTS@     // extrapolate_outflow
 #define MAX_NSTAGE 5     // maximum number of stages per cycle for time-integrator
 #define MAX_NREGISTER 3  // maximum number of (u, b) register pairs for time-integrator
+#define NRAD @NUMBER_EXT_RAD@
 
 //----------------------------------------------------------------------------------------
 // general purpose macros (never modified)

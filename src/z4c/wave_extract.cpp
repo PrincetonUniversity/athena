@@ -22,18 +22,25 @@
 #include "../mesh/spherical_grid.hpp"
 #include "z4c.hpp"
 
-WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin):
+WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n):
     pmesh(pmesh), pofile(NULL) {
   int nlev = pin->GetOrAddInteger("z4c", "extraction_nlev", 3);
-  Real rad = pin->GetOrAddReal("z4c", "extraction_radius", 10.0);
-  ofname = pin->GetOrAddString("z4c", "extract_filename", "wave.txt");
+  Real rad;
+  std::string rad_parname;
+  rad_parname = "extraction_radius_";
+  std::string n_str = std::to_string(n);
+  rad_parname += n_str;
+  rad = pin->GetOrAddReal("z4c", rad_parname, 10.0); 
+  rad_id = n;
+  ofname = pin->GetOrAddString("z4c", "extract_filename", "wave");
   root = pin->GetOrAddInteger("z4c", "mpi_root", 0);
   lmax = pin->GetOrAddInteger("z4c", "lmax", 2);
   psphere = new SphericalGrid(nlev, rad);
-
-// int np = psphere->NumVertices();
+  ofname += n_str;
+  ofname += ".txt";
+ int np = psphere->NumVertices();
 //  Real theta, phi, x, y, z;
-//  printf("np = %d\n",np);
+  printf("np = %d\n",np);
 //  for(int ip=0;ip<np;++ip){
 //    psphere->SphericalGrid::PositionPolar(ip,&theta,&phi);
 //    psphere->SphericalGrid::Position(ip,&x,&y,&z);
@@ -75,8 +82,8 @@ void WaveExtract::ReduceMultipole() {
   while (pmb != NULL) {
     for(int l=2;l<lmax+1;++l){
       for(int m=-l;m<l+1;++m){
-        psi(l-2,m+l,0) +=pmb->pwave_extr_loc->psi(l-2,m+l,0);
-        psi(l-2,m+l,1) +=pmb->pwave_extr_loc->psi(l-2,m+l,1);
+        psi(l-2,m+l,0) +=pmb->pwave_extr_loc[rad_id]->psi(l-2,m+l,0);
+        psi(l-2,m+l,1) +=pmb->pwave_extr_loc[rad_id]->psi(l-2,m+l,1);
       }
     }
     pmb = pmb->next;
@@ -117,8 +124,12 @@ void WaveExtract::Write(int iter, Real time) const {
   }
 }
 
-WaveExtractLocal::WaveExtractLocal(SphericalGrid * psphere, MeshBlock * pmb, ParameterInput * pin) {
-  rad = pin->GetOrAddReal("z4c", "extraction_radius", 10.0);
+WaveExtractLocal::WaveExtractLocal(SphericalGrid * psphere, MeshBlock * pmb, ParameterInput * pin, int n) {
+  std::string rad_parname;
+  rad_parname = "extraction_radius_";
+  std::string n_str = std::to_string(n);
+  rad_parname += n_str;
+  rad = pin->GetOrAddReal("z4c", rad_parname.c_str(), 10.0); 
   lmax = pin->GetOrAddInteger("z4c", "lmax",2);
   ppatch = new SphericalPatch(psphere, pmb, SphericalPatch::vertex);
   datareal.NewAthenaArray(ppatch->NumPoints());

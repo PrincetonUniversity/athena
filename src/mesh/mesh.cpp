@@ -321,7 +321,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 //WGC wext
 if (Z4C_ENABLED){
 #ifdef Z4C_WEXT
-   pwave_extr = new WaveExtract(this, pin);
+   for(int n = 0;n<NRAD;++n){
+     pwave_extr[n] = new WaveExtract(this, pin,n);
+   }
 #endif
 // WGC end
 #ifdef Z4C_TRACKER
@@ -739,7 +741,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 //WGC wext
   if (Z4C_ENABLED){
 #ifdef Z4C_WEXT   
- pwave_extr = new WaveExtract(this, pin);
+    for(int n = 0;n<NRAD;++n){ 
+      pwave_extr[n] = new WaveExtract(this, pin, n);
+    }
+//end multi
 #endif
 //WGC end
 
@@ -945,6 +950,10 @@ Mesh::~Mesh() {
   if (SELF_GRAVITY_ENABLED == 1) delete pfgrd;
   else if (SELF_GRAVITY_ENABLED == 2) delete pmgrd;
   if (turb_flag > 0) delete ptrbd;
+
+#ifdef Z4C_WEXT
+ delete [] pwave_extr;
+#endif
 
 #ifdef Z4C_TRACKER
   delete pz4c_tracker;

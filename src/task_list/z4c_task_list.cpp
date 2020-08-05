@@ -624,7 +624,9 @@ TaskStatus Z4cIntegratorTaskList::WaveExtract(MeshBlock *pmb, int stage) {
  AthenaArray<Real> u_I;
  u_R.InitWithShallowSlice(pmb->pz4c->storage.weyl, Z4c::I_WEY_rpsi4, 1);
  u_I.InitWithShallowSlice(pmb->pz4c->storage.weyl, Z4c::I_WEY_ipsi4, 1);
- pmb->pwave_extr_loc->Decompose_multipole(u_R,u_I);
+ for(int n = 0; n<NRAD;++n){
+   pmb->pwave_extr_loc[n]->Decompose_multipole(u_R,u_I);
+ }
 #endif
   return TaskStatus::success;
   }

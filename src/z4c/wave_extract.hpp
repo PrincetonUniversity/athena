@@ -26,7 +26,7 @@ class ParameterInput;
 class WaveExtract {
   public:
     //! Creates the WaveExtract object
-    WaveExtract(Mesh * pmesh, ParameterInput * pin);
+    WaveExtract(Mesh * pmesh, ParameterInput * pin, int n);
     //! Destructor (will close output file)
     ~WaveExtract();
     //! Reduces the data from all of the SphericalPatches
@@ -37,6 +37,7 @@ class WaveExtract {
     //!  Array of lm modes
     AthenaArray<Real> psi;    
     //! SphericalGrid for wave extraction
+    int rad_id;
     SphericalGrid * psphere;
   private:
     int root;
@@ -53,7 +54,7 @@ class WaveExtract {
 class WaveExtractLocal {
   public:
     //! Creates the WaveExtractLocal object
-    WaveExtractLocal(SphericalGrid * psphere, MeshBlock * pmb, ParameterInput * pin);
+    WaveExtractLocal(SphericalGrid * psphere, MeshBlock * pmb, ParameterInput * pin, int n);
     ~WaveExtractLocal();
     //Calculates factorial - move to a general utility?
     Real fac(Real n);

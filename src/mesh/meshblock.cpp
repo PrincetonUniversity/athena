@@ -178,7 +178,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pz4c = new Z4c(this, pin);
 //WGC wext
 #ifdef Z4C_WEXT
-    pwave_extr_loc = new WaveExtractLocal(this->pmy_mesh->pwave_extr->psphere, this, pin); 
+    for(int n = 0;n<NRAD;++n){
+      pwave_extr_loc[n] = new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin,n); 
+    }
 #endif
 //WGC end
 #ifdef Z4C_TRACKER
@@ -310,7 +312,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     pz4c = new Z4c(this, pin);
 //WGC wext
 #ifdef Z4C_WEXT
-    pwave_extr_loc = new WaveExtractLocal(this->pmy_mesh->pwave_extr->psphere, this, pin);  
+    for(int n = 0;n<NRAD;++n){
+      pwave_extr_loc[n] = new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin,n);  
+    }
 #endif
 //WGC end
 #ifdef Z4C_TRACKER
@@ -432,7 +436,7 @@ MeshBlock::~MeshBlock() {
     delete pz4c;
 //WGC wext
 #ifdef Z4C_WEXT
-    delete pwave_extr_loc;
+    delete [] pwave_extr_loc;
 #endif
 //WGC end
 #ifdef Z4C_TRACKER
