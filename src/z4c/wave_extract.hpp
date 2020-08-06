@@ -26,7 +26,7 @@ class ParameterInput;
 class WaveExtract {
   public:
     //! Creates the WaveExtract object
-    WaveExtract(Mesh * pmesh, ParameterInput * pin, int n);
+    WaveExtract(Mesh * pmesh, ParameterInput * pin, int n, int res_flag);
     //! Destructor (will close output file)
     ~WaveExtract();
     //! Reduces the data from all of the SphericalPatches

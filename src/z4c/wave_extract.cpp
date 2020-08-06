@@ -22,7 +22,7 @@
 #include "../mesh/spherical_grid.hpp"
 #include "z4c.hpp"
 
-WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n):
+WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n, int res_flag):
     pmesh(pmesh), pofile(NULL) {
   int nlev = pin->GetOrAddInteger("z4c", "extraction_nlev", 3);
   Real rad;
@@ -55,17 +55,28 @@ WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n):
 #else
   ioproc = true;
 #endif
-
-  if (ioproc) {
-    pofile = fopen(ofname.c_str(), "w");
-    if (NULL == pofile) {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in WaveExtract constructor" << std::endl;
-      msg << "Could not open file '" << ofname << "' for writing!";
-      throw std::runtime_error(msg.str().c_str());
-    }
+  if(res_flag == 0){
+    if (ioproc) {
+      pofile = fopen(ofname.c_str(), "w");
+      if (NULL == pofile) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in WaveExtract constructor" << std::endl;
+        msg << "Could not open file '" << ofname << "' for writing!";
+        throw std::runtime_error(msg.str().c_str());
+      }
     fprintf(pofile, "# 1:iter 2:time 3:l=2 m=-2 R 4: l=2 m=-2 I 5: l=2 m=-1 R 6: l=2 m=-1 I 7: l=2 m=0 R 8: l=2 m=0 I 9: l=2 m=1 R 10: l=2 m=1 I 11: l=2 m=2 R 12: l=2 m=2 I\n");
-  }
+    }
+   } else if(res_flag == 1){
+     if (ioproc) {
+       pofile = fopen(ofname.c_str(), "a");
+       if (NULL == pofile) {
+         std::stringstream msg;
+         msg << "### FATAL ERROR in WaveExtract constructor" << std::endl;
+         msg << "Could not open file '" << ofname << "' for writing!";
+         throw std::runtime_error(msg.str().c_str());
+       }
+     }
+   }
 }
 
 WaveExtract::~WaveExtract() {
