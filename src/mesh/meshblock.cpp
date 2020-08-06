@@ -436,7 +436,9 @@ MeshBlock::~MeshBlock() {
     delete pz4c;
 //WGC wext
 #ifdef Z4C_WEXT
-    delete [] pwave_extr_loc;
+    for(int n=0;n<NRAD;++n){
+    delete pwave_extr_loc[n];
+    }
 #endif
 //WGC end
 #ifdef Z4C_TRACKER

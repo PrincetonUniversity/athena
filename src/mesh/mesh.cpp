@@ -952,7 +952,9 @@ Mesh::~Mesh() {
   if (turb_flag > 0) delete ptrbd;
 
 #ifdef Z4C_WEXT
- delete [] pwave_extr;
+ for(int n=0;n<NRAD;++n){
+ delete pwave_extr[n];
+ }
 #endif
 
 #ifdef Z4C_TRACKER
