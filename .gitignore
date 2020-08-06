@@ -55,6 +55,9 @@ meshtest.dat
 *~
 *.swp
 
+# scratch
+*.bak
+
 # Gcov: GCC coverage testing tool- data files
 *.gcno
 *.gcda

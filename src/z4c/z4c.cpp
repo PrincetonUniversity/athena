@@ -167,8 +167,22 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   opt.lapse_harmonic = pin->GetOrAddReal("z4c", "lapse_harmonic", 0.0);
   opt.lapse_oplog = pin->GetOrAddReal("z4c", "lapse_oplog", 2.0);
   opt.lapse_advect = pin->GetOrAddReal("z4c", "lapse_advect", 1.0);
-  opt.shift_eta = pin->GetOrAddReal("z4c", "shift_eta", 2.0);
   opt.shift_advect = pin->GetOrAddReal("z4c", "shift_advect", 1.0);
+
+  opt.shift_eta = pin->GetOrAddReal("z4c", "shift_eta", 2.0);
+
+#if defined(Z4C_ETA_CONF)
+  // Spatially dependent shift damping [based on conf. factor]
+  opt.shift_eta_a = pin->GetOrAddReal("z4c", "shift_eta_a", 2.);
+  opt.shift_eta_b = pin->GetOrAddReal("z4c", "shift_eta_b", 2.);
+  opt.shift_eta_R_0 = pin->GetOrAddReal("z4c", "shift_eta_R_0", 1.31);
+#elif defined(Z4C_ETA_TRACK_TP)
+  // Spatially dependent shift damping [based on puncture dist.]
+  opt.shift_eta_w = pin->GetOrAddReal("z4c", "shift_eta_w", 2.67);
+  opt.shift_eta_delta = pin->GetOrAddReal("z4c", "shift_eta_delta", 2.0);
+  opt.shift_eta_P = pin->GetOrAddReal("z4c", "shift_eta_P", 3);
+  opt.shift_eta_TP_ix = pin->GetOrAddInteger("z4c", "shift_eta_TP_ix", 0);
+#endif // Z4C_ETA_CONF, Z4C_ETA_TRACK_TP
 
   // Problem-specific parameters
   // Two punctures parameters
@@ -223,6 +237,11 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   DK_ddd.NewAthenaTensor(nn1);
   DK_udd.NewAthenaTensor(nn1);
 
+#if defined(Z4C_ETA_CONF) || defined(Z4C_ETA_TRACK_TP)
+  eta_damp.NewAthenaTensor(nn1);
+#endif // Z4C_ETA_CONF, Z4C_ETA_TRACK_TP
+
+
   dbeta.NewAthenaTensor(nn1);
   dalpha_d.NewAthenaTensor(nn1);
   ddbeta_d.NewAthenaTensor(nn1);
@@ -262,6 +281,7 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   Riemm4_ddd.NewAthenaTensor(nn1);
   Riemm4_dd.NewAthenaTensor(nn1);
 //WGC end
+
 //
   // Set up finite difference operators
   Real dx1, dx2, dx3;
@@ -336,6 +356,11 @@ Z4c::~Z4c()
   DK_ddd.DeleteAthenaTensor();
   DK_udd.DeleteAthenaTensor();
 
+#if defined(Z4C_ETA_CONF) || defined(Z4C_ETA_TRACK_TP)
+  eta_damp.DeleteAthenaTensor();
+#endif // Z4C_ETA_CONF, Z4C_ETA_TRACK_TP
+
+
   dbeta.DeleteAthenaTensor();
   dalpha_d.DeleteAthenaTensor();
   ddbeta_d.DeleteAthenaTensor();
@@ -374,6 +399,7 @@ Z4c::~Z4c()
   Riemm4_ddd.DeleteAthenaTensor();
   Riemm4_dd.DeleteAthenaTensor();
 //WGC end
+
 }
 
 //----------------------------------------------------------------------------------------

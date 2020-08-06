@@ -269,7 +269,7 @@ void Tracker::WriteTracker(int iter, Real time) const {
   if (ioproc) {
     FILE *pfile[NPUNCT];
     for (int i_outfile = 0; i_outfile <= npunct-1; ++i_outfile) {
-      std::string title = ofname + std::to_string(i_outfile+1) + ".txt"; 
+      std::string title = ofname + std::to_string(i_outfile+1) + ".txt";
       pfile[i_outfile] = fopen(title.c_str(), "a");
       fprintf(pfile[i_outfile], "%-13d%-13.5e", iter, time);
       fprintf(pfile[i_outfile], "%-13.5e%-13.5e%-13.5e\n", pos_body[i_outfile].pos[0], pos_body[i_outfile].pos[1], pos_body[i_outfile].pos[2]);

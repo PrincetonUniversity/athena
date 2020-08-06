@@ -24,6 +24,11 @@
 #include <gsl/gsl_sf_bessel.h>   // Bessel functions
 #endif
 
+#ifdef Z4C_TRACKER
+#include "trackers.hpp"
+#endif // Z4C_TRACKER
+
+
 //----------------------------------------------------------------------------------------
 // \!fn void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, AthenaArray<Real> & u_rhs)
 // \brief compute the RHS given the state vector and matter state
@@ -40,12 +45,48 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
   Matter_vars mat;
   SetMatterAliases(u_mat, mat);
 
-#if (0)  //DEBUG (for output in y-direction, to be read by Mathematica)
+  //---------------------------------------------------------------------------
+  // Scratch arrays for spatially dependent eta shift damping
+#if defined(Z4C_ETA_CONF)
+  int nn1 = mbi.nn1;
+  // 1/psi^2 (guarded); derivative and shift eta scratch
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> oopsi2;
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 1> doopsi2_d;
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> shift_eta_spa;
+
+  oopsi2.NewAthenaTensor(nn1);
+  doopsi2_d.NewAthenaTensor(nn1);
+  shift_eta_spa.NewAthenaTensor(nn1);
+
+#elif defined(Z4C_ETA_TRACK_TP)
+
+  // int nn1 = mbi.nn1;
+  // AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> eta_damp;
+
+  // eta_damp.NewAthenaTensor(nn1);
+
+#endif // Z4C_ETA_CONF, Z4C_ETA_TRACK_TP
+  //---------------------------------------------------------------------------
+
+  //---------------------------------------------------------------------------
+#if (0) // DEBUG: (for output in y-direction, to be read by Mathematica)
   Real i_test = mbi.il; //where to evaluate things
   std::cout << "Writing test output to file..." << std::endl;
   std::ofstream outdata;
   outdata.open ("output.dat");
-#endif  //END DEBUG
+#endif  // END DEBUG
+
+#if (0) // DEBUG
+  int body = 0;
+
+  coutBoldBlue("body_0 tracker:\n");
+  for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
+    Real tt = pmy_block->pmy_mesh->pz4c_tracker->pos_body[body].pos[i_dim];
+    printf("%1.6f, ", tt);
+  }
+  coutBoldBlue("\n=\n");
+#endif  // END DEBUG
+  //---------------------------------------------------------------------------
 
   ILOOP2(k,j) {
     // -----------------------------------------------------------------------------------
@@ -508,13 +549,86 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
       Real const f = opt.lapse_oplog * opt.lapse_harmonicf + opt.lapse_harmonic * z4c.alpha(k,j,i);
       rhs.alpha(k,j,i) = opt.lapse_advect * Lalpha(i) - f * z4c.alpha(k,j,i) * z4c.Khat(k,j,i);
     }
+
     // shift vector
     for(int a = 0; a < NDIM; ++a) {
       ILOOP1(i) {
         rhs.beta_u(a,k,j,i) = z4c.Gam_u(a,k,j,i) + opt.shift_advect * Lbeta_u(a,i);
+        // rhs.beta_u(a,k,j,i) -= opt.shift_eta * z4c.beta_u(a,k,j,i);
+      }
+    }
+
+#if defined(Z4C_ETA_CONF)
+    // compute based on conformal factor
+
+    // relevant fields:
+    // g_uu(c, d, i) [con. conf. g]
+    // z4c.chi(k,j,i)
+    // dchi_d(a,i)   [cov. pd of chi]
+
+    eta_damp.ZeroClear();
+
+    for(int a = 0; a < NDIM; ++a) {
+      for(int b = 0; b < NDIM; ++b) {
+        ILOOP1(i) {
+          eta_damp(i) += g_uu(a,b,i) * dchi_d(a,i) * dchi_d(b,i);
+        }
+      }
+    }
+
+    ILOOP1(i) {
+      eta_damp(i) = SQRT(eta_damp(i) / z4c.chi(k,j,i))
+        * pow(1. - pow(z4c.chi(k,j,i), opt.shift_eta_a / 2.),
+              opt.shift_eta_b);
+      eta_damp(i) *= opt.shift_eta_R_0 / 2.;
+    }
+
+    // mask and damp
+    for(int a = 0; a< NDIM; ++a) {
+      ILOOP1(i) {
+        rhs.beta_u(a,k,j,i) -= eta_damp(i) * z4c.beta_u(a,k,j,i);
+      }
+    }
+
+#elif defined(Z4C_ETA_TRACK_TP)
+    int const b_ix = opt.shift_eta_TP_ix;
+
+    eta_damp.ZeroClear();
+
+    // compute prefactors
+    ILOOP1(i) {
+
+      eta_damp(i) += \
+        POW2(pmy_block->pmy_mesh->pz4c_tracker->pos_body[b_ix].pos[0]
+          - mbi.x1(i));
+      eta_damp(i) += \
+        POW2(pmy_block->pmy_mesh->pz4c_tracker->pos_body[b_ix].pos[1]
+          - mbi.x2(j));
+      eta_damp(i) += \
+        POW2(pmy_block->pmy_mesh->pz4c_tracker->pos_body[b_ix].pos[2]
+          - mbi.x3(k));
+
+      eta_damp(i) = 1. + pow(POW2(eta_damp(i) / opt.shift_eta_w),
+                             opt.shift_eta_delta);
+      eta_damp(i) = opt.shift_eta \
+        + (opt.shift_eta_P - opt.shift_eta) / eta_damp(i);
+    }
+
+    // mask and damp
+    for(int a = 0; a< NDIM; ++a) {
+      ILOOP1(i) {
+        rhs.beta_u(a,k,j,i) -= eta_damp(i) * z4c.beta_u(a,k,j,i);
+      }
+    }
+
+#else
+    // global constant [original implementation]
+    for(int a = 0; a < NDIM; ++a) {
+      ILOOP1(i) {
         rhs.beta_u(a,k,j,i) -= opt.shift_eta * z4c.beta_u(a,k,j,i);
       }
     }
+#endif // Z4C_ETA_CONF, Z4C_ETA_TRACK_TP
 
 #if (0)// DEBUG (force analytical polarised Gowdy lapse, zero shift)
 #ifdef GSL
