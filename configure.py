@@ -27,6 +27,8 @@
 #   -z                  enable Z4c system
 #   -z_tracker          enable Z4c tracker functionality
 #   -z_wext             enable wave extraction
+#   -z_eta_track_tp     enable (TP) based shift-damping
+#   -z_eta_conf         enable conformal factor based shift-damping
 #   -z_assert_is_finite enable checking for nan/inf within Z4c tasklist
 #   -t                  enable interface frame transformations for GR
 #   -vertex             prefer vertex-centered (where available)
@@ -197,12 +199,24 @@ parser.add_argument("-z_wext",
                     default=False,
                     help='enable Z4c Wave extraction')
 
-
 # -z_tracker argument
 parser.add_argument("-z_tracker",
                     action='store_true',
                     default=False,
                     help='enable Z4c tracker')
+
+# -z_eta_track_tp argument
+parser.add_argument("-z_eta_track_tp",
+                    action='store_true',
+                    default=False,
+                    help='enable (TP) based shift-damping')
+
+# -z_eta_conf argument
+parser.add_argument("-z_eta_conf",
+                    action='store_true',
+                    default=False,
+                    help='enable conformal factor based shift-damping')
+
 
 # -z_assert_is_finite argument
 parser.add_argument("-z_assert_is_finite",
@@ -614,6 +628,29 @@ if args['z_assert_is_finite']:
     definitions['Z4C_ASSERT_FINITE'] = 'Z4C_ASSERT_FINITE'
 else:
   definitions['Z4C_ASSERT_FINITE'] = 'NO_Z4C_ASSERT_FINITE'
+
+# -z_eta_track_tp argument
+ERR_MUL_ETA_STR = "### CONFIGURE ERROR: select at most ONE of {z_eta_track_tp, z_eta_conf}"
+if args['z_eta_track_tp']:
+    if not args['z']:
+        raise SystemExit("### CONFIGURE ERROR: z_eta_track_tp requires z flag")
+    if not args['z_tracker']:
+        raise SystemExit("### CONFIGURE ERROR: z_eta_track_tp requires z_tracker flag")
+    if args['z_eta_conf']:
+        raise SystemExit(ERR_MUL_ETA_STR)
+    definitions['Z4C_ETA_TRACK_TP'] = 'Z4C_ETA_TRACK_TP'
+else:
+  definitions['Z4C_ETA_TRACK_TP'] = 'NO_Z4C_ETA_TRACK_TP'
+
+# -z_eta_conf argument
+if args['z_eta_conf']:
+    if not args['z']:
+        raise SystemExit("### CONFIGURE ERROR: z_eta_conf requires z flag")
+    if args['z_eta_track_tp']:
+        raise SystemExit(ERR_MUL_ETA_STR)
+    definitions['Z4C_ETA_CONF'] = 'Z4C_ETA_CONF'
+else:
+  definitions['Z4C_ETA_CONF'] = 'NO_Z4C_ETA_CONF'
 
 # -vertex argument
 if args['vertex']:
@@ -1056,6 +1093,12 @@ if args['grav'] == 'fft':
 elif args['grav'] == 'mg':
     self_grav_string = 'Multigrid'
 
+self_eta_damp_string = 'Constant'
+if args['z_eta_track_tp']:
+    self_eta_damp_string = 'TP'
+elif args['z_eta_conf']:
+    self_eta_damp_string = 'Conformal'
+
 print('Your Athena++ distribution has now been configured with the following options:')
 print('  Problem generator:            ' + args['prob'])
 print('  Coordinate system:            ' + args['coord'])
@@ -1069,9 +1112,12 @@ print('  General relativity:           ' + ('ON' if args['g'] else 'OFF'))
 print('  Advection equation:           ' + ('ON' if args['a'] else 'OFF'))
 print('  Wave equation:                ' + ('ON' if args['w'] else 'OFF'))
 print('  Z4c equations:                ' + ('ON' if args['z'] else 'OFF'))
-print('  Z4c wave extraction:          ' + ('ON' if args['z_wext'] else 'OFF'))
-print('  Z4c tracker:                  ' + ('ON' if args['z_tracker'] else 'OFF'))
-print('  Z4c assert is_finite:         ' + ('ON' if args['z_assert_is_finite'] else 'OFF'))
+if args['z']:
+    print('  Z4c wave extraction:          ' + ('ON' if args['z_wext'] else 'OFF'))
+    print('  Z4c tracker:                  ' + ('ON' if args['z_tracker'] else 'OFF'))
+    print('  Z4c assert is_finite:         ' + ('ON' if args['z_assert_is_finite'] else 'OFF'))
+    print('  Z4c shift damping:            ' + self_eta_damp_string)
+
 print('  Frame transformations:        ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:                 ' + self_grav_string)
 print('  Super-Time-Stepping:          ' + ('ON' if args['sts'] else 'OFF'))

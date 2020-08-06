@@ -175,6 +175,18 @@ public:
     // Gauge condition for the shift
     Real shift_advect;
     Real shift_eta;
+    // Spatially dependent shift damping
+#if defined(Z4C_ETA_CONF)
+    Real shift_eta_a;
+    Real shift_eta_b;
+    Real shift_eta_R_0;
+#elif defined(Z4C_ETA_TRACK_TP)
+    Real shift_eta_w;
+    Real shift_eta_delta;
+    Real shift_eta_P;
+    Real shift_eta_TP_ix;
+#endif // Z4C_ETA_CONF, Z4C_ETA_TRACK_TP
+
     // AwA parameters
     Real AwA_amplitude; // amplitude parameter
     Real AwA_d_x; // d_x (width) parameter
@@ -355,6 +367,11 @@ private:
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 3> Gamma_udd;   // Christoffel symbols of 2nd kind
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 3> DK_ddd;      // differential of K
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 3> DK_udd;      // differential of K
+
+  // Spatially dependent shift damping
+#if defined(Z4C_ETA_CONF) || defined(Z4C_ETA_TRACK_TP)
+  AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> eta_damp;
+#endif // Z4C_ETA_CONF, Z4C_ETA_TRACK_TP
 
   // auxiliary derivatives
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> dbeta;       // d_a beta^a

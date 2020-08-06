@@ -14,16 +14,22 @@ export REL_OUTPUT=outputs/z4c_c_tp
 export REL_INPUT=scripts/problems
 
 # Will be populated with defaults instead.
-export INPUT_NAME=z4c_one_puncture.inp
+export INPUT_NAME=z4c_two_punctures.inp
 
 # if compilation is chosen
 export DIR_USR=${soft}/usr                            # local lib. installation
 export DIR_HDF5=${DIR_USR}/hdf5_serial/1.10.5
 export DIR_GSL=${DIR_USR}/gsl/2.6
 
-export COMPILE_STR="--prob=z4c_two_punctures -z -z_tracker
-                    --cxx g++ -omp
-                    --nghost=2"
+export COMPILE_STR="--prob=z4c_two_punctures -z
+                    -z_tracker
+                    -z_eta_conf
+                    -z_assert_is_finite
+                    --cxx g++ -omp -vertex
+                    --nghost=4 --ncghost=4 --nextrapolate=5"
+
+# add wave extraction
+export COMPILE_STR="${COMPILE_STR} -z_wext --nrad 2"
 
 # apply caching compiler together with gold linker
 export COMPILE_STR="${COMPILE_STR} -ccache -link_gold"
@@ -37,6 +43,9 @@ export COMPILE_STR="${COMPILE_STR} -gsl --gsl_path=${DIR_GSL}"
 # two punctures relative
 export COMPILE_STR="${COMPILE_STR}
   --two_punctures_path=../../twopuncturesc/master"
+
+echo "COMPILE_STR"
+echo ${COMPILE_STR}
 ###############################################################################
 
 
@@ -70,5 +79,14 @@ source ${DIR_SCRIPTS}/utils/dump_info.sh
 source utils/exec.sh
 ###############################################################################
 
+# stupid check out outer bc extrap
+# export PYTHONPATH=$PYTHONPATH:/mnt/grottoop/_Repositories/NR/athena/development/vis/python
+# export data_file="/mnt/grottoop/_Repositories/NR/athena/development/outputs/z4c_c_tp/two_puncture/z4c.out3.00002.athdf"
+# export pycmd="import athena_read as ar; import numpy as np"
+# export pycmd="${pycmd}; data = ar.athdf('${data_file}', raw=True)"
+# export pycmd="${pycmd}; print(data['z4c.alpha'][-1,-1,-1])"
+
+# echo ${pycmd} > pyout
+# python pyout
 
 # >:D

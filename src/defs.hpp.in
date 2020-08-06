@@ -111,9 +111,14 @@
 // allow control over whether tracker enabled
 #define @Z4C_TRACKER@
 
-
 // allow control over whether wave extraction enabled
 #define @Z4C_WEXT@
+
+// allow for spatially varying shift-damping based on conformal factor
+#define @Z4C_ETA_CONF@
+
+// allow for spatially varying shift-damping based on tracker computed distance
+#define @Z4C_ETA_TRACK_TP@
 
 // assert is_finite for z4c field variables during evolution ?
 #define @Z4C_ASSERT_FINITE@

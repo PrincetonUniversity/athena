@@ -58,19 +58,27 @@ void ShowConfig() {
   }
   if (Z4C_ENABLED) {
     std::cout<<"  Z4c equations:              ON" << std::endl;
+#ifdef Z4C_TRACKER
+      std::cout<<"  Z4c tracker:                ON" << std::endl;
+#else
+      std::cout<<"  Z4c tracker:                OFF" << std::endl;
+#endif // Z4C_TRACKER
+#ifdef Z4C_WEXT
+      std::cout<<"  Z4c wave extraction:                ON" << std::endl;
+#else
+      std::cout<<"  Z4c wave extraction:                OFF" << std::endl;
+#endif // Z4C_WEXT
+
+#if defined(Z4C_ETA_TRACK_TP)
+      std::cout<<"  Z4c shift damping:                  TP" << std::endl;
+#elif defined(Z4C_ETA_CONF)
+      std::cout<<"  Z4c shift damping:                  Conformal" << std::endl;
+#else
+      std::cout<<"  Z4c shift damping:                  Constant" << std::endl;
+#endif
   } else {
     std::cout<<"  Z4c equations:              OFF" << std::endl;
   }
-#ifdef Z4C_TRACKER
-    std::cout<<"  Z4c tracker:                ON" << std::endl;
-#else
-    std::cout<<"  Z4c tracker:                OFF" << std::endl;
-#endif // Z4C_TRACKER
-#ifdef Z4C_WEXT
-    std::cout<<"  Z4c wave extraction:                ON" << std::endl;
-#else
-    std::cout<<"  Z4c wave extraction:                OFF" << std::endl;
-#endif // Z4C_WEXT
   // configure.py output: "Frame transformations"
   if (SELF_GRAVITY_ENABLED == 1) {
     std::cout<<"  Self-Gravity:               FFT" << std::endl;
