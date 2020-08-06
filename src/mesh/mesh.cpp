@@ -327,7 +327,8 @@ if (Z4C_ENABLED){
 #endif
 // WGC end
 #ifdef Z4C_TRACKER
-  pz4c_tracker = new Tracker(this, pin);
+  // Last entry says if it is restart run or not
+  pz4c_tracker = new Tracker(this, pin, 0);
 #endif // Z4C_TRACKER
   }
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
@@ -749,7 +750,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 //WGC end
 
 #ifdef Z4C_TRACKER
-  pz4c_tracker = new Tracker(this, pin);
+  // Last entry tells if it is restart run or not
+  pz4c_tracker = new Tracker(this, pin, 1);
 #endif
   }
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);

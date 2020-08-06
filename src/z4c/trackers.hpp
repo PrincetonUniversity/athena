@@ -40,15 +40,15 @@ class Tracker {
     Real L_grid;
   public:
     //! Creates the Tracker object
-    Tracker(Mesh * pmesh, ParameterInput * pin);
+    Tracker(Mesh * pmesh, ParameterInput * pin, int res_flag);
     //! Destructor (will close output file)
     ~Tracker();
     //! Call different initializations
-    void Initialize(Mesh * pmesh, ParameterInput * pin);
+    void Initialize(Mesh * pmesh, ParameterInput * pin, int res_flag);
     //! Initialize for one puncture case
-    void InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin);
+    void InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin, int res_flag);
     //! Initialize for two punctures case
-    void InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin);
+    void InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin, int res_flag);
     //! Reduces the data from all meshblocks and ranks
     void ReduceTracker();
     //! Call different integrators

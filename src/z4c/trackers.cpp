@@ -26,12 +26,12 @@
 #include "../lagrange_interp.hpp"
 #include "../defs.hpp"
 
-Tracker::Tracker(Mesh * pmesh, ParameterInput * pin):
+Tracker::Tracker(Mesh * pmesh, ParameterInput * pin, int res_flag):
     pmesh(pmesh){
   ofname = pin->GetOrAddString("problem", "tracker_filename", "punctures_position");
   //TODO Punctures number is decided at configure/defs level instead of parfile level
   npunct = NPUNCT;
-  Initialize(pmesh, pin);
+  Initialize(pmesh, pin, res_flag);
   root = 0;
   root_lev = pmesh->root_level;
 
@@ -45,18 +45,22 @@ Tracker::Tracker(Mesh * pmesh, ParameterInput * pin):
 #endif
   // Print header of tracker file
   if (ioproc) {
-    for (int i_outfile = 0; i_outfile <= npunct-1; ++i_outfile) {
-      pofile[i_outfile] = NULL;
-      std::string title = ofname + std::to_string(i_outfile+1) + ".txt";
-      pofile[i_outfile] = fopen(title.c_str(), "w");
-      if (NULL == pofile[i_outfile]) {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in Tracker constructor" << std::endl;
-        msg << "Could not open file '" << title << "' for writing!";
-        throw std::runtime_error(msg.str().c_str());
+    if (! res_flag) {
+      for (int i_outfile = 0; i_outfile <= npunct-1; ++i_outfile) {
+        pofile[i_outfile] = NULL;
+        std::string title = ofname + std::to_string(i_outfile+1) + ".txt";
+        pofile[i_outfile] = fopen(title.c_str(), "w");
+        if (NULL == pofile[i_outfile]) {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in Tracker constructor" << std::endl;
+          msg << "Could not open file '" << title << "' for writing!";
+          throw std::runtime_error(msg.str().c_str());
+        }
+        fprintf(pofile[i_outfile], "#%-12s%-13s%-13s%-13s%-13s\n", "1:iter", "2:time", "3:P-x", "4:P-y", "5:P-z");
+	fprintf(pofile[i_outfile], "%-13d%-13.5e", 0, 0.);
+        fprintf(pofile[i_outfile], "%-13.5e%-13.5e%-13.5e\n", pos_body[i_outfile].pos[0], pos_body[i_outfile].pos[1], pos_body[i_outfile].pos[2]);
+      fclose(pofile[i_outfile]);
       }
-      fprintf(pofile[i_outfile], "#%-12s%-13s%-13s%-13s%-13s\n", "1:iter", "2:time", "3:P-x", "4:P-y", "5:P-z");
-    fclose(pofile[i_outfile]);
     }
   }
 }
@@ -65,11 +69,11 @@ Tracker::Tracker(Mesh * pmesh, ParameterInput * pin):
 // \!fn void Tracker::Initialize(Mesh * pmesh, ParameterInput * pin)
 // \brief Initialize tracker depending on problem
 //
-void Tracker::Initialize(Mesh * pmesh, ParameterInput * pin){
+void Tracker::Initialize(Mesh * pmesh, ParameterInput * pin, int res_flag){
   switch(npunct) {
-    case 1 : InitializeOnepuncture(pmesh, pin);
+    case 1 : InitializeOnepuncture(pmesh, pin, res_flag);
 	     break;
-    case 2 : InitializeTwopuncture(pmesh, pin);
+    case 2 : InitializeTwopuncture(pmesh, pin, res_flag);
 	     break;
     default : std::cout<<"This case has not been implemented yet.\n";
   }
@@ -79,7 +83,7 @@ void Tracker::Initialize(Mesh * pmesh, ParameterInput * pin){
 // \!fn void Tracker::InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin)
 // \brief Initialize One Puncture problem
 //
-void Tracker::InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin){
+void Tracker::InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin, int res_flag){
   //Currently the one puncture is set at the origin and so its position
   //but this will need to be changed
   for (int i_punc = 0; i_punc < npunct; ++i_punc) {
@@ -97,7 +101,7 @@ void Tracker::InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin){
 // \!fn void Tracker::InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin)
 // \brief Initialize Two Punctures problem
 //
-void Tracker::InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin){
+void Tracker::InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin, int res_flag){
 
   Real par_b = pin->GetOrAddReal("problem", "par_b", 2.);
   Real of1 = pin->GetOrAddReal("problem", "center_offset1", 0.);
@@ -266,7 +270,7 @@ void Tracker::EvolveTrackerIntegrateEuler()
 }
 
 void Tracker::WriteTracker(int iter, Real time) const {
-  if (ioproc) {
+  if (ioproc && (iter > 0)) {
     FILE *pfile[NPUNCT];
     for (int i_outfile = 0; i_outfile <= npunct-1; ++i_outfile) {
       std::string title = ofname + std::to_string(i_outfile+1) + ".txt";
