@@ -31,7 +31,8 @@ Tracker::Tracker(Mesh * pmesh, ParameterInput * pin, int res_flag):
   ofname = pin->GetOrAddString("problem", "tracker_filename", "punctures_position");
   //TODO Punctures number is decided at configure/defs level instead of parfile level
   npunct = NPUNCT;
-  Initialize(pmesh, pin, res_flag);
+  if (!res_flag)
+    Initialize(pmesh, pin);
   root = 0;
   root_lev = pmesh->root_level;
 
@@ -69,11 +70,11 @@ Tracker::Tracker(Mesh * pmesh, ParameterInput * pin, int res_flag):
 // \!fn void Tracker::Initialize(Mesh * pmesh, ParameterInput * pin)
 // \brief Initialize tracker depending on problem
 //
-void Tracker::Initialize(Mesh * pmesh, ParameterInput * pin, int res_flag){
+void Tracker::Initialize(Mesh * pmesh, ParameterInput * pin){
   switch(npunct) {
-    case 1 : InitializeOnepuncture(pmesh, pin, res_flag);
+    case 1 : InitializeOnepuncture(pmesh, pin);
 	     break;
-    case 2 : InitializeTwopuncture(pmesh, pin, res_flag);
+    case 2 : InitializeTwopuncture(pmesh, pin);
 	     break;
     default : std::cout<<"This case has not been implemented yet.\n";
   }
@@ -83,7 +84,7 @@ void Tracker::Initialize(Mesh * pmesh, ParameterInput * pin, int res_flag){
 // \!fn void Tracker::InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin)
 // \brief Initialize One Puncture problem
 //
-void Tracker::InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin, int res_flag){
+void Tracker::InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin){
   //Currently the one puncture is set at the origin and so its position
   //but this will need to be changed
   for (int i_punc = 0; i_punc < npunct; ++i_punc) {
@@ -101,7 +102,7 @@ void Tracker::InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin, int res_
 // \!fn void Tracker::InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin)
 // \brief Initialize Two Punctures problem
 //
-void Tracker::InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin, int res_flag){
+void Tracker::InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin){
 
   Real par_b = pin->GetOrAddReal("problem", "par_b", 2.);
   Real of1 = pin->GetOrAddReal("problem", "center_offset1", 0.);

@@ -32,6 +32,9 @@
 // -BD
 #include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
+#ifdef Z4C_TRACKER
+#include "../z4c/trackers.hpp"
+#endif
 #include "outputs.hpp"
 
 
@@ -81,7 +84,10 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     udsize += pm->iuser_mesh_data[n].GetSizeInBytes();
   for (int n=0; n<pm->nreal_user_mesh_data_; n++)
     udsize += pm->ruser_mesh_data[n].GetSizeInBytes();
-
+#ifdef Z4C_TRACKER
+  for (int i_punc = 0; i_punc < NPUNCT-1; ++i_punc)
+    udsize += 6*sizeof(Real);
+#endif
   headeroffset = sbuf.size()*sizeof(char) + 3*sizeof(int)+sizeof(RegionSize)
                  + 2*sizeof(Real)+sizeof(IOWrapperSizeT)+udsize;
   // the size of an element of the ID and cost list
@@ -120,6 +126,18 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
                     pm->ruser_mesh_data[n].GetSizeInBytes());
         udoffset += pm->ruser_mesh_data[n].GetSizeInBytes();
       }
+      //TRACKER
+#ifdef Z4C_TRACKER
+      for (int i_punc = 0; i_punc < NPUNCT-1; ++i_punc) {
+        std::memcpy(&(ud[udoffset]), pm->pz4c_tracker->pos_body[i_punc].pos,
+                    3*sizeof(Real));
+        udoffset += 3*sizeof(double);
+        std::memcpy(&(ud[udoffset]), pm->pz4c_tracker->pos_body[i_punc].betap,
+                    3*sizeof(Real));
+        udoffset += 3*sizeof(double);
+      }
+#endif
+      //END TRACKER
       resfile.Write(ud, 1, udsize);
       delete [] ud;
     }

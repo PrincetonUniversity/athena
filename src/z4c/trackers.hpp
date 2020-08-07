@@ -44,11 +44,11 @@ class Tracker {
     //! Destructor (will close output file)
     ~Tracker();
     //! Call different initializations
-    void Initialize(Mesh * pmesh, ParameterInput * pin, int res_flag);
+    void Initialize(Mesh * pmesh, ParameterInput * pin);
     //! Initialize for one puncture case
-    void InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin, int res_flag);
+    void InitializeOnepuncture(Mesh * pmesh, ParameterInput * pin);
     //! Initialize for two punctures case
-    void InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin, int res_flag);
+    void InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin);
     //! Reduces the data from all meshblocks and ranks
     void ReduceTracker();
     //! Call different integrators

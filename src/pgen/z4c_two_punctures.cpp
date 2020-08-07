@@ -34,122 +34,123 @@ static ini_data *data;
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
+void Mesh::InitUserMeshData(ParameterInput *pin, int res_flag)
 {
 
+    if (!res_flag) {     
+      string set_name = "problem";
+      //printf("BeforeSetDefault\n");
+      TwoPunctures_params_set_default();
+      //printf("AfterSetDefault\n");
+      TwoPunctures_params_set_Boolean((char *) "verbose",
+                                  pin->GetOrAddBoolean(set_name, "verbose", 0));
+      TwoPunctures_params_set_Real((char *) "par_b",
+                                   pin->GetOrAddReal(set_name, "par_b", 1.));
+      TwoPunctures_params_set_Real((char *) "par_m_plus",
+                                   pin->GetOrAddReal(set_name, "par_m_plus", 1.));
+      TwoPunctures_params_set_Real((char *) "par_m_minus",
+                                   pin->GetOrAddReal(set_name, "par_m_minus", 1.));
 
-    string set_name = "problem";
-    //printf("BeforeSetDefault\n");
-    TwoPunctures_params_set_default();
-    //printf("AfterSetDefault\n");
-    TwoPunctures_params_set_Boolean((char *) "verbose",
-                                pin->GetOrAddBoolean(set_name, "verbose", 0));
-    TwoPunctures_params_set_Real((char *) "par_b",
-                                 pin->GetOrAddReal(set_name, "par_b", 1.));
-    TwoPunctures_params_set_Real((char *) "par_m_plus",
-                                 pin->GetOrAddReal(set_name, "par_m_plus", 1.));
-    TwoPunctures_params_set_Real((char *) "par_m_minus",
-                                 pin->GetOrAddReal(set_name, "par_m_minus", 1.));
+      TwoPunctures_params_set_Real((char *) "target_M_plus",
+                                   pin->GetOrAddReal(set_name, "target_M_plus", 1.));
 
-    TwoPunctures_params_set_Real((char *) "target_M_plus",
-                                 pin->GetOrAddReal(set_name, "target_M_plus", 1.));
+      TwoPunctures_params_set_Real((char *) "target_M_minus",
+                                   pin->GetOrAddReal(set_name, "target_M_minus", 1.));
 
-    TwoPunctures_params_set_Real((char *) "target_M_minus",
-                                 pin->GetOrAddReal(set_name, "target_M_minus", 1.));
-
-    TwoPunctures_params_set_Real((char *) "par_P_plus1",
-                                 pin->GetOrAddReal(set_name, "par_P_plus1", 0.));
-    TwoPunctures_params_set_Real((char *) "par_P_plus2",
-                                 pin->GetOrAddReal(set_name, "par_P_plus2", 0.5));
-    TwoPunctures_params_set_Real((char *) "par_P_plus3",
-                                 pin->GetOrAddReal(set_name, "par_P_plus3", 0.));
-
-
-    TwoPunctures_params_set_Real((char *) "par_P_minus1",
-                                 pin->GetOrAddReal(set_name, "par_P_minus1", 0.));
-    TwoPunctures_params_set_Real((char *) "par_P_minus2",
-                                 pin->GetOrAddReal(set_name, "par_P_minus2", 0.5));
-    TwoPunctures_params_set_Real((char *) "par_P_minus3",
-                                 pin->GetOrAddReal(set_name, "par_P_minus3", 0.));
+      TwoPunctures_params_set_Real((char *) "par_P_plus1",
+                                   pin->GetOrAddReal(set_name, "par_P_plus1", 0.));
+      TwoPunctures_params_set_Real((char *) "par_P_plus2",
+                                   pin->GetOrAddReal(set_name, "par_P_plus2", 0.5));
+      TwoPunctures_params_set_Real((char *) "par_P_plus3",
+                                   pin->GetOrAddReal(set_name, "par_P_plus3", 0.));
 
 
-    TwoPunctures_params_set_Real((char *) "par_S_plus1",
-                                 pin->GetOrAddReal(set_name, "par_S_plus1", 0.));
-    TwoPunctures_params_set_Real((char *) "par_S_plus2",
-                                 pin->GetOrAddReal(set_name, "par_S_plus2", 0.));
-    TwoPunctures_params_set_Real((char *) "par_S_plus3",
-                                 pin->GetOrAddReal(set_name, "par_S_plus3", 0.));
+      TwoPunctures_params_set_Real((char *) "par_P_minus1",
+                                   pin->GetOrAddReal(set_name, "par_P_minus1", 0.));
+      TwoPunctures_params_set_Real((char *) "par_P_minus2",
+                                   pin->GetOrAddReal(set_name, "par_P_minus2", 0.5));
+      TwoPunctures_params_set_Real((char *) "par_P_minus3",
+                                   pin->GetOrAddReal(set_name, "par_P_minus3", 0.));
 
 
-    TwoPunctures_params_set_Real((char *) "par_S_minus1",
-                                 pin->GetOrAddReal(set_name, "par_S_minus1", 0.));
-    TwoPunctures_params_set_Real((char *) "par_S_minus2",
-                                 pin->GetOrAddReal(set_name, "par_S_minus2", 0.));
-    TwoPunctures_params_set_Real((char *) "par_S_minus3",
-                                 pin->GetOrAddReal(set_name, "par_S_minus3", 0.));
-    TwoPunctures_params_set_Real((char *) "center_offset1",
-                                 pin->GetOrAddReal(set_name, "center_offset1", 0.));
-
-    TwoPunctures_params_set_Real((char *) "center_offset2",
-                                 pin->GetOrAddReal(set_name, "center_offset2", 0.));
-    TwoPunctures_params_set_Real((char *) "center_offset3",
-                                 pin->GetOrAddReal(set_name, "center_offset3", 0.));
-
-    TwoPunctures_params_set_Boolean((char *) "give_bare_mass",
-                                 pin->GetOrAddBoolean(set_name, "give_bare_mass", 1));
-
-    TwoPunctures_params_set_Int((char *) "npoints_A",
-                                 pin->GetOrAddInteger(set_name, "npoints_A", 30));
-    TwoPunctures_params_set_Int((char *) "npoints_B",
-                                 pin->GetOrAddInteger(set_name, "npoints_B", 30));
-    TwoPunctures_params_set_Int((char *) "npoints_phi",
-                                 pin->GetOrAddInteger(set_name, "npoints_phi", 16));
+      TwoPunctures_params_set_Real((char *) "par_S_plus1",
+                                   pin->GetOrAddReal(set_name, "par_S_plus1", 0.));
+      TwoPunctures_params_set_Real((char *) "par_S_plus2",
+                                   pin->GetOrAddReal(set_name, "par_S_plus2", 0.));
+      TwoPunctures_params_set_Real((char *) "par_S_plus3",
+                                   pin->GetOrAddReal(set_name, "par_S_plus3", 0.));
 
 
-    TwoPunctures_params_set_Real((char *) "Newton_tol",
-                                 pin->GetOrAddReal(set_name, "Newton_tol", 1.e-10));
+      TwoPunctures_params_set_Real((char *) "par_S_minus1",
+                                   pin->GetOrAddReal(set_name, "par_S_minus1", 0.));
+      TwoPunctures_params_set_Real((char *) "par_S_minus2",
+                                   pin->GetOrAddReal(set_name, "par_S_minus2", 0.));
+      TwoPunctures_params_set_Real((char *) "par_S_minus3",
+                                   pin->GetOrAddReal(set_name, "par_S_minus3", 0.));
+      TwoPunctures_params_set_Real((char *) "center_offset1",
+                                   pin->GetOrAddReal(set_name, "center_offset1", 0.));
 
-    TwoPunctures_params_set_Int((char *) "Newton_maxit",
-                                 pin->GetOrAddInteger(set_name, "Newton_maxit", 5));
+      TwoPunctures_params_set_Real((char *) "center_offset2",
+                                   pin->GetOrAddReal(set_name, "center_offset2", 0.));
+      TwoPunctures_params_set_Real((char *) "center_offset3",
+                                   pin->GetOrAddReal(set_name, "center_offset3", 0.));
+
+      TwoPunctures_params_set_Boolean((char *) "give_bare_mass",
+                                   pin->GetOrAddBoolean(set_name, "give_bare_mass", 1));
+
+      TwoPunctures_params_set_Int((char *) "npoints_A",
+                                   pin->GetOrAddInteger(set_name, "npoints_A", 30));
+      TwoPunctures_params_set_Int((char *) "npoints_B",
+                                   pin->GetOrAddInteger(set_name, "npoints_B", 30));
+      TwoPunctures_params_set_Int((char *) "npoints_phi",
+                                   pin->GetOrAddInteger(set_name, "npoints_phi", 16));
 
 
-    TwoPunctures_params_set_Real((char *) "TP_epsilon",
-                                 pin->GetOrAddReal(set_name, "TP_epsilon", 0.));
+      TwoPunctures_params_set_Real((char *) "Newton_tol",
+                                   pin->GetOrAddReal(set_name, "Newton_tol", 1.e-10));
 
-    TwoPunctures_params_set_Real((char *) "TP_Tiny",
-                                 pin->GetOrAddReal(set_name, "TP_Tiny", 0.));
-    TwoPunctures_params_set_Real((char *) "TP_Extend_Radius",
-                                 pin->GetOrAddReal(set_name, "TP_Extend_Radius", 0.));
+      TwoPunctures_params_set_Int((char *) "Newton_maxit",
+                                   pin->GetOrAddInteger(set_name, "Newton_maxit", 5));
 
 
-    TwoPunctures_params_set_Real((char *) "adm_tol",
-                                 pin->GetOrAddReal(set_name, "adm_tol", 1.e-10));
+      TwoPunctures_params_set_Real((char *) "TP_epsilon",
+                                   pin->GetOrAddReal(set_name, "TP_epsilon", 0.));
+
+      TwoPunctures_params_set_Real((char *) "TP_Tiny",
+                                   pin->GetOrAddReal(set_name, "TP_Tiny", 0.));
+      TwoPunctures_params_set_Real((char *) "TP_Extend_Radius",
+                                   pin->GetOrAddReal(set_name, "TP_Extend_Radius", 0.));
 
 
-    TwoPunctures_params_set_Boolean((char *) "do_residuum_debug_output",
-                                 pin->GetOrAddBoolean(set_name, "do_residuum_debug_output", 0));
+      TwoPunctures_params_set_Real((char *) "adm_tol",
+                                   pin->GetOrAddReal(set_name, "adm_tol", 1.e-10));
 
-    TwoPunctures_params_set_Boolean((char *) "solve_momentum_constraint",
-                                 pin->GetOrAddBoolean(set_name, "solve_momentum_constraint", 0));
 
-    TwoPunctures_params_set_Real((char *) "initial_lapse_psi_exponent",
-                                 pin->GetOrAddReal(set_name, "initial_lapse_psi_exponent", -2.0));
+      TwoPunctures_params_set_Boolean((char *) "do_residuum_debug_output",
+                                   pin->GetOrAddBoolean(set_name, "do_residuum_debug_output", 0));
 
-    TwoPunctures_params_set_Boolean((char *) "swap_xz",
-                                 pin->GetOrAddBoolean(set_name, "swap_xz", 0));
-    //printf("AfterParSetting\n");
-    data = TwoPunctures_make_initial_data();
-    //printf("AfterMakeInitData\n");
+      TwoPunctures_params_set_Boolean((char *) "solve_momentum_constraint",
+                                   pin->GetOrAddBoolean(set_name, "solve_momentum_constraint", 0));
 
+      TwoPunctures_params_set_Real((char *) "initial_lapse_psi_exponent",
+                                   pin->GetOrAddReal(set_name, "initial_lapse_psi_exponent", -2.0));
+
+      TwoPunctures_params_set_Boolean((char *) "swap_xz",
+                                   pin->GetOrAddBoolean(set_name, "swap_xz", 0));
+      //printf("AfterParSetting\n");
+      data = TwoPunctures_make_initial_data();
+      //printf("AfterMakeInitData\n");
+    }
     if(adaptive==true)
       EnrollUserRefinementCondition(RefinementCondition);
 
     return;
 }
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
+void Mesh::UserWorkAfterLoop(ParameterInput *pin, int res_flag)
 {
-  TwoPunctures_finalise(data);
+  if (!res_flag)
+    TwoPunctures_finalise(data);
   return;
 }
 
