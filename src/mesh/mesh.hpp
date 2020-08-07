@@ -400,7 +400,8 @@ class Mesh {
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   //TRACKER HACK CODE
-  void UserWorkAfterLoop(ParameterInput *pin, int res_flag=0);   // called in main loop
+  //void UserWorkAfterLoop(ParameterInput *pin);   // called in main loop
+  void UserWorkAfterLoop(ParameterInput *pin, int res_flag=0);
   void UserWorkInLoop(); // called in main after each cycle
  private:
   // data
@@ -485,6 +486,7 @@ class Mesh {
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   // TRACKER HACK CODE
+  //void InitUserMeshData(ParameterInput *pin)
   void InitUserMeshData(ParameterInput *pin, int res_flag=0);
 
   // often used (not defined) in prob file in ../pgen/
