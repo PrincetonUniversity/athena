@@ -652,8 +652,8 @@ pmesh->pwave_extr[n]->Write(pmesh->ncycle, pmesh->time);
     return(0);
   }
 #endif // ENABLE_EXCEPTIONS
-
-  pmesh->UserWorkAfterLoop(pinput);
+  // TRACKER HACK CODE
+  pmesh->UserWorkAfterLoop(pinput, res_flag);
 
   //--- Step 10. -------------------------------------------------------------------------
   // Print diagnostic messages related to the end of the simulation

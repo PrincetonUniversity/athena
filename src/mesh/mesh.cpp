@@ -755,7 +755,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 #endif
   }
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
-  InitUserMeshData(pin);
+  InitUserMeshData(pin, 1);
 
   // read user Mesh data
   IOWrapperSizeT udsize = 0;
@@ -763,6 +763,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     udsize += iuser_mesh_data[n].GetSizeInBytes();
   for (int n=0; n<nreal_user_mesh_data_; n++)
     udsize += ruser_mesh_data[n].GetSizeInBytes();
+#ifdef Z4C_TRACKER
+  for (int i_punc = 0; i_punc < NPUNCT-1; ++i_punc)
+    udsize += 6*sizeof(Real);
+#endif
   if (udsize != 0) {
     char *userdata = new char[udsize];
     if (Globals::my_rank == 0) { // only the master process reads the ID list
@@ -788,6 +792,16 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
                   ruser_mesh_data[n].GetSizeInBytes());
       udoffset += ruser_mesh_data[n].GetSizeInBytes();
     }
+#ifdef Z4C_TRACKER
+    for (int i_punc = 0; i_punc < NPUNCT-1; ++i_punc) {
+      std::memcpy(pz4c_tracker->pos_body[i_punc].pos, &(userdata[udoffset]),
+                  3*sizeof(Real));
+      udoffset += 3*sizeof(Real);
+      std::memcpy(pz4c_tracker->pos_body[i_punc].betap, &(userdata[udoffset]),
+                  3*sizeof(Real));
+      udoffset += 3*sizeof(Real);
+    }
+#endif
     delete [] userdata;
   }
 

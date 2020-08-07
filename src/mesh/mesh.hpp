@@ -399,7 +399,8 @@ class Mesh {
   int ReserveTagPhysIDs(int num_phys);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
-  void UserWorkAfterLoop(ParameterInput *pin);   // called in main loop
+  //TRACKER HACK CODE
+  void UserWorkAfterLoop(ParameterInput *pin, int res_flag=0);   // called in main loop
   void UserWorkInLoop(); // called in main after each cycle
  private:
   // data
@@ -483,7 +484,8 @@ class Mesh {
   void FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
-  void InitUserMeshData(ParameterInput *pin);
+  // TRACKER HACK CODE
+  void InitUserMeshData(ParameterInput *pin, int res_flag=0);
 
   // often used (not defined) in prob file in ../pgen/
   void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);
