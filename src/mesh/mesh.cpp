@@ -321,8 +321,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 //WGC wext
 if (Z4C_ENABLED){
 #ifdef Z4C_WEXT
+// 0 is restart flag for no restart
    for(int n = 0;n<NRAD;++n){
-     pwave_extr[n] = new WaveExtract(this, pin,n);
+     pwave_extr[n] = new WaveExtract(this, pin,n,0);
    }
 #endif
 // WGC end
@@ -741,9 +742,10 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   }
 //WGC wext
   if (Z4C_ENABLED){
-#ifdef Z4C_WEXT   
+#ifdef Z4C_WEXT  
+// 1 is restart flag for restart
     for(int n = 0;n<NRAD;++n){ 
-      pwave_extr[n] = new WaveExtract(this, pin, n);
+      pwave_extr[n] = new WaveExtract(this, pin, n,1);
     }
 //end multi
 #endif
