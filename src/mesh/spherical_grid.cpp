@@ -79,7 +79,7 @@ SphericalPatch::SphericalPatch(SphericalGrid const * psphere, MeshBlock const * 
       size[2] = pmb->block_size.nx3 + 2*(NGHOST) + 1;
       break;
   }
-  printf("xmin = %.16f,xmax = %.16f,ymin = %.16f,ymax = %.16f,zmin = %.16f,zmax = %.16f\n",xmin,xmax,ymin,ymax,zmin,zmax);
+  //printf("xmin = %.16f,xmax = %.16f,ymin = %.16f,ymax = %.16f,zmin = %.16f,zmax = %.16f\n",xmin,xmax,ymin,ymax,zmin,zmax);
   delta[0] = pmc->dx1v(0);
   delta[1] = pmc->dx2v(0);
   delta[2] = pmc->dx3v(0);

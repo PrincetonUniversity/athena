@@ -40,7 +40,7 @@ WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n):
   ofname += ".txt";
  int np = psphere->NumVertices();
 //  Real theta, phi, x, y, z;
-  printf("np = %d\n",np);
+  //printf("np = %d\n",np);
 //  for(int ip=0;ip<np;++ip){
 //    psphere->SphericalGrid::PositionPolar(ip,&theta,&phi);
 //    psphere->SphericalGrid::Position(ip,&x,&y,&z);
