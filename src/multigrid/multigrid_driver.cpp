@@ -35,11 +35,14 @@
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) :
     nvar_(invar),
-    mode_(0), // 0: V(1,1) FMG one sweep, 1: FMG + iterative, 2: V(1,1) iterative
+    mode_(0), // 0: FMG V(1,1) + iterative, 1: V(1,1) iterative
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
-    fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0),
+    fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0), niter_(-1),
     cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3) {
+
+  std::cout << std::scientific << std::setprecision(15);
+
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MultigridDriver::MultigridDriver" << std::endl
@@ -186,15 +189,13 @@ void MultigridDriver::SetupMultigrid() {
 
   if (fsubtract_average_)
     SubtractAverage(MGVariable::src);
-  if (mode_ <= 1) { // FMG
+  if (mode_ == 0) { // FMG
     for (Multigrid* pmg : vmg_)
       pmg->RestrictFMGSource();
     TransferFromBlocksToRoot(true);
     RestrictFMGSourceOctets();
     mgroot_->RestrictFMGSource();
     current_level_ = 0;
-  } else {
-    current_level_ = ntotallevel_-1;
   }
 
   return;
@@ -459,28 +460,55 @@ void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth) {
 //  \brief Solve the FMG Cycle using the V(1,1) or F(0,1) cycle
 
 void MultigridDriver::SolveFMGCycle() {
-  if (nreflevel_ > 0)
-    ffas_ = true; // Use FAS for FMG with refinement
   for (fmglevel_=0; fmglevel_<ntotallevel_; fmglevel_++) {
-    if (fmglevel_ <= nrootlevel_ + nreflevel_)
-      SolveVCycle(1, 1);
-    else
-      SolveVCycle(1, 1);
+    SolveVCycle(1, 1);
     if (fmglevel_ != ntotallevel_-1)
       FMGProlongate();
   }
-  Real def = 0.0;
+  fmglevel_ = ntotallevel_ - 1;
+  if (fsubtract_average_)
+    SubtractAverage(MGVariable::u);
+  if (eps_ >= 0.0)
+    SolveIterative();
+  else
+    SolveIterativeFixedTimes();
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::SolveIterative()
+//  \brief Solve iteratively until the convergence is achieved
+
+void MultigridDriver::SolveIterative() {
+  int n = 0;
+  Real def;
   for (int v=0; v<nvar_; ++v)
     def += CalculateDefectNorm(MGNormType::l2, v);
-  std::cout << std::scientific << std::setprecision(15);
-//  std::cout << "after FMG def = " << def << " fas " << ffas_ << " fsub "
-//            << fsubtract_average_ << std::endl;
-  if (mode_ == 1) {
-    fmglevel_ = ntotallevel_ - 1;
-    Real def = 0.0;
+  while (def > eps_) {
+    SolveVCycle(1, 1);
+    Real olddef = def;
+    def = 0.0;
     for (int v=0; v<nvar_; ++v)
       def += CalculateDefectNorm(MGNormType::l2, v);
-    SolveIterative(def);
+    std::cout << "niter " << n << " def " << def << std::endl;
+    if (def/olddef > 0.8) {
+      if (eps_ == 0.0) break;
+      if (Globals::my_rank == 0)
+        std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
+                  << "Slow multigrid convergence : defect norm = " << def
+                  << ", convergence factor = " << def/olddef << "." << std::endl;
+    }
+    if (n > 100) {
+      if (Globals::my_rank == 0) {
+        std::cout
+            << "### Warning in MultigridDriver::SolveIterative" << std::endl
+            << "Aborting because the # iterations is too large, n > 100." << std::endl
+            << "Check the solution as it may not be accurate enough." << std::endl;
+      }
+      break;
+    }
+    n++;
   }
   if (fsubtract_average_)
     SubtractAverage(MGVariable::u);
@@ -489,41 +517,12 @@ void MultigridDriver::SolveFMGCycle() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SolveIterative(Real inidef)
-//  \brief Solve iteratively until the convergence is achieved
+//! \fn void MultigridDriver::SolveIterativeFixedTimes()
+//  \brief Solve iteratively niter_ times
 
-void MultigridDriver::SolveIterative(Real inidef) {
-  int niter = 0;
-  Real def = inidef;
-  if (def != 0.0)
-    def += inidef * 1e-10;
-  else
-    def += TINY_NUMBER;
-  std::cout << std::scientific << std::setprecision(15);
-  while (def > eps_) {
+void MultigridDriver::SolveIterativeFixedTimes() {
+  for (int n = 0; n < niter_; ++n) {
     SolveVCycle(1, 1);
-    Real olddef = def;
-    def = 0.0;
-    for (int v=0; v<nvar_; ++v)
-      def += CalculateDefectNorm(MGNormType::l2, v);
-    std::cout << "niter " << niter << " def " << def << std::endl;
-    if (niter > 0 && def/olddef > 0.9) {
-      if (eps_ == 0.0) break;
-      if (Globals::my_rank == 0)
-        std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
-                  << "Slow multigrid convergence : defect norm = " << def
-                  << ", convergence factor = " << def/olddef << "." << std::endl;
-    }
-    if (niter > 100) {
-      if (Globals::my_rank == 0) {
-        std::cout
-            << "### Warning in MultigridDriver::SolveIterative" << std::endl
-            << "Aborting because the # iterations is too large, niter > 100." << std::endl
-            << "Check the solution as it may not be accurate enough." << std::endl;
-      }
-      break;
-    }
-    niter++;
   }
   if (fsubtract_average_)
     SubtractAverage(MGVariable::u);

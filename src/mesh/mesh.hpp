@@ -72,11 +72,10 @@ class MeshBlock {
 
  public:
   MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_size,
-            BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, int igflag,
+            BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin,
             bool ref_flag = false);
   MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin, LogicalLocation iloc,
-            RegionSize input_block, BoundaryFlag *input_bcs, double icost,
-            char *mbdata, int igflag);
+            RegionSize input_block, BoundaryFlag *input_bcs, double icost, char *mbdata);
   ~MeshBlock();
 
   // data
@@ -91,7 +90,6 @@ class MeshBlock {
   int is, ie, js, je, ks, ke;
   int gid, lid;
   int cis, cie, cjs, cje, cks, cke, cnghost;
-  int gflag;
   // At every cycle n, hydro and field registers (u, b) are advanced from t^n -> t^{n+1},
   // the time-integration scheme may partially substep several storage register pairs
   // (u,b), (u1,b1), (u2, b2), ..., (um, bm) through the dt interval. Track their time
@@ -231,7 +229,6 @@ class Mesh {
   int nbtotal, nblocal, nbnew, nbdel;
 
   int step_since_lb;
-  int gflag;
   int turb_flag; // turbulence flag
   bool amr_updated;
   EosTable *peos_table;

@@ -47,9 +47,7 @@
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real four_pi_G = pin->GetReal("problem","four_pi_G");
-  Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
   SetFourPiG(four_pi_G);
-  SetGravityThreshold(eps);
   SetMeanDensity(0.0);
 }
 

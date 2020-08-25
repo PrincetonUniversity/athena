@@ -156,7 +156,8 @@ class MultigridDriver {
   void OneStepToCoarser(int nsmooth);
   void SolveVCycle(int npresmooth, int npostsmooth);
   void SolveFMGCycle();
-  void SolveIterative(Real inidef);
+  void SolveIterative();
+  void SolveIterativeFixedTimes();
 
   virtual void SolveCoarsestGrid();
   Real CalculateDefectNorm(MGNormType nrm, int n);
@@ -211,6 +212,7 @@ class MultigridDriver {
   bool fsubtract_average_, ffas_;
   Real last_ave_;
   Real eps_;
+  int niter_;
   int os_, oe_;
 
   // for mesh refinement

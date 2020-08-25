@@ -51,6 +51,11 @@ nx3        = 64
 gamma           = 1.666666666667 # gamma = C_p/C_v
 iso_sound_speed = 0.4082482905   # equavalent to sqrt(gamma*p/d) for p=0.1, d=1
 
+<gravity>
+mgmode          = FMG
+threshold       = 0.0
+outputdefect    = true
+
 <problem>
 iprob           = 1 # problem choice
 four_pi_G       = 12.5663706144

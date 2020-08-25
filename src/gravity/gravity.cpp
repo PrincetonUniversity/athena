@@ -33,6 +33,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
     four_pi_G(pmb->pmy_mesh->four_pi_G_),
     grav_mean_rho(pmb->pmy_mesh->grav_mean_rho_),
+    output_defect(false),
     gbvar(pmb, &phi, nullptr, empty_flux) {
   if (four_pi_G == 0.0) {
     std::stringstream msg;
@@ -50,6 +51,12 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
         << "using the SetMeanDensity function." << std::endl;
     ATHENA_ERROR(msg);
     return;
+  }
+
+  if (SELF_GRAVITY_ENABLED == 2) {
+    output_defect = pin->GetOrAddBoolean("gravity", "output_defect", false);
+    if (output_defect)
+      def.NewAthenaArray(pmb->ncells3, pmb->ncells2, pmb->ncells1);
   }
 
   // using Gravity as an example of: containing full object members instead of pointer

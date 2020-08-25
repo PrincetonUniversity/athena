@@ -40,20 +40,36 @@ class MeshBlock;
 MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
     : MultigridDriver(pm, pm->MGGravityBoundaryFunction_, 1) {
   four_pi_G_ = pmy_mesh_->four_pi_G_;
-  eps_ = pmy_mesh_->grav_eps_;
+  eps_ = pin->GetOrAddReal("gravity", "threshold", -1.0);
+  niter_ = pin->GetOrAddInteger("gravity", "niteration", -1);
+  std::string m = pin->GetOrAddString("gravity", "mgmode", "none");
+  std::transform(m.begin(), m.end(), m.begin(), ::tolower);
+  if (m == "fmg") {
+    mode_ = 0;
+  } else if (m == "mgi") {
+    mode_ = 1; // Iterative
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
+        << "The \"mgmode\" parameter in the <gravity> block is invalid." << std::endl
+        << "FMG: Full Multigrid + Multigrid iteration (default)" << std::endl
+        << "MGI: Multigrid Iteration" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  if (eps_<0.0 && niter_ < 0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
+        << "Either \"threshold\" or \"niteration\" parameter must be set "
+        << "in the <gravity> block." << std::endl
+        << "When both parameters are specified, \"niteration\" is ignored." << std::endl
+        << "Set \"threshold = 0.0\" for automatic convergence control." << std::endl;
+    ATHENA_ERROR(msg);
+  }
   if (four_pi_G_==0.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitationalConstant or SetFourPiG function." << std::endl;
-    ATHENA_ERROR(msg);
-  }
-  if (mode_>=2 && eps_<0.0) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
-        << "Convergence threshold must be set in the Mesh::InitUserMeshData "
-        << "using the SetGravitatyThreshold for the iterative mode." << std::endl
-        << "Set the threshold = 0.0 for automatic convergence control." << std::endl;
     ATHENA_ERROR(msg);
   }
 
@@ -109,7 +125,7 @@ void MGGravityDriver::Solve(int stage) {
   for (Multigrid* pmg : vmg_) {
     // assume all the data are located on the same node
     pmg->LoadSource(pmg->pmy_block_->phydro->u, IDN, NGHOST, four_pi_G_);
-    if (mode_ >= 2) // iterative mode - load initial guess
+    if (mode_ ==1) // iterative mode - load initial guess
       pmg->LoadFinestData(pmg->pmy_block_->pgrav->phi, 0, NGHOST);
   }
 
@@ -118,16 +134,22 @@ void MGGravityDriver::Solve(int stage) {
   if (fsubtract_average_)
     mean_rho = last_ave_/four_pi_G_;
 
-  if (mode_ <= 1)
+  if (mode_ == 0) {
     SolveFMGCycle();
-  else
-    SolveIterative(eps_);
+  } else {
+    if (eps_ >= 0.0)
+      SolveIterative();
+    else
+      SolveIterativeFixedTimes();
+  }
 
   // Return the result
   for (Multigrid* pmg : vmg_) {
     Gravity *pgrav = pmg->pmy_block_->pgrav;
     pmg->RetrieveResult(pgrav->phi, 0, NGHOST);
     pgrav->grav_mean_rho = mean_rho;
+    if(pgrav->output_defect)
+      pmg->RetrieveDefect(pgrav->def, 0, NGHOST);
   }
   return;
 }

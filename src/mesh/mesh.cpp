@@ -95,7 +95,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     sts_loc(TaskType::main_int),
     muj(), nuj(), muj_tilde(), gammaj_tilde(),
     nbnew(), nbdel(),
-    step_since_lb(), gflag(), turb_flag(), amr_updated(multilevel),
+    step_since_lb(), turb_flag(), amr_updated(multilevel),
     // private members:
     next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
     gids_(), gide_(),
@@ -492,14 +492,11 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 
 
   if (SELF_GRAVITY_ENABLED == 1) {
-    gflag = 1; // set gravity flag
     pfgrd = new FFTGravityDriver(this, pin);
   } else if (SELF_GRAVITY_ENABLED == 2) {
     // MGDriver must be initialzied before MeshBlocks
     pmgrd = new MGGravityDriver(this, pin);
   }
-  //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
-  //    gflag = 2;
 
   // create MeshBlock list for this process
   gids_ = nslist[Globals::my_rank];
@@ -510,7 +507,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
   for (int i=gids_; i<=gide_; i++) {
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     my_blocks(i-gids_) = new MeshBlock(i, i-gids_, loclist[i], block_size, block_bcs,
-                                       this, pin, gflag);
+                                       this, pin);
     my_blocks(i-gids_)->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
 
@@ -560,7 +557,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     sts_loc(TaskType::main_int),
     muj(), nuj(), muj_tilde(), gammaj_tilde(),
     nbnew(), nbdel(),
-    step_since_lb(), gflag(), turb_flag(), amr_updated(multilevel),
+    step_since_lb(), turb_flag(), amr_updated(multilevel),
     // private members:
     next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
     gids_(), gide_(),
@@ -813,14 +810,11 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   }
 
   if (SELF_GRAVITY_ENABLED == 1) {
-    gflag = 1; // set gravity flag
     pfgrd = new FFTGravityDriver(this, pin);
   } else if (SELF_GRAVITY_ENABLED == 2) {
     // MGDriver must be initialzied before MeshBlocks
     pmgrd = new MGGravityDriver(this, pin);
   }
-  //  if (SELF_GRAVITY_ENABLED == 2 && ...) // independent allocation
-  //    gflag=2;
 
   // allocate data buffer
   nblocal = nblist[Globals::my_rank];
@@ -841,7 +835,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     std::uint64_t buff_os = datasize * (i-gids_);
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     my_blocks(i-gids_) = new MeshBlock(i, i-gids_, this, pin, loclist[i], block_size,
-                                       block_bcs, costlist[i], mbdata+buff_os, gflag);
+                                       block_bcs, costlist[i], mbdata+buff_os);
     my_blocks(i-gids_)->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   delete [] mbdata;
