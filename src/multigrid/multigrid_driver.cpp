@@ -33,13 +33,13 @@
 
 // constructor, initializes data structures and parameters
 
-MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar) :
+MultigridDriver::MultigridDriver(Mesh *pm, int invar) :
     nvar_(invar),
     mode_(0), // 0: FMG V(1,1) + iterative, 1: V(1,1) iterative
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
-    nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), pmy_mesh_(pm),
-    fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0), niter_(-1),
-    cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3) {
+    nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(nullptr),
+    pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0),
+    niter_(-1), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3) {
 
   std::cout << std::scientific << std::setprecision(15);
 
@@ -59,23 +59,6 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar
     ATHENA_ERROR(msg);
     return;
   }
-
-  for (int i=0; i<6; i++)
-    MGBoundaryFunction_[i]=MGBoundary[i];
-
-  if ( (MGBoundaryFunction_[BoundaryFace::inner_x1] == MGPeriodicInnerX1
-        ||  MGBoundaryFunction_[BoundaryFace::inner_x1] == MGZeroGradientInnerX1)
-       && (MGBoundaryFunction_[BoundaryFace::outer_x1] == MGPeriodicOuterX1
-           ||  MGBoundaryFunction_[BoundaryFace::outer_x1] == MGZeroGradientOuterX1)
-       && (MGBoundaryFunction_[BoundaryFace::inner_x2] == MGPeriodicInnerX2
-           ||  MGBoundaryFunction_[BoundaryFace::inner_x2] == MGZeroGradientInnerX2)
-       && (MGBoundaryFunction_[BoundaryFace::outer_x2] == MGPeriodicOuterX2
-           ||  MGBoundaryFunction_[BoundaryFace::outer_x2] == MGZeroGradientOuterX2)
-       && (MGBoundaryFunction_[BoundaryFace::inner_x3] == MGPeriodicInnerX3
-           ||  MGBoundaryFunction_[BoundaryFace::inner_x3] == MGZeroGradientInnerX3)
-       && (MGBoundaryFunction_[BoundaryFace::outer_x3] == MGPeriodicOuterX3
-           ||  MGBoundaryFunction_[BoundaryFace::outer_x3] == MGZeroGradientOuterX3))
-    fsubtract_average_ = true;
 
   // Setting up the MPI information
   // *** this part should be modified when dedicate processes are allocated ***
@@ -140,6 +123,26 @@ MultigridDriver::~MultigridDriver() {
   MPI_Comm_free(&MPI_COMM_MULTIGRID);
 #endif
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::EnrollUserMGBoundaryFunction(BoundaryFace dir
+//                                                         MGBoundaryFunc my_bc)
+//  \brief Enroll a user-defined Multigrid boundary function
+
+void MultigridDriver::EnrollUserMGBoundaryFunction(BoundaryFace dir,
+                                                   MGBoundaryFunc my_bc) {
+  std::stringstream msg;
+  if (dir < 0 || dir > 5) {
+    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  MGBoundaryFunction_[static_cast<int>(dir)] = my_bc;
+  return;
+}
+
+
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SetupMultigrid()

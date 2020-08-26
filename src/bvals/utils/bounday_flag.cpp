@@ -137,3 +137,37 @@ void CheckBoundaryFlag(BoundaryFlag block_flag, CoordinateDirection dir) {
   }
   return;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn MGBoundaryFlag  GetMGBoundaryFlag(std::string input_string)
+//  \brief Parses input string to return scoped enumerator flag specifying boundary
+//  condition for Multigrid.
+
+MGBoundaryFlag GetMGBoundaryFlag(const std::string& input_string) {
+  if (input_string == "user") {
+    return MGBoundaryFlag::user;
+  } else if (input_string == "periodic") {
+    return MGBoundaryFlag::periodic;
+  } else if (input_string == "zerograd") {
+    return MGBoundaryFlag::zerograd;
+  } else if (input_string == "zerofixed") {
+    return MGBoundaryFlag::zerofixed;
+  } else if (input_string == "multipole4") {
+    return MGBoundaryFlag::multipole4;
+  } else if (input_string == "multipole16") {
+    return MGBoundaryFlag::multipole16;
+  } else if (input_string == "none") {
+    return MGBoundaryFlag::undef;
+  } else if (input_string == "block") {
+    return MGBoundaryFlag::block;
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in GetBoundaryFlag" << std::endl
+        << "Input string=" << input_string << "\n"
+        << "is an invalid boundary type" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+}
+
+

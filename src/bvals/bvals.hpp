@@ -39,6 +39,7 @@ BoundaryFlag GetBoundaryFlag(const std::string& input_string);
 std::string GetBoundaryString(BoundaryFlag input_flag);
 // + confirming that the MeshBlock's boundaries are all valid selections
 void CheckBoundaryFlag(BoundaryFlag block_flag, CoordinateDirection dir);
+MGBoundaryFlag GetMGBoundaryFlag(const std::string& input_string);
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBase

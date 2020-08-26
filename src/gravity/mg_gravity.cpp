@@ -38,7 +38,7 @@ class MeshBlock;
 //  \brief MGGravityDriver constructor
 
 MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
-    : MultigridDriver(pm, pm->MGGravityBoundaryFunction_, 1) {
+    : MultigridDriver(pm, 1) {
   four_pi_G_ = pmy_mesh_->four_pi_G_;
   eps_ = pin->GetOrAddReal("gravity", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("gravity", "niteration", -1);
@@ -73,8 +73,193 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
     ATHENA_ERROR(msg);
   }
 
+  mg_bcs_[inner_x1]=GetMGBoundaryFlag(pin->GetOrAddString("gravity", "ix1_bc", "none"));
+  mg_bcs_[outer_x1]=GetMGBoundaryFlag(pin->GetOrAddString("gravity", "ox1_bc", "none"));
+  mg_bcs_[inner_x2]=GetMGBoundaryFlag(pin->GetOrAddString("gravity", "ix2_bc", "none"));
+  mg_bcs_[outer_x2]=GetMGBoundaryFlag(pin->GetOrAddString("gravity", "ox2_bc", "none"));
+  mg_bcs_[inner_x3]=GetMGBoundaryFlag(pin->GetOrAddString("gravity", "ix3_bc", "none"));
+  mg_bcs_[outer_x3]=GetMGBoundaryFlag(pin->GetOrAddString("gravity", "ox3_bc", "none"));
+  SetBoundaryFunctions();
+
   // Allocate the root multigrid
   mgroot_ = new MGGravity(this, nullptr);
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGGravityDriver::SetBoundaryFunctions()
+//  \brief Set Multigrid boundary functions from boundary flags.
+
+void MGGravityDriver::SetBoundaryFunctions() {
+  fsubtract_average_ = true;
+  switch(mg_bcs_[BoundaryFace::inner_x1]) {
+    case MGBoundaryFlag::user:
+      fsubtract_average_ = false;
+      break;
+    case MGBoundaryFlag::periodic:
+      MGBoundaryFunction_[BoundaryFace::inner_x1] = MGPeriodicInnerX1;
+      break;
+    case MGBoundaryFlag::zerograd:
+      MGBoundaryFunction_[BoundaryFace::inner_x1] = MGZeroGradientInnerX1;
+      break;
+    case MGBoundaryFlag::zerofixed:
+      MGBoundaryFunction_[BoundaryFace::inner_x1] = MGZeroFixedInnerX1;
+      break;
+    case MGBoundaryFlag::multipole4:
+      MGBoundaryFunction_[BoundaryFace::inner_x1] = MGMultipole4InnerX1;
+      fsubtract_average_ = false;
+      break;
+    case MGBoundaryFlag::multipole16:
+      MGBoundaryFunction_[BoundaryFace::inner_x1] = MGMultipole16InnerX1;
+      fsubtract_average_ = false;
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::SetBoundaryFunctions" << std::endl
+          << "Invalid or no boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  }
+  switch(mg_bcs_[BoundaryFace::outer_x1]) {
+    case MGBoundaryFlag::user:
+      fsubtract_average_ = false;
+      break;
+    case MGBoundaryFlag::periodic:
+      MGBoundaryFunction_[BoundaryFace::outer_x1] = MGPeriodicOuterX1;
+      break;
+    case MGBoundaryFlag::zerograd:
+      MGBoundaryFunction_[BoundaryFace::outer_x1] = MGZeroGradientOuterX1;
+      break;
+    case MGBoundaryFlag::zerofixed:
+      MGBoundaryFunction_[BoundaryFace::outer_x1] = MGZeroFixedOuterX1;
+      break;
+    case MGBoundaryFlag::multipole4:
+      MGBoundaryFunction_[BoundaryFace::outer_x1] = MGMultipole4OuterX1;
+      fsubtract_average_ = false;
+      break;
+    case MGBoundaryFlag::multipole16:
+      MGBoundaryFunction_[BoundaryFace::outer_x1] = MGMultipole16OuterX1;
+      fsubtract_average_ = false;
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::SetBoundaryFunctions" << std::endl
+          << "Invalid or no boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  }
+  switch(mg_bcs_[BoundaryFace::inner_x2]) {
+    case MGBoundaryFlag::user:
+      fsubtract_average_ = false;
+      break;
+    case MGBoundaryFlag::periodic:
+      MGBoundaryFunction_[BoundaryFace::inner_x2] = MGPeriodicInnerX2;
+      break;
+    case MGBoundaryFlag::zerograd:
+      MGBoundaryFunction_[BoundaryFace::inner_x2] = MGZeroGradientInnerX2;
+      break;
+    case MGBoundaryFlag::zerofixed:
+      MGBoundaryFunction_[BoundaryFace::inner_x2] = MGZeroFixedInnerX2;
+      break;
+    case MGBoundaryFlag::multipole4:
+      MGBoundaryFunction_[BoundaryFace::inner_x2] = MGMultipole4InnerX2;
+      fsubtract_average_ = false;
+      break;
+    case MGBoundaryFlag::multipole16:
+      MGBoundaryFunction_[BoundaryFace::inner_x2] = MGMultipole16InnerX2;
+      fsubtract_average_ = false;
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::SetBoundaryFunctions" << std::endl
+          << "Invalid or no boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  }
+  switch(mg_bcs_[BoundaryFace::outer_x2]) {
+    case MGBoundaryFlag::user:
+      fsubtract_average_ = false;
+      break;
+    case MGBoundaryFlag::periodic:
+      MGBoundaryFunction_[BoundaryFace::outer_x2] = MGPeriodicOuterX2;
+      break;
+    case MGBoundaryFlag::zerograd:
+      MGBoundaryFunction_[BoundaryFace::outer_x2] = MGZeroGradientOuterX2;
+      break;
+    case MGBoundaryFlag::zerofixed:
+      MGBoundaryFunction_[BoundaryFace::outer_x2] = MGZeroFixedOuterX2;
+      break;
+    case MGBoundaryFlag::multipole4:
+      MGBoundaryFunction_[BoundaryFace::outer_x2] = MGMultipole4OuterX2;
+      fsubtract_average_ = false;
+      break;
+    case MGBoundaryFlag::multipole16:
+      MGBoundaryFunction_[BoundaryFace::outer_x2] = MGMultipole16OuterX2;
+      fsubtract_average_ = false;
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::SetBoundaryFunctions" << std::endl
+          << "Invalid or no boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  }
+  switch(mg_bcs_[BoundaryFace::inner_x3]) {
+    case MGBoundaryFlag::user:
+      fsubtract_average_ = false;
+      break;
+    case MGBoundaryFlag::periodic:
+      MGBoundaryFunction_[BoundaryFace::inner_x3] = MGPeriodicInnerX3;
+      break;
+    case MGBoundaryFlag::zerograd:
+      MGBoundaryFunction_[BoundaryFace::inner_x3] = MGZeroGradientInnerX3;
+      break;
+    case MGBoundaryFlag::zerofixed:
+      MGBoundaryFunction_[BoundaryFace::inner_x3] = MGZeroFixedInnerX3;
+      break;
+    case MGBoundaryFlag::multipole4:
+      MGBoundaryFunction_[BoundaryFace::inner_x3] = MGMultipole4InnerX3;
+      fsubtract_average_ = false;
+      break;
+    case MGBoundaryFlag::multipole16:
+      MGBoundaryFunction_[BoundaryFace::inner_x3] = MGMultipole16InnerX3;
+      fsubtract_average_ = false;
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::SetBoundaryFunctions" << std::endl
+          << "Invalid or no boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  }
+  switch(mg_bcs_[BoundaryFace::outer_x3]) {
+    case MGBoundaryFlag::user:
+      fsubtract_average_ = false;
+      break;
+    case MGBoundaryFlag::periodic:
+      MGBoundaryFunction_[BoundaryFace::outer_x3] = MGPeriodicOuterX3;
+      break;
+    case MGBoundaryFlag::zerograd:
+      MGBoundaryFunction_[BoundaryFace::outer_x3] = MGZeroGradientOuterX3;
+      break;
+    case MGBoundaryFlag::zerofixed:
+      MGBoundaryFunction_[BoundaryFace::outer_x3] = MGZeroFixedOuterX3;
+      break;
+    case MGBoundaryFlag::multipole4:
+      MGBoundaryFunction_[BoundaryFace::outer_x3] = MGMultipole4OuterX3;
+      fsubtract_average_ = false;
+      break;
+    case MGBoundaryFlag::multipole16:
+      MGBoundaryFunction_[BoundaryFace::outer_x3] = MGMultipole16OuterX3;
+      fsubtract_average_ = false;
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::SetBoundaryFunctions" << std::endl
+          << "Invalid or no boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  }
 }
 
 

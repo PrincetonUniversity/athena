@@ -20,6 +20,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals_interfaces.hpp"
 #include "../bvals/cc/mg/bvals_mg.hpp"
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
@@ -145,7 +146,7 @@ class Multigrid {
 
 class MultigridDriver {
  public:
-  MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, int invar);
+  MultigridDriver(Mesh *pm, int invar);
   virtual ~MultigridDriver();
   void SubtractAverage(MGVariable type);
   void SetupMultigrid();
@@ -162,6 +163,9 @@ class MultigridDriver {
   virtual void SolveCoarsestGrid();
   Real CalculateDefectNorm(MGNormType nrm, int n);
   Multigrid* FindMultigrid(int tgid);
+
+  void EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
+  void EnrollUserSourceMaskFunction(BoundaryFace dir, MGSourceMaskFunc srcmask);
 
   // octet manipulation functions
   void RestrictFMGSourceOctets();
@@ -190,6 +194,7 @@ class MultigridDriver {
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }
 
   // pure virtual functions
+  virtual void SetBoundaryFunctions() = 0;
   virtual void Solve(int step) = 0;
   virtual void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) = 0;
 
@@ -205,7 +210,9 @@ class MultigridDriver {
   int current_level_, fmglevel_;
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *nvlisti_, *nvslisti_, *ranklist_;
   int nrbx1_, nrbx2_, nrbx3_;
+  MGBoundaryFlag mg_bcs_[6];
   MGBoundaryFunc MGBoundaryFunction_[6];
+  MGSourceMaskFunc srcmask_;
   Mesh *pmy_mesh_;
   std::vector<Multigrid*> vmg_;
   Multigrid *mgroot_;
@@ -301,5 +308,44 @@ void MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 void MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+
+void MGMultipole4InnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGMultipole4OuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGMultipole4InnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGMultipole4OuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGMultipole4InnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGMultipole4OuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+
+
+void MGMultipole16InnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh,
+                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGMultipole16OuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh,
+                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGMultipole16InnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh,
+                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGMultipole16OuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh,
+                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGMultipole16InnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh,
+                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+void MGMultipole16OuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh,
+                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
 
 #endif // MULTIGRID_MULTIGRID_HPP_

@@ -108,9 +108,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
                    UniformMeshGeneratorX3},
     BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
-    ConductionCoeff_{}, FieldDiffusivity_{},
-    MGGravityBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
-                               MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
+    ConductionCoeff_{}, FieldDiffusivity_{} {
   std::stringstream msg;
   RegionSize block_size;
   MeshBlock *pfirst{};
@@ -570,9 +568,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
                    UniformMeshGeneratorX3},
     BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
-    ConductionCoeff_{}, FieldDiffusivity_{},
-    MGGravityBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
-                        MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
+    ConductionCoeff_{}, FieldDiffusivity_{} {
   std::stringstream msg;
   RegionSize block_size;
   BoundaryFlag block_bcs[6];
@@ -1109,30 +1105,9 @@ void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
   return;
 }
 
-//----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir
-//                                                     MGBoundaryFunc my_bc)
-//  \brief Enroll a user-defined Multigrid boundary function
-
-void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
-  std::stringstream msg;
-  if (dir < 0 || dir > 5) {
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
-        << "dirName = " << dir << " not valid" << std::endl;
-    ATHENA_ERROR(msg);
-  }
-  MGGravityBoundaryFunction_[static_cast<int>(dir)] = my_bc;
-  return;
-}
-
 // DEPRECATED(felker): provide trivial overloads for old-style BoundaryFace enum argument
 void Mesh::EnrollUserBoundaryFunction(int dir, BValFunc my_bc) {
   EnrollUserBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
-  return;
-}
-
-void Mesh::EnrollUserMGGravityBoundaryFunction(int dir, MGBoundaryFunc my_bc) {
-  EnrollUserMGGravityBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
   return;
 }
 

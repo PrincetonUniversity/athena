@@ -82,6 +82,10 @@ enum class NeighborConnect {none, face, edge, corner}; // degenerate/shared part
 // identifiers for status of MPI boundary communications
 enum class BoundaryStatus {waiting, arrived, completed};
 
+// identifiers for Multigrid boundary conditions
+enum class MGBoundaryFlag {block=-1, undef, user, periodic, zerograd, zerofixed,
+                           multipole4, multipole16};
+
 // flags to mark which variables are reversed across polar boundary
 constexpr const bool flip_across_pole_hydro[] = {false, false, true, true, false};
 constexpr const bool flip_across_pole_field[] = {false, true, true};
