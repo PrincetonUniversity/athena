@@ -142,6 +142,15 @@ void MultigridDriver::EnrollUserMGBoundaryFunction(BoundaryFace dir,
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::EnrollUserSourceMaskFunction(MGSourceMaskFunc srcmask)
+//  \brief Enroll a user-defined Multigrid source mask function
+
+void MultigridDriver::EnrollUserSourceMaskFunction(MGSourceMaskFunc srcmask) {
+  srcmask_ = srcmask;
+  return;
+}
+
 
 
 //----------------------------------------------------------------------------------------
@@ -155,9 +164,10 @@ void MultigridDriver::SetupMultigrid() {
   nreflevel_ = pmy_mesh_->current_level - locrootlevel_;
   ntotallevel_ = nrootlevel_ + nmblevel_ + nreflevel_ - 1;
   fmglevel_ = current_level_ = ntotallevel_ - 1;
-  int ncoct = mgroot_->ngh_*2 + 2;
+  int ncoct = mgroot_->ngh_*2 + 2, nccoct = mgroot_->ngh_*2 + 1;
   os_ = mgroot_->ngh_;
   oe_ = os_+1;
+  static bool needinit = true;
 
   // note: the level of an Octet is one level lower than the data stored there
   if (nreflevel_ > 0 && pmy_mesh_->amr_updated) {
@@ -181,17 +191,31 @@ void MultigridDriver::SetupMultigrid() {
         octets_[l][o].u.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
         octets_[l][o].def.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
         octets_[l][o].src.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
+        octets_[l][o].coord.AllocateMGCoordinates(ncoct, ncoct, ncoct);
+        octets_[l][o].ccoord.AllocateMGCoordinates(nccoct, nccoct, nccoct);
         if (ffas_)
           octets_[l][o].uold.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
       }
     }
+    needinit = true;
   }
 
-  for (Multigrid* pmg : vmg_)
-    pmg->pmgbval->CopyNeighborInfoFromMeshBlock();
+  if (needinit) {
+    for (Multigrid* pmg : vmg_)
+      pmg->pmgbval->CopyNeighborInfoFromMeshBlock();
+    if (nreflevel_ > 0)
+      CalculateOctetCoordinates();
+    needinit = false;
+  }
 
   if (fsubtract_average_)
     SubtractAverage(MGVariable::src);
+
+  if (srcmask_ != nullptr) {
+    for (Multigrid* pmg : vmg_)
+      pmg->ApplySourceMask();
+  }
+
   if (mode_ == 0) { // FMG
     for (Multigrid* pmg : vmg_)
       pmg->RestrictFMGSource();
@@ -627,6 +651,56 @@ Multigrid* MultigridDriver::FindMultigrid(int tgid) {
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::CalculateOctetCoordinates()
+//  \brief calculate coordinates for Octets
+
+void MultigridDriver::CalculateOctetCoordinates() {
+  RegionSize size, csize;
+  int ngh = mgroot_->ngh_;
+  size.nx1  = 2, size.nx2  = 2, size.nx3  = 2;
+  csize.nx1 = 1, csize.nx2 = 1, csize.nx3 = 1;
+  for (int o = 0; o < noctets_[0]; ++o) {
+    MGCoordinates &coord = mgroot_->coord_[mgroot_->nlevel_-1];
+    LogicalLocation &loc = octets_[0][o].loc;
+    int i = loc.lx1 + ngh;
+    int j = loc.lx2 + ngh;
+    int k = loc.lx3 + ngh;
+    size.x1min = csize.x1min = coord.x1f(i);
+    size.x1max = csize.x1max = coord.x1f(i+1);
+    size.x2min = csize.x2min = coord.x2f(j);
+    size.x2max = csize.x2max = coord.x2f(j+1);
+    size.x3min = csize.x3min = coord.x3f(k);
+    size.x3max = csize.x3max = coord.x3f(k+1);
+    octets_[0][o].coord.CalculateMGCoordinates(size, 0, ngh);
+    octets_[0][o].ccoord.CalculateMGCoordinates(csize, 0, ngh);
+  }
+  for (int l = 1; l < nreflevel_; l++) {
+    for (int o = 0; o < noctets_[l]; ++o) {
+      LogicalLocation &loc = octets_[l][o].loc;
+      LogicalLocation cloc;
+      cloc.lx1 = (loc.lx1 >> 1);
+      cloc.lx2 = (loc.lx2 >> 1);
+      cloc.lx3 = (loc.lx3 >> 1);
+      cloc.level = loc.level - 1;
+      int oid = octetmap_[l-1][cloc];
+      MGCoordinates &coord = octets_[l-1][oid].coord;
+      int i = (loc.lx1&1) + ngh;
+      int j = (loc.lx2&1) + ngh;
+      int k = (loc.lx3&1) + ngh;
+      size.x1min = csize.x1min = coord.x1f(i);
+      size.x1max = csize.x1max = coord.x1f(i+1);
+      size.x2min = csize.x2min = coord.x2f(j);
+      size.x2max = csize.x2max = coord.x2f(j+1);
+      size.x3min = csize.x3min = coord.x3f(k);
+      size.x3max = csize.x3max = coord.x3f(k+1);
+      octets_[l][o].coord.CalculateMGCoordinates(size, 0, ngh);
+      octets_[l][o].ccoord.CalculateMGCoordinates(csize, 0, ngh);
+    }
+  }
+}
+
+
+//----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::RestrictFMGSourceOctets()
 //  \brief restrict the source in octets for FMG
 
@@ -978,10 +1052,10 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
       }
     }
     if (!fprolong) {
-      ApplyPhysicalBoundariesOctet(cbuf_, loc, true);
+      ApplyPhysicalBoundariesOctet(cbuf_, loc, octets_[lev][o].ccoord, true);
       ProlongateOctetBoundariesFluxCons(u);
     }
-    ApplyPhysicalBoundariesOctet(u, loc, false);
+    ApplyPhysicalBoundariesOctet(u, loc, octets_[lev][o].coord, false);
   }
 
   return;
@@ -1082,30 +1156,19 @@ void MultigridDriver::SetOctetBoundaryFromCoarser(const AthenaArray<Real> &un,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
-//                                         const LogicalLocation &loc, bool fcbuf)
+//                    const LogicalLocation &loc, const MGCoordinates &coord, bool fcbuf)
 //  \brief Apply physical boundary conditions for an octet
 
 void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
-                                             const LogicalLocation &loc, bool fcbuf) {
+              const LogicalLocation &loc, const MGCoordinates &coord, bool fcbuf) {
   int lev = loc.level - locrootlevel_;
   int ngh = mgroot_->ngh_;
   int l, r, cs, ce;
   Real time = pmy_mesh_->time;
-  // dx,dy,dz: cell spacing, x0,y0,z0: origins, x = x0+i*dx (integer = cell center), etc.
-  Real fac = 1.0/(static_cast<Real>(2<<lev));
-  Real dx = mgroot_->rdx_*fac;
-  Real dy = mgroot_->rdy_*fac;
-  Real dz = mgroot_->rdz_*fac;
-  Real x0 = mgroot_->size_.x1min + static_cast<Real>(loc.lx1*2)*dx;
-  Real y0 = mgroot_->size_.x2min + static_cast<Real>(loc.lx2*2)*dy;
-  Real z0 = mgroot_->size_.x3min + static_cast<Real>(loc.lx2*2)*dz;
   if (fcbuf)
-    l = ngh, r = ngh,   cs = 0, ce = 1 + ngh, dx*=2.0, dy*=2.0, dz*=2.0;
+    l = ngh, r = ngh,   cs = 0, ce = 1 + ngh;
   else
     l = ngh, r = ngh+1, cs = 0, ce = 2 + ngh;
-  x0 -= (static_cast<Real>(ngh) - 0.5) * dx;
-  y0 -= (static_cast<Real>(ngh) - 0.5) * dx;
-  z0 -= (static_cast<Real>(ngh) - 0.5) * dx;
 
   int bis = l - ngh, bie = r + ngh;
   int bjs = l,       bje = r;
@@ -1123,33 +1186,33 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
     && MGBoundaryFunction_[BoundaryFace::inner_x1] != MGPeriodicInnerX1
     && MGBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
     MGBoundaryFunction_[BoundaryFace::inner_x1](u, time, nvar_,
-                        l, r, bjs, bje, bks, bke, ngh, x0, y0, z0, dx, dy, dz);
+                                                l, r, bjs, bje, bks, bke, ngh, coord);
   if (loc.lx1 == (nrbx1_<<lev)-1
     && MGBoundaryFunction_[BoundaryFace::outer_x1] != MGPeriodicOuterX1
     && MGBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
     MGBoundaryFunction_[BoundaryFace::outer_x1](u, time, nvar_,
-                        l, r, bjs, bje, bks, bke, ngh, x0, y0, z0, dx, dy, dz);
+                                                l, r, bjs, bje, bks, bke, ngh, coord);
   if (loc.lx2 == 0
     && MGBoundaryFunction_[BoundaryFace::inner_x2] != MGPeriodicInnerX2
     && MGBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
     MGBoundaryFunction_[BoundaryFace::inner_x2](u, time, nvar_,
-                        bis, bie, l, r, bks, bke, ngh, x0, y0, z0, dx, dy, dz);
+                                                bis, bie, l, r, bks, bke, ngh, coord);
   if (loc.lx2 == (nrbx2_<<lev)-1
     && MGBoundaryFunction_[BoundaryFace::outer_x2] != MGPeriodicOuterX2
     && MGBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
     MGBoundaryFunction_[BoundaryFace::outer_x2](u, time, nvar_,
-                        bis, bie, l, r, bks, bke, ngh, x0, y0, z0, dx, dy, dz);
+                                                bis, bie, l, r, bks, bke, ngh, coord);
   bjs = l - ngh, bje = r + ngh;
   if (loc.lx3 == 0
     && MGBoundaryFunction_[BoundaryFace::inner_x3] != MGPeriodicInnerX3
     && MGBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
     MGBoundaryFunction_[BoundaryFace::inner_x3](u, time, nvar_,
-                        bis, bie, bjs, bje, l, r, ngh, x0, y0, z0, dx, dy, dz);
+                                                bis, bie, bjs, bje, l, r, ngh, coord);
   if (loc.lx3 == (nrbx3_<<lev)-1
     && MGBoundaryFunction_[BoundaryFace::outer_x3] != MGPeriodicOuterX3
     && MGBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
     MGBoundaryFunction_[BoundaryFace::outer_x3](u, time, nvar_,
-                        bis, bie, bjs, bje, l, r, ngh, x0, y0, z0, dx, dy, dz);
+                                                bis, bie, bjs, bje, l, r, ngh, coord);
 
   return;
 }
@@ -1297,11 +1360,11 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
       }
     }
 
-    ApplyPhysicalBoundariesOctet(cbuf_, loc, true);
+    ApplyPhysicalBoundariesOctet(cbuf_, loc, octets_[lev][oid].ccoord, true);
     if (folddata)
-      ApplyPhysicalBoundariesOctet(cbufold_, loc, true);
+      ApplyPhysicalBoundariesOctet(cbufold_, loc, octets_[lev][oid].ccoord, true);
     ProlongateOctetBoundaries(u, uold, folddata);
-    ApplyPhysicalBoundariesOctet(u, loc, false);
+    ApplyPhysicalBoundariesOctet(u, loc, octets_[lev][oid].coord, false);
   }
   return;
 }

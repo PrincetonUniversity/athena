@@ -157,11 +157,14 @@ void MGBoundaryValues::DestroyBoundaryData() {
 
 void MGBoundaryValues::ApplyPhysicalBoundaries(int flag) {
   AthenaArray<Real> *u;
-  if (flag == 0)      u = &(pmy_mg_->GetCurrentData());
-  else if (flag == 1) u = &cbuf_;
-  else                u = &cbufold_;
+  MGCoordinates *c;
+  int lev = pmy_mg_->GetCurrentLevel();
+  int ll = pmy_mg_->nlevel_ - 1 - lev;
+  if (flag == 0)      u = &(pmy_mg_->GetCurrentData()), c=&(pmy_mg_->coord_[lev]);
+  else if (flag == 1) u = &cbuf_,                       c=&(pmy_mg_->ccoord_[lev]);
+  else                u = &cbufold_,                    c=&(pmy_mg_->ccoord_[lev]);
   AthenaArray<Real> &dst = *u;
-  int ll = pmy_mg_->nlevel_ - 1 - pmy_mg_->GetCurrentLevel();
+  MGCoordinates &coord = *c;
   if (flag > 0) ll--;
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int ncx = block_size_.nx1 >> ll, ncy = block_size_.nx2 >> ll,
@@ -189,30 +192,30 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(int flag) {
   // Apply boundary function on inner-x1
   if (MGBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
     MGBoundaryFunction_[BoundaryFace::inner_x1](
-        dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, x0, y0, z0, dx, dy, dz);
+        dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, coord);
   // Apply boundary function on outer-x1
   if (MGBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
     MGBoundaryFunction_[BoundaryFace::outer_x1](
-        dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, x0, y0, z0, dx, dy, dz);
+        dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, coord);
 
   // Apply boundary function on inner-x2
   if (MGBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
     MGBoundaryFunction_[BoundaryFace::inner_x2](
-        dst, time, nvar, bis, bie, js, je, bks, bke, ngh, x0, y0, z0, dx, dy, dz);
+        dst, time, nvar, bis, bie, js, je, bks, bke, ngh, coord);
   // Apply boundary function on outer-x2
   if (MGBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
     MGBoundaryFunction_[BoundaryFace::outer_x2](
-        dst, time, nvar, bis, bie, js, je, bks, bke, ngh, x0, y0, z0, dx, dy, dz);
+        dst, time, nvar, bis, bie, js, je, bks, bke, ngh, coord);
 
   bjs = js - ngh, bje = je + ngh;
   // Apply boundary function on inner-x3
   if (MGBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
     MGBoundaryFunction_[BoundaryFace::inner_x3](
-        dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, x0, y0, z0, dx, dy, dz);
+        dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, coord);
   // Apply boundary function on outer-x3
   if (MGBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
     MGBoundaryFunction_[BoundaryFace::outer_x3](
-        dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, x0, y0, z0, dx, dy, dz);
+        dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, coord);
 
   return;
 }
@@ -1145,13 +1148,9 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   Real time = pmy_mesh_->time;
-  int ll = pmy_mg_->nlevel_ - 1 - pmy_mg_->GetCurrentLevel();
-  Real dx = pmy_mg_->rdx_*static_cast<Real>(1<<(ll-1));
-  Real dy = pmy_mg_->rdy_*static_cast<Real>(1<<(ll-1));
-  Real dz = pmy_mg_->rdz_*static_cast<Real>(1<<(ll-1));
-  Real x0 = block_size_.x1min - (static_cast<Real>(ngh) + 0.5)*dx;
-  Real y0 = block_size_.x2min - (static_cast<Real>(ngh) + 0.5)*dy;
-  Real z0 = block_size_.x3min - (static_cast<Real>(ngh) + 0.5)*dz;
+  int lev = pmy_mg_->GetCurrentLevel();
+  int ll = pmy_mg_->nlevel_ - 1 - lev;
+  MGCoordinates &coord = pmy_mg_->ccoord_[lev];
   constexpr Real ot = 1.0 / 3.0;
   int cn = 1, cs = cn, ce = cs + nc/2 -1;
   int fs = ngh, fe = fs + nc - 1;
@@ -1165,16 +1164,16 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
       else         i = cs - 1, fi = fs, fig = fs - 1;
       if (MGBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
         MGBoundaryFunction_[BoundaryFace::inner_x2](cbuf_, time, nvar,
-                            i, i, cs, ce, cs, ce, ngh, x0, y0, z0, dx, dy, dz);
+                                                    i, i, cs, ce, cs, ce, ngh, coord);
       if (MGBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
         MGBoundaryFunction_[BoundaryFace::outer_x2](cbuf_, time, nvar,
-                            i, i, cs, ce, cs, ce, ngh, x0, y0, z0, dx, dy, dz);
+                                                    i, i, cs, ce, cs, ce, ngh, coord);
       if (MGBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
         MGBoundaryFunction_[BoundaryFace::inner_x3](cbuf_, time, nvar,
-                            i, i, cs, ce, cs, ce, ngh, x0, y0, z0, dx, dy, dz);
+                                                    i, i, cs, ce, cs, ce, ngh, coord);
       if (MGBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
         MGBoundaryFunction_[BoundaryFace::outer_x3](cbuf_, time, nvar,
-                            i, i, cs, ce, cs, ce, ngh, x0, y0, z0, dx, dy, dz);
+                                                    i, i, cs, ce, cs, ce, ngh, coord);
       for(int k=cs, fk=fs; k<=ce; ++k, fk+=2) {
         for(int j=cs, fj=fs; j<=ce; ++j, fj+=2) {
           Real ccval = cbuf_(0, k, j, i);
@@ -1203,16 +1202,16 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
       else         j = cs - 1, fj = fs, fjg = fs - 1;
       if (MGBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
         MGBoundaryFunction_[BoundaryFace::inner_x1](cbuf_, time, nvar,
-                            cs, ce, j, j, cs, ce, ngh, x0, y0, z0, dx, dy, dz);
+                                                    cs, ce, j, j, cs, ce, ngh, coord);
       if (MGBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
         MGBoundaryFunction_[BoundaryFace::outer_x1](cbuf_, time, nvar,
-                            cs, ce, j, j, cs, ce, ngh, x0, y0, z0, dx, dy, dz);
+                                                    cs, ce, j, j, cs, ce, ngh, coord);
       if (MGBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
         MGBoundaryFunction_[BoundaryFace::inner_x3](cbuf_, time, nvar,
-                            cs, ce, j, j, cs, ce, ngh, x0, y0, z0, dx, dy, dz);
+                                                    cs, ce, j, j, cs, ce, ngh, coord);
       if (MGBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
         MGBoundaryFunction_[BoundaryFace::outer_x3](cbuf_, time, nvar,
-                            cs, ce, j, j, cs, ce, ngh, x0, y0, z0, dx, dy, dz);
+                                                    cs, ce, j, j, cs, ce, ngh, coord);
       for(int k=cs, fk=fs; k<=ce; ++k, fk+=2) {
         for(int i=cs, fi=fs; i<=ce; ++i, fi+=2) {
           Real ccval = cbuf_(0, k, j, i);
@@ -1241,16 +1240,16 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
       else         k = cs - 1, fk = fs, fkg = fs - 1;
       if (MGBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
         MGBoundaryFunction_[BoundaryFace::inner_x1](cbuf_, time, nvar,
-                            cs, ce, cs, ce, k, k, ngh, x0, y0, z0, dx, dy, dz);
+                            cs, ce, cs, ce, k, k, ngh, coord);
       if (MGBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
         MGBoundaryFunction_[BoundaryFace::outer_x1](cbuf_, time, nvar,
-                            cs, ce, cs, ce, k, k, ngh, x0, y0, z0, dx, dy, dz);
+                                                    cs, ce, cs, ce, k, k, ngh, coord);
       if (MGBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
         MGBoundaryFunction_[BoundaryFace::inner_x2](cbuf_, time, nvar,
-                            cs, ce, cs, ce, k, k, ngh, x0, y0, z0, dx, dy, dz);
+                                                    cs, ce, cs, ce, k, k, ngh, coord);
       if (MGBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
         MGBoundaryFunction_[BoundaryFace::outer_x2](cbuf_, time, nvar,
-                            cs, ce, cs, ce, k, k, ngh, x0, y0, z0, dx, dy, dz);
+                                                    cs, ce, cs, ce, k, k, ngh, coord);
       for(int j=cs, fj=fs; j<=ce; ++j, fj+=2) {
         for(int i=cs, fi=fs; i<=ce; ++i, fi+=2) {
           Real ccval = cbuf_(0, k, j, i);

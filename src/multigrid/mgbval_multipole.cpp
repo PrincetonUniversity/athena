@@ -18,12 +18,12 @@
 //----------------------------------------------------------------------------------------
 //! \fn MGMultipole4InnerX1(AthenaArray<Real> &dst, Real time, int nvar,
 //                          int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                          Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//                          const MGCoordinates &coord)
 //  \brief  Multipole4 boundary condition in the inner-X1 direction
 
 void MGMultipole4InnerX1(AthenaArray<Real> &dst, Real time, int nvar,
                          int is, int ie, int js, int je, int ks, int ke, int ngh,
-                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
+                         const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
@@ -39,12 +39,12 @@ void MGMultipole4InnerX1(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn MGMultipole4OuterX1(AthenaArray<Real> &dst, Real time, int nvar,
 //                          int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                          Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//                          const MGCoordinates &coord)
 //  \brief  Multipole4 boundary condition in the outer-X1 direction
 
 void MGMultipole4OuterX1(AthenaArray<Real> &dst, Real time, int nvar,
                            int is, int ie, int js, int je, int ks, int ke, int ngh,
-                           Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
+                           const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
@@ -60,12 +60,12 @@ void MGMultipole4OuterX1(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn MGMultipole4InnerX2(AthenaArray<Real> &dst, Real time, int nvar,
 //                          int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                          Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//                          const MGCoordinates &coord)
 //  \brief  Multipole4 boundary condition in the inner-X2 direction
 
 void MGMultipole4InnerX2(AthenaArray<Real> &dst, Real time, int nvar,
                          int is, int ie, int js, int je, int ks, int ke, int ngh,
-                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
+                         const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=0; j<ngh; j++) {
@@ -81,12 +81,12 @@ void MGMultipole4InnerX2(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn MGMultipole4OuterX2(AthenaArray<Real> &dst, Real time, int nvar,
 //                          int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                          Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//                          const MGCoordinates &coord)
 //  \brief  Multipole4 boundary condition in the outer-X2 direction
 
 void MGMultipole4OuterX2(AthenaArray<Real> &dst, Real time, int nvar,
                          int is, int ie, int js, int je, int ks, int ke, int ngh,
-                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
+                         const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=0; j<ngh; j++) {
@@ -102,12 +102,12 @@ void MGMultipole4OuterX2(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn MGMultipole4InnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 //                          int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                          Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//                          const MGCoordinates &coord)
 //  \brief  Multipole4 boundary condition in the inner-X3 direction
 
 void MGMultipole4InnerX3(AthenaArray<Real> &dst, Real time, int nvar,
                          int is, int ie, int js, int je, int ks, int ke, int ngh,
-                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
+                         const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=0; k<ngh; k++) {
       for (int j=js; j<=je; j++) {
@@ -123,12 +123,12 @@ void MGMultipole4InnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn MGMultipole4OuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 //                          int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                          Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//                          const MGCoordinates &coord)
 //  \brief  Multipole4 boundary condition in the outer-X3 direction
 
 void MGMultipole4OuterX3(AthenaArray<Real> &dst, Real time, int nvar,
                          int is, int ie, int js, int je, int ks, int ke, int ngh,
-                         Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
+                         const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=0; k<ngh; k++) {
       for (int j=js; j<=je; j++) {
@@ -144,12 +144,12 @@ void MGMultipole4OuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn MGMultipole16InnerX1(AthenaArray<Real> &dst, Real time, int nvar,
 //                            int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                            Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//                            const MGCoordinates &coord)
 //  \brief  Multipole16 boundary condition in the inner-X1 direction
 
 void MGMultipole16InnerX1(AthenaArray<Real> &dst, Real time, int nvar,
                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-                          Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
+                          const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
@@ -165,12 +165,12 @@ void MGMultipole16InnerX1(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn MGMultipole16OuterX1(AthenaArray<Real> &dst, Real time, int nvar,
 //                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                           Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//                           const MGCoordinates &coord)
 //  \brief  Multipole16 boundary condition in the outer-X1 direction
 
 void MGMultipole16OuterX1(AthenaArray<Real> &dst, Real time, int nvar,
                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-                          Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
+                          const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
@@ -186,12 +186,12 @@ void MGMultipole16OuterX1(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn MGMultipole16InnerX2(AthenaArray<Real> &dst, Real time, int nvar,
 //                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                           Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//                           const MGCoordinates &coord)
 //  \brief  Multipole16 boundary condition in the inner-X2 direction
 
 void MGMultipole16InnerX2(AthenaArray<Real> &dst, Real time, int nvar,
                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-                          Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
+                          const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=0; j<ngh; j++) {
@@ -207,12 +207,12 @@ void MGMultipole16InnerX2(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn MGMultipole16OuterX2(AthenaArray<Real> &dst, Real time, int nvar,
 //                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                           Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//                           const MGCoordinates &coord)
 //  \brief  Multipole16 boundary condition in the outer-X2 direction
 
 void MGMultipole16OuterX2(AthenaArray<Real> &dst, Real time, int nvar,
                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-                          Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
+                          const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=0; j<ngh; j++) {
@@ -228,12 +228,12 @@ void MGMultipole16OuterX2(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn MGMultipole16InnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 //                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                           Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//                           const MGCoordinates &coord)
 //  \brief  Multipole16 boundary condition in the inner-X3 direction
 
 void MGMultipole16InnerX3(AthenaArray<Real> &dst, Real time, int nvar,
                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-                          Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
+                          const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=0; k<ngh; k++) {
       for (int j=js; j<=je; j++) {
@@ -249,12 +249,12 @@ void MGMultipole16InnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn MGMultipole16OuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 //                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                           Real x0, Real y0, Real z0, Real dx, Real dy, Real dz)
+//                           const MGCoordinates &coord)
 //  \brief  Multipole16 boundary condition in the outer-X3 direction
 
 void MGMultipole16OuterX3(AthenaArray<Real> &dst, Real time, int nvar,
                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-                          Real x0, Real y0, Real z0, Real dx, Real dy, Real dz) {
+                          const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=0; k<ngh; k++) {
       for (int j=js; j<=je; j++) {

@@ -57,15 +57,15 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
   nlevel_=0;
   if (pmy_block_ == nullptr) { // root
     int nbx, nby, nbz;
-    for (int l=0; l<20; l++) {
-      if (size_.nx1%(1<<l)==0 && size_.nx2%(1<<l)==0 && size_.nx3%(1<<l)==0) {
+    for (int l = 0; l < 20; l++) {
+      if (size_.nx1%(1<<l) == 0 && size_.nx2%(1<<l) == 0 && size_.nx3%(1<<l) == 0) {
         nbx=size_.nx1/(1<<l), nby=size_.nx2/(1<<l), nbz=size_.nx3/(1<<l);
         nlevel_=l+1;
       }
     }
     int nmaxr=std::max(nbx, std::max(nby, nbz));
     // int nminr=std::min(nbx, std::min(nby, nbz)); // unused variable
-    if (nmaxr!=1 && Globals::my_rank==0) {
+    if (nmaxr != 1 && Globals::my_rank == 0) {
       std::cout
           << "### Warning in Multigrid::Multigrid" << std::endl
           << "The root grid can not be reduced to a single cell." << std::endl
@@ -82,13 +82,13 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
                 << "We recommend to reconsider grid configuration." << std::endl;
     }
   } else {
-    for (int l=0; l<20; l++) {
+    for (int l = 0; l < 20; l++) {
       if ((1<<l) == size_.nx1) {
         nlevel_=l+1;
         break;
       }
     }
-    if (nlevel_==0) {
+    if (nlevel_ == 0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
           << "The MeshBlock size must be power of two." << std::endl;
@@ -96,7 +96,7 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
       return;
     }
     // *** temporary ***
-    if (std::abs(rdx_-rdy_)>1.0e-5 || std::abs(rdx_-rdz_)>1.0e-5) {
+    if (std::abs(rdx_-rdy_) > 1.0e-5 || std::abs(rdx_-rdz_) > 1.0e-5) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
           << "The cell size must be cubic." << std::endl;
@@ -111,21 +111,34 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
   u_ = new AthenaArray<Real>[nlevel_];
   src_ = new AthenaArray<Real>[nlevel_];
   def_ = new AthenaArray<Real>[nlevel_];
+  coord_ = new MGCoordinates[nlevel_];
+  if (pmy_driver_->maxreflevel_ > 0)
+    ccoord_ = new MGCoordinates[nlevel_];
   if (pmy_driver_->ffas_) {
     if (pmy_block_ == nullptr)
       uold_ = new AthenaArray<Real>[nlevel_];
     else
       uold_ = new AthenaArray<Real>[nlevel_-1];
   }
-  for (int l=0; l<nlevel_; l++) {
+  for (int l = 0; l < nlevel_; l++) {
     int ll=nlevel_-1-l;
-    int ncx=(size_.nx1>>ll)+2*ngh_, ncy=(size_.nx2>>ll)+2*ngh_,
-        ncz=(size_.nx3>>ll)+2*ngh_;
+    int ncx=(size_.nx1>>ll)+2*ngh_;
+    int ncy=(size_.nx2>>ll)+2*ngh_;
+    int ncz=(size_.nx3>>ll)+2*ngh_;
     u_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     src_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     def_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     if (pmy_driver_->ffas_ && !((pmy_block_ != nullptr) && (l == nlevel_-1)))
       uold_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
+    coord_[l].AllocateMGCoordinates(ncx,ncy,ncz);
+    coord_[l].CalculateMGCoordinates(size_, ll, ngh_);
+    if (pmy_driver_->maxreflevel_ > 0 && l > 0) {
+      ncx=(size_.nx1>>(ll+1))+2*ngh_;
+      ncy=(size_.nx2>>(ll+1))+2*ngh_;
+      ncz=(size_.nx3>>(ll+1))+2*ngh_;
+      ccoord_[l].AllocateMGCoordinates(ncx,ncy,ncz);
+      ccoord_[l].CalculateMGCoordinates(size_, ll+1, ngh_);
+    }
   }
 }
 
@@ -138,6 +151,9 @@ Multigrid::~Multigrid() {
   delete [] u_;
   delete [] src_;
   delete [] def_;
+  delete [] coord_;
+  if (pmy_driver_->maxreflevel_ > 0)
+    delete [] ccoord_;
   if (pmy_driver_->ffas_) delete [] uold_;
 }
 
@@ -199,6 +215,15 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
   return;
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::ApplySourceMask()
+//  \brief Apply the user-defined source mask function on the finest level
+
+void Multigrid::ApplySourceMask() {
+  pmy_driver_->srcmask_(src_[nlevel_-1], coord_[nlevel_-1]);
+  return;
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::RestrictFMGSource()
@@ -763,4 +788,54 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
 
   return;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGCoordinates::AllocateMGCoordinates(int nx, int ny, int nz)
+//  \brief Allocate coordinate arrays for multigrid
+
+void MGCoordinates::AllocateMGCoordinates(int nx, int ny, int nz) {
+  x1f.NewAthenaArray(nx+1);
+  x2f.NewAthenaArray(ny+1);
+  x3f.NewAthenaArray(nz+1);
+  x1v.NewAthenaArray(nx);
+  x2v.NewAthenaArray(ny);
+  x3v.NewAthenaArray(nz);
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGCoordinates::CalculateMGCoordinates(const RegionSize &size,
+//                                                 int ll, int ngh)
+//  \brief Calculate coordinates for Multigrid
+//         Currently uniform Cartesian only
+
+void MGCoordinates::CalculateMGCoordinates(const RegionSize &size, int ll, int ngh) {
+  int ncx = (size.nx1>>ll), ncy = (size.nx2>>ll), ncz = (size.nx3>>ll);
+  Real dx = (size.x1max-size.x1min)/ncx;
+  Real dy = (size.x2max-size.x2min)/ncy;
+  Real dz = (size.x3max-size.x3min)/ncz;
+  for (int i = 0; i <= ncx+2*ngh; ++i)
+    x1f(i) = size.x1min + (i-ngh)*dx;
+  x1f(ngh) = size.x1min;
+  x1f(ncx+ngh) = size.x1max;
+  for (int i = 0; i < ncx+2*ngh; ++i)
+    x1v(i) = 0.5*(x1f(i)+x1f(i+1));
+
+  for (int j = 0; j <= ncy+2*ngh; ++j)
+    x2f(j) = size.x2min + (j-ngh)*dy;
+  x2f(ngh) = size.x2min;
+  x2f(ncy+ngh) = size.x2max;
+  for (int j = 0; j < ncy+2*ngh; ++j)
+    x2v(j) = 0.5*(x2f(j)+x2f(j+1));
+
+  for (int k = 0; k <= ncz+2*ngh; ++k)
+    x3f(k) = size.x3min + (k-ngh)*dx;
+  x3f(ngh) = size.x3min;
+  x3f(ncz+ngh) = size.x3max;
+  for (int k = 0; k < ncz+2*ngh; ++k)
+    x3v(k) = 0.5*(x3f(k)+x3f(k+1));
+}
+
 
