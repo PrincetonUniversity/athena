@@ -149,7 +149,8 @@ class Multigrid {
 
 class MultigridDriver {
  public:
-  MultigridDriver(Mesh *pm, int invar);
+  MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, 
+                  MGSourceMaskFunc MGSourceMask, int invar);
   virtual ~MultigridDriver();
   void SubtractAverage(MGVariable type);
   void SetupMultigrid();
@@ -166,9 +167,6 @@ class MultigridDriver {
   virtual void SolveCoarsestGrid();
   Real CalculateDefectNorm(MGNormType nrm, int n);
   Multigrid* FindMultigrid(int tgid);
-
-  void EnrollUserMGBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
-  void EnrollUserSourceMaskFunction(MGSourceMaskFunc srcmask);
 
   // octet manipulation functions
   void CalculateOctetCoordinates();

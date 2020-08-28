@@ -221,7 +221,12 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
 //  \brief Apply the user-defined source mask function on the finest level
 
 void Multigrid::ApplySourceMask() {
-  pmy_driver_->srcmask_(src_[nlevel_-1], coord_[nlevel_-1]);
+  int is, ie, js, je, ks, ke;
+  is = js = ks = ngh_;
+  ie = is + size_.nx1;
+  je = js + size_.nx2;
+  ke = ks + size_.nx3;
+  pmy_driver_->srcmask_(src_[nlevel_-1], is, ie, js, je, ks, ke, coord_[nlevel_-1]);
   return;
 }
 

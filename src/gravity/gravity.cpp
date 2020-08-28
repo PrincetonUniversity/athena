@@ -44,7 +44,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     return;
   }
 
-  if (grav_mean_rho == -1.0) {
+  if (SELF_GRAVITY_ENABLED == 1 && grav_mean_rho == -1.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
         << "Background Mean Density must be set in the Mesh::InitUserMeshData "

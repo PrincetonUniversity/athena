@@ -311,6 +311,8 @@ class Mesh {
   ViscosityCoeffFunc ViscosityCoeff_;
   ConductionCoeffFunc ConductionCoeff_;
   FieldDiffusionCoeffFunc FieldDiffusivity_;
+  MGBoundaryFunc MGGravityBoundaryFunction_[6];
+  MGSourceMaskFunc MGGravitySourceMaskFunction_;
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -347,6 +349,8 @@ class Mesh {
 
   // often used (not defined) in prob file in ../pgen/
   void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);
+  void EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
+  void EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask);
   // DEPRECATED(felker): provide trivial overload for old-style BoundaryFace enum argument
   void EnrollUserBoundaryFunction(int face, BValFunc my_func);
 

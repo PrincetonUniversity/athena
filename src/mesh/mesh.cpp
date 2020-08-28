@@ -108,7 +108,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
                    UniformMeshGeneratorX3},
     BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
-    ConductionCoeff_{}, FieldDiffusivity_{} {
+    ConductionCoeff_{}, FieldDiffusivity_{}, 
+    MGGravityBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
+    MGGravitySourceMaskFunction_{}  {
   std::stringstream msg;
   RegionSize block_size;
   MeshBlock *pfirst{};
@@ -568,7 +570,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
                    UniformMeshGeneratorX3},
     BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
-    ConductionCoeff_{}, FieldDiffusivity_{} {
+    ConductionCoeff_{}, FieldDiffusivity_{},
+    MGGravityBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
+    MGGravitySourceMaskFunction_{} {
   std::stringstream msg;
   RegionSize block_size;
   BoundaryFlag block_bcs[6];
@@ -1091,7 +1095,7 @@ void Mesh::NewTimeStep() {
 void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
   std::stringstream msg;
   if (dir < 0 || dir > 5) {
-    msg << "### FATAL ERROR in EnrollBoundaryCondition function" << std::endl
+    msg << "### FATAL ERROR in EnrollUserBoundaryFunction" << std::endl
         << "dirName = " << dir << " not valid" << std::endl;
     ATHENA_ERROR(msg);
   }
@@ -1108,6 +1112,32 @@ void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
 // DEPRECATED(felker): provide trivial overloads for old-style BoundaryFace enum argument
 void Mesh::EnrollUserBoundaryFunction(int dir, BValFunc my_bc) {
   EnrollUserBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir,
+//                                                     MGBoundaryFunc my_bc)
+//  \brief Enroll a user-defined Multigrid gravity boundary function
+
+void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
+  std::stringstream msg;
+  if (dir < 0 || dir > 5) {
+    msg << "### FATAL ERROR in EnrollUserMGGravityBoundaryFunction" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  MGGravityBoundaryFunction_[static_cast<int>(dir)] = my_bc;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask)
+//  \brief Enroll a user-defined Multigrid gravity source mask function
+
+void Mesh::EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask) {
+  MGGravitySourceMaskFunction_ = srcmask;
   return;
 }
 

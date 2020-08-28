@@ -38,7 +38,8 @@ class MeshBlock;
 //  \brief MGGravityDriver constructor
 
 MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
-    : MultigridDriver(pm, 1) {
+    : MultigridDriver(pm, pm->MGGravityBoundaryFunction_,
+                      pm->MGGravitySourceMaskFunction_, 1) {
   four_pi_G_ = pmy_mesh_->four_pi_G_;
   eps_ = pin->GetOrAddReal("gravity", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("gravity", "niteration", -1);
@@ -56,7 +57,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
         << "MGI: Multigrid Iteration" << std::endl;
     ATHENA_ERROR(msg);
   }
-  if (eps_<0.0 && niter_ < 0) {
+  if (eps_ < 0.0 && niter_ < 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
         << "Either \"threshold\" or \"niteration\" parameter must be set "
@@ -65,7 +66,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
         << "Set \"threshold = 0.0\" for automatic convergence control." << std::endl;
     ATHENA_ERROR(msg);
   }
-  if (four_pi_G_==0.0) {
+  if (four_pi_G_ == 0.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
@@ -94,6 +95,13 @@ void MGGravityDriver::SetBoundaryFunctions() {
   fsubtract_average_ = true;
   switch(mg_bcs_[BoundaryFace::inner_x1]) {
     case MGBoundaryFlag::user:
+      if (MGBoundaryFunction_[BoundaryFace::inner_x1] == nullptr) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::SetBoundaryFunctions" << std::endl
+            << "A user-defined boundary condition is specified for " << std::endl
+            << "inner_x1 but no function is enrolled." << std::endl;
+        ATHENA_ERROR(msg);
+      }
       fsubtract_average_ = false;
       break;
     case MGBoundaryFlag::periodic:
@@ -122,6 +130,13 @@ void MGGravityDriver::SetBoundaryFunctions() {
   }
   switch(mg_bcs_[BoundaryFace::outer_x1]) {
     case MGBoundaryFlag::user:
+      if (MGBoundaryFunction_[BoundaryFace::outer_x1] == nullptr) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::SetBoundaryFunctions" << std::endl
+            << "A user-defined boundary condition is specified for " << std::endl
+            << "outer_x1 but no function is enrolled." << std::endl;
+        ATHENA_ERROR(msg);
+      }
       fsubtract_average_ = false;
       break;
     case MGBoundaryFlag::periodic:
@@ -150,6 +165,13 @@ void MGGravityDriver::SetBoundaryFunctions() {
   }
   switch(mg_bcs_[BoundaryFace::inner_x2]) {
     case MGBoundaryFlag::user:
+      if (MGBoundaryFunction_[BoundaryFace::inner_x2] == nullptr) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::SetBoundaryFunctions" << std::endl
+            << "A user-defined boundary condition is specified for " << std::endl
+            << "inner_x2 but no function is enrolled." << std::endl;
+        ATHENA_ERROR(msg);
+      }
       fsubtract_average_ = false;
       break;
     case MGBoundaryFlag::periodic:
@@ -178,6 +200,13 @@ void MGGravityDriver::SetBoundaryFunctions() {
   }
   switch(mg_bcs_[BoundaryFace::outer_x2]) {
     case MGBoundaryFlag::user:
+      if (MGBoundaryFunction_[BoundaryFace::outer_x2] == nullptr) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::SetBoundaryFunctions" << std::endl
+            << "A user-defined boundary condition is specified for " << std::endl
+            << "outer_x2 but no function is enrolled." << std::endl;
+        ATHENA_ERROR(msg);
+      }
       fsubtract_average_ = false;
       break;
     case MGBoundaryFlag::periodic:
@@ -206,6 +235,13 @@ void MGGravityDriver::SetBoundaryFunctions() {
   }
   switch(mg_bcs_[BoundaryFace::inner_x3]) {
     case MGBoundaryFlag::user:
+      if (MGBoundaryFunction_[BoundaryFace::inner_x3] == nullptr) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::SetBoundaryFunctions" << std::endl
+            << "A user-defined boundary condition is specified for " << std::endl
+            << "inner_x3 but no function is enrolled." << std::endl;
+        ATHENA_ERROR(msg);
+      }
       fsubtract_average_ = false;
       break;
     case MGBoundaryFlag::periodic:
@@ -234,6 +270,13 @@ void MGGravityDriver::SetBoundaryFunctions() {
   }
   switch(mg_bcs_[BoundaryFace::outer_x3]) {
     case MGBoundaryFlag::user:
+      if (MGBoundaryFunction_[BoundaryFace::outer_x3] == nullptr) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::SetBoundaryFunctions" << std::endl
+            << "A user-defined boundary condition is specified for " << std::endl
+            << "outer_x3 but no function is enrolled." << std::endl;
+        ATHENA_ERROR(msg);
+      }
       fsubtract_average_ = false;
       break;
     case MGBoundaryFlag::periodic:
