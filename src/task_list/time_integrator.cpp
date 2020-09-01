@@ -811,13 +811,14 @@ TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
 }
 
 TaskStatus TimeIntegratorTaskList::CalculateRadFlux(MeshBlock *pmb, int stage) {
+  Hydro *phydro = pmb->phydro;
   Radiation *prad = pmb->prad;
   if (stage <= nstages) {
     if ((stage == 1) && (integrator == "vl2")) {
-      prad->CalculateFluxes(prad->prim, 1);
+      prad->CalculateFluxes(prad->prim, phydro->w, 1);
       return TaskStatus::next;
     } else {
-      prad->CalculateFluxes(prad->prim, pmb->precon->xorder);
+      prad->CalculateFluxes(prad->prim, phydro->w, pmb->precon->xorder);
       return TaskStatus::next;
     }
   }
@@ -1032,7 +1033,12 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) 
     // Scaled coefficient for RHS update
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     // Evaluate the time-dependent source terms at the time at the beginning of the stage
-    pr->AddSourceTerms(t_start_stage, dt, pr->prim, ph->w, pr->cons, ph->u);
+    // TODO(CJW): below only works for VL2
+    if (stage == 1) {
+      pr->AddSourceTerms(t_start_stage, dt, pr->prim, ph->w, pr->cons, ph->u);
+    } else {
+      pr->AddSourceTerms(t_start_stage, dt, pr->prim1, ph->w1, pr->cons, ph->u);
+    }
   } else {
     return TaskStatus::fail;
   }

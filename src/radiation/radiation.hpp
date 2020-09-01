@@ -97,7 +97,8 @@ public:
   // Task list functions
   void WeightedAve(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
       AthenaArray<Real> &cons_in_2, const Real weights[3]);
-  void CalculateFluxes(AthenaArray<Real> &prim_in, int order);
+  void CalculateFluxes(AthenaArray<Real> &prim_rad, const AthenaArray<Real> &prim_hydro,
+      int order);
   void AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Real weight,
       AthenaArray<Real> &cons_out);
   void PrimitiveToConserved(const AthenaArray<Real> &prim_in, AthenaArray<Real> &cons_out,
@@ -113,10 +114,6 @@ public:
 
   // Fluid coupling functions
   void EnrollOpacityFunction(OpacityFunc MyOpacityFunction);
-  void Coupling(const AthenaArray<Real> &prim_hydro, const AthenaArray<Real> &normal,
-      const AthenaArray<Real> &n0, const AthenaArray<Real> &omega,
-      const AthenaArray<Real> &dt, const AthenaArray<Real> &dtau, int k, int j,
-      AthenaArray<Real> &intensity);
 
   // Other functions
   int AngleInd(int l, int m, bool zeta_face = false, bool psi_face = false);
@@ -144,8 +141,8 @@ private:
   AthenaArray<Real> n3_n_0_;         // n^3 n_0 at x^3-faces and angle centers
   AthenaArray<Real> na1_n_0_;        // n^zeta n_0 at cell centers and zeta-faces
   AthenaArray<Real> na2_n_0_;        // n^psi n_0 at cell centers and psi-faces
-  AthenaArray<Real> prim_l_;         // left reconstructed state
-  AthenaArray<Real> prim_r_;         // right reconstructed state
+  AthenaArray<Real> rad_l_;          // left reconstructed radiation state
+  AthenaArray<Real> rad_r_;          // right reconstructed radiation state
   AthenaArray<Real> area_l_;         // left face areas
   AthenaArray<Real> area_r_;         // right face areas
   AthenaArray<Real> vol_;            // cell volumes
@@ -163,9 +160,13 @@ private:
   AthenaArray<Real> n_cm_;           // unit null direction in comoving fluid frame
   AthenaArray<Real> n0_;             // unit null time component in coordinate frame
   AthenaArray<Real> omega_cm_;       // solid angle in comoving fluid frame
-  AthenaArray<Real> intensity_cm_;   // intensity I in comoving fluid frame
   AthenaArray<Real> moments_old_;    // moments of radiation field before fluid coupling
   AthenaArray<Real> moments_new_;    // moments of radiation field after fluid coupling
+  AthenaArray<Real> coefficients_;   // quartic coefficients for implicit update
+  AthenaArray<bool> bad_cell_;       // flag indicating problem with coupling
+  AthenaArray<Real> tt_plus_;        // gas temperature after coupling
+  AthenaArray<Real> ee_f_minus_;     // fluid-frame radiation energy before coupling
+  AthenaArray<Real> ee_f_plus_;      // fluid-frame radiation energy after coupling
 };
 
 #endif // RADIATION_RADIATION_HPP_

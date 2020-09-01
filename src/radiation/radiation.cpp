@@ -7,8 +7,9 @@
 //  \brief implementation of functions in class Radiation
 
 // C++ headers
-#include <algorithm>  // max
-#include <cmath>      // acos, cos, NAN, sin, sqrt
+#include <algorithm>  // max, min
+#include <cstdlib>    // abs
+#include <cmath>      // acos, cos, isnan, NAN, sin, sqrt
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str, string
@@ -18,10 +19,12 @@
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../parameter_input.hpp"          // ParameterInput
 #include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../eos/eos.hpp"                  // EquationOfState
 #include "../mesh/mesh.hpp"                // MeshBlock
 
 // Declarations
 void DefaultOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim_hydro);
+bool FourthPolyRoot(const Real coef4, const Real tconst, Real *root);
 
 //----------------------------------------------------------------------------------------
 // Radiation constructor
@@ -54,6 +57,36 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     coarse_prim(nang, pmb->ncc3, pmb->ncc2, pmb->ncc1, (pmb->pmy_mesh->multilevel ?
         AthenaArray<Real>::DataStatus::allocated : AthenaArray<Real>::DataStatus::empty)),
     rbvar(pmb, &cons, &coarse_cons, flux_x, nzeta, npsi) {
+
+  // Verify temporal and special orders
+  std::stringstream msg;
+  if (pin->GetString("time", "integrator") != "vl2") {
+    msg << "### FATAL ERROR in Radiation\n";
+    msg << "only VL2 integration supported\n";
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if (pin->GetInteger("time", "xorder") > 2) {
+    msg << "### FATAL ERROR in Radiation\n";
+    msg << "only first and second order reconstruction supported\n";
+    throw std::runtime_error(msg.str().c_str());
+  }
+
+  // Verify numbers of angles
+  if (nzeta < 4) {
+    msg << "### FATAL ERROR in Radiation constructor\n";
+    msg << "too few polar angles\n";
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if (npsi < 4) {
+    msg << "### FATAL ERROR in Radiation constructor\n";
+    msg << "too few azimuthal angles\n";
+    throw std::runtime_error(msg.str().c_str());
+  }
+  if (npsi%2 != 0) {
+    msg << "### FATAL ERROR in Radiation constructor\n";
+    msg << "must have even number of azimuthal angles\n";
+    throw std::runtime_error(msg.str().c_str());
+  }
 
   // Set object and function pointers
   UserSourceTerm = pmb->pmy_mesh->UserRadSourceTerm_;
@@ -101,24 +134,6 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   mol_weight = pin->GetOrAddReal("radiation", "mol_weight", NAN);
   arad = arad_cgs * SQR(c_cgs) * SQR(SQR(mol_weight * m_p_cgs * c_cgs / k_b_cgs))
       / density_cgs;
-
-  // Verify numbers of angles
-  std::stringstream msg;
-  if (nzeta < 4) {
-    msg << "### FATAL ERROR in Radiation constructor\n";
-    msg << "too few polar angles\n";
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if (npsi < 4) {
-    msg << "### FATAL ERROR in Radiation constructor\n";
-    msg << "too few azimuthal angles\n";
-    throw std::runtime_error(msg.str().c_str());
-  }
-  if (npsi%2 != 0) {
-    msg << "### FATAL ERROR in Radiation constructor\n";
-    msg << "must have even number of azimuthal angles\n";
-    throw std::runtime_error(msg.str().c_str());
-  }
 
   // Allocate memory for angles
   zetaf.NewAthenaArray(nzeta + 2*NGHOST + 1);
@@ -435,9 +450,9 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
-  // Allocate memory for left and right reconstructed states
-  prim_l_.NewAthenaArray(nang_zpf, pmb->ncells1 + 1);
-  prim_r_.NewAthenaArray(nang_zpf, pmb->ncells1 + 1);
+  // Allocate memory for flux calculation
+  rad_l_.NewAthenaArray(nang_zpf, pmb->ncells1 + 1);
+  rad_r_.NewAthenaArray(nang_zpf, pmb->ncells1 + 1);
 
   // Allocate memory for flux divergence calculation
   area_l_.NewAthenaArray(pmb->ncells1 + 1);
@@ -462,9 +477,15 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   n_cm_.NewAthenaArray(4, nzeta * npsi, pmb->ncells1);
   n0_.NewAthenaArray(nzeta * npsi, pmb->ncells3, pmb->ncells2, pmb->ncells1);
   omega_cm_.NewAthenaArray(nzeta * npsi, pmb->ncells1);
-  intensity_cm_.NewAthenaArray(nzeta * npsi, pmb->ncells1);
   moments_old_.NewAthenaArray(4, pmb->ncells1);
   moments_new_.NewAthenaArray(4, pmb->ncells1);
+
+  // Allocate memory for implicit coupling
+  coefficients_.NewAthenaArray(2, pmb->ncells1);
+  bad_cell_.NewAthenaArray(pmb->ncells1);
+  tt_plus_.NewAthenaArray(pmb->ncells1);
+  ee_f_minus_.NewAthenaArray(pmb->ncells1);
+  ee_f_plus_.NewAthenaArray(pmb->ncells1);
 
   // Calculate transformation from normal frame to tetrad frame
   for (int k = ks; k <= ke; ++k) {
@@ -606,45 +627,44 @@ void Radiation::WeightedAve(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons
 //----------------------------------------------------------------------------------------
 // Function for calculating spatial and angular fluxes
 // Inputs:
-//   prim_in: primitive intensity
+//   prim_rad: primitive intensity
+//   prim_hydro: primitive hydrodynamic variables
 //   order: reconstruction order
 // Outputs:
 //   this->flux_x, this->flux_a: fluxes set
 
-void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
-
-  // Check order
-  if (order != 1 and order != 2) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in Radiation\n";
-    msg << "only first and second order reconstruction supported\n";
-    throw std::runtime_error(msg.str().c_str());
-  }
+void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
+    const AthenaArray<Real> &prim_hydro, int order) {
 
   // Calculate x1-fluxes
-  for (int l = zs; l <= ze; ++l) {
-    for (int m = ps; m <= pe; ++m) {
-      int lm = AngleInd(l, m);
-      for (int k = ks; k <= ke; ++k) {
-        for (int j = js; j <= je; ++j) {
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
 
-          // Reconstruction
-          if (order == 1) {
+      // Reconstruct radiation
+      if (order == 1) {
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
             for (int i = is; i <= ie+1; ++i) {
-              prim_l_(lm,i) = prim_in(lm,k,j,i-1);
-              prim_r_(lm,i) = prim_in(lm,k,j,i);
+              rad_l_(lm,i) = prim_rad(lm,k,j,i-1);
+              rad_r_(lm,i) = prim_rad(lm,k,j,i);
             }
-          } else {
+          }
+        }
+      } else {
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
             for (int i = is; i <= ie+1; ++i) {
               Real x_l = pmy_block->pcoord->x1v(i-1);
               Real x_c = pmy_block->pcoord->x1f(i);
               Real x_r = pmy_block->pcoord->x1v(i);
               Real dx_l = x_c - x_l;
               Real dx_r = x_r - x_c;
-              Real q_ll = prim_in(lm,k,j,i-2);
-              Real q_l = prim_in(lm,k,j,i-1);
-              Real q_r = prim_in(lm,k,j,i);
-              Real q_rr = prim_in(lm,k,j,i+1);
+              Real q_ll = prim_rad(lm,k,j,i-2);
+              Real q_l = prim_rad(lm,k,j,i-1);
+              Real q_r = prim_rad(lm,k,j,i);
+              Real q_rr = prim_rad(lm,k,j,i+1);
               Real dq_l = q_l - q_ll;
               Real dq_c = q_r - q_l;
               Real dq_r = q_rr - q_r;
@@ -652,24 +672,27 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
               Real dq_2_r = dq_c * dq_r;
               Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
               Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
-              prim_l_(lm,i) = q_l + dx_l * dq_m_l;
-              prim_r_(lm,i) = q_r - dx_r * dq_m_r;
-            }
-          }
-
-          // Upwind flux calculation
-          for (int i = is; i <= ie+1; ++i) {
-            Real n1_n_0 = n1_n_0_(l,m,k,j,i);
-            if (n1_n_0 < 0.0) {
-              flux_x[X1DIR](lm,k,j,i) = n1_n_0 * prim_l_(lm,i);
-            } else {
-              flux_x[X1DIR](lm,k,j,i) = n1_n_0 * prim_r_(lm,i);
+              rad_l_(lm,i) = q_l + dx_l * dq_m_l;
+              rad_r_(lm,i) = q_r - dx_r * dq_m_r;
             }
           }
         }
       }
-    }
-  }
+
+      // Calculate radiation fluxes
+      for (int l = zs; l <= ze; ++l) {
+        for (int m = ps; m <= pe; ++m) {
+          int lm = AngleInd(l, m);
+          for (int i = is; i <= ie+1; ++i) {
+            Real n1_n_0 = n1_n_0_(l,m,k,j,i);
+            if (n1_n_0 < 0.0) {
+              flux_x[X1DIR](lm,k,j,i) = n1_n_0 * rad_l_(lm,i);
+            } else {
+              flux_x[X1DIR](lm,k,j,i) = n1_n_0 * rad_r_(lm,i);
+            }
+          }
+        }
+      }
 
   // Calculate x2-fluxes
   if (js != je) {
@@ -682,8 +705,8 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
             // Reconstruction
             if (order == 1) {
               for (int i = is; i <= ie; ++i) {
-                prim_l_(lm,i) = prim_in(lm,k,j-1,i);
-                prim_r_(lm,i) = prim_in(lm,k,j,i);
+                rad_l_(lm,i) = prim_rad(lm,k,j-1,i);
+                rad_r_(lm,i) = prim_rad(lm,k,j,i);
               }
             } else {
               Real x_l = pmy_block->pcoord->x2v(j-1);
@@ -692,10 +715,10 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
               Real dx_l = x_c - x_l;
               Real dx_r = x_r - x_c;
               for (int i = is; i <= ie; ++i) {
-                Real q_ll = prim_in(lm,k,j-2,i);
-                Real q_l = prim_in(lm,k,j-1,i);
-                Real q_r = prim_in(lm,k,j,i);
-                Real q_rr = prim_in(lm,k,j+1,i);
+                Real q_ll = prim_rad(lm,k,j-2,i);
+                Real q_l = prim_rad(lm,k,j-1,i);
+                Real q_r = prim_rad(lm,k,j,i);
+                Real q_rr = prim_rad(lm,k,j+1,i);
                 Real dq_l = q_l - q_ll;
                 Real dq_c = q_r - q_l;
                 Real dq_r = q_rr - q_r;
@@ -703,8 +726,8 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
                 Real dq_2_r = dq_c * dq_r;
                 Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
                 Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
-                prim_l_(lm,i) = q_l + dx_l * dq_m_l;
-                prim_r_(lm,i) = q_r - dx_r * dq_m_r;
+                rad_l_(lm,i) = q_l + dx_l * dq_m_l;
+                rad_r_(lm,i) = q_r - dx_r * dq_m_r;
               }
             }
 
@@ -712,9 +735,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
             for (int i = is; i <= ie; ++i) {
               Real n2_n_0 = n2_n_0_(l,m,k,j,i);
               if (n2_n_0 < 0.0) {
-                flux_x[X2DIR](lm,k,j,i) = n2_n_0 * prim_l_(lm,i);
+                flux_x[X2DIR](lm,k,j,i) = n2_n_0 * rad_l_(lm,i);
               } else {
-                flux_x[X2DIR](lm,k,j,i) = n2_n_0 * prim_r_(lm,i);
+                flux_x[X2DIR](lm,k,j,i) = n2_n_0 * rad_r_(lm,i);
               }
             }
           }
@@ -734,8 +757,8 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
             // Reconstruction
             if (order == 1) {
               for (int i = is; i <= ie; ++i) {
-                prim_l_(lm,i) = prim_in(lm,k-1,j,i);
-                prim_r_(lm,i) = prim_in(lm,k,j,i);
+                rad_l_(lm,i) = prim_rad(lm,k-1,j,i);
+                rad_r_(lm,i) = prim_rad(lm,k,j,i);
               }
             } else {
               Real x_l = pmy_block->pcoord->x3v(k-1);
@@ -744,10 +767,10 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
               Real dx_l = x_c - x_l;
               Real dx_r = x_r - x_c;
               for (int i = is; i <= ie; ++i) {
-                Real q_ll = prim_in(lm,k-2,j,i);
-                Real q_l = prim_in(lm,k-1,j,i);
-                Real q_r = prim_in(lm,k,j,i);
-                Real q_rr = prim_in(lm,k+1,j,i);
+                Real q_ll = prim_rad(lm,k-2,j,i);
+                Real q_l = prim_rad(lm,k-1,j,i);
+                Real q_r = prim_rad(lm,k,j,i);
+                Real q_rr = prim_rad(lm,k+1,j,i);
                 Real dq_l = q_l - q_ll;
                 Real dq_c = q_r - q_l;
                 Real dq_r = q_rr - q_r;
@@ -755,8 +778,8 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
                 Real dq_2_r = dq_c * dq_r;
                 Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
                 Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
-                prim_l_(lm,i) = q_l + dx_l * dq_m_l;
-                prim_r_(lm,i) = q_r - dx_r * dq_m_r;
+                rad_l_(lm,i) = q_l + dx_l * dq_m_l;
+                rad_r_(lm,i) = q_r - dx_r * dq_m_r;
               }
             }
 
@@ -764,9 +787,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
             for (int i = is; i <= ie; ++i) {
               Real n3_n_0 = n3_n_0_(l,m,k,j,i);
               if (n3_n_0 < 0.0) {
-                flux_x[X3DIR](lm,k,j,i) = n3_n_0 * prim_l_(lm,i);
+                flux_x[X3DIR](lm,k,j,i) = n3_n_0 * rad_l_(lm,i);
               } else {
-                flux_x[X3DIR](lm,k,j,i) = n3_n_0 * prim_r_(lm,i);
+                flux_x[X3DIR](lm,k,j,i) = n3_n_0 * rad_r_(lm,i);
               }
             }
           }
@@ -789,8 +812,8 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
           // Reconstruction
           if (order == 1) {
             for (int i = is; i <= ie; ++i) {
-              prim_l_(lm_c,i) = prim_in(lm_l,k,j,i);
-              prim_r_(lm_c,i) = prim_in(lm_r,k,j,i);
+              rad_l_(lm_c,i) = prim_rad(lm_l,k,j,i);
+              rad_r_(lm_c,i) = prim_rad(lm_r,k,j,i);
             }
           } else {
             Real x_l = zetav(l-1);
@@ -799,10 +822,10 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
             Real dx_l = x_c - x_l;
             Real dx_r = x_r - x_c;
             for (int i = is; i <= ie; ++i) {
-              Real q_ll = prim_in(lm_ll,k,j,i);
-              Real q_l = prim_in(lm_l,k,j,i);
-              Real q_r = prim_in(lm_r,k,j,i);
-              Real q_rr = prim_in(lm_rr,k,j,i);
+              Real q_ll = prim_rad(lm_ll,k,j,i);
+              Real q_l = prim_rad(lm_l,k,j,i);
+              Real q_r = prim_rad(lm_r,k,j,i);
+              Real q_rr = prim_rad(lm_rr,k,j,i);
               Real dq_l = q_l - q_ll;
               Real dq_c = q_r - q_l;
               Real dq_r = q_rr - q_r;
@@ -810,8 +833,8 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
               Real dq_2_r = dq_c * dq_r;
               Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
               Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
-              prim_l_(lm_c,i) = q_l + dx_l * dq_m_l;
-              prim_r_(lm_c,i) = q_r - dx_r * dq_m_r;
+              rad_l_(lm_c,i) = q_l + dx_l * dq_m_l;
+              rad_r_(lm_c,i) = q_r - dx_r * dq_m_r;
             }
           }
 
@@ -819,9 +842,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
           for (int i = is; i <= ie; ++i) {
             Real na1_n_0 = na1_n_0_(l,m,k,j,i);
             if (na1_n_0 < 0.0) {
-              flux_a[ZETADIR](lm_c,k,j,i) = na1_n_0 * prim_l_(lm_c,i);
+              flux_a[ZETADIR](lm_c,k,j,i) = na1_n_0 * rad_l_(lm_c,i);
             } else {
-              flux_a[ZETADIR](lm_c,k,j,i) = na1_n_0 * prim_r_(lm_c,i);
+              flux_a[ZETADIR](lm_c,k,j,i) = na1_n_0 * rad_r_(lm_c,i);
             }
           }
         }
@@ -843,8 +866,8 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
           // Reconstruction
           if (order == 1) {
             for (int i = is; i <= ie; ++i) {
-              prim_l_(lm_c,i) = prim_in(lm_l,k,j,i);
-              prim_r_(lm_c,i) = prim_in(lm_r,k,j,i);
+              rad_l_(lm_c,i) = prim_rad(lm_l,k,j,i);
+              rad_r_(lm_c,i) = prim_rad(lm_r,k,j,i);
             }
           } else {
             Real x_l = psiv(m-1);
@@ -853,10 +876,10 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
             Real dx_l = x_c - x_l;
             Real dx_r = x_r - x_c;
             for (int i = is; i <= ie; ++i) {
-              Real q_ll = prim_in(lm_ll,k,j,i);
-              Real q_l = prim_in(lm_l,k,j,i);
-              Real q_r = prim_in(lm_r,k,j,i);
-              Real q_rr = prim_in(lm_rr,k,j,i);
+              Real q_ll = prim_rad(lm_ll,k,j,i);
+              Real q_l = prim_rad(lm_l,k,j,i);
+              Real q_r = prim_rad(lm_r,k,j,i);
+              Real q_rr = prim_rad(lm_rr,k,j,i);
               Real dq_l = q_l - q_ll;
               Real dq_c = q_r - q_l;
               Real dq_r = q_rr - q_r;
@@ -864,8 +887,8 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
               Real dq_2_r = dq_c * dq_r;
               Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
               Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
-              prim_l_(lm_c,i) = q_l + dx_l * dq_m_l;
-              prim_r_(lm_c,i) = q_r - dx_r * dq_m_r;
+              rad_l_(lm_c,i) = q_l + dx_l * dq_m_l;
+              rad_r_(lm_c,i) = q_r - dx_r * dq_m_r;
             }
           }
 
@@ -873,9 +896,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_in, int order) {
           for (int i = is; i <= ie; ++i) {
             Real na2_n_0 = na2_n_0_(l,m,k,j,i);
             if (na2_n_0 < 0.0) {
-              flux_a[PSIDIR](lm_c,k,j,i) = na2_n_0 * prim_l_(lm_c,i);
+              flux_a[PSIDIR](lm_c,k,j,i) = na2_n_0 * rad_l_(lm_c,i);
             } else {
-              flux_a[PSIDIR](lm_c,k,j,i) = na2_n_0 * prim_r_(lm_c,i);
+              flux_a[PSIDIR](lm_c,k,j,i) = na2_n_0 * rad_r_(lm_c,i);
             }
           }
         }
@@ -1160,6 +1183,9 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
     const AthenaArray<Real> &prim_rad, const AthenaArray<Real> &prim_hydro,
     AthenaArray<Real> &cons_rad, AthenaArray<Real> &cons_hydro) {
 
+  // Get adiabatic index
+  Real gamma_adi = pmy_block->peos->GetGamma();
+
   // Go through outer loops of cells
   if (coupled_to_matter) {
     for (int k = ks; k <= ke; ++k) {
@@ -1184,7 +1210,7 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
           }
         }
 
-        // Calculate fluid velocity in tetrad frame, as well as time steps
+        // Calculate fluid velocity in tetrad frame
         for (int i = is; i <= ie; ++i) {
           Real uu1 = prim_hydro(IVX,k,j,i);
           Real uu2 = prim_hydro(IVY,k,j,i);
@@ -1201,59 +1227,82 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
               + norm_to_tet_(2,2,k,j,i) * uu2 + norm_to_tet_(2,3,k,j,i) * uu3;
           u_tet_(3,i) = norm_to_tet_(3,0,k,j,i) * uu0 + norm_to_tet_(3,1,k,j,i) * uu1
               + norm_to_tet_(3,2,k,j,i) * uu2 + norm_to_tet_(3,3,k,j,i) * uu3;
-          Real u0 = uu0 * std::sqrt(-gi_(I00,i));
-          dt_(i) = dt;
-          dtau_(i) = dt / u0;
         }
 
-        // Transform radiation from tetrad to fluid frame
+        // Calculate quartic coefficients
         for (int i = is; i <= ie; ++i) {
-          weight_sum_(i) = 0.0;
-        }
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m);
-            int lm_alt = (l - zs) * (pe - ps + 1) + m - ps;
-            for (int i = is; i <= ie; ++i) {
-              Real un_tet = u_tet_(1,i) * nh_cc_(1,l,m) + u_tet_(2,i) * nh_cc_(2,l,m)
-                  + u_tet_(3,i) * nh_cc_(3,l,m);
-              n_cm_(0,lm_alt,i) = u_tet_(0,i) * nh_cc_(0,l,m) - un_tet;
-              n_cm_(1,lm_alt,i) = -u_tet_(1,i) * nh_cc_(0,l,m)
-                  + u_tet_(1,i) / (u_tet_(0,i) + 1.0) * un_tet + nh_cc_(1,l,m);
-              n_cm_(2,lm_alt,i) = -u_tet_(2,i) * nh_cc_(0,l,m)
-                  + u_tet_(2,i) / (u_tet_(0,i) + 1.0) * un_tet + nh_cc_(2,l,m);
-              n_cm_(3,lm_alt,i) = -u_tet_(3,i) * nh_cc_(0,l,m)
-                  + u_tet_(3,i) / (u_tet_(0,i) + 1.0) * un_tet + nh_cc_(3,l,m);
-              omega_cm_(lm_alt,i) = solid_angle(l,m) / SQR(n_cm_(0,lm_alt,i));
-              intensity_cm_(lm_alt,i) = prim_rad(lm,k,j,i) * SQR(SQR(n_cm_(0,lm_alt,i)));
-              weight_sum_(i) += omega_cm_(lm_alt,i);
+          Real rho = prim_hydro(IDN,k,j,i);
+          Real tt_minus = prim_hydro(IPR,k,j,i) / rho;
+          Real k_a = rho * opacity(OPAA,k,j,i);
+          Real k_s = rho * opacity(OPAS,k,j,i);
+          Real k_tot = k_a + k_s;
+          Real var_a = 0.0;
+          Real var_b = 0.0;
+          ee_f_minus_(i) = 0.0;
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              Real ii_minus = prim_rad(lm,k,j,i);
+              Real u_n = -u_tet_(0,i) * nh_cc_(0,l,m) + u_tet_(1,i) * nh_cc_(1,l,m)
+                  + u_tet_(2,i) * nh_cc_(2,l,m) + u_tet_(3,i) * nh_cc_(3,l,m);
+              Real denominator = 1.0 - dt * k_tot * u_n;
+              var_a += ii_minus * SQR(u_n) / denominator * solid_angle(l,m);
+              var_b += 1.0 / u_n / denominator * solid_angle(l,m);
+              ee_f_minus_(i) += ii_minus * SQR(u_n) * solid_angle(l,m);
             }
           }
+          var_b *= dt / (4.0 * PI);
+          coefficients_(0,i) =
+              -(gamma_adi - 1.0) / rho * var_b * k_a * arad / (1.0 + var_b * k_s);
+          coefficients_(1,i) = -tt_minus - (gamma_adi - 1.0) / rho * ee_f_minus_(i)
+              + (gamma_adi - 1.0) / rho * var_a / (1.0 + var_b * k_s);
         }
 
-        // Calculate radiation-fluid coupling in fluid frame
-        for (int n = 0; n < nzeta * npsi; ++n) {
-          for (int i = is; i <= ie; ++i) {
-            omega_cm_(n,i) /= weight_sum_(i);
-            intensity_cm_(n,i) *= 4.0*PI;
-          }
-        }
-        Coupling(prim_hydro, n_cm_, n0_, omega_cm_, dt_, dtau_, k, j, intensity_cm_);
-        for (int n = 0; n < nzeta * npsi; ++n) {
-          for (int i = is; i <= ie; ++i) {
-            intensity_cm_(n,i) /= 4.0*PI;
+        // Calculate new gas temperature
+        for (int i = is; i <= ie; ++i) {
+          bad_cell_(i) = false;
+          if (std::abs(coefficients_(0,i)) > TINY_NUMBER) {
+            bool quartic_flag =
+                FourthPolyRoot(coefficients_(0,i), coefficients_(1,i), &tt_plus_(i));
+            if (not quartic_flag or std::isnan(tt_plus_(i))) {
+              bad_cell_(i) = true;
+              tt_plus_(i) = prim_hydro(IPR,k,j,i) / prim_hydro(IDN,k,j,i);
+            }
+          } else {
+            tt_plus_(i) = -coefficients_(1,i);
           }
         }
 
-        // Apply radiation-fluid coupling to radiation in coordinate frame
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m);
-            int lm_alt = (l - zs) * (pe - ps + 1) + m - ps;
-            for (int i = is; i <= ie; ++i) {
-              Real intensity_coord =
-                  intensity_cm_(lm_alt,i) / SQR(SQR(n_cm_(0,lm_alt,i)));
-              cons_rad(lm,k,j,i) = intensity_coord * n0_n_mu_(0,l,m,k,j,i);
+        // Calculate new radiation energy density
+        for (int i = is; i <= ie; ++i) {
+          if (not bad_cell_(i)) {
+            Real rho = prim_hydro(IDN,k,j,i);
+            Real tt_minus = prim_hydro(IPR,k,j,i) / rho;
+            ee_f_plus_(i) =
+                ee_f_minus_(i) + rho / (gamma_adi - 1.0) * (tt_minus - tt_plus_(i));
+            ee_f_plus_(i) = std::max(ee_f_plus_(i), 0.0);
+          }
+        }
+
+        // Calculate new intensity
+        for (int i = is; i <= ie; ++i) {
+          if (not bad_cell_(i)) {
+            Real rho = prim_hydro(IDN,k,j,i);
+            Real k_a = rho * opacity(OPAA,k,j,i);
+            Real k_s = rho * opacity(OPAS,k,j,i);
+            Real k_tot = k_a + k_s;
+            for (int l = zs; l <= ze; ++l) {
+              for (int m = ps; m <= pe; ++m) {
+                int lm = AngleInd(l, m);
+                Real ii_minus = prim_rad(lm,k,j,i);
+                Real u_n = -u_tet_(0,i) * nh_cc_(0,l,m) + u_tet_(1,i) * nh_cc_(1,l,m)
+                    + u_tet_(2,i) * nh_cc_(2,l,m) + u_tet_(3,i) * nh_cc_(3,l,m);
+                Real ii_plus = (ii_minus - dt / (4.0 * PI) / u_n / SQR(u_n)
+                    * (k_a * arad * SQR(SQR(tt_plus_(i))) + k_s * ee_f_plus_(i)))
+                    / (1.0 - dt * k_tot * u_n);
+                cons_rad(lm,k,j,i) += (ii_plus - ii_minus) * n0_n_mu_(0,l,m,k,j,i);
+                cons_rad(lm,k,j,i) = std::min(cons_rad(lm,k,j,i), 0.0);
+              }
             }
           }
         }
@@ -1827,4 +1876,54 @@ void Radiation::SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pco
 
 void DefaultOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim_hydro) {
   return;
+}
+
+//----------------------------------------------------------------------------------------
+// Exact solution for fourth order polynomial
+// Inputs:
+//   coef4: quartic coefficient
+//   tconst: constant coefficient
+// Outputs:
+//   root: solution to equation
+//   returned value: flag indicating success
+// Notes:
+//   Polynomial has the form coef4 * x^4 + x + tconst = 0.
+
+bool FourthPolyRoot(const Real coef4, const Real tconst, Real *root) {
+
+  // Calculate real root of z^3 - 4*tconst/coef4 * z - 1/coef4^2 = 0
+  Real asquar = coef4 * coef4;
+  Real acubic = coef4 * asquar;
+  Real ccubic = tconst * tconst * tconst;
+  Real delta1 = 0.25 - 64.0 * ccubic * coef4 / 27.0;
+  if (delta1 < 0.0) {
+    return false;
+  }
+  delta1 = std::sqrt(delta1);
+  if (delta1 < 0.5) {
+    return false;
+  }
+  Real zroot;
+  if (delta1 > 1.0e11) {  // to avoid small number cancellation
+    zroot = std::pow(delta1, -2.0/3.0) / 3.0;
+  } else {
+    zroot = std::pow(0.5 + delta1, 1.0/3.0) - std::pow(-0.5 + delta1, 1.0/3.0);
+  }
+  if (zroot < 0.0) {
+    return false;
+  }
+  zroot *= std::pow(coef4, -2.0/3.0);
+
+  // Calculate quartic root using cubic root
+  Real rcoef = std::sqrt(zroot);
+  Real delta2 = -zroot + 2.0 / (coef4 * rcoef);
+  if (delta2 < 0.0) {
+    return false;
+  }
+  delta2 = std::sqrt(delta2);
+  *root = 0.5 * (delta2 - rcoef);
+  if (*root < 0.0) {
+    return false;
+  }
+  return true;
 }
