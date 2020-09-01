@@ -94,13 +94,9 @@ public:
   RadBoundaryVariable rbvar;
   int refinement_idx{-1};
 
-  // Task list functions
+  // Task list functions - core
   void WeightedAve(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
       AthenaArray<Real> &cons_in_2, const Real weights[3]);
-  void CalculateFluxes(AthenaArray<Real> &prim_rad, const AthenaArray<Real> &prim_hydro,
-      int order);
-  void AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Real weight,
-      AthenaArray<Real> &cons_out);
   void PrimitiveToConserved(const AthenaArray<Real> &prim_in, AthenaArray<Real> &cons_out,
       Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
   void ConservedToPrimitive(AthenaArray<Real> &cons_in, AthenaArray<Real> &prim_out,
@@ -112,8 +108,26 @@ public:
       const AthenaArray<Real> &prim_hydro, AthenaArray<Real> &cons_rad,
       AthenaArray<Real> &cons_hydro);
 
+  // Task list functions - fluxes (defined in rad_fluxes.cpp)
+  void CalculateFluxes(AthenaArray<Real> &prim_rad, const AthenaArray<Real> &prim_hydro,
+      int order);
+  void AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Real weight,
+      AthenaArray<Real> &cons_out);
+
   // Fluid coupling functions
   void EnrollOpacityFunction(OpacityFunc MyOpacityFunction);
+
+  // Reconstruction functions (defined in rad_reconstruction.cpp)
+  void RadiationDonorCellX1(const AthenaArray<Real> &intensity, int k, int j);
+  void RadiationDonorCellX2(const AthenaArray<Real> &intensity, int k, int j);
+  void RadiationDonorCellX3(const AthenaArray<Real> &intensity, int k, int j);
+  void RadiationDonorCellA1(const AthenaArray<Real> &intensity, int k, int j);
+  void RadiationDonorCellA2(const AthenaArray<Real> &intensity, int k, int j);
+  void RadiationPiecewiseLinearX1(const AthenaArray<Real> &intensity, int k, int j);
+  void RadiationPiecewiseLinearX2(const AthenaArray<Real> &intensity, int k, int j);
+  void RadiationPiecewiseLinearX3(const AthenaArray<Real> &intensity, int k, int j);
+  void RadiationPiecewiseLinearA1(const AthenaArray<Real> &intensity, int k, int j);
+  void RadiationPiecewiseLinearA2(const AthenaArray<Real> &intensity, int k, int j);
 
   // Other functions
   int AngleInd(int l, int m, bool zeta_face = false, bool psi_face = false);
