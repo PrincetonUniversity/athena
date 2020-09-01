@@ -147,21 +147,11 @@ private:
   AthenaArray<Real> area_r_;         // right face areas
   AthenaArray<Real> vol_;            // cell volumes
   AthenaArray<Real> flux_div_;       // flux divergences in spatial coordinates
-  AthenaArray<Real> intensity_scr_;  // intensity in a single cell
-  AthenaArray<Real> tran_coef_;      // transformation coefficient in a single cell
-  AthenaArray<Real> weight_;         // weight (fractional solid angle) in a single cell
-  AthenaArray<Real> vncsigma2_;      // source terms in a single cell
   AthenaArray<Real> g_, gi_;         // metric and inverse
   AthenaArray<Real> norm_to_tet_;    // transformation from normal to tetrad frame
-  AthenaArray<Real> u_tet_;          // fluid 4-velocity in tetrad frame
-  AthenaArray<Real> dt_;             // timestep in coordinate frame
-  AthenaArray<Real> dtau_;           // timestep in fluid frame
-  AthenaArray<Real> weight_sum_;     // sum of solid angles, used for normalizing
-  AthenaArray<Real> n_cm_;           // unit null direction in comoving fluid frame
-  AthenaArray<Real> n0_;             // unit null time component in coordinate frame
-  AthenaArray<Real> omega_cm_;       // solid angle in comoving fluid frame
   AthenaArray<Real> moments_old_;    // moments of radiation field before fluid coupling
   AthenaArray<Real> moments_new_;    // moments of radiation field after fluid coupling
+  AthenaArray<Real> u_tet_;          // fluid 4-velocity in tetrad frame
   AthenaArray<Real> coefficients_;   // quartic coefficients for implicit update
   AthenaArray<bool> bad_cell_;       // flag indicating problem with coupling
   AthenaArray<Real> tt_plus_;        // gas temperature after coupling

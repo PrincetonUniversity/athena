@@ -460,27 +460,13 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   vol_.NewAthenaArray(pmb->ncells1 + 1);
   flux_div_.NewAthenaArray(nang, pmb->ncells1 + 1);
 
-  // Allocate memory for source term calculation in a single cell
-  intensity_scr_.NewAthenaArray(nzeta * npsi);
-  tran_coef_.NewAthenaArray(nzeta * npsi);
-  weight_.NewAthenaArray(nzeta * npsi);
-  vncsigma2_.NewAthenaArray(nzeta * npsi);
-
-  // Allocate memory for source term frame transformations
+  // Allocate memory for source term calculation
   g_.NewAthenaArray(NMETRIC, pmb->ncells1);
   gi_.NewAthenaArray(NMETRIC, pmb->ncells1);
   norm_to_tet_.NewAthenaArray(4, 4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
-  u_tet_.NewAthenaArray(4, pmb->ncells1);
-  dt_.NewAthenaArray(pmb->ncells1);
-  dtau_.NewAthenaArray(pmb->ncells1);
-  weight_sum_.NewAthenaArray(pmb->ncells1);
-  n_cm_.NewAthenaArray(4, nzeta * npsi, pmb->ncells1);
-  n0_.NewAthenaArray(nzeta * npsi, pmb->ncells3, pmb->ncells2, pmb->ncells1);
-  omega_cm_.NewAthenaArray(nzeta * npsi, pmb->ncells1);
   moments_old_.NewAthenaArray(4, pmb->ncells1);
   moments_new_.NewAthenaArray(4, pmb->ncells1);
-
-  // Allocate memory for implicit coupling
+  u_tet_.NewAthenaArray(4, pmb->ncells1);
   coefficients_.NewAthenaArray(2, pmb->ncells1);
   bad_cell_.NewAthenaArray(pmb->ncells1);
   tt_plus_.NewAthenaArray(pmb->ncells1);
@@ -526,28 +512,6 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
                 norm_to_tet_(m,n,k,j,i) += eta[m][p] * e_cov(p,q) * norm_to_coord[q][n];
               }
             }
-          }
-        }
-      }
-    }
-  }
-
-  // Calculate n^0
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie; ++i) {
-        Real x1 = pmb->pcoord->x1v(i);
-        Real x2 = pmb->pcoord->x2v(j);
-        Real x3 = pmb->pcoord->x3v(k);
-        pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm_alt = (l - zs) * (pe - ps + 1) + m - ps;
-            Real n0 = 0.0;
-            for (int n = 0; n < 4; ++n) {
-              n0 += e(n,0) * nh_cc_(n,l,m);
-            }
-            n0_(lm_alt,k,j,i) = n0;
           }
         }
       }
@@ -693,6 +657,8 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
           }
         }
       }
+    }
+  }
 
   // Calculate x2-fluxes
   if (js != je) {
