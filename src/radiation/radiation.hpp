@@ -9,11 +9,12 @@
 //  \brief definitions for Radiation class
 
 // Athena++ headers
-#include "../athena.hpp"                  // Real, indices, function prototypes
-#include "../athena_arrays.hpp"           // AthenaArray
-#include "../bvals/cc/rad/bvals_rad.hpp"  // RadBoundaryVariable
-#include "../mesh/mesh.hpp"               // MeshBlock
-#include "../parameter_input.hpp"         // ParameterInput
+#include "../athena.hpp"                   // Real, indices, function prototypes
+#include "../athena_arrays.hpp"            // AthenaArray
+#include "../parameter_input.hpp"          // ParameterInput
+#include "../bvals/cc/rad/bvals_rad.hpp"   // RadBoundaryVariable
+#include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../mesh/mesh.hpp"                // MeshBlock
 
 //----------------------------------------------------------------------------------------
 // Radiation class
@@ -94,25 +95,25 @@ public:
   RadBoundaryVariable rbvar;
   int refinement_idx{-1};
 
-  // Task list functions - core
-  void WeightedAve(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
-      AthenaArray<Real> &cons_in_2, const Real weights[3]);
-  void PrimitiveToConserved(const AthenaArray<Real> &prim_in, AthenaArray<Real> &cons_out,
-      Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
-  void ConservedToPrimitive(AthenaArray<Real> &cons_in, AthenaArray<Real> &prim_out,
-      int il, int iu, int jl, int ju, int kl, int ku);
-  void ConservedToPrimitiveWithMoments(AthenaArray<Real> &cons_in,
-      AthenaArray<Real> &prim_out, const AthenaArray<Real> &prim_hydro,
-      Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
-  void AddSourceTerms(const Real time, const Real dt, const AthenaArray<Real> &prim_rad,
-      const AthenaArray<Real> &prim_hydro, AthenaArray<Real> &cons_rad,
-      AthenaArray<Real> &cons_hydro);
+  // Setup functions for problem generators (defined in rad_setup.cpp)
+  void CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real width, Real dir_1,
+      Real dir_2, Real dir_3, Real spread, Real dii_dt, AthenaArray<Real> &dcons_dt,
+      bool cylindrical = false, bool spherical = false);
+  void CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u3,
+      AthenaArray<Real> &cons_out);
+  void CalculateRadiationInCellM1(Real energy, Real u1, Real u2, Real u3, int k, int j,
+      int i, const AthenaArray<Real> &g, AthenaArray<Real> &cons_out);
+  void CalculateRadiationInCellLinear(Real ee_f, Real ff1_f, Real ff2_f, Real ff3_f,
+      Real uu1, Real uu2, Real uu3, int k, int j, int i, const AthenaArray<Real> &g,
+      AthenaArray<Real> &cons_out);
 
-  // Task list functions - fluxes (defined in rad_fluxes.cpp)
+  // Flux functions (defined in rad_fluxes.cpp)
   void CalculateFluxes(AthenaArray<Real> &prim_rad, const AthenaArray<Real> &prim_hydro,
       int order);
   void AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Real weight,
       AthenaArray<Real> &cons_out);
+  void WeightedAve(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
+      AthenaArray<Real> &cons_in_2, const Real weights[3]);
 
   // Reconstruction functions (defined in rad_reconstruction.cpp)
   void RadiationDonorCellX1(const AthenaArray<Real> &intensity, int k, int j);
@@ -126,23 +127,39 @@ public:
   void RadiationPiecewiseLinearA1(const AthenaArray<Real> &intensity, int k, int j);
   void RadiationPiecewiseLinearA2(const AthenaArray<Real> &intensity, int k, int j);
 
-  // Setup functions for problem generators (defined in rad_setup.cpp)
-  void CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real width, Real dir_1,
-      Real dir_2, Real dir_3, Real spread, Real dii_dt, AthenaArray<Real> &dcons_dt,
-      bool cylindrical = false, bool spherical = false);
-  void CalculateConstantRadiation(Real energy, Real u1, Real u2, Real u3,
-      AthenaArray<Real> &cons_out);
-  void CalculateRadiationInCellM1(Real energy, Real u1, Real u2, Real u3, int k, int j,
-      int i, const AthenaArray<Real> &g, AthenaArray<Real> &cons_out);
-  void CalculateRadiationInCellLinear(Real ee_f, Real ff1_f, Real ff2_f, Real ff3_f,
-      Real uu1, Real uu2, Real uu3, int k, int j, int i, const AthenaArray<Real> &g,
-      AthenaArray<Real> &cons_out);
+  // Source term functions (defined in rad_source.cpp)
+  void AddSourceTerms(const Real time, const Real dt, const AthenaArray<Real> &prim_rad,
+      const AthenaArray<Real> &prim_hydro, AthenaArray<Real> &cons_rad,
+      AthenaArray<Real> &cons_hydro);
+  void EnrollOpacityFunction(OpacityFunc MyOpacityFunction);
 
-  // Other functions
-  int AngleInd(int l, int m, bool zeta_face = false, bool psi_face = false);
+  // Variable conversion/inversion functions (defined in rad_convert.cpp)
+  void PrimitiveToConserved(const AthenaArray<Real> &prim_in, AthenaArray<Real> &cons_out,
+      Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
+  void ConservedToPrimitive(AthenaArray<Real> &cons_in, AthenaArray<Real> &prim_out,
+      int il, int iu, int jl, int ju, int kl, int ku);
+  void ConservedToPrimitiveWithMoments(AthenaArray<Real> &cons_in,
+      AthenaArray<Real> &prim_out, const AthenaArray<Real> &prim_hydro,
+      Coordinates *pcoord, int il, int iu, int jl, int ju, int kl, int ku);
   void SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pcoord, int il,
       int iu, int jl, int ju, int kl, int ku);
-  void EnrollOpacityFunction(OpacityFunc MyOpacityFunction);
+
+  // Indexing function for angles
+  // Inputs:
+  //   l: zeta-index
+  //   m: psi-index
+  //   zeta_face: flag indicating zeta-index is on faces
+  //   psi_face: flag indicating psi-index is on faces
+  // Outputs:
+  //   returned value: 1D index for both zeta and psi
+  // Notes:
+  //   More general version of RadBoundaryVariable::AngleInd().
+  int AngleInd(int l, int m, bool zeta_face = false, bool psi_face = false) {
+    if (psi_face) {
+      return l * (npsi + 2*NGHOST + 1) + m;
+    }
+    return l * (npsi + 2*NGHOST) + m;
+  }
 
 private:
 

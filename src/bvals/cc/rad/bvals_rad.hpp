@@ -58,8 +58,17 @@ public:
   void ReflectOuterX3(Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
       override;
 
-  // Indexing function
-  int AngleInd(int l, int m);
+  // Indexing function for angles
+  // Inputs:
+  //   l: zeta-index
+  //   m: psi-index
+  // Outputs:
+  //   returned value: 1D index for both zeta and psi
+  // Notes:
+  //   Less general version of Radiation::AngleInd().
+  int AngleInd(int l, int m) {
+    return l * (npsi + 2*NGHOST) + m;
+  }
 
 private:
 

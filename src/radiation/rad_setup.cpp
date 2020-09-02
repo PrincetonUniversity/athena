@@ -12,6 +12,7 @@
 
 // Athena++ headers
 #include "radiation.hpp"
+#include "../athena.hpp"                   // Real, indices
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../mesh/mesh.hpp"                // MeshBlock

@@ -8,6 +8,7 @@
 
 // Athena++ headers
 #include "radiation.hpp"
+#include "../athena.hpp"                   // Real, indices
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../mesh/mesh.hpp"                // MeshBlock
@@ -278,6 +279,70 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
 
             // Update conserved variables
             cons_out(lm,k,j,i) -= dt * flux_div / omega;
+          }
+        }
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Function for averaging intensities according to integrator weights
+// Inputs:
+//   cons_out, cons_in_1, cons_in_2: conserved intensity arrays, possibly uninitialized
+//   weights: integrator weights
+// Outputs:
+//   cons_out: weighted intensity
+// Notes:
+//   Same procedure as in MeshBlock::WeightedAve().
+
+void Radiation::WeightedAve(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
+    AthenaArray<Real> &cons_in_2, const Real weights[3]) {
+
+  // Apply averaging based on which weights are 0
+  if (weights[2] != 0.0) {
+    for (int n = 0; n < nang; ++n) {
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          #pragma omp simd
+          for (int i = is; i <= ie; ++i) {
+            cons_out(n,k,j,i) = weights[0] * cons_out(n,k,j,i)
+                + weights[1] * cons_in_1(n,k,j,i) + weights[2] * cons_in_2(n,k,j,i);
+          }
+        }
+      }
+    }
+  } else if (weights[1] != 0.0) {
+    for (int n = 0; n < nang; ++n) {
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          #pragma omp simd
+          for (int i = is; i <= ie; ++i) {
+            cons_out(n,k,j,i) =
+                weights[0] * cons_out(n,k,j,i) + weights[1] * cons_in_1(n,k,j,i);
+          }
+        }
+      }
+    }
+  } else if (weights[0] != 0.0) {
+    for (int n = 0; n < nang; ++n) {
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          #pragma omp simd
+          for (int i = is; i <= ie; ++i) {
+            cons_out(n,k,j,i) = weights[0] * cons_out(n,k,j,i);
+          }
+        }
+      }
+    }
+  } else {
+    for (int n = 0; n < nang; ++n) {
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          #pragma omp simd
+          for (int i = is; i <= ie; ++i) {
+            cons_out(n,k,j,i) = 0.0;
           }
         }
       }

@@ -644,17 +644,3 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
     }
   }
 }
-
-//----------------------------------------------------------------------------------------
-// Indexing function for angles
-// Inputs:
-//   l: zeta-index
-//   m: psi-index
-// Outputs:
-//   returned value: 1D index for both zeta and psi
-// Notes:
-//   Less general version of Radiation::AngleInd().
-
-int RadBoundaryVariable::AngleInd(int l, int m) {
-  return l * (npsi + 2*NGHOST) + m;
-}

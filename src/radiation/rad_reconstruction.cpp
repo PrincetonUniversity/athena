@@ -8,6 +8,7 @@
 
 // Athena++ headers
 #include "radiation.hpp"
+#include "../athena.hpp"                   // Real
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // Coordinates
 
