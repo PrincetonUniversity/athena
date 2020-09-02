@@ -36,16 +36,88 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
         RadiationPiecewiseLinearX1(prim_rad, k, j);
       }
 
-      // Calculate radiation fluxes
-      for (int l = zs; l <= ze; ++l) {
-        for (int m = ps; m <= pe; ++m) {
-          int lm = AngleInd(l, m);
-          for (int i = is; i <= ie+1; ++i) {
-            Real n1_n_0 = n1_n_0_(l,m,k,j,i);
-            if (n1_n_0 < 0.0) {
-              flux_x[X1DIR](lm,k,j,i) = n1_n_0 * rad_l_(lm,i);
-            } else {
-              flux_x[X1DIR](lm,k,j,i) = n1_n_0 * rad_r_(lm,i);
+      // Calculate pure radiation fluxes
+      if (not coupled_to_matter) {
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            for (int i = is; i <= ie+1; ++i) {
+              Real n1_n_0 = n1_n_0_(l,m,k,j,i);
+              if (n1_n_0 < 0.0) {
+                flux_x[X1DIR](lm,k,j,i) = n1_n_0 * rad_l_(lm,i);
+              } else {
+                flux_x[X1DIR](lm,k,j,i) = n1_n_0 * rad_r_(lm,i);
+              }
+            }
+          }
+        }
+      }
+
+      // Calculate radiation-hydrodynamic fluxes
+      if (coupled_to_matter) {
+        pmy_block->pcoord->CellMetric(k, j, is - 1, ie + 1, g_, gi_);
+        pmy_block->pcoord->CenterWidth1(k, j, is - 1, ie + 1, widths_l_);
+        for (int i = is-1; i <= ie+1; ++i) {
+          ee_l_(i) = 0.0;
+        }
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            for (int i = is-1; i <= ie+1; ++i) {
+              ee_l_(i) += n0_n_mu_(0,l,m,k,j,i) * prim_rad(lm,k,j,i) * solid_angle(l,m);
+            }
+          }
+        }
+        for (int i = is-1; i <= ie+1; ++i) {
+          Real uu1 = prim_hydro(IVX,k,j,i);
+          Real uu2 = prim_hydro(IVY,k,j,i);
+          Real uu3 = prim_hydro(IVZ,k,j,i);
+          Real gamma_sq = 1.0 + g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
+              + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+          Real gamma = std::sqrt(gamma_sq);
+          Real alpha = std::sqrt(-1.0 / gi_(I00,i));
+          Real u0 = gamma / alpha;
+          Real u1 = uu1 - alpha * gamma * gi_(I01,i);
+          v_l_(i) = u1 / u0;
+        }
+        for (int i = is; i <= ie+1; ++i) {
+          Real dx_l = pmy_block->pcoord->x1f(i) - pmy_block->pcoord->x1v(i-1);
+          Real dx_r = pmy_block->pcoord->x1v(i) - pmy_block->pcoord->x1f(i);
+          Real ee = 0.5 * (ee_l_(i-1) + ee_l_(i));
+          Real grad_ee =
+              2.0 * std::abs(ee_l_(i-1) - ee_l_(i)) / (widths_l_(i-1) + widths_l_(i));
+          Real kappa_l = opacity(OPAA,k,j,i-1) + opacity(OPAS,k,j,i-1);
+          Real kappa_r = opacity(OPAA,k,j,i) + opacity(OPAS,k,j,i);
+          Real tau_factor_l = kappa_l > 0.0 ? 1.0 : 0.0;
+          Real tau_factor_r = kappa_r > 0.0 ? 1.0 : 0.0;
+          if (grad_ee > 0.0) {
+            Real tau_l = ee / grad_ee * prim_hydro(IDN,k,j,i-1) * kappa_l;
+            Real tau_r = ee / grad_ee * prim_hydro(IDN,k,j,i) * kappa_r;
+            tau_factor_l = -std::expm1(-SQR(tau_l));
+            tau_factor_r = -std::expm1(-SQR(tau_r));
+          }
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              Real ii_diffusive_l = rad_l_(lm,i) * (1.0 - tau_factor_l);
+              Real ii_diffusive_r = rad_r_(lm,i) * (1.0 - tau_factor_r);
+              Real v_diffusive = n1_n_0_(l,m,k,j,i);
+              if (v_diffusive < 0.0) {
+                flux_x[X1DIR](lm,k,j,i) = v_diffusive * ii_diffusive_l;
+              } else {
+                flux_x[X1DIR](lm,k,j,i) = v_diffusive * ii_diffusive_r;
+              }
+              Real ii_advective_l = rad_l_(lm,i) * tau_factor_l;
+              Real ii_advective_r = rad_r_(lm,i) * tau_factor_r;
+              Real v_advective = (dx_r * v_l_(i-1) * n0_n_mu_(0,l,m,k,j,i-1)
+                  / nmu_(0,l,m,k,j,i-1) + dx_l * v_l_(i) * n0_n_mu_(0,l,m,k,j,i)
+                  / nmu_(0,l,m,k,j,i)) / (dx_l + dx_r);
+              if (v_advective < 0.0) {
+                flux_x[X1DIR](lm,k,j,i) += v_advective * ii_advective_l;
+              } else {
+                flux_x[X1DIR](lm,k,j,i) += v_advective * ii_advective_r;
+              }
             }
           }
         }

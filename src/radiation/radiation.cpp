@@ -447,9 +447,21 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
+  // Allocate memory for metric
+  g_.NewAthenaArray(NMETRIC, pmb->ncells1);
+  gi_.NewAthenaArray(NMETRIC, pmb->ncells1);
+
   // Allocate memory for flux calculation
-  rad_l_.NewAthenaArray(nang_zpf, pmb->ncells1 + 1);
-  rad_r_.NewAthenaArray(nang_zpf, pmb->ncells1 + 1);
+  if (coupled_to_matter) {
+    widths_l_.NewAthenaArray(pmb->ncells1);
+    widths_r_.NewAthenaArray(pmb->ncells1);
+    ee_l_.NewAthenaArray(pmb->ncells1);
+    ee_r_.NewAthenaArray(pmb->ncells1);
+    v_l_.NewAthenaArray(pmb->ncells1);
+    v_r_.NewAthenaArray(pmb->ncells1);
+  }
+  rad_l_.NewAthenaArray(nang_zpf, pmb->ncells1);
+  rad_r_.NewAthenaArray(nang_zpf, pmb->ncells1);
 
   // Allocate memory for flux divergence calculation
   area_l_.NewAthenaArray(pmb->ncells1 + 1);
@@ -458,17 +470,17 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   flux_div_.NewAthenaArray(nang, pmb->ncells1 + 1);
 
   // Allocate memory for source term calculation
-  g_.NewAthenaArray(NMETRIC, pmb->ncells1);
-  gi_.NewAthenaArray(NMETRIC, pmb->ncells1);
   norm_to_tet_.NewAthenaArray(4, 4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
-  moments_old_.NewAthenaArray(4, pmb->ncells1);
-  moments_new_.NewAthenaArray(4, pmb->ncells1);
-  u_tet_.NewAthenaArray(4, pmb->ncells1);
-  coefficients_.NewAthenaArray(2, pmb->ncells1);
-  bad_cell_.NewAthenaArray(pmb->ncells1);
-  tt_plus_.NewAthenaArray(pmb->ncells1);
-  ee_f_minus_.NewAthenaArray(pmb->ncells1);
-  ee_f_plus_.NewAthenaArray(pmb->ncells1);
+  if (coupled_to_matter) {
+    moments_old_.NewAthenaArray(4, pmb->ncells1);
+    moments_new_.NewAthenaArray(4, pmb->ncells1);
+    u_tet_.NewAthenaArray(4, pmb->ncells1);
+    coefficients_.NewAthenaArray(2, pmb->ncells1);
+    bad_cell_.NewAthenaArray(pmb->ncells1);
+    tt_plus_.NewAthenaArray(pmb->ncells1);
+    ee_f_minus_.NewAthenaArray(pmb->ncells1);
+    ee_f_plus_.NewAthenaArray(pmb->ncells1);
+  }
 
   // Calculate transformation from normal frame to tetrad frame
   for (int k = ks; k <= ke; ++k) {
