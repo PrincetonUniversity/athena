@@ -114,9 +114,6 @@ public:
   void AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Real weight,
       AthenaArray<Real> &cons_out);
 
-  // Fluid coupling functions
-  void EnrollOpacityFunction(OpacityFunc MyOpacityFunction);
-
   // Reconstruction functions (defined in rad_reconstruction.cpp)
   void RadiationDonorCellX1(const AthenaArray<Real> &intensity, int k, int j);
   void RadiationDonorCellX2(const AthenaArray<Real> &intensity, int k, int j);
@@ -129,8 +126,7 @@ public:
   void RadiationPiecewiseLinearA1(const AthenaArray<Real> &intensity, int k, int j);
   void RadiationPiecewiseLinearA2(const AthenaArray<Real> &intensity, int k, int j);
 
-  // Other functions
-  int AngleInd(int l, int m, bool zeta_face = false, bool psi_face = false);
+  // Setup functions for problem generators (defined in rad_setup.cpp)
   void CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real width, Real dir_1,
       Real dir_2, Real dir_3, Real spread, Real dii_dt, AthenaArray<Real> &dcons_dt,
       bool cylindrical = false, bool spherical = false);
@@ -141,8 +137,12 @@ public:
   void CalculateRadiationInCellLinear(Real ee_f, Real ff1_f, Real ff2_f, Real ff3_f,
       Real uu1, Real uu2, Real uu3, int k, int j, int i, const AthenaArray<Real> &g,
       AthenaArray<Real> &cons_out);
+
+  // Other functions
+  int AngleInd(int l, int m, bool zeta_face = false, bool psi_face = false);
   void SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pcoord, int il,
       int iu, int jl, int ju, int kl, int ku);
+  void EnrollOpacityFunction(OpacityFunc MyOpacityFunction);
 
 private:
 
