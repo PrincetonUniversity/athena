@@ -453,6 +453,8 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
 
   // Allocate memory for flux calculation
   if (coupled_to_matter) {
+    g_alt_.NewAthenaArray(NMETRIC, pmb->ncells1);
+    gi_alt_.NewAthenaArray(NMETRIC, pmb->ncells1);
     ee_l_.NewAthenaArray(pmb->ncells1);
     ee_r_.NewAthenaArray(pmb->ncells1);
     u_l_.NewAthenaArray(4, pmb->ncells1);

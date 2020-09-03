@@ -173,6 +173,8 @@ private:
   AthenaArray<Real> na1_n_0_;        // n^zeta n_0 at cell centers and zeta-faces
   AthenaArray<Real> na2_n_0_;        // n^psi n_0 at cell centers and psi-faces
   AthenaArray<Real> g_, gi_;         // metric and inverse
+  AthenaArray<Real> g_alt_;          // alternate storage of metric coefficients
+  AthenaArray<Real> gi_alt_;         // alternate storage of inverse metric coefficients
   AthenaArray<Real> ee_l_, ee_r_;    // energy densities
   AthenaArray<Real> u_l_, u_r_;      // velocities
   AthenaArray<Real> rad_l_;          // left reconstructed radiation state
