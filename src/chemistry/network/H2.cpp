@@ -30,6 +30,7 @@
 #include "../utils/chemistry_utils.hpp"
 #include "../../defs.hpp"
 #include "../../eos/eos.hpp"
+#include "../utils/thermo.hpp"
 
 //c++ header
 #include <sstream>    // stringstream
@@ -48,6 +49,10 @@ const int ChemNetwork::iH_ =
 const int ChemNetwork::iH2_ =
   ChemistryUtility::FindStrIndex(species_names, NSCALARS, "H2");
 
+//flag for Cv
+static bool is_const_Cv;
+
+
 ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 	//number of species and a list of name of species
   pmy_spec_ = pmb->pscalars;
@@ -63,6 +68,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   unit_time_in_s_ = unit_length_in_cm_/unit_vel_in_cms_;
   unit_E_in_cgs_ = 1.67e-24 * 1.4 * unit_density_in_nH_
                            * unit_vel_in_cms_ * unit_vel_in_cms_;
+  //set Cv: constant or H2 abundance dependent
+  is_const_Cv = pin->GetOrAddBoolean("problem", "is_const_Cv", true);
 }
 
 ChemNetwork::~ChemNetwork() {}
@@ -93,6 +100,27 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 }
 
 Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED){
-  const Real dEDdt = 0;
+  //isothermal
+  if (!NON_BAROTROPIC_EOS) {
+    return 0;
+  }
+  const Real x_He = 0.1;
+  const Real x_e = 0.;
+  Real x_H2;
+  if (is_const_Cv) {
+    x_H2 = 0;
+  } else {
+    x_H2 = y[iH2_];
+  }
+  const Real T_floor = 1.;//temperature floor for cooling
+  //ernergy per hydrogen atom
+  const Real E_ergs = ED * unit_E_in_cgs_ / nH_; 
+  Real T = E_ergs / Thermo::CvCold(x_H2, x_He, x_e);
+	if (T < T_floor) {
+    return 0;
+  }
+  Real dEdt = - Thermo::alpha_GD_ * nH_ * sqrt(T) * T;
+  //return in code units
+  Real dEDdt = (dEdt * nH_ / unit_E_in_cgs_) * unit_time_in_s_;
   return dEDdt;
 }

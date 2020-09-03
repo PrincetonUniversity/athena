@@ -23,6 +23,7 @@ def prepare(**kwargs):
         prob='chem_uniform',
         chemistry='H2', 
         cxx = cxx,
+        eos = 'isothermal', 
         cvode_path=os.environ['CVODE_PATH']
         )
     athena.make()

@@ -176,11 +176,19 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 	const Real unit_length_in_cm = pin->GetReal("chemistry", "unit_length_in_cm");
 	const Real unit_vel_in_cms = pin->GetReal("chemistry", "unit_vel_in_cms");
   const Real unit_time_in_s = unit_length_in_cm/unit_vel_in_cms;
+  const Real unit_ED_in_cgs = 1.67e-24 * 1.4 * unit_vel_in_cms * unit_vel_in_cms;
 	const Real xi_cr = pin->GetOrAddReal("chemistry", "xi_cr", 2e-16);
   const Real kcr = xi_cr * 3.;
   const Real kgr = 3e-17;
   const Real a1 = kcr + 2.*nH*kgr*unit_density_in_nH;
   const Real a2 = kcr;
+  //cooling parameters
+  const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
+  const Real gm = pin->GetReal("hydro", "gamma");
+  const Real ED0  = SQR(iso_cs) / (gm - 1.0);
+  const Real CvHI = Thermo::CvCold(0., 0.1, 0.);
+  const Real T0 =  (ED0 * unit_ED_in_cgs)  / CvHI;
+  const Real tdust = 2 * CvHI / (3.2e-34 * nH * unit_density_in_nH);
   
   //end of the simulation time
   const Real tchem = time*unit_time_in_s;
@@ -197,7 +205,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   }
 
   // Initialize errors to zero
-  Real l1_err[NSCALARS]{}, max_err[NSCALARS]{}, cons_err[1]{};
+  Real l1_err[NSCALARS]{}, max_err[NSCALARS]{}, cons_err[1]{},
+       l1_err_T[1]{}, max_err_T[1]{};
+  Real T1_a, T1_s;
 
   for (int b=0; b<nblocal; ++b) {
     MeshBlock *pmb = my_blocks(b);
@@ -216,6 +226,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           }
           Real fH = (fH0 - a2/a1)*exp(-a1*tchem) + a2/a1;
           Real fH2 = 0.5*(1. - fH);
+          T1_a = 1. / SQR( tchem/tdust + 1./sqrt(T0) );//analytic T
+          T1_s = pmb->phydro->w(IPR,k,j,i)/pmb->phydro->w(IDN,k,j,i)/(gm-1)
+                        * unit_ED_in_cgs / CvHI;//simulation T
           // Weight l1 error by cell volume
           Real vol = pmb->pcoord->GetCellVolume(k, j, i);
           l1_err[0] += std::abs(fH - pmb->pscalars->r(0,k,j,i))*vol;
@@ -226,6 +239,11 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           max_err[1] = std::max(
               static_cast<Real>(std::abs(fH2 - pmb->pscalars->r(1,k,j,i))),
               max_err[1]);
+          if (NON_BAROTROPIC_EOS) {
+            l1_err_T[0] += std::abs(T1_a - T1_s)*vol;
+            max_err_T[0] = std::max(
+                static_cast<Real>(std::abs(T1_a - T1_s)), max_err_T[0]);
+          }
           cons_err[0] += std::abs(pmb->pscalars->r(0,k,j,i) +
                                   2*pmb->pscalars->r(1,k,j,i) - 1.)*vol;
         }
@@ -241,6 +259,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
                MPI_COMM_WORLD);
     MPI_Reduce(MPI_IN_PLACE, &cons_err, 1, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
+    if (NON_BAROTROPIC_EOS) {
+      MPI_Reduce(MPI_IN_PLACE, &l1_err_T, 1, MPI_ATHENA_REAL, MPI_SUM, 0,
+                 MPI_COMM_WORLD);
+      MPI_Reduce(MPI_IN_PLACE, &max_err_T, 1, MPI_ATHENA_REAL, MPI_MAX, 0,
+                 MPI_COMM_WORLD);
+    }
   } else {
     MPI_Reduce(&l1_err, &l1_err, NSCALARS, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
@@ -248,6 +272,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
                MPI_COMM_WORLD);
     MPI_Reduce(&cons_err, &cons_err, 1, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
+    if (NON_BAROTROPIC_EOS) {
+      MPI_Reduce(&l1_err, &l1_err_T, 1, MPI_ATHENA_REAL, MPI_SUM, 0,
+                 MPI_COMM_WORLD);
+      MPI_Reduce(&max_err, &max_err_T, 1, MPI_ATHENA_REAL, MPI_MAX, 0,
+                 MPI_COMM_WORLD);
+    }
   }
 #endif
 
@@ -258,7 +288,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
               *(mesh_size.x3max - mesh_size.x3min);
     for (int i=0; i<NSCALARS; ++i) {
       l1_err[i] = l1_err[i]/vol;
-      cons_err[i] = cons_err[i]/vol;
+    }
+    cons_err[0] = cons_err[0]/vol;
+    if (NON_BAROTROPIC_EOS) {
+      l1_err_T[0] = l1_err_T[0]/vol;
     }
 
     // open output file and write out errors
@@ -283,20 +316,26 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         ATHENA_ERROR(msg);
       }
       std::fprintf(pfile, "# Nx1  Nx2  Nx3  Ncycle  ");
-      for (int n=0; n<NSCALARS; ++n)
+      for (int n=0; n<NSCALARS; ++n) {
         std::fprintf(pfile, "r%d_L1  ", n);
-      for (int n=0; n<NSCALARS; ++n)
         std::fprintf(pfile, "r%d_max  ", n);
+      }
+      if (NON_BAROTROPIC_EOS) {
+        std::fprintf(pfile, "T_L1  T_max  ");
+      }
       std::fprintf(pfile, "cons_L1  \n");
     }
 
     // write errors
     std::fprintf(pfile, "%d  %d", mesh_size.nx1, mesh_size.nx2);
     std::fprintf(pfile, "  %d  %d", mesh_size.nx3, ncycle);
-    for (int n=0; n<NSCALARS; ++n)
+    for (int n=0; n<NSCALARS; ++n) {
       std::fprintf(pfile, "  %e", l1_err[n]);
-    for (int n=0; n<NSCALARS; ++n)
       std::fprintf(pfile, "  %e", max_err[n]);
+    }
+    if (NON_BAROTROPIC_EOS) {
+      std::fprintf(pfile, "  %e  %e", l1_err_T[0], max_err_T[0]);
+    }
     std::fprintf(pfile, "  %e", cons_err[0]);
     std::fprintf(pfile, "\n");
     std::fclose(pfile);

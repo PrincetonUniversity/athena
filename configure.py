@@ -202,7 +202,7 @@ parser.add_argument('--fftw_path',
 # --chemistry argument
 parser.add_argument('--chemistry',
     default=None,
-    choices=["gow17", "H2", "kida"],
+    choices=["gow17", "H2", "kida", "C12Mg24"],
     help='select chemical network')
 
 # --kida_rates argument
@@ -605,6 +605,8 @@ if args['chemistry'] is not None:
     if args['chemistry'] == "gow17":
         definitions['NUMBER_PASSIVE_SCALARS'] = '12'
     elif args['chemistry'] == "H2":
+        definitions['NUMBER_PASSIVE_SCALARS'] = '2'
+    elif args['chemistry'] == "C12Mg24":
         definitions['NUMBER_PASSIVE_SCALARS'] = '2'
 else:
     definitions['CHEMISTRY_OPTION'] = 'NOT_INCLUDE_CHEMISTRY'
