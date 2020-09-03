@@ -8,8 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // max, min
-#include <cstdlib>    // abs
-#include <cmath>      // isnan, pow, sqrt
+#include <cmath>      // abs, isnan, pow, sqrt
 
 // Athena++ headers
 #include "radiation.hpp"
