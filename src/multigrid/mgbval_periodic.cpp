@@ -14,16 +14,18 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../defs.hpp"
+#include "multigrid.hpp"
+
 
 //----------------------------------------------------------------------------------------
-//! \fn MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
-//                int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                const MGCoordinates &coord)
+//! \fn void MultigridDriver::MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time,
+//                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                    const MGCoordinates &coord)
 //  \brief Periodic (default) boundary condition in the inner-X1 direction
 
-void MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       const MGCoordinates &coord) {
+void MultigridDriver::MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
@@ -37,13 +39,13 @@ void MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
-//                int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                const MGCoordinates &coord)
+//! \fn void MultigridDriver::MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time,
+//                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                    const MGCoordinates &coord)
 //  \brief Periodic (default) boundary condition in the outer-X1 direction
 
-void MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
+void MultigridDriver::MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
                        const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
@@ -58,14 +60,14 @@ void MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
-//                int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                const MGCoordinates &coord)
+//! \fn void MultigridDriver::MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time,
+//                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                    const MGCoordinates &coord)
 //  \brief Periodic (default) boundary condition in the inner-X2 direction
 
-void MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       const MGCoordinates &coord) {
+void MultigridDriver::MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=0; j<ngh; j++) {
@@ -79,14 +81,14 @@ void MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
-//                int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                const MGCoordinates &coord)
+//! \fn void MultigridDriver::MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time,
+//                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                    const MGCoordinates &coord)
 //  \brief Periodic (default) boundary condition in the outer-X2 direction
 
-void MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       const MGCoordinates &coord) {
+void MultigridDriver::MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=0; j<ngh; j++) {
@@ -100,14 +102,14 @@ void MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
-//                int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                const MGCoordinates &coord)
+//! \fn void MultigridDriver::MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time,
+//                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                    const MGCoordinates &coord)
 //  \brief Periodic (default) boundary condition in the inner-X3 direction
 
-void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       const MGCoordinates &coord) {
+void MultigridDriver::MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=0; k<ngh; k++) {
       for (int j=js; j<=je; j++) {
@@ -121,14 +123,14 @@ void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
-//                int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                const MGCoordinates &coord)
+//! \fn void MultigridDriver::MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time,
+//                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                    const MGCoordinates &coord)
 //  \brief Periodic (default) boundary condition in the outer-X3 direction
 
-void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       const MGCoordinates &coord) {
+void MultigridDriver::MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                        int is, int ie, int js, int je, int ks, int ke, int ngh,
+                        const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=0; k<ngh; k++) {
       for (int j=js; j<=je; j++) {

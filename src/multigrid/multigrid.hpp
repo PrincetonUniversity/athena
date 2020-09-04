@@ -97,6 +97,8 @@ class Multigrid {
   Real GetCoarsestData(MGVariable type, int n);
   void SetData(MGVariable type, int n, int k, int j, int i, Real v);
 
+  void CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int mporder_);
+
   // small functions
   int GetCurrentNumberOfCells() { return 1<<current_level_; }
   int GetNumberOfLevels() { return nlevel_; }
@@ -152,6 +154,17 @@ class MultigridDriver {
   MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, 
                   MGSourceMaskFunc MGSourceMask, int invar);
   virtual ~MultigridDriver();
+
+  // pure virtual function
+  virtual void Solve(int step) = 0;
+
+  friend class Multigrid;
+  friend class MultigridTaskList;
+  friend class MGGravity;
+  friend class MGBoundaryValues;
+  friend class MGGravityBoundaryValues;
+
+ protected:
   void SubtractAverage(MGVariable type);
   void SetupMultigrid();
   void TransferFromBlocksToRoot(bool initflag = false);
@@ -192,21 +205,18 @@ class MultigridDriver {
   void SetOctetBoundariesBeforeTransfer(bool folddata);
   void RestrictOctetsBeforeTransfer();
 
+  // for multipole expansion
+  void AllocateMultipoleCoefficients();
+  void CalculateMultipoleCoefficients();
+  virtual void ScaleMultipoleCoefficients() {};
+
   // small functions
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }
 
   // pure virtual functions
   virtual void SetBoundaryFunctions() = 0;
-  virtual void Solve(int step) = 0;
   virtual void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) = 0;
 
-  friend class Multigrid;
-  friend class MultigridTaskList;
-  friend class MGGravity;
-  friend class MGBoundaryValues;
-  friend class MGGravityBoundaryValues;
-
- protected:
   int nranks_, nvar_, mode_;
   int locrootlevel_, nrootlevel_, nmblevel_, ntotallevel_, nreflevel_, maxreflevel_;
   int current_level_, fmglevel_;
@@ -231,6 +241,108 @@ class MultigridDriver {
   int *noctets_, *prevnoct_;
   AthenaArray<Real> cbuf_, cbufold_;
   bool ncoarse_[3][3][3];
+
+  // for multipole expansion
+  AthenaArray<Real> mpcoeff_;
+  int mporder_, nmpcoeff_;
+
+  // Multigrid Boundary functions
+
+  void MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh,
+                         const MGCoordinates &coord);
+  void MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh,
+                         const MGCoordinates &coord);
+  void MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh,
+                         const MGCoordinates &coord);
+  void MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh,
+                         const MGCoordinates &coord);
+  void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh,
+                         const MGCoordinates &coord);
+  void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                         int is, int ie, int js, int je, int ks, int ke, int ngh,
+                         const MGCoordinates &coord);
+
+  void MGZeroGradientInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                             int is, int ie, int js, int je, int ks, int ke, int ngh,
+                             const MGCoordinates &coord);
+  void MGZeroGradientOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                             int is, int ie, int js, int je, int ks, int ke, int ngh,
+                             const MGCoordinates &coord);
+  void MGZeroGradientInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                             int is, int ie, int js, int je, int ks, int ke, int ngh,
+                             const MGCoordinates &coord);
+  void MGZeroGradientOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                             int is, int ie, int js, int je, int ks, int ke, int ngh,
+                             const MGCoordinates &coord);
+  void MGZeroGradientInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                             int is, int ie, int js, int je, int ks, int ke, int ngh,
+                             const MGCoordinates &coord);
+  void MGZeroGradientOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                             int is, int ie, int js, int je, int ks, int ke, int ngh,
+                             const MGCoordinates &coord);
+
+  void MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+                          const MGCoordinates &coord);
+  void MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+                          const MGCoordinates &coord);
+  void MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+                          const MGCoordinates &coord);
+  void MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+                          const MGCoordinates &coord);
+  void MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+                          const MGCoordinates &coord);
+  void MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+                          const MGCoordinates &coord);
+
+  void MGMultipole4InnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+                          const MGCoordinates &coord);
+  void MGMultipole4OuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+                          const MGCoordinates &coord);
+  void MGMultipole4InnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+                          const MGCoordinates &coord);
+  void MGMultipole4OuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+                          const MGCoordinates &coord);
+  void MGMultipole4InnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+                          const MGCoordinates &coord);
+  void MGMultipole4OuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+                          const MGCoordinates &coord);
+
+
+  void MGMultipole16InnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           const MGCoordinates &coord);
+  void MGMultipole16OuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           const MGCoordinates &coord);
+  void MGMultipole16InnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           const MGCoordinates &coord);
+  void MGMultipole16OuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           const MGCoordinates &coord);
+  void MGMultipole16InnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           const MGCoordinates &coord);
+  void MGMultipole16OuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           const MGCoordinates &coord);
 
  private:
   MultigridTaskList *mgtlist_;
@@ -264,104 +376,5 @@ struct MGOctet {
   AthenaArray<Real> u, def, src, uold;
   MGCoordinates coord, ccoord;
 };
-
-
-// Function Prototypes for Multigrid Boundary
-
-void MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       const MGCoordinates &coord);
-void MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       const MGCoordinates &coord);
-void MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       const MGCoordinates &coord);
-void MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       const MGCoordinates &coord);
-void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       const MGCoordinates &coord);
-void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
-                       int is, int ie, int js, int je, int ks, int ke, int ngh,
-                       const MGCoordinates &coord);
-
-void MGZeroGradientInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
-                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-                           const MGCoordinates &coord);
-void MGZeroGradientOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
-                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-                           const MGCoordinates &coord);
-void MGZeroGradientInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
-                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-                           const MGCoordinates &coord);
-void MGZeroGradientOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
-                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-                           const MGCoordinates &coord);
-void MGZeroGradientInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
-                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-                           const MGCoordinates &coord);
-void MGZeroGradientOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
-                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-                           const MGCoordinates &coord);
-
-void MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord);
-void MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord);
-void MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord);
-void MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord);
-void MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord);
-void MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord);
-
-void MGMultipole4InnerX1(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord);
-void MGMultipole4OuterX1(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord);
-void MGMultipole4InnerX2(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord);
-void MGMultipole4OuterX2(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord);
-void MGMultipole4InnerX3(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord);
-void MGMultipole4OuterX3(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord);
-
-
-void MGMultipole16InnerX1(AthenaArray<Real> &dst, Real time, int nvar,
-                         int is, int ie, int js, int je, int ks, int ke, int ngh,
-                         const MGCoordinates &coord);
-void MGMultipole16OuterX1(AthenaArray<Real> &dst, Real time, int nvar,
-                         int is, int ie, int js, int je, int ks, int ke, int ngh,
-                         const MGCoordinates &coord);
-void MGMultipole16InnerX2(AthenaArray<Real> &dst, Real time, int nvar,
-                         int is, int ie, int js, int je, int ks, int ke, int ngh,
-                         const MGCoordinates &coord);
-void MGMultipole16OuterX2(AthenaArray<Real> &dst, Real time, int nvar,
-                         int is, int ie, int js, int je, int ks, int ke, int ngh,
-                         const MGCoordinates &coord);
-void MGMultipole16InnerX3(AthenaArray<Real> &dst, Real time, int nvar,
-                         int is, int ie, int js, int je, int ks, int ke, int ngh,
-                         const MGCoordinates &coord);
-void MGMultipole16OuterX3(AthenaArray<Real> &dst, Real time, int nvar,
-                         int is, int ie, int js, int je, int ks, int ke, int ngh,
-                         const MGCoordinates &coord);
 
 #endif // MULTIGRID_MULTIGRID_HPP_

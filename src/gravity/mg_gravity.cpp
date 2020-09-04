@@ -43,6 +43,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
   four_pi_G_ = pmy_mesh_->four_pi_G_;
   eps_ = pin->GetOrAddReal("gravity", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("gravity", "niteration", -1);
+  ffas_ = pin->GetOrAddBoolean("gravity", "fas", ffas_);
   std::string m = pin->GetOrAddString("gravity", "mgmode", "none");
   std::transform(m.begin(), m.end(), m.begin(), ::tolower);
   if (m == "fmg") {
@@ -81,6 +82,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
   mg_bcs_[inner_x3]=GetMGBoundaryFlag(pin->GetOrAddString("gravity", "ix3_bc", "none"));
   mg_bcs_[outer_x3]=GetMGBoundaryFlag(pin->GetOrAddString("gravity", "ox3_bc", "none"));
   SetBoundaryFunctions();
+  AllocateMultipoleCoefficients();
 
   // Allocate the root multigrid
   mgroot_ = new MGGravity(this, nullptr);
@@ -93,6 +95,8 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
 
 void MGGravityDriver::SetBoundaryFunctions() {
   fsubtract_average_ = true;
+  mp_order_ = 0;
+  fskip_dipole_ = false;
   switch(mg_bcs_[BoundaryFace::inner_x1]) {
     case MGBoundaryFlag::user:
       if (MGBoundaryFunction_[BoundaryFace::inner_x1] == nullptr) {
@@ -116,10 +120,12 @@ void MGGravityDriver::SetBoundaryFunctions() {
     case MGBoundaryFlag::multipole4:
       MGBoundaryFunction_[BoundaryFace::inner_x1] = MGMultipole4InnerX1;
       fsubtract_average_ = false;
+      mp_order_ = std::max(mp_order_, 2);
       break;
     case MGBoundaryFlag::multipole16:
       MGBoundaryFunction_[BoundaryFace::inner_x1] = MGMultipole16InnerX1;
       fsubtract_average_ = false;
+      mp_order_ = 4;
       break;
     default:
       std::stringstream msg;
@@ -151,10 +157,12 @@ void MGGravityDriver::SetBoundaryFunctions() {
     case MGBoundaryFlag::multipole4:
       MGBoundaryFunction_[BoundaryFace::outer_x1] = MGMultipole4OuterX1;
       fsubtract_average_ = false;
+      mp_order_ = std::max(mp_order_, 2);
       break;
     case MGBoundaryFlag::multipole16:
       MGBoundaryFunction_[BoundaryFace::outer_x1] = MGMultipole16OuterX1;
       fsubtract_average_ = false;
+      mp_order_ = 4;
       break;
     default:
       std::stringstream msg;
@@ -186,10 +194,12 @@ void MGGravityDriver::SetBoundaryFunctions() {
     case MGBoundaryFlag::multipole4:
       MGBoundaryFunction_[BoundaryFace::inner_x2] = MGMultipole4InnerX2;
       fsubtract_average_ = false;
+      mp_order_ = std::max(mp_order_, 2);
       break;
     case MGBoundaryFlag::multipole16:
       MGBoundaryFunction_[BoundaryFace::inner_x2] = MGMultipole16InnerX2;
       fsubtract_average_ = false;
+      mp_order_ = 4;
       break;
     default:
       std::stringstream msg;
@@ -221,10 +231,12 @@ void MGGravityDriver::SetBoundaryFunctions() {
     case MGBoundaryFlag::multipole4:
       MGBoundaryFunction_[BoundaryFace::outer_x2] = MGMultipole4OuterX2;
       fsubtract_average_ = false;
+      mp_order_ = std::max(mp_order_, 2);
       break;
     case MGBoundaryFlag::multipole16:
       MGBoundaryFunction_[BoundaryFace::outer_x2] = MGMultipole16OuterX2;
       fsubtract_average_ = false;
+      mp_order_ = 4;
       break;
     default:
       std::stringstream msg;
@@ -256,10 +268,12 @@ void MGGravityDriver::SetBoundaryFunctions() {
     case MGBoundaryFlag::multipole4:
       MGBoundaryFunction_[BoundaryFace::inner_x3] = MGMultipole4InnerX3;
       fsubtract_average_ = false;
+      mp_order_ = std::max(mp_order_, 2);
       break;
     case MGBoundaryFlag::multipole16:
       MGBoundaryFunction_[BoundaryFace::inner_x3] = MGMultipole16InnerX3;
       fsubtract_average_ = false;
+      mp_order_ = 4;
       break;
     default:
       std::stringstream msg;
@@ -291,10 +305,12 @@ void MGGravityDriver::SetBoundaryFunctions() {
     case MGBoundaryFlag::multipole4:
       MGBoundaryFunction_[BoundaryFace::outer_x3] = MGMultipole4OuterX3;
       fsubtract_average_ = false;
+      mp_order_ = std::max(mp_order_, 2);
       break;
     case MGBoundaryFlag::multipole16:
       MGBoundaryFunction_[BoundaryFace::outer_x3] = MGMultipole16OuterX3;
       fsubtract_average_ = false;
+      mp_order_ = 4;
       break;
     default:
       std::stringstream msg;
@@ -558,4 +574,14 @@ void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) 
   }
 
   return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGGravityDriver::ScaleMultipoleCoefficients()
+//  \brief scale coefficients for multipole expansion
+
+void MGGravityDriver::ScaleMultipoleCoefficients() {
+  for (int i = 0; i < nmpcoeff_; ++i)
+    mpcoeff_(i) *= four_pi_G_;
 }

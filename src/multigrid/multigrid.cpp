@@ -25,6 +25,22 @@
 #include "../parameter_input.hpp"
 #include "multigrid.hpp"
 
+// constants for multipole expansion
+static const Real c0  = 0.5/std::sqrt(PI);
+static const Real c1  = std::sqrt(3.0/(4.0*PI));
+static const Real c2  = 0.25*std::sqrt(5.0/PI);
+static const Real c2a = 0.5*std::sqrt(15.0/PI);
+static const Real c30 = 0.25*std::sqrt(7.0/PI);
+static const Real c31 = 0.25*std::sqrt(21.0/TWO_PI);
+static const Real c32 = 0.5*std::sqrt(105.0/PI);
+static const Real c33 = 0.25*std::sqrt(35.0/TWO_PI);
+static const Real c40 = 0.1875/std::sqrt(PI);
+static const Real c41 = 0.75*std::sqrt(5.0/TWO_PI);
+static const Real c42 = 0.75*std::sqrt(5.0/PI);
+static const Real c43 = 0.75*std::sqrt(35.0/TWO_PI);
+static const Real c44 = 1.5*std::sqrt(35.0/PI);
+
+
 //----------------------------------------------------------------------------------------
 //! \fn Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost)
 //  \brief Multigrid constructor
@@ -792,6 +808,107 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
   }
 
   return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff,
+//                                                     int mporder_)
+//  \brief Actual implementation of calculation of multipole expansion coeficients
+
+void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int mporder) {
+  AthenaArray<Real> &src=src_[nlevel_-1];
+  MGCoordinates &coord = coord_[nlevel_-1];
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
+  // *** Note ***: Currently this calculates coefficients of the zeroth variable only.
+  // It is trivial to extend it, but I'm afraid it slows down the code considerably
+  // as it requires non-continuous memory access.
+  // Also, I separate the mporder = 2 and mporder = 4 for performance. 
+  if (mporder == 4) {
+    for (int k = ks; k <= ke; ++k) {
+      Real z = coord.x3v(k);
+      Real z2 = z*z;
+      for (int j = js; j <= je; ++j) {
+        Real y = coord.x2v(j);
+        Real y2 = y*y, yz = y*z;
+        for (int i = is; i <= ie; ++i) {
+          Real x = coord.x1v(i);
+          Real x2 = x*x, xy = x*y, zx = z*x;
+          Real r2 = x2 + y2 + z2;
+          Real hx2my2 = 0.5*(x2-y2);
+          Real x2mty2 = x2-3.0*y2;
+          Real tx2my2 = 3.0*x2-y2;
+          Real fz2mr2 = 5.0*z2-r2;
+          Real sz2mr2 = 7.0*z2-r2;
+          Real sz2mtr2 = 7.0*z2-3.0*r2;
+          Real s = src(k,j,i);
+          // Y00
+          mpcoeff(0)  += s;
+          // r*(Y1-1, Y10, Y11)
+          Real sc1 = s*c1;
+          mpcoeff(1)  += sc1*y;
+          mpcoeff(2)  += sc1*z;
+          mpcoeff(3)  += sc1*x;
+          // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
+          Real sc2a = s*c2a;
+          mpcoeff(4)  += sc2a*xy;
+          mpcoeff(5)  += sc2a*yz;
+          mpcoeff(6)  += s*c2*(3.0*z2-r2);
+          mpcoeff(7)  += sc2a*zx;
+          mpcoeff(8)  += sc2a*hx2my2;
+          // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
+          mpcoeff(9)  += s*c33*y*tx2my2;
+          mpcoeff(10) += s*c32*xy*z;
+          mpcoeff(11) += s*c31*y*fz2mr2;
+          mpcoeff(12) += s*c30*z*(z2-3.0*r2);
+          mpcoeff(13) += s*c31*x*fz2mr2;
+          mpcoeff(14) += s*c32*z*hx2my2;
+          mpcoeff(15) += s*c33*x*x2mty2;
+          // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
+          mpcoeff(16) += s*c44*xy*hx2my2;
+          mpcoeff(17) += s*c43*yz*tx2my2;
+          mpcoeff(18) += s*c42*xy*sz2mr2;
+          mpcoeff(19) += s*c41*yz*sz2mtr2;
+          mpcoeff(20) += s*c40*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2);
+          mpcoeff(21) += s*c41*zx*sz2mtr2;
+          mpcoeff(22) += s*c42*hx2my2*sz2mr2;
+          mpcoeff(23) += s*c43*zx*x2mty2;
+          mpcoeff(24) += s*c44*0.125*(x2*x2mty2-y2*tx2my2);
+        }
+      }
+    }
+  } else if (mporder == 2) {
+    for (int k = ks; k <= ke; ++k) {
+      Real z = coord.x3v(k);
+      Real z2 = z*z;
+      for (int j = js; j <= je; ++j) {
+        Real y = coord.x2v(j);
+        Real y2 = y*y, yz = y*z;
+        for (int i = is; i <= ie; ++i) {
+          Real x = coord.x1v(i);
+          Real x2 = x*x, xy = x*y, zx = z*x;
+          Real r2 = x2 + y2 + z2;
+          Real s = src(k,j,i);
+          // Y00
+          mpcoeff(0) += s*c0;
+          // r*(Y1-1, Y10, Y11)
+          Real sc1 = s*c1;
+          mpcoeff(1) += sc1*y;
+          mpcoeff(2) += sc1*z;
+          mpcoeff(3) += sc1*x;
+          // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
+          Real sc2a = s*c2a;
+          mpcoeff(4) += sc2a*xy;
+          mpcoeff(5) += sc2a*yz;
+          mpcoeff(6) += s*c2*(3.0*z2-r2);
+          mpcoeff(7) += sc2a*zx;
+          mpcoeff(8) += sc2a*0.5*(x2-y2);
+        }
+      }
+    }
+  }
 }
 
 

@@ -40,7 +40,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
     pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0),
-    niter_(-1), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3) {
+    niter_(-1), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3), mporder_(0), nmpcoeff_(0) {
 
   std::cout << std::scientific << std::setprecision(15);
 
@@ -82,13 +82,12 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
   mg_phys_id_ = pmy_mesh_->ReserveTagPhysIDs(1);
 #endif
   int nv = nvar_;
-  if (ffas_) nv*=2;
   // assume the same parallelization as hydro
   for (int n=0; n<nranks_; ++n) {
     nslist_[n]  = pmy_mesh_->nslist[n];
     nblist_[n]  = pmy_mesh_->nblist[n];
-    nvslist_[n] = nslist_[n]*nv;
-    nvlist_[n]  = nblist_[n]*nv;
+    nvslist_[n] = nslist_[n]*nv*2;
+    nvlist_[n]  = nblist_[n]*nv*2;
     nvslisti_[n] = nslist_[n]*nvar_;
     nvlisti_[n]  = nblist_[n]*nvar_;
   }
@@ -191,6 +190,9 @@ void MultigridDriver::SetupMultigrid() {
     for (Multigrid* pmg : vmg_)
       pmg->ApplySourceMask();
   }
+
+  if (mporder_ > 0)
+    CalculateMultigridCoefficients();
 
   if (mode_ == 0) { // FMG
     for (Multigrid* pmg : vmg_)
@@ -1467,5 +1469,38 @@ void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
     }
   }
 
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::AllocateMultipoleCoefficients()
+//  \brief allocate arrays for multipole expansion coefficients
+
+void MultigridDriver::AllocateMultipoleCoefficients() {
+  nmpcoeff_ = 0;
+  if (mporder_ == 0) return;
+  for (int i = 0; i <= mporder_; ++i) {
+    nmpcoeff_ += 2 * i + 1;
+  }
+
+  mpcoeff_.NewAthenaArray(nvar_, nmpcoeff_);
+
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::CalculateMultipoleCoefficients()
+//  \brief calculate multipole expansion coefficients
+
+void MultigridDriver::CalculateMultipoleCoefficients() {
+  mpcoeff_.ZeroClear();
+  for (Multigrid* pmg : vmg_)
+    pmg->CalculateMutipoleCoefficients(mpcoeff_, mporder_);
+#ifdef MPI_PARALLEL
+  MPI_Allreduce(MPI_IN_PLACE, mpcoeff_.data(), nmpcoeff_, MPI_ATHENA_REAL,
+                MPI_SUM, MPI_COMM_MULTIGRID);
+#endif
   return;
 }
