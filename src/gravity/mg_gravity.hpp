@@ -50,7 +50,6 @@ class MGGravityDriver : public MultigridDriver {
  public:
   MGGravityDriver(Mesh *pm, ParameterInput *pin);
   ~MGGravityDriver();
-  void SetBoundaryFunctions() final;
   void Solve(int stage) final;
   void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) final;
   void ScaleMultipoleCoefficients() final;

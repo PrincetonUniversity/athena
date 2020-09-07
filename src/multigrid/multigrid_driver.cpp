@@ -77,22 +77,22 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
   nvslist_ = new int[nranks_];
   nvlisti_  = new int[nranks_];
   nvslisti_ = new int[nranks_];
+
 #ifdef MPI_PARALLEL
   MPI_Comm_dup(MPI_COMM_WORLD, &MPI_COMM_MULTIGRID);
   mg_phys_id_ = pmy_mesh_->ReserveTagPhysIDs(1);
 #endif
-  int nv = nvar_;
+
   // assume the same parallelization as hydro
   for (int n=0; n<nranks_; ++n) {
     nslist_[n]  = pmy_mesh_->nslist[n];
     nblist_[n]  = pmy_mesh_->nblist[n];
-    nvslist_[n] = nslist_[n]*nv*2;
-    nvlist_[n]  = nblist_[n]*nv*2;
+    nvslist_[n] = nslist_[n]*nvar_*2;
+    nvlist_[n]  = nblist_[n]*nvar_*2;
     nvslisti_[n] = nslist_[n]*nvar_;
     nvlisti_[n]  = nblist_[n]*nvar_;
   }
-  rootbuf_=new Real[pm->nbtotal*nv];
-  mgtlist_ = new MultigridTaskList(this);
+  rootbuf_=new Real[pm->nbtotal*nvar_*2];
   if (maxreflevel_ > 0) { // SMR / AMR
     octets_ = new std::vector<MGOctet>[maxreflevel_];
     octetmap_ = new std::unordered_map<LogicalLocation, int,
@@ -114,7 +114,6 @@ MultigridDriver::~MultigridDriver() {
   delete [] nvlisti_;
   delete [] nvslisti_;
   delete [] rootbuf_;
-  delete mgtlist_;
   if (maxreflevel_ > 0) {
     delete [] octets_;
     delete [] octetmap_;
@@ -125,6 +124,220 @@ MultigridDriver::~MultigridDriver() {
 #ifdef MPI_PARALLEL
   MPI_Comm_free(&MPI_COMM_MULTIGRID);
 #endif
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::CheckBoundaryFunctions()
+//  \brief check boundary functions and set some internal flags.
+
+void MultigridDriver::CheckBoundaryFunctions() {
+  fsubtract_average_ = true;
+  mporder_ = 0;
+  switch(mg_mesh_bcs_[BoundaryFace::inner_x1]) {
+    case BoundaryFlag::user:
+      if (MGBoundaryFunction_[BoundaryFace::inner_x1] == nullptr) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+            << "A user-defined boundary condition is specified for " << std::endl
+            << "inner_x1 but no function is enrolled." << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      fsubtract_average_ = false;
+      break;
+    case BoundaryFlag::periodic:
+    case BoundaryFlag::mg_zerograd:
+    case BoundaryFlag::mg_zerofixed:
+      break;
+    case BoundaryFlag::mg_multipole4:
+      mporder_ = std::max(mporder_, 2);
+      break;
+    case BoundaryFlag::mg_multipole16:
+      mporder_ = 4;
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+          << "Invalid or no boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  }
+  switch(mg_mesh_bcs_[BoundaryFace::outer_x1]) {
+    case BoundaryFlag::user:
+      if (MGBoundaryFunction_[BoundaryFace::outer_x1] == nullptr) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+            << "A user-defined boundary condition is specified for " << std::endl
+            << "outer_x1 but no function is enrolled." << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      fsubtract_average_ = false;
+      break;
+    case BoundaryFlag::periodic:
+    case BoundaryFlag::mg_zerograd:
+    case BoundaryFlag::mg_zerofixed:
+      break;
+    case BoundaryFlag::mg_multipole4:
+      mporder_ = std::max(mporder_, 2);
+      break;
+    case BoundaryFlag::mg_multipole16:
+      mporder_ = 4;
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+          << "Invalid or no boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  }
+  switch(mg_mesh_bcs_[BoundaryFace::inner_x2]) {
+    case BoundaryFlag::user:
+      if (MGBoundaryFunction_[BoundaryFace::inner_x2] == nullptr) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+            << "A user-defined boundary condition is specified for " << std::endl
+            << "inner_x2 but no function is enrolled." << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      fsubtract_average_ = false;
+      break;
+    case BoundaryFlag::periodic:
+    case BoundaryFlag::mg_zerograd:
+    case BoundaryFlag::mg_zerofixed:
+      break;
+    case BoundaryFlag::mg_multipole4:
+      mporder_ = std::max(mporder_, 2);
+      break;
+    case BoundaryFlag::mg_multipole16:
+      mporder_ = 4;
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+          << "Invalid or no boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  }
+  switch(mg_mesh_bcs_[BoundaryFace::outer_x2]) {
+    case BoundaryFlag::user:
+      if (MGBoundaryFunction_[BoundaryFace::outer_x2] == nullptr) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+            << "A user-defined boundary condition is specified for " << std::endl
+            << "outer_x2 but no function is enrolled." << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      fsubtract_average_ = false;
+      break;
+    case BoundaryFlag::periodic:
+    case BoundaryFlag::mg_zerograd:
+    case BoundaryFlag::mg_zerofixed:
+      break;
+    case BoundaryFlag::mg_multipole4:
+      mporder_ = std::max(mporder_, 2);
+      break;
+    case BoundaryFlag::mg_multipole16:
+      mporder_ = 4;
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+          << "Invalid or no boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  }
+  switch(mg_mesh_bcs_[BoundaryFace::inner_x3]) {
+    case BoundaryFlag::user:
+      if (MGBoundaryFunction_[BoundaryFace::inner_x3] == nullptr) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+            << "A user-defined boundary condition is specified for " << std::endl
+            << "inner_x3 but no function is enrolled." << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      fsubtract_average_ = false;
+      break;
+    case BoundaryFlag::periodic:
+    case BoundaryFlag::mg_zerograd:
+    case BoundaryFlag::mg_zerofixed:
+      break;
+    case BoundaryFlag::mg_multipole4:
+      mporder_ = std::max(mporder_, 2);
+      break;
+    case BoundaryFlag::mg_multipole16:
+      mporder_ = 4;
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+          << "Invalid or no boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  }
+  switch(mg_mesh_bcs_[BoundaryFace::outer_x3]) {
+    case BoundaryFlag::user:
+      if (MGBoundaryFunction_[BoundaryFace::outer_x3] == nullptr) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+            << "A user-defined boundary condition is specified for " << std::endl
+            << "outer_x3 but no function is enrolled." << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      fsubtract_average_ = false;
+      break;
+    case BoundaryFlag::periodic:
+    case BoundaryFlag::mg_zerograd:
+    case BoundaryFlag::mg_zerofixed:
+      break;
+    case BoundaryFlag::mg_multipole4:
+      mporder_ = std::max(mporder_, 2);
+      break;
+    case BoundaryFlag::mg_multipole16:
+      mporder_ = 4;
+      break;
+    default:
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+          << "Invalid or no boundary type is specified." << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  }
+
+  if (mporder_ > 0) {
+    ffas_ = true;
+    fsubtract_average_ = false;
+  }
+
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::SubtractAverage(MGVariable type)
+//  \brief Calculate the global average and subtract it
+
+void MultigridDriver::SubtractAverage(MGVariable type) {
+  for (Multigrid* pmg : vmg_) {
+    for (int v=0; v<nvar_; ++v)
+      rootbuf_[pmg->pmy_block_->gid*nvar_+v] = pmg->CalculateTotal(type, v);
+  }
+#ifdef MPI_PARALLEL
+  MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
+                 rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
+#endif
+  Real vol = (pmy_mesh_->mesh_size.x1max - pmy_mesh_->mesh_size.x1min)
+           * (pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min)
+           * (pmy_mesh_->mesh_size.x3max - pmy_mesh_->mesh_size.x3min);
+  for (int v=0; v<nvar_; ++v) {
+    Real total = 0.0;
+    for (int n=0; n<pmy_mesh_->nbtotal; ++n)
+      total += rootbuf_[n*nvar_+v];
+    last_ave_ = total/vol;
+    for (Multigrid* pmg : vmg_)
+      pmg->SubtractAverage(type, v, last_ave_);
+  }
+
+  return;
 }
 
 
@@ -177,7 +390,7 @@ void MultigridDriver::SetupMultigrid() {
 
   if (needinit) {
     for (Multigrid* pmg : vmg_)
-      pmg->pmgbval->CopyNeighborInfoFromMeshBlock();
+      pmg->pmgbval->SearchAndSetNeighbors(pmy_mesh_->tree, ranklist_, nslist_);
     if (nreflevel_ > 0)
       CalculateOctetCoordinates();
     needinit = false;
@@ -192,7 +405,7 @@ void MultigridDriver::SetupMultigrid() {
   }
 
   if (mporder_ > 0)
-    CalculateMultigridCoefficients();
+    CalculateMultipoleCoefficients();
 
   if (mode_ == 0) { // FMG
     for (Multigrid* pmg : vmg_)
@@ -201,35 +414,6 @@ void MultigridDriver::SetupMultigrid() {
     RestrictFMGSourceOctets();
     mgroot_->RestrictFMGSource();
     current_level_ = 0;
-  }
-
-  return;
-}
-
-
-//----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SubtractAverage(MGVariable type)
-//  \brief Calculate the global average and subtract it
-
-void MultigridDriver::SubtractAverage(MGVariable type) {
-  for (Multigrid* pmg : vmg_) {
-    for (int v=0; v<nvar_; ++v)
-      rootbuf_[pmg->pmy_block_->gid*nvar_+v] = pmg->CalculateTotal(type, v);
-  }
-#ifdef MPI_PARALLEL
-  MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
-                 rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
-#endif
-  Real vol = (pmy_mesh_->mesh_size.x1max - pmy_mesh_->mesh_size.x1min)
-           * (pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min)
-           * (pmy_mesh_->mesh_size.x3max - pmy_mesh_->mesh_size.x3min);
-  for (int v=0; v<nvar_; ++v) {
-    Real total = 0.0;
-    for (int n=0; n<pmy_mesh_->nbtotal; ++n)
-      total += rootbuf_[n*nvar_+v];
-    last_ave_ = total/vol;
-    for (Multigrid* pmg : vmg_)
-      pmg->SubtractAverage(type, v, last_ave_);
   }
 
   return;
@@ -487,7 +671,7 @@ void MultigridDriver::SolveFMGCycle() {
 
 void MultigridDriver::SolveIterative() {
   int n = 0;
-  Real def;
+  Real def = 0.0;
   for (int v=0; v<nvar_; ++v)
     def += CalculateDefectNorm(MGNormType::l2, v);
   while (def > eps_) {
@@ -697,14 +881,14 @@ void MultigridDriver::RestrictFMGSourceOctets() {
         int oi = (static_cast<int>(loc.lx1) & 1) + ngh;
         int oj = (static_cast<int>(loc.lx2) & 1) + ngh;
         int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
-        mgroot_->Restrict(cbuf_, octets_[l][o].src, os_, oe_, os_, oe_, os_, oe_);
+        mgroot_->Restrict(cbuf_, octets_[l][o].src, ngh, ngh, ngh, ngh, ngh, ngh);
         for (int v=0; v<nvar_; ++v)
           octets_[l-1][oid].src(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
       }
     }
     for (int o=0; o<noctets_[0]; ++o) { // octets to the root grid
       const LogicalLocation &loc = octets_[0][o].loc;
-      mgroot_->Restrict(cbuf_, octets_[0][o].src, os_, oe_, os_, oe_, os_, oe_);
+      mgroot_->Restrict(cbuf_, octets_[0][o].src, ngh, ngh, ngh, ngh, ngh, ngh);
       for (int v=0; v<nvar_; ++v)
         mgroot_->SetData(MGVariable::src, v, static_cast<int>(loc.lx3),
                          static_cast<int>(loc.lx2), static_cast<int>(loc.lx1),
@@ -738,11 +922,11 @@ void MultigridDriver::RestrictOctets() {
       int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
       mgroot_->CalculateDefect(octets_[lev][o].def, octets_[lev][o].u,
                                octets_[lev][o].src, lev+1, os_, oe_, os_, oe_, os_, oe_);
-      mgroot_->Restrict(cbuf_, octets_[lev][o].def, os_, oe_, os_, oe_, os_, oe_);
+      mgroot_->Restrict(cbuf_, octets_[lev][o].def, ngh, ngh, ngh, ngh, ngh, ngh);
       for (int v=0; v<nvar_; ++v)
         octets_[lev-1][oid].src(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
       if (ffas_) {
-        mgroot_->Restrict(cbuf_, octets_[lev][o].u, os_, oe_, os_, oe_, os_, oe_);
+        mgroot_->Restrict(cbuf_, octets_[lev][o].u, ngh, ngh, ngh, ngh, ngh, ngh);
         for (int v=0; v<nvar_; ++v)
           octets_[lev-1][oid].u(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
       }
@@ -755,11 +939,11 @@ void MultigridDriver::RestrictOctets() {
       int rk = static_cast<int>(loc.lx3);
       mgroot_->CalculateDefect(octets_[0][o].def, octets_[0][o].u,
                                octets_[0][o].src, 1, os_, oe_, os_, oe_, os_, oe_);
-      mgroot_->Restrict(cbuf_, octets_[0][o].def, os_, oe_, os_, oe_, os_, oe_);
+      mgroot_->Restrict(cbuf_, octets_[0][o].def, ngh, ngh, ngh, ngh, ngh, ngh);
       for (int v=0; v<nvar_; ++v)
         mgroot_->SetData(MGVariable::src, v, rk, rj, ri, cbuf_(v, ngh, ngh, ngh));
       if (ffas_) {
-        mgroot_->Restrict(cbuf_, octets_[0][o].u, os_, oe_, os_, oe_, os_, oe_);
+        mgroot_->Restrict(cbuf_, octets_[0][o].u, ngh, ngh, ngh, ngh, ngh, ngh);
         for (int v=0; v<nvar_; ++v)
           mgroot_->SetData(MGVariable::u, v, rk, rj, ri, cbuf_(v, ngh, ngh, ngh));
       }
@@ -1141,57 +1325,154 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
               const LogicalLocation &loc, const MGCoordinates &coord, bool fcbuf) {
   int lev = loc.level - locrootlevel_;
   int ngh = mgroot_->ngh_;
-  int l, r, cs, ce;
+  int l, r;
   Real time = pmy_mesh_->time;
   if (fcbuf)
-    l = ngh, r = ngh,   cs = 0, ce = 1 + ngh;
+    l = ngh, r = ngh;
   else
-    l = ngh, r = ngh+1, cs = 0, ce = 2 + ngh;
+    l = ngh, r = ngh+1;
 
   int bis = l - ngh, bie = r + ngh;
   int bjs = l,       bje = r;
   int bks = l,       bke = r;
-  if (loc.lx2 != 0 || MGBoundaryFunction_[BoundaryFace::inner_x2] == nullptr
-    || MGBoundaryFunction_[BoundaryFace::inner_x2] == MGPeriodicInnerX2) bjs = l - ngh;
-  if (loc.lx2 != (nrbx2_<<lev)-1 || MGBoundaryFunction_[BoundaryFace::inner_x2] == nullptr
-    || MGBoundaryFunction_[BoundaryFace::inner_x2] == MGPeriodicInnerX2) bje = r + ngh;
-  if (loc.lx3 != 0 || MGBoundaryFunction_[BoundaryFace::inner_x3] == nullptr
-    || MGBoundaryFunction_[BoundaryFace::inner_x3] == MGPeriodicInnerX3) bks = l - ngh;
-  if (loc.lx3 != (nrbx3_<<lev)-1 || MGBoundaryFunction_[BoundaryFace::inner_x3] == nullptr
-    || MGBoundaryFunction_[BoundaryFace::inner_x3] == MGPeriodicInnerX3) bke = r + ngh;
+  if (loc.lx2 != 0 || mg_mesh_bcs_[BoundaryFace::inner_x2] == BoundaryFlag::periodic)
+    bjs = l - ngh;
+  if (loc.lx2 != (nrbx2_<<lev)-1
+    || mg_mesh_bcs_[BoundaryFace::inner_x2] == BoundaryFlag::periodic)
+    bje = r + ngh;
+  if (loc.lx3 != 0 || mg_mesh_bcs_[BoundaryFace::inner_x3] == BoundaryFlag::periodic)
+    bks = l - ngh;
+  if (loc.lx3 != (nrbx3_<<lev)-1
+    || mg_mesh_bcs_[BoundaryFace::inner_x3] == BoundaryFlag::periodic)
+    bke = r + ngh;
 
-  if (loc.lx1 == 0
-    && MGBoundaryFunction_[BoundaryFace::inner_x1] != MGPeriodicInnerX1
-    && MGBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
-    MGBoundaryFunction_[BoundaryFace::inner_x1](u, time, nvar_,
-                                                l, r, bjs, bje, bks, bke, ngh, coord);
-  if (loc.lx1 == (nrbx1_<<lev)-1
-    && MGBoundaryFunction_[BoundaryFace::outer_x1] != MGPeriodicOuterX1
-    && MGBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
-    MGBoundaryFunction_[BoundaryFace::outer_x1](u, time, nvar_,
-                                                l, r, bjs, bje, bks, bke, ngh, coord);
-  if (loc.lx2 == 0
-    && MGBoundaryFunction_[BoundaryFace::inner_x2] != MGPeriodicInnerX2
-    && MGBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
-    MGBoundaryFunction_[BoundaryFace::inner_x2](u, time, nvar_,
-                                                bis, bie, l, r, bks, bke, ngh, coord);
-  if (loc.lx2 == (nrbx2_<<lev)-1
-    && MGBoundaryFunction_[BoundaryFace::outer_x2] != MGPeriodicOuterX2
-    && MGBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
-    MGBoundaryFunction_[BoundaryFace::outer_x2](u, time, nvar_,
-                                                bis, bie, l, r, bks, bke, ngh, coord);
+  if (loc.lx1 == 0) {
+    switch (mg_mesh_bcs_[BoundaryFace::inner_x1]) {
+      case BoundaryFlag::user:
+        MGBoundaryFunction_[BoundaryFace::inner_x1](u, time, nvar_,
+                                                    l, r, bjs, bje, bks, bke, ngh, coord);
+        break;
+      case BoundaryFlag::mg_zerograd:
+        MGZeroGradientInnerX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord);
+        break;
+      case BoundaryFlag::mg_zerofixed:
+        MGZeroFixedInnerX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord);
+        break;
+      case BoundaryFlag::mg_multipole4:
+      case BoundaryFlag::mg_multipole16:
+        MGMultipoleInnerX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord,
+                           mpcoeff_, mporder_);
+        break;
+      default:
+        break;
+    }
+  }
+  if (loc.lx1 == (nrbx1_<<lev)-1) {
+    switch (mg_mesh_bcs_[BoundaryFace::outer_x1]) {
+      case BoundaryFlag::user:
+        MGBoundaryFunction_[BoundaryFace::outer_x1](u, time, nvar_,
+                                                    l, r, bjs, bje, bks, bke, ngh, coord);
+        break;
+      case BoundaryFlag::mg_zerograd:
+        MGZeroGradientOuterX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord);
+        break;
+      case BoundaryFlag::mg_zerofixed:
+        MGZeroFixedOuterX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord);
+        break;
+      case BoundaryFlag::mg_multipole4:
+      case BoundaryFlag::mg_multipole16:
+        MGMultipoleOuterX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord,
+                           mpcoeff_, mporder_);
+        break;
+      default:
+        break;
+    }
+  }
+  if (loc.lx2 == 0) {
+    switch (mg_mesh_bcs_[BoundaryFace::inner_x2]) {
+      case BoundaryFlag::user:
+        MGBoundaryFunction_[BoundaryFace::inner_x2](u, time, nvar_,
+                                                    bis, bie, l, r, bks, bke, ngh, coord);
+        break;
+      case BoundaryFlag::mg_zerograd:
+        MGZeroGradientInnerX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord);
+        break;
+      case BoundaryFlag::mg_zerofixed:
+        MGZeroFixedInnerX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord);
+        break;
+      case BoundaryFlag::mg_multipole4:
+      case BoundaryFlag::mg_multipole16:
+        MGMultipoleInnerX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord,
+                           mpcoeff_, mporder_);
+        break;
+      default:
+        break;
+    }
+  }
+  if (loc.lx2 == (nrbx2_<<lev)-1) {
+    switch (mg_mesh_bcs_[BoundaryFace::outer_x2]) {
+      case BoundaryFlag::user:
+        MGBoundaryFunction_[BoundaryFace::outer_x2](u, time, nvar_,
+                                                    bis, bie, l, r, bks, bke, ngh, coord);
+        break;
+      case BoundaryFlag::mg_zerograd:
+        MGZeroGradientOuterX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord);
+        break;
+      case BoundaryFlag::mg_zerofixed:
+        MGZeroFixedOuterX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord);
+        break;
+      case BoundaryFlag::mg_multipole4:
+      case BoundaryFlag::mg_multipole16:
+        MGMultipoleOuterX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord,
+                           mpcoeff_, mporder_);
+        break;
+      default:
+        break;
+    }
+  }
   bjs = l - ngh, bje = r + ngh;
-  if (loc.lx3 == 0
-    && MGBoundaryFunction_[BoundaryFace::inner_x3] != MGPeriodicInnerX3
-    && MGBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
-    MGBoundaryFunction_[BoundaryFace::inner_x3](u, time, nvar_,
-                                                bis, bie, bjs, bje, l, r, ngh, coord);
-  if (loc.lx3 == (nrbx3_<<lev)-1
-    && MGBoundaryFunction_[BoundaryFace::outer_x3] != MGPeriodicOuterX3
-    && MGBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
-    MGBoundaryFunction_[BoundaryFace::outer_x3](u, time, nvar_,
-                                                bis, bie, bjs, bje, l, r, ngh, coord);
-
+  if (loc.lx3 == 0) {
+    switch (mg_mesh_bcs_[BoundaryFace::inner_x3]) {
+      case BoundaryFlag::user:
+        MGBoundaryFunction_[BoundaryFace::inner_x3](u, time, nvar_,
+                                                    bis, bie, bjs, bje, l, r, ngh, coord);
+        break;
+      case BoundaryFlag::mg_zerograd:
+        MGZeroGradientInnerX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord);
+        break;
+      case BoundaryFlag::mg_zerofixed:
+        MGZeroFixedInnerX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord);
+        break;
+      case BoundaryFlag::mg_multipole4:
+      case BoundaryFlag::mg_multipole16:
+        MGMultipoleInnerX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord,
+                           mpcoeff_, mporder_);
+        break;
+      default:
+        break;
+    }
+  }
+  if (loc.lx3 == (nrbx3_<<lev)-1) {
+    switch (mg_mesh_bcs_[BoundaryFace::outer_x3]) {
+      case BoundaryFlag::user:
+        MGBoundaryFunction_[BoundaryFace::outer_x3](u, time, nvar_,
+                                                    bis, bie, bjs, bje, l, r, ngh, coord);
+        break;
+      case BoundaryFlag::mg_zerograd:
+        MGZeroGradientOuterX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord);
+        break;
+      case BoundaryFlag::mg_zerofixed:
+        MGZeroFixedOuterX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord);
+        break;
+      case BoundaryFlag::mg_multipole4:
+      case BoundaryFlag::mg_multipole16:
+        MGMultipoleOuterX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord,
+                           mpcoeff_, mporder_);
+        break;
+      default:
+        break;
+    }
+  }
   return;
 }
 
@@ -1214,14 +1495,14 @@ void MultigridDriver::RestrictOctetsBeforeTransfer() {
       int oi = (static_cast<int>(loc.lx1) & 1) + ngh;
       int oj = (static_cast<int>(loc.lx2) & 1) + ngh;
       int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
-      mgroot_->Restrict(cbuf_, octets_[l][o].u, os_, oe_, os_, oe_, os_, oe_);
+      mgroot_->Restrict(cbuf_, octets_[l][o].u, ngh, ngh, ngh, ngh, ngh, ngh);
       for (int v=0; v<nvar_; ++v)
         octets_[l-1][oid].u(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
     }
   }
   for (int o=0; o<noctets_[0]; ++o) { // octets to the root grid
     const LogicalLocation &loc = octets_[0][o].loc;
-    mgroot_->Restrict(cbuf_, octets_[0][o].u, os_, oe_, os_, oe_, os_, oe_);
+    mgroot_->Restrict(cbuf_, octets_[0][o].u, ngh, ngh, ngh, ngh, ngh, ngh);
     for (int v=0; v<nvar_; ++v)
       mgroot_->SetData(MGVariable::u, v, static_cast<int>(loc.lx3),
                        static_cast<int>(loc.lx2), static_cast<int>(loc.lx1),
@@ -1497,10 +1778,12 @@ void MultigridDriver::AllocateMultipoleCoefficients() {
 void MultigridDriver::CalculateMultipoleCoefficients() {
   mpcoeff_.ZeroClear();
   for (Multigrid* pmg : vmg_)
-    pmg->CalculateMutipoleCoefficients(mpcoeff_, mporder_);
+    pmg->CalculateMultipoleCoefficients(mpcoeff_, mporder_);
 #ifdef MPI_PARALLEL
   MPI_Allreduce(MPI_IN_PLACE, mpcoeff_.data(), nmpcoeff_, MPI_ATHENA_REAL,
                 MPI_SUM, MPI_COMM_MULTIGRID);
 #endif
   return;
 }
+
+

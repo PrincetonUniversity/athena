@@ -39,7 +39,7 @@ BoundaryFlag GetBoundaryFlag(const std::string& input_string);
 std::string GetBoundaryString(BoundaryFlag input_flag);
 // + confirming that the MeshBlock's boundaries are all valid selections
 void CheckBoundaryFlag(BoundaryFlag block_flag, CoordinateDirection dir);
-MGBoundaryFlag GetMGBoundaryFlag(const std::string& input_string);
+BoundaryFlag GetMGBoundaryFlag(const std::string& input_string);
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBase
@@ -82,6 +82,11 @@ class BoundaryBase {
   Mesh *pmy_mesh_;
   RegionSize block_size_;
   AthenaArray<Real> sarea_[2];
+
+  // if a BoundaryPhysics or user fn should be applied at each MeshBlock boundary
+  // false --> e.g. block, polar, (shear-) periodic boundaries (moved from BoundaryValues)
+  bool apply_bndry_fn_[6]{};   // C++11: in-class initializer of non-static member
+  // C++11: direct-list-initialization -> value init of array -> zero init of each scalar
 
  private:
   // calculate 3x shared static data members when constructing only the 1st class instance
@@ -143,11 +148,6 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
  private:
   MeshBlock *pmy_block_;      // ptr to MeshBlock containing this BoundaryValues
   int nface_, nedge_;         // used only in fc/flux_correction_fc.cpp calculations
-
-  // if a BoundaryPhysics or user fn should be applied at each MeshBlock boundary
-  // false --> e.g. block, polar, (shear-) periodic boundaries
-  bool apply_bndry_fn_[6]{};   // C++11: in-class initializer of non-static member
-  // C++11: direct-list-initialization -> value init of array -> zero init of each scalar
 
   // For spherical polar coordinates edge-case: if one MeshBlock wraps entirely around
   // the pole (azimuthally), shift the k-axis by nx3/2 for cell- and face-centered

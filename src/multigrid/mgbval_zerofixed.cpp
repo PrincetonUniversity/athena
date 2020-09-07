@@ -21,12 +21,12 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time,
-//                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                    const MGCoordinates &coord)
+//! \fn void MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time,
+//                      int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                      const MGCoordinates &coord)
 //  \brief Zero fixed boundary condition in the inner-X1 direction
 
-void MultigridDriver::MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+void MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
@@ -42,12 +42,12 @@ void MultigridDriver::MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time, int 
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time,
-//                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                    const MGCoordinates &coord)
+//! \fn void MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time,
+//                      int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                      const MGCoordinates &coord)
 //  \brief Zero fixed boundary condition in the outer-X1 direction
 
-void MultigridDriver::MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+void MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
@@ -63,12 +63,12 @@ void MultigridDriver::MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time, int 
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time,
-//                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                    const MGCoordinates &coord)
+//! \fn void MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time,
+//                      int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                      const MGCoordinates &coord)
 //  \brief Zero fixed boundary condition in the inner-X2 direction
 
-void MultigridDriver::MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+void MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
@@ -84,12 +84,12 @@ void MultigridDriver::MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time, int 
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time,
-//                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                    const MGCoordinates &coord)
+//! \fn void MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time,
+//                      int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                      const MGCoordinates &coord)
 //  \brief Zero fixed boundary condition in the outer-X2 direction
 
-void MultigridDriver::MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+void MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
@@ -105,12 +105,12 @@ void MultigridDriver::MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time, int 
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time,
-//                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                    const MGCoordinates &coord)
+//! \fn void MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time,
+//                      int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                      const MGCoordinates &coord)
 //  \brief Zero fixed boundary condition in the inner-X3 direction
 
-void MultigridDriver::MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+void MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
@@ -126,12 +126,12 @@ void MultigridDriver::MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time, int 
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time,
-//                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                    const MGCoordinates &coord)
+//! \fn void MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time,
+//                      int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                      const MGCoordinates &coord)
 //  \brief Zero fixed boundary condition in the outer-X3 direction
 
-void MultigridDriver::MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+void MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
                         const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {

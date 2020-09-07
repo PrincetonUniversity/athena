@@ -18,14 +18,14 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void::MultigridDriver::MGZeroGradientInnerX1(AthenaArray<Real> &dst, Real time,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     const MGCoordinates &coord)
+//! \fn void::MGZeroGradientInnerX1(AthenaArray<Real> &dst, Real time,
+//                  int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                  const MGCoordinates &coord)
 //  \brief Zero gradient boundary condition in the inner-X1 direction
 
-void MultigridDriver::MGZeroGradientInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord) {
+void MGZeroGradientInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
@@ -39,14 +39,14 @@ void MultigridDriver::MGZeroGradientInnerX1(AthenaArray<Real> &dst, Real time, i
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void::MultigridDriver::MGZeroGradientOuterX1(AthenaArray<Real> &dst, Real time,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     const MGCoordinates &coord)
+//! \fn void::MGZeroGradientOuterX1(AthenaArray<Real> &dst, Real time,
+//                  int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                  const MGCoordinates &coord)
 //  \brief Zero gradient boundary condition in the outer-X1 direction
 
-void MultigridDriver::MGZeroGradientOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord) {
+void MGZeroGradientOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
@@ -60,14 +60,14 @@ void MultigridDriver::MGZeroGradientOuterX1(AthenaArray<Real> &dst, Real time, i
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void::MultigridDriver::MGZeroGradientInnerX2(AthenaArray<Real> &dst, Real time,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     const MGCoordinates &coord)
+//! \fn void::MGZeroGradientInnerX2(AthenaArray<Real> &dst, Real time,
+//                  int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                  const MGCoordinates &coord)
 //  \brief Zero gradient boundary condition in the inner-X2 direction
 
-void MultigridDriver::MGZeroGradientInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord) {
+void MGZeroGradientInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=0; j<ngh; j++) {
@@ -81,14 +81,14 @@ void MultigridDriver::MGZeroGradientInnerX2(AthenaArray<Real> &dst, Real time, i
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void::MultigridDriver::MGZeroGradientOuterX2(AthenaArray<Real> &dst, Real time,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     const MGCoordinates &coord)
+//! \fn void::MGZeroGradientOuterX2(AthenaArray<Real> &dst, Real time,
+//                  int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                  const MGCoordinates &coord)
 //  \brief Zero gradient boundary condition in the outer-X2 direction
 
-void MultigridDriver::MGZeroGradientOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord) {
+void MGZeroGradientOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=0; j<ngh; j++) {
@@ -102,14 +102,14 @@ void MultigridDriver::MGZeroGradientOuterX2(AthenaArray<Real> &dst, Real time, i
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void::MultigridDriver::MGZeroGradientInnerX3(AthenaArray<Real> &dst, Real time,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     const MGCoordinates &coord)
+//! \fn void::MGZeroGradientInnerX3(AthenaArray<Real> &dst, Real time,
+//                  int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                  const MGCoordinates &coord)
 //  \brief Zero gradient boundary condition in the inner-X3 direction
 
-void MultigridDriver::MGZeroGradientInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord) {
+void MGZeroGradientInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=0; k<ngh; k++) {
       for (int j=js; j<=je; j++) {
@@ -123,14 +123,14 @@ void MultigridDriver::MGZeroGradientInnerX3(AthenaArray<Real> &dst, Real time, i
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void::MultigridDriver::MGZeroGradientOuterX3(AthenaArray<Real> &dst, Real time,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     const MGCoordinates &coord)
+//! \fn void::MGZeroGradientOuterX3(AthenaArray<Real> &dst, Real time,
+//                  int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                  const MGCoordinates &coord)
 //  \brief Zero gradient boundary condition in the outer-X3 direction
 
-void MultigridDriver::MGZeroGradientOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
-                        int is, int ie, int js, int je, int ks, int ke, int ngh,
-                        const MGCoordinates &coord) {
+void MGZeroGradientOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+                           const MGCoordinates &coord) {
   for (int n=0; n<nvar; n++) {
     for (int k=0; k<ngh; k++) {
       for (int j=js; j<=je; j++) {
