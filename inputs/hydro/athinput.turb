@@ -60,7 +60,7 @@ level      = 1
 
 <hydro>
 gamma           = 1.666666666667 # gamma = C_p/C_v
-iso_sound_speed = 1.00           # equavalent to sqrt(gamma*p/d) for p=0.1, d=1
+iso_sound_speed = 1.00           # equivalent to sqrt(gamma*p/d) for p=0.1, d=1
 
 <problem>
 turb_flag  = 1    # 1 for decaying, 2 (impulsive) or 3 (continuous) for driven turbulence
