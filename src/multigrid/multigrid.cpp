@@ -827,6 +827,8 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
   // It is trivial to extend it, but I'm afraid it slows down the code considerably
   // as it requires non-continuous memory access.
   // Also, I separate the mporder = 2 and mporder = 4 for performance. 
+  Real vol = (coord.x1f(is+1)-coord.x1f(is))*(coord.x2f(js+1)-coord.x2f(js))
+            *(coord.x3f(ks+1)-coord.x3f(ks));
   if (mporder == 4) {
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
@@ -844,7 +846,7 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
           Real fz2mr2 = 5.0*z2-r2;
           Real sz2mr2 = 7.0*z2-r2;
           Real sz2mtr2 = 7.0*z2-3.0*r2;
-          Real s = src(k,j,i);
+          Real s = src(k,j,i) * vol;
           // Y00
           mpcoeff(0)  += s;
           // r*(Y1-1, Y10, Y11)
@@ -891,7 +893,7 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
           Real x = coord.x1v(i);
           Real x2 = x*x, xy = x*y, zx = z*x;
           Real r2 = x2 + y2 + z2;
-          Real s = src(k,j,i);
+          Real s = src(k,j,i) * vol;
           // Y00
           mpcoeff(0) += s*c0;
           // r*(Y1-1, Y10, Y11)

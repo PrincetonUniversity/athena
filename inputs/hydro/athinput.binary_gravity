@@ -1,18 +1,14 @@
 <comment>
 problem   = poisson's solver test
 reference = 
-configure = --prob=poisson --grav=mg/fft -fft --eos=isothermal
+configure = --prob=binary_gravity --grav=mg
 
 <job>
 problem_id = Poisson    # problem ID: basename of output filenames
 
-<nooutput1>
-file_type  = hst        # History data dump
-dt         = 0.01       # time increment between outputs
-
 <output1>
-file_type  = vtk        # Binary data dump
-variable   = prim       # variables to be output
+file_type  = hdf5       # Binary data dump
+variable   = cons       # variables to be output
 dt         = 0.01       # time increment between outputs
 
 <time>
@@ -42,10 +38,49 @@ x3max      = 0.5        # maximum value of X3
 ix3_bc     = periodic   # inner-X3 boundary flag
 ox3_bc     = periodic   # outer-X3 boundary flag
 
+refinement = static
+
 <meshblock>
-nx1        = 64
-nx2        = 64
-nx3        = 64
+nx1        = 16
+nx2        = 16
+nx3        = 16
+
+<refinement1>
+x1min = -0.25
+x1max =  0.25
+x2min = -0.25
+x2max =  0.25
+x3min = -0.25
+x3max =  0.25
+level=1
+
+<refinement2>
+x1min = -0.125
+x1max =  0.125
+x2min = -0.125
+x2max =  0.125
+x3min = -0.125
+x3max =  0.125
+level=2
+
+<refinement3>
+x1min = -0.0625
+x1max =  0.0625
+x2min = -0.0625
+x2max =  0.0625
+x3min = -0.0625
+x3max =  0.0625
+level=3
+
+<refinement4>
+x1min = -0.03125
+x1max =  0.03125
+x2min = -0.03125
+x2max =  0.03125
+x3min = -0.03125
+x3max =  0.03125
+level=4
+
 
 <hydro>
 gamma           = 1.666666666667 # gamma = C_p/C_v
@@ -55,16 +90,12 @@ iso_sound_speed = 0.4082482905   # equivalent to sqrt(gamma*p/d) for p=0.1, d=1
 mgmode          = FMG
 threshold       = 0.0
 output_defect   = true
-ix1_bc          = periodic
-ox1_bc          = periodic
-ix2_bc          = periodic
-ox2_bc          = periodic
-ix3_bc          = periodic
-ox3_bc          = periodic
+ix1_bc          = multipole4
+ox1_bc          = multipole4
+ix2_bc          = multipole4
+ox2_bc          = multipole4
+ix3_bc          = multipole4
+ox3_bc          = multipole4
 
 <problem>
-iprob           = 1 # problem choice
 four_pi_G       = 12.5663706144
-ncycle          = 100
-M               = 1.0
-a0              = 0.1

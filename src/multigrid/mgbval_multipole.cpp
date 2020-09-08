@@ -18,19 +18,19 @@
 
 
 // constants for multipole expansion
-static const Real c0  = 0.5/std::sqrt(PI);
-static const Real c1  = std::sqrt(3.0/(4.0*PI))/3.0;
-static const Real c2  = 0.25*std::sqrt(5.0/PI)/5.0;
-static const Real c2a = 0.5*std::sqrt(15.0/PI)/5.0;
-static const Real c30 = 0.25*std::sqrt(7.0/PI)/7.0;
-static const Real c31 = 0.25*std::sqrt(21.0/TWO_PI)/7.0;
-static const Real c32 = 0.5*std::sqrt(105.0/PI)/7.0;
-static const Real c33 = 0.25*std::sqrt(35.0/TWO_PI)/7.0;
-static const Real c40 = 0.1875/std::sqrt(PI)/9.0;
-static const Real c41 = 0.75*std::sqrt(5.0/TWO_PI)/9.0;
-static const Real c42 = 0.75*std::sqrt(5.0/PI)/9.0;
-static const Real c43 = 0.75*std::sqrt(35.0/TWO_PI)/9.0;
-static const Real c44 = 1.5*std::sqrt(35.0/PI)/9.0;
+static const Real c0  = -0.5/std::sqrt(PI);
+static const Real c1  = -std::sqrt(3.0/(4.0*PI))/3.0;
+static const Real c2  = -0.25*std::sqrt(5.0/PI)/5.0;
+static const Real c2a = -0.5*std::sqrt(15.0/PI)/5.0;
+static const Real c30 = -0.25*std::sqrt(7.0/PI)/7.0;
+static const Real c31 = -0.25*std::sqrt(21.0/TWO_PI)/7.0;
+static const Real c32 = -0.5*std::sqrt(105.0/PI)/7.0;
+static const Real c33 = -0.25*std::sqrt(35.0/TWO_PI)/7.0;
+static const Real c40 = -0.1875/std::sqrt(PI)/9.0;
+static const Real c41 = -0.75*std::sqrt(5.0/TWO_PI)/9.0;
+static const Real c42 = -0.75*std::sqrt(5.0/PI)/9.0;
+static const Real c43 = -0.75*std::sqrt(35.0/TWO_PI)/9.0;
+static const Real c44 = -1.5*std::sqrt(35.0/PI)/9.0;
 
 
 //----------------------------------------------------------------------------------------
@@ -44,7 +44,7 @@ void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
        const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder) {
   int i = is;
-  Real x = coord.x1f(i+1), x2 = x*x;
+  Real x = coord.x1f(i), x2 = x*x;
   if (mporder == 2) {
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
@@ -59,7 +59,7 @@ void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
           + ir3*c1*(mpcoeff(1)*y + mpcoeff(2)*z + mpcoeff(3)*x)
           + ir5*(c2a*(mpcoeff(4)*xy + mpcoeff(5)*yz + mpcoeff(7)*zx
                      +mpcoeff(8)*0.5*(x2-y2)) + c2*(3.0*z2-r2)*mpcoeff(6));
-        dst(0,k,j,i) = 2.0*phis - dst(0,k,j,i+1);
+        dst(0,k,j,i-1) = 2.0*phis - dst(0,k,j,i);
       }
     }
   } else if (mporder == 4) {
@@ -88,7 +88,7 @@ void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
                 +c42*(7.0*z2-r2)*(xy*mpcoeff(18) + hx2my2*mpcoeff(22))
                 +c41*(7.0*z2-3.0*r2)*(yz*mpcoeff(19) + zx*mpcoeff(21))
                 *c40*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2)*mpcoeff(20));
-        dst(0,k,j,i) = 2.0*phis - dst(0,k,j,i+1);
+        dst(0,k,j,i-1) = 2.0*phis - dst(0,k,j,i);
       }
     }
   }
@@ -106,7 +106,7 @@ void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
        const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder) {
   int i = ie;
-  Real x = coord.x1f(i), x2 = x*x;
+  Real x = coord.x1f(i+1), x2 = x*x;
   if (mporder == 2) {
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
@@ -121,7 +121,7 @@ void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
           + ir3*c1*(mpcoeff(1)*y + mpcoeff(2)*z + mpcoeff(3)*x)
           + ir5*(c2a*(mpcoeff(4)*xy + mpcoeff(5)*yz + mpcoeff(7)*zx
                      +mpcoeff(8)*0.5*(x2-y2)) + c2*(3.0*z2-r2)*mpcoeff(6));
-        dst(0,k,j,i) = 2.0*phis - dst(0,k,j,i-1);
+        dst(0,k,j,i+1) = 2.0*phis - dst(0,k,j,i);
       }
     }
   } else if (mporder == 4) {
@@ -150,7 +150,7 @@ void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
                 +c42*(7.0*z2-r2)*(xy*mpcoeff(18) + hx2my2*mpcoeff(22))
                 +c41*(7.0*z2-3.0*r2)*(yz*mpcoeff(19) + zx*mpcoeff(21))
                 *c40*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2)*mpcoeff(20));
-        dst(0,k,j,i) = 2.0*phis - dst(0,k,j,i-1);
+        dst(0,k,j,i+1) = 2.0*phis - dst(0,k,j,i);
       }
     }
   }
@@ -169,7 +169,7 @@ void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
        const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder) {
   int j = js;
-  Real y = coord.x2f(j+1), y2 = y*y;
+  Real y = coord.x2f(j), y2 = y*y;
   if (mporder == 2) {
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
@@ -183,7 +183,7 @@ void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
           + ir3*c1*(mpcoeff(1)*y + mpcoeff(2)*z + mpcoeff(3)*x)
           + ir5*(c2a*(mpcoeff(4)*xy + mpcoeff(5)*yz + mpcoeff(7)*zx
                      +mpcoeff(8)*0.5*(x2-y2)) + c2*(3.0*z2-r2)*mpcoeff(6));
-        dst(0,k,j,i) = 2.0*phis - dst(0,k,j+1,i);
+        dst(0,k,j-1,i) = 2.0*phis - dst(0,k,j,i);
       }
     }
   } else if (mporder == 4) {
@@ -211,7 +211,7 @@ void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
                 +c42*(7.0*z2-r2)*(xy*mpcoeff(18) + hx2my2*mpcoeff(22))
                 +c41*(7.0*z2-3.0*r2)*(yz*mpcoeff(19) + zx*mpcoeff(21))
                 *c40*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2)*mpcoeff(20));
-        dst(0,k,j,i) = 2.0*phis - dst(0,k,j+1,i);
+        dst(0,k,j-1,i) = 2.0*phis - dst(0,k,j,i);
       }
     }
   }
@@ -230,7 +230,7 @@ void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
        const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder) {
   int j = je;
-  Real y = coord.x2f(j), y2 = y*y;
+  Real y = coord.x2f(j+1), y2 = y*y;
   if (mporder == 2) {
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
@@ -244,7 +244,7 @@ void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
           + ir3*c1*(mpcoeff(1)*y + mpcoeff(2)*z + mpcoeff(3)*x)
           + ir5*(c2a*(mpcoeff(4)*xy + mpcoeff(5)*yz + mpcoeff(7)*zx
                      +mpcoeff(8)*0.5*(x2-y2)) + c2*(3.0*z2-r2)*mpcoeff(6));
-        dst(0,k,j,i) = 2.0*phis - dst(0,k,j-1,i);
+        dst(0,k,j+1,i) = 2.0*phis - dst(0,k,j,i);
       }
     }
   } else if (mporder == 4) {
@@ -272,7 +272,7 @@ void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
                 +c42*(7.0*z2-r2)*(xy*mpcoeff(18) + hx2my2*mpcoeff(22))
                 +c41*(7.0*z2-3.0*r2)*(yz*mpcoeff(19) + zx*mpcoeff(21))
                 *c40*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2)*mpcoeff(20));
-        dst(0,k,j,i) = 2.0*phis - dst(0,k,j-1,i);
+        dst(0,k,j+1,i) = 2.0*phis - dst(0,k,j,i);
       }
     }
   }
@@ -291,7 +291,7 @@ void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
        const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder) {
   int k = ks;
-  Real z = coord.x3f(k+1), z2 = z*z;
+  Real z = coord.x3f(k), z2 = z*z;
   if (mporder == 2) {
     for (int j = js; j <= je; ++j) {
       Real y = coord.x2v(j), y2 = y*y, yz = y*z;
@@ -304,7 +304,7 @@ void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
           + ir3*c1*(mpcoeff(1)*y + mpcoeff(2)*z + mpcoeff(3)*x)
           + ir5*(c2a*(mpcoeff(4)*xy + mpcoeff(5)*yz + mpcoeff(7)*zx
                      +mpcoeff(8)*0.5*(x2-y2)) + c2*(3.0*z2-r2)*mpcoeff(6));
-        dst(0,k,j,i) = 2.0*phis - dst(0,k+1,j,i);
+        dst(0,k-1,j,i) = 2.0*phis - dst(0,k,j,i);
       }
     }
   } else if (mporder == 4) {
@@ -331,7 +331,7 @@ void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
                 +c42*(7.0*z2-r2)*(xy*mpcoeff(18) + hx2my2*mpcoeff(22))
                 +c41*(7.0*z2-3.0*r2)*(yz*mpcoeff(19) + zx*mpcoeff(21))
                 *c40*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2)*mpcoeff(20));
-        dst(0,k,j,i) = 2.0*phis - dst(0,k+1,j,i);
+        dst(0,k-1,j,i) = 2.0*phis - dst(0,k,j,i);
       }
     }
   }
@@ -350,7 +350,7 @@ void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
        const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder) {
   int k = ke;
-  Real z = coord.x3f(k), z2 = z*z;
+  Real z = coord.x3f(k+1), z2 = z*z;
   if (mporder == 2) {
     for (int j = js; j <= je; ++j) {
       Real y = coord.x2v(j), y2 = y*y, yz = y*z;
@@ -363,7 +363,7 @@ void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
           + ir3*c1*(mpcoeff(1)*y + mpcoeff(2)*z + mpcoeff(3)*x)
           + ir5*(c2a*(mpcoeff(4)*xy + mpcoeff(5)*yz + mpcoeff(7)*zx
                      +mpcoeff(8)*0.5*(x2-y2)) + c2*(3.0*z2-r2)*mpcoeff(6));
-        dst(0,k,j,i) = 2.0*phis - dst(0,k-1,j,i);
+        dst(0,k+1,j,i) = 2.0*phis - dst(0,k,j,i);
       }
     }
   } else if (mporder == 4) {
@@ -390,7 +390,7 @@ void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
                 +c42*(7.0*z2-r2)*(xy*mpcoeff(18) + hx2my2*mpcoeff(22))
                 +c41*(7.0*z2-3.0*r2)*(yz*mpcoeff(19) + zx*mpcoeff(21))
                 *c40*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2)*mpcoeff(20));
-        dst(0,k,j,i) = 2.0*phis - dst(0,k-1,j,i);
+        dst(0,k+1,j,i) = 2.0*phis - dst(0,k,j,i);
       }
     }
   }
