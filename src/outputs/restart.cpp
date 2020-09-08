@@ -85,7 +85,8 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   for (int n=0; n<pm->nreal_user_mesh_data_; n++)
     udsize += pm->ruser_mesh_data[n].GetSizeInBytes();
 #ifdef Z4C_TRACKER
-  for (int i_punc = 0; i_punc < NPUNCT-1; ++i_punc)
+  // 3 positions + 3 betap for every puncture
+  for (int i_punc = 0; i_punc < NPUNCT; ++i_punc)
     udsize += 6*sizeof(Real);
 #endif
   headeroffset = sbuf.size()*sizeof(char) + 3*sizeof(int)+sizeof(RegionSize)
@@ -127,14 +128,15 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
         udoffset += pm->ruser_mesh_data[n].GetSizeInBytes();
       }
       //TRACKER
+      //These are mesh variables, they have to be written here
 #ifdef Z4C_TRACKER
-      for (int i_punc = 0; i_punc < NPUNCT-1; ++i_punc) {
+      for (int i_punc = 0; i_punc < NPUNCT; ++i_punc) {
         std::memcpy(&(ud[udoffset]), pm->pz4c_tracker->pos_body[i_punc].pos,
                     3*sizeof(Real));
-        udoffset += 3*sizeof(double);
+        udoffset += 3*sizeof(Real);
         std::memcpy(&(ud[udoffset]), pm->pz4c_tracker->pos_body[i_punc].betap,
                     3*sizeof(Real));
-        udoffset += 3*sizeof(double);
+        udoffset += 3*sizeof(Real);
       }
 #endif
       //END TRACKER

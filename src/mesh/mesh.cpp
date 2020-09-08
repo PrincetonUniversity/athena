@@ -766,7 +766,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   for (int n=0; n<nreal_user_mesh_data_; n++)
     udsize += ruser_mesh_data[n].GetSizeInBytes();
 #ifdef Z4C_TRACKER
-  for (int i_punc = 0; i_punc < NPUNCT-1; ++i_punc)
+  for (int i_punc = 0; i_punc < NPUNCT; ++i_punc)
     udsize += 6*sizeof(Real);
 #endif
   if (udsize != 0) {
@@ -795,7 +795,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
       udoffset += ruser_mesh_data[n].GetSizeInBytes();
     }
 #ifdef Z4C_TRACKER
-    for (int i_punc = 0; i_punc < NPUNCT-1; ++i_punc) {
+    for (int i_punc = 0; i_punc < NPUNCT; ++i_punc) {
       std::memcpy(pz4c_tracker->pos_body[i_punc].pos, &(userdata[udoffset]),
                   3*sizeof(Real));
       udoffset += 3*sizeof(Real);
