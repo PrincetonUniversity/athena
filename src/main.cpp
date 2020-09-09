@@ -518,6 +518,8 @@ int main(int argc, char *argv[]) {
 
   //--- Step 9. --------------------------------------------------------------------------
   // Make the final outputs
+  pmesh->UserWorkAfterLoop(pinput);
+
 #ifdef ENABLE_EXCEPTIONS
   try {
 #endif
@@ -540,8 +542,6 @@ int main(int argc, char *argv[]) {
     return(0);
   }
 #endif // ENABLE_EXCEPTIONS
-
-  pmesh->UserWorkAfterLoop(pinput);
 
   //--- Step 10. -------------------------------------------------------------------------
   // Print diagnostic messages related to the end of the simulation
