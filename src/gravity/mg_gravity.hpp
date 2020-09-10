@@ -52,7 +52,6 @@ class MGGravityDriver : public MultigridDriver {
   ~MGGravityDriver();
   void Solve(int stage) final;
   void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) final;
-  void ScaleMultipoleCoefficients() final;
  private:
   Real four_pi_G_;
 };

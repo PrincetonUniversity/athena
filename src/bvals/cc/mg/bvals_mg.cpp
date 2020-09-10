@@ -124,8 +124,7 @@ void MGBoundaryValues::InitBoundaryData(BoundaryQuantity type) {
       }
         break;
     }
-    if (pmy_mg_->pmy_driver_->ffas_) size *= 2;
-    size *= pmy_mg_->nvar_;
+    size *= pmy_mg_->nvar_*2; // for FAS
     bdata_.send[n] = new Real[size];
     bdata_.recv[n] = new Real[size];
   }
@@ -350,6 +349,8 @@ void MGBoundaryValues::StartReceivingMultigrid(BoundaryQuantity type, bool foldd
   for (int n=0; n<nneighbor; n++) {
     NeighborBlock& nb = neighbor[n];
     if (nb.snb.rank!=Globals::my_rank) {
+      if (type == BoundaryQuantity::mggrav_f && nb.snb.level > loc.level
+        && nb.ni.type != NeighborConnect::face) continue;
       int size = 0;
       if (nb.snb.level == loc.level) { // same
         if (nb.ni.type == NeighborConnect::face) size = SQR(nc)*ngh;
@@ -366,8 +367,7 @@ void MGBoundaryValues::StartReceivingMultigrid(BoundaryQuantity type, bool foldd
         else if (nb.ni.type == NeighborConnect::corner) size = cngh*cngh*cngh;
       } else { // finer
         if (nb.ni.type == NeighborConnect::face) size = SQR(nc/2)*ngh;
-        if (type == BoundaryQuantity::mggrav_f) continue;
-        if (nb.ni.type == NeighborConnect::edge) size = nc/2*ngh*ngh;
+        else if (nb.ni.type == NeighborConnect::edge) size = nc/2*ngh*ngh;
         else if (nb.ni.type == NeighborConnect::corner) size = ngh*ngh*ngh;
       }
       if (folddata) size *= 2;
@@ -482,7 +482,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
   const AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int nc = pmy_mg_->GetCurrentNumberOfCells();
-  int cn = ngh - 1, fs = ngh, cs = ngh, fe = fs + nc - 1, ce = cs + nc/2 - 1;
+  int cn = ngh - 1, cs = ngh, ce = cs + nc/2 - 1;
   int p=0;
   int si = (nb.ni.ox1 > 0) ? (ce - cn) : cs;
   int ei = (nb.ni.ox1 < 0) ? (cs + cn) : ce;

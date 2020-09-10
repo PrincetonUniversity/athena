@@ -210,7 +210,7 @@ class MultigridDriver {
   // for multipole expansion
   void AllocateMultipoleCoefficients();
   void CalculateMultipoleCoefficients();
-  virtual void ScaleMultipoleCoefficients() {};
+  virtual void ScaleMultipoleCoefficients();
 
   // small functions
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }

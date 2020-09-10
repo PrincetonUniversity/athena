@@ -83,7 +83,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IDN,k,j,i) = den2;
         else
           phydro->u(IDN,k,j,i) = 1e-300;
-        phydro->u(IEN,k,j,i) = - G*m1/(std::max(r1, 0.5*r)) - G*m2/(std::max(r2, 0.5*r));
+        phydro->u(IEN,k,j,i) = phydro->u(IDN,k,j,i);
         phydro->u(IM1,k,j,i) = 0.0;
         phydro->u(IM2,k,j,i) = 0.0;
         phydro->u(IM3,k,j,i) = phydro->u(IEN,k,j,i);
@@ -93,7 +93,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // rescale the mass
   if (lid == pmy_mesh->nblocal - 1) {
-    Real mass;
+    Real mass = 0.0;
     for (int b = 0; b < pmy_mesh->nblocal; ++b) {
       MeshBlock *pmb = pmy_mesh->my_blocks(b);
       Coordinates *pcoord = pmb->pcoord;
@@ -101,7 +101,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k = ks; k <= ke; ++k) {
         for (int j = js; j <= je; ++j) {
           for (int i = is; i <= ie; ++i)
-            mass += vol * pmb->phydro->u(IDN,k,j,i);
+            mass += pmb->phydro->u(IDN,k,j,i) * vol;
         }
       }
     }
@@ -110,8 +110,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     MPI_Allreduce(MPI_IN_PLACE, &mass, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
-    if (mass < (m1+m2)*0.8 && Globals::my_rank == 0)
-      std::cout << "A lot of mass is missing, resolution is too low." << std::endl;
+    if ((mass < (m1+m2)*0.7 || mass > (m1+m2)*1.3) && Globals::my_rank == 0)
+      std::cout << "Too much or too little mass. Resolution is too low." << std::endl;
 
     Real fac = (m1+m2)/mass;
     for (int b = 0; b < pmy_mesh->nblocal; ++b) {
@@ -133,6 +133,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
+  Real x0 = 12.0/1024.0, y0 = 0.0, z0 = 0.0, r = 6.0/1024.0;
+  Real m1 = 2.0, m2 = 1.0;
+  Real G = four_pi_G / (4.0 * PI);
+  Real den1 = m1/(4.0*PI/3.0*r*r*r);
+  Real den2 = m2/(4.0*PI/3.0*r*r*r);
+
   MeshBlock *pmb = my_blocks(0);
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
@@ -149,8 +155,25 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     for (int k = ks; k <= ke; ++k) {
       for (int j = js; j <= je; ++j) {
         for (int i = is; i <= ie; ++i) {
-          phydro->u(IEN,k,j,i) = std::abs(phydro->u(IEN,k,j,i) - pgrav->phi(k,j,i));
-          err += phydro->u(IEN, k, j, i) * vol;
+          Real x = pcoord->x1v(i);
+          Real y = pcoord->x2v(j);
+          Real z = pcoord->x3v(k);
+
+          Real r1 = sqrt(SQR(x-x0)+SQR(y-y0)+SQR(z-z0));
+          Real r2 = sqrt(SQR(x+x0)+SQR(y+y0)+SQR(z+z0));
+          Real p1 = 0.0, p2 = 0.0;
+          if (r1 > r)
+            p1 = -G*m1/r1;
+          else
+            p1 = -G*PI*2.0/3.0*den1*(3.0*r*r-r1*r1);
+          if (r2 > r)
+            p2 = -G*m2/r2;
+          else
+            p2 = -G*PI*2.0/3.0*den2*(3.0*r*r-r2*r2);
+          Real pot = p1 + p2;
+          phydro->u(IM1,k,j,i) = pot;
+          phydro->u(IM2,k,j,i) = std::abs((pot - pgrav->phi(k,j,i))/pot);
+          err += phydro->u(IM2, k, j, i) * vol;
         }
       }
     }

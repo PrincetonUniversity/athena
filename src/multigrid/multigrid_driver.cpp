@@ -31,6 +31,7 @@
 #include <mpi.h>
 #endif
 
+
 // constructor, initializes data structures and parameters
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, 
@@ -396,13 +397,13 @@ void MultigridDriver::SetupMultigrid() {
     needinit = false;
   }
 
-  if (fsubtract_average_)
-    SubtractAverage(MGVariable::src);
-
   if (srcmask_ != nullptr) {
     for (Multigrid* pmg : vmg_)
       pmg->ApplySourceMask();
   }
+
+  if (fsubtract_average_)
+    SubtractAverage(MGVariable::src);
 
   if (mporder_ > 0)
     CalculateMultipoleCoefficients();
@@ -545,11 +546,10 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
     mgtlist_->DoTaskListOneStage(this);
     current_level_++;
   } else if (current_level_ >= nrootlevel_ - 1) { // non uniform octets
-    if (current_level_ == nrootlevel_ - 1) {
+    if (current_level_ == nrootlevel_ - 1)
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
-    } else {
+    else
       SetBoundariesOctets(true, ffas_);
-    }
     ProlongateAndCorrectOctets();
     current_level_++;
     for (int n=0; n<nsmooth; ++n) {
@@ -680,7 +680,8 @@ void MultigridDriver::SolveIterative() {
     def = 0.0;
     for (int v=0; v<nvar_; ++v)
       def += CalculateDefectNorm(MGNormType::l2, v);
-    std::cout << "niter " << n << " def " << def << std::endl;
+    //if (Globals::my_rank == 0)
+    //  std::cout << "niter " << n << " def " << def << std::endl;
     if (def/olddef > 0.8) {
       if (eps_ == 0.0) break;
       if (Globals::my_rank == 0)
@@ -1761,9 +1762,8 @@ void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
 void MultigridDriver::AllocateMultipoleCoefficients() {
   nmpcoeff_ = 0;
   if (mporder_ == 0) return;
-  for (int i = 0; i <= mporder_; ++i) {
+  for (int i = 0; i <= mporder_; ++i)
     nmpcoeff_ += 2 * i + 1;
-  }
 
   mpcoeff_.NewAthenaArray(nvar_, nmpcoeff_);
 
@@ -1783,7 +1783,56 @@ void MultigridDriver::CalculateMultipoleCoefficients() {
   MPI_Allreduce(MPI_IN_PLACE, mpcoeff_.data(), nmpcoeff_, MPI_ATHENA_REAL,
                 MPI_SUM, MPI_COMM_MULTIGRID);
 #endif
+  ScaleMultipoleCoefficients();
   return;
 }
 
 
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::ScaleMultipoleCoefficients()
+//  \brief scale coefficients for multipole expansion
+
+void MultigridDriver::ScaleMultipoleCoefficients() {
+  // constants for multipole expansion
+  static const Real c0  = -0.5/std::sqrt(PI);
+  static const Real c1  = -std::sqrt(3.0/(4.0*PI))/3.0;
+  static const Real c2  = -0.25*std::sqrt(5.0/PI)/5.0;
+  static const Real c2a = -0.5*std::sqrt(15.0/PI)/5.0;
+  static const Real c30 = -0.25*std::sqrt(7.0/PI)/7.0;
+  static const Real c31 = -0.25*std::sqrt(21.0/TWO_PI)/7.0;
+  static const Real c32 = -0.5*std::sqrt(105.0/PI)/7.0;
+  static const Real c33 = -0.25*std::sqrt(35.0/TWO_PI)/7.0;
+  static const Real c40 = -0.1875/std::sqrt(PI)/9.0;
+  static const Real c41 = -0.75*std::sqrt(5.0/TWO_PI)/9.0;
+  static const Real c42 = -0.75*std::sqrt(5.0/PI)/9.0;
+  static const Real c43 = -0.75*std::sqrt(35.0/TWO_PI)/9.0;
+  static const Real c44 = -1.5*std::sqrt(35.0/PI)/9.0;
+
+  mpcoeff_(0) *= c0;
+  mpcoeff_(1) *= c1;
+  mpcoeff_(2) *= c1;
+  mpcoeff_(3) *= c1;
+  mpcoeff_(4) *= c2a;
+  mpcoeff_(5) *= c2a;
+  mpcoeff_(6) *= c2;
+  mpcoeff_(7) *= c2a;
+  mpcoeff_(8) *= c2a;
+  if (mporder_ == 4) {
+    mpcoeff_(9)  *= c33;
+    mpcoeff_(10) *= c32;
+    mpcoeff_(11) *= c31;
+    mpcoeff_(12) *= c30;
+    mpcoeff_(13) *= c31;
+    mpcoeff_(14) *= c32;
+    mpcoeff_(15) *= c33;
+    mpcoeff_(16) *= c44;
+    mpcoeff_(17) *= c43;
+    mpcoeff_(18) *= c42;
+    mpcoeff_(19) *= c41;
+    mpcoeff_(20) *= c40;
+    mpcoeff_(21) *= c41;
+    mpcoeff_(22) *= c42;
+    mpcoeff_(23) *= c43;
+    mpcoeff_(24) *= c44;
+  }
+}

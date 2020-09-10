@@ -25,22 +25,6 @@
 #include "../parameter_input.hpp"
 #include "multigrid.hpp"
 
-// constants for multipole expansion
-static const Real c0  = 0.5/std::sqrt(PI);
-static const Real c1  = std::sqrt(3.0/(4.0*PI));
-static const Real c2  = 0.25*std::sqrt(5.0/PI);
-static const Real c2a = 0.5*std::sqrt(15.0/PI);
-static const Real c30 = 0.25*std::sqrt(7.0/PI);
-static const Real c31 = 0.25*std::sqrt(21.0/TWO_PI);
-static const Real c32 = 0.5*std::sqrt(105.0/PI);
-static const Real c33 = 0.25*std::sqrt(35.0/TWO_PI);
-static const Real c40 = 0.1875/std::sqrt(PI);
-static const Real c41 = 0.75*std::sqrt(5.0/TWO_PI);
-static const Real c42 = 0.75*std::sqrt(5.0/PI);
-static const Real c43 = 0.75*std::sqrt(35.0/TWO_PI);
-static const Real c44 = 1.5*std::sqrt(35.0/PI);
-
-
 //----------------------------------------------------------------------------------------
 //! \fn Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost)
 //  \brief Multigrid constructor
@@ -207,7 +191,7 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
-  if (fac==1.0) {
+  if (fac == 1.0) {
     for (int v=0; v<nvar_; ++v) {
       int nsrc=ns+v;
       for (int k=ngh, mk=ks; mk<=ke; ++k, ++mk) {
@@ -228,7 +212,7 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
       }
     }
   }
-  current_level_=nlevel_-1;
+  current_level_ = nlevel_-1;
   return;
 }
 
@@ -818,7 +802,22 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
 //  \brief Actual implementation of calculation of multipole expansion coeficients
 
 void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int mporder) {
-  AthenaArray<Real> &src=src_[nlevel_-1];
+  // constants for multipole expansion
+  static const Real c0  = 0.5/std::sqrt(PI);
+  static const Real c1  = std::sqrt(3.0/(4.0*PI));
+  static const Real c2  = 0.25*std::sqrt(5.0/PI);
+  static const Real c2a = 0.5*std::sqrt(15.0/PI);
+  static const Real c30 = 0.25*std::sqrt(7.0/PI);
+  static const Real c31 = 0.25*std::sqrt(21.0/TWO_PI);
+  static const Real c32 = 0.5*std::sqrt(105.0/PI);
+  static const Real c33 = 0.25*std::sqrt(35.0/TWO_PI);
+  static const Real c40 = 0.1875/std::sqrt(PI);
+  static const Real c41 = 0.75*std::sqrt(5.0/TWO_PI);
+  static const Real c42 = 0.75*std::sqrt(5.0/PI);
+  static const Real c43 = 0.75*std::sqrt(35.0/TWO_PI);
+  static const Real c44 = 1.5*std::sqrt(35.0/PI);
+
+  AthenaArray<Real> &src = src_[nlevel_-1];
   MGCoordinates &coord = coord_[nlevel_-1];
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
@@ -827,8 +826,8 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
   // It is trivial to extend it, but I'm afraid it slows down the code considerably
   // as it requires non-continuous memory access.
   // Also, I separate the mporder = 2 and mporder = 4 for performance. 
-  Real vol = (coord.x1f(is+1)-coord.x1f(is))*(coord.x2f(js+1)-coord.x2f(js))
-            *(coord.x3f(ks+1)-coord.x3f(ks));
+  Real vol = (coord.x1f(is+1)-coord.x1f(is)) * (coord.x2f(js+1)-coord.x2f(js))
+           * (coord.x3f(ks+1)-coord.x3f(ks));
   if (mporder == 4) {
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
@@ -848,7 +847,7 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
           Real sz2mtr2 = 7.0*z2-3.0*r2;
           Real s = src(k,j,i) * vol;
           // Y00
-          mpcoeff(0)  += s;
+          mpcoeff(0)  += s*c0;
           // r*(Y1-1, Y10, Y11)
           Real sc1 = s*c1;
           mpcoeff(1)  += sc1*y;

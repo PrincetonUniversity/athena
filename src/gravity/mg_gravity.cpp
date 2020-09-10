@@ -349,12 +349,3 @@ void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) 
   return;
 }
 
-
-//----------------------------------------------------------------------------------------
-//! \fn void MGGravityDriver::ScaleMultipoleCoefficients()
-//  \brief scale coefficients for multipole expansion
-
-void MGGravityDriver::ScaleMultipoleCoefficients() {
-  for (int i = 0; i < nmpcoeff_; ++i)
-    mpcoeff_(i) *= four_pi_G_;
-}
