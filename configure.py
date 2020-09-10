@@ -960,35 +960,26 @@ if args['prob'] == "z4c_two_punctures":
     definitions['TWO_PUNCTURES_OPTION'] = 'TWO_PUNCTURES' + '\n#define NPUNCT (2)'
 
     if args['two_punctures_path'] == '':
-        os.system('mkdir -p extern/initial_data')
-        args['two_punctures_path'] = 'extern/initial_data/two_punctures'
-        if os.path.exists('../twopuncturesc'):
-            os.system('rm {}'.format(args['two_punctures_path']))
-            os.system('ln -s ../../../twopuncturesc {}'.format(args['two_punctures_path']))
-        else:
-            raise SystemExit('### CONFIGURE ERROR: To compile with two punctures, it is necessary to have external initial data two_punctures library ../twopuncturesc.')
-    if args['two_punctures_path'] != '':
-        makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/src'.format(
-            args['two_punctures_path'])
-        makefile_options['LINKER_FLAGS'] += ' -L{0}/obj'.format(
-            args['two_punctures_path'])
-    if (args['cxx'] == 'g++' or args['cxx'] == 'icc' or args['cxx'] == 'cray'
-            or args['cxx'] == 'icc-debug' or args['cxx'] == 'icc-phi'
-            or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
-            or args['cxx'] == 'bgxl'):
+	#twop_path = os.path.abspath(os.getcwd()) + '../../twopunctures'
+        #os.system('mkdir -p extern/initial_data')
 
-        obj_dir = args['two_punctures_path'] + '/obj/'
-        so_names = ['TwoPunctures.o', 'TP_CoordTransf.o', 'TP_Equations.o',
-                    'TP_FuncAndJacobian.o', 'TP_Newton.o', 'TP_Utilities.o']
-
-        ## Check the external library has been compiled
-        for so in so_names:
-            if not os.path.isfile(obj_dir + so):
-                print(obj_dir + so)
-                raise SystemExit('### CONFIGURE ERROR: It appears that library ../twopuncturesc has not been compiled yet: some objects files are missing.')
-
-        for n in so_names:
-            makefile_options['LIBRARY_FLAGS'] += ' ' + obj_dir + n
+        #args['two_punctures_path'] = 'extern/initial_data/two_punctures'
+	args['two_punctures_path'] = os.path.abspath(os.getcwd()) + '/../twopuncturesc'
+    if os.path.exists(args['two_punctures_path']):
+        pass
+        #os.system('rm {}'.format(args['two_punctures_path']))
+        #os.system('ln -s ../../../twopuncturesc {}'.format(args['two_punctures_path']))
+    else:
+        raise SystemExit('### CONFIGURE ERROR: To compile with two punctures, it is necessary to have external initial data two_punctures library ../twopuncturesc.')
+    makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/src'.format(args['two_punctures_path'])
+    makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['two_punctures_path'])
+    if (args['cxx'].__contains__("g")):
+	twopl = "twopunct_gcc"
+    elif (args['cxx'].__contains__("ic")):
+	twopl = "twopunct_icc"
+    makefile_options['LIBRARY_FLAGS'] += " -l{} -Wl,-rpath,{}".format(twopl, args['two_punctures_path'] + "/lib")
+        #for n in so_names:
+        #    makefile_options['LIBRARY_FLAGS'] += ' ' + obj_dir + n
 else:
     definitions['TWO_PUNCTURES_OPTION'] = 'NO_TWO_PUNCTURES'
     if args['prob'] == 'z4c_one_puncture':
@@ -999,7 +990,7 @@ definitions['GSL_OPTION'] = 'NO_GSL'
 if args['gsl']:
     definitions['GSL_OPTION'] = 'GSL'
     if args['gsl_path'] != '':
-        makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
+        makefile_options['PREPROCESSOR_FLAGS'] += ' {0}/include'.format(
             args['gsl_path'])
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['gsl_path'])
     makefile_options['LIBRARY_FLAGS'] += ' -lgsl -lgslcblas'
@@ -1010,7 +1001,7 @@ if args['cflag'] is not None:
 
 # --include=[name] arguments
 for include_path in args['include']:
-    makefile_options['COMPILER_FLAGS'] += ' -I'+include_path
+    makefile_options['COMPILER_FLAGS'] += (' -I' if not include_path.__contains__("-I") else ' ') + include_path
 
 # --lib_path=[name] arguments
 for library_path in args['lib_path']:
