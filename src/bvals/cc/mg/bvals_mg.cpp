@@ -1065,28 +1065,34 @@ int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *
     int fi;
     if (nb.ni.ox1 < 0) fi = fs;
     else               fi = fe;
-    for (int fk=fs; fk<=fe; fk+=2) {
-      for (int fj=fs; fj<=fe; fj+=2)
-        buf[p++] = 0.25*((u(0, fk,   fj,   fi)+u(0, fk,   fj+1, fi))
-                        +(u(0, fk+1, fj,   fi)+u(0, fk+1, fj+1, fi)));
+    for (int v=0; v<nvar; ++v) {
+      for (int fk=fs; fk<=fe; fk+=2) {
+        for (int fj=fs; fj<=fe; fj+=2)
+          buf[p++] = 0.25*((u(v, fk,   fj,   fi)+u(v, fk,   fj+1, fi))
+                          +(u(v, fk+1, fj,   fi)+u(v, fk+1, fj+1, fi)));
+      }
     }
   } else if (nb.ni.ox2 != 0) { // x2 face
     int fj;
     if (nb.ni.ox2 < 0) fj = fs;
     else               fj = fe;
-    for (int fk=fs; fk<=fe; fk+=2) {
-      for (int fi=fs; fi<=fe; fi+=2)
-        buf[p++] = 0.25*((u(0, fk,   fj, fi)+u(0, fk,   fj, fi+1))
-                        +(u(0, fk+1, fj, fi)+u(0, fk+1, fj, fi+1)));
+    for (int v=0; v<nvar; ++v) {
+      for (int fk=fs; fk<=fe; fk+=2) {
+        for (int fi=fs; fi<=fe; fi+=2)
+          buf[p++] = 0.25*((u(v, fk,   fj, fi)+u(v, fk,   fj, fi+1))
+                          +(u(v, fk+1, fj, fi)+u(v, fk+1, fj, fi+1)));
+      }
     }
   } else { // x3 face
     int fk;
     if (nb.ni.ox3 < 0) fk = fs;
     else               fk = fe;
-    for (int fj=fs; fj<=fe; fj+=2) {
-      for (int fi=fs; fi<=fe; fi+=2)
-        buf[p++] = 0.25*((u(0, fk, fj,   fi)+u(0, fk, fj,   fi+1))
-                        +(u(0, fk, fj+1, fi)+u(0, fk, fj+1, fi+1)));
+    for (int v=0; v<nvar; ++v) {
+      for (int fj=fs; fj<=fe; fj+=2) {
+        for (int fi=fs; fi<=fe; fi+=2)
+          buf[p++] = 0.25*((u(v, fk, fj,   fi)+u(v, fk, fj,   fi+1))
+                          +(u(v, fk, fj+1, fi)+u(v, fk, fj+1, fi+1)));
+      }
     }
   }
 
@@ -1247,10 +1253,12 @@ void MGGravityBoundaryValues::SetMultigridBoundaryFromFinerFluxCons(const Real *
   int p = 0;
 
   // correct the ghost values using the mass conservation formula
-  for (int k=sk; k<=ek; ++k) {
-    for (int j=sj; j<=ej; ++j) {
-      for (int i=si; i<=ei; ++i) {
-        dst(0,k,j,i) = ot * (4.0*buf[p++] - dst(0,k+ok,j+oj,i+oi));
+  for (int v=0; v<nvar; ++v) {
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+        for (int i=si; i<=ei; ++i) {
+          dst(v,k,j,i) = ot * (4.0*buf[p++] - dst(v,k+ok,j+oj,i+oi));
+        }
       }
     }
   }
@@ -1295,21 +1303,23 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
       if (apply_bndry_fn_[BoundaryFace::outer_x3])
         DispatchBoundaryFunction(BoundaryFace::outer_x3, cbuf_, time, nvar,
                                  i, i, cs, ce, cs, ce, ngh, coord);
-      for(int k=cs, fk=fs; k<=ce; ++k, fk+=2) {
-        for(int j=cs, fj=fs; j<=ce; ++j, fj+=2) {
-          Real ccval = cbuf_(0, k, j, i);
-          Real gx2m = ccval - cbuf_(0, k, j-1, i);
-          Real gx2p = cbuf_(0, k, j+1, i) - ccval;
-          Real gx2c = 0.125*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
-                                                               std::abs(gx2p));
-          Real gx3m = ccval - cbuf_(0, k-1, j, i);
-          Real gx3p = cbuf_(0, k+1, j, i) - ccval;
-          Real gx3c = 0.125*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
-                                                               std::abs(gx3p));
-          dst(0,fk  ,fj  ,fig) = ot*(2.0*(ccval - gx2c - gx3c) + u(0,fk  ,fj  ,fi));
-          dst(0,fk  ,fj+1,fig) = ot*(2.0*(ccval + gx2c - gx3c) + u(0,fk  ,fj+1,fi));
-          dst(0,fk+1,fj  ,fig) = ot*(2.0*(ccval - gx2c + gx3c) + u(0,fk+1,fj  ,fi));
-          dst(0,fk+1,fj+1,fig) = ot*(2.0*(ccval + gx2c + gx3c) + u(0,fk+1,fj+1,fi));
+      for (int v=0; v<nvar; ++v) {
+        for(int k=cs, fk=fs; k<=ce; ++k, fk+=2) {
+          for(int j=cs, fj=fs; j<=ce; ++j, fj+=2) {
+            Real ccval = cbuf_(v, k, j, i);
+            Real gx2m = ccval - cbuf_(v, k, j-1, i);
+            Real gx2p = cbuf_(v, k, j+1, i) - ccval;
+            Real gx2c = 0.125*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
+                                                                 std::abs(gx2p));
+            Real gx3m = ccval - cbuf_(v, k-1, j, i);
+            Real gx3p = cbuf_(v, k+1, j, i) - ccval;
+            Real gx3c = 0.125*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
+                                                                 std::abs(gx3p));
+            dst(v,fk  ,fj  ,fig) = ot*(2.0*(ccval - gx2c - gx3c) + u(v,fk  ,fj  ,fi));
+            dst(v,fk  ,fj+1,fig) = ot*(2.0*(ccval + gx2c - gx3c) + u(v,fk  ,fj+1,fi));
+            dst(v,fk+1,fj  ,fig) = ot*(2.0*(ccval - gx2c + gx3c) + u(v,fk+1,fj  ,fi));
+            dst(v,fk+1,fj+1,fig) = ot*(2.0*(ccval + gx2c + gx3c) + u(v,fk+1,fj+1,fi));
+          }
         }
       }
     }
@@ -1333,21 +1343,23 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
       if (apply_bndry_fn_[BoundaryFace::outer_x3])
         DispatchBoundaryFunction(BoundaryFace::outer_x3, cbuf_, time, nvar,
                                  cs, ce, j, j, cs, ce, ngh, coord);
-      for(int k=cs, fk=fs; k<=ce; ++k, fk+=2) {
-        for(int i=cs, fi=fs; i<=ce; ++i, fi+=2) {
-          Real ccval = cbuf_(0, k, j, i);
-          Real gx1m = ccval - cbuf_(0, k, j, i-1);
-          Real gx1p = cbuf_(0, k, j, i+1) - ccval;
-          Real gx1c = 0.125*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
-                                                               std::abs(gx1p));
-          Real gx3m = ccval - cbuf_(0, k-1, j, i);
-          Real gx3p = cbuf_(0, k+1, j, i) - ccval;
-          Real gx3c = 0.125*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
-                                                               std::abs(gx3p));
-          dst(0,fk  ,fjg,fi  ) = ot*(2.0*(ccval - gx1c - gx3c) + u(0,fk,  fj,fi  ));
-          dst(0,fk  ,fjg,fi+1) = ot*(2.0*(ccval + gx1c - gx3c) + u(0,fk,  fj,fi+1));
-          dst(0,fk+1,fjg,fi  ) = ot*(2.0*(ccval - gx1c + gx3c) + u(0,fk+1,fj,fi  ));
-          dst(0,fk+1,fjg,fi+1) = ot*(2.0*(ccval + gx1c + gx3c) + u(0,fk+1,fj,fi+1));
+      for (int v=0; v<nvar; ++v) {
+        for(int k=cs, fk=fs; k<=ce; ++k, fk+=2) {
+          for(int i=cs, fi=fs; i<=ce; ++i, fi+=2) {
+            Real ccval = cbuf_(v, k, j, i);
+            Real gx1m = ccval - cbuf_(v, k, j, i-1);
+            Real gx1p = cbuf_(v, k, j, i+1) - ccval;
+            Real gx1c = 0.125*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
+                                                                 std::abs(gx1p));
+            Real gx3m = ccval - cbuf_(v, k-1, j, i);
+            Real gx3p = cbuf_(v, k+1, j, i) - ccval;
+            Real gx3c = 0.125*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
+                                                                 std::abs(gx3p));
+            dst(v,fk  ,fjg,fi  ) = ot*(2.0*(ccval - gx1c - gx3c) + u(v,fk,  fj,fi  ));
+            dst(v,fk  ,fjg,fi+1) = ot*(2.0*(ccval + gx1c - gx3c) + u(v,fk,  fj,fi+1));
+            dst(v,fk+1,fjg,fi  ) = ot*(2.0*(ccval - gx1c + gx3c) + u(v,fk+1,fj,fi  ));
+            dst(v,fk+1,fjg,fi+1) = ot*(2.0*(ccval + gx1c + gx3c) + u(v,fk+1,fj,fi+1));
+          }
         }
       }
     }
@@ -1371,21 +1383,23 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
       if (apply_bndry_fn_[BoundaryFace::outer_x2])
         DispatchBoundaryFunction(BoundaryFace::outer_x2, cbuf_, time, nvar,
                                  cs, ce, cs, ce, k, k, ngh, coord);
-      for(int j=cs, fj=fs; j<=ce; ++j, fj+=2) {
-        for(int i=cs, fi=fs; i<=ce; ++i, fi+=2) {
-          Real ccval = cbuf_(0, k, j, i);
-          Real gx1m = ccval - cbuf_(0, k, j, i-1);
-          Real gx1p = cbuf_(0, k, j, i+1) - ccval;
-          Real gx1c = 0.125*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
-                                                               std::abs(gx1p));
-          Real gx2m = ccval - cbuf_(0, k, j-1, i);
-          Real gx2p = cbuf_(0, k, j+1, i) - ccval;
-          Real gx2c = 0.125*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
-                                                               std::abs(gx2p));
-          dst(0,fkg,fj  ,fi  ) = ot*(2.0*(ccval - gx1c - gx2c) + u(0,fk,fj  ,fi  ));
-          dst(0,fkg,fj  ,fi+1) = ot*(2.0*(ccval + gx1c - gx2c) + u(0,fk,fj  ,fi+1));
-          dst(0,fkg,fj+1,fi  ) = ot*(2.0*(ccval - gx1c + gx2c) + u(0,fk,fj+1,fi  ));
-          dst(0,fkg,fj+1,fi+1) = ot*(2.0*(ccval + gx1c + gx2c) + u(0,fk,fj+1,fi+1));
+      for (int v=0; v<nvar; ++v) {
+        for(int j=cs, fj=fs; j<=ce; ++j, fj+=2) {
+          for(int i=cs, fi=fs; i<=ce; ++i, fi+=2) {
+            Real ccval = cbuf_(v, k, j, i);
+            Real gx1m = ccval - cbuf_(v, k, j, i-1);
+            Real gx1p = cbuf_(v, k, j, i+1) - ccval;
+            Real gx1c = 0.125*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
+                                                                 std::abs(gx1p));
+            Real gx2m = ccval - cbuf_(v, k, j-1, i);
+            Real gx2p = cbuf_(v, k, j+1, i) - ccval;
+            Real gx2c = 0.125*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
+                                                                 std::abs(gx2p));
+            dst(v,fkg,fj  ,fi  ) = ot*(2.0*(ccval - gx1c - gx2c) + u(v,fk,fj  ,fi  ));
+            dst(v,fkg,fj  ,fi+1) = ot*(2.0*(ccval + gx1c - gx2c) + u(v,fk,fj  ,fi+1));
+            dst(v,fkg,fj+1,fi  ) = ot*(2.0*(ccval - gx1c + gx2c) + u(v,fk,fj+1,fi  ));
+            dst(v,fkg,fj+1,fi+1) = ot*(2.0*(ccval + gx1c + gx2c) + u(v,fk,fj+1,fi+1));
+          }
         }
       }
     }
