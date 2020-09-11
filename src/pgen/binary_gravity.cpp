@@ -144,7 +144,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;
 
-  Real err = 0.0;
+  Real err1 = 0.0, err2 = 0.0;
 
   for (int b = 0; b < nblocal; ++b) {
     pmb = my_blocks(b);
@@ -158,40 +158,77 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real x = pcoord->x1v(i);
           Real y = pcoord->x2v(j);
           Real z = pcoord->x3v(k);
+          Real dx = pcoord->dx1f(i);
+          Real dy = pcoord->dx2f(j);
+          Real dz = pcoord->dx3f(k);
 
           Real r1 = sqrt(SQR(x-x0)+SQR(y-y0)+SQR(z-z0));
           Real r2 = sqrt(SQR(x+x0)+SQR(y+y0)+SQR(z+z0));
-          Real p1 = 0.0, p2 = 0.0;
-          if (r1 > r)
+
+          Real ax = -(pgrav->phi(k,j,i+1)-pgrav->phi(k,j,i-1))/(2.0*dx);
+          Real ay = -(pgrav->phi(k,j+1,i)-pgrav->phi(k,j-1,i))/(2.0*dy);
+          Real az = -(pgrav->phi(k+1,j,i)-pgrav->phi(k-1,j,i))/(2.0*dz);
+
+          Real p1, p2, pot0, ax1, ay1, az1, ax2, ay2, az2, ax0, ay0, az0;
+          if (r1 > r) {
             p1 = -G*m1/r1;
-          else
+            ax1 = -G*m1/(r1*r1*r1)*(x-x0);
+            ay1 = -G*m1/(r1*r1*r1)*(y-y0);
+            az1 = -G*m1/(r1*r1*r1)*(z-z0);
+          } else {
             p1 = -G*PI*2.0/3.0*den1*(3.0*r*r-r1*r1);
-          if (r2 > r)
+            ax1 = -G*PI*4.0/3.0*den1*(x-x0);
+            ay1 = -G*PI*4.0/3.0*den1*(y-y0);
+            az1 = -G*PI*4.0/3.0*den1*(z-z0);
+          }
+          if (r2 > r) {
             p2 = -G*m2/r2;
-          else
+            ax2 = -G*m2/(r2*r2*r2)*(x+x0);
+            ay2 = -G*m2/(r2*r2*r2)*(y+y0);
+            az2 = -G*m2/(r2*r2*r2)*(z+z0);
+          } else {
             p2 = -G*PI*2.0/3.0*den2*(3.0*r*r-r2*r2);
-          Real pot = p1 + p2;
-          phydro->u(IM1,k,j,i) = pot;
-          phydro->u(IM2,k,j,i) = std::abs((pot - pgrav->phi(k,j,i))/pot);
-          err += phydro->u(IM2, k, j, i) * vol;
+            ax2 = -G*PI*4.0/3.0*den2*(x+x0);
+            ay2 = -G*PI*4.0/3.0*den2*(y+y0);
+            az2 = -G*PI*4.0/3.0*den2*(z+z0);
+          }
+          pot0 = p1 + p2;
+          ax0 = ax1 + ax2;
+          ay0 = ay1 + ay2;
+          az0 = az1 + az2;
+
+          Real perr = std::abs((pot0 - pgrav->phi(k,j,i))/pot0);
+          Real aerr = std::sqrt(SQR(ax-ax0)+SQR(ay-ay0)+SQR(az-az0))
+                    / std::sqrt(SQR(ax0)+SQR(ay0)+SQR(az0));
+          phydro->u(IM1,k,j,i) = pot0;
+          phydro->u(IM2,k,j,i) = perr;
+          phydro->u(IM3,k,j,i) = aerr;
+//          phydro->u(IM1,k,j,i) = ax;
+//          phydro->u(IM2,k,j,i) = ay;
+//          phydro->u(IM3,k,j,i) = az;
+          err1 += perr * vol;
+          err2 += aerr * vol;
         }
       }
     }
   }
 #ifdef MPI_PARALLEL
-  MPI_Allreduce(MPI_IN_PLACE, &err, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE, &err1, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE, &err2, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
   Real x1size = mesh_size.x1max - mesh_size.x1min;
   Real x2size = mesh_size.x2max - mesh_size.x2min;
   Real x3size = mesh_size.x3max - mesh_size.x3min;
   Real tvol = x1size * x2size * x3size;
-  err /= tvol;
+  err1 /= tvol;
+  err2 /= tvol;
   if (Globals::my_rank == 0) {
     std::cout << std::scientific
               << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1);
     std::cout << "=====================================================" << std::endl;
-    std::cout << "L1 : " << err << std::endl;
+    std::cout << "Potential    L1 : " << err1 << std::endl;
+    std::cout << "Acceleration L1 : " << err2 << std::endl;
     std::cout << "=====================================================" << std::endl;
   }
 

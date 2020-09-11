@@ -1144,13 +1144,13 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
     for (int ox3=-1; ox3<=1; ++ox3) {
       nloc.lx3 = loc.lx3 + ox3;
       if (nloc.lx3 < 0) {
-        if (MGBoundaryFunction_[BoundaryFace::inner_x3] == MGPeriodicInnerX3)
+        if (mg_mesh_bcs_[BoundaryFace::inner_x3] == BoundaryFlag::periodic)
           nloc.lx3 = (nrbx3_ << lev) - 1;
         else
           continue;
       }
       if (nloc.lx3 >= (nrbx3_ << lev)) {
-        if (MGBoundaryFunction_[BoundaryFace::outer_x3] == MGPeriodicOuterX3)
+        if (mg_mesh_bcs_[BoundaryFace::outer_x3] == BoundaryFlag::periodic)
           nloc.lx3 = 0;
         else
           continue;
@@ -1158,13 +1158,13 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
       for (int ox2=-1; ox2<=1; ++ox2) {
         nloc.lx2 = loc.lx2 + ox2;
         if (nloc.lx2 < 0) {
-          if (MGBoundaryFunction_[BoundaryFace::inner_x2] == MGPeriodicInnerX2)
+          if (mg_mesh_bcs_[BoundaryFace::inner_x2] == BoundaryFlag::periodic)
             nloc.lx2 = (nrbx2_ << lev) - 1;
           else
             continue;
         }
         if (nloc.lx2 >= (nrbx2_ << lev)) {
-          if (MGBoundaryFunction_[BoundaryFace::outer_x2] == MGPeriodicOuterX2)
+          if (mg_mesh_bcs_[BoundaryFace::outer_x2] == BoundaryFlag::periodic)
             nloc.lx2 = 0;
           else
             continue;
@@ -1175,13 +1175,13 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
           // find a neighboring octet - either on the same or coarser level
           nloc.lx1 = loc.lx1 + ox1;
           if (nloc.lx1 < 0) {
-            if (MGBoundaryFunction_[BoundaryFace::inner_x1] == MGPeriodicInnerX1)
+            if (mg_mesh_bcs_[BoundaryFace::inner_x1] == BoundaryFlag::periodic)
               nloc.lx1 = (nrbx1_ << lev) - 1;
             else
               continue;
           }
           if (nloc.lx1 >= (nrbx1_ << lev)) {
-            if (MGBoundaryFunction_[BoundaryFace::outer_x1] == MGPeriodicOuterX1)
+            if (mg_mesh_bcs_[BoundaryFace::outer_x1] == BoundaryFlag::periodic)
               nloc.lx1 = 0;
             else
               continue;
@@ -1553,13 +1553,13 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
     for (int ox3=-1; ox3<=1; ++ox3) {
       nloc.lx3 = loc.lx3 + ox3;
       if (nloc.lx3 < 0) {
-        if (MGBoundaryFunction_[BoundaryFace::inner_x3] == MGPeriodicInnerX3)
+        if (mg_mesh_bcs_[BoundaryFace::inner_x3] == BoundaryFlag::periodic)
           nloc.lx3 = (nrbx3_ << lev) - 1;
         else
           continue;
       }
       if (nloc.lx3 >= (nrbx3_ << lev)) {
-        if (MGBoundaryFunction_[BoundaryFace::outer_x3] == MGPeriodicOuterX3)
+        if (mg_mesh_bcs_[BoundaryFace::outer_x3] == BoundaryFlag::periodic)
           nloc.lx3 = 0;
         else
           continue;
@@ -1567,13 +1567,13 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
       for (int ox2=-1; ox2<=1; ++ox2) {
         nloc.lx2 = loc.lx2 + ox2;
         if (nloc.lx2 < 0) {
-          if (MGBoundaryFunction_[BoundaryFace::inner_x2] == MGPeriodicInnerX2)
+          if (mg_mesh_bcs_[BoundaryFace::inner_x2] == BoundaryFlag::periodic)
             nloc.lx2 = (nrbx2_ << lev) - 1;
           else
             continue;
         }
         if (nloc.lx2 >= (nrbx2_ << lev)) {
-          if (MGBoundaryFunction_[BoundaryFace::outer_x2] == MGPeriodicOuterX2)
+          if (mg_mesh_bcs_[BoundaryFace::outer_x2] == BoundaryFlag::periodic)
             nloc.lx2 = 0;
           else
             continue;
@@ -1582,13 +1582,13 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
           if (ox1 == 0 && ox2 == 0 && ox3 == 0) continue;
           nloc.lx1 = loc.lx1 + ox1;
           if (nloc.lx1 < 0) {
-            if (MGBoundaryFunction_[BoundaryFace::inner_x1] == MGPeriodicInnerX1)
+            if (mg_mesh_bcs_[BoundaryFace::inner_x1] == BoundaryFlag::periodic)
               nloc.lx1 = (nrbx1_ << lev) - 1;
             else
               continue;
           }
           if (nloc.lx1 >= (nrbx1_ << lev)) {
-            if (MGBoundaryFunction_[BoundaryFace::outer_x1] == MGPeriodicOuterX1)
+            if (mg_mesh_bcs_[BoundaryFace::outer_x1] == BoundaryFlag::periodic)
               nloc.lx1 = 0;
             else
               continue;

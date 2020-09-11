@@ -150,6 +150,169 @@ void MGBoundaryValues::DestroyBoundaryData() {
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face,
+//                           AthenaArray<Real> &dst, Real time, int nvar,
+//                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                           const MGCoordinates &coord)
+//  \brief Call multigrid boundary function for a face
+
+void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face, AthenaArray<Real> &dst,
+     Real time, int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+     const MGCoordinates &coord) {
+  switch (face) {
+    case BoundaryFace::inner_x1:
+      switch (block_bcs[BoundaryFace::inner_x1]) {
+        case BoundaryFlag::user:
+          MGBoundaryFunction_[BoundaryFace::inner_x1](dst, time, nvar,
+                              is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::periodic:
+          MGPeriodicInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_zerograd:
+          MGZeroGradientInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_zerofixed:
+          MGZeroFixedInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_multipole4:
+        case BoundaryFlag::mg_multipole16:
+          MGMultipoleInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
+                     pmy_mg_->pmy_driver_->mpcoeff_, pmy_mg_->pmy_driver_->mporder_);
+          break;
+        default:
+          break;
+      }
+      break;
+    case BoundaryFace::outer_x1:
+      switch (block_bcs[BoundaryFace::outer_x1]) {
+        case BoundaryFlag::user:
+          MGBoundaryFunction_[BoundaryFace::outer_x1](dst, time, nvar,
+                              is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::periodic:
+          MGPeriodicOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_zerograd:
+          MGZeroGradientOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_zerofixed:
+          MGZeroFixedOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_multipole4:
+        case BoundaryFlag::mg_multipole16:
+          MGMultipoleOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
+                     pmy_mg_->pmy_driver_->mpcoeff_, pmy_mg_->pmy_driver_->mporder_);
+          break;
+        default:
+          break;
+      }
+      break;
+    case BoundaryFace::inner_x2:
+      switch (block_bcs[BoundaryFace::inner_x2]) {
+        case BoundaryFlag::user:
+          MGBoundaryFunction_[BoundaryFace::inner_x2](dst, time, nvar,
+                              is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::periodic:
+          MGPeriodicInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_zerograd:
+          MGZeroGradientInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_zerofixed:
+          MGZeroFixedInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_multipole4:
+        case BoundaryFlag::mg_multipole16:
+          MGMultipoleInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
+                     pmy_mg_->pmy_driver_->mpcoeff_, pmy_mg_->pmy_driver_->mporder_);
+          break;
+        default:
+          break;
+      }
+      break;
+    case BoundaryFace::outer_x2:
+      switch (block_bcs[BoundaryFace::outer_x2]) {
+        case BoundaryFlag::user:
+          MGBoundaryFunction_[BoundaryFace::outer_x2](dst, time, nvar,
+                              is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::periodic:
+          MGPeriodicOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_zerograd:
+          MGZeroGradientOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_zerofixed:
+          MGZeroFixedOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_multipole4:
+        case BoundaryFlag::mg_multipole16:
+          MGMultipoleOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
+                     pmy_mg_->pmy_driver_->mpcoeff_, pmy_mg_->pmy_driver_->mporder_);
+          break;
+        default:
+          break;
+      }
+      break;
+    case BoundaryFace::inner_x3:
+      switch (block_bcs[BoundaryFace::inner_x3]) {
+        case BoundaryFlag::user:
+          MGBoundaryFunction_[BoundaryFace::inner_x3](dst, time, nvar,
+                              is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::periodic:
+          MGPeriodicInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_zerograd:
+          MGZeroGradientInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_zerofixed:
+          MGZeroFixedInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_multipole4:
+        case BoundaryFlag::mg_multipole16:
+          MGMultipoleInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
+                     pmy_mg_->pmy_driver_->mpcoeff_, pmy_mg_->pmy_driver_->mporder_);
+          break;
+        default:
+          break;
+      }
+      break;
+    case BoundaryFace::outer_x3:
+      switch (block_bcs[BoundaryFace::outer_x3]) {
+        case BoundaryFlag::user:
+          MGBoundaryFunction_[BoundaryFace::outer_x3](dst, time, nvar,
+                              is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::periodic:
+          MGPeriodicOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_zerograd:
+          MGZeroGradientOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_zerofixed:
+          MGZeroFixedOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+          break;
+        case BoundaryFlag::mg_multipole4:
+        case BoundaryFlag::mg_multipole16:
+          MGMultipoleOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
+                     pmy_mg_->pmy_driver_->mpcoeff_, pmy_mg_->pmy_driver_->mporder_);
+          break;
+        default:
+          break;
+      }
+      break;
+    default:
+      break;
+  }
+
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::ApplyPhysicalBoundaries(int flag)
 //  \brief Apply physical boundary conditions to the current Multigrid data
 
@@ -180,158 +343,25 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(int flag) {
   if (!apply_bndry_fn_[BoundaryFace::inner_x3]) bks = ks - ngh;
   if (!apply_bndry_fn_[BoundaryFace::outer_x3]) bke = ke + ngh;
 
-  // Apply boundary function on inner-x1
-  if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
-    switch (block_bcs[BoundaryFace::inner_x1]) {
-      case BoundaryFlag::user:
-        MGBoundaryFunction_[BoundaryFace::inner_x1](dst, time, nvar,
-                            is, ie, bjs, bje, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::periodic:
-        MGPeriodicInnerX1(dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_zerograd:
-        MGZeroGradientInnerX1(dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_zerofixed:
-        MGZeroFixedInnerX1(dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_multipole4:
-      case BoundaryFlag::mg_multipole16:
-        MGMultipoleInnerX1(dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, coord,
-                   pmy_mg_->pmy_driver_->mpcoeff_, pmy_mg_->pmy_driver_->mporder_);
-        break;
-      default:
-        break;
-    }
-  }
-  // Apply boundary function on outer-x1
-  if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
-    switch (block_bcs[BoundaryFace::outer_x1]) {
-      case BoundaryFlag::user:
-        MGBoundaryFunction_[BoundaryFace::outer_x1](dst, time, nvar,
-                            is, ie, bjs, bje, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::periodic:
-        MGPeriodicOuterX1(dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_zerograd:
-        MGZeroGradientOuterX1(dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_zerofixed:
-        MGZeroFixedOuterX1(dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_multipole4:
-      case BoundaryFlag::mg_multipole16:
-        MGMultipoleOuterX1(dst, time, nvar, is, ie, bjs, bje, bks, bke, ngh, coord,
-                   pmy_mg_->pmy_driver_->mpcoeff_, pmy_mg_->pmy_driver_->mporder_);
-        break;
-      default:
-        break;
-    }
-  }
-  // Apply boundary function on inner-x2
-  if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
-    switch (block_bcs[BoundaryFace::inner_x2]) {
-      case BoundaryFlag::user:
-        MGBoundaryFunction_[BoundaryFace::inner_x2](dst, time, nvar,
-                            bis, bie, js, je, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::periodic:
-        MGPeriodicInnerX2(dst, time, nvar, bis, bie, js, je, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_zerograd:
-        MGZeroGradientInnerX2(dst, time, nvar, bis, bie, js, je, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_zerofixed:
-        MGZeroFixedInnerX2(dst, time, nvar, bis, bie, js, je, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_multipole4:
-      case BoundaryFlag::mg_multipole16:
-        MGMultipoleInnerX2(dst, time, nvar, bis, bie, js, je, bks, bke, ngh, coord,
-                   pmy_mg_->pmy_driver_->mpcoeff_, pmy_mg_->pmy_driver_->mporder_);
-        break;
-      default:
-        break;
-    }
-  }
-  // Apply boundary function on outer-x2
-  if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
-    switch (block_bcs[BoundaryFace::outer_x2]) {
-      case BoundaryFlag::user:
-        MGBoundaryFunction_[BoundaryFace::outer_x2](dst, time, nvar,
-                            bis, bie, js, je, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::periodic:
-        MGPeriodicOuterX2(dst, time, nvar, bis, bie, js, je, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_zerograd:
-        MGZeroGradientOuterX2(dst, time, nvar, bis, bie, js, je, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_zerofixed:
-        MGZeroFixedOuterX2(dst, time, nvar, bis, bie, js, je, bks, bke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_multipole4:
-      case BoundaryFlag::mg_multipole16:
-        MGMultipoleOuterX2(dst, time, nvar, bis, bie, js, je, bks, bke, ngh, coord,
-                   pmy_mg_->pmy_driver_->mpcoeff_, pmy_mg_->pmy_driver_->mporder_);
-        break;
-      default:
-        break;
-    }
-  }
+  if (apply_bndry_fn_[BoundaryFace::inner_x1])
+    DispatchBoundaryFunction(BoundaryFace::inner_x1, dst, time, nvar,
+                             is, ie, bjs, bje, bks, bke, ngh, coord);
+  if (apply_bndry_fn_[BoundaryFace::outer_x1])
+    DispatchBoundaryFunction(BoundaryFace::outer_x1, dst, time, nvar,
+                             is, ie, bjs, bje, bks, bke, ngh, coord);
+  if (apply_bndry_fn_[BoundaryFace::inner_x2])
+    DispatchBoundaryFunction(BoundaryFace::inner_x2, dst, time, nvar,
+                             bis, bie, js, je, bks, bke, ngh, coord);
+  if (apply_bndry_fn_[BoundaryFace::outer_x2])
+    DispatchBoundaryFunction(BoundaryFace::outer_x2, dst, time, nvar,
+                             bis, bie, js, je, bks, bke, ngh, coord);
   bjs = js - ngh, bje = je + ngh;
-  // Apply boundary function on inner-x3
-  if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
-    switch (block_bcs[BoundaryFace::inner_x3]) {
-      case BoundaryFlag::user:
-        MGBoundaryFunction_[BoundaryFace::inner_x3](dst, time, nvar,
-                            bis, bie, bjs, bje, ks, ke, ngh, coord);
-        break;
-      case BoundaryFlag::periodic:
-        MGPeriodicInnerX3(dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_zerograd:
-        MGZeroGradientInnerX3(dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_zerofixed:
-        MGZeroFixedInnerX3(dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_multipole4:
-      case BoundaryFlag::mg_multipole16:
-        MGMultipoleInnerX3(dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, coord,
-                   pmy_mg_->pmy_driver_->mpcoeff_, pmy_mg_->pmy_driver_->mporder_);
-        break;
-      default:
-        break;
-    }
-  }
-  // Apply boundary function on outer-x3
-  if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
-    switch (block_bcs[BoundaryFace::outer_x3]) {
-      case BoundaryFlag::user:
-        MGBoundaryFunction_[BoundaryFace::outer_x3](dst, time, nvar,
-                            bis, bie, bjs, bje, ks, ke, ngh, coord);
-        break;
-      case BoundaryFlag::periodic:
-        MGPeriodicOuterX3(dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_zerograd:
-        MGZeroGradientOuterX3(dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_zerofixed:
-        MGZeroFixedOuterX3(dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, coord);
-        break;
-      case BoundaryFlag::mg_multipole4:
-      case BoundaryFlag::mg_multipole16:
-        MGMultipoleOuterX3(dst, time, nvar, bis, bie, bjs, bje, ks, ke, ngh, coord,
-                   pmy_mg_->pmy_driver_->mpcoeff_, pmy_mg_->pmy_driver_->mporder_);
-        break;
-      default:
-        break;
-    }
-  }
-
+  if (apply_bndry_fn_[BoundaryFace::inner_x3])
+    DispatchBoundaryFunction(BoundaryFace::inner_x3, dst, time, nvar,
+                             bis, bie, bjs, bje, ks, ke, ngh, coord);
+  if (apply_bndry_fn_[BoundaryFace::outer_x3])
+    DispatchBoundaryFunction(BoundaryFace::outer_x3, dst, time, nvar,
+                             bis, bie, bjs, bje, ks, ke, ngh, coord);
   return;
 }
 
@@ -1253,18 +1283,18 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
       int i, fi, fig;
       if (ox1 > 0) i = ce + 1, fi = fe, fig = fe + 1;
       else         i = cs - 1, fi = fs, fig = fs - 1;
-      if (MGBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
-        MGBoundaryFunction_[BoundaryFace::inner_x2](cbuf_, time, nvar,
-                                                    i, i, cs, ce, cs, ce, ngh, coord);
-      if (MGBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
-        MGBoundaryFunction_[BoundaryFace::outer_x2](cbuf_, time, nvar,
-                                                    i, i, cs, ce, cs, ce, ngh, coord);
-      if (MGBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
-        MGBoundaryFunction_[BoundaryFace::inner_x3](cbuf_, time, nvar,
-                                                    i, i, cs, ce, cs, ce, ngh, coord);
-      if (MGBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
-        MGBoundaryFunction_[BoundaryFace::outer_x3](cbuf_, time, nvar,
-                                                    i, i, cs, ce, cs, ce, ngh, coord);
+      if (apply_bndry_fn_[BoundaryFace::inner_x2])
+        DispatchBoundaryFunction(BoundaryFace::inner_x2, cbuf_, time, nvar,
+                                 i, i, cs, ce, cs, ce, ngh, coord);
+      if (apply_bndry_fn_[BoundaryFace::outer_x2])
+        DispatchBoundaryFunction(BoundaryFace::outer_x2, cbuf_, time, nvar,
+                                 i, i, cs, ce, cs, ce, ngh, coord);
+      if (apply_bndry_fn_[BoundaryFace::inner_x3])
+        DispatchBoundaryFunction(BoundaryFace::inner_x3, cbuf_, time, nvar,
+                                 i, i, cs, ce, cs, ce, ngh, coord);
+      if (apply_bndry_fn_[BoundaryFace::outer_x3])
+        DispatchBoundaryFunction(BoundaryFace::outer_x3, cbuf_, time, nvar,
+                                 i, i, cs, ce, cs, ce, ngh, coord);
       for(int k=cs, fk=fs; k<=ce; ++k, fk+=2) {
         for(int j=cs, fj=fs; j<=ce; ++j, fj+=2) {
           Real ccval = cbuf_(0, k, j, i);
@@ -1291,18 +1321,18 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
       int j, fj, fjg;
       if (ox2 > 0) j = ce + 1, fj = fe, fjg = fe + 1;
       else         j = cs - 1, fj = fs, fjg = fs - 1;
-      if (MGBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
-        MGBoundaryFunction_[BoundaryFace::inner_x1](cbuf_, time, nvar,
-                                                    cs, ce, j, j, cs, ce, ngh, coord);
-      if (MGBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
-        MGBoundaryFunction_[BoundaryFace::outer_x1](cbuf_, time, nvar,
-                                                    cs, ce, j, j, cs, ce, ngh, coord);
-      if (MGBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
-        MGBoundaryFunction_[BoundaryFace::inner_x3](cbuf_, time, nvar,
-                                                    cs, ce, j, j, cs, ce, ngh, coord);
-      if (MGBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
-        MGBoundaryFunction_[BoundaryFace::outer_x3](cbuf_, time, nvar,
-                                                    cs, ce, j, j, cs, ce, ngh, coord);
+      if (apply_bndry_fn_[BoundaryFace::inner_x1])
+        DispatchBoundaryFunction(BoundaryFace::inner_x1, cbuf_, time, nvar,
+                                 cs, ce, j, j, cs, ce, ngh, coord);
+      if (apply_bndry_fn_[BoundaryFace::outer_x1])
+        DispatchBoundaryFunction(BoundaryFace::outer_x1, cbuf_, time, nvar,
+                                 cs, ce, j, j, cs, ce, ngh, coord);
+      if (apply_bndry_fn_[BoundaryFace::inner_x3])
+        DispatchBoundaryFunction(BoundaryFace::inner_x3, cbuf_, time, nvar,
+                                 cs, ce, j, j, cs, ce, ngh, coord);
+      if (apply_bndry_fn_[BoundaryFace::outer_x3])
+        DispatchBoundaryFunction(BoundaryFace::outer_x3, cbuf_, time, nvar,
+                                 cs, ce, j, j, cs, ce, ngh, coord);
       for(int k=cs, fk=fs; k<=ce; ++k, fk+=2) {
         for(int i=cs, fi=fs; i<=ce; ++i, fi+=2) {
           Real ccval = cbuf_(0, k, j, i);
@@ -1329,18 +1359,18 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
       int k, fk, fkg;
       if (ox3 > 0) k = ce + 1, fk = fe, fkg = fe + 1;
       else         k = cs - 1, fk = fs, fkg = fs - 1;
-      if (MGBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
-        MGBoundaryFunction_[BoundaryFace::inner_x1](cbuf_, time, nvar,
-                            cs, ce, cs, ce, k, k, ngh, coord);
-      if (MGBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
-        MGBoundaryFunction_[BoundaryFace::outer_x1](cbuf_, time, nvar,
-                                                    cs, ce, cs, ce, k, k, ngh, coord);
-      if (MGBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
-        MGBoundaryFunction_[BoundaryFace::inner_x2](cbuf_, time, nvar,
-                                                    cs, ce, cs, ce, k, k, ngh, coord);
-      if (MGBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
-        MGBoundaryFunction_[BoundaryFace::outer_x2](cbuf_, time, nvar,
-                                                    cs, ce, cs, ce, k, k, ngh, coord);
+      if (apply_bndry_fn_[BoundaryFace::inner_x1])
+        DispatchBoundaryFunction(BoundaryFace::inner_x1, cbuf_, time, nvar,
+                                 cs, ce, cs, ce, k, k, ngh, coord);
+      if (apply_bndry_fn_[BoundaryFace::outer_x1])
+        DispatchBoundaryFunction(BoundaryFace::outer_x1, cbuf_, time, nvar,
+                                 cs, ce, cs, ce, k, k, ngh, coord);
+      if (apply_bndry_fn_[BoundaryFace::inner_x2])
+        DispatchBoundaryFunction(BoundaryFace::inner_x2, cbuf_, time, nvar,
+                                 cs, ce, cs, ce, k, k, ngh, coord);
+      if (apply_bndry_fn_[BoundaryFace::outer_x2])
+        DispatchBoundaryFunction(BoundaryFace::outer_x2, cbuf_, time, nvar,
+                                 cs, ce, cs, ce, k, k, ngh, coord);
       for(int j=cs, fj=fs; j<=ce; ++j, fj+=2) {
         for(int i=cs, fi=fs; i<=ce; ++i, fi+=2) {
           Real ccval = cbuf_(0, k, j, i);

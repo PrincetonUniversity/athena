@@ -51,6 +51,10 @@ class MGBoundaryValues : public BoundaryBase {
   void ProlongateMultigridBoundaries(bool folddata);
   void ProlongateMultigridBoundariesFluxCons();
 
+  virtual void DispatchBoundaryFunction(BoundaryFace face, AthenaArray<Real> &dst,
+       Real time, int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+       const MGCoordinates &coord);
+
  protected:
   Multigrid *pmy_mg_;
   MGBoundaryFunc MGBoundaryFunction_[6];
