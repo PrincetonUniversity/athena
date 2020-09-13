@@ -1307,14 +1307,8 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
         for(int k=cs, fk=fs; k<=ce; ++k, fk+=2) {
           for(int j=cs, fj=fs; j<=ce; ++j, fj+=2) {
             Real ccval = cbuf_(v, k, j, i);
-            Real gx2m = ccval - cbuf_(v, k, j-1, i);
-            Real gx2p = cbuf_(v, k, j+1, i) - ccval;
-            Real gx2c = 0.125*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
-                                                                 std::abs(gx2p));
-            Real gx3m = ccval - cbuf_(v, k-1, j, i);
-            Real gx3p = cbuf_(v, k+1, j, i) - ccval;
-            Real gx3c = 0.125*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
-                                                                 std::abs(gx3p));
+            Real gx2c = 0.125*(cbuf_(v, k, j+1, i) -  cbuf_(v, k, j-1, i));
+            Real gx3c = 0.125*(cbuf_(v, k+1, j, i) -  cbuf_(v, k-1, j, i));
             dst(v,fk  ,fj  ,fig) = ot*(2.0*(ccval - gx2c - gx3c) + u(v,fk  ,fj  ,fi));
             dst(v,fk  ,fj+1,fig) = ot*(2.0*(ccval + gx2c - gx3c) + u(v,fk  ,fj+1,fi));
             dst(v,fk+1,fj  ,fig) = ot*(2.0*(ccval - gx2c + gx3c) + u(v,fk+1,fj  ,fi));
@@ -1347,14 +1341,8 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
         for(int k=cs, fk=fs; k<=ce; ++k, fk+=2) {
           for(int i=cs, fi=fs; i<=ce; ++i, fi+=2) {
             Real ccval = cbuf_(v, k, j, i);
-            Real gx1m = ccval - cbuf_(v, k, j, i-1);
-            Real gx1p = cbuf_(v, k, j, i+1) - ccval;
-            Real gx1c = 0.125*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
-                                                                 std::abs(gx1p));
-            Real gx3m = ccval - cbuf_(v, k-1, j, i);
-            Real gx3p = cbuf_(v, k+1, j, i) - ccval;
-            Real gx3c = 0.125*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
-                                                                 std::abs(gx3p));
+            Real gx1c = 0.125*(cbuf_(v, k, j, i+1) -  cbuf_(v, k, j, i-1));
+            Real gx3c = 0.125*(cbuf_(v, k+1, j, i) -  cbuf_(v, k-1, j, i));
             dst(v,fk  ,fjg,fi  ) = ot*(2.0*(ccval - gx1c - gx3c) + u(v,fk,  fj,fi  ));
             dst(v,fk  ,fjg,fi+1) = ot*(2.0*(ccval + gx1c - gx3c) + u(v,fk,  fj,fi+1));
             dst(v,fk+1,fjg,fi  ) = ot*(2.0*(ccval - gx1c + gx3c) + u(v,fk+1,fj,fi  ));
@@ -1387,14 +1375,8 @@ void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
         for(int j=cs, fj=fs; j<=ce; ++j, fj+=2) {
           for(int i=cs, fi=fs; i<=ce; ++i, fi+=2) {
             Real ccval = cbuf_(v, k, j, i);
-            Real gx1m = ccval - cbuf_(v, k, j, i-1);
-            Real gx1p = cbuf_(v, k, j, i+1) - ccval;
-            Real gx1c = 0.125*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
-                                                                 std::abs(gx1p));
-            Real gx2m = ccval - cbuf_(v, k, j-1, i);
-            Real gx2p = cbuf_(v, k, j+1, i) - ccval;
-            Real gx2c = 0.125*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
-                                                                 std::abs(gx2p));
+            Real gx1c = 0.125*(cbuf_(v, k, j, i+1) -  cbuf_(v, k, j, i-1));
+            Real gx2c = 0.125*(cbuf_(v, k, j+1, i) -  cbuf_(v, k, j-1, i));
             dst(v,fkg,fj  ,fi  ) = ot*(2.0*(ccval - gx1c - gx2c) + u(v,fk,fj  ,fi  ));
             dst(v,fkg,fj  ,fi+1) = ot*(2.0*(ccval + gx1c - gx2c) + u(v,fk,fj  ,fi+1));
             dst(v,fkg,fj+1,fi  ) = ot*(2.0*(ccval - gx1c + gx2c) + u(v,fk,fj+1,fi  ));

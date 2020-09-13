@@ -287,14 +287,8 @@ void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) 
       if (ox1 > 0) i = ngh + 1, fi = ngh + 1, fig = ngh + 2;
       else         i = ngh - 1, fi = ngh,     fig = ngh - 1;
       Real ccval = cbuf_(0, ck, cj, i);
-      Real gx2m = ccval - cbuf_(0, ck, cj-1, i);
-      Real gx2p = cbuf_(0, ck, cj+1, i) - ccval;
-      Real gx2c = 0.125*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
-                                                           std::abs(gx2p));
-      Real gx3m = ccval - cbuf_(0, ck-1, cj, i);
-      Real gx3p = cbuf_(0, ck+1, cj, i) - ccval;
-      Real gx3c = 0.125*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
-                                                           std::abs(gx3p));
+      Real gx2c = 0.125*(cbuf_(0, ck, cj+1, i) - cbuf_(0, ck, cj-1, i));
+      Real gx3c = 0.125*(cbuf_(0, ck+1, cj, i) - cbuf_(0, ck-1, cj, i));
       dst(0, l, l, fig) = ot*(2.0*(ccval - gx2c - gx3c) + u(0, l, l, fi));
       dst(0, l, r, fig) = ot*(2.0*(ccval + gx2c - gx3c) + u(0, l, r, fi));
       dst(0, r, l, fig) = ot*(2.0*(ccval - gx2c + gx3c) + u(0, r, l, fi));
@@ -309,14 +303,8 @@ void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) 
       if (ox2 > 0) j = ngh + 1, fj = ngh + 1, fjg = ngh + 2;
       else         j = ngh - 1, fj = ngh,     fjg = ngh - 1;
       Real ccval = cbuf_(0, ck, j, ci);
-      Real gx1m = ccval - cbuf_(0, ck, j, ci-1);
-      Real gx1p = cbuf_(0, ck, j, ci+1) - ccval;
-      Real gx1c = 0.125*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
-                                                           std::abs(gx1p));
-      Real gx3m = ccval - cbuf_(0, ck-1, j, ci);
-      Real gx3p = cbuf_(0, ck+1, j, ci) - ccval;
-      Real gx3c = 0.125*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
-                                                           std::abs(gx3p));
+      Real gx1c = 0.125*(cbuf_(0, ck, j, ci+1) - cbuf_(0, ck, j, ci-1));
+      Real gx3c = 0.125*(cbuf_(0, ck+1, j, ci) - cbuf_(0, ck-1, j, ci));
       dst(0, l, fjg, l) = ot*(2.0*(ccval - gx1c - gx3c) + u(0, l, fj, l));
       dst(0, l, fjg, r) = ot*(2.0*(ccval + gx1c - gx3c) + u(0, l, fj, r));
       dst(0, r, fjg, l) = ot*(2.0*(ccval - gx1c + gx3c) + u(0, r, fj, l));
@@ -331,14 +319,8 @@ void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) 
       if (ox3 > 0) k = ngh + 1, fk = ngh + 1, fkg = ngh + 2;
       else         k = ngh - 1, fk = ngh,     fkg = ngh - 1;
       Real ccval = cbuf_(0, k, cj, ci);
-      Real gx1m = ccval - cbuf_(0, k, cj, ci-1);
-      Real gx1p = cbuf_(0, k, cj, ci+1) - ccval;
-      Real gx1c = 0.125*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
-                                                           std::abs(gx1p));
-      Real gx2m = ccval - cbuf_(0, k, cj-1, ci);
-      Real gx2p = cbuf_(0, k, cj+1, ci) - ccval;
-      Real gx2c = 0.125*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
-                                                           std::abs(gx2p));
+      Real gx1c = 0.125*(cbuf_(0, k, cj, ci+1) - cbuf_(0, k, cj, ci-1));
+      Real gx2c = 0.125*(cbuf_(0, k, cj+1, ci) - cbuf_(0, k, cj-1, ci));
       dst(0, fkg, l, l) = ot*(2.0*(ccval - gx1c - gx2c) + u(0, fk, l, l));
       dst(0, fkg, l, r) = ot*(2.0*(ccval + gx1c - gx2c) + u(0, fk, l, r));
       dst(0, fkg, r, l) = ot*(2.0*(ccval - gx1c + gx2c) + u(0, fk, r, l));
