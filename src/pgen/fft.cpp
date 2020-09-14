@@ -47,7 +47,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-
   Real x0=0.0, y0=0.0, z0=0.0;
   AthenaArray<Real> src[nblocal], dst[nblocal];
 
