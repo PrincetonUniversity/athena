@@ -1428,6 +1428,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
                                                HydroBoundaryQuantity::prim);
           pmb->phydro->hbvar.SendBoundaryBuffers();
+          if (NSCALARS > 0) {
+            pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->r);
+            pmb->pscalars->sbvar.SendBoundaryBuffers();
+          }
         }
 
         // wait to receive AMR/SMR GR primitives
@@ -1435,9 +1439,15 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         for (int i=0; i<nmb; ++i) {
           pmb = pmb_array[i]; pbval = pmb->pbval;
           pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
+          if (NSCALARS > 0) {
+            pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
+          }
           pbval->ClearBoundary(BoundaryCommSubset::gr_amr);
           pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                                HydroBoundaryQuantity::cons);
+          if (NSCALARS > 0) {
+            pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->s);
+          }
         }
       } // multilevel
 
