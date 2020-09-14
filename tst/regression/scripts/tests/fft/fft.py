@@ -8,7 +8,6 @@ import logging
 import os
 import scripts.utils.athena as athena
 import sys
-import numpy as np
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
@@ -65,21 +64,21 @@ def analyze():
     # check errors between runs w/wo MPI and different numbers of cores
     if data[0][5] != data[1][5]:
         logger.warning("FFT runs with serial and 1 MPI rank are different %g %g",
-                data[0][5], data[1][5])
+                       data[0][5], data[1][5])
         analyze_status = False
     if (data[0][5] > 1.e-10) or (data[0][6] > 1.e-10):
         logger.warning("FFT error is too large for a serial run real=%g, imag=%g",
-                data[0][5], data[0][6])
+                       data[0][5], data[0][6])
         analyze_status = False
     if (data[2][5] > 1.e-10) or (data[3][5] > 1.e-10):
         logger.warning("FFT error is too large for MPI runs np2=%g np4=%g",
-                data[2][5], data[3][5])
+                       data[2][5], data[3][5])
         analyze_status = False
     if (data[0][4] < 1.e6):
         logger.warning("FFT is too slow for a serial run zcs=%g",
-                data[0][4])
+                       data[0][4])
     if (data[3][4] < 1.e6):
         logger.warning("FFT is too slow for a MPI run (np=4) zcs=%g",
-                data[3][4])
+                       data[3][4])
 
     return analyze_status
