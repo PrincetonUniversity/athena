@@ -149,7 +149,7 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, bool nu, int ngh,
       for (int j=jl, mj=js; mj<=je; j++, mj++) {
         for (int i=ngh, mi=is; mi<=ie; i++, mi++) {
           std::int64_t idx = GetIndex(mi, mj, mk, b_out_);
-          if (nu == 0) {
+          if (n == 0) {
             dst(k,j,i) = std::real(src[idx])*norm_factor_;
           } else {
             dst(n,k,j,i) = std::imag(src[idx])*norm_factor_;
@@ -185,7 +185,7 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, bool nu, int ngh,
       for (int j=jl, mj=js; mj<=je; j++, mj++) {
         for (int i=ngh, mi=is; mi<=ie; i++, mi++) {
           std::int64_t idx = GetIndex(mi, mj, mk, f_in_);
-          if (nu == 0) {
+          if (n == 0) {
             // copy-list initializatio (since C++11)
             dst[idx] = {src(n,k,j,i), 0.0};
           } else {
