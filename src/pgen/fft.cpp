@@ -47,16 +47,24 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
+  Real x0=0.0, y0=0.0, z0=0.0;
   AthenaArray<Real> src, dst;
   MeshBlock *pmb = my_blocks(0);
-  // TODO(changgoo): this does NOT assume 3D anymore, but need to check that 2D works
+  Coordinates *pcoord = pmb->pcoord;
+  LogicalLocation &loc = pmb->loc;
+  RegionSize &block_size = pmb->block_size;
+
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
+
   src.NewAthenaArray(pmb->ncells3, pmb->ncells2, pmb->ncells1);
   dst.NewAthenaArray(2, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+
 #ifdef FFT
   FFTDriver *pfftd;
   pfftd = new FFTDriver(this, pin);
   pfftd->InitializeFFTBlock(true);
-  pfftd->QuickCreatePlan();
 
   FFTBlock *pfft = pfftd->pmy_fb;
   // Repeating FFTs for timing
@@ -123,22 +131,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     std::cout << "zone-cycles/omp_wsecond = " << zc_omps << std::endl;
 #endif
   }
-  // Reset everything and do FFT once for error estimation
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
-      for (int i=is; i<=ie; ++i) {
-        Real r2;
-        if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
-          Real x = pcoord->x1v(i);
-          Real y = pcoord->x2v(j);
-          Real z = pcoord->x3v(k);
-          r2 = std::sqrt(SQR(x - x0) + SQR(y - y0) + SQR(z - z0));
-        }
-        src(k,j,i) = std::exp(-r2);
-      }
-    }
-  }
-
+  // Do FFT once for error estimation
   pfft->LoadSource(src, 0, NGHOST, loc, block_size);
   pfft->ExecuteForward();
   pfft->ApplyKernel(0);
