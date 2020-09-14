@@ -58,13 +58,8 @@ Real e_of_rho_T(Real rho, Real T) {
 //  \brief compute adiabatic sound speed squared
 Real asq_(Real rho, Real T) {
   Real x = x_(rho, T);
-  Real lt = std::log(T);
-  Real b = 8. * rho * std::exp(-1.25 * lt - .5 / T);
-  Real c = std::exp(1.5 * lt - .5 / T);
-  c = (std::sqrt(c) + std::sqrt(c + 4. * rho));
-  b /= c*c*c;
-  c = 2. + x - SQR(x);
-  return (1.+x)*T*(b*(4.+20.*T+15.*SQR(T))+10.*c)/(b*SQR(2.+3.*T)+6.*c);
+  Real c = 2 * SQR(T) * (2. + x - SQR(x));
+  return (1.+x)*T*(1+(2*c + 2*T*(4 + 3*T)*(1 - x)*x)/(3*c + SQR(2 + 3*T)*(1 - x)*x));
 }
 
 //----------------------------------------------------------------------------------------
