@@ -56,7 +56,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     threshold = pin->GetReal("problem", "thr");
     EnrollUserRefinementCondition(RefinementCondition);
   }
-  if (iprob == 4) {
+  if (iprob == 4 && NSCALARS > 0) {
     AllocateUserHistoryOutput(1);
     EnrollUserHistoryOutput(0, PassiveDyeEntropy, "tot-S");
   }
