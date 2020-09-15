@@ -261,7 +261,11 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     } else {
       AddTask(INT_HYD, CALC_HYDFLX);
     }
-    AddTask(SRCTERM_HYD,INT_HYD);
+    if (NSCALARS > 0) {
+      AddTask(SRCTERM_HYD,INT_HYD|INT_SCLR);
+    } else {
+      AddTask(SRCTERM_HYD,INT_HYD);
+    }
     AddTask(SEND_HYD,SRCTERM_HYD);
     AddTask(RECV_HYD,NONE);
     AddTask(SETB_HYD,(RECV_HYD|SRCTERM_HYD));
@@ -279,9 +283,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         AddTask(INT_SCLR,CALC_SCLRFLX);
       }
       // there is no SRCTERM_SCLR task
-      AddTask(SEND_SCLR,INT_SCLR);
+      AddTask(SEND_SCLR,SRCTERM_HYD);
       AddTask(RECV_SCLR,NONE);
-      AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
+      AddTask(SETB_SCLR,(RECV_SCLR|SRCTERM_HYD));
       // if (SHEARING_BOX) {
       //   AddTask(SEND_SCLRSH,SETB_SCLR);
       //   AddTask(RECV_SCLRSH,SETB_SCLR);
@@ -830,6 +834,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   Field *pf = pmb->pfield;
+  PassiveScalars *ps = pmb->pscalars;
 
   // return if there are no source terms to be added
   if (!(ph->hsrc.hydro_sourceterms_defined)
@@ -841,7 +846,8 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage
     // Scaled coefficient for RHS update
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     // Evaluate the time-dependent source terms at the time at the beginning of the stage
-    ph->hsrc.AddHydroSourceTerms(t_start_stage, dt, ph->flux, ph->w, pf->bcc, ph->u);
+    ph->hsrc.AddHydroSourceTerms(t_start_stage, dt, ph->flux, ph->w, ps->r, pf->bcc,
+        ph->u, ps->s);
   } else {
     return TaskStatus::fail;
   }
@@ -1083,8 +1089,7 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
                                     il, iu, jl, ju, kl, ku);
     if (NSCALARS > 0) {
       // r1/r_old for GR is currently unused:
-      pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->w1, // ph->u, (updated rho)
-                                                   ps->r, ps->r,
+      pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->u, ps->r, ps->r,
                                                    pmb->pcoord, il, iu, jl, ju, kl, ku);
     }
     // fourth-order EOS:

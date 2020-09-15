@@ -1415,6 +1415,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->w,
                                                HydroBoundaryQuantity::prim);
           pmb->phydro->hbvar.SendBoundaryBuffers();
+          if (NSCALARS > 0) {
+            pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->r);
+            pmb->pscalars->sbvar.SendBoundaryBuffers();
+          }
         }
 
         // wait to receive AMR/SMR GR primitives
@@ -1422,10 +1426,16 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         for (int i=0; i<nblocal; ++i) {
           pmb = my_blocks(i); pbval = pmb->pbval;
           pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
+          if (NSCALARS > 0) {
+            pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
+          }
           pbval->ClearBoundarySubset(BoundaryCommSubset::gr_amr,
                                      pbval->bvars_main_int);
           pmb->phydro->hbvar.SwapHydroQuantity(pmb->phydro->u,
                                                HydroBoundaryQuantity::cons);
+          if (NSCALARS > 0) {
+            pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->s);
+          }
         }
       } // multilevel
 
@@ -1464,7 +1474,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                         il, iu, jl, ju, kl, ku);
         if (NSCALARS > 0) {
           // r1/r_old for GR is currently unused:
-          pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->w, ps->r, ps->r,
+          pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->u, ps->r, ps->r,
                                                        pmb->pcoord,
                                                        il, iu, jl, ju, kl, ku);
         }

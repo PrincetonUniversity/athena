@@ -76,8 +76,10 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
 void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
                                            const AthenaArray<Real> *flux,
                                            const AthenaArray<Real> &prim,
+                                           const AthenaArray<Real> &prim_scalar,
                                            const AthenaArray<Real> &bcc,
-                                           AthenaArray<Real> &cons) {
+                                           AthenaArray<Real> &cons,
+                                           AthenaArray<Real> &cons_scalar) {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
 
   // accleration due to point mass (MUST BE AT ORIGIN)
@@ -95,8 +97,9 @@ void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
   // MyNewSourceTerms()
 
   //  user-defined source terms
-  if (UserSourceTerm != nullptr)
-    UserSourceTerm(pmb, time,dt,prim,bcc,cons);
+  if (UserSourceTerm != nullptr) {
+    UserSourceTerm(pmb, time, dt, prim, prim_scalar, bcc, cons, cons_scalar);
+  }
 
   return;
 }
