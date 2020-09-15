@@ -49,7 +49,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   Real x0=0.0, y0=0.0, z0=0.0;
-  AthenaArray<Real> src[nblocal], dst[nblocal];
+  AthenaArray<Real> src,dst;
 
 #ifdef FFT
   FFTDriver *pfftd;
@@ -66,9 +66,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   pfftd->QuickCreatePlan();
 
-  int is = my_blocks(0)->is, ie = my_blocks(0)->ie;
-  int js = my_blocks(0)->js, je = my_blocks(0)->je;
-  int ks = my_blocks(0)->ks, ke = my_blocks(0)->ke;
+  MeshBlock *pmb = my_blocks(0);
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
+
+  src.NewAthenaArray(nblocal, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+  dst.NewAthenaArray(nblocal, 2, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
   for (int b=0; b<nblocal; ++b) {
     MeshBlock *pmb = my_blocks(b);
@@ -76,10 +80,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     LogicalLocation &loc = pmb->loc;
     RegionSize &block_size = pmb->block_size;
 
-    src[b].NewAthenaArray(pmb->ncells3, pmb->ncells2, pmb->ncells1);
-    dst[b].NewAthenaArray(2, pmb->ncells3, pmb->ncells2, pmb->ncells1);
-
-    AthenaArray<Real> &src_ = src[b];
+    AthenaArray<Real> src_;
+    src_.InitWithShallowSlice(src, 4, b, 1);
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
@@ -147,7 +149,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     LogicalLocation &loc = pmb->loc;
     RegionSize &block_size = pmb->block_size;
 
-    AthenaArray<Real> &src_ = src[b];
+    AthenaArray<Real> src_;
+    src_.InitWithShallowSlice(src, 4, b, 1);
     pfft->LoadSource(src_, 0, NGHOST, loc, block_size);
   }
 
@@ -163,7 +166,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     LogicalLocation &loc = pmb->loc;
     RegionSize &block_size = pmb->block_size;
 
-    AthenaArray<Real> &dst_ = dst[b], &src_ = src[b];
+    AthenaArray<Real> dst_,src_;
+    src_.InitWithShallowSlice(src, 4, b, 1);
+    dst_.InitWithShallowSlice(dst, 5, b, 1);
     pfft->RetrieveResult(dst_, 1, NGHOST, loc, block_size);
 
     for (int k=ks; k<=ke; ++k) {
