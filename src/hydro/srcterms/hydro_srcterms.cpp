@@ -42,8 +42,8 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
     } else {
       std::stringstream msg;
       msg << "### FATAL ERROR in HydroSourceTerms constructor" << std::endl
-          << "The point mass gravity works only in spherical polar coordinates"
-          << "or in 2D cylindrical coordinates." << std::endl
+          << "The point mass gravity works only in spherical polar coordinates (2D or 3D)"
+          << "\nor in 2D cylindrical coordinates." << std::endl
           << "Check <problem> GM parameter in the input file." << std::endl;
       ATHENA_ERROR(msg);
     }

@@ -1,6 +1,6 @@
 # Regression test based on the diffusion of a Gaussian
 # velocity field.  Convergence of L1 norm of the error
-# in v is tested.  Expected 2nd order conv. for explicit.
+# in v is tested.
 
 # Modules
 import logging
@@ -15,67 +15,76 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 _amp = 1.e-6
 _nu = 0.25
 _t0 = 0.5
-_Lx1 = 8.0
+_tf = 2.0
+_Lx1 = 12.0
 
-resolution_range = [64, 128]
-method = 'Explicit'
+resolution_range = [256, 512]
+sts_integrators = ['Explicit']  # no STS, explicit integration applied
 rate_tols = [-1.99]
 
 
 def prepare(*args, **kwargs):
     logger.debug('Running test ' + __name__)
     athena.configure(prob='visc', *args,
-                     eos='isothermal', **kwargs)
+                     eos='isothermal', flux='roe', **kwargs)
     athena.make()
 
 
 def run(**kwargs):
-    for i in resolution_range:
-        arguments0 = ['output2/file_type=tab', 'output2/variable=v2',
-                      'output2/data_format=%24.16e', 'output2/dt={}'.format(_t0),
-                      'time/cfl_number=0.8',
-                      'time/tlim={}'.format(_t0), 'time/nlim=500',
-                      'time/ncycle_out=0',
-                      'mesh/nx1=' + repr(i),
-                      'mesh/x1min={}'.format(-_Lx1/2.),
-                      'mesh/x1max={}'.format(_Lx1/2.),
-                      'mesh/ix1_bc=outflow', 'mesh/ox1_bc=outflow',
-                      'mesh/nx2=1', 'mesh/x2min=-1.0', 'mesh/x2max=1.0',
-                      'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
-                      'mesh/nx3=1', 'mesh/x3min=-1.0', 'mesh/x3max=1.0',
-                      'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
-                      'hydro/iso_sound_speed=1.0',
-                      'problem/v0={}'.format(_amp), 'problem/iprob=0',
-                      'problem/nu_iso={}'.format(_nu)]
-        arguments = arguments0+['job/problem_id=visc' + repr(i)]
-        athena.run('hydro/athinput.visc', arguments)
+    for integrator in sts_integrators:
+        for n in resolution_range:
+            arguments = ['job/problem_id=ViscousDiffusion_'
+                         + repr(n) + '_' + integrator,
+                         'output2/file_type=tab', 'output2/variable=v2',
+                         'output2/data_format=%24.16e', 'output2/dt={}'.format(_tf),
+                         'time/cfl_number=0.8',
+                         'time/tlim={}'.format(_tf), 'time/nlim=10000',
+                         'time/sts_integrator={}'.format(integrator),
+                         'time/ncycle_out=0',
+                         'mesh/nx1=' + repr(n),
+                         'mesh/x1min={}'.format(-_Lx1/2.),
+                         'mesh/x1max={}'.format(_Lx1/2.),
+                         'mesh/ix1_bc=outflow', 'mesh/ox1_bc=outflow',
+                         'mesh/nx2=1', 'mesh/x2min=-1.0', 'mesh/x2max=1.0',
+                         'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
+                         'mesh/nx3=1', 'mesh/x3min=-1.0', 'mesh/x3max=1.0',
+                         'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
+                         'hydro/iso_sound_speed=1.0',
+                         'problem/amp={}'.format(_amp), 'problem/iprob=0',
+                         'problem/t0={}'.format(_t0),
+                         'problem/nu_iso={}'.format(_nu)]
+            athena.run('hydro/athinput.visc', arguments)
 
 
 def analyze():
-    l1ERROR = []
+    l1ERROR = [[] for err in range(0, len(sts_integrators))]
+    conv = []
 
-    for n in resolution_range:
-        x1v, v2 = athena_read.tab("bin/visc"+str(n)+".block0.out2.00001.tab", raw=True,
-                                  dimensions=1)
-        sigma = np.sqrt(2.*_nu*_t0)
-        dx1 = _Lx1/len(x1v)
-        analytic = ((_amp/np.sqrt(2.*np.pi*sigma**2.))
-                    * (1./np.sqrt(1.+(2.*_nu*_t0/sigma**2.)))
-                    * np.exp(-(x1v**2.)
-                    / (2.*sigma**2.*(1.+(2.*_nu*_t0/sigma**2.)))))
-        l1ERROR.append(sum(np.absolute(v2-analytic)*dx1))
+    for i in range(len(sts_integrators)):
+        for n in resolution_range:
+            x1v, v2 = athena_read.tab('bin/ViscousDiffusion_' + str(n) + '_'
+                                      + sts_integrators[i] + '.block0.out2.00001.tab',
+                                      raw=True, dimensions=1)
+            dx1 = _Lx1/len(x1v)
+            analytic = (_amp/np.sqrt(4.*np.pi*_nu*(_t0+_tf))
+                        * np.exp(-(x1v**2.)/(4.*_nu*(_t0+_tf))))
+            l1ERROR[i].append(sum(np.absolute(v2-analytic)*dx1))
 
     # estimate L1 convergence
-    conv = np.diff(np.log(np.array(l1ERROR)))/np.diff(np.log(np.array(resolution_range)))
-    logger.info('[Viscous Diffusion {}]: Convergence order = {}'.format(method, conv))
-
     analyze_status = True
-    if conv > rate_tols[-1]:
-        logger.warning('[Viscous Diffusion {}]: '
-                       'Scheme NOT converging at expected order.'.format(method))
-        analyze_status = False
-    else:
-        logger.info('[Viscous Diffusion {}]: '
-                    'Scheme converging at expected order.'.format(method))
+    for i in range(len(sts_integrators)):
+        method = sts_integrators[i].upper()
+        conv.append(np.diff(np.log(np.array(l1ERROR[i])))
+                    / np.diff(np.log(np.array(resolution_range))))
+        logger.info('[Viscous Diffusion {}]: Convergence order = {}'
+                    .format(method, conv[i]))
+
+        if conv[i] > rate_tols[i]:
+            logger.warning('[Viscous Diffusion {}]: '
+                           'Scheme NOT converging at expected order.'.format(method))
+            analyze_status = False
+        else:
+            logger.info('[Viscous Diffusion {}]: '
+                        'Scheme converging at expected order.'.format(method))
 
     return analyze_status

@@ -37,6 +37,7 @@ class Field {
   FaceField b;       // time-integrator memory register #1
   FaceField b1;      // time-integrator memory register #2
   FaceField b2;      // time-integrator memory register #3
+  FaceField b0, ct_update; // rkl2 STS memory registers
   // (no more than MAX_NREGISTER allowed)
 
   // cell-centered magnetic fields
@@ -61,6 +62,7 @@ class Field {
       const FaceField &bf, AthenaArray<Real> &bc,
       Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
   void CT(const Real wght, FaceField &b_out);
+  void CT_STS(const Real wght, int stage, FaceField &b_out, FaceField &ct_update_out);
   void ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc);
   void ComputeCornerE_STS();
 

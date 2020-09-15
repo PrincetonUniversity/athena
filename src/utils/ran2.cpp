@@ -45,6 +45,7 @@ double ran2(std::int64_t *idum) {
   static std::int64_t idum2=123456789;
   static std::int64_t iy=0;
   static std::int64_t iv[NTAB];
+#pragma omp threadprivate(iy,iv,idum2)
   double temp;
 
   if (*idum <= 0) { // Initialize

@@ -88,10 +88,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     Real l1_err[(NSCALARS > 0 ? NSCALARS : 1)]{},
         max_err[(NSCALARS > 0 ? NSCALARS : 1)]{};
 
-    MeshBlock *pmb = pblock;
     // recalculate initial condition from ProblemGenerator on final Mesh configuration:
     // (may have changed due to AMR)
-    while (pmb != nullptr) {
+    for (int b=0; b<nblocal; ++b) {
+      MeshBlock *pmb = my_blocks(b);
       int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
           kl = pmb->ks, ku = pmb->ke;
       AthenaArray<Real> vol(pmb->ncells1);
@@ -130,7 +130,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             }
           }
         }
-        pmb = pmb->next;
       }
     }
 #ifdef MPI_PARALLEL

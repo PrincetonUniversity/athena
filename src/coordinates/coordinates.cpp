@@ -740,6 +740,14 @@ void Coordinates::AddCoordTermsDivergence(
 }
 
 //----------------------------------------------------------------------------------------
+// Coordinate (Geometric) source term function for STS
+void Coordinates::AddCoordTermsDivergence_STS(
+    const Real dt, int stage, const AthenaArray<Real> *flux,
+    AthenaArray<Real> &u, AthenaArray<Real> &flux_div) {
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 // Function for determining if index corresponds to a polar boundary
 // Inputs:
 //   j: x2-index

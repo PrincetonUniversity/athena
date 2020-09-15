@@ -433,25 +433,42 @@ int main(int argc, char *argv[]) {
       pmesh->OutputCycleDiagnostics();
 
     if (STS_ENABLED) {
+      pmesh->sts_loc = TaskType::op_split_before;
       // compute nstages for this STS
-      Real my_dt = pmesh->dt;
-      Real dt_parabolic  = pmesh->dt_parabolic;
-      pststlist->nstages =
-          static_cast<int>(0.5*(-1. + std::sqrt(1. + 8.*my_dt/dt_parabolic))) + 1;
-
+      if (pmesh->sts_integrator == "rkl2") {
+        pststlist->nstages =
+            static_cast<int>
+              (0.5*(-1. + std::sqrt(9. + 16.*(0.5*pmesh->dt)/pmesh->dt_parabolic))) + 1;
+      } else { // rkl1, default
+        pststlist->nstages =
+            static_cast<int>
+              (0.5*(-1. + std::sqrt(1. + 8.*pmesh->dt/pmesh->dt_parabolic))) + 1;
+      }
+      if (pststlist->nstages % 2 == 0) { // guarantee odd nstages for STS
+        pststlist->nstages += 1;
+      }
       // take super-timestep
       for (int stage=1; stage<=pststlist->nstages; ++stage)
-        pststlist->DoTaskListOneStage(pmesh,stage);
+        pststlist->DoTaskListOneStage(pmesh, stage);
+
+      pmesh->sts_loc = TaskType::main_int;
     }
 
     if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
 
     for (int stage=1; stage<=ptlist->nstages; ++stage) {
+      ptlist->DoTaskListOneStage(pmesh, stage);
       if (SELF_GRAVITY_ENABLED == 1) // fft (flag 0 for discrete kernel, 1 for continuous)
         pmesh->pfgrd->Solve(stage, 0);
       else if (SELF_GRAVITY_ENABLED == 2) // multigrid
         pmesh->pmgrd->Solve(stage);
-      ptlist->DoTaskListOneStage(pmesh, stage);
+    }
+
+    if (STS_ENABLED && pmesh->sts_integrator == "rkl2") {
+      pmesh->sts_loc = TaskType::op_split_after;
+      // take super-timestep
+      for (int stage=1; stage<=pststlist->nstages; ++stage)
+        pststlist->DoTaskListOneStage(pmesh, stage);
     }
 
     pmesh->UserWorkInLoop();
@@ -464,6 +481,7 @@ int main(int argc, char *argv[]) {
     pmesh->LoadBalancingAndAdaptiveMeshRefinement(pinput);
 
     pmesh->NewTimeStep();
+
 #ifdef ENABLE_EXCEPTIONS
     try {
 #endif
@@ -557,8 +575,8 @@ int main(int argc, char *argv[]) {
     clock_t tstop = clock();
     double cpu_time = (tstop>tstart ? static_cast<double> (tstop-tstart) :
                        1.0)/static_cast<double> (CLOCKS_PER_SEC);
-    std::uint64_t zonecycles =
-        mbcnt*static_cast<std::uint64_t> (pmesh->pblock->GetNumberOfMeshBlockCells());
+    std::uint64_t zonecycles = mbcnt
+      *static_cast<std::uint64_t> (pmesh->my_blocks(0)->GetNumberOfMeshBlockCells());
     double zc_cpus = static_cast<double> (zonecycles) / cpu_time;
 
     std::cout << std::endl << "zone-cycles = " << zonecycles << std::endl;

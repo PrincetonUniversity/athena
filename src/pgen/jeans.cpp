@@ -163,7 +163,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     //    return;
   }
 
-  MeshBlock *pmb = pblock;
+  MeshBlock *pmb = my_blocks(0);
   // Initialize errors to zero
   Real l1_err[NHYDRO+NFIELD],max_err[NHYDRO+NFIELD];
   for (int i=0; i<(NHYDRO+NFIELD); ++i) {
@@ -171,15 +171,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     max_err[i]=0.0;
   }
 
-  Hydro *phydro = pblock->phydro;
-  Coordinates *pcoord = pblock->pcoord;
+  Hydro *phydro = pmb->phydro;
+  Coordinates *pcoord = pmb->pcoord;
   Real sinkx, coskx, sinot, cosot;
-  int is=pblock->is, ie=pblock->ie;
-  int js=pblock->js, je=pblock->je;
-  int ks=pblock->ks, ke=pblock->ke;
+  int is=pmb->is, ie=pmb->ie;
+  int js=pmb->js, je=pmb->je;
+  int ks=pmb->ks, ke=pmb->ke;
 
   Real tlim = time;
-  while (pmb != nullptr) {
+  for (int b=0; b<nblocal; ++b) {
+    pmb = my_blocks(b);
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
@@ -226,7 +227,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         }
       }
     }
-    pmb=pmb->next;
   }
 
   for (int i=0; i<(NHYDRO+NFIELD); ++i) {

@@ -126,8 +126,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   Real err[NHYDRO+NFIELD];
   for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i]=0.0;
 
-  MeshBlock *pmb = pblock;
-  while (pmb != nullptr) {
+  for (int b=0; b<nblocal; ++b) {
+    MeshBlock *pmb = my_blocks(b);
     //  Compute errors
     for (int k=pmb->ks; k<=pmb->ke; k++) {
       for (int j=pmb->js; j<=pmb->je; j++) {
@@ -167,7 +167,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         }
       }
     }
-    pmb=pmb->next;
   }
 
   // normalize errors by number of cells, compute RMS

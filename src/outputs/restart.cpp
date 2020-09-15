@@ -35,7 +35,6 @@
 //  \brief Cycles over all MeshBlocks and writes data to a single restart file.
 
 void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_write) {
-  MeshBlock *pmb;
   IOWrapper resfile;
   IOWrapperSizeT listsize, headeroffset, datasize;
 
@@ -82,7 +81,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   // the size of an element of the ID and cost list
   listsize = sizeof(LogicalLocation)+sizeof(double);
   // the size of each MeshBlock
-  datasize = pm->pblock->GetBlockSizeInBytes();
+  datasize = pm->my_blocks(0)->GetBlockSizeInBytes();
   int nbtotal = pm->nbtotal;
   int myns = pm->nslist[Globals::my_rank];
   int mynb = pm->nblist[Globals::my_rank];
@@ -125,14 +124,13 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   char *data = new char[mynb*datasize];
 
   // Loop over MeshBlocks and pack the meta data
-  pmb = pm->pblock;
   int os=0;
-  while (pmb != nullptr) {
+  for (int b=0; b<pm->nblocal; ++b) {
+    MeshBlock *pmb = pm->my_blocks(b);
     std::memcpy(&(idlist[os]), &(pmb->loc), sizeof(LogicalLocation));
     os += sizeof(LogicalLocation);
     std::memcpy(&(idlist[os]), &(pmb->cost_), sizeof(double));
     os += sizeof(double);
-    pmb = pmb->next;
   }
 
   // write the ID list collectively
@@ -143,8 +141,8 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   delete [] idlist;
 
   // Loop over MeshBlocks and pack the data
-  pmb = pm->pblock;
-  while (pmb != nullptr) {
+  for (int b=0; b<pm->nblocal; ++b) {
+    MeshBlock *pmb = pm->my_blocks(b);
     char *pdata = &(data[pmb->lid*datasize]);
 
     // NEW_OUTPUT_TYPES: add output of additional physics to restarts here also update
@@ -199,7 +197,6 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
                   pmb->ruser_meshblock_data[n].GetSizeInBytes());
       pdata += pmb->ruser_meshblock_data[n].GetSizeInBytes();
     }
-    pmb = pmb->next;
   }
 
   // now write restart data in parallel

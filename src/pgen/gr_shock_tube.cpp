@@ -209,9 +209,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = uu2;
           phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = uu3;
         } else {
-          phydro->w(IVX,k,j,i) = phydro->w1(IM1,k,j,i) = u1 / u0;
-          phydro->w(IVY,k,j,i) = phydro->w1(IM2,k,j,i) = u2 / u0;
-          phydro->w(IVZ,k,j,i) = phydro->w1(IM3,k,j,i) = u3 / u0;
+          phydro->w(IVX,k,j,i) = phydro->w1(IM1,k,j,i) = u1;
+          phydro->w(IVY,k,j,i) = phydro->w1(IM2,k,j,i) = u2;
+          phydro->w(IVZ,k,j,i) = phydro->w1(IM3,k,j,i) = u3;
         }
 
         // Set passive scalar primitives

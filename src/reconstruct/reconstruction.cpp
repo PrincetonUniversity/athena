@@ -9,6 +9,7 @@
 // C headers
 
 // C++ headers
+#include <algorithm>  // max()
 #include <cmath>      // abs()
 #include <cstring>    // strcmp()
 #include <iomanip>
@@ -223,10 +224,10 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   scr01_i_.NewAthenaArray(nc1);
   scr02_i_.NewAthenaArray(nc1);
 
-  scr1_ni_.NewAthenaArray(NWAVE, nc1);
-  scr2_ni_.NewAthenaArray(NWAVE, nc1);
-  scr3_ni_.NewAthenaArray(NWAVE, nc1);
-  scr4_ni_.NewAthenaArray(NWAVE, nc1);
+  scr1_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
+  scr2_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
+  scr3_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
+  scr4_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
 
   if ((xorder == 3) || (xorder == 4)) {
     Coordinates *pco = pmb->pcoord;
@@ -243,10 +244,10 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     scr13_i_.NewAthenaArray(nc1);
     scr14_i_.NewAthenaArray(nc1);
 
-    scr5_ni_.NewAthenaArray(NWAVE, nc1);
-    scr6_ni_.NewAthenaArray(NWAVE, nc1);
-    scr7_ni_.NewAthenaArray(NWAVE, nc1);
-    scr8_ni_.NewAthenaArray(NWAVE, nc1);
+    scr5_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
+    scr6_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
+    scr7_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
+    scr8_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
 
     // Precompute PPM coefficients in x1-direction ---------------------------------------
     c1i.NewAthenaArray(nc1);
@@ -665,7 +666,7 @@ namespace {
 //
 // INPUT:
 //     a: square nxn matrix A of real numbers. Must be a mutable pointer-to-pointer/rows.
-//     n: number of rows and columns in "a"
+//     n: number of rows and columns in "a", rows in pivot output
 //
 //    Also expects "const Real lu_tol >=0" file-scope variable to be defined = criterion
 //    for detecting degenerate input "a" (or nearly-degenerate).
@@ -692,9 +693,12 @@ namespace {
 
 int DoolittleLUPDecompose(Real **a, int n, int *pivot) {
   constexpr int failure = 0, success = 1;
-  // initialize unit permutation matrix P=I. In our sparse representation, pivot[n]=n
-  for (int i=0; i<=n; i++)
+  // initialize unit permutation matrix P=I
+  for (int i=0; i<n; i++)
     pivot[i] = i;
+  // In our sparse representation, could let pivot be (n+1)x1 and init. pivot[n]=n,
+  // increment for each pivot so that it equals n+s upon return, s=# permutations
+  // Useful for determinant calculation.
 
   // loop over rows of input matrix:
   for (int i=0; i<n; i++) {

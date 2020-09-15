@@ -12,12 +12,15 @@
 // C headers
 
 // C++ headers
+#include <unordered_map>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
 #include "../defs.hpp"
+#include "../multigrid/multigrid.hpp"
 
 class Mesh;
 
@@ -49,6 +52,9 @@ class MeshBlockTree {
   void GetMeshBlockList(LogicalLocation *list, int *pglist, int& count);
   MeshBlockTree* FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3,
                               bool amrflag=false);
+  void CountMGOctets(int *noct);
+  void GetMGOctetList(std::vector<MGOctet> *oct,
+       std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octmap, int *noct);
 
  private:
   // data
@@ -56,6 +62,7 @@ class MeshBlockTree {
   int gid_;
   LogicalLocation loc_;
 
+  static Mesh* pmesh_;
   static MeshBlockTree* proot_;
   static int nleaf_;
 };

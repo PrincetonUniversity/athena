@@ -91,14 +91,14 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       Real gl = pmy_block->peos->AsqFromRhoP(rhol, pmid) * rhol / pmid;
       Real gr = pmy_block->peos->AsqFromRhoP(rhor, pmid) * rhor / pmid;
       ql = (pmid <= wli[IPR]) ? 1.0 :
-           (1.0 + (gl + 1) / std::sqrt(2 * gl) * (pmid / wli[IPR]-1.0));
+           std::sqrt(1.0 + (gl + 1) / (2 * gl) * (pmid / wli[IPR]-1.0));
       qr = (pmid <= wri[IPR]) ? 1.0 :
-           (1.0 + (gr + 1) / std::sqrt(2 * gr) * (pmid / wri[IPR]-1.0));
+           std::sqrt(1.0 + (gr + 1) / (2 * gr) * (pmid / wri[IPR]-1.0));
     } else {
       ql = (pmid <= wli[IPR]) ? 1.0 :
-           (1.0 + (gamma + 1) / std::sqrt(2 * gamma) * (pmid / wli[IPR]-1.0));
+           std::sqrt(1.0 + (gamma + 1) / (2 * gamma) * (pmid / wli[IPR]-1.0));
       qr = (pmid <= wri[IPR]) ? 1.0 :
-           (1.0 + (gamma + 1) / std::sqrt(2 * gamma) * (pmid / wri[IPR]-1.0));
+           std::sqrt(1.0 + (gamma + 1) / (2 * gamma) * (pmid / wri[IPR]-1.0));
     }
 
     //--- Step 4.  Compute the max/min wave speeds based on L/R

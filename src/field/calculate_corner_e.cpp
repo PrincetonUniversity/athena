@@ -52,7 +52,7 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js-1; j<=je+1; ++j) {
         // E3=-(v X B)=VyBx-VxBy
-#if GENERAL_RELATIVITY==1
+#if GENERAL_RELATIVITY==1  // GR
         pmb->pcoord->CellMetric(k, j, is-1, ie+1, g_, gi_);
 #pragma omp simd
         for (int i=is-1; i<=ie+1; ++i) {
@@ -79,7 +79,16 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
           Real b3 = (bb3 + b0 * u3) / u0;
           cc_e_(k,j,i) = b1 * u2 - b2 * u1;
         }
-#else
+#elif RELATIVISTIC_DYNAMICS==1  // SR
+#pragma omp simd
+        for (int i=is-1; i<=ie+1; ++i) {
+          const Real &u1 = w(IVX,k,j,i);
+          const Real &u2 = w(IVY,k,j,i);
+          const Real &u3 = w(IVZ,k,j,i);
+          Real u0 = std::sqrt(1.0 + SQR(u1) + SQR(u2) + SQR(u3));
+          cc_e_(k,j,i) = (u2 * bcc(IB1,k,j,i) - u1 * bcc(IB2,k,j,i)) / u0;
+        }
+#else  // Newtonian
 #pragma omp simd
         for (int i=is-1; i<=ie+1; ++i) {
           cc_e_(k,j,i) = w(IVY,k,j,i)*bcc(IB1,k,j,i) - w(IVX,k,j,i)*bcc(IB2,k,j,i);
@@ -124,7 +133,7 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
         // E1=-(v X B)=VzBy-VyBz
         // E2=-(v X B)=VxBz-VzBx
         // E3=-(v X B)=VyBx-VxBy
-#if GENERAL_RELATIVITY==1
+#if GENERAL_RELATIVITY==1  // GR
         pmb->pcoord->CellMetric(k, j, is-1, ie+1, g_, gi_);
 #pragma omp simd
         for (int i=is-1; i<=ie+1; ++i) {
@@ -153,7 +162,18 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
           cc_e_(IB2,k,j,i) = b3 * u1 - b1 * u3;
           cc_e_(IB3,k,j,i) = b1 * u2 - b2 * u1;
         }
-#else
+#elif RELATIVISTIC_DYNAMICS==1  // SR
+#pragma omp simd
+        for (int i=is-1; i<=ie+1; ++i) {
+          const Real &u1 = w(IVX,k,j,i);
+          const Real &u2 = w(IVY,k,j,i);
+          const Real &u3 = w(IVZ,k,j,i);
+          Real u0 = std::sqrt(1.0 + SQR(u1) + SQR(u2) + SQR(u3));
+          cc_e_(IB1,k,j,i) = (u3 * bcc(IB2,k,j,i) - u2 * bcc(IB3,k,j,i)) / u0;
+          cc_e_(IB2,k,j,i) = (u1 * bcc(IB3,k,j,i) - u3 * bcc(IB1,k,j,i)) / u0;
+          cc_e_(IB3,k,j,i) = (u2 * bcc(IB1,k,j,i) - u1 * bcc(IB2,k,j,i)) / u0;
+        }
+#else  // Newtonian
 #pragma omp simd
         for (int i=is-1; i<=ie+1; ++i) {
           cc_e_(IB1,k,j,i) = w(IVZ,k,j,i)*bcc(IB2,k,j,i) - w(IVY,k,j,i)*bcc(IB3,k,j,i);

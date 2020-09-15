@@ -419,12 +419,12 @@ def plot_grid(refinement, r_bounds, theta_bounds, output, colormap, grid_refined
     # Determine levels as a function of position
     max_level = len(refinement) - 1
     levels = np.zeros((2*len(r), 2*len(delta_theta)), dtype=int)
-    for l, refinement_current in enumerate(refinement[:-1]):
-        block_size = 2 ** (max_level-l+1)
+    for level, refinement_current in enumerate(refinement[:-1]):
+        block_size = 2 ** (max_level-level+1)
         for (i, j), refined in np.ndenumerate(refinement_current):
             if refined:
                 levels[i*block_size+1:(i+1)*block_size+1,
-                       j*block_size:(j+1)*block_size] = l + 1
+                       j*block_size:(j+1)*block_size] = level + 1
     levels[0, :] = -1
     levels[-1, :] = -1
     levels = levels.T
@@ -507,23 +507,23 @@ def plot_grid(refinement, r_bounds, theta_bounds, output, colormap, grid_refined
         plt.plot((-x1, -x2), (y1, y2), 'k')
 
     # Draw refined boundaries
-    for l in range(min(max_level, grid_refined)):
-        for (i, j), refined in np.ndenumerate(refinement[l]):
+    for level in range(min(max_level, grid_refined)):
+        for (i, j), refined in np.ndenumerate(refinement[level]):
             if refined:
-                r_val = r_bounds[l+1][2*i+1]
+                r_val = r_bounds[level+1][2*i+1]
                 if log:
                     r_val = np.log10(r_val)
-                theta1 = 90.0 - theta_bounds[l][j] * 180.0/np.pi
-                theta2 = 90.0 - theta_bounds[l][j+1] * 180.0/np.pi
+                theta1 = 90.0 - theta_bounds[level][j] * 180.0/np.pi
+                theta2 = 90.0 - theta_bounds[level][j+1] * 180.0/np.pi
                 theta3 = 180.0 - theta1
                 theta4 = 180.0 - theta2
                 arc = patches.Arc((0, 0), r_val*2, r_val*2, theta1=theta2, theta2=theta1)
                 ax.add_artist(arc)
                 arc = patches.Arc((0, 0), r_val*2, r_val*2, theta1=theta3, theta2=theta4)
                 ax.add_artist(arc)
-                theta_val = theta_bounds[l+1][2*j+1]
-                r1 = r_bounds[l][i]
-                r2 = r_bounds[l][i+1]
+                theta_val = theta_bounds[level+1][2*j+1]
+                r1 = r_bounds[level][i]
+                r2 = r_bounds[level][i+1]
                 if log:
                     r1 = np.log10(r1)
                     r2 = np.log10(r2)

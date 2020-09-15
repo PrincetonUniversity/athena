@@ -37,6 +37,7 @@
 
 void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
   int nnew = 0, ndel = 0;
+  amr_updated = false;
 
   if (adaptive) {
     UpdateMeshBlockTree(nnew, ndel);
@@ -48,6 +49,7 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
   UpdateCostList();
 
   if (nnew != 0 || ndel != 0) { // at least one (de)refinement happened
+    amr_updated = true;
     GatherCostListAndCheckBalance();
     RedistributeAndRefineMeshBlocks(pin, nbtotal + nnew - ndel);
   } else if (lb_flag_ && step_since_lb >= lb_interval_) {
@@ -137,11 +139,10 @@ void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlis
 
 void Mesh::ResetLoadBalanceVariables() {
   if (lb_automatic_) {
-    MeshBlock *pmb = pblock;
-    while (pmb != nullptr) {
+    for (int i=0; i<nblocal; ++i) {
+      MeshBlock *pmb = my_blocks(i);
       costlist[pmb->gid] = TINY_NUMBER;
       pmb->ResetTimeMeasurement();
-      pmb = pmb->next;
     }
   }
   lb_flag_ = false;
@@ -153,17 +154,16 @@ void Mesh::ResetLoadBalanceVariables() {
 // \brief update the cost list
 
 void Mesh::UpdateCostList() {
-  MeshBlock *pmb = pblock;
   if (lb_automatic_) {
     double w = static_cast<double>(lb_interval_-1)/static_cast<double>(lb_interval_);
-    while (pmb != nullptr) {
+    for (int i=0; i<nblocal; ++i) {
+      MeshBlock *pmb = my_blocks(i);
       costlist[pmb->gid] = costlist[pmb->gid]*w+pmb->cost_;
-      pmb = pmb->next;
     }
   } else if (lb_flag_) {
-    while (pmb != nullptr) {
+    for (int i=0; i<nblocal; ++i) {
+      MeshBlock *pmb = my_blocks(i);
       costlist[pmb->gid] = pmb->cost_;
-      pmb = pmb->next;
     }
   }
 }
@@ -174,7 +174,6 @@ void Mesh::UpdateCostList() {
 
 void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
   // compute nleaf= number of leaf MeshBlocks per refined block
-  MeshBlock *pmb;
   int nleaf = 2, dim = 1;
   if (mesh_size.nx2 > 1) nleaf = 4, dim = 2;
   if (mesh_size.nx3 > 1) nleaf = 8, dim = 3;
@@ -183,11 +182,10 @@ void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
   // count the number of the blocks to be (de)refined
   nref[Globals::my_rank] = 0;
   nderef[Globals::my_rank] = 0;
-  pmb = pblock;
-  while (pmb != nullptr) {
+  for (int i=0; i<nblocal; ++i) {
+    MeshBlock *pmb = my_blocks(i);
     if (pmb->pmr->refine_flag_ ==  1) nref[Globals::my_rank]++;
     if (pmb->pmr->refine_flag_ == -1) nderef[Globals::my_rank]++;
-    pmb = pmb->next;
   }
 #ifdef MPI_PARALLEL
   MPI_Allgather(MPI_IN_PLACE, 1, MPI_INT, nref,   1, MPI_INT, MPI_COMM_WORLD);
@@ -230,13 +228,12 @@ void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
 
   // collect the locations and costs
   int iref = rdisp[Globals::my_rank], ideref = ddisp[Globals::my_rank];
-  pmb = pblock;
-  while (pmb != nullptr) {
+  for (int i=0; i<nblocal; ++i) {
+    MeshBlock *pmb = my_blocks(i);
     if (pmb->pmr->refine_flag_ ==  1)
       lref[iref++] = pmb->loc;
     if (pmb->pmr->refine_flag_ == -1 && tnderef >= nleaf)
       lderef[ideref++] = pmb->loc;
-    pmb = pmb->next;
   }
 #ifdef MPI_PARALLEL
   if (tnref > 0) {
@@ -394,20 +391,16 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
       newcost[n] = acost/nleaf;
     }
   }
-#ifdef MPI_PARALLEL
-  // store old nbstart and nbend before load balancing in Step 2.
-  int onbs = nslist[Globals::my_rank];
-  int onbe = onbs + nblist[Globals::my_rank] - 1;
-#endif
+
   // Step 2. Calculate new load balance
   CalculateLoadBalance(newcost, newrank, nslist, nblist, ntot);
 
   int nbs = nslist[Globals::my_rank];
   int nbe = nbs + nblist[Globals::my_rank] - 1;
 
-  int bnx1 = pblock->block_size.nx1;
-  int bnx2 = pblock->block_size.nx2;
-  int bnx3 = pblock->block_size.nx3;
+  int bnx1 = my_blocks(0)->block_size.nx1;
+  int bnx2 = my_blocks(0)->block_size.nx2;
+  int bnx3 = my_blocks(0)->block_size.nx3;
 
 #ifdef MPI_PARALLEL
   // Step 3. count the number of the blocks to be sent / received
@@ -424,7 +417,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
         nrecv++;
     }
   }
-  for (int n=onbs; n<=onbe; n++) {
+  for (int n=gids_; n<=gide_; n++) {
     int nn = oldtonew[n];
     if (loclist[n].level < newloc[nn].level) { // c2f
       for (int k=0; k<nleaf; k++) {
@@ -446,10 +439,10 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   // TODO(felker): add explicit check to ensure that elements of pb->vars_cc/fc_ and
   // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
 
-  // int num_cc = pblock->pmr->pvars_cc_.size();
-  int num_fc = pblock->vars_fc_.size();
+  // int num_cc = my_blocks(0)->pmr->pvars_cc_.size();
+  int num_fc = my_blocks(0)->vars_fc_.size();
   int nx4_tot = 0;
-  for (AthenaArray<Real> &var_cc : pblock->vars_cc_) {
+  for (AthenaArray<Real> &var_cc : my_blocks(0)->vars_cc_) {
     nx4_tot += var_cc.GetDim4();
   }
 
@@ -512,7 +505,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
     sendbuf = new Real*[nsend];
     req_send = new MPI_Request[nsend];
     int sb_idx = 0;      // send buffer index
-    for (int n=onbs; n<=onbe; n++) {
+    for (int n=gids_; n<=gide_; n++) {
       int nn = oldtonew[n];
       LogicalLocation &oloc = loclist[n];
       LogicalLocation &nloc = newloc[nn];
@@ -552,75 +545,54 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
 #endif // MPI_PARALLEL
 
   // Step 7. construct a new MeshBlock list (moving the data within the MPI rank)
-  MeshBlock *newlist = nullptr;
-  MeshBlock *pmb = nullptr;
-  RegionSize block_size = pblock->block_size;
+  AthenaArray<MeshBlock*> newlist;
+  newlist.NewAthenaArray(nblist[Globals::my_rank]);
+  RegionSize block_size = my_blocks(0)->block_size;
 
   for (int n=nbs; n<=nbe; n++) {
     int on = newtoold[n];
     if ((ranklist[on] == Globals::my_rank) && (loclist[on].level == newloc[n].level)) {
       // on the same MPI rank and same level -> just move it
       MeshBlock* pob = FindMeshBlock(on);
-      if (pob->prev == nullptr) {
-        pblock = pob->next;
-      } else {
-        pob->prev->next = pob->next;
-      }
-      if (pob->next != nullptr) pob->next->prev = pob->prev;
-      pob->next = nullptr;
-      if (n == nbs) { // first
-        pob->prev = nullptr;
-        newlist = pob;
-        pmb = newlist;
-      } else {
-        pmb->next = pob;
-        pob->prev = pmb;
-        pmb = pmb->next;
-      }
-      pmb->gid = n;
-      pmb->lid = n - nbs;
+      pob->gid = n;
+      pob->lid = n - nbs;
+      newlist(n-nbs) = pob;
+      my_blocks(on-gids_) = nullptr;
     } else {
       // on a different refinement level or MPI rank - create a new block
       BoundaryFlag block_bcs[6];
       SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);
-      // insert new block in singly-linked list of MeshBlocks
-      if (n == nbs) { // first node
-        newlist = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
-                                pin, gflag, true);
-        pmb = newlist;
-      } else {
-        pmb->next = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
-                                  pin, gflag, true);
-        pmb->next->prev = pmb;
-        pmb = pmb->next;
-      }
+      newlist(n-nbs) = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
+                                     pin, gflag, true);
       // fill the conservative variables
       if ((loclist[on].level > newloc[n].level)) { // fine to coarse (f2c)
         for (int ll=0; ll<nleaf; ll++) {
           if (ranklist[on+ll] != Globals::my_rank) continue;
           // fine to coarse on the same MPI rank (different AMR level) - restriction
           MeshBlock* pob = FindMeshBlock(on+ll);
-          FillSameRankFineToCoarseAMR(pob, pmb, loclist[on+ll]);
+          FillSameRankFineToCoarseAMR(pob, newlist(n-nbs), loclist[on+ll]);
         }
       } else if ((loclist[on].level < newloc[n].level) && // coarse to fine (c2f)
                  (ranklist[on] == Globals::my_rank)) {
         // coarse to fine on the same MPI rank (different AMR level) - prolongation
         MeshBlock* pob = FindMeshBlock(on);
-        FillSameRankCoarseToFineAMR(pob, pmb, newloc[n]);
+        FillSameRankCoarseToFineAMR(pob, newlist(n-nbs), newloc[n]);
       }
     }
   }
 
   // discard remaining MeshBlocks
   // they could be reused, but for the moment, just throw them away for simplicity
-  if (pblock != nullptr) {
-    while (pblock->next  !=  nullptr)
-      delete pblock->next;
-    delete pblock;
+  for (int n = 0; n<nblocal; n++) {
+    delete my_blocks(n); // OK to delete even if it is nullptr
+    my_blocks(n) = nullptr;
   }
 
   // Replace the MeshBlock list
-  pblock = newlist;
+  my_blocks.ExchangeAthenaArray(newlist);
+  nblocal = nblist[Globals::my_rank];
+  gids_ = nbs;
+  gide_ = nbe;
 
   // Step 8. Receive the data and load into MeshBlocks
   // This is a test: try MPI_Waitall later.
@@ -682,11 +654,8 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   costlist = newcost;
 
   // re-initialize the MeshBlocks
-  pmb = pblock;
-  while (pmb != nullptr) {
-    pmb->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
-    pmb = pmb->next;
-  }
+  for (int i=0; i<nblocal; ++i)
+    my_blocks(i)->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   Initialize(2, pin);
 
   ResetLoadBalanceVariables();

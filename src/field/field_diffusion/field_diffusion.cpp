@@ -10,7 +10,12 @@
 // C++ headers
 #include <algorithm>  // min()
 #include <cmath>      // sqrt(), fabs()
+#include <cstring>    // strcmp()
+#include <iostream>   // endl
 #include <limits>
+#include <sstream>    // sstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
 
 // Athena++ headers
 #include "../../athena.hpp"
@@ -72,6 +77,13 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) :
       CalcMagDiffCoeff_ = ConstDiffusivity;
     else
       CalcMagDiffCoeff_ = pmb->pmy_mesh->FieldDiffusivity_;
+  }
+
+  if (field_diffusion_defined && RELATIVISTIC_DYNAMICS) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in FieldDiffusion" << std::endl
+        << "Diffusion is incompatibile with relativistic dynamics" << std::endl;
+    ATHENA_ERROR(msg);
   }
 }
 

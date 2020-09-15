@@ -143,46 +143,26 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
     // Extract left primitives
     Real rho_l = prim_l(IDN,i);
     Real pgas_l = prim_l(IPR,i);
+    Real ux_l = prim_l(ivx,i);
+    Real uy_l = prim_l(ivy,i);
+    Real uz_l = prim_l(ivz,i);
     Real u_l[4];
-    if (GENERAL_RELATIVITY) {
-      Real vx_l = prim_l(ivx,i);
-      Real vy_l = prim_l(ivy,i);
-      Real vz_l = prim_l(ivz,i);
-      u_l[0] = std::sqrt(1.0 + SQR(vx_l) + SQR(vy_l) + SQR(vz_l));
-      u_l[1] = vx_l;
-      u_l[2] = vy_l;
-      u_l[3] = vz_l;
-    } else {  // SR
-      Real vx_l = prim_l(ivx,i);
-      Real vy_l = prim_l(ivy,i);
-      Real vz_l = prim_l(ivz,i);
-      u_l[0] = std::sqrt(1.0 / (1.0 - SQR(vx_l) - SQR(vy_l) - SQR(vz_l)));
-      u_l[1] = u_l[0] * vx_l;
-      u_l[2] = u_l[0] * vy_l;
-      u_l[3] = u_l[0] * vz_l;
-    }
+    u_l[0] = std::sqrt(1.0 + SQR(ux_l) + SQR(uy_l) + SQR(uz_l));
+    u_l[1] = ux_l;
+    u_l[2] = uy_l;
+    u_l[3] = uz_l;
 
     // Extract right primitives
     Real rho_r = prim_r(IDN,i);
     Real pgas_r = prim_r(IPR,i);
+    Real ux_r = prim_r(ivx,i);
+    Real uy_r = prim_r(ivy,i);
+    Real uz_r = prim_r(ivz,i);
     Real u_r[4];
-    if (GENERAL_RELATIVITY) {
-      Real vx_r = prim_r(ivx,i);
-      Real vy_r = prim_r(ivy,i);
-      Real vz_r = prim_r(ivz,i);
-      u_r[0] = std::sqrt(1.0 + SQR(vx_r) + SQR(vy_r) + SQR(vz_r));
-      u_r[1] = vx_r;
-      u_r[2] = vy_r;
-      u_r[3] = vz_r;
-    } else {  // SR
-      Real vx_r = prim_r(ivx,i);
-      Real vy_r = prim_r(ivy,i);
-      Real vz_r = prim_r(ivz,i);
-      u_r[0] = std::sqrt(1.0 / (1.0 - SQR(vx_r) - SQR(vy_r) - SQR(vz_r)));
-      u_r[1] = u_r[0] * vx_r;
-      u_r[2] = u_r[0] * vy_r;
-      u_r[3] = u_r[0] * vz_r;
-    }
+    u_r[0] = std::sqrt(1.0 + SQR(ux_r) + SQR(uy_r) + SQR(uz_r));
+    u_r[1] = ux_r;
+    u_r[2] = uy_r;
+    u_r[3] = uz_r;
 
     // Calculate wavespeeds in left state (MB2005 23)
     Real lambda_p_l, lambda_m_l;

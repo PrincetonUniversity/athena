@@ -448,8 +448,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     }
 
     // Go through blocks to calculate errors
-    MeshBlock *pmb = pblock;
-    while (pmb != nullptr) {
+    for (int b=0; b<nblocal; ++b) {
+      MeshBlock *pmb = my_blocks(b);
       for (int k = pmb->ks; k <= pmb->ke; ++k) {
         for (int j = pmb->js; j <= pmb->je; ++j) {
           pmb->pcoord->CellVolume(k, j, pmb->is, pmb->ie, volume);
@@ -469,7 +469,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           }
         }
       }
-      pmb = pmb->next;
     }
 
     // Reduce errors across ranks
@@ -691,9 +690,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = uu2;
           phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = uu3;
         } else {  // SR
-          phydro->w(IVX,k,j,i) = phydro->w1(IVX,k,j,i) = u_local[1] / u_local[0];
-          phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = u_local[2] / u_local[0];
-          phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = u_local[3] / u_local[0];
+          phydro->w(IVX,k,j,i) = phydro->w1(IVX,k,j,i) = u_local[1];
+          phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = u_local[2];
+          phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = u_local[3];
         }
 
         // Set conserved hydro variables
@@ -810,7 +809,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // Prepare arrays for comparing to initial conditions (only once per Mesh)
   if (compute_error && lid == 0) {
-    int num_blocks = pmy_mesh->GetNumMeshBlocksThisRank(Globals::my_rank);
+    int num_blocks = pmy_mesh->nblocal;
     int nx1 = block_size.nx1;
     int nx2 = block_size.nx2;
     int nx3 = block_size.nx3;

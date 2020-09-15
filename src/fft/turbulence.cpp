@@ -47,9 +47,12 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
     expo(pin->GetOrAddReal("problem", "expo", 2)), // power-law exponent
     dedt(pin->GetReal("problem", "dedt")), // turbulence amplitude
     // TODO(changgoo): this assumes 3D and should not work with 1D, 2D. Add check.
-    vel{ {nmb, pm->pblock->ncells3, pm->pblock->ncells2, pm->pblock->ncells1},
-         {nmb, pm->pblock->ncells3, pm->pblock->ncells2, pm->pblock->ncells1},
-         {nmb, pm->pblock->ncells3, pm->pblock->ncells2, pm->pblock->ncells1} } {
+    vel{ {nmb, pm->my_blocks(0)->ncells3,
+               pm->my_blocks(0)->ncells2, pm->my_blocks(0)->ncells1},
+         {nmb, pm->my_blocks(0)->ncells3,
+               pm->my_blocks(0)->ncells2, pm->my_blocks(0)->ncells1},
+         {nmb, pm->my_blocks(0)->ncells3,
+               pm->my_blocks(0)->ncells2, pm->my_blocks(0)->ncells1} } {
   if (f_shear > 1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
@@ -288,9 +291,9 @@ void TurbulenceDriver::Perturb(Real dt) {
   int nbs = nslist_[Globals::my_rank];
   int nbe = nbs+nblist_[Globals::my_rank]-1;
 
-  int il = pm->pblock->is, iu = pm->pblock->ie;
-  int jl = pm->pblock->js, ju = pm->pblock->je;
-  int kl = pm->pblock->ks, ku = pm->pblock->ke;
+  int il = pm->my_blocks(0)->is, iu = pm->my_blocks(0)->ie;
+  int jl = pm->my_blocks(0)->js, ju = pm->my_blocks(0)->je;
+  int kl = pm->my_blocks(0)->ks, ku = pm->my_blocks(0)->ke;
 
   Real aa, b, c, s, de, v1, v2, v3, den, M1, M2, M3;
   Real m[4] = {0};
