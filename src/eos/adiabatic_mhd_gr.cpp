@@ -10,8 +10,8 @@
 // C headers
 
 // C++ headers
-#include <algorithm>  // max(), min()
-#include <cmath>      // abs(), cbrt(), isfinite(), isnan(), NAN, pow(), sqrt()
+#include <algorithm>  // max, min
+#include <cmath>      // abs, acos, cbrt, cos, isfinite, pow, sqrt
 
 // Athena++ headers
 #include "../athena.hpp"                   // enums, macros
@@ -26,19 +26,18 @@ namespace {
 // Declarations
 void CalculateNormalConserved(
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bb,
-    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
-    AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt);
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int il, int iu,
+    AthenaArray<Real> &dd, AthenaArray<Real> &ee, AthenaArray<Real> &mm,
+    AthenaArray<Real> &bbb, AthenaArray<Real> &tt);
 bool ConservedToPrimitiveNormal(
     const AthenaArray<Real> &dd_vals, const AthenaArray<Real> &ee_vals,
     const AthenaArray<Real> &mm_vals, const AthenaArray<Real> &bb_vals,
-    const AthenaArray<Real> &tt_vals,
-    Real gamma_adi, Real pgas_old,
-    int k, int j, int i, AthenaArray<Real> &prim, Real *p_gamma_lor, Real *p_pmag);
+    const AthenaArray<Real> &tt_vals, Real gamma_adi, Real pgas_old, int k, int j, int i,
+    AthenaArray<Real> &prim, Real *p_gamma_lor, Real *p_pmag);
 void PrimitiveToConservedSingle(
     const AthenaArray<Real> &prim, Real gamma_adi, const AthenaArray<Real> &bb_cc,
-    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int i, AthenaArray<Real> &cons, Coordinates *pco);
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
+    AthenaArray<Real> &cons, Coordinates *pco);
 } // namespace
 
 //----------------------------------------------------------------------------------------
@@ -70,7 +69,6 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
   normal_tt_.NewAthenaArray(nc1);
 }
 
-
 //----------------------------------------------------------------------------------------
 // Variable inverter
 // Inputs:
@@ -78,15 +76,18 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
 //   prim_old: primitive quantities from previous half timestep
 //   bb: face-centered magnetic field
 //   pco: pointer to Coordinates
-//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
+//   il, iu, jl, ju, kl, ku: index bounds of region to be updated
 // Outputs:
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field
+// Notes:
+//   Simpler version without magnetic fields found in adiabatic_hydro_gr.cpp.
+//   Simpler version for SR found in adiabatic_mhd_sr.cpp.
 
 void EquationOfState::ConservedToPrimitive(
     AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &bb,
-    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco,
-    int il, int iu, int jl, int ju, int kl, int ku) {
+    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu,
+    int jl, int ju, int kl, int ku) {
   // Parameters
   const Real mm_sq_ee_sq_max = 1.0 - 1.0e-12;  // max. of squared momentum over energy
 
@@ -183,8 +184,8 @@ void EquationOfState::ConservedToPrimitive(
           // Recalculate primitives
           success = ConservedToPrimitiveNormal(normal_dd_, normal_ee_, normal_mm_,
                                                normal_bb_, normal_tt_, gamma_adi,
-                                               prim_old(IPR,k,j,i), k, j, i, prim,
-                                               &gamma, &pmag);
+                                               prim_old(IPR,k,j,i), k, j, i, prim, &gamma,
+                                               &pmag);
 
           // Handle failures
           if (!success) {
@@ -286,8 +287,8 @@ void EquationOfState::ConservedToPrimitive(
 // Outputs:
 //   cons: conserved variables
 // Notes:
-//   single-cell function exists for other purposes; call made to that function rather
-//       than having duplicate code
+//   Single-cell function exists for other purposes; call made to that function rather
+//       than having duplicate code.
 
 void EquationOfState::PrimitiveToConserved(
     const AthenaArray<Real> &prim,
@@ -312,8 +313,8 @@ namespace {
 // Inputs:
 //   cons: conserved quantities rho u^0, T^0_\mu
 //   bb: cell-centered magnetic field B^i
-//   g,gi: 1D arrays of metric covariant and contravariant coefficients
-//   k,j,il,iu: indices and index bounds of 1D array to use
+//   g, gi: 1D arrays of metric covariant and contravariant coefficients
+//   k, j, il, iu: indices and index bounds of 1D array to use
 // Outputs:
 //   dd: normal density D
 //   ee: normal energy E
@@ -322,19 +323,19 @@ namespace {
 //       its components \mathcal{B}^i
 //   tt: projection of momentum onto field \mathcal{T} = g_{ij} M^i \mathcal{B}^j
 // Notes:
-//   references Noble et al. 2006, ApJ 641 626 (N)
-//   symbols:
+//   References Noble et al. 2006, ApJ 641 626 (N).
+//   Symbols:
 //     t: T
 //     qq_n: Q \cdot n
 //     bbb: \mathcal{B}
 //     tt: \mathcal{T}
+//   Simpler version without magnetic fields found in adiabatic_hydro_gr.cpp.
 
 void CalculateNormalConserved(
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bb,
-    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int il, int iu,
-    AthenaArray<Real> &dd, AthenaArray<Real> &ee,
-    AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt) {
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int il, int iu,
+    AthenaArray<Real> &dd, AthenaArray<Real> &ee, AthenaArray<Real> &mm,
+    AthenaArray<Real> &bbb, AthenaArray<Real> &tt) {
   // Go through row
   for (int i=il; i<=iu; ++i) {
     // Extract metric
@@ -418,19 +419,19 @@ void CalculateNormalConserved(
 //   tt_vals: array of M_i B^i values
 //   gamma_adi: ratio of specific heats
 //   pgas_old: previous value of p_{gas} used to initialize iteration
-//   k,j,i: indices of cell
+//   k, j, i: indices of cell
 // Outputs:
 //   returned value: true for successful convergence, false otherwise
 //   prim: all values set in given cell
 //   p_gamma_lor: normal-frame Lorentz factor
 //   p_pmag: magnetic pressure
 // Notes:
-//   generalizes Newman & Hamlin 2014, SIAM J. Sci. Comput. 36(4) B661 (NH)
-//     like SR, but all 3-vector operations done with respect to g_{ij} rather than
-//         \eta_{ij}
-//   notation here largely follows (NH), so for example writing B^i for what is really
-//       \mathcal{B}^i
-//   symbols:
+//   Generalizes Newman & Hamlin 2014, SIAM J. Sci. Comput. 36(4) B661 (NH).
+//     Like SR, but all 3-vector operations done with respect to g_{ij} rather than
+//         \eta_{ij}.
+//   Notation here largely follows (NH), so for example writing B^i for what is really
+//       \mathcal{B}^i.
+//   Symbols:
 //     tt: \mathcal{T}
 //     ee: E (NH: e)
 //     mm: M (NH: m)
@@ -438,15 +439,16 @@ void CalculateNormalConserved(
 //     ll: \mathcal{L}
 //     wgas: w_{gas} (NH: w)
 //     rr: \mathcal{R}
+//   Also found in adiabatic_mhd_sr.cpp.
+//   Simpler version without magnetic fields found in adiabatic_hydro_gr.cpp.
 
 bool ConservedToPrimitiveNormal(
     const AthenaArray<Real> &dd_vals, const AthenaArray<Real> &ee_vals,
     const AthenaArray<Real> &mm_vals, const AthenaArray<Real> &bb_vals,
-    const AthenaArray<Real> &tt_vals, Real gamma_adi, Real pgas_old,
-    int k, int j, int i,
+    const AthenaArray<Real> &tt_vals, Real gamma_adi, Real pgas_old, int k, int j, int i,
     AthenaArray<Real> &prim, Real *p_gamma_lor, Real *p_pmag) {
   // Parameters
-  const int max_iterations = 10;
+  const int max_iterations = 15;
   const Real tol = 1.0e-12;
   const Real pgas_uniform_min = 1.0e-12;
   const Real a_min = 1.0e-12;
@@ -467,7 +469,7 @@ bool ConservedToPrimitiveNormal(
   const Real &tt = tt_vals(i);
 
   // Calculate functions of conserved quantities
-  Real d = 0.5 * (mm_sq * bb_sq - SQR(tt));             // (NH 5.7)
+  Real d = 0.5 * (mm_sq * bb_sq - SQR(tt));                  // (NH 5.7)
   d = std::max(d, 0.0);
   Real pgas_min = std::cbrt(27.0/4.0 * d) - ee - 0.5*bb_sq;
   pgas_min = std::max(pgas_min, pgas_uniform_min);
@@ -539,7 +541,6 @@ bool ConservedToPrimitiveNormal(
   v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
   Real gamma_sq = 1.0/(1.0-v_sq);                                 // (NH 3.1)
   Real gamma = std::sqrt(gamma_sq);                               // (NH 3.1)
-  //Real wgas = ll/gamma_sq;                                      // (NH 5.1); unused var
   prim(IDN,k,j,i) = dd/gamma;                                     // (NH 4.5)
   if (!std::isfinite(prim(IDN,k,j,i))) {
     return false;
@@ -574,10 +575,9 @@ bool ConservedToPrimitiveNormal(
 //   cons: conserved variables set in desired cell
 
 void PrimitiveToConservedSingle(
-    const AthenaArray<Real> &prim, Real gamma_adi,
-    const AthenaArray<Real> &bb_cc, const AthenaArray<Real> &g,
-    const AthenaArray<Real> &gi, int k, int j, int i, AthenaArray<Real> &cons,
-    Coordinates *pco) {
+    const AthenaArray<Real> &prim, Real gamma_adi, const AthenaArray<Real> &bb_cc,
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
+    AthenaArray<Real> &cons, Coordinates *pco) {
   // Extract primitives and magnetic fields
   const Real &rho = prim(IDN,k,j,i);
   const Real &pgas = prim(IPR,k,j,i);
@@ -630,6 +630,7 @@ void PrimitiveToConservedSingle(
   t0_3 = wtot * u0 * u_3 - b0 * b_3;
   return;
 }
+
 } // namespace
 
 //----------------------------------------------------------------------------------------
@@ -643,11 +644,11 @@ void PrimitiveToConservedSingle(
 // Outputs:
 //   lambdas_p,lambdas_m: 1D arrays set to +/- wavespeeds
 // Notes:
-//   references Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
-//   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
-//   references Numerical Recipes, 3rd ed. (NR)
-//   follows advice in NR for avoiding large cancellations in solving quadratics
-//   almost same function as in adiabatic_mhd_sr.cpp
+//   references Mignone & Bodo 2005, MNRAS 364 126 (MB2005).
+//   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006).
+//   references Numerical Recipes, 3rd ed. (NR).
+//   Follows advice in NR for avoiding large cancellations in solving quadratics.
+//   Almost same function as in adiabatic_mhd_sr.cpp.
 
 void EquationOfState::FastMagnetosonicSpeedsSR(
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bbx_vals,
@@ -834,8 +835,8 @@ void EquationOfState::FastMagnetosonicSpeedsSR(
 //   plambda_plus: value set to most positive wavespeed
 //   plambda_minus: value set to most negative wavespeed
 // Notes:
-//   follows same general procedure as vchar() in phys.c in Harm
-//   variables are named as though 1 is normal direction
+//   Follows same general procedure as vchar() in phys.c in Harm.
+//   Variables are named as though 1 is normal direction.
 
 void EquationOfState::FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
                                                Real b_sq, Real g00, Real g01, Real g11,

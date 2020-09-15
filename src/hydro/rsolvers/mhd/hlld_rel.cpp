@@ -920,7 +920,6 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
 // Notes:
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   implementation follows that of hlld_sr.c in Athena 4.2
-//   same function as in adiabatic_mhd_sr.cpp
 
 Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
                Real gamma_prime) {
@@ -949,7 +948,6 @@ Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq
 // Notes:
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   implementation follows that of hlld_sr.c in Athena 4.2
-//   same function as in adiabatic_mhd_sr.cpp
 
 Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
                     Real gamma_prime) {
