@@ -17,6 +17,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../defs.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../mesh/mesh.hpp"
@@ -116,6 +117,9 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
   dflx_.NewAthenaArray(NHYDRO, nc1);
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) { // only used in (SR/GR)MHD
     bb_normal_.NewAthenaArray(nc1);
+  }
+  if (RELATIVISTIC_DYNAMICS && std::strcmp(RIEMANN_SOLVER, "hlld") == 0) {
+    // only used in (SR/GR)MHD with HLLD
     lambdas_p_l_.NewAthenaArray(nc1);
     lambdas_m_l_.NewAthenaArray(nc1);
     lambdas_p_r_.NewAthenaArray(nc1);
