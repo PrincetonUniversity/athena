@@ -16,6 +16,7 @@
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
+#include <random>     // mt19937, normal_distribution, uniform_real_distribution
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -93,6 +94,25 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
     fv_co_[nv] = new std::complex<Real>[pmy_fb->cnt_];
     if (pm->turb_flag > 1) fv_new_[nv] = new std::complex<Real>[pmy_fb->cnt_];
   }
+
+  // initialize MT19937 random number generator
+  if (rseed < 0) {
+    std::random_device device;
+    rseed = static_cast<std::int64_t>(device());
+  } else {
+    // If rseed is specified with a positive value, 
+    // PS is generated with a global random number sequence.
+    // This would make perturbation identical irrespective of number of MPI ranks,
+    // but the cost of the PowerSpectrum() function call is huge.
+    // Not recommended with turb_flag = 3 or turb_flag = with small dtdrive
+    global_ps_ = true;
+    if (turb_flag == 3) {
+      std::cout << "### Warning: continuous turbulence driving (turb_flag == 3)" 
+                << std::endl << " with a specific rseed (rseed >= 0) will be slow"
+                << std::endl;
+    }
+  }
+  rng_generator.seed(rseed);
 }
 
 // destructor
@@ -176,12 +196,10 @@ void TurbulenceDriver::Generate() {
     AthenaArray<Real> &dv = vel[nv], dv_mb;
     for (int kidx=0; kidx<pfb->cnt_; kidx++) pfb->in_[kidx] = fv_[nv][kidx];
     pfb->Execute(plan);
-    for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
-      MeshBlock *pmb = pm->FindMeshBlock(igid);
-      if (pmb != nullptr) {
-        dv_mb.InitWithShallowSlice(dv, 4, nb, 1);
-        pfb->RetrieveResult(dv_mb, 0, NGHOST, pmb->loc, pmb->block_size);
-      }
+    for (int nb=0; nb<pm->nblocal; ++nb) {
+      MeshBlock *pmb = pm->my_blocks(nb);
+      dv_mb.InitWithShallowSlice(dv, 4, nb, 1);
+      pfb->RetrieveResult(dv_mb, 0, NGHOST, pmb->loc, pmb->block_size);
     }
   }
 }
@@ -224,27 +242,37 @@ void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp) {
   int knx1 = pfb->knx[0], knx2 = pfb->knx[1], knx3 = pfb->knx[2];
   int kdisp1 = pfb->kdisp[0], kdisp2 = pfb->kdisp[1], kdisp3 = pfb->kdisp[2];
 
+  std::normal_distribution<Real> ndist(0.0,1.0); // standard normal distribution
+  std::uniform_real_distribution<Real> udist(0.0,1.0); // uniform in [0,1)
+
   // set random amplitudes with gaussian deviation
   // loop over entire Mesh
-  for (int gk=0; gk<kNx3; gk++) {
-    for (int gj=0; gj<kNx2; gj++) {
-      for (int gi=0; gi<kNx1; gi++) {
-        int k = gk - kdisp3;
-        int j = gj - kdisp2;
-        int i = gi - kdisp1;
-        if ((k >= 0) && (k < knx3) &&
-            (j >= 0) && (j < knx2) &&
-            (i >= 0) && (i < knx1)) {
-          Real q1 = ran2(&rseed);
-          Real q2 = ran2(&rseed);
-          Real q3 = std::sqrt(-2.0*std::log(q1 + 1.e-20))*std::cos(TWO_PI*q2);
-          q1 = ran2(&rseed);
-          std::int64_t kidx = pfb->GetIndex(i,j,k,idx);
-          amp[kidx] = q3*std::complex<Real>(std::cos(TWO_PI*q1), std::sin(TWO_PI*q1));
-        } else { // if it is not in FFTBlock, just burn three random numbers
-          ran2(&rseed);
-          ran2(&rseed);
-          ran2(&rseed);
+  if (global_ps_) {
+    for (int gk=0; gk<kNx3; gk++) {
+      for (int gj=0; gj<kNx2; gj++) {
+        for (int gi=0; gi<kNx1; gi++) {
+          int k = gk - kdisp3;
+          int j = gj - kdisp2;
+          int i = gi - kdisp1;
+          if ((k >= 0) && (k < knx3) &&
+              (j >= 0) && (j < knx2) &&
+              (i >= 0) && (i < knx1)) {
+            // Box-Muller Method
+            //Real q1 = ran2(&rseed);
+            //Real q2 = ran2(&rseed);
+            //Real A = std::sqrt(-2.0*std::log(q1 + 1.e-20))*std::cos(TWO_PI*q2);
+            //Real ph = ran2(&rseed)*TWO_PI;
+            std::int64_t kidx = pfb->GetIndex(i,j,k,idx);
+            Real A = ndist(rng_generator);
+            Real ph = udist(rng_generator)*TWO_PI;
+            amp[kidx] = A*std::complex<Real>(std::cos(ph), std::sin(ph));
+          } else { // if it is not in FFTBlock, just burn unused random numbers
+            Real A = ndist(rng_generator);
+            Real ph = udist(rng_generator)*TWO_PI;
+            //ran2(&rseed);
+            //ran2(&rseed);
+            //ran2(&rseed);
+          }
         }
       }
     }
@@ -275,7 +303,14 @@ void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp) {
           }
         }
         std::int64_t kidx=pfb->GetIndex(i,j,k,idx);
-        amp[kidx] *= pcoeff;
+
+        if (global_ps_) {
+          amp[kidx] *= pcoeff;
+        } else {
+          Real A = ndist(rng_generator);
+          Real ph = udist(rng_generator)*TWO_PI;
+          amp[kidx] = pcoeff*A*std::complex<Real>(std::cos(ph), std::sin(ph));
+        }
       }
     }
   }
@@ -299,35 +334,30 @@ void TurbulenceDriver::Perturb(Real dt) {
   Real m[4] = {0};
   AthenaArray<Real> &dv1 = vel[0], &dv2 = vel[1], &dv3 = vel[2];
 
-  for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
-    MeshBlock *pmb = pm->FindMeshBlock(igid);
-    if (pmb != nullptr) {
-      for (int k=kl; k<=ku; k++) {
-        for (int j=jl; j<=ju; j++) {
-          for (int i=il; i<=iu; i++) {
-            den = pmb->phydro->u(IDN,k,j,i);
-            m[0] += den;
-            m[1] += den*dv1(nb,k,j,i);
-            m[2] += den*dv2(nb,k,j,i);
-            m[3] += den*dv3(nb,k,j,i);
-          }
+  for (int nb=0; nb<pm->nblocal; ++nb) {
+    MeshBlock *pmb = pm->my_blocks(nb);
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+        for (int i=il; i<=iu; i++) {
+          den = pmb->phydro->u(IDN,k,j,i);
+          m[0] += den;
+          m[1] += den*dv1(nb,k,j,i);
+          m[2] += den*dv2(nb,k,j,i);
+          m[3] += den*dv3(nb,k,j,i);
         }
       }
     }
   }
 
 #ifdef MPI_PARALLEL
-  Real gm[4];
   int mpierr;
   // Sum the perturbations over all processors
-  mpierr = MPI_Allreduce(m, gm, 4, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  mpierr = MPI_Allreduce(MPI_IN_PLACE, m, 4, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   if (mpierr) {
     std::stringstream msg;
     msg << "[normalize]: MPI_Allreduce error = " << mpierr << std::endl;
     ATHENA_ERROR(msg);
   }
-  // TODO(felker): ask Chang-Goo about this next line:
-  for (int n=0; n<4; n++) m[n] = gm[n];
 #endif // MPI_PARALLEL
 
   for (int nb=0; nb<nmb; nb++) {
@@ -345,22 +375,20 @@ void TurbulenceDriver::Perturb(Real dt) {
   // Calculate unscaled energy of perturbations
   m[0] = 0.0;
   m[1] = 0.0;
-  for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
-    MeshBlock *pmb = pm->FindMeshBlock(igid);
-    if (pmb != nullptr) {
+  for (int nb=0; nb<pm->nblocal; ++nb) {
+    MeshBlock *pmb = pm->my_blocks(nb);
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
         for (int i=il; i<=iu; i++) {
-            v1 = dv1(nb,k,j,i);
-            v2 = dv2(nb,k,j,i);
-            v3 = dv3(nb,k,j,i);
-            den = pmb->phydro->u(IDN,k,j,i);
-            M1 = pmb->phydro->u(IM1,k,j,i);
-            M2 = pmb->phydro->u(IM2,k,j,i);
-            M3 = pmb->phydro->u(IM3,k,j,i);
-            m[0] += den*(SQR(v1) + SQR(v2) + SQR(v3));
-            m[1] += M1*v1 + M2*v2 + M3*v3;
-          }
+          v1 = dv1(nb,k,j,i);
+          v2 = dv2(nb,k,j,i);
+          v3 = dv3(nb,k,j,i);
+          den = pmb->phydro->u(IDN,k,j,i);
+          M1 = pmb->phydro->u(IM1,k,j,i);
+          M2 = pmb->phydro->u(IM2,k,j,i);
+          M3 = pmb->phydro->u(IM3,k,j,i);
+          m[0] += den*(SQR(v1) + SQR(v2) + SQR(v3));
+          m[1] += M1*v1 + M2*v2 + M3*v3;
         }
       }
     }
@@ -368,14 +396,13 @@ void TurbulenceDriver::Perturb(Real dt) {
 
 #ifdef MPI_PARALLEL
   // Sum the perturbations over all processors
-  mpierr = MPI_Allreduce(m, gm, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  mpierr = MPI_Allreduce(MPI_IN_PLACE, m, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   if (mpierr) {
     std::stringstream msg;
     msg << "[normalize]: MPI_Allreduce error = "
         << mpierr << std::endl;
     ATHENA_ERROR(msg);
   }
-  m[0] = gm[0];  m[1] = gm[1];
 #endif // MPI_PARALLEL
 
   // Rescale to give the correct energy injection rate
@@ -398,28 +425,26 @@ void TurbulenceDriver::Perturb(Real dt) {
   if (std::isnan(s)) std::cout << "[perturb]: s is NaN!" << std::endl;
 
   // Apply momentum pertubations
-  for (int igid=nbs, nb=0; igid<=nbe; igid++, nb++) {
-    MeshBlock *pmb = pm->FindMeshBlock(igid);
-    if (pmb != nullptr) {
-      for (int k=kl; k<=ku; k++) {
-        for (int j=jl; j<=ju; j++) {
-          for (int i=il; i<=iu; i++) {
-            v1 = dv1(nb,k,j,i);
-            v2 = dv2(nb,k,j,i);
-            v3 = dv3(nb,k,j,i);
-            den = pmb->phydro->u(IDN,k,j,i);
-            M1 = pmb->phydro->u(IM1,k,j,i);
-            M2 = pmb->phydro->u(IM2,k,j,i);
-            M3 = pmb->phydro->u(IM3,k,j,i);
+  for (int nb=0; nb<pm->nblocal; ++nb) {
+    MeshBlock *pmb = pm->my_blocks(nb);
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+        for (int i=il; i<=iu; i++) {
+          v1 = dv1(nb,k,j,i);
+          v2 = dv2(nb,k,j,i);
+          v3 = dv3(nb,k,j,i);
+          den = pmb->phydro->u(IDN,k,j,i);
+          M1 = pmb->phydro->u(IM1,k,j,i);
+          M2 = pmb->phydro->u(IM2,k,j,i);
+          M3 = pmb->phydro->u(IM3,k,j,i);
 
-            if (NON_BAROTROPIC_EOS) {
-              pmb->phydro->u(IEN,k,j,i) += s*(M1*v1 + M2*v2+M3*v3)
-                                           + 0.5*s*s*den*(SQR(v1) + SQR(v2) + SQR(v3));
-            }
-            pmb->phydro->u(IM1,k,j,i) += s*den*v1;
-            pmb->phydro->u(IM2,k,j,i) += s*den*v2;
-            pmb->phydro->u(IM3,k,j,i) += s*den*v3;
+          if (NON_BAROTROPIC_EOS) {
+            pmb->phydro->u(IEN,k,j,i) += s*(M1*v1 + M2*v2+M3*v3)
+                                         + 0.5*s*s*den*(SQR(v1) + SQR(v2) + SQR(v3));
           }
+          pmb->phydro->u(IM1,k,j,i) += s*den*v1;
+          pmb->phydro->u(IM2,k,j,i) += s*den*v2;
+          pmb->phydro->u(IM3,k,j,i) += s*den*v3;
         }
       }
     }
