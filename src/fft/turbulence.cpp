@@ -106,7 +106,7 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
     // but the cost of the PowerSpectrum() function call is huge.
     // Not recommended with turb_flag = 3 or turb_flag = with small dtdrive
     global_ps_ = true;
-    if (turb_flag == 3) {
+    if (pm->turb_flag == 3) {
       std::cout << "### Warning: continuous turbulence driving (turb_flag == 3)" 
                 << std::endl << " with a specific rseed (rseed >= 0) will be slow"
                 << std::endl;
