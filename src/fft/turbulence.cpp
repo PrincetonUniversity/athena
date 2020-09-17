@@ -13,10 +13,10 @@
 #include <cmath>
 #include <complex>
 #include <iostream>
+#include <random>     // mt19937, normal_distribution, uniform_real_distribution
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <random>     // mt19937, normal_distribution, uniform_real_distribution
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -100,14 +100,14 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
     std::random_device device;
     rseed = static_cast<std::int64_t>(device());
   } else {
-    // If rseed is specified with a positive value, 
+    // If rseed is specified with a non-negative value,
     // PS is generated with a global random number sequence.
     // This would make perturbation identical irrespective of number of MPI ranks,
     // but the cost of the PowerSpectrum() function call is huge.
     // Not recommended with turb_flag = 3 or turb_flag = with small dtdrive
     global_ps_ = true;
-    if (pm->turb_flag == 3) {
-      std::cout << "### Warning: continuous turbulence driving (turb_flag == 3)" 
+    if ((pm->turb_flag == 3) & (Globals::my_rank == 0)) {
+      std::cout << "### Warning: continuous turbulence driving (turb_flag == 3)"
                 << std::endl << " with a specific rseed (rseed >= 0) will be slow"
                 << std::endl;
     }
