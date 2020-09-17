@@ -18,15 +18,15 @@
 //   intensity: radiation intensity
 //   k, j: x3- and x2-indices
 // Outputs:
-//   this->rad_l_, this->rad_r_: reconstructed intensities set
+//   this->ii_l_, this->ii_r_: reconstructed intensities set
 
 void Radiation::RadiationDonorCellX1(const AthenaArray<Real> &intensity, int k, int j) {
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
       int lm = AngleInd(l, m);
       for (int i = is; i <= ie+1; ++i) {
-        rad_l_(lm,i) = intensity(lm,k,j,i-1);
-        rad_r_(lm,i) = intensity(lm,k,j,i);
+        ii_l_(lm,i) = intensity(lm,k,j,i-1);
+        ii_r_(lm,i) = intensity(lm,k,j,i);
       }
     }
   }
@@ -39,15 +39,15 @@ void Radiation::RadiationDonorCellX1(const AthenaArray<Real> &intensity, int k, 
 //   intensity: radiation intensity
 //   k, j: x3- and x2-indices
 // Outputs:
-//   this->rad_l_, this->rad_r_: reconstructed intensities set
+//   this->ii_l_, this->ii_r_: reconstructed intensities set
 
 void Radiation::RadiationDonorCellX2(const AthenaArray<Real> &intensity, int k, int j) {
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
       int lm = AngleInd(l, m);
       for (int i = is; i <= ie; ++i) {
-        rad_l_(lm,i) = intensity(lm,k,j-1,i);
-        rad_r_(lm,i) = intensity(lm,k,j,i);
+        ii_l_(lm,i) = intensity(lm,k,j-1,i);
+        ii_r_(lm,i) = intensity(lm,k,j,i);
       }
     }
   }
@@ -60,15 +60,15 @@ void Radiation::RadiationDonorCellX2(const AthenaArray<Real> &intensity, int k, 
 //   intensity: radiation intensity
 //   k, j: x3- and x2-indices
 // Outputs:
-//   this->rad_l_, this->rad_r_: reconstructed intensities set
+//   this->ii_l_, this->ii_r_: reconstructed intensities set
 
 void Radiation::RadiationDonorCellX3(const AthenaArray<Real> &intensity, int k, int j) {
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe; ++m) {
       int lm = AngleInd(l, m);
       for (int i = is; i <= ie; ++i) {
-        rad_l_(lm,i) = intensity(lm,k-1,j,i);
-        rad_r_(lm,i) = intensity(lm,k,j,i);
+        ii_l_(lm,i) = intensity(lm,k-1,j,i);
+        ii_r_(lm,i) = intensity(lm,k,j,i);
       }
     }
   }
@@ -81,7 +81,7 @@ void Radiation::RadiationDonorCellX3(const AthenaArray<Real> &intensity, int k, 
 //   intensity: radiation intensity
 //   k, j: x3- and x2-indices
 // Outputs:
-//   this->rad_l_, this->rad_r_: reconstructed intensities set
+//   this->ii_l_, this->ii_r_: reconstructed intensities set
 
 void Radiation::RadiationDonorCellA1(const AthenaArray<Real> &intensity, int k, int j) {
   for (int l = zs; l <= ze+1; ++l) {
@@ -90,8 +90,8 @@ void Radiation::RadiationDonorCellA1(const AthenaArray<Real> &intensity, int k, 
       int lm_c = AngleInd(l, m, true, false);
       int lm_r = AngleInd(l, m, false, false);
       for (int i = is; i <= ie; ++i) {
-        rad_l_(lm_c,i) = intensity(lm_l,k,j,i);
-        rad_r_(lm_c,i) = intensity(lm_r,k,j,i);
+        ii_l_(lm_c,i) = intensity(lm_l,k,j,i);
+        ii_r_(lm_c,i) = intensity(lm_r,k,j,i);
       }
     }
   }
@@ -104,7 +104,7 @@ void Radiation::RadiationDonorCellA1(const AthenaArray<Real> &intensity, int k, 
 //   intensity: radiation intensity
 //   k, j: x3- and x2-indices
 // Outputs:
-//   this->rad_l_, this->rad_r_: reconstructed intensities set
+//   this->ii_l_, this->ii_r_: reconstructed intensities set
 
 void Radiation::RadiationDonorCellA2(const AthenaArray<Real> &intensity, int k, int j) {
   for (int l = zs; l <= ze; ++l) {
@@ -113,8 +113,8 @@ void Radiation::RadiationDonorCellA2(const AthenaArray<Real> &intensity, int k, 
       int lm_c = AngleInd(l, m, false, true);
       int lm_r = AngleInd(l, m, false, false);
       for (int i = is; i <= ie; ++i) {
-        rad_l_(lm_c,i) = intensity(lm_l,k,j,i);
-        rad_r_(lm_c,i) = intensity(lm_r,k,j,i);
+        ii_l_(lm_c,i) = intensity(lm_l,k,j,i);
+        ii_r_(lm_c,i) = intensity(lm_r,k,j,i);
       }
     }
   }
@@ -127,7 +127,7 @@ void Radiation::RadiationDonorCellA2(const AthenaArray<Real> &intensity, int k, 
 //   intensity: radiation intensity
 //   k, j: x3- and x2-indices
 // Outputs:
-//   this->rad_l_, this->rad_r_: reconstructed intensities set
+//   this->ii_l_, this->ii_r_: reconstructed intensities set
 
 void Radiation::RadiationPiecewiseLinearX1(const AthenaArray<Real> &intensity, int k,
     int j) {
@@ -151,8 +151,8 @@ void Radiation::RadiationPiecewiseLinearX1(const AthenaArray<Real> &intensity, i
         Real dq_2_r = dq_c * dq_r;
         Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
         Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
-        rad_l_(lm,i) = q_l + dx_l * dq_m_l;
-        rad_r_(lm,i) = q_r - dx_r * dq_m_r;
+        ii_l_(lm,i) = q_l + dx_l * dq_m_l;
+        ii_r_(lm,i) = q_r - dx_r * dq_m_r;
       }
     }
   }
@@ -165,7 +165,7 @@ void Radiation::RadiationPiecewiseLinearX1(const AthenaArray<Real> &intensity, i
 //   intensity: radiation intensity
 //   k, j: x3- and x2-indices
 // Outputs:
-//   this->rad_l_, this->rad_r_: reconstructed intensities set
+//   this->ii_l_, this->ii_r_: reconstructed intensities set
 
 void Radiation::RadiationPiecewiseLinearX2(const AthenaArray<Real> &intensity, int k,
     int j) {
@@ -189,8 +189,8 @@ void Radiation::RadiationPiecewiseLinearX2(const AthenaArray<Real> &intensity, i
         Real dq_2_r = dq_c * dq_r;
         Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
         Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
-        rad_l_(lm,i) = q_l + dx_l * dq_m_l;
-        rad_r_(lm,i) = q_r - dx_r * dq_m_r;
+        ii_l_(lm,i) = q_l + dx_l * dq_m_l;
+        ii_r_(lm,i) = q_r - dx_r * dq_m_r;
       }
     }
   }
@@ -203,7 +203,7 @@ void Radiation::RadiationPiecewiseLinearX2(const AthenaArray<Real> &intensity, i
 //   intensity: radiation intensity
 //   k, j: x3- and x2-indices
 // Outputs:
-//   this->rad_l_, this->rad_r_: reconstructed intensities set
+//   this->ii_l_, this->ii_r_: reconstructed intensities set
 
 void Radiation::RadiationPiecewiseLinearX3(const AthenaArray<Real> &intensity, int k,
     int j) {
@@ -227,8 +227,8 @@ void Radiation::RadiationPiecewiseLinearX3(const AthenaArray<Real> &intensity, i
         Real dq_2_r = dq_c * dq_r;
         Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
         Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
-        rad_l_(lm,i) = q_l + dx_l * dq_m_l;
-        rad_r_(lm,i) = q_r - dx_r * dq_m_r;
+        ii_l_(lm,i) = q_l + dx_l * dq_m_l;
+        ii_r_(lm,i) = q_r - dx_r * dq_m_r;
       }
     }
   }
@@ -241,7 +241,7 @@ void Radiation::RadiationPiecewiseLinearX3(const AthenaArray<Real> &intensity, i
 //   intensity: radiation intensity
 //   k, j: x3- and x2-indices
 // Outputs:
-//   this->rad_l_, this->rad_r_: reconstructed intensities set
+//   this->ii_l_, this->ii_r_: reconstructed intensities set
 
 void Radiation::RadiationPiecewiseLinearA1(const AthenaArray<Real> &intensity, int k,
     int j) {
@@ -269,8 +269,8 @@ void Radiation::RadiationPiecewiseLinearA1(const AthenaArray<Real> &intensity, i
         Real dq_2_r = dq_c * dq_r;
         Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
         Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
-        rad_l_(lm_c,i) = q_l + dx_l * dq_m_l;
-        rad_r_(lm_c,i) = q_r - dx_r * dq_m_r;
+        ii_l_(lm_c,i) = q_l + dx_l * dq_m_l;
+        ii_r_(lm_c,i) = q_r - dx_r * dq_m_r;
       }
     }
   }
@@ -283,7 +283,7 @@ void Radiation::RadiationPiecewiseLinearA1(const AthenaArray<Real> &intensity, i
 //   intensity: radiation intensity
 //   k, j: x3- and x2-indices
 // Outputs:
-//   this->rad_l_, this->rad_r_: reconstructed intensities set
+//   this->ii_l_, this->ii_r_: reconstructed intensities set
 
 void Radiation::RadiationPiecewiseLinearA2(const AthenaArray<Real> &intensity, int k,
     int j) {
@@ -311,8 +311,8 @@ void Radiation::RadiationPiecewiseLinearA2(const AthenaArray<Real> &intensity, i
         Real dq_2_r = dq_c * dq_r;
         Real dq_m_l = (dq_2_l > 0.0) ? 2.0 * dq_2_l / (dq_l + dq_c) : 0.0;
         Real dq_m_r = (dq_2_r > 0.0) ? 2.0 * dq_2_r / (dq_c + dq_r) : 0.0;
-        rad_l_(lm_c,i) = q_l + dx_l * dq_m_l;
-        rad_r_(lm_c,i) = q_r - dx_r * dq_m_r;
+        ii_l_(lm_c,i) = q_l + dx_l * dq_m_l;
+        ii_r_(lm_c,i) = q_r - dx_r * dq_m_r;
       }
     }
   }

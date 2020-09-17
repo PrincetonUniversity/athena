@@ -32,6 +32,7 @@ void DefaultOpacity(MeshBlock *pmb, const AthenaArray<Real> &prim_hydro);
 Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb),
     coupled_to_matter(pin->GetBoolean("radiation", "coupled")),
+    affect_fluid(pin->GetOrAddBoolean("radiation", "affect_fluid", coupled_to_matter)),
     nzeta(pin->GetInteger("radiation", "n_polar")),
     npsi(pin->GetInteger("radiation", "n_azimuthal")),
     nang((nzeta + 2*NGHOST) * (npsi + 2*NGHOST)),
@@ -217,10 +218,9 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   // Allocate memory for unit normal components in orthonormal frame
   int num_cells_zeta = ze + NGHOST;
   int num_cells_psi = pe + NGHOST;
-  AthenaArray<Real> nh_fc, nh_cf;
   nh_cc_.NewAthenaArray(4, num_cells_zeta, num_cells_psi);
-  nh_fc.NewAthenaArray(4, num_cells_zeta + 1, num_cells_psi);
-  nh_cf.NewAthenaArray(4, num_cells_zeta, num_cells_psi + 1);
+  nh_fc_.NewAthenaArray(4, num_cells_zeta + 1, num_cells_psi);
+  nh_cf_.NewAthenaArray(4, num_cells_zeta, num_cells_psi + 1);
 
   // Calculate unit normal components in orthonormal frame at angle centers
   for (int l = zs; l <= ze; ++l) {
@@ -235,20 +235,20 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   // Calculate unit normal components in orthonormal frame at zeta-faces
   for (int l = zs; l <= ze+1; ++l) {
     for (int m = ps; m <= pe; ++m) {
-      nh_fc(0,l,m) = 1.0;
-      nh_fc(1,l,m) = std::sin(zetaf(l)) * std::cos(psiv(m));
-      nh_fc(2,l,m) = std::sin(zetaf(l)) * std::sin(psiv(m));
-      nh_fc(3,l,m) = std::cos(zetaf(l));
+      nh_fc_(0,l,m) = 1.0;
+      nh_fc_(1,l,m) = std::sin(zetaf(l)) * std::cos(psiv(m));
+      nh_fc_(2,l,m) = std::sin(zetaf(l)) * std::sin(psiv(m));
+      nh_fc_(3,l,m) = std::cos(zetaf(l));
     }
   }
 
   // Calculate unit normal components in orthonormal frame at psi-faces
   for (int l = zs; l <= ze; ++l) {
     for (int m = ps; m <= pe+1; ++m) {
-      nh_cf(0,l,m) = 1.0;
-      nh_cf(1,l,m) = std::sin(zetav(l)) * std::cos(psif(m));
-      nh_cf(2,l,m) = std::sin(zetav(l)) * std::sin(psif(m));
-      nh_cf(3,l,m) = std::cos(zetav(l));
+      nh_cf_(0,l,m) = 1.0;
+      nh_cf_(1,l,m) = std::sin(zetav(l)) * std::cos(psif(m));
+      nh_cf_(2,l,m) = std::sin(zetav(l)) * std::sin(psif(m));
+      nh_cf_(3,l,m) = std::cos(zetav(l));
     }
   }
 
@@ -404,13 +404,13 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
             Real na1 = 0.0;
             for (int n = 0; n < 4; ++n) {
               for (int p = 0; p < 4; ++p) {
-                na1 += 1.0 / std::sin(zetaf(l)) * nh_fc(n,l,m) * nh_fc(p,l,m)
-                    * (nh_fc(0,l,m) * omega(3,n,p) - nh_fc(3,l,m) * omega(0,n,p));
+                na1 += 1.0 / std::sin(zetaf(l)) * nh_fc_(n,l,m) * nh_fc_(p,l,m)
+                    * (nh_fc_(0,l,m) * omega(3,n,p) - nh_fc_(3,l,m) * omega(0,n,p));
               }
             }
             Real n_0 = 0.0;
             for (int n = 0; n < 4; ++n) {
-              n_0 += e_cov(n,0) * nh_fc(n,l,m);
+              n_0 += e_cov(n,0) * nh_fc_(n,l,m);
             }
             na1_n_0_(l,m,k,j,i) = na1 * n_0;
           }
@@ -432,13 +432,13 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
             Real na2 = 0.0;
             for (int n = 0; n < 4; ++n) {
               for (int p = 0; p < 4; ++p) {
-                na2 += 1.0 / SQR(std::sin(zetav(l))) * nh_cf(n,l,m) * nh_cf(p,l,m)
-                    * (nh_cf(2,l,m) * omega(1,n,p) - nh_cf(1,l,m) * omega(2,n,p));
+                na2 += 1.0 / SQR(std::sin(zetav(l))) * nh_cf_(n,l,m) * nh_cf_(p,l,m)
+                    * (nh_cf_(2,l,m) * omega(1,n,p) - nh_cf_(1,l,m) * omega(2,n,p));
               }
             }
             Real n_0 = 0.0;
             for (int n = 0; n < 4; ++n) {
-              n_0 += e_cov(n,0) * nh_cf(n,l,m);
+              n_0 += e_cov(n,0) * nh_cf_(n,l,m);
             }
             na2_n_0_(l,m,k,j,i) = na2 * n_0;
           }
@@ -451,17 +451,25 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   g_.NewAthenaArray(NMETRIC, pmb->ncells1);
   gi_.NewAthenaArray(NMETRIC, pmb->ncells1);
 
+  // Allocate memory for reconstruction
+  ii_l_.NewAthenaArray(nang_zpf, pmb->ncells1);
+  ii_r_.NewAthenaArray(nang_zpf, pmb->ncells1);
+
   // Allocate memory for flux calculation
   if (coupled_to_matter) {
-    g_alt_.NewAthenaArray(NMETRIC, pmb->ncells1);
-    gi_alt_.NewAthenaArray(NMETRIC, pmb->ncells1);
-    ee_l_.NewAthenaArray(pmb->ncells1);
-    ee_r_.NewAthenaArray(pmb->ncells1);
-    u_l_.NewAthenaArray(4, pmb->ncells1);
-    u_r_.NewAthenaArray(4, pmb->ncells1);
+    norm_to_tet_1_.NewAthenaArray(4, 4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+    if (js != je) {
+      norm_to_tet_2_.NewAthenaArray(4, 4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+    }
+    if (ks != ke) {
+      norm_to_tet_3_.NewAthenaArray(4, 4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+    }
+    ii_lr_.NewAthenaArray(nang_zpf, pmb->ncells1);
+    jj_f_.NewAthenaArray(pmb->ncells1);
+    k_tot_.NewAthenaArray(pmb->ncells1);
+    bb_jj_f_.NewAthenaArray(pmb->ncells1);
+    neg_u_n_.NewAthenaArray(nang_zpf, pmb->ncells1);
   }
-  rad_l_.NewAthenaArray(nang_zpf, pmb->ncells1);
-  rad_r_.NewAthenaArray(nang_zpf, pmb->ncells1);
 
   // Allocate memory for flux divergence calculation
   area_l_.NewAthenaArray(pmb->ncells1 + 1);
@@ -472,8 +480,10 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   // Allocate memory for source term calculation
   norm_to_tet_.NewAthenaArray(4, 4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
   if (coupled_to_matter) {
-    moments_old_.NewAthenaArray(4, pmb->ncells1);
-    moments_new_.NewAthenaArray(4, pmb->ncells1);
+    if (affect_fluid) {
+      moments_old_.NewAthenaArray(4, pmb->ncells1);
+      moments_new_.NewAthenaArray(4, pmb->ncells1);
+    }
     u_tet_.NewAthenaArray(4, pmb->ncells1);
     coefficients_.NewAthenaArray(2, pmb->ncells1);
     bad_cell_.NewAthenaArray(pmb->ncells1);
@@ -482,7 +492,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     ee_f_plus_.NewAthenaArray(pmb->ncells1);
   }
 
-  // Calculate transformation from normal frame to tetrad frame
+  // Calculate transformation from normal frame to tetrad frame (cell)
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
@@ -519,6 +529,147 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
             for (int p = 0; p < 4; ++p) {
               for (int q = 0; q < 4; ++q) {
                 norm_to_tet_(m,n,k,j,i) += eta[m][p] * e_cov(p,q) * norm_to_coord[q][n];
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate transformation from normal frame to tetrad frame (x1-face)
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      pmy_block->pcoord->Face1Metric(k, j, is, ie+1, g_, gi_);
+      for (int i = is; i <= ie+1; ++i) {
+
+        // Set Minkowski metric
+        Real eta[4][4] = {};
+        eta[0][0] = -1.0;
+        eta[1][1] = 1.0;
+        eta[2][2] = 1.0;
+        eta[3][3] = 1.0;
+
+        // Calculate coordinate-to-tetrad transformation
+        Real x1 = pmb->pcoord->x1f(i);
+        Real x2 = pmb->pcoord->x2v(j);
+        Real x3 = pmb->pcoord->x3v(k);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
+
+        // Calculate normal-to-coordinate transformation
+        Real norm_to_coord[4][4] = {};
+        Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
+        norm_to_coord[0][0] = 1.0 / alpha;
+        norm_to_coord[1][0] = -alpha * gi_(I01,i);
+        norm_to_coord[2][0] = -alpha * gi_(I02,i);
+        norm_to_coord[3][0] = -alpha * gi_(I03,i);
+        norm_to_coord[1][1] = 1.0;
+        norm_to_coord[2][2] = 1.0;
+        norm_to_coord[3][3] = 1.0;
+
+        // Concatenate transformations
+        for (int m = 0; m < 4; ++m) {
+          for (int n = 0; n < 4; ++n) {
+            norm_to_tet_1_(m,n,k,j,i) = 0.0;
+            for (int p = 0; p < 4; ++p) {
+              for (int q = 0; q < 4; ++q) {
+                norm_to_tet_1_(m,n,k,j,i) += eta[m][p] * e_cov(p,q) * norm_to_coord[q][n];
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate transformation from normal frame to tetrad frame (x2-face)
+  if (js != je) {
+    for (int k = ks; k <= ke; ++k) {
+      for (int j = js; j <= je+1; ++j) {
+        pmy_block->pcoord->Face2Metric(k, j, is, ie, g_, gi_);
+        for (int i = is; i <= ie; ++i) {
+
+          // Set Minkowski metric
+          Real eta[4][4] = {};
+          eta[0][0] = -1.0;
+          eta[1][1] = 1.0;
+          eta[2][2] = 1.0;
+          eta[3][3] = 1.0;
+
+          // Calculate coordinate-to-tetrad transformation
+          Real x1 = pmb->pcoord->x1v(i);
+          Real x2 = pmb->pcoord->x2f(j);
+          Real x3 = pmb->pcoord->x3v(k);
+          pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
+
+          // Calculate normal-to-coordinate transformation
+          Real norm_to_coord[4][4] = {};
+          Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
+          norm_to_coord[0][0] = 1.0 / alpha;
+          norm_to_coord[1][0] = -alpha * gi_(I01,i);
+          norm_to_coord[2][0] = -alpha * gi_(I02,i);
+          norm_to_coord[3][0] = -alpha * gi_(I03,i);
+          norm_to_coord[1][1] = 1.0;
+          norm_to_coord[2][2] = 1.0;
+          norm_to_coord[3][3] = 1.0;
+
+          // Concatenate transformations
+          for (int m = 0; m < 4; ++m) {
+            for (int n = 0; n < 4; ++n) {
+              norm_to_tet_2_(m,n,k,j,i) = 0.0;
+              for (int p = 0; p < 4; ++p) {
+                for (int q = 0; q < 4; ++q) {
+                  norm_to_tet_2_(m,n,k,j,i) +=
+                      eta[m][p] * e_cov(p,q) * norm_to_coord[q][n];
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate transformation from normal frame to tetrad frame (x3-face)
+  if (ks != ke) {
+    for (int k = ks; k <= ke+1; ++k) {
+      for (int j = js; j <= je; ++j) {
+        pmy_block->pcoord->Face3Metric(k, j, is, ie, g_, gi_);
+        for (int i = is; i <= ie; ++i) {
+
+          // Set Minkowski metric
+          Real eta[4][4] = {};
+          eta[0][0] = -1.0;
+          eta[1][1] = 1.0;
+          eta[2][2] = 1.0;
+          eta[3][3] = 1.0;
+
+          // Calculate coordinate-to-tetrad transformation
+          Real x1 = pmb->pcoord->x1v(i);
+          Real x2 = pmb->pcoord->x2v(j);
+          Real x3 = pmb->pcoord->x3f(k);
+          pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
+
+          // Calculate normal-to-coordinate transformation
+          Real norm_to_coord[4][4] = {};
+          Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
+          norm_to_coord[0][0] = 1.0 / alpha;
+          norm_to_coord[1][0] = -alpha * gi_(I01,i);
+          norm_to_coord[2][0] = -alpha * gi_(I02,i);
+          norm_to_coord[3][0] = -alpha * gi_(I03,i);
+          norm_to_coord[1][1] = 1.0;
+          norm_to_coord[2][2] = 1.0;
+          norm_to_coord[3][3] = 1.0;
+
+          // Concatenate transformations
+          for (int m = 0; m < 4; ++m) {
+            for (int n = 0; n < 4; ++n) {
+              norm_to_tet_3_(m,n,k,j,i) = 0.0;
+              for (int p = 0; p < 4; ++p) {
+                for (int q = 0; q < 4; ++q) {
+                  norm_to_tet_3_(m,n,k,j,i) +=
+                      eta[m][p] * e_cov(p,q) * norm_to_coord[q][n];
+                }
               }
             }
           }

@@ -8,7 +8,7 @@
 
 // C++ headers
 #include <algorithm>  // max
-#include <cmath>      // cos, sin, sqrt
+#include <cmath>      // cos, hypot, sin, sqrt
 
 // Athena++ headers
 #include "radiation.hpp"
@@ -297,10 +297,16 @@ void Radiation::CalculateRadiationInCellLinear(Real ee_f, Real ff1_f, Real ff2_f
 
   // Calculate normalized flux in fluid frame
   Real ff_f = std::sqrt(SQR(ff1_f) + SQR(ff2_f) + SQR(ff3_f));
-  Real f_f = ff_f / ee_f;
-  Real f1_f = ff1_f / ff_f;
-  Real f2_f = ff2_f / ff_f;
-  Real f3_f = ff3_f / ff_f;
+  Real f_f = 0.0;
+  Real f1_f = 0.0;
+  Real f2_f = 0.0;
+  Real f3_f = 0.0;
+  if (ee_f > 0.0 and ff_f > 0.0) {
+    f_f = ff_f / ee_f;
+    f1_f = 1.0 / std::hypot(1.0, std::hypot(ff2_f / ff1_f, ff3_f / ff1_f));
+    f2_f = 1.0 / std::hypot(1.0, std::hypot(ff1_f / ff2_f, ff3_f / ff2_f));
+    f3_f = 1.0 / std::hypot(1.0, std::hypot(ff1_f / ff3_f, ff2_f / ff3_f));
+  }
 
   // Calculate fluid velocity in tetrad frame
   Real temp_var = g(I11,i) * SQR(uu1) + 2.0 * g(I12,i) * uu1 * uu2

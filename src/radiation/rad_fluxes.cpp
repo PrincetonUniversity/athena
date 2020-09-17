@@ -22,11 +22,12 @@
 //   prim_rad: primitive intensity
 //   prim_hydro: primitive hydrodynamic variables
 //   order: reconstruction order
+//   dt: timestep
 // Outputs:
 //   this->flux_x, this->flux_a: fluxes set
 
 void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
-    const AthenaArray<Real> &prim_hydro, int order) {
+    const AthenaArray<Real> &prim_hydro, int order, Real dt) {
 
   // Calculate x1-fluxes
   for (int k = ks; k <= ke; ++k) {
@@ -47,7 +48,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             for (int i = is; i <= ie+1; ++i) {
               Real n1_n_0 = n1_n_0_(l,m,k,j,i);
               flux_x[X1DIR](lm,k,j,i) =
-                  n1_n_0 * (n1_n_0 < 0.0 ? rad_l_(lm,i) : rad_r_(lm,i));
+                  n1_n_0 * (n1_n_0 < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
             }
           }
         }
@@ -55,109 +56,94 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
 
       // Calculate radiation-hydrodynamic fluxes
       if (coupled_to_matter) {
-        pmy_block->pcoord->CellMetric(k, j, is - 1, ie + 1, g_, gi_);
-        for (int i = is-1; i <= ie+1; ++i) {
-          ee_l_(i) = 0.0;
+
+        // Calculate negative fluid velocity in tetrad frame
+        pmy_block->pcoord->Face1Metric(k, j, is, ie + 1, g_, gi_);
+        for (int i = is; i <= ie+1; ++i) {
+          Real dx_l = pmy_block->pcoord->x1f(i) - pmy_block->pcoord->x1v(i-1);
+          Real dx_r = pmy_block->pcoord->x1v(i) - pmy_block->pcoord->x1f(i);
+          Real uu1 = (dx_r * prim_hydro(IVX,k,j,i-1) + dx_l * prim_hydro(IVX,k,j,i))
+              / (dx_l + dx_r);
+          Real uu2 = (dx_r * prim_hydro(IVY,k,j,i-1) + dx_l * prim_hydro(IVY,k,j,i))
+              / (dx_l + dx_r);
+          Real uu3 = (dx_r * prim_hydro(IVZ,k,j,i-1) + dx_l * prim_hydro(IVZ,k,j,i))
+              / (dx_l + dx_r);
+          Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+              + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+          Real uu0 = std::sqrt(1.0 + temp_var);
+          u_tet_(0,i) = norm_to_tet_1_(0,0,k,j,i) * uu0 + norm_to_tet_1_(0,1,k,j,i) * uu1
+              + norm_to_tet_1_(0,2,k,j,i) * uu2 + norm_to_tet_1_(0,3,k,j,i) * uu3;
+          u_tet_(1,i) = -norm_to_tet_1_(1,0,k,j,i) * uu0 - norm_to_tet_1_(1,1,k,j,i) * uu1
+              - norm_to_tet_1_(1,2,k,j,i) * uu2 - norm_to_tet_1_(1,3,k,j,i) * uu3;
+          u_tet_(2,i) = -norm_to_tet_1_(2,0,k,j,i) * uu0 - norm_to_tet_1_(2,1,k,j,i) * uu1
+              - norm_to_tet_1_(2,2,k,j,i) * uu2 - norm_to_tet_1_(2,3,k,j,i) * uu3;
+          u_tet_(3,i) = -norm_to_tet_1_(3,0,k,j,i) * uu0 - norm_to_tet_1_(3,1,k,j,i) * uu1
+              - norm_to_tet_1_(3,2,k,j,i) * uu2 - norm_to_tet_1_(3,3,k,j,i) * uu3;
+        }
+
+        // Calculate mixed radiation field
+        for (int i = is; i <= ie+1; ++i) {
+          jj_f_(i) = 0.0;
         }
         for (int l = zs; l <= ze; ++l) {
           for (int m = ps; m <= pe; ++m) {
             int lm = AngleInd(l, m);
-            for (int i = is-1; i <= ie+1; ++i) {
-              ee_l_(i) += n0_n_mu_(0,l,m,k,j,i) * prim_rad(lm,k,j,i) * solid_angle(l,m);
+            for (int i = is; i <= ie+1; ++i) {
+              ii_lr_(lm,i) = n1_n_0_(l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
+              for (int p = 0; p < 4; ++p) {
+                for (int q = 0; q < 4; ++q) {
+                  jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * ii_lr_(lm,i) * nh_cc_(p,l,m)
+                      * nh_cc_(q,l,m) * solid_angle(l,m);
+                }
+              }
             }
           }
         }
-        for (int i = is-1; i <= ie+1; ++i) {
-          Real uu1 = prim_hydro(IVX,k,j,i);
-          Real uu2 = prim_hydro(IVY,k,j,i);
-          Real uu3 = prim_hydro(IVZ,k,j,i);
-          Real gamma_sq = 1.0 + g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
-              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
-              + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
-          Real gamma = std::sqrt(gamma_sq);
-          Real alpha = std::sqrt(-1.0 / gi_(I00,i));
-          u_l_(0,i) = gamma / alpha;
-          u_l_(1,i) = uu1 - alpha * gamma * gi_(I01,i);
-          u_l_(2,i) = uu2 - alpha * gamma * gi_(I02,i);
-          u_l_(3,i) = uu3 - alpha * gamma * gi_(I03,i);
+        for (int i = is; i <= ie+1; ++i) {
+          jj_f_(i) /= 4.0 * PI;
         }
+
+        // Calculate coefficients needed for modified fluxes
         for (int i = is; i <= ie+1; ++i) {
           Real dx_l = pmy_block->pcoord->x1f(i) - pmy_block->pcoord->x1v(i-1);
           Real dx_r = pmy_block->pcoord->x1v(i) - pmy_block->pcoord->x1f(i);
-          Real width_l = std::sqrt(g_(I11,i-1)) * pmy_block->pcoord->dx1f(i-1);
-          Real width_r = std::sqrt(g_(I11,i)) * pmy_block->pcoord->dx1f(i);
-          Real ee = 0.5 * (ee_l_(i-1) + ee_l_(i));
-          Real grad_ee = 2.0 * std::abs(ee_l_(i-1) - ee_l_(i)) / (width_l + width_r);
-          Real kappa_l = opacity(OPAA,k,j,i-1) + opacity(OPAS,k,j,i-1);
-          Real kappa_r = opacity(OPAA,k,j,i) + opacity(OPAS,k,j,i);
-          Real tau_factor_l = kappa_l > 0.0 ? 1.0 : 0.0;
-          Real tau_factor_r = kappa_r > 0.0 ? 1.0 : 0.0;
-          if (grad_ee > 0.0) {
-            Real tau_l = ee / grad_ee * prim_hydro(IDN,k,j,i-1) * kappa_l;
-            Real tau_r = ee / grad_ee * prim_hydro(IDN,k,j,i) * kappa_r;
-            tau_factor_l = -std::expm1(-SQR(tau_l));
-            tau_factor_r = -std::expm1(-SQR(tau_r));
-          }
-          for (int l = zs; l <= ze; ++l) {
-            for (int m = ps; m <= pe; ++m) {
-              int lm = AngleInd(l, m);
-              Real u0_l = u_l_(0,i-1);
-              Real u1_l = u_l_(1,i-1);
-              Real u2_l = u_l_(2,i-1);
-              Real u3_l = u_l_(3,i-1);
-              Real n0_l = nmu_(0,l,m,k,j,i-1);
-              Real n1_l = nmu_(1,l,m,k,j,i-1);
-              Real n2_l = nmu_(2,l,m,k,j,i-1);
-              Real n3_l = nmu_(3,l,m,k,j,i-1);
-              Real u_n_l = g_(I00,i-1) * u0_l * n0_l
-                  + g_(I01,i-1) * (u0_l * n1_l + u1_l * n0_l)
-                  + g_(I02,i-1) * (u0_l * n2_l + u2_l * n0_l)
-                  + g_(I03,i-1) * (u0_l * n3_l + u3_l * n0_l) + g_(I11,i-1) * u1_l * n1_l
-                  + g_(I12,i-1) * (u1_l * n2_l + u2_l * n1_l)
-                  + g_(I13,i-1) * (u1_l * n3_l + u3_l * n1_l) + g_(I22,i-1) * u2_l * n2_l
-                  + g_(I23,i-1) * (u2_l * n3_l + u3_l * n2_l) + g_(I33,i-1) * u3_l * n3_l;
-              Real advective_factor_l = tau_factor_l * (1.0 - SQR(SQR(-u_n_l)));
-              Real ii_diffusive_l = rad_l_(lm,i) * (1.0 - advective_factor_l);
-              Real u0_r = u_l_(0,i);
-              Real u1_r = u_l_(1,i);
-              Real u2_r = u_l_(2,i);
-              Real u3_r = u_l_(3,i);
-              Real n0_r = nmu_(0,l,m,k,j,i);
-              Real n1_r = nmu_(1,l,m,k,j,i);
-              Real n2_r = nmu_(2,l,m,k,j,i);
-              Real n3_r = nmu_(3,l,m,k,j,i);
-              Real u_n_r = g_(I00,i) * u0_r * n0_r
-                  + g_(I01,i) * (u0_r * n1_r + u1_r * n0_r)
-                  + g_(I02,i) * (u0_r * n2_r + u2_r * n0_r)
-                  + g_(I03,i) * (u0_r * n3_r + u3_r * n0_r) + g_(I11,i) * u1_r * n1_r
-                  + g_(I12,i) * (u1_r * n2_r + u2_r * n1_r)
-                  + g_(I13,i) * (u1_r * n3_r + u3_r * n1_r) + g_(I22,i) * u2_r * n2_r
-                  + g_(I23,i) * (u2_r * n3_r + u3_r * n2_r) + g_(I33,i) * u3_r * n3_r;
-              Real advective_factor_r = tau_factor_r * (1.0 - SQR(SQR(-u_n_r)));
-              Real ii_diffusive_r = rad_r_(lm,i) * (1.0 - advective_factor_r);
-              Real v_diffusive = n1_n_0_(l,m,k,j,i);
-              if (grad_ee == 0.0) {
-                v_diffusive = 0.0;
-              } else {
-                Real tau_l = ee / grad_ee * prim_hydro(IDN,k,j,i-1) * kappa_l;
-                Real tau_r = ee / grad_ee * prim_hydro(IDN,k,j,i) * kappa_r;
-                Real tau = (dx_r * tau_l + dx_l * tau_r) / (dx_l + dx_r);
-                if (tau > 0.0) {
-                  v_diffusive *= std::sqrt(-std::expm1(-SQR(tau))) / tau;
-                }
+          Real k_a = (dx_r * opacity(OPAA,k,j,i-1) * prim_hydro(IDN,k,j,i-1)
+              + dx_l * opacity(OPAA,k,j,i) * prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
+          Real k_s = (dx_r * opacity(OPAS,k,j,i-1) * prim_hydro(IDN,k,j,i-1)
+              + dx_l * opacity(OPAS,k,j,i) * prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
+          Real tt = (dx_r * prim_hydro(IPR,k,j,i-1) / prim_hydro(IDN,k,j,i-1)
+              + dx_l * prim_hydro(IPR,k,j,i) / prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
+          k_tot_(i) = k_a + k_s;
+          bb_jj_f_(i) =
+              (k_a * arad * SQR(SQR(tt)) / (4.0 * PI) + k_s * jj_f_(i)) / (k_a + k_s);
+        }
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            for (int i = is; i <= ie+1; ++i) {
+              neg_u_n_(lm,i) = 0.0;
+              for (int p = 0; p < 4; ++p) {
+                neg_u_n_(lm,i) += u_tet_(p,i) * nh_cc_(p,l,m);
               }
-              flux_x[X1DIR](lm,k,j,i) =
-                  v_diffusive * (v_diffusive < 0.0 ? ii_diffusive_l : ii_diffusive_r);
-              Real ii_advective_l = rad_l_(lm,i) * advective_factor_l;
-              Real ii_advective_r = rad_r_(lm,i) * advective_factor_r;
-              Real v1_l = u_l_(1,i-1) / u_l_(0,i-1);
-              Real v1_r = u_l_(1,i) / u_l_(0,i);
-              Real n_0_l = n0_n_mu_(0,l,m,k,j,i-1) / nmu_(0,l,m,k,j,i-1);
-              Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
-              Real v_advective =
-                  (dx_r * v1_l * n_0_l + dx_l * v1_r * n_0_r) / (dx_l + dx_r);
-              flux_x[X1DIR](lm,k,j,i) +=
-                  v_advective * (v_advective < 0.0 ? ii_advective_l : ii_advective_r);
+            }
+          }
+        }
+
+        // Calculate modified fluxes
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            for (int i = is; i <= ie+1; ++i) {
+              Real steady_term = bb_jj_f_(i) / SQR(SQR(neg_u_n_(lm,i)));
+              Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
+              Real factor = std::expm1(-tau) / tau;
+              if (tau <= 0.0) {
+                flux_x[X1DIR](lm,k,j,i) = n1_n_0_(l,m,k,j,i) * ii_lr_(lm,i);
+              } else {
+                flux_x[X1DIR](lm,k,j,i) = n1_n_0_(l,m,k,j,i)
+                    * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
+              }
             }
           }
         }
@@ -185,7 +171,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
               for (int i = is; i <= ie; ++i) {
                 Real n2_n_0 = n2_n_0_(l,m,k,j,i);
                 flux_x[X2DIR](lm,k,j,i) =
-                    n2_n_0 * (n2_n_0 < 0.0 ? rad_l_(lm,i) : rad_r_(lm,i));
+                    n2_n_0 * (n2_n_0 < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
               }
             }
           }
@@ -193,128 +179,98 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
 
         // Calculate radiation-hydrodynamic fluxes
         if (coupled_to_matter) {
-          pmy_block->pcoord->CellMetric(k, j - 1, is, ie, g_, gi_);
-          pmy_block->pcoord->CellMetric(k, j, is, ie, g_alt_, gi_alt_);
+
+          // Calculate negative fluid velocity in tetrad frame
+          pmy_block->pcoord->Face2Metric(k, j, is, ie, g_, gi_);
           for (int i = is; i <= ie; ++i) {
-            ee_l_(i) = 0.0;
-            ee_r_(i) = 0.0;
+            Real dx_l = pmy_block->pcoord->x2f(j) - pmy_block->pcoord->x2v(j-1);
+            Real dx_r = pmy_block->pcoord->x2v(j) - pmy_block->pcoord->x2f(j);
+            Real uu1 = (dx_r * prim_hydro(IVX,k,j-1,i) + dx_l * prim_hydro(IVX,k,j,i))
+                / (dx_l + dx_r);
+            Real uu2 = (dx_r * prim_hydro(IVY,k,j-1,i) + dx_l * prim_hydro(IVY,k,j,i))
+                / (dx_l + dx_r);
+            Real uu3 = (dx_r * prim_hydro(IVZ,k,j-1,i) + dx_l * prim_hydro(IVZ,k,j,i))
+                / (dx_l + dx_r);
+            Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+                + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+                + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+            Real uu0 = std::sqrt(1.0 + temp_var);
+            u_tet_(0,i) = norm_to_tet_2_(0,0,k,j,i) * uu0
+                + norm_to_tet_2_(0,1,k,j,i) * uu1 + norm_to_tet_2_(0,2,k,j,i) * uu2
+                + norm_to_tet_2_(0,3,k,j,i) * uu3;
+            u_tet_(1,i) = -norm_to_tet_2_(1,0,k,j,i) * uu0
+                - norm_to_tet_2_(1,1,k,j,i) * uu1 - norm_to_tet_2_(1,2,k,j,i) * uu2
+                - norm_to_tet_2_(1,3,k,j,i) * uu3;
+            u_tet_(2,i) = -norm_to_tet_2_(2,0,k,j,i) * uu0
+                - norm_to_tet_2_(2,1,k,j,i) * uu1 - norm_to_tet_2_(2,2,k,j,i) * uu2
+                - norm_to_tet_2_(2,3,k,j,i) * uu3;
+            u_tet_(3,i) = -norm_to_tet_2_(3,0,k,j,i) * uu0
+                - norm_to_tet_2_(3,1,k,j,i) * uu1 - norm_to_tet_2_(3,2,k,j,i) * uu2
+                - norm_to_tet_2_(3,3,k,j,i) * uu3;
+          }
+
+          // Calculate mixed radiation field
+          for (int i = is; i <= ie; ++i) {
+            jj_f_(i) = 0.0;
           }
           for (int l = zs; l <= ze; ++l) {
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
-                ee_l_(i) +=
-                    n0_n_mu_(0,l,m,k,j-1,i) * prim_rad(lm,k,j-1,i) * solid_angle(l,m);
-                ee_r_(i) += n0_n_mu_(0,l,m,k,j,i) * prim_rad(lm,k,j,i) * solid_angle(l,m);
+                ii_lr_(lm,i) = n2_n_0_(l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
+                for (int p = 0; p < 4; ++p) {
+                  for (int q = 0; q < 4; ++q) {
+                    jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * ii_lr_(lm,i) * nh_cc_(p,l,m)
+                        * nh_cc_(q,l,m) * solid_angle(l,m);
+                  }
+                }
               }
             }
           }
           for (int i = is; i <= ie; ++i) {
-            Real uu1 = prim_hydro(IVX,k,j-1,i);
-            Real uu2 = prim_hydro(IVY,k,j-1,i);
-            Real uu3 = prim_hydro(IVZ,k,j-1,i);
-            Real gamma_sq = 1.0 + g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
-                + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
-                + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
-            Real gamma = std::sqrt(gamma_sq);
-            Real alpha = std::sqrt(-1.0 / gi_(I00,i));
-            u_l_(0,i) = gamma / alpha;
-            u_l_(1,i) = uu1 - alpha * gamma * gi_(I01,i);
-            u_l_(2,i) = uu2 - alpha * gamma * gi_(I02,i);
-            u_l_(3,i) = uu3 - alpha * gamma * gi_(I03,i);
-            uu1 = prim_hydro(IVX,k,j,i);
-            uu2 = prim_hydro(IVY,k,j,i);
-            uu3 = prim_hydro(IVZ,k,j,i);
-            gamma_sq = 1.0 + g_alt_(I11,i) * SQR(uu1) + 2.0 * g_alt_(I12,i) * uu1 * uu2
-                + 2.0 * g_alt_(I13,i) * uu1 * uu3 + g_alt_(I22,i) * SQR(uu2)
-                + 2.0 * g_alt_(I23,i) * uu2 * uu3 + g_alt_(I33,i) * SQR(uu3);
-            gamma = std::sqrt(gamma_sq);
-            alpha = std::sqrt(-1.0 / gi_alt_(I00,i));
-            u_r_(0,i) = gamma / alpha;
-            u_r_(1,i) = uu1 - alpha * gamma * gi_alt_(I01,i);
-            u_r_(2,i) = uu2 - alpha * gamma * gi_alt_(I02,i);
-            u_r_(3,i) = uu3 - alpha * gamma * gi_alt_(I03,i);
+            jj_f_(i) /= 4.0 * PI;
           }
+
+          // Calculate coefficients needed for modified fluxes
           for (int i = is; i <= ie; ++i) {
             Real dx_l = pmy_block->pcoord->x2f(j) - pmy_block->pcoord->x2v(j-1);
             Real dx_r = pmy_block->pcoord->x2v(j) - pmy_block->pcoord->x2f(j);
-            Real width_l = std::sqrt(g_(I22,i)) * pmy_block->pcoord->dx2f(j-1);
-            Real width_r = std::sqrt(g_alt_(I22,i)) * pmy_block->pcoord->dx2f(j);
-            Real ee = 0.5 * (ee_l_(i) + ee_r_(i));
-            Real grad_ee = 2.0 * std::abs(ee_l_(i) - ee_r_(i)) / (width_l + width_r);
-            Real kappa_l = opacity(OPAA,k,j-1,i) + opacity(OPAS,k,j-1,i);
-            Real kappa_r = opacity(OPAA,k,j,i) + opacity(OPAS,k,j,i);
-            Real tau_factor_l = kappa_l > 0.0 ? 1.0 : 0.0;
-            Real tau_factor_r = kappa_r > 0.0 ? 1.0 : 0.0;
-            if (grad_ee > 0.0) {
-              Real tau_l = ee / grad_ee * prim_hydro(IDN,k,j-1,i) * kappa_l;
-              Real tau_r = ee / grad_ee * prim_hydro(IDN,k,j,i) * kappa_r;
-              tau_factor_l = -std::expm1(-SQR(tau_l));
-              tau_factor_r = -std::expm1(-SQR(tau_r));
-            }
-            for (int l = zs; l <= ze; ++l) {
-              for (int m = ps; m <= pe; ++m) {
-                int lm = AngleInd(l, m);
-                Real u0_l = u_l_(0,i);
-                Real u1_l = u_l_(1,i);
-                Real u2_l = u_l_(2,i);
-                Real u3_l = u_l_(3,i);
-                Real n0_l = nmu_(0,l,m,k,j-1,i);
-                Real n1_l = nmu_(1,l,m,k,j-1,i);
-                Real n2_l = nmu_(2,l,m,k,j-1,i);
-                Real n3_l = nmu_(3,l,m,k,j-1,i);
-                Real u_n_l = g_(I00,i) * u0_l * n0_l
-                    + g_(I01,i) * (u0_l * n1_l + u1_l * n0_l)
-                    + g_(I02,i) * (u0_l * n2_l + u2_l * n0_l)
-                    + g_(I03,i) * (u0_l * n3_l + u3_l * n0_l) + g_(I11,i) * u1_l * n1_l
-                    + g_(I12,i) * (u1_l * n2_l + u2_l * n1_l)
-                    + g_(I13,i) * (u1_l * n3_l + u3_l * n1_l) + g_(I22,i) * u2_l * n2_l
-                    + g_(I23,i) * (u2_l * n3_l + u3_l * n2_l) + g_(I33,i) * u3_l * n3_l;
-                Real advective_factor_l = tau_factor_l * (1.0 - SQR(SQR(-u_n_l)));
-                Real ii_diffusive_l = rad_l_(lm,i) * (1.0 - advective_factor_l);
-                Real u0_r = u_r_(0,i);
-                Real u1_r = u_r_(1,i);
-                Real u2_r = u_r_(2,i);
-                Real u3_r = u_r_(3,i);
-                Real n0_r = nmu_(0,l,m,k,j,i);
-                Real n1_r = nmu_(1,l,m,k,j,i);
-                Real n2_r = nmu_(2,l,m,k,j,i);
-                Real n3_r = nmu_(3,l,m,k,j,i);
-                Real u_n_r = g_alt_(I00,i) * u0_r * n0_r
-                    + g_alt_(I01,i) * (u0_r * n1_r + u1_r * n0_r)
-                    + g_alt_(I02,i) * (u0_r * n2_r + u2_r * n0_r)
-                    + g_alt_(I03,i) * (u0_r * n3_r + u3_r * n0_r)
-                    + g_alt_(I11,i) * u1_r * n1_r
-                    + g_alt_(I12,i) * (u1_r * n2_r + u2_r * n1_r)
-                    + g_alt_(I13,i) * (u1_r * n3_r + u3_r * n1_r)
-                    + g_alt_(I22,i) * u2_r * n2_r
-                    + g_alt_(I23,i) * (u2_r * n3_r + u3_r * n2_r)
-                    + g_alt_(I33,i) * u3_r * n3_r;
-                Real advective_factor_r = tau_factor_r * (1.0 - SQR(SQR(-u_n_r)));
-                Real ii_diffusive_r = rad_r_(lm,i) * (1.0 - advective_factor_r);
-                Real v_diffusive = n2_n_0_(l,m,k,j,i);
-                if (grad_ee == 0.0) {
-                  v_diffusive = 0.0;
-                } else {
-                  Real tau_l = ee / grad_ee * prim_hydro(IDN,k,j-1,i) * kappa_l;
-                  Real tau_r = ee / grad_ee * prim_hydro(IDN,k,j,i) * kappa_r;
-                  Real tau = (dx_r * tau_l + dx_l * tau_r) / (dx_l + dx_r);
-                  if (tau > 0.0) {
-                    v_diffusive *= std::sqrt(-std::expm1(-SQR(tau))) / tau;
-                  }
+            Real k_a = (dx_r * opacity(OPAA,k,j-1,i) * prim_hydro(IDN,k,j-1,i)
+                + dx_l * opacity(OPAA,k,j,i) * prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
+            Real k_s = (dx_r * opacity(OPAS,k,j-1,i) * prim_hydro(IDN,k,j-1,i)
+                + dx_l * opacity(OPAS,k,j,i) * prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
+            Real tt = (dx_r * prim_hydro(IPR,k,j-1,i) / prim_hydro(IDN,k,j-1,i)
+                + dx_l * prim_hydro(IPR,k,j,i) / prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
+            k_tot_(i) = k_a + k_s;
+            bb_jj_f_(i) =
+                (k_a * arad * SQR(SQR(tt)) / (4.0 * PI) + k_s * jj_f_(i)) / (k_a + k_s);
+          }
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              for (int i = is; i <= ie; ++i) {
+                neg_u_n_(lm,i) = 0.0;
+                for (int p = 0; p < 4; ++p) {
+                  neg_u_n_(lm,i) += u_tet_(p,i) * nh_cc_(p,l,m);
                 }
-                flux_x[X2DIR](lm,k,j,i) =
-                    v_diffusive * (v_diffusive < 0.0 ? ii_diffusive_l : ii_diffusive_r);
-                Real ii_advective_l = rad_l_(lm,i) * advective_factor_l;
-                Real ii_advective_r = rad_r_(lm,i) * advective_factor_r;
-                Real v2_l = u_l_(2,i) / u_l_(0,i);
-                Real v2_r = u_r_(2,i) / u_r_(0,i);
-                Real n_0_l = n0_n_mu_(0,l,m,k,j-1,i) / nmu_(0,l,m,k,j-1,i);
-                Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
-                Real v_advective =
-                    (dx_r * v2_l * n_0_l + dx_l * v2_r * n_0_r) / (dx_l + dx_r);
-                flux_x[X2DIR](lm,k,j,i) +=
-                    v_advective * (v_advective < 0.0 ? ii_advective_l : ii_advective_r);
+              }
+            }
+          }
+
+          // Calculate modified fluxes
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              for (int i = is; i <= ie; ++i) {
+                Real steady_term = bb_jj_f_(i) / SQR(SQR(neg_u_n_(lm,i)));
+                Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
+                Real factor = std::expm1(-tau) / tau;
+                if (tau <= 0.0) {
+                  flux_x[X2DIR](lm,k,j,i) = n2_n_0_(l,m,k,j,i) * ii_lr_(lm,i);
+                } else {
+                  flux_x[X2DIR](lm,k,j,i) = n2_n_0_(l,m,k,j,i)
+                      * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
+                }
               }
             }
           }
@@ -343,7 +299,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
               for (int i = is; i <= ie; ++i) {
                 Real n3_n_0 = n3_n_0_(l,m,k,j,i);
                 flux_x[X3DIR](lm,k,j,i) =
-                    n3_n_0 * (n3_n_0 < 0.0 ? rad_l_(lm,i) : rad_r_(lm,i));
+                    n3_n_0 * (n3_n_0 < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
               }
             }
           }
@@ -351,128 +307,98 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
 
         // Calculate radiation-hydrodynamic fluxes
         if (coupled_to_matter) {
-          pmy_block->pcoord->CellMetric(k - 1, j, is, ie, g_, gi_);
-          pmy_block->pcoord->CellMetric(k, j, is, ie, g_alt_, gi_alt_);
+
+          // Calculate negative fluid velocity in tetrad frame
+          pmy_block->pcoord->Face3Metric(k, j, is, ie, g_, gi_);
           for (int i = is; i <= ie; ++i) {
-            ee_l_(i) = 0.0;
-            ee_r_(i) = 0.0;
+            Real dx_l = pmy_block->pcoord->x3f(k) - pmy_block->pcoord->x3v(k-1);
+            Real dx_r = pmy_block->pcoord->x3v(k) - pmy_block->pcoord->x3f(k);
+            Real uu1 = (dx_r * prim_hydro(IVX,k-1,j,i) + dx_l * prim_hydro(IVX,k,j,i))
+                / (dx_l + dx_r);
+            Real uu2 = (dx_r * prim_hydro(IVY,k-1,j,i) + dx_l * prim_hydro(IVY,k,j,i))
+                / (dx_l + dx_r);
+            Real uu3 = (dx_r * prim_hydro(IVZ,k-1,j,i) + dx_l * prim_hydro(IVZ,k,j,i))
+                / (dx_l + dx_r);
+            Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+                + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+                + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+            Real uu0 = std::sqrt(1.0 + temp_var);
+            u_tet_(0,i) = norm_to_tet_3_(0,0,k,j,i) * uu0
+                + norm_to_tet_3_(0,1,k,j,i) * uu1 + norm_to_tet_3_(0,2,k,j,i) * uu2
+                + norm_to_tet_3_(0,3,k,j,i) * uu3;
+            u_tet_(1,i) = -norm_to_tet_3_(1,0,k,j,i) * uu0
+                - norm_to_tet_3_(1,1,k,j,i) * uu1 - norm_to_tet_3_(1,2,k,j,i) * uu2
+                - norm_to_tet_3_(1,3,k,j,i) * uu3;
+            u_tet_(2,i) = -norm_to_tet_3_(2,0,k,j,i) * uu0
+                - norm_to_tet_3_(2,1,k,j,i) * uu1 - norm_to_tet_3_(2,2,k,j,i) * uu2
+                - norm_to_tet_3_(2,3,k,j,i) * uu3;
+            u_tet_(3,i) = -norm_to_tet_3_(3,0,k,j,i) * uu0
+                - norm_to_tet_3_(3,1,k,j,i) * uu1 - norm_to_tet_3_(3,2,k,j,i) * uu2
+                - norm_to_tet_3_(3,3,k,j,i) * uu3;
+          }
+
+          // Calculate mixed radiation field
+          for (int i = is; i <= ie; ++i) {
+            jj_f_(i) = 0.0;
           }
           for (int l = zs; l <= ze; ++l) {
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
-                ee_l_(i) +=
-                    n0_n_mu_(0,l,m,k,j-1,i) * prim_rad(lm,k-1,j,i) * solid_angle(l,m);
-                ee_r_(i) += n0_n_mu_(0,l,m,k,j,i) * prim_rad(lm,k,j,i) * solid_angle(l,m);
+                ii_lr_(lm,i) = n3_n_0_(l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
+                for (int p = 0; p < 4; ++p) {
+                  for (int q = 0; q < 4; ++q) {
+                    jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * ii_lr_(lm,i) * nh_cc_(p,l,m)
+                        * nh_cc_(q,l,m) * solid_angle(l,m);
+                  }
+                }
               }
             }
           }
           for (int i = is; i <= ie; ++i) {
-            Real uu1 = prim_hydro(IVX,k-1,j,i);
-            Real uu2 = prim_hydro(IVY,k-1,j,i);
-            Real uu3 = prim_hydro(IVZ,k-1,j,i);
-            Real gamma_sq = 1.0 + g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
-                + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
-                + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
-            Real gamma = std::sqrt(gamma_sq);
-            Real alpha = std::sqrt(-1.0 / gi_(I00,i));
-            u_l_(0,i) = gamma / alpha;
-            u_l_(1,i) = uu1 - alpha * gamma * gi_(I01,i);
-            u_l_(2,i) = uu2 - alpha * gamma * gi_(I02,i);
-            u_l_(3,i) = uu3 - alpha * gamma * gi_(I03,i);
-            uu1 = prim_hydro(IVX,k,j,i);
-            uu2 = prim_hydro(IVY,k,j,i);
-            uu3 = prim_hydro(IVZ,k,j,i);
-            gamma_sq = 1.0 + g_alt_(I11,i) * SQR(uu1) + 2.0 * g_alt_(I12,i) * uu1 * uu2
-                + 2.0 * g_alt_(I13,i) * uu1 * uu3 + g_alt_(I22,i) * SQR(uu2)
-                + 2.0 * g_alt_(I23,i) * uu2 * uu3 + g_alt_(I33,i) * SQR(uu3);
-            gamma = std::sqrt(gamma_sq);
-            alpha = std::sqrt(-1.0 / gi_alt_(I00,i));
-            u_r_(0,i) = gamma / alpha;
-            u_r_(1,i) = uu1 - alpha * gamma * gi_alt_(I01,i);
-            u_r_(2,i) = uu2 - alpha * gamma * gi_alt_(I02,i);
-            u_r_(3,i) = uu3 - alpha * gamma * gi_alt_(I03,i);
+            jj_f_(i) /= 4.0 * PI;
           }
+
+          // Calculate coefficients needed for modified fluxes
           for (int i = is; i <= ie; ++i) {
             Real dx_l = pmy_block->pcoord->x3f(k) - pmy_block->pcoord->x3v(k-1);
             Real dx_r = pmy_block->pcoord->x3v(k) - pmy_block->pcoord->x3f(k);
-            Real width_l = std::sqrt(g_(I33,i)) * pmy_block->pcoord->dx3f(k-1);
-            Real width_r = std::sqrt(g_alt_(I33,i)) * pmy_block->pcoord->dx3f(k);
-            Real ee = 0.5 * (ee_l_(i) + ee_r_(i));
-            Real grad_ee = 2.0 * std::abs(ee_l_(i) - ee_r_(i)) / (width_l + width_r);
-            Real kappa_l = opacity(OPAA,k-1,j,i) + opacity(OPAS,k-1,j,i);
-            Real kappa_r = opacity(OPAA,k,j,i) + opacity(OPAS,k,j,i);
-            Real tau_factor_l = kappa_l > 0.0 ? 1.0 : 0.0;
-            Real tau_factor_r = kappa_r > 0.0 ? 1.0 : 0.0;
-            if (grad_ee > 0.0) {
-              Real tau_l = ee / grad_ee * prim_hydro(IDN,k-1,j,i) * kappa_l;
-              Real tau_r = ee / grad_ee * prim_hydro(IDN,k,j,i) * kappa_r;
-              tau_factor_l = -std::expm1(-SQR(tau_l));
-              tau_factor_r = -std::expm1(-SQR(tau_r));
-            }
-            for (int l = zs; l <= ze; ++l) {
-              for (int m = ps; m <= pe; ++m) {
-                int lm = AngleInd(l, m);
-                Real u0_l = u_l_(0,i);
-                Real u1_l = u_l_(1,i);
-                Real u2_l = u_l_(2,i);
-                Real u3_l = u_l_(3,i);
-                Real n0_l = nmu_(0,l,m,k-1,j,i);
-                Real n1_l = nmu_(1,l,m,k-1,j,i);
-                Real n2_l = nmu_(2,l,m,k-1,j,i);
-                Real n3_l = nmu_(3,l,m,k-1,j,i);
-                Real u_n_l = g_(I00,i) * u0_l * n0_l
-                    + g_(I01,i) * (u0_l * n1_l + u1_l * n0_l)
-                    + g_(I02,i) * (u0_l * n2_l + u2_l * n0_l)
-                    + g_(I03,i) * (u0_l * n3_l + u3_l * n0_l) + g_(I11,i) * u1_l * n1_l
-                    + g_(I12,i) * (u1_l * n2_l + u2_l * n1_l)
-                    + g_(I13,i) * (u1_l * n3_l + u3_l * n1_l) + g_(I22,i) * u2_l * n2_l
-                    + g_(I23,i) * (u2_l * n3_l + u3_l * n2_l) + g_(I33,i) * u3_l * n3_l;
-                Real advective_factor_l = tau_factor_l * (1.0 - SQR(SQR(-u_n_l)));
-                Real ii_diffusive_l = rad_l_(lm,i) * (1.0 - advective_factor_l);
-                Real u0_r = u_r_(0,i);
-                Real u1_r = u_r_(1,i);
-                Real u2_r = u_r_(2,i);
-                Real u3_r = u_r_(3,i);
-                Real n0_r = nmu_(0,l,m,k,j,i);
-                Real n1_r = nmu_(1,l,m,k,j,i);
-                Real n2_r = nmu_(2,l,m,k,j,i);
-                Real n3_r = nmu_(3,l,m,k,j,i);
-                Real u_n_r = g_alt_(I00,i) * u0_r * n0_r
-                    + g_alt_(I01,i) * (u0_r * n1_r + u1_r * n0_r)
-                    + g_alt_(I02,i) * (u0_r * n2_r + u2_r * n0_r)
-                    + g_alt_(I03,i) * (u0_r * n3_r + u3_r * n0_r)
-                    + g_alt_(I11,i) * u1_r * n1_r
-                    + g_alt_(I12,i) * (u1_r * n2_r + u2_r * n1_r)
-                    + g_alt_(I13,i) * (u1_r * n3_r + u3_r * n1_r)
-                    + g_alt_(I22,i) * u2_r * n2_r
-                    + g_alt_(I23,i) * (u2_r * n3_r + u3_r * n2_r)
-                    + g_alt_(I33,i) * u3_r * n3_r;
-                Real advective_factor_r = tau_factor_r * (1.0 - SQR(SQR(-u_n_r)));
-                Real ii_diffusive_r = rad_r_(lm,i) * (1.0 - advective_factor_r);
-                Real v_diffusive = n3_n_0_(l,m,k,j,i);
-                if (grad_ee == 0.0) {
-                  v_diffusive = 0.0;
-                } else {
-                  Real tau_l = ee / grad_ee * prim_hydro(IDN,k-1,j,i) * kappa_l;
-                  Real tau_r = ee / grad_ee * prim_hydro(IDN,k,j,i) * kappa_r;
-                  Real tau = (dx_r * tau_l + dx_l * tau_r) / (dx_l + dx_r);
-                  if (tau > 0.0) {
-                    v_diffusive *= std::sqrt(-std::expm1(-SQR(tau))) / tau;
-                  }
+            Real k_a = (dx_r * opacity(OPAA,k-1,j,i) * prim_hydro(IDN,k-1,j,i)
+                + dx_l * opacity(OPAA,k,j,i) * prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
+            Real k_s = (dx_r * opacity(OPAS,k-1,j,i) * prim_hydro(IDN,k-1,j,i)
+                + dx_l * opacity(OPAS,k,j,i) * prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
+            Real tt = (dx_r * prim_hydro(IPR,k-1,j,i) / prim_hydro(IDN,k-1,j,i)
+                + dx_l * prim_hydro(IPR,k,j,i) / prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
+            k_tot_(i) = k_a + k_s;
+            bb_jj_f_(i) =
+                (k_a * arad * SQR(SQR(tt)) / (4.0 * PI) + k_s * jj_f_(i)) / (k_a + k_s);
+          }
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              for (int i = is; i <= ie; ++i) {
+                neg_u_n_(lm,i) = 0.0;
+                for (int p = 0; p < 4; ++p) {
+                  neg_u_n_(lm,i) += u_tet_(p,i) * nh_cc_(p,l,m);
                 }
-                flux_x[X3DIR](lm,k,j,i) =
-                    v_diffusive * (v_diffusive < 0.0 ? ii_diffusive_l : ii_diffusive_r);
-                Real ii_advective_l = rad_l_(lm,i) * advective_factor_l;
-                Real ii_advective_r = rad_r_(lm,i) * advective_factor_r;
-                Real v3_l = u_l_(3,i) / u_l_(0,i);
-                Real v3_r = u_r_(3,i) / u_r_(0,i);
-                Real n_0_l = n0_n_mu_(0,l,m,k-1,j,i) / nmu_(0,l,m,k-1,j,i);
-                Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
-                Real v_advective =
-                    (dx_r * v3_l * n_0_l + dx_l * v3_r * n_0_r) / (dx_l + dx_r);
-                flux_x[X3DIR](lm,k,j,i) +=
-                    v_advective * (v_advective < 0.0 ? ii_advective_l : ii_advective_r);
+              }
+            }
+          }
+
+          // Calculate modified fluxes
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              for (int i = is; i <= ie; ++i) {
+                Real steady_term = bb_jj_f_(i) / SQR(SQR(neg_u_n_(lm,i)));
+                Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
+                Real factor = std::expm1(-tau) / tau;
+                if (tau <= 0.0) {
+                  flux_x[X3DIR](lm,k,j,i) = n3_n_0_(l,m,k,j,i) * ii_lr_(lm,i);
+                } else {
+                  flux_x[X3DIR](lm,k,j,i) = n3_n_0_(l,m,k,j,i)
+                      * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
+                }
               }
             }
           }
@@ -492,16 +418,110 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
         RadiationPiecewiseLinearA1(prim_rad, k, j);
       }
 
-      // Calculate radiation fluxes
-      for (int l = zs; l <= ze+1; ++l) {
-        for (int m = ps; m <= pe; ++m) {
-          int lm_c = AngleInd(l, m, true, false);
-          for (int i = is; i <= ie; ++i) {
-            Real na1_n_0 = na1_n_0_(l,m,k,j,i);
-            if (na1_n_0 < 0.0) {
-              flux_a[ZETADIR](lm_c,k,j,i) = na1_n_0 * rad_l_(lm_c,i);
-            } else {
-              flux_a[ZETADIR](lm_c,k,j,i) = na1_n_0 * rad_r_(lm_c,i);
+      // Calculate pure radiation fluxes
+      if (not coupled_to_matter) {
+        for (int l = zs; l <= ze+1; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m, true, false);
+            for (int i = is; i <= ie; ++i) {
+              Real na1_n_0 = na1_n_0_(l,m,k,j,i);
+              if (na1_n_0 < 0.0) {
+                flux_a[ZETADIR](lm,k,j,i) = na1_n_0 * ii_l_(lm,i);
+              } else {
+                flux_a[ZETADIR](lm,k,j,i) = na1_n_0 * ii_r_(lm,i);
+              }
+            }
+          }
+        }
+      }
+
+      // Calculate radiation-hydrodynamic fluxes
+      if (coupled_to_matter) {
+
+        // Calculate negative fluid velocity in tetrad frame
+        pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
+        for (int i = is; i <= ie; ++i) {
+          Real uu1 = prim_hydro(IVX,k,j,i);
+          Real uu2 = prim_hydro(IVY,k,j,i);
+          Real uu3 = prim_hydro(IVZ,k,j,i);
+          Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+              + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+          Real uu0 = std::sqrt(1.0 + temp_var);
+          u_tet_(0,i) = norm_to_tet_(0,0,k,j,i) * uu0 + norm_to_tet_(0,1,k,j,i) * uu1
+              + norm_to_tet_(0,2,k,j,i) * uu2 + norm_to_tet_(0,3,k,j,i) * uu3;
+          u_tet_(1,i) = -norm_to_tet_(1,0,k,j,i) * uu0 - norm_to_tet_(1,1,k,j,i) * uu1
+              - norm_to_tet_(1,2,k,j,i) * uu2 - norm_to_tet_(1,3,k,j,i) * uu3;
+          u_tet_(2,i) = -norm_to_tet_(2,0,k,j,i) * uu0 - norm_to_tet_(2,1,k,j,i) * uu1
+              - norm_to_tet_(2,2,k,j,i) * uu2 - norm_to_tet_(2,3,k,j,i) * uu3;
+          u_tet_(3,i) = -norm_to_tet_(3,0,k,j,i) * uu0 - norm_to_tet_(3,1,k,j,i) * uu1
+              - norm_to_tet_(3,2,k,j,i) * uu2 - norm_to_tet_(3,3,k,j,i) * uu3;
+        }
+
+        // Calculate mixed radiation field
+        for (int l = zs; l <= ze+1; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m, true, false);
+            for (int i = is; i <= ie; ++i) {
+              ii_lr_(lm,i) = na1_n_0_(l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
+            }
+          }
+        }
+        for (int i = is; i <= ie; ++i) {
+          jj_f_(i) = 0.0;
+        }
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            for (int i = is; i <= ie; ++i) {
+              for (int p = 0; p < 4; ++p) {
+                for (int q = 0; q < 4; ++q) {
+                  jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * prim_rad(lm,k,j,i)
+                      * nh_cc_(p,l,m) * nh_cc_(q,l,m) * solid_angle(l,m);
+                }
+              }
+            }
+          }
+        }
+        for (int i = is; i <= ie; ++i) {
+          jj_f_(i) /= 4.0 * PI;
+        }
+
+        // Calculate coefficients needed for modified fluxes
+        for (int i = is; i <= ie; ++i) {
+          Real k_a = opacity(OPAA,k,j,i) * prim_hydro(IDN,k,j,i);
+          Real k_s = opacity(OPAS,k,j,i) * prim_hydro(IDN,k,j,i);
+          Real tt = prim_hydro(IPR,k,j,i) / prim_hydro(IDN,k,j,i);
+          k_tot_(i) = k_a + k_s;
+          bb_jj_f_(i) =
+              (k_a * arad * SQR(SQR(tt)) / (4.0 * PI) + k_s * jj_f_(i)) / (k_a + k_s);
+        }
+        for (int l = zs; l <= ze+1; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m, true, false);
+            for (int i = is; i <= ie; ++i) {
+              neg_u_n_(lm,i) = 0.0;
+              for (int p = 0; p < 4; ++p) {
+                neg_u_n_(lm,i) += u_tet_(p,i) * nh_fc_(p,l,m);
+              }
+            }
+          }
+        }
+
+        // Calculate modified fluxes
+        for (int l = zs; l <= ze+1; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m, true, false);
+            for (int i = is; i <= ie; ++i) {
+              Real steady_term = bb_jj_f_(i) / SQR(SQR(neg_u_n_(lm,i)));
+              Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
+              Real factor = std::expm1(-tau) / tau;
+              if (tau <= 0.0) {
+                flux_a[ZETADIR](lm,k,j,i) = na1_n_0_(l,m,k,j,i) * ii_lr_(lm,i);
+              } else {
+                flux_a[ZETADIR](lm,k,j,i) = na1_n_0_(l,m,k,j,i)
+                    * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
+              }
             }
           }
         }
@@ -520,16 +540,108 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
         RadiationPiecewiseLinearA2(prim_rad, k, j);
       }
 
-      // Calculate radiation fluxes
+      // Calculate pure radiation fluxes
       for (int l = zs; l <= ze; ++l) {
         for (int m = ps; m <= pe+1; ++m) {
-          int lm_c = AngleInd(l, m, false, true);
+          int lm = AngleInd(l, m, false, true);
           for (int i = is; i <= ie; ++i) {
             Real na2_n_0 = na2_n_0_(l,m,k,j,i);
             if (na2_n_0 < 0.0) {
-              flux_a[PSIDIR](lm_c,k,j,i) = na2_n_0 * rad_l_(lm_c,i);
+              flux_a[PSIDIR](lm,k,j,i) = na2_n_0 * ii_l_(lm,i);
             } else {
-              flux_a[PSIDIR](lm_c,k,j,i) = na2_n_0 * rad_r_(lm_c,i);
+              flux_a[PSIDIR](lm,k,j,i) = na2_n_0 * ii_r_(lm,i);
+            }
+          }
+        }
+      }
+
+      // Calculate radiation-hydrodynamic fluxes
+      if (coupled_to_matter) {
+
+        // Calculate negative fluid velocity in tetrad frame
+        pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
+        for (int i = is; i <= ie; ++i) {
+          Real uu1 = prim_hydro(IVX,k,j,i);
+          Real uu2 = prim_hydro(IVY,k,j,i);
+          Real uu3 = prim_hydro(IVZ,k,j,i);
+          Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+              + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+          Real uu0 = std::sqrt(1.0 + temp_var);
+          u_tet_(0,i) = norm_to_tet_(0,0,k,j,i) * uu0 + norm_to_tet_(0,1,k,j,i) * uu1
+              + norm_to_tet_(0,2,k,j,i) * uu2 + norm_to_tet_(0,3,k,j,i) * uu3;
+          u_tet_(1,i) = -norm_to_tet_(1,0,k,j,i) * uu0 - norm_to_tet_(1,1,k,j,i) * uu1
+              - norm_to_tet_(1,2,k,j,i) * uu2 - norm_to_tet_(1,3,k,j,i) * uu3;
+          u_tet_(2,i) = -norm_to_tet_(2,0,k,j,i) * uu0 - norm_to_tet_(2,1,k,j,i) * uu1
+              - norm_to_tet_(2,2,k,j,i) * uu2 - norm_to_tet_(2,3,k,j,i) * uu3;
+          u_tet_(3,i) = -norm_to_tet_(3,0,k,j,i) * uu0 - norm_to_tet_(3,1,k,j,i) * uu1
+              - norm_to_tet_(3,2,k,j,i) * uu2 - norm_to_tet_(3,3,k,j,i) * uu3;
+        }
+
+        // Calculate mixed radiation field
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe+1; ++m) {
+            int lm = AngleInd(l, m, false, true);
+            for (int i = is; i <= ie; ++i) {
+              ii_lr_(lm,i) = na2_n_0_(l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
+            }
+          }
+        }
+        for (int i = is; i <= ie; ++i) {
+          jj_f_(i) = 0.0;
+        }
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            for (int i = is; i <= ie; ++i) {
+              for (int p = 0; p < 4; ++p) {
+                for (int q = 0; q < 4; ++q) {
+                  jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * prim_rad(lm,k,j,i)
+                      * nh_cc_(p,l,m) * nh_cc_(q,l,m) * solid_angle(l,m);
+                }
+              }
+            }
+          }
+        }
+        for (int i = is; i <= ie; ++i) {
+          jj_f_(i) /= 4.0 * PI;
+        }
+
+        // Calculate coefficients needed for modified fluxes
+        for (int i = is; i <= ie; ++i) {
+          Real k_a = opacity(OPAA,k,j,i) * prim_hydro(IDN,k,j,i);
+          Real k_s = opacity(OPAS,k,j,i) * prim_hydro(IDN,k,j,i);
+          Real tt = prim_hydro(IPR,k,j,i) / prim_hydro(IDN,k,j,i);
+          k_tot_(i) = k_a + k_s;
+          bb_jj_f_(i) =
+              (k_a * arad * SQR(SQR(tt)) / (4.0 * PI) + k_s * jj_f_(i)) / (k_a + k_s);
+        }
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe+1; ++m) {
+            int lm = AngleInd(l, m, false, true);
+            for (int i = is; i <= ie; ++i) {
+              neg_u_n_(lm,i) = 0.0;
+              for (int p = 0; p < 4; ++p) {
+                neg_u_n_(lm,i) += u_tet_(p,i) * nh_cf_(p,l,m);
+              }
+            }
+          }
+        }
+
+        // Calculate modified fluxes
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe+1; ++m) {
+            int lm = AngleInd(l, m, false, true);
+            for (int i = is; i <= ie; ++i) {
+              Real steady_term = bb_jj_f_(i) / SQR(SQR(neg_u_n_(lm,i)));
+              Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
+              Real factor = std::expm1(-tau) / tau;
+              if (tau <= 0.0) {
+                flux_a[PSIDIR](lm,k,j,i) = na2_n_0_(l,m,k,j,i) * ii_lr_(lm,i);
+              } else {
+                flux_a[PSIDIR](lm,k,j,i) = na2_n_0_(l,m,k,j,i)
+                    * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
+              }
             }
           }
         }

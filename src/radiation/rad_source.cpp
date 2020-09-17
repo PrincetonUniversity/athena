@@ -48,18 +48,20 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
         pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
 
         // Calculate zeroth and first moments of radiation before coupling
-        for (int n = 0; n < 4; ++n) {
-          for (int i = is; i <= ie; ++i) {
-            moments_old_(n,i) = 0.0;
+        if (affect_fluid) {
+          for (int n = 0; n < 4; ++n) {
+            for (int i = is; i <= ie; ++i) {
+              moments_old_(n,i) = 0.0;
+            }
           }
-        }
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m);
-            for (int n = 0; n < 4; ++n) {
-              for (int i = is; i <= ie; ++i) {
-                moments_old_(n,i) += n0_n_mu_(n,l,m,k,j,i) * cons_rad(lm,k,j,i)
-                    / n0_n_mu_(0,l,m,k,j,i) * solid_angle(l,m);
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              for (int n = 0; n < 4; ++n) {
+                for (int i = is; i <= ie; ++i) {
+                  moments_old_(n,i) += n0_n_mu_(n,l,m,k,j,i) * cons_rad(lm,k,j,i)
+                      / n0_n_mu_(0,l,m,k,j,i) * solid_angle(l,m);
+                }
               }
             }
           }
@@ -163,29 +165,33 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
         }
 
         // Calculate zeroth and first moments of radiation after coupling
-        for (int n = 0; n < 4; ++n) {
-          for (int i = is; i <= ie; ++i) {
-            moments_new_(n,i) = 0.0;
+        if (affect_fluid) {
+          for (int n = 0; n < 4; ++n) {
+            for (int i = is; i <= ie; ++i) {
+              moments_new_(n,i) = 0.0;
+            }
           }
-        }
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m);
-            for (int n = 0; n < 4; ++n) {
-              for (int i = is; i <= ie; ++i) {
-                moments_new_(n,i) += n0_n_mu_(n,l,m,k,j,i) * cons_rad(lm,k,j,i)
-                    / n0_n_mu_(0,l,m,k,j,i) * solid_angle(l,m);
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              for (int n = 0; n < 4; ++n) {
+                for (int i = is; i <= ie; ++i) {
+                  moments_new_(n,i) += n0_n_mu_(n,l,m,k,j,i) * cons_rad(lm,k,j,i)
+                      / n0_n_mu_(0,l,m,k,j,i) * solid_angle(l,m);
+                }
               }
             }
           }
         }
 
         // Apply radiation-fluid coupling to fluid
-        for (int i = is; i <= ie; ++i) {
-          cons_hydro(IEN,k,j,i) += moments_old_(0,i) - moments_new_(0,i);
-          cons_hydro(IM1,k,j,i) += moments_old_(1,i) - moments_new_(1,i);
-          cons_hydro(IM2,k,j,i) += moments_old_(2,i) - moments_new_(2,i);
-          cons_hydro(IM3,k,j,i) += moments_old_(3,i) - moments_new_(3,i);
+        if (affect_fluid) {
+          for (int i = is; i <= ie; ++i) {
+            cons_hydro(IEN,k,j,i) += moments_old_(0,i) - moments_new_(0,i);
+            cons_hydro(IM1,k,j,i) += moments_old_(1,i) - moments_new_(1,i);
+            cons_hydro(IM2,k,j,i) += moments_old_(2,i) - moments_new_(2,i);
+            cons_hydro(IM3,k,j,i) += moments_old_(3,i) - moments_new_(3,i);
+          }
         }
       }
     }

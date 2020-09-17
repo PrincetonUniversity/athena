@@ -231,9 +231,23 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Initialize opacity
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie; ++i) {
+  int il = is - NGHOST;
+  int iu = ie + NGHOST;
+  int jl = js;
+  int ju = je;
+  if (jl != ju) {
+    jl -= NGHOST;
+    ju += NGHOST;
+  }
+  int kl = ks;
+  int ku = ke;
+  if (kl != ku) {
+    kl -= NGHOST;
+    ku += NGHOST;
+  }
+  for (int k = kl; k <= ku; ++k) {
+    for (int j = jl; j <= ju; ++j) {
+      for (int i = il; i <= iu; ++i) {
         prad->opacity(OPAA,k,j,i) = kappa_a;
         prad->opacity(OPAS,k,j,i) = kappa_s;
         prad->opacity(OPAP,k,j,i) = 0.0;

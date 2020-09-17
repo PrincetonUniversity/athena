@@ -813,12 +813,13 @@ TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::CalculateRadFlux(MeshBlock *pmb, int stage) {
   Hydro *phydro = pmb->phydro;
   Radiation *prad = pmb->prad;
+  const Real dt_eff = stage_wghts[stage-1].beta * pmb->pmy_mesh->dt;
   if (stage <= nstages) {
     if ((stage == 1) && (integrator == "vl2")) {
-      prad->CalculateFluxes(prad->prim, phydro->w, 1);
+      prad->CalculateFluxes(prad->prim, phydro->w, 1, dt_eff);
       return TaskStatus::next;
     } else {
-      prad->CalculateFluxes(prad->prim, phydro->w, pmb->precon->xorder);
+      prad->CalculateFluxes(prad->prim, phydro->w, pmb->precon->xorder, dt_eff);
       return TaskStatus::next;
     }
   }

@@ -36,6 +36,7 @@ public:
 
   // Flags
   bool coupled_to_matter;
+  bool affect_fluid;
   bool source_terms_defined;
   bool moment_fix;
 
@@ -109,7 +110,7 @@ public:
 
   // Flux functions (defined in rad_fluxes.cpp)
   void CalculateFluxes(AthenaArray<Real> &prim_rad, const AthenaArray<Real> &prim_hydro,
-      int order);
+      int order, Real dt);
   void AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Real weight,
       AthenaArray<Real> &cons_out);
   void WeightedAve(AthenaArray<Real> &cons_out, AthenaArray<Real> &cons_in_1,
@@ -163,8 +164,10 @@ public:
 
 private:
 
-  // Data arrays
+  // Data arrays - unit directions
   AthenaArray<Real> nh_cc_;          // n^\hat{mu} at angle centers
+  AthenaArray<Real> nh_fc_;          // n^\hat{mu} at zeta faces
+  AthenaArray<Real> nh_cf_;          // n^\hat{mu} at psi faces
   AthenaArray<Real> nmu_;            // n^mu at cell and angle centers
   AthenaArray<Real> n0_n_mu_;        // n^0 n_mu at cell and angle centers
   AthenaArray<Real> n1_n_0_;         // n^1 n_0 at x^1-faces and angle centers
@@ -172,17 +175,31 @@ private:
   AthenaArray<Real> n3_n_0_;         // n^3 n_0 at x^3-faces and angle centers
   AthenaArray<Real> na1_n_0_;        // n^zeta n_0 at cell centers and zeta-faces
   AthenaArray<Real> na2_n_0_;        // n^psi n_0 at cell centers and psi-faces
+
+  // Data arrays - metric
   AthenaArray<Real> g_, gi_;         // metric and inverse
-  AthenaArray<Real> g_alt_;          // alternate storage of metric coefficients
-  AthenaArray<Real> gi_alt_;         // alternate storage of inverse metric coefficients
-  AthenaArray<Real> ee_l_, ee_r_;    // energy densities
-  AthenaArray<Real> u_l_, u_r_;      // velocities
-  AthenaArray<Real> rad_l_;          // left reconstructed radiation state
-  AthenaArray<Real> rad_r_;          // right reconstructed radiation state
+
+  // Data arrays - reconstruction
+  AthenaArray<Real> ii_l_;           // left reconstructed radiation state
+  AthenaArray<Real> ii_r_;           // right reconstructed radiation state
+
+  // Data arrays - flux
+  AthenaArray<Real> norm_to_tet_1_;  // transformation from normal to tetrad frame
+  AthenaArray<Real> norm_to_tet_2_;  // transformation from normal to tetrad frame
+  AthenaArray<Real> norm_to_tet_3_;  // transformation from normal to tetrad frame
+  AthenaArray<Real> ii_lr_;          // combined reconstructed radiation state
+  AthenaArray<Real> jj_f_;           // fluid-frame J
+  AthenaArray<Real> k_tot_;          // total absorption coefficient
+  AthenaArray<Real> bb_jj_f_;        // average of fluid-frame B and fluid-frame J
+  AthenaArray<Real> neg_u_n_;        // -u_mu n^mu
+
+  // Data arrays - flux divergence
   AthenaArray<Real> area_l_;         // left face areas
   AthenaArray<Real> area_r_;         // right face areas
   AthenaArray<Real> vol_;            // cell volumes
   AthenaArray<Real> flux_div_;       // flux divergences in spatial coordinates
+
+  // Data arrays - source
   AthenaArray<Real> norm_to_tet_;    // transformation from normal to tetrad frame
   AthenaArray<Real> moments_old_;    // moments of radiation field before fluid coupling
   AthenaArray<Real> moments_new_;    // moments of radiation field after fluid coupling

@@ -7,8 +7,9 @@
 //  \brief Problem generator for GR radiation and diffusion of pulse
 
 // C++ headers
+#include <algorithm>  // max
 #include <cstdlib>    // exit (needed for defs.hpp)
-#include <cmath>      // exp
+#include <cmath>      // exp, sqrt
 #include <iostream>   // cout (needed for defs.hpp), endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error (needed for defs.hpp)
@@ -37,11 +38,14 @@
 
 // Global variables
 namespace {
-Real rho, pgas;               // initial thermodynamic variables for fluid
-Real ux, uy, uz;              // initial spatial components of fluid 4-velocity
-Real x0, t0;                  // initial location of peak and time since delta function
-Real e_rad_back, e_rad_peak;  // initial radiation energy density parameters
-Real kappa;                   // constant scattering opacity
+Real rho, pgas;   // initial thermodynamic variables for fluid
+Real ux, uy, uz;  // initial spatial components of fluid 4-velocity
+Real x0;          // initial location of peak
+Real sigma;       // initial width of Gaussian
+Real e_rad_peak;  // initial peak radiation energy density above background
+Real e_rad_back;  // initial background radiation energy density
+Real k_s;         // scattering coefficient
+Real dd;          // diffusion coefficient
 }  // namespace
 
 //----------------------------------------------------------------------------------------
@@ -75,10 +79,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   uy = pin->GetReal("problem", "uy");
   uz = pin->GetReal("problem", "uz");
   x0 = pin->GetReal("problem", "x0");
-  t0 = pin->GetReal("problem", "t0");
-  e_rad_back = pin->GetReal("problem", "e_rad_back");
+  sigma = pin->GetReal("problem", "sigma");
   e_rad_peak = pin->GetReal("problem", "e_rad_peak");
-  kappa = pin->GetReal("problem", "kappa");
+  e_rad_back = pin->GetReal("problem", "e_rad_back");
+  k_s = pin->GetReal("problem", "k_s");
+  dd = 1.0 / (3.0 * k_s);
   return;
 }
 
@@ -106,26 +111,41 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is, ie, js, je, ks, ke);
 
   // Initialize radiation
-  Real dd = 1.0 / (3.0 * kappa * rho);
-  for (int i = is; i <= ie; ++i) {
-    Real x = pcoord->x1v(i);
-    Real e_rad = e_rad_peak * (e_rad_back + std::exp(-SQR(x) / (4.0 * dd * t0)));
-    Real ii = e_rad / (4.0*PI);
-    for (int n = 0; n < prad->nang; ++n) {
-      for (int k = ks; k <= ke; ++k) {
-        for (int j = js; j <= je; ++j) {
-          prad->prim(n,k,j,i) = ii;
-        }
+  AthenaArray<Real> g, gi;
+  g.NewAthenaArray(NMETRIC, ie + 1);
+  gi.NewAthenaArray(NMETRIC, ie + 1);
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      pcoord->CellMetric(k, j, is, ie, g, gi);
+      for (int i = is; i <= ie; ++i) {
+        Real x = pcoord->x1v(i);
+        Real e_rad = std::exp(-SQR(x - x0) / (2.0 * SQR(sigma)));
+        Real f_rad = dd / SQR(sigma) * (x - x0) * e_rad;
+        prad->CalculateRadiationInCellLinear(e_rad * e_rad_peak + e_rad_back,
+            f_rad * e_rad_peak, 0.0, 0.0, ux, uy, uz, k, j, i, g, prad->cons);
       }
     }
   }
-  prad->PrimitiveToConserved(prad->prim, prad->cons, pcoord, is, ie, js, je, ks, ke);
 
-  // Initialize opacity (never changed)
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie; ++i) {
-        prad->opacity(OPAS,k,j,i) = kappa;
+  // Initialize opacity
+  int il = is - NGHOST;
+  int iu = ie + NGHOST;
+  int jl = js;
+  int ju = je;
+  if (jl != ju) {
+    jl -= NGHOST;
+    ju += NGHOST;
+  }
+  int kl = ks;
+  int ku = ke;
+  if (kl != ku) {
+    kl -= NGHOST;
+    ku += NGHOST;
+  }
+  for (int k = kl; k <= ku; ++k) {
+    for (int j = jl; j <= ju; ++j) {
+      for (int i = il; i <= iu; ++i) {
+        prad->opacity(OPAS,k,j,i) = k_s / rho;
         prad->opacity(OPAA,k,j,i) = 0.0;
         prad->opacity(OPAP,k,j,i) = 0.0;
       }
