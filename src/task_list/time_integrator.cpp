@@ -1045,9 +1045,9 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) 
     // Evaluate the time-dependent source terms at the time at the beginning of the stage
     // TODO(CJW): below only works for VL2
     if (stage == 1) {
-      pr->AddSourceTerms(t_start_stage, dt, pr->prim, ph->w, pr->cons, ph->u);
+      pr->AddSourceTerms(t_start_stage, dt, pr->prim, ph->w, ph->w, pr->cons, ph->u);
     } else {
-      pr->AddSourceTerms(t_start_stage, dt, pr->prim1, ph->w1, pr->cons, ph->u);
+      pr->AddSourceTerms(t_start_stage, dt, pr->prim1, ph->w1, ph->w, pr->cons, ph->u);
     }
   } else {
     return TaskStatus::fail;

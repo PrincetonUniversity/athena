@@ -130,8 +130,8 @@ public:
 
   // Source term functions (defined in rad_source.cpp)
   void AddSourceTerms(const Real time, const Real dt, const AthenaArray<Real> &prim_rad,
-      const AthenaArray<Real> &prim_hydro, AthenaArray<Real> &cons_rad,
-      AthenaArray<Real> &cons_hydro);
+      const AthenaArray<Real> &prim_hydro, const AthenaArray<Real> &prim_hydro_alt,
+      AthenaArray<Real> &cons_rad, AthenaArray<Real> &cons_hydro);
   void EnrollOpacityFunction(OpacityFunc MyOpacityFunction);
 
   // Variable conversion/inversion functions (defined in rad_convert.cpp)

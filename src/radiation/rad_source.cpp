@@ -27,7 +27,8 @@ bool FourthPolyRoot(const Real coef4, const Real tconst, Real *root);
 //   time: time of simulation
 //   dt: simulation timestep
 //   prim_rad: primitive intensity at beginning of stage
-//   prim_hydro: primitive hydro variables at beginning of stage
+//   prim_hydro: primitive hydro variables at beginning of step
+//   prim_hydro_alt: primitive hydro variables at beginning of stage
 //   cons_rad: conserved intensity after stage integration
 //   cons_hydro: conserved hydro variables after stage integration
 // Outputs:
@@ -36,7 +37,8 @@ bool FourthPolyRoot(const Real coef4, const Real tconst, Real *root);
 
 void Radiation::AddSourceTerms(const Real time, const Real dt,
     const AthenaArray<Real> &prim_rad, const AthenaArray<Real> &prim_hydro,
-    AthenaArray<Real> &cons_rad, AthenaArray<Real> &cons_hydro) {
+    const AthenaArray<Real> &prim_hydro_alt, AthenaArray<Real> &cons_rad,
+    AthenaArray<Real> &cons_hydro) {
 
   // Get adiabatic index
   Real gamma_adi = pmy_block->peos->GetGamma();
@@ -69,9 +71,9 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
 
         // Calculate fluid velocity in tetrad frame
         for (int i = is; i <= ie; ++i) {
-          Real uu1 = prim_hydro(IVX,k,j,i);
-          Real uu2 = prim_hydro(IVY,k,j,i);
-          Real uu3 = prim_hydro(IVZ,k,j,i);
+          Real uu1 = prim_hydro_alt(IVX,k,j,i);
+          Real uu2 = prim_hydro_alt(IVY,k,j,i);
+          Real uu3 = prim_hydro_alt(IVZ,k,j,i);
           Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
               + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
               + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
