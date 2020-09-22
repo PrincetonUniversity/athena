@@ -170,9 +170,9 @@ private:
   AthenaArray<Real> nh_cf_;          // n^\hat{mu} at psi faces
   AthenaArray<Real> nmu_;            // n^mu at cell and angle centers
   AthenaArray<Real> n0_n_mu_;        // n^0 n_mu at cell and angle centers
-  AthenaArray<Real> n1_n_0_;         // n^1 n_0 at x^1-faces and angle centers
-  AthenaArray<Real> n2_n_0_;         // n^2 n_0 at x^2-faces and angle centers
-  AthenaArray<Real> n3_n_0_;         // n^3 n_0 at x^3-faces and angle centers
+  AthenaArray<Real> n1_n_mu_;        // n^1 n_mu at x^1-faces and angle centers
+  AthenaArray<Real> n2_n_mu_;        // n^2 n_mu at x^2-faces and angle centers
+  AthenaArray<Real> n3_n_mu_;        // n^3 n_mu at x^3-faces and angle centers
   AthenaArray<Real> na1_n_0_;        // n^zeta n_0 at cell centers and zeta-faces
   AthenaArray<Real> na2_n_0_;        // n^psi n_0 at cell centers and psi-faces
 

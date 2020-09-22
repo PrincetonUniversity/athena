@@ -250,11 +250,20 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         AddTask(CALC_SCLRFLX,CALC_HYDFLX);
     }
     if (pm->multilevel) { // SMR or AMR
-      AddTask(SEND_HYDFLX,CALC_HYDFLX);
-      AddTask(RECV_HYDFLX,CALC_HYDFLX);
+      if (RADIATION_ENABLED) {
+        AddTask(SEND_HYDFLX,CALC_RADFLX);
+        AddTask(RECV_HYDFLX,CALC_RADFLX);
+      } else {
+        AddTask(SEND_HYDFLX,CALC_HYDFLX);
+        AddTask(RECV_HYDFLX,CALC_HYDFLX);
+      }
       AddTask(INT_HYD,RECV_HYDFLX);
     } else {
-      AddTask(INT_HYD, CALC_HYDFLX);
+      if (RADIATION_ENABLED) {
+        AddTask(INT_HYD, CALC_RADFLX);
+      } else {
+        AddTask(INT_HYD, CALC_HYDFLX);
+      }
     }
     if (RADIATION_ENABLED) {
       AddTask(SRCTERM_HYD,INT_HYD|SRCTERM_RAD);
@@ -312,7 +321,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     // compute radiation fluxes, integrate radiation variables
     if (RADIATION_ENABLED) {
-      AddTask(CALC_RADFLX,NONE);
+      AddTask(CALC_RADFLX,CALC_HYDFLX);
       if (pm->multilevel) { // SMR or AMR
         AddTask(SEND_RADFLX,CALC_RADFLX);
         AddTask(RECV_RADFLX,CALC_RADFLX);

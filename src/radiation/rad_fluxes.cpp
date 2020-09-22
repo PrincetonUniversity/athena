@@ -7,13 +7,14 @@
 //  \brief implementation of flux-related functions in class Radiation
 
 // C++ headers
-#include <cmath>  // abs, expm1, sqrt
+#include <cmath>  // expm1, sqrt
 
 // Athena++ headers
 #include "radiation.hpp"
 #include "../athena.hpp"                   // Real, indices
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../hydro/hydro.hpp"              // Hydro
 #include "../mesh/mesh.hpp"                // MeshBlock
 
 //----------------------------------------------------------------------------------------
@@ -46,7 +47,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
           for (int m = ps; m <= pe; ++m) {
             int lm = AngleInd(l, m);
             for (int i = is; i <= ie+1; ++i) {
-              Real n1_n_0 = n1_n_0_(l,m,k,j,i);
+              Real n1_n_0 = n1_n_mu_(0,l,m,k,j,i);
               flux_x[X1DIR](lm,k,j,i) =
                   n1_n_0 * (n1_n_0 < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
             }
@@ -90,7 +91,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
           for (int m = ps; m <= pe; ++m) {
             int lm = AngleInd(l, m);
             for (int i = is; i <= ie+1; ++i) {
-              ii_lr_(lm,i) = n1_n_0_(l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
+              ii_lr_(lm,i) = n1_n_mu_(0,l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
               for (int p = 0; p < 4; ++p) {
                 for (int q = 0; q < 4; ++q) {
                   jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * ii_lr_(lm,i) * nh_cc_(p,l,m)
@@ -139,10 +140,22 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
               Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
               Real factor = std::expm1(-tau) / tau;
               if (tau <= 0.0) {
-                flux_x[X1DIR](lm,k,j,i) = n1_n_0_(l,m,k,j,i) * ii_lr_(lm,i);
+                flux_x[X1DIR](lm,k,j,i) = n1_n_mu_(0,l,m,k,j,i) * ii_lr_(lm,i);
               } else {
-                flux_x[X1DIR](lm,k,j,i) = n1_n_0_(l,m,k,j,i)
+                flux_x[X1DIR](lm,k,j,i) = n1_n_mu_(0,l,m,k,j,i)
                     * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
+              }
+              if (affect_fluid and tau > 0.0) {
+                Real temp_var =
+                    (ii_lr_(lm,i) - steady_term) * (1.0 + factor) * solid_angle(l,m);
+                pmy_block->phydro->flux[X1DIR](IEN,k,j,i) +=
+                    temp_var * n1_n_mu_(0,l,m,k,j,i);
+                pmy_block->phydro->flux[X1DIR](IM1,k,j,i) +=
+                    temp_var * n1_n_mu_(1,l,m,k,j,i);
+                pmy_block->phydro->flux[X1DIR](IM2,k,j,i) +=
+                    temp_var * n1_n_mu_(2,l,m,k,j,i);
+                pmy_block->phydro->flux[X1DIR](IM3,k,j,i) +=
+                    temp_var * n1_n_mu_(3,l,m,k,j,i);
               }
             }
           }
@@ -169,7 +182,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
-                Real n2_n_0 = n2_n_0_(l,m,k,j,i);
+                Real n2_n_0 = n2_n_mu_(0,l,m,k,j,i);
                 flux_x[X2DIR](lm,k,j,i) =
                     n2_n_0 * (n2_n_0 < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
               }
@@ -217,7 +230,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
-                ii_lr_(lm,i) = n2_n_0_(l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
+                ii_lr_(lm,i) = n2_n_mu_(0,l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
                 for (int p = 0; p < 4; ++p) {
                   for (int q = 0; q < 4; ++q) {
                     jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * ii_lr_(lm,i) * nh_cc_(p,l,m)
@@ -266,10 +279,22 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
                 Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
                 Real factor = std::expm1(-tau) / tau;
                 if (tau <= 0.0) {
-                  flux_x[X2DIR](lm,k,j,i) = n2_n_0_(l,m,k,j,i) * ii_lr_(lm,i);
+                  flux_x[X2DIR](lm,k,j,i) = n2_n_mu_(0,l,m,k,j,i) * ii_lr_(lm,i);
                 } else {
-                  flux_x[X2DIR](lm,k,j,i) = n2_n_0_(l,m,k,j,i)
+                  flux_x[X2DIR](lm,k,j,i) = n2_n_mu_(0,l,m,k,j,i)
                       * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
+                }
+                if (affect_fluid and tau > 0.0) {
+                  Real temp_var =
+                      (ii_lr_(lm,i) - steady_term) * (1.0 + factor) * solid_angle(l,m);
+                  pmy_block->phydro->flux[X2DIR](IEN,k,j,i) +=
+                      temp_var * n2_n_mu_(0,l,m,k,j,i);
+                  pmy_block->phydro->flux[X2DIR](IM1,k,j,i) +=
+                      temp_var * n2_n_mu_(1,l,m,k,j,i);
+                  pmy_block->phydro->flux[X2DIR](IM2,k,j,i) +=
+                      temp_var * n2_n_mu_(2,l,m,k,j,i);
+                  pmy_block->phydro->flux[X2DIR](IM3,k,j,i) +=
+                      temp_var * n2_n_mu_(3,l,m,k,j,i);
                 }
               }
             }
@@ -297,7 +322,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
-                Real n3_n_0 = n3_n_0_(l,m,k,j,i);
+                Real n3_n_0 = n3_n_mu_(0,l,m,k,j,i);
                 flux_x[X3DIR](lm,k,j,i) =
                     n3_n_0 * (n3_n_0 < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
               }
@@ -345,7 +370,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
-                ii_lr_(lm,i) = n3_n_0_(l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
+                ii_lr_(lm,i) = n3_n_mu_(0,l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
                 for (int p = 0; p < 4; ++p) {
                   for (int q = 0; q < 4; ++q) {
                     jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * ii_lr_(lm,i) * nh_cc_(p,l,m)
@@ -394,10 +419,22 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
                 Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
                 Real factor = std::expm1(-tau) / tau;
                 if (tau <= 0.0) {
-                  flux_x[X3DIR](lm,k,j,i) = n3_n_0_(l,m,k,j,i) * ii_lr_(lm,i);
+                  flux_x[X3DIR](lm,k,j,i) = n3_n_mu_(0,l,m,k,j,i) * ii_lr_(lm,i);
                 } else {
-                  flux_x[X3DIR](lm,k,j,i) = n3_n_0_(l,m,k,j,i)
+                  flux_x[X3DIR](lm,k,j,i) = n3_n_mu_(0,l,m,k,j,i)
                       * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
+                }
+                if (affect_fluid and tau > 0.0) {
+                  Real temp_var =
+                      (ii_lr_(lm,i) - steady_term) * (1.0 + factor) * solid_angle(l,m);
+                  pmy_block->phydro->flux[X3DIR](IEN,k,j,i) +=
+                      temp_var * n3_n_mu_(0,l,m,k,j,i);
+                  pmy_block->phydro->flux[X3DIR](IM1,k,j,i) +=
+                      temp_var * n3_n_mu_(1,l,m,k,j,i);
+                  pmy_block->phydro->flux[X3DIR](IM2,k,j,i) +=
+                      temp_var * n3_n_mu_(3,l,m,k,j,i);
+                  pmy_block->phydro->flux[X3DIR](IM3,k,j,i) +=
+                      temp_var * n3_n_mu_(3,l,m,k,j,i);
                 }
               }
             }

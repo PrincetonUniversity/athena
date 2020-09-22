@@ -257,12 +257,12 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
       pmb->ncells1);
   n0_n_mu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
       pmb->ncells1);
-  n1_n_0_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
+  n1_n_mu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
       pmb->ncells1 + 1);
-  n2_n_0_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2 + 1,
-      pmb->ncells1);
-  n3_n_0_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3 + 1, pmb->ncells2,
-      pmb->ncells1);
+  n2_n_mu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3,
+      pmb->ncells2 + 1, pmb->ncells1);
+  n3_n_mu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3 + 1,
+      pmb->ncells2, pmb->ncells1);
   na1_n_0_.NewAthenaArray(num_cells_zeta + 1, num_cells_psi, pmb->ncells3, pmb->ncells2,
       pmb->ncells1);
   na2_n_0_.NewAthenaArray(num_cells_zeta, num_cells_psi + 1, pmb->ncells3, pmb->ncells2,
@@ -322,7 +322,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
-  // Calculate n^1 n_0
+  // Calculate n^1 n_mu
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       for (int i = is; i <= ie+1; ++i) {
@@ -334,18 +334,27 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
           for (int m = ps; m <= pe; ++m) {
             Real n1 = 0.0;
             Real n_0 = 0.0;
+            Real n_1 = 0.0;
+            Real n_2 = 0.0;
+            Real n_3 = 0.0;
             for (int n = 0; n < 4; ++n) {
               n1 += e(n,1) * nh_cc_(n,l,m);
               n_0 += e_cov(n,0) * nh_cc_(n,l,m);
+              n_1 += e_cov(n,1) * nh_cc_(n,l,m);
+              n_2 += e_cov(n,2) * nh_cc_(n,l,m);
+              n_3 += e_cov(n,3) * nh_cc_(n,l,m);
             }
-            n1_n_0_(l,m,k,j,i) = n1 * n_0;
+            n1_n_mu_(0,l,m,k,j,i) = n1 * n_0;
+            n1_n_mu_(1,l,m,k,j,i) = n1 * n_1;
+            n1_n_mu_(2,l,m,k,j,i) = n1 * n_2;
+            n1_n_mu_(3,l,m,k,j,i) = n1 * n_3;
           }
         }
       }
     }
   }
 
-  // Calculate n^2 n_0
+  // Calculate n^2 n_mu
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je+1; ++j) {
       for (int i = is; i <= ie; ++i) {
@@ -357,18 +366,27 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
           for (int m = ps; m <= pe; ++m) {
             Real n2 = 0.0;
             Real n_0 = 0.0;
+            Real n_1 = 0.0;
+            Real n_2 = 0.0;
+            Real n_3 = 0.0;
             for (int n = 0; n < 4; ++n) {
               n2 += e(n,2) * nh_cc_(n,l,m);
               n_0 += e_cov(n,0) * nh_cc_(n,l,m);
+              n_1 += e_cov(n,1) * nh_cc_(n,l,m);
+              n_2 += e_cov(n,2) * nh_cc_(n,l,m);
+              n_3 += e_cov(n,3) * nh_cc_(n,l,m);
             }
-            n2_n_0_(l,m,k,j,i) = n2 * n_0;
+            n2_n_mu_(0,l,m,k,j,i) = n2 * n_0;
+            n2_n_mu_(1,l,m,k,j,i) = n2 * n_1;
+            n2_n_mu_(2,l,m,k,j,i) = n2 * n_2;
+            n2_n_mu_(3,l,m,k,j,i) = n2 * n_3;
           }
         }
       }
     }
   }
 
-  // Calculate n^3 n_0
+  // Calculate n^3 n_mu
   for (int k = ks; k <= ke+1; ++k) {
     for (int j = js; j <= je; ++j) {
       for (int i = is; i <= ie; ++i) {
@@ -380,11 +398,20 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
           for (int m = ps; m <= pe; ++m) {
             Real n3 = 0.0;
             Real n_0 = 0.0;
+            Real n_1 = 0.0;
+            Real n_2 = 0.0;
+            Real n_3 = 0.0;
             for (int n = 0; n < 4; ++n) {
               n3 += e(n,3) * nh_cc_(n,l,m);
               n_0 += e_cov(n,0) * nh_cc_(n,l,m);
+              n_1 += e_cov(n,1) * nh_cc_(n,l,m);
+              n_2 += e_cov(n,2) * nh_cc_(n,l,m);
+              n_3 += e_cov(n,3) * nh_cc_(n,l,m);
             }
-            n3_n_0_(l,m,k,j,i) = n3 * n_0;
+            n3_n_mu_(0,l,m,k,j,i) = n3 * n_0;
+            n3_n_mu_(1,l,m,k,j,i) = n3 * n_1;
+            n3_n_mu_(2,l,m,k,j,i) = n3 * n_2;
+            n3_n_mu_(3,l,m,k,j,i) = n3 * n_3;
           }
         }
       }
