@@ -30,7 +30,7 @@ WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n, int res_flag
   rad_parname = "extraction_radius_";
   std::string n_str = std::to_string(n);
   rad_parname += n_str;
-  rad = pin->GetOrAddReal("z4c", rad_parname, 10.0); 
+  rad = pin->GetOrAddReal("z4c", rad_parname, 10.0);
   rad_id = n;
   ofname = pin->GetOrAddString("z4c", "extract_filename", "wave");
   root = pin->GetOrAddInteger("z4c", "mpi_root", 0);
@@ -88,7 +88,7 @@ WaveExtract::~WaveExtract() {
 
 void WaveExtract::ReduceMultipole() {
   psi.NewAthenaArray(lmax-1,2*(lmax)+1,2);
-  psi.ZeroClear(); 
+  psi.ZeroClear();
   MeshBlock const * pmb = pmesh->pblock;
   while (pmb != NULL) {
     for(int l=2;l<lmax+1;++l){
@@ -104,7 +104,7 @@ void WaveExtract::ReduceMultipole() {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if (root == rank) {
     for(int l=2;l<lmax+1;++l){
-      for(int m=-l;m<l+1;++m){ 
+      for(int m=-l;m<l+1;++m){
       MPI_Reduce(MPI_IN_PLACE, &psi(l-2,m+l,0), 1, MPI_ATHENA_REAL, MPI_SUM, root, MPI_COMM_WORLD);
       MPI_Reduce(MPI_IN_PLACE, &psi(l-2,m+l,1), 1, MPI_ATHENA_REAL, MPI_SUM, root, MPI_COMM_WORLD);
       }
@@ -112,7 +112,7 @@ void WaveExtract::ReduceMultipole() {
   }
   else {
     for(int l=2;l<lmax+1;++l){
-      for(int m=-l;m<l+1;++m){ 
+      for(int m=-l;m<l+1;++m){
       MPI_Reduce(&psi(l-2,m+l,0), &psi(l-2,m+l,0), 1, MPI_ATHENA_REAL, MPI_SUM, root, MPI_COMM_WORLD);
       MPI_Reduce(&psi(l-2,m+l,1), &psi(l-2,m+l,1), 1, MPI_ATHENA_REAL, MPI_SUM, root, MPI_COMM_WORLD);
       }
@@ -124,12 +124,14 @@ void WaveExtract::ReduceMultipole() {
 
 void WaveExtract::Write(int iter, Real time) const {
   if (ioproc) {
-      fprintf(pofile, "%d %g ", iter, time);  
+      fprintf(pofile, "%d %.*g ", iter, FPRINTF_PREC, time);
       for(int l=2;l<lmax+1;++l){
         for(int m=-l;m<l+1;++m){
-          fprintf(pofile, "%g %g ",psi(l-2,m+l,0),psi(l-2,m+l,1));
+          fprintf(pofile, "%.*g %.*g ",
+                  FPRINTF_PREC, psi(l-2,m+l,0),
+                  FPRINTF_PREC, psi(l-2,m+l,1));
         }
-      } 
+      }
       fprintf(pofile, "\n");
       fflush(pofile);
   }
@@ -140,7 +142,7 @@ WaveExtractLocal::WaveExtractLocal(SphericalGrid * psphere, MeshBlock * pmb, Par
   rad_parname = "extraction_radius_";
   std::string n_str = std::to_string(n);
   rad_parname += n_str;
-  rad = pin->GetOrAddReal("z4c", rad_parname.c_str(), 10.0); 
+  rad = pin->GetOrAddReal("z4c", rad_parname.c_str(), 10.0);
   lmax = pin->GetOrAddInteger("z4c", "lmax",2);
   ppatch = new SphericalPatch(psphere, pmb, SphericalPatch::vertex);
   datareal.NewAthenaArray(ppatch->NumPoints());
@@ -161,7 +163,7 @@ void WaveExtractLocal::Decompose_multipole(AthenaArray<Real> const & u_R, Athena
     ppatch->InterpToSpherical(u_I, &dataim);
     Real theta, phi, ylmR, ylmI,x,y,z;
     psi.NewAthenaArray(lmax-1,2*(lmax)+1,2);
-    psi.ZeroClear(); 
+    psi.ZeroClear();
 //        for (int ip = 0; ip < ppatch->NumPoints(); ++ip) {
 //     ppatch->psphere->GeodesicGrid::PositionPolar(ppatch->idxMap(ip),&theta,&phi);
 //    ppatch->psphere->SphericalGrid::Position(ppatch->idxMap(ip),&x,&y,&z);
@@ -175,7 +177,7 @@ void WaveExtractLocal::Decompose_multipole(AthenaArray<Real> const & u_R, Athena
             ppatch->psphere->GeodesicGrid::PositionPolar(ppatch->idxMap(ip),&theta,&phi);
             swsh(&ylmR,&ylmI,l,m,theta,phi);
             psilmR += datareal(ip)*weight(ip)*ylmR + dataim(ip)*weight(ip)*ylmI;
-            psilmI += dataim(ip)*weight(ip)*ylmR -datareal(ip)*weight(ip)*ylmI;       
+            psilmI += dataim(ip)*weight(ip)*ylmR -datareal(ip)*weight(ip)*ylmI;
           }
         psi(l-2,m+l,0) = psilmR;
         psi(l-2,m+l,1) = psilmI;

@@ -168,6 +168,10 @@
 #define NRAD @NUMBER_EXT_RAD@
 
 //----------------------------------------------------------------------------------------
+// macros associated with input / output (rarely modified)
+#define FPRINTF_PREC 17
+
+//----------------------------------------------------------------------------------------
 // general purpose macros (never modified)
 
 // all constants specified to 17 total digits of precision = max_digits10 for "double"
