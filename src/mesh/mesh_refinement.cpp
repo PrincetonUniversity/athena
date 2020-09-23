@@ -43,8 +43,9 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
     deref_threshold_(pin->GetOrAddInteger("mesh", "derefine_count", 10)),
     AMRFlag_(pmb->pmy_mesh->AMRFlag_) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::MeshRefinement\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::MeshRefinement\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   // Create coarse mesh object for parent grid
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
@@ -108,8 +109,10 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
 //  \brief destructor
 
 MeshRefinement::~MeshRefinement() {
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::~MeshRefinement\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::~MeshRefinement\n");
+#endif // DBGPR_MESH_REFINEMENT
+
   delete pcoarsec;
 }
 
@@ -123,8 +126,9 @@ void MeshRefinement::RestrictCellCenteredValues(
     const AthenaArray<Real> &fine, AthenaArray<Real> &coarse, int sn, int en,
     int csi, int cei, int csj, int cej, int csk, int cek) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::RestrictCellCenteredValues\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::RestrictCellCenteredValues\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
@@ -280,8 +284,9 @@ void MeshRefinement::RestrictFieldX1(
     const AthenaArray<Real> &fine, AthenaArray<Real> &coarse,
     int csi, int cei, int csj, int cej, int csk, int cek) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::RestrictFieldX1\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::RestrictFieldX1\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
@@ -340,8 +345,9 @@ void MeshRefinement::RestrictFieldX2(
     const AthenaArray<Real> &fine, AthenaArray<Real> &coarse,
     int csi, int cei, int csj, int cej, int csk, int cek) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::RestrictFieldX2\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::RestrictFieldX2\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
@@ -418,8 +424,9 @@ void MeshRefinement::RestrictFieldX3(
     const AthenaArray<Real> &fine, AthenaArray<Real> &coarse,
     int csi, int cei, int csj, int cej, int csk, int cek) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::RestrictFieldX3\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::RestrictFieldX3\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
@@ -506,8 +513,9 @@ void MeshRefinement::RestrictVertexCenteredValues(
     int csi, int cei, int csj, int cej, int csk, int cek) {
 
   // For vertex centered values this becomes an injection / identity operator
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::RestrictVertexCenteredValues\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::RestrictVertexCenteredValues\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
 
@@ -574,8 +582,9 @@ void MeshRefinement::RestrictTwiceToBufferVertexCenteredValues(
     int csi, int cei, int csj, int cej, int csk, int cek,
     int &offset) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::RestrictTwiceToBufferVertexCenteredValues\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::RestrictTwiceToBufferVertexCenteredValues\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
   // Coordinates *pco = pmb->pcoord;
@@ -647,41 +656,43 @@ void MeshRefinement::ProlongateCellCenteredValues(
     const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
     int sn, int en, int si, int ei, int sj, int ej, int sk, int ek) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::ProlongateCellCenteredValues\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::ProlongateCellCenteredValues\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
 
-  if (DBGPR_MESH_REFINEMENT) {
-    coutBoldRed("[pre]coarse\n");
-    coarse.print_all();
+#ifdef DBGPR_MESH_REFINEMENT
+  coutBoldRed("[pre]coarse\n");
+  coarse.print_all();
 
-    coutBoldRed("[pre]fine\n");
-    fine.print_all();
+  coutBoldRed("[pre]fine\n");
+  fine.print_all();
 
-    coutBoldRed("\npcoarsec->x1v\n");
-    pcoarsec->x1v.print_all();
+  coutBoldRed("\npcoarsec->x1v\n");
+  pcoarsec->x1v.print_all();
 
-    coutBoldRed("pco->x1v\n");
-    pco->x1v.print_all();
-  }
+  coutBoldRed("pco->x1v\n");
+  pco->x1v.print_all();
+#endif // DBGPR_MESH_REFINEMENT
 
   // BD debug: re-populate coarse grid with exact solution
   // need mutable
   AthenaArray<Real>& coarse_ = const_cast<AthenaArray<Real>&>(coarse);
 
-  if (FILL_WAVE_COARSE_P) {
-    pmb->DebugWaveMeshBlock(coarse_,
-                            pmb->cims, pmb->cipe,
-                            pmb->cjme, pmb->cjpe,
-                            pmb->ckme, pmb->ckpe,
-                            false, true);
+#ifdef FILL_WAVE_COARSE_P
+  pmb->DebugWaveMeshBlock(coarse_,
+                          pmb->cims, pmb->cipe,
+                          pmb->cjme, pmb->cjpe,
+                          pmb->ckme, pmb->ckpe,
+                          false, true);
 
-    if (DBGPR_MESH_REFINEMENT)
-      coutBoldRed("Warning: coarse buffer overridden..\n");
-  }
+#ifdef DBGPR_MESH_REFINEMENT
+  coutBoldRed("Warning: coarse buffer overridden..\n");
+#endif // DBGPR_MESH_REFINEMENT
 
+#endif // FILL_WAVE_COARSE_P
 
   // BD: interpolation test
   if (false) {
@@ -893,19 +904,19 @@ void MeshRefinement::ProlongateCellCenteredValues(
     }
   }
 
-  if (DBGPR_MESH_REFINEMENT) {
-    for (int i=si; i<=ei; i++) {
-      int fi = (i - pmb->cis)*2 + pmb->is;
-      printf("(i, fi) = (%d, %d)\n", i, fi);
-    }
-    printf("\n");
-
-    coutBoldRed("[post]coarse\n");
-    coarse_.print_all();
-
-    coutBoldRed("[post]fine\n");
-    fine.print_all();
+#ifdef DBGPR_MESH_REFINEMENT
+  for (int i=si; i<=ei; i++) {
+    int fi = (i - pmb->cis)*2 + pmb->is;
+    printf("(i, fi) = (%d, %d)\n", i, fi);
   }
+  printf("\n");
+
+  coutBoldRed("[post]coarse\n");
+  coarse_.print_all();
+
+  coutBoldRed("[post]fine\n");
+  fine.print_all();
+#endif // DBGPR_MESH_REFINEMENT
 
   return;
 }
@@ -919,8 +930,9 @@ void MeshRefinement::ProlongateSharedFieldX1(
     const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
     int si, int ei, int sj, int ej, int sk, int ek) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::ProlongateSharedFieldX1\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::ProlongateSharedFieldX1\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
@@ -1005,8 +1017,9 @@ void MeshRefinement::ProlongateSharedFieldX2(
     const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
     int si, int ei, int sj, int ej, int sk, int ek) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::ProlongateSharedFieldX2\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::ProlongateSharedFieldX2\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
@@ -1098,8 +1111,9 @@ void MeshRefinement::ProlongateSharedFieldX3(
     const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
     int si, int ei, int sj, int ej, int sk, int ek) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::ProlongateSharedFieldX3\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::ProlongateSharedFieldX3\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
@@ -1211,8 +1225,9 @@ void MeshRefinement::ProlongateSharedFieldX3(
 void MeshRefinement::ProlongateInternalField(
     FaceField &fine, int si, int ei, int sj, int ej, int sk, int ek) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::ProlongateInternalField\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::ProlongateInternalField\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
@@ -1428,95 +1443,95 @@ void MeshRefinement::ProlongateVertexCenteredValues(
     const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
     int sn, int en, int si, int ei, int sj, int ej, int sk, int ek) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::ProlongateVertexCenteredValues\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::ProlongateVertexCenteredValues\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
 
 
-  if (DBGPR_MESH_REFINEMENT) {
-    coutBoldRed("(block_size.nx1, pmb->is, pmb->cis, si, ei) = ");
-    printf("(%d, %d, %d, %d, %d)\n\n",
-          pmb->block_size.nx1, pmb->is, pmb->cis, si, ei);
+#ifdef DBGPR_MESH_REFINEMENT
+  coutBoldRed("(block_size.nx1, pmb->is, pmb->cis, si, ei) = ");
+  printf("(%d, %d, %d, %d, %d)\n\n",
+        pmb->block_size.nx1, pmb->is, pmb->cis, si, ei);
 
-    coutBoldRed("(block_size.nx2, pmb->js, pmb->cjs, sj, ej) = ");
-    printf("(%d, %d, %d, %d, %d)\n\n",
-          pmb->block_size.nx2, pmb->js, pmb->cjs, sj, ej);
-  }
+  coutBoldRed("(block_size.nx2, pmb->js, pmb->cjs, sj, ej) = ");
+  printf("(%d, %d, %d, %d, %d)\n\n",
+        pmb->block_size.nx2, pmb->js, pmb->cjs, sj, ej);
+#endif // DBGPR_MESH_REFINEMENT
 
-  if (DBGPR_MESH_REFINEMENT) {
-    coutBoldRed("[pre]fine\n");
-    fine.print_all();
-  }
+#ifdef DBGPR_MESH_REFINEMENT
+  coutBoldRed("[pre]fine\n");
+  fine.print_all();
+#endif // DBGPR_MESH_REFINEMENT
 
   // BD debug: re-populate coarse grid with exact solution
   // need mutable
   AthenaArray<Real>& coarse_ = const_cast<AthenaArray<Real>&>(coarse);
 
-  if (FILL_WAVE_COARSE_P) {
-    AthenaArray<Real> tmp;
-    tmp.NewAthenaArray(2, pmb->ncv3, pmb->ncv2, pmb->ncv1);
+#ifdef FILL_WAVE_COARSE_P
+  AthenaArray<Real> tmp;
+  tmp.NewAthenaArray(2, pmb->ncv3, pmb->ncv2, pmb->ncv1);
 
-    for (int n=sn; n<=en; ++n)
-      for (int k=pmb->ckms; k<=pmb->ckpe; ++k)
-        for (int j=pmb->cjms; j<=pmb->cjpe; ++j)
-          for (int i=pmb->cims; i<=pmb->cipe; ++ i)
-            tmp(n, k, j, i) = coarse_(n, k, j, i);
+  for (int n=sn; n<=en; ++n)
+    for (int k=pmb->ckms; k<=pmb->ckpe; ++k)
+      for (int j=pmb->cjms; j<=pmb->cjpe; ++j)
+        for (int i=pmb->cims; i<=pmb->cipe; ++ i)
+          tmp(n, k, j, i) = coarse_(n, k, j, i);
 
-    pmb->DebugWaveMeshBlock(coarse_,
-                            pmb->cims, pmb->cipe,
-                            pmb->cjms, pmb->cjpe,
-                            pmb->ckms, pmb->ckpe,
-                            false, true);
+  pmb->DebugWaveMeshBlock(coarse_,
+                          pmb->cims, pmb->cipe,
+                          pmb->cjms, pmb->cjpe,
+                          pmb->ckms, pmb->ckpe,
+                          false, true);
 
-    bool err_kill = false;
-    for (int n=sn; n<=en; ++n)
-      for (int k=pmb->ckms; k<=pmb->ckpe; ++k)
-        for (int j=pmb->cjms; j<=pmb->cjpe; ++j)
-          for (int i=pmb->cims; i<=pmb->cipe; ++i) {
-            Real v = std::abs(tmp(n, k, j, i) - coarse_(n, k, j, i));
-            tmp(n, k, j, i) = v;
-            err_kill = err_kill or (v > 0.1);
+  bool err_kill = false;
+  for (int n=sn; n<=en; ++n)
+    for (int k=pmb->ckms; k<=pmb->ckpe; ++k)
+      for (int j=pmb->cjms; j<=pmb->cjpe; ++j)
+        for (int i=pmb->cims; i<=pmb->cipe; ++i) {
+          Real v = std::abs(tmp(n, k, j, i) - coarse_(n, k, j, i));
+          tmp(n, k, j, i) = v;
+          err_kill = err_kill or (v > 0.1);
 
-            if (err_kill) {
-              printf("n,k,j,i=%d,%d,%d,%d\n",
-                     n,k,j,i);
-              Q();
-            }
-
+          if (err_kill) {
+            printf("n,k,j,i=%d,%d,%d,%d\n",
+                    n,k,j,i);
+            Q();
           }
 
-
-    if (DBGPR_MESH_REFINEMENT) {
-      coutBoldBlue("coarse_\n");
-      coarse_.print_all();
-      coutBoldBlue("tmp\n");
-      tmp.print_all();
-
-      tmp.DeleteAthenaArray();
-
-      // if (err_kill) {
-      // // if (pmb->gid == 4) {
-      //   coutBoldRed("ERROR IN COARSE\n");
-      //   Q();
-      // }
-      // for (int n=sn; n<=en; ++n)
-      //   for (int j=pmb->cjvs; j<=pmb->cjve; ++j)
-      //     for (int i=pmb->civs; i<=pmb->cive; ++ i)
-      //       coarse_(n, 0, j, i) = 10000000.;
+        }
 
 
-      coutBoldRed("Warning: coarse buffer overridden..\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutBoldBlue("coarse_\n");
+  coarse_.print_all();
+  coutBoldBlue("tmp\n");
+  tmp.print_all();
 
-    }
+  tmp.DeleteAthenaArray();
 
-    if (err_kill) {
-      // if (pmb->gid == 4) {
-      coutBoldRed("ERROR IN COARSE\n");
-      Q();
-    }
+  // if (err_kill) {
+  // // if (pmb->gid == 4) {
+  //   coutBoldRed("ERROR IN COARSE\n");
+  //   Q();
+  // }
+  // for (int n=sn; n<=en; ++n)
+  //   for (int j=pmb->cjvs; j<=pmb->cjve; ++j)
+  //     for (int i=pmb->civs; i<=pmb->cive; ++ i)
+  //       coarse_(n, 0, j, i) = 10000000.;
+
+
+  coutBoldRed("Warning: coarse buffer overridden..\n");
+#endif // DBGPR_MESH_REFINEMENT
+
+  if (err_kill) {
+    // if (pmb->gid == 4) {
+    coutBoldRed("ERROR IN COARSE\n");
+    Q();
   }
+#endif // FILL_WAVE_COARSE_P
 
   // Prolongation based on Lagrange interpolation on uniform grids.
   // Coarse variable assumed to be densely populated over required nodes
@@ -1575,23 +1590,24 @@ void MeshRefinement::ProlongateVertexCenteredValues(
       }
     }
 
-    if (DBGPR_MESH_REFINEMENT) {
-      coutBoldRed("\npcoarsec->x1f\n");
-      pcoarsec->x1f.print_all();
+#ifdef DBGPR_MESH_REFINEMENT
+    coutBoldRed("\npcoarsec->x1f\n");
+    pcoarsec->x1f.print_all();
 
-      coutBoldRed("pco->x1f\n");
-      pco->x1f.print_all();
+    coutBoldRed("pco->x1f\n");
+    pco->x1f.print_all();
 
-      coutBoldRed("[post]coarse\n");
-      coarse.print_all();
-      coutBoldRed("[post]fine\n");
-      fine.print_all();
+    coutBoldRed("[post]coarse\n");
+    coarse.print_all();
+    coutBoldRed("[post]fine\n");
+    fine.print_all();
 
-      // coutBoldRed("[exact]fine [WARNING SOLN OVERWRITTEN]\n");
-      // pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, 0, 0, 0, 0, false);
-      // fine.print_all();
-      // Q();
-    }
+    // coutBoldRed("[exact]fine [WARNING SOLN OVERWRITTEN]\n");
+    // pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, 0, 0, 0, 0, false);
+    // fine.print_all();
+    // Q();
+#endif // DBGPR_MESH_REFINEMENT
+
     return;
   } else if (pmb->pmy_mesh->ndim == 2) {
     int const k = pmb->ckvs;
@@ -1660,22 +1676,23 @@ void MeshRefinement::ProlongateVertexCenteredValues(
 
     }
 
-    if (DBGPR_MESH_REFINEMENT) {
-      coutBoldRed("\npcoarsec->x1f\n");
-      pcoarsec->x1f.print_all();
+#ifdef DBGPR_MESH_REFINEMENT
+    coutBoldRed("\npcoarsec->x1f\n");
+    pcoarsec->x1f.print_all();
 
-      coutBoldRed("pco->x1f\n");
-      pco->x1f.print_all();
+    coutBoldRed("pco->x1f\n");
+    pco->x1f.print_all();
 
-      coutBoldRed("[post]coarse\n");
-      coarse.print_all();
-      coutBoldRed("[post]fine\n");
-      fine.print_all();
+    coutBoldRed("[post]coarse\n");
+    coarse.print_all();
+    coutBoldRed("[post]fine\n");
+    fine.print_all();
 
-      // coutBoldRed("[exact]fine [WARNING SOLN OVERWRITTEN]\n");
-      // pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, pmb->jms, pmb->jpe, 0, 0, false);
-      // fine.print_all();
-    }
+    // coutBoldRed("[exact]fine [WARNING SOLN OVERWRITTEN]\n");
+    // pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, pmb->jms, pmb->jpe, 0, 0, false);
+    // fine.print_all();
+#endif // DBGPR_MESH_REFINEMENT
+
     return;
   } else if (pmb->pmy_mesh->ndim == 3) {
     for (int n = sn; n <= en; ++n) {
@@ -1765,117 +1782,25 @@ void MeshRefinement::ProlongateVertexCenteredValues(
       }
     }
 
-    if (DBGPR_MESH_REFINEMENT) {
-      coutBoldRed("\npcoarsec->x1f\n");
-      pcoarsec->x1f.print_all();
+#ifdef DBGPR_MESH_REFINEMENT
+    coutBoldRed("\npcoarsec->x1f\n");
+    pcoarsec->x1f.print_all();
 
-      coutBoldRed("pco->x1f\n");
-      pco->x1f.print_all();
+    coutBoldRed("pco->x1f\n");
+    pco->x1f.print_all();
 
-      coutBoldRed("[post]coarse\n");
-      coarse.print_all();
-      coutBoldRed("[post]fine\n");
-      fine.print_all();
+    coutBoldRed("[post]coarse\n");
+    coarse.print_all();
+    coutBoldRed("[post]fine\n");
+    fine.print_all();
 
-      // coutBoldRed("[exact]fine [WARNING SOLN OVERWRITTEN]\n");
-      // pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, pmb->jms, pmb->jpe, 0, 0, false);
-      // fine.print_all();
-    }
+    // coutBoldRed("[exact]fine [WARNING SOLN OVERWRITTEN]\n");
+    // pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, pmb->jms, pmb->jpe, 0, 0, false);
+    // fine.print_all();
+#endif // DBGPR_MESH_REFINEMENT
+
     return;
   }
-
-  // if (pmb->pmy_mesh->ndim == 1) {
-  //   int const k = pmb->ckvs;
-  //   int const fk = pmb->kvs;
-  //   int const j = pmb->cjvs;
-  //   int const fj = pmb->jvs;
-
-  //   for (int n = sn; n <= en; ++n) {
-  //     for (int i = si; i <= ei; ++i) {
-
-  //       int fi, ib = 0;
-  //       int sio=0, eio=1;
-
-  //       // map for fine-index
-  //       if (i < pmb->civs) {
-  //         fi = pmb->ivs - 2 * (pmb->civs - i);
-  //       } else if (i > pmb->cive) {
-  //         fi = pmb->ive + 2 * (i - pmb->cive);
-  //       } else { // map to interior+boundary nodes
-  //         fi = 2 * (i - pmb->civs) + pmb->ivs;
-  //       }
-
-  //       // bias direction [nb. stencil still symmetric!]
-  //       if (i < pmb->cimp) {
-  //         ib = 1;
-  //         sio = 0;
-  //         eio = 1;
-  //       } else if (i > pmb->cimp) {
-  //         ib = -1;
-  //         sio = -1;
-  //         eio = 0;
-  //       } else {
-  //         // central node is unbiased, coincident, inject with no neighbors
-  //         sio = eio = 1;
-  //         ib = 1;
-  //       }
-
-  //       int il = i - hs_sz + 1 - (1 - ib) / 2;
-  //       int iu = i + hs_sz - (1 - ib) / 2;
-
-  //       // int slc_io = 0;
-  //       // if (il < pmb->cims)
-  //       //   slc_io = il;
-  //       // else if (iu > pmb->cipe)
-  //       //   slc_io = iu - pmb->cipe;
-
-  //       for (int io = sio; io <= eio; ++io) {
-  //         int const fio = fi + io;
-
-  //         // edge correction (odd ghosts require initial interp not inj.)
-  //         if ((fio >= pmb->ims) and (fio <= pmb->ipe)) {
-  //           fine(n, fk, fj, fio) = 0;
-
-  //           for (int di = 0; di < hs_sz; ++di) {
-  //             Real const lc_il = UniformInterp<hs_sz>::coeff[io-ib+1][di];
-  //             Real const lc_iu = UniformInterp<hs_sz>::coeff[io-ib+1][2 * hs_sz-di-1];
-
-  //             fine(n, fk, fj, fio) +=
-  //               lc_il * coarse(n, k, j, il + di) +
-  //               lc_iu * coarse(n, k, j, iu - di);
-
-  //             // if (n == 0) {
-  //             //   printf("i, fi, io, di, lc_il, lc_iu => %d, %d, %d, %d, %1.3f, %1.3f\n",
-  //             //           i, fi, io, di, lc_il, lc_iu);
-  //             // }
-
-  //           }
-  //         }
-  //       }
-
-
-
-  //     }
-  //   }
-
-  //   if (DBGPR_MESH_REFINEMENT) {
-  //     coutBoldRed("\npcoarsec->x1f\n");
-  //     pcoarsec->x1f.print_all();
-
-  //     coutBoldRed("pco->x1f\n");
-  //     pco->x1f.print_all();
-
-  //     coutBoldRed("[post]coarse\n");
-  //     coarse.print_all();
-  //     coutBoldRed("[post]fine\n");
-  //     fine.print_all();
-
-  //     // coutBoldRed("[exact]fine [WARNING SOLN OVERWRITTEN]\n");
-  //     // pmb->DebugWaveMeshBlock(fine, pmb->ims, pmb->ipe, 0, 0, 0, 0, false);
-  //     // fine.print_all();
-  //   }
-  //   return;
-  // }
 
 }
 
@@ -1884,8 +1809,9 @@ void MeshRefinement::ProlongateVertexCenteredValues(
 //  \brief Check refinement criteria
 
 void MeshRefinement::CheckRefinementCondition() {
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::CheckRefinementCondition\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::CheckRefinementCondition\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
   int ret = 0, aret = -1;
@@ -1951,8 +1877,9 @@ void MeshRefinement::CheckRefinementCondition() {
 int MeshRefinement::AddToRefinement(AthenaArray<Real> *pvar_in,
                                     AthenaArray<Real> *pcoarse_in) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::AddToRefinement\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::AddToRefinement\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   // BD: TODO: one should do this differently...
   if (PREFER_VC) {
@@ -1966,8 +1893,9 @@ int MeshRefinement::AddToRefinement(AthenaArray<Real> *pvar_in,
 
 int MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) {
 
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::AddToRefinement\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::AddToRefinement\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   pvars_fc_.push_back(std::make_tuple(pvar_fc, pcoarse_fc));
   return static_cast<int>(pvars_fc_.size() - 1);
@@ -1993,8 +1921,9 @@ int MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) {
 // 2) ability to switch (s, coarse_s) and (r, coarse_r) ptrs in MeshRefinement::bvals_cc_
 
 void MeshRefinement::SetHydroRefinement(HydroBoundaryQuantity hydro_type) {
-  if (DBGPR_MESH_REFINEMENT)
-    coutCyan("MeshRefinement::SetHydroRefinement\n");
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::SetHydroRefinement\n");
+#endif // DBGPR_MESH_REFINEMENT
 
   // TODO(felker): make more general so it can be used as SetPassiveScalarsRefinement()
   // e.g. refer to "int Hydro::refinement_idx" instead of assuming that the correct tuple

@@ -102,7 +102,7 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
   // }
 
   // point to appropriate grid
-  if (FILL_WAVE_COARSE_P)
+#ifdef FILL_WAVE_COARSE_P
   if (PREFER_VC) {
     printf("slice coords for vc\n");
     mbi.cx1.InitWithShallowSlice(pmb->pmr->pcoarsec->x1f, 0, 1);
@@ -114,7 +114,7 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
     mbi.cx2.InitWithShallowSlice(pmb->pmr->pcoarsec->x2v, 0, 1);
     mbi.cx3.InitWithShallowSlice(pmb->pmr->pcoarsec->x3v, 0, 1);
   }
-
+#endif // FILL_WAVE_COARSE_P
   // inform MeshBlock that this array is the "primary" representation
   // Used for:
   // (1) load-balancing

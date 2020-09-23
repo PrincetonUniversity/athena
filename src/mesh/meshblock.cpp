@@ -52,7 +52,7 @@
 
 // WGC wext
 #ifdef Z4C_WEXT
-#include "../z4c/wave_extract.hpp"  
+#include "../z4c/wave_extract.hpp"
 #endif
 // WGC end
 
@@ -69,9 +69,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(1.0) {
 
-  if (DBGPR_MESHBLOCK)
-    coutGreen("MeshBlock::MeshBlock\n");
-
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::MeshBlock\n");
+#endif // DBGPR_MESHBLOCK
 
   // BD:
   // As this needs to be done twice (here and restarts), is verbose and prone
@@ -223,8 +223,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     new_block_dt_{}, new_block_dt_hyperbolic_{}, new_block_dt_parabolic_{},
     new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(icost) {
-  if (DBGPR_MESHBLOCK)
-    coutGreen("MeshBlock::MeshBlock\n");
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::MeshBlock\n");
+#endif // DBGPR_MESHBLOCK
 
   // BD:
   // As this needs to be done twice (here and restarts), is verbose and prone
@@ -410,8 +411,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 // MeshBlock destructor
 
 MeshBlock::~MeshBlock() {
-  if (DBGPR_MESHBLOCK)
-    coutGreen("MeshBlock::~MeshBlock\n");
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::~MeshBlock\n");
+#endif // DBGPR_MESHBLOCK
 
   if (prev != nullptr) prev->next = next;
   if (next != nullptr) next->prev = prev;
@@ -586,8 +588,9 @@ inline void MeshBlock::SetIndicialParameters(int num_ghost,
 //  \brief Allocate Real AthenaArrays for user-defned data in MeshBlock
 
 void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
-  if (DBGPR_MESHBLOCK)
-    coutGreen("MeshBlock::AllocateRealUserMeshBlockDataField\n");
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::AllocateRealUserMeshBlockDataField\n");
+#endif // DBGPR_MESHBLOCK
 
   if (nreal_user_meshblock_data_ != 0) {
     std::stringstream msg;
@@ -605,8 +608,9 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
 //  \brief Allocate integer AthenaArrays for user-defned data in MeshBlock
 
 void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
-  if (DBGPR_MESHBLOCK)
-    coutGreen("MeshBlock::AllocateIntUserMeshBlockDataField\n");
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::AllocateIntUserMeshBlockDataField\n");
+#endif // DBGPR_MESHBLOCK
 
   if (nint_user_meshblock_data_ != 0) {
     std::stringstream msg;
@@ -625,8 +629,9 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
 //  \brief Allocate user-defined output variables
 
 void MeshBlock::AllocateUserOutputVariables(int n) {
-  if (DBGPR_MESHBLOCK)
-    coutGreen("MeshBlock::AllocateUserOutputVariables\n");
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::AllocateUserOutputVariables\n");
+#endif // DBGPR_MESHBLOCK
 
   if (n <= 0) return;
   if (nuser_out_var != 0) {
@@ -648,8 +653,9 @@ void MeshBlock::AllocateUserOutputVariables(int n) {
 //  \brief set the user-defined output variable name
 
 void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
-  if (DBGPR_MESHBLOCK)
-    coutGreen("MeshBlock::SetUserOutputVariableName\n");
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::SetUserOutputVariableName\n");
+#endif // DBGPR_MESHBLOCK
 
   if (n >= nuser_out_var) {
     std::stringstream msg;
@@ -667,8 +673,9 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
 //  \brief Calculate the block data size required for restart.
 
 std::size_t MeshBlock::GetBlockSizeInBytes() {
-  if (DBGPR_MESHBLOCK)
-    coutGreen("MeshBlock::GetBlockSizeInBytes\n");
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::GetBlockSizeInBytes\n");
+#endif // DBGPR_MESHBLOCK
 
   std::size_t size = 0;
   // NEW_OUTPUT_TYPES:
@@ -717,8 +724,9 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
 //  \brief stop time measurement and accumulate it in the MeshBlock cost
 
 void MeshBlock::SetCostForLoadBalancing(double cost) {
-  if (DBGPR_MESHBLOCK)
-    coutGreen("MeshBlock::SetCostForLoadBalancing\n");
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::SetCostForLoadBalancing\n");
+#endif // DBGPR_MESHBLOCK
 
   if (pmy_mesh->lb_manual_) {
     cost_ = std::min(cost, TINY_NUMBER);
@@ -731,8 +739,9 @@ void MeshBlock::SetCostForLoadBalancing(double cost) {
 //  \brief reset the MeshBlock cost for automatic load balancing
 
 void MeshBlock::ResetTimeMeasurement() {
-  if (DBGPR_MESHBLOCK)
-    coutGreen("MeshBlock::ResetTimeMeasurement\n");
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::ResetTimeMeasurement\n");
+#endif // DBGPR_MESHBLOCK
 
   if (pmy_mesh->lb_automatic_) cost_ = TINY_NUMBER;
 }
@@ -770,8 +779,9 @@ void MeshBlock::StopTimeMeasurement() {
 
 
 void MeshBlock::RegisterMeshBlockData(AthenaArray<Real> &pvar_in) {
-  if (DBGPR_MESHBLOCK)
-    coutGreen("MeshBlock::RegisterMeshBlockData\n");
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::RegisterMeshBlockData\n");
+#endif // DBGPR_MESHBLOCK
 
   // BD: TODO: one should do this differently...
   if (PREFER_VC) {
@@ -784,8 +794,9 @@ void MeshBlock::RegisterMeshBlockData(AthenaArray<Real> &pvar_in) {
 
 
 void MeshBlock::RegisterMeshBlockData(FaceField &pvar_fc) {
-  if (DBGPR_MESHBLOCK)
-    coutGreen("MeshBlock::RegisterMeshBlockData\n");
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::RegisterMeshBlockData\n");
+#endif // DBGPR_MESHBLOCK
 
   vars_fc_.push_back(pvar_fc);
   return;

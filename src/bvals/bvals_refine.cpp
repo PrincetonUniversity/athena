@@ -82,8 +82,9 @@
 
 void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
-  if (DBGPR_BVALS_REFINE)
-    coutBlue("BoundaryValues::ProlongateBoundaries\n");
+#ifdef DBGPR_BVALS_REFINE
+  coutBlue("BoundaryValues::ProlongateBoundaries\n");
+#endif // DBGPR_BVALS_REFINE
 
   MeshBlock *pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
@@ -262,8 +263,9 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
   } // end loop over nneighbor
 
-  if (DBGPR_BVALS_REFINE)
-    coutBlue("< BoundaryValues::ProlongateBoundaries\n");
+#ifdef DBGPR_BVALS_REFINE
+  coutBlue("< BoundaryValues::ProlongateBoundaries\n");
+#endif // DBGPR_BVALS_REFINE
 
   return;
 }
@@ -272,8 +274,9 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int nk,
                                                    int nj, int ni) {
 
-  if (DBGPR_BVALS_REFINE)
-    coutBlue("BoundaryValues::RestrictGhostCellsOnSameLevel\n");
+#ifdef DBGPR_BVALS_REFINE
+  coutBlue("BoundaryValues::RestrictGhostCellsOnSameLevel\n");
+#endif // DBGPR_BVALS_REFINE
 
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
@@ -367,8 +370,10 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
     }
   } // end loop over pvars_fc_
 
-  if (DBGPR_BVALS_REFINE)
-    coutBlue("< BoundaryValues::RestrictGhostCellsOnSameLevel\n");
+#ifdef DBGPR_BVALS_REFINE
+  coutBlue("< BoundaryValues::RestrictGhostCellsOnSameLevel\n");
+#endif // DBGPR_BVALS_REFINE
+
   return;
 }
 
@@ -382,8 +387,9 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     const NeighborBlock& nb, const Real time, const Real dt,
     int si, int ei, int sj, int ej, int sk, int ek) {
 
-  if (DBGPR_BVALS_REFINE)
-    coutBlue("BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel\n");
+#ifdef DBGPR_BVALS_REFINE
+  coutBlue("BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel\n");
+#endif // DBGPR_BVALS_REFINE
 
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
@@ -498,14 +504,14 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
 void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
                                           int si, int ei, int sj, int ej,
                                           int sk, int ek) {
-  if (DBGPR_BVALS_REFINE) {
-    coutBlue("BoundaryValues::ProlongateGhostCells\n");
-    coutBoldRed("\nix: ");
-    printf("(si, ei, sj, ej, sk, ek)="
-          "(%d, %d, %d, %d, %d, %d)\n",
-          si, ei, sj, ej, sk, ek);
-    nb.print_all();
-  }
+#ifdef DBGPR_BVALS_REFINE
+  coutBlue("BoundaryValues::ProlongateGhostCells\n");
+  coutBoldRed("\nix: ");
+  printf("(si, ei, sj, ej, sk, ek)="
+        "(%d, %d, %d, %d, %d, %d)\n",
+        si, ei, sj, ej, sk, ek);
+  nb.print_all();
+#endif // DBGPR_BVALS_REFINE
 
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
@@ -631,8 +637,10 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   }
 
 
-  if (DBGPR_BVALS_REFINE)
-    coutBlue("< BoundaryValues::ProlongateGhostCells\n");
+#ifdef DBGPR_BVALS_REFINE
+  coutBlue("< BoundaryValues::ProlongateGhostCells\n");
+#endif // DBGPR_BVALS_REFINE
+
   return;
 }
 
@@ -754,8 +762,9 @@ inline void BoundaryValues::CalculateVertexProlongationIndices(
 void BoundaryValues::ProlongateVertexCenteredBoundaries(
   const Real time, const Real dt) {
 
-  if (DBGPR_BVALS_REFINE)
-    coutBlue("BoundaryValues::ProlongateVertexCenteredBoundaries\n");
+#ifdef DBGPR_BVALS_REFINE
+  coutBlue("BoundaryValues::ProlongateVertexCenteredBoundaries\n");
+#endif // DBGPR_BVALS_REFINE
 
   MeshBlock *pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
@@ -868,15 +877,15 @@ void BoundaryValues::ProlongateVertexCenteredGhosts(
     int si, int ei, int sj, int ej,
     int sk, int ek) {
 
-  if (DBGPR_BVALS_REFINE) {
-    coutBlue("BoundaryValues::ProlongateVertexCenteredGhosts\n");
+#ifdef DBGPR_BVALS_REFINE
+  coutBlue("BoundaryValues::ProlongateVertexCenteredGhosts\n");
 
-    coutBoldRed("\nix: ");
-    printf("(si, ei, sj, ej, sk, ek)="
-          "(%d, %d, %d, %d, %d, %d)\n",
-          si, ei, sj, ej, sk, ek);
-    nb.print_all();
-  }
+  coutBoldRed("\nix: ");
+  printf("(si, ei, sj, ej, sk, ek)="
+        "(%d, %d, %d, %d, %d, %d)\n",
+        si, ei, sj, ej, sk, ek);
+  nb.print_all();
+#endif // DBGPR_BVALS_REFINE
 
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
@@ -895,9 +904,9 @@ void BoundaryValues::ProlongateVertexCenteredGhosts(
     //                                     sj, ej, sk, ek);
   }
 
-  if (DBGPR_BVALS_REFINE) {
-    coutBlue("< BoundaryValues::ProlongateGhostCells\n");
-  }
+#ifdef DBGPR_BVALS_REFINE
+  coutBlue("< BoundaryValues::ProlongateGhostCells\n");
+#endif // DBGPR_BVALS_REFINE
 
   return;
 }

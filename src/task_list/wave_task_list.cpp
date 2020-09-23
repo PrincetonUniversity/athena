@@ -382,8 +382,6 @@ void WaveIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 
   }
 
-  if (DBGPR_WAVEINTEGRATORTASKLIST)
-    printf("StartupTaskList\n");
   pmb->pbval->StartReceiving(BoundaryCommSubset::all);
   return;
 }
@@ -421,16 +419,16 @@ TaskStatus WaveIntegratorTaskList::IntegrateWave(MeshBlock *pmb, int stage) {
   //////////////////////////////////////////////////////////////////////////////
   // coutBoldGreen("STAGE=\n");
   // printf("%d\n", stage);
-  if (FILL_WAVE_INTERIOR){
-    if (stage <= nstages) {
-      int il = pwave->mbi.il, iu = pwave->mbi.iu;
-      int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
-      int jl = pwave->mbi.jl, ju = pwave->mbi.ju;
-      pmb->DebugWaveMeshBlock(pwave->u,
-                              il, iu, jl, ju, kl, ku, false);
-      return TaskStatus::next;
-    }
+#ifdef FILL_WAVE_INTERIOR
+  if (stage <= nstages) {
+    int il = pwave->mbi.il, iu = pwave->mbi.iu;
+    int kl = pwave->mbi.kl, ku = pwave->mbi.ku;
+    int jl = pwave->mbi.jl, ju = pwave->mbi.ju;
+    pmb->DebugWaveMeshBlock(pwave->u,
+                            il, iu, jl, ju, kl, ku, false);
+    return TaskStatus::next;
   }
+#endif // FILL_WAVE_INTERIOR
   //////////////////////////////////////////////////////////////////////////////
 
   if (stage <= nstages) {

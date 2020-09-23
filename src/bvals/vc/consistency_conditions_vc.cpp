@@ -57,9 +57,9 @@ void VertexCenteredBoundaryVariable::PrepareNodeMult() {
 //  \brief zero out ghost zones
 
 void VertexCenteredBoundaryVariable::ZeroVertexGhosts() {
-  if (DBGPR_CONSISTENCY_CONDITIONS_VC)
-    coutYellow("VertexCenteredBoundaryVariable::ZeroVertexGhosts\n");
-
+#ifdef DBGPR_CONSISTENCY_CONDITIONS_VC
+  coutYellow("VertexCenteredBoundaryVariable::ZeroVertexGhosts\n");
+#endif // DBGPR_CONSISTENCY_CONDITIONS_VC
   // additive unpack used to populate ghosts entails that old ghost data needs
   // to be cleaned
 
@@ -303,8 +303,10 @@ inline void VertexCenteredBoundaryVariable::ApplyNodeMultiplicitesDim1(
 //! \fn void VertexCenteredBoundaryVariable::FinalizeVertexConsistency()
 //  \brief Apply division factors to shared vertices
 void VertexCenteredBoundaryVariable::FinalizeVertexConsistency() {
-  if (DBGPR_BVALS_VC)
-    coutYellow("VertexCenteredBoundaryVariable::FinalizeVertexConsistency\n");
+
+#ifdef CONSISTENCY_CONDITIONS_VC
+  coutYellow("VertexCenteredBoundaryVariable::FinalizeVertexConsistency\n");
+#endif // CONSISTENCY_CONDITIONS_VC
 
   MeshBlock *pmb = pmy_block_;
   AthenaArray<Real> &var = *var_vc;
