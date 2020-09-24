@@ -68,6 +68,9 @@ public:
   Real density_cgs;  // code unit of density in g/cm^3
   Real mol_weight;   // molecular weight of gas in proton masses
 
+  // User-specified velocity maximum
+  Real v_sq_max;
+
   // Data arrays
   AthenaArray<Real> zetaf;           // face-centered polar radiation angles
   AthenaArray<Real> zetav;           // volume-centered polar radiation angles

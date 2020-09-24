@@ -88,6 +88,122 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
               + norm_to_tet_(3,2,k,j,i) * uu2 + norm_to_tet_(3,3,k,j,i) * uu3;
         }
 
+        // Calculate radiation energy density in fluid frame
+        for (int i = is; i <= ie; ++i) {
+          ee_f_minus_(i) = 0.0;
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              Real u_n = -u_tet_(0,i) * nh_cc_(0,l,m) + u_tet_(1,i) * nh_cc_(1,l,m)
+                  + u_tet_(2,i) * nh_cc_(2,l,m) + u_tet_(3,i) * nh_cc_(3,l,m);
+              ee_f_minus_(i) += prim_rad(lm,k,j,i) * SQR(u_n) * solid_angle(l,m);
+            }
+          }
+        }
+
+        // Modify velocity in radiation-dominated regime
+        for (int i = is; i <= ie; ++i) {
+
+          // Check that radiation dominates fluid
+          Real rho = prim_hydro_alt(IDN,k,j,i);
+          Real pgas = prim_hydro_alt(IPR,k,j,i);
+          Real egas = rho + pgas / (gamma_adi - 1.);
+          if (ee_f_minus_(i) <= egas) {
+            continue;
+          }
+
+          // Calculate radiation moments
+          Real rr_tet00 = 0.0;
+          Real rr_tet01 = 0.0;
+          Real rr_tet02 = 0.0;
+          Real rr_tet03 = 0.0;
+          Real rr_tet11 = 0.0;
+          Real rr_tet12 = 0.0;
+          Real rr_tet13 = 0.0;
+          Real rr_tet22 = 0.0;
+          Real rr_tet23 = 0.0;
+          Real rr_tet33 = 0.0;
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              rr_tet00 += prim_rad(lm,k,j,i) * solid_angle(l,m);
+              rr_tet01 += prim_rad(lm,k,j,i) * nh_cc_(1,l,m) * solid_angle(l,m);
+              rr_tet02 += prim_rad(lm,k,j,i) * nh_cc_(2,l,m) * solid_angle(l,m);
+              rr_tet03 += prim_rad(lm,k,j,i) * nh_cc_(3,l,m) * solid_angle(l,m);
+              rr_tet11 += prim_rad(lm,k,j,i) * SQR(nh_cc_(1,l,m)) * solid_angle(l,m);
+              rr_tet12 +=
+                  prim_rad(lm,k,j,i) * nh_cc_(1,l,m) * nh_cc_(2,l,m) * solid_angle(l,m);
+              rr_tet13 +=
+                  prim_rad(lm,k,j,i) * nh_cc_(1,l,m) * nh_cc_(3,l,m) * solid_angle(l,m);
+              rr_tet22 += prim_rad(lm,k,j,i) * SQR(nh_cc_(2,l,m)) * solid_angle(l,m);
+              rr_tet23 +=
+                  prim_rad(lm,k,j,i) * nh_cc_(2,l,m) * nh_cc_(3,l,m) * solid_angle(l,m);
+              rr_tet33 += prim_rad(lm,k,j,i) * SQR(nh_cc_(3,l,m)) * solid_angle(l,m);
+            }
+          }
+
+          // Calculate radiation-frame velocity
+          Real vrad_tet1 = rr_tet01 / rr_tet00;
+          Real vrad_tet2 = rr_tet02 / rr_tet00;
+          Real vrad_tet3 = rr_tet03 / rr_tet00;
+          Real vrad_sq = SQR(vrad_tet1) + SQR(vrad_tet2) + SQR(vrad_tet3);
+          if (vrad_sq > v_sq_max) {
+            Real ratio = std::sqrt(v_sq_max / vrad_sq);
+            vrad_tet1 *= ratio;
+            vrad_tet2 *= ratio;
+            vrad_tet3 *= ratio;
+            vrad_sq = v_sq_max;
+          }
+          Real urad_tet0 = 1.0 / std::sqrt(1.0 - vrad_sq);
+          Real urad_tet1 = urad_tet0 * vrad_tet1;
+          Real urad_tet2 = urad_tet0 * vrad_tet2;
+          Real urad_tet3 = urad_tet0 * vrad_tet3;
+
+          // Calculate current fluid momentum
+          Real wgas = egas + pgas;
+          Real mgas_tet1 = wgas * u_tet_(0,i) * u_tet_(1,i);
+          Real mgas_tet2 = wgas * u_tet_(0,i) * u_tet_(2,i);
+          Real mgas_tet3 = wgas * u_tet_(0,i) * u_tet_(3,i);
+
+          // Calculate fluid momentum if accelerated to radiation frame
+          Real mgas_rad_tet1 = wgas * urad_tet0 * urad_tet1;
+          Real mgas_rad_tet2 = wgas * urad_tet0 * urad_tet2;
+          Real mgas_rad_tet3 = wgas * urad_tet0 * urad_tet3;
+
+          // Estimate change in fluid momentum from source terms
+          Real tt = pgas / rho;
+          Real k_a = rho * opacity(OPAA,k,j,i);
+          Real k_s = rho * opacity(OPAS,k,j,i);
+          Real gg_tet1 = -(k_a * arad * SQR(SQR(tt)) + k_s * ee_f_minus_(i)) * u_tet_(1,i)
+              - (k_a + k_s) * (-u_tet_(0,i) * rr_tet01 + u_tet_(1,i) * rr_tet11
+              + u_tet_(2,i) * rr_tet12 + u_tet_(3,i) * rr_tet13);
+          Real gg_tet2 = -(k_a * arad * SQR(SQR(tt)) + k_s * ee_f_minus_(i)) * u_tet_(2,i)
+              - (k_a + k_s) * (-u_tet_(0,i) * rr_tet02 + u_tet_(1,i) * rr_tet12
+              + u_tet_(2,i) * rr_tet22 + u_tet_(3,i) * rr_tet23);
+          Real gg_tet3 = -(k_a * arad * SQR(SQR(tt)) + k_s * ee_f_minus_(i)) * u_tet_(3,i)
+              - (k_a + k_s) * (-u_tet_(0,i) * rr_tet03 + u_tet_(1,i) * rr_tet13
+              + u_tet_(2,i) * rr_tet13 + u_tet_(3,i) * rr_tet33);
+          Real dmgas_tet1 = dt / 2.0 * gg_tet1;
+          Real dmgas_tet2 = dt / 2.0 * gg_tet2;
+          Real dmgas_tet3 = dt / 2.0 * gg_tet3;
+
+          // Estimate new fluid velocity
+          Real frac1 =
+              mgas_rad_tet1 == mgas_tet1 ? 0.0 : dmgas_tet1 / (mgas_rad_tet1 - mgas_tet1);
+          Real frac2 =
+              mgas_rad_tet2 == mgas_tet2 ? 0.0 : dmgas_tet2 / (mgas_rad_tet2 - mgas_tet2);
+          Real frac3 =
+              mgas_rad_tet3 == mgas_tet3 ? 0.0 : dmgas_tet3 / (mgas_rad_tet3 - mgas_tet3);
+          frac1 = std::min(std::max(frac1, 0.0), 1.0);
+          frac2 = std::min(std::max(frac2, 0.0), 1.0);
+          frac3 = std::min(std::max(frac3, 0.0), 1.0);
+          u_tet_(1,i) = (1.0 - frac1) * u_tet_(1,i) + frac1 * urad_tet1;
+          u_tet_(2,i) = (1.0 - frac2) * u_tet_(2,i) + frac2 * urad_tet2;
+          u_tet_(3,i) = (1.0 - frac3) * u_tet_(3,i) + frac3 * urad_tet3;
+          u_tet_(0,i) =
+              std::sqrt(1.0 + SQR(u_tet_(1,i)) + SQR(u_tet_(2,i)) + SQR(u_tet_(3,i)));
+        }
+
         // Calculate quartic coefficients
         for (int i = is; i <= ie; ++i) {
           Real rho = prim_hydro(IDN,k,j,i);

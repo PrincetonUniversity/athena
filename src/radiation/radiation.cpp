@@ -133,6 +133,10 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   arad = arad_cgs * SQR(c_cgs) * SQR(SQR(mol_weight * m_p_cgs * c_cgs / k_b_cgs))
       / density_cgs;
 
+  // Calculate maximum velocity
+  Real gamma_max = pin->GetOrAddReal("hydro", "gamma_max", 1000.0);
+  v_sq_max = 1.0 - 1.0 / SQR(gamma_max);
+
   // Allocate memory for angles
   zetaf.NewAthenaArray(nzeta + 2*NGHOST + 1);
   zetav.NewAthenaArray(nzeta + 2*NGHOST);
