@@ -39,8 +39,9 @@ BoundaryVariable::BoundaryVariable(MeshBlock *pmb) : bvar_index(), pmy_block_(pm
 //  \brief Initialize BoundaryData structure
 
 void BoundaryVariable::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type) {
-  if (DBGPR_BVALS_VAR)
-    coutMagenta("BoundaryVariable::InitBoundaryData\n");
+#ifdef DBGPR_BVALS_VAR
+  coutMagenta("BoundaryVariable::InitBoundaryData\n");
+#endif // DBGPR_BVALS_VAR
 
   MeshBlock *pmb = pmy_block_;
   NeighborIndexes *ni = pbval_->ni;
@@ -90,8 +91,9 @@ void BoundaryVariable::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity typ
 //  \brief Destroy BoundaryData structure
 
 void BoundaryVariable::DestroyBoundaryData(BoundaryData<> &bd) {
-  if (DBGPR_BVALS_VAR)
-    coutMagenta("BoundaryVariable::DestroyBoundaryData\n");
+#ifdef DBGPR_BVALS_VAR
+  coutMagenta("BoundaryVariable::DestroyBoundaryData\n");
+#endif // DBGPR_BVALS_VAR
 
   for (int n=0; n<bd.nbmax; n++) {
     delete [] bd.send[n];
@@ -117,8 +119,9 @@ void BoundaryVariable::DestroyBoundaryData(BoundaryData<> &bd) {
 //  separate BoundaryValues
 
 void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize) {
-  if (DBGPR_BVALS_VAR)
-    coutMagenta("BoundaryVariable::CopyVariableBufferSameProcess\n");
+#ifdef DBGPR_BVALS_VAR
+  coutMagenta("BoundaryVariable::CopyVariableBufferSameProcess\n");
+#endif // DBGPR_BVALS_VAR
 
   // Locate target buffer
   // 1) which MeshBlock?
@@ -135,8 +138,9 @@ void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssiz
 // KGF: change ssize to send_count
 
 void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize) {
-  if (DBGPR_BVALS_VAR)
-    coutMagenta("BoundaryVariable::CopyFluxCorrectionBufferSameProcess\n");
+#ifdef DBGPR_BVALS_VAR
+  coutMagenta("BoundaryVariable::CopyFluxCorrectionBufferSameProcess\n");
+#endif // DBGPR_BVALS_VAR
 
   // Locate target buffer
   // 1) which MeshBlock?
@@ -154,9 +158,9 @@ void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, in
 // fixed "int bufid" is used for both IDs. Seems unnecessarily strict.
 void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int ssize,
                                                   int bufid, bool upper) {
-
-  if (DBGPR_BVALS_VAR)
-    coutMagenta("BoundaryVariable::CopyShearBufferSameProcess\n");
+#ifdef DBGPR_BVALS_VAR
+  coutMagenta("BoundaryVariable::CopyShearBufferSameProcess\n");
+#endif // DBGPR_BVALS_VAR
 
   // Locate target buffer
   // 1) which MeshBlock?
@@ -173,8 +177,9 @@ void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int 
 
 void BoundaryVariable::CopyShearEMFSameProcess(SimpleNeighborBlock& snb, int ssize,
                                                int bufid, bool upper) {
-  if (DBGPR_BVALS_VAR)
-    coutMagenta("BoundaryVariable::CopyShearEMFSameProcess\n");
+#ifdef DBGPR_BVALS_VAR
+  coutMagenta("BoundaryVariable::CopyShearEMFSameProcess\n");
+#endif // DBGPR_BVALS_VAR
 
   // Locate target buffer
   // 1) which MeshBlock?
@@ -196,8 +201,9 @@ void BoundaryVariable::CopyShearEMFSameProcess(SimpleNeighborBlock& snb, int ssi
 //  \brief Send boundary buffers of variables
 
 void BoundaryVariable::SendBoundaryBuffers() {
-  if (DBGPR_BVALS_VAR)
-    coutMagenta("BoundaryVariable::SendBoundaryBuffers\n");
+#ifdef DBGPR_BVALS_VAR
+  coutMagenta("BoundaryVariable::SendBoundaryBuffers\n");
+#endif // DBGPR_BVALS_VAR
 
   MeshBlock *pmb = pmy_block_;
   int mylevel = pmb->loc.level;
@@ -229,8 +235,9 @@ void BoundaryVariable::SendBoundaryBuffers() {
 //  \brief receive the boundary data
 
 bool BoundaryVariable::ReceiveBoundaryBuffers() {
-  if (DBGPR_BVALS_VAR)
-    coutMagenta("BoundaryVariable::ReceiveBoundaryBuffers\n");
+#ifdef DBGPR_BVALS_VAR
+  coutMagenta("BoundaryVariable::ReceiveBoundaryBuffers\n");
+#endif // DBGPR_BVALS_VAR
 
   bool bflag = true;
 
@@ -265,8 +272,9 @@ bool BoundaryVariable::ReceiveBoundaryBuffers() {
 //  \brief set the boundary data
 
 void BoundaryVariable::SetBoundaries() {
-  if (DBGPR_BVALS_VAR)
-    coutMagenta("BoundaryVariable::SetBoundaries\n");
+#ifdef DBGPR_BVALS_VAR
+  coutMagenta("BoundaryVariable::SetBoundaries\n");
+#endif // DBGPR_BVALS_VAR
 
   MeshBlock *pmb = pmy_block_;
   int mylevel = pmb->loc.level;
@@ -294,17 +302,18 @@ void BoundaryVariable::SetBoundaries() {
 //  \brief receive and set the boundary data for initialization
 
 void BoundaryVariable::ReceiveAndSetBoundariesWithWait() {
-  if (DBGPR_BVALS_VAR)
-    coutMagenta("BoundaryVariable::ReceiveAndSetBoundariesWithWait\n");
+#ifdef DBGPR_BVALS_VAR
+  coutMagenta("BoundaryVariable::ReceiveAndSetBoundariesWithWait\n");
+#endif // DBGPR_BVALS_VAR
 
   MeshBlock *pmb = pmy_block_;
   int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
 
-    if (DBGPR_BVALS_VAR) {
-      coutMagenta("iterating over neighbors; (n, pbval_->nneighbor)=");
-      printf("(%d, %d)\n", n, pbval_->nneighbor);
-    }
+#ifdef DBGPR_BVALS_VAR
+    coutMagenta("iterating over neighbors; (n, pbval_->nneighbor)=");
+    printf("(%d, %d)\n", n, pbval_->nneighbor);
+#endif // DBGPR_BVALS_VAR
 
     NeighborBlock& nb = pbval_->neighbor[n];
 #ifdef MPI_PARALLEL

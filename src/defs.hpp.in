@@ -12,17 +12,28 @@
 
 //----------------------------------------------------------------------------------------
 // control debug (printing) for various parts of the codebase
-#define DBGPR_MESH false
-#define DBGPR_MESHBLOCK false
-#define DBGPR_MESHBLOCK_TREE false
-#define DBGPR_MESH_REFINEMENT false
-#define DBGPR_AMR_LOADBALANCE false
-#define DBGPR_BVALS_VAR false
-#define DBGPR_BVALS_REFINE false
-#define DBGPR_BVALS_CC false
-#define DBGPR_BVALS_VC false
-#define DBGPR_CONSISTENCY_CONDITIONS_VC false
-#define DBGPR_WAVEINTEGRATORTASKLIST false
+// enable by stripping 'NO' prefix (not exposed to configure.py)
+#define NO_DBGPR_AMR_LOADBALANCE
+#define NO_DBGPR_MESH
+#define NO_DBGPR_MESH_REFINEMENT
+#define NO_DBGPR_MESHBLOCK
+#define NO_DBGPR_MESHBLOCK_TREE
+#define NO_DBGPR_BVALS_VAR
+#define NO_DBGPR_BVALS_CC
+#define NO_DBGPR_BVALS_VC
+#define NO_DBGPR_BVALS_REFINE
+#define NO_DBGPR_CONSISTENCY_CONDITIONS_VC
+#define NO_DBGPR_BUFFER_UTILS
+
+// deprecated: fill different portions of block with exact solution [for debug]
+#define NO_FILL_WAVE_BND_FRC
+#define NO_FILL_WAVE_BND_FRF
+#define NO_FILL_WAVE_BND_SL
+#define NO_FILL_WAVE_INTERIOR
+#define NO_FILL_WAVE_COARSE_P
+
+#define DBG_VC_CONSISTENCY 0
+//------
 
 //----------------------------------------------------------------------------------------
 // macros which define physics and algorithms
@@ -43,16 +54,6 @@
 
 // prefer vertex-centering default=0 (false)
 #define PREFER_VC @PREFER_VC@
-
-// deprecated: fill different portions of block with exact solution [for debug]
-#define FILL_WAVE_INTERIOR 0
-#define FILL_WAVE_BND_SL 0
-#define FILL_WAVE_BND_FRF 0
-#define FILL_WAVE_BND_FRC 0
-#define FILL_WAVE_VERTICES 0
-#define FILL_WAVE_COARSE_P 0
-#define DBG_VC_CONSISTENCY 0
-//------
 
 // enable shearing box? default=0 (false)
 #define SHEARING_BOX @SHEARING_BOX@
@@ -165,6 +166,10 @@
 #define MAX_NSTAGE 5     // maximum number of stages per cycle for time-integrator
 #define MAX_NREGISTER 3  // maximum number of (u, b) register pairs for time-integrator
 #define NRAD @NUMBER_EXT_RAD@
+
+//----------------------------------------------------------------------------------------
+// macros associated with input / output (rarely modified)
+#define FPRINTF_PREC 17
 
 //----------------------------------------------------------------------------------------
 // general purpose macros (never modified)

@@ -122,8 +122,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     MGGravityBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
                                MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
 
-  if (DBGPR_MESH)
-    coutRed("Mesh::Mesh(ParameterInput *pin, int mesh_test)\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::Mesh(ParameterInput *pin, int mesh_test)\n");
+#endif // DBGPR_MESH
 
   std::stringstream msg;
   RegionSize block_size;
@@ -622,8 +623,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     MGGravityBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
                         MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
 
-  if (DBGPR_MESH)
-    coutRed("Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test)\n");
+#endif // DBGPR_MESH
 
   std::stringstream msg;
   RegionSize block_size;
@@ -953,8 +955,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 // destructor
 
 Mesh::~Mesh() {
-  if (DBGPR_MESH)
-    coutRed("Mesh::~Mesh\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::~Mesh\n");
+#endif // DBGPR_MESH
 
   while (pblock->prev != nullptr) // should not be true
     delete pblock->prev;
@@ -1005,8 +1008,9 @@ Mesh::~Mesh() {
 //  \brief print the mesh structure information
 
 void Mesh::OutputMeshStructure(int ndim) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::OutputMeshStructure\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::OutputMeshStructure\n");
+#endif // DBGPR_MESH
 
   RegionSize block_size;
   BoundaryFlag block_bcs[6];
@@ -1158,8 +1162,9 @@ void Mesh::OutputMeshStructure(int ndim) {
 //        this assumes that phydro->NewBlockTimeStep is already called
 
 void Mesh::NewTimeStep() {
-  if (DBGPR_MESH)
-    coutRed("Mesh::NewTimeStep\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::NewTimeStep\n");
+#endif // DBGPR_MESH
 
   MeshBlock *pmb = pblock;
 
@@ -1202,8 +1207,9 @@ void Mesh::NewTimeStep() {
 //  \brief Enroll a user-defined boundary function
 
 void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollUserBoundaryFunction\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollUserBoundaryFunction\n");
+#endif // DBGPR_MESH
 
   std::stringstream msg;
   if (dir < 0 || dir > 5) {
@@ -1227,8 +1233,9 @@ void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
 //  \brief Enroll a user-defined Multigrid boundary function
 
 void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollUserMGGravityBoundaryFunction\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollUserMGGravityBoundaryFunction\n");
+#endif // DBGPR_MESH
 
   std::stringstream msg;
   if (dir < 0 || dir > 5) {
@@ -1242,16 +1249,18 @@ void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc 
 
 // DEPRECATED(felker): provide trivial overloads for old-style BoundaryFace enum argument
 void Mesh::EnrollUserBoundaryFunction(int dir, BValFunc my_bc) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollUserBoundaryFunction\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollUserBoundaryFunction\n");
+#endif // DBGPR_MESH
 
   EnrollUserBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
   return;
 }
 
 void Mesh::EnrollUserMGGravityBoundaryFunction(int dir, MGBoundaryFunc my_bc) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollUserMGGravityBoundaryFunction\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollUserMGGravityBoundaryFunction\n");
+#endif // DBGPR_MESH
 
   EnrollUserMGGravityBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
   return;
@@ -1262,8 +1271,9 @@ void Mesh::EnrollUserMGGravityBoundaryFunction(int dir, MGBoundaryFunc my_bc) {
 //  \brief Enroll a user-defined function for checking refinement criteria
 
 void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollUserRefinementCondition\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollUserRefinementCondition\n");
+#endif // DBGPR_MESH
 
   if (adaptive)
     AMRFlag_ = amrflag;
@@ -1275,8 +1285,9 @@ void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag) {
 //  \brief Enroll a user-defined function for Mesh generation
 
 void Mesh::EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollUserMeshGenerator\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollUserMeshGenerator\n");
+#endif // DBGPR_MESH
 
   std::stringstream msg;
   if (dir < 0 || dir >= 3) {
@@ -1312,8 +1323,9 @@ void Mesh::EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg) {
 //  \brief Enroll a user-defined source function
 
 void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc my_func) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollUserExplicitSourceFunction\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollUserExplicitSourceFunction\n");
+#endif // DBGPR_MESH
 
   UserSourceTerm_ = my_func;
   return;
@@ -1324,8 +1336,9 @@ void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc my_func) {
 //  \brief Enroll a user-defined time step function
 
 void Mesh::EnrollUserTimeStepFunction(TimeStepFunc my_func) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollUserTimeStepFunction\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollUserTimeStepFunction\n");
+#endif // DBGPR_MESH
 
   UserTimeStep_ = my_func;
   return;
@@ -1336,8 +1349,9 @@ void Mesh::EnrollUserTimeStepFunction(TimeStepFunc my_func) {
 //  \brief set the number of user-defined history outputs
 
 void Mesh::AllocateUserHistoryOutput(int n) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::AllocateUserHistoryOutput\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::AllocateUserHistoryOutput\n");
+#endif // DBGPR_MESH
 
   nuser_history_output_ = n;
   user_history_output_names_ = new std::string[n];
@@ -1353,8 +1367,9 @@ void Mesh::AllocateUserHistoryOutput(int n) {
 
 void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name,
                                    UserHistoryOperation op) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollUserHistoryOutput\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollUserHistoryOutput\n");
+#endif // DBGPR_MESH
 
   std::stringstream msg;
   if (i >= nuser_history_output_) {
@@ -1373,8 +1388,9 @@ void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char 
 //  \brief Enroll a user-defined metric for arbitrary GR coordinates
 
 void Mesh::EnrollUserMetric(MetricFunc my_func) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollUserMetric\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollUserMetric\n");
+#endif // DBGPR_MESH
 
   UserMetric_ = my_func;
   return;
@@ -1385,8 +1401,9 @@ void Mesh::EnrollUserMetric(MetricFunc my_func) {
 //  \brief Enroll a user-defined magnetic field diffusivity function
 
 void Mesh::EnrollViscosityCoefficient(ViscosityCoeffFunc my_func) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollViscosityCoefficient\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollViscosityCoefficient\n");
+#endif // DBGPR_MESH
 
   ViscosityCoeff_ = my_func;
   return;
@@ -1397,8 +1414,9 @@ void Mesh::EnrollViscosityCoefficient(ViscosityCoeffFunc my_func) {
 //  \brief Enroll a user-defined thermal conduction function
 
 void Mesh::EnrollConductionCoefficient(ConductionCoeffFunc my_func) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollConductionCoefficient\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollConductionCoefficient\n");
+#endif // DBGPR_MESH
 
   ConductionCoeff_ = my_func;
   return;
@@ -1409,8 +1427,9 @@ void Mesh::EnrollConductionCoefficient(ConductionCoeffFunc my_func) {
 //  \brief Enroll a user-defined magnetic field diffusivity function
 
 void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeffFunc my_func) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::EnrollFieldDiffusivity\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::EnrollFieldDiffusivity\n");
+#endif // DBGPR_MESH
 
   FieldDiffusivity_ = my_func;
   return;
@@ -1420,8 +1439,9 @@ void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeffFunc my_func) {
 //  \brief Allocate Real AthenaArrays for user-defned data in Mesh
 
 void Mesh::AllocateRealUserMeshDataField(int n) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::AllocateRealUserMeshDataField\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::AllocateRealUserMeshDataField\n");
+#endif // DBGPR_MESH
 
   if (nreal_user_mesh_data_ != 0) {
     std::stringstream msg;
@@ -1439,8 +1459,9 @@ void Mesh::AllocateRealUserMeshDataField(int n) {
 //  \brief Allocate integer AthenaArrays for user-defned data in Mesh
 
 void Mesh::AllocateIntUserMeshDataField(int n) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::AllocateIntUserMeshDataField\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::AllocateIntUserMeshDataField\n");
+#endif // DBGPR_MESH
 
   if (nint_user_mesh_data_ != 0) {
     std::stringstream msg;
@@ -1459,8 +1480,9 @@ void Mesh::AllocateIntUserMeshDataField(int n) {
 // \brief Apply MeshBlock::UserWorkBeforeOutput
 
 void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::ApplyUserWorkBeforeOutput\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::ApplyUserWorkBeforeOutput\n");
+#endif // DBGPR_MESH
 
   MeshBlock *pmb = pblock;
   while (pmb != nullptr)  {
@@ -1474,8 +1496,9 @@ void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
 // \brief  initialization before the main loop
 
 void Mesh::Initialize(int res_flag, ParameterInput *pin) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::Initialize\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::Initialize\n");
+#endif // DBGPR_MESH
 
   bool iflag = true;
   int inb = nbtotal;
@@ -1627,8 +1650,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
       } // multilevel
 
-      if (DBGPR_MESH)
-        coutBoldGreen("Boundary communication complete; processing...\n");
+#ifdef DBGPR_MESH
+      coutBoldGreen("Boundary communication complete; processing...\n");
+#endif // DBGPR_MESH
 
       if (FLUID_ENABLED) {
         // perform fourth-order correction of midpoint initial condition:
@@ -1789,8 +1813,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 //  \brief return the MeshBlock whose gid is tgid
 
 MeshBlock* Mesh::FindMeshBlock(int tgid) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::FindMeshBlock\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::FindMeshBlock\n");
+#endif // DBGPR_MESH
 
   MeshBlock *pbl = pblock;
   while (pbl != nullptr) {
@@ -1808,8 +1833,9 @@ MeshBlock* Mesh::FindMeshBlock(int tgid) {
 
 void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                      BoundaryFlag *block_bcs) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::SetBlockSizeAndBoundaries\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::SetBlockSizeAndBoundaries\n");
+#endif // DBGPR_MESH
 
   std::int64_t &lx1 = loc.lx1;
   int &ll = loc.level;
@@ -1896,8 +1922,9 @@ void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size
 
 
 void Mesh::CorrectMidpointInitialCondition(std::vector<MeshBlock*> &pmb_array, int nmb) {
-  if (DBGPR_MESH)
-    coutRed("Mesh::CorrectMidpointInitialCondition\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::CorrectMidpointInitialCondition\n");
+#endif // DBGPR_MESH
 
   MeshBlock *pmb;
   Hydro *ph;
@@ -2035,8 +2062,9 @@ int Mesh::ReserveTagPhysIDs(int num_phys) {
 // TODO(felker): deduplicate this logic, which combines conditionals in MeshBlock ctor
 
 void Mesh::ReserveMeshBlockPhysIDs() {
-  if (DBGPR_MESH)
-    coutRed("Mesh::ReserveMeshBlockPhysIDs\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::ReserveMeshBlockPhysIDs\n");
+#endif // DBGPR_MESH
 
 #ifdef MPI_PARALLEL
   if (FLUID_ENABLED) {
@@ -2083,8 +2111,9 @@ void Mesh::ReserveMeshBlockPhysIDs() {
 //  condition. Typically called in Mesh() ctor initializer list
 
 FluidFormulation GetFluidFormulation(const std::string& input_string) {
-  if (DBGPR_MESH)
-    coutRed("GetFluidFormulation\n");
+#ifdef DBGPR_MESH
+  coutRed("GetFluidFormulation\n");
+#endif // DBGPR_MESH
 
   if (input_string == "true") {
     return FluidFormulation::evolve;
@@ -2102,8 +2131,9 @@ FluidFormulation GetFluidFormulation(const std::string& input_string) {
 }
 
 void Mesh::OutputCycleDiagnostics() {
-  if (DBGPR_MESH)
-    coutRed("Mesh::OutputCycleDiagnostics\n");
+#ifdef DBGPR_MESH
+  coutRed("Mesh::OutputCycleDiagnostics\n");
+#endif // DBGPR_MESH
 
   const int dt_precision = std::numeric_limits<Real>::max_digits10 - 1;
   const int ratio_precision = 3;
