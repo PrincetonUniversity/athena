@@ -15,6 +15,7 @@
 #include "../athena.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
+#include "../outputs/outputs.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -204,8 +205,10 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   SetZ4cAliases(storage.rhs, rhs);
   SetZ4cAliases(storage.u, z4c);
 //WGC wext
+#if defined(Z4C_WEXT)
   SetWeylAliases(storage.weyl, weyl);
 //WGC end
+#endif
   // Allocate memory for aux 1D vars
   r.NewAthenaTensor(nn1);
   detg.NewAthenaTensor(nn1);
@@ -271,6 +274,7 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   LA_dd.NewAthenaTensor(nn1);
 
 //WGC wext
+#if defined(Z4C_WEXT)
   uvec.NewAthenaTensor(nn1);
   vvec.NewAthenaTensor(nn1);
   wvec.NewAthenaTensor(nn1);
@@ -280,6 +284,7 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   Riemm4_dddd.NewAthenaTensor(nn1);
   Riemm4_ddd.NewAthenaTensor(nn1);
   Riemm4_dd.NewAthenaTensor(nn1);
+#endif // Z4C_WEXT
 //WGC end
 
 //
@@ -320,7 +325,9 @@ Z4c::~Z4c()
   storage.con.DeleteAthenaArray();
   storage.mat.DeleteAthenaArray();
 //WGC wext
+#if defined(Z4C_WEXT)
   storage.weyl.DeleteAthenaArray();
+#endif
 //WGC end
   dt1_.DeleteAthenaArray();
   dt2_.DeleteAthenaArray();
@@ -389,6 +396,7 @@ Z4c::~Z4c()
   Lg_dd.DeleteAthenaTensor();
   LA_dd.DeleteAthenaTensor();
 //WGC wext
+#if defined(Z4C_WEXT)
   uvec.DeleteAthenaTensor();
   vvec.DeleteAthenaTensor();
   wvec.DeleteAthenaTensor();
@@ -398,6 +406,7 @@ Z4c::~Z4c()
   Riemm4_dddd.DeleteAthenaTensor();
   Riemm4_ddd.DeleteAthenaTensor();
   Riemm4_dd.DeleteAthenaTensor();
+#endif
 //WGC end
 
 }

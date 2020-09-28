@@ -469,6 +469,31 @@ public:
   TaskStatus AssertFinite(MeshBlock *pmb, int stage);      // ASSERT_FIN   [x]
 #endif // Z4C_ASSERT_FINITE
 
+  //---------------------------------------------------------------------------
+  // Provide finer-grained control over tasklist
+  // Note: If a parameter is zero related task(s) will be ignored
+  struct aux_NextTimeStep{
+    Real dt{0.};
+    Real next_time{0.};
+    Real to_update{false};
+  };
+
+  struct {
+    aux_NextTimeStep adm;
+    aux_NextTimeStep con;
+#ifdef Z4C_ASSERT_FINITE
+    aux_NextTimeStep assert_is_finite;
+#endif // Z4C_ASSERT_FINITE
+#ifdef Z4C_WEXT
+    aux_NextTimeStep wave_extraction;
+#endif // Z4C_WEXT
+  } TaskListTriggers;
+
+  bool CurrentTimeCalculationThreshold(Mesh *pm,
+                                       aux_NextTimeStep *variable);
+  void UpdateTaskListTriggers();
+  //---------------------------------------------------------------------------
+
 
 private:
   IntegratorWeight stage_wghts[MAX_NSTAGE];

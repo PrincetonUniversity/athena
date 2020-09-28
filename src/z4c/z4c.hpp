@@ -13,6 +13,9 @@
 //    _d --> covariant component
 // For example g_dd is a tensor, or tensor-like object, with two covariant indices.
 
+// C++ headers
+// #include <string>
+
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
@@ -105,8 +108,10 @@ public:
     AthenaArray<Real> adm;   // ADM variables
     AthenaArray<Real> con;   // constraints
     AthenaArray<Real> mat;   // matter variables
-//WGC wext  
+//WGC wext
+#ifdef Z4C_WEXT
     AthenaArray<Real> weyl;  // weyl scalars
+#endif //Z4C_WEXT
 //WGC end
   } storage;
 
@@ -403,7 +408,8 @@ private:
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 2> Lg_dd;       // Lie derivative of conf. 3-metric
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 2> LA_dd;       // Lie derivative of A
 
-//WGC wext - TODO fix tensor index symmetries
+  //WGC wext - TODO fix tensor index symmetries
+#ifdef Z4C_WEXT
   //auxiliary wave extraction tensors
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 1> uvec;        // radial vector in tetrad
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 1> vvec;        // theta vector in tetrad
@@ -414,8 +420,8 @@ private:
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 4> Riemm4_dddd; // 4D Riemann tensor
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 3> Riemm4_ddd;  // 4D Riemann * n^a
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 2> Riemm4_dd;   // 4D Riemann *n^a*n^c
+#endif //Z4C_WEXT
   //WGC end
-
 
 private:
   void Z4cSommerfeld_(AthenaArray<Real> & u, AthenaArray<Real> & rhs,
@@ -559,6 +565,7 @@ private:
       return out * idx[dir] * diss;
     }
   } FD;
+
 };
 
 #endif // Z4c_HPP

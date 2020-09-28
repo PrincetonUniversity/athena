@@ -851,6 +851,7 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
   bool first=true;
   OutputType* ptype = pfirst_type_;
   while (ptype != nullptr) {
+
     if ((pm->time == pm->start_time) ||
         (pm->time >= ptype->output_params.next_time) ||
         (pm->time >= pm->tlim) ||
@@ -863,6 +864,23 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
     }
     ptype = ptype->pnext_type; // move to next OutputType node in signly linked list
   }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Outputs::GetOutputTimeStep(bool wtflag)
+//  \brief scans through singly linked list of OutputTypes returning TimeStep
+
+Real Outputs::GetOutputTimeStep(std::string variable) {
+  Real dt = 0;
+
+  OutputType* ptype = pfirst_type_;
+  while (ptype != nullptr) {
+    if (ptype->output_params.variable == variable) {
+      return ptype->output_params.dt;
+    }
+    ptype = ptype->pnext_type; // move to next OutputType node in signly linked list
+  }
+  return dt;
 }
 
 //----------------------------------------------------------------------------------------

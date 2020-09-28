@@ -514,8 +514,16 @@ int main(int argc, char *argv[]) {
   double omp_start_time = omp_get_wtime();
 #endif
 
+  // BD: populate z4c struct carrying output dt for various quantities
+  // This controls computation of quantities within the main tasklist
+  if (Z4C_ENABLED) {
+    Real dt_con = pouts->GetOutputTimeStep("con");
+    pz4clist->TaskListTriggers.con.dt = dt_con;
+  }
+
   while ((pmesh->time < pmesh->tlim) &&
          (pmesh->nlim < 0 || pmesh->ncycle < pmesh->nlim)) {
+
     if (Globals::my_rank == 0)
       pmesh->OutputCycleDiagnostics();
 
@@ -564,8 +572,12 @@ int main(int argc, char *argv[]) {
       for (int stage=1; stage<=pz4clist->nstages; ++stage) {
         pz4clist->DoTaskListOneStage(pmesh, stage);
       }
+// BD: TODO - check that the following are not displaced by \dt ?
+
 //WGC wext
 #ifdef Z4C_WEXT
+  // only do an extraction if NextTime threshold cleared (updated below)
+  if (pz4clist->TaskListTriggers.wave_extraction.to_update)
     for (int n = 0;n<NRAD;++n){
       pmesh->pwave_extr[n]->ReduceMultipole();
       pmesh->pwave_extr[n]->Write(pmesh->ncycle, pmesh->time);
@@ -581,6 +593,12 @@ int main(int argc, char *argv[]) {
     pmesh->pz4c_tracker->WriteTracker(pmesh->ncycle, pmesh->time);
 #endif // Z4C_TRACKER
 
+    //-------------------------------------------------------------------------
+    // Update NextTime triggers
+    // This needs to be here to share tasklist external (though coupled) ops.
+    pz4clist->UpdateTaskListTriggers();
+    //-------------------------------------------------------------------------
+
     pmesh->UserWorkInLoop();
     pmesh->ncycle++;
     pmesh->time += pmesh->dt;
@@ -590,6 +608,7 @@ int main(int argc, char *argv[]) {
     pmesh->LoadBalancingAndAdaptiveMeshRefinement(pinput);
 
     pmesh->NewTimeStep();
+
 #ifdef ENABLE_EXCEPTIONS
     try {
 #endif

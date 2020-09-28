@@ -63,6 +63,8 @@ bool Z4c::is_finite_z4c() {
   return finite;
 }
 
+// BD: TODO: The following need better signalling when MPI is involved.
+
 //----------------------------------------------------------------------------------------
 // \!fn void Z4c::assert_is_finite_adm()
 // \brief Aggregate 'is_finite' conditional as assertion

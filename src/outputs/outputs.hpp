@@ -193,6 +193,7 @@ class Outputs {
   ~Outputs();
 
   void MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag=false);
+  Real GetOutputTimeStep(std::string variable);
 
  private:
   OutputType *pfirst_type_; // ptr to head OutputType node in singly linked list

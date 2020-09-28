@@ -232,6 +232,27 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
   // Save to Mesh class
   pm->cfl_number = cfl_number;
 
+
+  //---------------------------------------------------------------------------
+  // Output frequency control (on task-list)
+#ifdef Z4C_ASSERT_FINITE
+  TaskListTriggers.assert_is_finite.next_time = pm->start_time;
+  TaskListTriggers.assert_is_finite.dt = pin->GetOrAddReal("z4c",
+    "dt_assert_is_finite", 0);
+#endif // Z4C_ASSERT_FINITE
+
+  // For constraint calculation
+  TaskListTriggers.con.next_time = pm->start_time;
+  // Seed TaskListTriggers.con.dt in main
+
+#ifdef Z4C_WEXT
+  TaskListTriggers.wave_extraction.next_time = pm->start_time;
+  TaskListTriggers.wave_extraction.dt = pin->GetOrAddReal("z4c",
+    "dt_wave_extraction", 0);
+#endif
+  //---------------------------------------------------------------------------
+
+
   // Now assemble list of tasks for each stage of z4c integrator
   {using namespace Z4cIntegratorTaskNames;
     AddTask(CALC_Z4CRHS, NONE);                // CalculateZ4cRHS
@@ -252,8 +273,10 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
     AddTask(Z4C_TO_ADM, ALG_CONSTR);           // Z4cToADM
     AddTask(ADM_CONSTR, Z4C_TO_ADM);           // ADM_Constraints
 //WGC wext
+#ifdef Z4C_WEXT
     AddTask(Z4C_WEYL, Z4C_TO_ADM);             // Calc Psi4
     AddTask(WAVE_EXTR, Z4C_WEYL);              // Project Psi4 multipoles
+#endif // Z4C_WEXT
 //WGC end
     AddTask(USERWORK, ADM_CONSTR);             // UserWork
 
@@ -344,7 +367,9 @@ void Z4cIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         (&Z4cIntegratorTaskList::ADM_Constraints);
       task_list_[ntasks].lb_time = true;
 //WGC wext
-    } else if (id == Z4C_WEYL) {
+    }
+#ifdef Z4C_WEXT
+    else if (id == Z4C_WEYL) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&Z4cIntegratorTaskList::Z4c_Weyl);
@@ -355,7 +380,9 @@ void Z4cIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         (&Z4cIntegratorTaskList::WaveExtract);
       task_list_[ntasks].lb_time = true;
 //WGC end
-    } else if (id == NEW_DT) {
+    }
+#endif // Z4C_WEXT
+    else if (id == NEW_DT) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&Z4cIntegratorTaskList::NewBlockTimeStep);
@@ -596,71 +623,65 @@ TaskStatus Z4cIntegratorTaskList::EnforceAlgConstr(MeshBlock *pmb, int stage) {
 }
 
 TaskStatus Z4cIntegratorTaskList::Z4cToADM(MeshBlock *pmb, int stage) {
-  // BD: conversion only needed on final stage?
+  // BD: this map is only required on the final stage
   if (stage != nstages) return TaskStatus::success;
 
   pmb->pz4c->Z4cToADM(pmb->pz4c->storage.u, pmb->pz4c->storage.adm);
   return TaskStatus::success;
-
-  /*
-  if (stage <= nstages) {
-    pmb->pz4c->Z4cToADM(pmb->pz4c->storage.u, pmb->pz4c->storage.adm);
-    return TaskStatus::success;
-  }
-  return TaskStatus::fail;
-  */
 }
 
 //WGC wext
 TaskStatus Z4cIntegratorTaskList::Z4c_Weyl(MeshBlock *pmb, int stage) {
-  // BD: weyl isn't propagated, why recompute at each t-substep?
+  // only do on last stage
   if (stage != nstages) return TaskStatus::success;
+
 #ifdef Z4C_WEXT
+  Mesh *pm = pmb->pmy_mesh;
+
+  if (CurrentTimeCalculationThreshold(pm, &TaskListTriggers.wave_extraction)) {
     pmb->pz4c->Z4cWeyl(pmb->pz4c->storage.adm, pmb->pz4c->storage.mat,
                        pmb->pz4c->storage.weyl);
-#endif
-  return TaskStatus::success;
+  }
 
-//   if (stage <= nstages) {
-// #ifdef Z4C_WEXT
-//     pmb->pz4c->Z4cWeyl(pmb->pz4c->storage.adm, pmb->pz4c->storage.mat,
-//                        pmb->pz4c->storage.weyl);
-// #endif
-//     return TaskStatus::success;
-//   } else {
-//     return TaskStatus::fail;
-//   }
+#endif // Z4C_WEXT
+  return TaskStatus::success;
 }
 
 TaskStatus Z4cIntegratorTaskList::WaveExtract(MeshBlock *pmb, int stage) {
+  // only do on last stage
   if (stage != nstages) return TaskStatus::success;
+
 #ifdef Z4C_WEXT
-  AthenaArray<Real> u_R;
-  AthenaArray<Real> u_I;
-  u_R.InitWithShallowSlice(pmb->pz4c->storage.weyl, Z4c::I_WEY_rpsi4, 1);
-  u_I.InitWithShallowSlice(pmb->pz4c->storage.weyl, Z4c::I_WEY_ipsi4, 1);
-  for(int n = 0; n<NRAD;++n){
-    pmb->pwave_extr_loc[n]->Decompose_multipole(u_R,u_I);
+  Mesh *pm = pmb->pmy_mesh;
+
+  if (CurrentTimeCalculationThreshold(pm, &TaskListTriggers.wave_extraction)) {
+    AthenaArray<Real> u_R;
+    AthenaArray<Real> u_I;
+    u_R.InitWithShallowSlice(pmb->pz4c->storage.weyl, Z4c::I_WEY_rpsi4, 1);
+    u_I.InitWithShallowSlice(pmb->pz4c->storage.weyl, Z4c::I_WEY_ipsi4, 1);
+    for(int n = 0; n<NRAD;++n){
+      pmb->pwave_extr_loc[n]->Decompose_multipole(u_R,u_I);
+    }
   }
-#endif
+
+#endif // Z4C_WEXT
   return TaskStatus::success;
 }
 //WGC end
 
 TaskStatus Z4cIntegratorTaskList::ADM_Constraints(MeshBlock *pmb, int stage) {
-  // BD: workload can be reduced by only computing constraints on final stage
+  // only do on last stage
   if (stage != nstages) return TaskStatus::success;
 
-  pmb->pz4c->ADMConstraints(pmb->pz4c->storage.con, pmb->pz4c->storage.adm,
-                            pmb->pz4c->storage.mat, pmb->pz4c->storage.u);
-  return TaskStatus::success;
+  Mesh *pm = pmb->pmy_mesh;
 
-  // if (stage <= nstages) {
-  //   pmb->pz4c->ADMConstraints(pmb->pz4c->storage.con, pmb->pz4c->storage.adm,
-  //                             pmb->pz4c->storage.mat, pmb->pz4c->storage.u);
-  //   return TaskStatus::success;
-  // }
-  // return TaskStatus::fail;
+  // check last stage is actually at a relevant time
+  if (CurrentTimeCalculationThreshold(pm, &TaskListTriggers.con)) {
+    pmb->pz4c->ADMConstraints(pmb->pz4c->storage.con, pmb->pz4c->storage.adm,
+                              pmb->pz4c->storage.mat, pmb->pz4c->storage.u);
+  }
+
+  return TaskStatus::success;
 }
 
 TaskStatus Z4cIntegratorTaskList::NewBlockTimeStep(MeshBlock *pmb, int stage) {
@@ -679,13 +700,81 @@ TaskStatus Z4cIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int stage) {
 
 #ifdef Z4C_ASSERT_FINITE
 TaskStatus Z4cIntegratorTaskList::AssertFinite(MeshBlock *pmb, int stage) {
-  if (stage != nstages) return TaskStatus::success; // only do on last stage
+  // only do on last stage
+  if (stage != nstages) return TaskStatus::success;
 
-  pmb->pz4c->assert_is_finite_adm();
-  pmb->pz4c->assert_is_finite_con();
-  pmb->pz4c->assert_is_finite_mat();
-  pmb->pz4c->assert_is_finite_z4c();
+  Mesh *pm = pmb->pmy_mesh;
+
+  // check last stage is actually at a relevant time
+  if (CurrentTimeCalculationThreshold(pm, &TaskListTriggers.assert_is_finite)) {
+    pmb->pz4c->assert_is_finite_adm();
+    pmb->pz4c->assert_is_finite_con();
+    pmb->pz4c->assert_is_finite_mat();
+    pmb->pz4c->assert_is_finite_z4c();
+  }
 
   return TaskStatus::success;
 }
 #endif // Z4C_ASSERT_FINITE
+
+
+//----------------------------------------------------------------------------------------
+// \!fn bool Z4cIntegratorTaskList::CurrentTimeCalculationThreshold(
+//   MeshBlock *pmb, aux_NextTimeStep *variable)
+// \brief Given current time / ncycles, does a specified 'dt' mean we need
+//        to calculate something?
+//        Secondary effect is to mutate next_time
+bool Z4cIntegratorTaskList::CurrentTimeCalculationThreshold(
+  Mesh *pm, aux_NextTimeStep *variable) {
+
+  // this variable is not dumped / computed
+  if (variable->dt == 0 )
+    return false;
+
+  Real cur_time = pm->time + pm->dt;
+
+  if ((cur_time == pm->start_time) ||
+      (cur_time >= variable->next_time) ||
+      (cur_time >= pm->tlim)) {
+    variable->to_update = true;
+    return true;
+  }
+
+  return false;
+}
+
+//----------------------------------------------------------------------------------------
+// \!fn void Z4cIntegratorTaskList::UpdateTaskListTriggers()
+// \brief Update 'next_time' outside task list to avoid race condition
+void Z4cIntegratorTaskList::UpdateTaskListTriggers() {
+  // note that for global dt > target output dt
+  // next_time will 'lag'; this will need to be corrected if an integrator with dense /
+  // interpolating output is used.
+
+  if (TaskListTriggers.adm.to_update) {
+    TaskListTriggers.adm.next_time += TaskListTriggers.adm.dt;
+    TaskListTriggers.adm.to_update = false;
+  }
+
+  if (TaskListTriggers.con.to_update) {
+    TaskListTriggers.con.next_time += TaskListTriggers.con.dt;
+    TaskListTriggers.con.to_update = false;
+  }
+
+#ifdef Z4C_ASSERT_FINITE
+  if (TaskListTriggers.assert_is_finite.to_update) {
+    TaskListTriggers.assert_is_finite.next_time += \
+      TaskListTriggers.assert_is_finite.dt;
+    TaskListTriggers.assert_is_finite.to_update = false;
+  }
+#endif // Z4C_ASSERT_FINITE
+
+#ifdef Z4C_WEXT
+  if (TaskListTriggers.wave_extraction.to_update) {
+    TaskListTriggers.wave_extraction.next_time += \
+      TaskListTriggers.wave_extraction.dt;
+    TaskListTriggers.wave_extraction.to_update = false;
+  }
+#endif // Z4C_WEXT
+
+}
