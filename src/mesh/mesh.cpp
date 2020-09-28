@@ -759,8 +759,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 #endif
   }
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
-  InitUserMeshData(pin, 1);
-
+#ifndef TWO_PUNCTURES //In case of two punctures this function must not be called
+  InitUserMeshData(pin);
+#endif
   // read user Mesh data
   IOWrapperSizeT udsize = 0;
   for (int n=0; n<nint_user_mesh_data_; n++)

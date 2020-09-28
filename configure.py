@@ -956,7 +956,7 @@ else:
 #
 # Default directory structure anticipated (though may be passed directly)
 #     ./configure.py
-# ../../twopuncturesc
+# ../twopuncturesc
 # ^ should contain /lib from 'make && make install'
 
 if args['prob'] == "z4c_two_punctures":
@@ -975,12 +975,13 @@ if args['prob'] == "z4c_two_punctures":
 
     # attempt path inference if not provided
     if args['two_punctures_path'] == '':
-        args['two_punctures_path'] = os.path.abspath(os.getcwd()) + '../../twopuncturesc'
+        args['two_punctures_path'] = os.path.abspath(os.getcwd()) + '/../twopuncturesc'
     else:
         args['two_punctures_path'] = os.path.abspath(args['two_punctures_path'])
     lib_dir = args['two_punctures_path'] + '/lib/'
 
     # check paths exist and we have shared library to link against
+    print(args['two_punctures_path'])
     if not os.path.exists(args['two_punctures_path']):
         raise SystemExit('### CONFIGURE ERROR: Location of two_punctures shared library must be provided.')
     elif not os.path.isfile(lib_dir + 'lib' + libtwopunc_name + '.so'):
