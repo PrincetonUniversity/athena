@@ -6,9 +6,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file defs.hpp.in
-//  \brief Template file for defs.hpp.  When the configure.py script is run, a new
-//  defs.hpp file will be created (overwriting the last) from this template.  This new
-//  file contains Athena++ specific cpp macros and definitions set by configure.
+//! \brief Template file for defs.hpp.  When the configure.py script is run, a new
+//! defs.hpp file will be created (overwriting the last) from this template.  This new
+//! file contains Athena++ specific cpp macros and definitions set by configure.
 
 //----------------------------------------------------------------------------------------
 // macros which define physics and algorithms

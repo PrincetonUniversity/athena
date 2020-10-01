@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file globals.hpp
-//  \brief namespace containing external global variables
+//! \brief namespace containing external global variables
 
 namespace Globals {
 extern int my_rank, nranks;

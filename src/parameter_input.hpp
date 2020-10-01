@@ -6,10 +6,11 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file parameter_input.hpp
-//  \brief definition of class ParameterInput
-// Contains data structures used to store, and functions used to access, parameters
-// read from the input file.  See comments at start of parameter_input.cpp for more
-// information on the Athena++ input file format.
+//! \brief definition of class ParameterInput
+//!
+//! Contains data structures used to store, and functions used to access, parameters
+//! read from the input file.  See comments at start of parameter_input.cpp for more
+//! information on the Athena++ input file format.
 
 // C headers
 
@@ -30,7 +31,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \struct InputLine
-//  \brief  node in a singly linked list of parameters contained within 1x input block
+//! \brief  node in a singly linked list of parameters contained within 1x input block
 
 struct InputLine {
   std::string param_name;
@@ -41,7 +42,7 @@ struct InputLine {
 
 //----------------------------------------------------------------------------------------
 //! \class InputBlock
-//  \brief node in a singly linked list of all input blocks contained within input file
+//! \brief node in a singly linked list of all input blocks contained within input file
 
 class InputBlock {
  public:
@@ -63,8 +64,9 @@ class InputBlock {
 
 //----------------------------------------------------------------------------------------
 //! \class ParameterInput
-//  \brief data and definitions of functions used to store and access input parameters
-//  Functions are implemented in parameter_input.cpp
+//! \brief data and definitions of functions used to store and access input parameters
+//!
+//! Functions are implemented in parameter_input.cpp
 
 class ParameterInput {
  public:
