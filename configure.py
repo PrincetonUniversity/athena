@@ -1000,7 +1000,7 @@ definitions['GSL_OPTION'] = 'NO_GSL'
 if args['gsl']:
     definitions['GSL_OPTION'] = 'GSL'
     if args['gsl_path'] != '':
-        makefile_options['PREPROCESSOR_FLAGS'] += ' {0}/include'.format(
+        makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
             args['gsl_path'])
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['gsl_path'])
     makefile_options['LIBRARY_FLAGS'] += ' -lgsl -lgslcblas'
