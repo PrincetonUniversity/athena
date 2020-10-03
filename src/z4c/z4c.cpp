@@ -50,9 +50,11 @@ char const * const Z4c::Matter_names[Z4c::N_MAT] = {
   "mat.Sxx", "mat.Sxy", "mat.Sxz", "mat.Syy", "mat.Syz", "mat.Szz",
 };
 // WGC wext
+#ifdef Z4C_WEXT
 char const * const Z4c::Weyl_names[Z4c::N_WEY] = {
   "weyl.rpsi4","weyl.ipsi4",
 };
+#endif // Z4C_WEXT
 //WGC end
 Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   pmy_block(pmb),
@@ -68,7 +70,9 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
           {N_CON, pmb->nverts3, pmb->nverts2, pmb->nverts1}, // con
           {N_MAT, pmb->nverts3, pmb->nverts2, pmb->nverts1}, // mat
 //WGC wext
+#ifdef Z4C_WEXT
           {N_WEY, pmb->nverts3, pmb->nverts2, pmb->nverts1}, // weyl
+#endif // Z4C_WEXT
 //WGC end
   },
 #else
@@ -465,12 +469,13 @@ void Z4c::SetZ4cAliases(AthenaArray<Real> & u, Z4c::Z4c_vars & z4c)
 //----------------------------------------------------------------------------------------
 // \!fn void Z4c::SetWeylAliases(AthenaArray<Real> & u, Weyl_vars & weyl)
 // \brief Set Weyl aliases
-
+#ifdef Z4C_WEXT
 void Z4c::SetWeylAliases(AthenaArray<Real> & u, Z4c::Weyl_vars & weyl)
 {
   weyl.rpsi4.InitWithShallowSlice(u, I_WEY_rpsi4);
   weyl.ipsi4.InitWithShallowSlice(u, I_WEY_ipsi4);
 }
+#endif // Z4C_WEXT
 //WGC end
 
 //----------------------------------------------------------------------------------------
