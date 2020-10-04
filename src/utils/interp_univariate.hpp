@@ -46,5 +46,12 @@ class InterpolateLagrangeUniformBiasL {
     static Real const coeff[npoints];
 };
 
+template<int half_stencil_size_>
+class InterpolateLagrangeUniform_opt {
+  public:
+    enum {interpolation_order = 2 * half_stencil_size_ - 1};
+    enum {npoints = half_stencil_size_};
+    static Real const coeff[npoints];
+};
 
 #endif

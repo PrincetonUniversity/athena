@@ -55,6 +55,9 @@
 // prefer vertex-centering default=0 (false)
 #define PREFER_VC @PREFER_VC@
 
+// enable VC, uniform grid adapted prolongation
+#define @VC_UGRID_PROLONGATE@
+
 // enable shearing box? default=0 (false)
 #define SHEARING_BOX @SHEARING_BOX@
 
@@ -191,6 +194,8 @@
 #define POW4(x) ( POW2(x) * POW2(x) )
 #define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
 #define SQRT(x) (std::sqrt(x))
+#define ISEVEN(n)   ((n%2 == 0) ? 1 : 0)
+#define ISODD(n)    ((n%2 != 0) ? 1 : 0)
 
 #ifdef ENABLE_EXCEPTIONS
 #define ATHENA_ERROR(x) throw std::runtime_error(x.str().c_str())

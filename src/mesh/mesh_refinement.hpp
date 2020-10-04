@@ -76,9 +76,12 @@ class MeshRefinement {
                                int si, int ei, int sj, int ej, int sk, int ek);
   void ProlongateInternalField(FaceField &fine,
                                int si, int ei, int sj, int ej, int sk, int ek);
+
   void ProlongateVertexCenteredValues(const AthenaArray<Real> &coarse,
                                       AthenaArray<Real> &fine, int sn, int en,
                                       int si, int ei, int sj, int ej, int sk, int ek);
+
+
   void CheckRefinementCondition();
 
   // setter functions for "enrolling" variable arrays in refinement via Mesh::AMR()
@@ -114,6 +117,12 @@ class MeshRefinement {
     int ix_cvs, int ix_cve, int ix_cmp,
     int ix_vs, int ix_ve,
     int &f_ix, int &ix_b, int &ix_so, int &ix_eo, int &ix_l, int &ix_u);
+
+  // Flip implementation used
+  void _ProlongateVertexCenteredValues(const AthenaArray<Real> &coarse,
+                                       AthenaArray<Real> &fine, int sn, int en,
+                                       int si, int ei, int sj, int ej, int sk, int ek);
+
 
   // tuples of references to AMR-enrolled arrays (quantity, coarse_quantity)
   std::vector<std::tuple<AthenaArray<Real> *, AthenaArray<Real> *>> pvars_cc_;

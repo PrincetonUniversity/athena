@@ -124,3 +124,24 @@ Real const InterpolateLagrangeUniformBiasL<10>::coeff[] = {
 };
 
 
+// centered stencils
+template<>
+Real const InterpolateLagrangeUniform_opt<1>::coeff[1] = {
+  1./2., // interp. to midpoint of stencil
+};
+template<>
+Real const InterpolateLagrangeUniform_opt<2>::coeff[2] = {
+  -1./16., 9./16.,
+};
+template<>
+Real const InterpolateLagrangeUniform_opt<3>::coeff[3] = {
+  3./256., -25./256., 75./128.,
+};
+template<>
+Real const InterpolateLagrangeUniform_opt<4>::coeff[4] = {
+  -5./2048., 49./2048., -245./2048., 1225./2048.,
+};
+template<>
+Real const InterpolateLagrangeUniform_opt<5>::coeff[5] = {
+  35./65536., -405./65536., 567./16384., -2205./16384., 19845./32768.,
+};
