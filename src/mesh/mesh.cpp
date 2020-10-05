@@ -1834,7 +1834,7 @@ void Mesh::ReserveMeshBlockPhysIDs() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn GetFluidFormulation(std::string input_string)
+//! \fn FluidFormulation GetFluidFormulation(const std::string& input_string)
 //! \brief Parses input string to return scoped enumerator flag specifying boundary
 //! condition. Typically called in Mesh() ctor initializer list
 

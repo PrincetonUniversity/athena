@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file mesh_amr.cpp
+//! \file amr_loadbalance.cpp
 //! \brief implementation of Mesh::AdaptiveMeshRefinement() and related utilities
 
 // C headers
@@ -1099,7 +1099,7 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
+//! \fn int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
 //! \brief calculate an MPI tag for AMR block transfer
 //!
 //! tag = local id of destination (remaining bits) + ox1(1 bit) + ox2(1 bit) + ox3(1 bit)
