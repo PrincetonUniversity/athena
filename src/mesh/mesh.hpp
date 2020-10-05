@@ -6,9 +6,10 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mesh.hpp
-//  \brief defines Mesh and MeshBlock classes, and various structs used in them
-//  The Mesh is the overall grid structure, and MeshBlocks are local patches of data
-//  (potentially on different levels) that tile the entire domain.
+//! \brief defines Mesh and MeshBlock classes, and various structs used in them
+//!
+//! The Mesh is the overall grid structure, and MeshBlocks are local patches of data
+//! (potentially on different levels) that tile the entire domain.
 
 // C headers
 
@@ -56,7 +57,7 @@ FluidFormulation GetFluidFormulation(const std::string& input_string);
 
 //----------------------------------------------------------------------------------------
 //! \class MeshBlock
-//  \brief data/functions associated with a single block
+//! \brief data/functions associated with a single block
 
 class MeshBlock {
   friend class RestartOutput;
@@ -141,7 +142,7 @@ class MeshBlock {
   void RegisterMeshBlockData(AthenaArray<Real> &pvar_cc);
   void RegisterMeshBlockData(FaceField &pvar_fc);
 
-  // defined in either the prob file or default_pgen.cpp in ../pgen/
+  //! defined in either the prob file or default_pgen.cpp in ../pgen/
   void UserWorkBeforeOutput(ParameterInput *pin); // called in Mesh fn (friend class)
   void UserWorkInLoop();                          // called in TimeIntegratorTaskList
 
@@ -149,8 +150,10 @@ class MeshBlock {
   // data
   Real new_block_dt_, new_block_dt_hyperbolic_, new_block_dt_parabolic_,
     new_block_dt_user_;
-  // TODO(felker): make global TaskList a member of MeshBlock, store TaskStates in list
-  // shared by main integrator + FFT gravity task lists. Multigrid has separate TaskStates
+  //! \todo(felker):
+  //! * make global TaskList a member of MeshBlock, store TaskStates in list
+  //!   shared by main integrator + FFT gravity task lists.
+  //! * Multigrid has separate TaskStates
   TaskStates tasks;
   int nreal_user_meshblock_data_, nint_user_meshblock_data_;
   std::vector<std::reference_wrapper<AthenaArray<Real>>> vars_cc_;
@@ -163,7 +166,7 @@ class MeshBlock {
   void SetUserOutputVariableName(int n, const char *name);
   void SetCostForLoadBalancing(double cost);
 
-  // defined in either the prob file or default_pgen.cpp in ../pgen/
+  //! defined in either the prob file or default_pgen.cpp in ../pgen/
   void ProblemGenerator(ParameterInput *pin);
   void InitUserMeshBlockData(ParameterInput *pin);
 
@@ -176,7 +179,7 @@ class MeshBlock {
 
 //----------------------------------------------------------------------------------------
 //! \class Mesh
-//  \brief data/functions associated with the overall mesh
+//! \brief data/functions associated with the overall mesh
 
 class Mesh {
   friend class RestartOutput;
@@ -284,8 +287,9 @@ class Mesh {
   // number of MeshBlocks in the x1, x2, x3 directions of the root grid:
   // (unlike LogicalLocation.lxi, nrbxi don't grow w/ AMR # of levels, so keep 32-bit int)
   int nrbx1, nrbx2, nrbx3;
-  // TODO(felker) find unnecessary static_cast<> ops. from old std::int64_t type in 2018:
-  //std::int64_t nrbx1, nrbx2, nrbx3;
+  //! \todo (felker):
+  //! * find unnecessary static_cast<> ops. from old std::int64_t type in 2018:
+  //!   std::int64_t nrbx1, nrbx2, nrbx3;
 
   // flags are false if using non-uniform or user meshgen function
   bool use_uniform_meshgen_fn_[3];
@@ -346,13 +350,14 @@ class Mesh {
   void FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf, LogicalLocation &lloc);
   void FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf);
 
-  // defined in either the prob file or default_pgen.cpp in ../pgen/
+  //! defined in either the prob file or default_pgen.cpp in ../pgen/
   void InitUserMeshData(ParameterInput *pin);
 
   // often used (not defined) in prob file in ../pgen/
   void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);
   void EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
-  // DEPRECATED(felker): provide trivial overload for old-style BoundaryFace enum argument
+  //! \deprecated (felker):
+  //! * provide trivial overload for old-style BoundaryFace enum argument
   void EnrollUserBoundaryFunction(int face, BValFunc my_func);
   void EnrollUserMGGravityBoundaryFunction(int dir, MGBoundaryFunc my_bc);
 
@@ -375,10 +380,11 @@ class Mesh {
 
 
 //----------------------------------------------------------------------------------------
-// \!fn Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange,
-//                                 bool sym_interval)
-// \brief wrapper fn to compute Real x logical location for either [0., 1.] or [-0.5, 0.5]
-//        real cell ranges for MeshGenerator_[] functions (default/user vs. uniform)
+//! \fn Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange,
+//!                                bool sym_interval)
+//! \brief wrapper fn to compute Real x logical location for either
+//!        [0., 1.] or [-0.5, 0.5]\n
+//!        real cell ranges for MeshGenerator_[] functions (default/user vs. uniform)
 
 inline Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange,
                                   bool sym_interval) {
@@ -399,8 +405,9 @@ inline Real ComputeMeshGeneratorX(std::int64_t index, std::int64_t nrange,
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
-// \brief x1 mesh generator function, x is the logical location; x=i/nx1, real in [0., 1.]
+//! \fn Real DefaultMeshGeneratorX1(Real x, RegionSize rs)
+//! \brief x1 mesh generator function, x is the logical location;
+//!        x=i/nx1, real in [0., 1.]
 
 inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
   Real lw, rw;
@@ -417,8 +424,9 @@ inline Real DefaultMeshGeneratorX1(Real x, RegionSize rs) {
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
-// \brief x2 mesh generator function, x is the logical location; x=j/nx2, real in [0., 1.]
+//! \fn Real DefaultMeshGeneratorX2(Real x, RegionSize rs)
+//! \brief x2 mesh generator function, x is the logical location;
+//!        x=j/nx2, real in [0., 1.]
 
 inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
   Real lw, rw;
@@ -434,8 +442,9 @@ inline Real DefaultMeshGeneratorX2(Real x, RegionSize rs) {
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
-// \brief x3 mesh generator function, x is the logical location; x=k/nx3, real in [0., 1.]
+//! \fn Real DefaultMeshGeneratorX3(Real x, RegionSize rs)
+//! \brief x3 mesh generator function, x is the logical location;
+//!        x=k/nx3, real in [0., 1.]
 
 inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
   Real lw, rw;
@@ -451,8 +460,9 @@ inline Real DefaultMeshGeneratorX3(Real x, RegionSize rs) {
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn Real UniformMeshGeneratorX1(Real x, RegionSize rs)
-// \brief x1 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
+//! \fn Real UniformMeshGeneratorX1(Real x, RegionSize rs)
+//! \brief x1 mesh generator function, x is the logical location;
+//!        real cells in [-0.5, 0.5]
 
 inline Real UniformMeshGeneratorX1(Real x, RegionSize rs) {
   // linear interp, equally weighted from left (x(xmin)=-0.5) and right (x(xmax)=0.5)
@@ -460,16 +470,18 @@ inline Real UniformMeshGeneratorX1(Real x, RegionSize rs) {
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn Real UniformMeshGeneratorX2(Real x, RegionSize rs)
-// \brief x2 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
+//! \fn Real UniformMeshGeneratorX2(Real x, RegionSize rs)
+//! \brief x2 mesh generator function, x is the logical location;
+//!       real cells in [-0.5, 0.5]
 
 inline Real UniformMeshGeneratorX2(Real x, RegionSize rs) {
   return static_cast<Real>(0.5)*(rs.x2min+rs.x2max) + (x*rs.x2max - x*rs.x2min);
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn Real UniformMeshGeneratorX3(Real x, RegionSize rs)
-// \brief x3 mesh generator function, x is the logical location; real cells in [-0.5, 0.5]
+//! \fn Real UniformMeshGeneratorX3(Real x, RegionSize rs)
+//! \brief x3 mesh generator function, x is the logical location;
+//!        real cells in [-0.5, 0.5]
 
 inline Real UniformMeshGeneratorX3(Real x, RegionSize rs) {
   return static_cast<Real>(0.5)*(rs.x3min+rs.x3max) + (x*rs.x3max - x*rs.x3min);
