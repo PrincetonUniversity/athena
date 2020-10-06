@@ -5,8 +5,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_var.cpp
-//  \brief constructor/destructor and default implementations for some functions in the
-//         abstract BoundaryVariable class
+//! \brief constructor/destructor and default implementations for some functions in the
+//!        abstract BoundaryVariable class
 
 // C headers
 
@@ -28,7 +28,7 @@
 #include <mpi.h>
 #endif
 
-// constructor
+//! constructor
 
 BoundaryVariable::BoundaryVariable(MeshBlock *pmb) : bvar_index(), pmy_block_(pmb),
                                                      pmy_mesh_(pmb->pmy_mesh),
@@ -36,7 +36,7 @@ BoundaryVariable::BoundaryVariable(MeshBlock *pmb) : bvar_index(), pmy_block_(pm
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type)
-//  \brief Initialize BoundaryData structure
+//! \brief Initialize BoundaryData structure
 
 void BoundaryVariable::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type) {
   MeshBlock *pmb = pmy_block_;
@@ -83,7 +83,7 @@ void BoundaryVariable::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity typ
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::DestroyBoundaryData(BoundaryData<> &bd)
-//  \brief Destroy BoundaryData structure
+//! \brief Destroy BoundaryData structure
 
 void BoundaryVariable::DestroyBoundaryData(BoundaryData<> &bd) {
   for (int n=0; n<bd.nbmax; n++) {
@@ -101,13 +101,13 @@ void BoundaryVariable::DestroyBoundaryData(BoundaryData<> &bd) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize)
-//  \brief
-
-//  Called in BoundaryVariable::SendBoundaryBuffer(), SendFluxCorrection() calls when the
-//  destination neighbor block is on the same MPI rank as the sending MeshBlcok. So
-//  std::memcpy() call requires pointer to "void *dst" corresponding to
-//  bd_var_.recv[nb.targetid] in separate BoundaryVariable object in separate vector in
-//  separate BoundaryValues
+//! \brief
+//!
+//! Called in BoundaryVariable::SendBoundaryBuffer(), SendFluxCorrection() calls when the
+//! destination neighbor block is on the same MPI rank as the sending MeshBlcok. So
+//! std::memcpy() call requires pointer to "void *dst" corresponding to
+//! bd_var_.recv[nb.targetid] in separate BoundaryVariable object in separate vector in
+//! separate BoundaryValues
 
 void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
@@ -133,6 +133,7 @@ void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, in
       &(ptarget_block->pbval->bvars[bvar_index]->bd_var_flcor_);
   std::memcpy(ptarget_bdata->recv[nb.targetid], bd_var_flcor_.send[nb.bufid],
               ssize*sizeof(Real));
+  // finally, set the BoundaryStatus flag on the destination buffer
   ptarget_bdata->flag[nb.targetid] = BoundaryStatus::arrived;
   return;
 }
@@ -173,7 +174,7 @@ void BoundaryVariable::CopyShearEMFSameProcess(SimpleNeighborBlock& snb, int ssi
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::SendBoundaryBuffers()
-//  \brief Send boundary buffers of variables
+//! \brief Send boundary buffers of variables
 
 void BoundaryVariable::SendBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
@@ -203,7 +204,7 @@ void BoundaryVariable::SendBoundaryBuffers() {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool BoundaryVariable::ReceiveBoundaryBuffers()
-//  \brief receive the boundary data
+//! \brief receive the boundary data
 
 bool BoundaryVariable::ReceiveBoundaryBuffers() {
   bool bflag = true;
@@ -236,7 +237,7 @@ bool BoundaryVariable::ReceiveBoundaryBuffers() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::SetBoundaries()
-//  \brief set the boundary data
+//! \brief set the boundary data
 
 void BoundaryVariable::SetBoundaries() {
   MeshBlock *pmb = pmy_block_;
@@ -262,7 +263,7 @@ void BoundaryVariable::SetBoundaries() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::ReceiveAndSetBoundariesWithWait()
-//  \brief receive and set the boundary data for initialization
+//! \brief receive and set the boundary data for initialization
 
 void BoundaryVariable::ReceiveAndSetBoundariesWithWait() {
   MeshBlock *pmb = pmy_block_;
