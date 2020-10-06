@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_shear_cc.cpp
-//  \brief functions that apply shearing box BCs for cell-centered variables
+//! \brief functions that apply shearing box BCs for cell-centered variables
 //========================================================================================
 
 // C headers
@@ -40,10 +40,10 @@
 #endif
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *buf,
-//                                                     int nb)
-//  \brief Load shearing box hydro boundary buffers
+//!                                                    int nb)
+//! \brief Load shearing box hydro boundary buffers
 
 void CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *buf,
                                                 int nb) {
@@ -102,9 +102,9 @@ void CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *bu
 }
 
 
-// --------------------------------------------------------------------------------------
-// ! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
-//  \brief Send shearing box boundary buffers for hydro variables
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
+//! \brief Send shearing box boundary buffers for hydro variables
 
 void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
@@ -189,10 +189,10 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   return;
 }
 
-// --------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
-//                                                                         const int nb)
-//  \brief Set hydro shearing box boundary received from a block on the same level
+//!                                                                        const int nb)
+//! \brief Set hydro shearing box boundary received from a block on the same level
 
 void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
                                                                    const int nb) {
@@ -259,9 +259,9 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
 }
 
 
-// --------------------------------------------------------------------------------------
-// ! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
-//  \brief receive shearing box boundary data for hydro variables
+//----------------------------------------------------------------------------------------
+//! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
+//! \brief receive shearing box boundary data for hydro variables
 
 bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   bool flag[2]{true, true};
@@ -300,10 +300,12 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
 }
 
 
-//--------------------------------------------------------------------------------------
-
-//  \brief compute the flux along j indices for remapping adopted from 2nd
-//  order RemapFlux of Athena 4.2 (C-version)
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::RemapFlux(const int n, const int k,
+//!          const int jinner, const int jouter, const int i, const Real eps,
+//!          const AthenaArray<Real> &var, AthenaArray<Real> &flux)
+//! \brief compute the flux along j indices for remapping adopted from 2nd
+//! order RemapFlux of Athena 4.2 (C-version)
 
 void CellCenteredBoundaryVariable::RemapFlux(const int n, const int k, const int jinner,
                                const int jouter, const int i, const Real eps,
@@ -321,8 +323,9 @@ void CellCenteredBoundaryVariable::RemapFlux(const int n, const int k, const int
     ju = jouter;
   }
 
-  // TODO(felker): do not reimplement PLM here; use plm.cpp.
-  // TODO(felker): relax assumption that 2nd order reconstruction must be used
+  //! \todo (felker):
+  //! - do not reimplement PLM here; use plm.cpp.
+  //! - relax assumption that 2nd order reconstruction must be used
   for (j=jl; j<=ju; j++) {
     dUc = var(n,k,j+1,i) - var(n,k,j-1,i);
     dUl = var(n,k,j,  i) - var(n,k,j-1,i);
@@ -343,6 +346,9 @@ void CellCenteredBoundaryVariable::RemapFlux(const int n, const int k, const int
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
+//! \brief
 
 void CellCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
@@ -367,8 +373,19 @@ void CellCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::ComputeShear(const Real time)
+//! \brief
+//!
+//! \todo (felker):
+//! - also set sflag members of ShearingBoundaryData
+//! \note
+//! This CellCenteredBoundaryVariable implementation could be replaced by a single
+//! loop n=0:4 without any conditionals IF a shared "BoundaryStatus flag[4]" was computed
+//! in BoundaryValues::FindShearBlock(), since this fn merely scales the shared count
+//! arrays by ssize. However, this entire logic is confusing and should probably be
+//! replaced entirely.
 
-// TODO(felker): also set sflag members of ShearingBoundaryData
 void CellCenteredBoundaryVariable::ComputeShear(const Real time) {
   MeshBlock *pmb = pmy_block_;
   int nx2 = pmb->block_size.nx2;

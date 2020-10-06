@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file polarwedge.cpp
-//  \brief implementation of polar wedge BCs in x2 direction
+//! \brief implementation of polar wedge BCs in x2 direction
 
 // C headers
 
@@ -17,8 +17,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::PolarWedgeInnerX2(
-//          Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
-//  \brief polar wedge boundary conditions, inner x2 boundary
+//!         Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
+//! \brief polar wedge boundary conditions, inner x2 boundary
 
 void CellCenteredBoundaryVariable::PolarWedgeInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
@@ -38,8 +38,8 @@ void CellCenteredBoundaryVariable::PolarWedgeInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::PolarWedgeOuterX2(
-//          Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
-//  \brief polar wedge boundary conditions, outer x2 boundary
+//!         Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
+//! \brief polar wedge boundary conditions, outer x2 boundary
 
 void CellCenteredBoundaryVariable::PolarWedgeOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {

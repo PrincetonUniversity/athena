@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file flux_correction_cc.cpp
-//  \brief functions that perform flux correction for CELL_CENTERED variables
+//! \brief functions that perform flux correction for CELL_CENTERED variables
 
 // C headers
 
@@ -39,7 +39,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SendFluxCorrection()
-//  \brief Restrict, pack and send the surface flux to the coarse neighbor(s)
+//! \brief Restrict, pack and send the surface flux to the coarse neighbor(s)
 
 void CellCenteredBoundaryVariable::SendFluxCorrection() {
   MeshBlock *pmb = pmy_block_;
@@ -151,7 +151,7 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool CellCenteredBoundaryVariable::ReceiveFluxCorrection()
-//  \brief Receive and apply the surface flux from the finer neighbor(s)
+//! \brief Receive and apply the surface flux from the finer neighbor(s)
 
 bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
   MeshBlock *pmb = pmy_block_;

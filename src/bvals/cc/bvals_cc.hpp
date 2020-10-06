@@ -2,12 +2,12 @@
 #define BVALS_CC_BVALS_CC_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Copyright(C) 2014 James M. Stone <jmstone!@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_cc.hpp
-//  \brief handle boundaries for any AthenaArray type variable that represents a physical
-//         quantity indexed along / located around cell-centers
+//! \brief handle boundaries for any AthenaArray type variable that represents a physical
+//!        quantity indexed along / located around cell-centers
 
 // C headers
 
@@ -26,7 +26,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \class CellCenteredBoundaryVariable
-//  \brief
+//! \brief
 
 class CellCenteredBoundaryVariable : public BoundaryVariable {
  public:
@@ -39,38 +39,51 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   // Also, derived class HydroBoundaryVariable needs to keep switching var and coarse_var
   // arrays between primitive and conserved variables ---> ptr members, not references
   AthenaArray<Real> *var_cc;
-  AthenaArray<Real> *coarse_buf;  // may pass nullptr if mesh refinement is unsupported
+  AthenaArray<Real> *coarse_buf;  //!< may pass nullptr if mesh refinement is unsupported
 
-  // currently, no need to ever switch flux[] ---> keep as reference members (not ptrs)
-  // flux[3] w/ 3x empty AthenaArrays may be passed if mesh refinement is unsupported, but
-  // nullptr is not allowed
+  //!@{
+  //! currently, no need to ever switch flux[] ---> keep as reference members (not ptrs)
+  //! flux[3] w/ 3x empty AthenaArrays may be passed if mesh refinement is unsupported,
+  //! but nullptr is not allowed
   AthenaArray<Real> &x1flux, &x2flux, &x3flux;
+  //!@}
 
-  // maximum number of reserved unique "physics ID" component of MPI tag bitfield
-  // (CellCenteredBoundaryVariable only actually uses 1x if multilevel==false, no shear)
-  // must correspond to the # of "int *phys_id_" private members, below. Convert to array?
+  //! maximum number of reserved unique "physics ID" component of MPI tag bitfield
+  //! (CellCenteredBoundaryVariable only actually uses 1x if multilevel==false, no shear)
+  //! \note
+  //! must correspond to the # of "int *phys_id_" private members, below.
+  //! Convert to array?
   static constexpr int max_phys_id = 3;
 
-  // BoundaryVariable:
+  //!@{
+  //! BoundaryVariable:
   int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;
   int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) override;
+  //!@}
 
-  // BoundaryCommunication:
+  //!@{
+  //! BoundaryCommunication:
   void SetupPersistentMPI() override;
   void StartReceiving(BoundaryCommSubset phase) override;
   void ClearBoundary(BoundaryCommSubset phase) override;
   void StartReceivingShear(BoundaryCommSubset phase) override;
   void ComputeShear(const Real time) override;
+  //!@}
 
-  // BoundaryBuffer:
+  //!@{
+  //! BoundaryBuffer:
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
+  //!@}
 
-  // Shearing box
+  //!@{
+  //! Shearing box
   void SendShearingBoxBoundaryBuffers();
   bool ReceiveShearingBoxBoundaryBuffers();
+  //!@}
 
-  // BoundaryPhysics:
+  //!@{
+  //! BoundaryPhysics:
   void ReflectInnerX1(Real time, Real dt,
                       int il, int jl, int ju, int kl, int ku, int ngh) override;
   void ReflectOuterX1(Real time, Real dt,
@@ -101,22 +114,25 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
                          int il, int iu, int jl, int kl, int ku, int ngh) override;
   void PolarWedgeOuterX2(Real time, Real dt,
                          int il, int iu, int ju, int kl, int ku, int ngh) override;
+  //!@}
 
  protected:
   int nl_, nu_;
   const bool *flip_across_pole_;
 
-  // shearing box:
-  // working arrays of remapped quantities
+  //! shearing box:
+  //! working arrays of remapped quantities
   AthenaArray<Real>  shear_cc_[2];
 
  private:
-  // BoundaryBuffer:
+  //!@{
+  //! BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;
   void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
 
   int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
   int LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) override;
+  //!@}
 
   void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
   void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
@@ -127,7 +143,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   int cc_phys_id_, cc_flx_phys_id_;
 #endif
   // shearing box:
-  // flux from conservative remapping
+  //! flux from conservative remapping
   AthenaArray<Real>  shear_flx_cc_[2];
   // KGF: these should probably be combined into a struct or array with send/recv switch
   int shear_send_count_cc_[2][4], shear_recv_count_cc_[2][4]; // buffer sizes

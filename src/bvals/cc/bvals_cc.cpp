@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_cc.cpp
-//  \brief functions that apply BCs for CELL_CENTERED variables
+//! \brief functions that apply BCs for CELL_CENTERED variables
 
 // C headers
 
@@ -36,7 +36,7 @@
 #include <mpi.h>
 #endif
 
-// constructor
+//! constructor
 
 CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     MeshBlock *pmb, AthenaArray<Real> *var, AthenaArray<Real> *coarse_var,
@@ -44,10 +44,11 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     : BoundaryVariable(pmb), var_cc(var), coarse_buf(coarse_var), x1flux(var_flux[X1DIR]),
       x2flux(var_flux[X2DIR]), x3flux(var_flux[X3DIR]), nl_(0), nu_(var->GetDim4() -1),
       flip_across_pole_(nullptr) {
-  // CellCenteredBoundaryVariable should only be used w/ 4D or 3D (nx4=1) AthenaArray
-  // For now, assume that full span of 4th dim of input AthenaArray should be used:
-  // ---> get the index limits directly from the input AthenaArray
-  // <=nu_ (inclusive), <nx4 (exclusive)
+  //! \note
+  //! CellCenteredBoundaryVariable should only be used w/ 4D or 3D (nx4=1) AthenaArray
+  //! For now, assume that full span of 4th dim of input AthenaArray should be used:
+  //! ---> get the index limits directly from the input AthenaArray
+  //! <=nu_ (inclusive), <nx4 (exclusive)
   if (nu_ < 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in CellCenteredBoundaryVariable constructor" << std::endl
@@ -111,7 +112,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   } // end shearing box component of ctor
 }
 
-// destructor
+//! destructor
 
 CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
   DestroyBoundaryData(bd_var_);
@@ -130,6 +131,11 @@ CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
     }
   }
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn int CellCenteredBoundaryVariable::ComputeVariableBufferSize(
+//!     const NeighborIndexes& ni, int cng)
+//! \brief
 
 int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,
                                                             int cng) {
@@ -171,8 +177,8 @@ int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
 
 //----------------------------------------------------------------------------------------
 //! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Set cell-centered boundary buffers for sending to a block on the same level
+//!                                                             const NeighborBlock& nb)
+//! \brief Set cell-centered boundary buffers for sending to a block on the same level
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
                                                               const NeighborBlock& nb) {
@@ -194,8 +200,8 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Set cell-centered boundary buffers for sending to a block on the coarser level
+//!                                                             const NeighborBlock& nb)
+//! \brief Set cell-centered boundary buffers for sending to a block on the coarser level
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
                                                               const NeighborBlock& nb) {
@@ -221,8 +227,8 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Set cell-centered boundary buffers for sending to a block on the finer level
+//!                                                             const NeighborBlock& nb)
+//! \brief Set cell-centered boundary buffers for sending to a block on the finer level
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
                                                             const NeighborBlock& nb) {
@@ -271,8 +277,8 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
-//                                                              const NeighborBlock& nb)
-//  \brief Set cell-centered boundary received from a block on the same level
+//!                                                             const NeighborBlock& nb)
+//! \brief Set cell-centered boundary received from a block on the same level
 
 void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
                                                         const NeighborBlock& nb) {
@@ -336,8 +342,8 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Set cell-centered prolongation buffer received from a block on a coarser level
+//!                                                               const NeighborBlock& nb)
+//! \brief Set cell-centered prolongation buffer received from a block on a coarser level
 
 void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
                                                           const NeighborBlock& nb) {
@@ -400,8 +406,8 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
-//                                                              const NeighborBlock& nb)
-//  \brief Set cell-centered boundary received from a block on a finer level
+//!                                                             const NeighborBlock& nb)
+//! \brief Set cell-centered boundary received from a block on a finer level
 
 void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
                                                         const NeighborBlock& nb) {
@@ -474,7 +480,8 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock()
-// \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
+//! \brief polar boundary edge-case:
+//!   single MeshBlock spans the entire azimuthal (x3) range
 
 void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb = pmy_block_;
@@ -518,6 +525,10 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
   }
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::SetupPersistentMPI()
+//! \brief Setup persistent MPI requests to be reused throughout the entire simulation
 
 void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 #ifdef MPI_PARALLEL
@@ -602,6 +613,10 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase)
+//! \brief initiate MPI_Irecv()
+
 void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
   MeshBlock *pmb = pmy_block_;
@@ -619,7 +634,9 @@ void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
   return;
 }
 
-
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase)
+//! \brief clean up the boundary flags after each loop
 void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
