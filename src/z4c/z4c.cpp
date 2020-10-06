@@ -200,6 +200,10 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   opt.AwA_Gaussian_w = pin->GetOrAddReal("z4c", "AwA_Gaussian_w", 0.5);
   opt.AwA_polarised_Gowdy_t0 = pin->GetOrAddReal("z4c",
     "AwA_polarised_Gowdy_t0", 9.8753205829098);
+
+  // wave-zone refinement test [disabled by default]
+  opt.wave_zone_level = pin->GetOrAddInteger("z4c", "wave_zone_level", 0);
+  opt.wave_zone_radius = pin->GetOrAddReal("z4c", "wave_zone_radius", 0.);
   //---------------------------------------------------------------------------
 
   // Set aliases

@@ -201,6 +201,10 @@ public:
     Real AwA_d_y; // d_y (width) parameter
     Real AwA_Gaussian_w; // 1d Gaussian parameter
     Real AwA_polarised_Gowdy_t0; // seed time for pG test
+
+    // Wave-zone refinement
+    int wave_zone_level;
+    Real wave_zone_radius;
   } opt;
 
 

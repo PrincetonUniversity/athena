@@ -219,6 +219,66 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
 int RefinementCondition(MeshBlock *pmb)
 {
+
+  // Wave-zone refinement test ------------------------------------------------
+
+  Real const R_wz = pmb->pz4c->opt.wave_zone_radius;
+  int const lev_wz = pmb->pz4c->opt.wave_zone_level;
+
+  if (lev_wz > 0) {
+    // centre of Mesh
+    Real const x1_D = pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min;
+    Real const x2_D = pmb->pmy_mesh->mesh_size.x2max - pmb->pmy_mesh->mesh_size.x2min;
+    Real const x3_D = pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min;
+
+    Real const x1_0 = pmb->pmy_mesh->mesh_size.x1min + x1_D / 2.;
+    Real const x2_0 = pmb->pmy_mesh->mesh_size.x2min + x2_D / 2.;
+    Real const x3_0 = pmb->pmy_mesh->mesh_size.x3min + x3_D / 2.;
+
+    Real const mb_mi_x1 = pmb->block_size.x1min;
+    Real const mb_ma_x1 = pmb->block_size.x1max;
+
+    Real const mb_mi_x2 = pmb->block_size.x2min;
+    Real const mb_ma_x2 = pmb->block_size.x2max;
+
+    Real const mb_mi_x3 = pmb->block_size.x3min;
+    Real const mb_ma_x3 = pmb->block_size.x3max;
+
+
+    // is intersection of current MeshBlock with wave-zone non-empty?
+    // (check square distances to each vertex)
+    Real const d1 = SQR(mb_mi_x1 - x1_0) + SQR(mb_mi_x2 - x2_0) + SQR(mb_mi_x3 - x3_0);
+    Real const d2 = SQR(mb_ma_x1 - x1_0) + SQR(mb_mi_x2 - x2_0) + SQR(mb_mi_x3 - x3_0);
+    Real const d3 = SQR(mb_mi_x1 - x1_0) + SQR(mb_ma_x2 - x2_0) + SQR(mb_mi_x3 - x3_0);
+    Real const d4 = SQR(mb_mi_x1 - x1_0) + SQR(mb_mi_x2 - x2_0) + SQR(mb_ma_x3 - x3_0);
+
+    Real const d5 = SQR(mb_mi_x1 - x1_0) + SQR(mb_ma_x2 - x2_0) + SQR(mb_ma_x3 - x3_0);
+    Real const d6 = SQR(mb_ma_x1 - x1_0) + SQR(mb_ma_x2 - x2_0) + SQR(mb_mi_x3 - x3_0);
+    Real const d7 = SQR(mb_ma_x1 - x1_0) + SQR(mb_mi_x2 - x2_0) + SQR(mb_ma_x3 - x3_0);
+    Real const d8 = SQR(mb_ma_x1 - x1_0) + SQR(mb_ma_x2 - x2_0) + SQR(mb_ma_x3 - x3_0);
+
+    Real const SR_wz = SQR(R_wz);
+
+    if ((d1 < SR_wz) || (d2 < SR_wz) || (d3 < SR_wz) || (d4 < SR_wz) ||
+        (d5 < SR_wz) || (d6 < SR_wz) || (d7 < SR_wz) || (d8 < SR_wz)) {
+      Real const dx = std::min({pmb->pcoord->dx1v(0),
+                                pmb->pcoord->dx2v(0),
+                                pmb->pcoord->dx3v(0)});
+
+      Real const M_dx = std::max({x1_D / pmb->pmy_mesh->mesh_size.nx1,
+                                  x2_D / pmb->pmy_mesh->mesh_size.nx2,
+                                  x3_D / pmb->pmy_mesh->mesh_size.nx3});
+
+      bool const need_ref = dx > M_dx / (std::pow(2, lev_wz));
+      if (need_ref) {
+        return 1;
+      }
+    }
+  }
+
+  // --------------------------------------------------------------------------
+
+
 #ifdef Z4C_TRACKER
   //Initial distance between one of the punctures and the edge of the full mesh, needed to
   //calculate the box-in-box grid structure
@@ -232,6 +292,7 @@ int RefinementCondition(MeshBlock *pmb)
   printf("Max x = %g\n", pmb->block_size.x1max);
   printf("Min x = %g\n", pmb->block_size.x1min);
 #endif
+
   //Needed to calculate coordinates of vertices of a block with same center but
   //edge of 1/8th of the original size
   Real x1sum_sup = (5*pmb->block_size.x1max+3*pmb->block_size.x1min)/8.;
