@@ -526,7 +526,8 @@ void MeshBlock::RegisterMeshBlockData(FaceField &pvar_fc) {
 
 
 //! \todo (felker):
-//! * consider merging the MeshRefinement::pvars_cc/fc_ into the MeshBlock::pvars_cc/fc_. //! * Would need to weaken the MeshBlock std::vector to use tuples
+//! * consider merging the MeshRefinement::pvars_cc/fc_ into the MeshBlock::pvars_cc/fc_.
+//! * Would need to weaken the MeshBlock std::vector to use tuples
 //!   of pointers instead of a std::vector of references, so that:
 //!   - nullptr can be passed for the second entry if multilevel==false
 //!   - we can rebind the pointers to Hydro for GR purposes in bvals_refine.cpp

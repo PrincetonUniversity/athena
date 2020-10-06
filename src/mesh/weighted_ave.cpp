@@ -33,7 +33,6 @@
 void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
                             AthenaArray<Real> &u_in2, AthenaArray<Real> &u_in3,
                             AthenaArray<Real> &u_in4, const Real wght[5]) {
-
   const int nu = u_out.GetDim4() - 1;
 
   // u_in2, u_in3, and/or u_in4 may be unallocated AthenaArrays if using a
