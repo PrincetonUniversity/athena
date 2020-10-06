@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_mg.hpp
-//  \brief defines MGBoundaryValues class
+//! \brief defines MGBoundaryValues class
 
 // C headers
 
@@ -33,7 +33,7 @@ class Coordinates;
 
 //----------------------------------------------------------------------------------------
 //! \class MGBoundaryValues
-//  \brief BVals data and functions
+//! \brief BVals data and functions
 
 class MGBoundaryValues : public BoundaryBase {
  public:
@@ -74,7 +74,8 @@ class MGBoundaryValues : public BoundaryBase {
                                        bool folddata);
   void SetMultigridBoundaryFromFiner(const Real *buf, const NeighborBlock& nb,
                                      bool folddata);
-  // functions specific to physics
+  //!@{
+  //! functions specific to physics
   virtual int LoadMultigridBoundaryBufferToCoarserFluxCons(Real *buf,
                                                            const NeighborBlock& nb) = 0;
   virtual int LoadMultigridBoundaryBufferToFinerFluxCons(Real *buf,
@@ -83,7 +84,7 @@ class MGBoundaryValues : public BoundaryBase {
                                                        const NeighborBlock& nb) = 0;
   virtual void SetMultigridBoundaryFromFinerFluxCons(const Real *buf,
                                                      const NeighborBlock& nb) = 0;
-
+  //!@}
   friend class Multigrid;
   friend class MultigridDriver;
 };
@@ -91,7 +92,7 @@ class MGBoundaryValues : public BoundaryBase {
 
 //----------------------------------------------------------------------------------------
 //! \class MGGravityBoundaryValues
-//  \brief BVals data and functions for Multigrid Gravity
+//! \brief BVals data and functions for Multigrid Gravity
 
 class MGGravityBoundaryValues : public MGBoundaryValues {
  public:

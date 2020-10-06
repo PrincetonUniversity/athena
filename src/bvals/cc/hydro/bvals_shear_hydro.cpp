@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_shear_hydro.cpp
-//  \brief functions that apply shearing box BCs for hydro variables
+//! \brief functions that apply shearing box BCs for hydro variables
 //========================================================================================
 
 // C headers
@@ -39,9 +39,9 @@
 #include <mpi.h>
 #endif
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::AddHydroShearForInit()
-//  \brief Send shearing box boundary buffers for hydro variables
+//! \brief Send shearing box boundary buffers for hydro variables
 
 void HydroBoundaryVariable::AddHydroShearForInit() {
   MeshBlock *pmb = pmy_block_;
@@ -88,10 +88,10 @@ void HydroBoundaryVariable::AddHydroShearForInit() {
   }  // loop over inner/outer boundaries
   return;
 }
-// --------------------------------------------------------------------------------------
-// ! \fn void HydroBoundaryVariable::ShearQuantities(AthenaArray<Real> &shear_cc_,
-//                                                   bool upper)
-//  \brief Apply shear to Hydro x2 momentum and energy
+//----------------------------------------------------------------------------------------
+//! \fn void HydroBoundaryVariable::ShearQuantities(AthenaArray<Real> &shear_cc_,
+//!                                                   bool upper)
+//! \brief Apply shear to Hydro x2 momentum and energy
 
 void HydroBoundaryVariable::ShearQuantities(AthenaArray<Real> &shear_cc_, bool upper) {
   MeshBlock *pmb = pmy_block_;
