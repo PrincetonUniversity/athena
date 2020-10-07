@@ -998,7 +998,7 @@ if args['prob'] == "z4c_two_punctures":
     print(args['two_punctures_path'])
     if not os.path.exists(args['two_punctures_path']):
         raise SystemExit('### CONFIGURE ERROR: Location of two_punctures shared library must be provided.')
-    elif not os.path.isfile(lib_dir + 'lib' + libtwopunc_name + '.so'):
+    elif not os.path.isfile(lib_dir + 'lib' + libtwopunc_name + '.so') and not os.path.isfile(lib_dir + 'lib' + libtwopunc_name + '.a'):
         raise SystemExit('### CONFIGURE ERROR: two_punctures shared library must be pre-compiled.')
 
     makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/src'.format(args['two_punctures_path'])
