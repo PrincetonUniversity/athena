@@ -637,6 +637,7 @@ void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase)
 //! \brief clean up the boundary flags after each loop
+
 void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];

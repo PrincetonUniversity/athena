@@ -4,9 +4,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_shear_emf.cpp
-//  \brief functions that apply BCs for face-centered flux corrections in shearing box
-// calculations
-//======================================================================================
+//! \brief functions that apply BCs for face-centered flux corrections in shearing box
+//! calculations
+//========================================================================================
 
 // C headers
 
@@ -41,10 +41,10 @@
 #endif
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int FaceCenteredBoundaryVariable::LoadEMFShearing(EdgeField &src,
-//                                                        Real *buf, int nb)
-//  \brief Load shearing box EMF boundary buffers
+//!                                                       Real *buf, int nb)
+//! \brief Load shearing box EMF boundary buffers
 
 void FaceCenteredBoundaryVariable::LoadEMFShearing(EdgeField &src,
                                                    Real *buf, const int nb) {
@@ -119,9 +119,9 @@ void FaceCenteredBoundaryVariable::LoadEMFShearing(EdgeField &src,
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection()
-//  \brief Send shearing box boundary buffers for EMF correction
+//! \brief Send shearing box boundary buffers for EMF correction
 
 void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
   MeshBlock *pmb = pmy_block_;
@@ -170,10 +170,10 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
   return;
 }
 
-// --------------------------------------------------------------------------------------
-// ! \fn void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(
-//                                   EdgeField &dst, Real *buf, const int nb)
-//  \brief Set EMF shearing box boundary received from a block on the same level
+//----------------------------------------------------------------------------------------
+//! \fn void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(
+//!                                   EdgeField &dst, Real *buf, const int nb)
+//! \brief Set EMF shearing box boundary received from a block on the same level
 
 void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(EdgeField &dst,
                                                                       Real *buf,
@@ -250,11 +250,13 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(EdgeField 
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection()
-//  \brief receive shearing box boundary data for EMF correction
+//! \brief receive shearing box boundary data for EMF correction
+//!
+//! \todo (felker):
+//! * DRY. Identical to Face/CellCentered impl. except for "emf" identifiers
 
-// TODO(felker): DRY. Identical to Face/CellCentered impl. except for "emf" identifiers
 bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
   bool flag[2]{true, true};
   int nb_offset[2]{0, 4};
@@ -291,9 +293,9 @@ bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::RemapEMFShearingBoxBoundary()
-//  \brief Set EMF boundary received from a block on the finer level
+//! \brief Set EMF boundary received from a block on the finer level
 
 void FaceCenteredBoundaryVariable::RemapEMFShearingBoxBoundary() {
   MeshBlock *pmb = pmy_block_;
@@ -335,10 +337,10 @@ void FaceCenteredBoundaryVariable::RemapEMFShearingBoxBoundary() {
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ClearEMFShearing()
-//  \brief Clear the working array for EMFs on the surface/edge contacting with
-//  a shearing periodic boundary
+//! \brief Clear the working array for EMFs on the surface/edge contacting with
+//! a shearing periodic boundary
 
 void FaceCenteredBoundaryVariable::ClearEMFShearing(EdgeField &work) {
   MeshBlock *pmb = pmy_block_;
@@ -357,11 +359,11 @@ void FaceCenteredBoundaryVariable::ClearEMFShearing(EdgeField &work) {
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::RemapFluxEMF(int k, int jinner, int jouter,
-//                       Real eps, static AthenaArray<Real> &U, AthenaArray<Real> &Flux)
-//  \brief compute the flux along j indices for remapping
-//  adopted from 2nd order RemapFlux of Athena4.0
+//!                      Real eps, static AthenaArray<Real> &U, AthenaArray<Real> &Flux)
+//! \brief compute the flux along j indices for remapping
+//! adopted from 2nd order RemapFlux of Athena4.0
 
 void FaceCenteredBoundaryVariable::RemapFluxEMF(const int k, const int jinner,
                                                 const int jouter,
@@ -381,8 +383,9 @@ void FaceCenteredBoundaryVariable::RemapFluxEMF(const int k, const int jinner,
     ju = jouter;
   }
 
-  // TODO(felker): do not reimplement PLM here; use plm.cpp.
-  // TODO(felker): relax assumption that 2nd order reconstruction must be used
+  //! \todo (felker):
+  //! - do not reimplement PLM here; use plm.cpp.
+  //! - relax assumption that 2nd order reconstruction must be used
   for (j=jl; j<=ju; j++) {
     dUc = var(k,j+1) - var(k,j-1);
     dUl = var(k,j  ) - var(k,j-1);

@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_shear_fc.cpp
-//  \brief functions that apply shearing box BCs for face-centered quantities
-//======================================================================================
+//! \brief functions that apply shearing box BCs for face-centered quantities
+//========================================================================================
 
 // C headers
 
@@ -40,13 +40,15 @@
 #endif
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int nb)
-//  \brief Load shearing box field boundary buffers
+//! \brief Load shearing box field boundary buffers
+//!
+//! \todo (felker):
+//! - deduplicate with CellCenteredBoundaryVariable::LoadShearing()
+//! - Only differences are the calculation of psj, pej, and 3x PackData calls
 
 void FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int nb) {
-  // TODO(felker): deduplicate with CellCenteredBoundaryVariable::LoadShearing()
-  // Only differences are the calculation of psj, pej, and 3x PackData calls
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
@@ -112,9 +114,9 @@ void FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int n
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
-//  \brief Send shearing box boundary buffers for field variables
+//! \brief Send shearing box boundary buffers for field variables
 
 void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
@@ -228,13 +230,14 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
-//                                           Real *buf, const int nb)
-//  \brief Set field shearing box boundary received from a block on the same level
-
-// TODO(felker): deduplicate with CellCenteredBoundaryVariable::SetShearingBoxBound...()
-// Only differences are the calculation of psi,pei,psj,pej, and 3x UnpackData calls
+//!                                          Real *buf, const int nb)
+//! \brief Set field shearing box boundary received from a block on the same level
+//!
+//! \todo (felker):
+//! - deduplicate with CellCenteredBoundaryVariable::SetShearingBoxBound...()
+//! - Only differences are the calculation of psi,pei,psj,pej, and 3x UnpackData calls
 
 void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
                                                                    const int nb) {
@@ -310,11 +313,13 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
-//  \brief receive shearing box boundary data for field(face-centered) variables
+//! \brief receive shearing box boundary data for field(face-centered) variables
+//!
+//! \todo (felker):
+//! - DRY. completely identical to CellCenteredBoundaryVariable implementation
 
-// TODO(felker): DRY. completely identical to CellCenteredBoundaryVariable implementation
 bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   bool flag[2]{true, true};
   int nb_offset[2]{0, 4};
@@ -352,13 +357,13 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
 }
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::RemapFlux(const int k, const int jinner,
-///                                         const int jouter, int i,
-//                                          Real eps, static AthenaArray<Real> &U,
-//                                          AthenaArray<Real> &Flux)
-//  \brief compute the flux along j indices for remapping adopted from 2nd order RemapFlux
-//         of Athena4.0
+//!                                         const int jouter, int i,
+//!                                         Real eps, static AthenaArray<Real> &U,
+//!                                         AthenaArray<Real> &Flux)
+//! \brief compute the flux along j indices for remapping adopted from 2nd order
+//!        RemapFlux of Athena4.0
 
 void FaceCenteredBoundaryVariable::RemapFlux(const int k, const int jinner,
                                              const int jouter,
@@ -379,6 +384,9 @@ void FaceCenteredBoundaryVariable::RemapFlux(const int k, const int jinner,
     ju = jouter;
   }
 
+  //! \todo (felker):
+  //! - do not reimplement PLM here; use plm.cpp.
+  //! - relax assumption that 2nd order reconstruction must be used
   for (j=jl; j<=ju; j++) {
     dUc = var(k,j+1,i) - var(k,j-1,i);
     dUl = var(k,j,  i) - var(k,j-1,i);
@@ -399,6 +407,9 @@ void FaceCenteredBoundaryVariable::RemapFlux(const int k, const int jinner,
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void FaceCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
+//! \brief initiate MPI_Irecv
 
 void FaceCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
@@ -431,8 +442,18 @@ void FaceCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void FaceCenteredBoundaryVariable::ComputeShear(const Real time)
+//! \brief compute shift by shear
+//!
+//! \todo (felker):
+//! - also set sflag members of ShearingBoundaryData
+//!
+//! \note
+//! unlike the CellCenteredBoundaryVariable implementation of this fn, the scaling factor
+//! for the counts is not a constant ssize. the n=1 (always set) and n=0 (only set if
+//! overlap) have different expressions than the other cases
 
-// TODO(felker): also set sflag members of ShearingBoundaryData
 void FaceCenteredBoundaryVariable::ComputeShear(const Real time) {
   MeshBlock *pmb = pmy_block_;
   int &jo = pbval_->joverlap_;
