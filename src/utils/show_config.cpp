@@ -54,11 +54,6 @@ void ShowConfig() {
   } else {
     std::cout<<"  Super-Time-Stepping:        OFF" << std::endl;
   }
-  if (SHEARING_BOX) {
-    std::cout<<"  Shearing Box BCs:           ON" << std::endl;
-  } else {
-    std::cout<<"  Shearing Box BCs:           OFF" << std::endl;
-  }
   // configure.py output: +"Debug flags"
   // configure.py output: +"Code coverage flags"
   // configure.py output: +"Linker flags"

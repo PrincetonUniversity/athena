@@ -40,6 +40,7 @@ class MeshBlockTree {
   // accessor
   MeshBlockTree* GetLeaf(int ox1, int ox2, int ox3)
   { return pleaf_[(ox1 + (ox2<<1) + (ox3<<2))]; }
+  int GetGid() const {return gid_;}
 
   // functions
   void CreateRootGrid();

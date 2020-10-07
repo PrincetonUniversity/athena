@@ -44,6 +44,7 @@ struct OutputParameters {
   bool output_slicex1, output_slicex2, output_slicex3;
   bool output_sumx1, output_sumx2, output_sumx3;
   bool include_ghost_zones, cartesian_vector;
+  bool orbital_system_output;
   int islice, jslice, kslice;
   Real x1_slice, x2_slice, x3_slice;
   // TODO(felker): some of the parameters in this class are not initialized in constructor

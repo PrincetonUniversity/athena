@@ -54,14 +54,12 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/utils.hpp" // ran2()
 
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"
-#endif
-#if !SHEARING_BOX
-#error "This problem generator requires shearing box"
 #endif
 
 namespace {
@@ -78,9 +76,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   EnrollUserHistoryOutput(0, HistoryBxBy, "-BxBy");
   EnrollUserHistoryOutput(1, HistorydVxVy, "dVxVy");
   EnrollUserHistoryOutput(2, HistorydBy, "dBy");
-  // Read problem parameters
-  Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0);
-  qshear  = pin->GetOrAddReal("problem","qshear",1.5);
+
+  if (!shear_periodic) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "This problem generator requires shearing box" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
   return;
 }
 
@@ -94,6 +97,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (pmy_mesh->mesh_size.nx2 == 1) {
     std::cout << "[hgb.cpp]: HGB only works on a 2D or 3D grid" << std::endl;
   }
+
+  // shearing sheet parameter
+  Omega_0 = porb->Omega0;
+  qshear  = porb->qshear;
 
   // Read problem parameters for initial conditions
   Real amp = pin->GetReal("problem","amp");
@@ -272,11 +279,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
 
         // Initialize (d, M, P)
-        // for_the_future: if FARGO do not initialize the bg shear
         phydro->u(IDN,k,j,i) = rd;
         phydro->u(IM1,k,j,i) = rd*rvx;
         phydro->u(IM2,k,j,i) = rd*rvy;
-        phydro->u(IM2,k,j,i) -= rd*(qshear*Omega_0*x1);
+        if(!porb->orbital_advection_defined)
+          phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
         phydro->u(IM3,k,j,i) = rd*rvz;
         if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,k,j,i) = rp/(gamma-1.0)
@@ -418,7 +425,11 @@ Real HistorydVxVy(MeshBlock *pmb, int iout) {
     for (int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k, j, is, ie, volume);
       for (int i=is; i<=ie; i++) {
-        vshear = qshear*Omega_0*pmb->pcoord->x1v(i);
+        if(!pmb->porb->orbital_advection_defined) {
+          vshear = -qshear*Omega_0*pmb->pcoord->x1v(i);
+        } else {
+          vshear = 0.0;
+        }
         dvxvy += volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i)+vshear);
       }
     }

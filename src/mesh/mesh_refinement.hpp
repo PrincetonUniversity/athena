@@ -30,6 +30,7 @@ struct FaceField;
 class BoundaryValues;
 class FaceCenteredBoundaryVariable;
 class HydroBoundaryVariable;
+class OrbitalAdvection;
 
 //----------------------------------------------------------------------------------------
 //! \class MeshRefinement
@@ -40,6 +41,8 @@ class MeshRefinement {
   friend class BoundaryValues;
   // needs to access refine_flag_ in Mesh::AdaptiveMeshRefinement(). Make var public?
   friend class Mesh;
+  // needs to access pcoarsec
+  friend class OrbitalAdvection;
 
  public:
   MeshRefinement(MeshBlock *pmb, ParameterInput *pin);

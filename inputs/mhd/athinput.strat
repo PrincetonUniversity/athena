@@ -1,7 +1,7 @@
 <comment>
 problem   = Stratified 3D MRI with zero-net vertical flux
 reference = Stone, Hawley, Gammie, & Balbus
-configure = --prob=strat -shear -b --eos=isothermal
+configure = --prob=strat -b --eos=isothermal
 
 <job>
 problem_id  = Strat      # problem ID: basename of output filenames
@@ -60,6 +60,7 @@ dfloor          = 1.e-6
 pfloor          = 5e-13
 
 <problem>
+orbital_advection = true     # orbital advection flag
 beta            = 100        # Plasma beta
 amp             = 0.025      # dP/P <= amp
 ifield          = 1          # 1 for zero-net-flux Bz, 2 for constant Bz

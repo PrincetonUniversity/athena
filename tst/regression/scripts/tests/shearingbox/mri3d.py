@@ -11,15 +11,15 @@ athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
+# Prepare Athena++
 def prepare(**kwargs):
     logger.debug('Running test ' + __name__)
-    athena.configure('b', 'shear',
-                     prob='hgb',
-                     flux='hlld',
+    athena.configure('b', prob='hgb', flux='hlld',
                      eos='isothermal', **kwargs)
     athena.make()
 
 
+# Run Athena++ w/wo Orbital Advection
 def run(**kwargs):
     arguments = [
         'job/problem_id=HGB',
@@ -36,13 +36,14 @@ def run(**kwargs):
         'meshblock/nx1=32', 'meshblock/nx2=24', 'meshblock/nx3=32',
         'hydro/iso_sound_speed=1.0', 'problem/beta=100', 'problem/amp=0.025',
         'problem/ipert=1', 'problem/ifield=1',
-        'problem/Omega0=1.0', 'problem/qshear=1.5', 'time/ncycle_out=0']
-
+        'problem/Omega0=1.0', 'problem/qshear=1.5',
+        'problem/orbital_advection=false',
+        'time/ncycle_out=0']
     athena.run('mhd/athinput.hgb', arguments)
 
 
+# Analyze outputs
 def analyze():
-
     # omg  = 1.0e-3 # unused
     rho0 = 1.0
     cs = 1.0
@@ -50,6 +51,7 @@ def analyze():
     vol = 1.0 * np.pi * 1.0
     index = -500
 
+    # reference
     fname = 'data/mhd_mri_3d.hst'
     a = athena_read.hst(fname)
     me = (a['1-ME'] + a['2-ME'] + a['3-ME'])
@@ -57,6 +59,7 @@ def analyze():
     ref_me = np.average(me[index:] / vol / pres)
     ref_ratio = ref_me / ref_stress
 
+    # resutls 
     fname = 'bin/HGB.hst'
     b = athena_read.hst(fname)
     me = (b['1-ME'] + b['2-ME'] + b['3-ME'])
@@ -65,7 +68,7 @@ def analyze():
     new_ratio = new_me / new_stress
 
     msg = '[MRI-3D]: {}(stress,ME,ratio) = {} {} {}'
-    logger.warning(msg.format('Ref', ref_stress, ref_me, ref_ratio))
+    logger.warning(msg.format('Ref ', ref_stress,  ref_me,  ref_ratio))
     logger.warning(msg.format('New', new_stress, new_me, new_ratio))
     flag = True
     error_rel = np.fabs((new_stress / ref_stress) - 1.0)

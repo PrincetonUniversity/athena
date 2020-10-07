@@ -55,7 +55,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void StartReceiving(BoundaryCommSubset phase) override;
   void ClearBoundary(BoundaryCommSubset phase) override;
   void StartReceivingShear(BoundaryCommSubset phase) override;
-  void ComputeShear(const Real time) override;
+  void ComputeShear(const Real time_fc, const Real time_cc) override;
 
   // BoundaryBuffer:
   void ReceiveAndSetBoundariesWithWait() override;
@@ -66,11 +66,12 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // Shearing box Field
   void SendShearingBoxBoundaryBuffers();
   bool ReceiveShearingBoxBoundaryBuffers();
+  void SetShearingBoxBoundaryBuffers();
 
   // Shearing box EMF
   void SendEMFShearingBoxBoundaryCorrection();
   bool ReceiveEMFShearingBoxBoundaryCorrection();
-  void RemapEMFShearingBoxBoundary();
+  void SetEMFShearingBoxBoundaryCorrection();
 
   // BoundaryPhysics:
   void ReflectInnerX1(Real time, Real dt,
@@ -158,9 +159,10 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 
   void CopyPolarBufferSameProcess(const SimpleNeighborBlock& nb, int ssize,
                                   int polar_block_index, bool is_north);
+  AthenaArray<Real> pbuf;
+  int xorder_, xgh_;
   // Shearing box Field
   FaceField shear_fc_[2];
-  FaceField shear_flx_fc_[2];
   int shear_send_count_fc_[2][4], shear_recv_count_fc_[2][4];
 
 #ifdef MPI_PARALLEL
@@ -168,16 +170,12 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
 #endif
 
   void LoadShearing(FaceField &src, Real *buf, int nb);
-  void SetShearingBoxBoundarySameLevel(Real *buf, const int nb);
-  void RemapFlux(const int k, const int jinner, const int jouter, const int i,
-                 const Real eps, const AthenaArray<Real> &var,
-                 AthenaArray<Real> &flux);
+  void SetShearingBoxBoundarySameLevel(FaceField &dst, Real *buf, const int nb);
 
   // Shearing box EMF correction
   EdgeField shear_var_emf_[2];
   EdgeField shear_map_emf_[2];
-  EdgeField shear_flx_emf_[2];
-  int shear_send_count_emf_[2][4], shear_recv_count_emf_[2][4];
+  int shear_send_count_emf_[2][3], shear_recv_count_emf_[2][3];
 #ifdef MPI_PARALLEL
   int shear_emf_phys_id_;
 #endif
@@ -185,8 +183,6 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void LoadEMFShearing(EdgeField &src, Real *buf, const int nb);
   void SetEMFShearingBoxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb);
   void ClearEMFShearing(EdgeField &work);
-  void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps,
-                    const AthenaArray<Real> &var, AthenaArray<Real> &flux);
 };
 
 #endif // BVALS_FC_BVALS_FC_HPP_

@@ -1,7 +1,7 @@
 <comment>
 problem   = 3D MRI
 reference = J.F. Hawley, C.F. Gammie, & S.A. Balbus, ApJ 440, 742 (1995)
-configure = -b -shear --prob=hgb --eos=isothermal
+configure = -b --prob=hgb --eos=isothermal
 
 <job>
 problem_id = HGB        # problem ID: basename of output filenames
@@ -54,6 +54,7 @@ gamma = 1.666666666666667 # gamma = C_p/C_v
 iso_sound_speed = 1.0     # isothermal sound speed
 
 <problem>
+orbital_advection = true # orbital advection flag
 amp       = 0.025     # wave amplitude
 nwx       = -2        # wavenumber in x1
 nwy       = 1         # wavenumber in x2

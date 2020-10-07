@@ -24,9 +24,6 @@
 #define RIEMANN_SOLVER "@RSOLVER@"
 
 // configure.py dict(definitions) Boolean values:
-// enable shearing box? default=0 (false)
-#define SHEARING_BOX @SHEARING_BOX@
-
 // Equation of state
 #define EQUATION_OF_STATE "@EQUATION_OF_STATE@"
 

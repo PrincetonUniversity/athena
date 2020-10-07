@@ -43,15 +43,13 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/utils.hpp" // ran2()
 
 
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"
-#endif
-#if !SHEARING_BOX
-#error "This problem generator requires shearing box"
 #endif
 
 namespace {
@@ -79,9 +77,13 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   ShBoxCoord = pin->GetOrAddInteger("problem","shboxcoord",2);
   ipert  = pin->GetOrAddInteger("problem","ipert",1);
   ifield = pin->GetOrAddInteger("problem","ifield",1);
-  Omega_0= pin->GetOrAddReal("problem","Omega0",0.001);
-  qshear = pin->GetOrAddReal("problem","qshear",1.5);
 
+  if (!shear_periodic) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "This problem generator requires shearing box" << std::endl;
+    ATHENA_ERROR(msg);
+  }
 
   // enroll new history variables
   AllocateUserHistoryOutput(1);
@@ -108,6 +110,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         << "Shearing sheet only works for x-z plane with ShBoxCoord=2" << std::endl;
     ATHENA_ERROR(msg);
   }
+
+  if (porb->orbital_advection_defined) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "This problem NOT work with orbital advection." << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
+  // shearing sheet parameter
+  Omega_0 = porb->Omega0;
+  qshear  = porb->qshear;
+
   // allocate 1D array for cell volume used in usr def history
   volume.NewAthenaArray(ncells1);
 

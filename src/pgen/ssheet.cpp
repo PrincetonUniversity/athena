@@ -4,19 +4,21 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //======================================================================================
 //! \file ssheet.cpp
-//  \brief Shearing wave problem generator for 2D problems.
+//  \brief Shearing wave problem generator.
 //  Several different initial conditions:
 //  - ipert = 0  pure shearing background flow
-//  - ipert = 1  shearing wave perturbed in velocity
+//  - ipert = 1  shwave test for compressible flow
+//                 (e.g., Johnson & Gammie 2005, ApJ, 626, 978)
 //  - ipert = 2  epicycle motion (0.1 c_s initial kick in radial)
 //
-// Code must be configured using -shear
 //======================================================================================
 
 // C headers
 
 // C++ headers
 #include <cmath>      // sqrt()
+#include <fstream>    // ofstream
+#include <iomanip>    // setprecision
 #include <iostream>   // cout, endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
@@ -28,12 +30,14 @@
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
+#include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 
-#if !SHEARING_BOX
-#error "This problem generator requires shearing box"
+#if MAGNETIC_FIELDS_ENABLED
+#error "This problem generator requires NOT MHD"
 #endif
 
 namespace {
@@ -43,6 +47,8 @@ Real gm1,iso_cs;
 Real x1size,x2size,x3size;
 Real Omega_0,qshear;
 int shboxcoord;
+
+Real HistoryDvyc(MeshBlock *pmb, int iout);
 } // namespace
 
 //======================================================================================
@@ -56,9 +62,19 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   nwx = pin->GetInteger("problem","nwx");
   nwy = pin->GetInteger("problem","nwy");
   ipert = pin->GetInteger("problem","ipert");
-  Omega_0 = pin->GetOrAddReal("problem","Omega0",0.001);
-  qshear  = pin->GetOrAddReal("problem","qshear",1.5);
   shboxcoord = pin->GetOrAddInteger("problem","shboxcoord",1);
+
+  if (ipert == 1) {
+    AllocateUserHistoryOutput(1);
+    EnrollUserHistoryOutput(0, HistoryDvyc, "dvyc", UserHistoryOperation::sum);
+  }
+
+  if (!shear_periodic) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "This problem generator requires shearing box" << std::endl;
+    ATHENA_ERROR(msg);
+  }
 
   return;
 }
@@ -68,18 +84,30 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //  \brief
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  if (pmy_mesh->mesh_size.nx2 == 1 || pmy_mesh->mesh_size.nx3 > 1) {
+  if (pmy_mesh->mesh_size.nx2 == 1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
-        << "Shearing wave sheet only works on a 2D grid" << std::endl;
+        << "Shearing wave sheet does NOT work on a 1D grid" << std::endl;
     ATHENA_ERROR(msg);
   }
 
-  if (MAGNETIC_FIELDS_ENABLED) {
+  if (porb->orbital_advection_defined && shboxcoord==2) {
     std::stringstream msg;
     msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
-        << "Shearing wave sheet is currently incompatible with MHD" << std::endl;
+        << "OrbitalAdvection does not work in x-z plane." << std::endl;
     ATHENA_ERROR(msg);
+  }
+
+  // shearing sheet parameter
+  Omega_0 = porb->Omega0;
+  qshear  = porb->qshear;
+
+  int il = is - NGHOST; int iu = ie + NGHOST;
+  int jl = js - NGHOST; int ju = je + NGHOST;
+  int kl = ks;          int ku = ke;
+  if (block_size.nx3 > 1) {
+    kl = ks - NGHOST;
+    ku = ke + NGHOST;
   }
 
   Real d0 = 1.0;
@@ -92,25 +120,28 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     iso_cs = peos->GetIsoSoundSpeed();
     p0 = d0*SQR(iso_cs);
   }
-  std::cout << "iso_cs = " << iso_cs << std::endl;
-  std::cout << "d0 = " << d0 << std::endl;
-  std::cout << "p0 = " << p0 << std::endl;
-  std::cout << "ipert  = " << ipert  << std::endl;
-
   x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
   x2size = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
   x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
-  std::cout << "[ssheet.cpp]: [Lx,Ly,Lz] = [" <<x1size <<","<<x2size
-            <<","<<x3size<<"]"<<std::endl;
+
+  if (gid == 0) {
+    std::cout << "iso_cs = " << iso_cs << std::endl;
+    std::cout << "d0 = " << d0 << std::endl;
+    std::cout << "p0 = " << p0 << std::endl;
+    std::cout << "ipert  = " << ipert  << std::endl;
+
+    std::cout << "[ssheet.cpp]: [Lx,Ly,Lz] = [" <<x1size <<","<<x2size
+              <<","<<x3size<<"]"<<std::endl;
+  }
 
   Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
   Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
 
   Real x1, x2, rd, rp, rvx, rvy;
   // update the physical variables as initial conditions
-  for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+      for (int i=il; i<=iu; i++) {
         x1 = pcoord->x1v(i);
         x2 = pcoord->x2v(j);
         rd = d0;
@@ -119,15 +150,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           // 1) pure shear bg flow:
           phydro->u(IDN,k,j,i) = rd;
           phydro->u(IM1,k,j,i) = 0.0;
-          phydro->u(IM2,k,j,i) -= rd*(qshear*Omega_0*x1);
+          phydro->u(IM2,k,j,i) = 0.0;
+          if(!porb->orbital_advection_defined)
+            phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
           phydro->u(IM3,k,j,i) = 0.0;
         } else if (ipert == 1) {
           // 2) initialize with shwave in velocity
-          rvx = amp*iso_cs*std::sin(kx*x1 + ky*x2);
-          rvy = amp*iso_cs*(kx/ky)*std::sin(kx*x1 + ky*x2);
+          rvx = amp*iso_cs*std::cos(kx*x1 + ky*x2);
+          rvy = amp*iso_cs*(ky/kx)*std::cos(kx*x1 + ky*x2);
           phydro->u(IDN,k,j,i) = rd;
-          phydro->u(IM1,k,j,i) = rd*rvx;
-          phydro->u(IM2,k,j,i) -= rd*(rvy + qshear*Omega_0*x1);
+          phydro->u(IM1,k,j,i) = -rd*rvx;
+          phydro->u(IM2,k,j,i) = -rd*rvy;
+          if(!porb->orbital_advection_defined)
+            phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
           phydro->u(IM3,k,j,i) = 0.0;
         } else if (ipert == 2) {
           // 3) epicyclic oscillation
@@ -136,7 +171,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             rvy = 0.0;
             phydro->u(IDN,k,j,i) = rd;
             phydro->u(IM1,k,j,i) = rd*rvx;
-            phydro->u(IM2,k,j,i) -= rd*(rvy + qshear*Omega_0*x1);
+            phydro->u(IM2,k,j,i) = -rd*rvy;
+            if(!porb->orbital_advection_defined)
+            phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
             phydro->u(IM3,k,j,i) = 0.0;
           } else { // x-z plane
             rvx = 0.1*iso_cs;
@@ -144,7 +181,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             phydro->u(IDN,k,j,i) = rd;
             phydro->u(IM1,k,j,i) = rd*rvx;
             phydro->u(IM2,k,j,i) = 0.0;
-            phydro->u(IM3,k,j,i) = -rd*(rvy + qshear*Omega_0*x1);
+            phydro->u(IM3,k,j,i) = -rd*(rvy+qshear*Omega_0*x1);
           }
         } else {
           std::stringstream msg;
@@ -156,20 +193,39 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IEN,k,j,i) = rp/gm1 + 0.5*(SQR(phydro->u(IM1,k,j,i)) +
                                                SQR(phydro->u(IM2,k,j,i)) +
                                                SQR(phydro->u(IM3,k,j,i))
-                                               ) / phydro->u(IDN,k,j,i);
+                                              ) / phydro->u(IDN,k,j,i);
         }
       }
     }
   }
+
   return;
 }
 
+namespace {
 
-//======================================================================================
-//! \fn void MeshBlock::UserWorkInLoop()
-//  \brief User-defined work function for every time step
-//======================================================================================
-void MeshBlock::UserWorkInLoop() {
-  // nothing to do
-  return;
+Real HistoryDvyc(MeshBlock *pmb, int iout) {
+  Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
+  Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
+  kx += qshear*Omega_0*pmb->pmy_mesh->time*ky;
+  Real dvyc = 0.0;
+  AthenaArray<Real> volume; // 1D array of volumes
+  volume.NewAthenaArray(pmb->ncells1);
+  Real tvol = x1size*x2size*x3size;
+  for (int k=pmb->ks; k<=pmb->ke  ; k++) {
+    for (int j=pmb->js; j<=pmb->je  ; j++) {
+      pmb->pcoord->CellVolume(k, j, pmb->is, pmb->ie, volume);
+      for (int i=pmb->is; i<=pmb->ie  ; i++) {
+        Real x1 = pmb->pcoord->x1v(i);
+        Real x2 = pmb->pcoord->x2v(j);
+        Real CS = std::cos(kx*x1+ky*x2);
+        Real dvy = pmb->phydro->w(IVY,k,j,i);
+        if(!pmb->porb->orbital_advection_defined)
+          dvy += qshear*Omega_0*x1;
+        dvyc += volume(i)*2.0*dvy*CS/tvol;
+      }
+    }
+  }
+  return dvyc;
 }
+} // namespace

@@ -233,7 +233,7 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
 
 void MeshBlock::WeightedAve(FaceField &b_out, FaceField &b_in1,
                             FaceField &b_in2, FaceField &b_in3,
-                            FaceField &b_in4, const Real wght[5]) {
+                            FaceField &b_in4, const Real wght[3]) {
   int jl=js; int ju=je+1;
   // move these limit modifications outside the loop
   if (pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar

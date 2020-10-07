@@ -21,6 +21,7 @@
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
 #include "../mesh/mesh.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../scalars/scalars.hpp"
 #include "hydro.hpp"
 #include "hydro_diffusion/hydro_diffusion.hpp"
@@ -159,6 +160,12 @@ void Hydro::NewBlockTimeStep() {
   // (user-selected or automaticlaly enforced). May add independent parameter "cfl_diff"
   // in the future (with default = cfl_number).
   min_dt_parabolic *= pmb->pmy_mesh->cfl_number;
+
+  // For orbital advection, give a restriction on dt_hyperbolic.
+  if (pmb->porb->orbital_advection_defined) {
+    Real min_dt_orb = pmb->porb->NewOrbitalAdvectionDt();
+    min_dt_hyperbolic = std::min(min_dt_hyperbolic, min_dt_orb);
+  }
 
   // set main integrator timestep as the minimum of the appropriate timestep constraints:
   // hyperbolic: (skip if fluid is nonexistent or frozen)

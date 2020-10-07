@@ -31,6 +31,7 @@
 #include "../gravity/gravity.hpp"
 #include "../gravity/mg_gravity.hpp"
 #include "../hydro/hydro.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
@@ -172,6 +173,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   peos = new EquationOfState(this, pin);
 
+  // OrbitalAdvection: constructor depends on Coordinates, Hydro, Field, PassiveScalars.
+  porb = new OrbitalAdvection(this, pin);
+
   // Create user mesh data
   InitUserMeshBlockData(pin);
 
@@ -287,6 +291,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   peos = new EquationOfState(this, pin);
 
+  // OrbitalAdvection: constructor depends on Coordinates, Hydro, Field, PassiveScalars.
+  porb = new OrbitalAdvection(this, pin);
+
   InitUserMeshBlockData(pin);
 
   std::size_t os = 0;
@@ -349,6 +356,7 @@ MeshBlock::~MeshBlock() {
   delete phydro;
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
+  delete porb;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
   if (NSCALARS > 0) delete pscalars;
 

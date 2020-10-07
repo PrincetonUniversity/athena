@@ -69,7 +69,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
   }
 
   // TODO(pdmullen): time-dep BC's and STS:
-  if (SHEARING_BOX) {
+  if (pm->shear_periodic) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SuperTimeStepTaskList" << std::endl
         << "Super-time-stepping is not yet compatible "

@@ -48,7 +48,7 @@ class TaskID {  // POD but not aggregate (there is a user-provided ctor)
   TaskID operator| (const TaskID& rhs) const;
 
  private:
-  constexpr static int kNField_ = 1;
+  constexpr static int kNField_ = 2;
   std::uint64_t bitfld_[kNField_];
 
   friend class TaskList;
@@ -125,11 +125,16 @@ class TimeIntegratorTaskList : public TaskList {
     Real delta; // low-storage coefficients to avoid double F() evaluation per substage
     Real gamma_1, gamma_2, gamma_3; // low-storage coeff for weighted ave of registers
     Real beta; // coeff. from bidiagonal Shu-Osher form Beta matrix, -1 diagonal terms
+    Real sbeta, ebeta; // time coeff describing start/end time of each stage
+    bool main_stage, orbital_stage; // flag for whether the main calculation is done
   };
 
   // data
   std::string integrator;
   Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
+  int nstages_main; // number of stages labeled main_stage
+  bool ORBITAL_ADVECTION; // flag for orbital advection (true w/ , false w/o)
+  bool SHEAR_PERIODIC; // flag for shear periodic boundary (true w/ , false w/o)
 
   // functions
   TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);
@@ -163,11 +168,12 @@ class TimeIntegratorTaskList : public TaskList {
 
   TaskStatus SendHydroShear(MeshBlock *pmb, int stage);
   TaskStatus ReceiveHydroShear(MeshBlock *pmb, int stage);
+  TaskStatus SendHydroFluxShear(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveHydroFluxShear(MeshBlock *pmb, int stage);
   TaskStatus SendFieldShear(MeshBlock *pmb, int stage);
   TaskStatus ReceiveFieldShear(MeshBlock *pmb, int stage);
   TaskStatus SendEMFShear(MeshBlock *pmb, int stage);
   TaskStatus ReceiveEMFShear(MeshBlock *pmb, int stage);
-  TaskStatus RemapEMFShear(MeshBlock *pmb, int stage);
 
   TaskStatus Prolongation(MeshBlock *pmb, int stage);
   TaskStatus Primitives(MeshBlock *pmb, int stage);
@@ -183,6 +189,17 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus SendScalars(MeshBlock *pmb, int stage);
   TaskStatus ReceiveScalars(MeshBlock *pmb, int stage);
   TaskStatus SetBoundariesScalars(MeshBlock *pmb, int stage);
+  TaskStatus SendScalarsShear(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveScalarsShear(MeshBlock *pmb, int stage);
+  TaskStatus SendScalarsFluxShear(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveScalarsFluxShear(MeshBlock *pmb, int stage);
+
+  TaskStatus SendHydroOrbital(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveHydroOrbital(MeshBlock *pmb, int stage);
+  TaskStatus CalculateHydroOrbital(MeshBlock *pmb, int stage);
+  TaskStatus SendFieldOrbital(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveFieldOrbital(MeshBlock *pmb, int stage);
+  TaskStatus CalculateFieldOrbital(MeshBlock *pmb, int stage);
 
  private:
   IntegratorWeight stage_wghts[MAX_NSTAGE];
@@ -288,28 +305,37 @@ const TaskID USERWORK(37);
 const TaskID NEW_DT(38);
 const TaskID FLAG_AMR(39);
 
-const TaskID SEND_HYDSH(40);
-const TaskID SEND_EMFSH(41);
-const TaskID SEND_FLDSH(42);
-const TaskID RECV_HYDSH(43);
-const TaskID RECV_EMFSH(44);
-const TaskID RECV_FLDSH(45);
-const TaskID RMAP_EMFSH(46);
+const TaskID SEND_HYDFLXSH(40);
+const TaskID SEND_HYDSH(41);
+const TaskID SEND_EMFSH(42);
+const TaskID SEND_FLDSH(43);
+const TaskID RECV_HYDFLXSH(44);
+const TaskID RECV_HYDSH(45);
+const TaskID RECV_EMFSH(46);
+const TaskID RECV_FLDSH(47);
 
-const TaskID DIFFUSE_HYD(47);
-const TaskID DIFFUSE_FLD(48);
+const TaskID DIFFUSE_HYD(48);
+const TaskID DIFFUSE_FLD(49);
 
-const TaskID CALC_SCLRFLX(49);
-const TaskID SEND_SCLRFLX(50);
-const TaskID RECV_SCLRFLX(51);
-const TaskID INT_SCLR(52);
-const TaskID SEND_SCLR(53);
-const TaskID RECV_SCLR(54);
-const TaskID SETB_SCLR(55);
-const TaskID DIFFUSE_SCLR(56);
+const TaskID CALC_SCLRFLX(50);
+const TaskID SEND_SCLRFLX(51);
+const TaskID RECV_SCLRFLX(52);
+const TaskID INT_SCLR(53);
+const TaskID SEND_SCLR(54);
+const TaskID RECV_SCLR(55);
+const TaskID SETB_SCLR(56);
+const TaskID DIFFUSE_SCLR(57);
+const TaskID SEND_SCLRFLXSH(58);
+const TaskID SEND_SCLRSH(59);
+const TaskID RECV_SCLRFLXSH(60);
+const TaskID RECV_SCLRSH(61);
 
-// const TaskID RECV_SCLRSH(57);
-// const TaskID SEND_SCLRSH(58);
+const TaskID SEND_HYDORB(62);
+const TaskID RECV_HYDORB(63);
+const TaskID CALC_HYDORB(64);
+const TaskID SEND_FLDORB(65);
+const TaskID RECV_FLDORB(66);
+const TaskID CALC_FLDORB(67);
 
 }  // namespace HydroIntegratorTaskNames
 #endif  // TASK_LIST_TASK_LIST_HPP_

@@ -95,6 +95,7 @@
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
@@ -214,6 +215,10 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         op.include_ghost_zones = pin->GetOrAddBoolean(op.block_name, "ghost_zones",
                                                       false);
 
+        // read orbital system output option
+        op.orbital_system_output = pin->GetOrAddBoolean(op.block_name, "orbital_system",
+                                                        false);
+
         // read cartesian mapping option
         if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0 ||
             std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
@@ -331,6 +336,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   Field *pfld = pmb->pfield;
   PassiveScalars *psclr = pmb->pscalars;
   Gravity *pgrav = pmb->pgrav;
+  OrbitalAdvection *porb = pmb->porb;
   num_vars_ = 0;
   OutputData *pod;
 
@@ -365,7 +371,13 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "Etot";
-      pod->data.InitWithShallowSlice(phyd->u, 4, IEN, 1);
+      if(porb->orbital_advection_defined
+         && !output_params.orbital_system_output) {
+        porb->SetOrbitalSystemOutput(phyd->w);
+        pod->data.InitWithShallowSlice(porb->u_orb, 4, IEN, 1);
+      } else {
+        pod->data.InitWithShallowSlice(phyd->u, 4, IEN, 1);
+      }
       AppendOutputDataNode(pod);
       num_vars_++;
     }
@@ -388,12 +400,23 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "VECTORS";
     pod->name = "mom";
-    pod->data.InitWithShallowSlice(phyd->u, 4, IM1, 3);
+    if(porb->orbital_advection_defined
+       && !output_params.orbital_system_output) {
+      porb->SetOrbitalSystemOutput(phyd->w);
+      pod->data.InitWithShallowSlice(porb->u_orb, 4, IM1, 3);
+    } else {
+      pod->data.InitWithShallowSlice(phyd->u, 4, IM1, 3);
+    }
     AppendOutputDataNode(pod);
     num_vars_ += 3;
     if (output_params.cartesian_vector) {
       AthenaArray<Real> src;
-      src.InitWithShallowSlice(phyd->u, 4, IM1, 3);
+      if(porb->orbital_advection_defined
+         && !output_params.orbital_system_output) {
+        src.InitWithShallowSlice(porb->u_orb, 4, IM1, 3);
+      } else {
+        src.InitWithShallowSlice(phyd->u, 4, IM1, 3);
+      }
       pod = new OutputData;
       pod->type = "VECTORS";
       pod->name = "mom_xyz";
@@ -418,7 +441,14 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "mom2";
-    pod->data.InitWithShallowSlice(phyd->u, 4, IM2, 1);
+    if(porb->orbital_advection_defined
+       && !output_params.orbital_system_output
+       && porb->orbital_direction == 1) {
+      porb->SetOrbitalSystemOutput(phyd->w);
+      pod->data.InitWithShallowSlice(porb->u_orb, 4, IM2, 1);
+    } else {
+      pod->data.InitWithShallowSlice(phyd->u, 4, IM2, 1);
+    }
     AppendOutputDataNode(pod);
     num_vars_++;
   }
@@ -426,7 +456,14 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "mom3";
-    pod->data.InitWithShallowSlice(phyd->u, 4, IM3, 1);
+    if(porb->orbital_advection_defined
+       && !output_params.orbital_system_output
+       && porb->orbital_direction == 2) {
+      porb->SetOrbitalSystemOutput(phyd->w);
+      pod->data.InitWithShallowSlice(porb->u_orb, 4, IM3, 1);
+    } else {
+      pod->data.InitWithShallowSlice(phyd->u, 4, IM3, 1);
+    }
     AppendOutputDataNode(pod);
     num_vars_++;
   }
@@ -437,12 +474,23 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "VECTORS";
     pod->name = "vel";
-    pod->data.InitWithShallowSlice(phyd->w, 4, IVX, 3);
+    if(porb->orbital_advection_defined
+       && !output_params.orbital_system_output) {
+      porb->SetOrbitalSystemOutput(phyd->w);
+      pod->data.InitWithShallowSlice(porb->w_orb, 4, IVX, 3);
+    } else {
+      pod->data.InitWithShallowSlice(phyd->w, 4, IVX, 3);
+    }
     AppendOutputDataNode(pod);
     num_vars_ += 3;
     if (output_params.cartesian_vector) {
       AthenaArray<Real> src;
-      src.InitWithShallowSlice(phyd->w, 4, IVX, 3);
+      if(porb->orbital_advection_defined
+         && !output_params.orbital_system_output) {
+        src.InitWithShallowSlice(porb->w_orb, 4, IVX, 3);
+      } else {
+        src.InitWithShallowSlice(phyd->w, 4, IVX, 3);
+      }
       pod = new OutputData;
       pod->type = "VECTORS";
       pod->name = "vel_xyz";
@@ -469,7 +517,14 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "vel2";
-    pod->data.InitWithShallowSlice(phyd->w, 4, IVY, 1);
+    if(porb->orbital_advection_defined
+       && !output_params.orbital_system_output
+       && porb->orbital_direction == 1) {
+      porb->SetOrbitalSystemOutput(phyd->w);
+      pod->data.InitWithShallowSlice(porb->w_orb, 4, IVY, 1);
+    } else {
+      pod->data.InitWithShallowSlice(phyd->w, 4, IVY, 1);
+    }
     AppendOutputDataNode(pod);
     num_vars_++;
   }
@@ -478,7 +533,14 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "vel3";
-    pod->data.InitWithShallowSlice(phyd->w, 4, IVZ, 1);
+    if(porb->orbital_advection_defined
+       && !output_params.orbital_system_output
+       && porb->orbital_direction == 2) {
+      porb->SetOrbitalSystemOutput(phyd->w);
+      pod->data.InitWithShallowSlice(porb->w_orb, 4, IVZ, 1);
+    } else {
+      pod->data.InitWithShallowSlice(phyd->w, 4, IVZ, 1);
+    }
     AppendOutputDataNode(pod);
     num_vars_++;
   }

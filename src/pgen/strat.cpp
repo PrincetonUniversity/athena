@@ -49,12 +49,9 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/utils.hpp"     // ran2()
-
-#if !SHEARING_BOX
-#error "This problem generator requires shearing box"
-#endif
 
 // TODO(felker): many unused arguments in these functions: time, iout, ...
 void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
@@ -83,9 +80,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   AllocateUserHistoryOutput(2);
   EnrollUserHistoryOutput(0, HistoryBxBy, "-BxBy");
   EnrollUserHistoryOutput(1, HistorydVxVy, "dVxVy");
-  // Read problem parameters
-  Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
-  qshear  = pin->GetOrAddReal("problem","qshear",1.5);
 
   // Enroll user-defined physical source terms
   //   vertical external gravitational potential
@@ -98,6 +92,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (mesh_bcs[BoundaryFace::outer_x3] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(BoundaryFace::outer_x3, StratOutflowOuterX3);
   }
+
+  if (!shear_periodic) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "This problem generator requires shearing box" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
   return;
 }
 
@@ -112,6 +114,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real beta, amp, pres;
   Real iso_cs=1.0;
   Real B0 = 0.0;
+
+  // shearing sheet parameter
+  Omega_0 = porb->Omega0;
+  qshear  = porb->qshear;
 
   Real SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
   // TODO(felker): tons of unused variables in this file: xmin, xmax, rbx, rby, Ly, ky,...
@@ -227,7 +233,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IDN,k,j,i) = rd;
         phydro->u(IM1,k,j,i) = rd*rvx;
         phydro->u(IM2,k,j,i) = rd*rvy;
-        phydro->u(IM2,k,j,i) -= rd*(qshear*Omega_0*x1);
+        if(!porb->orbital_advection_defined)
+          phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
         phydro->u(IM3,k,j,i) = rd*rvz;
         if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,k,j,i) = rp/(gam-1.0)
@@ -584,7 +591,11 @@ Real HistorydVxVy(MeshBlock *pmb, int iout) {
     for (int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
       for (int i=is; i<=ie; i++) {
-        vshear = qshear*Omega_0*pmb->pcoord->x1v(i);
+        if(!pmb->porb->orbital_advection_defined) {
+          vshear = -qshear*Omega_0*pmb->pcoord->x1v(i);
+        } else {
+          vshear = 0.0;
+        }
         dvxvy += volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i) + vshear);
       }
     }

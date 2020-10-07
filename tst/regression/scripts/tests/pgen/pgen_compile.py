@@ -35,7 +35,6 @@ hydro_probs = pgen_choices - gr_probs - mhd_probs - shear_probs
 # Define configure flags for each set:
 gr_args = ['g', 't', '-coord=minkowski']
 mhd_args = ['b']
-shear_args = ['b', 'shear']
 hydro_args = []
 
 
@@ -47,7 +46,7 @@ def prepare(**kwargs):
         for pgen_set, args in zip([gr_probs, mhd_probs,
                                    shear_probs, hydro_probs],
                                   [gr_args, mhd_args,
-                                   shear_args, hydro_args]):
+                                   hydro_args]):
             args_lcl = list(args)
             if single_precision:
                 args_lcl.extend(['float'])

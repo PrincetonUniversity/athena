@@ -51,6 +51,7 @@ class EquationOfState;
 class FFTDriver;
 class FFTGravityDriver;
 class TurbulenceDriver;
+class OrbitalAdvection;
 
 FluidFormulation GetFluidFormulation(const std::string& input_string);
 
@@ -92,11 +93,6 @@ class MeshBlock {
   int gid, lid;
   int cis, cie, cjs, cje, cks, cke, cnghost;
   int gflag;
-  // At every cycle n, hydro and field registers (u, b) are advanced from t^n -> t^{n+1},
-  // the time-integration scheme may partially substep several storage register pairs
-  // (u,b), (u1,b1), (u2, b2), ..., (um, bm) through the dt interval. Track their time
-  // abscissae at the end of each stage (1<=l<=nstage) as (dt_m^l) relative to t^n
-  Real stage_abscissae[MAX_NSTAGE+1][MAX_NREGISTER];
 
   // user output variables for analysis
   int nuser_out_var;
@@ -120,6 +116,7 @@ class MeshBlock {
   MGGravity* pmg;
   PassiveScalars *pscalars;
   EquationOfState *peos;
+  OrbitalAdvection *porb;
 
   // functions
   std::size_t GetBlockSizeInBytes();
@@ -200,6 +197,7 @@ class Mesh {
   friend class Gravity;
   friend class HydroDiffusion;
   friend class FieldDiffusion;
+  friend class OrbitalAdvection;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -221,6 +219,8 @@ class Mesh {
   const bool f2, f3; // flags indicating (at least) 2D or 3D Mesh
   const int ndim;     // number of dimensions
   const bool adaptive, multilevel;
+  const bool orbital_advection;      // flag of orbital advection
+  const bool shear_periodic;         // flag of shear periodic b.c.
   const FluidFormulation fluid_setup;
   Real start_time, time, tlim, dt, dt_hyperbolic, dt_parabolic, dt_user, cfl_number;
   int nlim, ncycle, ncycle_out, dt_diagnostics;
@@ -314,6 +314,7 @@ class Mesh {
   ViscosityCoeffFunc ViscosityCoeff_;
   ConductionCoeffFunc ConductionCoeff_;
   FieldDiffusionCoeffFunc FieldDiffusivity_;
+  OrbitalVelocityFunc OrbitalVelocity_, OrbitalVelocityDerivative_[2];
   MGBoundaryFunc MGGravityBoundaryFunction_[6];
 
   void AllocateRealUserMeshDataField(int n);
@@ -367,6 +368,8 @@ class Mesh {
   void EnrollViscosityCoefficient(ViscosityCoeffFunc my_func);
   void EnrollConductionCoefficient(ConductionCoeffFunc my_func);
   void EnrollFieldDiffusivity(FieldDiffusionCoeffFunc my_func);
+  void EnrollOrbitalVelocity(OrbitalVelocityFunc my_func);
+  void EnrollOrbitalVelocityDerivative(int i, OrbitalVelocityFunc my_func);
   void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; }
   void SetFourPiG(Real fpg) { four_pi_G_=fpg; }
   void SetGravityThreshold(Real eps) { grav_eps_=eps; }
