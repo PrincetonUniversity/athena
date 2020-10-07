@@ -35,10 +35,11 @@ class ParameterInput;
 class Coordinates;
 struct RegionSize;
 
-// free functions to return boundary flag given input string, and vice versa
+//! free functions to return boundary flag given input string
 BoundaryFlag GetBoundaryFlag(const std::string& input_string);
+//! free functions to return string given boundary flag
 std::string GetBoundaryString(BoundaryFlag input_flag);
-// + confirming that the MeshBlock's boundaries are all valid selections
+//! confirming that the MeshBlock's boundaries are all valid selections
 void CheckBoundaryFlag(BoundaryFlag block_flag, CoordinateDirection dir);
 
 //----------------------------------------------------------------------------------------

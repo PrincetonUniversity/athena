@@ -311,12 +311,14 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   virtual int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) = 0;
   virtual int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) = 0;
 
-  // BoundaryBuffer public functions with shared implementations
+  //!@{
+  //! BoundaryBuffer public functions with shared implementations
   void SendBoundaryBuffers() override;
   bool ReceiveBoundaryBuffers() override;
   void ReceiveAndSetBoundariesWithWait() override;
   void SetBoundaries() override;
-
+  //!@}
+  
  protected:
   // deferred initialization of BoundaryData objects in derived class constructors
   BoundaryData<> bd_var_, bd_var_flcor_;

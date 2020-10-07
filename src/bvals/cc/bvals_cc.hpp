@@ -35,22 +35,25 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
                                AthenaArray<Real> *var_flux);
   ~CellCenteredBoundaryVariable();
 
-  // may want to rebind var_cc to u,u1,u2,w,w1, etc. registers for time integrator logic.
-  // Also, derived class HydroBoundaryVariable needs to keep switching var and coarse_var
-  // arrays between primitive and conserved variables ---> ptr members, not references
+  //! \note
+  //! may want to rebind var_cc to u,u1,u2,w,w1, etc. registers for time integrator logic.
+  //! Also, derived class HydroBoundaryVariable needs to keep switching var and coarse_var
+  //! arrays between primitive and conserved variables ---> ptr members, not references
   AthenaArray<Real> *var_cc;
   AthenaArray<Real> *coarse_buf;  //!< may pass nullptr if mesh refinement is unsupported
 
   //!@{
+  //! \note
   //! currently, no need to ever switch flux[] ---> keep as reference members (not ptrs)
   //! flux[3] w/ 3x empty AthenaArrays may be passed if mesh refinement is unsupported,
   //! but nullptr is not allowed
   AthenaArray<Real> &x1flux, &x2flux, &x3flux;
   //!@}
 
+
   //! maximum number of reserved unique "physics ID" component of MPI tag bitfield
-  //! (CellCenteredBoundaryVariable only actually uses 1x if multilevel==false, no shear)
   //! \note
+  //! (CellCenteredBoundaryVariable only actually uses 1x if multilevel==false, no shear)
   //! must correspond to the # of "int *phys_id_" private members, below.
   //! Convert to array?
   static constexpr int max_phys_id = 3;

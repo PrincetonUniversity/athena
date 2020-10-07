@@ -819,7 +819,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetFielBoundaryFromFiner
+//! \fn void FaceCenteredBoundaryVariable::SetBoundaryFromFiner
 //! \brief Set face-centered boundary received from a block on the same level
 
 void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,

@@ -45,8 +45,9 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   FaceField &coarse_buf;
   AthenaArray<Real> &e1, &e2, &e3;  // same for EdgeField
 
-  //! note
+
   //! maximum number of reserved unique "physics ID" component of MPI tag bitfield
+  //! \note
   //! must correspond to the # of "int *phys_id_" private members, below.
   //! Convert to array?
   static constexpr int max_phys_id = 5;

@@ -581,7 +581,7 @@ void FaceCenteredBoundaryVariable::CopyPolarBufferSameProcess(
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SendEMFCorrection()
+//! \fn void FaceCenteredBoundaryVariable::SendFluxCorrection()
 //! \brief Restrict, pack and send the surface EMF to the coarse neighbor(s) if needed
 
 void FaceCenteredBoundaryVariable::SendFluxCorrection() {

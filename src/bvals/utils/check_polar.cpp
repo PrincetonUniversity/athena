@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file check_polar.cpp
-//  \brief check compatibilty of user-selected 'polar' and/or 'polar_wedge' boundary flags
-//         with compile-time and run-time solver configurations
+//! \brief check compatibilty of user-selected 'polar' and/or 'polar_wedge' boundary flags
+//!        with compile-time and run-time solver configurations
 
 // C headers
 
@@ -23,8 +23,9 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::CheckPolarBoundaries()
-//  \brief Check for any compatibility issues if polar-type boundary flags are selected.
-//  Called after setting 6x boundary functions in MeshBlock's BoundaryValues() constructor
+//! \brief Check for any compatibility issues if polar-type boundary flags are selected.
+//!
+//! Called after setting 6x boundary functions in MeshBlock's BoundaryValues() constructor
 
 void BoundaryValues::CheckPolarBoundaries() {
   // Check that spherical-like coordinates were specified at compile time (this check
