@@ -4,11 +4,11 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file task_id.cpp
-//  \brief implementation of the Task ID class
+//! \brief implementation of the Task ID class
 
 #include "task_list.hpp"
 
-// TaskID constructor. Default id = 0.
+//! TaskID constructor. Default id = 0.
 
 TaskID::TaskID(unsigned int id) {
   for (int i=0; i<kNField_; i++)
@@ -23,7 +23,7 @@ TaskID::TaskID(unsigned int id) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void TaskID::Clear()
-//  \brief Clear all the bits in the Task ID
+//! \brief Clear all the bits in the Task ID
 
 void TaskID::Clear() {
   for (int i=0; i<kNField_; i++)
@@ -32,8 +32,8 @@ void TaskID::Clear() {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool TaskID::IsUnfinished(const TaskID& id)
-//  \brief Check if the task with the given ID is unfinished. This function is to be
-//  called on Task States and returns true if the task is unfinished.
+//! \brief Check if the task with the given ID is unfinished. This function is to be
+//! called on Task States and returns true if the task is unfinished.
 
 bool TaskID::IsUnfinished(const TaskID& id) const {
   std::uint64_t fld = (bitfld_[0] & id.bitfld_[0]);
@@ -44,8 +44,8 @@ bool TaskID::IsUnfinished(const TaskID& id) const {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool TaskID::CheckDependencies(const TaskID& dep)
-//  \brief Check if the given dependencies are cleared. This function is to be
-//  called on Task States, and returns true if all the dependencies are clear.
+//! \brief Check if the given dependencies are cleared. This function is to be
+//! called on Task States, and returns true if all the dependencies are clear.
 
 bool TaskID::CheckDependencies(const TaskID& dep) const {
   bool ret = ((bitfld_[0] & dep.bitfld_[0]) == dep.bitfld_[0]);
@@ -57,8 +57,8 @@ bool TaskID::CheckDependencies(const TaskID& dep) const {
 
 //----------------------------------------------------------------------------------------
 //! \fn void TaskID::SetFinished(const TaskID& id)
-//  \brief Mark the task with the given ID finished.
-//  This function is to be called on Task States.
+//! \brief Mark the task with the given ID finished.
+//! This function is to be called on Task States.
 
 void TaskID::SetFinished(const TaskID& id) {
   for (int i=0; i<kNField_; i++)
@@ -68,7 +68,7 @@ void TaskID::SetFinished(const TaskID& id) {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool TaskID::operator== (const TaskID& rhs)
-//  \brief overloading operator == for TaskID
+//! \brief overloading operator == for TaskID
 
 bool TaskID::operator== (const TaskID& rhs) const {
   bool ret = (bitfld_[0] == rhs.bitfld_[0]);
@@ -79,7 +79,7 @@ bool TaskID::operator== (const TaskID& rhs) const {
 
 //----------------------------------------------------------------------------------------
 //! \fn TaskID TaskID::operator| (const TaskID& rhs)
-//  \brief overloading operator | for TaskID
+//! \brief overloading operator | for TaskID
 
 TaskID TaskID::operator| (const TaskID& rhs) const {
   TaskID ret;

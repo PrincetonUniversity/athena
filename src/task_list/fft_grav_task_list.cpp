@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file fft_grav_task_list.cpp
-//  \brief
+//! \brief function implementation for FFTGravitySolverTaskList
 
 // C headers
 
@@ -27,7 +27,7 @@
 #include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------
-//  FFTGravitySolverTaskList constructor
+//! FFTGravitySolverTaskList constructor
 
 FFTGravitySolverTaskList::FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm) {
   // Now assemble list of tasks for each stage of time integrator
@@ -43,8 +43,8 @@ FFTGravitySolverTaskList::FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm
 
 //----------------------------------------------------------------------------------------
 //! \fn void FFTGravitySolverTaskList::AddTask(const TaskID& id, const TaskID& dep)
-//  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.
+//! \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
+//! value of ntask.
 
 void FFTGravitySolverTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id=id;

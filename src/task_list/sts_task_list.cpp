@@ -4,11 +4,10 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file sts_task_list.cpp
-//  \brief RKL Super-Time-Stepping
-//
-// REFERENCE:
-// Meyer, C. D., Balsara, D. S., & Aslam, T. D. 2014, J. Comput. Phys.,
-//    257A, 594-626
+//! \brief RKL Super-Time-Stepping
+//!
+//! REFERENCE:
+//! Meyer, C. D., Balsara, D. S., & Aslam, T. D. 2014, J. Comput. Phys., 257A, 594-626
 
 // C headers
 
@@ -40,7 +39,7 @@
 #include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------
-//  SuperTimeStepTaskList constructor
+//! SuperTimeStepTaskList constructor
 
 SuperTimeStepTaskList::SuperTimeStepTaskList(
     ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) :
@@ -258,8 +257,8 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
 }
 
 //---------------------------------------------------------------------------------------
-//  Sets id and dependency for "ntask" member of task_list_ array, then iterates value of
-//  ntask.
+//! Sets id and dependency for "ntask" member of task_list_ array, then iterates value of
+//! ntask.
 
 void SuperTimeStepTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id = id;
@@ -432,6 +431,8 @@ void SuperTimeStepTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   return;
 }
 
+//---------------------------------------------------------------------------------------
+//! \brief
 
 void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   Mesh *pm =  pmb->pmy_mesh;
@@ -521,7 +522,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to end MPI communication
+//! Functions to end MPI communication
 
 TaskStatus SuperTimeStepTaskList::ClearAllBoundary_STS(MeshBlock *pmb, int stage) {
   pmb->pbval->ClearBoundarySubset(BoundaryCommSubset::all,
@@ -530,7 +531,7 @@ TaskStatus SuperTimeStepTaskList::ClearAllBoundary_STS(MeshBlock *pmb, int stage
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to calculates fluxes
+//! Functions to calculates hydro flux
 
 TaskStatus SuperTimeStepTaskList::CalculateHydroFlux_STS(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
@@ -541,6 +542,8 @@ TaskStatus SuperTimeStepTaskList::CalculateHydroFlux_STS(MeshBlock *pmb, int sta
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to calculates scalar flux
 
 TaskStatus SuperTimeStepTaskList::CalculateScalarFlux_STS(MeshBlock *pmb, int stage) {
   PassiveScalars *ps = pmb->pscalars;
@@ -551,6 +554,8 @@ TaskStatus SuperTimeStepTaskList::CalculateScalarFlux_STS(MeshBlock *pmb, int st
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to calculates emf
 
 TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
@@ -562,7 +567,7 @@ TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to integrate conserved variables
+//! Functions to integrate hydro variables
 
 TaskStatus SuperTimeStepTaskList::IntegrateHydro_STS(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
@@ -604,6 +609,8 @@ TaskStatus SuperTimeStepTaskList::IntegrateHydro_STS(MeshBlock *pmb, int stage) 
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to integrate scalars
 
 TaskStatus SuperTimeStepTaskList::IntegrateScalars_STS(MeshBlock *pmb, int stage) {
   PassiveScalars *ps = pmb->pscalars;
@@ -641,6 +648,8 @@ TaskStatus SuperTimeStepTaskList::IntegrateScalars_STS(MeshBlock *pmb, int stage
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to integrate field variables
 
 TaskStatus SuperTimeStepTaskList::IntegrateField_STS(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
@@ -718,18 +727,19 @@ TaskStatus SuperTimeStepTaskList::Primitives_STS(MeshBlock *pmb, int stage) {
   if (pbval->nblevel[2][1][1] != -1) ku += NGHOST;
 
   if (stage <= nstages) {
-    // At beginning of this task, ph->w and pf->bcc contain the previous stage's output.
-    // Now, we wish to update ph->w and pf->bcc with the present ph->u and pf->b.
-    // In TimeIntegratorTaskList::Primitives, ph->w1 is used to contain the present
-    // stage's output, however, after performing w.SwapAthenaArray(ph->w1), the
-    // resulting ph->w does not contain correct values for the ghost zones.
-    // This is resolved by calling TimeIntegratorTaskList::ApplyPhysicalBoundaries,
-    // however, in STS, ApplyPhysicalBoundaries only cycles through boundary types
-    // integrated in SuperTimeStepTaskList, **not all** boundary types.  We still
-    // need the correct values in ghost zones for all other non-STS-integrated boundaries,
-    // thus we choose to directly update ph->w, instead of storing in an intermediate
-    // ph->w1.  ph->w1 is only used in RELATAVISTIC DYNAMICS, which is not yet compatible
-    // with STS, thus making this a safe choice.
+    //! \note
+    //! At beginning of this task, ph->w and pf->bcc contain the previous stage's output.
+    //! Now, we wish to update ph->w and pf->bcc with the present ph->u and pf->b.
+    //! In TimeIntegratorTaskList::Primitives, ph->w1 is used to contain the present
+    //! stage's output, however, after performing w.SwapAthenaArray(ph->w1), the
+    //! resulting ph->w does not contain correct values for the ghost zones.
+    //! This is resolved by calling TimeIntegratorTaskList::ApplyPhysicalBoundaries,
+    //! however, in STS, ApplyPhysicalBoundaries only cycles through boundary types
+    //! integrated in SuperTimeStepTaskList, **not all** boundary types.  We still
+    //! need the correct values in ghost zones for all other non-STS-integrated
+    //! boundaries, thus we choose to directly update ph->w, instead of storing in an
+    //! intermediate ph->w1. ph->w1 is only used in RELATAVISTIC DYNAMICS,
+    //! which is not yet compatible with STS, thus making this a safe choice.
     if (do_sts_hydro || do_sts_field) {
       pmb->peos->ConservedToPrimitive(ph->u, ph->w, pf->b,
                                       ph->w, pf->bcc, pmb->pcoord,

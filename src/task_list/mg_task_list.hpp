@@ -5,8 +5,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//!   \file mg_task_list.hpp
-//    \brief
+//! \file mg_task_list.hpp
+//! \brief define MultiGridTaskList class
 
 // C headers
 
@@ -25,25 +25,25 @@ class MultigridTaskList;
 
 //----------------------------------------------------------------------------------------
 //! \struct MGTask
-//  \brief data and function pointer for an individual MGTask
+//! \brief data and function pointer for an individual MGTask
 
 struct MGTask {
-  TaskID task_id;      // encodes task using bit positions in MultigridTaskNames
-  TaskID dependency;   // encodes dependencies to other tasks using " " " "
-  TaskStatus (MultigridTaskList::*TaskFunc)(Multigrid*);  // ptr to a task
+  TaskID task_id;      //!> encodes task using bit positions in MultigridTaskNames
+  TaskID dependency;   //!> encodes dependencies to other tasks using MultigridTaskNames
+  TaskStatus (MultigridTaskList::*TaskFunc)(Multigrid*);  //!> ptr to a task
 };
 
 
 //----------------------------------------------------------------------------------------
 //! \class MultigridTaskList
-//  \brief data and function definitions for MultigridTaskList class
+//! \brief data and function definitions for MultigridTaskList class
 
 class MultigridTaskList {
  public:
   explicit MultigridTaskList(MultigridDriver *pmd) : ntasks(0), pmy_mgdriver_(pmd),
                                                      task_list_{} {}
   // data
-  int ntasks;     // number of tasks in this list
+  int ntasks;     //!> number of tasks in this list
 
   // functions
   TaskListStatus DoAllAvailableTasks(Multigrid *pmg, TaskStates &ts);
@@ -85,7 +85,7 @@ class MultigridTaskList {
 };
 
 //----------------------------------------------------------------------------------------
-// 64-bit integers with "1" in different bit positions used to ID each Multigrid task.
+//! 64-bit integers with "1" in different bit positions used to ID each Multigrid task.
 
 namespace MultigridTaskNames {
 const TaskID NONE(0);

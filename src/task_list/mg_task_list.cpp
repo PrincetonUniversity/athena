@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mg_task_list.cpp
-//  \brief functions for MultigridTaskList class
+//! \brief functions for MultigridTaskList class
 
 // C headers
 
@@ -25,7 +25,7 @@ using namespace MultigridTaskNames; // NOLINT (build/namespace)
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd)
-//  \brief completes all tasks in this list, will not return until all are tasks done
+//! \brief completes all tasks in this list, will not return until all are tasks done
 
 void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd) {
   int nthreads = pmd->pmy_mesh_->GetNumMeshThreads();
@@ -51,8 +51,8 @@ void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd) {
 
 //----------------------------------------------------------------------------------------
 //! \fn TaskListStatus MultigridTaskList::DoAllAvailableTasks
-//  \brief do all tasks that can be done (are not waiting for a dependency to be
-//  cleared) in this TaskList, return status.
+//! \brief do all tasks that can be done (are not waiting for a dependency to be
+//! cleared) in this TaskList, return status.
 
 TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskStates &ts) {
   int skip=0;
@@ -89,8 +89,8 @@ TaskListStatus MultigridTaskList::DoAllAvailableTasks(Multigrid *pmg, TaskStates
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridTaskList::AddMultigridTask(const TaskID& id, const TaskID& dep)
-//  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.
+//! \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
+//! value of ntask.
 
 void MultigridTaskList::AddMultigridTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id=id;
@@ -294,7 +294,7 @@ TaskStatus MultigridTaskList::ProlongateBoundaryForProlongation(Multigrid *pmg) 
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag)
-//  \brief Set the task list for prolongation and post smoothing
+//! \brief Set the task list for prolongation and post smoothing
 
 void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag) {
   bool multilevel = false;
@@ -389,7 +389,7 @@ void MultigridTaskList::SetMGTaskListToFiner(int nsmooth, int ngh, int flag) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh)
-//  \brief Set the task list for pre smoothing and restriction
+//! \brief Set the task list for pre smoothing and restriction
 
 void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh) {
   bool multilevel = false;
@@ -520,7 +520,7 @@ void MultigridTaskList::SetMGTaskListToCoarser(int nsmooth, int ngh) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridTaskList::SetMGTaskListFMGProlongate(int flag)
-//  \brief Set the task list for FMG prolongation
+//! \brief Set the task list for FMG prolongation
 
 void MultigridTaskList::SetMGTaskListFMGProlongate(int flag) {
   ClearTaskList();
