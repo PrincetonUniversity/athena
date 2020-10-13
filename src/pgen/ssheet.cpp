@@ -27,6 +27,8 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
+#include "../bvals/bvals_interfaces.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
@@ -35,6 +37,7 @@
 #include "../mesh/mesh.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
+#include "../scalars/scalars.hpp"
 
 #if MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires NOT MHD"
@@ -49,6 +52,7 @@ Real Omega_0,qshear;
 int shboxcoord;
 
 Real HistoryDvyc(MeshBlock *pmb, int iout);
+Real HistoryGhostScalar(MeshBlock *pmb, int iout);
 } // namespace
 
 //======================================================================================
@@ -64,6 +68,28 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   ipert = pin->GetInteger("problem","ipert");
   shboxcoord = pin->GetOrAddInteger("problem","shboxcoord",1);
 
+  if (NSCALARS > 0) {
+    if (NSCALARS > 1) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
+          << "NSCALARS should be no more than 1." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    if (shboxcoord == 2) { // x-z shear
+      std::stringstream msg;
+      msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
+          << "NSCALARS requires shboxcoord == 2 in this probrem." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    if (ipert == 0) {
+      AllocateUserHistoryOutput(1);
+      EnrollUserHistoryOutput(0, HistoryGhostScalar, "ghost_scalar",
+                              UserHistoryOperation::sum);
+    }
+  }
+
   if (ipert == 1) {
     AllocateUserHistoryOutput(1);
     EnrollUserHistoryOutput(0, HistoryDvyc, "dvyc", UserHistoryOperation::sum);
@@ -71,8 +97,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   if (!shear_periodic) {
     std::stringstream msg;
-    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
-        << "This problem generator requires shearing box" << std::endl;
+    msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
+        << "This problem generator requires shearing box"   << std::endl;
     ATHENA_ERROR(msg);
   }
 
@@ -199,6 +225,28 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
 
+  // set the specific angular momentum into passive scalar
+  // In shearing box
+  if (NSCALARS > 0) {
+    Real den;
+    Real vel;
+    if (shboxcoord == 1) { // x-y shear
+      for (int n=0; n<NSCALARS; ++n) {
+        for (int k=kl; k<=ku; k++) {
+          for (int j=jl; j<=ju; j++) {
+            for (int i=il; i<=iu; i++) {
+              x1 = pcoord->x1v(i);
+              x2 = pcoord->x2v(j);
+              rd = d0;
+              rp = p0;
+              pscalars->s(n,k,j,i) = rd*amp*(2.0+std::cos(kx*x1 + ky*x2));
+            }
+          }
+        }
+      }
+    }
+  }
+
   return;
 }
 
@@ -227,5 +275,53 @@ Real HistoryDvyc(MeshBlock *pmb, int iout) {
     }
   }
   return dvyc;
+}
+
+Real HistoryGhostScalar(MeshBlock *pmb, int iout) {
+  BoundaryValues *pbval = pmb->pbval;
+  Real time = pmb->pmy_mesh->time;
+  Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
+  Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
+  kx += qshear*Omega_0*time*ky;
+  Real dy  = pmb->pcoord->dx2f(pmb->js);
+  Real dz  = pmb->pcoord->dx3f(pmb->ks);
+  Real gs1 = 0.0;
+  Real gs2 = 0.0;
+  for (int n=0; n<4; n++) {
+    if (pbval->block_bcs[n] != BoundaryFlag::shear_periodic) continue;
+    if (n == BoundaryFace::inner_x1) {
+      for (int k=pmb->ks; k<=pmb->ke  ; k++) {
+        for (int j=pmb->js; j<=pmb->je  ; j++) {
+          for (int i=1; i<=NGHOST  ; i++) {
+            Real x1 = pmb->pcoord->x1v(pmb->is-i);
+            Real x2 = pmb->pcoord->x2v(j);
+            Real ref = amp*(2.0+std::cos(kx*x1 + ky*x2));
+            gs1 += std::abs(pmb->pscalars->r(0,k,j,pmb->is-i)-ref)
+                   *pmb->pcoord->dx1f(pmb->is-i)*dy*dz;
+          }
+        }
+      }
+      gs1 /= x2size*x3size
+             *(pmb->pcoord->x1f(pmb->is)
+               -pmb->pcoord->x1f(pmb->is-NGHOST));
+    } else if (n == BoundaryFace::outer_x1) {
+      for (int k=pmb->ks; k<=pmb->ke  ; k++) {
+        for (int j=pmb->js; j<=pmb->je  ; j++) {
+          for (int i=1; i<=NGHOST  ; i++) {
+            Real x1 = pmb->pcoord->x1v(pmb->ie+i);
+            Real x2 = pmb->pcoord->x2v(j);
+            Real ref = amp*(2.0+std::cos(kx*x1 + ky*x2));
+            gs2 += std::abs(pmb->pscalars->r(0,k,j,pmb->ie+i)-ref)
+                   *pmb->pcoord->dx1f(pmb->ie+i)*dy*dz;
+          }
+        }
+      }
+      gs2 /= x2size*x3size
+             *(pmb->pcoord->x1f(pmb->ie+NGHOST+1)
+               -pmb->pcoord->x1f(pmb->ie+1));
+    }
+  }
+
+  return gs1+gs2;
 }
 } // namespace
