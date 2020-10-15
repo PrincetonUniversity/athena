@@ -399,8 +399,16 @@ class Mesh {
   int ReserveTagPhysIDs(int num_phys);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
+#ifdef KILL_329f164
+  //TRACKER HACK CODE
+  //void UserWorkAfterLoop(ParameterInput *pin);   // called in main loop
+  void UserWorkAfterLoop(ParameterInput *pin, int res_flag=0);
+#else
   void UserWorkAfterLoop(ParameterInput *pin);   // called in main loop
+#endif // KILL_329f164
+
   void UserWorkInLoop(); // called in main after each cycle
+
  private:
   // data
   int next_phys_id_; // next unused value for encoding final component of MPI tag bitfield
@@ -483,7 +491,14 @@ class Mesh {
   void FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
+
+#ifdef KILL_329f164
+  // TRACKER HACK CODE
+  //void InitUserMeshData(ParameterInput *pin)
+  void InitUserMeshData(ParameterInput *pin, int res_flag=0);
+#else
   void InitUserMeshData(ParameterInput *pin);
+#endif // KILL_329f164
 
   // often used (not defined) in prob file in ../pgen/
   void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);

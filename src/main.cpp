@@ -671,11 +671,20 @@ int main(int argc, char *argv[]) {
     return(0);
   }
 #endif // ENABLE_EXCEPTIONS
+
+#ifdef KILL_329f164
+  // TRACKER HACK CODE
+  //pmesh->UserWorkAfterLoop(pinput)
+  pmesh->UserWorkAfterLoop(pinput, res_flag);
+#else
 #ifdef TWO_PUNCTURES // In case of two punctures this function has to be called only if not restarting simulation
   if (!res_flag) pmesh->UserWorkAfterLoop(pinput);
 #else
   pmesh->UserWorkAfterLoop(pinput);
 #endif
+
+#endif // KILL_329f164
+
   //pmesh->UserWorkAfterLoop(pinput, res_flag);
 
   //--- Step 10. -------------------------------------------------------------------------

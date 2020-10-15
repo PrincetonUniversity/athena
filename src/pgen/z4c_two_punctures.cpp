@@ -34,10 +34,16 @@ static ini_data *data;
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
+#ifdef KILL_329f164
+void Mesh::InitUserMeshData(ParameterInput *pin, int res_flag)
+#else
 void Mesh::InitUserMeshData(ParameterInput *pin) //, int res_flag)
+#endif // KILL_329f164
 {
 
-    //if (!res_flag) {     
+#ifdef KILL_329f164
+    if (!res_flag) {
+#endif // KILL_329f164
       string set_name = "problem";
       //printf("BeforeSetDefault\n");
       TwoPunctures_params_set_default();
@@ -140,18 +146,31 @@ void Mesh::InitUserMeshData(ParameterInput *pin) //, int res_flag)
       //printf("AfterParSetting\n");
       data = TwoPunctures_make_initial_data();
       //printf("AfterMakeInitData\n");
-    //}
+#ifdef KILL_329f164
+    }
+#endif // KILL_329f164
+
     if(adaptive==true)
       EnrollUserRefinementCondition(RefinementCondition);
 
     return;
 }
 
+#ifdef KILL_329f164
+void Mesh::UserWorkAfterLoop(ParameterInput *pin, int res_flag)
+#else
 //void Mesh::UserWorkAfterLoop(ParameterInput *pin, int res_flag)
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
+#endif // KILL_329f164
 {
+#ifdef KILL_329f164
+  if (!res_flag)
+    TwoPunctures_finalise(data);
+#else
   //if (!res_flag)
   TwoPunctures_finalise(data);
+#endif // KILL_329f164
+
   return;
 }
 

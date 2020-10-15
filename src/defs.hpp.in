@@ -33,6 +33,9 @@
 #define NO_FILL_WAVE_COARSE_P
 
 #define DBG_VC_CONSISTENCY 0
+
+#define KILL_329f164  // BD: isolate problem commit.
+
 //------
 
 //----------------------------------------------------------------------------------------
