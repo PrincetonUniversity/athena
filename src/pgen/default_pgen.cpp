@@ -38,14 +38,8 @@
 //  to initialize variables which are global to (and therefore can be passed to) other
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
-#ifdef KILL_329f164
-// TRACKER HACK CODE
-//void __attribute__((weak)) Mesh::InitUserMeshData(ParameterInput *pin) {
-void __attribute__((weak)) Mesh::InitUserMeshData(ParameterInput *pin, int res_flag) {
-#else
-void __attribute__((weak)) Mesh::InitUserMeshData(ParameterInput *pin) {
-#endif // KILL_329f164
 
+void __attribute__((weak)) Mesh::InitUserMeshData(ParameterInput *pin) {
   // do nothing
   return;
 }
@@ -64,13 +58,7 @@ void __attribute__((weak)) Mesh::UserWorkInLoop() {
 //! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief Function called after main loop is finished for user-defined work.
 //========================================================================================
-#ifdef KILL_329f164
-// TRACKER HACK CODE
-//void __attribute__((weak)) Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-void __attribute__((weak)) Mesh::UserWorkAfterLoop(ParameterInput *pin, int res_flag) {
-#else
 void __attribute__((weak)) Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-#endif // KILL_329f164
   // do nothing
   return;
 }
