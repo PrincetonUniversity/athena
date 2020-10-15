@@ -131,7 +131,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
   MeshBlock *pfirst{};
   BoundaryFlag block_bcs[6];
   std::int64_t nbmax;
-
+  resume_flag=false;
   // mesh test
   if (mesh_test > 0) Globals::nranks = mesh_test;
 
@@ -759,9 +759,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 #endif
   }
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
-#ifndef TWO_PUNCTURES //In case of two punctures this function must not be called
   InitUserMeshData(pin);
-#endif
   // read user Mesh data
   IOWrapperSizeT udsize = 0;
   for (int n=0; n<nint_user_mesh_data_; n++)

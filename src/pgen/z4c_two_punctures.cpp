@@ -34,14 +34,12 @@ static ini_data *data;
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin) //, int res_flag)
+void Mesh::InitUserMeshData(ParameterInput *pin)
 {
 
-    //if (!res_flag) {     
+    if (!resume_flag) {    
       string set_name = "problem";
-      //printf("BeforeSetDefault\n");
       TwoPunctures_params_set_default();
-      //printf("AfterSetDefault\n");
       TwoPunctures_params_set_Boolean((char *) "verbose",
                                   pin->GetOrAddBoolean(set_name, "verbose", 0));
       TwoPunctures_params_set_Real((char *) "par_b",
@@ -137,20 +135,18 @@ void Mesh::InitUserMeshData(ParameterInput *pin) //, int res_flag)
 
       TwoPunctures_params_set_Boolean((char *) "swap_xz",
                                    pin->GetOrAddBoolean(set_name, "swap_xz", 0));
-      //printf("AfterParSetting\n");
       data = TwoPunctures_make_initial_data();
-      //printf("AfterMakeInitData\n");
-    //}
+    }
+    std::cout<<"EnrollUserRefinemntCondition\n";
     if(adaptive==true)
       EnrollUserRefinementCondition(RefinementCondition);
 
     return;
 }
 
-//void Mesh::UserWorkAfterLoop(ParameterInput *pin, int res_flag)
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
-  //if (!res_flag)
+  if (!resume_flag)
   TwoPunctures_finalise(data);
   return;
 }

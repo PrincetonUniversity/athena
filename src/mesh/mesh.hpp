@@ -345,7 +345,8 @@ class Mesh {
   int GetNumMeshThreads() const {return num_mesh_threads_;}
   std::int64_t GetTotalCells() {return static_cast<std::int64_t> (nbtotal)*
         pblock->block_size.nx1*pblock->block_size.nx2*pblock->block_size.nx3;}
-
+  // FZ: Add this parameter to deal with initial data generation
+  bool resume_flag=true;
   // data
   RegionSize mesh_size;
   BoundaryFlag mesh_bcs[6];
