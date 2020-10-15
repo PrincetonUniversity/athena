@@ -29,40 +29,40 @@ def prepare(**kwargs):
 
 # Run Athena++ w/wo Orbital Advection
 def run(**kwargs):
-    # w/o Orbital Advection for ipert=1 w/o passive scalars
+    # HD shwave w/o Orbital Advection
     arguments = [
-        'job/problem_id=ssheet_ipert1_na',
+        'job/problem_id=SSHEET_SHWAVE',
         'output1/file_type=hst', 'output1/dt=10.0',
         'output2/file_type=vtk', 'output2/variable=prim',
         'output2/dt=-1', 'time/cfl_number=0.4',
         'time/tlim=8000.0', 'time/nlim=2000',
-        'time/xorder=2', 'time/integrator=vl2', 'time/ncycle_out=10',
+        'time/xorder=2', 'time/integrator=vl2',
         'mesh/nx1=64', 'mesh/x1min=-2.0', 'mesh/x1max=2.0',
         'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
         'mesh/nx2=64', 'mesh/x2min=-2.0', 'mesh/x2max=2.0',
         'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
         'mesh/nx3=1', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
-        'hydro/iso_sound_speed=0.001', 'problem/ipert=1',
-        'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1', 'problem/nwz=0',
+        'hydro/iso_sound_speed=0.001', 'problem/ipert=3',
+        'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
         'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
         'problem/orbital_advection=false', 'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 
-    # w/  Orbital Advection for ipert=1 w/o passive scalars
+    # HD shwave w/  Orbital Advection
     arguments = [
-        'job/problem_id=ssheet_ipert1_oa',
+        'job/problem_id=SSHEET_SHWAVE_ORB',
         'output1/file_type=hst', 'output1/dt=10.0',
         'output2/file_type=vtk', 'output2/variable=prim',
         'output2/dt=-1', 'time/cfl_number=0.4',
-        'time/tlim=8000.0', 'time/nlim=500',
-        'time/xorder=2', 'time/integrator=vl2', 'time/ncycle_out=10',
+        'time/tlim=8000.0', 'time/nlim=2000',
+        'time/xorder=2', 'time/integrator=vl2',
         'mesh/nx1=64', 'mesh/x1min=-2.0', 'mesh/x1max=2.0',
         'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
         'mesh/nx2=64', 'mesh/x2min=-2.0', 'mesh/x2max=2.0',
         'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
         'mesh/nx3=1', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
-        'hydro/iso_sound_speed=0.001', 'problem/ipert=1',
-        'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1', 'problem/nwz=0',
+        'hydro/iso_sound_speed=0.001', 'problem/ipert=3',
+        'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
         'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
         'problem/orbital_advection=true', 'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
@@ -70,40 +70,40 @@ def run(**kwargs):
     os.system('rm -rf obj')
     os.system('mv obj_scalar obj')
     os.system('mv bin/athena_scalar bin/athena')
-    # w/o Orbital Advection for ipert=0 w/  passive scalars
+    # passive scalar in shearingbox w/o Orbital Advection
     arguments = [
-        'job/problem_id=ssheet_ipert0_na',
+        'job/problem_id=SSHEET_SCALAR',
         'output1/file_type=hst', 'output1/dt=10.0',
         'output2/file_type=vtk', 'output2/variable=prim',
         'output2/dt=-1', 'time/cfl_number=0.4',
         'time/tlim=8000.0', 'time/nlim=2000',
-        'time/xorder=2', 'time/integrator=vl2', 'time/ncycle_out=10',
+        'time/xorder=2', 'time/integrator=vl2',
         'mesh/nx1=64', 'mesh/x1min=-2.0', 'mesh/x1max=2.0',
         'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
         'mesh/nx2=64', 'mesh/x2min=-2.0', 'mesh/x2max=2.0',
         'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
         'mesh/nx3=1', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
-        'hydro/iso_sound_speed=0.001', 'problem/ipert=0',
-        'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1', 'problem/nwz=0',
+        'hydro/iso_sound_speed=0.001', 'problem/ipert=1',
+        'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
         'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
         'problem/orbital_advection=false', 'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 
-    # w/  Orbital Advection for ipert=0 w/  passive scalars
+    # passive scalar in shearingbox w/  Orbital Advection
     arguments = [
-        'job/problem_id=ssheet_ipert0_oa',
+        'job/problem_id=SSHEET_SCALAR_ORB',
         'output1/file_type=hst', 'output1/dt=10.0',
         'output2/file_type=vtk', 'output2/variable=prim',
         'output2/dt=-1', 'time/cfl_number=0.4',
-        'time/tlim=8000.0', 'time/nlim=500',
-        'time/xorder=2', 'time/integrator=vl2', 'time/ncycle_out=10',
+        'time/tlim=8000.0', 'time/nlim=2000',
+        'time/xorder=2', 'time/integrator=vl2',
         'mesh/nx1=64', 'mesh/x1min=-2.0', 'mesh/x1max=2.0',
         'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
         'mesh/nx2=64', 'mesh/x2min=-2.0', 'mesh/x2max=2.0',
         'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
         'mesh/nx3=1', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
-        'hydro/iso_sound_speed=0.001', 'problem/ipert=0',
-        'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1', 'problem/nwz=0',
+        'hydro/iso_sound_speed=0.001', 'problem/ipert=1',
+        'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
         'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
         'problem/orbital_advection=true', 'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
@@ -111,7 +111,7 @@ def run(**kwargs):
 
 # Analyze outputs
 def analyze():
-    # ipert=1
+    # HD SHWAVE
     # set parameters 
     ky     = 0.5*pi
     kx0    = -2.0*pi
@@ -125,8 +125,8 @@ def analyze():
     c2 = -8.20766e-08
     dvy0 = 1.0e-7
 
-    # read results w/o Orbital Advection
-    fname = 'bin/ssheet_ipert1_na.hst'
+    # read results of SSEET_SHWAVE
+    fname = 'bin/SSHEET_SHWAVE.hst'
     a    = athena_read.hst(fname)
     time1 = a['time']
     dvyc1 = a['dvyc']
@@ -145,8 +145,8 @@ def analyze():
         norm1 += abs(dvyc1[n]-advy)/dvy0
     norm1 /= nf1
 
-    # read results w/  Orbital Advection
-    fname = 'bin/ssheet_ipert1_oa.hst'
+    # read results of SSEET_SHWAVE_ORB
+    fname = 'bin/SSHEET_SHWAVE_ORB.hst'
     b    = athena_read.hst(fname)
     time2 = b['time']
     dvyc2 = b['dvyc']
@@ -165,43 +165,44 @@ def analyze():
         norm2 += abs(dvyc2[n]-advy)/dvy0
     norm2 /= nf2
 
-    logger.warning('[ssheet]: check L1 norm of the vyc deviation for ipert=1')
+    logger.warning('[SSHEET_SHWAVE]: check L1 norm of the dvyc deviation')
     msg = '[ssheet]: L1 Norm {} = {}'
     logger.warning(msg.format('w/o Orbital Advection', norm1))
     logger.warning(msg.format('w/  Orbital Advection', norm2))
     flag = True
     if norm1 > 0.2:
-        logger.warning('[ssheet]: the deviation is more than 20% w/o Orbital Advection')
+        logger.warning('[SSHEET_SHWAVE]: the deviation is more than 20% w/o Orbital Advection')
         flag = False
     if norm2 > 0.2:
-        logger.warning('[ssheet]: the deviation is more than 20% w/  Orbital Advection')
+        logger.warning('[SSHEET_SHWAVE]: the deviation is more than 20% w/  Orbital Advection')
         flag = False
 
-    # ipert=0 w/o orbital advection
+    # passive in shearingbox
     amp   = 4.0e-4
-    fname = 'bin/ssheet_ipert0_na.hst'
+    # read results of SSHEET_SCALAR
+    fname = 'bin/SSHEET_SCALAR.hst'
     c     = athena_read.hst(fname)
     time3   = c['time']
     scalar3 = c['ghost_scalar']
     nf3     = len(time3)
     norm3   = scalar3[nf3-1]/amp
 
-    # ipert=0 w/  orbital advection
-    fname = 'bin/ssheet_ipert0_oa.hst'
+    # read results of SSHEET_SCALAR_ORB
+    fname = 'bin/SSHEET_SCALAR_ORB.hst'
     d     = athena_read.hst(fname)
     time4   = d['time']
     scalar4 = d['ghost_scalar']
     nf4     = len(time4)
     norm4   = scalar4[nf4-1]/amp
 
-    logger.warning('[ssheet] check L1 norm of the scalar deviation for ipert=0')
+    logger.warning('[SSHEET_SCALAR] check L1 norm of the scalar deviation')
     logger.warning(msg.format('w/o Orbital Advection', norm3))
     logger.warning(msg.format('w/  Orbital Advection', norm4))
     if norm3 > 0.1:
-        logger.warning('[ssheet]: the deviation is more than 10% w/o Orbital Advection')
+        logger.warning('[SSHEET_SCALAR]: the deviation is more than 10% w/o Orbital Advection')
         flag = False
     if norm4 > 0.1:
-        logger.warning('[ssheet]: the deviation is more than 10% w/  Orbital Advection')
+        logger.warning('[SSHEET_SCALAR]: the deviation is more than 10% w/  Orbital Advection')
         flag = False
 
     return flag

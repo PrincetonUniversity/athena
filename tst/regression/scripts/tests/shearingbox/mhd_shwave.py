@@ -15,7 +15,7 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 # Prepare Athena++
 def prepare(**kwargs):
     logger.debug('Running test ' + __name__)
-    athena.configure('b', prob='ssheet_mhd', flux='hlld',
+    athena.configure('b', prob='hgb', flux='hlld',
                      eos='isothermal', **kwargs)
     athena.make()
 
@@ -24,45 +24,49 @@ def prepare(**kwargs):
 def run(**kwargs):
     # w/o Orbital Advection
     arguments = [
-        'job/problem_id=ssheet_mhd',
+        'job/problem_id=HGB_SHWAVE',
         'output1/file_type=hst', 'output1/dt=0.01',
+        'output1/data_format=%1.16f',
         'output2/file_type=vtk', 'output2/variable=prim',
         'output2/dt=1.0', 'time/cfl_number=0.3',
         'time/tlim=3.0', 'time/nlim=1000',
-        'time/xorder=2', 'time/integrator=vl2', 'time/ncycle_out=10',
+        'time/xorder=2', 'time/integrator=vl2',
         'mesh/nx1=32', 'mesh/x1min=-0.25', 'mesh/x1max=0.25',
         'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
         'mesh/nx2=32', 'mesh/x2min=-0.25', 'mesh/x2max=0.25',
         'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
         'mesh/nx3=16', 'mesh/x3min=-0.25', 'mesh/x3max=0.25',
         'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
-        'hydro/iso_sound_speed=1.0', 'problem/epsilon=1.0e-6',
-        'problem/d0=1.0', 'problem/beta=20.0',
+        'hydro/iso_sound_speed=1.0', 'problem/d0=1.0',
+        'problem/amp=1.0e-6', 'problem/beta=20.0',
+        'problem/ipert=5', 'problem/ifield=0',
         'problem/nwx=-2', 'problem/nwy=1', 'problem/nwz=1',
-        'problem/Omega0=1.0', 'problem/qshear=1.5', 'problem/shboxcoord=1',
+        'problem/Omega0=1.0', 'problem/qshear=1.5',
         'problem/orbital_advection=false', 'time/ncycle_out=0']
-    athena.run('mhd/athinput.ssheet_mhd', arguments)
+    athena.run('mhd/athinput.hgb_shwave', arguments)
 
     # w/  Orbital Advection
     arguments = [
-        'job/problem_id=ssheet_mhd_oa',
+        'job/problem_id=HGB_SHWAVE_ORB',
         'output1/file_type=hst', 'output1/dt=0.01',
+        'output1/data_format=%1.16f',
         'output2/file_type=vtk', 'output2/variable=prim',
         'output2/dt=1.0', 'time/cfl_number=0.3',
         'time/tlim=3.0', 'time/nlim=1000',
-        'time/xorder=2', 'time/integrator=vl2', 'time/ncycle_out=10',
+        'time/xorder=2', 'time/integrator=vl2',
         'mesh/nx1=32', 'mesh/x1min=-0.25', 'mesh/x1max=0.25',
         'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
         'mesh/nx2=32', 'mesh/x2min=-0.25', 'mesh/x2max=0.25',
         'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
         'mesh/nx3=16', 'mesh/x3min=-0.25', 'mesh/x3max=0.25',
         'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
-        'hydro/iso_sound_speed=1.0', 'problem/epsilon=1.0e-6',
-        'problem/d0=1.0', 'problem/beta=20.0',
+        'hydro/iso_sound_speed=1.0', 'problem/d0=1.0',
+        'problem/amp=1.0e-6', 'problem/beta=20.0',
+        'problem/ipert=5', 'problem/ifield=0',
         'problem/nwx=-2', 'problem/nwy=1', 'problem/nwz=1',
-        'problem/Omega0=1.0', 'problem/qshear=1.5', 'problem/shboxcoord=1',
+        'problem/Omega0=1.0', 'problem/qshear=1.5',
         'problem/orbital_advection=true', 'time/ncycle_out=0']
-    athena.run('mhd/athinput.ssheet_mhd', arguments)
+    athena.run('mhd/athinput.hgb_shwave', arguments)
 
 
 # Analyze outputs
@@ -90,10 +94,10 @@ def analyze():
     k0      = math.sqrt(kx0*kx0+ky*ky+kz*kz)
 
     # read results w/o Orbital Advection
-    fname   = 'bin/ssheet_mhd.hst'
+    fname   = 'bin/HGB_SHWAVE.hst'
     a       = athena_read.hst(fname)
     time1   = a['time']
-    dby1    = a['dby']
+    dby1    = a['dBy']
     nf1     = len(time1)
     norm1   = 0.0
     CS      = 0.0
@@ -120,10 +124,10 @@ def analyze():
     norm1 /= nf1
 
     # read results w/  Orbital Advection
-    fname   = 'bin/ssheet_mhd_oa.hst'
+    fname   = 'bin/HGB_SHWAVE_ORB.hst'
     b       = athena_read.hst(fname)
     time2   = b['time']
-    dby2    = b['dby']
+    dby2    = b['dBy']
     nf2     = len(time2)
     norm2   = 0.0
     CS      = 0.0
@@ -149,15 +153,15 @@ def analyze():
         norm2 += abs(dby2[i]-dBa)/dBy0
     norm2 /= nf2
 
-    msg = '[ssheet]: L1 Norm of b2 deviation {} = {}'
+    msg = '[MHD_SHWAVE]: L1 Norm of b2 deviation {} = {}'
     logger.warning(msg.format('w/o Orbital Advection', norm1))
     logger.warning(msg.format('w/  Orbital Advection', norm2))
     flag = True
     if norm1 > 0.2:
-        logger.warning('[SSHEET]: L1 Norm is off by 20% w/o Orbital Advection')
+        logger.warning('[MHD_SHWAVE]: L1 Norm is off by 20% w/o Orbital Advection')
         flag = False
     if norm2 > 0.2:
-        logger.warning('[SSHEET]: L1 Norm is off by 20% w/  Orbital Advection')
+        logger.warning('[MHD_SHWAVE]: L1 Norm is off by 20% w/  Orbital Advection')
         flag = False
 
     return flag

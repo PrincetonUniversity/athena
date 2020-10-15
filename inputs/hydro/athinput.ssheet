@@ -60,7 +60,7 @@ amp               = 4.0e-4  # wave amplitude
 nwx               = -4      # wavenumber in x1
 nwy               = 1       # wavenumber in x2
 nwz               = 0       # wavenumber in x3
-ipert             = 1       # 0: pure shear; 1: shear wave; 2: epicyclic
-Omega0            = 0.001   # orbital freq
+ipert             = 3       # 1: pure shear; 2: epicyclic; 3: shear wave
+Omega0            = 0.001   # orbital frequency
 qshear            = 1.5     # shear rate
 shboxcoord        = 1       # 1=xy (default); 2=xz

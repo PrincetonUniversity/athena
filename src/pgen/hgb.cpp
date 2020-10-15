@@ -22,11 +22,9 @@
 //
 //- ipert = 1 - random perturbations to P and V [default, used by HGB]
 //- ipert = 2 - uniform Vx=amp (epicyclic wave test)
-//- ipert = 3 - J&G vortical shwave (hydro test)
-//- ipert = 4 - nonlinear density wave test of Fromang & Papaloizou
-//- ipert = 5 - 2nd MHD shwave test of JGG (2008) -- their figure 9
-//- ipert = 6 - 3rd MHD shwave test of JGG (2008) -- their figure 11
-//- ipert = 7 - nonlinear shearing wave test of Heinemann & Papaloizou (2008)
+//- ipert = 3 - nonlinear density wave test of Fromang & Papaloizou (2007)
+//- ipert = 4 - nonlinear shearing wave test of Heinemann & Papaloizou (2009)
+//- ipert = 5 - MHD shwave test of JGG (2008) -- their figure 11
 //
 // To run simulations of stratified disks (including vertical gravity), use the
 // strat.c problem generator.
@@ -63,19 +61,36 @@
 #endif
 
 namespace {
+Real iso_cs, gm1, d0, p0;
+Real nwx, nwy, nwz; // Wavenumbers
+Real Lx, Ly, Lz; // root grid size, global to share with output functions
+Real Omega_0, qshear;
+Real amp, beta;
+int ipert, shboxcoord;
+
 Real HistoryBxBy(MeshBlock *pmb, int iout);
 Real HistorydVxVy(MeshBlock *pmb, int iout);
 Real HistorydBy(MeshBlock *pmb, int iout);
-Real Lx, Ly, Lz; // root grid size, global to share with output functions
-Real Omega_0, qshear;
 } // namespace
 
 // ===================================================================================
 void Mesh::InitUserMeshData(ParameterInput *pin) {
-  AllocateUserHistoryOutput(3);
-  EnrollUserHistoryOutput(0, HistoryBxBy, "-BxBy");
-  EnrollUserHistoryOutput(1, HistorydVxVy, "dVxVy");
-  EnrollUserHistoryOutput(2, HistorydBy, "dBy");
+  ipert = pin->GetOrAddInteger("problem","ipert", 1);
+  if (ipert == 5) { // ipert = 5
+    AllocateUserHistoryOutput(3);
+    EnrollUserHistoryOutput(0, HistoryBxBy, "-BxBy");
+    EnrollUserHistoryOutput(1, HistorydVxVy, "dVxVy");
+    EnrollUserHistoryOutput(2, HistorydBy, "dBy");
+  } else if (ipert > 0 || ipert < 4) { // ipert = 1-4
+    AllocateUserHistoryOutput(2);
+    EnrollUserHistoryOutput(0, HistoryBxBy, "-BxBy");
+    EnrollUserHistoryOutput(1, HistorydVxVy, "dVxVy");
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "ipert should be chosen from 1 to 5." << std::endl;
+    ATHENA_ERROR(msg);
+  }
 
   if (!shear_periodic) {
     std::stringstream msg;
@@ -95,43 +110,73 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
   if (pmy_mesh->mesh_size.nx2 == 1) {
-    std::cout << "[hgb.cpp]: HGB only works on a 2D or 3D grid" << std::endl;
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "This problem generator works only in 2D or 3D." << std::endl;
+    ATHENA_ERROR(msg);
   }
 
-  // shearing sheet parameter
+  // gamma, press, sound speed
+  Real gamma = 1.0;
+  d0    = pin->GetOrAddReal("problem","d0", 1.0);
+  if (NON_BAROTROPIC_EOS) {
+    p0    = pin->GetReal("problem","p0");
+    gamma  = peos->GetGamma();
+    iso_cs = std::sqrt(gamma*p0/d0);
+  } else {
+    iso_cs = peos->GetIsoSoundSpeed();
+    p0 = d0*SQR(iso_cs);
+  }
+
+  // shearing box parameter
+  shboxcoord = pin->GetOrAddInteger("problem","shboxcoord",1);
+  if (shboxcoord != 1) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "This problem generator requires shearing box in x-y plane." << std::endl;
+    ATHENA_ERROR(msg);
+  }
   Omega_0 = porb->Omega0;
   qshear  = porb->qshear;
 
   // Read problem parameters for initial conditions
   Real amp = pin->GetReal("problem","amp");
-  int ipert = pin->GetOrAddInteger("problem","ipert", 1);
 
-  Real beta, dir_sgn;
+  Real dir_sgn;
   int ifield, Bdir;
-  if (MAGNETIC_FIELDS_ENABLED) {
-    beta = pin->GetReal("problem","beta");
-    ifield = pin->GetOrAddInteger("problem","ifield", 1);
-    // For net-flux calc, provide the direction of the B field
-    Bdir = pin->GetOrAddInteger("problem","Bdir",1);
-    if (Bdir > 0)
-      dir_sgn = 1.0;
-    else
-      dir_sgn = -1.0;
+  beta    = pin->GetReal("problem","beta");
+  ifield  = pin->GetOrAddInteger("problem","ifield", 1);
+  if ((ipert < 5)
+      && (ifield <1 || ifield >5)) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "ifield should be from 1 to 5 for ipert = 1-4." << std::endl;
+    ATHENA_ERROR(msg);
   }
+  if ((ipert == 2) && (ifield != 0)) {
+    std::stringstream msg;
+    msg << "### WARNING in hb3.cpp ProblemGenerator" << std::endl
+        << "For ipert = 5, ifield should be set at 0." << std::endl;
+    ifield = 0;
+  }
+
+  // For net-flux calc, provide the direction of the B field
+  Bdir    = pin->GetOrAddInteger("problem","Bdir",1);
+  if (Bdir > 0)
+    dir_sgn = 1.0;
+  else
+    dir_sgn = -1.0;
 
   // Compute pressure based on the EOS.
-  Real den = 1.0, pres =1.0, gamma=1.0, iso_cs=1.0;
   if (NON_BAROTROPIC_EOS) {
-    gamma = peos->GetGamma();
-    pres = pin->GetReal("problem","pres");
+    gamma  = peos->GetGamma();
+    p0     = pin->GetReal("problem","p0");
   } else {
-    iso_cs =peos->GetIsoSoundSpeed();
-    pres = den*SQR(iso_cs);
+    iso_cs = peos->GetIsoSoundSpeed();
+    p0   = d0*SQR(iso_cs);
   }
   // Compute field strength based on beta.
-  Real B0  = 0.0;
-  if (MAGNETIC_FIELDS_ENABLED)
-    B0 = std::sqrt(static_cast<Real>(2.0*pres/beta));
+  Real B0  = std::sqrt(static_cast<Real>(2.0*p0/beta));
 
   // Ensure a different initial random seed for each meshblock.
   std::int64_t iseed = -1 - gid;
@@ -142,251 +187,396 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Lz = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
 
   // initialize wavenumbers
-  int nwx = pin->GetOrAddInteger("problem","nwx",1);
-  int nwy = pin->GetOrAddInteger("problem","nwy",1);
-  int nwz = pin->GetOrAddInteger("problem","nwz",1);
+  nwx = pin->GetOrAddInteger("problem","nwx",1);
+  nwy = pin->GetOrAddInteger("problem","nwy",1);
+  nwz = pin->GetOrAddInteger("problem","nwz",1);
   Real kx = (TWO_PI/Lx)*(static_cast<Real>(nwx));// nxw=-ve for leading wave
   Real ky = (TWO_PI/Ly)*(static_cast<Real>(nwy));
   Real kz = (TWO_PI/Lz)*(static_cast<Real>(nwz));
+  if (pmy_mesh->mesh_size.nx3 == 1) kz = 0.0;
 
-  // For PF density wave test, read data from file: not implemented yet.
-
-
-  // Rescale amp to sound speed for ipert 2,3
-  if (NON_BAROTROPIC_EOS) {
-    if (ipert == 2 || ipert == 3)
-      amp *= std::sqrt(gamma*pres/den);
-  } else {
-    if (ipert == 2 || ipert == 3)
+  // Rescale amp to sound speed for ipert 2
+  if (ipert == 2) {
+    if (NON_BAROTROPIC_EOS)
+      amp *= std::sqrt(gamma*p0/d0);
+    else
       amp *= iso_cs;
   }
 
-  Real x1, x2, x3;  // xmin, xmax;
-  Real x1f, x2f, x3f;
-  Real rd(0.0), rp(0.0), rvx(0.0), rvy(0.0), rvz(0.0), rbx(0.0), rby(0.0), rbz(0.0);
-  Real rval;
-
-  for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      for (int i=is; i<=ie; i++) {
-        x1 = pcoord->x1v(i);
-        x2 = pcoord->x2v(j);
-        x3 = pcoord->x3v(k);
-        x1f = pcoord->x1f(i);
-        x2f = pcoord->x2f(j);
-        x3f = pcoord->x3f(k);
-
-        //Initialize perturbations
-        // ipert = 1 - random perturbations to P and V [default, used by HGB]
-        // ipert = 2 - uniform Vx=amp (epicyclic wave test)
-        // ipert = 3 - vortical shwave (hydro test)
-        // ipert = 4 - Fromang & Papaloizou nonlinear density wave (hydro test)
-        // ipert = 5 & 6 - JGG MHD shwave tests
-        // ipert = 7 - Heinemann & Papaloizou (2008) nonlinear shwave (hydro test)
-        if (ipert == 1) {
-          rval = amp*(ran2(&iseed) - 0.5);
-          if (NON_BAROTROPIC_EOS) {
-            rp = pres*(1.0 + 2.0*rval);
-            rd = den;
-          } else {
-            rd = den; //den*(1.0 + 2.0*rval);
-          }
-          // Follow HGB: the perturbations to V/Cs are
-          // (1/5)amp/std::sqrt(gamma)
-          rval = amp*(ran2(&iseed) - 0.5);
-          rvx = (0.4/std::sqrt(3.0)) *rval*1e-3/std::sqrt(gamma);
-          //rvx = 0.4*rval*std::sqrt(pres/den);
-          SumRvx += rvx;
-
-          rval = amp*(ran2(&iseed) - 0.5);
-          rvy = (0.4/std::sqrt(3.0)) *rval*1e-3/std::sqrt(gamma);
-          //rvy = 0.4*rval*std::sqrt(pres/den);
-          SumRvy += rvy;
-
-          rval = amp*(ran2(&iseed) - 0.5);
-          rvz = (0.4/std::sqrt(3.0)) *rval*1e-3/std::sqrt(gamma);
-          //rvz = 0.4*rval*std::sqrt(pres/den);
-          SumRvz += rvz;
-        }
-        if (ipert == 2) {
-          rp = pres;
-          rd = den;
-          rvx = amp;
-          rvy = 0.0;
-          rvz = 0.0;
-        }
-        if (ipert == 3) {
-          rp = pres;
-          rd = den;
-          rvx = amp*std::sin(static_cast<Real>(kx*x1 + ky*x2));
-          rvy = -amp*(kx/ky)*std::sin(static_cast<Real>(kx*x1 + ky*x2));
-          rvz = 0.0;
-        }
-        if (ipert == 4) {
-          std::stringstream msg;
-          msg << "### FATAL ERROR in hgb.cpp ProblemGenerator" << std::endl
-              << "ipert=4 (nonlinear density wave test of Fromang & Papaloizou)"
-              << " not implemented yet!" << std::endl;
-          ATHENA_ERROR(msg);
-        }
-        // Note: ICs in JGG for this test are incorrect.
-        if (ipert == 5) {
-          ifield = 0;
-          rd =
-              den + 8.9525e-10*std::cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3 - PI/4.));
-          rvx = 8.16589e-8*std::cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3 + PI/4.));
-          rvy = 8.70641e-8*std::cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3 + PI/4.));
-          rvz = 0.762537e-8*std::cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3 + PI/4.));
-          rbx = -1.08076e-7;
-          rbx *= std::cos(static_cast<Real>(kx*(x1-0.5*pcoord->dx1f(i)) +
-                                            ky*x2 + kz*x3 - PI/4.));
-          rby = 1.04172e-7;
-          rby *= std::cos(static_cast<Real>(kx*x1 + ky*(x2-0.5*pcoord->dx2f(j)) +
-                                            kz*x3 - PI/4.));
-          rbz = -0.320324e-7;
-          rbz *= std::cos(static_cast<Real>(kx*x1 + ky*x2 +
-                                            kz*(x3-0.5*pcoord->dx3f(k)) - PI/4.));
-          rbz += (std::sqrt(15.0)/16.0)*(Omega_0/kz);
-        }
-        if (ipert == 6) {
-          ifield = 0;
-          rd = den + 5.48082e-6*std::cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3));
-          rvx = -4.5856e-6*std::cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3));
-          rvy = 2.29279e-6*std::cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3));
-          rvz = 2.29279e-6*std::cos(static_cast<Real>(kx*x1 + ky*x2 + kz*x3));
-          rbx = 5.48082e-7;
-          rbx *= std::cos(static_cast<Real>(kx*x1f + ky*x2 + kz*x3));
-          rbx += (0.1);
-          rby = 1.0962e-6;
-          rby *= std::cos(static_cast<Real>(kx*x1 + ky*x2f + kz*x3));
-          rby += (0.2);
-          rbz = 0.0;
-        }
-        if (ipert == 7) {
-          if (!NON_BAROTROPIC_EOS) {
-            Real kappa2 = 2.0*(2.0 - qshear)*Omega_0*Omega_0;
-            Real aa = (kx*kx + ky*ky)*SQR(iso_cs) + kappa2;
-            Real bb = 2.0*qshear*Omega_0*ky*iso_cs;
-            Real denom = aa*aa + bb*bb;
-            Real rd_hat =         (ky*iso_cs*bb -2.0*Omega_0*aa)*amp/denom;
-            Real px_hat = -iso_cs*(ky*iso_cs*aa +2.0*Omega_0*bb)*amp/denom;
-            Real py_hat = (amp + ky*px_hat + (2.0-qshear)*Omega_0*rd_hat)/kx;
-            rd  = 1.0 + rd_hat*std::cos(static_cast<Real>(kx*x1 + ky*x2));
-            rvx = px_hat*std::sin(static_cast<Real>(kx*x1 + ky*x2))/rd;
-            rvy = py_hat*std::sin(static_cast<Real>(kx*x1 + ky*x2))/rd;
-          }
-          rvz = 0.0;
-        }
-
-        // Initialize (d, M, P)
-        phydro->u(IDN,k,j,i) = rd;
-        phydro->u(IM1,k,j,i) = rd*rvx;
-        phydro->u(IM2,k,j,i) = rd*rvy;
-        if(!porb->orbital_advection_defined)
-          phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
-        phydro->u(IM3,k,j,i) = rd*rvz;
-        if (NON_BAROTROPIC_EOS) {
-          phydro->u(IEN,k,j,i) = rp/(gamma-1.0)
-                                 + 0.5*(SQR(phydro->u(IM1,k,j,i))
-                                        + SQR(phydro->u(IM2,k,j,i))
-                                        + SQR(phydro->u(IM3,k,j,i)))/rd;
-        } // Hydro
-
-        // Initialize b.  For 3D shearing box B1=Bx, B2=By, B3=Bz
-        // ifield = 0 - used with ipert=5 or 6
-        // ifield = 1 - Bz=B0std::sin(x1) field with zero-net-flux[default]
-        // ifield = 2 - uniform Bz
-        // ifield = 3 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))=zero-net flux w helicity
-        // ifield = 4 - B=(0,B0/std::sqrt(2),B0/std::sqrt(2))= net toroidal+vertical field
-        if (MAGNETIC_FIELDS_ENABLED) {
-          if (ifield == 0) {
-            pfield->b.x1f(k,j,i) = rbx;
-            pfield->b.x2f(k,j,i) = rby;
-            pfield->b.x3f(k,j,i) = rbz;
-            if (i==ie) {
-              x1f = pcoord->x1f(ie+1);
-              rbx = 5.48082e-7;
-              rbx *= std::cos(static_cast<Real>(kx*x1f + ky*x2 + kz*x3));
-              rbx += (0.1);
-              pfield->b.x1f(k,j,ie+1) =  rbx;
+  // Initialize perturbations
+  // ipert = 1 - random perturbations to P and V [default, used by HGB]
+  // ipert = 2 - uniform Vx=amp (epicyclic wave test)
+  // ipert = 3 - nonlinear density wave test of Fromang & Papaloizou (2007)
+  // ipert = 4 - nonlinear shearing wave test of Heinemann & Papaloizou (2009)
+  // ipert = 5 - MHD shwave test of JGG (2008) -- their figure 11
+  if (ipert < 5) { // ipert = 1-4
+    Real x1;
+    // hydro
+    if (ipert == 1) {
+      Real rd(0.0), rp(0.0), rvx(0.0), rvy(0.0), rvz(0.0);
+      Real rval;
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            x1  = pcoord->x1v(i);
+            // In HGB, amp = 2.5e-2
+            rval = amp*(ran2(&iseed) - 0.5);
+            if (NON_BAROTROPIC_EOS) {
+              rp = p0*(1.0 + 2.0*rval);
+              rd = d0;
+            } else {
+              rd = d0; //den*(1.0 + 2.0*rval);
             }
-            if (j==je) {
-              x2f = pcoord->x2f(je+1);
-              rby = 1.0962e-6;
-              rby *= std::cos(static_cast<Real>(kx*x1 + ky*x2f + kz*x3));
-              rby += (0.2);
-              pfield->b.x2f(k,je+1,i) =  rby;
-            }
-            if (k==ke) {
-              x3f = pcoord->x3f(ke+1);
-              rbz = 0.0;
-              pfield->b.x3f(ke+1,j,i) =  rbz;
+            // Following HGB: the perturbations to V/Cs are
+            // (1/5)amp/std::sqrt(gamma)
+            rval = amp*(ran2(&iseed) - 0.5);
+            rvx = (0.4/std::sqrt(3.0)) *rval*1e-3/std::sqrt(gamma);
+            //rvx  = 0.4*rval*iso_cs/std::sqrt(gamma);
+            SumRvx += rvx;
+
+            rval = amp*(ran2(&iseed) - 0.5);
+            rvy = (0.4/std::sqrt(3.0)) *rval*1e-3/std::sqrt(gamma);
+            //rvy  = 0.4*rval*iso_cs/std::sqrt(gamma);
+            SumRvy += rvy;
+
+            rval = amp*(ran2(&iseed) - 0.5);
+            rvz = (0.4/std::sqrt(3.0)) *rval*1e-3/std::sqrt(gamma);
+            //rvz  = 0.4*rval*iso_cs/std::sqrt(gamma);
+            SumRvz += rvz;
+
+            // Initialize (d, M, P)
+            phydro->u(IDN,k,j,i) = rd;
+            phydro->u(IM1,k,j,i) = rd*rvx;
+            phydro->u(IM2,k,j,i) = rd*rvy;
+            if(!porb->orbital_advection_defined)
+              phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
+            phydro->u(IM3,k,j,i) = rd*rvz;
+            if (NON_BAROTROPIC_EOS) {
+              phydro->u(IEN,k,j,i) = rp/(gamma-1.0)
+                                     + 0.5*(SQR(phydro->u(IM1,k,j,i))
+                                            + SQR(phydro->u(IM2,k,j,i))
+                                            + SQR(phydro->u(IM3,k,j,i)))/rd;
             }
           }
-          if (ifield == 1) {
-            pfield->b.x1f(k,j,i) = 0.0;
-            pfield->b.x2f(k,j,i) = 0.0;
-            pfield->b.x3f(k,j,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
-            if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-            if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
-          }
-          if (ifield == 2) {
-            pfield->b.x1f(k,j,i) = 0.0;
-            pfield->b.x2f(k,j,i) = 0.0;
-            pfield->b.x3f(k,j,i) = B0*dir_sgn;
-            if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-            if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*dir_sgn;
-          }
-          if (ifield == 3) {
-            pfield->b.x1f(k,j,i) = 0.0;
-            pfield->b.x2f(k,j,i) = B0*(std::cos(static_cast<Real>(kx)*x1));
-            pfield->b.x3f(k,j,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
-            if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-            if (j==je) pfield->b.x2f(k,je+1,i) = B0*(std::cos(static_cast<Real>(kx)*x1));
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
-          }
-          if (ifield == 4) {
-            pfield->b.x1f(k,j,i) = 0.0;
-            pfield->b.x2f(k,j,i) = B0/std::sqrt(2);
-            pfield->b.x3f(k,j,i) = B0/std::sqrt(2);
-            if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-            if (j==je) pfield->b.x2f(k,je+1,i) = B0/std::sqrt(2);
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = B0/std::sqrt(2);
-          }
-          if (ifield == 5) {
-            pfield->b.x1f(k,j,i) = 0.0;
-            pfield->b.x2f(k,j,i) = B0;
-            pfield->b.x3f(k,j,i) = 0.0;
-            if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
-            if (j==je) pfield->b.x2f(k,je+1,i) = B0;
-            if (k==ke) pfield->b.x3f(ke+1,j,i) = 0.0;
-          }
-        } // MHD
+        }
       }
+      // For random perturbations as in HGB, ensure net momentum is zero by
+      // subtracting off mean of perturbations
+      int cell_num = block_size.nx1*block_size.nx2*block_size.nx3;
+      SumRvx /= cell_num;
+      SumRvy /= cell_num;
+      SumRvz /= cell_num;
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            phydro->u(IM1,k,j,i) -= rd*SumRvx;
+            phydro->u(IM2,k,j,i) -= rd*SumRvy;
+            phydro->u(IM3,k,j,i) -= rd*SumRvz;
+          }
+        }
+      }
+    } else if (ipert == 2) {
+      Real x1;
+      Real rd(0.0), rp(0.0), rvx(0.0), rvy(0.0), rvz(0.0);
+      rp = p0;
+      rd = d0;
+      rvx = amp;
+      rvy = 0.0;
+      rvz = 0.0;
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            // Initialize (d, M, P)
+            x1  = pcoord->x1v(i);
+            phydro->u(IDN,k,j,i) = rd;
+            phydro->u(IM1,k,j,i) = rd*rvx;
+            phydro->u(IM2,k,j,i) = rd*rvy;
+            if(!porb->orbital_advection_defined)
+              phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
+            phydro->u(IM3,k,j,i) = rd*rvz;
+            if (NON_BAROTROPIC_EOS) {
+              phydro->u(IEN,k,j,i) = rp/(gamma-1.0)
+                                     + 0.5*(SQR(phydro->u(IM1,k,j,i))
+                                            + SQR(phydro->u(IM2,k,j,i))
+                                            + SQR(phydro->u(IM3,k,j,i)))/rd;
+            }
+          }
+        }
+      }
+    } else if (ipert == 3) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in hgb.cpp ProblemGenerator" << std::endl
+          << "ipert=3 (nonlinear density wave test of Fromang & Papaloizou)"
+          << " not implemented yet!" << std::endl;
+      ATHENA_ERROR(msg);
+      // For FP density wave test, read data from file: not implemented yet.
+    } else if (ipert == 4) {
+      Real x1, x2;
+      Real rd(0.0), rvx(0.0), rvy(0.0), rvz(0.0);
+      if (NON_BAROTROPIC_EOS) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in hgb.cpp ProblemGenerator" << std::endl
+            << "ipert=4 (nonlinear density wave test of Heinemann & Papaloizou)"
+            << " requires the isothermal eos." << std::endl;
+        ATHENA_ERROR(msg);
+      } else { // isothermal
+        Real kappa2 = 2.0*(2.0 - qshear)*Omega_0*Omega_0;
+        Real aa = (kx*kx + ky*ky)*SQR(iso_cs) + kappa2;
+        Real bb = 2.0*qshear*Omega_0*ky*iso_cs;
+        Real denom = aa*aa + bb*bb;
+        Real rd_hat = (ky*iso_cs*bb -2.0*Omega_0*aa)*amp/denom;
+        Real px_hat = -d0*iso_cs*(ky*iso_cs*aa +2.0*Omega_0*bb)*amp/denom;
+        Real py_hat = d0*(amp + ky*px_hat + (2.0-qshear)*Omega_0*rd_hat)/kx;
+        for (int k=ks; k<=ke; k++) {
+          for (int j=js; j<=je; j++) {
+            for (int i=is; i<=ie; i++) {
+              x1 = pcoord->x1v(i);
+              x2 = pcoord->x2v(j);
+              // Initialize (d, M, P)
+              rd  = d0*(1.0 + rd_hat*std::cos(static_cast<Real>(kx*x1 + ky*x2)));
+              rvx = px_hat*std::sin(static_cast<Real>(kx*x1 + ky*x2))/rd;
+              rvy = py_hat*std::sin(static_cast<Real>(kx*x1 + ky*x2))/rd;
+              rvz = 0.0;
+              phydro->u(IDN,k,j,i) = rd;
+              phydro->u(IM1,k,j,i) = rd*rvx;
+              phydro->u(IM2,k,j,i) = rd*rvy;
+              if(!porb->orbital_advection_defined)
+                phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
+              phydro->u(IM3,k,j,i) = rd*rvz;
+            }
+          }
+        }
+      }
+    } // hydro
+
+    // Initialize b.  For 3D shearing box B1=Bx, B2=By, B3=Bz
+    // ifield = 1 - Bz=B0std::sin(ks*x1) field with zero-net-flux[default]
+    // ifield = 2 - uniform Bz
+    // ifield = 3 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))=zero-net flux w helicity
+    // ifield = 4 - B=(0,B0/std::sqrt(2),B0/std::sqrt(2))= net toroidal+vertical field
+    // ifield = 5 - uniform By
+    if (ifield < 1 || ifield > 5) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+          << "ifield should be from 1 to 5 for ipert = 1-4." << std::endl;
+      ATHENA_ERROR(msg);
+    } else if (ifield != 3) {
+      if (ifield == 1) {
+        for (int k=ks; k<=ke; k++) {
+          for (int j=js; j<=je; j++) {
+            for (int i=is; i<=ie; i++) {
+              x1  = pcoord->x1v(i);
+              pfield->b.x1f(k,j,i) = 0.0;
+              pfield->b.x2f(k,j,i) = 0.0;
+              pfield->b.x3f(k,j,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
+              if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
+              if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
+              if (k==ke)
+                pfield->b.x3f(ke+1,j,i) = B0*(std::sin(static_cast<Real>(kx)*x1));
+            }
+          }
+        }
+      } else if (ifield == 2) {
+        for (int k=ks; k<=ke; k++) {
+          for (int j=js; j<=je; j++) {
+            for (int i=is; i<=ie; i++) {
+              pfield->b.x1f(k,j,i) = 0.0;
+              pfield->b.x2f(k,j,i) = 0.0;
+              pfield->b.x3f(k,j,i) = B0*dir_sgn;
+              if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
+              if (j==je) pfield->b.x2f(k,je+1,i) = 0.0;
+              if (k==ke) pfield->b.x3f(ke+1,j,i) = B0*dir_sgn;
+            }
+          }
+        }
+      } else if (ifield == 4) {
+        for (int k=ks; k<=ke; k++) {
+          for (int j=js; j<=je; j++) {
+            for (int i=is; i<=ie; i++) {
+              pfield->b.x1f(k,j,i) = 0.0;
+              pfield->b.x2f(k,j,i) = B0/std::sqrt(2);
+              pfield->b.x3f(k,j,i) = B0/std::sqrt(2);
+              if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
+              if (j==je) pfield->b.x2f(k,je+1,i) = B0/std::sqrt(2);
+              if (k==ke) pfield->b.x3f(ke+1,j,i) = B0/std::sqrt(2);
+            }
+          }
+        }
+      } else { // ifield = 5
+        for (int k=ks; k<=ke; k++) {
+          for (int j=js; j<=je; j++) {
+            for (int i=is; i<=ie; i++) {
+              pfield->b.x1f(k,j,i) = 0.0;
+              pfield->b.x2f(k,j,i) = B0;
+              pfield->b.x3f(k,j,i) = 0.0;
+              if (i==ie) pfield->b.x1f(k,j,ie+1) = 0.0;
+              if (j==je) pfield->b.x2f(k,je+1,i) = B0;
+              if (k==ke) pfield->b.x3f(ke+1,j,i) = 0.0;
+            }
+          }
+        }
+      }
+    } else { // ifield = 4
+      // nxN != ncellsN, in general. Allocate to extend through 2*ghost, regardless # dim
+      int nx1 = block_size.nx1 + 2*NGHOST;
+      int nx2 = block_size.nx2 + 2*NGHOST;
+      int nx3 = block_size.nx3 + 2*NGHOST;
+
+      // vector potential
+      AthenaArray<Real> rax, ray, raz;
+      rax.NewAthenaArray(nx3, nx2, nx1);
+      ray.NewAthenaArray(nx3, nx2, nx1);
+      raz.NewAthenaArray(nx3, nx2, nx1);
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            x1 = pcoord->x1f(i);
+            rax(k,j,i) = 0.0;
+            ray(k,j,i) = -B0*std::cos(kx*x1)/kx;
+            raz(k,j,i) = -B0*std::sin(kx*x1)/kx;
+          }
+        }
+      }
+
+      // calculate b from vector potential
+      for (int k=ks; k<=ke  ; k++) {
+        for (int j=js; j<=je  ; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            pfield->b.x1f(k,j,i) = 0.5*(raz(k,j+1,i)+raz(k+1,j+1,i)
+                                      -raz(k,j,i)-raz(k+1,j,i))/pcoord->dx2f(j) -
+                                   0.5*(ray(k+1,j,i)+ray(k+1,j+1,i)
+                                      -ray(k,j,i)-ray(k,j+1,i))/pcoord->dx3f(k);
+          }
+        }
+      }
+      for (int k=ks; k<=ke  ; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie  ; i++) {
+            pfield->b.x2f(k,j,i) = 0.5*(rax(k+1,j,i)+rax(k+1,j,i+1)
+                                        -rax(k,j,i)-rax(k,j,i+1))/pcoord->dx3f(k) -
+                                   0.5*(raz(k,j,i+1)+raz(k+1,j,i+1)
+                                        -raz(k,j,i)-raz(k+1,j,i))/pcoord->dx1f(i);
+          }
+        }
+      }
+
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je  ; j++) {
+          for (int i=is; i<=ie  ; i++) {
+            pfield->b.x3f(k,j,i) = 0.5*(ray(k,j,i+1)+ray(k,j+1,i+1)
+                                        -ray(k,j,i)-ray(k,j+1,i))/pcoord->dx1f(i) -
+                                   0.5*(rax(k,j+1,i)+rax(k,j+1,i+1)
+                                        -rax(k,j,i)-rax(k,j,i+1))/pcoord->dx2f(j);
+          }
+        }
+      }
+      rax.DeleteAthenaArray();
+      ray.DeleteAthenaArray();
+      raz.DeleteAthenaArray();
     }
-  }
+  } else { // ipert = 5
+    Real x1, x2, x3;
+    Real rd(0.0), rp(0.0), rvx(0.0), rvy(0.0), rvz(0.0);
+    Real rbx(0.0), rby(0.0), rbz(0.0);
+    // Following JG
+    // amp (epsilon in JG) = 1.0e-6
+    // Omega_0 = d0 = iso_cs = H = 1.0
+    // Lx = Ly = Lz = 0.5H
+    // nwx = -2, nwy = nwz = 1
+    Real B02   =  0.5*SQR(B0); // the definition of beta is different in JG
+    Real k2    =  SQR(kx)+SQR(ky)+SQR(kz);
+    Real alpha =  std::sqrt(B02/static_cast<Real>(nwx*nwx+nwy*nwy));
+    rbx   =  alpha*static_cast<Real>(nwy);
+    rby   = -alpha*static_cast<Real>(nwx);
+    rbz   =  0.0;
 
+    Real sch   =  iso_cs/Omega_0; // H = 1
+    Real cf1   =  std::sqrt(B02*(1.0+beta)); // va*sqrt(1+beta)
+    Real cf2   =  amp*std::sqrt(sch*std::sqrt(k2*beta/(1.0+beta)));
+    Real vd    =  cf1/std::sqrt(k2)*cf2;
 
-  // For random perturbations as in HGB, ensure net momentum is zero by
-  // subtracting off mean of perturbations
-  if (ipert == 1) {
-    int cell_num = block_size.nx1*block_size.nx2*block_size.nx3;
-    SumRvx /= cell_num;
-    SumRvy /= cell_num;
-    SumRvz /= cell_num;
+    // hydro
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
-          phydro->u(IM1,k,j,i) -= rd*SumRvx;
-          phydro->u(IM2,k,j,i) -= rd*SumRvy;
-          phydro->u(IM3,k,j,i) -= rd*SumRvz;
+          x1 = pcoord->x1v(i);
+          x2 = pcoord->x2v(j);
+          x3 = pcoord->x3v(k);
+          Real CS = std::cos(kx*x1+ky*x2+kz*x3);
+          rd = d0*(1.0+cf2*CS);
+          phydro->u(IDN,k,j,i) = rd;
+          phydro->u(IM1,k,j,i) = rd*vd*kx*CS;
+          phydro->u(IM2,k,j,i) = rd*vd*ky*CS;
+          if(!porb->orbital_advection_defined)
+            phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
+          phydro->u(IM3,k,j,i) = rd*vd*kz*CS;
         }
       }
     }
-  }
 
+    // magnetic fields
+    // nxN != ncellsN, in general. Allocate to extend through 2*ghost, regardless # dim
+    // nxN != ncellsN, in general. Allocate to extend through 2*ghost, regardless # dim
+    int nx1 = block_size.nx1 + 2*NGHOST;
+    int nx2 = block_size.nx2 + 2*NGHOST;
+    int nx3 = block_size.nx3 + 2*NGHOST;
+    AthenaArray<Real> rax, ray, raz;
+    rax.NewAthenaArray(nx3, nx2, nx1);
+    ray.NewAthenaArray(nx3, nx2, nx1);
+    raz.NewAthenaArray(nx3, nx2, nx1);
+    for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie+1; i++) {
+          x1 = pcoord->x1f(i);
+          x2 = pcoord->x2f(j);
+          x3 = pcoord->x3f(k);
+          Real SN = std::sin(kx*x1+ky*x2+kz*x3);
+          Real temp = cf2*SN/k2;
+          rax(k,j,i) = temp*(rby*kz-rbz*ky);
+          ray(k,j,i) = temp*(rbz*kx-rbx*kz);
+          raz(k,j,i) = temp*(rbx*ky-rby*kx);
+        }
+      }
+    }
+    // initialize interface B
+    for (int k=ks; k<=ke  ; k++) {
+      for (int j=js; j<=je  ; j++) {
+        for (int i=is; i<=ie+1; i++) {
+          pfield->b.x1f(k,j,i) = rbx +
+                                 0.5*(raz(k,j+1,i)+raz(k+1,j+1,i)
+                                      -raz(k,j,i)-raz(k+1,j,i))/pcoord->dx2f(j) -
+                                 0.5*(ray(k+1,j,i)+ray(k+1,j+1,i)
+                                      -ray(k,j,i)-ray(k,j+1,i))/pcoord->dx3f(k);
+        }
+      }
+    }
+    for (int k=ks; k<=ke  ; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie  ; i++) {
+          pfield->b.x2f(k,j,i) = rby +
+                                 0.5*(rax(k+1,j,i)+rax(k+1,j,i+1)
+                                      -rax(k,j,i)-rax(k,j,i+1))/pcoord->dx3f(k) -
+                                 0.5*(raz(k,j,i+1)+raz(k+1,j,i+1)
+                                      -raz(k,j,i)-raz(k+1,j,i))/pcoord->dx1f(i);
+        }
+      }
+    }
+
+    for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je  ; j++) {
+        for (int i=is; i<=ie  ; i++) {
+          pfield->b.x3f(k,j,i) = rbz +
+                                 0.5*(ray(k,j,i+1)+ray(k,j+1,i+1)
+                                      -ray(k,j,i)-ray(k,j+1,i))/pcoord->dx1f(i) -
+                                 0.5*(rax(k,j+1,i)+rax(k,j+1,i+1)
+                                      -rax(k,j,i)-rax(k,j,i+1))/pcoord->dx2f(j);
+        }
+      }
+    }
+    rax.DeleteAthenaArray();
+    ray.DeleteAthenaArray();
+    raz.DeleteAthenaArray();
+  }
 
   return;
 }
@@ -439,16 +629,21 @@ Real HistorydVxVy(MeshBlock *pmb, int iout) {
 
 Real HistorydBy(MeshBlock *pmb, int iout) {
   Real dby = 0;
-  Real fkx, fky, fkz; // Fourier kx, ky
   Real x1, x2, x3;
   AthenaArray<Real> volume; // 1D array of volumes
   volume.NewAthenaArray(pmb->ncells1);
   int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> &b = pmb->pfield->bcc;
 
-  fky = TWO_PI/Ly;
-  fkx = -4.0*PI/Lx + qshear*Omega_0*fky*pmb->pmy_mesh->time;
-  fkz = TWO_PI/Lz;
+  Real kx = (TWO_PI/Lx)*(static_cast<Real>(nwx));
+  kx += qshear*Omega_0*pmb->pmy_mesh->time*(TWO_PI/static_cast<Real>(Lx));
+  Real ky = (TWO_PI/Ly)*(static_cast<Real>(nwy));
+  Real kz = (TWO_PI/Lz)*(static_cast<Real>(nwz));
+  if (pmb->pmy_mesh->mesh_size.nx3 == 1)
+    kz = 0.0;
+  Real by_analytic = -kx*std::sqrt(d0*SQR(iso_cs)/(beta*(SQR(kx)+SQR(ky))));
+  Real total_volume = Lx*Ly*Lz;
+
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k, j, is, ie, volume);
@@ -456,10 +651,8 @@ Real HistorydBy(MeshBlock *pmb, int iout) {
         x1 = pmb->pcoord->x1v(i);
         x2 = pmb->pcoord->x2v(j);
         x3 = pmb->pcoord->x3v(k);
-        dby += (2.0
-                * volume(i)
-                * (b(IB2, k, j, i) - (0.2-0.15*Omega_0*pmb->pmy_mesh->time))
-                * std::cos(fkx*x1 + fky*x2 + fkz*x3));
+        Real CS = std::cos(kx*x1+ky*x2+kz*x3);
+        dby += volume(i)*2.0*(b(IB2,k,j,i)-by_analytic)*CS/total_volume;
       }
     }
   }
