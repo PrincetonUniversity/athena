@@ -34,6 +34,7 @@ static ini_data *data;
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
+<<<<<<< HEAD
 #ifdef KILL_329f164
 void Mesh::InitUserMeshData(ParameterInput *pin, int res_flag)
 #else
@@ -44,10 +45,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) //, int res_flag)
 #ifdef KILL_329f164
     if (!res_flag) {
 #endif // KILL_329f164
+=======
+void Mesh::InitUserMeshData(ParameterInput *pin)
+{
+
+    if (!resume_flag) {    
+>>>>>>> 2b36d96326a1163c0ad1c0f563b5713be745f54f
       string set_name = "problem";
-      //printf("BeforeSetDefault\n");
       TwoPunctures_params_set_default();
-      //printf("AfterSetDefault\n");
       TwoPunctures_params_set_Boolean((char *) "verbose",
                                   pin->GetOrAddBoolean(set_name, "verbose", 0));
       TwoPunctures_params_set_Real((char *) "par_b",
@@ -143,31 +148,42 @@ void Mesh::InitUserMeshData(ParameterInput *pin) //, int res_flag)
 
       TwoPunctures_params_set_Boolean((char *) "swap_xz",
                                    pin->GetOrAddBoolean(set_name, "swap_xz", 0));
-      //printf("AfterParSetting\n");
       data = TwoPunctures_make_initial_data();
+<<<<<<< HEAD
       //printf("AfterMakeInitData\n");
 #ifdef KILL_329f164
     }
 #endif // KILL_329f164
 
+=======
+    }
+    std::cout<<"EnrollUserRefinemntCondition\n";
+>>>>>>> 2b36d96326a1163c0ad1c0f563b5713be745f54f
     if(adaptive==true)
       EnrollUserRefinementCondition(RefinementCondition);
 
     return;
 }
 
+<<<<<<< HEAD
 #ifdef KILL_329f164
 void Mesh::UserWorkAfterLoop(ParameterInput *pin, int res_flag)
 #else
 //void Mesh::UserWorkAfterLoop(ParameterInput *pin, int res_flag)
+=======
+>>>>>>> 2b36d96326a1163c0ad1c0f563b5713be745f54f
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 #endif // KILL_329f164
 {
+<<<<<<< HEAD
 #ifdef KILL_329f164
   if (!res_flag)
     TwoPunctures_finalise(data);
 #else
   //if (!res_flag)
+=======
+  if (!resume_flag)
+>>>>>>> 2b36d96326a1163c0ad1c0f563b5713be745f54f
   TwoPunctures_finalise(data);
 #endif // KILL_329f164
 
