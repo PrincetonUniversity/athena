@@ -30,7 +30,8 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX1(
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
+// Leads to errors here
+// #pragma omp simd
         for (int i = il-1; i >= il-ngh; --i) {
           (*var_vc)(n,k,j,i) = 0.;
 
@@ -57,7 +58,7 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX1(
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
+// #pragma omp simd
         for (int i=iu+1; i<=iu+ngh; ++i) {
           (*var_vc)(n,k,j,i) = 0.;
 
@@ -88,7 +89,7 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX2(
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl-1; j>=jl-ngh; --j) {
-#pragma omp simd
+// #pragma omp simd
         for (int i=il; i<=iu; ++i) {
           (*var_vc)(n,k,j,i) = 0.;
 
@@ -116,7 +117,7 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX2(
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=ju+1; j<=ju+ngh; ++j) {
-#pragma omp simd
+// #pragma omp simd
         for (int i=il; i<=iu; ++i) {
           (*var_vc)(n,k,j,i) = 0.;
 
@@ -143,7 +144,7 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowInnerX3(
   for (int n=0; n<=nu_; ++n) {
     for (int k=kl-1; k>=kl-ngh; --k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
+// #pragma omp simd
         for (int i=il; i<=iu; ++i) {
           (*var_vc)(n,k,j,i) = 0.;
 
@@ -170,7 +171,7 @@ void VertexCenteredBoundaryVariable::ExtrapolateOutflowOuterX3(
   for (int n=0; n<=nu_; ++n) {
     for (int k=ku+1; k<=ku+ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
+// #pragma omp simd
         for (int i=il; i<=iu; ++i) {
           (*var_vc)(n,k,j,i) = 0.;
 
