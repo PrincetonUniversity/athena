@@ -61,7 +61,7 @@ def analyze():
     ref_me = np.average(me[index:] / vol / pres)
     ref_ratio = ref_me / ref_stress
 
-    # resutls 
+    # resutls
     fname = 'bin/HGB_MRI.hst'
     b = athena_read.hst(fname)
     me = (b['1-ME'] + b['2-ME'] + b['3-ME'])

@@ -2,8 +2,7 @@
 
 # Modules
 import logging
-import math, cmath
-import numpy as np
+import math
 import scripts.utils.athena as athena
 import sys
 sys.path.insert(0, '../../vis/python')
@@ -72,83 +71,81 @@ def run(**kwargs):
 # Analyze outputs
 def analyze():
     # set parameters
-    nx      = -2
-    ny      = 1
-    nz      = 1
-    Lx      = 0.5
-    Ly      = 0.5
-    Lz      = 0.5
-    Omega0  = 1.0
-    qshear  = 1.5
-    iso_cs  = 1.0
-    rho0    = 1.0
+    nx = -2
+    ny = 1
+    nz = 1
+    Lx = 0.5
+    Ly = 0.5
+    Lz = 0.5
+    Omega0 = 1.0
+    qshear = 1.5
+    iso_cs = 1.0
+    rho0 = 1.0
     epsilon = 1.0e-6
-    beta    = 20.0
-    kx0     = nx*2.0*math.pi/Lx
-    ky      = ny*2.0*math.pi/Ly
-    kz      = nz*2.0*math.pi/Lz
-    vA2     = iso_cs*iso_cs/beta
-    vAx     = math.sqrt(vA2/(kx0*kx0+ky*ky))*ky
-    vAy0    = -math.sqrt(vA2/(kx0*kx0+ky*ky))*kx0
-    sch     = Omega0/iso_cs
-    k0      = math.sqrt(kx0*kx0+ky*ky+kz*kz)
+    beta = 20.0
+    kx0 = nx*2.0*math.pi/Lx
+    ky = ny*2.0*math.pi/Ly
+    kz = nz*2.0*math.pi/Lz
+    vA2 = iso_cs*iso_cs/beta
+    vAx = math.sqrt(vA2/(kx0*kx0+ky*ky))*ky
+    sch = Omega0/iso_cs
 
     # read results w/o Orbital Advection
-    fname   = 'bin/HGB_SHWAVE.hst'
-    a       = athena_read.hst(fname)
-    time1   = a['time']
-    dby1    = a['dBy']
-    nf1     = len(time1)
-    norm1   = 0.0
-    CS      = 0.0
+    fname = 'bin/HGB_SHWAVE.hst'
+    a = athena_read.hst(fname)
+    time1 = a['time']
+    dby1 = a['dBy']
+    nf1 = len(time1)
+    norm1 = 0.0
+    CS = 0.0
     for i in xrange(nf1):
-        if i!=0:
+        if i != 0:
             dt = time1[i]-time1[i-1]
             for j in xrange(10):
                 time_temp = time1[i-1]+0.1*dt*(j+1)
-                kx        = kx0+qshear*Omega0*time_temp*2.0*math.pi/Lx
-                k         = math.sqrt(kx*kx+ky*ky+kz*kz)
-                vAy       = -math.sqrt(vA2/(kx0*kx0+ky*ky))*kx
-                By        = math.sqrt(rho0)*vAy
+                kx = kx0+qshear*Omega0*time_temp*2.0*math.pi/Lx
+                k = math.sqrt(kx*kx+ky*ky+kz*kz)
+                vAy = -math.sqrt(vA2/(kx0*kx0+ky*ky))*kx
+                By = math.sqrt(rho0)*vAy
                 omega_over_k2 = (iso_cs*iso_cs+vAx*vAx+vAy*vAy)
-                CS       += math.sqrt(omega_over_k2)*k*0.1*dt
-        kx  = kx0+qshear*Omega0*time1[i]*2.0*math.pi/Lx
-        k   = math.sqrt(kx*kx+ky*ky+kz*kz)
+                CS += math.sqrt(omega_over_k2)*k*0.1*dt
+        kx = kx0+qshear*Omega0*time1[i]*2.0*math.pi/Lx
+        k = math.sqrt(kx*kx+ky*ky+kz*kz)
         vAy = -math.sqrt(vA2/(kx0*kx0+ky*ky))*kx
-        By  = math.sqrt(rho0)*vAy
+        By = math.sqrt(rho0)*vAy
         omega_over_k2 = (iso_cs*iso_cs+vAx*vAx+vAy*vAy)
         dBa = By*epsilon*math.sqrt(sch*k*math.sqrt(beta/(1.0+beta)))*math.cos(CS)
-        if i==0:
+        if i == 0:
             dBy0 = dBa
         norm1 += abs(dby1[i]-dBa)/dBy0
     norm1 /= nf1
 
     # read results w/  Orbital Advection
-    fname   = 'bin/HGB_SHWAVE_ORB.hst'
-    b       = athena_read.hst(fname)
-    time2   = b['time']
-    dby2    = b['dBy']
-    nf2     = len(time2)
-    norm2   = 0.0
-    CS      = 0.0
+    fname = 'bin/HGB_SHWAVE_ORB.hst'
+    b = athena_read.hst(fname)
+    time2 = b['time']
+    dby2 = b['dBy']
+    nf2 = len(time2)
+    norm2 = 0.0
+    CS = 0.0
     for i in xrange(nf2):
-        if i!=0:
+        if i != 0:
             dt = time2[i]-time2[i-1]
             for j in xrange(10):
                 time_temp = time2[i-1]+0.1*dt*(j+1)
-                kx        = kx0+qshear*Omega0*time_temp*2.0*math.pi/Lx
-                k         = math.sqrt(kx*kx+ky*ky+kz*kz)
-                vAy       = -math.sqrt(vA2/(kx0*kx0+ky*ky))*kx
-                By        = math.sqrt(rho0)*vAy
+                kx = kx0+qshear*Omega0*time_temp*2.0*math.pi/Lx
+                k = math.sqrt(kx*kx+ky*ky+kz*kz)
+                vAy = -math.sqrt(vA2/(kx0*kx0+ky*ky))*kx
+                By = math.sqrt(rho0)*vAy
                 omega_over_k2 = (iso_cs*iso_cs+vAx*vAx+vAy*vAy)
-                CS       += math.sqrt(omega_over_k2)*k*0.1*dt
-        kx  = kx0+qshear*Omega0*time2[i]*2.0*math.pi/Lx
-        k   = math.sqrt(kx*kx+ky*ky+kz*kz)
+                CS += math.sqrt(omega_over_k2)*k*0.1*dt
+        kx = kx0+qshear*Omega0*time2[i]*2.0*math.pi/Lx
+        k = math.sqrt(kx*kx+ky*ky+kz*kz)
         vAy = -math.sqrt(vA2/(kx0*kx0+ky*ky))*kx
-        By  = math.sqrt(rho0)*vAy
+        By = math.sqrt(rho0)*vAy
         omega_over_k2 = (iso_cs*iso_cs+vAx*vAx+vAy*vAy)
         dBa = By*epsilon*math.sqrt(sch*k*math.sqrt(beta/(1.0+beta)))*math.cos(CS)
-        if i==0:
+        if i == 0:
             dBy0 = dBa
         norm2 += abs(dby2[i]-dBa)/dBy0
     norm2 /= nf2
