@@ -2,10 +2,10 @@
 
 # Modules
 import logging
-import math
 import cmath
+import math
+import mpmath as mp
 import os
-import scipy.special as sc
 import scripts.utils.athena as athena
 import sys
 sys.path.insert(0, '../../vis/python')
@@ -136,10 +136,10 @@ def analyze():
         tau_ = qshear*Omega0*time1[n]+kx0/ky
         T_ = 1.0j * cmath.sqrt(2.0*cs*ky/(qshear*Omega0))*tau_
         exp_ = cmath.exp(-0.25j*T_*T_)
-        fterm_ = exp_*sc.hyp1f1(0.25-0.5j*constC, 0.5, 0.5j*T_*T_)
+        fterm_ = exp_*mp.hyp1f1(0.25-0.5j*constC, 0.5, 0.5j*T_*T_)
         first_ = fterm_.real
         exp_ = cmath.exp(0.25j*(math.pi-T_*T_))
-        sterm_ = exp_*T_*sc.hyp1f1(0.75-0.5j*constC, 1.5, 0.5j*T_*T_)
+        sterm_ = exp_*T_*mp.hyp1f1(0.75-0.5j*constC, 1.5, 0.5j*T_*T_)
         second_ = sterm_.real
         advy = c1*first_+c2*second_
         norm1 += abs(dvyc1[n]-advy)/dvy0
@@ -156,17 +156,17 @@ def analyze():
         tau_ = qshear*Omega0*time2[n]+kx0/ky
         T_ = 1.0j * cmath.sqrt(2.0*cs*ky/(qshear*Omega0))*tau_
         exp_ = cmath.exp(-0.25j*T_*T_)
-        fterm_ = exp_*sc.hyp1f1(0.25-0.5j*constC, 0.5, 0.5j*T_*T_)
+        fterm_ = exp_*mp.hyp1f1(0.25-0.5j*constC, 0.5, 0.5j*T_*T_)
         first_ = fterm_.real
         exp_ = cmath.exp(0.25j*(math.pi-T_*T_))
-        sterm_ = exp_*T_*sc.hyp1f1(0.75-0.5j*constC, 1.5, 0.5j*T_*T_)
+        sterm_ = exp_*T_*mp.hyp1f1(0.75-0.5j*constC, 1.5, 0.5j*T_*T_)
         second_ = sterm_.real
         advy = c1*first_+c2*second_
         norm2 += abs(dvyc2[n]-advy)/dvy0
     norm2 /= nf2
 
     logger.warning('[SSHEET_SHWAVE]: check L1 norm of the dvyc deviation')
-    msg = '[ssheet]: L1 Norm {} = {}'
+    msg = '[SSHEET_SHWAVE]: L1 Norm {} = {}'
     logger.warning(msg.format('w/o Orbital Advection', norm1))
     logger.warning(msg.format('w/  Orbital Advection', norm2))
     flag = True
@@ -198,6 +198,7 @@ def analyze():
     norm4 = scalar4[nf4-1]/amp
 
     logger.warning('[SSHEET_SCALAR] check L1 norm of the scalar deviation')
+    msg = '[SSHEET_SCALAR]: L1 Norm {} = {}'
     logger.warning(msg.format('w/o Orbital Advection', norm3))
     logger.warning(msg.format('w/  Orbital Advection', norm4))
     if norm3 > 0.1:
