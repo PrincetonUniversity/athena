@@ -1827,25 +1827,45 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
 #endif // VC_UGRID_PROLONGATE
 
   // half number of ghosts
-  int const H_NGHOST = NCGHOST / 2;
+  int const H_NCGHOST = NCGHOST / 2;
 
   // maximum stencil size for interpolator
-  int const H_SZ = H_NGHOST + 1;
+  int const H_SZ = H_NCGHOST + 1;
 
   MeshBlock *pmb = pmy_block_;
-
 
   if (pmb->pmy_mesh->ndim == 3) {
 #if ISEVEN(NGHOST)
     int const eo_offset = 0;
-    int const fke_inj = 2 * (ek - H_NGHOST);
-    int const fje_inj = 2 * (ej - H_NGHOST);
-    int const fie_inj = 2 * (ei - H_NGHOST);
+
+    int const si_inj{(si)};
+    int const ei_inj{(ei)};
+
+    int const sj_inj{(sj)};
+    int const ej_inj{(ej)};
+
+    int const sk_inj{(sk)};
+    int const ek_inj{(ek)};
 #else
-  int const eo_offset = -1;
-    int const fke_inj = 2 * (ek - H_NGHOST) + eo_offset;
-    int const fje_inj = 2 * (ej - H_NGHOST) + eo_offset;
-    int const fie_inj = 2 * (ei - H_NGHOST) + eo_offset;
+    int const eo_offset = -1;
+
+    int const fis_inj{(2 * (si - H_NCGHOST) + eo_offset)};
+    int const fie_inj{(2 * (ei - H_NCGHOST) + eo_offset)};
+
+    int const fjs_inj{(2 * (sj - H_NCGHOST) + eo_offset)};
+    int const fje_inj{(2 * (ej - H_NCGHOST) + eo_offset)};
+
+    int const fks_inj{(2 * (sk - H_NCGHOST) + eo_offset)};
+    int const fke_inj{(2 * (ek - H_NCGHOST) + eo_offset)};
+
+    int const si_inj{(fis_inj < 0) ? si + 1 : si};
+    int const ei_inj{(fie_inj > 2 * NGHOST + pmb->block_size.nx1) ? ei - 1 : ei};
+
+    int const sj_inj{(fjs_inj < 0) ? sj + 1 : sj};
+    int const ej_inj{(fje_inj > 2 * NGHOST + pmb->block_size.nx2) ? ej - 1 : ej};
+
+    int const sk_inj{(fks_inj < 0) ? sk + 1 : sk};
+    int const ek_inj{(fke_inj > 2 * NGHOST + pmb->block_size.nx3) ? ek - 1 : ek};
 #endif
 
 
@@ -1864,15 +1884,15 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
       //-----------------------------------------------------------------------
       // [k, j, i]: interp. 3d
       for (int k = sk_prl; k < ek_prl; ++k) {
-        int const fk_inj = 2 * (k - H_NGHOST) + eo_offset;
+        int const fk_inj = 2 * (k - H_NCGHOST) + eo_offset;
         int const fk_prl = fk_inj + 1;
 
         for (int j = sj_prl; j < ej_prl; ++j) {
-          int const fj_inj = 2 * (j - H_NGHOST) + eo_offset;
+          int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
           int const fj_prl = fj_inj + 1;
 
           for (int i = si_prl; i < ei_prl; ++i) {
-            int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+            int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
             int const fi_prl = fi_inj + 1;
 
             fine(n, fk_prl, fj_prl, fi_prl) = 0.;
@@ -1921,16 +1941,16 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
 
       //-----------------------------------------------------------------------
       // [k, j, i]: interp. 2d & inject 1d
-      for (int k = sk; k <= ek; ++k) {
-        int const fk_inj = 2 * (k - H_NGHOST) + eo_offset;
+      for (int k = sk_inj; k <= ek_inj; ++k) {
+        int const fk_inj = 2 * (k - H_NCGHOST) + eo_offset;
         int const fk_prl = fk_inj + 1;
 
         for (int j = sj_prl; j < ej_prl; ++j) {
-          int const fj_inj = 2 * (j - H_NGHOST) + eo_offset;
+          int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
           int const fj_prl = fj_inj + 1;
 
           for (int i = si_prl; i < ei_prl; ++i) {
-            int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+            int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
             int const fi_prl = fi_inj + 1;
 
             fine(n, fk_inj, fj_prl, fi_prl) = 0.;
@@ -1963,15 +1983,15 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
 
       // [k, j, i]: interp. 2d & inject 1d
       for (int k = sk_prl; k < ek_prl; ++k) {
-        int const fk_inj = 2 * (k - H_NGHOST) + eo_offset;
+        int const fk_inj = 2 * (k - H_NCGHOST) + eo_offset;
         int const fk_prl = fk_inj + 1;
 
-        for (int j = sj; j <= ej; ++j) {
-          int const fj_inj = 2 * (j - H_NGHOST) + eo_offset;
+        for (int j = sj_inj; j <= ej_inj; ++j) {
+          int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
           int const fj_prl = fj_inj + 1;
 
           for (int i = si_prl; i < ei_prl; ++i) {
-            int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+            int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
             int const fi_prl = fi_inj + 1;
 
             fine(n, fk_prl, fj_inj, fi_prl) = 0.;
@@ -2003,15 +2023,15 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
 
       // [k, j, i]: interp. 2d & inject 1d
       for (int k = sk_prl; k < ek_prl; ++k) {
-        int const fk_inj = 2 * (k - H_NGHOST) + eo_offset;
+        int const fk_inj = 2 * (k - H_NCGHOST) + eo_offset;
         int const fk_prl = fk_inj + 1;
 
         for (int j = sj_prl; j < ej_prl; ++j) {
-          int const fj_inj = 2 * (j - H_NGHOST) + eo_offset;
+          int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
           int const fj_prl = fj_inj + 1;
 
-          for (int i = si; i <= ei; ++i) {
-            int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+          for (int i = si_inj; i <= ei_inj; ++i) {
+            int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
             int const fi_prl = fi_inj + 1;
 
             fine(n, fk_prl, fj_prl, fi_inj) = 0.;
@@ -2044,16 +2064,16 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
 
       //-----------------------------------------------------------------------
       // [k, j, i]: interp. 1d & inject 2d
-      for (int k = sk; k <= ek; ++k) {
-        int const fk_inj = 2 * (k - H_NGHOST) + eo_offset;
+      for (int k = sk_inj; k <= ek_inj; ++k) {
+        int const fk_inj = 2 * (k - H_NCGHOST) + eo_offset;
         int const fk_prl = fk_inj + 1;
 
-        for (int j = sj; j <= ej; ++j) {
-          int const fj_inj = 2 * (j - H_NGHOST) + eo_offset;
+        for (int j = sj_inj; j <= ej_inj; ++j) {
+          int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
           int const fj_prl = fj_inj + 1;
 
           for (int i = si_prl; i < ei_prl; ++i) {
-            int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+            int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
             int const fi_prl = fi_inj + 1;
 
             fine(n, fk_inj, fj_inj, fi_prl) = 0.;
@@ -2076,16 +2096,16 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
 
 
       // [k, j, i]: interp. 1d & inject 2d
-      for (int k = sk; k <= ek; ++k) {
-        int const fk_inj = 2 * (k - H_NGHOST) + eo_offset;
+      for (int k = sk_inj; k <= ek_inj; ++k) {
+        int const fk_inj = 2 * (k - H_NCGHOST) + eo_offset;
         int const fk_prl = fk_inj + 1;
 
         for (int j = sj_prl; j < ej_prl; ++j) {
-          int const fj_inj = 2 * (j - H_NGHOST) + eo_offset;
+          int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
           int const fj_prl = fj_inj + 1;
 
-          for (int i = si; i <= ei; ++i) {
-            int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+          for (int i = si_inj; i <= ei_inj; ++i) {
+            int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
             int const fi_prl = fi_inj + 1;
 
             fine(n, fk_inj, fj_prl, fi_inj) = 0.;
@@ -2108,15 +2128,15 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
 
       // [k, j, i]: interp. 1d & inject 2d
       for (int k = sk_prl; k < ek_prl; ++k) {
-        int const fk_inj = 2 * (k - H_NGHOST) + eo_offset;
+        int const fk_inj = 2 * (k - H_NCGHOST) + eo_offset;
         int const fk_prl = fk_inj + 1;
 
-        for (int j = sj; j <= ej; ++j) {
-          int const fj_inj = 2 * (j - H_NGHOST) + eo_offset;
+        for (int j = sj_inj; j <= ej_inj; ++j) {
+          int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
           int const fj_prl = fj_inj + 1;
 
-          for (int i = si; i <= ei; ++i) {
-            int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+          for (int i = si_inj; i <= ei_inj; ++i) {
+            int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
             int const fi_prl = fi_inj + 1;
 
             fine(n, fk_prl, fj_inj, fi_inj) = 0.;
@@ -2140,16 +2160,16 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
 
       //-----------------------------------------------------------------------
       // [k, j, i]: inject 3d
-      for (int k = sk; k <= ek; ++k) {
-        int const fk_inj = 2 * (k - H_NGHOST) + eo_offset;
+      for (int k = sk_inj; k <= ek_inj; ++k) {
+        int const fk_inj = 2 * (k - H_NCGHOST) + eo_offset;
         int const fk_prl = fk_inj + 1;
 
-        for (int j = sj; j <= ej; ++j) {
-          int const fj_inj = 2 * (j - H_NGHOST) + eo_offset;
+        for (int j = sj_inj; j <= ej_inj; ++j) {
+          int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
           int const fj_prl = fj_inj + 1;
 
-          for (int i = si; i <= ei; ++i) {
-            int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+          for (int i = si_inj; i <= ei_inj; ++i) {
+            int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
             int const fi_prl = fi_inj + 1;
 
             fine(n, fk_inj, fj_inj, fi_inj) = coarse(n, k, j, i);
@@ -2161,16 +2181,30 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
 
     } // function component loop
 
-
   } else if (pmb->pmy_mesh->ndim == 2) {
 #if ISEVEN(NGHOST)
-    int const fje_inj = 2 * (ej - H_NGHOST);
-    int const fie_inj = 2 * (ei - H_NGHOST);
     int const eo_offset = 0;
+
+    int const si_inj{(si)};
+    int const sj_inj{(sj)};
+
+    int const ei_inj{(ei)};
+    int const ej_inj{(ej)};
 #else
     int const eo_offset = -1;
-    int const fje_inj = 2 * (ej - H_NGHOST) + eo_offset;
-    int const fie_inj = 2 * (ei - H_NGHOST) + eo_offset;
+
+    int const fis_inj{(2 * (si - H_NCGHOST) + eo_offset)};
+    int const fie_inj{(2 * (ei - H_NCGHOST) + eo_offset)};
+
+    int const fjs_inj{(2 * (sj - H_NCGHOST) + eo_offset)};
+    int const fje_inj{(2 * (ej - H_NCGHOST) + eo_offset)};
+
+
+    int const si_inj{(fis_inj < 0) ? si + 1 : si};
+    int const ei_inj{(fie_inj > 2 * NGHOST + pmb->block_size.nx1) ? ei - 1 : ei};
+
+    int const sj_inj{(fjs_inj < 0) ? sj + 1 : sj};
+    int const ej_inj{(fje_inj > 2 * NGHOST + pmb->block_size.nx2) ? ej - 1 : ej};
 #endif
 
     //-------------------------------------------------------------------------
@@ -2188,11 +2222,11 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
       //-----------------------------------------------------------------------
       // [j, i]: interp. 2d
       for (int j = sj_prl; j < ej_prl; ++j) {
-        int const fj_inj = 2 * (j - H_NGHOST) + eo_offset;
+        int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
         int const fj_prl = fj_inj + 1;
 
         for (int i = si_prl; i < ei_prl; ++i) {
-          int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+          int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
           int const fi_prl = fi_inj + 1;
 
           fine(n, 0, fj_prl, fi_prl) = 0.;
@@ -2225,11 +2259,11 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
       //-----------------------------------------------------------------------
       // [j, i]: (interp. 1d, inject 1d)
       for (int j = sj_prl; j < ej_prl; ++j) {
-        int const fj_inj = 2 * (j - H_NGHOST) + eo_offset;
+        int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
         int const fj_prl = fj_inj + 1;
 
-        for (int i = si; i <= ei; ++i) {
-          int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+        for (int i = si_inj; i <= ei_inj; ++i) {
+          int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
           int const fi_prl = fi_inj + 1;
 
           fine(n, 0, fj_prl, fi_inj) = 0.;
@@ -2249,12 +2283,12 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
       } // (prl, inj)
 
       // [j, i]: (inject 1d, interp. 1d)
-      for (int j = sj; j <= ej; ++j) {
-        int const fj_inj = 2 * (j - H_NGHOST) + eo_offset;
+      for (int j = sj_inj; j <= ej_inj; ++j) {
+        int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
         int const fj_prl = fj_inj + 1;
 
         for (int i = si_prl; i < ei_prl; ++i) {
-          int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+          int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
           int const fi_prl = fi_inj + 1;
 
           fine(n, 0, fj_inj, fi_prl) = 0.;
@@ -2275,12 +2309,12 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
       //-----------------------------------------------------------------------
 
       // [j, i]: inject 2d
-      for (int j = sj; j <= ej; ++j) {
-        int const fj_inj = 2 * (j - H_NGHOST) + eo_offset;
+      for (int j = sj_inj; j <= ej_inj; ++j) {
+        int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
         int const fj_prl = fj_inj + 1;
 
-        for (int i = si; i <= ei; ++i) {
-          int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+        for (int i = si_inj; i <= ei_inj; ++i) {
+          int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
           int const fi_prl = fi_inj + 1;
 
           // injected
@@ -2295,11 +2329,18 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
 
   } else {
 #if ISEVEN(NGHOST)
-    int const fie_inj = 2 * (ei - H_NGHOST);
     int const eo_offset = 0;
+
+    int const si_inj{(si)};
+    int const ei_inj{(ei)};
 #else
     int const eo_offset = -1;
-    int const fie_inj = 2 * (ei - H_NGHOST) + eo_offset;
+
+    int const fis_inj{(2 * (si - H_NCGHOST) + eo_offset)};
+    int const fie_inj{(2 * (ei - H_NCGHOST) + eo_offset)};
+
+    int const si_inj{(fis_inj < 0) ? si + 1 : si};
+    int const ei_inj{(fie_inj > 2 * NGHOST + pmb->block_size.nx1) ? ei - 1 : ei};
 #endif
 
     //-------------------------------------------------------------------------
@@ -2309,7 +2350,7 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
 
     for (int n = sn; n<= en; ++n) {
       for (int i = si_prl; i < ei_prl; ++i) {
-        int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+        int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
         int const fi_prl = fi_inj + 1;
         fine(n, 0, 0, fi_prl) = 0.;
 
@@ -2331,13 +2372,10 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
 
     // inject
     for (int n = sn; n<= en; ++n) {
-      for (int i = si; i < ei; ++i) {
-        int const fi_inj = 2 * (i - H_NGHOST) + eo_offset;
+      for (int i = si_inj; i <= ei_inj; ++i) {
+        int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
         fine(n, 0, 0, fi_inj) = coarse(n, 0, 0, i);
       }
-
-      // treat last coarse node separately to maintain bounds -----------------
-      fine(n, 0, 0, fie_inj) = coarse(n, 0, 0, ei);
       //-----------------------------------------------------------------------
     } // function component loop
 
