@@ -163,21 +163,19 @@ int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
 int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
     const NeighborIndexes& ni, int cng) {
   MeshBlock *pmb = pmy_block_;
-  int size = 0;
-  if (pbval_->shearing_box == 1) {
-    if (ni.ox1 != 0)
-      size = pmb->block_size.nx2*pmb->block_size.nx3*(nu_ + 1);
-    else
-      size = 0;
-  } else if (pmy_mesh_->multilevel) {
-    if (ni.ox1 != 0)
-        size = (pmb->block_size.nx2 + 1)/2*(pmb->block_size.nx3 + 1)/2*(nu_ + 1);
-    if (ni.ox2 != 0)
-      size = (pmb->block_size.nx1 + 1)/2*(pmb->block_size.nx3 + 1)/2*(nu_ + 1);
-    if (ni.ox3 != 0)
-      size = (pmb->block_size.nx1 + 1)/2*(pmb->block_size.nx2 + 1)/2*(nu_ + 1);
+  int size1(0), size2(0);
+  if ((pbval_->shearing_box == 1) && (ni.ox1 != 0)) {
+    size1 = pmb->block_size.nx2*pmb->block_size.nx3*(nu_ + 1);
   }
-  return size;
+  if (pmy_mesh_->multilevel) {
+    if (ni.ox1 != 0)
+      size2 = (pmb->block_size.nx2 + 1)/2*(pmb->block_size.nx3 + 1)/2*(nu_ + 1);
+    if (ni.ox2 != 0)
+      size2 = (pmb->block_size.nx1 + 1)/2*(pmb->block_size.nx3 + 1)/2*(nu_ + 1);
+    if (ni.ox3 != 0)
+      size2 = (pmb->block_size.nx1 + 1)/2*(pmb->block_size.nx2 + 1)/2*(nu_ + 1);
+  }
+  return std::max(size1,size2);
 }
 
 //----------------------------------------------------------------------------------------

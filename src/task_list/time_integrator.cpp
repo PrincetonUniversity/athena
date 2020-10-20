@@ -668,10 +668,19 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
       // prolongate, compute new primitives
       if (pm->multilevel) { // SMR or AMR
-        if (NSCALARS > 0) {
-          AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD|SEND_SCLR|SETB_SCLR));
+        if (SHEAR_PERIODIC) {
+          if (NSCALARS > 0) {
+            AddTask(PROLONG,(SETB_HYD|SETB_FLD|SETB_SCLR
+                             |RECV_HYDSH|RECV_FLDSH|RECV_SCLRSH));
+          } else {
+            AddTask(PROLONG,(SETB_HYD|SETB_FLD|RECV_HYDSH|RECV_FLDSH));
+          }
         } else {
-          AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD));
+          if (NSCALARS > 0) {
+            AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD|SEND_SCLR|SETB_SCLR));
+          } else {
+            AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD));
+          }
         }
         AddTask(CONS2PRIM,PROLONG);
       } else {
