@@ -472,7 +472,6 @@ int main(int argc, char *argv[]) {
   //--- Step 7. --------------------------------------------------------------------------
   // Change to run directory, initialize outputs object, and make output of ICs
   //printf("->main Step 7\n");
-  // Q();
 
   Outputs *pouts;
 #ifdef ENABLE_EXCEPTIONS
@@ -576,28 +575,27 @@ int main(int argc, char *argv[]) {
 
 //WGC wext
 #ifdef Z4C_WEXT
-  // only do an extraction if NextTime threshold cleared (updated below)
-  if (pz4clist->TaskListTriggers.wave_extraction.to_update)
-    for (int n = 0;n<NRAD;++n){
-      pmesh->pwave_extr[n]->ReduceMultipole();
-      pmesh->pwave_extr[n]->Write(pmesh->ncycle, pmesh->time);
-    }
+      // only do an extraction if NextTime threshold cleared (updated below)
+      if (pz4clist->TaskListTriggers.wave_extraction.to_update)
+        for (int n = 0;n<NRAD;++n){
+          pmesh->pwave_extr[n]->ReduceMultipole();
+          pmesh->pwave_extr[n]->Write(pmesh->ncycle, pmesh->time);
+        }
 #endif
 //WGC end
 
-    }
 #ifdef Z4C_TRACKER
-    //Tracker
-    pmesh->pz4c_tracker->ReduceTracker();
-    pmesh->pz4c_tracker->EvolveTracker();
-    pmesh->pz4c_tracker->WriteTracker(pmesh->ncycle, pmesh->time);
+      pmesh->pz4c_tracker->ReduceTracker();
+      pmesh->pz4c_tracker->EvolveTracker();
+      pmesh->pz4c_tracker->WriteTracker(pmesh->ncycle, pmesh->time);
 #endif // Z4C_TRACKER
 
-    //-------------------------------------------------------------------------
-    // Update NextTime triggers
-    // This needs to be here to share tasklist external (though coupled) ops.
-    pz4clist->UpdateTaskListTriggers();
-    //-------------------------------------------------------------------------
+      //-------------------------------------------------------------------------
+      // Update NextTime triggers
+      // This needs to be here to share tasklist external (though coupled) ops.
+      pz4clist->UpdateTaskListTriggers();
+      //-------------------------------------------------------------------------
+    }
 
     pmesh->UserWorkInLoop();
     pmesh->ncycle++;
