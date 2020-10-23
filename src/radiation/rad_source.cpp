@@ -101,6 +101,13 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
           }
         }
 
+        // Calculate velocity modification effective timestep
+        // TODO(CJW): below only works for VL2
+        Real dt_velocity = dt;
+        if (prim_hydro.data() != prim_hydro_alt.data()) {
+          dt_velocity /= 2.0;
+        }
+
         // Modify velocity in radiation-dominated regime
         for (int i = is; i <= ie; ++i) {
 
@@ -174,26 +181,29 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
           Real tt = pgas / rho;
           Real k_a = rho * opacity(OPAA,k,j,i);
           Real k_s = rho * opacity(OPAS,k,j,i);
-          Real gg_tet1 = -(k_a * arad * SQR(SQR(tt)) + k_s * ee_f_minus_(i)) * u_tet_(1,i)
-              - (k_a + k_s) * (-u_tet_(0,i) * rr_tet01 + u_tet_(1,i) * rr_tet11
-              + u_tet_(2,i) * rr_tet12 + u_tet_(3,i) * rr_tet13);
-          Real gg_tet2 = -(k_a * arad * SQR(SQR(tt)) + k_s * ee_f_minus_(i)) * u_tet_(2,i)
-              - (k_a + k_s) * (-u_tet_(0,i) * rr_tet02 + u_tet_(1,i) * rr_tet12
-              + u_tet_(2,i) * rr_tet22 + u_tet_(3,i) * rr_tet23);
-          Real gg_tet3 = -(k_a * arad * SQR(SQR(tt)) + k_s * ee_f_minus_(i)) * u_tet_(3,i)
-              - (k_a + k_s) * (-u_tet_(0,i) * rr_tet03 + u_tet_(1,i) * rr_tet13
-              + u_tet_(2,i) * rr_tet13 + u_tet_(3,i) * rr_tet33);
-          Real dmgas_tet1 = dt / 2.0 * gg_tet1;
-          Real dmgas_tet2 = dt / 2.0 * gg_tet2;
-          Real dmgas_tet3 = dt / 2.0 * gg_tet3;
+          Real gg_tet1 = -(k_a * arad * SQR(SQR(tt)) + k_s * ee_f_minus_(i))
+              * u_tet_(1,i) - (k_a + k_s) * (-u_tet_(0,i) * rr_tet01
+              + u_tet_(1,i) * rr_tet11 + u_tet_(2,i) * rr_tet12
+              + u_tet_(3,i) * rr_tet13);
+          Real gg_tet2 = -(k_a * arad * SQR(SQR(tt)) + k_s * ee_f_minus_(i))
+              * u_tet_(2,i) - (k_a + k_s) * (-u_tet_(0,i) * rr_tet02
+              + u_tet_(1,i) * rr_tet12 + u_tet_(2,i) * rr_tet22
+              + u_tet_(3,i) * rr_tet23);
+          Real gg_tet3 = -(k_a * arad * SQR(SQR(tt)) + k_s * ee_f_minus_(i))
+              * u_tet_(3,i) - (k_a + k_s) * (-u_tet_(0,i) * rr_tet03
+              + u_tet_(1,i) * rr_tet13 + u_tet_(2,i) * rr_tet23
+              + u_tet_(3,i) * rr_tet33);
+          Real dmgas_tet1 = dt_velocity * gg_tet1;
+          Real dmgas_tet2 = dt_velocity * gg_tet2;
+          Real dmgas_tet3 = dt_velocity * gg_tet3;
 
           // Estimate new fluid velocity
-          Real frac1 =
-              mgas_rad_tet1 == mgas_tet1 ? 0.0 : dmgas_tet1 / (mgas_rad_tet1 - mgas_tet1);
-          Real frac2 =
-              mgas_rad_tet2 == mgas_tet2 ? 0.0 : dmgas_tet2 / (mgas_rad_tet2 - mgas_tet2);
-          Real frac3 =
-              mgas_rad_tet3 == mgas_tet3 ? 0.0 : dmgas_tet3 / (mgas_rad_tet3 - mgas_tet3);
+          Real frac1 = mgas_rad_tet1 == mgas_tet1 ? 0.0
+              : dmgas_tet1 / (mgas_rad_tet1 - mgas_tet1);
+          Real frac2 = mgas_rad_tet2 == mgas_tet2 ? 0.0
+              : dmgas_tet2 / (mgas_rad_tet2 - mgas_tet2);
+          Real frac3 = mgas_rad_tet3 == mgas_tet3 ? 0.0
+              : dmgas_tet3 / (mgas_rad_tet3 - mgas_tet3);
           frac1 = std::min(std::max(frac1, 0.0), 1.0);
           frac2 = std::min(std::max(frac2, 0.0), 1.0);
           frac3 = std::min(std::max(frac3, 0.0), 1.0);
