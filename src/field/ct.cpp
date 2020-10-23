@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file ct.cpp
-//  \brief
+//! \brief
 
 // C headers
 
@@ -26,7 +26,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn  void Field::CT
-//  \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
+//! \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
 
 void Field::CT(const Real wght, FaceField &b_out) {
   MeshBlock *pmb=pmy_block;
@@ -117,8 +117,8 @@ void Field::CT(const Real wght, FaceField &b_out) {
 
 //----------------------------------------------------------------------------------------
 //! \fn  void Field::CT_STS
-//  \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
-// for STS. RKL2 registers are set to -Curl(E) update if first stage of RKL2 STS.
+//! \brief Constrained Transport implementation of dB/dt = -Curl(E), where E=-(v X B)
+//! for STS. RKL2 registers are set to -Curl(E) update if first stage of RKL2 STS.
 
 void Field::CT_STS(const Real wght, int stage,
                    FaceField &b_out, FaceField &ct_update_out) {

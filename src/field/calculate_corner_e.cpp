@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file corner_emf.cpp
-//  \brief
+//! \brief
 
 // C headers
 
@@ -23,7 +23,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn  void Field::ComputeCornerE
-//  \brief calculate the corner EMFs
+//! \brief calculate the corner EMFs
 
 void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
   MeshBlock *pmb = pmy_block;
@@ -237,7 +237,7 @@ void Field::ComputeCornerE(AthenaArray<Real> &w, AthenaArray<Real> &bcc) {
 
 //----------------------------------------------------------------------------------------
 //! \fn  void Field::ComputeCornerE_STS
-//  \brief Compute corner E for STS
+//! \brief Compute corner E for STS
 
 void Field::ComputeCornerE_STS() {
   // add diffusion flux
