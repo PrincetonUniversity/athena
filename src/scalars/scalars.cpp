@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file scalars.cpp
-//  \brief implementation of functions in class PassiveScalars
+//! \brief implementation of functions in class PassiveScalars
 
 // C headers
 
@@ -22,7 +22,7 @@
 #include "../reconstruct/reconstruction.hpp"
 #include "scalars.hpp"
 
-// constructor, initializes data structures and parameters
+//! constructor, initializes data structures and parameters
 
 PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     s(NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1),
