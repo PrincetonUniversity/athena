@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file utils.hpp
-//  \brief prototypes of functions and class definitions for utils/*.cpp files
+//! \brief prototypes of functions and class definitions for utils/*.cpp files
 
 // C headers
 
@@ -21,8 +21,8 @@ double ran2(std::int64_t *idum);
 void ShowConfig();
 
 //----------------------------------------------------------------------------------------
-//! SignalHandler
-//  \brief static data and functions that implement a simple signal handling system
+//! \namespace SignalHandler
+//! \brief static data and functions that implement a simple signal handling system
 
 namespace SignalHandler {
 const int nsignal = 3;

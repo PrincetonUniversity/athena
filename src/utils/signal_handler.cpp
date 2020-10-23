@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file signal_handler.cpp
-//  \brief contains functions that implement a simple SignalHandler
-//  These functions are based on TAG's signal handler written for Athena 8/19/2004
+//! \brief contains functions that implement a simple SignalHandler
+//! These functions are based on TAG's signal handler written for Athena 8/19/2004
 
 // C headers
 #include <unistd.h>   // alarm() Unix OS utility; not in C standard --> no <cunistd>
@@ -29,7 +29,7 @@ namespace SignalHandler {
 
 //----------------------------------------------------------------------------------------
 //! \fn void SignalHandlerInit()
-//  \brief install handlers for selected signals
+//! \brief install handlers for selected signals
 
 void SignalHandlerInit() {
   for (int n=0; n<nsignal; n++) {
@@ -50,7 +50,7 @@ void SignalHandlerInit() {
 
 //----------------------------------------------------------------------------------------
 //! \fn int CheckSignalFlags()
-//  \brief Synchronize and check signal flags and return true if any of them is caught
+//! \brief Synchronize and check signal flags and return true if any of them is caught
 
 int CheckSignalFlags() {
   // Currently, only checking for nonzero return code at the end of each timestep in
@@ -71,8 +71,8 @@ int CheckSignalFlags() {
 
 //----------------------------------------------------------------------------------------
 //! \fn int GetSignalFlag(int s)
-//  \brief Gets a signal flag assuming the signalflag array is already synchronized.
-//         Returns -1 if the specified signal is not handled.
+//! \brief Gets a signal flag assuming the signalflag array is already synchronized.
+//!        Returns -1 if the specified signal is not handled.
 
 int GetSignalFlag(int s) {
   int ret=-1;
@@ -95,7 +95,7 @@ int GetSignalFlag(int s) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void SetSignalFlag(int s)
-//  \brief Sets signal flags and reinstalls the signal handler function.
+//! \brief Sets signal flags and reinstalls the signal handler function.
 
 void SetSignalFlag(int s) {
   // Signal handler functions must have C linkage; C++ linkage is implemantation-defined
@@ -121,7 +121,7 @@ void SetSignalFlag(int s) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void SetWallTimeAlarm(int t)
-//  \brief Set the wall time limit alarm
+//! \brief Set the wall time limit alarm
 
 void SetWallTimeAlarm(int t) {
   alarm(t);
@@ -130,7 +130,7 @@ void SetWallTimeAlarm(int t) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void CancelWallTimeAlarm()
-//  \brief Cancel the wall time limit alarm
+//! \brief Cancel the wall time limit alarm
 
 void CancelWallTimeAlarm() {
   alarm(0);

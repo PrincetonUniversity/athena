@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file buffer_utils.hpp
-//  \brief prototypes of utility functions to pack/unpack buffers
+//! \brief prototypes of utility functions to pack/unpack buffers
 
 // C headers
 

@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file corner_emf.cpp
+//! \file calculate_corner_e.cpp
 //! \brief
 
 // C headers

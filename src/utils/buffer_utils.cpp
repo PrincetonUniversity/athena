@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file buffer_utils.cpp
-//  \brief namespace containing buffer utilities.
+//! \brief namespace containing buffer utilities.
 
 // C headers
 
@@ -18,8 +18,8 @@
 namespace BufferUtility {
 //----------------------------------------------------------------------------------------
 //! \fn template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
-//      int sn, int en, int si, int ei, int sj, int ej, int sk, int ek, int &offset)
-//  \brief pack a 4D AthenaArray into a one-dimensional buffer
+//!     int sn, int en, int si, int ei, int sj, int ej, int sk, int ek, int &offset)
+//! \brief pack a 4D AthenaArray into a one-dimensional buffer
 
 template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
          int sn, int en, int si, int ei, int sj, int ej, int sk, int ek, int &offset) {
@@ -36,8 +36,8 @@ template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
-//                      int si, int ei, int sj, int ej, int sk, int ek, int &offset)
-//  \brief pack a 3D AthenaArray into a one-dimensional buffer
+//!                     int si, int ei, int sj, int ej, int sk, int ek, int &offset)
+//! \brief pack a 3D AthenaArray into a one-dimensional buffer
 
 template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
                                     int si, int ei, int sj, int ej, int sk, int ek,
@@ -54,8 +54,8 @@ template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
-//      int sn, int en, int si, int ei, int sj, int ej, int sk, int ek, int &offset)
-//  \brief unpack a one-dimensional buffer into a 4D AthenaArray
+//!     int sn, int en, int si, int ei, int sj, int ej, int sk, int ek, int &offset)
+//! \brief unpack a one-dimensional buffer into a 4D AthenaArray
 
 template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
          int sn, int en, int si, int ei, int sj, int ej, int sk, int ek, int &offset) {
@@ -73,8 +73,8 @@ template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
 
 //----------------------------------------------------------------------------------------
 //! \fn template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
-//                        int si, int ei, int sj, int ej, int sk, int ek, int &offset)
-//  \brief unpack a one-dimensional buffer into a 3D AthenaArray
+//!                       int si, int ei, int sj, int ej, int sk, int ek, int &offset)
+//! \brief unpack a one-dimensional buffer into a 3D AthenaArray
 
 template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
                            int si, int ei, int sj, int ej, int sk, int ek, int &offset) {

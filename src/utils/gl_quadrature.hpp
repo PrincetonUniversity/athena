@@ -6,11 +6,12 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gl_quadrature.hpp
-//  \brief functions for computing the Gauss-Legendre (GL) quadrature of a given 1D, 2D,
-// or 3D function. Provided for convenience / intended for use in pgen/*.cpp files.
-
-// TODO(felker): add other Gaussian quadratures, or alternative approaches for computing
-// the initial condition that outperform GL quadrature for a discontinuous function
+//! \brief functions for computing the Gauss-Legendre (GL) quadrature of a given 1D, 2D,
+//!  or 3D function. Provided for convenience / intended for use in pgen/*.cpp files.
+//!
+//! \todo (felker):
+//! - add other Gaussian quadratures, or alternative approaches for computing
+//!   the initial condition that outperform GL quadrature for a discontinuous function
 
 // C headers
 

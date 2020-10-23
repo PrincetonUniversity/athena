@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gl_quadrature.cpp
-//  \brief namespace containing GL quadrature function implementations, weights, and
-// abscissas
+//! \brief namespace containing GL quadrature function implementations, weights, and
+//!  abscissas
 
 // C headers
 
