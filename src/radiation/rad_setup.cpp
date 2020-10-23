@@ -278,9 +278,9 @@ void Radiation::CalculateRadiationInCellM1(Real energy, Real u1, Real u2, Real u
 //----------------------------------------------------------------------------------------
 // Function for calculating conserved intensity from energy density and velocity
 // Inputs:
-//   ee_f: fluid-frame energy density
-//   ff1_f, ff2_f, ff3_f: fluid-frame flux
-//   uu1, uu2, uu3: normal-frame fluid 4-velocity
+//   ee_f: fluid-frame energy density E_f
+//   ff1_f, ff2_f, ff3_f: fluid-frame flux F_f^i
+//   uu1, uu2, uu3: normal-frame fluid 4-velocity u^{i'}
 //   k, j, i: indices for cell to set
 //   g: covariant metric
 // Outputs:
@@ -303,9 +303,9 @@ void Radiation::CalculateRadiationInCellLinear(Real ee_f, Real ff1_f, Real ff2_f
   Real f3_f = 0.0;
   if (ee_f > 0.0 and ff_f > 0.0) {
     f_f = ff_f / ee_f;
-    f1_f = 1.0 / std::hypot(1.0, std::hypot(ff2_f / ff1_f, ff3_f / ff1_f));
-    f2_f = 1.0 / std::hypot(1.0, std::hypot(ff1_f / ff2_f, ff3_f / ff2_f));
-    f3_f = 1.0 / std::hypot(1.0, std::hypot(ff1_f / ff3_f, ff2_f / ff3_f));
+    f1_f = ff1_f / ff_f;
+    f2_f = ff2_f / ff_f;
+    f3_f = ff3_f / ff_f;
   }
 
   // Calculate fluid velocity in tetrad frame

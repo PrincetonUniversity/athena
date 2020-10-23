@@ -105,11 +105,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   bby = pin->GetReal("problem", "bby");
   bbz = pin->GetReal("problem", "bbz");
   erad = pin->GetReal("problem", "erad");
-  kappa_a = pin->GetReal("problem", "kappa_a");
-  kappa_s = pin->GetReal("problem", "kappa_s");
   fxrad = pin->GetReal("problem", "fxrad");
   fyrad = pin->GetReal("problem", "fyrad");
   fzrad = pin->GetReal("problem", "fzrad");
+  kappa_a = pin->GetReal("problem", "kappa_a");
+  kappa_s = pin->GetReal("problem", "kappa_s");
   drho_real = pin->GetReal("problem", "drho_real");
   drho_imag = pin->GetReal("problem", "drho_imag");
   dpgas_real = pin->GetReal("problem", "dpgas_real");
@@ -316,13 +316,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             1.0 / (1.0 + u_wave[0]) * u_wave[2] * u_wave[3];
         lambda_c_f_wave[3][3] = 1.0 + 1.0 / (1.0 + u_wave[0]) * SQR(u_wave[3]);
         Real r_wave[4][4];
-        for (int a = 0; a < 4; ++a) {
-          for (int b = 0; b < 4; ++b) {
-            r_wave[a][b] = 0.0;
-            for (int c = 0; c < 4; ++c) {
-              for (int d = 0; d < 4; ++d) {
-                r_wave[a][b] +=
-                    lambda_c_f_wave[a][c] * lambda_c_f_wave[b][d] * rf_wave[c][d];
+        for (int alpha = 0; alpha < 4; ++alpha) {
+          for (int beta = 0; beta < 4; ++beta) {
+            r_wave[alpha][beta] = 0.0;
+            for (int mu = 0; mu < 4; ++mu) {
+              for (int nu = 0; nu < 4; ++nu) {
+                r_wave[alpha][beta] +=
+                    lambda_c_f_wave[alpha][mu] * lambda_c_f_wave[beta][nu] * rf_wave[mu][nu];
               }
             }
           }
@@ -357,12 +357,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         lambda_f_c[2][3] = lambda_f_c[3][2] = 1.0 / (1.0 + u[0]) * u[2] * u[3];
         lambda_f_c[3][3] = 1.0 + 1.0 / (1.0 + u[0]) * SQR(u[3]);
         Real rf[4][4];
-        for (int a = 0; a < 4; ++a) {
-          for (int b = 0; b < 4; ++b) {
-            rf[a][b] = 0.0;
-            for (int c = 0; c < 4; ++c) {
-              for (int d = 0; d < 4; ++d) {
-                rf[a][b] += lambda_f_c[a][c] * lambda_f_c[b][d] * r[c][d];
+        for (int alpha = 0; alpha < 4; ++alpha) {
+          for (int beta = 0; beta < 4; ++beta) {
+            rf[alpha][beta] = 0.0;
+            for (int mu = 0; mu < 4; ++mu) {
+              for (int nu = 0; nu < 4; ++nu) {
+                rf[alpha][beta] += lambda_f_c[alpha][mu] * lambda_f_c[beta][nu] * r[mu][nu];
               }
             }
           }
