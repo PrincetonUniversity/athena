@@ -329,7 +329,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       } else {
         AddTask(INT_RAD, CALC_RADFLX);
       }
-      AddTask(SRCTERM_RAD,INT_RAD);
+      AddTask(SRCTERM_RAD,INT_RAD|INT_HYD);
       AddTask(SEND_RAD,SRCTERM_RAD|SRCTERM_HYD);
       AddTask(RECV_RAD,NONE);
       AddTask(SETB_RAD,(RECV_RAD|SRCTERM_RAD));
