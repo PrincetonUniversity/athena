@@ -58,7 +58,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
       // Calculate radiation-hydrodynamic fluxes
       if (coupled_to_matter) {
 
-        // Calculate negative fluid velocity in tetrad frame
+        // Calculate negative fluid velocity in tetrad frame and coordinate 3-velocity
         pmy_block->pcoord->Face1Metric(k, j, is, ie + 1, g_, gi_);
         for (int i = is; i <= ie+1; ++i) {
           Real dx_l = pmy_block->pcoord->x1f(i) - pmy_block->pcoord->x1v(i-1);
@@ -81,6 +81,11 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
               - norm_to_tet_1_(2,2,k,j,i) * uu2 - norm_to_tet_1_(2,3,k,j,i) * uu3;
           u_tet_(3,i) = -norm_to_tet_1_(3,0,k,j,i) * uu0 - norm_to_tet_1_(3,1,k,j,i) * uu1
               - norm_to_tet_1_(3,2,k,j,i) * uu2 - norm_to_tet_1_(3,3,k,j,i) * uu3;
+          Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
+          Real beta1 = -gi_(I01,i) / gi_(I00,i);
+          Real u0 = uu0 / alpha;
+          Real u1 = uu1 - beta1 / alpha * uu0;
+          v_fluid_(i) = u1 / u0;
         }
 
         // Calculate mixed radiation field
@@ -123,10 +128,18 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
           for (int m = ps; m <= pe; ++m) {
             int lm = AngleInd(l, m);
             for (int i = is; i <= ie+1; ++i) {
-              neg_u_n_(lm,i) = 0.0;
+              ii_f_to_tet_(lm,i) = 0.0;
               for (int p = 0; p < 4; ++p) {
-                neg_u_n_(lm,i) += u_tet_(p,i) * nh_cc_(p,l,m);
+                ii_f_to_tet_(lm,i) += u_tet_(p,i) * nh_cc_(p,l,m);
               }
+            }
+          }
+        }
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m);
+            for (int i = is; i <= ie+1; ++i) {
+              ii_f_to_tet_(lm,i) = SQR(SQR(ii_f_to_tet_(lm,i)));
             }
           }
         }
@@ -136,18 +149,15 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
           for (int m = ps; m <= pe; ++m) {
             int lm = AngleInd(l, m);
             for (int i = is; i <= ie+1; ++i) {
-              Real steady_term = bb_jj_f_(i) / SQR(SQR(neg_u_n_(lm,i)));
-              Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
-              Real factor = std::expm1(-tau) / tau;
-              if (tau <= 0.0) {
-                flux_x[X1DIR](lm,k,j,i) = n1_n_mu_(0,l,m,k,j,i) * ii_lr_(lm,i);
-              } else {
-                flux_x[X1DIR](lm,k,j,i) = n1_n_mu_(0,l,m,k,j,i)
-                    * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
-              }
-              if (affect_fluid and tau > 0.0) {
-                Real temp_var =
-                    (ii_lr_(lm,i) - steady_term) * (1.0 + factor) * solid_angle(l,m);
+              Real tau = k_tot_(i) * dt / u_tet_(0,i);
+              Real factor = tau > 0.0 ? -std::expm1(-tau) / tau : 1.0;
+              Real flux_free = n1_n_mu_(0,l,m,k,j,i) * ii_lr_(lm,i) * factor;
+              Real flux_adv = v_fluid_(i) * n_0_1_(l,m,k,j,i) * ii_f_to_tet_(lm,i)
+                  * bb_jj_f_(i) * (1.0 - factor);
+              flux_x[X1DIR](lm,k,j,i) = flux_free + flux_adv;
+              if (affect_fluid) {
+                Real temp_var = (ii_lr_(lm,i) - ii_f_to_tet_(lm,i) * bb_jj_f_(i))
+                    * (1.0 - factor) * solid_angle(l,m);
                 pmy_block->phydro->flux[X1DIR](IEN,k,j,i) +=
                     temp_var * n1_n_mu_(0,l,m,k,j,i);
                 pmy_block->phydro->flux[X1DIR](IM1,k,j,i) +=
@@ -193,7 +203,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
         // Calculate radiation-hydrodynamic fluxes
         if (coupled_to_matter) {
 
-          // Calculate negative fluid velocity in tetrad frame
+          // Calculate negative fluid velocity in tetrad frame and coordinate 3-velocity
           pmy_block->pcoord->Face2Metric(k, j, is, ie, g_, gi_);
           for (int i = is; i <= ie; ++i) {
             Real dx_l = pmy_block->pcoord->x2f(j) - pmy_block->pcoord->x2v(j-1);
@@ -220,6 +230,11 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             u_tet_(3,i) = -norm_to_tet_2_(3,0,k,j,i) * uu0
                 - norm_to_tet_2_(3,1,k,j,i) * uu1 - norm_to_tet_2_(3,2,k,j,i) * uu2
                 - norm_to_tet_2_(3,3,k,j,i) * uu3;
+            Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
+            Real beta2 = -gi_(I02,i) / gi_(I00,i);
+            Real u0 = uu0 / alpha;
+            Real u2 = uu2 - beta2 / alpha * uu0;
+            v_fluid_(i) = u2 / u0;
           }
 
           // Calculate mixed radiation field
@@ -262,10 +277,18 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
-                neg_u_n_(lm,i) = 0.0;
+                ii_f_to_tet_(lm,i) = 0.0;
                 for (int p = 0; p < 4; ++p) {
-                  neg_u_n_(lm,i) += u_tet_(p,i) * nh_cc_(p,l,m);
+                  ii_f_to_tet_(lm,i) += u_tet_(p,i) * nh_cc_(p,l,m);
                 }
+              }
+            }
+          }
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              for (int i = is; i <= ie; ++i) {
+                ii_f_to_tet_(lm,i) = SQR(SQR(ii_f_to_tet_(lm,i)));
               }
             }
           }
@@ -275,18 +298,15 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
-                Real steady_term = bb_jj_f_(i) / SQR(SQR(neg_u_n_(lm,i)));
-                Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
-                Real factor = std::expm1(-tau) / tau;
-                if (tau <= 0.0) {
-                  flux_x[X2DIR](lm,k,j,i) = n2_n_mu_(0,l,m,k,j,i) * ii_lr_(lm,i);
-                } else {
-                  flux_x[X2DIR](lm,k,j,i) = n2_n_mu_(0,l,m,k,j,i)
-                      * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
-                }
-                if (affect_fluid and tau > 0.0) {
-                  Real temp_var =
-                      (ii_lr_(lm,i) - steady_term) * (1.0 + factor) * solid_angle(l,m);
+                Real tau = k_tot_(i) * dt / u_tet_(0,i);
+                Real factor = tau > 0.0 ? -std::expm1(-tau) / tau : 1.0;
+                Real flux_free = n2_n_mu_(0,l,m,k,j,i) * ii_lr_(lm,i) * factor;
+                Real flux_adv = v_fluid_(i) * n_0_2_(l,m,k,j,i) * ii_f_to_tet_(lm,i)
+                    * bb_jj_f_(i) * (1.0 - factor);
+                flux_x[X2DIR](lm,k,j,i) = flux_free + flux_adv;
+                if (affect_fluid) {
+                  Real temp_var = (ii_lr_(lm,i) - ii_f_to_tet_(lm,i) * bb_jj_f_(i))
+                      * (1.0 - factor) * solid_angle(l,m);
                   pmy_block->phydro->flux[X2DIR](IEN,k,j,i) +=
                       temp_var * n2_n_mu_(0,l,m,k,j,i);
                   pmy_block->phydro->flux[X2DIR](IM1,k,j,i) +=
@@ -333,7 +353,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
         // Calculate radiation-hydrodynamic fluxes
         if (coupled_to_matter) {
 
-          // Calculate negative fluid velocity in tetrad frame
+          // Calculate negative fluid velocity in tetrad frame and coordinate 3-velocity
           pmy_block->pcoord->Face3Metric(k, j, is, ie, g_, gi_);
           for (int i = is; i <= ie; ++i) {
             Real dx_l = pmy_block->pcoord->x3f(k) - pmy_block->pcoord->x3v(k-1);
@@ -360,6 +380,11 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             u_tet_(3,i) = -norm_to_tet_3_(3,0,k,j,i) * uu0
                 - norm_to_tet_3_(3,1,k,j,i) * uu1 - norm_to_tet_3_(3,2,k,j,i) * uu2
                 - norm_to_tet_3_(3,3,k,j,i) * uu3;
+            Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
+            Real beta3 = -gi_(I03,i) / gi_(I00,i);
+            Real u0 = uu0 / alpha;
+            Real u3 = uu3 - beta3 / alpha * uu0;
+            v_fluid_(i) = u3 / u0;
           }
 
           // Calculate mixed radiation field
@@ -402,10 +427,18 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
-                neg_u_n_(lm,i) = 0.0;
+                ii_f_to_tet_(lm,i) = 0.0;
                 for (int p = 0; p < 4; ++p) {
-                  neg_u_n_(lm,i) += u_tet_(p,i) * nh_cc_(p,l,m);
+                  ii_f_to_tet_(lm,i) += u_tet_(p,i) * nh_cc_(p,l,m);
                 }
+              }
+            }
+          }
+          for (int l = zs; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m) {
+              int lm = AngleInd(l, m);
+              for (int i = is; i <= ie; ++i) {
+                ii_f_to_tet_(lm,i) = SQR(SQR(ii_f_to_tet_(lm,i)));
               }
             }
           }
@@ -415,24 +448,21 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
-                Real steady_term = bb_jj_f_(i) / SQR(SQR(neg_u_n_(lm,i)));
-                Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
-                Real factor = std::expm1(-tau) / tau;
-                if (tau <= 0.0) {
-                  flux_x[X3DIR](lm,k,j,i) = n3_n_mu_(0,l,m,k,j,i) * ii_lr_(lm,i);
-                } else {
-                  flux_x[X3DIR](lm,k,j,i) = n3_n_mu_(0,l,m,k,j,i)
-                      * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
-                }
-                if (affect_fluid and tau > 0.0) {
-                  Real temp_var =
-                      (ii_lr_(lm,i) - steady_term) * (1.0 + factor) * solid_angle(l,m);
+                Real tau = k_tot_(i) * dt / u_tet_(0,i);
+                Real factor = tau > 0.0 ? -std::expm1(-tau) / tau : 1.0;
+                Real flux_free = n3_n_mu_(0,l,m,k,j,i) * ii_lr_(lm,i) * factor;
+                Real flux_adv = v_fluid_(i) * n_0_3_(l,m,k,j,i) * ii_f_to_tet_(lm,i)
+                    * bb_jj_f_(i) * (1.0 - factor);
+                flux_x[X3DIR](lm,k,j,i) = flux_free + flux_adv;
+                if (affect_fluid) {
+                  Real temp_var = (ii_lr_(lm,i) - ii_f_to_tet_(lm,i) * bb_jj_f_(i))
+                      * (1.0 - factor) * solid_angle(l,m);
                   pmy_block->phydro->flux[X3DIR](IEN,k,j,i) +=
                       temp_var * n3_n_mu_(0,l,m,k,j,i);
                   pmy_block->phydro->flux[X3DIR](IM1,k,j,i) +=
                       temp_var * n3_n_mu_(1,l,m,k,j,i);
                   pmy_block->phydro->flux[X3DIR](IM2,k,j,i) +=
-                      temp_var * n3_n_mu_(3,l,m,k,j,i);
+                      temp_var * n3_n_mu_(2,l,m,k,j,i);
                   pmy_block->phydro->flux[X3DIR](IM3,k,j,i) +=
                       temp_var * n3_n_mu_(3,l,m,k,j,i);
                 }
@@ -537,10 +567,18 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
           for (int m = ps; m <= pe; ++m) {
             int lm = AngleInd(l, m, true, false);
             for (int i = is; i <= ie; ++i) {
-              neg_u_n_(lm,i) = 0.0;
+              ii_f_to_tet_(lm,i) = 0.0;
               for (int p = 0; p < 4; ++p) {
-                neg_u_n_(lm,i) += u_tet_(p,i) * nh_fc_(p,l,m);
+                ii_f_to_tet_(lm,i) += u_tet_(p,i) * nh_fc_(p,l,m);
               }
+            }
+          }
+        }
+        for (int l = zs; l <= ze+1; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(l, m, true, false);
+            for (int i = is; i <= ie; ++i) {
+              ii_f_to_tet_(lm,i) = SQR(SQR(ii_f_to_tet_(lm,i)));
             }
           }
         }
@@ -550,15 +588,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
           for (int m = ps; m <= pe; ++m) {
             int lm = AngleInd(l, m, true, false);
             for (int i = is; i <= ie; ++i) {
-              Real steady_term = bb_jj_f_(i) / SQR(SQR(neg_u_n_(lm,i)));
-              Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
-              Real factor = std::expm1(-tau) / tau;
-              if (tau <= 0.0) {
-                flux_a[ZETADIR](lm,k,j,i) = na1_n_0_(l,m,k,j,i) * ii_lr_(lm,i);
-              } else {
-                flux_a[ZETADIR](lm,k,j,i) = na1_n_0_(l,m,k,j,i)
-                    * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
-              }
+              Real tau = k_tot_(i) * dt / u_tet_(0,i);
+              Real factor = tau > 0.0 ? -std::expm1(-tau) / tau : 1.0;
+              flux_a[ZETADIR](lm,k,j,i) = na1_n_0_(l,m,k,j,i) * ii_lr_(lm,i) * factor;
             }
           }
         }
@@ -657,10 +689,18 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
           for (int m = ps; m <= pe+1; ++m) {
             int lm = AngleInd(l, m, false, true);
             for (int i = is; i <= ie; ++i) {
-              neg_u_n_(lm,i) = 0.0;
+              ii_f_to_tet_(lm,i) = 0.0;
               for (int p = 0; p < 4; ++p) {
-                neg_u_n_(lm,i) += u_tet_(p,i) * nh_cf_(p,l,m);
+                ii_f_to_tet_(lm,i) += u_tet_(p,i) * nh_cf_(p,l,m);
               }
+            }
+          }
+        }
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe+1; ++m) {
+            int lm = AngleInd(l, m, false, true);
+            for (int i = is; i <= ie; ++i) {
+              ii_f_to_tet_(lm,i) = SQR(SQR(ii_f_to_tet_(lm,i)));
             }
           }
         }
@@ -670,15 +710,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
           for (int m = ps; m <= pe+1; ++m) {
             int lm = AngleInd(l, m, false, true);
             for (int i = is; i <= ie; ++i) {
-              Real steady_term = bb_jj_f_(i) / SQR(SQR(neg_u_n_(lm,i)));
-              Real tau = k_tot_(i) * neg_u_n_(lm,i) * dt;
-              Real factor = std::expm1(-tau) / tau;
-              if (tau <= 0.0) {
-                flux_a[PSIDIR](lm,k,j,i) = na2_n_0_(l,m,k,j,i) * ii_lr_(lm,i);
-              } else {
-                flux_a[PSIDIR](lm,k,j,i) = na2_n_0_(l,m,k,j,i)
-                    * (steady_term + factor * (steady_term - ii_lr_(lm,i)));
-              }
+              Real tau = k_tot_(i) * dt / u_tet_(0,i);
+              Real factor = tau > 0.0 ? -std::expm1(-tau) / tau : 1.0;
+              flux_a[PSIDIR](lm,k,j,i) = na2_n_0_(l,m,k,j,i) * ii_lr_(lm,i) * factor;
             }
           }
         }

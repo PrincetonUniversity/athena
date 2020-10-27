@@ -259,6 +259,12 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   // Allocate memory for unit normal and related components in coordinate frame
   nmu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
       pmb->ncells1);
+  n_0_1_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
+      pmb->ncells1 + 1);
+  n_0_2_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2 + 1,
+      pmb->ncells1);
+  n_0_3_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3 + 1, pmb->ncells2,
+      pmb->ncells1);
   n0_n_mu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
       pmb->ncells1);
   n1_n_mu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
@@ -326,7 +332,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
-  // Calculate n^1 n_mu
+  // Calculate n_0 and n^1 n_mu
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       for (int i = is; i <= ie+1; ++i) {
@@ -348,6 +354,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
               n_2 += e_cov(n,2) * nh_cc_(n,l,m);
               n_3 += e_cov(n,3) * nh_cc_(n,l,m);
             }
+            n_0_1_(l,m,k,j,i) = n_0;
             n1_n_mu_(0,l,m,k,j,i) = n1 * n_0;
             n1_n_mu_(1,l,m,k,j,i) = n1 * n_1;
             n1_n_mu_(2,l,m,k,j,i) = n1 * n_2;
@@ -358,7 +365,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
-  // Calculate n^2 n_mu
+  // Calculate n_0 and n^2 n_mu
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je+1; ++j) {
       for (int i = is; i <= ie; ++i) {
@@ -380,6 +387,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
               n_2 += e_cov(n,2) * nh_cc_(n,l,m);
               n_3 += e_cov(n,3) * nh_cc_(n,l,m);
             }
+            n_0_2_(l,m,k,j,i) = n_0;
             n2_n_mu_(0,l,m,k,j,i) = n2 * n_0;
             n2_n_mu_(1,l,m,k,j,i) = n2 * n_1;
             n2_n_mu_(2,l,m,k,j,i) = n2 * n_2;
@@ -390,7 +398,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
-  // Calculate n^3 n_mu
+  // Calculate n_0 and n^3 n_mu
   for (int k = ks; k <= ke+1; ++k) {
     for (int j = js; j <= je; ++j) {
       for (int i = is; i <= ie; ++i) {
@@ -412,6 +420,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
               n_2 += e_cov(n,2) * nh_cc_(n,l,m);
               n_3 += e_cov(n,3) * nh_cc_(n,l,m);
             }
+            n_0_3_(l,m,k,j,i) = n_0;
             n3_n_mu_(0,l,m,k,j,i) = n3 * n_0;
             n3_n_mu_(1,l,m,k,j,i) = n3 * n_1;
             n3_n_mu_(2,l,m,k,j,i) = n3 * n_2;
@@ -499,7 +508,8 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     jj_f_.NewAthenaArray(pmb->ncells1);
     k_tot_.NewAthenaArray(pmb->ncells1);
     bb_jj_f_.NewAthenaArray(pmb->ncells1);
-    neg_u_n_.NewAthenaArray(nang_zpf, pmb->ncells1);
+    ii_f_to_tet_.NewAthenaArray(nang_zpf, pmb->ncells1);
+    v_fluid_.NewAthenaArray(pmb->ncells1);
   }
 
   // Allocate memory for flux divergence calculation

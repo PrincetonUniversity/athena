@@ -172,6 +172,9 @@ private:
   AthenaArray<Real> nh_fc_;          // n^\hat{mu} at zeta faces
   AthenaArray<Real> nh_cf_;          // n^\hat{mu} at psi faces
   AthenaArray<Real> nmu_;            // n^mu at cell and angle centers
+  AthenaArray<Real> n_0_1_;          // n_0 at x^1-faces and angle centers
+  AthenaArray<Real> n_0_2_;          // n_0 at x^2-faces and angle centers
+  AthenaArray<Real> n_0_3_;          // n_0 at x^3-faces and angle centers
   AthenaArray<Real> n0_n_mu_;        // n^0 n_mu at cell and angle centers
   AthenaArray<Real> n1_n_mu_;        // n^1 n_mu at x^1-faces and angle centers
   AthenaArray<Real> n2_n_mu_;        // n^2 n_mu at x^2-faces and angle centers
@@ -194,7 +197,8 @@ private:
   AthenaArray<Real> jj_f_;           // fluid-frame J
   AthenaArray<Real> k_tot_;          // total absorption coefficient
   AthenaArray<Real> bb_jj_f_;        // average of fluid-frame B and fluid-frame J
-  AthenaArray<Real> neg_u_n_;        // -u_mu n^mu
+  AthenaArray<Real> ii_f_to_tet_;    // conversion factor for intensity
+  AthenaArray<Real> v_fluid_;        // fluid 3-velocity in appropriate direction
 
   // Data arrays - flux divergence
   AthenaArray<Real> area_l_;         // left face areas
