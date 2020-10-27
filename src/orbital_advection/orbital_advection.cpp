@@ -334,21 +334,21 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
       if (MAGNETIC_FIELDS_ENABLED) {
         b1_coarse_send.NewAthenaArray((nc3+2*NGHOST)/2,
                                       (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
-        b1_coarse_recv.NewAthenaArray((nc3+2*NGHOST)/2,
-                                      (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
-        b1_temp.NewAthenaArray(nc3, nc2, nc1+1);
+        b_coarse_recv.x1f.NewAthenaArray((nc3+2*NGHOST)/2,
+                                        (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
+        b_coarse_recv.x2f.NewAthenaArray((nc3+2*NGHOST)/2,
+                                        (nc2+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
+        b_coarse_recv.x3f.NewAthenaArray((nc3+2*NGHOST)/2+1,
+                                        (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
+        b_temp.x1f.NewAthenaArray(nc3, nc2, nc1+1);
+        b_temp.x2f.NewAthenaArray(nc3, nc2+1, nc1);
+        b_temp.x3f.NewAthenaArray(nc3+1, nc2, nc1);
         if (orbital_direction == 1) {
           b2_coarse_send.NewAthenaArray((nc3+2*NGHOST)/2+1,
                                         (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
-          b2_coarse_recv.NewAthenaArray((nc3+2*NGHOST)/2+1,
-                                        (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
-          b2_temp.NewAthenaArray(nc3+1, nc2, nc1);
         } else if (orbital_direction == 2) {
           b2_coarse_send.NewAthenaArray((nc3+2*NGHOST)/2,
                                         (nc2+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
-          b2_coarse_recv.NewAthenaArray((nc3+2*NGHOST)/2,
-                                        (nc2+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
-          b2_temp.NewAthenaArray(nc3, nc2+1, nc1);
         }
       }
     }

@@ -427,12 +427,31 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       rax.NewAthenaArray(nx3, nx2, nx1);
       ray.NewAthenaArray(nx3, nx2, nx1);
       raz.NewAthenaArray(nx3, nx2, nx1);
+
+      // set rax
       for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            rax(k,j,i) = 0.0;
+          }
+        }
+      }
+
+      // set ray
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            x1 = pcoord->x1f(i);
+            ray(k,j,i) = -B0*std::cos(kx*x1)/kx;
+          }
+        }
+      }
+
+      // set raz
+      for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je+1; j++) {
           for (int i=is; i<=ie+1; i++) {
             x1 = pcoord->x1f(i);
-            rax(k,j,i) = 0.0;
-            ray(k,j,i) = -B0*std::cos(kx*x1)/kx;
             raz(k,j,i) = -B0*std::sin(kx*x1)/kx;
           }
         }
@@ -442,20 +461,16 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke  ; k++) {
         for (int j=js; j<=je  ; j++) {
           for (int i=is; i<=ie+1; i++) {
-            pfield->b.x1f(k,j,i) = 0.5*(raz(k,j+1,i)+raz(k+1,j+1,i)
-                                      -raz(k,j,i)-raz(k+1,j,i))/pcoord->dx2f(j) -
-                                   0.5*(ray(k+1,j,i)+ray(k+1,j+1,i)
-                                      -ray(k,j,i)-ray(k,j+1,i))/pcoord->dx3f(k);
+            pfield->b.x1f(k,j,i) = (raz(k,j+1,i)-raz(k,j,i))/pcoord->dx2f(j)
+                                   -(ray(k+1,j,i)-ray(k,j,i))/pcoord->dx3f(k);
           }
         }
       }
       for (int k=ks; k<=ke  ; k++) {
         for (int j=js; j<=je+1; j++) {
           for (int i=is; i<=ie  ; i++) {
-            pfield->b.x2f(k,j,i) = 0.5*(rax(k+1,j,i)+rax(k+1,j,i+1)
-                                        -rax(k,j,i)-rax(k,j,i+1))/pcoord->dx3f(k) -
-                                   0.5*(raz(k,j,i+1)+raz(k+1,j,i+1)
-                                        -raz(k,j,i)-raz(k+1,j,i))/pcoord->dx1f(i);
+            pfield->b.x2f(k,j,i) = (rax(k+1,j,i)-rax(k,j,i))/pcoord->dx3f(k)
+                                   -(raz(k,j,i+1)-raz(k,j,i))/pcoord->dx1f(i);
           }
         }
       }
@@ -463,10 +478,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int k=ks; k<=ke+1; k++) {
         for (int j=js; j<=je  ; j++) {
           for (int i=is; i<=ie  ; i++) {
-            pfield->b.x3f(k,j,i) = 0.5*(ray(k,j,i+1)+ray(k,j+1,i+1)
-                                        -ray(k,j,i)-ray(k,j+1,i))/pcoord->dx1f(i) -
-                                   0.5*(rax(k,j+1,i)+rax(k,j+1,i+1)
-                                        -rax(k,j,i)-rax(k,j,i+1))/pcoord->dx2f(j);
+            pfield->b.x3f(k,j,i) = (ray(k,j,i+1)-ray(k,j,i))/pcoord->dx1f(i)
+                                   -(rax(k,j+1,i)-rax(k,j,i))/pcoord->dx2f(j);
           }
         }
       }
@@ -515,8 +528,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
     // magnetic fields
-    // nxN != ncellsN, in general. Allocate to extend through 2*ghost, regardless # dim
-    // nxN != ncellsN, in general. Allocate to extend through 2*ghost, regardless # dim
+    // Calculate magnetic fields using the vector potential.
     int nx1 = block_size.nx1 + 2*NGHOST;
     int nx2 = block_size.nx2 + 2*NGHOST;
     int nx3 = block_size.nx3 + 2*NGHOST;
@@ -524,52 +536,75 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     rax.NewAthenaArray(nx3, nx2, nx1);
     ray.NewAthenaArray(nx3, nx2, nx1);
     raz.NewAthenaArray(nx3, nx2, nx1);
+    // set rax
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je+1; j++) {
-        for (int i=is; i<=ie+1; i++) {
-          x1 = pcoord->x1f(i);
+        for (int i=is; i<=ie; i++) {
+          x1 = pcoord->x1v(i);
           x2 = pcoord->x2f(j);
           x3 = pcoord->x3f(k);
-          Real SN = std::sin(kx*x1+ky*x2+kz*x3);
-          Real temp = cf2*SN/k2;
+          Real temp = cf2/k2*std::sin(kx*x1+ky*x2+kz*x3);
           rax(k,j,i) = temp*(rby*kz-rbz*ky);
-          ray(k,j,i) = temp*(rbz*kx-rbx*kz);
-          raz(k,j,i) = temp*(rbx*ky-rby*kx);
-        }
-      }
-    }
-    // initialize interface B
-    for (int k=ks; k<=ke  ; k++) {
-      for (int j=js; j<=je  ; j++) {
-        for (int i=is; i<=ie+1; i++) {
-          pfield->b.x1f(k,j,i) = rbx +
-                                 0.5*(raz(k,j+1,i)+raz(k+1,j+1,i)
-                                      -raz(k,j,i)-raz(k+1,j,i))/pcoord->dx2f(j) -
-                                 0.5*(ray(k+1,j,i)+ray(k+1,j+1,i)
-                                      -ray(k,j,i)-ray(k,j+1,i))/pcoord->dx3f(k);
-        }
-      }
-    }
-    for (int k=ks; k<=ke  ; k++) {
-      for (int j=js; j<=je+1; j++) {
-        for (int i=is; i<=ie  ; i++) {
-          pfield->b.x2f(k,j,i) = rby +
-                                 0.5*(rax(k+1,j,i)+rax(k+1,j,i+1)
-                                      -rax(k,j,i)-rax(k,j,i+1))/pcoord->dx3f(k) -
-                                 0.5*(raz(k,j,i+1)+raz(k+1,j,i+1)
-                                      -raz(k,j,i)-raz(k+1,j,i))/pcoord->dx1f(i);
         }
       }
     }
 
+    // set ray
+    for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie+1; i++) {
+          x1 = pcoord->x1f(i);
+          x2 = pcoord->x2v(j);
+          x3 = pcoord->x3f(k);
+          Real temp = cf2/k2*std::sin(kx*x1+ky*x2+kz*x3);
+          ray(k,j,i) = temp*(rbz*kx-rbx*kz);
+        }
+      }
+    }
+
+    // set raz
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie+1; i++) {
+          x1 = pcoord->x1f(i);
+          x2 = pcoord->x2f(j);
+          x3 = pcoord->x3v(k);
+          Real temp = cf2/k2*std::sin(kx*x1+ky*x2+kz*x3);
+          raz(k,j,i) = temp*(rbx*ky-rby*kx);
+        }
+      }
+    }
+
+    // initialize interface B
+    // set bx
+    for (int k=ks; k<=ke  ; k++) {
+      for (int j=js; j<=je  ; j++) {
+        for (int i=is; i<=ie+1; i++) {
+          pfield->b.x1f(k,j,i) = rbx
+                                 +(raz(k,j+1,i)-raz(k,j,i))/pcoord->dx2f(j)
+                                 -(ray(k+1,j,i)-ray(k,j,i))/pcoord->dx3f(k);
+        }
+      }
+    }
+
+    // set by
+    for (int k=ks; k<=ke  ; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie  ; i++) {
+          pfield->b.x2f(k,j,i) = rby
+                                 +(rax(k+1,j,i)-rax(k,j,i))/pcoord->dx3f(k)
+                                 -(raz(k,j,i+1)-raz(k,j,i))/pcoord->dx1f(i);
+        }
+      }
+    }
+
+    // set bz
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je  ; j++) {
         for (int i=is; i<=ie  ; i++) {
-          pfield->b.x3f(k,j,i) = rbz +
-                                 0.5*(ray(k,j,i+1)+ray(k,j+1,i+1)
-                                      -ray(k,j,i)-ray(k,j+1,i))/pcoord->dx1f(i) -
-                                 0.5*(rax(k,j+1,i)+rax(k,j+1,i+1)
-                                      -rax(k,j,i)-rax(k,j,i+1))/pcoord->dx2f(j);
+          pfield->b.x3f(k,j,i) = rbz
+                                 +(ray(k,j,i+1)-ray(k,j,i))/pcoord->dx1f(i)
+                                 -(rax(k,j+1,i)-rax(k,j,i))/pcoord->dx2f(j);
         }
       }
     }

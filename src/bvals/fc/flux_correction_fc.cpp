@@ -1362,11 +1362,11 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
       int i;
       if (n == BoundaryFace::inner_x1) {
         i = pmb->is;
-        if(pbval_->shearing_box != 0 && pbval_->is_shear[0])
+        if(pbval_->shearing_box == 1 && pbval_->is_shear[0])
           div *= 2.0;
       } else {
         i = pmb->ie + 1;
-        if(pbval_->shearing_box != 0 && pbval_->is_shear[1])
+        if(pbval_->shearing_box == 1 && pbval_->is_shear[1])
           div *= 2.0;
       }
       nl = pbval_->nblevel[1][1][2*n];

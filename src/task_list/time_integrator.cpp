@@ -670,14 +670,17 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       if (pm->multilevel) { // SMR or AMR
         if (SHEAR_PERIODIC) {
           if (NSCALARS > 0) {
-            AddTask(PROLONG,(SETB_HYD|SETB_FLD|SETB_SCLR
-                             |RECV_HYDSH|RECV_FLDSH|RECV_SCLRSH));
+            AddTask(PROLONG,(SEND_HYD|SEND_HYDSH|RECV_HYDSH
+                             |SEND_FLD|SEND_FLDSH|RECV_FLDSH
+                             |SEND_SCLR|SEND_SCLRSH|RECV_SCLRSH));
           } else {
-            AddTask(PROLONG,(SETB_HYD|SETB_FLD|RECV_HYDSH|RECV_FLDSH));
+            AddTask(PROLONG,(SEND_HYDSH|RECV_HYDSH|SEND_HYD
+                             |SEND_FLDSH|RECV_FLDSH|SEND_FLD));
           }
         } else {
           if (NSCALARS > 0) {
-            AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD|SEND_SCLR|SETB_SCLR));
+            AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD
+                             |SEND_SCLR|SETB_SCLR));
           } else {
             AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD));
           }
@@ -686,40 +689,55 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       } else {
         if (SHEAR_PERIODIC) {
           if (NSCALARS > 0) {
-            AddTask(CONS2PRIM,
-                    (SETB_HYD|SETB_FLD|SETB_SCLR|RECV_HYDSH|RECV_FLDSH|RECV_SCLRSH));
+            AddTask(CONS2PRIM,(SEND_HYD|SEND_HYDSH|RECV_HYDSH
+                               |SEND_FLD|SEND_FLDSH|RECV_FLDSH
+                               |SEND_SCLR|SEND_SCLRSH|RECV_SCLRSH));
           } else {
-            AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD|RECV_HYDSH|RECV_FLDSH));
+            AddTask(CONS2PRIM,(SEND_HYDSH|RECV_HYDSH|SEND_HYD
+                               |SEND_FLDSH|RECV_FLDSH|SEND_FLD));
           }
         } else {
           if (NSCALARS > 0) {
-            AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD|SETB_SCLR));
+            AddTask(CONS2PRIM,(SEND_HYD|SETB_HYD
+                               |SEND_FLD|SETB_FLD
+                               |SEND_SCLR|SETB_SCLR));
           } else {
-            AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD));
+            AddTask(CONS2PRIM,(SEND_HYD|SETB_HYD
+                               |SEND_FLD|SETB_FLD));
           }
         }
       }
     } else {  // HYDRO
       // prolongate, compute new primitives
       if (pm->multilevel) { // SMR or AMR
-        if (NSCALARS > 0) {
-          AddTask(PROLONG,(SEND_HYD|SETB_HYD|SETB_SCLR|SEND_SCLR));
+        if (SHEAR_PERIODIC) {
+          if (NSCALARS > 0) {
+            AddTask(PROLONG,(SEND_HYD|SEND_HYDSH|RECV_HYDSH
+                             |SEND_SCLR|SEND_SCLRSH|RECV_SCLRSH));
+          } else {
+            AddTask(PROLONG,(SEND_HYD|SEND_HYDSH|RECV_HYDSH));
+          }
         } else {
-          AddTask(PROLONG,(SEND_HYD|SETB_HYD));
+          if (NSCALARS > 0) {
+            AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_SCLR|SETB_SCLR));
+          } else {
+            AddTask(PROLONG,(SEND_HYD|SETB_HYD));
+          }
         }
         AddTask(CONS2PRIM,PROLONG);
       } else {
         if (SHEAR_PERIODIC) {
           if (NSCALARS > 0) {
-            AddTask(CONS2PRIM,(SETB_HYD|RECV_HYDSH|SETB_SCLR|RECV_SCLRSH));
+            AddTask(CONS2PRIM,(SEND_HYD|SEND_HYDSH|RECV_HYDSH
+                               |SEND_SCLR|SEND_SCLRSH|RECV_SCLRSH));
           } else {
-            AddTask(CONS2PRIM,(SETB_HYD|RECV_HYDSH));
+            AddTask(CONS2PRIM,(SEND_HYD|SEND_HYDSH|RECV_HYDSH));
           }
         } else {
           if (NSCALARS > 0) {
-            AddTask(CONS2PRIM,(SETB_HYD|SETB_SCLR));
+            AddTask(CONS2PRIM,(SEND_HYD|SETB_HYD|SEND_SCLR|SETB_SCLR));
           } else {
-            AddTask(CONS2PRIM,(SETB_HYD));
+            AddTask(CONS2PRIM,(SEND_HYD|SETB_HYD));
           }
         }
       }

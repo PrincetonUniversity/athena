@@ -64,8 +64,8 @@ OrbitalBoundaryCommunication::OrbitalBoundaryCommunication(
       size_cc_send[n] = new int[6];
       size_cc_recv[n] = new int[6];
       if (MAGNETIC_FIELDS_ENABLED) {
-        size_fc_send[n] = new int[10];
-        size_fc_recv[n] = new int[7];
+        size_fc_send[n] = new int[6];
+        size_fc_recv[n] = new int[6];
       }
     }
   } else {
@@ -120,10 +120,12 @@ void OrbitalBoundaryCommunication::InitBoundaryData(
       if (nx3>1) { //3D
         bd.nbmax = 4;
         if (type == BoundaryQuantity::orbital_cc) {
-          ssize = (NHYDRO+NSCALARS)*(nx1/2)*(nx2/2)*(nx3/2);
+          ssize = (NHYDRO+NSCALARS)*(nx1/2+2)*(nx2/2+2)*(nx3/2+2);
           lsize = (NHYDRO+NSCALARS)*nx1*nx2*nx3;
         } else if (type == BoundaryQuantity::orbital_fc) {
-          ssize = ((nx1/2+1)*(nx3/2)+(nx1/2)*(nx3/2+1))*(nx2/2);
+          ssize = (nx1/2+1)*(nx2/2+2)*(nx3/2+2)
+                  +(nx1/2+2)*(nx2/2+1)*(nx3/2+2)
+                  +(nx1/2+2)*(nx2/2+2)*(nx3/2+1);
           lsize = (2*nx1*nx3+nx1+nx3)*nx2;
         } else {
           std::stringstream msg;
@@ -135,10 +137,12 @@ void OrbitalBoundaryCommunication::InitBoundaryData(
       } else { //2D
         bd.nbmax = 2;
         if (type == BoundaryQuantity::orbital_cc) {
-          ssize = (NHYDRO+NSCALARS)*(nx1/2)*(nx2/2);
+          ssize = (NHYDRO+NSCALARS)*(nx1/2+2)*(nx2/2+2);
           lsize = (NHYDRO+NSCALARS)*nx1*nx2;
         } else if (type == BoundaryQuantity::orbital_fc) {
-          ssize = ((nx1/2+1)+2*(nx1/2))*(nx2/2);
+          ssize = (nx1/2+1)*(nx2/2+2)
+                  +(nx1/2+2)*(nx2/2+1)
+                  +(nx1/2+2)*(nx2/2+2);
           lsize = (3*nx1+1)*nx2;
         } else {
           std::stringstream msg;
@@ -151,10 +155,12 @@ void OrbitalBoundaryCommunication::InitBoundaryData(
     } else if (porb->orbital_direction == 2) {
       bd.nbmax = 4;
       if (type == BoundaryQuantity::orbital_cc) {
-        ssize = (NHYDRO+NSCALARS)*(nx1/2)*(nx2/2)*(nx3/2);
+        ssize = (NHYDRO+NSCALARS)*(nx1/2+2)*(nx2/2+2)*(nx3/2+2);
         lsize = (NHYDRO+NSCALARS)*nx1*nx2*nx3;
       } else if (type == BoundaryQuantity::orbital_fc) {
-        ssize = ((nx1/2+1)*(nx2/2)+(nx1/2)*(nx2/2+1))*(nx3/2);
+        ssize = (nx1/2+1)*(nx2/2+2)*(nx3/2+2)
+                  +(nx1/2+2)*(nx2/2+1)*(nx3/2+2)
+                  +(nx1/2+2)*(nx2/2+2)*(nx3/2+1);
         lsize = (2*nx1*nx2+nx1+nx2)*nx3;
       } else {
         std::stringstream msg;
@@ -326,52 +332,53 @@ void OrbitalBoundaryCommunication::ComputeOrbit(const Real dt) {
   if (porb->orbital_refinement) { // orbital refinement
     int mylevel = pmb->loc.level;
     porb->SetOrbitalEdgeCC(dt, size_cc_send, size_cc_recv);
-    int coef1;
+    int coef;
+    int size;
     if (porb->orbital_direction == 1) {
-      if (pmb->block_size.nx3>1) {
-        coef1 = (pmb->block_size.nx3/2+2)*(pmb->block_size.nx1/2+2);
-      } else {
-        coef1 = pmb->block_size.nx1/2+2;
+      if (pmb->block_size.nx3>1) { // 3D
+        coef = (pmb->block_size.nx3/2+2)*(pmb->block_size.nx1/2+2);
+      } else { // 2D
+        coef = pmb->block_size.nx1/2+2;
       }
     } else if (porb->orbital_direction == 2) {
-      coef1 = (pmb->block_size.nx2/2+2)*(pmb->block_size.nx1/2+2);
+      coef = (pmb->block_size.nx2/2+2)*(pmb->block_size.nx1/2+2);
     }
     // upper=0: to right, upper=1: to left
     for (int upper=0; upper<2; upper++) {
       // send
-      if (orbital_send_neighbor_[upper][0].level>mylevel) { // to finner
+      if (orbital_send_neighbor_[upper][0].level>mylevel) { // to finer
         for (int n=0; n<orbital_bd_cc_[upper].nbmax; n++) {
-          int size = size_cc_send[upper][2+n]*coef1;
+          size = size_cc_send[upper][2+n]*coef;
           if (size>0) {
             orbital_send_cc_count_[upper][n] = size;
           }
         }
       } else if (orbital_send_neighbor_[upper][0].level<mylevel) { // to coarser
-        int size = size_cc_send[upper][1];
+        size = size_cc_send[upper][1];
         if (size>0) {
           orbital_send_cc_count_[upper][0] = size;
         }
       } else {
-        int size = size_cc_send[upper][0]; // to same level
+        size = size_cc_send[upper][0]; // to same level
         if (size>0) {
           orbital_send_cc_count_[upper][0] = size;
         }
       }
       //recv
       if (orbital_recv_neighbor_[upper][0].level>mylevel) {
-        for (int n=0; n<orbital_bd_cc_[upper].nbmax; n++) { // from finner
-          int size = size_cc_recv[upper][2+n];
+        for (int n=0; n<orbital_bd_cc_[upper].nbmax; n++) { // from finer
+          size = size_cc_recv[upper][2+n];
           if (size>0) {
             orbital_recv_cc_count_[upper][n] = size;
           }
         }
       } else if (orbital_recv_neighbor_[upper][0].level<mylevel) { // from coarser
-        int size = size_cc_recv[upper][1]*coef1;
+        size = size_cc_recv[upper][1]*coef;
         if (size>0) {
           orbital_recv_cc_count_[upper][0] = size;
         }
       } else {
-        int size = size_cc_recv[upper][0];
+        size = size_cc_recv[upper][0];
         if (size>0) {
           orbital_recv_cc_count_[upper][0] = size;
         }
@@ -380,57 +387,68 @@ void OrbitalBoundaryCommunication::ComputeOrbit(const Real dt) {
 
     if (MAGNETIC_FIELDS_ENABLED) {
       porb->SetOrbitalEdgeFC(dt, size_fc_send, size_fc_recv);
-      int coef2;
+      int nco1, nco2, norb;
       if (porb->orbital_direction == 1) {
-        if (pmb->block_size.nx3>1) {
-          coef1 = (pmb->block_size.nx3/2+2)*(pmb->block_size.nx1/2+3);
-          coef2 = (pmb->block_size.nx3/2+3)*(pmb->block_size.nx1/2+2);
-        } else {
-          coef1 = pmb->block_size.nx1/2+3;
-          coef2 = 2*(pmb->block_size.nx1/2+2);
-        }
+        nco1 = pmb->block_size.nx1/2;
+        nco2 = pmb->block_size.nx3/2;
       } else if (porb->orbital_direction == 2) {
-        coef1 = (pmb->block_size.nx2/2+2)*(pmb->block_size.nx1/2+3);
-        coef2 = (pmb->block_size.nx2/2+3)*(pmb->block_size.nx1/2+2);
+        nco1 = pmb->block_size.nx1/2;
+        nco2 = pmb->block_size.nx2/2;
       }
       // upper=0: to right, upper=1: to left
       for (int upper=0; upper<2; upper++) {
         // send
-        if (orbital_send_neighbor_[upper][0].level>mylevel) { // to coarser
-          for (int n=0; n<orbital_bd_cc_[upper].nbmax; n++) {
-            int size = size_fc_send[upper][2+2*n]*coef1
-                       +size_fc_send[upper][3+2*n]*coef2;
+        if (orbital_send_neighbor_[upper][0].level>mylevel) { // to finer
+          for (int n=0; n<orbital_bd_fc_[upper].nbmax; n++) {
+            norb = size_fc_send[upper][2+n];
+            if (pmb->block_size.nx3>1) { // 3D
+              size = (nco1+1)*(nco2+2)*(norb+2)
+                     +(nco1+2)*(nco2+1)*(norb+2)
+                     +(nco1+2)*(nco2+2)*(norb+1);
+            } else { // 2D
+              size = (nco1+1)*(norb+2)
+                     +(nco1+2)*(norb+1)
+                     +(nco1+2)*(norb+2);
+            }
             if (size>0) {
               orbital_send_fc_count_[upper][n] = size;
             }
           }
-        } else if (orbital_send_neighbor_[upper][0].level<mylevel) { //to finner
-          int size = size_fc_send[upper][1];
+        } else if (orbital_send_neighbor_[upper][0].level<mylevel) { //to coarser
+          size = size_fc_send[upper][1];
           if(size>0) {
             orbital_send_fc_count_[upper][0] = size;
           }
         } else { // to same
-          int size = size_fc_send[upper][0];
+          size = size_fc_send[upper][0];
           if(size>0) {
             orbital_send_fc_count_[upper][0] = size;
           }
         }
         // recv
-        if (orbital_recv_neighbor_[upper][0].level>mylevel) { // from coarser
-          for (int n=0; n<orbital_bd_cc_[upper].nbmax; n++) {
-            int size = size_fc_recv[upper][3+n];
+        if (orbital_recv_neighbor_[upper][0].level>mylevel) { // from finer
+          for (int n=0; n<orbital_bd_fc_[upper].nbmax; n++) {
+            size = size_fc_recv[upper][2+n];
             if (size>0) {
               orbital_recv_fc_count_[upper][n] = size;
             }
           }
-        } else if (orbital_recv_neighbor_[upper][0].level<mylevel) { // from finner
-          int size = size_fc_recv[upper][1]*coef1
-                       +size_fc_recv[upper][2]*coef2;
+        } else if (orbital_recv_neighbor_[upper][0].level<mylevel) { // from coarser
+          norb = size_fc_recv[upper][1];
+          if (pmb->block_size.nx3>1) { // 3D
+            size = (nco1+1)*(nco2+2)*(norb+2)
+                   +(nco1+2)*(nco2+1)*(norb+2)
+                   +(nco1+2)*(nco2+2)*(norb+1);
+          } else { // 2D
+            size = (nco1+1)*(norb+2)
+                   +(nco1+2)*(norb+1)
+                   +(nco1+2)*(norb+2);
+          }
           if(size>0) {
             orbital_recv_fc_count_[upper][0] = size;
           }
-        } else {
-          int size =  size_fc_recv[upper][0];
+        } else { // from same
+          size =  size_fc_recv[upper][0];
           if(size>0) {
             orbital_recv_fc_count_[upper][0] = size;
           }
@@ -439,26 +457,27 @@ void OrbitalBoundaryCommunication::ComputeOrbit(const Real dt) {
     }
   } else { // no orbital refinement
     porb->SetOrbitalEdgeCC(dt, size_cc_send, size_cc_recv);
+    int size;
     for (int upper=0; upper<2; upper++) {
-      int ssize = size_cc_send[upper][0];
-      if (ssize>0) {
-        orbital_send_cc_count_[upper][0] = ssize;
+      size = size_cc_send[upper][0];
+      if (size>0) {
+        orbital_send_cc_count_[upper][0] = size;
       }
-      int rsize = size_cc_recv[upper][0];
-      if (rsize>0) {
-        orbital_recv_cc_count_[upper][0] = rsize;
+      size = size_cc_recv[upper][0];
+      if (size>0) {
+        orbital_recv_cc_count_[upper][0] = size;
       }
     }
     if (MAGNETIC_FIELDS_ENABLED) {
       porb->SetOrbitalEdgeFC(dt, size_fc_send, size_fc_recv);
       for (int upper=0; upper<2; upper++) {
-        int ssize = size_fc_send[upper][0];
-        if (ssize>0) {
-          orbital_send_fc_count_[upper][0] = ssize;
+        size = size_fc_send[upper][0];
+        if (size>0) {
+          orbital_send_fc_count_[upper][0] = size;
         }
-        int rsize = size_fc_recv[upper][0];
-        if (rsize>0) {
-          orbital_recv_fc_count_[upper][0] = rsize;
+        size = size_fc_recv[upper][0];
+        if (size>0) {
+          orbital_recv_fc_count_[upper][0] = size;
         }
       }
     }
@@ -569,19 +588,19 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersCC() {
       if (orbital_bd_cc_[upper].sflag[n] == BoundaryStatus::completed) continue;
       SimpleNeighborBlock& snb= orbital_send_neighbor_[upper][n];
       int p=0;
-      if (snb.level == mylevel) {
+      if (snb.level == mylevel) { // to same
         LoadHydroBufferSameLevel(orbital_bd_cc_[upper].send[n], p, n+offset[upper]);
-      } else if (snb.level < mylevel) {
+      } else if (snb.level < mylevel) { // to coarser
         LoadHydroBufferToCoarser(orbital_bd_cc_[upper].send[n], p, n+offset[upper]);
-      } else {
+      } else { // to finer
         LoadHydroBufferToFiner(orbital_bd_cc_[upper].send[n], p, n+offset[upper]);
       }
       if (NSCALARS>0) {
-        if (snb.level == mylevel) {
+        if (snb.level == mylevel) { // to same
           LoadScalarBufferSameLevel(orbital_bd_cc_[upper].send[n], p, n+offset[upper]);
-        } else if (snb.level < mylevel) {
+        } else if (snb.level < mylevel) { // to coarser
           LoadScalarBufferToCoarser(orbital_bd_cc_[upper].send[n], p, n+offset[upper]);
-        } else {
+        } else { // to finer
           LoadScalarBufferToFiner(orbital_bd_cc_[upper].send[n], p, n+offset[upper]);
         }
       }
@@ -609,7 +628,7 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersCC() {
             std::memcpy(obd.recv[n1+n2*2], orbital_bd_cc_[upper].send[n], p*sizeof(Real));
             obd.flag[n1+n2*2] = BoundaryStatus::arrived;
           }
-        } else { //to finner
+        } else { //to finer
           std::memcpy(obd.recv[0], orbital_bd_cc_[upper].send[n], p*sizeof(Real));
           obd.flag[0] = BoundaryStatus::arrived;
         }
@@ -629,7 +648,7 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersCC() {
             tag = pbval_->CreateBvalsMPITag(snb.lid, n1+n2*2+offset[upper],
                                             orbital_advection_cc_phys_id_);
           }
-        } else { //to finner
+        } else { //to finer
           tag = pbval_->CreateBvalsMPITag(snb.lid, offset[upper],
                                           orbital_advection_cc_phys_id_);
         }
@@ -675,19 +694,19 @@ bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersCC() {
       }
       // set var
       int p=0;
-      if (snb.level == mylevel) {
+      if (snb.level == mylevel) { // from same level
         SetHydroBufferSameLevel(orbital_bd_cc_[upper].recv[n], p, n+offset[upper]);
-      } else if (snb.level < mylevel) {
+      } else if (snb.level < mylevel) { // from coarser
         SetHydroBufferFromCoarser(orbital_bd_cc_[upper].recv[n], p, n+offset[upper]);
-      } else {
+      } else { // from finer
         SetHydroBufferFromFiner(orbital_bd_cc_[upper].recv[n], p, n+offset[upper]);
       }
       if (NSCALARS>0) {
-        if (snb.level == mylevel) {
+        if (snb.level == mylevel) { // from same level
           SetScalarBufferSameLevel(orbital_bd_cc_[upper].recv[n], p, n+offset[upper]);
-        } else if (snb.level < mylevel) {
+        } else if (snb.level < mylevel) { // from coarser
           SetScalarBufferFromCoarser(orbital_bd_cc_[upper].recv[n], p, n+offset[upper]);
-        } else {
+        } else { // from finer
           SetScalarBufferFromFiner(orbital_bd_cc_[upper].recv[n], p, n+offset[upper]);
         }
       }
@@ -718,11 +737,11 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersFC() {
       if (orbital_bd_fc_[upper].sflag[n] == BoundaryStatus::completed) continue;
       SimpleNeighborBlock& snb= orbital_send_neighbor_[upper][n];
       int p=0;
-      if (snb.level == mylevel) {
+      if (snb.level == mylevel) { // to same level
         LoadFieldBufferSameLevel(orbital_bd_fc_[upper].send[n], p, n+offset[upper]);
-      } else if (snb.level < mylevel) {
+      } else if (snb.level < mylevel) { // to coarser
         LoadFieldBufferToCoarser(orbital_bd_fc_[upper].send[n], p, n+offset[upper]);
-      } else {
+      } else { // to finer
         LoadFieldBufferToFiner(orbital_bd_fc_[upper].send[n], p, n+offset[upper]);
       }
       if (p != orbital_send_fc_count_[upper][n]) {
@@ -735,10 +754,10 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersFC() {
       if (snb.rank == Globals::my_rank) { //on the same process
         MeshBlock *tmb = pmy_mesh_->FindMeshBlock(snb.gid);
         OrbitalBoundaryData &obd = tmb->porb->orb_bc->orbital_bd_fc_[upper];
-        if (snb.level == mylevel) {
+        if (snb.level == mylevel) { // to same level
           std::memcpy(obd.recv[n], orbital_bd_fc_[upper].send[n], p*sizeof(Real));
           obd.flag[n] = BoundaryStatus::arrived;
-        } else if (snb.level < mylevel) {
+        } else if (snb.level < mylevel) { // to coarser
           int n1 = pmb->loc.lx1%2;
           if (porb->orbital_direction == 1) {
             int n3 = pmb->loc.lx3%2;
@@ -749,7 +768,7 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersFC() {
             std::memcpy(obd.recv[n1+n2*2], orbital_bd_fc_[upper].send[n], p*sizeof(Real));
             obd.flag[n1+n2*2] = BoundaryStatus::arrived;
           }
-        } else {
+        } else { // to finer
           std::memcpy(obd.recv[0], orbital_bd_fc_[upper].send[n], p*sizeof(Real));
           obd.flag[0] = BoundaryStatus::arrived;
         }
@@ -769,7 +788,7 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersFC() {
             tag = pbval_->CreateBvalsMPITag(snb.lid, n1+n2*2+offset[upper],
                                             orbital_advection_fc_phys_id_);
           }
-        } else { //to finner
+        } else { // to finer
           tag = pbval_->CreateBvalsMPITag(snb.lid, offset[upper],
                                           orbital_advection_fc_phys_id_);
         }
@@ -815,11 +834,11 @@ bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersFC() {
       }
       // set var
       int p=0;
-      if (snb.level == mylevel) {
+      if (snb.level == mylevel) { // from same level
         SetFieldBufferSameLevel(orbital_bd_fc_[upper].recv[n], p, n+offset[upper]);
-      } else if (snb.level < mylevel) {
+      } else if (snb.level < mylevel) { // from coarser
         SetFieldBufferFromCoarser(orbital_bd_fc_[upper].recv[n], p, n+offset[upper]);
-      } else {
+      } else { // from finer
         SetFieldBufferFromFiner(orbital_bd_fc_[upper].recv[n], p, n+offset[upper]);
       }
       if (p != orbital_recv_fc_count_[upper][n]) {
@@ -1844,125 +1863,158 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(Real *buf, int &p, int
   OrbitalAdvection *porb = pmy_orbital_;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
-    if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
-      int il, iu, jl, ju, kl, ku;
-      if (pmb->block_size.nx3>1) {
+    int onx;
+    int il, iu, jl, ju, kl, ku;
+    if (pmb->block_size.nx3>1) { // 3D
+      if(porb->orbital_direction == 1) {
+        onx = pmb->block_size.nx2;
         if(nb%4<2) {
-          kl = pmb->ks-1;
-          ku = pmb->ke+1-pmb->block_size.nx3/2;
-        } else {
-          kl = pmb->ks-1+pmb->block_size.nx3/2;
-          ku = pmb->ke+1;
-        }
-      } else {
           kl = pmb->ks;
+          ku = pmb->ke-pmb->block_size.nx3/2;
+        } else {
+          kl = pmb->ks+pmb->block_size.nx3/2;
           ku = pmb->ke;
+        }
+        if (nb%2==0) {
+          il = pmb->is;
+          iu = pmb->ie-pmb->block_size.nx1/2;
+        } else {
+          il = pmb->is+pmb->block_size.nx1/2;
+          iu = pmb->ie;
+        }
+        if (nb<4) {
+          jl = pmb->js-size_fc_send[0][2+nb]+onx;
+          ju = pmb->je;
+        } else if (nb<8) {
+          jl = pmb->js;
+          ju = pmb->je+size_fc_send[1][2+(nb-4)]-onx;
+        } else {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
+              << "::LoadFieldBufferToFiner" << std::endl
+              << "Invalid number is specified." << std::endl;
+          ATHENA_ERROR(msg);
+        }
+      } else if (porb->orbital_direction == 2) {
+        onx = pmb->block_size.nx3;
+        if(nb%4<2) {
+          jl = pmb->js;
+          ju = pmb->je-pmb->block_size.nx2/2;
+        } else {
+          jl = pmb->js+pmb->block_size.nx2/2;
+          ju = pmb->je;
+        }
+        if (nb%2==0) {
+          il = pmb->is;
+          iu = pmb->ie-pmb->block_size.nx1/2;
+        } else {
+          il = pmb->is+pmb->block_size.nx1/2;
+          iu = pmb->ie;
+        }
+        if (nb<4) {
+          kl = pmb->ks-size_fc_send[0][2+nb]+onx;
+          ku = pmb->ke;
+        } else if (nb<8) {
+          kl = pmb->ks;
+          ku = pmb->ke+size_fc_send[1][2+(nb-4)]-onx;
+        } else {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
+              << "::LoadFieldBufferToFiner" << std::endl
+              << "Invalid number is specified." << std::endl;
+          ATHENA_ERROR(msg);
+        }
       }
-      if (nb%2==0) {
-        il = pmb->is-1;
-        iu = pmb->ie+1-pmb->block_size.nx1/2;
-      } else {
-        il = pmb->is-1+pmb->block_size.nx1/2;
-        iu = pmb->ie+1;
-      }
-      if (nb<4) {
-        jl = pmb->js-size_fc_send[0][2+2*nb]+1+onx;
-        ju = pmb->je+1;
-      } else if (nb<8) {
-        jl = pmb->js-1;
-        ju = pmb->je+size_fc_send[1][2+2*(nb-4)]-onx-1;
-      } else {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
-            << "::LoadFieldBufferToFiner" << std::endl
-            << "Invalid number is specified." << std::endl;
-        ATHENA_ERROR(msg);
-      }
-      for (int k=kl; k<=ku; k++) {
-        for (int j=jl; j<=ju; j++) {
+
+      // pack b1
+      for (int k=kl-1; k<=ku+1; k++) {
+        for (int j=jl-1; j<=ju+1; j++) {
+          for (int i=il; i<=iu+1; i++) {
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
-          for (int i=il; i<=iu+1; i++) {
             buf[p++] = in_fc->x1f(k,j,i);
           }
         }
       }
-      // If using PackData with intel compiler, there is a problem.
-      //BufferUtility::PackData(in_fc->x1f, buf, il, iu+1, jl, ju, kl, ku, p);
-      if (nb<4) {
-        jl = pmb->js-size_fc_send[0][3+2*nb]+1+onx;
-        ju = pmb->je+1;
-      } else if (nb<8) {
-        jl = pmb->js-1;
-        ju = pmb->je+size_fc_send[1][3+2*(nb-4)]-onx-1;
-      }
-      for (int k=kl; k<=ku+1; k++) {
-        for (int j=jl; j<=ju  ; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-          for (int i=il; i<=iu; i++) {
-            buf[p++] = -in_fc->x3f(k,j,i);
-          }
-        }
-      }
-    } else if (porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
-      int il, iu, jl, ju, kl, ku;
-      if(nb%4<2) {
-        jl = pmb->js-1;
-        ju = pmb->je+1-pmb->block_size.nx2/2;
-      } else {
-        jl = pmb->js-1+pmb->block_size.nx2/2;
-        ju = pmb->je+1;
-      }
-      if (nb%2==0) {
-        il = pmb->is-1;
-        iu = pmb->ie+1-pmb->block_size.nx1/2;
-      } else {
-        il = pmb->is-1+pmb->block_size.nx1/2;
-        iu = pmb->ie+1;
-      }
-      if (nb<4) {
-        kl = pmb->ks-size_fc_send[0][2+2*nb]+1+onx;
-        ku = pmb->ke+1;
-      } else if (nb<8) {
-        kl = pmb->ks-1;
-        ku = pmb->ke+size_fc_send[1][2+2*(nb-4)]-onx-1;
-      } else {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
-            << "::LoadFieldBufferToFiner" << std::endl
-            << "Invalid number is specified." << std::endl;
-        ATHENA_ERROR(msg);
-      }
-      for (int k=kl; k<=ku; k++) {
-        for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-          for (int i=il; i<=iu+1; i++) {
-            buf[p++] = -in_fc->x1f(k,j,i);
-          }
-        }
-      }
-      if (nb<4) {
-        kl = pmb->ks-size_fc_send[0][3+2*nb]+1+onx;
-        ku = pmb->ke+1;
-      } else if (nb<8) {
-        kl = pmb->ks-1;
-        ku = pmb->ke+size_fc_send[1][3+2*(nb-4)]-onx-1;
-      }
-      for (int k=kl; k<=ku; k++) {
+
+      // pack b2
+      for (int k=kl-1; k<=ku+1; k++) {
         for (int j=jl; j<=ju+1; j++) {
+          for (int i=il-1; i<=iu+1; i++) {
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
-          for (int i=il; i<=iu; i++) {
             buf[p++] = in_fc->x2f(k,j,i);
           }
         }
       }
-      // If using PackData with intel compiler, there is a problem.
-      //BufferUtility::PackData(in_fc->x2f, buf, il, iu, jl, ju+1, kl, ku, p);
+
+      // pack b3
+      for (int k=kl; k<=ku+1; k++) {
+        for (int j=jl-1; j<=ju+1; j++) {
+          for (int i=il-1; i<=iu+1; i++) {
+// If using omp simd with intel compiler, there is a problem.
+//#pragma omp simd
+            buf[p++] = in_fc->x3f(k,j,i);
+          }
+        }
+      }
+    } else { // 2D
+      if(porb->orbital_direction == 1) {
+        onx = pmb->block_size.nx2;
+        if (nb%2==0) {
+          il = pmb->is;
+          iu = pmb->ie-pmb->block_size.nx1/2;
+        } else {
+          il = pmb->is+pmb->block_size.nx1/2;
+          iu = pmb->ie;
+        }
+        if (nb<4) {
+          jl = pmb->js-size_fc_send[0][2+nb]+onx;
+          ju = pmb->je;
+        } else if (nb<8) {
+          jl = pmb->js;
+          ju = pmb->je+size_fc_send[1][2+(nb-4)]-onx;
+        } else {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
+              << "::LoadFieldBufferToFiner" << std::endl
+              << "Invalid number is specified." << std::endl;
+          ATHENA_ERROR(msg);
+        }
+      } else {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
+              << "::LoadFieldBufferToFiner" << std::endl
+              << "2D Orbital Advection is not allowed in spherical_polar." << std::endl;
+          ATHENA_ERROR(msg);
+      }
+      int k = pmb->ks;
+      // pack b1
+      for (int j=jl-1; j<=ju+1; j++) {
+        for (int i=il; i<=iu+1; i++) {
+// If using omp simd with intel compiler, there is a problem.
+//#pragma omp simd
+          buf[p++] = in_fc->x1f(k,j,i);
+        }
+      }
+
+      // pack b2
+      for (int j=jl; j<=ju+1; j++) {
+        for (int i=il-1; i<=iu+1; i++) {
+// If using omp simd with intel compiler, there is a problem.
+//#pragma omp simd
+          buf[p++] = in_fc->x2f(k,j,i);
+        }
+      }
+
+      // pack b3
+      for (int j=jl-1; j<=ju+1; j++) {
+        for (int i=il-1; i<=iu+1; i++) {
+// If using omp simd with intel compiler, there is a problem.
+//#pragma omp simd
+          buf[p++] = in_fc->x3f(k,j,i);
+        }
+      }
     }
   }
 //  else { // non-uniform mesh
@@ -2139,41 +2191,131 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
   AthenaArray<Real> &bo1  = *out_b1;
-  AthenaArray<Real> &bco1 = porb->b1_coarse_recv;
-  AthenaArray<Real> &bto1 = porb->b1_temp;
   AthenaArray<Real> &bo2  = *out_b2;
-  AthenaArray<Real> &bco2 = porb->b2_coarse_recv;
-  AthenaArray<Real> &bto2 = porb->b2_temp;
+  FaceField &bto = porb->b_temp;
+  FaceField &bco = porb->b_coarse_recv;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
-    if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
-      int il, iu, kl, ku;
-      if (pmb->block_size.nx3>1) {
-        kl = pmb->cks-1;
-        ku = pmb->cke+1;
-      } else {
+    int onx;
+    int il, iu, jl, ju, kl, ku;
+    if (pmb->block_size.nx3>1) { // 3D
+      if(porb->orbital_direction == 1) {
+        onx = pmb->block_size.nx2;
+        il = pmb->cis;
+        iu = pmb->cie;
         kl = pmb->cks;
         ku = pmb->cke;
+        if(nb == 0) {
+          jl = pmb->cjs-xgh-porb->max_off_coarse+onx/2;
+          ju = pmb->cje;
+        } else if (nb == 4) {
+          jl = pmb->cjs;
+          ju = pmb->cje+1+xgh-porb->min_off_coarse-onx/2;
+        }
+      } else if(porb->orbital_direction == 2) {
+        onx = pmb->block_size.nx3;
+        il = pmb->cis;
+        iu = pmb->cie;
+        jl = pmb->cjs;
+        ju = pmb->cje;
+        if(nb == 0) {
+          kl = pmb->cks-xgh-porb->max_off_coarse+onx/2;
+          ku = pmb->cke;
+        } else if (nb == 4) {
+          kl = pmb->cks;
+          ku = pmb->cke+1+xgh-porb->min_off_coarse-onx/2;
+        }
       }
-      il = pmb->cis-1;
-      iu = pmb->cie+1;
-      if(nb==0) {
-        int jl = pmb->cjs-xgh-porb->max_off_coarse[0]+onx/2-1;
-        int ju = pmb->cje+1;
-        for (int k=kl; k<=ku; k++) {
-          for (int j=jl; j<=ju; j++) {
+
+      // b1
+      for (int k=kl-1; k<=ku+1; k++) {
+        for (int j=jl-1; j<=ju+1; j++) {
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
-            for (int i=il; i<=iu+1; i++) {
-              bco1(k,j,i) = buf[p++];
-            }
+          for (int i=il; i<=iu+1; i++) {
+            bco.x1f(k,j,i) = buf[p++];
           }
         }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, bco1, il, iu+1, jl, ju, kl, ku, p);
-        pmb->pmr->ProlongateSharedFieldX1(bco1, bto1, pmb->cis, pmb->cie+1, jl+1,
-                                          pmb->cje, pmb->cks, pmb->cke);
+      }
+
+      // b2
+      for (int k=kl-1; k<=ku+1; k++) {
+        for (int j=jl; j<=ju+1; j++) {
+// If using omp simd with intel compiler, there is a problem.
+//#pragma omp simd
+          for (int i=il-1; i<=iu+1; i++) {
+            bco.x2f(k,j,i) = buf[p++];
+          }
+        }
+      }
+
+      // b3
+      for (int k=kl; k<=ku+1; k++) {
+        for (int j=jl-1; j<=ju+1; j++) {
+// If using omp simd with intel compiler, there is a problem.
+//#pragma omp simd
+          for (int i=il-1; i<=iu+1; i++) {
+            bco.x3f(k,j,i) = buf[p++];
+          }
+        }
+      }
+    } else { // 2D
+      int k = pmb->cks;
+      if(porb->orbital_direction == 1) {
+        onx = pmb->block_size.nx2;
+        il = pmb->cis;
+        iu = pmb->cie;
+        kl = k;
+        ku = k;
+        if(nb == 0) {
+          jl = pmb->cjs-xgh-porb->max_off_coarse+onx/2;
+          ju = pmb->cje;
+        } else if (nb == 4) {
+          jl = pmb->cjs;
+          ju = pmb->cje+1+xgh-porb->min_off_coarse-onx/2;
+        }
+      } else {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
+            << "::LoadFieldBufferToFiner" << std::endl
+            << "2D Orbital Advection is not allowed in spherical_polar." << std::endl;
+        ATHENA_ERROR(msg);
+      }
+
+      // b1
+      for (int j=jl-1; j<=ju+1; j++) {
+// If using omp simd with intel compiler, there is a problem.
+//#pragma omp simd
+        for (int i=il; i<=iu+1; i++) {
+          bco.x1f(k,j,i) = buf[p++];
+        }
+      }
+
+      // b2
+      for (int j=jl; j<=ju+1; j++) {
+// If using omp simd with intel compiler, there is a problem.
+//#pragma omp simd
+        for (int i=il-1; i<=iu+1; i++) {
+          bco.x2f(k,j,i) = buf[p++];
+        }
+      }
+
+      // b3
+      for (int j=jl-1; j<=ju+1; j++) {
+// If using omp simd with intel compiler, there is a problem.
+//#pragma omp simd
+        for (int i=il-1; i<=iu+1; i++) {
+          bco.x3f(k,j,i) = buf[p++];
+        }
+      }
+    }
+    pmb->pmr->ProlongateSharedFieldX1(bco.x1f, bto.x1f, il, iu+1, jl, ju, kl, ku);
+    pmb->pmr->ProlongateSharedFieldX2(bco.x2f, bto.x2f, il, iu, jl, ju+1, kl, ku);
+    pmb->pmr->ProlongateSharedFieldX3(bco.x3f, bto.x3f, il, iu, jl, ju, kl, ku+1);
+    pmb->pmr->ProlongateInternalField(bto, il, iu, jl, ju, kl, ku);
+
+    if(porb->orbital_direction == 1) {
+      if (nb == 0) {
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           for (int i=pmb->is; i<=pmb->ie+1; i++) {
             int offset = porb->off[0](k,i);
@@ -2183,25 +2325,26 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
             for (int j=xl; j<=xu; j++) {
-              bo1(k,i,j+shift) = bto1(k,j,i);
+              bo1(k,i,j+shift) = bto.x1f(k,j,i);
             }
           }
         }
-        jl = pmb->cjs-xgh-porb->max_off_coarse[1]+onx/2-1;
-        for (int k=kl; k<=ku+1; k++) {
-          for (int j=jl; j<=ju; j++) {
+        if (pmb->block_size.nx3>1) { // 3D
+          for (int k=pmb->ks; k<=pmb->ke+1; k++) {
+            for (int i=pmb->is; i<=pmb->ie; i++) {
+              int offset = porb->off[1](k,i);
+              int xl = pmb->js-xgh-offset+onx;
+              int xu = pmb->je;
+              const int shift = (offset>0)? 0: -onx;
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
-            for (int i=il; i<=iu; i++) {
-              bco2(k,j,i) = buf[p++];
+              for (int j=xl; j<=xu; j++) {
+                bo2(k,i,j+shift) = -bto.x3f(k,j,i);
+              }
             }
           }
-        }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, bco2, il, iu, jl, ju, kl, ku+1, p);
-        pmb->pmr->ProlongateSharedFieldX3(bco2, bto2, pmb->cis, pmb->cie, jl+1,
-                                          pmb->cje, pmb->cks, pmb->cke+1);
-        for (int k=pmb->ks; k<=pmb->ke+1; k++) {
+        } else { // 2D
+          int k = pmb->ks;
           for (int i=pmb->is; i<=pmb->ie; i++) {
             int offset = porb->off[1](k,i);
             int xl = pmb->js-xgh-offset+onx;
@@ -2210,28 +2353,14 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
             for (int j=xl; j<=xu; j++) {
-              bo2(k,i,j+shift) = bto2(k,j,i);
+              bo2(k,i,j+shift)   = -bto.x3f(k,j,i);
+              bo2(k+1,i,j+shift) = -bto.x3f(k,j,i);
             }
           }
         }
-      } else if (nb==4) {
-        int jl = pmb->cjs-1;
-        int ju = pmb->cje+2+xgh-porb->min_off_coarse[0]-onx/2;
-        for (int k=kl; k<=ku; k++) {
-          for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-            for (int i=il; i<=iu+1; i++) {
-              bco1(k,j,i) = buf[p++];
-            }
-          }
-        }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, bco1, il, iu+1, jl, ju, kl, ku, p);
-        pmb->pmr->ProlongateSharedFieldX1(bco1, bto1, pmb->cis, pmb->cie+1,
-                                          pmb->cjs, ju-1, pmb->cks, pmb->cke);
-        for(int k=pmb->ks; k<=pmb->ke  ; k++) {
-          for(int i=pmb->is; i<=pmb->ie+1; i++) {
+      } else if (nb == 4) {
+        for (int k=pmb->ks; k<=pmb->ke; k++) {
+          for (int i=pmb->is; i<=pmb->ie+1; i++) {
             int offset = porb->off[0](k,i);
             int xl = pmb->js;
             int xu = pmb->je+1+xgh-offset-onx;
@@ -2239,26 +2368,27 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
             for (int j=xl; j<=xu; j++) {
-              bo1(k,i,j+shift) = bto1(k,j,i);
+              bo1(k,i,j+shift) = bto.x1f(k,j,i);
             }
           }
         }
-        ju = pmb->cje+2+xgh-porb->min_off_coarse[1]-onx/2;
-        for (int k=kl; k<=ku+1; k++) {
-          for (int j=jl; j<=ju; j++) {
+        if (pmb->block_size.nx3>1) { // 3D
+          for (int k=pmb->ks; k<=pmb->ke+1; k++) {
+            for (int i=pmb->is; i<=pmb->ie; i++) {
+              int offset = porb->off[1](k,i);
+              int xl = pmb->js;
+              int xu = pmb->je+1+xgh-offset-onx;
+              const int shift = (offset>0)? 2*onx: onx;
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
-            for (int i=il; i<=iu; i++) {
-              bco2(k,j,i) = buf[p++];
+              for (int j=xl; j<=xu; j++) {
+                bo2(k,i,j+shift) = -bto.x3f(k,j,i);
+              }
             }
           }
-        }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, bco2, il, iu, jl, ju, kl, ku+1, p);
-        pmb->pmr->ProlongateSharedFieldX3(bco2, bto2, pmb->cis, pmb->cie,
-                                          pmb->cjs, ju-1, pmb->cks, pmb->cke+1);
-        for(int k=pmb->ks; k<=pmb->ke+1; k++) {
-          for(int i=pmb->is; i<=pmb->ie  ; i++) {
+        } else { // 2D
+          int k = pmb->ks;
+          for (int i=pmb->is; i<=pmb->ie; i++) {
             int offset = porb->off[1](k,i);
             int xl = pmb->js;
             int xu = pmb->je+1+xgh-offset-onx;
@@ -2266,7 +2396,8 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
             for (int j=xl; j<=xu; j++) {
-              bo2(k,i,j+shift) = bto2(k,j,i);
+              bo2(k,i,j+shift)   = -bto.x3f(k,j,i);
+              bo2(k+1,i,j+shift) = -bto.x3f(k,j,i);
             }
           }
         }
@@ -2278,55 +2409,20 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
-      int il, iu, jl, ju;
-      jl = pmb->cjs-1;
-      ju = pmb->cje+1;
-      il = pmb->cis-1;
-      iu = pmb->cie+1;
-      if(nb==0) {
-        int kl = pmb->cks-xgh-porb->max_off_coarse[0]+onx/2-1;
-        int ku = pmb->cke+1;
-        for (int k=kl; k<=ku; k++) {
-          for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-            for (int i=il; i<=iu+1; i++) {
-              bco1(k,j,i) = buf[p++];
-            }
-          }
-        }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, bco1, il, iu+1, jl, ju, kl, ku, p);
-        pmb->pmr->ProlongateSharedFieldX1(bco1, bto1, pmb->cis, pmb->cie+1,
-                                          pmb->cks, pmb->cje, kl+1, pmb->cke);
+      if (nb == 0) {
         for (int j=pmb->js; j<=pmb->je; j++) {
           for (int i=pmb->is; i<=pmb->ie+1; i++) {
-             int offset = porb->off[0](j,i);
+            int offset = porb->off[0](j,i);
             int xl = pmb->ks-xgh-offset+onx;
             int xu = pmb->ke;
             const int shift = (offset>0)? 0: -onx;
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
             for (int k=xl; k<=xu; k++) {
-              bo1(j,i,k+shift) = bto1(k,j,i);
+              bo1(j,i,k+shift) = -bto.x1f(k,j,i);
             }
           }
         }
-        kl = pmb->cks-xgh-porb->max_off_coarse[1]+onx/2-1;
-        for (int k=kl; k<=ku; k++) {
-          for (int j=jl; j<=ju+1; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-            for (int i=il; i<=iu; i++) {
-              bco2(k,j,i) = buf[p++];
-            }
-          }
-        }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, bco2, il, iu, jl, ju+1, kl, ku, p);
-        pmb->pmr->ProlongateSharedFieldX2(bco2, bto2, pmb->cis, pmb->cie,
-                                          pmb->cks, pmb->cje+1, kl+1, pmb->cke);
         for (int j=pmb->js; j<=pmb->je+1; j++) {
           for (int i=pmb->is; i<=pmb->ie; i++) {
             int offset = porb->off[1](j,i);
@@ -2336,27 +2432,12 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
             for (int k=xl; k<=xu; k++) {
-              bo2(j,i,k+shift) = bto2(k,j,i);
+              bo2(j,i,k+shift) = bto.x2f(k,j,i);
             }
           }
         }
-      } else if (nb==4) {
-        int kl = pmb->cks-1;
-        int ku = pmb->cke+2+xgh-porb->min_off_coarse[0]-onx/2;
-        for (int k=kl; k<=ku; k++) {
-          for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-            for (int i=il; i<=iu+1; i++) {
-              bco1(k,j,i) = buf[p++];
-            }
-          }
-        }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, bco1, il, iu+1, jl, ju, kl, ku, p);
-        pmb->pmr->ProlongateSharedFieldX1(bco1, bto1, pmb->cis, pmb->cie+1,
-                                          pmb->cks, pmb->cje, pmb->cks, ku-1);
-        for (int j=pmb->js; j<=pmb->je  ; j++) {
+      } else if (nb == 4) {
+        for (int j=pmb->js; j<=pmb->je; j++) {
           for (int i=pmb->is; i<=pmb->ie+1; i++) {
             int offset = porb->off[0](j,i);
             int xl = pmb->ks;
@@ -2365,26 +2446,12 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
             for (int k=xl; k<=xu; k++) {
-              bo1(j,i,k+shift) = bto1(k,j,i);
+              bo1(j,i,k+shift) = -bto.x1f(k,j,i);
             }
           }
         }
-        ku = pmb->cke+2+xgh-porb->min_off_coarse[1]-onx/2;
-        for (int k=kl; k<=ku; k++) {
-          for (int j=jl; j<=ju+1; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-            for (int i=il; i<=iu; i++) {
-              bco2(k,j,i) = buf[p++];
-            }
-          }
-        }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, bco2, il, iu, jl, ju+1, kl, ku, p);
-        pmb->pmr->ProlongateSharedFieldX2(bco2, bto2, pmb->cis, pmb->cie,
-                                          pmb->cks, pmb->cje+1, pmb->cks, ku-1);
         for (int j=pmb->js; j<=pmb->je+1; j++) {
-          for (int i=pmb->is; i<=pmb->ie  ; i++) {
+          for (int i=pmb->is; i<=pmb->ie; i++) {
             int offset = porb->off[1](j,i);
             int xl = pmb->ks;
             int xu = pmb->ke+1+xgh-offset-onx;
@@ -2392,7 +2459,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
 // If using omp simd with intel compiler, there is a problem.
 //#pragma omp simd
             for (int k=xl; k<=xu; k++) {
-              bo2(j,i,k+shift) = bto2(k,j,i);
+              bo2(j,i,k+shift) = bto.x2f(k,j,i);
             }
           }
         }

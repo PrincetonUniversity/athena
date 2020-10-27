@@ -126,10 +126,10 @@ class OrbitalAdvection{
 
   AthenaArray<Real> u_coarse_send, u_coarse_recv, u_temp;
   AthenaArray<Real> s_coarse_send, s_coarse_recv, s_temp;
-  AthenaArray<Real> b1_coarse_send, b1_coarse_recv, b1_temp;
-  AthenaArray<Real> b2_coarse_send, b2_coarse_recv, b2_temp;
+  AthenaArray<Real> b1_coarse_send, b2_coarse_send;
+  FaceField b_temp, b_coarse_recv;
   int max_ofc_coarse, min_ofc_coarse;
-  int max_off_coarse[2], min_off_coarse[2];
+  int max_off_coarse, min_off_coarse;
 
   // pencil(1D) buffer
   AthenaArray<Real> hbuf;  // pencil buffer for shallow copy for hydro calculation

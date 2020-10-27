@@ -221,7 +221,7 @@ bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundary()
+//! \fn void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundaryCorrection()
 //  \brief Set EMF boundary received from a block on the finer level
 
 void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundaryCorrection() {

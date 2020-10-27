@@ -146,14 +146,16 @@ void OrbitalAdvection::CalculateOrbitalAdvectionFC(Real dt, EdgeField &e) {
           for (int jj=1; jj<offset; jj++) {
             const int shift = shift0+jj;
 #pragma omp simd
-            for (int j=js; j<=je+1; j++)
+            for (int j=js; j<=je+1; j++) {
               pflux(j) += bbuf(k,i,j+shift);
+            }
           }
           for (int jj=0; jj>offset; jj--) {
             const int shift = shift0+jj-1;
 #pragma omp simd
-            for (int j=js; j<=je+1; j++)
+            for (int j=js; j<=je+1; j++) {
               pflux(j) -= bbuf(k,i,j+shift);
+            }
           }
           Real len = pco_->h2v(i)*dx;
 #pragma omp simd
@@ -182,19 +184,22 @@ void OrbitalAdvection::CalculateOrbitalAdvectionFC(Real dt, EdgeField &e) {
           for (int jj=1; jj<offset; jj++) {
             const int shift = shift0+jj;
 #pragma omp simd
-            for (int j=js; j<=je+1; j++)
+            for (int j=js; j<=je+1; j++) {
               pflux(j) += bbuf(k,i,j+shift);
+            }
           }
           for (int jj=0; jj>offset; jj--) {
             const int shift = shift0+jj-1;
 #pragma omp simd
-            for (int j=js; j<=je+1; j++)
+            for (int j=js; j<=je+1; j++) {
               pflux(j) -= bbuf(k,i,j+shift);
+            }
           }
           Real len = pco_->h2f(i)*dx;
 #pragma omp simd
-          for (int j=js; j<=je+1; j++)
+          for (int j=js; j<=je+1; j++) {
             e.x3e(k,j,i) = pflux(j)*len;
+          }
         }
       }
     }
@@ -218,14 +223,16 @@ void OrbitalAdvection::CalculateOrbitalAdvectionFC(Real dt, EdgeField &e) {
           for (int kk=1; kk<offset; kk++) {
             const int shift = shift0+kk;
 #pragma omp simd
-            for (int k=ks; k<=ke+1; k++)
+            for (int k=ks; k<=ke+1; k++) {
               pflux(k) += bbuf(j,i,k+shift);
+            }
           }
           for (int kk=0; kk>offset; kk--) {
             const int shift = shift0+kk-1;
 #pragma omp simd
-            for (int k=ks; k<=ke+1; k++)
+            for (int k=ks; k<=ke+1; k++) {
               pflux(k) -= bbuf(j,i,k+shift);
+            }
           }
           Real len = pco_->h2v(i)*pco_->h32f(j)*dx;
 #pragma omp simd
@@ -251,14 +258,16 @@ void OrbitalAdvection::CalculateOrbitalAdvectionFC(Real dt, EdgeField &e) {
           for (int kk=1; kk<offset; kk++) {
             const int shift = shift0+kk;
 #pragma omp simd
-            for (int k=ks; k<=ke+1; k++)
+            for (int k=ks; k<=ke+1; k++) {
               pflux(k) += bbuf(j,i,k+shift);
+            }
           }
           for (int kk=0; kk>offset; kk--) {
             const int shift = shift0+kk-1;
 #pragma omp simd
-            for (int k=ks; k<=ke+1; k++)
+            for (int k=ks; k<=ke+1; k++) {
               pflux(k) -= bbuf(j,i,k+shift);
+            }
           }
           Real len = pco_->h2f(i)*pco_->h32v(j)*dx;
 #pragma omp simd

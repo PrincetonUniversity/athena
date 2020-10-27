@@ -171,15 +171,15 @@ void OrbitalAdvection::SetOrbitalAdvectionFC(const FaceField &b) {
   if (orbital_refinement) {
     // restriction for orbital communications with refinement
     pmb_->pmr->RestrictFieldX1(b.x1f, b1_coarse_send, pmb_->cis,
-                               pmb_->cie, pmb_->cjs, pmb_->cje,
+                               pmb_->cie+1, pmb_->cjs, pmb_->cje,
                                pmb_->cks, pmb_->cke);
     if (orbital_direction ==1) { // cartesian or cylindrical
       pmb_->pmr->RestrictFieldX3(b.x3f, b2_coarse_send, pmb_->cis,
                                  pmb_->cie, pmb_->cjs, pmb_->cje,
-                                 pmb_->cks, pmb_->cke);
+                                 pmb_->cks, pmb_->cke+1);
     } else if (orbital_direction == 2) { // spherical_polar
       pmb_->pmr->RestrictFieldX2(b.x2f, b2_coarse_send, pmb_->cis,
-                                 pmb_->cie, pmb_->cjs, pmb_->cje,
+                                 pmb_->cie, pmb_->cjs, pmb_->cje+1,
                                  pmb_->cks, pmb_->cke);
     }
   }
@@ -405,10 +405,8 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
       // for communication with meshblock at coarse level
       p1 = 0; p2 = 0;
       Real cdx = 2.0*dx;
-      max_off_coarse[0] = -onx;
-      min_off_coarse[0] = onx;
-      max_off_coarse[1] = -onx;
-      min_off_coarse[1] = onx;
+      max_off_coarse = -onx;
+      min_off_coarse = onx;
       Coordinates *cpco = pmb_->pmr->pcoarsec;
       if (orbital_direction == 1) { // cartesian or cylindrical
         for(int k=pmb_->cks; k<=pmb_->cke  ; k++) {
@@ -417,8 +415,8 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
             int offset = static_cast<int>(olen/cdx);
             if (olen > 0.0) offset++;
             off_coarse[0](k,i)  = offset;
-            max_off_coarse[0] = std::max(offset+1, max_off_coarse[0]);
-            min_off_coarse[0] = std::min(offset-1, min_off_coarse[0]);
+            max_off_coarse = std::max(offset+1, max_off_coarse);
+            min_off_coarse = std::min(offset-1, min_off_coarse);
             p1 += std::max(offset+xgh, 0);
             p2 += std::max(1+xgh-offset, 0);
           }
@@ -429,8 +427,8 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
             int offset = static_cast<int>(olen/cdx);
             if (olen > 0.0) offset++;
             off_coarse[1](k,i)  = offset;
-            max_off_coarse[1] = std::max(offset+1, max_off_coarse[1]);
-            min_off_coarse[1] = std::min(offset-1, min_off_coarse[1]);
+            max_off_coarse = std::max(offset+1, max_off_coarse);
+            min_off_coarse = std::min(offset-1, min_off_coarse);
             p1 += std::max(offset+xgh, 0);
             p2 += std::max(1+xgh-offset, 0);
           }
@@ -442,8 +440,8 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
             int offset = static_cast<int>(olen/cdx);
             if (olen > 0.0) offset++;
             off_coarse[0](j,i)  = offset;
-            max_off_coarse[0] = std::max(offset+1, max_off_coarse[0]);
-            min_off_coarse[0] = std::min(offset-1, min_off_coarse[0]);
+            max_off_coarse = std::max(offset+1, max_off_coarse);
+            min_off_coarse = std::min(offset-1, min_off_coarse);
             p1 += std::max(offset+xgh, 0);
             p2 += std::max(1+xgh-offset, 0);
           }
@@ -454,8 +452,8 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
             int offset = static_cast<int>(olen/cdx);
             if (olen > 0.0) offset++;
             off_coarse[1](j,i)  = offset;
-            max_off_coarse[1] = std::max(offset+1, max_off_coarse[1]);
-            min_off_coarse[1] = std::min(offset-1, min_off_coarse[1]);
+            max_off_coarse = std::max(offset+1, max_off_coarse);
+            min_off_coarse = std::min(offset-1, min_off_coarse);
             p1 += std::max(offset+xgh, 0);
             p2 += std::max(1+xgh-offset, 0);
           }
@@ -463,17 +461,15 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
       }
       ssize[0][1] = p1;
       ssize[1][1] = p2;
-      rsize[0][1] = std::max(max_off_coarse[0]+xgh+2,0);
-      rsize[1][1] = std::max(3+xgh-min_off_coarse[0],0);
-      rsize[0][2] = std::max(max_off_coarse[1]+xgh+2,0);
-      rsize[1][2] = std::max(3+xgh-min_off_coarse[1],0);
+      rsize[0][1] = std::max(max_off_coarse+xgh,0);
+      rsize[1][1] = std::max(1+xgh-min_off_coarse,0);
 
       // for communication with meshblock at finner level
       int hnx1 = pmb_->block_size.nx1/2;
       int hnx2 = pmb_->block_size.nx2/2;
       int hnx3 = pmb_->block_size.nx3/2;
       if (orbital_direction == 1) { // cartesian or cylindrical
-        if (hnx3!=0) {
+        if (hnx3!=0) { // 3D
           for (int n3=0; n3<2; n3++) {
             for (int n1=0; n1<2; n1++) {
               p1 = 0; p2 = 0;
@@ -487,10 +483,7 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
                   p2 += std::max(1+xgh-offset, 0);
                 }
               }
-              ssize[0][2+2*(n1+2*n3)] = max_off+xgh+2;
-              ssize[1][2+2*(n1+2*n3)] = 3+xgh-min_off;
 
-              max_off = -hnx2; min_off = hnx2;
               for(int k=ks+n3*hnx3; k<=ke-(1-n3)*hnx3+1; k++) {
                 for(int i=is+n1*hnx1; i<=ie-(1-n1)*hnx1  ; i++) {
                   int offset = off[1](k,i);
@@ -500,13 +493,13 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
                   p2 += std::max(1+xgh-offset, 0);
                 }
               }
-              ssize[0][3+2*(n1+2*n3)] = std::max(max_off+xgh+2,0);
-              ssize[1][3+2*(n1+2*n3)] = std::max(3+xgh-min_off,0);
-              rsize[0][3+(n1+2*n3)] = p1;
-              rsize[1][3+(n1+2*n3)] = p2;
+              ssize[0][2+(n1+2*n3)] = std::max(max_off+xgh,0);
+              ssize[1][2+(n1+2*n3)] = std::max(1+xgh-min_off,0);
+              rsize[0][2+(n1+2*n3)] = p1;
+              rsize[1][2+(n1+2*n3)] = p2;
             }
           }
-        } else {
+        } else { // 2D
           for (int n1=0; n1<2; n1++) {
             p1 = 0; p2 = 0;
             int max_off = -hnx2; int min_off = hnx2;
@@ -518,10 +511,7 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
               p1 += std::max(offset+xgh, 0);
               p2 += std::max(1+xgh-offset, 0);
             }
-            ssize[0][2+2*n1] = std::max(max_off+xgh+2,0);
-            ssize[1][2+2*n1] = std::max(3+xgh-min_off,0);
 
-            max_off = -hnx2; min_off = hnx2;
             for(int kk = ks; kk<=ks+1; kk++) {
               for(int i=is+n1*hnx1; i<=ie-(1-n1)*hnx1; i++) {
                 int offset = off[1](k,i);
@@ -531,10 +521,10 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
                 p2 += std::max(1+xgh-offset, 0);
               }
             }
-            ssize[0][3+2*n1] = std::max(max_off+xgh+2,0);
-            ssize[1][3+2*n1] = std::max(3+xgh-min_off,0);
-            rsize[0][3+n1] = p1;
-            rsize[1][3+n1] = p2;
+            ssize[0][2+n1] = std::max(max_off+xgh,0);
+            ssize[1][2+n1] = std::max(1+xgh-min_off,0);
+            rsize[0][2+n1] = p1;
+            rsize[1][2+n1] = p2;
           }
         }
       } else if(orbital_direction == 2) { // spherical_polar
@@ -551,10 +541,7 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
                 p2 += std::max(1+xgh-offset, 0);
               }
             }
-            ssize[0][3+2*(n1+2*n2)] = std::max(max_off+xgh+2,0);
-            ssize[1][3+2*(n1+2*n2)] = std::max(3+xgh-min_off,0);
 
-            max_off = -hnx3; min_off = hnx3;
             for(int j=js+n2*hnx2; j<=je-(1-n2)*hnx2+1; j++) {
               for(int i=is+n1*hnx1; i<=ie-(1-n1)*hnx1  ; i++) {
                 int offset = off[1](j,i);
@@ -564,10 +551,10 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
                 p2 += std::max(1+xgh-offset, 0);
               }
             }
-            ssize[0][3+2*(n1+2*n2)] = std::max(max_off+xgh+2,0);
-            ssize[1][3+2*(n1+2*n2)] = std::max(3+xgh-min_off,0);
-            rsize[0][3+(n1+2*n2)] = p1;
-            rsize[1][3+(n1+2*n2)] = p2;
+            ssize[0][2+(n1+2*n2)] = std::max(max_off+xgh,0);
+            ssize[1][2+(n1+2*n2)] = std::max(1+xgh-min_off,0);
+            rsize[0][2+(n1+2*n2)] = p1;
+            rsize[1][2+(n1+2*n2)] = p2;
           }
         }
       }
