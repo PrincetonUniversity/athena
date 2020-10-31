@@ -72,13 +72,24 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
   // Read a flag for shear periodic
   SHEAR_PERIODIC = pm->shear_periodic;
 
-  // shear periodic does not work with rk4 or ssprk5_4
-  if (SHEAR_PERIODIC && (integrator == "rk4" || integrator == "ssprk5_4")) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in TimeIntegratorTaskList constructor" << std::endl
-        << "integrator=" << integrator << " not work with shear periodic boundary"
-        << std::endl;
-    ATHENA_ERROR(msg);
+  if (integrator == "rk4" || integrator == "ssprk5_4") {
+    // shear periodic not work with rk4 or ssprk5_4
+    if (SHEAR_PERIODIC) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in TimeIntegratorTaskList constructor" << std::endl
+          << "integrator=" << integrator << " not work with shear periodic boundary"
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    // orbital advection + mesh refinement not work with rk4 or ssprk5_4
+    if (ORBITAL_ADVECTION && pm->multilevel) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in TimeIntegratorTaskList constructor" << std::endl
+          << "integrator=" << integrator << " not work with orbital advection and"
+          << " mesh refinement"
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
   }
 
   if (integrator == "vl2") {
@@ -395,53 +406,69 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     // error norm). Refer to Colella (2011) for linear stability analysis of constant
     // coeff. advection of classical RK4 + 4th or 1st order (limiter engaged) fluxes
     cfl_limit = 1.3925; // Colella (2011) eq 101; 1st order flux is most severe constraint
-    Real temp = 0.0;
-    stage_wghts[0].orbital_stage = false;
-    stage_wghts[0].main_stage = true;
+
     stage_wghts[0].delta = 1.0;
     stage_wghts[0].gamma_1 = 0.0;
     stage_wghts[0].gamma_2 = 1.0;
     stage_wghts[0].gamma_3 = 0.0;
     stage_wghts[0].beta  = 1.193743905974738;
-    stage_wghts[0].sbeta = 0.0;
-    stage_wghts[0].ebeta = 1.193743905974738;
 
-    stage_wghts[1].orbital_stage = false;
-    stage_wghts[1].main_stage = true;
     stage_wghts[1].delta  = 0.217683334308543;
     stage_wghts[1].gamma_1 = 0.121098479554482;
     stage_wghts[1].gamma_2 = 0.721781678111411;
     stage_wghts[1].gamma_3 = 0.0;
     stage_wghts[1].beta  = 0.099279895495783;
-    stage_wghts[1].sbeta = stage_wghts[0].sbeta;
-    temp += stage_wghts[0].ebeta*stage_wghts[1].delta;
-    stage_wghts[1].ebeta = stage_wghts[1].gamma_1*stage_wghts[0].ebeta
-                           +stage_wghts[1].gamma_2*temp
-                           +stage_wghts[1].beta;
 
-    stage_wghts[2].orbital_stage = false;
-    stage_wghts[2].main_stage = true;
     stage_wghts[2].delta = 1.065841341361089;
     stage_wghts[2].gamma_1 = -3.843833699660025;
     stage_wghts[2].gamma_2 = 2.121209265338722;
     stage_wghts[2].gamma_3 = 0.0;
     stage_wghts[2].beta = 1.131678018054042;
-    stage_wghts[2].sbeta = stage_wghts[1].ebeta;
-    temp += stage_wghts[1].ebeta*stage_wghts[2].delta;
-    stage_wghts[2].ebeta = stage_wghts[2].gamma_1*stage_wghts[1].ebeta
-                           +stage_wghts[2].gamma_2*temp
-                           +stage_wghts[2].beta;
 
-    stage_wghts[3].orbital_stage = false;
-    stage_wghts[3].main_stage = true;
     stage_wghts[3].delta = 0.0;
     stage_wghts[3].gamma_1 = 0.546370891121863;
     stage_wghts[3].gamma_2 = 0.198653035682705;
     stage_wghts[3].gamma_3 = 0.0;
     stage_wghts[3].beta = 0.310665766509336;
-    stage_wghts[3].sbeta = stage_wghts[2].ebeta;
-    temp += stage_wghts[2].ebeta*stage_wghts[2].delta;
-    stage_wghts[3].ebeta = 1.0;
+
+    stage_wghts[0].orbital_stage = false;
+    stage_wghts[1].orbital_stage = false;
+    stage_wghts[2].orbital_stage = false;
+    stage_wghts[0].main_stage = true;
+    stage_wghts[1].main_stage = true;
+    stage_wghts[2].main_stage = true;
+    stage_wghts[3].main_stage = true;
+    if (ORBITAL_ADVECTION) {
+      stage_wghts[3].orbital_stage = true;
+
+      stage_wghts[0].sbeta = 0.0;
+      stage_wghts[0].ebeta = 0.0;
+      stage_wghts[1].sbeta = 0.0;
+      stage_wghts[1].ebeta = 0.0;
+      stage_wghts[2].sbeta = 0.0;
+      stage_wghts[2].ebeta = 0.0;
+      stage_wghts[3].sbeta = 0.0;
+      stage_wghts[3].ebeta = 1.0;
+    } else {
+      stage_wghts[3].orbital_stage = false;
+
+      Real temp = 0.0;
+      stage_wghts[0].sbeta = 0.0;
+      stage_wghts[0].ebeta = 1.193743905974738;
+      stage_wghts[1].sbeta = stage_wghts[0].sbeta;
+      temp += stage_wghts[0].ebeta*stage_wghts[1].delta;
+      stage_wghts[1].ebeta = stage_wghts[1].gamma_1*stage_wghts[0].ebeta
+                             +stage_wghts[1].gamma_2*temp
+                             +stage_wghts[1].beta;
+      stage_wghts[2].sbeta = stage_wghts[1].ebeta;
+      temp += stage_wghts[1].ebeta*stage_wghts[2].delta;
+      stage_wghts[2].ebeta = stage_wghts[2].gamma_1*stage_wghts[1].ebeta
+                             +stage_wghts[2].gamma_2*temp
+                             +stage_wghts[2].beta;
+      stage_wghts[3].sbeta = stage_wghts[2].ebeta;
+      temp += stage_wghts[2].ebeta*stage_wghts[2].delta;
+      stage_wghts[3].ebeta = 1.0;
+    }
   } else if (integrator == "ssprk5_4") {
     // SSPRK (5,4): Gottlieb (2009) section 3.1; between eq 3.3 and 3.4
     // Optimal (in error bounds) explicit five-stage, fourth-order SSPRK
@@ -456,71 +483,89 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     // limiter engaged are unconditionally unstable under RK1 integration, so the SSP
     // guarantees do not hold for the Athena++ spatial discretizations.
     cfl_limit = 1.508;         //  (effective SSP coeff = 0.302) Gottlieb (2009) pg 272
-    Real temp = 0.0;
+
     // u^(1)
-    stage_wghts[0].orbital_stage = false;
-    stage_wghts[0].main_stage = true;
     stage_wghts[0].delta = 1.0; // u1 = u^n
     stage_wghts[0].gamma_1 = 0.0;
     stage_wghts[0].gamma_2 = 1.0;
     stage_wghts[0].gamma_3 = 0.0;
     stage_wghts[0].beta = 0.391752226571890;
-    stage_wghts[0].sbeta = 0.0;
-    stage_wghts[0].ebeta = 0.391752226571890;
 
     // u^(2)
-    stage_wghts[1].orbital_stage = false;
-    stage_wghts[1].main_stage = true;
     stage_wghts[1].delta = 0.0; // u1 = u^n
     stage_wghts[1].gamma_1 = 0.555629506348765;
     stage_wghts[1].gamma_2 = 0.444370493651235;
     stage_wghts[1].gamma_3 = 0.0;
     stage_wghts[1].beta = 0.368410593050371;
-    stage_wghts[1].sbeta = stage_wghts[0].ebeta;
-    temp += stage_wghts[0].ebeta*stage_wghts[1].delta;
-    stage_wghts[1].ebeta = stage_wghts[1].gamma_1*stage_wghts[0].ebeta
-                           +stage_wghts[1].gamma_2*temp
-                           +stage_wghts[1].beta;
 
     // u^(3)
-    stage_wghts[2].orbital_stage = false;
-    stage_wghts[2].main_stage = true;
     stage_wghts[2].delta = 0.517231671970585; // u1 <- (u^n + d*u^(2))
     stage_wghts[2].gamma_1 = 0.379898148511597;
     stage_wghts[2].gamma_2 = 0.0;
     stage_wghts[2].gamma_3 = 0.620101851488403; // u^(n) coeff =  u2
     stage_wghts[2].beta = 0.251891774271694;
-    stage_wghts[2].sbeta = stage_wghts[1].ebeta;
-    temp += stage_wghts[1].ebeta*stage_wghts[2].delta;
-    stage_wghts[2].ebeta = stage_wghts[2].gamma_1*stage_wghts[1].ebeta
-                           +stage_wghts[2].gamma_2*temp
-                           +stage_wghts[2].beta;
 
     // u^(4)
-    stage_wghts[3].orbital_stage = false;
-    stage_wghts[3].main_stage = true;
     stage_wghts[3].delta = 0.096059710526147; // u1 <- (u^n + d*u^(2) + d'*u^(3))
     stage_wghts[3].gamma_1 = 0.821920045606868;
     stage_wghts[3].gamma_2 = 0.0;
     stage_wghts[3].gamma_3 = 0.178079954393132; // u^(n) coeff =  u2
     stage_wghts[3].beta = 0.544974750228521;
-    stage_wghts[3].sbeta = stage_wghts[2].ebeta;
-    temp += stage_wghts[2].ebeta*stage_wghts[3].delta;
-    stage_wghts[3].ebeta = stage_wghts[3].gamma_1*stage_wghts[2].ebeta
-                           +stage_wghts[3].gamma_2*temp
-                           +stage_wghts[3].beta;
 
     // u^(n+1) partial expression
-    stage_wghts[4].orbital_stage = false;
-    stage_wghts[4].main_stage = true;
     stage_wghts[4].delta = 0.0;
     stage_wghts[4].gamma_1 = 0.386708617503268; // 1 ulp lower than Gottlieb u^(4) coeff
     stage_wghts[4].gamma_2 = 1.0; // u1 <- (u^n + d*u^(2) + d'*u^(3))
     stage_wghts[4].gamma_3 = 1.0; // partial sum from hardcoded extra stage=4
     stage_wghts[4].beta = 0.226007483236906; // F(u^(4)) coeff.
-    stage_wghts[4].sbeta = stage_wghts[3].ebeta;
-    temp += stage_wghts[3].ebeta*stage_wghts[4].delta;
-    stage_wghts[4].ebeta = 1.0;
+
+    stage_wghts[0].orbital_stage = false;
+    stage_wghts[1].orbital_stage = false;
+    stage_wghts[2].orbital_stage = false;
+    stage_wghts[3].orbital_stage = false;
+    stage_wghts[0].main_stage = true;
+    stage_wghts[1].main_stage = true;
+    stage_wghts[2].main_stage = true;
+    stage_wghts[3].main_stage = true;
+    stage_wghts[4].main_stage = true;
+    if (ORBITAL_ADVECTION) {
+      stage_wghts[4].orbital_stage = true;
+
+      stage_wghts[0].sbeta = 0.0;
+      stage_wghts[0].ebeta = 0.0;
+      stage_wghts[1].sbeta = 0.0;
+      stage_wghts[1].ebeta = 0.0;
+      stage_wghts[2].sbeta = 0.0;
+      stage_wghts[2].ebeta = 0.0;
+      stage_wghts[3].sbeta = 0.0;
+      stage_wghts[3].ebeta = 0.0;
+      stage_wghts[4].sbeta = 0.0;
+      stage_wghts[4].ebeta = 1.0;
+    } else {
+      stage_wghts[4].orbital_stage = false;
+
+      Real temp = 0.0;
+      stage_wghts[0].sbeta = 0.0;
+      stage_wghts[0].ebeta = 0.391752226571890;
+      stage_wghts[1].sbeta = stage_wghts[0].ebeta;
+      temp += stage_wghts[0].ebeta*stage_wghts[1].delta;
+      stage_wghts[1].ebeta = stage_wghts[1].gamma_1*stage_wghts[0].ebeta
+                             +stage_wghts[1].gamma_2*temp
+                             +stage_wghts[1].beta;
+      stage_wghts[2].sbeta = stage_wghts[1].ebeta;
+      temp += stage_wghts[1].ebeta*stage_wghts[2].delta;
+      stage_wghts[2].ebeta = stage_wghts[2].gamma_1*stage_wghts[1].ebeta
+                             +stage_wghts[2].gamma_2*temp
+                             +stage_wghts[2].beta;
+      stage_wghts[3].sbeta = stage_wghts[2].ebeta;
+      temp += stage_wghts[2].ebeta*stage_wghts[3].delta;
+      stage_wghts[3].ebeta = stage_wghts[3].gamma_1*stage_wghts[2].ebeta
+                             +stage_wghts[3].gamma_2*temp
+                             +stage_wghts[3].beta;
+      stage_wghts[4].sbeta = stage_wghts[3].ebeta;
+      temp += stage_wghts[3].ebeta*stage_wghts[4].delta;
+      stage_wghts[4].ebeta = 1.0;
+    }
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in TimeIntegratorTaskList constructor" << std::endl
