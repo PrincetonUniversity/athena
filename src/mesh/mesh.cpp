@@ -84,7 +84,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     multilevel((adaptive || pin->GetOrAddString("mesh", "refinement", "none") == "static")
                ? true : false),
     orbital_advection(pin->GetOrAddBoolean("problem","orbital_advection",false)),
-    orbital_splitting(pin->GetOrAddBoolean("problem","orbital_splitting",1)),
+    orbital_splitting(pin->GetOrAddInteger("problem","orbital_splitting",1)),
     shear_periodic(GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none"))
                    == BoundaryFlag::shear_periodic ? true : false),
     fluid_setup(GetFluidFormulation(pin->GetOrAddString("hydro", "active", "true"))),
@@ -554,7 +554,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     multilevel((adaptive || pin->GetOrAddString("mesh", "refinement", "none") == "static")
                ? true : false),
     orbital_advection(pin->GetOrAddBoolean("problem","orbital_advection",false)),
-    orbital_splitting(pin->GetOrAddBoolean("problem","orbital_splitting",1)),
+    orbital_splitting(pin->GetOrAddInteger("problem","orbital_splitting",1)),
     shear_periodic(GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none"))
                    == BoundaryFlag::shear_periodic ? true : false),
     fluid_setup(GetFluidFormulation(pin->GetOrAddString("hydro", "active", "true"))),

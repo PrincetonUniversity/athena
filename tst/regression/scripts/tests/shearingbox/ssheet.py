@@ -17,12 +17,7 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 # Prepare Athena++
 def prepare(**kwargs):
     logger.debug('Running test ' + __name__)
-    athena.configure(prob='ssheet', nscalars=1,
-                     eos='isothermal', **kwargs)
-    athena.make()
-    os.system('mv bin/athena bin/athena_scalar')
-    os.system('mv obj obj_scalar')
-    athena.configure(prob='ssheet',
+    athena.configure(prob='ssheet', flux='hlld',
                      eos='isothermal', **kwargs)
     athena.make()
 
@@ -68,50 +63,6 @@ def run(**kwargs):
         'problem/orbital_advection=true', 'problem/orbital_splitting=2',
         'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
-
-    os.system('rm -rf obj')
-    os.system('mv obj_scalar obj')
-    os.system('mv bin/athena_scalar bin/athena')
-    # passive scalar in shearingbox w/o Orbital Advection
-    arguments = [
-        'job/problem_id=SSHEET_SCALAR',
-        'output1/file_type=hst', 'output1/dt=10.0',
-        'output2/file_type=vtk', 'output2/variable=prim',
-        'output2/dt=-1', 'time/cfl_number=0.4',
-        'time/tlim=8000.0', 'time/nlim=2000',
-        'time/xorder=2', 'time/integrator=vl2',
-        'mesh/nx1=64', 'mesh/x1min=-2.0', 'mesh/x1max=2.0',
-        'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
-        'mesh/nx2=64', 'mesh/x2min=-2.0', 'mesh/x2max=2.0',
-        'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
-        'mesh/nx3=1', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
-        'hydro/iso_sound_speed=0.001', 'problem/ipert=1',
-        'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
-        'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
-        'problem/orbital_advection=false',
-        'time/ncycle_out=0']
-    athena.run('hydro/athinput.ssheet', arguments)
-
-    # passive scalar in shearingbox w/  Orbital Advection
-    arguments = [
-        'job/problem_id=SSHEET_SCALAR_ORB',
-        'output1/file_type=hst', 'output1/dt=10.0',
-        'output2/file_type=vtk', 'output2/variable=prim',
-        'output2/dt=-1', 'time/cfl_number=0.4',
-        'time/tlim=8000.0', 'time/nlim=2000',
-        'time/xorder=2', 'time/integrator=vl2',
-        'mesh/nx1=64', 'mesh/x1min=-2.0', 'mesh/x1max=2.0',
-        'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
-        'mesh/nx2=64', 'mesh/x2min=-2.0', 'mesh/x2max=2.0',
-        'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
-        'mesh/nx3=1', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
-        'hydro/iso_sound_speed=0.001', 'problem/ipert=1',
-        'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
-        'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
-        'problem/orbital_advection=true', 'problem/orbital_splitting=2',
-        'time/ncycle_out=0']
-    athena.run('hydro/athinput.ssheet', arguments)
-
 
 # Analyze outputs
 def analyze():
@@ -180,37 +131,6 @@ def analyze():
         flag = False
     if norm2 > 0.2:
         logger.warning('[SSHEET_SHWAVE]: the deviation is more than 20%')
-        logger.warning('                 w/  Orbital Advection')
-        flag = False
-
-    # passive in shearingbox
-    amp = 4.0e-4
-    # read results of SSHEET_SCALAR
-    fname = 'bin/SSHEET_SCALAR.hst'
-    c = athena_read.hst(fname)
-    time3 = c['time']
-    scalar3 = c['ghost_scalar']
-    nf3 = len(time3)
-    norm3 = scalar3[nf3-1]/amp
-
-    # read results of SSHEET_SCALAR_ORB
-    fname = 'bin/SSHEET_SCALAR_ORB.hst'
-    d = athena_read.hst(fname)
-    time4 = d['time']
-    scalar4 = d['ghost_scalar']
-    nf4 = len(time4)
-    norm4 = scalar4[nf4-1]/amp
-
-    logger.warning('[SSHEET_SCALAR] check L1 norm of the scalar deviation')
-    msg = '[SSHEET_SCALAR]: L1 Norm {} = {}'
-    logger.warning(msg.format('w/o Orbital Advection', norm3))
-    logger.warning(msg.format('w/  Orbital Advection', norm4))
-    if norm3 > 0.1:
-        logger.warning('[SSHEET_SCALAR]: the deviation is more than 10%')
-        logger.warning('                 w/o Orbital Advection')
-        flag = False
-    if norm4 > 0.1:
-        logger.warning('[SSHEET_SCALAR]: the deviation is more than 10%')
         logger.warning('                 w/  Orbital Advection')
         flag = False
 
