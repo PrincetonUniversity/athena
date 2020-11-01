@@ -419,6 +419,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
           stage_wghts[2].sbeta = 0.5;
           stage_wghts[2].ebeta = 1.0;
         }
+      }
     } else { // w/o orbital advection
       nstages = nstages_main;
       stage_wghts[0].main_stage = true;
@@ -742,7 +743,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       stage_wghts[0].sbeta = 0.0;
 
       Real temp_prev = temp;
-      Real temp = temp_prev + stage_wghts[0].delta*stage_wghts[0].sbeta;
+      temp = temp_prev + stage_wghts[0].delta*stage_wghts[0].sbeta;
       stage_wghts[0].ebeta = stage_wghts[0].gamma_1*temp_prev
                              + stage_wghts[0].gamma_2*temp
                              + stage_wghts[0].gamma_3*0.0
@@ -917,7 +918,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       stage_wghts[0].sbeta = 0.0;
 
       Real temp_prev = temp;
-      Real temp = temp_prev + stage_wghts[0].delta*stage_wghts[0].sbeta;
+      temp = temp_prev + stage_wghts[0].delta*stage_wghts[0].sbeta;
       stage_wghts[0].ebeta = stage_wghts[0].gamma_1*temp_prev
                              + stage_wghts[0].gamma_2*temp
                              + stage_wghts[0].gamma_3*0.0
