@@ -41,7 +41,8 @@ def run(**kwargs):
         'problem/ipert=5', 'problem/ifield=0',
         'problem/nwx=-2', 'problem/nwy=1', 'problem/nwz=1',
         'problem/Omega0=1.0', 'problem/qshear=1.5',
-        'problem/orbital_advection=false', 'time/ncycle_out=0']
+        'problem/orbital_advection=false',
+        'time/ncycle_out=0']
     athena.run('mhd/athinput.hgb_shwave', arguments)
 
     # w/  Orbital Advection
@@ -64,7 +65,8 @@ def run(**kwargs):
         'problem/ipert=5', 'problem/ifield=0',
         'problem/nwx=-2', 'problem/nwy=1', 'problem/nwz=1',
         'problem/Omega0=1.0', 'problem/qshear=1.5',
-        'problem/orbital_advection=true', 'time/ncycle_out=0']
+        'problem/orbital_advection=true', 'problem/orbital_splitting=2',
+        'time/ncycle_out=0']
     athena.run('mhd/athinput.hgb_shwave', arguments)
 
 

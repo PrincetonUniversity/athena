@@ -60,7 +60,8 @@ dfloor          = 1.e-6
 pfloor          = 5e-13
 
 <problem>
-orbital_advection = true     # orbital advection flag
+orbital_advection = false    # orbital advection flag
+orbital_splitting = 2        # order of orbital operator splitting
 beta            = 100        # Plasma beta
 amp             = 0.025      # dP/P <= amp
 ifield          = 1          # 1 for zero-net-flux Bz, 2 for constant Bz

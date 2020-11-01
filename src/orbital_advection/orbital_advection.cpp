@@ -42,6 +42,7 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
       pf_(pmb->pfield), pco_(pmb->pcoord), pbval_(pmb->pbval), ps_(pmb->pscalars) {
   // read parameters from input file
   orbital_advection_defined = pm_->orbital_advection;
+  orbital_splitting_order   = pm_->orbital_splitting;
 
   // check xorder for reconstruction
   xorder = pmb_->precon->xorder;
@@ -239,6 +240,14 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
       msg << "### FATAL ERROR in OrbitalAdvection Class."<<std::endl
           << "Orbital advection currently does not support non-uniform mesh"
           << "in the orbital direction." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    // check orbital_splitting_order
+    if ((orbital_splitting_order-1)*(orbital_splitting_order-2) != 0) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in OrbitalAdvection Class."<<std::endl
+          << "Order of the orbital splitting must be 1 or 2." << std::endl;
       ATHENA_ERROR(msg);
     }
 
@@ -509,6 +518,8 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
 //  else {
 //  }
   // restrictions from derivatives of orbital velocity
+  Real coef = 1.0;
+  if (orbital_splitting_order == 1) coef = 0.5;
   if(orbital_direction == 1) {
     for(int k=pmb_->ks; k<=pmb_->ke; k++) {
       for(int i=pmb_->is; i<=pmb_->ie; i++) {
@@ -521,7 +532,7 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
         if(dvk_ghost == 0.0) {
           continue;
         } else if(orbital_uniform_mesh) { // uniform mesh
-          Real orb_dt = 0.5*dx/dvk_ghost;
+          Real orb_dt = coef*dx/dvk_ghost;
           if (min_dt > orb_dt) min_dt = orb_dt;
           // tomo-ono: if using std::min, sometimes an error occurs
           // min_dt = std::min(min_dt, 0.5*dx/dvk_ghost);
@@ -541,7 +552,7 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
         if(dvk_ghost == 0.0) {
           continue;
         } else if(orbital_uniform_mesh) { // uniform mesh
-          Real orb_dt = 0.5*dx/dvk_ghost;
+          Real orb_dt = coef*dx/dvk_ghost;
           if (min_dt > orb_dt) min_dt = orb_dt;
           // tomo-ono: if using std::min, sometimes an error occurs
           //min_dt = std::min(min_dt, 0.5*dx/dvk_ghost);

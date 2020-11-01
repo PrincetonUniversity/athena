@@ -55,12 +55,13 @@ gamma = 1.666666666666667 # gamma = C_p/C_v
 iso_sound_speed = 0.001   # isothermal sound speed
 
 <problem>
-orbital_advection = true    # flag for orbital advection
+orbital_advection = false   # flag for orbital advection
+orbital_splitting = 2       # order of orbital operator splitting
 amp               = 4.0e-4  # wave amplitude
 nwx               = -4      # wavenumber in x1
 nwy               = 1       # wavenumber in x2
 nwz               = 0       # wavenumber in x3
-ipert             = 3       # 1: pure shear; 2: epicyclic; 3: shear wave
+ipert             = 3       # 1: pure shear; 2: epicyclic; 3: shwave
 Omega0            = 0.001   # orbital frequency
 qshear            = 1.5     # shear rate
 shboxcoord        = 1       # 1=xy (default); 2=xz

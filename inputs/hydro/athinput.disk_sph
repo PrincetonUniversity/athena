@@ -52,7 +52,8 @@ dfloor          = 1.e-9
 pfloor          = 1.e-12
 
 <problem>
-orbital_advection = true  # flag for orbital advection
+orbital_advection = false # flag for orbital advection
+orbital_splitting = 2     # order of orbital operator splitting
 Omega0            = 0.0   # angular velocity of the system
 GM                = 1.0
 r0                = 1.0

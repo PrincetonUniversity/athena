@@ -45,7 +45,8 @@ def run(**kwargs):
         'hydro/iso_sound_speed=0.001', 'problem/ipert=3',
         'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
         'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
-        'problem/orbital_advection=false', 'time/ncycle_out=0']
+        'problem/orbital_advection=false',
+        'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 
     # HD shwave w/  Orbital Advection
@@ -64,7 +65,8 @@ def run(**kwargs):
         'hydro/iso_sound_speed=0.001', 'problem/ipert=3',
         'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
         'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
-        'problem/orbital_advection=true', 'time/ncycle_out=0']
+        'problem/orbital_advection=true', 'problem/orbital_splitting=2',
+        'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 
     os.system('rm -rf obj')
@@ -86,7 +88,8 @@ def run(**kwargs):
         'hydro/iso_sound_speed=0.001', 'problem/ipert=1',
         'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
         'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
-        'problem/orbital_advection=false', 'time/ncycle_out=0']
+        'problem/orbital_advection=false',
+        'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 
     # passive scalar in shearingbox w/  Orbital Advection
@@ -105,7 +108,8 @@ def run(**kwargs):
         'hydro/iso_sound_speed=0.001', 'problem/ipert=1',
         'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
         'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
-        'problem/orbital_advection=true', 'time/ncycle_out=0']
+        'problem/orbital_advection=true', 'problem/orbital_splitting=2',
+        'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 
 
