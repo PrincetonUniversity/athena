@@ -31,7 +31,7 @@ x1max      = 0.25       # maximum value of X1
 ix1_bc     = shear_periodic      # inner-X1 boundary flag
 ox1_bc     = shear_periodic      # outer-X1 boundary flag
 
-nx2        = 32        # Number of zones in X2-direction
+nx2        = 16        # Number of zones in X2-direction
 x2min      = -0.25     # minimum value of X2
 x2max      = 0.25      # maximum value of X2
 ix2_bc     = periodic  # inner-X2 boundary flag
@@ -47,7 +47,7 @@ num_threads = 1        # maximum number of OMP threads
 
 <meshblock>
 nx1 = 32 #
-nx2 = 32 #
+nx2 = 16 #
 nx3 = 16 #
 
 <hydro>
