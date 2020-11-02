@@ -555,7 +555,7 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
           Real orb_dt = coef*dx/dvk_ghost;
           if (min_dt > orb_dt) min_dt = orb_dt;
           // tomo-ono: if using std::min, sometimes an error occurs
-          //min_dt = std::min(min_dt, 0.5*dx/dvk_ghost);
+          //min_dt = std::min(min_dt, coef*dx/dvk_ghost);
         }
 //        else { // non-uniform mesh
 //        }
