@@ -5,7 +5,6 @@ import logging
 import cmath
 import math
 import mpmath as mp
-import os
 import scripts.utils.athena as athena
 import sys
 sys.path.insert(0, '../../vis/python')
@@ -17,7 +16,7 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 # Prepare Athena++
 def prepare(**kwargs):
     logger.debug('Running test ' + __name__)
-    athena.configure(prob='ssheet', flux='hlld',
+    athena.configure(prob='ssheet', flux='hlle',
                      eos='isothermal', **kwargs)
     athena.make()
 
@@ -64,9 +63,9 @@ def run(**kwargs):
         'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 
+
 # Analyze outputs
 def analyze():
-    # HD SHWAVE
     # set parameters
     ky = 0.5*math.pi
     kx0 = -2.0*math.pi
