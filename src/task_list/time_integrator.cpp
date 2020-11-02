@@ -105,103 +105,99 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         // w/ shear_periodic or refinements
         if (pm->orbital_splitting==1) { // first order splitting
           nstages = nstages_main+1;
-          stage_wghts[0].main_stage = true;
-          stage_wghts[1].main_stage = true;
-          stage_wghts[2].main_stage = false;
-
-          stage_wghts[0].orbital_stage = false;
-          stage_wghts[1].orbital_stage = false;
-          stage_wghts[2].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
           stage_wghts[0].beta = 0.5;
           stage_wghts[1].beta = 1.0;
           stage_wghts[2].beta = 0.0;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.0;
-          stage_wghts[1].sbeta = 0.0;
-          stage_wghts[1].ebeta = 0.0;
-          stage_wghts[2].sbeta = 0.0;
-          stage_wghts[2].ebeta = 1.0;
         } else { // second order splitting
           nstages = nstages_main+2;
-          stage_wghts[0].main_stage = false;
-          stage_wghts[1].main_stage = true;
-          stage_wghts[2].main_stage = true;
-          stage_wghts[3].main_stage = false;
-
-          stage_wghts[0].orbital_stage = true;
-          stage_wghts[1].orbital_stage = false;
-          stage_wghts[2].orbital_stage = false;
-          stage_wghts[3].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
           stage_wghts[0].beta = 0.0;
           stage_wghts[1].beta = 0.5;
           stage_wghts[2].beta = 1.0;
           stage_wghts[3].beta = 0.0;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.5;
-          stage_wghts[1].sbeta = 0.5;
-          stage_wghts[1].ebeta = 0.5;
-          stage_wghts[2].sbeta = 0.5;
-          stage_wghts[2].ebeta = 0.5;
-          stage_wghts[3].sbeta = 0.5;
-          stage_wghts[3].ebeta = 1.0;
         }
       } else { // w/o shear periodic and refinements
         if (pm->orbital_splitting==1) { // first order splitting
           nstages = nstages_main;
-          stage_wghts[0].main_stage = true;
-          stage_wghts[1].main_stage = true;
-
-          stage_wghts[0].orbital_stage = false;
-          stage_wghts[1].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            stage_wghts[l].main_stage = true;
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
           stage_wghts[0].beta = 0.5;
           stage_wghts[1].beta = 1.0;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.0;
-          stage_wghts[1].sbeta = 0.0;
-          stage_wghts[1].ebeta = 1.0;
         } else { // second order splitting
           nstages = nstages_main+1;
-          stage_wghts[0].main_stage = false;
-          stage_wghts[1].main_stage = true;
-          stage_wghts[2].main_stage = true;
-
-          stage_wghts[0].orbital_stage = false;
-          stage_wghts[1].orbital_stage = false;
-          stage_wghts[2].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
           stage_wghts[0].beta = 0.0;
           stage_wghts[1].beta = 0.5;
           stage_wghts[2].beta = 1.0;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.5;
-          stage_wghts[1].sbeta = 0.5;
-          stage_wghts[1].ebeta = 0.5;
-          stage_wghts[2].sbeta = 0.5;
-          stage_wghts[2].ebeta = 1.0;
         }
       }
     } else { // w/o orbital advection
       nstages = nstages_main;
-      stage_wghts[0].main_stage = true;
-      stage_wghts[1].main_stage = true;
-
-      stage_wghts[0].orbital_stage = false;
-      stage_wghts[1].orbital_stage = false;
-
-      stage_wghts[0].beta = 0.5;
-      stage_wghts[1].beta = 1.0;
-
+      for (int l=0; l<nstages; l++) {
+        stage_wghts[l].main_stage = true;
+        stage_wghts[l].orbital_stage = false;
+      }
       stage_wghts[0].sbeta = 0.0;
       stage_wghts[0].ebeta = 0.5;
       stage_wghts[1].sbeta = 0.5;
       stage_wghts[1].ebeta = 1.0;
+      stage_wghts[0].beta = 0.5;
+      stage_wghts[1].beta = 1.0;
     }
     cfl_limit = 1.0;
     // Modify VL2 stability limit in 2D, 3D
@@ -238,78 +234,73 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         // w/ shear_periodic or refinements
         if (pm->orbital_splitting==1) { // first order splitting
           nstages = nstages_main+1;
-          stage_wghts[0].main_stage = true;
-          stage_wghts[1].main_stage = false;
-
-          stage_wghts[0].orbital_stage = false;
-          stage_wghts[1].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
           stage_wghts[0].beta = 1.0;
           stage_wghts[1].beta = 0.0;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.0;
-          stage_wghts[1].sbeta = 0.0;
-          stage_wghts[1].ebeta = 1.0;
         } else { // second order splitting
           nstages = nstages_main+2;
-          stage_wghts[0].main_stage = false;
-          stage_wghts[1].main_stage = true;
-          stage_wghts[2].main_stage = false;
-
-          stage_wghts[0].orbital_stage = true;
-          stage_wghts[1].orbital_stage = false;
-          stage_wghts[2].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
           stage_wghts[0].beta = 0.0;
           stage_wghts[1].beta = 1.0;
           stage_wghts[2].beta = 0.0;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.5;
-          stage_wghts[1].sbeta = 0.5;
-          stage_wghts[1].ebeta = 0.5;
-          stage_wghts[2].sbeta = 0.5;
-          stage_wghts[2].ebeta = 1.0;
         }
       } else { // w/o shear periodic and refinements
         if (pm->orbital_splitting==1) { // first order splitting
           nstages = nstages_main;
           stage_wghts[0].main_stage = true;
-
           stage_wghts[0].orbital_stage = true;
-
-          stage_wghts[0].beta = 1.0;
-
           stage_wghts[0].sbeta = 0.0;
           stage_wghts[0].ebeta = 1.0;
+          stage_wghts[0].beta = 1.0;
         } else { // second order splitting
           nstages = nstages_main+1;
           stage_wghts[0].main_stage = false;
           stage_wghts[1].main_stage = true;
-
           stage_wghts[0].orbital_stage = true;
           stage_wghts[1].orbital_stage = true;
-
-          stage_wghts[0].beta = 0.0;
-          stage_wghts[1].beta = 1.0;
-
           stage_wghts[0].sbeta = 0.0;
           stage_wghts[0].ebeta = 0.5;
           stage_wghts[1].sbeta = 0.5;
           stage_wghts[1].ebeta = 1.0;
+          stage_wghts[0].beta = 0.0;
+          stage_wghts[1].beta = 1.0;
         }
       }
     } else { // w/o orbital advection
       nstages = nstages_main;
       stage_wghts[0].main_stage = true;
-
       stage_wghts[0].orbital_stage = false;
-
-      stage_wghts[0].beta = 1.0;
-
       stage_wghts[0].sbeta = 0.0;
       stage_wghts[0].ebeta = 1.0;
+      stage_wghts[0].beta = 1.0;
     }
     cfl_limit = 1.0;
 
@@ -338,103 +329,99 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         // w/ shear_periodic or refinements
         if (pm->orbital_splitting==1) { // first order splitting
           nstages = nstages_main+1;
-          stage_wghts[0].main_stage = true;
-          stage_wghts[1].main_stage = true;
-          stage_wghts[2].main_stage = false;
-
-          stage_wghts[0].orbital_stage = false;
-          stage_wghts[1].orbital_stage = false;
-          stage_wghts[2].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
           stage_wghts[0].beta = 1.0;
           stage_wghts[1].beta = 0.5;
           stage_wghts[2].beta = 0.0;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.0;
-          stage_wghts[1].sbeta = 0.0;
-          stage_wghts[1].ebeta = 0.0;
-          stage_wghts[2].sbeta = 0.0;
-          stage_wghts[2].ebeta = 1.0;
         } else { // second order splitting
           nstages = nstages_main+2;
-          stage_wghts[0].main_stage = false;
-          stage_wghts[1].main_stage = true;
-          stage_wghts[2].main_stage = true;
-          stage_wghts[3].main_stage = false;
-
-          stage_wghts[0].orbital_stage = true;
-          stage_wghts[1].orbital_stage = false;
-          stage_wghts[2].orbital_stage = false;
-          stage_wghts[3].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
           stage_wghts[0].beta = 0.0;
           stage_wghts[1].beta = 1.0;
           stage_wghts[2].beta = 0.5;
           stage_wghts[3].beta = 0.0;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.5;
-          stage_wghts[1].sbeta = 0.5;
-          stage_wghts[1].ebeta = 0.5;
-          stage_wghts[2].sbeta = 0.5;
-          stage_wghts[2].ebeta = 0.5;
-          stage_wghts[3].sbeta = 0.5;
-          stage_wghts[3].ebeta = 1.0;
         }
       } else { // w/o shear periodic and refinements
         if (pm->orbital_splitting==1) { // first order splitting
           nstages = nstages_main;
-          stage_wghts[0].main_stage = true;
-          stage_wghts[1].main_stage = true;
-
-          stage_wghts[0].orbital_stage = false;
-          stage_wghts[1].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            stage_wghts[l].main_stage = true;
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
           stage_wghts[0].beta = 1.0;
           stage_wghts[1].beta = 0.5;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.0;
-          stage_wghts[1].sbeta = 0.0;
-          stage_wghts[1].ebeta = 1.0;
         } else { // second order splitting
           nstages = nstages_main+1;
-          stage_wghts[0].main_stage = false;
-          stage_wghts[1].main_stage = true;
-          stage_wghts[2].main_stage = true;
-
-          stage_wghts[0].orbital_stage = true;
-          stage_wghts[1].orbital_stage = false;
-          stage_wghts[2].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
           stage_wghts[0].beta = 0.0;
           stage_wghts[1].beta = 1.0;
           stage_wghts[2].beta = 0.5;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.5;
-          stage_wghts[1].sbeta = 0.5;
-          stage_wghts[1].ebeta = 0.5;
-          stage_wghts[2].sbeta = 0.5;
-          stage_wghts[2].ebeta = 1.0;
         }
       }
     } else { // w/o orbital advection
       nstages = nstages_main;
-      stage_wghts[0].main_stage = true;
-      stage_wghts[1].main_stage = true;
-
-      stage_wghts[0].orbital_stage = false;
-      stage_wghts[1].orbital_stage = false;
-
-      stage_wghts[0].beta = 1.0;
-      stage_wghts[1].beta = 0.5;
-
+      for (int l=0; l<nstages; l++) {
+        stage_wghts[l].main_stage = true;
+        stage_wghts[l].orbital_stage = false;
+      }
       stage_wghts[0].sbeta = 0.0;
       stage_wghts[0].ebeta = 1.0;
       stage_wghts[1].sbeta = 1.0;
       stage_wghts[1].ebeta = 1.0;
+      stage_wghts[0].beta = 1.0;
+      stage_wghts[1].beta = 0.5;
     }
     cfl_limit = 1.0;  // c_eff = c/nstages = 1/2 (Gottlieb (2009), pg 271)
 
@@ -469,128 +456,106 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         // w/ shear_periodic or refinements
         if (pm->orbital_splitting==1) { // first order splitting
           nstages = nstages_main+1;
-          stage_wghts[0].main_stage = true;
-          stage_wghts[1].main_stage = true;
-          stage_wghts[2].main_stage = true;
-          stage_wghts[3].main_stage = false;
-
-          stage_wghts[0].orbital_stage = false;
-          stage_wghts[1].orbital_stage = false;
-          stage_wghts[2].orbital_stage = false;
-          stage_wghts[3].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
           stage_wghts[0].beta = 1.0;
           stage_wghts[1].beta = 0.25;
           stage_wghts[2].beta = TWO_3RD;
           stage_wghts[3].beta = 0.0;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.0;
-          stage_wghts[1].sbeta = 0.0;
-          stage_wghts[1].ebeta = 0.0;
-          stage_wghts[2].sbeta = 0.0;
-          stage_wghts[2].ebeta = 0.0;
-          stage_wghts[3].sbeta = 0.0;
-          stage_wghts[3].ebeta = 1.0;
         } else { // second order splitting
           nstages = nstages_main+2;
-          stage_wghts[0].main_stage = false;
-          stage_wghts[1].main_stage = true;
-          stage_wghts[2].main_stage = true;
-          stage_wghts[3].main_stage = true;
-          stage_wghts[4].main_stage = false;
-
-          stage_wghts[0].orbital_stage = true;
-          stage_wghts[1].orbital_stage = false;
-          stage_wghts[2].orbital_stage = false;
-          stage_wghts[3].orbital_stage = false;
-          stage_wghts[4].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
           stage_wghts[0].beta = 0.0;
           stage_wghts[1].beta = 1.0;
           stage_wghts[2].beta = 0.25;
           stage_wghts[3].beta = TWO_3RD;
           stage_wghts[4].beta = 0.0;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.5;
-          stage_wghts[1].sbeta = 0.5;
-          stage_wghts[1].ebeta = 0.5;
-          stage_wghts[2].sbeta = 0.5;
-          stage_wghts[2].ebeta = 0.5;
-          stage_wghts[3].sbeta = 0.5;
-          stage_wghts[3].ebeta = 0.5;
-          stage_wghts[4].sbeta = 0.5;
-          stage_wghts[4].ebeta = 1.0;
         }
       } else { // w/o shear periodic and refinements
         if (pm->orbital_splitting==1) { // first order splitting
           nstages = nstages_main;
-          stage_wghts[0].main_stage = true;
-          stage_wghts[1].main_stage = true;
-          stage_wghts[2].main_stage = true;
-
-          stage_wghts[0].orbital_stage = false;
-          stage_wghts[1].orbital_stage = false;
-          stage_wghts[2].orbital_stage = true;
-
+          for (int l=0; l<nstages; l++) {
+            stage_wghts[l].main_stage = true;
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
           stage_wghts[0].beta = 1.0;
           stage_wghts[1].beta = 0.25;
           stage_wghts[2].beta = TWO_3RD;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.0;
-          stage_wghts[1].sbeta = 0.0;
-          stage_wghts[1].ebeta = 0.0;
-          stage_wghts[2].sbeta = 0.0;
-          stage_wghts[2].ebeta = 1.0;
         } else { // second order splitting
-          nstages = nstages_main;
-          stage_wghts[0].main_stage = false;
-          stage_wghts[1].main_stage = true;
-          stage_wghts[2].main_stage = true;
-          stage_wghts[3].main_stage = true;
-
-          stage_wghts[0].orbital_stage = true;
-          stage_wghts[1].orbital_stage = false;
-          stage_wghts[2].orbital_stage = false;
-          stage_wghts[3].orbital_stage = true;
-
+          nstages = nstages_main+1;
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
           stage_wghts[0].beta = 0.0;
           stage_wghts[1].beta = 1.0;
           stage_wghts[2].beta = 0.25;
           stage_wghts[3].beta = TWO_3RD;
-
-          stage_wghts[0].sbeta = 0.0;
-          stage_wghts[0].ebeta = 0.5;
-          stage_wghts[1].sbeta = 0.5;
-          stage_wghts[1].ebeta = 0.5;
-          stage_wghts[2].sbeta = 0.5;
-          stage_wghts[2].ebeta = 0.5;
-          stage_wghts[3].sbeta = 0.5;
-          stage_wghts[3].ebeta = 1.0;
         }
       }
     } else { // w/o orbital advection
       nstages = nstages_main;
-      stage_wghts[0].main_stage = true;
-      stage_wghts[1].main_stage = true;
-      stage_wghts[2].main_stage = true;
-
-      stage_wghts[0].orbital_stage = false;
-      stage_wghts[1].orbital_stage = false;
-      stage_wghts[2].orbital_stage = false;
-
-      stage_wghts[0].beta = 1.0;
-      stage_wghts[1].beta = 0.25;
-      stage_wghts[2].beta = TWO_3RD;
-
+      for (int l=0; l<nstages; l++) {
+        stage_wghts[l].main_stage = true;
+        stage_wghts[l].orbital_stage = false;
+      }
       stage_wghts[0].sbeta = 0.0;
       stage_wghts[0].ebeta = 1.0;
       stage_wghts[1].sbeta = 1.0;
       stage_wghts[1].ebeta = 0.5;
       stage_wghts[2].sbeta = 0.5;
       stage_wghts[2].ebeta = 1.0;
+      stage_wghts[0].beta = 1.0;
+      stage_wghts[1].beta = 0.25;
+      stage_wghts[2].beta = TWO_3RD;
     }
     cfl_limit = 1.0;  // c_eff = c/nstages = 1/3 (Gottlieb (2009), pg 271)
 
@@ -631,34 +596,32 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     if (ORBITAL_ADVECTION) {
       if (pm->orbital_splitting==1) { // first order splitting
         nstages = nstages_main;
-        stage_wghts[0].main_stage = true;
-        stage_wghts[1].main_stage = true;
-        stage_wghts[2].main_stage = true;
-        stage_wghts[3].main_stage = true;
-
-        stage_wghts[0].orbital_stage = false;
-        stage_wghts[1].orbital_stage = false;
-        stage_wghts[2].orbital_stage = false;
-        stage_wghts[3].orbital_stage = true;
-
+        for (int l=0; l<nstages; l++) {
+          stage_wghts[l].main_stage = true;
+          if (l == nstages-1) { // last stage
+            stage_wghts[l].orbital_stage = true;
+          } else {
+            stage_wghts[l].orbital_stage = false;
+          }
+        }
         stage_wghts[0].beta = 1.193743905974738;
         stage_wghts[1].beta = 0.099279895495783;
         stage_wghts[2].beta = 1.131678018054042;
         stage_wghts[3].beta = 0.310665766509336;
       } else { // second order splitting
         nstages = nstages_main+1;
-        stage_wghts[0].main_stage = false;
-        stage_wghts[1].main_stage = true;
-        stage_wghts[2].main_stage = true;
-        stage_wghts[3].main_stage = true;
-        stage_wghts[4].main_stage = true;
-
-        stage_wghts[0].orbital_stage = true;
-        stage_wghts[1].orbital_stage = false;
-        stage_wghts[2].orbital_stage = false;
-        stage_wghts[3].orbital_stage = false;
-        stage_wghts[4].orbital_stage = true;
-
+        for (int l=0; l<nstages; l++) {
+          if (l == 0) { // first stage
+            stage_wghts[l].main_stage = false;
+            stage_wghts[l].orbital_stage = true;
+          } else if (l == nstages-1) { // last stage
+            stage_wghts[l].main_stage = true;
+            stage_wghts[l].orbital_stage = true;
+          } else {
+            stage_wghts[l].main_stage = true;
+            stage_wghts[l].orbital_stage = false;
+          }
+        }
         stage_wghts[0].beta = 0.0;
         stage_wghts[1].beta = 1.193743905974738;
         stage_wghts[2].beta = 0.099279895495783;
@@ -667,16 +630,10 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       }
     } else { // w/o orbital advection
       nstages = nstages_main;
-      stage_wghts[0].main_stage = true;
-      stage_wghts[1].main_stage = true;
-      stage_wghts[2].main_stage = true;
-      stage_wghts[3].main_stage = true;
-
-      stage_wghts[0].orbital_stage = false;
-      stage_wghts[1].orbital_stage = false;
-      stage_wghts[2].orbital_stage = false;
-      stage_wghts[3].orbital_stage = false;
-
+      for (int l=0; l<nstages; l++) {
+        stage_wghts[l].main_stage = true;
+        stage_wghts[l].orbital_stage = false;
+      }
       stage_wghts[0].beta = 1.193743905974738;
       stage_wghts[1].beta = 0.099279895495783;
       stage_wghts[2].beta = 1.131678018054042;
@@ -718,54 +675,42 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     // set sbeta & ebeta
     if (ORBITAL_ADVECTION) {
       if (pm->orbital_splitting==1) { // first order splitting
-        stage_wghts[0].sbeta = 0.0;
-        stage_wghts[0].ebeta = 0.0;
-        stage_wghts[1].sbeta = 0.0;
-        stage_wghts[1].ebeta = 0.0;
-        stage_wghts[2].sbeta = 0.0;
-        stage_wghts[2].ebeta = 0.0;
-        stage_wghts[3].sbeta = 0.0;
-        stage_wghts[3].ebeta = 1.0;
+        for (int l=0; l<nstages; l++) {
+          if (l == nstages-1) { // last stage
+            stage_wghts[l].ebeta = 1.0;
+          } else {
+            stage_wghts[l].ebeta = 0.0;
+          }
+          stage_wghts[l].sbeta = 0.0;
+        }
       } else { // second order splitting
-        stage_wghts[0].sbeta = 0.0;
-        stage_wghts[0].ebeta = 0.5;
-        stage_wghts[1].sbeta = 0.5;
-        stage_wghts[1].ebeta = 0.5;
-        stage_wghts[2].sbeta = 0.5;
-        stage_wghts[2].ebeta = 0.5;
-        stage_wghts[3].sbeta = 0.5;
-        stage_wghts[3].ebeta = 0.5;
-        stage_wghts[4].sbeta = 0.5;
-        stage_wghts[4].ebeta = 1.0;
+        for (int l=0; l<nstages; l++) {
+          if (l == 0) { // first stage
+            stage_wghts[l].sbeta = 0.0;
+          } else if (l == nstages-1) { // last stage
+            stage_wghts[l].sbeta = 0.5;
+            stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            stage_wghts[l].ebeta = 1.0;
+          } else {
+            stage_wghts[l].sbeta = 0.5;
+            stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+          }
+        }
       }
     } else { // w/o orbital advection ///
       Real temp = 0.0;
+      Real temp_prev = 0.0;
       stage_wghts[0].sbeta = 0.0;
-
-      Real temp_prev = temp;
-      temp = temp_prev + stage_wghts[0].delta*stage_wghts[0].sbeta;
-      stage_wghts[0].ebeta = stage_wghts[0].gamma_1*temp_prev
-                             + stage_wghts[0].gamma_2*temp
-                             + stage_wghts[0].gamma_3*0.0
-                             + stage_wghts[0].beta;
-      stage_wghts[1].sbeta = stage_wghts[0].ebeta;
-
-      temp_prev = temp;
-      temp = temp_prev + stage_wghts[1].delta*stage_wghts[1].sbeta;
-      stage_wghts[1].ebeta = stage_wghts[1].gamma_1*temp_prev
-                             + stage_wghts[1].gamma_2*temp
-                             + stage_wghts[1].gamma_3*0.0
-                             + stage_wghts[1].beta;
-      stage_wghts[2].sbeta = stage_wghts[1].ebeta;
-
-      temp_prev = temp;
-      temp = temp_prev + stage_wghts[2].delta*stage_wghts[2].sbeta;
-      stage_wghts[2].ebeta = stage_wghts[2].gamma_1*temp_prev
-                             + stage_wghts[2].gamma_2*temp
-                             + stage_wghts[2].gamma_3*0.0
-                             + stage_wghts[2].beta;
-      stage_wghts[3].sbeta = stage_wghts[2].ebeta;
-      stage_wghts[3].ebeta = 1.0;
+      for (int l=0; l<nstages-1; l++) {
+        temp_prev = temp;
+        temp = temp_prev + stage_wghts[l].delta*stage_wghts[l].sbeta;
+        stage_wghts[l].ebeta = stage_wghts[l].gamma_1*temp_prev
+                               + stage_wghts[l].gamma_2*temp
+                               + stage_wghts[l].gamma_3*0.0
+                               + stage_wghts[l].beta;
+        stage_wghts[l+1].sbeta = stage_wghts[l].ebeta;
+      }
+      stage_wghts[nstages-1].ebeta = 1.0;
     }
   } else if (integrator == "ssprk5_4") {
     // SSPRK (5,4): Gottlieb (2009) section 3.1; between eq 3.3 and 3.4
@@ -784,18 +729,14 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     if (ORBITAL_ADVECTION) {
       if (pm->orbital_splitting==1) { // first order splitting
         nstages = nstages_main;
-        stage_wghts[0].main_stage = true;
-        stage_wghts[1].main_stage = true;
-        stage_wghts[2].main_stage = true;
-        stage_wghts[3].main_stage = true;
-        stage_wghts[4].main_stage = true;
-
-        stage_wghts[0].orbital_stage = false;
-        stage_wghts[1].orbital_stage = false;
-        stage_wghts[2].orbital_stage = false;
-        stage_wghts[3].orbital_stage = false;
-        stage_wghts[4].orbital_stage = true;
-
+        for (int l=0; l<nstages; l++) {
+          stage_wghts[l].main_stage = true;
+          if (l == nstages-1) { // last stage
+            stage_wghts[l].orbital_stage = true;
+          } else {
+            stage_wghts[l].orbital_stage = false;
+          }
+        }
         stage_wghts[0].beta = 0.391752226571890;
         stage_wghts[1].beta = 0.368410593050371;
         stage_wghts[2].beta = 0.251891774271694;
@@ -803,20 +744,18 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         stage_wghts[4].beta = 0.226007483236906; // F(u^(4)) coeff.
       } else { // second order splitting
         nstages = nstages_main+1;
-        stage_wghts[0].main_stage = false;
-        stage_wghts[1].main_stage = true;
-        stage_wghts[2].main_stage = true;
-        stage_wghts[3].main_stage = true;
-        stage_wghts[4].main_stage = true;
-        stage_wghts[5].main_stage = true;
-
-        stage_wghts[0].orbital_stage = false;
-        stage_wghts[1].orbital_stage = false;
-        stage_wghts[2].orbital_stage = false;
-        stage_wghts[3].orbital_stage = false;
-        stage_wghts[4].orbital_stage = false;
-        stage_wghts[5].orbital_stage = true;
-
+        for (int l=0; l<nstages; l++) {
+          if (l == 0) { // first stage
+            stage_wghts[l].main_stage = false;
+            stage_wghts[l].orbital_stage = true;
+          } else if (l == nstages-1) { // last stage
+            stage_wghts[l].main_stage = true;
+            stage_wghts[l].orbital_stage = true;
+          } else {
+            stage_wghts[l].main_stage = true;
+            stage_wghts[l].orbital_stage = false;
+          }
+        }
         stage_wghts[0].beta = 0.0;
         stage_wghts[1].beta = 0.391752226571890;
         stage_wghts[2].beta = 0.368410593050371;
@@ -826,18 +765,10 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       }
     } else { // w/o orbital advection
       nstages = nstages_main;
-      stage_wghts[0].main_stage = true;
-      stage_wghts[1].main_stage = true;
-      stage_wghts[2].main_stage = true;
-      stage_wghts[3].main_stage = true;
-      stage_wghts[4].main_stage = true;
-
-      stage_wghts[0].orbital_stage = false;
-      stage_wghts[1].orbital_stage = false;
-      stage_wghts[2].orbital_stage = false;
-      stage_wghts[3].orbital_stage = false;
-      stage_wghts[4].orbital_stage = false;
-
+      for (int l=0; l<nstages; l++) {
+        stage_wghts[l].main_stage = true;
+        stage_wghts[l].orbital_stage = false;
+      }
       stage_wghts[0].beta = 0.391752226571890;
       stage_wghts[1].beta = 0.368410593050371;
       stage_wghts[2].beta = 0.251891774271694;
@@ -889,66 +820,42 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     // set sbeta & ebeta
     if (ORBITAL_ADVECTION) {
       if (pm->orbital_splitting==1) { // first order splitting
-        stage_wghts[0].sbeta = 0.0;
-        stage_wghts[0].ebeta = 0.0;
-        stage_wghts[1].sbeta = 0.0;
-        stage_wghts[1].ebeta = 0.0;
-        stage_wghts[2].sbeta = 0.0;
-        stage_wghts[2].ebeta = 0.0;
-        stage_wghts[3].sbeta = 0.0;
-        stage_wghts[3].ebeta = 0.0;
-        stage_wghts[4].sbeta = 0.0;
-        stage_wghts[4].ebeta = 1.0;
+        for (int l=0; l<nstages; l++) {
+          if (l == nstages-1) { // last stage
+            stage_wghts[l].ebeta = 1.0;
+          } else {
+            stage_wghts[l].ebeta = 0.0;
+          }
+          stage_wghts[l].sbeta = 0.0;
+        }
       } else { // second order splitting
-        stage_wghts[0].sbeta = 0.0;
-        stage_wghts[0].ebeta = 0.5;
-        stage_wghts[1].sbeta = 0.5;
-        stage_wghts[1].ebeta = 0.5;
-        stage_wghts[2].sbeta = 0.5;
-        stage_wghts[2].ebeta = 0.5;
-        stage_wghts[3].sbeta = 0.5;
-        stage_wghts[3].ebeta = 0.5;
-        stage_wghts[4].sbeta = 0.5;
-        stage_wghts[4].ebeta = 0.5;
-        stage_wghts[5].sbeta = 0.5;
-        stage_wghts[5].ebeta = 1.0;
+        for (int l=0; l<nstages; l++) {
+          if (l == 0) { // first stage
+            stage_wghts[l].sbeta = 0.0;
+          } else if (l == nstages-1) { // last stage
+            stage_wghts[l].sbeta = 0.5;
+            stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            stage_wghts[l].ebeta = 1.0;
+          } else {
+            stage_wghts[l].sbeta = 0.5;
+            stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+          }
+        }
       }
     } else { // w/o orbital advection ///
       Real temp = 0.0;
+      Real temp_prev = 0.0;
       stage_wghts[0].sbeta = 0.0;
-
-      Real temp_prev = temp;
-      temp = temp_prev + stage_wghts[0].delta*stage_wghts[0].sbeta;
-      stage_wghts[0].ebeta = stage_wghts[0].gamma_1*temp_prev
-                             + stage_wghts[0].gamma_2*temp
-                             + stage_wghts[0].gamma_3*0.0
-                             + stage_wghts[0].beta;
-      stage_wghts[1].sbeta = stage_wghts[0].ebeta;
-
-      temp_prev = temp;
-      temp = temp_prev + stage_wghts[1].delta*stage_wghts[1].sbeta;
-      stage_wghts[1].ebeta = stage_wghts[1].gamma_1*temp_prev
-                             + stage_wghts[1].gamma_2*temp
-                             + stage_wghts[1].gamma_3*0.0
-                             + stage_wghts[1].beta;
-      stage_wghts[2].sbeta = stage_wghts[1].ebeta;
-
-      temp_prev = temp;
-      temp = temp_prev + stage_wghts[2].delta*stage_wghts[2].sbeta;
-      stage_wghts[2].ebeta = stage_wghts[2].gamma_1*temp_prev
-                             + stage_wghts[2].gamma_2*temp
-                             + stage_wghts[2].gamma_3*0.0
-                             + stage_wghts[2].beta;
-      stage_wghts[3].sbeta = stage_wghts[2].ebeta;
-
-      temp_prev = temp;
-      temp = temp_prev + stage_wghts[3].delta*stage_wghts[3].sbeta;
-      stage_wghts[3].ebeta = stage_wghts[3].gamma_1*temp_prev
-                             + stage_wghts[3].gamma_2*temp
-                             + stage_wghts[3].gamma_3*0.0
-                             + stage_wghts[3].beta;
-      stage_wghts[4].sbeta = stage_wghts[3].ebeta;
-      stage_wghts[4].ebeta = 1.0;
+      for (int l=0; l<nstages-1; l++) {
+        temp_prev = temp;
+        temp = temp_prev + stage_wghts[l].delta*stage_wghts[l].sbeta;
+        stage_wghts[l].ebeta = stage_wghts[l].gamma_1*temp_prev
+                               + stage_wghts[l].gamma_2*temp
+                               + stage_wghts[l].gamma_3*0.0
+                               + stage_wghts[l].beta;
+        stage_wghts[l+1].sbeta = stage_wghts[l].ebeta;
+      }
+      stage_wghts[nstages-1].ebeta = 1.0;
     }
   } else {
     std::stringstream msg;
