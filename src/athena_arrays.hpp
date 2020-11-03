@@ -156,7 +156,6 @@ class AthenaArray {
   void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
                             const int nvar);
 
-  // TODO(tomo-ono): Reconsider the orbital advection to replace ShallowSlice3DToPencil
   void ShallowSlice3DToPencil(AthenaArray<T> &src, const int k, const int j,
                               const int il, const int n);
 

@@ -112,7 +112,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
     }
   }
 
-  if (pbval_->shearing_box) {
+  if (pbval_->shearing_box != 0) {
 #ifdef MPI_PARALLEL
     shear_fc_phys_id_ = fc_flx_phys_id_ + 2;
     shear_emf_phys_id_ = shear_fc_phys_id_+ 1;

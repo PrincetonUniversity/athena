@@ -62,14 +62,15 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   // cc_phys_id_ = pbval_->ReserveTagVariableIDs(1);
   cc_phys_id_ = pbval_->bvars_next_phys_id_;
 #endif
-  if (pmy_mesh_->multilevel || pbval_->shearing_box) { // SMR or AMR or SHEARING_BOX
+  if ((pmy_mesh_->multilevel)
+      || (pbval_->shearing_box != 0)) { // SMR or AMR or SHEARING_BOX
     InitBoundaryData(bd_var_flcor_, BoundaryQuantity::cc_flcor);
 #ifdef MPI_PARALLEL
     cc_flx_phys_id_ = cc_phys_id_ + 1;
 #endif
   }
 
-  if (pbval_->shearing_box) {
+  if (pbval_->shearing_box != 0) {
 #ifdef MPI_PARALLEL
     shear_cc_phys_id_ = cc_phys_id_ + 2;
     shear_flx_phys_id_ = shear_cc_phys_id_ + 1;
@@ -115,7 +116,8 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
 
 CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
   DestroyBoundaryData(bd_var_);
-  if (pmy_mesh_->multilevel || pbval_->shearing_box)
+  if ((pmy_mesh_->multilevel)
+      || (pbval_->shearing_box != 0))
     DestroyBoundaryData(bd_var_flcor_);
 
   // TODO(KGF): this should be a part of DestroyBoundaryData()
@@ -699,7 +701,7 @@ void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
       if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face) {
         if ((nb.shear && (nb.fid == BoundaryFace::inner_x1
                           || nb.fid == BoundaryFace::outer_x1)
-            &&pbval_->shearing_box==1) || nb.snb.level < mylevel) {
+            && pbval_->shearing_box==1) || nb.snb.level < mylevel) {
           MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
         }
       }
