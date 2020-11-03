@@ -70,7 +70,7 @@ def analyze():
     new_ratio = new_me / new_stress
 
     msg = '[MRI-3D]: {}(stress,ME,ratio) = {} {} {}'
-    logger.warning(msg.format('Ref ', ref_stress,  ref_me,  ref_ratio))
+    logger.warning(msg.format('Ref', ref_stress, ref_me, ref_ratio))
     logger.warning(msg.format('New', new_stress, new_me, new_ratio))
     flag = True
     error_rel = np.fabs((new_stress / ref_stress) - 1.0)
