@@ -577,8 +577,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
           n_main++;
         } else if (n_main == 2) {
           stage_wghts[n].delta = 0.0;
-          stage_wghts[n].gamma_1 = 0.6666666666666666;
-          stage_wghts[n].gamma_2 = 0.3333333333333333;
+          stage_wghts[n].gamma_1 = TWO_3RD;
+          stage_wghts[n].gamma_2 = ONE_3RD;
           stage_wghts[n].gamma_3 = 0.0;
           n_main++;
         }
@@ -1556,12 +1556,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
       ave_wghts[4] = 0.0;
       pmb->WeightedAve(ph->u1, ph->u, ph->u2, ph->u0, ph->fl_div, ave_wghts);
 
-      if(integrator == "rk3" && pmb->pmy_mesh->ncycle%2==0
-         && stage_wghts[stage-1].gamma_1 == 0.6666666666666666) {
-        ave_wghts[0] = stage_wghts[stage-1].gamma_1+1.0e-16;
-      } else {
-        ave_wghts[0] = stage_wghts[stage-1].gamma_1;
-      }
+      ave_wghts[0] = stage_wghts[stage-1].gamma_1;
       ave_wghts[1] = stage_wghts[stage-1].gamma_2;
       ave_wghts[2] = stage_wghts[stage-1].gamma_3;
       if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
@@ -1612,12 +1607,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
       ave_wghts[4] = 0.0;
       pmb->WeightedAve(pf->b1, pf->b, pf->b2, pf->b0, pf->ct_update, ave_wghts);
 
-      if(integrator == "rk3" && pmb->pmy_mesh->ncycle%2==0
-         && stage_wghts[stage-1].gamma_1 == 0.6666666666666666) {
-        ave_wghts[0] = stage_wghts[stage-1].gamma_1+1.0e-16;
-      } else {
-        ave_wghts[0] = stage_wghts[stage-1].gamma_1;
-      }
+      ave_wghts[0] = stage_wghts[stage-1].gamma_1;
       ave_wghts[1] = stage_wghts[stage-1].gamma_2;
       ave_wghts[2] = stage_wghts[stage-1].gamma_3;
       if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0) {
@@ -2078,12 +2068,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
       ave_wghts[4] = 0.0;
       pmb->WeightedAve(ps->s1, ps->s, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
 
-      if(integrator == "rk3" && pmb->pmy_mesh->ncycle%2==0
-         && stage_wghts[stage-1].gamma_1 == 0.6666666666666666) {
-        ave_wghts[0] = stage_wghts[stage-1].gamma_1+1.0e-16;
-      } else {
-        ave_wghts[0] = stage_wghts[stage-1].gamma_1;
-      }
+      ave_wghts[0] = stage_wghts[stage-1].gamma_1;
       ave_wghts[1] = stage_wghts[stage-1].gamma_2;
       ave_wghts[2] = stage_wghts[stage-1].gamma_3;
       if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
