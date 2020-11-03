@@ -1457,7 +1457,7 @@ TaskStatus TimeIntegratorTaskList::CalculateHydroFlux(MeshBlock *pmb, int stage)
 
   if (stage <= nstages) {
     if (stage_wghts[stage-1].main_stage) {
-      if ((integrator == "vl2") && (stage-stage_wghts[0].orbital_stage == 1) {
+      if ((integrator == "vl2") && (stage-stage_wghts[0].orbital_stage == 1)) {
         phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
       } else {
         phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, pmb->precon->xorder);
@@ -2014,7 +2014,7 @@ TaskStatus TimeIntegratorTaskList::CalculateScalarFlux(MeshBlock *pmb, int stage
   PassiveScalars *ps = pmb->pscalars;
   if (stage <= nstages) {
     if (stage_wghts[stage-1].main_stage) {
-      if ((integrator == "vl2") && (stage-stage_wghts[0].orbital_stage == 1) {
+      if ((integrator == "vl2") && (stage-stage_wghts[0].orbital_stage == 1)) {
         ps->CalculateFluxes(ps->r, 1);
       } else {
         ps->CalculateFluxes(ps->r, pmb->precon->xorder);
