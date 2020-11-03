@@ -58,7 +58,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     return;
 #endif
   }
-  
+
   return;
 }
 
