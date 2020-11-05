@@ -22,7 +22,7 @@ def prepare(**kwargs):
 # Run Athena++ w/wo Orbital Advection
 def run(**kwargs):
     arguments = [
-        'job/problem_id=HGB_MRI',
+        'job/problem_id=HGB',
         'output1/file_type=hst', 'output1/dt=0.062831853',
         'output2/file_type=vtk', 'output2/variable=prim', 'output2/dt=31.4616',
         'time/cfl_number=0.3', 'time/tlim=62.83185', 'time/nlim=10000',
@@ -41,7 +41,7 @@ def run(**kwargs):
         'problem/Omega0=1.0', 'problem/qshear=1.5',
         'problem/orbital_advection=false',
         'time/ncycle_out=0']
-    athena.run('mhd/athinput.hgb_mri', arguments)
+    athena.run('mhd/athinput.hgb', arguments)
 
 
 # Analyze outputs
@@ -62,7 +62,7 @@ def analyze():
     ref_ratio = ref_me / ref_stress
 
     # resutls
-    fname = 'bin/HGB_MRI.hst'
+    fname = 'bin/HGB.hst'
     b = athena_read.hst(fname)
     me = (b['1-ME'] + b['2-ME'] + b['3-ME'])
     new_stress = np.average(b['-BxBy'][index:] / vol / pres)

@@ -24,7 +24,7 @@ pgen_choices.remove('from_array')
 # coord='minkowski', #'-t'
 gr_probs = set([pgen for pgen in pgen_choices if pgen[0:3] == 'gr_'])
 # MHD-required problems: --rsolver=hlld by default
-mhd_probs = set(['hb3', 'hgb', 'cpaw', 'field_loop',
+mhd_probs = set(['hb3', 'hgb', 'jgg', 'cpaw', 'field_loop',
                  'orszag_tang', 'rotor', 'resist', 'magnoh'])
 # Newtonian Hydro-only or MHD-optional problems are all leftover pgen/ files
 # --rsolver=hllc by default

@@ -414,8 +414,18 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
 
   if(orbital_uniform_mesh) { // uniform mesh
     // set dx
-    dx = (orbital_direction == 1) ?
-         pco_->dx2f(pmb_->js): pco_->dx3f(pmb_->ks);
+    // TODO(tomo-ono): For the consistency, not use dx2v or dx3v
+    if (orbital_direction == 1) { // cartesian or cylindrical
+      dx = (pm_->mesh_size.x2max-pm_->mesh_size.x2min)
+           /static_cast<Real>((pm_->nrbx2
+             *(1L<<(pmb_->loc.level-pm_->root_level))
+            )*pmb_->block_size.nx2);
+    } else { // spherical_polar
+      dx = (pm_->mesh_size.x3max-pm_->mesh_size.x3min)
+           /static_cast<Real>((pm_->nrbx3
+             *(1L<<(pmb_->loc.level-pm_->root_level))
+            )*pmb_->block_size.nx3);
+    }
   }
 //  else { // non-uniform mesh
 //  }
@@ -450,7 +460,7 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
         }
       }
     }
-  } else if (orbital_direction == 2) {// spherical_polar
+  } else if (orbital_direction == 2) { // spherical_polar
     // cell center
     for (int j=pmb_->js; j<= pmb_->je; ++j) {
       for (int i=pmb_->is; i<= pmb_->ie; ++i) {

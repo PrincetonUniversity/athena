@@ -686,8 +686,8 @@ void BoundaryValues::ComputeShear(const Real time_fc, const Real time_int) {
     std::int64_t nblx2 = pmesh->nrbx2*(1L << level);
 
     // Update the amount of shear:
-    Real dx = pco->dx2v(js);
-    Real x2size = pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min;
+    Real x2size = pmesh->mesh_size.x2max - pmesh->mesh_size.x2min;
+    Real dx = x2size/static_cast<Real>(nblx2*nx2);
     Real yshear, deltay;
     int joffset, Ngrids;
 

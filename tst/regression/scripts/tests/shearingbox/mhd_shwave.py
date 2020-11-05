@@ -14,7 +14,7 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 # Prepare Athena++
 def prepare(**kwargs):
     logger.debug('Running test ' + __name__)
-    athena.configure('b', prob='hgb', flux='hlld',
+    athena.configure('b', prob='jgg', flux='hlld',
                      eos='isothermal', **kwargs)
     athena.make()
 
@@ -23,7 +23,7 @@ def prepare(**kwargs):
 def run(**kwargs):
     # w/o Orbital Advection
     arguments = [
-        'job/problem_id=HGB_SHWAVE',
+        'job/problem_id=JGG',
         'output1/file_type=hst', 'output1/dt=0.01',
         'output1/data_format=%1.16f',
         'output2/file_type=vtk', 'output2/variable=prim',
@@ -37,17 +37,16 @@ def run(**kwargs):
         'mesh/nx3=16', 'mesh/x3min=-0.25', 'mesh/x3max=0.25',
         'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
         'hydro/iso_sound_speed=1.0', 'problem/d0=1.0',
-        'problem/amp=1.0e-6', 'problem/beta=20.0',
-        'problem/ipert=5', 'problem/ifield=0',
+        'problem/amp=1.0e-6', 'problem/beta=20.0', 'problem/ipert=2',
         'problem/nwx=-2', 'problem/nwy=1', 'problem/nwz=1',
         'problem/Omega0=1.0', 'problem/qshear=1.5',
-        'problem/orbital_advection=false',
+        'problem/orbital_advection=true',
         'time/ncycle_out=0']
-    athena.run('mhd/athinput.hgb_shwave', arguments)
+    athena.run('mhd/athinput.jgg', arguments)
 
     # w/  Orbital Advection
     arguments = [
-        'job/problem_id=HGB_SHWAVE_ORB',
+        'job/problem_id=JGG_ORB',
         'output1/file_type=hst', 'output1/dt=0.01',
         'output1/data_format=%1.16f',
         'output2/file_type=vtk', 'output2/variable=prim',
@@ -61,13 +60,12 @@ def run(**kwargs):
         'mesh/nx3=16', 'mesh/x3min=-0.25', 'mesh/x3max=0.25',
         'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
         'hydro/iso_sound_speed=1.0', 'problem/d0=1.0',
-        'problem/amp=1.0e-6', 'problem/beta=20.0',
-        'problem/ipert=5', 'problem/ifield=0',
+        'problem/amp=1.0e-6', 'problem/beta=20.0', 'problem/ipert=2',
         'problem/nwx=-2', 'problem/nwy=1', 'problem/nwz=1',
         'problem/Omega0=1.0', 'problem/qshear=1.5',
         'problem/orbital_advection=true', 'problem/orbital_splitting=2',
         'time/ncycle_out=0']
-    athena.run('mhd/athinput.hgb_shwave', arguments)
+    athena.run('mhd/athinput.jgg', arguments)
 
 
 # Analyze outputs
@@ -93,7 +91,7 @@ def analyze():
     sch = Omega0/iso_cs
 
     # read results w/o Orbital Advection
-    fname = 'bin/HGB_SHWAVE.hst'
+    fname = 'bin/JGG.hst'
     a = athena_read.hst(fname)
     time1 = a['time']
     dby1 = a['dBy']
@@ -123,7 +121,7 @@ def analyze():
     norm1 /= nf1
 
     # read results w/  Orbital Advection
-    fname = 'bin/HGB_SHWAVE_ORB.hst'
+    fname = 'bin/JGG_ORB.hst'
     b = athena_read.hst(fname)
     time2 = b['time']
     dby2 = b['dBy']
