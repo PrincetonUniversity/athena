@@ -237,7 +237,6 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundaryCorrection() {
   int is = pmb->is, ie = pmb->ie;
 
   int ib[2]{is, ie + 1};
-  int sign[2]{1, -1};
   for (int upper=0; upper<2; upper++) {
     if (pbval_->is_shear[upper]) {
       Real eps = (1.0-2*upper)*pbval_->eps_flux_;

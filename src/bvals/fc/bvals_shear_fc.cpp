@@ -241,9 +241,7 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
   Coordinates *pco = pmb->pcoord;
   OrbitalAdvection *porb = pmb->porb;
   int ib[2]{pmb->is - NGHOST, pmb->ie + 1};
-  int sign[2]{1, -1};
   int js = pmb->js, je = pmb->je;
-  int il = pmb->is-NGHOST, iu = pmb->ie+NGHOST;
   int kl = pmb->ks, ku = pmb->ke;
   if (pmesh->mesh_size.nx3 > 1) {
     kl -= NGHOST;

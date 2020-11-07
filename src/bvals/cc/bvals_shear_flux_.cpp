@@ -214,7 +214,6 @@ void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundaryBuffers() {
   int ks = pmb->ks, ke = pmb->ke;
 
   int ib[2]{is, ie+1};
-  int sign[2]{1,-1};
   for (int upper=0; upper<2; upper++) {
     if (pbval_->is_shear[upper]) { // check inner boundaries
       Real eps = (1.0-2*upper)*pbval_->eps_;
