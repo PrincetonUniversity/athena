@@ -13,7 +13,7 @@
 //
 // Two kinds of perturbations are possible:
 //
-//- ipert = 1 - MHD simple shwave test of JGG -- their figures 5 - 7
+//- ipert = 1 - MHD simple shwave test of JGG -- similar to their figures 5 - 7
 //- ipert = 2 - MHD compressive shwave test of JGG -- their figure 11
 //
 // REFERENCE: Johnson, Guan, & Gammie, ApJS, 177, 373 (2008)
@@ -52,7 +52,6 @@ Real amp, beta;
 int ipert, shboxcoord;
 
 Real HistoryBxAmp(MeshBlock *pmb, int iout);
-Real HistoryByAmp(MeshBlock *pmb, int iout);
 Real HistoryBzAmp(MeshBlock *pmb, int iout);
 Real HistorydBy(MeshBlock *pmb, int iout);
 } // namespace
@@ -62,14 +61,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   ipert = pin->GetOrAddInteger("problem","ipert", 1);
   if (ipert == 1) {
     if (mesh_size.nx3 > 1) { // 3D
-      AllocateUserHistoryOutput(3);
-      EnrollUserHistoryOutput(0, HistoryBxAmp, "BxAmp");
-      EnrollUserHistoryOutput(1, HistoryByAmp, "ByAmp");
-      EnrollUserHistoryOutput(2, HistoryBzAmp, "BzAmp");
+      AllocateUserHistoryOutput(1);
+      EnrollUserHistoryOutput(0, HistoryBzAmp, "BzAmp");
     } else { // 2D
-      AllocateUserHistoryOutput(2);
+      AllocateUserHistoryOutput(1);
       EnrollUserHistoryOutput(0, HistoryBxAmp, "BxAmp");
-      EnrollUserHistoryOutput(1, HistoryByAmp, "ByAmp");
     }
   } else if (ipert == 2) {
     AllocateUserHistoryOutput(1);
@@ -134,39 +130,28 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Lz = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
 
   // initialize wavenumbers
-  nwx = pin->GetOrAddInteger("problem","nwx",1);
-  nwy = pin->GetOrAddInteger("problem","nwy",1);
-  if (block_size.nx3 == 1)
-    nwz = pin->GetOrAddInteger("problem","nwz",1);
-  else
-    nwz = pin->GetOrAddInteger("problem","nwz",0);
+  if (ipert == 1) {
+    nwx = 0;
+    nwy = pin->GetOrAddInteger("problem","nwy",1);
+    nwz = 0;
+  } else { // ipert = 2
+    nwx = pin->GetOrAddInteger("problem","nwx",1);
+    nwy = pin->GetOrAddInteger("problem","nwy",1);
+    if (block_size.nx3 == 1) { // 2D
+      nwz = 0;
+    } else { // 3D
+      nwz = pin->GetOrAddInteger("problem","nwz",1);
+    }
+  }
+
   Real kx = (TWO_PI/Lx)*(static_cast<Real>(nwx));
   Real ky = (TWO_PI/Ly)*(static_cast<Real>(nwy));
   Real kz = (TWO_PI/Lz)*(static_cast<Real>(nwz));
-  if (nwx == 0) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in jgg.cpp ProblemGenerator" << std::endl
-        << "Parameterproblem/nwx must be non-zero." << std::endl;
-    ATHENA_ERROR(msg);
-  }
-  if (block_size.nx3 == 1 && nwz != 0) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in jgg.cpp ProblemGenerator" << std::endl
-        << "In 2D, parameer problem/nwz must vanish." << std::endl;
-    ATHENA_ERROR(msg);
-  }
 
   // Initialize perturbations
   // parameters
   Real x1, x2, x3;
   Real rp(0.0);
-  Real rbx(0.0), rby(0.0), rbz(0.0);
-  // Calculate magnetic fields using the vector potential.
-  AthenaArray<Real> rax, ray, raz;
-  int nz = (ncells3>1)?ncells3:2;
-  rax.NewAthenaArray(nz, ncells2, ncells1);
-  ray.NewAthenaArray(nz, ncells2, ncells1);
-  raz.NewAthenaArray(nz, ncells2, ncells1);
 
   // ipert = 1 - MHD linear shwave test of JGG -- their figures 5 - 7
   // ipert = 2 - MHD compressive shwave test of JGG -- their figure 11
@@ -186,45 +171,69 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    // vector potential
-    rby = amp*ky/std::fabs(ky);
-    rbz = amp*kz/std::fabs(ky);
-    rbx = -(rby*ky+rbz*kz)/kx;
-    // set rax
-    for (int k=ks; k<=ke+1; k++) {
-      for (int j=js; j<=je+1; j++) {
-        for (int i=is; i<=ie; i++) {
-          rax(k,j,i) = 0.0;
+    // set b
+    if (block_size.nx3 == 1) { // 2D
+      // initialize interface B
+      // set bx
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            x2 = pcoord->x2v(j);
+            pfield->b.x1f(k,j,i) = amp*std::cos(ky*x2);
+          }
+        }
+      }
+
+      // set by
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x2f(k,j,i) = 0.0;
+          }
+        }
+      }
+
+      // set bz
+       for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x3f(k,j,i) = 0.0;
+          }
+        }
+      }
+    } else { //3D
+      // initialize interface B
+      // set bx
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            pfield->b.x1f(k,j,i) = 0.0;
+          }
+        }
+      }
+
+      // set by
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x2f(k,j,i) = 0.0;
+          }
+        }
+      }
+
+      // set bz
+       for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            x2 = pcoord->x2v(j);
+            pfield->b.x3f(k,j,i) = amp*std::cos(ky*x2);
+          }
         }
       }
     }
-    // set ray
-    for (int k=ks; k<=ke+1; k++) {
-      for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie+1; i++) {
-          x1 = pcoord->x1f(i);
-          x2 = pcoord->x2v(j);
-          x3 = pcoord->x3f(k);
-          ray(k,j,i) = rbz/kx*std::sin(kx*x1+ky*x2+kz*x3);
-        }
-      }
-    }
-    // set raz
-    for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je+1; j++) {
-        for (int i=is; i<=ie+1; i++) {
-          x1 = pcoord->x1f(i);
-          x2 = pcoord->x2f(j);
-          x3 = pcoord->x3v(k);
-          raz(k,j,i) = -rby/kx*std::sin(kx*x1+ky*x2+kz*x3);
-        }
-      }
-    }
-    rbx = 0.0;
-    rby = 0.0;
-    rbz = 0.0;
   } else { // ipert == 2
     Real rd(0.0);
+    Real rbx(0.0), rby(0.0), rbz(0.0);
     rp = p0;
     // In JGG
     // amp (epsilon in JGG)  = 1.0e-6
@@ -263,6 +272,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
 
+    // Calculate magnetic fields using the vector potential.
+    AthenaArray<Real> rax, ray, raz;
+    int nz = (ncells3>1)? ncells3: 2;
+    rax.NewAthenaArray(nz, ncells2, ncells1);
+    ray.NewAthenaArray(nz, ncells2, ncells1);
+    raz.NewAthenaArray(nz, ncells2, ncells1);
     // vector potential
     // set rax
     for (int k=ks; k<=ke+1; k++) {
@@ -276,7 +291,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-
     // set ray
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
@@ -289,7 +303,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-
     // set raz
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je+1; j++) {
@@ -302,44 +315,42 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-  }
-
-  // initialize interface B
-  // set bx
-  for (int k=ks; k<=ke  ; k++) {
-    for (int j=js; j<=je  ; j++) {
-      for (int i=is; i<=ie+1; i++) {
-        pfield->b.x1f(k,j,i) = rbx
-                               +(raz(k,j+1,i)-raz(k,j,i))/pcoord->dx2f(j)
-                               -(ray(k+1,j,i)-ray(k,j,i))/pcoord->dx3f(k);
+    // initialize interface B
+    // set bx
+    for (int k=ks; k<=ke  ; k++) {
+      for (int j=js; j<=je  ; j++) {
+        for (int i=is; i<=ie+1; i++) {
+          pfield->b.x1f(k,j,i) = rbx
+                                 +(raz(k,j+1,i)-raz(k,j,i))/pcoord->dx2f(j)
+                                 -(ray(k+1,j,i)-ray(k,j,i))/pcoord->dx3f(k);
+        }
       }
     }
-  }
-
-  // set by
-  for (int k=ks; k<=ke  ; k++) {
-    for (int j=js; j<=je+1; j++) {
-      for (int i=is; i<=ie  ; i++) {
-        pfield->b.x2f(k,j,i) = rby
-                               +(rax(k+1,j,i)-rax(k,j,i))/pcoord->dx3f(k)
-                               -(raz(k,j,i+1)-raz(k,j,i))/pcoord->dx1f(i);
+    // set by
+    for (int k=ks; k<=ke  ; k++) {
+      for (int j=js; j<=je+1; j++) {
+        for (int i=is; i<=ie  ; i++) {
+          pfield->b.x2f(k,j,i) = rby
+                                 +(rax(k+1,j,i)-rax(k,j,i))/pcoord->dx3f(k)
+                                 -(raz(k,j,i+1)-raz(k,j,i))/pcoord->dx1f(i);
+        }
       }
     }
-  }
 
-  // set bz
-  for (int k=ks; k<=ke+1; k++) {
-    for (int j=js; j<=je  ; j++) {
-      for (int i=is; i<=ie  ; i++) {
-        pfield->b.x3f(k,j,i) = rbz
-                               +(ray(k,j,i+1)-ray(k,j,i))/pcoord->dx1f(i)
-                               -(rax(k,j+1,i)-rax(k,j,i))/pcoord->dx2f(j);
+    // set bz
+    for (int k=ks; k<=ke+1; k++) {
+      for (int j=js; j<=je  ; j++) {
+        for (int i=is; i<=ie  ; i++) {
+          pfield->b.x3f(k,j,i) = rbz
+                                 +(ray(k,j,i+1)-ray(k,j,i))/pcoord->dx1f(i)
+                                 -(rax(k,j+1,i)-rax(k,j,i))/pcoord->dx2f(j);
+        }
       }
     }
+    rax.DeleteAthenaArray();
+    ray.DeleteAthenaArray();
+    raz.DeleteAthenaArray();
   }
-  rax.DeleteAthenaArray();
-  ray.DeleteAthenaArray();
-  raz.DeleteAthenaArray();
 
   // initialize total energy
   if (NON_BAROTROPIC_EOS) {
@@ -390,35 +401,6 @@ Real HistoryBxAmp(MeshBlock *pmb, int iout) {
     }
   }
   return bx_amp;
-}
-
-Real HistoryByAmp(MeshBlock *pmb, int iout) {
-  Real by_amp = 0.0;
-  Real x1, x2, x3;
-  AthenaArray<Real> volume; // 1D array of volumes
-  volume.NewAthenaArray(pmb->ncells1);
-  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> &b = pmb->pfield->bcc;
-
-  Real kx = (TWO_PI/Lx)
-            *(static_cast<Real>(nwx)+qshear*Omega_0*pmb->pmy_mesh->time);
-  Real ky = (TWO_PI/Ly)*(static_cast<Real>(nwy));
-  Real kz = (TWO_PI/Lz)*(static_cast<Real>(nwz));
-  Real total_volume = Lx*Ly*Lz;
-
-  for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      pmb->pcoord->CellVolume(k, j, is, ie, volume);
-      for (int i=is; i<=ie; i++) {
-        x1 = pmb->pcoord->x1v(i);
-        x2 = pmb->pcoord->x2v(j);
-        x3 = pmb->pcoord->x3v(k);
-        Real CS = std::cos(kx*x1+ky*x2+kz*x3);
-        by_amp += volume(i)*2.0*b(IB2,k,j,i)*CS/total_volume;
-      }
-    }
-  }
-  return by_amp;
 }
 
 Real HistoryBzAmp(MeshBlock *pmb, int iout) {
