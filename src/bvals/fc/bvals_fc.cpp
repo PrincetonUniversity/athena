@@ -347,7 +347,7 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   else if (nb.ni.ox3 > 0) sk = pmb->ke-NGHOST + 1, ek = pmb->ke;
   else              sk = pmb->ks,          ek = pmb->ks + NGHOST-1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmy_mesh_->multilevel 
+  if (pmy_mesh_->multilevel
       && nb.ni.type != NeighborConnect::face && !nb.shear) {
     if (nb.ni.ox1 > 0) ei++;
     else if (nb.ni.ox1 < 0) si--;
@@ -590,7 +590,7 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else if (nb.ni.ox3 > 0) sk = pmb->ke + 1,      ek = pmb->ke + NGHOST;
   else              sk = pmb->ks - NGHOST, ek = pmb->ks - 1;
   // for SMR/AMR, always include the overlapping faces in edge and corner boundaries
-  if (pmy_mesh_->multilevel 
+  if (pmy_mesh_->multilevel
       && nb.ni.type != NeighborConnect::face && !nb.shear) {
     if (nb.ni.ox1 > 0) si--;
     else if (nb.ni.ox1 < 0) ei++;
