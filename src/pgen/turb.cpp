@@ -32,9 +32,6 @@
 #include <omp.h>
 #endif
 
-
-std::int64_t rseed; // seed for turbulence power spectrum
-
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief
@@ -61,6 +58,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     return;
 #endif
   }
+
   return;
 }
 

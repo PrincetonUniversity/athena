@@ -31,22 +31,28 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin)
-//  \brief TurbulenceDriver constructor
+//! \brief TurbulenceDriver constructor
+//!
+//! \note
+//! turb_flag is initialzed in the Mesh constructor to 0 by default;
+//! turb_flag = 1 for decaying turbulence
+//! turb_flag = 2 for impulsively driven turbulence
+//! turb_flag = 3 for continuously driven turbulence
 
 TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
     FFTDriver(pm, pin),
-    rseed(pin->GetOrAddInteger("problem", "rseed", -1)), // seed for RNG
+    rseed(pin->GetOrAddInteger("turbulence", "rseed", -1)), // seed for RNG
     // cut-off wavenumbers, low and high:
-    nlow(pin->GetOrAddInteger("problem", "nlow", 0)),
-    nhigh(pin->GetOrAddInteger("problem", "nhigh", pm->mesh_size.nx1/2)),
+    nlow(pin->GetOrAddInteger("turbulence", "nlow", 0)),
+    nhigh(pin->GetOrAddInteger("turbulence", "nhigh", pm->mesh_size.nx1/2)),
     tdrive(pm->time),
     // driving interval must be set manually:
-    dtdrive(pm->turb_flag == 2 ? pin->GetReal("problem", "dtdrive") : 0.0),
+    dtdrive(pm->turb_flag == 2 ? pin->GetReal("turbulence", "dtdrive") : 0.0),
     // correlation time scales for OU smoothing:
-    tcorr(pm->turb_flag > 1 ? pin->GetReal("problem", "tcorr") : 0.0),
-    f_shear(pin->GetOrAddReal("problem", "f_shear", -1)), // ratio of shear component
-    expo(pin->GetOrAddReal("problem", "expo", 2)), // power-law exponent
-    dedt(pin->GetReal("problem", "dedt")), // turbulence amplitude
+    tcorr(pm->turb_flag > 1 ? pin->GetReal("turbulence", "tcorr") : 0.0),
+    f_shear(pin->GetOrAddReal("turbulence", "f_shear", -1)), // ratio of shear component
+    expo(pin->GetOrAddReal("turbulence", "expo", 2)), // power-law exponent
+    dedt(pin->GetReal("turbulence", "dedt")), // turbulence amplitude
     // TODO(changgoo): this assumes 3D and should not work with 1D, 2D. Add check.
     vel{ {nmb, pm->my_blocks(0)->ncells3,
                pm->my_blocks(0)->ncells2, pm->my_blocks(0)->ncells1},
