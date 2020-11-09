@@ -925,8 +925,8 @@ void Mesh::OutputMeshStructure(int ndim) {
   std::cout << "Number of logical  refinement levels = " << current_level << std::endl;
 
   // compute/output number of blocks per level, and cost per level
-  int *nb_per_plevel = new int[max_level];
-  int *cost_per_plevel = new int[max_level];
+  int *nb_per_plevel = new int[max_level+1];
+  int *cost_per_plevel = new int[max_level+1];
   for (int i=0; i<=max_level; ++i) {
     nb_per_plevel[i] = 0;
     cost_per_plevel[i] = 0;
