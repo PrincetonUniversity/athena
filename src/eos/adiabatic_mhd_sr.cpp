@@ -170,8 +170,10 @@ void EquationOfState::ConservedToPrimitive(
         if (beta_min_ > 0.0) {
           pressure_floor_local = std::max(pressure_floor_local, beta_min_*pmag);
         }
-        Real rho_add = std::max(density_floor_local-prim(IDN,k,j,i), 0.0);
-        Real pgas_add = std::max(pressure_floor_local-prim(IPR,k,j,i), 0.0);
+        Real rho_add = std::max(density_floor_local-prim(IDN,k,j,i),
+                                                static_cast<Real>(0.0));
+        Real pgas_add = std::max(pressure_floor_local-prim(IPR,k,j,i),
+                                                static_cast<Real>(0.0));
         if (success && (rho_add > 0.0 || pgas_add > 0.0)) {
           // Adjust conserved density and energy
           Real wgas_add = rho_add + gamma_adi/(gamma_adi-1.0) * pgas_add;
@@ -361,7 +363,7 @@ void EquationOfState::FastMagnetosonicSpeedsGR(Real wgas, Real pgas, Real u0, Re
   Real c = SQR(u1) - (g11 + SQR(u1)) * cms_sq;
   Real a1 = b / a;
   Real a0 = c / a;
-  Real s = std::sqrt(std::max(SQR(a1) - 4.0 * a0, 0.0));
+  Real s = std::sqrt(std::max(SQR(a1) - 4.0 * a0, static_cast<Real>(0.0)));
   *p_lambda_plus = (a1 >= 0.0) ? -2.0 * a0 / (a1 + s) : (-a1 + s) / 2.0;
   *p_lambda_minus = (a1 >= 0.0) ? (-a1 - s) / 2.0 : -2.0 * a0 / (a1 - s);
   return;
@@ -450,7 +452,7 @@ bool ConservedToPrimitiveNormal(
       eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));               // (NH 5.11)
       ll = eee - bb_sq;                                                       // (NH 5.5)
       v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll)) / SQR(ll * (bb_sq+ll)); // (NH 5.2)
-      v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
+      v_sq = std::min(std::max(v_sq, static_cast<Real>(0.0)), v_sq_max);
       Real gamma_sq = 1.0/(1.0-v_sq);                                         // (NH 3.1)
       Real gamma = std::sqrt(gamma_sq);                                       // (NH 3.1)
       Real wgas = ll/gamma_sq;                                                // (NH 5.1)
@@ -495,7 +497,7 @@ bool ConservedToPrimitiveNormal(
   Real ll = eee - bb_sq;                                          // (NH 5.5)
   Real v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll))
               / SQR(ll * (bb_sq+ll));                             // (NH 5.2)
-  v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
+  v_sq = std::min(std::max(v_sq, static_cast<Real>(0.0)), v_sq_max);
   Real gamma_sq = 1.0/(1.0-v_sq);                                 // (NH 3.1)
   Real gamma = std::sqrt(gamma_sq);                               // (NH 3.1)
   prim(IDN,k,j,i) = dd/gamma;                                     // (NH 4.5)
