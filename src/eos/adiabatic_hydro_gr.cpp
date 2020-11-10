@@ -155,8 +155,10 @@ void EquationOfState::ConservedToPrimitive(
         }
 
         // Apply density and gas pressure floors in normal frame
-        Real rho_add = std::max(density_floor_local-prim(IDN,k,j,i), 0.0);
-        Real pgas_add = std::max(pressure_floor_local-prim(IPR,k,j,i), 0.0);
+        Real rho_add = std::max(density_floor_local-prim(IDN,k,j,i),
+                                                static_cast<Real>(0.0));
+        Real pgas_add = std::max(pressure_floor_local-prim(IPR,k,j,i),
+                                                static_cast<Real>(0.0));
         if (success && (rho_add > 0.0 || pgas_add > 0.0)) {
           // Adjust conserved density and energy
           Real wgas_add = rho_add + gamma_adi/(gamma_adi-1.0) * pgas_add;
@@ -483,7 +485,7 @@ bool ConservedToPrimitiveNormal(
     Real v_sq;
     if (n%3 != 2) {
       v_sq = mm_sq / SQR(a);                                     // (NH 5.2)
-      v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
+      v_sq = std::min(std::max(v_sq, static_cast<Real>(0.0)), v_sq_max);
       Real gamma_sq = 1.0/(1.0-v_sq);                            // (NH 3.1)
       Real gamma = std::sqrt(gamma_sq);                          // (NH 3.1)
       Real wgas = a/gamma_sq;                                    // (NH 5.1)
@@ -524,7 +526,7 @@ bool ConservedToPrimitiveNormal(
   Real a = ee + prim(IPR,k,j,i);                   // (NH 5.7)
   a = std::max(a, a_min);
   Real v_sq = mm_sq / SQR(a);                      // (NH 5.2)
-  v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
+  v_sq = std::min(std::max(v_sq, static_cast<Real>(0.0)), v_sq_max);
   Real gamma_sq = 1.0/(1.0-v_sq);                  // (NH 3.1)
   Real gamma = std::sqrt(gamma_sq);                // (NH 3.1)
   prim(IDN,k,j,i) = dd/gamma;                      // (NH 4.5)
