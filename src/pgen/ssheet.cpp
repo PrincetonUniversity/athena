@@ -67,6 +67,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     amp = pin->GetReal("problem","amp");
     nwx = pin->GetInteger("problem","nwx");
     nwy = pin->GetInteger("problem","nwy");
+    if (nwx == 0) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator"   << std::endl
+          << "Parameter nwx must be non-zero." << std::endl;
+      ATHENA_ERROR(msg);
+    }
     AllocateUserHistoryOutput(1);
     EnrollUserHistoryOutput(0, Historydvyc, "dvyc", UserHistoryOperation::sum);
   } else if (ipert == 1 || ipert == 2) {
