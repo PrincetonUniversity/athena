@@ -52,10 +52,11 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
     } else {
       std::stringstream msg;
       msg << "### FATAL ERROR in HydroSourceTerms constructor" << std::endl
-          << "The point mass gravity works only in spherical polar coordinates"
-          << "or in cylindrical coordinates." << std::endl
-          << "In 2D cylindrical corrdinates, it works only with OrbitalAdvection"
-          << "and with predfined orbital velocity."<<std::endl
+          << "The point mass gravity works only in the cylindrical and "
+          << "spherical polar coordinates" << std::endl
+          << "To use the point mass gravity in the 3D cylindrical corrdinates, "
+          << "using the predefined orbital velocity profile with the orbital "
+          << "advection is required."<<std::endl
           << "Check <problem> GM parameter in the input file." << std::endl;
       ATHENA_ERROR(msg);
     }

@@ -60,16 +60,24 @@ Real Historydvyc(MeshBlock *pmb, int iout);
 //======================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
-  // initialize global variables
-  amp = pin->GetReal("problem","amp");
-  nwx = pin->GetInteger("problem","nwx");
-  nwy = pin->GetInteger("problem","nwy");
+  // read ipert parameter
   ipert = pin->GetInteger("problem","ipert");
-  shboxcoord = pin->GetOrAddInteger("problem","shboxcoord",1);
 
   if (ipert == 3) {
+    amp = pin->GetReal("problem","amp");
+    nwx = pin->GetInteger("problem","nwx");
+    nwy = pin->GetInteger("problem","nwy");
     AllocateUserHistoryOutput(1);
     EnrollUserHistoryOutput(0, Historydvyc, "dvyc", UserHistoryOperation::sum);
+  } else if (ipert == 1 || ipert == 2) {
+    amp = 0.0;
+    nwx = 0;
+    nwy = 0;
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator"   << std::endl
+        << "This problem requires that ipert is from 1 to 3." << std::endl;
+    ATHENA_ERROR(msg);
   }
 
   if (!shear_periodic) {
@@ -87,23 +95,18 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //  \brief
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
+  // shearing sheet parameter
+  Omega_0 = porb->Omega0;
+  qshear  = porb->qshear;
+  shboxcoord = pin->GetOrAddInteger("problem","shboxcoord",1);
+
+  // conditional error branch
   if (pmy_mesh->mesh_size.nx2 == 1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
         << "Shearing wave sheet does NOT work on a 1D grid" << std::endl;
     ATHENA_ERROR(msg);
   }
-
-  if (porb->orbital_advection_defined && shboxcoord==2) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
-        << "OrbitalAdvection does not work in x-z plane." << std::endl;
-    ATHENA_ERROR(msg);
-  }
-
-  // shearing sheet parameter
-  Omega_0 = porb->Omega0;
-  qshear  = porb->qshear;
 
   int il = is - NGHOST; int iu = ie + NGHOST;
   int jl = js - NGHOST; int ju = je + NGHOST;
@@ -132,11 +135,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     std::cout << "d0 = " << d0 << std::endl;
     std::cout << "p0 = " << p0 << std::endl;
     std::cout << "ipert  = " << ipert  << std::endl;
-
     std::cout << "[ssheet.cpp]: [Lx,Ly,Lz] = [" <<x1size <<","<<x2size
               <<","<<x3size<<"]"<<std::endl;
   }
 
+  // calculate wave number just for ipert = 3
   Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
   Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
 
