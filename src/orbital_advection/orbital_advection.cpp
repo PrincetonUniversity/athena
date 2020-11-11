@@ -527,22 +527,33 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
   }
 //  else {
 //  }
+
   // restrictions from derivatives of orbital velocity
   Real coef = 1.0;
   if (orbital_splitting_order == 1) coef = 0.5;
   if(orbital_direction == 1) {
     for(int k=pmb_->ks; k<=pmb_->ke; k++) {
       for(int i=pmb_->is; i<=pmb_->ie; i++) {
-        Real dvk_ghost = fabs(vKc(k,i+NGHOST)/pco_->h2v(i+NGHOST)
-                           - vKc(k,i-NGHOST)/pco_->h2v(i-NGHOST));
-        if(nc3>1) {
-          Real temp = fabs(vKc(k+NGHOST,i) - vKc(k-NGHOST,i))/pco_->h2v(i);
-          dvk_ghost = std::max(dvk_ghost, temp);
+        Real vorb_c   = vKc(k,i)/pco_->h2v(i);
+        Real vorb_min = vorb_c;
+        Real vorb_max = vorb_c;
+        for (int neighbor=1; neighbor<=xgh; neighbor++) {
+          Real vorb_m = vKc(k,i-neighbor)/pco_->h2v(i-neighbor);
+          Real vorb_p = vKc(k,i+neighbor)/pco_->h2v(i+neighbor);
+          vorb_min = std::min(vorb_min, std::min(vorb_m, vorb_p));
+          vorb_max = std::max(vorb_max, std::max(vorb_m, vorb_p));
         }
-        if(dvk_ghost == 0.0) {
-          continue;
-        } else if(orbital_uniform_mesh) { // uniform mesh
-          min_dt = std::min(min_dt, coef*dx/dvk_ghost);
+        if (nc3>1) {
+          for (int neighbor=1; neighbor<=xgh; neighbor++) {
+            Real vorb_m = vKc(k-neighbor,i)/pco_->h2v(i);
+            Real vorb_p = vKc(k+neighbor,i)/pco_->h2v(i);
+            vorb_min = std::min(vorb_min, std::min(vorb_m, vorb_p));
+            vorb_max = std::max(vorb_max, std::max(vorb_m, vorb_p));
+          }
+        }
+        if (vorb_min == vorb_max) continue;
+        if(orbital_uniform_mesh) { // uniform mesh
+          min_dt = std::min(min_dt, coef*dx/(vorb_max-vorb_min));
         }
 //        else { // non-uniform mesh
 //        }
@@ -551,15 +562,24 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
   } else if (orbital_direction == 2) {
     for(int j=pmb_->js; j<=pmb_->je; j++) {
       for(int i=pmb_->is; i<=pmb_->ie; i++) {
-        Real dvk_ghost = fabs(vKc(j,i+NGHOST)/pco_->h2v(i+NGHOST)
-                           - vKc(j,i-NGHOST)/pco_->h2v(i-NGHOST))/pco_->h32v(j);
-        Real temp = fabs(vKc(j+NGHOST,i)/pco_->h32v(j+NGHOST)
-                     - vKc(j-NGHOST,i)/pco_->h32v(j-NGHOST))/pco_->h2v(i);
-        dvk_ghost = std::max(dvk_ghost, temp);
-        if(dvk_ghost == 0.0) {
-          continue;
-        } else if(orbital_uniform_mesh) { // uniform mesh
-          min_dt = std::min(min_dt, coef*dx/dvk_ghost);
+        Real vorb_c   = vKc(j,i)/(pco_->h2v(i)*pco_->h32v(j));
+        Real vorb_min = vorb_c;
+        Real vorb_max = vorb_c;
+        for (int neighbor=1; neighbor<=xgh; neighbor++) {
+          Real vorb_m = vKc(j,i-neighbor)/(pco_->h2v(i-neighbor)*pco_->h32v(j));
+          Real vorb_p = vKc(j,i+neighbor)/(pco_->h2v(i+neighbor)*pco_->h32v(j));
+          vorb_min = std::min(vorb_min, std::min(vorb_m, vorb_p));
+          vorb_max = std::max(vorb_max, std::max(vorb_m, vorb_p));
+        }
+        for (int neighbor=1; neighbor<=xgh; neighbor++) {
+          Real vorb_m = vKc(j-neighbor,i)/(pco_->h2v(i)*pco_->h32v(j-neighbor));
+          Real vorb_p = vKc(j+neighbor,i)/(pco_->h2v(i)*pco_->h32v(j+neighbor));
+          vorb_min = std::min(vorb_min, std::min(vorb_m, vorb_p));
+          vorb_max = std::max(vorb_max, std::max(vorb_m, vorb_p));
+        }
+        if (vorb_min == vorb_max) continue;
+        if(orbital_uniform_mesh) { // uniform mesh
+          min_dt = std::min(min_dt, coef*dx/(vorb_max-vorb_min));
         }
 //        else { // non-uniform mesh
 //        }
