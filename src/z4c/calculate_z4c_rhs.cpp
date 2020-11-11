@@ -553,7 +553,7 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
     // shift vector
     for(int a = 0; a < NDIM; ++a) {
       ILOOP1(i) {
-        rhs.beta_u(a,k,j,i) = z4c.Gam_u(a,k,j,i) + opt.shift_advect * Lbeta_u(a,i);
+        rhs.beta_u(a,k,j,i) = opt.shift_Gamma * z4c.Gam_u(a,k,j,i) + opt.shift_advect * Lbeta_u(a,i);
         // rhs.beta_u(a,k,j,i) -= opt.shift_eta * z4c.beta_u(a,k,j,i);
       }
     }
@@ -577,10 +577,9 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
     }
 
     ILOOP1(i) {
-      eta_damp(i) = SQRT(eta_damp(i) / z4c.chi(k,j,i))
-        * pow(1. - pow(z4c.chi(k,j,i), opt.shift_eta_a / 2.),
+      eta_damp(i) = opt.shift_eta_R_0 / 2. * SQRT(eta_damp(i) / chi_guarded(i))
+        / pow(1. - pow(chi_guarded(i), opt.shift_eta_a / 2.),
               opt.shift_eta_b);
-      eta_damp(i) *= opt.shift_eta_R_0 / 2.;
     }
 
     // mask and damp
@@ -596,6 +595,8 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
     eta_damp.ZeroClear();
 
     // compute prefactors
+    Real const re_pow2_w = 1. / POW2(opt.shift_eta_w);
+
     ILOOP1(i) {
 
       eta_damp(i) += \
@@ -608,8 +609,8 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
         POW2(pmy_block->pmy_mesh->pz4c_tracker->pos_body[b_ix].pos[2]
           - mbi.x3(k));
 
-      eta_damp(i) = 1. + pow(POW2(eta_damp(i) / opt.shift_eta_w),
-                             opt.shift_eta_delta);
+      eta_damp(i) = 1. + pow(eta_damp(i) * re_pow2_w, opt.shift_eta_delta);
+
       eta_damp(i) = opt.shift_eta \
         + (opt.shift_eta_P - opt.shift_eta) / eta_damp(i);
     }
