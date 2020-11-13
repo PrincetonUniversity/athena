@@ -87,7 +87,9 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
           {N_CON, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // con
           {N_MAT, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // mat
 //WGC wext
+#ifdef Z4C_WEXT
           {N_WEY, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // weyl
+#endif // Z4C_WEXT
 //WGC end
   },
 #endif
