@@ -44,7 +44,7 @@
 void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   MeshBlock *pmb = pm->my_blocks(0);
   Real real_max = std::numeric_limits<Real>::max();
-  Real real_min = std::numeric_limits<Real>::min();
+  Real real_lowest = std::numeric_limits<Real>::lowest();
   AthenaArray<Real> vol(pmb->ncells1);
   const int nhistory_output = NHISTORY_VARS + pm->nuser_history_output_;
   std::unique_ptr<Real[]> hst_data(new Real[nhistory_output]);
@@ -57,7 +57,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         hst_data[NHISTORY_VARS+n] = 0.0;
         break;
       case UserHistoryOperation::max:
-        hst_data[NHISTORY_VARS+n] = real_min;
+        hst_data[NHISTORY_VARS+n] = real_lowest;
         break;
       case UserHistoryOperation::min:
         hst_data[NHISTORY_VARS+n] = real_max;
