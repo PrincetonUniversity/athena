@@ -135,14 +135,19 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
       xgh_ = 2;
 
     shearing_box = pin->GetOrAddInteger("problem", "shboxcoord", 1);
-    if ((shearing_box-1)*(shearing_box-2)!=0) shearing_box = 1;
+    if ((shearing_box-1)*(shearing_box-2)!=0) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
+          << "<problem> shboxcoord must be 1 or 2."<<std::endl;
+      ATHENA_ERROR(msg);
+    }
 
     if (pmb->block_size.nx3>1) { // 3D
       if (shearing_box == 2) {
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
             << "When using shear_periodic bondary in 3D, "
-            << "<problem> shboxcoord should be 1."<<std::endl;
+            << "<problem> shboxcoord must be 1."<<std::endl;
         ATHENA_ERROR(msg);
       }
     } else if (pmb->block_size.nx2==1) { // 1D
@@ -150,7 +155,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
         std::stringstream msg;
         msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
             << "When using Shear Periodic Bondaries in 1D, "
-            << "<problem> shboxcoord should be 2."<<std::endl;
+            << "<problem> shboxcoord must be 2."<<std::endl;
         ATHENA_ERROR(msg);
       }
     }
