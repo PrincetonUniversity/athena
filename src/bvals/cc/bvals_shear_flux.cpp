@@ -191,7 +191,6 @@ bool CellCenteredBoundaryVariable::ReceiveFluxShearingBoxBoundaryBuffers() {
     }  // if boundary is shearing
   }  // loop over inner/outer boundaries
   return (flag[0] && flag[1]);
-  return true;
 }
 
 // --------------------------------------------------------------------------------------
