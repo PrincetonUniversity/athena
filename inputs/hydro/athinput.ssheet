@@ -65,3 +65,4 @@ ipert             = 3       # 1: pure shear; 2: epicyclic; 3: shwave
 Omega0            = 0.001   # orbital frequency
 qshear            = 1.5     # shear rate
 shboxcoord        = 1       # 1=xy (default); 2=xz
+error_output      = false   # flag for output of L1-norm errors

@@ -31,11 +31,11 @@
 #include "../bvals/bvals_interfaces.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../field/field.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
+#include "../outputs/outputs.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
 
@@ -44,14 +44,19 @@
 #endif
 
 namespace {
-Real amp, nwx, nwy; // amplitude, Wavenumbers
+Real amp; // amplitude
+int nwx, nwy; // Wavenumbers
 int ipert; // initial pattern
 Real gm1,iso_cs;
 Real x1size,x2size,x3size;
 Real Omega_0,qshear;
 int shboxcoord;
+Real hst_dt, hst_next_time;
+bool error_output;
 
 Real Historydvyc(MeshBlock *pmb, int iout);
+Real Historyvxs(MeshBlock *pmb, int iout);
+Real Historydvys(MeshBlock *pmb, int iout);
 } // namespace
 
 //======================================================================================
@@ -60,9 +65,22 @@ Real Historydvyc(MeshBlock *pmb, int iout);
 //======================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
+  if (!shear_periodic) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
+        << "This problem generator requires shearing box"   << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
+  if (mesh_size.nx2 == 1) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
+        << "This problem does NOT work on a 1D grid" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
   // read ipert parameter
   ipert = pin->GetInteger("problem","ipert");
-
   if (ipert == 3) {
     amp = pin->GetReal("problem","amp");
     nwx = pin->GetInteger("problem","nwx");
@@ -73,8 +91,41 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
           << "Parameter nwx must be non-zero." << std::endl;
       ATHENA_ERROR(msg);
     }
-    AllocateUserHistoryOutput(1);
-    EnrollUserHistoryOutput(0, Historydvyc, "dvyc", UserHistoryOperation::sum);
+    error_output = pin->GetOrAddBoolean("problem","error_output",false);
+    if (error_output) {
+      // allocateDataField
+      AllocateRealUserMeshDataField(2);
+      ruser_mesh_data[0].NewAthenaArray(2, mesh_size.nx3,
+                                        mesh_size.nx2, mesh_size.nx1);
+
+      // read history output timing
+      InputBlock *pib = pin->pfirst_block;
+      while (pib != nullptr) {
+        if (pib->block_name.compare(0, 6, "output") == 0) {
+          OutputParameters op;
+          std::string outn = pib->block_name.substr(6);
+          op.block_number = atoi(outn.c_str());
+          op.block_name.assign(pib->block_name);
+          op.next_time = pin->GetOrAddReal(op.block_name,"next_time", time);
+          op.dt = pin->GetReal(op.block_name,"dt");
+          op.file_type = pin->GetString(op.block_name,"file_type");
+          if (op.file_type.compare("hst") == 0) {
+            hst_dt = op.dt;
+            hst_next_time = op.next_time;
+          }
+        }
+        pib = pib->pnext;
+      }
+
+      // allocate User-defined History Output
+      AllocateUserHistoryOutput(3);
+      EnrollUserHistoryOutput(0, Historydvyc, "dvyc",
+                              UserHistoryOperation::sum);
+      EnrollUserHistoryOutput(1, Historyvxs,  "vxs",
+                              UserHistoryOperation::sum);
+      EnrollUserHistoryOutput(2, Historydvys, "dvys",
+                              UserHistoryOperation::sum);
+    }
   } else if (ipert == 1 || ipert == 2) {
     amp = 0.0;
     nwx = 0;
@@ -83,13 +134,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     std::stringstream msg;
     msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator"   << std::endl
         << "This problem requires that ipert is from 1 to 3." << std::endl;
-    ATHENA_ERROR(msg);
-  }
-
-  if (!shear_periodic) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
-        << "This problem generator requires shearing box"   << std::endl;
     ATHENA_ERROR(msg);
   }
 
@@ -105,14 +149,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Omega_0 = porb->Omega0;
   qshear  = porb->qshear;
   shboxcoord = pin->GetOrAddInteger("problem","shboxcoord",1);
-
-  // conditional error branch
-  if (pmy_mesh->mesh_size.nx2 == 1) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
-        << "Shearing wave sheet does NOT work on a 1D grid" << std::endl;
-    ATHENA_ERROR(msg);
-  }
 
   int il = is - NGHOST; int iu = ie + NGHOST;
   int jl = js - NGHOST; int ju = je + NGHOST;
@@ -214,6 +250,219 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+//========================================================================================
+//! \fn void Mesh::UserWorkInLoop()
+//  \brief Function called once every time step for user-defined work.
+//========================================================================================
+
+void Mesh::UserWorkInLoop() {
+  bool flag = false;
+  // check output
+  Real present_time = time + dt;
+  int cncycle = ncycle + 1;
+  if (error_output) {
+    if ((present_time < tlim) && (nlim < 0 || cncycle < nlim)
+        && (present_time > hst_next_time)) {
+      flag = true;
+      hst_next_time += hst_dt;
+    }
+    if ((present_time >= tlim) || (nlim >= 0 && cncycle >= nlim)) {
+      flag = true;
+    }
+  }
+  // calculate vxs, dvys
+  if (flag) {
+    AthenaArray<Real> &vs = ruser_mesh_data[0];
+    Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
+    Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
+    kx += qshear*Omega_0*present_time*ky;
+    // initialize vs
+    for (int k=0; k<mesh_size.nx3; k++) {
+      for (int j=0; j<mesh_size.nx2; j++) {
+        for (int i=0; i<mesh_size.nx1; i++) {
+          vs(0,k,j,i) = 0.0;
+          vs(1,k,j,i) = 0.0;
+        }
+      }
+    }
+    for (int bn=0; bn<nblocal; ++bn) {
+      MeshBlock *pmb = my_blocks(bn);
+      LogicalLocation loc0;
+      loc0.lx1 = pmb->loc.lx1;
+      loc0.lx2 = pmb->loc.lx2;
+      loc0.lx3 = pmb->loc.lx3;
+      loc0.level = pmb->loc.level;
+      if (loc0.level == root_level) { // root level
+        for (int k=pmb->ks; k<=pmb->ke; k++) {
+          for (int j=pmb->js; j<=pmb->je; j++) {
+            for (int i=pmb->is; i<=pmb->ie; i++) {
+              int ti = loc0.lx1*pmb->block_size.nx1+(i-pmb->is);
+              int tj = loc0.lx2*pmb->block_size.nx2+(j-pmb->js);
+              int tk = loc0.lx3*pmb->block_size.nx3+(k-pmb->ks);
+              Real x1 = pmb->pcoord->x1v(i);
+              Real x2 = pmb->pcoord->x2v(j);
+              Real vx = pmb->phydro->w(IVX,k,j,i);
+              Real dvy = pmb->phydro->w(IVY,k,j,i);
+              if(!pmb->porb->orbital_advection_defined)
+                dvy += qshear*Omega_0*x1;
+              Real vol = pmb->pcoord->dx3f(k)
+                         *pmb->pcoord->dx2f(j)*pmb->pcoord->dx1f(i);
+              Real SN = std::sin(kx*x1+ky*x2);
+              vs(0,tk,tj,ti) = 2.0*vx*vol*SN;
+              vs(1,tk,tj,ti) = 2.0*dvy*vol*SN;
+            }
+          }
+        }
+      } else if (loc0.level-1 == root_level) { // level difference 1
+        if (pmb->block_size.nx3==1) { // 2D
+          int k = pmb->ks;
+          for (int j=pmb->cjs; j<=pmb->cje; j++) {
+            for (int i=pmb->cis; i<=pmb->cie; i++) {
+              int ii = (i-pmb->cis)*2+pmb->is;
+              int jj = (j-pmb->cjs)*2+pmb->js;
+              int kk = k;
+              int ti = (loc0.lx1>>1)*pmb->block_size.nx1
+                       +(loc0.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
+              int tj = (loc0.lx2>>1)*pmb->block_size.nx2
+                       +(loc0.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
+              int tk = k;
+              Real vx00 = pmb->phydro->w(IVX,kk  ,jj  ,ii  );
+              Real vx01 = pmb->phydro->w(IVX,kk  ,jj  ,ii+1);
+              Real vx10 = pmb->phydro->w(IVX,kk  ,jj+1,ii  );
+              Real vx11 = pmb->phydro->w(IVX,kk  ,jj+1,ii+1);
+              Real dvy00 = pmb->phydro->w(IVY,kk  ,jj  ,ii  );
+              Real dvy01 = pmb->phydro->w(IVY,kk  ,jj  ,ii+1);
+              Real dvy10 = pmb->phydro->w(IVY,kk  ,jj+1,ii  );
+              Real dvy11 = pmb->phydro->w(IVY,kk  ,jj+1,ii+1);
+              Real vol00 = pmb->pcoord->dx3f(kk)
+                           *pmb->pcoord->dx2f(jj  )
+                           *pmb->pcoord->dx1f(ii  );
+              Real vol01 = pmb->pcoord->dx3f(kk)
+                           *pmb->pcoord->dx2f(jj  )
+                           *pmb->pcoord->dx1f(ii+1);
+              Real vol10 = pmb->pcoord->dx3f(kk)
+                           *pmb->pcoord->dx2f(jj+1)
+                           *pmb->pcoord->dx1f(ii  );
+              Real vol11 = pmb->pcoord->dx3f(kk)
+                           *pmb->pcoord->dx2f(jj+1)
+                           *pmb->pcoord->dx1f(ii+1);
+              if(!pmb->porb->orbital_advection_defined) {
+                dvy00 += qshear*Omega_0*pmb->pcoord->x1v(ii  );
+                dvy01 += qshear*Omega_0*pmb->pcoord->x1v(ii+1);
+                dvy10 += qshear*Omega_0*pmb->pcoord->x1v(ii  );
+                dvy11 += qshear*Omega_0*pmb->pcoord->x1v(ii+1);
+              }
+              Real SN = std::sin(kx*pmb->pcoord->x1f(ii+1)
+                                 +ky*pmb->pcoord->x2f(jj+1));
+              Real vx_vol  = vx00*vol00+vx01*vol01
+                             +vx10*vol10+vx11*vol11;
+              Real dvy_vol = dvy00*vol00+dvy01*vol01
+                             +dvy10*vol10+dvy11*vol11;
+              vs(0,tk,tj,ti) = 2.0*SN*vx_vol;
+              vs(1,tk,tj,ti) = 2.0*SN*dvy_vol;
+            }
+          }
+        } else { // 3D
+          for (int k=pmb->cks; k<=pmb->cke; k++) {
+            for (int j=pmb->cjs; j<=pmb->cje; j++) {
+              for (int i=pmb->cis; i<=pmb->cie; i++) {
+                int ii = (i-pmb->cis)*2+pmb->is;
+                int jj = (j-pmb->cjs)*2+pmb->js;
+                int kk = (k-pmb->cks)*2+pmb->ks;
+                int ti = (loc0.lx1>>1)*pmb->block_size.nx1
+                         +(loc0.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
+                int tj = (loc0.lx2>>1)*pmb->block_size.nx2
+                         +(loc0.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
+                int tk = (loc0.lx3>>1)*pmb->block_size.nx3
+                         +(loc0.lx3%2)*(pmb->block_size.nx3/2)+(k-pmb->cks);
+                Real vx000 = pmb->phydro->w(IVX,kk  ,jj  ,ii  );
+                Real vx001 = pmb->phydro->w(IVX,kk  ,jj  ,ii+1);
+                Real vx010 = pmb->phydro->w(IVX,kk  ,jj+1,ii  );
+                Real vx011 = pmb->phydro->w(IVX,kk  ,jj+1,ii+1);
+                Real vx100 = pmb->phydro->w(IVX,kk+1,jj  ,ii  );
+                Real vx101 = pmb->phydro->w(IVX,kk+1,jj  ,ii+1);
+                Real vx110 = pmb->phydro->w(IVX,kk+1,jj+1,ii  );
+                Real vx111 = pmb->phydro->w(IVX,kk+1,jj+1,ii+1);
+                Real dvy000 = pmb->phydro->w(IVY,kk  ,jj  ,ii  );
+                Real dvy001 = pmb->phydro->w(IVY,kk  ,jj  ,ii+1);
+                Real dvy010 = pmb->phydro->w(IVY,kk  ,jj+1,ii  );
+                Real dvy011 = pmb->phydro->w(IVY,kk  ,jj+1,ii+1);
+                Real dvy100 = pmb->phydro->w(IVY,kk+1,jj  ,ii  );
+                Real dvy101 = pmb->phydro->w(IVY,kk+1,jj  ,ii+1);
+                Real dvy110 = pmb->phydro->w(IVY,kk+1,jj+1,ii  );
+                Real dvy111 = pmb->phydro->w(IVY,kk+1,jj+1,ii+1);
+                Real vol000 = pmb->pcoord->dx3f(kk  )
+                              *pmb->pcoord->dx2f(jj  )
+                              *pmb->pcoord->dx1f(ii  );
+                Real vol001 = pmb->pcoord->dx3f(kk  )
+                              *pmb->pcoord->dx2f(jj  )
+                              *pmb->pcoord->dx1f(ii+1);
+                Real vol010 = pmb->pcoord->dx3f(kk  )
+                              *pmb->pcoord->dx2f(jj+1)
+                              *pmb->pcoord->dx1f(ii  );
+                Real vol011 = pmb->pcoord->dx3f(kk  )
+                              *pmb->pcoord->dx2f(jj+1)
+                              *pmb->pcoord->dx1f(ii+1);
+                Real vol100 = pmb->pcoord->dx3f(kk+1)
+                              *pmb->pcoord->dx2f(jj  )
+                              *pmb->pcoord->dx1f(ii  );
+                Real vol101 = pmb->pcoord->dx3f(kk+1)
+                              *pmb->pcoord->dx2f(jj  )
+                              *pmb->pcoord->dx1f(ii+1);
+                Real vol110 = pmb->pcoord->dx3f(kk+1)
+                              *pmb->pcoord->dx2f(jj+1)
+                              *pmb->pcoord->dx1f(ii  );
+                Real vol111 = pmb->pcoord->dx3f(kk+1)
+                              *pmb->pcoord->dx2f(jj+1)
+                              *pmb->pcoord->dx1f(ii+1);
+                if(!pmb->porb->orbital_advection_defined) {
+                  dvy000 += qshear*Omega_0*pmb->pcoord->x1v(ii  );
+                  dvy001 += qshear*Omega_0*pmb->pcoord->x1v(ii+1);
+                  dvy010 += qshear*Omega_0*pmb->pcoord->x1v(ii  );
+                  dvy011 += qshear*Omega_0*pmb->pcoord->x1v(ii+1);
+                  dvy100 += qshear*Omega_0*pmb->pcoord->x1v(ii  );
+                  dvy101 += qshear*Omega_0*pmb->pcoord->x1v(ii+1);
+                  dvy110 += qshear*Omega_0*pmb->pcoord->x1v(ii  );
+                  dvy111 += qshear*Omega_0*pmb->pcoord->x1v(ii+1);
+                }
+                Real SN = std::sin(kx*pmb->pcoord->x1f(ii+1)
+                                   +ky*pmb->pcoord->x2f(jj+1));
+                Real vx_vol = vx000*vol000+vx001*vol001
+                              +vx010*vol010+vx011*vol011
+                              +vx100*vol100+vx101*vol101
+                              +vx110*vol110+vx111*vol111;
+                Real dvy_vol = dvy000*vol000+dvy001*vol001
+                               +dvy010*vol010+dvy011*vol011
+                               +dvy100*vol100+dvy101*vol101
+                               +dvy110*vol110+dvy111*vol111;
+                vs(0,tk,tj,ti) = 2.0*SN*vx_vol;
+                vs(1,tk,tj,ti) = 2.0*SN*dvy_vol;
+              }
+            }
+          }
+        }
+      } else { // level difference 2
+        std::stringstream msg;
+        msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator"   << std::endl
+            << "This problem prohibits level > 1 for ipert=3 "
+            << "with error_output=true."  << std::endl;
+          ATHENA_ERROR(msg);
+      }
+    } // pmb
+#ifdef MPI_PARALLEL
+    int ntot = 2*mesh_size.nx3*mesh_size.nx2*mesh_size.nx1;
+    if (Globals::my_rank == 0) {
+      MPI_Reduce(MPI_IN_PLACE, vs.data(), ntot, MPI_ATHENA_REAL,
+                 MPI_SUM, 0, MPI_COMM_WORLD);
+    } else {
+      MPI_Reduce(vs.data(), vs.data(), ntot, MPI_ATHENA_REAL,
+                 MPI_SUM, 0, MPI_COMM_WORLD);
+    }
+#endif
+  } // flag
+  return;
+}
+
 namespace {
 
 Real Historydvyc(MeshBlock *pmb, int iout) {
@@ -234,10 +483,59 @@ Real Historydvyc(MeshBlock *pmb, int iout) {
         Real dvy = pmb->phydro->w(IVY,k,j,i);
         if(!pmb->porb->orbital_advection_defined)
           dvy += qshear*Omega_0*x1;
-        dvyc += volume(i)*2.0*dvy*CS/tvol;
+        dvyc += volume(i)*2.0*dvy*CS;
       }
     }
   }
-  return dvyc;
+  Real dvy0 = iso_cs*amp
+              *std::fabs(static_cast<Real>(nwy)/static_cast<Real>(nwx));
+  return dvyc/(dvy0*tvol);
+}
+
+Real Historyvxs(MeshBlock *pmb, int iout) {
+  if (Globals::my_rank != 0) return 0.0;
+  if (pmb->lid != 0) return 0.0;
+  AthenaArray<Real> &vs = pmb->pmy_mesh->ruser_mesh_data[0];
+  Real vxs = 0.0;
+  Real vxs_temp;
+  int nx1 = pmb->pmy_mesh->mesh_size.nx1;
+  int nx2 = pmb->pmy_mesh->mesh_size.nx2;
+  int nx3 = pmb->pmy_mesh->mesh_size.nx3;
+  Real tvol = x1size*x2size*x3size;
+  for (int k=0; k<nx3; k++) {
+    for (int i=0; i<nx1; i++) {
+      vxs_temp = 0.0;
+      for (int j=0; j<nx2; j++) {
+        vxs_temp += vs(0,k,j,i);
+      }
+      vxs += std::fabs(vxs_temp);
+    }
+  }
+  Real vx0 = iso_cs*amp;
+  return vxs/(vx0*tvol);
+}
+
+Real Historydvys(MeshBlock *pmb, int iout) {
+  if (Globals::my_rank != 0) return 0.0;
+  if (pmb->lid != 0) return 0.0;
+  AthenaArray<Real> &vs = pmb->pmy_mesh->ruser_mesh_data[0];
+  Real dvys = 0.0;
+  Real dvys_temp;
+  int nx1 = pmb->pmy_mesh->mesh_size.nx1;
+  int nx2 = pmb->pmy_mesh->mesh_size.nx2;
+  int nx3 = pmb->pmy_mesh->mesh_size.nx3;
+  Real tvol = x1size*x2size*x3size;
+  for (int k=0; k<nx3; k++) {
+    for (int i=0; i<nx1; i++) {
+      dvys_temp = 0.0;
+      for (int j=0; j<nx2; j++) {
+        dvys_temp += vs(1,k,j,i);
+      }
+      dvys += std::fabs(dvys_temp);
+    }
+  }
+  Real dvy0 = iso_cs*amp
+              *std::fabs(static_cast<Real>(nwy)/static_cast<Real>(nwx));
+  return dvys/(dvy0*tvol);
 }
 } // namespace

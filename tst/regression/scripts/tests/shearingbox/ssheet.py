@@ -40,6 +40,7 @@ def run(**kwargs):
         'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
         'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
         'problem/orbital_advection=false',
+        'problem/error_output=true',
         'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 
@@ -60,6 +61,7 @@ def run(**kwargs):
         'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
         'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
         'problem/orbital_advection=true', 'problem/orbital_splitting=2',
+        'problem/error_output=true',
         'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 
@@ -75,17 +77,19 @@ def analyze():
     cs = 0.001
     constC = 0.5*(cs**2.0*ky**2.0+kappa2)/(qshear*Omega0*cs*ky)
 
+    dvy0 = 1.0e-7
     c1 = -1.82088e-07
     c2 = -8.20766e-08
-    dvy0 = 1.0e-7
 
     # read results of SSEET_SHWAVE
     fname = 'bin/SSHEET_SHWAVE.hst'
     a = athena_read.hst(fname)
     time1 = a['time']
     dvyc1 = a['dvyc']
+    dvys1 = a['dvys']
     nf1 = len(time1)
-    norm1 = 0.0
+    norm1c = 0.0
+    norm1s = 0.0
     for n in xrange(nf1):
         tau_ = qshear*Omega0*time1[n]+kx0/ky
         T_ = 1.0j * cmath.sqrt(2.0*cs*ky/(qshear*Omega0))*tau_
@@ -96,16 +100,20 @@ def analyze():
         sterm_ = exp_*T_*mp.hyp1f1(0.75-0.5j*constC, 1.5, 0.5j*T_*T_)
         second_ = sterm_.real
         advy = c1*first_+c2*second_
-        norm1 += abs(dvyc1[n]-advy)/dvy0
-    norm1 /= nf1
+        norm1c += abs(dvyc1[n]-advy/dvy0)
+        norm1s += abs(dvys1[n])
+    norm1c /= nf1
+    norm1s /= nf1
 
     # read results of SSEET_SHWAVE_ORB
     fname = 'bin/SSHEET_SHWAVE_ORB.hst'
     b = athena_read.hst(fname)
     time2 = b['time']
     dvyc2 = b['dvyc']
+    dvys2 = b['dvys']
     nf2 = len(time2)
-    norm2 = 0.0
+    norm2c = 0.0
+    norm2s = 0.0
     for n in xrange(nf2):
         tau_ = qshear*Omega0*time2[n]+kx0/ky
         T_ = 1.0j * cmath.sqrt(2.0*cs*ky/(qshear*Omega0))*tau_
@@ -116,21 +124,30 @@ def analyze():
         sterm_ = exp_*T_*mp.hyp1f1(0.75-0.5j*constC, 1.5, 0.5j*T_*T_)
         second_ = sterm_.real
         advy = c1*first_+c2*second_
-        norm2 += abs(dvyc2[n]-advy)/dvy0
-    norm2 /= nf2
+        norm2c += abs(dvyc2[n]-advy/dvy0)
+        norm2s += abs(dvys2[n])
+    norm2c /= nf2
+    norm2s /= nf2
 
-    logger.warning('[SSHEET_SHWAVE]: check L1 norm of the dvyc deviation')
-    msg = '[SSHEET_SHWAVE]: L1 Norm {} = {}'
-    logger.warning(msg.format('w/o Orbital Advection', norm1))
-    logger.warning(msg.format('w/  Orbital Advection', norm2))
+    logger.warning('[SSHEET_SHWAVE]: L1-Norm Errors')
+    msg = '[SSHEET_SHWAVE]: epsilon_c = {}, epsilon_s = {}'
     flag = True
-    if norm1 > 0.2:
-        logger.warning('[SSHEET_SHWAVE]: the deviation is more than 20%')
-        logger.warning('                 w/o Orbital Advection')
+    logger.warning('[SSHEET_SHWAVE]: w/o Orbital Advection')
+    logger.warning(msg.format(norm1c, norm1s))
+    if norm1c > 0.2:
+        logger.warning('[SSHEET_SHWAVE]: dvyc Error is more than 20%')
         flag = False
-    if norm2 > 0.2:
-        logger.warning('[SSHEET_SHWAVE]: the deviation is more than 20%')
-        logger.warning('                 w/  Orbital Advection')
+    if norm1s > 0.01:
+        logger.warning('[SSHEET_SHWAVE]: dvys Error is more than 1%')
+        flag = False
+
+    logger.warning('[SSHEET_SHWAVE]: w/  Orbital Advection')
+    logger.warning(msg.format(norm2c, norm2s))
+    if norm1c > 0.2:
+        logger.warning('[SSHEET_SHWAVE]: dvyc Error is more than 20%')
+        flag = False
+    if norm1s > 0.01:
+        logger.warning('[SSHEET_SHWAVE]: dvys Error is more than 1%')
         flag = False
 
     return flag
