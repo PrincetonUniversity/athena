@@ -71,13 +71,7 @@ void CellCenteredBoundaryVariable::LoadFluxShearing(AthenaArray<Real> &src, Real
     ATHENA_ERROR(msg);
   }
   int p = 0;
-  for (int n=nl_; n<=nu_; ++n) {
-    for (int k=sk; k<=ek; k++) {
-      for (int j=sj; j<=ej; j++) {
-        buf[p++] = src(n,k,j);
-      }
-    }
-  }
+  BufferUtility::PackData(src, buf, sj, ej, sk, ek, nl_, nu_, p);
   return;
 }
 
@@ -148,6 +142,7 @@ void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundarySameLevel(
   int p = 0;
   for (int n=nl_; n<=nu_; ++n) {
     for (int k=sk; k<=ek; k++) {
+#pragma omp simd
       for (int j=sj; j<=ej; j++) {
         src(n,k,0,j) = buf[p++];
       }
