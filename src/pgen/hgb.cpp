@@ -58,7 +58,7 @@
 
 namespace {
 Real iso_cs, gm1, d0, p0;
-Real nwx, nwy, nwz; // Wavenumbers
+Real nwx, nwy; // Wavenumbers
 Real Lx, Ly, Lz; // root grid size, global to share with output functions
 Real Omega_0, qshear;
 Real amp, beta;
@@ -163,20 +163,24 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // initialize wavenumbers
   nwx = pin->GetOrAddInteger("problem","nwx",1);
+  if (nwx==0) {
+    if (ipert==4) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in hgb.cpp ProblemGenerator" << std::endl
+          << "<problem> nwx must be non-zero for ipert=4." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    if (ifield==3) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in hgb.cpp ProblemGenerator" << std::endl
+          << "<problem> nwx must be non-zero for ifield=3." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+  }
   nwy = pin->GetOrAddInteger("problem","nwy",1);
-  if (block_size.nx3 == 1)
-    nwz = pin->GetOrAddInteger("problem","nwz",1);
-  else
-    nwz = pin->GetOrAddInteger("problem","nwz",0);
+
   Real kx = (TWO_PI/Lx)*(static_cast<Real>(nwx));// nxw=-ve for leading wave
   Real ky = (TWO_PI/Ly)*(static_cast<Real>(nwy));
-  Real kz = (TWO_PI/Lz)*(static_cast<Real>(nwz));
-  if (block_size.nx3 == 1 && nwz != 0) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in hgb.cpp ProblemGenerator" << std::endl
-        << "In 2D, parameer problem/nwz must vanish." << std::endl;
-    ATHENA_ERROR(msg);
-  }
 
   // Rescale amp to sound speed for ipert 2
   if (ipert == 2) {
