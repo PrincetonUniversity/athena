@@ -79,7 +79,6 @@ void CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *bu
   for (int n=nl_; n<=nu_; ++n) {
     for (int k=sk; k<=ek; k++) {
       for (int i=si; i<=ei; i++) {
-#pragma omp simd
         for (int j=sj; j<=ej; j++) {
           buf[p++] = src(n,k,j,i);
         }
@@ -156,16 +155,8 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
     ATHENA_ERROR(msg);
   }
   int p = 0;
-  for (int n=nl_; n<=nu_; ++n) {
-    for (int k=sk; k<=ek; k++) {
-      for (int i=si; i<=ei; i++) {
-#pragma omp simd
-        for (int j=sj; j<=ej; j++) {
-          src(n,k,i,j) = buf[p++];
-        }
-      }
-    }
-  }
+  BufferUtility::UnpackData(buf, src, nl_, nu_,
+                            sj, ej, si, ei, sk, ek, p);
   return;
 }
 
