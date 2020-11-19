@@ -28,12 +28,14 @@
 
 //---------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::RemapFluxPlm(AthenaArray<Real> &pflux_,
-//                                          AthenaArray<Real> &pbuf_, const Real eps_,
-//                                          const int osgn_, const int k, const int j,
-//                                          const int il, const int iu, const int shift_)
+//                                          const AthenaArray<Real> &pbuf_,
+//                                          const Real eps_, const int osgn_,
+//                                          const int k, const int j, const int il,
+//                                          const int iu, const int shift_)
 // Remap & Calculate flux with plm
 
-void OrbitalAdvection::RemapFluxPlm(AthenaArray<Real> &pflux_, AthenaArray<Real> &pbuf_,
+void OrbitalAdvection::RemapFluxPlm(AthenaArray<Real> &pflux_,
+                                    const AthenaArray<Real> &pbuf_,
                                     const Real eps_, const int osgn_, const int k,
                                     const int j, const int il, const int iu,
                                     const int shift_) {
@@ -54,16 +56,16 @@ void OrbitalAdvection::RemapFluxPlm(AthenaArray<Real> &pflux_, AthenaArray<Real>
 //---------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::RemapFluxPpm(AthenaArray<Real> &pflux_,
 //                                          AthenaArray<Real> &pbuf_,
-//                                          const Real eps_, const int osgn_, const int k,
-//                                          const int j, const int il, const int iu,
-//                                          const int shift_)
+//                                          const Real eps_, const int osgn_,
+//                                          const int k, const int j, const int il,
+//                                          const int iu, const int shift_)
 // Remap & Calculate flux with ppm
 
 void OrbitalAdvection::RemapFluxPpm(AthenaArray<Real> &pflux_,
                                     AthenaArray<Real> &pbuf_,
                                     const Real eps_, const int osgn_,
-                                    const int k, const int j, const int il, const int iu,
-                                    const int shift_) {
+                                    const int k, const int j, const int il,
+                                    const int iu, const int shift_) {
   const Real C2      = 1.25;
   const Real odi     = 2.0*(osgn_-0.5);
   AthenaArray<Real> &q_m2  = s_src[0], &q_m1  = s_src[1], &q     = s_src[2],
