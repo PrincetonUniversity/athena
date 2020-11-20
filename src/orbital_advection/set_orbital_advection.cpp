@@ -110,9 +110,9 @@ void OrbitalAdvection::SetOrbitalAdvectionCC(const AthenaArray<Real> &u,
                                           pmb_->cis, pmb_->cie, pmb_->cjs,
                                           pmb_->cje, pmb_->cks, pmb_->cke);
     if (NSCALARS>0)
-    pmb_->pmr->RestrictCellCenteredValues(s, s_coarse_send, 0, NSCALARS-1,
-                                          pmb_->cis, pmb_->cie, pmb_->cjs,
-                                          pmb_->cje, pmb_->cks, pmb_->cke);
+      pmb_->pmr->RestrictCellCenteredValues(s, s_coarse_send, 0, NSCALARS-1,
+                                            pmb_->cis, pmb_->cie, pmb_->cjs,
+                                            pmb_->cje, pmb_->cks, pmb_->cke);
   }
 return;
 }

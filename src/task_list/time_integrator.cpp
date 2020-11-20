@@ -2226,8 +2226,6 @@ TaskStatus TimeIntegratorTaskList::SendHydroOrbital(MeshBlock *pmb, int stage) {
     Hydro *ph = pmb->phydro;
     PassiveScalars *ps = pmb->pscalars;
     porb->SetOrbitalAdvectionCC(ph->u, ps->s);
-    porb->orb_bc->in_hyd  = &(ph->u);
-    porb->orb_bc->in_sclr = &(ps->s);
     porb->orb_bc->SendBoundaryBuffersCC();
     return TaskStatus::success;
   }
@@ -2242,7 +2240,6 @@ TaskStatus TimeIntegratorTaskList::SendFieldOrbital(MeshBlock *pmb, int stage) {
     OrbitalAdvection *porb = pmb->porb;
     Field *pf = pmb->pfield;
     porb->SetOrbitalAdvectionFC(pf->b);
-    porb->orb_bc->in_fc   = &(pf->b);
     porb->orb_bc->SendBoundaryBuffersFC();
     return TaskStatus::success;
   }

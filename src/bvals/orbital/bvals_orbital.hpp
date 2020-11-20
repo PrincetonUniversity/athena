@@ -49,14 +49,6 @@ class OrbitalBoundaryCommunication {
 
   static constexpr int max_phys_id = 2;
 
-  // ptr to inputs
-  AthenaArray<Real> *in_hyd, *in_sclr;
-  FaceField *in_fc;
-
-  // ptr to outputs
-  AthenaArray<Real> *out_hyd, *out_sclr;
-  AthenaArray<Real> *out_b1, *out_b2;
-
  private:
   void InitBoundaryData(OrbitalBoundaryData &bd, BoundaryQuantity type);
   void DestroyBoundaryData(OrbitalBoundaryData &bd);

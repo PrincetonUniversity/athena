@@ -23,8 +23,10 @@
 #include "../../coordinates/coordinates.hpp"
 #include "../../field/field.hpp"
 #include "../../globals.hpp"
+#include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../orbital_advection/orbital_advection.hpp"
+#include "../../scalars/scalars.hpp"
 #include "../../utils/buffer_utils.hpp"
 #include "../bvals.hpp"
 #include "bvals_orbital.hpp"
@@ -40,10 +42,6 @@ OrbitalBoundaryCommunication::OrbitalBoundaryCommunication(
     OrbitalAdvection *porb)
     : pmy_block_(porb->pmb_), pmy_mesh_(porb->pm_),
       pbval_(porb->pbval_), pmy_orbital_(porb),
-      out_hyd(&(porb->orbital_cons)),
-      out_b1(&(porb->orbital_b1)),
-      out_b2(&(porb->orbital_b2)),
-      out_sclr(&(porb->orbital_scalar)),
       xgh(porb->xgh) {
   for (int upper=0; upper<2; upper++) {
     InitBoundaryData(orbital_bd_cc_[upper], BoundaryQuantity::orbital_cc);
@@ -229,7 +227,7 @@ void OrbitalBoundaryCommunication::InitBoundaryData(
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::DestroyBoundaryData(OrbitalBoundaryData &bd)
-//  \brief Destroy BoundaryData structure
+//  \brief destroy BoundaryData structure
 
 void OrbitalBoundaryCommunication::DestroyBoundaryData(OrbitalBoundaryData &bd) {
   for (int n=0; n<bd.nbmax; n++) {
@@ -487,6 +485,7 @@ void OrbitalBoundaryCommunication::ComputeOrbit(const Real dt) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::StartReceiving(BoundaryCommSubset phase)
+//  \brief StartReceiving function for the orbital communication
 void OrbitalBoundaryCommunication::StartReceiving(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
   int tag, size;
@@ -546,6 +545,7 @@ void OrbitalBoundaryCommunication::StartReceiving(BoundaryCommSubset phase) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::ClearBoundary(BoundaryCommSubset phase)
+//  \brief ClearBoundary function for the orbital communication
 void OrbitalBoundaryCommunication::ClearBoundary(BoundaryCommSubset phase) {
   for (int upper=0; upper<2; upper++) {
     for (int n=0; n<orbital_bd_cc_[upper].nbmax; n++) {
@@ -576,7 +576,7 @@ void OrbitalBoundaryCommunication::ClearBoundary(BoundaryCommSubset phase) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SendBoundaryBuffersCC()
-//  \brief load and send variables (u, s)
+//  \brief load and send hydro variables and passive scalars
 void OrbitalBoundaryCommunication::SendBoundaryBuffersCC() {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -608,7 +608,7 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersCC() {
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SendBoundaryBuffersCC" << std::endl
-            << "Invalid boundary type is specified." << std::endl;
+            << "Send buffer size is incorrect." << std::endl;
         ATHENA_ERROR(msg);
       }
       if (snb.rank == Globals::my_rank) { //on the same process
@@ -664,7 +664,7 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersCC() {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersCC()
-//  \brief receive and set variables (u,s)
+//  \brief receive and set hydro variables and passive scalars
 bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersCC() {
   bool flag[2]{true, true};
   int mylevel = pmy_block_->loc.level;
@@ -714,7 +714,7 @@ bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersCC() {
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::ReceiveBoundaryBuffersCC" << std::endl
-            << "Invalid boundary type is specified." << std::endl;
+            << "Recieve buffer size is incorrect." << std::endl;
         ATHENA_ERROR(msg);
       }
       orbital_bd_cc_[upper].flag[n] = BoundaryStatus::completed;
@@ -725,7 +725,7 @@ bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersCC() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SendBoundaryBuffersFC()
-//  \brief send variables (b)
+//  \brief load and send magnetic fields
 void OrbitalBoundaryCommunication::SendBoundaryBuffersFC() {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -748,7 +748,7 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersFC() {
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SendBoundaryBuffersFC" << std::endl
-            << "Invalid boundary type is specified." << std::endl;
+            << "Send buffer size is incorrect." << std::endl;
         ATHENA_ERROR(msg);
       }
       if (snb.rank == Globals::my_rank) { //on the same process
@@ -804,7 +804,7 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersFC() {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersFC()
-//  \brief receive variables (b)
+//  \brief receive and set magnetic fields
 bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersFC() {
   bool flag[2]{true, true};
   int mylevel = pmy_block_->loc.level;
@@ -845,7 +845,7 @@ bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersFC() {
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::ReceiveBoundaryBuffersFC" << std::endl
-            << "Invalid boundary type is specified." << std::endl;
+            << "Recieve buffer size is incorrect." << std::endl;
         ATHENA_ERROR(msg);
       }
       orbital_bd_fc_[upper].flag[n] = BoundaryStatus::completed;
@@ -861,7 +861,7 @@ bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersFC() {
 void OrbitalBoundaryCommunication::LoadHydroBufferSameLevel(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &ui = *in_hyd;
+  AthenaArray<Real> &ui = pmb->phydro->u;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
@@ -872,8 +872,6 @@ void OrbitalBoundaryCommunication::LoadHydroBufferSameLevel(Real *buf, int &p, i
             int offset = porb->ofc(k,i);
             int xl = pmb->js-xgh-offset+onx;
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=xl; j<=pmb->je; j++) {
                 buf[p++] = ui(nph,k,j,i);
               }
@@ -886,10 +884,8 @@ void OrbitalBoundaryCommunication::LoadHydroBufferSameLevel(Real *buf, int &p, i
             int offset = porb->ofc(k,i);
             int xu = pmb->je+1+xgh-offset-onx;
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=pmb->js; j<=xu; j++) {
-              buf[p++] = ui(nph,k,j,i);
+                buf[p++] = ui(nph,k,j,i);
               }
             }
           }
@@ -898,7 +894,7 @@ void OrbitalBoundaryCommunication::LoadHydroBufferSameLevel(Real *buf, int &p, i
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadHydroBufferSameLevel" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if (porb->orbital_direction == 2) {
@@ -909,10 +905,8 @@ void OrbitalBoundaryCommunication::LoadHydroBufferSameLevel(Real *buf, int &p, i
             int offset = porb->ofc(j,i);
             int xl = pmb->ks-xgh-offset+onx;
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int k=xl; k<=pmb->ke; k++) {
-              buf[p++] = ui(nph,k,j,i);
+                buf[p++] = ui(nph,k,j,i);
               }
             }
           }
@@ -923,8 +917,6 @@ void OrbitalBoundaryCommunication::LoadHydroBufferSameLevel(Real *buf, int &p, i
             int offset = porb->ofc(j,i);
             int xu = pmb->ke+1+xgh-offset-onx;
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int k=pmb->ks; k<=xu; k++) {
                 buf[p++] = ui(nph,k,j,i);
               }
@@ -935,7 +927,7 @@ void OrbitalBoundaryCommunication::LoadHydroBufferSameLevel(Real *buf, int &p, i
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadHydroBufferSameLevel" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -963,8 +955,6 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToCoarser(Real *buf, int &p, i
             int offset = porb->ofc_coarse(k,i);
             int xl = pmb->cjs-xgh-offset+honx;
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=xl; j<=pmb->cje; j++) {
                 buf[p++] = ui(nph,k,j,i);
               }
@@ -977,8 +967,6 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToCoarser(Real *buf, int &p, i
             int offset = porb->ofc_coarse(k,i);
             int xu = pmb->cje+1+xgh-offset-honx;
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=pmb->cjs; j<=xu; j++) {
                 buf[p++] = ui(nph,k,j,i);
               }
@@ -989,7 +977,7 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToCoarser(Real *buf, int &p, i
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadHydroBufferToCoarser" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if (porb->orbital_direction == 2) {
@@ -1000,8 +988,6 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToCoarser(Real *buf, int &p, i
             int offset = porb->ofc_coarse(j,i);
             int xl = pmb->cks-xgh-offset+honx;
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int k=xl; k<=pmb->cke; k++) {
                 buf[p++] = ui(nph,k,j,i);
               }
@@ -1014,8 +1000,6 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToCoarser(Real *buf, int &p, i
             int offset = porb->ofc_coarse(j,i);
             int xu = pmb->cke+1+xgh-offset-honx;
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int k=pmb->cks; k<=xu; k++) {
                 buf[p++] = ui(nph,k,j,i);
               }
@@ -1026,7 +1010,7 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToCoarser(Real *buf, int &p, i
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadHydroBufferToCoarser" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -1043,7 +1027,7 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToCoarser(Real *buf, int &p, i
 void OrbitalBoundaryCommunication::LoadHydroBufferToFiner(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &ui = *in_hyd;
+  AthenaArray<Real> &ui = pmb->phydro->u;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
@@ -1078,22 +1062,11 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToFiner(Real *buf, int &p, int
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadHydroBufferToFiner" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
-      for (int n=0; n<NHYDRO; ++n) {
-        for (int k=kl; k<=ku; k++) {
-          for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-            for (int i=il; i<=iu; i++) {
-              buf[p++] = ui(n,k,j,i);
-            }
-          }
-        }
-      }
-      // If using PackData with intel compiler, there is a problem.
-      //BufferUtility::PackData(ui, buf, 0, NHYDRO-1, il, iu, jl, ju, kl, ku, p);
+      BufferUtility::PackData(ui, buf, 0, NHYDRO-1,
+                              il, iu, jl, ju, kl, ku, p);
     } else if (porb->orbital_direction == 2) {
       int &onx = pmb->block_size.nx3;
       int il, iu, jl, ju, kl, ku;
@@ -1121,23 +1094,11 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToFiner(Real *buf, int &p, int
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadHydroBufferToFiner" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
-      for (int n=0; n<NHYDRO; ++n) {
-        for (int k=kl; k<=ku; k++) {
-          for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-            for (int i=il; i<=iu; i++) {
-              buf[p++] = ui(n,k,j,i);
-            }
-          }
-        }
-      }
-      // If using PackData with intel compiler, there is a problem.
-      // BufferUtility::PackData(ui, buf, 0, NHYDRO-1, il,
-      //                         iu, jl, ju, kl, ku, p);
+      BufferUtility::PackData(ui, buf, 0, NHYDRO-1,
+                              il, iu, jl, ju, kl, ku, p);
     }
   }
 //  else { // non-uniform mesh
@@ -1148,12 +1109,12 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToFiner(Real *buf, int &p, int
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
 //                                 Real *buf, int &p, const int nb)
-//  \brief set hydro variables (same level or coarser level)
+//  \brief set hydro variables (same level)
 void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
                            Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &uo = *out_hyd;
+  AthenaArray<Real> &uo = porb->orbital_cons;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
@@ -1168,10 +1129,9 @@ void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
               xl -= onx; xu -= onx;
             }
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for (int j=xl; j<=xu; j++) {
-              uo(nph,k,i,j) = buf[p++];
+                uo(nph,k,i,j) = buf[p++];
               }
             }
           }
@@ -1186,8 +1146,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
               xl += onx; xu += onx;
             }
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for (int j=xl; j<=xu; j++) {
                 uo(nph,k,i,j) = buf[p++];
               }
@@ -1198,7 +1157,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetHydroBufferSameLevel" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
@@ -1213,8 +1172,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
               xl -= onx; xu -= onx;
             }
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for (int k=xl; k<=xu; k++) {
                 uo(nph,j,i,k) = buf[p++];
               }
@@ -1231,8 +1189,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
               xl += onx; xu += onx;
             }
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for (int k=xl; k<=xu; k++) {
                 uo(nph,j,i,k) = buf[p++];
               }
@@ -1243,7 +1200,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetHydroBufferSameLevel" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -1259,7 +1216,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
                              Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &uo  = *out_hyd;
+  AthenaArray<Real> &uo  = porb->orbital_cons;
   AthenaArray<Real> &uco = porb->u_coarse_recv;
   AthenaArray<Real> &uto = porb->u_temp;
 
@@ -1279,21 +1236,22 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
       if (nb==0) {
         int jl = pmb->cjs-xgh-porb->max_ofc_coarse+onx/2-1;
         int ju = pmb->cje+1;
+        // TODO(tomo-ono): This part has a problem with "#pragma omp simd"
+        //                 when using the Intel compiler
+        // BufferUtility::UnpackData(buf, uco, 0, NHYDRO-1,
+        //                           il, iu, jl, ju, kl, ku, p);
         for (int n=0; n<NHYDRO; ++n) {
           for (int k=kl; k<=ku; k++) {
             for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int i=il; i<=iu; i++) {
                 uco(n,k,j,i) = buf[p++];
               }
             }
           }
         }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, uco, 0, NHYDRO-1, il, iu, jl, ju, kl, ku, p);
-        pmb->pmr->ProlongateCellCenteredValues(uco, uto, 0, NHYDRO-1, pmb->cis, pmb->cie,
-                                               jl+1, pmb->cje, pmb->cks, pmb->cke);
+        pmb->pmr->ProlongateCellCenteredValues(uco, uto, 0, NHYDRO-1,
+                                               pmb->cis, pmb->cie, jl+1,
+                                               pmb->cje, pmb->cks, pmb->cke);
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           for (int i=pmb->is; i<=pmb->ie; i++) {
             int offset = porb->ofc(k,i);
@@ -1301,8 +1259,6 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
             int xu = pmb->je;
             const int shift = (offset>0)? 0: -onx;
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=xl; j<=xu; j++) {
                 uo(nph,k,i,j+shift) = uto(nph,k,j,i);
               }
@@ -1312,21 +1268,22 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
       } else if (nb==4) {
         int jl = pmb->cjs-1;
         int ju = pmb->cje+2+xgh-porb->min_ofc_coarse-onx/2;
+        // TODO(tomo-ono): This part has a problem with "#pragma omp simd"
+        //                 when using the Intel compiler
+        // BufferUtility::UnpackData(buf, uco, 0, NHYDRO-1,
+        //                           il, iu, jl, ju, kl, ku, p);
         for (int n=0; n<NHYDRO; ++n) {
           for (int k=kl; k<=ku; k++) {
             for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int i=il; i<=iu; i++) {
                 uco(n,k,j,i) = buf[p++];
               }
             }
           }
         }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, uco, 0, NHYDRO-1, il, iu, jl, ju, kl, ku, p);
-        pmb->pmr->ProlongateCellCenteredValues(uco, uto, 0, NHYDRO-1, pmb->cis, pmb->cie,
-                                               pmb->cjs, ju-1, pmb->cks, pmb->cke);
+        pmb->pmr->ProlongateCellCenteredValues(uco, uto, 0, NHYDRO-1,
+                                               pmb->cis, pmb->cie, pmb->cjs,
+                                               ju-1, pmb->cks, pmb->cke);
         for(int k=pmb->ks; k<=pmb->ke; k++) {
           for(int i=pmb->is; i<=pmb->ie; i++) {
             int offset = porb->ofc(k,i);
@@ -1334,8 +1291,6 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
             int xu = pmb->je+1+xgh-offset-onx;
             const int shift = (offset>0)? 2*onx: onx;
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=xl; j<=xu; j++) {
                 uo(nph,k,i,j+shift) = uto(nph,k,j,i);
               }
@@ -1346,7 +1301,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetHydroBufferFromCoarser" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
@@ -1359,21 +1314,22 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
       if(nb==0) {
         int kl = pmb->cks-xgh-porb->max_ofc_coarse+onx/2-1;
         int ku = pmb->cke+1;
+        // TODO(tomo-ono): This part has a problem with "#pragma omp simd"
+        //                 when using the Intel compiler
+        // BufferUtility::UnpackData(buf, uco, 0, NHYDRO-1,
+        //                           il, iu, jl, ju, kl, ku, p);
         for (int n=0; n<NHYDRO; ++n) {
           for (int k=kl; k<=ku; k++) {
             for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int i=il; i<=iu; i++) {
                 uco(n,k,j,i) = buf[p++];
               }
             }
           }
         }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, uco, 0, NHYDRO-1, il, iu, jl, ju, kl, ku, p);
-        pmb->pmr->ProlongateCellCenteredValues(uco, uto, 0, NHYDRO-1, pmb->cis, pmb->cie,
-                                               pmb->cjs, pmb->cje, kl+1, pmb->cke);
+        pmb->pmr->ProlongateCellCenteredValues(uco, uto, 0, NHYDRO-1,
+                                               pmb->cis, pmb->cie, pmb->cjs,
+                                               pmb->cje, kl+1, pmb->cke);
         for(int j=pmb->js; j<=pmb->je; j++) {
           for(int i=pmb->is; i<=pmb->ie; i++) {
             int offset = porb->ofc(j,i);
@@ -1381,8 +1337,6 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
             int xu = pmb->ke;
             const int shift = (offset>0)? 0: -onx;
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int k=xl; k<=xu; k++) {
                 uo(nph,j,i,k+shift) = uto(nph,k,j,i);
               }
@@ -1392,21 +1346,22 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
       } else if (nb==4) {
         int kl = pmb->cks-1;
         int ku = pmb->cke+2+xgh-porb->min_ofc_coarse-onx/2;
+        // TODO(tomo-ono): This part has a problem with "#pragma omp simd"
+        //                 when using the Intel compiler
+        // BufferUtility::UnpackData(buf, uco, 0, NHYDRO-1,
+        //                           il, iu, jl, ju, kl, ku, p);
         for (int n=0; n<NHYDRO; ++n) {
           for (int k=kl; k<=ku; k++) {
             for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int i=il; i<=iu; i++) {
                 uco(n,k,j,i) = buf[p++];
               }
             }
           }
         }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, uco, 0, NHYDRO-1, il, iu, jl, ju, kl, ku, p);
-        pmb->pmr->ProlongateCellCenteredValues(uco, uto, 0, NHYDRO-1, pmb->cis, pmb->cie,
-                                               pmb->cjs, pmb->cje, pmb->cks, ku-1);
+        pmb->pmr->ProlongateCellCenteredValues(uco, uto, 0, NHYDRO-1,
+                                               pmb->cis, pmb->cie, pmb->cjs,
+                                               pmb->cje, pmb->cks, ku-1);
         for(int j=pmb->js; j<=pmb->je; j++) {
           for(int i=pmb->is; i<=pmb->ie; i++) {
             int offset = porb->ofc(j,i);
@@ -1414,8 +1369,6 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
             int xu = pmb->ke+1+xgh-offset-onx;
             const int shift = (offset>0)? 2*onx: onx;
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int k=xl; k<=xu; k++) {
                 uo(nph,j,i,k+shift) = uto(nph,k,j,i);
               }
@@ -1426,7 +1379,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetHydroBufferFromCoarser" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -1442,7 +1395,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
                            Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &uo = *out_hyd;
+  AthenaArray<Real> &uo = porb->orbital_cons;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
@@ -1463,7 +1416,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
           std::stringstream msg;
           msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
               << "::SetHydroBufferFromFiner" << std::endl
-              << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
           ATHENA_ERROR(msg);
         }
         kl = pmb->ks;
@@ -1486,8 +1439,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
               xl -= onx; xu -= onx;
             }
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for (int j=xl; j<=xu; j++) {
                 uo(nph,k,i,j) = buf[p++];
               }
@@ -1504,8 +1456,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
               xl += onx; xu += onx;
             }
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for (int j=xl; j<=xu; j++) {
                 uo(nph,k,i,j) = buf[p++];
               }
@@ -1516,7 +1467,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetHydroBufferFromFiner" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
@@ -1548,8 +1499,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
               xl -= onx; xu -= onx;
             }
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for (int k=xl; k<=xu; k++) {
                 uo(nph,j,i,k) = buf[p++];
               }
@@ -1566,8 +1516,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
               xl += onx; xu += onx;
             }
             for(int nph=0 ; nph<NHYDRO; nph++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for (int k=xl; k<=xu; k++) {
                 uo(nph,j,i,k) = buf[p++];
               }
@@ -1578,7 +1527,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetHydroBufferFromFiner" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -1589,10 +1538,11 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(
 //                                        Real *buf, int &p, int nb)
-//  \brief set orbital field buffer in the case of same level
+//  \brief load magnetic fields (same level)
 void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
+  FaceField &bi = pmb->pfield->b;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
@@ -1603,10 +1553,8 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
           for(int i=pmb->is; i<=pmb->ie+1; i++) {
             int offset = porb->off[0](k,i);
             int xl = pmb->js-xgh-offset+onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int j=xl; j<=pmb->je; j++) {
-              buf[p++] = in_fc->x1f(k,j,i);
+              buf[p++] = bi.x1f(k,j,i);
             }
           }
         }
@@ -1615,10 +1563,8 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
           for(int i=pmb->is; i<=pmb->ie  ; i++) {
             int offset = porb->off[1](k,i);
             int xl = pmb->js-xgh-offset+onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int j=xl; j<=pmb->je; j++) {
-              buf[p++] = -in_fc->x3f(k,j,i);
+              buf[p++] = -bi.x3f(k,j,i);
             }
           }
         }
@@ -1628,10 +1574,8 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
           for(int i=pmb->is; i<=pmb->ie+1; i++) {
             int offset = porb->off[0](k,i);
             int xu = pmb->je+1+xgh-offset-onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int j=pmb->js; j<=xu; j++) {
-              buf[p++] = in_fc->x1f(k,j,i);
+              buf[p++] = bi.x1f(k,j,i);
             }
           }
         }
@@ -1640,10 +1584,8 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
           for(int i=pmb->is; i<=pmb->ie  ; i++) {
             int offset = porb->off[1](k,i);
             int xu = pmb->je+1+xgh-offset-onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int j=pmb->js; j<=xu; j++) {
-              buf[p++] = -in_fc->x3f(k,j,i);
+              buf[p++] = -bi.x3f(k,j,i);
             }
           }
         }
@@ -1651,7 +1593,7 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadFieldBufferSameLevel" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if (porb->orbital_direction == 2) {
@@ -1662,10 +1604,8 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
           for(int i=pmb->is; i<=pmb->ie+1; i++) {
             int offset = porb->off[0](j,i);
             int xl = pmb->ks-xgh-offset+onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int k=xl; k<=pmb->ke; k++) {
-              buf[p++] = -in_fc->x1f(k,j,i);
+              buf[p++] = -bi.x1f(k,j,i);
             }
           }
         }
@@ -1674,10 +1614,8 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
           for(int i=pmb->is; i<=pmb->ie  ; i++) {
             int offset = porb->off[1](j,i);
             int xl = pmb->ks-xgh-offset+onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int k=xl; k<=pmb->ke; k++) {
-              buf[p++] = in_fc->x2f(k,j,i);
+              buf[p++] = bi.x2f(k,j,i);
             }
           }
         }
@@ -1687,10 +1625,8 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
           for(int i=pmb->is; i<=pmb->ie+1; i++) {
             int offset = porb->off[0](j,i);
             int xu = pmb->ke+1+xgh-offset-onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int k=pmb->ks; k<=xu; k++) {
-              buf[p++] = -in_fc->x1f(k,j,i);
+              buf[p++] = -bi.x1f(k,j,i);
             }
           }
         }
@@ -1699,10 +1635,8 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
           for(int i=pmb->is; i<=pmb->ie  ; i++) {
             int offset = porb->off[1](j,i);
             int xu = pmb->ke+1+xgh-offset-onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int k=pmb->ks; k<=xu; k++) {
-              buf[p++] = in_fc->x2f(k,j,i);
+              buf[p++] = bi.x2f(k,j,i);
             }
           }
         }
@@ -1710,7 +1644,7 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadFieldBufferSameLevel" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -1723,10 +1657,11 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(
 //                                        Real *buf, int &p, int nb)
-//  \brief load field variables (coarser level)
+//  \brief load magnetic fields (coarser level)
 void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
+  FaceField &bi = pmb->pfield->b;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
@@ -1737,8 +1672,6 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, i
           for(int i=pmb->cis; i<=pmb->cie+1; i++) {
             int offset = porb->off_coarse[0](k,i);
             int xl = pmb->cjs-xgh-offset+onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int j=xl; j<=pmb->cje; j++) {
               buf[p++] = porb->b1_coarse_send(k,j,i);
             }
@@ -1749,8 +1682,6 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, i
           for(int i=pmb->cis; i<=pmb->cie  ; i++) {
             int offset = porb->off_coarse[1](k,i);
             int xl = pmb->cjs-xgh-offset+onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int j=xl; j<=pmb->cje; j++) {
               buf[p++] = -porb->b2_coarse_send(k,j,i);
             }
@@ -1762,8 +1693,6 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, i
           for(int i=pmb->cis; i<=pmb->cie+1; i++) {
             int offset = porb->off_coarse[0](k,i);
             int xu = pmb->cje+1+xgh-offset-onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int j=pmb->cjs; j<=xu; j++) {
               buf[p++] = porb->b1_coarse_send(k,j,i);
             }
@@ -1774,8 +1703,6 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, i
           for(int i=pmb->cis; i<=pmb->cie  ; i++) {
             int offset = porb->off_coarse[1](k,i);
             int xu = pmb->cje+1+xgh-offset-onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int j=pmb->cjs; j<=xu; j++) {
               buf[p++] = -porb->b2_coarse_send(k,j,i);
             }
@@ -1785,7 +1712,7 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, i
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadFieldBufferToCoarser" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if (porb->orbital_direction == 2) {
@@ -1796,8 +1723,6 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, i
           for(int i=pmb->cis; i<=pmb->cie+1; i++) {
             int offset = porb->off_coarse[0](j,i);
             int xl = pmb->cks-xgh-offset+onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int k=xl; k<=pmb->cke; k++) {
               buf[p++] = -porb->b1_coarse_send(k,j,i);
             }
@@ -1808,8 +1733,6 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, i
           for(int i=pmb->cis; i<=pmb->cie  ; i++) {
             int offset = porb->off_coarse[1](j,i);
             int xl = pmb->cks-xgh-offset+onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int k=xl; k<=pmb->cke; k++) {
               buf[p++] = porb->b2_coarse_send(k,j,i);
             }
@@ -1821,8 +1744,6 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, i
           for(int i=pmb->cis; i<=pmb->cie+1; i++) {
             int offset = porb->off_coarse[0](j,i);
             int xu = pmb->cke+1+xgh-offset-onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int k=pmb->cks; k<=xu; k++) {
               buf[p++] = -porb->b1_coarse_send(k,j,i);
             }
@@ -1833,8 +1754,6 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, i
           for(int i=pmb->cis; i<=pmb->cie  ; i++) {
             int offset = porb->off_coarse[1](j,i);
             int xu = pmb->cke+1+xgh-offset-onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int k=pmb->cks; k<=xu; k++) {
               buf[p++] = porb->b2_coarse_send(k,j,i);
             }
@@ -1844,7 +1763,7 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, i
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadFieldBufferToCoarser" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -1857,10 +1776,11 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, i
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(
 //                                      Real *buf, int &p, int nb)
-//  \brief load field variables (finer level)
+//  \brief load magnetic fields (finer level)
 void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
+  FaceField &bi = pmb->pfield->b;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     int onx;
@@ -1892,7 +1812,7 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(Real *buf, int &p, int
           std::stringstream msg;
           msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
               << "::LoadFieldBufferToFiner" << std::endl
-              << "Invalid number is specified." << std::endl;
+              << "Neighbors are read incorrectly." << std::endl;
           ATHENA_ERROR(msg);
         }
       } else if (porb->orbital_direction == 2) {
@@ -1921,46 +1841,25 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(Real *buf, int &p, int
           std::stringstream msg;
           msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
               << "::LoadFieldBufferToFiner" << std::endl
-              << "Invalid number is specified." << std::endl;
+              << "Neighbors are read incorrectly." << std::endl;
           ATHENA_ERROR(msg);
         }
       }
 
       // pack b1
-      for (int k=kl-1; k<=ku+1; k++) {
-        for (int j=jl-1; j<=ju+1; j++) {
-          for (int i=il; i<=iu+1; i++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-            buf[p++] = in_fc->x1f(k,j,i);
-          }
-        }
-      }
-
+      BufferUtility::PackData(bi.x1f, buf,
+                              il, iu+1, jl-1, ju+1, kl-1, ku+1, p);
       // pack b2
-      for (int k=kl-1; k<=ku+1; k++) {
-        for (int j=jl; j<=ju+1; j++) {
-          for (int i=il-1; i<=iu+1; i++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-            buf[p++] = in_fc->x2f(k,j,i);
-          }
-        }
-      }
-
+      BufferUtility::PackData(bi.x2f, buf,
+                              il-1, iu+1, jl, ju+1, kl-1, ku+1, p);
       // pack b3
-      for (int k=kl; k<=ku+1; k++) {
-        for (int j=jl-1; j<=ju+1; j++) {
-          for (int i=il-1; i<=iu+1; i++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-            buf[p++] = in_fc->x3f(k,j,i);
-          }
-        }
-      }
+      BufferUtility::PackData(bi.x3f, buf,
+                              il-1, iu+1, jl-1, ju+1, kl, ku+1, p);
     } else { // 2D
       if(porb->orbital_direction == 1) {
         onx = pmb->block_size.nx2;
+        kl = pmb->ks;
+        ku = pmb->ks;
         if (nb%2==0) {
           il = pmb->is;
           iu = pmb->ie-pmb->block_size.nx1/2;
@@ -1978,7 +1877,7 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(Real *buf, int &p, int
           std::stringstream msg;
           msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
               << "::LoadFieldBufferToFiner" << std::endl
-              << "Invalid number is specified." << std::endl;
+              << "Neighbors are read incorrectly." << std::endl;
           ATHENA_ERROR(msg);
         }
       } else {
@@ -1988,33 +1887,15 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(Real *buf, int &p, int
               << "2D Orbital Advection is not allowed in spherical_polar." << std::endl;
           ATHENA_ERROR(msg);
       }
-      int k = pmb->ks;
       // pack b1
-      for (int j=jl-1; j<=ju+1; j++) {
-        for (int i=il; i<=iu+1; i++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-          buf[p++] = in_fc->x1f(k,j,i);
-        }
-      }
-
+      BufferUtility::PackData(bi.x1f, buf,
+                              il, iu+1, jl-1, ju+1, kl, ku, p);
       // pack b2
-      for (int j=jl; j<=ju+1; j++) {
-        for (int i=il-1; i<=iu+1; i++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-          buf[p++] = in_fc->x2f(k,j,i);
-        }
-      }
-
+      BufferUtility::PackData(bi.x2f, buf,
+                              il-1, iu+1, jl, ju+1, kl, ku, p);
       // pack b3
-      for (int j=jl-1; j<=ju+1; j++) {
-        for (int i=il-1; i<=iu+1; i++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-          buf[p++] = in_fc->x3f(k,j,i);
-        }
-      }
+      BufferUtility::PackData(bi.x3f, buf,
+                              il-1, iu+1, jl-1, ju+1, kl, ku, p);
     }
   }
 //  else { // non-uniform mesh
@@ -2025,13 +1906,13 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(Real *buf, int &p, int
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
 //                                 Real *buf, int &p, const int nb)
-//  \brief load orbital field buffers
+//  \brief set magnetic fields (same level)
 void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
                            Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &bo1 = *out_b1;
-  AthenaArray<Real> &bo2 = *out_b2;
+  AthenaArray<Real> &bo1 = porb->orbital_b1;
+  AthenaArray<Real> &bo2 = porb->orbital_b2;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
@@ -2045,8 +1926,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
             if (offset<=0) {
               xl -= onx; xu -= onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-////#pragma omp simd
+#pragma omp simd
             for (int j=xl; j<=xu; j++) {
               bo1(k,i,j) = buf[p++];
             }
@@ -2060,8 +1940,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
             if (offset<=0) {
               xl -= onx; xu -= onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-////#pragma omp simd
+#pragma omp simd
             for (int j=xl; j<=xu; j++) {
               bo2(k,i,j) = buf[p++];
             }
@@ -2076,8 +1955,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
             if (offset>0) {
               xl += onx; xu += onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int j=xl; j<=xu; j++) {
               bo1(k,i,j) = buf[p++];
             }
@@ -2091,8 +1969,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
             if (offset>0) {
               xl += onx; xu += onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int j=xl; j<=xu; j++) {
               bo2(k,i,j) = buf[p++];
             }
@@ -2102,7 +1979,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetFieldBufferSameLevel" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if (porb->orbital_direction == 2) {
@@ -2116,8 +1993,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
             if (offset<=0) {
               xl -= onx; xu -= onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int k=xl; k<=xu; k++) {
               bo1(j,i,k) = buf[p++];
             }
@@ -2131,8 +2007,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
             if (offset<=0) {
               xl -= onx; xu -= onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int k=xl; k<=xu; k++) {
               bo2(j,i,k) = buf[p++];
             }
@@ -2147,8 +2022,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
             if (offset>0) {
               xl += onx; xu += onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int k=xl; k<=xu; k++) {
               bo1(j,i,k) = buf[p++];
             }
@@ -2163,8 +2037,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
             if (offset>0) {
               xl += onx; xu += onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int k=xl; k<=xu; k++) {
               bo1(j,i,k) = buf[p++];
             }
@@ -2174,7 +2047,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetFieldBufferSameLevel" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -2185,13 +2058,13 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
 //                                   Real *buf, int &p, const int nb)
-//  \brief set hydro variables (coarser level)
+//  \brief set magnetic fields (coarser level)
 void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
                              Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &bo1  = *out_b1;
-  AthenaArray<Real> &bo2  = *out_b2;
+  AthenaArray<Real> &bo1 = porb->orbital_b1;
+  AthenaArray<Real> &bo2 = porb->orbital_b2;
   FaceField &bto = porb->b_temp;
   FaceField &bco = porb->b_coarse_recv;
 
@@ -2227,11 +2100,17 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
         }
       }
 
+      // TODO(tomo-ono): This part has a problem with "#pragma omp simd"
+      //                 when using the Intel compiler
+      // BufferUtility::UnpackData(buf, bco.x1f,
+      //                           il, iu+1, jl-1, ju+1, kl-1, k+1u, p);
+      // BufferUtility::UnpackData(buf, bco.x2f,
+      //                           il-1, iu+1, jl, ju+1, kl-1, ku+1, p);
+      // BufferUtility::UnpackData(buf, bco.x3f,
+      //                           il-1, iu+1, jl-1, ju+1, kl, ku+1, p);
       // b1
       for (int k=kl-1; k<=ku+1; k++) {
         for (int j=jl-1; j<=ju+1; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
           for (int i=il; i<=iu+1; i++) {
             bco.x1f(k,j,i) = buf[p++];
           }
@@ -2241,8 +2120,6 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
       // b2
       for (int k=kl-1; k<=ku+1; k++) {
         for (int j=jl; j<=ju+1; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
           for (int i=il-1; i<=iu+1; i++) {
             bco.x2f(k,j,i) = buf[p++];
           }
@@ -2252,21 +2129,18 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
       // b3
       for (int k=kl; k<=ku+1; k++) {
         for (int j=jl-1; j<=ju+1; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
           for (int i=il-1; i<=iu+1; i++) {
             bco.x3f(k,j,i) = buf[p++];
           }
         }
       }
     } else { // 2D
-      int k = pmb->cks;
       if(porb->orbital_direction == 1) {
         onx = pmb->block_size.nx2;
         il = pmb->cis;
         iu = pmb->cie;
-        kl = k;
-        ku = k;
+        kl = pmb->cks;
+        ku = pmb->cks;
         if(nb == 0) {
           jl = pmb->cjs-xgh-porb->max_off_coarse+onx/2;
           ju = pmb->cje;
@@ -2282,30 +2156,32 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
         ATHENA_ERROR(msg);
       }
 
+      // TODO(tomo-ono): This part has a problem with "#pragma omp simd"
+      //                 when using the Intel compiler
+      // BufferUtility::UnpackData(buf, bco.x1f,
+      //                           il, iu+1, jl-1, ju+1, kl, ku, p);
+      // BufferUtility::UnpackData(buf, bco.x2f,
+      //                           il-1, iu+1, jl, ju+1, kl, ku, p);
+      // BufferUtility::UnpackData(buf, bco.x3f,
+      //                           il-1, iu+1, jl-1, ju+1, kl, ku, p);
       // b1
       for (int j=jl-1; j<=ju+1; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
         for (int i=il; i<=iu+1; i++) {
-          bco.x1f(k,j,i) = buf[p++];
+          bco.x1f(kl,j,i) = buf[p++];
         }
       }
 
       // b2
       for (int j=jl; j<=ju+1; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
         for (int i=il-1; i<=iu+1; i++) {
-          bco.x2f(k,j,i) = buf[p++];
+          bco.x2f(kl,j,i) = buf[p++];
         }
       }
 
       // b3
       for (int j=jl-1; j<=ju+1; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
         for (int i=il-1; i<=iu+1; i++) {
-          bco.x3f(k,j,i) = buf[p++];
+          bco.x3f(kl,j,i) = buf[p++];
         }
       }
     }
@@ -2322,8 +2198,6 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
             int xl = pmb->js-xgh-offset+onx;
             int xu = pmb->je;
             const int shift = (offset>0)? 0: -onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int j=xl; j<=xu; j++) {
               bo1(k,i,j+shift) = bto.x1f(k,j,i);
             }
@@ -2336,8 +2210,6 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
               int xl = pmb->js-xgh-offset+onx;
               int xu = pmb->je;
               const int shift = (offset>0)? 0: -onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=xl; j<=xu; j++) {
                 bo2(k,i,j+shift) = -bto.x3f(k,j,i);
               }
@@ -2350,8 +2222,6 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
             int xl = pmb->js-xgh-offset+onx;
             int xu = pmb->je;
             const int shift = (offset>0)? 0: -onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int j=xl; j<=xu; j++) {
               bo2(k,i,j+shift)   = -bto.x3f(k,j,i);
               bo2(k+1,i,j+shift) = -bto.x3f(k,j,i);
@@ -2365,8 +2235,6 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
             int xl = pmb->js;
             int xu = pmb->je+1+xgh-offset-onx;
             const int shift = (offset>0)? 2*onx: onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int j=xl; j<=xu; j++) {
               bo1(k,i,j+shift) = bto.x1f(k,j,i);
             }
@@ -2379,8 +2247,6 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
               int xl = pmb->js;
               int xu = pmb->je+1+xgh-offset-onx;
               const int shift = (offset>0)? 2*onx: onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=xl; j<=xu; j++) {
                 bo2(k,i,j+shift) = -bto.x3f(k,j,i);
               }
@@ -2393,8 +2259,6 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
             int xl = pmb->js;
             int xu = pmb->je+1+xgh-offset-onx;
             const int shift = (offset>0)? 2*onx: onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int j=xl; j<=xu; j++) {
               bo2(k,i,j+shift)   = -bto.x3f(k,j,i);
               bo2(k+1,i,j+shift) = -bto.x3f(k,j,i);
@@ -2405,7 +2269,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetFieldBufferFromCoarser" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
@@ -2416,8 +2280,6 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
             int xl = pmb->ks-xgh-offset+onx;
             int xu = pmb->ke;
             const int shift = (offset>0)? 0: -onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int k=xl; k<=xu; k++) {
               bo1(j,i,k+shift) = -bto.x1f(k,j,i);
             }
@@ -2429,8 +2291,6 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
             int xl = pmb->ks-xgh-offset+onx;
             int xu = pmb->ke;
             const int shift = (offset>0)? 0: -onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int k=xl; k<=xu; k++) {
               bo2(j,i,k+shift) = bto.x2f(k,j,i);
             }
@@ -2443,8 +2303,6 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
             int xl = pmb->ks;
             int xu = pmb->ke+1+xgh-offset-onx;
             const int shift = (offset>0)? 2*onx: onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int k=xl; k<=xu; k++) {
               bo1(j,i,k+shift) = -bto.x1f(k,j,i);
             }
@@ -2456,8 +2314,6 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
             int xl = pmb->ks;
             int xu = pmb->ke+1+xgh-offset-onx;
             const int shift = (offset>0)? 2*onx: onx;
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
             for (int k=xl; k<=xu; k++) {
               bo2(j,i,k+shift) = bto.x2f(k,j,i);
             }
@@ -2467,7 +2323,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetFieldBufferFromCoarser" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -2478,13 +2334,13 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
 //                                 Real *buf, int &p, const int nb)
-//  \brief set hydro variables (finer level)
+//  \brief set magnetic fields (finer level)
 void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
                            Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &bo1 = *out_b1;
-  AthenaArray<Real> &bo2 = *out_b2;
+  AthenaArray<Real> &bo1 = porb->orbital_b1;
+  AthenaArray<Real> &bo2 = porb->orbital_b2;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
@@ -2505,7 +2361,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
           std::stringstream msg;
           msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
               << "::SetFieldBufferFromFiner" << std::endl
-              << "Invalid number is specified." << std::endl;
+              << "Neighbors are read incorrectly." << std::endl;
           ATHENA_ERROR(msg);
         }
         kl = pmb->ks;
@@ -2527,8 +2383,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
             if (offset<=0) {
               xl -= onx; xu -= onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int j=xl; j<=xu; j++) {
               bo1(k,i,j) = buf[p++];
             }
@@ -2542,8 +2397,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
             if (offset<=0) {
               xl -= onx; xu -= onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int j=xl; j<=xu; j++) {
               bo2(k,i,j) = buf[p++];
             }
@@ -2558,8 +2412,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
             if (offset>0) {
               xl += onx; xu += onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int j=xl; j<=xu; j++) {
               bo1(k,i,j) = buf[p++];
             }
@@ -2573,8 +2426,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
             if (offset>0) {
               xl += onx; xu += onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int j=xl; j<=xu; j++) {
               bo2(k,i,j) = buf[p++];
             }
@@ -2584,7 +2436,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetFieldBufferFromFiner" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
@@ -2615,8 +2467,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
             if (offset<=0) {
               xl -= onx; xu -= onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int k=xl; k<=xu; k++) {
               bo1(j,i,k) = buf[p++];
             }
@@ -2630,8 +2481,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
             if (offset<=0) {
               xl -= onx; xu -= onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int k=xl; k<=xu; k++) {
               bo2(j,i,k) = buf[p++];
             }
@@ -2646,8 +2496,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
             if (offset>0) {
               xl += onx; xu += onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int k=xl; k<=xu; k++) {
               bo1(j,i,k) = buf[p++];
             }
@@ -2661,8 +2510,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
             if (offset>0) {
               xl += onx; xu += onx;
             }
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
             for (int k=xl; k<=xu; k++) {
               bo2(j,i,k) = buf[p++];
             }
@@ -2672,7 +2520,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetFieldBufferFromFiner" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -2682,12 +2530,12 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
 //                                         Real *buf, int &p, int nb)
-//  \brief set orbital hydro buffer in the case of same level
+//  \brief load passive scalars (same level)
 void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
                                    Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &si = *in_sclr;
+  AthenaArray<Real> &si = pmb->pscalars->s;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
@@ -2698,8 +2546,6 @@ void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
             int offset = porb->ofc(k,i);
             int xl = pmb->js-xgh-offset+onx;
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=xl; j<=pmb->je; j++) {
                 buf[p++] = si(nsc,k,j,i);
               }
@@ -2712,8 +2558,6 @@ void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
             int offset = porb->ofc(k,i);
             int xu = pmb->je+1+xgh-offset-onx;
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=pmb->js; j<=xu; j++) {
                 buf[p++] = si(nsc,k,j,i);
               }
@@ -2724,7 +2568,7 @@ void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadScalarBufferSameLevel" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if (porb->orbital_direction == 2) {
@@ -2735,8 +2579,6 @@ void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
             int offset = porb->ofc(j,i);
             int xl = pmb->ks-xgh-offset+onx;
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int k=xl; k<=pmb->ke; k++) {
                 buf[p++] = si(nsc,k,j,i);
               }
@@ -2749,8 +2591,6 @@ void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
             int offset = porb->ofc(j,i);
             int xu = pmb->ke+1+xgh-offset-onx;
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int k=pmb->ks; k<=xu; k++) {
                 buf[p++] = si(nsc,k,j,i);
               }
@@ -2761,7 +2601,7 @@ void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadScalarBufferSameLevel" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -2789,8 +2629,6 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToCoarser(Real *buf, int &p, 
             int offset = porb->ofc_coarse(k,i);
             int xl = pmb->cjs-xgh-offset+honx;
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=xl; j<=pmb->cje; j++) {
                 buf[p++] = si(nsc,k,j,i);
               }
@@ -2803,8 +2641,6 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToCoarser(Real *buf, int &p, 
             int offset = porb->ofc_coarse(k,i);
             int xu = pmb->cje+1+xgh-offset-honx;
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=pmb->cjs; j<=xu; j++) {
                 buf[p++] = si(nsc,k,j,i);
               }
@@ -2815,7 +2651,7 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToCoarser(Real *buf, int &p, 
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadScalarBufferToCoarser" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if (porb->orbital_direction == 2) {
@@ -2826,8 +2662,6 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToCoarser(Real *buf, int &p, 
             int offset = porb->ofc_coarse(j,i);
             int xl = pmb->cks-xgh-offset+honx;
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int k=xl; k<=pmb->cke; k++) {
                 buf[p++] = si(nsc,k,j,i);
               }
@@ -2840,8 +2674,6 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToCoarser(Real *buf, int &p, 
             int offset = porb->ofc_coarse(j,i);
             int xu = pmb->cke+1+xgh-offset-honx;
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int k=pmb->cks; k<=xu; k++) {
                 buf[p++] = si(nsc,k,j,i);
               }
@@ -2852,7 +2684,7 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToCoarser(Real *buf, int &p, 
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadScalarBufferToCoarser" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -2869,7 +2701,7 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToCoarser(Real *buf, int &p, 
 void OrbitalBoundaryCommunication::LoadScalarBufferToFiner(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &si = *in_sclr;
+  AthenaArray<Real> &si = pmb->pscalars->s;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
@@ -2904,22 +2736,11 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToFiner(Real *buf, int &p, in
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadScalarBufferToFiner" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
-      for (int n=0; n<NSCALARS; ++n) {
-        for (int k=kl; k<=ku; k++) {
-          for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-            for (int i=il; i<=iu; i++) {
-              buf[p++] = si(n,k,j,i);
-            }
-          }
-        }
-      }
-      // If using PackData with intel compiler, there is a problem.
-      //BufferUtility::PackData(si, buf, 0, NSCALARS-1, il, iu, jl, ju, kl, ku, p);
+      BufferUtility::PackData(si, buf, 0, NSCALARS-1,
+                              il, iu, jl, ju, kl, ku, p);
     } else if (porb->orbital_direction == 2) {
       int &onx = pmb->block_size.nx3;
       int il, iu, jl, ju, kl, ku;
@@ -2947,23 +2768,11 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToFiner(Real *buf, int &p, in
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::LoadScalarBufferToFiner" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
-      for (int n=0; n<NSCALARS; ++n) {
-        for (int k=kl; k<=ku; k++) {
-          for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-            for (int i=il; i<=iu; i++) {
-        buf[p++] = si(n,k,j,i);
-            }
-          }
-        }
-      }
-      // If using PackData with intel compiler, there is a problem.
-      //BufferUtility::PackData(si, buf, 0, NSCALARS-1,
-      //                        il, iu, jl, ju, kl, ku, p);
+      BufferUtility::PackData(si, buf, 0, NSCALARS-1,
+                              il, iu, jl, ju, kl, ku, p);
     }
   }
 //  else { // non-uniform mesh
@@ -2974,12 +2783,12 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToFiner(Real *buf, int &p, in
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
 //                                  Real *buf, int &p, const int nb)
-//  \brief load orbital sclaar buffers
+//  \brief set passive scalars (same level)
 void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
                             Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &so = *out_sclr;
+  AthenaArray<Real> &so = porb->orbital_scalar;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
@@ -2994,10 +2803,9 @@ void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
               xl -= onx; xu -= onx;
             }
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for(int j=xl; j<=xu; j++) {
-              so(nsc,k,i,j) = buf[p++];
+                so(nsc,k,i,j) = buf[p++];
               }
             }
           }
@@ -3012,8 +2820,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
               xl += onx; xu += onx;
             }
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for(int j=xl; j<=xu; j++) {
                 so(nsc,k,i,j) = buf[p++];
               }
@@ -3024,7 +2831,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetScalarBufferSameLevel" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
@@ -3039,8 +2846,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
               xl -= onx; xu -= onx;
             }
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for (int k=xl; k<=xu; k++) {
                 so(nsc,j,i,k) = buf[p++];
               }
@@ -3057,8 +2863,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
               xl += onx; xu += onx;
             }
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for(int k=xl; k<=xu; k++) {
                 so(nsc,j,i,k) = buf[p++];
               }
@@ -3069,7 +2874,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetScalarBufferSameLevel" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -3085,7 +2890,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
                               Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &so  = *out_sclr;
+  AthenaArray<Real> &so  = porb->orbital_scalar;
   AthenaArray<Real> &sco = porb->s_coarse_recv;
   AthenaArray<Real> &sto = porb->s_temp;
 
@@ -3105,19 +2910,19 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
       if(nb==0) {
         int jl = pmb->cjs-xgh-porb->max_ofc_coarse+onx/2-1;
         int ju = pmb->cje+1;
+        // TODO(tomo-ono): This part has a problem with "#pragma omp simd"
+        //                 when using the Intel compiler
+        // BufferUtility::UnpackData(buf, sco, 0, NSCALARS-1,
+        //                           il, iu, jl, ju, kl, ku, p);
         for(int n=0; n<NSCALARS; ++n) {
           for(int k=kl; k<=ku; k++) {
             for(int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for(int i=il; i<=iu; i++) {
                 sco(n,k,j,i) = buf[p++];
               }
             }
           }
         }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, sco, 0, NSCALARS-1, il, iu, jl, ju, kl, ku, p);
         pmb->pmr->ProlongateCellCenteredValues(sco, sto, 0, NSCALARS-1, pmb->cis,
                                                pmb->cie, jl+1, pmb->cje, pmb->cks,
                                                pmb->cke);
@@ -3128,8 +2933,6 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
             int xu = pmb->je;
             const int shift = (offset>0)? 0: -onx;
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for(int j=xl; j<=xu; j++) {
                 so(nsc,k,i,j+shift) = sto(nsc,k,j,i);
               }
@@ -3139,19 +2942,19 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
       } else if(nb==4) {
         int jl = pmb->cjs-1;
         int ju = pmb->cje+2+xgh-porb->min_ofc_coarse-onx/2;
+        // TODO(tomo-ono): This part has a problem with "#pragma omp simd"
+        //                 when using the Intel compiler
+        // BufferUtility::UnpackData(buf, sco, 0, NSCALARS-1,
+        //                           il, iu, jl, ju, kl, ku, p);
         for(int n=0; n<NSCALARS; ++n) {
           for(int k=kl; k<=ku; k++) {
             for(int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for(int i=il; i<=iu; i++) {
                 sco(n,k,j,i) = buf[p++];
               }
             }
           }
         }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, sco, 0, NSCALARS-1, il, iu, jl, ju, kl, ku, p);
         pmb->pmr->ProlongateCellCenteredValues(sco, sto, 0, NSCALARS-1, pmb->cis,
                                                pmb->cie, pmb->cjs, ju-1, pmb->cks,
                                                pmb->cke);
@@ -3162,8 +2965,6 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
             int xu = pmb->je+1+xgh-offset-onx;
             const int shift = (offset>0)? 2*onx: onx;
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int j=xl; j<=xu; j++) {
                 so(nsc,k,i,j+shift) = sto(nsc,k,j,i);
               }
@@ -3174,7 +2975,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetScalarBufferFromCoarser" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
@@ -3187,19 +2988,19 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
       if(nb==0) {
         int kl = pmb->cks-xgh-porb->max_ofc_coarse+onx/2-1;
         int ku = pmb->cke+1;
-        for (int n=0; n<NSCALARS; ++n) {
-          for (int k=kl; k<=ku; k++) {
-            for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-              for (int i=il; i<=iu; i++) {
+        // TODO(tomo-ono): This part has a problem with "#pragma omp simd"
+        //                 when using the Intel compiler
+        // BufferUtility::UnpackData(buf, sco, 0, NSCALARS-1,
+        //                           il, iu, jl, ju, kl, ku, p);
+        for(int n=0; n<NSCALARS; ++n) {
+          for(int k=kl; k<=ku; k++) {
+            for(int j=jl; j<=ju; j++) {
+              for(int i=il; i<=iu; i++) {
                 sco(n,k,j,i) = buf[p++];
               }
             }
           }
         }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, sco, 0, NSCALARS-1, il, iu, jl, ju, kl, ku, p);
         pmb->pmr->ProlongateCellCenteredValues(sco, sto, 0, NSCALARS-1, pmb->cis,
                                                pmb->cie, pmb->cjs, pmb->cje,
                                                kl+1, pmb->cke);
@@ -3210,8 +3011,6 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
             int xu = pmb->ke;
             const int shift = (offset>0)? 0: -onx;
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int k=xl; k<=xu; k++) {
                 so(nsc,j,i,k+shift) = sto(nsc,k,j,i);
               }
@@ -3221,19 +3020,19 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
       } else if (nb==4) {
         int kl = pmb->cks-1;
         int ku = pmb->cke+2+xgh-porb->min_ofc_coarse-onx/2;
-        for (int n=0; n<NSCALARS; ++n) {
-          for (int k=kl; k<=ku; k++) {
-            for (int j=jl; j<=ju; j++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
-              for (int i=il; i<=iu; i++) {
+        // TODO(tomo-ono): This part has a problem with "#pragma omp simd"
+        //                 when using the Intel compiler
+        // BufferUtility::UnpackData(buf, sco, 0, NSCALARS-1,
+        //                           il, iu, jl, ju, kl, ku, p);
+        for(int n=0; n<NSCALARS; ++n) {
+          for(int k=kl; k<=ku; k++) {
+            for(int j=jl; j<=ju; j++) {
+              for(int i=il; i<=iu; i++) {
                 sco(n,k,j,i) = buf[p++];
               }
             }
           }
         }
-        // If using UnpackData with intel compiler, there is a problem.
-        //BufferUtility::UnpackData(buf, sco, 0, NSCALARS-1, il, iu, jl, ju, kl, ku, p);
         pmb->pmr->ProlongateCellCenteredValues(sco, sto, 0, NSCALARS-1, pmb->cis,
                                                pmb->cie, pmb->cjs, pmb->cje,
                                                pmb->cks, ku-1);
@@ -3244,8 +3043,6 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
             int xu = pmb->ke+1+xgh-offset-onx;
             const int shift = (offset>0)? 2*onx: onx;
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
               for (int k=xl; k<=xu; k++) {
                 so(nsc,j,i,k+shift) = sto(nsc,k,j,i);
               }
@@ -3256,7 +3053,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetScalarBufferFromCoarser" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -3267,12 +3064,12 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
 //                                  Real *buf, int &p, const int nb)
-//  \brief set hydro variables (finer level)
+//  \brief set passive scalars (passive level)
 void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
                             Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
-  AthenaArray<Real> &so = *out_sclr;
+  AthenaArray<Real> &so  = porb->orbital_scalar;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
@@ -3293,7 +3090,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
           std::stringstream msg;
           msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
               << "::SetScalarBufferFromFiner" << std::endl
-              << "Invalid number is specified." << std::endl;
+              << "Neighbors are read incorrectly." << std::endl;
           ATHENA_ERROR(msg);
         }
         kl = pmb->ks;
@@ -3316,8 +3113,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
               xl -= onx; xu -= onx;
             }
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for (int j=xl; j<=xu; j++) {
                 so(nsc,k,i,j) = buf[p++];
               }
@@ -3334,8 +3130,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
               xl += onx; xu += onx;
             }
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for (int j=xl; j<=xu; j++) {
                 so(nsc,k,i,j) = buf[p++];
               }
@@ -3346,7 +3141,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetScalarBufferFromFiner" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
@@ -3378,10 +3173,9 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
               xl -= onx; xu -= onx;
             }
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for(int k=xl; k<=xu; k++) {
-              so(nsc,j,i,k) = buf[p++];
+                so(nsc,j,i,k) = buf[p++];
               }
             }
           }
@@ -3396,10 +3190,9 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
               xl += onx; xu += onx;
             }
             for(int nsc=0 ; nsc<NSCALARS; nsc++) {
-// If using omp simd with intel compiler, there is a problem.
-//#pragma omp simd
+#pragma omp simd
               for(int k=xl; k<=xu; k++) {
-              so(nsc,j,i,k) = buf[p++];
+                so(nsc,j,i,k) = buf[p++];
               }
             }
           }
@@ -3408,7 +3201,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
             << "::SetScalarBufferFromFiner" << std::endl
-            << "Invalid number is specified." << std::endl;
+            << "Neighbors are read incorrectly." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
