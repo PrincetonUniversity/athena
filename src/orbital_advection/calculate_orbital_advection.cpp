@@ -52,7 +52,6 @@ void OrbitalAdvection::CalculateOrbitalAdvectionCC(Real dt,
             } else {
               RemapFluxPpm(pflux, hbuf, epsilon, osgn, k, i, js, je+1, shift0);
             }
-#pragma omp simd
             for (int j=js; j<=je; j++) {
               u(nph,k,j,i) = hbuf(k,i,j+shift) - (pflux(j+1) - pflux(j));
             }
@@ -65,7 +64,6 @@ void OrbitalAdvection::CalculateOrbitalAdvectionCC(Real dt,
             } else {
               RemapFluxPpm(pflux, hbuf, epsilon, osgn, k, i, js, je+1, shift0);
             }
-#pragma omp simd
             for (int j=js; j<=je; j++) {
               s(nsc,k,j,i) = hbuf(k,i,j+shift) - (pflux(j+1) - pflux(j));
             }
@@ -91,7 +89,6 @@ void OrbitalAdvection::CalculateOrbitalAdvectionCC(Real dt,
             } else {
               RemapFluxPpm(pflux, hbuf, epsilon, osgn, j, i, ks, ke+1, shift0);
             }
-#pragma omp simd
             for (int k=ks; k<=ke; k++) {
               u(nph,k,j,i) = hbuf(j,i,k+shift) - (pflux(k+1) - pflux(k));
             }
@@ -104,7 +101,6 @@ void OrbitalAdvection::CalculateOrbitalAdvectionCC(Real dt,
             } else {
               RemapFluxPpm(pflux, hbuf, epsilon, osgn, j, i, ks, ke+1, shift0);
             }
-#pragma omp simd
             for (int k=ks; k<=ke; k++) {
               s(nsc,k,j,i) = hbuf(j,i,k+shift) - (pflux(k+1) - pflux(k));
             }
