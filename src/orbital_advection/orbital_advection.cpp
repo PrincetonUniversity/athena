@@ -19,6 +19,7 @@
 #include "../parameter_input.hpp"
 
 #include "../bvals/bvals.hpp"
+#include "../bvals/bvals_interfaces.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
@@ -492,23 +493,22 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
   // set min_dt
   int mylevel = pmb_->loc.level;
   int lblevel, rblevel;
-  if (orbital_direction == 1) {
-    for(int n=0; n<pbval_->nneighbor; n++) {
-      NeighborBlock& nb = pbval_->neighbor[n];
-      if(nb.ni.ox1==0 && nb.ni.ox3==0) {
-        if(nb.ni.ox2==-1) lblevel = nb.snb.level;
-        else if(nb.ni.ox2== 1) rblevel = nb.snb.level;
-      }
-    }
-  } else if (orbital_direction == 2) {
-    for(int n=0; n<pbval_->nneighbor; n++) {
-      NeighborBlock& nb = pbval_->neighbor[n];
-      if(nb.ni.ox1==0 && nb.ni.ox2==0) {
-        if(nb.ni.ox3==-1) lblevel = nb.snb.level;
-        else if(nb.ni.ox3== 1) rblevel = nb.snb.level;
-      }
+  for(int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    if (nb.ni.type != NeighborConnect::face) break;
+    if (orbital_direction == 1) {
+      if (nb.fid == BoundaryFace::inner_x2)
+        lblevel = nb.snb.level;
+      else if (nb.fid == BoundaryFace::outer_x2)
+        rblevel = nb.snb.level;
+    } else if (orbital_direction == 2) {
+      if (nb.fid == BoundaryFace::inner_x3)
+        lblevel = nb.snb.level;
+      else if (nb.fid == BoundaryFace::outer_x3)
+        rblevel = nb.snb.level;
     }
   }
+
   min_dt = (FLT_MAX);
   // restrictions from meshblock size
   if(orbital_uniform_mesh) { // uniform mesh
