@@ -46,20 +46,23 @@ int CellCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
                                                        const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   int p = 0;
-  int i;
-  int sign;
-  if (nb.fid == BoundaryFace::inner_x1) {
-    i = pmb->is;
-    sign = -1;
-  } else {
-    i = pmb->ie + 1;
-    sign =  1;
-  }
-  // pack x1flux
-  for (int nn=nl_; nn<=nu_; nn++) {
-    for (int k=pmb->ks; k<=pmb->ke; k++) {
-      for (int j=pmb->js; j<=pmb->je; j++) {
-        buf[p++] = x1flux(nn,k,j,i);
+  if (pbval_->shearing_box == 1 && nb.shear
+      && (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1)) {
+    int i;
+    int sign;
+    if (nb.fid == BoundaryFace::inner_x1) {
+      i = pmb->is;
+      sign = -1;
+    } else {
+      i = pmb->ie + 1;
+      sign =  1;
+    }
+    // pack x1flux
+    for (int nn=nl_; nn<=nu_; nn++) {
+      for (int k=pmb->ks; k<=pmb->ke; k++) {
+        for (int j=pmb->js; j<=pmb->je; j++) {
+          buf[p++] = x1flux(nn,k,j,i);
+        }
       }
     }
   }
@@ -171,28 +174,25 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
     if (nb.ni.type != NeighborConnect::face) break;
     if (bd_var_flcor_.sflag[nb.bufid] == BoundaryStatus::completed) continue;
     int p = 0;
-    if (nb.snb.level == pmb->loc.level) {
-      if (pbval_->shearing_box == 1) {
-        if (nb.shear &&
-             (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1)) {
-          p = LoadFluxBoundaryBufferSameLevel(bd_var_flcor_.send[nb.bufid],nb);
-        } else {
-          continue;
-        }
-      } else {
-        continue;
-      }
-    } else if (nb.snb.level == pmb->loc.level - 1) {
+    if (nb.snb.level == pmb->loc.level) { // to same level
+      p = LoadFluxBoundaryBufferSameLevel(bd_var_flcor_.send[nb.bufid],nb);
+    } else if (nb.snb.level < pmb->loc.level) { // to coaser
       p = LoadFluxBoundaryBufferToCoarser(bd_var_flcor_.send[nb.bufid],nb);
-    } else {
-      continue;
     }
-    if (nb.snb.rank == Globals::my_rank) // on the same node
-      CopyFluxCorrectionBufferSameProcess(nb, p);
+    // else { // to finer
+    // }
+
+    if (p>0) {
+      if (nb.snb.rank == Globals::my_rank) // on the same node
+        CopyFluxCorrectionBufferSameProcess(nb, p);
 #ifdef MPI_PARALLEL
-    else
-      MPI_Start(&(bd_var_flcor_.req_send[nb.bufid]));
+      else
+        MPI_Start(&(bd_var_flcor_.req_send[nb.bufid]));
 #endif
+    } else {
+      if (nb.snb.rank == Globals::my_rank) // on the same node
+        SetCompletedFlagSameProcess(nb);
+    }
     bd_var_flcor_.sflag[nb.bufid] = BoundaryStatus::completed;
   }
   return;
@@ -293,75 +293,42 @@ bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
   MeshBlock *pmb = pmy_block_;
   bool flag=true;
 
-  // Receive same-level
-  if (pbval_->shearing_box == 1) {
-    for (int n=0; n<pbval_->nneighbor; n++) {
-      NeighborBlock& nb = pbval_->neighbor[n];
-      if (nb.ni.type != NeighborConnect::face) break;
-      if (nb.snb.level!=pmb->loc.level) continue;
-      if (nb.shear &&
-           (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1)) {
-        if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
-        if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
-          if (nb.snb.rank == Globals::my_rank) {// on the same process
-            flag = false;
-            continue;
-          }
-#ifdef MPI_PARALLEL
-          else { // NOLINT
-            int test;
-            MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
-                       MPI_STATUS_IGNORE);
-            MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
-            if (!static_cast<bool>(test)) {
-              flag = false;
-              continue;
-            }
-            bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::arrived;
-          }
-#endif
-        }
-        if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::arrived) {
-          SetFluxBoundarySameLevel(bd_var_flcor_.recv[nb.bufid],nb);
-          bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::completed;
-        }
+  for (int n=0; n<pbval_->nneighbor; n++) {
+    NeighborBlock& nb = pbval_->neighbor[n];
+    if (nb.ni.type != NeighborConnect::face) break;
+    if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
+    // receive data
+    if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
+      if (nb.snb.rank == Globals::my_rank) {// on the same process
+        flag = false;
+        continue;
       }
+#ifdef MPI_PARALLEL
+      else { // NOLINT
+        int test;
+        MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
+                   MPI_STATUS_IGNORE);
+        MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
+        if (!static_cast<bool>(test)) {
+          flag = false;
+          continue;
+        }
+        bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::arrived;
+      }
+#endif
     }
-    if (!flag) return flag;
+    // set data
+    if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::arrived) {
+      if (nb.snb.level==pmb->loc.level)      // from same level
+        SetFluxBoundarySameLevel(bd_var_flcor_.recv[nb.bufid],nb);
+      else if (nb.snb.level>pmb->loc.level)  // from finer
+        SetFluxBoundaryFromFiner(bd_var_flcor_.recv[nb.bufid],nb);
+      // else                                   // from coarser
+      //   nothing to do
+
+      bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::completed;
+    }
   }
 
-  // Receive finer flux values
-  if (pmb->pmy_mesh->multilevel) {
-    for (int n=0; n<pbval_->nneighbor; n++) {
-      NeighborBlock& nb = pbval_->neighbor[n];
-      if (nb.ni.type != NeighborConnect::face) break;
-      if (nb.snb.level==pmb->loc.level+1) {
-        if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::completed) continue;
-        if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::waiting) {
-          if (nb.snb.rank == Globals::my_rank) {// on the same process
-            flag = false;
-            continue;
-          }
-#ifdef MPI_PARALLEL
-          else { // NOLINT
-            int test;
-            MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test,
-                       MPI_STATUS_IGNORE);
-            MPI_Test(&(bd_var_flcor_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
-            if (!static_cast<bool>(test)) {
-              flag = false;
-              continue;
-            }
-            bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::arrived;
-          }
-#endif
-        }
-        if (bd_var_flcor_.flag[nb.bufid] == BoundaryStatus::arrived) {
-          SetFluxBoundaryFromFiner(bd_var_flcor_.recv[nb.bufid],nb);
-          bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::completed;
-        }
-      }
-    }
-  }
   return flag;
 }

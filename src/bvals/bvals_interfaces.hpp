@@ -328,6 +328,7 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
                                   bool upper);
   void CopyShearFluxSameProcess(SimpleNeighborBlock& snb, int ssize, int bufid,
                                bool upper);
+  void SetCompletedFlagSameProcess(NeighborBlock& nb);
   // private:
 };
 

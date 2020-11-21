@@ -584,9 +584,9 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
                           nb.snb.rank, tag, MPI_COMM_WORLD,
                           &(bd_var_flcor_.req_recv[nb.bufid]));
           }
-        } else { // send to same level
-          if (nb.shear
-              && (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1)
+        } else { // communication with same level
+          if (nb.shear && (nb.fid == BoundaryFace::inner_x1
+                           || nb.fid == BoundaryFace::outer_x1)
               && pbval_->shearing_box==1) {
             int size = pmb->block_size.nx2*pmb->block_size.nx3*(nu_+1);
             tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_flx_phys_id_);
@@ -621,8 +621,11 @@ void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
       if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face) {
         if ((nb.shear&&(nb.fid == BoundaryFace::inner_x1
              || nb.fid == BoundaryFace::outer_x1)
-            && pbval_->shearing_box==1) || nb.snb.level > mylevel)
+            && pbval_->shearing_box==1) || nb.snb.level > mylevel) {
           MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
+        } else { // no recv
+          bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::completed;
+        }
       }
     }
   }

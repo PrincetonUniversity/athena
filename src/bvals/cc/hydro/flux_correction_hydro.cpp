@@ -45,43 +45,46 @@ int HydroBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
   MeshBlock *pmb=pmy_block_;
   Real qomL = pbval_->qomL_;
   int p = 0;
-  int i;
-  int sign;
-  if (nb.fid == BoundaryFace::inner_x1) {
-    i = pmb->is;
-    sign = -1;
-  } else {
-    i = pmb->ie + 1;
-    sign =  1;
-  }
-  if(pmb->porb->orbital_advection_defined) {
-    for (int nn=nl_; nn<=nu_; nn++) {
-      for (int k=pmb->ks; k<=pmb->ke; k++) {
-        for (int j=pmb->js; j<=pmb->je; j++) {
-          buf[p++] = x1flux(nn,k,j,i);
-        }
-      }
+  if (pbval_->shearing_box == 1 && nb.shear
+      && (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1)) {
+    int i;
+    int sign;
+    if (nb.fid == BoundaryFace::inner_x1) {
+      i = pmb->is;
+      sign = -1;
+    } else {
+      i = pmb->ie + 1;
+      sign =  1;
     }
-  } else {
-    for (int nn=nl_; nn<=nu_; nn++) {
-      if(nn==IVY) {
-        for (int k=pmb->ks; k<=pmb->ke; k++) {
-          for (int j=pmb->js; j<=pmb->je; j++) {
-            buf[p++] = x1flux(nn,k,j,i)+sign*qomL*x1flux(IDN,k,j,i);
-          }
-        }
-      } else if (nn==IEN) {
-        for (int k=pmb->ks; k<=pmb->ke; k++) {
-          for (int j=pmb->js; j<=pmb->je; j++) {
-            buf[p++] = x1flux(nn,k,j,i)
-                         +0.5*SQR(qomL)*x1flux(IDN,k,j,i)
-                         +sign*qomL*x1flux(IVY,k,j,i);
-          }
-        }
-      } else {
+    if(pmb->porb->orbital_advection_defined) {
+      for (int nn=nl_; nn<=nu_; nn++) {
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           for (int j=pmb->js; j<=pmb->je; j++) {
             buf[p++] = x1flux(nn,k,j,i);
+          }
+        }
+      }
+    } else {
+      for (int nn=nl_; nn<=nu_; nn++) {
+        if(nn==IVY) {
+          for (int k=pmb->ks; k<=pmb->ke; k++) {
+            for (int j=pmb->js; j<=pmb->je; j++) {
+              buf[p++] = x1flux(nn,k,j,i)+sign*qomL*x1flux(IDN,k,j,i);
+            }
+          }
+        } else if (nn==IEN) {
+          for (int k=pmb->ks; k<=pmb->ke; k++) {
+            for (int j=pmb->js; j<=pmb->je; j++) {
+              buf[p++] = x1flux(nn,k,j,i)
+                           +0.5*SQR(qomL)*x1flux(IDN,k,j,i)
+                           +sign*qomL*x1flux(IVY,k,j,i);
+            }
+          }
+        } else {
+          for (int k=pmb->ks; k<=pmb->ke; k++) {
+            for (int j=pmb->js; j<=pmb->je; j++) {
+              buf[p++] = x1flux(nn,k,j,i);
+            }
           }
         }
       }

@@ -169,6 +169,23 @@ void BoundaryVariable::CopyShearFluxSameProcess(SimpleNeighborBlock& snb, int ss
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryVariable::SetCompletedFlagSameProcess(NeighborBlock& nb)
+//  \brief
+//  Called in CellCenteredBoundaryVariable::SendFluxCorrection() when there is no
+//  need to send any information to nb on the same process. Just set
+//  BoundaryStatus::completed in the flag.
+void BoundaryVariable::SetCompletedFlagSameProcess(NeighborBlock& nb) {
+  // Locate target buffer
+  // 1) which MeshBlock?
+  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.snb.gid);
+  // 2) which element in vector of BoundaryVariable *?
+  BoundaryData<> *ptarget_bdata =
+      &(ptarget_block->pbval->bvars[bvar_index]->bd_var_flcor_);
+  ptarget_bdata->flag[nb.targetid] = BoundaryStatus::completed;
+  return;
+}
+
 // Default / shared implementations of 4x BoundaryBuffer public functions
 
 //----------------------------------------------------------------------------------------
