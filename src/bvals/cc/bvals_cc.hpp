@@ -146,9 +146,10 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   int shear_cc_phys_id_;
 #endif
 
-  void LoadShearing(AthenaArray<Real> &src, Real *buf, int nb);
+  void LoadShearingBoxBoundarySameLevel(AthenaArray<Real> &src, Real *buf, int nb);
   virtual void ShearQuantities(AthenaArray<Real> &shear_cc_, bool upper) {}
-  void SetShearingBoxBoundarySameLevel(AthenaArray<Real> &src, Real *buf, const int nb);
+  void SetShearingBoxBoundarySameLevel(AthenaArray<Real> &src,
+                                       Real *buf, const int nb);
 
   AthenaArray<Real> shear_var_flx_[2];
   AthenaArray<Real> shear_map_flx_[2];
@@ -157,7 +158,8 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   int shear_flx_phys_id_;
 #endif
 
-  void LoadFluxShearing(AthenaArray<Real> &src, Real *buf, int nb);
+  void LoadFluxShearingBoxBoundarySameLevel(AthenaArray<Real> &src,
+                                            Real *buf, int nb);
   void SetFluxShearingBoxBoundarySameLevel(AthenaArray<Real> &src,
                                            Real *buf, const int nb);
 };

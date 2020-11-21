@@ -169,7 +169,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   int shear_fc_phys_id_;
 #endif
 
-  void LoadShearing(FaceField &src, Real *buf, int nb);
+  void LoadShearingBoxBoundarySameLevel(FaceField &src, Real *buf, int nb);
   void SetShearingBoxBoundarySameLevel(FaceField &dst, Real *buf, const int nb);
 
   // Shearing box EMF correction
@@ -180,7 +180,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   int shear_emf_phys_id_;
 #endif
 
-  void LoadEMFShearing(EdgeField &src, Real *buf, const int nb);
+  void LoadEMFShearingBoxBoundarySameLevel(EdgeField &src, Real *buf, const int nb);
   void SetEMFShearingBoxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb);
   void ClearEMFShearing(EdgeField &work);
 };

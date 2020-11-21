@@ -43,12 +43,12 @@
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadEMFShearing(EdgeField &src,
-//                                                        Real *buf, int nb)
+//! \fn int FaceCenteredBoundaryVariable::LoadEMFShearingBoxBoundarySameLevel(
+//                                                EdgeField &src, Real *buf, int nb)
 //  \brief Load shearing box EMF boundary buffers
 
-void FaceCenteredBoundaryVariable::LoadEMFShearing(EdgeField &src,
-                                                   Real *buf, const int nb) {
+void FaceCenteredBoundaryVariable::LoadEMFShearingBoxBoundarySameLevel(
+                                   EdgeField &src, Real *buf, const int nb) {
   MeshBlock *pmb = pmy_block_;
   int sj, sk, ej, ek;
   int jo = pbval_->joverlap_flux_;
@@ -66,8 +66,9 @@ void FaceCenteredBoundaryVariable::LoadEMFShearing(EdgeField &src,
     ej = jmax2[nb-3]+jo;
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in CellCenteredBoundaryVariable:LoadShearing "
-        << std::endl << "nb = " << nb << " not valid" << std::endl;
+    msg << "### FATAL ERROR in CellCenteredBoundaryVariable::"
+        << "LoadShearingBoxBoundarySameLevel"<<std::endl
+        << "nb = " << nb << " not valid" << std::endl;
     ATHENA_ERROR(msg);
   }
 
@@ -114,8 +115,8 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
       for (int n=0; n<3; n++) {
         SimpleNeighborBlock& snb = pbval_->shear_flux_send_neighbor_[upper][n];
         if (snb.rank != -1) {
-          LoadEMFShearing(shear_var_emf_[upper], shear_bd_flux_[upper].send[n],
-                          n+offset[upper]);
+          LoadEMFShearingBoxBoundarySameLevel(shear_var_emf_[upper],
+                                     shear_bd_flux_[upper].send[n], n+offset[upper]);
           if (snb.rank == Globals::my_rank) {
             CopyShearFluxSameProcess(snb, shear_send_count_emf_[upper][n], n, upper);
           } else { // MPI
@@ -139,9 +140,8 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
 //                                   EdgeField &dst, Real *buf, const int nb)
 //  \brief Set EMF shearing box boundary received from a block on the same level
 
-void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(EdgeField &dst,
-                                                                      Real *buf,
-                                                                      const int nb) {
+void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(
+                                   EdgeField &dst, Real *buf, const int nb) {
   MeshBlock *pmb = pmy_block_;
   int &xgh = pbval_->xgh_;
   int sj, sk, ej, ek;
@@ -159,8 +159,9 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(EdgeField 
     sj = jmin2[nb-3]+xgh;   ej = jmax2[nb-3]+xgh;
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in CellCenteredBoundaryVariable:LoadShearing "
-        << std::endl << "nb = " << nb << " not valid" << std::endl;
+    msg << "### FATAL ERROR in CellCenteredBoundaryVariable::"
+        << "SetEMFShearingBoxBoundarySameLevel"<<std::endl
+        << "nb = " << nb << " not valid" << std::endl;
     ATHENA_ERROR(msg);
   }
 

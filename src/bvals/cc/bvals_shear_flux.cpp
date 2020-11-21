@@ -42,12 +42,12 @@
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *buf,
-//                                                     int nb)
-//  \brief Load shearing box hydro boundary buffers
+//! \fn void CellCenteredBoundaryVariable::LoadFluxShearingBoxBoundarySameLevel(
+//                               AthenaArray<Real> &src, Real *buf, int nb)
+//  \brief Load shearing box boundary buffers CC
 
-void CellCenteredBoundaryVariable::LoadFluxShearing(AthenaArray<Real> &src, Real *buf,
-                                                int nb) {
+void CellCenteredBoundaryVariable::LoadFluxShearingBoxBoundarySameLevel(
+                               AthenaArray<Real> &src, Real *buf, int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int sj, sk, ej, ek;
@@ -66,8 +66,9 @@ void CellCenteredBoundaryVariable::LoadFluxShearing(AthenaArray<Real> &src, Real
     ej = jmax2[nb-3]+jo;
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in CellCenteredBoundaryVariable:LoadShearing "
-        << std::endl << "nb = " << nb << " not valid" << std::endl;
+    msg << "### FATAL ERROR in CellCenteredBoundaryVariable:"
+        << "LoadFluxShearingBoxBoundarySameLevel"     << std::endl
+        << "nb = " << nb << " not valid" << std::endl;
     ATHENA_ERROR(msg);
   }
   int p = 0;
@@ -90,8 +91,8 @@ void CellCenteredBoundaryVariable::SendFluxShearingBoxBoundaryBuffers() {
       for (int n=0; n<3; n++) {
         SimpleNeighborBlock& snb = pbval_->shear_flux_send_neighbor_[upper][n];
         if (snb.rank != -1) {
-          LoadFluxShearing(shear_var_flx_[upper],
-                           shear_bd_flux_[upper].send[n], n+offset[upper]);
+          LoadFluxShearingBoxBoundarySameLevel(shear_var_flx_[upper],
+                                   shear_bd_flux_[upper].send[n], n+offset[upper]);
           if (snb.rank == Globals::my_rank) {// on the same process
             CopyShearFluxSameProcess(snb, shear_send_count_flx_[upper][n]*ssize, n,
                                        upper);
@@ -135,8 +136,9 @@ void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundarySameLevel(
     sj = jmin2[nb-3]+xgh;   ej = jmax2[nb-3]+xgh;
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in CellCenteredBoundaryVariable:LoadShearing "
-        << std::endl << "nb = " << nb << " not valid" << std::endl;
+    msg << "### FATAL ERROR in CellCenteredBoundaryVariable::"
+        << "SetFluxShearingBoxBoundarySameLevel"<<std::endl
+        << "nb = " << nb << " not valid" << std::endl;
     ATHENA_ERROR(msg);
   }
   int p = 0;

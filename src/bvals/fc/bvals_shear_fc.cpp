@@ -42,10 +42,12 @@
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int nb)
+//! \fn int FaceCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
+//                                               FaceField &src, Real *buf, int nb)
 //  \brief Load shearing box field boundary buffers
 
-void FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int nb) {
+void FaceCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
+                                               FaceField &src, Real *buf, int nb) {
   // TODO(felker): deduplicate with CellCenteredBoundaryVariable::LoadShearing()
   // Only differences are the calculation of psj, pej, and 3x PackData calls
   MeshBlock *pmb = pmy_block_;
@@ -71,8 +73,9 @@ void FaceCenteredBoundaryVariable::LoadShearing(FaceField &src, Real *buf, int n
     ej = jmax2[nb-4]+jo;
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in CellCenteredBoundaryVariable:LoadShearing "
-        << std::endl << "nb = " << nb << " not valid" << std::endl;
+    msg << "### FATAL ERROR in CellCenteredBoundaryVariable::"
+        << "LoadShearingBoxBoundarySameLevel"<<std::endl
+        << "nb = " << nb << " not valid" << std::endl;
     ATHENA_ERROR(msg);
   }
 
@@ -110,7 +113,8 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
       for (int n=0; n<4; n++) {
         SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[upper][n];
         if (snb.rank != -1) {
-          LoadShearing(var, shear_bd_var_[upper].send[n], n+offset[upper]);
+          LoadShearingBoxBoundarySameLevel(var, shear_bd_var_[upper].send[n],
+                                           n+offset[upper]);
           if (snb.rank == Globals::my_rank) {
             CopyShearBufferSameProcess(snb, shear_send_count_fc_[upper][n], n, upper);
           } else { // MPI
@@ -158,8 +162,9 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
     sj = jmin2[nb-4]+xgh;   ej = jmax2[nb-4]+xgh;
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in CellCenteredBoundaryVariable:LoadShearing "
-        << std::endl << "nb = " << nb << " not valid" << std::endl;
+    msg << "### FATAL ERROR in CellCenteredBoundaryVariable::"
+        << "SetShearingBoxBoundarySameLevel"<<std::endl
+        << "nb = " << nb << " not valid" << std::endl;
     ATHENA_ERROR(msg);
   }
 
