@@ -163,14 +163,14 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
     if (std::strcmp(COORDINATE_SYSTEM, "cartesian") != 0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
-          << "Shear Periodic work only in cartesian coordinates."<<std::endl;
+          << "Shear Periodic works only in cartesian coordinates."<<std::endl;
       ATHENA_ERROR(msg);
     }
 
     if (!pmy_mesh_->use_uniform_meshgen_fn_[1]) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
-          << "Shear Periodic work only with x2 uniform spacing."<<std::endl
+          << "Shear Periodic works only with x2 uniform spacing."<<std::endl
           << "Check <mesh> x2rat parameter in the input file"<<std::endl;
       ATHENA_ERROR(msg);
     }
@@ -187,6 +187,13 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
           << "Shear Periodic requires predefined orbital velocity"<<std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    if (RELATIVISTIC_DYNAMICS) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
+          << "Neigher SR nor GR works with Shear Periodic."<<std::endl;
       ATHENA_ERROR(msg);
     }
 

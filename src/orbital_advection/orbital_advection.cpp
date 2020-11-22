@@ -252,6 +252,14 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
       ATHENA_ERROR(msg);
     }
 
+    // check relativity
+    if (RELATIVISTIC_DYNAMICS) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in OrbitalAdvection Class."<<std::endl
+          << "Neigher SR nor GR supports Orbital Advection."<<std::endl;
+      ATHENA_ERROR(msg);
+    }
+
     // memory allocation
     if (orbital_direction == 1) { // cartesian or cylindrical
       vKc.NewAthenaArray(nc3, nc1);
