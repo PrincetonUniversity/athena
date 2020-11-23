@@ -28,7 +28,7 @@
 #include "orbital_advection.hpp"
 
 
---------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::RemapFluxPlm(AthenaArray<Real> &pflux_,
 //                                          const AthenaArray<Real> &pbuf_,
 //                                          const Real eps_, const int osgn_,
