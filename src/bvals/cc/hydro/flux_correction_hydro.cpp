@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file flux_correction_cc.cpp
-//  \brief functions that perform flux correction for CELL_CENTERED variables
+//! \file flux_correction_hydro.cpp
+//  \brief functions that perform flux correction for hydrodynamic variables
 
 // C headers
 

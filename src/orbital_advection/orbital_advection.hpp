@@ -6,8 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file  orbital_advection.hpp
-//  \brief defines class OrbitalAdvection
-//  \brief data and functions for orbital advection
+//  \brief definitions of the OrbitalAdvection class and related functions
 
 // C/C++ headers
 

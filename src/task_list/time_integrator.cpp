@@ -77,7 +77,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     if (SHEAR_PERIODIC) {
       std::stringstream msg;
       msg << "### FATAL ERROR in TimeIntegratorTaskList constructor" << std::endl
-          << "integrator=" << integrator << " not work with shear periodic boundary"
+          << "integrator=" << integrator << " does not work with shear periodic boundary."
           << std::endl;
       ATHENA_ERROR(msg);
     }
@@ -85,8 +85,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     if (ORBITAL_ADVECTION && pm->multilevel) {
       std::stringstream msg;
       msg << "### FATAL ERROR in TimeIntegratorTaskList constructor" << std::endl
-          << "integrator=" << integrator << " not work with orbital advection and"
-          << " mesh refinement"
+          << "integrator=" << integrator << " does not work with orbital advection and "
+          << "mesh refinement"
           << std::endl;
       ATHENA_ERROR(msg);
     }
@@ -1392,7 +1392,7 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
       if (integrator == "ssprk5_4") {
         std::stringstream msg;
         msg << "### FATAL ERROR in TimeIntegratorTaskList::StartupTaskList\n"
-            << "integrator=" << integrator << " is currently incompatible with MHD"
+            << "integrator=" << integrator << " is currently incompatible with MHD."
             << std::endl;
         ATHENA_ERROR(msg);
       }

@@ -40,7 +40,7 @@
 #include "../scalars/scalars.hpp"
 
 #if MAGNETIC_FIELDS_ENABLED
-#error "This problem generator requires NOT MHD"
+#error "This problem generator does not work with MHD."
 #endif
 
 namespace {
@@ -68,14 +68,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (!shear_periodic) {
     std::stringstream msg;
     msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
-        << "This problem generator requires shearing box"   << std::endl;
+        << "This problem generator requires shearing box."   << std::endl;
     ATHENA_ERROR(msg);
   }
 
   if (mesh_size.nx2 == 1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in ssheet.cpp ProblemGenerator" << std::endl
-        << "This problem does NOT work on a 1D grid" << std::endl;
+        << "This problem does NOT work on a 1D grid." << std::endl;
     ATHENA_ERROR(msg);
   }
 

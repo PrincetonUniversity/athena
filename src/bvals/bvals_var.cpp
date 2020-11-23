@@ -101,13 +101,10 @@ void BoundaryVariable::DestroyBoundaryData(BoundaryData<> &bd) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize)
-//  \brief
-
-//  Called in BoundaryVariable::SendBoundaryBuffer(), SendFluxCorrection() calls when the
-//  destination neighbor block is on the same MPI rank as the sending MeshBlcok. So
-//  std::memcpy() call requires pointer to "void *dst" corresponding to
-//  bd_var_.recv[nb.targetid] in separate BoundaryVariable object in separate vector in
-//  separate BoundaryValues
+//  \brief Called in BoundaryVariable::SendBoundaryBuffer() and SendFluxCorrection()
+//  when the destination neighbor block is on the same MPI rank as the sending MeshBlcok.
+//  So std::memcpy() call requires a pointer to "void *dst" corresponding to
+//  bd_var_.recv[nb.targetid] on the target block
 
 void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
@@ -124,6 +121,12 @@ void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssiz
 
 // KGF: change ssize to send_count
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb,
+//                                                                 int ssize)
+//  \brief Same as CopyVariableBufferSameProcess but for flux correction
+
 void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
   // 1) which MeshBlock?
@@ -137,8 +140,15 @@ void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, in
   return;
 }
 
+
 // no nb.targetid, nb.bufid in SimpleNeighborBlock.
 // fixed "int bufid" is used for both IDs. Seems unnecessarily strict.
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb,
+//                                                int ssize, int bufid, bool upper)
+//  \brief Same as CopyVariableBufferSameProcess but for shear boundaries
+
 void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int ssize,
                                                   int bufid, bool upper) {
   // Locate target buffer
@@ -153,6 +163,12 @@ void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int 
   ptarget_bdata->flag[bufid] = BoundaryStatus::arrived;
   return;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryVariable::CopyShearFluxSameProcess(SimpleNeighborBlock& snb,
+//                                                      int ssize, int bufid, bool upper)
+//  \brief Same as CopyVariableBufferSameProcess but for shear flux
 
 void BoundaryVariable::CopyShearFluxSameProcess(SimpleNeighborBlock& snb, int ssize,
                                                int bufid, bool upper) {

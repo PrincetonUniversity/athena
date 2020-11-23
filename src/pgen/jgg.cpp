@@ -80,7 +80,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (!shear_periodic) {
     std::stringstream msg;
     msg << "### FATAL ERROR in jgg.cpp ProblemGenerator" << std::endl
-        << "This problem generator requires shearing box" << std::endl;
+        << "This problem generator requires shearing box." << std::endl;
     ATHENA_ERROR(msg);
   }
 

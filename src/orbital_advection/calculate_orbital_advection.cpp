@@ -3,6 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
+//! \file calculate_orbital_advection.cpp
 //  \brief functions of main calculations in orbital advection
 
 // C/C++ headers
@@ -26,10 +27,12 @@
 // this class header
 #include "orbital_advection.hpp"
 
+
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::CalculateOrbitalAdvectionCC(Real dt,
 //                             AthenaArray<Real> &u, AthenaArray<Real> &s)
 //  \brief update hydro & passive scalars using orbital advection scheme
+
 void OrbitalAdvection::CalculateOrbitalAdvectionCC(Real dt,
                                 AthenaArray<Real> &u, AthenaArray<Real> &s) {
   int is = pmb_->is, ie = pmb_->ie;
@@ -116,9 +119,11 @@ void OrbitalAdvection::CalculateOrbitalAdvectionCC(Real dt,
   return;
 }
 
+
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::CalculateOrbitalAdvectionFC(Real dt, EdgeField &e)
 //  \brief calculate field flux for orbital advection
+
 void OrbitalAdvection::CalculateOrbitalAdvectionFC(Real dt, EdgeField &e) {
   int is = pmb_->is, ie = pmb_->ie;
   int js = pmb_->js, je = pmb_->je;

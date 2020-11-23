@@ -114,7 +114,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   if (porb->orbital_advection_defined) {
     std::stringstream msg;
     msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
-        << "This problem NOT work with orbital advection." << std::endl;
+        << "This problem does NOT work with orbital advection." << std::endl;
     ATHENA_ERROR(msg);
   }
 
@@ -192,7 +192,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       } else {
         std::stringstream msg;
         msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
-            << "Shearing sheet ipert=" << ipert << " is unrecognized" << std::endl;
+            << "Shearing sheet ipert=" << ipert << " is invalid." << std::endl;
         ATHENA_ERROR(msg);
       }
       phydro->u(IDN,ks,j,i) = rd;
@@ -228,7 +228,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         } else {
           std::stringstream msg;
           msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
-              << "Shearing sheet ifield=" << ifield << " is unrecognized" << std::endl;
+              << "Shearing sheet ifield=" << ifield << " is unrecognized." << std::endl;
           ATHENA_ERROR(msg);
         }
         if (NON_BAROTROPIC_EOS) {

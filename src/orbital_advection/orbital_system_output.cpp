@@ -3,6 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
+//! \file orbital_system_output.cpp
 //  \brief functions for orbital system output
 
 // C/C++ headers
@@ -20,10 +21,12 @@
 // this class header
 #include "orbital_advection.hpp"
 
+
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &src,
 //                                                    bool cons_flag)
 //  \brief calculate profiles including orbital velocity
+
 void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &src) {
   if(!orbital_system_output_done) {
     int il = pmb_->is-(NGHOST); int jl = pmb_->js-(NGHOST); int kl = pmb_->ks;

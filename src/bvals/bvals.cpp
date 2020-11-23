@@ -135,58 +135,60 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
       xgh_ = 2;
 
     shearing_box = pin->GetOrAddInteger("problem", "shboxcoord", 1);
-    if ((shearing_box-1)*(shearing_box-2)!=0) {
+    if (shearing_box != 1 && shearing_box != 2) {
       std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
-          << "<problem> shboxcoord must be 1 or 2."<<std::endl;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "<problem> shboxcoord must be 1 or 2." << std::endl;
       ATHENA_ERROR(msg);
     }
 
     if (pmb->block_size.nx3>1) { // 3D
       if (shearing_box == 2) {
         std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
-            << "When using shear_periodic bondary in 3D, "
-            << "<problem> shboxcoord must be 1."<<std::endl;
+        msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+            << "When using shear_periodic bondaries in 3D, "
+            << "<problem> shboxcoord must be 1." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if (pmb->block_size.nx2==1) { // 1D
       if (shearing_box == 1) {
         std::stringstream msg;
-        msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
-            << "When using Shear Periodic Bondaries in 1D, "
-            << "<problem> shboxcoord must be 2."<<std::endl;
+        msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+            << "When using shear_periodic bondaries in 1D, "
+            << "<problem> shboxcoord must be 2." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
 
     if (std::strcmp(COORDINATE_SYSTEM, "cartesian") != 0) {
       std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
-          << "Shear Periodic work only in cartesian coordinates."<<std::endl;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "shear_periodic boundaries work only in cartesian coordinates."<<std::endl;
       ATHENA_ERROR(msg);
     }
 
     if (!pmy_mesh_->use_uniform_meshgen_fn_[1]) {
       std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
-          << "Shear Periodic work only with x2 uniform spacing."<<std::endl
-          << "Check <mesh> x2rat parameter in the input file"<<std::endl;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "shear_periodic boundaries work only with uniform spacing "
+          << "in the x2 direction." << std::endl 
+          << "Check <mesh> x2rat parameter in the input file."<<std::endl;
       ATHENA_ERROR(msg);
     }
 
     std::string integrator = pin->GetOrAddString("time", "integrator", "vl2");
     if (integrator == "rk4" || integrator == "ssprk5_4") {
       std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
-          << "Shear Periodic NOT work with rk4 or ssprk5_4."<<std::endl
-          << "Check <time> integrator parameter in the input file"<<std::endl;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "shear_periodic boundaries do not work with rk4 or ssprk5_4." << std::endl
+          << "Check <time> integrator parameter in the input file." << std::endl;
       ATHENA_ERROR(msg);
     }
     if (pmy_mesh_->OrbitalVelocity_ != nullptr) {
       std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
-          << "Shear Periodic requires predefined orbital velocity"<<std::endl;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "shear_periodic boundaries require the default orbital velocity profile."
+          << std::endl;
       ATHENA_ERROR(msg);
     }
 
@@ -248,8 +250,8 @@ void BoundaryValues::SetupPersistentMPI() {
     LogicalLocation *loclist = pmy_mesh_->loclist;
     if (pmy_mesh_->adaptive) {
       std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
-          << "Shear Periodic Boundaries does NOT work with AMR at present."<<std::endl;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "shear_periodic boundaries do NOT work with AMR at present." << std::endl;
       ATHENA_ERROR(msg);
     } else {
       for (int upper=0; upper<2; upper++) {
@@ -264,9 +266,9 @@ void BoundaryValues::SetupPersistentMPI() {
             int gid = mbt->GetGid();
             if (mbt == nullptr || gid == -1) {
               std::stringstream msg;
-              msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
-                  << "Shear Periodic Boundaries does NOT work "
-                  << "if there is refinment in the x2 direction."<<std::endl;
+              msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+                  << "shear_periodic boundaries do NOT work "
+                  << "if there is refinment in the x2 direction." << std::endl;
               ATHENA_ERROR(msg);
             }
             shbb_[upper][lx2].gid = gid;
@@ -279,9 +281,9 @@ void BoundaryValues::SetupPersistentMPI() {
           MeshBlockTree *mbt = pmy_mesh_->tree.FindMeshBlock(loc);
           if (mbt == nullptr || mbt->GetGid() == -1) {
             std::stringstream msg;
-            msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
-                << "Shear Periodic Boundaries does NOT work "
-                << "if boudary meshblocks have different level."<<std::endl;
+            msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+                << "shear_periodic boundaries do NOT work if MeshBlocks contacting "
+                << "the shear boundaries are on different levels." << std::endl;
             ATHENA_ERROR(msg);
           }
         }

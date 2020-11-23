@@ -30,7 +30,7 @@
 //! \fn void HydroSourceTerms::RotatingSystemSourceTerms
 //              (const Real dt, const AthenaArray<Real> *flux,
 //               const AthenaArray<Real> &prim, AthenaArray<Real> &cons)
-//  \brief source terms for rotating system
+//  \brief source terms for the rotating system
 
 void HydroSourceTerms::RotatingSystemSourceTerms
                  (const Real dt, const AthenaArray<Real> *flux,

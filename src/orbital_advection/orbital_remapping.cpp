@@ -3,6 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
+//! \file orbital_remapping.cpp
 //  \brief functions for remapping in the orbital direction
 
 // C/C++ headers
@@ -26,7 +27,8 @@
 // this class header
 #include "orbital_advection.hpp"
 
-//---------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::RemapFluxPlm(AthenaArray<Real> &pflux_,
 //                                          const AthenaArray<Real> &pbuf_,
 //                                          const Real eps_, const int osgn_,
@@ -52,6 +54,7 @@ void OrbitalAdvection::RemapFluxPlm(AthenaArray<Real> &pflux_,
   }
   return;
 }
+
 
 //---------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::RemapFluxPpm(AthenaArray<Real> &pflux_,

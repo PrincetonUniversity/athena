@@ -3,7 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//  \brief functions to put variables into buffer for orbital communication
+//! \file set_orbital_advection.cpp
+//  \brief functions to put variables into buffers for orbital communication
 
 // C/C++ headers
 #include <algorithm>  // min()
@@ -26,10 +27,12 @@
 // this class header
 #include "orbital_advection.hpp"
 
+
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetOrbitalAdvectionCC(const AthenaArray<Real> &u,
 //                                                   const AthenaArray<Real> &s)
 //  \brief put cell-centered variables of this meshblock into orbital buffer
+
 void OrbitalAdvection::SetOrbitalAdvectionCC(const AthenaArray<Real> &u,
                                              const AthenaArray<Real> &s) {
   int is = pmb_->is, ie = pmb_->ie;
@@ -116,9 +119,12 @@ void OrbitalAdvection::SetOrbitalAdvectionCC(const AthenaArray<Real> &u,
   }
 return;
 }
+
+
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetOrbitalAdvectionFC(const FaceField &b)
 //  \brief put face-centered variables of this meshblock into orbital buffer
+
 void OrbitalAdvection::SetOrbitalAdvectionFC(const FaceField &b) {
   int is = pmb_->is, ie = pmb_->ie;
   int js = pmb_->js, je = pmb_->je;
@@ -186,10 +192,12 @@ void OrbitalAdvection::SetOrbitalAdvectionFC(const FaceField &b) {
   return;
 }
 
+
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetOrbitalEdgeCC(const Real dt,
 //                                              int *ssize[2], int *rsize[2])
-//  \brief set orbital edge of center
+//  \brief set orbital edge for cell-centered variables
+
 void OrbitalAdvection::SetOrbitalEdgeCC(const Real dt, int *ssize[2], int *rsize[2]) {
   int is = pmb_->is, ie = pmb_->ie;
   int js = pmb_->js, je = pmb_->je;
@@ -332,15 +340,17 @@ void OrbitalAdvection::SetOrbitalEdgeCC(const Real dt, int *ssize[2], int *rsize
       }
     }
   }
-//  else { //non-uniform mesh
-//  }
+  // else { // non-uniform mesh
+  // }
   return;
 }
+
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt,
 //                                              int *ssize[2], int *rsize[2])
-//  \brief set orbital edge of face
+//  \brief set orbital edge for face-centered variables
+
 void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize[2]) {
   int is = pmb_->is, ie = pmb_->ie;
   int js = pmb_->js, je = pmb_->je;
@@ -560,7 +570,7 @@ void OrbitalAdvection::SetOrbitalEdgeFC(const Real dt, int *ssize[2], int *rsize
       }
     }
   }
-//  else { // non-uniform mesh
-//  }
+  // else { // non-uniform mesh
+  // }
   return;
 }

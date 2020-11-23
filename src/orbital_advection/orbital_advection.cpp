@@ -3,7 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//  \brief define OrbitalAdvection class
+//! \file orbital_advection.cpp
+//  \brief implementation of the OrbitalAdvection class
 
 // C/C++ headers
 #include <algorithm>  // max(), min()
@@ -64,7 +65,7 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
     onx = pmb_->block_size.nx3;
   }
 
-  // allocate pre-defined orbital velocity functions
+  // set default orbital velocity functions
   if (pmb->pmy_mesh->OrbitalVelocity_ == nullptr) {
     // not user-defined functions
     if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
@@ -110,9 +111,11 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
       } else { // 1D
         orbital_advection_defined = false;
         std::stringstream msg;
-        msg << "### FATAL ERROR in OrbitalAdvection Class."<<std::endl
-            << "Orbital advection needs 2D or 3D in cartesian and cylindrical."<<std::endl
-            << "Check <problem> orbital_advection parameter in the input file"<<std::endl;
+        msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
+            << "Orbital advection requires 2D or 3D in cartesian and "
+            << "cylindrical coordinates." << std::endl
+            << "Check <problem> orbital_advection parameter in the input file."
+            << std::endl;
         ATHENA_ERROR(msg);
       }
       if (pmb_->block_size.nx3 > 1) // 3D
@@ -124,32 +127,35 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
       } else { // 1D or 2D
         orbital_advection_defined = false;
         std::stringstream msg;
-        msg << "### FATAL ERROR in OrbitalAdvection Class."<<std::endl
-            << "Orbital advection needs 3D in spherical_polar coordinates."<<std::endl
-            << "Check <problem> orbital_advection parameter in the input file"<<std::endl;
+        msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
+            << "Orbital advection requires 3D in spherical_polar coordinates."
+            << std::endl
+            << "Check <problem> orbital_advection parameter in the input file."
+            << std::endl;
         ATHENA_ERROR(msg);
       }
       nc2 = pmb_->block_size.nx2 + 2*(NGHOST);
     } else {
       orbital_advection_defined = false;
       std::stringstream msg;
-      msg << "### FATAL ERROR in OrbitalAdvection Class."<<std::endl
+      msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
           << "Orbital advection works only in cartesian, cylindrical, "
-          << "or spherical_polar coordinates."<<std::endl
-          << "Check <problem> orbital_advection parameter in the input file"<<std::endl;
+          << "or spherical_polar coordinates." << std::endl
+          << "Check <problem> orbital_advection parameter in the input file."
+          << std::endl;
       ATHENA_ERROR(msg);
     }
 
-    // check parameters about the orbital motion for using pre-defined orbital velocity
+    // check parameters about the orbital motion for using default orbital velocity
     if (pmb->pmy_mesh->OrbitalVelocity_ == nullptr) {
       if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
         if ((Omega0 == 0.0) || (qshear == 0.0)) {
           orbital_advection_defined = false;
           std::stringstream msg;
-          msg << "### FATAL ERROR in OrbitalAdvection Class."<<std::endl
-              << "Pre-defined orbital velocity requires that "
-              << "both Omega0 and qshear are non-zero."<<std::endl
-              << "Check <problem> Omega0 and qshear in the input file"<<std::endl;
+          msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
+              << "The default orbital velocity profile requires non-zero "
+              << "Omega0 and qshear." << std::endl
+              << "Check <problem> Omega0 and qshear in the input file." << std::endl;
           ATHENA_ERROR(msg);
         }
       } else if ((std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0)
@@ -157,9 +163,10 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
         if (gm == 0.0) {
           orbital_advection_defined = false;
           std::stringstream msg;
-          msg << "### FATAL ERROR in OrbitalAdvection Class."<<std::endl
-              << "Pre-defined orbital velocity requires that non-zero GM."<<std::endl
-              << "Check <problem> GM and <problem> qshear in the input file"<<std::endl;
+          msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
+              << "The default orbital velocity profile requires non-zero GM." << std::endl
+              << "Check <problem> GM and <problem> qshear in the input file."
+              << std::endl;
           ATHENA_ERROR(msg);
         }
       }
@@ -211,10 +218,10 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
         ||pin->GetOrAddString("mesh", "ox2_bc", "none")!="periodic") {
         orbital_advection_defined = false;
         std::stringstream msg;
-        msg << "### FATAL ERROR in OrbitalAdvection Class."<<std::endl
-            << "Orbital advection requires boundary conditions of x2 periodic"
-            << "in cartesian or cylindrical coordinates."<<std::endl
-            << "Check <mesh> ix2_bc and ox2_bc in the input file"<<std::endl;
+        msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
+            << "Orbital advection in Cartesian or cylindrical coordinates requires "
+            << "periodic boundary conditions in the x2 direction." << std::endl
+            << "Check <mesh> ix2_bc and ox2_bc in the input file." << std::endl;
         ATHENA_ERROR(msg);
       }
     } else if (orbital_direction==2) { // spherical_polar
@@ -222,10 +229,10 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
           ||pin->GetOrAddString("mesh", "ox3_bc", "none")!="periodic") {
         orbital_advection_defined = false;
         std::stringstream msg;
-        msg << "### FATAL ERROR in OrbitalAdvection Class."<<std::endl
-            << "Orbital advection requires boundary conditions of x3 periodic"
-            << "in spherical_polar coordinates."<<std::endl
-            << "Check <mesh> ix3_bc and ox3_bc in the input file"<<std::endl;
+        msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
+            << "Orbital advection in spherical_polar coordinates requires "
+            << "periodic boundary conditions in the x3 direction." << std::endl
+            << "Check <mesh> ix3_bc and ox3_bc in the input file." << std::endl;
         ATHENA_ERROR(msg);
       }
     }
@@ -238,7 +245,7 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
     orbital_uniform_mesh = pm_->use_uniform_meshgen_fn_[orbital_direction];
     if (!orbital_uniform_mesh) {
       std::stringstream msg;
-      msg << "### FATAL ERROR in OrbitalAdvection Class."<<std::endl
+      msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
           << "Orbital advection currently does not support non-uniform mesh"
           << "in the orbital direction." << std::endl;
       ATHENA_ERROR(msg);
@@ -247,8 +254,8 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
     // check orbital_splitting_order
     if ((orbital_splitting_order-1)*(orbital_splitting_order-2) != 0) {
       std::stringstream msg;
-      msg << "### FATAL ERROR in OrbitalAdvection Class."<<std::endl
-          << "Order of the orbital splitting must be 1 or 2." << std::endl;
+      msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
+          << "The order of the orbital splitting must be 1 or 2." << std::endl;
       ATHENA_ERROR(msg);
     }
 
@@ -381,6 +388,7 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
   }
 }
 
+
 // destructor
 OrbitalAdvection::~OrbitalAdvection() {
   if (orbital_advection_defined) {
@@ -389,9 +397,11 @@ OrbitalAdvection::~OrbitalAdvection() {
   }
 }
 
+
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::InitializeOrbitalAdvection()
 //  \brief Setup for OrbitalAdvection in void Mesh::Initialize
+
 void OrbitalAdvection::InitializeOrbitalAdvection() {
   //set grids edge in the orbital direction
   int xs, xe, xl, xu;
@@ -428,8 +438,8 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
             )*pmb_->block_size.nx3);
     }
   }
-//  else { // non-uniform mesh
-//  }
+  // else { // non-uniform mesh
+  // }
 
   //set vK_max, vK_min
   vK_max = -(FLT_MAX);
@@ -589,6 +599,7 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
   return;
 }
 
+
 //---------------------------------------------------------------------------------------
 //! \fn Real OrbitalAdvection::NewOrbitalAdvectionDt()
 // Calculate time step for OrbitalAdvection
@@ -596,6 +607,7 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
 Real OrbitalAdvection::NewOrbitalAdvectionDt() {
   return min_dt;
 }
+
 
 //---------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetVKc()
@@ -629,9 +641,11 @@ void OrbitalAdvection::SetVKc() {
   }
 }
 
+
 //---------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetVKf()
 // Calculate Orbital Velocity at cell surface
+
 void OrbitalAdvection::SetVKf() {
   int il = pmb_->is-(NGHOST); int jl = pmb_->js-(NGHOST); int kl = pmb_->ks;
   int iu = pmb_->ie+(NGHOST); int ju = pmb_->je+(NGHOST); int ku = pmb_->ke;
@@ -675,6 +689,7 @@ void OrbitalAdvection::SetVKf() {
     }
   }
 }
+
 
 //---------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetDvKc()
@@ -777,6 +792,7 @@ void OrbitalAdvection::SetDvKc() {
   }
 }
 
+
 //---------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetVKcCoarse()
 // Calculate Orbital Velocity at cell center for coarse cells
@@ -809,6 +825,7 @@ void OrbitalAdvection::SetVKcCoarse() {
     }
   }
 }
+
 
 //---------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetVKfCoarse()
