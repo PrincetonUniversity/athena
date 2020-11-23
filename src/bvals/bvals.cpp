@@ -171,8 +171,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
           << "shear_periodic boundaries work only with uniform spacing "
-          << "in the x2 direction." << std::endl 
-          << "Check <mesh> x2rat parameter in the input file."<<std::endl;
+          << "in the x2 direction." << std::endl
+          << "Check <mesh> x2rat parameter in the input file." << std::endl;
       ATHENA_ERROR(msg);
     }
 
@@ -189,6 +189,13 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
       msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
           << "shear_periodic boundaries require the default orbital velocity profile."
           << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    if (RELATIVISTIC_DYNAMICS) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
+          << "Neigher SR nor GR works with Shear Periodic."<<std::endl;
       ATHENA_ERROR(msg);
     }
 
