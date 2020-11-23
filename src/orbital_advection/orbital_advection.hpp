@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file  orbital_advection.hpp
-//  \brief definitions of the OrbitalAdvection class and related functions
+//! \brief definitions of the OrbitalAdvection class and related functions
 
 // C/C++ headers
 
@@ -36,7 +36,7 @@ Real SphOrbitalVelocity_t(OrbitalAdvection *porb, Real x_, Real y_, Real z_);
 Real ZeroOrbitalVelocity(OrbitalAdvection *porb, Real x_, Real y_, Real z_);
 
 //! \class OrbitalAdvection
-//  \brief data and functions for orbital advection
+//! \brief data and functions for orbital advection
 class OrbitalAdvection{
   friend class OrbitalBoundaryCommunication;
  public:
@@ -62,11 +62,11 @@ class OrbitalAdvection{
   OrbitalVelocityFunc OrbitalVelocity, OrbitalVelocityDerivative[2];
 
   // flag
-  int orbital_direction; // the direction of orbital motion x2(=1), x3 (=2)
-  int orbital_splitting_order; // order of the orbital splitting method
-  bool orbital_advection_defined; // flag for the orbital advection
-  bool orbital_refinement; // flag for refinement in the orbital direction
-  bool orbital_uniform_mesh; // true: uniform grid, false: un-uniform grid
+  int orbital_direction; //!> the direction of orbital motion x2(=1), x3 (=2)
+  int orbital_splitting_order; //!> order of the orbital splitting method
+  bool orbital_advection_defined; //!> flag for the orbital advection
+  bool orbital_refinement; //!> flag for refinement in the orbital direction
+  bool orbital_uniform_mesh; //!> true: uniform grid, false: un-uniform grid
 
   AthenaArray<Real> vKc, vKf[2]; // Orbital Velocity (cell-centered and face)
   AthenaArray<Real> dvKc1, dvKc2; // Derivatives of vKc

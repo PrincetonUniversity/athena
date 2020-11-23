@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file pre_orbital_velocity.cpp
-//  \brief define default orbital velocity functions
+//! \file default_orbital_velocity.cpp
+//! \brief define default orbital velocity functions
 
 // C/C++ headers
 #include <algorithm>  // max(), min()

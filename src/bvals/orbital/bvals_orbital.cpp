@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_orbital.cpp
-//  \brief functions for orbital communications
+//! \brief functions for orbital communications
 
 // C headers
 
@@ -101,9 +101,9 @@ OrbitalBoundaryCommunication::~OrbitalBoundaryCommunication() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int OrbitalBoundaryCommunication::InitBoundaryData(
-//          OrbitalBoundaryData &bd, BoundaryQuantity type)
-//  \brief allocate memory for orbital communicaiton
+//! \fn void OrbitalBoundaryCommunication::InitBoundaryData(
+//!            OrbitalBoundaryData &bd, BoundaryQuantity type)
+//! \brief allocate memory for orbital communicaiton
 void OrbitalBoundaryCommunication::InitBoundaryData(
      OrbitalBoundaryData &bd, BoundaryQuantity type) {
   MeshBlock *pmb = pmy_block_;
@@ -245,7 +245,7 @@ void OrbitalBoundaryCommunication::DestroyBoundaryData(OrbitalBoundaryData &bd) 
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetupPersistentMPI()
-//  \brief set up for MPI in Mesh::Initiate()
+//! \brief set up for MPI in Mesh::Initiate()
 void OrbitalBoundaryCommunication::SetupPersistentMPI() {
   OrbitalAdvection *porb = pmy_orbital_;
   // initialize
@@ -307,7 +307,7 @@ void OrbitalBoundaryCommunication::SetupPersistentMPI() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::ComputeOrbit(const Real dt)
-//  \brief Calculate number of cells for orbital communication
+//! \brief Calculate number of cells for orbital communication
 void OrbitalBoundaryCommunication::ComputeOrbit(const Real dt) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -485,7 +485,7 @@ void OrbitalBoundaryCommunication::ComputeOrbit(const Real dt) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::StartReceiving(BoundaryCommSubset phase)
-//  \brief StartReceiving function for the orbital communication
+//! \brief StartReceiving function for the orbital communication
 void OrbitalBoundaryCommunication::StartReceiving(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
   int tag, size;
@@ -545,7 +545,7 @@ void OrbitalBoundaryCommunication::StartReceiving(BoundaryCommSubset phase) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::ClearBoundary(BoundaryCommSubset phase)
-//  \brief ClearBoundary function for the orbital communication
+//! \brief ClearBoundary function for the orbital communication
 void OrbitalBoundaryCommunication::ClearBoundary(BoundaryCommSubset phase) {
   for (int upper=0; upper<2; upper++) {
     for (int n=0; n<orbital_bd_cc_[upper].nbmax; n++) {
@@ -576,7 +576,7 @@ void OrbitalBoundaryCommunication::ClearBoundary(BoundaryCommSubset phase) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SendBoundaryBuffersCC()
-//  \brief load and send hydro variables and passive scalars
+//! \brief load and send hydro variables and passive scalars
 void OrbitalBoundaryCommunication::SendBoundaryBuffersCC() {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -664,7 +664,7 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersCC() {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersCC()
-//  \brief receive and set hydro variables and passive scalars
+//! \brief receive and set hydro variables and passive scalars
 bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersCC() {
   bool flag[2]{true, true};
   int mylevel = pmy_block_->loc.level;
@@ -725,7 +725,7 @@ bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersCC() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SendBoundaryBuffersFC()
-//  \brief load and send magnetic fields
+//! \brief load and send magnetic fields
 void OrbitalBoundaryCommunication::SendBoundaryBuffersFC() {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -804,7 +804,7 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersFC() {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersFC()
-//  \brief receive and set magnetic fields
+//! \brief receive and set magnetic fields
 bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersFC() {
   bool flag[2]{true, true};
   int mylevel = pmy_block_->loc.level;
@@ -856,8 +856,8 @@ bool OrbitalBoundaryCommunication::ReceiveBoundaryBuffersFC() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadHydroBufferSameLevel(
-//                                        Real *buf, int &p, int nb)
-//  \brief load hydro variables (same level)
+//!                                       Real *buf, int &p, int nb)
+//! \brief load hydro variables (same level)
 void OrbitalBoundaryCommunication::LoadHydroBufferSameLevel(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -939,8 +939,8 @@ void OrbitalBoundaryCommunication::LoadHydroBufferSameLevel(Real *buf, int &p, i
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadHydroBufferToCoarser(
-//                                        Real *buf, int &p, int nb)
-//  \brief load hydro variables (coarser level)
+//!                                       Real *buf, int &p, int nb)
+//! \brief load hydro variables (coarser level)
 void OrbitalBoundaryCommunication::LoadHydroBufferToCoarser(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -1022,8 +1022,8 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToCoarser(Real *buf, int &p, i
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadHydroBufferToFiner(
-//                                      Real *buf, int &p, int nb)
-//  \brief load hydro variables (finer level)
+//!                                     Real *buf, int &p, int nb)
+//! \brief load hydro variables (finer level)
 void OrbitalBoundaryCommunication::LoadHydroBufferToFiner(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -1108,8 +1108,8 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToFiner(Real *buf, int &p, int
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
-//                                 Real *buf, int &p, const int nb)
-//  \brief set hydro variables (same level)
+//!                                Real *buf, int &p, const int nb)
+//! \brief set hydro variables (same level)
 void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
                            Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
@@ -1210,8 +1210,8 @@ void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
-//                                    Real *buf, int &p, const int nb)
-//  \brief set hydro variables (coarser level)
+//!                                   Real *buf, int &p, const int nb)
+//! \brief set hydro variables (coarser level)
 void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
                              Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
@@ -1389,8 +1389,8 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
-//                                 Real *buf, int &p, const int nb)
-//  \brief set hydro variables (finer level)
+//!                                Real *buf, int &p, const int nb)
+//! \brief set hydro variables (finer level)
 void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
                            Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
@@ -1537,8 +1537,8 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(
-//                                        Real *buf, int &p, int nb)
-//  \brief load magnetic fields (same level)
+//!                                       Real *buf, int &p, int nb)
+//! \brief load magnetic fields (same level)
 void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -1656,8 +1656,8 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(
-//                                        Real *buf, int &p, int nb)
-//  \brief load magnetic fields (coarser level)
+//!                                       Real *buf, int &p, int nb)
+//! \brief load magnetic fields (coarser level)
 void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -1775,8 +1775,8 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToCoarser(Real *buf, int &p, i
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(
-//                                      Real *buf, int &p, int nb)
-//  \brief load magnetic fields (finer level)
+//!                                     Real *buf, int &p, int nb)
+//! \brief load magnetic fields (finer level)
 void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -1905,8 +1905,8 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(Real *buf, int &p, int
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
-//                                 Real *buf, int &p, const int nb)
-//  \brief set magnetic fields (same level)
+//!                                Real *buf, int &p, const int nb)
+//! \brief set magnetic fields (same level)
 void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
                            Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
@@ -2057,8 +2057,8 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
-//                                   Real *buf, int &p, const int nb)
-//  \brief set magnetic fields (coarser level)
+//!                                  Real *buf, int &p, const int nb)
+//! \brief set magnetic fields (coarser level)
 void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
                              Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
@@ -2333,8 +2333,8 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
-//                                 Real *buf, int &p, const int nb)
-//  \brief set magnetic fields (finer level)
+//!                                Real *buf, int &p, const int nb)
+//! \brief set magnetic fields (finer level)
 void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
                            Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
@@ -2529,8 +2529,8 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
-//                                         Real *buf, int &p, int nb)
-//  \brief load passive scalars (same level)
+//!                                        Real *buf, int &p, int nb)
+//! \brief load passive scalars (same level)
 void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
                                    Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
@@ -2613,8 +2613,8 @@ void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadScalarBufferToCoarser(
-//                                         Real *buf, int &p, int nb)
-//  \brief load passive scalars (coarser level)
+//!                                        Real *buf, int &p, int nb)
+//! \brief load passive scalars (coarser level)
 void OrbitalBoundaryCommunication::LoadScalarBufferToCoarser(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -2696,8 +2696,8 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToCoarser(Real *buf, int &p, 
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::LoadScalarBufferToFiner(
-//                                       Real *buf, int &p, int nb)
-//  \brief load passive scalars (finer level)
+//!                                      Real *buf, int &p, int nb)
+//! \brief load passive scalars (finer level)
 void OrbitalBoundaryCommunication::LoadScalarBufferToFiner(Real *buf, int &p, int nb) {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmy_orbital_;
@@ -2782,8 +2782,8 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToFiner(Real *buf, int &p, in
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
-//                                  Real *buf, int &p, const int nb)
-//  \brief set passive scalars (same level)
+//!                                 Real *buf, int &p, const int nb)
+//! \brief set passive scalars (same level)
 void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
                             Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
@@ -2884,8 +2884,8 @@ void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
-//                                    Real *buf, int &p, const int nb)
-//  \brief set passive scalars (coarser level)
+//!                                   Real *buf, int &p, const int nb)
+//! \brief set passive scalars (coarser level)
 void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
                               Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;
@@ -3063,8 +3063,8 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
-//                                  Real *buf, int &p, const int nb)
-//  \brief set passive scalars (passive level)
+//!                                 Real *buf, int &p, const int nb)
+//! \brief set passive scalars (passive level)
 void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
                             Real *buf, int &p, const int nb) {
   MeshBlock *pmb = pmy_block_;

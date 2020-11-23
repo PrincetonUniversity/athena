@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_orbital.hpp
-//  \brief handle orbital communication for orbital advection
+//! \brief handle orbital communication for orbital advection
 
 // C headers
 
@@ -29,7 +29,7 @@ using OrbitalBoundaryData = BoundaryData<4>;
 
 //----------------------------------------------------------------------------------------
 //! \class OrbitalBoundaryCommunication
-//  \brief
+//! \brief
 
 class OrbitalBoundaryCommunication {
  public:

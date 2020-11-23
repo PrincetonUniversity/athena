@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file orbital_system_output.cpp
-//  \brief functions for orbital system output
+//! \brief functions for orbital system output
 
 // C/C++ headers
 #include <cstring>    // memcpy
@@ -24,8 +24,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &src,
-//                                                    bool cons_flag)
-//  \brief calculate profiles including orbital velocity
+//!                                                   bool cons_flag)
+//! \brief calculate profiles including orbital velocity
 
 void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &src) {
   if(!orbital_system_output_done) {

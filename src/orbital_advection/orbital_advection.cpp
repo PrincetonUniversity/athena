@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file orbital_advection.cpp
-//  \brief implementation of the OrbitalAdvection class
+//! \brief implementation of the OrbitalAdvection class
 
 // C/C++ headers
 #include <algorithm>  // max(), min()
@@ -408,7 +408,7 @@ OrbitalAdvection::~OrbitalAdvection() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::InitializeOrbitalAdvection()
-//  \brief Setup for OrbitalAdvection in void Mesh::Initialize
+//! \brief Setup for OrbitalAdvection in void Mesh::Initialize
 
 void OrbitalAdvection::InitializeOrbitalAdvection() {
   //set grids edge in the orbital direction
@@ -608,18 +608,18 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
 }
 
 
-//---------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn Real OrbitalAdvection::NewOrbitalAdvectionDt()
-// Calculate time step for OrbitalAdvection
+//! \brief Calculate time step for OrbitalAdvection
 
 Real OrbitalAdvection::NewOrbitalAdvectionDt() {
   return min_dt;
 }
 
 
-//---------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetVKc()
-// Calculate Orbital Velocity at cell-centered
+//! \brief Calculate Orbital Velocity at cell centers
 
 void OrbitalAdvection::SetVKc() {
   int il = pmb_->is-(NGHOST); int jl = pmb_->js-(NGHOST); int kl = pmb_->ks;
@@ -650,9 +650,9 @@ void OrbitalAdvection::SetVKc() {
 }
 
 
-//---------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetVKf()
-// Calculate Orbital Velocity at cell surface
+//! \brief Calculate Orbital Velocity at cell faces
 
 void OrbitalAdvection::SetVKf() {
   int il = pmb_->is-(NGHOST); int jl = pmb_->js-(NGHOST); int kl = pmb_->ks;
@@ -699,9 +699,9 @@ void OrbitalAdvection::SetVKf() {
 }
 
 
-//---------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetDvKc()
-// Calculate Orbital Velocity at cell center
+//! \brief Calculate Orbital Velocity derivatives at cell centers
 
 void OrbitalAdvection::SetDvKc() {
   int il = pmb_->is-(NGHOST); int jl = pmb_->js-(NGHOST); int kl = pmb_->ks;
@@ -801,9 +801,9 @@ void OrbitalAdvection::SetDvKc() {
 }
 
 
-//---------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetVKcCoarse()
-// Calculate Orbital Velocity at cell center for coarse cells
+//! \brief Calculate Orbital Velocity at cell centers for coarse cells
 
 void OrbitalAdvection::SetVKcCoarse() {
   int il = pmb_->cis-(NGHOST); int jl = pmb_->cjs-(NGHOST); int kl = pmb_->cks;
@@ -835,9 +835,9 @@ void OrbitalAdvection::SetVKcCoarse() {
 }
 
 
-//---------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetVKfCoarse()
-// Calculate Orbital Velocity at cell surface for coarse cells
+//! \brief Calculate Orbital Velocity at cell faces for coarse cells
 void OrbitalAdvection::SetVKfCoarse() {
   int il = pmb_->cis-(NGHOST); int jl = pmb_->cjs-(NGHOST); int kl = pmb_->cks;
   int iu = pmb_->cie+(NGHOST); int ju = pmb_->cje+(NGHOST); int ku = pmb_->cke;
