@@ -41,6 +41,7 @@ def run(**kwargs):
         'problem/nwx=-2', 'problem/nwy=1', 'problem/nwz=1',
         'problem/Omega0=1.0', 'problem/qshear=1.5',
         'problem/orbital_advection=true',
+        'problem/error_output=true',
         'time/ncycle_out=0']
     athena.run('mhd/athinput.jgg', arguments)
 
@@ -64,6 +65,7 @@ def run(**kwargs):
         'problem/nwx=-2', 'problem/nwy=1', 'problem/nwz=1',
         'problem/Omega0=1.0', 'problem/qshear=1.5',
         'problem/orbital_advection=true', 'problem/orbital_splitting=2',
+        'problem/error_output=true',
         'time/ncycle_out=0']
     athena.run('mhd/athinput.jgg', arguments)
 
@@ -74,91 +76,135 @@ def analyze():
     nx = -2
     ny = 1
     nz = 1
+
     Lx = 0.5
     Ly = 0.5
     Lz = 0.5
+
     Omega0 = 1.0
     qshear = 1.5
     iso_cs = 1.0
     rho0 = 1.0
     epsilon = 1.0e-6
     beta = 20.0
-    kx0 = nx*2.0*math.pi/Lx
-    ky = ny*2.0*math.pi/Ly
-    kz = nz*2.0*math.pi/Lz
-    vA2 = iso_cs*iso_cs/beta
-    vAx = math.sqrt(vA2/(kx0*kx0+ky*ky))*ky
-    sch = Omega0/iso_cs
+
+    Bx = 0.1*iso_cs*math.sqrt(rho0)
+    By0 = 0.2*iso_cs*math.sqrt(rho0)
+
+    kx0 = float(nx)*2.0*math.pi/Lx
+    ky = float(ny)*2.0*math.pi/Ly
+    kz = float(nz)*2.0*math.pi/Lz
 
     # read results w/o Orbital Advection
     fname = 'bin/JGG.hst'
     a = athena_read.hst(fname)
     time1 = a['time']
-    dby1 = a['dBy']
+    dByc1 = a['dByc']
     nf1 = len(time1)
+
+    # initialize parameters
+    n_ex = 8
     norm1 = 0.0
-    CS = 0.0
     for i in xrange(nf1):
-        if i != 0:
-            dt = time1[i]-time1[i-1]
-            for j in xrange(10):
-                time_temp = time1[i-1]+0.1*dt*(j+1)
-                kx = kx0+qshear*Omega0*time_temp*2.0*math.pi/Lx
-                k = math.sqrt(kx*kx+ky*ky+kz*kz)
-                vAy = -math.sqrt(vA2/(kx0*kx0+ky*ky))*kx
-                By = math.sqrt(rho0)*vAy
-                omega_over_k2 = (iso_cs*iso_cs+vAx*vAx+vAy*vAy)
-                CS += math.sqrt(omega_over_k2)*k*0.1*dt
-        kx = kx0+qshear*Omega0*time1[i]*2.0*math.pi/Lx
-        k = math.sqrt(kx*kx+ky*ky+kz*kz)
-        vAy = -math.sqrt(vA2/(kx0*kx0+ky*ky))*kx
-        By = math.sqrt(rho0)*vAy
-        omega_over_k2 = (iso_cs*iso_cs+vAx*vAx+vAy*vAy)
-        dBa = By*epsilon*math.sqrt(sch*k*math.sqrt(beta/(1.0+beta)))*math.cos(CS)
-        if i == 0:
-            dBy0 = dBa
-        norm1 += abs(dby1[i]-dBa)/dBy0
+        dst_time = time1[i]
+        if (i == 0):
+            dt = 0.0
+            k = math.sqrt(kx0**2+ky**2+kz**2)
+            dBya = epsilon*By0
+            dBya *= math.sqrt(iso_cs*k/Omega0*math.sqrt(beta/(1.0+beta)))
+            omega_tot = 0.0
+            dBy0 = dBya
+            dBya = 1.0
+        else:
+            # calculate omega_tot
+            dt = dst_time/float(n_ex*i)
+            omega = 0.0
+            omega_tot = 0.0
+            for j in xrange(n_ex*i+1):
+                present_time = float(j)*dt
+                kx = kx0+qshear*Omega0*present_time*ky
+                k = math.sqrt(kx**2+ky**2+kz**2)
+                By = By0-qshear*Omega0*present_time*Bx
+                omega = math.sqrt(iso_cs**2+Bx**2+By**2)*k
+                if (j == 0):
+                    omega_tot = omega
+                elif (j == n_ex*i):
+                    omega_tot += omega
+                elif ((j % 2) == 0):
+                    omega_tot += 2.0*omega
+                else:
+                    omega_tot += 4.0*omega
+            omega_tot *= dt/3.0
+            # calculate dBy_analytic
+            kx = kx0+qshear*Omega0*dst_time*ky
+            k = math.sqrt(kx**2+ky**2+kz**2)
+            By = By0-qshear*Omega0*dst_time*Bx
+            dBya = epsilon*By*math.cos(omega_tot)/dBy0
+            dBya *= math.sqrt(iso_cs*k/Omega0*math.sqrt(beta/(1.0+beta)))
+        norm1 += abs(dByc1[i]-dBya)
     norm1 /= nf1
 
     # read results w/  Orbital Advection
     fname = 'bin/JGG_ORB.hst'
     b = athena_read.hst(fname)
     time2 = b['time']
-    dby2 = b['dBy']
+    dByc2 = b['dByc']
     nf2 = len(time2)
+
+    # initialize parameters
+    n_ex = 8
     norm2 = 0.0
-    CS = 0.0
-    for i in xrange(nf2):
-        if i != 0:
-            dt = time2[i]-time2[i-1]
-            for j in xrange(10):
-                time_temp = time2[i-1]+0.1*dt*(j+1)
-                kx = kx0+qshear*Omega0*time_temp*2.0*math.pi/Lx
-                k = math.sqrt(kx*kx+ky*ky+kz*kz)
-                vAy = -math.sqrt(vA2/(kx0*kx0+ky*ky))*kx
-                By = math.sqrt(rho0)*vAy
-                omega_over_k2 = (iso_cs*iso_cs+vAx*vAx+vAy*vAy)
-                CS += math.sqrt(omega_over_k2)*k*0.1*dt
-        kx = kx0+qshear*Omega0*time2[i]*2.0*math.pi/Lx
-        k = math.sqrt(kx*kx+ky*ky+kz*kz)
-        vAy = -math.sqrt(vA2/(kx0*kx0+ky*ky))*kx
-        By = math.sqrt(rho0)*vAy
-        omega_over_k2 = (iso_cs*iso_cs+vAx*vAx+vAy*vAy)
-        dBa = By*epsilon*math.sqrt(sch*k*math.sqrt(beta/(1.0+beta)))*math.cos(CS)
-        if i == 0:
-            dBy0 = dBa
-        norm2 += abs(dby2[i]-dBa)/dBy0
+    for i in xrange(nf1):
+        dst_time = time2[i]
+        if (i == 0):
+            dt = 0.0
+            k = math.sqrt(kx0**2+ky**2+kz**2)
+            dBya = epsilon*By0
+            dBya *= math.sqrt(iso_cs*k/Omega0*math.sqrt(beta/(1.0+beta)))
+            omega_tot = 0.0
+            dBy0 = dBya
+            dBya = 1.0
+        else:
+            # calculate omega_tot
+            dt = dst_time/float(n_ex*i)
+            omega = 0.0
+            omega_tot = 0.0
+            for j in xrange(n_ex*i+1):
+                present_time = float(j)*dt
+                kx = kx0+qshear*Omega0*present_time*ky
+                k = math.sqrt(kx**2+ky**2+kz**2)
+                By = By0-qshear*Omega0*present_time*Bx
+                omega = math.sqrt(iso_cs**2+Bx**2+By**2)*k
+                if (j == 0):
+                    omega_tot = omega
+                elif (j == n_ex*i):
+                    omega_tot += omega
+                elif ((j % 2) == 0):
+                    omega_tot += 2.0*omega
+                else:
+                    omega_tot += 4.0*omega
+            omega_tot *= dt/3.0
+            # calculate dBy_analytic
+            kx = kx0+qshear*Omega0*dst_time*ky
+            k = math.sqrt(kx**2+ky**2+kz**2)
+            By = By0-qshear*Omega0*dst_time*Bx
+            dBya = epsilon*By*math.cos(omega_tot)/dBy0
+            dBya *= math.sqrt(iso_cs*k/Omega0*math.sqrt(beta/(1.0+beta)))
+        norm2 += abs(dByc2[i]-dBya)
     norm2 /= nf2
 
-    msg = '[MHD_SHWAVE]: L1 Norm of b2 deviation {} = {}'
-    logger.warning(msg.format('w/o Orbital Advection', norm1))
-    logger.warning(msg.format('w/  Orbital Advection', norm2))
+    logger.warning('[MHD_SHWAVE]: L1-Norm Errors')
+    msg = '[MHD_SHWAVE]: epsilon_c = {}'
     flag = True
-    if norm1 > 0.2:
-        logger.warning('[MHD_SHWAVE]: L1 Norm is off by 20% w/o Orbital Advection')
+    logger.warning('[MHD_SHWAVE]: w/o Orbital Advection')
+    logger.warning(msg.format(norm1))
+    if norm1 > 0.20:
+        logger.warning('[MHD_SHWAVE]: dByc Error is more than 20%.')
         flag = False
-    if norm2 > 0.2:
-        logger.warning('[MHD_SHWAVE]: L1 Norm is off by 20% w/  Orbital Advection')
+    logger.warning('[MHD_SHWAVE]: w/  Orbital Advection')
+    logger.warning(msg.format(norm2))
+    if norm2 > 0.20:
+        logger.warning('[MHD_SHWAVE]: dByc Error is more than 20%.')
         flag = False
 
     return flag

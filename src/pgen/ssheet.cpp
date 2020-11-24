@@ -27,8 +27,6 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../bvals/bvals.hpp"
-#include "../bvals/bvals_interfaces.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../globals.hpp"
@@ -40,17 +38,15 @@
 #include "../scalars/scalars.hpp"
 
 #if MAGNETIC_FIELDS_ENABLED
-#error "This problem generator does not work with MHD."
+#error "This problem generator requires does not work with MHD."
 #endif
 
 namespace {
+Real iso_cs, gm1, d0, p0;
 Real amp; // amplitude
 int nwx, nwy; // Wavenumbers
-int ipert; // initial pattern
-Real gm1,iso_cs;
 Real x1size,x2size,x3size;
-Real Omega_0,qshear;
-int shboxcoord;
+int ipert; // initial pattern
 Real hst_dt, hst_next_time;
 bool error_output;
 
@@ -80,7 +76,19 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   }
 
   // read ipert parameter
+  Real d0 = 1.0;
+  Real p0 = 1e-6;
+  if (NON_BAROTROPIC_EOS) {
+    gm1 = (pin->GetReal("hydro","gamma") - 1.0);
+    iso_cs = std::sqrt((gm1+1.0)*p0/d0);
+  } else {
+    iso_cs = pin->GetReal("hydro","iso_sound_speed");
+    p0 = d0*SQR(iso_cs);
+  }
   ipert = pin->GetInteger("problem","ipert");
+  x1size = mesh_size.x1max - mesh_size.x1min;
+  x2size = mesh_size.x2max - mesh_size.x2min;
+  x3size = mesh_size.x3max - mesh_size.x3min;
   if (ipert == 3) {
     amp = pin->GetReal("problem","amp");
     nwx = pin->GetInteger("problem","nwx");
@@ -94,7 +102,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     error_output = pin->GetOrAddBoolean("problem","error_output",false);
     if (error_output) {
       // allocateDataField
-      AllocateRealUserMeshDataField(2);
+      AllocateRealUserMeshDataField(1);
       ruser_mesh_data[0].NewAthenaArray(2, mesh_size.nx3,
                                         mesh_size.nx2, mesh_size.nx1);
 
@@ -146,9 +154,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // shearing sheet parameter
-  Omega_0 = porb->Omega0;
-  qshear  = porb->qshear;
-  shboxcoord = pin->GetOrAddInteger("problem","shboxcoord",1);
+  Real Omega_0 = porb->Omega0;
+  Real qshear  = porb->qshear;
+  int shboxcoord = pin->GetOrAddInteger("problem","shboxcoord",1);
 
   int il = is - NGHOST; int iu = ie + NGHOST;
   int jl = js - NGHOST; int ju = je + NGHOST;
@@ -157,20 +165,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     kl = ks - NGHOST;
     ku = ke + NGHOST;
   }
-
-  Real d0 = 1.0;
-  Real p0 = 1e-6;
-
-  if (NON_BAROTROPIC_EOS) {
-    gm1 = (peos->GetGamma() - 1.0);
-    iso_cs = std::sqrt((gm1+1.0)*p0/d0);
-  } else {
-    iso_cs = peos->GetIsoSoundSpeed();
-    p0 = d0*SQR(iso_cs);
-  }
-  x1size = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
-  x2size = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
-  x3size = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
 
   if (gid == 0) {
     std::cout << "iso_cs = " << iso_cs << std::endl;
@@ -182,8 +176,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // calculate wave number just for ipert = 3
-  Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
-  Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
+  Real kx(0.0), ky(0.0);
+  if (ipert==3) {
+    kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
+    ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
+  }
 
   Real x1, x2, rd, rp, rvx, rvy;
   // update the physical variables as initial conditions
@@ -275,7 +272,7 @@ void Mesh::UserWorkInLoop() {
     AthenaArray<Real> &vs = ruser_mesh_data[0];
     Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
     Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
-    kx += qshear*Omega_0*present_time*ky;
+
     // initialize vs
     for (int k=0; k<mesh_size.nx3; k++) {
       for (int j=0; j<mesh_size.nx2; j++) {
@@ -287,6 +284,8 @@ void Mesh::UserWorkInLoop() {
     }
     for (int bn=0; bn<nblocal; ++bn) {
       MeshBlock *pmb = my_blocks(bn);
+      Real qom = pmb->porb->qshear*pmb->porb->Omega0;
+      kx += qom*present_time*ky;
       LogicalLocation loc0;
       loc0.lx1 = pmb->loc.lx1;
       loc0.lx2 = pmb->loc.lx2;
@@ -304,7 +303,7 @@ void Mesh::UserWorkInLoop() {
               Real vx = pmb->phydro->w(IVX,k,j,i);
               Real dvy = pmb->phydro->w(IVY,k,j,i);
               if(!pmb->porb->orbital_advection_defined)
-                dvy += qshear*Omega_0*x1;
+                dvy += qom*x1;
               Real vol = pmb->pcoord->dx3f(k)
                          *pmb->pcoord->dx2f(j)*pmb->pcoord->dx1f(i);
               Real SN = std::sin(kx*x1+ky*x2);
@@ -347,10 +346,10 @@ void Mesh::UserWorkInLoop() {
                            *pmb->pcoord->dx2f(jj+1)
                            *pmb->pcoord->dx1f(ii+1);
               if(!pmb->porb->orbital_advection_defined) {
-                dvy00 += qshear*Omega_0*pmb->pcoord->x1v(ii  );
-                dvy01 += qshear*Omega_0*pmb->pcoord->x1v(ii+1);
-                dvy10 += qshear*Omega_0*pmb->pcoord->x1v(ii  );
-                dvy11 += qshear*Omega_0*pmb->pcoord->x1v(ii+1);
+                dvy00 += qom*pmb->pcoord->x1v(ii  );
+                dvy01 += qom*pmb->pcoord->x1v(ii+1);
+                dvy10 += qom*pmb->pcoord->x1v(ii  );
+                dvy11 += qom*pmb->pcoord->x1v(ii+1);
               }
               Real SN = std::sin(kx*pmb->pcoord->x1f(ii+1)
                                  +ky*pmb->pcoord->x2f(jj+1));
@@ -416,14 +415,14 @@ void Mesh::UserWorkInLoop() {
                               *pmb->pcoord->dx2f(jj+1)
                               *pmb->pcoord->dx1f(ii+1);
                 if(!pmb->porb->orbital_advection_defined) {
-                  dvy000 += qshear*Omega_0*pmb->pcoord->x1v(ii  );
-                  dvy001 += qshear*Omega_0*pmb->pcoord->x1v(ii+1);
-                  dvy010 += qshear*Omega_0*pmb->pcoord->x1v(ii  );
-                  dvy011 += qshear*Omega_0*pmb->pcoord->x1v(ii+1);
-                  dvy100 += qshear*Omega_0*pmb->pcoord->x1v(ii  );
-                  dvy101 += qshear*Omega_0*pmb->pcoord->x1v(ii+1);
-                  dvy110 += qshear*Omega_0*pmb->pcoord->x1v(ii  );
-                  dvy111 += qshear*Omega_0*pmb->pcoord->x1v(ii+1);
+                  dvy000 += qom*pmb->pcoord->x1v(ii  );
+                  dvy001 += qom*pmb->pcoord->x1v(ii+1);
+                  dvy010 += qom*pmb->pcoord->x1v(ii  );
+                  dvy011 += qom*pmb->pcoord->x1v(ii+1);
+                  dvy100 += qom*pmb->pcoord->x1v(ii  );
+                  dvy101 += qom*pmb->pcoord->x1v(ii+1);
+                  dvy110 += qom*pmb->pcoord->x1v(ii  );
+                  dvy111 += qom*pmb->pcoord->x1v(ii+1);
                 }
                 Real SN = std::sin(kx*pmb->pcoord->x1f(ii+1)
                                    +ky*pmb->pcoord->x2f(jj+1));
@@ -466,9 +465,10 @@ void Mesh::UserWorkInLoop() {
 namespace {
 
 Real Historydvyc(MeshBlock *pmb, int iout) {
+  Real qom = pmb->porb->qshear*pmb->porb->Omega0;
   Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
   Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
-  kx += qshear*Omega_0*pmb->pmy_mesh->time*ky;
+  kx += qom*pmb->pmy_mesh->time*ky;
   Real dvyc = 0.0;
   AthenaArray<Real> volume; // 1D array of volumes
   volume.NewAthenaArray(pmb->ncells1);
@@ -482,7 +482,7 @@ Real Historydvyc(MeshBlock *pmb, int iout) {
         Real CS = std::cos(kx*x1+ky*x2);
         Real dvy = pmb->phydro->w(IVY,k,j,i);
         if(!pmb->porb->orbital_advection_defined)
-          dvy += qshear*Omega_0*x1;
+          dvy += qom*x1;
         dvyc += volume(i)*2.0*dvy*CS;
       }
     }

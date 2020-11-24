@@ -135,19 +135,19 @@ def analyze():
     logger.warning('[SSHEET_SHWAVE]: w/o Orbital Advection')
     logger.warning(msg.format(norm1c, norm1s))
     if norm1c > 0.2:
-        logger.warning('[SSHEET_SHWAVE]: dvyc Error is more than 20%')
+        logger.warning('[SSHEET_SHWAVE]: dvyc Error is more than 20%.')
         flag = False
     if norm1s > 0.01:
-        logger.warning('[SSHEET_SHWAVE]: dvys Error is more than 1%')
+        logger.warning('[SSHEET_SHWAVE]: dvys Error is more than 1%.')
         flag = False
 
     logger.warning('[SSHEET_SHWAVE]: w/  Orbital Advection')
     logger.warning(msg.format(norm2c, norm2s))
     if norm1c > 0.2:
-        logger.warning('[SSHEET_SHWAVE]: dvyc Error is more than 20%')
+        logger.warning('[SSHEET_SHWAVE]: dvyc Error is more than 20%.')
         flag = False
     if norm1s > 0.01:
-        logger.warning('[SSHEET_SHWAVE]: dvys Error is more than 1%')
+        logger.warning('[SSHEET_SHWAVE]: dvys Error is more than 1%.')
         flag = False
 
     return flag
