@@ -32,12 +32,15 @@ void Hydro::AddGravityFlux() {
   AthenaArray<Real> &phi=pmb->pgrav->phi;
   Real phil;
   Real gxl, gyl(0.0), gzl(0.0);
+  Real gxlsq(0.0), gylsq(0.0), gzlsq(0.0);
 
   // i-direction
   for (int k=ks; k<=ke; ++k) {
     Real dx3 = pco->dx3v(k);
+    Real dx3sq = SQR(dx3);
     for (int j=js; j<=je; ++j) {
       Real dx2 = pco->dx2v(j);
+      Real dx2sq = SQR(dx2);
       for (int i=is; i<=ie+1; ++i) {
         Real dx1 = pco->dx1v(i);
         phil = 0.5*(phi(k,j,i-1)+phi(k,j,i));
@@ -46,14 +49,22 @@ void Hydro::AddGravityFlux() {
         if (pmb->block_size.nx2 > 1) { // 2D or 3D
           gyl = 0.25*((phi(k,j-1,i-1) - phi(k,j+1,i-1)) +
                       (phi(k,j-1,i  ) - phi(k,j+1,i  )))/dx2;
+          gylsq = 0.5* (((phi(k,j-1,i-1) - phi(k,j  ,i-1)) *
+                         (phi(k,j-1,i  ) - phi(k,j  ,i  ))) +
+                        ((phi(k,j  ,i-1) - phi(k,j+1,i-1)) *
+                         (phi(k,j  ,i  ) - phi(k,j+1,i  ))))/dx2sq;
           if (pmb->block_size.nx3 > 1) { // 3D
             gzl = 0.25*((phi(k-1,j,i-1) - phi(k+1,j,i-1)) +
                         (phi(k-1,j,i  ) - phi(k+1,j,i  )))/dx3;
+            gzlsq = 0.5* (((phi(k-1,j,i-1) - phi(k  ,j,i-1)) *
+                           (phi(k-1,j,i  ) - phi(k  ,j,i  ))) +
+                          ((phi(k  ,j,i-1) - phi(k+1,j,i-1)) *
+                           (phi(k  ,j,i  ) - phi(k+1,j,i  ))))/dx3sq;
           }
         }
         // momentum fluxes in x1-dir.
         // 2nd term is needed only if Jean's swindle used
-        x1flux(IM1,k,j,i) += 0.5*(gxl*gxl-gyl*gyl-gzl*gzl)/four_pi_G
+        x1flux(IM1,k,j,i) += 0.5*(gxl*gxl-gylsq-gzlsq)/four_pi_G
                              +  grav_mean_rho*phil;
         x1flux(IM2,k,j,i) += gxl*gyl/four_pi_G;
         x1flux(IM3,k,j,i) += gxl*gzl/four_pi_G;
@@ -66,23 +77,33 @@ void Hydro::AddGravityFlux() {
   if (pmb->block_size.nx2 > 1) {
     for (int k=ks; k<=ke; ++k) {
       Real dx3 = pco->dx3v(k);
+      Real dx3sq = SQR(dx3);
       for (int j=js; j<=je+1; ++j) {
         Real dx2 = pco->dx2v(j);
         for (int i=is; i<=ie; i++) {
           Real dx1 = pco->dx1v(i);
+          Real dx1sq = SQR(dx1);
           phil = 0.5*(phi(k,j-1,i)+phi(k,j,i));
           // gx, gy, and gz centered at L and R x2-faces
           gxl = 0.25*((phi(k,j-1,i-1) - phi(k,j-1,i+1)) +
                       (phi(k,j  ,i-1) - phi(k,j  ,i+1)))/dx1;
+          gxlsq = 0.5* (((phi(k,j-1,i-1) - phi(k,j-1,i  )) *
+                         (phi(k,j  ,i-1) - phi(k,j  ,i  ))) +
+                        ((phi(k,j-1,i  ) - phi(k,j-1,i+1)) *
+                         (phi(k,j  ,i  ) - phi(k,j  ,i+1))))/dx1sq;
           gyl =       (phi(k,j-1,i  ) - phi(k,j  ,i  ))/dx2;
           if (pmb->block_size.nx3 > 1) { // 3D
             gzl = 0.25*((phi(k-1,j-1,i) - phi(k+1,j-1,i)) +
                         (phi(k-1,j  ,i) - phi(k+1,j  ,i)))/dx3;
+            gzlsq = 0.5* (((phi(k-1,j-1,i) - phi(k  ,j-1,i)) *
+                           (phi(k-1,j  ,i) - phi(k  ,j  ,i))) +
+                          ((phi(k  ,j-1,i) - phi(k+1,j-1,i)) *
+                           (phi(k  ,j  ,i) - phi(k+1,j  ,i))))/dx3sq;
           }
           // momentum fluxes in x2-dir.
           // 2nd term is needed only if Jean's swindle used
           x2flux(IM1,k,j,i) += gyl*gxl/four_pi_G;
-          x2flux(IM2,k,j,i) += 0.5*(gyl*gyl-gxl*gxl-gzl*gzl)/four_pi_G
+          x2flux(IM2,k,j,i) += 0.5*(gyl*gyl-gxlsq-gzlsq)/four_pi_G
                                +  grav_mean_rho*phil;
           x2flux(IM3,k,j,i) += gyl*gzl/four_pi_G;
           // energy source term is included as a source term separately
@@ -97,20 +118,30 @@ void Hydro::AddGravityFlux() {
       Real dx3 = pco->dx3v(k);
       for (int j=js; j<=je; ++j) {
         Real dx2 = pco->dx2v(j);
+        Real dx2sq = SQR(dx2);
         for (int i=is; i<=ie; i++) {
           Real dx1 = pco->dx1v(i);
+          Real dx1sq = SQR(dx1);
           phil = 0.5*(phi(k-1,j,i)+phi(k,j,i));
           // gx, gy, and gz centered at L and R x3-faces
           gxl = 0.25*((phi(k-1,j,i-1) - phi(k-1,j,i+1)) +
                       (phi(k  ,j,i-1) - phi(k  ,j,i+1)))/dx1;
+          gxlsq = 0.5* (((phi(k-1,j,i-1) - phi(k-1,j,i  )) *
+                         (phi(k  ,j,i-1) - phi(k  ,j,i  ))) +
+                        ((phi(k-1,j,i  ) - phi(k-1,j,i+1)) *
+                         (phi(k  ,j,i  ) - phi(k  ,j,i+1))))/dx1sq;
           gyl = 0.25*((phi(k-1,j-1,i) - phi(k-1,j+1,i)) +
                       (phi(k  ,j-1,i) - phi(k  ,j+1,i)))/dx2;
+          gylsq = 0.5* (((phi(k-1,j-1,i) - phi(k-1,j  ,i)) *
+                         (phi(k  ,j-1,i) - phi(k  ,j  ,i))) +
+                        ((phi(k-1,j  ,i) - phi(k-1,j+1,i)) *
+                         (phi(k  ,j  ,i) - phi(k  ,j+1,i))))/dx2sq;
           gzl =       (phi(k-1,j  ,i) - phi(k  ,j  ,i))/dx3;
           // momentum fluxes in x3-dir.
           // 2nd term is needed only if Jean's swindle used
           x3flux(IM1,k,j,i) += gzl*gxl/four_pi_G;
           x3flux(IM2,k,j,i) += gzl*gyl/four_pi_G;
-          x3flux(IM3,k,j,i) += 0.5*(gzl*gzl-gxl*gxl-gyl*gyl)/four_pi_G
+          x3flux(IM3,k,j,i) += 0.5*(gzl*gzl-gxlsq-gylsq)/four_pi_G
                                +  grav_mean_rho*phil;
           // energy source term is included as a source term separately
           // see hydro/srctrm/gravity.cpp
