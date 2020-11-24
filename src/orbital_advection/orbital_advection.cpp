@@ -43,8 +43,8 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
     : pmb_(pmb), pm_(pmb->pmy_mesh), ph_(pmb->phydro),
       pf_(pmb->pfield), pco_(pmb->pcoord), pbval_(pmb->pbval), ps_(pmb->pscalars) {
   // read parameters from input file
-  orbital_advection_defined = pm_->orbital_advection;
-  orbital_splitting_order   = pm_->orbital_splitting;
+  orbital_splitting_order   = pm_->orbital_advection;
+  orbital_advection_defined = (orbital_splitting_order != 0) ? true : false;
 
   // check xorder for reconstruction
   xorder = pmb_->precon->xorder;
@@ -52,16 +52,17 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
 
   // Read parameters
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
-    Omega0  = pin->GetOrAddReal("problem","Omega0",0.0);
-    qshear  = pin->GetOrAddReal("problem","qshear",0.0);
+    Omega0  = pin->GetOrAddReal("orbital_advection","Omega0",0.0);
+    qshear  = pin->GetOrAddReal("orbital_advection","qshear",0.0);
+    shboxcoord = pin->GetOrAddInteger("orbital_advection","shboxcoord",1);
     onx = pmb_->block_size.nx2;
   } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     gm  = pin->GetOrAddReal("problem","GM",0.0);
-    Omega0  = pin->GetOrAddReal("problem","Omega0",0.0);
+    Omega0  = pin->GetOrAddReal("orbital_advection","Omega0",0.0);
     onx = pmb_->block_size.nx2;
   } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     gm  = pin->GetOrAddReal("problem","GM",0.0);
-    Omega0  = pin->GetOrAddReal("problem","Omega0",0.0);
+    Omega0  = pin->GetOrAddReal("orbital_advection","Omega0",0.0);
     onx = pmb_->block_size.nx3;
   }
 
@@ -114,7 +115,7 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
         msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
             << "Orbital advection requires 2D or 3D in cartesian and "
             << "cylindrical coordinates." << std::endl
-            << "Check <problem> orbital_advection parameter in the input file."
+            << "Check <orbital_advection> order parameter in the input file."
             << std::endl;
         ATHENA_ERROR(msg);
       }
@@ -130,7 +131,7 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
         msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
             << "Orbital advection requires 3D in spherical_polar coordinates."
             << std::endl
-            << "Check <problem> orbital_advection parameter in the input file."
+            << "Check <orbital_advection> order parameter in the input file."
             << std::endl;
         ATHENA_ERROR(msg);
       }
@@ -141,7 +142,7 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
       msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
           << "Orbital advection works only in cartesian, cylindrical, "
           << "or spherical_polar coordinates." << std::endl
-          << "Check <problem> orbital_advection parameter in the input file."
+          << "Check <orbital_advection> order parameter in the input file."
           << std::endl;
       ATHENA_ERROR(msg);
     }
@@ -155,7 +156,8 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
           msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
               << "The default orbital velocity profile requires non-zero "
               << "Omega0 and qshear." << std::endl
-              << "Check <problem> Omega0 and qshear in the input file." << std::endl;
+              << "Check <orbital_advection> Omega0 and qshear in the input file."
+              << std::endl;
           ATHENA_ERROR(msg);
         }
       } else if ((std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0)
@@ -165,7 +167,7 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
           std::stringstream msg;
           msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
               << "The default orbital velocity profile requires non-zero GM." << std::endl
-              << "Check <problem> GM and <problem> qshear in the input file."
+              << "Check <problem> GM and <orbital_advection> qshear in the input file."
               << std::endl;
           ATHENA_ERROR(msg);
         }
@@ -252,10 +254,11 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
     }
 
     // check orbital_splitting_order
-    if ((orbital_splitting_order-1)*(orbital_splitting_order-2) != 0) {
+    if (orbital_splitting_order<0 || orbital_splitting_order > 2) {
       std::stringstream msg;
       msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
-          << "The order of the orbital splitting must be 1 or 2." << std::endl;
+          << "The order of the orbital splitting must be from 0 to 2." << std::endl
+          << "Check <orbital_advection> order parameter." << std::endl;
       ATHENA_ERROR(msg);
     }
 

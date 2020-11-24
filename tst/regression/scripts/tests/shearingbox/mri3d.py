@@ -38,9 +38,8 @@ def run(**kwargs):
         'problem/d0=1.0', 'problem/amp=0.025',
         'problem/nwx=-2', 'problem/nwy=1', 'problem/nwz=1',
         'problem/ipert=1', 'problem/ifield=1',
-        'problem/Omega0=1.0', 'problem/qshear=1.5',
-        'problem/orbital_advection=false',
-        'time/ncycle_out=0']
+        'orbital_advection/Omega0=1.0', 'orbital_advection/qshear=1.5',
+        'orbital_advection/order=0', 'time/ncycle_out=0']
     athena.run('mhd/athinput.hgb', arguments)
 
 

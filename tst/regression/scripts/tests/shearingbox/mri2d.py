@@ -35,8 +35,8 @@ def run(**kwargs):
         'mesh/nx3=1', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
         'hydro/iso_sound_speed=0.00408', 'problem/beta=4000',
         'problem/amp=0.01', 'problem/ipert=1', 'problem/ifield=1',
-        'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=2',
-        'time/ncycle_out=0']
+        'orbital_advection/Omega0=1.0e-3', 'orbital_advection/qshear=1.5',
+        'orbital_advection/shboxcoord=2', 'time/ncycle_out=0']
 
     athena.run('mhd/athinput.hb3', arguments)
 

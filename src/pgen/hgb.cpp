@@ -62,7 +62,7 @@ Real nwx, nwy; // Wavenumbers
 Real Lx, Ly, Lz; // root grid size, global to share with output functions
 Real Omega_0, qshear;
 Real amp, beta;
-int ipert, shboxcoord;
+int ipert;
 
 Real HistoryBxBy(MeshBlock *pmb, int iout);
 Real HistorydVxVy(MeshBlock *pmb, int iout);
@@ -119,11 +119,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // shearing box parameter
-  shboxcoord = pin->GetOrAddInteger("problem","shboxcoord",1);
-  if (shboxcoord != 1) {
+  if (porb->shboxcoord != 1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in hgb.cpp ProblemGenerator" << std::endl
-        << "This problem generator requires shearing box in x-y plane." << std::endl;
+        << "This problem generator requires shearing box in x-y plane." << std::endl
+        << "Check <orbital_advection> shboxcoord parameter." << std::endl;
     ATHENA_ERROR(msg);
   }
   Omega_0 = porb->Omega0;

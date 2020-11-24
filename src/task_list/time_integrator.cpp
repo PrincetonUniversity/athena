@@ -67,7 +67,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
   integrator = pin->GetOrAddString("time", "integrator", "vl2");
 
   // Read a flag for orbital advection
-  ORBITAL_ADVECTION = pm->orbital_advection;
+  ORBITAL_ADVECTION = (pm->orbital_advection != 0)? true : false;
 
   // Read a flag for shear periodic
   SHEAR_PERIODIC = pm->shear_periodic;
@@ -103,7 +103,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       // w/ orbital advection
       if (SHEAR_PERIODIC || pm->multilevel) {
         // w/ shear_periodic or refinements
-        if (pm->orbital_splitting==1) { // first order splitting
+        if (pm->orbital_advection==1) { // first order splitting
           nstages = nstages_main+1;
           for (int l=0; l<nstages; l++) {
             if (l == nstages-1) { // last stage
@@ -146,7 +146,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
           stage_wghts[3].beta = 0.0;
         }
       } else { // w/o shear periodic and refinements
-        if (pm->orbital_splitting==1) { // first order splitting
+        if (pm->orbital_advection==1) { // first order splitting
           nstages = nstages_main;
           for (int l=0; l<nstages; l++) {
             stage_wghts[l].main_stage = true;
@@ -232,7 +232,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       // w/ orbital advection
       if (SHEAR_PERIODIC || pm->multilevel) {
         // w/ shear_periodic or refinements
-        if (pm->orbital_splitting==1) { // first order splitting
+        if (pm->orbital_advection==1) { // first order splitting
           nstages = nstages_main+1;
           for (int l=0; l<nstages; l++) {
             if (l == nstages-1) { // last stage
@@ -273,7 +273,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
           stage_wghts[2].beta = 0.0;
         }
       } else { // w/o shear periodic and refinements
-        if (pm->orbital_splitting==1) { // first order splitting
+        if (pm->orbital_advection==1) { // first order splitting
           nstages = nstages_main;
           stage_wghts[0].main_stage = true;
           stage_wghts[0].orbital_stage = true;
@@ -327,7 +327,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       // w/ orbital advection
       if (SHEAR_PERIODIC || pm->multilevel) {
         // w/ shear_periodic or refinements
-        if (pm->orbital_splitting==1) { // first order splitting
+        if (pm->orbital_advection==1) { // first order splitting
           nstages = nstages_main+1;
           for (int l=0; l<nstages; l++) {
             if (l == nstages-1) { // last stage
@@ -370,7 +370,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
           stage_wghts[3].beta = 0.0;
         }
       } else { // w/o shear periodic and refinements
-        if (pm->orbital_splitting==1) { // first order splitting
+        if (pm->orbital_advection==1) { // first order splitting
           nstages = nstages_main;
           for (int l=0; l<nstages; l++) {
             stage_wghts[l].main_stage = true;
@@ -454,7 +454,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       // w/ orbital advection
       if (SHEAR_PERIODIC || pm->multilevel) {
         // w/ shear_periodic or refinements
-        if (pm->orbital_splitting==1) { // first order splitting
+        if (pm->orbital_advection==1) { // first order splitting
           nstages = nstages_main+1;
           for (int l=0; l<nstages; l++) {
             if (l == nstages-1) { // last stage
@@ -499,7 +499,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
           stage_wghts[4].beta = 0.0;
         }
       } else { // w/o shear periodic and refinements
-        if (pm->orbital_splitting==1) { // first order splitting
+        if (pm->orbital_advection==1) { // first order splitting
           nstages = nstages_main;
           for (int l=0; l<nstages; l++) {
             stage_wghts[l].main_stage = true;
@@ -594,7 +594,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     cfl_limit = 1.3925; // Colella (2011) eq 101; 1st order flux is most severe constraint
 
     if (ORBITAL_ADVECTION) {
-      if (pm->orbital_splitting==1) { // first order splitting
+      if (pm->orbital_advection==1) { // first order splitting
         nstages = nstages_main;
         for (int l=0; l<nstages; l++) {
           stage_wghts[l].main_stage = true;
@@ -674,7 +674,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     // set sbeta & ebeta
     if (ORBITAL_ADVECTION) {
-      if (pm->orbital_splitting==1) { // first order splitting
+      if (pm->orbital_advection==1) { // first order splitting
         for (int l=0; l<nstages; l++) {
           if (l == nstages-1) { // last stage
             stage_wghts[l].ebeta = 1.0;
@@ -727,7 +727,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     cfl_limit = 1.508;         //  (effective SSP coeff = 0.302) Gottlieb (2009) pg 272
 
     if (ORBITAL_ADVECTION) {
-      if (pm->orbital_splitting==1) { // first order splitting
+      if (pm->orbital_advection==1) { // first order splitting
         nstages = nstages_main;
         for (int l=0; l<nstages; l++) {
           stage_wghts[l].main_stage = true;
@@ -819,7 +819,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     // set sbeta & ebeta
     if (ORBITAL_ADVECTION) {
-      if (pm->orbital_splitting==1) { // first order splitting
+      if (pm->orbital_advection==1) { // first order splitting
         for (int l=0; l<nstages; l++) {
           if (l == nstages-1) { // last stage
             stage_wghts[l].ebeta = 1.0;

@@ -54,15 +54,16 @@ nx3 = 1  #
 gamma = 1.666666666666667   # gamma = C_p/C_v
 iso_sound_speed = 0.001     # isothermal sound speed
 
+<orbital_advection>
+order           = 0       # 0: w/o OA, 1: w/ OA(1st), 2: w/ OA (2nd)
+qshear          = 1.5     # shear rate
+Omega0          = 0.001   # angular velocity of the system
+shboxcoord      = 1       # 1=xy (default); 2=xz
+
 <problem>
-orbital_advection = false   # flag for orbital advection
-orbital_splitting = 2       # order of orbital operator splitting
-amp               = 4.0e-4  # wave amplitude
-nwx               = -4      # wavenumber in x1
-nwy               = 1       # wavenumber in x2
-nwz               = 0       # wavenumber in x3
-ipert             = 3       # 1: pure shear; 2: epicyclic; 3: shwave
-Omega0            = 0.001   # orbital frequency
-qshear            = 1.5     # shear rate
-shboxcoord        = 1       # 1=xy (default); 2=xz
-error_output      = true    # flag of error output in history file
+amp             = 4.0e-4  # wave amplitude
+nwx             = -4      # wavenumber in x1
+nwy             = 1       # wavenumber in x2
+nwz             = 0       # wavenumber in x3
+ipert           = 3       # 1: pure shear; 2: epicyclic; 3: shwave
+error_output    = false   # flag of error output in history file

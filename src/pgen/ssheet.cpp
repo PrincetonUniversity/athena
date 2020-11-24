@@ -76,8 +76,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   }
 
   // read ipert parameter
-  Real d0 = 1.0;
-  Real p0 = 1e-6;
+  d0 = 1.0;
+  p0 = 1e-6;
   if (NON_BAROTROPIC_EOS) {
     gm1 = (pin->GetReal("hydro","gamma") - 1.0);
     iso_cs = std::sqrt((gm1+1.0)*p0/d0);
@@ -156,7 +156,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // shearing sheet parameter
   Real Omega_0 = porb->Omega0;
   Real qshear  = porb->qshear;
-  int shboxcoord = pin->GetOrAddInteger("problem","shboxcoord",1);
+  int shboxcoord = porb->shboxcoord;
 
   int il = is - NGHOST; int iu = ie + NGHOST;
   int jl = js - NGHOST; int ju = je + NGHOST;

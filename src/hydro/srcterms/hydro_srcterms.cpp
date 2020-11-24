@@ -37,7 +37,8 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
   flag_point_mass_ = false;
   gm_ = pin->GetOrAddReal("problem","GM",0.0);
   bool orbital_advection_defined
-         = pin->GetOrAddBoolean("problem","orbital_advection",false);
+         = (pin->GetOrAddInteger("orbital_advection","order",0)!=0)?
+           true : false;
   if (gm_ != 0.0) {
     if (orbital_advection_defined &&
         ((phyd->pmy_block->pmy_mesh->OrbitalVelocity_ == nullptr
@@ -71,9 +72,9 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
   if (g3_ != 0.0) hydro_sourceterms_defined = true;
 
   // read shearing box parameters from input block
-  Omega_0_ = pin->GetOrAddReal("problem","Omega0",0.0);
-  qshear_  = pin->GetOrAddReal("problem","qshear",0.0);
-  ShBoxCoord_ = pin->GetOrAddInteger("problem","shboxcoord",1);
+  Omega_0_ = pin->GetOrAddReal("orbital_advection","Omega0",0.0);
+  qshear_  = pin->GetOrAddReal("orbital_advection","qshear",0.0);
+  ShBoxCoord_ = pin->GetOrAddInteger("orbital_advection","shboxcoord",1);
 
   // check flag for shearing source
   flag_shearing_source_ = 0;
@@ -84,7 +85,8 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
       std::stringstream msg;
       msg << "### FATAL ERROR in HydroSourceTerms constructor" << std::endl
           << "OrbitalAdvection does NOT work with shboxcoord = 2." << std::endl
-          << "Check <problem> shboxcoord parameter in the input file." << std::endl;
+          << "Check <orbital_advection> shboxcoord parameter in the input file."
+          << std::endl;
       ATHENA_ERROR(msg);
     }
   } else if ((Omega_0_ !=0.0) && (qshear_ != 0.0)

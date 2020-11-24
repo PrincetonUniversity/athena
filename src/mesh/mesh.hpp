@@ -219,8 +219,7 @@ class Mesh {
   const bool f2, f3; // flags indicating (at least) 2D or 3D Mesh
   const int ndim;     // number of dimensions
   const bool adaptive, multilevel;
-  const bool orbital_advection;      // flag of orbital advection
-  const int orbital_splitting;       // order of the orbital splitting method
+  const int orbital_advection;       // order of the orbital splitting method
   const bool shear_periodic;         // flag of shear periodic b.c.
   const FluidFormulation fluid_setup;
   Real start_time, time, tlim, dt, dt_hyperbolic, dt_parabolic, dt_user, cfl_number;

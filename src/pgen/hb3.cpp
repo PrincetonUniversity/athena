@@ -74,7 +74,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   beta   = pin->GetReal("problem","beta");
   nwx = pin->GetOrAddInteger("problem","nwx",1);
   nwy = pin->GetOrAddInteger("problem","nwy",1);
-  ShBoxCoord = pin->GetOrAddInteger("problem","shboxcoord",2);
   ipert  = pin->GetOrAddInteger("problem","ipert",1);
   ifield = pin->GetOrAddInteger("problem","ifield",1);
 
@@ -103,14 +102,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     ATHENA_ERROR(msg);
   }
 
-
-  if (ShBoxCoord != 2) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
-        << "Shearing sheet only works for x-z plane with ShBoxCoord=2" << std::endl;
-    ATHENA_ERROR(msg);
-  }
-
   if (porb->orbital_advection_defined) {
     std::stringstream msg;
     msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
@@ -121,6 +112,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // shearing sheet parameter
   Omega_0 = porb->Omega0;
   qshear  = porb->qshear;
+  ShBoxCoord = porb->shboxcoord;
+
+  if (ShBoxCoord != 2) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "Shearing sheet only works for x-z plane with shboxcoord=2" << std::endl
+        << "Check <orbital_advection> shboxcoord parameter." <<std::endl;
+    ATHENA_ERROR(msg);
+  }
 
   // allocate 1D array for cell volume used in usr def history
   volume.NewAthenaArray(ncells1);

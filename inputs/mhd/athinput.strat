@@ -59,12 +59,13 @@ iso_sound_speed = 7.0711e-4  # isothermal sound speed
 dfloor          = 1.e-6
 pfloor          = 5e-13
 
+<orbital_advection>
+order           = 0       # 0: w/o OA, 1: w/ OA(1st), 2: w/ OA (2nd)
+qshear          = 1.5     # shear rate
+Omega0          = 0.001   # angular velocity of the system
+
 <problem>
-orbital_advection = false    # orbital advection flag
-orbital_splitting = 2        # order of orbital operator splitting
 beta            = 100        # Plasma beta
 amp             = 0.025      # dP/P <= amp
 ifield          = 1          # 1 for zero-net-flux Bz, 2 for constant Bz
 ipert           = 1          # 1 for random d,P, 2 for uniform Vx
-Omega0          = 0.001      # orbital freq
-qshear          = 1.5        # shear rate

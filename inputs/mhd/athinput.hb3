@@ -52,6 +52,10 @@ nx3         = 1
 gamma = 1.6666666666666667 # gamma = C_p/C_v
 iso_sound_speed = 0.00408  # isothermal sound speed
 
+<orbital_advection>
+qshear     = 1.5       # shear rate
+Omega0     = 0.001     # angular velocity of the system
+shboxcoord = 2         # 1=xy; 2=xz
 
 <problem>
 beta       = 4000      # Plasma beta
@@ -60,6 +64,3 @@ ipert      = 1         # 1 for random d,P, 2 for uniform Vx
 ifield     = 1         # 1 for zero-net-flux Bz, 2 for constant Bz
 nwx        = 1         # wavenumber in x1
 nwy        = 1         # wavenumber in x2
-Omega0     = 1.0e-3    # orbital freq
-qshear     = 1.5       # shear rate
-shboxcoord = 2         # 1=xy; 2=xz

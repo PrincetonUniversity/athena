@@ -160,8 +160,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //======================================================================================
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // shearing box parameter
-  int shboxcoord = pin->GetOrAddInteger("problem","shboxcoord",1);
-  if (shboxcoord != 1) {
+  if (porb->shboxcoord != 1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in jgg.cpp ProblemGenerator" << std::endl
         << "This problem generator requires shearing box in x-y plane." << std::endl;

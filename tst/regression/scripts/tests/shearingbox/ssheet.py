@@ -38,10 +38,9 @@ def run(**kwargs):
         'mesh/nx3=1', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
         'hydro/iso_sound_speed=0.001', 'problem/ipert=3',
         'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
-        'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
-        'problem/orbital_advection=false',
-        'problem/error_output=true',
-        'time/ncycle_out=0']
+        'orbital_advection/Omega0=1.0e-3', 'orbital_advection/qshear=1.5',
+        'orbital_advection/shboxcoord=1', 'orbital_advection/order=0',
+        'problem/error_output=true', 'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 
     # HD shwave w/  Orbital Advection
@@ -59,10 +58,9 @@ def run(**kwargs):
         'mesh/nx3=1', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
         'hydro/iso_sound_speed=0.001', 'problem/ipert=3',
         'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
-        'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=1',
-        'problem/orbital_advection=true', 'problem/orbital_splitting=2',
-        'problem/error_output=true',
-        'time/ncycle_out=0']
+        'orbital_advection/Omega0=1.0e-3', 'orbital_advection/qshear=1.5',
+        'orbital_advection/shboxcoord=1', 'orbital_advection/order=2',
+        'problem/error_output=true', 'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 
 
