@@ -75,13 +75,17 @@ void FaceCenteredBoundaryVariable::LoadEMFShearingBoxBoundarySameLevel(
   int p = 0;
   // pack e2
   for (int k=sk; k<=ek+1; k++) {
-    for (int j=sj; j<=ej; j++)
+#pragma omp simd
+    for (int j=sj; j<=ej; j++) {
       buf[p++] = src.x2e(k,j);
+    }
   }
   // pack e3
   for (int k=sk; k<=ek; k++) {
-    for (int j=sj; j<=ej+1; j++)
+#pragma omp simd
+    for (int j=sj; j<=ej+1; j++) {
       buf[p++] = src.x3e(k,j);
+    }
   }
   return;
 }
@@ -168,13 +172,17 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(
   int p = 0;
   // unpack e2
   for (int k=sk; k<=ek+1; k++) {
-    for (int j=sj; j<=ej; j++)
+#pragma omp simd
+    for (int j=sj; j<=ej; j++) {
       dst.x2e(k,0,j) = buf[p++];
+    }
   }
   // unpack e3
   for (int k=sk; k<=ek; k++) {
-    for (int j=sj; j<=ej+1; j++)
+#pragma omp simd
+    for (int j=sj; j<=ej+1; j++) {
       dst.x3e(k,0,j) = buf[p++];
+    }
   }
   return;
 }

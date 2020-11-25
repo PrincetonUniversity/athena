@@ -83,7 +83,6 @@ void FaceCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
   // bx2
   for (int k=sk; k<=ek; k++) {
     for (int i=si; i<=ei; i++) {
-#pragma omp simd
       for (int j=sj; j<=ej+1; j++)
         buf[p++] = src.x2f(k,j,i);
     }
@@ -91,7 +90,6 @@ void FaceCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
   // bx3
   for (int k=sk; k<=ek+1; k++) {
     for (int i=si; i<=ei; i++) {
-#pragma omp simd
       for (int j=sj; j<=ej; j++)
         buf[p++] = src.x3f(k,j,i);
     }
