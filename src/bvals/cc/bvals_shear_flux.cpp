@@ -212,7 +212,7 @@ void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundaryBuffers() {
   int ib[2]{is, ie+1};
   for (int upper=0; upper<2; upper++) {
     if (pbval_->is_shear[upper]) { // check inner boundaries
-      Real eps = (1.0-2*upper)*pbval_->eps_;
+      Real eps = (1.0-2*upper)*pbval_->eps_flux_;
       int ii = ib[upper];
       for (int n=nl_; n<=nu_; n++) {
         pbuf.InitWithShallowSlice(shear_map_flx_[upper], 4, n, 1);
