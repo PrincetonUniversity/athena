@@ -37,7 +37,7 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
   flag_point_mass_ = false;
   gm_ = pin->GetOrAddReal("problem","GM",0.0);
   bool orbital_advection_defined
-         = (pin->GetOrAddInteger("orbital_advection","order",0)!=0)?
+         = (pin->GetOrAddInteger("orbital_advection","OAorder",0)!=0)?
            true : false;
   if (gm_ != 0.0) {
     if (orbital_advection_defined &&

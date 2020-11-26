@@ -60,12 +60,12 @@ dfloor          = 1.e-6
 pfloor          = 5e-13
 
 <orbital_advection>
-order           = 0       # 0: w/o OA, 1: w/ OA(1st), 2: w/ OA (2nd)
-qshear          = 1.5     # shear rate
-Omega0          = 0.001   # angular velocity of the system
+OAorder      = 0       # 0: w/o OA, 1: w/ OA(1st), 2: w/ OA (2nd)
+qshear       = 1.5     # shear rate
+Omega0       = 0.001   # angular velocity of the system
 
 <problem>
-beta            = 100        # Plasma beta
-amp             = 0.025      # dP/P <= amp
-ifield          = 1          # 1 for zero-net-flux Bz, 2 for constant Bz
-ipert           = 1          # 1 for random d,P, 2 for uniform Vx
+beta         = 100     # Plasma beta
+amp          = 0.025   # dP/P <= amp
+ifield       = 1       # 1 for zero-net-flux Bz, 2 for constant Bz
+ipert        = 1       # 1 for random d,P, 2 for uniform Vx

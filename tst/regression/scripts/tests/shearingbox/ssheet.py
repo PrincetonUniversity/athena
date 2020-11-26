@@ -39,7 +39,7 @@ def run(**kwargs):
         'hydro/iso_sound_speed=0.001', 'problem/ipert=3',
         'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
         'orbital_advection/Omega0=1.0e-3', 'orbital_advection/qshear=1.5',
-        'orbital_advection/shboxcoord=1', 'orbital_advection/order=0',
+        'orbital_advection/shboxcoord=1', 'orbital_advection/OAorder=0',
         'problem/error_output=true', 'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 
@@ -59,7 +59,7 @@ def run(**kwargs):
         'hydro/iso_sound_speed=0.001', 'problem/ipert=3',
         'problem/amp=4.0e-4', 'problem/nwx=-4', 'problem/nwy=1',
         'orbital_advection/Omega0=1.0e-3', 'orbital_advection/qshear=1.5',
-        'orbital_advection/shboxcoord=1', 'orbital_advection/order=2',
+        'orbital_advection/shboxcoord=1', 'orbital_advection/OAorder=2',
         'problem/error_output=true', 'time/ncycle_out=0']
     athena.run('hydro/athinput.ssheet', arguments)
 

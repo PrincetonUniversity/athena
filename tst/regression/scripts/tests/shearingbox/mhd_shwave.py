@@ -40,7 +40,7 @@ def run(**kwargs):
         'problem/amp=1.0e-6', 'problem/beta=20.0', 'problem/ipert=2',
         'problem/nwx=-2', 'problem/nwy=1', 'problem/nwz=1',
         'orbital_advection/Omega0=1.0', 'orbital_advection/qshear=1.5',
-        'orbital_advection/order=0', 'problem/error_output=true',
+        'orbital_advection/OAorder=0', 'problem/error_output=true',
         'time/ncycle_out=0']
     athena.run('mhd/athinput.jgg', arguments)
 
@@ -63,7 +63,7 @@ def run(**kwargs):
         'problem/amp=1.0e-6', 'problem/beta=20.0', 'problem/ipert=2',
         'problem/nwx=-2', 'problem/nwy=1', 'problem/nwz=1',
         'orbital_advection/Omega0=1.0', 'orbital_advection/qshear=1.5',
-        'orbital_advection/order=2', 'problem/error_output=true',
+        'orbital_advection/OAorder=2', 'problem/error_output=true',
         'time/ncycle_out=0']
     athena.run('mhd/athinput.jgg', arguments)
 

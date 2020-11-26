@@ -83,7 +83,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
              ? true : false),
     multilevel((adaptive || pin->GetOrAddString("mesh", "refinement", "none") == "static")
                ? true : false),
-    orbital_advection(pin->GetOrAddInteger("orbital_advection","order",0)),
+    orbital_advection(pin->GetOrAddInteger("orbital_advection","OAorder",0)),
     shear_periodic(GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none"))
                    == BoundaryFlag::shear_periodic ? true : false),
     fluid_setup(GetFluidFormulation(pin->GetOrAddString("hydro", "active", "true"))),
@@ -552,7 +552,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
              ? true : false),
     multilevel((adaptive || pin->GetOrAddString("mesh", "refinement", "none") == "static")
                ? true : false),
-    orbital_advection(pin->GetOrAddInteger("orbital_advection","order",0)),
+    orbital_advection(pin->GetOrAddInteger("orbital_advection","OAorder",0)),
     shear_periodic(GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none"))
                    == BoundaryFlag::shear_periodic ? true : false),
     fluid_setup(GetFluidFormulation(pin->GetOrAddString("hydro", "active", "true"))),

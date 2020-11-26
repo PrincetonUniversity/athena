@@ -55,16 +55,16 @@ gamma = 1.666666666666667  # gamma = C_p/C_v
 iso_sound_speed = 1.0      # isothermal sound speed
 
 <orbital_advection>
-order           = 0       # 0: w/o OA, 1: w/ OA(1st), 2: w/ OA (2nd)
-qshear          = 1.5     # shear rate
-Omega0          = 1.0     # angular velocity of the system
+OAorder      = 0       # 0: w/o OA, 1: w/ OA(1st), 2: w/ OA (2nd)
+qshear       = 1.5     # shear rate
+Omega0       = 1.0     # angular velocity of the system
 
 <problem>
-d0                = 1.0    # background density
-amp               = 1.0e-6 # wave amplitude
-nwx               = -2     # wavenumber in x1
-nwy               = 1      # wavenumber in x2
-nwz               = 1      # wavenumber in x3
-ipert             = 2      # 1: Figs 5-7, 2: Fig 11 in JGG
-beta              = 20     # plasma beta
-error_output      = false  # flag of error output in history file
+d0           = 1.0    # background density
+amp          = 1.0e-6 # wave amplitude
+nwx          = -2     # wavenumber in x1
+nwy          = 1      # wavenumber in x2
+nwz          = 1      # wavenumber in x3
+ipert        = 2      # 1: Figs 5-7, 2: Fig 11 in JGG
+beta         = 20     # plasma beta
+error_output = false  # flag of error output in history file
