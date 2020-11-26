@@ -913,9 +913,6 @@ void BoundaryValues::ComputeShear(const Real time_fc, const Real time_int) {
     } // end loop over inner, outer shearing boundaries
   }
 
-  for (auto bvar : bvars_main_int) {
-    bvar->ComputeShear(time_fc, time_int);
-  }
   return;
 }
 

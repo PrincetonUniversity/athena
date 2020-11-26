@@ -370,9 +370,3 @@ void FaceCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
 #endif
   return;
 }
-
-
-// TODO(felker): also set sflag members of ShearingBoundaryData
-void FaceCenteredBoundaryVariable::ComputeShear(const Real time1, const Real time2) {
-  return;
-}

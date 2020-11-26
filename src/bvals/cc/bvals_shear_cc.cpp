@@ -296,9 +296,3 @@ void CellCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
 #endif
   return;
 }
-
-
-// TODO(felker): also set sflag members of ShearingBoundaryData
-void CellCenteredBoundaryVariable::ComputeShear(const Real time_fc, const Real time_int) {
-  return;
-}

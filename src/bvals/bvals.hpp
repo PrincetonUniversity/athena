@@ -116,7 +116,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void StartReceiving(BoundaryCommSubset phase) final {return;};
   void ClearBoundary(BoundaryCommSubset phase) final {return;};
   void StartReceivingShear(BoundaryCommSubset phase) final;
-  void ComputeShear(const Real time_fc, const Real time_int) final;
+  void ComputeShear(const Real time_fc, const Real time_int);
 
   // non-inhertied / unique functions (do not exist in BoundaryVariable objects):
   // (these typically involve a coupled interaction of boundary variable/quantities)

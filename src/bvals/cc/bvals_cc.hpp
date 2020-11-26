@@ -60,7 +60,6 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void StartReceiving(BoundaryCommSubset phase) override;
   void ClearBoundary(BoundaryCommSubset phase) override;
   void StartReceivingShear(BoundaryCommSubset phase) override;
-  void ComputeShear(const Real time_fc, const Real time_int) override;
 
   // BoundaryBuffer:
   void SendFluxCorrection() override;
