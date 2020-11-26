@@ -1,7 +1,7 @@
 <comment>
 problem   = MHD shwave test 
 reference = Johnson, 2007, ApJ, 660, 1375, Johnson et al., 2008, ApJS, 177, 373
-configure = --prob==jgg --eos=isothermal -b
+configure = --prob==jgg --eos=isothermal -b -fft
 
 <job>
 problem_id = JGG         # problem ID: basename of output filenames

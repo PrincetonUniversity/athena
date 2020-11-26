@@ -13,7 +13,7 @@
 //
 // Two kinds of perturbations are possible:
 //
-//- ipert = 1 - MHD simple shwave test of JGG -- similar to their figures 5 - 7
+//- ipert = 1 - MHD simple shwave test
 //- ipert = 2 - MHD compressive shwave test of JGG -- their figure 11
 //
 // REFERENCE: Johnson, Guan, & Gammie, ApJS, 177, 373 (2008)
@@ -33,6 +33,7 @@
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
+#include "../fft/athena_fft.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
@@ -55,12 +56,17 @@ int ipert;
 Real hst_dt, hst_next_time;
 bool error_output;
 
+#ifdef FFT
+  fftw_plan fplan;
+  fftw_complex *fft_data;
+#endif
+
 Real HistoryBxc(MeshBlock *pmb, int iout);
-Real HistoryBxs(MeshBlock *pmb, int iout);
+Real HistoryBzc(MeshBlock *pmb, int iout);
+Real HistoryBs(MeshBlock *pmb, int iout);
 Real HistorydBxc(MeshBlock *pmb, int iout);
-Real HistorydBxs(MeshBlock *pmb, int iout);
 Real HistorydByc(MeshBlock *pmb, int iout);
-Real HistorydBys(MeshBlock *pmb, int iout);
+Real HistoryxidBx(MeshBlock *pmb, int iout);
 } // namespace
 
 // ===================================================================================
@@ -120,27 +126,45 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     if (ipert == 1) {
       // allocateDataField
       AllocateRealUserMeshDataField(1);
-      ruser_mesh_data[0].NewAthenaArray(1, mesh_size.nx3,
-                                        mesh_size.nx2, mesh_size.nx1);
+      ruser_mesh_data[0].NewAthenaArray(mesh_size.nx3, mesh_size.nx2, mesh_size.nx1);
       // allocate User-defined History Output
       AllocateUserHistoryOutput(2);
-      EnrollUserHistoryOutput(0, HistoryBxc, "Bxc");
-      EnrollUserHistoryOutput(1, HistoryBxs, "Bxs");
+      if (mesh_size.nx3 > 1) { // 3D
+        EnrollUserHistoryOutput(0, HistoryBzc, "Bzc");
+        EnrollUserHistoryOutput(1, HistoryBs, "Bzs");
+      } else { // 2D
+        EnrollUserHistoryOutput(0, HistoryBxc, "Bxc");
+        EnrollUserHistoryOutput(1, HistoryBs, "Bxs");
+      }
     } else if (ipert == 2) {
+      // preparation for fft
+#ifndef FFT
+        std::stringstream msg;
+        msg << "### FATAL ERROR in jgg.cpp ProblemGenerator" << std::endl
+            << "FFT option is required for error output."    << std::endl;
+        ATHENA_ERROR(msg);
+#endif
+      if (Globals::my_rank==0 || (Globals::nranks>1 && Globals::my_rank == 1)) {
+        fft_data = new fftw_complex[mesh_size.nx2];
+        fplan =  fftw_plan_dft_1d(mesh_size.nx2, fft_data, fft_data,
+                                  FFTW_FORWARD, FFTW_ESTIMATE);
+      }
+
       // allocateDataField
-      AllocateRealUserMeshDataField(2);
-      ruser_mesh_data[0].NewAthenaArray(2, mesh_size.nx3,
-                                        mesh_size.nx2, mesh_size.nx1);
-      ruser_mesh_data[1].NewAthenaArray(1); // omega_tot
-      AllocateIntUserMeshDataField(1);
-      iuser_mesh_data[0].NewAthenaArray(1); // number of hst output
+      AllocateRealUserMeshDataField(4);
+      ruser_mesh_data[0].NewAthenaArray(mesh_size.nx3, mesh_size.nx2, mesh_size.nx1);
+      ruser_mesh_data[1].NewAthenaArray(mesh_size.nx3, mesh_size.nx2, mesh_size.nx1);
+      ruser_mesh_data[2].NewAthenaArray(2); // [dbx] 0: amplitude, 1: error rate
+      ruser_mesh_data[2](0) = 1.0;
+      ruser_mesh_data[2](1) = 0.0;
+      ruser_mesh_data[3].NewAthenaArray(1); // [dby] 0: amplitude
+      ruser_mesh_data[3](0) = 1.0;
       // allocate User-defined History Output
-      AllocateUserHistoryOutput(4);
+      AllocateUserHistoryOutput(3);
       EnrollUserHistoryOutput(0, HistorydBxc, "dBxc");
-      EnrollUserHistoryOutput(1, HistorydBxs, "dBxs");
-      EnrollUserHistoryOutput(2, HistorydByc, "dByc");
-      EnrollUserHistoryOutput(3, HistorydBys, "dBys");
-    }
+      EnrollUserHistoryOutput(1, HistorydByc, "dByc");
+      EnrollUserHistoryOutput(2, HistoryxidBx, "xidBx");
+    } // ipert == 2
     // read history output timing
     InputBlock *pib = pin->pfirst_block;
     while (pib != nullptr) {
@@ -189,7 +213,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Initialize perturbations
   Real x1, x2, x3;
   Real rp(0.0);
-  // ipert = 1 - MHD linear shwave test of JGG -- their figures 5 - 7
+  // ipert = 1 - MHD linear shwave test
   // ipert = 2 - MHD compressive shwave test of JGG -- their figure 11
   if (ipert == 1) {
     // hydro
@@ -207,14 +231,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    // set b
     // initialize interface B
     // set bx
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie+1; i++) {
-          x2 = pcoord->x2v(j);
-          pfield->b.x1f(k,j,i) = amp*std::cos(ky*x2);
+          if (block_size.nx3>1) { // 3D
+            pfield->b.x1f(k,j,i) = 0.0;
+          } else { // 2D
+            x2 = pcoord->x2v(j);
+            pfield->b.x1f(k,j,i) = amp*std::cos(ky*x2);
+          }
         }
       }
     }
@@ -231,7 +258,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
      for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
-          pfield->b.x3f(k,j,i) = 0.0;
+          if (block_size.nx3>1) { // 3D
+            x2 = pcoord->x2v(j);
+            pfield->b.x3f(k,j,i) = amp*std::cos(ky*x2);
+          } else { // 2D
+            pfield->b.x3f(k,j,i) = 0.0;
+          }
         }
       }
     }
@@ -395,10 +427,10 @@ void Mesh::UserWorkInLoop() {
       flag = true;
     }
   }
-  // calculate dbxs, dbys
+
   if (flag) {
-    AthenaArray<Real> &bs    = ruser_mesh_data[0];
     Real rbx(0.0), rby0(0.0), rby(0.0);
+    Real dbx0(0.0), dby0(0.0);
 
     Real kx0 = (TWO_PI/Lx)*(static_cast<Real>(nwx));
     Real ky  = (TWO_PI/Ly)*(static_cast<Real>(nwy));
@@ -406,42 +438,23 @@ void Mesh::UserWorkInLoop() {
     Real kx  = kx0+qshear*Omega0*present_time*ky;
     if (ipert == 2) {
       Real B02 = p0/beta;
+      Real sch = iso_cs/Omega0;
+      Real k20 = SQR(kx0)+SQR(ky)+SQR(kz);
       rbx  =  ky*std::sqrt(B02/(SQR(kx0)+SQR(ky)));
       rby0 = -kx0*std::sqrt(B02/(SQR(kx0)+SQR(ky)));
       rby  =  rby0-qshear*Omega0*present_time*rbx;
-
-      // update omega
-      AthenaArray<int> &num_hst = iuser_mesh_data[0];
-      num_hst(0) += 1;
-      int n_omega = num_hst(0)*8;
-      Real dt_omega = present_time/static_cast<Real>(n_omega);
-      Real omega_tot = 0.0;
-      for (int n=0; n<=n_omega; n++) {
-        Real time_omega = static_cast<Real>(n)*dt_omega;
-        if (n==n_omega) time_omega = present_time;
-        Real kx_omega = kx0+qshear*Omega0*time_omega*ky;
-        Real ka_omega = std::sqrt(SQR(kx_omega)+SQR(ky)+SQR(kz));
-        Real rby_omega = rby0-qshear*Omega0*time_omega*rbx;
-        Real omega = std::sqrt((SQR(iso_cs)+(SQR(rbx)+SQR(rby_omega))/d0))*ka_omega;
-        if (n == 0) {
-          omega_tot = omega;
-        } else if (n == n_omega) {
-          omega_tot += omega;
-        } else if (n%2 == 0) {
-          omega_tot += 2.0*omega;
-        } else {
-          omega_tot += 4.0*omega;
-        }
-      }
-      omega_tot *= dt_omega*ONE_3RD;
-      ruser_mesh_data[1](0) = std::fmod(omega_tot, TWO_PI);
+      dbx0 = amp*rbx*std::sqrt(sch*std::sqrt(k20*beta/(1.0+beta)));
+      dby0 = amp*rby0*std::sqrt(sch*std::sqrt(k20*beta/(1.0+beta)));
     }
 
-    // initialize bs
+    // initialize ruser_mesh_data[0] and ruser_mesh_data[1]
     for (int k=0; k<mesh_size.nx3; k++) {
       for (int j=0; j<mesh_size.nx2; j++) {
         for (int i=0; i<mesh_size.nx1; i++) {
-          bs(0,k,j,i) = 0.0;
+          ruser_mesh_data[0](k,j,i) = 0.0;
+          if (ipert==2) {
+            ruser_mesh_data[1](k,j,i) = 0.0;
+          }
         }
       }
     }
@@ -460,21 +473,20 @@ void Mesh::UserWorkInLoop() {
               int ti = loc0.lx1*pmb->block_size.nx1+(i-pmb->is);
               int tj = loc0.lx2*pmb->block_size.nx2+(j-pmb->js);
               int tk = loc0.lx3*pmb->block_size.nx3+(k-pmb->ks);
-              Real x1 = pmb->pcoord->x1v(i);
-              Real x2 = pmb->pcoord->x2v(j);
-              Real x3 = pmb->pcoord->x3v(k);
-              Real vol = pmb->pcoord->dx3f(k)
-                         *pmb->pcoord->dx2f(j)*pmb->pcoord->dx1f(i);
               if (ipert == 1) {
+                Real x1  = pmb->pcoord->x1v(i);
+                Real x2  = pmb->pcoord->x2v(j);
+                Real x3  = pmb->pcoord->x3v(k);
+                Real vol = pmb->pcoord->GetCellVolume(k,j,i);
                 Real SN = std::sin(kx*x1+ky*x2+kz*x3);
-                Real bx = pmb->pfield->bcc(IB1,k,j,i);
-                bs(0,tk,tj,ti) = 2.0*bx*vol*SN;
+                if (mesh_size.nx3>1) { // 3D
+                  ruser_mesh_data[0](tk,tj,ti) = 2.0*pmb->pfield->bcc(IB1,k,j,i)*vol*SN;
+                } else { // 2D
+                  ruser_mesh_data[0](tk,tj,ti) = 2.0*pmb->pfield->bcc(IB3,k,j,i)*vol*SN;
+                }
               } else { // ipert == 2
-                Real SN = std::sin(kx*x1+ky*x2+kz*x3-ruser_mesh_data[1](0));
-                Real dbx = pmb->pfield->bcc(IB1,k,j,i)-rbx;
-                bs(0,tk,tj,ti) = 2.0*dbx*vol*SN;
-                Real dby = pmb->pfield->bcc(IB2,k,j,i)-rby;
-                bs(1,tk,tj,ti) = 2.0*dby*vol*SN;
+                ruser_mesh_data[0](tk,tj,ti) = (pmb->pfield->bcc(IB1,k,j,i)-rbx)/dbx0;
+                ruser_mesh_data[1](tk,tj,ti) = (pmb->pfield->bcc(IB2,k,j,i)-rby)/dby0;
               }
             }
           }
@@ -492,46 +504,31 @@ void Mesh::UserWorkInLoop() {
               int tj = (loc0.lx2>>1)*pmb->block_size.nx2
                        +(loc0.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
               int tk = k;
-              Real vol00 = pmb->pcoord->dx3f(kk)
-                           *pmb->pcoord->dx2f(jj  )
-                           *pmb->pcoord->dx1f(ii  );
-              Real vol01 = pmb->pcoord->dx3f(kk)
-                           *pmb->pcoord->dx2f(jj  )
-                           *pmb->pcoord->dx1f(ii+1);
-              Real vol10 = pmb->pcoord->dx3f(kk)
-                           *pmb->pcoord->dx2f(jj+1)
-                           *pmb->pcoord->dx1f(ii  );
-              Real vol11 = pmb->pcoord->dx3f(kk)
-                           *pmb->pcoord->dx2f(jj+1)
-                           *pmb->pcoord->dx1f(ii+1);
               if (ipert == 1) {
-                Real SN = std::sin(kx*pmb->pcoord->x1f(ii+1)+ky*pmb->pcoord->x2f(jj+1)
-                                   +kz*pmb->pcoord->x3v(kk));
-
+                Real vol00 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii  );
+                Real vol01 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii+1);
+                Real vol10 = pmb->pcoord->GetCellVolume(kk  ,jj+1,ii  );
+                Real vol11 = pmb->pcoord->GetCellVolume(kk  ,jj+1,ii+1);
+                Real SN = std::sin(kx*pmb->pcoord->x1f(ii+1)
+                                   +ky*pmb->pcoord->x2f(jj+1)+kz*pmb->pcoord->x3v(kk));
                 Real bx00 = pmb->pfield->bcc(IB1,kk,jj  ,ii  );
                 Real bx01 = pmb->pfield->bcc(IB1,kk,jj  ,ii+1);
                 Real bx10 = pmb->pfield->bcc(IB1,kk,jj+1,ii  );
                 Real bx11 = pmb->pfield->bcc(IB1,kk,jj+1,ii+1);
                 Real bx_vol = bx00*vol00+bx01*vol01
                               +bx10*vol10+bx11*vol11;
-                bs(0,tk,tj,ti) = 2.0*bx_vol*SN;
+                ruser_mesh_data[0](tk,tj,ti) = 2.0*bx_vol*SN;
               } else { // ipert == 2
-                Real SN = std::sin(kx*pmb->pcoord->x1f(ii+1)+ky*pmb->pcoord->x2f(jj+1)
-                                   +kz*pmb->pcoord->x3v(kk)-ruser_mesh_data[1](0));
                 Real dbx00 = pmb->pfield->bcc(IB1,kk,jj  ,ii  )-rbx;
                 Real dbx01 = pmb->pfield->bcc(IB1,kk,jj  ,ii+1)-rbx;
                 Real dbx10 = pmb->pfield->bcc(IB1,kk,jj+1,ii  )-rbx;
                 Real dbx11 = pmb->pfield->bcc(IB1,kk,jj+1,ii+1)-rbx;
-                Real dbx_vol = dbx00*vol00+dbx01*vol01
-                               +dbx10*vol10+dbx11*vol11;
-                bs(0,tk,tj,ti) = 2.0*dbx_vol*SN;
+                ruser_mesh_data[0](tk,tj,ti) = 0.25*(dbx00+dbx01+dbx10+dbx11)/dbx0;
                 Real dby00 = pmb->pfield->bcc(IB2,kk,jj  ,ii  )-rby;
                 Real dby01 = pmb->pfield->bcc(IB2,kk,jj  ,ii+1)-rby;
                 Real dby10 = pmb->pfield->bcc(IB2,kk,jj+1,ii  )-rby;
                 Real dby11 = pmb->pfield->bcc(IB2,kk,jj+1,ii+1)-rby;
-                Real dby_vol = dby00*vol00+dby01*vol01
-                               +dby10*vol10+dby11*vol11;
-                bs(1,tk,tj,ti) = 2.0*dby_vol*SN;
+                ruser_mesh_data[1](tk,tj,ti) = 0.25*(dby00+dby01+dby10+dby11)/dby0;
               }
             }
           }
@@ -548,50 +545,32 @@ void Mesh::UserWorkInLoop() {
                          +(loc0.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
                 int tk = (loc0.lx3>>1)*pmb->block_size.nx3
                          +(loc0.lx3%2)*(pmb->block_size.nx3/2)+(k-pmb->cks);
-                Real vol000 = pmb->pcoord->dx3f(kk  )
-                              *pmb->pcoord->dx2f(jj  )
-                              *pmb->pcoord->dx1f(ii  );
-                Real vol001 = pmb->pcoord->dx3f(kk  )
-                              *pmb->pcoord->dx2f(jj  )
-                              *pmb->pcoord->dx1f(ii+1);
-                Real vol010 = pmb->pcoord->dx3f(kk  )
-                              *pmb->pcoord->dx2f(jj+1)
-                              *pmb->pcoord->dx1f(ii  );
-                Real vol011 = pmb->pcoord->dx3f(kk  )
-                              *pmb->pcoord->dx2f(jj+1)
-                              *pmb->pcoord->dx1f(ii+1);
-                Real vol100 = pmb->pcoord->dx3f(kk+1)
-                              *pmb->pcoord->dx2f(jj  )
-                              *pmb->pcoord->dx1f(ii  );
-                Real vol101 = pmb->pcoord->dx3f(kk+1)
-                              *pmb->pcoord->dx2f(jj  )
-                              *pmb->pcoord->dx1f(ii+1);
-                Real vol110 = pmb->pcoord->dx3f(kk+1)
-                              *pmb->pcoord->dx2f(jj+1)
-                              *pmb->pcoord->dx1f(ii  );
-                Real vol111 = pmb->pcoord->dx3f(kk+1)
-                              *pmb->pcoord->dx2f(jj+1)
-                              *pmb->pcoord->dx1f(ii+1);
                 if (ipert == 1) {
+                  Real vol000 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii  );
+                  Real vol001 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii+1);
+                  Real vol010 = pmb->pcoord->GetCellVolume(kk  ,jj+1,ii  );
+                  Real vol011 = pmb->pcoord->GetCellVolume(kk  ,jj+1,ii+1);
+                  Real vol100 = pmb->pcoord->GetCellVolume(kk+1,jj  ,ii  );
+                  Real vol101 = pmb->pcoord->GetCellVolume(kk+1,jj  ,ii+1);
+                  Real vol110 = pmb->pcoord->GetCellVolume(kk+1,jj+1,ii  );
+                  Real vol111 = pmb->pcoord->GetCellVolume(kk+1,jj+1,ii+1);
                   Real SN = std::sin(kx*pmb->pcoord->x1f(ii+1)+ky*pmb->pcoord->x2f(jj+1)
                                      +kz*pmb->pcoord->x3f(kk+1));
 
-                  Real bx000 = pmb->pfield->bcc(IB1,kk  ,jj  ,ii  );
-                  Real bx001 = pmb->pfield->bcc(IB1,kk  ,jj  ,ii+1);
-                  Real bx010 = pmb->pfield->bcc(IB1,kk  ,jj+1,ii  );
-                  Real bx011 = pmb->pfield->bcc(IB1,kk  ,jj+1,ii+1);
-                  Real bx100 = pmb->pfield->bcc(IB1,kk+1,jj  ,ii  );
-                  Real bx101 = pmb->pfield->bcc(IB1,kk+1,jj  ,ii+1);
-                  Real bx110 = pmb->pfield->bcc(IB1,kk+1,jj+1,ii  );
-                  Real bx111 = pmb->pfield->bcc(IB1,kk+1,jj+1,ii+1);
-                  Real bx_vol = bx000*vol000+bx001*vol001
-                                +bx010*vol010+bx011*vol011
-                                +bx100*vol100+bx101*vol101
-                                +bx110*vol110+bx111*vol111;
-                  bs(0,tk,tj,ti) = 2.0*bx_vol*SN;
+                  Real bz000 = pmb->pfield->bcc(IB3,kk  ,jj  ,ii  );
+                  Real bz001 = pmb->pfield->bcc(IB3,kk  ,jj  ,ii+1);
+                  Real bz010 = pmb->pfield->bcc(IB3,kk  ,jj+1,ii  );
+                  Real bz011 = pmb->pfield->bcc(IB3,kk  ,jj+1,ii+1);
+                  Real bz100 = pmb->pfield->bcc(IB3,kk+1,jj  ,ii  );
+                  Real bz101 = pmb->pfield->bcc(IB3,kk+1,jj  ,ii+1);
+                  Real bz110 = pmb->pfield->bcc(IB3,kk+1,jj+1,ii  );
+                  Real bz111 = pmb->pfield->bcc(IB3,kk+1,jj+1,ii+1);
+                  Real bz_vol = bz000*vol000+bz001*vol001
+                                +bz010*vol010+bz011*vol011
+                                +bz100*vol100+bz101*vol101
+                                +bz110*vol110+bz111*vol111;
+                  ruser_mesh_data[0](tk,tj,ti) = 2.0*bz_vol*SN;
                 } else {
-                  Real SN = std::sin(kx*pmb->pcoord->x1f(ii+1)+ky*pmb->pcoord->x2f(jj+1)
-                                     +kz*pmb->pcoord->x3v(kk+1)-ruser_mesh_data[1](0));
                   Real dbx000 = pmb->pfield->bcc(IB1,kk  ,jj  ,ii  )-rbx;
                   Real dbx001 = pmb->pfield->bcc(IB1,kk  ,jj  ,ii+1)-rbx;
                   Real dbx010 = pmb->pfield->bcc(IB1,kk  ,jj+1,ii  )-rbx;
@@ -600,11 +579,8 @@ void Mesh::UserWorkInLoop() {
                   Real dbx101 = pmb->pfield->bcc(IB1,kk+1,jj  ,ii+1)-rbx;
                   Real dbx110 = pmb->pfield->bcc(IB1,kk+1,jj+1,ii  )-rbx;
                   Real dbx111 = pmb->pfield->bcc(IB1,kk+1,jj+1,ii+1)-rbx;
-                  Real dbx_vol = dbx000*vol000+dbx001*vol001
-                                 +dbx010*vol010+dbx011*vol011
-                                 +dbx100*vol100+dbx101*vol101
-                                 +dbx110*vol110+dbx111*vol111;
-                  bs(0,tk,tj,ti) = 2.0*dbx_vol*SN;
+                  ruser_mesh_data[0](tk,tj,ti) = 0.125*(dbx000+dbx001+dbx010+dbx011
+                                                       +dbx100+dbx101+dbx110+dbx111)/dbx0;
                   Real dby000 = pmb->pfield->bcc(IB2,kk  ,jj  ,ii  )-rby;
                   Real dby001 = pmb->pfield->bcc(IB2,kk  ,jj  ,ii+1)-rby;
                   Real dby010 = pmb->pfield->bcc(IB2,kk  ,jj+1,ii  )-rby;
@@ -613,11 +589,8 @@ void Mesh::UserWorkInLoop() {
                   Real dby101 = pmb->pfield->bcc(IB2,kk+1,jj  ,ii+1)-rby;
                   Real dby110 = pmb->pfield->bcc(IB2,kk+1,jj+1,ii  )-rby;
                   Real dby111 = pmb->pfield->bcc(IB2,kk+1,jj+1,ii+1)-rby;
-                  Real dby_vol = dby000*vol000+dby001*vol001
-                                 +dby010*vol010+dby011*vol011
-                                 +dby100*vol100+dby101*vol101
-                                 +dby110*vol110+dby111*vol111;
-                  bs(1,tk,tj,ti) = 2.0*dby_vol*SN;
+                  ruser_mesh_data[1](tk,tj,ti) = 0.125*(dby000+dby001+dby010+dby011
+                                                       +dby100+dby101+dby110+dby111)/dby0;
                 }
               }
             }
@@ -632,17 +605,107 @@ void Mesh::UserWorkInLoop() {
       }
     } // pmb
 #ifdef MPI_PARALLEL
-    int ntot = mesh_size.nx3*mesh_size.nx2*mesh_size.nx1;
-    if (ipert == 2) ntot *= 2;
-    if (Globals::my_rank == 0) {
-      MPI_Reduce(MPI_IN_PLACE, bs.data(), ntot, MPI_ATHENA_REAL,
-                 MPI_SUM, 0, MPI_COMM_WORLD);
-    } else {
-      MPI_Reduce(bs.data(), bs.data(), ntot, MPI_ATHENA_REAL,
-                 MPI_SUM, 0, MPI_COMM_WORLD);
+    if (Globals::nranks > 1) {
+      int ntot = mesh_size.nx3*mesh_size.nx2*mesh_size.nx1;
+      if (Globals::my_rank == 0) {
+        MPI_Reduce(MPI_IN_PLACE, ruser_mesh_data[0].data(), ntot,
+                   MPI_ATHENA_REAL, MPI_SUM, 0, MPI_COMM_WORLD);
+      } else {
+        MPI_Reduce(ruser_mesh_data[0].data(), ruser_mesh_data[0].data(), ntot,
+                   MPI_ATHENA_REAL, MPI_SUM, 0, MPI_COMM_WORLD);
+      }
+      if (ipert == 2) {
+        if (Globals::my_rank == 1) {
+          MPI_Reduce(MPI_IN_PLACE, ruser_mesh_data[1].data(), ntot,
+                     MPI_ATHENA_REAL, MPI_SUM, 1, MPI_COMM_WORLD);
+        } else {
+          MPI_Reduce(ruser_mesh_data[1].data(), ruser_mesh_data[1].data(), ntot,
+                     MPI_ATHENA_REAL, MPI_SUM, 1, MPI_COMM_WORLD);
+        }
+      }
     }
 #endif
+    // fft execution
+    if (ipert == 2) {
+      int exe_rank_dby = (Globals::nranks>1)? 1 : 0;
+      Real inv_nik = 1.0/static_cast<Real>(mesh_size.nx3*mesh_size.nx1);
+      Real inv_half_nx2 = static_cast<Real>(mesh_size.nx2/2);
+      int abs_nwy = std::abs(nwy);
+      // calculate FFT of dbx
+      if (Globals::my_rank == 0) {
+        ruser_mesh_data[2](0) = 0.0; // amplitude of main mode
+        ruser_mesh_data[2](1) = 0.0; // error rate
+        for (int k=0; k<mesh_size.nx3; k++) {
+          for (int i=0; i<mesh_size.nx1; i++) {
+            // set into buffer
+            for (int j=0; j<mesh_size.nx2; j++) {
+              fft_data[j][0] = ruser_mesh_data[0](k,j,i);
+              fft_data[j][1] = 0.0;
+            }
+            fftw_execute(fplan);
+            // calculation
+            Real amp_wave;
+            Real amp_others = 0.0;
+            Real x1 = (static_cast<Real>(i)+0.5)*Lx
+                      /static_cast<Real>(mesh_size.nx1)
+                      +mesh_size.x1min;
+            Real x3 = (static_cast<Real>(k)+0.5)*Lz
+                      /static_cast<Real>(mesh_size.nx3)
+                      +mesh_size.x3min;
+            for (int j=0; j<mesh_size.nx2/2; j++) {
+              if (j == abs_nwy) {
+                amp_wave = std::sqrt(SQR(fft_data[j][0])+SQR(fft_data[j][1]))
+                           /inv_half_nx2;
+              } else {
+                amp_others += std::sqrt(SQR(fft_data[j][0])+SQR(fft_data[j][1]))
+                              /inv_half_nx2;
+              }
+            }
+            ruser_mesh_data[2](0) += amp_wave*inv_nik;
+            ruser_mesh_data[2](1) += (amp_others/amp_wave)*inv_nik;
+          }
+        }
+      }
+
+      // calculate FFT of dby
+      if (Globals::my_rank == exe_rank_dby) {
+        ruser_mesh_data[3](0) = 0.0; // amplitude of main mode
+        for (int k=0; k<mesh_size.nx3; k++) {
+          for (int i=0; i<mesh_size.nx1; i++) {
+            // set into buffer
+            for (int j=0; j<mesh_size.nx2; j++) {
+              fft_data[j][0] = ruser_mesh_data[1](k,j,i);
+              fft_data[j][1] = 0.0;
+            }
+            fftw_execute(fplan);
+            // calculation
+            Real x1 = (static_cast<Real>(i)+0.5)*Lx
+                      /static_cast<Real>(mesh_size.nx1)
+                      +mesh_size.x1min;
+            Real x3 = (static_cast<Real>(k)+0.5)*Lz
+                      /static_cast<Real>(mesh_size.nx3)
+                      +mesh_size.x3min;
+            Real amp_wave = std::sqrt(SQR(fft_data[abs_nwy][0])
+                                     +SQR(fft_data[abs_nwy][1]))/inv_half_nx2;
+            ruser_mesh_data[3](0) += amp_wave*inv_nik;
+          }
+        }
+      }
+    }
   } // flag
+  return;
+}
+
+//========================================================================================
+//! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
+//  \brief Function called after main loop is finished for user-defined work.
+//========================================================================================
+
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
+#ifdef FFT
+  if(fplan) fftw_destroy_plan(fplan);
+  if(fft_data) delete[] fft_data;
+#endif
   return;
 }
 
@@ -656,7 +719,7 @@ Real HistoryBxc(MeshBlock *pmb, int iout) {
   AthenaArray<Real> volume; // 1D array of volumes
   volume.NewAthenaArray(pmb->ncells1);
 
-  Real qom = pmb->porb->qshear*pmb->porb->Omega0;
+  Real qom = qshear*Omega0;
   Real bxc = 0.0;
 
   AthenaArray<Real> &b = pmb->pfield->bcc;
@@ -682,165 +745,78 @@ Real HistoryBxc(MeshBlock *pmb, int iout) {
   return bxc/(amp*total_volume);
 }
 
-Real HistoryBxs(MeshBlock *pmb, int iout) {
+Real HistoryBzc(MeshBlock *pmb, int iout) {
+  Real x1, x2, x3;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
+  AthenaArray<Real> volume; // 1D array of volumes
+  volume.NewAthenaArray(pmb->ncells1);
+
+  Real qom = qshear*Omega0;
+  Real bzc = 0.0;
+
+  AthenaArray<Real> &b = pmb->pfield->bcc;
+
+  Real kx = (TWO_PI/Lx)
+            *(static_cast<Real>(nwx)+qom*pmb->pmy_mesh->time);
+  Real ky = (TWO_PI/Ly)*(static_cast<Real>(nwy));
+  Real kz = (TWO_PI/Lz)*(static_cast<Real>(nwz));
+  Real total_volume = Lx*Ly*Lz;
+
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      pmb->pcoord->CellVolume(k, j, is, ie, volume);
+      for (int i=is; i<=ie; i++) {
+        x1 = pmb->pcoord->x1v(i);
+        x2 = pmb->pcoord->x2v(j);
+        x3 = pmb->pcoord->x3v(k);
+        Real CS = std::cos(kx*x1+ky*x2+kz*x3);
+        bzc += volume(i)*2.0*b(IB3,k,j,i)*CS;
+      }
+    }
+  }
+  return bzc/(amp*total_volume);
+}
+
+Real HistoryBs(MeshBlock *pmb, int iout) {
   if (Globals::my_rank != 0) return 0.0;
   if (pmb->lid != 0) return 0.0;
-  AthenaArray<Real> &bs = pmb->pmy_mesh->ruser_mesh_data[0];
-  Real bxs = 0.0;
-  Real bxs_temp;
+  AthenaArray<Real> &bb = pmb->pmy_mesh->ruser_mesh_data[0];
+  Real bs = 0.0;
+  Real bs_temp;
   int nx1 = pmb->pmy_mesh->mesh_size.nx1;
   int nx2 = pmb->pmy_mesh->mesh_size.nx2;
   int nx3 = pmb->pmy_mesh->mesh_size.nx3;
   Real total_volume = Lx*Ly*Ly;
   for (int k=0; k<nx3; k++) {
     for (int i=0; i<nx1; i++) {
-      bxs_temp = 0.0;
+      bs_temp = 0.0;
       for (int j=0; j<nx2; j++) {
-        bxs_temp += bs(0,k,j,i);
+        bs_temp += bb(0,k,j,i);
       }
-      bxs += std::fabs(bxs_temp);
+      bs += std::fabs(bs_temp);
     }
   }
-  return bxs/(amp*total_volume);
+  return bs/(amp*total_volume);
 }
 
 Real HistorydBxc(MeshBlock *pmb, int iout) {
-  Real omega_tot = pmb->pmy_mesh->ruser_mesh_data[1](0);
-  Real x1, x2, x3;
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> volume; // 1D array of volumes
-  volume.NewAthenaArray(pmb->ncells1);
-
-  Real qom = qshear*Omega0;
-  Real sch = iso_cs/Omega0;
-  Real dbxc = 0.0;
-
-  AthenaArray<Real> &b = pmb->pfield->bcc;
-
-  Real kx0 = (TWO_PI/Lx)*(static_cast<Real>(nwx));
-  Real ky  = (TWO_PI/Ly)*(static_cast<Real>(nwy));
-  Real kz  = (TWO_PI/Lz)*(static_cast<Real>(nwz));
-  Real k20 = SQR(kx0)+SQR(ky)+SQR(kz);
-  Real B02 = p0/beta;
-  Real rbx =  ky*std::sqrt(B02/(SQR(kx0)+SQR(ky)));
-  Real kx  = kx0+qom*pmb->pmy_mesh->time*ky;
-  Real total_volume = Lx*Ly*Lz;
-  for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      pmb->pcoord->CellVolume(k, j, is, ie, volume);
-      for (int i=is; i<=ie; i++) {
-        x1 = pmb->pcoord->x1v(i);
-        x2 = pmb->pcoord->x2v(j);
-        x3 = pmb->pcoord->x3v(k);
-        Real CS = std::cos(kx*x1+ky*x2+kz*x3-omega_tot);
-        dbxc += volume(i)*2.0*(b(IB1,k,j,i)-rbx)*CS;
-      }
-    }
-  }
-  Real dbxc0 = amp*rbx*std::sqrt(sch*std::sqrt(k20*beta/(1.0+beta)));
-  return dbxc/(total_volume*dbxc0);
-}
-
-Real HistorydBxs(MeshBlock *pmb, int iout) {
   if (Globals::my_rank != 0) return 0.0;
   if (pmb->lid != 0) return 0.0;
-  AthenaArray<Real> &bs = pmb->pmy_mesh->ruser_mesh_data[0];
-  Real dbxs = 0.0;
-  Real dbxs_temp;
-  int nx1 = pmb->pmy_mesh->mesh_size.nx1;
-  int nx2 = pmb->pmy_mesh->mesh_size.nx2;
-  int nx3 = pmb->pmy_mesh->mesh_size.nx3;
-  Real total_volume = Lx*Ly*Ly;
-  for (int k=0; k<nx3; k++) {
-    for (int i=0; i<nx1; i++) {
-      dbxs_temp = 0.0;
-      for (int j=0; j<nx2; j++) {
-        dbxs_temp += bs(0,k,j,i);
-      }
-      dbxs += std::fabs(dbxs_temp);
-    }
-  }
-  Real kx0 = (TWO_PI/Lx)*(static_cast<Real>(nwx));
-  Real ky  = (TWO_PI/Ly)*(static_cast<Real>(nwy));
-  Real kz  = (TWO_PI/Lz)*(static_cast<Real>(nwz));
-  Real k20 = SQR(kx0)+SQR(ky)+SQR(kz);
-  Real sch = iso_cs/Omega0;
-  Real B02 = p0/beta;
-  Real rbx  = ky*std::sqrt(B02/(SQR(kx0)+SQR(ky)));
-  Real dbx0 = amp*rbx*std::sqrt(sch*std::sqrt(k20*beta/(1.0+beta)));
-  return dbxs/(dbx0*total_volume);
+  return pmb->pmy_mesh->ruser_mesh_data[2](0);
 }
 
 Real HistorydByc(MeshBlock *pmb, int iout) {
-  Real omega_tot = pmb->pmy_mesh->ruser_mesh_data[1](0);
-  Real x1, x2, x3;
-  int is = pmb->is, ie = pmb->ie;
-  int js = pmb->js, je = pmb->je;
-  int ks = pmb->ks, ke = pmb->ke;
-  AthenaArray<Real> volume; // 1D array of volumes
-  volume.NewAthenaArray(pmb->ncells1);
-
-  Real qom = qshear*Omega0;
-  Real sch = iso_cs/Omega0;
-  Real dbyc = 0.0;
-
-  AthenaArray<Real> &b = pmb->pfield->bcc;
-
-  Real kx0 = (TWO_PI/Lx)*(static_cast<Real>(nwx));
-  Real ky  = (TWO_PI/Ly)*(static_cast<Real>(nwy));
-  Real kz  = (TWO_PI/Lz)*(static_cast<Real>(nwz));
-  Real k20 = SQR(kx0)+SQR(ky)+SQR(kz);
-  Real B02 = p0/beta;
-  Real rbx =  ky*std::sqrt(B02/(SQR(kx0)+SQR(ky)));
-  Real rby0 = -kx0*std::sqrt(B02/(SQR(kx0)+SQR(ky)));
-  Real kx  = kx0+qom*pmb->pmy_mesh->time*ky;
-  Real rby = rby0-qom*pmb->pmy_mesh->time*rbx;
-  Real total_volume = Lx*Ly*Lz;
-  for (int k=ks; k<=ke; k++) {
-    for (int j=js; j<=je; j++) {
-      pmb->pcoord->CellVolume(k, j, is, ie, volume);
-      for (int i=is; i<=ie; i++) {
-        x1 = pmb->pcoord->x1v(i);
-        x2 = pmb->pcoord->x2v(j);
-        x3 = pmb->pcoord->x3v(k);
-        Real CS = std::cos(kx*x1+ky*x2+kz*x3-omega_tot);
-        dbyc += volume(i)*2.0*(b(IB2,k,j,i)-rby)*CS;
-      }
-    }
-  }
-  Real dbyc0 = amp*rby0*std::sqrt(sch*std::sqrt(k20*beta/(1.0+beta)));
-  return dbyc/(total_volume*dbyc0);
+  int exe_rank_dby = (Globals::nranks>1)? 1 : 0;
+  if (Globals::my_rank != exe_rank_dby) return 0.0;
+  if (pmb->lid != 0) return 0.0;
+  return pmb->pmy_mesh->ruser_mesh_data[3](0);
 }
 
-Real HistorydBys(MeshBlock *pmb, int iout) {
+Real HistoryxidBx(MeshBlock *pmb, int iout) {
   if (Globals::my_rank != 0) return 0.0;
   if (pmb->lid != 0) return 0.0;
-  AthenaArray<Real> &bs = pmb->pmy_mesh->ruser_mesh_data[0];
-  Real dbys = 0.0;
-  Real dbys_temp;
-  int nx1 = pmb->pmy_mesh->mesh_size.nx1;
-  int nx2 = pmb->pmy_mesh->mesh_size.nx2;
-  int nx3 = pmb->pmy_mesh->mesh_size.nx3;
-  Real total_volume = Lx*Ly*Ly;
-  for (int k=0; k<nx3; k++) {
-    for (int i=0; i<nx1; i++) {
-      dbys_temp = 0.0;
-      for (int j=0; j<nx2; j++) {
-        dbys_temp += bs(1,k,j,i);
-      }
-      dbys += std::fabs(dbys_temp);
-    }
-  }
-  Real kx0 = (TWO_PI/Lx)*(static_cast<Real>(nwx));
-  Real ky  = (TWO_PI/Ly)*(static_cast<Real>(nwy));
-  Real kz  = (TWO_PI/Lz)*(static_cast<Real>(nwz));
-  Real k20 = SQR(kx0)+SQR(ky)+SQR(kz);
-  Real sch = iso_cs/Omega0;
-  Real B02 = p0/beta;
-  Real rby0 = -kx0*std::sqrt(B02/(SQR(kx0)+SQR(ky)));
-  Real dby0 = amp*rby0*std::sqrt(sch*std::sqrt(k20*beta/(1.0+beta)));
-  return dbys/(dby0*total_volume);
+  return pmb->pmy_mesh->ruser_mesh_data[2](1);
 }
 } // namespace

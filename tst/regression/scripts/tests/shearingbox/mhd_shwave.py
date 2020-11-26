@@ -14,8 +14,8 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 # Prepare Athena++
 def prepare(**kwargs):
     logger.debug('Running test ' + __name__)
-    athena.configure('b', prob='jgg', flux='hlld',
-                     eos='isothermal', **kwargs)
+    athena.configure('b', 'fft', prob='jgg', flux='hlld',
+                     eos='isothermal', nghost='4', **kwargs)
     athena.make()
 
 
@@ -27,9 +27,9 @@ def run(**kwargs):
         'output1/file_type=hst', 'output1/dt=0.01',
         'output1/data_format=%1.16f',
         'output2/file_type=vtk', 'output2/variable=prim',
-        'output2/dt=1.0', 'time/cfl_number=0.3',
+        'output2/dt=-1.0', 'time/cfl_number=0.3',
         'time/tlim=3.0', 'time/nlim=1000',
-        'time/xorder=2', 'time/integrator=vl2',
+        'time/xorder=3', 'time/integrator=vl2',
         'mesh/nx1=32', 'mesh/x1min=-0.25', 'mesh/x1max=0.25',
         'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
         'mesh/nx2=16', 'mesh/x2min=-0.25', 'mesh/x2max=0.25',
@@ -50,9 +50,9 @@ def run(**kwargs):
         'output1/file_type=hst', 'output1/dt=0.01',
         'output1/data_format=%1.16f',
         'output2/file_type=vtk', 'output2/variable=prim',
-        'output2/dt=1.0', 'time/cfl_number=0.3',
+        'output2/dt=-1.0', 'time/cfl_number=0.3',
         'time/tlim=3.0', 'time/nlim=1000',
-        'time/xorder=2', 'time/integrator=vl2',
+        'time/xorder=3', 'time/integrator=vl2',
         'mesh/nx1=32', 'mesh/x1min=-0.25', 'mesh/x1max=0.25',
         'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
         'mesh/nx2=16', 'mesh/x2min=-0.25', 'mesh/x2max=0.25',
@@ -98,111 +98,77 @@ def analyze():
     a = athena_read.hst(fname)
     time1 = a['time']
     dByc1 = a['dByc']
+    xidBx1 = a['xidBx']
     nf1 = len(time1)
 
     # initialize parameters
-    n_ex = 8
-    norm1 = 0.0
+    norm1a = 0.0
+    norm1b = 0.0
     for i in xrange(nf1):
-        dst_time = time1[i]
         if (i == 0):
-            dt = 0.0
             k = math.sqrt(kx0**2+ky**2+kz**2)
             dBya = epsilon*By0
             dBya *= math.sqrt(iso_cs*k/Omega0*math.sqrt(beta/(1.0+beta)))
-            omega_tot = 0.0
             dBy0 = dBya
             dBya = 1.0
         else:
-            # calculate omega_tot
-            dt = dst_time/float(n_ex*i)
-            omega = 0.0
-            omega_tot = 0.0
-            for j in xrange(n_ex*i+1):
-                present_time = float(j)*dt
-                kx = kx0+qshear*Omega0*present_time*ky
-                k = math.sqrt(kx**2+ky**2+kz**2)
-                By = By0-qshear*Omega0*present_time*Bx
-                omega = math.sqrt(iso_cs**2+Bx**2+By**2)*k
-                if (j == 0):
-                    omega_tot = omega
-                elif (j == n_ex*i):
-                    omega_tot += omega
-                elif ((j % 2) == 0):
-                    omega_tot += 2.0*omega
-                else:
-                    omega_tot += 4.0*omega
-            omega_tot *= dt/3.0
-            # calculate dBy_analytic
-            kx = kx0+qshear*Omega0*dst_time*ky
+            kx = kx0+qshear*Omega0*time1[i]*ky
             k = math.sqrt(kx**2+ky**2+kz**2)
-            By = By0-qshear*Omega0*dst_time*Bx
-            dBya = epsilon*By*math.cos(omega_tot)/dBy0
+            By = By0-qshear*Omega0*time1[i]*Bx
+            dBya = epsilon*By/dBy0
             dBya *= math.sqrt(iso_cs*k/Omega0*math.sqrt(beta/(1.0+beta)))
-        norm1 += abs(dByc1[i]-dBya)
-    norm1 /= nf1
+        norm1a += abs(dByc1[i]-abs(dBya))
+        norm1b += abs(xidBx1[i])
+    norm1a /= nf1
+    norm1b /= nf1
 
     # read results w/  Orbital Advection
     fname = 'bin/JGG_ORB.hst'
     b = athena_read.hst(fname)
     time2 = b['time']
     dByc2 = b['dByc']
+    xidBx2 = b['xidBx']
     nf2 = len(time2)
 
     # initialize parameters
-    n_ex = 8
-    norm2 = 0.0
+    norm2a = 0.0
+    norm2b = 0.0
     for i in xrange(nf1):
-        dst_time = time2[i]
         if (i == 0):
-            dt = 0.0
             k = math.sqrt(kx0**2+ky**2+kz**2)
             dBya = epsilon*By0
             dBya *= math.sqrt(iso_cs*k/Omega0*math.sqrt(beta/(1.0+beta)))
-            omega_tot = 0.0
             dBy0 = dBya
             dBya = 1.0
         else:
-            # calculate omega_tot
-            dt = dst_time/float(n_ex*i)
-            omega = 0.0
-            omega_tot = 0.0
-            for j in xrange(n_ex*i+1):
-                present_time = float(j)*dt
-                kx = kx0+qshear*Omega0*present_time*ky
-                k = math.sqrt(kx**2+ky**2+kz**2)
-                By = By0-qshear*Omega0*present_time*Bx
-                omega = math.sqrt(iso_cs**2+Bx**2+By**2)*k
-                if (j == 0):
-                    omega_tot = omega
-                elif (j == n_ex*i):
-                    omega_tot += omega
-                elif ((j % 2) == 0):
-                    omega_tot += 2.0*omega
-                else:
-                    omega_tot += 4.0*omega
-            omega_tot *= dt/3.0
-            # calculate dBy_analytic
-            kx = kx0+qshear*Omega0*dst_time*ky
+            kx = kx0+qshear*Omega0*time1[i]*ky
             k = math.sqrt(kx**2+ky**2+kz**2)
-            By = By0-qshear*Omega0*dst_time*Bx
-            dBya = epsilon*By*math.cos(omega_tot)/dBy0
+            By = By0-qshear*Omega0*time1[i]*Bx
+            dBya = epsilon*By/dBy0
             dBya *= math.sqrt(iso_cs*k/Omega0*math.sqrt(beta/(1.0+beta)))
-        norm2 += abs(dByc2[i]-dBya)
-    norm2 /= nf2
+        norm2a += abs(dByc2[i]-abs(dBya))
+        norm2b += abs(xidBx2[i])
+    norm2a /= nf2
+    norm2b /= nf2
 
     logger.warning('[MHD_SHWAVE]: L1-Norm Errors')
-    msg = '[MHD_SHWAVE]: epsilon_c = {}'
+    msg = '[MHD_SHWAVE]: epsilon_c = {}, xi_dBx = {}'
     flag = True
     logger.warning('[MHD_SHWAVE]: w/o Orbital Advection')
-    logger.warning(msg.format(norm1))
-    if norm1 > 0.20:
-        logger.warning('[MHD_SHWAVE]: dByc Error is more than 20%.')
+    logger.warning(msg.format(norm1a, norm1b))
+    if norm1a > 0.01:
+        logger.warning('[MHD_SHWAVE]: dByc Error is more than 1%.')
+        flag = False
+    if norm1b > 0.01:
+        logger.warning('[MHD_SHWAVE]: xi_dBx Error is more than 1%.')
         flag = False
     logger.warning('[MHD_SHWAVE]: w/  Orbital Advection')
-    logger.warning(msg.format(norm2))
-    if norm2 > 0.20:
-        logger.warning('[MHD_SHWAVE]: dByc Error is more than 20%.')
+    logger.warning(msg.format(norm2a, norm2b))
+    if norm2a > 0.01:
+        logger.warning('[MHD_SHWAVE]: dByc Error is more than 1%.')
+        flag = False
+    if norm2b > 0.01:
+        logger.warning('[MHD_SHWAVE]: xi_dBx Error is more than 1%.')
         flag = False
 
     return flag

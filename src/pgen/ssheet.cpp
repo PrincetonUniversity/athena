@@ -47,6 +47,7 @@ Real amp; // amplitude
 int nwx, nwy; // Wavenumbers
 Real x1size,x2size,x3size;
 int ipert; // initial pattern
+Real qshear, Omega0;
 Real hst_dt, hst_next_time;
 bool error_output;
 
@@ -89,6 +90,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   x1size = mesh_size.x1max - mesh_size.x1min;
   x2size = mesh_size.x2max - mesh_size.x2min;
   x3size = mesh_size.x3max - mesh_size.x3min;
+
+  // shearing box parameters
+  qshear = pin->GetReal("orbital_advection","qshear");
+  Omega0 = pin->GetReal("orbital_advection","Omega0");
+
   if (ipert == 3) {
     amp = pin->GetReal("problem","amp");
     nwx = pin->GetInteger("problem","nwx");
@@ -102,9 +108,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     error_output = pin->GetOrAddBoolean("problem","error_output",false);
     if (error_output) {
       // allocateDataField
-      AllocateRealUserMeshDataField(1);
-      ruser_mesh_data[0].NewAthenaArray(2, mesh_size.nx3,
-                                        mesh_size.nx2, mesh_size.nx1);
+      AllocateRealUserMeshDataField(2);
+      ruser_mesh_data[0].NewAthenaArray(mesh_size.nx3, mesh_size.nx2, mesh_size.nx1);
+      ruser_mesh_data[1].NewAthenaArray(mesh_size.nx3, mesh_size.nx2, mesh_size.nx1);
 
       // read history output timing
       InputBlock *pib = pin->pfirst_block;
@@ -153,11 +159,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //  \brief
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  // shearing sheet parameter
-  Real Omega_0 = porb->Omega0;
-  Real qshear  = porb->qshear;
   int shboxcoord = porb->shboxcoord;
-
   int il = is - NGHOST; int iu = ie + NGHOST;
   int jl = js - NGHOST; int ju = je + NGHOST;
   int kl = ks;          int ku = ke;
@@ -197,7 +199,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM1,k,j,i) = 0.0;
           phydro->u(IM2,k,j,i) = 0.0;
           if(!porb->orbital_advection_defined)
-            phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
+            phydro->u(IM2,k,j,i) -= rd*qshear*Omega0*x1;
           phydro->u(IM3,k,j,i) = 0.0;
         } else if (ipert == 2) {
           // 2) epicyclic oscillation
@@ -208,7 +210,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             phydro->u(IM1,k,j,i) = rd*rvx;
             phydro->u(IM2,k,j,i) = -rd*rvy;
             if(!porb->orbital_advection_defined)
-            phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
+            phydro->u(IM2,k,j,i) -= rd*qshear*Omega0*x1;
             phydro->u(IM3,k,j,i) = 0.0;
           } else { // x-z plane
             rvx = 0.1*iso_cs;
@@ -216,7 +218,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             phydro->u(IDN,k,j,i) = rd;
             phydro->u(IM1,k,j,i) = rd*rvx;
             phydro->u(IM2,k,j,i) = 0.0;
-            phydro->u(IM3,k,j,i) = -rd*(rvy+qshear*Omega_0*x1);
+            phydro->u(IM3,k,j,i) = -rd*(rvy+qshear*Omega0*x1);
           }
         } else if (ipert == 3) {
           // 3) JG HD shwave test
@@ -226,7 +228,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM1,k,j,i) = -rd*rvx;
           phydro->u(IM2,k,j,i) = -rd*rvy;
           if(!porb->orbital_advection_defined)
-            phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
+            phydro->u(IM2,k,j,i) -= rd*qshear*Omega0*x1;
           phydro->u(IM3,k,j,i) = 0.0;
         } else {
           std::stringstream msg;
@@ -269,7 +271,8 @@ void Mesh::UserWorkInLoop() {
   }
   // calculate vxs, dvys
   if (flag) {
-    AthenaArray<Real> &vs = ruser_mesh_data[0];
+    AthenaArray<Real> &vxs = ruser_mesh_data[0];
+    AthenaArray<Real> &dvys = ruser_mesh_data[1];
     Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
     Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
 
@@ -277,14 +280,14 @@ void Mesh::UserWorkInLoop() {
     for (int k=0; k<mesh_size.nx3; k++) {
       for (int j=0; j<mesh_size.nx2; j++) {
         for (int i=0; i<mesh_size.nx1; i++) {
-          vs(0,k,j,i) = 0.0;
-          vs(1,k,j,i) = 0.0;
+          vxs(k,j,i) = 0.0;
+          dvys(k,j,i) = 0.0;
         }
       }
     }
     for (int bn=0; bn<nblocal; ++bn) {
       MeshBlock *pmb = my_blocks(bn);
-      Real qom = pmb->porb->qshear*pmb->porb->Omega0;
+      Real qom = qshear*Omega0;
       kx += qom*present_time*ky;
       LogicalLocation loc0;
       loc0.lx1 = pmb->loc.lx1;
@@ -307,8 +310,8 @@ void Mesh::UserWorkInLoop() {
               Real vol = pmb->pcoord->dx3f(k)
                          *pmb->pcoord->dx2f(j)*pmb->pcoord->dx1f(i);
               Real SN = std::sin(kx*x1+ky*x2);
-              vs(0,tk,tj,ti) = 2.0*vx*vol*SN;
-              vs(1,tk,tj,ti) = 2.0*dvy*vol*SN;
+              vxs(tk,tj,ti) = 2.0*vx*vol*SN;
+              dvys(tk,tj,ti) = 2.0*dvy*vol*SN;
             }
           }
         }
@@ -357,8 +360,8 @@ void Mesh::UserWorkInLoop() {
                              +vx10*vol10+vx11*vol11;
               Real dvy_vol = dvy00*vol00+dvy01*vol01
                              +dvy10*vol10+dvy11*vol11;
-              vs(0,tk,tj,ti) = 2.0*SN*vx_vol;
-              vs(1,tk,tj,ti) = 2.0*SN*dvy_vol;
+              vxs(tk,tj,ti) = 2.0*SN*vx_vol;
+              dvys(tk,tj,ti) = 2.0*SN*dvy_vol;
             }
           }
         } else { // 3D
@@ -434,8 +437,8 @@ void Mesh::UserWorkInLoop() {
                                +dvy010*vol010+dvy011*vol011
                                +dvy100*vol100+dvy101*vol101
                                +dvy110*vol110+dvy111*vol111;
-                vs(0,tk,tj,ti) = 2.0*SN*vx_vol;
-                vs(1,tk,tj,ti) = 2.0*SN*dvy_vol;
+                vxs(0,tk,tj,ti) = 2.0*SN*vx_vol;
+                dvys(1,tk,tj,ti) = 2.0*SN*dvy_vol;
               }
             }
           }
@@ -449,13 +452,24 @@ void Mesh::UserWorkInLoop() {
       }
     } // pmb
 #ifdef MPI_PARALLEL
-    int ntot = 2*mesh_size.nx3*mesh_size.nx2*mesh_size.nx1;
-    if (Globals::my_rank == 0) {
-      MPI_Reduce(MPI_IN_PLACE, vs.data(), ntot, MPI_ATHENA_REAL,
-                 MPI_SUM, 0, MPI_COMM_WORLD);
-    } else {
-      MPI_Reduce(vs.data(), vs.data(), ntot, MPI_ATHENA_REAL,
-                 MPI_SUM, 0, MPI_COMM_WORLD);
+    if (Globals::nranks > 1) {
+      int ntot = mesh_size.nx3*mesh_size.nx2*mesh_size.nx1;
+      // vxs
+      if (Globals::my_rank == 0) {
+        MPI_Reduce(MPI_IN_PLACE, vxs.data(), ntot, MPI_ATHENA_REAL,
+                   MPI_SUM, 0, MPI_COMM_WORLD);
+      } else {
+        MPI_Reduce(vxs.data(), vxs.data(), ntot, MPI_ATHENA_REAL,
+                   MPI_SUM, 0, MPI_COMM_WORLD);
+      }
+      // dvys
+      if (Globals::my_rank == 1) {
+        MPI_Reduce(MPI_IN_PLACE, dvys.data(), ntot, MPI_ATHENA_REAL,
+                   MPI_SUM, 1, MPI_COMM_WORLD);
+      } else {
+        MPI_Reduce(dvys.data(), dvys.data(), ntot, MPI_ATHENA_REAL,
+                   MPI_SUM, 1, MPI_COMM_WORLD);
+      }
     }
 #endif
   } // flag
@@ -465,7 +479,7 @@ void Mesh::UserWorkInLoop() {
 namespace {
 
 Real Historydvyc(MeshBlock *pmb, int iout) {
-  Real qom = pmb->porb->qshear*pmb->porb->Omega0;
+  Real qom = qshear*Omega0;
   Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
   Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
   kx += qom*pmb->pmy_mesh->time*ky;
@@ -506,7 +520,7 @@ Real Historyvxs(MeshBlock *pmb, int iout) {
     for (int i=0; i<nx1; i++) {
       vxs_temp = 0.0;
       for (int j=0; j<nx2; j++) {
-        vxs_temp += vs(0,k,j,i);
+        vxs_temp += vs(k,j,i);
       }
       vxs += std::fabs(vxs_temp);
     }
@@ -516,9 +530,10 @@ Real Historyvxs(MeshBlock *pmb, int iout) {
 }
 
 Real Historydvys(MeshBlock *pmb, int iout) {
-  if (Globals::my_rank != 0) return 0.0;
+  int exe_rank_dvy = (Globals::nranks>1)? 1 : 0;
+  if (Globals::my_rank != exe_rank_dvy) return 0.0;
   if (pmb->lid != 0) return 0.0;
-  AthenaArray<Real> &vs = pmb->pmy_mesh->ruser_mesh_data[0];
+  AthenaArray<Real> &vs = pmb->pmy_mesh->ruser_mesh_data[1];
   Real dvys = 0.0;
   Real dvys_temp;
   int nx1 = pmb->pmy_mesh->mesh_size.nx1;
@@ -529,7 +544,7 @@ Real Historydvys(MeshBlock *pmb, int iout) {
     for (int i=0; i<nx1; i++) {
       dvys_temp = 0.0;
       for (int j=0; j<nx2; j++) {
-        dvys_temp += vs(1,k,j,i);
+        dvys_temp += vs(k,j,i);
       }
       dvys += std::fabs(dvys_temp);
     }
