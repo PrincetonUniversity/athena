@@ -115,7 +115,7 @@ void OrbitalAdvection::CalculateOrbitalAdvectionCC(const Real dt,
 //    }
   }
   // initiate flag for calculating orbital system cons
-  orbital_system_output_done = false;
+  orbital_system_output_done = 3;
   return;
 }
 

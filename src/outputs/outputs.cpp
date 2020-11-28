@@ -373,7 +373,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       pod->name = "Etot";
       if(porb->orbital_advection_defined
          && !output_params.orbital_system_output) {
-        porb->SetOrbitalSystemOutput(phyd->w);
+        porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::cons);
         pod->data.InitWithShallowSlice(porb->u_orb, 4, IEN, 1);
       } else {
         pod->data.InitWithShallowSlice(phyd->u, 4, IEN, 1);
@@ -402,7 +402,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod->name = "mom";
     if(porb->orbital_advection_defined
        && !output_params.orbital_system_output) {
-      porb->SetOrbitalSystemOutput(phyd->w);
+      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::cons);
       pod->data.InitWithShallowSlice(porb->u_orb, 4, IM1, 3);
     } else {
       pod->data.InitWithShallowSlice(phyd->u, 4, IM1, 3);
@@ -444,7 +444,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     if(porb->orbital_advection_defined
        && !output_params.orbital_system_output
        && porb->orbital_direction == 1) {
-      porb->SetOrbitalSystemOutput(phyd->w);
+      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::cons);
       pod->data.InitWithShallowSlice(porb->u_orb, 4, IM2, 1);
     } else {
       pod->data.InitWithShallowSlice(phyd->u, 4, IM2, 1);
@@ -459,7 +459,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     if(porb->orbital_advection_defined
        && !output_params.orbital_system_output
        && porb->orbital_direction == 2) {
-      porb->SetOrbitalSystemOutput(phyd->w);
+      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::cons);
       pod->data.InitWithShallowSlice(porb->u_orb, 4, IM3, 1);
     } else {
       pod->data.InitWithShallowSlice(phyd->u, 4, IM3, 1);
@@ -476,7 +476,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod->name = "vel";
     if(porb->orbital_advection_defined
        && !output_params.orbital_system_output) {
-      porb->SetOrbitalSystemOutput(phyd->w);
+      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::prim);
       pod->data.InitWithShallowSlice(porb->w_orb, 4, IVX, 3);
     } else {
       pod->data.InitWithShallowSlice(phyd->w, 4, IVX, 3);
@@ -520,7 +520,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     if(porb->orbital_advection_defined
        && !output_params.orbital_system_output
        && porb->orbital_direction == 1) {
-      porb->SetOrbitalSystemOutput(phyd->w);
+      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::prim);
       pod->data.InitWithShallowSlice(porb->w_orb, 4, IVY, 1);
     } else {
       pod->data.InitWithShallowSlice(phyd->w, 4, IVY, 1);
@@ -536,7 +536,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     if(porb->orbital_advection_defined
        && !output_params.orbital_system_output
        && porb->orbital_direction == 2) {
-      porb->SetOrbitalSystemOutput(phyd->w);
+      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::prim);
       pod->data.InitWithShallowSlice(porb->w_orb, 4, IVZ, 1);
     } else {
       pod->data.InitWithShallowSlice(phyd->w, 4, IVZ, 1);

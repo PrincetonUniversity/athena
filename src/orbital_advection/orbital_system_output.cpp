@@ -23,50 +23,92 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &src,
-//!                                                   bool cons_flag)
+//! \fn void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &w0,
+//                             const AthenaArray<Real> &u0, const OrbitalTransform trans)
 //! \brief calculate profiles including orbital velocity
 
-void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &src) {
-  if(!orbital_system_output_done) {
+void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &w0,
+                       const AthenaArray<Real> &u0, const OrbitalTransform trans) {
+  int flag = static_cast<int>(trans);
+  if ((orbital_system_output_done&flag) > 0) {
     int il = pmb_->is-(NGHOST); int jl = pmb_->js-(NGHOST); int kl = pmb_->ks;
     int iu = pmb_->ie+(NGHOST); int ju = pmb_->je+(NGHOST); int ku = pmb_->ke;
     if (nc3>1) {
       kl -= NGHOST;
       ku += NGHOST;
     }
-    if(orbital_direction == 1) {
-      for(int k=kl; k<=ku; k++) {
-        for(int j=jl; j<=ju; j++) {
+    // prim
+    if((orbital_system_output_done&flag)%2==1) {
+      if(orbital_direction == 1) {
+        for(int k=kl; k<=ku; k++) {
+          for(int j=jl; j<=ju; j++) {
 #pragma omp simd
-          for(int i=il; i<=iu; i++) {
-            w_orb(IDN,k,j,i) = src(IDN,k,j,i);
-            w_orb(IVX,k,j,i) = src(IVX,k,j,i);
-            w_orb(IVY,k,j,i) = src(IVY,k,j,i) + vKc(k,i);
-            w_orb(IVZ,k,j,i) = src(IVZ,k,j,i);
-            if (NON_BAROTROPIC_EOS)
-              w_orb(IPR,k,j,i) = src(IPR,k,j,i);
+            for(int i=il; i<=iu; i++) {
+              w_orb(IDN,k,j,i) = w0(IDN,k,j,i);
+              w_orb(IVX,k,j,i) = w0(IVX,k,j,i);
+              w_orb(IVY,k,j,i) = w0(IVY,k,j,i) + vKc(k,i);
+              w_orb(IVZ,k,j,i) = w0(IVZ,k,j,i);
+              if (NON_BAROTROPIC_EOS)
+                w_orb(IPR,k,j,i) = w0(IPR,k,j,i);
+            }
+          }
+        }
+      } else if(orbital_direction ==2) {
+        for(int k=kl; k<=ku; k++) {
+          for(int j=jl; j<=ju; j++) {
+#pragma omp simd
+            for(int i=il; i<=iu; i++) {
+              w_orb(IDN,k,j,i) = w0(IDN,k,j,i);
+              w_orb(IVX,k,j,i) = w0(IVX,k,j,i);
+              w_orb(IVY,k,j,i) = w0(IVY,k,j,i);
+              w_orb(IVZ,k,j,i) = w0(IVZ,k,j,i)+ vKc(j,i);
+              if (NON_BAROTROPIC_EOS)
+                w_orb(IPR,k,j,i) = w0(IPR,k,j,i);
+            }
           }
         }
       }
-    } else if(orbital_direction ==2) {
-      for(int k=kl; k<=ku; k++) {
-        for(int j=jl; j<=ju; j++) {
-#pragma omp simd
-          for(int i=il; i<=iu; i++) {
-            w_orb(IDN,k,j,i) = src(IDN,k,j,i);
-            w_orb(IVX,k,j,i) = src(IVX,k,j,i);
-            w_orb(IVY,k,j,i) = src(IVY,k,j,i);
-            w_orb(IVZ,k,j,i) = src(IVZ,k,j,i)+ vKc(j,i);
-            if (NON_BAROTROPIC_EOS)
-              w_orb(IPR,k,j,i) = src(IPR,k,j,i);
-          }
-        }
-      }
+      orbital_system_output_done -= 1;
     }
-    pmb_->peos->PrimitiveToConserved(w_orb, pf_->bcc, u_orb,
-                                     pco_, il, iu, jl, ju, kl, ku);
-    orbital_system_output_done = true;
+    // cons
+    if((orbital_system_output_done&flag)>=2) {
+      if(orbital_direction == 1) {
+        for(int k=kl; k<=ku; k++) {
+          for(int j=jl; j<=ju; j++) {
+#pragma omp simd
+            for(int i=il; i<=iu; i++) {
+              Real den = u0(IDN,k,j,i);
+              Real m2  = u0(IM2,k,j,i);
+              Real mk  = den*vKc(k,i);
+              u_orb(IDN,k,j,i) = den;
+              u_orb(IM1,k,j,i) = u0(IM1,k,j,i);
+              u_orb(IM2,k,j,i) = m2 + mk;
+              u_orb(IM3,k,j,i) = u0(IM3,k,j,i);
+              if (NON_BAROTROPIC_EOS)
+                u_orb(IEN,k,j,i) = u0(IEN,k,j,i)+mk*(m2+0.5*mk);
+            }
+          }
+        }
+      } else if(orbital_direction ==2) {
+        for(int k=kl; k<=ku; k++) {
+          for(int j=jl; j<=ju; j++) {
+#pragma omp simd
+            for(int i=il; i<=iu; i++) {
+              Real den = u0(IDN,k,j,i);
+              Real m3  = u0(IM3,k,j,i);
+              Real mk  = den*vKc(j,i);
+              u_orb(IDN,k,j,i) = den;
+              u_orb(IM1,k,j,i) = u0(IM1,k,j,i);
+              u_orb(IM2,k,j,i) = u0(IM2,k,j,i);
+              u_orb(IM3,k,j,i) = m3+ mk;
+              if (NON_BAROTROPIC_EOS)
+                u_orb(IEN,k,j,i) = u0(IEN,k,j,i)+mk*(m3+0.5*mk);
+            }
+          }
+        }
+      }
+      orbital_system_output_done -= 2;
+    }
   }
   return;
 }
