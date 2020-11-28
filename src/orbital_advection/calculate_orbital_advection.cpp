@@ -29,11 +29,11 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void OrbitalAdvection::CalculateOrbitalAdvectionCC(Real dt,
+//! \fn void OrbitalAdvection::CalculateOrbitalAdvectionCC(const Real dt,
 //!                            AthenaArray<Real> &u, AthenaArray<Real> &s)
 //! \brief update hydro & passive scalars using orbital advection scheme
 
-void OrbitalAdvection::CalculateOrbitalAdvectionCC(Real dt,
+void OrbitalAdvection::CalculateOrbitalAdvectionCC(const Real dt,
                                 AthenaArray<Real> &u, AthenaArray<Real> &s) {
   int is = pmb_->is, ie = pmb_->ie;
   int js = pmb_->js, je = pmb_->je;
@@ -121,10 +121,10 @@ void OrbitalAdvection::CalculateOrbitalAdvectionCC(Real dt,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void OrbitalAdvection::CalculateOrbitalAdvectionFC(Real dt, EdgeField &e)
+//! \fn void OrbitalAdvection::CalculateOrbitalAdvectionFC(const Real dt, EdgeField &e)
 //! \brief calculate field flux for orbital advection
 
-void OrbitalAdvection::CalculateOrbitalAdvectionFC(Real dt, EdgeField &e) {
+void OrbitalAdvection::CalculateOrbitalAdvectionFC(const Real dt, EdgeField &e) {
   int is = pmb_->is, ie = pmb_->ie;
   int js = pmb_->js, je = pmb_->je;
   int ks = pmb_->ks, ke = pmb_->ke;
