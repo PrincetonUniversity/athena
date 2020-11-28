@@ -36,7 +36,7 @@ Real SphOrbitalVelocity_t(OrbitalAdvection *porb, Real x_, Real y_, Real z_);
 Real ZeroOrbitalVelocity(OrbitalAdvection *porb, Real x_, Real y_, Real z_);
 
 // idntifiers for variable to be transformed in SetOrbitalSystemOutput
-enum class OrbitalTransform {none=0, prim=1, cons=2, both=3};
+enum class OrbitalTransform {none=0, prim=1, cons=2, all=3};
 
 //! \class OrbitalAdvection
 //! \brief data and functions for orbital advection
