@@ -44,54 +44,55 @@ void HydroSourceTerms::RotatingSystemSourceTerms
       for (int j=pmb->js; j<=pmb->je; ++j) {
 #pragma omp simd
         for (int i=pmb->is; i<=pmb->ie; ++i) {
-          Real den    = prim(IDN,k,j,i);               // \rho
-          Real rv     = pmb->pcoord->x1v(i);           // r
-          Real vc     = rv*Omega_0_;                   //
-          Real rho_v1 = 0.25*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i))
-                        + 0.5*den*prim(IVX,k,j,i);
-
-          Real src_i = dt*rv*SQR(Omega_0_);
-          cons(IM1,k,j,i) += den*(dt*2.0*Omega_0_*prim(IVY,k,j,i)
-                                  +src_i);
-          cons(IM2,k,j,i) += -dt*2.0*Omega_0_*rho_v1;
-          if(NON_BAROTROPIC_EOS)
-            cons(IEN,k,j,i) += src_i*rho_v1;
+          Real den  = prim(IDN,k,j,i);
+          Real mom1 = den*prim(IVX,k,j,i);
+          Real rv   = pmb->pcoord->x1v(i);
+          Real src  = SQR(rv*Omega_0_);
+          cons(IM1,k,j,i) += dt*Omega_0_*2.0*(den*prim(IVY,k,j,i))
+                             +dt*den*src*pmb->pcoord->coord_src1_i_(i);
+          cons(IM2,k,j,i) -= dt*Omega_0_*2.0*mom1;
+          if(NON_BAROTROPIC_EOS) {
+            cons(IEN,k,j,i) +=
+              dt*0.5*rv*src*(pmb->pcoord->phy_src1_i_(i)*flux[X1DIR](IDN,k,j,i)
+                            +pmb->pcoord->phy_src2_i_(i)*flux[X1DIR](IDN,k,j,i+1));
+          }
         }
       }
     }
   } else if(std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
-    // dM1/dt = 2 \rho (r sin(\theta) \Omega) vp /r
-    //          +\rho (r sin(\theta) \Omega)^2/r
-    // dM2/dt = 2 \rho vp cot(\theta) r sin(\theta) \Omega /r
-    //          + \rho cot(\theta) (r sint(\theta)\Omega)^2 /r
-    // dM3/dt = -\rho vr (2 r sin(\theta)\Omega)/r
-    //          -\rho vt (2 r sin(\theta)\Omega) cot(\theta) /r
-    // dE/dt  = \rho vr (r sint(\theta)\Omega)^2/r
-    //          + \rho vt (r sint(\theta)\Omega)^2 cot(\theta) /r
+    // dM1/dt = 2 \rho vc vp / r
+    //          +\rho (vc)^2 / r
+    // dM2/dt = 2 \rho vp cot(\theta) vc / r
+    //          + \rho cot(\theta) (vc)^2 /r
+    // dM3/dt = -\rho vr (2 vc)/r
+    //          -\rho vt (2 vc) cot(\theta) /r
+    // dE/dt  = \rho vr (vc)^2/r
+    //          + \rho vt (vc)^2 cot(\theta) /r
+    // vc     = r sin(\theta)\Omega
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
       for (int j=pmb->js; j<=pmb->je; ++j) {
+        Real cv1 = pmb->pcoord->coord_src1_j_(j); // cot(theta)
+        Real cv3 = pmb->pcoord->coord_src3_j_(j); // cot(\theta)
+        Real sv  = std::sin(pmb->pcoord->x2v(j)); // sin(\theta)
 #pragma omp simd
         for (int i=pmb->is; i<=pmb->ie; ++i) {
-          Real den = prim(IDN,k,j,i);
-          Real vp  = prim(IVZ,k,j,i);
-          Real rv  = pmb->pcoord->x1v(i);
-          Real ri  = pmb->pcoord->coord_src1_i_(i);// 1/r
-          Real vc  = rv*std::sin(pmb->pcoord->x2v(j))*Omega_0_;
-
-          Real cv1    = pmb->pcoord->coord_src1_j_(j);
-          Real cv3    = pmb->pcoord->coord_src3_j_(j);
-          Real rho_v1 = 0.25*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i))
-                        + 0.5*den*prim(IVX,k,j,i);
-          Real rho_v2 = 0.25*(flux[X2DIR](IDN,k,j+1,i)+flux[X2DIR](IDN,k,j,i))
-                        + 0.5*den*prim(IVY,k,j,i);
-
-          Real src_i1 = dt*2.0*vc*vp*ri;
-          Real src_i2 = dt*SQR(vc)*ri;
-          cons(IM1,k,j,i) += den*(src_i1+src_i2);
-          cons(IM2,k,j,i) += den*(src_i1+src_i2)*cv1;
-          cons(IM3,k,j,i) += -2.0*dt*vc*ri*(rho_v1+rho_v2*cv3);
-          if(NON_BAROTROPIC_EOS)
-            cons(IEN,k,j,i) += src_i2*(rho_v1+rho_v2*cv1);
+          Real den  = prim(IDN,k,j,i);
+          Real mom1 = den*prim(IVX,k,j,i);
+          Real mom2 = den*prim(IVY,k,j,i);
+          Real mom3 = den*prim(IVZ,k,j,i);
+          Real rv   = pmb->pcoord->x1v(i);
+          Real vc   = rv*sv*Omega_0_;
+          Real ri   = pmb->pcoord->coord_src1_i_(i); // 1/r
+          Real src = SQR(vc)*ri;
+          cons(IM1,k,j,i) += dt*vc*ri*2.0*mom3+dt*src*den;
+          cons(IM2,k,j,i) += dt*vc*ri*cv1*2.0*mom3+dt*src*cv1*den;
+          cons(IM3,k,j,i) -= dt*vc*ri*2.0*mom1+dt*vc*ri*cv3*2.0*mom2;
+          // TODO(tomo-ono): This energy source is inconsistent with the pointmass.
+          if(NON_BAROTROPIC_EOS) {
+            Real rho_v1 = 0.25*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i))+0.5*mom1;
+            Real rho_v2 = 0.25*(flux[X2DIR](IDN,k,j+1,i)+flux[X2DIR](IDN,k,j,i))+0.5*mom2;
+            cons(IEN,k,j,i) += dt*src*rho_v1+dt*src*cv1*rho_v2;
+          }
         }
       }
     }

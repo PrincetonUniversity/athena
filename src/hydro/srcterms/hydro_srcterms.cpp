@@ -40,26 +40,28 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
          = (pin->GetOrAddInteger("orbital_advection","OAorder",0)!=0)?
            true : false;
   if (gm_ != 0.0) {
-    if (orbital_advection_defined &&
-        ((phyd->pmy_block->pmy_mesh->OrbitalVelocity_ == nullptr
-          && std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) ||
-         (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0))) {
-      hydro_sourceterms_defined = true;
-    } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0
-        || (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0
-            && phyd->pmy_block->block_size.nx3==1)) {
-      flag_point_mass_ = true;
-      hydro_sourceterms_defined = true;
-    } else {
+    if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") != 0
+        && std::strcmp(COORDINATE_SYSTEM, "cylindrical") != 0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in HydroSourceTerms constructor" << std::endl
           << "The point mass gravity works only in the cylindrical and "
           << "spherical polar coordinates." << std::endl
-          << "To use the point mass gravity in the 3D cylindrical corrdinates, "
-          << "using the default orbital velocity profile with the orbital "
-          << "advection is required." << std::endl
           << "Check <problem> GM parameter in the input file." << std::endl;
       ATHENA_ERROR(msg);
+    }
+    if (orbital_advection_defined) {
+      hydro_sourceterms_defined = true;
+    } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0
+               && phyd->pmy_block->block_size.nx3>1) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in HydroSourceTerms constructor" << std::endl
+          << "The point mass gravity deos not work in the 3D cylindrical "
+          << "coordinates without orbital advection." << std::endl
+          << "Check <problem> GM parameter in the input file." << std::endl;
+      ATHENA_ERROR(msg);
+    } else {
+      flag_point_mass_ = true;
+      hydro_sourceterms_defined = true;
     }
   }
   g1_ = pin->GetOrAddReal("hydro","grav_acc1",0.0);
@@ -125,11 +127,12 @@ void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
     PointMass(dt, flux, prim, cons);
 
   // constant acceleration (e.g. for RT instability)
-  if (g1_ != 0.0 || g2_ != 0.0 || g3_ != 0.0) ConstantAcceleration(dt, flux,
-                                                                   prim,cons);
+  if (g1_ != 0.0 || g2_ != 0.0 || g3_ != 0.0)
+    ConstantAcceleration(dt, flux, prim, cons);
 
   // Add new source terms here
-  if (SELF_GRAVITY_ENABLED) SelfGravity(dt, flux, prim, cons);
+  if (SELF_GRAVITY_ENABLED)
+    SelfGravity(dt, flux, prim, cons);
 
   // Sorce terms for orbital advection, shearing box, or rotating system
   if (flag_shearing_source_ == 1)

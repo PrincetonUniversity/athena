@@ -35,8 +35,7 @@ def run(**kwargs):
         'mesh/ix3_bc=periodic', 'mesh/ox3_bc=periodic',
         'meshblock/nx1=32', 'meshblock/nx2=24', 'meshblock/nx3=32',
         'hydro/iso_sound_speed=1.0', 'problem/beta=100',
-        'problem/d0=1.0', 'problem/amp=0.025',
-        'problem/nwx=-2', 'problem/nwy=1', 'problem/nwz=1',
+        'problem/d0=1.0', 'problem/amp=0.025', 'problem/nwx=-2', 'problem/nwy=1',
         'problem/ipert=1', 'problem/ifield=1',
         'orbital_advection/Omega0=1.0', 'orbital_advection/qshear=1.5',
         'orbital_advection/OAorder=0', 'time/ncycle_out=0']

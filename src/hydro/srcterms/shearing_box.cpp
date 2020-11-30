@@ -52,46 +52,39 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt,
   // 2) Coriolis forces:
   //    dM1/dt = 2\Omega(\rho v_y)
   //    dM2/dt = -2\Omega(\rho v_x)
-  if (pmb->block_size.nx3 > 1 || ShBoxCoord_== 1) {
+  if (ShBoxCoord_== 1) {
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
       for (int j=pmb->js; j<=pmb->je; ++j) {
+#pragma omp simd
         for (int i=pmb->is; i<=pmb->ie; ++i) {
-          Real den    = prim(IDN,k,j,i);
-          Real qO2    = qshear_*SQR(Omega_0_);
-          Real xc     = pmb->pcoord->x1v(i);
-          cons(IM1,k,j,i)   += 2.0*den*dt*(qO2*xc
-                               +Omega_0_*prim(IVY,k,j,i));
-          cons(IM2,k,j,i)   -= 2.0*dt*Omega_0_*den*prim(IVX,k,j,i);
+          Real den  = prim(IDN,k,j,i);
+          Real qO2x = 2.0*qshear_*SQR(Omega_0_)*pmb->pcoord->x1v(i);
+          Real mom1 = den*prim(IVX,k,j,i);
+          cons(IM1,k,j,i) += dt*Omega_0_*2.0*(den*prim(IVY,k,j,i))+dt*qO2x*den;
+          cons(IM2,k,j,i) -= dt*Omega_0_*2.0*mom1;
           if (NON_BAROTROPIC_EOS) {
-            Real rho_v1_d    = flux[X1DIR](IDN,k,j,i)
-                               +flux[X1DIR](IDN,k,j,i+1);
-            cons(IEN,k,j,i) += dt*qO2*xc*rho_v1_d;
+            Real rho_v1 = 0.25*(flux[X1DIR](IDN,k,j,i)+flux[X1DIR](IDN,k,j,i+1))+0.5*mom1;
+            cons(IEN,k,j,i) += dt*qO2x*rho_v1;
           }
         }
       }
     }
-  } else if (pmb->block_size.nx3 == 1 && ShBoxCoord_ == 2) {
+  } else { // ShBoxCoord_== 2
     int ks = pmb->ks;
     for (int j=pmb->js; j<=pmb->je; ++j) {
+#pragma omp simd
       for (int i=pmb->is; i<=pmb->ie; ++i) {
-        Real den      = prim(IDN,ks,j,i);
-        Real qO2      = qshear_*SQR(Omega_0_);
-        Real xc       = pmb->pcoord->x1v(i);
-        cons(IM1,ks,j,i)   += 2.0*den*dt*(qO2*xc
-                              +Omega_0_*prim(IVZ,ks,j,i));
-        cons(IM3,ks,j,i)   -= 2.0*dt*Omega_0_*den*prim(IVX,ks,j,i);
+        Real den  = prim(IDN,ks,j,i);
+        Real qO2x = 2.0*qshear_*SQR(Omega_0_)*pmb->pcoord->x1v(i);
+        Real mom1 = den*prim(IVX,ks,j,i);
+        cons(IM1,ks,j,i) += dt*Omega_0_*2.0*(den*prim(IVZ,ks,j,i))+dt*qO2x*den;
+        cons(IM3,ks,j,i) -= dt*Omega_0_*2.0*mom1;
         if (NON_BAROTROPIC_EOS) {
-          Real rho_v1_d     = flux[X1DIR](IDN,ks,j,i)
-                              +flux[X1DIR](IDN,ks,j,i+1);
-          cons(IEN,ks,j,i) += dt*qO2*xc*rho_v1_d;
+          Real rho_v1 = 0.25*(flux[X1DIR](IDN,ks,j,i)+flux[X1DIR](IDN,ks,j,i+1))+0.5*mom1;
+          cons(IEN,ks,j,i) += dt*qO2x*rho_v1;
         }
       }
     }
-  } else {
-    std::cout << "[ShearingBoxSourceTerms]: not compatible to 1D !!" << std::endl;
-    return;
   }
-
-
   return;
 }
