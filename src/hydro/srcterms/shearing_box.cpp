@@ -58,13 +58,18 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt,
 #pragma omp simd
         for (int i=pmb->is; i<=pmb->ie; ++i) {
           Real den  = prim(IDN,k,j,i);
-          Real qO2x = 2.0*qshear_*SQR(Omega_0_)*pmb->pcoord->x1v(i);
+          Real qO2  = qshear_*SQR(Omega_0_);
           Real mom1 = den*prim(IVX,k,j,i);
-          cons(IM1,k,j,i) += dt*Omega_0_*2.0*(den*prim(IVY,k,j,i))+dt*qO2x*den;
+          Real xc = pmb->pcoord->x1v(i);
+          cons(IM1,k,j,i) += 2.0*dt*(Omega_0_*(den*prim(IVY,k,j,i))+qO2*den*xc);
           cons(IM2,k,j,i) -= dt*Omega_0_*2.0*mom1;
           if (NON_BAROTROPIC_EOS) {
-            Real rho_v1 = 0.25*(flux[X1DIR](IDN,k,j,i)+flux[X1DIR](IDN,k,j,i+1))+0.5*mom1;
-            cons(IEN,k,j,i) += dt*qO2x*rho_v1;
+            Real phic = qO2*SQR(xc);
+            Real phil = qO2*SQR(pmb->pcoord->x1f(i));
+            Real phir = qO2*SQR(pmb->pcoord->x1f(i+1));
+            cons(IEN,k,j,i) += dt*(flux[X1DIR](IDN,k,j,i)*(phic-phil)+
+                                   flux[X1DIR](IDN,k,j,i+1)*(phir-phic))
+                                   /pmb->pcoord->dx1f(i);
           }
         }
       }
@@ -75,13 +80,18 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt,
 #pragma omp simd
       for (int i=pmb->is; i<=pmb->ie; ++i) {
         Real den  = prim(IDN,ks,j,i);
-        Real qO2x = 2.0*qshear_*SQR(Omega_0_)*pmb->pcoord->x1v(i);
+        Real qO2  = qshear_*SQR(Omega_0_);
         Real mom1 = den*prim(IVX,ks,j,i);
-        cons(IM1,ks,j,i) += dt*Omega_0_*2.0*(den*prim(IVZ,ks,j,i))+dt*qO2x*den;
-        cons(IM3,ks,j,i) -= dt*Omega_0_*2.0*mom1;
+        Real xc = pmb->pcoord->x1v(i);
+        cons(IM1,ks,j,i) += 2.0*dt*(Omega_0_*(den*prim(IVZ,ks,j,i))+qO2*den*xc);
+        cons(IM3,ks,j,i) -= 2.0*dt*Omega_0_*mom1;
         if (NON_BAROTROPIC_EOS) {
-          Real rho_v1 = 0.25*(flux[X1DIR](IDN,ks,j,i)+flux[X1DIR](IDN,ks,j,i+1))+0.5*mom1;
-          cons(IEN,ks,j,i) += dt*qO2x*rho_v1;
+          Real phic = qO2*SQR(xc);
+          Real phil = qO2*SQR(pmb->pcoord->x1f(i));
+          Real phir = qO2*SQR(pmb->pcoord->x1f(i+1));
+          cons(IEN,ks,j,i) += dt*(flux[X1DIR](IDN,ks,j,i)*(phic-phil)+
+                                  flux[X1DIR](IDN,ks,j,i+1)*(phir-phic))
+                                  /pmb->pcoord->dx1f(i);
         }
       }
     }

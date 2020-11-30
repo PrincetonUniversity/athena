@@ -47,14 +47,13 @@ void HydroSourceTerms::RotatingSystemSourceTerms
           Real den  = prim(IDN,k,j,i);
           Real mom1 = den*prim(IVX,k,j,i);
           Real rv   = pmb->pcoord->x1v(i);
-          Real src  = SQR(rv*Omega_0_);
-          cons(IM1,k,j,i) += dt*Omega_0_*2.0*(den*prim(IVY,k,j,i))
-                             +dt*den*src*pmb->pcoord->coord_src1_i_(i);
-          cons(IM2,k,j,i) -= dt*Omega_0_*2.0*mom1;
+          Real src  = SQR(rv*Omega_0_)*pmb->pcoord->coord_src1_i_(i); // (rOmega)^2/r
+          cons(IM1,k,j,i) += dt*(2.0*Omega_0_*(den*prim(IVY,k,j,i))+den*src);
+          cons(IM2,k,j,i) -= 2.0*dt*Omega_0_*mom1;
           if(NON_BAROTROPIC_EOS) {
+            // This is consistent with the pointmass.
             cons(IEN,k,j,i) +=
-              dt*0.5*rv*src*(pmb->pcoord->phy_src1_i_(i)*flux[X1DIR](IDN,k,j,i)
-                            +pmb->pcoord->phy_src2_i_(i)*flux[X1DIR](IDN,k,j,i+1));
+              dt*0.5*src*(flux[X1DIR](IDN,k,j,i)+flux[X1DIR](IDN,k,j,i+1));
           }
         }
       }
@@ -83,15 +82,17 @@ void HydroSourceTerms::RotatingSystemSourceTerms
           Real rv   = pmb->pcoord->x1v(i);
           Real vc   = rv*sv*Omega_0_;
           Real ri   = pmb->pcoord->coord_src1_i_(i); // 1/r
-          Real src = SQR(vc)*ri;
-          cons(IM1,k,j,i) += dt*vc*ri*2.0*mom3+dt*src*den;
-          cons(IM2,k,j,i) += dt*vc*ri*cv1*2.0*mom3+dt*src*cv1*den;
-          cons(IM3,k,j,i) -= dt*vc*ri*2.0*mom1+dt*vc*ri*cv3*2.0*mom2;
-          // TODO(tomo-ono): This energy source is inconsistent with the pointmass.
+          Real src  = SQR(vc); // vc^2
+          Real force = ri*(2.0*vc*mom3+src*den);
+          cons(IM1,k,j,i) += dt*force;
+          cons(IM2,k,j,i) += dt*force*cv1;
+          cons(IM3,k,j,i) -= 2.0*dt*ri*vc*(mom1+cv3*mom2);
+
           if(NON_BAROTROPIC_EOS) {
-            Real rho_v1 = 0.25*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i))+0.5*mom1;
-            Real rho_v2 = 0.25*(flux[X2DIR](IDN,k,j+1,i)+flux[X2DIR](IDN,k,j,i))+0.5*mom2;
-            cons(IEN,k,j,i) += dt*src*rho_v1+dt*src*cv1*rho_v2;
+            // This is consistent with the pointmass.
+            Real rho_v1 = 0.5*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i));
+            Real rho_v2 = 0.5*(flux[X2DIR](IDN,k,j+1,i)+flux[X2DIR](IDN,k,j,i));
+            cons(IEN,k,j,i) += dt*src*(rho_v1+cv1*rho_v2)/rv;
           }
         }
       }
