@@ -92,7 +92,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real float_min = std::numeric_limits<float>::min();
   dfloor=pin->GetOrAddReal("hydro","dfloor",(1024*(float_min)));
 
-  Omega0 = pin->GetOrAddReal("problem","Omega0",0.0);
+  Omega0 = pin->GetOrAddReal("orbital_advection","Omega0",0.0);
 
   // enroll user-defined boundary condition
   if (mesh_bcs[BoundaryFace::inner_x1] == GetBoundaryFlag("user")) {
