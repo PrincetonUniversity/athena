@@ -38,10 +38,10 @@ ix2_bc      = periodic       # Inner-X2 boundary condition flag
 ox2_bc      = periodic       # Outer-X2 boundary condition flag
 
 nx3         = 1              # Number of zones in X3-direction
-x3min       = -0.4           # minimum value of X3
-x3max       = 0.4            # maximum value of X3
-ix3_bc      = user           # Inner-X3 boundary condition flag
-ox3_bc      = user           # Outer-X3 boundary condition flag
+x3min       = -0.5           # minimum value of X3
+x3max       = 0.5            # maximum value of X3
+ix3_bc      = periodic       # Inner-X3 boundary condition flag
+ox3_bc      = periodic       # Outer-X3 boundary condition flag
 
 refinement  = None
 
