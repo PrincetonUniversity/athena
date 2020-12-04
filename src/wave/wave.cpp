@@ -11,6 +11,9 @@
 #include <string>
 // #include <algorithm>  // min()
 // #include <cmath>      // fabs(), sqrt()
+#ifdef COMPACT_FD
+#include <vector>
+#endif // COMPACT_FD
 #include <limits>
 
 // Athena++ headers
@@ -257,6 +260,37 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
     FD.idx[2] = 1.0 / dx3;
   }
 
+#ifdef COMPACT_FD
+  // Set up compact finite difference operators
+  const unsigned int order = 2;
+  if (pmb->pmy_mesh->ndim == 3) {
+    const std::vector<unsigned int> dims_N {
+      (unsigned int) nn1, (unsigned int) nn2, (unsigned int) nn3
+    };
+    const std::vector<Real> dx {
+      dx1, dx2, dx3
+    };
+    FDC2 = new FDCompact(order, dims_N, dx);
+
+  } else if (pmb->pmy_mesh->ndim == 2) {
+    const std::vector<unsigned int> dims_N {
+      (unsigned int) nn1, (unsigned int) nn2
+    };
+    const std::vector<Real> dx {
+      dx1, dx2
+    };
+
+    FDC2 = new FDCompact(order, dims_N, dx);
+  } else if (pmb->pmy_mesh->ndim == 1) {
+    const std::vector<unsigned int> dims_N {(unsigned int) nn1};
+    const std::vector<Real> dx {
+      dx1
+    };
+    FDC2 = new FDCompact(order, dims_N, dx);
+  }
+  scratch_wu.NewAthenaArray(nn3, nn2, nn1);
+#endif // COMPACT_FD
+
 }
 
 
@@ -280,6 +314,11 @@ Wave::~Wave()
     A_.DeleteAthenaArray();
     B_.DeleteAthenaArray();
   }
+
+#ifdef COMPACT_FD
+  delete FDC2;
+  scratch_wu.DeleteAthenaArray();
+#endif // COMPACT_FD
 
   // note: do not include x1_, x2_, x3_
 }

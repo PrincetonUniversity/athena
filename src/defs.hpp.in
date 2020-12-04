@@ -128,6 +128,9 @@
 // assert is_finite for z4c field variables during evolution ?
 #define @Z4C_ASSERT_FINITE@
 
+// control whether compact FD enabled
+#define @COMPACT_FD@
+
 // configure.py dict(definitions) Boolean string macros:
 // (these options have the latter (false) option as defaults, unless noted otherwise)
 // make use of FFT? (FFT or NO_FFT)
@@ -170,6 +173,11 @@
 #define MAX_NSTAGE 5     // maximum number of stages per cycle for time-integrator
 #define MAX_NREGISTER 3  // maximum number of (u, b) register pairs for time-integrator
 #define NRAD @NUMBER_EXT_RAD@
+
+// compact stencil parameters
+#define NCFDWIDTH_L @NUMBER_CFD_BANDWIDTH_LHS@
+#define NCFDWIDTH_R @NUMBER_CFD_BANDWIDTH_RHS@
+#define CFDFILTER   @NUMBER_CFDFILTER@
 
 //----------------------------------------------------------------------------------------
 // macros associated with input / output (rarely modified)

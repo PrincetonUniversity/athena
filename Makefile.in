@@ -15,7 +15,7 @@ MPIFFT_FILE = @MPIFFT_FILE@
 
 CXX := @COMPILER_COMMAND@
 CPPFLAGS := @PREPROCESSOR_FLAGS@
-CXXFLAGS := @COMPILER_FLAGS@ #-fdebug-prefix-map=${PWD}=. @COMPILER_FLAGS@ #-fsanitize=thread #-fsanitize=bounds-strict -fsanitize=address -fsanitize=leak -Wpedantic -fsanitize=undefined -fsanitize-address-use-after-scope
+CXXFLAGS := @COMPILER_FLAGS@ #-pg -fdebug-prefix-map=${PWD}=. @COMPILER_FLAGS@ #-fsanitize=thread #-fsanitize=bounds-strict -fsanitize=address -fsanitize=leak -Wpedantic -fsanitize=undefined -fsanitize-address-use-after-scope
 LDFLAGS := @LINKER_FLAGS@
 LDLIBS := @LIBRARY_FLAGS@
 GCOV_CMD := @GCOV_COMMAND@
@@ -57,6 +57,7 @@ SRC_FILES := \
 		$(wildcard src/scalars/*.cpp) \
 		$(wildcard src/task_list/*.cpp) \
 		$(wildcard src/utils/*.cpp) \
+@CFD_FILES@ \
 @Z4C_FILES@		$(wildcard src/wave/*.cpp) \
 		$(wildcard src/advection/*.cpp) \
 		$(MPIFFT_FILE)

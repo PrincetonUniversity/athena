@@ -11,8 +11,11 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../finite_differencing.hpp"
 
+#include "../finite_differencing.hpp"
+#ifdef COMPACT_FD
+#include "../finite_difference/compact_finite_differencing.hpp"
+#endif // COMPACT_FD
 #include "../bvals/vc/bvals_vc.hpp"
 #include "../bvals/cc/bvals_cc.hpp"
 
@@ -107,6 +110,7 @@ private:
                               int il, int iu, int jl, int ju, int kl, int ku);
 
 private:
+
   struct {
     typedef FDCenteredStencil<2, NGHOST> stencil;
 
@@ -133,6 +137,11 @@ private:
       return out*SQR(idx[dir]);
     }
   } FD;
+
+#ifdef COMPACT_FD
+  FDCompact * FDC2;
+  AthenaArray<Real> scratch_wu;
+#endif // COMPACT_FD
 
 };
 #endif // WAVE_HPP

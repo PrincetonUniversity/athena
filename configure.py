@@ -17,6 +17,9 @@
 #   --nextrapolate=xxx  set NEXTRAPOLATE=xxx  [for ouflow conditions]
 #   --nscalars=xxx      set NSCALARS=xxx
 #   --nrad=xxx          set NRAD=xxx (for wave extraction)
+#   --ncfd_l=xxx        set NCFDWIDTH_L=xxx (for compact FD)
+#   --ncfd_r=xxx        set NCFDWIDTH_R=xxx (for compact FD)
+#   --cfd_filter=xxx    set CFDFILTER=xxx (for compact FD)
 #   -eos_table          enable EOS table
 #   -f                  enable fluid
 #   -b                  enable magnetic fields
@@ -33,6 +36,7 @@
 #   -t                  enable interface frame transformations for GR
 #   -vertex             prefer vertex-centered (VC)
 #   -v_unif_prol_cbias  enable VC, uniform grid adapted prolongation
+#   -compact_fd         enable (prefer) compact finite difference operators
 #   -shear              enable shearing periodic boundary conditions
 #   -debug              enable debug flags (-g -O0); override other compiler options
 #   -coverage           enable compiler-dependent code coverage flags
@@ -146,6 +150,21 @@ parser.add_argument('--nrad',
                     default='5',
                     help='set number of extraction radii')
 
+# --ncfd_l=[value] argument
+parser.add_argument('--ncfd_l',
+                    default='3',
+                    help='CFD stencil lhs bandlimit')
+
+# --ncfd_r=[value] argument
+parser.add_argument('--ncfd_r',
+                    default='3',
+                    help='CFD stencil rhs bandlimit')
+
+# --cfd_filter=[value] argument
+parser.add_argument('--cfd_filter',
+                    default='0',
+                    help='CFD stencil filter type')
+
 # -f argument
 parser.add_argument('-f',
                     action='store_true',
@@ -242,6 +261,12 @@ parser.add_argument('-v_unif_prol_cbias',
                     action='store_true',
                     default=False,
                     help='enable VC, uniform grid adapted prolongation')
+
+# -compact_fd argument
+parser.add_argument('-compact_fd',
+                    action='store_true',
+                    default=False,
+                    help='enable (prefer) compact finite difference operators')
 
 # -shear argument
 parser.add_argument('-shear',
@@ -527,6 +552,15 @@ definitions['NUMBER_PASSIVE_SCALARS'] = args['nscalars']
 # --nrad=[value] argument
 definitions['NUMBER_EXT_RAD'] = args['nrad']
 
+# --ncfd_l=[value] argument
+definitions['NUMBER_CFD_BANDWIDTH_LHS'] = args['ncfd_l']
+
+# --ncfd_r=[value] argument
+definitions['NUMBER_CFD_BANDWIDTH_RHS'] = args['ncfd_r']
+
+# --cfd_filter=[value] argument
+definitions['NUMBER_CFDFILTER'] = args['cfd_filter']
+
 # -f argument
 if args['f']:
     definitions['FLUID_ENABLED'] = '1'
@@ -671,6 +705,11 @@ if args['v_unif_prol_cbias']:
 else:
     definitions['VC_UGRID_PROLONGATE'] = 'NO_VC_UGRID_PROLONGATE'
 
+# -compact_fd argument
+if args['compact_fd']:
+    definitions['COMPACT_FD'] = 'COMPACT_FD'
+else:
+    definitions['COMPACT_FD'] = 'NO_COMPACT_FD'
 
 # -shear argument
 if args['shear']:
@@ -1085,6 +1124,12 @@ with open(defsfile_input, 'r') as current_file:
 with open(makefile_input, 'r') as current_file:
     makefile_template = current_file.read()
 
+# Populate makefile with CFD specific src (if activated)
+if args['compact_fd']:
+    makefile_options['CFD_FILES'] = '$(wildcard src/finite_difference/*.cpp)'
+else:
+    makefile_options['CFD_FILES'] = ''
+
 # Populate makefile with z4c specific src
 files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs',
          'gauge', 'z4c_utils']
@@ -1155,6 +1200,10 @@ print('  Self-Gravity:                 ' + self_grav_string)
 print('  Super-Time-Stepping:          ' + ('ON' if args['sts'] else 'OFF'))
 print('  Vertex-centering preferred:   ' + ('ON' if args['vertex'] else 'OFF'))
 print('  VC uniform grid prolongation: ' + ('ON' if args['v_unif_prol_cbias'] else 'OFF'))
+print('  Compact FD (CFD) preferred:   ' + ('ON' if args['compact_fd'] else 'OFF'))
+if args['compact_fd']:
+    print('  CFD (BW_LHS, BW_RHS; filter): ' + '({bw_l}, {bw_r}; {filt})'.format(
+        bw_l=args['ncfd_l'], bw_r=args['ncfd_r'], filt=args['cfd_filter']))
 print('  Shearing Box BCs:             ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:                  ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:          ' + ('ON' if args['coverage'] else 'OFF'))

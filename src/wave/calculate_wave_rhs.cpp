@@ -32,14 +32,33 @@ void Wave::WaveRHS(AthenaArray<Real> & u){
         rhs(0,k,j,i) = wpi(k,j,i);
         rhs(1,k,j,i) = 0.0;
       }
+#ifndef COMPACT_FD
       for(int a = 0; a < 3; ++a) {
 #pragma omp simd
         for(int i = mbi.il; i <= mbi.iu; ++i) {
           rhs(1,k,j,i) += c_2 * FD.Dxx(a, wu(k,j,i));
         }
       }
+#endif // COMPACT_FD
+
     }
   }
+
+#ifdef COMPACT_FD
+  for(int axis=0; axis<pmb->pmy_mesh->ndim; ++axis) {
+    FDC2->diff(axis, wu, scratch_wu);
+
+    for(int k = mbi.kl; k <= mbi.ku; ++k) {
+      for(int j = mbi.jl; j <= mbi.ju; ++j) {
+#pragma omp simd
+        for(int i = mbi.il; i <= mbi.iu; ++i) {
+          rhs(1,k,j,i) += c_2 * scratch_wu(k,j,i);
+        }
+      }
+    }
+  }
+#endif
+
 }
 
 //! \fn void Wave:WaveBoundaryRHS
