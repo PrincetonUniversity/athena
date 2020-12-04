@@ -37,23 +37,26 @@ void HydroSourceTerms::RotatingSystemSourceTerms
                   const AthenaArray<Real> &prim, AthenaArray<Real> &cons) {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
   if(std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
-    // dM1/dt = 2 \rho \Omega vp +\rho r \Omega^2
-    // dM2/dt = -2 \rho \Omega vr
-    // dE/dt  = \rho r \Omega^2 vr
+    // dM1/dt = 2 \rho vc vp /r +\rho vc^2/r
+    // dM2/dt = -2 \rho vc vr /r
+    // dE/dt  = \rho vc^2 vr /r
+    // vc     = r \Omega
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
       for (int j=pmb->js; j<=pmb->je; ++j) {
 #pragma omp simd
         for (int i=pmb->is; i<=pmb->ie; ++i) {
           Real den  = prim(IDN,k,j,i);
           Real mom1 = den*prim(IVX,k,j,i);
+          Real ri   = pmb->pcoord->coord_src1_i_(i);
           Real rv   = pmb->pcoord->x1v(i);
-          Real src  = SQR(rv*Omega_0_)*pmb->pcoord->coord_src1_i_(i); // (rOmega)^2/r
-          cons(IM1,k,j,i) += dt*(2.0*Omega_0_*(den*prim(IVY,k,j,i))+den*src);
-          cons(IM2,k,j,i) -= 2.0*dt*Omega_0_*mom1;
+          Real vc   = rv*Omega_0_;
+          Real src  = SQR(vc); // (rOmega)^2
+          Real flux_c = 0.5*(flux[X1DIR](IDN,k,j,i)+flux[X1DIR](IDN,k,j,i+1));
+          cons(IM1,k,j,i) += dt*ri*(2.0*vc*(den*prim(IVY,k,j,i))+den*src);
+          cons(IM2,k,j,i) -= dt*ri*vc*(mom1 + flux_c);
           if(NON_BAROTROPIC_EOS) {
             // This is consistent with the pointmass.
-            cons(IEN,k,j,i) +=
-              dt*0.5*src*(flux[X1DIR](IDN,k,j,i)+flux[X1DIR](IDN,k,j,i+1));
+            cons(IEN,k,j,i) += dt*ri*src*flux_c;
           }
         }
       }
@@ -76,23 +79,20 @@ void HydroSourceTerms::RotatingSystemSourceTerms
 #pragma omp simd
         for (int i=pmb->is; i<=pmb->ie; ++i) {
           Real den  = prim(IDN,k,j,i);
-          Real mom1 = den*prim(IVX,k,j,i);
-          Real mom2 = den*prim(IVY,k,j,i);
-          Real mom3 = den*prim(IVZ,k,j,i);
           Real rv   = pmb->pcoord->x1v(i);
-          Real vc   = rv*sv*Omega_0_;
           Real ri   = pmb->pcoord->coord_src1_i_(i); // 1/r
+          Real vc   = rv*sv*Omega_0_;
           Real src  = SQR(vc); // vc^2
-          Real force = ri*(2.0*vc*mom3+src*den);
+          Real force = den*ri*(2.0*vc*prim(IVZ,k,j,i)+src);
+          Real flux_xc = 0.5*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i));
+          Real flux_yc = 0.5*(flux[X2DIR](IDN,k,j+1,i)+flux[X2DIR](IDN,k,j,i));
           cons(IM1,k,j,i) += dt*force;
           cons(IM2,k,j,i) += dt*force*cv1;
-          cons(IM3,k,j,i) -= 2.0*dt*ri*vc*(mom1+cv3*mom2);
-
+          cons(IM3,k,j,i) -= dt*ri*vc*(den*prim(IVX,k,j,i)+flux_xc
+                                       +cv3*(den*prim(IVY,k,j,i)+flux_yc));
           if(NON_BAROTROPIC_EOS) {
             // This is consistent with the pointmass.
-            Real rho_v1 = 0.5*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i));
-            Real rho_v2 = 0.5*(flux[X2DIR](IDN,k,j+1,i)+flux[X2DIR](IDN,k,j,i));
-            cons(IEN,k,j,i) += dt*src*(rho_v1+cv1*rho_v2)/rv;
+            cons(IEN,k,j,i) += dt*src*(flux_xc+cv1*flux_yc)/rv;
           }
         }
       }

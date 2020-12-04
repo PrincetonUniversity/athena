@@ -40,6 +40,7 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
   Field *pf = pmb->pfield;
   OrbitalAdvection *porb = pmb->porb;
   AthenaArray<Real> &vKc = porb->vKc;
+  AthenaArray<Real> &vKf1 = porb->vKf[0];
   AthenaArray<Real> &dvKc1 = porb->dvKc1;
   AthenaArray<Real> &dvKc2 = porb->dvKc2;
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
@@ -81,23 +82,25 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
 #pragma omp simd
           for (int i=pmb->is; i<=pmb->ie; ++i) {
             Real den   = prim(IDN,k,j,i);
-            Real vk    = vKc(k,i);
             Real dvk_i = dvKc1(k,i);
-            Real vc    = vk+qshear_*Omega_0_*pmb->pcoord->x1v(i);
             Real mom1  = den*prim(IVX,k,j,i);
             Real vy    = prim(IVY,k,j,i);
-            Real src   = 2.0*Omega_0_*vc;
+            Real vc    = vKc(k,i)+qshear_*Omega_0_*pmb->pcoord->x1v(i);
             // 2D components
-            cons(IM1,k,j,i) += dt*(Omega_0_*2.0*(den*vy)+src*den);
+            cons(IM1,k,j,i) += dt*2.0*Omega_0_*(den*(vy+vc));
             cons(IM2,k,j,i) -= dt*(2.0*Omega_0_+dvk_i)*mom1;
             if (NON_BAROTROPIC_EOS) {
-              Real rho_v1 = 0.25*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i))
-                            +0.5*mom1;
+              Real vm    = vKf1(k,i)+qshear_*Omega_0_*pmb->pcoord->x1f(i);
+              Real vp    = vKf1(k,i+1)+qshear_*Omega_0_*pmb->pcoord->x1f(i+1);
+              Real flux_m = flux[X1DIR](IDN,k,j,i);
+              Real flux_p = flux[X1DIR](IDN,k,j,i+1);
+              Real rho_v1 = 0.25*(flux_m+flux_p)+0.5*mom1;
               Real temp = -rho_v1*vy;
               if (MAGNETIC_FIELDS_ENABLED) {
                 temp += pf->bcc(IB1,k,j,i)*pf->bcc(IB2,k,j,i);
               }
-              cons(IEN,k,j,i) += dt*(temp*dvk_i+src*rho_v1);
+              cons(IEN,k,j,i) += dt*(temp*dvk_i
+                                     +0.5*Omega_0_*((vm+vc)*flux_m+(vc+vp)*flux_p));
             }
             // 3D components
             if (pmb->block_size.nx3 > 1) {
@@ -144,24 +147,22 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
               Real mom1   = den*prim(IVX,k,j,i);
               Real vp     = prim(IVY,k,j,i);
               Real mom3   = den*prim(IVZ,k,j,i);
+              Real flux_xc = 0.5*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i));
+              Real flux_zc = 0.5*(flux[X3DIR](IDN,k+1,j,i)+flux[X3DIR](IDN,k,j,i));
               cons(IM1,k,j,i) += 2.0*dt*vc*ri*(den*vp);
-              cons(IM2,k,j,i) -= dt*((2.0*vc*ri+rdok_i)*mom1+dvk_k*mom3);
+              cons(IM2,k,j,i) -= 0.5*dt*((2.0*vc*ri+rdok_i)*(mom1+flux_xc)
+                                          +dvk_k*(mom3+flux_zc));
               Real src_k = -gm_*zv/(dv*dv*dv);
               cons(IM3,k,j,i) += dt*src_k*den;
               if (NON_BAROTROPIC_EOS) {
-                Real rho_v3 = 0.5*(flux[X3DIR](IDN,k+1,j,i)+flux[X3DIR](IDN,k,j,i));
-                cons(IEN,k,j,i) += dt*src_k*rho_v3;
-
-                Real rho_v1 = 0.25*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i))
-                              +0.5*mom1;
-                rho_v3 = 0.5*rho_v3+0.5*mom3;
-                Real temp1 = -rho_v1*vp;
-                Real temp2 = -rho_v3*vp;
+                cons(IEN,k,j,i) += dt*src_k*flux_zc;
+                Real temp1 = -0.5*(flux_xc+mom1)*vp;
+                Real temp2 = -0.5*(flux_zc+mom3)*vp;
                 if (MAGNETIC_FIELDS_ENABLED) {
                   temp1 += pf->bcc(IB1,k,j,i)*pf->bcc(IB2,k,j,i);
                   temp2 += pf->bcc(IB2,k,j,i)*pf->bcc(IB3,k,j,i);
                 }
-                cons(IEN,k,j,i) += dt*temp1*rdok_i+dt*temp2*dvk_k;
+                cons(IEN,k,j,i) += dt*(temp1*rdok_i+temp2*dvk_k+src_k*flux_zc);
               }
             }
           }
@@ -182,12 +183,11 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
             Real rdok_i = -1.5*vc/rv;
             Real mom1   = den*prim(IVX,ks,j,i);
             Real vp     = prim(IVY,ks,j,i);
+            Real flux_c = 0.5*(flux[X1DIR](IDN,ks,j,i+1)+flux[X1DIR](IDN,ks,j,i));
             cons(IM1,ks,j,i) += 2.0*dt*vc*ri*(den*vp);
-            cons(IM2,ks,j,i) -= dt*(2.0*vc*ri+rdok_i)*mom1;
+            cons(IM2,ks,j,i) -= dt*(vc*ri+0.5*rdok_i)*(mom1+flux_c);
             if (NON_BAROTROPIC_EOS) {
-              Real rho_v1 = 0.25*(flux[X1DIR](IDN,ks,j,i+1)+flux[X1DIR](IDN,ks,j,i))
-                            +0.5*mom1;
-              Real temp = -rho_v1*vp;
+              Real temp = -0.5*(flux_c+mom1)*vp;
               if (MAGNETIC_FIELDS_ENABLED) {
                 temp += pf->bcc(IB1,ks,j,i)*pf->bcc(IB2,ks,j,i);
               }
@@ -199,10 +199,10 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
     } else { // user-defined orbital velocity
       if (pmb->block_size.nx3== 1) { // 2D
         // dM1/dt = 2\rho vp vc/r
-        //          + \rho (vc^2/r - gm/r^2)
+        //          + \rho (vc^2 - gm/r)/r
         // dM2/dt = -\rho vr (2 vc /r+(dvk/dr-vk/r))
         // dE/dt  = (dvk/dr-vk/r)(b1 b2 - \rho vr vp)
-        //          +\rho vr (vc^2/r - gm/r^2)
+        //          +\rho vr (vc^2 - gm/r)/r
         // vc     = vk+r\Omega
         int ks = pmb->ks;
         for (int j=pmb->js; j<=pmb->je; ++j) {
@@ -216,20 +216,17 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
             Real rdok_i = dvKc1(ks,i)-vk*ri;
             Real mom1   = den*prim(IVX,ks,j,i);
             Real vp     = prim(IVY,ks,j,i);
-            Real src    = (SQR(vc)-gm_/rv)*ri; // vc^2/r-gm/r^2
-            cons(IM1,ks,j,i) += dt*(2.0*vc*ri*(den*vp)+src*den);
-            cons(IM2,ks,j,i) -= dt*(2.0*vc*ri+rdok_i)*mom1;
+            Real src    = SQR(vc)-gm_/rv; // vc^2-gm/r
+            Real flux_c = 0.5*(flux[X1DIR](IDN,ks,j,i+1)+flux[X1DIR](IDN,ks,j,i));
+            cons(IM1,ks,j,i) += dt*ri*(2.0*vc*(den*vp)+src*den);
+            cons(IM2,ks,j,i) -= dt*(vc*ri+0.5*rdok_i)*(mom1+flux_c);
             if (NON_BAROTROPIC_EOS) {
               // This is consistent with the pointmass.
-              Real rho_v1 = 0.5*(flux[X1DIR](IDN,ks,j,i+1)+flux[X1DIR](IDN,ks,j,i));
-              cons(IEN,ks,j,i) += dt*src*rho_v1;
-
-              rho_v1 = 0.5*rho_v1+0.5*mom1;
-              Real temp = -rho_v1*vp;
+              Real temp = -0.5*(flux_c+mom1)*vp;
               if (MAGNETIC_FIELDS_ENABLED) {
                 temp += pf->bcc(IB1,ks,j,i)*pf->bcc(IB2,ks,j,i);
               }
-              cons(IEN,ks,j,i) += dt*temp*rdok_i;
+              cons(IEN,ks,j,i) += dt*(temp*rdok_i+ri*src*flux_c);
             }
           }
         }
@@ -267,31 +264,28 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
           Real vc     = vk + Omega_0_*rv*sv;
           Real rdok_i = dvKc1(j,i)-vk*ri;              // dvk/dr-vk/r
           Real sdvk_j = (dvKc2(j,i)-cv3*vk)*ri;        // (dvk/dtheta - vk cot(\theta))/r
-
           Real mom1   = den*prim(IVX,k,j,i);
           Real mom2   = den*prim(IVY,k,j,i);
           Real vp     = prim(IVZ,k,j,i);
           Real src    = SQR(vc);
           Real grav   = gm_/rv;
-          cons(IM1,k,j,i) += dt*ri*(2.0*vc*(den*vp)+(src-grav)*den);
-          cons(IM2,k,j,i) += dt*ri*cv1*(2.0*vc*(den*vp)+src*den);
-          cons(IM3,k,j,i) -= dt*((2.0*vc*ri+rdok_i)*mom1+(2.0*vc*ri+sdvk_j)*mom2*cv3);
+          Real flux_xc = 0.5*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i));
+          Real flux_yc = 0.5*(flux[X2DIR](IDN,k,j+1,i)+flux[X2DIR](IDN,k,j,i));
+          cons(IM1,k,j,i) += dt*ri*den*(2.0*vc*vp+(src-grav));
+          cons(IM2,k,j,i) += dt*ri*den*cv1*(2.0*vc*vp+src);
+          cons(IM3,k,j,i) -= dt*((vc*ri+0.5*rdok_i)*(mom1+flux_xc)
+                                  +(vc*ri+0.5*sdvk_j)*(mom2+flux_yc)*cv3);
           //energy
           if (NON_BAROTROPIC_EOS) {
             // This is consistent with the pointmass.
-            Real rho_v1 = 0.5*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i));
-            Real rho_v2 = 0.5*(flux[X2DIR](IDN,k,j+1,i)+flux[X2DIR](IDN,k,j,i));
-            cons(IEN,k,j,i) += dt*((src-grav)*rho_v1+src*cv1*rho_v2)/rv;
-
-            rho_v1 = 0.5*rho_v1+0.5*mom1;
-            rho_v2 = 0.5*rho_v2+0.5*mom2;
-            Real temp1 = -rho_v1*vp;
-            Real temp2 = -rho_v2*vp;
+            Real temp1 = -0.5*(flux_xc+mom1)*vp;
+            Real temp2 = -0.5*(flux_yc+mom2)*vp;
             if (MAGNETIC_FIELDS_ENABLED) {
              temp1 += pf->bcc(IB1,k,j,i)*pf->bcc(IB3,k,j,i);
              temp2 += pf->bcc(IB2,k,j,i)*pf->bcc(IB3,k,j,i);
             }
-            cons(IEN,k,j,i) += dt*(temp1*rdok_i+temp2*sdvk_j);
+            cons(IEN,k,j,i) += dt*(temp1*rdok_i+temp2*sdvk_j
+                               +((src-grav)*flux_xc+src*cv1*flux_yc)/rv);
           }
         }
       }

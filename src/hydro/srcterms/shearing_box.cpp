@@ -62,7 +62,7 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt,
           Real mom1 = den*prim(IVX,k,j,i);
           Real xc = pmb->pcoord->x1v(i);
           cons(IM1,k,j,i) += 2.0*dt*(Omega_0_*(den*prim(IVY,k,j,i))+qO2*den*xc);
-          cons(IM2,k,j,i) -= dt*Omega_0_*2.0*mom1;
+          cons(IM2,k,j,i) -= 2.0*dt*Omega_0_*mom1;
           if (NON_BAROTROPIC_EOS) {
             Real phic = qO2*SQR(xc);
             Real phil = qO2*SQR(pmb->pcoord->x1f(i));
