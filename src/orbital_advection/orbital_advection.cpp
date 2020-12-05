@@ -43,8 +43,9 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
     : pmb_(pmb), pm_(pmb->pmy_mesh), ph_(pmb->phydro),
       pf_(pmb->pfield), pco_(pmb->pcoord), pbval_(pmb->pbval), ps_(pmb->pscalars) {
   // read parameters from input file
-  orbital_splitting_order   = pm_->orbital_advection;
+  orbital_splitting_order = pm_->orbital_advection;
   orbital_advection_defined = (orbital_splitting_order != 0) ? true : false;
+  orbital_advection_active = orbital_advection_defined;
 
   // check xorder for reconstruction
   xorder = pmb_->precon->xorder;
@@ -106,38 +107,33 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
     nc2 = 1, nc3 = 1;
     if ((std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0)
          || (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0)) {
+      orbital_direction = 1;
       if (pmb_->block_size.nx2 > 1) { // 2D or 3D
         nc2 = pmb_->block_size.nx2 + 2*(NGHOST);
-        orbital_direction = 1;
       } else { // 1D
-        orbital_advection_defined = false;
-        std::stringstream msg;
-        msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
-            << "Orbital advection requires 2D or 3D in cartesian and "
-            << "cylindrical coordinates." << std::endl
-            << "Check <orbital_advection> order parameter in the input file."
-            << std::endl;
-        ATHENA_ERROR(msg);
+        orbital_advection_active = false;
       }
-      if (pmb_->block_size.nx3 > 1) // 3D
-        nc3 = pmb_->block_size.nx3 + 2*(NGHOST);
-    } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
       if (pmb_->block_size.nx3 > 1) { // 3D
         nc3 = pmb_->block_size.nx3 + 2*(NGHOST);
-        orbital_direction = 2;
-      } else { // 1D or 2D
-        orbital_advection_defined = false;
+      }
+    } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
+      orbital_direction = 2;
+      if (pmb_->block_size.nx3 > 1) { // 3D
+        nc2 = pmb_->block_size.nx2 + 2*(NGHOST);
+        nc3 = pmb_->block_size.nx3 + 2*(NGHOST);
+      } else if (pmb_->block_size.nx2 > 1) { // 2D
+        orbital_advection_active = false;
+        nc2 = pmb_->block_size.nx2 + 2*(NGHOST);
+      } else { // 1D
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
-            << "Orbital advection requires 3D in spherical_polar coordinates."
+            << "Orbital advection requires 2D or 3D in spherical polar coordinates."
             << std::endl
             << "Check <orbital_advection> order parameter in the input file."
             << std::endl;
         ATHENA_ERROR(msg);
       }
-      nc2 = pmb_->block_size.nx2 + 2*(NGHOST);
     } else {
-      orbital_advection_defined = false;
       std::stringstream msg;
       msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
           << "Orbital advection works only in cartesian, cylindrical, "
@@ -151,7 +147,6 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
     if (pmb->pmy_mesh->OrbitalVelocity_ == nullptr) {
       if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
         if ((Omega0 == 0.0) || (qshear == 0.0)) {
-          orbital_advection_defined = false;
           std::stringstream msg;
           msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
               << "The default orbital velocity profile requires non-zero "
@@ -163,7 +158,6 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
       } else if ((std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0)
                 || (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)) {
         if (gm == 0.0) {
-          orbital_advection_defined = false;
           std::stringstream msg;
           msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
               << "The default orbital velocity profile requires non-zero GM." << std::endl
@@ -176,49 +170,50 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
 
     // check orbital_refinement
     orbital_refinement = false;
-    if (pm_->adaptive==true) { //AMR
-      orbital_refinement = true;
-    } else if (pm_->multilevel==true) { //SMR
-      if (orbital_direction == 1) { // cartesian or cylindrical
-        int64_t nbx = pm_->nrbx2 * (1L << (pmb_->loc.level - pm_->root_level));
-        LogicalLocation loc;
-        loc.level = pmb_->loc.level;
-        loc.lx1   = pmb_->loc.lx1;
-        loc.lx3   = pmb_->loc.lx3;
-        for (int64_t dlx=1; dlx < nbx; dlx++) {
-          loc.lx2 = pmb_->loc.lx2+dlx;
-          if (loc.lx2>=nbx) loc.lx2-=nbx;
-          //check level of meshblocks at same i, k
-          MeshBlockTree *mbt = pm_->tree.FindMeshBlock(loc);
-          if(mbt == nullptr || mbt->GetGid() == -1) {
-            orbital_refinement = true;
-            break;
+    if (orbital_advection_active) {
+      if (pm_->adaptive==true) { //AMR
+        orbital_refinement = true;
+      } else if (pm_->multilevel==true) { //SMR
+        if (orbital_direction == 1) { // cartesian or cylindrical
+          int64_t nbx = pm_->nrbx2 * (1L << (pmb_->loc.level - pm_->root_level));
+          LogicalLocation loc;
+          loc.level = pmb_->loc.level;
+          loc.lx1   = pmb_->loc.lx1;
+          loc.lx3   = pmb_->loc.lx3;
+          for (int64_t dlx=1; dlx < nbx; dlx++) {
+            loc.lx2 = pmb_->loc.lx2+dlx;
+            if (loc.lx2>=nbx) loc.lx2-=nbx;
+            //check level of meshblocks at same i, k
+            MeshBlockTree *mbt = pm_->tree.FindMeshBlock(loc);
+            if(mbt == nullptr || mbt->GetGid() == -1) {
+              orbital_refinement = true;
+              break;
+            }
+          }
+        } else if (orbital_direction == 2) { // spherical_polar
+          int64_t nbx = pm_->nrbx3 * (1L << (pmb_->loc.level - pm_->root_level));
+          LogicalLocation loc;
+          loc.level = pmb_->loc.level;
+          loc.lx1   = pmb_->loc.lx1;
+          loc.lx2   = pmb_->loc.lx2;
+          for (int64_t dlx=0; dlx < nbx; dlx++) {
+            loc.lx3   = pmb_->loc.lx3+dlx;
+            if (loc.lx3>=nbx) loc.lx3-=nbx;
+            //check level of meshblocks at same i, j
+            MeshBlockTree *mbt = pm_->tree.FindMeshBlock(loc);
+            if(mbt == nullptr || mbt->GetGid() == -1) {
+              orbital_refinement = true;
+              break;
+            }
           }
         }
-      } else if (orbital_direction == 2) { // spherical_polar
-        int64_t nbx = pm_->nrbx3 * (1L << (pmb_->loc.level - pm_->root_level));
-        LogicalLocation loc;
-        loc.level = pmb_->loc.level;
-        loc.lx1   = pmb_->loc.lx1;
-        loc.lx2   = pmb_->loc.lx2;
-        for (int64_t dlx=0; dlx < nbx; dlx++) {
-          loc.lx3   = pmb_->loc.lx3+dlx;
-          if (loc.lx3>=nbx) loc.lx3-=nbx;
-          //check level of meshblocks at same i, j
-          MeshBlockTree *mbt = pm_->tree.FindMeshBlock(loc);
-          if(mbt == nullptr || mbt->GetGid() == -1) {
-            orbital_refinement = true;
-            break;
-          }
-        }
-      }
-    }
+      } // SMR
+    } // orbital_advection_active
 
     // check boundary conditions in the orbital direction
     if (orbital_direction == 1) { // cartesian or cylindrical
       if(pin->GetOrAddString("mesh", "ix2_bc", "none")!="periodic"
         ||pin->GetOrAddString("mesh", "ox2_bc", "none")!="periodic") {
-        orbital_advection_defined = false;
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
             << "Orbital advection in Cartesian or cylindrical coordinates requires "
@@ -229,7 +224,6 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
     } else if (orbital_direction==2) { // spherical_polar
       if(pin->GetOrAddString("mesh", "ix3_bc", "none")!="periodic"
           ||pin->GetOrAddString("mesh", "ox3_bc", "none")!="periodic") {
-        orbital_advection_defined = false;
         std::stringstream msg;
         msg << "### FATAL ERROR in OrbitalAdvection Class" << std::endl
             << "Orbital advection in spherical_polar coordinates requires "
@@ -277,118 +271,111 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
       dvKc2.NewAthenaArray(nc3, nc1);
       vKf[0].NewAthenaArray(nc3,nc1+1);
       vKf[1].NewAthenaArray(nc3+1,nc1);
-      orbital_cons.NewAthenaArray(NHYDRO, nc3, nc1, nc2+onx+1);
-
-      orc.NewAthenaArray(nc3, nc1);
-      ofc.NewAthenaArray(nc3, nc1);
-
-      if (orbital_refinement) {
-        vKc_coarse.NewAthenaArray((nc3+2*NGHOST)/2, (nc1+2*NGHOST)/2);
-        ofc_coarse.NewAthenaArray((nc3+2*NGHOST)/2, (nc1+2*NGHOST)/2);
-      }
-
-      if (MAGNETIC_FIELDS_ENABLED) {
-        orbital_b1.NewAthenaArray(nc3, nc1+1, nc2+onx+1);
-        orbital_b2.NewAthenaArray(nc3+1, nc1, nc2+onx+1);
-
-        orf[0].NewAthenaArray(nc3, nc1+1);
-        orf[1].NewAthenaArray(nc3+1, nc1);
-        off[0].NewAthenaArray(nc3, nc1+1);
-        off[1].NewAthenaArray(nc3+1, nc1);
-
+      if (orbital_advection_active) {
+        orbital_cons.NewAthenaArray(NHYDRO, nc3, nc1, nc2+onx+1);
+        orc.NewAthenaArray(nc3, nc1);
+        ofc.NewAthenaArray(nc3, nc1);
         if (orbital_refinement) {
-          vKf_coarse[0].NewAthenaArray((nc3+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
-          off_coarse[0].NewAthenaArray((nc3+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
-          vKf_coarse[1].NewAthenaArray((nc3+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
-          off_coarse[1].NewAthenaArray((nc3+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
+          vKc_coarse.NewAthenaArray((nc3+2*NGHOST)/2, (nc1+2*NGHOST)/2);
+          ofc_coarse.NewAthenaArray((nc3+2*NGHOST)/2, (nc1+2*NGHOST)/2);
+        }
+        if (MAGNETIC_FIELDS_ENABLED) {
+          orbital_b1.NewAthenaArray(nc3, nc1+1, nc2+onx+1);
+          orbital_b2.NewAthenaArray(nc3+1, nc1, nc2+onx+1);
+          orf[0].NewAthenaArray(nc3, nc1+1);
+          orf[1].NewAthenaArray(nc3+1, nc1);
+          off[0].NewAthenaArray(nc3, nc1+1);
+          off[1].NewAthenaArray(nc3+1, nc1);
+          if (orbital_refinement) {
+            vKf_coarse[0].NewAthenaArray((nc3+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
+            off_coarse[0].NewAthenaArray((nc3+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
+            vKf_coarse[1].NewAthenaArray((nc3+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
+            off_coarse[1].NewAthenaArray((nc3+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
+          }
+        }
+        if (NSCALARS>0) {
+          orbital_scalar.NewAthenaArray(NSCALARS, nc3, nc1, nc2+onx+1);
         }
       }
-
-      if (NSCALARS>0)
-        orbital_scalar.NewAthenaArray(NSCALARS, nc3, nc1, nc2+onx+1);
     } else if (orbital_direction==2) { // spherical_polar
       vKc.NewAthenaArray(nc2, nc1);
       dvKc1.NewAthenaArray(nc2, nc1);
       dvKc2.NewAthenaArray(nc2, nc1);
       vKf[0].NewAthenaArray(nc2,nc1+1);
       vKf[1].NewAthenaArray(nc2+1,nc1);
-      orbital_cons.NewAthenaArray(NHYDRO, nc2, nc1, nc3+onx+1);
-
-      orc.NewAthenaArray(nc2, nc1);
-      ofc.NewAthenaArray(nc2, nc1);
-
-      if (orbital_refinement) {
-        vKc_coarse.NewAthenaArray((nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
-        ofc_coarse.NewAthenaArray((nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
-      }
-
-      if (MAGNETIC_FIELDS_ENABLED) {
-        orbital_b1.NewAthenaArray(nc2, nc1+1, nc3+onx+1);
-        orbital_b2.NewAthenaArray(nc2+1, nc1, nc3+onx+1);
-
-        orf[0].NewAthenaArray(nc2, nc1+1);
-        orf[1].NewAthenaArray(nc2+1, nc1);
-        off[0].NewAthenaArray(nc2, nc1+1);
-        off[1].NewAthenaArray(nc2+1, nc1);
-
+      if (orbital_advection_active) {
+        orbital_cons.NewAthenaArray(NHYDRO, nc2, nc1, nc3+onx+1);
+        orc.NewAthenaArray(nc2, nc1);
+        ofc.NewAthenaArray(nc2, nc1);
         if (orbital_refinement) {
-          vKf_coarse[0].NewAthenaArray((nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
-          off_coarse[0].NewAthenaArray((nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
-          vKf_coarse[1].NewAthenaArray((nc2+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
-          off_coarse[1].NewAthenaArray((nc2+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
+          vKc_coarse.NewAthenaArray((nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
+          ofc_coarse.NewAthenaArray((nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
+        }
+        if (MAGNETIC_FIELDS_ENABLED) {
+          orbital_b1.NewAthenaArray(nc2, nc1+1, nc3+onx+1);
+          orbital_b2.NewAthenaArray(nc2+1, nc1, nc3+onx+1);
+          orf[0].NewAthenaArray(nc2, nc1+1);
+          orf[1].NewAthenaArray(nc2+1, nc1);
+          off[0].NewAthenaArray(nc2, nc1+1);
+          off[1].NewAthenaArray(nc2+1, nc1);
+          if (orbital_refinement) {
+            vKf_coarse[0].NewAthenaArray((nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
+            off_coarse[0].NewAthenaArray((nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
+            vKf_coarse[1].NewAthenaArray((nc2+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
+            off_coarse[1].NewAthenaArray((nc2+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
+          }
+        }
+        if (NSCALARS>0) {
+          orbital_scalar.NewAthenaArray(NSCALARS, nc2, nc1, nc3+onx+1);
         }
       }
-
-      if (NSCALARS>0)
-        orbital_scalar.NewAthenaArray(NSCALARS, nc2, nc1, nc3+onx+1);
     }
-    pflux.NewAthenaArray(onx+2*NGHOST+1);
     w_orb.NewAthenaArray(NHYDRO,nc3,nc2,nc1);
     u_orb.NewAthenaArray(NHYDRO,nc3,nc2,nc1);
 
-    if (orbital_refinement) {
-      u_coarse_send.NewAthenaArray(NHYDRO, (nc3+2*NGHOST)/2,
-                                   (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
-      u_coarse_recv.NewAthenaArray(NHYDRO, (nc3+2*NGHOST)/2,
-                                   (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
-      u_temp.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
-      if (NSCALARS>0) {
-        s_coarse_send.NewAthenaArray(NSCALARS, (nc3+2*NGHOST)/2,
+    if (orbital_advection_active) {
+      pflux.NewAthenaArray(onx+2*NGHOST+1);
+      if (orbital_refinement) {
+        u_coarse_send.NewAthenaArray(NHYDRO, (nc3+2*NGHOST)/2,
                                      (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
-        s_coarse_recv.NewAthenaArray(NSCALARS, (nc3+2*NGHOST)/2,
+        u_coarse_recv.NewAthenaArray(NHYDRO, (nc3+2*NGHOST)/2,
                                      (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
-        s_temp.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
-      }
-      if (MAGNETIC_FIELDS_ENABLED) {
-        b1_coarse_send.NewAthenaArray((nc3+2*NGHOST)/2,
-                                      (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
-        b_coarse_recv.x1f.NewAthenaArray((nc3+2*NGHOST)/2,
+        u_temp.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
+        if (NSCALARS>0) {
+          s_coarse_send.NewAthenaArray(NSCALARS, (nc3+2*NGHOST)/2,
+                                       (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
+          s_coarse_recv.NewAthenaArray(NSCALARS, (nc3+2*NGHOST)/2,
+                                       (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
+          s_temp.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+        }
+        if (MAGNETIC_FIELDS_ENABLED) {
+          b1_coarse_send.NewAthenaArray((nc3+2*NGHOST)/2,
                                         (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
-        b_coarse_recv.x2f.NewAthenaArray((nc3+2*NGHOST)/2,
-                                        (nc2+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
-        b_coarse_recv.x3f.NewAthenaArray((nc3+2*NGHOST)/2+1,
-                                        (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
-        b_temp.x1f.NewAthenaArray(nc3, nc2, nc1+1);
-        b_temp.x2f.NewAthenaArray(nc3, nc2+1, nc1);
-        b_temp.x3f.NewAthenaArray(nc3+1, nc2, nc1);
-        if (orbital_direction == 1) {
-          b2_coarse_send.NewAthenaArray((nc3+2*NGHOST)/2+1,
-                                        (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
-        } else if (orbital_direction == 2) {
-          b2_coarse_send.NewAthenaArray((nc3+2*NGHOST)/2,
-                                        (nc2+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
+          b_coarse_recv.x1f.NewAthenaArray((nc3+2*NGHOST)/2,
+                                          (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2+1);
+          b_coarse_recv.x2f.NewAthenaArray((nc3+2*NGHOST)/2,
+                                          (nc2+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
+          b_coarse_recv.x3f.NewAthenaArray((nc3+2*NGHOST)/2+1,
+                                          (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
+          b_temp.x1f.NewAthenaArray(nc3, nc2, nc1+1);
+          b_temp.x2f.NewAthenaArray(nc3, nc2+1, nc1);
+          b_temp.x3f.NewAthenaArray(nc3+1, nc2, nc1);
+          if (orbital_direction == 1) {
+            b2_coarse_send.NewAthenaArray((nc3+2*NGHOST)/2+1,
+                                          (nc2+2*NGHOST)/2, (nc1+2*NGHOST)/2);
+          } else if (orbital_direction == 2) {
+            b2_coarse_send.NewAthenaArray((nc3+2*NGHOST)/2,
+                                          (nc2+2*NGHOST)/2+1, (nc1+2*NGHOST)/2);
+          }
         }
       }
+      // call OrbitalAdvectionBoundaryVariable
+      orb_bc = new OrbitalBoundaryCommunication(this);
     }
-    //if(!orbital_uniform_mesh) {
-    //}
-
-    // call OrbitalAdvectionBoundaryVariable
-    orb_bc = new OrbitalBoundaryCommunication(this);
   }
 
   // preparation for shear_periodic boundary
-  if ((orbital_advection_defined || pm_->shear_periodic)) {
+  if ((orbital_advection_active || pm_->shear_periodic)) {
     int pnum = onx+2*NGHOST+1;
     if (pm_->shear_periodic && MAGNETIC_FIELDS_ENABLED) pnum++;
     if (xorder>2) {
@@ -402,7 +389,7 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
 
 // destructor
 OrbitalAdvection::~OrbitalAdvection() {
-  if (orbital_advection_defined) {
+  if (orbital_advection_active) {
     // destroy OrbitalBoundaryCommunication
     delete orb_bc;
   }
@@ -414,199 +401,192 @@ OrbitalAdvection::~OrbitalAdvection() {
 //! \brief Setup for OrbitalAdvection in void Mesh::Initialize
 
 void OrbitalAdvection::InitializeOrbitalAdvection() {
-  //set grids edge in the orbital direction
-  int xs, xe, xl, xu;
-  if (orbital_direction == 1) { // cartesian or cylindrical
-    xs = pmb_->js; xe = pmb_->je;
-  } else if (orbital_direction ==2) { // spherical_polar
-    xs = pmb_->ks; xe = pmb_->ke;
-  }
-  xl = xs - NGHOST; xu = xe + NGHOST;
-
   // set orbital velocity
   SetVKc();
   SetVKf();
   SetDvKc();
-  if (orbital_refinement) {
-    SetVKcCoarse();
-    if (MAGNETIC_FIELDS_ENABLED) {
-      SetVKfCoarse();
+  if (orbital_advection_active) {
+    if (orbital_refinement) {
+      SetVKcCoarse();
+      if (MAGNETIC_FIELDS_ENABLED) {
+        SetVKfCoarse();
+     }
     }
-  }
 
-  if(orbital_uniform_mesh) { // uniform mesh
-    // set dx
-    // TODO(tomo-ono): For the consistency, not use dx2v or dx3v
+    if(orbital_uniform_mesh) { // uniform mesh
+      // set dx
+      // TODO(tomo-ono): For the consistency, not use dx2v or dx3v
+      if (orbital_direction == 1) { // cartesian or cylindrical
+        dx = (pm_->mesh_size.x2max-pm_->mesh_size.x2min)
+             /static_cast<Real>((pm_->nrbx2
+               *(1L<<(pmb_->loc.level-pm_->root_level))
+              )*pmb_->block_size.nx2);
+      } else { // spherical_polar
+        dx = (pm_->mesh_size.x3max-pm_->mesh_size.x3min)
+             /static_cast<Real>((pm_->nrbx3
+               *(1L<<(pmb_->loc.level-pm_->root_level))
+              )*pmb_->block_size.nx3);
+      }
+    }
+    // else { // non-uniform mesh
+    // }
+
+    //set vK_max, vK_min
+    vK_max = -(FLT_MAX);
+    vK_min = (FLT_MAX);
     if (orbital_direction == 1) { // cartesian or cylindrical
-      dx = (pm_->mesh_size.x2max-pm_->mesh_size.x2min)
-           /static_cast<Real>((pm_->nrbx2
-             *(1L<<(pmb_->loc.level-pm_->root_level))
-            )*pmb_->block_size.nx2);
-    } else { // spherical_polar
-      dx = (pm_->mesh_size.x3max-pm_->mesh_size.x3min)
-           /static_cast<Real>((pm_->nrbx3
-             *(1L<<(pmb_->loc.level-pm_->root_level))
-            )*pmb_->block_size.nx3);
-    }
-  }
-  // else { // non-uniform mesh
-  // }
-
-  //set vK_max, vK_min
-  vK_max = -(FLT_MAX);
-  vK_min = (FLT_MAX);
-  if (orbital_direction == 1) { // cartesian or cylindrical
-    // cell center
-    for (int k=pmb_->ks; k<= pmb_->ke; k++) {
-      for (int i=pmb_->is; i<= pmb_->ie; i++) {
-        Real pvk = 1.0/pco_->h2v(i);
-        vK_max   = std::max(vK_max, vKc(k,i)*pvk);
-        vK_min   = std::min(vK_min, vKc(k,i)*pvk);
-      }
-    }
-    if (MAGNETIC_FIELDS_ENABLED) {
-      // x1 surface
+      // cell center
       for (int k=pmb_->ks; k<= pmb_->ke; k++) {
-        for (int i=pmb_->is; i<= pmb_->ie+1; i++) {
-          Real pvk = 1.0/pco_->h2f(i);
-          vK_max   = std::max(vK_max, vKf[0](k,i)*pvk);
-          vK_min   = std::min(vK_min, vKf[0](k,i)*pvk);
-        }
-      }
-      // x3 surface
-      for (int k=pmb_->ks; k<= pmb_->ke+1; k++) {
         for (int i=pmb_->is; i<= pmb_->ie; i++) {
           Real pvk = 1.0/pco_->h2v(i);
-          vK_max   = std::max(vK_max, vKf[1](k,i)*pvk);
-          vK_min   = std::min(vK_min, vKf[1](k,i)*pvk);
+          vK_max   = std::max(vK_max, vKc(k,i)*pvk);
+          vK_min   = std::min(vK_min, vKc(k,i)*pvk);
         }
       }
-    }
-  } else if (orbital_direction == 2) { // spherical_polar
-    // cell center
-    for (int j=pmb_->js; j<= pmb_->je; ++j) {
-      for (int i=pmb_->is; i<= pmb_->ie; ++i) {
-        Real pvk = 1.0/(pco_->h2v(i)*pco_->h32v(j));
-        vK_max   = std::max(vK_max, vKc(j,i)*pvk);
-        vK_min   = std::min(vK_min, vKc(j,i)*pvk);
+      if (MAGNETIC_FIELDS_ENABLED) {
+        // x1 surface
+        for (int k=pmb_->ks; k<= pmb_->ke; k++) {
+          for (int i=pmb_->is; i<= pmb_->ie+1; i++) {
+            Real pvk = 1.0/pco_->h2f(i);
+            vK_max   = std::max(vK_max, vKf[0](k,i)*pvk);
+            vK_min   = std::min(vK_min, vKf[0](k,i)*pvk);
+          }
+        }
+        // x3 surface
+        for (int k=pmb_->ks; k<= pmb_->ke+1; k++) {
+          for (int i=pmb_->is; i<= pmb_->ie; i++) {
+            Real pvk = 1.0/pco_->h2v(i);
+            vK_max   = std::max(vK_max, vKf[1](k,i)*pvk);
+            vK_min   = std::min(vK_min, vKf[1](k,i)*pvk);
+          }
+        }
       }
-    }
-    if (MAGNETIC_FIELDS_ENABLED) {
-      // x1 surface
+    } else if (orbital_direction == 2) { // spherical_polar
+      // cell center
       for (int j=pmb_->js; j<= pmb_->je; ++j) {
-        for (int i=pmb_->is; i<= pmb_->ie+1; ++i) {
-          Real pvk = 1.0/(pco_->h2f(i)*pco_->h32v(j));
-          vK_max   = std::max(vK_max, vKf[0](j,i)*pvk);
-          vK_min   = std::min(vK_min, vKf[0](j,i)*pvk);
-        }
-      }
-      // x2 surface
-      for (int j=pmb_->js; j<= pmb_->je+1; ++j) {
         for (int i=pmb_->is; i<= pmb_->ie; ++i) {
-          Real pvk = 1.0/(pco_->h2v(i)*pco_->h32f(j));
-          vK_max   = std::max(vK_max, vKf[1](j,i)*pvk);
-          vK_min   = std::min(vK_min, vKf[1](j,i)*pvk);
+          Real pvk = 1.0/(pco_->h2v(i)*pco_->h32v(j));
+          vK_max   = std::max(vK_max, vKc(j,i)*pvk);
+          vK_min   = std::min(vK_min, vKc(j,i)*pvk);
+        }
+      }
+      if (MAGNETIC_FIELDS_ENABLED) {
+        // x1 surface
+        for (int j=pmb_->js; j<= pmb_->je; ++j) {
+          for (int i=pmb_->is; i<= pmb_->ie+1; ++i) {
+            Real pvk = 1.0/(pco_->h2f(i)*pco_->h32v(j));
+            vK_max   = std::max(vK_max, vKf[0](j,i)*pvk);
+            vK_min   = std::min(vK_min, vKf[0](j,i)*pvk);
+          }
+        }
+        // x2 surface
+        for (int j=pmb_->js; j<= pmb_->je+1; ++j) {
+          for (int i=pmb_->is; i<= pmb_->ie; ++i) {
+            Real pvk = 1.0/(pco_->h2v(i)*pco_->h32f(j));
+            vK_max   = std::max(vK_max, vKf[1](j,i)*pvk);
+            vK_min   = std::min(vK_min, vKf[1](j,i)*pvk);
+          }
         }
       }
     }
-  }
 
-  // set min_dt
-  int mylevel = pmb_->loc.level;
-  int lblevel, rblevel;
-  for(int n=0; n<pbval_->nneighbor; n++) {
-    NeighborBlock& nb = pbval_->neighbor[n];
-    if (nb.ni.type != NeighborConnect::face) break;
-    if (orbital_direction == 1) {
-      if (nb.fid == BoundaryFace::inner_x2)
-        lblevel = nb.snb.level;
-      else if (nb.fid == BoundaryFace::outer_x2)
-        rblevel = nb.snb.level;
-    } else if (orbital_direction == 2) {
-      if (nb.fid == BoundaryFace::inner_x3)
-        lblevel = nb.snb.level;
-      else if (nb.fid == BoundaryFace::outer_x3)
-        rblevel = nb.snb.level;
+    // set min_dt
+    int mylevel = pmb_->loc.level;
+    int lblevel, rblevel;
+    for(int n=0; n<pbval_->nneighbor; n++) {
+      NeighborBlock& nb = pbval_->neighbor[n];
+      if (nb.ni.type != NeighborConnect::face) break;
+      if (orbital_direction == 1) {
+        if (nb.fid == BoundaryFace::inner_x2)
+          lblevel = nb.snb.level;
+        else if (nb.fid == BoundaryFace::outer_x2)
+          rblevel = nb.snb.level;
+      } else if (orbital_direction == 2) {
+        if (nb.fid == BoundaryFace::inner_x3)
+          lblevel = nb.snb.level;
+        else if (nb.fid == BoundaryFace::outer_x3)
+          rblevel = nb.snb.level;
+      }
     }
-  }
 
-  min_dt = (FLT_MAX);
-  // restrictions from meshblock size
-  if(orbital_uniform_mesh) { // uniform mesh
-    if(vK_max>0.0) {
-      if(lblevel > mylevel)
-        min_dt = std::min(min_dt, dx*(onx/2-xgh)/vK_max);
-      else
-        min_dt = std::min(min_dt, dx*(onx-xgh)/vK_max);
+    min_dt = (FLT_MAX);
+    // restrictions from meshblock size
+    if(orbital_uniform_mesh) { // uniform mesh
+      if(vK_max>0.0) {
+        if(lblevel > mylevel)
+          min_dt = std::min(min_dt, dx*(onx/2-xgh)/vK_max);
+        else
+          min_dt = std::min(min_dt, dx*(onx-xgh)/vK_max);
+      }
+      if(vK_min<0.0) {
+        if(rblevel > mylevel)
+          min_dt = std::min(min_dt, -dx*(onx/2-xgh)/vK_min);
+        else
+          min_dt = std::min(min_dt, -dx*(onx-xgh)/vK_min);
+      }
     }
-    if(vK_min<0.0) {
-      if(rblevel > mylevel)
-        min_dt = std::min(min_dt, -dx*(onx/2-xgh)/vK_min);
-      else
-        min_dt = std::min(min_dt, -dx*(onx-xgh)/vK_min);
-    }
-  }
-//  else {
-//  }
+    // else {
+    //  }
 
-  // restrictions from derivatives of orbital velocity
-  Real coef = 1.0;
-  if (orbital_splitting_order == 1) coef = 0.5;
-  if(orbital_direction == 1) {
-    for(int k=pmb_->ks; k<=pmb_->ke; k++) {
-      for(int i=pmb_->is; i<=pmb_->ie; i++) {
-        Real vorb_c   = vKc(k,i)/pco_->h2v(i);
-        Real vorb_min = vorb_c;
-        Real vorb_max = vorb_c;
-        for (int neighbor=1; neighbor<=xgh; neighbor++) {
-          Real vorb_m = vKc(k,i-neighbor)/pco_->h2v(i-neighbor);
-          Real vorb_p = vKc(k,i+neighbor)/pco_->h2v(i+neighbor);
-          vorb_min = std::min(vorb_min, std::min(vorb_m, vorb_p));
-          vorb_max = std::max(vorb_max, std::max(vorb_m, vorb_p));
-        }
-        if (nc3>1) {
+    // restrictions from derivatives of orbital velocity
+    Real coef = 1.0;
+    if (orbital_splitting_order == 1) coef = 0.5;
+    if(orbital_direction == 1) {
+      for(int k=pmb_->ks; k<=pmb_->ke; k++) {
+        for(int i=pmb_->is; i<=pmb_->ie; i++) {
+          Real vorb_c   = vKc(k,i)/pco_->h2v(i);
+          Real vorb_min = vorb_c;
+          Real vorb_max = vorb_c;
           for (int neighbor=1; neighbor<=xgh; neighbor++) {
-            Real vorb_m = vKc(k-neighbor,i)/pco_->h2v(i);
-            Real vorb_p = vKc(k+neighbor,i)/pco_->h2v(i);
+            Real vorb_m = vKc(k,i-neighbor)/pco_->h2v(i-neighbor);
+            Real vorb_p = vKc(k,i+neighbor)/pco_->h2v(i+neighbor);
             vorb_min = std::min(vorb_min, std::min(vorb_m, vorb_p));
             vorb_max = std::max(vorb_max, std::max(vorb_m, vorb_p));
           }
+          if (nc3>1) {
+            for (int neighbor=1; neighbor<=xgh; neighbor++) {
+              Real vorb_m = vKc(k-neighbor,i)/pco_->h2v(i);
+              Real vorb_p = vKc(k+neighbor,i)/pco_->h2v(i);
+              vorb_min = std::min(vorb_min, std::min(vorb_m, vorb_p));
+              vorb_max = std::max(vorb_max, std::max(vorb_m, vorb_p));
+            }
+          }
+          if (vorb_min == vorb_max) continue;
+          if(orbital_uniform_mesh) { // uniform mesh
+            min_dt = std::min(min_dt, coef*dx/(vorb_max-vorb_min));
+          }
+          // else { // non-uniform mesh
+          // }
         }
-        if (vorb_min == vorb_max) continue;
-        if(orbital_uniform_mesh) { // uniform mesh
-          min_dt = std::min(min_dt, coef*dx/(vorb_max-vorb_min));
+      }
+    } else if (orbital_direction == 2) {
+      for(int j=pmb_->js; j<=pmb_->je; j++) {
+        for(int i=pmb_->is; i<=pmb_->ie; i++) {
+          Real vorb_c   = vKc(j,i)/(pco_->h2v(i)*pco_->h32v(j));
+          Real vorb_min = vorb_c;
+          Real vorb_max = vorb_c;
+          for (int neighbor=1; neighbor<=xgh; neighbor++) {
+            Real vorb_m = vKc(j,i-neighbor)/(pco_->h2v(i-neighbor)*pco_->h32v(j));
+            Real vorb_p = vKc(j,i+neighbor)/(pco_->h2v(i+neighbor)*pco_->h32v(j));
+            vorb_min = std::min(vorb_min, std::min(vorb_m, vorb_p));
+            vorb_max = std::max(vorb_max, std::max(vorb_m, vorb_p));
+          }
+          for (int neighbor=1; neighbor<=xgh; neighbor++) {
+            Real vorb_m = vKc(j-neighbor,i)/(pco_->h2v(i)*pco_->h32v(j-neighbor));
+            Real vorb_p = vKc(j+neighbor,i)/(pco_->h2v(i)*pco_->h32v(j+neighbor));
+            vorb_min = std::min(vorb_min, std::min(vorb_m, vorb_p));
+            vorb_max = std::max(vorb_max, std::max(vorb_m, vorb_p));
+          }
+          if (vorb_min == vorb_max) continue;
+          if(orbital_uniform_mesh) { // uniform mesh
+            min_dt = std::min(min_dt, coef*dx/(vorb_max-vorb_min));
+          }
+          // else { // non-uniform mesh
+          // }
         }
-//        else { // non-uniform mesh
-//        }
       }
     }
-  } else if (orbital_direction == 2) {
-    for(int j=pmb_->js; j<=pmb_->je; j++) {
-      for(int i=pmb_->is; i<=pmb_->ie; i++) {
-        Real vorb_c   = vKc(j,i)/(pco_->h2v(i)*pco_->h32v(j));
-        Real vorb_min = vorb_c;
-        Real vorb_max = vorb_c;
-        for (int neighbor=1; neighbor<=xgh; neighbor++) {
-          Real vorb_m = vKc(j,i-neighbor)/(pco_->h2v(i-neighbor)*pco_->h32v(j));
-          Real vorb_p = vKc(j,i+neighbor)/(pco_->h2v(i+neighbor)*pco_->h32v(j));
-          vorb_min = std::min(vorb_min, std::min(vorb_m, vorb_p));
-          vorb_max = std::max(vorb_max, std::max(vorb_m, vorb_p));
-        }
-        for (int neighbor=1; neighbor<=xgh; neighbor++) {
-          Real vorb_m = vKc(j-neighbor,i)/(pco_->h2v(i)*pco_->h32v(j-neighbor));
-          Real vorb_p = vKc(j+neighbor,i)/(pco_->h2v(i)*pco_->h32v(j+neighbor));
-          vorb_min = std::min(vorb_min, std::min(vorb_m, vorb_p));
-          vorb_max = std::max(vorb_max, std::max(vorb_m, vorb_p));
-        }
-        if (vorb_min == vorb_max) continue;
-        if(orbital_uniform_mesh) { // uniform mesh
-          min_dt = std::min(min_dt, coef*dx/(vorb_max-vorb_min));
-        }
-//        else { // non-uniform mesh
-//        }
-      }
-    }
-  }
+  } // orbital_advection_active
   return;
 }
 
@@ -625,13 +605,12 @@ Real OrbitalAdvection::NewOrbitalAdvectionDt() {
 //! \brief Calculate Orbital Velocity at cell centers
 
 void OrbitalAdvection::SetVKc() {
-  int il = pmb_->is-(NGHOST); int jl = pmb_->js-(NGHOST); int kl = pmb_->ks;
-  int iu = pmb_->ie+(NGHOST); int ju = pmb_->je+(NGHOST); int ku = pmb_->ke;
-  if (nc3>1) {
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
   if (orbital_direction == 1) {
+    int il = pmb_->is-(NGHOST); int kl = pmb_->ks;
+    int iu = pmb_->ie+(NGHOST); int ku = pmb_->ke;
+    if (nc3>1) {
+      kl -= NGHOST; ku += NGHOST;
+    }
     for(int k=kl; k<=ku; k++) {
       Real z_ = pco_->x3v(k);
 #pragma omp simd
@@ -641,6 +620,8 @@ void OrbitalAdvection::SetVKc() {
       }
     }
   } else if (orbital_direction == 2) {
+    int il = pmb_->is-(NGHOST); int jl = pmb_->js-NGHOST;
+    int iu = pmb_->ie+(NGHOST); int ju = pmb_->je+NGHOST;
     for(int j=jl; j<=ju; j++) {
       Real y_ = pco_->x2v(j);
 #pragma omp simd
@@ -658,13 +639,12 @@ void OrbitalAdvection::SetVKc() {
 //! \brief Calculate Orbital Velocity at cell faces
 
 void OrbitalAdvection::SetVKf() {
-  int il = pmb_->is-(NGHOST); int jl = pmb_->js-(NGHOST); int kl = pmb_->ks;
-  int iu = pmb_->ie+(NGHOST); int ju = pmb_->je+(NGHOST); int ku = pmb_->ke;
-  if (nc3>1) {
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
   if (orbital_direction == 1) {
+    int il = pmb_->is-(NGHOST); int kl = pmb_->ks;
+    int iu = pmb_->ie+(NGHOST); int ku = pmb_->ke;
+    if (nc3>1) {
+      kl -= NGHOST; ku += NGHOST;
+    }
     for(int k=kl; k<=ku; k++) {
       Real z_ = pco_->x3v(k);
 #pragma omp simd
@@ -682,6 +662,8 @@ void OrbitalAdvection::SetVKf() {
       }
     }
   } else if (orbital_direction == 2) {
+    int il = pmb_->is-(NGHOST); int jl = pmb_->js-NGHOST;
+    int iu = pmb_->ie+(NGHOST); int ju = pmb_->je+NGHOST;
     for(int j=jl; j<=ju; j++) {
       Real y_ = pco_->x2v(j);
 #pragma omp simd
@@ -707,13 +689,12 @@ void OrbitalAdvection::SetVKf() {
 //! \brief Calculate Orbital Velocity derivatives at cell centers
 
 void OrbitalAdvection::SetDvKc() {
-  int il = pmb_->is-(NGHOST); int jl = pmb_->js-(NGHOST); int kl = pmb_->ks;
-  int iu = pmb_->ie+(NGHOST); int ju = pmb_->je+(NGHOST); int ku = pmb_->ke;
-  if (nc3>1) {
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
   if (orbital_direction == 1) { // cartesian or cylindrical
+    int il = pmb_->is-(NGHOST); int kl = pmb_->ks;
+    int iu = pmb_->ie+(NGHOST); int ku = pmb_->ke;
+    if (nc3>1) {
+      kl -= NGHOST; ku += NGHOST;
+    }
     if (OrbitalVelocityDerivative[0] == nullptr) {
       // calculate dvK using user-defined vKf
       for(int k=kl; k<=ku; k++) {
@@ -762,6 +743,8 @@ void OrbitalAdvection::SetDvKc() {
       }
     }
   } else if (orbital_direction == 2) { // spherical_polar
+    int il = pmb_->is-(NGHOST); int jl = pmb_->js-NGHOST;
+    int iu = pmb_->ie+(NGHOST); int ju = pmb_->je+NGHOST;
     if (OrbitalVelocityDerivative[0] == nullptr) {
       // calculate dvK using user-defined vKf
       for(int j=jl; j<=ju; j++) {
@@ -809,14 +792,14 @@ void OrbitalAdvection::SetDvKc() {
 //! \brief Calculate Orbital Velocity at cell centers for coarse cells
 
 void OrbitalAdvection::SetVKcCoarse() {
-  int il = pmb_->cis-(NGHOST); int jl = pmb_->cjs-(NGHOST); int kl = pmb_->cks;
-  int iu = pmb_->cie+(NGHOST); int ju = pmb_->cje+(NGHOST); int ku = pmb_->cke;
-  if (nc3>1) {
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
   Coordinates *cpco = pmb_->pmr->pcoarsec;
   if (orbital_direction == 1) {
+    int il = pmb_->cis-(NGHOST); int kl = pmb_->cks;
+    int iu = pmb_->cie+(NGHOST); int ku = pmb_->cke;
+    if (nc3>1) {
+      kl -= NGHOST;
+      ku += NGHOST;
+    }
     for(int k=kl; k<=ku; k++) {
       Real z_ = cpco->x3v(k);
 #pragma omp simd
@@ -826,6 +809,8 @@ void OrbitalAdvection::SetVKcCoarse() {
       }
     }
   } else if (orbital_direction == 2) {
+    int il = pmb_->cis-(NGHOST); int jl = pmb_->cjs-NGHOST;
+    int iu = pmb_->cie+(NGHOST); int ju = pmb_->cje+NGHOST;
     for(int j=jl; j<=ju; j++) {
       Real y_ = cpco->x2v(j);
 #pragma omp simd
@@ -842,14 +827,14 @@ void OrbitalAdvection::SetVKcCoarse() {
 //! \fn void OrbitalAdvection::SetVKfCoarse()
 //! \brief Calculate Orbital Velocity at cell faces for coarse cells
 void OrbitalAdvection::SetVKfCoarse() {
-  int il = pmb_->cis-(NGHOST); int jl = pmb_->cjs-(NGHOST); int kl = pmb_->cks;
-  int iu = pmb_->cie+(NGHOST); int ju = pmb_->cje+(NGHOST); int ku = pmb_->cke;
-  if (nc3>1) {
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
   Coordinates *cpco = pmb_->pmr->pcoarsec;
   if (orbital_direction == 1) {
+    int il = pmb_->cis-(NGHOST); int kl = pmb_->cks;
+    int iu = pmb_->cie+(NGHOST); int ku = pmb_->cke;
+    if (nc3>1) {
+      kl -= NGHOST;
+      ku += NGHOST;
+    }
     for(int k=kl; k<=ku; k++) {
       Real z_ = cpco->x3v(k);
 #pragma omp simd
@@ -867,6 +852,8 @@ void OrbitalAdvection::SetVKfCoarse() {
       }
     }
   } else if (orbital_direction == 2) {
+    int il = pmb_->cis-(NGHOST); int jl = pmb_->cjs-NGHOST;
+    int iu = pmb_->cie+(NGHOST); int ju = pmb_->cje+NGHOST;
     for(int j=jl; j<=ju; j++) {
       Real y_ = cpco->x2v(j);
 #pragma omp simd

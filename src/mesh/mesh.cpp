@@ -1479,7 +1479,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pmb = my_blocks(i);
         if (pmb->porb->orbital_advection_defined) {
           pmb->porb->InitializeOrbitalAdvection();
-          pmb->porb->orb_bc->SetupPersistentMPI();
+          if (pmb->porb->orbital_advection_active)
+            pmb->porb->orb_bc->SetupPersistentMPI();
         }
       }
 

@@ -162,7 +162,7 @@ void Hydro::NewBlockTimeStep() {
   min_dt_parabolic *= pmb->pmy_mesh->cfl_number;
 
   // For orbital advection, give a restriction on dt_hyperbolic.
-  if (pmb->porb->orbital_advection_defined) {
+  if (pmb->porb->orbital_advection_active) {
     Real min_dt_orb = pmb->porb->NewOrbitalAdvectionDt();
     min_dt_hyperbolic = std::min(min_dt_hyperbolic, min_dt_orb);
   }

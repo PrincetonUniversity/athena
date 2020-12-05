@@ -31,8 +31,12 @@ void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &w0,
                        const AthenaArray<Real> &u0, const OrbitalTransform trans) {
   int flag = static_cast<int>(trans);
   if ((orbital_system_output_done&flag) > 0) {
-    int il = pmb_->is-(NGHOST); int jl = pmb_->js-(NGHOST); int kl = pmb_->ks;
-    int iu = pmb_->ie+(NGHOST); int ju = pmb_->je+(NGHOST); int ku = pmb_->ke;
+    int il = pmb_->is-(NGHOST); int jl = pmb_->js; int kl = pmb_->ks;
+    int iu = pmb_->ie+(NGHOST); int ju = pmb_->je; int ku = pmb_->ke;
+    if (nc2>1) {
+      jl -= NGHOST;
+      ju += NGHOST;
+    }
     if (nc3>1) {
       kl -= NGHOST;
       ku += NGHOST;

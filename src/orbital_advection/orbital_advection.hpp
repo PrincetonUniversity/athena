@@ -69,7 +69,8 @@ class OrbitalAdvection{
   // flag
   int orbital_direction; //!> the direction of orbital motion x2(=1), x3 (=2)
   int orbital_splitting_order; //!> order of the orbital splitting method
-  bool orbital_advection_defined; //!> flag for the orbital advection
+  bool orbital_advection_defined; //!> flag for the orbital advection system
+  bool orbital_advection_active; //!> flag for solving orbital advection
   bool orbital_refinement; //!> flag for refinement in the orbital direction
   bool orbital_uniform_mesh; //!> true: uniform grid, false: un-uniform grid
 

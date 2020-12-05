@@ -35,6 +35,10 @@
 
 void OrbitalAdvection::CalculateOrbitalAdvectionCC(const Real dt,
                                 AthenaArray<Real> &u, AthenaArray<Real> &s) {
+  if (!orbital_advection_active) {
+    orbital_system_output_done = 3;
+    return;
+  }
   int is = pmb_->is, ie = pmb_->ie;
   int js = pmb_->js, je = pmb_->je;
   int ks = pmb_->ks, ke = pmb_->ke;

@@ -1421,7 +1421,7 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     pmb->pbval->StartReceivingSubset(BoundaryCommSubset::orbital,
                                      pmb->pbval->bvars_main_int);
   }
-  if (stage_wghts[stage-1].orbital_stage) {
+  if (stage_wghts[stage-1].orbital_stage && pmb->porb->orbital_advection_active) {
     Real dt = (stage_wghts[(stage-1)].ebeta-stage_wghts[(stage-1)].sbeta)
               *pmb->pmy_mesh->dt;
     pmb->porb->orb_bc->ComputeOrbit(dt);
@@ -1441,7 +1441,7 @@ TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
     pmb->pbval->ClearBoundarySubset(BoundaryCommSubset::orbital,
                                     pmb->pbval->bvars_main_int);
   }
-  if (stage_wghts[stage-1].orbital_stage) {
+  if (stage_wghts[stage-1].orbital_stage && pmb->porb->orbital_advection_active) {
     pmb->porb->orb_bc->ClearBoundary(BoundaryCommSubset::all);
   }
 
@@ -2223,6 +2223,7 @@ TaskStatus TimeIntegratorTaskList::SendHydroOrbital(MeshBlock *pmb, int stage) {
     return TaskStatus::success;
   } else {
     OrbitalAdvection *porb = pmb->porb;
+    if (!porb->orbital_advection_active) return TaskStatus::success;
     Hydro *ph = pmb->phydro;
     PassiveScalars *ps = pmb->pscalars;
     porb->SetOrbitalAdvectionCC(ph->u, ps->s);
@@ -2238,6 +2239,7 @@ TaskStatus TimeIntegratorTaskList::SendFieldOrbital(MeshBlock *pmb, int stage) {
     return TaskStatus::success;
   } else {
     OrbitalAdvection *porb = pmb->porb;
+    if (!porb->orbital_advection_active) return TaskStatus::success;
     Field *pf = pmb->pfield;
     porb->SetOrbitalAdvectionFC(pf->b);
     porb->orb_bc->SendBoundaryBuffersFC();
@@ -2252,6 +2254,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydroOrbital(MeshBlock *pmb, int stage
     return TaskStatus::success;
   } else {
     OrbitalAdvection *porb = pmb->porb;
+    if (!porb->orbital_advection_active) return TaskStatus::success;
     if (porb->orb_bc->ReceiveBoundaryBuffersCC()) {
       return TaskStatus::success;
     }
@@ -2265,6 +2268,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveFieldOrbital(MeshBlock *pmb, int stage
     return TaskStatus::success;
   } else {
     OrbitalAdvection *porb = pmb->porb;
+    if (!porb->orbital_advection_active) return TaskStatus::success;
     if (porb->orb_bc->ReceiveBoundaryBuffersFC()) {
       return TaskStatus::success;
     }
@@ -2294,6 +2298,7 @@ TaskStatus TimeIntegratorTaskList::CalculateFieldOrbital(MeshBlock *pmb, int sta
     return TaskStatus::success;
   } else {
     OrbitalAdvection *porb = pmb->porb;
+    if (!porb->orbital_advection_active) return TaskStatus::success;
     Field *pf = pmb->pfield;
     Real dt = pmb->pmy_mesh->dt
               *(stage_wghts[(stage-1)].ebeta-stage_wghts[(stage-1)].sbeta);
