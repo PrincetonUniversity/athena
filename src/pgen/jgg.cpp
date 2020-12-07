@@ -461,18 +461,14 @@ void Mesh::UserWorkInLoop() {
 
     for (int bn=0; bn<nblocal; ++bn) {
       MeshBlock *pmb = my_blocks(bn);
-      LogicalLocation loc0;
-      loc0.lx1 = pmb->loc.lx1;
-      loc0.lx2 = pmb->loc.lx2;
-      loc0.lx3 = pmb->loc.lx3;
-      loc0.level = pmb->loc.level;
-      if (loc0.level == root_level) { // root level
+      LogicalLocation &loc = pmb->loc;
+      if (loc.level == root_level) { // root level
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           for (int j=pmb->js; j<=pmb->je; j++) {
             for (int i=pmb->is; i<=pmb->ie; i++) {
-              int ti = loc0.lx1*pmb->block_size.nx1+(i-pmb->is);
-              int tj = loc0.lx2*pmb->block_size.nx2+(j-pmb->js);
-              int tk = loc0.lx3*pmb->block_size.nx3+(k-pmb->ks);
+              int ti = loc.lx1*pmb->block_size.nx1+(i-pmb->is);
+              int tj = loc.lx2*pmb->block_size.nx2+(j-pmb->js);
+              int tk = loc.lx3*pmb->block_size.nx3+(k-pmb->ks);
               if (ipert == 1) {
                 Real x1  = pmb->pcoord->x1v(i);
                 Real x2  = pmb->pcoord->x2v(j);
@@ -491,7 +487,7 @@ void Mesh::UserWorkInLoop() {
             }
           }
         }
-      } else if (loc0.level-1 == root_level) { // level difference 1
+      } else if (loc.level-1 == root_level) { // level difference 1
         if (pmb->block_size.nx3==1) { // 2D
           int k = pmb->ks;
           for (int j=pmb->cjs; j<=pmb->cje; j++) {
@@ -499,10 +495,10 @@ void Mesh::UserWorkInLoop() {
               int ii = (i-pmb->cis)*2+pmb->is;
               int jj = (j-pmb->cjs)*2+pmb->js;
               int kk = k;
-              int ti = (loc0.lx1>>1)*pmb->block_size.nx1
-                       +(loc0.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
-              int tj = (loc0.lx2>>1)*pmb->block_size.nx2
-                       +(loc0.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
+              int ti = (loc.lx1>>1)*pmb->block_size.nx1
+                       +(loc.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
+              int tj = (loc.lx2>>1)*pmb->block_size.nx2
+                       +(loc.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
               int tk = k;
               if (ipert == 1) {
                 Real vol00 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii  );
@@ -539,12 +535,12 @@ void Mesh::UserWorkInLoop() {
                 int ii = (i-pmb->cis)*2+pmb->is;
                 int jj = (j-pmb->cjs)*2+pmb->js;
                 int kk = (k-pmb->cks)*2+pmb->ks;
-                int ti = (loc0.lx1>>1)*pmb->block_size.nx1
-                         +(loc0.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
-                int tj = (loc0.lx2>>1)*pmb->block_size.nx2
-                         +(loc0.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
-                int tk = (loc0.lx3>>1)*pmb->block_size.nx3
-                         +(loc0.lx3%2)*(pmb->block_size.nx3/2)+(k-pmb->cks);
+                int ti = (loc.lx1>>1)*pmb->block_size.nx1
+                         +(loc.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
+                int tj = (loc.lx2>>1)*pmb->block_size.nx2
+                         +(loc.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
+                int tk = (loc.lx3>>1)*pmb->block_size.nx3
+                         +(loc.lx3%2)*(pmb->block_size.nx3/2)+(k-pmb->cks);
                 if (ipert == 1) {
                   Real vol000 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii  );
                   Real vol001 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii+1);
