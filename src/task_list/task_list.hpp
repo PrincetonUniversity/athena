@@ -201,6 +201,8 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus ReceiveFieldOrbital(MeshBlock *pmb, int stage);
   TaskStatus CalculateFieldOrbital(MeshBlock *pmb, int stage);
 
+  bool CheckNextMainStage(int stage) const {return stage_wghts[stage%nstages].main_stage;}
+
  private:
   IntegratorWeight stage_wghts[MAX_NSTAGE];
 
