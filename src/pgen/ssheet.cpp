@@ -273,8 +273,10 @@ void Mesh::UserWorkInLoop() {
   if (flag) {
     AthenaArray<Real> &vxs = ruser_mesh_data[0];
     AthenaArray<Real> &dvys = ruser_mesh_data[1];
+    Real qom = qshear*Omega0;
     Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
     Real ky = (TWO_PI/x2size)*(static_cast<Real>(nwy));
+    kx += qom*present_time*ky;
 
     // initialize vs
     for (int k=0; k<mesh_size.nx3; k++) {
@@ -287,35 +289,28 @@ void Mesh::UserWorkInLoop() {
     }
     for (int bn=0; bn<nblocal; ++bn) {
       MeshBlock *pmb = my_blocks(bn);
-      Real qom = qshear*Omega0;
-      kx += qom*present_time*ky;
-      LogicalLocation loc0;
-      loc0.lx1 = pmb->loc.lx1;
-      loc0.lx2 = pmb->loc.lx2;
-      loc0.lx3 = pmb->loc.lx3;
-      loc0.level = pmb->loc.level;
-      if (loc0.level == root_level) { // root level
+      LogicalLocation &loc = pmb->loc;
+      if (loc.level == root_level) { // root level
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           for (int j=pmb->js; j<=pmb->je; j++) {
             for (int i=pmb->is; i<=pmb->ie; i++) {
-              int ti = loc0.lx1*pmb->block_size.nx1+(i-pmb->is);
-              int tj = loc0.lx2*pmb->block_size.nx2+(j-pmb->js);
-              int tk = loc0.lx3*pmb->block_size.nx3+(k-pmb->ks);
+              int ti = loc.lx1*pmb->block_size.nx1+(i-pmb->is);
+              int tj = loc.lx2*pmb->block_size.nx2+(j-pmb->js);
+              int tk = loc.lx3*pmb->block_size.nx3+(k-pmb->ks);
               Real x1 = pmb->pcoord->x1v(i);
               Real x2 = pmb->pcoord->x2v(j);
               Real vx = pmb->phydro->w(IVX,k,j,i);
               Real dvy = pmb->phydro->w(IVY,k,j,i);
               if(!pmb->porb->orbital_advection_defined)
                 dvy += qom*x1;
-              Real vol = pmb->pcoord->dx3f(k)
-                         *pmb->pcoord->dx2f(j)*pmb->pcoord->dx1f(i);
+              Real vol = pmb->pcoord->GetCellVolume(k,j,i);
               Real SN = std::sin(kx*x1+ky*x2);
               vxs(tk,tj,ti) = 2.0*vx*vol*SN;
               dvys(tk,tj,ti) = 2.0*dvy*vol*SN;
             }
           }
         }
-      } else if (loc0.level-1 == root_level) { // level difference 1
+      } else if (loc.level-1 == root_level) { // level difference 1
         if (pmb->block_size.nx3==1) { // 2D
           int k = pmb->ks;
           for (int j=pmb->cjs; j<=pmb->cje; j++) {
@@ -323,11 +318,15 @@ void Mesh::UserWorkInLoop() {
               int ii = (i-pmb->cis)*2+pmb->is;
               int jj = (j-pmb->cjs)*2+pmb->js;
               int kk = k;
-              int ti = (loc0.lx1>>1)*pmb->block_size.nx1
-                       +(loc0.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
-              int tj = (loc0.lx2>>1)*pmb->block_size.nx2
-                       +(loc0.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
+              int ti = (loc.lx1>>1)*pmb->block_size.nx1
+                       +(loc.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
+              int tj = (loc.lx2>>1)*pmb->block_size.nx2
+                       +(loc.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
               int tk = k;
+              Real vol00 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii  );
+              Real vol01 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii+1);
+              Real vol10 = pmb->pcoord->GetCellVolume(kk  ,jj+1,ii  );
+              Real vol11 = pmb->pcoord->GetCellVolume(kk  ,jj+1,ii+1);
               Real vx00 = pmb->phydro->w(IVX,kk  ,jj  ,ii  );
               Real vx01 = pmb->phydro->w(IVX,kk  ,jj  ,ii+1);
               Real vx10 = pmb->phydro->w(IVX,kk  ,jj+1,ii  );
@@ -336,18 +335,6 @@ void Mesh::UserWorkInLoop() {
               Real dvy01 = pmb->phydro->w(IVY,kk  ,jj  ,ii+1);
               Real dvy10 = pmb->phydro->w(IVY,kk  ,jj+1,ii  );
               Real dvy11 = pmb->phydro->w(IVY,kk  ,jj+1,ii+1);
-              Real vol00 = pmb->pcoord->dx3f(kk)
-                           *pmb->pcoord->dx2f(jj  )
-                           *pmb->pcoord->dx1f(ii  );
-              Real vol01 = pmb->pcoord->dx3f(kk)
-                           *pmb->pcoord->dx2f(jj  )
-                           *pmb->pcoord->dx1f(ii+1);
-              Real vol10 = pmb->pcoord->dx3f(kk)
-                           *pmb->pcoord->dx2f(jj+1)
-                           *pmb->pcoord->dx1f(ii  );
-              Real vol11 = pmb->pcoord->dx3f(kk)
-                           *pmb->pcoord->dx2f(jj+1)
-                           *pmb->pcoord->dx1f(ii+1);
               if(!pmb->porb->orbital_advection_defined) {
                 dvy00 += qom*pmb->pcoord->x1v(ii  );
                 dvy01 += qom*pmb->pcoord->x1v(ii+1);
@@ -371,12 +358,20 @@ void Mesh::UserWorkInLoop() {
                 int ii = (i-pmb->cis)*2+pmb->is;
                 int jj = (j-pmb->cjs)*2+pmb->js;
                 int kk = (k-pmb->cks)*2+pmb->ks;
-                int ti = (loc0.lx1>>1)*pmb->block_size.nx1
-                         +(loc0.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
-                int tj = (loc0.lx2>>1)*pmb->block_size.nx2
-                         +(loc0.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
-                int tk = (loc0.lx3>>1)*pmb->block_size.nx3
-                         +(loc0.lx3%2)*(pmb->block_size.nx3/2)+(k-pmb->cks);
+                int ti = (loc.lx1>>1)*pmb->block_size.nx1
+                         +(loc.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
+                int tj = (loc.lx2>>1)*pmb->block_size.nx2
+                         +(loc.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
+                int tk = (loc.lx3>>1)*pmb->block_size.nx3
+                         +(loc.lx3%2)*(pmb->block_size.nx3/2)+(k-pmb->cks);
+                Real vol000 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii  );
+                Real vol001 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii+1);
+                Real vol010 = pmb->pcoord->GetCellVolume(kk  ,jj+1,ii  );
+                Real vol011 = pmb->pcoord->GetCellVolume(kk  ,jj+1,ii+1);
+                Real vol100 = pmb->pcoord->GetCellVolume(kk+1,jj  ,ii  );
+                Real vol101 = pmb->pcoord->GetCellVolume(kk+1,jj  ,ii+1);
+                Real vol110 = pmb->pcoord->GetCellVolume(kk+1,jj+1,ii  );
+                Real vol111 = pmb->pcoord->GetCellVolume(kk+1,jj+1,ii+1);
                 Real vx000 = pmb->phydro->w(IVX,kk  ,jj  ,ii  );
                 Real vx001 = pmb->phydro->w(IVX,kk  ,jj  ,ii+1);
                 Real vx010 = pmb->phydro->w(IVX,kk  ,jj+1,ii  );
@@ -393,30 +388,6 @@ void Mesh::UserWorkInLoop() {
                 Real dvy101 = pmb->phydro->w(IVY,kk+1,jj  ,ii+1);
                 Real dvy110 = pmb->phydro->w(IVY,kk+1,jj+1,ii  );
                 Real dvy111 = pmb->phydro->w(IVY,kk+1,jj+1,ii+1);
-                Real vol000 = pmb->pcoord->dx3f(kk  )
-                              *pmb->pcoord->dx2f(jj  )
-                              *pmb->pcoord->dx1f(ii  );
-                Real vol001 = pmb->pcoord->dx3f(kk  )
-                              *pmb->pcoord->dx2f(jj  )
-                              *pmb->pcoord->dx1f(ii+1);
-                Real vol010 = pmb->pcoord->dx3f(kk  )
-                              *pmb->pcoord->dx2f(jj+1)
-                              *pmb->pcoord->dx1f(ii  );
-                Real vol011 = pmb->pcoord->dx3f(kk  )
-                              *pmb->pcoord->dx2f(jj+1)
-                              *pmb->pcoord->dx1f(ii+1);
-                Real vol100 = pmb->pcoord->dx3f(kk+1)
-                              *pmb->pcoord->dx2f(jj  )
-                              *pmb->pcoord->dx1f(ii  );
-                Real vol101 = pmb->pcoord->dx3f(kk+1)
-                              *pmb->pcoord->dx2f(jj  )
-                              *pmb->pcoord->dx1f(ii+1);
-                Real vol110 = pmb->pcoord->dx3f(kk+1)
-                              *pmb->pcoord->dx2f(jj+1)
-                              *pmb->pcoord->dx1f(ii  );
-                Real vol111 = pmb->pcoord->dx3f(kk+1)
-                              *pmb->pcoord->dx2f(jj+1)
-                              *pmb->pcoord->dx1f(ii+1);
                 if(!pmb->porb->orbital_advection_defined) {
                   dvy000 += qom*pmb->pcoord->x1v(ii  );
                   dvy001 += qom*pmb->pcoord->x1v(ii+1);
@@ -437,8 +408,8 @@ void Mesh::UserWorkInLoop() {
                                +dvy010*vol010+dvy011*vol011
                                +dvy100*vol100+dvy101*vol101
                                +dvy110*vol110+dvy111*vol111;
-                vxs(0,tk,tj,ti) = 2.0*SN*vx_vol;
-                dvys(1,tk,tj,ti) = 2.0*SN*dvy_vol;
+                vxs(tk,tj,ti) = 2.0*SN*vx_vol;
+                dvys(tk,tj,ti) = 2.0*SN*dvy_vol;
               }
             }
           }
