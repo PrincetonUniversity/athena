@@ -33,7 +33,6 @@
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "../fft/athena_fft.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
@@ -41,6 +40,10 @@
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../outputs/outputs.hpp"
 #include "../parameter_input.hpp"
+
+#ifdef FFT
+#include "../fft/athena_fft.hpp"
+#endif
 
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"
@@ -143,12 +146,13 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
         msg << "### FATAL ERROR in jgg.cpp ProblemGenerator" << std::endl
             << "FFT option is required for error output."    << std::endl;
         ATHENA_ERROR(msg);
-#endif
+#else
       if (Globals::my_rank==0 || (Globals::nranks>1 && Globals::my_rank == 1)) {
         fft_data = new fftw_complex[mesh_size.nx2];
         fplan =  fftw_plan_dft_1d(mesh_size.nx2, fft_data, fft_data,
                                   FFTW_FORWARD, FFTW_ESTIMATE);
       }
+#endif
 
       // allocateDataField
       AllocateRealUserMeshDataField(4);
@@ -476,9 +480,9 @@ void Mesh::UserWorkInLoop() {
                 Real vol = pmb->pcoord->GetCellVolume(k,j,i);
                 Real SN = std::sin(kx*x1+ky*x2+kz*x3);
                 if (mesh_size.nx3>1) { // 3D
-                  ruser_mesh_data[0](tk,tj,ti) = 2.0*pmb->pfield->bcc(IB1,k,j,i)*vol*SN;
-                } else { // 2D
                   ruser_mesh_data[0](tk,tj,ti) = 2.0*pmb->pfield->bcc(IB3,k,j,i)*vol*SN;
+                } else { // 2D
+                  ruser_mesh_data[0](tk,tj,ti) = 2.0*pmb->pfield->bcc(IB1,k,j,i)*vol*SN;
                 }
               } else { // ipert == 2
                 ruser_mesh_data[0](tk,tj,ti) = (pmb->pfield->bcc(IB1,k,j,i)-rbx)/dbx0;
@@ -621,6 +625,7 @@ void Mesh::UserWorkInLoop() {
       }
     }
 #endif
+#ifdef FFT
     // fft execution
     if (ipert == 2) {
       int exe_rank_dby = (Globals::nranks>1)? 1 : 0;
@@ -688,6 +693,7 @@ void Mesh::UserWorkInLoop() {
         }
       }
     }
+#endif
   } // flag
   return;
 }
