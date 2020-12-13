@@ -52,7 +52,7 @@ dfloor          = 1.e-6
 pfloor          = 1.e-9
 
 <orbital_advection>
-OAorder     = 0   # 0: w/o OA, 1: w/ OA(1st), 2: w/ OA (2nd)
+OAorder     = 0   # 0: w/o OA, 1: w/ OA (1st), 2: w/ OA (2nd)
 Omega0      = 0.0 # angular velocity of the system
 
 <problem>

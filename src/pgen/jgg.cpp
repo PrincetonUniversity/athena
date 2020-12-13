@@ -630,7 +630,7 @@ void Mesh::UserWorkInLoop() {
     if (ipert == 2) {
       int exe_rank_dby = (Globals::nranks>1)? 1 : 0;
       Real inv_nik = 1.0/static_cast<Real>(mesh_size.nx3*mesh_size.nx1);
-      Real inv_half_nx2 = static_cast<Real>(mesh_size.nx2/2);
+      Real inv_half_nx2 = 1.0/static_cast<Real>(mesh_size.nx2/2);
       int abs_nwy = std::abs(nwy);
       // calculate FFT of dbx
       if (Globals::my_rank == 0) {
@@ -647,19 +647,13 @@ void Mesh::UserWorkInLoop() {
             // calculation
             Real amp_wave;
             Real amp_others = 0.0;
-            Real x1 = (static_cast<Real>(i)+0.5)*Lx
-                      /static_cast<Real>(mesh_size.nx1)
-                      +mesh_size.x1min;
-            Real x3 = (static_cast<Real>(k)+0.5)*Lz
-                      /static_cast<Real>(mesh_size.nx3)
-                      +mesh_size.x3min;
             for (int j=0; j<mesh_size.nx2/2; j++) {
               if (j == abs_nwy) {
                 amp_wave = std::sqrt(SQR(fft_data[j][0])+SQR(fft_data[j][1]))
-                           /inv_half_nx2;
+                           *inv_half_nx2;
               } else {
                 amp_others += std::sqrt(SQR(fft_data[j][0])+SQR(fft_data[j][1]))
-                              /inv_half_nx2;
+                              *inv_half_nx2;
               }
             }
             ruser_mesh_data[2](0) += amp_wave*inv_nik;
@@ -680,14 +674,8 @@ void Mesh::UserWorkInLoop() {
             }
             fftw_execute(fplan);
             // calculation
-            Real x1 = (static_cast<Real>(i)+0.5)*Lx
-                      /static_cast<Real>(mesh_size.nx1)
-                      +mesh_size.x1min;
-            Real x3 = (static_cast<Real>(k)+0.5)*Lz
-                      /static_cast<Real>(mesh_size.nx3)
-                      +mesh_size.x3min;
             Real amp_wave = std::sqrt(SQR(fft_data[abs_nwy][0])
-                                     +SQR(fft_data[abs_nwy][1]))/inv_half_nx2;
+                                     +SQR(fft_data[abs_nwy][1]))*inv_half_nx2;
             ruser_mesh_data[3](0) += amp_wave*inv_nik;
           }
         }

@@ -74,10 +74,8 @@ def analyze():
     kappa2 = 2.0*(2.0-qshear)*Omega0**2.0
     cs = 0.001
     constC = 0.5*(cs**2.0*ky**2.0+kappa2)/(qshear*Omega0*cs*ky)
-
-    dvy0 = 1.0e-7
-    c1 = -1.82088e-07
-    c2 = -8.20766e-08
+    c1 = -1.82085106245
+    c2 = -0.8208057072217868
 
     # read results of SSEET_SHWAVE
     fname = 'bin/SSHEET_SHWAVE.hst'
@@ -98,7 +96,7 @@ def analyze():
         sterm_ = exp_*T_*mp.hyp1f1(0.75-0.5j*constC, 1.5, 0.5j*T_*T_)
         second_ = sterm_.real
         advy = c1*first_+c2*second_
-        norm1c += abs(dvyc1[n]-advy/dvy0)
+        norm1c += abs(dvyc1[n]-advy)
         norm1s += abs(dvys1[n])
     norm1c /= nf1
     norm1s /= nf1
@@ -122,7 +120,7 @@ def analyze():
         sterm_ = exp_*T_*mp.hyp1f1(0.75-0.5j*constC, 1.5, 0.5j*T_*T_)
         second_ = sterm_.real
         advy = c1*first_+c2*second_
-        norm2c += abs(dvyc2[n]-advy/dvy0)
+        norm2c += abs(dvyc2[n]-advy)
         norm2s += abs(dvys2[n])
     norm2c /= nf2
     norm2s /= nf2

@@ -1,6 +1,6 @@
 <comment>
 problem   = HD shwave test
-reference = Johnson & Gammie, 2008, ApJS, 177, 373
+reference = Johnson & Gammie, 2005, ApJ, 626, 978
 configure = --prob=ssheet --eos=isothermal
 
 <job>
@@ -55,7 +55,7 @@ gamma = 1.666666666666667   # gamma = C_p/C_v
 iso_sound_speed = 0.001     # isothermal sound speed
 
 <orbital_advection>
-OAorder      = 0       # 0: w/o OA, 1: w/ OA(1st), 2: w/ OA (2nd)
+OAorder      = 0       # 0: w/o OA, 1: w/ OA (1st), 2: w/ OA (2nd)
 qshear       = 1.5     # shear rate
 Omega0       = 0.001   # angular velocity of the system
 shboxcoord   = 1       # 1=xy (default); 2=xz
