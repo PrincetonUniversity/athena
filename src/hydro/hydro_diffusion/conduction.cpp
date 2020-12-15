@@ -3,6 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
+//! \file conduction.cpp
+//! \brief
 
 // C headers
 
@@ -18,7 +20,7 @@
 #include "hydro_diffusion.hpp"
 
 //---------------------------------------------------------------------------------------
-// Calculate isotropic thermal conduction
+//! Calculate isotropic thermal conduction
 
 void HydroDiffusion::ThermalFluxIso(
     const AthenaArray<Real> &prim,
@@ -106,7 +108,7 @@ void HydroDiffusion::ThermalFluxIso(
 
 
 //---------------------------------------------------------------------------------------
-// Calculate anisotropic thermal conduction
+//! Calculate anisotropic thermal conduction
 
 void HydroDiffusion::ThermalFluxAniso(
     const AthenaArray<Real> &p,
@@ -116,7 +118,7 @@ void HydroDiffusion::ThermalFluxAniso(
 
 
 //----------------------------------------------------------------------------------------
-// constant viscosity
+//! constant viscosity
 
 void ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &prim,
                      const AthenaArray<Real> &bcc,
