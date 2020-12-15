@@ -101,13 +101,10 @@ void BoundaryVariable::DestroyBoundaryData(BoundaryData<> &bd) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize)
-//  \brief
-
-//  Called in BoundaryVariable::SendBoundaryBuffer(), SendFluxCorrection() calls when the
-//  destination neighbor block is on the same MPI rank as the sending MeshBlcok. So
-//  std::memcpy() call requires pointer to "void *dst" corresponding to
-//  bd_var_.recv[nb.targetid] in separate BoundaryVariable object in separate vector in
-//  separate BoundaryValues
+//  \brief Called in BoundaryVariable::SendBoundaryBuffer() and SendFluxCorrection()
+//  when the destination neighbor block is on the same MPI rank as the sending MeshBlcok.
+//  So std::memcpy() call requires a pointer to "void *dst" corresponding to
+//  bd_var_.recv[nb.targetid] on the target block
 
 void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
@@ -124,6 +121,12 @@ void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssiz
 
 // KGF: change ssize to send_count
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb,
+//                                                                 int ssize)
+//  \brief Same as CopyVariableBufferSameProcess but for flux correction
+
 void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
   // 1) which MeshBlock?
@@ -137,8 +140,15 @@ void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, in
   return;
 }
 
+
 // no nb.targetid, nb.bufid in SimpleNeighborBlock.
 // fixed "int bufid" is used for both IDs. Seems unnecessarily strict.
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb,
+//                                                int ssize, int bufid, bool upper)
+//  \brief Same as CopyVariableBufferSameProcess but for shear boundaries
+
 void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int ssize,
                                                   int bufid, bool upper) {
   // Locate target buffer
@@ -154,18 +164,41 @@ void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int 
   return;
 }
 
-void BoundaryVariable::CopyShearEMFSameProcess(SimpleNeighborBlock& snb, int ssize,
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryVariable::CopyShearFluxSameProcess(SimpleNeighborBlock& snb,
+//                                                      int ssize, int bufid, bool upper)
+//  \brief Same as CopyVariableBufferSameProcess but for shear flux
+
+void BoundaryVariable::CopyShearFluxSameProcess(SimpleNeighborBlock& snb, int ssize,
                                                int bufid, bool upper) {
   // Locate target buffer
   // 1) which MeshBlock?
   MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(snb.gid);
   // 2) which element in vector of BoundaryVariable *?
-  ShearingBoundaryData *ptarget_bdata =
-      &(ptarget_block->pbval->bvars[bvar_index]->shear_bd_emf_[upper]);
-  std::memcpy(ptarget_bdata->recv[bufid], shear_bd_emf_[upper].send[bufid],
+  ShearingFluxBoundaryData *ptarget_bdata =
+      &(ptarget_block->pbval->bvars[bvar_index]->shear_bd_flux_[upper]);
+  std::memcpy(ptarget_bdata->recv[bufid], shear_bd_flux_[upper].send[bufid],
               ssize*sizeof(Real));
   // finally, set the BoundaryStatus flag on the destination buffer
   ptarget_bdata->flag[bufid] = BoundaryStatus::arrived;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryVariable::SetCompletedFlagSameProcess(NeighborBlock& nb)
+//  \brief
+//  Called in CellCenteredBoundaryVariable::SendFluxCorrection() when there is no
+//  need to send any information to nb on the same process. Just set
+//  BoundaryStatus::completed in the flag.
+void BoundaryVariable::SetCompletedFlagSameProcess(NeighborBlock& nb) {
+  // Locate target buffer
+  // 1) which MeshBlock?
+  MeshBlock *ptarget_block = pmy_mesh_->FindMeshBlock(nb.snb.gid);
+  // 2) which element in vector of BoundaryVariable *?
+  BoundaryData<> *ptarget_bdata =
+      &(ptarget_block->pbval->bvars[bvar_index]->bd_var_flcor_);
+  ptarget_bdata->flag[nb.targetid] = BoundaryStatus::completed;
   return;
 }
 

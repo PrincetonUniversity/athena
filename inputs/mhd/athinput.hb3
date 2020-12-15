@@ -1,7 +1,7 @@
 <comment>
 problem   = 2D MRI
 reference = J.F. Hawley & S.A. Balbus. ApJ 400, 595-609 (1992)
-configure = --prob=hb3 -shear -b --eos=isothermal
+configure = --prob=hb3 -b --eos=isothermal
 
 <job>
 problem_id  = HB3       # problem ID: basename of output filenames
@@ -28,8 +28,8 @@ ncycle_out  = 1         # interval for stdout summary info
 nx1         = 64        # Number of zones in X1-direction
 x1min       = -0.5      # minimum value of X1
 x1max       = 0.5       # maximum value of X1
-ix1_bc      = periodic  # Inner-X1 boundary condition flag
-ox1_bc      = periodic  # Outer-X1 boundary condition flag
+ix1_bc      = shear_periodic  # Inner-X1 boundary condition flag
+ox1_bc      = shear_periodic  # Outer-X1 boundary condition flag
 
 nx2         = 64        # Number of zones in X2-direction
 x2min       = -0.5      # minimum value of X2
@@ -52,6 +52,10 @@ nx3         = 1
 gamma = 1.6666666666666667 # gamma = C_p/C_v
 iso_sound_speed = 0.00408  # isothermal sound speed
 
+<orbital_advection>
+qshear     = 1.5       # shear rate
+Omega0     = 0.001     # angular velocity of the system
+shboxcoord = 2         # 1=xy; 2=xz
 
 <problem>
 beta       = 4000      # Plasma beta
@@ -60,6 +64,3 @@ ipert      = 1         # 1 for random d,P, 2 for uniform Vx
 ifield     = 1         # 1 for zero-net-flux Bz, 2 for constant Bz
 nwx        = 1         # wavenumber in x1
 nwy        = 1         # wavenumber in x2
-Omega0     = 1.0e-3    # orbital freq
-qshear     = 1.5       # shear rate
-shboxcoord = 2         # 1=xy; 2=xz
