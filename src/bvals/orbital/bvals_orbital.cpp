@@ -227,7 +227,7 @@ void OrbitalBoundaryCommunication::InitBoundaryData(
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalBoundaryCommunication::DestroyBoundaryData(OrbitalBoundaryData &bd)
-//  \brief destroy BoundaryData structure
+//! \brief destroy BoundaryData structure
 
 void OrbitalBoundaryCommunication::DestroyBoundaryData(OrbitalBoundaryData &bd) {
   for (int n=0; n<bd.nbmax; n++) {
