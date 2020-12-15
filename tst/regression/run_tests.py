@@ -20,6 +20,7 @@ from __future__ import print_function
 import argparse
 import os
 from collections import OrderedDict
+from importlib import reload
 import logging
 import logging.config
 from pkgutil import iter_modules
@@ -111,6 +112,7 @@ def main(**kwargs):
                 name_full = 'scripts.tests.' + name
                 module = __import__(name_full, globals(), locals(),
                                     fromlist=['prepare', 'run', 'analyze'])
+                reload(module)
                 os.system('rm -rf {0}/bin'.format(current_dir))
                 os.system('rm -rf {0}/obj'.format(current_dir))
 
