@@ -138,7 +138,7 @@ void FieldDiffusion::AddEMF(const EdgeField &e_src, EdgeField &e_des) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FieldDiffusion::ClearFieldDiffusionEMF(EdgeField &e)
+//! \fn void FieldDiffusion::ClearEMF(EdgeField &e)
 //! \brief Clear EMF
 
 // TODO(felker): move out of FieldDiffusion class. Completely general operation

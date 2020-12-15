@@ -6,6 +6,7 @@
 //! \file gr_user.cpp
 //!  \brief Used for arbitrary stationary coordinates in general relativity, with all
 //!  functions evaluated numerically based on the metric.
+//!
 //!  Original implementation by CJ White.
 
 // C headers
