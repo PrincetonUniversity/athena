@@ -173,6 +173,7 @@ struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
 };
 
 using ShearingBoundaryData = BoundaryData<4>;
+using ShearingFluxBoundaryData = BoundaryData<3>;
 
 // Struct for describing blocks which touch the shearing-periodic boundaries
 // struct ShearingBoundaryBlock {
@@ -206,7 +207,6 @@ class BoundaryCommunication {
   virtual void ClearBoundary(BoundaryCommSubset phase) = 0;
 
   virtual void StartReceivingShear(BoundaryCommSubset phase) = 0;
-  virtual void ComputeShear(const Real time) = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -318,7 +318,7 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   void ReceiveAndSetBoundariesWithWait() override;
   void SetBoundaries() override;
   //!@}
-  
+
  protected:
   // deferred initialization of BoundaryData objects in derived class constructors
   BoundaryData<> bd_var_, bd_var_flcor_;
@@ -335,12 +335,14 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   void InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type);
   void DestroyBoundaryData(BoundaryData<> &bd);
 
-  ShearingBoundaryData shear_bd_var_[2], shear_bd_emf_[2];
-  //! \todo (felker): combine 4x Copy*SameProcess() functions
+  ShearingBoundaryData shear_bd_var_[2];
+  ShearingFluxBoundaryData shear_bd_flux_[2];
+  // TODO(felker): combine 4x Copy*SameProcess() functions
   void CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int ssize, int bufid,
                                   bool upper);
-  void CopyShearEMFSameProcess(SimpleNeighborBlock& snb, int ssize, int bufid,
+  void CopyShearFluxSameProcess(SimpleNeighborBlock& snb, int ssize, int bufid,
                                bool upper);
+  void SetCompletedFlagSameProcess(NeighborBlock& nb);
   // private:
 };
 

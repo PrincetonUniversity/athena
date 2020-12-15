@@ -367,7 +367,7 @@ void MeshRefinement::RestrictFieldX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::ProlongateCellCenteredValues(
-//!       const AthenaArray<Real> &coarse,AthenaArray<Real> &fine, int sn, int en,,
+//!       const AthenaArray<Real> &coarse,AthenaArray<Real> &fine, int sn, int en,
 //!       int si, int ei, int sj, int ej, int sk, int ek)
 //! \brief Prolongate cell centered values
 

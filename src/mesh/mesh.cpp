@@ -42,6 +42,7 @@
 #include "../hydro/hydro.hpp"
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
 #include "../multigrid/multigrid.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../outputs/io_wrapper.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
@@ -82,6 +83,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
              ? true : false),
     multilevel((adaptive || pin->GetOrAddString("mesh", "refinement", "none") == "static")
                ? true : false),
+    orbital_advection(pin->GetOrAddInteger("orbital_advection","OAorder",0)),
+    shear_periodic(GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none"))
+                   == BoundaryFlag::shear_periodic ? true : false),
     fluid_setup(GetFluidFormulation(pin->GetOrAddString("hydro", "active", "true"))),
     start_time(pin->GetOrAddReal("time", "start_time", 0.0)), time(start_time),
     tlim(pin->GetReal("time", "tlim")), dt(std::numeric_limits<Real>::max()),
@@ -109,6 +113,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
     ConductionCoeff_{}, FieldDiffusivity_{},
+    OrbitalVelocity_{}, OrbitalVelocityDerivative_{nullptr, nullptr},
     MGGravityBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
                                MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
   std::stringstream msg;
@@ -547,6 +552,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
              ? true : false),
     multilevel((adaptive || pin->GetOrAddString("mesh", "refinement", "none") == "static")
                ? true : false),
+    orbital_advection(pin->GetOrAddInteger("orbital_advection","OAorder",0)),
+    shear_periodic(GetBoundaryFlag(pin->GetOrAddString("mesh", "ix1_bc", "none"))
+                   == BoundaryFlag::shear_periodic ? true : false),
     fluid_setup(GetFluidFormulation(pin->GetOrAddString("hydro", "active", "true"))),
     start_time(pin->GetOrAddReal("time", "start_time", 0.0)), time(start_time),
     tlim(pin->GetReal("time", "tlim")), dt(std::numeric_limits<Real>::max()),
@@ -574,6 +582,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     BoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     AMRFlag_{}, UserSourceTerm_{}, UserTimeStep_{}, ViscosityCoeff_{},
     ConductionCoeff_{}, FieldDiffusivity_{},
+    OrbitalVelocity_{}, OrbitalVelocityDerivative_{nullptr, nullptr},
     MGGravityBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
                         MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
   std::stringstream msg;
@@ -1271,6 +1280,25 @@ void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeffFunc my_func) {
   FieldDiffusivity_ = my_func;
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollOrbitalVelocity(OrbitalVelocityFunc my_func)
+//  \brief Enroll a user-defined orbital velocity function
+
+void Mesh::EnrollOrbitalVelocity(OrbitalVelocityFunc my_func) {
+  OrbitalVelocity_ = my_func;
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollOrbitalVelocityDerivative(int i, OrbitalVelocityFunc my_func)
+//  \brief Enroll Derivative fuctions of user-defined orbital velocity.
+
+void Mesh::EnrollOrbitalVelocityDerivative(int i, OrbitalVelocityFunc my_func) {
+  OrbitalVelocityDerivative_[i] = my_func;
+  return;
+}
+
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::AllocateRealUserMeshDataField(int n)
 //! \brief Allocate Real AthenaArrays for user-defned data in Mesh
@@ -1362,8 +1390,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nblocal; ++i) {
         pmb = my_blocks(i); pbval = pmb->pbval;
-        if (SHEARING_BOX) {
-          pbval->ComputeShear(time);
+        if (shear_periodic) {
+          pbval->ComputeShear(time, time);
         }
         pbval->StartReceivingSubset(BoundaryCommSubset::mesh_init,
                                     pbval->bvars_main_int);
@@ -1392,7 +1420,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
         if (NSCALARS > 0)
           pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
-        if (SHEARING_BOX) {
+        if (shear_periodic && orbital_advection==0) {
           pmb->phydro->hbvar.AddHydroShearForInit();
         }
         pbval->ClearBoundarySubset(BoundaryCommSubset::mesh_init,
@@ -1445,6 +1473,17 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       bool correct_ic = my_blocks(0)->precon->correct_ic;
       if (correct_ic)
         CorrectMidpointInitialCondition();
+
+      // Initiate orbital advection
+#pragma omp for private(pmb)
+      for (int i=0; i<nblocal; ++i) {
+        pmb = my_blocks(i);
+        if (pmb->porb->orbital_advection_defined) {
+          pmb->porb->InitializeOrbitalAdvection();
+          if (pmb->porb->orbital_advection_active)
+            pmb->porb->orb_bc->SetupPersistentMPI();
+        }
+      }
 
       // Now do prolongation, compute primitives, apply BCs
       Hydro *ph;
@@ -1741,8 +1780,8 @@ void Mesh::CorrectMidpointInitialCondition() {
 #pragma omp for private(pmb,pbval)
   for (int i=0; i<nblocal; ++i) {
     pmb = my_blocks(i); pbval = pmb->pbval;
-    if (SHEARING_BOX) {
-      pbval->ComputeShear(time);
+    if (shear_periodic) {
+      pbval->ComputeShear(time, time);
     }
     // no need to re-SetupPersistentMPI() the MPI requests for boundary values
     pbval->StartReceivingSubset(BoundaryCommSubset::mesh_init,
@@ -1773,7 +1812,7 @@ void Mesh::CorrectMidpointInitialCondition() {
       pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
     if (NSCALARS > 0)
       pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
-    if (SHEARING_BOX) {
+    if (shear_periodic && orbital_advection==0) {
       pmb->phydro->hbvar.AddHydroShearForInit();
     }
     pbval->ClearBoundarySubset(BoundaryCommSubset::mesh_init,

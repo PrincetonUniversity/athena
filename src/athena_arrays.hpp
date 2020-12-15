@@ -159,6 +159,9 @@ class AthenaArray {
   void InitWithShallowSlice(AthenaArray<T> &src, const int dim, const int indx,
                             const int nvar);
 
+  void ShallowSlice3DToPencil(AthenaArray<T> &src, const int k, const int j,
+                              const int il, const int n);
+
  private:
   T *pdata_;
   int nx1_, nx2_, nx3_, nx4_, nx5_, nx6_;
@@ -532,6 +535,26 @@ void AthenaArray<T>::AllocateData() {
       pdata_ = new T[nx1_*nx2_*nx3_*nx4_*nx5_*nx6_]();
       break;
   }
+}
+//----------------------------------------------------------------------------------------
+//! \fn AthenaArray<T>::ShallowSlice3DToPencil(AthenaArray<T> &src, const int k,
+//                                             const int j, const int il, const int n) {
+//  \brief shallow copy of 1D (pencil) array with n elements from il at k, j in 3D array.
+//         Copies pointer to data, but not data itself.
+
+template<typename T>
+void AthenaArray<T>::ShallowSlice3DToPencil(AthenaArray<T> &src, const int k,
+                                            const int j, const int il, const int n) {
+  pdata_ = src.pdata_;
+  nx6_ = 1;
+  nx5_ = 1;
+  nx4_ = 1;
+  nx3_ = 1;
+  nx2_ = 1;
+  nx1_ = n;
+  pdata_ += (k*src.nx2_+j)*src.nx1_+il;
+  state_ = DataStatus::shallow_slice;
+  return;
 }
 
 #endif // ATHENA_ARRAYS_HPP_

@@ -55,9 +55,11 @@ class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
 
   //protected:
  private:
+  void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
   //! Hydro is a unique cell-centered variable because of the relationship between
   //! HydroBoundaryQuantity::cons u and HydroBoundaryQuantity::prim w.
   HydroBoundaryQuantity hydro_type_;
+  int LoadFluxBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) final;
 };
 
 #endif // BVALS_CC_HYDRO_BVALS_HYDRO_HPP_

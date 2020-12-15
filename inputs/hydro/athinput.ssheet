@@ -1,64 +1,69 @@
 <comment>
-problem   = xy-shearing wave test
-reference =
-configure = -shear --eos=isothermal --prob=ssheet
+problem   = HD shwave test
+reference = Johnson & Gammie, 2005, ApJ, 626, 978
+configure = --prob=ssheet --eos=isothermal
 
 <job>
-problem_id = sst   # problem ID: basename of output filenames
+problem_id  = ssheet     # problem ID: basename of output filenames
 
 <output1>
-file_type  = hst       # History data dump
-dt         = 0.1       # time increment between outputs
+file_type   = hst        # History data dump
+dt          = 10.0       # time increment between outputsi
+data_format = %1.16f     # format of History data
 
 <output2>
-file_type   = hdf5     # HDF5 data dump
-variable    = prim     # variables to be output
-dt          = 500      # time increment between outputs
+file_type   = vtk        # vtk data dump
+variable    = prim       # variables to be output
+dt          = 1000.0     # time increment between outputs
 
 <time>
-cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
-nlim       = -1        # cycle limit
-tlim       = 1e4       # time limit
-integrator  = vl2      # time integration algorithm
-xorder      = 2        # order of spatial reconstruction
-ncycle_out  = 1        # interval for stdout summary info
+cfl_number  = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = -1         # cycle limit
+tlim        = 8000.0     # time limit
+integrator  = vl2        # time integration algorithm
+xorder      = 2          # order of spatial reconstruction
+ncycle_out  = 1          # interval for stdout summary info
 
 <mesh>
-nx1        = 64        # Number of zones in X1-direction
-x1min      = -0.5      # minimum value of X1
-x1max      = 0.5       # maximum value of X1
-ix1_bc     = shear_periodic      # inner-X1 boundary flag
-ox1_bc     = shear_periodic      # outer-X1 boundary flag
+nx1         = 64         # Number of zones in X1-direction
+x1min       = -2.0       # minimum value of X1
+x1max       = 2.0        # maximum value of X1
+ix1_bc      = shear_periodic      # inner-X1 boundary flag
+ox1_bc      = shear_periodic      # outer-X1 boundary flag
 
-nx2        = 64        # Number of zones in X2-direction
-x2min      = -0.5      # minimum value of X2
-x2max      = 0.5       # maximum value of X2
-ix2_bc     = periodic  # inner-X2 boundary flag
-ox2_bc     = periodic  # outer-X2 boundary flag
+nx2         = 64         # Number of zones in X2-direction
+x2min       = -2.0       # minimum value of X2
+x2max       = 2.0        # maximum value of X2
+ix2_bc      = periodic   # inner-X2 boundary flag
+ox2_bc      = periodic   # outer-X2 boundary flag
 
-nx3        = 1         # Number of zones in X3-direction
-x3min      = -0.03125  # minimum value of X3
-x3max      = 0.03125   # maximum value of X3
-ix3_bc     = periodic  # inner-X3 boundary flag
-ox3_bc     = periodic  # outer-X3 boundary flag
+nx3         = 1          # Number of zones in X3-direction
+x3min       = -0.5       # minimum value of X3
+x3max       = 0.5        # maximum value of X3
+ix3_bc      = periodic   # inner-X3 boundary flag
+ox3_bc      = periodic   # outer-X3 boundary flag
 
-num_threads = 1        # maximum number of OMP threads
+num_threads = 1          # maximum number of OMP threads
 
 <meshblock>
-nx1 = 64
-nx2 = 64
-nx3 = 1
+nx1 = 64 #
+nx2 = 64 #
+nx3 = 1  #
 
 <hydro>
-gamma = 1.666666666666667 # gamma = C_p/C_v
-iso_sound_speed = 0.001 # isothermal sound speed
+gamma = 1.666666666666667   # gamma = C_p/C_v
+iso_sound_speed = 0.001     # isothermal sound speed
+
+<orbital_advection>
+OAorder      = 0       # 0: w/o OA, 1: w/ OA (1st), 2: w/ OA (2nd)
+qshear       = 1.5     # shear rate
+Omega0       = 0.001   # angular velocity of the system
+shboxcoord   = 1       # 1=xy (default); 2=xz
 
 <problem>
-amp       = 1.0e-4    # wave amplitude
-nwx       = -8        # wavenumber in x1
-nwy       = 2         # wavenumber in x2
-ipert     = 1         # 0: pure shear; 1: shear wave
-Omega0    = 1e-3      # orbital freq
-qshear    = 1.5       # shear rate
-shboxcoord = 1        # 1=xy (default); 2=xz
-
+amp          = 4.0e-4  # wave amplitude
+nwx          = -4      # wavenumber in x1
+nwy          = 1       # wavenumber in x2
+nwz          = 0       # wavenumber in x3
+ipert        = 3       # 1: pure shear; 2: epicyclic; 3: shwave
+error_output = false   # flag of error output in history file

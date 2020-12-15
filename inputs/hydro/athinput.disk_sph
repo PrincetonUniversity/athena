@@ -24,20 +24,20 @@ xorder      = 2         # order of spatial reconstruction
 ncycle_out  = 1         # interval for stdout summary info
 
 <mesh>
-nx1         = 256       # Number of zones in X1-direction
-x1min       = 0.3       # minimum value of X1
-x1max       = 3.0       # maximum value of X1
+nx1         = 64       # Number of zones in X1-direction
+x1min       = 0.5       # minimum value of X1
+x1max       = 2.0       # maximum value of X1
 ix1_bc      = user      # Inner-X1 boundary condition flag
 ox1_bc      = user      # Outer-X1 boundary condition flag
-x1rat       = 1.009     # non-uniform grid ratio
+x1rat       = 1.0219    # non-uniform grid ratio
 
-nx2         = 64        # Number of zones in X2-direction
-x2min       = 1.1708    # minimum value of X2
-x2max       = 1.9708    # maximum value of X2
+nx2         = 32        # Number of zones in X2-direction
+x2min       = 1.2458    # minimum value of X2
+x2max       = 1.8958    # maximum value of X2
 ix2_bc      = user      # Inner-X2 boundary condition flag
 ox2_bc      = user      # Outer-X2 boundary condition flag
 
-nx3         = 4              # Number of zones in X3-direction
+nx3         = 256            # Number of zones in X3-direction
 x3min       = 0.0            # minimum value of X3
 x3max       = 6.2831853071795862  # maximum value of X3
 ix3_bc      = periodic       # Inner-X3 boundary condition flag
@@ -51,10 +51,14 @@ iso_sound_speed = 0.1        # isothermal sound speed
 dfloor          = 1.e-9
 pfloor          = 1.e-12
 
+<orbital_advection>
+OAorder     = 0   # 0: w/o OA, 1: w/ OA (1st), 2: w/ OA (2nd)
+Omega0      = 0.0 # angular velocity of the system
+
 <problem>
-GM              = 1.0
-r0              = 1.0
-rho0            = 1.0
-p0_over_r0      = 0.01
-pslope          = -0.5
-dslope          = -2.25
+GM          = 1.0
+r0          = 1.0
+rho0        = 1.0
+p0_over_r0  = 0.01
+pslope      = -0.5
+dslope      = -2.25

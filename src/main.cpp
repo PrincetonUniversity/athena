@@ -458,10 +458,12 @@ int main(int argc, char *argv[]) {
 
     for (int stage=1; stage<=ptlist->nstages; ++stage) {
       ptlist->DoTaskListOneStage(pmesh, stage);
-      if (SELF_GRAVITY_ENABLED == 1) // fft (flag 0 for discrete kernel, 1 for continuous)
-        pmesh->pfgrd->Solve(stage, 0);
-      else if (SELF_GRAVITY_ENABLED == 2) // multigrid
-        pmesh->pmgrd->Solve(stage);
+      if (ptlist->CheckNextMainStage(stage)) {
+        if (SELF_GRAVITY_ENABLED == 1) // fft (0: discrete kernel, 1: continuous karnel)
+          pmesh->pfgrd->Solve(stage, 0);
+        else if (SELF_GRAVITY_ENABLED == 2) // multigrid
+          pmesh->pmgrd->Solve(stage);
+      }
     }
 
     if (STS_ENABLED && pmesh->sts_integrator == "rkl2") {
