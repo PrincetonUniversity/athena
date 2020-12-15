@@ -3,7 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//  \brief Class to implement source terms in the hydro equations
+//! \file hydro_srcterms.cpp
+//! \brief Class to implement source terms in the hydro equations
 
 // C headers
 
@@ -24,7 +25,7 @@
 #include "../hydro.hpp"
 #include "hydro_srcterms.hpp"
 
-// HydroSourceTerms constructor
+//! HydroSourceTerms constructor
 
 HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
   pmy_hydro_ = phyd;
@@ -111,7 +112,7 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroSourceTerms::AddHydroSourceTerms
-//  \brief Adds source terms to conserved variables
+//! \brief Adds source terms to conserved variables
 
 void HydroSourceTerms::AddHydroSourceTerms(const Real time, const Real dt,
                                            const AthenaArray<Real> *flux,
