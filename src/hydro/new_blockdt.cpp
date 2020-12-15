@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file new_blockdt.cpp
-//  \brief computes timestep using CFL condition on a MEshBlock
+//! \brief computes timestep using CFL condition on a MEshBlock
 
 // C headers
 
@@ -36,8 +36,8 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-// \!fn void Hydro::NewBlockTimeStep()
-// \brief calculate the minimum timestep within a MeshBlock
+//! \fn void Hydro::NewBlockTimeStep()
+//! \brief calculate the minimum timestep within a MeshBlock
 
 void Hydro::NewBlockTimeStep() {
   MeshBlock *pmb = pmy_block;

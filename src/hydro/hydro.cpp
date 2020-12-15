@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hydro.cpp
-//  \brief implementation of functions in class Hydro
+//! \brief implementation of functions in class Hydro
 
 // C headers
 
@@ -26,7 +26,7 @@
 #include "hydro_diffusion/hydro_diffusion.hpp"
 #include "srcterms/hydro_srcterms.hpp"
 
-// constructor, initializes data structures and parameters
+//! constructor, initializes data structures and parameters
 
 Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), u(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
@@ -162,7 +162,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
 
 //----------------------------------------------------------------------------------------
 //! \fn Real Hydro::GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt)
-//  \brief Calculate the weighting factor for the constrained transport method
+//! \brief Calculate the weighting factor for the constrained transport method
 
 Real Hydro::GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt) {
   Real v_over_c = (1024.0)* dt * dflx / (dx * (rhol + rhor));

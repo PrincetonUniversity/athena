@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gravity_fluxes.cpp
-//  \brief Calculate gravity fluxes
+//! \brief Calculate gravity fluxes
 
 // C headers
 
@@ -18,7 +18,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::AddGravityFlux()
-//  \brief Add gravity flux using new potential directly
+//! \brief Add gravity flux using new potential directly
 
 void Hydro::AddGravityFlux() {
   MeshBlock *pmb=pmy_block;
@@ -154,8 +154,8 @@ void Hydro::AddGravityFlux() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::AddGravityFluxWithGflx()
-//  \brief Adds gravity flux to hydro flux using pre-calculated gflx.
-//         Implemented for one poisson solver call. (old Athena style)
+//! \brief Adds gravity flux to hydro flux using pre-calculated gflx.
+//!        Implemented for one poisson solver call. (old Athena style)
 
 void Hydro::AddGravityFluxWithGflx() {
   MeshBlock *pmb=pmy_block;
@@ -193,8 +193,8 @@ void Hydro::AddGravityFluxWithGflx() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in)
-//  \brief Calcuates gravity flux to hydro flux
-//         Implemented for one poisson solver call. (old Athena style)
+//! \brief Calcuates gravity flux to hydro flux
+//!        Implemented for one poisson solver call. (old Athena style)
 
 void Hydro::CalculateGravityFlux(AthenaArray<Real> &phi_in) {
   MeshBlock *pmb=pmy_block;

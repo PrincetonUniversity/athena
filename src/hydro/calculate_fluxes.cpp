@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file calculate_fluxes.cpp
-//  \brief Calculate hydro/MHD fluxes
+//! \brief Calculate hydro/MHD fluxes
 
 // C headers
 
@@ -31,7 +31,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn  void Hydro::CalculateFluxes
-//  \brief Calculate Hydrodynamic Fluxes using the Riemann solver
+//! \brief Calculate Hydrodynamic Fluxes using the Riemann solver
 
 void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
                             AthenaArray<Real> &bcc, const int order) {
@@ -382,7 +382,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
 //----------------------------------------------------------------------------------------
 //! \fn  void Hydro::CalculateFluxes_STS
-//  \brief Calculate Hydrodynamic Diffusion Fluxes for STS
+//! \brief Calculate Hydrodynamic Diffusion Fluxes for STS
 
 void Hydro::CalculateFluxes_STS() {
   AddDiffusionFluxes();

@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hydro.hpp
-//  \brief definitions for Hydro class
+//! \brief definitions for Hydro class
 
 // C headers
 
@@ -27,7 +27,7 @@ class ParameterInput;
 // using FaceFlux = AthenaArray<Real>[3];
 
 //! \class Hydro
-//  \brief hydro data and functions
+//! \brief hydro data and functions
 
 class Hydro {
   friend class Field;
