@@ -734,7 +734,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     //!   3N method, but there is no 3S* formulation due to irregular sparsity
     //!   of Shu-Osher form matrix, alpha.
     //! - Because it is an SSP method, we can use the SSP coefficient c=1.508 to to
-    //!   trivially relate the CFL constraint to the RK1 CFL=1 (for first-order fluxes). ///! - There is no need to perform stability analysis from scratch
+    //!   trivially relate the CFL constraint to the RK1 CFL=1 (for first-order fluxes).
+    //! - There is no need to perform stability analysis from scratch
     //!   (unlike e.g. the linear stability analysis for classical/non-SSP RK4 in
     //!   Colella (2011)).
     //! - However, PLM and PPM w/o the limiter engaged are unconditionally unstable

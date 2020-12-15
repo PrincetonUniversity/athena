@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file boundary_flag.cpp
-//! \brief utilities for processing the user's input `<mesh>` ixn_bc, oxn_bc parameters and
-//! the associated internal BoundaryFlag enumerators
+//! \brief utilities for processing the user's input `<mesh>` ixn_bc, oxn_bc
+//!   parameters and the associated internal BoundaryFlag enumerators
 
 // C headers
 

@@ -35,7 +35,6 @@
 
 void PassiveScalars::AddDiffusionFluxes() {
   if (scalar_diffusion_defined) {
-
     // if (nu_scalar_iso > 0.0 || nu_scalar_aniso > 0.0)
     // AddDiffusionFlux(diffusion_flx, flux);
 
