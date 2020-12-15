@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file llf_mhd_rel.cpp
-//  \brief Implements local Lax-Friedrichs Riemann solver for relativistic MHD.
+//! \brief Implements local Lax-Friedrichs Riemann solver for relativistic MHD.
 
 // C headers
 

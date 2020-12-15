@@ -4,11 +4,11 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hlld.cpp
-//  \brief HLLD Riemann solver for adiabatic MHD.
-//
-// REFERENCES:
-// - T. Miyoshi & K. Kusano, "A multi-state HLL approximate Riemann solver for ideal
-//   MHD", JCP, 208, 315 (2005)
+//! \brief HLLD Riemann solver for adiabatic MHD.
+//!
+//! REFERENCES:
+//! - T. Miyoshi & K. Kusano, "A multi-state HLL approximate Riemann solver for ideal
+//!   MHD", JCP, 208, 315 (2005)
 
 // C headers
 

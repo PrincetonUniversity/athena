@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hlld_rel.cpp
-//  \brief Implements HLLD Riemann solver for relativistic MHD.
+//! \brief Implements HLLD Riemann solver for relativistic MHD.
 
 // C headers
 
