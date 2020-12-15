@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file fft_gravity.cpp
-//  \brief implementation of functions in class FFTGravity
+//! \brief implementation of functions in class FFTGravity
 
 // C headers
 
@@ -29,7 +29,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
-//  \brief FFTGravityDriver constructor
+//! \brief FFTGravityDriver constructor
 
 FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
     : FFTDriver(pm, pin) {
@@ -61,7 +61,7 @@ FFTGravityDriver::~FFTGravityDriver() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void GravityDriver::Solve(int stage)
-//  \brief load the data and solve
+//! \brief load the data and solve
 
 void FFTGravityDriver::Solve(int stage, int mode) {
   FFTBlock *pfb = pmy_fb;
@@ -101,7 +101,7 @@ void FFTGravityDriver::Solve(int stage, int mode) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void FFTGravity::ApplyKernel(const AthenaArray<Real> &src, int ns)
-//  \brief Apply kernel
+//! \brief Apply kernel
 void FFTGravity::ApplyKernel(int mode) {
   Real pcoeff(0.0);
   Real dx1sq = SQR(TWO_PI/(kNx[0]*dkx[0]));

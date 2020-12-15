@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mg_gravity.hpp
-//  \brief defines MGGravity class
+//! \brief defines MGGravity class
 
 // C headers
 
@@ -23,7 +23,7 @@ class Coordinates;
 class Multigrid;
 
 //! \class MGGravity
-//  \brief Multigrid gravity solver for each block
+//! \brief Multigrid gravity solver for each block
 
 class MGGravity : public Multigrid {
  public:
@@ -44,7 +44,7 @@ class MGGravity : public Multigrid {
 
 
 //! \class MGGravityDriver
-//  \brief Multigrid gravity solver
+//! \brief Multigrid gravity solver
 
 class MGGravityDriver : public MultigridDriver {
  public:
