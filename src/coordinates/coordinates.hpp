@@ -6,10 +6,11 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file coordinates.hpp
-//  \brief defines abstract base and derived classes for coordinates.  These classes
-//  provide data and functions to compute/store coordinate positions and spacing, as well
-//  as geometrical factors (areas, volumes, coordinate source terms) for various
-//  coordinate systems.
+//! \brief defines abstract base and derived classes for coordinates.
+//!
+//! These classes provide data and functions to compute/store coordinate positions and
+//! spacing, as well as geometrical factors (areas, volumes, coordinate source terms)
+//! for various coordinate systems.
 
 // C headers
 
@@ -28,7 +29,7 @@ class ParameterInput;
 
 //----------------------------------------------------------------------------------------
 //! \class Coordinates
-//  \brief abstract base class for all coordinate derived classes
+//! \brief abstract base class for all coordinate derived classes
 
 class Coordinates {
  public:
@@ -282,8 +283,8 @@ class Coordinates {
 
 //----------------------------------------------------------------------------------------
 //! \class Cartesian
-//  \brief derived class for Cartesian coordinates.  None of the virtual funcs
-//  in the Coordinates abstract base class need to be overridden.
+//! \brief derived class for Cartesian coordinates.  None of the virtual funcs
+//!  in the Coordinates abstract base class need to be overridden.
 
 class Cartesian : public Coordinates {
   friend class HydroSourceTerms;
@@ -294,8 +295,8 @@ class Cartesian : public Coordinates {
 
 //----------------------------------------------------------------------------------------
 //! \class Cylindrical
-//  \brief derived class for Cylindrical coordinates.  Some of the length, area,
-//  and volume functions in the Coordinates abstract base class are overridden
+//! \brief derived class for Cylindrical coordinates.  Some of the length, area,
+//!  and volume functions in the Coordinates abstract base class are overridden
 
 class Cylindrical : public Coordinates {
   friend class HydroSourceTerms;
@@ -343,8 +344,8 @@ class Cylindrical : public Coordinates {
 
 //----------------------------------------------------------------------------------------
 //! \class SphericalPolar
-//  \brief derived class for spherical polar coordinates.  Many of the length, area,
-//  and volume functions in the Coordinates abstract base class are overridden.
+//! \brief derived class for spherical polar coordinates.  Many of the length, area,
+//!  and volume functions in the Coordinates abstract base class are overridden.
 
 class SphericalPolar : public Coordinates {
   friend class HydroSourceTerms;
@@ -404,9 +405,10 @@ class SphericalPolar : public Coordinates {
 
 //----------------------------------------------------------------------------------------
 //! \class Minkowski
-//  \brief derived class for Minkowski (flat) spacetime and Cartesian coordinates in GR.
-//  None of the length, area, and volume functions in the abstract base class need to be
-//  overridden, but all the metric and transforms functions are.
+//! \brief derived class for Minkowski (flat) spacetime and Cartesian coordinates in GR.
+//!
+//! None of the length, area, and volume functions in the abstract base class need to be
+//! overridden, but all the metric and transforms functions are.
 
 class Minkowski : public Coordinates {
   friend class HydroSourceTerms;
@@ -459,8 +461,9 @@ class Minkowski : public Coordinates {
 
 //----------------------------------------------------------------------------------------
 //! \class Schwarzschild
-//  \brief derived class for Schwarzschild spacetime and spherical polar coordinates in GR
-//  Nearly every function in the abstract base class need to be overridden.
+//! \brief derived class for Schwarzschild spacetime and spherical polar coordinates in GR
+//!
+//!  Nearly every function in the abstract base class need to be overridden.
 
 class Schwarzschild : public Coordinates {
   friend class HydroSourceTerms;
@@ -554,8 +557,9 @@ class Schwarzschild : public Coordinates {
 
 //----------------------------------------------------------------------------------------
 //! \class KerrSchild
-//  \brief derived class for Kerr spacetime and Kerr-Schild coordinates in GR.
-//  Nearly every function in the abstract base class need to be overridden.
+//! \brief derived class for Kerr spacetime and Kerr-Schild coordinates in GR.
+//!
+//! Nearly every function in the abstract base class need to be overridden.
 
 class KerrSchild : public Coordinates {
   friend class HydroSourceTerms;
@@ -649,8 +653,9 @@ class KerrSchild : public Coordinates {
 
 //----------------------------------------------------------------------------------------
 //! \class GRUser
-//  \brief derived class for arbitrary (stationary) user-defined coordinates in GR.
-//  Nearly every function in the abstract base class need to be overridden.
+//! \brief derived class for arbitrary (stationary) user-defined coordinates in GR.
+//!
+//! Nearly every function in the abstract base class need to be overridden.
 
 class GRUser : public Coordinates {
   friend class HydroSourceTerms;

@@ -4,26 +4,27 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file kerr-schild.cpp
-//  \brief implements functions for Kerr spacetime and Kerr-Schild (t,r,theta,phi)
-//  coordinates in a derived class of the Coordinates abstract base class.
-//  Original implementation by CJ White.
-//
-// Notes:
-//   coordinates: t, r, \theta, \phi
-//   parameters: M (mass), M > 0
-//               a (spin), -M < a < M
-//   metric:
-//     ds^2 = -(1 - 2 M r/\Sigma) dt^2
-//            + 4 M r/\Sigma dt dr
-//            - 4 M a r/\Sigma dt d\phi
-//            + (1 + 2 M r/\Sigma) dr^2
-//            - 2 a (1 + 2 M r/\Sigma) \sin^2\theta dr d\phi
-//            + \Sigma d\theta^2
-//            + (r^2 + a^2 + (2 M a^2 r/\Sigma) \sin^2\theta) \sin^2\theta d\phi^2
-//     where \Delta = r^2 - 2 M r + a^2
-//           \Sigma = r^2 + a^2 cos^2\theta
-//           \Xi = r^2 - a^2 cos^2\theta
-//   other "Kerr-Schild" coordinates exist
+//! \brief implements functions for Kerr spacetime and Kerr-Schild (t,r,theta,phi)
+//! coordinates in a derived class of the Coordinates abstract base class.
+//!
+//! Original implementation by CJ White.
+//!
+//! Notes:
+//!   coordinates: t, r, \theta, \phi
+//!   parameters: M (mass), M > 0
+//!               a (spin), -M < a < M
+//!   metric:
+//!     ds^2 = -(1 - 2 M r/\Sigma) dt^2
+//!            + 4 M r/\Sigma dt dr
+//!            - 4 M a r/\Sigma dt d\phi
+//!            + (1 + 2 M r/\Sigma) dr^2
+//!            - 2 a (1 + 2 M r/\Sigma) \sin^2\theta dr d\phi
+//!            + \Sigma d\theta^2
+//!            + (r^2 + a^2 + (2 M a^2 r/\Sigma) \sin^2\theta) \sin^2\theta d\phi^2
+//!     where \Delta = r^2 - 2 M r + a^2
+//!           \Sigma = r^2 + a^2 cos^2\theta
+//!           \Xi = r^2 - a^2 cos^2\theta
+//!   other "Kerr-Schild" coordinates exist
 
 // C headers
 

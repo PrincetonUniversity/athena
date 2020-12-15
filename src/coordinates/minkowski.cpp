@@ -4,12 +4,12 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file minkowski.cpp
-//  \brief implements functions for Minkowski (flat) spacetime and Cartesian (t,x,y,z)
-//  coordinates in a derived class of the Coordinates abstract base class.
-//
-// Notes:
-//   coordinates: t, x, y, z
-//   metric: ds^2 = -dt^2 + dx^2 + dy^2 + dz^2
+//!  \brief implements functions for Minkowski (flat) spacetime and Cartesian (t,x,y,z)
+//!  coordinates in a derived class of the Coordinates abstract base class.
+//!
+//! Notes:
+//!   coordinates: t, x, y, z
+//!   metric: ds^2 = -dt^2 + dx^2 + dy^2 + dz^2
 
 // C headers
 
