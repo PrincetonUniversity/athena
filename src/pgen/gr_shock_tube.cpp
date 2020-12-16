@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gr_shock_tube.cpp
-//  \brief Problem generator for shock tubes in special and general relativity.
+//! \brief Problem generator for shock tubes in special and general relativity.
 
 // C headers
 

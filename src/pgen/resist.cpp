@@ -4,9 +4,10 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file resist.cpp
-//  \brief Problem generator for resistive diffusion of B-field.
-//  iprob = 0 - Resistive Diffusion of 1-D Gaussian
-//  iprob = 1 - Resistive Diffusion of 2-D Gaussian
+//! \brief Problem generator for resistive diffusion of B-field.
+//!
+//! - iprob = 0 - Resistive Diffusion of 1-D Gaussian
+//! - iprob = 1 - Resistive Diffusion of 2-D Gaussian
 //========================================================================================
 
 // C headers

@@ -3,17 +3,17 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file cpaw.c
-//  \brief Circularly polarized Alfven wave (CPAW) for 1D/2D/3D problems
-//
-// In 1D, the problem is setup along one of the three coordinate axes (specified by
-// setting [ang_2,ang_3] = 0.0 or PI/2 in the input file).  In 2D/3D this routine
-// automatically sets the wavevector along the domain diagonal.
-//
-// Can be used for [standing/traveling] waves [(problem/v_par=1.0)/(problem/v_par=0.0)]
-//
-// REFERENCE: G. Toth,  "The div(B)=0 constraint in shock capturing MHD codes", JCP,
-//   161, 605 (2000)
+//! \file cpaw.cpp
+//! \brief Circularly polarized Alfven wave (CPAW) for 1D/2D/3D problems
+//!
+//! In 1D, the problem is setup along one of the three coordinate axes (specified by
+//! setting [ang_2,ang_3] = 0.0 or PI/2 in the input file).  In 2D/3D this routine
+//! automatically sets the wavevector along the domain diagonal.
+//!
+//! Can be used for [standing/traveling] waves [(problem/v_par=1.0)/(problem/v_par=0.0)]
+//!
+//! REFERENCE: G. Toth,  "The div(B)=0 constraint in shock capturing MHD codes", JCP,
+//!   161, 605 (2000)
 
 // C headers
 

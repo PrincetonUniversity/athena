@@ -4,31 +4,30 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hgb.cpp
-//
-//  \brief Problem generator for non-linear 3D MHD in shearing sheet.
-//
-// PURPOSE:  Problem generator for non-linear 3D MHD in shearing sheet. Based on the
-//   initial conditions described in "Local Three-dimensional Magnetohydrodynamic
-//   Simulations of Accretion Disks" by Hawley, Gammie & Balbus, or HGB.
-//
-// Several different field configurations and perturbations are possible:
-//
-//- ifield = 1 - Bz=B0std::sin(kx*x1) field with zero-net-flux [default] (kx input)
-//- ifield = 2 - uniform Bz
-//- ifield = 3 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))= zero-net flux w helicity
-//- ifield = 4 - B=(0,B0/std::sqrt(2),B0/std::sqrt(2))= net toroidal+vertical field
-//- ifield = 5 - uniform By
-//
-//- ipert = 1 - random perturbations to P and V [default, used by HGB]
-//- ipert = 2 - uniform Vx=amp (epicyclic wave test)
-//- ipert = 3 - nonlinear density wave test of Fromang & Papaloizou (2007)
-//- ipert = 4 - nonlinear shearing wave test of Heinemann & Papaloizou (2009)
-//
-// For linear 3D MHD in shearing sheet, use the jgg.cpp problem generator.
-// To run simulations of stratified disks (including vertical gravity), use the
-// strat.c problem generator.
-//
-// REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).
+//! \brief Problem generator for non-linear 3D MHD in shearing sheet.
+//!
+//! PURPOSE:  Problem generator for non-linear 3D MHD in shearing sheet. Based on the
+//!  initial conditions described in "Local Three-dimensional Magnetohydrodynamic
+//!  Simulations of Accretion Disks" by Hawley, Gammie & Balbus, or HGB.
+//!
+//! Several different field configurations and perturbations are possible:
+//!
+//! - ifield = 1 - Bz=B0std::sin(kx*x1) field with zero-net-flux [default] (kx input)
+//! - ifield = 2 - uniform Bz
+//! - ifield = 3 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))= zero-net flux w helicity
+//! - ifield = 4 - B=(0,B0/std::sqrt(2),B0/std::sqrt(2))= net toroidal+vertical field
+//! - ifield = 5 - uniform By
+//!
+//! - ipert = 1 - random perturbations to P and V [default, used by HGB]
+//! - ipert = 2 - uniform Vx=amp (epicyclic wave test)
+//! - ipert = 3 - nonlinear density wave test of Fromang & Papaloizou (2007)
+//! - ipert = 4 - nonlinear shearing wave test of Heinemann & Papaloizou (2009)
+//!
+//! For linear 3D MHD in shearing sheet, use the jgg.cpp problem generator.
+//! To run simulations of stratified disks (including vertical gravity), use the
+//! strat.c problem generator.
+//!
+//! REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).
 //============================================================================
 
 // C headers

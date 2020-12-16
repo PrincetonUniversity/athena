@@ -3,13 +3,14 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file rotor.c
-//  \brief Sets up 2D rotor test problem.
-// The center of the grid is assumed to have coordinates (x1,x2) = [0,0]; the grid
-// initialization must be consistent with this
-//
-// REFERENCE: G. Toth, "The div(B)=0 constraint in shock-capturing MHD codes", JCP, 161,
-//   605 (2000)
+//! \file rotor.cpp
+//! \brief Sets up 2D rotor test problem.
+//!
+//! The center of the grid is assumed to have coordinates (x1,x2) = [0,0]; the grid
+//! initialization must be consistent with this
+//!
+//! REFERENCE: G. Toth, "The div(B)=0 constraint in shock-capturing MHD codes", JCP, 161,
+//!   605 (2000)
 //========================================================================================
 
 // C headers

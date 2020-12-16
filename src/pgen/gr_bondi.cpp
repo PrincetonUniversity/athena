@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gr_bondi.cpp
-//  \brief Problem generator for spherically symmetric black hole accretion.
+//! \brief Problem generator for spherically symmetric black hole accretion.
 
 // C headers
 

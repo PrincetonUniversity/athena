@@ -3,31 +3,30 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//============================================================================
-//! \file strat.c
-//  \brief Problem generator for stratified 3D shearing sheet.
-//
-// PURPOSE:  Problem generator for stratified 3D shearing sheet.  Based on the
-//   initial conditions described in "Three-dimensional Magnetohydrodynamic
-//   Simulations of Vertically Stratified Accretion Disks" by Stone, Hawley,
-//   Gammie & Balbus.
-//
-// Several different field configurations and perturbations are possible:
-//  ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
-//  ifield = 2 - uniform Bz
-//  ifield = 3 - uniform Bz plus sinusoidal perturbation Bz(1+0.5*std::sin(kx*x1))
-//  ifield = 4 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))= zero-net flux w helicity
-//  ifield = 5 - uniform By, but only for |z|<2
-//  ifield = 6 - By with constant \beta versus z
-//  ifield = 7 - zero field everywhere
-//
-// - ipert = 1 - random perturbations to P and V [default, used by HGB]
-//
-// Code must be configured using -shear
-//
-// REFERENCE: Stone, J., Hawley, J., Gammie, C.F. & Balbus, S. A., ApJ 463, 656-673
-//                (1996)
-//            Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992)
+//! \file strat.cpp
+//! \brief Problem generator for stratified 3D shearing sheet.
+//!
+//! PURPOSE:  Problem generator for stratified 3D shearing sheet.  Based on the
+//!   initial conditions described in "Three-dimensional Magnetohydrodynamic
+//!   Simulations of Vertically Stratified Accretion Disks" by Stone, Hawley,
+//!   Gammie & Balbus.
+//!
+//! Several different field configurations and perturbations are possible:
+//! - ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
+//! - ifield = 2 - uniform Bz
+//! - ifield = 3 - uniform Bz plus sinusoidal perturbation Bz(1+0.5*std::sin(kx*x1))
+//! - ifield = 4 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))= zero-net flux w helicity
+//! - ifield = 5 - uniform By, but only for |z|<2
+//! - ifield = 6 - By with constant \beta versus z
+//! - ifield = 7 - zero field everywhere
+//!
+//! - ipert = 1 - random perturbations to P and V [default, used by HGB]
+//!
+//! Code must be configured using -shear
+//!
+//! REFERENCE:
+//! - Stone, J., Hawley, J., Gammie, C.F. & Balbus, S. A., ApJ 463, 656-673 (1996)
+//! - Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992)
 //============================================================================
 
 // C headers

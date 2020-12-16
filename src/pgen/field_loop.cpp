@@ -3,25 +3,25 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file field_loop.c
-//  \brief Problem generator for advection of a field loop test.
-//
-// Can only be run in 2D or 3D.  Input parameters are:
-//   -  problem/rad   = radius of field loop
-//   -  problem/amp   = amplitude of vector potential (and therefore B)
-//   -  problem/vflow = flow velocity
-//   -  problem/drat  = density ratio in loop, to test density advection and conduction
-// The flow is automatically set to run along the diagonal.
-//
-// Various test cases are possible:
-//   - (iprob=1): field loop in x1-x2 plane (cylinder in 3D)
-//   - (iprob=2): field loop in x2-x3 plane (cylinder in 3D)
-//   - (iprob=3): field loop in x3-x1 plane (cylinder in 3D)
-//   - (iprob=4): rotated cylindrical field loop in 3D.
-//   - (iprob=5): spherical field loop in rotated plane
-//
-// REFERENCE: T. Gardiner & J.M. Stone, "An unsplit Godunov method for ideal MHD via
-// constrined transport", JCP, 205, 509 (2005)
+//! \file field_loop.cpp
+//! \brief Problem generator for advection of a field loop test.
+//!
+//! Can only be run in 2D or 3D.  Input parameters are:
+//!  -  problem/rad   = radius of field loop
+//!  -  problem/amp   = amplitude of vector potential (and therefore B)
+//!  -  problem/vflow = flow velocity
+//!  -  problem/drat  = density ratio in loop, to test density advection and conduction
+//! The flow is automatically set to run along the diagonal.
+//!
+//! Various test cases are possible:
+//!  - (iprob=1): field loop in x1-x2 plane (cylinder in 3D)
+//!  - (iprob=2): field loop in x2-x3 plane (cylinder in 3D)
+//!  - (iprob=3): field loop in x3-x1 plane (cylinder in 3D)
+//!  - (iprob=4): rotated cylindrical field loop in 3D.
+//!  - (iprob=5): spherical field loop in rotated plane
+//!
+//! REFERENCE: T. Gardiner & J.M. Stone, "An unsplit Godunov method for ideal MHD via
+//! constrined transport", JCP, 205, 509 (2005)
 //========================================================================================
 
 // C headers
@@ -50,7 +50,7 @@
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief field loop advection problem generator for 2D/3D problems.
+//! \brief field loop advection problem generator for 2D/3D problems.
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {

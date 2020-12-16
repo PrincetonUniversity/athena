@@ -4,11 +4,11 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file field_loop_poles.c
-//  \brief Advection of a field loop THROUGH the poles in spherical_polar coordinates.
-//
-//  Originally developed by ZZ.  Sets up constant uniform-density flow in x-direction
-//  through poles, and follows advection of loop.  Set xz>0 (xz<0) for loop through
-//  upper (lower) pole.  Works in 2D and 3D.
+//! \brief Advection of a field loop THROUGH the poles in spherical_polar coordinates.
+//!
+//! Originally developed by ZZ.  Sets up constant uniform-density flow in x-direction
+//! through poles, and follows advection of loop.  Set xz>0 (xz<0) for loop through
+//! upper (lower) pole.  Works in 2D and 3D.
 //========================================================================================
 
 // C headers
@@ -65,9 +65,9 @@ int RefinementCondition(MeshBlock *pmb);
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
-//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
-//  to initialize variables which are global to (and therefore can be passed to) other
-//  functions in this file.  Called in Mesh constructor.
+//! \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//! to initialize variables which are global to (and therefore can be passed to) other
+//! functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
@@ -112,7 +112,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Initializes field loop advection through pole.
+//! \brief Initializes field loop advection through pole.
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
