@@ -86,7 +86,7 @@ def analyze():
     nf1 = len(time1)
     norm1c = 0.0
     norm1s = 0.0
-    for n in xrange(nf1):
+    for n in range(nf1):
         tau_ = qshear*Omega0*time1[n]+kx0/ky
         T_ = 1.0j * cmath.sqrt(2.0*cs*ky/(qshear*Omega0))*tau_
         exp_ = cmath.exp(-0.25j*T_*T_)
@@ -110,7 +110,7 @@ def analyze():
     nf2 = len(time2)
     norm2c = 0.0
     norm2s = 0.0
-    for n in xrange(nf2):
+    for n in range(nf2):
         tau_ = qshear*Omega0*time2[n]+kx0/ky
         T_ = 1.0j * cmath.sqrt(2.0*cs*ky/(qshear*Omega0))*tau_
         exp_ = cmath.exp(-0.25j*T_*T_)

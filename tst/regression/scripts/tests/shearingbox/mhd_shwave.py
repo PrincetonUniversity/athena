@@ -104,7 +104,7 @@ def analyze():
     # initialize parameters
     norm1a = 0.0
     norm1b = 0.0
-    for i in xrange(nf1):
+    for i in range(nf1):
         if (i == 0):
             k = math.sqrt(kx0**2+ky**2+kz**2)
             dBya = epsilon*By0
@@ -133,7 +133,7 @@ def analyze():
     # initialize parameters
     norm2a = 0.0
     norm2b = 0.0
-    for i in xrange(nf1):
+    for i in range(nf1):
         if (i == 0):
             k = math.sqrt(kx0**2+ky**2+kz**2)
             dBya = epsilon*By0
