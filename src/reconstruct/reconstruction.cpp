@@ -170,7 +170,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       ATHENA_ERROR(msg);
     }
 
-    if (SHEARING_BOX) {
+    if (pmb->pmy_mesh->shear_periodic) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
           << "Selected time/xorder=" << input_recon << " flux calculations"

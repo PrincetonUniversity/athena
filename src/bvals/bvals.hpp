@@ -116,7 +116,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void StartReceiving(BoundaryCommSubset phase) final {return;};
   void ClearBoundary(BoundaryCommSubset phase) final {return;};
   void StartReceivingShear(BoundaryCommSubset phase) final;
-  void ComputeShear(const Real time) final;
+  void ComputeShear(const Real time_fc, const Real time_int);
 
   // non-inhertied / unique functions (do not exist in BoundaryVariable objects):
   // (these typically involve a coupled interaction of boundary variable/quantities)
@@ -159,23 +159,29 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
 
   // Shearing box (shared with Field and Hydro)
   // KGF: remove the redundancies in these variables:
-  Real Omega_0_, qshear_;       // orbital freq and shear rate
-  int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz
-  int joverlap_;                // # of cells the shear runs over one block
-  Real ssize_;                  // # of ghost cells in x-z plane
-  Real eps_;                    // fraction part of the shear
+  int shearing_box; // flag for shearing box: 0 = none, 1: xy, 2: xz
+  int joverlap_, joverlap_flux_; // # of cells the shear runs over one block
+  Real ssize_;                   // # of ghost cells in x-z plane
+  Real eps_, eps_flux_;          // fraction part of the shear
   Real qomL_;
+  int xorder_, xgh_;
+  AthenaArray<Real> pflux_;    // pencil buffer for remapping
 
   // it is possible for a MeshBlock to have is_shear={true, true}, if it is the only block
   // along x1
+  std::int64_t nblx2;
   bool is_shear[2]; // inner_x1=0, outer_x1=1
   SimpleNeighborBlock *shbb_[2];
   std::int64_t loc_shear[2];  // x1 LogicalLocation of block(s) on inner/outer shear bndry
 
-  // KGF: why 4x? shouldn't in only require +/-1 MeshBlock along the shear, aka 3x?
-  // KGF: fold 4x arrays into 2x 2D array of structs (combine recv/send); inner=0, outer=1
+  // tomo-ono: 3x arrays and 4x arrays are required for int and fc, respectively
   SimpleNeighborBlock shear_send_neighbor_[2][4], shear_recv_neighbor_[2][4];
   int shear_send_count_[2][4], shear_recv_count_[2][4];
+  int jmin_send_[2][4], jmax_send_[2][4], jmin_recv_[2][4], jmax_recv_[2][4];
+  SimpleNeighborBlock shear_flux_send_neighbor_[2][3], shear_flux_recv_neighbor_[2][3];
+  int shear_flux_send_count_[2][3], shear_flux_recv_count_[2][3];
+  int jmin_flux_send_[2][3], jmax_flux_send_[2][3],
+      jmin_flux_recv_[2][3], jmax_flux_recv_[2][3];
 
   // ProlongateBoundaries() wraps the following S/AMR-operations (within nneighbor loop):
   // (the next function is also called within 3x nested loops over nk,nj,ni)

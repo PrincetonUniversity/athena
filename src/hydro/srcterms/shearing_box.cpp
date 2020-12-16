@@ -44,63 +44,57 @@ void HydroSourceTerms::ShearingBoxSourceTerms(const Real dt,
                                               const AthenaArray<Real> *flux,
                                               const AthenaArray<Real> &prim,
                                               AthenaArray<Real> &cons) {
-  if (Omega_0_==0.0 || qshear_==0.0 ) {
-    std::cout << "[ShearingBoxSourceTerms]: Omega_0 or qshear not stated " << std::endl;
-    return;
-  }
-  Real phic,phil,phir;
-
   MeshBlock *pmb = pmy_hydro_->pmy_block;
 
-
-  // 1) S_M = -rho*grad(Phi); S_E = -rho*v*grad(Phi)
+  // 1) Tidal force:
   //    dM1/dt = 2q\rho\Omega^2 x
-  //    dE /dt = 2q\Omega^2 (\rho v_x)
+  //    dE /dt = 2q\Omega^2 (\rho v_x) x
   // 2) Coriolis forces:
   //    dM1/dt = 2\Omega(\rho v_y)
   //    dM2/dt = -2\Omega(\rho v_x)
-  if (pmb->block_size.nx3 > 1 || ShBoxCoord_== 1) {
+  if (ShBoxCoord_== 1) {
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
       for (int j=pmb->js; j<=pmb->je; ++j) {
+#pragma omp simd
         for (int i=pmb->is; i<=pmb->ie; ++i) {
-          Real den = prim(IDN,k,j,i);
-          cons(IM1,k,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den*pmb->pcoord->x1v(i)
-                                 +2.0*Omega_0_*den*prim(IVY,k,j,i));
-          cons(IM2,k,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,k,j,i);
+          Real den  = prim(IDN,k,j,i);
+          Real qO2  = qshear_*SQR(Omega_0_);
+          Real mom1 = den*prim(IVX,k,j,i);
+          Real xc = pmb->pcoord->x1v(i);
+          cons(IM1,k,j,i) += 2.0*dt*(Omega_0_*(den*prim(IVY,k,j,i))+qO2*den*xc);
+          cons(IM2,k,j,i) -= 2.0*dt*Omega_0_*mom1;
           if (NON_BAROTROPIC_EOS) {
-            phic = -qshear_*SQR(Omega_0_*pmb->pcoord->x1v(i));
-            phil = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i));
-            phir = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i+1));
-            cons(IEN,k,j,i) -= dt*(flux[X1DIR](IDN,k,j,i)*(phic-phil) +
+            Real phic = qO2*SQR(xc);
+            Real phil = qO2*SQR(pmb->pcoord->x1f(i));
+            Real phir = qO2*SQR(pmb->pcoord->x1f(i+1));
+            cons(IEN,k,j,i) += dt*(flux[X1DIR](IDN,k,j,i)*(phic-phil)+
                                    flux[X1DIR](IDN,k,j,i+1)*(phir-phic))
-                               /pmb->pcoord->dx1v(i);
+                                   /pmb->pcoord->dx1f(i);
           }
         }
       }
     }
-  } else if (pmb->block_size.nx3 == 1 && ShBoxCoord_ == 2) {
+  } else { // ShBoxCoord_== 2
     int ks = pmb->ks;
     for (int j=pmb->js; j<=pmb->je; ++j) {
+#pragma omp simd
       for (int i=pmb->is; i<=pmb->ie; ++i) {
-        Real den = prim(IDN,ks,j,i);
-        cons(IM1,ks,j,i) += dt*(2.0*qshear_*Omega_0_*Omega_0_*den
-                                *pmb->pcoord->x1v(i)+2.0*Omega_0_*den*prim(IVZ,ks,j,i));
-        cons(IM3,ks,j,i) -= dt*2.0*Omega_0_*den*prim(IVX,ks,j,i);
+        Real den  = prim(IDN,ks,j,i);
+        Real qO2  = qshear_*SQR(Omega_0_);
+        Real mom1 = den*prim(IVX,ks,j,i);
+        Real xc = pmb->pcoord->x1v(i);
+        cons(IM1,ks,j,i) += 2.0*dt*(Omega_0_*(den*prim(IVZ,ks,j,i))+qO2*den*xc);
+        cons(IM3,ks,j,i) -= 2.0*dt*Omega_0_*mom1;
         if (NON_BAROTROPIC_EOS) {
-          phic = -qshear_*SQR(Omega_0_*pmb->pcoord->x1v(i));
-          phil = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i));
-          phir = -qshear_*SQR(Omega_0_*pmb->pcoord->x1f(i+1));
-          cons(IEN,ks,j,i) -= dt*(flux[X1DIR](IDN,ks,j,i)*(phic-phil) +
+          Real phic = qO2*SQR(xc);
+          Real phil = qO2*SQR(pmb->pcoord->x1f(i));
+          Real phir = qO2*SQR(pmb->pcoord->x1f(i+1));
+          cons(IEN,ks,j,i) += dt*(flux[X1DIR](IDN,ks,j,i)*(phic-phil)+
                                   flux[X1DIR](IDN,ks,j,i+1)*(phir-phic))
-                              /pmb->pcoord->dx1v(i);
+                                  /pmb->pcoord->dx1f(i);
         }
       }
     }
-  } else {
-    std::cout << "[ShearingBoxSourceTerms]: not compatible to 1D !!" << std::endl;
-    return;
   }
-
-
   return;
 }

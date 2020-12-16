@@ -1,7 +1,7 @@
 <comment>
 problem   = Stratified 3D MRI with zero-net vertical flux
 reference = Stone, Hawley, Gammie, & Balbus
-configure = --prob=strat -shear -b --eos=isothermal
+configure = --prob=strat -b --eos=isothermal
 
 <job>
 problem_id  = Strat      # problem ID: basename of output filenames
@@ -59,10 +59,13 @@ iso_sound_speed = 7.0711e-4  # isothermal sound speed
 dfloor          = 1.e-6
 pfloor          = 5e-13
 
+<orbital_advection>
+OAorder      = 0       # 0: w/o OA, 1: w/ OA (1st), 2: w/ OA (2nd)
+qshear       = 1.5     # shear rate
+Omega0       = 0.001   # angular velocity of the system
+
 <problem>
-beta            = 100        # Plasma beta
-amp             = 0.025      # dP/P <= amp
-ifield          = 1          # 1 for zero-net-flux Bz, 2 for constant Bz
-ipert           = 1          # 1 for random d,P, 2 for uniform Vx
-Omega0          = 0.001      # orbital freq
-qshear          = 1.5        # shear rate
+beta         = 100     # Plasma beta
+amp          = 0.025   # dP/P <= amp
+ifield       = 1       # 1 for zero-net-flux Bz, 2 for constant Bz
+ipert        = 1       # 1 for random d,P, 2 for uniform Vx
