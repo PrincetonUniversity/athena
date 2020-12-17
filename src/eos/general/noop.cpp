@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file noop.cpp
-//  \brief Implements no-op versions of the general eos functions
+//! \brief Implements no-op versions of the general eos functions
 
 // C headers
 
@@ -42,8 +42,8 @@ Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
 }
 
 //----------------------------------------------------------------------------------------
-//! void EquationOfState::InitEosConstants(ParameterInput* pin)
-//  \brief Initialize constants for EOS
+//! \fn void EquationOfState::InitEosConstants(ParameterInput* pin)
+//! \brief Initialize constants for EOS
 void EquationOfState::InitEosConstants(ParameterInput *pin) {
   return;
 }
