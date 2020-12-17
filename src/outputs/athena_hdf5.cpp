@@ -3,6 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
+//! \file athena_hdf5.cpp
+//! \brief hdf5 outputs
 
 // C headers
 
@@ -52,8 +54,8 @@ using H5Real = float;
 
 //----------------------------------------------------------------------------------------
 //! \fn void ATHDF5Output:::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
-//  \brief Cycles over all MeshBlocks and writes OutputData in the Athena++ HDF5 format,
-//         one file per output using parallel IO.
+//! \brief Cycles over all MeshBlocks and writes OutputData in the Athena++ HDF5 format,
+//!        one file per output using parallel IO.
 
 void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // HDF5 structures
@@ -791,15 +793,16 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 }
 
 //----------------------------------------------------------------------------------------
-
-// Function for writing auxiliary XDMF metadata file
-// Inputs: (none)
-// Outputs: (none)
-// Notes:
-//   writes .athdf.xdmf file for describing .athdf file
-//   should only be called by single process
-//   file size scales proportional to total number of MeshBlocks
-//   for many small MeshBlocks, this can take most of the output writing time
+//! \fn void ATHDF5Output::MakeXDMF()
+//! \brief Function for writing auxiliary XDMF metadata file
+//!
+//! Inputs: (none)
+//! Outputs: (none)
+//! Notes:
+//!   writes .athdf.xdmf file for describing .athdf file
+//!   should only be called by single process
+//!   file size scales proportional to total number of MeshBlocks
+//!   for many small MeshBlocks, this can take most of the output writing time
 
 void ATHDF5Output::MakeXDMF() {
   std::string filename_aux(filename);

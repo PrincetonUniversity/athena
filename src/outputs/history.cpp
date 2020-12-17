@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file history.cpp
-//  \brief writes history output data, volume-averaged quantities that are output
-//         frequently in time to trace their history.
+//! \brief writes history output data, volume-averaged quantities that are output
+//!        frequently in time to trace their history.
 
 // C headers
 
@@ -40,7 +40,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::HistoryFile()
-//  \brief Writes a history file
+//! \brief Writes a history file
 
 void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   MeshBlock *pmb = pm->my_blocks(0);
