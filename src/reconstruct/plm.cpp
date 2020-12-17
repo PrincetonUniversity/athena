@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file plm.cpp
-//  \brief  piecewise linear reconstruction for both uniform and non-uniform meshes
+//! \brief  piecewise linear reconstruction for both uniform and non-uniform meshes
 
 // C headers
 
@@ -19,7 +19,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseLinearX1()
-//  \brief
+//! \brief
 
 void Reconstruction::PiecewiseLinearX1(
     const int k, const int j, const int il, const int iu,
@@ -129,7 +129,7 @@ void Reconstruction::PiecewiseLinearX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseLinearX2()
-//  \brief
+//! \brief
 
 void Reconstruction::PiecewiseLinearX2(
     const int k, const int j, const int il, const int iu,
@@ -240,7 +240,7 @@ void Reconstruction::PiecewiseLinearX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseLinearX3()
-//  \brief
+//! \brief
 
 void Reconstruction::PiecewiseLinearX3(
     const int k, const int j, const int il, const int iu,

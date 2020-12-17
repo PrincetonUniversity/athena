@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file dc.cpp
-//  \brief piecewise constant (donor cell) reconstruction
+//! \brief piecewise constant (donor cell) reconstruction
 
 // C headers
 
@@ -17,7 +17,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::DonorCellX1()
-//  \brief reconstruct L/R surfaces of the i-th cells
+//! \brief reconstruct L/R surfaces of the i-th cells
 
 void Reconstruction::DonorCellX1(const int k, const int j, const int il, const int iu,
                                  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
@@ -44,7 +44,7 @@ void Reconstruction::DonorCellX1(const int k, const int j, const int il, const i
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::DonorCellX2()
-//  \brief
+//! \brief
 
 
 void Reconstruction::DonorCellX2(const int k, const int j, const int il, const int iu,
@@ -72,7 +72,7 @@ void Reconstruction::DonorCellX2(const int k, const int j, const int il, const i
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::DonorCellX3()
-//  \brief
+//! \brief
 
 void Reconstruction::DonorCellX3(const int k, const int j, const int il, const int iu,
                                  const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
