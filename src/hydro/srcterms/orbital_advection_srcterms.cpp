@@ -236,7 +236,7 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
         return;
       }
     }
-  } else if (COORDINATE_SYSTEM == "spherical_polar") {
+  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     // dM1/dt = 2\rho vp vc/r
     //          + \rho (vc^2/r - gm/r^2)
     // dM2/dt = 2\rho vp vc/r cot(\theta)

@@ -492,7 +492,7 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
 
     // set min_dt
     int mylevel = pmb_->loc.level;
-    int lblevel, rblevel;
+    int lblevel = mylevel, rblevel = mylevel;
     for(int n=0; n<pbval_->nneighbor; n++) {
       NeighborBlock& nb = pbval_->neighbor[n];
       if (nb.ni.type != NeighborConnect::face) break;

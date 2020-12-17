@@ -72,11 +72,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real vflow = pin->GetReal("problem","vflow");
   Real drat = pin->GetOrAddReal("problem","drat",1.0);
   int iprob = pin->GetInteger("problem","iprob");
-  Real omega0, qshear;
-  if (pmy_mesh->shear_periodic) {
-    omega0 = porb->Omega0;
-    qshear = porb->qshear;
-  }
+  Real omega0 = porb->Omega0;
+  Real qshear = porb->qshear;
   Real ang_2, cos_a2(0.0), sin_a2(0.0), lambda(0.0);
 
   // For (iprob=4) -- rotated cylinder in 3D -- set up rotation angle and wavelength

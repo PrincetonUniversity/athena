@@ -40,9 +40,8 @@
 
 OrbitalBoundaryCommunication::OrbitalBoundaryCommunication(
     OrbitalAdvection *porb)
-    : pmy_block_(porb->pmb_), pmy_mesh_(porb->pm_),
-      pbval_(porb->pbval_), pmy_orbital_(porb),
-      xgh(porb->xgh) {
+    : xgh(porb->xgh), pmy_block_(porb->pmb_), pmy_mesh_(porb->pm_),
+      pbval_(porb->pbval_), pmy_orbital_(porb) {
   for (int upper=0; upper<2; upper++) {
     InitBoundaryData(orbital_bd_cc_[upper], BoundaryQuantity::orbital_cc);
   }
@@ -113,7 +112,7 @@ void OrbitalBoundaryCommunication::InitBoundaryData(
   int nx3 = pmb->block_size.nx3;
 
   if (porb->orbital_refinement) {
-    int ssize, lsize;
+    int ssize(0), lsize(0);
     if (porb->orbital_direction == 1) {
       if (nx3>1) { //3D
         bd.nbmax = 4;
@@ -185,7 +184,7 @@ void OrbitalBoundaryCommunication::InitBoundaryData(
     }
   } else {
     bd.nbmax = 1;
-    int size;
+    int size(0);
     if (porb->orbital_direction == 1) {
       if (type == BoundaryQuantity::orbital_cc) {
         size = (NHYDRO+NSCALARS)*nx1*nx2*nx3;
@@ -330,16 +329,14 @@ void OrbitalBoundaryCommunication::ComputeOrbit(const Real dt) {
   if (porb->orbital_refinement) { // orbital refinement
     int mylevel = pmb->loc.level;
     porb->SetOrbitalEdgeCC(dt, size_cc_send, size_cc_recv);
-    int coef;
-    int size;
+    int coef = pmb->block_size.nx1/2+2;
+    int size(0);
     if (porb->orbital_direction == 1) {
       if (pmb->block_size.nx3>1) { // 3D
-        coef = (pmb->block_size.nx3/2+2)*(pmb->block_size.nx1/2+2);
-      } else { // 2D
-        coef = pmb->block_size.nx1/2+2;
+        coef *= pmb->block_size.nx3/2+2;
       }
     } else if (porb->orbital_direction == 2) {
-      coef = (pmb->block_size.nx2/2+2)*(pmb->block_size.nx1/2+2);
+      coef *= pmb->block_size.nx2/2+2;
     }
     // upper=0: to right, upper=1: to left
     for (int upper=0; upper<2; upper++) {
@@ -385,20 +382,15 @@ void OrbitalBoundaryCommunication::ComputeOrbit(const Real dt) {
 
     if (MAGNETIC_FIELDS_ENABLED) {
       porb->SetOrbitalEdgeFC(dt, size_fc_send, size_fc_recv);
-      int nco1, nco2, norb;
-      if (porb->orbital_direction == 1) {
-        nco1 = pmb->block_size.nx1/2;
-        nco2 = pmb->block_size.nx3/2;
-      } else if (porb->orbital_direction == 2) {
-        nco1 = pmb->block_size.nx1/2;
-        nco2 = pmb->block_size.nx2/2;
-      }
+      int nco1=pmb->block_size.nx1/2;
+      int nco2=(porb->orbital_direction==1)?
+                pmb->block_size.nx3/2 : pmb->block_size.nx2/2;
       // upper=0: to right, upper=1: to left
       for (int upper=0; upper<2; upper++) {
         // send
         if (orbital_send_neighbor_[upper][0].level>mylevel) { // to finer
           for (int n=0; n<orbital_bd_fc_[upper].nbmax; n++) {
-            norb = size_fc_send[upper][2+n];
+            int norb = size_fc_send[upper][2+n];
             if (pmb->block_size.nx3>1) { // 3D
               size = (nco1+1)*(nco2+2)*(norb+2)
                      +(nco1+2)*(nco2+1)*(norb+2)
@@ -432,7 +424,7 @@ void OrbitalBoundaryCommunication::ComputeOrbit(const Real dt) {
             }
           }
         } else if (orbital_recv_neighbor_[upper][0].level<mylevel) { // from coarser
-          norb = size_fc_recv[upper][1];
+          int norb = size_fc_recv[upper][1];
           if (pmb->block_size.nx3>1) { // 3D
             size = (nco1+1)*(nco2+2)*(norb+2)
                    +(nco1+2)*(nco2+1)*(norb+2)
@@ -1784,30 +1776,24 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(Real *buf, int &p, int
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     int onx;
-    int il, iu, jl, ju, kl, ku;
+    int il=pmb->is, iu=pmb->ie, jl=pmb->js, ju=pmb->je, kl=pmb->ks, ku=pmb->ke;
     if (pmb->block_size.nx3>1) { // 3D
       if(porb->orbital_direction == 1) {
         onx = pmb->block_size.nx2;
         if(nb%4<2) {
-          kl = pmb->ks;
-          ku = pmb->ke-pmb->block_size.nx3/2;
+          ku -= pmb->block_size.nx3/2;
         } else {
-          kl = pmb->ks+pmb->block_size.nx3/2;
-          ku = pmb->ke;
+          kl += pmb->block_size.nx3/2;
         }
         if (nb%2==0) {
-          il = pmb->is;
-          iu = pmb->ie-pmb->block_size.nx1/2;
+          iu -= pmb->block_size.nx1/2;
         } else {
-          il = pmb->is+pmb->block_size.nx1/2;
-          iu = pmb->ie;
+          il += pmb->block_size.nx1/2;
         }
         if (nb<4) {
-          jl = pmb->js-size_fc_send[0][2+nb]+onx;
-          ju = pmb->je;
+          jl += -size_fc_send[0][2+nb]+onx;
         } else if (nb<8) {
-          jl = pmb->js;
-          ju = pmb->je+size_fc_send[1][2+(nb-4)]-onx;
+          ju += size_fc_send[1][2+(nb-4)]-onx;
         } else {
           std::stringstream msg;
           msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
@@ -1818,25 +1804,19 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(Real *buf, int &p, int
       } else if (porb->orbital_direction == 2) {
         onx = pmb->block_size.nx3;
         if(nb%4<2) {
-          jl = pmb->js;
-          ju = pmb->je-pmb->block_size.nx2/2;
+          ju -= pmb->block_size.nx2/2;
         } else {
-          jl = pmb->js+pmb->block_size.nx2/2;
-          ju = pmb->je;
+          jl += pmb->block_size.nx2/2;
         }
         if (nb%2==0) {
-          il = pmb->is;
-          iu = pmb->ie-pmb->block_size.nx1/2;
+          iu -= pmb->block_size.nx1/2;
         } else {
-          il = pmb->is+pmb->block_size.nx1/2;
-          iu = pmb->ie;
+          il += pmb->block_size.nx1/2;
         }
         if (nb<4) {
-          kl = pmb->ks-size_fc_send[0][2+nb]+onx;
-          ku = pmb->ke;
+          kl += -size_fc_send[0][2+nb]+onx;
         } else if (nb<8) {
-          kl = pmb->ks;
-          ku = pmb->ke+size_fc_send[1][2+(nb-4)]-onx;
+          ku += size_fc_send[1][2+(nb-4)]-onx;
         } else {
           std::stringstream msg;
           msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
@@ -1858,21 +1838,15 @@ void OrbitalBoundaryCommunication::LoadFieldBufferToFiner(Real *buf, int &p, int
     } else { // 2D
       if(porb->orbital_direction == 1) {
         onx = pmb->block_size.nx2;
-        kl = pmb->ks;
-        ku = pmb->ks;
         if (nb%2==0) {
-          il = pmb->is;
-          iu = pmb->ie-pmb->block_size.nx1/2;
+          iu -= pmb->block_size.nx1/2;
         } else {
-          il = pmb->is+pmb->block_size.nx1/2;
-          iu = pmb->ie;
+          il += pmb->block_size.nx1/2;
         }
         if (nb<4) {
-          jl = pmb->js-size_fc_send[0][2+nb]+onx;
-          ju = pmb->je;
+          jl += -size_fc_send[0][2+nb]+onx;
         } else if (nb<8) {
-          jl = pmb->js;
-          ju = pmb->je+size_fc_send[1][2+(nb-4)]-onx;
+          ju += size_fc_send[1][2+(nb-4)]-onx;
         } else {
           std::stringstream msg;
           msg << "### FATAL ERROR in OrbitalBoundaryCommunication"
@@ -2069,34 +2043,21 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
   FaceField &bco = porb->b_coarse_recv;
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
-    int onx;
-    int il, iu, jl, ju, kl, ku;
+    int onx = pmb->block_size.nx2;
+    int il=pmb->cis, iu=pmb->cie, jl=pmb->cjs, ju=pmb->cje, kl=pmb->cks, ku=pmb->cke;
     if (pmb->block_size.nx3>1) { // 3D
       if(porb->orbital_direction == 1) {
-        onx = pmb->block_size.nx2;
-        il = pmb->cis;
-        iu = pmb->cie;
-        kl = pmb->cks;
-        ku = pmb->cke;
         if(nb == 0) {
-          jl = pmb->cjs-xgh-porb->max_off_coarse+onx/2;
-          ju = pmb->cje;
+          jl += -xgh-porb->max_off_coarse+onx/2;
         } else if (nb == 4) {
-          jl = pmb->cjs;
-          ju = pmb->cje+1+xgh-porb->min_off_coarse-onx/2;
+          ju += 1+xgh-porb->min_off_coarse-onx/2;
         }
       } else if(porb->orbital_direction == 2) {
         onx = pmb->block_size.nx3;
-        il = pmb->cis;
-        iu = pmb->cie;
-        jl = pmb->cjs;
-        ju = pmb->cje;
         if(nb == 0) {
-          kl = pmb->cks-xgh-porb->max_off_coarse+onx/2;
-          ku = pmb->cke;
+          kl += -xgh-porb->max_off_coarse+onx/2;
         } else if (nb == 4) {
-          kl = pmb->cks;
-          ku = pmb->cke+1+xgh-porb->min_off_coarse-onx/2;
+          ku += 1+xgh-porb->min_off_coarse-onx/2;
         }
       }
 
@@ -2137,16 +2098,10 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromCoarser(
     } else { // 2D
       if(porb->orbital_direction == 1) {
         onx = pmb->block_size.nx2;
-        il = pmb->cis;
-        iu = pmb->cie;
-        kl = pmb->cks;
-        ku = pmb->cks;
         if(nb == 0) {
-          jl = pmb->cjs-xgh-porb->max_off_coarse+onx/2;
-          ju = pmb->cje;
+          jl += -xgh-porb->max_off_coarse+onx/2;
         } else if (nb == 4) {
-          jl = pmb->cjs;
-          ju = pmb->cje+1+xgh-porb->min_off_coarse-onx/2;
+          ju += 1+xgh-porb->min_off_coarse-onx/2;
         }
       } else {
         std::stringstream msg;
