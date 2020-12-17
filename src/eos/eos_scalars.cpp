@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file eos_scalars.cpp
-//  \brief implements functions in EquationOfState class for passive scalars
+//! \brief implements functions in EquationOfState class for passive scalars
 
 // C headers
 
@@ -22,11 +22,11 @@
 #include "eos.hpp"
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::PassiveScalarConservedToPrimitive(AthenaArray<Real> &s,
-//           const AthenaArray<Real> &u, const AthenaArray<Real> &r_old,
-//           AthenaArray<Real> &r, Coordinates *pco,
-//           int il, int iu, int jl, int ju, int kl, int ku)
-// \brief Converts conserved into primitive passive scalar variables
+//! \fn void EquationOfState::PassiveScalarConservedToPrimitive(AthenaArray<Real> &s,
+//!           const AthenaArray<Real> &u, const AthenaArray<Real> &r_old,
+//!           AthenaArray<Real> &r, Coordinates *pco,
+//!           int il, int iu, int jl, int ju, int kl, int ku)
+//! \brief Converts conserved into primitive passive scalar variables
 
 void EquationOfState::PassiveScalarConservedToPrimitive(
     AthenaArray<Real> &s, const AthenaArray<Real> &u, const AthenaArray<Real> &r_old,
@@ -126,10 +126,10 @@ void EquationOfState::PassiveScalarConservedToPrimitiveCellAverage(
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::PassiveScalarPrimitiveToConserved(const AthenaArray<Real> &r
-//           const AthenaArray<Real> &u, AthenaArray<Real> &s, Coordinates *pco,
-//           int il, int iu, int jl, int ju, int kl, int ku);
-// \brief Converts primitive variables into conservative variables
+//! \fn void EquationOfState::PassiveScalarPrimitiveToConserved(const AthenaArray<Real> &r
+//!           const AthenaArray<Real> &u, AthenaArray<Real> &s, Coordinates *pco,
+//!           int il, int iu, int jl, int ju, int kl, int ku);
+//! \brief Converts primitive variables into conservative variables
 
 void EquationOfState::PassiveScalarPrimitiveToConserved(
     const AthenaArray<Real> &r, const AthenaArray<Real> &u,
@@ -153,11 +153,11 @@ void EquationOfState::PassiveScalarPrimitiveToConserved(
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &prim, int n,
-//                                                     int k, int j, int i)
-// \brief Apply species concentration floor to cell-averaged passive scalars or
-// reconstructed L/R cell interface states (if PPM is used, e.g.) along:
-// (NSCALARS x) x1 slices
+//! \fn void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &prim, int n,
+//!                                                     int k, int j, int i)
+//! \brief Apply species concentration floor to cell-averaged passive scalars or
+//! reconstructed L/R cell interface states (if PPM is used, e.g.) along:
+//! (NSCALARS x) x1 slices
 
 void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &r, int n, int k, int j,
                                                int i) {

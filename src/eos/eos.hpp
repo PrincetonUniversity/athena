@@ -6,8 +6,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file eos.hpp
-//  \brief defines class EquationOfState
-//  Contains data and functions that implement the equation of state
+//! \brief defines class EquationOfState
+//!
+//!  Contains data and functions that implement the equation of state
 
 // C headers
 
@@ -26,7 +27,7 @@ class ParameterInput;
 struct FaceField;
 
 //! \class EquationOfState
-//  \brief data and functions that implement EoS
+//! \brief data and functions that implement EoS
 
 class EquationOfState {
   friend class Hydro;

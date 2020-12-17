@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file adiabatic_hydro_sr.cpp
-//  \brief Implements functions for going between primitive and conserved variables in
-//  special-relativistic hydrodynamics, as well as for computing wavespeeds.
+//! \brief Implements functions for going between primitive and conserved variables in
+//!  special-relativistic hydrodynamics, as well as for computing wavespeeds.
 
 // C headers
 

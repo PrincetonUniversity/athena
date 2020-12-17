@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file adiabatic_hydro_gr.cpp
-//  \brief Implements functions for going between primitive and conserved variables in
-//  general-relativistic hydrodynamics, as well as for computing wavespeeds.
+//! \brief Implements functions for going between primitive and conserved variables in
+//! general-relativistic hydrodynamics, as well as for computing wavespeeds.
 
 // C headers
 
@@ -39,10 +39,12 @@ void PrimitiveToConservedSingle(
 } // namespace
 
 //----------------------------------------------------------------------------------------
-// Constructor
-// Inputs:
-//   pmb: pointer to MeshBlock
-//   pin: pointer to runtime inputs
+//! \fn EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin)
+//! \brief Constructor
+//!
+//! Inputs:
+//!   pmb: pointer to MeshBlock
+//!   pin: pointer to runtime inputs
 
 EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block_(pmb),
@@ -64,19 +66,24 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
 }
 
 //----------------------------------------------------------------------------------------
-// Variable inverter
-// Inputs:
-//   cons: conserved quantities
-//   prim_old: primitive quantities from previous half timestep
-//   bb: face-centered magnetic field (not used)
-//   pco: pointer to Coordinates
-//   il, iu, jl, ju, kl, ku: index bounds of region to be updated
-// Outputs:
-//   prim: primitives
-//   bb_cc: cell-centered magnetic field (not set)
-// Notes:
-//   More complex version with magnetic fields found in adiabatic_mhd_gr.cpp.
-//   Simpler version for SR found in adiabatic_hydro_sr.cpp.
+//! \fn void EquationOfState::ConservedToPrimitive(
+//!   AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &bb,
+//!   AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu,
+//!   int jl, int ju, int kl, int ku)
+//! \brief Variable inverter
+//!
+//! Inputs:
+//!  - cons: conserved quantities
+//!  - prim_old: primitive quantities from previous half timestep
+//!  - bb: face-centered magnetic field (not used)
+//!  - pco: pointer to Coordinates
+//!  - il, iu, jl, ju, kl, ku: index bounds of region to be updated
+//! Outputs:
+//!  - prim: primitives
+//!  - bb_cc: cell-centered magnetic field (not set)
+//! Notes:
+//!  - More complex version with magnetic fields found in adiabatic_mhd_gr.cpp.
+//!  - Simpler version for SR found in adiabatic_hydro_sr.cpp.
 
 void EquationOfState::ConservedToPrimitive(
     AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &bb,
@@ -239,17 +246,22 @@ void EquationOfState::ConservedToPrimitive(
 }
 
 //----------------------------------------------------------------------------------------
-// Function for converting all primitives to conserved variables
-// Inputs:
-//   prim: primitives
-//   bb_cc: cell-centered magnetic field (unused)
-//   pco: pointer to Coordinates
-//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
-// Outputs:
-//   cons: conserved variables
-// Notes:
-//   Single-cell function exists for other purposes; call made to that function rather
-//       than having duplicate code.
+//! \fn void EquationOfState::PrimitiveToConserved(
+//!    const AthenaArray<Real> &prim,
+//!    const AthenaArray<Real> &bb_cc, AthenaArray<Real> &cons, Coordinates *pco,
+//!    int il, int iu, int jl, int ju, int kl, int ku)
+//! \brief Function for converting all primitives to conserved variables
+//!
+//! Inputs:
+//!  - prim: primitives
+//!  - bb_cc: cell-centered magnetic field (unused)
+//!  - pco: pointer to Coordinates
+//!  - il,iu,jl,ju,kl,ku: index bounds of region to be updated
+//! Outputs:
+//!  - cons: conserved variables
+//! Notes:
+//!  - Single-cell function exists for other purposes; call made to that function rather
+//!       than having duplicate code.
 
 void EquationOfState::PrimitiveToConserved(
     const AthenaArray<Real> &prim,
@@ -268,19 +280,22 @@ void EquationOfState::PrimitiveToConserved(
 }
 
 //----------------------------------------------------------------------------------------
-// Function for calculating relativistic sound speeds
-// Inputs:
-//   rho_h: enthalpy per unit volume
-//   pgas: gas pressure
-//   vx: 3-velocity component v^x
-//   gamma_lorentz_sq: Lorentz factor \gamma^2
-// Outputs:
-//   plambda_plus: value set to most positive wavespeed
-//   plambda_minus: value set to most negative wavespeed
-// Notes:
-//   Same function as in adiabatic_hydro_sr.cpp.
-//     Uses SR formula (should be called in locally flat coordinates).
-//   References Mignone & Bodo 2005, MNRAS 364 126 (MB).
+//! \fn void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx,
+//!     Real gamma_lorentz_sq, Real *plambda_plus, Real *plambda_minus)
+//! \brief Function for calculating relativistic sound speeds
+//!
+//! Inputs:
+//!  - rho_h: enthalpy per unit volume
+//!  - pgas: gas pressure
+//!  - vx: 3-velocity component v^x
+//!  - gamma_lorentz_sq: Lorentz factor \gamma^2
+//! Outputs:
+//!  - plambda_plus: value set to most positive wavespeed
+//!  - plambda_minus: value set to most negative wavespeed
+//! Notes:
+//!  - Same function as in adiabatic_hydro_sr.cpp.
+//!  - Uses SR formula (should be called in locally flat coordinates).
+//!  - References Mignone & Bodo 2005, MNRAS 364 126 (MB).
 
 void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_lorentz_sq,
                                     Real *plambda_plus, Real *plambda_minus) {
@@ -294,18 +309,21 @@ void EquationOfState::SoundSpeedsSR(Real rho_h, Real pgas, Real vx, Real gamma_l
 }
 
 //----------------------------------------------------------------------------------------
-// Function for calculating relativistic sound speeds in arbitrary coordinates
-// Inputs:
-//   rho_h: enthalpy per unit volume
-//   pgas: gas pressure
-//   u0,u1: 4-velocity components u^0, u^1
-//   g00,g01,g11: metric components g^00, g^01, g^11
-// Outputs:
-//   plambda_plus: value set to most positive wavespeed
-//   plambda_minus: value set to most negative wavespeed
-// Notes:
-//   Follows same general procedure as vchar() in phys.c in Harm.
-//   Variables are named as though 1 is normal direction.
+//! \fn void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
+//!    Real g00, Real g01, Real g11, Real *plambda_plus, Real *plambda_minus)
+//! \brief Function for calculating relativistic sound speeds in arbitrary coordinates
+//!
+//! Inputs:
+//!  - rho_h: enthalpy per unit volume
+//!  - pgas: gas pressure
+//!  - u0,u1: 4-velocity components u^0, u^1
+//!  - g00,g01,g11: metric components g^00, g^01, g^11
+//! Outputs:
+//!  - plambda_plus: value set to most positive wavespeed
+//!  - plambda_minus: value set to most negative wavespeed
+//! Notes:
+//!  - Follows same general procedure as vchar() in phys.c in Harm.
+//!  - Variables are named as though 1 is normal direction.
 
 void EquationOfState::SoundSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1, Real g00,
                                     Real g01, Real g11,
@@ -603,9 +621,9 @@ void PrimitiveToConservedSingle(
 } // namespace
 
 //---------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j,
-//                                                 int i)
-// \brief Apply density and pressure floors to reconstructed L/R cell interface states
+//! \fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j,
+//!                                                 int i)
+//! \brief Apply density and pressure floors to reconstructed L/R cell interface states
 
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,i);

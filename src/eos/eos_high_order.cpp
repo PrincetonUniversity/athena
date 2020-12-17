@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file eos_high_order.cpp
-//  \brief functions for variable conversion at greater than second-order spatial accuracy
+//! \brief functions for variable conversion at greater than second-order spatial accuracy
 
 // C headers
 
@@ -20,12 +20,12 @@
 #include "eos.hpp"
 
 //---------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
-//           const AthenaArray<Real> &prim_old, const FaceField &b,
-//           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
-//           int il, int iu, int jl, int ju, int kl, int ku)
-// \brief Converts cell-averaged conserved variables to cell-averaged primitive variables
-// at fourth order accuracy. Wrapper function for specific pointwise conversion routine
+//! \fn void EquationOfState::ConservedToPrimitiveCellAverage(AthenaArray<Real> &cons,
+//!           const AthenaArray<Real> &prim_old, const FaceField &b,
+//!           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
+//!           int il, int iu, int jl, int ju, int kl, int ku)
+//! \brief Converts cell-averaged conserved variables to cell-averaged primitive variables
+//! at fourth order accuracy. Wrapper function for specific pointwise conversion routine
 
 void EquationOfState::ConservedToPrimitiveCellAverage(
     AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,

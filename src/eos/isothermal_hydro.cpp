@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file isothermal_hydro.cpp
-//  \brief implements functions in class EquationOfState for isothermal hydrodynamics`
+//! \brief implements functions in class EquationOfState for isothermal hydrodynamics`
 
 // C headers
 
@@ -29,10 +29,10 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
     scalar_floor_{pin->GetOrAddReal("hydro", "sfloor", std::sqrt(1024*float_min))} {}
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-//           const AthenaArray<Real> &prim_old, const FaceField &b,
-//           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
-//           int il, int iu, int jl, int ju, int kl, int ku)
+//! \fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+//!           const AthenaArray<Real> &prim_old, const FaceField &b,
+//!           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
+//!           int il, int iu, int jl, int ju, int kl, int ku)
 void EquationOfState::ConservedToPrimitive(
     AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
     AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
@@ -67,10 +67,10 @@ void EquationOfState::ConservedToPrimitive(
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-//           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-//           int il, int iu, int jl, int ju, int kl, int ku);
-// \brief Converts primitive variables into conservative variables
+//! \fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+//!           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
+//!           int il, int iu, int jl, int ju, int kl, int ku);
+//! \brief Converts primitive variables into conservative variables
 
 void EquationOfState::PrimitiveToConserved(
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
@@ -102,17 +102,17 @@ void EquationOfState::PrimitiveToConserved(
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn Real EquationOfState::SoundSpeed(Real dummy_arg[NHYDRO])
-// \brief returns isothermal sound speed
+//! \fn Real EquationOfState::SoundSpeed(Real dummy_arg[NHYDRO])
+//! \brief returns isothermal sound speed
 
 Real EquationOfState::SoundSpeed(const Real dummy_arg[NHYDRO]) {
   return iso_sound_speed_;
 }
 
 //---------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j,
-//                                                 int i)
-// \brief Apply density floor to reconstructed L/R cell interface states
+//! \fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j,
+//!                                                 int i)
+//! \brief Apply density floor to reconstructed L/R cell interface states
 
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,i);
@@ -124,9 +124,9 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
-//           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
-// \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
+//! \fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+//!           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
+//! \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
 
 void EquationOfState::ApplyPrimitiveConservedFloors(
     AthenaArray<Real> &prim, AthenaArray<Real> &cons, AthenaArray<Real> &bcc,
