@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file field_loop_poles.c
+//! \file field_loop_poles.cpp
 //! \brief Advection of a field loop THROUGH the poles in spherical_polar coordinates.
 //!
 //! Originally developed by ZZ.  Sets up constant uniform-density flow in x-direction

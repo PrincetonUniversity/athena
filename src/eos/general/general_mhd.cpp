@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file general_mhd.cpp
-//!  \brief implements most but not all of the functions in class
+//! \brief implements most but not all of the functions in class
 //! EquationOfState for general EOS MHD
 //!
 //! These functions MUST be implemented in an additional file.
