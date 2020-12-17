@@ -459,7 +459,7 @@ int main(int argc, char *argv[]) {
     for (int stage=1; stage<=ptlist->nstages; ++stage) {
       ptlist->DoTaskListOneStage(pmesh, stage);
       if (ptlist->CheckNextMainStage(stage)) {
-        if (SELF_GRAVITY_ENABLED == 1) // fft (0: discrete kernel, 1: continuous karnel)
+        if (SELF_GRAVITY_ENABLED == 1) // fft (0: discrete kernel, 1: continuous kernel)
           pmesh->pfgrd->Solve(stage, 0);
         else if (SELF_GRAVITY_ENABLED == 2) // multigrid
           pmesh->pmgrd->Solve(stage);
