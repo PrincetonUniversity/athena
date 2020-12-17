@@ -16,7 +16,7 @@
 //! - ipert = 1 - isentropic perturbations to P & d [default]
 //! - ipert = 2 - uniform Vx=amp, sinusoidal density
 //!
-//! - ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
+//! - ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
 //! - ifield = 2 - uniform Bz
 //!
 //! PRIVATE FUNCTION PROTOTYPES:

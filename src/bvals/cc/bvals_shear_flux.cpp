@@ -43,8 +43,8 @@
 
 //--------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::LoadFluxShearingBoxBoundarySameLevel(
-//                               AthenaArray<Real> &src, Real *buf, int nb)
-//  \brief Load shearing box boundary buffers CC
+//!                               AthenaArray<Real> &src, Real *buf, int nb)
+//! \brief Load shearing box boundary buffers CC
 
 void CellCenteredBoundaryVariable::LoadFluxShearingBoxBoundarySameLevel(
                                AthenaArray<Real> &src, Real *buf, int nb) {
@@ -77,9 +77,9 @@ void CellCenteredBoundaryVariable::LoadFluxShearingBoxBoundarySameLevel(
 }
 
 
-// --------------------------------------------------------------------------------------
-// ! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
-//  \brief Send shearing box boundary buffers for hydro variables
+//---------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
+//! \brief Send shearing box boundary buffers for hydro variables
 
 void CellCenteredBoundaryVariable::SendFluxShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
@@ -113,10 +113,10 @@ void CellCenteredBoundaryVariable::SendFluxShearingBoxBoundaryBuffers() {
   return;
 }
 
-// --------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
-//                         AthenaArray<Real> &src, Real *buf, const int nb)
-//  \brief Set hydro shearing box boundary received from a block on the same level
+//!                        AthenaArray<Real> &src, Real *buf, const int nb)
+//! \brief Set hydro shearing box boundary received from a block on the same level
 
 void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundarySameLevel(
                        AthenaArray<Real> &src, Real *buf, const int nb) {
@@ -154,9 +154,9 @@ void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundarySameLevel(
 }
 
 
-// --------------------------------------------------------------------------------------
-// ! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
-//  \brief receive shearing box boundary data for hydro variables
+//----------------------------------------------------------------------------------------
+//! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
+//! \brief receive shearing box boundary data for hydro variables
 
 bool CellCenteredBoundaryVariable::ReceiveFluxShearingBoxBoundaryBuffers() {
   bool flag[2]{true, true};
@@ -195,9 +195,9 @@ bool CellCenteredBoundaryVariable::ReceiveFluxShearingBoxBoundaryBuffers() {
   return (flag[0] && flag[1]);
 }
 
-// --------------------------------------------------------------------------------------
-// ! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
-//  \brief receive shearing box boundary data for hydro variables
+//----------------------------------------------------------------------------------------
+//! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
+//! \brief receive shearing box boundary data for hydro variables
 void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;

@@ -715,7 +715,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutputData::AppendOutputDataNode(OutputData *pod)
+//! \fn void OutputType::AppendOutputDataNode(OutputData *pnew_data)
 //! \brief
 
 void OutputType::AppendOutputDataNode(OutputData *pnew_data) {
@@ -730,7 +730,7 @@ void OutputType::AppendOutputDataNode(OutputData *pnew_data) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutputData::ReplaceOutputDataNode()
+//! \fn void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew)
 //! \brief
 
 void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew) {
@@ -756,7 +756,7 @@ void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutputData::ClearOutputData()
+//! \fn void OutputType::ClearOutputData()
 //! \brief
 
 void OutputType::ClearOutputData() {

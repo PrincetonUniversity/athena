@@ -18,7 +18,10 @@
 #include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::DonorCellX1()
+//! \fn Reconstruction::DonorCellX1(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 //! \brief reconstruct L/R surfaces of the i-th cells
 
 void Reconstruction::DonorCellX1(const int k, const int j, const int il, const int iu,
@@ -37,9 +40,11 @@ void Reconstruction::DonorCellX1(const int k, const int j, const int il, const i
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::DonorCellX2()
+//! \fn Reconstruction::DonorCellX2(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 //! \brief
-
 
 void Reconstruction::DonorCellX2(const int k, const int j, const int il, const int iu,
                                  const AthenaArray<Real> &q,
@@ -56,7 +61,10 @@ void Reconstruction::DonorCellX2(const int k, const int j, const int il, const i
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::DonorCellX3()
+//! \fn Reconstruction::DonorCellX3(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 //! \brief
 
 void Reconstruction::DonorCellX3(const int k, const int j, const int il, const int iu,

@@ -33,7 +33,7 @@
 //!
 //! LIMITATIONS
 //! ===========
-//!  - parameter specification (name=val #comment) must all be on a single line
+//!  - parameter specification (name=val # comment) must all be on a single line
 //!
 //! HISTORY
 //! =======

@@ -12,12 +12,12 @@
 //!   Gammie & Balbus.
 //!
 //! Several different field configurations and perturbations are possible:
-//! - ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
+//! - ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
 //! - ifield = 2 - uniform Bz
-//! - ifield = 3 - uniform Bz plus sinusoidal perturbation Bz(1+0.5*std::sin(kx*x1))
-//! - ifield = 4 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))= zero-net flux w helicity
+//! - ifield = 3 - uniform Bz plus sinusoidal perturbation Bz(1+0.5*sin(kx*x1))
+//! - ifield = 4 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
 //! - ifield = 5 - uniform By, but only for |z|<2
-//! - ifield = 6 - By with constant \beta versus z
+//! - ifield = 6 - By with constant beta versus z
 //! - ifield = 7 - zero field everywhere
 //!
 //! - ipert = 1 - random perturbations to P and V [default, used by HGB]
@@ -245,11 +245,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         // Initialize magnetic field.  For 3D shearing box B1=Bx, B2=By, B3=Bz
         //  ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
         //  ifield = 2 - uniform Bz
-        //  ifield = 3 - Bz(1+0.5*std::sin(kx*x1))
-        //  ifield = 4 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1)) =
+        //  ifield = 3 - Bz(1+0.5*sin(kx*x1))
+        //  ifield = 4 - B=(0,B0cos(kx*x1),B0sin(kx*x1)) =
         //               zero-net flux w/ helicity
         //  ifield = 5 - uniform By, but only for |z|<2
-        //  ifield = 6 - By with constant \beta versus z
+        //  ifield = 6 - By with constant beta versus z
         //  ifield = 7 - zero field everywhere
         if (MAGNETIC_FIELDS_ENABLED) {
           if (ifield == 1) {

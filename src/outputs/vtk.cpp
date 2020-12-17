@@ -51,7 +51,7 @@ inline void Swap4Bytes(void *vdat) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void VTKOutput:::WriteOutputFile(Mesh *pm)
+//! \fn void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 //! \brief Cycles over all MeshBlocks and writes OutputData in (legacy) vtk format, one
 //!        MeshBlock per file
 

@@ -15,7 +15,7 @@
 //! pressure = 1.E-6*B^2   actually zero in the exact solution
 //!
 //! Can apply sine wave perturbation in a form
-//!   *(1+perturb*std::cos(mphi*phi)) to the magnetic potential Az
+//!   \f$ (1+perturb*std::cos(mphi*phi)) \f$ to the magnetic potential Az
 //!
 //! REFERENCES:
 //! 1) Velikovich, Giuliani, Zalesak, Gardiner, "Exact self-similar solutions for the

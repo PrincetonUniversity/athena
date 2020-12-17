@@ -161,7 +161,7 @@ void FieldDiffusion::CalcCurrent(FaceField &b) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::OhmicEMF
-//! \breif EMF from Ohmic resistivity
+//! \brief EMF from Ohmic resistivity
 
 void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc,
                               EdgeField &e) {
@@ -230,7 +230,7 @@ void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc,
 
 //----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::AmbipolarEMF
-//! \breif EMF from ambipolar diffusion
+//! \brief EMF from ambipolar diffusion
 
 void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &bc,
                                   EdgeField &e) {
@@ -398,7 +398,7 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
 
 //----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::PoyntingFlux
-//! \breif Poynting flux from non-ideal MHD
+//! \brief Poynting flux from non-ideal MHD
 
 void FieldDiffusion::PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bc) {
   MeshBlock *pmb = pmy_block;

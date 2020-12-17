@@ -39,7 +39,7 @@
 #define NHISTORY_VARS ((NHYDRO) + (SELF_GRAVITY_ENABLED) + (NFIELD) + 3 + (NSCALARS))
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutputType::HistoryFile()
+//! \fn void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 //! \brief Writes a history file
 
 void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {

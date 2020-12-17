@@ -18,7 +18,10 @@
 #include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::PiecewiseLinearX1()
+//! \fn Reconstruction::PiecewiseLinearX1(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 //! \brief
 
 void Reconstruction::PiecewiseLinearX1(
@@ -128,7 +131,10 @@ void Reconstruction::PiecewiseLinearX1(
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::PiecewiseLinearX2()
+//! \fn Reconstruction::PiecewiseLinearX2(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 //! \brief
 
 void Reconstruction::PiecewiseLinearX2(
@@ -239,7 +245,10 @@ void Reconstruction::PiecewiseLinearX2(
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::PiecewiseLinearX3()
+//! \fn Reconstruction::PiecewiseLinearX3(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 //! \brief
 
 void Reconstruction::PiecewiseLinearX3(

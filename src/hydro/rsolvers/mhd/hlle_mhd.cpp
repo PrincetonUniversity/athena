@@ -19,7 +19,6 @@
 #include "../../hydro.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, const AthenaArray<Real> &bx,

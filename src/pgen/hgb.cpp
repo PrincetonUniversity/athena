@@ -12,10 +12,10 @@
 //!
 //! Several different field configurations and perturbations are possible:
 //!
-//! - ifield = 1 - Bz=B0std::sin(kx*x1) field with zero-net-flux [default] (kx input)
+//! - ifield = 1 - Bz=B0 sin(kx*x1) field with zero-net-flux [default] (kx input)
 //! - ifield = 2 - uniform Bz
-//! - ifield = 3 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))= zero-net flux w helicity
-//! - ifield = 4 - B=(0,B0/std::sqrt(2),B0/std::sqrt(2))= net toroidal+vertical field
+//! - ifield = 3 - B=(0,B0 cos(kx*x1),B0 sin(kx*x1))= zero-net flux w helicity
+//! - ifield = 4 - B=(0,B0/sqrt(2),B0/sqrt(2))= net toroidal+vertical field
 //! - ifield = 5 - uniform By
 //!
 //! - ipert = 1 - random perturbations to P and V [default, used by HGB]

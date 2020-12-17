@@ -356,7 +356,7 @@ Real A1(const Real x1, const Real x2, const Real x3) {
 } // namespace
 
 //----------------------------------------------------------------------------------------
-//!\f: User-defined boundary Conditions: LoopInnerX1
+//! \brief: User-defined boundary Conditions: LoopInnerX1
 
 void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
                  Real time, Real dt,
@@ -408,7 +408,7 @@ void LoopInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 }
 
 //----------------------------------------------------------------------------------------
-//!\f: User-defined boundary Conditions: LoopOuterX1
+//! \brief: User-defined boundary Conditions: LoopOuterX1
 
 void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
                  Real time, Real dt,
@@ -460,7 +460,7 @@ void LoopOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 }
 
 //----------------------------------------------------------------------------------------
-//!\f: User-defined boundary Conditions: LoopInnerX2
+//! \brief: User-defined boundary Conditions: LoopInnerX2
 
 void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
                  Real time, Real dt,
@@ -512,7 +512,7 @@ void LoopInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 }
 
 //----------------------------------------------------------------------------------------
-//!\f: User-defined boundary Conditions: LoopOuterX2
+//! \brief: User-defined boundary Conditions: LoopOuterX2
 
 void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
                  Real time, Real dt,

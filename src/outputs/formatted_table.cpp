@@ -27,7 +27,8 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void FormattedTableOutput:::WriteOutputFile(Mesh *pm)
+//! \fn void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin,
+//!                                                bool flag)
 //! \brief writes OutputData to file in tabular format using C style std::fprintf
 //!        Writes one file per MeshBlock
 

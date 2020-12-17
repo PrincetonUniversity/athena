@@ -60,7 +60,7 @@ FFTGravityDriver::~FFTGravityDriver() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void GravityDriver::Solve(int stage)
+//! \fn void FFTGravityDriver::Solve(int stage, int mode)
 //! \brief load the data and solve
 
 void FFTGravityDriver::Solve(int stage, int mode) {
@@ -100,7 +100,7 @@ void FFTGravityDriver::Solve(int stage, int mode) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FFTGravity::ApplyKernel(const AthenaArray<Real> &src, int ns)
+//! \fn void FFTGravity::ApplyKernel(int mode)
 //! \brief Apply kernel
 void FFTGravity::ApplyKernel(int mode) {
   Real pcoeff(0.0);

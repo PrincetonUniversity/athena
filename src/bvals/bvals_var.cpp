@@ -124,8 +124,8 @@ void BoundaryVariable::CopyVariableBufferSameProcess(NeighborBlock& nb, int ssiz
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb,
-//                                                                 int ssize)
-//  \brief Same as CopyVariableBufferSameProcess but for flux correction
+//!                                                                int ssize)
+//!  \brief Same as CopyVariableBufferSameProcess but for flux correction
 
 void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize) {
   // Locate target buffer
@@ -147,8 +147,8 @@ void BoundaryVariable::CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, in
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb,
-//                                                int ssize, int bufid, bool upper)
-//  \brief Same as CopyVariableBufferSameProcess but for shear boundaries
+//!                                               int ssize, int bufid, bool upper)
+//! \brief Same as CopyVariableBufferSameProcess but for shear boundaries
 
 void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int ssize,
                                                   int bufid, bool upper) {
@@ -168,8 +168,8 @@ void BoundaryVariable::CopyShearBufferSameProcess(SimpleNeighborBlock& snb, int 
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::CopyShearFluxSameProcess(SimpleNeighborBlock& snb,
-//                                                      int ssize, int bufid, bool upper)
-//  \brief Same as CopyVariableBufferSameProcess but for shear flux
+//!                                                     int ssize, int bufid, bool upper)
+//! \brief Same as CopyVariableBufferSameProcess but for shear flux
 
 void BoundaryVariable::CopyShearFluxSameProcess(SimpleNeighborBlock& snb, int ssize,
                                                int bufid, bool upper) {
@@ -188,10 +188,11 @@ void BoundaryVariable::CopyShearFluxSameProcess(SimpleNeighborBlock& snb, int ss
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::SetCompletedFlagSameProcess(NeighborBlock& nb)
-//  \brief
-//  Called in CellCenteredBoundaryVariable::SendFluxCorrection() when there is no
-//  need to send any information to nb on the same process. Just set
-//  BoundaryStatus::completed in the flag.
+//! \brief
+//!
+//!  Called in CellCenteredBoundaryVariable::SendFluxCorrection() when there is no
+//!  need to send any information to nb on the same process. Just set
+//!  BoundaryStatus::completed in the flag.
 void BoundaryVariable::SetCompletedFlagSameProcess(NeighborBlock& nb) {
   // Locate target buffer
   // 1) which MeshBlock?

@@ -256,8 +256,8 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn
-//!  \brief refinement condition: maximum density and pressure curvature
+//! \fn int RefinementCondition(MeshBlock *pmb)
+//! \brief refinement condition: maximum density and pressure curvature
 
 int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;

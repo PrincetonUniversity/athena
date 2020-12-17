@@ -288,7 +288,7 @@ void EquationOfState::PrimitiveToConserved(
 //!  - rho_h: enthalpy per unit volume
 //!  - pgas: gas pressure
 //!  - vx: 3-velocity component v^x
-//!  - gamma_lorentz_sq: Lorentz factor \gamma^2
+//!  - gamma_lorentz_sq: Lorentz factor gamma^2
 //! Outputs:
 //!  - plambda_plus: value set to most positive wavespeed
 //!  - plambda_minus: value set to most negative wavespeed

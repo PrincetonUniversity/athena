@@ -36,7 +36,10 @@
 #include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::PiecewiseParabolicX1()
+//! \fn Reconstruction::PiecewiseParabolicX1(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 //! \brief Returns L/R interface values in X1-dir constructed using fourth-order PPM and
 //!        Colella-Sekora or Mignone limiting over [kl,ku][jl,ju][il,iu]
 
@@ -294,7 +297,10 @@ void Reconstruction::PiecewiseParabolicX1(
 }
 
 //-------------------------------------------------------------------------------------
-//! \fn Reconstruction::PiecewiseParabolicX2()
+//! \fn Reconstruction::PiecewiseParabolicX2(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 //! \brief Returns L/R interface values in X2-dir constructed using fourth-order PPM and
 //!         Colella-Sekora or Mignone limiting over [kl,ku][jl,ju][il,iu]
 
@@ -548,7 +554,10 @@ void Reconstruction::PiecewiseParabolicX2(
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::PiecewiseParabolicX3()
+//! \fn Reconstruction::PiecewiseParabolicX3(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
 //! \brief Returns L/R interface values in X3-dir constructed using fourth-order PPM and
 //!         Colella-Sekora or Mignone limiting over [kl,ku][jl,ju][il,iu]
 

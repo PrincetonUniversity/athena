@@ -152,7 +152,7 @@ void FieldDiffusion::ClearEMF(EdgeField &e) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::SetDiffusivity
-//! \breif Set magnetic diffusion coefficients
+//! \brief Set magnetic diffusion coefficients
 
 void FieldDiffusion::SetDiffusivity(const AthenaArray<Real> &w,
                                     const AthenaArray<Real> &bc) {
@@ -183,7 +183,7 @@ void FieldDiffusion::SetDiffusivity(const AthenaArray<Real> &w,
 
 //----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::AddPoyntingFlux
-//! \breif Add Poynting flux to the hydro energy flux
+//! \brief Add Poynting flux to the hydro energy flux
 
 void FieldDiffusion::AddPoyntingFlux(FaceField &p_src) {
   MeshBlock *pmb = pmy_block;
