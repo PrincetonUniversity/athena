@@ -7,7 +7,7 @@
 //! \brief Problem generator for RT instabilty.
 //!
 //! Note the gravitational acceleration is hardwired to be 0.1. Density difference is
-//! hardwired to be 2.0 in 2D, and is set by the input parameter <problem>/rhoh in 3D
+//! hardwired to be 2.0 in 2D, and is set by the input parameter `problem/rhoh` in 3D
 //! (default value is 3.0). This reproduces 2D results of Liska & Wendroff, 3D results of
 //! Dimonte et al.
 //!

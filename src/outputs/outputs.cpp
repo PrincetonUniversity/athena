@@ -24,13 +24,15 @@
 //!   - dt           = problem time between outputs
 //!
 //! EXAMPLE of an <output[n]> block for a VTK dump:
-//!   <output3>
-//!   file_type   = tab       # Tabular data dump
-//!   variable    = prim      # variables to be output
-//!   data_format = %12.5e    # Optional data format string
-//!   dt          = 0.01      # time increment between outputs
-//!   x2_slice    = 0.0       # slice in x2
-//!   x3_slice    = 0.0       # slice in x3
+//!
+//!     <output3>
+//!     file_type   = tab       # Tabular data dump
+//!     variable    = prim      # variables to be output
+//!     data_format = %12.5e    # Optional data format string
+//!     dt          = 0.01      # time increment between outputs
+//!     x2_slice    = 0.0       # slice in x2
+//!     x3_slice    = 0.0       # slice in x3
+//!
 //!
 //! Each <output[n]> block will result in a new node being created in a linked list of
 //! OutputType stored in the Outputs class.  During a simulation, outputs are made when

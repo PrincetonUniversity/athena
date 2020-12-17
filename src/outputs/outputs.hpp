@@ -29,7 +29,7 @@ class Coordinates;
 
 //----------------------------------------------------------------------------------------
 //! \struct OutputParameters
-//! \brief  container for parameters read from <output> block in the input file
+//! \brief  container for parameters read from `<output>` block in the input file
 
 struct OutputParameters {
   int block_number;
