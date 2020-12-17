@@ -108,9 +108,15 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
       }
       if(pmb->block_size.nx3 > 1) {
         // average e2 for x1x3 edge
-        for (int k=pmb->ks; k<=pmb->ke+1; k+=pmb->block_size.nx3) {
+        if (pbval_->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::block
+            || pbval_->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::periodic) {
           for (int j=pmb->js; j<=pmb->je; j++)
-            shear_var_emf_[upper].x2e(k,j) *= 0.5;
+            shear_var_emf_[upper].x2e(pmb->ks,j) *= 0.5;
+        }
+        if (pbval_->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::block
+            || pbval_->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::periodic) {
+          for (int j=pmb->js; j<=pmb->je; j++)
+            shear_var_emf_[upper].x2e(pmb->ke+1,j) *= 0.5;
         }
       }
 
