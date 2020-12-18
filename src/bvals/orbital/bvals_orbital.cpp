@@ -618,13 +618,13 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersCC() {
           std::memcpy(obd.recv[n], orbital_bd_cc_[upper].send[n], p*sizeof(Real));
           obd.flag[n] = BoundaryStatus::arrived;
         } else if (snb.level < mylevel) { // to coarser
-          std::int64_t n1 = pmb->loc.lx1%2;
+          int n1 = static_cast<int>(pmb->loc.lx1%2);
           if (porb->orbital_direction == 1) {
-            std::int64_t n3 = pmb->loc.lx3%2;
+            int n3 = static_cast<int>(pmb->loc.lx3%2);
             std::memcpy(obd.recv[n1+n3*2], orbital_bd_cc_[upper].send[n], p*sizeof(Real));
             obd.flag[n1+n3*2] = BoundaryStatus::arrived;
           } else {
-            std::int64_t n2 = pmb->loc.lx2%2;
+            int n2 = static_cast<int>(pmb->loc.lx2%2);
             std::memcpy(obd.recv[n1+n2*2], orbital_bd_cc_[upper].send[n], p*sizeof(Real));
             obd.flag[n1+n2*2] = BoundaryStatus::arrived;
           }
@@ -638,13 +638,13 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersCC() {
           tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset[upper],
                                           orbital_advection_cc_phys_id_);
         } else if (snb.level < mylevel) { // to coarser
-          std::int64_t n1 = pmb->loc.lx1%2;
+          int n1 = static_cast<int>(pmb->loc.lx1%2);
           if (porb->orbital_direction == 1) {
-            std::int64_t n3 = pmb->loc.lx3%2;
+            int n3 = static_cast<int>(pmb->loc.lx3%2);
             tag = pbval_->CreateBvalsMPITag(snb.lid, n1+n3*2+offset[upper],
                                             orbital_advection_cc_phys_id_);
           } else {
-            std::int64_t n2 = pmb->loc.lx2%2;
+            int n2 = static_cast<int>(pmb->loc.lx2%2);
             tag = pbval_->CreateBvalsMPITag(snb.lid, n1+n2*2+offset[upper],
                                             orbital_advection_cc_phys_id_);
           }
@@ -758,13 +758,13 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersFC() {
           std::memcpy(obd.recv[n], orbital_bd_fc_[upper].send[n], p*sizeof(Real));
           obd.flag[n] = BoundaryStatus::arrived;
         } else if (snb.level < mylevel) { // to coarser
-          std::int64_t n1 = pmb->loc.lx1%2;
+          int n1 = static_cast<int>(pmb->loc.lx1%2);
           if (porb->orbital_direction == 1) {
-            std::int64_t n3 = pmb->loc.lx3%2;
+            int n3 = static_cast<int>(pmb->loc.lx3%2);
             std::memcpy(obd.recv[n1+n3*2], orbital_bd_fc_[upper].send[n], p*sizeof(Real));
             obd.flag[n1+n3*2] = BoundaryStatus::arrived;
           } else {
-            std::int64_t n2 = pmb->loc.lx2%2;
+            int n2 = static_cast<int>(pmb->loc.lx2%2);
             std::memcpy(obd.recv[n1+n2*2], orbital_bd_fc_[upper].send[n], p*sizeof(Real));
             obd.flag[n1+n2*2] = BoundaryStatus::arrived;
           }
@@ -778,13 +778,13 @@ void OrbitalBoundaryCommunication::SendBoundaryBuffersFC() {
           tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset[upper],
                                           orbital_advection_fc_phys_id_);
         } else if (snb.level < mylevel) { // to coarser
-          std::int64_t n1 = pmb->loc.lx1%2;
+          int n1 = static_cast<int>(pmb->loc.lx1%2);
           if (porb->orbital_direction == 1) {
-            std::int64_t n3 = pmb->loc.lx3%2;
+            int n3 = static_cast<int>(pmb->loc.lx3%2);
             tag = pbval_->CreateBvalsMPITag(snb.lid, n1+n3*2+offset[upper],
                                             orbital_advection_fc_phys_id_);
           } else {
-            std::int64_t n2 = pmb->loc.lx2%2;
+            int n2 = static_cast<int>(pmb->loc.lx2%2);
             tag = pbval_->CreateBvalsMPITag(snb.lid, n1+n2*2+offset[upper],
                                             orbital_advection_fc_phys_id_);
           }
