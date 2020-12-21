@@ -644,7 +644,7 @@ void Mesh::UserWorkInLoop() {
             }
             fftw_execute(fplan);
             // calculation
-            Real amp_wave;
+            Real amp_wave = 0.0;
             Real amp_others = 0.0;
             for (int j=0; j<mesh_size.nx2/2; j++) {
               if (j == abs_nwy) {
