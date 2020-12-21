@@ -285,6 +285,12 @@ void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp) {
   }
 
   // set power spectrum: only power-law
+
+  // find the reference 2PI/L along the longest axis
+  Real dkx = pfb->dkx[0];
+  if (knx2>1) dkx = dkx < pfb->dkx[1] ? dkx : pfb->dkx[1];
+  if (knx3>2) dkx = dkx < pfb->dkx[2] ? dkx : pfb->dkx[2];
+
   for (int k=0; k<knx3; k++) {
     for (int j=0; j<knx2; j++) {
       for (int i=0; i<knx1; i++) {
@@ -302,7 +308,7 @@ void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp) {
         if (gidx == 0) {
           pcoeff = 0.0;
         } else {
-          if ((nmag > nlow) && (nmag < nhigh)) {
+          if ((kmag/dkx > nlow) && (kmag/dkx < nhigh)) {
             pcoeff = 1.0/std::pow(kmag,(expo+2.0)/2.0);
           } else {
             pcoeff = 0.0;
