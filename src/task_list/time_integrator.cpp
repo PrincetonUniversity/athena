@@ -1508,7 +1508,9 @@ TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SendHydroFlux(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       pmb->phydro->hbvar.SendFluxCorrection();
     }
     return TaskStatus::success;
@@ -1521,7 +1523,9 @@ TaskStatus TimeIntegratorTaskList::SendHydroFlux(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SendEMF(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       pmb->pfield->fbvar.SendFluxCorrection();
     }
     return TaskStatus::success;
@@ -1534,7 +1538,9 @@ TaskStatus TimeIntegratorTaskList::SendEMF(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectHydroFlux(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       if (pmb->phydro->hbvar.ReceiveFluxCorrection()) {
         return TaskStatus::next;
       } else {
@@ -1552,7 +1558,9 @@ TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectHydroFlux(MeshBlock *pmb, in
 
 TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectEMF(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       if (pmb->pfield->fbvar.ReceiveFluxCorrection()) {
         return TaskStatus::next;
       } else {
@@ -1697,7 +1705,9 @@ TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
       || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       // if using orbital advection, put modified conservative into the function
       if(pmb->porb->orbital_advection_defined) {
         pmb->porb->SetOrbitalSystemOutput(ph->w, ph->u, OrbitalTransform::prim);
@@ -1721,7 +1731,9 @@ TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
   if (!(pf->fdif.field_diffusion_defined)) return TaskStatus::next;
 
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       // TODO(pdmullen): DiffuseField is also called in SuperTimeStepTaskLsit.
       // It must skip Hall effect (once implemented) diffusion process in STS
       // and always calculate those terms in the main integrator.
@@ -2080,7 +2092,9 @@ TaskStatus TimeIntegratorTaskList::CalculateScalarFlux(MeshBlock *pmb, int stage
 
 TaskStatus TimeIntegratorTaskList::SendScalarFlux(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       pmb->pscalars->sbvar.SendFluxCorrection();
     }
     return TaskStatus::success;
@@ -2091,7 +2105,9 @@ TaskStatus TimeIntegratorTaskList::SendScalarFlux(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::ReceiveScalarFlux(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       if (pmb->pscalars->sbvar.ReceiveFluxCorrection()) {
         return TaskStatus::next;
       } else {
@@ -2199,7 +2215,9 @@ TaskStatus TimeIntegratorTaskList::DiffuseScalars(MeshBlock *pmb, int stage) {
     return TaskStatus::next;
 
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       // TODO(felker): adapted directly from HydroDiffusion::ClearFlux. Deduplicate
       ps->diffusion_flx[X1DIR].ZeroClear();
       ps->diffusion_flx[X2DIR].ZeroClear();
