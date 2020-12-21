@@ -83,8 +83,8 @@ class OrbitalBoundaryCommunication {
 
   int *size_cc_send[2];  //same, coarser, fine*4
   int *size_cc_recv[2];  //same, coarser, fine*4
-  int *size_fc_send[2];  //same, coarser, fine*8
-  int *size_fc_recv[2];  //same, coarser, fine*8
+  int *size_fc_send[2];  //same, coarser, fine*4
+  int *size_fc_recv[2];  //same, coarser, fine*4
 
   // ptr to MeshBlock, Mesh, BoundaryValues, OrbitalAdvection
   MeshBlock *pmy_block_;
