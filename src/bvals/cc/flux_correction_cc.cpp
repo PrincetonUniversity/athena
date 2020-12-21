@@ -40,7 +40,7 @@
 //----------------------------------------------------------------------------------------
 //! \fn int CellCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
 //!                                                  const NeighborBlock& nb)
-//! \brief Set flux correction buffers for sending to a block on the same level
+//! \brief Set surface flux buffers for sending to a block on the same level
 
 int CellCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
                                                        const NeighborBlock& nb) {
@@ -72,7 +72,7 @@ int CellCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
 //----------------------------------------------------------------------------------------
 //! \fn int CellCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(Real *buf,
 //!                                                        const NeighborBlock& nb)
-//! \brief Set EMF correction buffers for sending to a block on the coarser level
+//! \brief Set surface flux buffers for sending to a block on the coarser level
 
 int CellCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(Real *buf,
                                                          const NeighborBlock& nb) {
@@ -166,7 +166,8 @@ int CellCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SendFluxCorrection()
-//! \brief Restrict, pack and send the surface flux to the coarse neighbor(s)
+//! \brief Send surface flux buffers
+
 void CellCenteredBoundaryVariable::SendFluxCorrection() {
   MeshBlock *pmb=pmy_block_;
   for (int n=0; n<pbval_->nneighbor; n++) {
@@ -202,8 +203,7 @@ void CellCenteredBoundaryVariable::SendFluxCorrection() {
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
 //!                                                               const NeighborBlock& nb)
-//! \brief Add up the EMF received from a block on the same level
-//!        Later they will be divided in the AverageFluxBoundary function
+//! \brief Set surface flux data received from a block on the same level
 
 void CellCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
                                                            const NeighborBlock& nb) {
@@ -235,8 +235,7 @@ void CellCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
 //!                                                               const NeighborBlock& nb)
-//! \brief Add up the EMF received from a block on the finer level
-//!        Later they will be divided in the AverageFluxBoundary function
+//! \brief Set surface flux data received from a block on the finer level
 
 void CellCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
                                                            const NeighborBlock& nb) {
@@ -287,7 +286,7 @@ void CellCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn bool CellCenteredBoundaryVariable::ReceiveFluxCorrection()
-//! \brief Receive and apply the surface flux from the finer neighbor(s)
+//! \brief Receive surface flux buffers
 
 bool CellCenteredBoundaryVariable::ReceiveFluxCorrection() {
   MeshBlock *pmb = pmy_block_;

@@ -70,7 +70,7 @@ void HydroBoundaryVariable::SwapHydroQuantity(AthenaArray<Real> &var_hydro,
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::SetBoundarySameLevel(Real *buf,
 //!                                                      const NeighborBlock& nb)
-//! \brief Set cell-centered boundary received from a block on the same level
+//! \brief Set hydro boundary received from a block on the same level
 
 void HydroBoundaryVariable::SetBoundarySameLevel(Real *buf,
                                                  const NeighborBlock& nb) {

@@ -44,7 +44,7 @@
 //--------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::LoadFluxShearingBoxBoundarySameLevel(
 //!                               AthenaArray<Real> &src, Real *buf, int nb)
-//! \brief Load shearing box boundary buffers CC
+//! \brief Set shearing boundary flux buffers for sending to a block on the same level
 
 void CellCenteredBoundaryVariable::LoadFluxShearingBoxBoundarySameLevel(
                                AthenaArray<Real> &src, Real *buf, int nb) {
@@ -79,7 +79,7 @@ void CellCenteredBoundaryVariable::LoadFluxShearingBoxBoundarySameLevel(
 
 //---------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
-//! \brief Send shearing box boundary buffers for hydro variables
+//! \brief Send shearing box boundary flux buffers
 
 void CellCenteredBoundaryVariable::SendFluxShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
@@ -116,7 +116,7 @@ void CellCenteredBoundaryVariable::SendFluxShearingBoxBoundaryBuffers() {
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
 //!                        AthenaArray<Real> &src, Real *buf, const int nb)
-//! \brief Set hydro shearing box boundary received from a block on the same level
+//! \brief Set shearing box boundary flux data received from a block on the same level
 
 void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundarySameLevel(
                        AthenaArray<Real> &src, Real *buf, const int nb) {
@@ -156,7 +156,7 @@ void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundarySameLevel(
 
 //----------------------------------------------------------------------------------------
 //! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
-//! \brief receive shearing box boundary data for hydro variables
+//! \brief Receive shearing box boundary flux data
 
 bool CellCenteredBoundaryVariable::ReceiveFluxShearingBoxBoundaryBuffers() {
   bool flag[2]{true, true};
@@ -196,8 +196,9 @@ bool CellCenteredBoundaryVariable::ReceiveFluxShearingBoxBoundaryBuffers() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
-//! \brief receive shearing box boundary data for hydro variables
+//! \fn bool CellCenteredBoundaryVariable::SetFluxShearingBoxBoundaryBuffers()
+//! \brief Update shearing box boundary fluxes
+
 void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
