@@ -4,9 +4,10 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file vtk.cpp
-//  \brief writes output data in (legacy) vtk format.
-//  Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
-//  Writes one file per MeshBlock.
+//! \brief writes output data in (legacy) vtk format.
+//!
+//! Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
+//! Writes one file per MeshBlock.
 
 // C headers
 
@@ -29,8 +30,8 @@
 #include "outputs.hpp"
 
 //----------------------------------------------------------------------------------------
-// Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
-// legacy format requires data to be stored as big-endian.
+//! Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
+//! legacy format requires data to be stored as big-endian.
 
 int IsBigEndian() {
   std::int32_t n = 1;
@@ -50,9 +51,9 @@ inline void Swap4Bytes(void *vdat) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void VTKOutput:::WriteOutputFile(Mesh *pm)
-//  \brief Cycles over all MeshBlocks and writes OutputData in (legacy) vtk format, one
-//         MeshBlock per file
+//! \fn void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
+//! \brief Cycles over all MeshBlocks and writes OutputData in (legacy) vtk format, one
+//!        MeshBlock per file
 
 void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   int big_end = IsBigEndian(); // =1 on big endian machine

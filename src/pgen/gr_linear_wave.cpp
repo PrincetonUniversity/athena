@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gr_linear_wave.cpp
-//  \brief Problem generator for linear waves in special and general relativity.
+//! \brief Problem generator for linear waves in special and general relativity.
 
 // C headers
 

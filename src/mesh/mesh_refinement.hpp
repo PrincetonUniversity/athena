@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mesh_refinement.hpp
-//  \brief defines MeshRefinement class used for static/adaptive mesh refinement
+//! \brief defines MeshRefinement class used for static/adaptive mesh refinement
 
 // C headers
 
@@ -34,7 +34,7 @@ class OrbitalAdvection;
 
 //----------------------------------------------------------------------------------------
 //! \class MeshRefinement
-//  \brief
+//! \brief
 
 class MeshRefinement {
   // needs to access pcoarsec in ProlongateBoundaries() for passing to BoundaryFunc()

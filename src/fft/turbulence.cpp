@@ -35,9 +35,9 @@
 //!
 //! \note
 //! turb_flag is initialzed in the Mesh constructor to 0 by default;
-//! turb_flag = 1 for decaying turbulence
-//! turb_flag = 2 for impulsively driven turbulence
-//! turb_flag = 3 for continuously driven turbulence
+//! - turb_flag = 1 for decaying turbulence
+//! - turb_flag = 2 for impulsively driven turbulence
+//! - turb_flag = 3 for continuously driven turbulence
 
 TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
     FFTDriver(pm, pin),
@@ -137,7 +137,7 @@ TurbulenceDriver::~TurbulenceDriver() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void TurbulenceDriver::Driving()
-//  \brief Generate and Perturb the velocity field
+//! \brief Generate and Perturb the velocity field
 
 void TurbulenceDriver::Driving() {
   Mesh *pm = pmy_mesh_;
@@ -170,7 +170,7 @@ void TurbulenceDriver::Driving() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void TurbulenceDriver::Generate()
-//  \brief Generate velocity pertubation.
+//! \brief Generate velocity pertubation.
 
 void TurbulenceDriver::Generate() {
   Mesh *pm = pmy_mesh_;
@@ -212,16 +212,16 @@ void TurbulenceDriver::Generate() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void TurbulenceDriver::OUProcess(Real dt)
-//  \brief Generate velocity pertubation.
+//! \brief Generate velocity pertubation.
+//!
+//! Ornstein–Uhlenbeck (OU) process based on Eq. 26 in Lynn et al. (2012)
+//! original formalism for
+//! \f$ f=exp(-dt/tcorr) \f$
+//! \f[ dv_k(t+dt) = f*dv_k(t) + sqrt(1-f^2)*dv_k' \f]
 
 void TurbulenceDriver::OUProcess(Real dt) {
-  // Ornstein–Uhlenbeck (OU) process based on Eq. 26 in Lynn et al. (2012)
-  // original formalism for f=exp(-dt/tcorr)
-  // dv_k(t+dt) = f*dv_k(t) + sqrt(1-f^2)*dv_k'
-  // or by assuming dt << tcorr, f=1-dt/tcorr
   FFTBlock *pfb = pmy_fb;
   Real factor = std::exp(-dt/tcorr);
-  //Real factor = 1-dt/tcorr;
   Real sqrt_factor = std::sqrt(1 - factor*factor);
 
   for (int nv=0; nv<3; nv++) PowerSpectrum(fv_new_[nv]);
@@ -238,7 +238,7 @@ void TurbulenceDriver::OUProcess(Real dt) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp)
-//  \brief Generate Power spectrum in Fourier space with power-law
+//! \brief Generate Power spectrum in Fourier space with power-law
 
 void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp) {
   Real pcoeff;
@@ -331,7 +331,7 @@ void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void TurbulenceDriver::Perturb(Real dt)
-//  \brief Add velocity perturbation to the hydro variables
+//! \brief Add velocity perturbation to the hydro variables
 
 void TurbulenceDriver::Perturb(Real dt) {
   Mesh *pm = pmy_mesh_;
@@ -465,8 +465,8 @@ void TurbulenceDriver::Perturb(Real dt) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void TurbulenceDriver::Project()
-//  \brief calculates shear and compressible components
+//! \fn void TurbulenceDriver::Project(std::complex<Real> **fv, Real f_shear)
+//! \brief calculate velocity field with a given ratio of shear to comp.
 
 void TurbulenceDriver::Project(std::complex<Real> **fv, Real f_shear) {
   FFTBlock *pfb = pmy_fb;
@@ -478,6 +478,11 @@ void TurbulenceDriver::Project(std::complex<Real> **fv, Real f_shear) {
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void TurbulenceDriver::Project(std::complex<Real> **fv,
+//!                                    std::complex<Real> **fv_sh,
+//!                                    std::complex<Real> **fv_co)
+//! \brief calculates shear and compressible components
 void TurbulenceDriver::Project(std::complex<Real> **fv, std::complex<Real> **fv_sh,
                                std::complex<Real> **fv_co) {
   FFTBlock *pfb = pmy_fb;
@@ -529,7 +534,7 @@ void TurbulenceDriver::Project(std::complex<Real> **fv, std::complex<Real> **fv_
 
 //----------------------------------------------------------------------------------------
 //! \fn void TurbulenceDriver::GetKcomp(int idx, int disp, int Nx)
-//  \brief Get k index, which runs from 0, 1, ... Nx/2-1, -Nx/2, -Nx/2+1, ..., -1.
+//! \brief Get k index, which runs from 0, 1, ... Nx/2-1, -Nx/2, -Nx/2+1, ..., -1.
 
 std::int64_t TurbulenceDriver::GetKcomp(int idx, int disp, int Nx) {
   return ((idx+disp) - static_cast<std::int64_t>(2*(idx+disp)/Nx)*Nx);

@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_shear_cc.cpp
-//  \brief functions that apply shearing box BCs for cell-centered variables
+//! \brief functions that apply shearing box BCs for cell-centered variables
 //========================================================================================
 
 // C headers
@@ -43,8 +43,8 @@
 
 //--------------------------------------------------------------------------------------
 //! \fn int CellCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
-//                                        AthenaArray<Real> &src, Real *buf, int nb)
-//  \brief Load shearing box boundary buffers CC
+//!                                       AthenaArray<Real> &src, Real *buf, int nb)
+//! \brief Set CC shearing boundary buffers for sending to a block on the same level
 
 void CellCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
                                  AthenaArray<Real> &src, Real *buf, int nb) {
@@ -90,9 +90,9 @@ void CellCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
 }
 
 
-// --------------------------------------------------------------------------------------
-// ! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
-//  \brief Send shearing box boundary buffers for hydro variables
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
+//! \brief Send CC shearing box boundary buffers
 
 void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
@@ -128,8 +128,8 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 
 // --------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
-//                         AthenaArray<Real> &src, Real *buf, const int nb)
-//  \brief Set hydro shearing box boundary received from a block on the same level
+//!                        AthenaArray<Real> &src, Real *buf, const int nb)
+//! \brief Set CC shearing boundary data received from a block on the same level
 
 void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
                     AthenaArray<Real> &src, Real *buf,const int nb) {
@@ -164,9 +164,9 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
 }
 
 
-// --------------------------------------------------------------------------------------
-// ! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
-//  \brief receive shearing box boundary data for hydro variables
+//----------------------------------------------------------------------------------------
+//! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
+//! \brief Receive CC shearing box boundary buffers
 
 bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   bool flag[2]{true, true};
@@ -205,9 +205,10 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   return (flag[0] && flag[1]);
 }
 
-// --------------------------------------------------------------------------------------
-// ! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
-//  \brief receive shearing box boundary data for hydro variables
+//----------------------------------------------------------------------------------------
+//! \fn bool CellCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers()
+//! \brief Update CC shearing box boundary variables
+
 void CellCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
@@ -256,6 +257,9 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
+//! \brief
 void CellCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
   int size, tag;

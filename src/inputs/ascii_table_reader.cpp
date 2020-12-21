@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file ascii_table_reader.cpp
-//  \brief Implements ASCII table reader functions
+//! \brief Implements ASCII table reader functions
 
 // C headers
 
@@ -23,9 +23,9 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void ASCIITableLoader(const char *filename, InterpTable2D* ptable,
-//                            AthenaArray<Real>* pratios)
-//  \brief Load a table stored in ASCII form and initialize an interpolated table.
-//         Fastest index corresponds to column
+//!                           AthenaArray<Real>* pratios)
+//! \brief Load a table stored in ASCII form and initialize an interpolated table.
+//!        Fastest index corresponds to column
 void ASCIITableLoader(const char *filename, InterpTable2D &table,
                       AthenaArray<Real>* pratios) {
   std::ifstream file(filename, std::ios::in);

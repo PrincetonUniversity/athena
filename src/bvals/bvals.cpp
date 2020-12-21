@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals.cpp
-//  \brief constructor/destructor and utility functions for BoundaryValues class
+//! \brief constructor/destructor and utility functions for BoundaryValues class
 
 // C headers
 
@@ -46,9 +46,15 @@
 #include <mpi.h>
 #endif
 
-// BoundaryValues constructor (the first object constructed inside the MeshBlock()
-// constructor): sets functions for the appropriate boundary conditions at each of the 6
-// dirs of a MeshBlock
+//----------------------------------------------------------------------------------------
+//! \brief BoundaryValues constructor
+//!        (the first object constructed inside the MeshBlock() constructor)
+//!
+//! Sets functions for the appropriate boundary conditions at each of the 6
+//! dirs of a MeshBlock
+//!
+//! At the end, there is a section containing ALL shearing box-specific stuff:
+//! set parameters for shearing box bc and allocate buffers
 BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
                                ParameterInput *pin)
     : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs), pmy_block_(pmb),
@@ -115,7 +121,7 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
   bvars_next_phys_id_ = 1;
 
-  // KGF: BVals constructor section only containing ALL shearing box-specific stuff
+  // BVals constructor section only containing ALL shearing box-specific stuff
   // set parameters for shearing box bc and allocate buffers
   shearing_box = 0;
   if (pmy_mesh_->shear_periodic) {
@@ -217,7 +223,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
 
       int nc3 = pmb->ncells3;
       ssize_ = NGHOST*nc3;
-      // TODO(KGF): much of this should be a part of InitBoundaryData()
+      //! \todo (felker):
+      //! * much of this should be a part of InitBoundaryData()
       for (int upper=0; upper<2; upper++) {
         if (pmb->loc.lx1 == loc_shear[upper]) { // if true for shearing inner blocks
           is_shear[upper] = true;
@@ -228,7 +235,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   } // end shearing box component of BoundaryValues ctor
 }
 
-// destructor
+//----------------------------------------------------------------------------------------
+//! destructor
 
 BoundaryValues::~BoundaryValues() {
   if (shearing_box == 1) {
@@ -239,7 +247,10 @@ BoundaryValues::~BoundaryValues() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetupPersistentMPI()
-//  \brief Setup persistent MPI requests to be reused throughout the entire simulation
+//! \brief Setup persistent MPI requests to be reused throughout the entire simulation
+//!
+//! Includes an exclusive shearing-box section that
+//! initializes the shearing block lists
 
 void BoundaryValues::SetupPersistentMPI() {
   for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
@@ -302,8 +313,10 @@ void BoundaryValues::SetupPersistentMPI() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::CheckUserBoundaries()
-//  \brief checks if the boundary functions are correctly enrolled (this compatibility
-//  check is performed at the top of Mesh::Initialize(), after calling ProblemGenerator())
+//! \brief checks if the boundary functions are correctly enrolled
+//!
+//! This compatibility check is performed at the top of Mesh::Initialize(),
+//! after calling ProblemGenerator()
 
 void BoundaryValues::CheckUserBoundaries() {
   for (int i=0; i<nface_; i++) {
@@ -322,8 +335,8 @@ void BoundaryValues::CheckUserBoundaries() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
-//                                std::vector<BoundaryVariable *> bvars_subset)
-//  \brief initiate MPI_Irecv()
+//!                                std::vector<BoundaryVariable *> bvars_subset)
+//! \brief initiate MPI_Irecv()
 
 void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
                                           std::vector<BoundaryVariable *> bvars_subset) {
@@ -340,6 +353,15 @@ void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase)
+//! \brief initiate MPI_Irecv() for shearing box
+//!
+//! \note
+//! - cannot simply combine StartReceivingShear() at end of StartReceiving()
+//!   (which is done for ClearBoundary), because the "shared"/non-virtual fn
+//!   BoundaryValues::FindShearBlock() must be called in between 2x fns
+//! - shearing box is currently incompatible with both GR and AMR
 void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase) {
   switch (phase) {
     case BoundaryCommSubset::mesh_init:
@@ -353,8 +375,9 @@ void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase) {
       // (which is done for ClearBoundary), because the "shared"/non-virtual fn
       // BoundaryValues::FindShearBlock() must be called in between 2x fns
 
-      // TODO(felker): consider calling FindShearBlock() at the beginning of this fn,
-      // which will allow the 2x StartReceiving() to be combined
+      //! \todo (felker):
+      //! * consider calling FindShearBlock() at the beginning of this fn,
+      //!   which will allow the 2x StartReceiving() to be combined
       for (auto bvar : bvars_main_int) {
         bvar->StartReceivingShear(phase);
       }
@@ -379,14 +402,16 @@ void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ClearBoundary(BoundaryCommSubset phase,
-//                                         std::vector<BoundaryVariable *> bvars_subset)
-//  \brief clean up the boundary flags after each loop
+//!                                         std::vector<BoundaryVariable *> bvars_subset)
+//! \brief clean up the boundary flags after each loop
+//!
+//! \note
+//! BoundaryCommSubset::mesh_init corresponds to initial exchange of conserved fluid
+//! variables and magentic fields, while BoundaryCommSubset::gr_amr corresponds to fluid
+//! primitive variables sent only in the case of GR with refinement
 
 void BoundaryValues::ClearBoundarySubset(BoundaryCommSubset phase,
                                          std::vector<BoundaryVariable *> bvars_subset) {
-  // Note BoundaryCommSubset::mesh_init corresponds to initial exchange of conserved fluid
-  // variables and magentic fields, while BoundaryCommSubset::gr_amr corresponds to fluid
-  // primitive variables sent only in the case of GR with refinement
   for (auto bvars_it = bvars_subset.begin(); bvars_it != bvars_subset.end();
        ++bvars_it) {
     (*bvars_it)->ClearBoundary(phase);
@@ -396,8 +421,12 @@ void BoundaryValues::ClearBoundarySubset(BoundaryCommSubset phase,
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
-//                                         std::vector<BoundaryVariable *> bvars_subset)
-//  \brief Apply all the physical boundary conditions for both hydro and field
+//!                                        std::vector<BoundaryVariable *> bvars_subset)
+//! \brief Apply all the physical boundary conditions for both hydro and field
+//!
+//! \note
+//! - temporarily hardcode Hydro and Field access for coupling in EOS U(W) + calc bcc
+//!   and when passed to user-defined boundary function stored in function pointer array
 
 void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
                                    std::vector<BoundaryVariable *> bvars_subset) {
@@ -427,8 +456,9 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
   //     dynamic_cast<HydroBoundaryVariable *>(bvars_main_int[0]);
   Hydro *ph = pmb->phydro;
 
-  // TODO(KGF): passing nullptrs (pf) if no MHD (coarse_* no longer in MeshRefinement)
-  // (may be fine to unconditionally directly set to pmb->pfield. See bvals_refine.cpp)
+  //! \todo (felker):
+  //! - passing nullptrs (pf) if no MHD (coarse_* no longer in MeshRefinement)
+  //!   (may be fine to unconditionally directly set to pmb->pfield. See bvals_refine.cpp)
 
   // FaceCenteredBoundaryVariable *pfbvar = nullptr;
   Field *pf = nullptr;
@@ -570,8 +600,10 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
   return;
 }
 
-
-// KGF: should "bvars_it" be fixed in this class member function? Or passed as argument?
+//! \brief
+//!
+//! \note
+//! - should "bvars_it" be fixed in this class member function? Or passed as argument?
 void BoundaryValues::DispatchBoundaryFunctions(
     MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh,
@@ -678,10 +710,10 @@ void BoundaryValues::DispatchBoundaryFunctions(
 
 //--------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ComputeShear(const Real time_fc, const Real time_int)
-//  \brief Calculate the following quantities:
-//  send_gid recv_gid send_lid recv_lid send_rank recv_rank,
-//  send_size_hydro  recv_size_hydro: for MPI_Irecv
-//  eps_,joverlap_: for update the conservative
+//! \brief Calculate the following quantities:
+//! send_gid recv_gid send_lid recv_lid send_rank recv_rank,
+//! send_size_hydro  recv_size_hydro: for MPI_Irecv
+//! eps_,joverlap_: for update the conservative
 
 void BoundaryValues::ComputeShear(const Real time_fc, const Real time_int) {
   MeshBlock *pmb = pmy_block_;
@@ -917,13 +949,15 @@ void BoundaryValues::ComputeShear(const Real time_fc, const Real time_int) {
 }
 
 
-// Public function, to be called in MeshBlock ctor for keeping MPI tag bitfields
-// consistent across MeshBlocks, even if certain MeshBlocks only construct a subset of
-// physical variable classes
+//--------------------------------------------------------------------------------------
+//! \brief Public function, to be called in MeshBlock ctor for keeping MPI tag bitfields
+//! consistent across MeshBlocks, even if certain MeshBlocks only construct a subset of
+//! physical variable classes
 
 int BoundaryValues::AdvanceCounterPhysID(int num_phys) {
 #ifdef MPI_PARALLEL
-  // TODO(felker): add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
+  //! \todo (felker):
+  //! * add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
   int start_id = bvars_next_phys_id_;
   bvars_next_phys_id_ += num_phys;
   return start_id;

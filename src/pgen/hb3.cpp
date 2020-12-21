@@ -3,27 +3,26 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file hb3.c
-//  \brief Problem generator for 2D MRI simulations using the shearing sheet
-//   based on "A powerful local shear instability in weakly magnetized disks"
-//
-//  PURPOSE: Problem generator for 2D MRI simulations using the shearing sheet
-//    based on "A powerful local shear instability in weakly magnetized disks.
-//    III - Long-term evolution in a shearing sheet" by Hawley & Balbus.  This
-//    is the third of the HB papers on the MRI, thus hb3.
-//
-//  Several different perturbations and field configurations are possible:
-//  - ipert = 1 - isentropic perturbations to P & d [default]
-//  - ipert = 2 - uniform Vx=amp, sinusoidal density
-//
-//  - ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
-//  - ifield = 2 - uniform Bz
-//
-//  PRIVATE FUNCTION PROTOTYPES:
-//  - ran2() - random number generator from NR
-//
-//  REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).*/
-//
+//! \file hb3.cpp
+//! \brief Problem generator for 2D MRI simulations using the shearing sheet
+//!  based on "A powerful local shear instability in weakly magnetized disks"
+//!
+//! PURPOSE: Problem generator for 2D MRI simulations using the shearing sheet
+//!   based on "A powerful local shear instability in weakly magnetized disks.
+//!   III - Long-term evolution in a shearing sheet" by Hawley & Balbus.  This
+//!   is the third of the HB papers on the MRI, thus hb3.
+//!
+//! Several different perturbations and field configurations are possible:
+//! - ipert = 1 - isentropic perturbations to P & d [default]
+//! - ipert = 2 - uniform Vx=amp, sinusoidal density
+//!
+//! - ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
+//! - ifield = 2 - uniform Bz
+//!
+//! PRIVATE FUNCTION PROTOTYPES:
+//! - ran2() - random number generator from NR
+//!
+//! REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).*/
 //======================================================================================
 
 // C headers

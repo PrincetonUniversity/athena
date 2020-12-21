@@ -4,15 +4,14 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hllc.cpp
-//  \brief HLLC Riemann solver for hydrodynamics, an extension of the HLLE fluxes to
-//  include the contact wave.  Only works for adiabatic hydrodynamics.
-//
-// REFERENCES:
-// - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
-//   Springer-Verlag, Berlin, (1999) chpt. 10.
-//
-// - P. Batten, N. Clarke, C. Lambert, and D. M. Causon, "On the Choice of Wavespeeds
-//   for the HLLC Riemann Solver", SIAM J. Sci. & Stat. Comp. 18, 6, 1553-1570, (1997).
+//! \brief HLLC Riemann solver for hydrodynamics, an extension of the HLLE fluxes to
+//! include the contact wave.  Only works for adiabatic hydrodynamics.
+//!
+//! REFERENCES:
+//! - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
+//!   Springer-Verlag, Berlin, (1999) chpt. 10.
+//! - P. Batten, N. Clarke, C. Lambert, and D. M. Causon, "On the Choice of Wavespeeds
+//!   for the HLLC Riemann Solver", SIAM J. Sci. & Stat. Comp. 18, 6, 1553-1570, (1997).
 
 // C headers
 

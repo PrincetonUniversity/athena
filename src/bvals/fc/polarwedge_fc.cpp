@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file polarwedge.cpp
-//  \brief implementation of polar wedge BCs in x2 direction
+//! \file polarwedge_fc.cpp
+//! \brief implementation of polar wedge BCs in x2 direction
 
 // C headers
 
@@ -17,8 +17,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::PolarWedgeInnerX2(
-//               Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
-//  \brief polar wedge boundary conditions, inner x2 boundary
+//!              Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
+//! \brief polar wedge boundary conditions, inner x2 boundary
 
 void FaceCenteredBoundaryVariable::PolarWedgeInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
@@ -61,8 +61,8 @@ void FaceCenteredBoundaryVariable::PolarWedgeInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::PolarWedgeOuterX2(
-//               Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
-//  \brief polar wedge boundary conditions, outer x2 boundary
+//!              Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
+//! \brief polar wedge boundary conditions, outer x2 boundary
 
 void FaceCenteredBoundaryVariable::PolarWedgeOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {

@@ -6,8 +6,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hydro_srcterms.hpp
-//  \brief defines class HydroSourceTerms
-//  Contains data and functions that implement physical (not coordinate) source terms
+//! \brief defines class HydroSourceTerms
+//!
+//! Contains data and functions that implement physical (not coordinate) source terms
 
 // C headers
 
@@ -22,7 +23,7 @@ class Hydro;
 class ParameterInput;
 
 //! \class HydroSourceTerms
-//  \brief data and functions for physical source terms in the hydro
+//! \brief data and functions for physical source terms in the hydro
 
 class HydroSourceTerms {
  public:

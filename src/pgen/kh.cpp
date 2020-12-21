@@ -4,14 +4,14 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file kh.cpp
-//  \brief Problem generator for KH instability.
-//
-// Sets up several different problems:
-//   - iprob=1: slip surface with random perturbations
-//   - iprob=2: tanh profile, with single-mode perturbation (Frank et al. 1996)
-//   - iprob=3: tanh profiles for v and d, SR test problem in Beckwith & Stone (2011)
-//   - iprob=4: tanh profiles for v and d, "Lecoanet" test
-//   - iprob=5: two resolved slip-surfaces with m=2 perturbation for the AMR test
+//! \brief Problem generator for KH instability.
+//!
+//! Sets up several different problems:
+//!   - iprob=1: slip surface with random perturbations
+//!   - iprob=2: tanh profile, with single-mode perturbation (Frank et al. 1996)
+//!   - iprob=3: tanh profiles for v and d, SR test problem in Beckwith & Stone (2011)
+//!   - iprob=4: tanh profiles for v and d, "Lecoanet" test
+//!   - iprob=5: two resolved slip-surfaces with m=2 perturbation for the AMR test
 
 // C headers
 

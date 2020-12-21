@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mesh.cpp
-//  \brief implementation of functions in Mesh class
+//! \brief implementation of functions in Mesh class
 
 // C headers
 // pre-C11: needed before including inttypes.h, else won't define int64_t for C++ code
@@ -58,7 +58,7 @@
 #endif
 
 //----------------------------------------------------------------------------------------
-// Mesh constructor, builds mesh at start of calculation using parameters in input file
+//! Mesh constructor, builds mesh at start of calculation using parameters in input file
 
 Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     // public members:
@@ -526,7 +526,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 }
 
 //----------------------------------------------------------------------------------------
-// Mesh constructor for restarts. Load the restart file
+//! Mesh constructor for restarts. Load the restart file
 
 Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     // public members:
@@ -872,7 +872,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 }
 
 //----------------------------------------------------------------------------------------
-// destructor
+//! destructor
 
 Mesh::~Mesh() {
   for (int b=0; b<nblocal; ++b)
@@ -908,7 +908,7 @@ Mesh::~Mesh() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::OutputMeshStructure(int ndim)
-//  \brief print the mesh structure information
+//! \brief print the mesh structure information
 
 void Mesh::OutputMeshStructure(int ndim) {
   RegionSize block_size;
@@ -1056,9 +1056,9 @@ void Mesh::OutputMeshStructure(int ndim) {
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::NewTimeStep()
-// \brief function that loops over all MeshBlocks and find new timestep
-//        this assumes that phydro->NewBlockTimeStep is already called
+//! \fn void Mesh::NewTimeStep()
+//! \brief function that loops over all MeshBlocks and find new timestep
+//!        this assumes that phydro->NewBlockTimeStep is already called
 
 void Mesh::NewTimeStep() {
   MeshBlock *pmb = my_blocks(0);
@@ -1104,8 +1104,8 @@ void Mesh::NewTimeStep() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValHydro my_bc)
-//  \brief Enroll a user-defined boundary function
+//! \fn void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc)
+//! \brief Enroll a user-defined boundary function
 
 void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
   std::stringstream msg;
@@ -1125,9 +1125,9 @@ void Mesh::EnrollUserBoundaryFunction(BoundaryFace dir, BValFunc my_bc) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir
-//                                                     MGBoundaryFunc my_bc)
-//  \brief Enroll a user-defined Multigrid boundary function
+//! \fn void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir,
+//!                                                    MGBoundaryFunc my_bc)
+//! \brief Enroll a user-defined Multigrid boundary function
 
 void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
   std::stringstream msg;
@@ -1140,7 +1140,8 @@ void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc 
   return;
 }
 
-// DEPRECATED(felker): provide trivial overloads for old-style BoundaryFace enum argument
+//! \deprecated (felker):
+//! * provide trivial overloads for old-style BoundaryFace enum argument
 void Mesh::EnrollUserBoundaryFunction(int dir, BValFunc my_bc) {
   EnrollUserBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
   return;
@@ -1153,7 +1154,7 @@ void Mesh::EnrollUserMGGravityBoundaryFunction(int dir, MGBoundaryFunc my_bc) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag)
-//  \brief Enroll a user-defined function for checking refinement criteria
+//! \brief Enroll a user-defined function for checking refinement criteria
 
 void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag) {
   if (adaptive)
@@ -1163,7 +1164,7 @@ void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserMeshGenerator(CoordinateDirection,MeshGenFunc my_mg)
-//  \brief Enroll a user-defined function for Mesh generation
+//! \brief Enroll a user-defined function for Mesh generation
 
 void Mesh::EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg) {
   std::stringstream msg;
@@ -1197,7 +1198,7 @@ void Mesh::EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc my_func)
-//  \brief Enroll a user-defined source function
+//! \brief Enroll a user-defined source function
 
 void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc my_func) {
   UserSourceTerm_ = my_func;
@@ -1206,7 +1207,7 @@ void Mesh::EnrollUserExplicitSourceFunction(SrcTermFunc my_func) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserTimeStepFunction(TimeStepFunc my_func)
-//  \brief Enroll a user-defined time step function
+//! \brief Enroll a user-defined time step function
 
 void Mesh::EnrollUserTimeStepFunction(TimeStepFunc my_func) {
   UserTimeStep_ = my_func;
@@ -1215,7 +1216,7 @@ void Mesh::EnrollUserTimeStepFunction(TimeStepFunc my_func) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::AllocateUserHistoryOutput(int n)
-//  \brief set the number of user-defined history outputs
+//! \brief set the number of user-defined history outputs
 
 void Mesh::AllocateUserHistoryOutput(int n) {
   nuser_history_output_ = n;
@@ -1227,8 +1228,8 @@ void Mesh::AllocateUserHistoryOutput(int n) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func,
-//                                         const char *name, UserHistoryOperation op)
-//  \brief Enroll a user-defined history output function and set its name
+//!                                        const char *name, UserHistoryOperation op)
+//! \brief Enroll a user-defined history output function and set its name
 
 void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char *name,
                                    UserHistoryOperation op) {
@@ -1246,7 +1247,7 @@ void Mesh::EnrollUserHistoryOutput(int i, HistoryOutputFunc my_func, const char 
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserMetric(MetricFunc my_func)
-//  \brief Enroll a user-defined metric for arbitrary GR coordinates
+//! \brief Enroll a user-defined metric for arbitrary GR coordinates
 
 void Mesh::EnrollUserMetric(MetricFunc my_func) {
   UserMetric_ = my_func;
@@ -1255,7 +1256,7 @@ void Mesh::EnrollUserMetric(MetricFunc my_func) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollViscosityCoefficient(ViscosityCoeff my_func)
-//  \brief Enroll a user-defined magnetic field diffusivity function
+//! \brief Enroll a user-defined magnetic field diffusivity function
 
 void Mesh::EnrollViscosityCoefficient(ViscosityCoeffFunc my_func) {
   ViscosityCoeff_ = my_func;
@@ -1264,7 +1265,7 @@ void Mesh::EnrollViscosityCoefficient(ViscosityCoeffFunc my_func) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollConductionCoefficient(ConductionCoeff my_func)
-//  \brief Enroll a user-defined thermal conduction function
+//! \brief Enroll a user-defined thermal conduction function
 
 void Mesh::EnrollConductionCoefficient(ConductionCoeffFunc my_func) {
   ConductionCoeff_ = my_func;
@@ -1273,7 +1274,7 @@ void Mesh::EnrollConductionCoefficient(ConductionCoeffFunc my_func) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeff my_func)
-//  \brief Enroll a user-defined magnetic field diffusivity function
+//! \brief Enroll a user-defined magnetic field diffusivity function
 
 void Mesh::EnrollFieldDiffusivity(FieldDiffusionCoeffFunc my_func) {
   FieldDiffusivity_ = my_func;
@@ -1300,7 +1301,7 @@ void Mesh::EnrollOrbitalVelocityDerivative(int i, OrbitalVelocityFunc my_func) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::AllocateRealUserMeshDataField(int n)
-//  \brief Allocate Real AthenaArrays for user-defned data in Mesh
+//! \brief Allocate Real AthenaArrays for user-defned data in Mesh
 
 void Mesh::AllocateRealUserMeshDataField(int n) {
   if (nreal_user_mesh_data_ != 0) {
@@ -1316,7 +1317,7 @@ void Mesh::AllocateRealUserMeshDataField(int n) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::AllocateIntUserMeshDataField(int n)
-//  \brief Allocate integer AthenaArrays for user-defned data in Mesh
+//! \brief Allocate integer AthenaArrays for user-defned data in Mesh
 
 void Mesh::AllocateIntUserMeshDataField(int n) {
   if (nint_user_mesh_data_ != 0) {
@@ -1332,8 +1333,8 @@ void Mesh::AllocateIntUserMeshDataField(int n) {
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
-// \brief Apply MeshBlock::UserWorkBeforeOutput
+//! \fn void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin)
+//! \brief Apply MeshBlock::UserWorkBeforeOutput
 
 void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
   for (int i=0; i<nblocal; ++i)
@@ -1341,8 +1342,8 @@ void Mesh::ApplyUserWorkBeforeOutput(ParameterInput *pin) {
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::Initialize(int res_flag, ParameterInput *pin)
-// \brief  initialization before the main loop
+//! \fn void Mesh::Initialize(int res_flag, ParameterInput *pin)
+//! \brief  initialization before the main loop
 
 void Mesh::Initialize(int res_flag, ParameterInput *pin) {
   bool iflag = true;
@@ -1529,7 +1530,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           if (pbval->nblevel[0][1][1] != -1) kl += 1;
           if (pbval->nblevel[2][1][1] != -1) ku -= 1;
           // for MHD, shrink buffer by 3
-          // TODO(felker): add MHD loop limit calculation for 4th order W(U)
+          //! \todo (felker):
+          //! * add MHD loop limit calculation for 4th order W(U)
           pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
                                                      ph->w, pf->bcc, pmb->pcoord,
                                                      il, iu, jl, ju, kl, ku);
@@ -1605,7 +1607,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
 //----------------------------------------------------------------------------------------
 //! \fn MeshBlock* Mesh::FindMeshBlock(int tgid)
-//  \brief return the MeshBlock whose gid is tgid
+//! \brief return the MeshBlock whose gid is tgid
 
 MeshBlock* Mesh::FindMeshBlock(int tgid) {
   if (tgid >= gids_ && tgid <= gide_)
@@ -1614,9 +1616,9 @@ MeshBlock* Mesh::FindMeshBlock(int tgid) {
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc,
-//                 RegionSize &block_size, BundaryFlag *block_bcs)
-// \brief Set the physical part of a block_size structure and block boundary conditions
+//! \fn void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc,
+//!                RegionSize &block_size, BundaryFlag *block_bcs)
+//! \brief Set the physical part of a block_size structure and block boundary conditions
 
 void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                      BoundaryFlag *block_bcs) {
@@ -1731,8 +1733,9 @@ void Mesh::CorrectMidpointInitialCondition() {
     // Compute and store Laplacian of cell-averaged conserved variables
     pmb->pcoord->Laplacian(ph->u, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
 
-    // TODO(felker): assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
-    // TODO(felker): also, this may need to be dx1v, since Laplacian is cell-center
+    //! \todo (felker):
+    //! * assuming uniform mesh with dx1f=dx2f=dx3f, so this factors out
+    //! * also, this may need to be dx1v, since Laplacian is cell-center
     Real h = pmb->pcoord->dx1f(il);  // pco->dx1f(i); inside loop
     Real C = (h*h)/24.0;
 
@@ -1818,29 +1821,36 @@ void Mesh::CorrectMidpointInitialCondition() {
   return;
 }
 
-// Public function for advancing next_phys_id_ counter
-// E.g. if chemistry or radiation elects to communicate additional information with MPI
-// outside the framework of the BoundaryVariable classes
-
-// Store signed, but positive, integer corresponding to the next unused value to be used
-// as unique ID for a BoundaryVariable object's single set of MPI calls (formerly "enum
-// AthenaTagMPI"). 5 bits of unsigned integer representation are currently reserved
-// for this "phys" part of the bitfield tag, making 0, ..., 31 legal values
+//----------------------------------------------------------------------------------------
+//! \fn int Mesh::ReserveTagPhysIDs(int num_phys)
+//! \brief Public function for advancing next_phys_id_ counter
+//!
+//! E.g. if chemistry or radiation elects to communicate additional information with MPI
+//! outside the framework of the BoundaryVariable classes
+//!
+//! Store signed, but positive, integer corresponding to the next unused value to be used
+//! as unique ID for a BoundaryVariable object's single set of MPI calls (formerly "enum
+//! AthenaTagMPI"). 5 bits of unsigned integer representation are currently reserved
+//! for this "phys" part of the bitfield tag, making 0, ..., 31 legal values
 
 int Mesh::ReserveTagPhysIDs(int num_phys) {
-  // TODO(felker): add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
+  //! \todo (felker):
+  //! * add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
   int start_id = next_phys_id_;
   next_phys_id_ += num_phys;
   return start_id;
 }
 
-// private member fn, called in Mesh() ctor
-
-// depending on compile- and runtime options, reserve the maximum number of "int physid"
-// that might be necessary for each MeshBlock's BoundaryValues object to perform MPI
-// communication for all BoundaryVariable objects
-
-// TODO(felker): deduplicate this logic, which combines conditionals in MeshBlock ctor
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::ReserveMeshBlockPhysIDs()
+//! \brief private member fn, called in Mesh() ctor
+//!
+//! depending on compile- and runtime options, reserve the maximum number of "int physid"
+//! that might be necessary for each MeshBlock's BoundaryValues object to perform MPI
+//! communication for all BoundaryVariable objects
+//!
+//! \todo (felker):
+//! * deduplicate this logic, which combines conditionals in MeshBlock ctor
 
 void Mesh::ReserveMeshBlockPhysIDs() {
 #ifdef MPI_PARALLEL
@@ -1863,9 +1873,9 @@ void Mesh::ReserveMeshBlockPhysIDs() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn GetFluidFormulation(std::string input_string)
-//  \brief Parses input string to return scoped enumerator flag specifying boundary
-//  condition. Typically called in Mesh() ctor initializer list
+//! \fn FluidFormulation GetFluidFormulation(const std::string& input_string)
+//! \brief Parses input string to return scoped enumerator flag specifying boundary
+//! condition. Typically called in Mesh() ctor initializer list
 
 FluidFormulation GetFluidFormulation(const std::string& input_string) {
   if (input_string == "true") {

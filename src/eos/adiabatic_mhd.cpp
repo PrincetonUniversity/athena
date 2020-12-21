@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file adiabatic_mhd.cpp
-//  \brief implements functions in class EquationOfState for adiabatic MHD
+//! \brief implements functions in class EquationOfState for adiabatic MHD
 
 // C headers
 
@@ -31,12 +31,12 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
     scalar_floor_{pin->GetOrAddReal("hydro", "sfloor", std::sqrt(1024*float_min))} {}
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-//    const AthenaArray<Real> &prim_old, const FaceField &b,
-//    AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
-//    int il, int iu, int jl, int ju, int kl, int ku);
-// \brief For the Hydro, converts conserved into primitive variables in adiabatic MHD.
-//  For the Field, computes cell-centered from face-centered magnetic field.
+//! \fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+//!   const AthenaArray<Real> &prim_old, const FaceField &b,
+//!   AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
+//!   int il, int iu, int jl, int ju, int kl, int ku);
+//! \brief For the Hydro, converts conserved into primitive variables in adiabatic MHD.
+//!  For the Field, computes cell-centered from face-centered magnetic field.
 
 void EquationOfState::ConservedToPrimitive(
     AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
@@ -90,11 +90,11 @@ void EquationOfState::ConservedToPrimitive(
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-//           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-//           int il, int iu, int jl, int ju, int kl, int ku);
-// \brief Converts primitive variables into conservative variables
-//        Note that this function assumes cell-centered fields are already calculated
+//! \fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+//!           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
+//!           int il, int iu, int jl, int ju, int kl, int ku);
+//! \brief Converts primitive variables into conservative variables
+//!        Note that this function assumes cell-centered fields are already calculated
 
 void EquationOfState::PrimitiveToConserved(
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
@@ -136,16 +136,16 @@ void EquationOfState::PrimitiveToConserved(
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
-// \brief returns adiabatic sound speed given vector of primitive variables
+//! \fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
+//! \brief returns adiabatic sound speed given vector of primitive variables
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
   return std::sqrt(GetGamma()*prim[IPR]/prim[IDN]);
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn Real EquationOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
-// \brief returns fast magnetosonic speed given vector of primitive variables
-// Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
+//! \fn Real EquationOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
+//! \brief returns fast magnetosonic speed given vector of primitive variables
+//! Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
 Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx) {
   Real asq = GetGamma()*prim[IPR];
   Real vaxsq = bx*bx;
@@ -156,9 +156,9 @@ Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real
 }
 
 //---------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j,
-//                                                 int i)
-// \brief Apply density and pressure floors to reconstructed L/R cell interface states
+//! \fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j,
+//!                                                 int i)
+//! \brief Apply density and pressure floors to reconstructed L/R cell interface states
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,i);
   Real& w_p  = prim(IPR,i);
@@ -172,9 +172,9 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
-//           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
-// \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
+//! \fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+//!           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
+//! \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
 void EquationOfState::ApplyPrimitiveConservedFloors(
     AthenaArray<Real> &prim, AthenaArray<Real> &cons, AthenaArray<Real> &bcc,
     int k, int j, int i) {

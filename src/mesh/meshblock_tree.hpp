@@ -6,7 +6,7 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //! \file meshblock_tree.hpp
-//  \brief defines the LogicalLocation structure and MeshBlockTree class
+//! \brief defines the LogicalLocation structure and MeshBlockTree class
 //======================================================================================
 
 // C headers
@@ -26,7 +26,7 @@ class Mesh;
 
 //--------------------------------------------------------------------------------------
 //! \class MeshBlockTree
-//  \brief Objects are nodes in an AMR MeshBlock tree structure
+//! \brief Objects are nodes in an AMR MeshBlock tree structure
 
 class MeshBlockTree {
   friend class Mesh;

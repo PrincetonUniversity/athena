@@ -4,8 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file turb.cpp
-//  \brief Problem generator for turbulence generator
-//
+//! \brief Problem generator for turbulence driver
 
 // C headers
 

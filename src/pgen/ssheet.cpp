@@ -4,13 +4,12 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //======================================================================================
 //! \file ssheet.cpp
-//  \brief Shearing wave problem generator.
-//  Several different initial conditions:
-//  - ipert = 1  pure shearing background flow
-//  - ipert = 2  epicycle motion (0.1 c_s initial kick in radial)
-//  - ipert = 3  shwave test for compressible flow
-//               JG: Johnson & Gammie 2005, ApJ, 626, 978
-//
+//! \brief Shearing wave problem generator.
+//! Several different initial conditions:
+//!  - ipert = 1  pure shearing background flow
+//!  - ipert = 2  epicycle motion (0.1 c_s initial kick in radial)
+//!  - ipert = 3  shwave test for compressible flow
+//!               JG: Johnson & Gammie 2005, ApJ, 626, 978
 //======================================================================================
 
 // C headers

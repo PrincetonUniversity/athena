@@ -3,11 +3,11 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file noh.c
-//  \brief Spherical Noh implosion problem, from Liska & Wendroff, section 4.5 (fig 4.7)
-//
-//  Tests code on VERY strong shock, also sensitive to carbuncle instability.
-// REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
+//! \file noh.cpp
+//! \brief Spherical Noh implosion problem, from Liska & Wendroff, section 4.5 (fig 4.7)
+//!
+//! Tests code on VERY strong shock, also sensitive to carbuncle instability.
+//! REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
 //========================================================================================
 
 // C headers

@@ -24,7 +24,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &w0,
-//                             const AthenaArray<Real> &u0, const OrbitalTransform trans)
+//!                            const AthenaArray<Real> &u0, const OrbitalTransform trans)
 //! \brief calculate profiles including orbital velocity
 
 void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &w0,

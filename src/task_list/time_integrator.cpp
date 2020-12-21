@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file time_integrator.cpp
-//  \brief derived class for time integrator task list. Can create task lists for one
-//  of many different time integrators (e.g. van Leer, RK2, RK3, etc.)
+//! \brief derived class for time integrator task list. Can create task lists for one
+//! of many different time integrators (e.g. van Leer, RK2, RK3, etc.)
 
 // C headers
 
@@ -33,37 +33,46 @@
 #include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------
-//  TimeIntegratorTaskList constructor
+//! TimeIntegratorTaskList constructor
 
 TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
-  // First, define each time-integrator by setting weights for each step of the algorithm
-  // and the CFL number stability limit when coupled to the single-stage spatial operator.
-  // Currently, the explicit, multistage time-integrators must be expressed as 2S-type
-  // algorithms as in Ketcheson (2010) Algorithm 3, which incudes 2N (Williamson) and 2R
-  // (van der Houwen) popular 2-register low-storage RK methods. The 2S-type integrators
-  // depend on a bidiagonally sparse Shu-Osher representation; at each stage l:
-  //
-  //    U^{l} = a_{l,l-2}*U^{l-2} + a_{l-1}*U^{l-1}
-  //          + b_{l,l-2}*dt*Div(F_{l-2}) + b_{l,l-1}*dt*Div(F_{l-1}),
-  //
-  // where U^{l-1} and U^{l-2} are previous stages and a_{l,l-2}, a_{l,l-1}=(1-a_{l,l-2}),
-  // and b_{l,l-2}, b_{l,l-1} are weights that are different for each stage and
-  // integrator. Previous timestep U^{0} = U^n is given, and the integrator solves
-  // for U^{l} for 1 <= l <= nstages.
-  //
-  // The 2x RHS evaluations of Div(F) and source terms per stage is avoided by adding
-  // another weighted average / caching of these terms each stage. The API and framework
-  // is extensible to three register 3S* methods, although none are currently implemented.
-
-  // Notation: exclusively using "stage", equivalent in lit. to "substage" or "substep"
-  // (infrequently "step"), to refer to the intermediate values of U^{l} between each
-  // "timestep" = "cycle" in explicit, multistage methods. This is to disambiguate the
-  // temporal integration from other iterative sequences; "Step" is often used for generic
-  // sequences in code, e.g. main.cpp: "Step 1: MPI"
-  //
-  // main.cpp invokes the tasklist in a for () loop from stage=1 to stage=ptlist->nstages
-
-  // TODO(felker): validate Field and Hydro diffusion with RK3, RK4, SSPRK(5,4)
+  //! \note
+  //! First, define each time-integrator by setting weights for each step of
+  //! the algorithm and the CFL number stability limit when coupled to the single-stage
+  //! spatial operator.
+  //! Currently, the explicit, multistage time-integrators must be expressed as 2S-type
+  //! algorithms as in Ketcheson (2010) Algorithm 3, which incudes 2N (Williamson) and 2R
+  //! (van der Houwen) popular 2-register low-storage RK methods. The 2S-type integrators
+  //! depend on a bidiagonally sparse Shu-Osher representation; at each stage l:
+  //! \f[
+  //!   U^{l} = a_{l,l-2}*U^{l-2} + a_{l-1}*U^{l-1}
+  //!         + b_{l,l-2}*dt*Div(F_{l-2}) + b_{l,l-1}*dt*Div(F_{l-1}),
+  //! \f]
+  //! where \f$U^{l-1}\f$ and \f$U^{l-2}\f$ are previous stages and
+  //! \f$a_{l,l-2}\f$, \f$a_{l,l-1}=(1-a_{l,l-2})\f$,
+  //! and \f$b_{l,l-2}\f$, \f$b_{l,l-1}\f$
+  //! are weights that are different for each stage and
+  //! integrator. Previous timestep \f$U^{0} = U^n\f$ is given, and the integrator solves
+  //! for \f$U^{l}\f$ for 1 <= l <= nstages.
+  //!
+  //! \note
+  //! The 2x RHS evaluations of Div(F) and source terms per stage is avoided by adding
+  //! another weighted average / caching of these terms each stage. The API and framework
+  //! is extensible to three register 3S* methods,
+  //! although none are currently implemented.
+  //!
+  //! \note
+  //! Notation: exclusively using "stage", equivalent in lit. to "substage" or "substep"
+  //! (infrequently "step"), to refer to the intermediate values of U^{l} between each
+  //! "timestep" = "cycle" in explicit, multistage methods. This is to disambiguate the
+  //! temporal integration from other iterative sequences;  generic
+  //! "Step" is often used for sequences in code, e.g. main.cpp: "Step 1: MPI"
+  //!
+  //! \note
+  //! main.cpp invokes the tasklist in a for () loop from stage=1 to stage=ptlist->nstages
+  //!
+  //! \todo (felker):
+  //! - validate Field and Hydro diffusion with RK3, RK4, SSPRK(5,4)
   integrator = pin->GetOrAddString("time", "integrator", "vl2");
 
   // Read a flag for orbital advection
@@ -93,9 +102,10 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
   }
 
   if (integrator == "vl2") {
-    // VL: second-order van Leer integrator (Stone & Gardiner, NewA 14, 139 2009)
-    // Simple predictor-corrector scheme similar to MUSCL-Hancock
-    // Expressed in 2S or 3S* algorithm form
+    //! \note `integrator == "vl2"`
+    //! - VL: second-order van Leer integrator (Stone & Gardiner, NewA 14, 139 2009)
+    //! - Simple predictor-corrector scheme similar to MUSCL-Hancock
+    //! - Expressed in 2S or 3S* algorithm form
 
     // set number of stages and time coeff.
     nstages_main = 2;
@@ -224,7 +234,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       }
     }
   } else if (integrator == "rk1") {
-    // RK1: first-order Runge-Kutta / the forward Euler (FE) method
+    //! \note `integrator == "rk1"`
+    //! - RK1: first-order Runge-Kutta / the forward Euler (FE) method
 
     // set number of stages and time coeff.
     nstages_main = 1;
@@ -318,8 +329,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       }
     }
   } else if (integrator == "rk2") {
-    // Heun's method / SSPRK (2,2): Gottlieb (2009) equation 3.1
-    // Optimal (in error bounds) explicit two-stage, second-order SSPRK
+    //! \note `integrator == "rk2"`
+    //! - Heun's method / SSPRK (2,2): Gottlieb (2009) equation 3.1
+    //! - Optimal (in error bounds) explicit two-stage, second-order SSPRK
 
     // set number of stages and time coeff.
     nstages_main = 2;
@@ -445,8 +457,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       }
     }
   } else if (integrator == "rk3") {
-    // SSPRK (3,3): Gottlieb (2009) equation 3.2
-    // Optimal (in error bounds) explicit three-stage, third-order SSPRK
+    //! \note `integrator == "rk3"`
+    //! - SSPRK (3,3): Gottlieb (2009) equation 3.2
+    //! - Optimal (in error bounds) explicit three-stage, third-order SSPRK
 
     // set number of stages and time coeff.
     nstages_main = 3;
@@ -585,12 +598,14 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       }
     }
   } else if (integrator == "rk4") {
-    // RK4()4[2S] from Table 2 of Ketcheson (2010)
-    // Non-SSP, explicit four-stage, fourth-order RK
+    //! \note `integorator == "rk4"`
+    //! - RK4()4[2S] from Table 2 of Ketcheson (2010)
+    //! - Non-SSP, explicit four-stage, fourth-order RK
+    //! - Stability properties are similar to classical (non-SSP) RK4
+    //!   (but ~2x L2 principal error norm).
+    //! - Refer to Colella (2011) for linear stability analysis of constant
+    //!   coeff. advection of classical RK4 + 4th or 1st order (limiter engaged) fluxes
     nstages_main = 4;
-    // Stability properties are similar to classical (non-SSP) RK4 (but ~2x L2 principal
-    // error norm). Refer to Colella (2011) for linear stability analysis of constant
-    // coeff. advection of classical RK4 + 4th or 1st order (limiter engaged) fluxes
     cfl_limit = 1.3925; // Colella (2011) eq 101; 1st order flux is most severe constraint
 
     if (ORBITAL_ADVECTION) {
@@ -713,17 +728,20 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       stage_wghts[nstages-1].ebeta = 1.0;
     }
   } else if (integrator == "ssprk5_4") {
-    // SSPRK (5,4): Gottlieb (2009) section 3.1; between eq 3.3 and 3.4
-    // Optimal (in error bounds) explicit five-stage, fourth-order SSPRK
-    // 3N method, but there is no 3S* formulation due to irregular sparsity
-    // of Shu-Osher form matrix, alpha.
+    //! \note `integrator == "ssprk5_4"`
+    //! - SSPRK (5,4): Gottlieb (2009) section 3.1; between eq 3.3 and 3.4
+    //! - Optimal (in error bounds) explicit five-stage, fourth-order SSPRK
+    //!   3N method, but there is no 3S* formulation due to irregular sparsity
+    //!   of Shu-Osher form matrix, alpha.
+    //! - Because it is an SSP method, we can use the SSP coefficient c=1.508 to to
+    //!   trivially relate the CFL constraint to the RK1 CFL=1 (for first-order fluxes).
+    //! - There is no need to perform stability analysis from scratch
+    //!   (unlike e.g. the linear stability analysis for classical/non-SSP RK4 in
+    //!   Colella (2011)).
+    //! - However, PLM and PPM w/o the limiter engaged are unconditionally unstable
+    //!   under RK1 integration, so the SSP guarantees do not hold for
+    //!   the Athena++ spatial discretizations.
     nstages_main = 5;
-    // Because it is an SSP method, we can use the SSP coefficient c=1.508 to to trivially
-    // relate the CFL constraint to the RK1 CFL=1 (for first-order fluxes). There is no
-    // need to perform stability analysis from scratch (unlike e.g. the linear stability
-    // analysis for classical/non-SSP RK4 in Colella (2011)) However, PLM and PPM w/o the
-    // limiter engaged are unconditionally unstable under RK1 integration, so the SSP
-    // guarantees do not hold for the Athena++ spatial discretizations.
     cfl_limit = 1.508;         //  (effective SSP coeff = 0.302) Gottlieb (2009) pg 272
 
     if (ORBITAL_ADVECTION) {
@@ -1096,24 +1114,25 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
   } // end of using namespace block
 }
 
-//---------------------------------------------------------------------------------------
-//  Sets id and dependency for "ntask" member of task_list_ array, then iterates value of
-//  ntask.
+//----------------------------------------------------------------------------------------
+//!  Sets id and dependency for "ntask" member of task_list_ array, then iterates value of
+//!  ntask.
 
 void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id = id;
   task_list_[ntasks].dependency = dep;
-  // TODO(felker): change naming convention of either/both of TASK_NAME and TaskFunc
-  // There are some issues with the current names:
-  // 1) VERB_OBJECT is confusing with ObjectVerb(). E.g. seeing SEND_HYD in the task list
-  // assembly would lead the user to believe the corresponding function is SendHydro(),
-  // when it is actually HydroSend()--- Probaby change function names to active voice
-  // VerbObject() since "HydroFluxCalculate()" doesn't sound quite right.
-
-  // Note, there are exceptions to the "verb+object" convention in some TASK_NAMES and
-  // TaskFunc, e.g. NEW_DT + NewBlockTimeStep() and AMR_FLAG + CheckRefinement(),
-  // SRCTERM_HYD and HydroSourceTerms(), USERWORK, PHY_BVAL, PROLONG, CONS2PRIM,
-  // ... Although, AMR_FLAG = "flag blocks for AMR" should be FLAG_AMR in VERB_OBJECT
+  //! \todo (felker):
+  //! - change naming convention of either/both of TASK_NAME and TaskFunc
+  //! - There are some issues with the current names:
+  //!   VERB_OBJECT is confusing with ObjectVerb(). E.g. seeing SEND_HYD in the task list
+  //!   assembly would lead the user to believe the corresponding function is
+  //!   SendHydro(), when it is actually HydroSend() ---
+  //!   Probaby change function names to active voice
+  //!   VerbObject() since "HydroFluxCalculate()" doesn't sound quite right.
+  //! - There are exceptions to the "verb+object" convention in some TASK_NAMES and
+  //!   TaskFunc, e.g. NEW_DT + NewBlockTimeStep() and AMR_FLAG + CheckRefinement(),
+  //!   SRCTERM_HYD and HydroSourceTerms(), USERWORK, PHY_BVAL, PROLONG, CONS2PRIM,
+  //!   ... Although, AMR_FLAG = "flag blocks for AMR" should be FLAG_AMR in VERB_OBJECT
   using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
   if (id == CLEAR_ALLBND) {
     task_list_[ntasks].TaskFunc=
@@ -1375,6 +1394,9 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage)
+//! \brief Initialize time abscissae
 
 void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   if (stage == 1) {
@@ -1431,7 +1453,7 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to end MPI communication
+//! Functions to end MPI communication
 
 TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
   if (stage_wghts[stage-1].main_stage) {
@@ -1449,7 +1471,7 @@ TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to calculates fluxes
+// Functions to calculates Hydro fluxes
 
 TaskStatus TimeIntegratorTaskList::CalculateHydroFlux(MeshBlock *pmb, int stage) {
   Hydro *phydro = pmb->phydro;
@@ -1468,6 +1490,8 @@ TaskStatus TimeIntegratorTaskList::CalculateHydroFlux(MeshBlock *pmb, int stage)
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+// Functions to calculates EMFs
 
 TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -1492,6 +1516,8 @@ TaskStatus TimeIntegratorTaskList::SendHydroFlux(MeshBlock *pmb, int stage) {
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+// Functions to communicate emf between MeshBlocks for flux correction with AMR
 
 TaskStatus TimeIntegratorTaskList::SendEMF(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -1521,6 +1547,9 @@ TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectHydroFlux(MeshBlock *pmb, in
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+// Functions to receive emf between MeshBlocks
+
 TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectEMF(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     if (stage_wghts[stage-1].main_stage) {
@@ -1537,7 +1566,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectEMF(MeshBlock *pmb, int stag
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to integrate conserved variables
+// Functions to integrate Hydro variables
 
 TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
@@ -1590,6 +1619,9 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+// Functions to integrate Field variables
+
 
 TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
@@ -1626,7 +1658,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to add source terms
+//! Functions to add source terms
 
 TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
@@ -1654,8 +1686,8 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to calculate hydro diffusion fluxes (stored in HydroDiffusion::visflx[],
-// cndflx[], added at the end of Hydro::CalculateFluxes()
+//! Functions to calculate hydro diffusion fluxes (stored in HydroDiffusion::visflx[],
+//! cndflx[], added at the end of Hydro::CalculateFluxes()
 
 TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
@@ -1680,7 +1712,7 @@ TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to calculate diffusion EMF
+//! Functions to calculate diffusion EMF
 
 TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
@@ -1701,7 +1733,7 @@ TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to communicate conserved variables between MeshBlocks
+//! Functions to communicate Hydro variables between MeshBlocks
 
 TaskStatus TimeIntegratorTaskList::SendHydro(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -1715,6 +1747,8 @@ TaskStatus TimeIntegratorTaskList::SendHydro(MeshBlock *pmb, int stage) {
   return TaskStatus::success;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate Field variables between MeshBlocks
 
 TaskStatus TimeIntegratorTaskList::SendField(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -1726,7 +1760,7 @@ TaskStatus TimeIntegratorTaskList::SendField(MeshBlock *pmb, int stage) {
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to receive conserved variables between MeshBlocks
+//! Functions to receive Hydro variables between MeshBlocks
 
 TaskStatus TimeIntegratorTaskList::ReceiveHydro(MeshBlock *pmb, int stage) {
   bool ret;
@@ -1742,6 +1776,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydro(MeshBlock *pmb, int stage) {
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to receive Field variables between MeshBlocks
 
 TaskStatus TimeIntegratorTaskList::ReceiveField(MeshBlock *pmb, int stage) {
   bool ret;
@@ -1757,6 +1793,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveField(MeshBlock *pmb, int stage) {
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to set Hydro boundaries
 
 TaskStatus TimeIntegratorTaskList::SetBoundariesHydro(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -1767,6 +1805,8 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesHydro(MeshBlock *pmb, int stage)
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to set Field boundaries
 
 TaskStatus TimeIntegratorTaskList::SetBoundariesField(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -1776,6 +1816,8 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesField(MeshBlock *pmb, int stage)
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate Hydro variables between MeshBlocks with shear
 
 TaskStatus TimeIntegratorTaskList::SendHydroShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -1786,6 +1828,8 @@ TaskStatus TimeIntegratorTaskList::SendHydroShear(MeshBlock *pmb, int stage) {
   return TaskStatus::success;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate Hydro variables between MeshBlocks with shear
 
 TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) {
   bool ret;
@@ -1803,6 +1847,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) 
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate Field variables between MeshBlocks with shear
 
 TaskStatus TimeIntegratorTaskList::SendHydroFluxShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -1841,6 +1887,8 @@ TaskStatus TimeIntegratorTaskList::SendFieldShear(MeshBlock *pmb, int stage) {
   return TaskStatus::success;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate Field variables between MeshBlocks with shear
 
 TaskStatus TimeIntegratorTaskList::ReceiveFieldShear(MeshBlock *pmb, int stage) {
   bool ret;
@@ -1858,6 +1906,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveFieldShear(MeshBlock *pmb, int stage) 
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate EMFs between MeshBlocks with shear
 
 TaskStatus TimeIntegratorTaskList::SendEMFShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -1869,6 +1919,8 @@ TaskStatus TimeIntegratorTaskList::SendEMFShear(MeshBlock *pmb, int stage) {
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate EMFs between MeshBlocks with shear
 
 TaskStatus TimeIntegratorTaskList::ReceiveEMFShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -2308,4 +2360,3 @@ TaskStatus TimeIntegratorTaskList::CalculateFieldOrbital(MeshBlock *pmb, int sta
   }
   return TaskStatus::fail;
 }
-

@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file llf_rel_no_transform.cpp
-//  \brief Implements local Lax-Friedrichs Riemann solver for relativistic hydrodynamics
-//  in pure GR.
+//! \brief Implements local Lax-Friedrichs Riemann solver for relativistic hydrodynamics
+//!   in pure GR.
 
 // C headers
 
@@ -22,18 +22,23 @@
 #include "../../hydro.hpp"
 
 //----------------------------------------------------------------------------------------
-// Riemann solver
-// Inputs:
-//   k,j: x3- and x2-indices
-//   il,iu: lower and upper x1-indices
-//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-//   prim_l,prim_r: 1D arrays of left and right primitive states
-//   dxw: 1D arrays of mesh spacing in the x1 direction (not used)
-// Outputs:
-//   flux: 3D array of hydrodynamical fluxes across interfaces
-// Notes:
-//   implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
-//   cf. LLFNonTransforming() in llf_rel.cpp
+//! \fn void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+//!                           const int ivx,
+//!                           AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+//!                           AthenaArray<Real> &flux, const AthenaArray<Real> &dxw)
+//! \brief Riemann solver
+//!
+//! Inputs:
+//!  - k,j: x3- and x2-indices
+//!  - il,iu: lower and upper x1-indices
+//!  - ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
+//!  - prim_l,prim_r: 1D arrays of left and right primitive states
+//!  - dxw: 1D arrays of mesh spacing in the x1 direction (not used)
+//! Outputs:
+//!  - flux: 3D array of hydrodynamical fluxes across interfaces
+//! Notes:
+//!  - implements LLF algorithm similar to that of fluxcalc() in step_ch.c in Harm
+//!  - cf. LLFNonTransforming() in llf_rel.cpp
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx,

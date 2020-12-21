@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_fc.cpp
-//  \brief functions that apply BCs for FACE_CENTERED variables
+//! \brief functions that apply BCs for FACE_CENTERED variables
 
 // C headers
 
@@ -38,7 +38,7 @@
 #include <mpi.h>
 #endif
 
-// constructor
+//! constructor
 
 FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
     MeshBlock *pmb, FaceField *var, FaceField &coarse_buf, EdgeField &var_flux)
@@ -161,7 +161,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
   } // end shearing box component of ctor
 }
 
-// destructor
+//! destructor
 
 FaceCenteredBoundaryVariable::~FaceCenteredBoundaryVariable() {
   DestroyBoundaryData(bd_var_);
@@ -223,6 +223,9 @@ FaceCenteredBoundaryVariable::~FaceCenteredBoundaryVariable() {
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn int FaceCenteredBoundaryVariable::ComputeVariableBufferSize
+//! \brief
 
 int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,
                                                             int cng) {
@@ -289,6 +292,10 @@ int FaceCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
   return size;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn int FaceCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize
+//! \brief
+
 int FaceCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
     const NeighborIndexes& ni, int cng) {
   MeshBlock *pmb = pmy_block_;
@@ -326,9 +333,8 @@ int FaceCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
-//                                                               const NeighborBlock& nb)
-//  \brief Set face-centered boundary buffers for sending to a block on the same level
+//! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel
+//! \brief Set face-centered boundary buffers for sending to a block on the same level
 
 int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
                                                               const NeighborBlock& nb) {
@@ -386,9 +392,8 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Set face-centered boundary buffers for sending to a block on the coarser level
+//! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser
+//! \brief Set face-centered boundary buffers for sending to a block on the coarser level
 
 int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
                                                               const NeighborBlock& nb) {
@@ -460,9 +465,8 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Set face-centered boundary buffers for sending to a block on the finer level
+//! \fn int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner
+//! \brief Set face-centered boundary buffers for sending to a block on the finer level
 
 int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
                                                             const NeighborBlock& nb) {
@@ -568,9 +572,8 @@ int FaceCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
-//                                                              const NeighborBlock& nb)
-//  \brief Set face-centered boundary received from a block on the same level
+//! \fn void FaceCenteredBoundaryVariable::SetBoundarySameLevel
+//! \brief Set face-centered boundary received from a block on the same level
 
 void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
                                                         const NeighborBlock& nb) {
@@ -676,9 +679,8 @@ void FaceCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Set face-centered prolongation buffer received from a block on the same level
+//! \fn void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser
+//! \brief Set face-centered prolongation buffer received from a block on the same level
 
 void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
                                                           const NeighborBlock& nb) {
@@ -800,9 +802,8 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SetFielBoundaryFromFiner(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Set face-centered boundary received from a block on the same level
+//! \fn void FaceCenteredBoundaryVariable::SetBoundaryFromFiner
+//! \brief Set face-centered boundary received from a block on the same level
 
 void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
                                                         const NeighborBlock& nb) {
@@ -967,7 +968,7 @@ void FaceCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SetBoundaries()
-//  \brief set the face-centered boundary data
+//! \brief set the face-centered boundary data
 
 void FaceCenteredBoundaryVariable::SetBoundaries() {
   BoundaryVariable::SetBoundaries();
@@ -981,10 +982,11 @@ void FaceCenteredBoundaryVariable::SetBoundaries() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait()
-//  \brief receive and set the face-centered boundary data for initialization
-
-// TODO(KGF): nearly identical to CellCenteredBoundaryVariable counterpart (extra call to
-// PolarFieldBoundaryAverage())
+//! \brief receive and set the face-centered boundary data for initialization
+//!
+//! \todo (felker):
+//! * nearly identical to CellCenteredBoundaryVariable counterpart (extra call to
+//!   PolarFieldBoundaryAverage())
 void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
   BoundaryVariable::ReceiveAndSetBoundariesWithWait();
   if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
@@ -997,7 +999,9 @@ void FaceCenteredBoundaryVariable::ReceiveAndSetBoundariesWithWait() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock()
-// \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
+//! \brief polar boundary edge-case:
+//!
+//! single MeshBlock spans the entire azimuthal (x3) range
 
 void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb = pmy_block_;
@@ -1082,7 +1086,7 @@ void FaceCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::PolarFieldBoundaryAverage()
-//  \brief set theta-component of field along axis
+//! \brief set theta-component of field along axis
 
 void FaceCenteredBoundaryVariable::PolarFieldBoundaryAverage() {
   MeshBlock *pmb = pmy_block_;
@@ -1112,6 +1116,10 @@ void FaceCenteredBoundaryVariable::PolarFieldBoundaryAverage() {
   }
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void FaceCenteredBoundaryVariable::CountFineEdges()
+//! \brief count the number of the fine meshblocks contacting on each edge
 
 void FaceCenteredBoundaryVariable::CountFineEdges() {
   MeshBlock* pmb = pmy_block_;
@@ -1179,6 +1187,9 @@ void FaceCenteredBoundaryVariable::CountFineEdges() {
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void FaceCenteredBoundaryVariable::SetupPersistentMPI()
+//! \brief Setup persistent MPI requests to be reused throughout the entire simulation
 
 void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
   CountFineEdges();
@@ -1383,6 +1394,9 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void FaceCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase)
+//! \brief initiate MPI_Irecv()
 
 void FaceCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
   MeshBlock *pmb = pmy_block_;
@@ -1480,6 +1494,9 @@ void FaceCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase)
+//! \brief clean up the boundary flags after each loop
 
 void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   // Clear non-polar boundary communications

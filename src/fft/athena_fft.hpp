@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file athena_fft.hpp
-//  \brief defines FFT class which implements parallel FFT using MPI/OpenMP
+//! \brief defines FFT class which implements parallel FFT using MPI/OpenMP
 
 // C headers
 
@@ -94,7 +94,7 @@ class AthenaFFTIndex{
 };
 
 //! \class FFTBlock
-//  \brief
+//! \brief
 
 class FFTBlock {
  public:
@@ -168,7 +168,7 @@ class FFTBlock {
 };
 
 //! \class FFTDriver
-//  \brief FFT driver
+//! \brief FFT driver
 
 class FFTDriver {
  public:

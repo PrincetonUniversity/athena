@@ -4,9 +4,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file dc_simple.cpp
-//  \brief piecewise constant (donor cell) reconstruction
-//  Operates on the entire nx4 range of a single AthenaArray<Real> input (no MHD).
-//  No assumptions of hydrodynamic fluid variable input; no characteristic projection.
+//! \brief piecewise constant (donor cell) reconstruction
+//! Operates on the entire nx4 range of a single AthenaArray<Real> input (no MHD).
+//! No assumptions of hydrodynamic fluid variable input; no characteristic projection.
 
 // C headers
 
@@ -18,8 +18,11 @@
 #include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::DonorCellX1()
-//  \brief reconstruct L/R surfaces of the i-th cells
+//! \fn Reconstruction::DonorCellX1(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
+//! \brief reconstruct L/R surfaces of the i-th cells
 
 void Reconstruction::DonorCellX1(const int k, const int j, const int il, const int iu,
                                  const AthenaArray<Real> &q,
@@ -37,9 +40,11 @@ void Reconstruction::DonorCellX1(const int k, const int j, const int il, const i
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::DonorCellX2()
-//  \brief
-
+//! \fn Reconstruction::DonorCellX2(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
+//! \brief
 
 void Reconstruction::DonorCellX2(const int k, const int j, const int il, const int iu,
                                  const AthenaArray<Real> &q,
@@ -56,8 +61,11 @@ void Reconstruction::DonorCellX2(const int k, const int j, const int il, const i
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::DonorCellX3()
-//  \brief
+//! \fn Reconstruction::DonorCellX3(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
+//! \brief
 
 void Reconstruction::DonorCellX3(const int k, const int j, const int il, const int iu,
                                  const AthenaArray<Real> &q,

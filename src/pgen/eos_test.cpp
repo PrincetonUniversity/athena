@@ -4,9 +4,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file eos_test.cpp
-//  \brief Problem generator to test/verify equation of state.
-//
-// Problem generator designed to test, debug, and verify EOS tables and functions
+//! \brief Problem generator to test/verify equation of state.
+//!
+//! Problem generator designed to test, debug, and verify EOS tables and functions
 //
 //========================================================================================
 
@@ -32,7 +32,7 @@
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Problem Generator for eos tests
+//! \brief Problem Generator for eos tests
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {

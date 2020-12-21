@@ -4,11 +4,11 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hlld.cpp
-//  \brief HLLD Riemann solver for adiabatic MHD.
-//
-// REFERENCES:
-// - T. Miyoshi & K. Kusano, "A multi-state HLL approximate Riemann solver for ideal
-//   MHD", JCP, 208, 315 (2005)
+//! \brief HLLD Riemann solver for adiabatic MHD.
+//!
+//! REFERENCES:
+//! - T. Miyoshi & K. Kusano, "A multi-state HLL approximate Riemann solver for ideal
+//!   MHD", JCP, 208, 315 (2005)
 
 // C headers
 
@@ -32,7 +32,6 @@ struct Cons1D {
 #define SMALL_NUMBER 1.0e-8
 
 //----------------------------------------------------------------------------------------
-//! \fn
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, const AthenaArray<Real> &bx,

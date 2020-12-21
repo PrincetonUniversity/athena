@@ -3,11 +3,11 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file orszag-tang.c
-//  \brief Problem generator for Orszag-Tang vortex problem.
-//
-// REFERENCE: For example, see: G. Toth,  "The div(B)=0 constraint in shock capturing
-//   MHD codes", JCP, 161, 605 (2000)
+//! \file orszag_tang.cpp
+//! \brief Problem generator for Orszag-Tang vortex problem.
+//!
+//! REFERENCE: For example, see: G. Toth,  "The div(B)=0 constraint in shock capturing
+//!   MHD codes", JCP, 161, 605 (2000)
 //========================================================================================
 
 // C headers

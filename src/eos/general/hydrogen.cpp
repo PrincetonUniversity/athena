@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //======================================================================================
-//! \file hydrogen_hydro.cpp
-//  \brief implements functions in class EquationOfState for simple hydrogen EOS
+//! \file hydrogen.cpp
+//! \brief implements functions in class EquationOfState for simple hydrogen EOS
 //======================================================================================
 
 // C headers
@@ -33,21 +33,21 @@ Real prec = 1e-12;
 
 //----------------------------------------------------------------------------------------
 //! \fn Real x_(Real rho, Real T) {
-//  \brief compute ionization fraction
+//! \brief compute ionization fraction
 Real x_(Real rho, Real T) {
   return 2./(1.+std::sqrt(1.+4.*std::exp(1./T-1.5*std::log(T)+std::log(rho))));
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real P_of_rho_T(Real rho, Real T) {
-//  \brief compute gas pressure
+//! \brief compute gas pressure
 Real P_of_rho_T(Real rho, Real T) {
   return rho * T * (1. + x_(rho, T));
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real e_of_rho_T(Real rho, Real T) {
-//  \brief compute internal energy density
+//! \brief compute internal energy density
 Real e_of_rho_T(Real rho, Real T) {
   Real x = x_(rho, T);
   return x * rho + 1.5 * rho * T * (1. + x);
@@ -55,7 +55,7 @@ Real e_of_rho_T(Real rho, Real T) {
 
 //----------------------------------------------------------------------------------------
 //! \fn Real asq_(Real rho, Real T) {
-//  \brief compute adiabatic sound speed squared
+//! \brief compute adiabatic sound speed squared
 Real asq_(Real rho, Real T) {
   Real x = x_(rho, T);
   Real c = 2 * SQR(T) * (2. + x - SQR(x));
@@ -64,8 +64,8 @@ Real asq_(Real rho, Real T) {
 
 //----------------------------------------------------------------------------------------
 //! \fn Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real T0, Real T1)
-//  \brief Invert an EOS function at a given density and return temperature.
-//         Uses Brent–Dekker method for inversion.
+//! \brief Invert an EOS function at a given density and return temperature.
+//!        Uses Brent–Dekker method for inversion.
 Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real Ta, Real Tb) {
   Real fc, fs, Tc, Td, Ts;
   bool mflag = false;
@@ -134,7 +134,7 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real Ta, Real Tb) {
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
-//  \brief Return gas pressure
+//! \brief Return gas pressure
 Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
   rho *= rho_unit_;
   egas *= egas_unit_;
@@ -146,7 +146,7 @@ Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
-//  \brief Return internal energy density
+//! \brief Return internal energy density
 Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
   rho *= rho_unit_;
   pres *= egas_unit_;
@@ -157,7 +157,7 @@ Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
-//  \brief Return adiabatic sound speed squared
+//! \brief Return adiabatic sound speed squared
 Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
   rho *= rho_unit_;
   pres *= egas_unit_;
@@ -167,8 +167,8 @@ Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
 }
 
 //----------------------------------------------------------------------------------------
-//! void EquationOfState::InitEosConstants(ParameterInput* pin)
-//  \brief Initialize constants for EOS
+//! \fn void EquationOfState::InitEosConstants(ParameterInput* pin)
+//! \brief Initialize constants for EOS
 void EquationOfState::InitEosConstants(ParameterInput* pin) {
   prec = pin->GetOrAddReal("hydro", "InversionPrecision", prec);
   return;

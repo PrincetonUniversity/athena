@@ -4,16 +4,16 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file llf_mhd.cpp
-//  \brief Local Lax Friedrichs (LLF) Riemann solver for MHD
-//
-//  Computes 1D fluxes using the LLF Riemann solver, also known as Rusanov's method.
-//  This flux is very diffusive, even more diffusive than HLLE, and so it is not
-//  recommended for use in applications.  However, it is useful for testing, or for
-//  problems where other Riemann solvers fail.
-//
-// REFERENCES:
-// - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
-//   Springer-Verlag, Berlin, (1999) chpt. 10.
+//! \brief Local Lax Friedrichs (LLF) Riemann solver for MHD
+//!
+//! Computes 1D fluxes using the LLF Riemann solver, also known as Rusanov's method.
+//! This flux is very diffusive, even more diffusive than HLLE, and so it is not
+//! recommended for use in applications.  However, it is useful for testing, or for
+//! problems where other Riemann solvers fail.
+//!
+//! REFERENCES:
+//! - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
+//!   Springer-Verlag, Berlin, (1999) chpt. 10.
 
 // C headers
 
@@ -29,7 +29,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::RiemannSolver
-//  \brief The LLF Riemann solver for MHD (both adiabatic and isothermal)
+//! \brief The LLF Riemann solver for MHD (both adiabatic and isothermal)
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, const AthenaArray<Real> &bx,

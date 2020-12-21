@@ -3,12 +3,12 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file linear_wave.c
-//  \brief Linear wave problem generator for 1D/2D/3D problems.
-//
-// In 1D, the problem is setup along one of the three coordinate axes (specified by
-// setting [ang_2,ang_3] = 0.0 or PI/2 in the input file).  In 2D/3D this routine
-// automatically sets the wavevector along the domain diagonal.
+//! \file linear_wave.cpp
+//! \brief Linear wave problem generator for 1D/2D/3D problems.
+//!
+//! In 1D, the problem is setup along one of the three coordinate axes (specified by
+//! setting [ang_2,ang_3] = 0.0 or PI/2 in the input file).  In 2D/3D this routine
+//! automatically sets the wavevector along the domain diagonal.
 //========================================================================================
 
 // C headers

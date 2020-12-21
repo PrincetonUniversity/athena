@@ -3,13 +3,14 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file meshblocktree.cpp
-//  \brief implementation of functions in the MeshBlockTree class
-// The MeshBlockTree stores the logical grid structure, and is used for neighbor
-// searches, assigning global IDs, etc.  Level is defined as "logical level", where the
-// logical root (single block) level is 0.  Note the logical level of the physical root
-// grid (user-specified root grid) will be greater than zero if it contains more than
-// one MeshBlock
+//! \file meshblock_tree.cpp
+//! \brief implementation of functions in the MeshBlockTree class
+//!
+//! The MeshBlockTree stores the logical grid structure, and is used for neighbor
+//! searches, assigning global IDs, etc.  Level is defined as "logical level", where the
+//! logical root (single block) level is 0.  Note the logical level of the physical root
+//! grid (user-specified root grid) will be greater than zero if it contains more than
+//! one MeshBlock
 
 // C headers
 
@@ -33,7 +34,7 @@ int MeshBlockTree::nleaf_;
 
 //----------------------------------------------------------------------------------------
 //! \fn bool operator==(const LogicalLocation &l1, const LogicalLocation &l2)
-//  \brief overloading the comparison operator for LogicalLocation
+//! \brief overloading the comparison operator for LogicalLocation
 bool operator==(const LogicalLocation &l1, const LogicalLocation &l2) {
   return ((l1.level == l2.level) && (l1.lx1 == l2.lx1)
        && (l1.lx2 == l2.lx2) && (l1.lx3 == l2.lx3));
@@ -41,8 +42,8 @@ bool operator==(const LogicalLocation &l1, const LogicalLocation &l2) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MeshBlockTree::MeshBlockTree()
-//  \brief constructor for the logical root
+//! \fn MeshBlockTree::MeshBlockTree(Mesh* pmesh)
+//! \brief constructor for the logical root
 
 MeshBlockTree::MeshBlockTree(Mesh* pmesh) : pleaf_(nullptr), gid_(-1) {
   pmesh_ = pmesh;
@@ -54,8 +55,8 @@ MeshBlockTree::MeshBlockTree(Mesh* pmesh) : pleaf_(nullptr), gid_(-1) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn MeshBlockTree::MeshBlockTree(int gid, int ox1, int ox2, int ox3)
-//  \brief constructor for a leaf
+//! \fn MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox1, int ox2, int ox3)
+//! \brief constructor for a leaf
 
 MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox1, int ox2, int ox3)
                            : pleaf_(nullptr), gid_(parent->gid_) {
@@ -68,7 +69,7 @@ MeshBlockTree::MeshBlockTree(MeshBlockTree *parent, int ox1, int ox2, int ox3)
 
 //----------------------------------------------------------------------------------------
 //! \fn MeshBlockTree::~MeshBlockTree()
-//  \brief destructor (for both root and leaves)
+//! \brief destructor (for both root and leaves)
 
 MeshBlockTree::~MeshBlockTree() {
   if (pleaf_ != nullptr) {
@@ -81,7 +82,7 @@ MeshBlockTree::~MeshBlockTree() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::CreateRootGrid()
-//  \brief create the root grid; the root grid can be incomplete (less than 8 leaves)
+//! \brief create the root grid; the root grid can be incomplete (less than 8 leaves)
 
 void MeshBlockTree::CreateRootGrid() {
   if (loc_.level == 0) {
@@ -110,7 +111,7 @@ void MeshBlockTree::CreateRootGrid() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::AddMeshBlock(LogicalLocation rloc, int &nnew)
-//  \brief add a MeshBlock to the tree, also creates neighboring blocks
+//! \brief add a MeshBlock to the tree, also creates neighboring blocks
 
 void MeshBlockTree::AddMeshBlock(LogicalLocation rloc, int &nnew) {
   if (loc_.level == rloc.level) return; // done
@@ -132,8 +133,8 @@ void MeshBlockTree::AddMeshBlock(LogicalLocation rloc, int &nnew) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc)
-//  \brief add a MeshBlock to the tree without refinement, used in restarting.
-//         MeshBlockTree::CreateRootGrid must be called before this method
+//! \brief add a MeshBlock to the tree without refinement, used in restarting.
+//!        MeshBlockTree::CreateRootGrid must be called before this method
 void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc) {
   if (loc_.level == rloc.level) // done
     return;
@@ -160,7 +161,7 @@ void MeshBlockTree::AddMeshBlockWithoutRefine(LogicalLocation rloc) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::Refine(int &nnew)
-//  \brief make finer leaves
+//! \brief make finer leaves
 
 void MeshBlockTree::Refine(int &nnew) {
   if (pleaf_ != nullptr) return;
@@ -255,7 +256,7 @@ void MeshBlockTree::Refine(int &nnew) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::Derefine(int &ndel)
-//  \brief destroy leaves and make this block a leaf
+//! \brief destroy leaves and make this block a leaf
 
 void MeshBlockTree::Derefine(int &ndel) {
   int s2=0, e2=0, s3=0, e3=0;
@@ -310,7 +311,7 @@ void MeshBlockTree::Derefine(int &ndel) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::CountMeshBlock(int& count)
-//  \brief creates the Location list sorted by Z-ordering
+//! \brief creates the Location list sorted by Z-ordering
 
 void MeshBlockTree::CountMeshBlock(int& count) {
   if (loc_.level == 0) count=0;
@@ -328,8 +329,8 @@ void MeshBlockTree::CountMeshBlock(int& count) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::GetMeshBlockList(LogicalLocation *list,
-//                                           int *pglist, int& count)
-//  \brief creates the Location list sorted by Z-ordering
+//!                                          int *pglist, int& count)
+//! \brief creates the Location list sorted by Z-ordering
 
 void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& count) {
   if (loc_.level == 0) count=0;
@@ -351,11 +352,11 @@ void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& co
 
 //----------------------------------------------------------------------------------------
 //! \fn MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
-//                                    int ox1, int ox2, int ox3, bool amrflag)
-//  \brief find a neighboring block, called from the root of the tree
-//         If it is coarser or same level, return the pointer to that block.
-//         If it is a finer block, return the pointer to its parent.
-//         Note that this function must be called on a completed tree only
+//!                                   int ox1, int ox2, int ox3, bool amrflag)
+//! \brief find a neighboring block, called from the root of the tree
+//!        If it is coarser or same level, return the pointer to that block.
+//!        If it is a finer block, return the pointer to its parent.
+//!        Note that this function must be called on a completed tree only
 
 MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
                                            int ox1, int ox2, int ox3, bool amrflag) {
@@ -463,7 +464,7 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
 
 //----------------------------------------------------------------------------------------
 //! \fn MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc)
-//  \brief find MeshBlock with LogicalLocation tloc and return a pointer
+//! \brief find MeshBlock with LogicalLocation tloc and return a pointer
 
 MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc) {
   if (tloc.level == loc_.level) return this;
@@ -482,7 +483,7 @@ MeshBlockTree* MeshBlockTree::FindMeshBlock(LogicalLocation tloc) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::CountMGOctets(int *noct)
-//  \brief count the number of octets for Multigrid with mesh refinement
+//! \brief count the number of octets for Multigrid with mesh refinement
 
 void MeshBlockTree::CountMGOctets(int *noct) {
   if (pleaf_ == nullptr) return;
@@ -500,8 +501,8 @@ void MeshBlockTree::CountMGOctets(int *noct) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlockTree::GetMGOctetList(std::vector<MGOctet> *oct,
-//      std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octmap, int *noct)
-//  \brief construct lists of octets Multigrid with mesh refinement
+//!     std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octmap, int *noct)
+//! \brief construct lists of octets Multigrid with mesh refinement
 
 void MeshBlockTree::GetMGOctetList(std::vector<MGOctet> *oct,
      std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octmap, int *noct) {

@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file disk.cpp
-//  \brief Initializes stratified Keplerian accretion disk in both cylindrical and
-//  spherical polar coordinates.  Initial conditions are in vertical hydrostatic eqm.
+//! \brief Initializes stratified Keplerian accretion disk in both cylindrical and
+//! spherical polar coordinates.  Initial conditions are in vertical hydrostatic eqm.
 
 // C headers
 
@@ -67,9 +67,9 @@ void DiskOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
-//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
-//  to initialize variables which are global to (and therefore can be passed to) other
-//  functions in this file.  Called in Mesh constructor.
+//! \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//! to initialize variables which are global to (and therefore can be passed to) other
+//! functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
@@ -119,7 +119,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Initializes Keplerian accretion disk.
+//! \brief Initializes Keplerian accretion disk.
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
@@ -166,7 +166,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 namespace {
 //----------------------------------------------------------------------------------------
-//!\f transform to cylindrical coordinate
+//! transform to cylindrical coordinate
 
 void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k) {
   if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
@@ -182,7 +182,7 @@ void GetCylCoord(Coordinates *pco,Real &rad,Real &phi,Real &z,int i,int j,int k)
 }
 
 //----------------------------------------------------------------------------------------
-//! \f  computes density in cylindrical coordinates
+//! computes density in cylindrical coordinates
 
 Real DenProfileCyl(const Real rad, const Real phi, const Real z) {
   Real den;
@@ -195,7 +195,7 @@ Real DenProfileCyl(const Real rad, const Real phi, const Real z) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \f  computes pressure/density in cylindrical coordinates
+//! computes pressure/density in cylindrical coordinates
 
 Real PoverR(const Real rad, const Real phi, const Real z) {
   Real poverr;
@@ -204,7 +204,7 @@ Real PoverR(const Real rad, const Real phi, const Real z) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \f  computes rotational velocity in cylindrical coordinates
+//! computes rotational velocity in cylindrical coordinates
 
 Real VelProfileCyl(const Real rad, const Real phi, const Real z) {
   Real p_over_r = PoverR(rad, phi, z);
@@ -216,8 +216,7 @@ Real VelProfileCyl(const Real rad, const Real phi, const Real z) {
 } // namespace
 
 //----------------------------------------------------------------------------------------
-//!\f: User-defined boundary Conditions: sets solution in ghost zones to initial values
-//
+//! User-defined boundary Conditions: sets solution in ghost zones to initial values
 
 void DiskInnerX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                  Real time, Real dt,
@@ -262,6 +261,9 @@ void DiskInnerX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! User-defined boundary Conditions: sets solution in ghost zones to initial values
+
 void DiskOuterX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                  Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
@@ -304,6 +306,9 @@ void DiskOuterX1(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
     }
   }
 }
+
+//----------------------------------------------------------------------------------------
+//! User-defined boundary Conditions: sets solution in ghost zones to initial values
 
 void DiskInnerX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                  Real time, Real dt,
@@ -348,6 +353,9 @@ void DiskInnerX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! User-defined boundary Conditions: sets solution in ghost zones to initial values
+
 void DiskOuterX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                  Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
@@ -391,6 +399,9 @@ void DiskOuterX2(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! User-defined boundary Conditions: sets solution in ghost zones to initial values
+
 void DiskInnerX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                  Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
@@ -433,6 +444,9 @@ void DiskInnerX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceF
     }
   }
 }
+
+//----------------------------------------------------------------------------------------
+//! User-defined boundary Conditions: sets solution in ghost zones to initial values
 
 void DiskOuterX3(MeshBlock *pmb,Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                  Real time, Real dt,

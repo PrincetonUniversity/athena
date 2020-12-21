@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file cylindrical.cpp
-//  \brief implements functions for cylindrical (r-phi-z) coordinates in a derived class
-//  of the Coordinates abstract base class.
+//! \brief implements functions for cylindrical (r-phi-z) coordinates in a derived class
+//! of the Coordinates abstract base class.
 
 // C headers
 
@@ -23,7 +23,7 @@
 #include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
-// Cylindrical coordinates constructor
+//! Cylindrical coordinates constructor
 
 Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {
@@ -281,7 +281,7 @@ Real Cylindrical::GetCellVolume(const int k, const int j, const int i) {
 }
 
 //----------------------------------------------------------------------------------------
-// Coordinate (Geometric) source term function
+//! Coordinate (Geometric) source term function
 
 void Cylindrical::AddCoordTermsDivergence(
     const Real dt, const AthenaArray<Real> *flux,
@@ -327,7 +327,7 @@ void Cylindrical::AddCoordTermsDivergence(
 }
 
 //----------------------------------------------------------------------------------------
-// Coordinate (Geometric) source term function for STS
+//! Coordinate (Geometric) source term function for STS
 
 void Cylindrical::AddCoordTermsDivergence_STS(
     const Real dt, int stage, const AthenaArray<Real> *flux,

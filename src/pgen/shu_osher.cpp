@@ -4,11 +4,11 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file shu_osher.cpp
-//  \brief Problem generator for Shu-Osher shocktube test, involving
-//   interaction of a Mach 3 shock with a sine wave density distribution.
-//
-// REFERENCE: C.W. Shu & S. Osher, "Efficient implementation of essentially
-//   non-oscillatory shock-capturing schemes, II", JCP, 83, 32 (1998)
+//! \brief Problem generator for Shu-Osher shocktube test, involving
+//!  interaction of a Mach 3 shock with a sine wave density distribution.
+//!
+//! REFERENCE: C.W. Shu & S. Osher, "Efficient implementation of essentially
+//!   non-oscillatory shock-capturing schemes, II", JCP, 83, 32 (1998)
 //========================================================================================
 
 // C headers

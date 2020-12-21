@@ -4,10 +4,10 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mignone_advection.cpp
-//  \brief 1D passive scalar advection tests in curvilinear coordinates from:
-// Mignone, A. (2014). High-order conservative reconstruction schemes for finite volume
-// methods in cylindrical and spherical coordinates. Journal of Computational Physics,
-// 270, 784-814.
+//! \brief 1D passive scalar advection tests in curvilinear coordinates from:
+//! Mignone, A. (2014). High-order conservative reconstruction schemes for finite volume
+//! methods in cylindrical and spherical coordinates. Journal of Computational Physics,
+//! 270, 784-814.
 //========================================================================================
 
 // C++ headers

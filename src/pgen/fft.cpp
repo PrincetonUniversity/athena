@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file fft.cpp
-//  \brief Problem generator for complex-to-complex FFT test.
+//! \brief Problem generator for complex-to-complex FFT test.
 //
 
 // C headers
@@ -35,7 +35,7 @@
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief
+//! \brief
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
@@ -43,7 +43,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 //========================================================================================
 //! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-//  \brief
+//! \brief
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {

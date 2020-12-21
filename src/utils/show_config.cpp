@@ -16,7 +16,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void ShowConfig()
-//  \brief prints diagnostic messages about the configuration of an Athena++ executable
+//! \brief prints diagnostic messages about the configuration of an Athena++ executable
 
 void ShowConfig() {
   // To match configure.py output: use 2 space indent for option, value output starts on

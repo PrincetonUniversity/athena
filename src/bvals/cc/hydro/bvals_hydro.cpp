@@ -4,9 +4,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_hydro.cpp
-//  \brief implements boundary functions for Hydro variables and utilities to manage
-//  primitive/conservative variable relationship in a derived class of the
-//  CellCenteredBoundaryVariable base class.
+//! \brief implements boundary functions for Hydro variables and utilities to manage
+//! primitive/conservative variable relationship in a derived class of the
+//! CellCenteredBoundaryVariable base class.
 
 // C headers
 
@@ -20,7 +20,8 @@
 #include "bvals_hydro.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \class HydroBoundaryFunctions
+//! \fn HydroBoundaryVariable::HydroBoundaryVariable
+//! \brief
 
 HydroBoundaryVariable::HydroBoundaryVariable(
     MeshBlock *pmb, AthenaArray<Real> *var_hydro, AthenaArray<Real> *coarse_var,
@@ -33,7 +34,7 @@ HydroBoundaryVariable::HydroBoundaryVariable(
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::SelectCoarseBuffer(HydroBoundaryQuantity type)
-//  \brief
+//! \brief
 
 void HydroBoundaryVariable::SelectCoarseBuffer(HydroBoundaryQuantity hydro_type) {
   if (pmy_mesh_->multilevel) {
@@ -52,7 +53,12 @@ void HydroBoundaryVariable::SelectCoarseBuffer(HydroBoundaryQuantity hydro_type)
   return;
 }
 
-// TODO(felker): make general (but restricted) setter fns in CellCentered and FaceCentered
+//----------------------------------------------------------------------------------------
+//! \fn void HydroBoundaryVariable::SwapHydroQuantity
+//! \brief
+//! \todo (felker):
+//! * make general (but restricted) setter fns in CellCentered and FaceCentered
+
 void HydroBoundaryVariable::SwapHydroQuantity(AthenaArray<Real> &var_hydro,
                                               HydroBoundaryQuantity hydro_type) {
   var_cc = &var_hydro;
@@ -63,11 +69,11 @@ void HydroBoundaryVariable::SwapHydroQuantity(AthenaArray<Real> &var_hydro,
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::SetBoundarySameLevel(Real *buf,
-//                                                              const NeighborBlock& nb)
-//  \brief Set cell-centered boundary received from a block on the same level
+//!                                                      const NeighborBlock& nb)
+//! \brief Set hydro boundary received from a block on the same level
 
 void HydroBoundaryVariable::SetBoundarySameLevel(Real *buf,
-                                                        const NeighborBlock& nb) {
+                                                 const NeighborBlock& nb) {
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   AthenaArray<Real> &var = *var_cc;

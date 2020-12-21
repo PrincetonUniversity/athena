@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file mesh_amr.cpp
-//  \brief implementation of Mesh::AdaptiveMeshRefinement() and related utilities
+//! \file amr_loadbalance.cpp
+//! \brief implementation of Mesh::AdaptiveMeshRefinement() and related utilities
 
 // C headers
 
@@ -32,8 +32,8 @@
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin)
-// \brief Main function for adaptive mesh refinement
+//! \fn void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin)
+//! \brief Main function for adaptive mesh refinement
 
 void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
   int nnew = 0, ndel = 0;
@@ -62,9 +62,9 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist,
-//                                      int *nlist, int nb)
-// \brief Calculate distribution of MeshBlocks based on the cost list
+//! \fn void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist,
+//!                                     int *nlist, int nb)
+//! \brief Calculate distribution of MeshBlocks based on the cost list
 
 void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist,
                                 int nb) {
@@ -134,8 +134,8 @@ void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlis
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::ResetLoadBalanceVariables()
-// \brief reset counters and flags for load balancing
+//! \fn void Mesh::ResetLoadBalanceVariables()
+//! \brief reset counters and flags for load balancing
 
 void Mesh::ResetLoadBalanceVariables() {
   if (lb_automatic_) {
@@ -150,8 +150,8 @@ void Mesh::ResetLoadBalanceVariables() {
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::UpdateCostList()
-// \brief update the cost list
+//! \fn void Mesh::UpdateCostList()
+//! \brief update the cost list
 
 void Mesh::UpdateCostList() {
   if (lb_automatic_) {
@@ -169,8 +169,8 @@ void Mesh::UpdateCostList() {
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel)
-// \brief collect refinement flags and manipulate the MeshBlockTree
+//! \fn void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel)
+//! \brief collect refinement flags and manipulate the MeshBlockTree
 
 void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
   // compute nleaf= number of leaf MeshBlocks per refined block
@@ -310,8 +310,8 @@ void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn bool Mesh::GatherCostListAndCheckBalance()
-// \brief collect the cost from MeshBlocks and check the load balance
+//! \fn bool Mesh::GatherCostListAndCheckBalance()
+//! \brief collect the cost from MeshBlocks and check the load balance
 
 bool Mesh::GatherCostListAndCheckBalance() {
   if (lb_manual_ || lb_automatic_) {
@@ -342,8 +342,8 @@ bool Mesh::GatherCostListAndCheckBalance() {
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot)
-// \brief redistribute MeshBlocks according to the new load balance
+//! \fn void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot)
+//! \brief redistribute MeshBlocks according to the new load balance
 
 void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   // compute nleaf= number of leaf MeshBlocks per refined block
@@ -436,8 +436,9 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   // representative of all MeshBlocks for counting the "load-balancing registered" and
   // "SMR/AMR-enrolled" quantities (loop over MeshBlock::vars_cc_, not MeshRefinement)
 
-  // TODO(felker): add explicit check to ensure that elements of pb->vars_cc/fc_ and
-  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
+  //! \todo (felker):
+  //! * add explicit check to ensure that elements of pb->vars_cc/fc_ and
+  //!   pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
 
   // int num_cc = my_blocks(0)->pmr->pvars_cc_.size();
   int num_fc = my_blocks(0)->vars_fc_.size();
@@ -663,18 +664,21 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   return;
 }
 
-// AMR: step 6, branch 1 (same2same: just pack+send)
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf)
+//! \brief AMR: step 6, branch 1 (same2same: just pack+send)
+//!
+//! This helper fn is used for AMR and non-refinement load balancing of MeshBlocks.
+//! Therefore, unlike PrepareSendCoarseToFineAMR(), etc., it loops over
+//! MeshBlock::vars_cc/fc_ containers, not MeshRefinement::pvars_cc/fc_ containers
 
 void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
   // pack
   int p = 0;
 
-  // this helper fn is used for AMR and non-refinement load balancing of
-  // MeshBlocks. Therefore, unlike PrepareSendCoarseToFineAMR(), etc., it loops over
-  // MeshBlock::vars_cc/fc_ containers, not MeshRefinement::pvars_cc/fc_ containers
-
-  // TODO(felker): add explicit check to ensure that elements of pb->vars_cc/fc_ and
-  // pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
+  //! \todo (felker):
+  //! * add explicit check to ensure that elements of pb->vars_cc/fc_ and
+  //!   pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
 
   // (C++11) range-based for loop: (automatic type deduction fails when iterating over
   // container with std::reference_wrapper; could use auto var_cc_r = var_cc.get())
@@ -691,8 +695,9 @@ void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
     BufferUtility::PackData(var_fc.x3f, sendbuf,
                             pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke+f3, p);
   }
-  // WARNING(felker): casting from "Real *" to "int *" in order to append single integer
-  // to send buffer is slightly unsafe (especially if sizeof(int) > sizeof(Real))
+  //! \warning (felker):
+  //! * casting from "Real *" to "int *" in order to append single integer
+  //!   to send buffer is slightly unsafe (especially if sizeof(int) > sizeof(Real))
   if (adaptive) {
     int *dcp = reinterpret_cast<int *>(&(sendbuf[p]));
     *dcp = pb->pmr->deref_count_;
@@ -700,8 +705,10 @@ void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
   return;
 }
 
-
-// step 6, branch 2 (c2f: just pack+send)
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
+//!                                           LogicalLocation &lloc)
+//! \brief step 6, branch 2 (c2f: just pack+send)
 
 void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
                                       LogicalLocation &lloc) {
@@ -734,7 +741,9 @@ void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
   return;
 }
 
-// step 6, branch 3 (f2c: restrict, pack, send)
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf)
+//! \brief step 6, branch 3 (f2c: restrict, pack, send)
 
 void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
   // restrict and pack
@@ -785,7 +794,10 @@ void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
   return;
 }
 
-// step 7: f2c, same MPI rank, different level (just restrict+copy, no pack/send)
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
+//!                                            LogicalLocation &loc)
+//! \brief step 7: f2c, same MPI rank, different level (just restrict+copy, no pack/send)
 
 void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
                                        LogicalLocation &loc) {
@@ -876,7 +888,11 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
   return;
 }
 
-// step 7: c2f, same MPI rank, different level (just copy+prolongate, no pack/send)
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
+//!                                            LogicalLocation &newloc)
+//! \brief step 7: c2f, same MPI rank, different level
+//!        (just copy+prolongate, no pack/send)
 
 void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
                                        LogicalLocation &newloc) {
@@ -953,7 +969,9 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
   return;
 }
 
-// step 8 (receive and load), branch 1 (same2same: unpack)
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf)
+//! \brief step 8 (receive and load), branch 1 (same2same: unpack)
 void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
   int p = 0;
   for (AthenaArray<Real> &var_cc : pb->vars_cc_) {
@@ -979,8 +997,9 @@ void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
       }
     }
   }
-  // WARNING(felker): casting from "Real *" to "int *" in order to read single
-  // appended integer from received buffer is slightly unsafe
+  //! \warning (felker):
+  //! * casting from "Real *" to "int *" in order to read single
+  //!   appended integer from received buffer is slightly unsafe
   if (adaptive) {
     int *dcp = reinterpret_cast<int *>(&(recvbuf[p]));
     pb->pmr->deref_count_ = *dcp;
@@ -988,7 +1007,11 @@ void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
   return;
 }
 
-// step 8 (receive and load), branch 2 (f2c: unpack)
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
+//!                                          LogicalLocation &lloc)
+//! \brief step 8 (receive and load), branch 2 (f2c: unpack)
+
 void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
                                      LogicalLocation &lloc) {
   int ox1 = ((lloc.lx1 & 1LL) == 1LL), ox2 = ((lloc.lx2 & 1LL) == 1LL),
@@ -1030,7 +1053,10 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
   return;
 }
 
-// step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf)
+//! \brief step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
+
 void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
   MeshRefinement *pmr = pb->pmr;
   int p = 0;
@@ -1073,12 +1099,13 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
-//  \brief calculate an MPI tag for AMR block transfer
-// tag = local id of destination (remaining bits) + ox1(1 bit) + ox2(1 bit) + ox3(1 bit)
-//       + physics(5 bits)
-
-// See comments on BoundaryBase::CreateBvalsMPITag()
+//! \fn int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3)
+//! \brief calculate an MPI tag for AMR block transfer
+//!
+//! tag = local id of destination (remaining bits) + ox1(1 bit) + ox2(1 bit) + ox3(1 bit)
+//!       + physics(5 bits)
+//!
+//! See comments on BoundaryBase::CreateBvalsMPITag()
 
 int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3) {
   // former "AthenaTagMPI" AthenaTagMPI::amr=8 redefined to 0

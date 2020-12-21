@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file reflect.cpp
-//  \brief implementation of reflecting BCs in each dimension
+//! \file reflect_cc.cpp
+//! \brief implementation of reflecting BCs in each dimension
 
 // C headers
 
@@ -17,8 +17,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::ReflectInnerX1(
-//          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, inner x1 boundary
+//!         Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, inner x1 boundary
 
 void CellCenteredBoundaryVariable::ReflectInnerX1(
     Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
@@ -37,8 +37,8 @@ void CellCenteredBoundaryVariable::ReflectInnerX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::ReflectOuterX1(
-//          Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, outer x1 boundary
+//!         Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, outer x1 boundary
 
 void CellCenteredBoundaryVariable::ReflectOuterX1(
     Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
@@ -57,8 +57,8 @@ void CellCenteredBoundaryVariable::ReflectOuterX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::ReflectInnerX2(
-//          Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, inner x2 boundary
+//!         Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, inner x2 boundary
 
 void CellCenteredBoundaryVariable::ReflectInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
@@ -77,8 +77,8 @@ void CellCenteredBoundaryVariable::ReflectInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::ReflectOuterX2(
-//          Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, outer x2 boundary
+//!         Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, outer x2 boundary
 
 void CellCenteredBoundaryVariable::ReflectOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
@@ -97,8 +97,8 @@ void CellCenteredBoundaryVariable::ReflectOuterX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::ReflectInnerX3(
-//          Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
-//  \brief REFLECTING boundary conditions, inner x3 boundary
+//!         Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
+//! \brief REFLECTING boundary conditions, inner x3 boundary
 
 void CellCenteredBoundaryVariable::ReflectInnerX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
@@ -117,8 +117,8 @@ void CellCenteredBoundaryVariable::ReflectInnerX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::ReflectOuterX3(
-//          Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, outer x3 boundary
+//!         Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, outer x3 boundary
 
 void CellCenteredBoundaryVariable::ReflectOuterX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {

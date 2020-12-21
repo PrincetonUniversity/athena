@@ -1,16 +1,15 @@
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file blast.cpp
-//  \brief Problem generator for spherical blast wave problem.  Works in Cartesian,
-//         cylindrical, and spherical coordinates.  Contains post-processing code
-//         to check whether blast is spherical for regression tests
-//
-// REFERENCE: P. Londrillo & L. Del Zanna, "High-order upwind schemes for
-//   multidimensional MHD", ApJ, 530, 508 (2000), and references therein.
+//! \brief Problem generator for spherical blast wave problem.  Works in Cartesian,
+//!        cylindrical, and spherical coordinates.  Contains post-processing code
+//!        to check whether blast is spherical for regression tests
+//!
+//! REFERENCE: P. Londrillo & L. Del Zanna, "High-order upwind schemes for
+//!   multidimensional MHD", ApJ, 530, 508 (2000), and references therein.
 
 // C headers
 
@@ -48,7 +47,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Spherical blast wave test problem generator
+//! \brief Spherical blast wave test problem generator
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
@@ -215,7 +214,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 //========================================================================================
 //! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-//  \brief Check radius of sphere to make sure it is round
+//! \brief Check radius of sphere to make sure it is round
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {

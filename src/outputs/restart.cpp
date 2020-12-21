@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file restart.cpp
-//  \brief writes restart files
+//! \brief writes restart files
 
 // C headers
 
@@ -32,7 +32,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
-//  \brief Cycles over all MeshBlocks and writes data to a single restart file.
+//! \brief Cycles over all MeshBlocks and writes data to a single restart file.
 
 void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_write) {
   IOWrapper resfile;

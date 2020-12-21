@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file flux_correction_fc.cpp
-//  \brief functions that perform flux correction for face-centered variables
+//! \brief functions that perform flux correction for face-centered variables
 
 // C headers
 
@@ -40,12 +40,13 @@
 #include <mpi.h>
 #endif
 
-// TODO(felker): break-up the long functions in this file
+//! \todo (felker):
+//! - break-up the long functions in this file
 
 //----------------------------------------------------------------------------------------
 //! \fn int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
-//                                                   const NeighborBlock& nb)
-//  \brief Set EMF correction buffers for sending to a block on the same level
+//!                                                   const NeighborBlock& nb)
+//! \brief Set EMF correction buffers for sending to a block on the same level
 
 int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
     Real *buf, const NeighborBlock& nb) {
@@ -303,8 +304,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
 
 //----------------------------------------------------------------------------------------
 //! \fn int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(Real *buf,
-//                                                         const NeighborBlock& nb)
-//  \brief Set EMF correction buffers for sending to a block on the coarser level
+//!                                                        const NeighborBlock& nb)
+//! \brief Set EMF correction buffers for sending to a block on the coarser level
 
 int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(
     Real *buf, const NeighborBlock& nb) {
@@ -562,9 +563,9 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToCoarser(
 
 //----------------------------------------------------------------------------------------
 //! \fn int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(Real *buf,
-//                                                         const SimpleNeighborBlock &nb,
-//                                                           bool is_north)
-//  \brief Load EMF values along polar axis into send buffers
+//!                                                        const SimpleNeighborBlock &nb,
+//!                                                          bool is_north)
+//! \brief Load EMF values along polar axis into send buffers
 
 int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(
     Real *buf, const SimpleNeighborBlock &nb, bool is_north) {
@@ -581,7 +582,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferToPolar(
   return count;
 }
 
-// helper function for below SendFluxCorrection()
+//----------------------------------------------------------------------------------------
+//! \brief helper function for below SendFluxCorrection()
 
 void FaceCenteredBoundaryVariable::CopyPolarBufferSameProcess(
     const SimpleNeighborBlock& snb, int ssize, int polar_block_index, bool is_north) {
@@ -610,8 +612,8 @@ void FaceCenteredBoundaryVariable::CopyPolarBufferSameProcess(
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::SendEMFCorrection()
-//  \brief Restrict, pack and send the surface EMF to the coarse neighbor(s) if needed
+//! \fn void FaceCenteredBoundaryVariable::SendFluxCorrection()
+//! \brief Restrict, pack and send the surface EMF to the coarse neighbor(s) if needed
 
 void FaceCenteredBoundaryVariable::SendFluxCorrection() {
   MeshBlock *pmb=pmy_block_;
@@ -675,9 +677,9 @@ void FaceCenteredBoundaryVariable::SendFluxCorrection() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Add up the EMF received from a block on the same level
-//         Later they will be divided in the AverageFluxBoundary function
+//!                                                               const NeighborBlock& nb)
+//! \brief Add up the EMF received from a block on the same level
+//!        Later they will be divided in the AverageFluxBoundary function
 
 void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
                                                            const NeighborBlock& nb) {
@@ -930,9 +932,9 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Add up the EMF received from a block on the finer level
-//         Later they will be divided in the AverageFluxBoundary function
+//!                                                               const NeighborBlock& nb)
+//! \brief Add up the EMF received from a block on the finer level
+//!        Later they will be divided in the AverageFluxBoundary function
 
 void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
                                                            const NeighborBlock& nb) {
@@ -1179,8 +1181,8 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SetFluxBoundaryFromPolar(Real **buf_list,
-//                                                            int num_bufs, bool is_north)
-//  \brief Overwrite EMF values along polar axis with azimuthal averages
+//!                                                           int num_bufs, bool is_north)
+//! \brief Overwrite EMF values along polar axis with azimuthal averages
 
 void FaceCenteredBoundaryVariable::SetFluxBoundaryFromPolar(Real **buf_list, int num_bufs,
                                                             bool is_north) {
@@ -1202,7 +1204,7 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromPolar(Real **buf_list, int
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ClearCoarseFluxBoundary()
-//  \brief Clear the EMFs on the surface/edge contacting with a finer block
+//! \brief Clear the EMFs on the surface/edge contacting with a finer block
 
 void FaceCenteredBoundaryVariable::ClearCoarseFluxBoundary() {
   MeshBlock *pmb = pmy_block_;
@@ -1343,7 +1345,7 @@ void FaceCenteredBoundaryVariable::ClearCoarseFluxBoundary() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::AverageFluxBoundary()
-// \brief Set EMF boundary received from a block on the finer level
+//! \brief Set EMF boundary received from a block on the finer level
 
 void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
   MeshBlock *pmb = pmy_block_;
@@ -1535,7 +1537,9 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::PolarFluxBoundarySingleAzimuthalBlock()
-// \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
+//! \brief polar boundary edge-case:
+//!
+//! single MeshBlock spans the entire azimuthal (x3) range
 
 void FaceCenteredBoundaryVariable::PolarFluxBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb = pmy_block_;
@@ -1596,7 +1600,7 @@ void FaceCenteredBoundaryVariable::PolarFluxBoundarySingleAzimuthalBlock() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReceiveFluxCorrection()
-//  \brief Receive and Apply the surface EMF to the coarse neighbor(s) if needed
+//! \brief Receive and Apply the surface EMF to the coarse neighbor(s) if needed
 
 bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
   MeshBlock *pmb = pmy_block_;

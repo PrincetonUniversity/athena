@@ -37,8 +37,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn int HydroBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
-//                                                   const NeighborBlock& nb)
-//  \brief Set flux correction buffers for sending to a block on the same level
+//!                                                  const NeighborBlock& nb)
+//! \brief Set surface hydro flux buffers for sending to a block on the same level
 
 int HydroBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
                                                        const NeighborBlock& nb) {

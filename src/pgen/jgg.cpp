@@ -4,19 +4,18 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file jgg.cpp
-//
-//  \brief Problem generator for linear MHD in shearing sheet.
-//
-// PURPOSE:  Problem generator for linear MHD in shearing sheet. Based on the initial
-//   conditions described in "ORBITAL ADVECTION BY INTERPOLATION: A FAST AND ACCURATE
-//   NUMERICAL SCHEME FOR SUPER-FAST MHD FLOWS" by Johnson, Guan, & Gammie, or JGG.
-//
-// Two kinds of perturbations are possible:
-//
-//- ipert = 1 - MHD simple shwave test
-//- ipert = 2 - MHD compressive shwave test of JGG -- their figure 11
-//
-// REFERENCE: Johnson, Guan, & Gammie, ApJS, 177, 373 (2008)
+//! \brief Problem generator for linear MHD in shearing sheet.
+//!
+//! PURPOSE:  Problem generator for linear MHD in shearing sheet. Based on the initial
+//!   conditions described in "ORBITAL ADVECTION BY INTERPOLATION: A FAST AND ACCURATE
+//!   NUMERICAL SCHEME FOR SUPER-FAST MHD FLOWS" by Johnson, Guan, & Gammie, or JGG.
+//!
+//! Two kinds of perturbations are possible:
+//!
+//! - ipert = 1 - MHD simple shwave test
+//! - ipert = 2 - MHD compressive shwave test of JGG -- their figure 11
+//!
+//! REFERENCE: Johnson, Guan, & Gammie, ApJS, 177, 373 (2008)
 //============================================================================
 
 // C headers

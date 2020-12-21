@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gr_torus.cpp
-//  \brief Problem generator for magnetized Fishbone-Moncrief torus.
+//! \brief Problem generator for magnetized Fishbone-Moncrief torus.
 
 // C headers
 

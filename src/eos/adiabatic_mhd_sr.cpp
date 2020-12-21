@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file adiabatic_mhd_sr.cpp
-//  \brief Implements functions for going between primitive and conserved variables in
-//  special-relativistic MHD, as well as for computing wavespeeds.
+//! \brief Implements functions for going between primitive and conserved variables in
+//! special-relativistic MHD, as well as for computing wavespeeds.
 
 // C headers
 

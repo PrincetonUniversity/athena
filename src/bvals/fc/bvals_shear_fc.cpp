@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_shear_fc.cpp
-//  \brief functions that apply shearing box BCs for face-centered quantities
-//======================================================================================
+//! \brief functions that apply shearing box BCs for face-centered quantities
+//========================================================================================
 
 // C headers
 
@@ -41,10 +41,10 @@
 #endif
 
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn int FaceCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
-//                                               FaceField &src, Real *buf, int nb)
-//  \brief Load shearing box field boundary buffers
+//!                                              FaceField &src, Real *buf, int nb)
+//! \brief Load shearing box field boundary buffers
 
 void FaceCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
                                                FaceField &src, Real *buf, int nb) {
@@ -97,9 +97,9 @@ void FaceCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
-//  \brief Send shearing box boundary buffers for field variables
+//! \brief Send shearing box boundary buffers for field variables
 
 void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
@@ -131,13 +131,13 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
-//                          AthenaArray<Real> &src, Real *buf, const int nb)
-//  \brief Set field shearing box boundary received from a block on the same level
-
-// TODO(felker): deduplicate with CellCenteredBoundaryVariable::SetShearingBoxBound...()
-// Only differences are the calculation of psi,pei,psj,pej, and 3x UnpackData calls
+//!                         AthenaArray<Real> &src, Real *buf, const int nb)
+//! \brief Set field shearing box boundary received from a block on the same level
+//!
+//! TODO(felker): deduplicate with CellCenteredBoundaryVariable::SetShearingBoxBound...()
+//! Only differences are the calculation of psi,pei,psj,pej, and 3x UnpackData calls
 
 void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
                            FaceField &dst, Real *buf, const int nb) {
@@ -189,11 +189,13 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
   return;
 }
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
-//  \brief receive shearing box boundary data for field(face-centered) variables
+//! \brief receive shearing box boundary data for field(face-centered) variables
+//!
+//! \todo (felker):
+//! - DRY. completely identical to CellCenteredBoundaryVariable implementation
 
-// TODO(felker): DRY. completely identical to CellCenteredBoundaryVariable implementation
 bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   bool flag[2]{true, true};
   int nb_offset[2]{0, 4};
@@ -233,7 +235,7 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
 
 //--------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers()
-//  \brief receive shearing box boundary data for field(face-centered) variables
+//! \brief receive shearing box boundary data for field(face-centered) variables
 void FaceCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
@@ -327,6 +329,10 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
   }
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void FaceCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
+//! \brief initiate MPI_Irecv
 
 void FaceCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL

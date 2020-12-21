@@ -16,14 +16,14 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn double ran2(std::int64_t *idum)
-//  \brief  Extracted from the Numerical Recipes in C (version 2) code. Modified
-//   to use doubles instead of floats. -- T. A. Gardiner -- Aug. 12, 2003
-//
-// Long period (> 2 x 10^{18}) random number generator of L'Ecuyer with Bays-Durham
-// shuffle and added safeguards.  Returns a uniform random deviate between 0.0 and 1.0
-// (exclusive of the endpoint values).  Call with idum = a negative integer to
-// initialize; thereafter, do not alter idum between successive deviates in a sequence.
-// RNMX should appriximate the largest floating-point value that is less than 1.
+//! \brief  Extracted from the Numerical Recipes in C (version 2) code. Modified
+//!  to use doubles instead of floats. -- T. A. Gardiner -- Aug. 12, 2003
+//!
+//! Long period (> 2 x 10^{18}) random number generator of L'Ecuyer with Bays-Durham
+//! shuffle and added safeguards.  Returns a uniform random deviate between 0.0 and 1.0
+//! (exclusive of the endpoint values).  Call with idum = a negative integer to
+//! initialize; thereafter, do not alter idum between successive deviates in a sequence.
+//! RNMX should appriximate the largest floating-point value that is less than 1.
 
 #define IMR1 2147483563
 #define IMR2 2147483399

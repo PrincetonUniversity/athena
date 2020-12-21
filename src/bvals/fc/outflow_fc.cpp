@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file outflow.cpp
-//  \brief implementation of outflow BCs in each dimension
+//! \file outflow_fc.cpp
+//! \brief implementation of outflow BCs in each dimension
 
 // C headers
 
@@ -17,8 +17,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowInnerX1(
-//               Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief OUTFLOW boundary conditions, inner x1 boundary
+//!              Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
+//! \brief OUTFLOW boundary conditions, inner x1 boundary
 
 void FaceCenteredBoundaryVariable::OutflowInnerX1(
     Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
@@ -52,8 +52,8 @@ void FaceCenteredBoundaryVariable::OutflowInnerX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowOuterX1(
-//               Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
-//  \brief OUTFLOW boundary conditions, outer x1 boundary
+//!              Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
+//! \brief OUTFLOW boundary conditions, outer x1 boundary
 
 void FaceCenteredBoundaryVariable::OutflowOuterX1(
     Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
@@ -87,8 +87,8 @@ void FaceCenteredBoundaryVariable::OutflowOuterX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowInnerX2(
-//               Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
-//  \brief OUTFLOW boundary conditions, inner x2 boundary
+//!              Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
+//! \brief OUTFLOW boundary conditions, inner x2 boundary
 
 void FaceCenteredBoundaryVariable::OutflowInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
@@ -122,8 +122,8 @@ void FaceCenteredBoundaryVariable::OutflowInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowOuterX2(
-//               Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
-//  \brief OUTFLOW boundary conditions, outer x2 boundary
+//!              Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
+//! \brief OUTFLOW boundary conditions, outer x2 boundary
 
 void FaceCenteredBoundaryVariable::OutflowOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
@@ -157,8 +157,8 @@ void FaceCenteredBoundaryVariable::OutflowOuterX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowInnerX3(
-//               Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
-//  \brief OUTFLOW boundary conditions, inner x3 boundary
+//!              Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
+//! \brief OUTFLOW boundary conditions, inner x3 boundary
 
 void FaceCenteredBoundaryVariable::OutflowInnerX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
@@ -192,8 +192,8 @@ void FaceCenteredBoundaryVariable::OutflowInnerX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::OutflowOuterX3(
-//               Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
-//  \brief OUTFLOW boundary conditions, outer x3 boundary
+//!              Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
+//! \brief OUTFLOW boundary conditions, outer x3 boundary
 
 void FaceCenteredBoundaryVariable::OutflowOuterX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {
