@@ -33,6 +33,7 @@
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../mesh/mesh.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
