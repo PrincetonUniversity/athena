@@ -472,8 +472,6 @@ void FFTBlock::InitializeMPI() {
 #ifdef MPI_PARALLEL
   std::stringstream msg;
   if ((pdim_ == 2 || pdim_ ==1) && dim_ == 3) {
-
-
     swap1_ = true; swap2_ = true;
     permute1_ = 2; permute2_ = 2;
     if (decomp_ == DecompositionNames::x_decomp) {
