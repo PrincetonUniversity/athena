@@ -893,6 +893,9 @@ TaskStatus SuperTimeStepTaskList::Primitives_STS(MeshBlock *pmb, int stage) {
       pmb->peos->ConservedToPrimitive(ph->u, ph->w, pf->b,
                                       ph->w, pf->bcc, pmb->pcoord,
                                       il, iu, jl, ju, kl, ku);
+      if(pmb->porb->orbital_advection_defined) {
+        pmb->porb->ResetOrbitalSystemOutputFlag();
+      }
     }
 
     if (do_sts_scalar) {

@@ -116,3 +116,12 @@ void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &w0,
   }
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void OrbitalAdvection::ResetOrbitalSystemOutputFlag()
+//! \brief reset orbital_system_output_done flag for HydroDiffusion()
+
+void OrbitalAdvection::ResetOrbitalSystemOutputFlag() {
+  orbital_system_output_done = 3;
+  return;
+}

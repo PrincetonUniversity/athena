@@ -55,6 +55,7 @@ class OrbitalAdvection{
   void CalculateOrbitalAdvectionFC(const Real dt, EdgeField &e);
   void SetOrbitalSystemOutput(const AthenaArray<Real> &w0, const AthenaArray<Real> &u0,
                               const OrbitalTransform trans);
+  void ResetOrbitalSystemOutputFlag();
   Real NewOrbitalAdvectionDt();
   void RemapFluxPlm(AthenaArray<Real> &pflux_, const AthenaArray<Real> &pbuf_,
                     const Real eps_, const int osgn_, const int k, const int j,
