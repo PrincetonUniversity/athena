@@ -140,7 +140,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
           AddTask(SEND_HYDFLXSH,RECV_HYDFLX);
           AddTask(RECV_HYDFLXSH,(SEND_HYDFLX|RECV_HYDFLX));
           AddTask(INT_HYD,RECV_HYDFLXSH);
-        else {
+        } else {
           AddTask(INT_HYD,RECV_HYDFLX);
         }
       } else {
