@@ -293,9 +293,9 @@ void Mesh::UserWorkInLoop() {
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           for (int j=pmb->js; j<=pmb->je; j++) {
             for (int i=pmb->is; i<=pmb->ie; i++) {
-              int ti = static_cast<int>(loc.lx1)*pmb->block_size.nx1+(i-pmb->is);
-              int tj = static_cast<int>(loc.lx2)*pmb->block_size.nx2+(j-pmb->js);
-              int tk = static_cast<int>(loc.lx3)*pmb->block_size.nx3+(k-pmb->ks);
+              int ti = loc.lx1*pmb->block_size.nx1+(i-pmb->is);
+              int tj = loc.lx2*pmb->block_size.nx2+(j-pmb->js);
+              int tk = loc.lx3*pmb->block_size.nx3+(k-pmb->ks);
               Real x1 = pmb->pcoord->x1v(i);
               Real x2 = pmb->pcoord->x2v(j);
               Real vx = pmb->phydro->w(IVX,k,j,i);
@@ -317,10 +317,10 @@ void Mesh::UserWorkInLoop() {
               int ii = (i-pmb->cis)*2+pmb->is;
               int jj = (j-pmb->cjs)*2+pmb->js;
               int kk = k;
-              int ti = static_cast<int>(loc.lx1>>1)*pmb->block_size.nx1
-                       +static_cast<int>(loc.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
-              int tj = static_cast<int>(loc.lx2>>1)*pmb->block_size.nx2
-                       +static_cast<int>(loc.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
+              int ti = (loc.lx1>>1)*pmb->block_size.nx1
+                       +(loc.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
+              int tj = (loc.lx2>>1)*pmb->block_size.nx2
+                       +(loc.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
               int tk = k;
               Real vol00 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii  );
               Real vol01 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii+1);
@@ -357,15 +357,12 @@ void Mesh::UserWorkInLoop() {
                 int ii = (i-pmb->cis)*2+pmb->is;
                 int jj = (j-pmb->cjs)*2+pmb->js;
                 int kk = (k-pmb->cks)*2+pmb->ks;
-                int ti = static_cast<int>(loc.lx1>>1)*pmb->block_size.nx1
-                         +static_cast<int>(loc.lx1%2)*(pmb->block_size.nx1/2)
-                         +(i-pmb->cis);
-                int tj = static_cast<int>(loc.lx2>>1)*pmb->block_size.nx2
-                         +static_cast<int>(loc.lx2%2)*(pmb->block_size.nx2/2)
-                         +(j-pmb->cjs);
-                int tk = static_cast<int>(loc.lx3>>1)*pmb->block_size.nx3
-                         +static_cast<int>(loc.lx3%2)*(pmb->block_size.nx3/2)
-                         +(k-pmb->cks);
+                int ti = (loc.lx1>>1)*pmb->block_size.nx1
+                         +(loc.lx1%2)*(pmb->block_size.nx1/2)+(i-pmb->cis);
+                int tj = (loc.lx2>>1)*pmb->block_size.nx2
+                         +(loc.lx2%2)*(pmb->block_size.nx2/2)+(j-pmb->cjs);
+                int tk = (loc.lx3>>1)*pmb->block_size.nx3
+                         +(loc.lx3%2)*(pmb->block_size.nx3/2)+(k-pmb->cks);
                 Real vol000 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii  );
                 Real vol001 = pmb->pcoord->GetCellVolume(kk  ,jj  ,ii+1);
                 Real vol010 = pmb->pcoord->GetCellVolume(kk  ,jj+1,ii  );
