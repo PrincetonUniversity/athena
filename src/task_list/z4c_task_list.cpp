@@ -236,19 +236,28 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
   //---------------------------------------------------------------------------
   // Output frequency control (on task-list)
 #ifdef Z4C_ASSERT_FINITE
-  TaskListTriggers.assert_is_finite.next_time = pm->start_time;
+  TaskListTriggers.assert_is_finite.next_time = pm->time;
   TaskListTriggers.assert_is_finite.dt = pin->GetOrAddReal("z4c",
     "dt_assert_is_finite", 0);
 #endif // Z4C_ASSERT_FINITE
 
   // For constraint calculation
-  TaskListTriggers.con.next_time = pm->start_time;
+  TaskListTriggers.con.next_time = pm->time;
   // Seed TaskListTriggers.con.dt in main
 
 #ifdef Z4C_WEXT
-  TaskListTriggers.wave_extraction.next_time = pm->start_time;
-  TaskListTriggers.wave_extraction.dt = pin->GetOrAddReal("z4c",
-    "dt_wave_extraction", 0);
+  double intpart;
+  double fractpart = modf (pm->time , &intpart);
+  // Ensure wave extraction dt is a multiple of evolution dt
+  TaskListTriggers.wave_extraction.dt = round(pin->GetOrAddReal("z4c",
+      "dt_wave_extraction", 0)/pm->dt)*pm->dt;
+  // When initializing at restart, this procedure ensures to restart
+  // extraction from right time
+  TaskListTriggers.wave_extraction.next_time = pm->time;
+  while (fractpart > 0) {
+    TaskListTriggers.wave_extraction.next_time += pm->dt;
+    fractpart = modf (TaskListTriggers.wave_extraction.next_time, &intpart);
+  }
 #endif
   //---------------------------------------------------------------------------
 
@@ -637,7 +646,6 @@ TaskStatus Z4cIntegratorTaskList::Z4c_Weyl(MeshBlock *pmb, int stage) {
 
 #ifdef Z4C_WEXT
   Mesh *pm = pmb->pmy_mesh;
-
   if (CurrentTimeCalculationThreshold(pm, &TaskListTriggers.wave_extraction)) {
     pmb->pz4c->Z4cWeyl(pmb->pz4c->storage.adm, pmb->pz4c->storage.mat,
                        pmb->pz4c->storage.weyl);
@@ -732,9 +740,8 @@ bool Z4cIntegratorTaskList::CurrentTimeCalculationThreshold(
     return false;
 
   Real cur_time = pm->time + pm->dt;
-
-  if ((cur_time == pm->start_time) ||
-      (cur_time >= variable->next_time) ||
+  //if ((cur_time == pm->time) ||
+  if    ((cur_time - pm->dt >= variable->next_time) ||
       (cur_time >= pm->tlim)) {
     variable->to_update = true;
     return true;
