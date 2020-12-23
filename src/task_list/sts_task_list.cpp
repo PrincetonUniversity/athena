@@ -368,7 +368,7 @@ void SuperTimeStepTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   } else if (id == SEND_FLDFLX) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::SendEMF);
+        (&SuperTimeStepTaskList::SendEMF_STS);
     task_list_[ntasks].lb_time = true;
   } else if (id == RECV_HYDFLX) {
     task_list_[ntasks].TaskFunc=
@@ -712,6 +712,17 @@ TaskStatus SuperTimeStepTaskList::CalculateEMF_STS(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pf->ComputeCornerE_STS();
     return TaskStatus::next;
+  }
+  return TaskStatus::fail;
+}
+
+//----------------------------------------------------------------------------------------
+//! Functions to send emf
+
+TaskStatus SuperTimeStepTaskList::SendEMF_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    pmb->pfield->fbvar.SendFluxCorrection_STS();
+    return TaskStatus::success;
   }
   return TaskStatus::fail;
 }

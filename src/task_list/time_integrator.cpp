@@ -1508,9 +1508,7 @@ TaskStatus TimeIntegratorTaskList::SendHydroFlux(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SendEMF(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage ||
-        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
-        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+    if (stage_wghts[stage-1].main_stage) {
       pmb->pfield->fbvar.SendFluxCorrection();
     }
     return TaskStatus::success;
