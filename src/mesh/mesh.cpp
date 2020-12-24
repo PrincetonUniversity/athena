@@ -237,10 +237,11 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
         << "the Mesh must be evenly divisible by the MeshBlock" << std::endl;
     ATHENA_ERROR(msg);
   }
-  if (block_size.nx1 < 4 || (block_size.nx2 < 4 && f2)
-      || (block_size.nx3 < 4 && f3)) {
+  if (block_size.nx1 < 2*NGHOST || (block_size.nx2 < 2*NGHOST && f2)
+      || (block_size.nx3 < 2*NGHOST && f3)) {
     msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "block_size must be larger than or equal to 4 cells." << std::endl;
+        << "block_size must be larger than or equal to 2*NGHOST = " << 2*NGHOST
+        << " cells." << std::endl;
     ATHENA_ERROR(msg);
   }
 
