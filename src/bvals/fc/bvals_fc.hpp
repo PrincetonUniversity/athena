@@ -72,7 +72,6 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void SetBoundaries() override;
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
-  void SendFluxCorrection_STS();
   //!@}
 
   //!@{
@@ -168,7 +167,6 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   int LoadFluxBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
   int LoadFluxBoundaryBufferToPolar(Real *buf, const SimpleNeighborBlock &nb,
                                     bool is_north);
-  int LoadFluxBoundaryBufferSameLevel_STS(Real *buf, const NeighborBlock& nb);
 
   // all 7x only called in ReceiveFluxCorrection():
   void SetFluxBoundarySameLevel(Real *buf, const NeighborBlock& nb);

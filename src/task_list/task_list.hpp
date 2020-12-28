@@ -234,8 +234,6 @@ class SuperTimeStepTaskList : public TaskList {
   TaskStatus CalculateEMF_STS(MeshBlock *pmb, int stage);
   TaskStatus CalculateScalarFlux_STS(MeshBlock *pmb, int stage);
 
-  TaskStatus SendEMF_STS(MeshBlock *pmb, int stage);
-
   TaskStatus IntegrateHydro_STS(MeshBlock *pmb, int stage);
   TaskStatus IntegrateField_STS(MeshBlock *pmb, int stage);
   TaskStatus IntegrateScalars_STS(MeshBlock *pmb, int stage);
