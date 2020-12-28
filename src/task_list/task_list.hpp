@@ -135,8 +135,6 @@ class TimeIntegratorTaskList : public TaskList {
   std::string integrator;
   Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
   int nstages_main; // number of stages labeled main_stage
-  bool ORBITAL_ADVECTION; // flag for orbital advection (true w/ , false w/o)
-  bool SHEAR_PERIODIC; // flag for shear periodic boundary (true w/ , false w/o)
 
   // functions
   TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);
@@ -206,6 +204,8 @@ class TimeIntegratorTaskList : public TaskList {
   bool CheckNextMainStage(int stage) const {return stage_wghts[stage%nstages].main_stage;}
 
  private:
+  bool ORBITAL_ADVECTION; // flag for orbital advection (true w/ , false w/o)
+  bool SHEAR_PERIODIC; // flag for shear periodic boundary (true w/ , false w/o)
   IntegratorWeight stage_wghts[MAX_NSTAGE];
 
   void AddTask(const TaskID& id, const TaskID& dep) override;
@@ -249,6 +249,7 @@ class SuperTimeStepTaskList : public TaskList {
 
 
  private:
+  bool SHEAR_PERIODIC; // flag for shear periodic boundary (true w/ , false w/o)
   // currently intiialized but unused. May use it for direct calls to TimeIntegrator fns:
   TimeIntegratorTaskList *ptlist_;
   void AddTask(const TaskID&, const TaskID& dep) override;

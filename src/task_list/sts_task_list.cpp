@@ -46,6 +46,9 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
     ParameterInput *pin, Mesh *pm, TimeIntegratorTaskList *ptlist) :
     sts_max_dt_ratio(pin->GetOrAddReal("time", "sts_max_dt_ratio", -1.0)),
     ptlist_(ptlist) {
+  // Read a flag for shear periodic
+  SHEAR_PERIODIC = pm->shear_periodic;
+
   // Check for valid STS integrator:
   if (pm->sts_integrator != "rkl1" && pm->sts_integrator != "rkl2") {
     std::stringstream msg;
@@ -134,10 +137,10 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
     }
 
     if (do_sts_hydro) {
-      if (pm->multilevel || pm->shear_periodic) { // SMR or AMR or shear periodic
+      if (pm->multilevel || SHEAR_PERIODIC) { // SMR or AMR or shear periodic
         AddTask(SEND_HYDFLX,CALC_HYDFLX);
         AddTask(RECV_HYDFLX,CALC_HYDFLX);
-        if (pm->shear_periodic) {
+        if (SHEAR_PERIODIC) {
           AddTask(SEND_HYDFLXSH,RECV_HYDFLX);
           AddTask(RECV_HYDFLXSH,(SEND_HYDFLX|RECV_HYDFLX));
           AddTask(INT_HYD,RECV_HYDFLXSH);
@@ -150,17 +153,17 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
       AddTask(SEND_HYD,INT_HYD);
       AddTask(RECV_HYD,NONE);
       AddTask(SETB_HYD,(RECV_HYD|INT_HYD));
-      if (pm->shear_periodic) {
+      if (SHEAR_PERIODIC) {
         AddTask(SEND_HYDSH,SETB_HYD);
         AddTask(RECV_HYDSH,SEND_HYDSH);
       }
     }
 
     if (do_sts_scalar) {
-      if (pm->multilevel || pm->shear_periodic) {
+      if (pm->multilevel || SHEAR_PERIODIC) {
         AddTask(SEND_SCLRFLX,CALC_SCLRFLX);
         AddTask(RECV_SCLRFLX,CALC_SCLRFLX);
-        if (pm->shear_periodic) {
+        if (SHEAR_PERIODIC) {
           AddTask(SEND_SCLRFLXSH,RECV_SCLRFLX);
           AddTask(RECV_SCLRFLXSH,(SEND_SCLRFLX|RECV_SCLRFLX));
           AddTask(INT_SCLR,RECV_SCLRFLXSH);
@@ -173,7 +176,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
       AddTask(SEND_SCLR,INT_SCLR);
       AddTask(RECV_SCLR,NONE);
       AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
-      if (pm->shear_periodic) {
+      if (SHEAR_PERIODIC) {
         AddTask(SEND_SCLRSH,SETB_SCLR);
         AddTask(RECV_SCLRSH,SEND_SCLRSH);
       }
@@ -188,7 +191,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
       }
       AddTask(SEND_FLDFLX,CALC_FLDFLX);
       AddTask(RECV_FLDFLX,SEND_FLDFLX);
-      if (pm->shear_periodic) {
+      if (SHEAR_PERIODIC) {
         AddTask(SEND_EMFSH,RECV_FLDFLX);
         AddTask(RECV_EMFSH,RECV_FLDFLX);
         AddTask(INT_FLD,RECV_EMFSH);
@@ -198,7 +201,7 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
       AddTask(SEND_FLD,INT_FLD);
       AddTask(RECV_FLD,NONE);
       AddTask(SETB_FLD,(RECV_FLD|INT_FLD));
-      if (pm->shear_periodic) {
+      if (SHEAR_PERIODIC) {
         AddTask(SEND_FLDSH,SETB_FLD);
         AddTask(RECV_FLDSH,SEND_FLDSH);
       }
@@ -207,14 +210,14 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
       if (pm->multilevel) { // SMR or AMR
         if (do_sts_scalar) {
           if (do_sts_hydro) {
-            if (pm->shear_periodic) {
+            if (SHEAR_PERIODIC) {
               AddTask(PROLONG,(SEND_HYD|RECV_HYDSH|SEND_FLD|RECV_FLDSH
                                |SEND_SCLR|RECV_SCLRSH));
             } else {
               AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD|SEND_SCLR|SETB_SCLR));
             }
           } else {
-            if (pm->shear_periodic) {
+            if (SHEAR_PERIODIC) {
               AddTask(PROLONG,(SEND_FLD|RECV_FLDSH|SEND_SCLR|RECV_SCLRSH));
             } else {
               AddTask(PROLONG,(SEND_FLD|SETB_FLD|SEND_SCLR|SETB_SCLR));
@@ -222,13 +225,13 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
           }
         } else {
           if (do_sts_hydro) {
-            if (pm->shear_periodic) {
+            if (SHEAR_PERIODIC) {
               AddTask(PROLONG,(SEND_HYD|RECV_HYDSH|SEND_FLD|RECV_FLDSH));
             } else {
               AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD));
             }
           } else {
-            if (pm->shear_periodic) {
+            if (SHEAR_PERIODIC) {
               AddTask(PROLONG,(SEND_FLD|RECV_FLDSH));
             } else {
               AddTask(PROLONG,(SEND_FLD|SETB_FLD));
@@ -239,13 +242,13 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
       } else {
         if (do_sts_scalar) {
           if (do_sts_hydro) {
-            if (pm->shear_periodic) {
+            if (SHEAR_PERIODIC) {
               AddTask(CONS2PRIM,(RECV_HYDSH|RECV_FLDSH|RECV_SCLRSH));
             } else {
               AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD|SETB_SCLR));
             }
           } else {
-            if (pm->shear_periodic) {
+            if (SHEAR_PERIODIC) {
               AddTask(CONS2PRIM,(RECV_FLDSH|RECV_SCLRSH));
             } else {
               AddTask(CONS2PRIM,(SETB_FLD|SETB_SCLR));
@@ -253,13 +256,13 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
           }
         } else {
           if (do_sts_hydro) {
-            if (pm->shear_periodic) {
+            if (SHEAR_PERIODIC) {
               AddTask(CONS2PRIM,(RECV_HYDSH|RECV_FLDSH));
             } else {
               AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD));
             }
           } else {
-            if (pm->shear_periodic) {
+            if (SHEAR_PERIODIC) {
               AddTask(CONS2PRIM,RECV_FLDSH);
             } else {
               AddTask(CONS2PRIM,SETB_FLD);
@@ -271,13 +274,13 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
       // prolongate, compute new primitives
       if (pm->multilevel) { // SMR or AMR
         if (do_sts_scalar) {
-          if (pm->shear_periodic) {
+          if (SHEAR_PERIODIC) {
             AddTask(PROLONG,(SEND_HYD|RECV_HYDSH|SEND_SCLR|RECV_SCLRSH));
           } else {
             AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_SCLR|SETB_SCLR));
           }
         } else {
-          if (pm->shear_periodic) {
+          if (SHEAR_PERIODIC) {
             AddTask(PROLONG,(SEND_HYD|RECV_HYDSH));
           } else {
             AddTask(PROLONG,(SEND_HYD|SETB_HYD));
@@ -286,13 +289,13 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
         AddTask(CONS2PRIM,PROLONG);
       } else {
         if (do_sts_scalar) {
-          if (pm->shear_periodic) {
+          if (SHEAR_PERIODIC) {
             AddTask(CONS2PRIM,(RECV_HYDSH|RECV_SCLRSH));
           } else {
             AddTask(CONS2PRIM,(SETB_HYD|SETB_SCLR));
           }
         } else {
-          if (pm->shear_periodic) {
+          if (SHEAR_PERIODIC) {
             AddTask(CONS2PRIM,RECV_HYDSH);
           } else {
             AddTask(CONS2PRIM,SETB_HYD);
@@ -302,14 +305,14 @@ SuperTimeStepTaskList::SuperTimeStepTaskList(
     } else {  // only scalar diffusion
       // prolongate, compute new primitives
       if (pm->multilevel) { // SMR or AMR
-        if (pm->shear_periodic) {
+        if (SHEAR_PERIODIC) {
           AddTask(PROLONG,(SEND_SCLR|RECV_SCLRSH));
         } else {
           AddTask(PROLONG,(SEND_SCLR|SETB_SCLR));
         }
         AddTask(CONS2PRIM,PROLONG);
       } else {
-        if (pm->shear_periodic) {
+        if (SHEAR_PERIODIC) {
           AddTask(CONS2PRIM,RECV_SCLRSH);
         } else {
           AddTask(CONS2PRIM,SETB_SCLR);
@@ -644,7 +647,7 @@ void SuperTimeStepTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   }
 
   // Compute Shear for Shearing Box at stage = 1
-  if (pm->shear_periodic) {
+  if (SHEAR_PERIODIC) {
     if (stage == 1) {
       if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before) {
         pmb->pbval->ComputeShear(pm->time, pm->time);
