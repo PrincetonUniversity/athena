@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file orbital_system_output.cpp
-//! \brief functions for orbital system output
+//! \file orbital_system_conversion.cpp
+//! \brief functions for orbital system conversion
 
 // C/C++ headers
 #include <cstring>    // memcpy
@@ -23,14 +23,14 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &w0,
+//! \fn void OrbitalAdvection::ConvertOrbitalSystem(const AthenaArray<Real> &w0,
 //!                            const AthenaArray<Real> &u0, const OrbitalTransform trans)
-//! \brief calculate profiles including orbital velocity
+//! \brief convert the orbital system to the normal system
 
-void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &w0,
+void OrbitalAdvection::ConvertOrbitalSystem(const AthenaArray<Real> &w0,
                        const AthenaArray<Real> &u0, const OrbitalTransform trans) {
   int flag = static_cast<int>(trans);
-  if ((orbital_system_output_done&flag) > 0) {
+  if ((orbital_system_conversion_done&flag) > 0) {
     int il = pmb_->is-(NGHOST); int jl = pmb_->js; int kl = pmb_->ks;
     int iu = pmb_->ie+(NGHOST); int ju = pmb_->je; int ku = pmb_->ke;
     if (nc2>1) {
@@ -42,7 +42,7 @@ void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &w0,
       ku += NGHOST;
     }
     // prim
-    if((orbital_system_output_done&flag)%2==1) {
+    if((orbital_system_conversion_done&flag)%2==1) {
       if(orbital_direction == 1) {
         for(int k=kl; k<=ku; k++) {
           for(int j=jl; j<=ju; j++) {
@@ -72,10 +72,10 @@ void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &w0,
           }
         }
       }
-      orbital_system_output_done -= 1;
+      orbital_system_conversion_done -= 1;
     }
     // cons
-    if((orbital_system_output_done&flag)>=2) {
+    if((orbital_system_conversion_done&flag)>=2) {
       if(orbital_direction == 1) {
         for(int k=kl; k<=ku; k++) {
           for(int j=jl; j<=ju; j++) {
@@ -111,17 +111,17 @@ void OrbitalAdvection::SetOrbitalSystemOutput(const AthenaArray<Real> &w0,
           }
         }
       }
-      orbital_system_output_done -= 2;
+      orbital_system_conversion_done -= 2;
     }
   }
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OrbitalAdvection::ResetOrbitalSystemOutputFlag()
-//! \brief reset orbital_system_output_done flag for HydroDiffusion()
+//! \fn void OrbitalAdvection::ResetOrbitalSystemConversionFlag()
+//! \brief orbital_system_conversion_done flag for HydroDiffusion() and Outputs
 
-void OrbitalAdvection::ResetOrbitalSystemOutputFlag() {
-  orbital_system_output_done = 3;
+void OrbitalAdvection::ResetOrbitalSystemConversionFlag() {
+  orbital_system_conversion_done = 3;
   return;
 }

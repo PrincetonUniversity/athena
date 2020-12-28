@@ -1692,8 +1692,8 @@ TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
         pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
         pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       // if using orbital advection, put modified conservative into the function
-      if(pmb->porb->orbital_advection_defined) {
-        pmb->porb->SetOrbitalSystemOutput(ph->w, ph->u, OrbitalTransform::prim);
+      if (pmb->porb->orbital_advection_defined) {
+        pmb->porb->ConvertOrbitalSystem(ph->w, ph->u, OrbitalTransform::prim);
         ph->hdif.CalcDiffusionFlux(pmb->porb->w_orb, pmb->porb->u_orb, ph->flux);
       } else {
         ph->hdif.CalcDiffusionFlux(ph->w, ph->u, ph->flux);
@@ -1984,8 +1984,8 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
     pmb->peos->ConservedToPrimitive(ph->u, ph->w, pf->b,
                                     ph->w1, pf->bcc, pmb->pcoord,
                                     il, iu, jl, ju, kl, ku);
-    if(pmb->porb->orbital_advection_defined) {
-      pmb->porb->ResetOrbitalSystemOutputFlag();
+    if (pmb->porb->orbital_advection_defined) {
+      pmb->porb->ResetOrbitalSystemConversionFlag();
     }
     if (NSCALARS > 0) {
       // r1/r_old for GR is currently unused:

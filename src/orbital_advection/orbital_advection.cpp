@@ -233,8 +233,8 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
       }
     }
 
-    // initialize orbital_system_output_done flag
-    orbital_system_output_done = 3;
+    // initialize orbital_system_conversion_done flag
+    orbital_system_conversion_done = 3;
 
     // check orbital_uniform_mesh
     // TODO(tomo-ono): non-uniform mesh grids are not allowed now.

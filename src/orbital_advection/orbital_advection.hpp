@@ -35,7 +35,7 @@ Real SphOrbitalVelocity_t(OrbitalAdvection *porb, Real x_, Real y_, Real z_);
 
 Real ZeroOrbitalVelocity(OrbitalAdvection *porb, Real x_, Real y_, Real z_);
 
-// idntifiers for variable to be transformed in SetOrbitalSystemOutput
+// idntifiers for variable to be transformed in ConvertOrbitalSystem
 enum class OrbitalTransform {none=0, prim=1, cons=2, all=3};
 
 //! \class OrbitalAdvection
@@ -53,9 +53,9 @@ class OrbitalAdvection{
   void CalculateOrbitalAdvectionCC(const Real dt, AthenaArray<Real> &u,
                                    AthenaArray<Real> &s);
   void CalculateOrbitalAdvectionFC(const Real dt, EdgeField &e);
-  void SetOrbitalSystemOutput(const AthenaArray<Real> &w0, const AthenaArray<Real> &u0,
-                              const OrbitalTransform trans);
-  void ResetOrbitalSystemOutputFlag();
+  void ConvertOrbitalSystem(const AthenaArray<Real> &w0, const AthenaArray<Real> &u0,
+                            const OrbitalTransform trans);
+  void ResetOrbitalSystemConversionFlag();
   Real NewOrbitalAdvectionDt();
   void RemapFluxPlm(AthenaArray<Real> &pflux_, const AthenaArray<Real> &pbuf_,
                     const Real eps_, const int osgn_, const int k, const int j,
@@ -145,7 +145,7 @@ class OrbitalAdvection{
   // buffer for ppm
   AthenaArray<Real> s_src[5], d_src[13]; // s_src for deep copy, d_src for shallow copy
 
-  // flag calculating orbital system cons
-  int orbital_system_output_done; //
+  // flag for orbital system conversion
+  int orbital_system_conversion_done; //
 };
 #endif // ORBITAL_ADVECTION_ORBITAL_ADVECTION_HPP_
