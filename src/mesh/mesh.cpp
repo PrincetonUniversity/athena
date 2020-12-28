@@ -237,12 +237,22 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
         << "the Mesh must be evenly divisible by the MeshBlock" << std::endl;
     ATHENA_ERROR(msg);
   }
-  if (block_size.nx1 < 2*NGHOST || (block_size.nx2 < 2*NGHOST && f2)
-      || (block_size.nx3 < 2*NGHOST && f3)) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "block_size must be larger than or equal to 2*NGHOST = " << 2*NGHOST
-        << " cells." << std::endl;
-    ATHENA_ERROR(msg);
+  if (multilevel) { // SMR/AMR
+    if (block_size.nx1 < 2*NGHOST || (block_size.nx2 < 2*NGHOST && f2)
+        || (block_size.nx3 < 2*NGHOST && f3)) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "block_size must be larger than or equal to 2*NGHOST = " << 2*NGHOST
+          << " cells with SMR/AMR." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+  } else {
+    if (block_size.nx1 < NGHOST || (block_size.nx2 < NGHOST && f2)
+        || (block_size.nx3 < NGHOST && f3)) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "block_size must be larger than or equal to NGHOST = " << NGHOST
+          << " cells." << std::endl;
+      ATHENA_ERROR(msg);
+    }
   }
 
   // calculate the number of the blocks
