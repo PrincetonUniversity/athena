@@ -856,8 +856,9 @@ TaskStatus SuperTimeStepTaskList::Prolongation_STS(MeshBlock *pmb,
                                                    int stage) {
   BoundaryValues *pbval = pmb->pbval;
   if (stage <= nstages) {
-    pbval->ProlongateBoundaries(pmb->pmy_mesh->time, pmb->pmy_mesh->dt,
-                                pbval->bvars_sts);
+    Real time = pmb->pmy_mesh->time;
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_after) time += pmb->pmy_mesh->dt;
+    pbval->ProlongateBoundaries(time, 0.0, pbval->bvars_sts);
   } else {
     return TaskStatus::fail;
   }
@@ -946,8 +947,9 @@ TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage
     if (do_sts_scalar) {
       pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->r);
     }
-    pbval->ApplyPhysicalBoundaries(pmb->pmy_mesh->time, pmb->pmy_mesh->dt,
-                                   pbval->bvars_sts);
+    Real time = pmb->pmy_mesh->time;
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_after) time += pmb->pmy_mesh->dt;
+    pbval->ApplyPhysicalBoundaries(time, 0.0, pbval->bvars_sts);
   } else {
     return TaskStatus::fail;
   }
