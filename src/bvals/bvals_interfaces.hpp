@@ -75,7 +75,7 @@ enum BoundaryFace {undef=-1, inner_x1=0, outer_x1=1, inner_x2=2, outer_x2=3,
 // identifiers for boundary conditions
 enum class BoundaryFlag {block=-1, undef, reflect, outflow, user, periodic,
                          polar, polar_wedge, shear_periodic,
-                         mg_zerograd, mg_zerofixed, mg_multipole4, mg_multipole16};
+                         mg_zerograd, mg_zerofixed, mg_multipole};
 
 // identifiers for types of neighbor blocks (connectivity with current MeshBlock)
 enum class NeighborConnect {none, face, edge, corner}; // degenerate/shared part of block

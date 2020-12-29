@@ -205,12 +205,6 @@ TaskStatus MultigridTaskList::ClearBoundaryFluxCons(Multigrid *pmg) {
   return TaskStatus::next;
 }
 
-TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg) {
-  if (!(pmg->pmgbval->SendMultigridBoundaryBuffers(pmg->btype, false)))
-    return TaskStatus::fail;
-  return TaskStatus::success;
-}
-
 TaskStatus MultigridTaskList::SendBoundaryFluxCons(Multigrid *pmg) {
   if (!(pmg->pmgbval->SendMultigridBoundaryBuffers(pmg->btypef, false)))
     return TaskStatus::fail;
@@ -221,12 +215,6 @@ TaskStatus MultigridTaskList::SendBoundaryForProlongation(Multigrid *pmg) {
   if (!(pmg->pmgbval->SendMultigridBoundaryBuffers(pmg->btype, pmg->pmy_driver_->ffas_)))
     return TaskStatus::fail;
   return TaskStatus::success;
-}
-
-TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg) {
-  if (!(pmg->pmgbval->ReceiveMultigridBoundaryBuffers(pmg->btype, false)))
-    return TaskStatus::fail;
-  return TaskStatus::next;
 }
 
 TaskStatus MultigridTaskList::ReceiveBoundaryFluxCons(Multigrid *pmg) {

@@ -153,10 +153,8 @@ BoundaryFlag GetMGBoundaryFlag(const std::string& input_string) {
     return BoundaryFlag::mg_zerograd;
   } else if (input_string == "zerofixed") {
     return BoundaryFlag::mg_zerofixed;
-  } else if (input_string == "multipole4") {
-    return BoundaryFlag::mg_multipole4;
-  } else if (input_string == "multipole16") {
-    return BoundaryFlag::mg_multipole16;
+  } else if (input_string == "multipole") {
+    return BoundaryFlag::mg_multipole;
   } else if (input_string == "none") {
     return BoundaryFlag::undef;
   } else if (input_string == "block") {

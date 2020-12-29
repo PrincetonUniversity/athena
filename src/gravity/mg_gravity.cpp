@@ -88,7 +88,19 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
   mg_mesh_bcs_[outer_x3] =
               GetMGBoundaryFlag(pin->GetOrAddString("gravity", "ox3_bc", "none"));
   CheckBoundaryFunctions();
-  AllocateMultipoleCoefficients();
+  if (mporder_ >= 0) {
+    mporder_ = pin->GetOrAddInteger("gravity", "mporder", 0);
+    if (mporder_ != 2 && mporder_ != 4) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
+          << "To use multipole expansion for boundary conditions, "
+          << "\"mporder\" must be specified in the <gravity> block." << std::endl
+          << "Currently we support only mporder = 2 (up to quadrapole) "
+          << "and 4 (hexadecapole)." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    AllocateMultipoleCoefficients();
+  }
 
   mgtlist_ = new MultigridTaskList(this);
 

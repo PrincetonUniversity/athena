@@ -56,10 +56,8 @@ class MultigridTaskList {
   TaskStatus StartReceiveForProlongation(Multigrid *pmg);
   TaskStatus ClearBoundary(Multigrid *pmg);
   TaskStatus ClearBoundaryFluxCons(Multigrid *pmg);
-  TaskStatus SendBoundary(Multigrid *pmg);
   TaskStatus SendBoundaryFluxCons(Multigrid *pmg);
   TaskStatus SendBoundaryForProlongation(Multigrid *pmg);
-  TaskStatus ReceiveBoundary(Multigrid *pmg);
   TaskStatus ReceiveBoundaryFluxCons(Multigrid *pmg);
   TaskStatus ReceiveBoundaryForProlongation(Multigrid *pmg);
   TaskStatus SmoothRed(Multigrid *pmg);

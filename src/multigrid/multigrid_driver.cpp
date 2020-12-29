@@ -41,7 +41,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
     pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0),
-    niter_(-1), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3), mporder_(0), nmpcoeff_(0) {
+    niter_(-1), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3), mporder_(-1), nmpcoeff_(0) {
 
   std::cout << std::scientific << std::setprecision(15);
 
@@ -134,7 +134,6 @@ MultigridDriver::~MultigridDriver() {
 
 void MultigridDriver::CheckBoundaryFunctions() {
   fsubtract_average_ = true;
-  mporder_ = 0;
   switch(mg_mesh_bcs_[BoundaryFace::inner_x1]) {
     case BoundaryFlag::user:
       if (MGBoundaryFunction_[BoundaryFace::inner_x1] == nullptr) {
@@ -150,11 +149,8 @@ void MultigridDriver::CheckBoundaryFunctions() {
     case BoundaryFlag::mg_zerograd:
     case BoundaryFlag::mg_zerofixed:
       break;
-    case BoundaryFlag::mg_multipole4:
-      mporder_ = std::max(mporder_, 2);
-      break;
-    case BoundaryFlag::mg_multipole16:
-      mporder_ = 4;
+    case BoundaryFlag::mg_multipole:
+      mporder_ = 0;
       break;
     default:
       std::stringstream msg;
@@ -178,11 +174,8 @@ void MultigridDriver::CheckBoundaryFunctions() {
     case BoundaryFlag::mg_zerograd:
     case BoundaryFlag::mg_zerofixed:
       break;
-    case BoundaryFlag::mg_multipole4:
-      mporder_ = std::max(mporder_, 2);
-      break;
-    case BoundaryFlag::mg_multipole16:
-      mporder_ = 4;
+    case BoundaryFlag::mg_multipole:
+      mporder_ = 0;
       break;
     default:
       std::stringstream msg;
@@ -206,11 +199,8 @@ void MultigridDriver::CheckBoundaryFunctions() {
     case BoundaryFlag::mg_zerograd:
     case BoundaryFlag::mg_zerofixed:
       break;
-    case BoundaryFlag::mg_multipole4:
-      mporder_ = std::max(mporder_, 2);
-      break;
-    case BoundaryFlag::mg_multipole16:
-      mporder_ = 4;
+    case BoundaryFlag::mg_multipole:
+      mporder_ = 0;
       break;
     default:
       std::stringstream msg;
@@ -234,11 +224,8 @@ void MultigridDriver::CheckBoundaryFunctions() {
     case BoundaryFlag::mg_zerograd:
     case BoundaryFlag::mg_zerofixed:
       break;
-    case BoundaryFlag::mg_multipole4:
-      mporder_ = std::max(mporder_, 2);
-      break;
-    case BoundaryFlag::mg_multipole16:
-      mporder_ = 4;
+    case BoundaryFlag::mg_multipole:
+      mporder_ = 0;
       break;
     default:
       std::stringstream msg;
@@ -262,11 +249,8 @@ void MultigridDriver::CheckBoundaryFunctions() {
     case BoundaryFlag::mg_zerograd:
     case BoundaryFlag::mg_zerofixed:
       break;
-    case BoundaryFlag::mg_multipole4:
-      mporder_ = std::max(mporder_, 2);
-      break;
-    case BoundaryFlag::mg_multipole16:
-      mporder_ = 4;
+    case BoundaryFlag::mg_multipole:
+      mporder_ = 0;
       break;
     default:
       std::stringstream msg;
@@ -290,11 +274,8 @@ void MultigridDriver::CheckBoundaryFunctions() {
     case BoundaryFlag::mg_zerograd:
     case BoundaryFlag::mg_zerofixed:
       break;
-    case BoundaryFlag::mg_multipole4:
-      mporder_ = std::max(mporder_, 2);
-      break;
-    case BoundaryFlag::mg_multipole16:
-      mporder_ = 4;
+    case BoundaryFlag::mg_multipole:
+      mporder_ = 0;
       break;
     default:
       std::stringstream msg;
@@ -304,7 +285,7 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
   }
 
-  if (mporder_ > 0) {
+  if (mporder_ >= 0) {
     ffas_ = true;
     fsubtract_average_ = false;
   }
@@ -1359,8 +1340,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
       case BoundaryFlag::mg_zerofixed:
         MGZeroFixedInnerX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord);
         break;
-      case BoundaryFlag::mg_multipole4:
-      case BoundaryFlag::mg_multipole16:
+      case BoundaryFlag::mg_multipole:
         MGMultipoleInnerX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord,
                            mpcoeff_, mporder_);
         break;
@@ -1380,8 +1360,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
       case BoundaryFlag::mg_zerofixed:
         MGZeroFixedOuterX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord);
         break;
-      case BoundaryFlag::mg_multipole4:
-      case BoundaryFlag::mg_multipole16:
+      case BoundaryFlag::mg_multipole:
         MGMultipoleOuterX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord,
                            mpcoeff_, mporder_);
         break;
@@ -1401,8 +1380,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
       case BoundaryFlag::mg_zerofixed:
         MGZeroFixedInnerX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord);
         break;
-      case BoundaryFlag::mg_multipole4:
-      case BoundaryFlag::mg_multipole16:
+      case BoundaryFlag::mg_multipole:
         MGMultipoleInnerX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord,
                            mpcoeff_, mporder_);
         break;
@@ -1422,8 +1400,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
       case BoundaryFlag::mg_zerofixed:
         MGZeroFixedOuterX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord);
         break;
-      case BoundaryFlag::mg_multipole4:
-      case BoundaryFlag::mg_multipole16:
+      case BoundaryFlag::mg_multipole:
         MGMultipoleOuterX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord,
                            mpcoeff_, mporder_);
         break;
@@ -1444,8 +1421,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
       case BoundaryFlag::mg_zerofixed:
         MGZeroFixedInnerX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord);
         break;
-      case BoundaryFlag::mg_multipole4:
-      case BoundaryFlag::mg_multipole16:
+      case BoundaryFlag::mg_multipole:
         MGMultipoleInnerX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord,
                            mpcoeff_, mporder_);
         break;
@@ -1465,8 +1441,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
       case BoundaryFlag::mg_zerofixed:
         MGZeroFixedOuterX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord);
         break;
-      case BoundaryFlag::mg_multipole4:
-      case BoundaryFlag::mg_multipole16:
+      case BoundaryFlag::mg_multipole:
         MGMultipoleOuterX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord,
                            mpcoeff_, mporder_);
         break;
@@ -1761,7 +1736,7 @@ void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
 
 void MultigridDriver::AllocateMultipoleCoefficients() {
   nmpcoeff_ = 0;
-  if (mporder_ == 0) return;
+  if (mporder_ <= 0) return;
   for (int i = 0; i <= mporder_; ++i)
     nmpcoeff_ += 2 * i + 1;
 
