@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file visc.cpp
-//  iprob = 0 - Viscous Diffusion of 1-D Gaussian
-//  iprob = 1 - Viscous Diffusion of 2-D Gaussian
+//! iprob = 0 - Viscous Diffusion of 1-D Gaussian
+//! iprob = 1 - Viscous Diffusion of 2-D Gaussian
 //========================================================================================
 
 // C headers

@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file adiabatic_hydro.cpp
-//  \brief implements functions in class EquationOfState for adiabatic hydrodynamics`
+//! \brief implements functions in class EquationOfState for adiabatic hydrodynamics`
 
 // C headers
 
@@ -30,11 +30,11 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
     scalar_floor_{pin->GetOrAddReal("hydro", "sfloor", std::sqrt(1024*float_min))} {}
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-//           const AthenaArray<Real> &prim_old, const FaceField &b,
-//           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
-//           int il, int iu, int jl, int ju, int kl, int ku)
-// \brief Converts conserved into primitive variables in adiabatic hydro.
+//! \fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
+//!          const AthenaArray<Real> &prim_old, const FaceField &b,
+//!          AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
+//!          int il, int iu, int jl, int ju, int kl, int ku)
+//! \brief Converts conserved into primitive variables in adiabatic hydro.
 
 void EquationOfState::ConservedToPrimitive(
     AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
@@ -81,10 +81,10 @@ void EquationOfState::ConservedToPrimitive(
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-//           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-//           int il, int iu, int jl, int ju, int kl, int ku);
-// \brief Converts primitive variables into conservative variables
+//! \fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+//!          const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
+//!          int il, int iu, int jl, int ju, int kl, int ku);
+//! \brief Converts primitive variables into conservative variables
 
 void EquationOfState::PrimitiveToConserved(
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
@@ -124,16 +124,16 @@ void EquationOfState::PrimitiveToConserved(
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
-// \brief returns adiabatic sound speed given vector of primitive variables
+//! \fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
+//! \brief returns adiabatic sound speed given vector of primitive variables
 Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
   return std::sqrt(gamma_*prim[IPR]/prim[IDN]);
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j,
-//                                                 =int i)
-// \brief Apply density and pressure floors to reconstructed L/R cell interface states
+//! \fn void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j,
+//!                                                 =int i)
+//! \brief Apply density and pressure floors to reconstructed L/R cell interface states
 void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j, int i) {
   Real& w_d  = prim(IDN,i);
   Real& w_p  = prim(IPR,i);
@@ -147,9 +147,9 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, int k, int j
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
-//           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
-// \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
+//! \fn void EquationOfState::ApplyPrimitiveConservedFloors(AthenaArray<Real> &prim,
+//!           AthenaArray<Real> &cons, FaceField &b, int k, int j, int i) {
+//! \brief Apply pressure (prim) floor and correct energy (cons) (typically after W(U))
 void EquationOfState::ApplyPrimitiveConservedFloors(
     AthenaArray<Real> &prim, AthenaArray<Real> &cons, AthenaArray<Real> &bcc,
     int k, int j, int i) {

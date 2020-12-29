@@ -3,31 +3,30 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//============================================================================
-//! \file strat.c
-//  \brief Problem generator for stratified 3D shearing sheet.
-//
-// PURPOSE:  Problem generator for stratified 3D shearing sheet.  Based on the
-//   initial conditions described in "Three-dimensional Magnetohydrodynamic
-//   Simulations of Vertically Stratified Accretion Disks" by Stone, Hawley,
-//   Gammie & Balbus.
-//
-// Several different field configurations and perturbations are possible:
-//  ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
-//  ifield = 2 - uniform Bz
-//  ifield = 3 - uniform Bz plus sinusoidal perturbation Bz(1+0.5*std::sin(kx*x1))
-//  ifield = 4 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1))= zero-net flux w helicity
-//  ifield = 5 - uniform By, but only for |z|<2
-//  ifield = 6 - By with constant \beta versus z
-//  ifield = 7 - zero field everywhere
-//
-// - ipert = 1 - random perturbations to P and V [default, used by HGB]
-//
-// Code must be configured using -shear
-//
-// REFERENCE: Stone, J., Hawley, J., Gammie, C.F. & Balbus, S. A., ApJ 463, 656-673
-//                (1996)
-//            Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992)
+//! \file strat.cpp
+//! \brief Problem generator for stratified 3D shearing sheet.
+//!
+//! PURPOSE:  Problem generator for stratified 3D shearing sheet.  Based on the
+//!   initial conditions described in "Three-dimensional Magnetohydrodynamic
+//!   Simulations of Vertically Stratified Accretion Disks" by Stone, Hawley,
+//!   Gammie & Balbus.
+//!
+//! Several different field configurations and perturbations are possible:
+//! - ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
+//! - ifield = 2 - uniform Bz
+//! - ifield = 3 - uniform Bz plus sinusoidal perturbation Bz(1+0.5*sin(kx*x1))
+//! - ifield = 4 - B=(0,B0cos(kx*x1),B0sin(kx*x1))= zero-net flux w helicity
+//! - ifield = 5 - uniform By, but only for |z|<2
+//! - ifield = 6 - By with constant beta versus z
+//! - ifield = 7 - zero field everywhere
+//!
+//! - ipert = 1 - random perturbations to P and V [default, used by HGB]
+//!
+//! Code must be configured using -shear
+//!
+//! REFERENCE:
+//! - Stone, J., Hawley, J., Gammie, C.F. & Balbus, S. A., ApJ 463, 656-673 (1996)
+//! - Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992)
 //============================================================================
 
 // C headers
@@ -49,17 +48,15 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/utils.hpp"     // ran2()
 
-#if !SHEARING_BOX
-#error "This problem generator requires shearing box"
-#endif
-
 // TODO(felker): many unused arguments in these functions: time, iout, ...
 void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
-              const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
-              AthenaArray<Real> &cons);
+              const AthenaArray<Real> &prim, const AthenaArray<Real> &prim_scalar,
+              const AthenaArray<Real> &bcc, AthenaArray<Real> &cons,
+              AthenaArray<Real> &cons_scalar);
 void StratOutflowInnerX3(MeshBlock *pmb, Coordinates *pco,
                          AthenaArray<Real> &a,
                          FaceField &b, Real time, Real dt,
@@ -82,9 +79,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   AllocateUserHistoryOutput(2);
   EnrollUserHistoryOutput(0, HistoryBxBy, "-BxBy");
   EnrollUserHistoryOutput(1, HistorydVxVy, "dVxVy");
-  // Read problem parameters
-  Omega_0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
-  qshear  = pin->GetOrAddReal("problem","qshear",1.5);
 
   // Enroll user-defined physical source terms
   //   vertical external gravitational potential
@@ -97,6 +91,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (mesh_bcs[BoundaryFace::outer_x3] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(BoundaryFace::outer_x3, StratOutflowOuterX3);
   }
+
+  if (!shear_periodic) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "This problem generator requires shearing box." << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
   return;
 }
 
@@ -111,6 +113,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real beta, amp, pres;
   Real iso_cs=1.0;
   Real B0 = 0.0;
+
+  // shearing sheet parameter
+  Omega_0 = porb->Omega0;
+  qshear  = porb->qshear;
 
   Real SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
   // TODO(felker): tons of unused variables in this file: xmin, xmax, rbx, rby, Ly, ky,...
@@ -226,7 +232,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IDN,k,j,i) = rd;
         phydro->u(IM1,k,j,i) = rd*rvx;
         phydro->u(IM2,k,j,i) = rd*rvy;
-        phydro->u(IM2,k,j,i) -= rd*(qshear*Omega_0*x1);
+        if(!porb->orbital_advection_defined)
+          phydro->u(IM2,k,j,i) -= rd*qshear*Omega_0*x1;
         phydro->u(IM3,k,j,i) = rd*rvz;
         if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,k,j,i) = rp/(gam-1.0)
@@ -238,11 +245,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         // Initialize magnetic field.  For 3D shearing box B1=Bx, B2=By, B3=Bz
         //  ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
         //  ifield = 2 - uniform Bz
-        //  ifield = 3 - Bz(1+0.5*std::sin(kx*x1))
-        //  ifield = 4 - B=(0,B0std::cos(kx*x1),B0std::sin(kx*x1)) =
+        //  ifield = 3 - Bz(1+0.5*sin(kx*x1))
+        //  ifield = 4 - B=(0,B0cos(kx*x1),B0sin(kx*x1)) =
         //               zero-net flux w/ helicity
         //  ifield = 5 - uniform By, but only for |z|<2
-        //  ifield = 6 - By with constant \beta versus z
+        //  ifield = 6 - By with constant beta versus z
         //  ifield = 7 - zero field everywhere
         if (MAGNETIC_FIELDS_ENABLED) {
           if (ifield == 1) {
@@ -367,8 +374,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
 
 void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
-              const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
-              AthenaArray<Real> &cons) {
+              const AthenaArray<Real> &prim, const AthenaArray<Real> &prim_scalar,
+              const AthenaArray<Real> &bcc, AthenaArray<Real> &cons,
+              AthenaArray<Real> &cons_scalar) {
   Real fsmooth, xi, sign;
   Real Lz = pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min;
   Real z0 = Lz/2.0;
@@ -582,7 +590,11 @@ Real HistorydVxVy(MeshBlock *pmb, int iout) {
     for (int j=js; j<=je; j++) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
       for (int i=is; i<=ie; i++) {
-        vshear = qshear*Omega_0*pmb->pcoord->x1v(i);
+        if(!pmb->porb->orbital_advection_defined) {
+          vshear = -qshear*Omega_0*pmb->pcoord->x1v(i);
+        } else {
+          vshear = 0.0;
+        }
         dvxvy += volume(i)*w(IDN,k,j,i)*w(IVX,k,j,i)*(w(IVY,k,j,i) + vshear);
       }
     }

@@ -6,8 +6,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_fc.hpp
-//  \brief handle boundaries for any FaceField type variable that represents a physical
-//         quantity indexed along / located around face-centers of cells
+//! \brief handle boundaries for any FaceField type variable that represents a physical
+//!        quantity indexed along / located around face-centers of cells
 
 // C headers
 
@@ -26,7 +26,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \class FaceCenteredBoundaryVariable
-//  \brief
+//! \brief
 
 class FaceCenteredBoundaryVariable : public BoundaryVariable {
  public:
@@ -34,45 +34,62 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
                                EdgeField &var_flux);
   ~FaceCenteredBoundaryVariable();
 
-  // may want to rebind var_fc to b, b1, b2, etc. Hence ptr member, not reference
+  //! \note
+  //! may want to rebind var_fc to b, b1, b2, etc. Hence ptr member, not reference
   FaceField *var_fc;
 
-  // unlke Hydro cons vs. prim, never need to rebind FaceCentered coarse_buf, so it can be
-  // a reference member: ---> must be initialized in initializer list; cannot pass nullptr
+  //! \note
+  //! unlke Hydro cons vs. prim, never need to rebind FaceCentered coarse_buf,
+  //! so it can be a reference member:
+  //! ---> must be initialized in initializer list; cannot pass nullptr
   FaceField &coarse_buf;
   AthenaArray<Real> &e1, &e2, &e3;  // same for EdgeField
 
-  // maximum number of reserved unique "physics ID" component of MPI tag bitfield
-  // must correspond to the # of "int *phys_id_" private members, below. Convert to array?
+
+  //! maximum number of reserved unique "physics ID" component of MPI tag bitfield
+  //! \note
+  //! must correspond to the # of "int *phys_id_" private members, below.
+  //! Convert to array?
   static constexpr int max_phys_id = 5;
 
-  // BoundaryVariable:
+  //!@{
+  //! BoundaryVariable:
   int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;
   int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) override;
+  //!@}
 
-  // BoundaryCommunication:
+  //!@{
+  //! BoundaryCommunication:
   void SetupPersistentMPI() override;
   void StartReceiving(BoundaryCommSubset phase) override;
   void ClearBoundary(BoundaryCommSubset phase) override;
   void StartReceivingShear(BoundaryCommSubset phase) override;
-  void ComputeShear(const Real time) override;
+  //!@}
 
-  // BoundaryBuffer:
+  //!@{
+  //! BoundaryBuffer:
   void ReceiveAndSetBoundariesWithWait() override;
   void SetBoundaries() override;
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
+  //!@}
 
-  // Shearing box Field
+  //!@{
+  //! Shearing box Field
   void SendShearingBoxBoundaryBuffers();
   bool ReceiveShearingBoxBoundaryBuffers();
+  void SetShearingBoxBoundaryBuffers();
+  //!@}
 
-  // Shearing box EMF
+  //!@{
+  //! Shearing box EMF
   void SendEMFShearingBoxBoundaryCorrection();
   bool ReceiveEMFShearingBoxBoundaryCorrection();
-  void RemapEMFShearingBoxBoundary();
+  void SetEMFShearingBoxBoundaryCorrection();
+  //!@}
 
-  // BoundaryPhysics:
+  //!@{
+  //! BoundaryPhysics:
   void ReflectInnerX1(Real time, Real dt,
                       int il, int jl, int ju, int kl, int ku, int ngh) override;
   void ReflectOuterX1(Real time, Real dt,
@@ -103,6 +120,8 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
                          int il, int iu, int jl, int kl, int ku, int ngh) override;
   void PolarWedgeOuterX2(Real time, Real dt,
                          int il, int iu, int ju, int kl, int ku, int ngh) override;
+  //!@}
+
   //protected:
 
  private:
@@ -116,8 +135,9 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   bool edge_flag_[12];
   int nedge_fine_[12];
 
-  // variable switch used in 2x functions, ReceiveFluxCorrection() and StartReceiving():
-  // ready to recv flux from same level and apply correction? false= 2nd pass for fine lvl
+  //! variable switch used in 2x functions, ReceiveFluxCorrection() and StartReceiving():
+  //! ready to recv flux from same level and apply correction?
+  //! false= 2nd pass for fine lvl
   bool recv_flx_same_lvl_;
 
 #ifdef MPI_PARALLEL
@@ -126,7 +146,8 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   MPI_Request *req_flux_south_send_, *req_flux_south_recv_;
 #endif
 
-  // BoundaryBuffer:
+  //!@{
+  //! BoundaryBuffer:
   int LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;
   void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
   int LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) override;
@@ -134,10 +155,11 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
   void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
   void PolarBoundarySingleAzimuthalBlock() override;
+  //!@}
 
   // Face-centered/Field/EMF unique class methods:
 
-  // called in SetBoundaries() and ReceiveAndSetBoundariesWithWait()
+  //! called in SetBoundaries() and ReceiveAndSetBoundariesWithWait()
   void PolarFieldBoundaryAverage();
 
   // all 3x only called in SendFluxCorrection():
@@ -152,41 +174,38 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void SetFluxBoundaryFromPolar(Real **buf_list, int num_bufs, bool is_north);
 
   void ClearCoarseFluxBoundary();
-  void AverageFluxBoundary();  // average flux from fine and equal lvls
+  void AverageFluxBoundary();  //!> average flux from fine and equal lvls
   void PolarFluxBoundarySingleAzimuthalBlock();
-  void CountFineEdges();   // called in SetupPersistentMPI()
+  void CountFineEdges();   //!> called in SetupPersistentMPI()
 
   void CopyPolarBufferSameProcess(const SimpleNeighborBlock& nb, int ssize,
                                   int polar_block_index, bool is_north);
+  AthenaArray<Real> pbuf;
+  int xorder_, xgh_;
   // Shearing box Field
   FaceField shear_fc_[2];
-  FaceField shear_flx_fc_[2];
   int shear_send_count_fc_[2][4], shear_recv_count_fc_[2][4];
 
 #ifdef MPI_PARALLEL
   int shear_fc_phys_id_;
 #endif
 
-  void LoadShearing(FaceField &src, Real *buf, int nb);
-  void SetShearingBoxBoundarySameLevel(Real *buf, const int nb);
-  void RemapFlux(const int k, const int jinner, const int jouter, const int i,
-                 const Real eps, const AthenaArray<Real> &var,
-                 AthenaArray<Real> &flux);
+  void LoadShearingBoxBoundarySameLevel(FaceField &src, Real *buf, int nb);
+  void SetShearingBoxBoundarySameLevel(FaceField &dst, Real *buf, const int nb);
 
-  // Shearing box EMF correction
+  //!@{
+  //! Shearing box EMF correction
   EdgeField shear_var_emf_[2];
   EdgeField shear_map_emf_[2];
-  EdgeField shear_flx_emf_[2];
-  int shear_send_count_emf_[2][4], shear_recv_count_emf_[2][4];
+  int shear_send_count_emf_[2][3], shear_recv_count_emf_[2][3];
 #ifdef MPI_PARALLEL
   int shear_emf_phys_id_;
 #endif
+  //!@}
 
-  void LoadEMFShearing(EdgeField &src, Real *buf, const int nb);
+  void LoadEMFShearingBoxBoundarySameLevel(EdgeField &src, Real *buf, const int nb);
   void SetEMFShearingBoxBoundarySameLevel(EdgeField &dst, Real *buf, const int nb);
   void ClearEMFShearing(EdgeField &work);
-  void RemapFluxEMF(const int k, const int jinner, const int jouter, const Real eps,
-                    const AthenaArray<Real> &var, AthenaArray<Real> &flux);
 };
 
 #endif // BVALS_FC_BVALS_FC_HPP_

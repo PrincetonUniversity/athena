@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file boundary_flag.cpp
-//  \brief utilities for processing the user's input <mesh> ixn_bc, oxn_bc parameters and
-// the associated internal BoundaryFlag enumerators
+//! \brief utilities for processing the user's input `<mesh>` ixn_bc, oxn_bc
+//!   parameters and the associated internal BoundaryFlag enumerators
 
 // C headers
 
@@ -21,8 +21,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn GetBoundaryFlag(std::string input_string)
-//  \brief Parses input string to return scoped enumerator flag specifying boundary
-//  condition. Typically called in Mesh() ctor and in pgen/*.cpp files.
+//! \brief Parses input string to return scoped enumerator flag specifying boundary
+//! condition. Typically called in Mesh() ctor and in pgen/*.cpp files.
 
 BoundaryFlag GetBoundaryFlag(const std::string& input_string) {
   if (input_string == "reflecting") {
@@ -54,9 +54,9 @@ BoundaryFlag GetBoundaryFlag(const std::string& input_string) {
 
 //----------------------------------------------------------------------------------------
 //! \fn GetBoundaryString(BoundaryFlag input_flag)
-//  \brief Parses enumerated type BoundaryFlag internal integer representation to return
-//  string describing the boundary condition. Typicall used to format descriptive errors
-//  or diagnostics. Inverse of GetBoundaryFlag().
+//! \brief Parses enumerated type BoundaryFlag internal integer representation to return
+//! string describing the boundary condition. Typically used to format descriptive errors
+//! or diagnostics. Inverse of GetBoundaryFlag().
 
 std::string GetBoundaryString(BoundaryFlag input_flag) {
   switch (input_flag) {
@@ -90,11 +90,13 @@ std::string GetBoundaryString(BoundaryFlag input_flag) {
 
 //----------------------------------------------------------------------------------------
 //! \fn CheckBoundaryFlag(BoundaryFlag block_flag, CoordinateDirection dir)
-//  \brief Called in each MeshBlock's BoundaryValues() constructor. Mesh() ctor only
-//  checks the validity of user's input mesh/ixn_bc, oxn_bc string values corresponding to
-//  a BoundaryFlag enumerator before passing it to a MeshBlock and then BoundaryBase
-//  object. However, not all BoundaryFlag enumerators can be used in all directions as a
-//  valid MeshBlock boundary.
+//! \brief Called in each MeshBlock's BoundaryValues() constructor.
+//!
+//! Mesh() ctor only
+//! checks the validity of user's input mesh/ixn_bc, oxn_bc string values corresponding to
+//! a BoundaryFlag enumerator before passing it to a MeshBlock and then BoundaryBase
+//! object. However, not all BoundaryFlag enumerators can be used in all directions as a
+//! valid MeshBlock boundary.
 
 void CheckBoundaryFlag(BoundaryFlag block_flag, CoordinateDirection dir) {
   std::stringstream msg;

@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gravity.cpp
-//  \brief implementation of functions in class Gravity
+//! \brief implementation of functions in class Gravity
 
 // C headers
 
@@ -25,7 +25,7 @@
 #include "gravity.hpp"
 #include "mg_gravity.hpp"
 
-// constructor, initializes data structures and parameters
+//! constructor, initializes data structures and parameters
 
 // TODO(felker): change "MeshBlock *pmb" to reference member, set in initializer list
 Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
@@ -68,4 +68,3 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
   gbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&gbvar);
 }
-

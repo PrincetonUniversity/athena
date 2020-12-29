@@ -24,18 +24,16 @@ pgen_choices.remove('from_array')
 # coord='minkowski', #'-t'
 gr_probs = set([pgen for pgen in pgen_choices if pgen[0:3] == 'gr_'])
 # MHD-required problems: --rsolver=hlld by default
-mhd_probs = set(['cpaw', 'field_loop', 'orszag_tang', 'rotor', 'resist', 'magnoh'])
-# Shearing box MHD problems
-shear_probs = set(['hb3', 'hgb', 'ssheet', 'strat'])
+mhd_probs = set(['hb3', 'hgb', 'jgg', 'cpaw', 'field_loop',
+                 'orszag_tang', 'rotor', 'resist', 'magnoh'])
 # Newtonian Hydro-only or MHD-optional problems are all leftover pgen/ files
 # --rsolver=hllc by default
-hydro_probs = pgen_choices - gr_probs - mhd_probs - shear_probs
+hydro_probs = pgen_choices - gr_probs - mhd_probs
 # Curvilinear problems
 
 # Define configure flags for each set:
 gr_args = ['g', 't', '-coord=minkowski']
 mhd_args = ['b']
-shear_args = ['b', 'shear']
 hydro_args = []
 
 
@@ -45,9 +43,9 @@ def prepare(**kwargs):
     # Check that code compiles all pgen files in single or double precision
     for single_precision in [True, False]:
         for pgen_set, args in zip([gr_probs, mhd_probs,
-                                   shear_probs, hydro_probs],
+                                   hydro_probs],
                                   [gr_args, mhd_args,
-                                   shear_args, hydro_args]):
+                                   hydro_args]):
             args_lcl = list(args)
             if single_precision:
                 args_lcl.extend(['float'])

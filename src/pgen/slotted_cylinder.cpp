@@ -4,8 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file slotted_cylinder.cpp
-//  \brief Slotted cylinder passive scalar advection problem generator for 2D/3D problems.
-//
+//! \brief Slotted cylinder passive scalar advection problem generator for 2D/3D problems.
 //========================================================================================
 
 // C++ headers

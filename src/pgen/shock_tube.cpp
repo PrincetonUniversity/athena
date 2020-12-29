@@ -4,10 +4,10 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file shock_tube.cpp
-//  \brief Problem generator for shock tube problems.
-//
-// Problem generator for shock tube (1-D Riemann) problems. Initializes plane-parallel
-// shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D), and along x3 (in 3D).
+//! \brief Problem generator for shock tube problems.
+//!
+//! Problem generator for shock tube (1-D Riemann) problems. Initializes plane-parallel
+//! shock along x1 (in 1D, 2D, 3D), along x2 (in 2D, 3D), and along x3 (in 3D).
 //========================================================================================
 
 // C headers
@@ -33,7 +33,7 @@
 
 //========================================================================================
 //! \fn Real press(Real rho, Real T)
-//  \brief Calculate pressure as a function of density and temperature for H EOS.
+//! \brief Calculate pressure as a function of density and temperature for H EOS.
 //========================================================================================
 
 Real press(Real rho, Real T) {
@@ -44,7 +44,7 @@ Real press(Real rho, Real T) {
 
 //========================================================================================
 //! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-//  \brief Calculate L1 errors in Sod (hydro) and RJ2a (MHD) tests
+//! \brief Calculate L1 errors in Sod (hydro) and RJ2a (MHD) tests
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
@@ -300,7 +300,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Problem Generator for the shock tube tests
+//! \brief Problem Generator for the shock tube tests
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {

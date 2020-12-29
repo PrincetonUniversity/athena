@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file io_wrapper.hpp
-//  \brief defines a set of small wrapper functions for MPI versus Serial Output.
+//! \brief defines a set of small wrapper functions for MPI versus Serial Output.
 
 // C headers
 

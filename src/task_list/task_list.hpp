@@ -5,8 +5,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//!   \file task_list.hpp
-//    \brief provides functionality to control dynamic execution using tasks
+//! \file task_list.hpp
+//! \brief provides functionality to control dynamic execution using tasks
 
 // C headers
 
@@ -25,7 +25,8 @@ class TaskList;
 class FFTGravitySolverTaskList;
 class TaskID;
 
-// TODO(felker): these 4x declarations can be nested in TaskList if MGTaskList is derived
+//! \todo (felker):
+//! - these 4x declarations can be nested in TaskList if MGTaskList is derived
 
 // constants = return codes for functions working on individual Tasks and TaskList
 enum class TaskStatus {fail, success, next};
@@ -33,7 +34,7 @@ enum class TaskListStatus {running, stuck, complete, nothing_to_do};
 
 //----------------------------------------------------------------------------------------
 //! \class TaskID
-//  \brief generalization of bit fields for Task IDs, status, and dependencies.
+//! \brief generalization of bit fields for Task IDs, status, and dependencies.
 
 class TaskID {  // POD but not aggregate (there is a user-provided ctor)
  public:
@@ -48,7 +49,7 @@ class TaskID {  // POD but not aggregate (there is a user-provided ctor)
   TaskID operator| (const TaskID& rhs) const;
 
  private:
-  constexpr static int kNField_ = 1;
+  constexpr static int kNField_ = 2;
   std::uint64_t bitfld_[kNField_];
 
   friend class TaskList;
@@ -58,18 +59,19 @@ class TaskID {  // POD but not aggregate (there is a user-provided ctor)
 
 //----------------------------------------------------------------------------------------
 //! \struct Task
-//  \brief data and function pointer for an individual Task
+//! \brief data and function pointer for an individual Task
 
 struct Task { // aggregate and POD
-  TaskID task_id;    // encodes task with bit positions in HydroIntegratorTaskNames
-  TaskID dependency; // encodes dependencies to other tasks using " " " "
-  TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  // ptr to member function
-  bool lb_time; // flag for automatic load balancing based on timing
+  TaskID task_id;    //!> encodes task with bit positions in HydroIntegratorTaskNames
+  TaskID dependency; //!> encodes dependencies to other tasks using
+                     //!> HydroIntegratorTaskNames
+  TaskStatus (TaskList::*TaskFunc)(MeshBlock*, int);  //!> ptr to member function
+  bool lb_time; //!> flag for automatic load balancing based on timing
 };
 
 //---------------------------------------------------------------------------------------
 //! \struct TaskStates
-//  \brief container for task states on a single MeshBlock
+//! \brief container for task states on a single MeshBlock
 
 struct TaskStates { // aggregate and POD
   TaskID finished_tasks;
@@ -83,7 +85,7 @@ struct TaskStates { // aggregate and POD
 
 //----------------------------------------------------------------------------------------
 //! \class TaskList
-//  \brief data and function definitions for task list base class
+//! \brief data and function definitions for task list base class
 
 class TaskList {
  public:
@@ -92,15 +94,15 @@ class TaskList {
   virtual ~TaskList() = default;
 
   // data
-  int ntasks;     // number of tasks in this list
-  int nstages;    // number of times the tasklist is repeated per each full timestep
+  int ntasks;     //!> number of tasks in this list
+  int nstages;    //!> number of times the tasklist is repeated per each full timestep
 
   // functions
   TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskStates &ts);
   void DoTaskListOneStage(Mesh *pmesh, int stage);
 
  protected:
-  // TODO(felker): rename to avoid confusion with class name
+  //! \todo (felker): rename to avoid confusion with class name
   Task task_list_[64*TaskID::kNField_];
 
  private:
@@ -110,7 +112,7 @@ class TaskList {
 
 //----------------------------------------------------------------------------------------
 //! \class TimeIntegratorTaskList
-//  \brief data and function definitions for TimeIntegratorTaskList derived class
+//! \brief data and function definitions for TimeIntegratorTaskList derived class
 
 class TimeIntegratorTaskList : public TaskList {
  public:
@@ -118,18 +120,23 @@ class TimeIntegratorTaskList : public TaskList {
 
   //--------------------------------------------------------------------------------------
   //! \struct IntegratorWeight
-  //  \brief weights used in time integrator tasks
+  //! \brief weights used in time integrator tasks
 
   struct IntegratorWeight {
     // 2S or 3S* low-storage RK coefficients, Ketchenson (2010)
-    Real delta; // low-storage coefficients to avoid double F() evaluation per substage
+    Real delta; //!> low-storage coefficients to avoid double F() evaluation per substage
     Real gamma_1, gamma_2, gamma_3; // low-storage coeff for weighted ave of registers
     Real beta; // coeff. from bidiagonal Shu-Osher form Beta matrix, -1 diagonal terms
+    Real sbeta, ebeta; // time coeff describing start/end time of each stage
+    bool main_stage, orbital_stage; // flag for whether the main calculation is done
   };
 
   // data
   std::string integrator;
   Real cfl_limit; // dt stability limit for the particular time integrator + spatial order
+  int nstages_main; // number of stages labeled main_stage
+  bool ORBITAL_ADVECTION; // flag for orbital advection (true w/ , false w/o)
+  bool SHEAR_PERIODIC; // flag for shear periodic boundary (true w/ , false w/o)
 
   // functions
   TaskStatus ClearAllBoundary(MeshBlock *pmb, int stage);
@@ -163,11 +170,12 @@ class TimeIntegratorTaskList : public TaskList {
 
   TaskStatus SendHydroShear(MeshBlock *pmb, int stage);
   TaskStatus ReceiveHydroShear(MeshBlock *pmb, int stage);
+  TaskStatus SendHydroFluxShear(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveHydroFluxShear(MeshBlock *pmb, int stage);
   TaskStatus SendFieldShear(MeshBlock *pmb, int stage);
   TaskStatus ReceiveFieldShear(MeshBlock *pmb, int stage);
   TaskStatus SendEMFShear(MeshBlock *pmb, int stage);
   TaskStatus ReceiveEMFShear(MeshBlock *pmb, int stage);
-  TaskStatus RemapEMFShear(MeshBlock *pmb, int stage);
 
   TaskStatus Prolongation(MeshBlock *pmb, int stage);
   TaskStatus Primitives(MeshBlock *pmb, int stage);
@@ -183,6 +191,19 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus SendScalars(MeshBlock *pmb, int stage);
   TaskStatus ReceiveScalars(MeshBlock *pmb, int stage);
   TaskStatus SetBoundariesScalars(MeshBlock *pmb, int stage);
+  TaskStatus SendScalarsShear(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveScalarsShear(MeshBlock *pmb, int stage);
+  TaskStatus SendScalarsFluxShear(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveScalarsFluxShear(MeshBlock *pmb, int stage);
+
+  TaskStatus SendHydroOrbital(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveHydroOrbital(MeshBlock *pmb, int stage);
+  TaskStatus CalculateHydroOrbital(MeshBlock *pmb, int stage);
+  TaskStatus SendFieldOrbital(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveFieldOrbital(MeshBlock *pmb, int stage);
+  TaskStatus CalculateFieldOrbital(MeshBlock *pmb, int stage);
+
+  bool CheckNextMainStage(int stage) const {return stage_wghts[stage%nstages].main_stage;}
 
  private:
   IntegratorWeight stage_wghts[MAX_NSTAGE];
@@ -193,7 +214,7 @@ class TimeIntegratorTaskList : public TaskList {
 
 //----------------------------------------------------------------------------------------
 //! \class SuperTimeStepTaskList
-//  \brief data and function definitions for SuperTimeStepTaskList derived class
+//! \brief data and function definitions for SuperTimeStepTaskList derived class
 
 class SuperTimeStepTaskList : public TaskList {
  public:
@@ -233,9 +254,10 @@ class SuperTimeStepTaskList : public TaskList {
 };
 
 //----------------------------------------------------------------------------------------
-// 64-bit integers with "1" in different bit positions used to ID each hydro task.
-
-// TODO(felker): uncomment the reserved TASK_NAMES once the features are merged to master
+//! 64-bit integers with "1" in different bit positions used to ID each hydro task.
+//!
+//! \todo (felker):
+//! - uncomment the reserved TASK_NAMES once the features are merged to master
 namespace HydroIntegratorTaskNames {
 
 const TaskID NONE(0);
@@ -288,28 +310,37 @@ const TaskID USERWORK(37);
 const TaskID NEW_DT(38);
 const TaskID FLAG_AMR(39);
 
-const TaskID SEND_HYDSH(40);
-const TaskID SEND_EMFSH(41);
-const TaskID SEND_FLDSH(42);
-const TaskID RECV_HYDSH(43);
-const TaskID RECV_EMFSH(44);
-const TaskID RECV_FLDSH(45);
-const TaskID RMAP_EMFSH(46);
+const TaskID SEND_HYDFLXSH(40);
+const TaskID SEND_HYDSH(41);
+const TaskID SEND_EMFSH(42);
+const TaskID SEND_FLDSH(43);
+const TaskID RECV_HYDFLXSH(44);
+const TaskID RECV_HYDSH(45);
+const TaskID RECV_EMFSH(46);
+const TaskID RECV_FLDSH(47);
 
-const TaskID DIFFUSE_HYD(47);
-const TaskID DIFFUSE_FLD(48);
+const TaskID DIFFUSE_HYD(48);
+const TaskID DIFFUSE_FLD(49);
 
-const TaskID CALC_SCLRFLX(49);
-const TaskID SEND_SCLRFLX(50);
-const TaskID RECV_SCLRFLX(51);
-const TaskID INT_SCLR(52);
-const TaskID SEND_SCLR(53);
-const TaskID RECV_SCLR(54);
-const TaskID SETB_SCLR(55);
-const TaskID DIFFUSE_SCLR(56);
+const TaskID CALC_SCLRFLX(50);
+const TaskID SEND_SCLRFLX(51);
+const TaskID RECV_SCLRFLX(52);
+const TaskID INT_SCLR(53);
+const TaskID SEND_SCLR(54);
+const TaskID RECV_SCLR(55);
+const TaskID SETB_SCLR(56);
+const TaskID DIFFUSE_SCLR(57);
+const TaskID SEND_SCLRFLXSH(58);
+const TaskID SEND_SCLRSH(59);
+const TaskID RECV_SCLRFLXSH(60);
+const TaskID RECV_SCLRSH(61);
 
-// const TaskID RECV_SCLRSH(57);
-// const TaskID SEND_SCLRSH(58);
+const TaskID SEND_HYDORB(62);
+const TaskID RECV_HYDORB(63);
+const TaskID CALC_HYDORB(64);
+const TaskID SEND_FLDORB(65);
+const TaskID RECV_FLDORB(66);
+const TaskID CALC_FLDORB(67);
 
 }  // namespace HydroIntegratorTaskNames
 #endif  // TASK_LIST_TASK_LIST_HPP_

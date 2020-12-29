@@ -3,17 +3,17 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-/////////////////////////////////// Athena++ Main Program ////////////////////////////////
+//================================= Athena++ Main Program ================================
 //! \file main.cpp
-//  \brief Athena++ main program
-//
-// Based on the Athena MHD code (Cambridge version), originally written in 2002-2005 by
-// Jim Stone, Tom Gardiner, and Peter Teuben, with many important contributions by many
-// other developers after that, i.e. 2005-2014.
-//
-// Athena++ was started in Jan 2014.  The core design was finished during 4-7/2014 at the
-// KITP by Jim Stone.  GR was implemented by Chris White and AMR by Kengo Tomida during
-// 2014-2016.  Contributions from many others have continued to the present.
+//! \brief Athena++ main program
+//!
+//! Based on the Athena MHD code (Cambridge version), originally written in 2002-2005 by
+//! Jim Stone, Tom Gardiner, and Peter Teuben, with many important contributions by many
+//! other developers after that, i.e. 2005-2014.
+//!
+//! Athena++ was started in Jan 2014.  The core design was finished during 4-7/2014 at the
+//! KITP by Jim Stone.  GR was implemented by Chris White and AMR by Kengo Tomida during
+//! 2014-2016.  Contributions from many others have continued to the present.
 //========================================================================================
 
 // C headers
@@ -55,7 +55,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn int main(int argc, char *argv[])
-//  \brief Athena++ main program
+//! \brief Athena++ main program
 
 int main(int argc, char *argv[]) {
   std::string athena_version = "version 19.0 - August 2019";
@@ -458,10 +458,12 @@ int main(int argc, char *argv[]) {
 
     for (int stage=1; stage<=ptlist->nstages; ++stage) {
       ptlist->DoTaskListOneStage(pmesh, stage);
-      if (SELF_GRAVITY_ENABLED == 1) // fft (flag 0 for discrete kernel, 1 for continuous)
-        pmesh->pfgrd->Solve(stage, 0);
-      else if (SELF_GRAVITY_ENABLED == 2) // multigrid
-        pmesh->pmgrd->Solve(stage);
+      if (ptlist->CheckNextMainStage(stage)) {
+        if (SELF_GRAVITY_ENABLED == 1) // fft (0: discrete kernel, 1: continuous kernel)
+          pmesh->pfgrd->Solve(stage, 0);
+        else if (SELF_GRAVITY_ENABLED == 2) // multigrid
+          pmesh->pmgrd->Solve(stage);
+      }
     }
 
     if (STS_ENABLED && pmesh->sts_integrator == "rkl2") {

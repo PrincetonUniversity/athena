@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file field.hpp
-//  \brief defines Field class which implements data and functions for E/B fields
+//! \brief defines Field class which implements data and functions for E/B fields
 
 // C headers
 
@@ -23,28 +23,29 @@ class MeshBlock;
 class ParameterInput;
 class Hydro;
 
+//========================================================================================
 //! \class Field
-//  \brief electric and magnetic field data and functions
+//! \brief electric and magnetic field data and functions
 
 class Field {
   friend class Hydro;
  public:
   Field(MeshBlock *pmb, ParameterInput *pin);
 
-  MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
+  MeshBlock* pmy_block;  //!> ptr to MeshBlock containing this Field
 
   // face-centered magnetic fields
-  FaceField b;       // time-integrator memory register #1
-  FaceField b1;      // time-integrator memory register #2
-  FaceField b2;      // time-integrator memory register #3
+  FaceField b;       //!> time-integrator memory register #1
+  FaceField b1;      //!> time-integrator memory register #2
+  FaceField b2;      //!> time-integrator memory register #3
   FaceField b0, ct_update; // rkl2 STS memory registers
   // (no more than MAX_NREGISTER allowed)
 
   // cell-centered magnetic fields
-  AthenaArray<Real> bcc;  // time-integrator memory register #1
+  AthenaArray<Real> bcc;  //!> time-integrator memory register #1
 
-  EdgeField e;    // edge-centered electric fields used in CT
-  FaceField wght; // weights used to integrate E to corner using GS algorithm
+  EdgeField e;    //!> edge-centered electric fields used in CT
+  FaceField wght; //!> weights used to integrate E to corner using GS algorithm
   AthenaArray<Real> e2_x1f, e3_x1f; // electric fields at x1-face from Riemann solver
   AthenaArray<Real> e1_x2f, e3_x2f; // electric fields at x2-face from Riemann solver
   AthenaArray<Real> e1_x3f, e2_x3f; // electric fields at x3-face from Riemann solver

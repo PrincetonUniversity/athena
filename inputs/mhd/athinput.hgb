@@ -1,10 +1,10 @@
 <comment>
-problem   = 3D MRI
+problem   = 3D MRI test
 reference = J.F. Hawley, C.F. Gammie, & S.A. Balbus, ApJ 440, 742 (1995)
-configure = -b -shear --prob=hgb --eos=isothermal
+configure = -b --prob=hgb --eos=isothermal
 
 <job>
-problem_id = HGB        # problem ID: basename of output filenames
+problem_id = HGB         # problem ID: basename of output filenames
 
 <output1>
 file_type  = hst         # History data dump
@@ -53,13 +53,16 @@ nx3 = 32
 gamma = 1.666666666666667 # gamma = C_p/C_v
 iso_sound_speed = 1.0     # isothermal sound speed
 
+<orbital_advection>
+OAorder   = 0       # 0: w/o OA, 1: w/ OA (1st), 2: w/ OA (2nd)
+qshear    = 1.5     # shear rate
+Omega0    = 1.0     # angular velocity of the system
+
 <problem>
+d0        = 1.0       # background density
 amp       = 0.025     # wave amplitude
 nwx       = -2        # wavenumber in x1
 nwy       = 1         # wavenumber in x2
-nwz       = 1         # wavenumber in x3
-ipert     = 1         # shwave
-Omega0    = 1.0       # orbital freq
-qshear    = 1.5       # shear rate
-beta      = 100      # plasma beta
+ipert     = 1         # random perturbations
+beta      = 100       # plasma beta
 ifield    = 1         # zero-net-flux Bz

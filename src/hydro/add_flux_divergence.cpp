@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file add_flux_divergence.cpp
-//  \brief Computes divergence of the Hydro fluxes and adds that to a conserved variable
-// register
+//! \brief Computes divergence of the Hydro fluxes and adds that to a conserved variable
+//! register
 
 // C headers
 
@@ -27,8 +27,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn  void Hydro::AddFluxDivergence
-//  \brief Adds flux divergence to weighted average of conservative variables from
-//  previous step(s) of time integrator algorithm
+//! \brief Adds flux divergence to weighted average of conservative variables from
+//! previous step(s) of time integrator algorithm
 
 // TODO(felker): consider combining with PassiveScalars implementation + (see 57cfe28b)
 // (may rename to AddPhysicalFluxDivergence or AddQuantityFluxDivergence to explicitly
@@ -98,10 +98,10 @@ void Hydro::AddFluxDivergence(const Real wght, AthenaArray<Real> &u_out) {
 
 //----------------------------------------------------------------------------------------
 //! \fn  void Hydro::AddFluxDivergence_STS
-//  \brief Adds diffusive flux divergence to weighted average of conservative variables
-// from previous step of time integration algorithm.  RKL2 registers are set to flux
-// divergence update if first stage of RKL2 STS.  Only a subset of ph->u indices are
-// integrated, dependent on which diffusive processes are integrated.
+//! \brief Adds diffusive flux divergence to weighted average of conservative variables
+//! from previous step of time integration algorithm.  RKL2 registers are set to flux
+//! divergence update if first stage of RKL2 STS.  Only a subset of ph->u indices are
+//! integrated, dependent on which diffusive processes are integrated.
 void Hydro::AddFluxDivergence_STS(const Real wght, int stage,
                                   AthenaArray<Real> &u_out,
                                   AthenaArray<Real> &fl_div_out,

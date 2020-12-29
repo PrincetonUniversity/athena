@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_base.cpp
-//  \brief utility functions for BoundaryBase neighbors and buffers
+//! \brief utility functions for BoundaryBase neighbors and buffers
 
 // C headers
 
@@ -38,11 +38,7 @@ NeighborIndexes BoundaryBase::ni[56];
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
-//                          int iox1, int iox2, int iox3, NeighborConnect itype,
-//                          int ibid, int itargetid, int ifi1=0, int ifi2=0,
-//                          bool ipolar=false)
-// \brief Set neighbor information
+//! \brief Set neighbor information
 
 void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
                                 int iox1, int iox2, int iox3,
@@ -74,8 +70,8 @@ void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
 
 //----------------------------------------------------------------------------------------
 //! \fn BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
-//                                 BoundaryFlag *input_bcs)
-//  \brief constructor of BoundaryBase
+//!                                BoundaryFlag *input_bcs)
+//! \brief constructor of BoundaryBase
 BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
                            BoundaryFlag *input_bcs) {
   loc = iloc;
@@ -121,7 +117,7 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
 
 //----------------------------------------------------------------------------------------
 //! \fn BoundaryBase::~BoundaryBase()
-//  \brief destructor of BoundaryBase
+//! \brief destructor of BoundaryBase
 
 BoundaryBase::~BoundaryBase() {
   if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
@@ -135,12 +131,13 @@ BoundaryBase::~BoundaryBase() {
 
 //----------------------------------------------------------------------------------------
 //! \fn unsigned int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3,
-//                                                       int fi1, int fi2)
-//  \brief calculate a buffer identifier
+//!                                               int fi1, int fi2)
+//! \brief calculate a buffer identifier
 
 int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
-  // WARN: highly unsafe conversion if signed (oxi+1) are negative (they shouldn't be)
-  // See comments on BoundaryBase::CreateBvalsMPITag()
+  //! \warning: highly unsafe conversion if signed (oxi+1) are negative
+  //!   (they shouldn't be)
+  //! See comments on BoundaryBase::CreateBvalsMPITag()
   int ux1 = (ox1 + 1);
   int ux2 = (ox2 + 1);
   int ux3 = (ox3 + 1);
@@ -151,7 +148,7 @@ int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 
 //----------------------------------------------------------------------------------------
 //! \fn int BoundaryBase::BufferID(int dim, bool multilevel)
-//  \brief calculate neighbor indexes and target buffer IDs
+//! \brief calculate neighbor indexes and target buffer IDs
 
 int BoundaryBase::BufferID(int dim, bool multilevel) {
   int nf1 = 1, nf2 = 1;
@@ -256,7 +253,7 @@ int BoundaryBase::BufferID(int dim, bool multilevel) {
 
 //----------------------------------------------------------------------------------------
 //! \fn int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
-//  \brief find the boundary buffer ID from the direction
+//! \brief find the boundary buffer ID from the direction
 
 int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
   int bid = CreateBufferID(ox1, ox2, ox3, fi1, fi2);
@@ -270,18 +267,22 @@ int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 
 //----------------------------------------------------------------------------------------
 //! \fn int BoundaryBase::CreateBvalsMPITag(int lid, int bufid, int phys)
-//  \brief calculate an MPI tag for Bval communications
-//  MPI tag = local id of destination (remaining bits) + bufid(6 bits) + physics(5 bits)
-
-// WARN: The below procedure of generating unsigned integer bitfields from signed integer
-// types and converting output to signed integer tags (required by MPI) is tricky and may
-// lead to unsafe conversions (and overflows from built-in types and MPI_TAG_UB).  Note,
-// the MPI standard requires signed int tag, with MPI_TAG_UB>= 2^15-1 = 32,767 (inclusive)
-
-// TODO(felker) Consider adding safety check: if (tag > MPI_TAG_UB) ATHENA_ERROR();
-// TODO(felker) Consider adding safety check: signed int inputs & outputs are positive
-// TODO(felker) Store # of bits for each bitfield component in preprocessor macros
-//              TAG_BITS_PHYS=5, MAX_NUM_PHYS=31
+//! \brief calculate an MPI tag for Bval communications
+//!
+//! MPI tag = local id of destination (remaining bits) + bufid(6 bits) + physics(5 bits)
+//!
+//! \warning
+//! The below procedure of generating unsigned integer bitfields from signed integer
+//! types and converting output to signed integer tags (required by MPI) is tricky and may
+//! lead to unsafe conversions (and overflows from built-in types and MPI_TAG_UB).
+//! Note, the MPI standard requires signed int tag,
+//! with MPI_TAG_UB>= 2^15-1 = 32,767 (inclusive)
+//!
+//! \todo (felker):
+//! - Consider adding safety check: if (tag > MPI_TAG_UB) ATHENA_ERROR();
+//! - Consider adding safety check: signed int inputs & outputs are positive
+//! - Store # of bits for each bitfield component in preprocessor macros
+//!   TAG_BITS_PHYS=5, MAX_NUM_PHYS=31
 
 int BoundaryBase::CreateBvalsMPITag(int lid, int bufid, int phys) {
   return (lid<<11) | (bufid<<5) | phys;
@@ -289,11 +290,11 @@ int BoundaryBase::CreateBvalsMPITag(int lid, int bufid, int phys) {
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
-//                                               int *ranklist, int *nslist)
-// \brief Search and set all the neighbor blocks
-
-// TODO(felker): break-up this long function
+//! \fn void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
+//!                                              int *ranklist, int *nslist)
+//! \brief Search and set all the neighbor blocks
+//!
+//! \todo (felker): break-up this long function
 
 void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
                                          int *nslist) {

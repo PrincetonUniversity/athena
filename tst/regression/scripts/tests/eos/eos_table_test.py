@@ -132,7 +132,7 @@ def analyze():
                             var, diff, g]
                     print(' '.join(map(str, line)))
                     analyze_status = False
-    tol = .004
+    tol = .005
     for t in [10, 25]:
         x_ref, _, _, data_ref = athena_read.vtk(
             'bin/Sod_eos_H.block0.out1.{:05d}.vtk'.format(t))

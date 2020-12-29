@@ -3,7 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//  \brief source terms due to self-gravity
+//! \file self_gravity.cpp
+//! \brief source terms due to self-gravity
 
 // C headers
 
@@ -20,7 +21,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroSourceTerms::SelfGravity
-//  \brief Adds source terms for self-gravitational acceleration to conserved variables
+//! \brief Adds source terms for self-gravitational acceleration to conserved variables
 
 void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
                                    const AthenaArray<Real> &prim,

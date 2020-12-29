@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file task_list.cpp
-//  \brief functions for TaskList base class
+//! \brief functions for TaskList base class
 
 
 // C headers
@@ -24,8 +24,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn TaskListStatus TaskList::DoAllAvailableTasks
-//  \brief do all tasks that can be done (are not waiting for a dependency to be
-//  cleared) in this TaskList, return status.
+//! \brief do all tasks that can be done (are not waiting for a dependency to be
+//! cleared) in this TaskList, return status.
 
 TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskStates &ts) {
   int skip = 0;
@@ -61,7 +61,7 @@ TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskStat
 
 //----------------------------------------------------------------------------------------
 //! \fn void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage)
-//  \brief completes all tasks in this list, will not return until all are tasks done
+//! \brief completes all tasks in this list, will not return until all are tasks done
 
 void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
   int nthreads = pmesh->GetNumMeshThreads();
@@ -77,7 +77,8 @@ void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
   int nmb_left = nmb;
   // cycle through all MeshBlocks and perform all tasks possible
   while (nmb_left > 0) {
-    // KNOWN ISSUE: Workaround for unknown OpenMP race condition. See #183 on GitHub.
+    //! \note
+    //! KNOWN ISSUE: Workaround for unknown OpenMP race condition. See #183 on GitHub.
 #pragma omp parallel for reduction(- : nmb_left) num_threads(nthreads) schedule(dynamic,1)
     for (int i=0; i<nmb; ++i) {
       if (DoAllAvailableTasks(pmesh->my_blocks(i), stage, pmesh->my_blocks(i)->tasks)

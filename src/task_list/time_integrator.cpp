@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file time_integrator.cpp
-//  \brief derived class for time integrator task list. Can create task lists for one
-//  of many different time integrators (e.g. van Leer, RK2, RK3, etc.)
+//! \brief derived class for time integrator task list. Can create task lists for one
+//! of many different time integrators (e.g. van Leer, RK2, RK3, etc.)
 
 // C headers
 
@@ -26,193 +26,855 @@
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../mesh/mesh.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
 #include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------
-//  TimeIntegratorTaskList constructor
+//! TimeIntegratorTaskList constructor
 
 TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
-  // First, define each time-integrator by setting weights for each step of the algorithm
-  // and the CFL number stability limit when coupled to the single-stage spatial operator.
-  // Currently, the explicit, multistage time-integrators must be expressed as 2S-type
-  // algorithms as in Ketcheson (2010) Algorithm 3, which incudes 2N (Williamson) and 2R
-  // (van der Houwen) popular 2-register low-storage RK methods. The 2S-type integrators
-  // depend on a bidiagonally sparse Shu-Osher representation; at each stage l:
-  //
-  //    U^{l} = a_{l,l-2}*U^{l-2} + a_{l-1}*U^{l-1}
-  //          + b_{l,l-2}*dt*Div(F_{l-2}) + b_{l,l-1}*dt*Div(F_{l-1}),
-  //
-  // where U^{l-1} and U^{l-2} are previous stages and a_{l,l-2}, a_{l,l-1}=(1-a_{l,l-2}),
-  // and b_{l,l-2}, b_{l,l-1} are weights that are different for each stage and
-  // integrator. Previous timestep U^{0} = U^n is given, and the integrator solves
-  // for U^{l} for 1 <= l <= nstages.
-  //
-  // The 2x RHS evaluations of Div(F) and source terms per stage is avoided by adding
-  // another weighted average / caching of these terms each stage. The API and framework
-  // is extensible to three register 3S* methods, although none are currently implemented.
-
-  // Notation: exclusively using "stage", equivalent in lit. to "substage" or "substep"
-  // (infrequently "step"), to refer to the intermediate values of U^{l} between each
-  // "timestep" = "cycle" in explicit, multistage methods. This is to disambiguate the
-  // temporal integration from other iterative sequences; "Step" is often used for generic
-  // sequences in code, e.g. main.cpp: "Step 1: MPI"
-  //
-  // main.cpp invokes the tasklist in a for () loop from stage=1 to stage=ptlist->nstages
-
-  // TODO(felker): validate Field and Hydro diffusion with RK3, RK4, SSPRK(5,4)
+  //! \note
+  //! First, define each time-integrator by setting weights for each step of
+  //! the algorithm and the CFL number stability limit when coupled to the single-stage
+  //! spatial operator.
+  //! Currently, the explicit, multistage time-integrators must be expressed as 2S-type
+  //! algorithms as in Ketcheson (2010) Algorithm 3, which incudes 2N (Williamson) and 2R
+  //! (van der Houwen) popular 2-register low-storage RK methods. The 2S-type integrators
+  //! depend on a bidiagonally sparse Shu-Osher representation; at each stage l:
+  //! \f[
+  //!   U^{l} = a_{l,l-2}*U^{l-2} + a_{l-1}*U^{l-1}
+  //!         + b_{l,l-2}*dt*Div(F_{l-2}) + b_{l,l-1}*dt*Div(F_{l-1}),
+  //! \f]
+  //! where \f$U^{l-1}\f$ and \f$U^{l-2}\f$ are previous stages and
+  //! \f$a_{l,l-2}\f$, \f$a_{l,l-1}=(1-a_{l,l-2})\f$,
+  //! and \f$b_{l,l-2}\f$, \f$b_{l,l-1}\f$
+  //! are weights that are different for each stage and
+  //! integrator. Previous timestep \f$U^{0} = U^n\f$ is given, and the integrator solves
+  //! for \f$U^{l}\f$ for 1 <= l <= nstages.
+  //!
+  //! \note
+  //! The 2x RHS evaluations of Div(F) and source terms per stage is avoided by adding
+  //! another weighted average / caching of these terms each stage. The API and framework
+  //! is extensible to three register 3S* methods,
+  //! although none are currently implemented.
+  //!
+  //! \note
+  //! Notation: exclusively using "stage", equivalent in lit. to "substage" or "substep"
+  //! (infrequently "step"), to refer to the intermediate values of U^{l} between each
+  //! "timestep" = "cycle" in explicit, multistage methods. This is to disambiguate the
+  //! temporal integration from other iterative sequences;  generic
+  //! "Step" is often used for sequences in code, e.g. main.cpp: "Step 1: MPI"
+  //!
+  //! \note
+  //! main.cpp invokes the tasklist in a for () loop from stage=1 to stage=ptlist->nstages
+  //!
+  //! \todo (felker):
+  //! - validate Field and Hydro diffusion with RK3, RK4, SSPRK(5,4)
   integrator = pin->GetOrAddString("time", "integrator", "vl2");
 
+  // Read a flag for orbital advection
+  ORBITAL_ADVECTION = (pm->orbital_advection != 0)? true : false;
+
+  // Read a flag for shear periodic
+  SHEAR_PERIODIC = pm->shear_periodic;
+
+  if (integrator == "rk4" || integrator == "ssprk5_4") {
+    // shear periodic not work with rk4 or ssprk5_4
+    if (SHEAR_PERIODIC) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in TimeIntegratorTaskList constructor" << std::endl
+          << "integrator=" << integrator << " does not work with shear periodic boundary."
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    // orbital advection + mesh refinement not work with rk4 or ssprk5_4
+    if (ORBITAL_ADVECTION && pm->multilevel) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in TimeIntegratorTaskList constructor" << std::endl
+          << "integrator=" << integrator << " does not work with orbital advection and "
+          << "mesh refinement"
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
+  }
+
   if (integrator == "vl2") {
-    // VL: second-order van Leer integrator (Stone & Gardiner, NewA 14, 139 2009)
-    // Simple predictor-corrector scheme similar to MUSCL-Hancock
-    // Expressed in 2S or 3S* algorithm form
-    nstages = 2;
+    //! \note `integrator == "vl2"`
+    //! - VL: second-order van Leer integrator (Stone & Gardiner, NewA 14, 139 2009)
+    //! - Simple predictor-corrector scheme similar to MUSCL-Hancock
+    //! - Expressed in 2S or 3S* algorithm form
+
+    // set number of stages and time coeff.
+    nstages_main = 2;
+    if (ORBITAL_ADVECTION) {
+      // w/ orbital advection
+      if (SHEAR_PERIODIC || pm->multilevel) {
+        // w/ shear_periodic or refinements
+        if (pm->orbital_advection==1) { // first order splitting
+          nstages = nstages_main+1;
+          for (int l=0; l<nstages; l++) {
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
+          stage_wghts[0].beta = 0.5;
+          stage_wghts[1].beta = 1.0;
+          stage_wghts[2].beta = 0.0;
+        } else { // second order splitting
+          nstages = nstages_main+2;
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
+          stage_wghts[0].beta = 0.0;
+          stage_wghts[1].beta = 0.5;
+          stage_wghts[2].beta = 1.0;
+          stage_wghts[3].beta = 0.0;
+        }
+      } else { // w/o shear periodic and refinements
+        if (pm->orbital_advection==1) { // first order splitting
+          nstages = nstages_main;
+          for (int l=0; l<nstages; l++) {
+            stage_wghts[l].main_stage = true;
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
+          stage_wghts[0].beta = 0.5;
+          stage_wghts[1].beta = 1.0;
+        } else { // second order splitting
+          nstages = nstages_main+1;
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
+          stage_wghts[0].beta = 0.0;
+          stage_wghts[1].beta = 0.5;
+          stage_wghts[2].beta = 1.0;
+        }
+      }
+    } else { // w/o orbital advection
+      nstages = nstages_main;
+      for (int l=0; l<nstages; l++) {
+        stage_wghts[l].main_stage = true;
+        stage_wghts[l].orbital_stage = false;
+      }
+      stage_wghts[0].sbeta = 0.0;
+      stage_wghts[0].ebeta = 0.5;
+      stage_wghts[1].sbeta = 0.5;
+      stage_wghts[1].ebeta = 1.0;
+      stage_wghts[0].beta = 0.5;
+      stage_wghts[1].beta = 1.0;
+    }
     cfl_limit = 1.0;
     // Modify VL2 stability limit in 2D, 3D
     if (pm->ndim == 2) cfl_limit = 0.5;
     if (pm->ndim == 3) cfl_limit = 0.5;
 
-    stage_wghts[0].delta = 1.0; // required for consistency
-    stage_wghts[0].gamma_1 = 0.0;
-    stage_wghts[0].gamma_2 = 1.0;
-    stage_wghts[0].gamma_3 = 0.0;
-    stage_wghts[0].beta = 0.5;
-
-    stage_wghts[1].delta = 0.0;
-    stage_wghts[1].gamma_1 = 0.0;
-    stage_wghts[1].gamma_2 = 1.0;
-    stage_wghts[1].gamma_3 = 0.0;
-    stage_wghts[1].beta = 1.0;
+    // set delta and gamma at each stage
+    int n_main = 0;
+    for (int n=0; n<nstages; n++) {
+      if (stage_wghts[n].main_stage) {
+        if (n_main == 0) {
+          stage_wghts[n].delta = 1.0; // required for consistency
+          stage_wghts[n].gamma_1 = 0.0;
+          stage_wghts[n].gamma_2 = 1.0;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        } else if (n_main == 1) {
+          stage_wghts[n].delta = 0.0;
+          stage_wghts[n].gamma_1 = 0.0;
+          stage_wghts[n].gamma_2 = 1.0;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        }
+      }
+    }
   } else if (integrator == "rk1") {
-    // RK1: first-order Runge-Kutta / the forward Euler (FE) method
-    nstages = 1;
+    //! \note `integrator == "rk1"`
+    //! - RK1: first-order Runge-Kutta / the forward Euler (FE) method
+
+    // set number of stages and time coeff.
+    nstages_main = 1;
+    if (ORBITAL_ADVECTION) {
+      // w/ orbital advection
+      if (SHEAR_PERIODIC || pm->multilevel) {
+        // w/ shear_periodic or refinements
+        if (pm->orbital_advection==1) { // first order splitting
+          nstages = nstages_main+1;
+          for (int l=0; l<nstages; l++) {
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
+          stage_wghts[0].beta = 1.0;
+          stage_wghts[1].beta = 0.0;
+        } else { // second order splitting
+          nstages = nstages_main+2;
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
+          stage_wghts[0].beta = 0.0;
+          stage_wghts[1].beta = 1.0;
+          stage_wghts[2].beta = 0.0;
+        }
+      } else { // w/o shear periodic and refinements
+        if (pm->orbital_advection==1) { // first order splitting
+          nstages = nstages_main;
+          stage_wghts[0].main_stage = true;
+          stage_wghts[0].orbital_stage = true;
+          stage_wghts[0].sbeta = 0.0;
+          stage_wghts[0].ebeta = 1.0;
+          stage_wghts[0].beta = 1.0;
+        } else { // second order splitting
+          nstages = nstages_main+1;
+          stage_wghts[0].main_stage = false;
+          stage_wghts[1].main_stage = true;
+          stage_wghts[0].orbital_stage = true;
+          stage_wghts[1].orbital_stage = true;
+          stage_wghts[0].sbeta = 0.0;
+          stage_wghts[0].ebeta = 0.5;
+          stage_wghts[1].sbeta = 0.5;
+          stage_wghts[1].ebeta = 1.0;
+          stage_wghts[0].beta = 0.0;
+          stage_wghts[1].beta = 1.0;
+        }
+      }
+    } else { // w/o orbital advection
+      nstages = nstages_main;
+      stage_wghts[0].main_stage = true;
+      stage_wghts[0].orbital_stage = false;
+      stage_wghts[0].sbeta = 0.0;
+      stage_wghts[0].ebeta = 1.0;
+      stage_wghts[0].beta = 1.0;
+    }
     cfl_limit = 1.0;
-    stage_wghts[0].delta = 1.0;
-    stage_wghts[0].gamma_1 = 0.0;
-    stage_wghts[0].gamma_2 = 1.0;
-    stage_wghts[0].gamma_3 = 0.0;
-    stage_wghts[0].beta = 1.0;
+
+    // set delta and gamma at each stage
+    int n_main = 0;
+    for (int n=0; n<nstages; n++) {
+      if (stage_wghts[n].main_stage) {
+        if (n_main == 0) {
+          stage_wghts[n].delta = 1.0;
+          stage_wghts[n].gamma_1 = 0.0;
+          stage_wghts[n].gamma_2 = 1.0;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        }
+      }
+    }
   } else if (integrator == "rk2") {
-    // Heun's method / SSPRK (2,2): Gottlieb (2009) equation 3.1
-    // Optimal (in error bounds) explicit two-stage, second-order SSPRK
-    nstages = 2;
+    //! \note `integrator == "rk2"`
+    //! - Heun's method / SSPRK (2,2): Gottlieb (2009) equation 3.1
+    //! - Optimal (in error bounds) explicit two-stage, second-order SSPRK
+
+    // set number of stages and time coeff.
+    nstages_main = 2;
+    if (ORBITAL_ADVECTION) {
+      // w/ orbital advection
+      if (SHEAR_PERIODIC || pm->multilevel) {
+        // w/ shear_periodic or refinements
+        if (pm->orbital_advection==1) { // first order splitting
+          nstages = nstages_main+1;
+          for (int l=0; l<nstages; l++) {
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
+          stage_wghts[0].beta = 1.0;
+          stage_wghts[1].beta = 0.5;
+          stage_wghts[2].beta = 0.0;
+        } else { // second order splitting
+          nstages = nstages_main+2;
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
+          stage_wghts[0].beta = 0.0;
+          stage_wghts[1].beta = 1.0;
+          stage_wghts[2].beta = 0.5;
+          stage_wghts[3].beta = 0.0;
+        }
+      } else { // w/o shear periodic and refinements
+        if (pm->orbital_advection==1) { // first order splitting
+          nstages = nstages_main;
+          for (int l=0; l<nstages; l++) {
+            stage_wghts[l].main_stage = true;
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
+          stage_wghts[0].beta = 1.0;
+          stage_wghts[1].beta = 0.5;
+        } else { // second order splitting
+          nstages = nstages_main+1;
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
+          stage_wghts[0].beta = 0.0;
+          stage_wghts[1].beta = 1.0;
+          stage_wghts[2].beta = 0.5;
+        }
+      }
+    } else { // w/o orbital advection
+      nstages = nstages_main;
+      for (int l=0; l<nstages; l++) {
+        stage_wghts[l].main_stage = true;
+        stage_wghts[l].orbital_stage = false;
+      }
+      stage_wghts[0].sbeta = 0.0;
+      stage_wghts[0].ebeta = 1.0;
+      stage_wghts[1].sbeta = 1.0;
+      stage_wghts[1].ebeta = 1.0;
+      stage_wghts[0].beta = 1.0;
+      stage_wghts[1].beta = 0.5;
+    }
     cfl_limit = 1.0;  // c_eff = c/nstages = 1/2 (Gottlieb (2009), pg 271)
-    stage_wghts[0].delta = 1.0;
-    stage_wghts[0].gamma_1 = 0.0;
-    stage_wghts[0].gamma_2 = 1.0;
-    stage_wghts[0].gamma_3 = 0.0;
-    stage_wghts[0].beta = 1.0;
 
-    stage_wghts[1].delta = 0.0;
-    stage_wghts[1].gamma_1 = 0.5;
-    stage_wghts[1].gamma_2 = 0.5;
-    stage_wghts[1].gamma_3 = 0.0;
-    stage_wghts[1].beta = 0.5;
+    // set delta and gamma at each stage
+    int n_main = 0;
+    for (int n=0; n<nstages; n++) {
+      if (stage_wghts[n].main_stage) {
+        if (n_main == 0) {
+          stage_wghts[n].delta = 1.0;
+          stage_wghts[n].gamma_1 = 0.0;
+          stage_wghts[n].gamma_2 = 1.0;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        } else if (n_main == 1) {
+          stage_wghts[n].delta = 0.0;
+          stage_wghts[n].gamma_1 = 0.5;
+          stage_wghts[n].gamma_2 = 0.5;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        }
+      }
+    }
   } else if (integrator == "rk3") {
-    // SSPRK (3,3): Gottlieb (2009) equation 3.2
-    // Optimal (in error bounds) explicit three-stage, third-order SSPRK
-    nstages = 3;
+    //! \note `integrator == "rk3"`
+    //! - SSPRK (3,3): Gottlieb (2009) equation 3.2
+    //! - Optimal (in error bounds) explicit three-stage, third-order SSPRK
+
+    // set number of stages and time coeff.
+    nstages_main = 3;
+    if (ORBITAL_ADVECTION) {
+      // w/ orbital advection
+      if (SHEAR_PERIODIC || pm->multilevel) {
+        // w/ shear_periodic or refinements
+        if (pm->orbital_advection==1) { // first order splitting
+          nstages = nstages_main+1;
+          for (int l=0; l<nstages; l++) {
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
+          stage_wghts[0].beta = 1.0;
+          stage_wghts[1].beta = 0.25;
+          stage_wghts[2].beta = TWO_3RD;
+          stage_wghts[3].beta = 0.0;
+        } else { // second order splitting
+          nstages = nstages_main+2;
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
+          stage_wghts[0].beta = 0.0;
+          stage_wghts[1].beta = 1.0;
+          stage_wghts[2].beta = 0.25;
+          stage_wghts[3].beta = TWO_3RD;
+          stage_wghts[4].beta = 0.0;
+        }
+      } else { // w/o shear periodic and refinements
+        if (pm->orbital_advection==1) { // first order splitting
+          nstages = nstages_main;
+          for (int l=0; l<nstages; l++) {
+            stage_wghts[l].main_stage = true;
+            if (l == nstages-1) { // last stage
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].ebeta = 0.0;
+            }
+            stage_wghts[l].sbeta = 0.0;
+          }
+          stage_wghts[0].beta = 1.0;
+          stage_wghts[1].beta = 0.25;
+          stage_wghts[2].beta = TWO_3RD;
+        } else { // second order splitting
+          nstages = nstages_main+1;
+          for (int l=0; l<nstages; l++) {
+            if (l == 0) { // first stage
+              stage_wghts[l].main_stage = false;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.0;
+            } else if (l == nstages-1) { // last stage
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = true;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+              stage_wghts[l].ebeta = 1.0;
+            } else {
+              stage_wghts[l].main_stage = true;
+              stage_wghts[l].orbital_stage = false;
+              stage_wghts[l].sbeta = 0.5;
+              stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            }
+          }
+          stage_wghts[0].beta = 0.0;
+          stage_wghts[1].beta = 1.0;
+          stage_wghts[2].beta = 0.25;
+          stage_wghts[3].beta = TWO_3RD;
+        }
+      }
+    } else { // w/o orbital advection
+      nstages = nstages_main;
+      for (int l=0; l<nstages; l++) {
+        stage_wghts[l].main_stage = true;
+        stage_wghts[l].orbital_stage = false;
+      }
+      stage_wghts[0].sbeta = 0.0;
+      stage_wghts[0].ebeta = 1.0;
+      stage_wghts[1].sbeta = 1.0;
+      stage_wghts[1].ebeta = 0.5;
+      stage_wghts[2].sbeta = 0.5;
+      stage_wghts[2].ebeta = 1.0;
+      stage_wghts[0].beta = 1.0;
+      stage_wghts[1].beta = 0.25;
+      stage_wghts[2].beta = TWO_3RD;
+    }
     cfl_limit = 1.0;  // c_eff = c/nstages = 1/3 (Gottlieb (2009), pg 271)
-    stage_wghts[0].delta = 1.0;
-    stage_wghts[0].gamma_1 = 0.0;
-    stage_wghts[0].gamma_2 = 1.0;
-    stage_wghts[0].gamma_3 = 0.0;
-    stage_wghts[0].beta = 1.0;
 
-    stage_wghts[1].delta = 0.0;
-    stage_wghts[1].gamma_1 = 0.25;
-    stage_wghts[1].gamma_2 = 0.75;
-    stage_wghts[1].gamma_3 = 0.0;
-    stage_wghts[1].beta = 0.25;
-
-    stage_wghts[2].delta = 0.0;
-    stage_wghts[2].gamma_1 = TWO_3RD;
-    stage_wghts[2].gamma_2 = ONE_3RD;
-    stage_wghts[2].gamma_3 = 0.0;
-    stage_wghts[2].beta = TWO_3RD;
-    //} else if (integrator == "ssprk5_3") {
-    //} else if (integrator == "ssprk10_4") {
+    // set delta and gamma at each stage
+    int n_main = 0;
+    for (int n=0; n<nstages; n++) {
+      if (stage_wghts[n].main_stage) {
+        if (n_main == 0) {
+          stage_wghts[n].delta = 1.0;
+          stage_wghts[n].gamma_1 = 0.0;
+          stage_wghts[n].gamma_2 = 1.0;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        } else if (n_main == 1) {
+          stage_wghts[n].delta = 0.0;
+          stage_wghts[n].gamma_1 = 0.25;
+          stage_wghts[n].gamma_2 = 0.75;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        } else if (n_main == 2) {
+          stage_wghts[n].delta = 0.0;
+          stage_wghts[n].gamma_1 = TWO_3RD;
+          stage_wghts[n].gamma_2 = ONE_3RD;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        }
+      }
+    }
   } else if (integrator == "rk4") {
-    // RK4()4[2S] from Table 2 of Ketcheson (2010)
-    // Non-SSP, explicit four-stage, fourth-order RK
-    nstages = 4;
-    // Stability properties are similar to classical (non-SSP) RK4 (but ~2x L2 principal
-    // error norm). Refer to Colella (2011) for linear stability analysis of constant
-    // coeff. advection of classical RK4 + 4th or 1st order (limiter engaged) fluxes
+    //! \note `integorator == "rk4"`
+    //! - RK4()4[2S] from Table 2 of Ketcheson (2010)
+    //! - Non-SSP, explicit four-stage, fourth-order RK
+    //! - Stability properties are similar to classical (non-SSP) RK4
+    //!   (but ~2x L2 principal error norm).
+    //! - Refer to Colella (2011) for linear stability analysis of constant
+    //!   coeff. advection of classical RK4 + 4th or 1st order (limiter engaged) fluxes
+    nstages_main = 4;
     cfl_limit = 1.3925; // Colella (2011) eq 101; 1st order flux is most severe constraint
-    stage_wghts[0].delta = 1.0;
-    stage_wghts[0].gamma_1 = 0.0;
-    stage_wghts[0].gamma_2 = 1.0;
-    stage_wghts[0].gamma_3 = 0.0;
-    stage_wghts[0].beta = 1.193743905974738;
 
-    stage_wghts[1].delta = 0.217683334308543;
-    stage_wghts[1].gamma_1 = 0.121098479554482;
-    stage_wghts[1].gamma_2 = 0.721781678111411;
-    stage_wghts[1].gamma_3 = 0.0;
-    stage_wghts[1].beta = 0.099279895495783;
+    if (ORBITAL_ADVECTION) {
+      if (pm->orbital_advection==1) { // first order splitting
+        nstages = nstages_main;
+        for (int l=0; l<nstages; l++) {
+          stage_wghts[l].main_stage = true;
+          if (l == nstages-1) { // last stage
+            stage_wghts[l].orbital_stage = true;
+          } else {
+            stage_wghts[l].orbital_stage = false;
+          }
+        }
+        stage_wghts[0].beta = 1.193743905974738;
+        stage_wghts[1].beta = 0.099279895495783;
+        stage_wghts[2].beta = 1.131678018054042;
+        stage_wghts[3].beta = 0.310665766509336;
+      } else { // second order splitting
+        nstages = nstages_main+1;
+        for (int l=0; l<nstages; l++) {
+          if (l == 0) { // first stage
+            stage_wghts[l].main_stage = false;
+            stage_wghts[l].orbital_stage = true;
+          } else if (l == nstages-1) { // last stage
+            stage_wghts[l].main_stage = true;
+            stage_wghts[l].orbital_stage = true;
+          } else {
+            stage_wghts[l].main_stage = true;
+            stage_wghts[l].orbital_stage = false;
+          }
+        }
+        stage_wghts[0].beta = 0.0;
+        stage_wghts[1].beta = 1.193743905974738;
+        stage_wghts[2].beta = 0.099279895495783;
+        stage_wghts[3].beta = 1.131678018054042;
+        stage_wghts[4].beta = 0.310665766509336;
+      }
+    } else { // w/o orbital advection
+      nstages = nstages_main;
+      for (int l=0; l<nstages; l++) {
+        stage_wghts[l].main_stage = true;
+        stage_wghts[l].orbital_stage = false;
+      }
+      stage_wghts[0].beta = 1.193743905974738;
+      stage_wghts[1].beta = 0.099279895495783;
+      stage_wghts[2].beta = 1.131678018054042;
+      stage_wghts[3].beta = 0.310665766509336;
+    }
 
-    stage_wghts[2].delta = 1.065841341361089;
-    stage_wghts[2].gamma_1 = -3.843833699660025;
-    stage_wghts[2].gamma_2 = 2.121209265338722;
-    stage_wghts[2].gamma_3 = 0.0;
-    stage_wghts[2].beta = 1.131678018054042;
+    // set delta and gamma at each stage
+    int n_main = 0;
+    for (int n=0; n<nstages; n++) {
+      if (stage_wghts[n].main_stage) {
+        if (n_main == 0) {
+          stage_wghts[n].delta = 1.0;
+          stage_wghts[n].gamma_1 = 0.0;
+          stage_wghts[n].gamma_2 = 1.0;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        } else if (n_main == 1) {
+          stage_wghts[n].delta = 0.217683334308543;
+          stage_wghts[n].gamma_1 = 0.121098479554482;
+          stage_wghts[n].gamma_2 = 0.721781678111411;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        } else if (n_main == 2) {
+          stage_wghts[n].delta = 1.065841341361089;
+          stage_wghts[n].gamma_1 = -3.843833699660025;
+          stage_wghts[n].gamma_2 = 2.121209265338722;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        } else if (n_main == 3) {
+          stage_wghts[n].delta = 0.0;
+          stage_wghts[n].gamma_1 = 0.546370891121863;
+          stage_wghts[n].gamma_2 = 0.198653035682705;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        }
+      }
+    }
 
-    stage_wghts[3].delta = 0.0;
-    stage_wghts[3].gamma_1 = 0.546370891121863;
-    stage_wghts[3].gamma_2 = 0.198653035682705;
-    stage_wghts[3].gamma_3 = 0.0;
-    stage_wghts[3].beta = 0.310665766509336;
+    // set sbeta & ebeta
+    if (ORBITAL_ADVECTION) {
+      if (pm->orbital_advection==1) { // first order splitting
+        for (int l=0; l<nstages; l++) {
+          if (l == nstages-1) { // last stage
+            stage_wghts[l].ebeta = 1.0;
+          } else {
+            stage_wghts[l].ebeta = 0.0;
+          }
+          stage_wghts[l].sbeta = 0.0;
+        }
+      } else { // second order splitting
+        for (int l=0; l<nstages; l++) {
+          if (l == 0) { // first stage
+            stage_wghts[l].sbeta = 0.0;
+          } else if (l == nstages-1) { // last stage
+            stage_wghts[l].sbeta = 0.5;
+            stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            stage_wghts[l].ebeta = 1.0;
+          } else {
+            stage_wghts[l].sbeta = 0.5;
+            stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+          }
+        }
+      }
+    } else { // w/o orbital advection ///
+      Real temp = 0.0;
+      Real temp_prev = 0.0;
+      stage_wghts[0].sbeta = 0.0;
+      for (int l=0; l<nstages-1; l++) {
+        temp_prev = temp;
+        temp = temp_prev + stage_wghts[l].delta*stage_wghts[l].sbeta;
+        stage_wghts[l].ebeta = stage_wghts[l].gamma_1*temp_prev
+                               + stage_wghts[l].gamma_2*temp
+                               + stage_wghts[l].gamma_3*0.0
+                               + stage_wghts[l].beta;
+        stage_wghts[l+1].sbeta = stage_wghts[l].ebeta;
+      }
+      stage_wghts[nstages-1].ebeta = 1.0;
+    }
   } else if (integrator == "ssprk5_4") {
-    // SSPRK (5,4): Gottlieb (2009) section 3.1; between eq 3.3 and 3.4
-    // Optimal (in error bounds) explicit five-stage, fourth-order SSPRK
-    // 3N method, but there is no 3S* formulation due to irregular sparsity
-    // of Shu-Osher form matrix, alpha.
-    nstages = 5;
-    // Because it is an SSP method, we can use the SSP coefficient c=1.508 to to trivially
-    // relate the CFL constraint to the RK1 CFL=1 (for first-order fluxes). There is no
-    // need to perform stability analysis from scratch (unlike e.g. the linear stability
-    // analysis for classical/non-SSP RK4 in Colella (2011)) However, PLM and PPM w/o the
-    // limiter engaged are unconditionally unstable under RK1 integration, so the SSP
-    // guarantees do not hold for the Athena++ spatial discretizations.
+    //! \note `integrator == "ssprk5_4"`
+    //! - SSPRK (5,4): Gottlieb (2009) section 3.1; between eq 3.3 and 3.4
+    //! - Optimal (in error bounds) explicit five-stage, fourth-order SSPRK
+    //!   3N method, but there is no 3S* formulation due to irregular sparsity
+    //!   of Shu-Osher form matrix, alpha.
+    //! - Because it is an SSP method, we can use the SSP coefficient c=1.508 to to
+    //!   trivially relate the CFL constraint to the RK1 CFL=1 (for first-order fluxes).
+    //! - There is no need to perform stability analysis from scratch
+    //!   (unlike e.g. the linear stability analysis for classical/non-SSP RK4 in
+    //!   Colella (2011)).
+    //! - However, PLM and PPM w/o the limiter engaged are unconditionally unstable
+    //!   under RK1 integration, so the SSP guarantees do not hold for
+    //!   the Athena++ spatial discretizations.
+    nstages_main = 5;
     cfl_limit = 1.508;         //  (effective SSP coeff = 0.302) Gottlieb (2009) pg 272
-    // u^(1)
-    stage_wghts[0].delta = 1.0; // u1 = u^n
-    stage_wghts[0].gamma_1 = 0.0;
-    stage_wghts[0].gamma_2 = 1.0;
-    stage_wghts[0].gamma_3 = 0.0;
-    stage_wghts[0].beta = 0.391752226571890;
 
-    // u^(2)
-    stage_wghts[1].delta = 0.0; // u1 = u^n
-    stage_wghts[1].gamma_1 = 0.555629506348765;
-    stage_wghts[1].gamma_2 = 0.444370493651235;
-    stage_wghts[1].gamma_3 = 0.0;
-    stage_wghts[1].beta = 0.368410593050371;
+    if (ORBITAL_ADVECTION) {
+      if (pm->orbital_advection==1) { // first order splitting
+        nstages = nstages_main;
+        for (int l=0; l<nstages; l++) {
+          stage_wghts[l].main_stage = true;
+          if (l == nstages-1) { // last stage
+            stage_wghts[l].orbital_stage = true;
+          } else {
+            stage_wghts[l].orbital_stage = false;
+          }
+        }
+        stage_wghts[0].beta = 0.391752226571890;
+        stage_wghts[1].beta = 0.368410593050371;
+        stage_wghts[2].beta = 0.251891774271694;
+        stage_wghts[3].beta = 0.544974750228521;
+        stage_wghts[4].beta = 0.226007483236906; // F(u^(4)) coeff.
+      } else { // second order splitting
+        nstages = nstages_main+1;
+        for (int l=0; l<nstages; l++) {
+          if (l == 0) { // first stage
+            stage_wghts[l].main_stage = false;
+            stage_wghts[l].orbital_stage = true;
+          } else if (l == nstages-1) { // last stage
+            stage_wghts[l].main_stage = true;
+            stage_wghts[l].orbital_stage = true;
+          } else {
+            stage_wghts[l].main_stage = true;
+            stage_wghts[l].orbital_stage = false;
+          }
+        }
+        stage_wghts[0].beta = 0.0;
+        stage_wghts[1].beta = 0.391752226571890;
+        stage_wghts[2].beta = 0.368410593050371;
+        stage_wghts[3].beta = 0.251891774271694;
+        stage_wghts[4].beta = 0.544974750228521;
+        stage_wghts[5].beta = 0.226007483236906; // F(u^(4)) coeff.
+      }
+    } else { // w/o orbital advection
+      nstages = nstages_main;
+      for (int l=0; l<nstages; l++) {
+        stage_wghts[l].main_stage = true;
+        stage_wghts[l].orbital_stage = false;
+      }
+      stage_wghts[0].beta = 0.391752226571890;
+      stage_wghts[1].beta = 0.368410593050371;
+      stage_wghts[2].beta = 0.251891774271694;
+      stage_wghts[3].beta = 0.544974750228521;
+      stage_wghts[4].beta = 0.226007483236906; // F(u^(4)) coeff.
+    }
 
-    // u^(3)
-    stage_wghts[2].delta = 0.517231671970585; // u1 <- (u^n + d*u^(2))
-    stage_wghts[2].gamma_1 = 0.379898148511597;
-    stage_wghts[2].gamma_2 = 0.0;
-    stage_wghts[2].gamma_3 = 0.620101851488403; // u^(n) coeff =  u2
-    stage_wghts[2].beta = 0.251891774271694;
+    // set delta and gamma at each stage
+    int n_main = 0;
+    for (int n=0; n<nstages; n++) {
+      if (stage_wghts[n].main_stage) {
+        if (n_main == 0) {
+          stage_wghts[n].delta = 1.0; // u1 = u^n
+          stage_wghts[n].gamma_1 = 0.0;
+          stage_wghts[n].gamma_2 = 1.0;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        } else if (n_main == 1) {
+          stage_wghts[n].delta = 0.0; // u1 = u^n
+          stage_wghts[n].gamma_1 = 0.555629506348765;
+          stage_wghts[n].gamma_2 = 0.444370493651235;
+          stage_wghts[n].gamma_3 = 0.0;
+          n_main++;
+        } else if (n_main == 2) {
+          stage_wghts[n].delta = 0.517231671970585; // u1 <- (u^n + d*u^(2))
+          stage_wghts[n].gamma_1 = 0.379898148511597;
+          stage_wghts[n].gamma_2 = 0.0;
+          stage_wghts[n].gamma_3 = 0.620101851488403; // u^(n) coeff =  u2
+          n_main++;
+        } else if (n_main == 3) {
+          stage_wghts[n].delta = 0.096059710526147; // u1 <- (u^n + d*u^(2) + d'*u^(3))
+          stage_wghts[n].gamma_1 = 0.821920045606868;
+          stage_wghts[n].gamma_2 = 0.0;
+          stage_wghts[n].gamma_3 = 0.178079954393132; // u^(n) coeff =  u2
+          n_main++;
+        } else if (n_main == 4) {
+          stage_wghts[n].delta = 0.0;
+          // 1 ulp lower than Gottlieb u^(4) coeff
+          stage_wghts[n].gamma_1 = 0.386708617503268;
+          // u1 <- (u^n + d*u^(2) + d'*u^(3))
+          stage_wghts[n].gamma_2 = 1.0;
+          // partial sum from hardcoded extra stage=4
+          stage_wghts[n].gamma_3 = 1.0;
+          n_main++;
+        }
+      }
+    }
 
-    // u^(4)
-    stage_wghts[3].delta = 0.096059710526147; // u1 <- (u^n + d*u^(2) + d'*u^(3))
-    stage_wghts[3].gamma_1 = 0.821920045606868;
-    stage_wghts[3].gamma_2 = 0.0;
-    stage_wghts[3].gamma_3 = 0.178079954393132; // u^(n) coeff =  u2
-    stage_wghts[3].beta = 0.544974750228521;
-
-    // u^(n+1) partial expression
-    stage_wghts[4].delta = 0.0;
-    stage_wghts[4].gamma_1 = 0.386708617503268; // 1 ulp lower than Gottlieb u^(4) coeff
-    stage_wghts[4].gamma_2 = 1.0; // u1 <- (u^n + d*u^(2) + d'*u^(3))
-    stage_wghts[4].gamma_3 = 1.0; // partial sum from hardcoded extra stage=4
-    stage_wghts[4].beta = 0.226007483236906; // F(u^(4)) coeff.
+    // set sbeta & ebeta
+    if (ORBITAL_ADVECTION) {
+      if (pm->orbital_advection==1) { // first order splitting
+        for (int l=0; l<nstages; l++) {
+          if (l == nstages-1) { // last stage
+            stage_wghts[l].ebeta = 1.0;
+          } else {
+            stage_wghts[l].ebeta = 0.0;
+          }
+          stage_wghts[l].sbeta = 0.0;
+        }
+      } else { // second order splitting
+        for (int l=0; l<nstages; l++) {
+          if (l == 0) { // first stage
+            stage_wghts[l].sbeta = 0.0;
+          } else if (l == nstages-1) { // last stage
+            stage_wghts[l].sbeta = 0.5;
+            stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+            stage_wghts[l].ebeta = 1.0;
+          } else {
+            stage_wghts[l].sbeta = 0.5;
+            stage_wghts[l-1].ebeta = stage_wghts[l].sbeta;
+          }
+        }
+      }
+    } else { // w/o orbital advection ///
+      Real temp = 0.0;
+      Real temp_prev = 0.0;
+      stage_wghts[0].sbeta = 0.0;
+      for (int l=0; l<nstages-1; l++) {
+        temp_prev = temp;
+        temp = temp_prev + stage_wghts[l].delta*stage_wghts[l].sbeta;
+        stage_wghts[l].ebeta = stage_wghts[l].gamma_1*temp_prev
+                               + stage_wghts[l].gamma_2*temp
+                               + stage_wghts[l].gamma_3*0.0
+                               + stage_wghts[l].beta;
+        stage_wghts[l+1].sbeta = stage_wghts[l].ebeta;
+      }
+      stage_wghts[nstages-1].ebeta = 1.0;
+    }
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in TimeIntegratorTaskList constructor" << std::endl
@@ -254,38 +916,70 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       if (NSCALARS > 0)
         AddTask(CALC_SCLRFLX,CALC_HYDFLX);
     }
-    if (pm->multilevel) { // SMR or AMR
+    if (pm->multilevel || SHEAR_PERIODIC) { // SMR or AMR or shear periodic
       AddTask(SEND_HYDFLX,CALC_HYDFLX);
       AddTask(RECV_HYDFLX,CALC_HYDFLX);
-      AddTask(INT_HYD,RECV_HYDFLX);
+      if (SHEAR_PERIODIC) {
+        AddTask(SEND_HYDFLXSH,RECV_HYDFLX);
+        AddTask(RECV_HYDFLXSH,(SEND_HYDFLX|RECV_HYDFLX));
+        AddTask(INT_HYD,RECV_HYDFLXSH);
+      } else {
+        AddTask(INT_HYD,RECV_HYDFLX);
+      }
     } else {
       AddTask(INT_HYD, CALC_HYDFLX);
     }
-    AddTask(SRCTERM_HYD,INT_HYD);
-    AddTask(SEND_HYD,SRCTERM_HYD);
-    AddTask(RECV_HYD,NONE);
-    AddTask(SETB_HYD,(RECV_HYD|SRCTERM_HYD));
-    if (SHEARING_BOX) { // Shearingbox BC for Hydro
+    if (NSCALARS > 0) {
+      AddTask(SRCTERM_HYD,(INT_HYD|INT_SCLR));
+    } else {
+      AddTask(SRCTERM_HYD,INT_HYD);
+    }
+    if (ORBITAL_ADVECTION) {
+      AddTask(SEND_HYDORB,SRCTERM_HYD);
+      AddTask(RECV_HYDORB,NONE);
+      AddTask(CALC_HYDORB,(SEND_HYDORB|RECV_HYDORB));
+      AddTask(SEND_HYD,CALC_HYDORB);
+      AddTask(RECV_HYD,NONE);
+      AddTask(SETB_HYD,(RECV_HYD|CALC_HYDORB));
+    } else {
+      AddTask(SEND_HYD,SRCTERM_HYD);
+      AddTask(RECV_HYD,NONE);
+      AddTask(SETB_HYD,(RECV_HYD|SRCTERM_HYD));
+    }
+
+    if (SHEAR_PERIODIC) {
       AddTask(SEND_HYDSH,SETB_HYD);
-      AddTask(RECV_HYDSH,SETB_HYD);
+      AddTask(RECV_HYDSH,SEND_HYDSH);
     }
 
     if (NSCALARS > 0) {
-      if (pm->multilevel) {
+      if (pm->multilevel || SHEAR_PERIODIC) {
         AddTask(SEND_SCLRFLX,CALC_SCLRFLX);
         AddTask(RECV_SCLRFLX,CALC_SCLRFLX);
-        AddTask(INT_SCLR,RECV_SCLRFLX);
+        if (SHEAR_PERIODIC) {
+          AddTask(SEND_SCLRFLXSH,RECV_SCLRFLX);
+          AddTask(RECV_SCLRFLXSH,(SEND_SCLRFLX|RECV_SCLRFLX));
+          AddTask(INT_SCLR,RECV_SCLRFLXSH);
+        } else {
+          AddTask(INT_SCLR,RECV_SCLRFLX);
+        }
       } else {
         AddTask(INT_SCLR,CALC_SCLRFLX);
       }
       // there is no SRCTERM_SCLR task
-      AddTask(SEND_SCLR,INT_SCLR);
-      AddTask(RECV_SCLR,NONE);
-      AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
-      // if (SHEARING_BOX) {
-      //   AddTask(SEND_SCLRSH,SETB_SCLR);
-      //   AddTask(RECV_SCLRSH,SETB_SCLR);
-      // }
+      if (ORBITAL_ADVECTION) {
+        AddTask(SEND_SCLR,CALC_HYDORB);
+        AddTask(RECV_SCLR,NONE);
+        AddTask(SETB_SCLR,(RECV_SCLR|CALC_HYDORB));
+      } else {
+        AddTask(SEND_SCLR,INT_SCLR);
+        AddTask(RECV_SCLR,NONE);
+        AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
+      }
+      if (SHEAR_PERIODIC) {
+        AddTask(SEND_SCLRSH,SETB_SCLR);
+        AddTask(RECV_SCLRSH,SEND_SCLRSH);
+      }
     }
 
     if (MAGNETIC_FIELDS_ENABLED) { // MHD
@@ -293,21 +987,29 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       AddTask(CALC_FLDFLX,CALC_HYDFLX);
       AddTask(SEND_FLDFLX,CALC_FLDFLX);
       AddTask(RECV_FLDFLX,SEND_FLDFLX);
-      if (SHEARING_BOX) {// Shearingbox BC for EMF
+      if (SHEAR_PERIODIC) {
         AddTask(SEND_EMFSH,RECV_FLDFLX);
         AddTask(RECV_EMFSH,RECV_FLDFLX);
-        AddTask(RMAP_EMFSH,RECV_EMFSH);
-        AddTask(INT_FLD,RMAP_EMFSH);
+        AddTask(INT_FLD,RECV_EMFSH);
       } else {
         AddTask(INT_FLD,RECV_FLDFLX);
       }
 
-      AddTask(SEND_FLD,INT_FLD);
-      AddTask(RECV_FLD,NONE);
-      AddTask(SETB_FLD,(RECV_FLD|INT_FLD));
-      if (SHEARING_BOX) { // Shearingbox BC for Bfield
+      if (ORBITAL_ADVECTION) {
+        AddTask(SEND_FLDORB,INT_FLD);
+        AddTask(RECV_FLDORB,NONE);
+        AddTask(CALC_FLDORB,(SEND_FLDORB|RECV_FLDORB));
+        AddTask(SEND_FLD,CALC_FLDORB);
+        AddTask(RECV_FLD,NONE);
+        AddTask(SETB_FLD,(RECV_FLD|CALC_FLDORB));
+      } else {
+        AddTask(SEND_FLD,INT_FLD);
+        AddTask(RECV_FLD,NONE);
+        AddTask(SETB_FLD,(RECV_FLD|INT_FLD));
+      }
+      if (SHEAR_PERIODIC) {
         AddTask(SEND_FLDSH,SETB_FLD);
-        AddTask(RECV_FLDSH,SETB_FLD);
+        AddTask(RECV_FLDSH,SEND_FLDSH);
       }
 
       // TODO(felker): these nested conditionals are horrible now. Add option to AddTask
@@ -315,19 +1017,28 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
       // prolongate, compute new primitives
       if (pm->multilevel) { // SMR or AMR
-        if (NSCALARS > 0) {
-          AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD|SEND_SCLR|SETB_SCLR));
+        if (SHEAR_PERIODIC) {
+          if (NSCALARS > 0) {
+            AddTask(PROLONG,(SEND_HYD|RECV_HYDSH|SEND_FLD|RECV_FLDSH
+                             |SEND_SCLR|RECV_SCLRSH));
+          } else {
+            AddTask(PROLONG,(SEND_HYD|RECV_HYDSH|SEND_FLD|RECV_FLDSH));
+          }
         } else {
-          AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD));
+          if (NSCALARS > 0) {
+            AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD
+                             |SEND_SCLR|SETB_SCLR));
+          } else {
+            AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_FLD|SETB_FLD));
+          }
         }
         AddTask(CONS2PRIM,PROLONG);
       } else {
-        if (SHEARING_BOX) {
+        if (SHEAR_PERIODIC) {
           if (NSCALARS > 0) {
-            AddTask(CONS2PRIM,
-                    (SETB_HYD|SETB_FLD|SETB_SCLR|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
+            AddTask(CONS2PRIM,(RECV_HYDSH|RECV_FLDSH|RECV_SCLRSH));
           } else {
-            AddTask(CONS2PRIM,(SETB_HYD|SETB_FLD|RECV_HYDSH|RECV_FLDSH|RMAP_EMFSH));
+            AddTask(CONS2PRIM,(RECV_HYDSH|RECV_FLDSH));
           }
         } else {
           if (NSCALARS > 0) {
@@ -340,24 +1051,32 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     } else {  // HYDRO
       // prolongate, compute new primitives
       if (pm->multilevel) { // SMR or AMR
-        if (NSCALARS > 0) {
-          AddTask(PROLONG,(SEND_HYD|SETB_HYD|SETB_SCLR|SEND_SCLR));
+        if (SHEAR_PERIODIC) {
+          if (NSCALARS > 0) {
+            AddTask(PROLONG,(SEND_HYD|RECV_HYDSH|SEND_SCLR|RECV_SCLRSH));
+          } else {
+            AddTask(PROLONG,(SEND_HYD|RECV_HYDSH));
+          }
         } else {
-          AddTask(PROLONG,(SEND_HYD|SETB_HYD));
+          if (NSCALARS > 0) {
+            AddTask(PROLONG,(SEND_HYD|SETB_HYD|SEND_SCLR|SETB_SCLR));
+          } else {
+            AddTask(PROLONG,(SEND_HYD|SETB_HYD));
+          }
         }
         AddTask(CONS2PRIM,PROLONG);
       } else {
-        if (SHEARING_BOX) {
+        if (SHEAR_PERIODIC) {
           if (NSCALARS > 0) {
-            AddTask(CONS2PRIM,(SETB_HYD|RECV_HYDSH|SETB_SCLR));  // RECV_SCLRSH
+            AddTask(CONS2PRIM,(RECV_HYDSH|RECV_SCLRSH));
           } else {
-            AddTask(CONS2PRIM,(SETB_HYD|RECV_HYDSH));
+            AddTask(CONS2PRIM,RECV_HYDSH);
           }
         } else {
           if (NSCALARS > 0) {
             AddTask(CONS2PRIM,(SETB_HYD|SETB_SCLR));
           } else {
-            AddTask(CONS2PRIM,(SETB_HYD));
+            AddTask(CONS2PRIM,SETB_HYD);
           }
         }
       }
@@ -380,24 +1099,25 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
   } // end of using namespace block
 }
 
-//---------------------------------------------------------------------------------------
-//  Sets id and dependency for "ntask" member of task_list_ array, then iterates value of
-//  ntask.
+//----------------------------------------------------------------------------------------
+//!  Sets id and dependency for "ntask" member of task_list_ array, then iterates value of
+//!  ntask.
 
 void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id = id;
   task_list_[ntasks].dependency = dep;
-  // TODO(felker): change naming convention of either/both of TASK_NAME and TaskFunc
-  // There are some issues with the current names:
-  // 1) VERB_OBJECT is confusing with ObjectVerb(). E.g. seeing SEND_HYD in the task list
-  // assembly would lead the user to believe the corresponding function is SendHydro(),
-  // when it is actually HydroSend()--- Probaby change function names to active voice
-  // VerbObject() since "HydroFluxCalculate()" doesn't sound quite right.
-
-  // Note, there are exceptions to the "verb+object" convention in some TASK_NAMES and
-  // TaskFunc, e.g. NEW_DT + NewBlockTimeStep() and AMR_FLAG + CheckRefinement(),
-  // SRCTERM_HYD and HydroSourceTerms(), USERWORK, PHY_BVAL, PROLONG, CONS2PRIM,
-  // ... Although, AMR_FLAG = "flag blocks for AMR" should be FLAG_AMR in VERB_OBJECT
+  //! \todo (felker):
+  //! - change naming convention of either/both of TASK_NAME and TaskFunc
+  //! - There are some issues with the current names:
+  //!   VERB_OBJECT is confusing with ObjectVerb(). E.g. seeing SEND_HYD in the task list
+  //!   assembly would lead the user to believe the corresponding function is
+  //!   SendHydro(), when it is actually HydroSend() ---
+  //!   Probaby change function names to active voice
+  //!   VerbObject() since "HydroFluxCalculate()" doesn't sound quite right.
+  //! - There are exceptions to the "verb+object" convention in some TASK_NAMES and
+  //!   TaskFunc, e.g. NEW_DT + NewBlockTimeStep() and AMR_FLAG + CheckRefinement(),
+  //!   SRCTERM_HYD and HydroSourceTerms(), USERWORK, PHY_BVAL, PROLONG, CONS2PRIM,
+  //!   ... Although, AMR_FLAG = "flag blocks for AMR" should be FLAG_AMR in VERB_OBJECT
   using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
   if (id == CLEAR_ALLBND) {
     task_list_[ntasks].TaskFunc=
@@ -479,6 +1199,16 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::SetBoundariesField);
     task_list_[ntasks].lb_time = true;
+  } else if (id == SEND_HYDFLXSH) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::SendHydroFluxShear);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == RECV_HYDFLXSH) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::ReceiveHydroFluxShear);
+    task_list_[ntasks].lb_time = false;
   } else if (id == SEND_HYDSH) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -509,11 +1239,6 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::ReceiveEMFShear);
     task_list_[ntasks].lb_time = false;
-  } else if (id == RMAP_EMFSH) {
-    task_list_[ntasks].TaskFunc=
-        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::RemapEMFShear);
-    task_list_[ntasks].lb_time = true;
   } else if (id == PROLONG) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -589,10 +1314,60 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::SetBoundariesScalars);
     task_list_[ntasks].lb_time = true;
+  } else if (id == SEND_SCLRSH) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::SendScalarsShear);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == RECV_SCLRSH) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::ReceiveScalarsShear);
+    task_list_[ntasks].lb_time = false;
+  } else if (id == SEND_SCLRFLXSH) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::SendScalarsFluxShear);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == RECV_SCLRFLXSH) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::ReceiveScalarsFluxShear);
+    task_list_[ntasks].lb_time = false;
   } else if (id == DIFFUSE_SCLR) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::DiffuseScalars);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == SEND_HYDORB) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::SendHydroOrbital);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == RECV_HYDORB) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::ReceiveHydroOrbital);
+    task_list_[ntasks].lb_time = false;
+  } else if (id == CALC_HYDORB) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::CalculateHydroOrbital);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == SEND_FLDORB) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::SendFieldOrbital);
+    task_list_[ntasks].lb_time = true;
+  } else if (id == RECV_FLDORB) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::ReceiveFieldOrbital);
+    task_list_[ntasks].lb_time = false;
+  } else if (id == CALC_FLDORB) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::CalculateFieldOrbital);
     task_list_[ntasks].lb_time = true;
   } else {
     std::stringstream msg;
@@ -604,32 +1379,12 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage)
+//! \brief Initialize time abscissae
 
 void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   if (stage == 1) {
-    // For each Meshblock, initialize time abscissae of each memory register pair (u,b)
-    // at stage=0 to correspond to the beginning of the interval [t^n, t^{n+1}]
-    pmb->stage_abscissae[0][0] = 0.0;
-    pmb->stage_abscissae[0][1] = 0.0; // u1 advances to u1 = 0*u1 + 1.0*u in stage=1
-    pmb->stage_abscissae[0][2] = 0.0; // u2 = u cached for all stages in 3S* methods
-
-    // Given overall timestep dt, compute the time abscissae for all registers, stages
-    for (int l=1; l<=nstages; l++) {
-      // Update the dt abscissae of each memory register to values at end of this stage
-      const IntegratorWeight w = stage_wghts[l-1];
-
-      // u1 = u1 + delta*u
-      pmb->stage_abscissae[l][1] = pmb->stage_abscissae[l-1][1]
-                                   + w.delta*pmb->stage_abscissae[l-1][0];
-      // u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*F(u)
-      pmb->stage_abscissae[l][0] = w.gamma_1*pmb->stage_abscissae[l-1][0]
-                                   + w.gamma_2*pmb->stage_abscissae[l][1]
-                                   + w.gamma_3*pmb->stage_abscissae[l-1][2]
-                                   + w.beta*pmb->pmy_mesh->dt;
-      // u2 = u^n
-      pmb->stage_abscissae[l][2] = 0.0;
-    }
-
     // Initialize storage registers
     Hydro *ph = pmb->phydro;
     ph->u1.ZeroClear();
@@ -644,7 +1399,7 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
       if (integrator == "ssprk5_4") {
         std::stringstream msg;
         msg << "### FATAL ERROR in TimeIntegratorTaskList::StartupTaskList\n"
-            << "integrator=" << integrator << " is currently incompatible with MHD"
+            << "integrator=" << integrator << " is currently incompatible with MHD."
             << std::endl;
         ATHENA_ERROR(msg);
       }
@@ -657,48 +1412,77 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     }
   }
 
-  if (SHEARING_BOX) {
-    Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-    Real time = pmb->pmy_mesh->time+dt;
-    pmb->pbval->ComputeShear(time);
+  if (SHEAR_PERIODIC) {
+    Real dt_fc   = pmb->pmy_mesh->dt*(stage_wghts[stage-1].sbeta);
+    Real dt_int  = pmb->pmy_mesh->dt*(stage_wghts[stage-1].ebeta);
+    Real time = pmb->pmy_mesh->time;
+    if (stage==1 ||
+        ((stage_wghts[stage-1].sbeta != stage_wghts[stage-2].sbeta)
+        || (stage_wghts[stage-1].ebeta != stage_wghts[stage-2].ebeta)))
+      pmb->pbval->ComputeShear(time+dt_fc, time+dt_int);
   }
-  pmb->pbval->StartReceivingSubset(BoundaryCommSubset::all, pmb->pbval->bvars_main_int);
 
+  if (stage_wghts[stage-1].main_stage) {
+    pmb->pbval->StartReceivingSubset(BoundaryCommSubset::all, pmb->pbval->bvars_main_int);
+  } else {
+    pmb->pbval->StartReceivingSubset(BoundaryCommSubset::orbital,
+                                     pmb->pbval->bvars_main_int);
+  }
+  if (stage_wghts[stage-1].orbital_stage && pmb->porb->orbital_advection_active) {
+    Real dt = (stage_wghts[(stage-1)].ebeta-stage_wghts[(stage-1)].sbeta)
+              *pmb->pmy_mesh->dt;
+    pmb->porb->orb_bc->ComputeOrbit(dt);
+    pmb->porb->orb_bc->StartReceiving(BoundaryCommSubset::all);
+  }
   return;
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to end MPI communication
+//! Functions to end MPI communication
 
 TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
-  pmb->pbval->ClearBoundarySubset(BoundaryCommSubset::all,
-                                  pmb->pbval->bvars_main_int);
+  if (stage_wghts[stage-1].main_stage) {
+    pmb->pbval->ClearBoundarySubset(BoundaryCommSubset::all,
+                                    pmb->pbval->bvars_main_int);
+  } else {
+    pmb->pbval->ClearBoundarySubset(BoundaryCommSubset::orbital,
+                                    pmb->pbval->bvars_main_int);
+  }
+  if (stage_wghts[stage-1].orbital_stage && pmb->porb->orbital_advection_active) {
+    pmb->porb->orb_bc->ClearBoundary(BoundaryCommSubset::all);
+  }
+
   return TaskStatus::success;
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to calculates fluxes
+// Functions to calculates Hydro fluxes
 
 TaskStatus TimeIntegratorTaskList::CalculateHydroFlux(MeshBlock *pmb, int stage) {
   Hydro *phydro = pmb->phydro;
   Field *pfield = pmb->pfield;
 
   if (stage <= nstages) {
-    if ((stage == 1) && (integrator == "vl2")) {
-      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
-      return TaskStatus::next;
-    } else {
-      phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, pmb->precon->xorder);
-      return TaskStatus::next;
+    if (stage_wghts[stage-1].main_stage) {
+      if ((integrator == "vl2") && (stage-stage_wghts[0].orbital_stage == 1)) {
+        phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
+      } else {
+        phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, pmb->precon->xorder);
+      }
     }
+    return TaskStatus::next;
   }
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+// Functions to calculates EMFs
 
 TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
+    if (stage_wghts[stage-1].main_stage) {
+      pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
+    }
     return TaskStatus::next;
   }
   return TaskStatus::fail;
@@ -708,37 +1492,74 @@ TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
 // Functions to communicate fluxes between MeshBlocks for flux correction with AMR
 
 TaskStatus TimeIntegratorTaskList::SendHydroFlux(MeshBlock *pmb, int stage) {
-  pmb->phydro->hbvar.SendFluxCorrection();
-  return TaskStatus::success;
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      pmb->phydro->hbvar.SendFluxCorrection();
+    }
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+// Functions to communicate emf between MeshBlocks for flux correction with AMR
 
 TaskStatus TimeIntegratorTaskList::SendEMF(MeshBlock *pmb, int stage) {
-  pmb->pfield->fbvar.SendFluxCorrection();
-  return TaskStatus::success;
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      pmb->pfield->fbvar.SendFluxCorrection();
+    }
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
 }
 
 //----------------------------------------------------------------------------------------
 // Functions to receive fluxes between MeshBlocks
 
 TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectHydroFlux(MeshBlock *pmb, int stage) {
-  if (pmb->phydro->hbvar.ReceiveFluxCorrection()) {
-    return TaskStatus::next;
-  } else {
-    return TaskStatus::fail;
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      if (pmb->phydro->hbvar.ReceiveFluxCorrection()) {
+        return TaskStatus::next;
+      } else {
+        return TaskStatus::fail;
+      }
+    } else {
+      return TaskStatus::next;
+    }
   }
-}
-
-TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectEMF(MeshBlock *pmb, int stage) {
-  if (pmb->pfield->fbvar.ReceiveFluxCorrection()) {
-    return TaskStatus::next;
-  } else {
-    return TaskStatus::fail;
-  }
+  return TaskStatus::fail;
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to integrate conserved variables
+// Functions to receive emf between MeshBlocks
+
+TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectEMF(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      if (pmb->pfield->fbvar.ReceiveFluxCorrection()) {
+        return TaskStatus::next;
+      } else {
+        return TaskStatus::fail;
+      }
+    } else {
+      return TaskStatus::next;
+    }
+  }
+  return TaskStatus::fail;
+}
+
+//----------------------------------------------------------------------------------------
+// Functions to integrate Hydro variables
 
 TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
@@ -747,47 +1568,52 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
   if (pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
-    // This time-integrator-specific averaging operation logic is identical to FieldInt
-    Real ave_wghts[5];
-    ave_wghts[0] = 1.0;
-    ave_wghts[1] = stage_wghts[stage-1].delta;
-    ave_wghts[2] = 0.0;
-    ave_wghts[3] = 0.0;
-    ave_wghts[4] = 0.0;
-    pmb->WeightedAve(ph->u1, ph->u, ph->u2, ph->u0, ph->fl_div, ave_wghts);
-
-    ave_wghts[0] = stage_wghts[stage-1].gamma_1;
-    ave_wghts[1] = stage_wghts[stage-1].gamma_2;
-    ave_wghts[2] = stage_wghts[stage-1].gamma_3;
-    if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
-      ph->u.SwapAthenaArray(ph->u1);
-    else
-      pmb->WeightedAve(ph->u, ph->u1, ph->u2, ph->u0, ph->fl_div, ave_wghts);
-
-    const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
-    ph->AddFluxDivergence(wght, ph->u);
-    // add coordinate (geometric) source terms
-    pmb->pcoord->AddCoordTermsDivergence(wght, ph->flux, ph->w, pf->bcc, ph->u);
-
-    // Hardcode an additional flux divergence weighted average for the penultimate
-    // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
-    if (stage == 4 && integrator == "ssprk5_4") {
-      // From Gottlieb (2009), u^(n+1) partial calculation
-      ave_wghts[0] = -1.0; // -u^(n) coeff.
-      ave_wghts[1] = 0.0;
+    if (stage_wghts[stage-1].main_stage) {
+      // This time-integrator-specific averaging operation logic is identical to FieldInt
+      Real ave_wghts[5];
+      ave_wghts[0] = 1.0;
+      ave_wghts[1] = stage_wghts[stage-1].delta;
       ave_wghts[2] = 0.0;
-      const Real beta = 0.063692468666290; // F(u^(3)) coeff.
-      const Real wght_ssp = beta*pmb->pmy_mesh->dt;
-      // writing out to u2 register
-      pmb->WeightedAve(ph->u2, ph->u1, ph->u2, ph->u0, ph->fl_div, ave_wghts);
-      ph->AddFluxDivergence(wght_ssp, ph->u2);
+      ave_wghts[3] = 0.0;
+      ave_wghts[4] = 0.0;
+      pmb->WeightedAve(ph->u1, ph->u, ph->u2, ph->u0, ph->fl_div, ave_wghts);
+
+      ave_wghts[0] = stage_wghts[stage-1].gamma_1;
+      ave_wghts[1] = stage_wghts[stage-1].gamma_2;
+      ave_wghts[2] = stage_wghts[stage-1].gamma_3;
+      if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
+        ph->u.SwapAthenaArray(ph->u1);
+      else
+        pmb->WeightedAve(ph->u, ph->u1, ph->u2, ph->u0, ph->fl_div, ave_wghts);
+
+      const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
+      ph->AddFluxDivergence(wght, ph->u);
       // add coordinate (geometric) source terms
-      pmb->pcoord->AddCoordTermsDivergence(wght_ssp, ph->flux, ph->w, pf->bcc, ph->u2);
+      pmb->pcoord->AddCoordTermsDivergence(wght, ph->flux, ph->w, pf->bcc, ph->u);
+
+      // Hardcode an additional flux divergence weighted average for the penultimate
+      // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
+      if (stage == 4 && integrator == "ssprk5_4") {
+        // From Gottlieb (2009), u^(n+1) partial calculation
+        ave_wghts[0] = -1.0; // -u^(n) coeff.
+        ave_wghts[1] = 0.0;
+        ave_wghts[2] = 0.0;
+        const Real beta = 0.063692468666290; // F(u^(3)) coeff.
+        const Real wght_ssp = beta*pmb->pmy_mesh->dt;
+        // writing out to u2 register
+        pmb->WeightedAve(ph->u2, ph->u1, ph->u2, ph->u0, ph->fl_div, ave_wghts);
+        ph->AddFluxDivergence(wght_ssp, ph->u2);
+        // add coordinate (geometric) source terms
+        pmb->pcoord->AddCoordTermsDivergence(wght_ssp, ph->flux, ph->w, pf->bcc, ph->u2);
+      }
     }
     return TaskStatus::next;
   }
   return TaskStatus::fail;
 }
+
+//----------------------------------------------------------------------------------------
+// Functions to integrate Field variables
 
 
 TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
@@ -796,61 +1622,65 @@ TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
   if (pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
-    // This time-integrator-specific averaging operation logic is identical to HydroInt
-    Real ave_wghts[5];
-    ave_wghts[0] = 1.0;
-    ave_wghts[1] = stage_wghts[stage-1].delta;
-    ave_wghts[2] = 0.0;
-    ave_wghts[3] = 0.0;
-    ave_wghts[4] = 0.0;
-    pmb->WeightedAve(pf->b1, pf->b, pf->b2, pf->b0, pf->ct_update, ave_wghts);
+    if (stage_wghts[stage-1].main_stage) {
+      // This time-integrator-specific averaging operation logic is identical to HydroInt
+      Real ave_wghts[5];
+      ave_wghts[0] = 1.0;
+      ave_wghts[1] = stage_wghts[stage-1].delta;
+      ave_wghts[2] = 0.0;
+      ave_wghts[3] = 0.0;
+      ave_wghts[4] = 0.0;
+      pmb->WeightedAve(pf->b1, pf->b, pf->b2, pf->b0, pf->ct_update, ave_wghts);
 
-    ave_wghts[0] = stage_wghts[stage-1].gamma_1;
-    ave_wghts[1] = stage_wghts[stage-1].gamma_2;
-    ave_wghts[2] = stage_wghts[stage-1].gamma_3;
-    if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0) {
-      pf->b.x1f.SwapAthenaArray(pf->b1.x1f);
-      pf->b.x2f.SwapAthenaArray(pf->b1.x2f);
-      pf->b.x3f.SwapAthenaArray(pf->b1.x3f);
-    } else {
-      pmb->WeightedAve(pf->b, pf->b1, pf->b2, pf->b0, pf->ct_update, ave_wghts);
+      ave_wghts[0] = stage_wghts[stage-1].gamma_1;
+      ave_wghts[1] = stage_wghts[stage-1].gamma_2;
+      ave_wghts[2] = stage_wghts[stage-1].gamma_3;
+      if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0) {
+        pf->b.x1f.SwapAthenaArray(pf->b1.x1f);
+        pf->b.x2f.SwapAthenaArray(pf->b1.x2f);
+        pf->b.x3f.SwapAthenaArray(pf->b1.x3f);
+      } else {
+        pmb->WeightedAve(pf->b, pf->b1, pf->b2, pf->b0, pf->ct_update, ave_wghts);
+      }
+
+      pf->CT(stage_wghts[stage-1].beta*pmb->pmy_mesh->dt, pf->b);
     }
-
-    pf->CT(stage_wghts[stage-1].beta*pmb->pmy_mesh->dt, pf->b);
-
     return TaskStatus::next;
   }
-
   return TaskStatus::fail;
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to add source terms
+//! Functions to add source terms
 
 TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   Field *pf = pmb->pfield;
+  PassiveScalars *ps = pmb->pscalars;
 
   // return if there are no source terms to be added
   if (!(ph->hsrc.hydro_sourceterms_defined)
       || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
-    // Time at beginning of stage for u()
-    Real t_start_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage-1][0];
-    // Scaled coefficient for RHS update
-    Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-    // Evaluate the time-dependent source terms at the time at the beginning of the stage
-    ph->hsrc.AddHydroSourceTerms(t_start_stage, dt, ph->flux, ph->w, pf->bcc, ph->u);
-  } else {
-    return TaskStatus::fail;
+    if (stage_wghts[stage-1].main_stage) {
+      // Time at beginning of stage for u()
+      Real t_start_stage = pmb->pmy_mesh->time
+                           + stage_wghts[(stage-1)].sbeta*pmb->pmy_mesh->dt;
+      // Scaled coefficient for RHS update
+      Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+      // Evaluate the source terms at the time at the beginning of the stage
+      ph->hsrc.AddHydroSourceTerms(t_start_stage, dt, ph->flux, ph->w, ps->r, pf->bcc,
+                                   ph->u, ps->s);
+    }
+    return TaskStatus::next;
   }
-  return TaskStatus::next;
+  return TaskStatus::fail;
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to calculate hydro diffusion fluxes (stored in HydroDiffusion::visflx[],
-// cndflx[], added at the end of Hydro::CalculateFluxes()
+//! Functions to calculate hydro diffusion fluxes (stored in HydroDiffusion::visflx[],
+//! cndflx[], added at the end of Hydro::CalculateFluxes()
 
 TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
@@ -860,15 +1690,24 @@ TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
       || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
 
   if (stage <= nstages) {
-    ph->hdif.CalcDiffusionFlux(ph->w, ph->u, ph->flux);
-  } else {
-    return TaskStatus::fail;
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      // if using orbital advection, put modified conservative into the function
+      if(pmb->porb->orbital_advection_defined) {
+        pmb->porb->SetOrbitalSystemOutput(ph->w, ph->u, OrbitalTransform::prim);
+        ph->hdif.CalcDiffusionFlux(pmb->porb->w_orb, pmb->porb->u_orb, ph->flux);
+      } else {
+        ph->hdif.CalcDiffusionFlux(ph->w, ph->u, ph->flux);
+      }
+    }
+    return TaskStatus::next;
   }
-  return TaskStatus::next;
+  return TaskStatus::fail;
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to calculate diffusion EMF
+//! Functions to calculate diffusion EMF
 
 TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
   Field *pf = pmb->pfield;
@@ -877,18 +1716,21 @@ TaskStatus TimeIntegratorTaskList::DiffuseField(MeshBlock *pmb, int stage) {
   if (!(pf->fdif.field_diffusion_defined)) return TaskStatus::next;
 
   if (stage <= nstages) {
-    // TODO(pdmullen): DiffuseField is also called in SuperTimeStepTaskLsit. It must skip
-    // Hall effect (once implemented) diffusion process in STS and always calculate those
-    // terms in the main integrator.
-    pf->fdif.CalcDiffusionEMF(pf->b, pf->bcc, pf->e);
-  } else {
-    return TaskStatus::fail;
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      // TODO(pdmullen): DiffuseField is also called in SuperTimeStepTaskLsit.
+      // It must skip Hall effect (once implemented) diffusion process in STS
+      // and always calculate those terms in the main integrator.
+      pf->fdif.CalcDiffusionEMF(pf->b, pf->bcc, pf->e);
+    }
+    return TaskStatus::next;
   }
-  return TaskStatus::next;
+  return TaskStatus::fail;
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to communicate conserved variables between MeshBlocks
+//! Functions to communicate Hydro variables between MeshBlocks
 
 TaskStatus TimeIntegratorTaskList::SendHydro(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -902,6 +1744,8 @@ TaskStatus TimeIntegratorTaskList::SendHydro(MeshBlock *pmb, int stage) {
   return TaskStatus::success;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate Field variables between MeshBlocks
 
 TaskStatus TimeIntegratorTaskList::SendField(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -913,7 +1757,7 @@ TaskStatus TimeIntegratorTaskList::SendField(MeshBlock *pmb, int stage) {
 }
 
 //----------------------------------------------------------------------------------------
-// Functions to receive conserved variables between MeshBlocks
+//! Functions to receive Hydro variables between MeshBlocks
 
 TaskStatus TimeIntegratorTaskList::ReceiveHydro(MeshBlock *pmb, int stage) {
   bool ret;
@@ -929,6 +1773,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydro(MeshBlock *pmb, int stage) {
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to receive Field variables between MeshBlocks
 
 TaskStatus TimeIntegratorTaskList::ReceiveField(MeshBlock *pmb, int stage) {
   bool ret;
@@ -944,6 +1790,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveField(MeshBlock *pmb, int stage) {
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to set Hydro boundaries
 
 TaskStatus TimeIntegratorTaskList::SetBoundariesHydro(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -954,6 +1802,8 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesHydro(MeshBlock *pmb, int stage)
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to set Field boundaries
 
 TaskStatus TimeIntegratorTaskList::SetBoundariesField(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -963,6 +1813,8 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesField(MeshBlock *pmb, int stage)
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate Hydro variables between MeshBlocks with shear
 
 TaskStatus TimeIntegratorTaskList::SendHydroShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -973,6 +1825,8 @@ TaskStatus TimeIntegratorTaskList::SendHydroShear(MeshBlock *pmb, int stage) {
   return TaskStatus::success;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate Hydro variables between MeshBlocks with shear
 
 TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) {
   bool ret;
@@ -983,10 +1837,41 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) 
     return TaskStatus::fail;
   }
   if (ret) {
+    pmb->phydro->hbvar.SetShearingBoxBoundaryBuffers();
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;
   }
+}
+
+//----------------------------------------------------------------------------------------
+//! Functions to communicate Field variables between MeshBlocks with shear
+
+TaskStatus TimeIntegratorTaskList::SendHydroFluxShear(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage) {
+      pmb->phydro->hbvar.SendFluxShearingBoxBoundaryBuffers();
+    }
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::ReceiveHydroFluxShear(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage) {
+      if (pmb->phydro->hbvar.ReceiveFluxShearingBoxBoundaryBuffers()) {
+        pmb->phydro->hbvar.SetFluxShearingBoxBoundaryBuffers();
+        return TaskStatus::success;
+      } else {
+        return TaskStatus::fail;
+      }
+    } else {
+      return TaskStatus::success;
+    }
+  }
+  return TaskStatus::fail;
 }
 
 
@@ -999,6 +1884,8 @@ TaskStatus TimeIntegratorTaskList::SendFieldShear(MeshBlock *pmb, int stage) {
   return TaskStatus::success;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate Field variables between MeshBlocks with shear
 
 TaskStatus TimeIntegratorTaskList::ReceiveFieldShear(MeshBlock *pmb, int stage) {
   bool ret;
@@ -1009,32 +1896,43 @@ TaskStatus TimeIntegratorTaskList::ReceiveFieldShear(MeshBlock *pmb, int stage) 
     return TaskStatus::fail;
   }
   if (ret) {
+    pmb->pfield->fbvar.SetShearingBoxBoundaryBuffers();
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate EMFs between MeshBlocks with shear
 
 TaskStatus TimeIntegratorTaskList::SendEMFShear(MeshBlock *pmb, int stage) {
-  pmb->pfield->fbvar.SendEMFShearingBoxBoundaryCorrection();
-  return TaskStatus::success;
-}
-
-
-TaskStatus TimeIntegratorTaskList::ReceiveEMFShear(MeshBlock *pmb, int stage) {
-  if (pmb->pfield->fbvar.ReceiveEMFShearingBoxBoundaryCorrection()) {
-    return TaskStatus::next;
-  } else {
-    return TaskStatus::fail;
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage) {
+      pmb->pfield->fbvar.SendEMFShearingBoxBoundaryCorrection();
+    }
+    return TaskStatus::success;
   }
   return TaskStatus::fail;
 }
 
+//----------------------------------------------------------------------------------------
+//! Functions to communicate EMFs between MeshBlocks with shear
 
-TaskStatus TimeIntegratorTaskList::RemapEMFShear(MeshBlock *pmb, int stage) {
-  pmb->pfield->fbvar.RemapEMFShearingBoxBoundary();
-  return TaskStatus::success;
+TaskStatus TimeIntegratorTaskList::ReceiveEMFShear(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage) {
+      if (pmb->pfield->fbvar.ReceiveEMFShearingBoxBoundaryCorrection()) {
+        pmb->pfield->fbvar.SetEMFShearingBoxBoundaryCorrection();
+        return TaskStatus::success;
+      } else {
+        return TaskStatus::fail;
+      }
+    } else {
+      return TaskStatus::success;
+    }
+  }
+  return TaskStatus::fail;
 }
 
 //--------------------------------------------------------------------------------------
@@ -1045,15 +1943,14 @@ TaskStatus TimeIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
 
   if (stage <= nstages) {
     // Time at the end of stage for (u, b) register pair
-    Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
+    Real t_end_stage = pmb->pmy_mesh->time
+                       + stage_wghts[(stage-1)].ebeta*pmb->pmy_mesh->dt;
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     pbval->ProlongateBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
-  } else {
-    return TaskStatus::fail;
+    return TaskStatus::success;
   }
-
-  return TaskStatus::success;
+  return TaskStatus::fail;
 }
 
 
@@ -1083,8 +1980,7 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
                                     il, iu, jl, ju, kl, ku);
     if (NSCALARS > 0) {
       // r1/r_old for GR is currently unused:
-      pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->w1, // ph->u, (updated rho)
-                                                   ps->r, ps->r,
+      pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->u, ps->r, ps->r,
                                                    pmb->pcoord, il, iu, jl, ju, kl, ku);
     }
     // fourth-order EOS:
@@ -1110,11 +2006,9 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
     ph->w.SwapAthenaArray(ph->w1);
     // r1/r_old for GR is currently unused:
     // ps->r.SwapAthenaArray(ps->r1);
-  } else {
-    return TaskStatus::fail;
+    return TaskStatus::success;
   }
-
-  return TaskStatus::success;
+  return TaskStatus::fail;
 }
 
 
@@ -1125,7 +2019,8 @@ TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
 
   if (stage <= nstages) {
     // Time at the end of stage for (u, b) register pair
-    Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
+    Real t_end_stage = pmb->pmy_mesh->time
+                       + stage_wghts[(stage-1)].ebeta*pmb->pmy_mesh->dt;
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     // Swap Hydro and (possibly) passive scalar quantities in BoundaryVariable interface
@@ -1134,11 +2029,9 @@ TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     if (NSCALARS > 0)
       ps->sbvar.var_cc = &(ps->r);
     pbval->ApplyPhysicalBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
-  } else {
-    return TaskStatus::fail;
+    return TaskStatus::success;
   }
-
-  return TaskStatus::success;
+  return TaskStatus::fail;
 }
 
 
@@ -1169,11 +2062,43 @@ TaskStatus TimeIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::CalculateScalarFlux(MeshBlock *pmb, int stage) {
   PassiveScalars *ps = pmb->pscalars;
   if (stage <= nstages) {
-    if ((stage == 1) && (integrator == "vl2")) {
-      ps->CalculateFluxes(ps->r, 1);
-      return TaskStatus::next;
+    if (stage_wghts[stage-1].main_stage) {
+      if ((integrator == "vl2") && (stage-stage_wghts[0].orbital_stage == 1)) {
+        ps->CalculateFluxes(ps->r, 1);
+      } else {
+        ps->CalculateFluxes(ps->r, pmb->precon->xorder);
+      }
+    }
+    return TaskStatus::next;
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::SendScalarFlux(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      pmb->pscalars->sbvar.SendFluxCorrection();
+    }
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::ReceiveScalarFlux(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      if (pmb->pscalars->sbvar.ReceiveFluxCorrection()) {
+        return TaskStatus::next;
+      } else {
+        return TaskStatus::fail;
+      }
     } else {
-      ps->CalculateFluxes(ps->r, pmb->precon->xorder);
       return TaskStatus::next;
     }
   }
@@ -1181,58 +2106,45 @@ TaskStatus TimeIntegratorTaskList::CalculateScalarFlux(MeshBlock *pmb, int stage
 }
 
 
-TaskStatus TimeIntegratorTaskList::SendScalarFlux(MeshBlock *pmb, int stage) {
-  pmb->pscalars->sbvar.SendFluxCorrection();
-  return TaskStatus::success;
-}
-
-
-TaskStatus TimeIntegratorTaskList::ReceiveScalarFlux(MeshBlock *pmb, int stage) {
-  if (pmb->pscalars->sbvar.ReceiveFluxCorrection()) {
-    return TaskStatus::next;
-  } else {
-    return TaskStatus::fail;
-  }
-}
-
-
 TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
   PassiveScalars *ps = pmb->pscalars;
 
   if (stage <= nstages) {
-    // This time-integrator-specific averaging operation logic is identical to
-    // IntegrateHydro, IntegrateField
-    Real ave_wghts[5];
-    ave_wghts[0] = 1.0;
-    ave_wghts[1] = stage_wghts[stage-1].delta;
-    ave_wghts[2] = 0.0;
-    ave_wghts[3] = 0.0;
-    ave_wghts[4] = 0.0;
-    pmb->WeightedAve(ps->s1, ps->s, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
-
-    ave_wghts[0] = stage_wghts[stage-1].gamma_1;
-    ave_wghts[1] = stage_wghts[stage-1].gamma_2;
-    ave_wghts[2] = stage_wghts[stage-1].gamma_3;
-    if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
-      ps->s.SwapAthenaArray(ps->s1);
-    else
-      pmb->WeightedAve(ps->s, ps->s1, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
-
-    const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
-    ps->AddFluxDivergence(wght, ps->s);
-
-    // Hardcode an additional flux divergence weighted average for the penultimate
-    // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
-    if (stage == 4 && integrator == "ssprk5_4") {
-      // From Gottlieb (2009), u^(n+1) partial calculation
-      ave_wghts[0] = -1.0; // -u^(n) coeff.
-      ave_wghts[1] = 0.0;
+    if (stage_wghts[stage-1].main_stage) {
+      // This time-integrator-specific averaging operation logic is identical to
+      // IntegrateHydro, IntegrateField
+      Real ave_wghts[5];
+      ave_wghts[0] = 1.0;
+      ave_wghts[1] = stage_wghts[stage-1].delta;
       ave_wghts[2] = 0.0;
-      const Real beta = 0.063692468666290; // F(u^(3)) coeff.
-      const Real wght_ssp = beta*pmb->pmy_mesh->dt;
-      // writing out to s2 register
-      pmb->WeightedAve(ps->s2, ps->s1, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
-      ps->AddFluxDivergence(wght_ssp, ps->s2);
+      ave_wghts[3] = 0.0;
+      ave_wghts[4] = 0.0;
+      pmb->WeightedAve(ps->s1, ps->s, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
+
+      ave_wghts[0] = stage_wghts[stage-1].gamma_1;
+      ave_wghts[1] = stage_wghts[stage-1].gamma_2;
+      ave_wghts[2] = stage_wghts[stage-1].gamma_3;
+      if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
+        ps->s.SwapAthenaArray(ps->s1);
+      else
+        pmb->WeightedAve(ps->s, ps->s1, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
+
+      const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
+      ps->AddFluxDivergence(wght, ps->s);
+
+      // Hardcode an additional flux divergence weighted average for the penultimate
+      // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
+      if (stage == 4 && integrator == "ssprk5_4") {
+        // From Gottlieb (2009), u^(n+1) partial calculation
+        ave_wghts[0] = -1.0; // -u^(n) coeff.
+        ave_wghts[1] = 0.0;
+        ave_wghts[2] = 0.0;
+        const Real beta = 0.063692468666290; // F(u^(3)) coeff.
+        const Real wght_ssp = beta*pmb->pmy_mesh->dt;
+        // writing out to s2 register
+        pmb->WeightedAve(ps->s2, ps->s1, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
+        ps->AddFluxDivergence(wght_ssp, ps->s2);
+      }
     }
     return TaskStatus::next;
   }
@@ -1288,16 +2200,166 @@ TaskStatus TimeIntegratorTaskList::DiffuseScalars(MeshBlock *pmb, int stage) {
     return TaskStatus::next;
 
   if (stage <= nstages) {
-    // TODO(felker): adapted directly from HydroDiffusion::ClearFlux. Deduplicate
-    ps->diffusion_flx[X1DIR].ZeroClear();
-    ps->diffusion_flx[X2DIR].ZeroClear();
-    ps->diffusion_flx[X3DIR].ZeroClear();
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      // TODO(felker): adapted directly from HydroDiffusion::ClearFlux. Deduplicate
+      ps->diffusion_flx[X1DIR].ZeroClear();
+      ps->diffusion_flx[X2DIR].ZeroClear();
+      ps->diffusion_flx[X3DIR].ZeroClear();
 
-    // unlike HydroDiffusion, only 1x passive scalar diffusive process is allowed, so
-    // there is no need for counterpart to wrapper fn HydroDiffusion::CalcDiffusionFlux
-    ps->DiffusiveFluxIso(ps->r, ph->w, ps->diffusion_flx);
+      // unlike HydroDiffusion, only 1x passive scalar diffusive process is allowed, so
+      // there is no need for counterpart to wrapper fn HydroDiffusion::CalcDiffusionFlux
+      ps->DiffusiveFluxIso(ps->r, ph->w, ps->diffusion_flx);
+    }
+    return TaskStatus::next;
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::SendScalarsShear(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    pmb->pscalars->sbvar.SendShearingBoxBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
-  return TaskStatus::next;
+  return TaskStatus::success;
+}
+
+
+TaskStatus TimeIntegratorTaskList::ReceiveScalarsShear(MeshBlock *pmb, int stage) {
+  bool ret;
+  ret = false;
+  if (stage <= nstages) {
+    ret = pmb->pscalars->sbvar.ReceiveShearingBoxBoundaryBuffers();
+  } else {
+    return TaskStatus::fail;
+  }
+  if (ret) {
+    pmb->pscalars->sbvar.SetShearingBoxBoundaryBuffers();
+    return TaskStatus::success;
+  } else {
+    return TaskStatus::fail;
+  }
+}
+
+
+TaskStatus TimeIntegratorTaskList::SendScalarsFluxShear(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage) {
+      pmb->pscalars->sbvar.SendFluxShearingBoxBoundaryBuffers();
+    }
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::ReceiveScalarsFluxShear(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage) {
+      if (pmb->pscalars->sbvar.ReceiveFluxShearingBoxBoundaryBuffers()) {
+        pmb->pscalars->sbvar.SetFluxShearingBoxBoundaryBuffers();
+        return TaskStatus::success;
+      } else {
+        return TaskStatus::fail;
+      }
+    } else {
+      return TaskStatus::success;
+    }
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::SendHydroOrbital(MeshBlock *pmb, int stage) {
+  if (!stage_wghts[stage-1].orbital_stage) {
+    return TaskStatus::success;
+  } else {
+    OrbitalAdvection *porb = pmb->porb;
+    if (!porb->orbital_advection_active) return TaskStatus::success;
+    Hydro *ph = pmb->phydro;
+    PassiveScalars *ps = pmb->pscalars;
+    porb->SetOrbitalAdvectionCC(ph->u, ps->s);
+    porb->orb_bc->SendBoundaryBuffersCC();
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::SendFieldOrbital(MeshBlock *pmb, int stage) {
+  if (!stage_wghts[stage-1].orbital_stage) {
+    return TaskStatus::success;
+  } else {
+    OrbitalAdvection *porb = pmb->porb;
+    if (!porb->orbital_advection_active) return TaskStatus::success;
+    Field *pf = pmb->pfield;
+    porb->SetOrbitalAdvectionFC(pf->b);
+    porb->orb_bc->SendBoundaryBuffersFC();
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::ReceiveHydroOrbital(MeshBlock *pmb, int stage) {
+  if (!stage_wghts[stage-1].orbital_stage) {
+    return TaskStatus::success;
+  } else {
+    OrbitalAdvection *porb = pmb->porb;
+    if (!porb->orbital_advection_active) return TaskStatus::success;
+    if (porb->orb_bc->ReceiveBoundaryBuffersCC()) {
+      return TaskStatus::success;
+    }
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::ReceiveFieldOrbital(MeshBlock *pmb, int stage) {
+  if (!stage_wghts[stage-1].orbital_stage) {
+    return TaskStatus::success;
+  } else {
+    OrbitalAdvection *porb = pmb->porb;
+    if (!porb->orbital_advection_active) return TaskStatus::success;
+    if (porb->orb_bc->ReceiveBoundaryBuffersFC()) {
+      return TaskStatus::success;
+    }
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::CalculateHydroOrbital(MeshBlock *pmb, int stage) {
+  if (!stage_wghts[stage-1].orbital_stage) {
+    return TaskStatus::success;
+  } else {
+    OrbitalAdvection *porb = pmb->porb;
+    Hydro *ph = pmb->phydro;
+    PassiveScalars *ps = pmb->pscalars;
+    Real dt = pmb->pmy_mesh->dt
+              *(stage_wghts[(stage-1)].ebeta-stage_wghts[(stage-1)].sbeta);
+    porb->CalculateOrbitalAdvectionCC(dt, ph->u, ps->s);
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus TimeIntegratorTaskList::CalculateFieldOrbital(MeshBlock *pmb, int stage) {
+  if (!stage_wghts[stage-1].orbital_stage) {
+    return TaskStatus::success;
+  } else {
+    OrbitalAdvection *porb = pmb->porb;
+    if (!porb->orbital_advection_active) return TaskStatus::success;
+    Field *pf = pmb->pfield;
+    Real dt = pmb->pmy_mesh->dt
+              *(stage_wghts[(stage-1)].ebeta-stage_wghts[(stage-1)].sbeta);
+    porb->CalculateOrbitalAdvectionFC(dt, pf->e);
+    pf->CT(1.0, pf->b);
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
 }

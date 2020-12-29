@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gr_shock_tube.cpp
-//  \brief Problem generator for shock tubes in special and general relativity.
+//! \brief Problem generator for shock tubes in special and general relativity.
 
 // C headers
 
@@ -23,8 +23,9 @@
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
-#include "../mesh/mesh.hpp"
+#include "../mesh/mesh.hpp"                // MeshBlock
 #include "../parameter_input.hpp"          // ParameterInput
+#include "../scalars/scalars.hpp"          // PassiveScalars
 
 // Configuration checking
 #if not RELATIVISTIC_DYNAMICS
@@ -120,7 +121,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     gi.NewAthenaArray(NMETRIC, ie+1);
   }
 
-  // Initialize hydro variables
+  // Initialize hydro variables and passive scalars
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
 #if GENERAL_RELATIVITY
@@ -197,7 +198,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
 #endif  // GENERAL_RELATIVITY
 
-        // Set primitives
+        // Set hydro primitives
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
         phydro->w(IPR,k,j,i) = phydro->w1(IPR,k,j,i) = pgas;
         if (GENERAL_RELATIVITY) {
@@ -213,7 +214,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->w(IVZ,k,j,i) = phydro->w1(IM3,k,j,i) = u3;
         }
 
-        // Set magnetic fields
+        // Set passive scalar primitives
+        if (NSCALARS > 0) {
+          pscalars->r(0,k,j,i) = left_side ? 0.0 : 1.0;
+        }
+
+        // Set cell-centered magnetic fields
         bb(IB1,k,j,i) = b1 * u0 - b0 * u1;
         bb(IB2,k,j,i) = b2 * u0 - b0 * u2;
         bb(IB3,k,j,i) = b3 * u0 - b0 * u3;
@@ -221,6 +227,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
   peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is, ie, js, je, ks, ke);
+  peos->PassiveScalarPrimitiveToConserved(pscalars->r, phydro->u, pscalars->s, pcoord, is,
+      ie, js, je, ks, ke);
 
   // Initialize magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {

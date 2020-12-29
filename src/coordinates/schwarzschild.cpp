@@ -4,16 +4,21 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file schwarzschild.cpp
-//  \brief implements functions for Schwarzschild spacetime and spherical (t,r,theta,phi)
-//  coordinates in a derived class of the Coordinates abstract base class.
-//  Original implementation by CJ White.
-//
-// Notes:
-//   coordinates: t, r, theta, phi
-//   parameters: M (mass)
-//   metric:
-//     ds^2 = -\alpha^2 dt^2 + 1/\alpha^2 * dr^2 + r^2 (d\theta^2 + \sin^2\theta d\phi^2)
-//     where \alpha = \sqrt(1 - 2M/r)
+//! \brief implements functions for Schwarzschild spacetime and spherical (t,r,theta,phi)
+//! coordinates in a derived class of the Coordinates abstract base class.
+//!
+//!  Original implementation by CJ White.
+//!
+//! Notes:
+//!  - coordinates: t, r, theta, phi
+//!  - parameters: M (mass)
+//!  - metric:
+//!   \f[
+//!     ds^2 = -\alpha^2 dt^2 + 1/\alpha^2 dr^2
+//!            + r^2 (d\theta^2 + \sin^2\theta d\phi^2)
+//!   \f]
+//!     where \f$ \alpha = \sqrt{1 - 2M/r} \f$
+
 
 // C headers
 
@@ -29,11 +34,22 @@
 #include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
-// Schwarzschild Constructor
-// Inputs:
-//   pmb: pointer to MeshBlock containing this grid
-//   pin: pointer to runtime inputs
-//   flag: true if object is for coarse grid only in an AMR calculation
+//! \brief Schwarzschild Constructor
+//!
+//! Inputs:
+//!  - pmb: pointer to MeshBlock containing this grid
+//!  - pin: pointer to runtime inputs
+//!  - flag: true if object is for coarse grid only in an AMR calculation
+//!
+//! Notes:
+//!  - coordinates: t, r, theta, phi
+//!  - parameters: M (mass)
+//!  - metric:
+//!   \f[
+//!     ds^2 = -\alpha^2 dt^2 + 1/\alpha^2 dr^2
+//!            + r^2 (d\theta^2 + \sin^2\theta d\phi^2)
+//!   \f]
+//!     where \f$ \alpha = \sqrt{1 - 2M/r} \f$
 
 Schwarzschild::Schwarzschild(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {

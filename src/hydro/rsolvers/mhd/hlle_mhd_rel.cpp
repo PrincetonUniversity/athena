@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hlle_mhd_rel.cpp
-//  \brief Implements HLLE Riemann solver for relativistic MHD.
+//! \brief Implements HLLE Riemann solver for relativistic MHD.
 
 // C headers
 
@@ -25,10 +25,6 @@ namespace {
 void HLLETransforming(MeshBlock *pmb, const int k, const int j,
                       const int il, const int iu, const int ivx,
                       const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                      AthenaArray<Real> &lambdas_p_l,
-                      AthenaArray<Real> &lambdas_m_l,
-                      AthenaArray<Real> &lambdas_p_r,
-                      AthenaArray<Real> &lambdas_m_r,
                       AthenaArray<Real> &g, AthenaArray<Real> &gi,
                       AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
                       AthenaArray<Real> &cons, AthenaArray<Real> &flux,
@@ -72,7 +68,6 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                         ez);
   } else {
     HLLETransforming(pmy_block, k, j, il, iu, ivx, bb, bb_normal_,
-                     lambdas_p_l_, lambdas_m_l_, lambdas_p_r_, lambdas_m_r_,
                      g_, gi_, prim_l, prim_r, cons_, flux,
                      ey, ez);
   }
@@ -93,7 +88,6 @@ namespace {
 //   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
 //   bb: 3D array of normal magnetic fields
 //   bb_normal: 1D scratch array for normal magnetic fields
-//   lambdas_p_l,lambdas_m_l,lambdas_p_r,lambdas_m_r: 1D scratch arrays for wavespeeds
 //   g,gi: 1D scratch arrays for metric coefficients
 //   prim_l,prim_r: 1D arrays of left and right primitive states
 //   cons: 1D scratch array for conserved quantities
@@ -109,10 +103,6 @@ namespace {
 void HLLETransforming(MeshBlock *pmb, const int k, const int j,
                       const int il, const int iu, const int ivx,
                       const AthenaArray<Real> &bb, AthenaArray<Real> &bb_normal,
-                      AthenaArray<Real> &lambdas_p_l,
-                      AthenaArray<Real> &lambdas_m_l,
-                      AthenaArray<Real> &lambdas_p_r,
-                      AthenaArray<Real> &lambdas_m_r,
                       AthenaArray<Real> &g, AthenaArray<Real> &gi,
                       AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
                       AthenaArray<Real> &cons, AthenaArray<Real> &flux,
@@ -165,19 +155,12 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
   }
 #endif  // GENERAL_RELATIVITY
 
-  // Calculate wavespeeds
-  pmb->peos->FastMagnetosonicSpeedsSR(prim_l, bb_normal, k, j, il, iu, ivx, lambdas_p_l,
-                                      lambdas_m_l);
-  pmb->peos->FastMagnetosonicSpeedsSR(prim_r, bb_normal, k, j, il, iu, ivx, lambdas_p_r,
-                                      lambdas_m_r);
-
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
 
   // Extract ratio of specific heats
   const Real gamma_adi = pmb->peos->GetGamma();
-  const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
 
   // Go through each interface
 #pragma omp simd simdlen(SIMD_WIDTH)
@@ -229,13 +212,25 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
     b_r[3] = (bb3_r + b_r[0] * u_r[3]) / u_r[0];
     Real b_sq_r = -SQR(b_r[0]) + SQR(b_r[1]) + SQR(b_r[2]) + SQR(b_r[3]);
 
+    // Calculate left wavespeeds
+    Real wgas_l = rho_l + gamma_adi / (gamma_adi - 1.0) * pgas_l;
+    Real lambda_m_l, lambda_p_l;
+    pmb->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, u_l[0], u_l[1], b_sq_l, -1.0, 0.0,
+                                        1.0, &lambda_p_l, &lambda_m_l);
+
+    // Calculate right wavespeeds
+    Real wgas_r = rho_r + gamma_adi / (gamma_adi - 1.0) * pgas_r;
+    Real lambda_m_r, lambda_p_r;
+    pmb->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, u_r[0], u_r[1], b_sq_r, -1.0, 0.0,
+                                        1.0, &lambda_p_r, &lambda_m_r);
+
     // Calculate extremal wavespeeds (MB2006 55)
-    Real lambda_l = std::min(lambdas_m_l(i), lambdas_m_r(i));
-    Real lambda_r = std::max(lambdas_p_l(i), lambdas_p_r(i));
+    Real lambda_l = std::min(lambda_m_l, lambda_m_r);
+    Real lambda_r = std::max(lambda_p_l, lambda_p_r);
 
     // Calculate conserved quantities in L region (MUB 8)
     Real cons_l[NWAVE];
-    Real wtot_l = rho_l + gamma_prime * pgas_l + b_sq_l;
+    Real wtot_l = wgas_l + b_sq_l;
     Real ptot_l = pgas_l + 0.5*b_sq_l;
     cons_l[IDN] = rho_l * u_l[0];
     cons_l[IEN] = wtot_l * u_l[0] * u_l[0] - b_l[0] * b_l[0] - ptot_l;
@@ -257,7 +252,7 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
 
     // Calculate conserved quantities in R region (MUB 8)
     Real cons_r[NWAVE];
-    Real wtot_r = rho_r + gamma_prime * pgas_r + b_sq_r;
+    Real wtot_r = wgas_r + b_sq_r;
     Real ptot_r = pgas_r + 0.5*b_sq_r;
     cons_r[IDN] = rho_r * u_r[0];
     cons_r[IEN] = wtot_r * u_r[0] * u_r[0] - b_r[0] * b_r[0] - ptot_r;

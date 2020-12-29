@@ -4,8 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file turb.cpp
-//  \brief Problem generator for turbulence generator
-//
+//! \brief Problem generator for turbulence driver
 
 // C headers
 
@@ -31,9 +30,6 @@
 #ifdef OPENMP_PARALLEL
 #include <omp.h>
 #endif
-
-
-std::int64_t rseed; // seed for turbulence power spectrum
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -61,6 +57,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     return;
 #endif
   }
+
   return;
 }
 

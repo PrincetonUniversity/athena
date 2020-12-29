@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file weighted_ave.cpp
-//  \brief
+//! \brief
 
 // C headers
 
@@ -18,19 +18,21 @@
 #include "mesh.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn  void WeightedAve::WeightedAve
-//  \brief Compute weighted average of AthenaArrays (including cell-averaged U in time
-//         integrator step)
+//! \fn void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
+//!                                 AthenaArray<Real> &u_in2, AthenaArray<Real> &u_in3,
+//!                                 AthenaArray<Real> &u_in4, const Real wght[5])
+//! \brief Compute weighted average of AthenaArrays (including cell-averaged U in time
+//!        integrator step)
+//!
+//! * consider every possible simplified form of weighted sum operator:
+//!   U = a*U + b*U1 + c*U2 + d*U3 + e*U4
+//! * assuming all 3x arrays are of the same size (or at least u_out is equal or larger
+//!   than each input array) in each array dimension, and full range is desired:
+//!   nx4*(3D real MeshBlock cells)
 
 void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
                             AthenaArray<Real> &u_in2, AthenaArray<Real> &u_in3,
                             AthenaArray<Real> &u_in4, const Real wght[5]) {
-  // consider every possible simplified form of weighted sum operator:
-  // U = a*U + b*U1 + c*U2 + d*U3 + e*U4
-
-  // assuming all 3x arrays are of the same size (or at least u_out is equal or larger
-  // than each input array) in each array dimension, and full range is desired:
-  // nx4*(3D real MeshBlock cells)
   const int nu = u_out.GetDim4() - 1;
 
   // u_in2, u_in3, and/or u_in4 may be unallocated AthenaArrays if using a
@@ -228,12 +230,14 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn  void MeshBlock::WeightedAve
-//  \brief Compute weighted average of face-averaged B in time integrator step
+//! \fn void MeshBlock::WeightedAve(FaceField &b_out, FaceField &b_in1,
+//!                                 FaceField &b_in2, FaceField &b_in3,
+//!                                 FaceField &b_in4, const Real wght[5])
+//! \brief Compute weighted average of face-averaged B in time integrator step
 
 void MeshBlock::WeightedAve(FaceField &b_out, FaceField &b_in1,
                             FaceField &b_in2, FaceField &b_in3,
-                            FaceField &b_in4, const Real wght[3]) {
+                            FaceField &b_in4, const Real wght[5]) {
   int jl=js; int ju=je+1;
   // move these limit modifications outside the loop
   if (pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar

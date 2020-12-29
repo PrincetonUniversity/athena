@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file poisson.cpp
-//  \brief Problem generator to test Poisson's solver
+//! \brief Problem generator to test Poisson's solver
 
 // C headers
 

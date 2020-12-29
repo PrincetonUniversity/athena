@@ -3,7 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//  \brief source terms due to constant acceleration (e.g. for RT instability)
+//! \file constant_acc.cpp
+//! \brief source terms due to constant acceleration (e.g. for RT instability)
 
 // C headers
 
@@ -19,7 +20,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroSourceTerms::ConstantAcceleration
-//  \brief Adds source terms for constant acceleration to conserved variables
+//! \brief Adds source terms for constant acceleration to conserved variables
 
 void HydroSourceTerms::ConstantAcceleration(const Real dt,const AthenaArray<Real> *flux,
                                             const AthenaArray<Real> &prim,

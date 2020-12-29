@@ -7,7 +7,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hdf5_reader.hpp
-//  \brief Declares HDF5 reader functions
+//! \brief Declares HDF5 reader functions
 
 // C headers
 

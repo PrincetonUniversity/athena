@@ -3,31 +3,31 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file rt.c
-//  \brief Problem generator for RT instabilty.
-//
-// Note the gravitational acceleration is hardwired to be 0.1. Density difference is
-// hardwired to be 2.0 in 2D, and is set by the input parameter <problem>/rhoh in 3D
-// (default value is 3.0). This reproduces 2D results of Liska & Wendroff, 3D results of
-// Dimonte et al.
-//
-// FOR 2D HYDRO:
-// Problem domain should be -1/6 < x < 1/6; -0.5 < y < 0.5 with gamma=1.4 to match Liska
-// & Wendroff. Interface is at y=0; perturbation added to Vy. Gravity acts in y-dirn.
-// Special reflecting boundary conditions added in x2 to improve hydrostatic eqm
-// (prevents launching of weak waves) Atwood number A=(d2-d1)/(d2+d1)=1/3. Options:
-//     iprob = 1  -- Perturb V2 using single mode
-//     iprob != 1 -- Perturb V2 using multiple mode
-//
-// FOR 3D:
-// Problem domain should be -.05 < x < .05; -.05 < y < .05, -.1 < z < .1, gamma=5/3 to
-// match Dimonte et al.  Interface is at z=0; perturbation added to Vz. Gravity acts in
-// z-dirn. Special reflecting boundary conditions added in x3.  A=1/2.  Options:
-//     iprob = 1 -- Perturb V3 using single mode
-//     iprob = 2 -- Perturb V3 using multiple mode
-//     iprob = 3 -- B rotated by "angle" at interface, multimode perturbation
-//
-// REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
+//! \file rt.cpp
+//! \brief Problem generator for RT instabilty.
+//!
+//! Note the gravitational acceleration is hardwired to be 0.1. Density difference is
+//! hardwired to be 2.0 in 2D, and is set by the input parameter `problem/rhoh` in 3D
+//! (default value is 3.0). This reproduces 2D results of Liska & Wendroff, 3D results of
+//! Dimonte et al.
+//!
+//! FOR 2D HYDRO:
+//! Problem domain should be -1/6 < x < 1/6; -0.5 < y < 0.5 with gamma=1.4 to match Liska
+//! & Wendroff. Interface is at y=0; perturbation added to Vy. Gravity acts in y-dirn.
+//! Special reflecting boundary conditions added in x2 to improve hydrostatic eqm
+//! (prevents launching of weak waves) Atwood number A=(d2-d1)/(d2+d1)=1/3. Options:
+//!    - iprob = 1  -- Perturb V2 using single mode
+//!    - iprob != 1 -- Perturb V2 using multiple mode
+//!
+//! FOR 3D:
+//! Problem domain should be -.05 < x < .05; -.05 < y < .05, -.1 < z < .1, gamma=5/3 to
+//! match Dimonte et al.  Interface is at z=0; perturbation added to Vz. Gravity acts in
+//! z-dirn. Special reflecting boundary conditions added in x3.  A=1/2.  Options:
+//!    - iprob = 1 -- Perturb V3 using single mode
+//!    - iprob = 2 -- Perturb V3 using multiple mode
+//!    - iprob = 3 -- B rotated by "angle" at interface, multimode perturbation
+//!
+//! REFERENCE: R. Liska & B. Wendroff, SIAM J. Sci. Comput., 25, 995 (2003)
 //========================================================================================
 
 // C headers
@@ -258,8 +258,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void ProjectPressureInnerX2()
-//  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
+//! \fn void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco,
+//!                             AthenaArray<Real> &prim, FaceField &b, Real time, Real dt,
+//!                             int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//! \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
@@ -322,8 +324,10 @@ void ProjectPressureInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ProjuctPressureOuterX2()
-//  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
+//! \fn void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco,
+//!                             AthenaArray<Real> &prim, FaceField &b, Real time, Real dt,
+//!                             int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//! \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
@@ -386,8 +390,10 @@ void ProjectPressureOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ProjuctPressureInnerX3()
-//  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
+//! \fn void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco,
+//!                             AthenaArray<Real> &prim, FaceField &b, Real time, Real dt,
+//!                             int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//! \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,
@@ -450,8 +456,10 @@ void ProjectPressureInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> 
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ProjuctPressureOuterX3()
-//  \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
+//! \fn void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco,
+//!                             AthenaArray<Real> &prim, FaceField &b, Real time, Real dt,
+//!                             int il, int iu, int jl, int ju, int kl, int ku, int ngh)
+//! \brief  Pressure is integated into ghost cells to improve hydrostatic eqm
 
 void ProjectPressureOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                             FaceField &b, Real time, Real dt,

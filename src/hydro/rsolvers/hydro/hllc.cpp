@@ -4,15 +4,14 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hllc.cpp
-//  \brief HLLC Riemann solver for hydrodynamics, an extension of the HLLE fluxes to
-//  include the contact wave.  Only works for adiabatic hydrodynamics.
-//
-// REFERENCES:
-// - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
-//   Springer-Verlag, Berlin, (1999) chpt. 10.
-//
-// - P. Batten, N. Clarke, C. Lambert, and D. M. Causon, "On the Choice of Wavespeeds
-//   for the HLLC Riemann Solver", SIAM J. Sci. & Stat. Comp. 18, 6, 1553-1570, (1997).
+//! \brief HLLC Riemann solver for hydrodynamics, an extension of the HLLE fluxes to
+//! include the contact wave.  Only works for adiabatic hydrodynamics.
+//!
+//! REFERENCES:
+//! - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
+//!   Springer-Verlag, Berlin, (1999) chpt. 10.
+//! - P. Batten, N. Clarke, C. Lambert, and D. M. Causon, "On the Choice of Wavespeeds
+//!   for the HLLC Riemann Solver", SIAM J. Sci. & Stat. Comp. 18, 6, 1553-1570, (1997).
 
 // C headers
 
@@ -91,14 +90,14 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       Real gl = pmy_block->peos->AsqFromRhoP(rhol, pmid) * rhol / pmid;
       Real gr = pmy_block->peos->AsqFromRhoP(rhor, pmid) * rhor / pmid;
       ql = (pmid <= wli[IPR]) ? 1.0 :
-           (1.0 + (gl + 1) / std::sqrt(2 * gl) * (pmid / wli[IPR]-1.0));
+           std::sqrt(1.0 + (gl + 1) / (2 * gl) * (pmid / wli[IPR]-1.0));
       qr = (pmid <= wri[IPR]) ? 1.0 :
-           (1.0 + (gr + 1) / std::sqrt(2 * gr) * (pmid / wri[IPR]-1.0));
+           std::sqrt(1.0 + (gr + 1) / (2 * gr) * (pmid / wri[IPR]-1.0));
     } else {
       ql = (pmid <= wli[IPR]) ? 1.0 :
-           (1.0 + (gamma + 1) / std::sqrt(2 * gamma) * (pmid / wli[IPR]-1.0));
+           std::sqrt(1.0 + (gamma + 1) / (2 * gamma) * (pmid / wli[IPR]-1.0));
       qr = (pmid <= wri[IPR]) ? 1.0 :
-           (1.0 + (gamma + 1) / std::sqrt(2 * gamma) * (pmid / wri[IPR]-1.0));
+           std::sqrt(1.0 + (gamma + 1) / (2 * gamma) * (pmid / wri[IPR]-1.0));
     }
 
     //--- Step 4.  Compute the max/min wave speeds based on L/R

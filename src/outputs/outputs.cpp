@@ -4,72 +4,71 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file outputs.cpp
-//  \brief implements functions for Athena++ outputs
+//! \brief implements functions for Athena++ outputs
+//!
+//! The number and types of outputs are all controlled by the number and values of
+//! parameters specified in <output[n]> blocks in the input file.  Each output block must
+//! be labelled by a unique integer "n".  Following the convention of the parser
+//! implemented in the ParameterInput class, a second output block with the same integer
+//! "n" of an earlier block will silently overwrite the values read by the first block.
+//! The numbering of the output blocks does not need to be consecutive, and blocks may
+//! appear in any order in the input file.  Moreover, unlike the C version of Athena,
+//! the total number of <output[n]> blocks does not need to be specified --
+//! in Athena++ a new output type will be created for each and every <output[n]> block
+//! in the input file.
+//!
+//! Required parameters that must be specified in an <output[n]> block are:
+//!   - variable     = cons,prim,D,d,E,e,m,m1,m2,m3,v,v1=vx,v2=vy,v3=vz,p,
+//!                    bcc,bcc1,bcc2,bcc3,b,b1,b2,b3,phi,uov
+//!   - file_type    = rst,tab,vtk,hst,hdf5
+//!   - dt           = problem time between outputs
+//!
+//! EXAMPLE of an <output[n]> block for a VTK dump:
+//!
+//!     <output3>
+//!     file_type   = tab       # Tabular data dump
+//!     variable    = prim      # variables to be output
+//!     data_format = %12.5e    # Optional data format string
+//!     dt          = 0.01      # time increment between outputs
+//!     x2_slice    = 0.0       # slice in x2
+//!     x3_slice    = 0.0       # slice in x3
+//!
+//!
+//! Each <output[n]> block will result in a new node being created in a linked list of
+//! OutputType stored in the Outputs class.  During a simulation, outputs are made when
+//! the simulation time satisfies the criteria implemented in the MakeOutputs() function.
+//!
+//! \note
+//! To implement a new output type, write a new OutputType derived class, and construct
+//! an object of this class in the Outputs constructor at the location indicated by the
+//! comment text: 'NEW_OUTPUT_TYPES'. Current summary:
+//! - outputs.cpp, OutputType:LoadOutputData() (below): conditionally add new OutputData
+//!   node to linked list, depending on the user-input 'variable' string.
+//!   Provide direction on how to slice a possible 4D source AthenaArray into separate
+//!   3D arrays; automatically enrolls quantity in vtk.cpp, formatted_table.cpp outputs.
+//! - athena_hdf5.cpp, ATHDF5Output::WriteOutputFile(): need to allocate space for the new
+//!   OutputData node as an HDF5 "variable" inside an existing HDF5 "dataset"
+//!   (cell-centered vs. face-centered data).
+//! - restart.cpp, RestartOutput::WriteOutputFile(): memcpy array of quantity to pdata
+//!   pointer and increment the pointer. pdata points to an allocated region of
+//!   memory whose "datasize" is inferred from MeshBlock::GetBlockSizeInBytes(), ---->
+//! - mesh/meshblock.cpp, MeshBlock::GetBlockSizeInBytes(): increment std::size_t size by
+//!   the size of the new quantity's array(s)
+//! - mesh/meshblock.cpp, MeshBlock restart constructor: memcpy quantity
+//!   (IN THE SAME ORDER AS THE VARIABLES ARE WRITTEN IN restart.cpp)
+//!   from the loaded .rst file to the MeshBlock's appropriate physics member object
+//!
+//! - history.cpp, HistoryOutput::WriteOutputFile() (3x places):
+//!   1) modify NHISTORY_VARS macro
+//!      so that the size of data_sum[] can accommodate the new physics, when active.
+//!   2) Compute volume-weighted data_sum[i] for the new quantity + etc. factors
+//!   3) Provide short string to serve as the column header description of new quantity
+//!
+//! HDF5 note: packing gas velocity into the "prim" HDF5 dataset will cause VisIt to treat
+//! the 3x components as independent scalars instead of a physical vector, unlike how it
+//! treats .vtk velocity output from Athena++. The workaround is to import the
+//! vis/visit/*.xml expressions file, which can pack these HDF5 scalars into a vector.
 //
-// The number and types of outputs are all controlled by the number and values of
-// parameters specified in <output[n]> blocks in the input file.  Each output block must
-// be labelled by a unique integer "n".  Following the convention of the parser
-// implemented in the ParameterInput class, a second output block with the same integer
-// "n" of an earlier block will silently overwrite the values read by the first block. The
-// numbering of the output blocks does not need to be consecutive, and blocks may appear
-// in any order in the input file.  Moreover, unlike the C version of Athena, the total
-// number of <output[n]> blocks does not need to be specified -- in Athena++ a new output
-// type will be created for each and every <output[n]> block in the input file.
-//
-// Required parameters that must be specified in an <output[n]> block are:
-//   - variable     = cons,prim,D,d,E,e,m,m1,m2,m3,v,v1=vx,v2=vy,v3=vz,p,
-//                    bcc,bcc1,bcc2,bcc3,b,b1,b2,b3,phi,uov
-//   - file_type    = rst,tab,vtk,hst,hdf5
-//   - dt           = problem time between outputs
-//
-// EXAMPLE of an <output[n]> block for a VTK dump:
-//   <output3>
-//   file_type   = tab       # Tabular data dump
-//   variable    = prim      # variables to be output
-//   data_format = %12.5e    # Optional data format string
-//   dt          = 0.01      # time increment between outputs
-//   x2_slice    = 0.0       # slice in x2
-//   x3_slice    = 0.0       # slice in x3
-//
-// Each <output[n]> block will result in a new node being created in a linked list of
-// OutputType stored in the Outputs class.  During a simulation, outputs are made when
-// the simulation time satisfies the criteria implemented in the MakeOutputs() function.
-//
-// To implement a new output type, write a new OutputType derived class, and construct
-// an object of this class in the Outputs constructor at the location indicated by the
-// comment text: 'NEW_OUTPUT_TYPES'. Current summary:
-// -----------------------------------
-// - outputs.cpp, OutputType:LoadOutputData() (below): conditionally add new OutputData
-// node to linked list, depending on the user-input 'variable' string. Provide direction
-// on how to slice a possible 4D source AthenaArray into separate 3D arrays; automatically
-// enrolls quantity in vtk.cpp, formatted_table.cpp outputs.
-
-// - athena_hdf5.cpp, ATHDF5Output::WriteOutputFile(): need to allocate space for the new
-// OutputData node as an HDF5 "variable" inside an existing HDF5 "dataset" (cell-centered
-// vs. face-centered data).
-
-// - restart.cpp, RestartOutput::WriteOutputFile(): memcpy array of quantity to pdata
-// pointer and increment the pointer. pdata points to an allocated region of memory whose
-// "datasize" is inferred from MeshBlock::GetBlockSizeInBytes(), ---->
-
-// - mesh/meshblock.cpp, MeshBlock::GetBlockSizeInBytes(): increment std::size_t size by
-// the size of the new quantity's array(s)
-
-// - mesh/meshblock.cpp, MeshBlock restart constructor: memcpy quantity (IN THE SAME ORDER
-// AS THE VARIABLES ARE WRITTEN IN restart.cpp) from the loaded .rst file to the
-// MeshBlock's appropriate physics member object
-
-// - history.cpp, HistoryOutput::WriteOutputFile() (3x places): 1) modify NHISTORY_VARS
-// macro so that the size of data_sum[] can accommodate the new physics, when active.
-// 2) Compute volume-weighted data_sum[i] for the new quantity + etc. factors
-// 3) Provide short string to serve as the column header description of new quantity
-// -----------------------------------
-
-// HDF5 note: packing gas velocity into the "prim" HDF5 dataset will cause VisIt to treat
-// the 3x components as independent scalars instead of a physical vector, unlike how it
-// treats .vtk velocity output from Athena++. The workaround is to import the
-// vis/visit/*.xml expressions file, which can pack these HDF5 scalars into a vector.
-
 // TODO(felker): Replace MeshBlock::GetBlockSizeInBytes() by 2x RegisterMeshBlockData()
 // overloads. Replace "NEW_OUTPUT_TYPES" region of RestartOutput::WriteOutputFile() with
 // automatic loops over registered MeshBlock quantities in pvars_cc, pvars_fc vectors.
@@ -95,12 +94,13 @@
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
 //----------------------------------------------------------------------------------------
-// OutputType constructor
+//! OutputType constructor
 
 OutputType::OutputType(OutputParameters oparams) :
     output_params(oparams),
@@ -112,7 +112,7 @@ OutputType::OutputType(OutputParameters oparams) :
 }
 
 //----------------------------------------------------------------------------------------
-// Outputs constructor
+//! Outputs constructor
 
 Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
   pfirst_type_ = nullptr;
@@ -213,6 +213,10 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         // read ghost cell option
         op.include_ghost_zones = pin->GetOrAddBoolean(op.block_name, "ghost_zones",
                                                       false);
+
+        // read orbital system output option
+        op.orbital_system_output = pin->GetOrAddBoolean(op.block_name, "orbital_system",
+                                                        false);
 
         // read cartesian mapping option
         if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0 ||
@@ -324,13 +328,14 @@ Outputs::~Outputs() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::LoadOutputData(MeshBlock *pmb)
-//  \brief Create doubly linked list of OutputData's containing requested variables
+//! \brief Create doubly linked list of OutputData's containing requested variables
 
 void OutputType::LoadOutputData(MeshBlock *pmb) {
   Hydro *phyd = pmb->phydro;
   Field *pfld = pmb->pfield;
   PassiveScalars *psclr = pmb->pscalars;
   Gravity *pgrav = pmb->pgrav;
+  OrbitalAdvection *porb = pmb->porb;
   num_vars_ = 0;
   OutputData *pod;
 
@@ -365,7 +370,13 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "Etot";
-      pod->data.InitWithShallowSlice(phyd->u, 4, IEN, 1);
+      if(porb->orbital_advection_defined
+         && !output_params.orbital_system_output) {
+        porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::cons);
+        pod->data.InitWithShallowSlice(porb->u_orb, 4, IEN, 1);
+      } else {
+        pod->data.InitWithShallowSlice(phyd->u, 4, IEN, 1);
+      }
       AppendOutputDataNode(pod);
       num_vars_++;
     }
@@ -388,12 +399,23 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "VECTORS";
     pod->name = "mom";
-    pod->data.InitWithShallowSlice(phyd->u, 4, IM1, 3);
+    if(porb->orbital_advection_defined
+       && !output_params.orbital_system_output) {
+      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::cons);
+      pod->data.InitWithShallowSlice(porb->u_orb, 4, IM1, 3);
+    } else {
+      pod->data.InitWithShallowSlice(phyd->u, 4, IM1, 3);
+    }
     AppendOutputDataNode(pod);
     num_vars_ += 3;
     if (output_params.cartesian_vector) {
       AthenaArray<Real> src;
-      src.InitWithShallowSlice(phyd->u, 4, IM1, 3);
+      if(porb->orbital_advection_defined
+         && !output_params.orbital_system_output) {
+        src.InitWithShallowSlice(porb->u_orb, 4, IM1, 3);
+      } else {
+        src.InitWithShallowSlice(phyd->u, 4, IM1, 3);
+      }
       pod = new OutputData;
       pod->type = "VECTORS";
       pod->name = "mom_xyz";
@@ -418,7 +440,14 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "mom2";
-    pod->data.InitWithShallowSlice(phyd->u, 4, IM2, 1);
+    if(porb->orbital_advection_defined
+       && !output_params.orbital_system_output
+       && porb->orbital_direction == 1) {
+      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::cons);
+      pod->data.InitWithShallowSlice(porb->u_orb, 4, IM2, 1);
+    } else {
+      pod->data.InitWithShallowSlice(phyd->u, 4, IM2, 1);
+    }
     AppendOutputDataNode(pod);
     num_vars_++;
   }
@@ -426,7 +455,14 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "mom3";
-    pod->data.InitWithShallowSlice(phyd->u, 4, IM3, 1);
+    if(porb->orbital_advection_defined
+       && !output_params.orbital_system_output
+       && porb->orbital_direction == 2) {
+      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::cons);
+      pod->data.InitWithShallowSlice(porb->u_orb, 4, IM3, 1);
+    } else {
+      pod->data.InitWithShallowSlice(phyd->u, 4, IM3, 1);
+    }
     AppendOutputDataNode(pod);
     num_vars_++;
   }
@@ -437,12 +473,23 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "VECTORS";
     pod->name = "vel";
-    pod->data.InitWithShallowSlice(phyd->w, 4, IVX, 3);
+    if(porb->orbital_advection_defined
+       && !output_params.orbital_system_output) {
+      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::prim);
+      pod->data.InitWithShallowSlice(porb->w_orb, 4, IVX, 3);
+    } else {
+      pod->data.InitWithShallowSlice(phyd->w, 4, IVX, 3);
+    }
     AppendOutputDataNode(pod);
     num_vars_ += 3;
     if (output_params.cartesian_vector) {
       AthenaArray<Real> src;
-      src.InitWithShallowSlice(phyd->w, 4, IVX, 3);
+      if(porb->orbital_advection_defined
+         && !output_params.orbital_system_output) {
+        src.InitWithShallowSlice(porb->w_orb, 4, IVX, 3);
+      } else {
+        src.InitWithShallowSlice(phyd->w, 4, IVX, 3);
+      }
       pod = new OutputData;
       pod->type = "VECTORS";
       pod->name = "vel_xyz";
@@ -469,7 +516,14 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "vel2";
-    pod->data.InitWithShallowSlice(phyd->w, 4, IVY, 1);
+    if(porb->orbital_advection_defined
+       && !output_params.orbital_system_output
+       && porb->orbital_direction == 1) {
+      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::prim);
+      pod->data.InitWithShallowSlice(porb->w_orb, 4, IVY, 1);
+    } else {
+      pod->data.InitWithShallowSlice(phyd->w, 4, IVY, 1);
+    }
     AppendOutputDataNode(pod);
     num_vars_++;
   }
@@ -478,7 +532,14 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "vel3";
-    pod->data.InitWithShallowSlice(phyd->w, 4, IVZ, 1);
+    if(porb->orbital_advection_defined
+       && !output_params.orbital_system_output
+       && porb->orbital_direction == 2) {
+      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::prim);
+      pod->data.InitWithShallowSlice(porb->w_orb, 4, IVZ, 1);
+    } else {
+      pod->data.InitWithShallowSlice(phyd->w, 4, IVZ, 1);
+    }
     AppendOutputDataNode(pod);
     num_vars_++;
   }
@@ -664,8 +725,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutputData::AppendOutputDataNode(OutputData *pod)
-//  \brief
+//! \fn void OutputType::AppendOutputDataNode(OutputData *pnew_data)
+//! \brief
 
 void OutputType::AppendOutputDataNode(OutputData *pnew_data) {
   if (pfirst_data_ == nullptr) {
@@ -679,8 +740,8 @@ void OutputType::AppendOutputDataNode(OutputData *pnew_data) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutputData::ReplaceOutputDataNode()
-//  \brief
+//! \fn void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew)
+//! \brief
 
 void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew) {
   if (pold == pfirst_data_) {
@@ -705,8 +766,8 @@ void OutputType::ReplaceOutputDataNode(OutputData *pold, OutputData *pnew) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void OutputData::ClearOutputData()
-//  \brief
+//! \fn void OutputType::ClearOutputData()
+//! \brief
 
 void OutputType::ClearOutputData() {
   OutputData *pdata = pfirst_data_;
@@ -722,7 +783,7 @@ void OutputType::ClearOutputData() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag)
-//  \brief scans through singly linked list of OutputTypes and makes any outputs needed.
+//! \brief scans through singly linked list of OutputTypes and makes any outputs needed.
 
 void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
   bool first=true;
@@ -744,8 +805,8 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::TransformOutputData(MeshBlock *pmb)
-//  \brief Calls sum and slice functions on each direction in turn, in order to allow
-//  mulitple operations performed on the same data set
+//! \brief Calls sum and slice functions on each direction in turn, in order to allow
+//! mulitple operations performed on the same data set
 
 bool OutputType::TransformOutputData(MeshBlock *pmb) {
   bool flag = true;
@@ -775,7 +836,7 @@ bool OutputType::TransformOutputData(MeshBlock *pmb) {
 
 //----------------------------------------------------------------------------------------
 //! \fn bool OutputType::SliceOutputData(MeshBlock *pmb, int dim)
-//  \brief perform data slicing and update the data list
+//! \brief perform data slicing and update the data list
 
 bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
   int islice(0), jslice(0), kslice(0);
@@ -885,7 +946,7 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::SumOutputData(OutputData* pod, int dim)
-//  \brief perform data summation and update the data list
+//! \brief perform data summation and update the data list
 
 void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
   // For each node in OutputData doubly linked list, sum arrays containing output data
@@ -957,8 +1018,8 @@ void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::CalculateCartesianVector(AthenaArray<Real> &src,
-//                                AthenaArray<Real> &dst, Coordinates *pco)
-//  \brief Convert vectors in curvilinear coordinates into Cartesian
+//!                               AthenaArray<Real> &dst, Coordinates *pco)
+//! \brief Convert vectors in curvilinear coordinates into Cartesian
 
 void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Real> &dst,
                                           Coordinates *pco) {

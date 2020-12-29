@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file scalar_diffusion.cpp
-//  \brief Compute passive scalar fluxes corresponding to diffusion processes.
+//! \brief Compute passive scalar fluxes corresponding to diffusion processes.
 
 // C headers
 
@@ -23,14 +23,18 @@
 #include <omp.h>
 #endif
 
+//----------------------------------------------------------------------------------------
+//! \fn void PassiveScalars::AddDiffusionFluxes
+//! \brief
+//!
+//! \note
+//! Currently, no need to have 2x sets of wrapper fns like:
+//! Hydro::AddDiffusionFluxes()
+//! +
+//! 2x HydroDiffusion::AddDiffusion*Flux(), FieldDiffusion::AddPoyntingFlux
 
 void PassiveScalars::AddDiffusionFluxes() {
   if (scalar_diffusion_defined) {
-    // Currently, no need to have 2x sets of wrapper fns like:
-    // Hydro::AddDiffusionFluxes()
-    // +
-    // 2x HydroDiffusion::AddDiffusion*Flux(), FieldDiffusion::AddPoyntingFlux
-
     // if (nu_scalar_iso > 0.0 || nu_scalar_aniso > 0.0)
     // AddDiffusionFlux(diffusion_flx, flux);
 
@@ -56,6 +60,9 @@ void PassiveScalars::AddDiffusionFluxes() {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void PassiveScalars::DiffusiveFluxIso
+//! \brief
 
 void PassiveScalars::DiffusiveFluxIso(const AthenaArray<Real> &prim_r,
                                       const AthenaArray<Real> &w,
@@ -149,6 +156,10 @@ void PassiveScalars::DiffusiveFluxIso(const AthenaArray<Real> &prim_r,
   }
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void PassiveScalars::NewDiffusionDt
+//! \brief
 
 Real PassiveScalars::NewDiffusionDt() {
   Real real_max = std::numeric_limits<Real>::max();

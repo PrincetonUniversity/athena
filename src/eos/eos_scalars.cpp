@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file eos_scalars.cpp
-//  \brief implements functions in EquationOfState class for passive scalars
+//! \brief implements functions in EquationOfState class for passive scalars
 
 // C headers
 
@@ -22,14 +22,14 @@
 #include "eos.hpp"
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::PassiveScalarConservedToPrimitive(AthenaArray<Real> &s,
-//           const AthenaArray<Real> &w, const AthenaArray<Real> &r_old,
-//           AthenaArray<Real> &r, Coordinates *pco,
-//           int il, int iu, int jl, int ju, int kl, int ku)
-// \brief Converts conserved into primitive passive scalar variables
+//! \fn void EquationOfState::PassiveScalarConservedToPrimitive(AthenaArray<Real> &s,
+//!           const AthenaArray<Real> &u, const AthenaArray<Real> &r_old,
+//!           AthenaArray<Real> &r, Coordinates *pco,
+//!           int il, int iu, int jl, int ju, int kl, int ku)
+//! \brief Converts conserved into primitive passive scalar variables
 
 void EquationOfState::PassiveScalarConservedToPrimitive(
-    AthenaArray<Real> &s, const AthenaArray<Real> &w, const AthenaArray<Real> &r_old,
+    AthenaArray<Real> &s, const AthenaArray<Real> &u, const AthenaArray<Real> &r_old,
     AthenaArray<Real> &r,
     Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku) {
   for (int n=0; n<NSCALARS; ++n) {
@@ -37,22 +37,22 @@ void EquationOfState::PassiveScalarConservedToPrimitive(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          const Real &w_d  = w(IDN,k,j,i);
-          const Real di = 1.0/w_d;
+          const Real &d  = u(IDN,k,j,i);
+          const Real di = 1.0/d;
 
           //for (int n=0; n<NSCALARS; ++n) {
           Real& s_n  = s(n,k,j,i);
           Real& r_n  = r(n,k,j,i);
           // apply passive scalars floor to conserved variable first, then transform:
           // (multi-D fluxes may have caused it to drop below floor)
-          s_n = (s_n < scalar_floor_*w_d) ?  scalar_floor_*w_d : s_n;
-          r_n = s_n*di;
+          s_n = (s_n < scalar_floor_ * d) ?  scalar_floor_ * d : s_n;
+          r_n = s_n * di;
           // TODO(felker): continue to monitor the acceptability of this absolute 0. floor
           // (may create very large global conservation violations, e.g. the first few
           // cycles of the slotted cylinder test)
 
           //r_n = (r_n < scalar_floor_) ? scalar_floor_ : r_n;
-          //s_n = r_n*w_d;
+          //s_n = r_n * d;
         }
       }
     }
@@ -75,7 +75,7 @@ void EquationOfState::PassiveScalarConservedToPrimitiveCellAverage(
   Real C = (h*h)/24.0;
 
   // Fourth-order accurate approx to cell-centered Hydro conserved and primitive variables
-  AthenaArray<Real> &w_cc = ph->w_cc, &w = ph->w; // &u_cc = ph->u_cc;
+  AthenaArray<Real> &u_cc = ph->u_cc;
   // Passive scalrs
   AthenaArray<Real> &s_cc = ps->s_cc, &r_cc = ps->r_cc;
   // Laplacians of cell-averaged conserved and 2nd order accurate primitive variables
@@ -103,7 +103,7 @@ void EquationOfState::PassiveScalarConservedToPrimitiveCellAverage(
   pco->Laplacian(r, laplacian_cc, il, iu, jl, ju, kl, ku, nl, nu);
 
   // Convert cell-centered conserved values to cell-centered primitive values
-  PassiveScalarConservedToPrimitive(s_cc, w_cc, r_cc, r_cc, pco, il, iu,
+  PassiveScalarConservedToPrimitive(s_cc, u_cc, r_cc, r_cc, pco, il, iu,
                                     jl, ju, kl, ku);
 
   for (int n=nl; n<=nu; ++n) {
@@ -126,13 +126,13 @@ void EquationOfState::PassiveScalarConservedToPrimitiveCellAverage(
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::PassiveScalarPrimitiveToConserved(const AthenaArray<Real> &r
-//           const AthenaArray<Real> &w, AthenaArray<Real> &s, Coordinates *pco,
-//           int il, int iu, int jl, int ju, int kl, int ku);
-// \brief Converts primitive variables into conservative variables
+//! \fn void EquationOfState::PassiveScalarPrimitiveToConserved(const AthenaArray<Real> &r
+//!           const AthenaArray<Real> &u, AthenaArray<Real> &s, Coordinates *pco,
+//!           int il, int iu, int jl, int ju, int kl, int ku);
+//! \brief Converts primitive variables into conservative variables
 
 void EquationOfState::PassiveScalarPrimitiveToConserved(
-    const AthenaArray<Real> &r, const AthenaArray<Real> &w,
+    const AthenaArray<Real> &r, const AthenaArray<Real> &u,
     AthenaArray<Real> &s, Coordinates *pco,
     int il, int iu, int jl, int ju, int kl, int ku) {
   for (int n=0; n<NSCALARS; ++n) {
@@ -140,11 +140,11 @@ void EquationOfState::PassiveScalarPrimitiveToConserved(
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          const Real &w_d  = w(IDN,k,j,i);
+          const Real &d  = u(IDN,k,j,i);
           //for (int n=0; n<NSCALARS; ++n) {
           Real& s_n  = s(n,k,j,i);
           const Real& r_n  = r(n,k,j,i);
-          s_n = r_n*w_d;
+          s_n = r_n * d;
         }
       }
     }
@@ -153,11 +153,11 @@ void EquationOfState::PassiveScalarPrimitiveToConserved(
 }
 
 //----------------------------------------------------------------------------------------
-// \!fn void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &prim, int n,
-//                                                     int k, int j, int i)
-// \brief Apply species concentration floor to cell-averaged passive scalars or
-// reconstructed L/R cell interface states (if PPM is used, e.g.) along:
-// (NSCALARS x) x1 slices
+//! \fn void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &prim, int n,
+//!                                                     int k, int j, int i)
+//! \brief Apply species concentration floor to cell-averaged passive scalars or
+//! reconstructed L/R cell interface states (if PPM is used, e.g.) along:
+//! (NSCALARS x) x1 slices
 
 void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &r, int n, int k, int j,
                                                int i) {

@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file polarwedge.cpp
-//  \brief implementation of polar wedge BCs in x2 direction
+//! \file polarwedge_cc.cpp
+//! \brief implementation of polar wedge BCs in x2 direction
 
 // C headers
 
@@ -17,13 +17,14 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::PolarWedgeInnerX2(
-//          Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
-//  \brief polar wedge boundary conditions, inner x2 boundary
+//!         Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
+//! \brief polar wedge boundary conditions, inner x2 boundary
 
 void CellCenteredBoundaryVariable::PolarWedgeInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
   for (int n=0; n<=nu_; ++n) {
-    Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
+    Real sign = 1.0;
+    if (flip_across_pole_ != nullptr) sign = flip_across_pole_[n] ? -1.0 : 1.0;
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
 #pragma omp simd
@@ -38,13 +39,14 @@ void CellCenteredBoundaryVariable::PolarWedgeInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::PolarWedgeOuterX2(
-//          Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
-//  \brief polar wedge boundary conditions, outer x2 boundary
+//!         Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
+//! \brief polar wedge boundary conditions, outer x2 boundary
 
 void CellCenteredBoundaryVariable::PolarWedgeOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
   for (int n=0; n<=nu_; ++n) {
-    Real sign = flip_across_pole_hydro[n] ? -1.0 : 1.0;
+    Real sign = 1.0;
+    if (flip_across_pole_ != nullptr) sign = flip_across_pole_[n] ? -1.0 : 1.0;
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
 #pragma omp simd

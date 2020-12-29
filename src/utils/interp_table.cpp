@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file interp_table.cpp
-//  \brief implements functions in class InterpTable2D an intpolated lookup table
+//! \brief implements functions in class InterpTable2D an intpolated lookup table
 
 // C headers
 
@@ -18,13 +18,13 @@
 #include "../coordinates/coordinates.hpp" // Coordinates
 #include "interp_table.hpp"
 
-// A contructor that setts the size of the table with number of variables nvar
-// and dimensions nx2 x nx1 (interpolated dimensions)
+//! A contructor that setts the size of the table with number of variables nvar
+//! and dimensions nx2 x nx1 (interpolated dimensions)
 InterpTable2D::InterpTable2D(const int nvar, const int nx2, const int nx1) {
   SetSize(nvar, nx2, nx1);
 }
 
-// Set size of table
+//! Set size of table
 void InterpTable2D::SetSize(const int nvar, const int nx2, const int nx1) {
   nvar_ = nvar; // number of variables/tables
   nx2_ = nx2; // slower indexing dimension
@@ -32,14 +32,14 @@ void InterpTable2D::SetSize(const int nvar, const int nx2, const int nx1) {
   data.NewAthenaArray(nvar, nx2, nx1);
 }
 
-// Set the corrdinate limits for x1
+//! Set the corrdinate limits for x1
 void InterpTable2D::SetX1lim(Real x1min, Real x1max) {
   x1min_ = x1min;
   x1max_ = x1max;
   x1norm_ = (nx1_ - 1) / (x1max - x1min);
 }
 
-// Set the corrdinate limits for x2
+//! Set the corrdinate limits for x2
 void InterpTable2D::SetX2lim(Real x2min, Real x2max) {
   x2min_ = x2min;
   x2max_ = x2max;
@@ -63,7 +63,7 @@ void InterpTable2D::GetSize(int &nvar, int &nx2, int &nx1) {
   nx1 = nx1_;
 }
 
-// Bilinear interpolation
+//! Bilinear interpolation
 Real InterpTable2D::interpolate(int var, Real x2, Real x1) {
   Real x, y, xrl, yrl, out;
   x = (x2 - x2min_) * x2norm_;

@@ -3,8 +3,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file spherical_polar.cpp
-//  \brief implements functions for spherical polar (r-theta-phi) coordinates in a
-//  derived class of the Coordinates abstract base class.
+//! \brief implements functions for spherical polar (r-theta-phi) coordinates in a
+//! derived class of the Coordinates abstract base class.
 
 // C headers
 
