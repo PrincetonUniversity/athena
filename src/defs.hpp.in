@@ -45,9 +45,6 @@
 // include self gravity? default=0 (false)
 #define SELF_GRAVITY_ENABLED @SELF_GRAVITY_ENABLED@
 
-// use gravity fluxes? default=0 (false)
-#define GRAVITY_FLUX_ENABLED @GRAVITY_FLUX_ENABLED@
-
 // include radiative transfer? default=0 (false)
 #define RADIATION_ENABLED 0
 

@@ -127,7 +127,6 @@ void MGGravityDriver::Solve(int stage) {
   for (Multigrid* pmg : vmg_) {
     Gravity *pgrav = pmg->pmy_block_->pgrav;
     pmg->RetrieveResult(pgrav->phi, 0, NGHOST);
-    pgrav->grav_mean_rho = mean_rho;
   }
   return;
 }

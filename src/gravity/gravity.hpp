@@ -37,7 +37,6 @@ class Gravity {
   AthenaArray<Real> phi;   // gravitational potential
   AthenaArray<Real> empty_flux[3];
   Real gconst, four_pi_G;
-  Real grav_mean_rho;
   bool srcterm;
 
   // TODO(felker): consider creating a CellCentered.. derived class, and changing to

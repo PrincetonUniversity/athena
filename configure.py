@@ -123,12 +123,6 @@ parser.add_argument('-sts',
                     default=False,
                     help='enable super-time-stepping')
 
-# -gflux argument
-parser.add_argument('-gflux',
-                    action='store_true',
-                    default=False,
-                    help='enable gravity momentum flux')
-
 # -s argument
 parser.add_argument('-s',
                     action='store_true',
@@ -423,12 +417,6 @@ if args['sts']:
     definitions['STS_ENABLED'] = '1'
 else:
     definitions['STS_ENABLED'] = '0'
-
-# -gflux argument
-if args['gflux']:
-    definitions['GRAVITY_FLUX_ENABLED'] = '1'
-else:
-    definitions['GRAVITY_FLUX_ENABLED'] = '0'
 
 # -s, -g, and -t arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
@@ -802,7 +790,6 @@ print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:               ' + self_grav_string)
-print('  Gravity Fluxes              ' + ('ON' if args['gflux'] else 'OFF'))
 print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
 print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF'))
