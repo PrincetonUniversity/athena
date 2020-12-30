@@ -23,9 +23,11 @@
 //! \fn void HydroSourceTerms::SelfGravity
 //! \brief Adds source terms for self-gravitational acceleration to conserved variables
 //! \note
-//! This implements the source term formula in Mullen et al. 2020, but only for
-//! the momentum part. The energy source term is not conservative in this version.
+//! This implements the source term formula in Mullen, Hanawa and Gammie 2020, but only
+//! for the momentum part. The energy source term is not conservative in this version.
 //! I leave the fully conservative formula for later as it requires design consideration.
+//! Also note that this implementation is not exactly conservative when the potential
+//! contains a residual error (Multigrid has small but non-zero residual).
 
 void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
                                    const AthenaArray<Real> &prim,
