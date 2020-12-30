@@ -238,11 +238,24 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     ATHENA_ERROR(msg);
   }
   if (multilevel) { // SMR/AMR
-    if (block_size.nx1 < 2*NGHOST || (block_size.nx2 < 2*NGHOST && f2)
-        || (block_size.nx3 < 2*NGHOST && f3)) {
+    // It is required to know xorder before pmb->precon is defined.
+    // This assumes that the stencil size is equal to xorder
+    int xorder = 1;
+    std::string input_recon = pin->GetOrAddString("time", "xorder", "2");
+    if ((input_recon == "2") || (input_recon == "2c")) {
+      xorder = 2;
+    } else if ((input_recon == "3") || (input_recon == "3c")) {
+      xorder = 3;
+    } else if ((input_recon == "4") || (input_recon == "4c")) {
+      xorder = 4;
+    }
+    int slimit = std::max(2*(xorder-1), NGHOST);
+    if (block_size.nx1 < slimit || (block_size.nx2 < slimit && f2)
+        || (block_size.nx3 < slimit && f3)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
-          << "block_size must be larger than or equal to 2*NGHOST = " << 2*NGHOST
-          << " cells with SMR/AMR." << std::endl;
+          << "block_size must be larger than or equal to " << slimit
+          << " cells with SMR/AMR, when xorder = " << input_recon
+          << " and NGHOST = " << NGHOST << ". "<<std::endl;
       ATHENA_ERROR(msg);
     }
   } else {
@@ -250,7 +263,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
         || (block_size.nx3 < NGHOST && f3)) {
       msg << "### FATAL ERROR in Mesh constructor" << std::endl
           << "block_size must be larger than or equal to NGHOST = " << NGHOST
-          << " cells." << std::endl;
+          << " cells with uniform grid." << std::endl;
       ATHENA_ERROR(msg);
     }
   }
