@@ -130,20 +130,6 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     gi_.NewAthenaArray(NMETRIC, nc1);
     cons_.NewAthenaArray(NWAVE, nc1);
   }
-  // for one-time potential calcuation and correction (old Athena)
-  if (SELF_GRAVITY_ENABLED == 3) {
-    gflx[X1DIR].NewAthenaArray(NHYDRO, nc3, nc2, nc1+1);
-    if (pm->f2)
-      gflx[X2DIR].NewAthenaArray(NHYDRO, nc3, nc2+1, nc1);
-    if (pm->f3)
-      gflx[X3DIR].NewAthenaArray(NHYDRO, nc3+1, nc2, nc1);
-
-    gflx_old[X1DIR].NewAthenaArray(NHYDRO, nc3, nc2, nc1+1);
-    if (pm->f2)
-      gflx_old[X2DIR].NewAthenaArray(NHYDRO, nc3, nc2+1, nc1);
-    if (pm->f3)
-      gflx_old[X3DIR].NewAthenaArray(NHYDRO, nc3+1, nc2, nc1);
-  }
 
   // fourth-order hydro integration scheme
   if (pmb->precon->xorder == 4) {

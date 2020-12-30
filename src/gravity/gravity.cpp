@@ -32,22 +32,12 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), phi(pmb->ncells3, pmb->ncells2, pmb->ncells1),
     empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
     four_pi_G(pmb->pmy_mesh->four_pi_G_),
-    grav_mean_rho(pmb->pmy_mesh->grav_mean_rho_),
     gbvar(pmb, &phi, nullptr, empty_flux) {
   if (four_pi_G == 0.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
         << "using the SetGravitationalConstant or SetFourPiG function." << std::endl;
-    ATHENA_ERROR(msg);
-    return;
-  }
-
-  if (grav_mean_rho == -1.0 && GRAVITY_FLUX_ENABLED) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
-        << "Background Mean Density must be set in the Mesh::InitUserMeshData "
-        << "using the SetMeanDensity function when using gravity flux." << std::endl;
     ATHENA_ERROR(msg);
     return;
   }
