@@ -43,11 +43,11 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     return;
   }
 
-  if (grav_mean_rho == -1.0) {
+  if (grav_mean_rho == -1.0 && GRAVITY_FLUX_ENABLED) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
         << "Background Mean Density must be set in the Mesh::InitUserMeshData "
-        << "using the SetMeanDensity function." << std::endl;
+        << "using the SetMeanDensity function when using gravity flux." << std::endl;
     ATHENA_ERROR(msg);
     return;
   }
