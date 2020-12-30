@@ -32,7 +32,6 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
                                    AthenaArray<Real> &cons) {
   MeshBlock *pmb = pmy_hydro_->pmy_block;
   Gravity *pgrav = pmb->pgrav;
-  Real phic, phir, phil;
 
   if (NON_BAROTROPIC_EOS) {
     if (GRAVITY_FLUX_ENABLED) { // energy only
@@ -45,9 +44,9 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
             //Real dx2 = pmb->pcoord->dx2v(j);
             //Real dx3 = pmb->pcoord->dx3v(k);
             Real dtodx1 = dt/dx1;
-            phic = pgrav->phi(k,j,i);
-            phil = 0.5*(pgrav->phi(k,j,i-1)+pgrav->phi(k,j,i  ));
-            phir = 0.5*(pgrav->phi(k,j,i  )+pgrav->phi(k,j,i+1));
+            Real phic = pgrav->phi(k,j,i);
+            Real phil = 0.5*(pgrav->phi(k,j,i-1)+pgrav->phi(k,j,i  ));
+            Real phir = 0.5*(pgrav->phi(k,j,i  )+pgrav->phi(k,j,i+1));
             // Update momenta and energy with d/dx1 terms
             cons(IEN,k,j,i) -= dtodx1*(flux[X1DIR](IDN,k,j,i  )*(phic - phil) +
                                        flux[X1DIR](IDN,k,j,i+1)*(phir - phic));
@@ -65,9 +64,9 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
               Real dx2 = pmb->pcoord->dx2v(j);
               //Real dx3 = pmb->pcoord->dx3v(k);
               Real dtodx2 = dt/dx2;
-              phic = pgrav->phi(k,j,i);
-              phil = 0.5*(pgrav->phi(k,j-1,i)+pgrav->phi(k,j  ,i));
-              phir = 0.5*(pgrav->phi(k,j  ,i)+pgrav->phi(k,j+1,i));
+              Real phic = pgrav->phi(k,j,i);
+              Real phil = 0.5*(pgrav->phi(k,j-1,i)+pgrav->phi(k,j  ,i));
+              Real phir = 0.5*(pgrav->phi(k,j  ,i)+pgrav->phi(k,j+1,i));
               cons(IEN,k,j,i) -= dtodx2*(flux[X2DIR](IDN,k,j  ,i)*(phic - phil) +
                                          flux[X2DIR](IDN,k,j+1,i)*(phir - phic));
             }
@@ -85,9 +84,9 @@ void HydroSourceTerms::SelfGravity(const Real dt,const AthenaArray<Real> *flux,
               //Real dx2 = pmb->pcoord->dx2v(j);
               Real dx3 = pmb->pcoord->dx3v(k);
               Real dtodx3 = dt/dx3;
-              phic = pgrav->phi(k,j,i);
-              phil = 0.5*(pgrav->phi(k-1,j,i)+pgrav->phi(k  ,j,i));
-              phir = 0.5*(pgrav->phi(k  ,j,i)+pgrav->phi(k+1,j,i));
+              Real phic = pgrav->phi(k,j,i);
+              Real phil = 0.5*(pgrav->phi(k-1,j,i)+pgrav->phi(k  ,j,i));
+              Real phir = 0.5*(pgrav->phi(k  ,j,i)+pgrav->phi(k+1,j,i));
               cons(IEN,k,j,i) -= dtodx3*(flux[X3DIR](IDN,k  ,j,i)*(phic - phil) +
                                          flux[X3DIR](IDN,k+1,j,i)*(phir - phic));
             }
