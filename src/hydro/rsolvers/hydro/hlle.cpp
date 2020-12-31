@@ -105,11 +105,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       Real a  = iso_cs;
       if (NON_BAROTROPIC_EOS) {
         Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
-        if (GENERAL_EOS) {
-          a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
-        } else {
-          a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
-        }
+        a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
       }
 
       //--- Step 4. Compute the max/min wave speeds based on L/R and Roe-averaged values
