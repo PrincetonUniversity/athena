@@ -35,10 +35,7 @@
 
 void OrbitalAdvection::CalculateOrbitalAdvectionCC(const Real dt,
                                 AthenaArray<Real> &u, AthenaArray<Real> &s) {
-  if (!orbital_advection_active) {
-    orbital_system_output_done = 3;
-    return;
-  }
+  if (!orbital_advection_active) return;
   int is = pmb_->is, ie = pmb_->ie;
   int js = pmb_->js, je = pmb_->je;
   int ks = pmb_->ks, ke = pmb_->ke;
@@ -118,8 +115,6 @@ void OrbitalAdvection::CalculateOrbitalAdvectionCC(const Real dt,
 //    else { // non-uniform mesh
 //    }
   }
-  // initiate flag for calculating orbital system cons
-  orbital_system_output_done = 3;
   return;
 }
 

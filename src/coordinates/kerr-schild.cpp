@@ -15,18 +15,18 @@
 //!               a (spin), -M < a < M
 //!  - metric:
 //!   \f{eqnarray*}{
-//!     ds^2 &=&  -(1 - 2 M r/\Sigma) dt^2 \\
-//!          & &  + 4 M r/\Sigma dt dr \\
-//!          & &  - 4 M a r/\Sigma dt d\phi \\
-//!          & &  + (1 + 2 M r/\Sigma) dr^2 \\
-//!          & &  - 2 a (1 + 2 M r/\Sigma) \sin^2\theta dr d\phi \\
-//!          & &  + \Sigma d\theta^2 \\
+//!     ds^2 &=&  -(1 - 2 M r/\Sigma) dt^2
+//!          & &  + 4 M r/\Sigma dt dr
+//!          & &  - 4 M a r/\Sigma dt d\phi
+//!          & &  + (1 + 2 M r/\Sigma) dr^2
+//!          & &  - 2 a (1 + 2 M r/\Sigma) \sin^2\theta dr d\phi
+//!          & &  + \Sigma d\theta^2
 //!          & &  + (r^2 + a^2 + (2 M a^2 r/\Sigma) \sin^2\theta) \sin^2\theta d\phi^2
 //!   \f}
 //!     where
 //!   \f{eqnarray*}{
-//!           \Delta &=& r^2 - 2 M r + a^2 \\
-//!           \Sigma &=& r^2 + a^2 cos^2\theta \\
+//!           \Delta &=& r^2 - 2 M r + a^2
+//!           \Sigma &=& r^2 + a^2 cos^2\theta
 //!           \Xi &=& r^2 - a^2 cos^2\theta
 //!   \f}
 //!   other "Kerr-Schild" coordinates exist
@@ -59,18 +59,18 @@
 //!               a (spin), -M < a < M
 //!  - metric:
 //!   \f{eqnarray*}{
-//!     ds^2 &=&  -(1 - 2 M r/\Sigma) dt^2 \\
-//!          & &  + 4 M r/\Sigma dt dr \\
-//!          & &  - 4 M a r/\Sigma dt d\phi \\
-//!          & &  + (1 + 2 M r/\Sigma) dr^2 \\
-//!          & &  - 2 a (1 + 2 M r/\Sigma) \sin^2\theta dr d\phi \\
-//!          & &  + \Sigma d\theta^2 \\
+//!     ds^2 &=&  -(1 - 2 M r/\Sigma) dt^2
+//!          & &  + 4 M r/\Sigma dt dr
+//!          & &  - 4 M a r/\Sigma dt d\phi
+//!          & &  + (1 + 2 M r/\Sigma) dr^2
+//!          & &  - 2 a (1 + 2 M r/\Sigma) \sin^2\theta dr d\phi
+//!          & &  + \Sigma d\theta^2
 //!          & &  + (r^2 + a^2 + (2 M a^2 r/\Sigma) \sin^2\theta) \sin^2\theta d\phi^2
 //!   \f}
 //!     where
 //!   \f{eqnarray*}{
-//!           \Delta &=& r^2 - 2 M r + a^2 \\
-//!           \Sigma &=& r^2 + a^2 cos^2\theta \\
+//!           \Delta &=& r^2 - 2 M r + a^2
+//!           \Sigma &=& r^2 + a^2 cos^2\theta
 //!           \Xi &=& r^2 - a^2 cos^2\theta
 //!   \f}
 //!   other "Kerr-Schild" coordinates exist

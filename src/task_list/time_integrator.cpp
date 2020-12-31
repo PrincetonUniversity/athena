@@ -1694,8 +1694,8 @@ TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
         pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
         pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       // if using orbital advection, put modified conservative into the function
-      if(pmb->porb->orbital_advection_defined) {
-        pmb->porb->SetOrbitalSystemOutput(ph->w, ph->u, OrbitalTransform::prim);
+      if (pmb->porb->orbital_advection_defined) {
+        pmb->porb->ConvertOrbitalSystem(ph->w, ph->u, OrbitalTransform::prim);
         ph->hdif.CalcDiffusionFlux(pmb->porb->w_orb, pmb->porb->u_orb, ph->flux);
       } else {
         ph->hdif.CalcDiffusionFlux(ph->w, ph->u, ph->flux);
@@ -1849,7 +1849,9 @@ TaskStatus TimeIntegratorTaskList::ReceiveHydroShear(MeshBlock *pmb, int stage) 
 
 TaskStatus TimeIntegratorTaskList::SendHydroFluxShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       pmb->phydro->hbvar.SendFluxShearingBoxBoundaryBuffers();
     }
     return TaskStatus::success;
@@ -1860,7 +1862,9 @@ TaskStatus TimeIntegratorTaskList::SendHydroFluxShear(MeshBlock *pmb, int stage)
 
 TaskStatus TimeIntegratorTaskList::ReceiveHydroFluxShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       if (pmb->phydro->hbvar.ReceiveFluxShearingBoxBoundaryBuffers()) {
         pmb->phydro->hbvar.SetFluxShearingBoxBoundaryBuffers();
         return TaskStatus::success;
@@ -1908,7 +1912,9 @@ TaskStatus TimeIntegratorTaskList::ReceiveFieldShear(MeshBlock *pmb, int stage) 
 
 TaskStatus TimeIntegratorTaskList::SendEMFShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       pmb->pfield->fbvar.SendEMFShearingBoxBoundaryCorrection();
     }
     return TaskStatus::success;
@@ -1921,7 +1927,9 @@ TaskStatus TimeIntegratorTaskList::SendEMFShear(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::ReceiveEMFShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       if (pmb->pfield->fbvar.ReceiveEMFShearingBoxBoundaryCorrection()) {
         pmb->pfield->fbvar.SetEMFShearingBoxBoundaryCorrection();
         return TaskStatus::success;
@@ -1978,6 +1986,9 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
     pmb->peos->ConservedToPrimitive(ph->u, ph->w, pf->b,
                                     ph->w1, pf->bcc, pmb->pcoord,
                                     il, iu, jl, ju, kl, ku);
+    if (pmb->porb->orbital_advection_defined) {
+      pmb->porb->ResetOrbitalSystemConversionFlag();
+    }
     if (NSCALARS > 0) {
       // r1/r_old for GR is currently unused:
       pmb->peos->PassiveScalarConservedToPrimitive(ps->s, ph->u, ps->r, ps->r,
@@ -2247,7 +2258,9 @@ TaskStatus TimeIntegratorTaskList::ReceiveScalarsShear(MeshBlock *pmb, int stage
 
 TaskStatus TimeIntegratorTaskList::SendScalarsFluxShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       pmb->pscalars->sbvar.SendFluxShearingBoxBoundaryBuffers();
     }
     return TaskStatus::success;
@@ -2258,7 +2271,9 @@ TaskStatus TimeIntegratorTaskList::SendScalarsFluxShear(MeshBlock *pmb, int stag
 
 TaskStatus TimeIntegratorTaskList::ReceiveScalarsFluxShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
+    if (stage_wghts[stage-1].main_stage ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
       if (pmb->pscalars->sbvar.ReceiveFluxShearingBoxBoundaryBuffers()) {
         pmb->pscalars->sbvar.SetFluxShearingBoxBoundaryBuffers();
         return TaskStatus::success;

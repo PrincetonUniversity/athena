@@ -78,7 +78,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // Sum history variables over cells. Note ghost cells are never included in sums
     if(porb->orbital_advection_defined
        && !output_params.orbital_system_output) {
-      porb->SetOrbitalSystemOutput(phyd->w, phyd->u, OrbitalTransform::cons);
+      porb->ConvertOrbitalSystem(phyd->w, phyd->u, OrbitalTransform::cons);
       for (int k=pmb->ks; k<=pmb->ke; ++k) {
         for (int j=pmb->js; j<=pmb->je; ++j) {
           pmb->pcoord->CellVolume(k, j, pmb->is, pmb->ie, vol);
