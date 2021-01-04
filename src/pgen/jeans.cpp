@@ -100,7 +100,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   if (SELF_GRAVITY_ENABLED) {
     SetGravitationalConstant(gconst);
-    SetMeanDensity(d0);
   }
 
   if (Globals::my_rank==0) {

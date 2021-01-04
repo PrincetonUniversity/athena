@@ -125,7 +125,8 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   // set parameters for shearing box bc and allocate buffers
   shearing_box = 0;
   if (pmy_mesh_->shear_periodic) {
-    // TODO(tomo-ono): Reading input file about xorder should not be done here.
+    // It is required to know the reconstruction scheme before pmb->precon is defined.
+    // If a higher-order scheme than PPM is implemented, xgh_ must be larger than 2.
     std::string input_recon = pin->GetOrAddString("time", "xorder", "2");
     if (input_recon == "1") {
       xorder_ = 1;

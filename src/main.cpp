@@ -435,11 +435,11 @@ int main(int argc, char *argv[]) {
     if (STS_ENABLED) {
       pmesh->sts_loc = TaskType::op_split_before;
       // compute nstages for this STS
-      if (pmesh->sts_integrator == "rkl2") {
+      if (pmesh->sts_integrator == "rkl2") { // default
         pststlist->nstages =
             static_cast<int>
               (0.5*(-1. + std::sqrt(9. + 16.*(0.5*pmesh->dt)/pmesh->dt_parabolic))) + 1;
-      } else { // rkl1, default
+      } else { // rkl1
         pststlist->nstages =
             static_cast<int>
               (0.5*(-1. + std::sqrt(1. + 8.*pmesh->dt/pmesh->dt_parabolic))) + 1;

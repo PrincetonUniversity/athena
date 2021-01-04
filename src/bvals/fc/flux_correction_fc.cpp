@@ -76,7 +76,7 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
         // pack e3
         // KGF: shearing box
         // shift azmuthal velocity if shearing boundary blocks
-        if (nb.shear) {
+        if (nb.shear && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
           if(porb->orbital_advection_defined) {
             for (int k=pmb->ks; k<=pmb->ke; k++) {
               for (int j=pmb->js; j<=pmb->je+1; j++)
@@ -149,7 +149,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
           i = pmb->ie + 1;
         }
         // pack e2
-        if (pbval_->shearing_box == 2 && nb.shear) {
+        if (pbval_->shearing_box == 2 && nb.shear
+            && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
           if (nb.fid == BoundaryFace::inner_x1) {
             for (int j=pmb->js; j<=pmb->je; j++)
               buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);
@@ -164,7 +165,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
         // pack e3
         // KGF: shearing box
         // shift azmuthal velocity if shearing boundary blocks
-        if (pbval_->shearing_box == 1 && nb.shear) {
+        if (pbval_->shearing_box == 1 && nb.shear
+            && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
           if(porb->orbital_advection_defined) {
             for (int j=pmb->js; j<=pmb->je+1; j++)
               buf[p++] = e3(k,j,i);
@@ -205,7 +207,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
       }
 
       // pack e2
-      if (pbval_->shearing_box == 2 && nb.shear) {
+      if (pbval_->shearing_box == 2 && nb.shear
+          && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
         if (nb.fid == BoundaryFace::inner_x1) {
           buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);
         } else if (nb.fid == BoundaryFace::outer_x1) {
@@ -236,7 +239,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
       // KGF: shearing box
       // shift azmuthal velocity if shearing boundary blocks
       if (pbval_->shearing_box == 1
-          && nb.shear && nb.ni.ox1 != 0) {
+          && nb.shear && nb.ni.ox1 != 0
+          && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
         if(porb->orbital_advection_defined) {
           for (int k=pmb->ks; k<=pmb->ke; k++)
             buf[p++] = e3(k,j,i);
@@ -268,7 +272,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
       }
       // pack e2
       if (pbval_->shearing_box == 2
-          && nb.shear && nb.ni.ox1 != 0) {
+          && nb.shear && nb.ni.ox1 != 0
+          && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
         if (nb.ni.ox1 == -1) {
           for (int j=pmb->js; j<=pmb->je; j++)
             buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);

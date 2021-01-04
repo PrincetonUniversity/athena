@@ -48,7 +48,6 @@
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real four_pi_G = pin->GetReal("problem","four_pi_G");
   SetFourPiG(four_pi_G);
-  SetMeanDensity(0.0);
 }
 
 //========================================================================================

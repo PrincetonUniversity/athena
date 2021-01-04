@@ -94,7 +94,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     nlim(pin->GetOrAddInteger("time", "nlim", -1)), ncycle(),
     ncycle_out(pin->GetOrAddInteger("time", "ncycle_out", 1)),
     dt_diagnostics(pin->GetOrAddInteger("time", "dt_diagnostics", -1)),
-    sts_integrator(pin->GetOrAddString("time", "sts_integrator", "rkl1")),
+    sts_integrator(pin->GetOrAddString("time", "sts_integrator", "rkl2")),
     sts_max_dt_ratio(pin->GetOrAddReal("time", "sts_max_dt_ratio", -1.0)),
     sts_loc(TaskType::main_int),
     muj(), nuj(), muj_tilde(), gammaj_tilde(),
@@ -106,7 +106,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     tree(this),
     use_uniform_meshgen_fn_{true, true, true},
     nreal_user_mesh_data_(), nint_user_mesh_data_(), nuser_history_output_(),
-    four_pi_G_(), grav_eps_(-1.0), grav_mean_rho_(-1.0),
+    four_pi_G_(), grav_eps_(-1.0),
     lb_flag_(true), lb_automatic_(), lb_manual_(),
     MeshGenerator_{UniformMeshGeneratorX1, UniformMeshGeneratorX2,
                    UniformMeshGeneratorX3},
@@ -237,11 +237,35 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
         << "the Mesh must be evenly divisible by the MeshBlock" << std::endl;
     ATHENA_ERROR(msg);
   }
-  if (block_size.nx1 < 4 || (block_size.nx2 < 4 && f2)
-      || (block_size.nx3 < 4 && f3)) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "block_size must be larger than or equal to 4 cells." << std::endl;
-    ATHENA_ERROR(msg);
+  if (multilevel) { // SMR/AMR
+    // It is required to know xorder before pmb->precon is defined.
+    // This assumes that the stencil size is equal to xorder
+    int xorder = 1;
+    std::string input_recon = pin->GetOrAddString("time", "xorder", "2");
+    if ((input_recon == "2") || (input_recon == "2c")) {
+      xorder = 2;
+    } else if ((input_recon == "3") || (input_recon == "3c")) {
+      xorder = 3;
+    } else if ((input_recon == "4") || (input_recon == "4c")) {
+      xorder = 4;
+    }
+    int slimit = std::max(2*(xorder-1), NGHOST);
+    if (block_size.nx1 < slimit || (block_size.nx2 < slimit && f2)
+        || (block_size.nx3 < slimit && f3)) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "block_size must be larger than or equal to " << slimit
+          << " cells with SMR/AMR, when xorder = " << input_recon
+          << " and NGHOST = " << NGHOST << ". "<<std::endl;
+      ATHENA_ERROR(msg);
+    }
+  } else {
+    if (block_size.nx1 < NGHOST || (block_size.nx2 < NGHOST && f2)
+        || (block_size.nx3 < NGHOST && f3)) {
+      msg << "### FATAL ERROR in Mesh constructor" << std::endl
+          << "block_size must be larger than or equal to NGHOST = " << NGHOST
+          << " cells with uniform grid." << std::endl;
+      ATHENA_ERROR(msg);
+    }
   }
 
   // calculate the number of the blocks
@@ -560,7 +584,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     nlim(pin->GetOrAddInteger("time", "nlim", -1)), ncycle(),
     ncycle_out(pin->GetOrAddInteger("time", "ncycle_out", 1)),
     dt_diagnostics(pin->GetOrAddInteger("time", "dt_diagnostics", -1)),
-    sts_integrator(pin->GetOrAddString("time", "sts_integrator", "none")),
+    sts_integrator(pin->GetOrAddString("time", "sts_integrator", "rkl2")),
     sts_max_dt_ratio(pin->GetOrAddReal("time", "sts_max_dt_ratio", -1.0)),
     sts_loc(TaskType::main_int),
     muj(), nuj(), muj_tilde(), gammaj_tilde(),
@@ -572,7 +596,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     tree(this),
     use_uniform_meshgen_fn_{true, true, true},
     nreal_user_mesh_data_(), nint_user_mesh_data_(), nuser_history_output_(),
-    four_pi_G_(), grav_eps_(-1.0), grav_mean_rho_(-1.0),
+    four_pi_G_(), grav_eps_(-1.0),
     lb_flag_(true), lb_automatic_(), lb_manual_(),
     MeshGenerator_{UniformMeshGeneratorX1, UniformMeshGeneratorX2,
                    UniformMeshGeneratorX3},

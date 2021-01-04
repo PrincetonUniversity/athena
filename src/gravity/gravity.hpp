@@ -38,7 +38,6 @@ class Gravity {
   AthenaArray<Real> def;   // defect from the Multigrid solver
   AthenaArray<Real> empty_flux[3];
   Real gconst, four_pi_G;
-  Real grav_mean_rho;
   bool output_defect;
   bool srcterm;
 
