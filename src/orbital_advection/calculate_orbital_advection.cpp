@@ -124,10 +124,10 @@ void OrbitalAdvection::CalculateOrbitalAdvectionCC(const Real dt,
 //! \brief calculate field flux for orbital advection
 
 void OrbitalAdvection::CalculateOrbitalAdvectionFC(const Real dt, EdgeField &e) {
+  if (!orbital_advection_active) return;
   int is = pmb_->is, ie = pmb_->ie;
   int js = pmb_->js, je = pmb_->je;
   int ks = pmb_->ks, ke = pmb_->ke;
-
   if(orbital_direction ==1) { // cartesian or cylindrical
     if(orbital_uniform_mesh) { // uniform mesh
       // e1 = VK*(-B3)
