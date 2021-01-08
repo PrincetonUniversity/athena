@@ -2005,6 +2005,19 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
       if (pbval->nblevel[2][1][1] != -1) ku -= 1;
       // for MHD, shrink buffer by 3
       // TODO(felker): add MHD loop limit calculation for 4th order W(U)
+      // Apply physical boundaries prior to 4th order W(U)
+      // Time at the end of stage for (u, b) register pair
+      Real t_end_stage = pmb->pmy_mesh->time
+                         + stage_wghts[(stage-1)].ebeta*pmb->pmy_mesh->dt;
+      // Scaled coefficient for RHS time-advance within stage
+      Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+      // Swap Hydro and (possibly) passive scalar quantities in BoundaryVariable interface
+      // from conserved to primitive formulations:
+      ph->hbvar.SwapHydroQuantity(ph->w1, HydroBoundaryQuantity::prim);
+      if (NSCALARS > 0)
+        ps->sbvar.var_cc = &(ps->r);
+      pbval->ApplyPhysicalBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
+      // Perform 4th order W(U)
       pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w, pf->b,
                                                  ph->w1, pf->bcc, pmb->pcoord,
                                                  il, iu, jl, ju, kl, ku);

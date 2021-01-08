@@ -1556,6 +1556,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           // for MHD, shrink buffer by 3
           //! \todo (felker):
           //! * add MHD loop limit calculation for 4th order W(U)
+          // Apply physical boundaries prior to 4th order W(U)
+          ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
+          if (NSCALARS > 0)
+            ps->sbvar.var_cc = &(ps->r);
+          pbval->ApplyPhysicalBoundaries(time, 0.0, pbval->bvars_main_int);
+          // Perform 4th order W(U)
           pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
                                                      ph->w, pf->bcc, pmb->pcoord,
                                                      il, iu, jl, ju, kl, ku);
