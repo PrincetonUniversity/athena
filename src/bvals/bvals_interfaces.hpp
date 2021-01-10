@@ -175,6 +175,28 @@ struct BoundaryData { // aggregate and POD (even when MPI_PARALLEL is defined)
 using ShearingBoundaryData = BoundaryData<4>;
 using ShearingFluxBoundaryData = BoundaryData<3>;
 
+//----------------------------------------------------------------------------------------
+//! \struct ShearNeighborData
+//! \brief structure storing shearing boundary information for var
+
+struct ShearNeighborData {
+  SimpleNeighborBlock send_neighbor[4], recv_neighbor[4];
+  int send_count[4], recv_count[4];
+  int jmin_send[4], jmax_send[4];
+  int jmin_recv[4], jmax_recv[4];
+};
+
+//----------------------------------------------------------------------------------------
+//! \struct ShearFluxNeighborData
+//! \brief structure storing shearing boundary information for flux
+
+struct ShearFluxNeighborData {
+  SimpleNeighborBlock send_neighbor[3], recv_neighbor[3];
+  int send_count[3], recv_count[3];
+  int jmin_send[3], jmax_send[3];
+  int jmin_recv[3], jmax_recv[3];
+};
+
 // Struct for describing blocks which touch the shearing-periodic boundaries
 // struct ShearingBoundaryBlock {
 //   int *igidlist, *ilidlist, *irnklist, *ilevlist;
