@@ -350,7 +350,7 @@ void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
 
   // KGF: begin shearing-box exclusive section of original StartReceivingForInit()
   // find send_block_id and recv_block_id;
-  if (shearing_box != 0) {
+  if (shearing_box == 1) {
     StartReceivingShear(phase);
   }
   return;
@@ -729,10 +729,7 @@ void BoundaryValues::ComputeShear(const Real time_fc, const Real time_int) {
     int nx2 = pmb->block_size.nx2;
     int js = pmb->js; int je = pmb->je;
     int jl = js-NGHOST; int ju = je+NGHOST;
-
     int level = pmb->loc.level - pmesh->root_level;
-    // TODO(felker): share nblx2 with ctor?
-    std::int64_t nblx2 = pmesh->nrbx2*(1L << level);
 
     // Update the amount of shear:
     Real x2size = pmesh->mesh_size.x2max - pmesh->mesh_size.x2min;
