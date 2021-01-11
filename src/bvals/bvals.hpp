@@ -187,8 +187,8 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   std::int64_t loc_shear[2];  // x1 LogicalLocation of block(s) on inner/outer shear bndry
 
   // tomo-ono: 3x arrays and 4x arrays are required for int and fc, respectively
-  ShearNeighborData sb_data_[2];
-  ShearFluxNeighborData sb_flux_data_[2];
+  ShearNeighborData<4> sb_data_[2];
+  ShearNeighborData<3> sb_flux_data_[2];
 
   // ProlongateBoundaries() wraps the following S/AMR-operations (within nneighbor loop):
   // (the next function is also called within 3x nested loops over nk,nj,ni)

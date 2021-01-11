@@ -177,24 +177,15 @@ using ShearingFluxBoundaryData = BoundaryData<3>;
 
 //----------------------------------------------------------------------------------------
 //! \struct ShearNeighborData
-//! \brief structure storing shearing boundary information for var
+//! \brief structure storing shearing boundary information
 
+template <int n = 4>
 struct ShearNeighborData {
-  SimpleNeighborBlock send_neighbor[4], recv_neighbor[4];
-  int send_count[4], recv_count[4];
-  int jmin_send[4], jmax_send[4];
-  int jmin_recv[4], jmax_recv[4];
-};
-
-//----------------------------------------------------------------------------------------
-//! \struct ShearFluxNeighborData
-//! \brief structure storing shearing boundary information for flux
-
-struct ShearFluxNeighborData {
-  SimpleNeighborBlock send_neighbor[3], recv_neighbor[3];
-  int send_count[3], recv_count[3];
-  int jmin_send[3], jmax_send[3];
-  int jmin_recv[3], jmax_recv[3];
+  static constexpr int kMaxNeighbor = n;
+  SimpleNeighborBlock send_neighbor[kMaxNeighbor], recv_neighbor[kMaxNeighbor];
+  int send_count[kMaxNeighbor], recv_count[kMaxNeighbor];
+  int jmin_send[kMaxNeighbor], jmax_send[kMaxNeighbor];
+  int jmin_recv[kMaxNeighbor], jmax_recv[kMaxNeighbor];
 };
 
 // Struct for describing blocks which touch the shearing-periodic boundaries
