@@ -310,7 +310,9 @@ void BoundaryValues::SetupPersistentMPI() {
         }
       }
     }
-  } // end KGF: exclusive shearing box portion of SetupPersistentMPI()
+    qomL_ = pmb->porb->OrbitalVelocity(pmb->porb,pmy_mesh_->mesh_size.x1min,0,0)
+              - pmb->porb->OrbitalVelocity(pmb->porb,pmy_mesh_->mesh_size.x1max,0,0);
+  }
   return;
 }
 
@@ -350,7 +352,7 @@ void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
 
   // KGF: begin shearing-box exclusive section of original StartReceivingForInit()
   // find send_block_id and recv_block_id;
-  if (shearing_box == 1) {
+  if (shearing_box != 0) {
     StartReceivingShear(phase);
   }
   return;
@@ -722,9 +724,7 @@ void BoundaryValues::ComputeShear(const Real time_fc, const Real time_int) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
   Mesh *pmesh = pmb->pmy_mesh;
-  OrbitalAdvection *porb = pmb->porb;
-  qomL_ = porb->OrbitalVelocity(porb,pmy_mesh_->mesh_size.x1min,0,0)
-            - porb->OrbitalVelocity(porb,pmy_mesh_->mesh_size.x1max,0,0);
+
   if (shearing_box == 1) {
     int nx2 = pmb->block_size.nx2;
     int js = pmb->js; int je = pmb->je;
