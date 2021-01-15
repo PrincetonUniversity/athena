@@ -52,10 +52,10 @@ void CellCenteredBoundaryVariable::LoadFluxShearingBoxBoundarySameLevel(
   Mesh *pmesh = pmb->pmy_mesh;
   int sj, sk, ej, ek;
   int jo = pbval_->joverlap_flux_;
-  int *jmin1 = pbval_->jmin_flux_send_[0];
-  int *jmin2 = pbval_->jmin_flux_send_[1];
-  int *jmax1 = pbval_->jmax_flux_send_[0];
-  int *jmax2 = pbval_->jmax_flux_send_[1];
+  int *jmin1 = pbval_->sb_flux_data_[0].jmin_send;
+  int *jmin2 = pbval_->sb_flux_data_[1].jmin_send;
+  int *jmax1 = pbval_->sb_flux_data_[0].jmax_send;
+  int *jmax2 = pbval_->sb_flux_data_[1].jmax_send;
   sk = pmb->ks;        ek = pmb->ke;
 
   if (nb<3) { // inner boundary
@@ -89,7 +89,7 @@ void CellCenteredBoundaryVariable::SendFluxShearingBoxBoundaryBuffers() {
   for (int upper=0; upper<2; upper++) {
     if (pbval_->is_shear[upper]) {
       for (int n=0; n<3; n++) {
-        SimpleNeighborBlock& snb = pbval_->shear_flux_send_neighbor_[upper][n];
+        SimpleNeighborBlock& snb = pbval_->sb_flux_data_[upper].send_neighbor[n];
         if (snb.rank != -1) {
           LoadFluxShearingBoxBoundarySameLevel(shear_var_flx_[upper],
                                    shear_bd_flux_[upper].send[n], n+offset[upper]);
@@ -125,10 +125,10 @@ void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundarySameLevel(
   int &xgh = pbval_->xgh_;
   sk = pmb->ks;        ek = pmb->ke;
 
-  int *jmin1 = pbval_->jmin_flux_recv_[0];
-  int *jmin2 = pbval_->jmin_flux_recv_[1];
-  int *jmax1 = pbval_->jmax_flux_recv_[0];
-  int *jmax2 = pbval_->jmax_flux_recv_[1];
+  int *jmin1 = pbval_->sb_flux_data_[0].jmin_recv;
+  int *jmin2 = pbval_->sb_flux_data_[1].jmin_recv;
+  int *jmax1 = pbval_->sb_flux_data_[0].jmax_recv;
+  int *jmax2 = pbval_->sb_flux_data_[1].jmax_recv;
 
   if (nb<3) {
     sj = jmin1[nb]+xgh;     ej = jmax1[nb]+xgh;
@@ -167,7 +167,7 @@ bool CellCenteredBoundaryVariable::ReceiveFluxShearingBoxBoundaryBuffers() {
         if (shear_bd_flux_[upper].flag[n] == BoundaryStatus::completed) continue;
         if (shear_bd_flux_[upper].flag[n] == BoundaryStatus::waiting) {
           // on the same process
-          if (pbval_->shear_flux_recv_neighbor_[upper][n].rank == Globals::my_rank) {
+          if (pbval_->sb_flux_data_[upper].recv_neighbor[n].rank == Globals::my_rank) {
             flag[upper] = false;
             continue;
           } else { // MPI boundary
