@@ -3,27 +3,26 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file hb3.c
-//  \brief Problem generator for 2D MRI simulations using the shearing sheet
-//   based on "A powerful local shear instability in weakly magnetized disks"
-//
-//  PURPOSE: Problem generator for 2D MRI simulations using the shearing sheet
-//    based on "A powerful local shear instability in weakly magnetized disks.
-//    III - Long-term evolution in a shearing sheet" by Hawley & Balbus.  This
-//    is the third of the HB papers on the MRI, thus hb3.
-//
-//  Several different perturbations and field configurations are possible:
-//  - ipert = 1 - isentropic perturbations to P & d [default]
-//  - ipert = 2 - uniform Vx=amp, sinusoidal density
-//
-//  - ifield = 1 - Bz=B0 std::sin(x1) field with zero-net-flux [default]
-//  - ifield = 2 - uniform Bz
-//
-//  PRIVATE FUNCTION PROTOTYPES:
-//  - ran2() - random number generator from NR
-//
-//  REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).*/
-//
+//! \file hb3.cpp
+//! \brief Problem generator for 2D MRI simulations using the shearing sheet
+//!  based on "A powerful local shear instability in weakly magnetized disks"
+//!
+//! PURPOSE: Problem generator for 2D MRI simulations using the shearing sheet
+//!   based on "A powerful local shear instability in weakly magnetized disks.
+//!   III - Long-term evolution in a shearing sheet" by Hawley & Balbus.  This
+//!   is the third of the HB papers on the MRI, thus hb3.
+//!
+//! Several different perturbations and field configurations are possible:
+//! - ipert = 1 - isentropic perturbations to P & d [default]
+//! - ipert = 2 - uniform Vx=amp, sinusoidal density
+//!
+//! - ifield = 1 - Bz=B0 sin(x1) field with zero-net-flux [default]
+//! - ifield = 2 - uniform Bz
+//!
+//! PRIVATE FUNCTION PROTOTYPES:
+//! - ran2() - random number generator from NR
+//!
+//! REFERENCE: Hawley, J. F. & Balbus, S. A., ApJ 400, 595-609 (1992).*/
 //======================================================================================
 
 // C headers
@@ -43,15 +42,13 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../utils/utils.hpp" // ran2()
 
 
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"
-#endif
-#if !SHEARING_BOX
-#error "This problem generator requires shearing box"
 #endif
 
 namespace {
@@ -76,12 +73,15 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   beta   = pin->GetReal("problem","beta");
   nwx = pin->GetOrAddInteger("problem","nwx",1);
   nwy = pin->GetOrAddInteger("problem","nwy",1);
-  ShBoxCoord = pin->GetOrAddInteger("problem","shboxcoord",2);
   ipert  = pin->GetOrAddInteger("problem","ipert",1);
   ifield = pin->GetOrAddInteger("problem","ifield",1);
-  Omega_0= pin->GetOrAddReal("problem","Omega0",0.001);
-  qshear = pin->GetOrAddReal("problem","qshear",1.5);
 
+  if (!shear_periodic) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "This problem generator requires shearing box" << std::endl;
+    ATHENA_ERROR(msg);
+  }
 
   // enroll new history variables
   AllocateUserHistoryOutput(1);
@@ -101,13 +101,26 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     ATHENA_ERROR(msg);
   }
 
+  if (porb->orbital_advection_defined) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
+        << "This problem does NOT work with orbital advection." << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
+  // shearing sheet parameter
+  Omega_0 = porb->Omega0;
+  qshear  = porb->qshear;
+  ShBoxCoord = porb->shboxcoord;
 
   if (ShBoxCoord != 2) {
     std::stringstream msg;
     msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
-        << "Shearing sheet only works for x-z plane with ShBoxCoord=2" << std::endl;
+        << "Shearing sheet only works for x-z plane with shboxcoord=2" << std::endl
+        << "Check <orbital_advection> shboxcoord parameter." <<std::endl;
     ATHENA_ERROR(msg);
   }
+
   // allocate 1D array for cell volume used in usr def history
   volume.NewAthenaArray(ncells1);
 
@@ -178,7 +191,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       } else {
         std::stringstream msg;
         msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
-            << "Shearing sheet ipert=" << ipert << " is unrecognized" << std::endl;
+            << "Shearing sheet ipert=" << ipert << " is invalid." << std::endl;
         ATHENA_ERROR(msg);
       }
       phydro->u(IDN,ks,j,i) = rd;
@@ -214,7 +227,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         } else {
           std::stringstream msg;
           msg << "### FATAL ERROR in hb3.cpp ProblemGenerator" << std::endl
-              << "Shearing sheet ifield=" << ifield << " is unrecognized" << std::endl;
+              << "Shearing sheet ifield=" << ifield << " is unrecognized." << std::endl;
           ATHENA_ERROR(msg);
         }
         if (NON_BAROTROPIC_EOS) {

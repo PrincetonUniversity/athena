@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals.hpp
-//  \brief defines BoundaryBase, BoundaryValues classes used for setting BCs on all data
+//! \brief defines BoundaryBase, BoundaryValues classes used for setting BCs on all data
 
 // C headers
 
@@ -25,8 +25,9 @@
 #endif
 
 // forward declarations
-// TODO(felker): how many of these foward declarations are actually needed now?
-// Can #include "./bvals_interfaces.hpp" suffice?
+//! \todo (felker):
+//! - how many of these foward declarations are actually needed now?
+//! - Can #include "./bvals_interfaces.hpp" suffice?
 class Mesh;
 class MeshBlock;
 class MeshBlockTree;
@@ -34,15 +35,25 @@ class ParameterInput;
 class Coordinates;
 struct RegionSize;
 
-// free functions to return boundary flag given input string, and vice versa
+//! free functions to return boundary flag given input string
 BoundaryFlag GetBoundaryFlag(const std::string& input_string);
+//! free functions to return string given boundary flag
 std::string GetBoundaryString(BoundaryFlag input_flag);
-// + confirming that the MeshBlock's boundaries are all valid selections
+//! confirming that the MeshBlock's boundaries are all valid selections
 void CheckBoundaryFlag(BoundaryFlag block_flag, CoordinateDirection dir);
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryBase
-//  \brief Base class for all BoundaryValues classes (BoundaryValues and MGBoundaryValues)
+//! \brief Base class for all BoundaryValues classes (BoundaryValues and MGBoundaryValues)
+//!
+//! \note
+//! - 1x pair (neighbor index, buffer ID) per entire SET of separate variable buffers
+//!   (Hydro, Field, Passive Scalar, Gravity, etc.). Greedy allocation for worst-case
+//!   of refined 3D; only 26 entries needed/initialized if unrefined 3D, e.g.
+//!   - 1D refined or unrefined=2
+//!   - 2D refined=12, unrefined=8
+//!   - 3D refined=56, unrefined=26.
+//!     Refinement adds: 3*6 faces + 1*12 edges = +30 neighbors
 
 class BoundaryBase {
  public:
@@ -90,8 +101,8 @@ class BoundaryBase {
 
 //----------------------------------------------------------------------------------------
 //! \class BoundaryValues
-//  \brief centralized class for interacting with each individual variable boundary data
-//         (design pattern ~ mediator)
+//! \brief centralized class for interacting with each individual variable boundary data
+//!        (design pattern ~ mediator)
 
 class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
                        public BoundaryCommunication {
@@ -99,12 +110,12 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs, ParameterInput *pin);
   ~BoundaryValues();
 
-  // variable-length arrays of references to BoundaryVariable instances
-  // containing all BoundaryVariable instances:
+  //! variable-length arrays of references to BoundaryVariable instances
+  //! containing all BoundaryVariable instances:
   std::vector<BoundaryVariable *> bvars;
-  // subset of bvars that are exchanged in the main TimeIntegratorTaskList
+  //! subset of bvars that are exchanged in the main TimeIntegratorTaskList
   std::vector<BoundaryVariable *> bvars_main_int;
-  // subset of bvars that are exchanged in the SuperTimeStepTaskList
+  //! subset of bvars that are exchanged in the SuperTimeStepTaskList
   std::vector<BoundaryVariable *> bvars_sts;
 
   // inherited functions (interface shared with BoundaryVariable objects):
@@ -116,7 +127,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void StartReceiving(BoundaryCommSubset phase) final {return;};
   void ClearBoundary(BoundaryCommSubset phase) final {return;};
   void StartReceivingShear(BoundaryCommSubset phase) final;
-  void ComputeShear(const Real time) final;
+  void ComputeShear(const Real time_fc, const Real time_int);
 
   // non-inhertied / unique functions (do not exist in BoundaryVariable objects):
   // (these typically involve a coupled interaction of boundary variable/quantities)
@@ -131,10 +142,11 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
                             std::vector<BoundaryVariable *> bvars_subset);
 
   // compute the shear at each integrator stage
-  // TODO(felker): consider making this fn private again if calling within StartRecv()
+  //! \todo (felker):
+  //! - consider making this fn private again if calling within StartRecv()
   void FindShearBlock(const Real time);
 
-  // safety check of user's boundary fns in Mesh::Initialize before SetupPersistentMPI()
+  //! safety check of user's boundary fns in Mesh::Initialize before SetupPersistentMPI()
   void CheckUserBoundaries();
 
   int AdvanceCounterPhysID(int num_phys);
@@ -143,39 +155,40 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   MeshBlock *pmy_block_;      // ptr to MeshBlock containing this BoundaryValues
   int nface_, nedge_;         // used only in fc/flux_correction_fc.cpp calculations
 
-  // if a BoundaryPhysics or user fn should be applied at each MeshBlock boundary
-  // false --> e.g. block, polar, (shear-) periodic boundaries
+  //! if a BoundaryPhysics or user fn should be applied at each MeshBlock boundary
+  //! false --> e.g. block, polar, (shear-) periodic boundaries
   bool apply_bndry_fn_[6]{};   // C++11: in-class initializer of non-static member
   // C++11: direct-list-initialization -> value init of array -> zero init of each scalar
 
-  // For spherical polar coordinates edge-case: if one MeshBlock wraps entirely around
-  // the pole (azimuthally), shift the k-axis by nx3/2 for cell- and face-centered
-  // variables, & emf, using this temporary 1D array.
+  //! For spherical polar coordinates edge-case: if one MeshBlock wraps entirely around
+  //! the pole (azimuthally), shift the k-axis by nx3/2 for cell- and face-centered
+  //! variables, & emf, using this temporary 1D array.
   AthenaArray<Real> azimuthal_shift_;
 
-  // local counter for generating unique MPI tags for per-MeshBlock BoundaryVariable
-  // communication (subset of Mesh::next_phys_id_)
+  //! local counter for generating unique MPI tags for per-MeshBlock BoundaryVariable
+  //! communication (subset of Mesh::next_phys_id_)
   int bvars_next_phys_id_;
 
   // Shearing box (shared with Field and Hydro)
   // KGF: remove the redundancies in these variables:
-  Real Omega_0_, qshear_;       // orbital freq and shear rate
-  int ShBoxCoord_;              // shearcoordinate type: 1 = xy (default), 2 = xz
-  int joverlap_;                // # of cells the shear runs over one block
-  Real ssize_;                  // # of ghost cells in x-z plane
-  Real eps_;                    // fraction part of the shear
+  int shearing_box; // flag for shearing box: 0 = none, 1: xy, 2: xz
+  int joverlap_, joverlap_flux_; // # of cells the shear runs over one block
+  Real ssize_;                   // # of ghost cells in x-z plane
+  Real eps_, eps_flux_;          // fraction part of the shear
   Real qomL_;
+  int xorder_, xgh_;
+  AthenaArray<Real> pflux_;    // pencil buffer for remapping
 
-  // it is possible for a MeshBlock to have is_shear={true, true}, if it is the only block
-  // along x1
+  std::int64_t nblx2;
+  //! it is possible for a MeshBlock to have is_shear={true, true},
+  //! if it is the only block along x1
   bool is_shear[2]; // inner_x1=0, outer_x1=1
   SimpleNeighborBlock *shbb_[2];
   std::int64_t loc_shear[2];  // x1 LogicalLocation of block(s) on inner/outer shear bndry
 
-  // KGF: why 4x? shouldn't in only require +/-1 MeshBlock along the shear, aka 3x?
-  // KGF: fold 4x arrays into 2x 2D array of structs (combine recv/send); inner=0, outer=1
-  SimpleNeighborBlock shear_send_neighbor_[2][4], shear_recv_neighbor_[2][4];
-  int shear_send_count_[2][4], shear_recv_count_[2][4];
+  // tomo-ono: 3x arrays and 4x arrays are required for int and fc, respectively
+  ShearNeighborData<4> sb_data_[2];
+  ShearNeighborData<3> sb_flux_data_[2];
 
   // ProlongateBoundaries() wraps the following S/AMR-operations (within nneighbor loop):
   // (the next function is also called within 3x nested loops over nk,nj,ni)
@@ -196,13 +209,15 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void CheckPolarBoundaries();  // called in BoundaryValues() ctor
 
   // temporary--- Added by @tomidakn on 2015-11-27 in f0f989f85f
-  // TODO(KGF): consider removing this friendship designation
+  //! \todo (felker):
+  //! - consider removing this friendship designation
   friend class Mesh;
-  // currently, this class friendship is required for copying send/recv buffers between
-  // BoundaryVariable objects within different MeshBlocks on the same MPI rank:
+  //! currently, this class friendship is required for copying send/recv buffers between
+  //! BoundaryVariable objects within different MeshBlocks on the same MPI rank:
   friend class BoundaryVariable;
   friend class FaceCenteredBoundaryVariable;  // needs nface_, nedge_, num_north/south_...
-  // TODO(KGF): consider removing these friendship designations:
+  //! \todo (felker):
+  //! - consider removing these friendship designations:
   friend class CellCenteredBoundaryVariable;
   friend class HydroBoundaryVariable;  // needed for shearing box quantities
 };

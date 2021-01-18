@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file from_array.cpp
-//  \brief Problem generator for initializing with preexisting array from HDF5 input
+//! \brief Problem generator for initializing with preexisting array from HDF5 input
 
 // C headers
 
@@ -23,27 +23,27 @@
 #include "../parameter_input.hpp"     // ParameterInput
 
 //----------------------------------------------------------------------------------------
-// Function for setting initial conditions
-// Inputs:
-//   pin: parameters
-// Outputs: (none)
-// Notes:
-//   uses input parameters to determine which file contains array of conserved values
-//   dataset must be 5-dimensional array with the following sizes:
-//     NHYDRO
-//     total number of MeshBlocks
-//     MeshBlock/nx3
-//     MeshBlock/nx2
-//     MeshBlock/nx1
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//! \brief Function for setting initial conditions
+//!
+//! Inputs:
+//! - pin: parameters
+//! Outputs: (none)
+//! Notes:
+//! - uses input parameters to determine which file contains array of conserved values
+//!   dataset must be 5-dimensional array with the following sizes:
+//!   - NHYDRO
+//!   - total number of MeshBlocks
+//!   - MeshBlock/nx3
+//!   - MeshBlock/nx2
+//!   - MeshBlock/nx1
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (SELF_GRAVITY_ENABLED) {
     Real four_pi_G = pin->GetReal("problem","four_pi_G");
     Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
-    Real d0 = pin->GetReal("problem","d0");
     SetFourPiG(four_pi_G);
     SetGravityThreshold(eps);
-    SetMeanDensity(d0);
   }
 }
 

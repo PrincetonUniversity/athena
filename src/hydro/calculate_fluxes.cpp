@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file calculate_fluxes.cpp
-//  \brief Calculate hydro/MHD fluxes
+//! \brief Calculate hydro/MHD fluxes
 
 // C headers
 
@@ -31,7 +31,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn  void Hydro::CalculateFluxes
-//  \brief Calculate Hydrodynamic Fluxes using the Riemann solver
+//! \brief Calculate Hydrodynamic Fluxes using the Riemann solver
 
 void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
                             AthenaArray<Real> &bcc, const int order) {
@@ -64,15 +64,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   AthenaArray<Real> &x1flux = flux[X1DIR];
   // set the loop limits
   jl = js, ju = je, kl = ks, ku = ke;
-  // TODO(felker): fix loop limits for fourth-order hydro
-  //  if (MAGNETIC_FIELDS_ENABLED) {
-  if (pmb->block_size.nx2 > 1) {
-    if (pmb->block_size.nx3 == 1) // 2D
-      jl = js-1, ju = je+1, kl = ks, ku = ke;
-    else // 3D
-      jl = js-1, ju = je+1, kl = ks-1, ku = ke+1;
+  if (MAGNETIC_FIELDS_ENABLED || order == 4) {
+    if (pmb->block_size.nx2 > 1) {
+      if (pmb->block_size.nx3 == 1) // 2D
+        jl = js-1, ju = je+1, kl = ks, ku = ke;
+      else // 3D
+        jl = js-1, ju = je+1, kl = ks-1, ku = ke+1;
+    }
   }
-  //  }
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -166,13 +165,12 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     AthenaArray<Real> &x2flux = flux[X2DIR];
     // set the loop limits
     il = is-1, iu = ie+1, kl = ks, ku = ke;
-    // TODO(felker): fix loop limits for fourth-order hydro
-    //    if (MAGNETIC_FIELDS_ENABLED) {
-    if (pmb->block_size.nx3 == 1) // 2D
-      kl = ks, ku = ke;
-    else // 3D
-      kl = ks-1, ku = ke+1;
-    //    }
+    if (MAGNETIC_FIELDS_ENABLED || order == 4) {
+      if (pmb->block_size.nx3 == 1) // 2D
+        kl = ks, ku = ke;
+      else // 3D
+        kl = ks-1, ku = ke+1;
+    }
 
     for (int k=kl; k<=ku; ++k) {
       // reconstruct the first row
@@ -275,9 +273,9 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   if (pmb->pmy_mesh->f3) {
     AthenaArray<Real> &x3flux = flux[X3DIR];
     // set the loop limits
-    // TODO(felker): fix loop limits for fourth-order hydro
-    //    if (MAGNETIC_FIELDS_ENABLED)
-    il = is-1, iu = ie+1, jl = js-1, ju = je+1;
+    if (MAGNETIC_FIELDS_ENABLED || order == 4) {
+      il = is-1, iu = ie+1, jl = js-1, ju = je+1;
+    }
 
     for (int j=jl; j<=ju; ++j) { // this loop ordering is intentional
       // reconstruct the first row
@@ -372,17 +370,15 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     } // end if (order == 4)
   }
 
-  if (SELF_GRAVITY_ENABLED) AddGravityFlux(); // add gravity flux directly
-
-  if (!STS_ENABLED) { // add diffusion fluxes
+  if (!STS_ENABLED)
     AddDiffusionFluxes();
-  }
+
   return;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn  void Hydro::CalculateFluxes_STS
-//  \brief Calculate Hydrodynamic Diffusion Fluxes for STS
+//! \brief Calculate Hydrodynamic Diffusion Fluxes for STS
 
 void Hydro::CalculateFluxes_STS() {
   AddDiffusionFluxes();

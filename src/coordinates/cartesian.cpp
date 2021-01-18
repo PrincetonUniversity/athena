@@ -4,8 +4,8 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file cartesian.cpp
-//  \brief implements functions for Cartesian (x-y-z) coordinates in a derived class of
-//  the Coordinates abstract base class.
+//! \brief implements functions for Cartesian (x-y-z) coordinates in a derived class of
+//! the Coordinates abstract base class.
 
 // C headers
 
@@ -19,7 +19,7 @@
 #include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
-// Cartesian coordinates constructor
+//! Cartesian coordinates constructor
 
 Cartesian::Cartesian(MeshBlock *pmb, ParameterInput *pin, bool flag)
     : Coordinates(pmb, pin, flag) {

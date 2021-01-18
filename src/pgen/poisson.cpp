@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file poisson.cpp
-//  \brief Problem generator to test Poisson's solver
+//! \brief Problem generator to test Poisson's solver
 
 // C headers
 
@@ -50,7 +50,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
   SetFourPiG(four_pi_G);
   SetGravityThreshold(eps);
-  SetMeanDensity(0.0);
 }
 
 //========================================================================================

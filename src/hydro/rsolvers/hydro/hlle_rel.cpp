@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hlle_rel.cpp
-//  \brief Implements HLLE Riemann solver for relativistic hydrodynamics.
+//! \brief Implements HLLE Riemann solver for relativistic hydrodynamics.
 
 // C headers
 
@@ -35,20 +35,25 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 } // namespace
 
 //----------------------------------------------------------------------------------------
-// Riemann solver
-// Inputs:
-//   k,j: x3- and x2-indices
-//   il,iu: lower and upper x1-indices
-//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-//   prim_l,prim_r: 1D arrays of left and right primitive states
-//   dxw: 1D arrays of mesh spacing in the x1 direction (not used)
-// Outputs:
-//   flux: 3D array of hydrodynamical fluxes across interfaces
-// Notes:
-//   prim_l, prim_r overwritten
-//   tries to implement HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
-//   otherwise implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in
-//       Harm
+//! \fn void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+//!                           const int ivx,
+//!                           AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+//!                           AthenaArray<Real> &flux, const AthenaArray<Real> &dxw)
+//! \brief Riemann solver
+//!
+//! Inputs:
+//!  - k,j: x3- and x2-indices
+//!  - il,iu: lower and upper x1-indices
+//!  - ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
+//!  - prim_l,prim_r: 1D arrays of left and right primitive states
+//!  - dxw: 1D arrays of mesh spacing in the x1 direction (not used)
+//! Outputs:
+//!  - flux: 3D array of hydrodynamical fluxes across interfaces
+//! Notes:
+//!  - prim_l, prim_r overwritten
+//!  - tries to implement HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
+//!  - otherwise implements HLLE algorithm similar to that of fluxcalc() in step_ch.c
+//!    in Harm
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx,
@@ -64,20 +69,26 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
 namespace {
 //----------------------------------------------------------------------------------------
-// Frame-transforming HLLE implementation
-// Inputs:
-//   pmb: pointer to MeshBlock object
-//   k,j: x3- and x2-indices
-//   il,iu: lower and upper x1-indices
-//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-//   g,gi: 1D scratch arrays for metric coefficients
-//   prim_l,prim_r: 1D arrays of left and right primitive states
-//   cons: 1D scratch array for conserved quantities
-// Outputs:
-//   flux: 3D array of hydrodynamical fluxes across interfaces
-// Notes:
-//   prim_l, prim_r overwritten
-//   implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
+//! \fn void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
+//!                       const int iu, const int ivx,
+//!                       AthenaArray<Real> &g, AthenaArray<Real> &gi,
+//!                       AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+//!                       AthenaArray<Real> &cons, AthenaArray<Real> &flux)
+//! \brief Frame-transforming HLLE implementation
+//!
+//! Inputs:
+//!  - pmb: pointer to MeshBlock object
+//!  - k,j: x3- and x2-indices
+//!  - il,iu: lower and upper x1-indices
+//!  - ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
+//!  - g,gi: 1D scratch arrays for metric coefficients
+//!  - prim_l,prim_r: 1D arrays of left and right primitive states
+//!  - cons: 1D scratch array for conserved quantities
+//! Outputs:
+//!  - flux: 3D array of hydrodynamical fluxes across interfaces
+//! Notes:
+//!  - prim_l, prim_r overwritten
+//!  - implements HLLE algorithm from Mignone & Bodo 2005, MNRAS 364 126 (MB)
 
 void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
                       const int iu, const int ivx,
@@ -278,19 +289,24 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j, const int il,
 }
 
 //----------------------------------------------------------------------------------------
-// Non-frame-transforming HLLE implementation
-// Inputs:
-//   pmb: pointer to MeshBlock object
-//   k,j: x3- and x2-indices
-//   il,iu: lower and upper x1-indices
-//   g,gi: 1D scratch arrays for metric coefficients
-//   prim_l,prim_r: 1D arrays of left and right primitive states
-// Outputs:
-//   flux: 3D array of hydrodynamical fluxes across interfaces
-// Notes:
-//   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
-//   derived from RiemannSolver() in hlle_rel_no_transform.cpp assuming ivx = IVY
-//   same function as in hllc_rel.cpp
+//! \fn void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const int il,
+//!                         const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi,
+//!                         AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+//!                         AthenaArray<Real> &flux)
+//! \brief Non-frame-transforming HLLE implementation
+//!
+//! Inputs:
+//!  - pmb: pointer to MeshBlock object
+//!  - k,j: x3- and x2-indices
+//!  - il,iu: lower and upper x1-indices
+//!  - g,gi: 1D scratch arrays for metric coefficients
+//!  - prim_l,prim_r: 1D arrays of left and right primitive states
+//! Outputs:
+//!  - flux: 3D array of hydrodynamical fluxes across interfaces
+//! Notes:
+//!  - implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
+//!  - derived from RiemannSolver() in hlle_rel_no_transform.cpp assuming ivx = IVY
+//!  - same function as in hllc_rel.cpp
 
 void HLLENonTransforming(MeshBlock *pmb, const int k, const int j, const int il,
                          const int iu, AthenaArray<Real> &g, AthenaArray<Real> &gi,

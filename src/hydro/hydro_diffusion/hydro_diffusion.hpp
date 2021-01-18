@@ -6,8 +6,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hydro_diffusion.hpp
-//  \brief defines class HydroDiffusion
-//  Contains data and functions that implement the diffusion processes
+//! \brief defines class HydroDiffusion
+//!
+//! Contains data and functions that implement the diffusion processes
 
 // C headers
 
@@ -33,7 +34,7 @@ void ConstConduction(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Re
                      int is, int ie, int js, int je, int ks, int ke);
 
 //! \class HydroDiffusion
-//  \brief data and functions for physical diffusion processes in the hydro
+//! \brief data and functions for physical diffusion processes in the hydro
 
 class HydroDiffusion {
  public:

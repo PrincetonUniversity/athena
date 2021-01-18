@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file field.cpp
-//  \brief implementation of functions in class Field
+//! \brief implementation of functions in class Field
 
 // C headers
 
@@ -22,7 +22,7 @@
 #include "field.hpp"
 #include "field_diffusion/field_diffusion.hpp"
 
-// constructor, initializes data structures and parameters
+//! constructor, initializes data structures and parameters
 
 Field::Field(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), b(pmb->ncells3, pmb->ncells2, pmb->ncells1),
@@ -106,8 +106,8 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
 
 
 //----------------------------------------------------------------------------------------
-// \! fn
-// \! brief
+//! \fn void Field::CalculateCellCenteredField
+//! \brief cell center B-fields are defined as spatial interpolation at the volume center
 
 void Field::CalculateCellCenteredField(
     const FaceField &bf, AthenaArray<Real> &bc, Coordinates *pco,

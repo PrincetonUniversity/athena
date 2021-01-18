@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file reconstruction.cpp
-//  \brief
+//! \brief
 
 // C headers
 
@@ -34,7 +34,7 @@ int DoolittleLUPDecompose(Real **a, int n, int *pivot);
 void DoolittleLUPSolve(Real **lu, int *pivot, Real *b, int n, Real *x);
 } // namespace
 
-// constructor
+//!constructor
 
 Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     characteristic_projection{false}, uniform{true, true, true},
@@ -89,8 +89,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   // check for necessary number of ghost zones for PPM w/o fourth-order flux corrections
   if (xorder == 3) {
     int req_nghost = 3;
-    if (MAGNETIC_FIELDS_ENABLED)
-      req_nghost += 1;
     if (NGHOST < req_nghost) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
@@ -170,7 +168,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       ATHENA_ERROR(msg);
     }
 
-    if (SHEARING_BOX) {
+    if (pmb->pmy_mesh->shear_periodic) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
           << "Selected time/xorder=" << input_recon << " flux calculations"
@@ -654,42 +652,40 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
 namespace {
 
 //----------------------------------------------------------------------------------------
-// \!fn void DoolittleLUPDecompose(Real **a, int n, int *pivot)
-
-// \brief perform LU decomposition with partial (row) pivoting using Doolittle's
-// algorithm. Partial pivoting is required for stability.
-//
-// Let D be a diagonal matrix, L be a unit lower triangular matrix (main diagonal is all
-// 1's), and U be a unit upper triangular matrix
-// Crout = (LD)U  ---> unit upper triangular U and L'=LD non-unit lower triangular
-// Doolittle = L(DU) ---> unit lower triangular L and U'=DU non-unit upper triangular
-//
-// INPUT:
-//     a: square nxn matrix A of real numbers. Must be a mutable pointer-to-pointer/rows.
-//     n: number of rows and columns in "a", rows in pivot output
-//
-//    Also expects "const Real lu_tol >=0" file-scope variable to be defined = criterion
-//    for detecting degenerate input "a" (or nearly-degenerate).
-//
-// OUTPUT:
-//     a: modified in-place to contain both lower- and upper-triangular matrices L, U
-//        as A <- L + U (the 1's on the diagonal of L are not stored) in the decomposition
-//        PA=LU. See NR pg 50; even though they claim to use Crout, they are probably
-//        use Doolittle. They assume unit diagonal in Lx=Pb forward substitution.
-// pivot: nx1 int vector that is a sparse representation of the nxn permutation matrix P.
-//        For each row/vector entry, the value = the column # of the nonzero pivot element
-//
-// RETURN:
-//  failure=0: routine detected that "a" matrix was nearly-singular
-//  success=1: LUP decomposition completed
-//
-//     Both "a", "pivot" can then be passed with RHS vector "b" to DoolittleLUPSolve in
-//     order to solve Ax=b system of linear equations
-//
-// REFERENCES:
-//   - References Numerical Recipes, 3rd ed. (NR) section 2.3 "LU Decomposition & its
-//     Applications"
-
+//! \fn void DoolittleLUPDecompose(Real **a, int n, int *pivot)
+//! \brief perform LU decomposition with partial (row) pivoting using Doolittle's
+//! algorithm. Partial pivoting is required for stability.
+//!
+//! Let D be a diagonal matrix, L be a unit lower triangular matrix (main diagonal is all
+//! 1's), and U be a unit upper triangular matrix
+//! Crout = (LD)U  ---> unit upper triangular U and L'=LD non-unit lower triangular
+//! Doolittle = L(DU) ---> unit lower triangular L and U'=DU non-unit upper triangular
+//!
+//! INPUT:
+//!   - a: square nxn matrix A of real numbers. Must be a mutable pointer-to-pointer/rows.
+//!   - n: number of rows and columns in "a", rows in pivot output
+//!
+//! Also expects "const Real lu_tol >=0" file-scope variable to be defined = criterion
+//! for detecting degenerate input "a" (or nearly-degenerate).
+//!
+//! OUTPUT:
+//!   - a: modified in-place to contain both lower- and upper-triangular matrices L, U
+//!     as A <- L + U (the 1's on the diagonal of L are not stored) in the decomposition
+//!     PA=LU. See NR pg 50; even though they claim to use Crout, they are probably
+//!     use Doolittle. They assume unit diagonal in Lx=Pb forward substitution.
+//!   - pivot: nx1 int vector that is a sparse representation of the nxn permutation
+//!     matrix P. For each row/vector entry, the value = the column # of the nonzero
+//!     pivot element
+//!
+//! RETURN:
+//!  - failure=0: routine detected that "a" matrix was nearly-singular
+//!  - success=1: LUP decomposition completed
+//!
+//! Both "a", "pivot" can then be passed with RHS vector "b" to DoolittleLUPSolve in
+//! order to solve Ax=b system of linear equations
+//!
+//! REFERENCES:
+//!   - Numerical Recipes, 3rd ed. (NR) section 2.3 "LU Decomposition & its Applications"
 
 int DoolittleLUPDecompose(Real **a, int n, int *pivot) {
   constexpr int failure = 0, success = 1;
@@ -750,19 +746,18 @@ int DoolittleLUPDecompose(Real **a, int n, int *pivot) {
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void DoolittleLUPSolve(Real **lu, int *pivot, Real *b, int n, Real *x)
-
-// \brief after DoolittleLUPDecompose() function has transformed input the LHS of Ax=b
-// system to partially-row pivoted, LUP decomposed equivalent PAx=LUx=Pb, solve for x
-//
-// INPUT:
-//     lu: square nxn matrix of real numbers containing output "a" of successful
-//          DoolittleLUPDecompose() function call. See notes in that function for details.
-//  pivot: nx1 vector of integers produced by DoolittleLUPDecompose()
-//      b: RHS column vector of real numbers in original Ax=b system of linear equations
-//
-// OUTPUT:
-//     x: nx1 column vector of real numbers containing solution in original Ax=b system
+//! \fn void DoolittleLUPSolve(Real **lu, int *pivot, Real *b, int n, Real *x)
+//! \brief after DoolittleLUPDecompose() function has transformed input the LHS of Ax=b
+//! system to partially-row pivoted, LUP decomposed equivalent PAx=LUx=Pb, solve for x
+//!
+//! INPUT:
+//!  - lu: square nxn matrix of real numbers containing output "a" of successful
+//!    DoolittleLUPDecompose() function call. See notes in that function for details.
+//!  - pivot: nx1 vector of integers produced by DoolittleLUPDecompose()
+//!  - b: RHS column vector of real numbers in original Ax=b system of linear equations
+//!
+//! OUTPUT:
+//!  - x: nx1 column vector of real numbers containing solution in original Ax=b system
 
 void DoolittleLUPSolve(Real **lu, int *pivot, Real *b, int n, Real *x) {
   // forward substitution, Ly=Pb (L must be a UNIT lower-triangular matrix)

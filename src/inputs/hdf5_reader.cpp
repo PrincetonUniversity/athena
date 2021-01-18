@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hdf5_reader.cpp
-//  \brief Implements HDF5 reader functions
+//! \brief Implements HDF5 reader functions
 
 // C headers
 
@@ -38,10 +38,10 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void HDF5ReadArray(const char *filename, const char *dataset_name, int rank_file,
-//      const int *start_file, const int *count_file, int rank_mem, const int *start_mem,
-//      const int *count_mem, AthenaArray<Real> &array, bool collective=false,
-//      bool noop=false)
-//  \brief Read a single dataset from an HDF5 file into a pre-allocated array.
+//!     const int *start_file, const int *count_file, int rank_mem, const int *start_mem,
+//!     const int *count_mem, AthenaArray<Real> &array, bool collective=false,
+//!     bool noop=false)
+//! \brief Read a single dataset from an HDF5 file into a pre-allocated array.
 
 void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_file,
                        const int *start_file, const int *count_file, int rank_mem,
@@ -140,8 +140,8 @@ void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_
 
 //----------------------------------------------------------------------------------------
 //! \fn void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar,
-//                     const char **var_names, char *x2lim_name, char *x1lim_name) {
-//  \brief Reads datasets from an HDF5 file into a InterpTable2D.
+//!                    const char **var_names, char *x2lim_name, char *x1lim_name) {
+//! \brief Reads datasets from an HDF5 file into a InterpTable2D.
 
 void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar,
                      const char **var_names, const char *x2lim_name,

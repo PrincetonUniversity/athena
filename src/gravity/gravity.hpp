@@ -1,14 +1,13 @@
 #ifndef GRAVITY_GRAVITY_HPP_
 #define GRAVITY_GRAVITY_HPP_
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gravity.hpp
-//  \brief defines Gravity class which implements data and functions for gravitational
-//         potential. Shared by both Multigrid and FFT schemes for self-gravity.
+//! \brief defines Gravity class which implements data and functions for gravitational
+//!        potential. Shared by both Multigrid and FFT schemes for self-gravity.
 
 // C headers
 
@@ -28,7 +27,7 @@ class MGGravity;
 class MGGRavityDriver;
 
 //! \class Gravity
-//  \brief gravitational potential data and functions
+//! \brief gravitational potential data and functions
 
 class Gravity {
  public:
@@ -38,7 +37,6 @@ class Gravity {
   AthenaArray<Real> phi;   // gravitational potential
   AthenaArray<Real> empty_flux[3];
   Real gconst, four_pi_G;
-  Real grav_mean_rho;
   bool srcterm;
 
   // TODO(felker): consider creating a CellCentered.. derived class, and changing to

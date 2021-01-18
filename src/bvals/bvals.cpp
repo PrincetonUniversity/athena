@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals.cpp
-//  \brief constructor/destructor and utility functions for BoundaryValues class
+//! \brief constructor/destructor and utility functions for BoundaryValues class
 
 // C headers
 
@@ -35,6 +35,7 @@
 #include "../mesh/mesh.hpp"
 #include "../mesh/mesh_refinement.hpp"
 #include "../multigrid/multigrid.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
 #include "../utils/buffer_utils.hpp"
@@ -45,14 +46,19 @@
 #include <mpi.h>
 #endif
 
-// BoundaryValues constructor (the first object constructed inside the MeshBlock()
-// constructor): sets functions for the appropriate boundary conditions at each of the 6
-// dirs of a MeshBlock
+//----------------------------------------------------------------------------------------
+//! \brief BoundaryValues constructor
+//!        (the first object constructed inside the MeshBlock() constructor)
+//!
+//! Sets functions for the appropriate boundary conditions at each of the 6
+//! dirs of a MeshBlock
+//!
+//! At the end, there is a section containing ALL shearing box-specific stuff:
+//! set parameters for shearing box bc and allocate buffers
 BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
                                ParameterInput *pin)
     : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs), pmy_block_(pmb),
-      shear_send_neighbor_{}, shear_recv_neighbor_{},
-      shear_send_count_{}, shear_recv_count_{} {
+      sb_data_{}, sb_flux_data_{} {
   // Check BC functions for each of the 6 boundaries in turn ---------------------
   for (int i=0; i<6; i++) {
     switch (block_bcs[i]) {
@@ -110,44 +116,133 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
   bvars_next_phys_id_ = 1;
 
-  // KGF: BVals constructor section only containing ALL shearing box-specific stuff
+  // BVals constructor section only containing ALL shearing box-specific stuff
   // set parameters for shearing box bc and allocate buffers
-  if (SHEARING_BOX) {
-    // TODO(felker): add checks on the requisite number of dimensions
-    // TODO(felker): move all of these to member initializer list of new shearing class
-    Omega_0_ = pin->GetOrAddReal("problem", "Omega0", 0.001);
-    qshear_  = pin->GetOrAddReal("problem", "qshear", 1.5);
-    ShBoxCoord_ = pin->GetOrAddInteger("problem", "shboxcoord", 1);
+  shearing_box = 0;
+  if (pmy_mesh_->shear_periodic) {
+    // It is required to know the reconstruction scheme before pmb->precon is defined.
+    // If a higher-order scheme than PPM is implemented, xgh_ must be larger than 2.
+    std::string input_recon = pin->GetOrAddString("time", "xorder", "2");
+    if (input_recon == "1") {
+      xorder_ = 1;
+    } else if ((input_recon == "2") || (input_recon == "2c")) {
+      xorder_ = 2;
+    } else if ((input_recon == "3") || (input_recon == "3c")) {
+      xorder_ = 3;
+    } else if ((input_recon == "4") || (input_recon == "4c")) {
+      xorder_ = 4;
+    }
+    if (xorder_ <= 2) xgh_ = 1;
+    else
+      xgh_ = 2;
+
+    shearing_box = pin->GetOrAddInteger("orbital_advection","shboxcoord",1);
+    if (shearing_box != 1 && shearing_box != 2) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "<orbital_advection> shboxcoord must be 1 or 2." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    if (pmb->block_size.nx3>1) { // 3D
+      if (shearing_box == 2) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+            << "When using shear_periodic bondaries in 3D, "
+            << "<orbital_advection> shboxcoord must be 1." << std::endl;
+        ATHENA_ERROR(msg);
+      }
+    } else if (pmb->block_size.nx2==1) { // 1D
+      if (shearing_box == 1) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+            << "When using shear_periodic bondaries in 1D, "
+            << "<orbital_advection> shboxcoord must be 2." << std::endl;
+        ATHENA_ERROR(msg);
+      }
+    }
+
+    if (std::strcmp(COORDINATE_SYSTEM, "cartesian") != 0) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "shear_periodic boundaries work only in cartesian coordinates."<<std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    if (!pmy_mesh_->use_uniform_meshgen_fn_[1]) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "shear_periodic boundaries work only with uniform spacing "
+          << "in the x2 direction." << std::endl
+          << "Check <mesh> x2rat parameter in the input file." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    std::string integrator = pin->GetOrAddString("time", "integrator", "vl2");
+    if (integrator == "rk4" || integrator == "ssprk5_4") {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "shear_periodic boundaries do not work with rk4 or ssprk5_4." << std::endl
+          << "Check <time> integrator parameter in the input file." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    if (pmy_mesh_->OrbitalVelocity_ != nullptr) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "shear_periodic boundaries require the default orbital velocity profile."
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    if (RELATIVISTIC_DYNAMICS) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
+          << "Neigher SR nor GR works with Shear Periodic."<<std::endl;
+      ATHENA_ERROR(msg);
+    }
+
     int level = pmb->loc.level - pmy_mesh_->root_level;
     // nblx2 is only used for allocating SimpleNeighborBlock arrays; nblx1 for loc_shear
     // TODO(felker): initialize loc_shear{0, pmy_mesh_->nrbx2*(1L << pmb->loc.level - ..)}
     // in ctor member initializer list and update as refinement occurs. And nblx2
-    std::int64_t nblx1 = pmy_mesh_->nrbx1*(1L << level);
-    std::int64_t nblx2 = pmy_mesh_->nrbx2*(1L << level);
+    nblx2 = pmy_mesh_->nrbx2*(1L << level);
     // is_shear{} in member init_list
     is_shear[0] = false;
     is_shear[1] = false;
     loc_shear[0] = 0;
-    loc_shear[1] = nblx1 - 1;
+    loc_shear[1] = pmy_mesh_->nrbx1*(1L << level) - 1;
 
-    if (ShBoxCoord_ == 1) {
+    if (shearing_box == 1) {
+      if (NGHOST+xgh_ > pmb->block_size.nx2) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in BoundaryValues Class."<<std::endl
+            << "x2 block_size must be larger than NGHOST + "<< xgh_
+            << " = "<< NGHOST+xgh_ << "with shear_periodic boundary."<<std::endl;
+        ATHENA_ERROR(msg);
+      }
+      int pnum = pmb->block_size.nx2+2*NGHOST+1;
+      if (MAGNETIC_FIELDS_ENABLED) pnum++;
+      pflux_.NewAthenaArray(pnum);
+
       int nc3 = pmb->ncells3;
       ssize_ = NGHOST*nc3;
-      // TODO(KGF): much of this should be a part of InitBoundaryData()
+      //! \todo (felker):
+      //! * much of this should be a part of InitBoundaryData()
       for (int upper=0; upper<2; upper++) {
         if (pmb->loc.lx1 == loc_shear[upper]) { // if true for shearing inner blocks
           is_shear[upper] = true;
           shbb_[upper] = new SimpleNeighborBlock[nblx2];
         } // end "if is a shearing boundary"
-      }  // end loop over inner, outer shearing boundaries
-    } // end "if (ShBoxCoord_ == 1)"
+      } // end loop over inner, outer shearing boundaries
+    } // end "if (shearing_box == 1)"
   } // end shearing box component of BoundaryValues ctor
 }
 
-// destructor
+//----------------------------------------------------------------------------------------
+//! destructor
 
 BoundaryValues::~BoundaryValues() {
-  if (SHEARING_BOX) {
+  if (shearing_box == 1) {
     for (int upper=0; upper<2; upper++)
       if (is_shear[upper]) delete[] shbb_[upper];
   }
@@ -155,7 +250,10 @@ BoundaryValues::~BoundaryValues() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::SetupPersistentMPI()
-//  \brief Setup persistent MPI requests to be reused throughout the entire simulation
+//! \brief Setup persistent MPI requests to be reused throughout the entire simulation
+//!
+//! Includes an exclusive shearing-box section that
+//! initializes the shearing block lists
 
 void BoundaryValues::SetupPersistentMPI() {
   for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
@@ -165,36 +263,65 @@ void BoundaryValues::SetupPersistentMPI() {
 
   // KGF: begin exclusive shearing-box section in BoundaryValues::SetupPersistentMPI()
   // initialize the shearing block lists
-  if (SHEARING_BOX) {
+  if (shearing_box != 0) {
     MeshBlock *pmb = pmy_block_;
     int nbtotal = pmy_mesh_->nbtotal;
     int *ranklist = pmy_mesh_->ranklist;
     int *nslist = pmy_mesh_->nslist;
     LogicalLocation *loclist = pmy_mesh_->loclist;
-
-    for (int upper=0; upper<2; upper++) {
-      int count = 0;
-      if (is_shear[upper]) {
-        for (int i=0; i<nbtotal; i++) {
-          if (loclist[i].lx1 == loc_shear[upper] && loclist[i].lx3 == pmb->loc.lx3 &&
-              loclist[i].level == pmb->loc.level) {
-            shbb_[upper][count].gid = i;
-            shbb_[upper][count].lid = i - nslist[ranklist[i]];
-            shbb_[upper][count].rank = ranklist[i];
-            shbb_[upper][count].level = loclist[i].level;
-            count++;
+    if (pmy_mesh_->adaptive) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "shear_periodic boundaries do NOT work with AMR at present." << std::endl;
+      ATHENA_ERROR(msg);
+    } else {
+      for (int upper=0; upper<2; upper++) {
+        if (is_shear[upper]) {
+          LogicalLocation loc;
+          loc.level = pmb->loc.level;
+          loc.lx1   = loc_shear[upper];
+          loc.lx3   = pmb->loc.lx3;
+          for (int64_t lx2=0; lx2<nblx2; lx2++) {
+            loc.lx2 = lx2;
+            MeshBlockTree *mbt = pmy_mesh_->tree.FindMeshBlock(loc);
+            int gid = mbt->GetGid();
+            if (mbt == nullptr || gid == -1) {
+              std::stringstream msg;
+              msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+                  << "shear_periodic boundaries do NOT work "
+                  << "if there is refinment in the x2 direction." << std::endl;
+              ATHENA_ERROR(msg);
+            }
+            shbb_[upper][lx2].gid = gid;
+            shbb_[upper][lx2].lid = gid - nslist[ranklist[gid]];
+            shbb_[upper][lx2].rank = ranklist[gid];
+            shbb_[upper][lx2].level = loclist[gid].level;
+          }
+          loc.lx1 = loc_shear[1-upper];
+          loc.lx2   = pmb->loc.lx2;
+          MeshBlockTree *mbt = pmy_mesh_->tree.FindMeshBlock(loc);
+          if (mbt == nullptr || mbt->GetGid() == -1) {
+            std::stringstream msg;
+            msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+                << "shear_periodic boundaries do NOT work if MeshBlocks contacting "
+                << "the shear boundaries are on different levels." << std::endl;
+            ATHENA_ERROR(msg);
           }
         }
       }
     }
-  } // end KGF: exclusive shearing box portion of SetupPersistentMPI()
+    qomL_ = pmb->porb->OrbitalVelocity(pmb->porb,pmy_mesh_->mesh_size.x1min,0,0)
+              - pmb->porb->OrbitalVelocity(pmb->porb,pmy_mesh_->mesh_size.x1max,0,0);
+  }
   return;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::CheckUserBoundaries()
-//  \brief checks if the boundary functions are correctly enrolled (this compatibility
-//  check is performed at the top of Mesh::Initialize(), after calling ProblemGenerator())
+//! \brief checks if the boundary functions are correctly enrolled
+//!
+//! This compatibility check is performed at the top of Mesh::Initialize(),
+//! after calling ProblemGenerator()
 
 void BoundaryValues::CheckUserBoundaries() {
   for (int i=0; i<nface_; i++) {
@@ -213,8 +340,8 @@ void BoundaryValues::CheckUserBoundaries() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
-//                                std::vector<BoundaryVariable *> bvars_subset)
-//  \brief initiate MPI_Irecv()
+//!                                std::vector<BoundaryVariable *> bvars_subset)
+//! \brief initiate MPI_Irecv()
 
 void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
                                           std::vector<BoundaryVariable *> bvars_subset) {
@@ -225,12 +352,21 @@ void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
 
   // KGF: begin shearing-box exclusive section of original StartReceivingForInit()
   // find send_block_id and recv_block_id;
-  if (SHEARING_BOX) {
+  if (shearing_box != 0) {
     StartReceivingShear(phase);
   }
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase)
+//! \brief initiate MPI_Irecv() for shearing box
+//!
+//! \note
+//! - cannot simply combine StartReceivingShear() at end of StartReceiving()
+//!   (which is done for ClearBoundary), because the "shared"/non-virtual fn
+//!   BoundaryValues::FindShearBlock() must be called in between 2x fns
+//! - shearing box is currently incompatible with both GR and AMR
 void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase) {
   switch (phase) {
     case BoundaryCommSubset::mesh_init:
@@ -244,8 +380,14 @@ void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase) {
       // (which is done for ClearBoundary), because the "shared"/non-virtual fn
       // BoundaryValues::FindShearBlock() must be called in between 2x fns
 
-      // TODO(felker): consider calling FindShearBlock() at the beginning of this fn,
-      // which will allow the 2x StartReceiving() to be combined
+      //! \todo (felker):
+      //! * consider calling FindShearBlock() at the beginning of this fn,
+      //!   which will allow the 2x StartReceiving() to be combined
+      for (auto bvar : bvars_main_int) {
+        bvar->StartReceivingShear(phase);
+      }
+      break;
+    case BoundaryCommSubset::orbital:
       for (auto bvar : bvars_main_int) {
         bvar->StartReceivingShear(phase);
       }
@@ -265,14 +407,16 @@ void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ClearBoundary(BoundaryCommSubset phase,
-//                                         std::vector<BoundaryVariable *> bvars_subset)
-//  \brief clean up the boundary flags after each loop
+//!                                         std::vector<BoundaryVariable *> bvars_subset)
+//! \brief clean up the boundary flags after each loop
+//!
+//! \note
+//! BoundaryCommSubset::mesh_init corresponds to initial exchange of conserved fluid
+//! variables and magentic fields, while BoundaryCommSubset::gr_amr corresponds to fluid
+//! primitive variables sent only in the case of GR with refinement
 
 void BoundaryValues::ClearBoundarySubset(BoundaryCommSubset phase,
                                          std::vector<BoundaryVariable *> bvars_subset) {
-  // Note BoundaryCommSubset::mesh_init corresponds to initial exchange of conserved fluid
-  // variables and magentic fields, while BoundaryCommSubset::gr_amr corresponds to fluid
-  // primitive variables sent only in the case of GR with refinement
   for (auto bvars_it = bvars_subset.begin(); bvars_it != bvars_subset.end();
        ++bvars_it) {
     (*bvars_it)->ClearBoundary(phase);
@@ -282,8 +426,12 @@ void BoundaryValues::ClearBoundarySubset(BoundaryCommSubset phase,
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
-//                                         std::vector<BoundaryVariable *> bvars_subset)
-//  \brief Apply all the physical boundary conditions for both hydro and field
+//!                                        std::vector<BoundaryVariable *> bvars_subset)
+//! \brief Apply all the physical boundary conditions for both hydro and field
+//!
+//! \note
+//! - temporarily hardcode Hydro and Field access for coupling in EOS U(W) + calc bcc
+//!   and when passed to user-defined boundary function stored in function pointer array
 
 void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
                                    std::vector<BoundaryVariable *> bvars_subset) {
@@ -313,8 +461,9 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
   //     dynamic_cast<HydroBoundaryVariable *>(bvars_main_int[0]);
   Hydro *ph = pmb->phydro;
 
-  // TODO(KGF): passing nullptrs (pf) if no MHD (coarse_* no longer in MeshRefinement)
-  // (may be fine to unconditionally directly set to pmb->pfield. See bvals_refine.cpp)
+  //! \todo (felker):
+  //! - passing nullptrs (pf) if no MHD (coarse_* no longer in MeshRefinement)
+  //!   (may be fine to unconditionally directly set to pmb->pfield. See bvals_refine.cpp)
 
   // FaceCenteredBoundaryVariable *pfbvar = nullptr;
   Field *pf = nullptr;
@@ -343,7 +492,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
                                     pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
     if (NSCALARS > 0) {
       pmb->peos->PassiveScalarPrimitiveToConserved(
-          ps->r, ph->w, ps->s, pco, pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
+          ps->r, ph->u, ps->s, pco, pmb->is-NGHOST, pmb->is-1, bjs, bje, bks, bke);
     }
   }
 
@@ -363,7 +512,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
                                     pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
     if (NSCALARS > 0) {
       pmb->peos->PassiveScalarPrimitiveToConserved(
-          ps->r, ph->w, ps->s, pco, pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
+          ps->r, ph->u, ps->s, pco, pmb->ie+1, pmb->ie+NGHOST, bjs, bje, bks, bke);
     }
   }
 
@@ -384,7 +533,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
                                       bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
       if (NSCALARS > 0) {
         pmb->peos->PassiveScalarPrimitiveToConserved(
-            ps->r, ph->w, ps->s, pco, bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
+            ps->r, ph->u, ps->s, pco, bis, bie, pmb->js-NGHOST, pmb->js-1, bks, bke);
       }
     }
 
@@ -404,7 +553,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
                                       bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
       if (NSCALARS > 0) {
         pmb->peos->PassiveScalarPrimitiveToConserved(
-            ps->r, ph->w, ps->s, pco, bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
+            ps->r, ph->u, ps->s, pco, bis, bie, pmb->je+1, pmb->je+NGHOST, bks, bke);
       }
     }
   }
@@ -429,7 +578,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
                                       bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
       if (NSCALARS > 0) {
         pmb->peos->PassiveScalarPrimitiveToConserved(
-            ps->r, ph->w, ps->s, pco, bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
+            ps->r, ph->u, ps->s, pco, bis, bie, bjs, bje, pmb->ks-NGHOST, pmb->ks-1);
       }
     }
 
@@ -449,15 +598,17 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
                                       bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
       if (NSCALARS > 0) {
         pmb->peos->PassiveScalarPrimitiveToConserved(
-            ps->r, ph->w, ps->s, pco, bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
+            ps->r, ph->u, ps->s, pco, bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
       }
     }
   }
   return;
 }
 
-
-// KGF: should "bvars_it" be fixed in this class member function? Or passed as argument?
+//! \brief
+//!
+//! \note
+//! - should "bvars_it" be fixed in this class member function? Or passed as argument?
 void BoundaryValues::DispatchBoundaryFunctions(
     MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh,
@@ -563,224 +714,244 @@ void BoundaryValues::DispatchBoundaryFunctions(
 
 
 //--------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ComputeShear(const Real time)
-//  \brief Calculate the following quantities:
-//  send_gid recv_gid send_lid recv_lid send_rank recv_rank,
-//  send_size_hydro  recv_size_hydro: for MPI_Irecv
-//  eps_,joverlap_: for update the conservative
+//! \fn void BoundaryValues::ComputeShear(const Real time_fc, const Real time_int)
+//! \brief Calculate the following quantities:
+//! send_gid recv_gid send_lid recv_lid send_rank recv_rank,
+//! send_size_hydro  recv_size_hydro: for MPI_Irecv
+//! eps_,joverlap_: for update the conservative
 
-// TODO(felker): consider breaking up this ~200 (originally 400)line function:
-
-void BoundaryValues::ComputeShear(const Real time) {
+void BoundaryValues::ComputeShear(const Real time_fc, const Real time_int) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
   Mesh *pmesh = pmb->pmy_mesh;
-  int nx2 = pmb->block_size.nx2;
-  int js = pmb->js; int je = pmb->je;
 
-  int level = pmb->loc.level - pmesh->root_level;
-  // TODO(felker): share nblx2 with ctor?
-  std::int64_t nblx2 = pmesh->nrbx2*(1L << level);
+  if (shearing_box == 1) {
+    int nx2 = pmb->block_size.nx2;
+    int js = pmb->js; int je = pmb->je;
+    int jl = js-NGHOST; int ju = je+NGHOST;
+    int level = pmb->loc.level - pmesh->root_level;
 
-  // Update the amount of shear:
-  Real x1size = pmy_mesh_->mesh_size.x1max - pmy_mesh_->mesh_size.x1min;
-  Real x2size = pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min;
-  qomL_ = qshear_*Omega_0_*x1size;
-  Real yshear = qomL_*time;
-  Real deltay = std::fmod(yshear, x2size);
-  int joffset = static_cast<int>(deltay/pco->dx2v(js)); // assumes uniform grid in azimuth
-  int Ngrids  = static_cast<int>(joffset/nx2);
-  joverlap_   = joffset - Ngrids*nx2;
-  eps_ = (std::fmod(deltay, pco->dx2v(js)))/pco->dx2v(js);
+    // Update the amount of shear:
+    Real x2size = pmesh->mesh_size.x2max - pmesh->mesh_size.x2min;
+    Real dx = x2size/static_cast<Real>(nblx2*nx2);
+    Real yshear, deltay;
+    int joffset, Ngrids;
 
-  // TODO(felker): generalize from inner case. If upper==1, swap all send/recv arrays:
-  // shear_send_neighbor_[][], shear_recv_neighbor_[][]
-  // shear_send_count_*_ / shear_recv_count_*_
-  for (int upper=0; upper<2; upper++) {
-    if (is_shear[upper]) {
-      int *counts1 = shear_send_count_[upper];
-      int *counts2 = shear_recv_count_[upper];
-      SimpleNeighborBlock *nb1 = shear_send_neighbor_[upper];
-      SimpleNeighborBlock *nb2 = shear_recv_neighbor_[upper];
-      // permute the 2x pairs of send/recv variables if we are at the outer shear boundary
-      if (upper) {
-        std::swap(counts1, counts2);
-        std::swap(nb1, nb2);
-      }
+    // flux
+    yshear = qomL_*time_fc;
+    deltay = std::fmod(yshear, x2size);
+    joffset = static_cast<int>(deltay/dx); // assumes uniform grid in azimuth
+    Ngrids  = static_cast<int>(joffset/nx2);
+    joverlap_flux_   = joffset - Ngrids*nx2;
+    eps_flux_ = (std::fmod(deltay, dx))/dx;
 
-      for (int n=0; n<4; n++) {
-        nb1[n].gid  = -1;
-        nb1[n].lid  = -1;
-        nb1[n].rank  = -1;
+    for (int upper=0; upper<2; upper++) {
+      if (is_shear[upper]) {
+        int *counts1 = sb_flux_data_[upper].send_count;
+        int *counts2 = sb_flux_data_[upper].recv_count;
+        SimpleNeighborBlock *nb1 = sb_flux_data_[upper].send_neighbor;
+        SimpleNeighborBlock *nb2 = sb_flux_data_[upper].recv_neighbor;
+        int *jmin1 = sb_flux_data_[upper].jmin_send;
+        int *jmax1 = sb_flux_data_[upper].jmax_send;
+        int *jmin2 = sb_flux_data_[upper].jmin_recv;
+        int *jmax2 = sb_flux_data_[upper].jmax_recv;
+        int jo     = (1-2*upper)*((1-upper)+joverlap_flux_);
+        int Ng     = (1-2*upper)*Ngrids;
 
-        nb2[n].gid  = -1;
-        nb2[n].lid  = -1;
-        nb2[n].rank  = -1;
-
-        counts1[n] = 0;
-        counts2[n] = 0;
-      }
-
-      int jblock = 0;
-      for (int j=0; j<nblx2; j++) {
-        // find global index of current MeshBlock on the shearing boundary block list
-        if (shbb_[upper][j].gid == pmb->gid) jblock = j;
-      }
-      // send [js-NGHOST:je-joverlap] of the current MeshBlock to the shearing neighbor
-      // attach [je-joverlap+1:MIN(je-joverlap + NGHOST, je-js+1)] to its right end.
-      std::int64_t jtmp = jblock + Ngrids;
-      if (jtmp > (nblx2 - 1)) jtmp -= nblx2;
-      // TODO(felker): replace this with C++ copy semantics (also copy shbb_.level!):
-      nb1[1].gid  = shbb_[upper][jtmp].gid;
-      nb1[1].rank = shbb_[upper][jtmp].rank;
-      nb1[1].lid  = shbb_[upper][jtmp].lid;
-
-      int nx_attach = std::min(je - js - joverlap_ + 1 + NGHOST, je -js + 1);
-      // KGF: ssize_=NGHOST*nc3 is unset if ShBoxCoord==2. Is this fine?
-      // all counts are scaled by (nu_+1) e.g. NHYDRO in cc/
-      counts1[1] = nx_attach;
-
-      // recv [js+joverlap:je] of the current MeshBlock to the shearing neighbor
-      // attach [je+1:MIN(je+NGHOST, je+joverlap)] to its right end.
-      jtmp = jblock - Ngrids;
-      if (jtmp < 0) jtmp += nblx2;
-      nb2[1].gid  = shbb_[upper][jtmp].gid;
-      nb2[1].rank = shbb_[upper][jtmp].rank;
-      nb2[1].lid  = shbb_[upper][jtmp].lid;
-
-      counts2[1] = nx_attach;
-
-      // KGF: what is going on in the above code (since the end of the "for" loop)?
-
-      // if there is overlap to next blocks
-      if (joverlap_ != 0) {
-        // COMMENT SYNTAX: inner then outer (x1) boundaries
-        // send to the right
-        // recv from the right
-        jtmp = jblock + (Ngrids + 1);
-        if (jtmp > (nblx2 - 1)) jtmp -= nblx2;
-        nb1[0].gid  = shbb_[upper][jtmp].gid;
-        nb1[0].rank = shbb_[upper][jtmp].rank;
-        nb1[0].lid  = shbb_[upper][jtmp].lid;
-
-        int nx_exchange = std::min(joverlap_+NGHOST, je -js + 1);
-        counts1[0] = nx_exchange;
-
-        // receive from its left
-        // send to its left
-        jtmp = jblock - (Ngrids + 1);
-        if (jtmp < 0) jtmp += nblx2;
-        nb2[0].gid  = shbb_[upper][jtmp].gid;
-        nb2[0].rank = shbb_[upper][jtmp].rank;
-        nb2[0].lid  = shbb_[upper][jtmp].lid;
-
-        counts2[0] = nx_exchange;
-
-        // deal the left boundary cells with send[2]
-        if (joverlap_ > (nx2 - NGHOST)) {
-          // send to Right
-          // send to left
-          jtmp = jblock + (Ngrids + 2);
-          while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
-          nb1[2].gid  = shbb_[upper][jtmp].gid;
-          nb1[2].rank = shbb_[upper][jtmp].rank;
-          nb1[2].lid  = shbb_[upper][jtmp].lid;
-
-          int nx_exchange_left = joverlap_ - (nx2 - NGHOST);
-          counts1[2] = nx_exchange_left;
-
-          // recv from Left
-          // send to right
-          jtmp = jblock - (Ngrids + 2);
-          while (jtmp < 0) jtmp += nblx2;
-          nb2[2].gid  = shbb_[upper][jtmp].gid;
-          nb2[2].rank = shbb_[upper][jtmp].rank;
-          nb2[2].lid  = shbb_[upper][jtmp].lid;
-
-          counts2[2] = nx_exchange_left;
+        for (int n=0; n<3; n++) {
+          nb1[n].gid  = -1;  nb1[n].lid   = -1;
+          nb1[n].rank = -1;  nb1[n].level = -1;
+          nb2[n].gid  = -1;  nb2[n].lid   = -1;
+          nb2[n].rank = -1;  nb2[n].level = -1;
+          counts1[n]  = 0;   counts2[n]   = 0;
+          jmin1[n]    = 0;   jmax1[n]     = 0;
+          jmin2[n]    = 0;   jmax2[n]     = 0;
         }
-        // deal with the right boundary cells with send[3]
-        if (joverlap_ < NGHOST) {
-          jtmp = jblock + (Ngrids - 1);
-          while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
-          while (jtmp < 0) jtmp += nblx2;
-          nb1[3].gid  = shbb_[upper][jtmp].gid;
-          nb1[3].rank = shbb_[upper][jtmp].rank;
-          nb1[3].lid  = shbb_[upper][jtmp].lid;
 
-          int nx_exchange_right = NGHOST - joverlap_;
-          counts1[3] = nx_exchange_right;
-
-          jtmp = jblock - (Ngrids - 1);
-          while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
-          while (jtmp < 0) jtmp += nblx2;
-          nb2[3].gid  = shbb_[upper][jtmp].gid;
-          nb2[3].rank = shbb_[upper][jtmp].rank;
-          nb2[3].lid  = shbb_[upper][jtmp].lid;
-
-          counts2[3] = nx_exchange_right;
+        int jblock = 0;
+        for (int j=0; j<nblx2; j++) {
+          // find global index of current MeshBlock on the shearing boundary block list
+          if (shbb_[upper][j].gid == pmb->gid) jblock = j;
         }
-      } else {  // joverlap_ == 0
-        // send [je-(NGHOST-1):je] to Right (outer x2)
-        // recv [je + 1:je+NGHOST] from Left
-        jtmp = jblock + (Ngrids + 1);
-        while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
-        nb1[2].gid  = shbb_[upper][jtmp].gid;
-        nb1[2].rank = shbb_[upper][jtmp].rank;
-        nb1[2].lid  = shbb_[upper][jtmp].lid;
+        int bshift;
+        // send js+jo : je+jo
+        // recv js-xgh:je+1+xgh
+        // js+jo<=je+1+xgh-2*nx2
+        //    jo<=xgh-nx2
 
-        int nx_exchange = NGHOST;
-        counts1[2] = nx_exchange;
-
-        // recv [js-NGHOST:js-1] from Left
-        // send [js:js+NGHOST-1] to Right
-        jtmp = jblock - (Ngrids + 1);
-        while (jtmp < 0) jtmp += nblx2;
-        nb2[2].gid  = shbb_[upper][jtmp].gid;
-        nb2[2].rank = shbb_[upper][jtmp].rank;
-        nb2[2].lid  = shbb_[upper][jtmp].lid;
-
-        counts2[2] = nx_exchange;
-
-        // send [js:js+(NGHOST-1)] to Left (inner x2)
-        // recv [js-NGHOST:js-1] from Left
-        jtmp = jblock + (Ngrids - 1);
-        while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
-        while (jtmp < 0) jtmp += nblx2;
-        nb1[3].gid  = shbb_[upper][jtmp].gid;
-        nb1[3].rank = shbb_[upper][jtmp].rank;
-        nb1[3].lid  = shbb_[upper][jtmp].lid;
-
-        counts1[3] = nx_exchange;
-
-        // recv [je + 1:je+(NGHOST-1)] from Right (outer x2)
-        // send [je-(NGHOST-1):je] to Right
-        jtmp = jblock - (Ngrids - 1);
-        while (jtmp > (nblx2 - 1)) jtmp -= nblx2;
-        while (jtmp < 0) jtmp += nblx2;
-        nb2[3].gid  = shbb_[upper][jtmp].gid;
-        nb2[3].rank = shbb_[upper][jtmp].rank;
-        nb2[3].lid  = shbb_[upper][jtmp].lid;
-
-        counts2[3] = nx_exchange;
+        if (jo<=xgh_-nx2) {
+          // case 1
+          // send from this to 0: jb+(Ng-2), 1: jb+(Ng-1), 2: jb+(Ng  )
+          // recv to this from 0: jb-(Ng-2), 1: jb-(Ng-1), 2: jb-(Ng  )
+          bshift = -2;
+        } else if (jo<=xgh_) {
+          // case 2
+          // send from this to 0: jb+(Ng-1), 1: jb+(Ng  ), 2: jb+(Ng+1)
+          // recv to this from 0: jb-(Ng-1), 1: jb-(Ng  ), 2: jb-(Ng+1)
+          bshift = -1;
+        } else if (jo<=xgh_+nx2) {
+          // case 3
+          // send from this to 0: jb+(Ng  ), 1: jb+(Ng+1), 2: jb+(Ng+2)
+          // recv to this from 0: jb-(Ng  ), 1: jb-(Ng+1), 2: jb-(Ng+2)
+          bshift = 0;
+        } else {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in BoundaryValues::ComputeShear" << std::endl;
+          ATHENA_ERROR(msg);
+        }
+        jmin1[0] = js+jo;
+        jmax1[0] = je+1+xgh_+bshift*nx2;
+        jmin1[1] = std::max(js+jo,js-xgh_+(bshift+1)*nx2);
+        jmax1[1] = std::min(je+jo,je+xgh_+1+(bshift+1)*nx2);
+        jmin1[2] = js-xgh_+(bshift+2)*nx2;
+        jmax1[2] = je+jo;
+        for (int n=0; n<3; n++) {
+          counts1[n] = jmax1[n]-jmin1[n]+1;
+          if (counts1[n]>0) {
+            std::int64_t jtmp = (jblock+(Ng+bshift+n))%nblx2;
+            if (jtmp <  0)     jtmp += nblx2;
+            nb1[n].gid   = shbb_[upper][jtmp].gid;
+            nb1[n].lid   = shbb_[upper][jtmp].lid;
+            nb1[n].rank  = shbb_[upper][jtmp].rank;
+            nb1[n].level = shbb_[upper][jtmp].level;
+          }
+        }
+        jmin2[0] = js+jo-bshift*nx2;
+        jmax2[0] = je+1+xgh_;
+        jmin2[1] = std::max(js-xgh_,js+jo-(bshift+1)*nx2);
+        jmax2[1] = std::min(je+1+xgh_,je+jo-(bshift+1)*nx2);
+        jmin2[2] = js-xgh_;
+        jmax2[2] = je+jo-(bshift+2)*nx2;
+        for (int n=0; n<3; n++) {
+          counts2[n] = jmax2[n]-jmin2[n]+1;
+          if (counts2[n]>0) {
+            std::int64_t jtmp = (jblock-(Ng+bshift+n))%nblx2;
+            if (jtmp <  0)     jtmp += nblx2;
+            nb2[n].gid   = shbb_[upper][jtmp].gid;
+            nb2[n].lid   = shbb_[upper][jtmp].lid;
+            nb2[n].rank  = shbb_[upper][jtmp].rank;
+            nb2[n].level = shbb_[upper][jtmp].level;
+          }
+        }
       }
-    }
-  } // end loop over inner, outer shearing boundaries
+    } // end loop over inner, outer shearing boundaries
 
-  for (auto bvar : bvars_main_int) {
-    bvar->ComputeShear(time);
+    // after integration
+    yshear = qomL_*time_int;
+    deltay = std::fmod(yshear, x2size);
+    joffset = static_cast<int>(deltay/dx); // assumes uniform grid in azimuth
+    Ngrids  = static_cast<int>(joffset/nx2);
+    joverlap_   = joffset - Ngrids*nx2;
+    eps_ = (std::fmod(deltay, dx))/dx;
+    for (int upper=0; upper<2; upper++) {
+      if (is_shear[upper]) {
+        int *counts1 = sb_data_[upper].send_count;
+        int *counts2 = sb_data_[upper].recv_count;
+        SimpleNeighborBlock *nb1 = sb_data_[upper].send_neighbor;
+        SimpleNeighborBlock *nb2 = sb_data_[upper].recv_neighbor;
+        int *jmin1 = sb_data_[upper].jmin_send;
+        int *jmax1 = sb_data_[upper].jmax_send;
+        int *jmin2 = sb_data_[upper].jmin_recv;
+        int *jmax2 = sb_data_[upper].jmax_recv;
+        int jo     = (1-2*upper)*((1-upper)+joverlap_);
+        int Ng     = (1-2*upper)*Ngrids;
+
+        for (int n=0; n<4; n++) {
+          nb1[n].gid  = -1;  nb1[n].lid   = -1;
+          nb1[n].rank = -1;  nb1[n].level = -1;
+          nb2[n].gid  = -1;  nb2[n].lid   = -1;
+          nb2[n].rank = -1;  nb2[n].level = -1;
+          counts1[n]  = 0;   counts2[n]   = 0;
+          jmin1[n]    = 0;   jmax1[n]     = 0;
+          jmin2[n]    = 0;   jmax2[n]     = 0;
+        }
+
+        int jblock = 0;
+        for (int j=0; j<nblx2; j++) {
+          // find global index of current MeshBlock on the shearing boundary block list
+          if (shbb_[upper][j].gid == pmb->gid) jblock = j;
+        }
+        int bshift;
+        if (jo<=xgh_+NGHOST-2*nx2) {
+          // case 1
+          // send from this to 0: jb+(Ng-3), 1: jb+(Ng-2), 2: jb+(Ng-1), 3: jb+(Ng)
+          // recv to this from 0: jb-(Ng-3), 1: jb-(Ng-2), 2: jb-(Ng-1), 3: jb-(Ng)
+          bshift = -3;
+        } else if (jo<=xgh_+NGHOST-nx2) {
+          // case 2
+          // send from this to 0: jb+(Ng-2), 1: jb+(Ng-1), 2: jb+(Ng), 3: jb+(Ng+1)
+          // recv to this from 0: jb-(Ng-2), 1: jb-(Ng-1), 2: jb-(Ng), 3: jb-(Ng+1)
+          bshift = -2;
+        } else if (jo<=xgh_+NGHOST) {
+          // case 3
+          // send from this to 0: jb+(Ng-1), 1: jb+(Ng), 2: jb+(Ng+1), 3: jb+(Ng+2)
+          // recv to this from 0: jb-(Ng-1), 1: jb-(Ng), 2: jb-(Ng+1), 3: jb-(Ng+2)
+          bshift = -1;
+        } else if (jo<=xgh_+NGHOST+nx2) {
+          // case 4
+          // send from this to 0: jb+(Ng), 1: jb+(Ng+1), 2: jb+(Ng+2), 3: jb+(Ng+3)
+          // recv to this from 0: jb-(Ng), 1: jb-(Ng+1), 2: jb-(Ng+2), 3: jb-(Ng+3)
+          bshift = 0;
+        } else {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in BoundaryValues::ComputeShear" << std::endl;
+          ATHENA_ERROR(msg);
+        }
+        jmin1[0] = js+jo;
+        jmax1[0] = ju+1+xgh_+bshift*nx2;
+        jmin1[1] = std::max(js+jo,jl-xgh_+(bshift+1)*nx2);
+        jmax1[1] = std::min(je+jo,ju+xgh_+1+(bshift+1)*nx2);
+        jmin1[2] = std::max(js+jo,jl-xgh_+(bshift+2)*nx2);
+        jmax1[2] = std::min(je+jo,ju+xgh_+1+(bshift+2)*nx2);
+        jmin1[3] = jl-xgh_+(bshift+3)*nx2;
+        jmax1[3] = je+jo;
+        for (int n=0; n<4; n++) {
+          counts1[n] = jmax1[n]-jmin1[n]+1;
+          if (counts1[n]>0) {
+            std::int64_t jtmp = (jblock+(Ng+bshift+n))%nblx2;
+            if (jtmp <  0)     jtmp += nblx2;
+            nb1[n].gid   = shbb_[upper][jtmp].gid;
+            nb1[n].lid   = shbb_[upper][jtmp].lid;
+            nb1[n].rank  = shbb_[upper][jtmp].rank;
+            nb1[n].level = shbb_[upper][jtmp].level;
+          }
+        }
+        jmin2[0] = js+jo-bshift*nx2;
+        jmax2[0] = ju+1+xgh_;
+        jmin2[1] = std::max(jl-xgh_,js+jo-(bshift+1)*nx2);
+        jmax2[1] = std::min(ju+1+xgh_,je+jo-(bshift+1)*nx2);
+        jmin2[2] = std::max(jl-xgh_,js+jo-(bshift+2)*nx2);
+        jmax2[2] = std::min(ju+1+xgh_,je+jo-(bshift+2)*nx2);
+        jmin2[3] = jl-xgh_;
+        jmax2[3] = je+jo-(bshift+3)*nx2;
+        for (int n=0; n<4; n++) {
+          counts2[n] = jmax2[n]-jmin2[n]+1;
+          if (counts2[n]>0) {
+            std::int64_t jtmp = (jblock-(Ng+bshift+n))%nblx2;
+            if (jtmp <  0)     jtmp += nblx2;
+            nb2[n].gid   = shbb_[upper][jtmp].gid;
+            nb2[n].lid   = shbb_[upper][jtmp].lid;
+            nb2[n].rank  = shbb_[upper][jtmp].rank;
+            nb2[n].level = shbb_[upper][jtmp].level;
+          }
+        }
+      }
+    } // end loop over inner, outer shearing boundaries
   }
+
   return;
 }
 
 
-// Public function, to be called in MeshBlock ctor for keeping MPI tag bitfields
-// consistent across MeshBlocks, even if certain MeshBlocks only construct a subset of
-// physical variable classes
+//--------------------------------------------------------------------------------------
+//! \brief Public function, to be called in MeshBlock ctor for keeping MPI tag bitfields
+//! consistent across MeshBlocks, even if certain MeshBlocks only construct a subset of
+//! physical variable classes
 
 int BoundaryValues::AdvanceCounterPhysID(int num_phys) {
 #ifdef MPI_PARALLEL
-  // TODO(felker): add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
+  //! \todo (felker):
+  //! * add safety checks? input, output are positive, obey <= 31= MAX_NUM_PHYS
   int start_id = bvars_next_phys_id_;
   bvars_next_phys_id_ += num_phys;
   return start_id;

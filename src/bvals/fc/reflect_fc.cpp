@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file reflect.cpp
-//  \brief implementation of reflecting BCs in each dimension
+//! \file reflect_fc.cpp
+//! \brief implementation of reflecting BCs in each dimension
 
 // C headers
 
@@ -17,8 +17,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectInnerX1(
-//               Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, inner x1 boundary
+//!              Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, inner x1 boundary
 
 void FaceCenteredBoundaryVariable::ReflectInnerX1(
     Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
@@ -54,8 +54,8 @@ void FaceCenteredBoundaryVariable::ReflectInnerX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectOuterX1(
-//               Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, outer x1 boundary
+//!              Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, outer x1 boundary
 
 void FaceCenteredBoundaryVariable::ReflectOuterX1(
     Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
@@ -91,8 +91,8 @@ void FaceCenteredBoundaryVariable::ReflectOuterX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectInnerX2(
-//               Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, inner x2 boundary
+//!              Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, inner x2 boundary
 
 void FaceCenteredBoundaryVariable::ReflectInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
@@ -126,8 +126,8 @@ void FaceCenteredBoundaryVariable::ReflectInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectOuterX2(
-//               Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, outer x2 boundary
+//!              Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, outer x2 boundary
 
 void FaceCenteredBoundaryVariable::ReflectOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
@@ -161,8 +161,8 @@ void FaceCenteredBoundaryVariable::ReflectOuterX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectInnerX3(
-//               Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
-//  \brief REFLECTING boundary conditions, inner x3 boundary
+//!              Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
+//! \brief REFLECTING boundary conditions, inner x3 boundary
 
 void FaceCenteredBoundaryVariable::ReflectInnerX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
@@ -196,8 +196,8 @@ void FaceCenteredBoundaryVariable::ReflectInnerX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void FaceCenteredBoundaryVariable::ReflectOuterX3(
-//               Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, outer x3 boundary
+//!              Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, outer x3 boundary
 
 void FaceCenteredBoundaryVariable::ReflectOuterX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {

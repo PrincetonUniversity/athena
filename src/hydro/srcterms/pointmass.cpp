@@ -3,7 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//  \brief Adds source terms due to point mass AT ORIGIN
+//! \file pointmass.cpp
+//! \brief Adds source terms due to point mass AT ORIGIN
 
 // C headers
 
@@ -19,7 +20,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroSourceTerms::PointMass
-//  \brief Adds source terms due to point mass AT ORIGIN
+//! \brief Adds source terms due to point mass AT ORIGIN
 
 void HydroSourceTerms::PointMass(const Real dt, const AthenaArray<Real> *flux,
                                  const AthenaArray<Real> &prim, AthenaArray<Real> &cons) {

@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_hydro.hpp
-//  \brief
+//! \brief
 
 // C headers
 
@@ -19,7 +19,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \class CellCenteredBoundaryVariable
-//  \brief
+//! \brief
 
 class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
  public:
@@ -37,7 +37,8 @@ class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
   void AddHydroShearForInit();
   void ShearQuantities(AthenaArray<Real> &shear_cc_, bool upper) override;
 
-  // BoundaryPhysics: need to flip sign of velocity vectors for Reflect*()
+  //!@{
+  //! BoundaryPhysics: need to flip sign of velocity vectors for Reflect*()
   void ReflectInnerX1(Real time, Real dt,
                       int il, int jl, int ju, int kl, int ku, int ngh) override;
   void ReflectOuterX1(Real time, Real dt,
@@ -50,11 +51,15 @@ class HydroBoundaryVariable : public CellCenteredBoundaryVariable {
                       int il, int iu, int jl, int ju, int kl, int ngh) override;
   void ReflectOuterX3(Real time, Real dt,
                       int il, int iu, int jl, int ju, int ku, int ngh) override;
+  //!@}
+
   //protected:
  private:
-  // Hydro is a unique cell-centered variable because of the relationship between
-  // HydroBoundaryQuantity::cons u and HydroBoundaryQuantity::prim w.
+  void SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) override;
+  //! Hydro is a unique cell-centered variable because of the relationship between
+  //! HydroBoundaryQuantity::cons u and HydroBoundaryQuantity::prim w.
   HydroBoundaryQuantity hydro_type_;
+  int LoadFluxBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) final;
 };
 
 #endif // BVALS_CC_HYDRO_BVALS_HYDRO_HPP_

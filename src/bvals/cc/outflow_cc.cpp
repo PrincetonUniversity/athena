@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file outflow.cpp
-//  \brief implementation of outflow BCs in each dimension for cell-centered AthenaArray
+//! \file outflow_cc.cpp
+//! \brief implementation of outflow BCs in each dimension for cell-centered AthenaArray
 
 // C headers
 
@@ -17,8 +17,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::OutflowInnerX1(
-//          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief OUTFLOW boundary conditions, inner x1 boundary
+//!         Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
+//! \brief OUTFLOW boundary conditions, inner x1 boundary
 
 void CellCenteredBoundaryVariable::OutflowInnerX1(
     Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
@@ -37,8 +37,8 @@ void CellCenteredBoundaryVariable::OutflowInnerX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::OutflowOuterX1(
-//          Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
-//  \brief OUTFLOW boundary conditions, outer x1 boundary
+//!         Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
+//! \brief OUTFLOW boundary conditions, outer x1 boundary
 
 void CellCenteredBoundaryVariable::OutflowOuterX1(
     Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
@@ -57,8 +57,8 @@ void CellCenteredBoundaryVariable::OutflowOuterX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::OutflowInnerX2(
-//          Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
-//  \brief OUTFLOW boundary conditions, inner x2 boundary
+//!         Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
+//! \brief OUTFLOW boundary conditions, inner x2 boundary
 
 void CellCenteredBoundaryVariable::OutflowInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
@@ -77,8 +77,8 @@ void CellCenteredBoundaryVariable::OutflowInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::OutflowOuterX2(
-//          Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
-//  \brief OUTFLOW boundary conditions, outer x2 boundary
+//!         Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
+//! \brief OUTFLOW boundary conditions, outer x2 boundary
 
 void CellCenteredBoundaryVariable::OutflowOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
@@ -97,8 +97,8 @@ void CellCenteredBoundaryVariable::OutflowOuterX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::OutflowInnerX3(
-//          Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
-//  \brief OUTFLOW boundary conditions, inner x3 boundary
+//!         Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
+//! \brief OUTFLOW boundary conditions, inner x3 boundary
 
 void CellCenteredBoundaryVariable::OutflowInnerX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
@@ -117,8 +117,8 @@ void CellCenteredBoundaryVariable::OutflowInnerX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::OutflowOuterX3(
-//          Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
-//  \brief OUTFLOW boundary conditions, outer x3 boundary
+//!         Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
+//! \brief OUTFLOW boundary conditions, outer x3 boundary
 
 void CellCenteredBoundaryVariable::OutflowOuterX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {

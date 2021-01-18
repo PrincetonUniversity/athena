@@ -4,26 +4,26 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file magnoh.cpp
-//  \brief Magnetized Noh with perturbation in B_phi. Authored by A. Beresnyak
-//
-// 2D collapse on center, r distance to center
-// initial conditions with r in cm:
-// rho  = rho0*r^alpha [g/cm^3]
-// V    = V0    [cm/s]
-// Bphi = Bphi0*r^beta   [gauss] azimuthal
-// Bz   = Bz0*  r^beta   [gauss] axial
-// pressure = 1.E-6*B^2   actually zero in the exact solution
-//
-// Can apply sine wave perturbation in a form
-//   *(1+perturb*std::cos(mphi*phi)) to the magnetic potential Az
-//
-// REFERENCES:
-// 1) Velikovich, Giuliani, Zalesak, Gardiner, "Exact self-similar solutions for the
-// magnetized Noh Z pinch problem", Phys. of Plasmas, vol.19, p.012707 (2012)
-//
-// 2) Giuliani, Velikovich, Beresnyak, Zalesak, Gianakon, Rousculp, "Self-similar
-// solutions for the magnetized Noh problem with axial and azimuthal field", Phys. of
-// Plasmas, in prep (2018)
+//! \brief Magnetized Noh with perturbation in B_phi. Authored by A. Beresnyak
+//!
+//! 2D collapse on center, r distance to center
+//! initial conditions with r in cm:
+//! rho  = rho0*r^alpha [g/cm^3]
+//! V    = V0    [cm/s]
+//! Bphi = Bphi0*r^beta   [gauss] azimuthal
+//! Bz   = Bz0*  r^beta   [gauss] axial
+//! pressure = 1.E-6*B^2   actually zero in the exact solution
+//!
+//! Can apply sine wave perturbation in a form
+//!   \f$ (1+perturb*std::cos(mphi*phi)) \f$ to the magnetic potential Az
+//!
+//! REFERENCES:
+//! 1) Velikovich, Giuliani, Zalesak, Gardiner, "Exact self-similar solutions for the
+//! magnetized Noh Z pinch problem", Phys. of Plasmas, vol.19, p.012707 (2012)
+//!
+//! 2) Giuliani, Velikovich, Beresnyak, Zalesak, Gianakon, Rousculp, "Self-similar
+//! solutions for the magnetized Noh problem with axial and azimuthal field", Phys. of
+//! Plasmas, in prep (2018)
 
 // C headers
 

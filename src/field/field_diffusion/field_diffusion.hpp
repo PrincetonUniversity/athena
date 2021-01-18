@@ -6,8 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file field_diffusion.hpp
-//  \brief defines class FieldDiffusion
-//  Contains data and functions that implement the diffusion processes
+//! \brief defines class FieldDiffusion
 
 // C headers
 
@@ -25,14 +24,14 @@ class Coordinates;
 
 class FieldDiffusion;
 
-// currently must be free function for compatibility with user-defined fn via fn pointers
+//! currently must be free function for compatibility with user-defined fn via fn pointers
 void ConstDiffusivity(FieldDiffusion *pfdif, MeshBlock *pmb, const AthenaArray<Real> &w,
                       const AthenaArray<Real> &bmag,
                       const int is, const int ie, const int js, const int je,
                       const int ks, const int ke);
 
-//! \class HydroDiffusion
-//  \brief data and functions for physical diffusion processes in the hydro
+//! \class FieldDiffusion
+//! \brief data and functions for physical diffusion processes in the field
 
 class FieldDiffusion {
  public:

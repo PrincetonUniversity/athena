@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_cc.cpp
-//  \brief functions that apply BCs for CELL_CENTERED variables
+//! \brief functions that apply BCs for CELL_CENTERED variables
 
 // C headers
 
@@ -36,7 +36,7 @@
 #include <mpi.h>
 #endif
 
-// constructor
+//! constructor
 
 CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     MeshBlock *pmb, AthenaArray<Real> *var, AthenaArray<Real> *coarse_var,
@@ -44,10 +44,11 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     : BoundaryVariable(pmb), var_cc(var), coarse_buf(coarse_var), x1flux(var_flux[X1DIR]),
       x2flux(var_flux[X2DIR]), x3flux(var_flux[X3DIR]), nl_(0), nu_(var->GetDim4() -1),
       flip_across_pole_(nullptr) {
-  // CellCenteredBoundaryVariable should only be used w/ 4D or 3D (nx4=1) AthenaArray
-  // For now, assume that full span of 4th dim of input AthenaArray should be used:
-  // ---> get the index limits directly from the input AthenaArray
-  // <=nu_ (inclusive), <nx4 (exclusive)
+  //! \note
+  //! CellCenteredBoundaryVariable should only be used w/ 4D or 3D (nx4=1) AthenaArray
+  //! For now, assume that full span of 4th dim of input AthenaArray should be used:
+  //! ---> get the index limits directly from the input AthenaArray
+  //! <=nu_ (inclusive), <nx4 (exclusive)
   if (nu_ < 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in CellCenteredBoundaryVariable constructor" << std::endl
@@ -62,74 +63,85 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
   // cc_phys_id_ = pbval_->ReserveTagVariableIDs(1);
   cc_phys_id_ = pbval_->bvars_next_phys_id_;
 #endif
-  if (pmy_mesh_->multilevel) { // SMR or AMR
+  if ((pmy_mesh_->multilevel)
+      || (pbval_->shearing_box != 0)) { // SMR or AMR or SHEARING_BOX
     InitBoundaryData(bd_var_flcor_, BoundaryQuantity::cc_flcor);
 #ifdef MPI_PARALLEL
     cc_flx_phys_id_ = cc_phys_id_ + 1;
 #endif
   }
 
-  if (SHEARING_BOX) {
+  if (pbval_->shearing_box != 0) {
 #ifdef MPI_PARALLEL
     shear_cc_phys_id_ = cc_phys_id_ + 2;
+    shear_flx_phys_id_ = shear_cc_phys_id_ + 1;
 #endif
-    if (pbval_->ShBoxCoord_ == 1) {
-      int nc2 = pmb->ncells2;
-      int nc3 = pmb->ncells3;
-      for (int upper=0; upper<2; upper++) {
-        if (pbval_->is_shear[upper]) {
-          shear_cc_[upper].NewAthenaArray(nu_+1, nc3, nc2, NGHOST);
-          shear_flx_cc_[upper].NewAthenaArray(nc2);
+    int nc2 = pmb->ncells2;
+    int nc3 = pmb->ncells3;
+    int nx3 = pmb->block_size.nx3;
+    int &xgh = pbval_->xgh_;
+    for (int upper=0; upper<2; upper++) {
+      if (pbval_->is_shear[upper]) {
+        shear_cc_[upper].NewAthenaArray(nu_+1, nc3, NGHOST, nc2+2*xgh+1);
+        shear_var_flx_[upper].NewAthenaArray(nu_+1, nc3, nc2);
+        shear_map_flx_[upper].NewAthenaArray(nu_+1, nc3, 1, nc2+2*xgh+1);
 
-          // TODO(KGF): the rest of this should be a part of InitBoundaryData()
+        // TODO(KGF): the rest of this should be a part of InitBoundaryData()
 
-          // attach corner cells from L/R side
-          int size = (pmb->block_size.nx2 + NGHOST)*pbval_->ssize_*(nu_ + 1);
-          for (int n=0; n<2; n++) {
-            shear_bd_var_[upper].send[n] = new Real[size];
-            shear_bd_var_[upper].recv[n] = new Real[size];
-            shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
+        int bsize = pmb->block_size.nx2*pbval_->ssize_*(nu_ + 1);
+        int fsize = pmb->block_size.nx2*nx3*(nu_ + 1);
+        for (int n=0; n<4; n++) {
+          shear_bd_var_[upper].send[n] = new Real[bsize];
+          shear_bd_var_[upper].recv[n] = new Real[bsize];
+          shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-            shear_bd_var_[upper].req_send[n] = MPI_REQUEST_NULL;
-            shear_bd_var_[upper].req_recv[n] = MPI_REQUEST_NULL;
+          shear_bd_var_[upper].req_send[n] = MPI_REQUEST_NULL;
+          shear_bd_var_[upper].req_recv[n] = MPI_REQUEST_NULL;
 #endif
-          }
-          // corner cells only
-          size = NGHOST*pbval_->ssize_*(nu_ + 1);
-          for (int n=2; n<4; n++) {
-            shear_bd_var_[upper].send[n] = new Real[size];
-            shear_bd_var_[upper].recv[n] = new Real[size];
-            shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
+        }
+        for (int n=0; n<3; n++) {
+          shear_bd_flux_[upper].send[n] = new Real[fsize];
+          shear_bd_flux_[upper].recv[n] = new Real[fsize];
+          shear_bd_flux_[upper].flag[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-            shear_bd_var_[upper].req_send[n] = MPI_REQUEST_NULL;
-            shear_bd_var_[upper].req_recv[n] = MPI_REQUEST_NULL;
+          shear_bd_flux_[upper].req_send[n] = MPI_REQUEST_NULL;
+          shear_bd_flux_[upper].req_recv[n] = MPI_REQUEST_NULL;
 #endif
-          }
-        } // end "if is a shearing boundary"
-      }  // end loop over inner, outer shearing boundaries
-    } // end "if (pbval_->ShBoxCoord_ == 1)"
-  } // end shearing box component of ctor
+        }
+      } // end "if is a shearing boundary"
+    }  // end loop over inner, outer shearing boundaries
+  } // end shearing box component
 }
 
-// destructor
+//! destructor
 
 CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
   DestroyBoundaryData(bd_var_);
-  if (pmy_mesh_->multilevel)
+  if ((pmy_mesh_->multilevel)
+      || (pbval_->shearing_box != 0))
     DestroyBoundaryData(bd_var_flcor_);
 
   // TODO(KGF): this should be a part of DestroyBoundaryData()
-  if (SHEARING_BOX) {
+  if (pbval_->shearing_box == 1) {
     for (int upper=0; upper<2; upper++) {
       if (pbval_->is_shear[upper]) { // if true for shearing inner blocks
         for (int n=0; n<4; n++) {
           delete[] shear_bd_var_[upper].send[n];
           delete[] shear_bd_var_[upper].recv[n];
         }
+        for (int n=0; n<3; n++) {
+          delete[] shear_bd_flux_[upper].send[n];
+          delete[] shear_bd_flux_[upper].recv[n];
+        }
       }
     }
   }
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn int CellCenteredBoundaryVariable::ComputeVariableBufferSize(
+//!     const NeighborIndexes& ni, int cng)
+//! \brief
 
 int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,
                                                             int cng) {
@@ -159,20 +171,25 @@ int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
 int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
     const NeighborIndexes& ni, int cng) {
   MeshBlock *pmb = pmy_block_;
-  int size = 0;
-  if (ni.ox1 != 0)
-    size = (pmb->block_size.nx2 + 1)/2*(pmb->block_size.nx3 + 1)/2*(nu_ + 1);
-  if (ni.ox2 != 0)
-    size = (pmb->block_size.nx1 + 1)/2*(pmb->block_size.nx3 + 1)/2*(nu_ + 1);
-  if (ni.ox3 != 0)
-    size = (pmb->block_size.nx1 + 1)/2*(pmb->block_size.nx2 + 1)/2*(nu_ + 1);
-  return size;
+  int size1(0), size2(0);
+  if ((pbval_->shearing_box == 1) && (ni.ox1 != 0)) {
+    size1 = pmb->block_size.nx2*pmb->block_size.nx3*(nu_ + 1);
+  }
+  if (pmy_mesh_->multilevel) {
+    if (ni.ox1 != 0)
+      size2 = (pmb->block_size.nx2 + 1)/2*(pmb->block_size.nx3 + 1)/2*(nu_ + 1);
+    if (ni.ox2 != 0)
+      size2 = (pmb->block_size.nx1 + 1)/2*(pmb->block_size.nx3 + 1)/2*(nu_ + 1);
+    if (ni.ox3 != 0)
+      size2 = (pmb->block_size.nx1 + 1)/2*(pmb->block_size.nx2 + 1)/2*(nu_ + 1);
+  }
+  return std::max(size1,size2);
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Set cell-centered boundary buffers for sending to a block on the same level
+//!                                                             const NeighborBlock& nb)
+//! \brief Set cell-centered boundary buffers for sending to a block on the same level
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
                                                               const NeighborBlock& nb) {
@@ -188,14 +205,13 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   int p = 0;
   AthenaArray<Real> &var = *var_cc;
   BufferUtility::PackData(var, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
-
   return p;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Set cell-centered boundary buffers for sending to a block on the coarser level
+//!                                                             const NeighborBlock& nb)
+//! \brief Set cell-centered boundary buffers for sending to a block on the coarser level
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
                                                               const NeighborBlock& nb) {
@@ -221,8 +237,8 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Set cell-centered boundary buffers for sending to a block on the finer level
+//!                                                             const NeighborBlock& nb)
+//! \brief Set cell-centered boundary buffers for sending to a block on the finer level
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
                                                             const NeighborBlock& nb) {
@@ -271,8 +287,8 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
-//                                                              const NeighborBlock& nb)
-//  \brief Set cell-centered boundary received from a block on the same level
+//!                                                             const NeighborBlock& nb)
+//! \brief Set cell-centered boundary received from a block on the same level
 
 void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
                                                         const NeighborBlock& nb) {
@@ -309,35 +325,13 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
 
-  if (SHEARING_BOX) {
-    // 2D shearing box in x-z plane: additional step to shift azimuthal velocity
-    if (pbval_->ShBoxCoord_ == 2) {
-      int sign[2]{1, -1};
-      Real qomL = pbval_->qomL_;
-      for (int upper=0; upper<2; upper++) {
-        if ((pmb->loc.lx1 == pbval_->loc_shear[upper]) && (sign[upper]*nb.ni.ox1 < 0)) {
-          for (int k=sk; k<=ek; ++k) {
-            for (int j=sj; j<=ej; ++j) {
-              for (int i=si; i<=ei; ++i) {
-                if (NON_BAROTROPIC_EOS)
-                  var(IEN,k,j,i) += (0.5/var(IDN,k,j,i))*(
-                      SQR(var(IM3,k,j,i) + sign[upper]*qomL*var(IDN,k,j,i))
-                      - SQR(var(IM3,k,j,i)));
-                var(IM3,k,j,i) += sign[upper]*qomL*var(IDN,k,j,i);
-              }
-            }
-          }
-        }
-      }
-    }
-  } // end KGF: shearing box in SetBoundarySameLevel
   return;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
-//                                                                const NeighborBlock& nb)
-//  \brief Set cell-centered prolongation buffer received from a block on a coarser level
+//!                                                               const NeighborBlock& nb)
+//! \brief Set cell-centered prolongation buffer received from a block on a coarser level
 
 void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
                                                           const NeighborBlock& nb) {
@@ -400,8 +394,8 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
-//                                                              const NeighborBlock& nb)
-//  \brief Set cell-centered boundary received from a block on a finer level
+//!                                                             const NeighborBlock& nb)
+//! \brief Set cell-centered boundary received from a block on a finer level
 
 void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
                                                         const NeighborBlock& nb) {
@@ -474,7 +468,8 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock()
-// \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
+//! \brief polar boundary edge-case:
+//!   single MeshBlock spans the entire azimuthal (x3) range
 
 void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
   MeshBlock *pmb = pmy_block_;
@@ -518,6 +513,10 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
   }
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::SetupPersistentMPI()
+//! \brief Setup persistent MPI requests to be reused throughout the entire simulation
 
 void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 #ifdef MPI_PARALLEL
@@ -571,29 +570,49 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
                     nb.snb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_recv[nb.bufid]));
 
       // hydro flux correction: bd_var_flcor_
-      if (pmy_mesh_->multilevel && nb.ni.type == NeighborConnect::face) {
-        int size;
-        if (nb.fid == 0 || nb.fid == 1)
-          size = ((pmb->block_size.nx2 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
-        else if (nb.fid == 2 || nb.fid == 3)
-          size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
-        else // (nb.fid == 4 || nb.fid == 5)
-          size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx2 + 1)/2);
-        size *= (nu_ + 1);
-        if (nb.snb.level < mylevel) { // send to coarser
-          tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_flx_phys_id_);
-          if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
-            MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
-          MPI_Send_init(bd_var_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL,
-                        nb.snb.rank, tag, MPI_COMM_WORLD,
-                        &(bd_var_flcor_.req_send[nb.bufid]));
-        } else if (nb.snb.level > mylevel) { // receive from finer
-          tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
-          if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
-            MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
-          MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL,
-                        nb.snb.rank, tag, MPI_COMM_WORLD,
-                        &(bd_var_flcor_.req_recv[nb.bufid]));
+      if (nb.ni.type == NeighborConnect::face) {
+        if (nb.snb.level != mylevel) {
+          int size;
+          if (nb.fid == 0 || nb.fid == 1)
+            size = ((pmb->block_size.nx2 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
+          else if (nb.fid == 2 || nb.fid == 3)
+            size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx3 + 1)/2);
+          else // (nb.fid == 4 || nb.fid == 5)
+            size = ((pmb->block_size.nx1 + 1)/2)*((pmb->block_size.nx2 + 1)/2);
+          size *= (nu_ + 1);
+          if (nb.snb.level < mylevel) { // send to coarser
+            tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_flx_phys_id_);
+            if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
+              MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
+            MPI_Send_init(bd_var_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL,
+                          nb.snb.rank, tag, MPI_COMM_WORLD,
+                          &(bd_var_flcor_.req_send[nb.bufid]));
+          } else if (nb.snb.level > mylevel) { // receive from finer
+            tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
+            if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
+              MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
+            MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL,
+                          nb.snb.rank, tag, MPI_COMM_WORLD,
+                          &(bd_var_flcor_.req_recv[nb.bufid]));
+          }
+        } else { // communication with same level
+          if (nb.shear && (nb.fid == BoundaryFace::inner_x1
+                           || nb.fid == BoundaryFace::outer_x1)
+              && pbval_->shearing_box==1) {
+            int size = pmb->block_size.nx2*pmb->block_size.nx3*(nu_+1);
+            tag = pbval_->CreateBvalsMPITag(nb.snb.lid, nb.targetid, cc_flx_phys_id_);
+            if (bd_var_flcor_.req_send[nb.bufid] != MPI_REQUEST_NULL)
+              MPI_Request_free(&bd_var_flcor_.req_send[nb.bufid]);
+            MPI_Send_init(bd_var_flcor_.send[nb.bufid], size, MPI_ATHENA_REAL,
+                          nb.snb.rank, tag, MPI_COMM_WORLD,
+                          &(bd_var_flcor_.req_send[nb.bufid]));
+            tag = pbval_->CreateBvalsMPITag(pmb->lid, nb.bufid, cc_flx_phys_id_);
+            if (bd_var_flcor_.req_recv[nb.bufid] != MPI_REQUEST_NULL)
+              MPI_Request_free(&bd_var_flcor_.req_recv[nb.bufid]);
+            MPI_Recv_init(bd_var_flcor_.recv[nb.bufid], size, MPI_ATHENA_REAL,
+                          nb.snb.rank, tag, MPI_COMM_WORLD,
+                          &(bd_var_flcor_.req_recv[nb.bufid]));
+          }
         }
       }
     }
@@ -602,23 +621,87 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase)
+//! \brief initiate MPI_Irecv()
+
 void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
-#ifdef MPI_PARALLEL
   MeshBlock *pmb = pmy_block_;
+#ifdef MPI_PARALLEL
   int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.snb.rank != Globals::my_rank) {
       MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-      if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face
-          && nb.snb.level > mylevel) // opposite condition in ClearBoundary()
-        MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
+      if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face) {
+        if ((nb.shear&&(nb.fid == BoundaryFace::inner_x1
+             || nb.fid == BoundaryFace::outer_x1)
+            && pbval_->shearing_box==1) || nb.snb.level > mylevel) {
+          MPI_Start(&(bd_var_flcor_.req_recv[nb.bufid]));
+        } else { // no recv
+          bd_var_flcor_.flag[nb.bufid] = BoundaryStatus::completed;
+        }
+      }
     }
   }
 #endif
+  if (pbval_->shearing_box == 1) {
+    int ssize = pbval_->ssize_;
+    int nx3 = pmb->block_size.nx3;
+    // TODO(KGF): clear sflag arrays
+    if (phase == BoundaryCommSubset::all) {
+      for (int upper=0; upper<2; upper++) {
+        if (pbval_->is_shear[upper]) {
+          int *counts1 = pbval_->sb_flux_data_[upper].send_count;
+          int *counts2 = pbval_->sb_flux_data_[upper].recv_count;
+          for (int n=0; n<3; n++) {
+            if (counts1[n]>0) {
+              shear_send_count_flx_[upper][n] = counts1[n]*nx3;
+              shear_bd_flux_[upper].sflag[n] = BoundaryStatus::waiting;
+            } else {
+              shear_send_count_flx_[upper][n] = 0;
+              shear_bd_flux_[upper].sflag[n] = BoundaryStatus::completed;
+            }
+            if (counts2[n]>0) {
+              shear_recv_count_flx_[upper][n] = counts2[n]*nx3;
+              shear_bd_flux_[upper].flag[n] = BoundaryStatus::waiting;
+            } else {
+              shear_recv_count_flx_[upper][n] = 0;
+              shear_bd_flux_[upper].flag[n] = BoundaryStatus::completed;
+            }
+          }
+        }
+      }
+    }
+    for (int upper=0; upper<2; upper++) {
+      if (pbval_->is_shear[upper]) {
+        int *counts1 = pbval_->sb_data_[upper].send_count;
+        int *counts2 = pbval_->sb_data_[upper].recv_count;
+        for (int n=0; n<4; n++) {
+          if (counts1[n]>0) {
+            shear_send_count_cc_[upper][n] = counts1[n]*ssize;
+            shear_bd_var_[upper].sflag[n] = BoundaryStatus::waiting;
+          } else {
+            shear_send_count_cc_[upper][n] = 0;
+            shear_bd_var_[upper].sflag[n] = BoundaryStatus::completed;
+          }
+          if (counts2[n]>0) {
+            shear_recv_count_cc_[upper][n] = counts2[n]*ssize;
+            shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
+          } else {
+            shear_recv_count_cc_[upper][n] = 0;
+            shear_bd_var_[upper].flag[n] = BoundaryStatus::completed;
+          }
+        }
+      }
+    }
+  }
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase)
+//! \brief clean up the boundary flags after each loop
 
 void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   for (int n=0; n<pbval_->nneighbor; n++) {
@@ -636,23 +719,42 @@ void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
     if (nb.snb.rank != Globals::my_rank) {
       // Wait for Isend
       MPI_Wait(&(bd_var_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
-      if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face
-          && nb.snb.level < mylevel)
-        MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
+      if (phase == BoundaryCommSubset::all && nb.ni.type == NeighborConnect::face) {
+        if ((nb.shear && (nb.fid == BoundaryFace::inner_x1
+                          || nb.fid == BoundaryFace::outer_x1)
+            && pbval_->shearing_box==1) || nb.snb.level < mylevel) {
+          MPI_Wait(&(bd_var_flcor_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
+        }
+      }
     }
 #endif
   }
 
   // clear shearing box boundary communications
-  if (SHEARING_BOX) {
+  if (pbval_->shearing_box ==1) {
     // TODO(KGF): clear sflag arrays
+    if (phase == BoundaryCommSubset::all) {
+      for (int upper=0; upper<2; upper++) {
+        if (pbval_->is_shear[upper]) {
+          for (int n=0; n<3; n++) {
+            if (pbval_->sb_flux_data_[upper].send_neighbor[n].rank == -1) continue;
+            shear_bd_flux_[upper].flag[n] = BoundaryStatus::waiting;
+#ifdef MPI_PARALLEL
+            if (pbval_->sb_flux_data_[upper].send_neighbor[n].rank != Globals::my_rank) {
+              MPI_Wait(&shear_bd_flux_[upper].req_send[n], MPI_STATUS_IGNORE);
+            }
+#endif
+          }
+        }
+      }
+    }
     for (int upper=0; upper<2; upper++) {
       if (pbval_->is_shear[upper]) {
         for (int n=0; n<4; n++) {
-          if (pbval_->shear_send_neighbor_[upper][n].rank == -1) continue;
+          if (pbval_->sb_data_[upper].send_neighbor[n].rank == -1) continue;
           shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-          if (pbval_->shear_send_neighbor_[upper][n].rank != Globals::my_rank) {
+          if (pbval_->sb_data_[upper].send_neighbor[n].rank != Globals::my_rank) {
             MPI_Wait(&shear_bd_var_[upper].req_send[n], MPI_STATUS_IGNORE);
           }
 #endif

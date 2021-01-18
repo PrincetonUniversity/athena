@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hlle_mhd.cpp
-//  \brief HLLE Riemann solver for MHD. See the hydro version for details.
+//! \brief HLLE Riemann solver for MHD. See the hydro version for details.
 
 // C headers
 
@@ -19,7 +19,6 @@
 #include "../../hydro.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, const AthenaArray<Real> &bx,

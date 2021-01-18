@@ -4,20 +4,20 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hlle.cpp
-//  \brief HLLE Riemann solver for hydrodynamics
-//
-//  Computes 1D fluxes using the Harten-Lax-van Leer (HLL) Riemann solver.  This flux is
-//  very diffusive, especially for contacts, and so it is not recommended for use in
-//  applications.  However, as shown by Einfeldt et al.(1991), it is positively
-//  conservative (cannot return negative densities or pressure), so it is a useful
-//  option when other approximate solvers fail and/or when extra dissipation is needed.
-//
-// REFERENCES:
-// - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
-//   Springer-Verlag, Berlin, (1999) chpt. 10.
-// - Einfeldt et al., "On Godunov-type methods near low densities", JCP, 92, 273 (1991)
-// - A. Harten, P. D. Lax and B. van Leer, "On upstream differencing and Godunov-type
-//   schemes for hyperbolic conservation laws", SIAM Review 25, 35-61 (1983).
+//! \brief HLLE Riemann solver for hydrodynamics
+//!
+//!  Computes 1D fluxes using the Harten-Lax-van Leer (HLL) Riemann solver.  This flux is
+//!  very diffusive, especially for contacts, and so it is not recommended for use in
+//!  applications.  However, as shown by Einfeldt et al.(1991), it is positively
+//!  conservative (cannot return negative densities or pressure), so it is a useful
+//!  option when other approximate solvers fail and/or when extra dissipation is needed.
+//!
+//! REFERENCES:
+//! - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
+//!   Springer-Verlag, Berlin, (1999) chpt. 10.
+//! - Einfeldt et al., "On Godunov-type methods near low densities", JCP, 92, 273 (1991)
+//! - A. Harten, P. D. Lax and B. van Leer, "On upstream differencing and Godunov-type
+//!   schemes for hyperbolic conservation laws", SIAM Review 25, 35-61 (1983).
 
 // C headers
 
@@ -33,7 +33,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::RiemannSolver
-//  \brief The HLLE Riemann solver for hydrodynamics (both adiabatic and isothermal)
+//! \brief The HLLE Riemann solver for hydrodynamics (both adiabatic and isothermal)
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, AthenaArray<Real> &wl,
@@ -105,11 +105,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       Real a  = iso_cs;
       if (NON_BAROTROPIC_EOS) {
         Real q = hroe - 0.5*(SQR(wroe[IVX]) + SQR(wroe[IVY]) + SQR(wroe[IVZ]));
-        if (GENERAL_EOS) {
-          a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
-        } else {
-          a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
-        }
+        a = (q < 0.0) ? 0.0 : std::sqrt(gm1*q);
       }
 
       //--- Step 4. Compute the max/min wave speeds based on L/R and Roe-averaged values

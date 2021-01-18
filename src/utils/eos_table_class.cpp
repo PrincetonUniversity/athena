@@ -2,10 +2,10 @@
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
-//======================================================================================
+//========================================================================================
 //! \file eos_table_class.cpp
-//  \brief Implements class EosTable for an EOS lookup table
-//======================================================================================
+//! \brief Implements class EosTable for an EOS lookup table
+//========================================================================================
 
 // C headers
 
@@ -32,7 +32,7 @@ const char *var_names[] = {"p/e(e/rho,rho)", "e/p(p/rho,rho)", "asq*rho/p(p/rho,
 
 //----------------------------------------------------------------------------------------
 //! \fn void ReadBinaryTable(std::string fn, EosTable *peos_table)
-//  \brief Read data from binary EOS table and initialize interpolated table.
+//! \brief Read data from binary EOS table and initialize interpolated table.
 
 void ReadBinaryTable(std::string fn, EosTable *peos_table) {
   std::ifstream eos_file(fn.c_str(), std::ios::binary);
@@ -69,7 +69,7 @@ void ReadBinaryTable(std::string fn, EosTable *peos_table) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void ReadBinaryTable(std::string fn, EosTable *peos_table, ParameterInput *pin)
-//  \brief Read data from HDF5 EOS table and initialize interpolated table.
+//! \brief Read data from HDF5 EOS table and initialize interpolated table.
 
 void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 #ifndef HDF5OUTPUT
@@ -111,7 +111,7 @@ void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin)
-//  \brief Read data from HDF5 EOS table and initialize interpolated table.
+//! \brief Read data from HDF5 EOS table and initialize interpolated table.
 
 void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin) {
   bool read_ratios = pin->GetOrAddBoolean("hydro", "eos_read_ratios", true);

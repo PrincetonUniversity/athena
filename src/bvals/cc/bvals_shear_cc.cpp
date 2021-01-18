@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_shear_cc.cpp
-//  \brief functions that apply shearing box BCs for cell-centered variables
+//! \brief functions that apply shearing box BCs for cell-centered variables
 //========================================================================================
 
 // C headers
@@ -29,6 +29,7 @@
 #include "../../globals.hpp"
 #include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
+#include "../../orbital_advection/orbital_advection.hpp"
 #include "../../parameter_input.hpp"
 #include "../../utils/buffer_utils.hpp"
 #include "../bvals.hpp"
@@ -41,135 +42,71 @@
 
 
 //--------------------------------------------------------------------------------------
-//! \fn int CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *buf,
-//                                                     int nb)
-//  \brief Load shearing box hydro boundary buffers
+//! \fn int CellCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
+//!                                       AthenaArray<Real> &src, Real *buf, int nb)
+//! \brief Set CC shearing boundary buffers for sending to a block on the same level
 
-void CellCenteredBoundaryVariable::LoadShearing(AthenaArray<Real> &src, Real *buf,
-                                                int nb) {
+void CellCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
+                                 AthenaArray<Real> &src, Real *buf, int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int jo = pbval_->joverlap_;
-  int nx2 = pmb->block_size.nx2 - NGHOST;
-
-  si = pmb->is - NGHOST; ei = pmb->is - 1;
+  int *jmin1 = pbval_->sb_data_[0].jmin_send;
+  int *jmin2 = pbval_->sb_data_[1].jmin_send;
+  int *jmax1 = pbval_->sb_data_[0].jmax_send;
+  int *jmax2 = pbval_->sb_data_[1].jmax_send;
   sk = pmb->ks;        ek = pmb->ke;
-  if (pmesh->mesh_size.nx3 > 1)  ek += NGHOST, sk -= NGHOST;
-  // nb=0-3 for inner boundary; nb=4-7 for outer boundary
-  switch (nb) {
-    case 0:
-      sj = pmb->je - jo - (NGHOST - 1); ej = pmb->je;
-      if (jo > nx2) sj = pmb->js;
-      break;
-    case 1:
-      sj = pmb->js; ej = pmb->je - jo + NGHOST;
-      if (jo < NGHOST) ej = pmb->je;
-      break;
-    case 2:
-      sj = pmb->je - (NGHOST - 1); ej = pmb->je;
-      if (jo > nx2) sj = pmb->je - (jo - nx2) + 1;
-      break;
-    case 3:
-      sj = pmb->js; ej = pmb->js + (NGHOST - 1);
-      if (jo < NGHOST) ej = pmb->js + (NGHOST - jo) - 1;
-      break;
-    case 4:
-      sj = pmb->js; ej = pmb->js + jo + NGHOST - 1;
-      if (jo > nx2) ej = pmb->je;
-      break;
-    case 5:
-      sj = pmb->js + jo - NGHOST; ej = pmb->je;
-      if (jo < NGHOST) sj = pmb->js;
-      break;
-    case 6:
-      sj = pmb->js; ej = pmb->js + (NGHOST - 1);
-      if (jo > nx2) ej = pmb->js + (jo - nx2) - 1;
-      break;
-    case 7:
-      sj = pmb->je - (NGHOST - 1); ej = pmb->je;
-      if (jo < NGHOST) sj = pmb->je - (NGHOST - jo) + 1;
-      break;
-    default:
-      std::stringstream msg;
-      msg << "### FATAL ERROR in CellCenteredBoundaryVariable:LoadShearing "
-          << std::endl << "nb = " << nb << " not valid" << std::endl;
-      ATHENA_ERROR(msg);
+  if (pmesh->mesh_size.nx3 > 1) ek += NGHOST, sk -= NGHOST;
+
+  if (nb<4) { // inner boundary
+    si = pmb->is-NGHOST;
+    ei = pmb->is-1;
+    sj = jmin1[nb]-jo-1;
+    ej = jmax1[nb]-jo-1;
+  } else if (nb<8) { //outer boundary
+    si = pmb->ie+1;
+    ei = pmb->ie+NGHOST;
+    sj = jmin2[nb-4]+jo;
+    ej = jmax2[nb-4]+jo;
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in CellCenteredBoundaryVariable::"
+        << "ShearingBoxBoundarySameLevel"<<std::endl
+        << "nb = " << nb << " not valid" << std::endl;
+    ATHENA_ERROR(msg);
   }
   int p = 0;
-  BufferUtility::PackData(src, buf, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+  for (int n=nl_; n<=nu_; ++n) {
+    for (int k=sk; k<=ek; k++) {
+      for (int i=si; i<=ei; i++) {
+        for (int j=sj; j<=ej; j++) {
+          buf[p++] = src(n,k,j,i);
+        }
+      }
+    }
+  }
   return;
 }
 
 
-// --------------------------------------------------------------------------------------
-// ! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
-//  \brief Send shearing box boundary buffers for hydro variables
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers()
+//! \brief Send CC shearing box boundary buffers
 
 void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   AthenaArray<Real> &var = *var_cc;
-
-  // KGF: hidden assumption that 2D?
-  int js = pmb->js;
-  int je = pmb->je;
-
-  int jl = js - NGHOST;
-  int ju = je + NGHOST;
-  int kl = pmb->ks;
-  int ku = pmb->ke;
-  if (pmesh->mesh_size.nx3 > 1) {
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
-
-  Real eps = pbval_->eps_;
-  // Real qomL = pbval_->qomL_;
   int ssize = nu_ + 1;
-
   int offset[2]{0, 4};
-  int sign[2]{1, -1};
-  int ib[2]{pmb->is - NGHOST, pmb->ie + 1};
-
   for (int upper=0; upper<2; upper++) {
     if (pbval_->is_shear[upper]) {
-      // step 1.a -- load shear_cc_
-      for (int n=nl_; n<=nu_; ++n) {
-        for (int k=kl; k<=ku; k++) {
-          for (int j=jl; j<=ju; j++) {
-            for (int i=0; i<NGHOST; i++) {
-              int ii = ib[upper] + i;
-              shear_cc_[upper](n,k,j,i) = var(n,k,j,ii);
-            }
-          }
-        }
-      }
-
-      // step 1.b -- (optionally) appy shear to shear_cc_ (does nothing by default)
-      ShearQuantities(shear_cc_[upper], upper);  // Hydro overrides this
-
-      // step 2. -- remaping
-      for (int n=nl_; n<=nu_; n++) {
-        for (int k=kl; k<=ku; k++) {
-          for (int i=0; i<NGHOST; i++) {
-            int jl_remap = js - upper;
-            int ju_remap = je + 2 - upper;
-            RemapFlux(n, k, jl_remap, ju_remap, i, sign[upper]*eps, shear_cc_[upper],
-                      shear_flx_cc_[upper]);
-            for (int j=js-upper; j<=je+1-upper; j++) {
-              shear_cc_[upper](n,k,j,i) -= shear_flx_cc_[upper](j+1)
-                                           - shear_flx_cc_[upper](j);
-            }
-          }
-        }
-      }
-
-      // step 3. -- load sendbuf; memcpy to recvbuf if on same rank, else post MPI_Isend
       for (int n=0; n<4; n++) {
-        SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[upper][n];
+        SimpleNeighborBlock& snb = pbval_->sb_data_[upper].send_neighbor[n];
         if (snb.rank != -1) {
-          LoadShearing(shear_cc_[upper], shear_bd_var_[upper].send[n], n+offset[upper]);
+          LoadShearingBoxBoundarySameLevel(var, shear_bd_var_[upper].send[n],
+                                       n+offset[upper]);
           if (snb.rank == Globals::my_rank) {// on the same process
             CopyShearBufferSameProcess(snb, shear_send_count_cc_[upper][n]*ssize, n,
                                        upper);
@@ -190,78 +127,46 @@ void CellCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 }
 
 // --------------------------------------------------------------------------------------
-//! \fn void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
-//                                                                         const int nb)
-//  \brief Set hydro shearing box boundary received from a block on the same level
+//! \fn void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
+//!                        AthenaArray<Real> &src, Real *buf, const int nb)
+//! \brief Set CC shearing boundary data received from a block on the same level
 
-void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(Real *buf,
-                                                                   const int nb) {
+void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
+                    AthenaArray<Real> &src, Real *buf,const int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
-  int jo = pbval_->joverlap_;
-  int nx2 = pmb->block_size.nx2 - NGHOST;
-  int nxo = pmb->block_size.nx2 - jo;
+  int &xgh = pbval_->xgh_;
+  si = pmb->is-NGHOST; ei = pmb->is-1;
+  sk = pmb->ks;        ek = pmb->ke;
+  if (pmesh->mesh_size.nx3 > 1)  ek += NGHOST, sk -= NGHOST;
 
-  sk = pmb->ks; ek = pmb->ke;
-  if (pmesh->mesh_size.nx3 > 1) ek += NGHOST, sk -= NGHOST;
-  // nb=0-3 for inner boundary; 4-7 for outer boundary.
-  switch (nb) {
-    case 0:
-      si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->js - NGHOST; ej = pmb->js + (jo - 1);
-      if (jo > nx2) sj = pmb->js - nxo;
-      break;
-    case 1:
-      si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->js + jo; ej = pmb->je + NGHOST;
-      if (jo < NGHOST) ej = pmb->je + jo;
-      break;
-    case 2:
-      si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->js - NGHOST; ej = pmb->js - 1;
-      if (jo > nx2) ej = pmb->js - nxo - 1;
-      break;
-    case 3:
-      si = pmb->is - NGHOST; ei = pmb->is - 1;
-      sj = pmb->je + jo + 1; ej = pmb->je + NGHOST;
-      break;
-    case 4:
-      si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->je - (jo - 1); ej = pmb->je + NGHOST;
-      if (jo > nx2) ej = pmb->je + nxo;
-      break;
-    case 5:
-      si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->js - NGHOST; ej = pmb->je - jo;
-      if (jo < NGHOST)   sj = pmb->js - jo;
-      break;
-    case 6:
-      si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->je + 1; ej = pmb->je + NGHOST;
-      if (jo > nx2) sj = pmb->je + nxo + 1;
-      break;
-    case 7:
-      si = pmb->ie + 1; ei = pmb->ie + NGHOST;
-      sj = pmb->js - NGHOST; ej = pmb->js - jo-1;
-      break;
-    default:
-      std::stringstream msg;
-      msg << "### FATAL ERROR in CellCenteredBoundaryVariable:SetShearing " << std::endl
-          << "nb = " << nb << " not valid" << std::endl;
-      ATHENA_ERROR(msg);
+  int *jmin1 = pbval_->sb_data_[0].jmin_recv;
+  int *jmin2 = pbval_->sb_data_[1].jmin_recv;
+  int *jmax1 = pbval_->sb_data_[0].jmax_recv;
+  int *jmax2 = pbval_->sb_data_[1].jmax_recv;
+
+  if (nb<4) {
+    sj = jmin1[nb]+xgh;     ej = jmax1[nb]+xgh;
+  } else if (nb<8) {
+    sj = jmin2[nb-4]+xgh;   ej = jmax2[nb-4]+xgh;
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in CellCenteredBoundaryVariable::"
+        << "SetShearingBoxBoundarySameLevel"<<std::endl
+        << "nb = " << nb << " not valid" << std::endl;
+    ATHENA_ERROR(msg);
   }
-
-  // set [sj:ej] of current meshblock
   int p = 0;
-  BufferUtility::UnpackData(buf, *var_cc, nl_, nu_, si, ei, sj, ej, sk, ek, p);
+  BufferUtility::UnpackData(buf, src, nl_, nu_,
+                            sj, ej, si, ei, sk, ek, p);
   return;
 }
 
 
-// --------------------------------------------------------------------------------------
-// ! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
-//  \brief receive shearing box boundary data for hydro variables
+//----------------------------------------------------------------------------------------
+//! \fn bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers()
+//! \brief Receive CC shearing box boundary buffers
 
 bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   bool flag[2]{true, true};
@@ -273,7 +178,7 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
         if (shear_bd_var_[upper].flag[n] == BoundaryStatus::completed) continue;
         if (shear_bd_var_[upper].flag[n] == BoundaryStatus::waiting) {
           // on the same process
-          if (pbval_->shear_recv_neighbor_[upper][n].rank == Globals::my_rank) {
+          if (pbval_->sb_data_[upper].recv_neighbor[n].rank == Globals::my_rank) {
             flag[upper] = false;
             continue;
           } else { // MPI boundary
@@ -291,7 +196,8 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
           }
         }
         // set var if boundary arrived
-        SetShearingBoxBoundarySameLevel(shear_bd_var_[upper].recv[n], n+nb_offset[upper]);
+        SetShearingBoxBoundarySameLevel(shear_cc_[upper], shear_bd_var_[upper].recv[n],
+                                        n+nb_offset[upper]);
         shear_bd_var_[upper].flag[n] = BoundaryStatus::completed; // completed
       }  // loop over recv[0] to recv[3]
     }  // if boundary is shearing
@@ -299,133 +205,98 @@ bool CellCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   return (flag[0] && flag[1]);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn bool CellCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers()
+//! \brief Update CC shearing box boundary variables
 
-//--------------------------------------------------------------------------------------
-
-//  \brief compute the flux along j indices for remapping adopted from 2nd
-//  order RemapFlux of Athena 4.2 (C-version)
-
-void CellCenteredBoundaryVariable::RemapFlux(const int n, const int k, const int jinner,
-                               const int jouter, const int i, const Real eps,
-                               const AthenaArray<Real> &var, AthenaArray<Real> &flux) {
-  int j, jl, ju;
-  Real dUc, dUl, dUr, dUm, lim_slope;
-
-  // jinner, jouter are index range over which flux must be returned.  Set loop
-  // limits depending on direction of upwind differences
-  if (eps > 0.0) { // eps always > 0 for inner i boundary
-    jl = jinner - 1;
-    ju = jouter - 1;
-  } else {         // eps always < 0 for outer i boundary
-    jl = jinner;
-    ju = jouter;
+void CellCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
+  MeshBlock *pmb = pmy_block_;
+  Mesh *pmesh = pmb->pmy_mesh;
+  OrbitalAdvection *porb = pmb->porb;
+  AthenaArray<Real> &var = *var_cc;
+  AthenaArray<Real> &pflux = pbval_->pflux_;
+  int &xgh = pbval_->xgh_;
+  int &xorder = pbval_->xorder_;
+  int nb_offset[2]{0, 4};
+  int ib[2]{pmb->is - NGHOST, pmb->ie + 1};
+  int js = pmb->js, je = pmb->je;
+  int kl = pmb->ks, ku = pmb->ke;
+  if (pmesh->mesh_size.nx3 > 1) {
+    kl -= NGHOST;
+    ku += NGHOST;
   }
+  int jl = js-NGHOST;
+  int ju = je+NGHOST;
 
-  // TODO(felker): do not reimplement PLM here; use plm.cpp.
-  // TODO(felker): relax assumption that 2nd order reconstruction must be used
-  for (j=jl; j<=ju; j++) {
-    dUc = var(n,k,j+1,i) - var(n,k,j-1,i);
-    dUl = var(n,k,j,  i) - var(n,k,j-1,i);
-    dUr = var(n,k,j+1,i) - var(n,k,j,  i);
-
-    dUm = 0.0;
-    if (dUl*dUr > 0.0) {
-      lim_slope = std::min(std::abs(dUl), std::abs(dUr));
-      dUm = SIGN(dUc)*std::min(0.5*std::abs(dUc), 2.0*lim_slope);
-    }
-
-    if (eps > 0.0) { // eps always > 0 for inner i boundary
-      flux(j+1) = eps*(var(n,k,j,i) + 0.5*(1.0 - eps)*dUm);
-    } else {         // eps always < 0 for outer i boundary
-      flux(j  ) = eps*(var(n,k,j,i) - 0.5*(1.0 + eps)*dUm);
+  for (int upper=0; upper<2; upper++) {
+    if (pbval_->is_shear[upper]) { // check inner boundaries
+      // step 1 -- (optionally) appy shear to shear_cc_ (does nothing by default)
+      if (!porb->orbital_advection_defined)
+        ShearQuantities(shear_cc_[upper], upper);  // Hydro overrides this
+      // step 2. -- calculating remapping flux and update var
+      Real eps = (1.0-2*upper)*pbval_->eps_;
+      for (int n=nl_; n<=nu_; n++) {
+        pbuf.InitWithShallowSlice(shear_cc_[upper], 4, n, 1);
+        for (int k=kl; k<=ku; k++) {
+          for (int i=0; i<NGHOST; i++) {
+            int ii = ib[upper]+i;
+            if (xorder<=2) {
+              porb->RemapFluxPlm(pflux, pbuf, eps, 1-upper, k, i, jl, ju+1, xgh);
+            } else {
+              porb->RemapFluxPpm(pflux, pbuf, eps, 1-upper, k, i, jl, ju+1, xgh);
+            }
+            const int shift = xgh+1-upper;
+            for (int j=jl; j<=ju; j++) {
+              var(n,k,j,ii) = pbuf(k,i,j+shift) - (pflux(j+1) - pflux(j));
+            }
+          }
+        }
+      }
     }
   }
   return;
 }
 
-
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
+//! \brief
 void CellCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
   int size, tag;
-  int tag_offset[2]{0, 4};
+  if (phase == BoundaryCommSubset::all) {
+    int tag_offset1[2]{0, 3};
+    for (int upper=0; upper<2; upper++) {
+      if (pbval_->is_shear[upper]) {
+        for (int n=0; n<3; n++) {
+          int target_rank = pbval_->sb_flux_data_[upper].recv_neighbor[n].rank;
+          if ((target_rank != Globals::my_rank) && (target_rank != -1)) {
+            size = (nu_ + 1)*shear_recv_count_flx_[upper][n];
+            tag  = pbval_->CreateBvalsMPITag(pmy_block_->lid, n+tag_offset1[upper],
+                                             shear_flx_phys_id_);
+            MPI_Irecv(shear_bd_flux_[upper].recv[n], size, MPI_ATHENA_REAL,
+                      target_rank, tag, MPI_COMM_WORLD,
+                      &shear_bd_flux_[upper].req_recv[n]);
+          }
+        }
+      }
+    }
+  }
+  int tag_offset2[2]{0, 4};
   for (int upper=0; upper<2; upper++) {
     if (pbval_->is_shear[upper]) {
       for (int n=0; n<4; n++) {
-        int target_rank = pbval_->shear_recv_neighbor_[upper][n].rank;
+        int target_rank = pbval_->sb_data_[upper].recv_neighbor[n].rank;
         if ((target_rank != Globals::my_rank) && (target_rank != -1)) {
           size = (nu_ + 1)*shear_recv_count_cc_[upper][n];
-          tag  = pbval_->CreateBvalsMPITag(pmy_block_->lid, n+tag_offset[upper],
+          tag  = pbval_->CreateBvalsMPITag(pmy_block_->lid, n+tag_offset2[upper],
                                            shear_cc_phys_id_);
           MPI_Irecv(shear_bd_var_[upper].recv[n], size, MPI_ATHENA_REAL,
-                    pbval_->shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
+                    target_rank, tag, MPI_COMM_WORLD,
                     &shear_bd_var_[upper].req_recv[n]);
         }
       }
     }
   }
 #endif
-  return;
-}
-
-
-// TODO(felker): also set sflag members of ShearingBoundaryData
-void CellCenteredBoundaryVariable::ComputeShear(const Real time) {
-  MeshBlock *pmb = pmy_block_;
-  int nx2 = pmb->block_size.nx2;
-  int &jo = pbval_->joverlap_;
-  int ssize = pbval_->ssize_;
-  // Note, this CellCenteredBoundaryVariable implementation could be replaced by a single
-  // loop n=0:4 without any conditionals IF a shared "BoundaryStatus flag[4]" was computed
-  // in BoundaryValues::FindShearBlock(), since this fn merely scales the shared count
-  // arrays by ssize. However, this entire logic is confusing and should probably be
-  // replaced entirely.
-  for (int upper=0; upper<2; upper++) {
-    if (pbval_->is_shear[upper]) {
-      for (int n=0; n<4; n++) {
-        shear_send_count_cc_[upper][n] = 0;
-        shear_recv_count_cc_[upper][n] = 0;
-        shear_bd_var_[upper].flag[n] = BoundaryStatus::completed;
-      }
-      shear_send_count_cc_[upper][1] = pbval_->shear_send_count_[upper][1]*ssize;
-      shear_recv_count_cc_[upper][1] = pbval_->shear_recv_count_[upper][1]*ssize;
-      shear_bd_var_[upper].flag[1] = BoundaryStatus::waiting;
-
-      // if there is overlap to next blocks
-      if (jo != 0) {
-        // send to the right
-        shear_send_count_cc_[upper][0] = pbval_->shear_send_count_[upper][0]*ssize;
-        shear_recv_count_cc_[upper][0] = pbval_->shear_recv_count_[upper][0]*ssize;
-        shear_bd_var_[upper].flag[0] = BoundaryStatus::waiting;  // switch on if overlap
-
-        // deal the left boundary cells with send[2]
-        if (jo > (nx2 - NGHOST)) {
-          // send to Right
-          shear_send_count_cc_[upper][2] = pbval_->shear_send_count_[upper][2]*ssize;
-          // recv from Left
-          shear_recv_count_cc_[upper][2] = pbval_->shear_recv_count_[upper][2]*ssize;
-          shear_bd_var_[upper].flag[2] = BoundaryStatus::waiting;
-        }
-        // deal with the right boundary cells with send[3]
-        if (jo < NGHOST) {
-          shear_send_count_cc_[upper][3] = pbval_->shear_send_count_[upper][3]*ssize;
-
-          shear_recv_count_cc_[upper][3] = pbval_->shear_recv_count_[upper][3]*ssize;
-          shear_bd_var_[upper].flag[3] = BoundaryStatus::waiting;
-        }
-      } else {  // jo == 0
-        // send [je-(NGHOST-1):je] to Right (outer x2)
-        shear_send_count_cc_[upper][2] = pbval_->shear_send_count_[upper][2]*ssize;
-        // recv [js-NGHOST:js-1] from Left
-        shear_recv_count_cc_[upper][2] = pbval_->shear_recv_count_[upper][2]*ssize;
-        shear_bd_var_[upper].flag[2] = BoundaryStatus::waiting;
-
-        // send [js:js+(NGHOST-1)] to Left (inner x2)
-        shear_send_count_cc_[upper][3] = pbval_->shear_send_count_[upper][3]*ssize;
-        // recv [je + 1:je+(NGHOST-1)] from Right
-        shear_recv_count_cc_[upper][3] = pbval_->shear_recv_count_[upper][3]*ssize;
-        shear_bd_var_[upper].flag[3] = BoundaryStatus::waiting;
-      }
-    }
-  } // end loop over inner, outer shearing boundaries
   return;
 }

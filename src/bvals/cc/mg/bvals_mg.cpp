@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_mg.cpp
-//  \brief
+//! \brief
 
 // C headers
 
@@ -40,7 +40,7 @@ class MultigridDriver;
 
 //----------------------------------------------------------------------------------------
 //! \fn MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs)
-//  \brief Constructor of the MGBoundaryValues class
+//! \brief Constructor of the MGBoundaryValues class
 
 MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs)
     : BoundaryBase(pmg->pmy_driver_->pmy_mesh_, pmg->loc_, pmg->size_, input_bcs),
@@ -69,7 +69,7 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs)
 
 //----------------------------------------------------------------------------------------
 //! \fn MGBoundaryValues::~MGBoundaryValues()
-//  \brief Destructor of the MGBoundaryValues class
+//! \brief Destructor of the MGBoundaryValues class
 
 MGBoundaryValues::~MGBoundaryValues() {
   if (pmy_mg_->pmy_block_ != nullptr)
@@ -78,7 +78,7 @@ MGBoundaryValues::~MGBoundaryValues() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::InitBoundaryData(BoundaryQuantity type)
-//  \brief Initialize BoundaryData<> structure
+//! \brief Initialize BoundaryData<> structure
 
 void MGBoundaryValues::InitBoundaryData(BoundaryQuantity type) {
   int size = 0;
@@ -135,7 +135,7 @@ void MGBoundaryValues::InitBoundaryData(BoundaryQuantity type) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::DestroyBoundaryData()
-//  \brief Destroy BoundaryData<> structure
+//! \brief Destroy BoundaryData<> structure
 
 void MGBoundaryValues::DestroyBoundaryData() {
   for (int n=0; n<bdata_.nbmax; n++) {
@@ -153,7 +153,7 @@ void MGBoundaryValues::DestroyBoundaryData() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::ApplyPhysicalBoundaries(int flag)
-//  \brief Apply physical boundary conditions to the current Multigrid data
+//! \brief Apply physical boundary conditions to the current Multigrid data
 
 void MGBoundaryValues::ApplyPhysicalBoundaries(int flag) {
   AthenaArray<Real> *u;
@@ -220,8 +220,8 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(int flag) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::StartReceivingMultigrid(BoundaryQuantity type,
-//                                                     bool folddata)
-//  \brief initiate MPI_Irecv for multigrid
+//!                                                    bool folddata)
+//! \brief initiate MPI_Irecv for multigrid
 
 void MGBoundaryValues::StartReceivingMultigrid(BoundaryQuantity type, bool folddata) {
 #ifdef MPI_PARALLEL
@@ -266,7 +266,7 @@ void MGBoundaryValues::StartReceivingMultigrid(BoundaryQuantity type, bool foldd
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::ClearBoundaryMultigrid(BoundaryQuantity type)
-//  \brief clean up the boundary flags after each loop for multigrid
+//! \brief clean up the boundary flags after each loop for multigrid
 
 void MGBoundaryValues::ClearBoundaryMultigrid(BoundaryQuantity type) {
   for (int n=0; n<nneighbor; n++) {
@@ -287,8 +287,8 @@ void MGBoundaryValues::ClearBoundaryMultigrid(BoundaryQuantity type) {
 
 //----------------------------------------------------------------------------------------
 //! \fn int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
-//                                                 const NeighborBlock& nb, bool folddata)
-//  \brief Set Multigrid boundary buffers for sending to a block on the same level
+//!                                                const NeighborBlock& nb, bool folddata)
+//! \brief Set Multigrid boundary buffers for sending to a block on the same level
 
 int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
                                            const NeighborBlock& nb, bool folddata) {
@@ -354,8 +354,8 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
-//                                                 const NeighborBlock& nb, bool folddata)
-//  \brief Set Multigrid boundary buffers for sending to a block on the coarser level
+//!                                                const NeighborBlock& nb, bool folddata)
+//! \brief Set Multigrid boundary buffers for sending to a block on the coarser level
 
 int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
                                            const NeighborBlock& nb, bool folddata) {
@@ -409,8 +409,8 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn int MGBoundaryValues::LoadMultigridBoundaryBufferToFiner(Real *buf,
-//                                         const NeighborBlock& nb, bool folddata)
-//  \brief Set Multigrid boundary buffers for sending to a block on the finer level
+//!                                        const NeighborBlock& nb, bool folddata)
+//! \brief Set Multigrid boundary buffers for sending to a block on the finer level
 int MGBoundaryValues::LoadMultigridBoundaryBufferToFiner(Real *buf,
                                            const NeighborBlock& nb, bool folddata) {
   const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
@@ -460,8 +460,8 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToFiner(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn bool MGBoundaryValues::SendMultigridBoundaryBuffers(BoundaryQuantity type,
-//                                                          bool folddata)
-//  \brief Send boundary buffers
+//!                                                         bool folddata)
+//! \brief Send boundary buffers
 
 bool MGBoundaryValues::SendMultigridBoundaryBuffers(BoundaryQuantity type,
                                                     bool folddata) {
@@ -516,8 +516,8 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(BoundaryQuantity type,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::SetMultigridBoundarySameLevel(const Real *buf,
-//                                                 const NeighborBlock& nb, bool folddata)
-//  \brief Set Multigrid boundary received from a block on the same level
+//!                                                const NeighborBlock& nb, bool folddata)
+//! \brief Set Multigrid boundary received from a block on the same level
 
 void MGBoundaryValues::SetMultigridBoundarySameLevel(const Real *buf,
                                            const NeighborBlock& nb, bool folddata) {
@@ -576,8 +576,8 @@ void MGBoundaryValues::SetMultigridBoundarySameLevel(const Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::SetMultigridBoundaryFromCoarser(const Real *buf,
-//                                         const NeighborBlock& nb, boolf folddata)
-//  \brief Set hydro boundary received from a block on the same level
+//!                                        const NeighborBlock& nb, boolf folddata)
+//! \brief Set hydro boundary received from a block on the same level
 
 void MGBoundaryValues::SetMultigridBoundaryFromCoarser(const Real *buf,
                                            const NeighborBlock& nb, bool folddata) {
@@ -626,8 +626,8 @@ void MGBoundaryValues::SetMultigridBoundaryFromCoarser(const Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::SetMultigridBoundaryFromFiner(const Real *buf,
-//                                                 const NeighborBlock& nb, bool folddata)
-//  \brief Set hydro boundary received from a block on the same level
+//!                                                const NeighborBlock& nb, bool folddata)
+//! \brief Set hydro boundary received from a block on the same level
 
 void MGBoundaryValues::SetMultigridBoundaryFromFiner(const Real *buf,
                                                const NeighborBlock& nb, bool folddata) {
@@ -687,8 +687,8 @@ void MGBoundaryValues::SetMultigridBoundaryFromFiner(const Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(BoundaryQuantity type,
-//                                                             bool folddata)
-//  \brief receive the boundary data
+//!                                                            bool folddata)
+//! \brief receive the boundary data
 
 bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(BoundaryQuantity type,
                                                        bool folddata) {
@@ -739,7 +739,7 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(BoundaryQuantity type,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata)
-//  \brief prolongate boundaries for Multigrid
+//! \brief prolongate boundaries for Multigrid
 
 void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata) {
   AthenaArray<Real> &dst = pmy_mg_->GetCurrentData();
@@ -904,7 +904,7 @@ void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::CopyNeighborInfoFromMeshBlock()
-//  \brief copy the neighbor information from the MeshBlock BoundaryValues class
+//! \brief copy the neighbor information from the MeshBlock BoundaryValues class
 
 void MGBoundaryValues::CopyNeighborInfoFromMeshBlock() {
   BoundaryValues *pbv = pmy_mg_->pmy_block_->pbval;
@@ -924,9 +924,9 @@ void MGBoundaryValues::CopyNeighborInfoFromMeshBlock() {
 
 //----------------------------------------------------------------------------------------
 //! \fn int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(
-//                                                Real *buf, const NeighborBlock& nb)
-//  \brief Set Multigrid boundary buffers for sending to a block on the coarser level
-//         using the Mass Conservation formula for gravity
+//!                                               Real *buf, const NeighborBlock& nb)
+//! \brief Set Multigrid boundary buffers for sending to a block on the coarser level
+//!        using the Mass Conservation formula for gravity
 
 int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *buf,
                                                           const NeighborBlock& nb) {
@@ -972,8 +972,8 @@ int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *
 
 //----------------------------------------------------------------------------------------
 //! \fn int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToFinerFluxCons(Real *buf,
-//                                                              const NeighborBlock& nb)
-//  \brief Set Multigrid boundary buffers for sending to a block on the finer level
+//!                                                             const NeighborBlock& nb)
+//! \brief Set Multigrid boundary buffers for sending to a block on the finer level
 int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToFinerFluxCons(Real *buf,
                                                                const NeighborBlock& nb) {
   const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
@@ -1020,8 +1020,8 @@ int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToFinerFluxCons(Real *bu
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGGravityBoundaryValues::SetMultigridBoundaryFromCoarserFluxCons(
-//                                       const Real *buf, const NeighborBlock& nb)
-//  \brief Set hydro boundary received from a block on the same level
+//!                                      const Real *buf, const NeighborBlock& nb)
+//! \brief Set hydro boundary received from a block on the same level
 
 void MGGravityBoundaryValues::SetMultigridBoundaryFromCoarserFluxCons(const Real *buf,
                                                              const NeighborBlock& nb) {
@@ -1068,7 +1068,7 @@ void MGGravityBoundaryValues::SetMultigridBoundaryFromCoarserFluxCons(const Real
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGGravityBoundaryValues::SetMultigridBoundaryFromFinerFluxCons(
-//                                       const Real *buf, const NeighborBlock& nb)
+//!                                      const Real *buf, const NeighborBlock& nb)
 
 void MGGravityBoundaryValues::SetMultigridBoundaryFromFinerFluxCons(const Real *buf,
                                                              const NeighborBlock& nb) {
@@ -1137,7 +1137,7 @@ void MGGravityBoundaryValues::SetMultigridBoundaryFromFinerFluxCons(const Real *
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons()
-//  \brief prolongate boundaries for Multigrid
+//! \brief prolongate boundaries for Multigrid
 
 void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
   const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();

@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file ascii_table_reader.hpp
-//  \brief Declares ASCII table reader functions
+//! \brief Declares ASCII table reader functions
 
 // C headers
 
@@ -17,7 +17,7 @@
 #include "../athena_arrays.hpp"      // AthenaArray
 #include "../utils/interp_table.hpp" // InterpTable2D
 
-// Declarations
+//!Declarations
 void ASCIITableLoader(const char *filename, InterpTable2D &table,
                       AthenaArray<Real>* pratios=nullptr);
 

@@ -127,8 +127,8 @@ std::int64_t FFTBlock::GetIndex(const int i, const int j, const int k,
 
 //----------------------------------------------------------------------------------------
 //! \fn void FFTBlock::RetrieveResult(const AthenaArray<Real> &src, bool nu,
-//                                    int ngh, LogicalLocation loc, RegionSize bsize)
-//  \brief Fill the result in the active zone
+//!                                   int ngh, LogicalLocation loc, RegionSize bsize)
+//! \brief Fill the result in the active zone
 
 void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, bool nu, int ngh,
                               LogicalLocation loc, RegionSize bsize) {
@@ -149,7 +149,7 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, bool nu, int ngh,
       for (int j=jl, mj=js; mj<=je; j++, mj++) {
         for (int i=ngh, mi=is; mi<=ie; i++, mi++) {
           std::int64_t idx = GetIndex(mi, mj, mk, b_out_);
-          if (nu == 0) {
+          if (n == 0) {
             dst(k,j,i) = std::real(src[idx])*norm_factor_;
           } else {
             dst(n,k,j,i) = std::imag(src[idx])*norm_factor_;
@@ -163,8 +163,8 @@ void FFTBlock::RetrieveResult(AthenaArray<Real> &dst, bool nu, int ngh,
 
 //----------------------------------------------------------------------------------------
 //! \fn void FFTBlock::LoadSource(const AthenaArray<Real> &src, bool nu, int ngh,
-//                                LogicalLocation loc, RegionSize bsize)
-//  \brief Fill the source in the active zone
+//!                               LogicalLocation loc, RegionSize bsize)
+//! \brief Fill the source in the active zone
 
 void FFTBlock::LoadSource(const AthenaArray<Real> &src, bool nu, int ngh,
                           LogicalLocation loc, RegionSize bsize) {
@@ -185,8 +185,8 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, bool nu, int ngh,
       for (int j=jl, mj=js; mj<=je; j++, mj++) {
         for (int i=ngh, mi=is; mi<=ie; i++, mi++) {
           std::int64_t idx = GetIndex(mi, mj, mk, f_in_);
-          if (nu == 0) {
-            // copy-list initializatio (since C++11)
+          if (n == 0) {
+            // copy-list initialization (since C++11)
             dst[idx] = {src(n,k,j,i), 0.0};
           } else {
             dst[idx].imag(src(n,k,j,i));
@@ -200,7 +200,7 @@ void FFTBlock::LoadSource(const AthenaArray<Real> &src, bool nu, int ngh,
 
 //----------------------------------------------------------------------------------------
 //! \fn void FFTBlock::ApplyKernel(int mode)
-//  \brief Apply kernel
+//! \brief Apply kernel
 
 void FFTBlock::ApplyKernel(int mode) {
   for (int k=0; k<knx[2]; k++) {
@@ -217,8 +217,8 @@ void FFTBlock::ApplyKernel(int mode) {
 
 //----------------------------------------------------------------------------------------
 //! \fn AthenaFFTPlan *FFTBlock::QuickCreatePlan(std::complex<Real> *data,
-//                                                AthenaFFTDirection dir)
-//  \brief initialize FFT plan using mesh information
+//!                                               AthenaFFTDirection dir)
+//! \brief initialize FFT plan using mesh information
 
 AthenaFFTPlan *FFTBlock::QuickCreatePlan(std::complex<Real> *data,
                                          AthenaFFTDirection dir) {
@@ -235,8 +235,8 @@ AthenaFFTPlan *FFTBlock::QuickCreatePlan(std::complex<Real> *data,
 
 //----------------------------------------------------------------------------------------
 //! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, std::complex<Real> *data,
-//                                           AthenaFFTDirection dir)
-//  \brief initialize FFT plan for 1D FFT
+//!                                          AthenaFFTDirection dir)
+//! \brief initialize FFT plan for 1D FFT
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, std::complex<Real> *data,
                                     AthenaFFTDirection dir) {
   AthenaFFTPlan *plan = nullptr;
@@ -260,9 +260,9 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, std::complex<Real> *data,
 
 //----------------------------------------------------------------------------------------
 //! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
-//                                           std::complex<Real> *data,
-//                                           AthenaFFTDirection dir)
-//  \brief initialize FFT plan for 2D FFT
+//!                                          std::complex<Real> *data,
+//!                                          AthenaFFTDirection dir)
+//! \brief initialize FFT plan for 2D FFT
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
                                     std::complex<Real> *data,
                                     AthenaFFTDirection dir) {
@@ -315,9 +315,9 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nslow,
 
 //----------------------------------------------------------------------------------------
 //! \fn AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
-//                                           std::complex<Real> *data,
-//                                           AthenaFFTDirection dir)
-//  \brief initialize FFT plan for 3D FFT
+//!                                          std::complex<Real> *data,
+//!                                          AthenaFFTDirection dir)
+//! \brief initialize FFT plan for 3D FFT
 
 AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
                                     std::complex<Real> *data,
@@ -381,7 +381,7 @@ AthenaFFTPlan *FFTBlock::CreatePlan(int nfast, int nmid, int nslow,
 
 //----------------------------------------------------------------------------------------
 //! \fn void FFTBlock::Execute(AthenaFFTPlan *plan)
-//  \brief excute FFT using private vars
+//! \brief execute FFT using private vars
 
 void FFTBlock::Execute(AthenaFFTPlan *plan) {
 #ifdef FFT
@@ -401,7 +401,7 @@ void FFTBlock::Execute(AthenaFFTPlan *plan) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void FFTBlock::Execute(AthenaFFTPlan *plan, std::complex<Real> *data)
-//  \brief excute in-place FFT
+//! \brief execute in-place FFT
 
 void FFTBlock::Execute(AthenaFFTPlan *plan, std::complex<Real> *data) {
 #ifdef FFT
@@ -421,8 +421,8 @@ void FFTBlock::Execute(AthenaFFTPlan *plan, std::complex<Real> *data) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void FFTBlock::Execute(AthenaFFTPlan *plan,
-//                              std::complex<Real> *in_data,std::complex<Real> *out_data)
-//  \brief excute out-of-place FFT
+//!                             std::complex<Real> *in_data,std::complex<Real> *out_data)
+//! \brief execute out-of-place FFT
 
 void FFTBlock::Execute(AthenaFFTPlan *plan, std::complex<Real> *in_data,
                        std::complex<Real> *out_data) {
@@ -443,34 +443,35 @@ void FFTBlock::Execute(AthenaFFTPlan *plan, std::complex<Real> *in_data,
 
 //----------------------------------------------------------------------------------------
 //! \fn void FFTBlock::InitializeMPI(AthenaFFTPlan *plan,
-//                              std::complex<Real> *in_data,std::complex<Real> *out_data)
-//  \brief excute out-of-place FFT
+//!                             std::complex<Real> *in_data,std::complex<Real> *out_data)
+//! \brief initialize for paralle FFT
+//!
+//! \note
+//! To achieve best performance with 2D-pencil decomposition,
+//! (1) if the "long"-axis (undecomposed-axis) is not the "slow"-axis (x-axis),
+//!     one needs to permute the axes to make it fast by setting "permute0":
+//!       yz_decomp (long-axis = x) (i,j,k) --> (i,j,k) permute0=0
+//!       xz_decomp (long-axis = y) (i,j,k) --> (j,k,i) permute0=1
+//!       xy_decomp (long-axis = z) (i,j,k) --> (k,i,j) permute0=2
+//! (2) swap axes for input array (swap1=true)
+//!     forward FFT with permute1=2 option.
+//!       yz_decomp (i,j,k) --> (i,k,j) --> (j,i,k)
+//!       xz_decomp (j,k,i) --> (j,i,k) --> (k,j,i)
+//!       xy_decomp (k,i,j) --> (k,j,i) --> (i,k,j)
+//! (3) swap axes from the output of forward FFT to prepare backward FFT (swap2==treu).
+//!     excute backward FFT with permute2=2 option
+//!       yz_decomp (j,i,k) --> (j,k,i) --> (i,j,k)
+//!       xz_decomp (k,j,i) --> (k,i,j) --> (j,k,i)
+//!       xy_decomp (i,k,j) --> (i,j,k) --> (k,i,j)
+//! (4) final outcome is the same with original input before swapping.
+//!     assign it back to original Athena array with permutation
+//!
+//! swap1=swap2=true; permute1=permute2=2; permute0 depends on the decomposition
 
 void FFTBlock::InitializeMPI() {
 #ifdef MPI_PARALLEL
   std::stringstream msg;
   if ((pdim_ == 2 || pdim_ ==1) && dim_ == 3) {
-    // To achieve best performance with 2D-pencil decomposition,
-    // (1) if the "long"-axis (undecomposed-axis) is not the "slow"-axis (x-axis),
-    //     one needs to permute the axes to make it fast by setting "permute0":
-    //       yz_decomp (long-axis = x) (i,j,k) --> (i,j,k) permute0=0
-    //       xz_decomp (long-axis = y) (i,j,k) --> (j,k,i) permute0=1
-    //       xy_decomp (long-axis = z) (i,j,k) --> (k,i,j) permute0=2
-    // (2) swap axes for input array (swap1=true)
-    //     forward FFT with permute1=2 option.
-    //       yz_decomp (i,j,k) --> (i,k,j) --> (j,i,k)
-    //       xz_decomp (j,k,i) --> (j,i,k) --> (k,j,i)
-    //       xy_decomp (k,i,j) --> (k,j,i) --> (i,k,j)
-    // (3) swap axes from the output of forward FFT to prepare backward FFT (swap2==treu).
-    //     excute backward FFT with permute2=2 option
-    //       yz_decomp (j,i,k) --> (j,k,i) --> (i,j,k)
-    //       xz_decomp (k,j,i) --> (k,i,j) --> (j,k,i)
-    //       xy_decomp (i,k,j) --> (i,j,k) --> (k,i,j)
-    // (4) final outcome is the same with original input before swapping.
-    //     assign it back to original Athena array with permutation
-    //
-    // swap1=swap2=true; permute1=permute2=2; permute0 depends on the decomposition
-
     swap1_ = true; swap2_ = true;
     permute1_ = 2; permute2_ = 2;
     if (decomp_ == DecompositionNames::x_decomp) {

@@ -5,8 +5,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//!   \file fft_grav_task_list.hpp
-//    \brief
+//! \file fft_grav_task_list.hpp
+//! \brief define FFTGravitySolverTaskList
 
 // C headers
 
@@ -23,7 +23,7 @@ class MeshBlock;
 
 //----------------------------------------------------------------------------------------
 //! \class FFTGravitySolverTaskList
-//  \brief data and function definitions for FFTGravitySolverTaskList derived class
+//! \brief data and function definitions for FFTGravitySolverTaskList derived class
 
 class FFTGravitySolverTaskList : public TaskList {
  public:
@@ -43,7 +43,7 @@ class FFTGravitySolverTaskList : public TaskList {
 
 
 //----------------------------------------------------------------------------------------
-// 64-bit integers with "1" in different bit positions used to ID  each hydro task.
+//! 64-bit integers with "1" in different bit positions used to ID  each hydro task.
 namespace FFTGravitySolverTaskNames {
 const TaskID NONE(0);
 const TaskID CLEAR_GRAV(1);

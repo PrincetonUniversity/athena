@@ -13,7 +13,7 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 
 def prepare(**kwargs):
     logger.debug('Running test ' + __name__)
-    athena.configure('b', 'shear',
+    athena.configure('b',
                      prob='hb3',
                      flux='hlld',
                      eos='isothermal', **kwargs)
@@ -29,14 +29,14 @@ def run(**kwargs):
         'time/tlim=50265.482', 'time/nlim=500000',
         'time/xorder=2', 'time/integrator=vl2', 'time/ncycle_out=10',
         'mesh/nx1=64', 'mesh/x1min=-0.5', 'mesh/x1max=0.5',
-        'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
+        'mesh/ix1_bc=shear_periodic', 'mesh/ox1_bc=shear_periodic',
         'mesh/nx2=64', 'mesh/x2min=-0.5', 'mesh/x2max=0.5',
         'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
         'mesh/nx3=1', 'mesh/x3min=-0.5', 'mesh/x3max=0.5',
         'hydro/iso_sound_speed=0.00408', 'problem/beta=4000',
         'problem/amp=0.01', 'problem/ipert=1', 'problem/ifield=1',
-        'problem/Omega0=1.0e-3', 'problem/qshear=1.5', 'problem/shboxcoord=2',
-        'time/ncycle_out=0']
+        'orbital_advection/Omega0=1.0e-3', 'orbital_advection/qshear=1.5',
+        'orbital_advection/shboxcoord=2', 'time/ncycle_out=0']
 
     athena.run('mhd/athinput.hb3', arguments)
 

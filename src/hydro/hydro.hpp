@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hydro.hpp
-//  \brief definitions for Hydro class
+//! \brief definitions for Hydro class
 
 // C headers
 
@@ -27,7 +27,7 @@ class ParameterInput;
 // using FaceFlux = AthenaArray<Real>[3];
 
 //! \class Hydro
-//  \brief hydro data and functions
+//! \brief hydro data and functions
 
 class Hydro {
   friend class Field;
@@ -85,10 +85,6 @@ class Hydro {
       AthenaArray<Real> &wct, const AthenaArray<Real> &dxw);
 #endif
 
-  void AddGravityFlux();
-  void AddGravityFluxWithGflx();
-  void CalculateGravityFlux(AthenaArray<Real> &phi_in);
-
  private:
   AthenaArray<Real> dt1_, dt2_, dt3_;  // scratch arrays used in NewTimeStep
   // scratch space used to compute fluxes
@@ -107,9 +103,6 @@ class Hydro {
   // 2D GR
   AthenaArray<Real> g_, gi_;       // metric and inverse, for some GR Riemann solvers
   AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
-
-  // self-gravity
-  AthenaArray<Real> gflx[3], gflx_old[3]; // gravity tensor (old Athena style)
 
   // fourth-order hydro
   // 4D scratch arrays
