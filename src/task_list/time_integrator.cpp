@@ -933,7 +933,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       AddTask(INT_HYD, CALC_HYDFLX);
     }
     if (NSCALARS > 0) {
-      AddTask(SRCTERM_HYD,(INT_HYD|INT_SCLR));
+      AddTask(SRCTERM_HYD,(INT_HYD|INT_SCLR|INT_CHM));
     } else {
       AddTask(SRCTERM_HYD,INT_HYD);
     }
@@ -969,15 +969,12 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       } else {
         AddTask(INT_SCLR,CALC_SCLRFLX);
       }
+      AddTask(INT_CHM,INT_SCLR);
       if (ORBITAL_ADVECTION) {
-        //TODO: Gong: why does this not have the following?
-        //AddTask(INT_CHM,INT_SCLR);
-        //AddTask(SEND_SCLR,INT_CHM);
         AddTask(SEND_SCLR,CALC_HYDORB);
         AddTask(RECV_SCLR,NONE);
         AddTask(SETB_SCLR,(RECV_SCLR|CALC_HYDORB));
       } else {
-        AddTask(INT_CHM,INT_SCLR);
         AddTask(SEND_SCLR,INT_CHM);
         AddTask(RECV_SCLR,NONE);
         AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
