@@ -74,7 +74,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
 
   // If STS RKL2, allocate additional memory registers
   if (STS_ENABLED) {
-    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl1");
+    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl2");
     if (sts_integrator == "rkl2") {
       u0.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
       fl_div.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
