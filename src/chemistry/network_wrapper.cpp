@@ -93,13 +93,15 @@ int NetworkWrapper::WrapRHS(const realtype t, const N_Vector y,
   return 0;
 }
 
-void NetworkWrapper::Jacobian(const Real t,
+void __attribute__((weak)) NetworkWrapper::Jacobian(const Real t,
                const Real y[NSCALARS+1], const Real fy[NSCALARS+1], 
                Real jac[NSCALARS+1][NSCALARS+1],
                Real tmp1[NSCALARS+1], Real tmp2[NSCALARS+1], Real tmp3[NSCALARS+1]) {
   std::stringstream msg;
   msg << "### FATAL ERROR in function NetworkWrapper::Jacobian: "
-      << "Jacobian not specified but used." << std::endl
-      << "specify Jacobian or set <chemistry> user_jac=0." << std::endl;
+      << "Jacobian not implemented but used." << std::endl
+      << "Please implement the Jacobian function or set <chemistry> user_jac=0." 
+      << std::endl;
   ATHENA_ERROR(msg);
+  return;
 }

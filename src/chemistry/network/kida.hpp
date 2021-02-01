@@ -140,12 +140,10 @@ private:
   int iph_H2_; 
   //2body reactions
   int n_2body_;
-  AthenaArray<int> in2body1_;
-  AthenaArray<int> in2body2_;
-  AthenaArray<int> out2body1_;
-  AthenaArray<int> out2body2_;
-  AthenaArray<int> out2body3_;
-  AthenaArray<int> out2body4_;
+  const int n_in2body_ = 2;
+  const int n_out2body_ = 4;
+  AthenaArray<int> in2body_;
+  AthenaArray<int> out2body_;
   AthenaArray<int> frml_2body_;
   AthenaArray<Real> a2body_; //alpha
   AthenaArray<Real> b2body_; //beta
