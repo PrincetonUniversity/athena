@@ -167,7 +167,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
 
   // Set the Jacobian routine to Jac (user-supplied)
 	if (user_jac) {
-		flag = CVDlsSetJacFn(cvode_mem_, pmy_spec_->chemnet.WrapJacobian);
+		flag = CVodeSetJacFn(cvode_mem_, pmy_spec_->chemnet.WrapJacobian);
 		CheckFlag(&flag, "CVDlsSetDenseJacFn", 1);
 	}
 

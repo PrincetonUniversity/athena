@@ -33,33 +33,44 @@ NetworkWrapper::NetworkWrapper() {}
 NetworkWrapper::~NetworkWrapper() {}
 
 int NetworkWrapper::WrapJacobian(const realtype t,
-                          const N_Vector y, const N_Vector fy, 
+                          const N_Vector y, const N_Vector ydot, 
                           SUNMatrix jac, void *user_data,
                           N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
   Real t1 = t;
-  //copy y and fy values
-  Real y1[NSCALARS+1];
-  Real fy1[NSCALARS+1];
-  for (int i=0; i<NSCALARS+1; i++) {
-		y1[i] = NV_Ith_S(y, i);
-		fy1[i] = NV_Ith_S(fy, i);
-  }
-  //temporary storage for return
-  Real jac1[NSCALARS+1][NSCALARS+1];
-  Real tmp11[NSCALARS+1];
-  Real tmp21[NSCALARS+1];
-  Real tmp31[NSCALARS+1];
-  NetworkWrapper *meptr = (NetworkWrapper*) user_data;
-  meptr->Jacobian(t1, y1, fy1, jac1, tmp11, tmp21, tmp31);
-  //set J, tmp1, tmp2, tmp3 to return
-  for (int i=0; i<NSCALARS+1; i++) {
-		NV_Ith_S(tmp1, i) = tmp11[i];
-		NV_Ith_S(tmp2, i) = tmp21[i];
-		NV_Ith_S(tmp3, i) = tmp31[i];
-  }
-  for (int i=0; i<NSCALARS+1; i++) {
-    for (int j=0; j<NSCALARS+1; j++) {
-      SM_ELEMENT_D(jac, i, j) = jac1[i][j];
+  //copy y and ydot values
+  if (NON_BAROTROPIC_EOS) {//non-isothermal case
+    Real y1[NSCALARS+1];
+    Real ydot1[NSCALARS+1];
+    for (int i=0; i<NSCALARS+1; i++) {
+      y1[i] = NV_Ith_S(y, i);
+      ydot1[i] = NV_Ith_S(ydot, i);
+    }
+    //temporary storage for return
+    Real jac1[NSCALARS+1][NSCALARS+1];
+    NetworkWrapper *meptr = (NetworkWrapper*) user_data;
+    meptr->Jacobian(t1, y1, ydot1, jac1);
+    //set J to return
+    for (int i=0; i<NSCALARS+1; i++) {
+      for (int j=0; j<NSCALARS+1; j++) {
+        SM_ELEMENT_D(jac, i, j) = jac1[i][j];
+      }
+    }
+  } else {//isothermal case
+    Real y1[NSCALARS];
+    Real ydot1[NSCALARS];
+    for (int i=0; i<NSCALARS; i++) {
+      y1[i] = NV_Ith_S(y, i);
+      ydot1[i] = NV_Ith_S(ydot, i);
+    }
+    //temporary storage for return
+    Real jac1[NSCALARS][NSCALARS];
+    NetworkWrapper *meptr = (NetworkWrapper*) user_data;
+    meptr->Jacobian_isothermal(t1, y1, ydot1, jac1);
+    //set J to return
+    for (int i=0; i<NSCALARS; i++) {
+      for (int j=0; j<NSCALARS; j++) {
+        SM_ELEMENT_D(jac, i, j) = jac1[i][j];
+      }
     }
   }
   return 0;
@@ -94,12 +105,23 @@ int NetworkWrapper::WrapRHS(const realtype t, const N_Vector y,
 }
 
 void __attribute__((weak)) NetworkWrapper::Jacobian(const Real t,
-               const Real y[NSCALARS+1], const Real fy[NSCALARS+1], 
-               Real jac[NSCALARS+1][NSCALARS+1],
-               Real tmp1[NSCALARS+1], Real tmp2[NSCALARS+1], Real tmp3[NSCALARS+1]) {
+               const Real y[NSCALARS+1], const Real ydot[NSCALARS+1], 
+               Real jac[NSCALARS+1][NSCALARS+1]) {
   std::stringstream msg;
   msg << "### FATAL ERROR in function NetworkWrapper::Jacobian: "
       << "Jacobian not implemented but used." << std::endl
+      << "Please implement the Jacobian function or set <chemistry> user_jac=0." 
+      << std::endl;
+  ATHENA_ERROR(msg);
+  return;
+}
+
+void __attribute__((weak)) NetworkWrapper::Jacobian_isothermal(const Real t,
+               const Real y[NSCALARS], const Real ydot[NSCALARS], 
+               Real jac[NSCALARS][NSCALARS]) {
+  std::stringstream msg;
+  msg << "### FATAL ERROR in function NetworkWrapper::Jacobian_isothermal: "
+      << "Jacobian for isothermal EOS not implemented but used." << std::endl
       << "Please implement the Jacobian function or set <chemistry> user_jac=0." 
       << std::endl;
   ATHENA_ERROR(msg);

@@ -44,9 +44,14 @@ public:
   //the dimension is NSCALSRS+1, because the last equation is energy equation
   //(Edot).
   virtual void Jacobian(const Real t,
-               const Real y[NSCALARS+1], const Real fy[NSCALARS+1], 
-               Real jac[NSCALARS+1][NSCALARS+1], Real tmp1[NSCALARS+1],
-               Real tmp2[NSCALARS+1], Real tmp3[NSCALARS+1]);
+                        const Real y[NSCALARS+1], const Real ydot[NSCALARS+1], 
+                        Real jac[NSCALARS+1][NSCALARS+1]);
+
+  //Jacobian for isothermal EOS. The dimentions are NSCALARS because the lack
+  //of energy equation
+  virtual void Jacobian_isothermal(const Real t, const Real y[NSCALARS],
+                                   const Real ydot[NSCALARS], 
+                                   Real jac[NSCALARS][NSCALARS]);
 
   //------------All functions below has to be overloaded------------
   // Note that the RHS and Jac does NOT have user_data. All parameters should

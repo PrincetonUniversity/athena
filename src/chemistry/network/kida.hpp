@@ -57,6 +57,11 @@ public:
   //(ED is the energy density)
   Real Edot(const Real t, const Real y[NSCALARS], const Real ED);
 
+  //Jacobian for isothermal EOS without the energy equation
+  void Jacobian_isothermal(const Real t, const Real y[NSCALARS],
+                           const Real ydot[NSCALARS], 
+                           Real jac[NSCALARS][NSCALARS]);
+
 private:
   PassiveScalars *pmy_spec_;
 	MeshBlock *pmy_mb_;
