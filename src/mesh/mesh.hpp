@@ -248,6 +248,11 @@ public:
                           bool is_coarse=false);
   //--
 
+  bool PointContained(Real const x, Real const y, Real const z);
+  Real PointCentralDistanceSquared(Real const x, Real const y, Real const z);
+  bool SphereIntersects(Real const Sx0, Real const Sy0, Real const Sz0,
+                        Real const radius);
+
 private:
   // data
   Real new_block_dt_, new_block_dt_hyperbolic_, new_block_dt_parabolic_,

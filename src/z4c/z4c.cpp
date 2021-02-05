@@ -205,10 +205,34 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
     "AwA_polarised_Gowdy_t0", 9.8753205829098);
 
   // wave-zone refinement test [disabled by default]
-  opt.wave_zone_level = pin->GetOrAddInteger("z4c", "wave_zone_level", 0);
-  opt.wave_zone_radius = pin->GetOrAddReal("z4c", "wave_zone_radius", 0.);
-  //---------------------------------------------------------------------------
+  opt.sphere_zone_number = pin->GetOrAddInteger("z4c", "sphere_zone_number", 0);
+  if (opt.sphere_zone_number > 0) {
+    opt.sphere_zone_levels.NewAthenaArray(opt.sphere_zone_number);
+    opt.sphere_zone_radii.NewAthenaArray(opt.sphere_zone_number);
 
+    for (int i=0; i<opt.sphere_zone_number; ++i) {
+      opt.sphere_zone_levels(i) = pin->GetOrAddInteger("z4c",
+        "sphere_zone_level_" + std::to_string(i), 0);
+      opt.sphere_zone_radii(i) = pin->GetOrAddReal("z4c",
+        "sphere_zone_radius_" + std::to_string(i), 0.);
+    }
+  }
+
+  // for puncture refinement
+  if (NPUNCT > 0) {
+    opt.puncture_levels.NewAthenaArray(NPUNCT);
+    opt.puncture_radii.NewAthenaArray(NPUNCT);
+
+    for (int i=0; i<opt.sphere_zone_number; ++i) {
+      opt.puncture_levels(i) = pin->GetOrAddInteger("z4c",
+        "puncture_level_" + std::to_string(i),
+        pin->GetOrAddInteger("mesh", "numlevel", 3));
+      opt.puncture_radii(i) = pin->GetOrAddReal("z4c",
+        "puncture_radius_" + std::to_string(i), 1.5);
+    }
+
+  }
+  //---------------------------------------------------------------------------
   // Set aliases
   SetADMAliases(storage.adm, adm);
   SetConstraintAliases(storage.con, con);

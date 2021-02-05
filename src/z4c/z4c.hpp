@@ -204,8 +204,12 @@ public:
     Real AwA_polarised_Gowdy_t0; // seed time for pG test
 
     // Wave-zone refinement
-    int wave_zone_level;
-    Real wave_zone_radius;
+    int sphere_zone_number;
+    AthenaArray<int> sphere_zone_levels;
+    AthenaArray<Real> sphere_zone_radii;
+    // Puncture refinement
+    AthenaArray<int> puncture_levels;
+    AthenaArray<Real> puncture_radii;
   } opt;
 
 

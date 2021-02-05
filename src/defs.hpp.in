@@ -131,6 +131,10 @@
 // control whether compact FD enabled
 #define @COMPACT_FD@
 
+// refinement strategy
+#define Z4C_REF_BOX_IN_BOX
+#define NO_Z4C_REF_BALL_AT_PUNCTURE
+
 // configure.py dict(definitions) Boolean string macros:
 // (these options have the latter (false) option as defaults, unless noted otherwise)
 // make use of FFT? (FFT or NO_FFT)

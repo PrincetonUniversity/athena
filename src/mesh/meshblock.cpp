@@ -826,3 +826,101 @@ void MeshBlock::RegisterMeshBlockData(FaceField &pvar_fc) {
 //   }
 //   return;
 // }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn bool MeshBlock::PointContained(Real const x, Real const y,
+//                                     Real const z)
+//  \brief Check whether a point is contained in the MeshBlock.
+bool MeshBlock::PointContained(Real const x, Real const y, Real const z) {
+
+  Real const mb_mi_x1 = block_size.x1min;
+  Real const mb_ma_x1 = block_size.x1max;
+
+  Real const mb_mi_x2 = block_size.x2min;
+  Real const mb_ma_x2 = block_size.x2max;
+
+  Real const mb_mi_x3 = block_size.x3min;
+  Real const mb_ma_x3 = block_size.x3max;
+
+  return ((mb_mi_x1 <= x) && (x <= mb_ma_x1) &&
+          (mb_mi_x2 <= y) && (y <= mb_ma_x2) &&
+          (mb_mi_x3 <= z) && (z <= mb_ma_x3));
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn Real MeshBlock::PointCentralDistanceSquared(Real const x, Real const y,
+//                                                  Real const z)
+//  \brief Squared distance from center of MeshBlock to some point.
+Real MeshBlock::PointCentralDistanceSquared(Real const x, Real const y,
+                                            Real const z) {
+
+  Real const mb_mi_x1 = block_size.x1min;
+  Real const mb_ma_x1 = block_size.x1max;
+
+  Real const mb_mi_x2 = block_size.x2min;
+  Real const mb_ma_x2 = block_size.x2max;
+
+  Real const mb_mi_x3 = block_size.x3min;
+  Real const mb_ma_x3 = block_size.x3max;
+
+  Real const mb_cx1 = mb_mi_x1 + (mb_ma_x1 - mb_mi_x1) / 2.;
+  Real const mb_cx2 = mb_mi_x2 + (mb_ma_x2 - mb_mi_x2) / 2.;
+  Real const mb_cx3 = mb_mi_x3 + (mb_ma_x3 - mb_mi_x3) / 2.;
+
+  return SQR(mb_cx1 - x) + SQR(mb_cx2 - y) + SQR(mb_cx3 - z);
+
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn bool MeshBlock::SphereIntersects(
+// Real const Sx0, Real const Sy0, Real const Sz0, Real const radius)
+//  \brief Check if some sphere intersects current MeshBlock
+bool MeshBlock::SphereIntersects(
+  Real const Sx0, Real const Sy0, Real const Sz0, Real const radius) {
+
+  // Check if center is contained in MeshBlock
+  if (PointContained(Sx0, Sy0, Sz0))
+    return true;
+
+  // We require the MeshBlock vertices
+  Real const mb_mi_x1 = block_size.x1min;
+  Real const mb_ma_x1 = block_size.x1max;
+
+  Real const mb_mi_x2 = block_size.x2min;
+  Real const mb_ma_x2 = block_size.x2max;
+
+  Real const mb_mi_x3 = block_size.x3min;
+  Real const mb_ma_x3 = block_size.x3max;
+
+  Real const Srad = SQR(radius);
+
+  if ((SQR(mb_mi_x1 - Sx0) + SQR(mb_mi_x2 - Sy0) + SQR(mb_mi_x3 - Sz0)) < Srad)
+    return true;
+
+  if ((SQR(mb_ma_x1 - Sx0) + SQR(mb_mi_x2 - Sy0) + SQR(mb_mi_x3 - Sz0)) < Srad)
+    return true;
+
+  if ((SQR(mb_mi_x1 - Sx0) + SQR(mb_ma_x2 - Sy0) + SQR(mb_mi_x3 - Sz0)) < Srad)
+    return true;
+
+  if ((SQR(mb_mi_x1 - Sx0) + SQR(mb_mi_x2 - Sy0) + SQR(mb_ma_x3 - Sz0)) < Srad)
+    return true;
+
+  if ((SQR(mb_ma_x1 - Sx0) + SQR(mb_ma_x2 - Sy0) + SQR(mb_ma_x3 - Sz0)) < Srad)
+    return true;
+
+  if ((SQR(mb_mi_x1 - Sx0) + SQR(mb_ma_x2 - Sy0) + SQR(mb_ma_x3 - Sz0)) < Srad)
+    return true;
+
+  if ((SQR(mb_ma_x1 - Sx0) + SQR(mb_mi_x2 - Sy0) + SQR(mb_ma_x3 - Sz0)) < Srad)
+    return true;
+
+  if ((SQR(mb_ma_x1 - Sx0) + SQR(mb_ma_x2 - Sy0) + SQR(mb_mi_x3 - Sz0)) < Srad)
+    return true;
+
+
+  return false;
+
+}
