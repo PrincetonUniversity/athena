@@ -45,13 +45,13 @@ public:
   //(Edot).
   virtual void Jacobian(const Real t,
                         const Real y[NSCALARS+1], const Real ydot[NSCALARS+1], 
-                        Real jac[NSCALARS+1][NSCALARS+1]);
+                        AthenaArray<Real> &jac);
 
   //Jacobian for isothermal EOS. The dimentions are NSCALARS because the lack
   //of energy equation
   virtual void Jacobian_isothermal(const Real t, const Real y[NSCALARS],
                                    const Real ydot[NSCALARS], 
-                                   Real jac[NSCALARS][NSCALARS]);
+                                   AthenaArray<Real> &jac);
 
   //------------All functions below has to be overloaded------------
   // Note that the RHS and Jac does NOT have user_data. All parameters should

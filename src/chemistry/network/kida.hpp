@@ -59,8 +59,7 @@ public:
 
   //Jacobian for isothermal EOS without the energy equation
   void Jacobian_isothermal(const Real t, const Real y[NSCALARS],
-                           const Real ydot[NSCALARS], 
-                           Real jac[NSCALARS][NSCALARS]);
+                           const Real ydot[NSCALARS], AthenaArray<Real> &jac);
 
 private:
   PassiveScalars *pmy_spec_;

@@ -1899,49 +1899,45 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED){
 
 void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
                                       const Real ydot[NSCALARS], 
-                                      Real jac[NSCALARS][NSCALARS]) {
-  //TODO: let's assume RHS is already called and the rates are already updated
-  //from UpdateRates(): this should be the case since ydot is an input
-  //parameter. Check this later and think about how often
-  //UpdateRates() has to be called.
-  //TODO: check Jacobian by comparing the numerical to the analytic (does this
-  //mean Jacobian can be kind of approximate and not exact?)
+                                      AthenaArray<Real> &jac) {
   //TODO: would the code run faster with AthenaArray jac for more efficient
   //indexing?
+  //TODO: check Jacobian by comparing the numerical to the analytic (does this
+  //mean Jacobian can be kind of approximate and not exact?)
     
 	Real rate = 0;
   //initialize TODO:check if this is necessary
   for (int i=0; i<NSCALARS; i++) {
     for (int j=0; j<NSCALARS; j++) {
-      jac[i][j] = 0.;
+      jac(i,j) = 0.;
     }
   }
 
   //cosmic ray reactions
   for (int i=0; i<n_cr_; i++) {
     rate = kcr_(i);
-    jac[incr_(i)][incr_(i)] -= rate;
-    jac[outcr1_(i)][incr_(i)] += rate;
-    jac[outcr2_(i)][incr_(i)] += rate;
+    jac(incr_(i),incr_(i)) -= rate;
+    jac(outcr1_(i),incr_(i)) += rate;
+    jac(outcr2_(i),incr_(i)) += rate;
     if (outcr3_(i) >= 0) {
-      jac[outcr3_(i)][incr_(i)] += rate;
+      jac(outcr3_(i),incr_(i)) += rate;
     }
   }
 
   //cosmic ray induced photo reactions
   for (int i=0; i<n_crp_; i++) {
     rate = kcrp_(i);
-    jac[incrp_(i)][incrp_(i)] -= rate;
-    jac[outcrp1_(i)][incrp_(i)] += rate;
-    jac[outcrp2_(i)][incrp_(i)] += rate;
+    jac(incrp_(i),incrp_(i)) -= rate;
+    jac(outcrp1_(i),incrp_(i)) += rate;
+    jac(outcrp2_(i),incrp_(i)) += rate;
   }
 
   //FUV photo-dissociation and photo-ionisation
   for (int i=0; i<n_ph_; i++) {
     rate = kph_(i);
-    jac[inph_(i)][inph_(i)] -= rate;
-    jac[outph1_(i)][inph_(i)] += rate;
-    jac[outph2_(i)][inph_(i)] += rate;
+    jac(inph_(i),inph_(i)) -= rate;
+    jac(outph1_(i),inph_(i)) += rate;
+    jac(outph2_(i),inph_(i)) += rate;
   }
 
   //2body reactions
@@ -1953,12 +1949,12 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
     }
     for (int jin=0; jin<n_in2body_; jin++) {
       if (in2body_(i, jin) >= 0) {
-        jac[in2body_(i, jin)][in2body_(i, 0)] -= rate;
+        jac(in2body_(i, jin),in2body_(i, 0)) -= rate;
       }
     }
     for (int jout=0; jout<n_out2body_; jout++) {
       if (out2body_(i, jout) >= 0) {
-        jac[out2body_(i, jout)][in2body_(i, 0)] += rate;
+        jac(out2body_(i, jout),in2body_(i, 0)) += rate;
       }
     }
     //df/dy2
@@ -1968,12 +1964,12 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
     }
     for (int jin=0; jin<n_in2body_; jin++) {
       if (in2body_(i, jin) >= 0) {
-        jac[in2body_(i, jin)][in2body_(i, 1)] -= rate;
+        jac(in2body_(i, jin),in2body_(i, 1)) -= rate;
       }
     }
     for (int jout=0; jout<n_out2body_; jout++) {
       if (out2body_(i, jout) >= 0) {
-        jac[out2body_(i, jout)][in2body_(i, 1)] += rate;
+        jac(out2body_(i, jout),in2body_(i, 1)) += rate;
       }
     }
   }
@@ -1985,39 +1981,39 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
     if (y[in2bodytr1_(i)] < 0 && y[in2bodytr2_(i)] < 0) {
       rate *= -1.;
     }
-    jac[in2bodytr1_(i)][in2bodytr1_(i)] -= rate;
-    jac[in2bodytr2_(i)][in2bodytr1_(i)] -= rate;
-    jac[out2bodytr1_(i)][in2bodytr1_(i)] += rate;
+    jac(in2bodytr1_(i),in2bodytr1_(i)) -= rate;
+    jac(in2bodytr2_(i),in2bodytr1_(i)) -= rate;
+    jac(out2bodytr1_(i),in2bodytr1_(i)) += rate;
     if (out2bodytr2_(i) >= 0) {
-      jac[out2bodytr2_(i)][in2bodytr1_(i)] += rate;
+      jac(out2bodytr2_(i),in2bodytr1_(i)) += rate;
     }
     if (out2bodytr3_(i) >= 0) {
-      jac[out2bodytr3_(i)][in2bodytr1_(i)] += rate;
+      jac(out2bodytr3_(i),in2bodytr1_(i)) += rate;
     }
     //df/dy2
     rate =  k2bodytr_(i) * y[in2bodytr1_(i)] * nH_;
     if (y[in2bodytr1_(i)] < 0 && y[in2bodytr2_(i)] < 0) {
       rate *= -1.;
     }
-    jac[in2bodytr1_(i)][in2bodytr2_(i)] -= rate;
-    jac[in2bodytr2_(i)][in2bodytr2_(i)] -= rate;
-    jac[out2bodytr1_(i)][in2bodytr2_(i)] += rate;
+    jac(in2bodytr1_(i),in2bodytr2_(i)) -= rate;
+    jac(in2bodytr2_(i),in2bodytr2_(i)) -= rate;
+    jac(out2bodytr1_(i),in2bodytr2_(i)) += rate;
     if (out2bodytr2_(i) >= 0) {
-      jac[out2bodytr2_(i)][in2bodytr2_(i)] += rate;
+      jac(out2bodytr2_(i),in2bodytr2_(i)) += rate;
     }
     if (out2bodytr3_(i) >= 0) {
-      jac[out2bodytr3_(i)][in2bodytr2_(i)] += rate;
+      jac(out2bodytr3_(i),in2bodytr2_(i)) += rate;
     }
   }
 
   //grain assisted reactions
   for (int i=0; i<n_gr_; i++) {
     rate = kgr_(i);
-    jac[ingr1_(i)][ingr1_(i)] -= rate;
+    jac(ingr1_(i),ingr1_(i)) -= rate;
     if (ingr2_(i) >= 0) {
-      jac[ingr2_(i)][ingr1_(i)] -= rate;
+      jac(ingr2_(i),ingr1_(i)) -= rate;
     }
-    jac[outgr_(i)][ingr1_(i)] += rate;
+    jac(outgr_(i),ingr1_(i)) += rate;
   }
 
   //grain collision reactions
@@ -2029,12 +2025,12 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
     }
     for (int jin=0; jin<n_ingc_; jin++) {
       if (ingc_(i, jin) >= 0) {
-        jac[ingc_(i, jin)][ingc_(i, 0)] -= rate;
+        jac(ingc_(i, jin),ingc_(i, 0)) -= rate;
       }
     }
     for (int jout=0; jout<n_outgc_; jout++) {
       if (outgc_(i, jout) >= 0) {
-        jac[outgc_(i, jout)][ingc_(i, 0)] += rate;
+        jac(outgc_(i, jout),ingc_(i, 0)) += rate;
       }
     }
     //df/dy2
@@ -2044,12 +2040,12 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
     }
     for (int jin=0; jin<n_ingc_; jin++) {
       if (ingc_(i, jin) >= 0) {
-        jac[ingc_(i, jin)][ingc_(i, 1)] -= rate;
+        jac(ingc_(i, jin),ingc_(i, 1)) -= rate;
       }
     }
     for (int jout=0; jout<n_outgc_; jout++) {
       if (outgc_(i, jout) >= 0) {
-        jac[outgc_(i, jout)][ingc_(i, 1)] += rate;
+        jac(outgc_(i, jout),ingc_(i, 1)) += rate;
       }
     }
   }
@@ -2059,7 +2055,7 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
   //set unit for jacobian
   for (int i=0; i<NSCALARS; i++) {
     for (int j=0; j<NSCALARS; j++) {
-      jac[i][j] *= unit_time_in_s_;
+      jac(i,j) *= unit_time_in_s_;
     }
   }
   

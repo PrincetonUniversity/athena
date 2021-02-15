@@ -46,13 +46,14 @@ int NetworkWrapper::WrapJacobian(const realtype t,
       ydot1[i] = NV_Ith_S(ydot, i);
     }
     //temporary storage for return
-    Real jac1[NSCALARS+1][NSCALARS+1];
+    AthenaArray<Real> jac1;
+    jac1.NewAthenaArray(NSCALARS+1,NSCALARS+1);
     NetworkWrapper *meptr = (NetworkWrapper*) user_data;
     meptr->Jacobian(t1, y1, ydot1, jac1);
     //set J to return
     for (int i=0; i<NSCALARS+1; i++) {
       for (int j=0; j<NSCALARS+1; j++) {
-        SM_ELEMENT_D(jac, i, j) = jac1[i][j];
+        SM_ELEMENT_D(jac, i, j) = jac1(i,j);
       }
     }
   } else {//isothermal case
@@ -63,13 +64,14 @@ int NetworkWrapper::WrapJacobian(const realtype t,
       ydot1[i] = NV_Ith_S(ydot, i);
     }
     //temporary storage for return
-    Real jac1[NSCALARS][NSCALARS];
+    AthenaArray<Real> jac1;
+    jac1.NewAthenaArray(NSCALARS, NSCALARS);
     NetworkWrapper *meptr = (NetworkWrapper*) user_data;
     meptr->Jacobian_isothermal(t1, y1, ydot1, jac1);
     //set J to return
     for (int i=0; i<NSCALARS; i++) {
       for (int j=0; j<NSCALARS; j++) {
-        SM_ELEMENT_D(jac, i, j) = jac1[i][j];
+        SM_ELEMENT_D(jac, i, j) = jac1(i,j);
       }
     }
   }
@@ -106,7 +108,7 @@ int NetworkWrapper::WrapRHS(const realtype t, const N_Vector y,
 
 void __attribute__((weak)) NetworkWrapper::Jacobian(const Real t,
                const Real y[NSCALARS+1], const Real ydot[NSCALARS+1], 
-               Real jac[NSCALARS+1][NSCALARS+1]) {
+               AthenaArray<Real> &jac) {
   std::stringstream msg;
   msg << "### FATAL ERROR in function NetworkWrapper::Jacobian: "
       << "Jacobian not implemented but used." << std::endl
@@ -118,7 +120,7 @@ void __attribute__((weak)) NetworkWrapper::Jacobian(const Real t,
 
 void __attribute__((weak)) NetworkWrapper::Jacobian_isothermal(const Real t,
                const Real y[NSCALARS], const Real ydot[NSCALARS], 
-               Real jac[NSCALARS][NSCALARS]) {
+               AthenaArray<Real> &jac) {
   std::stringstream msg;
   msg << "### FATAL ERROR in function NetworkWrapper::Jacobian_isothermal: "
       << "Jacobian for isothermal EOS not implemented but used." << std::endl
