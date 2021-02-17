@@ -220,10 +220,14 @@ private:
   void InitializeReactions(); //set up coefficients of reactions
   void UpdateRates(const Real y[NSCALARS], const Real E); //reaction rates
   void UpdateRatesSpecial(const Real y[NSCALARS], const Real E); //formula = 7
+  void UpdateJacobianSpecial(const Real y[NSCALARS], const Real E,
+                             AthenaArray<Real> &jac); //formula = 7
   ReactionType SortReaction(KidaReaction* pr) const;
   void CheckReaction(KidaReaction reaction);
   void PrintProperties() const; //print out reactions and rates, for debug
   void OutputRates(FILE *pf) const;//output reaction rates
+  //output jacobian
+  void OutputJacobian(FILE *pf, const AthenaArray<Real> &jac) const;
   //set gradients of v and nH for CO cooling
   void SetGrad_v(const int k, const int j, const int i); 
 

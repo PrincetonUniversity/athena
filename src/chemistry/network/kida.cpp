@@ -269,6 +269,20 @@ ChemNetwork::~ChemNetwork() {
   FILE *pf = fopen("chem_network.dat", "w");
   OutputRates(pf);
   fclose(pf);
+  //TODO: test Jacobian: this can be deleted later
+  const Real t=0;
+  Real y[NSCALARS];
+  Real ydot[NSCALARS];
+  AthenaArray<Real> jac_analytic;
+  for (int i=0; i<NSCALARS; i++) {
+    y[i] = float(i) / float(NSCALARS);
+    ydot[i] = 0;
+  }
+  jac_analytic.NewAthenaArray(NSCALARS, NSCALARS);
+  Jacobian_isothermal(t, y, ydot, jac_analytic);
+  FILE *pf1 = fopen("jac_analytic.dat", "w");
+  OutputJacobian(pf1, jac_analytic);
+  fclose(pf1);
 }
 
 void ChemNetwork::InitializeReactions() {
@@ -1450,6 +1464,17 @@ void ChemNetwork::OutputRates(FILE *pf) const {
   return;
 }
 
+void ChemNetwork::OutputJacobian(FILE *pf, const AthenaArray<Real> &jac) const {
+  const int dim = jac.GetDim1();
+  for (int i=0; i<dim; i++) {
+    for (int j=0; j<dim; j++) {
+      fprintf(pf, "%12.4e ", jac(i,j));
+    }
+      fprintf(pf, "\n");
+  }
+  return;
+}
+
 void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   Real rho, rho_floor, rad_sum;
   const int nang = pmy_mb_->prad->nang;
@@ -1900,8 +1925,6 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED){
 void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
                                       const Real ydot[NSCALARS], 
                                       AthenaArray<Real> &jac) {
-  //TODO: would the code run faster with AthenaArray jac for more efficient
-  //indexing?
   //TODO: check Jacobian by comparing the numerical to the analytic (does this
   //mean Jacobian can be kind of approximate and not exact?)
     
@@ -2050,7 +2073,8 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
     }
   }
   
-  //TODO: special reactions with frml=7 not implemented yet
+  //special reactions with frml=7
+  UpdateJacobianSpecial(y, 0., jac);
 
   //set unit for jacobian
   for (int i=0; i<NSCALARS; i++) {
@@ -2097,6 +2121,13 @@ void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
 //default: no special rates
 void __attribute__((weak)) ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS],
                                                            const Real E) {
+  // do nothing
+  return;
+}
+
+//default: no special rates, and therefore no special terms for Jacobian
+void __attribute__((weak)) ChemNetwork::UpdateJacobianSpecial(
+               const Real y[NSCALARS], const Real E, AthenaArray<Real> &jac) {
   // do nothing
   return;
 }

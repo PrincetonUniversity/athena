@@ -193,6 +193,60 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   return;
 }
 
+void ChemNetwork::UpdateJacobianSpecial(const Real y[NSCALARS], const Real E, 
+                                        AthenaArray<Real> &jac) {
+  if (!NON_BAROTROPIC_EOS) { //isothermal
+    Real T = temperature_;
+    //cap T above some minimum temperature
+    if (T < temp_min_rates_) {
+      T = temp_min_rates_;
+    } 
+    const Real temp_coll = 7.0e2;
+    const int i_H2 = ispec_map_["H2"];
+    const int i_H = ispec_map_["H"];
+    const Real y_H2 = y[i_H2];
+    const Real y_H = y[i_H];
+    const Real xi = rad_(index_cr_);
+    Real rate = 0.;
+    //(1) H + CR -> H+ + e-
+    const int id1 = id7map_(1);
+    const Real dfdyH = 1.5;
+    const Real dfdyH2 = 2.3;
+    rate = y_H * xi * dfdyH;
+    jac(incr_(id1),i_H) -= rate;
+    jac(outcr1_(id1),i_H) += rate;
+    jac(outcr2_(id1),i_H) += rate;
+    rate = y_H * xi * dfdyH2; //cross term
+    jac(incr_(id1),i_H2) -= rate;
+    jac(outcr1_(id1),i_H2) += rate;
+    jac(outcr2_(id1),i_H2) += rate;
+    //(2) H2 + CR -> H2+ + e-
+    const int id2 = id7map_(2);
+    rate = 2. * y_H2 * xi * dfdyH2;
+    jac(incr_(id2),i_H2) -= rate;
+    jac(outcr1_(id2),i_H2) += rate;
+    jac(outcr2_(id2),i_H2) += rate;
+    rate = 2. * y_H2 * xi * dfdyH; //cross term
+    jac(incr_(id2),i_H) -= rate;
+    jac(outcr1_(id2),i_H) += rate;
+    jac(outcr2_(id2),i_H) += rate;
+    if (T > temp_coll) { //collisional dissociation reactions
+      std::stringstream msg; //error message
+      msg << "### FATAL ERROR in ChemNetwork UpdateJacobianSpecial [ChemNetwork]: "
+        << "T > " << temp_coll 
+        << ": collisional dissociation terms not implemented yet." << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    
+  } else { //non-isothermal, include temperature dependence
+    std::stringstream msg; //error message
+    msg << "### FATAL ERROR in ChemNetwork UpdateJacobianSpecial [ChemNetwork]: "
+      << "Non-isothermal case not implemented yet." << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  return;
+}
+
 Real CII_rec_rate(const Real temp) {
   Real A, B, T0, T1, C, T2, BN, term1, term2, alpharr, alphadr;
   A = 2.995e-9;
