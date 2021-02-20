@@ -62,7 +62,7 @@ void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
         Real phis = ir1*mpcoeff(0)
           + ir3*(mpcoeff(1)*y + mpcoeff(2)*z + mpcoeff(3)*x)
           + ir5*(mpcoeff(4)*xy + mpcoeff(5)*yz + (3.0*z2-r2)*mpcoeff(6)
-               + mpcoeff(7)*zx + mpcoeff(8)*0.5*(x2-y2));
+               + mpcoeff(7)*zx + mpcoeff(8)*0.5*(x2-y2))
           + ir7*(y*tx2my2*mpcoeff(9) + x*x2mty2*mpcoeff(15)
                + xy*z*mpcoeff(10) + z*hx2my2*mpcoeff(14)
                + (5.0*z2-r2)*(y*mpcoeff(11) + x*mpcoeff(13))
@@ -124,7 +124,7 @@ void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
         Real phis = ir1*mpcoeff(0)
           + ir3*(mpcoeff(1)*y + mpcoeff(2)*z + mpcoeff(3)*x)
           + ir5*(mpcoeff(4)*xy + mpcoeff(5)*yz + (3.0*z2-r2)*mpcoeff(6)
-               + mpcoeff(7)*zx + mpcoeff(8)*0.5*(x2-y2));
+               + mpcoeff(7)*zx + mpcoeff(8)*0.5*(x2-y2))
           + ir7*(y*tx2my2*mpcoeff(9) + x*x2mty2*mpcoeff(15)
                + xy*z*mpcoeff(10) + z*hx2my2*mpcoeff(14)
                + (5.0*z2-r2)*(y*mpcoeff(11) + x*mpcoeff(13))
@@ -185,7 +185,7 @@ void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
         Real phis = ir1*mpcoeff(0)
           + ir3*(mpcoeff(1)*y + mpcoeff(2)*z + mpcoeff(3)*x)
           + ir5*(mpcoeff(4)*xy + mpcoeff(5)*yz + (3.0*z2-r2)*mpcoeff(6)
-               + mpcoeff(7)*zx + mpcoeff(8)*0.5*(x2-y2));
+               + mpcoeff(7)*zx + mpcoeff(8)*0.5*(x2-y2))
           + ir7*(y*tx2my2*mpcoeff(9) + x*x2mty2*mpcoeff(15)
                + xy*z*mpcoeff(10) + z*hx2my2*mpcoeff(14)
                + (5.0*z2-r2)*(y*mpcoeff(11) + x*mpcoeff(13))
@@ -246,7 +246,7 @@ void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
         Real phis = ir1*mpcoeff(0)
           + ir3*(mpcoeff(1)*y + mpcoeff(2)*z + mpcoeff(3)*x)
           + ir5*(mpcoeff(4)*xy + mpcoeff(5)*yz + (3.0*z2-r2)*mpcoeff(6)
-               + mpcoeff(7)*zx + mpcoeff(8)*0.5*(x2-y2));
+               + mpcoeff(7)*zx + mpcoeff(8)*0.5*(x2-y2))
           + ir7*(y*tx2my2*mpcoeff(9) + x*x2mty2*mpcoeff(15)
                + xy*z*mpcoeff(10) + z*hx2my2*mpcoeff(14)
                + (5.0*z2-r2)*(y*mpcoeff(11) + x*mpcoeff(13))
@@ -305,7 +305,7 @@ void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
         Real phis = ir1*mpcoeff(0)
           + ir3*(mpcoeff(1)*y + mpcoeff(2)*z + mpcoeff(3)*x)
           + ir5*(mpcoeff(4)*xy + mpcoeff(5)*yz + (3.0*z2-r2)*mpcoeff(6)
-               + mpcoeff(7)*zx + mpcoeff(8)*0.5*(x2-y2));
+               + mpcoeff(7)*zx + mpcoeff(8)*0.5*(x2-y2))
           + ir7*(y*tx2my2*mpcoeff(9) + x*x2mty2*mpcoeff(15)
                + xy*z*mpcoeff(10) + z*hx2my2*mpcoeff(14)
                + (5.0*z2-r2)*(y*mpcoeff(11) + x*mpcoeff(13))
@@ -364,7 +364,7 @@ void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
         Real phis = ir1*mpcoeff(0)
           + ir3*(mpcoeff(1)*y + mpcoeff(2)*z + mpcoeff(3)*x)
           + ir5*(mpcoeff(4)*xy + mpcoeff(5)*yz + (3.0*z2-r2)*mpcoeff(6)
-               + mpcoeff(7)*zx + mpcoeff(8)*0.5*(x2-y2));
+               + mpcoeff(7)*zx + mpcoeff(8)*0.5*(x2-y2))
           + ir7*(y*tx2my2*mpcoeff(9) + x*x2mty2*mpcoeff(15)
                + xy*z*mpcoeff(10) + z*hx2my2*mpcoeff(14)
                + (5.0*z2-r2)*(y*mpcoeff(11) + x*mpcoeff(13))

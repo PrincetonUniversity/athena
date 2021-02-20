@@ -50,7 +50,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   // using Gravity as an example of: containing full object members instead of pointer
-  // memebers, construting BoundaryVariaable composite obj (no default ctor) in Gravity
+  // memebers, construting BoundaryVariable composite obj (no default ctor) in Gravity
   // ctor initializer list, avoiding dynamically-managed memory and the need for a
   // user-provided dtor.
 
