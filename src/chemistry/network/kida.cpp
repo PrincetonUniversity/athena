@@ -269,20 +269,28 @@ ChemNetwork::~ChemNetwork() {
   FILE *pf = fopen("chem_network.dat", "w");
   OutputRates(pf);
   fclose(pf);
-  //TODO: test Jacobian: this can be deleted later
+  //TODO: test Jacobian: this can be deleted later or put a debug macro
   const Real t=0;
   Real y[NSCALARS];
   Real ydot[NSCALARS];
   AthenaArray<Real> jac_analytic;
+  AthenaArray<Real> jac_numerical;
   for (int i=0; i<NSCALARS; i++) {
-    y[i] = float(i) / float(NSCALARS);
+    y[i] = float(i) / float(10*NSCALARS) + 0.1;
     ydot[i] = 0;
   }
+  //analytic jacobian
   jac_analytic.NewAthenaArray(NSCALARS, NSCALARS);
   Jacobian_isothermal(t, y, ydot, jac_analytic);
   FILE *pf1 = fopen("jac_analytic.dat", "w");
   OutputJacobian(pf1, jac_analytic);
   fclose(pf1);
+  //numerical jacobian
+  jac_numerical.NewAthenaArray(NSCALARS, NSCALARS);
+  Jacobian_isothermal_numerical(t, y, ydot, jac_numerical);
+  FILE *pf2 = fopen("jac_numerical.dat", "w");
+  OutputJacobian(pf2, jac_numerical);
+  fclose(pf2);
 }
 
 void ChemNetwork::InitializeReactions() {
@@ -749,7 +757,7 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
 
 	//cosmic ray induced photo reactions
 	for (int i=0; i<n_crp_; i++) {
-		kcrp_(i) = kcrp_base_(i) * rad_(index_cr_) * 2*y_H2;
+		kcrp_(i) = kcrp_base_(i) * rad_(index_cr_) * 2.*y_H2;
 	}
 
 	//FUV reactions
@@ -1929,6 +1937,8 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
   //mean Jacobian can be kind of approximate and not exact?)
     
 	Real rate = 0;
+  const int i_H2 = ispec_map_["H2"];
+  const Real xi = rad_(index_cr_);
   //initialize TODO:check if this is necessary
   for (int i=0; i<NSCALARS; i++) {
     for (int j=0; j<NSCALARS; j++) {
@@ -1953,6 +1963,10 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
     jac(incrp_(i),incrp_(i)) -= rate;
     jac(outcrp1_(i),incrp_(i)) += rate;
     jac(outcrp2_(i),incrp_(i)) += rate;
+    rate = y[incrp_(i)] * kcrp_base_(i) * xi * 2.;
+    jac(incrp_(i),i_H2) -= rate;
+    jac(outcrp1_(i),i_H2) += rate;
+    jac(outcrp2_(i),i_H2) += rate;
   }
 
   //FUV photo-dissociation and photo-ionisation
@@ -2083,6 +2097,34 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
     }
   }
   
+  return;
+}
+
+void ChemNetwork::Jacobian_isothermal_numerical(const Real t, 
+    const Real y[NSCALARS], const Real ydot[NSCALARS], AthenaArray<Real> &jac) {
+  const Real dy = 1e-2;
+  Real y1[NSCALARS];
+  Real y2[NSCALARS];
+  Real ydot1[NSCALARS];
+  Real ydot2[NSCALARS];
+  Real eps[NSCALARS];
+  for (int i=0; i<NSCALARS; i++) {
+    eps[i] = dy;
+  }
+  for (int i=0; i<NSCALARS; i++) {
+    for (int j=0; j<NSCALARS; j++) {
+      for (int k=0; k<NSCALARS; k++) {
+        y1[k] = y[k];
+        y2[k] = y[k];
+      }
+      y1[j] -= eps[j];
+      y2[j] += eps[j];
+      //TODO: call RHS and calculate Jacobian
+      RHS(t, y1, 0., ydot1);
+      RHS(t, y2, 0., ydot2);
+      jac(i, j) = (ydot2[i] - ydot1[i])/(2.*eps[j]);
+    }
+  }
   return;
 }
 

@@ -226,7 +226,11 @@ private:
   void CheckReaction(KidaReaction reaction);
   void PrintProperties() const; //print out reactions and rates, for debug
   void OutputRates(FILE *pf) const;//output reaction rates
-  //output jacobian
+  //calculate Jacobian with numerical differentiation 
+  void Jacobian_isothermal_numerical(const Real t, const Real y[NSCALARS],
+                                     const Real ydot[NSCALARS], 
+                                     AthenaArray<Real> &jac);
+  //output Jacobian
   void OutputJacobian(FILE *pf, const AthenaArray<Real> &jac) const;
   //set gradients of v and nH for CO cooling
   void SetGrad_v(const int k, const int j, const int i); 
