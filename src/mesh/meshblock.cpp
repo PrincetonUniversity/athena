@@ -304,8 +304,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   // load hydro and field data
   std::memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
-  // load it into the other memory register(s) too
-  std::memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
   os += phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
     std::memcpy(phydro->w.data(), &(mbdata[os]), phydro->w.GetSizeInBytes());
@@ -315,21 +313,16 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
   if (MAGNETIC_FIELDS_ENABLED) {
     std::memcpy(pfield->b.x1f.data(), &(mbdata[os]), pfield->b.x1f.GetSizeInBytes());
-    std::memcpy(pfield->b1.x1f.data(), &(mbdata[os]), pfield->b1.x1f.GetSizeInBytes());
     os += pfield->b.x1f.GetSizeInBytes();
     std::memcpy(pfield->b.x2f.data(), &(mbdata[os]), pfield->b.x2f.GetSizeInBytes());
-    std::memcpy(pfield->b1.x2f.data(), &(mbdata[os]), pfield->b1.x2f.GetSizeInBytes());
     os += pfield->b.x2f.GetSizeInBytes();
     std::memcpy(pfield->b.x3f.data(), &(mbdata[os]), pfield->b.x3f.GetSizeInBytes());
-    std::memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
     os += pfield->b.x3f.GetSizeInBytes();
   }
 
   // (conserved variable) Passive scalars:
   if (NSCALARS > 0) {
     std::memcpy(pscalars->s.data(), &(mbdata[os]), pscalars->s.GetSizeInBytes());
-    // load it into the other memory register(s) too
-    std::memcpy(pscalars->s1.data(), &(mbdata[os]), pscalars->s1.GetSizeInBytes());
     os += pscalars->s.GetSizeInBytes();
   }
 
