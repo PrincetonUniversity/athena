@@ -33,7 +33,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
     four_pi_G(pmb->pmy_mesh->four_pi_G_),
     output_defect(false),
-    gbvar(pmb, &phi, nullptr, empty_flux) {
+    gbvar(pmb, &phi, nullptr, empty_flux, false) {
   if (four_pi_G == 0.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Gravity::Gravity" << std::endl

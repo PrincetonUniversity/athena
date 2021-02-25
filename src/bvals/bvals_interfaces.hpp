@@ -303,7 +303,7 @@ class BoundaryPhysics {
 class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
                          public BoundaryPhysics {
  public:
-  explicit BoundaryVariable(MeshBlock *pmb);
+  explicit BoundaryVariable(MeshBlock *pmb, bool fflux);
   virtual ~BoundaryVariable() = default;
 
   // (usuallly the std::size_t unsigned integer type)
@@ -329,6 +329,7 @@ class BoundaryVariable : public BoundaryCommunication, public BoundaryBuffer,
   Mesh *pmy_mesh_;
   BoundaryValues *pbval_;  // ptr to BoundaryValues that aggregates these
                            // BoundaryVariable objects
+  bool fflux_;
 
   void CopyVariableBufferSameProcess(NeighborBlock& nb, int ssize);
   void CopyFluxCorrectionBufferSameProcess(NeighborBlock& nb, int ssize);
