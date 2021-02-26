@@ -276,7 +276,7 @@ ChemNetwork::~ChemNetwork() {
   AthenaArray<Real> jac_analytic;
   AthenaArray<Real> jac_numerical;
   for (int i=0; i<NSCALARS; i++) {
-    y[i] = float(i) / float(10*NSCALARS) + 0.1;
+    y[i] = 0.1;
     ydot[i] = 0;
   }
   //analytic jacobian
@@ -1937,6 +1937,8 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
   //mean Jacobian can be kind of approximate and not exact?)
     
 	Real rate = 0;
+  Real y_ices, Nl; //for desorption reactions
+  const Real eps = 1e-50;
   const int i_H2 = ispec_map_["H2"];
   const Real xi = rad_(index_cr_);
   //initialize TODO:check if this is necessary
@@ -2044,6 +2046,16 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
   }
 
   //grain assisted reactions
+  //desorption reactions: dependence on ice thickness
+  y_ices = 0; //total ice abundance
+  for (int i=0; i<nices_; i++) {
+    y_ices += y[id_ices_(i)];
+  }
+  if (x_d_ < eps) { //control for very small dust abundance
+    Nl = 0.;
+  } else {
+    Nl = y_ices / (6.0e15*M_PI*a_d_*a_d_*x_d_); //number of layers
+  }
   for (int i=0; i<n_gr_; i++) {
     rate = kgr_(i);
     jac(ingr1_(i),ingr1_(i)) -= rate;
@@ -2051,6 +2063,17 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
       jac(ingr2_(i),ingr1_(i)) -= rate;
     }
     jac(outgr_(i),ingr1_(i)) += rate;
+    if (frml_gr_(i) == 10 && Nl > 1.) {//desorption
+      rate = - kgr_(i)*y[ingr1_(i)]/y_ices;
+      for (int j=0; j<nices_; j++) {
+        jac(ingr1_(i),id_ices_(j)) -= rate;
+        if (ingr2_(i) >= 0) {
+          jac(ingr2_(i),id_ices_(j)) -= rate;
+        }
+        jac(outgr_(i),id_ices_(j)) += rate;
+
+      }
+    } 
   }
 
   //grain collision reactions
@@ -2102,7 +2125,7 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
 
 void ChemNetwork::Jacobian_isothermal_numerical(const Real t, 
     const Real y[NSCALARS], const Real ydot[NSCALARS], AthenaArray<Real> &jac) {
-  const Real dy = 1e-2;
+  const Real dy = 1e-3;
   Real y1[NSCALARS];
   Real y2[NSCALARS];
   Real ydot1[NSCALARS];
