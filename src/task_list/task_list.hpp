@@ -22,7 +22,6 @@
 class Mesh;
 class MeshBlock;
 class TaskList;
-class FFTGravitySolverTaskList;
 class TaskID;
 
 //! \todo (felker):
