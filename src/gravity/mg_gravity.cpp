@@ -24,6 +24,7 @@
 #include "../mesh/mesh.hpp"
 #include "../multigrid/multigrid.hpp"
 #include "../parameter_input.hpp"
+#include "../task_list/grav_task_list.hpp"
 #include "gravity.hpp"
 #include "mg_gravity.hpp"
 
@@ -44,6 +45,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
   eps_ = pin->GetOrAddReal("gravity", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("gravity", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("gravity", "fas", ffas_);
+  ffill_ghost_ = pin->GetOrAddBoolean("gravity", "fillghost", false);
   std::string m = pin->GetOrAddString("gravity", "mgmode", "none");
   std::transform(m.begin(), m.end(), m.begin(), ::tolower);
   if (m == "fmg") {
@@ -106,6 +108,8 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
 
   // Allocate the root multigrid
   mgroot_ = new MGGravity(this, nullptr);
+
+  gtlist_ = new GravityBoundaryTaskList(pin, pm);
 }
 
 
@@ -114,6 +118,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
 //! \brief MGGravityDriver destructor
 
 MGGravityDriver::~MGGravityDriver() {
+  delete gtlist_;
   delete mgroot_;
   delete mgtlist_;
 }
@@ -179,6 +184,10 @@ void MGGravityDriver::Solve(int stage) {
     if(pgrav->output_defect)
       pmg->RetrieveDefect(pgrav->def, 0, NGHOST);
   }
+
+  if (ffill_ghost_)
+    gtlist_->DoTaskListOneStage(pmy_mesh_, stage);
+
   return;
 }
 

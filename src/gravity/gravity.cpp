@@ -18,6 +18,8 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
+#include "../bvals/bvals_interfaces.hpp"
 #include "../bvals/cc/bvals_cc.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
@@ -30,10 +32,13 @@
 // TODO(felker): change "MeshBlock *pmb" to reference member, set in initializer list
 Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), phi(pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    coarse_phi(NHYDRO, pmb->ncc3, pmb->ncc2, pmb->ncc1,
+              (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
+               AthenaArray<Real>::DataStatus::empty)),
     empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
     four_pi_G(pmb->pmy_mesh->four_pi_G_),
     output_defect(false),
-    gbvar(pmb, &phi, nullptr, empty_flux, false) {
+    gbvar(pmb, &phi, &coarse_phi, empty_flux, false) {
   if (four_pi_G == 0.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
@@ -57,4 +62,5 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
   // Enroll CellCenteredBoundaryVariable object
   gbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&gbvar);
+  pmb->pbval->pgbvar = &gbvar;
 }

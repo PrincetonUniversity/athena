@@ -34,7 +34,7 @@ class Gravity {
   Gravity(MeshBlock *pmb, ParameterInput *pin);
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
-  AthenaArray<Real> phi;   // gravitational potential
+  AthenaArray<Real> phi, coarse_phi;   // gravitational potential
   AthenaArray<Real> def;   // defect from the Multigrid solver
   AthenaArray<Real> empty_flux[3];
   Real gconst, four_pi_G;

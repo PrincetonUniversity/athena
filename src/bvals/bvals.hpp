@@ -33,6 +33,7 @@ class MeshBlock;
 class MeshBlockTree;
 class ParameterInput;
 class Coordinates;
+class CellCenteredBoundaryVariable;
 struct RegionSize;
 
 //! free functions to return boundary flag given input string
@@ -123,6 +124,8 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   std::vector<BoundaryVariable *> bvars_main_int;
   //! subset of bvars that are exchanged in the SuperTimeStepTaskList
   std::vector<BoundaryVariable *> bvars_sts;
+  //! Pointer to the Gravity Boundary Variable
+  CellCenteredBoundaryVariable *pgbvar;
 
   // inherited functions (interface shared with BoundaryVariable objects):
   // ------
@@ -146,6 +149,9 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
                                std::vector<BoundaryVariable *> bvars_subset);
   void ProlongateBoundaries(const Real time, const Real dt,
                             std::vector<BoundaryVariable *> bvars_subset);
+
+  // temporary workaround for self-gravity
+  void ProlongateGravityBoundaries(const Real time, const Real dt);
 
   // compute the shear at each integrator stage
   //! \todo (felker):
@@ -210,6 +216,11 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
       std::vector<BoundaryVariable *> bvars_subset);
   void ProlongateGhostCells(const NeighborBlock& nb,
                             int si, int ei, int sj, int ej, int sk, int ek);
+
+  // temporary workaround for self-gravity
+  void RestrictGravityGhostCellsOnSameLevel(const NeighborBlock& nb,
+                                            int nk, int nj, int ni);
+  void ProlongateGravityGhostCells(int si, int ei, int sj, int ej, int sk, int ek);
 
   void DispatchBoundaryFunctions(
       MeshBlock *pmb, Coordinates *pco, Real time, Real dt,

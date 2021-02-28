@@ -21,6 +21,7 @@ class MeshBlock;
 class ParameterInput;
 class Coordinates;
 class Multigrid;
+class GravityBoundaryTaskList;
 
 //! \class MGGravity
 //! \brief Multigrid gravity solver for each block
@@ -54,6 +55,8 @@ class MGGravityDriver : public MultigridDriver {
   void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) final;
  private:
   Real four_pi_G_;
+  bool ffill_ghost_;
+  GravityBoundaryTaskList *gtlist_;
 };
 
 #endif // GRAVITY_MG_GRAVITY_HPP_

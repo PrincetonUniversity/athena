@@ -37,8 +37,8 @@ GravityBoundaryTaskList::GravityBoundaryTaskList(ParameterInput *pin, Mesh *pm) 
     AddTask(RECV_GRAV_BND,NONE);
     AddTask(SETB_GRAV_BND,(RECV_GRAV_BND|SEND_GRAV_BND));
     if (pm->multilevel) {
-      AddTask(PROLONGATE_GRAV_BND,SETB_GRAV_BND);
-      AddTask(GRAV_PHYS_BND,PROLONGATE_GRAV_BND);
+      AddTask(PROLONG_GRAV_BND,SETB_GRAV_BND);
+      AddTask(GRAV_PHYS_BND,PROLONG_GRAV_BND);
     } else {
       AddTask(GRAV_PHYS_BND,SETB_GRAV_BND);
     }
@@ -120,7 +120,7 @@ TaskStatus GravityBoundaryTaskList::SetGravityBoundary(MeshBlock *pmb, int stage
 
 TaskStatus GravityBoundaryTaskList::ProlongateGravityBoundary(MeshBlock *pmb,
                                                               int stage) {
-  pmb->pbval.ProlongateGravityBoundaries();
+  pmb->pbval->ProlongateGravityBoundaries(pmb->pmy_mesh->time, 0.0);
   return TaskStatus::success;
 }
 
