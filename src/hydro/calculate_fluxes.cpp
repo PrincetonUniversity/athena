@@ -273,6 +273,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   if (pmb->pmy_mesh->f3) {
     AthenaArray<Real> &x3flux = flux[X3DIR];
     // set the loop limits
+    il = is, iu = ie, jl = js, ju = je;
     if (MAGNETIC_FIELDS_ENABLED || order == 4) {
       il = is-1, iu = ie+1, jl = js-1, ju = je+1;
     }
