@@ -1447,8 +1447,8 @@ void FaceCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
     if (phase == BoundaryCommSubset::all) {
       for (int upper=0; upper<2; upper++) {
         if (pbval_->is_shear[upper]) {
-          int *counts1 = pbval_->shear_flux_send_count_[upper];
-          int *counts2 = pbval_->shear_flux_recv_count_[upper];
+          int *counts1 = pbval_->sb_flux_data_[upper].send_count;
+          int *counts2 = pbval_->sb_flux_data_[upper].recv_count;
           for (int n=0; n<3; n++) {
             if (counts1[n]>0) {
               shear_send_count_emf_[upper][n] = counts1[n]*(nx3+1)
@@ -1472,8 +1472,8 @@ void FaceCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
     }
     for (int upper=0; upper<2; upper++) {
       if (pbval_->is_shear[upper]) {
-        int *counts1 = pbval_->shear_send_count_[upper];
-        int *counts2 = pbval_->shear_recv_count_[upper];
+        int *counts1 = pbval_->sb_data_[upper].send_count;
+        int *counts2 = pbval_->sb_data_[upper].recv_count;
         for (int n=0; n<4; n++) {
           if (counts1[n]>0) {
             shear_send_count_fc_[upper][n] = NGHOST*(counts1[n]*(nc3+1)
@@ -1543,10 +1543,11 @@ void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
       for (int upper=0; upper<2; upper++) {
         if (pbval_->is_shear[upper]) {
           for (int n=0; n<3; n++) {
-            if (pbval_->shear_flux_send_neighbor_[upper][n].rank == -1) continue;
+            if (pbval_->sb_flux_data_[upper].send_neighbor[n].rank == -1) continue;
             shear_bd_flux_[upper].flag[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-            if (pbval_->shear_flux_send_neighbor_[upper][n].rank != Globals::my_rank) {
+            if (pbval_->sb_flux_data_[upper].send_neighbor[n].rank
+                                                                   != Globals::my_rank) {
               MPI_Wait(&shear_bd_flux_[upper].req_send[n], MPI_STATUS_IGNORE);
             }
 #endif
@@ -1557,10 +1558,10 @@ void FaceCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
     for (int upper=0; upper<2; upper++) {
       if (pbval_->is_shear[upper]) {
         for (int n=0; n<4; n++) {
-          if (pbval_->shear_send_neighbor_[upper][n].rank == -1) continue;
+          if (pbval_->sb_data_[upper].send_neighbor[n].rank == -1) continue;
           shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
-          if (pbval_->shear_send_neighbor_[upper][n].rank != Globals::my_rank) {
+          if (pbval_->sb_data_[upper].send_neighbor[n].rank != Globals::my_rank) {
             MPI_Wait(&shear_bd_var_[upper].req_send[n], MPI_STATUS_IGNORE);
           }
 #endif

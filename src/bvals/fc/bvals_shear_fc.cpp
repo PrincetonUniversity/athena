@@ -54,10 +54,10 @@ void FaceCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
   int jo = pbval_->joverlap_;
-  int *jmin1 = pbval_->jmin_send_[0];
-  int *jmin2 = pbval_->jmin_send_[1];
-  int *jmax1 = pbval_->jmax_send_[0];
-  int *jmax2 = pbval_->jmax_send_[1];
+  int *jmin1 = pbval_->sb_data_[0].jmin_send;
+  int *jmin2 = pbval_->sb_data_[1].jmin_send;
+  int *jmax1 = pbval_->sb_data_[0].jmax_send;
+  int *jmax2 = pbval_->sb_data_[1].jmax_send;
   sk = pmb->ks;        ek = pmb->ke;
   if (pmesh->mesh_size.nx3 > 1)  ek += NGHOST, sk -= NGHOST;
 
@@ -109,7 +109,7 @@ void FaceCenteredBoundaryVariable::SendShearingBoxBoundaryBuffers() {
   for (int upper=0; upper<2; upper++) {
     if (pbval_->is_shear[upper]) {
       for (int n=0; n<4; n++) {
-        SimpleNeighborBlock& snb = pbval_->shear_send_neighbor_[upper][n];
+        SimpleNeighborBlock& snb = pbval_->sb_data_[upper].send_neighbor[n];
         if (snb.rank != -1) {
           LoadShearingBoxBoundarySameLevel(var, shear_bd_var_[upper].send[n],
                                            n+offset[upper]);
@@ -149,10 +149,10 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
   sk = pmb->ks;        ek = pmb->ke;
   if (pmesh->mesh_size.nx3 > 1)  ek += NGHOST, sk -= NGHOST;
 
-  int *jmin1 = pbval_->jmin_recv_[0];
-  int *jmin2 = pbval_->jmin_recv_[1];
-  int *jmax1 = pbval_->jmax_recv_[0];
-  int *jmax2 = pbval_->jmax_recv_[1];
+  int *jmin1 = pbval_->sb_data_[0].jmin_recv;
+  int *jmin2 = pbval_->sb_data_[1].jmin_recv;
+  int *jmax1 = pbval_->sb_data_[0].jmax_recv;
+  int *jmax2 = pbval_->sb_data_[1].jmax_recv;
 
   if (nb<4) {
     sj = jmin1[nb]+xgh;     ej = jmax1[nb]+xgh;
@@ -205,7 +205,7 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
         if (shear_bd_var_[upper].flag[n] == BoundaryStatus::completed) continue;
         if (shear_bd_var_[upper].flag[n] == BoundaryStatus::waiting) {
           // on the same process
-          if (pbval_->shear_recv_neighbor_[upper][n].rank == Globals::my_rank) {
+          if (pbval_->sb_data_[upper].recv_neighbor[n].rank == Globals::my_rank) {
             flag[upper] = false;
             continue;
           } else { // MPI boundary
@@ -331,7 +331,7 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FaceCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
+//! \fn?void FaceCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
 //! \brief initiate MPI_Irecv
 
 void FaceCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase) {
@@ -342,15 +342,15 @@ void FaceCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
     for (int upper=0; upper<2; upper++) {
       if (pbval_->is_shear[upper]) {
         for (int n=0; n<3; n++) {
-          int target_rank = pbval_->shear_flux_recv_neighbor_[upper][n].rank;
+          int target_rank = pbval_->sb_flux_data_[upper].recv_neighbor[n].rank;
           if ((target_rank != Globals::my_rank) && (target_rank != -1)) {
             // emf
             size = shear_recv_count_emf_[upper][n];
             tag  = pbval_->CreateBvalsMPITag(pmy_block_->lid, n+tag_offset1[upper],
                                              shear_emf_phys_id_);
             MPI_Irecv(shear_bd_flux_[upper].recv[n], size, MPI_ATHENA_REAL,
-                      pbval_->shear_flux_recv_neighbor_[upper][n].rank,
-                      tag, MPI_COMM_WORLD, &shear_bd_flux_[upper].req_recv[n]);
+                      target_rank, tag, MPI_COMM_WORLD,
+                      &shear_bd_flux_[upper].req_recv[n]);
           }
         }
       }
@@ -360,14 +360,14 @@ void FaceCenteredBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase)
   for (int upper=0; upper<2; upper++) {
     if (pbval_->is_shear[upper]) {
       for (int n=0; n<4; n++) {
-        int target_rank = pbval_->shear_recv_neighbor_[upper][n].rank;
+        int target_rank = pbval_->sb_data_[upper].recv_neighbor[n].rank;
         if ((target_rank != Globals::my_rank) && (target_rank != -1)) {
           // var_vc
           size = shear_recv_count_fc_[upper][n];
           tag  = pbval_->CreateBvalsMPITag(pmy_block_->lid, n+tag_offset2[upper],
                                            shear_fc_phys_id_);
           MPI_Irecv(shear_bd_var_[upper].recv[n], size, MPI_ATHENA_REAL,
-                    pbval_->shear_recv_neighbor_[upper][n].rank, tag, MPI_COMM_WORLD,
+                    target_rank, tag, MPI_COMM_WORLD,
                     &shear_bd_var_[upper].req_recv[n]);
         }
       }

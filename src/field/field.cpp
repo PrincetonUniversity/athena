@@ -60,7 +60,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   if (STS_ENABLED) {
-    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl1");
+    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl2");
     if (sts_integrator == "rkl2") {
       b0.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
       b0.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );

@@ -89,8 +89,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   // check for necessary number of ghost zones for PPM w/o fourth-order flux corrections
   if (xorder == 3) {
     int req_nghost = 3;
-    if (MAGNETIC_FIELDS_ENABLED)
-      req_nghost += 1;
     if (NGHOST < req_nghost) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Reconstruction constructor" << std::endl

@@ -105,8 +105,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     al = wli[IVX] - cl*ql;
     ar = wri[IVX] + cr*qr;
 
-    Real bp = ar > 0.0 ? ar : 0.0;
-    Real bm = al < 0.0 ? al : 0.0;
+    Real bp = ar > 0.0 ? ar : (TINY_NUMBER);
+    Real bm = al < 0.0 ? al : -(TINY_NUMBER);
 
     //--- Step 5. Compute the contact wave speed and pressure
 
