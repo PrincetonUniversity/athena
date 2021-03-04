@@ -101,6 +101,8 @@ TaskStatus GravityBoundaryTaskList::ClearGravityBoundary(MeshBlock *pmb, int sta
 }
 
 TaskStatus GravityBoundaryTaskList::SendGravityBoundary(MeshBlock *pmb, int stage) {
+  if (pmb->pgrav->fill_ghost)
+    pmb->pgrav->SaveFaceBoundaries();
   pmb->pgrav->gbvar.SendBoundaryBuffers();
   return TaskStatus::success;
 }
@@ -125,5 +127,9 @@ TaskStatus GravityBoundaryTaskList::ProlongateGravityBoundary(MeshBlock *pmb,
 }
 
 TaskStatus GravityBoundaryTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
+  if (pmb->pgrav->fill_ghost) {
+    pmb->pgrav->RestoreFaceBoundaries();
+    pmb->pgrav->ExpandPhysicalBoundaries();
+  }
   return TaskStatus::next;
 }

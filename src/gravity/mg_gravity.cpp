@@ -45,7 +45,6 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
   eps_ = pin->GetOrAddReal("gravity", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("gravity", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("gravity", "fas", ffas_);
-  ffill_ghost_ = pin->GetOrAddBoolean("gravity", "fillghost", false);
   std::string m = pin->GetOrAddString("gravity", "mgmode", "none");
   std::transform(m.begin(), m.end(), m.begin(), ::tolower);
   if (m == "fmg") {
@@ -185,7 +184,7 @@ void MGGravityDriver::Solve(int stage) {
       pmg->RetrieveDefect(pgrav->def, 0, NGHOST);
   }
 
-  if (ffill_ghost_)
+  if (vmg_[0]->pmy_block_->pgrav->fill_ghost)
     gtlist_->DoTaskListOneStage(pmy_mesh_, stage);
 
   return;

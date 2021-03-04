@@ -55,7 +55,6 @@ class MGGravityDriver : public MultigridDriver {
   void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) final;
  private:
   Real four_pi_G_;
-  bool ffill_ghost_;
   GravityBoundaryTaskList *gtlist_;
 };
 
