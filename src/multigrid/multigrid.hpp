@@ -218,7 +218,7 @@ class MultigridDriver {
   // pure virtual functions
   virtual void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) = 0;
 
-  int nranks_, nvar_, mode_;
+  int nranks_, nbtotal_, nvar_, mode_;
   int locrootlevel_, nrootlevel_, nmblevel_, ntotallevel_, nreflevel_, maxreflevel_;
   int current_level_, fmglevel_;
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *nvlisti_, *nvslisti_, *ranklist_;

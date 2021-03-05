@@ -36,7 +36,7 @@
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, 
                                  MGSourceMaskFunc MGSourceMask, int invar) :
-    nvar_(invar),
+    nranks_(Globals::nranks), nbtotal_(pm->nbtotal), nvar_(invar),
     mode_(0), // 0: FMG V(1,1) + iterative, 1: V(1,1) iterative
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
@@ -68,10 +68,10 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
   // Setting up the MPI information
   // *** this part should be modified when dedicate processes are allocated ***
   // *** we also need to construct another neighbor list for Multigrid ***
-  ranklist_  = new int[pmy_mesh_->nbtotal];
-  for (int n=0; n<pmy_mesh_->nbtotal; ++n)
+  ranklist_  = new int[nbtotal_];
+  rootbuf_=new Real[nbtotal_*nvar_*2];
+  for (int n = 0; n < nbtotal_; ++n)
     ranklist_[n]=pmy_mesh_->ranklist[n];
-  nranks_  = Globals::nranks;
   nslist_  = new int[nranks_];
   nblist_  = new int[nranks_];
   nvlist_  = new int[nranks_];
@@ -84,16 +84,6 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
   mg_phys_id_ = pmy_mesh_->ReserveTagPhysIDs(1);
 #endif
 
-  // assume the same parallelization as hydro
-  for (int n=0; n<nranks_; ++n) {
-    nslist_[n]  = pmy_mesh_->nslist[n];
-    nblist_[n]  = pmy_mesh_->nblist[n];
-    nvslist_[n] = nslist_[n]*nvar_*2;
-    nvlist_[n]  = nblist_[n]*nvar_*2;
-    nvslisti_[n] = nslist_[n]*nvar_;
-    nvlisti_[n]  = nblist_[n]*nvar_;
-  }
-  rootbuf_=new Real[pm->nbtotal*nvar_*2];
   if (maxreflevel_ > 0) { // SMR / AMR
     octets_ = new std::vector<MGOctet>[maxreflevel_];
     octetmap_ = new std::unordered_map<LogicalLocation, int,
@@ -312,7 +302,7 @@ void MultigridDriver::SubtractAverage(MGVariable type) {
            * (pmy_mesh_->mesh_size.x3max - pmy_mesh_->mesh_size.x3min);
   for (int v=0; v<nvar_; ++v) {
     Real total = 0.0;
-    for (int n=0; n<pmy_mesh_->nbtotal; ++n)
+    for (int n = 0; n < nbtotal_; ++n)
       total += rootbuf_[n*nvar_+v];
     last_ave_ = total/vol;
     for (Multigrid* pmg : vmg_)
@@ -339,8 +329,11 @@ void MultigridDriver::SetupMultigrid() {
   oe_ = os_+1;
   static bool needinit = true;
 
+  if (pmy_mesh_->amr_updated)
+    needinit = true;
+
   // note: the level of an Octet is one level lower than the data stored there
-  if (nreflevel_ > 0 && pmy_mesh_->amr_updated) {
+  if (nreflevel_ > 0 && needinit) {
     for (int l=0; l<nreflevel_; ++l) { // clear old data
       octetmap_[l].clear();
       prevnoct_[l] = noctets_[l];
@@ -367,10 +360,30 @@ void MultigridDriver::SetupMultigrid() {
           octets_[l][o].uold.NewAthenaArray(nvar_, ncoct, ncoct, ncoct);
       }
     }
-    needinit = true;
   }
 
   if (needinit) {
+    // reallocate buffers if needed
+    if (nbtotal_ != pmy_mesh_->nbtotal) {
+      if (nbtotal_ < pmy_mesh_->nbtotal) {
+        delete [] ranklist_;
+        delete [] rootbuf_;
+        ranklist_ = new int[pmy_mesh_->nbtotal];
+        rootbuf_ = new Real[pmy_mesh_->nbtotal*nvar_*2];
+      }
+      nbtotal_ = pmy_mesh_->nbtotal;
+    }
+    // assume the same parallelization as hydro
+    for (int n = 0; n < nbtotal_; ++n)
+      ranklist_[n]=pmy_mesh_->ranklist[n];
+    for (int n = 0; n < nranks_; ++n) {
+      nslist_[n]  = pmy_mesh_->nslist[n];
+      nblist_[n]  = pmy_mesh_->nblist[n];
+      nvslist_[n] = nslist_[n]*nvar_*2;
+      nvlist_[n]  = nblist_[n]*nvar_*2;
+      nvslisti_[n] = nslist_[n]*nvar_;
+      nvlisti_[n]  = nblist_[n]*nvar_;
+    }
     for (Multigrid* pmg : vmg_)
       pmg->pmgbval->SearchAndSetNeighbors(pmy_mesh_->tree, ranklist_, nslist_);
     if (nreflevel_ > 0)
@@ -427,7 +440,7 @@ void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
                    rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
 #endif
 
-  for (int n=0; n<pmy_mesh_->nbtotal; ++n) {
+  for (int n = 0; n < nbtotal_; ++n) {
     const LogicalLocation &loc=pmy_mesh_->loclist[n];
     int i = static_cast<int>(loc.lx1);
     int j = static_cast<int>(loc.lx2);
