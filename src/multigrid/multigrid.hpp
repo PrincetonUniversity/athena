@@ -239,7 +239,7 @@ class MultigridDriver {
   std::vector<MGOctet> *octets_;
   std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octetmap_;
   std::vector<bool> *octetbflag_;
-  int *noctets_, *prevnoct_;
+  int *noctets_, *pmaxnoct_;
   AthenaArray<Real> cbuf_, cbufold_;
   bool ncoarse_[3][3][3];
 
