@@ -89,29 +89,40 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
 //! \brief Save face boundary values for multigrid + mesh refinement
 void Gravity::SaveFaceBoundaries() {
   int mylevel = pmy_block->pbval->nblevel[1][1][1];
-  int p = 0;
   int is = pmy_block->is, ie = pmy_block->ie,
       js = pmy_block->js, je = pmy_block->je,
       ks = pmy_block->ks, ke = pmy_block->ke;
 
-  if (pmy_block->pbval->nblevel[1][1][0] < mylevel)
+  if (pmy_block->pbval->nblevel[1][1][0] < mylevel) {
+    int p = 0;
     BufferUtility::PackData(phi, fbuf_[inner_x1].data(), 0, 0,
                             is-1, is-1, js,   je,   ks,   ke,   p);
-  if (pmy_block->pbval->nblevel[1][1][2] < mylevel)
+  }
+  if (pmy_block->pbval->nblevel[1][1][2] < mylevel) {
+    int p = 0;
     BufferUtility::PackData(phi, fbuf_[outer_x1].data(), 0, 0,
                             is+1, is+1, js,   je,   ks,   ke,   p);
-  if (pmy_block->pbval->nblevel[1][0][1] < mylevel)
+  }
+  if (pmy_block->pbval->nblevel[1][0][1] < mylevel) {
+    int p = 0;
     BufferUtility::PackData(phi, fbuf_[inner_x2].data(), 0, 0,
                             is,   ie,   js-1, js-1, ks,   ke,   p);
-  if (pmy_block->pbval->nblevel[1][2][1] < mylevel)
+  }
+  if (pmy_block->pbval->nblevel[1][2][1] < mylevel) {
+    int p = 0;
     BufferUtility::PackData(phi, fbuf_[outer_x2].data(), 0, 0,
                             is,   ie,   je+1, je+1, ks,   ke,   p);
-  if (pmy_block->pbval->nblevel[0][1][1] < mylevel)
+  }
+  if (pmy_block->pbval->nblevel[0][1][1] < mylevel) {
+    int p = 0;
     BufferUtility::PackData(phi, fbuf_[inner_x3].data(), 0, 0,
                             is,   ie,   js,   je,   ks-1, ks-1, p);
-  if (pmy_block->pbval->nblevel[2][1][1] < mylevel)
+  }
+  if (pmy_block->pbval->nblevel[2][1][1] < mylevel) {
+    int p = 0;
     BufferUtility::PackData(phi, fbuf_[outer_x3].data(), 0, 0,
                             is,   ie,   js,   je,   ke+1, ke+1, p);
+  }
 
   return;
 }
@@ -127,24 +138,36 @@ void Gravity::RestoreFaceBoundaries() {
       js = pmy_block->js, je = pmy_block->je,
       ks = pmy_block->ks, ke = pmy_block->ke;
 
-  if (pmy_block->pbval->nblevel[1][1][0] < mylevel)
+  if (pmy_block->pbval->nblevel[1][1][0] < mylevel) {
+    int p = 0;
     BufferUtility::UnpackData(fbuf_[inner_x1].data(), phi, 0, 0,
                               is-1, is-1, js,   je,   ks,   ke,   p);
-  if (pmy_block->pbval->nblevel[1][1][2] < mylevel)
+  }
+  if (pmy_block->pbval->nblevel[1][1][2] < mylevel) {
+    int p = 0;
     BufferUtility::UnpackData(fbuf_[outer_x1].data(), phi, 0, 0,
                               is+1, is+1, js,   je,   ks,   ke,   p);
-  if (pmy_block->pbval->nblevel[1][0][1] < mylevel)
+  }
+  if (pmy_block->pbval->nblevel[1][0][1] < mylevel) {
+    int p = 0;
     BufferUtility::UnpackData(fbuf_[inner_x2].data(), phi, 0, 0,
                               is,   ie,   js-1, js-1, ks,   ke,   p);
-  if (pmy_block->pbval->nblevel[1][2][1] < mylevel)
+  }
+  if (pmy_block->pbval->nblevel[1][2][1] < mylevel) {
+    int p = 0;
     BufferUtility::UnpackData(fbuf_[outer_x2].data(), phi, 0, 0,
                               is,   ie,   je+1, je+1, ks,   ke,   p);
-  if (pmy_block->pbval->nblevel[0][1][1] < mylevel)
+  }
+  if (pmy_block->pbval->nblevel[0][1][1] < mylevel) {
+    int p = 0;
     BufferUtility::UnpackData(fbuf_[inner_x3].data(), phi, 0, 0,
                               is,   ie,   js,   je,   ks-1, ks-1, p);
-  if (pmy_block->pbval->nblevel[2][1][1] < mylevel)
+  }
+  if (pmy_block->pbval->nblevel[2][1][1] < mylevel) {
+    int p = 0;
     BufferUtility::UnpackData(fbuf_[outer_x3].data(), phi, 0, 0,
                               is,   ie,   js,   je,   ke+1, ke+1, p);
+  }
 
   return;
 }

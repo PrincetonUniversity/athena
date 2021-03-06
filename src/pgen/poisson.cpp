@@ -163,7 +163,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       for (int n=0; n < ncycle; n++) {
         for (int b=0; b<nblocal; ++b) {
           pmb = my_blocks(b);
-          std::memset(pmb->pgrav->phi.data(), 0, pmb->pgrav->phi.GetSizeInBytes());
+          pmb->pgrav->phi.ZeroClear();
         }
         if (SELF_GRAVITY_ENABLED == 1) pfgrd->Solve(1,1);
         else if (SELF_GRAVITY_ENABLED == 2) pmgrd->Solve(1);
