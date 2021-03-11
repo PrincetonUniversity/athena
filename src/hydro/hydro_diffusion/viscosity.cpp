@@ -55,6 +55,7 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
       FaceXdx(k, j, is, ie+1, prim, fx_);
       FaceXdy(k, j, is, ie+1, prim, fy_);
       FaceXdz(k, j, is, ie+1, prim, fz_);
+#pragma omp simd private(nu1, denf, flx1, flx2, flx3)
       for (int i=is; i<=ie+1; ++i) {
         nu1  = 0.5*(nu(DiffProcess::iso,k,j,i)   + nu(DiffProcess::iso,k,j,i-1));
         denf = 0.5*(prim(IDN,k,j,i) + prim(IDN,k,j,i-1));
@@ -88,6 +89,7 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
         FaceYdy(k, j, is, ie, prim, fy_);
         FaceYdz(k, j, is, ie, prim, fz_);
         // store fluxes
+#pragma omp simd private(nu1, denf, flx1, flx2, flx3)
         for (int i=il; i<=iu; i++) {
           nu1  = 0.5*(nu(DiffProcess::iso,k,j,i)    + nu(DiffProcess::iso,k,j-1,i));
           denf = 0.5*(prim(IDN,k,j-1,i)+ prim(IDN,k,j,i));
@@ -110,6 +112,7 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
     FaceYdy(ks, js, is, ie, prim, fy_);
     FaceYdz(ks, js, is, ie, prim, fz_);
     // store fluxes
+#pragma omp simd private(nu1, denf, flx1, flx2, flx3)
     for (int i=il; i<=iu; i++) {
       nu1  = nu(DiffProcess::iso,ks,js,i);
       denf = prim(IDN,ks,js,i);
@@ -124,6 +127,7 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
                                prim(IM2,ks,js,i)*flx2 +
                                prim(IM3,ks,js,i)*flx3;
     }
+#pragma omp simd
     for (int i=il; i<=iu; i++) {
       x2flux(IM1,ks,je+1,i) = x2flux(IM1,ks,js,i);
       x2flux(IM2,ks,je+1,i) = x2flux(IM2,ks,js,i);
@@ -149,6 +153,7 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
         FaceZdy(k, j, is, ie, prim, fy_);
         FaceZdz(k, j, is, ie, prim, fz_);
         // store fluxes
+#pragma omp simd private(nu1, denf, flx1, flx2, flx3)
         for (int i=il; i<=iu; i++) {
           nu1  = 0.5*(nu(DiffProcess::iso,k,j,i)     + nu(DiffProcess::iso,k-1,j,i));
           denf = 0.5*(prim(IDN,k-1,j,i) + prim(IDN,k,j,i));
@@ -172,6 +177,7 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
       FaceZdy(ks, j, is, ie, prim, fy_);
       FaceZdz(ks, j, is, ie, prim, fz_);
       // store fluxes
+#pragma omp simd private(nu1, denf, flx1, flx2, flx3)
       for (int i=il; i<=iu; i++) {
         nu1 = nu(DiffProcess::iso,ks,j,i);
         denf = prim(IDN,ks,j,i);
@@ -225,7 +231,7 @@ void HydroDiffusion::DivVelocity(const AthenaArray<Real> &prim,
     for (int j=jl; j<=ju; ++j) {
       // calculate x1-flux divergence
       pmb_->pcoord->Face1Area(k, j, il, iu+1, x1area_);
-#pragma omp simd
+#pragma omp simd private(area_p1, area, vel_p1, vel)
       for (int i=il; i<=iu; ++i) {
         area_p1 = x1area_(i+1);
         area    = x1area_(i);
@@ -237,7 +243,7 @@ void HydroDiffusion::DivVelocity(const AthenaArray<Real> &prim,
       if (f2) {
         pmb_->pcoord->Face2Area(k, j  , il, iu, x2area_);
         pmb_->pcoord->Face2Area(k, j+1, il, iu, x2area_p1_);
-#pragma omp simd
+#pragma omp simd private(area_p1, area, vel_p1, vel)
         for (int i=il; i<=iu; ++i) {
           area_p1 = x2area_p1_(i);
           area    = x2area_(i);
@@ -249,7 +255,7 @@ void HydroDiffusion::DivVelocity(const AthenaArray<Real> &prim,
       if (f3) {
         pmb_->pcoord->Face3Area(k  , j, il, iu, x3area_);
         pmb_->pcoord->Face3Area(k+1, j, il, iu, x3area_p1_);
-#pragma omp simd
+#pragma omp simd private(area_p1, area, vel_p1, vel)
         for (int i=il; i<=iu; ++i) {
           area_p1 = x3area_p1_(i);
           area    = x3area_(i);
