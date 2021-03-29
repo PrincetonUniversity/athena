@@ -289,7 +289,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
 //  \brief Calculate the global average and subtract it
 
 void MultigridDriver::SubtractAverage(MGVariable type) {
-  for (Multigrid* pmg : vmg_) {
+#pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
     for (int v=0; v<nvar_; ++v)
       rootbuf_[pmg->pmy_block_->gid*nvar_+v] = pmg->CalculateTotal(type, v);
   }
@@ -305,8 +307,11 @@ void MultigridDriver::SubtractAverage(MGVariable type) {
     for (int n = 0; n < nbtotal_; ++n)
       total += rootbuf_[n*nvar_+v];
     last_ave_ = total/vol;
-    for (Multigrid* pmg : vmg_)
+#pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
+    for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+      Multigrid *pmg = *itr;
       pmg->SubtractAverage(type, v, last_ave_);
+    }
   }
 
   return;
@@ -392,8 +397,11 @@ void MultigridDriver::SetupMultigrid() {
   }
 
   if (srcmask_ != nullptr) {
-    for (Multigrid* pmg : vmg_)
+#pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
+    for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+      Multigrid *pmg = *itr;
       pmg->ApplySourceMask();
+    }
   }
 
   if (fsubtract_average_)
@@ -403,8 +411,11 @@ void MultigridDriver::SetupMultigrid() {
     CalculateMultipoleCoefficients();
 
   if (mode_ == 0) { // FMG
-    for (Multigrid* pmg : vmg_)
+#pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
+    for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+      Multigrid *pmg = *itr;
       pmg->RestrictFMGSource();
+    }
     TransferFromBlocksToRoot(true);
     RestrictFMGSourceOctets();
     mgroot_->RestrictFMGSource();
@@ -768,11 +779,19 @@ void MultigridDriver::SolveCoarsestGrid() {
 
 Real MultigridDriver::CalculateDefectNorm(MGNormType nrm, int n) {
   Real norm=0.0;
-  for (Multigrid* pmg : vmg_) {
-    if (nrm == MGNormType::max)
-      norm=std::max(norm, pmg->CalculateDefectNorm(nrm, n));
-    else
-      norm+=pmg->CalculateDefectNorm(nrm, n);
+
+  if (nrm == MGNormType::max) {
+#pragma omp parallel for reduction(max : norm) num_threads(nthreads) schedule(dynamic,1)
+    for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+      Multigrid *pmg = *itr;
+      norm = std::max(norm, pmg->CalculateDefectNorm(nrm, n));
+    }
+  } else
+#pragma omp parallel for reduction(+ : norm) num_threads(nthreads) schedule(dynamic,1)
+    for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+      Multigrid *pmg = *itr;
+      norm += pmg->CalculateDefectNorm(nrm, n);
+    }
   }
 #ifdef MPI_PARALLEL
   if (nrm == MGNormType::max)
@@ -781,13 +800,13 @@ Real MultigridDriver::CalculateDefectNorm(MGNormType nrm, int n) {
     MPI_Allreduce(MPI_IN_PLACE,&norm,1,MPI_ATHENA_REAL,MPI_SUM,MPI_COMM_MULTIGRID);
 #endif
   if (nrm != MGNormType::max) {
-    Real vol=(mgroot_->size_.x1max-mgroot_->size_.x1min)
-            *(mgroot_->size_.x2max-mgroot_->size_.x2min)
-            *(mgroot_->size_.x3max-mgroot_->size_.x3min);
+    Real vol = (mgroot_->size_.x1max-mgroot_->size_.x1min)
+             * (mgroot_->size_.x2max-mgroot_->size_.x2min)
+             * (mgroot_->size_.x3max-mgroot_->size_.x3min);
     norm /= vol;
   }
   if (nrm == MGNormType::l2)
-    norm=std::sqrt(norm);
+    norm = std::sqrt(norm);
 
   return norm;
 }

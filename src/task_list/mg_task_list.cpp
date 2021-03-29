@@ -38,7 +38,7 @@ void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd) {
 
   // cycle through all MeshBlocks and perform all tasks possible
   while (nmg_left > 0) {
-#pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
+#pragma omp parallel for reduction(- : nmb_left) num_threads(nthreads) schedule(dynamic,1)
     for (auto itr = pmd->vmg_.begin(); itr<pmd->vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       if (DoAllAvailableTasks(pmg, pmg->ts_) == TaskListStatus::complete) nmg_left--;
