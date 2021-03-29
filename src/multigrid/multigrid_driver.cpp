@@ -31,13 +31,16 @@
 #include <mpi.h>
 #endif
 
+#ifdef OPENMP_PARALLEL
+#include <omp.h>
+#endif
 
 // constructor, initializes data structures and parameters
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, 
                                  MGSourceMaskFunc MGSourceMask, int invar) :
-    nranks_(Globals::nranks), nbtotal_(pm->nbtotal), nvar_(invar),
-    mode_(0), // 0: FMG V(1,1) + iterative, 1: V(1,1) iterative
+    nranks_(Globals::nranks), nthreads_(pm->num_mesh_threads_), nbtotal_(pm->nbtotal),
+    nvar_(invar), mode_(0), // 0: FMG V(1,1) + iterative, 1: V(1,1) iterative
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
     pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0),
@@ -112,6 +115,8 @@ MultigridDriver::~MultigridDriver() {
     delete [] noctets_;
     delete [] pmaxnoct_;
   }
+  if (mporder_ > 0)
+    delete [] mpcoeff_;
 #ifdef MPI_PARALLEL
   MPI_Comm_free(&MPI_COMM_MULTIGRID);
 #endif
@@ -289,7 +294,7 @@ void MultigridDriver::CheckBoundaryFunctions() {
 //  \brief Calculate the global average and subtract it
 
 void MultigridDriver::SubtractAverage(MGVariable type) {
-#pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
+#pragma omp parallel for num_threads(nthreads_) schedule(dynamic,1)
   for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
     Multigrid *pmg = *itr;
     for (int v=0; v<nvar_; ++v)
@@ -307,7 +312,7 @@ void MultigridDriver::SubtractAverage(MGVariable type) {
     for (int n = 0; n < nbtotal_; ++n)
       total += rootbuf_[n*nvar_+v];
     last_ave_ = total/vol;
-#pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
+#pragma omp parallel for num_threads(nthreads_) schedule(dynamic,1)
     for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       pmg->SubtractAverage(type, v, last_ave_);
@@ -397,7 +402,7 @@ void MultigridDriver::SetupMultigrid() {
   }
 
   if (srcmask_ != nullptr) {
-#pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
+#pragma omp parallel for num_threads(nthreads_) schedule(dynamic,1)
     for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       pmg->ApplySourceMask();
@@ -411,7 +416,7 @@ void MultigridDriver::SetupMultigrid() {
     CalculateMultipoleCoefficients();
 
   if (mode_ == 0) { // FMG
-#pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
+#pragma omp parallel for num_threads(nthreads_) schedule(dynamic,1)
     for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       pmg->RestrictFMGSource();
@@ -781,13 +786,13 @@ Real MultigridDriver::CalculateDefectNorm(MGNormType nrm, int n) {
   Real norm=0.0;
 
   if (nrm == MGNormType::max) {
-#pragma omp parallel for reduction(max : norm) num_threads(nthreads) schedule(dynamic,1)
+#pragma omp parallel for reduction(max : norm) num_threads(nthreads_) schedule(dynamic,1)
     for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       norm = std::max(norm, pmg->CalculateDefectNorm(nrm, n));
     }
-  } else
-#pragma omp parallel for reduction(+ : norm) num_threads(nthreads) schedule(dynamic,1)
+  } else {
+#pragma omp parallel for reduction(+ : norm) num_threads(nthreads_) schedule(dynamic,1)
     for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       norm += pmg->CalculateDefectNorm(nrm, n);
@@ -1341,6 +1346,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
   int ngh = mgroot_->ngh_;
   int l, r;
   Real time = pmy_mesh_->time;
+  AthenaArray<Real> &mpcoeff = mpcoeff_[0];
   if (fcbuf)
     l = ngh, r = ngh;
   else
@@ -1374,7 +1380,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
         break;
       case BoundaryFlag::mg_multipole:
         MGMultipoleInnerX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord,
-                           mpcoeff_, mporder_);
+                           mpcoeff, mporder_);
         break;
       default:
         break;
@@ -1394,7 +1400,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
         break;
       case BoundaryFlag::mg_multipole:
         MGMultipoleOuterX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord,
-                           mpcoeff_, mporder_);
+                           mpcoeff, mporder_);
         break;
       default:
         break;
@@ -1414,7 +1420,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
         break;
       case BoundaryFlag::mg_multipole:
         MGMultipoleInnerX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord,
-                           mpcoeff_, mporder_);
+                           mpcoeff, mporder_);
         break;
       default:
         break;
@@ -1434,7 +1440,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
         break;
       case BoundaryFlag::mg_multipole:
         MGMultipoleOuterX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord,
-                           mpcoeff_, mporder_);
+                           mpcoeff, mporder_);
         break;
       default:
         break;
@@ -1455,7 +1461,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
         break;
       case BoundaryFlag::mg_multipole:
         MGMultipoleInnerX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord,
-                           mpcoeff_, mporder_);
+                           mpcoeff, mporder_);
         break;
       default:
         break;
@@ -1475,7 +1481,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
         break;
       case BoundaryFlag::mg_multipole:
         MGMultipoleOuterX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord,
-                           mpcoeff_, mporder_);
+                           mpcoeff, mporder_);
         break;
       default:
         break;
@@ -1772,7 +1778,9 @@ void MultigridDriver::AllocateMultipoleCoefficients() {
   for (int i = 0; i <= mporder_; ++i)
     nmpcoeff_ += 2 * i + 1;
 
-  mpcoeff_.NewAthenaArray(nvar_, nmpcoeff_);
+  mpcoeff_ = new AthenaArray<Real>[nthreads_];
+  for (int th = 0; th < nthreads_; ++th)
+    mpcoeff_[th].NewAthenaArray(nvar_, nmpcoeff_);
 
   return;
 }
@@ -1783,11 +1791,23 @@ void MultigridDriver::AllocateMultipoleCoefficients() {
 //  \brief calculate multipole expansion coefficients
 
 void MultigridDriver::CalculateMultipoleCoefficients() {
-  mpcoeff_.ZeroClear();
-  for (Multigrid* pmg : vmg_)
-    pmg->CalculateMultipoleCoefficients(mpcoeff_, mporder_);
+  for (int th = 0; th < nthreads_; ++th)
+    mpcoeff_[th].ZeroClear();
+#pragma omp parallel for num_threads(nthreads_) schedule(dynamic,1)
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    int th = 0;
+#ifdef OPENMP_PARALLEL
+    th = omp_get_thread_num();
+#endif
+    Multigrid *pmg = *itr;
+    pmg->CalculateMultipoleCoefficients(mpcoeff_[th], mporder_);
+  }
+  for (int th = 1; th < nthreads_; ++th) {
+    for (int i = 0; i < nmpcoeff_; ++i)
+      mpcoeff_[0](i) += mpcoeff_[th](i);
+  }
 #ifdef MPI_PARALLEL
-  MPI_Allreduce(MPI_IN_PLACE, mpcoeff_.data(), nmpcoeff_, MPI_ATHENA_REAL,
+  MPI_Allreduce(MPI_IN_PLACE, mpcoeff_[0].data(), nmpcoeff_, MPI_ATHENA_REAL,
                 MPI_SUM, MPI_COMM_MULTIGRID);
 #endif
   ScaleMultipoleCoefficients();
@@ -1800,6 +1820,7 @@ void MultigridDriver::CalculateMultipoleCoefficients() {
 //  \brief scale coefficients for multipole expansion
 
 void MultigridDriver::ScaleMultipoleCoefficients() {
+  AthenaArray<Real> &mpcoeff = mpcoeff_[0];
   // constants for multipole expansion
   static const Real c0  = -0.5/std::sqrt(PI);
   static const Real c1  = -std::sqrt(3.0/(4.0*PI))/3.0;
@@ -1815,31 +1836,31 @@ void MultigridDriver::ScaleMultipoleCoefficients() {
   static const Real c43 = -0.75*std::sqrt(35.0/TWO_PI)/9.0;
   static const Real c44 = -1.5*std::sqrt(35.0/PI)/9.0;
 
-  mpcoeff_(0) *= c0;
-  mpcoeff_(1) *= c1;
-  mpcoeff_(2) *= c1;
-  mpcoeff_(3) *= c1;
-  mpcoeff_(4) *= c2a;
-  mpcoeff_(5) *= c2a;
-  mpcoeff_(6) *= c2;
-  mpcoeff_(7) *= c2a;
-  mpcoeff_(8) *= c2a;
+  mpcoeff(0) *= c0;
+  mpcoeff(1) *= c1;
+  mpcoeff(2) *= c1;
+  mpcoeff(3) *= c1;
+  mpcoeff(4) *= c2a;
+  mpcoeff(5) *= c2a;
+  mpcoeff(6) *= c2;
+  mpcoeff(7) *= c2a;
+  mpcoeff(8) *= c2a;
   if (mporder_ == 4) {
-    mpcoeff_(9)  *= c33;
-    mpcoeff_(10) *= c32;
-    mpcoeff_(11) *= c31;
-    mpcoeff_(12) *= c30;
-    mpcoeff_(13) *= c31;
-    mpcoeff_(14) *= c32;
-    mpcoeff_(15) *= c33;
-    mpcoeff_(16) *= c44;
-    mpcoeff_(17) *= c43;
-    mpcoeff_(18) *= c42;
-    mpcoeff_(19) *= c41;
-    mpcoeff_(20) *= c40;
-    mpcoeff_(21) *= c41;
-    mpcoeff_(22) *= c42;
-    mpcoeff_(23) *= c43;
-    mpcoeff_(24) *= c44;
+    mpcoeff(9)  *= c33;
+    mpcoeff(10) *= c32;
+    mpcoeff(11) *= c31;
+    mpcoeff(12) *= c30;
+    mpcoeff(13) *= c31;
+    mpcoeff(14) *= c32;
+    mpcoeff(15) *= c33;
+    mpcoeff(16) *= c44;
+    mpcoeff(17) *= c43;
+    mpcoeff(18) *= c42;
+    mpcoeff(19) *= c41;
+    mpcoeff(20) *= c40;
+    mpcoeff(21) *= c41;
+    mpcoeff(22) *= c42;
+    mpcoeff(23) *= c43;
+    mpcoeff(24) *= c44;
   }
 }
