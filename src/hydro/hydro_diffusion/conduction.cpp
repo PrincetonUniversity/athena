@@ -45,7 +45,7 @@ void HydroDiffusion::ThermalFluxIso(
   }
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
+#pragma omp simd private(kappaf, denf, dTdx)
       for (int i=is; i<=ie+1; ++i) {
         kappaf = 0.5*(kappa(DiffProcess::iso,k,j,i) + kappa(DiffProcess::iso,k,j,i-1));
         denf = 0.5*(prim(IDN,k,j,i) + prim(IDN,k,j,i-1));
@@ -68,7 +68,7 @@ void HydroDiffusion::ThermalFluxIso(
     AthenaArray<Real> &x2flux = cndflx[X2DIR];
     for (int k=kl; k<=ku; ++k) {
       for (int j=js; j<=je+1; ++j) {
-#pragma omp simd
+#pragma omp simd private(kappaf, denf, dTdy)
         for (int i=il; i<=iu; ++i) {
           kappaf = 0.5*(kappa(DiffProcess::iso,k,j,i) + kappa(DiffProcess::iso,k,j-1,i));
           denf = 0.5*(prim(IDN,k,j,i) + prim(IDN,k,j-1,i));
@@ -92,7 +92,7 @@ void HydroDiffusion::ThermalFluxIso(
     AthenaArray<Real> &x3flux = cndflx[X3DIR];
     for (int k=ks; k<=ke+1; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma omp simd
+#pragma omp simd private(kappaf, denf, dTdz)
         for (int i=il; i<=iu; ++i) {
           kappaf = 0.5*(kappa(DiffProcess::iso,k,j,i) + kappa(DiffProcess::iso,k-1,j,i));
           denf = 0.5*(prim(IDN,k,j,i) + prim(IDN,k-1,j,i));
