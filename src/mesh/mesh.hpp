@@ -215,7 +215,7 @@ class Mesh {
   my_blocks(0)->block_size.nx1*my_blocks(0)->block_size.nx2*my_blocks(0)->block_size.nx3;}
 
   // data
-  RegionSize mesh_size;
+  RegionSize mesh_size, block_size;
   BoundaryFlag mesh_bcs[6];
   const bool f2, f3; // flags indicating (at least) 2D or 3D Mesh
   const int ndim;     // number of dimensions

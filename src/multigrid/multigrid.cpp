@@ -172,6 +172,7 @@ void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh) {
     int nsrc=ns+v;
     for (int k=ngh, mk=ks; mk<=ke; ++k, ++mk) {
       for (int j=ngh, mj=js; mj<=je; ++j, ++mj) {
+#pragma omp simd
         for (int i=ngh, mi=is; mi<=ie; ++i, ++mi)
           dst(v,mk,mj,mi)=src(nsrc,k,j,i);
       }
@@ -196,6 +197,7 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
       int nsrc=ns+v;
       for (int k=ngh, mk=ks; mk<=ke; ++k, ++mk) {
         for (int j=ngh, mj=js; mj<=je; ++j, ++mj) {
+#pragma omp simd
           for (int i=ngh, mi=is; mi<=ie; ++i, ++mi)
             dst(v,mk,mj,mi)=src(nsrc,k,j,i);
         }
@@ -206,6 +208,7 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
       int nsrc=ns+v;
       for (int k=ngh, mk=ks; mk<=ke; ++k, ++mk) {
         for (int j=ngh, mj=js; mj<=je; ++j, ++mj) {
+#pragma omp simd
           for (int i=ngh, mi=is; mi<=ie; ++i, ++mi)
             dst(v,mk,mj,mi)=src(nsrc,k,j,i)*fac;
         }
@@ -259,6 +262,7 @@ void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh) {
     int ndst=ns+v;
     for (int k=ngh-sngh, mk=ngh_-sngh; mk<=ke; ++k, ++mk) {
       for (int j=ngh-sngh, mj=ngh_-sngh; mj<=je; ++j, ++mj) {
+#pragma omp simd
         for (int i=ngh-sngh, mi=ngh_-sngh; mi<=ie; ++i, ++mi)
           dst(ndst,k,j,i)=src(v,mk,mj,mi);
       }
@@ -280,6 +284,7 @@ void Multigrid::RetrieveDefect(AthenaArray<Real> &dst, int ns, int ngh) {
     int ndst=ns+v;
     for (int k=ngh-sngh, mk=ngh_-sngh; mk<=ke; ++k, ++mk) {
       for (int j=ngh-sngh, mj=ngh_-sngh; mj<=je; ++j, ++mj) {
+#pragma omp simd
         for (int i=ngh-sngh, mi=ngh_-sngh; mi<=ie; ++i, ++mi)
           dst(ndst,k,j,i)=src(v,mk,mj,mi)*defscale_;
       }
@@ -432,6 +437,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
     for (int v=0; v<nvar_; ++v) {
       for (int k=0; k<=2; ++k) {
         for (int j=0; j<=2; ++j) {
+#pragma ivdep
           for (int i=0; i<=2; ++i)
             dst(v, k, j, i) = src(v, ck+k, cj+j, ci+i);
         }
@@ -443,6 +449,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
       for (int v=0; v<nvar_; ++v) {
         for (int k=0; k<=2; ++k) {
           for (int j=0; j<=2; ++j) {
+#pragma ivdep
             for (int i=0; i<=2; ++i)
               odst(v, k, j, i) = osrc(v, ck+k, cj+j, ci+i);
           }
@@ -464,6 +471,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
     for (int v=0; v<nvar_; ++v) {
       for (int k=0; k<=2; ++k) {
         for (int j=0; j<=2; ++j) {
+#pragma ivdep
           for (int i=0; i<=2; ++i)
             dst(v, k, j, i)=src(v, ck+k, cj+j, ci+i);
         }
@@ -475,6 +483,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
       for (int v=0; v<nvar_; ++v) {
         for (int k=0; k<=2; ++k) {
           for (int j=0; j<=2; ++j) {
+#pragma ivdep
             for (int i=0; i<=2; ++i)
               odst(v, k, j, i)=osrc(v, ck+k, cj+j, ci+i);
           }
@@ -507,6 +516,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
   if (nrm == MGNormType::max) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
+#pragma omp simd reduction(max: norm)
         for (int i=is; i<=ie; ++i)
           norm=std::max(norm,std::fabs(def(n,k,j,i)));
       }
@@ -515,6 +525,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
   } else if (nrm == MGNormType::l1) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
+#pragma omp simd reduction(+: norm)
         for (int i=is; i<=ie; ++i)
           norm+=std::fabs(def(n,k,j,i));
       }
@@ -522,6 +533,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
   } else { // L2 norm
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
+#pragma omp simd reduction(+: norm)
         for (int i=is; i<=ie; ++i)
           norm+=SQR(def(n,k,j,i));
       }
@@ -547,6 +559,7 @@ Real Multigrid::CalculateTotal(MGVariable type, int n) {
        dz=rdz_*static_cast<Real>(1<<ll);
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
+#pragma omp simd reduction(+: s)
       for (int i=is; i<=ie; ++i)
         s+=src(n,k,j,i);
     }
@@ -566,6 +579,7 @@ void Multigrid::SubtractAverage(MGVariable type, int n, Real ave) {
   ie=is+size_.nx1+1, je=js+size_.nx2+1, ke=ks+size_.nx3+1;
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
+#pragma omp simd
       for (int i=is; i<=ie; ++i)
         dst(n,k,j,i)-=ave;
     }
@@ -620,6 +634,7 @@ void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
   for (int v=0; v<nvar_; ++v) {
     for (int k=kl, fk=kl; k<=ku; ++k, fk+=2) {
       for (int j=jl, fj=jl; j<=ju; ++j, fj+=2) {
+#pragma ivdep
         for (int i=il, fi=il; i<=iu; ++i, fi+=2)
           dst(v, k, j, i)=0.125*(src(v, fk,   fj,   fi)+src(v, fk,   fj,   fi+1)
                                 +src(v, fk,   fj+1, fi)+src(v, fk,   fj+1, fi+1)
@@ -644,6 +659,7 @@ void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<R
   for (int v=0; v<nvar_; ++v) {
     for (int k=kl, fk=fkl; k<=ku; ++k, fk+=2) {
       for (int j=jl, fj=fjl; j<=ju; ++j, fj+=2) {
+#pragma ivdep
         for (int i=il, fi=fil; i<=iu; ++i, fi+=2) {
           dst(v,fk  ,fj  ,fi  ) +=
               0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j-1,i-1)
@@ -698,6 +714,7 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
   for (int v=0; v<nvar_; ++v) {
     for (int k=kl, fk=fkl; k<=ku; ++k, fk+=2) {
       for (int j=jl, fj=fjl; j<=ju; ++j, fj+=2) {
+#pragma ivdep
         for (int i=il, fi=fil; i<=iu; ++i, fi+=2) {
           dst(v,fk  ,fj,  fi  )=(
               + 125.*src(v,k-1,j-1,i-1)+  750.*src(v,k-1,j-1,i  )-  75.*src(v,k-1,j-1,i+1)
@@ -835,6 +852,7 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
       for (int j = js; j <= je; ++j) {
         Real y = coord.x2v(j);
         Real y2 = y*y, yz = y*z;
+#pragma ivdep
         for (int i = is; i <= ie; ++i) {
           Real x = coord.x1v(i);
           Real x2 = x*x, xy = x*y, zx = z*x;
@@ -888,6 +906,7 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
       for (int j = js; j <= je; ++j) {
         Real y = coord.x2v(j);
         Real y2 = y*y, yz = y*z;
+#pragma ivdep
         for (int i = is; i <= ie; ++i) {
           Real x = coord.x1v(i);
           Real x2 = x*x, xy = x*y, zx = z*x;

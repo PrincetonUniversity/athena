@@ -117,7 +117,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     MGGravityBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     MGGravitySourceMaskFunction_{} {
   std::stringstream msg;
-  RegionSize block_size;
   MeshBlock *pfirst{};
   BoundaryFlag block_bcs[6];
   std::int64_t nbmax;
