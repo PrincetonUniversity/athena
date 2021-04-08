@@ -164,7 +164,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
               Real& bcc1 = pfld->bcc(IB1,k,j,i);
               Real& bcc2 = pfld->bcc(IB2,k,j,i);
               Real& bcc3 = pfld->bcc(IB3,k,j,i);
-              constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED;
+              constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0);
               hst_data[prev_out] += vol(i)*0.5*bcc1*bcc1;
               hst_data[prev_out + 1] += vol(i)*0.5*bcc2*bcc2;
               hst_data[prev_out + 2] += vol(i)*0.5*bcc3*bcc3;
@@ -172,7 +172,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             // (conserved variable) Passive scalars:
             for (int n=0; n<NSCALARS; n++) {
               Real& s = psclr->s(n,k,j,i);
-              constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED + NFIELD;
+              constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD;
               hst_data[prev_out + n] += vol(i)*s;
             }
           }
