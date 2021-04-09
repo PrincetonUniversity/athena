@@ -468,6 +468,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
     for (int n=0; n<nvar; ++n) {
       for (int k=sk, fk=fsk; k<=ek; ++k, fk+=2) {
         for (int j=sj, fj=fsj; j<=ej; ++j, fj+=2) {
+#pragma ivdep
           for (int i=si, fi=fsi; i<=ei; ++i, fi+=2)
             buf[p++] = cbuf_(n, k, j, i)
                      = 0.125*(((u(n, fk,   fj,   fi)+u(n, fk,   fj,   fi+1))
@@ -481,6 +482,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
       for (int n=0; n<nvar; ++n) {
         for (int k=sk, fk=fsk; k<=ek; ++k, fk+=2) {
           for (int j=sj, fj=fsj; j<=ej; ++j, fj+=2) {
+#pragma ivdep
             for (int i=si, fi=fsi; i<=ei; ++i, fi+=2)
               buf[p++] = cbufold_(n, k, j, i)
                        = 0.125*(((old(n, fk,   fj,   fi)+old(n, fk,   fj,   fi+1))
@@ -524,6 +526,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
   for (int n=0; n<nvar; ++n) {
     for (int k=sk, fk=fsk; k<=ek; ++k, fk+=2) {
       for (int j=sj, fj=fsj; j<=ej; ++j, fj+=2) {
+#pragma ivdep
         for (int i=si, fi=fsi; i<=ei; ++i, fi+=2)
           buf[p++] = cbuf_(n, k, j, i)
                    = 0.125*(((u(n, fk,   fj,   fi)+u(n, fk,   fj,   fi+1))
@@ -537,6 +540,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
     for (int n=0; n<nvar; ++n) {
       for (int k=sk, fk=fsk; k<=ek; ++k, fk+=2) {
         for (int j=sj, fj=fsj; j<=ej; ++j, fj+=2) {
+#pragma ivdep
           for (int i=si, fi=fsi; i<=ei; ++i, fi+=2)
             buf[p++] = cbufold_(n, k, j, i)
                      = 0.125*(((old(n, fk,   fj,   fi)+old(n, fk,   fj,   fi+1))
@@ -941,6 +945,7 @@ void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata) {
     for (int v=0; v<nvar; ++v) {
       for (int k=sk, fk=fsk; k<=ek; ++k, fk+=2) {
         for (int j=sj, fj=fsj; j<=ej; ++j, fj+=2) {
+#pragma ivdep
           for (int i=si, fi=fsi; i<=ei; ++i, fi+=2) {
             if (fk >= 0 && fj >= 0 && fi >= 0)
               dst(v, fk,   fj,   fi  ) =
@@ -990,6 +995,7 @@ void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata) {
       for (int v=0; v<nvar; ++v) {
         for (int k=sk, fk=fsk; k<=ek; ++k, fk+=2) {
           for (int j=sj, fj=fsj; j<=ej; ++j, fj+=2) {
+#pragma ivdep
             for (int i=si, fi=fsi; i<=ei; ++i, fi+=2) {
               if (fk >= 0 && fj >= 0 && fi >= 0)
                 old(v, fk,   fj,   fi  ) =
@@ -1063,6 +1069,7 @@ int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *
     else               fi = fe;
     for (int v=0; v<nvar; ++v) {
       for (int fk=fs; fk<=fe; fk+=2) {
+#pragma ivdep
         for (int fj=fs; fj<=fe; fj+=2)
           buf[p++] = 0.25*((u(v, fk,   fj,   fi)+u(v, fk,   fj+1, fi))
                           +(u(v, fk+1, fj,   fi)+u(v, fk+1, fj+1, fi)));
@@ -1074,6 +1081,7 @@ int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *
     else               fj = fe;
     for (int v=0; v<nvar; ++v) {
       for (int fk=fs; fk<=fe; fk+=2) {
+#pragma ivdep
         for (int fi=fs; fi<=fe; fi+=2)
           buf[p++] = 0.25*((u(v, fk,   fj, fi)+u(v, fk,   fj, fi+1))
                           +(u(v, fk+1, fj, fi)+u(v, fk+1, fj, fi+1)));
@@ -1085,6 +1093,7 @@ int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *
     else               fk = fe;
     for (int v=0; v<nvar; ++v) {
       for (int fj=fs; fj<=fe; fj+=2) {
+#pragma ivdep
         for (int fi=fs; fi<=fe; fi+=2)
           buf[p++] = 0.25*((u(v, fk, fj,   fi)+u(v, fk, fj,   fi+1))
                           +(u(v, fk, fj+1, fi)+u(v, fk, fj+1, fi+1)));
