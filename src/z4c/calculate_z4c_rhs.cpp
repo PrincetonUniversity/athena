@@ -554,7 +554,33 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
     for(int a = 0; a < NDIM; ++a) {
       ILOOP1(i) {
         rhs.beta_u(a,k,j,i) = opt.shift_Gamma * z4c.Gam_u(a,k,j,i) + opt.shift_advect * Lbeta_u(a,i);
+
+        // This term is taken care of below
         // rhs.beta_u(a,k,j,i) -= opt.shift_eta * z4c.beta_u(a,k,j,i);
+      }
+    }
+
+    // harmonic gauge terms
+    if (std::fabs(opt.shift_alpha2Gamma) > 0.0) {
+      // coutBoldBlue("opt.shift_alpha2Gamma\n");
+      for(int a = 0; a < NDIM; ++a) {
+        ILOOP1(i) {
+          rhs.beta_u(a,k,j,i) += opt.shift_alpha2Gamma *
+                                 SQR(z4c.alpha(k,j,i)) * z4c.Gam_u(a,k,j,i);
+        }
+      }
+    }
+
+    if (std::fabs(opt.shift_H) > 0.0) {
+      // coutBoldRed("opt.shift_H\n");
+      for(int a = 0; a < NDIM; ++a) {
+        for(int b = 0; b < NDIM; ++b) {
+          ILOOP1(i) {
+            rhs.beta_u(a,k,j,i) += opt.shift_H * z4c.alpha(k,j,i) *
+              chi_guarded(i) * (0.5 * z4c.alpha(k,j,i) * dchi_d(b,i) -
+                                dalpha_d(b,i)) * g_uu(a,b,i);
+          }
+        }
       }
     }
 

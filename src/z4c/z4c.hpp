@@ -182,6 +182,8 @@ public:
     Real lapse_advect;
     // Gauge condition for the shift
     Real shift_Gamma;
+    Real shift_alpha2Gamma;
+    Real shift_H;
     Real shift_advect;
     Real shift_eta;
     // Spatially dependent shift damping

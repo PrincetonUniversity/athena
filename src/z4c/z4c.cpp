@@ -177,6 +177,9 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   opt.shift_Gamma = pin->GetOrAddReal("z4c", "shift_Gamma", 1.0);
   opt.shift_advect = pin->GetOrAddReal("z4c", "shift_advect", 1.0);
 
+  opt.shift_alpha2Gamma = pin->GetOrAddReal("z4c", "shift_alpha2Gamma", 0.0);
+  opt.shift_H = pin->GetOrAddReal("z4c", "shift_H", 0.0);
+
   opt.shift_eta = pin->GetOrAddReal("z4c", "shift_eta", 2.0);
 
 #if defined(Z4C_ETA_CONF)
