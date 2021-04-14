@@ -58,8 +58,9 @@ SRC_FILES := \
 		$(wildcard src/task_list/*.cpp) \
 		$(wildcard src/utils/*.cpp) \
 @CFD_FILES@ \
-@Z4C_FILES@		$(wildcard src/wave/*.cpp) \
-		$(wildcard src/advection/*.cpp) \
+@Z4C_FILES@	\
+@WAV_FILES@ \
+@ADV_FILES@ \
 		$(MPIFFT_FILE)
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))

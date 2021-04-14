@@ -1130,10 +1130,24 @@ if args['compact_fd']:
 else:
     makefile_options['CFD_FILES'] = ''
 
-# Populate makefile with z4c specific src
-files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs',
-         'gauge', 'z4c_utils']
+# Populate makefile with wave equation specific src (if activated)
+if args['w']:
+    makefile_options['WAV_FILES'] = '$(wildcard src/wave/*.cpp)'
+else:
+    makefile_options['WAV_FILES'] = ''
+
+# Populate makefile with advection equation specific src (if activated)
+if args['a']:
+    makefile_options['ADV_FILES'] = '$(wildcard src/advection/*.cpp)'
+else:
+    makefile_options['ADV_FILES'] = ''
+
+
 if args['z']:
+    # Populate makefile with z4c specific src
+    files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs',
+            'gauge', 'z4c_utils']
+
     if args['z_wext']:
         files.append('calculate_weyl_scalars')
         files.append('wave_extract')
@@ -1146,8 +1160,11 @@ if args['z']:
     elif args['prob'] == "z4c_awa_tests":
         files.append('awa_z4c')
 
-aux = ["		$(wildcard src/z4c/{}.cpp) \\".format(f) for f in files]
-makefile_options['Z4C_FILES'] = '\n'.join(aux) + '\n'
+    aux = ["		$(wildcard src/z4c/{}.cpp) \\".format(f) for f in files]
+    makefile_options['Z4C_FILES'] = '\n'.join(aux) + '\n'
+
+else:
+    makefile_options['Z4C_FILES'] = ''
 
 # Make substitutions
 for key, val in definitions.items():
