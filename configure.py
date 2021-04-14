@@ -1130,15 +1130,22 @@ if args['compact_fd']:
 else:
     makefile_options['CFD_FILES'] = ''
 
+files_athena_tasklist = [
+    'fft_grav_task_list', 'mg_task_list', 'sts_task_list', 'task_list',
+    'time_integrator', 'task_id'
+]
+
 # Populate makefile with wave equation specific src (if activated)
 if args['w']:
     makefile_options['WAV_FILES'] = '$(wildcard src/wave/*.cpp)'
+    files_athena_tasklist.append('wave_task_list')
 else:
     makefile_options['WAV_FILES'] = ''
 
 # Populate makefile with advection equation specific src (if activated)
 if args['a']:
     makefile_options['ADV_FILES'] = '$(wildcard src/advection/*.cpp)'
+    files_athena_tasklist.append('advection_task_list')
 else:
     makefile_options['ADV_FILES'] = ''
 
@@ -1147,6 +1154,7 @@ if args['z']:
     # Populate makefile with z4c specific src
     files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs',
             'gauge', 'z4c_utils']
+    files_athena_tasklist.append('z4c_task_list')
 
     if args['z_wext']:
         files.append('calculate_weyl_scalars')
@@ -1165,6 +1173,11 @@ if args['z']:
 
 else:
     makefile_options['Z4C_FILES'] = ''
+
+# Take care of task-list files
+aux_tal = ["		$(wildcard src/task_list/{}.cpp) \\".format(f)
+           for f in files_athena_tasklist]
+makefile_options['TAL_FILES'] = '\n'.join(aux_tal) + '\n'
 
 # Make substitutions
 for key, val in definitions.items():

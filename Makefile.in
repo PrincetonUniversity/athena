@@ -55,7 +55,7 @@ SRC_FILES := \
 		src/pgen/$(PROBLEM_FILE) \
 		$(wildcard src/reconstruct/*.cpp) \
 		$(wildcard src/scalars/*.cpp) \
-		$(wildcard src/task_list/*.cpp) \
+@TAL_FILES@ \
 		$(wildcard src/utils/*.cpp) \
 @CFD_FILES@ \
 @Z4C_FILES@	\
