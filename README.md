@@ -15,4 +15,23 @@ athena
 
 Athena++ radiation MHD code
 
-This is the development repository; please read [our contributing guidelines](./CONTRIBUTING.md) for details on how to participate.
+Please read [our contributing guidelines](./CONTRIBUTING.md) for details on how to participate.
+
+## Citation
+To cite Athena++ in your publication, please use the following BibTeX to refer to the code's [method paper](https://ui.adsabs.harvard.edu/abs/2020ApJS..249....4S/abstract):
+```
+@article{Stone2020,
+	doi = {10.3847/1538-4365/ab929b},
+	url = {https://doi.org/10.3847%2F1538-4365%2Fab929b},
+	year = 2020,
+	month = jun,
+	publisher = {American Astronomical Society},
+	volume = {249},
+	number = {1},
+	pages = {4},
+	author = {James M. Stone and Kengo Tomida and Christopher J. White and Kyle G. Felker},
+	title = {The Athena$\mathplus$$\mathplus$ Adaptive Mesh Refinement Framework: Design and Magnetohydrodynamic Solvers},
+	journal = {The Astrophysical Journal Supplement Series},
+}
+```
+Additionally, you can add a reference to `https://github.com/PrincetonUniversity/athena` in a footnote.
