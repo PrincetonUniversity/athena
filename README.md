@@ -8,6 +8,7 @@ athena
 [![Travis CI Build Status](https://travis-ci.com/PrincetonUniversity/athena.svg?token=Ejzw3yndG1Fqub679gCB&branch=master)](https://travis-ci.com/PrincetonUniversity/athena)
 [![codecov](https://codecov.io/gh/PrincetonUniversity/athena/branch/master/graph/badge.svg?token=ZzniY084kP)](https://codecov.io/gh/PrincetonUniversity/athena)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](code_of_conduct.md)
 
 <!--[![Public GitHub  issues](https://img.shields.io/github/issues/PrincetonUniversity/athena-public-version.svg)](https://github.com/PrincetonUniversity/athena-public-version/issues)
 [![Public GitHub pull requests](https://img.shields.io/github/issues-pr/PrincetonUniversity/athena-public-version.svg)](https://github.com/PrincetonUniversity/athena-public-version/pulls) -->
