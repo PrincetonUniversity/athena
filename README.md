@@ -38,9 +38,9 @@ To cite Athena++ in your publication, please use the following BibTeX to refer t
 	journal = {The Astrophysical Journal Supplement Series},
 }
 ```
-Additionally, you can add a reference to `https://github.com/PrincetonUniversity/athena` in a footnote. F
+Additionally, you can add a reference to `https://github.com/PrincetonUniversity/athena` in a footnote.
 
-inally, we have minted DOIs for each released version of Athena++ on Zenodo. This practice encourages computational reproducibility, since you can specify exactly which version of the code was used to produce the results in your publication. `10.5281/zenodo.4455879` is the DOI which cites _all_ versions of the code; it will always resolve to the latest release. Click on the Zenodo badge above to get access to BibTeX, etc. info related to these DOIs, e.g.:
+Finally, we have minted DOIs for each released version of Athena++ on Zenodo. This practice encourages computational reproducibility, since you can specify exactly which version of the code was used to produce the results in your publication. `10.5281/zenodo.4455879` is the DOI which cites _all_ versions of the code; it will always resolve to the latest release. Click on the Zenodo badge above to get access to BibTeX, etc. info related to these DOIs, e.g.:
 
 ```
 @software{athena,
