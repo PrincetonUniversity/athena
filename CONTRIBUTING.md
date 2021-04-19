@@ -1,15 +1,14 @@
 # Introduction
-Welcome! Thank you for considering contributing to Athena++.
+Welcome! Thank you for considering contributing to Athena++. This project adheres to a [code of conduct](CODE_OF_CONDUCT.md), which you are expected to uphold by participating. 
 
 The guidelines in this document are meant to help make the development of Athena++ straightforward and effective. They are a set of best practices, not strict rules, and this document may be modified at any time. Navigating the code can be daunting for new users, so if anything is unclear, please let us know!
 
 <!-- ### Table of Contents -->
 
+
 ## Resources and quick links
 * The latest development version of Athena++ is hosted in the public [PrincetonUniversity/athena](https://github.com/PrincetonUniversity/athena) GitHub repository.
-* The public version of Athena++ was formerly distributed via the public [PrincetonUnviersity/athena-public-version](https://github.com/PrincetonUniversity/athena-public-version) GitHub repository. This repository is now archived. 
-  * Periodic releases from the development repository are transferred by following the procedure described in [`pub/doc/pub_doc.tex`](https://github.com/PrincetonUniversity/athena/blob/master/pub/doc/pub_doc.tex) using the scripts in `pub/`.
-<!-- Establish timeline for periodic releases? -->
+* The public version of Athena++ was formerly distributed via [PrincetonUnviersity/athena-public-version](https://github.com/PrincetonUniversity/athena-public-version) GitHub repository. This repository is now archived. 
 * The final version of the predecessor C code, Athena 4.2, has been migrated from its original SVN repository to GitHub at [PrincetonUniversity/Athena-Cversion](https://github.com/PrincetonUniversity/Athena-Cversion).
   * [Athena 4.2 Documentation](https://princetonuniversity.github.io/Athena-Cversion/AthenaDocs) is hosted on GitHub Pages.
   * The [Athena 4.2 Test Page](https://www.astro.princeton.edu/~jstone/Athena/tests/) contains useful algorithm test results.
@@ -53,7 +52,7 @@ If you are new to Git or a need a refresher, the [Atlassian Bitbucket Git tutori
 
 The easiest way to contribute to Athena++ is to fork the repository to your GitHub account, create a branch on your fork, and make your changes there. When the changes are ready for submission, open a pull request (PR) on the Athena++ repository. The workflow could be summarized by the following commands:
 1. Fork the repository to your GitHub account (only once) at https://github.com/PrincetonUniversity/athena/fork
-2. Clone a local copy of your private fork:
+2. Clone a local copy of your fork:
 ```
 git clone https://github.com/<username>/athena ./athena-<username>
 ```
@@ -81,7 +80,7 @@ The use of separate branches for both new features and bug fixes, no matter how 
 
 For the majority of development, users should use personal forks instead of branches on [PrincetonUniversity/athena](https://github.com/PrincetonUniversity/athena) (especially for larger development projects). The shared Athena++ repository should only contain a restricted set of main feature branches and temporary hotfix branches at any given time. <!-- consider reaching out to Athena++ developers before starting any significant PR/feature development to see if anyone is working on it or if we would consider merging it into Athena++-->
 
-To update your private fork with changes from [PrincetonUniversity/athena](https://github.com/PrincetonUniversity/athena), from the `master` branch on a cloned copy of the forked repo:
+To update your fork with changes from [PrincetonUniversity/athena](https://github.com/PrincetonUniversity/athena), from the `master` branch on a cloned copy of the forked repo:
 1. Add a remote named `upstream` for the original Athena++ repository:
 ```
 git remote add upstream https://github.com/PrincetonUniversity/athena
@@ -120,7 +119,7 @@ git config --global pull.rebase true
 ```
 
 ### Pull requests
-When your changes are ready for submission, you may open a new pull request to `master` [from a branch on the main repository (Write access)](https://github.com/PrincetonUniversity/athena/pull/new/master) or from a branch on your private forked repository. For the latter, go to the page for your fork on GitHub, select your development branch, and click the pull request button. Fill out the relevant sections of the [`PULL_REQUEST_TEMPLATE.md`](https://github.com/PrincetonUniversity/athena/blob/master/.github/PULL_REQUEST_TEMPLATE.md) to the best of your ability when submitting a new PR.
+When your changes are ready for submission, you may open a new pull request to `master` [from a branch on the main repository (Write access)](https://github.com/PrincetonUniversity/athena/pull/new/master) or from a branch on your forked repository. For the latter, go to the page for your fork on GitHub, select your development branch, and click the pull request button. Fill out the relevant sections of the [`PULL_REQUEST_TEMPLATE.md`](https://github.com/PrincetonUniversity/athena/blob/master/.github/PULL_REQUEST_TEMPLATE.md) to the best of your ability when submitting a new PR.
 
 We will discuss the proposed changes and may request that you make modifications to your code before merging. To do so, simply commit to the feature branch and push your changes to GitHub, and your pull request will reflect these updates.
 
@@ -179,17 +178,7 @@ Any significant change or new feature requires accompanying documentation before
 ## Community
 The Athena++ private Slack workspace is located at [athena-pp.slack.com](https://athena-pp.slack.com). The default `#general` and `#random` channels are available for free-form discussion and user support, and topic-specific channels and private Direct Messages (DMs) with up to 8 other members can be started by anyone. Issues and pull requests on the GitHub repository should still be the main forum to discuss development details, but the Slack workspace is a useful centralized forum for general discussion, sharing new results, asking questions, and learning what others are working on. This Slack workspace was setup on the Free plan, which essentially limits the amount of file storage to 5GB and message history to 10k messages
 
-### Slack Apps
-The `#development` channel receives messages from the development GitHub repository when commits are made to `master` or an Issue/PR is opened or closed. This channel also receives messages from the Jenkins and TravisCI Slack Apps, which provide summaries of and links to every [Continuous Integration (CI)](https://github.com/PrincetonUniversity/athena/wiki/Continuous-Integration-%28CI%29) build test result.
-
-Note, the GitHub + Slack integration was originally managed via a GitHub Webhook and "GitHub Notifications (Legacy)" Slack App until 5/19/2018. The current [GitHub + Slack App](https://slack.github.com/) interface enables embedded [rich link previews ](https://github.com/integrations/slack) when posting links from GitHub:
-> When a user posts a GitHub link to issues and pull requests, directly linked comments, code blobs with line numbers, as well as organizations, repositories, and users in Slack, a preview of the link will be shown.
-
-You may need to use the `/invite @github` command in private channels and Direct Messages to get rich link previews to work there. Posting links to the private [PrincetonUniversity/athena](https://github.com/PrincetonUniversity/athena) repository requires that you to link your Slack and GitHub accounts with the `/github signin` command. The GitHub + Slack App also allows you to open and close Issues and PRs from Slack with `/github close [issue link]`, for example.
-
-Slack's simple file upload and sharing features are especially useful when compared to GitHub or email. Slack also integrates with cloud file storage apps such as Dropbox, Google Drive, and Box.
-
-At this time, the Slack workspace is closed to the general public, but it is open to anyone who has Read access to the private repository and their associates. The workspace is configured such that anyone with a `@princeton.edu` email can join automatically at [this signup link](https://join.slack.com/t/athena-pp/signup). Any current member may invite new members. If all else fails, send your email address to [kfelker@math.princeton.edu](mailto:kfelker@math.princeton.edu) to request an invite.
+At this time, the Slack workspace is closed to the general public. The workspace is configured such that anyone with a `@princeton.edu` email can join automatically at [this signup link](https://join.slack.com/t/athena-pp/signup). Any current member may invite new members.
 
 ## Versioning and public releases
 We intend to provide periodic releases, versioned according to CalVer, or [Calendar Versioninng](https://calver.org/).
@@ -209,7 +198,7 @@ A detailed example of these steps are illustrated in a below section.
 *Last updated April 2021*.
 
 #### Prepare to increment version
-Start in the root project directory of a fully up-to-date clone of the private repository, with all changes committed and pushed. For convenience, we assume this is located at `~/athena/`.
+Start in the root project directory of a fully up-to-date clone of the repository, with all changes committed and pushed. For convenience, we assume this is located at `~/athena/`.
 1. Edit `src/main.cpp` to update the following line with the new version number and current month and year for proper `athena -h` output:
 ```c++
 std::string athena_version = "version 21.0 - January 2021";
@@ -230,16 +219,12 @@ std::string athena_version = "version 21.0 - January 2021";
 
 #### Create repository tag and GitHub Release
 
-5. Push the 2x new tags to the private repository's GitHub remote with `git push --tags`
-6. [Draft a new Release on the private repository](https://github.com/PrincetonUniversity/athena/releases/new) using the `v1.2.0-dev` tag.
-  - Even though the `v1.2.0` tag will have the latest creation date, the `v1.2.0-dev` should be considered the most recent version on the private repository in this scenario.
-  - Use a simple title, *Athena++ 1.2.0-dev*, and header `## Release 1.2.0`
+4. Push the 2x new tags to the GitHub remote with `git push --tags`
+5. [Draft a new Release on the repository](https://github.com/PrincetonUniversity/athena/releases/new) using the `v21.0` tag.
+  - Use a simple title, *Athena++ 21.0*, and header `## Release 21.0`
   - Copy/paste the newly-updated "Added", "Removed", "Fixed/Changed" sections from `CHANGLEOG.md` into the notes and write an introduction.
 
-If nothing needs to be manually removed from `master` before the public release, then only the final 3 steps need to be executed. There will be no `v1.2.0-dev` tag, and the `v1.2.0` tag will be the latest release on the private repository.
-
-4. Announce the latest public release on the [Athena++
-  website](https://princetonuniversity.github.io/athena/index.html):
+6. Announce the latest public release on the [Athena++ website](https://www.athena-astro.app/):
 ```
 cd ~/athena; git checkout gh-pages
 emacs download.html # Edit the latest version number and write description
