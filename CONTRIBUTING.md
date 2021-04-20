@@ -180,21 +180,14 @@ The Athena++ private Slack workspace is located at [athena-pp.slack.com](https:/
 
 At this time, the Slack workspace is closed to the general public. The workspace is configured such that anyone with a `@princeton.edu` email can join automatically at [this signup link](https://join.slack.com/t/athena-pp/signup). Any current member may invite new members.
 
-## Versioning and public releases
-We intend to provide periodic releases, versioned according to CalVer, or [Calendar Versioninng](https://calver.org/).
+## Versioning and releases
+We intend to provide periodic releases, versioned according to CalVer, or [Calendar Versioninng](https://calver.org/). A detailed walkthrough of the steps a project maintainer must complete in order to mint a new release is provided in the following section.
 
 We currently maintain Git tags and code versions in a one-to-one correspondence: all versions are tagged, and all tags have a version number. However, not all tags/versions are released (see below section discussing pre-release tagged versions). A release version is defined by drafting a [GitHub Release](https://help.github.com/articles/creating-releases/) along with release notes in the GitHub UI. 
 
 Each release is accompanied by an Git annotated (not lightweight) tag. An annotated tag is a full Git object with its own tagger name, tagger email, and creation date. A lightweight Git tag is more appropriate for temporary or local/personal use than for publishing releases, since a lightweight tag is merely a pointer to a commit object (much like a branch that doesn't naturally move with commits and *shouldn't* be moved by users after it is shared). Therefore, the tag should be created from the Git CLI, not the GitHub UI which only supports creating lightweight tags as of 5/24/18.
 
-Before creating new versions and Git tags, the following manual actions should be taken:
-* The version string output by the `athena -h` command must be manually
-updated in `src/main.cpp`.  
-* The user should also manually revert the `README.md` file to the simple (no CI status badges nor link to this file) format before tagging on the public repository.
-
-A detailed example of these steps are illustrated in a below section.
-
-### Example steps for tagging and releasing new public version
+### Example steps for tagging and releasing a new version
 *Last updated April 2021*.
 
 #### Prepare to increment version
