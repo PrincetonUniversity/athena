@@ -469,7 +469,7 @@ if args['cxx'] == 'icpx':
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     # ICX drivers icx and icpx will accept ICC Classic Compiler options or Clang*/LLVM Compiler options
     makefile_options['COMPILER_FLAGS'] = (
-      '-O3 -std=c++11 -ipo -xhost  -qopenmp-simd '
+      '-O3 -std=c++11 -ipo -xhost -qopenmp-simd '
     )
     # Currently unsupported, but "options to be supported" according to icpx -qnextgen-diag
     # '-inline-forceinline -qopt-prefetch=4 '
