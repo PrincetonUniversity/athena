@@ -89,7 +89,7 @@ void OrbitalAdvection::ConvertOrbitalSystem(const AthenaArray<Real> &w0,
               u_orb(IM2,k,j,i) = m2 + mk;
               u_orb(IM3,k,j,i) = u0(IM3,k,j,i);
               if (NON_BAROTROPIC_EOS)
-                u_orb(IEN,k,j,i) = u0(IEN,k,j,i)+mk*(m2+0.5*mk);
+                u_orb(IEN,k,j,i) = u0(IEN,k,j,i)+mk*(m2+0.5*mk)/den;
             }
           }
         }
@@ -106,7 +106,7 @@ void OrbitalAdvection::ConvertOrbitalSystem(const AthenaArray<Real> &w0,
               u_orb(IM2,k,j,i) = u0(IM2,k,j,i);
               u_orb(IM3,k,j,i) = m3+ mk;
               if (NON_BAROTROPIC_EOS)
-                u_orb(IEN,k,j,i) = u0(IEN,k,j,i)+mk*(m3+0.5*mk);
+                u_orb(IEN,k,j,i) = u0(IEN,k,j,i)+mk*(m3+0.5*mk)/den;
             }
           }
         }
