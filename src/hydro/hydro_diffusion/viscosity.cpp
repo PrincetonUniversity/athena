@@ -24,8 +24,7 @@
 //! \brief Calculate isotropic viscous stress as fluxes
 
 void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
-                                    const AthenaArray<Real> &cons,
-                                    AthenaArray<Real> *visflx) {
+                     const AthenaArray<Real> &iprim, AthenaArray<Real> *visflx) {
   Hydro *ph = pmb_->phydro;
   const bool f2 = pmb_->pmy_mesh->f2;
   const bool f3 = pmb_->pmy_mesh->f3;
@@ -38,7 +37,7 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
   Real nu1, denf, flx1, flx2, flx3;
   Real nuiso2 = - TWO_3RD;
 
-  DivVelocity(prim, div_vel_);
+  DivVelocity(iprim, div_vel_);
 
   // Calculate the flux across each face.
   // i-direction
@@ -53,13 +52,13 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
   }
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
-      FaceXdx(k, j, is, ie+1, prim, fx_);
-      FaceXdy(k, j, is, ie+1, prim, fy_);
-      FaceXdz(k, j, is, ie+1, prim, fz_);
+      FaceXdx(k, j, is, ie+1, iprim, fx_);
+      FaceXdy(k, j, is, ie+1, iprim, fy_);
+      FaceXdz(k, j, is, ie+1, iprim, fz_);
 #pragma omp simd private(nu1, denf, flx1, flx2, flx3)
       for (int i=is; i<=ie+1; ++i) {
         nu1  = 0.5*(nu(DiffProcess::iso,k,j,i)   + nu(DiffProcess::iso,k,j,i-1));
-        denf = 0.5*(prim(IDN,k,j,i) + prim(IDN,k,j,i-1));
+        denf = 0.5*(iprim(IDN,k,j,i) + iprim(IDN,k,j,i-1));
         flx1 = -denf*nu1*(fx_(i) + nuiso2*0.5*(div_vel_(k,j,i) + div_vel_(k,j,i-1)));
         flx2 = -denf*nu1*fy_(i);
         flx3 = -denf*nu1*fz_(i);
@@ -67,9 +66,9 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
         x1flux(IM2,k,j,i) += flx2;
         x1flux(IM3,k,j,i) += flx3;
         if (NON_BAROTROPIC_EOS)
-          x1flux(IEN,k,j,i) += 0.5*((ph->w(IM1,k,j,i-1) + ph->w(IM1,k,j,i))*flx1 +
-                                    (ph->w(IM2,k,j,i-1) + ph->w(IM2,k,j,i))*flx2 +
-                                    (ph->w(IM3,k,j,i-1) + ph->w(IM3,k,j,i))*flx3);
+          x1flux(IEN,k,j,i) += 0.5*((prim(IM1,k,j,i-1) + prim(IM1,k,j,i))*flx1 +
+                                    (prim(IM2,k,j,i-1) + prim(IM2,k,j,i))*flx2 +
+                                    (prim(IM3,k,j,i-1) + prim(IM3,k,j,i))*flx3);
       }
     }
   }
@@ -86,14 +85,14 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
     for (int k=kl; k<=ku; ++k) {
       for (int j=js; j<=je+1; ++j) {
         // compute fluxes
-        FaceYdx(k, j, is, ie, prim, fx_);
-        FaceYdy(k, j, is, ie, prim, fy_);
-        FaceYdz(k, j, is, ie, prim, fz_);
+        FaceYdx(k, j, is, ie, iprim, fx_);
+        FaceYdy(k, j, is, ie, iprim, fy_);
+        FaceYdz(k, j, is, ie, iprim, fz_);
         // store fluxes
 #pragma omp simd private(nu1, denf, flx1, flx2, flx3)
         for (int i=il; i<=iu; i++) {
           nu1  = 0.5*(nu(DiffProcess::iso,k,j,i)    + nu(DiffProcess::iso,k,j-1,i));
-          denf = 0.5*(prim(IDN,k,j-1,i)+ prim(IDN,k,j,i));
+          denf = 0.5*(iprim(IDN,k,j-1,i)+ iprim(IDN,k,j,i));
           flx1 = -denf*nu1*fx_(i);
           flx2 = -denf*nu1*(fy_(i) + nuiso2*0.5*(div_vel_(k,j-1,i) + div_vel_(k,j,i)));
           flx3 = -denf*nu1*fz_(i);
@@ -101,22 +100,22 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
           x2flux(IM2,k,j,i) += flx2;
           x2flux(IM3,k,j,i) += flx3;
           if (NON_BAROTROPIC_EOS)
-            x2flux(IEN,k,j,i) += 0.5*((ph->w(IM1,k,j,i) + ph->w(IM1,k,j-1,i))*flx1 +
-                                      (ph->w(IM2,k,j,i) + ph->w(IM2,k,j-1,i))*flx2 +
-                                      (ph->w(IM3,k,j,i) + ph->w(IM3,k,j-1,i))*flx3);
+            x2flux(IEN,k,j,i) += 0.5*((prim(IM1,k,j,i) + prim(IM1,k,j-1,i))*flx1 +
+                                      (prim(IM2,k,j,i) + prim(IM2,k,j-1,i))*flx2 +
+                                      (prim(IM3,k,j,i) + prim(IM3,k,j-1,i))*flx3);
         }
       }
     }
   } else { // modify x2flux for 1D
     // compute fluxes
-    FaceYdx(ks, js, is, ie, prim, fx_);
-    FaceYdy(ks, js, is, ie, prim, fy_);
-    FaceYdz(ks, js, is, ie, prim, fz_);
+    FaceYdx(ks, js, is, ie, iprim, fx_);
+    FaceYdy(ks, js, is, ie, iprim, fy_);
+    FaceYdz(ks, js, is, ie, iprim, fz_);
     // store fluxes
 #pragma omp simd private(nu1, denf, flx1, flx2, flx3)
     for (int i=il; i<=iu; i++) {
       nu1  = nu(DiffProcess::iso,ks,js,i);
-      denf = prim(IDN,ks,js,i);
+      denf = iprim(IDN,ks,js,i);
       flx1 = -denf*nu1*fx_(i);
       flx2 = -denf*nu1*(fy_(i) + nuiso2*div_vel_(ks,js,i));
       flx3 = -denf*nu1*fz_(i);
@@ -124,9 +123,9 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
       x2flux(IM2,ks,js,i) += flx2;
       x2flux(IM3,ks,js,i) += flx3;
       if (NON_BAROTROPIC_EOS)
-        x2flux(IEN,ks,js,i) += ph->w(IM1,ks,js,i)*flx1 +
-                               ph->w(IM2,ks,js,i)*flx2 +
-                               ph->w(IM3,ks,js,i)*flx3;
+        x2flux(IEN,ks,js,i) += prim(IM1,ks,js,i)*flx1 +
+                               prim(IM2,ks,js,i)*flx2 +
+                               prim(IM3,ks,js,i)*flx3;
     }
 #pragma omp simd
     for (int i=il; i<=iu; i++) {
@@ -150,14 +149,14 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
     for (int k=ks; k<=ke+1; ++k) {
       for (int j=jl; j<=ju; ++j) {
         // compute fluxes
-        FaceZdx(k, j, is, ie, prim, fx_);
-        FaceZdy(k, j, is, ie, prim, fy_);
-        FaceZdz(k, j, is, ie, prim, fz_);
+        FaceZdx(k, j, is, ie, iprim, fx_);
+        FaceZdy(k, j, is, ie, iprim, fy_);
+        FaceZdz(k, j, is, ie, iprim, fz_);
         // store fluxes
 #pragma omp simd private(nu1, denf, flx1, flx2, flx3)
         for (int i=il; i<=iu; i++) {
           nu1  = 0.5*(nu(DiffProcess::iso,k,j,i)     + nu(DiffProcess::iso,k-1,j,i));
-          denf = 0.5*(prim(IDN,k-1,j,i) + prim(IDN,k,j,i));
+          denf = 0.5*(iprim(IDN,k-1,j,i) + iprim(IDN,k,j,i));
           flx1 = -denf*nu1*fx_(i);
           flx2 = -denf*nu1*fy_(i);
           flx3 = -denf*nu1*(fz_(i) + nuiso2*0.5*(div_vel_(k-1,j,i) + div_vel_(k,j,i)));
@@ -165,23 +164,23 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
           x3flux(IM2,k,j,i) += flx2;
           x3flux(IM3,k,j,i) += flx3;
           if (NON_BAROTROPIC_EOS)
-            x3flux(IEN,k,j,i) += 0.5*((ph->w(IM1,k,j,i) + ph->w(IM1,k-1,j,i))*flx1 +
-                                      (ph->w(IM2,k,j,i) + ph->w(IM2,k-1,j,i))*flx2 +
-                                      (ph->w(IM3,k,j,i) + ph->w(IM3,k-1,j,i))*flx3);
+            x3flux(IEN,k,j,i) += 0.5*((prim(IM1,k,j,i) + prim(IM1,k-1,j,i))*flx1 +
+                                      (prim(IM2,k,j,i) + prim(IM2,k-1,j,i))*flx2 +
+                                      (prim(IM3,k,j,i) + prim(IM3,k-1,j,i))*flx3);
         }
       }
     }
   } else { // modify x2flux for 1D or 2D
     for (int j=jl; j<=ju; ++j) {
       // compute fluxes
-      FaceZdx(ks, j, is, ie, prim, fx_);
-      FaceZdy(ks, j, is, ie, prim, fy_);
-      FaceZdz(ks, j, is, ie, prim, fz_);
+      FaceZdx(ks, j, is, ie, iprim, fx_);
+      FaceZdy(ks, j, is, ie, iprim, fy_);
+      FaceZdz(ks, j, is, ie, iprim, fz_);
       // store fluxes
 #pragma omp simd private(nu1, denf, flx1, flx2, flx3)
       for (int i=il; i<=iu; i++) {
         nu1 = nu(DiffProcess::iso,ks,j,i);
-        denf = prim(IDN,ks,j,i);
+        denf = iprim(IDN,ks,j,i);
         flx1 = -denf*nu1*fx_(i);
         flx2 = -denf*nu1*fy_(i);
         flx3 = -denf*nu1*(fz_(i) + nuiso2*div_vel_(ks,j,i));
@@ -192,9 +191,9 @@ void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &prim,
         x3flux(IM2,ke+1,j,i) = x3flux(IM2,ks,j,i);
         x3flux(IM3,ke+1,j,i) = x3flux(IM3,ks,j,i);
         if (NON_BAROTROPIC_EOS) {
-          x3flux(IEN,ks,j,i) += ph->w(IM1,ks,j,i)*flx1 +
-                                ph->w(IM2,ks,j,i)*flx2 +
-                                ph->w(IM3,ks,j,i)*flx3;
+          x3flux(IEN,ks,j,i) += prim(IM1,ks,j,i)*flx1 +
+                                prim(IM2,ks,j,i)*flx2 +
+                                prim(IM3,ks,j,i)*flx3;
           x3flux(IEN,ke+1,j,i) = x3flux(IEN,ks,j,i);
         }
       }
@@ -485,8 +484,7 @@ void HydroDiffusion::FaceZdz(const int k, const int j, const int il, const int i
 //! \brief Calculate anisotropic viscous stress as fluxes
 
 void HydroDiffusion::ViscousFluxAniso(const AthenaArray<Real> &prim,
-                                      const AthenaArray<Real> &cons,
-                                      AthenaArray<Real> *visflx) {
+                            const AthenaArray<Real> &iprim, AthenaArray<Real> *visflx) {
   return;
 }
 
