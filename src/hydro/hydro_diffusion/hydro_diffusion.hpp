@@ -67,14 +67,14 @@ class HydroDiffusion {
   void NewDiffusionDt(Real &dt_vis, Real &dt_cnd);
 
   // viscosity
-  void ViscousFluxIso(const AthenaArray<Real> &prim, const AthenaArray<Real> &iprim,
-                      AthenaArray<Real> *flx_out);
-  void ViscousFluxAniso(const AthenaArray<Real> &prim, const AthenaArray<Real> &iprim,
-                        AthenaArray<Real> *flx_out);
+  void ViscousFluxIso(const AthenaArray<Real> &p, const AthenaArray<Real> &p_i,
+                      AthenaArray<Real> *flx);
+  void ViscousFluxAniso(const AthenaArray<Real> &p, const AthenaArray<Real> &p_i,
+                        AthenaArray<Real> *flx);
 
   // thermal conduction
-  void ThermalFluxIso(const AthenaArray<Real> &prim, AthenaArray<Real> *flx_out);
-  void ThermalFluxAniso(const AthenaArray<Real> &prim, AthenaArray<Real> *flx_out);
+  void ThermalFluxIso(const AthenaArray<Real> &p, AthenaArray<Real> *flx);
+  void ThermalFluxAniso(const AthenaArray<Real> &p, AthenaArray<Real> *flx);
 
  private:
   Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroDiffusion
