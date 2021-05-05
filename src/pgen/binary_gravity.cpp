@@ -86,7 +86,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IEN,k,j,i) = phydro->u(IDN,k,j,i);
         phydro->u(IM1,k,j,i) = 0.0;
         phydro->u(IM2,k,j,i) = 0.0;
-        phydro->u(IM3,k,j,i) = phydro->u(IEN,k,j,i);
+        phydro->u(IM3,k,j,i) = 0.0;
       }
     }
   }
@@ -203,9 +203,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           phydro->u(IM1,k,j,i) = pot0;
           phydro->u(IM2,k,j,i) = perr;
           phydro->u(IM3,k,j,i) = aerr;
-//          phydro->u(IM1,k,j,i) = ax;
-//          phydro->u(IM2,k,j,i) = ay;
-//          phydro->u(IM3,k,j,i) = az;
           err1 += perr * vol;
           err2 += aerr * vol;
         }
