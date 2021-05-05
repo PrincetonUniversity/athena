@@ -68,7 +68,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
         << "Set \"threshold = 0.0\" for automatic convergence control." << std::endl;
     ATHENA_ERROR(msg);
   }
-  if (four_pi_G_ == 0.0) {
+  if (four_pi_G_ < 0.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
         << "Gravitational constant must be set in the Mesh::InitUserMeshData "
@@ -149,6 +149,7 @@ MGGravity::~MGGravity() {
 //! \brief load the data and solve
 
 void MGGravityDriver::Solve(int stage) {
+  four_pi_G_ = pmy_mesh_->four_pi_G_;
   // Construct the Multigrid array
   vmg_.clear();
   for (int i = 0; i < pmy_mesh_->nblocal; ++i)
