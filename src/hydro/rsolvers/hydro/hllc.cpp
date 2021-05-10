@@ -46,8 +46,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   Real gm1 = gamma - 1.0;
   Real igm1 = 1.0/gm1;
 
-#pragma distribute_point
 #pragma omp simd private(wli,wri,flxi,fl,fr)
+#pragma distribute_point
   for (int i=il; i<=iu; ++i) {
     //--- Step 1.  Load L/R states into local variables
     wli[IDN]=wl(IDN,i);
