@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 
   //--- Step 2. --------------------------------------------------------------------------
   // Check for command line options and respond.
-  //printf("->main Step 2\n");
+  // printf("->main Step 2\n");
 
   for (int i=1; i<argc; i++) {
     // If argv[i] is a 2 character string of the form "-?" then:
@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
 
   //--- Step 4. --------------------------------------------------------------------------
   // Construct and initialize Mesh
-  //printf("->main Step 4\n");
+  printf("->main Step 4\n");
 
   Mesh *pmesh;
 #ifdef ENABLE_EXCEPTIONS
@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
   }
   //--- Step 5. --------------------------------------------------------------------------
   // Construct and initialize TaskList
-  //printf("->main Step 5\n");
+  printf("->main Step 5\n");
   TimeIntegratorTaskList *ptlist = nullptr;
 
 #ifdef ENABLE_EXCEPTIONS

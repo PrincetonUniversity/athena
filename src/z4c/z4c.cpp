@@ -207,34 +207,49 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   opt.AwA_polarised_Gowdy_t0 = pin->GetOrAddReal("z4c",
     "AwA_polarised_Gowdy_t0", 9.8753205829098);
 
-  // wave-zone refinement test [disabled by default]
+  // sphere-zone refinement test [disabled by default]
   opt.sphere_zone_number = pin->GetOrAddInteger("z4c", "sphere_zone_number", 0);
   if (opt.sphere_zone_number > 0) {
     opt.sphere_zone_levels.NewAthenaArray(opt.sphere_zone_number);
     opt.sphere_zone_radii.NewAthenaArray(opt.sphere_zone_number);
+    opt.sphere_zone_puncture.NewAthenaArray(opt.sphere_zone_number);
+    opt.sphere_zone_center1.NewAthenaArray(opt.sphere_zone_number);
+    opt.sphere_zone_center2.NewAthenaArray(opt.sphere_zone_number);
+    opt.sphere_zone_center3.NewAthenaArray(opt.sphere_zone_number);
 
     for (int i=0; i<opt.sphere_zone_number; ++i) {
       opt.sphere_zone_levels(i) = pin->GetOrAddInteger("z4c",
         "sphere_zone_level_" + std::to_string(i), 0);
       opt.sphere_zone_radii(i) = pin->GetOrAddReal("z4c",
         "sphere_zone_radius_" + std::to_string(i), 0.);
+      opt.sphere_zone_puncture(i) = pin->GetOrAddInteger("z4c",
+        "sphere_zone_puncture_" + std::to_string(i), -1);
+      // populate centers
+      opt.sphere_zone_center1(i) = pin->GetOrAddReal("z4c",
+        "sphere_zone_center1_" + std::to_string(i), 0.);
+      opt.sphere_zone_center2(i) = pin->GetOrAddReal("z4c",
+        "sphere_zone_center2_" + std::to_string(i), 0.);
+      opt.sphere_zone_center3(i) = pin->GetOrAddReal("z4c",
+        "sphere_zone_center3_" + std::to_string(i), 0.);
     }
   }
+// #ifdef NPUNCT
+//   // for puncture refinement
+//   if (NPUNCT > 0) {
+//     opt.puncture_levels.NewAthenaArray(NPUNCT);
+//     opt.puncture_radii.NewAthenaArray(NPUNCT);
 
-  // for puncture refinement
-  if (NPUNCT > 0) {
-    opt.puncture_levels.NewAthenaArray(NPUNCT);
-    opt.puncture_radii.NewAthenaArray(NPUNCT);
+//     for (int i=0; i<opt.sphere_zone_number; ++i) {
+//       opt.puncture_levels(i) = pin->GetOrAddInteger("z4c",
+//         "puncture_level_" + std::to_string(i),
+//         pin->GetOrAddInteger("mesh", "numlevel", 3));
+//       opt.puncture_radii(i) = pin->GetOrAddReal("z4c",
+//         "puncture_radius_" + std::to_string(i), 1.5);
+//     }
 
-    for (int i=0; i<opt.sphere_zone_number; ++i) {
-      opt.puncture_levels(i) = pin->GetOrAddInteger("z4c",
-        "puncture_level_" + std::to_string(i),
-        pin->GetOrAddInteger("mesh", "numlevel", 3));
-      opt.puncture_radii(i) = pin->GetOrAddReal("z4c",
-        "puncture_radius_" + std::to_string(i), 1.5);
-    }
+//   }
+// #endif
 
-  }
   //---------------------------------------------------------------------------
   // Set aliases
   SetADMAliases(storage.adm, adm);
@@ -446,6 +461,16 @@ Z4c::~Z4c()
   Riemm4_dd.DeleteAthenaTensor();
 #endif
 //WGC end
+
+  if (opt.sphere_zone_number > 0) {
+    opt.sphere_zone_levels.DeleteAthenaArray();
+    opt.sphere_zone_radii.DeleteAthenaArray();
+    opt.sphere_zone_puncture.DeleteAthenaArray();
+    opt.sphere_zone_center1.DeleteAthenaArray();
+    opt.sphere_zone_center2.DeleteAthenaArray();
+    opt.sphere_zone_center3.DeleteAthenaArray();
+  }
+
 
 }
 

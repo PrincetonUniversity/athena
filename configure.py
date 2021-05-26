@@ -262,6 +262,18 @@ parser.add_argument('-v_unif_prol_cbias',
                     default=False,
                     help='enable VC, uniform grid adapted prolongation')
 
+# -ref_box_in_box argument
+parser.add_argument("-ref_box_in_box",
+                    action='store_true',
+                    default=True,
+                    help='use box-in-box refinement')
+
+# -ref_spheres argument
+parser.add_argument("-ref_spheres",
+                    action='store_true',
+                    default=False,
+                    help='use sphere refinement (disables box-in-box)')
+
 # -compact_fd argument
 parser.add_argument('-compact_fd',
                     action='store_true',
@@ -704,6 +716,16 @@ if args['v_unif_prol_cbias']:
     definitions['VC_UGRID_PROLONGATE'] = 'VC_UGRID_PROLONGATE'
 else:
     definitions['VC_UGRID_PROLONGATE'] = 'NO_VC_UGRID_PROLONGATE'
+
+# -ref_box_in_box / ref_spheres arguments
+if args['ref_spheres']:
+    args['ref_box_in_box'] = False
+    definitions['Z4C_REF_BOX_IN_BOX'] = 'NO_Z4C_REF_BOX_IN_BOX'
+    definitions['Z4C_REF_SPHERES'] = 'Z4C_REF_SPHERES'
+
+if args['ref_box_in_box']:
+    definitions['Z4C_REF_BOX_IN_BOX'] = 'Z4C_REF_BOX_IN_BOX'
+    definitions['Z4C_REF_SPHERES'] = 'NO_Z4C_REF_SPHERES'
 
 # -compact_fd argument
 if args['compact_fd']:
@@ -1224,7 +1246,8 @@ if args['z']:
     print('  Z4c tracker:                  ' + ('ON' if args['z_tracker'] else 'OFF'))
     print('  Z4c assert is_finite:         ' + ('ON' if args['z_assert_is_finite'] else 'OFF'))
     print('  Z4c shift damping:            ' + self_eta_damp_string)
-
+    print('  Z4c refinement strategy:      ' + ('box-in-box' if args['ref_box_in_box']
+                                                else 'spheres'))
 print('  Frame transformations:        ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:                 ' + self_grav_string)
 print('  Super-Time-Stepping:          ' + ('ON' if args['sts'] else 'OFF'))

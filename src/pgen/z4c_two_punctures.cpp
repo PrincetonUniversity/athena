@@ -215,70 +215,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 int RefinementCondition(MeshBlock *pmb)
 {
 
-  // Wave-zone refinement test ------------------------------------------------
-
-  Real const R_wz = pmb->pz4c->opt.wave_zone_radius;
-  int const lev_wz = pmb->pz4c->opt.wave_zone_level;
-
-  if (lev_wz > 0) {
-    // centre of Mesh
-    Real const x1_D = pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min;
-    Real const x2_D = pmb->pmy_mesh->mesh_size.x2max - pmb->pmy_mesh->mesh_size.x2min;
-    Real const x3_D = pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min;
-
-    Real const x1_0 = pmb->pmy_mesh->mesh_size.x1min + x1_D / 2.;
-    Real const x2_0 = pmb->pmy_mesh->mesh_size.x2min + x2_D / 2.;
-    Real const x3_0 = pmb->pmy_mesh->mesh_size.x3min + x3_D / 2.;
-
-    Real const mb_mi_x1 = pmb->block_size.x1min;
-    Real const mb_ma_x1 = pmb->block_size.x1max;
-
-    Real const mb_mi_x2 = pmb->block_size.x2min;
-    Real const mb_ma_x2 = pmb->block_size.x2max;
-
-    Real const mb_mi_x3 = pmb->block_size.x3min;
-    Real const mb_ma_x3 = pmb->block_size.x3max;
-
-
-    // is intersection of current MeshBlock with wave-zone non-empty?
-    // (check square distances to each vertex)
-    Real const d1 = SQR(mb_mi_x1 - x1_0) + SQR(mb_mi_x2 - x2_0) + SQR(mb_mi_x3 - x3_0);
-    Real const d2 = SQR(mb_ma_x1 - x1_0) + SQR(mb_mi_x2 - x2_0) + SQR(mb_mi_x3 - x3_0);
-    Real const d3 = SQR(mb_mi_x1 - x1_0) + SQR(mb_ma_x2 - x2_0) + SQR(mb_mi_x3 - x3_0);
-    Real const d4 = SQR(mb_mi_x1 - x1_0) + SQR(mb_mi_x2 - x2_0) + SQR(mb_ma_x3 - x3_0);
-
-    Real const d5 = SQR(mb_mi_x1 - x1_0) + SQR(mb_ma_x2 - x2_0) + SQR(mb_ma_x3 - x3_0);
-    Real const d6 = SQR(mb_ma_x1 - x1_0) + SQR(mb_ma_x2 - x2_0) + SQR(mb_mi_x3 - x3_0);
-    Real const d7 = SQR(mb_ma_x1 - x1_0) + SQR(mb_mi_x2 - x2_0) + SQR(mb_ma_x3 - x3_0);
-    Real const d8 = SQR(mb_ma_x1 - x1_0) + SQR(mb_ma_x2 - x2_0) + SQR(mb_ma_x3 - x3_0);
-
-    Real const SR_wz = SQR(R_wz);
-
-    if ((d1 < SR_wz) || (d2 < SR_wz) || (d3 < SR_wz) || (d4 < SR_wz) ||
-        (d5 < SR_wz) || (d6 < SR_wz) || (d7 < SR_wz) || (d8 < SR_wz)) {
-      Real const dx = std::min({pmb->pcoord->dx1v(0),
-                                pmb->pcoord->dx2v(0),
-                                pmb->pcoord->dx3v(0)});
-
-      Real const M_dx = std::max({x1_D / pmb->pmy_mesh->mesh_size.nx1,
-                                  x2_D / pmb->pmy_mesh->mesh_size.nx2,
-                                  x3_D / pmb->pmy_mesh->mesh_size.nx3});
-
-      bool const need_ref = dx > M_dx / (std::pow(2, lev_wz));
-      if (need_ref) {
-        return 1;
-      }
-    }
-  }
-
-  // --------------------------------------------------------------------------
-
 
 #ifdef Z4C_TRACKER
+
+  // root and current level
+  int root_lev = pmb->pmy_mesh->pz4c_tracker->root_lev;
+  int level = pmb->loc.level-root_lev;
+
+
+  // Box in box ---------------------------------------------------------------
+#ifdef Z4C_REF_BOX_IN_BOX
   //Initial distance between one of the punctures and the edge of the full mesh, needed to
   //calculate the box-in-box grid structure
   Real L = pmb->pmy_mesh->pz4c_tracker->L_grid;
-  int root_lev = pmb->pmy_mesh->pz4c_tracker->root_lev;
 #ifdef DEBUG
   printf("Root lev = %d\n", root_lev);
 #endif
@@ -330,7 +279,7 @@ int RefinementCondition(MeshBlock *pmb)
   xv[23] = x3sum_inf;
 
   //Level of current block
-  int level = pmb->loc.level-root_lev;
+  // int level = pmb->loc.level-root_lev;
 #ifdef DEBUG
   printf("\n<===================================================>\n");
   printf("L = %g\n",L);
@@ -404,7 +353,102 @@ int RefinementCondition(MeshBlock *pmb)
 #endif
     return 0;
 
+#endif // Z4C_REF_BOX_IN_BOX
+
+
+
+
+  // sphere-zone refinement test ----------------------------------------------
+  bool need_ref = false;
+  bool satisfied_ref = false;
+
+  // Minimum local step-size
+  // Real const x1_D = pmb->pmy_mesh->mesh_size.x1max \
+  //   - pmb->pmy_mesh->mesh_size.x1min;
+  // Real const x2_D = pmb->pmy_mesh->mesh_size.x2max \
+  //   - pmb->pmy_mesh->mesh_size.x2min;
+  // Real const x3_D = pmb->pmy_mesh->mesh_size.x3max \
+  //   - pmb->pmy_mesh->mesh_size.x3min;
+
+  // Real const M_dx = std::max({x1_D / pmb->pmy_mesh->mesh_size.nx1,
+  //                             x2_D / pmb->pmy_mesh->mesh_size.nx2,
+  //                             x3_D / pmb->pmy_mesh->mesh_size.nx3});
+  // Real const dx = std::min({pmb->pcoord->dx1v(0),
+  //                           pmb->pcoord->dx2v(0),
+  //                           pmb->pcoord->dx3v(0)});
+
+  // int pmb_level = pmb->loc.level - pmb->pmy_mesh->pz4c_tracker->root_lev;
+
+  // int pmb_level = pmb->loc.level - pmb->pmy_mesh->root_lev;
+
+  // Spherical balls around punctures -----------------------------------------
+// #ifdef Z4C_TRACKER
+// #ifdef Z4C_REF_BALL_AT_PUNCTURE
+
+//   // iterate over punctures; check (squared) distance to centre of current MB
+//   for(int ix_punc=0; ix_punc<NPUNCT; ++ix_punc) {
+//     // Tracker position
+//     Real const pc_x1 = pmb->pmy_mesh->pz4c_tracker->pos_body[ix_punc].pos[0];
+//     Real const pc_x2 = pmb->pmy_mesh->pz4c_tracker->pos_body[ix_punc].pos[1];
+//     Real const pc_x3 = pmb->pmy_mesh->pz4c_tracker->pos_body[ix_punc].pos[2];
+
+//     int const lev_punc = pmb->pz4c->opt.puncture_levels(ix_punc);
+//     Real const R_punc = pmb->pz4c->opt.puncture_radii(ix_punc);
+
+//     if (lev_punc > 0)
+//       if (pmb->SphereIntersects(pc_x1, pc_x2, pc_x3, R_punc)) {
+//         need_ref = need_ref or (pmb_level < lev_punc);
+//       }
+//   }
+
+// #endif // Z4C_REF_BALL_AT_PUNCTURE
+// #endif // Z4C_TRACKER
+
+#ifdef Z4C_REF_SPHERES
+  for (int six=0; six<pmb->pz4c->opt.sphere_zone_number; ++six) {
+    Real xyz_wz[3] = {0., 0., 0.};
+
+    // use tracker if we can and if it is relevant
+    int const pix = pmb->pz4c->opt.sphere_zone_puncture(six);
+    if (pix != -1) {
+      xyz_wz[0] = pmb->pmy_mesh->pz4c_tracker->pos_body[pix].pos[0];
+      xyz_wz[1] = pmb->pmy_mesh->pz4c_tracker->pos_body[pix].pos[1];
+      xyz_wz[2] = pmb->pmy_mesh->pz4c_tracker->pos_body[pix].pos[2];
+    } else {
+      xyz_wz[0] = pmb->pz4c->opt.sphere_zone_center1(six);
+      xyz_wz[1] = pmb->pz4c->opt.sphere_zone_center2(six);
+      xyz_wz[2] = pmb->pz4c->opt.sphere_zone_center3(six);
+    }
+
+    int const lev_wz = pmb->pz4c->opt.sphere_zone_levels(six);
+    Real const R_wz = pmb->pz4c->opt.sphere_zone_radii(six);
+
+    if (lev_wz > 0)  // ensure currently iterated sphere actually has non-trivial level
+      if (pmb->SphereIntersects(xyz_wz[0], xyz_wz[1], xyz_wz[2], R_wz)) {
+        need_ref = need_ref or (level < lev_wz);
+        satisfied_ref = satisfied_ref or (level == lev_wz);
+      }
+
+    // if (need_ref) {
+    //   coutBoldBlue("(six, pix), xyz_wz =");
+    //   printf("(%d, %d, %1.4f, %1.4f, %1.4f)\n", six, pix, xyz_wz[0], xyz_wz[1], xyz_wz[2]);
+    // }
+  }
+
+  if (need_ref) {
+    return 1;
+  } else if (satisfied_ref) {
+    return 0;
+  }
+  // force de-refine if no condition satisfied
+  return -1;
+
+#endif // Z4C_REF_SPHERES
+
+
 #else // Z4C_TRACKER
   return 0;
 #endif // Z4C_TRACKER
+
+
 }

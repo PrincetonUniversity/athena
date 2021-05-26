@@ -315,20 +315,29 @@ void Z4c::ADMGaugeWave1_shifted(AthenaArray<Real> & u_adm) {
 
   Real const amp = opt.AwA_amplitude;
   Real const d_x = opt.AwA_d_x;
-  Real const d_y = opt.AwA_d_y;
+  // Real const d_y = opt.AwA_d_y;
 
   // Flat spacetime
   ADMMinkowski(u_adm);
 
   // Propagation along x ...
   GLOOP2(k,j) {
-     GLOOP1(i) {
-        // g_xx
-        adm.g_dd(0,0,k,j,i) += SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
-        // K_xx
-        adm.K_dd(0,0,k,j,i) =
-                   0.5*DSINWAVE(amp, d_x, d_y, mbi.x1(i), 0.)/
-        std::sqrt(1.0 + SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.));
+    GLOOP1(i) {
+      Real const arg = (2. * PI * (mbi.x1(i) - 0.)) / d_x;
+      Real const b = amp * std::sin(arg);
+      Real const dt_b = -2. * amp * PI / d_x * std::cos(arg);
+
+      // g_xx and K_xx req.
+      adm.g_dd(0,0,k,j,i) += b;
+      adm.K_dd(0,0,k,j,i) += dt_b / (2. * std::sqrt(1. + b));
+
+      // // g_xx
+      // adm.g_dd(0,0,k,j,i) += SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
+      // // K_xx
+      // adm.K_dd(0,0,k,j,i) =
+      //             0.5*DSINWAVE(amp, d_x, d_y, mbi.x1(i), 0.)/
+      // std::sqrt(1.0 + SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.));
+
     }
   }
 }
@@ -349,14 +358,20 @@ void Z4c::GaugeGaugeWave1_shifted(AthenaArray<Real> & u) {
   Real const d_y = opt.AwA_d_y;
 
   GLOOP2(k,j) {
-     GLOOP1(i) {
-        // lapse
-        z4c.alpha(k,j,i) = 1.0/(std::sqrt(1.0 + SINWAVE(amp, d_x, d_y,
-                                                        mbi.x1(i),0.)));
-        // shift
-        z4c.beta_u(0,k,j,i) = - SINWAVE(amp, d_x, d_y, mbi.x1(i),0.)/
-                          (1. + SINWAVE(amp, d_x, d_y, mbi.x1(i),0.));
-      }
+    GLOOP1(i) {
+      Real const arg = (2. * PI * (mbi.x1(i) - 0.)) / d_x;
+      Real const b = amp * std::sin(arg);
+
+      // populate initial lapse and shift
+      z4c.alpha(k,j,i) = 1. / std::sqrt(1. + b);
+      z4c.beta_u(0,k,j,i) = -b / (1. + b);
+        // // lapse
+        // z4c.alpha(k,j,i) = 1.0/(std::sqrt(1.0 + SINWAVE(amp, d_x, d_y,
+        //                                                 mbi.x1(i),0.)));
+        // // shift
+        // z4c.beta_u(0,k,j,i) = - SINWAVE(amp, d_x, d_y, mbi.x1(i),0.)/
+        //                   (1. + SINWAVE(amp, d_x, d_y, mbi.x1(i),0.));
+    }
   }
 }
 

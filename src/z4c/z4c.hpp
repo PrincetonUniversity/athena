@@ -205,13 +205,14 @@ public:
     Real AwA_Gaussian_w; // 1d Gaussian parameter
     Real AwA_polarised_Gowdy_t0; // seed time for pG test
 
-    // Wave-zone refinement
+    // Sphere-zone refinement
     int sphere_zone_number;
     AthenaArray<int> sphere_zone_levels;
     AthenaArray<Real> sphere_zone_radii;
-    // Puncture refinement
-    AthenaArray<int> puncture_levels;
-    AthenaArray<Real> puncture_radii;
+    AthenaArray<int> sphere_zone_puncture;
+    AthenaArray<Real> sphere_zone_center1;
+    AthenaArray<Real> sphere_zone_center2;
+    AthenaArray<Real> sphere_zone_center3;
   } opt;
 
 
