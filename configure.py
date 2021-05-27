@@ -128,17 +128,18 @@ parser.add_argument('--flux',
 # --nghost=[value] argument
 parser.add_argument('--nghost',
                     default='2',
+                    choices=['2', '3', '4', '5', '6', '7'],
                     help='set number of ghost zones')
 
 # --ncghost=[value] argument
 parser.add_argument('--ncghost',
-                    default='3',
-                    help='set number of coarse ghost zones (for vertex centered)')
+                    default='default',
+                    help='set number of coarse ghost zones')
 
 # --nextrapolate=[value] argument
 parser.add_argument('--nextrapolate',
-                    default='4',
-                    help='number of points to use for outflow extrapolation')
+                    default='default',
+                    help='number of points to use for outflow extrapolation (defaults to nghosts + 1)')
 
 # --nscalars=[value] argument
 parser.add_argument('--nscalars',
@@ -560,10 +561,18 @@ definitions['RSOLVER'] = makefile_options['RSOLVER_FILE'] = args['flux']
 definitions['NUMBER_GHOST_CELLS'] = args['nghost']
 
 # --cnghost=[value] argument
-definitions['NUMBER_COARSE_GHOSTS'] = args['ncghost']
+if args['ncghost'].isnumeric():
+    definitions['NUMBER_COARSE_GHOSTS'] = args['ncghost']
+else:
+    # Default values for the number of coarse ghost zones
+    cnghosts = {'2': '2', '3': '3', '4': '4', '5': '5', '6': '7', '7': '8'}
+    definitions['NUMBER_COARSE_GHOSTS'] = cnghosts[args['nghost']]
 
 # --nextrapolate=[value] argument
-definitions['NUMBER_EXTRAPOLATION_POINTS'] = args['nextrapolate']
+if args['nextrapolate'].isnumeric():
+    definitions['NUMBER_EXTRAPOLATION_POINTS'] = args['nextrapolate']
+else:
+    definitions['NUMBER_EXTRAPOLATION_POINTS'] = str(int(args['nghost']) + 1)
 
 # --nscalars=[value] argument
 definitions['NUMBER_PASSIVE_SCALARS'] = args['nscalars']
