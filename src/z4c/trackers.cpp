@@ -23,7 +23,7 @@
 #include "z4c_macro.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
-#include "../lagrange_interp.hpp"
+#include "../utils/lagrange_interp.hpp"
 #include "../defs.hpp"
 
 Tracker::Tracker(Mesh * pmesh, ParameterInput * pin, int res_flag):

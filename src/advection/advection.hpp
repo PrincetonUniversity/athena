@@ -11,7 +11,7 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../finite_differencing.hpp"
+#include "../utils/finite_differencing.hpp"
 #include "../bvals/cc/bvals_cc.hpp"
 
 class MeshBlock;

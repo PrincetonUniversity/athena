@@ -9,8 +9,7 @@
 //! \file finite_differencing.hpp
 //  \brief High-performance finite-differencing kernel
 
-#include "athena.hpp"
-#include "athena_arrays.hpp"
+#include "../athena.hpp"
 
 // Centered finite differencing stencils
 // * degree : Degree of the derivative, eg, 1 for 1st derivative

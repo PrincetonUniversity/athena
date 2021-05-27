@@ -13,7 +13,7 @@
 
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../lagrange_interp.hpp"
+#include "../utils/lagrange_interp.hpp"
 #include "mesh.hpp"
 #include "geodesic_grid.hpp"
 

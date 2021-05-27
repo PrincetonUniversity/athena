@@ -31,7 +31,7 @@
 #include "../utils/interp_univariate.hpp"
 
 // BD: for comparison
-#include "../lagrange_interp.hpp"
+#include "../utils/lagrange_interp.hpp"
 //-
 
 //----------------------------------------------------------------------------------------
