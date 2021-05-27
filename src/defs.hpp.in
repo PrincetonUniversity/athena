@@ -53,12 +53,6 @@
 // evolve hydrodynamics? default=0 (false)
 #define FLUID_ENABLED @FLUID_ENABLED@
 
-// prefer vertex-centering default=0 (false)
-#define PREFER_VC @PREFER_VC@
-
-// enable VC, uniform grid adapted prolongation
-#define @VC_UGRID_PROLONGATE@
-
 // enable shearing box? default=0 (false)
 #define SHEARING_BOX @SHEARING_BOX@
 

@@ -254,7 +254,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     ATHENA_ERROR(msg);
   }
 
-  if (PREFER_VC && multilevel) {
+  if (multilevel) {
     // MeshBlock minimum size is constrained in multilevel due to double-restrict
     int const min_mb_nx = std::max(4, 4 * NCGHOST - 2);
 
@@ -2085,22 +2085,14 @@ void Mesh::ReserveMeshBlockPhysIDs() {
   }
   // BD: new problem
   if (WAVE_ENABLED) {
-    if (PREFER_VC) {
-      ReserveTagPhysIDs(VertexCenteredBoundaryVariable::max_phys_id);
-    } else {
-      ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
-    }
+    ReserveTagPhysIDs(VertexCenteredBoundaryVariable::max_phys_id);
   }
   // -BD
   if (ADVECTION_ENABLED) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
   if (Z4C_ENABLED) {
-    if (PREFER_VC) {
-      ReserveTagPhysIDs(VertexCenteredBoundaryVariable::max_phys_id);
-    } else {
-      ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
-    }
+    ReserveTagPhysIDs(VertexCenteredBoundaryVariable::max_phys_id);
   }
 
 #endif

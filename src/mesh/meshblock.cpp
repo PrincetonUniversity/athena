@@ -161,11 +161,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // BD: new problem
   if (WAVE_ENABLED) {
     pwave = new Wave(this, pin);
-    if (PREFER_VC) {
-      pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
-    } else {
-      pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
-    }
+    pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
   }
   // -BD
 
@@ -186,11 +182,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 #ifdef Z4C_TRACKER
     pz4c_tracker_loc = new TrackerLocal(this, pin);
 #endif // Z4C_TRACKER
-    if (PREFER_VC) {
-      pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
-    } else {
-      pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
-    }
+    pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
   }
 
   // KGF: suboptimal solution, since developer must copy/paste BoundaryVariable derived
@@ -296,11 +288,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   // BD: new problem
   if (WAVE_ENABLED) {
     pwave = new Wave(this, pin);
-    if (PREFER_VC) {
-      pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
-    } else {
-      pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
-    }
+    pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
   }
   // -BD
 
@@ -321,11 +309,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 #ifdef Z4C_TRACKER
     pz4c_tracker_loc = new TrackerLocal(this, pin);
 #endif // Z4C_TRACKER
-    if (PREFER_VC) {
-      pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
-    } else {
-      pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
-    }
+    pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
   }
 
   if (FLUID_ENABLED) {
@@ -777,27 +761,26 @@ void MeshBlock::StopTimeMeasurement() {
   }
 }
 
-
-void MeshBlock::RegisterMeshBlockData(AthenaArray<Real> &pvar_in) {
+void MeshBlock::RegisterMeshBlockDataCC(AthenaArray<Real> &pvar_in) {
 #ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::RegisterMeshBlockData\n");
-#endif // DBGPR_MESHBLOCK
-
-  // BD: TODO: one should do this differently...
-  if (PREFER_VC) {
-    vars_vc_.push_back(pvar_in);
-  } else {
-    vars_cc_.push_back(pvar_in);
-  }
+  coutGreen("MeshBlock::RegisterMeshBlockDataCC\n");
+#endif
+  vars_cc_.push_back(pvar_in);
   return;
 }
 
+void MeshBlock::RegisterMeshBlockDataVC(AthenaArray<Real> &pvar_in) {
+#ifdef DBGPR_MESHBLOCK
+  coutGreen("MeshBlock::RegisterMeshBlockDataVC\n");
+#endif
+  vars_vc_.push_back(pvar_in);
+  return;
+}
 
-void MeshBlock::RegisterMeshBlockData(FaceField &pvar_fc) {
+void MeshBlock::RegisterMeshBlockDataFC(FaceField &pvar_fc) {
 #ifdef DBGPR_MESHBLOCK
   coutGreen("MeshBlock::RegisterMeshBlockData\n");
 #endif // DBGPR_MESHBLOCK
-
   vars_fc_.push_back(pvar_fc);
   return;
 }

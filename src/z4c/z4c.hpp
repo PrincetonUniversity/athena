@@ -217,11 +217,7 @@ public:
 
 
   // boundary and grid data
-#if PREFER_VC
   VertexCenteredBoundaryVariable ubvar;
-#else
-  CellCenteredBoundaryVariable ubvar;
-#endif
   AthenaArray<Real> empty_flux[3];
 
   // storage for SMR/AMR

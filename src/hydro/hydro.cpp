@@ -55,7 +55,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
   int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
   Mesh *pm = pmy_block->pmy_mesh;
 
-  pmb->RegisterMeshBlockData(u);
+  pmb->RegisterMeshBlockDataCC(u);
 
   // Allocate optional memory primitive/conserved variable registers for time-integrator
   if (pmb->precon->xorder == 4) {
@@ -73,7 +73,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
 
   // "Enroll" in S/AMR by adding to vector of tuples of pointers in MeshRefinement class
   if (pm->multilevel) {
-    refinement_idx = pmy_block->pmr->AddToRefinement(&u, &coarse_cons_);
+    refinement_idx = pmy_block->pmr->AddToRefinementCC(&u, &coarse_cons_);
   }
 
   // enroll HydroBoundaryVariable object

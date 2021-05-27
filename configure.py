@@ -34,8 +34,6 @@
 #   -z_eta_conf         enable conformal factor based shift-damping
 #   -z_assert_is_finite enable checking for nan/inf within Z4c tasklist
 #   -t                  enable interface frame transformations for GR
-#   -vertex             prefer vertex-centered (VC)
-#   -v_unif_prol_cbias  enable VC, uniform grid adapted prolongation
 #   -compact_fd         enable (prefer) compact finite difference operators
 #   -shear              enable shearing periodic boundary conditions
 #   -debug              enable debug flags (-g -O0); override other compiler options
@@ -88,7 +86,7 @@ parser = argparse.ArgumentParser(description=athena_description, epilog=athena_e
 # --prob=[name] argument
 pgen_directory = 'src/pgen/'
 # set pgen_choices to list of .cpp files in src/pgen/
-pgen_choices = glob.glob(pgen_directory + '*.cpp')
+pgen_choices = sorted(glob.glob(pgen_directory + '*.cpp'))
 # remove 'src/pgen/' prefix and '.cpp' extension from each filename
 pgen_choices = [choice[len(pgen_directory):-4] for choice in pgen_choices]
 parser.add_argument('--prob',
@@ -250,18 +248,6 @@ parser.add_argument('-t',
                     action='store_true',
                     default=False,
                     help='enable interface frame transformations for GR')
-
-# -vertex argument
-parser.add_argument('-vertex',
-                    action='store_true',
-                    default=False,
-                    help='prefer vertex-centering')
-
-# -v_unif_prol_cbias argument
-parser.add_argument('-v_unif_prol_cbias',
-                    action='store_true',
-                    default=False,
-                    help='enable VC, uniform grid adapted prolongation')
 
 # -ref_box_in_box argument
 parser.add_argument("-ref_box_in_box",
@@ -720,18 +706,6 @@ if args['z_eta_conf']:
     definitions['Z4C_ETA_CONF'] = 'Z4C_ETA_CONF'
 else:
   definitions['Z4C_ETA_CONF'] = 'NO_Z4C_ETA_CONF'
-
-# -vertex argument
-if args['vertex']:
-    definitions['PREFER_VC'] = '1'
-else:
-    definitions['PREFER_VC'] = '0'
-
-# -v_unif_prol_cbias argument
-if args['v_unif_prol_cbias']:
-    definitions['VC_UGRID_PROLONGATE'] = 'VC_UGRID_PROLONGATE'
-else:
-    definitions['VC_UGRID_PROLONGATE'] = 'NO_VC_UGRID_PROLONGATE'
 
 # -ref_box_in_box / ref_spheres arguments
 if args['ref_spheres']:
@@ -1267,8 +1241,6 @@ if args['z']:
 print('  Frame transformations:        ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:                 ' + self_grav_string)
 print('  Super-Time-Stepping:          ' + ('ON' if args['sts'] else 'OFF'))
-print('  Vertex-centering preferred:   ' + ('ON' if args['vertex'] else 'OFF'))
-print('  VC uniform grid prolongation: ' + ('ON' if args['v_unif_prol_cbias'] else 'OFF'))
 print('  Compact FD (CFD) preferred:   ' + ('ON' if args['compact_fd'] else 'OFF'))
 if args['compact_fd']:
     print('  CFD (BW_LHS, BW_RHS; filter): ' + '({bw_l}, {bw_r}; {filt})'.format(

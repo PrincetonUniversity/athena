@@ -46,16 +46,6 @@ void ShowConfig() {
   } else {
     std::cout<<"  General relativity:         OFF " << std::endl;
   }
-  if (PREFER_VC) {
-    std::cout<<"  Vertex-centering preferred: ON " << std::endl;
-  } else {
-    std::cout<<"  Vertex-centering preferred: OFF " << std::endl;
-  }
-#ifdef VC_UGRID_PROLONGATE
-    std::cout<<"  VC unif. grid prolongation: ON" << std::endl;
-#else
-    std::cout<<"  VC unif. grid prolongation: OFF" << std::endl;
-#endif // VC_UGRID_PROLONGATE
   if (WAVE_ENABLED) {
     std::cout<<"  Wave equation:              ON" << std::endl;
   } else {

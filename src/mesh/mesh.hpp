@@ -213,16 +213,19 @@ public:
   int GetNumberOfMeshBlockCells() {
     return block_size.nx1*block_size.nx2*block_size.nx3; }
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
-  void WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
-                   AthenaArray<Real> &u_in2, const Real wght[3]);
-  void WeightedAve(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
-                   const Real wght[3]);
+  void WeightedAveCC(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
+                     AthenaArray<Real> &u_in2, const Real wght[3]);
+  void WeightedAveVC(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
+                     AthenaArray<Real> &u_in2, const Real wght[3]);
+  void WeightedAveFC(FaceField &b_out, FaceField &b_in1, FaceField &b_in2,
+                     const Real wght[3]);
 
   // inform MeshBlock which arrays contained in member Hydro, Field, Particles,
   // ... etc. classes are the "primary" representations of a quantity. when registered,
   // that data are used for (1) load balancing (2) (future) dumping to restart file
-  void RegisterMeshBlockData(AthenaArray<Real> &pvar_in);
-  void RegisterMeshBlockData(FaceField &pvar_fc);
+  void RegisterMeshBlockDataCC(AthenaArray<Real> &pvar_in);
+  void RegisterMeshBlockDataVC(AthenaArray<Real> &pvar_in);
+  void RegisterMeshBlockDataFC(FaceField &pvar_fc);
 
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void UserWorkBeforeOutput(ParameterInput *pin); // called in Mesh fn (friend class)

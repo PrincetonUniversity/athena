@@ -46,7 +46,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
   int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, ncells3 = pmb->ncells3;
   Mesh *pm = pmy_block->pmy_mesh;
 
-  pmb->RegisterMeshBlockData(b);
+  pmb->RegisterMeshBlockDataFC(b);
 
   // If user-requested time integrator is type 3S*, allocate additional memory registers
   // Note the extra cell in each longitudinal direction for interface fields
@@ -74,7 +74,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
 
   if (pm->multilevel) {
     // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
-    refinement_idx = pmy_block->pmr->AddToRefinement(&b, &coarse_b_);
+    refinement_idx = pmy_block->pmr->AddToRefinementFC(&b, &coarse_b_);
   }
 
   // enroll FaceCenteredBoundaryVariable object

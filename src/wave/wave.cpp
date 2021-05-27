@@ -28,7 +28,6 @@
 
 Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
   pmy_block(pmb),
-#if PREFER_VC
   u(NWAVE_CPT,
     pmb->nverts3,
     pmb->nverts2,
@@ -39,18 +38,6 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
             pmb->ncv1,
             (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
              AthenaArray<Real>::DataStatus::empty)),
-#else
-  u(NWAVE_CPT,
-    pmb->ncells3,
-    pmb->ncells2,
-    pmb->ncells1),
-  coarse_u_(NWAVE_CPT,
-            pmb->ncc3,
-            pmb->ncc2,
-            pmb->ncc1,
-            (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
-             AthenaArray<Real>::DataStatus::empty)),
-#endif
   empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
   ubvar(pmb, &u, &coarse_u_, empty_flux)
 {
@@ -58,65 +45,36 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
   Coordinates * pco = pmb->pcoord;
 
   // dimensions required for data allocation
-  if (PREFER_VC) {
-    mbi.nn1 = pmb->nverts1;
-    mbi.nn2 = pmb->nverts2;
-    mbi.nn3 = pmb->nverts3;
-  } else {
-    mbi.nn1 = pmb->ncells1;
-    mbi.nn2 = pmb->ncells2;
-    mbi.nn3 = pmb->ncells3;
-  }
+  mbi.nn1 = pmb->nverts1;
+  mbi.nn2 = pmb->nverts2;
+  mbi.nn3 = pmb->nverts3;
   int nn1 = mbi.nn1, nn2 = mbi.nn2, nn3 = mbi.nn3;
 
   // convenience for per-block iteration (private Wave scope)
   mbi.il = pmb->is; mbi.jl = pmb->js; mbi.kl = pmb->ks;
-  if (PREFER_VC) {
-    mbi.iu = pmb->ive; mbi.ju = pmb->jve; mbi.ku = pmb->kve;
-  } else {
-    mbi.iu = pmb->ie; mbi.ju = pmb->je; mbi.ku = pmb->ke;
-  }
+  mbi.iu = pmb->ive; mbi.ju = pmb->jve; mbi.ku = pmb->kve;
 
   // point to appropriate grid
-  if (PREFER_VC) {
-    mbi.x1.InitWithShallowSlice(pco->x1f, 1, 0, nn1);
-    mbi.x2.InitWithShallowSlice(pco->x2f, 1, 0, nn2);
-    mbi.x3.InitWithShallowSlice(pco->x3f, 1, 0, nn3);
-  } else {
-    mbi.x1.InitWithShallowSlice(pco->x1v, 1, 0, nn1);
-    mbi.x2.InitWithShallowSlice(pco->x2v, 1, 0, nn2);
-    mbi.x3.InitWithShallowSlice(pco->x3v, 1, 0, nn3);
-  }
+  mbi.x1.InitWithShallowSlice(pco->x1f, 1, 0, nn1);
+  mbi.x2.InitWithShallowSlice(pco->x2f, 1, 0, nn2);
+  mbi.x3.InitWithShallowSlice(pco->x3f, 1, 0, nn3);
 
   // BD: debug remove after tests pass
   // if (pm->multilevel) {
   //   // analogously construct coarse grid information as required
   //   mbi.cil = pmb->civs; mbi.cjl = pmb->cjvs; mbi.ckl = pmb->ckvs;
 
-  //   if (PREFER_VC) {
-  //     mbi.ciu = pmb->cive; mbi.cju = pmb->cjve; mbi.cku = pmb->ckve;
+  //   mbi.ciu = pmb->cive; mbi.cju = pmb->cjve; mbi.cku = pmb->ckve;
 
-  //     mbi.cnn1 = pmb->ncv1; mbi.cnn2 = pmb->ncv2; mbi.cnn3 = pmb->ncv3;
-  //   } else {
-  //     mbi.ciu = pmb->cie; mbi.cju = pmb->cje; mbi.cku = pmb->cke;
-
-  //     mbi.cnn1 = pmb->ncc1; mbi.cnn2 = pmb->ncc2; mbi.cnn3 = pmb->ncc3;
-  //   }
+  //   mbi.cnn1 = pmb->ncv1; mbi.cnn2 = pmb->ncv2; mbi.cnn3 = pmb->ncv3;
   // }
 
   // point to appropriate grid
 #ifdef FILL_WAVE_COARSE_P
-  if (PREFER_VC) {
-    printf("slice coords for vc\n");
-    mbi.cx1.InitWithShallowSlice(pmb->pmr->pcoarsec->x1f, 0, 1);
-    mbi.cx2.InitWithShallowSlice(pmb->pmr->pcoarsec->x2f, 0, 1);
-    mbi.cx3.InitWithShallowSlice(pmb->pmr->pcoarsec->x3f, 0, 1);
-  } else {
-    printf("slice coords for cc\n");
-    mbi.cx1.InitWithShallowSlice(pmb->pmr->pcoarsec->x1v, 0, 1);
-    mbi.cx2.InitWithShallowSlice(pmb->pmr->pcoarsec->x2v, 0, 1);
-    mbi.cx3.InitWithShallowSlice(pmb->pmr->pcoarsec->x3v, 0, 1);
-  }
+  printf("slice coords for vc\n");
+  mbi.cx1.InitWithShallowSlice(pmb->pmr->pcoarsec->x1f, 0, 1);
+  mbi.cx2.InitWithShallowSlice(pmb->pmr->pcoarsec->x2f, 0, 1);
+  mbi.cx3.InitWithShallowSlice(pmb->pmr->pcoarsec->x3f, 0, 1);
 #endif // FILL_WAVE_COARSE_P
   // inform MeshBlock that this array is the "primary" representation
   // Used for:
@@ -225,11 +183,7 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
   // enroll CellCenteredBoundaryVariable / VertexCenteredBoundaryVariable object
   ubvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&ubvar);
-  if (PREFER_VC) {
-    pmb->pbval->bvars_main_int_vc.push_back(&ubvar);
-  } else {
-    pmb->pbval->bvars_main_int.push_back(&ubvar);
-  }
+  pmb->pbval->bvars_main_int_vc.push_back(&ubvar);
 
   // Allocate memory for scratch arrays
   dt1_.NewAthenaArray(nn1);
@@ -238,11 +192,7 @@ Wave::Wave(MeshBlock *pmb, ParameterInput *pin) :
 
   // Set up finite difference operators
   Real dx1, dx2, dx3;
-  if (PREFER_VC) {
-    dx1 = pco->dx1f(0); dx2 = pco->dx2f(0); dx3 = pco->dx3f(0);
-  } else {
-    dx1 = pco->dx1v(0); dx2 = pco->dx2v(0); dx3 = pco->dx3v(0);
-  }
+  dx1 = pco->dx1f(0); dx2 = pco->dx2f(0); dx3 = pco->dx3f(0);
 
   FD.stride[0] = 1;
   FD.stride[1] = 0;

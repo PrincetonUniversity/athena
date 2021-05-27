@@ -2474,25 +2474,27 @@ void MeshRefinement::CheckRefinementCondition() {
 }
 
 // TODO(felker): consider merging w/ MeshBlock::pvars_cc, etc. See meshblock.cpp
-
-int MeshRefinement::AddToRefinement(AthenaArray<Real> *pvar_in,
+int MeshRefinement::AddToRefinementVC(AthenaArray<Real> *pvar_in,
                                     AthenaArray<Real> *pcoarse_in) {
-
 #ifdef DBGPR_MESH_REFINEMENT
   coutCyan("MeshRefinement::AddToRefinement\n");
-#endif // DBGPR_MESH_REFINEMENT
+#endif
 
-  // BD: TODO: one should do this differently...
-  if (PREFER_VC) {
-    pvars_vc_.push_back(std::make_tuple(pvar_in, pcoarse_in));
-    return static_cast<int>(pvars_vc_.size() - 1);
-  } else {
-    pvars_cc_.push_back(std::make_tuple(pvar_in, pcoarse_in));
-    return static_cast<int>(pvars_cc_.size() - 1);
-  }
+  pvars_vc_.push_back(std::make_tuple(pvar_in, pcoarse_in));
+  return static_cast<int>(pvars_vc_.size() - 1);
 }
 
-int MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) {
+int MeshRefinement::AddToRefinementCC(AthenaArray<Real> *pvar_in,
+                                    AthenaArray<Real> *pcoarse_in) {
+#ifdef DBGPR_MESH_REFINEMENT
+  coutCyan("MeshRefinement::AddToRefinement\n");
+#endif
+
+  pvars_cc_.push_back(std::make_tuple(pvar_in, pcoarse_in));
+  return static_cast<int>(pvars_cc_.size() - 1);
+}
+
+int MeshRefinement::AddToRefinementFC(FaceField *pvar_fc, FaceField *pcoarse_fc) {
 
 #ifdef DBGPR_MESH_REFINEMENT
   coutCyan("MeshRefinement::AddToRefinement\n");

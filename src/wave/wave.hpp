@@ -49,11 +49,7 @@ public:
   bool use_Sommerfeld = false;
 
   // boundary and grid data
-#if PREFER_VC
   VertexCenteredBoundaryVariable ubvar;
-#else
-  CellCenteredBoundaryVariable ubvar;
-#endif
 
   AthenaArray<Real> empty_flux[3];
 

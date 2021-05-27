@@ -58,7 +58,6 @@ char const * const Z4c::Weyl_names[Z4c::N_WEY] = {
 //WGC end
 Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   pmy_block(pmb),
-#if PREFER_VC
   coarse_u_(N_Z4c, pmb->ncv3, pmb->ncv2, pmb->ncv1,
             (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
              AthenaArray<Real>::DataStatus::empty)),
@@ -75,24 +74,6 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
 #endif // Z4C_WEXT
 //WGC end
   },
-#else
-  coarse_u_(N_Z4c, pmb->ncc3, pmb->ncc2, pmb->ncc1,
-            (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
-             AthenaArray<Real>::DataStatus::empty)),
-  storage{{N_Z4c, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // u
-          {N_Z4c, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // u1
-          {},                                                // u2
-          {N_Z4c, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // rhs
-          {N_ADM, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // adm
-          {N_CON, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // con
-          {N_MAT, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // mat
-//WGC wext
-#ifdef Z4C_WEXT
-          {N_WEY, pmb->ncells3, pmb->ncells2, pmb->ncells1}, // weyl
-#endif // Z4C_WEXT
-//WGC end
-  },
-#endif
   empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
   ubvar(pmb, &storage.u, &coarse_u_, empty_flux)
 {
@@ -100,46 +81,30 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   Coordinates * pco = pmb->pcoord;
 
   // dimensions required for data allocation
-  if (PREFER_VC) {
-    mbi.nn1 = pmb->nverts1;
-    mbi.nn2 = pmb->nverts2;
-    mbi.nn3 = pmb->nverts3;
-  } else {
-    mbi.nn1 = pmb->ncells1;
-    mbi.nn2 = pmb->ncells2;
-    mbi.nn3 = pmb->ncells3;
-  }
+  mbi.nn1 = pmb->nverts1;
+  mbi.nn2 = pmb->nverts2;
+  mbi.nn3 = pmb->nverts3;
   int nn1 = mbi.nn1, nn2 = mbi.nn2, nn3 = mbi.nn3;
 
   // convenience for per-block iteration (private Wave scope)
   mbi.il = pmb->is; mbi.jl = pmb->js; mbi.kl = pmb->ks;
-  if (PREFER_VC) {
-    mbi.iu = pmb->ive; mbi.ju = pmb->jve; mbi.ku = pmb->kve;
-  } else {
-    mbi.iu = pmb->ie; mbi.ju = pmb->je; mbi.ku = pmb->ke;
-  }
+  mbi.iu = pmb->ive; mbi.ju = pmb->jve; mbi.ku = pmb->kve;
 
   // point to appropriate grid
-  if (PREFER_VC) {
-    mbi.x1.InitWithShallowSlice(pco->x1f, 1, 0, nn1);
-    mbi.x2.InitWithShallowSlice(pco->x2f, 1, 0, nn2);
-    mbi.x3.InitWithShallowSlice(pco->x3f, 1, 0, nn3);
-  } else {
-    mbi.x1.InitWithShallowSlice(pco->x1v, 1, 0, nn1);
-    mbi.x2.InitWithShallowSlice(pco->x2v, 1, 0, nn2);
-    mbi.x3.InitWithShallowSlice(pco->x3v, 1, 0, nn3);
-  }
+  mbi.x1.InitWithShallowSlice(pco->x1f, 1, 0, nn1);
+  mbi.x2.InitWithShallowSlice(pco->x2f, 1, 0, nn2);
+  mbi.x3.InitWithShallowSlice(pco->x3f, 1, 0, nn3);
   //---------------------------------------------------------------------------
 
   // inform MeshBlock that this array is the "primary" representation
   // Used for:
   // (1) load-balancing
   // (2) (future) dumping to restart file
-  pmb->RegisterMeshBlockData(storage.u);
+  pmb->RegisterMeshBlockDataVC(storage.u);
 
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
   if (pm->multilevel) {
-    refinement_idx = pmy_block->pmr->AddToRefinement(&storage.u, &coarse_u_);
+    refinement_idx = pmy_block->pmr->AddToRefinementVC(&storage.u, &coarse_u_);
   }
 
 
@@ -151,11 +116,7 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   // enroll CellCenteredBoundaryVariable / VertexCenteredBoundaryVariable object
   ubvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&ubvar);
-  if (PREFER_VC) {
-    pmb->pbval->bvars_main_int_vc.push_back(&ubvar);
-  } else {
-    pmb->pbval->bvars_main_int.push_back(&ubvar);
-  }
+  pmb->pbval->bvars_main_int_vc.push_back(&ubvar);
 
   dt1_.NewAthenaArray(nn1);
   dt2_.NewAthenaArray(nn1);
@@ -343,11 +304,7 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
 //
   // Set up finite difference operators
   Real dx1, dx2, dx3;
-  if (PREFER_VC) {
-    dx1 = pco->dx1f(0); dx2 = pco->dx2f(0); dx3 = pco->dx3f(0);
-  } else {
-    dx1 = pco->dx1v(0); dx2 = pco->dx2v(0); dx3 = pco->dx3v(0);
-  }
+  dx1 = pco->dx1f(0); dx2 = pco->dx2f(0); dx3 = pco->dx3f(0);
 
   FD.stride[0] = 1;
   FD.stride[1] = 0;

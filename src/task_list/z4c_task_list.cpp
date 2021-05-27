@@ -436,11 +436,7 @@ void Z4cIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   // Scaled coefficient for RHS time-advance within stage
   Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
 
-  if (PREFER_VC) {
-    pbval->ApplyPhysicalVertexCenteredBoundaries(t_end_stage, dt);
-  } else {
-    pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
-  }
+  pbval->ApplyPhysicalVertexCenteredBoundaries(t_end_stage, dt);
   //--------
 
   if (stage == 1) {
@@ -604,11 +600,7 @@ TaskStatus Z4cIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     // Scaled coefficient for RHS time-advance within stage
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
 
-    if (PREFER_VC) {
-      pbval->ApplyPhysicalVertexCenteredBoundaries(t_end_stage, dt);
-    } else {
-      pbval->ApplyPhysicalBoundaries(t_end_stage, dt);
-    }
+    pbval->ApplyPhysicalVertexCenteredBoundaries(t_end_stage, dt);
 
   } else {
     return TaskStatus::fail;

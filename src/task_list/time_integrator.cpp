@@ -750,7 +750,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
-    pmb->WeightedAve(ph->u1, ph->u, ph->u2, ave_wghts);
+    pmb->WeightedAveCC(ph->u1, ph->u, ph->u2, ave_wghts);
 
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
@@ -758,7 +758,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
     if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
       ph->u.SwapAthenaArray(ph->u1);
     else
-      pmb->WeightedAve(ph->u, ph->u1, ph->u2, ave_wghts);
+      pmb->WeightedAveCC(ph->u, ph->u1, ph->u2, ave_wghts);
 
     const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
     ph->AddFluxDivergence(wght, ph->u);
@@ -775,7 +775,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
       const Real beta = 0.063692468666290; // F(u^(3)) coeff.
       const Real wght_ssp = beta*pmb->pmy_mesh->dt;
       // writing out to u2 register
-      pmb->WeightedAve(ph->u2, ph->u1, ph->u2, ave_wghts);
+      pmb->WeightedAveCC(ph->u2, ph->u1, ph->u2, ave_wghts);
       ph->AddFluxDivergence(wght_ssp, ph->u2);
       // add coordinate (geometric) source terms
       pmb->pcoord->AddCoordTermsDivergence(wght_ssp, ph->flux, ph->w, pf->bcc, ph->u2);
@@ -797,7 +797,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
-    pmb->WeightedAve(pf->b1, pf->b, pf->b2, ave_wghts);
+    pmb->WeightedAveFC(pf->b1, pf->b, pf->b2, ave_wghts);
 
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
@@ -807,7 +807,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
       pf->b.x2f.SwapAthenaArray(pf->b1.x2f);
       pf->b.x3f.SwapAthenaArray(pf->b1.x3f);
     } else {
-      pmb->WeightedAve(pf->b, pf->b1, pf->b2, ave_wghts);
+      pmb->WeightedAveFC(pf->b, pf->b1, pf->b2, ave_wghts);
     }
 
     pf->CT(stage_wghts[stage-1].beta*pmb->pmy_mesh->dt, pf->b);
@@ -1199,7 +1199,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
     ave_wghts[0] = 1.0;
     ave_wghts[1] = stage_wghts[stage-1].delta;
     ave_wghts[2] = 0.0;
-    pmb->WeightedAve(ps->s1, ps->s, ps->s2, ave_wghts);
+    pmb->WeightedAveCC(ps->s1, ps->s, ps->s2, ave_wghts);
 
     ave_wghts[0] = stage_wghts[stage-1].gamma_1;
     ave_wghts[1] = stage_wghts[stage-1].gamma_2;
@@ -1207,7 +1207,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
     if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
       ps->s.SwapAthenaArray(ps->s1);
     else
-      pmb->WeightedAve(ps->s, ps->s1, ps->s2, ave_wghts);
+      pmb->WeightedAveCC(ps->s, ps->s1, ps->s2, ave_wghts);
 
     const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
     ps->AddFluxDivergence(wght, ps->s);
@@ -1222,7 +1222,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
       const Real beta = 0.063692468666290; // F(u^(3)) coeff.
       const Real wght_ssp = beta*pmb->pmy_mesh->dt;
       // writing out to s2 register
-      pmb->WeightedAve(ps->s2, ps->s1, ps->s2, ave_wghts);
+      pmb->WeightedAveCC(ps->s2, ps->s1, ps->s2, ave_wghts);
       ps->AddFluxDivergence(wght_ssp, ps->s2);
     }
     return TaskStatus::next;
