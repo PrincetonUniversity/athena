@@ -26,8 +26,6 @@
 // This function operates only on the interior points of the MeshBlock
 
 void Z4c::Z4cWeyl(AthenaArray<Real> & u_adm, AthenaArray<Real> & u_mat, AthenaArray<Real> & u_weyl) {
-  MeshBlock * pmb = pmy_block;
-
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
 

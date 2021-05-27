@@ -40,7 +40,7 @@ struct MGTask {
 
 class MultigridTaskList {
  public:
-  explicit MultigridTaskList(MultigridDriver *pmd) : ntasks(0), pmy_mgdriver_(pmd),
+  explicit MultigridTaskList(MultigridDriver *pmd) : ntasks(0), //pmy_mgdriver_(pmd),
                                                      task_list_{} {}
   // data
   int ntasks;     // number of tasks in this list
@@ -71,7 +71,7 @@ class MultigridTaskList {
   void SetMGTaskListFMGProlongate(int flag = 0);
 
  private:
-  MultigridDriver* pmy_mgdriver_;
+  //MultigridDriver* pmy_mgdriver_;
   MGTask task_list_[64];
 
   void AddMultigridTask(const TaskID& id, const TaskID& dep);

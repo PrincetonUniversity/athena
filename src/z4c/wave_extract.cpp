@@ -38,7 +38,7 @@ WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n, int res_flag
   psphere = new SphericalGrid(nlev, rad);
   ofname += n_str;
   ofname += ".txt";
- int np = psphere->NumVertices();
+  //int np = psphere->NumVertices();
 //  Real theta, phi, x, y, z;
   //printf("np = %d\n",np);
 //  for(int ip=0;ip<np;++ip){
@@ -161,7 +161,7 @@ WaveExtractLocal::~WaveExtractLocal() {
 void WaveExtractLocal::Decompose_multipole(AthenaArray<Real> const & u_R, AthenaArray<Real> const & u_I) {
     ppatch->InterpToSpherical(u_R, &datareal);
     ppatch->InterpToSpherical(u_I, &dataim);
-    Real theta, phi, ylmR, ylmI,x,y,z;
+    Real theta, phi, ylmR, ylmI; //,x,y,z;
     psi.NewAthenaArray(lmax-1,2*(lmax)+1,2);
     psi.ZeroClear();
 //        for (int ip = 0; ip < ppatch->NumPoints(); ++ip) {

@@ -46,8 +46,8 @@ class MGGravityDriver : public MultigridDriver{
   ~MGGravityDriver();
   void Solve(int stage) final;
   // void SolveCoarsestGrid() final;
- private:
-  Real four_pi_G_;
+ //private:
+ // Real four_pi_G_;
 };
 
 #endif // GRAVITY_MG_GRAVITY_HPP_

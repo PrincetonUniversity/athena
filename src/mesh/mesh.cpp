@@ -1501,6 +1501,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
   bool iflag = true;
   int inb = nbtotal;
   int nthreads = GetNumMeshThreads();
+  (void)nthreads;
   int nmb = GetNumMeshBlocksThisRank(Globals::my_rank);
   std::vector<MeshBlock*> pmb_array(nmb);
 
@@ -1666,9 +1667,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       PassiveScalars *ps = nullptr;
       // BD: new problem
       Wave *pw = nullptr;
+      (void)pw;
       // -BD
       Advection *pa = nullptr;
       Z4c *pz4c = nullptr;
+      (void)pa;
+      (void)pz4c;
 
 #pragma omp for private(pmb,pbval,ph,pf,ps)
       for (int i=0; i<nmb; ++i) {

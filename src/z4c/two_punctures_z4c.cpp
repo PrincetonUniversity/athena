@@ -32,8 +32,8 @@ void Z4c::ADMTwoPunctures(ParameterInput *pin, AthenaArray<Real> & u_adm, ini_da
   ADM_vars adm;
   SetADMAliases(u_adm, adm);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
+  //MeshBlock * pmb = pmy_block;
+  //Coordinates * pco = pmb->pcoord;
 
   // Flat spacetime
   ADMMinkowski(u_adm);

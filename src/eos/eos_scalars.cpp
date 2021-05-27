@@ -75,7 +75,7 @@ void EquationOfState::PassiveScalarConservedToPrimitiveCellAverage(
   Real C = (h*h)/24.0;
 
   // Fourth-order accurate approx to cell-centered Hydro conserved and primitive variables
-  AthenaArray<Real> &w_cc = ph->w_cc, &w = ph->w; // &u_cc = ph->u_cc;
+  AthenaArray<Real> &w_cc = ph->w_cc; // &w = ph->w, &u_cc = ph->u_cc;
   // Passive scalrs
   AthenaArray<Real> &s_cc = ps->s_cc, &r_cc = ps->r_cc;
   // Laplacians of cell-averaged conserved and 2nd order accurate primitive variables

@@ -23,7 +23,6 @@
 //  \brief calculate the minimum timestep within a MeshBlock
 Real Z4c::NewBlockTimeStep(void) {
   MeshBlock * pmb = pmy_block;
-  int tid = 0;
 
   Real min_dt = (FLT_MAX);
 

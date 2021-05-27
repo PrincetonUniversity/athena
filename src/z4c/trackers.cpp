@@ -128,7 +128,6 @@ void Tracker::InitializeTwopuncture(Mesh * pmesh, ParameterInput * pin){
 //
 void Tracker::ReduceTracker() {
   MeshBlock const * pmb = pmesh->pblock;
-  Tracker * ptracker = pmesh->pz4c_tracker;
 
   // Initialize counter and collective betap
   for (int i_punc = 0; i_punc < npunct; ++i_punc) {
@@ -237,8 +236,8 @@ void Tracker::EvolveTrackerIntegrateEuler()
 #endif
   Real dt = pmesh->dt;
   Tracker * ptracker = pmesh->pz4c_tracker;
-  int rank=0;
 #ifdef MPI_PARALLEL
+  int rank=0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif // MPI_PARALLEL
 #ifdef DEBUG
@@ -288,9 +287,7 @@ Tracker::~Tracker() {
 
 
 //TrackerLocal class
-TrackerLocal::TrackerLocal(MeshBlock * pmb, ParameterInput * pin) {
-  pmy_block = pmb;
-  Coordinates * pco = pmb->pcoord;
+TrackerLocal::TrackerLocal(MeshBlock * pmb, ParameterInput * pin): pmy_block(pmb) {
 }
 
 //----------------------------------------------------------------------------------------
@@ -299,7 +296,6 @@ TrackerLocal::TrackerLocal(MeshBlock * pmb, ParameterInput * pin) {
 //
 void TrackerLocal::StoreBetaPrev(Betap_vars betap[NPUNCT], AthenaArray<Real> & u, int body)
 {
-  Real dt;
   Real origin[3];
   Real delta[3];
   int size[3];

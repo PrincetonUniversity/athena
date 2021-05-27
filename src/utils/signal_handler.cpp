@@ -27,6 +27,9 @@
 
 namespace SignalHandler {
 
+volatile int signalflag[nsignal];
+sigset_t mask;
+
 //----------------------------------------------------------------------------------------
 //! \fn void SignalHandlerInit()
 //  \brief install handlers for selected signals

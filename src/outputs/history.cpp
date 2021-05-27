@@ -210,7 +210,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // apply separate chosen operations to each user-defined history output
   for (int n=0; n<pm->nuser_history_output_; n++) {
     Real *usr_hst_data = hst_data.get() + NHISTORY_VARS + n;
-    MPI_Op usr_op;
+    MPI_Op usr_op(MPI_SUM);
     switch (pm->user_history_ops_[n]) {
       case UserHistoryOperation::sum:
         usr_op = MPI_SUM;

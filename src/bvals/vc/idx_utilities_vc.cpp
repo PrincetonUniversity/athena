@@ -124,7 +124,6 @@ void VertexCenteredBoundaryVariable::idxLoadToFinerRanges(
 
   MeshBlock *pmb = pmy_block_;
 
-  int ng = pmb->ng;
   int cng = pmb->cng;
 
   int tmp = cng;
@@ -149,7 +148,7 @@ void VertexCenteredBoundaryVariable::idxLoadToFinerRanges(
   } else {
     sj = pmb->jvs, ej = pmb->jve;
 
-    if (pmb->block_size.nx2 > 1)
+    if (pmb->block_size.nx2 > 1) {
       if (ni.ox1 != 0) {
         if (ni.fi1 == 1)
           sj += pmb->block_size.nx2/2 - tmp;
@@ -162,6 +161,7 @@ void VertexCenteredBoundaryVariable::idxLoadToFinerRanges(
           ej -= pmb->block_size.nx2/2 - tmp;
 
       }
+    }
   }
 
   if (ni.ox3 > 0) {
@@ -171,7 +171,7 @@ void VertexCenteredBoundaryVariable::idxLoadToFinerRanges(
   } else {
     sk = pmb->kvs, ek = pmb->kve;
 
-    if (pmb->block_size.nx3 > 1)
+    if (pmb->block_size.nx3 > 1) {
       if ((ni.ox1 != 0) && (ni.ox2 != 0)) {
         if (ni.fi1 == 1)
           sk += pmb->block_size.nx3/2 - tmp;
@@ -184,6 +184,7 @@ void VertexCenteredBoundaryVariable::idxLoadToFinerRanges(
           ek -= pmb->block_size.nx3/2 - tmp;
 
       }
+    }
   }
 
   return;
@@ -331,7 +332,7 @@ inline void VertexCenteredBoundaryVariable::SetIndexRangesSBFF(
     ix_s = ix_vs;
     ix_e = ix_ve;
 
-    if (size_flag)
+    if (size_flag) {
       if (offset_flag) {
         if (fi1 == 1) {
           ix_s += axis_half_size;
@@ -345,6 +346,7 @@ inline void VertexCenteredBoundaryVariable::SetIndexRangesSBFF(
           ix_e -= axis_half_size;
         }
       }
+    }
   } else if (ox > 0) {
     ix_s = ix_ve;
     ix_e = ix_pe;
@@ -439,7 +441,6 @@ void VertexCenteredBoundaryVariable::idxSetFromFinerRanges(
 
 // For calculation of buffer sizes based on neighbor index information
 int VertexCenteredBoundaryVariable::NeighborVariableBufferSize(const NeighborIndexes& ni) {
-  MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int size = 0;
 
@@ -451,7 +452,7 @@ int VertexCenteredBoundaryVariable::NeighborVariableBufferSize(const NeighborInd
     AccumulateBufferSize(nl_, nu_, si, ei, sj, ej, sk, ek, size);
 
     // as we are multi-level we should also maximize over fine to coarse and vice versa ops.
-    int sizef2c = 0, sizef2c_dr = 0;
+    int sizef2c = 0;
     idxLoadToCoarserRanges(ni, si, ei, sj, ej, sk, ek, false);
     AccumulateBufferSize(nl_, nu_, si, ei, sj, ej, sk, ek, sizef2c);
     idxLoadToCoarserRanges(ni, si, ei, sj, ej, sk, ek, true);
@@ -477,7 +478,6 @@ int VertexCenteredBoundaryVariable::MPI_BufferSizeSameLevel(
   const NeighborIndexes& ni,
   bool is_send=true) {
 
-  MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int size = 0;
 
@@ -505,7 +505,6 @@ int VertexCenteredBoundaryVariable::MPI_BufferSizeSameLevel(
 int VertexCenteredBoundaryVariable::MPI_BufferSizeToCoarser(
   const NeighborIndexes& ni) {
 
-  MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int size = 0;
 
@@ -521,7 +520,6 @@ int VertexCenteredBoundaryVariable::MPI_BufferSizeToCoarser(
 int VertexCenteredBoundaryVariable::MPI_BufferSizeFromCoarser(
   const NeighborIndexes& ni) {
 
-  MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int size = 0;
 
@@ -534,7 +532,6 @@ int VertexCenteredBoundaryVariable::MPI_BufferSizeFromCoarser(
 int VertexCenteredBoundaryVariable::MPI_BufferSizeToFiner(
   const NeighborIndexes& ni) {
 
-  MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int size = 0;
 
@@ -547,7 +544,6 @@ int VertexCenteredBoundaryVariable::MPI_BufferSizeToFiner(
 int VertexCenteredBoundaryVariable::MPI_BufferSizeFromFiner(
   const NeighborIndexes& ni) {
 
-  MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int size = 0;
 

@@ -43,7 +43,7 @@ void Linear_banded_direct::Tridiagonal(
   d_star(0) = y(0) / T_b(0);
 
 #pragma omp simd
-  for(int ix=1; ix<sz-1; ++ix){
+  for(unsigned int ix=1; ix<sz-1; ++ix){
     const Real m{1. / (T_b(ix) - T_a(ix-1) * c_star(ix-1))};
     c_star(ix) = T_c(ix) * m;
     d_star(ix) = (y(ix) - T_a(ix-1) * d_star(ix-1)) * m;
@@ -132,7 +132,7 @@ void Linear_banded_direct::Pentadiagonal(
   z(1) = (y(1) - z(0) * ga(0)) / mu(1);
 
   // step 5
-  for(int ix=2; ix < sz - 2; ++ix){
+  for(unsigned int ix=2; ix < sz - 2; ++ix){
     ga(ix-1) = P_c(ix-1) - al(ix-2) * P_e(ix-2);
     mu(ix) = P_d(ix) - be(ix-2) * P_e(ix-2) - al(ix-1) * ga(ix-1);
     al(ix) = (P_a(ix) - be(ix-1) * ga(ix-1)) / mu(ix);
@@ -188,7 +188,7 @@ solver_Tridiagonal::solver_Tridiagonal(
   N = new unsigned int [dim];
   strides = new unsigned int[dim];
 
-  for(int ix=0; ix<dim; ++ix) {
+  for(unsigned int ix=0; ix<dim; ++ix) {
     N[ix] = idims_N[ix];
 
     _c_star[ix].NewAthenaArray(N[ix]-1);
@@ -198,7 +198,7 @@ solver_Tridiagonal::solver_Tridiagonal(
   }
 
   strides[0] = 1;
-  for(int ix=1; ix<dim; ++ix)
+  for(unsigned int ix=1; ix<dim; ++ix)
     strides[ix] = N[ix-1] * strides[ix-1];
 }
 
@@ -217,7 +217,7 @@ void solver_Tridiagonal::factor_computation(
 
   c_star(0) = T_c(0) / T_b(0);
   m(0) = 1. / T_b(0);
-  for(int ix=1; ix<sz-1; ++ix){
+  for(unsigned int ix=1; ix<sz-1; ++ix){
     m(ix) = 1. / (T_b(ix) - T_a(ix-1) * c_star(ix-1));
     c_star(ix) = T_c(ix) * m(ix);
     a_m(ix-1) = T_a(ix-1) * m(ix);
@@ -263,7 +263,7 @@ void solver_Tridiagonal::imp_Solve(
   z(0) = py[0 + idx_offset] * m(0);
 
 // #pragma omp simd
-  for(int ix=1; ix<sz; ++ix){
+  for(unsigned int ix=1; ix<sz; ++ix){
     z(ix) = py[(ix) * strides[axis] + idx_offset] * m(ix) \
       - a_m(ix-1) * z(ix-1);
   }
@@ -286,17 +286,17 @@ void solver_Tridiagonal::Solve(
   if (dim==3) {
     const unsigned cJ[] = {2, 2, 1};
     const unsigned cI[] = {1, 0, 0};
-    unsigned int J = cJ[axis];
-    unsigned int I = cI[axis];
-    for(int jx=0; jx<N[cJ[axis]]; ++jx) {
-      for(int ix=0; ix<N[cI[axis]]; ++ix) {
+    //unsigned int J = cJ[axis];
+    //unsigned int I = cI[axis];
+    for(unsigned int jx=0; jx<N[cJ[axis]]; ++jx) {
+      for(unsigned int ix=0; ix<N[cI[axis]]; ++ix) {
         imp_Solve(axis, ix * strides[cI[axis]] + jx * strides[cJ[axis]], y, x);
       }
     }
   } else if (dim==2) {
     const unsigned int cI[] = {1, 0}; // 1-axis
 
-    for(int ix=0; ix<N[cI[axis]]; ++ix) {
+    for(unsigned int ix=0; ix<N[cI[axis]]; ++ix) {
       imp_Solve(axis, ix * strides[cI[axis]], y, x);
     }
   } else {
@@ -306,7 +306,7 @@ void solver_Tridiagonal::Solve(
 
 solver_Tridiagonal::~solver_Tridiagonal()
 {
-  for(int ix=0; ix<dim; ++ix) {
+  for(unsigned int ix=0; ix<dim; ++ix) {
     _c_star[ix].DeleteAthenaArray();
     _m[ix].DeleteAthenaArray();
     _a_m[ix].DeleteAthenaArray();
@@ -342,7 +342,7 @@ solver_Pentadiagonal::solver_Pentadiagonal(
   N = new unsigned int [dim];
   strides = new unsigned int[dim];
 
-  for(int ix=0; ix<dim; ++ix) {
+  for(unsigned int ix=0; ix<dim; ++ix) {
     N[ix] = idims_N[ix];
 
     _al[ix].NewAthenaArray(N[ix]-1);
@@ -354,7 +354,7 @@ solver_Pentadiagonal::solver_Pentadiagonal(
   }
 
   strides[0] = 1;
-  for(int ix=1; ix<dim; ++ix)
+  for(unsigned int ix=1; ix<dim; ++ix)
     strides[ix] = N[ix-1] * strides[ix-1];
 }
 
@@ -392,7 +392,7 @@ void solver_Pentadiagonal::factor_computation(
   be(1) = P_b(1) / mu(1);
 
   // step 5
-  for(int ix=2; ix < sz - 2; ++ix){
+  for(unsigned int ix=2; ix < sz - 2; ++ix){
     ga(ix-1) = P_c(ix-1) - al(ix-2) * P_e(ix-2);
     mu(ix) = P_d(ix) - be(ix-2) * P_e(ix-2) - al(ix-1) * ga(ix-1);
     al(ix) = (P_a(ix) - be(ix-1) * ga(ix-1)) / mu(ix);
@@ -407,7 +407,7 @@ void solver_Pentadiagonal::factor_computation(
   mu(sz-1) = P_d(sz-1) - be(sz-3) * P_e(sz-3) - al(sz-2) * ga(-1+sz-1);
 
   // seed factors
-  for(int ix=0; ix<sz-2; ++ix) {
+  for(unsigned int ix=0; ix<sz-2; ++ix) {
     i_mu(ix) = 1. / mu(ix);
     ga_mu(ix) = ga(ix) / mu(ix+1);
     e_mu(ix) = P_e(ix) / mu(ix+2);
@@ -468,7 +468,7 @@ void solver_Pentadiagonal::imp_Solve(
 
   // step 5
 // #pragma omp simd
-  for(int ix=2; ix < sz - 2; ++ix){
+  for(unsigned int ix=2; ix < sz - 2; ++ix){
     z(ix) = py[ix * strides[axis] + idx_offset] * i_mu(ix) \
       - z(ix-2) * e_mu(ix-2) - z(ix-1) * ga_mu(ix-1);
   }
@@ -504,17 +504,17 @@ void solver_Pentadiagonal::Solve(
   if (dim==3) {
     const unsigned cJ[] = {2, 2, 1};
     const unsigned cI[] = {1, 0, 0};
-    unsigned int J = cJ[axis];
-    unsigned int I = cI[axis];
-    for(int jx=0; jx<N[cJ[axis]]; ++jx) {
-      for(int ix=0; ix<N[cI[axis]]; ++ix) {
+    //unsigned int J = cJ[axis];
+    //unsigned int I = cI[axis];
+    for(unsigned int jx=0; jx<N[cJ[axis]]; ++jx) {
+      for(unsigned int ix=0; ix<N[cI[axis]]; ++ix) {
         imp_Solve(axis, ix * strides[cI[axis]] + jx * strides[cJ[axis]], y, x);
       }
     }
   } else if (dim==2) {
     const unsigned int cI[] = {1, 0}; // 1-axis
 
-    for(int ix=0; ix<N[cI[axis]]; ++ix) {
+    for(unsigned int ix=0; ix<N[cI[axis]]; ++ix) {
       imp_Solve(axis, ix * strides[cI[axis]], y, x);
     }
   } else {
@@ -524,7 +524,7 @@ void solver_Pentadiagonal::Solve(
 
 solver_Pentadiagonal::~solver_Pentadiagonal()
 {
-  for(int ix=0; ix<dim; ++ix) {
+  for(unsigned int ix=0; ix<dim; ++ix) {
     _al[ix].DeleteAthenaArray();
     _be[ix].DeleteAthenaArray();
     _ga_mu[ix].DeleteAthenaArray();
@@ -570,12 +570,12 @@ Linear_banded_mask::Linear_banded_mask(
   rix = irix;
   width = iwidth;
 
-  for(int ix=0; ix<dim; ++ix) {
+  for(unsigned int ix=0; ix<dim; ++ix) {
     N[ix] = idims_N[ix];
   }
 
   strides[0] = 1;
-  for(int ix=1; ix<dim; ++ix)
+  for(unsigned int ix=1; ix<dim; ++ix)
     strides[ix] = N[ix-1] * strides[ix-1];
 }
 
@@ -589,10 +589,10 @@ void Linear_banded_mask::imp_Mask(
   const unsigned int ixL_l = rix[0][0];
   const unsigned int ixL_u = rix[0][1];
 
-  for(int ix=ixL_l; ix<ixL_u; ++ix) {
+  for(unsigned int ix=ixL_l; ix<ixL_u; ++ix) {
     const unsigned int lix = ix-ixL_l;
 
-    for(int six=0; six<width[0][lix]; ++six) {
+    for(unsigned int six=0; six<width[0][lix]; ++six) {
       const unsigned int ix_Y = ix+six-offset[0][lix];
 
       x(ix * strides[axis] + idx_offset) += coeffL[lix][six] \
@@ -606,8 +606,8 @@ void Linear_banded_mask::imp_Mask(
   const unsigned int ix_l = rix[1][0];
   const unsigned int ix_u = N[axis] + rix[1][1];
 
-  for(int ix=ix_l; ix<ix_u; ++ix) {
-    for(int six=0; six<width[1][0]; ++six) {
+  for(unsigned int ix=ix_l; ix<ix_u; ++ix) {
+    for(unsigned int six=0; six<width[1][0]; ++six) {
       const unsigned int ix_Y = ix+six-offset[1][0];
 
       x(ix * strides[axis] + idx_offset) += coeffC[six] \
@@ -620,10 +620,10 @@ void Linear_banded_mask::imp_Mask(
   const unsigned int ixR_l = rix[2][0] + N[axis];
   const unsigned int ixR_u = rix[2][1] + N[axis];
 
-  for(int ix=ixR_l; ix<ixR_u; ++ix) {
+  for(unsigned int ix=ixR_l; ix<ixR_u; ++ix) {
     const unsigned int lix = ix-ixR_l;
 
-    for(int six=0; six<width[2][lix]; ++six) {
+    for(unsigned int six=0; six<width[2][lix]; ++six) {
       const unsigned int ix_Y = ix+six-offset[2][lix];
 
       x(ix * strides[axis] + idx_offset) += coeffR[lix][six] \
@@ -643,17 +643,17 @@ void Linear_banded_mask::Mask(
   if (dim==3) {
     const unsigned cJ[] = {2, 2, 1};
     const unsigned cI[] = {1, 0, 0};
-    unsigned int J = cJ[axis];
-    unsigned int I = cI[axis];
-    for(int jx=0; jx<N[cJ[axis]]; ++jx) {
-      for(int ix=0; ix<N[cI[axis]]; ++ix) {
+    //unsigned int J = cJ[axis];
+    //unsigned int I = cI[axis];
+    for(unsigned int jx=0; jx<N[cJ[axis]]; ++jx) {
+      for(unsigned int ix=0; ix<N[cI[axis]]; ++ix) {
         imp_Mask(axis, ix * strides[cI[axis]] + jx * strides[cJ[axis]], y, x);
       }
     }
   } else if (dim==2) {
     const unsigned int cI[] = {1, 0}; // 1-axis
 
-    for(int ix=0; ix<N[cI[axis]]; ++ix) {
+    for(unsigned int ix=0; ix<N[cI[axis]]; ++ix) {
       imp_Mask(axis, ix * strides[cI[axis]], y, x);
     }
   } else {
@@ -752,11 +752,11 @@ void Linear_solver_utils::BandedAthenaArrayToVector(
     M_d->NewAthenaArray(N);
     M_su->NewAthenaArray(N-1);
 
-    for(int ix=0; ix<N; ++ix) {
+    for(unsigned int ix=0; ix<N; ++ix) {
       (*M_d)(ix) = arr(ix, ix);
     }
 
-    for(int ix=0; ix<N-1; ++ix) {
+    for(unsigned int ix=0; ix<N-1; ++ix) {
       (*M_sp)(ix) = arr(ix, ix+1);
       (*M_su)(ix) = arr(ix+1, ix);
     }
@@ -774,7 +774,7 @@ void Linear_solver_utils::BandedAthenaArrayToVector(
     M_spsp->NewAthenaArray(N-2);
     M_susu->NewAthenaArray(N-2);
 
-    for(int ix=0; ix<N-2; ++ix) {
+    for(unsigned int ix=0; ix<N-2; ++ix) {
       (*M_spsp)(ix) = arr(ix, ix+2);
       (*M_susu)(ix) = arr(ix+2, ix);
     }
@@ -789,7 +789,7 @@ void Linear_solver_utils::BandedAthenaArrayToVector(
 void Linear_solver_utils::DeleteBandedVector(
     std::vector<AthenaArray<Real> *> & bands
 ){
-  for(int ix=0; ix<bands.size(); ++ix) {
+  for(unsigned int ix=0; ix<bands.size(); ++ix) {
     delete bands[ix];
   }
 }

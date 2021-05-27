@@ -44,7 +44,7 @@ SphericalPatch::SphericalPatch(SphericalGrid const * psphere, MeshBlock const * 
   MeshBlock const * pmb = pblock;
   Coordinates const * pmc = pblock->pcoord;
 
-  Real xmin, xmax, ymin, ymax, zmin, zmax;
+  Real xmin(0), xmax(0), ymin(0), ymax(0), zmin(0), zmax(0);
   Real origin[3];
   Real delta[3];
   int size[3];

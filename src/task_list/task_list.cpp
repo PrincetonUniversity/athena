@@ -66,6 +66,7 @@ TaskListStatus TaskList::DoAllAvailableTasks(MeshBlock *pmb, int stage, TaskStat
 
 void TaskList::DoTaskListOneStage(Mesh *pmesh, int stage) {
   int nthreads = pmesh->GetNumMeshThreads();
+  (void)nthreads;
   int nmb = pmesh->GetNumMeshBlocksThisRank(Globals::my_rank);
 
   // construct the MeshBlock array on this process

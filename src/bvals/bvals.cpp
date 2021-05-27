@@ -321,6 +321,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   // KGF: COUPLING OF QUANTITIES (must be manually specified)
   // downcast BoundaryVariable ptrs to known derived class types: RTTI via dynamic_cast
   HydroBoundaryVariable *phbvar = nullptr;
+  (void)phbvar;
   Hydro *ph = nullptr;
 
   if (FLUID_ENABLED) {
@@ -332,6 +333,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   // (may be fine to unconditionally directly set to pmb->pfield. See bvals_refine.cpp)
 
   FaceCenteredBoundaryVariable *pfbvar = nullptr;
+  (void)pfbvar;
   Field *pf = nullptr;
   if (MAGNETIC_FIELDS_ENABLED) {
     pf = pmb->pfield;

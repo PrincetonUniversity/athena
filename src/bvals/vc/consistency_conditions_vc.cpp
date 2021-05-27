@@ -24,7 +24,7 @@
 //! \fn void VertexCenteredBoundaryVariable::AllocateNodeMult()
 //  \brief Allocate node_mult array
 void VertexCenteredBoundaryVariable::AllocateNodeMult() {
-  if (!node_mult.IsAllocated())
+  if (!node_mult.IsAllocated()) {
     if (pmy_block_->pmy_mesh->ndim == 3)
       node_mult.NewAthenaArray(1, 7, 7, 7);
     else if (pmy_block_->pmy_mesh->ndim == 2) {
@@ -35,6 +35,7 @@ void VertexCenteredBoundaryVariable::AllocateNodeMult() {
       c_jvs = c_jve = c_jpe = 0;
       node_mult.NewAthenaArray(1, 1, 1, 7);
     }
+  }
 }
 
 //----------------------------------------------------------------------------------------

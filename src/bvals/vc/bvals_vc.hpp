@@ -54,23 +54,23 @@ class VertexCenteredBoundaryVariable : public BoundaryVariable {
   // BoundaryVariable:
   int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;
   // VC
-  int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) {return 0;};
+  int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) override {return 0;};
 
   // BoundaryCommunication:
   void SetupPersistentMPI() override;
   void StartReceiving(BoundaryCommSubset phase) override;
   void ClearBoundary(BoundaryCommSubset phase) override;
   // VC
-  void StartReceivingShear(BoundaryCommSubset phase) {return;};
-  void ComputeShear(const Real time) {return;};
+  void StartReceivingShear(BoundaryCommSubset phase) override {return;};
+  void ComputeShear(const Real time) override {return;};
 
   // VC
   // BoundaryBuffer:
   void SendBoundaryBuffers() override;
   void ReceiveAndSetBoundariesWithWait() override;
   void SetBoundaries() override;
-  void SendFluxCorrection() {return;};
-  bool ReceiveFluxCorrection() {return false;};
+  void SendFluxCorrection() override {return;};
+  bool ReceiveFluxCorrection() override {return false;};
 
   void RestrictNonGhost();
   void ZeroVertexGhosts();

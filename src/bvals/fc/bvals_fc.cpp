@@ -1218,7 +1218,7 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.snb.rank != Globals::my_rank) {
-      int size, csize, fsize;
+      int size, csize(0), fsize(0);
       int size1 = ((nb.ni.ox1 == 0) ? (nx1 + 1) : NGHOST)
                   *((nb.ni.ox2 == 0) ? (nx2) : NGHOST)
                   *((nb.ni.ox3 == 0) ? (nx3) : NGHOST);
@@ -1282,7 +1282,7 @@ void FaceCenteredBoundaryVariable::SetupPersistentMPI() {
                     nb.snb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_recv[nb.bufid]));
 
       // emf correction
-      int f2csize;
+      int f2csize = 0;
       if (nb.ni.type == NeighborConnect::face) { // face
         if (nx3 > 1) { // 3D
           if (nb.fid == BoundaryFace::inner_x1 || nb.fid == BoundaryFace::outer_x1) {

@@ -149,7 +149,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
     ph = pmb->phydro;
   }
 
-  CellCenteredBoundaryVariable *psbvar = nullptr;
+  //CellCenteredBoundaryVariable *psbvar = nullptr;
   PassiveScalars *ps = nullptr;
   if (NSCALARS > 0) {
     ps = pmb->pscalars;

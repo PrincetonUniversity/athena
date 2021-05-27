@@ -359,8 +359,8 @@ int RefinementCondition(MeshBlock *pmb)
 
 
   // sphere-zone refinement test ----------------------------------------------
-  bool need_ref = false;
-  bool satisfied_ref = false;
+  //bool need_ref = false;
+  //bool satisfied_ref = false;
 
   // Minimum local step-size
   // Real const x1_D = pmb->pmy_mesh->mesh_size.x1max \

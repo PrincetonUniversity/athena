@@ -198,6 +198,7 @@ void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
   int nleaf = 2, dim = 1;
   if (mesh_size.nx2 > 1) nleaf = 4, dim = 2;
   if (mesh_size.nx3 > 1) nleaf = 8, dim = 3;
+  (void)dim;
 
   // collect refinement flags from all the meshblocks
   // count the number of the blocks to be (de)refined
@@ -433,9 +434,11 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   int nbs = nslist[Globals::my_rank];
   int nbe = nbs + nblist[Globals::my_rank] - 1;
 
+#ifdef MPI_PARALLEL 
   int bnx1 = pblock->block_size.nx1;
   int bnx2 = pblock->block_size.nx2;
   int bnx3 = pblock->block_size.nx3;
+#endif
 
 #ifdef MPI_PARALLEL
   // Step 3. count the number of the blocks to be sent / received
@@ -466,7 +469,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   }
 
   // Step 4. calculate buffer sizes
-  Real **sendbuf, **recvbuf;
+  Real **sendbuf(nullptr), **recvbuf(nullptr);
   // use the first MeshBlock in the linked list of blocks belonging to this MPI rank as a
   // representative of all MeshBlocks for counting the "load-balancing registered" and
   // "SMR/AMR-enrolled" quantities (loop over MeshBlock::vars_cc_, not MeshRefinement)
@@ -522,7 +525,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   // add one more element to buffer size for storing the derefinement counter
   bssame++;
 
-  MPI_Request *req_send, *req_recv;
+  MPI_Request *req_send(nullptr), *req_recv(nullptr);
   // Step 5. allocate and start receiving buffers
   if (nrecv != 0) {
     recvbuf = new Real*[nrecv];

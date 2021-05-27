@@ -28,9 +28,6 @@ void Z4c::GaugePreCollapsedLapse(AthenaArray<Real> & u_adm, AthenaArray<Real> & 
   z4c.alpha.Fill(1.);
   z4c.beta_u.Fill(0.);
 
-  MeshBlock * pmb = pmy_block;
-  Coordinates * pco = pmb->pcoord;
-
   GLOOP2(k,j) {
     GLOOP1(i) {
       z4c.alpha(k,j,i) = std::pow(adm.psi4(k,j,i),-0.5);

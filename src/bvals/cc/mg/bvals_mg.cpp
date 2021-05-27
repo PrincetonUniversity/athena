@@ -216,8 +216,8 @@ void MGBoundaryValues::StartReceivingMultigrid(int nc, BoundaryQuantity type) {
 #ifdef MPI_PARALLEL
   int mylevel=loc.level;
   int nvar, ngh;
-  int phys; // used only in MPI calculations
-  BoundaryData<> *pbd;
+  int phys = 0; // used only in MPI calculations
+  BoundaryData<> *pbd = nullptr;
 #endif
 
   if (type == BoundaryQuantity::mggrav || type == BoundaryQuantity::mggrav_f) {
@@ -325,7 +325,7 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(AthenaArray<Real> &src,
   int mylevel = loc.level;
   int nvar, ngh;
 #ifdef MPI_PARALLEL
-  int phys;  // used only in MPI calculations
+  int phys = 0;  // used only in MPI calculations
 #endif
   bool faceonly = false;
   bool bflag = true;

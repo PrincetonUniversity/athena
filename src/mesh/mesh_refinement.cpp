@@ -141,6 +141,7 @@ void MeshRefinement::RestrictCellCenteredValues(
   // nodes that are unpopulated
 
 
+#if 0
   AthenaArray<Real>& fine_ = const_cast<AthenaArray<Real>&>(fine);
   if (false) {
     // BD debug
@@ -208,6 +209,7 @@ void MeshRefinement::RestrictCellCenteredValues(
     return;
   }
   //---
+#endif
 
   // store the restricted data in the prolongation buffer for later use
   if (pmb->block_size.nx3>1) { // 3D
@@ -694,6 +696,7 @@ void MeshRefinement::ProlongateCellCenteredValues(
 
 #endif // FILL_WAVE_COARSE_P
 
+#if 0
   // BD: interpolation test
   if (false) {
     int k = pmb->cks, fk = pmb->ks, j = pmb->cjs, fj = pmb->js;
@@ -739,6 +742,7 @@ void MeshRefinement::ProlongateCellCenteredValues(
     return;
   }
   //---
+#endif
 
 
   // BD: debug- disable slope-limiter for the moment
@@ -1453,7 +1457,9 @@ void MeshRefinement::ProlongateVertexCenteredValues(
 #endif // DBGPR_MESH_REFINEMENT
 
   MeshBlock *pmb = pmy_block_;
+#ifdef DBGPR_MESH_REFINEMENT
   Coordinates *pco = pmb->pcoord;
+#endif // DBGPR_MESH_REFINEMENT
 
 
 #ifdef DBGPR_MESH_REFINEMENT
@@ -1471,11 +1477,10 @@ void MeshRefinement::ProlongateVertexCenteredValues(
   fine.print_all();
 #endif // DBGPR_MESH_REFINEMENT
 
+#ifdef FILL_WAVE_COARSE_P
   // BD debug: re-populate coarse grid with exact solution
   // need mutable
   AthenaArray<Real>& coarse_ = const_cast<AthenaArray<Real>&>(coarse);
-
-#ifdef FILL_WAVE_COARSE_P
   AthenaArray<Real> tmp;
   tmp.NewAthenaArray(2, pmb->ncv3, pmb->ncv2, pmb->ncv1);
 
@@ -1944,6 +1949,7 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
       for (int k = sk_inj; k <= ek_inj; ++k) {
         int const fk_inj = 2 * (k - H_NCGHOST) + eo_offset;
         int const fk_prl = fk_inj + 1;
+        (void)fk_prl; // DR: why is this not used?
 
         for (int j = sj_prl; j < ej_prl; ++j) {
           int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
@@ -1989,6 +1995,7 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
         for (int j = sj_inj; j <= ej_inj; ++j) {
           int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
           int const fj_prl = fj_inj + 1;
+          (void)fj_prl; // DR: why is this not used?
 
           for (int i = si_prl; i < ei_prl; ++i) {
             int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
@@ -2033,6 +2040,7 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
           for (int i = si_inj; i <= ei_inj; ++i) {
             int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
             int const fi_prl = fi_inj + 1;
+            (void)fi_prl;  // DR: why is this not used?
 
             fine(n, fk_prl, fj_prl, fi_inj) = 0.;
 
@@ -2067,10 +2075,12 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
       for (int k = sk_inj; k <= ek_inj; ++k) {
         int const fk_inj = 2 * (k - H_NCGHOST) + eo_offset;
         int const fk_prl = fk_inj + 1;
+        (void)fk_prl;   // DR: why is this not used?
 
         for (int j = sj_inj; j <= ej_inj; ++j) {
           int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
           int const fj_prl = fj_inj + 1;
+          (void)fj_prl;  // DR: why is this not used?
 
           for (int i = si_prl; i < ei_prl; ++i) {
             int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
@@ -2099,6 +2109,7 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
       for (int k = sk_inj; k <= ek_inj; ++k) {
         int const fk_inj = 2 * (k - H_NCGHOST) + eo_offset;
         int const fk_prl = fk_inj + 1;
+        (void)fk_prl;  // DR: why is this not used?
 
         for (int j = sj_prl; j < ej_prl; ++j) {
           int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
@@ -2107,6 +2118,7 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
           for (int i = si_inj; i <= ei_inj; ++i) {
             int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
             int const fi_prl = fi_inj + 1;
+            (void)fi_prl;  // DR: why is this not used?
 
             fine(n, fk_inj, fj_prl, fi_inj) = 0.;
 
@@ -2134,10 +2146,12 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
         for (int j = sj_inj; j <= ej_inj; ++j) {
           int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
           int const fj_prl = fj_inj + 1;
+          (void)fj_prl;  // DR: why is this not used?
 
           for (int i = si_inj; i <= ei_inj; ++i) {
             int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
             int const fi_prl = fi_inj + 1;
+            (void)fi_prl;  // DR: why is this not used?
 
             fine(n, fk_prl, fj_inj, fi_inj) = 0.;
 
@@ -2163,14 +2177,17 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
       for (int k = sk_inj; k <= ek_inj; ++k) {
         int const fk_inj = 2 * (k - H_NCGHOST) + eo_offset;
         int const fk_prl = fk_inj + 1;
+        (void)fk_prl;  // DR: why is this not used?
 
         for (int j = sj_inj; j <= ej_inj; ++j) {
           int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
           int const fj_prl = fj_inj + 1;
+          (void)fj_prl;  // DR: why is this not used?
 
           for (int i = si_inj; i <= ei_inj; ++i) {
             int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
             int const fi_prl = fi_inj + 1;
+            (void)fi_prl;  // DR: why is this not used?
 
             fine(n, fk_inj, fj_inj, fi_inj) = coarse(n, k, j, i);
 
@@ -2265,6 +2282,7 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
         for (int i = si_inj; i <= ei_inj; ++i) {
           int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
           int const fi_prl = fi_inj + 1;
+          (void)fi_prl;  // DR: why is this not used?
 
           fine(n, 0, fj_prl, fi_inj) = 0.;
 
@@ -2286,6 +2304,7 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
       for (int j = sj_inj; j <= ej_inj; ++j) {
         int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
         int const fj_prl = fj_inj + 1;
+        (void)fj_prl;  // DR: why is this not used?
 
         for (int i = si_prl; i < ei_prl; ++i) {
           int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
@@ -2312,10 +2331,12 @@ void MeshRefinement::_ProlongateVertexCenteredValues(
       for (int j = sj_inj; j <= ej_inj; ++j) {
         int const fj_inj = 2 * (j - H_NCGHOST) + eo_offset;
         int const fj_prl = fj_inj + 1;
+        (void)fj_prl;  // DR: why is this not used?
 
         for (int i = si_inj; i <= ei_inj; ++i) {
           int const fi_inj = 2 * (i - H_NCGHOST) + eo_offset;
           int const fi_prl = fi_inj + 1;
+          (void)fi_prl;  // DR: why is this not used?
 
           // injected
           fine(n, 0, fj_inj, fi_inj) = coarse(n, 0, j, i);

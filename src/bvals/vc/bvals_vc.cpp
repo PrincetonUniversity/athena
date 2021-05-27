@@ -127,7 +127,7 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   nb.print_all();
 #endif // DBGPR_BVALS_VC
 
-  MeshBlock *pmb = pmy_block_;
+  //MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int p = 0;
   AthenaArray<Real> &var = *var_vc;
@@ -247,7 +247,6 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
   nb.print_all();
 #endif // DBGPR_BVALS_VC
 
-  MeshBlock *pmb = pmy_block_;
   AthenaArray<Real> &var = *var_vc;
   int si, sj, sk, ei, ej, ek;
   int p = 0;
@@ -261,6 +260,7 @@ int VertexCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 
 
 #ifdef DBGPR_BVALS_VC
+  MeshBlock *pmb = pmy_block_;
   coutBoldRed("MB::UWIL gid = ");
   printf("%d\n", pmb->gid);
 #endif // DBGPR_BVALS_VC
@@ -280,7 +280,7 @@ void VertexCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   nb.print_all();
 #endif // DBGPR_BVALS_VC
 
-  MeshBlock *pmb = pmy_block_;
+  //MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   AthenaArray<Real> &var = *var_vc;
   int p = 0;
@@ -341,7 +341,7 @@ void VertexCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
     // note: unpacked shared nodes additively unpacked-
     // consistency conditions will need to be applied to the coarse variable
 
-    MeshRefinement *pmr = pmb->pmr;
+    //MeshRefinement *pmr = pmb->pmr;
     AthenaArray<Real> &coarse_var = *coarse_buf;
 
     idxSetSameLevelRanges(nb.ni, si, ei, sj, ej, sk, ek, 2);
@@ -505,8 +505,6 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
   // BD: debug - populate based on solution
   // [note we directly modify fund. not coarse]
 
-  bool flag = false;
-
   // [1d] modifies si, ei
   if (nb.ni.ox1 == 0) {
     //
@@ -615,6 +613,8 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
     //                         pmb->kms, pmb->kpe,
     //                         false);
 
+    bool flag = false;
+
     if (flag)
       Q();
 #endif // #ifdef FILL_WAVE_BND_FRC
@@ -640,7 +640,7 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   nb.print_all();
 #endif // DBGPR_BVALS_VC
 
-  MeshBlock *pmb = pmy_block_;
+  //MeshBlock *pmb = pmy_block_;
   AthenaArray<Real> &var = *var_vc;
   // receive already restricted data
   int si, sj, sk, ei, ej, ek;
@@ -864,7 +864,7 @@ void VertexCenteredBoundaryVariable::SendBoundaryBuffers() {
   if (!node_mult_assembled)
     PrepareNodeMult();
 
-  MeshBlock *pmb = pmy_block_;
+  //MeshBlock *pmb = pmy_block_;
 
   // restrict all data (except ghosts) to coarse buffer
   if (pmy_mesh_->multilevel) {
@@ -966,8 +966,6 @@ void VertexCenteredBoundaryVariable::SetupPersistentMPI() {
 
 void VertexCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
-  MeshBlock *pmb = pmy_block_;
-  int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     if (nb.snb.rank != Globals::my_rank) {
@@ -990,8 +988,6 @@ void VertexCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
     bd_var_.sflag[nb.bufid] = BoundaryStatus::waiting;
 
 #ifdef MPI_PARALLEL
-    MeshBlock *pmb = pmy_block_;
-    int mylevel = pmb->loc.level;
     if (nb.snb.rank != Globals::my_rank) {
       // Wait for Isend
       MPI_Wait(&(bd_var_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
