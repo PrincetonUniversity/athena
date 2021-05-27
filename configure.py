@@ -514,6 +514,13 @@ if args['eos'][:8] == 'general/':
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with flux ' + args['flux'])
 
+# Check Z4c
+if args['z']:
+    if args['coord'] != "cartesian":
+        raise SystemExit("### CONFIGURE ERROR: Z4c requires Cartesian coordinates")
+    if args["f"] or args["b"] or args["s"] or args["g"]:
+        raise SystemExit("### CONFIGURE ERROR: Z4c only supports vacuum spacetimes for now")
+
 # --- Step 3. Set definitions and Makefile options based on above argument
 
 # Prepare dictionaries of substitutions to be made
