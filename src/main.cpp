@@ -44,11 +44,7 @@
 #include "parameter_input.hpp"
 #include "utils/utils.hpp"
 
-//WGC wext
-#ifdef Z4C_WEXT
 #include "z4c/wave_extract.hpp"
-#endif
-//WGC end
 
 #ifdef Z4C_TRACKER
 #include "z4c/trackers.hpp"
@@ -573,16 +569,13 @@ int main(int argc, char *argv[]) {
       }
 // BD: TODO - check that the following are not displaced by \dt ?
 
-//WGC wext
-#ifdef Z4C_WEXT
       // only do an extraction if NextTime threshold cleared (updated below)
-      if (pz4clist->TaskListTriggers.wave_extraction.to_update)
-        for (int n = 0;n<NRAD;++n){
-          pmesh->pwave_extr[n]->ReduceMultipole();
-          pmesh->pwave_extr[n]->Write(pmesh->ncycle, pmesh->time);
+      if (pz4clist->TaskListTriggers.wave_extraction.to_update) {
+        for (auto pwextr : pmesh->pwave_extr) {
+          pwextr->ReduceMultipole();
+          pwextr->Write(pmesh->ncycle, pmesh->time);
         }
-#endif
-//WGC end
+      }
 
 #ifdef Z4C_TRACKER
       pmesh->pz4c_tracker->ReduceTracker();

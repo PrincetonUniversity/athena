@@ -57,12 +57,8 @@ class Wave;
 // -BD
 class Advection;
 class Z4c;
-//WGC wext
-#ifdef Z4C_WEXT
 class WaveExtract;
 class WaveExtractLocal;
-#endif
-//WGC end
 #ifdef Z4C_TRACKER
 class Tracker;
 class TrackerLocal;
@@ -196,11 +192,7 @@ public:
 
   Advection *padv;
   Z4c *pz4c;
-//WGC wext
-#ifdef Z4C_WEXT
-    WaveExtractLocal * pwave_extr_loc[NRAD];
-#endif
-//WGC end
+  std::vector<WaveExtractLocal *> pwave_extr_loc;
 #ifdef Z4C_TRACKER
   // Tracker evolution
   TrackerLocal * pz4c_tracker_loc;
@@ -378,11 +370,7 @@ class Mesh {
   TurbulenceDriver *ptrbd;
   FFTGravityDriver *pfgrd;
   MGGravityDriver *pmgrd;
-//WGC wext
-#ifdef Z4C_WEXT
-  WaveExtract * pwave_extr[NRAD];
-#endif
-//WGC end
+  std::vector<WaveExtract *> pwave_extr;
 
 
 #ifdef Z4C_TRACKER

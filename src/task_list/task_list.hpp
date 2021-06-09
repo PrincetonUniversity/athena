@@ -484,9 +484,7 @@ public:
 #ifdef Z4C_ASSERT_FINITE
     aux_NextTimeStep assert_is_finite;
 #endif // Z4C_ASSERT_FINITE
-#ifdef Z4C_WEXT
     aux_NextTimeStep wave_extraction;
-#endif // Z4C_WEXT
   } TaskListTriggers;
 
   bool CurrentTimeCalculationThreshold(Mesh *pm,

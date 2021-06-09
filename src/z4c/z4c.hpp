@@ -84,8 +84,6 @@ public:
   };
   // Names of matter variables
   static char const * const Matter_names[N_MAT];
-//WGC wext
-#ifdef Z4C_WEXT
   // Indexes of Weyl scalars
   enum {
     I_WEY_rpsi4, I_WEY_ipsi4,
@@ -93,8 +91,6 @@ public:
   };
   // Names of Weyl scalars
   static char const * const Weyl_names[N_WEY];
-#endif // Z4C_WEXT
-//WGC end
 
 public:
   Z4c(MeshBlock *pmb, ParameterInput *pin);
@@ -111,11 +107,7 @@ public:
     AthenaArray<Real> adm;   // ADM variables
     AthenaArray<Real> con;   // constraints
     AthenaArray<Real> mat;   // matter variables
-//WGC wext
-#ifdef Z4C_WEXT
     AthenaArray<Real> weyl;  // weyl scalars
-#endif //Z4C_WEXT
-//WGC end
   } storage;
 
   // aliases for variables and RHS
@@ -259,11 +251,9 @@ public:
   // compute ADM constraints
   void ADMConstraints(AthenaArray<Real> & u_con, AthenaArray<Real> & u_adm,
                       AthenaArray<Real> & u_mat, AthenaArray<Real> & u_z4c);
-//WGC wext
   // calculate weyl scalars
   void Z4cWeyl(AthenaArray<Real> & u_adm, AthenaArray<Real> & u_mat,
                       AthenaArray<Real> & u_weyl);
-//WGC end
   // utility functions
   //
   // set ADM aliases given u_adm
@@ -274,12 +264,8 @@ public:
   void SetMatterAliases(AthenaArray<Real> & u_mat, Matter_vars & mat);
   // set Z4c aliases given a state
   void SetZ4cAliases(AthenaArray<Real> & u, Z4c_vars & z4c);
-//WGC wext
-#ifdef Z4C_WEXT
   // set weyl aliases
   void SetWeylAliases(AthenaArray<Real> & u_weyl, Weyl_vars & weyl);
-#endif // Z4C_WEXT
-//WGC end
 
   // compute spatial determinant of a 3x3  matrix
   Real SpatialDet(Real const gxx, Real const gxy, Real const gxz,
@@ -423,7 +409,6 @@ private:
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 2> LA_dd;       // Lie derivative of A
 
   //WGC wext - TODO fix tensor index symmetries
-#ifdef Z4C_WEXT
   //auxiliary wave extraction tensors
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 1> uvec;        // radial vector in tetrad
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 1> vvec;        // theta vector in tetrad
@@ -434,8 +419,6 @@ private:
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 4> Riemm4_dddd; // 4D Riemann tensor
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 3> Riemm4_ddd;  // 4D Riemann * n^a
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 2> Riemm4_dd;   // 4D Riemann *n^a*n^c
-#endif //Z4C_WEXT
-  //WGC end
 
 private:
   void Z4cSommerfeld_(AthenaArray<Real> & u, AthenaArray<Real> & rhs,

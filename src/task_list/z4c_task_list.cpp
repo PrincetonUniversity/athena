@@ -19,11 +19,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../z4c/z4c.hpp"
-//WGC wext
-#ifdef Z4C_WEXT
 #include "../z4c/wave_extract.hpp"
-#endif
-//WGC end
 #ifdef Z4C_TRACKER
 #include "../z4c/trackers.hpp"
 #endif // Z4C_TRACKER
@@ -232,7 +228,6 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
   // Save to Mesh class
   pm->cfl_number = cfl_number;
 
-
   //---------------------------------------------------------------------------
   // Output frequency control (on task-list)
 #ifdef Z4C_ASSERT_FINITE
@@ -245,22 +240,26 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
   TaskListTriggers.con.next_time = pm->time;
   // Seed TaskListTriggers.con.dt in main
 
-#ifdef Z4C_WEXT
   double intpart;
-  double fractpart = modf (pm->time , &intpart);
+  double fractpart = modf(pm->time , &intpart);
   // Ensure wave extraction dt is a multiple of evolution dt
   TaskListTriggers.wave_extraction.dt = round(pin->GetOrAddReal("z4c",
       "dt_wave_extraction", 0)/pm->dt)*pm->dt;
-  // When initializing at restart, this procedure ensures to restart
-  // extraction from right time
-  TaskListTriggers.wave_extraction.next_time = pm->time;
-  while (fractpart > 0) {
-    TaskListTriggers.wave_extraction.next_time += pm->dt;
-    fractpart = modf (TaskListTriggers.wave_extraction.next_time, &intpart);
+  if (pin->GetOrAddInteger("z4c", "nrad_wave_extraction", 0) == 0) {
+    TaskListTriggers.wave_extraction.dt = 0.0;
+    TaskListTriggers.wave_extraction.next_time = 0.0;
+    TaskListTriggers.wave_extraction.to_update = false;
   }
-#endif
+  else {
+    // When initializing at restart, this procedure ensures to restart
+    // extraction from right time
+    TaskListTriggers.wave_extraction.next_time = pm->time;
+    while (fractpart > 0) {
+      TaskListTriggers.wave_extraction.next_time += pm->dt;
+      fractpart = modf(TaskListTriggers.wave_extraction.next_time, &intpart);
+    }
+  }
   //---------------------------------------------------------------------------
-
 
   // Now assemble list of tasks for each stage of z4c integrator
   {using namespace Z4cIntegratorTaskNames;
@@ -281,12 +280,8 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
     AddTask(ALG_CONSTR, PHY_BVAL);             // EnforceAlgConstr
     AddTask(Z4C_TO_ADM, ALG_CONSTR);           // Z4cToADM
     AddTask(ADM_CONSTR, Z4C_TO_ADM);           // ADM_Constraints
-//WGC wext
-#ifdef Z4C_WEXT
     AddTask(Z4C_WEYL, Z4C_TO_ADM);             // Calc Psi4
     AddTask(WAVE_EXTR, Z4C_WEYL);              // Project Psi4 multipoles
-#endif // Z4C_WEXT
-//WGC end
     AddTask(USERWORK, ADM_CONSTR);             // UserWork
 
     AddTask(NEW_DT, USERWORK);                 // NewBlockTimeStep
@@ -300,9 +295,7 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
 #ifdef Z4C_ASSERT_FINITE
     AddTask(ASSERT_FIN, CLEAR_ALLBND);         // AssertFinite
 #endif // Z4C_ASSERT_FINITE
-
   } // end of using namespace block
-
 }
 
 //---------------------------------------------------------------------------------------
@@ -375,9 +368,7 @@ void Z4cIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&Z4cIntegratorTaskList::ADM_Constraints);
       task_list_[ntasks].lb_time = true;
-//WGC wext
     }
-#ifdef Z4C_WEXT
     else if (id == Z4C_WEYL) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -388,9 +379,7 @@ void Z4cIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&Z4cIntegratorTaskList::WaveExtract);
       task_list_[ntasks].lb_time = true;
-//WGC end
     }
-#endif // Z4C_WEXT
     else if (id == NEW_DT) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -631,19 +620,16 @@ TaskStatus Z4cIntegratorTaskList::Z4cToADM(MeshBlock *pmb, int stage) {
   return TaskStatus::success;
 }
 
-//WGC wext
 TaskStatus Z4cIntegratorTaskList::Z4c_Weyl(MeshBlock *pmb, int stage) {
   // only do on last stage
   if (stage != nstages) return TaskStatus::success;
 
-#ifdef Z4C_WEXT
   Mesh *pm = pmb->pmy_mesh;
   if (CurrentTimeCalculationThreshold(pm, &TaskListTriggers.wave_extraction)) {
     pmb->pz4c->Z4cWeyl(pmb->pz4c->storage.adm, pmb->pz4c->storage.mat,
                        pmb->pz4c->storage.weyl);
   }
 
-#endif // Z4C_WEXT
   return TaskStatus::success;
 }
 
@@ -651,7 +637,6 @@ TaskStatus Z4cIntegratorTaskList::WaveExtract(MeshBlock *pmb, int stage) {
   // only do on last stage
   if (stage != nstages) return TaskStatus::success;
 
-#ifdef Z4C_WEXT
   Mesh *pm = pmb->pmy_mesh;
 
   if (CurrentTimeCalculationThreshold(pm, &TaskListTriggers.wave_extraction)) {
@@ -659,15 +644,13 @@ TaskStatus Z4cIntegratorTaskList::WaveExtract(MeshBlock *pmb, int stage) {
     AthenaArray<Real> u_I;
     u_R.InitWithShallowSlice(pmb->pz4c->storage.weyl, Z4c::I_WEY_rpsi4, 1);
     u_I.InitWithShallowSlice(pmb->pz4c->storage.weyl, Z4c::I_WEY_ipsi4, 1);
-    for(int n = 0; n<NRAD;++n){
-      pmb->pwave_extr_loc[n]->Decompose_multipole(u_R,u_I);
+    for (auto pwextr : pmb->pwave_extr_loc) {
+        pwextr->Decompose_multipole(u_R,u_I);
     }
   }
 
-#endif // Z4C_WEXT
   return TaskStatus::success;
 }
-//WGC end
 
 TaskStatus Z4cIntegratorTaskList::ADM_Constraints(MeshBlock *pmb, int stage) {
   // only do on last stage
@@ -732,8 +715,7 @@ bool Z4cIntegratorTaskList::CurrentTimeCalculationThreshold(
     return false;
 
   Real cur_time = pm->time + pm->dt;
-  //if ((cur_time == pm->time) ||
-  if    ((cur_time - pm->dt >= variable->next_time) ||
+  if ((cur_time - pm->dt >= variable->next_time) ||
       (cur_time >= pm->tlim)) {
     variable->to_update = true;
     return true;
@@ -768,12 +750,9 @@ void Z4cIntegratorTaskList::UpdateTaskListTriggers() {
   }
 #endif // Z4C_ASSERT_FINITE
 
-#ifdef Z4C_WEXT
   if (TaskListTriggers.wave_extraction.to_update) {
     TaskListTriggers.wave_extraction.next_time += \
       TaskListTriggers.wave_extraction.dt;
     TaskListTriggers.wave_extraction.to_update = false;
   }
-#endif // Z4C_WEXT
-
 }

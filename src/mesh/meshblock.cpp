@@ -49,12 +49,7 @@
 
 #include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
-
-// WGC wext
-#ifdef Z4C_WEXT
 #include "../z4c/wave_extract.hpp"
-#endif
-// WGC end
 
 //----------------------------------------------------------------------------------------
 // MeshBlock constructor: constructs coordinate, boundary condition, hydro, field
@@ -172,13 +167,13 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   if (Z4C_ENABLED) {
     pz4c = new Z4c(this, pin);
-//WGC wext
-#ifdef Z4C_WEXT
-    for(int n = 0;n<NRAD;++n){
-      pwave_extr_loc[n] = new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin,n); 
+    int nrad = pin->GetOrAddInteger("z4c", "nrad_wave_extraction", 0);
+    if (nrad > 0) {
+      pwave_extr_loc.reserve(nrad);
+      for (int n = 0; n < nrad; ++n) {
+        pwave_extr_loc.push_back(new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin,n));
+      }
     }
-#endif
-//WGC end
 #ifdef Z4C_TRACKER
     pz4c_tracker_loc = new TrackerLocal(this, pin);
 #endif // Z4C_TRACKER
@@ -299,13 +294,13 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   if (Z4C_ENABLED) {
     pz4c = new Z4c(this, pin);
-//WGC wext
-#ifdef Z4C_WEXT
-    for(int n = 0;n<NRAD;++n){
-      pwave_extr_loc[n] = new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin,n);  
+    int nrad = pin->GetOrAddInteger("z4c", "nrad_wave_extraction", 0);
+    if (nrad > 0) {
+      pwave_extr_loc.reserve(nrad);
+      for (int n = 0; n < nrad; ++n) {
+        pwave_extr_loc.push_back(new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin,n));
+      }
     }
-#endif
-//WGC end
 #ifdef Z4C_TRACKER
     pz4c_tracker_loc = new TrackerLocal(this, pin);
 #endif // Z4C_TRACKER
@@ -420,13 +415,10 @@ MeshBlock::~MeshBlock() {
 
   if (Z4C_ENABLED) {
     delete pz4c;
-//WGC wext
-#ifdef Z4C_WEXT
-    for(int n=0;n<NRAD;++n){
-    delete pwave_extr_loc[n];
+    for(auto pwextr : pwave_extr_loc) {
+      delete pwextr;
     }
-#endif
-//WGC end
+    pwave_extr_loc.resize(0);
 #ifdef Z4C_TRACKER
     delete pz4c_tracker_loc;
 #endif // Z4C_TRACKER

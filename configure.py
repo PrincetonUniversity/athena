@@ -16,7 +16,6 @@
 #   --ncghost=xxx       set NCGHOST=xxx
 #   --nextrapolate=xxx  set NEXTRAPOLATE=xxx  [for ouflow conditions]
 #   --nscalars=xxx      set NSCALARS=xxx
-#   --nrad=xxx          set NRAD=xxx (for wave extraction)
 #   --ncfd_l=xxx        set NCFDWIDTH_L=xxx (for compact FD)
 #   --ncfd_r=xxx        set NCFDWIDTH_R=xxx (for compact FD)
 #   --cfd_filter=xxx    set CFDFILTER=xxx (for compact FD)
@@ -29,7 +28,6 @@
 #   -w                  enable wave equation
 #   -z                  enable Z4c system
 #   -z_tracker          enable Z4c tracker functionality
-#   -z_wext             enable wave extraction
 #   -z_eta_track_tp     enable (TP) based shift-damping
 #   -z_eta_conf         enable conformal factor based shift-damping
 #   -z_assert_is_finite enable checking for nan/inf within Z4c tasklist
@@ -144,11 +142,6 @@ parser.add_argument('--nscalars',
                     default='0',
                     help='set number of passive scalars')
 
-# --nrad=[value] argument
-parser.add_argument('--nrad',
-                    default='5',
-                    help='set number of extraction radii')
-
 # --ncfd_l=[value] argument
 parser.add_argument('--ncfd_l',
                     default='3',
@@ -211,12 +204,6 @@ parser.add_argument("-z",
                     action='store_true',
                     default=False,
                     help='enable Z4c system')
-
-# -z_wext argument
-parser.add_argument("-z_wext",
-                    action='store_true',
-                    default=False,
-                    help='enable Z4c Wave extraction')
 
 # -z_tracker argument
 parser.add_argument("-z_tracker",
@@ -563,9 +550,6 @@ else:
 # --nscalars=[value] argument
 definitions['NUMBER_PASSIVE_SCALARS'] = args['nscalars']
 
-# --nrad=[value] argument
-definitions['NUMBER_EXT_RAD'] = args['nrad']
-
 # --ncfd_l=[value] argument
 definitions['NUMBER_CFD_BANDWIDTH_LHS'] = args['ncfd_l']
 
@@ -658,15 +642,6 @@ if args['z']:
 
 else:
   definitions['Z4C_ENABLED'] = '0'
-
-# -z_wext argument
-if args['z_wext']:
-    if not args['z']:
-        raise SystemExit("### CONFIGURE ERROR: z_wext requires z flag")
-    definitions['Z4C_WEXT'] = 'Z4C_WEXT'
-else:
-  definitions['Z4C_WEXT'] = 'NO_Z4C_WEXT'
-
 
 # -z_tracker argument
 if args['z_tracker']:
@@ -1164,13 +1139,19 @@ else:
 
 if args['z']:
     # Populate makefile with z4c specific src
-    files = ['add_z4c_rhs', 'adm_z4c', 'new_blockdt_z4c', 'z4c', 'calculate_z4c_rhs',
-            'gauge', 'z4c_utils']
+    files = [
+            'add_z4c_rhs',
+            'adm_z4c',
+            'calculate_weyl_scalars',
+            'calculate_z4c_rhs',
+            'gauge',
+            'new_blockdt_z4c', 
+            'wave_extract',
+            'z4c',
+            'z4c_utils',
+    ]
     files_athena_tasklist.append('z4c_task_list')
 
-    if args['z_wext']:
-        files.append('calculate_weyl_scalars')
-        files.append('wave_extract')
     if args['z_tracker']:
         files.append('trackers')
     if args['prob'] == "z4c_two_punctures":
@@ -1232,7 +1213,6 @@ print('  Advection equation:           ' + ('ON' if args['a'] else 'OFF'))
 print('  Wave equation:                ' + ('ON' if args['w'] else 'OFF'))
 print('  Z4c equations:                ' + ('ON' if args['z'] else 'OFF'))
 if args['z']:
-    print('  Z4c wave extraction:          ' + ('ON' if args['z_wext'] else 'OFF'))
     print('  Z4c tracker:                  ' + ('ON' if args['z_tracker'] else 'OFF'))
     print('  Z4c assert is_finite:         ' + ('ON' if args['z_assert_is_finite'] else 'OFF'))
     print('  Z4c shift damping:            ' + self_eta_damp_string)
@@ -1254,7 +1234,6 @@ print('  Floating-point precision:     ' + ('single' if args['float'] else 'doub
 print('  Number of ghost cells:        ' + args['nghost'])
 print('  Number of coarse ghosts (VC): ' + args['ncghost'])
 print('  Total # extrapolation points: ' + args['nextrapolate'])
-print('  Number of extraction radii:   ' + args['nrad'])
 print('  MPI parallelism:              ' + ('ON' if args['mpi'] else 'OFF'))
 print('  OpenMP parallelism:           ' + ('ON' if args['omp'] else 'OFF'))
 print('  FFT:                          ' + ('ON' if args['fft'] else 'OFF'))

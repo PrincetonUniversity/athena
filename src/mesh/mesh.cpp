@@ -60,11 +60,7 @@
 #ifdef Z4C_TRACKER
 #include "../z4c/trackers.hpp"
 #endif // Z4C_TRACKER
-// WGC: wave ext
-#ifdef Z4C_WEXT
 #include "../z4c/wave_extract.hpp"
-#endif
-//WGC: wext end
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
@@ -319,18 +315,17 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
   } else {
     max_level = 63;
   }
-//WGC wext
-if (Z4C_ENABLED){
-#ifdef Z4C_WEXT
-// 0 is restart flag for no restart
-   for(int n = 0;n<NRAD;++n){
-     pwave_extr[n] = new WaveExtract(this, pin,n,0);
-   }
-#endif
-// WGC end
+  if (Z4C_ENABLED) {
+    int nrad = pin->GetOrAddInteger("z4c", "nrad_wave_extraction", 0);
+    if (nrad > 0) {
+      pwave_extr.reserve(nrad);
+      for(int n = 0; n < nrad; ++n){
+          pwave_extr.push_back(new WaveExtract(this, pin, n));
+      }
+    }
 #ifdef Z4C_TRACKER
-  // Last entry says if it is restart run or not
-  pz4c_tracker = new Tracker(this, pin, 0);
+    // Last entry says if it is restart run or not
+    pz4c_tracker = new Tracker(this, pin, 0);
 #endif // Z4C_TRACKER
   }
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
@@ -742,22 +737,22 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   } else {
     max_level = 63;
   }
-//WGC wext
-  if (Z4C_ENABLED){
-#ifdef Z4C_WEXT
-// 1 is restart flag for restart
-    for(int n = 0;n<NRAD;++n){
-      pwave_extr[n] = new WaveExtract(this, pin, n,1);
+
+  if (Z4C_ENABLED) {
+    int nrad = pin->GetOrAddInteger("z4c", "nrad_wave_extraction", 0);
+    if (nrad > 0) {
+      pwave_extr.reserve(nrad);
+      for(int n = 0; n < nrad; ++n) {
+        pwave_extr.push_back(new WaveExtract(this, pin, n));
+      }
     }
-//end multi
-#endif
-//WGC end
+  }
 
 #ifdef Z4C_TRACKER
   // Last entry tells if it is restart run or not
   pz4c_tracker = new Tracker(this, pin, 1);
 #endif
-  }
+
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
   // read user Mesh data
@@ -971,11 +966,12 @@ Mesh::~Mesh() {
   else if (SELF_GRAVITY_ENABLED == 2) delete pmgrd;
   if (turb_flag > 0) delete ptrbd;
 
-#ifdef Z4C_WEXT
- for(int n=0;n<NRAD;++n){
- delete pwave_extr[n];
- }
-#endif
+  if (Z4C_ENABLED) {
+    for (auto pwextr : pwave_extr) {
+      delete pwextr;
+    }
+    pwave_extr.resize(0);
+  }
 
 #ifdef Z4C_TRACKER
   delete pz4c_tracker;

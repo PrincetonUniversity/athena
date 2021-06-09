@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <sstream>
+#include <unistd.h>
 
 #ifdef MPI_PARALLEL
 #include <mpi.h>
@@ -22,7 +23,7 @@
 #include "../mesh/spherical_grid.hpp"
 #include "z4c.hpp"
 
-WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n, int res_flag):
+WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n):
     pmesh(pmesh), pofile(NULL) {
   int nlev = pin->GetOrAddInteger("z4c", "extraction_nlev", 3);
   Real rad;
@@ -38,15 +39,6 @@ WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n, int res_flag
   psphere = new SphericalGrid(nlev, rad);
   ofname += n_str;
   ofname += ".txt";
-  //int np = psphere->NumVertices();
-//  Real theta, phi, x, y, z;
-  //printf("np = %d\n",np);
-//  for(int ip=0;ip<np;++ip){
-//    psphere->SphericalGrid::PositionPolar(ip,&theta,&phi);
-//    psphere->SphericalGrid::Position(ip,&x,&y,&z);
-//    printf("theta = %.16f, phi = %.16f, ip = %d, x = %.16f, y = %.16f, z = %.16f\n",theta,phi,ip,x,y,z);
-//}
-
 
 #ifdef MPI_PARALLEL
   int rank;
@@ -55,8 +47,12 @@ WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n, int res_flag
 #else
   ioproc = true;
 #endif
-  if(res_flag == 0){
-    if (ioproc) {
+  if (ioproc) {
+    // check if output file already exists
+    if (access(ofname.c_str(), F_OK) == 0) {
+      pofile = fopen(ofname.c_str(), "a");
+    }
+    else {
       pofile = fopen(ofname.c_str(), "w");
       if (NULL == pofile) {
         std::stringstream msg;
@@ -64,19 +60,17 @@ WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n, int res_flag
         msg << "Could not open file '" << ofname << "' for writing!";
         throw std::runtime_error(msg.str().c_str());
       }
-    fprintf(pofile, "# 1:iter 2:time 3:l=2 m=-2 R 4: l=2 m=-2 I 5: l=2 m=-1 R 6: l=2 m=-1 I 7: l=2 m=0 R 8: l=2 m=0 I 9: l=2 m=1 R 10: l=2 m=1 I 11: l=2 m=2 R 12: l=2 m=2 I\n");
+      fprintf(pofile, "# 1:iter 2:time");
+      int idx = 3;
+      for (int l = 0; l <= lmax; ++l) {
+        for (int m = -l; m <= l; ++m) {
+          fprintf(pofile, " %d:l=%d m=%d Re", idx++, l, m);
+          fprintf(pofile, " %d:l=%d m=%d Im", idx++, l, m);
+        }
+      }
+      fprintf(pofile, "\n");
     }
-   } else if(res_flag == 1){
-     if (ioproc) {
-       pofile = fopen(ofname.c_str(), "a");
-       if (NULL == pofile) {
-         std::stringstream msg;
-         msg << "### FATAL ERROR in WaveExtract constructor" << std::endl;
-         msg << "Could not open file '" << ofname << "' for writing!";
-         throw std::runtime_error(msg.str().c_str());
-       }
-     }
-   }
+  }
 }
 
 WaveExtract::~WaveExtract() {
@@ -164,11 +158,6 @@ void WaveExtractLocal::Decompose_multipole(AthenaArray<Real> const & u_R, Athena
     Real theta, phi, ylmR, ylmI; //,x,y,z;
     psi.NewAthenaArray(lmax-1,2*(lmax)+1,2);
     psi.ZeroClear();
-//        for (int ip = 0; ip < ppatch->NumPoints(); ++ip) {
-//     ppatch->psphere->GeodesicGrid::PositionPolar(ppatch->idxMap(ip),&theta,&phi);
-//    ppatch->psphere->SphericalGrid::Position(ppatch->idxMap(ip),&x,&y,&z);
-//   printf("theta = %.16f, phi = %.16f, ip_patch = %d, ip_global = %d, x = %.16f, y = %.16f, z = %.16f\n",theta,phi,ip,ppatch->idxMap(ip),x,y,z);
-//}
     for (int l = 2; l < lmax+1; ++l){
       for (int m = -l; m < l+1 ; ++m){
         psilmR=0.0;
