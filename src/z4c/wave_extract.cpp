@@ -118,16 +118,16 @@ void WaveExtract::ReduceMultipole() {
 
 void WaveExtract::Write(int iter, Real time) const {
   if (ioproc) {
-      fprintf(pofile, "%d %.*g ", iter, FPRINTF_PREC, time);
-      for(int l=2;l<lmax+1;++l){
-        for(int m=-l;m<l+1;++m){
-          fprintf(pofile, "%.*g %.*g ",
-                  FPRINTF_PREC, psi(l-2,m+l,0),
-                  FPRINTF_PREC, psi(l-2,m+l,1));
-        }
+    fprintf(pofile, "%d %.*g ", iter, FPRINTF_PREC, time);
+    for(int l=2;l<lmax+1;++l){
+      for(int m=-l;m<l+1;++m){
+        fprintf(pofile, "%.*g %.*g ",
+                FPRINTF_PREC, psi(l-2,m+l,0),
+                FPRINTF_PREC, psi(l-2,m+l,1));
       }
-      fprintf(pofile, "\n");
-      fflush(pofile);
+    }
+    fprintf(pofile, "\n");
+    fflush(pofile);
   }
 }
 

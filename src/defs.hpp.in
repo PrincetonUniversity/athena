@@ -116,9 +116,6 @@
 // allow for spatially varying shift-damping based on tracker computed distance
 #define @Z4C_ETA_TRACK_TP@
 
-// assert is_finite for z4c field variables during evolution ?
-#define @Z4C_ASSERT_FINITE@
-
 // control whether compact FD enabled
 #define @COMPACT_FD@
 

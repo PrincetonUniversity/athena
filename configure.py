@@ -30,7 +30,6 @@
 #   -z_tracker          enable Z4c tracker functionality
 #   -z_eta_track_tp     enable (TP) based shift-damping
 #   -z_eta_conf         enable conformal factor based shift-damping
-#   -z_assert_is_finite enable checking for nan/inf within Z4c tasklist
 #   -t                  enable interface frame transformations for GR
 #   -compact_fd         enable (prefer) compact finite difference operators
 #   -shear              enable shearing periodic boundary conditions
@@ -222,13 +221,6 @@ parser.add_argument("-z_eta_conf",
                     action='store_true',
                     default=False,
                     help='enable conformal factor based shift-damping')
-
-
-# -z_assert_is_finite argument
-parser.add_argument("-z_assert_is_finite",
-                    action='store_true',
-                    default=False,
-                    help='enable Z4c assert is_finite checks')
 
 # -t argument
 parser.add_argument('-t',
@@ -650,14 +642,6 @@ if args['z_tracker']:
     definitions['Z4C_TRACKER'] = 'Z4C_TRACKER'
 else:
   definitions['Z4C_TRACKER'] = 'NO_Z4C_TRACKER'
-
-# -z_assert_is_finite argument
-if args['z_assert_is_finite']:
-    if not args['z']:
-        raise SystemExit("### CONFIGURE ERROR: z_assert_is_finite requires z flag")
-    definitions['Z4C_ASSERT_FINITE'] = 'Z4C_ASSERT_FINITE'
-else:
-  definitions['Z4C_ASSERT_FINITE'] = 'NO_Z4C_ASSERT_FINITE'
 
 # -z_eta_track_tp argument
 ERR_MUL_ETA_STR = "### CONFIGURE ERROR: select at most ONE of {z_eta_track_tp, z_eta_conf}"
@@ -1214,7 +1198,6 @@ print('  Wave equation:                ' + ('ON' if args['w'] else 'OFF'))
 print('  Z4c equations:                ' + ('ON' if args['z'] else 'OFF'))
 if args['z']:
     print('  Z4c tracker:                  ' + ('ON' if args['z_tracker'] else 'OFF'))
-    print('  Z4c assert is_finite:         ' + ('ON' if args['z_assert_is_finite'] else 'OFF'))
     print('  Z4c shift damping:            ' + self_eta_damp_string)
     print('  Z4c refinement strategy:      ' + ('box-in-box' if args['ref_box_in_box']
                                                 else 'spheres'))

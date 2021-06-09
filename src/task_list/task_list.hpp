@@ -463,11 +463,7 @@ public:
   TaskStatus CheckRefinement(MeshBlock *pmb, int stage);   // FLAG_AMR     [x]
   TaskStatus Z4c_Weyl(MeshBlock *pmb, int stage);          // Z4C_WEYL     [x]
   TaskStatus WaveExtract(MeshBlock *pmb, int stage);       // WAVE_EXTR    [x]
-
-#ifdef Z4C_ASSERT_FINITE
-  // monitor
   TaskStatus AssertFinite(MeshBlock *pmb, int stage);      // ASSERT_FIN   [x]
-#endif // Z4C_ASSERT_FINITE
 
   //---------------------------------------------------------------------------
   // Provide finer-grained control over tasklist
@@ -481,9 +477,7 @@ public:
   struct {
     aux_NextTimeStep adm;
     aux_NextTimeStep con;
-#ifdef Z4C_ASSERT_FINITE
     aux_NextTimeStep assert_is_finite;
-#endif // Z4C_ASSERT_FINITE
     aux_NextTimeStep wave_extraction;
   } TaskListTriggers;
 
@@ -523,9 +517,7 @@ namespace Z4cIntegratorTaskNames {
   const TaskID ADM_CONSTR(13);
   const TaskID FLAG_AMR(14);
 
-#ifdef Z4C_ASSERT_FINITE
   const TaskID ASSERT_FIN(15);
-#endif //Z4C_ASSERT_FINITE
   const TaskID Z4C_WEYL(16);
   const TaskID WAVE_EXTR(17);
 

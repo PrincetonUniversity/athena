@@ -230,11 +230,9 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
 
   //---------------------------------------------------------------------------
   // Output frequency control (on task-list)
-#ifdef Z4C_ASSERT_FINITE
   TaskListTriggers.assert_is_finite.next_time = pm->time;
   TaskListTriggers.assert_is_finite.dt = pin->GetOrAddReal("z4c",
-    "dt_assert_is_finite", 0);
-#endif // Z4C_ASSERT_FINITE
+    "dt_assert_is_finite", 0.0);
 
   // For constraint calculation
   TaskListTriggers.con.next_time = pm->time;
@@ -292,9 +290,7 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
       AddTask(CLEAR_ALLBND, NEW_DT);           // ClearAllBoundary
     }
 
-#ifdef Z4C_ASSERT_FINITE
     AddTask(ASSERT_FIN, CLEAR_ALLBND);         // AssertFinite
-#endif // Z4C_ASSERT_FINITE
   } // end of using namespace block
 }
 
@@ -391,14 +387,12 @@ void Z4cIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         (&Z4cIntegratorTaskList::CheckRefinement);
       task_list_[ntasks].lb_time = true;
     }
-#ifdef Z4C_ASSERT_FINITE
     else if (id == ASSERT_FIN) {
       task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&Z4cIntegratorTaskList::AssertFinite);
       task_list_[ntasks].lb_time = false;
     }
-#endif // Z4C_ASSERT_FINITE
     else {
       std::stringstream msg;
       msg << "### FATAL ERROR in AddTask" << std::endl
@@ -681,7 +675,6 @@ TaskStatus Z4cIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int stage) {
   return TaskStatus::success;
 }
 
-#ifdef Z4C_ASSERT_FINITE
 TaskStatus Z4cIntegratorTaskList::AssertFinite(MeshBlock *pmb, int stage) {
   // only do on last stage
   if (stage != nstages) return TaskStatus::success;
@@ -698,7 +691,6 @@ TaskStatus Z4cIntegratorTaskList::AssertFinite(MeshBlock *pmb, int stage) {
 
   return TaskStatus::success;
 }
-#endif // Z4C_ASSERT_FINITE
 
 
 //----------------------------------------------------------------------------------------
@@ -742,13 +734,11 @@ void Z4cIntegratorTaskList::UpdateTaskListTriggers() {
     TaskListTriggers.con.to_update = false;
   }
 
-#ifdef Z4C_ASSERT_FINITE
   if (TaskListTriggers.assert_is_finite.to_update) {
     TaskListTriggers.assert_is_finite.next_time += \
       TaskListTriggers.assert_is_finite.dt;
     TaskListTriggers.assert_is_finite.to_update = false;
   }
-#endif // Z4C_ASSERT_FINITE
 
   if (TaskListTriggers.wave_extraction.to_update) {
     TaskListTriggers.wave_extraction.next_time += \
