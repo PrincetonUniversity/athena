@@ -121,19 +121,19 @@ void Z4c::ADMLinearWave1(AthenaArray<Real> & u_adm) {
   GLOOP2(k,j) {
     // g_yy
     GLOOP1(i) {
-      adm.g_dd(1,1,k,j,i) += SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
+      adm.g_dd(1,1,k,j,i) += SINWAVE(amp, d_x, d_y, pmy_block->pcoord->x1f(i), 0.);
     }
     // g_zz
     GLOOP1(i) {
-      adm.g_dd(2,2,k,j,i) -= SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
+      adm.g_dd(2,2,k,j,i) -= SINWAVE(amp, d_x, d_y, pmy_block->pcoord->x1f(i), 0.);
     }
     // K_yy
     GLOOP1(i) {
-      adm.K_dd(1,1,k,j,i) += 0.5*DSINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
+      adm.K_dd(1,1,k,j,i) += 0.5*DSINWAVE(amp, d_x, d_y, pmy_block->pcoord->x1f(i), 0.);
     }
     // K_zz
     GLOOP1(i) {
-      adm.K_dd(2,2,k,j,i) -= 0.5*DSINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
+      adm.K_dd(2,2,k,j,i) -= 0.5*DSINWAVE(amp, d_x, d_y, pmy_block->pcoord->x1f(i), 0.);
     }
   }
 }
@@ -156,19 +156,19 @@ void Z4c::ADMLinearWave1Gaussian(AthenaArray<Real> & u_adm) {
   GLOOP2(k,j) {
     // g_yy
     GLOOP1(i) {
-      adm.g_dd(1,1,k,j,i) += GAUSSIAN1(amp, w, mbi.x1(i));
+      adm.g_dd(1,1,k,j,i) += GAUSSIAN1(amp, w, pmy_block->pcoord->x1f(i));
     }
     // g_zz
     GLOOP1(i) {
-      adm.g_dd(2,2,k,j,i) -= GAUSSIAN1(amp, w, mbi.x1(i));
+      adm.g_dd(2,2,k,j,i) -= GAUSSIAN1(amp, w, pmy_block->pcoord->x1f(i));
     }
     // K_yy
     GLOOP1(i) {
-      adm.K_dd(1,1,k,j,i) += 0.5*GAUSSIAN1(amp, w, mbi.x1(i));
+      adm.K_dd(1,1,k,j,i) += 0.5*GAUSSIAN1(amp, w, pmy_block->pcoord->x1f(i));
     }
     // K_zz
     GLOOP1(i) {
-      adm.K_dd(2,2,k,j,i) -= 0.5*GAUSSIAN1(amp, w, mbi.x1(i));
+      adm.K_dd(2,2,k,j,i) -= 0.5*GAUSSIAN1(amp, w, pmy_block->pcoord->x1f(i));
     }
   }
 }
@@ -196,16 +196,16 @@ void Z4c::ADMLinearWave2(AthenaArray<Real> & u_adm) {
     for(int a = 0; a < NDIM-1; ++a) {
       GLOOP1(i) {
         adm.g_dd(a,a,k,j,i) += 0.5*SINWAVE(amp, d_x, d_y,
-                                           mbi.x1(i), mbi.x2(j));
+                                           pmy_block->pcoord->x1f(i), pmy_block->pcoord->x2f(j));
       }
     }
 
     // g_xy, g_zz
     GLOOP1(i) {
       adm.g_dd(0,1,k,j,i)  = 0.5*SINWAVE(amp, d_x, d_y,
-                                         mbi.x1(i), mbi.x2(j));
+                                         pmy_block->pcoord->x1f(i), pmy_block->pcoord->x2f(j));
       adm.g_dd(2,2,k,j,i) -=     SINWAVE(amp, d_x, d_y,
-                                         mbi.x1(i), mbi.x2(j));
+                                         pmy_block->pcoord->x1f(i), pmy_block->pcoord->x2f(j));
     }
 
     // K_xx, K_xy, K_yy
@@ -213,14 +213,14 @@ void Z4c::ADMLinearWave2(AthenaArray<Real> & u_adm) {
       for(int b = a; b < NDIM-1; ++b) {
         GLOOP1(i) {
           adm.K_dd(a,b,k,j,i) = 0.25 * SQRT2 * DSINWAVE(amp, d_x, d_y,
-            mbi.x1(i), mbi.x2(j));
+            pmy_block->pcoord->x1f(i), pmy_block->pcoord->x2f(j));
         }
       }
     }
     // K_zz
     GLOOP1(i) {
       adm.K_dd(2,2,k,j,i) = -0.5 * SQRT2 * DSINWAVE(amp, d_x, d_y,
-        mbi.x1(i), mbi.x2(j));
+        pmy_block->pcoord->x1f(i), pmy_block->pcoord->x2f(j));
     }
   }
 }
@@ -243,10 +243,10 @@ void Z4c::GaugeSimpleGaugeWave(AthenaArray<Real> & u) {
       GLOOP1(i) {
         // lapse
         // z4c.alpha(k,j,i) += GAUSSIAN(amp, d_x,
-        //                              mbi.x1(i), mbi.x2(j), mbi.x3(k));
-        z4c.alpha(k,j,i) += amp * pow(sin(2. * M_PI * mbi.x1(i)) , 6) *
-                                  pow(sin(2. * M_PI * mbi.x2(j)) , 6) *
-                                  pow(sin(2. * M_PI * mbi.x3(k)) , 6);
+        //                              pmy_block->pcoord->x1f(i), pmy_block->pcoord->x2f(j), pmy_block->pcoord->x3f(k));
+        z4c.alpha(k,j,i) += amp * pow(sin(2. * M_PI * pmy_block->pcoord->x1f(i)) , 6) *
+                                  pow(sin(2. * M_PI * pmy_block->pcoord->x2f(j)) , 6) *
+                                  pow(sin(2. * M_PI * pmy_block->pcoord->x3f(k)) , 6);
       }
   }
 }
@@ -271,11 +271,11 @@ void Z4c::ADMGaugeWave1(AthenaArray<Real> & u_adm) {
   GLOOP2(k,j) {
      GLOOP1(i) {
         // g_xx
-        adm.g_dd(0,0,k,j,i) -= SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
+        adm.g_dd(0,0,k,j,i) -= SINWAVE(amp, d_x, d_y, pmy_block->pcoord->x1f(i), 0.);
         // K_xx
         adm.K_dd(0,0,k,j,i) =
-                   0.5*DSINWAVE(amp, d_x, d_y, mbi.x1(i), 0.)/
-        std::sqrt(1.0 - SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.));
+                   0.5*DSINWAVE(amp, d_x, d_y, pmy_block->pcoord->x1f(i), 0.)/
+        std::sqrt(1.0 - SINWAVE(amp, d_x, d_y, pmy_block->pcoord->x1f(i), 0.));
       }
   }
 }
@@ -299,7 +299,7 @@ void Z4c::GaugeGaugeWave1(AthenaArray<Real> & u) {
      GLOOP1(i) {
        // lapse
        z4c.alpha(k,j,i) = std::sqrt(1.0 - SINWAVE(amp, d_x, d_y,
-                                                  mbi.x1(i), 0.));
+                                                  pmy_block->pcoord->x1f(i), 0.));
      }
   }
 }
@@ -323,7 +323,7 @@ void Z4c::ADMGaugeWave1_shifted(AthenaArray<Real> & u_adm) {
   // Propagation along x ...
   GLOOP2(k,j) {
     GLOOP1(i) {
-      Real const arg = (2. * PI * (mbi.x1(i) - 0.)) / d_x;
+      Real const arg = (2. * PI * (pmy_block->pcoord->x1f(i) - 0.)) / d_x;
       Real const b = amp * std::sin(arg);
       Real const dt_b = -2. * amp * PI / d_x * std::cos(arg);
 
@@ -332,11 +332,11 @@ void Z4c::ADMGaugeWave1_shifted(AthenaArray<Real> & u_adm) {
       adm.K_dd(0,0,k,j,i) += dt_b / (2. * std::sqrt(1. + b));
 
       // // g_xx
-      // adm.g_dd(0,0,k,j,i) += SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.);
+      // adm.g_dd(0,0,k,j,i) += SINWAVE(amp, d_x, d_y, pmy_block->pcoord->x1f(i), 0.);
       // // K_xx
       // adm.K_dd(0,0,k,j,i) =
-      //             0.5*DSINWAVE(amp, d_x, d_y, mbi.x1(i), 0.)/
-      // std::sqrt(1.0 + SINWAVE(amp, d_x, d_y, mbi.x1(i), 0.));
+      //             0.5*DSINWAVE(amp, d_x, d_y, pmy_block->pcoord->x1f(i), 0.)/
+      // std::sqrt(1.0 + SINWAVE(amp, d_x, d_y, pmy_block->pcoord->x1f(i), 0.));
 
     }
   }
@@ -359,7 +359,7 @@ void Z4c::GaugeGaugeWave1_shifted(AthenaArray<Real> & u) {
 
   GLOOP2(k,j) {
     GLOOP1(i) {
-      Real const arg = (2. * PI * (mbi.x1(i) - 0.)) / d_x;
+      Real const arg = (2. * PI * (pmy_block->pcoord->x1f(i) - 0.)) / d_x;
       Real const b = amp * std::sin(arg);
 
       // populate initial lapse and shift
@@ -367,10 +367,10 @@ void Z4c::GaugeGaugeWave1_shifted(AthenaArray<Real> & u) {
       z4c.beta_u(0,k,j,i) = -b / (1. + b);
         // // lapse
         // z4c.alpha(k,j,i) = 1.0/(std::sqrt(1.0 + SINWAVE(amp, d_x, d_y,
-        //                                                 mbi.x1(i),0.)));
+        //                                                 pmy_block->pcoord->x1f(i),0.)));
         // // shift
-        // z4c.beta_u(0,k,j,i) = - SINWAVE(amp, d_x, d_y, mbi.x1(i),0.)/
-        //                   (1. + SINWAVE(amp, d_x, d_y, mbi.x1(i),0.));
+        // z4c.beta_u(0,k,j,i) = - SINWAVE(amp, d_x, d_y, pmy_block->pcoord->x1f(i),0.)/
+        //                   (1. + SINWAVE(amp, d_x, d_y, pmy_block->pcoord->x1f(i),0.));
     }
   }
 }
@@ -400,21 +400,21 @@ void Z4c::ADMGaugeWave2(AthenaArray<Real> & u_adm) {
     for(int a = 0; a < NDIM-1; ++a) {
       GLOOP1(i) {
         adm.g_dd(a,a,k,j,i) -= 0.5*SINWAVE(amp, d_y, d_y,
-                                           mbi.x1(i), mbi.x2(j));
+                                           pmy_block->pcoord->x1f(i), pmy_block->pcoord->x2f(j));
       }
     }
 
     // g_xy
     GLOOP1(i) {
-      adm.g_dd(0,1,k,j,i) = 0.5*SINWAVE(amp, d_y, d_y, mbi.x1(i), mbi.x2(j));
+      adm.g_dd(0,1,k,j,i) = 0.5*SINWAVE(amp, d_y, d_y, pmy_block->pcoord->x1f(i), pmy_block->pcoord->x2f(j));
     }
 
     // K_xx, K_yy
     for(int a = 0; a < NDIM-1; ++a) {
       GLOOP1(i) {
         adm.K_dd(a,a,k,j,i) =
-                  0.25 * SQRT2 * DSINWAVE(amp, d_y, d_y, mbi.x1(i), mbi.x2(j))/
-          std::sqrt(1.0-SINWAVE(amp, d_y, d_y, mbi.x1(i), mbi.x2(j)));
+                  0.25 * SQRT2 * DSINWAVE(amp, d_y, d_y, pmy_block->pcoord->x1f(i), pmy_block->pcoord->x2f(j))/
+          std::sqrt(1.0-SINWAVE(amp, d_y, d_y, pmy_block->pcoord->x1f(i), pmy_block->pcoord->x2f(j)));
       }
     }
 
@@ -422,7 +422,7 @@ void Z4c::ADMGaugeWave2(AthenaArray<Real> & u_adm) {
     GLOOP1(i) {
       adm.K_dd(0,1,k,j,i) = - adm.K_dd(0,0,k,j,i);
       adm.K_dd(2,2,k,j,i) = -0.5 * SQRT2 * DSINWAVE(amp, d_y, d_y,
-        mbi.x1(i), mbi.x2(j));
+        pmy_block->pcoord->x1f(i), pmy_block->pcoord->x2f(j));
     }
   }
 }
@@ -445,7 +445,7 @@ void Z4c::GaugeGaugeWave2(AthenaArray<Real> & u) {
      GLOOP1(i) {
         // lapse
         z4c.alpha(k,j,i) = std::sqrt(1.0 - SINWAVE(amp, d_x, d_y,
-                                                   mbi.x1(i), mbi.x2(j)));
+                                                   pmy_block->pcoord->x1f(i), pmy_block->pcoord->x2f(j)));
       }
   }
 }
@@ -489,7 +489,7 @@ void Z4c::GaugePolarisedGowdy(AthenaArray<Real> & u) {
 
 
   GLOOP3(k,j,i) {
-    Real cos_x = std::cos(2. * PI * mbi.x1(i));
+    Real cos_x = std::cos(2. * PI * pmy_block->pcoord->x1f(i));
     Real sqr_cos_x = SQR(cos_x);
 
     Real L = -2. * PI * t * J0_t * J1_t * sqr_cos_x;
@@ -539,10 +539,10 @@ void Z4c::ADMPolarisedGowdy(AthenaArray<Real> & u_adm) {
   //---------------------------------------------------------------------------
 
   GLOOP3(k,j,i) {
-    Real cos_x = std::cos(2. * PI * mbi.x1(i));
+    Real cos_x = std::cos(2. * PI * pmy_block->pcoord->x1f(i));
     Real sqr_cos_x = SQR(cos_x);
 
-    Real sin_x = std::sin(2. * PI * mbi.x1(i));
+    Real sin_x = std::sin(2. * PI * pmy_block->pcoord->x1f(i));
     Real sqr_sin_x = SQR(sin_x);
 
 

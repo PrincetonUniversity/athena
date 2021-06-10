@@ -11,22 +11,22 @@
 #define NDIM    (3)
 
 #define IX_IL                                                                 \
-  pmy_block->pz4c->mbi.il
+  pmy_block->is
 
 #define IX_IU                                                                 \
-  pmy_block->pz4c->mbi.iu
+  pmy_block->ive
 
 #define IX_JL                                                                 \
-  pmy_block->pz4c->mbi.jl
+  pmy_block->js
 
 #define IX_JU                                                                 \
-  pmy_block->pz4c->mbi.ju
+  pmy_block->jve
 
 #define IX_KL                                                                 \
-  pmy_block->pz4c->mbi.kl
+  pmy_block->ks
 
 #define IX_KU                                                                 \
-  pmy_block->pz4c->mbi.ku
+  pmy_block->kve
 
 #define GSIZEI                                                                \
   (NGHOST)

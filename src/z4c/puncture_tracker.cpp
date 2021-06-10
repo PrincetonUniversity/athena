@@ -125,7 +125,7 @@ void PunctureTracker::EvolveTracker() {
     }
   }
 
-#if MPI_PARALLEL
+#ifdef MPI_PARALLEL
   Real buf[2*NDIM] = {0., 0., 0., 0., 0., 0.};
   if (owns_puncture) {
     buf[0] = pos[0];

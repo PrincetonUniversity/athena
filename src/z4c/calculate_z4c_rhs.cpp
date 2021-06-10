@@ -46,7 +46,7 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
   //---------------------------------------------------------------------------
   // Scratch arrays for spatially dependent eta shift damping
 #if defined(Z4C_ETA_CONF)
-  int nn1 = mbi.nn1;
+  int nn1 = pmy_block->nverts1;
   // 1/psi^2 (guarded); derivative and shift eta scratch
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> oopsi2;
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 1> doopsi2_d;
@@ -58,32 +58,7 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
 
 #elif defined(Z4C_ETA_TRACK_TP)
 
-  // int nn1 = mbi.nn1;
-  // AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> eta_damp;
-
-  // eta_damp.NewAthenaTensor(nn1);
-
 #endif // Z4C_ETA_CONF, Z4C_ETA_TRACK_TP
-  //---------------------------------------------------------------------------
-
-  //---------------------------------------------------------------------------
-#if (0) // DEBUG: (for output in y-direction, to be read by Mathematica)
-  Real i_test = mbi.il; //where to evaluate things
-  std::cout << "Writing test output to file..." << std::endl;
-  std::ofstream outdata;
-  outdata.open ("output.dat");
-#endif  // END DEBUG
-
-#if (0) // DEBUG
-  int body = 0;
-
-  coutBoldBlue("body_0 tracker:\n");
-  for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
-    Real tt = pmy_block->pmy_mesh->pz4c_tracker[0]->GetPos(i_dim);
-    printf("%1.6f, ", tt);
-  }
-  coutBoldBlue("\n=\n");
-#endif  // END DEBUG
   //---------------------------------------------------------------------------
 
   ILOOP2(k,j) {
@@ -625,13 +600,13 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
 
       eta_damp(i) += \
         POW2(pmy_block->pmy_mesh->pz4c_tracker[b_ix]->GetPos(0)
-          - mbi.x1(i));
+          - pmy_block->pcoord->x1f(i));
       eta_damp(i) += \
         POW2(pmy_block->pmy_mesh->pz4c_tracker[b_ix]->GetPos(1)
-          - mbi.x2(j));
+          - pmy_block->pcoord->x2f(j));
       eta_damp(i) += \
         POW2(pmy_block->pmy_mesh->pz4c_tracker[b_ix]->GetPos(2)
-          - mbi.x3(k));
+          - pmy_block->pcoord->x3f(k));
 
       eta_damp(i) = 1. + pow(eta_damp(i) * re_pow2_w, opt.shift_eta_delta);
 
@@ -654,116 +629,6 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
       }
     }
 #endif // Z4C_ETA_CONF, Z4C_ETA_TRACK_TP
-
-#if (0)// DEBUG (force analytical polarised Gowdy lapse, zero shift)
-#ifdef GSL
-
-  // compute info for \Lambda--------------------------------------------------
-  Real t = opt.AwA_polarised_Gowdy_t0;
-
-  Real J0 = gsl_sf_bessel_J0(2. * PI);
-  Real J1 = gsl_sf_bessel_J1(2. * PI);
-  Real sqr_J0 = SQR(J0);
-  Real sqr_J1 = SQR(J1);
-
-  Real J0_t = gsl_sf_bessel_J0(2. * PI * t);
-  Real J1_t = gsl_sf_bessel_J1(2. * PI * t);
-  Real sqr_J0_t = SQR(J0_t);
-  Real sqr_J1_t = SQR(J1_t);
-
-  Real dt_J0_t = -2. * PI * J1_t;
-  Real dt_J1_t = 2. * PI * J0_t - J1_t / t;
-
-  Real sqr_pi = SQR(PI);
-  Real sqr_t = SQR(t);
-
-  // Real L = -2. * PI * t * J0_t * J1_t * sqr_cos_x;
-  // L += 2. * sqr_pi * sqr_t * (sqr_J0_t + sqr_J1_t);
-  // L -= 1. / 2. * (4. * sqr_pi * (sqr_J0 + sqr_J1) - 2. * PI * J0 * J1);
-
-  Real pow_t_m_1_4 = std::pow(t, -1./4.);
-  //-----------
-
-
-  GLOOP3(k,j,i) {
-    Real cos_x = std::cos(2. * PI * mbi.x1(i));
-    Real sqr_cos_x = SQR(cos_x);
-
-    Real L = -2. * PI * t * J0_t * J1_t * sqr_cos_x;
-    L += 2. * sqr_pi * sqr_t * (sqr_J0_t + sqr_J1_t);
-    L -= 1. / 2. * (4. * sqr_pi * (sqr_J0 + sqr_J1) - 2. * PI * J0 * J1);
-
-    rhs.alpha(k,j,i) = pow_t_m_1_4 * std::exp(L / 4.);
-  }
-
-
-  ILOOP2(k,j) {
-    for(int a = 0; a < NDIM; ++a) {
-      ILOOP1(i) {
-        rhs.beta_u(a,k,j,i) = 0.;
-      }
-    }
-  }
-#endif // ENDGSL
-#endif // ENDDEBUG
-
-#if (0)// DEBUG (forcing zero shift)
-    for(int a = 0; a < NDIM; ++a) {
-      ILOOP1(i) {
-        rhs.beta_u(a,k,j,i) = 0.;
-      }
-    }
-#endif // ENDDEBUG
-
-#if (0)    // DEBUG
-      outdata //(output in y-direction, to be read by Mathematica)
-      << std::setprecision(17)
-      << z4c.alpha(k,j,i_test) << " "
-      << dalpha_d(0,i_test) << " "
-      << dalpha_d(1,i_test) << " "
-      << mbi.x2(j) //y-grid
-      << std::endl;
-#endif// END DEBUG
-
-#if (0) // DEBUG (output in x-direction, to be read by Mathematica)
-    if (j == mbi.ju) {
-      std::cout << "---> Writing test output to file..." << std::endl;
-      std::cout << "(j,y(j)) = (" << j << "," << mbi.x2(j) << ")" << std::endl;
-
-      std::ofstream outdata;
-      outdata.open ("output.dat");
-      ILOOP1(i) {
-        outdata
-        << std::setprecision(17)
-
-        << rhs.g_dd(0,0,k,j,i) << " "
-        << rhs.g_dd(1,1,k,j,i) << " "
-        << rhs.g_dd(2,2,k,j,i) << " "
-        << rhs.A_dd(0,0,k,j,i) << " "
-        << rhs.A_dd(1,1,k,j,i) << " "
-        << rhs.A_dd(2,2,k,j,i) << " "
-        << rhs.Gam_u(0,k,j,i) << " "
-        << rhs.Khat(k,j,i) << " "
-        << rhs.chi(k,j,i) << " "
-        << rhs.Theta(k,j,i) << " "
-        << rhs.alpha(k,j,i) << " "
-        << rhs.beta_u(0,k,j,i) << " "
-
-        << mbi.x1(i) //x-grid
-        << std::endl;
-      }
-      outdata // To evaluate Mathematica functions
-      << 0. << " "   // t
-      << mbi.x2(j) // y
-      << std::endl;
-      outdata.close();
-    }
-    outdata // To evaluate Mathematica functions
-    << 0. << " "   // t
-    << mbi.x1(i_test) // x
-    << std::endl;
-    outdata.close();
-#endif  // ENDDEBUG
 
   }
 
@@ -789,27 +654,27 @@ void Z4c::Z4cBoundaryRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat, Athen
   MeshBlock * pmb = pmy_block;
   if(pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::outflow) {
-    Z4cSommerfeld_(u, u_rhs, mbi.il, mbi.il, mbi.jl, mbi.ju, mbi.kl, mbi.ku);
+    Z4cSommerfeld_(u, u_rhs, pmb->is, pmb->is, pmb->js, pmb->jve, pmb->ks, pmb->kve);
   }
   if(pmb->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::outflow) {
-    Z4cSommerfeld_(u, u_rhs, mbi.iu, mbi.iu, mbi.jl, mbi.ju, mbi.kl, mbi.ku);
+    Z4cSommerfeld_(u, u_rhs, pmb->ive, pmb->ive, pmb->js, pmb->jve, pmb->ks, pmb->kve);
   }
   if(pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::outflow) {
-    Z4cSommerfeld_(u, u_rhs, mbi.il, mbi.iu, mbi.jl, mbi.jl, mbi.kl, mbi.ku);
+    Z4cSommerfeld_(u, u_rhs, pmb->is, pmb->ive, pmb->js, pmb->js, pmb->ks, pmb->kve);
   }
   if(pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::outflow) {
-    Z4cSommerfeld_(u, u_rhs, mbi.il, mbi.iu, mbi.ju, mbi.ju, mbi.kl, mbi.ku);
+    Z4cSommerfeld_(u, u_rhs, pmb->is, pmb->ive, pmb->jve, pmb->jve, pmb->ks, pmb->kve);
   }
   if(pmb->pbval->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::outflow) {
-    Z4cSommerfeld_(u, u_rhs, mbi.il, mbi.iu, mbi.jl, mbi.ju, mbi.kl, mbi.kl);
+    Z4cSommerfeld_(u, u_rhs, pmb->is, pmb->ive, pmb->js, pmb->jve, pmb->ks, pmb->ks);
   }
   if(pmb->pbval->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::extrapolate_outflow ||
      pmb->pbval->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::outflow) {
-    Z4cSommerfeld_(u, u_rhs, mbi.il, mbi.iu, mbi.jl, mbi.ju, mbi.ku, mbi.ku);
+    Z4cSommerfeld_(u, u_rhs, pmb->is, pmb->ive, pmb->js, pmb->jve, pmb->kve, pmb->kve);
   }
 }
 
@@ -864,11 +729,11 @@ void Z4c::Z4cSommerfeld_(AthenaArray<Real> & u, AthenaArray<Real> & u_rhs,
     //
 #pragma omp simd
     for(int i = is; i <= ie; ++i) {
-      // NOTE: this will need to be changed if the Z4c variables become vertex center
-      r(i) = std::sqrt(SQR(mbi.x1(i)) + SQR(mbi.x2(j)) + SQR(mbi.x3(k)));
-      s_u(0,i) = mbi.x1(i)/r(i);
-      s_u(1,i) = mbi.x2(j)/r(i);
-      s_u(2,i) = mbi.x3(k)/r(i);
+      r(i) = std::sqrt(SQR(pmy_block->pcoord->x1f(i)) +
+              SQR(pmy_block->pcoord->x2f(j)) + SQR(pmy_block->pcoord->x3f(k)));
+      s_u(0,i) = pmy_block->pcoord->x1f(i)/r(i);
+      s_u(1,i) = pmy_block->pcoord->x2f(j)/r(i);
+      s_u(2,i) = pmy_block->pcoord->x3f(k)/r(i);
     }
 
     // -----------------------------------------------------------------------------------

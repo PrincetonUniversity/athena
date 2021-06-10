@@ -74,20 +74,6 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   Mesh *pm = pmy_block->pmy_mesh;
   Coordinates * pco = pmb->pcoord;
 
-  // dimensions required for data allocation
-  mbi.nn1 = pmb->nverts1;
-  mbi.nn2 = pmb->nverts2;
-  mbi.nn3 = pmb->nverts3;
-  int nn1 = mbi.nn1, nn2 = mbi.nn2, nn3 = mbi.nn3;
-
-  // convenience for per-block iteration (private Wave scope)
-  mbi.il = pmb->is; mbi.jl = pmb->js; mbi.kl = pmb->ks;
-  mbi.iu = pmb->ive; mbi.ju = pmb->jve; mbi.ku = pmb->kve;
-
-  // point to appropriate grid
-  mbi.x1.InitWithShallowSlice(pco->x1f, 1, 0, nn1);
-  mbi.x2.InitWithShallowSlice(pco->x2f, 1, 0, nn2);
-  mbi.x3.InitWithShallowSlice(pco->x3f, 1, 0, nn3);
   //---------------------------------------------------------------------------
 
   // inform MeshBlock that this array is the "primary" representation
@@ -101,20 +87,19 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
     refinement_idx = pmy_block->pmr->AddToRefinementVC(&storage.u, &coarse_u_);
   }
 
-
   // If user-requested time integrator is type 3S* allocate additional memory
   std::string integrator = pin->GetOrAddString("time", "integrator", "vl2");
   if (integrator == "ssprk5_4")
-    storage.u2.NewAthenaArray(N_Z4c, nn3, nn2, nn1);
+    storage.u2.NewAthenaArray(N_Z4c, pmb->nverts3, pmb->nverts2, pmb->nverts1);
 
   // enroll CellCenteredBoundaryVariable / VertexCenteredBoundaryVariable object
   ubvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&ubvar);
   pmb->pbval->bvars_main_int_vc.push_back(&ubvar);
 
-  dt1_.NewAthenaArray(nn1);
-  dt2_.NewAthenaArray(nn1);
-  dt3_.NewAthenaArray(nn1);
+  dt1_.NewAthenaArray(pmb->nverts1);
+  dt2_.NewAthenaArray(pmb->nverts1);
+  dt3_.NewAthenaArray(pmb->nverts1);
 
   // BD: TODO shift defaults to header [C++11 so can use def. declaration]..
   // Parameters
@@ -188,22 +173,6 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
         "sphere_zone_center3_" + std::to_string(i), 0.);
     }
   }
-// #ifdef NPUNCT
-//   // for puncture refinement
-//   if (NPUNCT > 0) {
-//     opt.puncture_levels.NewAthenaArray(NPUNCT);
-//     opt.puncture_radii.NewAthenaArray(NPUNCT);
-
-//     for (int i=0; i<opt.sphere_zone_number; ++i) {
-//       opt.puncture_levels(i) = pin->GetOrAddInteger("z4c",
-//         "puncture_level_" + std::to_string(i),
-//         pin->GetOrAddInteger("mesh", "numlevel", 3));
-//       opt.puncture_radii(i) = pin->GetOrAddReal("z4c",
-//         "puncture_radius_" + std::to_string(i), 1.5);
-//     }
-
-//   }
-// #endif
 
   //---------------------------------------------------------------------------
   // Set aliases
@@ -214,77 +183,77 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   SetZ4cAliases(storage.u, z4c);
   SetWeylAliases(storage.weyl, weyl);
   // Allocate memory for aux 1D vars
-  r.NewAthenaTensor(nn1);
-  detg.NewAthenaTensor(nn1);
-  chi_guarded.NewAthenaTensor(nn1);
-  oopsi4.NewAthenaTensor(nn1);
-  A.NewAthenaTensor(nn1);
-  AA.NewAthenaTensor(nn1);
-  R.NewAthenaTensor(nn1);
-  Ht.NewAthenaTensor(nn1);
-  K.NewAthenaTensor(nn1);
-  KK.NewAthenaTensor(nn1);
-  Ddalpha.NewAthenaTensor(nn1);
-  S.NewAthenaTensor(nn1);
-  M_u.NewAthenaTensor(nn1);
-  Gamma_u.NewAthenaTensor(nn1);
-  DA_u.NewAthenaTensor(nn1);
-  s_u.NewAthenaTensor(nn1);
-  g_uu.NewAthenaTensor(nn1);
-  A_uu.NewAthenaTensor(nn1);
-  AA_dd.NewAthenaTensor(nn1);
-  R_dd.NewAthenaTensor(nn1);
-  Rphi_dd.NewAthenaTensor(nn1);
-  Kt_dd.NewAthenaTensor(nn1);
-  K_ud.NewAthenaTensor(nn1);
-  Ddalpha_dd.NewAthenaTensor(nn1);
-  Ddphi_dd.NewAthenaTensor(nn1);
-  Gamma_ddd.NewAthenaTensor(nn1);
-  Gamma_udd.NewAthenaTensor(nn1);
-  DK_ddd.NewAthenaTensor(nn1);
-  DK_udd.NewAthenaTensor(nn1);
+  r.NewAthenaTensor(pmb->nverts1);
+  detg.NewAthenaTensor(pmb->nverts1);
+  chi_guarded.NewAthenaTensor(pmb->nverts1);
+  oopsi4.NewAthenaTensor(pmb->nverts1);
+  A.NewAthenaTensor(pmb->nverts1);
+  AA.NewAthenaTensor(pmb->nverts1);
+  R.NewAthenaTensor(pmb->nverts1);
+  Ht.NewAthenaTensor(pmb->nverts1);
+  K.NewAthenaTensor(pmb->nverts1);
+  KK.NewAthenaTensor(pmb->nverts1);
+  Ddalpha.NewAthenaTensor(pmb->nverts1);
+  S.NewAthenaTensor(pmb->nverts1);
+  M_u.NewAthenaTensor(pmb->nverts1);
+  Gamma_u.NewAthenaTensor(pmb->nverts1);
+  DA_u.NewAthenaTensor(pmb->nverts1);
+  s_u.NewAthenaTensor(pmb->nverts1);
+  g_uu.NewAthenaTensor(pmb->nverts1);
+  A_uu.NewAthenaTensor(pmb->nverts1);
+  AA_dd.NewAthenaTensor(pmb->nverts1);
+  R_dd.NewAthenaTensor(pmb->nverts1);
+  Rphi_dd.NewAthenaTensor(pmb->nverts1);
+  Kt_dd.NewAthenaTensor(pmb->nverts1);
+  K_ud.NewAthenaTensor(pmb->nverts1);
+  Ddalpha_dd.NewAthenaTensor(pmb->nverts1);
+  Ddphi_dd.NewAthenaTensor(pmb->nverts1);
+  Gamma_ddd.NewAthenaTensor(pmb->nverts1);
+  Gamma_udd.NewAthenaTensor(pmb->nverts1);
+  DK_ddd.NewAthenaTensor(pmb->nverts1);
+  DK_udd.NewAthenaTensor(pmb->nverts1);
 
 #if defined(Z4C_ETA_CONF) || defined(Z4C_ETA_TRACK_TP)
-  eta_damp.NewAthenaTensor(nn1);
+  eta_damp.NewAthenaTensor(pmb->nverts1);
 #endif // Z4C_ETA_CONF, Z4C_ETA_TRACK_TP
 
-  dbeta.NewAthenaTensor(nn1);
-  dalpha_d.NewAthenaTensor(nn1);
-  ddbeta_d.NewAthenaTensor(nn1);
-  dchi_d.NewAthenaTensor(nn1);
-  dphi_d.NewAthenaTensor(nn1);
-  dK_d.NewAthenaTensor(nn1);
-  dKhat_d.NewAthenaTensor(nn1);
-  dTheta_d.NewAthenaTensor(nn1);
-  ddalpha_dd.NewAthenaTensor(nn1);
-  dbeta_du.NewAthenaTensor(nn1);
-  ddchi_dd.NewAthenaTensor(nn1);
-  dGam_du.NewAthenaTensor(nn1);
-  dg_ddd.NewAthenaTensor(nn1);
-  dg_duu.NewAthenaTensor(nn1);
-  dK_ddd.NewAthenaTensor(nn1);
-  dA_ddd.NewAthenaTensor(nn1);
-  ddbeta_ddu.NewAthenaTensor(nn1);
-  ddg_dddd.NewAthenaTensor(nn1);
+  dbeta.NewAthenaTensor(pmb->nverts1);
+  dalpha_d.NewAthenaTensor(pmb->nverts1);
+  ddbeta_d.NewAthenaTensor(pmb->nverts1);
+  dchi_d.NewAthenaTensor(pmb->nverts1);
+  dphi_d.NewAthenaTensor(pmb->nverts1);
+  dK_d.NewAthenaTensor(pmb->nverts1);
+  dKhat_d.NewAthenaTensor(pmb->nverts1);
+  dTheta_d.NewAthenaTensor(pmb->nverts1);
+  ddalpha_dd.NewAthenaTensor(pmb->nverts1);
+  dbeta_du.NewAthenaTensor(pmb->nverts1);
+  ddchi_dd.NewAthenaTensor(pmb->nverts1);
+  dGam_du.NewAthenaTensor(pmb->nverts1);
+  dg_ddd.NewAthenaTensor(pmb->nverts1);
+  dg_duu.NewAthenaTensor(pmb->nverts1);
+  dK_ddd.NewAthenaTensor(pmb->nverts1);
+  dA_ddd.NewAthenaTensor(pmb->nverts1);
+  ddbeta_ddu.NewAthenaTensor(pmb->nverts1);
+  ddg_dddd.NewAthenaTensor(pmb->nverts1);
 
-  Lchi.NewAthenaTensor(nn1);
-  LKhat.NewAthenaTensor(nn1);
-  LTheta.NewAthenaTensor(nn1);
-  Lalpha.NewAthenaTensor(nn1);
-  LGam_u.NewAthenaTensor(nn1);
-  Lbeta_u.NewAthenaTensor(nn1);
-  Lg_dd.NewAthenaTensor(nn1);
-  LA_dd.NewAthenaTensor(nn1);
+  Lchi.NewAthenaTensor(pmb->nverts1);
+  LKhat.NewAthenaTensor(pmb->nverts1);
+  LTheta.NewAthenaTensor(pmb->nverts1);
+  Lalpha.NewAthenaTensor(pmb->nverts1);
+  LGam_u.NewAthenaTensor(pmb->nverts1);
+  Lbeta_u.NewAthenaTensor(pmb->nverts1);
+  Lg_dd.NewAthenaTensor(pmb->nverts1);
+  LA_dd.NewAthenaTensor(pmb->nverts1);
 
-  uvec.NewAthenaTensor(nn1);
-  vvec.NewAthenaTensor(nn1);
-  wvec.NewAthenaTensor(nn1);
-  dotp1.NewAthenaTensor(nn1);
-  dotp2.NewAthenaTensor(nn1);
-  Riem3_dddd.NewAthenaTensor(nn1);
-  Riemm4_dddd.NewAthenaTensor(nn1);
-  Riemm4_ddd.NewAthenaTensor(nn1);
-  Riemm4_dd.NewAthenaTensor(nn1);
+  uvec.NewAthenaTensor(pmb->nverts1);
+  vvec.NewAthenaTensor(pmb->nverts1);
+  wvec.NewAthenaTensor(pmb->nverts1);
+  dotp1.NewAthenaTensor(pmb->nverts1);
+  dotp2.NewAthenaTensor(pmb->nverts1);
+  Riem3_dddd.NewAthenaTensor(pmb->nverts1);
+  Riemm4_dddd.NewAthenaTensor(pmb->nverts1);
+  Riemm4_ddd.NewAthenaTensor(pmb->nverts1);
+  Riemm4_dd.NewAthenaTensor(pmb->nverts1);
 
   // Set up finite difference operators
   Real dx1, dx2, dx3;
@@ -296,12 +265,12 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   FD.idx[0] = 1.0 / dx1;
   FD.idx[1] = 0.0;
   FD.idx[2] = 0.0;
-  if(nn2 > 1) {
-    FD.stride[1] = nn1;
+  if(pmb->nverts2 > 1) {
+    FD.stride[1] = pmb->nverts1;
     FD.idx[1] = 1.0 / dx2;
   }
-  if(nn3 > 1) {
-    FD.stride[2] = nn2*nn1;
+  if(pmb->nverts3 > 1) {
+    FD.stride[2] = pmb->nverts2*pmb->nverts1;
     FD.idx[2] = 1.0 / dx3;
   }
   FD.diss = opt.diss*pow(2, -2*NGHOST)*(NGHOST % 2 == 0 ? -1 : 1);

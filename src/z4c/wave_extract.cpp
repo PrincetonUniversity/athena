@@ -87,25 +87,22 @@ void WaveExtract::ReduceMultipole() {
     pmb = pmb->next;
   }
 #ifdef MPI_PARALLEL
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  if (root == rank) {
+  if (0 == Globals::my_rank) {
     for(int l=2;l<lmax+1;++l){
       for(int m=-l;m<l+1;++m){
-      MPI_Reduce(MPI_IN_PLACE, &psi(l-2,m+l,0), 1, MPI_ATHENA_REAL, MPI_SUM, root, MPI_COMM_WORLD);
-      MPI_Reduce(MPI_IN_PLACE, &psi(l-2,m+l,1), 1, MPI_ATHENA_REAL, MPI_SUM, root, MPI_COMM_WORLD);
+      MPI_Reduce(MPI_IN_PLACE, &psi(l-2,m+l,0), 1, MPI_ATHENA_REAL, MPI_SUM, 0, MPI_COMM_WORLD);
+      MPI_Reduce(MPI_IN_PLACE, &psi(l-2,m+l,1), 1, MPI_ATHENA_REAL, MPI_SUM, 0, MPI_COMM_WORLD);
       }
     }
   }
   else {
     for(int l=2;l<lmax+1;++l){
       for(int m=-l;m<l+1;++m){
-      MPI_Reduce(&psi(l-2,m+l,0), &psi(l-2,m+l,0), 1, MPI_ATHENA_REAL, MPI_SUM, root, MPI_COMM_WORLD);
-      MPI_Reduce(&psi(l-2,m+l,1), &psi(l-2,m+l,1), 1, MPI_ATHENA_REAL, MPI_SUM, root, MPI_COMM_WORLD);
+      MPI_Reduce(&psi(l-2,m+l,0), &psi(l-2,m+l,0), 1, MPI_ATHENA_REAL, MPI_SUM, 0, MPI_COMM_WORLD);
+      MPI_Reduce(&psi(l-2,m+l,1), &psi(l-2,m+l,1), 1, MPI_ATHENA_REAL, MPI_SUM, 0, MPI_COMM_WORLD);
       }
     }
   }
-
 #endif
 }
 

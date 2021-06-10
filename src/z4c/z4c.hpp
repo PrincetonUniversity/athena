@@ -217,17 +217,6 @@ public:
   AthenaArray<Real> coarse_u_;
   int refinement_idx{-1};
 
-  // for seamless CC/VC switching
-  struct MB_info {
-    int il, iu, jl, ju, kl, ku;        // local block iter.
-    int nn1, nn2, nn3;                 // number of nodes (simplify switching)
-
-    AthenaArray<Real> x1, x2, x3;      // for CC / VC grid switch
-    AthenaArray<Real> cx1, cx2, cx3;   // for CC / VC grid switch (coarse)
-  };
-
-  MB_info mbi;
-
 public:
   // scheduled functions
   //

@@ -19,6 +19,8 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 
+#define SQ(X) ((X)*(X))
+
 //----------------------------------------------------------------------------------------
 // \!fn void Z4c::Z4cWeyl(AthenaArray<Real> & u_adm, AthenaArray<Real> & u_mat, AthenaArray<Real> & u_weyl)
 // \brief compute the weyl scalars given the adm variables and matter state
@@ -217,15 +219,16 @@ void Z4c::Z4cWeyl(AthenaArray<Real> & u_adm, AthenaArray<Real> & u_mat, AthenaAr
     //     vvec = theta vec
     //     wvec = phi vec
     ILOOP1(i){
-      Real xx = mbi.x1(i);
-      if(pow(mbi.x1(i),2.0) +  pow(mbi.x2(j),2.0) < 1e-10){ xx = xx + 1e-8;}
+      Real xx = pmy_block->pcoord->x1f(i);
+      if(SQ(pmy_block->pcoord->x1f(i)) +  SQ(pmy_block->pcoord->x2f(j)) < 1e-10)
+        xx = xx + 1e-8;
       uvec(0,i) = xx;
-      uvec(1,i) = mbi.x2(j);
-      uvec(2,i) = mbi.x3(k);
-      vvec(0,i) = xx*mbi.x3(k);
-      vvec(1,i) = mbi.x2(j)*mbi.x3(k);
-      vvec(2,i) = -SQR(xx)-SQR(mbi.x2(j));
-      wvec(0,i) = mbi.x2(j)*-1.0;
+      uvec(1,i) = pmy_block->pcoord->x2f(j);
+      uvec(2,i) = pmy_block->pcoord->x3f(k);
+      vvec(0,i) = xx*pmy_block->pcoord->x3f(k);
+      vvec(1,i) = pmy_block->pcoord->x2f(j)*pmy_block->pcoord->x3f(k);
+      vvec(2,i) = -SQR(xx)-SQR(pmy_block->pcoord->x2f(j));
+      wvec(0,i) = pmy_block->pcoord->x2f(j)*-1.0;
       wvec(1,i) = xx;
       wvec(2,i) = 0.0;
     }

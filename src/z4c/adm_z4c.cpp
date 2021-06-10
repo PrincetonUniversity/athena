@@ -90,7 +90,7 @@ void Z4c::ADMToZ4c(AthenaArray<Real> & u_adm, AthenaArray<Real> & u) {
   //
   // Allocate temporary memory for the inverse conformal metric
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 2> g_uu;
-  g_uu.NewAthenaTensor(mbi.nn3, mbi.nn2, mbi.nn1);
+  g_uu.NewAthenaTensor(pmy_block->nverts3, pmy_block->nverts2, pmy_block->nverts1);
 
   // Inverse conformal metric
   GLOOP3(k,j,i) {
