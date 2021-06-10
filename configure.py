@@ -958,50 +958,11 @@ if args['h5double']:
 else:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
 
-# TODO change/improve NPUNCT handling
-# -two_punctures argument
-#
-# Default directory structure anticipated (though may be passed directly)
-#     ./configure.py
-# ../twopuncturesc
-# ^ should contain /lib from 'make && make install'
-
 if args['prob'] == "z4c_two_punctures":
-    # if not args['gsl']:
-    #     raise SystemExit('### CONFIGURE ERROR: To compile with two punctures -gsl is required.')
-
-    # definitions['TWO_PUNCTURES_OPTION'] = 'TWO_PUNCTURES' + '\n#define NPUNCT (2)'
-
-    # # compiler [TODO: clang check?]
-    # cmp_c = 'gcc'
-    # if args['cxx'].__contains__('ic'):  # icc vs icpc commands
-    #     cmp_c = 'icc'
-
-    # # library name
-    # libtwopunc_name = 'twopunct_{cmp_c}'.format(cmp_c=cmp_c)
-
-    # # attempt path inference if not provided
-    # if args['two_punctures_path'] == '':
-    #     args['two_punctures_path'] = os.path.abspath(os.getcwd()) + '/../twopuncturesc'
-    # else:
-    #     args['two_punctures_path'] = os.path.abspath(args['two_punctures_path'])
-    # lib_dir = args['two_punctures_path'] + '/lib/'
-
-    # # check paths exist and we have shared library to link against
-    # print(args['two_punctures_path'])
-    # if not os.path.exists(args['two_punctures_path']):
-    #     raise SystemExit('### CONFIGURE ERROR: Location of two_punctures shared library must be provided.')
-    # elif not os.path.isfile(lib_dir + 'lib' + libtwopunc_name + '.so') and not os.path.isfile(lib_dir + 'lib' + libtwopunc_name + '.a'):
-    #     raise SystemExit('### CONFIGURE ERROR: two_punctures shared library must be pre-compiled.')
-
-    # makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/src'.format(args['two_punctures_path'])
-    # makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['two_punctures_path'])
-    # makefile_options['LIBRARY_FLAGS'] += " -l{} -Wl,-rpath,{}".format(libtwopunc_name, args['two_punctures_path'] + "/lib")
-
     if not args['gsl']:
         raise SystemExit('### CONFIGURE ERROR: To compile with two punctures -gsl is required.')
 
-    definitions['TWO_PUNCTURES_OPTION'] = 'TWO_PUNCTURES' + '\n#define NPUNCT (2)'
+    definitions['TWO_PUNCTURES_OPTION'] = 'TWO_PUNCTURES'
 
     # library name
     libtwopunc_name = 'TwoPunctures'
@@ -1013,11 +974,10 @@ if args['prob'] == "z4c_two_punctures":
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['two_punctures_path'])
 
     makefile_options['LIBRARY_FLAGS'] += ' -l{lib_name}'.format(lib_name=libtwopunc_name)
-
 else:
     definitions['TWO_PUNCTURES_OPTION'] = 'NO_TWO_PUNCTURES'
     if args['prob'] == 'z4c_one_puncture':
-        definitions['TWO_PUNCTURES_OPTION'] = definitions['TWO_PUNCTURES_OPTION'] + '\n#define NPUNCT (1)'
+        definitions['TWO_PUNCTURES_OPTION'] = definitions['TWO_PUNCTURES_OPTION']
 
 
 definitions['GSL_OPTION'] = 'NO_GSL'
