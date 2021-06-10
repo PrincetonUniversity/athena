@@ -8,6 +8,8 @@
 //! \file z4c_macro.hpp
 //  \brief common macros for the Z4c class
 
+#define NDIM    (3)
+
 #define IX_IL                                                                 \
   pmy_block->pz4c->mbi.il
 

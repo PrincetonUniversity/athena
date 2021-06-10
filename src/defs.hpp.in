@@ -107,9 +107,6 @@
 // two_punctures
 #define @TWO_PUNCTURES_OPTION@
 
-// allow control over whether tracker enabled
-#define @Z4C_TRACKER@
-
 // allow for spatially varying shift-damping based on conformal factor
 #define @Z4C_ETA_CONF@
 

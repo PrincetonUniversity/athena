@@ -40,9 +40,7 @@ class WaveExtract {
     int rad_id;
     SphericalGrid * psphere;
   private:
-    int root;
     int lmax;
-    bool ioproc;
     std::string ofname;
     Mesh const * pmesh;
     FILE * pofile;

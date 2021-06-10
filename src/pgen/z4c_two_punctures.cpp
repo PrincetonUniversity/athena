@@ -16,7 +16,7 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 #include "../z4c/z4c.hpp"
-#include "../z4c/trackers.hpp"
+#include "../z4c/puncture_tracker.hpp"
 
 // twopuncturesc: Stand-alone library ripped from Cactus
 #include "TwoPunctures.h"
@@ -27,6 +27,9 @@ int RefinementCondition(MeshBlock *pmb);
 // QUESTION: is it better to setup two different problems instead of using ifdef?
 static ini_data *data;
 
+static Real par_b;
+static Real L_grid;
+
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief Function to initialize problem-specific data in mesh class.  Can also be used
@@ -36,6 +39,7 @@ static ini_data *data;
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
+    par_b = pin->GetOrAddReal("problem", "par_b", 1.);
     if (!resume_flag) {
       string set_name = "problem";
       TwoPunctures_params_set_default();
@@ -144,8 +148,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 {
-  if (!resume_flag)
+  // This is a hack to cleanup the initial data
+  static bool tp_finalize = !resume_flag;
+  if (tp_finalize) {
     TwoPunctures_finalise(data);
+    tp_finalize = false;
+  }
 
   return;
 }
@@ -200,20 +208,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
 int RefinementCondition(MeshBlock *pmb)
 {
+  if (pmb->pmy_mesh->pz4c_tracker.size() != 2) {
+    return 0;
+  }
 
-
-#ifdef Z4C_TRACKER
-
-  // root and current level
-  int root_lev = pmb->pmy_mesh->pz4c_tracker->root_lev;
-  int level = pmb->loc.level-root_lev;
-
+  int root_lev = pmb->pmy_mesh->GetRootLevel();
+  int level = pmb->loc.level - root_lev;
 
   // Box in box ---------------------------------------------------------------
 #ifdef Z4C_REF_BOX_IN_BOX
+  L_grid = (pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min)/2. - par_b; 
   //Initial distance between one of the punctures and the edge of the full mesh, needed to
   //calculate the box-in-box grid structure
-  Real L = pmb->pmy_mesh->pz4c_tracker->L_grid;
+  Real L = L_grid;
 #ifdef DEBUG
   printf("Root lev = %d\n", root_lev);
 #endif
@@ -285,9 +292,9 @@ int RefinementCondition(MeshBlock *pmb)
       // Norm_inf
       Real norm_inf = -1;
       for (int i_diff = 0; i_diff < 3; ++ i_diff) {
-        diff = std::abs(pmb->pmy_mesh->pz4c_tracker->pos_body[i_punct].pos[i_diff] - xv[i_vert*3+i_diff]);
+        diff = std::abs(pmb->pmy_mesh->pz4c_tracker[i_punct]->GetPos(i_diff) - xv[i_vert*3+i_diff]);
 #ifdef DEBUG
-        printf("======> Coordpos = %g, coordblock = %g\n",pmb->pmy_mesh->pz4c_tracker->pos_body[i_punct].pos[i_diff], xv[i_vert*3+i_diff]);
+        printf("======> Coordpos = %g, coordblock = %g\n",pmb->pmy_mesh->pz4c_tracker[i_punct].pos[i_diff], xv[i_vert*3+i_diff]);
 #endif
         if (diff > norm_inf) {
           norm_inf = diff;
@@ -363,9 +370,9 @@ int RefinementCondition(MeshBlock *pmb)
   //                           pmb->pcoord->dx2v(0),
   //                           pmb->pcoord->dx3v(0)});
 
-  // int pmb_level = pmb->loc.level - pmb->pmy_mesh->pz4c_tracker->root_lev;
+  // int pmb_level = pmb->loc.level - pmb->pmy_mesh->root_level;
 
-  // int pmb_level = pmb->loc.level - pmb->pmy_mesh->root_lev;
+  // int pmb_level = pmb->loc.level - pmb->pmy_mesh->root_level;
 
   // Spherical balls around punctures -----------------------------------------
 // #ifdef Z4C_TRACKER
@@ -374,9 +381,9 @@ int RefinementCondition(MeshBlock *pmb)
 //   // iterate over punctures; check (squared) distance to centre of current MB
 //   for(int ix_punc=0; ix_punc<NPUNCT; ++ix_punc) {
 //     // Tracker position
-//     Real const pc_x1 = pmb->pmy_mesh->pz4c_tracker->pos_body[ix_punc].pos[0];
-//     Real const pc_x2 = pmb->pmy_mesh->pz4c_tracker->pos_body[ix_punc].pos[1];
-//     Real const pc_x3 = pmb->pmy_mesh->pz4c_tracker->pos_body[ix_punc].pos[2];
+//     Real const pc_x1 = pmb->pmy_mesh->pz4c_tracker[ix_punc].pos[0];
+//     Real const pc_x2 = pmb->pmy_mesh->pz4c_tracker[ix_punc].pos[1];
+//     Real const pc_x3 = pmb->pmy_mesh->pz4c_tracker[ix_punc].pos[2];
 
 //     int const lev_punc = pmb->pz4c->opt.puncture_levels(ix_punc);
 //     Real const R_punc = pmb->pz4c->opt.puncture_radii(ix_punc);
@@ -397,9 +404,9 @@ int RefinementCondition(MeshBlock *pmb)
     // use tracker if we can and if it is relevant
     int const pix = pmb->pz4c->opt.sphere_zone_puncture(six);
     if (pix != -1) {
-      xyz_wz[0] = pmb->pmy_mesh->pz4c_tracker->pos_body[pix].pos[0];
-      xyz_wz[1] = pmb->pmy_mesh->pz4c_tracker->pos_body[pix].pos[1];
-      xyz_wz[2] = pmb->pmy_mesh->pz4c_tracker->pos_body[pix].pos[2];
+      xyz_wz[0] = pmb->pmy_mesh->pz4c_tracker[pix].pos[0];
+      xyz_wz[1] = pmb->pmy_mesh->pz4c_tracker[pix].pos[1];
+      xyz_wz[2] = pmb->pmy_mesh->pz4c_tracker[pix].pos[2];
     } else {
       xyz_wz[0] = pmb->pz4c->opt.sphere_zone_center1(six);
       xyz_wz[1] = pmb->pz4c->opt.sphere_zone_center2(six);
@@ -431,10 +438,6 @@ int RefinementCondition(MeshBlock *pmb)
 
 #endif // Z4C_REF_SPHERES
 
-
-#else // Z4C_TRACKER
   return 0;
-#endif // Z4C_TRACKER
-
 
 }

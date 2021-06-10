@@ -25,6 +25,8 @@
 #include "../bvals/cc/bvals_cc.hpp"
 #include "../bvals/vc/bvals_vc.hpp"
 
+#include "z4c_macro.hpp"
+
 #ifdef TWO_PUNCTURES
 // twopuncturesc: Stand-alone library ripped from Cactus
 #include "TwoPunctures.h"
@@ -149,14 +151,12 @@ public:
     AthenaTensor<Real, TensorSymm::SYM2, NDIM, 2> S_dd;      // matter stress tensor
   };
   Matter_vars mat;
-//WGC wext - NB check symmetries for pseudoscalar if using refl BCs?
   // aliases for the Weyl scalars
   struct Weyl_vars {
     AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> rpsi4;       // Real part of Psi_4
     AthenaTensor<Real, TensorSymm::NONE, NDIM, 0> ipsi4;       // Imaginary part of Psi_4
   };
   Weyl_vars weyl;
-//WGC end
   // BD: this should be refactored
   // user settings and options
   struct {
@@ -255,6 +255,7 @@ public:
   void Z4cWeyl(AthenaArray<Real> & u_adm, AthenaArray<Real> & u_mat,
                       AthenaArray<Real> & u_weyl);
   // utility functions
+  // DR: make these static
   //
   // set ADM aliases given u_adm
   void SetADMAliases(AthenaArray<Real> & u_adm, ADM_vars & adm);

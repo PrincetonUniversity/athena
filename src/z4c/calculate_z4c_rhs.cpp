@@ -24,9 +24,7 @@
 #include <gsl/gsl_sf_bessel.h>   // Bessel functions
 #endif
 
-#ifdef Z4C_TRACKER
-#include "trackers.hpp"
-#endif // Z4C_TRACKER
+#include "puncture_tracker.hpp"
 
 
 //----------------------------------------------------------------------------------------
@@ -81,7 +79,7 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
 
   coutBoldBlue("body_0 tracker:\n");
   for (int i_dim = 0; i_dim < NDIM; ++i_dim) {
-    Real tt = pmy_block->pmy_mesh->pz4c_tracker->pos_body[body].pos[i_dim];
+    Real tt = pmy_block->pmy_mesh->pz4c_tracker[0]->GetPos(i_dim);
     printf("%1.6f, ", tt);
   }
   coutBoldBlue("\n=\n");
@@ -626,13 +624,13 @@ void Z4c::Z4cRHS(AthenaArray<Real> & u, AthenaArray<Real> & u_mat,
     ILOOP1(i) {
 
       eta_damp(i) += \
-        POW2(pmy_block->pmy_mesh->pz4c_tracker->pos_body[b_ix].pos[0]
+        POW2(pmy_block->pmy_mesh->pz4c_tracker[b_ix]->GetPos(0)
           - mbi.x1(i));
       eta_damp(i) += \
-        POW2(pmy_block->pmy_mesh->pz4c_tracker->pos_body[b_ix].pos[1]
+        POW2(pmy_block->pmy_mesh->pz4c_tracker[b_ix]->GetPos(1)
           - mbi.x2(j));
       eta_damp(i) += \
-        POW2(pmy_block->pmy_mesh->pz4c_tracker->pos_body[b_ix].pos[2]
+        POW2(pmy_block->pmy_mesh->pz4c_tracker[b_ix]->GetPos(2)
           - mbi.x3(k));
 
       eta_damp(i) = 1. + pow(eta_damp(i) * re_pow2_w, opt.shift_eta_delta);

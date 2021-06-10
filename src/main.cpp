@@ -45,10 +45,7 @@
 #include "utils/utils.hpp"
 
 #include "z4c/wave_extract.hpp"
-
-#ifdef Z4C_TRACKER
-#include "z4c/trackers.hpp"
-#endif // Z4C_TRACKER
+#include "z4c/puncture_tracker.hpp"
 
 // MPI/OpenMP headers
 #ifdef MPI_PARALLEL
@@ -577,11 +574,11 @@ int main(int argc, char *argv[]) {
         }
       }
 
-#ifdef Z4C_TRACKER
-      pmesh->pz4c_tracker->ReduceTracker();
-      pmesh->pz4c_tracker->EvolveTracker();
-      pmesh->pz4c_tracker->WriteTracker(pmesh->ncycle, pmesh->time);
-#endif // Z4C_TRACKER
+      // TODO: probably we do not want to output tracker data at every timestep
+      for (auto ptracker : pmesh->pz4c_tracker) {
+        ptracker->EvolveTracker();
+        ptracker->WriteTracker(pmesh->ncycle, pmesh->time);
+      }
 
       //-------------------------------------------------------------------------
       // Update NextTime triggers

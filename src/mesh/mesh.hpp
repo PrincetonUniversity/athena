@@ -59,10 +59,7 @@ class Advection;
 class Z4c;
 class WaveExtract;
 class WaveExtractLocal;
-#ifdef Z4C_TRACKER
-class Tracker;
-class TrackerLocal;
-#endif // Z4C_TRACKER
+class PunctureTracker;
 
 FluidFormulation GetFluidFormulation(const std::string& input_string);
 
@@ -193,10 +190,6 @@ public:
   Advection *padv;
   Z4c *pz4c;
   std::vector<WaveExtractLocal *> pwave_extr_loc;
-#ifdef Z4C_TRACKER
-  // Tracker evolution
-  TrackerLocal * pz4c_tracker_loc;
-#endif // Z4C_TRACKER
 
   MeshBlock *prev, *next;
 
@@ -330,9 +323,7 @@ class Mesh {
 
   friend class Advection;
   friend class Z4c;
-#ifdef Z4C_TRACKER
-  friend class Tracker;
-#endif
+  friend class PunctureTracker;
 
  public:
   // 2x function overloads of ctor: normal and restarted simulation
@@ -370,12 +361,9 @@ class Mesh {
   TurbulenceDriver *ptrbd;
   FFTGravityDriver *pfgrd;
   MGGravityDriver *pmgrd;
+
   std::vector<WaveExtract *> pwave_extr;
-
-
-#ifdef Z4C_TRACKER
-  Tracker * pz4c_tracker;
-#endif // Z4C_TRACKER
+  std::vector<PunctureTracker *> pz4c_tracker;
 
   AthenaArray<Real> *ruser_mesh_data;
   AthenaArray<int> *iuser_mesh_data;
@@ -398,6 +386,8 @@ class Mesh {
   // defined in either the prob file or default_pgen.cpp in ../pgen/
   void UserWorkAfterLoop(ParameterInput *pin);   // called in main loop
   void UserWorkInLoop(); // called in main after each cycle
+
+  inline int GetRootLevel() { return root_level; }
 
  private:
   // data

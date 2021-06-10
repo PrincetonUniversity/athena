@@ -18,6 +18,7 @@
 #include "wave_extract.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../globals.hpp"
 #include "../parameter_input.hpp"
 #include "../mesh/mesh.hpp"
 #include "../mesh/spherical_grid.hpp"
@@ -34,20 +35,12 @@ WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n):
   rad = pin->GetOrAddReal("z4c", rad_parname, 10.0);
   rad_id = n;
   ofname = pin->GetOrAddString("z4c", "extract_filename", "wave");
-  root = pin->GetOrAddInteger("z4c", "mpi_root", 0);
   lmax = pin->GetOrAddInteger("z4c", "lmax", 2);
   psphere = new SphericalGrid(nlev, rad);
   ofname += n_str;
   ofname += ".txt";
 
-#ifdef MPI_PARALLEL
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  ioproc = (root == rank);
-#else
-  ioproc = true;
-#endif
-  if (ioproc) {
+  if (0 == Globals::my_rank) {
     // check if output file already exists
     if (access(ofname.c_str(), F_OK) == 0) {
       pofile = fopen(ofname.c_str(), "a");
@@ -75,7 +68,7 @@ WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n):
 
 WaveExtract::~WaveExtract() {
   delete psphere;
-  if (ioproc) {
+  if (0 == Globals::my_rank) {
     fclose(pofile);
   }
 }
@@ -117,7 +110,7 @@ void WaveExtract::ReduceMultipole() {
 }
 
 void WaveExtract::Write(int iter, Real time) const {
-  if (ioproc) {
+  if (0 == Globals::my_rank) {
     fprintf(pofile, "%d %.*g ", iter, FPRINTF_PREC, time);
     for(int l=2;l<lmax+1;++l){
       for(int m=-l;m<l+1;++m){

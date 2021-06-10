@@ -32,9 +32,7 @@
 // -BD
 #include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
-#ifdef Z4C_TRACKER
-#include "../z4c/trackers.hpp"
-#endif
+#include "../z4c/puncture_tracker.hpp"
 #include "outputs.hpp"
 
 
@@ -127,19 +125,12 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
                     pm->ruser_mesh_data[n].GetSizeInBytes());
         udoffset += pm->ruser_mesh_data[n].GetSizeInBytes();
       }
-      //TRACKER
-      //These are mesh variables, they have to be written here
-#ifdef Z4C_TRACKER
-      for (int i_punc = 0; i_punc < NPUNCT; ++i_punc) {
-        std::memcpy(&(ud[udoffset]), pm->pz4c_tracker->pos_body[i_punc].pos,
-                    3*sizeof(Real));
-        udoffset += 3*sizeof(Real);
-        std::memcpy(&(ud[udoffset]), pm->pz4c_tracker->pos_body[i_punc].betap,
-                    3*sizeof(Real));
-        udoffset += 3*sizeof(Real);
+      for (auto ptracker : pm->pz4c_tracker) {
+        std::memcpy(&(ud[udoffset]), ptracker->pos, NDIM*sizeof(Real));
+        udoffset += NDIM*sizeof(Real);
+        std::memcpy(&(ud[udoffset]), ptracker->betap, NDIM*sizeof(Real));
+        udoffset += NDIM*sizeof(Real);
       }
-#endif
-      //END TRACKER
       resfile.Write(ud, 1, udsize);
       delete [] ud;
     }

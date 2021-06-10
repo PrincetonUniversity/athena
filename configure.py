@@ -27,7 +27,6 @@
 #   -a                  enable advection equation
 #   -w                  enable wave equation
 #   -z                  enable Z4c system
-#   -z_tracker          enable Z4c tracker functionality
 #   -z_eta_track_tp     enable (TP) based shift-damping
 #   -z_eta_conf         enable conformal factor based shift-damping
 #   -t                  enable interface frame transformations for GR
@@ -203,12 +202,6 @@ parser.add_argument("-z",
                     action='store_true',
                     default=False,
                     help='enable Z4c system')
-
-# -z_tracker argument
-parser.add_argument("-z_tracker",
-                    action='store_true',
-                    default=False,
-                    help='enable Z4c tracker')
 
 # -z_eta_track_tp argument
 parser.add_argument("-z_eta_track_tp",
@@ -635,21 +628,11 @@ if args['z']:
 else:
   definitions['Z4C_ENABLED'] = '0'
 
-# -z_tracker argument
-if args['z_tracker']:
-    if not args['z']:
-        raise SystemExit("### CONFIGURE ERROR: z_tracker requires z flag")
-    definitions['Z4C_TRACKER'] = 'Z4C_TRACKER'
-else:
-  definitions['Z4C_TRACKER'] = 'NO_Z4C_TRACKER'
-
 # -z_eta_track_tp argument
 ERR_MUL_ETA_STR = "### CONFIGURE ERROR: select at most ONE of {z_eta_track_tp, z_eta_conf}"
 if args['z_eta_track_tp']:
     if not args['z']:
         raise SystemExit("### CONFIGURE ERROR: z_eta_track_tp requires z flag")
-    if not args['z_tracker']:
-        raise SystemExit("### CONFIGURE ERROR: z_eta_track_tp requires z_tracker flag")
     if args['z_eta_conf']:
         raise SystemExit(ERR_MUL_ETA_STR)
     definitions['Z4C_ETA_TRACK_TP'] = 'Z4C_ETA_TRACK_TP'
@@ -1130,14 +1113,13 @@ if args['z']:
             'calculate_z4c_rhs',
             'gauge',
             'new_blockdt_z4c', 
+            'puncture_tracker',
             'wave_extract',
             'z4c',
             'z4c_utils',
     ]
     files_athena_tasklist.append('z4c_task_list')
 
-    if args['z_tracker']:
-        files.append('trackers')
     if args['prob'] == "z4c_two_punctures":
         files.append('two_punctures_z4c')
     elif args['prob'] == "z4c_one_puncture":
@@ -1197,7 +1179,6 @@ print('  Advection equation:           ' + ('ON' if args['a'] else 'OFF'))
 print('  Wave equation:                ' + ('ON' if args['w'] else 'OFF'))
 print('  Z4c equations:                ' + ('ON' if args['z'] else 'OFF'))
 if args['z']:
-    print('  Z4c tracker:                  ' + ('ON' if args['z_tracker'] else 'OFF'))
     print('  Z4c shift damping:            ' + self_eta_damp_string)
     print('  Z4c refinement strategy:      ' + ('box-in-box' if args['ref_box_in_box']
                                                 else 'spheres'))

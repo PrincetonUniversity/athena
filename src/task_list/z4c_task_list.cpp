@@ -20,9 +20,7 @@
 #include "../mesh/mesh.hpp"
 #include "../z4c/z4c.hpp"
 #include "../z4c/wave_extract.hpp"
-#ifdef Z4C_TRACKER
-#include "../z4c/trackers.hpp"
-#endif // Z4C_TRACKER
+#include "../z4c/puncture_tracker.hpp"
 #include "../parameter_input.hpp"
 #include "task_list.hpp"
 
@@ -464,19 +462,17 @@ TaskStatus Z4cIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
   pmb->pbval->ClearBoundary(BoundaryCommSubset::all);
   return TaskStatus::success;
 }
+
 //----------------------------------------------------------------------------------------
 // Functions to calculate the RHS
 
 TaskStatus Z4cIntegratorTaskList::CalculateZ4cRHS(MeshBlock *pmb, int stage) {
-
-#ifdef Z4C_TRACKER
-  // Tracker: interpolate beta at puncture position before evolution
-  if (stage==1) {
-    for (int i_punc = 0; i_punc<NPUNCT; i_punc++) {
-      pmb->pz4c_tracker_loc->StoreBetaPrev(pmb->pz4c_tracker_loc->betap, pmb->pz4c->storage.u, i_punc);
+  // PunctureTracker: interpolate beta at puncture position before evolution
+  if (stage == 1) {
+    for (auto ptracker : pmb->pmy_mesh->pz4c_tracker) {
+      ptracker->InterpolateShift(pmb, pmb->pz4c->storage.u);
     }
   }
-#endif // Z4C_TRACKER
 
   if (stage <= nstages) {
     pmb->pz4c->Z4cRHS(pmb->pz4c->storage.u,
@@ -494,6 +490,7 @@ TaskStatus Z4cIntegratorTaskList::CalculateZ4cRHS(MeshBlock *pmb, int stage) {
 
 //----------------------------------------------------------------------------------------
 // Functions to integrate variables
+
 TaskStatus Z4cIntegratorTaskList::IntegrateZ4c(MeshBlock *pmb, int stage) {
   Z4c *pz4c = pmb->pz4c;
 
@@ -556,8 +553,10 @@ TaskStatus Z4cIntegratorTaskList::SetBoundariesZ4c(MeshBlock *pmb, int stage) {
   }
   return TaskStatus::fail;
 }
+
 //--------------------------------------------------------------------------------------
 // Functions for everything else
+
 TaskStatus Z4cIntegratorTaskList::Prolongation(MeshBlock *pmb, int stage) {
   BoundaryValues *pbval = pmb->pbval;
 

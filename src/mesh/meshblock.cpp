@@ -43,10 +43,6 @@
 #include "../wave/wave.hpp"
 // -BD
 
-#ifdef Z4C_TRACKER
-#include "../z4c/trackers.hpp"
-#endif // Z4C_TRACKER
-
 #include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
 #include "../z4c/wave_extract.hpp"
@@ -171,12 +167,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     if (nrad > 0) {
       pwave_extr_loc.reserve(nrad);
       for (int n = 0; n < nrad; ++n) {
-        pwave_extr_loc.push_back(new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin,n));
+        pwave_extr_loc.push_back(new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin, n+1));
       }
     }
-#ifdef Z4C_TRACKER
-    pz4c_tracker_loc = new TrackerLocal(this, pin);
-#endif // Z4C_TRACKER
     pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
   }
 
@@ -298,12 +291,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     if (nrad > 0) {
       pwave_extr_loc.reserve(nrad);
       for (int n = 0; n < nrad; ++n) {
-        pwave_extr_loc.push_back(new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin,n));
+        pwave_extr_loc.push_back(new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin, n+1));
       }
     }
-#ifdef Z4C_TRACKER
-    pz4c_tracker_loc = new TrackerLocal(this, pin);
-#endif // Z4C_TRACKER
     pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
   }
 
@@ -419,9 +409,6 @@ MeshBlock::~MeshBlock() {
       delete pwextr;
     }
     pwave_extr_loc.resize(0);
-#ifdef Z4C_TRACKER
-    delete pz4c_tracker_loc;
-#endif // Z4C_TRACKER
   }
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed

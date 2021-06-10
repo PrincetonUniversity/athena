@@ -56,11 +56,9 @@
 // -BD
 #include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
-
-#ifdef Z4C_TRACKER
-#include "../z4c/trackers.hpp"
-#endif // Z4C_TRACKER
+#include "../z4c/puncture_tracker.hpp"
 #include "../z4c/wave_extract.hpp"
+
 // MPI/OpenMP header
 #ifdef MPI_PARALLEL
 #include <mpi.h>
@@ -320,13 +318,16 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     if (nrad > 0) {
       pwave_extr.reserve(nrad);
       for(int n = 0; n < nrad; ++n){
-          pwave_extr.push_back(new WaveExtract(this, pin, n));
+        pwave_extr.push_back(new WaveExtract(this, pin, n+1));
       }
     }
-#ifdef Z4C_TRACKER
-    // Last entry says if it is restart run or not
-    pz4c_tracker = new Tracker(this, pin, 0);
-#endif // Z4C_TRACKER
+    int npunct = pin->GetOrAddInteger("z4c", "npunct", 0);
+    if (npunct > 0) {
+      pz4c_tracker.reserve(npunct);
+      for (int n = 0; n < npunct; ++n) {
+        pz4c_tracker.push_back(new PunctureTracker(this, pin, n+1));
+      }
+    }
   }
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
@@ -743,15 +744,17 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     if (nrad > 0) {
       pwave_extr.reserve(nrad);
       for(int n = 0; n < nrad; ++n) {
-        pwave_extr.push_back(new WaveExtract(this, pin, n));
+        pwave_extr.push_back(new WaveExtract(this, pin, n+1));
+      }
+    }
+    int npunct = pin->GetOrAddInteger("z4c", "npunct", 0);
+    if (npunct > 0) {
+      pz4c_tracker.reserve(npunct);
+      for (int n = 0; n < npunct; ++n) {
+        pz4c_tracker.push_back(new PunctureTracker(this, pin, n+1));
       }
     }
   }
-
-#ifdef Z4C_TRACKER
-  // Last entry tells if it is restart run or not
-  pz4c_tracker = new Tracker(this, pin, 1);
-#endif
 
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
@@ -761,10 +764,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     udsize += iuser_mesh_data[n].GetSizeInBytes();
   for (int n=0; n<nreal_user_mesh_data_; n++)
     udsize += ruser_mesh_data[n].GetSizeInBytes();
-#ifdef Z4C_TRACKER
-  for (int i_punc = 0; i_punc < NPUNCT; ++i_punc)
-    udsize += 6*sizeof(Real);
-#endif
+  udsize += 2*NDIM*sizeof(Real)*pz4c_tracker.size();
   if (udsize != 0) {
     char *userdata = new char[udsize];
     if (Globals::my_rank == 0) { // only the master process reads the ID list
@@ -790,16 +790,12 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
                   ruser_mesh_data[n].GetSizeInBytes());
       udoffset += ruser_mesh_data[n].GetSizeInBytes();
     }
-#ifdef Z4C_TRACKER
-    for (int i_punc = 0; i_punc < NPUNCT; ++i_punc) {
-      std::memcpy(pz4c_tracker->pos_body[i_punc].pos, &(userdata[udoffset]),
-                  3*sizeof(Real));
+    for (auto ptracker : pz4c_tracker) {
+      std::memcpy(ptracker->pos, &userdata[udoffset], NDIM*sizeof(Real));
       udoffset += 3*sizeof(Real);
-      std::memcpy(pz4c_tracker->pos_body[i_punc].betap, &(userdata[udoffset]),
-                  3*sizeof(Real));
+      std::memcpy(ptracker->betap, &userdata[udoffset], NDIM*sizeof(Real));
       udoffset += 3*sizeof(Real);
     }
-#endif
     delete [] userdata;
   }
 
@@ -971,11 +967,12 @@ Mesh::~Mesh() {
       delete pwextr;
     }
     pwave_extr.resize(0);
+    for (auto tracker : pz4c_tracker) {
+      delete tracker;
+    }
+    pz4c_tracker.resize(0);
   }
 
-#ifdef Z4C_TRACKER
-  delete pz4c_tracker;
-#endif // Z4C_TRACKER
   if (adaptive) { // deallocate arrays for AMR
     delete [] nref;
     delete [] nderef;
