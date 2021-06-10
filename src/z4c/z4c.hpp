@@ -244,18 +244,17 @@ public:
   void Z4cWeyl(AthenaArray<Real> & u_adm, AthenaArray<Real> & u_mat,
                       AthenaArray<Real> & u_weyl);
   // utility functions
-  // DR: make these static
   //
   // set ADM aliases given u_adm
-  void SetADMAliases(AthenaArray<Real> & u_adm, ADM_vars & adm);
+  static void SetADMAliases(AthenaArray<Real> & u_adm, ADM_vars & adm);
   // set constraint aliases for a given u_con
-  void SetConstraintAliases(AthenaArray<Real> & u_con, Constraint_vars & con);
+  static void SetConstraintAliases(AthenaArray<Real> & u_con, Constraint_vars & con);
   // set matter aliases given a state
-  void SetMatterAliases(AthenaArray<Real> & u_mat, Matter_vars & mat);
+  static void SetMatterAliases(AthenaArray<Real> & u_mat, Matter_vars & mat);
   // set Z4c aliases given a state
-  void SetZ4cAliases(AthenaArray<Real> & u, Z4c_vars & z4c);
+  static void SetZ4cAliases(AthenaArray<Real> & u, Z4c_vars & z4c);
   // set weyl aliases
-  void SetWeylAliases(AthenaArray<Real> & u_weyl, Weyl_vars & weyl);
+  static void SetWeylAliases(AthenaArray<Real> & u_weyl, Weyl_vars & weyl);
 
   // compute spatial determinant of a 3x3  matrix
   Real SpatialDet(Real const gxx, Real const gxy, Real const gxz,
@@ -316,7 +315,6 @@ public:
   // initial data for binary BHs
   void ADMTwoPunctures(AthenaArray<Real> & u_adm);
 
-  //---------------------------------------------------------------------------
   // functions for debugging and monitoring
   bool is_finite_adm();
   bool is_finite_con();
@@ -327,7 +325,6 @@ public:
   void assert_is_finite_con();
   void assert_is_finite_mat();
   void assert_is_finite_z4c();
-  //---------------------------------------------------------------------------
 
 private:
   AthenaArray<Real> dt1_,dt2_,dt3_;  // scratch arrays used in NewTimeStep
