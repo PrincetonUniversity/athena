@@ -404,22 +404,6 @@ void Z4cIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
 
 
 void Z4cIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
-  // BD: debug-
-
-  // application of Sommerfeld boundary conditions
-  pmb->pz4c->Z4cBoundaryRHS(pmb->pz4c->storage.u,
-                            pmb->pz4c->storage.mat,
-                            pmb->pz4c->storage.rhs);
-
-  BoundaryValues *pbval = pmb->pbval;
-
-  Real t_end_stage = pmb->pmy_mesh->time + pmb->stage_abscissae[stage][0];
-  // Scaled coefficient for RHS time-advance within stage
-  Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
-
-  pbval->ApplyPhysicalVertexCenteredBoundaries(t_end_stage, dt);
-  //--------
-
   if (stage == 1) {
     // For each Meshblock, initialize time abscissae of each memory register pair (u,b)
     // at stage=0 to correspond to the beginning of the interval [t^n, t^{n+1}]
