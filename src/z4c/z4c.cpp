@@ -230,7 +230,6 @@ Z4c::Z4c(MeshBlock *pmb, ParameterInput *pin) :
   ddchi_dd.NewAthenaTensor(pmb->nverts1);
   dGam_du.NewAthenaTensor(pmb->nverts1);
   dg_ddd.NewAthenaTensor(pmb->nverts1);
-  dg_duu.NewAthenaTensor(pmb->nverts1);
   dK_ddd.NewAthenaTensor(pmb->nverts1);
   dA_ddd.NewAthenaTensor(pmb->nverts1);
   ddbeta_ddu.NewAthenaTensor(pmb->nverts1);
@@ -338,7 +337,6 @@ Z4c::~Z4c()
   ddchi_dd.DeleteAthenaTensor();
   dGam_du.DeleteAthenaTensor();
   dg_ddd.DeleteAthenaTensor();
-  dg_duu.DeleteAthenaTensor();
   dK_ddd.DeleteAthenaTensor();
   dA_ddd.DeleteAthenaTensor();
   ddbeta_ddu.DeleteAthenaTensor();

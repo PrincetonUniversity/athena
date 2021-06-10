@@ -379,7 +379,6 @@ private:
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 2> ddchi_dd;    // chi 2nd drvts
   AthenaTensor<Real, TensorSymm::NONE, NDIM, 2> dGam_du;     // Gamma 1st drvts
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 3> dg_ddd;      // metric 1st drvts
-  AthenaTensor<Real, TensorSymm::SYM2, NDIM, 3> dg_duu;      // inverse metric 1st drvts
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 3> dK_ddd;      // K 1st drvts
   AthenaTensor<Real, TensorSymm::SYM2, NDIM, 3> dA_ddd;      // A 1st drvts
   AthenaTensor<Real, TensorSymm::ISYM2, NDIM, 3> ddbeta_ddu; // shift 2nd drvts

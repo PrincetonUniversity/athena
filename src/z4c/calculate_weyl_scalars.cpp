@@ -232,8 +232,8 @@ void Z4c::Z4cWeyl(AthenaArray<Real> & u_adm, AthenaArray<Real> & u_mat, AthenaAr
       wvec(1,i) = xx;
       wvec(2,i) = 0.0;
     }
+
     //Gram-Schmidt orthonormalisation with spacetime metric.
-    //
     //
     dotp1.ZeroClear();
     for(int a = 0; a<NDIM; ++a){
@@ -365,36 +365,6 @@ void Z4c::Z4cWeyl(AthenaArray<Real> & u_adm, AthenaArray<Real> & u_mat, AthenaAr
         }
       }
     }
-
-    // BD: Original
-    /*
-    for(int a = 0; a < NDIM; ++a){
-      for(int b = 0; b < NDIM; ++b){
-        ILOOP1(i){
-          weyl.rpsi4(k,j,i) += - Riemm4_dd(a,b,i)*(vvec(a,i)/sqrt(2) * vvec(b,i)/sqrt(2)
-                                                  - (-wvec(a,i)/sqrt(2)*(-wvec(b,i)/sqrt(2))))/2.0;
-          weyl.ipsi4(k,j,i) += - Riemm4_dd(a,b,i)*(-vvec(a,i)/sqrt(2) * wvec(b,i)/sqrt(2)
-                                                  - wvec(a,i)/sqrt(2)*vvec(b,i)/sqrt(2))/2.0;
-        }
-        for(int c = 0; c < NDIM; ++c){
-          ILOOP1(i){
-            weyl.rpsi4(k,j,i) += 2.0*Riemm4_ddd(a,c,b,i)*uvec(c,i)*(vvec(a,i)/sqrt(2) * vvec(b,i)/sqrt(2)
-                                                                  - (-wvec(a,i)/sqrt(2)*(-wvec(b,i)/sqrt(2))))/2.0;
-            weyl.ipsi4(k,j,i) += 2.0*Riemm4_ddd(a,c,b,i)*uvec(c,i)*(-vvec(a,i)/sqrt(2) * wvec(b,i)/sqrt(2)
-                                                                  - wvec(a,i)/sqrt(2)*vvec(b,i)/sqrt(2))/2.0;
-          }
-          for(int d = 0; d < NDIM; ++d){
-            ILOOP1(i){
-              weyl.rpsi4(k,j,i) += -(Riemm4_dddd(d,a,c,b,i)*uvec(d,i)*uvec(c,i))*(vvec(a,i)/sqrt(2) * vvec(b,i)/sqrt(2)
-                                                                                - (-wvec(a,i)/sqrt(2)*(-wvec(b,i)/sqrt(2))))/2.0;
-              weyl.ipsi4(k,j,i) += -(Riemm4_dddd(d,a,c,b,i)*uvec(d,i)*uvec(c,i))*(-vvec(a,i)/sqrt(2) * wvec(b,i)/sqrt(2)
-                                                                                  - wvec(a,i)/sqrt(2)*vvec(b,i)/sqrt(2))/2.0;
-            }
-          }
-        }
-      }
-    }
-    */
 
     for(int a = 0; a < NDIM; ++a){
       for(int b = 0; b < NDIM; ++b){
