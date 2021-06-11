@@ -52,10 +52,6 @@ class EquationOfState;
 class FFTDriver;
 class FFTGravityDriver;
 class TurbulenceDriver;
-// BD: new problem
-class Wave;
-// -BD
-class Advection;
 class Z4c;
 class WaveExtract;
 class WaveExtractLocal;
@@ -183,11 +179,6 @@ public:
   PassiveScalars *pscalars;
   EquationOfState *peos;
 
-  // BD: new problem
-  Wave *pwave;
-  // -BD
-
-  Advection *padv;
   Z4c *pz4c;
   std::vector<WaveExtractLocal *> pwave_extr_loc;
 
@@ -216,25 +207,9 @@ public:
   void UserWorkBeforeOutput(ParameterInput *pin); // called in Mesh fn (friend class)
   void UserWorkInLoop();                          // called in TimeIntegratorTaskList
 
-  // BD: new problem
   // This is a quick fix to prevent multiple calls to 'UserWorkInLoop' if
-  // TimeIntegratorTaskList and WaveIntegratorTaskList are both running..
-  void WaveUserWorkInLoop();
-  // -BD
-
-  // as above
-  void AdvectionUserWorkInLoop();
+  // TimeIntegratorTaskList and Z4cIntegratorTaskList are both running..
   void Z4cUserWorkInLoop();
-
-  //-- Debug
-  // Populate MeshBlock subset based on input indices
-  void DebugWaveMeshBlock(AthenaArray<Real> &u_wave,
-                          int il, int iu,
-                          int jl, int ju,
-                          int kl, int ku,
-                          bool is_additive=false,
-                          bool is_coarse=false);
-  //--
 
   bool PointContained(Real const x, Real const y, Real const z);
   Real PointCentralDistanceSquared(Real const x, Real const y, Real const z);

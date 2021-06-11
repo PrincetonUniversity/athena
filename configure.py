@@ -16,21 +16,15 @@
 #   --ncghost=xxx       set NCGHOST=xxx
 #   --nextrapolate=xxx  set NEXTRAPOLATE=xxx  [for ouflow conditions]
 #   --nscalars=xxx      set NSCALARS=xxx
-#   --ncfd_l=xxx        set NCFDWIDTH_L=xxx (for compact FD)
-#   --ncfd_r=xxx        set NCFDWIDTH_R=xxx (for compact FD)
-#   --cfd_filter=xxx    set CFDFILTER=xxx (for compact FD)
 #   -eos_table          enable EOS table
 #   -f                  enable fluid
 #   -b                  enable magnetic fields
 #   -s                  enable special relativity
 #   -g                  enable general relativity
-#   -a                  enable advection equation
-#   -w                  enable wave equation
 #   -z                  enable Z4c system
 #   -z_eta_track_tp     enable (TP) based shift-damping
 #   -z_eta_conf         enable conformal factor based shift-damping
 #   -t                  enable interface frame transformations for GR
-#   -compact_fd         enable (prefer) compact finite difference operators
 #   -shear              enable shearing periodic boundary conditions
 #   -debug              enable debug flags (-g -O0); override other compiler options
 #   -coverage           enable compiler-dependent code coverage flags
@@ -140,21 +134,6 @@ parser.add_argument('--nscalars',
                     default='0',
                     help='set number of passive scalars')
 
-# --ncfd_l=[value] argument
-parser.add_argument('--ncfd_l',
-                    default='3',
-                    help='CFD stencil lhs bandlimit')
-
-# --ncfd_r=[value] argument
-parser.add_argument('--ncfd_r',
-                    default='3',
-                    help='CFD stencil rhs bandlimit')
-
-# --cfd_filter=[value] argument
-parser.add_argument('--cfd_filter',
-                    default='0',
-                    help='CFD stencil filter type')
-
 # -f argument
 parser.add_argument('-f',
                     action='store_true',
@@ -184,18 +163,6 @@ parser.add_argument('-g',
                     action='store_true',
                     default=False,
                     help='enable general relativity')
-
-# -a argument
-parser.add_argument("-a",
-                    action='store_true',
-                    default=False,
-                    help='enable advection equation')
-
-# -w argument
-parser.add_argument("-w",
-                    action='store_true',
-                    default=False,
-                    help='enable wave equation')
 
 # -z argument
 parser.add_argument("-z",
@@ -232,12 +199,6 @@ parser.add_argument("-ref_spheres",
                     action='store_true',
                     default=False,
                     help='use sphere refinement (disables box-in-box)')
-
-# -compact_fd argument
-parser.add_argument('-compact_fd',
-                    action='store_true',
-                    default=False,
-                    help='enable (prefer) compact finite difference operators')
 
 # -shear argument
 parser.add_argument('-shear',
@@ -535,15 +496,6 @@ else:
 # --nscalars=[value] argument
 definitions['NUMBER_PASSIVE_SCALARS'] = args['nscalars']
 
-# --ncfd_l=[value] argument
-definitions['NUMBER_CFD_BANDWIDTH_LHS'] = args['ncfd_l']
-
-# --ncfd_r=[value] argument
-definitions['NUMBER_CFD_BANDWIDTH_RHS'] = args['ncfd_r']
-
-# --cfd_filter=[value] argument
-definitions['NUMBER_CFDFILTER'] = args['cfd_filter']
-
 # -f argument
 if args['f']:
     definitions['FLUID_ENABLED'] = '1'
@@ -604,18 +556,6 @@ if args['g']:
     if not args['t']:
         makefile_options['RSOLVER_FILE'] += '_no_transform'
 
-# -a argument
-if args['a']:
-  definitions['ADVECTION_ENABLED'] = '1'
-else:
-  definitions['ADVECTION_ENABLED'] = '0'
-
-# -w argument
-if args['w']:
-  definitions['WAVE_ENABLED'] = '1'
-else:
-  definitions['WAVE_ENABLED'] = '0'
-
 # -z argument
 if args['z']:
   definitions['Z4C_ENABLED'] = '1'
@@ -658,12 +598,6 @@ if args['ref_spheres']:
 if args['ref_box_in_box']:
     definitions['Z4C_REF_BOX_IN_BOX'] = 'Z4C_REF_BOX_IN_BOX'
     definitions['Z4C_REF_SPHERES'] = 'NO_Z4C_REF_SPHERES'
-
-# -compact_fd argument
-if args['compact_fd']:
-    definitions['COMPACT_FD'] = 'COMPACT_FD'
-else:
-    definitions['COMPACT_FD'] = 'NO_COMPACT_FD'
 
 # -shear argument
 if args['shear']:
@@ -1038,66 +972,6 @@ with open(defsfile_input, 'r') as current_file:
 with open(makefile_input, 'r') as current_file:
     makefile_template = current_file.read()
 
-# Populate makefile with CFD specific src (if activated)
-if args['compact_fd']:
-    makefile_options['CFD_FILES'] = '$(wildcard src/finite_difference/*.cpp)'
-else:
-    makefile_options['CFD_FILES'] = ''
-
-files_athena_tasklist = [
-    'fft_grav_task_list', 'mg_task_list', 'sts_task_list', 'task_list',
-    'time_integrator', 'task_id'
-]
-
-# Populate makefile with wave equation specific src (if activated)
-if args['w']:
-    makefile_options['WAV_FILES'] = '$(wildcard src/wave/*.cpp)'
-    files_athena_tasklist.append('wave_task_list')
-else:
-    makefile_options['WAV_FILES'] = ''
-
-# Populate makefile with advection equation specific src (if activated)
-if args['a']:
-    makefile_options['ADV_FILES'] = '$(wildcard src/advection/*.cpp)'
-    files_athena_tasklist.append('advection_task_list')
-else:
-    makefile_options['ADV_FILES'] = ''
-
-
-if args['z']:
-    # Populate makefile with z4c specific src
-    files = [
-            'add_z4c_rhs',
-            'adm_z4c',
-            'calculate_weyl_scalars',
-            'calculate_z4c_rhs',
-            'gauge',
-            'new_blockdt_z4c', 
-            'puncture_tracker',
-            'wave_extract',
-            'z4c',
-            'z4c_utils',
-    ]
-    files_athena_tasklist.append('z4c_task_list')
-
-    if args['prob'] == "z4c_two_punctures":
-        files.append('two_punctures_z4c')
-    elif args['prob'] == "z4c_one_puncture":
-        files.append('one_puncture_z4c')
-    elif args['prob'] == "z4c_awa_tests":
-        files.append('awa_z4c')
-
-    aux = ["		$(wildcard src/z4c/{}.cpp) \\".format(f) for f in files]
-    makefile_options['Z4C_FILES'] = '\n'.join(aux) + '\n'
-
-else:
-    makefile_options['Z4C_FILES'] = ''
-
-# Take care of task-list files
-aux_tal = ["		$(wildcard src/task_list/{}.cpp) \\".format(f)
-           for f in files_athena_tasklist]
-makefile_options['TAL_FILES'] = '\n'.join(aux_tal) + '\n'
-
 # Make substitutions
 for key, val in definitions.items():
     defsfile_template = re.sub(r'@{0}@'.format(key), val, defsfile_template)
@@ -1135,8 +1009,6 @@ print('  Magnetic fields:              ' + ('ON' if args['b'] else 'OFF'))
 print('  Number of scalars:            ' + args['nscalars'])
 print('  Special relativity:           ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:           ' + ('ON' if args['g'] else 'OFF'))
-print('  Advection equation:           ' + ('ON' if args['a'] else 'OFF'))
-print('  Wave equation:                ' + ('ON' if args['w'] else 'OFF'))
 print('  Z4c equations:                ' + ('ON' if args['z'] else 'OFF'))
 if args['z']:
     print('  Z4c shift damping:            ' + self_eta_damp_string)
@@ -1145,10 +1017,6 @@ if args['z']:
 print('  Frame transformations:        ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:                 ' + self_grav_string)
 print('  Super-Time-Stepping:          ' + ('ON' if args['sts'] else 'OFF'))
-print('  Compact FD (CFD) preferred:   ' + ('ON' if args['compact_fd'] else 'OFF'))
-if args['compact_fd']:
-    print('  CFD (BW_LHS, BW_RHS; filter): ' + '({bw_l}, {bw_r}; {filt})'.format(
-        bw_l=args['ncfd_l'], bw_r=args['ncfd_r'], filt=args['cfd_filter']))
 print('  Shearing Box BCs:             ' + ('ON' if args['shear'] else 'OFF'))
 print('  Debug flags:                  ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:          ' + ('ON' if args['coverage'] else 'OFF'))

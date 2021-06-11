@@ -28,10 +28,6 @@
 #include "../globals.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
-// BD: new problem
-#include "../wave/wave.hpp"
-// -BD
-#include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
 #include "../mesh/mesh.hpp"
 #include "../scalars/scalars.hpp"
@@ -40,13 +36,9 @@
 // NEW_OUTPUT_TYPES:
 
 // "3" for 1-KE, 2-KE, 3-KE additional columns (come before tot-E)
-// BD: new problem
 #define NHISTORY_VARS (((NHYDRO) + 3) * (FLUID_ENABLED) + (SELF_GRAVITY_ENABLED) + \
                        (NFIELD) + (NSCALARS) + \
-                       2 * (WAVE_ENABLED) + \
-                       2 * (ADVECTION_ENABLED) + \
                        8 * (Z4C_ENABLED))
-// -BD
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::HistoryFile()
@@ -82,10 +74,6 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     Field *pfld = pmb->pfield;
     PassiveScalars *psclr = pmb->pscalars;
     Gravity *pgrav = pmb->pgrav;
-    // BD: new problem
-    Wave  *pwave = pmb->pwave;
-    // -BD
-    Advection  *padv = pmb->padv;
     Z4c *pz4c = pmb->pz4c;
 
     // Sum history variables over cells.  Note ghost cells are never included in sums
@@ -137,20 +125,6 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
               // constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED + NFIELD;
               hst_data[isum++] += vol(i)*s;
             }
-          }
-
-          // BD: new problem
-          if (WAVE_ENABLED) {
-            Real& wave_error = pwave->error(k,j,i);
-            hst_data[isum++] += vol(i)*wave_error;
-            hst_data[isum++] += vol(i)*SQR(wave_error);
-          }
-          // -BD
-
-          if (ADVECTION_ENABLED) {
-            Real& adv_error = padv->error(k,j,i);
-            hst_data[isum++] += vol(i)*adv_error;
-            hst_data[isum++] += vol(i)*SQR(adv_error);
           }
 
           if (Z4C_ENABLED) {
@@ -274,18 +248,6 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         for (int n=0; n<NSCALARS; n++) {
           std::fprintf(pfile,"[%d]=%d-scalar    ", iout++, n);
         }
-      }
-
-      // BD: new problem
-      if (WAVE_ENABLED) {
-        std::fprintf(pfile,"[%d]=err-norm1 ", iout++);
-        std::fprintf(pfile,"[%d]=err-norm2 ", iout++);
-      }
-      // -BD
-
-      if (ADVECTION_ENABLED) {
-        std::fprintf(pfile,"[%d]=err-norm1 ", iout++);
-        std::fprintf(pfile,"[%d]=err-norm2 ", iout++);
       }
 
       if (Z4C_ENABLED) {

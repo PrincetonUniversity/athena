@@ -26,9 +26,6 @@
 #include "fc/bvals_fc.hpp"
 #include "vc/bvals_vc.hpp"
 
-// BD: new problem
-#include "../wave/wave.hpp"
-// -BD
 #include "../z4c/z4c.hpp"
 
 // -----------
@@ -82,10 +79,6 @@
 
 void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
-#ifdef DBGPR_BVALS_REFINE
-  coutBlue("BoundaryValues::ProlongateBoundaries\n");
-#endif // DBGPR_BVALS_REFINE
-
   MeshBlock *pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
 
@@ -95,13 +88,7 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   //
   // Ensure coarse buffer has physical boundaries applied
   // (temp workaround) to automatically call all BoundaryFunction_[] on coarse var
-  Wave *pw = nullptr;
   Z4c *pz4c = nullptr;
-
-  if (WAVE_ENABLED) {
-    pw = pmb->pwave;
-    pw->ubvar.var_vc = &(pw->coarse_u_);
-  }
 
   if (Z4C_ENABLED) {
     pz4c = pmb->pz4c;
@@ -109,11 +96,6 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
   }
 
   ApplyPhysicalVertexCenteredBoundariesOnCoarseLevel(time, dt);
-
-  // switch back
-  if (WAVE_ENABLED) {
-    pw->ubvar.var_vc = &(pw->u);
-  }
 
   if (Z4C_ENABLED) {
     pz4c->ubvar.var_vc = &(pz4c->storage.u);
@@ -261,21 +243,12 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt) {
 
   } // end loop over nneighbor
 
-#ifdef DBGPR_BVALS_REFINE
-  coutBlue("< BoundaryValues::ProlongateBoundaries\n");
-#endif // DBGPR_BVALS_REFINE
-
   return;
 }
 
 
 void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int nk,
                                                    int nj, int ni) {
-
-#ifdef DBGPR_BVALS_REFINE
-  coutBlue("BoundaryValues::RestrictGhostCellsOnSameLevel\n");
-#endif // DBGPR_BVALS_REFINE
-
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
 
@@ -368,10 +341,6 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
     }
   } // end loop over pvars_fc_
 
-#ifdef DBGPR_BVALS_REFINE
-  coutBlue("< BoundaryValues::RestrictGhostCellsOnSameLevel\n");
-#endif // DBGPR_BVALS_REFINE
-
   return;
 }
 
@@ -384,11 +353,6 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
 void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     const NeighborBlock& nb, const Real time, const Real dt,
     int si, int ei, int sj, int ej, int sk, int ek) {
-
-#ifdef DBGPR_BVALS_REFINE
-  coutBlue("BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel\n");
-#endif // DBGPR_BVALS_REFINE
-
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
 
@@ -502,15 +466,6 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
 void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
                                           int si, int ei, int sj, int ej,
                                           int sk, int ek) {
-#ifdef DBGPR_BVALS_REFINE
-  coutBlue("BoundaryValues::ProlongateGhostCells\n");
-  coutBoldRed("\nix: ");
-  printf("(si, ei, sj, ej, sk, ek)="
-        "(%d, %d, %d, %d, %d, %d)\n",
-        si, ei, sj, ej, sk, ek);
-  nb.print_all();
-#endif // DBGPR_BVALS_REFINE
-
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
 
@@ -634,11 +589,6 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
                                                  fsi, fei, fsj, fej, fsk, fek);
   }
 
-
-#ifdef DBGPR_BVALS_REFINE
-  coutBlue("< BoundaryValues::ProlongateGhostCells\n");
-#endif // DBGPR_BVALS_REFINE
-
   return;
 }
 
@@ -760,10 +710,6 @@ inline void BoundaryValues::CalculateVertexProlongationIndices(
 void BoundaryValues::ProlongateVertexCenteredBoundaries(
   const Real time, const Real dt) {
 
-#ifdef DBGPR_BVALS_REFINE
-  coutBlue("BoundaryValues::ProlongateVertexCenteredBoundaries\n");
-#endif // DBGPR_BVALS_REFINE
-
   MeshBlock *pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
 
@@ -786,105 +732,13 @@ void BoundaryValues::ProlongateVertexCenteredBoundaries(
                                        pmb->block_size.nx3 > 1);
 
     ProlongateVertexCenteredGhosts(nb, si, ei, sj, ej, sk, ek);
-
-    // calculate the loop limits for the ghost zones
-    /*
-    int cn = pmb->cnghost - 1;
-    int si, ei, sj, ej, sk, ek;
-    if (nb.ni.ox1 == 0) {
-      std::int64_t &lx1 = pmb->loc.lx1;
-      si = pmb->cis, ei = pmb->cie;
-      if ((lx1 & 1LL) == 0LL) ei += cn;
-      else             si -= cn;
-    } else if (nb.ni.ox1 > 0) { si = pmb->cie + 1,  ei = pmb->cie + cn;}
-    else              si = pmb->cis-cn, ei = pmb->cis-1;
-    if (nb.ni.ox2 == 0) {
-      sj = pmb->cjs, ej = pmb->cje;
-      if (pmb->block_size.nx2 > 1) {
-        std::int64_t &lx2 = pmb->loc.lx2;
-        if ((lx2 & 1LL) == 0LL) ej += cn;
-        else             sj -= cn;
-      }
-    } else if (nb.ni.ox2 > 0) { sj = pmb->cje + 1,  ej = pmb->cje + cn;}
-    else              sj = pmb->cjs-cn, ej = pmb->cjs-1;
-    if (nb.ni.ox3 == 0) {
-      sk = pmb->cks, ek = pmb->cke;
-      if (pmb->block_size.nx3 > 1) {
-        std::int64_t &lx3 = pmb->loc.lx3;
-        if ((lx3 & 1LL) == 0LL) ek += cn;
-        else             sk -= cn;
-      }
-    } else if (nb.ni.ox3 > 0) { sk = pmb->cke + 1,  ek = pmb->cke + cn;}
-    else              sk = pmb->cks-cn, ek = pmb->cks-1;
-    */
-
-    // int cn = pmb->cnghost - 1;
-    /*
-    if (nb.ni.ox1 > 0) {
-      si = pmb->cive+1, ei = pmb->cive+cn;
-    } else if (nb.ni.ox1 < 0) {
-      si = pmb->civs-cn, ei = pmb->civs-1;
-    } else {
-      // 0
-      si = pmb->civs, ei = pmb->cive;
-      std::int64_t &lx1 = pmb->loc.lx1;
-      if ((lx1 & 1LL) == 0LL) ei += cn;
-      else             si -= cn;
-    }
-
-    if (nb.ni.ox2 > 0) {
-      sj = pmb->cjve+1, ej = pmb->cjve+cn;
-    } else if (nb.ni.ox2 < 0) {
-      sj = pmb->cjvs-cn, ej = pmb->cjvs-1;
-    } else {
-      // 0
-      sj = pmb->cjvs, ej = pmb->cjve;
-      if (pmb->block_size.nx2 > 1) {
-        std::int64_t &lx2 = pmb->loc.lx2;
-        if ((lx2 & 1LL) == 0LL) ej += cn;
-        else             sj -= cn;
-      }
-    }
-
-    if (nb.ni.ox3 > 0) {
-      sk = pmb->ckve+1, ej = pmb->ckve+cn;
-    } else if (nb.ni.ox3 < 0) {
-      sk = pmb->ckvs-cn, ej = pmb->ckvs-1;
-    } else {
-      // 0
-      sk = pmb->ckvs, ej = pmb->ckve;
-      if (pmb->block_size.nx3 > 1) {
-        std::int64_t &lx3 = pmb->loc.lx3;
-        if ((lx3 & 1LL) == 0LL) ej += cn;
-        else             sk -= cn;
-      }
-    }
-    */
-
-
-
   }
-
-
-
-
 }
 
 void BoundaryValues::ProlongateVertexCenteredGhosts(
     const NeighborBlock& nb,
     int si, int ei, int sj, int ej,
     int sk, int ek) {
-
-#ifdef DBGPR_BVALS_REFINE
-  coutBlue("BoundaryValues::ProlongateVertexCenteredGhosts\n");
-
-  coutBoldRed("\nix: ");
-  printf("(si, ei, sj, ej, sk, ek)="
-        "(%d, %d, %d, %d, %d, %d)\n",
-        si, ei, sj, ej, sk, ek);
-  nb.print_all();
-#endif // DBGPR_BVALS_REFINE
-
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
 
@@ -894,17 +748,7 @@ void BoundaryValues::ProlongateVertexCenteredGhosts(
     int nu = var_vc->GetDim4() - 1;
     pmr->ProlongateVertexCenteredValues(*coarse_vc, *var_vc, 0, nu,
                                         si, ei, sj, ej, sk, ek);
-
-    // // test prolongation on full block
-    // int pcng = pmb->ng / 2 + (pmb->ng % 2 != 0);
-    // pmr->ProlongateVertexCenteredValues(*coarse_vc, *var_vc, 0, nu,
-    //                                     pmb->civs-pcng, pmb->cive+pcng,
-    //                                     sj, ej, sk, ek);
   }
-
-#ifdef DBGPR_BVALS_REFINE
-  coutBlue("< BoundaryValues::ProlongateGhostCells\n");
-#endif // DBGPR_BVALS_REFINE
 
   return;
 }

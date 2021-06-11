@@ -25,9 +25,6 @@
 void Z4c::ADMTwoPunctures(ParameterInput *pin, AthenaArray<Real> & u_adm, ini_data *data)
 {
   bool verbose = pin->GetOrAddBoolean("problem", "verbose", 0);
-  
-  //if(verbose)
-  //  Z4c::DebugInfoVars();
 
   ADM_vars adm;
   SetADMAliases(u_adm, adm);

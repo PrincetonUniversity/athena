@@ -55,12 +55,9 @@ SRC_FILES := \
 		src/pgen/$(PROBLEM_FILE) \
 		$(wildcard src/reconstruct/*.cpp) \
 		$(wildcard src/scalars/*.cpp) \
-@TAL_FILES@ \
+		$(wildcard src/task_list/*.cpp) \
 		$(wildcard src/utils/*.cpp) \
-@CFD_FILES@ \
-@Z4C_FILES@	\
-@WAV_FILES@ \
-@ADV_FILES@ \
+		$(wildcard src/z4c/*.cpp) \
 		$(MPIFFT_FILE)
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))

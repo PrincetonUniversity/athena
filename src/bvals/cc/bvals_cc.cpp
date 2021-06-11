@@ -133,10 +133,6 @@ CellCenteredBoundaryVariable::~CellCenteredBoundaryVariable() {
 
 int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,
                                                             int cng) {
-#ifdef DBGPR_BVALS_CC
-  coutYellow("CellCenteredBoundaryVariable::ComputeVariableBufferSize\n");
-#endif // DBGPR_BVALS_CC
-
   MeshBlock *pmb = pmy_block_;
   int cng1, cng2, cng3;
   cng1 = cng;
@@ -163,10 +159,6 @@ int CellCenteredBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexe
 
 int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
     const NeighborIndexes& ni, int cng) {
-#ifdef DBGPR_BVALS_CC
-  coutYellow("CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize\n");
-#endif // DBGPR_BVALS_CC
-
   MeshBlock *pmb = pmy_block_;
   int size = 0;
   if (ni.ox1 != 0)
@@ -185,10 +177,6 @@ int CellCenteredBoundaryVariable::ComputeFluxCorrectionBufferSize(
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
                                                               const NeighborBlock& nb) {
-#ifdef DBGPR_BVALS_CC
-  coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel\n");
-#endif // DBGPR_BVALS_CC
-
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
@@ -213,10 +201,6 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
                                                               const NeighborBlock& nb) {
-#ifdef DBGPR_BVALS_CC
-    coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser\n");
-#endif // DBGPR_BVALS_CC
-
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
   int si, sj, sk, ei, ej, ek;
@@ -246,10 +230,6 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 
 int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
                                                             const NeighborBlock& nb) {
-#ifdef DBGPR_BVALS_CC
-    coutYellow("CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner\n");
-#endif // DBGPR_BVALS_CC
-
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int cn = pmb->cnghost - 1;
@@ -302,10 +282,6 @@ int CellCenteredBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 
 void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
                                                         const NeighborBlock& nb) {
-#ifdef DBGPR_BVALS_CC
-    coutYellow("CellCenteredBoundaryVariable::SetBoundarySameLevel\n");
-#endif // DBGPR_BVALS_CC
-
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   AthenaArray<Real> &var = *var_cc;
@@ -320,8 +296,6 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   else if (nb.ni.ox3 > 0) sk = pmb->ke + 1,      ek = pmb->ke + NGHOST;
   else              sk = pmb->ks - NGHOST, ek = pmb->ks - 1;
 
-  //////////////////////////////////////////////////////////////////////////////
-  // inject actual solution (see below)
   int p = 0;
 
   if (nb.polar) {
@@ -340,17 +314,6 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
   } else {
     BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
-
-  // printf("unpacking: (p, si, ei)=(%d, %d, %d)\n", p, si, ei);
-  // //printf("%d, %d\n", nl_, nu_);
-
-  // for (int kk=0; kk<NGHOST; kk++){
-  //   printf("%1.3f, ", buf[kk]);
-  // };
-  // printf("\n");
-
-  // var.print_data();
-
   if (SHEARING_BOX) {
     // 2D shearing box in x-z plane: additional step to shift azimuthal velocity
     if (pbval_->ShBoxCoord_ == 2) {
@@ -373,14 +336,7 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
       }
     }
   } // end KGF: shearing box in SetBoundarySameLevel
-  //////////////////////////////////////////////////////////////////////////////
 
-  //////////////////////////////////////////////////////////////////////////////
-  // BD: debug - populate based on solution
-#ifdef FILL_WAVE_BND_SL
-  pmb->DebugWaveMeshBlock(var, si, ei, sj, ej, sk, ek, false);
-#endif // FILL_WAVE_BND_SL
-  //////////////////////////////////////////////////////////////////////////////
   return;
 }
 
@@ -391,10 +347,6 @@ void CellCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
 
 void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
                                                           const NeighborBlock& nb) {
-#ifdef DBGPR_BVALS_CC
-    coutYellow("CellCenteredBoundaryVariable::SetBoundaryFromCoarser\n");
-#endif // DBGPR_BVALS_CC
-
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int cng = pmb->cnghost;
@@ -432,8 +384,6 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
     sk = pmb->cks - cng, ek = pmb->cks - 1;
   }
 
-  //////////////////////////////////////////////////////////////////////////////
-  // inject actual solution (see below)
   int p = 0;
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
@@ -451,14 +401,6 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
     BufferUtility::UnpackData(buf, coarse_var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
 
-  //////////////////////////////////////////////////////////////////////////////
-  // BD: debug - populate based on solution
-  // [note we directly modify fund. not coarse]
-#ifdef FILL_WAVE_BND_FRC
-  AthenaArray<Real> &var = *var_cc;
-  pmb->DebugWaveMeshBlock(var, si, ei, sj, ej, sk, ek, false);
-#endif // FILL_WAVE_BND_FRC
-  //////////////////////////////////////////////////////////////////////////////
   return;
 }
 
@@ -470,10 +412,6 @@ void CellCenteredBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 
 void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
                                                         const NeighborBlock& nb) {
-#ifdef DBGPR_BVALS_CC
-    coutYellow("CellCenteredBoundaryVariable::SetBoundaryFromFiner\n");
-#endif // DBGPR_BVALS_CC
-
   MeshBlock *pmb = pmy_block_;
   AthenaArray<Real> &var = *var_cc;
   // receive already restricted data
@@ -521,8 +459,6 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
     sk = pmb->ks - NGHOST, ek = pmb->ks - 1;
   }
 
-  //////////////////////////////////////////////////////////////////////////////
-  // inject actual solution (see below)
   int p = 0;
   if (nb.polar) {
     for (int n=nl_; n<=nu_; ++n) {
@@ -539,18 +475,9 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   } else {
     BufferUtility::UnpackData(buf, var, nl_, nu_, si, ei, sj, ej, sk, ek, p);
   }
-  //////////////////////////////////////////////////////////////////////////////
-
-  //////////////////////////////////////////////////////////////////////////////
-  // BD: debug - populate based on solution
-#ifdef FILL_WAVE_BND_FRF
-  pmb->DebugWaveMeshBlock(var, si, ei, sj, ej, sk, ek, false);
-#endif // FILL_WAVE_BND_FRF
-  //////////////////////////////////////////////////////////////////////////////
-
 
   return;
-  }
+}
 
 
 //----------------------------------------------------------------------------------------
@@ -558,10 +485,6 @@ void CellCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 // \brief polar boundary edge-case: single MeshBlock spans the entire azimuthal (x3) range
 
 void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
-#ifdef DBGPR_BVALS_CC
-  coutYellow("CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock\n");
-#endif // DBGPR_BVALS_CC
-
   MeshBlock *pmb = pmy_block_;
 
   if (pmb->loc.level  ==  pmy_mesh_->root_level && pmy_mesh_->nrbx3 == 1
@@ -606,10 +529,6 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
 
 void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 #ifdef MPI_PARALLEL
-#ifdef DBGPR_BVALS_CC
-  coutYellow("CellCenteredBoundaryVariable::SetupPersistentMPI\n");
-#endif // DBGPR_BVALS_CC
-
   MeshBlock* pmb = pmy_block_;
   int &mylevel = pmb->loc.level;
 
@@ -696,10 +615,6 @@ void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 
 void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 #ifdef MPI_PARALLEL
-#ifdef DBGPR_BVALS_CC
-  coutYellow("CellCenteredBoundaryVariable::StartReceiving\n");
-#endif // DBGPR_BVALS_CC
-
   MeshBlock *pmb = pmy_block_;
   int mylevel = pmb->loc.level;
   for (int n=0; n<pbval_->nneighbor; n++) {
@@ -720,10 +635,6 @@ void CellCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 
 
 void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
-#ifdef DBGPR_BVALS_CC
-  coutYellow("CellCenteredBoundaryVariable::ClearBoundary\n");
-#endif // DBGPR_BVALS_CC
-
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;

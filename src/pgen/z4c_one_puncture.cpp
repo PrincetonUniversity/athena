@@ -44,8 +44,5 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
 void MeshBlock::Z4cUserWorkInLoop() {
 
-  // BD: debug
-  // pz4c->storage.u.print_all();
-
   return;
 }

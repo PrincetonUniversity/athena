@@ -120,27 +120,6 @@ void __attribute__((weak)) MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) 
 }
 
 //========================================================================================
-//! \fn void MeshBlock::WaveUserWorkInLoop()
-//  \brief Function called once every time step for (wave) user-defined work.
-//========================================================================================
-// BD: new problem
-void __attribute__((weak)) MeshBlock::WaveUserWorkInLoop() {
-  // do nothing
-  return;
-}
-// -BD
-
-//========================================================================================
-//! \fn void MeshBlock::AdvectionUserWorkInLoop()
-//  \brief Function called once every time step for (advection) user-defined work.
-//========================================================================================
-
-void __attribute__((weak)) MeshBlock::AdvectionUserWorkInLoop() {
-  // do nothing
-  return;
-}
-
-//========================================================================================
 //! \fn void MeshBlock::Z4cUserWorkInLoop()
 //  \brief Function called once every time step for (z4c) user-defined work.
 //========================================================================================

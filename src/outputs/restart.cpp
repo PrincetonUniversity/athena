@@ -27,10 +27,6 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
-// BD: new problem
-#include "../wave/wave.hpp"
-// -BD
-#include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
 #include "../z4c/puncture_tracker.hpp"
 #include "outputs.hpp"
@@ -204,24 +200,12 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     //   pdata += r.GetSizeInBytes();
     // }
 
-    // BD: new problem
-    if (WAVE_ENABLED) {
-      std::memcpy(pdata, pmb->pwave->u.data(), pmb->pwave->u.GetSizeInBytes());
-      pdata += pmb->pwave->u.GetSizeInBytes();
-    }
-    // -BD
-
-    if (ADVECTION_ENABLED) {
-      std::memcpy(pdata, pmb->padv->u.data(), pmb->padv->u.GetSizeInBytes());
-      pdata += pmb->padv->u.GetSizeInBytes();
-    }
-
     if (Z4C_ENABLED) {
       std::memcpy(pdata, pmb->pz4c->storage.u.data(),
                   pmb->pz4c->storage.u.GetSizeInBytes());
       pdata += pmb->pz4c->storage.u.GetSizeInBytes();
 
-    // BD: TODO: extend as new data structures added
+      // BD: TODO: extend as new data structures added
       std::memcpy(pdata, pmb->pz4c->storage.mat.data(),
                   pmb->pz4c->storage.mat.GetSizeInBytes());
       pdata += pmb->pz4c->storage.mat.GetSizeInBytes();

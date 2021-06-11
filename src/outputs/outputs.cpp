@@ -94,10 +94,6 @@
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
-// BD: new problem
-#include "../wave/wave.hpp"
-// -BD
-#include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
@@ -336,10 +332,6 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   Field *pfld = pmb->pfield;
   PassiveScalars *psclr = pmb->pscalars;
   Gravity *pgrav = pmb->pgrav;
-  // BD: new problem
-  Wave *pwave = pmb->pwave;
-  // -BD
-  Advection *padv = pmb->padv;
   Z4c *pz4c = pmb->pz4c;
 
   num_vars_ = 0;
@@ -492,79 +484,6 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod->data.InitWithShallowSlice(phyd->w, 4, IVZ, 1);
     AppendOutputDataNode(pod);
     num_vars_++;
-  }
-
-  // BD: new problem
-  if (WAVE_ENABLED) {
-    if (output_params.variable.compare("wave") == 0 ||
-        output_params.variable.compare("wave_u") == 0) {
-      pod = new OutputData;
-      pod->type = "SCALARS";
-      pod->name = "wU";
-      pod->data.InitWithShallowSlice(pwave->u, 0, 1);
-      AppendOutputDataNode(pod);
-      num_vars_++;
-    }
-
-    if (output_params.variable.compare("wave") == 0 ||
-        output_params.variable.compare("wave_pi") == 0) {
-      pod = new OutputData;
-      pod->type = "SCALARS";
-      pod->name = "wPI";
-      pod->data.InitWithShallowSlice(pwave->u, 1, 1);
-      AppendOutputDataNode(pod);
-      num_vars_++;
-    }
-    if (output_params.variable.compare("wave") == 0 ||
-        output_params.variable.compare("wave_exact") == 0) {
-      pod = new OutputData;
-      pod->type = "SCALARS";
-      pod->name = "wExact";
-      pod->data.InitWithShallowSlice(pwave->exact, 0, 1);
-      AppendOutputDataNode(pod);
-      num_vars_++;
-    }
-    if (output_params.variable.compare("wave") == 0 ||
-        output_params.variable.compare("wave_error") == 0) {
-      pod = new OutputData;
-      pod->type = "SCALARS";
-      pod->name = "wError";
-      pod->data.InitWithShallowSlice(pwave->error, 0, 1);
-      AppendOutputDataNode(pod);
-      num_vars_++;
-    }
-  }
-  // -BD
-
-  if (ADVECTION_ENABLED) {
-    if (output_params.variable.compare("advection") == 0 ||
-        output_params.variable.compare("advection_u") == 0) {
-      pod = new OutputData;
-      pod->type = "SCALARS";
-      pod->name = "u";
-      pod->data.InitWithShallowSlice(padv->u, 0, 1);
-      AppendOutputDataNode(pod);
-      num_vars_++;
-    }
-
-    if (output_params.variable.compare("advection") == 0 ||
-        output_params.variable.compare("advection_exact") == 0) {
-      pod = new OutputData;
-      pod->type = "SCALARS";
-      pod->name = "uExact";
-      pod->data.InitWithShallowSlice(padv->exact, 0, 1);
-      AppendOutputDataNode(pod);
-      num_vars_++;
-    }
-    if (output_params.variable.compare("advection") == 0 ||
-        output_params.variable.compare("advection_error") == 0) {
-      pod = new OutputData;
-      pod->type = "SCALARS";
-      pod->name = "uError";
-      pod->data.InitWithShallowSlice(padv->error, 0, 1);
-      AppendOutputDataNode(pod);
-      num_vars_++;
-    }
   }
 
   if (Z4C_ENABLED) {

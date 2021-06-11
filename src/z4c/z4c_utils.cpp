@@ -70,15 +70,15 @@ bool Z4c::is_finite_z4c() {
 // \brief Aggregate 'is_finite' conditional as assertion
 void Z4c::assert_is_finite_adm() {
   if (not adm.psi4.is_finite()) {
-    coutBoldRed("adm.psi4 not finite, terminating...\n");
+    fprintf(stderr,"adm.psi4 not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not adm.g_dd.is_finite()) {
-    coutBoldRed("adm.g_dd not finite, terminating...\n");
+    fprintf(stderr,"adm.g_dd not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not adm.K_dd.is_finite()) {
-    coutBoldRed("adm.K_dd not finite, terminating...\n");
+    fprintf(stderr,"adm.K_dd not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
 }
@@ -88,23 +88,23 @@ void Z4c::assert_is_finite_adm() {
 // \brief Aggregate 'is_finite' conditional as assertion
 void Z4c::assert_is_finite_con() {
   if (not con.C.is_finite()) {
-    coutBoldRed("con.C not finite, terminating...\n");
+    fprintf(stderr,"con.C not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not con.H.is_finite()) {
-    coutBoldRed("con.H not finite, terminating...\n");
+    fprintf(stderr,"con.H not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not con.M.is_finite()) {
-    coutBoldRed("con.M not finite, terminating...\n");
+    fprintf(stderr,"con.M not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not con.Z.is_finite()) {
-    coutBoldRed("con.Z not finite, terminating...\n");
+    fprintf(stderr,"con.Z not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not con.M_d.is_finite()) {
-    coutBoldRed("con.M_d not finite, terminating...\n");
+    fprintf(stderr,"con.M_d not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
 }
@@ -114,15 +114,15 @@ void Z4c::assert_is_finite_con() {
 // \brief Aggregate 'is_finite' conditional as assertion
 void Z4c::assert_is_finite_mat() {
   if (not mat.rho.is_finite()) {
-    coutBoldRed("mat.rho not finite, terminating...\n");
+    fprintf(stderr,"mat.rho not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not mat.S_d.is_finite()) {
-    coutBoldRed("mat.S_d not finite, terminating...\n");
+    fprintf(stderr,"mat.S_d not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not mat.S_dd.is_finite()) {
-    coutBoldRed("mat.S_dd not finite, terminating...\n");
+    fprintf(stderr,"mat.S_dd not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
 }
@@ -132,35 +132,35 @@ void Z4c::assert_is_finite_mat() {
 // \brief Aggregate 'is_finite' conditional as assertion
 void Z4c::assert_is_finite_z4c() {
   if (not z4c.chi.is_finite()) {
-    coutBoldRed("z4c.chi not finite, terminating...\n");
+    fprintf(stderr,"z4c.chi not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not z4c.Khat.is_finite()) {
-    coutBoldRed("z4c.Khat not finite, terminating...\n");
+    fprintf(stderr,"z4c.Khat not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not z4c.Theta.is_finite()) {
-    coutBoldRed("z4c.Theta not finite, terminating...\n");
+    fprintf(stderr,"z4c.Theta not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not z4c.alpha.is_finite()) {
-    coutBoldRed("z4c.alpha not finite, terminating...\n");
+    fprintf(stderr,"z4c.alpha not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not z4c.Gam_u.is_finite()) {
-    coutBoldRed("z4c.Gam_u not finite, terminating...\n");
+    fprintf(stderr,"z4c.Gam_u not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not z4c.beta_u.is_finite()) {
-    coutBoldRed("z4c.beta_u not finite, terminating...\n");
+    fprintf(stderr,"z4c.beta_u not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not z4c.g_dd.is_finite()) {
-    coutBoldRed("z4c.g_dd not finite, terminating...\n");
+    fprintf(stderr,"z4c.g_dd not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
   if (not z4c.A_dd.is_finite()) {
-    coutBoldRed("z4c.A_dd not finite, terminating...\n");
+    fprintf(stderr,"z4c.A_dd not finite, terminating...\n");
     std::exit(EXIT_FAILURE);
   }
 }

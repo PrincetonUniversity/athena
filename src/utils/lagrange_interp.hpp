@@ -130,26 +130,6 @@ class LagrangeInterp1D {
         //! [in] stride used to access vals
         int const stride
         ) const {
-
-//       // BD: debug
-//       coutBoldYellow("LagrangeInterp1D.eval:\n");
-//       coutBoldYellow("  (origin, delta, coord) = ");
-//       printf("(%1.5f, %1.5f, %1.5f)\n", m_origin, m_delta, m_coord);
-//       coutBoldYellow("  (m_siz, m_npoint, order) = ");
-//       printf("(%d, %d, %d)\n", m_siz, m_npoint, order);
-//       coutBoldYellow("  m_out_of_bounds = ");
-//       printf("%d\n", m_out_of_bounds);
-//       coutBoldYellow("  m_mid_flag = ");
-//       printf("%d\n", m_mid_flag);
-//       coutBoldYellow("  LOCALINTERP_SYMMETRIC = ");
-// #ifdef LOCALINTERP_SYMMETRIC
-//       printf("%d\n", true);
-// #else
-//       printf("%d\n", false);
-// #endif
-
-      //-
-
       T out_lr = 0;
       for(int i = 0; i <= order; ++i) {
         out_lr += static_cast<T>(m_coeff_lr[i]) * vals[i*stride];

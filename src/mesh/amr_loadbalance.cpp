@@ -36,10 +36,6 @@
 // \brief Main function for adaptive mesh refinement
 
 void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::LoadBalancingAndAdaptiveMeshRefinement\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   int nnew = 0, ndel = 0;
 
   if (adaptive) {
@@ -70,10 +66,6 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
 
 void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlist,
                                 int nb) {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::CalculateLoadBalance\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   std::stringstream msg;
   double real_max  =  std::numeric_limits<double>::max();
   double totalcost = 0, maxcost = 0.0, mincost = (real_max);
@@ -144,10 +136,6 @@ void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlis
 // \brief reset counters and flags for load balancing
 
 void Mesh::ResetLoadBalanceVariables() {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::ResetLoadBalanceVariables\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   if (lb_automatic_) {
     MeshBlock *pmb = pblock;
     while (pmb != nullptr) {
@@ -165,10 +153,6 @@ void Mesh::ResetLoadBalanceVariables() {
 // \brief update the cost list
 
 void Mesh::UpdateCostList() {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::UpdateCostList\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   MeshBlock *pmb = pblock;
   if (lb_automatic_) {
     double w = static_cast<double>(lb_interval_-1)/static_cast<double>(lb_interval_);
@@ -189,10 +173,6 @@ void Mesh::UpdateCostList() {
 // \brief collect refinement flags and manipulate the MeshBlockTree
 
 void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::UpdateMeshBlockTree\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   // compute nleaf= number of leaf MeshBlocks per refined block
   MeshBlock *pmb;
   int nleaf = 2, dim = 1;
@@ -338,10 +318,6 @@ void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
 // \brief collect the cost from MeshBlocks and check the load balance
 
 bool Mesh::GatherCostListAndCheckBalance() {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::GatherCostListAndCheckBalance\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   if (lb_manual_ || lb_automatic_) {
 #ifdef MPI_PARALLEL
     MPI_Allgatherv(MPI_IN_PLACE, nblist[Globals::my_rank], MPI_DOUBLE, costlist, nblist,
@@ -374,10 +350,6 @@ bool Mesh::GatherCostListAndCheckBalance() {
 // \brief redistribute MeshBlocks according to the new load balance
 
 void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::RedistributeAndRefineMeshBlocks\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   // compute nleaf= number of leaf MeshBlocks per refined block
   int nleaf = 2;
   if (mesh_size.nx2 > 1) nleaf = 4;
@@ -753,10 +725,6 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
 // AMR: step 6, branch 1 (same2same: just pack+send)
 
 void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::PrepareSendSameLevel\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   // pack
   int p = 0;
 
@@ -805,10 +773,6 @@ void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
 
 void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
                                       LogicalLocation &lloc) {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::PrepareSendCoarseToFineAMR\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   int ox1 = ((lloc.lx1 & 1LL) == 1LL), ox2 = ((lloc.lx2 & 1LL) == 1LL),
       ox3 = ((lloc.lx3 & 1LL) == 1LL);
   // pack
@@ -877,10 +841,6 @@ void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
 // step 6, branch 3 (f2c: restrict, pack, send)
 
 void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::PrepareSendFineToCoarseAMR\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   // restrict and pack
   MeshRefinement *pmr = pb->pmr;
   int p = 0;
@@ -950,10 +910,6 @@ void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
 
 void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
                                        LogicalLocation &loc) {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::FillSameRankFineToCoarseAMR\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   MeshRefinement *pmr = pob->pmr;
   int il = pmb->is + ((loc.lx1 & 1LL) == 1LL)*pmb->block_size.nx1/2;
   int jl = pmb->js + ((loc.lx2 & 1LL) == 1LL)*pmb->block_size.nx2/2;
@@ -1078,10 +1034,6 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
 
 void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
                                        LogicalLocation &newloc) {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::FillSameRankCoarseToFineAMR\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   MeshRefinement *pmr = pmb->pmr;
   int il = pob->cis - 1, iu = pob->cie + 1, jl = pob->cjs - f2,
       ju = pob->cje + f2, kl = pob->cks - f3, ku = pob->cke + f3;
@@ -1197,10 +1149,6 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
 
 // step 8 (receive and load), branch 1 (same2same: unpack)
 void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::FinishRecvSameLevel\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   int p = 0;
   for (AthenaArray<Real> &var_cc : pb->vars_cc_) {
     int nu = var_cc.GetDim4() - 1;
@@ -1247,11 +1195,6 @@ void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
 // step 8 (receive and load), branch 2 (f2c: unpack)
 void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
                                      LogicalLocation &lloc) {
-
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::FinishRecvFineToCoarseAMR\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   int ox1 = ((lloc.lx1 & 1LL) == 1LL), ox2 = ((lloc.lx2 & 1LL) == 1LL),
       ox3 = ((lloc.lx3 & 1LL) == 1LL);
   int p = 0, il, iu, jl, ju, kl, ku;
@@ -1322,11 +1265,6 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
 
 // step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
 void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
-
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::FinishRecvCoarseToFineAMR\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   MeshRefinement *pmr = pb->pmr;
   int p = 0;
   int il = pb->cis - 1, iu = pb->cie+1, jl = pb->cjs - f2,
@@ -1399,11 +1337,6 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
 // See comments on BoundaryBase::CreateBvalsMPITag()
 
 int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3) {
-
-#ifdef DBGPR_AMR_LOADBALANCE
-  coutYellow("Mesh::CreateAMRMPITag\n");
-#endif // DBGPR_AMR_LOADBALANCE
-
   // former "AthenaTagMPI" AthenaTagMPI::amr=8 redefined to 0
   return (lid<<8) | (ox1<<7)| (ox2<<6) | (ox3<<5) | 0;
 }

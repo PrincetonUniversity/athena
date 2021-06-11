@@ -11,32 +11,6 @@
 //  file contains Athena++ specific cpp macros and definitions set by configure.
 
 //----------------------------------------------------------------------------------------
-// control debug (printing) for various parts of the codebase
-// enable by stripping 'NO' prefix (not exposed to configure.py)
-#define NO_DBGPR_AMR_LOADBALANCE
-#define NO_DBGPR_MESH
-#define NO_DBGPR_MESH_REFINEMENT
-#define NO_DBGPR_MESHBLOCK
-#define NO_DBGPR_MESHBLOCK_TREE
-#define NO_DBGPR_BVALS_VAR
-#define NO_DBGPR_BVALS_CC
-#define NO_DBGPR_BVALS_VC
-#define NO_DBGPR_BVALS_REFINE
-#define NO_DBGPR_CONSISTENCY_CONDITIONS_VC
-#define NO_DBGPR_BUFFER_UTILS
-
-// deprecated: fill different portions of block with exact solution [for debug]
-#define NO_FILL_WAVE_BND_FRC
-#define NO_FILL_WAVE_BND_FRF
-#define NO_FILL_WAVE_BND_SL
-#define NO_FILL_WAVE_INTERIOR
-#define NO_FILL_WAVE_COARSE_P
-
-#define DBG_VC_CONSISTENCY 0
-
-//------
-
-//----------------------------------------------------------------------------------------
 // macros which define physics and algorithms
 
 // configure.py dict(definitions) string values:
@@ -89,12 +63,6 @@
 // evolve the z4c equation? default=0 (false)
 #define Z4C_ENABLED @Z4C_ENABLED@
 
-// evolve the wave equation? default=0 (false)
-#define WAVE_ENABLED @WAVE_ENABLED@
-
-// evolve the advection equation? default=0 (false)
-#define ADVECTION_ENABLED @ADVECTION_ENABLED@
-
 // enable GR frame transformations? default=0 (false)
 #define FRAME_TRANSFORMATIONS @FRAME_TRANSFORMATIONS@
 
@@ -112,9 +80,6 @@
 
 // allow for spatially varying shift-damping based on tracker computed distance
 #define @Z4C_ETA_TRACK_TP@
-
-// control whether compact FD enabled
-#define @COMPACT_FD@
 
 // refinement strategy
 #define @Z4C_REF_BOX_IN_BOX@
@@ -161,11 +126,6 @@
 #define NEXTRAPOLATE @NUMBER_EXTRAPOLATION_POINTS@     // extrapolate_outflow
 #define MAX_NSTAGE 5     // maximum number of stages per cycle for time-integrator
 #define MAX_NREGISTER 3  // maximum number of (u, b) register pairs for time-integrator
-
-// compact stencil parameters
-#define NCFDWIDTH_L @NUMBER_CFD_BANDWIDTH_LHS@
-#define NCFDWIDTH_R @NUMBER_CFD_BANDWIDTH_RHS@
-#define CFDFILTER   @NUMBER_CFDFILTER@
 
 //----------------------------------------------------------------------------------------
 // macros associated with input / output (rarely modified)

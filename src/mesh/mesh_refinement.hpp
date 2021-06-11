@@ -92,14 +92,10 @@ class MeshRefinement {
 
   // for switching first entry in pvars_cc_ to/from: (w, coarse_prim); (u, coarse_cons_)
   void SetHydroRefinement(HydroBoundaryQuantity hydro_type);
-
-  // BD debug: shift back to private, this is for testing wave eqn.
-  Coordinates *pcoarsec;
-
-  //---
  private:
   // data
   MeshBlock *pmy_block_;
+  Coordinates *pcoarsec;
 
   AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
   int refine_flag_, neighbor_rflag_, deref_count_, deref_threshold_;
@@ -118,12 +114,6 @@ class MeshRefinement {
     int ix_cvs, int ix_cve, int ix_cmp,
     int ix_vs, int ix_ve,
     int &f_ix, int &ix_b, int &ix_so, int &ix_eo, int &ix_l, int &ix_u);
-
-  // Flip implementation used
-  void _ProlongateVertexCenteredValues(const AthenaArray<Real> &coarse,
-                                       AthenaArray<Real> &fine, int sn, int en,
-                                       int si, int ei, int sj, int ej, int sk, int ek);
-
 
   // tuples of references to AMR-enrolled arrays (quantity, coarse_quantity)
   std::vector<std::tuple<AthenaArray<Real> *, AthenaArray<Real> *>> pvars_cc_;

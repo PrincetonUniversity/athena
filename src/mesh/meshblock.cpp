@@ -38,12 +38,6 @@
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
-
-// BD: new problem
-#include "../wave/wave.hpp"
-// -BD
-
-#include "../advection/advection.hpp"
 #include "../z4c/z4c.hpp"
 #include "../z4c/wave_extract.hpp"
 
@@ -59,10 +53,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     new_block_dt_{}, new_block_dt_hyperbolic_{}, new_block_dt_parabolic_{},
     new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(1.0) {
-
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::MeshBlock\n");
-#endif // DBGPR_MESHBLOCK
 
   // BD:
   // As this needs to be done twice (here and restarts), is verbose and prone
@@ -149,18 +139,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
 
-  // BD: new problem
-  if (WAVE_ENABLED) {
-    pwave = new Wave(this, pin);
-    pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
-  }
-  // -BD
-
-  if (ADVECTION_ENABLED) {
-    padv = new Advection(this, pin);
-    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
-  }
-
   if (Z4C_ENABLED) {
     pz4c = new Z4c(this, pin);
     int nrad = pin->GetOrAddInteger("z4c", "nrad_wave_extraction", 0);
@@ -203,10 +181,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     new_block_dt_{}, new_block_dt_hyperbolic_{}, new_block_dt_parabolic_{},
     new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(icost) {
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::MeshBlock\n");
-#endif // DBGPR_MESHBLOCK
-
   // BD:
   // As this needs to be done twice (here and restarts), is verbose and prone
   // to parablepsis we collect logic..
@@ -273,18 +247,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
 
-  // BD: new problem
-  if (WAVE_ENABLED) {
-    pwave = new Wave(this, pin);
-    pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
-  }
-  // -BD
-
-  if (ADVECTION_ENABLED) {
-    padv = new Advection(this, pin);
-    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
-  }
-
   if (Z4C_ENABLED) {
     pz4c = new Z4c(this, pin);
     int nrad = pin->GetOrAddInteger("z4c", "nrad_wave_extraction", 0);
@@ -340,18 +302,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     os += pscalars->s.GetSizeInBytes();
   }
 
-  // BD: new problem
-  if (WAVE_ENABLED) {
-    std::memcpy(pwave->u.data(), &(mbdata[os]), pwave->u.GetSizeInBytes());
-    os += pwave->u.GetSizeInBytes();
-  }
-  // -BD
-
-  if (ADVECTION_ENABLED) {
-    std::memcpy(padv->u.data(), &(mbdata[os]), padv->u.GetSizeInBytes());
-    os += padv->u.GetSizeInBytes();
-  }
-
   if (Z4C_ENABLED) {
     std::memcpy(pz4c->storage.u.data(), &(mbdata[os]), pz4c->storage.u.GetSizeInBytes());
     os += pz4c->storage.u.GetSizeInBytes();
@@ -380,10 +330,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 // MeshBlock destructor
 
 MeshBlock::~MeshBlock() {
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::~MeshBlock\n");
-#endif // DBGPR_MESHBLOCK
-
   if (prev != nullptr) prev->next = next;
   if (next != nullptr) next->prev = prev;
 
@@ -396,12 +342,6 @@ MeshBlock::~MeshBlock() {
   if (FLUID_ENABLED) delete peos;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
   if (NSCALARS > 0) delete pscalars;
-
-  // BD: new problem
-  if (WAVE_ENABLED) delete pwave;
-  // -BD
-
-  if (ADVECTION_ENABLED) delete padv;
 
   if (Z4C_ENABLED) {
     delete pz4c;
@@ -551,10 +491,6 @@ inline void MeshBlock::SetIndicialParameters(int num_ghost,
 //  \brief Allocate Real AthenaArrays for user-defned data in MeshBlock
 
 void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::AllocateRealUserMeshBlockDataField\n");
-#endif // DBGPR_MESHBLOCK
-
   if (nreal_user_meshblock_data_ != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateRealUserMeshBlockDataField"
@@ -571,10 +507,6 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
 //  \brief Allocate integer AthenaArrays for user-defned data in MeshBlock
 
 void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::AllocateIntUserMeshBlockDataField\n");
-#endif // DBGPR_MESHBLOCK
-
   if (nint_user_meshblock_data_ != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::AllocateIntusermeshblockDataField"
@@ -592,10 +524,6 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
 //  \brief Allocate user-defined output variables
 
 void MeshBlock::AllocateUserOutputVariables(int n) {
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::AllocateUserOutputVariables\n");
-#endif // DBGPR_MESHBLOCK
-
   if (n <= 0) return;
   if (nuser_out_var != 0) {
     std::stringstream msg;
@@ -616,10 +544,6 @@ void MeshBlock::AllocateUserOutputVariables(int n) {
 //  \brief set the user-defined output variable name
 
 void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::SetUserOutputVariableName\n");
-#endif // DBGPR_MESHBLOCK
-
   if (n >= nuser_out_var) {
     std::stringstream msg;
     msg << "### FATAL ERROR in MeshBlock::SetUserOutputVariableName"
@@ -636,10 +560,6 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
 //  \brief Calculate the block data size required for restart.
 
 std::size_t MeshBlock::GetBlockSizeInBytes() {
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::GetBlockSizeInBytes\n");
-#endif // DBGPR_MESHBLOCK
-
   std::size_t size = 0;
   // NEW_OUTPUT_TYPES:
   if (FLUID_ENABLED)
@@ -656,16 +576,6 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
     size += pgrav->phi.GetSizeInBytes();
   if (NSCALARS > 0)
     size += pscalars->s.GetSizeInBytes();
-
-  // BD: new problem
-  if (WAVE_ENABLED) {
-    size += pwave->u.GetSizeInBytes();
-  }
-  // -BD
-
-  if (ADVECTION_ENABLED) {
-    size += padv->u.GetSizeInBytes();
-  }
 
   if (Z4C_ENABLED) {
     // BD: TODO: extend as new data structures added
@@ -687,10 +597,6 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
 //  \brief stop time measurement and accumulate it in the MeshBlock cost
 
 void MeshBlock::SetCostForLoadBalancing(double cost) {
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::SetCostForLoadBalancing\n");
-#endif // DBGPR_MESHBLOCK
-
   if (pmy_mesh->lb_manual_) {
     cost_ = std::min(cost, TINY_NUMBER);
     pmy_mesh->lb_flag_ = true;
@@ -702,10 +608,6 @@ void MeshBlock::SetCostForLoadBalancing(double cost) {
 //  \brief reset the MeshBlock cost for automatic load balancing
 
 void MeshBlock::ResetTimeMeasurement() {
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::ResetTimeMeasurement\n");
-#endif // DBGPR_MESHBLOCK
-
   if (pmy_mesh->lb_automatic_) cost_ = TINY_NUMBER;
 }
 
@@ -741,25 +643,16 @@ void MeshBlock::StopTimeMeasurement() {
 }
 
 void MeshBlock::RegisterMeshBlockDataCC(AthenaArray<Real> &pvar_in) {
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::RegisterMeshBlockDataCC\n");
-#endif
   vars_cc_.push_back(pvar_in);
   return;
 }
 
 void MeshBlock::RegisterMeshBlockDataVC(AthenaArray<Real> &pvar_in) {
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::RegisterMeshBlockDataVC\n");
-#endif
   vars_vc_.push_back(pvar_in);
   return;
 }
 
 void MeshBlock::RegisterMeshBlockDataFC(FaceField &pvar_fc) {
-#ifdef DBGPR_MESHBLOCK
-  coutGreen("MeshBlock::RegisterMeshBlockData\n");
-#endif // DBGPR_MESHBLOCK
   vars_fc_.push_back(pvar_fc);
   return;
 }

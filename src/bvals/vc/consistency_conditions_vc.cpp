@@ -58,12 +58,8 @@ void VertexCenteredBoundaryVariable::PrepareNodeMult() {
 //  \brief zero out ghost zones
 
 void VertexCenteredBoundaryVariable::ZeroVertexGhosts() {
-#ifdef DBGPR_CONSISTENCY_CONDITIONS_VC
-  coutYellow("VertexCenteredBoundaryVariable::ZeroVertexGhosts\n");
-#endif // DBGPR_CONSISTENCY_CONDITIONS_VC
   // additive unpack used to populate ghosts entails that old ghost data needs
   // to be cleaned
-
   MeshBlock *pmb = pmy_block_;
   AthenaArray<Real> &var = *var_vc;
   if (pmb->block_size.nx3 > 1) {

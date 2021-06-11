@@ -46,11 +46,6 @@ void ShowConfig() {
   } else {
     std::cout<<"  General relativity:         OFF " << std::endl;
   }
-  if (WAVE_ENABLED) {
-    std::cout<<"  Wave equation:              ON" << std::endl;
-  } else {
-    std::cout<<"  Wave equation:              OFF" << std::endl;
-  }
   if (Z4C_ENABLED) {
     std::cout<<"  Z4c equations:              ON" << std::endl;
 #if defined(Z4C_ETA_TRACK_TP)
