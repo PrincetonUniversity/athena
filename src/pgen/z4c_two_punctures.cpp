@@ -147,16 +147,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
     return;
 }
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
-  // This is a hack to cleanup the initial data
-  static bool tp_finalize = !resume_flag;
-  if (tp_finalize) {
+void Mesh::DeleteTemporaryUserMeshData() {
+  if (!resume_flag) {
     TwoPunctures_finalise(data);
-    tp_finalize = false;
   }
-
-  return;
 }
 
 //========================================================================================
@@ -222,14 +216,7 @@ int RefinementCondition(MeshBlock *pmb)
   //Initial distance between one of the punctures and the edge of the full mesh, needed to
   //calculate the box-in-box grid structure
   Real L = L_grid;
-#ifdef DEBUG
-  printf("Root lev = %d\n", root_lev);
-#endif
   Real xv[24];
-#ifdef DEBUG
-  printf("Max x = %g\n", pmb->block_size.x1max);
-  printf("Min x = %g\n", pmb->block_size.x1min);
-#endif
 
   //Needed to calculate coordinates of vertices of a block with same center but
   //edge of 1/8th of the original size
