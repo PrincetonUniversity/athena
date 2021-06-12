@@ -31,11 +31,11 @@
 //----------------------------------------------------------------------------------------
 PunctureTracker::PunctureTracker(Mesh * pmesh, ParameterInput * pin, int n):
     owns_puncture{false}, pos{NAN, NAN, NAN}, betap{NAN, NAN, NAN}, pmesh{pmesh} {
-  ofname = pin->GetOrAddString("bhtracker", "filename", "puncture_");
+  ofname = pin->GetOrAddString("z4c", "filename", "puncture_");
   ofname += std::to_string(n) + ".txt";
-  pos[0] = pin->GetOrAddReal("bhtracker", "bh_" + std::to_string(n) + "_x", 0.0);
-  pos[1] = pin->GetOrAddReal("bhtracker", "bh_" + std::to_string(n) + "_y", 0.0);
-  pos[2] = pin->GetOrAddReal("bhtracker", "bh_" + std::to_string(n) + "_z", 0.0);
+  pos[0] = pin->GetOrAddReal("z4c", "bh_" + std::to_string(n) + "_x", 0.0);
+  pos[1] = pin->GetOrAddReal("z4c", "bh_" + std::to_string(n) + "_y", 0.0);
+  pos[2] = pin->GetOrAddReal("z4c", "bh_" + std::to_string(n) + "_z", 0.0);
   if (0 == Globals::my_rank) {
     // check if output file already exists
     if (access(ofname.c_str(), F_OK) == 0) {
