@@ -47,6 +47,7 @@
 #   --lib_path=path     use -Lpath when linking
 #   --lib=xxx           use -lxxx when linking
 #   -ccache             use caching-compiler (prepend command to chosen compiler)
+#   -rpath              encode the path to the shared libraries into the executable
 #   -link_gold          use gold linker
 # ----------------------------------------------------------------------------------------
 
@@ -291,6 +292,12 @@ parser.add_argument('-ccache',
                     action='store_true',
                     default=False,
                     help='enable caching compiler')
+
+# -rpath
+parser.add_argument('-rpath',
+                    action='store_true',
+                    default=False,
+                    help="encode the path to the shared libraries into the executable")
 
 # -link_gold argument
 parser.add_argument('-link_gold',
@@ -854,6 +861,8 @@ if args['fft']:
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
             args['fftw_path'])
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['fftw_path'])
+        if args['rpath']:
+            makefile_options['LINKER_FLAGS'] += ' -Wl,-rpath {0}/lib'.format(args['fftw_path'])
     if args['omp']:
         makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_omp'
     if args['mpi']:
@@ -868,6 +877,8 @@ if args['hdf5']:
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
             args['hdf5_path'])
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['hdf5_path'])
+        if args['rpath']:
+            makefile_options['LINKER_FLAGS'] += ' -Wl,-rpath {0}/lib'.format(args['hdf5_path'])
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
             or args['cxx'] == 'cray' or args['cxx'] == 'icpc'
             or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi'
@@ -882,6 +893,10 @@ if args['hdf5']:
         makefile_options['LINKER_FLAGS'] += (
             ' -L/soft/libraries/hdf5/1.10.0/cnk-xl/current/lib'
             ' -L/soft/libraries/alcf/current/xl/ZLIB/lib')
+        if args['rpath']:
+            makefile_options['LINKER_FLAGS'] += (
+                ' -Wl,-rpath /soft/libraries/hdf5/1.10.0/cnk-xl/current/lib'
+                ' -Wl,-rpath/soft/libraries/alcf/current/xl/ZLIB/lib')
         makefile_options['LIBRARY_FLAGS'] += ' -lhdf5 -lz -lm'
 else:
     definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
@@ -906,6 +921,8 @@ if args['prob'] == "z4c_two_punctures":
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
             args['two_punctures_path'])
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['two_punctures_path'])
+        if args['rpath']:
+            makefile_options['LINKER_FLAGS'] += ' -Wl,-rpath {0}/lib'.format(args['two_punctures_path'])
 
     makefile_options['LIBRARY_FLAGS'] += ' -l{lib_name}'.format(lib_name=libtwopunc_name)
 else:
@@ -921,6 +938,8 @@ if args['gsl']:
         makefile_options['PREPROCESSOR_FLAGS'] += ' -I{0}/include'.format(
             args['gsl_path'])
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['gsl_path'])
+        if args['rpath']:
+            makefile_options['LINKER_FLAGS'] += ' -Wl,-rpath {0}/lib'.format(args['gsl_path'])
     makefile_options['LIBRARY_FLAGS'] += ' -lgsl -lgslcblas'
 
 # --cflag=[string] argument
@@ -934,6 +953,8 @@ for include_path in args['include']:
 # --lib_path=[name] arguments
 for library_path in args['lib_path']:
     makefile_options['LINKER_FLAGS'] += ' -L'+library_path
+    if args['rpath']:
+        makefile_options['LINKER_FLAGS'] += ' -Wl,-rpath '+library_path
 
 # --lib=[name] arguments
 for library_name in args['lib']:
