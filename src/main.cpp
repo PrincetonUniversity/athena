@@ -391,6 +391,7 @@ int main(int argc, char *argv[]) {
   try {
 #endif
     pmesh->Initialize(res_flag, pinput);
+    pmesh->DeleteTemporaryUserMeshData();
 #ifdef ENABLE_EXCEPTIONS
   }
   catch(std::bad_alloc& ba) {

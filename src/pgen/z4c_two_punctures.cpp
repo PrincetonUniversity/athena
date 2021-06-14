@@ -26,7 +26,7 @@ using namespace std;
 
 int RefinementCondition(MeshBlock *pmb);
 // QUESTION: is it better to setup two different problems instead of using ifdef?
-static ini_data *data;
+static ini_data *data = NULL;
 
 static Real par_b;
 static Real L_grid;
@@ -148,8 +148,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
 }
 
 void Mesh::DeleteTemporaryUserMeshData() {
-  if (!resume_flag) {
+  if (NULL != data) {
     TwoPunctures_finalise(data);
+    data = NULL;
   }
 }
 
@@ -160,6 +161,8 @@ void Mesh::DeleteTemporaryUserMeshData() {
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
+  assert(NULL != data);
+
   // as a sanity check (these should be over-written)
   pz4c->adm.psi4.Fill(NAN);
   pz4c->adm.g_dd.Fill(NAN);

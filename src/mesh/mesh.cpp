@@ -1669,8 +1669,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
   NewTimeStep();
 
-  DeleteTemporaryUserMeshData();
-
   return;
 }
 
