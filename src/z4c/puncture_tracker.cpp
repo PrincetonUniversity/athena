@@ -69,12 +69,13 @@ void PunctureTracker::InterpolateShift(MeshBlock * pmb, AthenaArray<Real> & u) {
   if (pos[0] >= pmb->block_size.x1min && pos[0] < pmb->block_size.x1max &&
       pos[1] >= pmb->block_size.x2min && pos[1] < pmb->block_size.x2max &&
       pos[2] >= pmb->block_size.x3min && pos[2] < pmb->block_size.x3max) {
+#pragma omp critical
     owns_puncture = true;
 
     Real const origin[3] = {
       pmb->pcoord->x1f(0),
-      pmb->pcoord->x1f(1),
-      pmb->pcoord->x1f(2),
+      pmb->pcoord->x2f(0),
+      pmb->pcoord->x3f(0),
     };
     Real const delta[3] = {
       pmb->pcoord->dx1f(0),
@@ -90,6 +91,7 @@ void PunctureTracker::InterpolateShift(MeshBlock * pmb, AthenaArray<Real> & u) {
     LagrangeInterpND<2*NGHOST-1, 3> linterp(origin, delta, size, pos);
     for (int a = 0; a < NDIM; ++a) {
       Real & beta = z4c.beta_u(a, 0, 0, 0);
+#pragma omp critical
       betap[a] = linterp.eval(&beta);
     }
   }
@@ -106,7 +108,9 @@ void PunctureTracker::EvolveTracker() {
   else {
     MPI_Reduce(&count, &count, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   }
-  assert(count == 1);   // the puncture should be in exactly one location
+  if (0 == Globals::my_rank) {
+    assert(count == 1);   // the puncture should be in exactly one location
+  }
 #else
   int count = 1;
 #endif // NDEBUG
