@@ -75,10 +75,6 @@ class MeshBlock {
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
-  // BD: new problem
-  friend class Wave;
-  // -BD
-  friend class Advection;
   friend class Z4c;
 
 public:
@@ -292,11 +288,6 @@ class Mesh {
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
-  // BD: new problem
-  friend class Wave;
-  // -BD
-
-  friend class Advection;
   friend class Z4c;
   friend class PunctureTracker;
 
