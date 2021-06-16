@@ -67,7 +67,7 @@ void PunctureTracker::InterpolateShift(MeshBlock * pmb, AthenaArray<Real> & u) {
   pmb->pz4c->SetZ4cAliases(u, z4c);
 
   if (pmb->PointContained(pos[0], pos[1], pos[2])) {
-#pragma omp critical
+#pragma omp atomic write
     owns_puncture = true;
 
     Real const origin[3] = {
@@ -89,7 +89,7 @@ void PunctureTracker::InterpolateShift(MeshBlock * pmb, AthenaArray<Real> & u) {
     LagrangeInterpND<2*NGHOST-1, 3> linterp(origin, delta, size, pos);
     for (int a = 0; a < NDIM; ++a) {
       Real & beta = z4c.beta_u(a, 0, 0, 0);
-#pragma omp critical
+#pragma omp atomic write
       betap[a] = linterp.eval(&beta);
     }
   }
