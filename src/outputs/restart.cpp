@@ -78,11 +78,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     udsize += pm->iuser_mesh_data[n].GetSizeInBytes();
   for (int n=0; n<pm->nreal_user_mesh_data_; n++)
     udsize += pm->ruser_mesh_data[n].GetSizeInBytes();
-#ifdef Z4C_TRACKER
-  // 3 positions + 3 betap for every puncture
-  for (int i_punc = 0; i_punc < NPUNCT; ++i_punc)
-    udsize += 6*sizeof(Real);
-#endif
+  udsize += 2*NDIM*sizeof(Real)*pm->pz4c_tracker.size();
   headeroffset = sbuf.size()*sizeof(char) + 3*sizeof(int)+sizeof(RegionSize)
                  + 2*sizeof(Real)+sizeof(IOWrapperSizeT)+udsize;
   // the size of an element of the ID and cost list
