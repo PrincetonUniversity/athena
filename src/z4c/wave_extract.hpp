@@ -62,10 +62,8 @@ class WaveExtractLocal {
     void Decompose_multipole(AthenaArray<Real> const & u_R,AthenaArray<Real> const & u_I);
   public:
     //! lm projections
-    Real psilmR;
-    Real psilmI;
     AthenaArray<Real> psi;    
-//! Patch of the spherical grid on which we are working
+    //! Patch of the spherical grid on which we are working
     SphericalPatch * ppatch;
   private:
     AthenaArray<Real> datareal;

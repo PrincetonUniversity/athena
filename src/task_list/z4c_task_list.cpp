@@ -236,11 +236,7 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
   TaskListTriggers.con.next_time = pm->time;
   // Seed TaskListTriggers.con.dt in main
 
-  double intpart;
-  double fractpart = modf(pm->time , &intpart);
-  // Ensure wave extraction dt is a multiple of evolution dt
-  TaskListTriggers.wave_extraction.dt = round(pin->GetOrAddReal("z4c",
-      "dt_wave_extraction", 0)/pm->dt)*pm->dt;
+  TaskListTriggers.wave_extraction.dt = pin->GetOrAddReal("z4c", "dt_wave_extraction", 1.0);
   if (pin->GetOrAddInteger("z4c", "nrad_wave_extraction", 0) == 0) {
     TaskListTriggers.wave_extraction.dt = 0.0;
     TaskListTriggers.wave_extraction.next_time = 0.0;
@@ -249,11 +245,9 @@ Z4cIntegratorTaskList::Z4cIntegratorTaskList(ParameterInput *pin, Mesh *pm){
   else {
     // When initializing at restart, this procedure ensures to restart
     // extraction from right time
-    TaskListTriggers.wave_extraction.next_time = pm->time;
-    while (fractpart > 0) {
-      TaskListTriggers.wave_extraction.next_time += pm->dt;
-      fractpart = modf(TaskListTriggers.wave_extraction.next_time, &intpart);
-    }
+    int nwavecycles = static_cast<int>(pm->time/TaskListTriggers.wave_extraction.dt);
+    TaskListTriggers.wave_extraction.next_time = (nwavecycles + 1)*
+        TaskListTriggers.wave_extraction.dt;
   }
   //---------------------------------------------------------------------------
 
@@ -692,6 +686,7 @@ bool Z4cIntegratorTaskList::CurrentTimeCalculationThreshold(
   Real cur_time = pm->time + pm->dt;
   if ((cur_time - pm->dt >= variable->next_time) ||
       (cur_time >= pm->tlim)) {
+#pragma omp atomic write
     variable->to_update = true;
     return true;
   }
