@@ -66,9 +66,7 @@ void PunctureTracker::InterpolateShift(MeshBlock * pmb, AthenaArray<Real> & u) {
   Z4c::Z4c_vars z4c;
   pmb->pz4c->SetZ4cAliases(u, z4c);
 
-  if (pos[0] >= pmb->block_size.x1min && pos[0] < pmb->block_size.x1max &&
-      pos[1] >= pmb->block_size.x2min && pos[1] < pmb->block_size.x2max &&
-      pos[2] >= pmb->block_size.x3min && pos[2] < pmb->block_size.x3max) {
+  if (pmb->PointContained(pos[0], pos[1], pos[2])) {
 #pragma omp critical
     owns_puncture = true;
 
@@ -99,38 +97,20 @@ void PunctureTracker::InterpolateShift(MeshBlock * pmb, AthenaArray<Real> & u) {
 
 //----------------------------------------------------------------------------------------
 void PunctureTracker::EvolveTracker() {
-#ifdef MPI_PARALLEL
-#ifndef NDEBUG
-  int count = owns_puncture;
-  if (0 == Globals::my_rank) {
-    MPI_Reduce(MPI_IN_PLACE, &count, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-  }
-  else {
-    MPI_Reduce(&count, &count, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-  }
-  if (0 == Globals::my_rank) {
-    assert(count == 1);   // the puncture should be in exactly one location
-  }
-#else
-  int count = 1;
-#endif // NDEBUG
-#else
-#ifndef NDEBUG
-  int count = 1;
-#else
-  int count = owns_puncture;
-  assert(count == 1);
-#endif // NDEBUG
-#endif // MPI_PARALLEL
-
   if (owns_puncture) {
     for (int a = 0; a < NDIM; ++a) {
       pos[a] -= pmesh->dt * betap[a];
     }
   }
-
-#ifdef MPI_PARALLEL
-  Real buf[2*NDIM] = {0., 0., 0., 0., 0., 0.};
+#ifndef MPI_PARALLEL
+  else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in PunctureTracker::EvolveTracker" << std::endl;
+    msg << "The puncture is MIA" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+#else
+  Real buf[2*NDIM + 1] = {0., 0., 0., 0., 0., 0., 0.};
   if (owns_puncture) {
     buf[0] = pos[0];
     buf[1] = pos[1];
@@ -138,15 +118,22 @@ void PunctureTracker::EvolveTracker() {
     buf[3] = betap[0];
     buf[4] = betap[1];
     buf[5] = betap[2];
+    buf[6] = 1.0;
   }
-  MPI_Allreduce(MPI_IN_PLACE, buf, 2*NDIM, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
-  pos[0] = buf[0]/count;
-  pos[1] = buf[1]/count;
-  pos[2] = buf[2]/count;
-  betap[0] = buf[3]/count;
-  betap[1] = buf[3]/count;
-  betap[2] = buf[5]/count;
-#endif
+  MPI_Allreduce(MPI_IN_PLACE, buf, 2*NDIM + 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
+  if (buf[6] < 1.) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in PunctureTracker::EvolveTracker" << std::endl;
+    msg << "The puncture is MIA" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  pos[0] = buf[0]/buf[6];
+  pos[1] = buf[1]/buf[6];
+  pos[2] = buf[2]/buf[6];
+  betap[0] = buf[3]/buf[6];
+  betap[1] = buf[3]/buf[6];
+  betap[2] = buf[5]/buf[6];
+#endif // MPI_PARALLEL
 
   // After the puncture has moved it might have changed ownership
   owns_puncture = false;
