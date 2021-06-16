@@ -744,12 +744,14 @@ if args['debug']:
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
             or args['cxx'] == 'clang++-apple'):
         makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11 -g'  # -Og
+        makefile_options['LINKER_FLAGS'] = '-rdynamic'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] = '-O0 -h std=c++11'
     if args['cxx'] == 'bgxlc++':
         makefile_options['COMPILER_FLAGS'] = '-O0 -g -qlanglvl=extended0x'
     if args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11 -g -xMIC-AVX512'
+        makefile_options['LINKER_FLAGS'] = '-rdynamic'
 else:
     definitions['DEBUG_OPTION'] = 'NOT_DEBUG'
 

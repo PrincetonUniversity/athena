@@ -8,6 +8,7 @@
 //  These functions are based on TAG's signal handler written for Athena 8/19/2004
 
 // C headers
+#include <execinfo.h> // backtrace()
 #include <unistd.h>   // alarm() Unix OS utility; not in C standard --> no <cunistd>
 
 // C++ headers
@@ -43,12 +44,14 @@ void SignalHandlerInit() {
   std::signal(SIGTERM, SetSignalFlag);
   std::signal(SIGINT,  SetSignalFlag);
   std::signal(SIGALRM, SetSignalFlag);
+  std::signal(SIGSEGV, BackTraceHandler);
 
   // populate set of signals to block while the handler is running; prevent premption
   sigemptyset(&mask);
   sigaddset(&mask, SIGTERM);
   sigaddset(&mask, SIGINT);
   sigaddset(&mask, SIGALRM);
+  sigaddset(&mask, SIGSEGV);
 }
 
 //----------------------------------------------------------------------------------------
@@ -139,5 +142,32 @@ void CancelWallTimeAlarm() {
   alarm(0);
   return;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void BackTraceHandler()
+//  \brief Dump backtrace
+
+void BackTraceHandler(int s) {
+  char ofname[BUFSIZ];
+  std::snprintf(ofname, BUFSIZ, "backtrace.%d.txt", Globals::my_rank);
+  FILE * ofile = fopen(ofname, "w");
+  fprintf(ofile, "Error: signal %d.\n", s);
+
+  void * array[512];
+  size_t btsize = backtrace(&array[0], 512);
+  char ** btstr = backtrace_symbols(array, btsize);
+  for (int i = 0; i < btsize; ++i) {
+    fprintf(ofile, "%s\n", btstr[i]);
+  }
+  fprintf(ofile, "\n\nThe hexadecimal addresses in this backtrace ");
+  fprintf(ofile, "can be interpreted using addr2line. E.g.,\n");
+  fprintf(ofile, "    addr2line -e athena <address>.\n\n");
+  fclose(ofile);
+
+  std::exit(EXIT_FAILURE);
+}
+
+
 
 } // namespace SignalHandler

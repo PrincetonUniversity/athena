@@ -35,6 +35,7 @@ int GetSignalFlag(int s);
 void SetSignalFlag(int s);
 void SetWallTimeAlarm(int t);
 void CancelWallTimeAlarm();
+void BackTraceHandler(int s);
 } // namespace SignalHandler
 
 #endif // UTILS_UTILS_HPP_
