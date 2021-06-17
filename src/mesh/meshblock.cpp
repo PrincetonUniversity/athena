@@ -145,7 +145,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     if (nrad > 0) {
       pwave_extr_loc.reserve(nrad);
       for (int n = 0; n < nrad; ++n) {
-        pwave_extr_loc.push_back(new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin, n+1));
+        pwave_extr_loc.push_back(new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin, n));
       }
     }
     pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);
@@ -253,7 +253,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     if (nrad > 0) {
       pwave_extr_loc.reserve(nrad);
       for (int n = 0; n < nrad; ++n) {
-        pwave_extr_loc.push_back(new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin, n+1));
+        pwave_extr_loc.push_back(new WaveExtractLocal(this->pmy_mesh->pwave_extr[n]->psphere, this, pin, n));
       }
     }
     pbval->AdvanceCounterPhysID(VertexCenteredBoundaryVariable::max_phys_id);

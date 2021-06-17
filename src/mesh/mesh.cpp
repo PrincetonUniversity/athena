@@ -310,14 +310,14 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     if (nrad > 0) {
       pwave_extr.reserve(nrad);
       for(int n = 0; n < nrad; ++n){
-        pwave_extr.push_back(new WaveExtract(this, pin, n+1));
+        pwave_extr.push_back(new WaveExtract(this, pin, n));
       }
     }
     int npunct = pin->GetOrAddInteger("z4c", "npunct", 0);
     if (npunct > 0) {
       pz4c_tracker.reserve(npunct);
       for (int n = 0; n < npunct; ++n) {
-        pz4c_tracker.push_back(new PunctureTracker(this, pin, n+1));
+        pz4c_tracker.push_back(new PunctureTracker(this, pin, n));
       }
     }
   }
@@ -732,14 +732,14 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     if (nrad > 0) {
       pwave_extr.reserve(nrad);
       for(int n = 0; n < nrad; ++n) {
-        pwave_extr.push_back(new WaveExtract(this, pin, n+1));
+        pwave_extr.push_back(new WaveExtract(this, pin, n));
       }
     }
     int npunct = pin->GetOrAddInteger("z4c", "npunct", 0);
     if (npunct > 0) {
       pz4c_tracker.reserve(npunct);
       for (int n = 0; n < npunct; ++n) {
-        pz4c_tracker.push_back(new PunctureTracker(this, pin, n+1));
+        pz4c_tracker.push_back(new PunctureTracker(this, pin, n));
       }
     }
   }
