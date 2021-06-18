@@ -124,14 +124,14 @@ void PunctureTracker::EvolveTracker() {
   if (buf[6] < 1.) {
     std::stringstream msg;
     msg << "### FATAL ERROR in PunctureTracker::EvolveTracker" << std::endl;
-    msg << "The puncture is MIA" << std::endl;
+    msg << "The puncture has left the grid" << std::endl;
     ATHENA_ERROR(msg);
   }
   pos[0] = buf[0]/buf[6];
   pos[1] = buf[1]/buf[6];
   pos[2] = buf[2]/buf[6];
   betap[0] = buf[3]/buf[6];
-  betap[1] = buf[3]/buf[6];
+  betap[1] = buf[4]/buf[6];
   betap[2] = buf[5]/buf[6];
 #endif // MPI_PARALLEL
 
