@@ -223,6 +223,9 @@ void VertexCenteredBoundaryVariable::SetBoundarySameLevel(Real *buf,
           node_mult(0, k, j, i) += 1;
   }
   //---------------------------------------------------------------------------
+  
+  BufferUtility::UnpackDataAdd(buf, var, nl_, nu_,
+                               si, ei, sj, ej, sk, ek, p);
 
   if (pmy_mesh_->multilevel) {
     // note: unpacked shared nodes additively unpacked-
@@ -295,6 +298,9 @@ void VertexCenteredBoundaryVariable::SetBoundaryFromFiner(Real *buf,
   ErrorIfPolarNotImplemented(nb);
 
   idxSetFromFinerRanges(nb.ni, si, ei, sj, ej, sk, ek, 1);
+
+  BufferUtility::UnpackDataAdd(buf, var, nl_, nu_,
+                               si, ei, sj, ej, sk, ek, p);
 
   // vertex consistency--------------------------------------------------------
   if (!node_mult_assembled) {
