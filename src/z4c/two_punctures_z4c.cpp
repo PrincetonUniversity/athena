@@ -15,6 +15,8 @@
 #include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"
 
+#ifdef TWO_PUNCTURES
+
 // twopuncturesc: Stand-alone library ripped from Cactus
 #include "TwoPunctures.h"
 
@@ -161,3 +163,5 @@ void Z4c::ADMTwoPunctures(ParameterInput *pin, AthenaArray<Real> & u_adm, ini_da
   if(verbose)
     std::cout << "\n\n<-Z4c::ADMTwoPunctures\n\n";
 }
+
+#endif // TWO_PUNCTURES

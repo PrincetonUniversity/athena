@@ -308,12 +308,11 @@ public:
   // initial data for a single BH
   void ADMOnePuncture(ParameterInput *pin, AthenaArray<Real> & u_adm);
   void GaugePreCollapsedLapse(AthenaArray<Real> & u_adm, AthenaArray<Real> & u);
+
+  // initial data for binary BHs
 #ifdef TWO_PUNCTURES
   void ADMTwoPunctures(ParameterInput *pin, AthenaArray<Real> & u_adm, ini_data * data);
 #endif
-
-  // initial data for binary BHs
-  void ADMTwoPunctures(AthenaArray<Real> & u_adm);
 
   // functions for debugging and monitoring
   bool is_finite_adm();
