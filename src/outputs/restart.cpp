@@ -28,6 +28,7 @@
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
+#include "../radiation/radiation.hpp"
 
 
 //----------------------------------------------------------------------------------------
@@ -175,6 +176,11 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
       AthenaArray<Real> &s = pmb->pscalars->s;
       std::memcpy(pdata, s.data(), s.GetSizeInBytes());
       pdata += s.GetSizeInBytes();
+#ifdef INCLUDE_CHEMISTRY
+      //next step-size in chemistry solver
+      std::memcpy(pdata, pmb->pscalars->h.data(), pmb->pscalars->h.GetSizeInBytes());
+      pdata += pmb->pscalars->h.GetSizeInBytes();
+#endif
     }
     // (primitive variable) density-normalized passive scalar concentrations
     // if ???
@@ -183,6 +189,10 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     //   std::memcpy(pdata, r.data(), r.GetSizeInBytes());
     //   pdata += r.GetSizeInBytes();
     // }
+    if (RADIATION_ENABLED) {
+      std::memcpy(pdata, pmb->prad->ir.data(), pmb->prad->ir.GetSizeInBytes());
+      pdata += pmb->prad->ir.GetSizeInBytes();
+    }
 
     // User MeshBlock data:
     // integer data:

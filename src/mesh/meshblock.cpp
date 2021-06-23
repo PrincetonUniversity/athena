@@ -333,6 +333,10 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if (NSCALARS > 0) {
     std::memcpy(pscalars->s.data(), &(mbdata[os]), pscalars->s.GetSizeInBytes());
     os += pscalars->s.GetSizeInBytes();
+#ifdef INCLUDE_CHEMISTRY
+    std::memcpy(pscalars->h.data(), &(mbdata[os]), pscalars->h.GetSizeInBytes());
+    os += pscalars->h.GetSizeInBytes();
+#endif
   }
 
   if (RADIATION_ENABLED) {
@@ -468,8 +472,15 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
   if (MAGNETIC_FIELDS_ENABLED)
     size += (pfield->b.x1f.GetSizeInBytes() + pfield->b.x2f.GetSizeInBytes()
              + pfield->b.x3f.GetSizeInBytes());
-  if (NSCALARS > 0)
+  if (NSCALARS > 0) {
     size += pscalars->s.GetSizeInBytes();
+#ifdef INCLUDE_CHEMISTRY
+    size += pscalars->h.GetSizeInBytes();
+#endif
+  }
+  if (RADIATION_ENABLED) {
+    size += prad->ir.GetSizeInBytes();
+  }
 
   // calculate user MeshBlock data size
   for (int n=0; n<nint_user_meshblock_data_; n++)
