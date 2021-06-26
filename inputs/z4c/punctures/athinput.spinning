@@ -1,6 +1,6 @@
 <comment>
 problem         = Single spinning puncture evolution with SMR, same parfile as BAM
-configure       = python configure.py -z --prob z4c_two_punctures -omp -mpi -hdf5 -h5double -vertex -gsl -z_tracker
+configure       = python configure.py -z --prob z4c_two_punctures -omp -mpi -hdf5 -h5double -vertex -gsl
 
 <job>
 problem_id      = two_punctures        # Basename of output filenames

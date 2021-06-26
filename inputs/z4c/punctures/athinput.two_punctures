@@ -9,6 +9,9 @@ diss            = 0.1                 # Kreiss-Oliger dissipation parameter
 chi_div_floor   = 0.00001
 damp_kappa1     = 0.00      # Constraint damping factor 1
 damp_kappa2     = 0.01
+npunct          = 2
+bh_0_x          = 3.257
+bh_1_x          = -3.257
 
 <problem>
 # the following are defaults and descriptions

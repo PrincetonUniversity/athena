@@ -1,0 +1,165 @@
+<job>
+# Basename of output filenames.
+problem_id = qc1
+repository_info = code_cleanup_92779fb
+
+<comment>
+configure = python3 configure.py --cxx=icpc-phi -rpath -omp -mpi -z -hdf5 --hdf5_path=${TACC_HDF5_DIR} -gsl --gsl_path=/work2/03043/dradice/stampede2/spack/view --two_punctures_path=/work2/03043/dradice/stampede2/local/TwoPuncturesC --prob=z4c_two_punctures --nghost=4
+
+<z4c>
+
+lapse_harmonic = 0.0
+lapse_harmonicf = 1.0
+lapse_oplog = 2.0
+lapse_advect = 1.0
+shift_eta = 2.0
+shift_advect = 1.0
+# Kreiss-Oliger dissipation parameter.
+diss = 0.02
+chi_div_floor = 1e-05
+# Constraint damping factor 1.
+damp_kappa1 = 0.02
+# Constraint damping factor 2.
+damp_kappa2 = 0.0
+# Wave extraction
+nrad_wave_extraction = 5
+extraction_radius_0 = 80
+extraction_radius_1 = 90
+extraction_radius_2 = 100
+extraction_radius_3 = 120
+extraction_radius_4 = 140
+extraction_nlev = 30
+dt_wave_extraction = 0.5625
+lmax = 8
+# Puncture tracker
+npunct = 2
+bh_0_x = 3.257
+bh_1_x = -3.257
+
+<problem>
+
+verbose = False
+# x coordinate of the m+ puncture
+par_b = 3.257
+# mass of the m+ puncture
+par_m_plus = 0.483
+# mass of the m- puncture
+par_m_minus = 0.483
+# target ADM mass for m+
+target_M_plus = 0.505
+# target ADM mass for m-
+target_M_minus = 0.505
+# momentum of the m+ puncture
+par_P_plus1 = 0.0
+par_P_plus2 = 0.133
+par_P_plus3 = 0.0
+# momentum of the m- puncture
+par_P_minus1 = 0.0
+par_P_minus2 = -0.133
+par_P_minus3 = 0.0
+# spin of the m+ puncture
+par_S_plus1 = 0.0
+par_S_plus2 = 0.0
+par_S_plus3 = 0.0
+# spin of the m- puncture
+par_S_minus1 = 0.0
+par_S_minus2 = 0.0
+par_S_minus3 = 0.0
+# offset b=0 to position (x,y,z)
+center_offset1 = 0.0
+center_offset2 = 0.0
+center_offset3 = 0.0
+# User provides bare masses not target M_ADM
+give_bare_mass = True
+# No. coeff in the compactified radial dir.
+npoints_A = 30
+# No. coeff in the angular dir.
+npoints_B = 30
+# no. coeff in the phi dir.
+npoints_phi = 16
+# Tolerance for Newton solver
+Newton_tol = 1e-10
+# Maximum number of Newton iterations
+Newton_maxit = 5
+# A small number to smooth out singularities at punc. loc.
+TP_epsilon = 0.0
+# Tiny number to avoid nans near or at the puncture locations
+TP_Tiny = 0.0
+# Radius of an extended spacetime instead of the puncture
+TP_Extend_radius = 0
+# Tol. of ADM masses when give_bare_mass=no
+adm_tol = 1e-10
+do_residuum_debug_output = False
+do_initial_debug_output = False
+# Solve for momentum constraint?
+solve_momentum_constraint = False
+# Exponent n for psi^-n initial lapse profile (<0)
+initial_lapse_psi_exponent = -2.0
+# x<->z coord interchange during interp. (black holes become separated in z direction)
+swap_xz = False
+n_punct = 2
+
+<output1>
+file_type = hst
+# Time increment between outputs
+dt = 0.5
+data_format = %.16e
+
+<output2>
+# Dump to hierarchical format.
+file_type = hdf5
+variable = z4c
+# Time increment between outputs
+dt = 2.
+data_format = %.16e
+ghost_zones = true
+id = z4c_z
+x3_slice = 0
+
+<output3>
+
+# Restart format.
+file_type = rst
+# Time increment between outputs
+dt = 20.0
+
+<time>
+
+cfl_number = 0.5
+tlim = 400
+integrator = rk4
+ncycle_out = 5
+nlim = -1
+
+<mesh>
+
+refinement = adaptive
+num_threads = @NUM_THREADS@
+numlevel = 11
+deref_count = 1
+# Number of zones in X1-direction
+nx1 = @NX@
+# Minimum value of X1
+x1min = -1536
+# Maximum value of X1
+x1max = 1536
+# Inner-X1 boundary flag
+ix1_bc = extrapolate_outflow
+# Outer-X1 boundary flag
+ox1_bc = extrapolate_outflow
+nx2 = @NX@
+x2min = -1536
+x2max = 1536
+ix2_bc = extrapolate_outflow
+ox2_bc = extrapolate_outflow
+nx3 = @NX@
+x3min = -1536
+x3max = 1536
+ix3_bc = extrapolate_outflow
+ox3_bc = extrapolate_outflow
+
+<meshblock>
+
+nx1 = 16 #24 for mesh/nx1=384
+nx2 = 16 #24 for mesh/nx1=384
+nx3 = 16 #24 for mesh/nx1=384
