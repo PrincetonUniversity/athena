@@ -31,7 +31,8 @@
 //----------------------------------------------------------------------------------------
 PunctureTracker::PunctureTracker(Mesh * pmesh, ParameterInput * pin, int n):
     owns_puncture{false}, pos{NAN, NAN, NAN}, betap{NAN, NAN, NAN}, pmesh{pmesh} {
-  ofname = pin->GetOrAddString("z4c", "filename", "puncture_");
+  ofname = pin->GetString("job", "problem_id") + ".";
+  ofname += pin->GetOrAddString("z4c", "filename", "puncture_");
   ofname += std::to_string(n) + ".txt";
   pos[0] = pin->GetOrAddReal("z4c", "bh_" + std::to_string(n) + "_x", 0.0);
   pos[1] = pin->GetOrAddReal("z4c", "bh_" + std::to_string(n) + "_y", 0.0);

@@ -34,7 +34,8 @@ WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n):
   rad_parname += n_str;
   rad = pin->GetOrAddReal("z4c", rad_parname, 10.0);
   rad_id = n;
-  ofname = pin->GetOrAddString("z4c", "extract_filename", "wave");
+  ofname = pin->GetString("job", "problem_id") + ".";
+  ofname += pin->GetOrAddString("z4c", "extract_filename", "wave");
   lmax = pin->GetOrAddInteger("z4c", "lmax", 2);
   psi.NewAthenaArray(lmax-1,2*(lmax)+1,2);
   psi.ZeroClear();
