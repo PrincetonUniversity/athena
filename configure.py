@@ -467,12 +467,13 @@ if args['cxx'] == 'icpx':
     definitions['COMPILER_CHOICE'] = 'icpx'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpx'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
-    # ICX drivers icx and icpx will accept ICC Classic Compiler options or Clang*/LLVM Compiler options
+    # ICX drivers icx and icpx will accept ICC Classic Compiler options or Clang*/LLVM
+    # Compiler options
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -ipo -xhost -qopenmp-simd '
     )
-    # Currently unsupported, but "options to be supported" according to icpx -qnextgen-diag
-    # '-inline-forceinline -qopt-prefetch=4 '
+    # Currently unsupported, but "options to be supported" according to icpx
+    # -qnextgen-diag: '-inline-forceinline -qopt-prefetch=4 '
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'icpc':
@@ -662,7 +663,8 @@ if args['omp']:
         # preprocessor. Must install LLVM's OpenMP runtime library libomp beforehand
         makefile_options['COMPILER_FLAGS'] += ' -Xpreprocessor -fopenmp'
         makefile_options['LIBRARY_FLAGS'] += ' -lomp'
-    if args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi' or args['cxx'] == 'icpx':
+    if (args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi'
+            or args['cxx'] == 'icpx'):
         makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -homp'
@@ -675,7 +677,8 @@ else:
     definitions['OPENMP_OPTION'] = 'NOT_OPENMP_PARALLEL'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
-    if args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi' or args['cxx'] == 'icpx':
+    if (args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi'
+            or args['cxx'] == 'icpx'):
         # suppressed messages:
         #   3180: pragma omp not recognized
         makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
