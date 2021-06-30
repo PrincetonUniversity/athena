@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -21,20 +21,20 @@
 // this class header
 #include "C12Mg24.hpp"
 
+//c++ header
+#include <iostream>  //endl
+#include <limits>    //inf
+#include <sstream>   //stringstream
+
 //athena++ header
-#include "network.hpp"
-#include "../../scalars/scalars.hpp"
-#include "../../parameter_input.hpp"       //ParameterInput
-#include "../../mesh/mesh.hpp"
-#include "../../hydro/hydro.hpp"
-#include "../utils/chemistry_utils.hpp"
 #include "../../defs.hpp"
 #include "../../eos/eos.hpp"
-
-//c++ header
-#include <sstream>    // stringstream
-#include <iostream>   // endl
-#include <limits>    //inf
+#include "../../hydro/hydro.hpp"
+#include "../../mesh/mesh.hpp"
+#include "../../parameter_input.hpp"       //ParameterInput
+#include "../../scalars/scalars.hpp"
+#include "../utils/chemistry_utils.hpp"
+#include "network.hpp"
 
 #ifdef DEBUG
 static bool output_rates = true;
@@ -44,7 +44,7 @@ static bool output_rates = true;
 // const Real gm1  = 1.666666666666667 - 1.0;   //not a good way to do this
 
 //species names
-const std::string ChemNetwork::species_names[NSCALARS] = 
+const std::string ChemNetwork::species_names[NSCALARS] = // NOLINT (runtime/string)
 {"C12", "Mg24"};
 
 const int ChemNetwork::iC12_ =
@@ -53,10 +53,10 @@ const int ChemNetwork::iMg24_ =
   ChemistryUtility::FindStrIndex(species_names, NSCALARS, "Mg24");
 
 ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
-	//number of species and a list of name of species
+  //number of species and a list of name of species
   pmy_spec_ = pmb->pscalars;
-	pmy_mb_ = pmb;
-	//set the parameters from input file
+  pmy_mb_ = pmb;
+  //set the parameters from input file
   mn_ = 1.674920e-24;
   Q12_ = 2.2323e-5;
   k_ = 1.380658e-16;
@@ -104,27 +104,35 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 //      msg << "ChemNetwork (C12Mg24): RHS(yprev): nan or inf" << std::endl;
 //     // ATHENA_ERROR(msg);
 //      }
-    }                                                                                                 
+    }
   Real mu_ = (y_corr[0]*12 + y_corr[1]*24);
   const Real gm1 = pmy_mb_->peos->GetGamma() - 1;
   Real temp = ED*gm1*mu_*mn_/(density_*k_);
   Real T9 = temp*1e-9;
-//  Real T9 = 5.0;
+  //  Real T9 = 5.0;
   Real TA9 = T9/(1+0.0396*T9);
-//  const Real rate_C12 = -(12*mn_/Q12_)*unit_edot_in_cgs*pow(y[0],2)*density_*pow(T9,29);
-  const Real rate_C12 = -(12*mn_/Q12_)*3.96e43*density_*pow(y_corr[0],2)*pow(TA9,5./6.)*exp(-84.165*pow(TA9,-1./3.)
-    - 2.12*1e-3*pow(T9,3));
+  //  const Real rate_C12 = -(12*mn_/Q12_)*unit_edot_in_cgs*pow(y[0],2)
+  //  *density_*pow(T9,29);
+  const Real rate_C12 = -(12*mn_/Q12_)*3.96e43*density_*pow(y_corr[0],2)
+                          *pow(TA9,5./6.)*exp(-84.165*pow(TA9,-1./3.)
+                          - 2.12*1e-3*pow(T9,3));
   const Real rate_Mg24 = -rate_C12;
   Real tnuc = ED/(rate_C12*Q12_/(12*mn_));
-if ((-1*tnuc<1e-3) or (-1*rate_C12>0.1)) {
-  printf("tnuc, ED, density, mu, T(1e9 K), rate_C12 =  %.2e, %.2e, %.2e, %.2e, %.2e, %.2e\n", tnuc, ED, density_, mu_, T9, rate_C12);
-}// if (T9 > 10){
-//     printf("HIGH T || ED, density, mu, T(1e9 K), rate_C12 =  %.2e, %.2e, %.2e, %.2e, %.2e\n", ED, density_, mu_, T9, rate_C12);
+  if ((-1*tnuc<1e-3) || (-1*rate_C12>0.1)) {
+    printf("tnuc, ED, density, mu, T(1e9 K), rate_C12 =  ");
+    printf("%.2e, %.2e, %.2e, %.2e, %.2e, %.2e\n",
+        tnuc, ED, density_, mu_, T9, rate_C12);
+  }
+// if (T9 > 10){
+//     printf("HIGH T || ED, density, mu, T(1e9 K), rate_C12
+//     =  %.2e, %.2e, %.2e, %.2e, %.2e\n", ED, density_, mu_, T9, rate_C12);
 // }
 // if (T9 < 1e-2){
-//     printf("LOW T || ED, density, mu, T(1e9 K), rate_C12 =  %.2e, %.2e, %.2e, %.2e, %.2e\n", ED, density_, mu_, T9, rate_C12);
+//     printf("LOW T || ED, density, mu, T(1e9 K), rate_C12
+//     =  %.2e, %.2e, %.2e, %.2e, %.2e\n", ED, density_, mu_, T9, rate_C12);
 // }
-//  else {printf("GOAL T || ED, density, mu, T(1e9 K), rate_C12 =  %.2e, %.2e, %.2e, %.2e, %.2e\n", ED, density_, mu_, T9, rate_C12);}
+//  else {printf("GOAL T || ED, density, mu, T(1e9 K), rate_C12
+//  =  %.2e, %.2e, %.2e, %.2e, %.2e\n", ED, density_, mu_, T9, rate_C12);}
   ydot[0] = rate_C12;
   ydot[1] = rate_Mg24;
 

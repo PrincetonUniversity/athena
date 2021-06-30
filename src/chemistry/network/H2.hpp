@@ -1,5 +1,5 @@
-#ifndef H2_HPP
-#define H2_HPP
+#ifndef CHEMISTRY_NETWORK_H2_HPP_
+#define CHEMISTRY_NETWORK_H2_HPP_
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -13,29 +13,29 @@
 #include <string> //std::string
 
 // Athena++ classes headers
-#include "network.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
+#include "network.hpp"
 
 //! \class ChemNetwork
 //  \brief Chemical Network that defines the reaction rates between species.
 //  Note: This is a template for chemistry network.
 //  When implementing a new chemistry network, all public functions should be
 //  in the same form.
-//  The internal calculations are in cgs units. The input and 
+//  The internal calculations are in cgs units. The input and
 //  return of RHS and Edot must be in code units.
 class ChemNetwork : public NetworkWrapper {
   //It would be convenient to know the species names in
   //initialization of chemical species in problem
-  friend class MeshBlock; 
-public:
+  friend class MeshBlock;
+ public:
   ChemNetwork(MeshBlock *pmb, ParameterInput *pin);
   ~ChemNetwork();
 
-	//a list of species name, used in output
-	static const std::string species_names[NSCALARS];
+  //a list of species name, used in output
+  static const std::string species_names[NSCALARS];
 
-	//Set the rates of chemical reactions, eg. through density and radiation field.
+  //Set the rates of chemical reactions, eg. through density and radiation field.
   //k, j, i are the corresponding index of the grid
   void InitializeNextStep(const int k, const int j, const int i);
 
@@ -44,31 +44,31 @@ public:
   //all input/output variables are in code units
   void RHS(const Real t, const Real y[NSCALARS], const Real ED,
            Real ydot[NSCALARS]);
-  
+
   //energy equation dED/dt, all input/output variables are in code units
   //(ED is the energy density)
   Real Edot(const Real t, const Real y[NSCALARS], const Real ED);
 
-private:
+ private:
   PassiveScalars *pmy_spec_;
-	MeshBlock *pmy_mb_;
+  MeshBlock *pmy_mb_;
 
-	std::string species_names_all_[NSCALARS];//all species
-	//index of species
-	static const int iH_;
-	static const int iH2_;
-	static const Real kgr_;//H2 formation rate on grains
+  std::string species_names_all_[NSCALARS];//all species
+  //index of species
+  static const int iH_;
+  static const int iH2_;
+  static const Real kgr_;//H2 formation rate on grains
 
-	Real xi_cr_; //primary CRIR in s-1 H-1, read from input file, default 2e-16.
+  Real xi_cr_; //primary CRIR in s-1 H-1, read from input file, default 2e-16.
   Real kcr_; //CRIR for H2 = 3*xi_cr_
-	//units 
-	Real unit_density_in_nH_; //read from input
-	Real unit_length_in_cm_; //read from input
-	Real unit_vel_in_cms_; //read from input
-	Real unit_time_in_s_; //from length and velocity units
+  //units
+  Real unit_density_in_nH_; //read from input
+  Real unit_length_in_cm_; //read from input
+  Real unit_vel_in_cms_; //read from input
+  Real unit_time_in_s_; //from length and velocity units
   //unit of energy density, in erg cm-3, from density and velocity units
-  Real unit_E_in_cgs_; 
-	Real nH_; //density, updated at InitializeNextStep from hydro variable
+  Real unit_E_in_cgs_;
+  Real nH_; //density, updated at InitializeNextStep from hydro variable
 };
 
-#endif // H2_HPP
+#endif // CHEMISTRY_NETWORK_H2_HPP_

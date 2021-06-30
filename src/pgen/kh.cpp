@@ -32,7 +32,6 @@
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
 #include "../utils/utils.hpp"
-#include "../scalars/scalars.hpp"
 
 namespace {
 Real vflow;

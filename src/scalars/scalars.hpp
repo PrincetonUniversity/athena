@@ -18,7 +18,7 @@
 #include "../bvals/cc/bvals_cc.hpp"
 //chemistry headers
 #ifdef INCLUDE_CHEMISTRY
-#include "../chemistry/network/network.hpp" 
+#include "../chemistry/network/network.hpp"
 #include "../chemistry/ode_wrapper.hpp"
 #include  CHEMNETWORK_HEADER //ChemNetwork class
 #endif //INCLUDE_CHEMISTRY

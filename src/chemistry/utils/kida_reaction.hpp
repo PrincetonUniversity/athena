@@ -1,5 +1,5 @@
-#ifndef KIDA_REACTION_H_
-#define KIDA_REACTION_H_
+#ifndef CHEMISTRY_UTILS_KIDA_REACTION_HPP_
+#define CHEMISTRY_UTILS_KIDA_REACTION_HPP_
 
 //======================================================================================
 // Athena++ astrophysical MHD code
@@ -10,34 +10,35 @@
 //  \brief definitions for heating and cooling processes
 //======================================================================================
 
-// Athena++ classes headers
-#include "../../athena.hpp"
-
 //c++ header
 #include <sstream>    // stringstream
 #include <string>     // string
 #include <vector>     // vector container
 
+// Athena++ classes headers
+#include "../../athena.hpp"
+
 class KidaReaction{
   friend class ChemNetwork;
-  public:
-    KidaReaction(std::string line);
-    void Print() const;
-  private:
-    std::vector<std::string> reactants_;
-    std::vector<std::string> products_;
+ public:
+  explicit KidaReaction(std::string line);
+  void Print() const;
 
-    int id_; //id number, has to be unique but doesn't have to be in order
+ private:
+  std::vector<std::string> reactants_;
+  std::vector<std::string> products_;
 
-    int itype_; //type of reaction
-    int formula_; //type of formula
+  int id_; //id number, has to be unique but doesn't have to be in order
 
-    //reaction rates coefficients;
-    Real alpha_;
-    Real beta_;
-    Real gamma_;
-    Real Tmin_;
-    Real Tmax_;
+  int itype_; //type of reaction
+  int formula_; //type of formula
+
+  //reaction rates coefficients;
+  Real alpha_;
+  Real beta_;
+  Real gamma_;
+  Real Tmin_;
+  Real Tmax_;
 };
 
-#endif //KIDA_REACTION_H_
+#endif //CHEMISTRY_UTILS_KIDA_REACTION_HPP_

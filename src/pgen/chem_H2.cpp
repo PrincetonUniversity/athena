@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -17,30 +17,32 @@
 //  \brief problem generator, uniform mesh with chemistry
 //======================================================================================
 
-// C++ headers
-#include <string>     // c_str()
-#include <iostream>   // endl
-#include <vector>     // vector container
-#include <sstream>    // stringstream
+// c headers
 #include <stdio.h>    // c style file
 #include <string.h>   // strcmp()
+
+// C++ headers
 #include <algorithm>  // std::find()
+#include <iostream>   // endl
+#include <sstream>    // stringstream
 #include <stdexcept>  // std::runtime_error()
+#include <string>     // c_str()
+#include <vector>     // vector container
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../globals.hpp"
-#include "../scalars/scalars.hpp"
 #include "../chemistry/utils/thermo.hpp"
-#include "../radiation/radiation.hpp"
-#include "../radiation/integrators/rad_integrators.hpp"
-#include "../field/field.hpp"
-#include "../eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "../radiation/integrators/rad_integrators.hpp"
+#include "../radiation/radiation.hpp"
+#include "../scalars/scalars.hpp"
 
 Real threshold;
 int RefinementCondition(MeshBlock *pmb);
@@ -62,38 +64,37 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //  \brief initialize problem by reading in vtk file.
 //======================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //dimensions of meshblock
   const int Nx = ie - is + 1;
   const int Ny = je - js + 1;
   const int Nz = ke - ks + 1;
-	//read input parameters
-	const Real nH = pin->GetReal("problem", "nH"); //density
-	const Real vx = pin->GetOrAddReal("problem", "vx", 0); //velocity x
+  //read input parameters
+  const Real nH = pin->GetReal("problem", "nH"); //density
+  const Real vx = pin->GetOrAddReal("problem", "vx", 0); //velocity x
   //mean and std of the initial gaussian profile
-	const Real gaussian_mean = pin->GetOrAddReal("problem", "gaussian_mean", 0.5);
-	const Real gaussian_std = pin->GetOrAddReal("problem", "gaussian_std", 0.1);
+  const Real gaussian_mean = pin->GetOrAddReal("problem", "gaussian_mean", 0.5);
+  const Real gaussian_std = pin->GetOrAddReal("problem", "gaussian_std", 0.1);
   const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   const Real pres = nH*SQR(iso_cs);
   const Real gm1  = peos->GetGamma() - 1.0;
 
-	for (int k=ks; k<=ke; ++k) {
-		for (int j=js; j<=je; ++j) {
-			for (int i=is; i<=ie; ++i) {
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+      for (int i=is; i<=ie; ++i) {
         //density
-				phydro->u(IDN, k, j, i) = nH;
+        phydro->u(IDN, k, j, i) = nH;
         //velocity, x direction
-				phydro->u(IM1, k, j, i) = nH*vx;
+        phydro->u(IM1, k, j, i) = nH*vx;
         //energy
         if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN, k, j, i) = pres/gm1 + 0.5*nH*SQR(vx);
         }
-			}
-		}
-	}
+      }
+    }
+  }
 
-	//intialize chemical species
+  //intialize chemical species
   if (NSCALARS > 0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
@@ -103,7 +104,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
             Real x1 = pcoord->x1v(i);
             //gaussian initial H abundance in [0, 1), and no H in [1, 2]
             if (x1 <= 1) {
-              pscalars->s(0, k, j, i) = exp( -SQR(x1-gaussian_mean)/(2.*SQR(gaussian_std)) )*nH; //H
+              pscalars->s(0, k, j, i) = exp( -SQR(x1-gaussian_mean)
+                                               /(2.*SQR(gaussian_std)) )*nH; //H
               pscalars->s(1, k, j, i) = 0.5*(nH - pscalars->s(0, k, j, i)); //H2
             } else {
               pscalars->s(0, k, j, i) = 0; //H
@@ -166,18 +168,18 @@ int RefinementCondition(MeshBlock *pmb) {
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem", "compute_error", false)) return;
 
-	//read input parameters
-	const Real nH = pin->GetReal("problem", "nH"); //density
-	const Real vx = pin->GetOrAddReal("problem", "vx", 0); //velocity x
-	const Real gaussian_mean = pin->GetOrAddReal("problem", "gaussian_mean", 0.5);
-	const Real gaussian_std = pin->GetOrAddReal("problem", "gaussian_std", 0.1);
-	//chemistry parameters
-	const Real unit_density_in_nH = pin->GetReal("chemistry", "unit_density_in_nH");
-	const Real unit_length_in_cm = pin->GetReal("chemistry", "unit_length_in_cm");
-	const Real unit_vel_in_cms = pin->GetReal("chemistry", "unit_vel_in_cms");
+  //read input parameters
+  const Real nH = pin->GetReal("problem", "nH"); //density
+  const Real vx = pin->GetOrAddReal("problem", "vx", 0); //velocity x
+  const Real gaussian_mean = pin->GetOrAddReal("problem", "gaussian_mean", 0.5);
+  const Real gaussian_std = pin->GetOrAddReal("problem", "gaussian_std", 0.1);
+  //chemistry parameters
+  const Real unit_density_in_nH = pin->GetReal("chemistry", "unit_density_in_nH");
+  const Real unit_length_in_cm = pin->GetReal("chemistry", "unit_length_in_cm");
+  const Real unit_vel_in_cms = pin->GetReal("chemistry", "unit_vel_in_cms");
   const Real unit_time_in_s = unit_length_in_cm/unit_vel_in_cms;
   const Real unit_ED_in_cgs = 1.67e-24 * 1.4 * unit_vel_in_cms * unit_vel_in_cms;
-	const Real xi_cr = pin->GetOrAddReal("chemistry", "xi_cr", 2e-16);
+  const Real xi_cr = pin->GetOrAddReal("chemistry", "xi_cr", 2e-16);
   const Real kcr = xi_cr * 3.;
   const Real kgr = 3e-17;
   const Real a1 = kcr + 2.*nH*kgr*unit_density_in_nH;
@@ -189,7 +191,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   const Real CvHI = Thermo::CvCold(0., 0.1, 0.);
   const Real T0 =  (ED0 * unit_ED_in_cgs)  / CvHI;
   const Real tdust = 2 * CvHI / (3.2e-34 * nH * unit_density_in_nH);
-  
+
   //end of the simulation time
   const Real tchem = time*unit_time_in_s;
   const Real mu = gaussian_mean + vx*time;

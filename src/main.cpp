@@ -42,8 +42,8 @@
 #include "outputs/io_wrapper.hpp"
 #include "outputs/outputs.hpp"
 #include "parameter_input.hpp"
-#include "utils/utils.hpp"
 #include "task_list/radiation_task_list.hpp"
+#include "utils/utils.hpp"
 
 // MPI/OpenMP headers
 #ifdef MPI_PARALLEL

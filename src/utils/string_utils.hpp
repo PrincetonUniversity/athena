@@ -1,5 +1,5 @@
-#ifndef STRING_UTILS_HPP
-#define STRING_UTILS_HPP
+#ifndef UTILS_STRING_UTILS_HPP_
+#define UTILS_STRING_UTILS_HPP_
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -9,11 +9,12 @@
 //  \brief prototypes of string utility functions
 //======================================================================================
 
-#include "../athena.hpp"
-
 // C++ headers
 #include <string>     // c_str()
 #include <vector>     // vector container
+
+//athena++ header
+#include "../athena.hpp"
 
 namespace StringUtils {
   //function to split a string into a vector
@@ -22,4 +23,4 @@ namespace StringUtils {
   void trim(std::string &s);
 }
 
-#endif //STRING_UTILS_HPP
+#endif //UTILS_STRING_UTILS_HPP_

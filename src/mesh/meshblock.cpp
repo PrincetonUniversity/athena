@@ -33,13 +33,13 @@
 #include "../hydro/hydro.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
 #include "../utils/buffer_utils.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
-#include "../radiation/radiation.hpp"
 
 //----------------------------------------------------------------------------------------
 //! MeshBlock constructor: constructs coordinate, boundary condition, hydro, field

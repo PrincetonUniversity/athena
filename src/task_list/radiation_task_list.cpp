@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -25,8 +25,8 @@
 
 // Athena++ classes headers
 #include "../athena.hpp"
-#include "../mesh/mesh.hpp"
 #include "../defs.hpp"
+#include "../mesh/mesh.hpp"
 #include "../radiation/integrators/rad_integrators.hpp"
 #include "../radiation/radiation.hpp"
 #include "radiation_task_list.hpp"
@@ -34,11 +34,10 @@
 
 //--------------------------------------------------------------------------------------
 //  RadiationIntegratorTaskList constructor
-RadiationIntegratorTaskList::RadiationIntegratorTaskList(ParameterInput *pin, Mesh *pm)
-{
+RadiationIntegratorTaskList::RadiationIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
   integrator = RADIATION_INTEGRATOR;
   // Now assemble list of tasks for each step of chemistry integrator
-  {using namespace RadiationIntegratorTaskNames;
+  {using namespace RadiationIntegratorTaskNames; // NOLINT (build/namespace)
     if (integrator == "loc_jeans") {
       AddTask(INT_LOC_JEANS,NONE);
     } else if (integrator == "const") {
@@ -47,7 +46,7 @@ RadiationIntegratorTaskList::RadiationIntegratorTaskList(ParameterInput *pin, Me
     } else {
       std::stringstream msg;
       msg << "### FATAL ERROR in RadiationIntegratorTaskList constructor" << std::endl
-        << "integrator=" << integrator << " not valid radiation integrator, " 
+        << "integrator=" << integrator << " not valid radiation integrator, "
         << std::endl << "choose from {jeans, const}" << std::endl;
       ATHENA_ERROR(msg);
     }
@@ -57,13 +56,12 @@ RadiationIntegratorTaskList::RadiationIntegratorTaskList(ParameterInput *pin, Me
 //--------------------------------------------------------------------------------------
 //! \fn
 //  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.  
-void RadiationIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep)
-{
+//  value of ntask.
+void RadiationIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
 
-  using namespace RadiationIntegratorTaskNames;
+  using namespace RadiationIntegratorTaskNames; // NOLINT (build/namespace)
   if (id == INT_LOC_JEANS) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -82,13 +80,12 @@ void RadiationIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep)
   return;
 }
 void RadiationIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
-  //TODO: sixray boundary e.g. 
+  //TODO(Munan Gong): sixray boundary e.g.
   //for fft gravity: pmb->pgrav->gbvar.StartReceiving(BoundaryCommSubset::all);
   return;
 }
 
-TaskStatus RadiationIntegratorTaskList::LocalIntegratorJeans(MeshBlock *pmb, int stage)
-{
+TaskStatus RadiationIntegratorTaskList::LocalIntegratorJeans(MeshBlock *pmb, int stage) {
 #ifdef INCLUDE_CHEMISTRY
   pmb->prad->pradintegrator->UpdateRadiation(0);
   pmb->prad->pradintegrator->CopyToOutput();
@@ -96,8 +93,7 @@ TaskStatus RadiationIntegratorTaskList::LocalIntegratorJeans(MeshBlock *pmb, int
   return TaskStatus::success;
 }
 
-TaskStatus RadiationIntegratorTaskList::ConstRadiation(MeshBlock *pmb, int stage)
-{
+TaskStatus RadiationIntegratorTaskList::ConstRadiation(MeshBlock *pmb, int stage) {
 #ifdef INCLUDE_CHEMISTRY
   pmb->prad->pradintegrator->CopyToOutput();
 #endif

@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -20,15 +20,16 @@
 // this class header
 #include "../../kida.hpp"
 
-//athena++ header
-#include "../../network.hpp"
-#include "../../../utils/chemistry_utils.hpp"
-#include "../../../utils/thermo.hpp"
-#include "../../../../defs.hpp"
-
 //c++ header
 #include <iostream>   // endl
 #include <sstream>    // stringstream
+
+//athena++ header
+#include "../../../../defs.hpp"
+#include "../../../utils/chemistry_utils.hpp"
+#include "../../../utils/thermo.hpp"
+#include "../../network.hpp"
+
 
 static bool check_index = true;
 Real CII_rec_rate(const Real temp);
@@ -46,10 +47,10 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
     //isohermal EOS
     T = temperature_;
   }
-	//cap T above some minimum temperature
-	if (T < temp_min_rates_) {
-		T = temp_min_rates_;
-	} 
+  //cap T above some minimum temperature
+  if (T < temp_min_rates_) {
+    T = temp_min_rates_;
+  }
 
   //2body reactions
   const int ns_2body = 1;

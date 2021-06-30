@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -16,12 +16,20 @@
 //! \file kida_reaction.cpp
 //  \brief implementation of functions in class KidaReaction
 //======================================================================================
+
+//this class header
 #include "kida_reaction.hpp"
-#include "../../utils/string_utils.hpp"
+
+//c header
+#include <stdio.h> //sscanf()
+
+//c++ header
 #include <iostream>   // endl
 #include <stdexcept>  // std::runtime_error()
 #include <string>
-#include <stdio.h> //sscanf()
+
+//athena++ header
+#include "../../utils/string_utils.hpp"
 
 KidaReaction::KidaReaction(std::string line) {
   const int nfields = 13;
@@ -33,9 +41,9 @@ KidaReaction::KidaReaction(std::string line) {
   std::vector<std::string> fields = StringUtils::split(line.substr(91, 85), ' ');
 
   if ( fields.size() != nfields ) {
-    std::stringstream msg; 
+    std::stringstream msg;
     msg << "### FATAL ERROR in KidaReaction constructor [KidaReaction]" << std::endl
-      << "number of fields (" << fields.size() << ")does not match " 
+      << "number of fields (" << fields.size() << ")does not match "
       << nfields << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
@@ -49,22 +57,21 @@ KidaReaction::KidaReaction(std::string line) {
   formula_ = std::stoi(fields[9]);
   id_ = std::stoi(fields[10]);
   r = std::stoi(fields[12]);
-  
+
   //Temperature range warning
   //if ( (Tmin_ > 0.) || (Tmax_ < 9998.) ) {
   //  std::cout << "### WARNING KidaReaction constructor [KidaReaction]" << std::endl
-  //    << "Temperature range (" << Tmin_ << "," << Tmax_ << ") for reaction (ID="  
+  //    << "Temperature range (" << Tmin_ << "," << Tmax_ << ") for reaction (ID="
   //    << id_ << "). Extrapolation or temperature cap will be used" << std::endl;
   //}
 
   //recommendation error
   if (r == 0) {
-    std::stringstream msg; 
+    std::stringstream msg;
     msg << "### FATAL ERROR in KidaReaction constructor [KidaReaction]" << std::endl
       << "reaction (ID=" << id_ << ") not recommended (r=0)." << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-
 }
 
 void KidaReaction::Print() const {

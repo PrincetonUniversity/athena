@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -17,17 +17,16 @@
 //  \brief implementation of radiation integrators: constant radiation
 //======================================================================================
 
-
-// Athena++ headers
-#include "../radiation.hpp"
-#include "../../parameter_input.hpp"
-#include "../../mesh/mesh.hpp"
-
-// Class header
+// this class header
 #include "rad_integrators.hpp"
 
-RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin)
-{
+// Athena++ headers
+#include "../../mesh/mesh.hpp"
+#include "../../parameter_input.hpp"
+#include "../radiation.hpp"
+
+
+RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) {
   pmy_mb = prad->pmy_block;
   pmy_rad = prad;
 }
@@ -45,7 +44,7 @@ void RadIntegrator::CopyToOutput() {
     for (int j=js-NGHOST; j<=je+NGHOST; ++j) {
       for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
         for (int ifreq=0; ifreq < pmy_rad->nfreq; ++ifreq) {
-          pmy_rad->ir_avg(ifreq, k, j, i) = 
+          pmy_rad->ir_avg(ifreq, k, j, i) =
             pmy_rad->ir(k, j, i, ifreq * pmy_rad->nang);
         }
       }
@@ -54,5 +53,5 @@ void RadIntegrator::CopyToOutput() {
   return;
 }
 
-void RadIntegrator::UpdateRadiation(int direction){}
+void RadIntegrator::UpdateRadiation(int direction) {}
 

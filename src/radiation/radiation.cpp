@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -18,39 +18,38 @@
 //======================================================================================
 
 //C++ headers
-#include <string>
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
+#include <string>
 
 // Athena++ headers
-#include "radiation.hpp"
 #include "../mesh/mesh.hpp"
 #include "integrators/rad_integrators.hpp"
+#include "radiation.hpp"
 
-Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin)
-{
+Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   // read in the parameters
   integrator = RADIATION_INTEGRATOR;
   pmy_block = pmb;
   //number of frequency bands
-	nfreq = pin->GetOrAddInteger("radiation","n_frequency",1);
-  
-	if (integrator == "six_ray") {
-		nang = 6;
-	} else if (integrator == "loc_jeans" or integrator == "const") {
-		nang = 1;
-	} else {
+  nfreq = pin->GetOrAddInteger("radiation","n_frequency",1);
+
+  if (integrator == "six_ray") {
+    nang = 6;
+  } else if (integrator == "loc_jeans" || integrator == "const") {
+    nang = 1;
+  } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in Radiation constructor" << std::endl
         << "integrator=" << integrator << " not valid radiation integrator, " << std::endl
         << "choose from {jeans, six_ray, const}" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
-  
+
   n_fre_ang = nang * nfreq;
-  
-  
+
+
   // allocate arrays
   int ncells1 = pmy_block->ncells1;
   int ncells2 = 1, ncells3 = 1;

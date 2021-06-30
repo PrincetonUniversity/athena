@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -18,22 +18,24 @@
 //  for the ODE solver, CVODE.
 //======================================================================================
 
-//c++ header
-#include <stdio.h> //c style io
-#include <string>
-#include <stdexcept> //throw exceptions
-#include <ctime> //time
-
-// Athena++ classes headers
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../scalars/scalars.hpp"
-#include "../eos/eos.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-
 // this class header
 #include "ode_wrapper.hpp"
+
+//c header
+#include <stdio.h> //c style io
+
+//c++ header
+#include <ctime> //time
+#include <stdexcept> //throw exceptions
+#include <string>
+
+// Athena++ classes headers
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "../scalars/scalars.hpp"
 
 ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   int flag;
@@ -48,7 +50,7 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   abstol_.NewAthenaArray(dim_);
   //allocate y_
   y_ = N_VNew_Serial(dim_);
-  CheckFlag((void *)y_, "N_VNew_Serial", 0);
+  CheckFlag(static_cast<void *>(y_), "N_VNew_Serial", 0);
   ydata_ = NV_DATA_S(y_);
   reltol_ = pin->GetOrAddReal("chemistry", "reltol", 1.0e-2);
   output_zone_sec_ = pin->GetOrAddInteger("chemistry", "output_zone_sec", 0);
@@ -89,7 +91,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   //user input Jacobian flag
   int user_jac = pin->GetOrAddInteger("chemistry", "user_jac", 0);
   //maximum number of steps
-  long int maxsteps = pin->GetOrAddInteger("chemistry", "maxsteps", 1000);
+  int64_t maxsteps = pin->GetOrAddInteger("chemistry", "maxsteps", 1000);
   //maximum order
   int maxorder = pin->GetOrAddInteger("chemistry", "maxorder", 3);
   //maximum number of error test fails
@@ -101,16 +103,16 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
 
   // -----------Initialize absolute value vector----------
   N_Vector abstol_vec = N_VNew_Serial(dim_);
-  CheckFlag((void *)abstol_vec, "N_VNew_Serial", 0);
+  CheckFlag(static_cast<void *>(abstol_vec), "N_VNew_Serial", 0);
   for (int i=0; i<dim_; i++) {
     NV_Ith_S(abstol_vec, i) = abstol_(i);
   }
 
   //-------------initialize CVODE------------------
-  // Call CVodeCreate to create the solver memory and specify the 
+  // Call CVodeCreate to create the solver memory and specify the
   // Backward Differentiation Formula and the use of a Newton iteration
   cvode_mem_ = CVodeCreate(CV_BDF);
-  CheckFlag((void *)cvode_mem_, "CVodeCreate", 0);
+  CheckFlag(static_cast<void *>(cvode_mem_), "CVodeCreate", 0);
 
   // Set the user data pointer to NetworkWrapper
   flag = CVodeSetUserData(cvode_mem_, &(pmy_spec_->chemnet));
@@ -119,22 +121,22 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   // Call CVodeInit to initialize the integrator memory and specify the
   // user's right hand side function in y'=f(t,y), the inital time T0, and
   // the initial dependent variable vector y.
-  flag = CVodeInit(cvode_mem_,  pmy_spec_->chemnet.WrapRHS, 
+  flag = CVodeInit(cvode_mem_,  pmy_spec_->chemnet.WrapRHS,
                    pmy_block_->pmy_mesh->time, y_);
   CheckFlag(&flag, "CVodeInit", 1);
 
   // Call CVodeSVtolerances to specify the scalar relative tolerance
-  // and vector absolute tolerances 
+  // and vector absolute tolerances
   flag = CVodeSVtolerances(cvode_mem_, reltol_, abstol_vec);
   CheckFlag(&flag, "CVodeSVtolerances", 1);
 
-  // Create dense SUNMatrix for use in linear solves 
+  // Create dense SUNMatrix for use in linear solves
   dense_matrix_ = SUNDenseMatrix(dim_, dim_);
-  CheckFlag((void *)dense_matrix_, "SUNDenseMatrix", 0);
+  CheckFlag(static_cast<void *>(dense_matrix_), "SUNDenseMatrix", 0);
 
   /* Create dense SUNLinearSolver object for use by CVode */
   dense_ls_ = SUNDenseLinearSolver(y_, dense_matrix_);
-  CheckFlag((void *)dense_ls_, "SUNDenseLinearSolver", 0);
+  CheckFlag(static_cast<void *>(dense_ls_), "SUNDenseLinearSolver", 0);
 
   /* Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode */
   flag = CVDlsSetLinearSolver(cvode_mem_, dense_ls_, dense_matrix_);
@@ -166,14 +168,14 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   CheckFlag(&flag, "CVodeSetStabLimDet", 1);
 
   // Set the Jacobian routine to Jac (user-supplied)
-	if (user_jac) {
-		flag = CVodeSetJacFn(cvode_mem_, pmy_spec_->chemnet.WrapJacobian);
-		CheckFlag(&flag, "CVDlsSetDenseJacFn", 1);
-	}
+  if (user_jac) {
+    flag = CVodeSetJacFn(cvode_mem_, pmy_spec_->chemnet.WrapJacobian);
+    CheckFlag(&flag, "CVDlsSetDenseJacFn", 1);
+  }
 
   //Free abstol_ vector
   N_VDestroy_Serial(abstol_vec);
-  
+
   return;
 }
 
@@ -205,13 +207,13 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
       //copy s to r_copy
       for (int ispec=0; ispec<NSCALARS; ispec++) {
         for (int i=is; i<=ie; ++i) {
-          pmy_spec_->r_copy(i, ispec) = pmy_spec_->s(ispec,k,j,i)/u(IDN,k,j,i); 
+          pmy_spec_->r_copy(i, ispec) = pmy_spec_->s(ispec,k,j,i)/u(IDN,k,j,i);
         }
       }
       //assign internal energy, if not isothermal eos
       if (NON_BAROTROPIC_EOS) {
         for (int i=is; i<=ie; ++i) {
-          pmy_spec_->r_copy(i, NSCALARS) = u(IEN,k,j,i) 
+          pmy_spec_->r_copy(i, NSCALARS) = u(IEN,k,j,i)
             - 0.5*( SQR(u(IM1,k,j,i)) + SQR(u(IM2,k,j,i)) + SQR(u(IM3,k,j,i))
                    )/u(IDN,k,j,i);
           if (MAGNETIC_FIELDS_ENABLED) {
@@ -227,11 +229,10 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
         pmy_spec_->chemnet.InitializeNextStep(k, j, i);
         //step 2: re-initialize CVODE with starting time t, and vector y
         //allocate r_copy(i, *) to y_.
-        //TODO: make sure Real and realtype are the same.
+        //TODO(Munan Gong): make sure Real and realtype are the same.
         flag = CVodeReInit(cvode_mem_, tinit, y_);
         CheckFlag(&flag, "CVodeReInit", 1);
         //set initial step
-        //TODO: make sure h in restart file
         if (ncycle == 0) {
           SetInitStep(h_init_);
         } else {
@@ -257,7 +258,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
           Real& r_copy_i  = pmy_spec_->r_copy(i,ispec);
           //apply floor to passive scalar concentrations
           r_copy_i = (r_copy_i < scalar_floor) ?  scalar_floor : r_copy_i;
-					pmy_spec_->s(ispec,k,j,i) = r_copy_i*u(IDN,k,j,i);
+          pmy_spec_->s(ispec,k,j,i) = r_copy_i*u(IDN,k,j,i);
         }
       }
 
@@ -279,7 +280,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   if (output_zone_sec_) {
     elapsed_secs = Real(end - begin) / CLOCKS_PER_SEC;
     printf("chemistry ODE integration: ");
-    printf("ncycle = %d, total time in sec = %.2e, zone/sec=%.2e\n", 
+    printf("ncycle = %d, total time in sec = %.2e, zone/sec=%.2e\n",
         ncycle, elapsed_secs, Real(nzones)/elapsed_secs);
   }
   return;
@@ -295,70 +296,61 @@ void ODEWrapper::SolveEq() {
   return;
 }
 
-void ODEWrapper::CheckFlag(const void *flagvalue, const char *funcname, 
+void ODEWrapper::CheckFlag(const void *flagvalue, const char *funcname,
                const int opt) const {
-   int *errflag;
+  const int *errflag;
 
-   // Check if SUNDIALS function returned NULL pointer - no memory allocated 
-   if (opt == 0 && flagvalue == NULL) {
-     fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
-         funcname);
-     throw std::runtime_error("SUNDIALS:Sundials error.");
-     return; 
-   }
-
-   // Check if flag < 0 
-   else if (opt == 1) {
-     errflag = (int *) flagvalue;
-     if (*errflag < 0) {
-       fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n",
-           funcname, *errflag);
-       throw std::runtime_error("SUNDIALS:Sundials error.");
-       return; 
-     }
-   }
-
-   // Check if function returned NULL pointer - no memory allocated 
-   else if (opt == 2 && flagvalue == NULL) {
-     fprintf(stderr, "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n",
-         funcname);
-     throw std::runtime_error("SUNDIALS:Memory error.");
-     return; 
-   }
-
-   // Check if CV_SUCCESS for integration.
-   else if (opt == 3) {
-     errflag = (int *) flagvalue;
-     if (*errflag != CV_SUCCESS) {
-       fprintf(stderr, "\nCV_SUCCESS error: %s() failed with flag = %d\n\n",
-           funcname, *errflag);
-       throw std::runtime_error("SUNDIALS:CV_SUCCESS error");
-       return; 
-     }
-   }
+  // Check if SUNDIALS function returned NULL pointer - no memory allocated
+  if (opt == 0 && flagvalue == NULL) {
+    fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
+        funcname);
+    throw std::runtime_error("SUNDIALS:Sundials error.");
+    return;
+  } else if (opt == 1) { // Check if flag < 0
+    errflag = static_cast<const int *>(flagvalue);
+    if (*errflag < 0) {
+      fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n",
+          funcname, *errflag);
+      throw std::runtime_error("SUNDIALS:Sundials error.");
+      return;
+    }
+  } else if (opt == 2 && flagvalue == NULL) {
+    // Check if function returned NULL pointer - no memory allocated
+    fprintf(stderr, "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n",
+        funcname);
+    throw std::runtime_error("SUNDIALS:Memory error.");
+    return;
+  } else if (opt == 3) { // Check if CV_SUCCESS for integration.
+    errflag = static_cast<const int *>(flagvalue);
+    if (*errflag != CV_SUCCESS) {
+      fprintf(stderr, "\nCV_SUCCESS error: %s() failed with flag = %d\n\n",
+          funcname, *errflag);
+      throw std::runtime_error("SUNDIALS:CV_SUCCESS error");
+      return;
+    }
+  }
 }
 
 Real ODEWrapper::GetLastStep() const {
   Real hlast;
-	int flag;
+  int flag;
   flag = CVodeGetLastStep(cvode_mem_, &hlast);
   CheckFlag(&flag, "CVodeGetLastStep", 1);
-	return hlast;
+  return hlast;
 }
 
 Real ODEWrapper::GetNextStep() const {
   Real hlast;
-	int flag;
+  int flag;
   flag = CVodeGetCurrentStep(cvode_mem_, &hlast);
   CheckFlag(&flag, "CVodeGetLastStep", 1);
-	return hlast;
+  return hlast;
 }
 
-long int ODEWrapper::GetNsteps() const {
-  long int nst;
+long int ODEWrapper::GetNsteps() const { // NOLINT (runtime/int)
+  long int nst; // NOLINT (runtime/int)
   int flag;
   flag = CVodeGetNumSteps(cvode_mem_, &nst);
   CheckFlag(&flag, "CVodeGetNumSteps", 1);
   return nst;
-
 }

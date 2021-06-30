@@ -1,5 +1,5 @@
-#ifndef RADIATION_HPP
-#define RADIATION_HPP
+#ifndef RADIATION_RADIATION_HPP_
+#define RADIATION_RADIATION_HPP_
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -9,16 +9,19 @@
 //  \brief definitions for Radiation class
 //======================================================================================
 
-// Athena++ classes headers
-#include "../defs.hpp"
+//c++ header
+#include <string>
+
+//Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../defs.hpp"
 #include "../parameter_input.hpp"
 
 class RadIntegrator;
 
 class Radiation {
-public:
+ public:
   Radiation(MeshBlock *pmb, ParameterInput *pin);
 
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Fluid
@@ -27,9 +30,9 @@ public:
 
   AthenaArray<Real> ir; // radiation specific intensity
   // average radiation intensity over all angles, for output
-  AthenaArray<Real> ir_avg; 
+  AthenaArray<Real> ir_avg;
 
   int nang, nfreq, n_fre_ang; // n_fre_ang=nang*nfreq
 };
 
-#endif // RADIATION_HPP
+#endif // RADIATION_RADIATION_HPP_

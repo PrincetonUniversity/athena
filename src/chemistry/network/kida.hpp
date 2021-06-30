@@ -1,5 +1,5 @@
-#ifndef KIDA_HPP
-#define KIDA_HPP
+#ifndef CHEMISTRY_NETWORK_KIDA_HPP_
+#define CHEMISTRY_NETWORK_KIDA_HPP_
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -10,16 +10,16 @@
 //  and H2 distruction by CR. This has an analytic solution.
 //======================================================================================
 //c++ headers
+#include <map>    //map
 #include <string> //std::string
 #include <vector> // vector container
-#include <map>    //map
 
 // Athena++ classes headers
-#include "network.hpp"
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../utils/kida_species.hpp"
 #include "../utils/kida_reaction.hpp"
+#include "../utils/kida_species.hpp"
+#include "network.hpp"
 
 //reaction types
 enum class ReactionType {none, cr, crp, photo, twobody, twobodytr,
@@ -30,20 +30,20 @@ enum class ReactionType {none, cr, crp, photo, twobody, twobodytr,
 //  Note: This is a template for chemistry network.
 //  When implementing a new chemistry network, all public functions should be
 //  in the same form.
-//  The internal calculations are in cgs units. The input and 
+//  The internal calculations are in cgs units. The input and
 //  return of RHS and Edot must be in code units.
 class ChemNetwork : public NetworkWrapper {
   //It would be convenient to know the species names in
   //initialization of chemical species in problem
-  friend class MeshBlock; 
-public:
+  friend class MeshBlock;
+ public:
   ChemNetwork(MeshBlock *pmb, ParameterInput *pin);
   ~ChemNetwork();
 
-	//a list of species name, used in output
-	std::string species_names[NSCALARS];
+  //a list of species name, used in output
+  std::string species_names[NSCALARS];
 
-	//Set the rates of chemical reactions, eg. through density and radiation field.
+  //Set the rates of chemical reactions, eg. through density and radiation field.
   //k, j, i are the corresponding index of the grid
   void InitializeNextStep(const int k, const int j, const int i);
 
@@ -52,7 +52,7 @@ public:
   //all input/output variables are in code units
   void RHS(const Real t, const Real y[NSCALARS], const Real ED,
            Real ydot[NSCALARS]);
-  
+
   //energy equation dED/dt, all input/output variables are in code units
   //(ED is the energy density)
   Real Edot(const Real t, const Real y[NSCALARS], const Real ED);
@@ -61,9 +61,9 @@ public:
   void Jacobian_isothermal(const Real t, const Real y[NSCALARS],
                            const Real ydot[NSCALARS], AthenaArray<Real> &jac);
 
-private:
+ private:
   PassiveScalars *pmy_spec_;
-	MeshBlock *pmy_mb_;
+  MeshBlock *pmy_mb_;
 
   std::map<std::string, int> ispec_map_;
   std::string network_dir_;
@@ -78,33 +78,33 @@ private:
   const Real xHe_ = 0.1;//Helium abundance
   //whether to cap temperature if the reaction is outside of the temperature range
   //only for 2body reactions. Default is false, which means extrapolation
-  bool is_Tcap_2body_; 
+  bool is_Tcap_2body_;
   //flag for in isothermal EOS only temperature related rates are
   //calculated only once in the beginning
-  bool flag_T_rates_; 
-	Real Z_g_; //gas metallicity relative to solar, default 1.
-	Real Z_d_; //larger dust grain metallicity relative to solar, default 1.
-	Real phi_PAH_; //PAH recombination efficiency, default 0.4
-	Real a_d_; //size of the dust grain in cm, default 1e-5 (0.1 micron)
-	Real rho_d_; //density of grain in cgs, default 2 g/cm3
-	Real m_d_; //mass of the dust grain in g
-	Real x_d_; //relative abundance of all dust
-	Real nH_; //density, updated at InitializeNextStep from hydro variable
+  bool flag_T_rates_;
+  Real Z_g_; //gas metallicity relative to solar, default 1.
+  Real Z_d_; //larger dust grain metallicity relative to solar, default 1.
+  Real phi_PAH_; //PAH recombination efficiency, default 0.4
+  Real a_d_; //size of the dust grain in cm, default 1e-5 (0.1 micron)
+  Real rho_d_; //density of grain in cgs, default 2 g/cm3
+  Real m_d_; //mass of the dust grain in g
+  Real x_d_; //relative abundance of all dust
+  Real nH_; //density, updated at InitializeNextStep from hydro variable
   Real o2pH2_;//ortho to para H2 ratio, default 3:1
   Real Yi_;//Yield for crp desorption, default 1e-3
-  Real temperature_; //temperature of the gas if isothermal 
+  Real temperature_; //temperature of the gas if isothermal
   Real temp_min_rates_; //temperature floor for reaction rates
   Real temp_min_cool_; //temperature minimum for cooling
-  Real temp_dust_thermo_; //dust temperature for dust thermo cooling and desorption 
+  Real temp_dust_thermo_; //dust temperature for dust thermo cooling and desorption
 
-	//units 
-	Real unit_density_in_nH_; //read from input
-	Real unit_length_in_cm_; //read from input
-	Real unit_vel_in_cms_; //read from input
-	Real unit_time_in_s_; //from length and velocity units
+  //units
+  Real unit_density_in_nH_; //read from input
+  Real unit_length_in_cm_; //read from input
+  Real unit_vel_in_cms_; //read from input
+  Real unit_time_in_s_; //from length and velocity units
   Real unit_radiation_in_draine1987_; //FUV radiation unit
   //unit of energy density, in erg cm-3, from density and velocity units
-  Real unit_E_in_cgs_; 
+  Real unit_E_in_cgs_;
 
   //reaction constants
   //special rates index map
@@ -120,7 +120,7 @@ private:
   AthenaArray<Real> kcr_base_;
   AthenaArray<Real> kcr_;
   //index for cr ionization rates for CR heating
-  int icr_H_;  
+  int icr_H_;
   int icr_H2_;
   int icr_He_;
   //cosmic-ray induced photo ionization
@@ -136,12 +136,12 @@ private:
   AthenaArray<int> outph1_;
   AthenaArray<int> outph2_;
   //reactant species name map, for radiation calculation
-  std::map<std::string, int> smap_ph_; 
+  std::map<std::string, int> smap_ph_;
   AthenaArray<Real> kph_base_;
   AthenaArray<Real> kph_avfac_;
   AthenaArray<Real> kph_;
   //index for H2 photodissociation for H2 UV pumping and dissociation heating
-  int iph_H2_; 
+  int iph_H2_;
   //2body reactions
   int n_2body_;
   const int n_in2body_ = 2;
@@ -201,7 +201,7 @@ private:
   AthenaArray<int> outgc_;
   AthenaArray<int> nu_gc_; //nu={0, -1} for rate formula
   //effective rate at 1K: pi a_g^2 s_i sqrt( 8k_B/(pi m_i) )*branch_ratio
-  AthenaArray<Real> r1_gc_; 
+  AthenaArray<Real> r1_gc_;
   AthenaArray<Real> t1_gc_; //tau at 1K: a_g k_B/qi^2
   AthenaArray<Real> kgc_;
 
@@ -209,12 +209,12 @@ private:
   int n_freq_;
   int index_gpe_;
   int index_cr_;
-	AthenaArray<Real> rad_;
+  AthenaArray<Real> rad_;
 
-	//parameters related to CO cooling
-	//these are needed for LVG approximation
-	Real Leff_CO_max_; //maximum effective length in cm for CO cooling
-	Real gradv_; //abosolute value of velocity gradient in cgs, >0
+  //parameters related to CO cooling
+  //these are needed for LVG approximation
+  Real Leff_CO_max_; //maximum effective length in cm for CO cooling
+  Real gradv_; //abosolute value of velocity gradient in cgs, >0
 
   //functions
   void InitializeReactions(); //set up coefficients of reactions
@@ -226,16 +226,15 @@ private:
   void CheckReaction(KidaReaction reaction);
   void PrintProperties() const; //print out reactions and rates, for debug
   void OutputRates(FILE *pf) const;//output reaction rates
-  //calculate Jacobian with numerical differentiation 
+  //calculate Jacobian with numerical differentiation
   void Jacobian_isothermal_numerical(const Real t, const Real y[NSCALARS],
-                                     const Real ydot[NSCALARS], 
+                                     const Real ydot[NSCALARS],
                                      AthenaArray<Real> &jac);
   //output Jacobian
   void OutputJacobian(FILE *pf, const AthenaArray<Real> &jac) const;
   //set gradients of v and nH for CO cooling
-  void SetGrad_v(const int k, const int j, const int i); 
-
+  void SetGrad_v(const int k, const int j, const int i);
 };
 
 
-#endif // KIDA_HPP
+#endif // CHEMISTRY_NETWORK_KIDA_HPP_

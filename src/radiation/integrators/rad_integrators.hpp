@@ -1,5 +1,5 @@
-#ifndef RADINTEGRATORS_HPP
-#define RADINTEGRATORS_HPP
+#ifndef RADIATION_INTEGRATORS_RAD_INTEGRATORS_HPP_
+#define RADIATION_INTEGRATORS_RAD_INTEGRATORS_HPP_
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -12,8 +12,8 @@
 // Athena++ classes headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../radiation.hpp" // radiation
 #include "../../scalars/scalars.hpp"
+#include "../radiation.hpp" // radiation
 
 class MeshBlock;
 class ParameterInput;
@@ -27,10 +27,10 @@ class NeighborBlock;
 class RadIntegrator {
   friend class Radiation;
   friend class BoundaryValues;
-public:
+ public:
   RadIntegrator(Radiation *prad, ParameterInput *pin);
   ~RadIntegrator();
-  
+
   Radiation *pmy_rad;
   MeshBlock *pmy_mb;
 
@@ -40,7 +40,6 @@ public:
 
   //calcuate total column and update radiation
   void UpdateRadiation(int direction);
-
 };
 
-#endif // RADINTEGRATORS_HPP
+#endif // RADIATION_INTEGRATORS_RAD_INTEGRATORS_HPP_

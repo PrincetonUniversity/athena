@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -20,15 +20,16 @@
 // this class header
 #include "../../kida.hpp"
 
-//athena++ header
-#include "../../network.hpp"
-#include "../../../utils/chemistry_utils.hpp"
-#include "../../../utils/thermo.hpp"
-#include "../../../../defs.hpp"
-
 //c++ header
 #include <iostream>   // endl
 #include <sstream>    // stringstream
+
+//athena++ header
+#include "../../../../defs.hpp"
+#include "../../../utils/chemistry_utils.hpp"
+#include "../../../utils/thermo.hpp"
+#include "../../network.hpp"
+
 
 static bool check_index = true;
 Real CII_rec_rate(const Real temp);
@@ -46,29 +47,29 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
     //isohermal EOS
     T = temperature_;
   }
-	//cap T above some minimum temperature
-	if (T < temp_min_rates_) {
-		T = temp_min_rates_;
-	} 
+  //cap T above some minimum temperature
+  if (T < temp_min_rates_) {
+    T = temp_min_rates_;
+  }
   const Real logT = log10(T);
-	const Real logT4 = log10(T/1.0e4);
-	const Real lnTe = log(T * 8.6173e-5);
+  const Real logT4 = log10(T/1.0e4);
+  const Real lnTe = log(T * 8.6173e-5);
   const Real sqrtT = sqrt(T);
   const Real kcr_H_fac = 2.3*y_H2 + 1.5 * y_H; //ratio of total to primary rate
 
-	//cosmic ray reactions
+  //cosmic ray reactions
   const int ns_cr = 2;
   const int indices_cr[ns_cr] = {1, 2};
   //(1) H + CR -> H+ + e-
-  kcr_(id7map_(1)) = kcr_H_fac * rad_(index_cr_); 
+  kcr_(id7map_(1)) = kcr_H_fac * rad_(index_cr_);
   //(2) H2 + CR -> H2+ + e-
-  kcr_(id7map_(2)) = 2. * kcr_H_fac * rad_(index_cr_); 
+  kcr_(id7map_(2)) = 2. * kcr_H_fac * rad_(index_cr_);
 
-	// Grain assisted reactions
+  // Grain assisted reactions
   const int ns_gr = 1;
   const int indices_gr[ns_gr] = {16};
-	//(16) H + H + gr -> H2 + gr , from Draine book chapter 31.2 page 346, Jura 1975
-	kgr_(id7map_(16)) = 3.0e-17 * nH_ * Z_d_ / (a_d_/1e-5);
+  //(16) H + H + gr -> H2 + gr , from Draine book chapter 31.2 page 346, Jura 1975
+  kgr_(id7map_(16)) = 3.0e-17 * nH_ * Z_d_ / (a_d_/1e-5);
 
   //2body reactions
   const int ns_2body = 14;
@@ -76,17 +77,17 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
                                        8, 9, 10, 11, 12,
                                        13, 14, 15, 17};
   //(3) H+ + e- -> H  -- Case B
-	k2body_(id7map_(3)) = 2.753e-14 * pow( 315614.0 / T, 1.5) 
-									 * pow(  1.0 + pow( 115188.0 / T, 0.407) , -2.242 );
+  k2body_(id7map_(3)) = 2.753e-14 * pow( 315614.0 / T, 1.5)
+                   * pow(  1.0 + pow( 115188.0 / T, 0.407) , -2.242 );
   //(4) O + H+ -> H + O+
   //(10) H + O+ -> O + H+
-  k2body_(id7map_(4)) = ( 1.1e-11 * pow(T, 0.517) + 4.0e-10 * pow(T, 6.69e-3) 
+  k2body_(id7map_(4)) = ( 1.1e-11 * pow(T, 0.517) + 4.0e-10 * pow(T, 6.69e-3)
                              ) * exp(-227./T);
-  k2body_(id7map_(10)) = (4.99e-11* pow(T, 0.405) + 7.5e-10 * pow(T, -0.458) 
+  k2body_(id7map_(10)) = (4.99e-11* pow(T, 0.405) + 7.5e-10 * pow(T, -0.458)
                              );
 
   //(5) H2 + H2+ -> H + H3+
-  k2body_(id7map_(5)) = 1.76e-9 * pow(T, 0.042) * exp(- T/46600.); 
+  k2body_(id7map_(5)) = 1.76e-9 * pow(T, 0.042) * exp(- T/46600.);
 
   //(6) C + H3+ -> H2 + CH+       --Vissapragada2016 new rates
   //(7) C + H3+ -> H + CH2+       --Vissapragada2016 new rates
@@ -109,7 +110,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   k2body_(id7map_(6)) = (t1_CHp + pow(T, -1.5) * t2_CHp);
   k2body_(id7map_(7)) = (t1_CH2p + pow(T, -1.5) * t2_CH2p);
   //(8) He+ + e- -> He  -- Case B
-	k2body_(id7map_(8)) = 1e-11*pow(T, -0.5)*(11.19 + 
+  k2body_(id7map_(8)) = 1e-11*pow(T, -0.5)*(11.19 +
                              (-1.676 + (-0.2852 + 0.04433*logT) * logT )* logT);
   //(9) C+ + e- -> C    -- Include RR and DR, Badnell2003, 2006.
   k2body_(id7map_(9)) = CII_rec_rate(T);
@@ -133,29 +134,29 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   const Real temp_coll = 7.0e2;
   if (T > temp_coll) {
     // Density dependent. See Glover+MacLow2007
-  	k9l = 6.67e-12 * sqrt(T) * exp(-(1. + 63590./T)); 
+    k9l = 6.67e-12 * sqrt(T) * exp(-(1. + 63590./T));
     k9h = 3.52e-9 * exp(-43900.0 / T);
-    k10l = 5.996e-30 * pow(T, 4.1881) / pow((1.0 + 6.761e-6 * T), 5.6881)  
+    k10l = 5.996e-30 * pow(T, 4.1881) / pow((1.0 + 6.761e-6 * T), 5.6881)
             * exp(-54657.4 / T);
-    k10h = 1.3e-9 * exp(-53300.0 / T); 
+    k10h = 1.3e-9 * exp(-53300.0 / T);
     ncrH = pow(10, (3.0 - 0.416 * logT4 - 0.327 * logT4*logT4));
     ncrH2 = pow(10, (4.845 - 1.3 * logT4 + 1.62 * logT4*logT4));
-		div_ncr = y_H/ncrH + y_H2/ncrH2;
-		if (div_ncr < small) {
-			ncr = 1./ small;
-		} else {
-			ncr = 1. / div_ncr;
-		}
+    div_ncr = y_H/ncrH + y_H2/ncrH2;
+    if (div_ncr < small) {
+      ncr = 1./ small;
+    } else {
+      ncr = 1. / div_ncr;
+    }
     n2ncr = nH_ / ncr;
-    k2body_(id7map_(13)) = exp( -3.271396786e1 + 
-                      (1.35365560e1 + (- 5.73932875 + (1.56315498 
+    k2body_(id7map_(13)) = exp( -3.271396786e1 +
+                      (1.35365560e1 + (- 5.73932875 + (1.56315498
                     + (- 2.877056e-1 + (3.48255977e-2 + (- 2.63197617e-3
                     + (1.11954395e-4 + (-2.03914985e-6)
                        *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe) *lnTe);
 
-    k2body_(id7map_(14)) = pow(10, log10(k9h) *  n2ncr/(1. + n2ncr) 
+    k2body_(id7map_(14)) = pow(10, log10(k9h) *  n2ncr/(1. + n2ncr)
                          + log10(k9l) / (1. + n2ncr));
-    k2body_(id7map_(15)) = pow(10, log10(k10h) *  n2ncr/(1. + n2ncr) 
+    k2body_(id7map_(15)) = pow(10, log10(k10h) *  n2ncr/(1. + n2ncr)
                          + log10(k10l) / (1. + n2ncr));
   } else {
     k2body_(id7map_(13)) = 0.;
@@ -193,14 +194,14 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   return;
 }
 
-void ChemNetwork::UpdateJacobianSpecial(const Real y[NSCALARS], const Real E, 
+void ChemNetwork::UpdateJacobianSpecial(const Real y[NSCALARS], const Real E,
                                         AthenaArray<Real> &jac) {
   if (!NON_BAROTROPIC_EOS) { //isothermal
     Real T = temperature_;
     //cap T above some minimum temperature
     if (T < temp_min_rates_) {
       T = temp_min_rates_;
-    } 
+    }
     const Real temp_coll = 7.0e2;
     const int i_H2 = ispec_map_["H2"];
     const int i_H = ispec_map_["H"];
@@ -233,11 +234,11 @@ void ChemNetwork::UpdateJacobianSpecial(const Real y[NSCALARS], const Real E,
     if (T > temp_coll) { //collisional dissociation reactions
       std::stringstream msg; //error message
       msg << "### FATAL ERROR in ChemNetwork UpdateJacobianSpecial [ChemNetwork]: "
-        << "T > " << temp_coll 
+        << "T > " << temp_coll
         << ": collisional dissociation terms not implemented yet." << std::endl;
       ATHENA_ERROR(msg);
     }
-    
+
   } else { //non-isothermal, include temperature dependence
     std::stringstream msg; //error message
     msg << "### FATAL ERROR in ChemNetwork UpdateJacobianSpecial [ChemNetwork]: "

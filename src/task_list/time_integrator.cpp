@@ -32,7 +32,7 @@
 #include "../scalars/scalars.hpp"
 #include "task_list.hpp"
 #ifdef INCLUDE_CHEMISTRY
-#include "../chemistry/network/network.hpp" 
+#include "../chemistry/network/network.hpp"
 #endif
 
 //----------------------------------------------------------------------------------------

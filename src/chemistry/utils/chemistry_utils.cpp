@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -15,17 +15,25 @@
 //======================================================================================
 
 //======================================================================================
-//! \file chemistry_utils.cpp 
+//! \file chemistry_utils.cpp
 //  \brief namespace containing chemistry utilities.
 //======================================================================================
+
+//this class header
 #include "chemistry_utils.hpp"
-#include "../../bvals/bvals.hpp"
+
+//c header
 #include <math.h>
-#include <vector>     // vector container
-#include <sstream>    // stringstream
-#include <string>     // c_str()
+
+//c++ header
 #include <iostream>   // endl
+#include <sstream>    // stringstream
 #include <stdexcept>  // std::runtime_error()
+#include <string>     // c_str()
+#include <vector>     // vector container
+
+//athena++ header
+#include "../../bvals/bvals.hpp"
 
 static int get_Tidx(const Real temp);
 static const int NTBL=801;
@@ -570,8 +578,7 @@ static Real temp_tbl[NTBL] = {
          5.90376417e+08,   6.04128050e+08,   6.18200000e+08,
 };
 
-namespace ChemistryUtility
-{
+namespace ChemistryUtility {
   Real get_temp_from_t1(const Real t1) {
     int iter=1,T1idx;
     Real Tmax,Tmin,Tnew;
@@ -593,7 +600,7 @@ namespace ChemistryUtility
     return Tnew;
   }
 
-  Real get_temp(Real pressure, Real dens){
+  Real get_temp(Real pressure, Real dens) {
     Real T1, temp;
 
     T1 = pressure / dens * unitT;
@@ -601,28 +608,28 @@ namespace ChemistryUtility
     return temp;
   }
 
-	int FindStrIndex(const std::string *str_arr, const int len,
-			const std::string name) {
-		std::vector<int> ifind;
-		std::stringstream msg; //error message
-		for (int i=0; i<len; i++) {
-			if (str_arr[i] == name) {
-				ifind.push_back(i);
-			}
-		}
-		if (ifind.size() == 1) {
-			return ifind[0];
-		} else if (ifind.size() == 0) {
-			msg <<  "### FATAL ERROR in ChemNetwork [FindStrIndex]" << std::endl
-				<< name << " not found." << std::endl; 
-			throw std::runtime_error(msg.str().c_str());
-		} else {
-			msg <<  "### FATAL ERROR in ChemNetwork [FindStrIndex]" << std::endl
-				<< name << " found more than once (" << ifind.size() << ")."  << std::endl; 
-			throw std::runtime_error(msg.str().c_str());
-		}
-	}
-  
+  int FindStrIndex(const std::string *str_arr, const int len,
+      const std::string name) {
+    std::vector<int> ifind;
+    std::stringstream msg; //error message
+    for (int i=0; i<len; i++) {
+      if (str_arr[i] == name) {
+        ifind.push_back(i);
+      }
+    }
+    if (ifind.size() == 1) {
+      return ifind[0];
+    } else if (ifind.size() == 0) {
+      msg <<  "### FATAL ERROR in ChemNetwork [FindStrIndex]" << std::endl
+        << name << " not found." << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    } else {
+      msg <<  "### FATAL ERROR in ChemNetwork [FindStrIndex]" << std::endl
+        << name << " found more than once (" << ifind.size() << ")."  << std::endl;
+      throw std::runtime_error(msg.str().c_str());
+    }
+  }
+
   //get opposite direction for face neighbour
   int GetOppositeDirection(const int direction) {
     std::stringstream msg;
@@ -648,10 +655,9 @@ namespace ChemistryUtility
     }
     return opp_direction;
   }
+} // namespace ChemistryUtility
 
-}
-
-static int get_Tidx(const Real temp){
+static int get_Tidx(const Real temp) {
   Real Tidx;
   Real Tmin=10.0,Tmax=1.e9,dT=0.01;
   Real x1, x2;
@@ -662,9 +668,9 @@ static int get_Tidx(const Real temp){
   x1 = log10(temp/Tmin)/dT;
   x2 = NTBL-2;
   if (x1 < x2) {
-    return (int)x1;
+    return static_cast<int>(x1);
   } else {
-    return (int)x2;
+    return static_cast<int>(x2);
   }
 }
 

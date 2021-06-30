@@ -1,5 +1,5 @@
-#ifndef NETWORK_HPP
-#define NETWORK_HPP
+#ifndef CHEMISTRY_NETWORK_NETWORK_HPP_
+#define CHEMISTRY_NETWORK_NETWORK_HPP_
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -9,17 +9,16 @@
 //  \brief definitions for chemical  network.
 //======================================================================================
 
-// Athena++ classes headers
-#include "../../athena.hpp"
+//CVODE headers.
+#include <nvector/nvector_serial.h> // N_Vector type
+#include <sundials/sundials_types.h> // realtype type
+#include <sunmatrix/sunmatrix_dense.h> // access to dense SUNMatrix
 
 //c++ headers
 #include <string>
 
-//CVODE headers. 
-#include <sundials/sundials_types.h> // realtype type
-#include <nvector/nvector_serial.h> // N_Vector type
-#include <sunmatrix/sunmatrix_dense.h> // access to dense SUNMatrix
-
+// Athena++ classes headers
+#include "../../athena.hpp"
 
 class PassiveScalars;
 class ParameterInput;
@@ -28,12 +27,12 @@ class NetworkWrapper;
 //! \class NetworkWrapper
 //  \brief Wrapper of the chemical network class.
 class NetworkWrapper {
-public:
+ public:
   NetworkWrapper();
   virtual ~NetworkWrapper();
 
   static int WrapJacobian(const realtype t,
-                          const N_Vector y, const N_Vector fy, 
+                          const N_Vector y, const N_Vector fy,
                           SUNMatrix jac, void *user_data,
                           N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
   static int WrapRHS(const realtype t, const N_Vector y,
@@ -44,13 +43,13 @@ public:
   //the dimension is NSCALSRS+1, because the last equation is energy equation
   //(Edot).
   virtual void Jacobian(const Real t,
-                        const Real y[NSCALARS+1], const Real ydot[NSCALARS+1], 
+                        const Real y[NSCALARS+1], const Real ydot[NSCALARS+1],
                         AthenaArray<Real> &jac);
 
   //Jacobian for isothermal EOS. The dimentions are NSCALARS because the lack
   //of energy equation
   virtual void Jacobian_isothermal(const Real t, const Real y[NSCALARS],
-                                   const Real ydot[NSCALARS], 
+                                   const Real ydot[NSCALARS],
                                    AthenaArray<Real> &jac);
 
   //------------All functions below has to be overloaded------------
@@ -65,14 +64,14 @@ public:
   // input: k, j, i: index of the cell in the MeshBlock.
   virtual void InitializeNextStep(const int k, const int j, const int i) = 0;
   // right hand side of ode.
-  // input: 
+  // input:
   //   t: time in code unites
   //   y: chemical abundances. These are dimensionless concentrations: the
   //   variable r in PassiveScalar class.
   //   E: internal energy
   // output:
   //   ydot: time-derivative of abundance y.
-  virtual void RHS(const Real t, const Real y[NSCALARS], const Real E, 
+  virtual void RHS(const Real t, const Real y[NSCALARS], const Real E,
                    Real ydot[NSCALARS]) = 0;
   // Energy equation. Currently solved with chemistry as coupled ODE.
   // input:
@@ -83,4 +82,4 @@ public:
   virtual Real Edot(const Real t, const Real y[NSCALARS], const Real E) = 0;
 };
 
-#endif // NETWORK_HPP
+#endif // CHEMISTRY_NETWORK_NETWORK_HPP_

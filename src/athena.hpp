@@ -169,7 +169,7 @@ enum class BoundaryCommSubset {mesh_init, gr_amr, all, orbital};
 // TODO(felker): consider generalizing/renaming to QuantityFormulation
 // TODO(Gong): currently disabled=background (with passive scalar advection),
 // and fixed is without passive scalar advection.
-enum class FluidFormulation {evolve, background, fixed, disabled}; 
+enum class FluidFormulation {evolve, background, fixed, disabled};
 enum class TaskType {op_split_before, main_int, op_split_after};
 enum class UserHistoryOperation {sum, max, min};
 

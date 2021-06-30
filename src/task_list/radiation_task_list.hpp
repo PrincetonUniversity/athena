@@ -13,6 +13,7 @@
 
 // C++ headers
 #include <cstdint>      // std::uint64_t
+#include <string>
 
 // Athena++ headers
 #include "../athena.hpp"

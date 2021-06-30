@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -17,30 +17,32 @@
 //  \brief problem generator, initalize mesh by read in vtk files.
 //======================================================================================
 
-// C++ headers
-#include <string>     // c_str()
-#include <iostream>   // endl
-#include <vector>     // vector container
-#include <sstream>    // stringstream
+// C headers
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
 #include <stdio.h>    // c style file
 #include <string.h>   // strcmp()
+
+// C++ headers
 #include <algorithm>  // std::find()
+#include <iostream>   // endl
+#include <sstream>    // stringstream
 #include <stdexcept>  // std::runtime_error()
+#include <string>     // c_str()
+#include <vector>     // vector container
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../field/field.hpp"
-#include "../eos/eos.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
 #include "../globals.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "../utils/string_utils.hpp" //split() and trim()
-#ifdef MPI_PARALLEL
-#include <mpi.h>
-#endif
 
 //function to read data field from vtk file
 static void readvtk(MeshBlock *mb, std::string filename, std::string field,
@@ -53,8 +55,7 @@ static void ath_bswap(void *vdat, int len, int cnt);
 //  \brief initialize problem by reading in vtk file.
 //======================================================================================
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //dimensions of meshblock
   const int Nx = ie - is + 1;
   const int Ny = je - js + 1;
@@ -70,14 +71,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   AthenaArray<Real> b; //needed for PrimitiveToConserved()
   if (isjoinedvtk != 0) {
 #ifdef DEBUG
-    printf("Joined vtk file. data size = (%d, %d, %d)\n", 
+    printf("Joined vtk file. data size = (%d, %d, %d)\n",
            Nz_mesh, Ny_mesh, Nx_mesh);
 #endif
     data.NewAthenaArray(Nz_mesh, Ny_mesh, Nx_mesh);
     b.NewAthenaArray(Nz_mesh, Ny_mesh, Nx_mesh);
   } else {
 #ifdef DEBUG
-    printf("Unjoined vtk file. data size = (%d, %d, %d)\n", 
+    printf("Unjoined vtk file. data size = (%d, %d, %d)\n",
            Nz, Ny, Nx);
 #endif
     data.NewAthenaArray(Nz, Ny, Nx);
@@ -85,8 +86,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
   std::stringstream msg; //error message
   std::string vtkfile; //corresponding vtk file for this meshblock
-	//gamma-1 for hydro eos
-	const Real gm1 = peos->GetGamma() - 1.0;
+  //gamma-1 for hydro eos
+  const Real gm1 = peos->GetGamma() - 1.0;
   //initial abundance
   const Real s_init = pin->GetOrAddReal("problem", "s_init", 1e-10);
   const Real sH2_init = pin->GetOrAddReal("problem", "sH2_init", 1e-10);
@@ -97,7 +98,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   std::string str_vectors = pin->GetString("problem", "vectors");
   std::vector<std::string> scaler_fields = StringUtils::split(str_scalers, ',');
   std::vector<std::string> vector_fields = StringUtils::split(str_vectors, ',');
-  
+
   if (isjoinedvtk != 0) {
     //for joined vtk file, read with processor 0, and broadcast
     int gis = loc.lx1 * Nx;
@@ -257,7 +258,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       vtkfile = vtkfile0;
     } else {
       //find the corespoinding athena4.2 global id
-      long int id_old = loc.lx1 + loc.lx2 * pmy_mesh->nrbx1 
+      int64_t id_old = loc.lx1 + loc.lx2 * pmy_mesh->nrbx1
         + loc.lx3 * pmy_mesh->nrbx1 * pmy_mesh->nrbx2;
       //get vtk file name .../id#/problem-id#.????.vtk
       std::stringstream id_str_stream;
@@ -383,7 +384,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   double dx_vtk, dy_vtk, dz_vtk; //spacings of vtk file
   int cell_dat_vtk; //total number of cells in vtk file
   //total number of cells in MeshBlock
-  const int cell_dat_mb = Nx_mb * Ny_mb * Nz_mb; 
+  const int cell_dat_mb = Nx_mb * Ny_mb * Nz_mb;
   int retval, nread; //file handler return value
   float fdat, fvec[3], ften[9];//store float format scaler, vector, and tensor
 
@@ -403,7 +404,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   if (line != athena_header && line != athena_header3) {
     fclose(fp);
     msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
-      << "Assuming Athena4.2 header " << athena_header << ", get header " 
+      << "Assuming Athena4.2 header " << athena_header << ", get header "
       << line << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
@@ -444,8 +445,8 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     throw std::runtime_error(msg.str().c_str());
   }
 
-  //I'm assuming from this point on that the header is in good shape 
-  
+  //I'm assuming from this point on that the header is in good shape
+
   //read dimensions
   fgets(cline,256,fp);
   if (SHOW_OUTPUT) {
@@ -460,8 +461,8 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   if (Nx_vtk != Nx_mb || Ny_vtk != Ny_mb || Nz_vtk != Nz_mb) {
     fclose(fp);
     msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
-      << "Dimensions of VTK file" << filename 
-      << " is (" << Nx_vtk << ", " << Ny_vtk << ", " << Nz_vtk 
+      << "Dimensions of VTK file" << filename
+      << " is (" << Nx_vtk << ", " << Ny_vtk << ", " << Nz_vtk
       << "), does not match the dimensions of meshblock ("
       << Nx_mb << ", " << Ny_mb << ", " << Nz_mb << ")." << std::endl;
     throw std::runtime_error(msg.str().c_str());
@@ -490,7 +491,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   if (cell_dat_vtk != cell_dat_mb) {
     fclose(fp);
     msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
-      << "Cell data in vtk file " << filename 
+      << "Cell data in vtk file " << filename
       << " is " << cell_dat_vtk << ", does not match the cell data of meshblock "
       << cell_dat_mb << std::endl;
     throw std::runtime_error(msg.str().c_str());
@@ -520,7 +521,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
       if (strcmp(t_type, "LOOKUP_TABLE") != 0 || strcmp(t_format, "default") != 0 ) {
         fclose(fp);
         msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
-          << "Expected \"LOOKUP_TABLE default, found " 
+          << "Expected \"LOOKUP_TABLE default, found "
           << t_type << " " << t_format << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
@@ -532,7 +533,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     //determine variable type and read data
     //read scalers
     if (strcmp(type, "SCALARS") == 0) {
-      if (strcmp(variable, field.c_str()) == 0) {      
+      if (strcmp(variable, field.c_str()) == 0) {
         printf("  Reading %s...\n", variable);
         for (int k=0; k<Nz_vtk; k++) {
           for (int j=0; j<Ny_vtk; j++) {
@@ -552,11 +553,11 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
         return;
       } else {
         if (SHOW_OUTPUT) printf("  Skipping %s...\n",variable);
-        fseek(fp, cell_dat_vtk*sizeof(float), SEEK_CUR);        
+        fseek(fp, cell_dat_vtk*sizeof(float), SEEK_CUR);
       }
     //read vectors
     } else if (strcmp(type, "VECTORS") == 0) {
-      if (strcmp(variable, field.c_str()) == 0) {      
+      if (strcmp(variable, field.c_str()) == 0) {
         printf("  Reading %s%d...\n", variable, component);
         for (int k=0; k<Nz_vtk; k++) {
           for (int j=0; j<Ny_vtk; j++) {
@@ -576,18 +577,18 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
         return;
       } else {
         if (SHOW_OUTPUT) printf("  Skipping %s...\n", variable);
-        fseek(fp, 3*cell_dat_vtk*sizeof(float), SEEK_CUR);        
+        fseek(fp, 3*cell_dat_vtk*sizeof(float), SEEK_CUR);
       }
     //read tensors, not supported yet
     } else if (strcmp(type, "TENSORS") == 0) {
-      if (strcmp(variable, field.c_str()) == 0) {      
+      if (strcmp(variable, field.c_str()) == 0) {
         fclose(fp);
         msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
           << "TENSORS reading not supported." << std::endl;
         throw std::runtime_error(msg.str().c_str());
       } else {
         if (SHOW_OUTPUT) printf("  Skipping %s...\n", variable);
-        fseek(fp, 9*cell_dat_vtk*sizeof(float), SEEK_CUR);        
+        fseek(fp, 9*cell_dat_vtk*sizeof(float), SEEK_CUR);
       }
     } else {
         fclose(fp);
@@ -596,33 +597,31 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
         throw std::runtime_error(msg.str().c_str());
     }
   }
-
 }
- 
+
 //======================================================================================
 //! \fn static void ath_bswap(void *vdat, int len, int cnt)
 
 //  \brief Swap bytes, code stolen from Athena4.2, NEMO
 //======================================================================================
-static void ath_bswap(void *vdat, int len, int cnt)
-{
-  char tmp, *dat = (char *) vdat;
+static void ath_bswap(void *vdat, int len, int cnt) {
+  char tmp, *dat = static_cast<char *>(vdat);
   int k;
- 
-  if (len==1)
+
+  if (len==1) {
     return;
-  else if (len==2)
+  } else if (len==2) {
     while (cnt--) {
       tmp = dat[0];  dat[0] = dat[1];  dat[1] = tmp;
       dat += 2;
     }
-  else if (len==4)
+  } else if (len==4) {
     while (cnt--) {
       tmp = dat[0];  dat[0] = dat[3];  dat[3] = tmp;
       tmp = dat[1];  dat[1] = dat[2];  dat[2] = tmp;
       dat += 4;
     }
-  else if (len==8)
+  } else if (len==8) {
     while (cnt--) {
       tmp = dat[0];  dat[0] = dat[7];  dat[7] = tmp;
       tmp = dat[1];  dat[1] = dat[6];  dat[6] = tmp;
@@ -630,7 +629,7 @@ static void ath_bswap(void *vdat, int len, int cnt)
       tmp = dat[3];  dat[3] = dat[4];  dat[4] = tmp;
       dat += 8;
     }
-  else {  /* the general SLOOOOOOOOOW case */
+  } else {  /* the general SLOOOOOOOOOW case */
     for(k=0; k<len/2; k++) {
       tmp = dat[k];
       dat[k] = dat[len-1-k];

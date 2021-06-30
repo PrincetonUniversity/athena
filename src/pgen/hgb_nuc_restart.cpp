@@ -55,8 +55,8 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../utils/utils.hpp" // ran2()
 #include "../scalars/scalars.hpp" //added scalars
+#include "../utils/utils.hpp" // ran2()
 
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"
@@ -72,7 +72,7 @@ namespace {
 Real HistoryBxBy(MeshBlock *pmb, int iout);
 Real HistorydVxVy(MeshBlock *pmb, int iout);
 Real HistorydBy(MeshBlock *pmb, int iout);
-// void ScalarSource(MeshBlock *pmb, const Real time, const Real dt, 
+// void ScalarSource(MeshBlock *pmb, const Real time, const Real dt,
 //               const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
 //               AthenaArray<Real> &cons);
 Real Lx, Ly, Lz; // root grid size, global to share with output functions
@@ -310,8 +310,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 void MeshBlock::UserWorkInLoop() {
   if ((pmy_mesh->time >= tscal)&&(pmy_mesh->time < tscal+(pmy_mesh->dt))) {
-//    printf("ACTIVATING SCALARS from %.2e, %.2e, %.2e, %.2e, %.2e, \n", layer_bound1, layer_bound3,
-//      s_0_layer1, s_0_layer2, s_0_bkgd);
+//    printf("ACTIVATING SCALARS from %.2e, %.2e, %.2e, %.2e, %.2e, \n",
+//    layer_bound1, layer_bound3, s_0_layer1, s_0_layer2, s_0_bkgd);
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
@@ -320,11 +320,12 @@ void MeshBlock::UserWorkInLoop() {
         // initialize scalars
           pscalars->s(0, k, j, i) = s_0_bkgd*u_d;
           pscalars->s(1, k, j, i) = s_1_bkgd*u_d;
-          if ((x1 < layer_bound2*pmy_mesh->mesh_size.x1max) && (x1 > layer_bound1*pmy_mesh->mesh_size.x1max)){
+          if ((x1 < layer_bound2*pmy_mesh->mesh_size.x1max)
+               && (x1 > layer_bound1*pmy_mesh->mesh_size.x1max)) {
             pscalars->s(0, k, j, i) = s_0_layer1*u_d;
             pscalars->s(1, k, j, i) = s_1_layer1*u_d;
-          }
-          else if ((x1 < layer_bound3*pmy_mesh->mesh_size.x1max) && (x1 > layer_bound2*pmy_mesh->mesh_size.x1max)){
+          } else if ((x1 < layer_bound3*pmy_mesh->mesh_size.x1max)
+                    && (x1 > layer_bound2*pmy_mesh->mesh_size.x1max)) {
               pscalars->s(0, k, j, i) = s_0_layer2*u_d;
               pscalars->s(1, k, j, i) = s_1_layer2*u_d;
           }
@@ -335,11 +336,13 @@ void MeshBlock::UserWorkInLoop() {
   return;
 }
 
-// void ScalarSource(MeshBlock *pmb, const Real time, const Real dt,const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
+// void ScalarSource(MeshBlock *pmb, const Real time, const Real dt,
+// const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
 //               AthenaArray<Real> &cons)
 // {
 //   if (time > tscal && time < tscal + dt) {
-//     int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
+//     int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je,
+//     ks = pmb->ks, ke = pmb->ke;
 //     for (int k=ks; k<=ke; k++) {
 //       for (int j=js; j<=je; j++) {
 //         for (int i=is; i<=ie; i++) {
@@ -348,12 +351,12 @@ void MeshBlock::UserWorkInLoop() {
 //           static const std::string species_names[2] = {"C12","Mg24"};
 //           pmb->pscalars->s(0, k, j, i) = s_0_bkgd*u_d;
 //           pmb->pscalars->s(1, k, j, i) = s_1_bkgd*u_d;
-//           if ((x1 < layer_bound2*pmb->pmy_mesh->mesh_size.x1max) && 
+//           if ((x1 < layer_bound2*pmb->pmy_mesh->mesh_size.x1max) &&
 //             (x1 > layer_bound1*pmb->pmy_mesh->mesh_size.x1max)){
 //             pmb->pscalars->s(0, k, j, i) = s_0_layer1*u_d;
 //             pmb->pscalars->s(1, k, j, i) = s_1_layer1*u_d;
 //           }
-//           else if ((x1 < layer_bound3*pmb->pmy_mesh->mesh_size.x1max) && 
+//           else if ((x1 < layer_bound3*pmb->pmy_mesh->mesh_size.x1max) &&
 //             (x1 > layer_bound2*pmb->pmy_mesh->mesh_size.x1max)){
 //               pmb->pscalars->s(0, k, j, i) = s_0_layer2*u_d;
 //               pmb->pscalars->s(1, k, j, i) = s_1_layer2*u_d;

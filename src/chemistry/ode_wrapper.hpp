@@ -1,5 +1,5 @@
-#ifndef ODE_WRAPPER_HPP
-#define ODE_WRAPPER_HPP
+#ifndef CHEMISTRY_ODE_WRAPPER_HPP_
+#define CHEMISTRY_ODE_WRAPPER_HPP_
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -9,18 +9,22 @@
 //  \brief definitions for ode solver classes.
 //======================================================================================
 
-// Athena++ classes headers
-#include "../athena.hpp"
-#include "../athena_arrays.hpp"
-#include "network/network.hpp" 
+// C headers
 //CVODE headers
-#include <sundials/sundials_types.h> /* realtype type*/
-#include <sundials/sundials_dense.h>
-#include <nvector/nvector_serial.h> /* N_Vector type*/
 #include <cvode/cvode.h>            /* CVODE solver fcts., consts. */
 #include <cvode/cvode_direct.h>       /* prototype for CVDense */
-#include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix            */
+#include <nvector/nvector_serial.h> /* N_Vector type*/
+#include <sundials/sundials_dense.h>
+#include <sundials/sundials_types.h> /* realtype type*/
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver      */
+#include <sunmatrix/sunmatrix_dense.h> /* access to dense SUNMatrix            */
+
+// C++ headers
+
+// Athena++ headers
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
+#include "network/network.hpp"
 
 class ParameterInput;
 class PassiveScalars;
@@ -28,7 +32,7 @@ class PassiveScalars;
 //! \class ODEWrapper
 //  \brief Wrapper for ODE solver, CVODE
 class ODEWrapper {
-public:
+ public:
   ODEWrapper(MeshBlock *pmb, ParameterInput *pin);
   ~ODEWrapper();
   //Initialize CVODE
@@ -45,7 +49,7 @@ public:
   //
   // Step 3: Integration. Update the array of PassiveScalars abundance in that
   // cell over time dt.
-  // 
+  //
   // Note that this will be not vectorizable(?).
   void Integrate(const Real tinit, const Real dt);
 
@@ -58,9 +62,9 @@ public:
   //Get the next step size
   Real GetNextStep() const;
   //Get the number of steps between two reinits.
-  long int GetNsteps() const;
+  long int GetNsteps() const; // NOLINT (runtime/int)
 
-private:
+ private:
   PassiveScalars *pmy_spec_;
   MeshBlock *pmy_block_;
   int dim_; //dimenstion
@@ -76,9 +80,9 @@ private:
   int output_zone_sec_;
 
   //CVODE checkflag
-  void CheckFlag(const void *flagvalue, const char *funcname, 
+  void CheckFlag(const void *flagvalue, const char *funcname,
                  const int opt) const;
 };
 
 
-#endif // ODE_WRAPPER_HPP
+#endif // CHEMISTRY_ODE_WRAPPER_HPP_

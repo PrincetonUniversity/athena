@@ -275,7 +275,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       }
       for (int n=0; n<NSCALARS; n++) {
 #ifdef INCLUDE_CHEMISTRY
-        std::fprintf(pfile,"[%d]=%s    ", iout++, psclr->chemnet.species_names[n].c_str());
+        std::fprintf(pfile,"[%d]=%s    ", iout++,
+                     psclr->chemnet.species_names[n].c_str());
 #else
         std::fprintf(pfile,"[%d]=%d-scalar    ", iout++, n);
 #endif //INCLUDE_CHEMISTRY
