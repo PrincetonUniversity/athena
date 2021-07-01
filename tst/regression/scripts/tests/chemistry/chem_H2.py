@@ -1,15 +1,15 @@
-#regression test for time dependent H2 chemistry
+# regression test for time dependent H2 chemistry
 
 # Modules
+import os
+import athena_read                             # utilities for reading Athena++ data
 import logging
 import numpy as np                             # standard Python module for numerics
 import sys                                     # standard Python module to change path
 import scripts.utils.athena as athena          # utilities for running Athena++
-import scripts.utils.comparison as comparison  # more utilities explicitly for testing
 sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
-import athena_read                             # utilities for reading Athena++ data
-import os
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
+
 
 def prepare(**kwargs):
     try:
@@ -21,22 +21,24 @@ def prepare(**kwargs):
         cxx = 'g++'
     athena.configure(
         prob='chem_uniform',
-        chemistry='H2', 
-        cxx = cxx,
-        eos = 'isothermal', 
+        chemistry='H2',
+        cxx=cxx,
+        eos='isothermal',
         cvode_path=os.environ['CVODE_PATH']
         )
     athena.make()
 
+
 def run(**kwargs):
-    arguments = [ 
+    arguments = [
             'chemistry/output_zone_sec=0',
             ]
     athena.run('chemistry/athinput.chem_H2', arguments)
 
+
 def analyze():
     def get_H(t_code, unit_length_in_cm=3.086e+18, unit_vel_in_cms=1.0e5,
-             f_H_0=1., n=100., xi_cr=2.0e-16, k_gr=3.0e-17):
+              f_H_0=1., n=100., xi_cr=2.0e-16, k_gr=3.0e-17):
         """theoretical abundance of atomic hydrogen over time.
         input:
             t_code: time in code units, float or array
@@ -47,7 +49,7 @@ def analyze():
             n: density in cm-3, default 100
             xi_cr: primary cosmic-ray ionization rate in s-1H-1, default 2.0e-16
             k_gr: grain surface recombination rate of H2, default 3.0e-17.
-        output: 
+        output:
             H abundance, float or array, between 0. and 1."""
         k_cr = xi_cr * 3.
         a1 = k_cr + 2.*n*k_gr
@@ -55,20 +57,19 @@ def analyze():
         t = t_code * (unit_length_in_cm / unit_vel_in_cms)
         f_H = (f_H_0 - a2/a1)*np.exp(-t*a1) + a2/a1
         return f_H
-    
-    #maximum error allowed
+
+    # maximum error allowed
     err_control = 2.0e-5
-    #athena++ output
+    # athena++ output
     fn_hst = "bin/chem_H2.hst"
     data_hst = athena_read.hst(fn_hst)
-    #theoretical abundances
-    t_code = np.linspace(0, 50, 1000)
+    # theoretical abundances
     f_H = get_H(data_hst["time"], n=100.)
 
     diff = f_H - data_hst["H"]/data_hst["mass"]
     err_max = abs(diff/f_H).max()
     print("err_max={:.2e}".format(err_max))
-    
+
     if err_max < err_control:
         return True
     else:

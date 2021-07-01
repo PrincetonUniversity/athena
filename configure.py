@@ -194,27 +194,27 @@ parser.add_argument('--fftw_path',
 
 # --chemistry argument
 parser.add_argument('--chemistry',
-    default=None,
-    choices=["gow17", "H2", "kida", "C12Mg24"],
-    help='select chemical network')
+                    default=None,
+                    choices=["gow17", "H2", "kida", "C12Mg24"],
+                    help='select chemical network')
 
 # --kida_rates argument
 parser.add_argument('--kida_rates',
-    default=None,
-    choices=["gow17", "nitrogen", "nitrogen_gas_Sipila"],
-    help='select special rates for kida network')
+                    default=None,
+                    choices=["gow17", "nitrogen", "nitrogen_gas_Sipila"],
+                    help='select special rates for kida network')
 
 # -radiation argument
 parser.add_argument('--radiation',
-    default=None,
-    choices=["const"],
-    help='enable and select radiation radiative transfer method')
+                    default=None,
+                    choices=["const"],
+                    help='enable and select radiation radiative transfer method')
 
 # --cvode_path argument
 parser.add_argument('--cvode_path',
-    type=str,
-    default='',
-    help='path to CVODE libraries')
+                    type=str,
+                    default='',
+                    help='path to CVODE libraries')
 
 # -hdf5 argument
 parser.add_argument('-hdf5',
@@ -495,12 +495,13 @@ if args['cxx'] == 'icpx':
     definitions['COMPILER_CHOICE'] = 'icpx'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpx'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
-    # ICX drivers icx and icpx will accept ICC Classic Compiler options or Clang*/LLVM Compiler options
+    # ICX drivers icx and icpx will accept ICC Classic Compiler options or
+    # Clang*/LLVM Compiler options
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -ipo -xhost -qopenmp-simd '
     )
-    # Currently unsupported, but "options to be supported" according to icpx -qnextgen-diag
-    # '-inline-forceinline -qopt-prefetch=4 '
+    # Currently unsupported, but "options to be supported" according to
+    # icpx -qnextgen-diag '-inline-forceinline -qopt-prefetch=4 '
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'icpc':
@@ -600,10 +601,10 @@ if args['chemistry'] is not None:
     definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/' \
                                         + args['chemistry'] + '.hpp'
     makefile_options['CHEMNET_FILE'] = 'src/chemistry/network/' \
-                                        + args['chemistry'] + '.cpp'
+        + args['chemistry'] + '.cpp'
     makefile_options['CHEMISTRY_FILE'] = 'src/chemistry/*.cpp src/chemistry/utils/*.cpp'
     makefile_options['LIBRARY_FLAGS'] += ' -lsundials_cvode -lsundials_nvecserial'
-    #specify the number of species for each network
+    # specify the number of species for each network
     if args['chemistry'] == "gow17":
         definitions['NUMBER_PASSIVE_SCALARS'] = '12'
     elif args['chemistry'] == "H2":
@@ -618,8 +619,12 @@ else:
 
 if args['kida_rates'] is not None:
     if args['chemistry'] == "kida":
-        makefile_options['CHEMNET_FILE'] += (' src/chemistry/network/kida_network_files/'
-           +args['kida_rates']+'/kida_'+args['kida_rates']+'.cpp')
+        makefile_options['CHEMNET_FILE'] += (
+            ' src/chemistry/network/kida_network_files/'
+            + args['kida_rates']
+            + '/kida_'
+            + args['kida_rates']
+            + '.cpp')
 
 # --cvode_path=[path] argument
 if args['cvode_path'] != '':
@@ -628,7 +633,7 @@ if args['cvode_path'] != '':
     makefile_options['LINKER_FLAGS'] += " -Wl,-rpath," + '%s/lib' % args['cvode_path']
 
 # -radiation argument
-if args['radiation'] != None:
+if args['radiation'] is not None:
     definitions['RADIATION_ENABLED'] = '1'
     makefile_options['RADIATION_FILE'] = args['radiation']+'.cpp'
     definitions['RADIATION_INTEGRATOR'] = args['radiation']
@@ -733,7 +738,8 @@ if args['omp']:
         # preprocessor. Must install LLVM's OpenMP runtime library libomp beforehand
         makefile_options['COMPILER_FLAGS'] += ' -Xpreprocessor -fopenmp'
         makefile_options['LIBRARY_FLAGS'] += ' -lomp'
-    if args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi' or args['cxx'] == 'icpx':
+    if (args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
+            or args['cxx'] == 'icpc-phi' or args['cxx'] == 'icpx'):
         makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -homp'
@@ -746,7 +752,8 @@ else:
     definitions['OPENMP_OPTION'] = 'NOT_OPENMP_PARALLEL'
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
-    if args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi' or args['cxx'] == 'icpx':
+    if (args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
+            or args['cxx'] == 'icpc-phi' or args['cxx'] == 'icpx'):
         # suppressed messages:
         #   3180: pragma omp not recognized
         makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
@@ -876,12 +883,12 @@ print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:               ' + self_grav_string)
 print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
-print('  Chemistry:                  ' + (args['chemistry'] if  args['chemistry'] \
-        !=  None else 'OFF'))
-print('  kida_rates:                 ' + (args['kida_rates'] if args['kida_rates'] \
-        !=  None else 'OFF'))
-print('  Radiation:                  ' + (args['radiation'] if  args['radiation'] \
-        !=  None else 'OFF'))
+print('  Chemistry:                  ' + (args['chemistry'] if args['chemistry']
+                                          is not None else 'OFF'))
+print('  kida_rates:                 ' + (args['kida_rates'] if args['kida_rates']
+                                          is not None else 'OFF'))
+print('  Radiation:                  ' + (args['radiation'] if args['radiation']
+                                          is not None else 'OFF'))
 print('  cvode_path:                 ' + args['cvode_path'])
 print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF'))
