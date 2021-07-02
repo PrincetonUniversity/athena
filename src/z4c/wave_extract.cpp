@@ -35,7 +35,7 @@ WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n):
   rad = pin->GetOrAddReal("z4c", rad_parname, 10.0);
   rad_id = n;
   ofname = pin->GetString("job", "problem_id") + ".";
-  ofname += pin->GetOrAddString("z4c", "extract_filename", "wave");
+  ofname += pin->GetOrAddString("z4c", "extract_filename", "wave_");
   lmax = pin->GetOrAddInteger("z4c", "lmax", 2);
   psi.NewAthenaArray(lmax-1,2*(lmax)+1,2);
   psi.ZeroClear();
@@ -58,10 +58,10 @@ WaveExtract::WaveExtract(Mesh * pmesh, ParameterInput * pin, int n):
       }
       fprintf(pofile, "# 1:iter 2:time");
       int idx = 3;
-      for (int l = 0; l <= lmax; ++l) {
+      for (int l = 2; l <= lmax; ++l) {
         for (int m = -l; m <= l; ++m) {
-          fprintf(pofile, " %d:l=%d m=%d Re", idx++, l, m);
-          fprintf(pofile, " %d:l=%d m=%d Im", idx++, l, m);
+          fprintf(pofile, " %d:l=%d-m=%d-Re", idx++, l, m);
+          fprintf(pofile, " %d:l=%d-m=%d-Im", idx++, l, m);
         }
       }
       fprintf(pofile, "\n");
