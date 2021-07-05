@@ -60,6 +60,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const Real s_init = pin->GetReal("problem", "s_init");
   const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   const Real pres = nH*SQR(iso_cs);
+  const Real gm1  = peos->GetGamma() - 1.0;
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
@@ -70,7 +71,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IM1, k, j, i) = nH*vx;
         //energy
         if (NON_BAROTROPIC_EOS) {
-          phydro->u(IEN, k, j, i) = pres;
+          phydro->u(IEN, k, j, i) = pres/gm1;
         }
       }
     }
