@@ -716,7 +716,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
           bool shear = false;
           if ((nlevel == loc.level) &&
               ((n == -1 && block_bcs[BoundaryFace::inner_x1]
-                                 == BoundaryFlag::shear_periodic) &&
+                                 == BoundaryFlag::shear_periodic) ||
                (n ==  1 && block_bcs[BoundaryFace::outer_x1]
                                  == BoundaryFlag::shear_periodic))) {
             shear = true; // neighbor is shearing periodic
