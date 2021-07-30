@@ -328,10 +328,8 @@ Real Thermo::CoolingCII(const Real xCII, const Real nHI,
 }
 
 Real Thermo::CoolingLya(const Real xHI, const Real ne, const Real T) {
-  const Real A = 6.3803e-9;
-  const Real beta = 1.17;
   const Real T4 = T / 1.0e4;
-  const Real fac = A * pow(T4, beta);
+  const Real fac = 5.31e-8*pow(T4, 0.15)/(1. + pow(T4/5., 0.65));
   const Real k01e = fac * exp(-11.84/T4);
   const Real q01 = k01e * ne;
   const Real q10 = (g0HI_/g1HI_) * fac * ne;
