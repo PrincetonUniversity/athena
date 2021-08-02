@@ -1,13 +1,12 @@
 #ifndef RADIATION_RADIATION_HPP_
 #define RADIATION_RADIATION_HPP_
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file radiation.hpp
-//  \brief definitions for Radiation class
-//======================================================================================
+//! \brief definitions for Radiation class
 
 //c++ header
 #include <string>
@@ -19,6 +18,9 @@
 #include "../parameter_input.hpp"
 
 class RadIntegrator;
+
+//! \class Radiation
+//! \brief Radiation data and functions
 
 class Radiation {
  public:

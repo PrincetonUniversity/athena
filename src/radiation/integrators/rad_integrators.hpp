@@ -1,13 +1,12 @@
 #ifndef RADIATION_INTEGRATORS_RAD_INTEGRATORS_HPP_
 #define RADIATION_INTEGRATORS_RAD_INTEGRATORS_HPP_
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file rad_integrators.hpp
-//  \brief definitions for RadIntegrator class
-//======================================================================================
+//! \brief definitions for RadIntegrator class
 
 // Athena++ classes headers
 #include "../../athena.hpp"
@@ -21,8 +20,7 @@ class Radiation;
 class NeighborBlock;
 
 //! \class RadIntegrator
-//  \brief integrate algorithm for radiative transfer
-
+//! \brief integrate algorithm for radiative transfer
 
 class RadIntegrator {
   friend class Radiation;
