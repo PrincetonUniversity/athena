@@ -183,8 +183,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     //--- Step 5.  Compute intermediate states
     // eqn (23) explicitly becomes eq (41) of Miyoshi & Kusano
     // TODO(felker): place an assertion that ptstl==ptstr
-    Real clsq = ((pbl + kel) + sqrt(SQR(pbl + kel) - 2.0*kel*bxsq)) / ul.d;
-    Real crsq = ((pbr + ker) + sqrt(SQR(pbr + ker) - 2.0*ker*bxsq)) / ur.d;
+    Real clsq = ((pbl + kel) + std::sqrt(SQR(pbl + kel) - 2.0*kel*bxsq)) / ul.d;
+    Real crsq = ((pbr + ker) + std::sqrt(SQR(pbr + ker) - 2.0*ker*bxsq)) / ur.d;
     Real chi = std::min(1.0, std::sqrt(std::max(clsq, crsq)) / cfmax);
     Real phi = chi * (2.0 - chi);
     Real ptst = (sdrd*ptl - sdld*ptr + phi*sdrd*sdld*(wri[IVX]-wli[IVX]))/(sdrd - sdld);

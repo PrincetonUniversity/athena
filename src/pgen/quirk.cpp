@@ -75,7 +75,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real igm1 = 1.0 / (gm - 1.0);
 
   Real xshock = 0.4;
-  for (ishock = 0; pcoord->x1v(ishock) < xshock; ++ishock);
+  for (ishock = 0; pcoord->x1v(ishock) < xshock; ++ishock) {}
   ishock--;
 
   Real dl =  3.692;
@@ -110,7 +110,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM2,k,j,i) = 0.0;
           phydro->u(IM3,k,j,i) = 0.0;
           phydro->u(IEN,k,j,i) = pd*igm1 + 0.5*dd*SQR(ud);
-        } 
+        }
       }
     }
   }
