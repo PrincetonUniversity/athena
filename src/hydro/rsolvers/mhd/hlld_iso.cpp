@@ -31,6 +31,8 @@ struct Cons1D {
 #define SMALL_NUMBER 1.0e-8
 
 //----------------------------------------------------------------------------------------
+//! \fn void Hydro::RiemannSolver
+//! \brief The HLLD Riemann solver for isothermal MHD
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, const AthenaArray<Real> &bx,

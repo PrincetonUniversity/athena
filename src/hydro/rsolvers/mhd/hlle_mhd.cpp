@@ -19,6 +19,8 @@
 #include "../../hydro.hpp"
 
 //----------------------------------------------------------------------------------------
+//! \fn void Hydro::RiemannSolver
+//! \brief The HLLE Riemann solver for adiabatic magnetohydrodynamics
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, const AthenaArray<Real> &bx,

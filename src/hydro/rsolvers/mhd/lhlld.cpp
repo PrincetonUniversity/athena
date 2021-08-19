@@ -3,12 +3,9 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file hlld.cpp
-//! \brief HLLD Riemann solver for adiabatic MHD.
-//!
-//! REFERENCES:
-//! - T. Miyoshi & K. Kusano, "A multi-state HLL approximate Riemann solver for ideal
-//!   MHD", JCP, 208, 315 (2005)
+//! \file lhlld.cpp
+//! \brief Low-dissipation HLLD (LHLLD) Riemann solver for adiabatic MHD.
+//!        (Minoshima et al. 2021)
 
 // C headers
 
@@ -31,9 +28,10 @@ struct Cons1D {
 
 #define SMALL_NUMBER 1.0e-8
 
+
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::RiemannSolver
-//! \brief The HLLD Riemann solver for adiabatic MHD
+//! \brief The Low-dissipation HLLD (LHLLD) Riemann solver for adiabatic MHD
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, const AthenaArray<Real> &bx,
@@ -51,6 +49,8 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   EquationOfState *peos = pmy_block->peos;
   if (!GENERAL_EOS) igm1 = 1.0 / (peos->GetGamma() - 1.0);
   Real dt = pmy_block->pmy_mesh->dt;
+
+  CalculateVelocityDifferences(k, j, il, iu, ivx, dvn, dvt);
 
 #pragma omp simd simdlen(SIMD_WIDTH) private(wli,wri,spd,flxi)
   for (int i=il; i<=iu; ++i) {
@@ -118,7 +118,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     spd[0] = std::min( wli[IVX]-cfl, wri[IVX]-cfr );
     spd[4] = std::max( wli[IVX]+cfl, wri[IVX]+cfr );
 
-    // Real cfmax = std::max(cfl,cfr);
+    Real cfmax = std::max(cfl,cfr);
     // if (wli[IVX] <= wri[IVX]) {
     //   spd[0] = wli[IVX] - cfmax;
     //   spd[4] = wri[IVX] + cfmax;
@@ -152,18 +152,25 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
     Real sdl = spd[0] - wli[IVX];  // S_i-u_i (i=L or R)
     Real sdr = spd[4] - wri[IVX];
+    Real sdld = sdl*ul.d;
+    Real sdrd = sdr*ur.d;
 
     // S_M: eqn (38) of Miyoshi & Kusano
     // (KGF): group ptl, ptr terms for floating-point associativity symmetry
-    spd[2] = (sdr*ur.mx - sdl*ul.mx + (ptl - ptr))/(sdr*ur.d - sdl*ul.d);
+
+    // shock detector
+    Real th1 = std::min(1.0, (cfmax-std::min(dvn(i),0.0))/(cfmax-std::min(dvt(i),0.0)));
+    Real th = th1 * th1 * th1 * th1;
+
+    spd[2] = (sdr*ur.mx - sdl*ul.mx + th*(ptl - ptr))/(sdrd - sdld);
 
     Real sdml   = spd[0] - spd[2];  // S_i-S_M (i=L or R)
     Real sdmr   = spd[4] - spd[2];
     Real sdml_inv = 1.0/sdml;
     Real sdmr_inv = 1.0/sdmr;
     // eqn (43) of Miyoshi & Kusano
-    ulst.d = ul.d * sdl * sdml_inv;
-    urst.d = ur.d * sdr * sdmr_inv;
+    ulst.d = sdld * sdml_inv;
+    urst.d = sdrd * sdmr_inv;
     Real ulst_d_inv = 1.0/ulst.d;
     Real urst_d_inv = 1.0/urst.d;
     Real sqrtdl = std::sqrt(ulst.d);
@@ -176,15 +183,15 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     //--- Step 5.  Compute intermediate states
     // eqn (23) explicitly becomes eq (41) of Miyoshi & Kusano
     // TODO(felker): place an assertion that ptstl==ptstr
-    Real ptstl = ptl + ul.d*sdl*(spd[2]-wli[IVX]);
-    Real ptstr = ptr + ur.d*sdr*(spd[2]-wri[IVX]);
-    // Real ptstl = ptl + ul.d*sdl*(sdl-sdml); // these equations had issues when averaged
-    // Real ptstr = ptr + ur.d*sdr*(sdr-sdmr);
-    Real ptst = 0.5*(ptstr + ptstl);  // total pressure (star state)
+    Real clsq = ((pbl + kel) + sqrt(SQR(pbl + kel) - 2.0*kel*bxsq)) / ul.d;
+    Real crsq = ((pbr + ker) + sqrt(SQR(pbr + ker) - 2.0*ker*bxsq)) / ur.d;
+    Real chi = std::min(1.0, std::sqrt(std::max(clsq, crsq)) / cfmax);
+    Real phi = chi * (2.0 - chi);
+    Real ptst = (sdrd*ptl - sdld*ptr + phi*sdrd*sdld*(wri[IVX]-wli[IVX]))/(sdrd - sdld);
 
     // ul* - eqn (39) of M&K
     ulst.mx = ulst.d * spd[2];
-    if (std::abs(ul.d*sdl*sdml-bxsq) < (SMALL_NUMBER)*ptst) {
+    if (std::abs(sdld*sdml-bxsq) < (SMALL_NUMBER)*ptst) {
       // Degenerate case
       ulst.my = ulst.d * wli[IVY];
       ulst.mz = ulst.d * wli[IVZ];
@@ -193,12 +200,12 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       ulst.bz = ul.bz;
     } else {
       // eqns (44) and (46) of M&K
-      Real tmp = bxi*(sdl - sdml)/(ul.d*sdl*sdml - bxsq);
+      Real tmp = bxi*(sdl - sdml)/(sdld*sdml - bxsq);
       ulst.my = ulst.d * (wli[IVY] - ul.by*tmp);
       ulst.mz = ulst.d * (wli[IVZ] - ul.bz*tmp);
 
       // eqns (45) and (47) of M&K
-      tmp = (ul.d*SQR(sdl) - bxsq)/(ul.d*sdl*sdml - bxsq);
+      tmp = (sdld*sdl - bxsq)/(sdld*sdml - bxsq);
       ulst.by = ul.by * tmp;
       ulst.bz = ul.bz * tmp;
     }
@@ -212,7 +219,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
     // ur* - eqn (39) of M&K
     urst.mx = urst.d * spd[2];
-    if (std::abs(ur.d*sdr*sdmr - bxsq) < (SMALL_NUMBER)*ptst) {
+    if (std::abs(sdrd*sdmr - bxsq) < (SMALL_NUMBER)*ptst) {
       // Degenerate case
       urst.my = urst.d * wri[IVY];
       urst.mz = urst.d * wri[IVZ];
@@ -221,12 +228,12 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       urst.bz = ur.bz;
     } else {
       // eqns (44) and (46) of M&K
-      Real tmp = bxi*(sdr - sdmr)/(ur.d*sdr*sdmr - bxsq);
+      Real tmp = bxi*(sdr - sdmr)/(sdrd*sdmr - bxsq);
       urst.my = urst.d * (wri[IVY] - ur.by*tmp);
       urst.mz = urst.d * (wri[IVZ] - ur.bz*tmp);
 
       // eqns (45) and (47) of M&K
-      tmp = (ur.d*SQR(sdr) - bxsq)/(ur.d*sdr*sdmr - bxsq);
+      tmp = (sdrd*sdr - bxsq)/(sdrd*sdmr - bxsq);
       urst.by = ur.by * tmp;
       urst.bz = ur.bz * tmp;
     }
@@ -380,3 +387,4 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   }
   return;
 }
+
