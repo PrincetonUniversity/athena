@@ -1,14 +1,13 @@
 #ifndef CHEMISTRY_NETWORK_KIDA_HPP_
 #define CHEMISTRY_NETWORK_KIDA_HPP_
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file H2.hpp
-//  \brief definitions for a very simple chemical network with H2 formation on grains,
-//  and H2 distruction by CR. This has an analytic solution.
-//======================================================================================
+//! \brief definitions for a general chemical network in KIDA format
+
 //c++ headers
 #include <map>    //map
 #include <string> //std::string
@@ -26,12 +25,7 @@ enum class ReactionType {none, cr, crp, photo, twobody, twobodytr,
                          grain_implicit, special, grain_collision};
 
 //! \class ChemNetwork
-//  \brief Chemical Network that defines the reaction rates between species.
-//  Note: This is a template for chemistry network.
-//  When implementing a new chemistry network, all public functions should be
-//  in the same form.
-//  The internal calculations are in cgs units. The input and
-//  return of RHS and Edot must be in code units.
+//! \brief General chemical network in KIDA format
 class ChemNetwork : public NetworkWrapper {
   //It would be convenient to know the species names in
   //initialization of chemical species in problem
@@ -43,21 +37,13 @@ class ChemNetwork : public NetworkWrapper {
   //a list of species name, used in output
   std::string species_names[NSCALARS];
 
-  //Set the rates of chemical reactions, eg. through density and radiation field.
-  //k, j, i are the corresponding index of the grid
   void InitializeNextStep(const int k, const int j, const int i);
 
-  //RHS: right-hand-side of ODE. dy/dt = ydot(t, y). Here y are the abundance
-  //of species. details see CVODE package documentation.
-  //all input/output variables are in code units
   void RHS(const Real t, const Real y[NSCALARS], const Real ED,
            Real ydot[NSCALARS]);
 
-  //energy equation dED/dt, all input/output variables are in code units
-  //(ED is the energy density)
   Real Edot(const Real t, const Real y[NSCALARS], const Real ED);
 
-  //Jacobian for isothermal EOS without the energy equation
   void Jacobian_isothermal(const Real t, const Real y[NSCALARS],
                            const Real ydot[NSCALARS], AthenaArray<Real> &jac);
 
@@ -216,24 +202,21 @@ class ChemNetwork : public NetworkWrapper {
   Real Leff_CO_max_; //maximum effective length in cm for CO cooling
   Real gradv_; //abosolute value of velocity gradient in cgs, >0
 
-  //functions
-  void InitializeReactions(); //set up coefficients of reactions
-  void UpdateRates(const Real y[NSCALARS], const Real E); //reaction rates
-  void UpdateRatesSpecial(const Real y[NSCALARS], const Real E); //formula = 7
-  void UpdateJacobianSpecial(const Real y[NSCALARS], const Real E,
-                             AthenaArray<Real> &jac); //formula = 7
+  //private functions
+  void InitializeReactions();
+  void UpdateRates(const Real y[NSCALARS], const Real E);
   ReactionType SortReaction(KidaReaction* pr) const;
   void CheckReaction(KidaReaction reaction);
-  void PrintProperties() const; //print out reactions and rates, for debug
-  void OutputRates(FILE *pf) const;//output reaction rates
-  //calculate Jacobian with numerical differentiation
+  void PrintProperties() const;
+  void OutputRates(FILE *pf) const;
+  void OutputJacobian(FILE *pf, const AthenaArray<Real> &jac) const;
   void Jacobian_isothermal_numerical(const Real t, const Real y[NSCALARS],
                                      const Real ydot[NSCALARS],
                                      AthenaArray<Real> &jac);
-  //output Jacobian
-  void OutputJacobian(FILE *pf, const AthenaArray<Real> &jac) const;
-  //set gradients of v and nH for CO cooling
   void SetGrad_v(const int k, const int j, const int i);
+  void UpdateRatesSpecial(const Real y[NSCALARS], const Real E);
+  void UpdateJacobianSpecial(const Real y[NSCALARS], const Real E,
+                             AthenaArray<Real> &jac);
 };
 
 

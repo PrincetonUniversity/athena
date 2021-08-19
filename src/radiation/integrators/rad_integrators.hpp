@@ -32,11 +32,8 @@ class RadIntegrator {
   Radiation *pmy_rad;
   MeshBlock *pmy_mb;
 
-  //average radiation field in all directions to output the radiation field
-  //strengths.
   void CopyToOutput();
 
-  //calcuate total column and update radiation
   void UpdateRadiation(int direction);
 };
 

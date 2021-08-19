@@ -14,19 +14,20 @@
 #include "../../parameter_input.hpp"
 #include "../radiation.hpp"
 
+//----------------------------------------------------------------------------------------
 //! constructor, for constant radiation integrator
-
 RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) {
   pmy_mb = prad->pmy_block;
   pmy_rad = prad;
 }
 
+//----------------------------------------------------------------------------------------
+//! destructor
 RadIntegrator::~RadIntegrator() {}
 
 //----------------------------------------------------------------------------------------
 //! \fn void void RadIntegrator::CopyToOutput()
 //! \brief average radiation field over all angles and copy values to output
-
 void RadIntegrator::CopyToOutput() {
   int is = pmy_mb->is;
   int js = pmy_mb->js;
@@ -47,5 +48,8 @@ void RadIntegrator::CopyToOutput() {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void RadIntegrator::UpdateRadiation(int direction) {}
+//! \brief calcuate total column and update radiation
 void RadIntegrator::UpdateRadiation(int direction) {}
 

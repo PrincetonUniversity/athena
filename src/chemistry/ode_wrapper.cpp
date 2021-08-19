@@ -1,22 +1,11 @@
-//======================================================================================
+//=======================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file ode_wrapper.cpp
-//  \brief implementation of functions in class ODEWrapper. This is a wrapper
-//  for the ODE solver, CVODE.
-//======================================================================================
+//! \brief implementation of functions in class ODEWrapper. This is a wrapper
+//! for the ODE solver, CVODE.
 
 // this class header
 #include "ode_wrapper.hpp"
@@ -37,6 +26,8 @@
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
 
+//----------------------------------------------------------------------------------------
+//! \brief ODEWrapper constructor
 ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   int flag;
   pmy_block_ = pmb;
@@ -57,6 +48,8 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   fac_dtmax_ = pin->GetOrAddReal("chemistry", "fac_dtmax", 10.);
 }
 
+//----------------------------------------------------------------------------------------
+//! \brief ODEWrapper destructor
 ODEWrapper::~ODEWrapper() {
   NV_DATA_S(y_) = ydata_;
   //Free y_ vector
@@ -65,6 +58,9 @@ ODEWrapper::~ODEWrapper() {
   CVodeFree(&cvode_mem_);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ODEWrapper::Initialize(ParameterInput *pin)
+//! \brief Initialize ODE solver parameters
 void ODEWrapper::Initialize(ParameterInput *pin) {
   //Note: this cannot be in the constructor, since it needs the PassiveScalars
   //class, and the ODEWrapper class is constructed in the PassiveScalars constructor.
@@ -134,11 +130,11 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   dense_matrix_ = SUNDenseMatrix(dim_, dim_);
   CheckFlag(static_cast<void *>(dense_matrix_), "SUNDenseMatrix", 0);
 
-  /* Create dense SUNLinearSolver object for use by CVode */
+  // Create dense SUNLinearSolver object for use by CVode
   dense_ls_ = SUNDenseLinearSolver(y_, dense_matrix_);
   CheckFlag(static_cast<void *>(dense_ls_), "SUNDenseLinearSolver", 0);
 
-  /* Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode */
+  // Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode
   flag = CVDlsSetLinearSolver(cvode_mem_, dense_ls_, dense_matrix_);
   CheckFlag(&flag, "CVDlsSetLinearSolver", 1);
 
@@ -179,6 +175,24 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ODEWrapper::Integrate(const Real tinit, const Real dt)
+//! \brief Integrate the ODE forward for time dt
+//!
+//! Update abundance in PassiveScalars over time dt.
+//! For each cell:
+//! Step 1: Set the radiation field strength in ChemNetwork.
+//! Depends on the data structure of radiation field, this can be copying
+//! the value from Radiation class to ChemNetwork class, or just pass a pointer.
+//!
+//! Step 2: re-initialize CVODE with starting time t, and starting abundance
+//! y. If x(k, j, i, ispec), we can just pass a pointer to CVODE, otherwise,
+//! we need to copy the abundance of PassiveScalars to an array.
+//!
+//! Step 3: Integration. Update the array of PassiveScalars abundance in that
+//! cell over time dt.
+//!
+//! Note that this will be not vectorizable(?).
 void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   int is = pmy_block_->is;
   int js = pmy_block_->js;
@@ -286,16 +300,19 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ODEWrapper::SetInitStep(const Real h_init)
+//! \brief Set initial stepsize for ODE solver
 void ODEWrapper::SetInitStep(const Real h_init) {
   int flag = CVodeSetInitStep(cvode_mem_, h_init);
   CheckFlag(&flag, "CVodeSetInitStep", 1);
   return;
 }
 
-void ODEWrapper::SolveEq() {
-  return;
-}
-
+//----------------------------------------------------------------------------------------
+//! \fn void ODEWrapper::CheckFlag(const void *flagvalue, const char *funcname,
+//!               const int opt) const
+//! \brief CVODE flag check
 void ODEWrapper::CheckFlag(const void *flagvalue, const char *funcname,
                const int opt) const {
   const int *errflag;
@@ -331,6 +348,9 @@ void ODEWrapper::CheckFlag(const void *flagvalue, const char *funcname,
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real ODEWrapper::GetLastStep() const
+//! \brief Get last stepsize
 Real ODEWrapper::GetLastStep() const {
   Real hlast;
   int flag;
@@ -339,6 +359,9 @@ Real ODEWrapper::GetLastStep() const {
   return hlast;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real ODEWrapper::GetNextStep() const
+//! \brief Get next stepsize
 Real ODEWrapper::GetNextStep() const {
   Real hlast;
   int flag;
@@ -347,6 +370,9 @@ Real ODEWrapper::GetNextStep() const {
   return hlast;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn long int ODEWrapper::GetNsteps() const
+//! \brief Get the number of steps between two reinits
 long int ODEWrapper::GetNsteps() const { // NOLINT (runtime/int)
   long int nst; // NOLINT (runtime/int)
   int flag;

@@ -1,13 +1,12 @@
 #ifndef CHEMISTRY_NETWORK_NETWORK_HPP_
 #define CHEMISTRY_NETWORK_NETWORK_HPP_
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file network.hpp
-//  \brief definitions for chemical  network.
-//======================================================================================
+//! \brief definitions for chemical  network.
 
 //CVODE headers.
 #include <nvector/nvector_serial.h> // N_Vector type
@@ -25,7 +24,7 @@ class ParameterInput;
 class NetworkWrapper;
 
 //! \class NetworkWrapper
-//  \brief Wrapper of the chemical network class.
+//! \brief Wrapper of the chemical network class.
 class NetworkWrapper {
  public:
   NetworkWrapper();

@@ -1,14 +1,12 @@
 #ifndef CHEMISTRY_UTILS_KIDA_REACTION_HPP_
 #define CHEMISTRY_UTILS_KIDA_REACTION_HPP_
-
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
-//! \file thermo.hpp
-//  \brief definitions for heating and cooling processes
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file kida_reaction.hpp
+//! \brief definitions for reactions in kida network format
 
 //c++ header
 #include <sstream>    // stringstream
@@ -18,6 +16,8 @@
 // Athena++ classes headers
 #include "../../athena.hpp"
 
+//! \class KidaReaction
+//! \brief Chemical reactions in kida network format
 class KidaReaction{
   friend class ChemNetwork;
  public:

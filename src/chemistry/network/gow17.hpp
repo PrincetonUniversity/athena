@@ -1,13 +1,12 @@
 #ifndef CHEMISTRY_NETWORK_GOW17_HPP_
 #define CHEMISTRY_NETWORK_GOW17_HPP_
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file gow17.hpp
-//  \brief definitions for chemical network in Gong, Osriker and Wolfire 2016
-//======================================================================================
+//! \brief definitions for chemical network in Gong, Osriker and Wolfire 2017
 
 //c++ headers
 #include <string> //std::string
@@ -18,12 +17,13 @@
 #include "network.hpp"
 
 //! \class ChemNetwork
-//  \brief Chemical Network that defines the reaction rates between species.
-//  Note: This is a template for chemistry network.
-//  When implementing a new chemistry network, all public functions should be
-//  in the same form.
-//  The internal calculations are in cgs units. The input and
-//  return of RHS and Edot must be in code units.
+//! \brief Chemical Network that defines the reaction rates between species.
+//!
+//!  Note: This is a template for chemistry network.
+//!  When implementing a new chemistry network, all public functions should be
+//!  in the same form.
+//!  The internal calculations are in cgs units. The input and
+//!  return of RHS and Edot must be in code units.
 class ChemNetwork : public NetworkWrapper {
   friend class Radiation; //number of frequencies n_freq_
   friend class RadIntegrator; //shielding
@@ -39,18 +39,11 @@ class ChemNetwork : public NetworkWrapper {
   //a list of species name, used in output
   static const std::string species_names[NSCALARS];
 
-  //Set the rates of chemical reactions, eg. through density and radiation field.
-  //k, j, i are the corresponding index of the grid
   void InitializeNextStep(const int k, const int j, const int i);
 
-  //RHS: right-hand-side of ODE. dy/dt = ydot(t, y). Here y are the abundance
-  //of species. details see CVODE package documentation.
-  //all input/output variables are in code units
   void RHS(const Real t, const Real y[NSCALARS], const Real ED,
            Real ydot[NSCALARS]);
 
-  //energy equation dE/dt, all input/output variables are in code units
-  //(ED is the energy density)
   Real Edot(const Real t, const Real y[NSCALARS], const Real ED);
 
  private:
@@ -188,13 +181,12 @@ class ChemNetwork : public NetworkWrapper {
   //a small number to avoid divide by zero.
   static const Real small_;
 
-  //functions
-  void UpdateRates(const Real y[NSCALARS+ngs_], const Real E);
+  //private functions
   void GetGhostSpecies(const Real *y, Real yall[NSCALARS+ngs_]);
   Real CII_rec_rate_(const Real temp);
+  void UpdateRates(const Real y[NSCALARS+ngs_], const Real E);
   void OutputRates(FILE *pf) const;
   Real GetStddev(Real arr[], const int len);
-  //set gradients of v and nH for CO cooling
   void SetGrad_v(const int k, const int j, const int i);
 };
 

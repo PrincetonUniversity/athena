@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file network_wrapper.cpp
-//  \brief implementation of functions in class NetworkWrapper
-//======================================================================================
+//! \brief implementation of functions in class NetworkWrapper
 
 // this class header
 #include "network/network.hpp"
@@ -28,10 +17,19 @@
 //athena++ header
 #include "../defs.hpp"
 
+//----------------------------------------------------------------------------------------
+//! \brief NetworkWrapper constructor
 NetworkWrapper::NetworkWrapper() {}
 
+//----------------------------------------------------------------------------------------
+//! \brief NetworkWrapper destructor
 NetworkWrapper::~NetworkWrapper() {}
 
+//----------------------------------------------------------------------------------------
+//! \fn int NetworkWrapper::WrapJacobian(const realtype t, const N_Vector y,
+//!            const N_Vector ydot, SUNMatrix jac, void *user_data, N_Vector tmp1,
+//!            N_Vector tmp2, N_Vector tmp3)
+//! \brief Wrapper for the Jacobian function in CVODE
 int NetworkWrapper::WrapJacobian(const realtype t,
                           const N_Vector y, const N_Vector ydot,
                           SUNMatrix jac, void *user_data,
@@ -78,6 +76,10 @@ int NetworkWrapper::WrapJacobian(const realtype t,
   return 0;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn int NetworkWrapper::WrapRHS(const realtype t, const N_Vector y,
+//!                                 N_Vector ydot, void *user_data)
+//! \brief Wrapper for the RHS function in CVODE
 int NetworkWrapper::WrapRHS(const realtype t, const N_Vector y,
                      N_Vector ydot, void *user_data) {
   Real t1 = t;
@@ -106,6 +108,12 @@ int NetworkWrapper::WrapRHS(const realtype t, const N_Vector y,
   return 0;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void NetworkWrapper::Jacobian(const Real t,
+//!               const Real y[NSCALARS+1], const Real ydot[NSCALARS+1],
+//!               AthenaArray<Real> &jac)
+//! \brief Default Jacobian
+//TODO (Munan Gong) the default jacobian is not implemented
 void __attribute__((weak)) NetworkWrapper::Jacobian(const Real t,
                const Real y[NSCALARS+1], const Real ydot[NSCALARS+1],
                AthenaArray<Real> &jac) {
@@ -118,6 +126,12 @@ void __attribute__((weak)) NetworkWrapper::Jacobian(const Real t,
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void NetworkWrapper::Jacobian_isothermal(const Real t,
+//!               const Real y[NSCALARS], const Real ydot[NSCALARS],
+//!              AthenaArray<Real> &jac)
+//! \brief Default Jacobian for isothermal EOS
+//TODO (Munan Gong) the default jacobian for isothermal EOS is not implemented
 void __attribute__((weak)) NetworkWrapper::Jacobian_isothermal(const Real t,
                const Real y[NSCALARS], const Real ydot[NSCALARS],
                AthenaArray<Real> &jac) {

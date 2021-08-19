@@ -1,32 +1,31 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
-#include "interp.hpp"
-#include <math.h>
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file interp.cpp
-//  \brief interpolation function implementations
-//======================================================================================
+//! \brief interpolation function implementations
+
+//this class header
+#include "interp.hpp"
+
+//c header
+#include <math.h>
 
 namespace Interpolation {
+  //--------------------------------------------------------------------------------------
+  //! \fn Real LP1D(const int len, const Real *xarr, const Real *data, const Real x)
+  //! \brief ID arrray linear interpolation
   Real LP1D(const int len, const Real *xarr, const Real *data,
       const Real x) {
     const int ix = LinearInterpIndex(len, xarr, x);
     return LP1Di(xarr, data, ix, x);
   }
 
+  //--------------------------------------------------------------------------------------
+  //! \fn Real LP2D(const int lenx, const Real *xarr, const int leny,
+  //!               const Real *yarr, const Real *data, const Real x, const Real y)
+  //! \brief 2D array bi-linear interpolation
   Real LP2D(const int lenx, const Real *xarr,
       const int leny, const Real *yarr,
       const Real *data, const Real x, const Real y) {
@@ -35,11 +34,20 @@ namespace Interpolation {
     return LP2Di(xarr, yarr, lenx, ix, iy, data, x, y);
   }
 
+  //--------------------------------------------------------------------------------------
+  //! \fn Real LP1Di(const Real *xarr, const Real *data, const int ix, const Real x)
+  //! \brief Interpolation with index provided.
+  //!
+  //!  ix, iy: return from LinearInterpIndex
   Real LP1Di(const Real *xarr, const Real *data, const int ix,
       const Real x) {
     return LinearInterp(xarr[ix], xarr[ix+1], data[ix], data[ix+1], x);
   }
 
+  //--------------------------------------------------------------------------------------
+  //! \fn Real LP2Di(const Real *xarr, const Real *yarr, const int lenx,
+  //!          const int ix, const int iy, const Real *data, const Real x, const Real y)
+  //! \brief 2D array bi-linear interpolation with index provided
   Real LP2Di(const Real *xarr, const Real *yarr,
       const int lenx, const int ix, const int iy,
       const Real *data, const Real x, const Real y) {

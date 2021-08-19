@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file radiation_task_list.cpp
-//  \brief derived class for radiation integrator task list.
-//======================================================================================
+//! \brief derived class for radiation integrator task list.
 
 // C/C++ headers
 #include <iostream>   // endl
@@ -33,7 +22,7 @@
 #include "task_list.hpp"
 
 //--------------------------------------------------------------------------------------
-//  RadiationIntegratorTaskList constructor
+//! RadiationIntegratorTaskList constructor
 RadiationIntegratorTaskList::RadiationIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
   integrator = RADIATION_INTEGRATOR;
   // Now assemble list of tasks for each step of chemistry integrator
@@ -54,9 +43,9 @@ RadiationIntegratorTaskList::RadiationIntegratorTaskList(ParameterInput *pin, Me
 }
 
 //--------------------------------------------------------------------------------------
-//! \fn
-//  \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//  value of ntask.
+//! \fn void RadiationIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep)
+//! \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
+//! value of ntask.
 void RadiationIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id=id;
   task_list_[ntasks].dependency=dep;
@@ -79,12 +68,18 @@ void RadiationIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   ntasks++;
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn void RadiationIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage)
+//! \brief Initialize boundary
 void RadiationIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   //TODO(Munan Gong): sixray boundary e.g.
   //for fft gravity: pmb->pgrav->gbvar.StartReceiving(BoundaryCommSubset::all);
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! Local Jeans integrator
 TaskStatus RadiationIntegratorTaskList::LocalIntegratorJeans(MeshBlock *pmb, int stage) {
 #ifdef INCLUDE_CHEMISTRY
   pmb->prad->pradintegrator->UpdateRadiation(0);
@@ -93,6 +88,8 @@ TaskStatus RadiationIntegratorTaskList::LocalIntegratorJeans(MeshBlock *pmb, int
   return TaskStatus::success;
 }
 
+//----------------------------------------------------------------------------------------
+//! Trivial constant integrator
 TaskStatus RadiationIntegratorTaskList::ConstRadiation(MeshBlock *pmb, int stage) {
 #ifdef INCLUDE_CHEMISTRY
   pmb->prad->pradintegrator->CopyToOutput();

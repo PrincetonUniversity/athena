@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file multigrid.cpp
-//  \brief implementation of the functions commonly used in Multigrid
+//! \brief implementation of the functions commonly used in Multigrid
 
 // C headers
 
@@ -27,7 +27,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost)
-//  \brief Multigrid constructor
+//! \brief Multigrid constructor
 
 Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost) :
   pmy_driver_(pmd), pmy_block_(pmb), ngh_(nghost), nvar_(invar), defscale_(1.0) {
@@ -132,7 +132,7 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
 
 //----------------------------------------------------------------------------------------
 //! \fn Multigrid::~Multigrid
-//  \brief Multigrid destroctor
+//! \brief Multigrid destroctor
 
 Multigrid::~Multigrid() {
   delete [] u_;
@@ -144,7 +144,7 @@ Multigrid::~Multigrid() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh)
-//  \brief Fill the inital guess in the active zone of the finest level
+//! \brief Fill the inital guess in the active zone of the finest level
 
 void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh) {
   AthenaArray<Real> &dst=u_[nlevel_-1];
@@ -166,8 +166,8 @@ void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh,
-//                                 Real fac)
-//  \brief Fill the source in the active zone of the finest level
+//!                                Real fac)
+//! \brief Fill the source in the active zone of the finest level
 
 void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac) {
   AthenaArray<Real> &dst=src_[nlevel_-1];
@@ -202,7 +202,7 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::RestrictFMGSource()
-//  \brief restrict the source through all the multigrid levels
+//! \brief restrict the source through all the multigrid levels
 
 void Multigrid::RestrictFMGSource() {
   int is, ie, js, je, ks, ke;
@@ -218,7 +218,7 @@ void Multigrid::RestrictFMGSource() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh)
-//  \brief Set the result, including the ghost zone
+//! \brief Set the result, including the ghost zone
 
 void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh) {
   const AthenaArray<Real> &src=u_[nlevel_-1];
@@ -239,7 +239,7 @@ void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::RetrieveDefect(AthenaArray<Real> &dst, int ns, int ngh)
-//  \brief Set the defect, including the ghost zone
+//! \brief Set the defect, including the ghost zone
 
 void Multigrid::RetrieveDefect(AthenaArray<Real> &dst, int ns, int ngh) {
   const AthenaArray<Real> &src=def_[nlevel_-1];
@@ -260,7 +260,7 @@ void Multigrid::RetrieveDefect(AthenaArray<Real> &dst, int ns, int ngh) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::ZeroClearData()
-//  \brief Clear the data array with zero
+//! \brief Clear the data array with zero
 
 void Multigrid::ZeroClearData() {
   u_[current_level_].ZeroClear();
@@ -270,7 +270,7 @@ void Multigrid::ZeroClearData() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::RestrictBlock()
-//  \brief Restrict the defect to the source
+//! \brief Restrict the defect to the source
 
 void Multigrid::RestrictBlock() {
   int ll=nlevel_-current_level_;
@@ -296,7 +296,7 @@ void Multigrid::RestrictBlock() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::ProlongateAndCorrectBlock()
-//  \brief Prolongate the potential using tri-linear interpolation
+//! \brief Prolongate the potential using tri-linear interpolation
 
 void Multigrid::ProlongateAndCorrectBlock() {
   int ll=nlevel_-1-current_level_;
@@ -320,7 +320,7 @@ void Multigrid::ProlongateAndCorrectBlock() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::FMGProlongateBlock()
-//  \brief Prolongate the potential for Full Multigrid cycle
+//! \brief Prolongate the potential for Full Multigrid cycle
 
 void Multigrid::FMGProlongateBlock() {
   int ll=nlevel_-1-current_level_;
@@ -338,7 +338,7 @@ void Multigrid::FMGProlongateBlock() {
 
 //----------------------------------------------------------------------------------------
 //! \fn  void Multigrid::SmoothBlock(int color)
-//  \brief Apply Smoother on the Block
+//! \brief Apply Smoother on the Block
 
 void Multigrid::SmoothBlock(int color) {
   int ll = nlevel_-1-current_level_;
@@ -354,7 +354,7 @@ void Multigrid::SmoothBlock(int color) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::CalculateDefectBlock()
-//  \brief calculate the residual
+//! \brief calculate the residual
 
 void Multigrid::CalculateDefectBlock() {
   int ll = nlevel_-1-current_level_;
@@ -371,7 +371,7 @@ void Multigrid::CalculateDefectBlock() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::CalculateFASRHSBlock()
-//  \brief calculate the RHS for the Full Approximation Scheme
+//! \brief calculate the RHS for the Full Approximation Scheme
 
 void Multigrid::CalculateFASRHSBlock() {
   int ll = nlevel_-1-current_level_;
@@ -387,7 +387,7 @@ void Multigrid::CalculateFASRHSBlock() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::SetFromRootGrid(bool folddata)
-//  \brief Load the data from the root grid or octets
+//! \brief Load the data from the root grid or octets
 
 void Multigrid::SetFromRootGrid(bool folddata) {
   current_level_=0;
@@ -458,7 +458,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
 
 //----------------------------------------------------------------------------------------
 //! \fn Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n)
-//  \brief calculate the residual norm
+//! \brief calculate the residual norm
 
 Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
   AthenaArray<Real> &def=def_[current_level_];
@@ -502,7 +502,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
 
 //----------------------------------------------------------------------------------------
 //! \fn Real Multigrid::CalculateTotal(MGVariable type, int n)
-//  \brief calculate the sum of the array (type: 0=src, 1=u)
+//! \brief calculate the sum of the array (type: 0=src, 1=u)
 
 Real Multigrid::CalculateTotal(MGVariable type, int n) {
   AthenaArray<Real> &src =
@@ -526,7 +526,7 @@ Real Multigrid::CalculateTotal(MGVariable type, int n) {
 
 //----------------------------------------------------------------------------------------
 //! \fn Real Multigrid::SubtractAverage(MGVariable type, int v, Real ave)
-//  \brief subtract the average value (type: 0=src, 1=u)
+//! \brief subtract the average value (type: 0=src, 1=u)
 
 void Multigrid::SubtractAverage(MGVariable type, int n, Real ave) {
   AthenaArray<Real> &dst = (type == MGVariable::src) ? src_[nlevel_-1] : u_[nlevel_-1];
@@ -546,7 +546,7 @@ void Multigrid::SubtractAverage(MGVariable type, int n, Real ave) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::StoreOldData()
-//  \brief store the old u data in the uold array
+//! \brief store the old u data in the uold array
 
 void Multigrid::StoreOldData() {
   memcpy(uold_[current_level_].data(), u_[current_level_].data(),
@@ -558,7 +558,7 @@ void Multigrid::StoreOldData() {
 
 //----------------------------------------------------------------------------------------
 //! \fn Real Multigrid::GetCoarsestData(MGVariable type, int n)
-//  \brief get the value on the coarsest level in the MG block (type: 0=src, 1=u)
+//! \brief get the value on the coarsest level in the MG block (type: 0=src, 1=u)
 
 Real Multigrid::GetCoarsestData(MGVariable type, int n) {
   AthenaArray<Real> &src = (type == MGVariable::src) ? src_[0] : u_[0];
@@ -568,7 +568,7 @@ Real Multigrid::GetCoarsestData(MGVariable type, int n) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v)
-//  \brief set a value to a cell on the current level
+//! \brief set a value to a cell on the current level
 
 void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v) {
   AthenaArray<Real> &dst =
@@ -581,8 +581,8 @@ void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-//                               int il, int iu, int jl, int ju, int kl, int ku)
-//  \brief Actual implementation of prolongation and correction
+//!                              int il, int iu, int jl, int ju, int kl, int ku)
+//! \brief Actual implementation of prolongation and correction
 
 void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
                          int il, int iu, int jl, int ju, int kl, int ku) {
@@ -604,9 +604,9 @@ void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst,
-//      const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku,
-//      int fil, int fjl, int fkl)
-//  \brief Actual implementation of prolongation and correction
+//!     const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku,
+//!     int fil, int fjl, int fkl)
+//! \brief Actual implementation of prolongation and correction
 
 void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
      int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl) {
@@ -657,9 +657,9 @@ void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<R
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::FMGProlongate(AthenaArray<Real> &dst,
-//           const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku
-//           int fil, int fjl, int fkl)
-//  \brief Actual implementation of FMG prolongation
+//!          const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku
+//!          int fil, int fjl, int fkl)
+//! \brief Actual implementation of FMG prolongation
 
 void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
                               int il, int iu, int jl, int ju, int kl, int ku,

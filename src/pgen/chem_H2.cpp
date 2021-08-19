@@ -1,20 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
-//! \file uniform_chem.cpp
-//  \brief problem generator, uniform mesh with chemistry
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file chem_H2.cpp
+//! \brief problem generator, H2 chemistry
 //======================================================================================
 
 // c headers
@@ -50,7 +40,6 @@ int RefinementCondition(MeshBlock *pmb);
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //========================================================================================
-
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (adaptive) {
     EnrollUserRefinementCondition(RefinementCondition);
@@ -61,9 +50,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief initialize problem by reading in vtk file.
+//! \brief initialize problem by reading in vtk file.
 //======================================================================================
-
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //dimensions of meshblock
   const int Nx = ie - is + 1;
@@ -121,8 +109,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
-// refinement condition: maximum gradient of each passive scalar profile
-
+//======================================================================================
+//! \fn int RefinementCondition(MeshBlock *pmb)
+//! \brief refinement condition: maximum gradient of each passive scalar profile
+//======================================================================================
 int RefinementCondition(MeshBlock *pmb) {
   int f2 = pmb->pmy_mesh->f2, f3 = pmb->pmy_mesh->f3;
   AthenaArray<Real> &r = pmb->pscalars->r;
@@ -164,7 +154,6 @@ int RefinementCondition(MeshBlock *pmb) {
 //========================================================================================
 //! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //========================================================================================
-
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem", "compute_error", false)) return;
 

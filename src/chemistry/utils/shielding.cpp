@@ -1,22 +1,16 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file shielding.cpp
-//  \brief implementation of functions in class Shielding
-//======================================================================================
+//! \brief implementation of functions in class Shielding
+
+// this class header
 #include "shielding.hpp"
+
+// Athena headers
+#include "../../utils/interp.hpp"
 
 //CO column density for DB table
 const Real Shielding::logNCOvDB_[len_NCO_DB_] = {0, 13, 14, 15, 16, 17, 18, 19};
@@ -298,11 +292,16 @@ const Real Shielding::ThetaV09_[len_NH2_V09_][len_NCO_V09_] = {
    3.898e-07,3.896e-07,3.894e-07,3.893e-07,3.893e-07,3.892e-07,3.891e-07,3.891e-07,
    3.890e-07,3.890e-07,3.889e-07,3.887e-07,3.885e-07,3.881e-07,3.875e-07}};
 
-//------------------Constructor and Destructor---------------------
+//----------------------------------------------------------------------------------------
+//! constructor for class Shielding
 Shielding::Shielding() {}
 
-//-----------------------CO self-sheilding and sheilding by * H2-------------
-
+//----------------------------------------------------------------------------------------
+//! \fn Real Shielding::fShield_CO_vDB(const Real NCO, const Real NH2)
+//! \brief CO self-sheilding and sheilding by H2,
+//!         from van Dishoeck & Black's shielding function.
+//!
+//! NCO, NH2: column densith of CO and H2 in cm^-2.
 Real Shielding::fShield_CO_vDB(const Real NCO, const Real NH2) {
   const Real logNCO = log10(NCO);
   const Real logNH2 = log10(NH2);
@@ -311,21 +310,26 @@ Real Shielding::fShield_CO_vDB(const Real NCO, const Real NH2) {
   //interpretation value of first, second line, and final value
   Real fl1, fl2, fl;
   //find which two points are we interpolate/extroplating
-  iCO0 = LinearInterpIndex(len_NCO_DB_, logNCOvDB_, logNCO);
+  iCO0 = Interpolation::LinearInterpIndex(len_NCO_DB_, logNCOvDB_, logNCO);
   iCO1 = iCO0+1;
-  iH20 = LinearInterpIndex(len_NH2_DB_, logNH2vDB_, logNH2);
+  iH20 = Interpolation::LinearInterpIndex(len_NH2_DB_, logNH2vDB_, logNH2);
   iH21 = iH20+1;
   //linear interpretation of the rows
-  fl1 = LinearInterp(logNCOvDB_[iCO0], logNCOvDB_[iCO1],
+  fl1 = Interpolation::LinearInterp(logNCOvDB_[iCO0], logNCOvDB_[iCO1],
                      log(ThetavDB_[iH20][iCO0]),  log(ThetavDB_[iH20][iCO1]), logNCO);
-  fl2 = LinearInterp(logNCOvDB_[iCO0], logNCOvDB_[iCO1],
+  fl2 = Interpolation::LinearInterp(logNCOvDB_[iCO0], logNCOvDB_[iCO1],
                      log(ThetavDB_[iH21][iCO0]),  log(ThetavDB_[iH21][iCO1]), logNCO);
   //linear interpretation of the column
-  fl = LinearInterp(logNH2vDB_[iH20], logNH2vDB_[iH21],
+  fl = Interpolation::LinearInterp(logNH2vDB_[iH20], logNH2vDB_[iH21],
                     fl1, fl2, logNH2);
   return exp(fl);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real Shielding::fShield_CO_V09(const Real NCO, const Real NH2)
+//! \brief CO self-sheilding and sheilding by H2, from Visser+2009, Table 5
+//!
+//! NCO, NH2: column densith of CO and H2 in cm^-2.
 Real Shielding::fShield_CO_V09(const Real NCO, const Real NH2) {
     const Real N_small_ = 1.0e10;
     Real logNCO, logNH2;
@@ -349,21 +353,24 @@ Real Shielding::fShield_CO_V09(const Real NCO, const Real NH2) {
   //interpretation value of first, second line, and final value
   Real fl1, fl2, fl;
   //find which two points are we interpolate/extroplating
-  iCO0 = LinearInterpIndex(len_NCO_V09_, logNCOV09_, logNCO);
+  iCO0 = Interpolation::LinearInterpIndex(len_NCO_V09_, logNCOV09_, logNCO);
   iCO1 = iCO0+1;
-  iH20 = LinearInterpIndex(len_NH2_V09_, logNH2V09_, logNH2);
+  iH20 = Interpolation::LinearInterpIndex(len_NH2_V09_, logNH2V09_, logNH2);
   iH21 = iH20+1;
   //linear interpretation of the rows
-  fl1 = LinearInterp(logNCOV09_[iCO0], logNCOV09_[iCO1],
+  fl1 = Interpolation::LinearInterp(logNCOV09_[iCO0], logNCOV09_[iCO1],
                      log(ThetaV09_[iH20][iCO0]),  log(ThetaV09_[iH20][iCO1]), logNCO);
-  fl2 = LinearInterp(logNCOV09_[iCO0], logNCOV09_[iCO1],
+  fl2 = Interpolation::LinearInterp(logNCOV09_[iCO0], logNCOV09_[iCO1],
                      log(ThetaV09_[iH21][iCO0]),  log(ThetaV09_[iH21][iCO1]), logNCO);
   //linear interpretation of the column
-  fl = LinearInterp(logNH2V09_[iH20], logNH2V09_[iH21],
+  fl = Interpolation::LinearInterp(logNH2V09_[iH20], logNH2V09_[iH21],
                     fl1, fl2, logNH2);
   return exp(fl);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real Shielding::fShield_H2(const Real NH2, const Real bH2)
+//! \brief H2 self shielding from Draine+Bertoldi1996
 Real Shielding::fShield_H2(const Real NH2, const Real bH2) {
   const Real N_small_ = 10.;
   if (NH2 < N_small_) {
@@ -378,6 +385,9 @@ Real Shielding::fShield_H2(const Real NH2, const Real bH2) {
   return p1 + p2;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real Shielding::fShield_C(const Real NC, const Real NH2)
+//! \brief CI self shielding.
 Real Shielding::fShield_C(const Real NC, const Real NH2) {
   //Tielens+Hollenbach1985 (A6) and (A7). Also see Wolfire's email on April 18,
   //2016.
@@ -400,6 +410,9 @@ Real Shielding::fShield_C(const Real NC, const Real NH2) {
   return rc * ry;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real Shielding::fShield_CO_C(const Real NC)
+//! \brief CI shielding of CO
 Real Shielding::fShield_CO_C(const Real NC) {
   if (NC < 0) {
     return 0.;

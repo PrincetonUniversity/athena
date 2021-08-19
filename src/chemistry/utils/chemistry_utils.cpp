@@ -1,23 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
-
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file chemistry_utils.cpp
-//  \brief namespace containing chemistry utilities.
-//======================================================================================
+//! \brief namespace containing chemistry utilities.
 
 //this class header
 #include "chemistry_utils.hpp"
@@ -579,6 +566,10 @@ static Real temp_tbl[NTBL] = {
 };
 
 namespace ChemistryUtility {
+
+  //--------------------------------------------------------------------------------------
+  //! \fn Real get_temp_from_t1(const Real t1)
+  //! \brief calculate tempereature in Kelvin from t1=m_H P / (rho * k_B)
   Real get_temp_from_t1(const Real t1) {
     int iter=1,T1idx;
     Real Tmax,Tmin,Tnew;
@@ -600,6 +591,14 @@ namespace ChemistryUtility {
     return Tnew;
   }
 
+  //--------------------------------------------------------------------------------------
+  //! \fn Real get_temp(Real pressure, Real dens)
+  //! \brief calculate temperature in Kelvin
+  //!
+  //! pressure: in units of [dens][v]^2, can be found in phydro.w(IEN, k, j, i).
+  //! dens: density in units of [dens] = mu_H m_H cm^-3,
+  //! in phydro.w(IDN, k, j, i) and phydro.u(IDN, k, j, i)
+  //! veolcity units: [v] = km/s
   Real get_temp(Real pressure, Real dens) {
     Real T1, temp;
 
@@ -608,6 +607,10 @@ namespace ChemistryUtility {
     return temp;
   }
 
+  //--------------------------------------------------------------------------------------
+  //! \fn int FindStrIndex(const std::string *str_arr, const int len,
+  //!                      const std::string name)
+  //! \brief find index of string
   int FindStrIndex(const std::string *str_arr, const int len,
       const std::string name) {
     std::vector<int> ifind;
@@ -630,7 +633,9 @@ namespace ChemistryUtility {
     }
   }
 
-  //get opposite direction for face neighbour
+  //--------------------------------------------------------------------------------------
+  //! \fn int GetOppositeDirection(const int direction)
+  //! \brief get opposite direction for face neighbour
   int GetOppositeDirection(const int direction) {
     std::stringstream msg;
 
@@ -657,6 +662,9 @@ namespace ChemistryUtility {
   }
 } // namespace ChemistryUtility
 
+//----------------------------------------------------------------------------------------
+//! \fn static int get_Tidx(const Real temp)
+//! \brief calculate index from the cooling table
 static int get_Tidx(const Real temp) {
   Real Tidx;
   Real Tmin=10.0,Tmax=1.e9,dT=0.01;

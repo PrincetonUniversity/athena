@@ -1,22 +1,11 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file gow17.cpp
-//  \brief implementation of functions in class ChemNetwork, using the GOW17
-//  network, see paper by Gong, Ostriker, Wolfire 2017
-//======================================================================================
+//! \brief implementation of functions in class ChemNetwork, using the GOW17
+//!  network, see paper by Gong, Ostriker, Wolfire 2017
 
 // this class header
 #include "gow17.hpp"
@@ -287,9 +276,10 @@ const Real ChemNetwork::cHep_[7] = {5.572, 3.185e-7, 1.512, 5.115e3, 3.903e-7,
                                     0.4956, 5.494e-7};
 const Real ChemNetwork::cSip_[7] = {2.166, 5.678e-8, 1.874, 4.375e4, 1.635e-6,
                                     0.8964, 7.538e-5};
-//-----------------end of chemical network---------------------
 
 
+//----------------------------------------------------------------------------------------
+//! \brief ChemNetwork constructor
 ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   //number of species and a list of name of species
   pmy_spec_ = pmb->pscalars;
@@ -375,8 +365,60 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \brief ChemNetwork destructor
 ChemNetwork::~ChemNetwork() {}
 
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::InitializeNextStep(const int k, const int j, const int i)
+//! \brief Set the rates of chemical reactions, eg. through density and radiation field.
+//!
+//! k, j, i are the corresponding index of the grid
+void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
+  Real rad_sum, temp, NH, rho, rho_floor;
+  int nang = pmy_mb_->prad->nang;
+  //density
+  rho = pmy_mb_->phydro->w(IDN, k, j, i);
+  //apply density floor
+  rho_floor = pmy_mb_->peos->GetDensityFloor();
+  rho = (rho > rho_floor) ?  rho : rho_floor;
+  //hydrogen atom number density
+  nH_ =  rho * unit_density_in_nH_;
+  //average radiation field of all angles
+  //TODO(Munan Gong): put floor on radiation variables?
+  for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
+    rad_sum = 0;
+    //radiation
+    for (int iang=0; iang < nang; ++iang) {
+      rad_sum += pmy_mb_->prad->ir(k, j, i, ifreq * nang + iang);
+    }
+    if (ifreq == index_cr_) {
+      rad_[index_cr_] = rad_sum / static_cast<float>(nang);
+    } else {
+      rad_[ifreq] = rad_sum * unit_radiation_in_draine1987_ / static_cast<float>(nang);
+    }
+#ifdef DEBUG
+    if (isnan(rad_[ifreq])) {
+      printf("InitializeNextStep: ");
+      printf("ifreq=%d, nang=%d, rad_sum=%.2e\n", ifreq, nang, rad_sum);
+      OutputRates(stdout);
+    }
+#endif
+  }
+  //CO cooling paramters
+  //TODO(Munan Gong): for six-ray, this should be in the right units
+  SetGrad_v(k, j, i);
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
+//!                       Real ydot[NSCALARS])
+//! \brief RHS: right-hand-side of ODE.
+//!
+//! dy/dt = ydot(t, y). Here y are the abundance
+//! of species. details see CVODE package documentation.
+//! all input/output variables are in code units
 void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
                       Real ydot[NSCALARS]) {
   Real rate;
@@ -502,44 +544,181 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
   return;
 }
 
-
-void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
-  Real rad_sum, temp, NH, rho, rho_floor;
-  int nang = pmy_mb_->prad->nang;
-  //density
-  rho = pmy_mb_->phydro->w(IDN, k, j, i);
-  //apply density floor
-  rho_floor = pmy_mb_->peos->GetDensityFloor();
-  rho = (rho > rho_floor) ?  rho : rho_floor;
-  //hydrogen atom number density
-  nH_ =  rho * unit_density_in_nH_;
-  //average radiation field of all angles
-  //TODO(Munan Gong): put floor on radiation variables?
-  for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
-    rad_sum = 0;
-    //radiation
-    for (int iang=0; iang < nang; ++iang) {
-      rad_sum += pmy_mb_->prad->ir(k, j, i, ifreq * nang + iang);
-    }
-    if (ifreq == index_cr_) {
-      rad_[index_cr_] = rad_sum / static_cast<float>(nang);
-    } else {
-      rad_[ifreq] = rad_sum * unit_radiation_in_draine1987_ / static_cast<float>(nang);
-    }
-#ifdef DEBUG
-    if (isnan(rad_[ifreq])) {
-      printf("InitializeNextStep: ");
-      printf("ifreq=%d, nang=%d, rad_sum=%.2e\n", ifreq, nang, rad_sum);
-      OutputRates(stdout);
-    }
-#endif
+//----------------------------------------------------------------------------------------
+//! \fn Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED)
+//! \brief energy equation dED/dt
+//!
+//! all input/output variables are in code units (ED is the energy density)
+Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
+  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
+  //isothermal
+  if (!NON_BAROTROPIC_EOS) {
+    return 0;
   }
-  //CO cooling paramters
-  //TODO(Munan Gong): for six-ray, this should be in the right units
-  SetGrad_v(k, j, i);
-  return;
+
+  Real T = 0.;
+  Real dEdt = 0.;
+  Real yprev[NSCALARS+ngs_]; // NOLINT (runtime/arrays)
+  // copy y to yprev and set ghost species
+  GetGhostSpecies(y, yprev);
+  //correct negative abundance to zero
+  for (int i=0; i<NSCALARS+ngs_; i++) {
+    if (yprev[i] < 0) {
+      yprev[i] = 0;
+    }
+  }
+
+  //temperature
+  T = E_ergs / Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]);
+  //apply temperature floor, incase of very small or negative energy
+  if (T < temp_min_rates_) {
+    T = temp_min_rates_;
+  }
+
+  //--------------------------heating-----------------------------
+  //cosmic ray ionization of H, He, and H2
+  //NOTE: because these depends on rates, make sure ChemInit is called before.
+  //NOTE: the kcr_[i] assume the order of equastions are not changed
+  //cut-off heating at high temperature
+  Real GCR, GPE, GH2gr, dot_xH2_photo, GH2pump, GH2diss;
+  if (T > temp_max_heat_) {
+    GCR = 0.;
+    GPE = 0;
+    GH2gr = 0;
+    GH2pump = 0.;
+    GH2diss = 0.;
+  } else {
+    GCR = Thermo::HeatingCr(yprev[ige_],  nH_,
+        yprev[igH_],  yprev[igHe_],  yprev[iH2_],
+        kcr_[icr_H_],  kcr_[icr_He_],  kcr_[icr_H2_]);
+    //photo electric effect on dust
+    GPE = Thermo::HeatingPE(rad_[index_gpe_], zdg_, T, nH_*yprev[ige_]);
+    //H2 formation on dust grains
+    GH2gr = Thermo::HeatingH2gr(yprev[igH_],  yprev[iH2_],  nH_,
+        T,  kgr_[igr_H_]);
+    //H2 UV pumping
+    dot_xH2_photo = kph_[iph_H2_] * yprev[iH2_];
+    GH2pump = Thermo::HeatingH2pump(yprev[igH_],  yprev[iH2_],  nH_,
+        T,  dot_xH2_photo);
+    //H2 photo dissiociation.
+    GH2diss = Thermo::HeatingH2diss(dot_xH2_photo);
+  }
+  //--------------------------cooling-----------------------------
+  //cut-off cooling at low temperature
+  Real LCII, LCI, LOI, LHotGas, LCOR, LH2, LDust, LRec, LH2diss, LHIion;
+  Real vth, nCO, grad_small_;
+  Real NCOeff, gradeff;
+  if (T < temp_min_cool_) {
+    LCII = 0.;
+    LCI = 0;
+    LOI = 0.;
+    LHotGas = 0;
+    LCOR = 0;
+    LH2 = 0;
+    LDust = 0;
+    LRec = 0;
+    LH2diss = 0;
+    LHIion = 0;
+  } else {
+    // C+ fine structure line
+    LCII = Thermo::CoolingCII(yprev[iCplus_],  nH_*yprev[igH_],  nH_*yprev[iH2_],
+        nH_*yprev[ige_],  T);
+    // CI fine structure line
+    LCI = Thermo:: CoolingCI(yprev[igC_],  nH_*yprev[igH_],  nH_*yprev[iH2_],
+        nH_*yprev[ige_],  T);
+    // OI fine structure line
+    LOI = Thermo:: CoolingOI(yprev[igO_],  nH_*yprev[igH_],  nH_*yprev[iH2_],
+        nH_*yprev[ige_],  T);
+    // cooling of hot gas: radiative cooling, free-free.
+    LHotGas = Thermo::CoolingHotGas(nH_,  T, zdg_);
+    // CO rotational lines
+    // Calculate effective CO column density
+    vth = sqrt(2. * Thermo::kb_ * T / ChemistryUtility::mCO);
+    nCO = nH_ * yprev[iCO_];
+    grad_small_ = vth/Leff_CO_max_;
+    gradeff = std::max(gradv_, grad_small_);
+    NCOeff = nCO / gradeff;
+    LCOR = Thermo::CoolingCOR(yprev[iCO_], nH_*yprev[igH_],  nH_*yprev[iH2_],
+        nH_*yprev[ige_],  T,  NCOeff);
+    // H2 vibration and rotation lines
+    if (is_H2_rovib_cooling_ != 0) {
+      LH2 = Thermo::CoolingH2(yprev[iH2_], nH_*yprev[igH_],  nH_*yprev[iH2_],
+          nH_*yprev[igHe_],  nH_*yprev[iHplus_], nH_*yprev[ige_],
+          T);
+    } else {
+      LH2 = 0.;
+    }
+    // dust thermo emission
+    LDust = Thermo::CoolingDustTd(zdg_,  nH_, T, 10.);
+    // reconbination of e on PAHs
+    LRec = Thermo::CoolingRec(zdg_,  T,  nH_*yprev[ige_], rad_[index_gpe_]);
+    // collisional dissociation of H2
+    LH2diss = Thermo::CoolingH2diss(yprev[igH_],  yprev[iH2_], k2body_[i2body_H2_H],
+        k2body_[i2body_H2_H2]);
+    // collisional ionization of HI
+    LHIion = Thermo::CoolingHIion(yprev[igH_],  yprev[ige_],
+        k2body_[i2body_H_e]);
+  }
+  dEdt = (GCR + GPE + GH2gr + GH2pump + GH2diss)
+            - (LCII + LCI + LOI + LHotGas + LCOR
+                + LH2 + LDust + LRec + LH2diss + LHIion);
+  //return in code units
+  Real dEDdt = dEdt * nH_ / unit_E_in_cgs_ * unit_time_in_s_;
+  if ( isnan(dEdt) || isinf(dEdt) ) {
+    if ( isnan(LCOR) || isinf(LCOR) ) {
+      printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
+          NCOeff, gradeff, gradv_, vth, nH_, nCO);
+    }
+    printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
+        GCR , GPE , GH2gr , GH2pump , GH2diss);
+    printf("LCII=%.2e, LCI=%.2e, LOI=%.2e, LHotGas=%.2e, LCOR=%.2e\n",
+        LCII , LCI , LOI , LHotGas , LCOR);
+    printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
+        LH2 , LDust , LRec , LH2diss , LHIion);
+    printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
+            T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]),
+            nH_);
+    for (int i=0; i<NSCALARS+ngs_; i++) {
+      printf("%s: %.2e  ", species_names_all_[i].c_str(), yprev[i]);
+    }
+    printf("\n");
+    std::stringstream msg;
+    msg << "ChemNetwork (gow17): dEdt: nan or inf number" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+#ifdef DEBUG
+  if (output_thermo) {
+      printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
+          NCOeff, gradeff, gradv_, vth, nH_, nCO);
+    printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
+        GCR , GPE , GH2gr , GH2pump , GH2diss);
+    printf("LCII=%.2e, LCI=%.2e, LOI=%.2e, LHotGas=%.2e, LCOR=%.2e\n",
+        LCII , LCI , LOI , LHotGas , LCOR);
+    printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
+        LH2 , LDust , LRec , LH2diss , LHIion);
+    printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
+            T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]),
+            nH_);
+    for (int i=0; i<NSCALARS+ngs_; i++) {
+      printf("%s: %.2e  ", species_names_all_[i].c_str(), yprev[i]);
+    }
+    printf("\n");
+    output_thermo = false;
+  }
+#endif
+  return dEDdt;
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::GetGhostSpecies(const Real *y, Real yghost[NSCALARS+ngs_])
+//! \brief calculate the abundances of ghost species with elemental
+//!  conservation laws
+//!
+//! Using ghost species help to reduce the computational cost by reducing the
+//! number of species in total. However, it can also be problematic because it
+//! dumps all the numerical error into one species. If that species' abundance is
+//! low, the error can be large
 void ChemNetwork::GetGhostSpecies(const Real *y, Real yghost[NSCALARS+ngs_]) {
   //copy the aboundances in y to yghost
   for (int i=0; i<NSCALARS; i++) {
@@ -561,6 +740,9 @@ void ChemNetwork::GetGhostSpecies(const Real *y, Real yghost[NSCALARS+ngs_]) {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real ChemNetwork::CII_rec_rate_(const Real temp)
+//! \brief Calculate the rate for CII recombination
 Real ChemNetwork::CII_rec_rate_(const Real temp) {
   Real A, B, T0, T1, C, T2, BN, term1, term2, alpharr, alphadr;
   A = 2.995e-9;
@@ -578,6 +760,11 @@ Real ChemNetwork::CII_rec_rate_(const Real temp) {
   return (alpharr+alphadr);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::UpdateRates(const Real y[NSCALARS+ngs_], const Real E)
+//! \brief update the rates for chemical reactions.
+//!
+//! This is called at the beginning of the RHS. E is in the unit of ergs.
 void ChemNetwork::UpdateRates(const Real y[NSCALARS+ngs_], const Real E) {
   Real T, Tcoll;
   //constant or evolve temperature
@@ -779,166 +966,9 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS+ngs_], const Real E) {
   return;
 }
 
-Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
-  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
-  //isothermal
-  if (!NON_BAROTROPIC_EOS) {
-    return 0;
-  }
-
-  Real T = 0.;
-  Real dEdt = 0.;
-  Real yprev[NSCALARS+ngs_]; // NOLINT (runtime/arrays)
-  // copy y to yprev and set ghost species
-  GetGhostSpecies(y, yprev);
-  //correct negative abundance to zero
-  for (int i=0; i<NSCALARS+ngs_; i++) {
-    if (yprev[i] < 0) {
-      yprev[i] = 0;
-    }
-  }
-
-  //temperature
-  T = E_ergs / Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]);
-  //apply temperature floor, incase of very small or negative energy
-  if (T < temp_min_rates_) {
-    T = temp_min_rates_;
-  }
-
-  //--------------------------heating-----------------------------
-  //cosmic ray ionization of H, He, and H2
-  //NOTE: because these depends on rates, make sure ChemInit is called before.
-  //NOTE: the kcr_[i] assume the order of equastions are not changed
-  //cut-off heating at high temperature
-  Real GCR, GPE, GH2gr, dot_xH2_photo, GH2pump, GH2diss;
-  if (T > temp_max_heat_) {
-    GCR = 0.;
-    GPE = 0;
-    GH2gr = 0;
-    GH2pump = 0.;
-    GH2diss = 0.;
-  } else {
-    GCR = Thermo::HeatingCr(yprev[ige_],  nH_,
-        yprev[igH_],  yprev[igHe_],  yprev[iH2_],
-        kcr_[icr_H_],  kcr_[icr_He_],  kcr_[icr_H2_]);
-    //photo electric effect on dust
-    GPE = Thermo::HeatingPE(rad_[index_gpe_], zdg_, T, nH_*yprev[ige_]);
-    //H2 formation on dust grains
-    GH2gr = Thermo::HeatingH2gr(yprev[igH_],  yprev[iH2_],  nH_,
-        T,  kgr_[igr_H_]);
-    //H2 UV pumping
-    dot_xH2_photo = kph_[iph_H2_] * yprev[iH2_];
-    GH2pump = Thermo::HeatingH2pump(yprev[igH_],  yprev[iH2_],  nH_,
-        T,  dot_xH2_photo);
-    //H2 photo dissiociation.
-    GH2diss = Thermo::HeatingH2diss(dot_xH2_photo);
-  }
-  //--------------------------cooling-----------------------------
-  //cut-off cooling at low temperature
-  Real LCII, LCI, LOI, LHotGas, LCOR, LH2, LDust, LRec, LH2diss, LHIion;
-  Real vth, nCO, grad_small_;
-  Real NCOeff, gradeff;
-  if (T < temp_min_cool_) {
-    LCII = 0.;
-    LCI = 0;
-    LOI = 0.;
-    LHotGas = 0;
-    LCOR = 0;
-    LH2 = 0;
-    LDust = 0;
-    LRec = 0;
-    LH2diss = 0;
-    LHIion = 0;
-  } else {
-    // C+ fine structure line
-    LCII = Thermo::CoolingCII(yprev[iCplus_],  nH_*yprev[igH_],  nH_*yprev[iH2_],
-        nH_*yprev[ige_],  T);
-    // CI fine structure line
-    LCI = Thermo:: CoolingCI(yprev[igC_],  nH_*yprev[igH_],  nH_*yprev[iH2_],
-        nH_*yprev[ige_],  T);
-    // OI fine structure line
-    LOI = Thermo:: CoolingOI(yprev[igO_],  nH_*yprev[igH_],  nH_*yprev[iH2_],
-        nH_*yprev[ige_],  T);
-    // cooling of hot gas: radiative cooling, free-free.
-    LHotGas = Thermo::CoolingHotGas(nH_,  T, zdg_);
-    // CO rotational lines
-    // Calculate effective CO column density
-    vth = sqrt(2. * Thermo::kb_ * T / ChemistryUtility::mCO);
-    nCO = nH_ * yprev[iCO_];
-    grad_small_ = vth/Leff_CO_max_;
-    gradeff = std::max(gradv_, grad_small_);
-    NCOeff = nCO / gradeff;
-    LCOR = Thermo::CoolingCOR(yprev[iCO_], nH_*yprev[igH_],  nH_*yprev[iH2_],
-        nH_*yprev[ige_],  T,  NCOeff);
-    // H2 vibration and rotation lines
-    if (is_H2_rovib_cooling_ != 0) {
-      LH2 = Thermo::CoolingH2(yprev[iH2_], nH_*yprev[igH_],  nH_*yprev[iH2_],
-          nH_*yprev[igHe_],  nH_*yprev[iHplus_], nH_*yprev[ige_],
-          T);
-    } else {
-      LH2 = 0.;
-    }
-    // dust thermo emission
-    LDust = Thermo::CoolingDustTd(zdg_,  nH_, T, 10.);
-    // reconbination of e on PAHs
-    LRec = Thermo::CoolingRec(zdg_,  T,  nH_*yprev[ige_], rad_[index_gpe_]);
-    // collisional dissociation of H2
-    LH2diss = Thermo::CoolingH2diss(yprev[igH_],  yprev[iH2_], k2body_[i2body_H2_H],
-        k2body_[i2body_H2_H2]);
-    // collisional ionization of HI
-    LHIion = Thermo::CoolingHIion(yprev[igH_],  yprev[ige_],
-        k2body_[i2body_H_e]);
-  }
-  dEdt = (GCR + GPE + GH2gr + GH2pump + GH2diss)
-            - (LCII + LCI + LOI + LHotGas + LCOR
-                + LH2 + LDust + LRec + LH2diss + LHIion);
-  //return in code units
-  Real dEDdt = dEdt * nH_ / unit_E_in_cgs_ * unit_time_in_s_;
-  if ( isnan(dEdt) || isinf(dEdt) ) {
-    if ( isnan(LCOR) || isinf(LCOR) ) {
-      printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
-          NCOeff, gradeff, gradv_, vth, nH_, nCO);
-    }
-    printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
-        GCR , GPE , GH2gr , GH2pump , GH2diss);
-    printf("LCII=%.2e, LCI=%.2e, LOI=%.2e, LHotGas=%.2e, LCOR=%.2e\n",
-        LCII , LCI , LOI , LHotGas , LCOR);
-    printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
-        LH2 , LDust , LRec , LH2diss , LHIion);
-    printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
-            T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]),
-            nH_);
-    for (int i=0; i<NSCALARS+ngs_; i++) {
-      printf("%s: %.2e  ", species_names_all_[i].c_str(), yprev[i]);
-    }
-    printf("\n");
-    std::stringstream msg;
-    msg << "ChemNetwork (gow17): dEdt: nan or inf number" << std::endl;
-    ATHENA_ERROR(msg);
-  }
-#ifdef DEBUG
-  if (output_thermo) {
-      printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
-          NCOeff, gradeff, gradv_, vth, nH_, nCO);
-    printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
-        GCR , GPE , GH2gr , GH2pump , GH2diss);
-    printf("LCII=%.2e, LCI=%.2e, LOI=%.2e, LHotGas=%.2e, LCOR=%.2e\n",
-        LCII , LCI , LOI , LHotGas , LCOR);
-    printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
-        LH2 , LDust , LRec , LH2diss , LHIion);
-    printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
-            T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]),
-            nH_);
-    for (int i=0; i<NSCALARS+ngs_; i++) {
-      printf("%s: %.2e  ", species_names_all_[i].c_str(), yprev[i]);
-    }
-    printf("\n");
-    output_thermo = false;
-  }
-#endif
-  return dEDdt;
-}
-
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::OutputRates(FILE *pf) const
+//! \brief output chemical reactions and rates
 void ChemNetwork::OutputRates(FILE *pf) const {
   //output the reactions and base rates
   for (int i=0; i<n_cr_; i++) {
@@ -967,6 +997,9 @@ void ChemNetwork::OutputRates(FILE *pf) const {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real ChemNetwork::GetStddev(Real arr[], const int len)
+//! \brief calculate standard deviation
 Real ChemNetwork::GetStddev(Real arr[], const int len) {
   Real sum=0, avg=0, sum_sq=0, avg_sq=0;
   for (int i=0; i<len; i++) {
@@ -978,6 +1011,9 @@ Real ChemNetwork::GetStddev(Real arr[], const int len) {
   return sqrt(avg_sq - avg*avg);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::SetGrad_v(const int k, const int j, const int i)
+//! \brief set gradients of v and nH for CO cooling
 void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
   AthenaArray<Real> &w = pmy_mb_->phydro->w;
   Real dvdx, dvdy, dvdz, dvdr_avg, di1, di2;

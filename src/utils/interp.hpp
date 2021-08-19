@@ -1,29 +1,27 @@
 #ifndef UTILS_INTERP_HPP_
 #define UTILS_INTERP_HPP_
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
-//! \file Interp.hpp
-//  \brief prototypes of linear interpolation functions
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file interp.hpp
+//! \brief prototypes of linear interpolation functions
 
 #include "../athena.hpp"
 
+//! \namespace ChemistryUtility
+//! \brief Utility functions for chemistry
+//TODO (Munan Gong): this is used for chemistry. check out interp_table used for
+//EOS to see whether we can merge them for similar functions
 namespace Interpolation {
-  // ID arrray linear interpolation
   Real LP1D(const int len, const Real *xarr, const Real *data,
       const Real x);
-  // 2D array bi-linear interpolation
   Real LP2D(const int lenx, const Real *xarr,
       const int leny, const Real *yarr,
       const Real *data, const Real x, const Real y);
-  // Interpolation with index provided.
-  // ix, iy: return from LinearInterpIndex
   Real LP1Di(const Real *xarr, const Real *data, const int ix,
       const Real x);
-  // 2D array bi-linear interpolation
   Real LP2Di(const Real *xarr, const Real *yarr,
       const int lenx, const int ix, const int iy,
       const Real *data, const Real x, const Real y);

@@ -281,13 +281,13 @@ AthenaArray<T> &AthenaArray<T>::operator= (AthenaArray<T> &&src) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaArray::InitWithShallowSlice()
+//! \fn void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
+//!                                          const int indx, const int nvar)
 //! \brief shallow copy of nvar elements in dimension dim of an array, starting at
 //! index=indx. Copies pointer to data, but not data itself.
 //!
 //! Shallow slice is only able to address the "nvar" range in "dim", and all entries of
 //! the src array for d<dim (cannot access any nx4=2, etc. entries if dim=3 for example)
-
 template<typename T>
 void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
                                           const int indx, const int nvar) {
@@ -346,9 +346,8 @@ void AthenaArray<T>::InitWithShallowSlice(AthenaArray<T> &src, const int dim,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaArray::NewAthenaArray()
+//! \fn void AthenaArray<T>::NewAthenaArray(int nx1)
 //! \brief allocate new 1D array with elements initialized to zero.
-
 template<typename T>
 __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx1) {
   state_ = DataStatus::allocated;
@@ -362,9 +361,8 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx1) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaArray::NewAthenaArray()
+//! \fn void AthenaArray<T>::NewAthenaArray(int nx2, int nx1)
 //! \brief 2d data allocation
-
 template<typename T>
 __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx2, int nx1) {
   state_ = DataStatus::allocated;
@@ -378,9 +376,8 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx2, int nx1) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaArray::NewAthenaArray()
+//! \fn void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1)
 //! \brief 3d data allocation
-
 template<typename T>
 __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, int nx1) {
   state_ = DataStatus::allocated;
@@ -394,9 +391,8 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx3, int nx2, i
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaArray::NewAthenaArray()
+//! \fn void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2, int nx1)
 //! \brief 4d data allocation
-
 template<typename T>
 __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, int nx2,
                                                              int nx1) {
@@ -411,9 +407,8 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx4, int nx3, i
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaArray::NewAthenaArray()
+//! \fn void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3, int nx2, int nx1)
 //! \brief 5d data allocation
-
 template<typename T>
 __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, int nx3,
                                                              int nx2, int nx1) {
@@ -428,9 +423,9 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx5, int nx4, i
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaArray::NewAthenaArray()
+//! \fn void AthenaArray<T>::NewAthenaArray(int nx6, int nx5, int nx4,
+//!           int nx3, int nx2, int nx1)
 //! \brief 6d data allocation
-
 template<typename T>
 __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx6, int nx5, int nx4,
                                                              int nx3, int nx2, int nx1) {
@@ -445,9 +440,8 @@ __attribute__((nothrow)) void AthenaArray<T>::NewAthenaArray(int nx6, int nx5, i
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaArray::DeleteAthenaArray()
-//! \brief  free memory allocated for data array
-
+//! \fn void AthenaArray<T>::DeleteAthenaArray()
+//! \brief free memory allocated for data array
 template<typename T>
 void AthenaArray<T>::DeleteAthenaArray() {
   // state_ is tracked partly for correctness of delete[] operation in DeleteAthenaArray()
@@ -465,14 +459,13 @@ void AthenaArray<T>::DeleteAthenaArray() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaArray::SwapAthenaArray()
+//! \fn void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2)
 //! \brief  swap pdata_ pointers of two equally sized AthenaArrays (shallow swap)
 //!
 //! Does not allocate memory for either AthenArray
 //!
 //! **THIS REQUIRES THAT THE DESTINATION AND SOURCE ARRAYS BE ALREADY ALLOCATED (state_ !=
 //! empty) AND HAVE THE SAME SIZES (does not explicitly check either condition)**
-
 template<typename T>
 void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
   std::swap(pdata_, array2.pdata_);
@@ -480,14 +473,13 @@ void AthenaArray<T>::SwapAthenaArray(AthenaArray<T>& array2) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn AthenaArray::ExchangeAthenaArray()
+//! \fn void AthenaArray<T>::ExchangeAthenaArray(AthenaArray<T>& array2)
 //! \brief  exchange two AthenaArrays including the size information
 //!
 //! Does not allocate memory for either AthenArray
 //!
 //! **THIS REQUIRES THAT THE DESTINATION AND SOURCE ARRAYS BE ALREADY ALLOCATED (state_ !=
 //! empty) BUT THEIR SIZES CAN BE DIFFERENT (but no check)**
-
 template<typename T>
 void AthenaArray<T>::ExchangeAthenaArray(AthenaArray<T>& array2) {
   std::swap(nx1_, array2.nx1_);
@@ -538,10 +530,9 @@ void AthenaArray<T>::AllocateData() {
 }
 //----------------------------------------------------------------------------------------
 //! \fn AthenaArray<T>::ShallowSlice3DToPencil(AthenaArray<T> &src, const int k,
-//                                             const int j, const int il, const int n) {
-//  \brief shallow copy of 1D (pencil) array with n elements from il at k, j in 3D array.
-//         Copies pointer to data, but not data itself.
-
+//!                                            const int j, const int il, const int n) {
+//! \brief shallow copy of 1D (pencil) array with n elements from il at k, j in 3D array.
+//!        Copies pointer to data, but not data itself.
 template<typename T>
 void AthenaArray<T>::ShallowSlice3DToPencil(AthenaArray<T> &src, const int k,
                                             const int j, const int il, const int n) {

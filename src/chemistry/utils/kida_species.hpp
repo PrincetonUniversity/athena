@@ -1,14 +1,12 @@
 #ifndef CHEMISTRY_UTILS_KIDA_SPECIES_HPP_
 #define CHEMISTRY_UTILS_KIDA_SPECIES_HPP_
-
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-// See LICENSE file for full public license information.
-//======================================================================================
-//! \file thermo.hpp
-//  \brief definitions for heating and cooling processes
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file kida_species.hpp
+//! \brief definitions for chemical species in kida network format
 
 //c++ header
 #include <sstream>    // stringstream
@@ -18,6 +16,8 @@
 #include "../../athena.hpp"
 #include "chemistry_utils.hpp"
 
+//! \class KidaSpecies
+//! \brief Chemical species in kida network format
 class KidaSpecies{
   friend class ChemNetwork;
   friend class KidaNetwork;
@@ -34,7 +34,7 @@ class KidaSpecies{
   //mass of the species in g, used in grain - molecule reactions.
   //mass is automatically calculated using the number of atoms
   Real mass_;
-  void SetMass(Real mass);//set the mass of species. used for grains.
+  void SetMass(Real mass);
 };
 
 #endif //CHEMISTRY_UTILS_KIDA_SPECIES_HPP_

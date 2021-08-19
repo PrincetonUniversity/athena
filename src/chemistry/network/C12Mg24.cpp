@@ -1,22 +1,11 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file H2.cpp
-//  \brief implementation of functions in class ChemNetwork, using the simple
-//  network for H2 formation and destruction.
-//======================================================================================
+//! \brief implementation of functions in class ChemNetwork, for test or
+//!  nuclear reactions
 
 // this class header
 #include "C12Mg24.hpp"
@@ -52,6 +41,8 @@ const int ChemNetwork::iC12_ =
 const int ChemNetwork::iMg24_ =
   ChemistryUtility::FindStrIndex(species_names, NSCALARS, "Mg24");
 
+//----------------------------------------------------------------------------------------
+//! \brief ChemNetwork constructor
 ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   //number of species and a list of name of species
   pmy_spec_ = pmb->pscalars;
@@ -67,8 +58,15 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 //  const Real gm1 = pmy_mb_->peos->GetGamma() - 1;
 }
 
+//----------------------------------------------------------------------------------------
+//! \brief ChemNetwork destructor
 ChemNetwork::~ChemNetwork() {}
 
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::InitializeNextStep(const int k, const int j, const int i)
+//! \brief Set the rates of chemical reactions
+//!
+//! k, j, i are the corresponding index of the grid
 void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   Real rho, rho_floor;
   //density
@@ -81,6 +79,14 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
+//!                       Real ydot[NSCALARS])
+//! \brief RHS: right-hand-side of ODE.
+//!
+//! dy/dt = ydot(t, y). Here y are the abundance
+//! of species. details see CVODE package documentation.
+//! all input/output variables are in code units
 void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
                       Real ydot[NSCALARS]) {
   //correct negative rates
@@ -148,6 +154,11 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED)
+//! \brief energy equation dED/dt
+//!
+//! all input/output variables are in code units (ED is the energy density)
 Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
   Real mu_ = (y[0]*12 + y[1]*24)*mn_;
   const Real gm1 = pmy_mb_->peos->GetGamma() - 1;

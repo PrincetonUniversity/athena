@@ -1,22 +1,11 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file kida.cpp
-//  \brief implementation of functions in class ChemNetwork, using the simple
-//  network for kida style network files.
-//======================================================================================
+//! \brief implementation of functions in class ChemNetwork, using the simple
+//! network for kida style network files.
 
 // this class header
 #include "kida.hpp"
@@ -51,6 +40,8 @@ static bool output_rates = true;
 static bool output_thermo = true;
 #endif
 
+//----------------------------------------------------------------------------------------
+//! \brief ChemNetwork constructor
 ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   pmy_spec_(pmb->pscalars), pmy_mb_(pmb), id7max_(0), n_cr_(0),
   icr_H_(-1), icr_H2_(-1), icr_He_(-1), n_crp_(0), n_ph_(0), iph_H2_(-1),
@@ -266,6 +257,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
 #endif
 }
 
+//----------------------------------------------------------------------------------------
+//! \brief ChemNetwork destructor
 ChemNetwork::~ChemNetwork() {
   FILE *pf = fopen("chem_network.dat", "w");
   OutputRates(pf);
@@ -294,6 +287,670 @@ ChemNetwork::~ChemNetwork() {
   fclose(pf2);
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::InitializeNextStep(const int k, const int j, const int i)
+//! \brief Set the rates of chemical reactions, eg. through density and radiation field.
+//!
+//! k, j, i are the corresponding index of the grid
+void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
+  Real rho, rho_floor, rad_sum;
+  const int nang = pmy_mb_->prad->nang;
+  //density
+  rho = pmy_mb_->phydro->w(IDN, k, j, i);
+  //apply density floor
+  rho_floor = pmy_mb_->peos->GetDensityFloor();
+  rho = (rho > rho_floor) ?  rho : rho_floor;
+  //hydrogen atom number density
+  nH_ =  rho * unit_density_in_nH_;
+  //average radiation field of all angles
+  for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
+    rad_sum = 0;
+    //radiation
+    for (int iang=0; iang < nang; ++iang) {
+      rad_sum += pmy_mb_->prad->ir(k, j, i, ifreq * nang + iang);
+    }
+    if (ifreq == index_cr_) {
+      rad_(index_cr_) = rad_sum / static_cast<float>(nang);
+    } else {
+      rad_(ifreq) = rad_sum * unit_radiation_in_draine1987_ / static_cast<float>(nang);
+    }
+#ifdef DEBUG
+    if (isnan(rad_(ifreq))) {
+      printf("InitializeNextStep: ");
+      printf("ifreq=%d, nang=%d, rad_sum=%.2e\n", ifreq, nang, rad_sum);
+      OutputRates(stdout);
+    }
+#endif
+  }
+  //CO cooling paramters
+  SetGrad_v(k, j, i);
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
+//!                       Real ydot[NSCALARS])
+//! \brief RHS: right-hand-side of ODE.
+//!
+//! dy/dt = ydot(t, y). Here y are the abundance
+//! of species. details see CVODE package documentation.
+//! all input/output variables are in code units
+void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
+                      Real ydot[NSCALARS]) {
+  Real rate = 0;
+  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
+  //store previous y includeing negative abundance correction
+  Real y0[NSCALARS];//correct negative abundance, only for UpdateRates()
+  Real ydotg[NSCALARS];
+
+  for(int i=0; i<NSCALARS; i++) {
+    ydotg[i] = 0.0;
+  }
+
+  //correct negative abundance to zero, used in rate update
+  for (int i=0; i<NSCALARS; i++) {
+    if (y[i] < 0) {
+      y0[i] = 0;
+    } else {
+      y0[i] = y[i];
+    }
+    //throw error if nan, or inf, or large negative value occurs
+    if ( isnan(y[i]) || isinf(y[i]) ) {
+      printf("RHS: ");
+      for (int j=0; j<NSCALARS; j++) {
+        printf("%s: %.2e  ", species_names[j].c_str(), y[j]);
+      }
+      printf("\n");
+      OutputRates(stdout);
+      printf("rad_ = ");
+      for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
+        printf("%.2e  ", rad_(ifreq));
+      }
+      printf("\n");
+      printf("nH_ = %.2e\n", nH_);
+      std::stringstream msg;
+      msg << "ChemNetwork (kida): RHS(y): nan or inf" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+  }
+
+  UpdateRates(y0, E_ergs);
+
+  if (output_rates) {
+    FILE *pf = fopen("chem_network_init.dat", "w");
+    OutputRates(pf);
+    fclose(pf);
+    output_rates = false;
+  }
+
+  //cosmic ray reactions
+  for (int i=0; i<n_cr_; i++) {
+    rate = kcr_(i) * y[incr_(i)];
+    ydotg[incr_(i)] -= rate;
+    ydotg[outcr1_(i)] += rate;
+    ydotg[outcr2_(i)] += rate;
+    if (outcr3_(i) >= 0) {
+      ydotg[outcr3_(i)] += rate;
+    }
+  }
+
+  //cosmic ray induced photo reactions
+  for (int i=0; i<n_crp_; i++) {
+    rate = kcrp_(i) * y[incrp_(i)];
+    ydotg[incrp_(i)] -= rate;
+    ydotg[outcrp1_(i)] += rate;
+    ydotg[outcrp2_(i)] += rate;
+  }
+
+  //FUV photo-dissociation and photo-ionisation
+  for (int i=0; i<n_ph_; i++) {
+    rate = kph_(i) * y[inph_(i)];
+    ydotg[inph_(i)] -= rate;
+    ydotg[outph1_(i)] += rate;
+    ydotg[outph2_(i)] += rate;
+  }
+
+  //2body reactions
+  for (int i=0; i<n_2body_; i++) {
+    rate =  k2body_(i) * y[in2body_(i, 0)] * y[in2body_(i, 1)] * nH_;
+    if (y[in2body_(i, 0)] < 0 && y[in2body_(i, 1)] < 0) {
+      rate *= -1.;
+    }
+    for (int jin=0; jin<n_in2body_; jin++) {
+      if (in2body_(i, jin) >= 0) {
+        ydotg[in2body_(i, jin)] -= rate;
+      }
+    }
+    for (int jout=0; jout<n_out2body_; jout++) {
+      if (out2body_(i, jout) >= 0) {
+        ydotg[out2body_(i, jout)] += rate;
+      }
+    }
+  }
+
+  //2bodytr reactions
+  for (int i=0; i<n_2bodytr_; i++) {
+    rate =  k2bodytr_(i) * y[in2bodytr1_(i)] * y[in2bodytr2_(i)] * nH_;
+    if (y[in2bodytr1_(i)] < 0 && y[in2bodytr2_(i)] < 0) {
+      rate *= -1.;
+    }
+    ydotg[in2bodytr1_(i)] -= rate;
+    ydotg[in2bodytr2_(i)] -= rate;
+    ydotg[out2bodytr1_(i)] += rate;
+    if (out2bodytr2_(i) >= 0) {
+      ydotg[out2bodytr2_(i)] += rate;
+    }
+    if (out2bodytr3_(i) >= 0) {
+      ydotg[out2bodytr3_(i)] += rate;
+    }
+  }
+
+  //grain assisted reactions
+  for (int i=0; i<n_gr_; i++) {
+    rate = kgr_(i) * y[ingr1_(i)];
+    ydotg[ingr1_(i)] -= rate;
+    if (ingr2_(i) >= 0) {
+      ydotg[ingr2_(i)] -= rate;
+    }
+    ydotg[outgr_(i)] += rate;
+  }
+
+  //special reactions
+  for (int i=0; i<n_sr_; i++) {
+    rate = ksr_(i);
+    for (int jin=0; jin<n_insr_; jin++) {
+      if (insr_(i, jin) >= 0) {
+        ydotg[insr_(i, jin)] -= rate;
+      }
+    }
+    for (int jout=0; jout<n_outsr_; jout++) {
+      if (outsr_(i, jout) >= 0) {
+        ydotg[outsr_(i, jout)] += rate;
+      }
+    }
+  }
+
+  //grain collision reactions
+  for (int i=0; i<n_gc_; i++) {
+    rate =  kgc_(i) * y[ingc_(i, 0)] * y[ingc_(i, 1)] * nH_;
+    if (y[ingc_(i, 0)] < 0 && y[ingc_(i, 1)] < 0) {
+      rate *= -1.;
+    }
+    for (int jin=0; jin<n_ingc_; jin++) {
+      if (ingc_(i, jin) >= 0) {
+        ydotg[ingc_(i, jin)] -= rate;
+      }
+    }
+    for (int jout=0; jout<n_outgc_; jout++) {
+      if (outgc_(i, jout) >= 0) {
+        ydotg[outgc_(i, jout)] += rate;
+      }
+    }
+  }
+
+  //set ydot to return
+  for (int i=0; i<NSCALARS; i++) {
+    //return in code units
+    ydot[i] = ydotg[i] * unit_time_in_s_;
+  }
+
+  //throw error if nan, or inf, or large value occurs
+  for (int i=0; i<NSCALARS; i++) {
+    if ( isnan(ydot[i]) || isinf(ydot[i]) ) {
+      printf("ydot: ");
+      for (int j=0; j<NSCALARS; j++) {
+        printf("%s: %.2e  ", species_names[j].c_str(), ydot[j]);
+      }
+      printf("abundances: ");
+      for (int j=0; j<NSCALARS; j++) {
+        printf("%s: %.2e  ", species_names[j].c_str(), y[j]);
+      }
+      printf("\n");
+      OutputRates(stdout);
+      printf("rad_ = ");
+      for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
+        printf("%.2e  ", rad_(ifreq));
+      }
+      printf("\n");
+      printf("nH_ = %.2e\n", nH_);
+      printf("ED = %.2e\n", ED);
+      printf("E_ergs = %.2e\n", E_ergs);
+      printf("unit_E_in_cgs_ = %.2e\n", unit_E_in_cgs_);
+      Real y_e;
+      if (ispec_map_.find("e-") != ispec_map_.end()) {
+        y_e = y0[ispec_map_["e-"]];
+      } else {
+        y_e = 0.;
+      }
+      printf("T = %.2e\n", E_ergs/Thermo::CvCold(y0[ispec_map_["H2"]], xHe_, y_e));
+      std::stringstream msg;
+      msg << "ChemNetwork (kida): RHS(ydot): nan or inf" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+  }
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED)
+//! \brief energy equation dED/dt
+//!
+//! all input/output variables are in code units (ED is the energy density)
+Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
+  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
+  //isothermal
+  if (!NON_BAROTROPIC_EOS) {
+    return 0;
+  }
+  Real T = 0.;
+  Real dEdt = 0.;
+  Real y0[NSCALARS];
+  //correct negative abundance to zero
+  for (int i=0; i<NSCALARS; i++) {
+    if (y[i] < 0) {
+      y0[i] = 0;
+    } else {
+      y0[i] = y[i];
+    }
+  }
+  //abundances
+  const Real y_H2 = y0[ispec_map_["H2"]];
+  const Real y_H = y0[ispec_map_["H"]];
+  Real y_e, y_He, y_Hplus, kcr_H, kcr_H2, kcr_He, kgr_H, kph_H2;
+  //explicit PAH abundance for heating and cooling
+  const Real y_PAH = y0[ispec_map_["PAH0"]] + y0[ispec_map_["PAH+"]]
+                     + y0[ispec_map_["PAH-"]];
+  const Real Z_PAH = y_PAH/6e-7;
+  if (ispec_map_.find("e-") != ispec_map_.end()) {
+    y_e = y0[ispec_map_["e-"]];
+  } else {
+    y_e = 0.;
+  }
+  if (ispec_map_.find("He") != ispec_map_.end()) {
+    y_He = y0[ispec_map_["He"]];
+  } else {
+    y_He = 0.;
+  }
+  if (ispec_map_.find("H+") != ispec_map_.end()) {
+    y_Hplus = y0[ispec_map_["H+"]];
+  } else {
+    y_Hplus = 0.;
+  }
+  if (icr_H_ >= 0) {
+    kcr_H = kcr_(icr_H_);
+  } else {
+    kcr_H = 0.;
+  }
+  if (icr_H2_ >= 0) {
+    kcr_H2 = kcr_(icr_H2_);
+  } else {
+    kcr_H2 = 0.;
+  }
+  if (icr_He_ >= 0) {
+    kcr_He = kcr_(icr_He_);
+  } else {
+    kcr_He = 0.;
+  }
+  if (igr_H_ >= 0) {
+    kgr_H = kgr_(igr_H_);
+  } else {
+    kgr_H = 0.;
+  }
+  if (iph_H2_ >= 0) {
+    kph_H2 = kph_(iph_H2_);
+  } else {
+    kph_H2 = 0.;
+  }
+  //temperature
+  T = E_ergs / Thermo::CvCold(y_H2, xHe_, y_e);
+  //apply temperature floor, incase of very small or negative energy
+  if (T < temp_min_rates_) {
+    T = temp_min_rates_;
+  }
+
+
+  //--------------------------heating-----------------------------
+  Real GCR, GPE, GH2gr, dot_xH2_photo, GH2pump, GH2diss;
+  //CR heating
+  GCR = Thermo::HeatingCr(y_e,  nH_, y_H,  y_He,  y_H2, kcr_H, kcr_He, kcr_H2);
+  //photo electric effect on dust
+  GPE = Thermo::HeatingPE_W03(rad_(index_gpe_), Z_PAH, T, nH_*y_e, phi_PAH_);
+  //H2 formation on dust grains
+  GH2gr = Thermo::HeatingH2gr(y_H,  y_H2, nH_, T, kgr_H);
+  //H2 UV pumping
+  dot_xH2_photo = kph_H2 * y_H2;
+  GH2pump = Thermo::HeatingH2pump(y_H,  y_H2, nH_, T, dot_xH2_photo);
+  //H2 photo dissiociation.
+  GH2diss = Thermo::HeatingH2diss(dot_xH2_photo);
+
+  //--------------------------cooling-----------------------------
+  Real LCII, LCI, LOI, LHotGas, LCOR, LH2, LDust, LRec, LH2diss, LHIion;
+  Real vth, nCO, grad_small;
+  Real NCOeff, gradeff;
+  Real k2body_H2_H, k2body_H2_H2, k2body_H_e;
+  if (i2body_H2_H_ >= 0) {
+    k2body_H2_H = k2body_(i2body_H2_H_);
+  } else {
+    k2body_H2_H = 0.;
+  }
+  if (i2body_H2_H2_ >= 0) {
+    k2body_H2_H2 = k2body_(i2body_H2_H2_);
+  } else {
+    k2body_H2_H2 = 0.;
+  }
+  if (i2body_H_e_ >= 0) {
+    k2body_H_e = k2body_(i2body_H_e_);
+  } else {
+    k2body_H_e = 0.;
+  }
+  if (T < temp_min_cool_) {
+    LCII = 0.;
+    LCI = 0;
+    LOI = 0.;
+    LHotGas = 0;
+    LCOR = 0;
+    LH2 = 0;
+    LDust = 0;
+    LRec = 0;
+    LH2diss = 0;
+    LHIion = 0;
+  } else {
+    // C+ fine structure line
+    if (ispec_map_.find("C+") != ispec_map_.end()) {
+      LCII = Thermo::CoolingCII(y0[ispec_map_["C+"]],
+                                nH_*y_H,  nH_*y_H2, nH_*y_e, T);
+    } else {
+      LCII = 0.;
+    }
+    // CI fine structure line
+    if (ispec_map_.find("C") != ispec_map_.end()) {
+      LCI = Thermo::CoolingCI(y0[ispec_map_["C"]], nH_*y_H, nH_*y_H2, nH_*y_e, T);
+    } else {
+      LCI = 0.;
+    }
+    // OI fine structure line
+    if (ispec_map_.find("O") != ispec_map_.end()) {
+      LOI = Thermo::CoolingOI(y0[ispec_map_["O"]], nH_*y_H, nH_*y_H2, nH_*y_e, T);
+    } else {
+      LOI = 0.;
+    }
+    // cooling of hot gas: radiative cooling, free-free.
+    LHotGas = Thermo::CoolingHotGas(nH_, T, Z_g_);
+    // CO rotational lines
+    if (ispec_map_.find("CO") != ispec_map_.end()) {
+      // Calculate effective CO column density
+      Real y_CO = y0[ispec_map_["CO"]];
+      vth = sqrt(2. * Thermo::kb_ * T / ChemistryUtility::mCO);
+      nCO = nH_ * y_CO;
+      grad_small = vth/Leff_CO_max_;
+      gradeff = std::max(gradv_, grad_small);
+      NCOeff = nCO / gradeff;
+      LCOR = Thermo::CoolingCOR(y_CO, nH_*y_H,  nH_*y_H2, nH_*y_e, T, NCOeff);
+    } else {
+      LCOR = 0.;
+    }
+    // H2 vibration and rotation lines
+    LH2 = Thermo::CoolingH2(y_H2, nH_*y_H, nH_*y_H2, nH_*y_He,
+                            nH_*y_Hplus, nH_*y_e, T);
+    // dust thermo emission
+    LDust = Thermo::CoolingDustTd(Z_d_, nH_, T, temp_dust_thermo_);
+    // reconbination of e on PAHs
+    LRec = Thermo::CoolingRec_W03(Z_PAH, T,  nH_*y_e, rad_(index_gpe_),
+                                  phi_PAH_);
+    // collisional dissociation of H2
+    LH2diss = Thermo::CoolingH2diss(y_H, y_H2, k2body_H2_H, k2body_H2_H2);
+    // collisional ionization of HI
+    LHIion = Thermo::CoolingHIion(y_H,  y_e, k2body_H_e);
+  }
+
+  dEdt = (GCR + GPE + GH2gr + GH2pump + GH2diss)
+          - (LCII + LCI + LOI + LHotGas + LCOR
+              + LH2 + LDust + LRec + LH2diss + LHIion);
+  //return in code units
+  Real dEDdt = dEdt * nH_ / unit_E_in_cgs_ * unit_time_in_s_;
+  if ( isnan(dEdt) || isinf(dEdt) ) {
+    if ( isnan(LCOR) || isinf(LCOR) ) {
+      printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
+          NCOeff, gradeff, gradv_, vth, nH_, nCO);
+    }
+    printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
+        GCR , GPE , GH2gr , GH2pump , GH2diss);
+    printf("LCII=%.2e, LCI=%.2e, LOI=%.2e, LHotGas=%.2e, LCOR=%.2e\n",
+        LCII , LCI , LOI , LHotGas , LCOR);
+    printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
+        LH2 , LDust , LRec , LH2diss , LHIion);
+    printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
+        T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(y_H2, xHe_, y_e), nH_);
+    for (int i=0; i<NSCALARS; i++) {
+      printf("%s: %.2e  ", species_names[i].c_str(), y0[i]);
+    }
+    printf("\n");
+    std::stringstream msg;
+    msg << "ChemNetwork (kida): dEdt: nan or inf number" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+#ifdef DEBUG
+  if (output_thermo) {
+    printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
+        NCOeff, gradeff, gradv_, vth, nH_, nCO);
+    printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
+        GCR , GPE , GH2gr , GH2pump , GH2diss);
+    printf("LCII=%.2e, LCI=%.2e, LOI=%.2e, LHotGas=%.2e, LCOR=%.2e\n",
+        LCII , LCI , LOI , LHotGas , LCOR);
+    printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
+        LH2 , LDust , LRec , LH2diss , LHIion);
+    printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
+        T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(y_H2, xHe_, y_e), nH_);
+    for (int i=0; i<NSCALARS; i++) {
+      printf("%s: %.2e  ", species_names[i].c_str(), y0[i]);
+    }
+    printf("\n");
+    output_thermo = false;
+  }
+#endif
+  return dEDdt;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
+//!           const Real ydot[NSCALARS], AthenaArray<Real> &jac)
+//! \brief Jacobian for isothermal EOS
+void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
+                                      const Real ydot[NSCALARS],
+                                      AthenaArray<Real> &jac) {
+  //TODO(Munan Gong): check Jacobian by comparing the numerical to the analytic
+  //(does this mean Jacobian can be kind of approximate and not exact?)
+
+  Real rate = 0;
+  Real y_ices, Nl; //for desorption reactions
+  const Real eps = 1e-50;
+  const int i_H2 = ispec_map_["H2"];
+  const Real xi = rad_(index_cr_);
+  //initialize TODO(Munan Gong):check if this is necessary
+  for (int i=0; i<NSCALARS; i++) {
+    for (int j=0; j<NSCALARS; j++) {
+      jac(i,j) = 0.;
+    }
+  }
+
+  //cosmic ray reactions
+  for (int i=0; i<n_cr_; i++) {
+    rate = kcr_(i);
+    jac(incr_(i),incr_(i)) -= rate;
+    jac(outcr1_(i),incr_(i)) += rate;
+    jac(outcr2_(i),incr_(i)) += rate;
+    if (outcr3_(i) >= 0) {
+      jac(outcr3_(i),incr_(i)) += rate;
+    }
+  }
+
+  //cosmic ray induced photo reactions
+  for (int i=0; i<n_crp_; i++) {
+    rate = kcrp_(i);
+    jac(incrp_(i),incrp_(i)) -= rate;
+    jac(outcrp1_(i),incrp_(i)) += rate;
+    jac(outcrp2_(i),incrp_(i)) += rate;
+    rate = y[incrp_(i)] * kcrp_base_(i) * xi * 2.;
+    jac(incrp_(i),i_H2) -= rate;
+    jac(outcrp1_(i),i_H2) += rate;
+    jac(outcrp2_(i),i_H2) += rate;
+  }
+
+  //FUV photo-dissociation and photo-ionisation
+  for (int i=0; i<n_ph_; i++) {
+    rate = kph_(i);
+    jac(inph_(i),inph_(i)) -= rate;
+    jac(outph1_(i),inph_(i)) += rate;
+    jac(outph2_(i),inph_(i)) += rate;
+  }
+
+  //2body reactions
+  for (int i=0; i<n_2body_; i++) {
+    //df/dy1
+    rate =  k2body_(i) * y[in2body_(i, 1)] * nH_;
+    if (y[in2body_(i, 0)] < 0 && y[in2body_(i, 1)] < 0) {
+      rate *= -1.;
+    }
+    for (int jin=0; jin<n_in2body_; jin++) {
+      if (in2body_(i, jin) >= 0) {
+        jac(in2body_(i, jin),in2body_(i, 0)) -= rate;
+      }
+    }
+    for (int jout=0; jout<n_out2body_; jout++) {
+      if (out2body_(i, jout) >= 0) {
+        jac(out2body_(i, jout),in2body_(i, 0)) += rate;
+      }
+    }
+    //df/dy2
+    rate =  k2body_(i) * y[in2body_(i, 0)] * nH_;
+    if (y[in2body_(i, 0)] < 0 && y[in2body_(i, 1)] < 0) {
+      rate *= -1.;
+    }
+    for (int jin=0; jin<n_in2body_; jin++) {
+      if (in2body_(i, jin) >= 0) {
+        jac(in2body_(i, jin),in2body_(i, 1)) -= rate;
+      }
+    }
+    for (int jout=0; jout<n_out2body_; jout++) {
+      if (out2body_(i, jout) >= 0) {
+        jac(out2body_(i, jout),in2body_(i, 1)) += rate;
+      }
+    }
+  }
+
+  //2bodytr reactions
+  for (int i=0; i<n_2bodytr_; i++) {
+    //df/dy1
+    rate =  k2bodytr_(i) * y[in2bodytr2_(i)] * nH_;
+    if (y[in2bodytr1_(i)] < 0 && y[in2bodytr2_(i)] < 0) {
+      rate *= -1.;
+    }
+    jac(in2bodytr1_(i),in2bodytr1_(i)) -= rate;
+    jac(in2bodytr2_(i),in2bodytr1_(i)) -= rate;
+    jac(out2bodytr1_(i),in2bodytr1_(i)) += rate;
+    if (out2bodytr2_(i) >= 0) {
+      jac(out2bodytr2_(i),in2bodytr1_(i)) += rate;
+    }
+    if (out2bodytr3_(i) >= 0) {
+      jac(out2bodytr3_(i),in2bodytr1_(i)) += rate;
+    }
+    //df/dy2
+    rate =  k2bodytr_(i) * y[in2bodytr1_(i)] * nH_;
+    if (y[in2bodytr1_(i)] < 0 && y[in2bodytr2_(i)] < 0) {
+      rate *= -1.;
+    }
+    jac(in2bodytr1_(i),in2bodytr2_(i)) -= rate;
+    jac(in2bodytr2_(i),in2bodytr2_(i)) -= rate;
+    jac(out2bodytr1_(i),in2bodytr2_(i)) += rate;
+    if (out2bodytr2_(i) >= 0) {
+      jac(out2bodytr2_(i),in2bodytr2_(i)) += rate;
+    }
+    if (out2bodytr3_(i) >= 0) {
+      jac(out2bodytr3_(i),in2bodytr2_(i)) += rate;
+    }
+  }
+
+  //grain assisted reactions
+  //desorption reactions: dependence on ice thickness
+  y_ices = 0; //total ice abundance
+  for (int i=0; i<nices_; i++) {
+    y_ices += y[id_ices_(i)];
+  }
+  if (x_d_ < eps) { //control for very small dust abundance
+    Nl = 0.;
+  } else {
+    Nl = y_ices / (6.0e15*M_PI*a_d_*a_d_*x_d_); //number of layers
+  }
+  for (int i=0; i<n_gr_; i++) {
+    rate = kgr_(i);
+    jac(ingr1_(i),ingr1_(i)) -= rate;
+    if (ingr2_(i) >= 0) {
+      jac(ingr2_(i),ingr1_(i)) -= rate;
+    }
+    jac(outgr_(i),ingr1_(i)) += rate;
+    if (frml_gr_(i) == 10 && Nl > 1.) {//desorption
+      rate = - kgr_(i)*y[ingr1_(i)]/y_ices;
+      for (int j=0; j<nices_; j++) {
+        jac(ingr1_(i),id_ices_(j)) -= rate;
+        if (ingr2_(i) >= 0) {
+          jac(ingr2_(i),id_ices_(j)) -= rate;
+        }
+        jac(outgr_(i),id_ices_(j)) += rate;
+      }
+    }
+  }
+
+  //grain collision reactions
+  for (int i=0; i<n_gc_; i++) {
+    //df/dy1
+    rate =  kgc_(i) * y[ingc_(i, 1)] * nH_;
+    if (y[ingc_(i, 0)] < 0 && y[ingc_(i, 1)] < 0) {
+      rate *= -1.;
+    }
+    for (int jin=0; jin<n_ingc_; jin++) {
+      if (ingc_(i, jin) >= 0) {
+        jac(ingc_(i, jin),ingc_(i, 0)) -= rate;
+      }
+    }
+    for (int jout=0; jout<n_outgc_; jout++) {
+      if (outgc_(i, jout) >= 0) {
+        jac(outgc_(i, jout),ingc_(i, 0)) += rate;
+      }
+    }
+    //df/dy2
+    rate =  kgc_(i) * y[ingc_(i, 0)] * nH_;
+    if (y[ingc_(i, 0)] < 0 && y[ingc_(i, 1)] < 0) {
+      rate *= -1.;
+    }
+    for (int jin=0; jin<n_ingc_; jin++) {
+      if (ingc_(i, jin) >= 0) {
+        jac(ingc_(i, jin),ingc_(i, 1)) -= rate;
+      }
+    }
+    for (int jout=0; jout<n_outgc_; jout++) {
+      if (outgc_(i, jout) >= 0) {
+        jac(outgc_(i, jout),ingc_(i, 1)) += rate;
+      }
+    }
+  }
+
+  //special reactions with frml=7
+  UpdateJacobianSpecial(y, 0., jac);
+
+  //set unit for jacobian
+  for (int i=0; i<NSCALARS; i++) {
+    for (int j=0; j<NSCALARS; j++) {
+      jac(i,j) *= unit_time_in_s_;
+    }
+  }
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::InitializeReactions()
+//! \brief set up coefficients of chemical reactions
 void ChemNetwork::InitializeReactions() {
   KidaReaction *pr = NULL;
   //error message
@@ -730,6 +1387,11 @@ void ChemNetwork::InitializeReactions() {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E)
+//! \brief update the rates for chemical reactions.
+//!
+//! This is called at the beginning of the RHS. E is in the unit of ergs.
 void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
   const Real y_H2 = y[ispec_map_["H2"]];
   Real y_e;
@@ -1007,7 +1669,9 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
   return;
 }
 
-//sort the type of the reaction, check format
+//----------------------------------------------------------------------------------------
+//! \fn ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const
+//! \brief sort the type of the reaction, check format
 ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
   //---------------- 1 - direct cosmic-ray ionization --------------
   if (pr->itype_ == 1) {
@@ -1131,6 +1795,9 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
   }
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::CheckReaction(KidaReaction reaction)
+//! \brief check the conservation of atoms and charge for chemical reaction
 void ChemNetwork::CheckReaction(KidaReaction reaction) {
   int atom_count_in[KidaSpecies::natom_];
   int atom_count_out[KidaSpecies::natom_];
@@ -1181,6 +1848,9 @@ void ChemNetwork::CheckReaction(KidaReaction reaction) {
 }
 
 
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::PrintProperties() const
+//! \brief print out reactions and rates, for debug
 void ChemNetwork::PrintProperties() const {
   //print each species.
   for (int i=0; i<NSCALARS; i++) {
@@ -1365,8 +2035,10 @@ void ChemNetwork::PrintProperties() const {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::OutputRates(FILE *pf) const
+//! \brief output the reactions and rates
 void ChemNetwork::OutputRates(FILE *pf) const {
-  //output the reactions and rates
   for (int i=0; i<n_cr_; i++) {
     fprintf(pf, "%4s + CR -> %4s + %4s",
      species_names[incr_(i)].c_str(), species_names[outcr1_(i)].c_str(),
@@ -1473,6 +2145,9 @@ void ChemNetwork::OutputRates(FILE *pf) const {
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::OutputJacobian(FILE *pf, const AthenaArray<Real> &jac) const
+//! \brief output jacobian coefficients, for debug
 void ChemNetwork::OutputJacobian(FILE *pf, const AthenaArray<Real> &jac) const {
   const int dim = jac.GetDim1();
   for (int i=0; i<dim; i++) {
@@ -1484,645 +2159,10 @@ void ChemNetwork::OutputJacobian(FILE *pf, const AthenaArray<Real> &jac) const {
   return;
 }
 
-void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
-  Real rho, rho_floor, rad_sum;
-  const int nang = pmy_mb_->prad->nang;
-  //density
-  rho = pmy_mb_->phydro->w(IDN, k, j, i);
-  //apply density floor
-  rho_floor = pmy_mb_->peos->GetDensityFloor();
-  rho = (rho > rho_floor) ?  rho : rho_floor;
-  //hydrogen atom number density
-  nH_ =  rho * unit_density_in_nH_;
-  //average radiation field of all angles
-  for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
-    rad_sum = 0;
-    //radiation
-    for (int iang=0; iang < nang; ++iang) {
-      rad_sum += pmy_mb_->prad->ir(k, j, i, ifreq * nang + iang);
-    }
-    if (ifreq == index_cr_) {
-      rad_(index_cr_) = rad_sum / static_cast<float>(nang);
-    } else {
-      rad_(ifreq) = rad_sum * unit_radiation_in_draine1987_ / static_cast<float>(nang);
-    }
-#ifdef DEBUG
-    if (isnan(rad_(ifreq))) {
-      printf("InitializeNextStep: ");
-      printf("ifreq=%d, nang=%d, rad_sum=%.2e\n", ifreq, nang, rad_sum);
-      OutputRates(stdout);
-    }
-#endif
-  }
-  //CO cooling paramters
-  SetGrad_v(k, j, i);
-  return;
-}
-
-void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
-                      Real ydot[NSCALARS]) {
-  Real rate = 0;
-  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
-  //store previous y includeing negative abundance correction
-  Real y0[NSCALARS];//correct negative abundance, only for UpdateRates()
-  Real ydotg[NSCALARS];
-
-  for(int i=0; i<NSCALARS; i++) {
-    ydotg[i] = 0.0;
-  }
-
-  //correct negative abundance to zero, used in rate update
-  for (int i=0; i<NSCALARS; i++) {
-    if (y[i] < 0) {
-      y0[i] = 0;
-    } else {
-      y0[i] = y[i];
-    }
-    //throw error if nan, or inf, or large negative value occurs
-    if ( isnan(y[i]) || isinf(y[i]) ) {
-      printf("RHS: ");
-      for (int j=0; j<NSCALARS; j++) {
-        printf("%s: %.2e  ", species_names[j].c_str(), y[j]);
-      }
-      printf("\n");
-      OutputRates(stdout);
-      printf("rad_ = ");
-      for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
-        printf("%.2e  ", rad_(ifreq));
-      }
-      printf("\n");
-      printf("nH_ = %.2e\n", nH_);
-      std::stringstream msg;
-      msg << "ChemNetwork (kida): RHS(y): nan or inf" << std::endl;
-      ATHENA_ERROR(msg);
-    }
-  }
-
-  UpdateRates(y0, E_ergs);
-
-  if (output_rates) {
-    FILE *pf = fopen("chem_network_init.dat", "w");
-    OutputRates(pf);
-    fclose(pf);
-    output_rates = false;
-  }
-
-  //cosmic ray reactions
-  for (int i=0; i<n_cr_; i++) {
-    rate = kcr_(i) * y[incr_(i)];
-    ydotg[incr_(i)] -= rate;
-    ydotg[outcr1_(i)] += rate;
-    ydotg[outcr2_(i)] += rate;
-    if (outcr3_(i) >= 0) {
-      ydotg[outcr3_(i)] += rate;
-    }
-  }
-
-  //cosmic ray induced photo reactions
-  for (int i=0; i<n_crp_; i++) {
-    rate = kcrp_(i) * y[incrp_(i)];
-    ydotg[incrp_(i)] -= rate;
-    ydotg[outcrp1_(i)] += rate;
-    ydotg[outcrp2_(i)] += rate;
-  }
-
-  //FUV photo-dissociation and photo-ionisation
-  for (int i=0; i<n_ph_; i++) {
-    rate = kph_(i) * y[inph_(i)];
-    ydotg[inph_(i)] -= rate;
-    ydotg[outph1_(i)] += rate;
-    ydotg[outph2_(i)] += rate;
-  }
-
-  //2body reactions
-  for (int i=0; i<n_2body_; i++) {
-    rate =  k2body_(i) * y[in2body_(i, 0)] * y[in2body_(i, 1)] * nH_;
-    if (y[in2body_(i, 0)] < 0 && y[in2body_(i, 1)] < 0) {
-      rate *= -1.;
-    }
-    for (int jin=0; jin<n_in2body_; jin++) {
-      if (in2body_(i, jin) >= 0) {
-        ydotg[in2body_(i, jin)] -= rate;
-      }
-    }
-    for (int jout=0; jout<n_out2body_; jout++) {
-      if (out2body_(i, jout) >= 0) {
-        ydotg[out2body_(i, jout)] += rate;
-      }
-    }
-  }
-
-  //2bodytr reactions
-  for (int i=0; i<n_2bodytr_; i++) {
-    rate =  k2bodytr_(i) * y[in2bodytr1_(i)] * y[in2bodytr2_(i)] * nH_;
-    if (y[in2bodytr1_(i)] < 0 && y[in2bodytr2_(i)] < 0) {
-      rate *= -1.;
-    }
-    ydotg[in2bodytr1_(i)] -= rate;
-    ydotg[in2bodytr2_(i)] -= rate;
-    ydotg[out2bodytr1_(i)] += rate;
-    if (out2bodytr2_(i) >= 0) {
-      ydotg[out2bodytr2_(i)] += rate;
-    }
-    if (out2bodytr3_(i) >= 0) {
-      ydotg[out2bodytr3_(i)] += rate;
-    }
-  }
-
-  //grain assisted reactions
-  for (int i=0; i<n_gr_; i++) {
-    rate = kgr_(i) * y[ingr1_(i)];
-    ydotg[ingr1_(i)] -= rate;
-    if (ingr2_(i) >= 0) {
-      ydotg[ingr2_(i)] -= rate;
-    }
-    ydotg[outgr_(i)] += rate;
-  }
-
-  //special reactions
-  for (int i=0; i<n_sr_; i++) {
-    rate = ksr_(i);
-    for (int jin=0; jin<n_insr_; jin++) {
-      if (insr_(i, jin) >= 0) {
-        ydotg[insr_(i, jin)] -= rate;
-      }
-    }
-    for (int jout=0; jout<n_outsr_; jout++) {
-      if (outsr_(i, jout) >= 0) {
-        ydotg[outsr_(i, jout)] += rate;
-      }
-    }
-  }
-
-  //grain collision reactions
-  for (int i=0; i<n_gc_; i++) {
-    rate =  kgc_(i) * y[ingc_(i, 0)] * y[ingc_(i, 1)] * nH_;
-    if (y[ingc_(i, 0)] < 0 && y[ingc_(i, 1)] < 0) {
-      rate *= -1.;
-    }
-    for (int jin=0; jin<n_ingc_; jin++) {
-      if (ingc_(i, jin) >= 0) {
-        ydotg[ingc_(i, jin)] -= rate;
-      }
-    }
-    for (int jout=0; jout<n_outgc_; jout++) {
-      if (outgc_(i, jout) >= 0) {
-        ydotg[outgc_(i, jout)] += rate;
-      }
-    }
-  }
-
-  //set ydot to return
-  for (int i=0; i<NSCALARS; i++) {
-    //return in code units
-    ydot[i] = ydotg[i] * unit_time_in_s_;
-  }
-
-  //throw error if nan, or inf, or large value occurs
-  for (int i=0; i<NSCALARS; i++) {
-    if ( isnan(ydot[i]) || isinf(ydot[i]) ) {
-      printf("ydot: ");
-      for (int j=0; j<NSCALARS; j++) {
-        printf("%s: %.2e  ", species_names[j].c_str(), ydot[j]);
-      }
-      printf("abundances: ");
-      for (int j=0; j<NSCALARS; j++) {
-        printf("%s: %.2e  ", species_names[j].c_str(), y[j]);
-      }
-      printf("\n");
-      OutputRates(stdout);
-      printf("rad_ = ");
-      for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
-        printf("%.2e  ", rad_(ifreq));
-      }
-      printf("\n");
-      printf("nH_ = %.2e\n", nH_);
-      printf("ED = %.2e\n", ED);
-      printf("E_ergs = %.2e\n", E_ergs);
-      printf("unit_E_in_cgs_ = %.2e\n", unit_E_in_cgs_);
-      Real y_e;
-      if (ispec_map_.find("e-") != ispec_map_.end()) {
-        y_e = y0[ispec_map_["e-"]];
-      } else {
-        y_e = 0.;
-      }
-      printf("T = %.2e\n", E_ergs/Thermo::CvCold(y0[ispec_map_["H2"]], xHe_, y_e));
-      std::stringstream msg;
-      msg << "ChemNetwork (kida): RHS(ydot): nan or inf" << std::endl;
-      ATHENA_ERROR(msg);
-    }
-  }
-
-  return;
-}
-
-Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
-  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
-  //isothermal
-  if (!NON_BAROTROPIC_EOS) {
-    return 0;
-  }
-  Real T = 0.;
-  Real dEdt = 0.;
-  Real y0[NSCALARS];
-  //correct negative abundance to zero
-  for (int i=0; i<NSCALARS; i++) {
-    if (y[i] < 0) {
-      y0[i] = 0;
-    } else {
-      y0[i] = y[i];
-    }
-  }
-  //abundances
-  const Real y_H2 = y0[ispec_map_["H2"]];
-  const Real y_H = y0[ispec_map_["H"]];
-  Real y_e, y_He, y_Hplus, kcr_H, kcr_H2, kcr_He, kgr_H, kph_H2;
-  //explicit PAH abundance for heating and cooling
-  const Real y_PAH = y0[ispec_map_["PAH0"]] + y0[ispec_map_["PAH+"]]
-                     + y0[ispec_map_["PAH-"]];
-  const Real Z_PAH = y_PAH/6e-7;
-  if (ispec_map_.find("e-") != ispec_map_.end()) {
-    y_e = y0[ispec_map_["e-"]];
-  } else {
-    y_e = 0.;
-  }
-  if (ispec_map_.find("He") != ispec_map_.end()) {
-    y_He = y0[ispec_map_["He"]];
-  } else {
-    y_He = 0.;
-  }
-  if (ispec_map_.find("H+") != ispec_map_.end()) {
-    y_Hplus = y0[ispec_map_["H+"]];
-  } else {
-    y_Hplus = 0.;
-  }
-  if (icr_H_ >= 0) {
-    kcr_H = kcr_(icr_H_);
-  } else {
-    kcr_H = 0.;
-  }
-  if (icr_H2_ >= 0) {
-    kcr_H2 = kcr_(icr_H2_);
-  } else {
-    kcr_H2 = 0.;
-  }
-  if (icr_He_ >= 0) {
-    kcr_He = kcr_(icr_He_);
-  } else {
-    kcr_He = 0.;
-  }
-  if (igr_H_ >= 0) {
-    kgr_H = kgr_(igr_H_);
-  } else {
-    kgr_H = 0.;
-  }
-  if (iph_H2_ >= 0) {
-    kph_H2 = kph_(iph_H2_);
-  } else {
-    kph_H2 = 0.;
-  }
-  //temperature
-  T = E_ergs / Thermo::CvCold(y_H2, xHe_, y_e);
-  //apply temperature floor, incase of very small or negative energy
-  if (T < temp_min_rates_) {
-    T = temp_min_rates_;
-  }
-
-
-  //--------------------------heating-----------------------------
-  Real GCR, GPE, GH2gr, dot_xH2_photo, GH2pump, GH2diss;
-  //CR heating
-  GCR = Thermo::HeatingCr(y_e,  nH_, y_H,  y_He,  y_H2, kcr_H, kcr_He, kcr_H2);
-  //photo electric effect on dust
-  GPE = Thermo::HeatingPE_W03(rad_(index_gpe_), Z_PAH, T, nH_*y_e, phi_PAH_);
-  //H2 formation on dust grains
-  GH2gr = Thermo::HeatingH2gr(y_H,  y_H2, nH_, T, kgr_H);
-  //H2 UV pumping
-  dot_xH2_photo = kph_H2 * y_H2;
-  GH2pump = Thermo::HeatingH2pump(y_H,  y_H2, nH_, T, dot_xH2_photo);
-  //H2 photo dissiociation.
-  GH2diss = Thermo::HeatingH2diss(dot_xH2_photo);
-
-  //--------------------------cooling-----------------------------
-  Real LCII, LCI, LOI, LHotGas, LCOR, LH2, LDust, LRec, LH2diss, LHIion;
-  Real vth, nCO, grad_small;
-  Real NCOeff, gradeff;
-  Real k2body_H2_H, k2body_H2_H2, k2body_H_e;
-  if (i2body_H2_H_ >= 0) {
-    k2body_H2_H = k2body_(i2body_H2_H_);
-  } else {
-    k2body_H2_H = 0.;
-  }
-  if (i2body_H2_H2_ >= 0) {
-    k2body_H2_H2 = k2body_(i2body_H2_H2_);
-  } else {
-    k2body_H2_H2 = 0.;
-  }
-  if (i2body_H_e_ >= 0) {
-    k2body_H_e = k2body_(i2body_H_e_);
-  } else {
-    k2body_H_e = 0.;
-  }
-  if (T < temp_min_cool_) {
-    LCII = 0.;
-    LCI = 0;
-    LOI = 0.;
-    LHotGas = 0;
-    LCOR = 0;
-    LH2 = 0;
-    LDust = 0;
-    LRec = 0;
-    LH2diss = 0;
-    LHIion = 0;
-  } else {
-    // C+ fine structure line
-    if (ispec_map_.find("C+") != ispec_map_.end()) {
-      LCII = Thermo::CoolingCII(y0[ispec_map_["C+"]],
-                                nH_*y_H,  nH_*y_H2, nH_*y_e, T);
-    } else {
-      LCII = 0.;
-    }
-    // CI fine structure line
-    if (ispec_map_.find("C") != ispec_map_.end()) {
-      LCI = Thermo::CoolingCI(y0[ispec_map_["C"]], nH_*y_H, nH_*y_H2, nH_*y_e, T);
-    } else {
-      LCI = 0.;
-    }
-    // OI fine structure line
-    if (ispec_map_.find("O") != ispec_map_.end()) {
-      LOI = Thermo::CoolingOI(y0[ispec_map_["O"]], nH_*y_H, nH_*y_H2, nH_*y_e, T);
-    } else {
-      LOI = 0.;
-    }
-    // cooling of hot gas: radiative cooling, free-free.
-    LHotGas = Thermo::CoolingHotGas(nH_, T, Z_g_);
-    // CO rotational lines
-    if (ispec_map_.find("CO") != ispec_map_.end()) {
-      // Calculate effective CO column density
-      Real y_CO = y0[ispec_map_["CO"]];
-      vth = sqrt(2. * Thermo::kb_ * T / ChemistryUtility::mCO);
-      nCO = nH_ * y_CO;
-      grad_small = vth/Leff_CO_max_;
-      gradeff = std::max(gradv_, grad_small);
-      NCOeff = nCO / gradeff;
-      LCOR = Thermo::CoolingCOR(y_CO, nH_*y_H,  nH_*y_H2, nH_*y_e, T, NCOeff);
-    } else {
-      LCOR = 0.;
-    }
-    // H2 vibration and rotation lines
-    LH2 = Thermo::CoolingH2(y_H2, nH_*y_H, nH_*y_H2, nH_*y_He,
-                            nH_*y_Hplus, nH_*y_e, T);
-    // dust thermo emission
-    LDust = Thermo::CoolingDustTd(Z_d_, nH_, T, temp_dust_thermo_);
-    // reconbination of e on PAHs
-    LRec = Thermo::CoolingRec_W03(Z_PAH, T,  nH_*y_e, rad_(index_gpe_),
-                                  phi_PAH_);
-    // collisional dissociation of H2
-    LH2diss = Thermo::CoolingH2diss(y_H, y_H2, k2body_H2_H, k2body_H2_H2);
-    // collisional ionization of HI
-    LHIion = Thermo::CoolingHIion(y_H,  y_e, k2body_H_e);
-  }
-
-  dEdt = (GCR + GPE + GH2gr + GH2pump + GH2diss)
-          - (LCII + LCI + LOI + LHotGas + LCOR
-              + LH2 + LDust + LRec + LH2diss + LHIion);
-  //return in code units
-  Real dEDdt = dEdt * nH_ / unit_E_in_cgs_ * unit_time_in_s_;
-  if ( isnan(dEdt) || isinf(dEdt) ) {
-    if ( isnan(LCOR) || isinf(LCOR) ) {
-      printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
-          NCOeff, gradeff, gradv_, vth, nH_, nCO);
-    }
-    printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
-        GCR , GPE , GH2gr , GH2pump , GH2diss);
-    printf("LCII=%.2e, LCI=%.2e, LOI=%.2e, LHotGas=%.2e, LCOR=%.2e\n",
-        LCII , LCI , LOI , LHotGas , LCOR);
-    printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
-        LH2 , LDust , LRec , LH2diss , LHIion);
-    printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
-        T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(y_H2, xHe_, y_e), nH_);
-    for (int i=0; i<NSCALARS; i++) {
-      printf("%s: %.2e  ", species_names[i].c_str(), y0[i]);
-    }
-    printf("\n");
-    std::stringstream msg;
-    msg << "ChemNetwork (kida): dEdt: nan or inf number" << std::endl;
-    ATHENA_ERROR(msg);
-  }
-#ifdef DEBUG
-  if (output_thermo) {
-    printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
-        NCOeff, gradeff, gradv_, vth, nH_, nCO);
-    printf("GCR=%.2e, GPE=%.2e, GH2gr=%.2e, GH2pump=%.2e GH2diss=%.2e\n",
-        GCR , GPE , GH2gr , GH2pump , GH2diss);
-    printf("LCII=%.2e, LCI=%.2e, LOI=%.2e, LHotGas=%.2e, LCOR=%.2e\n",
-        LCII , LCI , LOI , LHotGas , LCOR);
-    printf("LH2=%.2e, LDust=%.2e, LRec=%.2e, LH2diss=%.2e, LHIion=%.2e\n",
-        LH2 , LDust , LRec , LH2diss , LHIion);
-    printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
-        T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(y_H2, xHe_, y_e), nH_);
-    for (int i=0; i<NSCALARS; i++) {
-      printf("%s: %.2e  ", species_names[i].c_str(), y0[i]);
-    }
-    printf("\n");
-    output_thermo = false;
-  }
-#endif
-  return dEDdt;
-}
-
-void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
-                                      const Real ydot[NSCALARS],
-                                      AthenaArray<Real> &jac) {
-  //TODO(Munan Gong): check Jacobian by comparing the numerical to the analytic
-  //(does this mean Jacobian can be kind of approximate and not exact?)
-
-  Real rate = 0;
-  Real y_ices, Nl; //for desorption reactions
-  const Real eps = 1e-50;
-  const int i_H2 = ispec_map_["H2"];
-  const Real xi = rad_(index_cr_);
-  //initialize TODO(Munan Gong):check if this is necessary
-  for (int i=0; i<NSCALARS; i++) {
-    for (int j=0; j<NSCALARS; j++) {
-      jac(i,j) = 0.;
-    }
-  }
-
-  //cosmic ray reactions
-  for (int i=0; i<n_cr_; i++) {
-    rate = kcr_(i);
-    jac(incr_(i),incr_(i)) -= rate;
-    jac(outcr1_(i),incr_(i)) += rate;
-    jac(outcr2_(i),incr_(i)) += rate;
-    if (outcr3_(i) >= 0) {
-      jac(outcr3_(i),incr_(i)) += rate;
-    }
-  }
-
-  //cosmic ray induced photo reactions
-  for (int i=0; i<n_crp_; i++) {
-    rate = kcrp_(i);
-    jac(incrp_(i),incrp_(i)) -= rate;
-    jac(outcrp1_(i),incrp_(i)) += rate;
-    jac(outcrp2_(i),incrp_(i)) += rate;
-    rate = y[incrp_(i)] * kcrp_base_(i) * xi * 2.;
-    jac(incrp_(i),i_H2) -= rate;
-    jac(outcrp1_(i),i_H2) += rate;
-    jac(outcrp2_(i),i_H2) += rate;
-  }
-
-  //FUV photo-dissociation and photo-ionisation
-  for (int i=0; i<n_ph_; i++) {
-    rate = kph_(i);
-    jac(inph_(i),inph_(i)) -= rate;
-    jac(outph1_(i),inph_(i)) += rate;
-    jac(outph2_(i),inph_(i)) += rate;
-  }
-
-  //2body reactions
-  for (int i=0; i<n_2body_; i++) {
-    //df/dy1
-    rate =  k2body_(i) * y[in2body_(i, 1)] * nH_;
-    if (y[in2body_(i, 0)] < 0 && y[in2body_(i, 1)] < 0) {
-      rate *= -1.;
-    }
-    for (int jin=0; jin<n_in2body_; jin++) {
-      if (in2body_(i, jin) >= 0) {
-        jac(in2body_(i, jin),in2body_(i, 0)) -= rate;
-      }
-    }
-    for (int jout=0; jout<n_out2body_; jout++) {
-      if (out2body_(i, jout) >= 0) {
-        jac(out2body_(i, jout),in2body_(i, 0)) += rate;
-      }
-    }
-    //df/dy2
-    rate =  k2body_(i) * y[in2body_(i, 0)] * nH_;
-    if (y[in2body_(i, 0)] < 0 && y[in2body_(i, 1)] < 0) {
-      rate *= -1.;
-    }
-    for (int jin=0; jin<n_in2body_; jin++) {
-      if (in2body_(i, jin) >= 0) {
-        jac(in2body_(i, jin),in2body_(i, 1)) -= rate;
-      }
-    }
-    for (int jout=0; jout<n_out2body_; jout++) {
-      if (out2body_(i, jout) >= 0) {
-        jac(out2body_(i, jout),in2body_(i, 1)) += rate;
-      }
-    }
-  }
-
-  //2bodytr reactions
-  for (int i=0; i<n_2bodytr_; i++) {
-    //df/dy1
-    rate =  k2bodytr_(i) * y[in2bodytr2_(i)] * nH_;
-    if (y[in2bodytr1_(i)] < 0 && y[in2bodytr2_(i)] < 0) {
-      rate *= -1.;
-    }
-    jac(in2bodytr1_(i),in2bodytr1_(i)) -= rate;
-    jac(in2bodytr2_(i),in2bodytr1_(i)) -= rate;
-    jac(out2bodytr1_(i),in2bodytr1_(i)) += rate;
-    if (out2bodytr2_(i) >= 0) {
-      jac(out2bodytr2_(i),in2bodytr1_(i)) += rate;
-    }
-    if (out2bodytr3_(i) >= 0) {
-      jac(out2bodytr3_(i),in2bodytr1_(i)) += rate;
-    }
-    //df/dy2
-    rate =  k2bodytr_(i) * y[in2bodytr1_(i)] * nH_;
-    if (y[in2bodytr1_(i)] < 0 && y[in2bodytr2_(i)] < 0) {
-      rate *= -1.;
-    }
-    jac(in2bodytr1_(i),in2bodytr2_(i)) -= rate;
-    jac(in2bodytr2_(i),in2bodytr2_(i)) -= rate;
-    jac(out2bodytr1_(i),in2bodytr2_(i)) += rate;
-    if (out2bodytr2_(i) >= 0) {
-      jac(out2bodytr2_(i),in2bodytr2_(i)) += rate;
-    }
-    if (out2bodytr3_(i) >= 0) {
-      jac(out2bodytr3_(i),in2bodytr2_(i)) += rate;
-    }
-  }
-
-  //grain assisted reactions
-  //desorption reactions: dependence on ice thickness
-  y_ices = 0; //total ice abundance
-  for (int i=0; i<nices_; i++) {
-    y_ices += y[id_ices_(i)];
-  }
-  if (x_d_ < eps) { //control for very small dust abundance
-    Nl = 0.;
-  } else {
-    Nl = y_ices / (6.0e15*M_PI*a_d_*a_d_*x_d_); //number of layers
-  }
-  for (int i=0; i<n_gr_; i++) {
-    rate = kgr_(i);
-    jac(ingr1_(i),ingr1_(i)) -= rate;
-    if (ingr2_(i) >= 0) {
-      jac(ingr2_(i),ingr1_(i)) -= rate;
-    }
-    jac(outgr_(i),ingr1_(i)) += rate;
-    if (frml_gr_(i) == 10 && Nl > 1.) {//desorption
-      rate = - kgr_(i)*y[ingr1_(i)]/y_ices;
-      for (int j=0; j<nices_; j++) {
-        jac(ingr1_(i),id_ices_(j)) -= rate;
-        if (ingr2_(i) >= 0) {
-          jac(ingr2_(i),id_ices_(j)) -= rate;
-        }
-        jac(outgr_(i),id_ices_(j)) += rate;
-      }
-    }
-  }
-
-  //grain collision reactions
-  for (int i=0; i<n_gc_; i++) {
-    //df/dy1
-    rate =  kgc_(i) * y[ingc_(i, 1)] * nH_;
-    if (y[ingc_(i, 0)] < 0 && y[ingc_(i, 1)] < 0) {
-      rate *= -1.;
-    }
-    for (int jin=0; jin<n_ingc_; jin++) {
-      if (ingc_(i, jin) >= 0) {
-        jac(ingc_(i, jin),ingc_(i, 0)) -= rate;
-      }
-    }
-    for (int jout=0; jout<n_outgc_; jout++) {
-      if (outgc_(i, jout) >= 0) {
-        jac(outgc_(i, jout),ingc_(i, 0)) += rate;
-      }
-    }
-    //df/dy2
-    rate =  kgc_(i) * y[ingc_(i, 0)] * nH_;
-    if (y[ingc_(i, 0)] < 0 && y[ingc_(i, 1)] < 0) {
-      rate *= -1.;
-    }
-    for (int jin=0; jin<n_ingc_; jin++) {
-      if (ingc_(i, jin) >= 0) {
-        jac(ingc_(i, jin),ingc_(i, 1)) -= rate;
-      }
-    }
-    for (int jout=0; jout<n_outgc_; jout++) {
-      if (outgc_(i, jout) >= 0) {
-        jac(outgc_(i, jout),ingc_(i, 1)) += rate;
-      }
-    }
-  }
-
-  //special reactions with frml=7
-  UpdateJacobianSpecial(y, 0., jac);
-
-  //set unit for jacobian
-  for (int i=0; i<NSCALARS; i++) {
-    for (int j=0; j<NSCALARS; j++) {
-      jac(i,j) *= unit_time_in_s_;
-    }
-  }
-
-  return;
-}
-
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::Jacobian_isothermal_numerical(const Real t,
+//!    const Real y[NSCALARS], const Real ydot[NSCALARS], AthenaArray<Real> &jac)
+//! \brief calculate Jacobian with numerical differentiation
 void ChemNetwork::Jacobian_isothermal_numerical(const Real t,
     const Real y[NSCALARS], const Real ydot[NSCALARS], AthenaArray<Real> &jac) {
   const Real dy = 1e-3;
@@ -2150,6 +2190,9 @@ void ChemNetwork::Jacobian_isothermal_numerical(const Real t,
   return;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::SetGrad_v(const int k, const int j, const int i)
+//! \brief set gradients of v and nH for CO cooling
 void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
   AthenaArray<Real> &w = pmy_mb_->phydro->w;
   Real dvdx, dvdy, dvdz, dvdr_avg, di1, di2;
@@ -2182,14 +2225,23 @@ void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
 }
 
 
-//default: no special rates
+//----------------------------------------------------------------------------------------
+//! \fn void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E)
+//! \brief update reaction rates for special reactions with formula = 7
+//!
+//! default: no special rates
 void __attribute__((weak)) ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS],
                                                            const Real E) {
   // do nothing
   return;
 }
 
-//default: no special rates, and therefore no special terms for Jacobian
+//----------------------------------------------------------------------------------------
+//! \fn ChemNetwork::UpdateJacobianSpecial( const Real y[NSCALARS], const Real E,
+//!       AthenaArray<Real> &jac)
+//! \brief update jacobian coefficients for special reactions with formula = 7
+//!
+//! default: no special rates, and therefore no special terms for Jacobian
 void __attribute__((weak)) ChemNetwork::UpdateJacobianSpecial(
                const Real y[NSCALARS], const Real E, AthenaArray<Real> &jac) {
   // do nothing

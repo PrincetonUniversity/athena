@@ -1,21 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
 //! \file kida_species.cpp
-//  \brief implementation of functions in class KidaSpecies
-//======================================================================================
+//! \brief implementation of functions in class KidaSpecies
 
 //this class header
 #include "kida_species.hpp"
@@ -33,6 +22,8 @@ const Real KidaSpecies::ma_atom_[natom_] =
 {1., 4., 12., 14., 16., 28., 32., 55.8, 23., 24.3, 35.5, 31., 19. };
 //H  He   C    N    O   Si   S    Fe    Na   Mg    Cl    P    F
 
+//----------------------------------------------------------------------------------------
+//! constructor
 KidaSpecies::KidaSpecies(std::string line, int index) :
   index(index) {
   std::stringstream msg; //error message
@@ -54,6 +45,9 @@ KidaSpecies::KidaSpecies(std::string line, int index) :
   mass_ += static_cast<float>(-charge_) * ChemistryUtility::me;
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn void KidaSpecies::SetMass(Real mass)
+//! \brief set the mass of species. used for grains.
 void KidaSpecies::SetMass(Real mass) {
   mass_ = mass;
   return;

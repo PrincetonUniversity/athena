@@ -1,20 +1,10 @@
-//======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
-// Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
-//
-// This program is free software: you can redistribute and/or modify it under the terms
-// of the GNU General Public License (GPL) as published by the Free Software Foundation,
-// either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-//
-// You should have received a copy of GNU GPL in the file LICENSE included in the code
-// distribution.  If not see <http://www.gnu.org/licenses/>.
-//======================================================================================
-//! \file read_vtk.c
-//  \brief problem generator, initalize mesh by read in vtk files.
+// Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
+// Licensed under the 3-clause BSD License, see LICENSE file for details
+//========================================================================================
+//! \file read_vtk.cpp
+//! \brief problem generator, initalize mesh by read in vtk files.
 //======================================================================================
 
 // C headers
@@ -52,9 +42,8 @@ static void ath_bswap(void *vdat, int len, int cnt);
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief initialize problem by reading in vtk file.
+//! \brief initialize problem by reading in vtk file.
 //======================================================================================
-
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //dimensions of meshblock
   const int Nx = ie - is + 1;
@@ -355,9 +344,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 //======================================================================================
 //! \fn static void readvtk(MeshBlock *, std::string , std::string,
-//                          int , AthenaArray<Real> &, int)
-//  \brief read from athena4.2 vtk file and assign initial value to
-//  variables.
+//!                         int , AthenaArray<Real> &, int)
+//! \brief read from athena4.2 vtk file and assign initial value to
+//! variables.
 //======================================================================================
 static void readvtk(MeshBlock *mb, std::string filename, std::string field,
                     int component, AthenaArray<Real> &data, int isjoinedvtk) {
@@ -601,8 +590,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
 
 //======================================================================================
 //! \fn static void ath_bswap(void *vdat, int len, int cnt)
-
-//  \brief Swap bytes, code stolen from Athena4.2, NEMO
+//! \brief Swap bytes, code stolen from Athena4.2, NEMO
 //======================================================================================
 static void ath_bswap(void *vdat, int len, int cnt) {
   char tmp, *dat = static_cast<char *>(vdat);
