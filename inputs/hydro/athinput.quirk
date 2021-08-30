@@ -1,0 +1,49 @@
+<comment>
+problem   = Quirk's Carbuncle test
+reference = Quirk, J. (1994)
+configure = --prob=quirk (-b)  (use --flux=lhllc/lhlld to suppress Carbuncle)
+
+<job>
+problem_id  = Quirk     # problem ID: basename of output filenames
+
+<output1>
+file_type   = vtk       # Tabular data dump
+variable    = prim      # variables to be output
+data_format = %12.5e    # Optional data format string
+dt          = 0.01      # time increment between outputs
+
+<time>
+cfl_number  = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = -1        # cycle limit
+tlim        = 0.4       # time limit
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
+
+<mesh>
+nx1         = 128       # Number of zones in X1-direction
+x1min       = 0.0       # minimum value of X1
+x1max       = 1.0       # maximum value of X1
+ix1_bc      = outflow   # Inner-X1 boundary condition flag
+ox1_bc      = outflow   # Outer-X1 boundary condition flag
+
+nx2         = 16        # Number of zones in X2-direction
+x2min       = -0.0625   # minimum value of X2
+x2max       =  0.0625   # maximum value of X2
+ix2_bc      = periodic  # Inner-X2 boundary condition flag
+ox2_bc      = periodic  # Outer-X2 boundary condition flag
+
+nx3         = 1         # Number of zones in X3-direction
+x3min       = -0.5      # minimum value of X3
+x3max       = 0.5       # maximum value of X3
+ix3_bc      = periodic  # Inner-X3 boundary condition flag
+ox3_bc      = periodic  # Outer-X3 boundary condition flag
+
+num_threads = 1         # maximum number of OMP threads
+
+<hydro>
+gamma           = 1.666666666666667   # gamma = C_p/C_v
+iso_sound_speed = 1.0   # isothermal sound speed
+
+<problem>
+bx              = 0.0   # x magnetic field (only for MHD)
