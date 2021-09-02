@@ -33,6 +33,7 @@
 #include "../radiation/integrators/rad_integrators.hpp"
 #include "../radiation/radiation.hpp"
 #include "../scalars/scalars.hpp"
+#include "../utils/units.hpp"
 
 
 //======================================================================================
@@ -46,7 +47,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const int Nz = ke - ks + 1;
   //read density and radiation field strength
   const Real nH = pin->GetReal("problem", "nH");
-  const Real vx = pin->GetOrAddReal("problem", "vx", 0);
+  const Real vx = pin->GetOrAddReal("problem", "vx_kms", 0);
   const Real s_init = pin->GetReal("problem", "s_init");
   const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   const Real pres = nH*SQR(iso_cs);

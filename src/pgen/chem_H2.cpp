@@ -33,6 +33,7 @@
 #include "../radiation/integrators/rad_integrators.hpp"
 #include "../radiation/radiation.hpp"
 #include "../scalars/scalars.hpp"
+#include "../utils/units.hpp"
 
 Real threshold;
 int RefinementCondition(MeshBlock *pmb);
@@ -59,7 +60,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const int Nz = ke - ks + 1;
   //read input parameters
   const Real nH = pin->GetReal("problem", "nH"); //density
-  const Real vx = pin->GetOrAddReal("problem", "vx", 0); //velocity x
+  const Real vx = pin->GetOrAddReal("problem", "vx_kms", 0); //velocity x
   //mean and std of the initial gaussian profile
   const Real gaussian_mean = pin->GetOrAddReal("problem", "gaussian_mean", 0.5);
   const Real gaussian_std = pin->GetOrAddReal("problem", "gaussian_std", 0.1);
@@ -159,30 +160,26 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   //read input parameters
   const Real nH = pin->GetReal("problem", "nH"); //density
-  const Real vx = pin->GetOrAddReal("problem", "vx", 0); //velocity x
+  const Real vx = pin->GetOrAddReal("problem", "vx_kms", 0); //velocity x
   const Real gaussian_mean = pin->GetOrAddReal("problem", "gaussian_mean", 0.5);
   const Real gaussian_std = pin->GetOrAddReal("problem", "gaussian_std", 0.1);
   //chemistry parameters
-  const Real unit_density_in_nH = pin->GetReal("chemistry", "unit_density_in_nH");
-  const Real unit_length_in_cm = pin->GetReal("chemistry", "unit_length_in_cm");
-  const Real unit_vel_in_cms = pin->GetReal("chemistry", "unit_vel_in_cms");
-  const Real unit_time_in_s = unit_length_in_cm/unit_vel_in_cms;
-  const Real unit_ED_in_cgs = 1.67e-24 * 1.4 * unit_vel_in_cms * unit_vel_in_cms;
+  Units *punit = my_blocks(0)->pscalars->chemnet.punit;
   const Real xi_cr = pin->GetOrAddReal("chemistry", "xi_cr", 2e-16);
   const Real kcr = xi_cr * 3.;
   const Real kgr = 3e-17;
-  const Real a1 = kcr + 2.*nH*kgr*unit_density_in_nH;
+  const Real a1 = kcr + 2.*nH*kgr;
   const Real a2 = kcr;
   //cooling parameters
   const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   const Real gm = pin->GetReal("hydro", "gamma");
   const Real ED0  = SQR(iso_cs) / (gm - 1.0);
   const Real CvHI = Thermo::CvCold(0., 0.1, 0.);
-  const Real T0 =  (ED0 * unit_ED_in_cgs)  / CvHI;
-  const Real tdust = 2 * CvHI / (3.2e-34 * nH * unit_density_in_nH);
+  const Real T0 =  (ED0 * punit->EnergyDensity)  / CvHI;
+  const Real tdust = 2 * CvHI / (3.2e-34 * nH);
 
   //end of the simulation time
-  const Real tchem = time*unit_time_in_s;
+  const Real tchem = time*punit->Time;
   const Real mu = gaussian_mean + vx*time;
   const Real xg_min = vx*time;
   const Real xg_max = xg_min + 1.;
@@ -219,7 +216,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real fH2 = 0.5*(1. - fH);
           T1_a = 1. / SQR( tchem/tdust + 1./sqrt(T0) );//analytic T
           T1_s = pmb->phydro->w(IPR,k,j,i)/pmb->phydro->w(IDN,k,j,i)/(gm-1)
-                        * unit_ED_in_cgs / CvHI;//simulation T
+                        * punit->EnergyDensity / CvHI;//simulation T
           // Weight l1 error by cell volume
           Real vol = pmb->pcoord->GetCellVolume(k, j, i);
           l1_err[0] += std::abs(fH - pmb->pscalars->r(0,k,j,i))*vol;

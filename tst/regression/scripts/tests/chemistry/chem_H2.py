@@ -37,7 +37,7 @@ def run(**kwargs):
 
 
 def analyze():
-    def get_H(t_code, unit_length_in_cm=3.086e+18, unit_vel_in_cms=1.0e5,
+    def get_H(t_code, unit_length_in_cm=3.085678e+18, unit_vel_in_cms=1.0e5,
               f_H_0=1., n=100., xi_cr=2.0e-16, k_gr=3.0e-17):
         """theoretical abundance of atomic hydrogen over time.
         input:
@@ -59,7 +59,7 @@ def analyze():
         return f_H
 
     # maximum error allowed
-    err_control = 2.0e-5
+    err_control = 1.0e-4
     # athena++ output
     fn_hst = "bin/chem_H2.hst"
     data_hst = athena_read.hst(fn_hst)

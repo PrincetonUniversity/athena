@@ -25,12 +25,14 @@
 //athena++ header
 #include "../../defs.hpp"
 #include "../../eos/eos.hpp"
+#include "../../globals.hpp"
 #include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"       //ParameterInput
 #include "../../radiation/radiation.hpp"
 #include "../../scalars/scalars.hpp"
 #include "../../utils/string_utils.hpp"
+#include "../../utils/units.hpp"
 #include "../utils/chemistry_utils.hpp"
 #include "../utils/thermo.hpp"
 #include "network.hpp"
@@ -49,7 +51,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   n_2bodytr_(0), n_gr_(0), igr_H_(-1), n_sr_(0), n_gc_(0),
   n_freq_(0), index_gpe_(0), index_cr_(0), gradv_(0.), flag_T_rates_(true) {
   //set the parameters from input file
-  Z_g_ = pin->GetOrAddReal("chemistry", "Z_g", 1.);//dust and gas metallicity
+  Z_g_ = pin->GetOrAddReal("chemistry", "Z_g", 1.);//gas metallicity
   //PAH recombination efficiency
   phi_PAH_ = pin->GetOrAddReal("chemistry", "phi_PAH", 0.4);
   //size of the dust grain in cm, default 0.1 micron
@@ -58,27 +60,40 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   rho_d_ = pin->GetOrAddReal("chemistry", "rho_d", 2.);
   //mass of the dust grain in g, assuming density of 2 g/cm3
   m_d_ = rho_d_ * 4.*M_PI * a_d_*a_d_*a_d_ / 3.;
+  //fixing grain abundance for implicity grain assisted reactions
+  is_fixed_Zd_ = pin->GetOrAddBoolean("chemistry", "is_fixed_Zd", false);
+  //fixing PAH abundance for PE heating and Rec cooling
+  is_fixed_PAH_ = pin->GetOrAddBoolean("chemistry", "is_fixed_PAH", false);
+  if (is_fixed_PAH_) {
+    Z_PAH_ = pin->GetReal("chemistry", "Z_PAH");
+  } else {
+    Z_PAH_ = 0.;
+  }
   //grain abundance, read from initialization
   const Real sinit = pin->GetOrAddReal("problem", "s_init", 0.);
   const Real xg0 = pin->GetOrAddReal("problem", "s_init_g0", sinit);
   const Real xgp = pin->GetOrAddReal("problem", "s_init_g+", sinit);
   const Real xgm = pin->GetOrAddReal("problem", "s_init_g-", sinit);
   x_d_ = xg0 + xgp + xgm; //total dust abundance
-  //relative abundance of all dust at Zd=1
-  const Real xdZ1 = 0.013 * 1.4 * 1.67e-24 / m_d_;
-  Z_d_ = x_d_ / xdZ1;
-  std::cout << "Z_d=" << Z_d_ << std::endl;
+  //setting dust metallicity for implicit grain assisted reactions
+  if (is_fixed_Zd_) { //fixing Z_d
+    Z_d_ = pin->GetReal("chemistry", "Z_d");
+  } else { //setting Z_d according to the grain abundance
+    //relative abundance of all dust at Zd=1
+    const Real xdZ1 = 0.013 * 1.4 * 1.67e-24 / m_d_;
+    Z_d_ = x_d_ / xdZ1;
+  }
+  if (Globals::my_rank == 0) {
+    std::cout << "Z_d=" << Z_d_ << ", Z_PAH=" << Z_PAH_ << std::endl;
+  }
   o2pH2_ = pin->GetOrAddReal("chemistry", "o2pH2", 3.);//ortho to para H2 ratio
   Yi_ = pin->GetOrAddReal("chemistry", "Yi", 1e-3);//ortho to para H2 ratio
   //units
-  unit_density_in_nH_ = pin->GetReal("chemistry", "unit_density_in_nH");
-  unit_length_in_cm_ = pin->GetReal("chemistry", "unit_length_in_cm");
-  unit_vel_in_cms_ = pin->GetReal("chemistry", "unit_vel_in_cms");
-  unit_radiation_in_draine1987_ = pin->GetReal(
-                                "chemistry", "unit_radiation_in_draine1987");
-  unit_time_in_s_ = unit_length_in_cm_/unit_vel_in_cms_;
-  unit_E_in_cgs_ = 1.67e-24 * 1.4 * unit_density_in_nH_
-                           * unit_vel_in_cms_ * unit_vel_in_cms_;
+  Real muH = 1.4; //mass per hydrogen atoms, considering Helum
+  Real lunit = pin->GetReal("problem", "unit_length_in_pc") * Constants::pc;
+  Real dunit = muH * Constants::mH;
+  Real vunit = Constants::kms;
+  punit = new Units(dunit, lunit, vunit);
   //temperature
   if (NON_BAROTROPIC_EOS) {
     temperature_ = 0.;
@@ -285,6 +300,8 @@ ChemNetwork::~ChemNetwork() {
   FILE *pf2 = fopen("jac_numerical.dat", "w");
   OutputJacobian(pf2, jac_numerical);
   fclose(pf2);
+  //delete unit class
+  delete punit;
 }
 
 //----------------------------------------------------------------------------------------
@@ -301,7 +318,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   rho_floor = pmy_mb_->peos->GetDensityFloor();
   rho = (rho > rho_floor) ?  rho : rho_floor;
   //hydrogen atom number density
-  nH_ =  rho * unit_density_in_nH_;
+  nH_ =  rho;
   //average radiation field of all angles
   for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
     rad_sum = 0;
@@ -312,7 +329,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
     if (ifreq == index_cr_) {
       rad_(index_cr_) = rad_sum / static_cast<float>(nang);
     } else {
-      rad_(ifreq) = rad_sum * unit_radiation_in_draine1987_ / static_cast<float>(nang);
+      rad_(ifreq) = rad_sum / static_cast<float>(nang);
     }
 #ifdef DEBUG
     if (isnan(rad_(ifreq))) {
@@ -338,7 +355,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
 void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
                       Real ydot[NSCALARS]) {
   Real rate = 0;
-  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
+  Real E_ergs = ED * punit->EnergyDensity / nH_; //ernergy per hydrogen atom
   //store previous y includeing negative abundance correction
   Real y0[NSCALARS];//correct negative abundance, only for UpdateRates()
   Real ydotg[NSCALARS];
@@ -491,7 +508,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
   //set ydot to return
   for (int i=0; i<NSCALARS; i++) {
     //return in code units
-    ydot[i] = ydotg[i] * unit_time_in_s_;
+    ydot[i] = ydotg[i] * punit->Time;
   }
 
   //throw error if nan, or inf, or large value occurs
@@ -515,7 +532,6 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
       printf("nH_ = %.2e\n", nH_);
       printf("ED = %.2e\n", ED);
       printf("E_ergs = %.2e\n", E_ergs);
-      printf("unit_E_in_cgs_ = %.2e\n", unit_E_in_cgs_);
       Real y_e;
       if (ispec_map_.find("e-") != ispec_map_.end()) {
         y_e = y0[ispec_map_["e-"]];
@@ -538,7 +554,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 //!
 //! all input/output variables are in code units (ED is the energy density)
 Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
-  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
+  Real E_ergs = ED * punit->EnergyDensity / nH_; //ernergy per hydrogen atom
   //isothermal
   if (!NON_BAROTROPIC_EOS) {
     return 0;
@@ -557,11 +573,12 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
   //abundances
   const Real y_H2 = y0[ispec_map_["H2"]];
   const Real y_H = y0[ispec_map_["H"]];
-  Real y_e, y_He, y_Hplus, kcr_H, kcr_H2, kcr_He, kgr_H, kph_H2;
+  Real y_e, y_He, y_Hplus, kcr_H, kcr_H2, kcr_He, kgr_H, kph_H2, y_PAH;
   //explicit PAH abundance for heating and cooling
-  const Real y_PAH = y0[ispec_map_["PAH0"]] + y0[ispec_map_["PAH+"]]
-                     + y0[ispec_map_["PAH-"]];
-  const Real Z_PAH = y_PAH/6e-7;
+  if (!is_fixed_PAH_) {
+    y_PAH = y0[ispec_map_["PAH0"]] + y0[ispec_map_["PAH+"]] + y0[ispec_map_["PAH-"]];
+    Z_PAH_ = y_PAH/6e-7;
+  }
   if (ispec_map_.find("e-") != ispec_map_.end()) {
     y_e = y0[ispec_map_["e-"]];
   } else {
@@ -615,7 +632,11 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
   //CR heating
   GCR = Thermo::HeatingCr(y_e,  nH_, y_H,  y_He,  y_H2, kcr_H, kcr_He, kcr_H2);
   //photo electric effect on dust
-  GPE = Thermo::HeatingPE_W03(rad_(index_gpe_), Z_PAH, T, nH_*y_e, phi_PAH_);
+  if (is_fixed_PAH_) {
+    GPE = Thermo::HeatingPE(rad_(index_gpe_), Z_PAH_, T, nH_*y_e);
+  } else {
+    GPE = Thermo::HeatingPE_W03(rad_(index_gpe_), Z_PAH_, T, nH_*y_e, phi_PAH_);
+  }
   //H2 formation on dust grains
   GH2gr = Thermo::HeatingH2gr(y_H,  y_H2, nH_, T, kgr_H);
   //H2 UV pumping
@@ -696,8 +717,11 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
     // dust thermo emission
     LDust = Thermo::CoolingDustTd(Z_d_, nH_, T, temp_dust_thermo_);
     // reconbination of e on PAHs
-    LRec = Thermo::CoolingRec_W03(Z_PAH, T,  nH_*y_e, rad_(index_gpe_),
-                                  phi_PAH_);
+    if (is_fixed_PAH_) {
+      LRec = Thermo::CoolingRec(Z_PAH_, T, nH_*y_e, rad_(index_gpe_));
+    } else {
+      LRec = Thermo::CoolingRec_W03(Z_PAH_, T, nH_*y_e, rad_(index_gpe_), phi_PAH_);
+    }
     // collisional dissociation of H2
     LH2diss = Thermo::CoolingH2diss(y_H, y_H2, k2body_H2_H, k2body_H2_H2);
     // collisional ionization of HI
@@ -708,7 +732,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
           - (LCII + LCI + LOI + LHotGas + LCOR
               + LH2 + LDust + LRec + LH2diss + LHIion);
   //return in code units
-  Real dEDdt = dEdt * nH_ / unit_E_in_cgs_ * unit_time_in_s_;
+  Real dEDdt = dEdt * nH_ / punit->EnergyDensity * punit->Time;
   if ( isnan(dEdt) || isinf(dEdt) ) {
     if ( isnan(LCOR) || isinf(LCOR) ) {
       printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
@@ -941,7 +965,7 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
   //set unit for jacobian
   for (int i=0; i<NSCALARS; i++) {
     for (int j=0; j<NSCALARS; j++) {
-      jac(i,j) *= unit_time_in_s_;
+      jac(i,j) *= punit->Time;
     }
   }
 
@@ -2220,7 +2244,7 @@ void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
   dvdz = (di1/dz1 + di2/dz2)/2.;
   dvdr_avg = ( fabs(dvdx) + fabs(dvdy) + fabs(dvdz) ) / 3.;
   //asign gradv_, in cgs.
-  gradv_ = dvdr_avg * unit_vel_in_cms_ / unit_length_in_cm_;
+  gradv_ = dvdr_avg * punit->Velocity / punit->Length;
   return;
 }
 

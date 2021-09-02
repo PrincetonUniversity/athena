@@ -46,7 +46,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //read density and radiation field strength
   const Real nH = pin->GetReal("problem", "nH");
   const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
-  const Real vx = pin->GetOrAddReal("problem", "vx", 0);
+  const Real vx = pin->GetOrAddReal("problem", "vx_kms", 0);
   const Real G0 = pin->GetOrAddReal("problem", "G0", 0.);
   const Real s_init = pin->GetOrAddReal("problem", "s_init", 0.);
   const Real pres = nH*SQR(iso_cs);

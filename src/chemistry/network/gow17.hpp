@@ -16,6 +16,8 @@
 #include "../../athena_arrays.hpp"
 #include "network.hpp"
 
+class Units;
+
 //! \class ChemNetwork
 //! \brief Chemical Network that defines the reaction rates between species.
 //!
@@ -46,6 +48,7 @@ class ChemNetwork : public NetworkWrapper {
 
   Real Edot(const Real t, const Real y[NSCALARS], const Real ED);
 
+  Units *punit;
  private:
   PassiveScalars *pmy_spec_;
   MeshBlock *pmy_mb_;
@@ -64,13 +67,6 @@ class ChemNetwork : public NetworkWrapper {
   static const std::string ghost_species_names_[ngs_]; // NOLINT (runtime/arrays)
   std::string species_names_all_[NSCALARS+ngs_];// NOLINT (runtime/arrays)
   Real nH_; //density, updated at InitializeNextStep
-  //units of density and radiation
-  Real unit_density_in_nH_;
-  Real unit_length_in_cm_;
-  Real unit_vel_in_cms_;
-  Real unit_time_in_s_;
-  Real unit_E_in_cgs_;//unit of energy density, in erg cm-3
-  Real unit_radiation_in_draine1987_;
   Real temperature_;
   Real temp_max_heat_;
   Real temp_min_cool_;

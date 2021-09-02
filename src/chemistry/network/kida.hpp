@@ -20,6 +20,8 @@
 #include "../utils/kida_species.hpp"
 #include "network.hpp"
 
+class Units;
+
 //reaction types
 enum class ReactionType {none, cr, crp, photo, twobody, twobodytr,
                          grain_implicit, special, grain_collision};
@@ -47,6 +49,7 @@ class ChemNetwork : public NetworkWrapper {
   void Jacobian_isothermal(const Real t, const Real y[NSCALARS],
                            const Real ydot[NSCALARS], AthenaArray<Real> &jac);
 
+  Units *punit;
  private:
   PassiveScalars *pmy_spec_;
   MeshBlock *pmy_mb_;
@@ -65,11 +68,20 @@ class ChemNetwork : public NetworkWrapper {
   //whether to cap temperature if the reaction is outside of the temperature range
   //only for 2body reactions. Default is false, which means extrapolation
   bool is_Tcap_2body_;
+  //whether to fix dust metallicity for implicit grain assisted
+  //reactions (opposed to reading from the initial grain abundance from the
+  //input file)
+  bool is_fixed_Zd_;
+  //whether to fix PAH abundance for PE heating and Rec cooling
+  //if so, use PE heating and Rec cooling from Draine & Weingartner
+  //if not, use PE heating and Rec cooling from Wolfire+ 2003
+  bool is_fixed_PAH_;
   //flag for in isothermal EOS only temperature related rates are
   //calculated only once in the beginning
   bool flag_T_rates_;
   Real Z_g_; //gas metallicity relative to solar, default 1.
   Real Z_d_; //larger dust grain metallicity relative to solar, default 1.
+  Real Z_PAH_; //PAH abundance, for PE heating and Rec cooling
   Real phi_PAH_; //PAH recombination efficiency, default 0.4
   Real a_d_; //size of the dust grain in cm, default 1e-5 (0.1 micron)
   Real rho_d_; //density of grain in cgs, default 2 g/cm3
@@ -82,15 +94,6 @@ class ChemNetwork : public NetworkWrapper {
   Real temp_min_rates_; //temperature floor for reaction rates
   Real temp_min_cool_; //temperature minimum for cooling
   Real temp_dust_thermo_; //dust temperature for dust thermo cooling and desorption
-
-  //units
-  Real unit_density_in_nH_; //read from input
-  Real unit_length_in_cm_; //read from input
-  Real unit_vel_in_cms_; //read from input
-  Real unit_time_in_s_; //from length and velocity units
-  Real unit_radiation_in_draine1987_; //FUV radiation unit
-  //unit of energy density, in erg cm-3, from density and velocity units
-  Real unit_E_in_cgs_;
 
   //reaction constants
   //special rates index map

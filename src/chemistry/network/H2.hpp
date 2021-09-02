@@ -19,6 +19,8 @@
 #include "../../athena_arrays.hpp"
 #include "network.hpp"
 
+class Units;
+
 //! \class ChemNetwork
 //! \brief H2 Chemical Network.
 //!
@@ -45,6 +47,7 @@ class ChemNetwork : public NetworkWrapper {
 
   Real Edot(const Real t, const Real y[NSCALARS], const Real ED);
 
+  Units *punit;
  private:
   PassiveScalars *pmy_spec_;
   MeshBlock *pmy_mb_;
@@ -57,13 +60,6 @@ class ChemNetwork : public NetworkWrapper {
 
   Real xi_cr_; //primary CRIR in s-1 H-1, read from input file, default 2e-16.
   Real kcr_; //CRIR for H2 = 3*xi_cr_
-  //units
-  Real unit_density_in_nH_; //read from input
-  Real unit_length_in_cm_; //read from input
-  Real unit_vel_in_cms_; //read from input
-  Real unit_time_in_s_; //from length and velocity units
-  //unit of energy density, in erg cm-3, from density and velocity units
-  Real unit_E_in_cgs_;
   Real nH_; //density, updated at InitializeNextStep from hydro variable
 };
 

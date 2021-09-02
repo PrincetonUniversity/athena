@@ -72,7 +72,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   const int ns_gr = 5;
   const int indices_gr[ns_gr] = {15, 16, 17, 18, 19};
   //(15) H + H + gr -> H2 + gr , from Draine book chapter 31.2 page 346, Jura 1975
-  kgr_(id7map_(15)) = 3.0e-17 * nH_ * zdg_;
+  kgr_(id7map_(15)) = 3.0e-17 * nH_ * Z_d_;
   //(16) H+ + e- + gr -> H + gr
   kgr_(id7map_(16)) = 1.0e-14 * cHp[0] /
                (
@@ -80,7 +80,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
                    (1.0 + cHp[3] * pow(T, cHp[4])
                                  *pow( psi, -cHp[5]-cHp[6]*log(T) )
                    )
-                ) * nH_ * zdg_;
+                ) * nH_ * Z_d_;
   //(17) C+ + e- + gr -> C + gr
   kgr_(id7map_(17)) = 1.0e-14 * cCp[0] /
                (
@@ -88,7 +88,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
                    (1.0 + cCp[3] * pow(T, cCp[4])
                                  *pow( psi, -cCp[5]-cCp[6]*log(T) )
                    )
-                ) * nH_ * zdg_;
+                ) * nH_ * Z_d_;
   //(18) He+ + e- + gr -> He + gr
   kgr_(id7map_(18)) = 1.0e-14 * cHep[0] /
                (
@@ -96,7 +96,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
                    (1.0 + cHep[3] * pow(T, cHep[4])
                                  *pow( psi, -cHep[5]-cHep[6]*log(T) )
                    )
-                ) * nH_ * zdg_;
+                ) * nH_ * Z_d_;
   //(19) Si+ + e- + gr -> Si + gr
   kgr_(id7map_(19)) = 1.0e-14 * cSip[0] /
                (
@@ -104,21 +104,21 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
                    (1.0 + cSip[3] * pow(T, cSip[4])
                                  *pow( psi, -cSip[5]-cSip[6]*log(T) )
                    )
-                ) * nH_ * zdg_;
+                ) * nH_ * Z_d_;
 
   //2body reactions
   const int ns_2body = 9;
   const int indices_2body[ns_2body] = {33, 36, 38, 40, 41, 42, 43, 49, 50};
   //(33) He+ + e- -> He  -- Case B
   k2body_(id7map_(33)) = 1e-11*pow(T, -0.5)*(11.19 +
-                             (-1.676 + (-0.2852 + 0.04433*logT) * logT )* logT) * nH_;
+                             (-1.676 + (-0.2852 + 0.04433*logT) * logT )* logT);
   //(36) C+ + e- -> C    -- Include RR and DR, Badnell2003, 2006.
-  k2body_(id7map_(36)) = CII_rec_rate(T) * nH_;
+  k2body_(id7map_(36)) = CII_rec_rate(T);
   //(38) H2 + H2+ -> H + H3+
-  k2body_(id7map_(38)) = 1.76e-9 * pow(T, 0.042) * exp(- T/46600.) * nH_;
+  k2body_(id7map_(38)) = 1.76e-9 * pow(T, 0.042) * exp(- T/46600.);
   //(40) H+ + e- -> H  -- Case B
   k2body_(id7map_(40)) = 2.753e-14 * pow( 315614.0 / T, 1.5)
-                   * pow(  1.0 + pow( 115188.0 / T, 0.407) , -2.242 ) * nH_;
+                   * pow(  1.0 + pow( 115188.0 / T, 0.407) , -2.242 );
   //Collisional dissociation, k>~1.0e-30 at T>~5e2.
   //(41) H2 + H -> H + H + H
   //(42) H2 + H2 -> H + H + H2
@@ -142,14 +142,14 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
     }
     n2ncr = nH_ / ncr;
     k2body_(id7map_(41)) = pow(10, log10(k9h) *  n2ncr/(1. + n2ncr)
-                         + log10(k9l) / (1. + n2ncr)) * nH_;
+                         + log10(k9l) / (1. + n2ncr));
     k2body_(id7map_(42)) = pow(10, log10(k10h) *  n2ncr/(1. + n2ncr)
-                         + log10(k10l) / (1. + n2ncr)) * nH_;
+                         + log10(k10l) / (1. + n2ncr));
     k2body_(id7map_(43)) = exp( -3.271396786e1 +
                       (1.35365560e1 + (- 5.73932875 + (1.56315498
                     + (- 2.877056e-1 + (3.48255977e-2 + (- 2.63197617e-3
                     + (1.11954395e-4 + (-2.03914985e-6)
-                       *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe) *lnTe) * nH_;
+                       *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe) *lnTe);
   } else {
     k2body_(id7map_(41)) = 0.;
     k2body_(id7map_(42)) = 0.;
@@ -158,9 +158,9 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   //(49) O + H+ -> H + O+
   //(50) H + O+ -> O + H+
   k2body_(id7map_(49)) = ( 1.1e-11 * pow(T, 0.517) + 4.0e-10 * pow(T, 6.69e-3)
-                             ) * exp(-227./T) * nH_;
+                             ) * exp(-227./T);
   k2body_(id7map_(50)) = (4.99e-11* pow(T, 0.405) + 7.5e-10 * pow(T, -0.458)
-                             )* nH_;
+                             );
 
   //special reactions
   const int ns_sr = 8;
@@ -215,7 +215,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
       }
     }
     for (int i=0; i<ns_gr; i++) {
-      if (id7type_(indices_gr[i]) != ReactionType::grain) {
+      if (id7type_(indices_gr[i]) != ReactionType::grain_implicit) {
         ATHENA_ERROR(msg);
       }
     }

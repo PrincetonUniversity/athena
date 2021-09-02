@@ -30,12 +30,13 @@
 #include "../../radiation/integrators/rad_integrators.hpp"
 #include "../../radiation/radiation.hpp"
 #include "../../scalars/scalars.hpp"
+#include "../../utils/units.hpp"
 #include "../utils/chemistry_utils.hpp"
 #include "../utils/thermo.hpp"
 #include "network.hpp"
 
-#ifdef DEBUG
 static bool output_rates = true;
+#ifdef DEBUG
 static bool output_thermo = true;
 #endif
 
@@ -294,15 +295,12 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   xSi_std_ = pin->GetOrAddReal("chemistry", "xSi", 1.7e-6);
   //cosmic ray ionization rate per H
   cr_rate0_ = pin->GetOrAddReal("chemistry", "CR", 2e-16);
-  //units of density and radiation
-  unit_density_in_nH_ = pin->GetReal("chemistry", "unit_density_in_nH");
-  unit_length_in_cm_ = pin->GetReal("chemistry", "unit_length_in_cm");
-  unit_vel_in_cms_ = pin->GetReal("chemistry", "unit_vel_in_cms");
-  unit_time_in_s_ = unit_length_in_cm_/unit_vel_in_cms_;
-  unit_E_in_cgs_ = 1.67e-24 * 1.4 * unit_density_in_nH_
-                      * unit_vel_in_cms_ * unit_vel_in_cms_;
-  unit_radiation_in_draine1987_ = pin->GetReal(
-                                "chemistry", "unit_radiation_in_draine1987");
+  //units
+  Real muH = 1.4; //mass per hydrogen atoms, considering Helum
+  Real lunit = pin->GetReal("problem", "unit_length_in_pc") * Constants::pc;
+  Real dunit = muH * Constants::mH;
+  Real vunit = Constants::kms;
+  punit = new Units(dunit, lunit, vunit);
   //check whether number of frequencies equal to the input file specification
   const int nfreq = pin->GetOrAddInteger("radiation", "n_frequency", 1);
   std::stringstream msg; //error message
@@ -367,7 +365,12 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 
 //----------------------------------------------------------------------------------------
 //! \brief ChemNetwork destructor
-ChemNetwork::~ChemNetwork() {}
+ChemNetwork::~ChemNetwork() {
+  FILE *pf = fopen("chem_network.dat", "w");
+  OutputRates(pf);
+  fclose(pf);
+  delete punit;
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void ChemNetwork::InitializeNextStep(const int k, const int j, const int i)
@@ -383,7 +386,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   rho_floor = pmy_mb_->peos->GetDensityFloor();
   rho = (rho > rho_floor) ?  rho : rho_floor;
   //hydrogen atom number density
-  nH_ =  rho * unit_density_in_nH_;
+  nH_ =  rho;
   //average radiation field of all angles
   //TODO(Munan Gong): put floor on radiation variables?
   for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
@@ -395,7 +398,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
     if (ifreq == index_cr_) {
       rad_[index_cr_] = rad_sum / static_cast<float>(nang);
     } else {
-      rad_[ifreq] = rad_sum * unit_radiation_in_draine1987_ / static_cast<float>(nang);
+      rad_[ifreq] = rad_sum / static_cast<float>(nang);
     }
 #ifdef DEBUG
     if (isnan(rad_[ifreq])) {
@@ -427,7 +430,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
   //correct negative abundance
   Real yprev0[NSCALARS+ngs_]; // NOLINT (runtime/arrays)
   Real ydotg[NSCALARS+ngs_]; // NOLINT (runtime/arrays)
-  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
+  Real E_ergs = ED * punit->EnergyDensity / nH_; //ernergy per hydrogen atom
 
   for(int i=0; i<NSCALARS+ngs_; i++) {
     ydotg[i] = 0.0;
@@ -464,14 +467,12 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 
   UpdateRates(yprev0, E_ergs);
 
-#ifdef DEBUG
   if (output_rates) {
-    FILE *pf = fopen("chem_network.dat", "w");
+    FILE *pf = fopen("chem_network_init.dat", "w");
     OutputRates(pf);
     fclose(pf);
     output_rates = false;
   }
-#endif
 
   //cosmic ray reactions
   for (int i=0; i<n_cr_; i++) {
@@ -509,7 +510,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
   //set ydot to return
   for (int i=0; i<NSCALARS; i++) {
     //return in code units
-    ydot[i] = ydotg[i] * unit_time_in_s_;
+    ydot[i] = ydotg[i] * punit->Time;
   }
 
   //throw error if nan, or inf, or large value occurs
@@ -533,7 +534,6 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
       printf("nH_ = %.2e\n", nH_);
       printf("ED = %.2e\n", ED);
       printf("E_ergs = %.2e\n", E_ergs);
-      printf("unit_E_in_cgs_ = %.2e\n", unit_E_in_cgs_);
       printf("T = %.2e\n", E_ergs/Thermo::CvCold(yprev0[iH2_], xHe_, yprev0[ige_]));
       std::stringstream msg;
       msg << "ChemNetwork (gow17): RHS(ydot): nan or inf" << std::endl;
@@ -550,7 +550,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 //!
 //! all input/output variables are in code units (ED is the energy density)
 Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
-  Real E_ergs = ED * unit_E_in_cgs_ / nH_; //ernergy per hydrogen atom
+  Real E_ergs = ED * punit->EnergyDensity / nH_; //ernergy per hydrogen atom
   //isothermal
   if (!NON_BAROTROPIC_EOS) {
     return 0;
@@ -663,7 +663,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
             - (LCII + LCI + LOI + LHotGas + LCOR
                 + LH2 + LDust + LRec + LH2diss + LHIion);
   //return in code units
-  Real dEDdt = dEdt * nH_ / unit_E_in_cgs_ * unit_time_in_s_;
+  Real dEDdt = dEdt * nH_ / punit->EnergyDensity * punit->Time;
   if ( isnan(dEdt) || isinf(dEdt) ) {
     if ( isnan(LCOR) || isinf(LCOR) ) {
       printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
@@ -1041,6 +1041,6 @@ void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
   dvdz = (di1/dz1 + di2/dz2)/2.;
   dvdr_avg = ( fabs(dvdx) + fabs(dvdy) + fabs(dvdz) ) / 3.;
   //asign gradv_, in cgs.
-  gradv_ = dvdr_avg * unit_vel_in_cms_ / unit_length_in_cm_;
+  gradv_ = dvdr_avg * punit->Velocity / punit->Length;
   return;
 }

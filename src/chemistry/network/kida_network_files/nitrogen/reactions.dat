@@ -176,7 +176,7 @@ PAH-       Photon                 PAH0       e-                                 
 g0         Photon                 g+         e-                                            2.180e-03  0.000e+00  1.870e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  9303 1  2
 g-         Photon                 g0         e-                                            3.270e-03  0.000e+00  1.870e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2  9304 1  2
 ! special reactions
-! grain assisted for mation of H2
+! grain assisted formation of H2
 H          H                      H2                                                       0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  9  -9999   9999  7    16 1  1
 ! rate dependent on o/p ratio of H2
 H2         N+                     H          NH+                                           0.000e+00  0.000e+00  0.000e+00 1.30e+00 0.00e+00 logn  4  -9999   9999  7    17 1  1

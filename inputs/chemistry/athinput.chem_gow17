@@ -49,7 +49,8 @@ active   =   fixed        # post-processing
 
 <problem>
 nH         = 1.0921e+02 #density
-G0         = 1e-6   #radiation field strength
+G0         = 1e-6   #radiation field strength, in Draine 1987 units
+unit_length_in_pc = 1.
 s_init      = 1.0e-6 #initial abundances
 
 <chemistry>
@@ -70,11 +71,6 @@ abstol_E   = 1e-4 #for internal energy. Set to 0.01 K
 user_jac   = 0       #flag for whether use user provided Jacobian. default false/0
 maxsteps   = 100000     #maximum number of steps in one integration. default 10000
 h_init      = 1e-1    #first step of first zone. Default 0/CVODE algorithm.
-#code units
-unit_density_in_nH = 1.
-unit_radiation_in_draine1987 = 1
-unit_length_in_cm = 3.086e+18
-unit_vel_in_cms = 1.0e5
 output_zone_sec = 1 #output diagnostic
 
 #default parameters
