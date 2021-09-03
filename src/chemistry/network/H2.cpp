@@ -54,7 +54,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   xi_cr_ = pin->GetOrAddReal("chemistry", "xi_cr", 2e-16);
   kcr_ = xi_cr_ * 3.;
   //units
-  Real muH = 1.4; //mass per hydrogen atoms, considering Helum
+  Real muH = 1.4; //mass per hydrogen atoms, considering Helium
   Real lunit = pin->GetReal("problem", "unit_length_in_pc") * Constants::pc;
   Real dunit = muH * Constants::mH;
   Real vunit = Constants::kms;
