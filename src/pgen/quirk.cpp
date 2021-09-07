@@ -61,6 +61,33 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     else
       std::cout << "The scheme looks stable against the Carbuncle phenomenon : delta s = "
                 << deltas << std::endl;
+    // open output file and write out errors
+    std::string fname;
+    fname.assign("carbuncle-diff.dat");
+    std::stringstream msg;
+    FILE *pfile;
+
+    // The file exists -- reopen the file in append mode
+    if ((pfile = std::fopen(fname.c_str(), "r")) != nullptr) {
+      if ((pfile = std::freopen(fname.c_str(), "a", pfile)) == nullptr) {
+        msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop"
+            << std::endl << "Error output file could not be opened" <<std::endl;
+        ATHENA_ERROR(msg);
+      }
+
+      // The file does not exist -- open the file in write mode and add headers
+    } else {
+      if ((pfile = std::fopen(fname.c_str(), "w")) == nullptr) {
+        msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop"
+            << std::endl << "Error output file could not be opened" <<std::endl;
+        ATHENA_ERROR(msg);
+      }
+      std::fprintf(pfile, "# |s_odd - s_even|\n");
+    }
+
+    // write difference
+    std::fprintf(pfile, "%e\n", deltas);
+    std::fclose(pfile);
   }
   return;
 }
