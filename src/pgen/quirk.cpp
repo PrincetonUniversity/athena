@@ -5,6 +5,7 @@
 //========================================================================================
 //! \file quirk.cpp
 //! \brief Problem generator for the Quirk test (Quirk 1994)
+//! Variant is from Hanawa et al (2008), section 3.2. First of five shock tubes
 //!
 //! Problem generator for a shock tube with odd-even perturbation.
 //! Physically such a perturbation should not grow but with high resolution schemes
