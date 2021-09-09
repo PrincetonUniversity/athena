@@ -11,6 +11,7 @@
 // C++ headers
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstring>    // memset
 #include <ctime>
 #include <iomanip>
@@ -39,10 +40,6 @@
 
 #ifdef MPI_PARALLEL
 #include <mpi.h>
-#endif
-
-#if MAGNETIC_FIELDS_ENABLED
-#error "This problem generator does not support magnetic fields"
 #endif
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
@@ -141,7 +138,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;
-  int cnt = (ke-ks+1)*(je-js+1)*(ie-is+1);
 
   int nlim = pin->GetInteger("time","nlim");
 
@@ -229,8 +225,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       MPI_Allreduce(MPI_IN_PLACE, &maxphi, 1, MPI_ATHENA_REAL, MPI_MAX, MPI_COMM_WORLD);
 #endif
 
-      err1 = err1/(static_cast<Real>(cnt*nbtotal));
-      // err2 = err2/cnt;
+      err1 = err1/static_cast<Real>(zones);
 
       Real x1size = mesh_size.x1max - mesh_size.x1min;
       Real x2size = mesh_size.x2max - mesh_size.x2min;
