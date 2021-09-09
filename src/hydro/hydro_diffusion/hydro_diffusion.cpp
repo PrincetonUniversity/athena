@@ -103,20 +103,17 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
 //!  diffusion fluxes (of various flavors) for overall hydro flux.
 
 void HydroDiffusion::CalcDiffusionFlux(const AthenaArray<Real> &prim,
-                                       const AthenaArray<Real> &cons,
-                                       AthenaArray<Real> *flux) {
-  Hydro *ph = pmb_->phydro;
-  Field *pf = pmb_->pfield;
-
-  SetDiffusivity(ph->w, pf->bcc);
+                                       const AthenaArray<Real> &iprim,
+                                       const AthenaArray<Real> &bcc) {
+  SetDiffusivity(prim, bcc);
 
   if (nu_iso > 0.0 || nu_aniso > 0.0) ClearFlux(visflx);
-  if (nu_iso > 0.0) ViscousFluxIso(prim, cons, visflx);
-  if (nu_aniso > 0.0) ViscousFluxAniso(prim, cons, visflx);
+  if (nu_iso > 0.0) ViscousFluxIso(prim, iprim, visflx);
+  if (nu_aniso > 0.0) ViscousFluxAniso(prim, iprim, visflx);
 
   if (kappa_iso > 0.0 || kappa_aniso > 0.0) ClearFlux(cndflx);
-  if (kappa_iso > 0.0) ThermalFluxIso(prim, cons, cndflx);
-  if (kappa_aniso > 0.0) ThermalFluxAniso(prim, cons, cndflx);
+  if (kappa_iso > 0.0) ThermalFluxIso(prim, cndflx);
+  if (kappa_aniso > 0.0) ThermalFluxAniso(prim, cndflx);
 
   return;
 }
@@ -206,12 +203,14 @@ void HydroDiffusion::ClearFlux(AthenaArray<Real> *flux) {
 }
 
 //---------------------------------------------------------------------------------------
-//! \fn void HydroDiffusion::SetDiffusivity(Athena<Real> &w, AthenaArray<Real> &bc)
+//! \fn void HydroDiffusion::SetDiffusivity(const Athena<Real> &w,
+//                                          const AthenaArray<Real> &bc)
 //! \brief  Set local hydro diffusion coefficients based on the fluid and
 //! magnetic field variables across the mesh.
 //! Called within HydroDiffusion::CalcDiffusionFlux wrapper function.
 
-void HydroDiffusion::SetDiffusivity(AthenaArray<Real> &w, AthenaArray<Real> &bc) {
+void HydroDiffusion::SetDiffusivity(const AthenaArray<Real> &w,
+                                    const AthenaArray<Real> &bc) {
   int il = pmb_->is - NGHOST; int jl = pmb_->js; int kl = pmb_->ks;
   int iu = pmb_->ie + NGHOST; int ju = pmb_->je; int ku = pmb_->ke;
   if (pmb_->block_size.nx2 > 1) {

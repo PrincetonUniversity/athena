@@ -713,11 +713,19 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
         int nlevel = neibt->loc_.level;
         nblevel[l+1][m+1][n+1] = nlevel;
         if (nlevel >= loc.level || (myox1 == n && myox2 == m && myox3 == l)) {
+          bool shear = false;
+          if ((nlevel == loc.level) &&
+              ((n == -1 && block_bcs[BoundaryFace::inner_x1]
+                                 == BoundaryFlag::shear_periodic) ||
+               (n ==  1 && block_bcs[BoundaryFace::outer_x1]
+                                 == BoundaryFlag::shear_periodic))) {
+            shear = true; // neighbor is shearing periodic
+          }
           int nid = neibt->gid_;
           int tbid = FindBufferID(-n, polar ? m : -m, -l, 0, 0);
           neighbor[nneighbor].SetNeighbor(
               ranklist[nid], nlevel, nid, nid-nslist[ranklist[nid]], n, m, l,
-              NeighborConnect::corner, bufid, tbid, polar, false);
+              NeighborConnect::corner, bufid, tbid, polar, shear);
           nneighbor++;
         }
         bufid++;

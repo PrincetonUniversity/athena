@@ -3,15 +3,9 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file hllc.cpp
-//! \brief HLLC Riemann solver for hydrodynamics, an extension of the HLLE fluxes to
-//! include the contact wave.  Only works for adiabatic hydrodynamics.
-//!
-//! REFERENCES:
-//! - E.F. Toro, "Riemann Solvers and numerical methods for fluid dynamics", 2nd ed.,
-//!   Springer-Verlag, Berlin, (1999) chpt. 10.
-//! - P. Batten, N. Clarke, C. Lambert, and D. M. Causon, "On the Choice of Wavespeeds
-//!   for the HLLC Riemann Solver", SIAM J. Sci. & Stat. Comp. 18, 6, 1553-1570, (1997).
+//! \file lhllc.cpp
+//! \brief Low-dissipation HLLC (LHLLC) Riemann solver for adiabatic hydrodynamics.
+//!        (Minoshima et al. 2021)
 
 // C headers
 
@@ -27,7 +21,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::RiemannSolver
-//! \brief The HLLC Riemann solver for adiabatic hydrodynamics (use HLLE for isothermal)
+//! \brief The Low-dissipation HLLC (LHLLC) Riemann solver for adiabatic hydrodynamics
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, AthenaArray<Real> &wl,
@@ -46,8 +40,10 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   Real gm1 = gamma - 1.0;
   Real igm1 = 1.0/gm1;
 
-#pragma omp simd private(wli,wri,flxi,fl,fr)
+  CalculateVelocityDifferences(k, j, il, iu, ivx, dvn, dvt);
+
 #pragma distribute_point
+#pragma omp simd private(wli,wri,flxi,fl,fr)
   for (int i=il; i<=iu; ++i) {
     //--- Step 1.  Load L/R states into local variables
     wli[IDN]=wl(IDN,i);
@@ -67,14 +63,14 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     Real al, ar, el, er;
     Real cl = pmy_block->peos->SoundSpeed(wli);
     Real cr = pmy_block->peos->SoundSpeed(wri);
+    Real vsql = SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]);
+    Real vsqr = SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]);
     if (GENERAL_EOS) {
-      el = pmy_block->peos->EgasFromRhoP(wli[IDN], wli[IPR]) +
-           0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-      er = pmy_block->peos->EgasFromRhoP(wri[IDN], wri[IPR]) +
-           0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+      el = pmy_block->peos->EgasFromRhoP(wli[IDN], wli[IPR]) + 0.5*wli[IDN]*vsql;
+      er = pmy_block->peos->EgasFromRhoP(wri[IDN], wri[IPR]) + 0.5*wri[IDN]*vsqr;
     } else {
-      el = wli[IPR]*igm1 + 0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-      er = wri[IPR]*igm1 + 0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
+      el = wli[IPR]*igm1 + 0.5*wli[IDN]*vsql;
+      er = wri[IPR]*igm1 + 0.5*wri[IDN]*vsqr;
     }
     Real rhoa = .5 * (wli[IDN] + wri[IDN]); // average density
     Real ca = .5 * (cl + cr); // average sound speed
@@ -110,42 +106,49 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
     //--- Step 5. Compute the contact wave speed and pressure
 
-    Real vxl = wli[IVX] - al;
-    Real vxr = wri[IVX] - ar;
+    Real vxl = al - wli[IVX];
+    Real vxr = ar - wri[IVX];
 
-    Real tl = wli[IPR] + vxl*wli[IDN]*wli[IVX];
-    Real tr = wri[IPR] + vxr*wri[IDN]*wri[IVX];
+    Real ml = wli[IDN]*vxl;
+    Real mr = wri[IDN]*vxr;
 
-    Real ml =   wli[IDN]*vxl;
-    Real mr = -(wri[IDN]*vxr);
+    // shock detector
+    // Real cmax = std::max(cl*ql, cr*qr);
+    Real cmax = std::max(cl, cr);
+    Real th1 = std::min(1.0, (cmax-std::min(dvn(i),0.0)) / (cmax-std::min(dvt(i),0.0)));
+    Real th = th1 * th1 * th1 * th1; // this 4th power is empirical (see Minoshima+)
 
     // Determine the contact wave speed...
-    Real am = (tl - tr)/(ml + mr);
+    Real am = (mr*wri[IVX] - ml*wli[IVX] - th*(wri[IPR]-wli[IPR])) / (mr - ml);
+
     // ...and the pressure at the contact surface
-    Real cp = (ml*tr + mr*tl)/(ml + mr);
+    Real chi = std::min(1.0, std::sqrt(std::max(vsql, vsqr)) / cmax);
+    Real phi = chi * (2.0 - chi);
+
+    Real cp = (mr*wli[IPR] - ml*wri[IPR] + phi*mr*ml*(wri[IVX]-wli[IVX])) / (mr - ml);
     cp = cp > 0.0 ? cp : 0.0;
 
     // No loop-carried dependencies anywhere in this loop
     //    #pragma distribute_point
     //--- Step 6. Compute L/R fluxes along the line bm, bp
 
-    vxl = wli[IVX] - bm;
-    vxr = wri[IVX] - bp;
+    Real uxl = wli[IVX] - bm;
+    Real uxr = wri[IVX] - bp;
 
-    fl[IDN] = wli[IDN]*vxl;
-    fr[IDN] = wri[IDN]*vxr;
+    fl[IDN] = wli[IDN]*uxl;
+    fr[IDN] = wri[IDN]*uxr;
 
-    fl[IVX] = wli[IDN]*wli[IVX]*vxl + wli[IPR];
-    fr[IVX] = wri[IDN]*wri[IVX]*vxr + wri[IPR];
+    fl[IVX] = wli[IDN]*wli[IVX]*uxl + wli[IPR];
+    fr[IVX] = wri[IDN]*wri[IVX]*uxr + wri[IPR];
 
-    fl[IVY] = wli[IDN]*wli[IVY]*vxl;
-    fr[IVY] = wri[IDN]*wri[IVY]*vxr;
+    fl[IVY] = wli[IDN]*wli[IVY]*uxl;
+    fr[IVY] = wri[IDN]*wri[IVY]*uxr;
 
-    fl[IVZ] = wli[IDN]*wli[IVZ]*vxl;
-    fr[IVZ] = wri[IDN]*wri[IVZ]*vxr;
+    fl[IVZ] = wli[IDN]*wli[IVZ]*uxl;
+    fr[IVZ] = wri[IDN]*wri[IVZ]*uxr;
 
-    fl[IEN] = el*vxl + wli[IPR]*wli[IVX];
-    fr[IEN] = er*vxr + wri[IPR]*wri[IVX];
+    fl[IEN] = el*uxl + wli[IPR]*wli[IVX];
+    fr[IEN] = er*uxr + wri[IPR]*wri[IVX];
 
     //--- Step 8. Compute flux weights or scales
 

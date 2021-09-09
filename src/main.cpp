@@ -518,8 +518,13 @@ int main(int argc, char *argv[]) {
   if (Globals::my_rank == 0 && wtlim > 0)
     SignalHandler::CancelWallTimeAlarm();
 
+
   //--- Step 9. --------------------------------------------------------------------------
-  // Make the final outputs
+  // Output the final cycle diagnostics and make the final outputs
+
+  if (Globals::my_rank == 0)
+    pmesh->OutputCycleDiagnostics();
+
   pmesh->UserWorkAfterLoop(pinput);
 
 #ifdef ENABLE_EXCEPTIONS
@@ -547,8 +552,8 @@ int main(int argc, char *argv[]) {
 
   //--- Step 10. -------------------------------------------------------------------------
   // Print diagnostic messages related to the end of the simulation
+
   if (Globals::my_rank == 0) {
-    pmesh->OutputCycleDiagnostics();
     if (SignalHandler::GetSignalFlag(SIGTERM) != 0) {
       std::cout << std::endl << "Terminating on Terminate signal" << std::endl;
     } else if (SignalHandler::GetSignalFlag(SIGINT) != 0) {
