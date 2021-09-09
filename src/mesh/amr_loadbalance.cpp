@@ -12,6 +12,7 @@
 #include <algorithm>  // std::sort()
 #include <cstdint>
 #include <iostream>
+#include <limits>
 #include <sstream>
 
 // Athena++ headers
