@@ -846,6 +846,9 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
   Real vol = (coord.x1f(is+1)-coord.x1f(is)) * (coord.x2f(js+1)-coord.x2f(js))
            * (coord.x3f(ks+1)-coord.x3f(ks));
   if (mporder == 4) {
+    Real m0=0.0, m1=0.0, m2=0.0, m3=0.0, m4=0.0, m5=0.0, m6=0.0, m7=0.0, m8=0.0, m9=0.0,
+         m10=0.0, m11=0.0, m12=0.0, m13=0.0, m14=0.0, m15=0.0, m16=0.0, m17=0.0, m18=0.0,
+         m19=0.0, m20=0.0, m21=0.0, m22=0.0, m23=0.0, m24=0.0;
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
       Real z2 = z*z;
@@ -865,41 +868,67 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
           Real sz2mtr2 = 7.0*z2-3.0*r2;
           Real s = src(k,j,i) * vol;
           // Y00
-          mpcoeff(0)  += s*c0;
+          m0  += s*c0;
           // r*(Y1-1, Y10, Y11)
           Real sc1 = s*c1;
-          mpcoeff(1)  += sc1*y;
-          mpcoeff(2)  += sc1*z;
-          mpcoeff(3)  += sc1*x;
+          m1  += sc1*y;
+          m2  += sc1*z;
+          m3  += sc1*x;
           // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
           Real sc2a = s*c2a;
-          mpcoeff(4)  += sc2a*xy;
-          mpcoeff(5)  += sc2a*yz;
-          mpcoeff(6)  += s*c2*(3.0*z2-r2);
-          mpcoeff(7)  += sc2a*zx;
-          mpcoeff(8)  += sc2a*hx2my2;
+          m4  += sc2a*xy;
+          m5  += sc2a*yz;
+          m6  += s*c2*(3.0*z2-r2);
+          m7  += sc2a*zx;
+          m8  += sc2a*hx2my2;
           // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
-          mpcoeff(9)  += s*c33*y*tx2my2;
-          mpcoeff(10) += s*c32*xy*z;
-          mpcoeff(11) += s*c31*y*fz2mr2;
-          mpcoeff(12) += s*c30*z*(z2-3.0*r2);
-          mpcoeff(13) += s*c31*x*fz2mr2;
-          mpcoeff(14) += s*c32*z*hx2my2;
-          mpcoeff(15) += s*c33*x*x2mty2;
+          m9  += s*c33*y*tx2my2;
+          m10 += s*c32*xy*z;
+          m11 += s*c31*y*fz2mr2;
+          m12 += s*c30*z*(z2-3.0*r2);
+          m13 += s*c31*x*fz2mr2;
+          m14 += s*c32*z*hx2my2;
+          m15 += s*c33*x*x2mty2;
           // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
-          mpcoeff(16) += s*c44*xy*hx2my2;
-          mpcoeff(17) += s*c43*yz*tx2my2;
-          mpcoeff(18) += s*c42*xy*sz2mr2;
-          mpcoeff(19) += s*c41*yz*sz2mtr2;
-          mpcoeff(20) += s*c40*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2);
-          mpcoeff(21) += s*c41*zx*sz2mtr2;
-          mpcoeff(22) += s*c42*hx2my2*sz2mr2;
-          mpcoeff(23) += s*c43*zx*x2mty2;
-          mpcoeff(24) += s*c44*0.125*(x2*x2mty2-y2*tx2my2);
+          m16 += s*c44*xy*hx2my2;
+          m17 += s*c43*yz*tx2my2;
+          m18 += s*c42*xy*sz2mr2;
+          m19 += s*c41*yz*sz2mtr2;
+          m20 += s*c40*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2);
+          m21 += s*c41*zx*sz2mtr2;
+          m22 += s*c42*hx2my2*sz2mr2;
+          m23 += s*c43*zx*x2mty2;
+          m24 += s*c44*0.125*(x2*x2mty2-y2*tx2my2);
         }
       }
     }
+    mpcoeff(0)  = m0;
+    mpcoeff(1)  = m1;
+    mpcoeff(2)  = m2;
+    mpcoeff(3)  = m3;
+    mpcoeff(4)  = m4;
+    mpcoeff(5)  = m5;
+    mpcoeff(6)  = m6;
+    mpcoeff(7)  = m7;
+    mpcoeff(8)  = m8;
+    mpcoeff(9)  = m9;
+    mpcoeff(10) = m10;
+    mpcoeff(11) = m11;
+    mpcoeff(12) = m12;
+    mpcoeff(13) = m13;
+    mpcoeff(14) = m14;
+    mpcoeff(15) = m15;
+    mpcoeff(16) = m16;
+    mpcoeff(17) = m17;
+    mpcoeff(18) = m18;
+    mpcoeff(19) = m19;
+    mpcoeff(20) = m20;
+    mpcoeff(21) = m21;
+    mpcoeff(22) = m22;
+    mpcoeff(23) = m23;
+    mpcoeff(24) = m24;
   } else if (mporder == 2) {
+    Real m0=0.0, m1=0.0, m2=0.0, m3=0.0, m4=0.0, m5=0.0, m6=0.0, m7=0.0, m8=0.0;
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
       Real z2 = z*z;
@@ -913,22 +942,31 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
           Real r2 = x2 + y2 + z2;
           Real s = src(k,j,i) * vol;
           // Y00
-          mpcoeff(0) += s*c0;
+          m0 += s*c0;
           // r*(Y1-1, Y10, Y11)
           Real sc1 = s*c1;
-          mpcoeff(1) += sc1*y;
-          mpcoeff(2) += sc1*z;
-          mpcoeff(3) += sc1*x;
+          m1 += sc1*y;
+          m2 += sc1*z;
+          m3 += sc1*x;
           // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
           Real sc2a = s*c2a;
-          mpcoeff(4) += sc2a*xy;
-          mpcoeff(5) += sc2a*yz;
-          mpcoeff(6) += s*c2*(3.0*z2-r2);
-          mpcoeff(7) += sc2a*zx;
-          mpcoeff(8) += sc2a*0.5*(x2-y2);
+          m4 += sc2a*xy;
+          m5 += sc2a*yz;
+          m6 += s*c2*(3.0*z2-r2);
+          m7 += sc2a*zx;
+          m8 += sc2a*0.5*(x2-y2);
         }
       }
     }
+    mpcoeff(0) = m0;
+    mpcoeff(1) = m1;
+    mpcoeff(2) = m2;
+    mpcoeff(3) = m3;
+    mpcoeff(4) = m4;
+    mpcoeff(5) = m5;
+    mpcoeff(6) = m6;
+    mpcoeff(7) = m7;
+    mpcoeff(8) = m8;
   }
 }
 

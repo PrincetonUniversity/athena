@@ -208,6 +208,7 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
   Real isix = omega_/6.0;
   for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
+#pragma ivdep
       for (int i=il+c; i<=iu; i+=2)
         u(0,k,j,i) -= ((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
                       - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))

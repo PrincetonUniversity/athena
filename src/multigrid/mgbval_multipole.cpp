@@ -33,6 +33,7 @@ void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
       Real z2 = z*z, zx = z*x;
+#pragma ivdep
       for (int j = js; j <= je; ++j) {
         Real y = coord.x2v(j);
         Real y2 = y*y, yz = y*z, xy = x*y;
@@ -50,6 +51,7 @@ void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
       Real z2 = z*z, zx = z*x;
+#pragma ivdep
       for (int j = js; j <= je; ++j) {
         Real y = coord.x2v(j);
         Real y2 = y*y, yz = y*z, xy = x*y;
@@ -95,6 +97,7 @@ void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
       Real z2 = z*z, zx = z*x;
+#pragma ivdep
       for (int j = js; j <= je; ++j) {
         Real y = coord.x2v(j);
         Real y2 = y*y, yz = y*z, xy = x*y;
@@ -112,6 +115,7 @@ void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
       Real z2 = z*z, zx = z*x;
+#pragma ivdep
       for (int j = js; j <= je; ++j) {
         Real y = coord.x2v(j);
         Real y2 = y*y, yz = y*z, xy = x*y;
@@ -158,6 +162,7 @@ void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
       Real z2 = z*z, yz = y*z;
+#pragma ivdep
       for (int i = is; i <= ie; ++i) {
         Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
@@ -174,6 +179,7 @@ void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
       Real z2 = z*z, yz = y*z;
+#pragma ivdep
       for (int i = is; i <= ie; ++i) {
         Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
@@ -219,6 +225,7 @@ void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
       Real z2 = z*z, yz = y*z;
+#pragma ivdep
       for (int i = is; i <= ie; ++i) {
         Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
@@ -235,6 +242,7 @@ void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k = ks; k <= ke; ++k) {
       Real z = coord.x3v(k);
       Real z2 = z*z, yz = y*z;
+#pragma ivdep
       for (int i = is; i <= ie; ++i) {
         Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
@@ -279,6 +287,7 @@ void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
   if (mporder == 2) {
     for (int j = js; j <= je; ++j) {
       Real y = coord.x2v(j), y2 = y*y, yz = y*z;
+#pragma ivdep
       for (int i = is; i <= ie; ++i) {
         Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
@@ -294,6 +303,7 @@ void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
   } else if (mporder == 4) {
     for (int j = js; j <= je; ++j) {
       Real y = coord.x2v(j), y2 = y*y, yz = y*z;
+#pragma ivdep
       for (int i = is; i <= ie; ++i) {
         Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
@@ -338,6 +348,7 @@ void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
   if (mporder == 2) {
     for (int j = js; j <= je; ++j) {
       Real y = coord.x2v(j), y2 = y*y, yz = y*z;
+#pragma ivdep
       for (int i = is; i <= ie; ++i) {
         Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
@@ -353,6 +364,7 @@ void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
   } else if (mporder == 4) {
     for (int j = js; j <= je; ++j) {
       Real y = coord.x2v(j), y2 = y*y, yz = y*z;
+#pragma ivdep
       for (int i = is; i <= ie; ++i) {
         Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;

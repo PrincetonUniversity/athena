@@ -251,6 +251,7 @@ class MultigridDriver {
 
  private:
   Real *rootbuf_;
+  int nb_rank_;
 #ifdef MPI_PARALLEL
   MPI_Comm MPI_COMM_MULTIGRID;
   int mg_phys_id_;

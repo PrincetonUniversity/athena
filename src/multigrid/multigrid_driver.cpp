@@ -44,7 +44,8 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
     pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0),
-    niter_(-1), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3), mporder_(-1), nmpcoeff_(0) {
+    niter_(-1), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3), mporder_(-1), nmpcoeff_(0),
+    nb_rank_(0) {
 
   std::cout << std::scientific << std::setprecision(15);
 
@@ -68,9 +69,6 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
   for (int i=0; i<6; i++)
     MGBoundaryFunction_[i]=MGBoundary[i];
 
-  // Setting up the MPI information
-  // *** this part should be modified when dedicate processes are allocated ***
-  // *** we also need to construct another neighbor list for Multigrid ***
   ranklist_  = new int[nbtotal_];
   rootbuf_=new Real[nbtotal_*nvar_*2];
   for (int n = 0; n < nbtotal_; ++n)
@@ -301,8 +299,12 @@ void MultigridDriver::SubtractAverage(MGVariable type) {
       rootbuf_[pmg->pmy_block_->gid*nvar_+v] = pmg->CalculateTotal(type, v);
   }
 #ifdef MPI_PARALLEL
-  MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
-                 rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
+  if (nb_rank_ > 0)  // every rank has the same number of MeshBlocks
+    MPI_Allgather(MPI_IN_PLACE, nb_rank_*nvar_, MPI_ATHENA_REAL,
+                  rootbuf_, nb_rank_*nvar_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
+  else 
+    MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
+                   rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
 #endif
   Real vol = (pmy_mesh_->mesh_size.x1max - pmy_mesh_->mesh_size.x1min)
            * (pmy_mesh_->mesh_size.x2max - pmy_mesh_->mesh_size.x2min)
@@ -383,6 +385,18 @@ void MultigridDriver::SetupMultigrid() {
       }
       nbtotal_ = pmy_mesh_->nbtotal;
     }
+    nb_rank_ = pmy_mesh_->nblist[0];
+    for (int n = 1; n < nranks_; ++n) {
+      if (nb_rank_ != pmy_mesh_->nblist[n]) {
+        nb_rank_ = 0;
+        break;
+      }
+    }
+
+    // Setting up the MPI information
+    // *** this part should be modified when dedicate processes are allocated ***
+    // *** we also need to construct another neighbor list for Multigrid ***
+
     // assume the same parallelization as hydro
     for (int n = 0; n < nbtotal_; ++n)
       ranklist_[n] = pmy_mesh_->ranklist[n];
@@ -448,12 +462,17 @@ void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
   }
 
 #ifdef MPI_PARALLEL
-  if (!initflag)
-    MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nv, MPI_ATHENA_REAL,
-                   rootbuf_, nvlist_, nvslist_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
-  else
-    MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
-                   rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
+  if (nb_rank_ > 0) { // every rank has the same number of MeshBlocks
+    MPI_Allgather(MPI_IN_PLACE, nb_rank_*nv, MPI_ATHENA_REAL,
+                  rootbuf_, nb_rank_*nv, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
+  } else {
+    if (!initflag)
+      MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nv, MPI_ATHENA_REAL,
+                     rootbuf_, nvlist_, nvslist_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
+    else
+      MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
+                     rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
+  }
 #endif
 
   for (int n = 0; n < nbtotal_; ++n) {
