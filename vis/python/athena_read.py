@@ -216,7 +216,7 @@ def vtk(filename):
     # Read raw data
     with open(filename, 'rb') as data_file:
         raw_data = data_file.read()
-    raw_data_ascii = raw_data.decode('ascii', 'replace')
+    raw_data_ascii = raw_data.decode('utf-8', 'replace')
 
     # Skip header
     current_index = 0
@@ -365,10 +365,10 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
             data['x3v'] = f['x3v'][:]
 
             # Get metadata describing file layout
-            dataset_names = np.array([x.decode('ascii', 'replace')
+            dataset_names = np.array([x.decode('utf-8', 'replace')
                                       for x in f.attrs['DatasetNames'][:]])
             dataset_sizes = f.attrs['NumVariables'][:]
-            variable_names = np.array([x.decode('ascii', 'replace')
+            variable_names = np.array([x.decode('utf-8', 'replace')
                                        for x in f.attrs['VariableNames'][:]])
 
             # Store cell data
@@ -445,7 +445,7 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
                 num_extended_dims += 1
 
         # Set volume function for preset coordinates if needed
-        coord = f.attrs['Coordinates'].decode('ascii', 'replace')
+        coord = f.attrs['Coordinates'].decode('utf-8', 'replace')
         if level < max_level and not subsample and not fast_restrict and vol_func is None:
             x1_rat = f.attrs['RootGridX1'][2]
             x2_rat = f.attrs['RootGridX2'][2]
@@ -556,7 +556,7 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
                                       + ' fast restriction to work')
 
         # Create list of all quantities if none given
-        var_quantities = np.array([x.decode('ascii', 'replace')
+        var_quantities = np.array([x.decode('utf-8', 'replace')
                                    for x in f.attrs['VariableNames'][:]])
         coord_quantities = ('x1f', 'x2f', 'x3f', 'x1v', 'x2v', 'x3v')
         attr_quantities = [key for key in f.attrs]
@@ -582,11 +582,11 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
 
         # Get metadata describing file layout
         num_blocks = f.attrs['NumMeshBlocks']
-        dataset_names = np.array([x.decode('ascii', 'replace')
+        dataset_names = np.array([x.decode('utf-8', 'replace')
                                   for x in f.attrs['DatasetNames'][:]])
         dataset_sizes = f.attrs['NumVariables'][:]
         dataset_sizes_cumulative = np.cumsum(dataset_sizes)
-        variable_names = np.array([x.decode('ascii', 'replace')
+        variable_names = np.array([x.decode('utf-8', 'replace')
                                    for x in f.attrs['VariableNames'][:]])
         quantity_datasets = []
         quantity_indices = []
