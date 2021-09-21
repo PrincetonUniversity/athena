@@ -80,7 +80,7 @@ def main(**kwargs):
         data = athena_read.athdf(kwargs['data_file'], quantities=quantities, level=level)
 
     # Check that coordinates work with user choices
-    coordinates = data['Coordinates']
+    coordinates = data['Coordinates'].decode('ascii', 'replace')
     ave_or_sum = kwargs['average'] or kwargs['sum'] or kwargs['stream_average']
     warn_projection = False
     warn_vector = False
