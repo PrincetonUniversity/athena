@@ -400,15 +400,13 @@ void MultigridDriver::SetupMultigrid() {
     // assume the same parallelization as hydro
     for (int n = 0; n < nbtotal_; ++n)
       ranklist_[n] = pmy_mesh_->ranklist[n];
-    if (nb_rank_ == 0) {
-      for (int n = 0; n < nranks_; ++n) {
-        nslist_[n]  = pmy_mesh_->nslist[n];
-        nblist_[n]  = pmy_mesh_->nblist[n];
-        nvslist_[n] = nslist_[n]*nvar_*2;
-        nvlist_[n]  = nblist_[n]*nvar_*2;
-        nvslisti_[n] = nslist_[n]*nvar_;
-        nvlisti_[n]  = nblist_[n]*nvar_;
-      }
+    for (int n = 0; n < nranks_; ++n) {
+      nslist_[n]  = pmy_mesh_->nslist[n];
+      nblist_[n]  = pmy_mesh_->nblist[n];
+      nvslist_[n] = nslist_[n]*nvar_*2;
+      nvlist_[n]  = nblist_[n]*nvar_*2;
+      nvslisti_[n] = nslist_[n]*nvar_;
+      nvlisti_[n]  = nblist_[n]*nvar_;
     }
     for (Multigrid* pmg : vmg_)
       pmg->pmgbval->SearchAndSetNeighbors(pmy_mesh_->tree, ranklist_, nslist_);
