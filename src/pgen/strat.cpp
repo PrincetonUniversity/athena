@@ -76,6 +76,10 @@ Real Omega_0, qshear;
 
 //====================================================================================
 void Mesh::InitUserMeshData(ParameterInput *pin) {
+  // shearing sheet parameter
+  qshear = pin->GetReal("orbital_advection","qshear");
+  Omega_0 = pin->GetReal("orbital_advection","Omega0");
+
   AllocateUserHistoryOutput(2);
   EnrollUserHistoryOutput(0, HistoryBxBy, "-BxBy");
   EnrollUserHistoryOutput(1, HistorydVxVy, "dVxVy");
@@ -113,10 +117,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real beta, amp, pres;
   Real iso_cs=1.0;
   Real B0 = 0.0;
-
-  // shearing sheet parameter
-  Omega_0 = porb->Omega0;
-  qshear  = porb->qshear;
 
   Real SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
   // TODO(felker): tons of unused variables in this file: xmin, xmax, rbx, rby, Ly, ky,...
