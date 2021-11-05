@@ -207,7 +207,7 @@ void FaceCenteredBoundaryVariable::OutflowOuterX3(
     }
   }
   for (int k=1; k<=ngh; ++k) {
-    for (int j=jl; j<=ju; ++j) {
+    for (int j=jl; j<=ju+1; ++j) {
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
         (*var_fc).x2f((ku+k  ),j,i) = (*var_fc).x2f((ku  ),j,i);
