@@ -80,7 +80,7 @@ def main(**kwargs):
         data = athena_read.athdf(kwargs['data_file'], quantities=quantities, level=level, num_ghost=kwargs['num_ghost'])
 
     # Check that coordinates work with user choices
-    coordinates = data['Coordinates'].decode('utf-8', 'replace')
+    coordinates = data['Coordinates'].decode('ascii', 'replace')
     ave_or_sum = kwargs['average'] or kwargs['sum'] or kwargs['stream_average']
     warn_projection = False
     warn_vector = False
@@ -145,12 +145,6 @@ def main(**kwargs):
 
     # Create grids
     x_grid, y_grid = np.meshgrid(xf, yf)
-
-    #because single precision hdf5 writing
-    if ( (np.diff(xv).max() - np.diff(xv).min()) > np.finfo(float).eps ):
-        xv = np.linspace(xv.min(), xv.max(), xv.shape[0])
-    if ( (np.diff(yv).max() - np.diff(yv).min()) > np.finfo(float).eps ):
-        yv = np.linspace(yv.min(), yv.max(), yv.shape[0])
     x_stream, y_stream = np.meshgrid(xv, yv)
 
     # Extract scalar data

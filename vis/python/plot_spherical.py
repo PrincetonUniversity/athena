@@ -83,7 +83,7 @@ def main(**kwargs):
                                      level=level)
 
     # Extract basic coordinate information
-    coordinates = data['Coordinates'].decode('utf-8', 'replace')
+    coordinates = data['Coordinates'].decode('ascii', 'replace')
     r = data['x1v']
     theta = data['x2v']
     phi = data['x3v']
