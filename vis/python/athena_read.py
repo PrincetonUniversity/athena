@@ -556,7 +556,7 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
                                       + ' fast restriction to work')
 
         # Create list of all quantities if none given
-        var_quantities = np.array([x.decode('utf-8', 'replace')
+        var_quantities = np.array([x.decode('ascii', 'replace')
                                    for x in f.attrs['VariableNames'][:]])
         coord_quantities = ('x1f', 'x2f', 'x3f', 'x1v', 'x2v', 'x3v')
         attr_quantities = [key for key in f.attrs]
@@ -582,11 +582,11 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
 
         # Get metadata describing file layout
         num_blocks = f.attrs['NumMeshBlocks']
-        dataset_names = np.array([x.decode('utf-8', 'replace')
+        dataset_names = np.array([x.decode('ascii', 'replace')
                                   for x in f.attrs['DatasetNames'][:]])
         dataset_sizes = f.attrs['NumVariables'][:]
         dataset_sizes_cumulative = np.cumsum(dataset_sizes)
-        variable_names = np.array([x.decode('utf-8', 'replace')
+        variable_names = np.array([x.decode('ascii', 'replace')
                                    for x in f.attrs['VariableNames'][:]])
         quantity_datasets = []
         quantity_indices = []
