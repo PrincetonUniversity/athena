@@ -1069,3 +1069,15 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
   }
   return;
 }
+
+bool OutputType::ContainVariable(const std::string &haystack, const std::string &needle) {
+  if (haystack.compare(needle) == 0)
+    return true;
+  if (haystack.find(',' + needle + ',') != std::string::npos)
+    return true;
+  if (haystack.find(needle + ',') == 0)
+    return true;
+  if (haystack.find(',' + needle) == haystack.length() - needle.length())
+    return true;
+  return false;
+}
