@@ -554,6 +554,14 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       pod->data.InitWithShallowSlice(pgrav->phi, 4, 0, 1);
       AppendOutputDataNode(pod);
       num_vars_++;
+      if (pgrav->output_source) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = "source-phi";
+        pod->data.InitWithShallowSlice(pgrav->src, 4, 0, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
     }
   } // endif (SELF_GRAVITY_ENABLED)
 

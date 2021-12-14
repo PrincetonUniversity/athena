@@ -41,6 +41,7 @@ class Gravity {
   AthenaArray<Real> empty_flux[3];
   Real gconst, four_pi_G;
   bool srcterm;
+  bool output_source;
 
   // TODO(felker): consider creating a CellCentered.. derived class, and changing to
   //GravityBoundaryVariable *pgbval;

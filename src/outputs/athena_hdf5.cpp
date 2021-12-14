@@ -130,8 +130,11 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     if (output_params.cartesian_vector)
       num_variables[n_dataset] += 3;
     // Graviatational potential:
-    if (SELF_GRAVITY_ENABLED)
+    if (SELF_GRAVITY_ENABLED) {
       num_variables[n_dataset] += 1;
+      if (pmb->pgrav->output_source)
+        num_variables[n_dataset] += 1;
+    }
     // Passive scalars:
     if (NSCALARS > 0)
       num_variables[n_dataset] += NSCALARS;
