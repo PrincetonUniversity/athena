@@ -13,6 +13,7 @@
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
+#include <utility>
 #include <vector>
 
 // Athena++ headers
@@ -32,7 +33,8 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), phi(pmb->ncells3, pmb->ncells2, pmb->ncells1),
     empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
     four_pi_G(pmb->pmy_mesh->four_pi_G_),
-    gbvar(pmb, &phi, nullptr, empty_flux) {
+    gbvar(pmb, &phi, nullptr, empty_flux),
+    accumulated_src_(pmb->ncells3, pmb->ncells2, pmb->ncells1) {
   if (four_pi_G == 0.0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Gravity::Gravity" << std::endl
@@ -50,4 +52,43 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
   // Enroll CellCenteredBoundaryVariable object
   gbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&gbvar);
+}
+
+void Gravity::EnrollSource(AthenaArray<Real> &arr, int idx) {
+  // make sure no duplication
+  UnenrollSource(arr, idx);
+  enrolled_src_.emplace_back(&arr, idx);
+}
+
+void Gravity::UnenrollSource(AthenaArray<Real> &arr, int idx) {
+  for (auto it = enrolled_src_.begin(); it != enrolled_src_.end(); it++) {
+    if (it->first == &arr && it->second == idx) {
+      // no duplication
+      enrolled_src_.erase(it);
+      return;
+    }
+  }
+}
+
+void Gravity::ComputeSource() {
+  if (enrolled_src_.size() == 1) {
+    // only one array enrolled, point src to the array
+    auto parr = enrolled_src_.front().first;
+    int idx = enrolled_src_.front().second;
+    src.InitWithShallowSlice(*parr, 4, idx, 1);
+  } else {
+    // zero or more than one array enrolled, sum everything to buffer and point src to it
+    accumulated_src_.ZeroClear();
+    int sz = accumulated_src_.GetSize();
+    AthenaArray<Real> arr;    // shallow copy of each enrolled array
+    for (auto s : enrolled_src_) {
+      auto parr = s.first;
+      int idx = s.second;
+      arr.InitWithShallowSlice(*parr, 4, idx, 1);
+#pragma omp simd
+      for (int i = 0; i < sz; i++)
+        accumulated_src_(i) += arr(i);
+    }
+    src.InitWithShallowSlice(accumulated_src_, 4, 0, 1);
+  }
 }

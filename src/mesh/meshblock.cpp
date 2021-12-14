@@ -155,6 +155,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   if (SELF_GRAVITY_ENABLED) {
     // if (this->grav_block)
     pgrav = new Gravity(this, pin);
+    pgrav->EnrollSource(phydro->u, IDN);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
     if (SELF_GRAVITY_ENABLED == 2)
       pmg = new MGGravity(pmy_mesh->pmgrd, this);
@@ -281,6 +282,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if (SELF_GRAVITY_ENABLED) {
     // if (this->grav_block)
     pgrav = new Gravity(this, pin);
+    pgrav->EnrollSource(phydro->u, IDN);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
     if (SELF_GRAVITY_ENABLED == 2)
       pmg = new MGGravity(pmy_mesh->pmgrd, this);
