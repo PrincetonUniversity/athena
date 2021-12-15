@@ -1077,7 +1077,7 @@ bool OutputType::ContainVariable(const std::string &haystack, const std::string 
     return true;
   if (haystack.find(needle + ',') == 0)
     return true;
-  if (haystack.find(',' + needle) == haystack.length() - needle.length())
+  if (haystack.find(',' + needle) == haystack.length() - needle.length() - 1)
     return true;
   return false;
 }
