@@ -665,42 +665,24 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
   } // endif (MAGNETIC_FIELDS_ENABLED)
 
-  if (output_params.variable.compare(0, 3, "uov") == 0
-      || output_params.variable.compare(0, 12, "user_out_var") == 0) {
-    int iv, ns = 0, ne = pmb->nuser_out_var-1;
-    if (sscanf(output_params.variable.c_str(), "uov%d", &iv)>0) {
-      if (iv>=0 && iv<pmb->nuser_out_var)
-        ns=iv, ne=iv;
-    } else if (sscanf(output_params.variable.c_str(), "user_out_var%d", &iv)>0) {
-      if (iv>=0 && iv<pmb->nuser_out_var)
-        ns=iv, ne=iv;
-    }
-    for (int n = ns; n <= ne; ++n) {
+  for (int n = 0; n < pmb->nuser_out_var; ++n) {
+    char abbr_name[16], full_name[16];
+    std::snprintf(abbr_name, sizeof(abbr_name), "uov%d", n);
+    std::snprintf(full_name, sizeof(full_name), "user_out_var%d", n);
+    if ((pmb->user_out_var_names_[n].length() != 0
+         && ContainVariable(output_params.variable, pmb->user_out_var_names_[n]))
+        || ContainVariable(output_params.variable, abbr_name)
+        || ContainVariable(output_params.variable, abbr_name)) {
       pod = new OutputData;
       pod->type = "SCALARS";
       if (pmb->user_out_var_names_[n].length() != 0) {
         pod->name = pmb->user_out_var_names_[n];
       } else {
-        char vn[16];
-        std::snprintf(vn, sizeof(vn), "user_out_var%d", n);
-        pod->name = vn;
+        pod->name = full_name;
       }
       pod->data.InitWithShallowSlice(pmb->user_out_var, 4, n, 1);
       AppendOutputDataNode(pod);
       num_vars_++;
-    }
-  }
-
-  for (int n = 0; n < pmb->nuser_out_var; ++n) {
-    if (pmb->user_out_var_names_[n].length() != 0) {
-      if (output_params.variable.compare(pmb->user_out_var_names_[n]) == 0) {
-        pod = new OutputData;
-        pod->type = "SCALARS";
-        pod->name = pmb->user_out_var_names_[n];
-        pod->data.InitWithShallowSlice(pmb->user_out_var, 4, n, 1);
-        AppendOutputDataNode(pod);
-        num_vars_++;
-      }
     }
   }
 
