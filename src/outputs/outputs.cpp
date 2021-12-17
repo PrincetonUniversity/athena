@@ -563,7 +563,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     for (int n=0; n<NSCALARS; n++) {
       std::string scalar_name_cons = root_name_cons + std::to_string(n);
       std::string scalar_name_prim = root_name_prim + std::to_string(n);
-      if (output_params.variable.compare(scalar_name_cons) == 0 ||
+      if (ContainVariable(output_params.variable, scalar_name_cons) ||
           ContainVariable(output_params.variable, "cons")) {
         pod = new OutputData;
         pod->type = "SCALARS";
@@ -572,7 +572,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         AppendOutputDataNode(pod);
         num_vars_++;
       }
-      if (output_params.variable.compare(scalar_name_prim) == 0 ||
+      if (ContainVariable(output_params.variable, scalar_name_prim) ||
           ContainVariable(output_params.variable, "prim")) {
         pod = new OutputData;
         pod->type = "SCALARS";
