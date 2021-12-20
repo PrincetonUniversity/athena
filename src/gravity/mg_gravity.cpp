@@ -198,28 +198,40 @@ void MGGravityDriver::Solve(int stage) {
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
-//!           int rlev, int il, int iu, int jl, int ju, int kl, int ku, int color)
+//!        int rlev, int il, int iu, int jl, int ju, int kl, int ku, int color, bool th)
 //! \brief Implementation of the Red-Black Gauss-Seidel Smoother
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int rlev,
-                       int il, int iu, int jl, int ju, int kl, int ku, int color) {
-  int c = color;
+                int il, int iu, int jl, int ju, int kl, int ku, int color, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real dx2 = SQR(dx);
   Real isix = omega_/6.0;
-  for (int k=kl; k<=ku; k++) {
-    for (int j=jl; j<=ju; j++) {
+  if (th == true && (ku-kl) >=  minth_) {
+#pragma omp parallel for
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+        int c = (color + k + j) & 1;
 #pragma ivdep
-      for (int i=il+c; i<=iu; i+=2)
-        u(0,k,j,i) -= ((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
-                      - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))
-                       + src(0,k,j,i)*dx2)*isix;
-      c ^= 1;  // bitwise XOR assignment
+        for (int i=il+c; i<=iu; i+=2)
+          u(0,k,j,i) -= ((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
+                        - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))
+                         + src(0,k,j,i)*dx2)*isix;
+      }
     }
-    c ^= 1;
+  } else {
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+        int c = (color + k + j) & 1;
+#pragma ivdep
+        for (int i=il+c; i<=iu; i+=2)
+          u(0,k,j,i) -= ((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
+                        - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))
+                         + src(0,k,j,i)*dx2)*isix;
+      }
+    }
   }
 
 // Jacobi
@@ -230,8 +242,9 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
   for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
       for (int i=il; i<=iu; i++)
-        temp(0,k,j,i) = u(0,k,j,i) - (((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
-                      - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1)) + src(0,k,j,i)*dx2)*isix);
+        temp(0,k,j,i) = u(0,k,j,i) - (((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i)
+                      - u(0,k,j,i+1) - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))
+                      + src(0,k,j,i)*dx2)*isix);
     }
   }
   for (int k=kl; k<=ku; k++) {
@@ -247,24 +260,37 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::CalculateDefect(AthenaArray<Real> &def,
 //!                      const AthenaArray<Real> &u, const AthenaArray<Real> &src,
-//!                      int rlev, int il, int iu, int jl, int ju, int kl, int ku)
+//!                      int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th)
 //! \brief Implementation of the Defect calculation
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
                                 const AthenaArray<Real> &src, int rlev,
-                                int il, int iu, int jl, int ju, int kl, int ku) {
+                                int il, int iu, int jl, int ju, int kl, int ku, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real idx2 = 1.0/SQR(dx);
-  for (int k=kl; k<=ku; k++) {
-    for (int j=jl; j<=ju; j++) {
+  if (th == true && (ku-kl) >=  minth_) {
+#pragma omp parallel for
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
 #pragma omp simd
-      for (int i=il; i<=iu; i++)
-        def(0,k,j,i) = (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
-                       - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2
-                       + src(0,k,j,i);
+        for (int i=il; i<=iu; i++)
+          def(0,k,j,i) = (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
+                         - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2
+                         + src(0,k,j,i);
+      }
+    }
+  } else {
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+#pragma omp simd
+        for (int i=il; i<=iu; i++)
+          def(0,k,j,i) = (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
+                         - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2
+                         + src(0,k,j,i);
+      }
     }
   }
 
@@ -274,25 +300,37 @@ void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> 
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::CalculateFASRHS(AthenaArray<Real> &src,
-//!  const AthenaArray<Real> &u, int rlev, int il, int iu, int jl, int ju, int kl, int ku)
+//!                      const AthenaArray<Real> &u, int rlev,
+//!                      int il, int iu, int jl, int ju, int kl, int ku, bool th)
 //! \brief Implementation of the RHS calculation for FAS
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> &u,
-                         int rlev, int il, int iu, int jl, int ju, int kl, int ku) {
+                int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real idx2 = 1.0/SQR(dx);
-  for (int k=kl; k<=ku; k++) {
-    for (int j=jl; j<=ju; j++) {
+  if (th == true && (ku-kl) >=  minth_) {
+#pragma omp parallel for
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
 #pragma omp simd
-      for (int i=il; i<=iu; i++)
-        src(0,k,j,i) -= (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
-                        - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2;
+        for (int i=il; i<=iu; i++)
+          src(0,k,j,i) -= (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
+                          - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2;
+      }
+    }
+  } else {
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+#pragma omp simd
+        for (int i=il; i<=iu; i++)
+          src(0,k,j,i) -= (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
+                          - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2;
+      }
     }
   }
-
   return;
 }
 

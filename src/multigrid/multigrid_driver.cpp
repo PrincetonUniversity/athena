@@ -920,7 +920,7 @@ void MultigridDriver::RestrictFMGSourceOctets() {
         int oi = (static_cast<int>(loc.lx1) & 1) + ngh;
         int oj = (static_cast<int>(loc.lx2) & 1) + ngh;
         int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
-        mgroot_->Restrict(cbuf_, octets_[l][o].src, ngh, ngh, ngh, ngh, ngh, ngh);
+        mgroot_->Restrict(cbuf_, octets_[l][o].src, ngh, ngh, ngh, ngh, ngh, ngh, false);
         for (int v = 0; v < nvar_; ++v)
           octets_[l-1][oid].src(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
       }
@@ -928,7 +928,7 @@ void MultigridDriver::RestrictFMGSourceOctets() {
 #pragma omp parallel for num_threads(nthreads_)
     for (int o = 0; o < noctets_[0]; ++o) { // octets to the root grid
       const LogicalLocation &loc = octets_[0][o].loc;
-      mgroot_->Restrict(cbuf_, octets_[0][o].src, ngh, ngh, ngh, ngh, ngh, ngh);
+      mgroot_->Restrict(cbuf_, octets_[0][o].src, ngh, ngh, ngh, ngh, ngh, ngh, false);
       for (int v = 0; v < nvar_; ++v)
         mgroot_->SetData(MGVariable::src, v, static_cast<int>(loc.lx3),
                          static_cast<int>(loc.lx2), static_cast<int>(loc.lx1),
@@ -962,12 +962,12 @@ void MultigridDriver::RestrictOctets() {
       int oj = (static_cast<int>(loc.lx2) & 1) + ngh;
       int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
       mgroot_->CalculateDefect(octets_[lev][o].def, octets_[lev][o].u,
-                               octets_[lev][o].src, lev+1, os_, oe_, os_, oe_, os_, oe_);
-      mgroot_->Restrict(cbuf_, octets_[lev][o].def, ngh, ngh, ngh, ngh, ngh, ngh);
+                        octets_[lev][o].src, lev+1, os_, oe_, os_, oe_, os_, oe_, false);
+      mgroot_->Restrict(cbuf_, octets_[lev][o].def, ngh, ngh, ngh, ngh, ngh, ngh, false);
       for (int v = 0; v < nvar_; ++v)
         octets_[lev-1][oid].src(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
       if (ffas_) {
-        mgroot_->Restrict(cbuf_, octets_[lev][o].u, ngh, ngh, ngh, ngh, ngh, ngh);
+        mgroot_->Restrict(cbuf_, octets_[lev][o].u, ngh, ngh, ngh, ngh, ngh, ngh, false);
         for (int v = 0; v < nvar_; ++v)
           octets_[lev-1][oid].u(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
       }
@@ -980,12 +980,12 @@ void MultigridDriver::RestrictOctets() {
       int rj = static_cast<int>(loc.lx2);
       int rk = static_cast<int>(loc.lx3);
       mgroot_->CalculateDefect(octets_[0][o].def, octets_[0][o].u,
-                               octets_[0][o].src, 1, os_, oe_, os_, oe_, os_, oe_);
-      mgroot_->Restrict(cbuf_, octets_[0][o].def, ngh, ngh, ngh, ngh, ngh, ngh);
+                               octets_[0][o].src, 1, os_, oe_, os_, oe_, os_, oe_, false);
+      mgroot_->Restrict(cbuf_, octets_[0][o].def, ngh, ngh, ngh, ngh, ngh, ngh, false);
       for (int v = 0; v < nvar_; ++v)
         mgroot_->SetData(MGVariable::src, v, rk, rj, ri, cbuf_(v, ngh, ngh, ngh));
       if (ffas_) {
-        mgroot_->Restrict(cbuf_, octets_[0][o].u, ngh, ngh, ngh, ngh, ngh, ngh);
+        mgroot_->Restrict(cbuf_, octets_[0][o].u, ngh, ngh, ngh, ngh, ngh, ngh, false);
         for (int v = 0; v < nvar_; ++v)
           mgroot_->SetData(MGVariable::u, v, rk, rj, ri, cbuf_(v, ngh, ngh, ngh));
       }
@@ -1037,7 +1037,7 @@ void MultigridDriver::CalculateFASRHSOctets() {
 #pragma omp parallel for num_threads(nthreads_)
   for (int o = 0; o < noctets_[lev]; ++o)
     mgroot_->CalculateFASRHS(octets_[lev][o].src, octets_[lev][o].u,
-                             lev+1, os_, oe_, os_, oe_, os_, oe_);
+                             lev+1, os_, oe_, os_, oe_, os_, oe_, false);
 
   return;
 }
@@ -1052,7 +1052,7 @@ void MultigridDriver::SmoothOctets(int color) {
 #pragma omp parallel for num_threads(nthreads_)
   for (int o = 0; o < noctets_[lev]; ++o)
     mgroot_->Smooth(octets_[lev][o].u, octets_[lev][o].src,
-                    lev+1, os_, oe_, os_, oe_, os_, oe_, color);
+                    lev+1, os_, oe_, os_, oe_, os_, oe_, color, false);
   return;
 }
 
@@ -1087,10 +1087,10 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
           }
         }
         mgroot_->ProlongateAndCorrect(octets_[0][o].u, cbuf_,
-                                      ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh);
+                              ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh, false);
       } else {
         mgroot_->ProlongateAndCorrect(octets_[0][o].u, u,
-                                      ri+1, ri+1, rj+1, rj+1, rk+1, rk+1, ngh, ngh, ngh);
+                              ri+1, ri+1, rj+1, rj+1, rk+1, rk+1, ngh, ngh, ngh, false);
       }
     }
   } else { // from coarse octets to fine octets
@@ -1118,10 +1118,10 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
           }
         }
         mgroot_->ProlongateAndCorrect(octets_[flev][o].u, cbuf_,
-                                      ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh);
+                              ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh, ngh, false);
       } else {
         mgroot_->ProlongateAndCorrect(octets_[flev][o].u, uc,
-                                      ci+1, ci+1, cj+1, cj+1, ck+1, ck+1, ngh, ngh, ngh);
+                              ci+1, ci+1, cj+1, cj+1, ck+1, ck+1, ngh, ngh, ngh, false);
       }
     }
   }
@@ -1147,7 +1147,7 @@ void MultigridDriver::FMGProlongateOctets() {
       int rj = static_cast<int>(loc.lx2) + ngh;
       int rk = static_cast<int>(loc.lx3) + ngh;
       mgroot_->FMGProlongate(octets_[0][o].u, mgroot_->GetCurrentData(),
-                             ri, ri, rj, rj, rk, rk, ngh, ngh, ngh);
+                             ri, ri, rj, rj, rk, rk, ngh, ngh, ngh, false);
     }
   } else { // from coarse octets to fine octets
 #pragma omp parallel for num_threads(nthreads_)
@@ -1163,7 +1163,7 @@ void MultigridDriver::FMGProlongateOctets() {
       int cj = (static_cast<int>(loc.lx2) & 1) + ngh;
       int ck = (static_cast<int>(loc.lx3) & 1) + ngh;
       mgroot_->FMGProlongate(octets_[flev][o].u, octets_[clev][cid].u,
-                             ci, ci, cj, cj, ck, ck, ngh, ngh, ngh);
+                             ci, ci, cj, cj, ck, ck, ngh, ngh, ngh, false);
     }
   }
 
@@ -1542,7 +1542,7 @@ void MultigridDriver::RestrictOctetsBeforeTransfer() {
       int oi = (static_cast<int>(loc.lx1) & 1) + ngh;
       int oj = (static_cast<int>(loc.lx2) & 1) + ngh;
       int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
-      mgroot_->Restrict(cbuf_, octets_[l][o].u, ngh, ngh, ngh, ngh, ngh, ngh);
+      mgroot_->Restrict(cbuf_, octets_[l][o].u, ngh, ngh, ngh, ngh, ngh, ngh, false);
       for (int v = 0; v < nvar_; ++v)
         octets_[l-1][oid].u(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
     }
@@ -1550,7 +1550,7 @@ void MultigridDriver::RestrictOctetsBeforeTransfer() {
 #pragma omp parallel for num_threads(nthreads_)
   for (int o = 0; o < noctets_[0]; ++o) { // octets to the root grid
     const LogicalLocation &loc = octets_[0][o].loc;
-    mgroot_->Restrict(cbuf_, octets_[0][o].u, ngh, ngh, ngh, ngh, ngh, ngh);
+    mgroot_->Restrict(cbuf_, octets_[0][o].u, ngh, ngh, ngh, ngh, ngh, ngh, false);
     for (int v = 0; v < nvar_; ++v)
       mgroot_->SetData(MGVariable::u, v, static_cast<int>(loc.lx3),
                        static_cast<int>(loc.lx2), static_cast<int>(loc.lx1),

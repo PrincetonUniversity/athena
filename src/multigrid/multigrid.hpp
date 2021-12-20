@@ -40,7 +40,7 @@ struct MGOctet;
 enum class MGVariable {src, u};
 enum class MGNormType {max, l1, l2};
 
-
+constexpr int minth_ = 8;
 
 //! \fn inline std::int64_t rotl(std::int64_t i, int s)
 //  \brief left bit rotation function for 64bit integers (unsafe if s > 64)
@@ -109,20 +109,21 @@ class Multigrid {
 
   // actual implementations of Multigrid operations
   void Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                int il, int iu, int jl, int ju, int kl, int ku);
+                int il, int iu, int jl, int ju, int kl, int ku, bool th);
   void ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-       int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl);
+    int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl, bool th);
   void FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-       int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl);
+    int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl, bool th);
 
   // physics-dependent virtual functions
   virtual void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-               int rlev, int il, int iu, int jl, int ju, int kl, int ku, int color) = 0;
+                      int rlev, int il, int iu, int jl, int ju, int kl, int ku,
+                      int color, bool th) = 0;
   virtual void CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
-                               const AthenaArray<Real> &src, int rlev,
-                               int il, int iu, int jl, int ju, int kl, int ku) = 0;
+                        const AthenaArray<Real> &src, int rlev,
+                        int il, int iu, int jl, int ju, int kl, int ku, bool th) = 0;
   virtual void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
-                        int rlev, int il, int iu, int jl, int ju, int kl, int ku) = 0;
+                 int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) = 0;
 
   friend class MultigridDriver;
   friend class MultigridTaskList;
