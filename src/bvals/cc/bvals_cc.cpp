@@ -69,10 +69,13 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
 #endif
   if (fflux_ && ((pmy_mesh_->multilevel)
       || (pbval_->shearing_box != 0))) { // SMR or AMR or SHEARING_BOX
+    fflux_ = true;
     InitBoundaryData(bd_var_flcor_, BoundaryQuantity::cc_flcor);
 #ifdef MPI_PARALLEL
     cc_flx_phys_id_ = cc_phys_id_ + 1;
 #endif
+  } else {
+    fflux_ = false;
   }
 
   if (pbval_->shearing_box != 0) {
