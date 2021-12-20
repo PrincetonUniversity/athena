@@ -292,7 +292,7 @@ void MultigridDriver::CheckBoundaryFunctions() {
 //  \brief Calculate the global average and subtract it
 
 void MultigridDriver::SubtractAverage(MGVariable type) {
-#pragma omp parallel for num_threads(nthreads_) schedule(dynamic,1)
+#pragma omp parallel for num_threads(nthreads_)
   for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
     Multigrid *pmg = *itr;
     for (int v=0; v<nvar_; ++v)
@@ -314,7 +314,7 @@ void MultigridDriver::SubtractAverage(MGVariable type) {
     for (int n = 0; n < nbtotal_; ++n)
       total += rootbuf_[n*nvar_+v];
     last_ave_ = total/vol;
-#pragma omp parallel for num_threads(nthreads_) schedule(dynamic,1)
+#pragma omp parallel for num_threads(nthreads_)
     for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       pmg->SubtractAverage(type, v, last_ave_);
@@ -416,7 +416,7 @@ void MultigridDriver::SetupMultigrid() {
   }
 
   if (srcmask_ != nullptr) {
-#pragma omp parallel for num_threads(nthreads_) schedule(dynamic,1)
+#pragma omp parallel for num_threads(nthreads_)
     for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       pmg->ApplySourceMask();
@@ -430,7 +430,7 @@ void MultigridDriver::SetupMultigrid() {
     CalculateMultipoleCoefficients();
 
   if (mode_ == 0) { // FMG
-#pragma omp parallel for num_threads(nthreads_) schedule(dynamic,1)
+#pragma omp parallel for num_threads(nthreads_)
     for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       pmg->RestrictFMGSource();
@@ -475,6 +475,7 @@ void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
   }
 #endif
 
+#pragma omp parallel for num_threads(nthreads_)
   for (int n = 0; n < nbtotal_; ++n) {
     const LogicalLocation &loc=pmy_mesh_->loclist[n];
     int i = static_cast<int>(loc.lx1);
@@ -805,13 +806,13 @@ Real MultigridDriver::CalculateDefectNorm(MGNormType nrm, int n) {
   Real norm=0.0;
 
   if (nrm == MGNormType::max) {
-#pragma omp parallel for reduction(max : norm) num_threads(nthreads_) schedule(dynamic,1)
+#pragma omp parallel for reduction(max : norm) num_threads(nthreads_)
     for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       norm = std::max(norm, pmg->CalculateDefectNorm(nrm, n));
     }
   } else {
-#pragma omp parallel for reduction(+ : norm) num_threads(nthreads_) schedule(dynamic,1)
+#pragma omp parallel for reduction(+ : norm) num_threads(nthreads_)
     for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       norm += pmg->CalculateDefectNorm(nrm, n);
@@ -841,12 +842,10 @@ Real MultigridDriver::CalculateDefectNorm(MGNormType nrm, int n) {
 //  \brief return the Multigrid whose gid is tgid
 
 Multigrid* MultigridDriver::FindMultigrid(int tgid) {
-  for (Multigrid* pmg : vmg_) {
-    if (pmg->pmy_block_->gid == tgid)
-      return pmg;
-  }
-
-  return nullptr;
+  int first = vmg_[0]->pmy_block_->gid;
+  if (tgid > nblist_[Globals::my_rank] + first)
+    return nullptr;
+  return vmg_[tgid-first];
 }
 
 
@@ -874,6 +873,7 @@ void MultigridDriver::CalculateOctetCoordinates() {
     octets_[0][o].coord.CalculateMGCoordinates(size, 0, ngh);
     octets_[0][o].ccoord.CalculateMGCoordinates(csize, 0, ngh);
   }
+#pragma omp parallel for num_threads(nthreads_)
   for (int l = 1; l < nreflevel_; l++) {
     for (int o = 0; o < noctets_[l]; ++o) {
       LogicalLocation &loc = octets_[l][o].loc;
@@ -908,6 +908,7 @@ void MultigridDriver::RestrictFMGSourceOctets() {
   if (nreflevel_ > 0) {
     const int &ngh = mgroot_->ngh_;
     for (int l = nreflevel_ - 1; l >= 1; --l) {  // fine octets to coarse octets
+#pragma omp parallel for num_threads(nthreads_)
       for (int o = 0; o < noctets_[l]; ++o) {
         const LogicalLocation &loc = octets_[l][o].loc;
         LogicalLocation cloc;
@@ -924,6 +925,7 @@ void MultigridDriver::RestrictFMGSourceOctets() {
           octets_[l-1][oid].src(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
       }
     }
+#pragma omp parallel for num_threads(nthreads_)
     for (int o = 0; o < noctets_[0]; ++o) { // octets to the root grid
       const LogicalLocation &loc = octets_[0][o].loc;
       mgroot_->Restrict(cbuf_, octets_[0][o].src, ngh, ngh, ngh, ngh, ngh, ngh);
@@ -947,6 +949,7 @@ void MultigridDriver::RestrictOctets() {
   int lev = current_level_ - nrootlevel_;
 
   if (lev >= 1) { // fine octets to coarse octets
+#pragma omp parallel for num_threads(nthreads_)
     for (int o = 0; o < noctets_[lev]; ++o) {
       const LogicalLocation &loc = octets_[lev][o].loc;
       LogicalLocation cloc;
@@ -970,6 +973,7 @@ void MultigridDriver::RestrictOctets() {
       }
     }
   } else { // octets to the root grid
+#pragma omp parallel for num_threads(nthreads_)
     for (int o = 0; o < noctets_[0]; ++o) {
       const LogicalLocation &loc = octets_[0][o].loc;
       int ri = static_cast<int>(loc.lx1);
@@ -998,6 +1002,7 @@ void MultigridDriver::RestrictOctets() {
 
 void MultigridDriver::ZeroClearOctets() {
   int maxlevel = current_level_ - 1 - nrootlevel_;
+#pragma omp parallel for num_threads(nthreads_)
   for (int l = 0; l <= maxlevel; l++) {
     for (int o = 0; o < noctets_[l]; ++o)
       octets_[l][o].u.ZeroClear();
@@ -1014,6 +1019,7 @@ void MultigridDriver::ZeroClearOctets() {
 void MultigridDriver::StoreOldDataOctets() {
   int lev = current_level_ - nrootlevel_;
 
+#pragma omp parallel for num_threads(nthreads_)
   for (int o = 0; o < noctets_[lev]; ++o)
     memcpy(octets_[lev][o].uold.data(), octets_[lev][o].u.data(),
            octets_[lev][o].u.GetSizeInBytes());
@@ -1028,6 +1034,7 @@ void MultigridDriver::StoreOldDataOctets() {
 void MultigridDriver::CalculateFASRHSOctets() {
   int lev = current_level_ - nrootlevel_;
 
+#pragma omp parallel for num_threads(nthreads_)
   for (int o = 0; o < noctets_[lev]; ++o)
     mgroot_->CalculateFASRHS(octets_[lev][o].src, octets_[lev][o].u,
                              lev+1, os_, oe_, os_, oe_, os_, oe_);
@@ -1042,6 +1049,7 @@ void MultigridDriver::CalculateFASRHSOctets() {
 void MultigridDriver::SmoothOctets(int color) {
   int lev = current_level_ - nrootlevel_;
 
+#pragma omp parallel for num_threads(nthreads_)
   for (int o = 0; o < noctets_[lev]; ++o)
     mgroot_->Smooth(octets_[lev][o].u, octets_[lev][o].src,
                     lev+1, os_, oe_, os_, oe_, os_, oe_, color);
@@ -1062,6 +1070,7 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
   if (flev == 0) {  // from root to octets
     const AthenaArray<Real> &u = mgroot_->GetCurrentData();
     const AthenaArray<Real> &uold = mgroot_->GetCurrentOldData();
+#pragma omp parallel for num_threads(nthreads_)
     for (int o = 0; o < noctets_[0]; ++o) {
       const LogicalLocation &loc = octets_[0][o].loc;
       int ri = static_cast<int>(loc.lx1) + ngh - 1;
@@ -1085,6 +1094,7 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
       }
     }
   } else { // from coarse octets to fine octets
+#pragma omp parallel for num_threads(nthreads_)
     for (int o = 0; o < noctets_[flev]; ++o) {
       const LogicalLocation &loc = octets_[flev][o].loc;
       LogicalLocation cloc;
@@ -1130,6 +1140,7 @@ void MultigridDriver::FMGProlongateOctets() {
   int ngh = mgroot_->ngh_;
 
   if (flev == 0) {  // from root to octets
+#pragma omp parallel for num_threads(nthreads_)
     for (int o = 0; o < noctets_[0]; ++o) {
       const LogicalLocation &loc = octets_[0][o].loc;
       int ri = static_cast<int>(loc.lx1) + ngh;
@@ -1139,6 +1150,7 @@ void MultigridDriver::FMGProlongateOctets() {
                              ri, ri, rj, rj, rk, rk, ngh, ngh, ngh);
     }
   } else { // from coarse octets to fine octets
+#pragma omp parallel for num_threads(nthreads_)
     for (int o = 0; o < noctets_[flev]; ++o) {
       const LogicalLocation &loc = octets_[flev][o].loc;
       LogicalLocation cloc;
@@ -1166,6 +1178,7 @@ void MultigridDriver::FMGProlongateOctets() {
 void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
   int lev = current_level_ - nrootlevel_;
 
+#pragma omp parallel for num_threads(nthreads_) schedule(dynamic,1)
   for (int o = 0; o < noctets_[lev]; ++o) {
     for (int k = 0; k <= 2; ++k) {
       for (int j = 0; j <= 2; ++j) {
@@ -1517,6 +1530,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
 void MultigridDriver::RestrictOctetsBeforeTransfer() {
   const int &ngh = mgroot_->ngh_;
   for (int l = nreflevel_ - 1; l >= 1; --l) {  // fine octets to coarse octets
+#pragma omp parallel for num_threads(nthreads_)
     for (int o = 0; o < noctets_[l]; ++o) {
       const LogicalLocation &loc = octets_[l][o].loc;
       LogicalLocation cloc;
@@ -1533,6 +1547,7 @@ void MultigridDriver::RestrictOctetsBeforeTransfer() {
         octets_[l-1][oid].u(v, ok, oj, oi) = cbuf_(v, ngh, ngh, ngh);
     }
   }
+#pragma omp parallel for num_threads(nthreads_)
   for (int o = 0; o < noctets_[0]; ++o) { // octets to the root grid
     const LogicalLocation &loc = octets_[0][o].loc;
     mgroot_->Restrict(cbuf_, octets_[0][o].u, ngh, ngh, ngh, ngh, ngh, ngh);
@@ -1562,7 +1577,9 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
       octetbflag_[l][o] = false;
   }
 
-  for (Multigrid* pmg : vmg_) {
+#pragma omp parallel for num_threads(nthreads_)
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
     LogicalLocation loc = pmg->loc_;
     if (loc.level == locrootlevel_) continue;
     loc.lx1 = loc.lx1 >> 1;
@@ -1812,13 +1829,13 @@ void MultigridDriver::AllocateMultipoleCoefficients() {
 void MultigridDriver::CalculateMultipoleCoefficients() {
   for (int th = 0; th < nthreads_; ++th)
     mpcoeff_[th].ZeroClear();
-#pragma omp parallel for num_threads(nthreads_) schedule(dynamic,1)
+#pragma omp parallel for num_threads(nthreads_)
   for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
     int th = 0;
 #ifdef OPENMP_PARALLEL
     th = omp_get_thread_num();
 #endif
-    Multigrid *pmg = *itr;
     pmg->CalculateMultipoleCoefficients(mpcoeff_[th], mporder_);
   }
   for (int th = 1; th < nthreads_; ++th) {

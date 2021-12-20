@@ -170,11 +170,15 @@ void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh) {
   ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
   for (int v=0; v<nvar_; ++v) {
     int nsrc=ns+v;
-    for (int k=ngh, mk=ks; mk<=ke; ++k, ++mk) {
-      for (int j=ngh, mj=js; mj<=je; ++j, ++mj) {
+    for (int mk=ks; mk<=ke; ++mk) {
+      int k = mk - ks + ngh;
+      for (int mj=js; mj<=je; ++mj) {
+        int j = mj - js + ngh;
 #pragma omp simd
-        for (int i=ngh, mi=is; mi<=ie; ++i, ++mi)
+        for (int mi=is; mi<=ie; ++mi) {
+          int i = mi - is + ngh;
           dst(v,mk,mj,mi)=src(nsrc,k,j,i);
+        }
       }
     }
   }
@@ -195,22 +199,30 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
   if (fac == 1.0) {
     for (int v=0; v<nvar_; ++v) {
       int nsrc=ns+v;
-      for (int k=ngh, mk=ks; mk<=ke; ++k, ++mk) {
-        for (int j=ngh, mj=js; mj<=je; ++j, ++mj) {
+      for (int mk=ks; mk<=ke; ++mk) {
+        int k = mk - ks + ngh;
+        for (int mj=js; mj<=je; ++mj) {
+          int j = mj - js + ngh;
 #pragma omp simd
-          for (int i=ngh, mi=is; mi<=ie; ++i, ++mi)
+          for (int mi=is; mi<=ie; ++mi) {
+            int i = mi - is + ngh;
             dst(v,mk,mj,mi)=src(nsrc,k,j,i);
+          }
         }
       }
     }
   } else {
     for (int v=0; v<nvar_; ++v) {
       int nsrc=ns+v;
-      for (int k=ngh, mk=ks; mk<=ke; ++k, ++mk) {
-        for (int j=ngh, mj=js; mj<=je; ++j, ++mj) {
+      for (int mk=ks; mk<=ke; ++mk) {
+        int k = mk - ks + ngh;
+        for (int mj=js; mj<=je; ++mj) {
+          int j = mj - js + ngh;
 #pragma omp simd
-          for (int i=ngh, mi=is; mi<=ie; ++i, ++mi)
+          for (int mi=is; mi<=ie; ++mi) {
+            int i = mi - is + ngh;
             dst(v,mk,mj,mi)=src(nsrc,k,j,i)*fac;
+          }
         }
       }
     }
@@ -260,11 +272,15 @@ void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh) {
   int ie=size_.nx1+ngh_+sngh-1, je=size_.nx2+ngh_+sngh-1, ke=size_.nx3+ngh_+sngh-1;
   for (int v=0; v<nvar_; ++v) {
     int ndst=ns+v;
-    for (int k=ngh-sngh, mk=ngh_-sngh; mk<=ke; ++k, ++mk) {
-      for (int j=ngh-sngh, mj=ngh_-sngh; mj<=je; ++j, ++mj) {
+    for (int mk=ngh_-sngh; mk<=ke; ++mk) {
+      int k = mk - ngh_ + ngh;
+      for (int mj=ngh_-sngh; mj<=je; ++mj) {
+        int j = mj - ngh_ + ngh;
 #pragma omp simd
-        for (int i=ngh-sngh, mi=ngh_-sngh; mi<=ie; ++i, ++mi)
+        for (int mi=ngh_-sngh; mi<=ie; ++mi) {
+          int i = mi - ngh_ + ngh;
           dst(ndst,k,j,i)=src(v,mk,mj,mi);
+        }
       }
     }
   }
@@ -282,11 +298,15 @@ void Multigrid::RetrieveDefect(AthenaArray<Real> &dst, int ns, int ngh) {
   int ie=size_.nx1+ngh_+sngh-1, je=size_.nx2+ngh_+sngh-1, ke=size_.nx3+ngh_+sngh-1;
   for (int v=0; v<nvar_; ++v) {
     int ndst=ns+v;
-    for (int k=ngh-sngh, mk=ngh_-sngh; mk<=ke; ++k, ++mk) {
-      for (int j=ngh-sngh, mj=ngh_-sngh; mj<=je; ++j, ++mj) {
+    for (int mk=ngh_-sngh; mk<=ke; ++mk) {
+      int k = mk - ngh_ + ngh;
+      for (int mj=ngh_-sngh; mj<=je; ++mj) {
+        int j = mj - ngh_ + ngh;
 #pragma omp simd
-        for (int i=ngh-sngh, mi=ngh_-sngh; mi<=ie; ++i, ++mi)
+        for (int mi=ngh_-sngh; mi<=ie; ++mi) {
+          int i = mi - ngh_ + ngh;
           dst(ndst,k,j,i)=src(v,mk,mj,mi)*defscale_;
+        }
       }
     }
   }
@@ -518,7 +538,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd reduction(max: norm)
         for (int i=is; i<=ie; ++i)
-          norm=std::max(norm,std::fabs(def(n,k,j,i)));
+          norm = std::max(norm, std::fabs(def(n,k,j,i)));
       }
     }
     return norm;
@@ -527,7 +547,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd reduction(+: norm)
         for (int i=is; i<=ie; ++i)
-          norm+=std::fabs(def(n,k,j,i));
+          norm += std::fabs(def(n,k,j,i));
       }
     }
   } else { // L2 norm
@@ -535,7 +555,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd reduction(+: norm)
         for (int i=is; i<=ie; ++i)
-          norm+=SQR(def(n,k,j,i));
+          norm += SQR(def(n,k,j,i));
       }
     }
   }
@@ -632,14 +652,18 @@ void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v) {
 void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
                          int il, int iu, int jl, int ju, int kl, int ku) {
   for (int v=0; v<nvar_; ++v) {
-    for (int k=kl, fk=kl; k<=ku; ++k, fk+=2) {
-      for (int j=jl, fj=jl; j<=ju; ++j, fj+=2) {
+    for (int k=kl; k<=ku; ++k) {
+      int fk = 2*k - kl;
+      for (int j=jl; j<=ju; ++j) {
+        int fj = 2*j - jl;
 #pragma ivdep
-        for (int i=il, fi=il; i<=iu; ++i, fi+=2)
+        for (int i=il; i<=iu; ++i) {
+          int fi = 2*i - il;
           dst(v, k, j, i)=0.125*(src(v, fk,   fj,   fi)+src(v, fk,   fj,   fi+1)
                                 +src(v, fk,   fj+1, fi)+src(v, fk,   fj+1, fi+1)
                                 +src(v, fk+1, fj,   fi)+src(v, fk+1, fj,   fi+1)
                                 +src(v, fk+1, fj+1, fi)+src(v, fk+1, fj+1, fi+1));
+        }
       }
     }
   }
@@ -657,10 +681,13 @@ void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
 void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
      int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl) {
   for (int v=0; v<nvar_; ++v) {
-    for (int k=kl, fk=fkl; k<=ku; ++k, fk+=2) {
-      for (int j=jl, fj=fjl; j<=ju; ++j, fj+=2) {
+    for (int k=kl; k<=ku; ++k) {
+      int fk = 2*(k-kl) + fkl;
+      for (int j=jl; j<=ju; ++j) {
+        int fj = 2*(j-jl) + fjl;
 #pragma ivdep
-        for (int i=il, fi=fil; i<=iu; ++i, fi+=2) {
+        for (int i=il; i<=iu; ++i) {
+          int fi = 2*(i-il) + fil;
           dst(v,fk  ,fj  ,fi  ) +=
               0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j-1,i-1)
                         +9.0*(src(v,k,j,i-1)+src(v,k,j-1,i)+src(v,k-1,j,i))
@@ -712,10 +739,13 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
                               int il, int iu, int jl, int ju, int kl, int ku,
                               int fil, int fjl, int fkl) {
   for (int v=0; v<nvar_; ++v) {
-    for (int k=kl, fk=fkl; k<=ku; ++k, fk+=2) {
-      for (int j=jl, fj=fjl; j<=ju; ++j, fj+=2) {
+    for (int k=kl; k<=ku; ++k) {
+      int fk = 2*(k-kl) + fkl;
+      for (int j=jl; j<=ju; ++j) {
+        int fj = 2*(j-jl) + fjl;
 #pragma ivdep
-        for (int i=il, fi=fil; i<=iu; ++i, fi+=2) {
+        for (int i=il; i<=iu; ++i) {
+          int fi = 2*(i-il) + fil;
           dst(v,fk  ,fj,  fi  )=(
               + 125.*src(v,k-1,j-1,i-1)+  750.*src(v,k-1,j-1,i  )-  75.*src(v,k-1,j-1,i+1)
               + 750.*src(v,k-1,j,  i-1)+ 4500.*src(v,k-1,j,  i  )- 450.*src(v,k-1,j,  i+1)

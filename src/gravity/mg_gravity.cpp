@@ -156,7 +156,9 @@ void MGGravityDriver::Solve(int stage) {
     vmg_.push_back(pmy_mesh_->my_blocks(i)->pmg);
 
   // load the source
-  for (Multigrid* pmg : vmg_) {
+#pragma omp parallel for num_threads(nthreads_)
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
     // assume all the data are located on the same node
     pmg->LoadSource(pmg->pmy_block_->phydro->u, IDN, NGHOST, four_pi_G_);
     if (mode_ ==1) // iterative mode - load initial guess
@@ -178,7 +180,9 @@ void MGGravityDriver::Solve(int stage) {
   }
 
   // Return the result
-  for (Multigrid* pmg : vmg_) {
+#pragma omp parallel for num_threads(nthreads_)
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
     Gravity *pgrav = pmg->pmy_block_->pgrav;
     pmg->RetrieveResult(pgrav->phi, 0, NGHOST);
     if(pgrav->output_defect)
