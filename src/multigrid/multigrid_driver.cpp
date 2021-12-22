@@ -44,8 +44,8 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
     pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0),
-    niter_(-1), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3), mporder_(-1), nmpcoeff_(0),
-    nb_rank_(0) {
+    niter_(-1), coffset_(0), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3), mporder_(-1),
+    nmpcoeff_(0), nb_rank_(0) {
 
   std::cout << std::scientific << std::setprecision(15);
 
@@ -665,6 +665,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
 
 void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth) {
   int startlevel=current_level_;
+  coffset_ ^= 1;
   while (current_level_ > 0)
     OneStepToCoarser(npresmooth);
   SolveCoarsestGrid();

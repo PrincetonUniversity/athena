@@ -235,6 +235,7 @@ class MultigridDriver {
   Real eps_;
   int niter_;
   int os_, oe_;
+  int coffset_;
 
   // for mesh refinement
   std::vector<MGOctet> *octets_;

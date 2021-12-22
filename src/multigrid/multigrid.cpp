@@ -685,7 +685,7 @@ void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
                          int il, int iu, int jl, int ju, int kl, int ku, bool th) {
   if (th == true && (ku-kl) >=  minth_) {
     for (int v=0; v<nvar_; ++v) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(nthreads_)
       for (int k=kl; k<=ku; ++k) {
         int fk = 2*k - kl;
         for (int j=jl; j<=ju; ++j) {
@@ -734,7 +734,7 @@ void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<R
      int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl, bool th) {
   if (th == true && (ku-kl) >=  minth_/2) {
     for (int v=0; v<nvar_; ++v) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(nthreads_)
       for (int k=kl; k<=ku; ++k) {
         int fk = 2*(k-kl) + fkl;
         for (int j=jl; j<=ju; ++j) {
@@ -840,7 +840,7 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
                               int fil, int fjl, int fkl, bool th) {
   if (th == true && (ku-kl) >=  minth_/2) {
     for (int v=0; v<nvar_; ++v) {
-#pragma omp parallel for
+#pragma omp parallel for num_threads(nthreads_)
       for (int k=kl; k<=ku; ++k) {
         int fk = 2*(k-kl) + fkl;
         for (int j=jl; j<=ju; ++j) {
