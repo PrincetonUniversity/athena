@@ -1859,19 +1859,19 @@ void MultigridDriver::CalculateMultipoleCoefficients() {
 void MultigridDriver::ScaleMultipoleCoefficients() {
   AthenaArray<Real> &mpcoeff = mpcoeff_[0];
   // constants for multipole expansion
-  static const Real c0  = -0.5/std::sqrt(PI);
-  static const Real c1  = -std::sqrt(3.0/(4.0*PI))/3.0;
-  static const Real c2  = -0.25*std::sqrt(5.0/PI)/5.0;
-  static const Real c2a = -0.5*std::sqrt(15.0/PI)/5.0;
-  static const Real c30 = -0.25*std::sqrt(7.0/PI)/7.0;
-  static const Real c31 = -0.25*std::sqrt(21.0/TWO_PI)/7.0;
-  static const Real c32 = -0.5*std::sqrt(105.0/PI)/7.0;
-  static const Real c33 = -0.25*std::sqrt(35.0/TWO_PI)/7.0;
-  static const Real c40 = -0.1875/std::sqrt(PI)/9.0;
-  static const Real c41 = -0.75*std::sqrt(5.0/TWO_PI)/9.0;
-  static const Real c42 = -0.75*std::sqrt(5.0/PI)/9.0;
-  static const Real c43 = -0.75*std::sqrt(35.0/TWO_PI)/9.0;
-  static const Real c44 = -1.5*std::sqrt(35.0/PI)/9.0;
+  constexpr Real c0  = -0.25/PI;
+  constexpr Real c1  = -0.25/PI;
+  constexpr Real c2  = -0.0625/PI;
+  constexpr Real c2a = -0.75/PI;
+  constexpr Real c30 = -0.0625/PI;
+  constexpr Real c31 = -0.0625*1.5/PI;
+  constexpr Real c32 = -0.25*15.0/PI;
+  constexpr Real c33 = -0.0625*2.5/PI;
+  constexpr Real c40 = -0.0625*0.0625/PI;
+  constexpr Real c41 = -0.0625*2.5/PI;
+  constexpr Real c42 = -0.0625*5.0/PI;
+  constexpr Real c43 = -0.0625*17.5/PI;
+  constexpr Real c44 = -0.25*35.0/PI;
 
   mpcoeff(0) *= c0;
   mpcoeff(1) *= c1;

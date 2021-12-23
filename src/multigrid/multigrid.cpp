@@ -1053,21 +1053,6 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
 //  \brief Actual implementation of calculation of multipole expansion coeficients
 
 void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int mporder) {
-  // constants for multipole expansion
-  static const Real c0  = 0.5/std::sqrt(PI);
-  static const Real c1  = std::sqrt(3.0/(4.0*PI));
-  static const Real c2  = 0.25*std::sqrt(5.0/PI);
-  static const Real c2a = 0.5*std::sqrt(15.0/PI);
-  static const Real c30 = 0.25*std::sqrt(7.0/PI);
-  static const Real c31 = 0.25*std::sqrt(21.0/TWO_PI);
-  static const Real c32 = 0.5*std::sqrt(105.0/PI);
-  static const Real c33 = 0.25*std::sqrt(35.0/TWO_PI);
-  static const Real c40 = 0.1875/std::sqrt(PI);
-  static const Real c41 = 0.75*std::sqrt(5.0/TWO_PI);
-  static const Real c42 = 0.75*std::sqrt(5.0/PI);
-  static const Real c43 = 0.75*std::sqrt(35.0/TWO_PI);
-  static const Real c44 = 1.5*std::sqrt(35.0/PI);
-
   AthenaArray<Real> &src = src_[nlevel_-1];
   MGCoordinates &coord = coord_[nlevel_-1];
   int is, ie, js, je, ks, ke;
@@ -1102,37 +1087,35 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
           Real sz2mtr2 = 7.0*z2-3.0*r2;
           Real s = src(k,j,i) * vol;
           // Y00
-          m0  += s*c0;
+          m0  += s;
           // r*(Y1-1, Y10, Y11)
-          Real sc1 = s*c1;
-          m1  += sc1*y;
-          m2  += sc1*z;
-          m3  += sc1*x;
+          m1  += s*y;
+          m2  += s*z;
+          m3  += s*x;
           // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
-          Real sc2a = s*c2a;
-          m4  += sc2a*xy;
-          m5  += sc2a*yz;
-          m6  += s*c2*(3.0*z2-r2);
-          m7  += sc2a*zx;
-          m8  += sc2a*hx2my2;
+          m4  += s*xy;
+          m5  += s*yz;
+          m6  += s*(3.0*z2-r2);
+          m7  += s*zx;
+          m8  += s*hx2my2;
           // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
-          m9  += s*c33*y*tx2my2;
-          m10 += s*c32*xy*z;
-          m11 += s*c31*y*fz2mr2;
-          m12 += s*c30*z*(z2-3.0*r2);
-          m13 += s*c31*x*fz2mr2;
-          m14 += s*c32*z*hx2my2;
-          m15 += s*c33*x*x2mty2;
+          m9  += s*y*tx2my2;
+          m10 += s*xy*z;
+          m11 += s*y*fz2mr2;
+          m12 += s*z*(z2-3.0*r2);
+          m13 += s*x*fz2mr2;
+          m14 += s*z*hx2my2;
+          m15 += s*x*x2mty2;
           // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
-          m16 += s*c44*xy*hx2my2;
-          m17 += s*c43*yz*tx2my2;
-          m18 += s*c42*xy*sz2mr2;
-          m19 += s*c41*yz*sz2mtr2;
-          m20 += s*c40*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2);
-          m21 += s*c41*zx*sz2mtr2;
-          m22 += s*c42*hx2my2*sz2mr2;
-          m23 += s*c43*zx*x2mty2;
-          m24 += s*c44*0.125*(x2*x2mty2-y2*tx2my2);
+          m16 += s*xy*hx2my2;
+          m17 += s*yz*tx2my2;
+          m18 += s*xy*sz2mr2;
+          m19 += s*yz*sz2mtr2;
+          m20 += s*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2);
+          m21 += s*zx*sz2mtr2;
+          m22 += s*hx2my2*sz2mr2;
+          m23 += s*zx*x2mty2;
+          m24 += s*0.125*(x2*x2mty2-y2*tx2my2);
         }
       }
     }
@@ -1176,19 +1159,17 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
           Real r2 = x2 + y2 + z2;
           Real s = src(k,j,i) * vol;
           // Y00
-          m0 += s*c0;
+          m0 += s;
           // r*(Y1-1, Y10, Y11)
-          Real sc1 = s*c1;
-          m1 += sc1*y;
-          m2 += sc1*z;
-          m3 += sc1*x;
+          m1 += s*y;
+          m2 += s*z;
+          m3 += s*x;
           // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
-          Real sc2a = s*c2a;
-          m4 += sc2a*xy;
-          m5 += sc2a*yz;
-          m6 += s*c2*(3.0*z2-r2);
-          m7 += sc2a*zx;
-          m8 += sc2a*0.5*(x2-y2);
+          m4 += s*xy;
+          m5 += s*yz;
+          m6 += s*(3.0*z2-r2);
+          m7 += s*zx;
+          m8 += s*0.5*(x2-y2);
         }
       }
     }
