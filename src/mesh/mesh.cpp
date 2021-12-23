@@ -1324,6 +1324,15 @@ void Mesh::EnrollOrbitalVelocityDerivative(int i, OrbitalVelocityFunc my_func) {
 }
 
 //----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollGravitySource(GravSrcFunc my_func)
+//  \brief Enroll a user-defined gravity source function
+
+void Mesh::EnrollGravitySource(GravSrcFunc my_func) {
+  GravitySourceFunction_.push_back(my_func);
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void Mesh::AllocateRealUserMeshDataField(int n)
 //! \brief Allocate Real AthenaArrays for user-defned data in Mesh
 

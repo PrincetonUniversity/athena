@@ -209,5 +209,8 @@ using FieldDiffusionCoeffFunc = void (*)(
     int is, int ie, int js, int je, int ks, int ke);
 using OrbitalVelocityFunc = Real (*)(
     OrbitalAdvection *porb, Real x1, Real x2, Real x3);
+using GravSrcFunc = void (*)(
+    MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &src,
+    int is, int ie, int js, int je, int ks, int ke);
 
 #endif // ATHENA_HPP_

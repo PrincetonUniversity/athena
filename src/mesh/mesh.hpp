@@ -320,6 +320,7 @@ class Mesh {
   FieldDiffusionCoeffFunc FieldDiffusivity_;
   OrbitalVelocityFunc OrbitalVelocity_, OrbitalVelocityDerivative_[2];
   MGBoundaryFunc MGGravityBoundaryFunction_[6];
+  std::vector<GravSrcFunc> GravitySourceFunction_;
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -375,6 +376,7 @@ class Mesh {
   void EnrollFieldDiffusivity(FieldDiffusionCoeffFunc my_func);
   void EnrollOrbitalVelocity(OrbitalVelocityFunc my_func);
   void EnrollOrbitalVelocityDerivative(int i, OrbitalVelocityFunc my_func);
+  void EnrollGravitySource(GravSrcFunc my_func);
   void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; }
   void SetFourPiG(Real fpg) { four_pi_G_=fpg; }
   void SetGravityThreshold(Real eps) { grav_eps_=eps; }
