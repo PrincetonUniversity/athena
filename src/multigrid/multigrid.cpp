@@ -1136,31 +1136,31 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
         }
       }
     }
-    mpcoeff(0)  = m0;
-    mpcoeff(1)  = m1;
-    mpcoeff(2)  = m2;
-    mpcoeff(3)  = m3;
-    mpcoeff(4)  = m4;
-    mpcoeff(5)  = m5;
-    mpcoeff(6)  = m6;
-    mpcoeff(7)  = m7;
-    mpcoeff(8)  = m8;
-    mpcoeff(9)  = m9;
-    mpcoeff(10) = m10;
-    mpcoeff(11) = m11;
-    mpcoeff(12) = m12;
-    mpcoeff(13) = m13;
-    mpcoeff(14) = m14;
-    mpcoeff(15) = m15;
-    mpcoeff(16) = m16;
-    mpcoeff(17) = m17;
-    mpcoeff(18) = m18;
-    mpcoeff(19) = m19;
-    mpcoeff(20) = m20;
-    mpcoeff(21) = m21;
-    mpcoeff(22) = m22;
-    mpcoeff(23) = m23;
-    mpcoeff(24) = m24;
+    mpcoeff(0)  += m0;
+    mpcoeff(1)  += m1;
+    mpcoeff(2)  += m2;
+    mpcoeff(3)  += m3;
+    mpcoeff(4)  += m4;
+    mpcoeff(5)  += m5;
+    mpcoeff(6)  += m6;
+    mpcoeff(7)  += m7;
+    mpcoeff(8)  += m8;
+    mpcoeff(9)  += m9;
+    mpcoeff(10) += m10;
+    mpcoeff(11) += m11;
+    mpcoeff(12) += m12;
+    mpcoeff(13) += m13;
+    mpcoeff(14) += m14;
+    mpcoeff(15) += m15;
+    mpcoeff(16) += m16;
+    mpcoeff(17) += m17;
+    mpcoeff(18) += m18;
+    mpcoeff(19) += m19;
+    mpcoeff(20) += m20;
+    mpcoeff(21) += m21;
+    mpcoeff(22) += m22;
+    mpcoeff(23) += m23;
+    mpcoeff(24) += m24;
   } else if (mporder == 2) {
     Real m0=0.0, m1=0.0, m2=0.0, m3=0.0, m4=0.0, m5=0.0, m6=0.0, m7=0.0, m8=0.0;
     for (int k = ks; k <= ke; ++k) {
@@ -1192,15 +1192,15 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
         }
       }
     }
-    mpcoeff(0) = m0;
-    mpcoeff(1) = m1;
-    mpcoeff(2) = m2;
-    mpcoeff(3) = m3;
-    mpcoeff(4) = m4;
-    mpcoeff(5) = m5;
-    mpcoeff(6) = m6;
-    mpcoeff(7) = m7;
-    mpcoeff(8) = m8;
+    mpcoeff(0) += m0;
+    mpcoeff(1) += m1;
+    mpcoeff(2) += m2;
+    mpcoeff(3) += m3;
+    mpcoeff(4) += m4;
+    mpcoeff(5) += m5;
+    mpcoeff(6) += m6;
+    mpcoeff(7) += m7;
+    mpcoeff(8) += m8;
   }
 }
 
