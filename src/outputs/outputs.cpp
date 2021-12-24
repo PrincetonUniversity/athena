@@ -135,9 +135,22 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
 
       // set time of last output, time between outputs
       op.next_time = pin->GetOrAddReal(op.block_name,"next_time", pm->time);
-      op.dt = pin->GetReal(op.block_name,"dt");
+      op.dt = pin->GetOrAddReal(op.block_name,"dt", 0.0);
+      op.dcycle = pin->GetOrAddInteger(op.block_name,"dcycle", 0);
 
-      if (op.dt > 0.0) {  // only add output if dt>0
+      if (op.dt == 0.0 && op.dcycle == 0) {
+        msg << "### FATAL ERROR in Outputs constructor" << std::endl
+            << "Either dt or dcycle must be specified in " << op.block_name
+            << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      if (op.dt > 0.0 && op.dcycle > 0) {
+        msg << "### FATAL ERROR in Outputs constructor" << std::endl
+            << "dt and dcycle cannot be specified simultaneously in " << op.block_name
+            << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      if (op.dt > 0.0 || op.dcycle > 0) {  // only add output if dt > 0 or dycle > 0
         // set file number, basename, id, and format
         op.file_number = pin->GetOrAddInteger(op.block_name,"file_number",0);
         op.file_basename = pin->GetString("job","problem_id");
@@ -666,7 +679,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   } // endif (MAGNETIC_FIELDS_ENABLED)
 
   for (int n = 0; n < pmb->nuser_out_var; ++n) {
-    char abbr_name[16], full_name[16];
+    char abbr_name[16], full_name[32];
     std::snprintf(abbr_name, sizeof(abbr_name), "uov%d", n);
     std::snprintf(full_name, sizeof(full_name), "user_out_var%d", n);
     if ((pmb->user_out_var_names_[n].length() != 0
@@ -763,17 +776,18 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
   bool first=true;
   OutputType* ptype = pfirst_type_;
   while (ptype != nullptr) {
-    if ((pm->time == pm->start_time) ||
-        (pm->time >= ptype->output_params.next_time) ||
-        (pm->time >= pm->tlim) ||
-        (wtflag && ptype->output_params.file_type == "rst")) {
+    if ((pm->time == pm->start_time)
+      || (ptype->output_params.dt > 0.0 && pm->time >= ptype->output_params.next_time)
+      || (ptype->output_params.dcycle > 0 && pm->ncycle%ptype->output_params.dcycle == 0)
+      || (pm->time >= pm->tlim)
+      || (wtflag && ptype->output_params.file_type == "rst")) {
       if (first && ptype->output_params.file_type != "hst") {
         pm->ApplyUserWorkBeforeOutput(pin);
         first = false;
       }
       ptype->WriteOutputFile(pm, pin, wtflag);
     }
-    ptype = ptype->pnext_type; // move to next OutputType node in signly linked list
+    ptype = ptype->pnext_type; // move to next OutputType node in singly linked list
   }
 }
 
