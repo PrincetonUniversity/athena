@@ -45,7 +45,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
     pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0),
     niter_(-1), coffset_(0), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3), mporder_(-1),
-    nmpcoeff_(0), nb_rank_(0) {
+    nmpcoeff_(0), nodipole_(false), nb_rank_(0) {
 
   std::cout << std::scientific << std::setprecision(15);
 
@@ -1837,7 +1837,7 @@ void MultigridDriver::CalculateMultipoleCoefficients() {
 #ifdef OPENMP_PARALLEL
     th = omp_get_thread_num();
 #endif
-    pmg->CalculateMultipoleCoefficients(mpcoeff_[th], mporder_);
+    pmg->CalculateMultipoleCoefficients(mpcoeff_[th]);
   }
   for (int th = 1; th < nthreads_; ++th) {
     for (int i = 0; i < nmpcoeff_; ++i)

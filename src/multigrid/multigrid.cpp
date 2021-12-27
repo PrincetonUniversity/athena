@@ -1048,11 +1048,10 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff,
-//                                                     int mporder_)
+//! \fn void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff)
 //  \brief Actual implementation of calculation of multipole expansion coeficients
 
-void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int mporder) {
+void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff) {
   AthenaArray<Real> &src = src_[nlevel_-1];
   MGCoordinates &coord = coord_[nlevel_-1];
   int is, ie, js, je, ks, ke;
@@ -1061,61 +1060,110 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
   // *** Note ***: Currently this calculates coefficients of the zeroth variable only.
   // It is trivial to extend it, but I'm afraid it slows down the code considerably
   // as it requires non-continuous memory access.
-  // Also, I separate the mporder = 2 and mporder = 4 for performance. 
   Real vol = (coord.x1f(is+1)-coord.x1f(is)) * (coord.x2f(js+1)-coord.x2f(js))
            * (coord.x3f(ks+1)-coord.x3f(ks));
-  if (mporder == 4) {
+  if (pmy_driver_->mporder_ == 4) {
     Real m0=0.0, m1=0.0, m2=0.0, m3=0.0, m4=0.0, m5=0.0, m6=0.0, m7=0.0, m8=0.0, m9=0.0,
          m10=0.0, m11=0.0, m12=0.0, m13=0.0, m14=0.0, m15=0.0, m16=0.0, m17=0.0, m18=0.0,
          m19=0.0, m20=0.0, m21=0.0, m22=0.0, m23=0.0, m24=0.0;
-    for (int k = ks; k <= ke; ++k) {
-      Real z = coord.x3v(k);
-      Real z2 = z*z;
-      for (int j = js; j <= je; ++j) {
-        Real y = coord.x2v(j);
-        Real y2 = y*y, yz = y*z;
+    if (pmy_driver_->nodipole_) {
+      for (int k = ks; k <= ke; ++k) {
+        Real z = coord.x3v(k);
+        Real z2 = z*z;
+        for (int j = js; j <= je; ++j) {
+          Real y = coord.x2v(j);
+          Real y2 = y*y, yz = y*z;
 #pragma ivdep
-        for (int i = is; i <= ie; ++i) {
-          Real x = coord.x1v(i);
-          Real x2 = x*x, xy = x*y, zx = z*x;
-          Real r2 = x2 + y2 + z2;
-          Real hx2my2 = 0.5*(x2-y2);
-          Real x2mty2 = x2-3.0*y2;
-          Real tx2my2 = 3.0*x2-y2;
-          Real fz2mr2 = 5.0*z2-r2;
-          Real sz2mr2 = 7.0*z2-r2;
-          Real sz2mtr2 = 7.0*z2-3.0*r2;
-          Real s = src(k,j,i) * vol;
-          // Y00
-          m0  += s;
-          // r*(Y1-1, Y10, Y11)
-          m1  += s*y;
-          m2  += s*z;
-          m3  += s*x;
-          // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
-          m4  += s*xy;
-          m5  += s*yz;
-          m6  += s*(3.0*z2-r2);
-          m7  += s*zx;
-          m8  += s*hx2my2;
-          // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
-          m9  += s*y*tx2my2;
-          m10 += s*xy*z;
-          m11 += s*y*fz2mr2;
-          m12 += s*z*(z2-3.0*r2);
-          m13 += s*x*fz2mr2;
-          m14 += s*z*hx2my2;
-          m15 += s*x*x2mty2;
-          // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
-          m16 += s*xy*hx2my2;
-          m17 += s*yz*tx2my2;
-          m18 += s*xy*sz2mr2;
-          m19 += s*yz*sz2mtr2;
-          m20 += s*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2);
-          m21 += s*zx*sz2mtr2;
-          m22 += s*hx2my2*sz2mr2;
-          m23 += s*zx*x2mty2;
-          m24 += s*0.125*(x2*x2mty2-y2*tx2my2);
+          for (int i = is; i <= ie; ++i) {
+            Real x = coord.x1v(i);
+            Real x2 = x*x, xy = x*y, zx = z*x;
+            Real r2 = x2 + y2 + z2;
+            Real hx2my2 = 0.5*(x2-y2);
+            Real x2mty2 = x2-3.0*y2;
+            Real tx2my2 = 3.0*x2-y2;
+            Real fz2mr2 = 5.0*z2-r2;
+            Real sz2mr2 = 7.0*z2-r2;
+            Real sz2mtr2 = 7.0*z2-3.0*r2;
+            Real s = src(k,j,i) * vol;
+            // Y00
+            m0  += s;
+            // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
+            m4  += s*xy;
+            m5  += s*yz;
+            m6  += s*(3.0*z2-r2);
+            m7  += s*zx;
+            m8  += s*hx2my2;
+            // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
+            m9  += s*y*tx2my2;
+            m10 += s*xy*z;
+            m11 += s*y*fz2mr2;
+            m12 += s*z*(z2-3.0*r2);
+            m13 += s*x*fz2mr2;
+            m14 += s*z*hx2my2;
+            m15 += s*x*x2mty2;
+            // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
+            m16 += s*xy*hx2my2;
+            m17 += s*yz*tx2my2;
+            m18 += s*xy*sz2mr2;
+            m19 += s*yz*sz2mtr2;
+            m20 += s*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2);
+            m21 += s*zx*sz2mtr2;
+            m22 += s*hx2my2*sz2mr2;
+            m23 += s*zx*x2mty2;
+            m24 += s*0.125*(x2*x2mty2-y2*tx2my2);
+          }
+        }
+      }
+    } else {
+      for (int k = ks; k <= ke; ++k) {
+        Real z = coord.x3v(k);
+        Real z2 = z*z;
+        for (int j = js; j <= je; ++j) {
+          Real y = coord.x2v(j);
+          Real y2 = y*y, yz = y*z;
+#pragma ivdep
+          for (int i = is; i <= ie; ++i) {
+            Real x = coord.x1v(i);
+            Real x2 = x*x, xy = x*y, zx = z*x;
+            Real r2 = x2 + y2 + z2;
+            Real hx2my2 = 0.5*(x2-y2);
+            Real x2mty2 = x2-3.0*y2;
+            Real tx2my2 = 3.0*x2-y2;
+            Real fz2mr2 = 5.0*z2-r2;
+            Real sz2mr2 = 7.0*z2-r2;
+            Real sz2mtr2 = 7.0*z2-3.0*r2;
+            Real s = src(k,j,i) * vol;
+            // Y00
+            m0  += s;
+            // r*(Y1-1, Y10, Y11)
+            m1  += s*y;
+            m2  += s*z;
+            m3  += s*x;
+            // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
+            m4  += s*xy;
+            m5  += s*yz;
+            m6  += s*(3.0*z2-r2);
+            m7  += s*zx;
+            m8  += s*hx2my2;
+            // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
+            m9  += s*y*tx2my2;
+            m10 += s*xy*z;
+            m11 += s*y*fz2mr2;
+            m12 += s*z*(z2-3.0*r2);
+            m13 += s*x*fz2mr2;
+            m14 += s*z*hx2my2;
+            m15 += s*x*x2mty2;
+            // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
+            m16 += s*xy*hx2my2;
+            m17 += s*yz*tx2my2;
+            m18 += s*xy*sz2mr2;
+            m19 += s*yz*sz2mtr2;
+            m20 += s*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2);
+            m21 += s*zx*sz2mtr2;
+            m22 += s*hx2my2*sz2mr2;
+            m23 += s*zx*x2mty2;
+            m24 += s*0.125*(x2*x2mty2-y2*tx2my2);
+          }
         }
       }
     }
@@ -1144,32 +1192,58 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int m
     mpcoeff(22) += m22;
     mpcoeff(23) += m23;
     mpcoeff(24) += m24;
-  } else if (mporder == 2) {
+  } else if (pmy_driver_->mporder_ == 2) {
     Real m0=0.0, m1=0.0, m2=0.0, m3=0.0, m4=0.0, m5=0.0, m6=0.0, m7=0.0, m8=0.0;
-    for (int k = ks; k <= ke; ++k) {
-      Real z = coord.x3v(k);
-      Real z2 = z*z;
-      for (int j = js; j <= je; ++j) {
-        Real y = coord.x2v(j);
-        Real y2 = y*y, yz = y*z;
+    if (pmy_driver_->nodipole_) {
+      for (int k = ks; k <= ke; ++k) {
+        Real z = coord.x3v(k);
+        Real z2 = z*z;
+        for (int j = js; j <= je; ++j) {
+          Real y = coord.x2v(j);
+          Real y2 = y*y, yz = y*z;
 #pragma ivdep
-        for (int i = is; i <= ie; ++i) {
-          Real x = coord.x1v(i);
-          Real x2 = x*x, xy = x*y, zx = z*x;
-          Real r2 = x2 + y2 + z2;
-          Real s = src(k,j,i) * vol;
-          // Y00
-          m0 += s;
-          // r*(Y1-1, Y10, Y11)
-          m1 += s*y;
-          m2 += s*z;
-          m3 += s*x;
-          // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
-          m4 += s*xy;
-          m5 += s*yz;
-          m6 += s*(3.0*z2-r2);
-          m7 += s*zx;
-          m8 += s*0.5*(x2-y2);
+          for (int i = is; i <= ie; ++i) {
+            Real x = coord.x1v(i);
+            Real x2 = x*x, xy = x*y, zx = z*x;
+            Real r2 = x2 + y2 + z2;
+            Real s = src(k,j,i) * vol;
+            // Y00
+            m0 += s;
+            // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
+            m4 += s*xy;
+            m5 += s*yz;
+            m6 += s*(3.0*z2-r2);
+            m7 += s*zx;
+            m8 += s*0.5*(x2-y2);
+          }
+        }
+      }
+    } else {
+      for (int k = ks; k <= ke; ++k) {
+        Real z = coord.x3v(k);
+        Real z2 = z*z;
+        for (int j = js; j <= je; ++j) {
+          Real y = coord.x2v(j);
+          Real y2 = y*y, yz = y*z;
+#pragma ivdep
+          for (int i = is; i <= ie; ++i) {
+            Real x = coord.x1v(i);
+            Real x2 = x*x, xy = x*y, zx = z*x;
+            Real r2 = x2 + y2 + z2;
+            Real s = src(k,j,i) * vol;
+            // Y00
+            m0 += s;
+            // r*(Y1-1, Y10, Y11)
+            m1 += s*y;
+            m2 += s*z;
+            m3 += s*x;
+            // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
+            m4 += s*xy;
+            m5 += s*yz;
+            m6 += s*(3.0*z2-r2);
+            m7 += s*zx;
+            m8 += s*0.5*(x2-y2);
+          }
         }
       }
     }

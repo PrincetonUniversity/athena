@@ -97,7 +97,7 @@ class Multigrid {
   Real GetCoarsestData(MGVariable type, int n);
   void SetData(MGVariable type, int n, int k, int j, int i, Real v);
 
-  void CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff, int mporder_);
+  void CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff);
 
   // small functions
   int GetCurrentNumberOfCells() { return 1<<current_level_; }
@@ -250,6 +250,7 @@ class MultigridDriver {
   // for multipole expansion
   AthenaArray<Real> *mpcoeff_;
   int mporder_, nmpcoeff_;
+  bool nodipole_;
 
  private:
   Real *rootbuf_;

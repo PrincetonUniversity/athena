@@ -100,6 +100,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
           << "and 4 (hexadecapole)." << std::endl;
       ATHENA_ERROR(msg);
     }
+    nodipole_ = pin->GetOrAddBoolean("gravity", "nodipole", false);
     AllocateMultipoleCoefficients();
   }
 
