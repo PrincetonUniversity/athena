@@ -212,7 +212,7 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
   Real isix = omega_/6.0;
   color ^= pmy_driver_->coffset_;
   if (th == true && (ku-kl) >=  minth_) {
-#pragma omp parallel for num_threads(nthreads_)
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
         int c = (color + k + j) & 1;
@@ -274,7 +274,7 @@ void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> 
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real idx2 = 1.0/SQR(dx);
   if (th == true && (ku-kl) >=  minth_) {
-#pragma omp parallel for num_threads(nthreads_)
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
 #pragma omp simd
@@ -314,7 +314,7 @@ void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> 
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real idx2 = 1.0/SQR(dx);
   if (th == true && (ku-kl) >=  minth_) {
-#pragma omp parallel for num_threads(nthreads_)
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
 #pragma omp simd
