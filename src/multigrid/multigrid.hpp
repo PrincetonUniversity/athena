@@ -230,7 +230,7 @@ class MultigridDriver {
   Mesh *pmy_mesh_;
   std::vector<Multigrid*> vmg_;
   Multigrid *mgroot_;
-  bool fsubtract_average_, ffas_;
+  bool fsubtract_average_, ffas_, needinit_;
   Real last_ave_;
   Real eps_;
   int niter_;

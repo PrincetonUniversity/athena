@@ -236,11 +236,11 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
     }
   }
 
-// Jacobi
+// Jacobi solver for debugging
 /*  const Real isix = 1.0/7.0;
   static AthenaArray<Real> temp;
   if (!temp.IsAllocated())
-    temp.NewAthenaArray(1,18,18,18);
+    temp.NewAthenaArray(1,66,66,66);
   for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
       for (int i=il; i<=iu; i++)

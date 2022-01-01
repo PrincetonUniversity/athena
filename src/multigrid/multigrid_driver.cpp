@@ -43,9 +43,9 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     nvar_(invar), mode_(0), // 0: FMG V(1,1) + iterative, 1: V(1,1) iterative
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
-    pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), eps_(-1.0),
-    niter_(-1), coffset_(0), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3), mporder_(-1),
-    nmpcoeff_(0), nodipole_(false), nb_rank_(0) {
+    pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), needinit_(true),
+    eps_(-1.0), niter_(-1), coffset_(0), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3),
+    mporder_(-1), nmpcoeff_(0), nodipole_(false), nb_rank_(0) {
 
   std::cout << std::scientific << std::setprecision(15);
 
@@ -339,13 +339,12 @@ void MultigridDriver::SetupMultigrid() {
   int ncoct = mgroot_->ngh_*2 + 2, nccoct = mgroot_->ngh_*2 + 1;
   os_ = mgroot_->ngh_;
   oe_ = os_+1;
-  static bool needinit = true;
 
   if (pmy_mesh_->amr_updated)
-    needinit = true;
+    needinit_ = true;
 
   // note: the level of an Octet is one level lower than the data stored there
-  if (nreflevel_ > 0 && needinit) {
+  if (nreflevel_ > 0 && needinit_) {
     for (int l = 0; l < nreflevel_; ++l) { // clear old data
       octetmap_[l].clear();
       pmaxnoct_[l] = std::max(pmaxnoct_[l], noctets_[l]);
@@ -374,7 +373,7 @@ void MultigridDriver::SetupMultigrid() {
     }
   }
 
-  if (needinit) {
+  if (needinit_) {
     // reallocate buffers if needed
     if (nbtotal_ != pmy_mesh_->nbtotal) {
       if (nbtotal_ < pmy_mesh_->nbtotal) {
@@ -408,17 +407,14 @@ void MultigridDriver::SetupMultigrid() {
       nvslisti_[n] = nslist_[n]*nvar_;
       nvlisti_[n]  = nblist_[n]*nvar_;
     }
-    for (Multigrid* pmg : vmg_)
+    for (Multigrid* pmg : vmg_) {
       pmg->pmgbval->SearchAndSetNeighbors(pmy_mesh_->tree, ranklist_, nslist_);
+      pmg->pmgbval->color_ = 0;
+    }
     if (nreflevel_ > 0)
       CalculateOctetCoordinates();
-    needinit = false;
+    needinit_ = false;
   }
-
-  // reset the buffer color
-  for (Multigrid* pmg : vmg_)
-    pmg->pmgbval->color_ = 0;
-
 
   if (srcmask_ != nullptr) {
 #pragma omp parallel for num_threads(nthreads_)
