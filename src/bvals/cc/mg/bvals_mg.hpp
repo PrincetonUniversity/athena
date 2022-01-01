@@ -58,8 +58,10 @@ class MGBoundaryValues : public BoundaryBase {
  protected:
   Multigrid *pmy_mg_;
   MGBoundaryFunc MGBoundaryFunction_[6];
-  BoundaryData<> bdata_;
+  BoundaryData<> bdata_[3];
   AthenaArray<Real> cbuf_, cbufold_;
+  int color_;
+  bool triplebuf_;
 
 #ifdef MPI_PARALLEL
   MPI_Comm mgcomm_;

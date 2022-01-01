@@ -415,6 +415,11 @@ void MultigridDriver::SetupMultigrid() {
     needinit = false;
   }
 
+  // reset the buffer color
+  for (Multigrid* pmg : vmg_)
+    pmg->pmgbval->color_ = 0;
+
+
   if (srcmask_ != nullptr) {
 #pragma omp parallel for num_threads(nthreads_)
     for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
