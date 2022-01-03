@@ -373,11 +373,12 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(int flag) {
 //! \brief initiate MPI_Irecv for multigrid
 
 void MGBoundaryValues::StartReceivingMultigrid(BoundaryQuantity type, bool folddata) {
+  if (triplebuf_)
+    bcolor_ = (bcolor_ + 1) % 3;
+
 #ifdef MPI_PARALLEL
   int nvar = pmy_mg_->nvar_, ngh = pmy_mg_->ngh_, cngh = ngh;
   int nc = pmy_mg_->GetCurrentNumberOfCells();
-  if (triplebuf_)
-    bcolor_ = (bcolor_ + 1) % 3;
 
   for (int n = 0; n < nneighbor; ++n) {
     NeighborBlock& nb = neighbor[n];
