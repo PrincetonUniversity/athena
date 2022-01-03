@@ -409,7 +409,7 @@ void MultigridDriver::SetupMultigrid() {
     }
     for (Multigrid* pmg : vmg_) {
       pmg->pmgbval->SearchAndSetNeighbors(pmy_mesh_->tree, ranklist_, nslist_);
-      pmg->pmgbval->color_ = 0;
+      pmg->pmgbval->bcolor_ = 0;
     }
     if (nreflevel_ > 0)
       CalculateOctetCoordinates();
