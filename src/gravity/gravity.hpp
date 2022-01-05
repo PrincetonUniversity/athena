@@ -50,8 +50,6 @@ class Gravity {
   void Initialize(ParameterInput *pin);
   void Solver(const AthenaArray<Real> &u);
 
-  void EnrollSource(AthenaArray<Real> &arr, int idx);
-  void UnenrollSource(AthenaArray<Real> &arr, int idx);
   void ComputeSource();
 
   friend class MGGravityDriver;
@@ -60,9 +58,8 @@ class Gravity {
   bool gravity_tensor_momentum_;
   bool gravity_tensor_energy_;
 
-  // actual copy of accumulated source and (pointers, index) pair to enrolled sources
+  // actual copy of accumulated source
   AthenaArray<Real> accumulated_src_;
-  std::vector<std::pair<AthenaArray<Real>*, int>> enrolled_src_;
 };
 
 #endif // GRAVITY_GRAVITY_HPP_

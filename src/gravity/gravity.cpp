@@ -21,6 +21,7 @@
 #include "../athena_arrays.hpp"
 #include "../bvals/cc/bvals_cc.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "gravity.hpp"
@@ -57,41 +58,27 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
   pmb->pbval->bvars.push_back(&gbvar);
 }
 
-void Gravity::EnrollSource(AthenaArray<Real> &arr, int idx) {
-  // make sure no duplication
-  UnenrollSource(arr, idx);
-  enrolled_src_.emplace_back(&arr, idx);
-}
-
-void Gravity::UnenrollSource(AthenaArray<Real> &arr, int idx) {
-  for (auto it = enrolled_src_.begin(); it != enrolled_src_.end(); it++) {
-    if (it->first == &arr && it->second == idx) {
-      // no duplication
-      enrolled_src_.erase(it);
-      return;
-    }
-  }
-}
+//----------------------------------------------------------------------------------------
+//! \fn Gravity::ComputeSource()
+//! \brief Accumulate all sources to array
 
 void Gravity::ComputeSource() {
-  if (enrolled_src_.size() == 1) {
-    // only one array enrolled, point src to the array
-    auto parr = enrolled_src_.front().first;
-    int idx = enrolled_src_.front().second;
-    src.InitWithShallowSlice(*parr, 4, idx, 1);
-  } else {
-    // zero or more than one array enrolled, sum everything to buffer and point src to it
-    accumulated_src_.ZeroClear();
-    int sz = accumulated_src_.GetSize();
-    AthenaArray<Real> arr;    // shallow copy of each enrolled array
-    for (auto s : enrolled_src_) {
-      auto parr = s.first;
-      int idx = s.second;
-      arr.InitWithShallowSlice(*parr, 4, idx, 1);
-#pragma omp simd
-      for (int i = 0; i < sz; i++)
-        accumulated_src_(i) += arr(i);
-    }
-    src.InitWithShallowSlice(accumulated_src_, 4, 0, 1);
+  if (pmy_block->pmy_mesh->GravitySourceFunction_.empty()) {
+    // make only shallow copy
+    src.InitWithShallowSlice(pmy_block->phydro->u, 4, IDN, 1);
+    return;
+  }
+
+  // copy hydro density to actual copy of accumulated source by default
+  AthenaArray<Real> dens;
+  dens.InitWithShallowSlice(pmy_block->phydro->u, 4, IDN, 1);
+  src.InitWithShallowSlice(accumulated_src_, 4, 0, 1);
+  src = dens;
+
+  // apply all user-defined functions to the copy
+  for (auto src_func : pmy_block->pmy_mesh->GravitySourceFunction_) {
+    src_func(
+        pmy_block, pmy_block->pcoord, src, pmy_block->is, pmy_block->ie,
+        pmy_block->js, pmy_block->je, pmy_block->ks, pmy_block->ke);
   }
 }
