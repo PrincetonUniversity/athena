@@ -61,9 +61,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   dir_3 = pin->GetReal("problem", "dir_3");
   spread = pin->GetReal("problem", "spread");
   dii_dt = pin->GetReal("problem", "dii_dt");
-  zs = NGHOST;
+  zs = NGHOST_RAD;
   ze = zs + pin->GetInteger("radiation", "n_polar");
-  ps = NGHOST;
+  ps = NGHOST_RAD;
   pe = ps + pin->GetInteger("radiation", "n_azimuthal");
 
   // Determine coordinate type

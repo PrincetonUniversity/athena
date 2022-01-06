@@ -329,7 +329,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       } else {
         AddTask(INT_RAD, CALC_RADFLX);
       }
-      AddTask(SRCTERM_RAD,INT_RAD|INT_HYD);
+      AddTask(SRCTERM_RAD,INT_RAD|INT_HYD|INT_FLD);
       AddTask(SEND_RAD,SRCTERM_RAD|SRCTERM_HYD);
       AddTask(RECV_RAD,NONE);
       AddTask(SETB_RAD,(RECV_RAD|SRCTERM_RAD));
@@ -1032,6 +1032,7 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage
 
 TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
+  Field *pf = pmb->pfield;
   Radiation *pr = pmb->prad;
 
   // return if there are no source terms to be added
@@ -1043,11 +1044,12 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) 
     // Scaled coefficient for RHS update
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     // Evaluate the time-dependent source terms at the time at the beginning of the stage
-    // TODO(CJW): below only works for VL2
     if (stage == 1) {
-      pr->AddSourceTerms(t_start_stage, dt, pr->prim, ph->w, ph->w, pr->cons, ph->u);
+      pr->AddSourceTerms(t_start_stage, dt, pr->prim, ph->w, pf->b, pr->cons, ph->u,
+          pf->bcc);
     } else {
-      pr->AddSourceTerms(t_start_stage, dt, pr->prim1, ph->w1, ph->w, pr->cons, ph->u);
+      pr->AddSourceTerms(t_start_stage, dt, pr->prim, ph->w, pf->b, pr->cons, ph->u,
+          pf->bcc);
     }
   } else {
     return TaskStatus::fail;

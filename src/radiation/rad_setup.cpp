@@ -310,7 +310,7 @@ void Radiation::CalculateRadiationInCellLinear(Real ee_f, Real ff1_f, Real ff2_f
 
   // Calculate fluid velocity in tetrad frame
   Real temp_var = g(I11,i) * SQR(uu1) + 2.0 * g(I12,i) * uu1 * uu2
-      + 2.0 * g(I13,i) * uu1 * uu3 + g(I22) * SQR(uu2)
+      + 2.0 * g(I13,i) * uu1 * uu3 + g(I22,i) * SQR(uu2)
       + 2.0 * g(I23,i) * uu2 * uu3 + g(I33,i) * SQR(uu3);
   Real uu0 = std::sqrt(1.0 + temp_var);
   Real u0_t = norm_to_tet_(0,0,k,j,i) * uu0 + norm_to_tet_(0,1,k,j,i) * uu1

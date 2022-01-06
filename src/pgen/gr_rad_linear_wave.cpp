@@ -290,9 +290,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         // Calculate wave-aligned fluid-frame radiation moments
         Real rf_wave[4][4];
         rf_wave[0][0] = erad + delta * (derad_real * c - derad_imag * s);
-        rf_wave[0][1] = rf_wave[1][0] = fxrad + delta * (dfxrad_real * c - dfxrad_imag * s);
-        rf_wave[0][2] = rf_wave[2][0] = fyrad + delta * (dfyrad_real * c - dfyrad_imag * s);
-        rf_wave[0][3] = rf_wave[3][0] = fzrad + delta * (dfzrad_real * c - dfzrad_imag * s);
+        rf_wave[0][1] =
+            rf_wave[1][0] = fxrad + delta * (dfxrad_real * c - dfxrad_imag * s);
+        rf_wave[0][2] =
+            rf_wave[2][0] = fyrad + delta * (dfyrad_real * c - dfyrad_imag * s);
+        rf_wave[0][3] =
+            rf_wave[3][0] = fzrad + delta * (dfzrad_real * c - dfzrad_imag * s);
         rf_wave[1][1] = 1.0 / 3.0 * rf_wave[0][0];
         rf_wave[1][2] = rf_wave[2][1] = 0.0;
         rf_wave[1][3] = rf_wave[3][1] = 0.0;
@@ -321,8 +324,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             r_wave[alpha][beta] = 0.0;
             for (int mu = 0; mu < 4; ++mu) {
               for (int nu = 0; nu < 4; ++nu) {
-                r_wave[alpha][beta] +=
-                    lambda_c_f_wave[alpha][mu] * lambda_c_f_wave[beta][nu] * rf_wave[mu][nu];
+                r_wave[alpha][beta] += lambda_c_f_wave[alpha][mu]
+                    * lambda_c_f_wave[beta][nu] * rf_wave[mu][nu];
               }
             }
           }
@@ -362,7 +365,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             rf[alpha][beta] = 0.0;
             for (int mu = 0; mu < 4; ++mu) {
               for (int nu = 0; nu < 4; ++nu) {
-                rf[alpha][beta] += lambda_f_c[alpha][mu] * lambda_f_c[beta][nu] * r[mu][nu];
+                rf[alpha][beta] +=
+                    lambda_f_c[alpha][mu] * lambda_f_c[beta][nu] * r[mu][nu];
               }
             }
           }

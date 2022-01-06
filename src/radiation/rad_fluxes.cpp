@@ -7,13 +7,15 @@
 //  \brief implementation of flux-related functions in class Radiation
 
 // C++ headers
-#include <cmath>  // expm1, sqrt
+#include <algorithm>  // max, min
+#include <cmath>      // expm1, sqrt
 
 // Athena++ headers
 #include "radiation.hpp"
 #include "../athena.hpp"                   // Real, indices
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // Coordinates
+#include "../eos/eos.hpp"                  // EquationOfState
 #include "../hydro/hydro.hpp"              // Hydro
 #include "../mesh/mesh.hpp"                // MeshBlock
 
@@ -42,7 +44,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
       }
 
       // Calculate pure radiation fluxes
-      if (not coupled_to_matter) {
+      if (not (coupled_to_matter and tau_multiplier > 0.0)) {
         for (int l = zs; l <= ze; ++l) {
           for (int m = ps; m <= pe; ++m) {
             int lm = AngleInd(l, m);
@@ -56,9 +58,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
       }
 
       // Calculate radiation-hydrodynamic fluxes
-      if (coupled_to_matter) {
+      else {
 
-        // Calculate negative fluid velocity in tetrad frame and coordinate 3-velocity
+        // Calculate negative fluid velocity in tetrad frame
         pmy_block->pcoord->Face1Metric(k, j, is, ie + 1, g_, gi_);
         for (int i = is; i <= ie+1; ++i) {
           Real dx_l = pmy_block->pcoord->x1f(i) - pmy_block->pcoord->x1v(i-1);
@@ -70,47 +72,57 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
           Real uu3 = (dx_r * prim_hydro(IVZ,k,j,i-1) + dx_l * prim_hydro(IVZ,k,j,i))
               / (dx_l + dx_r);
           Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
-              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
               + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
           Real uu0 = std::sqrt(1.0 + temp_var);
           u_tet_(0,i) = norm_to_tet_1_(0,0,k,j,i) * uu0 + norm_to_tet_1_(0,1,k,j,i) * uu1
               + norm_to_tet_1_(0,2,k,j,i) * uu2 + norm_to_tet_1_(0,3,k,j,i) * uu3;
-          u_tet_(1,i) = -norm_to_tet_1_(1,0,k,j,i) * uu0 - norm_to_tet_1_(1,1,k,j,i) * uu1
-              - norm_to_tet_1_(1,2,k,j,i) * uu2 - norm_to_tet_1_(1,3,k,j,i) * uu3;
-          u_tet_(2,i) = -norm_to_tet_1_(2,0,k,j,i) * uu0 - norm_to_tet_1_(2,1,k,j,i) * uu1
-              - norm_to_tet_1_(2,2,k,j,i) * uu2 - norm_to_tet_1_(2,3,k,j,i) * uu3;
-          u_tet_(3,i) = -norm_to_tet_1_(3,0,k,j,i) * uu0 - norm_to_tet_1_(3,1,k,j,i) * uu1
-              - norm_to_tet_1_(3,2,k,j,i) * uu2 - norm_to_tet_1_(3,3,k,j,i) * uu3;
-          Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
-          Real beta1 = -gi_(I01,i) / gi_(I00,i);
-          Real u0 = uu0 / alpha;
-          Real u1 = uu1 - beta1 / alpha * uu0;
-          v_fluid_(i) = u1 / u0;
         }
 
-        // Calculate mixed radiation field
+        // Calculate fluid velocity in tetrad frame to left of interface
+        pmy_block->pcoord->CellMetric(k, j, is - 1, ie + 1, g_, gi_);
         for (int i = is; i <= ie+1; ++i) {
-          jj_f_(i) = 0.0;
-        }
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m);
-            for (int i = is; i <= ie+1; ++i) {
-              ii_lr_(lm,i) = n1_n_mu_(0,l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
-              for (int p = 0; p < 4; ++p) {
-                for (int q = 0; q < 4; ++q) {
-                  jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * ii_lr_(lm,i) * nh_cc_(p,l,m)
-                      * nh_cc_(q,l,m) * solid_angle(l,m);
-                }
-              }
-            }
-          }
-        }
-        for (int i = is; i <= ie+1; ++i) {
-          jj_f_(i) /= 4.0 * PI;
+          Real uu1 = prim_hydro(IVX,k,j,i-1);
+          Real uu2 = prim_hydro(IVY,k,j,i-1);
+          Real uu3 = prim_hydro(IVZ,k,j,i-1);
+          Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
+              + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+          Real uu0 = std::sqrt(1.0 + temp_var);
+          u_tet_l_(0,i) = norm_to_tet_(0,0,k,j,i-1) * uu0
+              + norm_to_tet_(0,1,k,j,i-1) * uu1 + norm_to_tet_(0,2,k,j,i-1) * uu2
+              + norm_to_tet_(0,3,k,j,i-1) * uu3;
+          u_tet_l_(1,i) = -norm_to_tet_(1,0,k,j,i-1) * uu0
+              - norm_to_tet_(1,1,k,j,i-1) * uu1 - norm_to_tet_(1,2,k,j,i-1) * uu2
+              - norm_to_tet_(1,3,k,j,i-1) * uu3;
+          u_tet_l_(2,i) = -norm_to_tet_(2,0,k,j,i-1) * uu0
+              - norm_to_tet_(2,1,k,j,i-1) * uu1 - norm_to_tet_(2,2,k,j,i-1) * uu2
+              - norm_to_tet_(2,3,k,j,i-1) * uu3;
+          u_tet_l_(3,i) = -norm_to_tet_(3,0,k,j,i-1) * uu0
+              - norm_to_tet_(3,1,k,j,i-1) * uu1 - norm_to_tet_(3,2,k,j,i-1) * uu2
+              - norm_to_tet_(3,3,k,j,i-1) * uu3;
         }
 
-        // Calculate coefficients needed for modified fluxes
+        // Calculate fluid velocity in tetrad frame to right of interface
+        for (int i = is; i <= ie+1; ++i) {
+          Real uu1 = prim_hydro(IVX,k,j,i);
+          Real uu2 = prim_hydro(IVY,k,j,i);
+          Real uu3 = prim_hydro(IVZ,k,j,i);
+          Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
+              + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+          Real uu0 = std::sqrt(1.0 + temp_var);
+          u_tet_r_(0,i) = norm_to_tet_(0,0,k,j,i) * uu0 + norm_to_tet_(0,1,k,j,i) * uu1
+              + norm_to_tet_(0,2,k,j,i) * uu2 + norm_to_tet_(0,3,k,j,i) * uu3;
+          u_tet_r_(1,i) = -norm_to_tet_(1,0,k,j,i) * uu0 - norm_to_tet_(1,1,k,j,i) * uu1
+              - norm_to_tet_(1,2,k,j,i) * uu2 - norm_to_tet_(1,3,k,j,i) * uu3;
+          u_tet_r_(2,i) = -norm_to_tet_(2,0,k,j,i) * uu0 - norm_to_tet_(2,1,k,j,i) * uu1
+              - norm_to_tet_(2,2,k,j,i) * uu2 - norm_to_tet_(2,3,k,j,i) * uu3;
+          u_tet_r_(3,i) = -norm_to_tet_(3,0,k,j,i) * uu0 - norm_to_tet_(3,1,k,j,i) * uu1
+              - norm_to_tet_(3,2,k,j,i) * uu2 - norm_to_tet_(3,3,k,j,i) * uu3;
+        }
+
+        // Calculate optical depth
         for (int i = is; i <= ie+1; ++i) {
           Real dx_l = pmy_block->pcoord->x1f(i) - pmy_block->pcoord->x1v(i-1);
           Real dx_r = pmy_block->pcoord->x1v(i) - pmy_block->pcoord->x1f(i);
@@ -118,30 +130,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
               + dx_l * opacity(OPAA,k,j,i) * prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
           Real k_s = (dx_r * opacity(OPAS,k,j,i-1) * prim_hydro(IDN,k,j,i-1)
               + dx_l * opacity(OPAS,k,j,i) * prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
-          Real tt = (dx_r * prim_hydro(IPR,k,j,i-1) / prim_hydro(IDN,k,j,i-1)
-              + dx_l * prim_hydro(IPR,k,j,i) / prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
-          k_tot_(i) = k_a + k_s;
-          bb_jj_f_(i) =
-              (k_a * arad * SQR(SQR(tt)) / (4.0 * PI) + k_s * jj_f_(i)) / (k_a + k_s);
-        }
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m);
-            for (int i = is; i <= ie+1; ++i) {
-              ii_f_to_tet_(lm,i) = 0.0;
-              for (int p = 0; p < 4; ++p) {
-                ii_f_to_tet_(lm,i) += u_tet_(p,i) * nh_cc_(p,l,m);
-              }
-            }
-          }
-        }
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m);
-            for (int i = is; i <= ie+1; ++i) {
-              ii_f_to_tet_(lm,i) = SQR(SQR(ii_f_to_tet_(lm,i)));
-            }
-          }
+          Real k_tot = k_a + k_s;
+          Real tau = tau_multiplier * k_tot * dt / u_tet_(0,i);
+          tau_factor_(i) = -std::expm1(-tau * tau);
         }
 
         // Calculate modified fluxes
@@ -149,24 +140,26 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
           for (int m = ps; m <= pe; ++m) {
             int lm = AngleInd(l, m);
             for (int i = is; i <= ie+1; ++i) {
-              Real tau = k_tot_(i) * dt / u_tet_(0,i);
-              Real factor = tau > 0.0 ? -std::expm1(-tau) / tau : 1.0;
-              Real flux_free = n1_n_mu_(0,l,m,k,j,i) * ii_lr_(lm,i) * factor;
-              Real flux_adv = v_fluid_(i) * n_0_1_(l,m,k,j,i) * ii_f_to_tet_(lm,i)
-                  * bb_jj_f_(i) * (1.0 - factor);
-              flux_x[X1DIR](lm,k,j,i) = flux_free + flux_adv;
-              if (affect_fluid) {
-                Real temp_var = (ii_lr_(lm,i) - ii_f_to_tet_(lm,i) * bb_jj_f_(i))
-                    * (1.0 - factor) * solid_angle(l,m);
-                pmy_block->phydro->flux[X1DIR](IEN,k,j,i) +=
-                    temp_var * n1_n_mu_(0,l,m,k,j,i);
-                pmy_block->phydro->flux[X1DIR](IM1,k,j,i) +=
-                    temp_var * n1_n_mu_(1,l,m,k,j,i);
-                pmy_block->phydro->flux[X1DIR](IM2,k,j,i) +=
-                    temp_var * n1_n_mu_(2,l,m,k,j,i);
-                pmy_block->phydro->flux[X1DIR](IM3,k,j,i) +=
-                    temp_var * n1_n_mu_(3,l,m,k,j,i);
-              }
+              Real u_n_left = -u_tet_l_(0,i) * nh_cc_(0,l,m)
+                  + u_tet_l_(1,i) * nh_cc_(1,l,m) + u_tet_l_(2,i) * nh_cc_(2,l,m)
+                  + u_tet_l_(3,i) * nh_cc_(3,l,m);
+              Real u_n_right = -u_tet_r_(0,i) * nh_cc_(0,l,m)
+                  + u_tet_r_(1,i) * nh_cc_(1,l,m) + u_tet_r_(2,i) * nh_cc_(2,l,m)
+                  + u_tet_r_(3,i) * nh_cc_(3,l,m);
+              Real advection_factor_left =
+                  -tau_factor_(i) * (1.0 + 1.0 / (u_n_left * u_n_left * u_n_left));
+              Real advection_factor_right =
+                  -tau_factor_(i) * (1.0 + 1.0 / (u_n_right * u_n_right * u_n_right));
+              Real ii_1_left = ii_l_(lm,i) * (1.0 - advection_factor_left);
+              Real ii_1_right = ii_r_(lm,i) * (1.0 - advection_factor_right);
+              Real ii_2_left = advection_factor_left;
+              Real ii_2_right = advection_factor_right;
+              Real v_1 = n1_n_mu_(0,l,m,k,j,i);
+              Real dx_l = pmy_block->pcoord->x1f(i) - pmy_block->pcoord->x1v(i-1);
+              Real dx_r = pmy_block->pcoord->x1v(i) - pmy_block->pcoord->x1f(i);
+              Real v_2 = v_1 * (dx_r * ii_2_left + dx_l * ii_2_right) / (dx_l + dx_r);
+              flux_x[X1DIR](lm,k,j,i) = v_1 * (v_1 < 0.0 ? ii_1_left : ii_1_right);
+              flux_x[X1DIR](lm,k,j,i) += v_2 * (v_2 < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
             }
           }
         }
@@ -187,7 +180,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
         }
 
         // Calculate pure radiation fluxes
-        if (not coupled_to_matter) {
+        if (not (coupled_to_matter and tau_multiplier > 0.0)) {
           for (int l = zs; l <= ze; ++l) {
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
@@ -201,13 +194,13 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
         }
 
         // Calculate radiation-hydrodynamic fluxes
-        if (coupled_to_matter) {
+        else {
 
-          // Calculate negative fluid velocity in tetrad frame and coordinate 3-velocity
+          // Calculate negative fluid velocity in tetrad frame
           pmy_block->pcoord->Face2Metric(k, j, is, ie, g_, gi_);
+          Real dx_l = pmy_block->pcoord->x2f(j) - pmy_block->pcoord->x2v(j-1);
+          Real dx_r = pmy_block->pcoord->x2v(j) - pmy_block->pcoord->x2f(j);
           for (int i = is; i <= ie; ++i) {
-            Real dx_l = pmy_block->pcoord->x2f(j) - pmy_block->pcoord->x2v(j-1);
-            Real dx_r = pmy_block->pcoord->x2v(j) - pmy_block->pcoord->x2f(j);
             Real uu1 = (dx_r * prim_hydro(IVX,k,j-1,i) + dx_l * prim_hydro(IVX,k,j,i))
                 / (dx_l + dx_r);
             Real uu2 = (dx_r * prim_hydro(IVY,k,j-1,i) + dx_l * prim_hydro(IVY,k,j,i))
@@ -215,82 +208,67 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             Real uu3 = (dx_r * prim_hydro(IVZ,k,j-1,i) + dx_l * prim_hydro(IVZ,k,j,i))
                 / (dx_l + dx_r);
             Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
-                + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+                + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
                 + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
             Real uu0 = std::sqrt(1.0 + temp_var);
             u_tet_(0,i) = norm_to_tet_2_(0,0,k,j,i) * uu0
                 + norm_to_tet_2_(0,1,k,j,i) * uu1 + norm_to_tet_2_(0,2,k,j,i) * uu2
                 + norm_to_tet_2_(0,3,k,j,i) * uu3;
-            u_tet_(1,i) = -norm_to_tet_2_(1,0,k,j,i) * uu0
-                - norm_to_tet_2_(1,1,k,j,i) * uu1 - norm_to_tet_2_(1,2,k,j,i) * uu2
-                - norm_to_tet_2_(1,3,k,j,i) * uu3;
-            u_tet_(2,i) = -norm_to_tet_2_(2,0,k,j,i) * uu0
-                - norm_to_tet_2_(2,1,k,j,i) * uu1 - norm_to_tet_2_(2,2,k,j,i) * uu2
-                - norm_to_tet_2_(2,3,k,j,i) * uu3;
-            u_tet_(3,i) = -norm_to_tet_2_(3,0,k,j,i) * uu0
-                - norm_to_tet_2_(3,1,k,j,i) * uu1 - norm_to_tet_2_(3,2,k,j,i) * uu2
-                - norm_to_tet_2_(3,3,k,j,i) * uu3;
-            Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
-            Real beta2 = -gi_(I02,i) / gi_(I00,i);
-            Real u0 = uu0 / alpha;
-            Real u2 = uu2 - beta2 / alpha * uu0;
-            v_fluid_(i) = u2 / u0;
           }
 
-          // Calculate mixed radiation field
+          // Calculate fluid velocity in tetrad frame to left of interface
+          pmy_block->pcoord->CellMetric(k, j - 1, is, ie, g_, gi_);
           for (int i = is; i <= ie; ++i) {
-            jj_f_(i) = 0.0;
-          }
-          for (int l = zs; l <= ze; ++l) {
-            for (int m = ps; m <= pe; ++m) {
-              int lm = AngleInd(l, m);
-              for (int i = is; i <= ie; ++i) {
-                ii_lr_(lm,i) = n2_n_mu_(0,l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
-                for (int p = 0; p < 4; ++p) {
-                  for (int q = 0; q < 4; ++q) {
-                    jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * ii_lr_(lm,i) * nh_cc_(p,l,m)
-                        * nh_cc_(q,l,m) * solid_angle(l,m);
-                  }
-                }
-              }
-            }
-          }
-          for (int i = is; i <= ie; ++i) {
-            jj_f_(i) /= 4.0 * PI;
+            Real uu1 = prim_hydro(IVX,k,j-1,i);
+            Real uu2 = prim_hydro(IVY,k,j-1,i);
+            Real uu3 = prim_hydro(IVZ,k,j-1,i);
+            Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+                + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
+                + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+            Real uu0 = std::sqrt(1.0 + temp_var);
+            u_tet_l_(0,i) = norm_to_tet_(0,0,k,j-1,i) * uu0
+                + norm_to_tet_(0,1,k,j-1,i) * uu1 + norm_to_tet_(0,2,k,j-1,i) * uu2
+                + norm_to_tet_(0,3,k,j-1,i) * uu3;
+            u_tet_l_(1,i) = -norm_to_tet_(1,0,k,j-1,i) * uu0
+                - norm_to_tet_(1,1,k,j-1,i) * uu1 - norm_to_tet_(1,2,k,j-1,i) * uu2
+                - norm_to_tet_(1,3,k,j-1,i) * uu3;
+            u_tet_l_(2,i) = -norm_to_tet_(2,0,k,j-1,i) * uu0
+                - norm_to_tet_(2,1,k,j-1,i) * uu1 - norm_to_tet_(2,2,k,j-1,i) * uu2
+                - norm_to_tet_(2,3,k,j-1,i) * uu3;
+            u_tet_l_(3,i) = -norm_to_tet_(3,0,k,j-1,i) * uu0
+                - norm_to_tet_(3,1,k,j-1,i) * uu1 - norm_to_tet_(3,2,k,j-1,i) * uu2
+                - norm_to_tet_(3,3,k,j-1,i) * uu3;
           }
 
-          // Calculate coefficients needed for modified fluxes
+          // Calculate fluid velocity in tetrad frame to right of interface
+          pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
           for (int i = is; i <= ie; ++i) {
-            Real dx_l = pmy_block->pcoord->x2f(j) - pmy_block->pcoord->x2v(j-1);
-            Real dx_r = pmy_block->pcoord->x2v(j) - pmy_block->pcoord->x2f(j);
+            Real uu1 = prim_hydro(IVX,k,j,i);
+            Real uu2 = prim_hydro(IVY,k,j,i);
+            Real uu3 = prim_hydro(IVZ,k,j,i);
+            Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+                + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
+                + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+            Real uu0 = std::sqrt(1.0 + temp_var);
+            u_tet_r_(0,i) = norm_to_tet_(0,0,k,j,i) * uu0 + norm_to_tet_(0,1,k,j,i) * uu1
+                + norm_to_tet_(0,2,k,j,i) * uu2 + norm_to_tet_(0,3,k,j,i) * uu3;
+            u_tet_r_(1,i) = -norm_to_tet_(1,0,k,j,i) * uu0 - norm_to_tet_(1,1,k,j,i) * uu1
+                - norm_to_tet_(1,2,k,j,i) * uu2 - norm_to_tet_(1,3,k,j,i) * uu3;
+            u_tet_r_(2,i) = -norm_to_tet_(2,0,k,j,i) * uu0 - norm_to_tet_(2,1,k,j,i) * uu1
+                - norm_to_tet_(2,2,k,j,i) * uu2 - norm_to_tet_(2,3,k,j,i) * uu3;
+            u_tet_r_(3,i) = -norm_to_tet_(3,0,k,j,i) * uu0 - norm_to_tet_(3,1,k,j,i) * uu1
+                - norm_to_tet_(3,2,k,j,i) * uu2 - norm_to_tet_(3,3,k,j,i) * uu3;
+          }
+
+          // Calculate optical depth
+          for (int i = is; i <= ie; ++i) {
             Real k_a = (dx_r * opacity(OPAA,k,j-1,i) * prim_hydro(IDN,k,j-1,i)
                 + dx_l * opacity(OPAA,k,j,i) * prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
             Real k_s = (dx_r * opacity(OPAS,k,j-1,i) * prim_hydro(IDN,k,j-1,i)
                 + dx_l * opacity(OPAS,k,j,i) * prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
-            Real tt = (dx_r * prim_hydro(IPR,k,j-1,i) / prim_hydro(IDN,k,j-1,i)
-                + dx_l * prim_hydro(IPR,k,j,i) / prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
-            k_tot_(i) = k_a + k_s;
-            bb_jj_f_(i) =
-                (k_a * arad * SQR(SQR(tt)) / (4.0 * PI) + k_s * jj_f_(i)) / (k_a + k_s);
-          }
-          for (int l = zs; l <= ze; ++l) {
-            for (int m = ps; m <= pe; ++m) {
-              int lm = AngleInd(l, m);
-              for (int i = is; i <= ie; ++i) {
-                ii_f_to_tet_(lm,i) = 0.0;
-                for (int p = 0; p < 4; ++p) {
-                  ii_f_to_tet_(lm,i) += u_tet_(p,i) * nh_cc_(p,l,m);
-                }
-              }
-            }
-          }
-          for (int l = zs; l <= ze; ++l) {
-            for (int m = ps; m <= pe; ++m) {
-              int lm = AngleInd(l, m);
-              for (int i = is; i <= ie; ++i) {
-                ii_f_to_tet_(lm,i) = SQR(SQR(ii_f_to_tet_(lm,i)));
-              }
-            }
+            Real k_tot = k_a + k_s;
+            Real tau = tau_multiplier * k_tot * dt / u_tet_(0,i);
+            tau_factor_(i) = -std::expm1(-tau * tau);
           }
 
           // Calculate modified fluxes
@@ -298,24 +276,24 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
-                Real tau = k_tot_(i) * dt / u_tet_(0,i);
-                Real factor = tau > 0.0 ? -std::expm1(-tau) / tau : 1.0;
-                Real flux_free = n2_n_mu_(0,l,m,k,j,i) * ii_lr_(lm,i) * factor;
-                Real flux_adv = v_fluid_(i) * n_0_2_(l,m,k,j,i) * ii_f_to_tet_(lm,i)
-                    * bb_jj_f_(i) * (1.0 - factor);
-                flux_x[X2DIR](lm,k,j,i) = flux_free + flux_adv;
-                if (affect_fluid) {
-                  Real temp_var = (ii_lr_(lm,i) - ii_f_to_tet_(lm,i) * bb_jj_f_(i))
-                      * (1.0 - factor) * solid_angle(l,m);
-                  pmy_block->phydro->flux[X2DIR](IEN,k,j,i) +=
-                      temp_var * n2_n_mu_(0,l,m,k,j,i);
-                  pmy_block->phydro->flux[X2DIR](IM1,k,j,i) +=
-                      temp_var * n2_n_mu_(1,l,m,k,j,i);
-                  pmy_block->phydro->flux[X2DIR](IM2,k,j,i) +=
-                      temp_var * n2_n_mu_(2,l,m,k,j,i);
-                  pmy_block->phydro->flux[X2DIR](IM3,k,j,i) +=
-                      temp_var * n2_n_mu_(3,l,m,k,j,i);
-                }
+                Real u_n_left = -u_tet_l_(0,i) * nh_cc_(0,l,m)
+                    + u_tet_l_(1,i) * nh_cc_(1,l,m) + u_tet_l_(2,i) * nh_cc_(2,l,m)
+                    + u_tet_l_(3,i) * nh_cc_(3,l,m);
+                Real u_n_right = -u_tet_r_(0,i) * nh_cc_(0,l,m)
+                    + u_tet_r_(1,i) * nh_cc_(1,l,m) + u_tet_r_(2,i) * nh_cc_(2,l,m)
+                    + u_tet_r_(3,i) * nh_cc_(3,l,m);
+                Real advection_factor_left =
+                    -tau_factor_(i) * (1.0 + 1.0 / (u_n_left * u_n_left * u_n_left));
+                Real advection_factor_right =
+                    -tau_factor_(i) * (1.0 + 1.0 / (u_n_right * u_n_right * u_n_right));
+                Real ii_1_left = ii_l_(lm,i) * (1.0 - advection_factor_left);
+                Real ii_1_right = ii_r_(lm,i) * (1.0 - advection_factor_right);
+                Real ii_2_left = advection_factor_left;
+                Real ii_2_right = advection_factor_right;
+                Real v_1 = n2_n_mu_(0,l,m,k,j,i);
+                Real v_2 = v_1 * (dx_r * ii_2_left + dx_l * ii_2_right) / (dx_l + dx_r);
+                flux_x[X2DIR](lm,k,j,i) = v_1 * (v_1 < 0.0 ? ii_1_left : ii_1_right);
+                flux_x[X2DIR](lm,k,j,i) += v_2 * (v_2 < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
               }
             }
           }
@@ -337,7 +315,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
         }
 
         // Calculate pure radiation fluxes
-        if (not coupled_to_matter) {
+        if (not (coupled_to_matter and tau_multiplier > 0.0)) {
           for (int l = zs; l <= ze; ++l) {
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
@@ -351,13 +329,13 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
         }
 
         // Calculate radiation-hydrodynamic fluxes
-        if (coupled_to_matter) {
+        else {
 
-          // Calculate negative fluid velocity in tetrad frame and coordinate 3-velocity
+          // Calculate negative fluid velocity in tetrad frame
           pmy_block->pcoord->Face3Metric(k, j, is, ie, g_, gi_);
+          Real dx_l = pmy_block->pcoord->x3f(k) - pmy_block->pcoord->x3v(k-1);
+          Real dx_r = pmy_block->pcoord->x3v(k) - pmy_block->pcoord->x3f(k);
           for (int i = is; i <= ie; ++i) {
-            Real dx_l = pmy_block->pcoord->x3f(k) - pmy_block->pcoord->x3v(k-1);
-            Real dx_r = pmy_block->pcoord->x3v(k) - pmy_block->pcoord->x3f(k);
             Real uu1 = (dx_r * prim_hydro(IVX,k-1,j,i) + dx_l * prim_hydro(IVX,k,j,i))
                 / (dx_l + dx_r);
             Real uu2 = (dx_r * prim_hydro(IVY,k-1,j,i) + dx_l * prim_hydro(IVY,k,j,i))
@@ -365,82 +343,67 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             Real uu3 = (dx_r * prim_hydro(IVZ,k-1,j,i) + dx_l * prim_hydro(IVZ,k,j,i))
                 / (dx_l + dx_r);
             Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
-                + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+                + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
                 + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
             Real uu0 = std::sqrt(1.0 + temp_var);
             u_tet_(0,i) = norm_to_tet_3_(0,0,k,j,i) * uu0
                 + norm_to_tet_3_(0,1,k,j,i) * uu1 + norm_to_tet_3_(0,2,k,j,i) * uu2
                 + norm_to_tet_3_(0,3,k,j,i) * uu3;
-            u_tet_(1,i) = -norm_to_tet_3_(1,0,k,j,i) * uu0
-                - norm_to_tet_3_(1,1,k,j,i) * uu1 - norm_to_tet_3_(1,2,k,j,i) * uu2
-                - norm_to_tet_3_(1,3,k,j,i) * uu3;
-            u_tet_(2,i) = -norm_to_tet_3_(2,0,k,j,i) * uu0
-                - norm_to_tet_3_(2,1,k,j,i) * uu1 - norm_to_tet_3_(2,2,k,j,i) * uu2
-                - norm_to_tet_3_(2,3,k,j,i) * uu3;
-            u_tet_(3,i) = -norm_to_tet_3_(3,0,k,j,i) * uu0
-                - norm_to_tet_3_(3,1,k,j,i) * uu1 - norm_to_tet_3_(3,2,k,j,i) * uu2
-                - norm_to_tet_3_(3,3,k,j,i) * uu3;
-            Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
-            Real beta3 = -gi_(I03,i) / gi_(I00,i);
-            Real u0 = uu0 / alpha;
-            Real u3 = uu3 - beta3 / alpha * uu0;
-            v_fluid_(i) = u3 / u0;
           }
 
-          // Calculate mixed radiation field
+          // Calculate fluid velocity in tetrad frame to left of interface
+          pmy_block->pcoord->CellMetric(k - 1, j, is, ie, g_, gi_);
           for (int i = is; i <= ie; ++i) {
-            jj_f_(i) = 0.0;
-          }
-          for (int l = zs; l <= ze; ++l) {
-            for (int m = ps; m <= pe; ++m) {
-              int lm = AngleInd(l, m);
-              for (int i = is; i <= ie; ++i) {
-                ii_lr_(lm,i) = n3_n_mu_(0,l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
-                for (int p = 0; p < 4; ++p) {
-                  for (int q = 0; q < 4; ++q) {
-                    jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * ii_lr_(lm,i) * nh_cc_(p,l,m)
-                        * nh_cc_(q,l,m) * solid_angle(l,m);
-                  }
-                }
-              }
-            }
-          }
-          for (int i = is; i <= ie; ++i) {
-            jj_f_(i) /= 4.0 * PI;
+            Real uu1 = prim_hydro(IVX,k-1,j,i);
+            Real uu2 = prim_hydro(IVY,k-1,j,i);
+            Real uu3 = prim_hydro(IVZ,k-1,j,i);
+            Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+                + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
+                + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+            Real uu0 = std::sqrt(1.0 + temp_var);
+            u_tet_l_(0,i) = norm_to_tet_(0,0,k-1,j,i) * uu0
+                + norm_to_tet_(0,1,k-1,j,i) * uu1 + norm_to_tet_(0,2,k-1,j,i) * uu2
+                + norm_to_tet_(0,3,k-1,j,i) * uu3;
+            u_tet_l_(1,i) = -norm_to_tet_(1,0,k-1,j,i) * uu0
+                - norm_to_tet_(1,1,k-1,j,i) * uu1 - norm_to_tet_(1,2,k-1,j,i) * uu2
+                - norm_to_tet_(1,3,k-1,j,i) * uu3;
+            u_tet_l_(2,i) = -norm_to_tet_(2,0,k-1,j,i) * uu0
+                - norm_to_tet_(2,1,k-1,j,i) * uu1 - norm_to_tet_(2,2,k-1,j,i) * uu2
+                - norm_to_tet_(2,3,k-1,j,i) * uu3;
+            u_tet_l_(3,i) = -norm_to_tet_(3,0,k-1,j,i) * uu0
+                - norm_to_tet_(3,1,k-1,j,i) * uu1 - norm_to_tet_(3,2,k-1,j,i) * uu2
+                - norm_to_tet_(3,3,k-1,j,i) * uu3;
           }
 
-          // Calculate coefficients needed for modified fluxes
+          // Calculate fluid velocity in tetrad frame to right of interface
+          pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
           for (int i = is; i <= ie; ++i) {
-            Real dx_l = pmy_block->pcoord->x3f(k) - pmy_block->pcoord->x3v(k-1);
-            Real dx_r = pmy_block->pcoord->x3v(k) - pmy_block->pcoord->x3f(k);
+            Real uu1 = prim_hydro(IVX,k,j,i);
+            Real uu2 = prim_hydro(IVY,k,j,i);
+            Real uu3 = prim_hydro(IVZ,k,j,i);
+            Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
+                + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
+                + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
+            Real uu0 = std::sqrt(1.0 + temp_var);
+            u_tet_r_(0,i) = norm_to_tet_(0,0,k,j,i) * uu0 + norm_to_tet_(0,1,k,j,i) * uu1
+                + norm_to_tet_(0,2,k,j,i) * uu2 + norm_to_tet_(0,3,k,j,i) * uu3;
+            u_tet_r_(1,i) = -norm_to_tet_(1,0,k,j,i) * uu0 - norm_to_tet_(1,1,k,j,i) * uu1
+                - norm_to_tet_(1,2,k,j,i) * uu2 - norm_to_tet_(1,3,k,j,i) * uu3;
+            u_tet_r_(2,i) = -norm_to_tet_(2,0,k,j,i) * uu0 - norm_to_tet_(2,1,k,j,i) * uu1
+                - norm_to_tet_(2,2,k,j,i) * uu2 - norm_to_tet_(2,3,k,j,i) * uu3;
+            u_tet_r_(3,i) = -norm_to_tet_(3,0,k,j,i) * uu0 - norm_to_tet_(3,1,k,j,i) * uu1
+                - norm_to_tet_(3,2,k,j,i) * uu2 - norm_to_tet_(3,3,k,j,i) * uu3;
+          }
+
+          // Calculate optical depth
+          for (int i = is; i <= ie; ++i) {
             Real k_a = (dx_r * opacity(OPAA,k-1,j,i) * prim_hydro(IDN,k-1,j,i)
                 + dx_l * opacity(OPAA,k,j,i) * prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
             Real k_s = (dx_r * opacity(OPAS,k-1,j,i) * prim_hydro(IDN,k-1,j,i)
                 + dx_l * opacity(OPAS,k,j,i) * prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
-            Real tt = (dx_r * prim_hydro(IPR,k-1,j,i) / prim_hydro(IDN,k-1,j,i)
-                + dx_l * prim_hydro(IPR,k,j,i) / prim_hydro(IDN,k,j,i)) / (dx_l + dx_r);
-            k_tot_(i) = k_a + k_s;
-            bb_jj_f_(i) =
-                (k_a * arad * SQR(SQR(tt)) / (4.0 * PI) + k_s * jj_f_(i)) / (k_a + k_s);
-          }
-          for (int l = zs; l <= ze; ++l) {
-            for (int m = ps; m <= pe; ++m) {
-              int lm = AngleInd(l, m);
-              for (int i = is; i <= ie; ++i) {
-                ii_f_to_tet_(lm,i) = 0.0;
-                for (int p = 0; p < 4; ++p) {
-                  ii_f_to_tet_(lm,i) += u_tet_(p,i) * nh_cc_(p,l,m);
-                }
-              }
-            }
-          }
-          for (int l = zs; l <= ze; ++l) {
-            for (int m = ps; m <= pe; ++m) {
-              int lm = AngleInd(l, m);
-              for (int i = is; i <= ie; ++i) {
-                ii_f_to_tet_(lm,i) = SQR(SQR(ii_f_to_tet_(lm,i)));
-              }
-            }
+            Real k_tot = k_a + k_s;
+            Real tau = tau_multiplier * k_tot * dt / u_tet_(0,i);
+            tau_factor_(i) = -std::expm1(-tau * tau);
           }
 
           // Calculate modified fluxes
@@ -448,24 +411,24 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
-                Real tau = k_tot_(i) * dt / u_tet_(0,i);
-                Real factor = tau > 0.0 ? -std::expm1(-tau) / tau : 1.0;
-                Real flux_free = n3_n_mu_(0,l,m,k,j,i) * ii_lr_(lm,i) * factor;
-                Real flux_adv = v_fluid_(i) * n_0_3_(l,m,k,j,i) * ii_f_to_tet_(lm,i)
-                    * bb_jj_f_(i) * (1.0 - factor);
-                flux_x[X3DIR](lm,k,j,i) = flux_free + flux_adv;
-                if (affect_fluid) {
-                  Real temp_var = (ii_lr_(lm,i) - ii_f_to_tet_(lm,i) * bb_jj_f_(i))
-                      * (1.0 - factor) * solid_angle(l,m);
-                  pmy_block->phydro->flux[X3DIR](IEN,k,j,i) +=
-                      temp_var * n3_n_mu_(0,l,m,k,j,i);
-                  pmy_block->phydro->flux[X3DIR](IM1,k,j,i) +=
-                      temp_var * n3_n_mu_(1,l,m,k,j,i);
-                  pmy_block->phydro->flux[X3DIR](IM2,k,j,i) +=
-                      temp_var * n3_n_mu_(2,l,m,k,j,i);
-                  pmy_block->phydro->flux[X3DIR](IM3,k,j,i) +=
-                      temp_var * n3_n_mu_(3,l,m,k,j,i);
-                }
+                Real u_n_left = -u_tet_l_(0,i) * nh_cc_(0,l,m)
+                    + u_tet_l_(1,i) * nh_cc_(1,l,m) + u_tet_l_(2,i) * nh_cc_(2,l,m)
+                    + u_tet_l_(3,i) * nh_cc_(3,l,m);
+                Real u_n_right = -u_tet_r_(0,i) * nh_cc_(0,l,m)
+                    + u_tet_r_(1,i) * nh_cc_(1,l,m) + u_tet_r_(2,i) * nh_cc_(2,l,m)
+                    + u_tet_r_(3,i) * nh_cc_(3,l,m);
+                Real advection_factor_left =
+                    -tau_factor_(i) * (1.0 + 1.0 / (u_n_left * u_n_left * u_n_left));
+                Real advection_factor_right =
+                    -tau_factor_(i) * (1.0 + 1.0 / (u_n_right * u_n_right * u_n_right));
+                Real ii_1_left = ii_l_(lm,i) * (1.0 - advection_factor_left);
+                Real ii_1_right = ii_r_(lm,i) * (1.0 - advection_factor_right);
+                Real ii_2_left = advection_factor_left;
+                Real ii_2_right = advection_factor_right;
+                Real v_1 = n3_n_mu_(0,l,m,k,j,i);
+                Real v_2 = v_1 * (dx_r * ii_2_left + dx_l * ii_2_right) / (dx_l + dx_r);
+                flux_x[X3DIR](lm,k,j,i) = v_1 * (v_1 < 0.0 ? ii_1_left : ii_1_right);
+                flux_x[X3DIR](lm,k,j,i) += v_2 * (v_2 < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
               }
             }
           }
@@ -475,122 +438,25 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
   }
 
   // Calculate zeta-fluxes
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
+  if (use_angular_fluxes) {
+    for (int k = ks; k <= ke; ++k) {
+      for (int j = js; j <= je; ++j) {
 
-      // Reconstruct radiation
-      if (order == 1) {
-        RadiationDonorCellA1(prim_rad, k, j);
-      } else {
-        RadiationPiecewiseLinearA1(prim_rad, k, j);
-      }
+        // Reconstruct radiation
+        if (order == 1) {
+          RadiationDonorCellA1(prim_rad, k, j);
+        } else {
+          RadiationPiecewiseLinearA1(prim_rad, k, j);
+        }
 
-      // Calculate pure radiation fluxes
-      if (not coupled_to_matter) {
+        // Calculate radiation fluxes
         for (int l = zs; l <= ze+1; ++l) {
           for (int m = ps; m <= pe; ++m) {
             int lm = AngleInd(l, m, true, false);
             for (int i = is; i <= ie; ++i) {
               Real na1_n_0 = na1_n_0_(l,m,k,j,i);
-              if (na1_n_0 < 0.0) {
-                flux_a[ZETADIR](lm,k,j,i) = na1_n_0 * ii_l_(lm,i);
-              } else {
-                flux_a[ZETADIR](lm,k,j,i) = na1_n_0 * ii_r_(lm,i);
-              }
-            }
-          }
-        }
-      }
-
-      // Calculate radiation-hydrodynamic fluxes
-      if (coupled_to_matter) {
-
-        // Calculate negative fluid velocity in tetrad frame
-        pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
-        for (int i = is; i <= ie; ++i) {
-          Real uu1 = prim_hydro(IVX,k,j,i);
-          Real uu2 = prim_hydro(IVY,k,j,i);
-          Real uu3 = prim_hydro(IVZ,k,j,i);
-          Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
-              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
-              + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
-          Real uu0 = std::sqrt(1.0 + temp_var);
-          u_tet_(0,i) = norm_to_tet_(0,0,k,j,i) * uu0 + norm_to_tet_(0,1,k,j,i) * uu1
-              + norm_to_tet_(0,2,k,j,i) * uu2 + norm_to_tet_(0,3,k,j,i) * uu3;
-          u_tet_(1,i) = -norm_to_tet_(1,0,k,j,i) * uu0 - norm_to_tet_(1,1,k,j,i) * uu1
-              - norm_to_tet_(1,2,k,j,i) * uu2 - norm_to_tet_(1,3,k,j,i) * uu3;
-          u_tet_(2,i) = -norm_to_tet_(2,0,k,j,i) * uu0 - norm_to_tet_(2,1,k,j,i) * uu1
-              - norm_to_tet_(2,2,k,j,i) * uu2 - norm_to_tet_(2,3,k,j,i) * uu3;
-          u_tet_(3,i) = -norm_to_tet_(3,0,k,j,i) * uu0 - norm_to_tet_(3,1,k,j,i) * uu1
-              - norm_to_tet_(3,2,k,j,i) * uu2 - norm_to_tet_(3,3,k,j,i) * uu3;
-        }
-
-        // Calculate mixed radiation field
-        for (int l = zs; l <= ze+1; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m, true, false);
-            for (int i = is; i <= ie; ++i) {
-              ii_lr_(lm,i) = na1_n_0_(l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
-            }
-          }
-        }
-        for (int i = is; i <= ie; ++i) {
-          jj_f_(i) = 0.0;
-        }
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m);
-            for (int i = is; i <= ie; ++i) {
-              for (int p = 0; p < 4; ++p) {
-                for (int q = 0; q < 4; ++q) {
-                  jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * prim_rad(lm,k,j,i)
-                      * nh_cc_(p,l,m) * nh_cc_(q,l,m) * solid_angle(l,m);
-                }
-              }
-            }
-          }
-        }
-        for (int i = is; i <= ie; ++i) {
-          jj_f_(i) /= 4.0 * PI;
-        }
-
-        // Calculate coefficients needed for modified fluxes
-        for (int i = is; i <= ie; ++i) {
-          Real k_a = opacity(OPAA,k,j,i) * prim_hydro(IDN,k,j,i);
-          Real k_s = opacity(OPAS,k,j,i) * prim_hydro(IDN,k,j,i);
-          Real tt = prim_hydro(IPR,k,j,i) / prim_hydro(IDN,k,j,i);
-          k_tot_(i) = k_a + k_s;
-          bb_jj_f_(i) =
-              (k_a * arad * SQR(SQR(tt)) / (4.0 * PI) + k_s * jj_f_(i)) / (k_a + k_s);
-        }
-        for (int l = zs; l <= ze+1; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m, true, false);
-            for (int i = is; i <= ie; ++i) {
-              ii_f_to_tet_(lm,i) = 0.0;
-              for (int p = 0; p < 4; ++p) {
-                ii_f_to_tet_(lm,i) += u_tet_(p,i) * nh_fc_(p,l,m);
-              }
-            }
-          }
-        }
-        for (int l = zs; l <= ze+1; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m, true, false);
-            for (int i = is; i <= ie; ++i) {
-              ii_f_to_tet_(lm,i) = SQR(SQR(ii_f_to_tet_(lm,i)));
-            }
-          }
-        }
-
-        // Calculate modified fluxes
-        for (int l = zs; l <= ze+1; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m, true, false);
-            for (int i = is; i <= ie; ++i) {
-              Real tau = k_tot_(i) * dt / u_tet_(0,i);
-              Real factor = tau > 0.0 ? -std::expm1(-tau) / tau : 1.0;
-              flux_a[ZETADIR](lm,k,j,i) = na1_n_0_(l,m,k,j,i) * ii_lr_(lm,i) * factor;
+              flux_a[ZETADIR](lm,k,j,i) =
+                  na1_n_0 * (na1_n_0 < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
             }
           }
         }
@@ -599,120 +465,25 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
   }
 
   // Calculate psi-fluxes
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
+  if (use_angular_fluxes) {
+    for (int k = ks; k <= ke; ++k) {
+      for (int j = js; j <= je; ++j) {
 
-      // Reconstruct radiation
-      if (order == 1) {
-        RadiationDonorCellA2(prim_rad, k, j);
-      } else {
-        RadiationPiecewiseLinearA2(prim_rad, k, j);
-      }
-
-      // Calculate pure radiation fluxes
-      for (int l = zs; l <= ze; ++l) {
-        for (int m = ps; m <= pe+1; ++m) {
-          int lm = AngleInd(l, m, false, true);
-          for (int i = is; i <= ie; ++i) {
-            Real na2_n_0 = na2_n_0_(l,m,k,j,i);
-            if (na2_n_0 < 0.0) {
-              flux_a[PSIDIR](lm,k,j,i) = na2_n_0 * ii_l_(lm,i);
-            } else {
-              flux_a[PSIDIR](lm,k,j,i) = na2_n_0 * ii_r_(lm,i);
-            }
-          }
-        }
-      }
-
-      // Calculate radiation-hydrodynamic fluxes
-      if (coupled_to_matter) {
-
-        // Calculate negative fluid velocity in tetrad frame
-        pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
-        for (int i = is; i <= ie; ++i) {
-          Real uu1 = prim_hydro(IVX,k,j,i);
-          Real uu2 = prim_hydro(IVY,k,j,i);
-          Real uu3 = prim_hydro(IVZ,k,j,i);
-          Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
-              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
-              + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
-          Real uu0 = std::sqrt(1.0 + temp_var);
-          u_tet_(0,i) = norm_to_tet_(0,0,k,j,i) * uu0 + norm_to_tet_(0,1,k,j,i) * uu1
-              + norm_to_tet_(0,2,k,j,i) * uu2 + norm_to_tet_(0,3,k,j,i) * uu3;
-          u_tet_(1,i) = -norm_to_tet_(1,0,k,j,i) * uu0 - norm_to_tet_(1,1,k,j,i) * uu1
-              - norm_to_tet_(1,2,k,j,i) * uu2 - norm_to_tet_(1,3,k,j,i) * uu3;
-          u_tet_(2,i) = -norm_to_tet_(2,0,k,j,i) * uu0 - norm_to_tet_(2,1,k,j,i) * uu1
-              - norm_to_tet_(2,2,k,j,i) * uu2 - norm_to_tet_(2,3,k,j,i) * uu3;
-          u_tet_(3,i) = -norm_to_tet_(3,0,k,j,i) * uu0 - norm_to_tet_(3,1,k,j,i) * uu1
-              - norm_to_tet_(3,2,k,j,i) * uu2 - norm_to_tet_(3,3,k,j,i) * uu3;
+        // Reconstruct radiation
+        if (order == 1) {
+          RadiationDonorCellA2(prim_rad, k, j);
+        } else {
+          RadiationPiecewiseLinearA2(prim_rad, k, j);
         }
 
-        // Calculate mixed radiation field
+        // Calculate radiation fluxes
         for (int l = zs; l <= ze; ++l) {
           for (int m = ps; m <= pe+1; ++m) {
             int lm = AngleInd(l, m, false, true);
             for (int i = is; i <= ie; ++i) {
-              ii_lr_(lm,i) = na2_n_0_(l,m,k,j,i) < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i);
-            }
-          }
-        }
-        for (int i = is; i <= ie; ++i) {
-          jj_f_(i) = 0.0;
-        }
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
-            int lm = AngleInd(l, m);
-            for (int i = is; i <= ie; ++i) {
-              for (int p = 0; p < 4; ++p) {
-                for (int q = 0; q < 4; ++q) {
-                  jj_f_(i) += u_tet_(p,i) * u_tet_(q,i) * prim_rad(lm,k,j,i)
-                      * nh_cc_(p,l,m) * nh_cc_(q,l,m) * solid_angle(l,m);
-                }
-              }
-            }
-          }
-        }
-        for (int i = is; i <= ie; ++i) {
-          jj_f_(i) /= 4.0 * PI;
-        }
-
-        // Calculate coefficients needed for modified fluxes
-        for (int i = is; i <= ie; ++i) {
-          Real k_a = opacity(OPAA,k,j,i) * prim_hydro(IDN,k,j,i);
-          Real k_s = opacity(OPAS,k,j,i) * prim_hydro(IDN,k,j,i);
-          Real tt = prim_hydro(IPR,k,j,i) / prim_hydro(IDN,k,j,i);
-          k_tot_(i) = k_a + k_s;
-          bb_jj_f_(i) =
-              (k_a * arad * SQR(SQR(tt)) / (4.0 * PI) + k_s * jj_f_(i)) / (k_a + k_s);
-        }
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe+1; ++m) {
-            int lm = AngleInd(l, m, false, true);
-            for (int i = is; i <= ie; ++i) {
-              ii_f_to_tet_(lm,i) = 0.0;
-              for (int p = 0; p < 4; ++p) {
-                ii_f_to_tet_(lm,i) += u_tet_(p,i) * nh_cf_(p,l,m);
-              }
-            }
-          }
-        }
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe+1; ++m) {
-            int lm = AngleInd(l, m, false, true);
-            for (int i = is; i <= ie; ++i) {
-              ii_f_to_tet_(lm,i) = SQR(SQR(ii_f_to_tet_(lm,i)));
-            }
-          }
-        }
-
-        // Calculate modified fluxes
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe+1; ++m) {
-            int lm = AngleInd(l, m, false, true);
-            for (int i = is; i <= ie; ++i) {
-              Real tau = k_tot_(i) * dt / u_tet_(0,i);
-              Real factor = tau > 0.0 ? -std::expm1(-tau) / tau : 1.0;
-              flux_a[PSIDIR](lm,k,j,i) = na2_n_0_(l,m,k,j,i) * ii_lr_(lm,i) * factor;
+              Real na2_n_0 = na2_n_0_(l,m,k,j,i);
+              flux_a[PSIDIR](lm,k,j,i) =
+                  na2_n_0 * (na2_n_0 < 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
             }
           }
         }
@@ -793,43 +564,45 @@ void Radiation::AddFluxDivergenceToAverage(AthenaArray<Real> &prim_in, const Rea
   }
 
   // Go through all angles
-  for (int l = zs; l <= ze; ++l) {
-    for (int m = ps; m <= pe; ++m) {
+  if (use_angular_fluxes) {
+    for (int l = zs; l <= ze; ++l) {
+      for (int m = ps; m <= pe; ++m) {
 
-      // Determine poles
-      bool left_pole = l == zs;
-      bool right_pole = l == ze;
+        // Determine poles
+        bool left_pole = l == zs;
+        bool right_pole = l == ze;
 
-      // Calculate angle lengths and solid angles
-      int lm = AngleInd(l, m);
-      int lm_lc = AngleInd(l, m, true, false);
-      int lm_rc = AngleInd(l + 1, m, true, false);
-      int lm_cl = AngleInd(l, m, false, true);
-      int lm_cr = AngleInd(l, m + 1, false, true);
-      Real zeta_length_m = zeta_length(l,m);
-      Real zeta_length_p = zeta_length(l,m+1);
-      Real psi_length_m = psi_length(l,m);
-      Real psi_length_p = psi_length(l+1,m);
-      Real omega = solid_angle(l,m);
+        // Calculate angle lengths and solid angles
+        int lm = AngleInd(l, m);
+        int lm_lc = AngleInd(l, m, true, false);
+        int lm_rc = AngleInd(l + 1, m, true, false);
+        int lm_cl = AngleInd(l, m, false, true);
+        int lm_cr = AngleInd(l, m + 1, false, true);
+        Real zeta_length_m = zeta_length(l,m);
+        Real zeta_length_p = zeta_length(l,m+1);
+        Real psi_length_m = psi_length(l,m);
+        Real psi_length_p = psi_length(l+1,m);
+        Real omega = solid_angle(l,m);
 
-      // Go through all cells
-      for (int k = ks; k <= ke; ++k) {
-        for (int j = js; j <= je; ++j) {
-          for (int i = is; i <= ie; ++i) {
+        // Go through all cells
+        for (int k = ks; k <= ke; ++k) {
+          for (int j = js; j <= je; ++j) {
+            for (int i = is; i <= ie; ++i) {
 
-            // Calculate zeta-divergence
-            Real left_flux =
-                left_pole ? 0.0 : -psi_length_m * flux_a[ZETADIR](lm_lc,k,j,i);
-            Real right_flux =
-                right_pole ? 0.0 : psi_length_p * flux_a[ZETADIR](lm_rc,k,j,i);
-            Real flux_div = left_flux + right_flux;
+              // Calculate zeta-divergence
+              Real left_flux =
+                  left_pole ? 0.0 : -psi_length_m * flux_a[ZETADIR](lm_lc,k,j,i);
+              Real right_flux =
+                  right_pole ? 0.0 : psi_length_p * flux_a[ZETADIR](lm_rc,k,j,i);
+              Real flux_div = left_flux + right_flux;
 
-            // Add psi-divergence
-            flux_div += zeta_length_p * flux_a[PSIDIR](lm_cr,k,j,i)
-                - zeta_length_m * flux_a[PSIDIR](lm_cl,k,j,i);
+              // Add psi-divergence
+              flux_div += zeta_length_p * flux_a[PSIDIR](lm_cr,k,j,i)
+                  - zeta_length_m * flux_a[PSIDIR](lm_cl,k,j,i);
 
-            // Update conserved variables
-            cons_out(lm,k,j,i) -= dt * flux_div / omega;
+              // Update conserved variables
+              cons_out(lm,k,j,i) -= dt * flux_div / omega;
+            }
           }
         }
       }

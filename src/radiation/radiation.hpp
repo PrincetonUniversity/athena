@@ -35,6 +35,7 @@ public:
   OpacityFunc UpdateOpacity;
 
   // Flags
+  bool use_angular_fluxes;
   bool coupled_to_matter;
   bool affect_fluid;
   bool source_terms_defined;
@@ -68,8 +69,9 @@ public:
   Real density_cgs;  // code unit of density in g/cm^3
   Real mol_weight;   // molecular weight of gas in proton masses
 
-  // User-specified velocity maximum
+  // User-specified factors
   Real v_sq_max;
+  Real tau_multiplier;
 
   // Data arrays
   AthenaArray<Real> zetaf;           // face-centered polar radiation angles
@@ -133,8 +135,9 @@ public:
 
   // Source term functions (defined in rad_source.cpp)
   void AddSourceTerms(const Real time, const Real dt, const AthenaArray<Real> &prim_rad,
-      const AthenaArray<Real> &prim_hydro, const AthenaArray<Real> &prim_hydro_alt,
-      AthenaArray<Real> &cons_rad, AthenaArray<Real> &cons_hydro);
+      const AthenaArray<Real> &prim_hydro_start, const FaceField &field_face,
+      AthenaArray<Real> &cons_rad, AthenaArray<Real> &cons_hydro,
+      AthenaArray<Real> &field_cell);
   void EnrollOpacityFunction(OpacityFunc MyOpacityFunction);
 
   // Variable conversion/inversion functions (defined in rad_convert.cpp)
@@ -160,62 +163,60 @@ public:
   //   More general version of RadBoundaryVariable::AngleInd().
   int AngleInd(int l, int m, bool zeta_face = false, bool psi_face = false) {
     if (psi_face) {
-      return l * (npsi + 2*NGHOST + 1) + m;
+      return l * (npsi + 2 * NGHOST_RAD + 1) + m;
     }
-    return l * (npsi + 2*NGHOST) + m;
+    return l * (npsi + 2 * NGHOST_RAD) + m;
   }
 
 private:
 
-  // Data arrays - unit directions
-  AthenaArray<Real> nh_cc_;          // n^\hat{mu} at angle centers
-  AthenaArray<Real> nh_fc_;          // n^\hat{mu} at zeta faces
-  AthenaArray<Real> nh_cf_;          // n^\hat{mu} at psi faces
-  AthenaArray<Real> nmu_;            // n^mu at cell and angle centers
-  AthenaArray<Real> n_0_1_;          // n_0 at x^1-faces and angle centers
-  AthenaArray<Real> n_0_2_;          // n_0 at x^2-faces and angle centers
-  AthenaArray<Real> n_0_3_;          // n_0 at x^3-faces and angle centers
-  AthenaArray<Real> n0_n_mu_;        // n^0 n_mu at cell and angle centers
-  AthenaArray<Real> n1_n_mu_;        // n^1 n_mu at x^1-faces and angle centers
-  AthenaArray<Real> n2_n_mu_;        // n^2 n_mu at x^2-faces and angle centers
-  AthenaArray<Real> n3_n_mu_;        // n^3 n_mu at x^3-faces and angle centers
-  AthenaArray<Real> na1_n_0_;        // n^zeta n_0 at cell centers and zeta-faces
-  AthenaArray<Real> na2_n_0_;        // n^psi n_0 at cell centers and psi-faces
-
   // Data arrays - metric
-  AthenaArray<Real> g_, gi_;         // metric and inverse
+  AthenaArray<Real> g_, gi_;  // metric and inverse
+
+  // Data arrays - unit directions
+  AthenaArray<Real> nh_cc_;        // n^\hat{mu} at angle centers
+  AthenaArray<Real> nh_fc_;        // n^\hat{mu} at zeta faces
+  AthenaArray<Real> nh_cf_;        // n^\hat{mu} at psi faces
+  AthenaArray<Real> nmu_;          // n^mu at cell and angle centers
+  AthenaArray<Real> n_0_1_;        // n_0 at x^1-faces and angle centers
+  AthenaArray<Real> n_0_2_;        // n_0 at x^2-faces and angle centers
+  AthenaArray<Real> n_0_3_;        // n_0 at x^3-faces and angle centers
+  AthenaArray<Real> n0_n_mu_;      // n^0 n_mu at cell and angle centers
+  AthenaArray<Real> n1_n_mu_;      // n^1 n_mu at x^1-faces and angle centers
+  AthenaArray<Real> n2_n_mu_;      // n^2 n_mu at x^2-faces and angle centers
+  AthenaArray<Real> n3_n_mu_;      // n^3 n_mu at x^3-faces and angle centers
+  AthenaArray<Real> na1_n_0_;      // n^zeta n_0 at cell centers and zeta-faces
+  AthenaArray<Real> na2_n_0_;      // n^psi n_0 at cell centers and psi-faces
+  AthenaArray<Real> norm_to_tet_;  // transformation from normal to tetrad frame
 
   // Data arrays - reconstruction
-  AthenaArray<Real> ii_l_;           // left reconstructed radiation state
-  AthenaArray<Real> ii_r_;           // right reconstructed radiation state
+  AthenaArray<Real> ii_l_;  // left reconstructed radiation state
+  AthenaArray<Real> ii_r_;  // right reconstructed radiation state
 
   // Data arrays - flux
   AthenaArray<Real> norm_to_tet_1_;  // transformation from normal to tetrad frame
   AthenaArray<Real> norm_to_tet_2_;  // transformation from normal to tetrad frame
   AthenaArray<Real> norm_to_tet_3_;  // transformation from normal to tetrad frame
-  AthenaArray<Real> ii_lr_;          // combined reconstructed radiation state
-  AthenaArray<Real> jj_f_;           // fluid-frame J
-  AthenaArray<Real> k_tot_;          // total absorption coefficient
-  AthenaArray<Real> bb_jj_f_;        // average of fluid-frame B and fluid-frame J
-  AthenaArray<Real> ii_f_to_tet_;    // conversion factor for intensity
-  AthenaArray<Real> v_fluid_;        // fluid 3-velocity in appropriate direction
+  AthenaArray<Real> u_tet_l_;        // tetrad-frame fluid 4-velocity left of interface
+  AthenaArray<Real> u_tet_r_;        // tetrad-frame fluid 4-velocity right of interface
+  AthenaArray<Real> tau_factor_;          // total absorption coefficient
 
   // Data arrays - flux divergence
-  AthenaArray<Real> area_l_;         // left face areas
-  AthenaArray<Real> area_r_;         // right face areas
-  AthenaArray<Real> vol_;            // cell volumes
-  AthenaArray<Real> flux_div_;       // flux divergences in spatial coordinates
+  AthenaArray<Real> area_l_;    // left face areas
+  AthenaArray<Real> area_r_;    // right face areas
+  AthenaArray<Real> vol_;       // cell volumes
+  AthenaArray<Real> flux_div_;  // flux divergences in spatial coordinates
 
   // Data arrays - source
-  AthenaArray<Real> norm_to_tet_;    // transformation from normal to tetrad frame
-  AthenaArray<Real> moments_old_;    // moments of radiation field before fluid coupling
-  AthenaArray<Real> moments_new_;    // moments of radiation field after fluid coupling
-  AthenaArray<Real> u_tet_;          // fluid 4-velocity in tetrad frame
-  AthenaArray<Real> coefficients_;   // quartic coefficients for implicit update
-  AthenaArray<bool> bad_cell_;       // flag indicating problem with coupling
-  AthenaArray<Real> tt_plus_;        // gas temperature after coupling
-  AthenaArray<Real> ee_f_minus_;     // fluid-frame radiation energy before coupling
-  AthenaArray<Real> ee_f_plus_;      // fluid-frame radiation energy after coupling
+  AthenaArray<Real> prim_hydro_end_;  // hydrodynamical primitives at end of stage
+  AthenaArray<Real> moments_old_;     // moments of radiation field before fluid coupling
+  AthenaArray<Real> moments_new_;     // moments of radiation field after fluid coupling
+  AthenaArray<Real> u_tet_;           // fluid 4-velocity in tetrad frame
+  AthenaArray<Real> coefficients_;    // quartic coefficients for implicit update
+  AthenaArray<bool> bad_cell_;        // flag indicating problem with coupling
+  AthenaArray<Real> tt_plus_;         // gas temperature after coupling
+  AthenaArray<Real> ee_f_minus_;      // fluid-frame radiation energy before coupling
+  AthenaArray<Real> ee_f_plus_;       // fluid-frame radiation energy after coupling
 };
 
 #endif // RADIATION_RADIATION_HPP_

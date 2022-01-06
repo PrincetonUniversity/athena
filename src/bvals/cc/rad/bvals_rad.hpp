@@ -67,7 +67,7 @@ public:
   // Notes:
   //   Less general version of Radiation::AngleInd().
   int AngleInd(int l, int m) {
-    return l * (npsi + 2*NGHOST) + m;
+    return l * (npsi + 2*NGHOST_RAD) + m;
   }
 
 private:

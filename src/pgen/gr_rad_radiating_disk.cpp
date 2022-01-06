@@ -76,9 +76,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   int nx2 = pin->GetInteger("mesh", "nx2");
   j_min = (nx2 - 1) / 2 + NGHOST;
   j_max = nx2 / 2 + NGHOST;
-  zs = NGHOST;
+  zs = NGHOST_RAD;
   ze = zs + pin->GetInteger("radiation", "n_polar");
-  ps = NGHOST;
+  ps = NGHOST_RAD;
   pe = ps + pin->GetInteger("radiation", "n_azimuthal");
 
   // Check for single block

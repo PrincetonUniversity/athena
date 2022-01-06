@@ -77,7 +77,7 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
 
   // Populate angular ghost zones in azimuthal angle
   for (int l = zs; l <= ze; ++l) {
-    for (int m = ps-NGHOST; m <= ps-1; ++m) {
+    for (int m = ps-NGHOST_RAD; m <= ps-1; ++m) {
       int m_src = pe - ps + 1 + m;
       int lm = AngleInd(l, m);
       int lm_src = AngleInd(l, m_src);
@@ -89,7 +89,7 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
         }
       }
     }
-    for (int m = pe+1; m <= pe+NGHOST; ++m) {
+    for (int m = pe+1; m <= pe+NGHOST_RAD; ++m) {
       int m_src = ps - pe - 1 + m;
       int lm = AngleInd(l, m);
       int lm_src = AngleInd(l, m_src);
@@ -104,10 +104,10 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
   }
 
   // Populate angular ghost zones in polar angle
-  for (int l = zs-NGHOST; l <= zs-1; ++l) {
-    for (int m = ps-NGHOST; m <= pe+NGHOST; ++m) {
+  for (int l = zs-NGHOST_RAD; l <= zs-1; ++l) {
+    for (int m = ps-NGHOST_RAD; m <= pe+NGHOST_RAD; ++m) {
       int l_src = 2*zs - 1 - l;
-      int m_src = (m + npsi/2) % (npsi + 2*NGHOST);
+      int m_src = (m + npsi/2) % (npsi + 2*NGHOST_RAD);
       int lm = AngleInd(l, m);
       int lm_src = AngleInd(l_src, m_src);
       for (int k = kl; k <= ku; ++k) {
@@ -119,10 +119,10 @@ void Radiation::ConservedToPrimitive(AthenaArray<Real> &cons_in,
       }
     }
   }
-  for (int l = ze+1; l <= ze+NGHOST; ++l) {
-    for (int m = ps-NGHOST; m <= pe+NGHOST; ++m) {
+  for (int l = ze+1; l <= ze+NGHOST_RAD; ++l) {
+    for (int m = ps-NGHOST_RAD; m <= pe+NGHOST_RAD; ++m) {
       int l_src = 2*ze + 1 - l;
-      int m_src = (m + npsi/2) % (npsi + 2*NGHOST);
+      int m_src = (m + npsi/2) % (npsi + 2*NGHOST_RAD);
       int lm = AngleInd(l, m);
       int lm_src = AngleInd(l_src, m_src);
       for (int k = kl; k <= ku; ++k) {
@@ -264,7 +264,7 @@ void Radiation::SetMoments(const AthenaArray<Real> &prim_hydro, Coordinates *pco
           Real uu2 = prim_hydro(IVY,k,j,i);
           Real uu3 = prim_hydro(IVZ,k,j,i);
           Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
-              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
               + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
           Real uu0 = std::sqrt(1.0 + temp_var);
           Real utet0 = norm_to_tet_(0,0,k,j,i) * uu0 + norm_to_tet_(0,1,k,j,i) * uu1

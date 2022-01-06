@@ -12,7 +12,7 @@
 
 // Athena++ headers
 #include "radiation.hpp"
-#include "../athena.hpp"                   // Real, indices, function prototypes
+#include "../athena.hpp"                   // Real, indices, function prototypes, structs
 #include "../athena_arrays.hpp"            // AthenaArray
 #include "../coordinates/coordinates.hpp"  // Coordinates
 #include "../eos/eos.hpp"                  // EquationOfState
@@ -27,21 +27,28 @@ bool FourthPolyRoot(const Real coef4, const Real tconst, Real *root);
 //   time: time of simulation
 //   dt: simulation timestep
 //   prim_rad: primitive intensity at beginning of stage
-//   prim_hydro: primitive hydro variables at beginning of step
-//   prim_hydro_alt: primitive hydro variables at beginning of stage
-//   cons_rad: conserved intensity after stage integration
-//   cons_hydro: conserved hydro variables after stage integration
+//   prim_hydro_start: primitive hydrodynamical variables at beginning of stage
+//   field_face: magnetic field at end of stage
+//   cons_rad: conserved intensity at end of stage (without coupling)
+//   cons_hydro: conserved hydrodynamical variables at end of stage (without coupling)
+//   field_cell: safe place to write cell-centered fields at end of stage
 // Outputs:
 //   cons: conserved intensity updated
 //   cons_hydro: conserved hydro variables updated
 
 void Radiation::AddSourceTerms(const Real time, const Real dt,
-    const AthenaArray<Real> &prim_rad, const AthenaArray<Real> &prim_hydro,
-    const AthenaArray<Real> &prim_hydro_alt, AthenaArray<Real> &cons_rad,
-    AthenaArray<Real> &cons_hydro) {
+    const AthenaArray<Real> &prim_rad, const AthenaArray<Real> &prim_hydro_start,
+    const FaceField &field_face, AthenaArray<Real> &cons_rad,
+    AthenaArray<Real> &cons_hydro, AthenaArray<Real> &field_cell) {
 
   // Get adiabatic index
   Real gamma_adi = pmy_block->peos->GetGamma();
+
+  // Calculate primitive hydro state at end of stage
+  if (coupled_to_matter) {
+    pmy_block->peos->ConservedToPrimitive(cons_hydro, prim_hydro_start, field_face,
+        prim_hydro_end_, field_cell, pmy_block->pcoord, is, ie, js, je, ks, ke);
+  }
 
   // Go through outer loops of cells
   if (coupled_to_matter) {
@@ -71,11 +78,11 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
 
         // Calculate fluid velocity in tetrad frame
         for (int i = is; i <= ie; ++i) {
-          Real uu1 = prim_hydro_alt(IVX,k,j,i);
-          Real uu2 = prim_hydro_alt(IVY,k,j,i);
-          Real uu3 = prim_hydro_alt(IVZ,k,j,i);
+          Real uu1 = prim_hydro_end_(IVX,k,j,i);
+          Real uu2 = prim_hydro_end_(IVY,k,j,i);
+          Real uu3 = prim_hydro_end_(IVZ,k,j,i);
           Real temp_var = g_(I11,i) * SQR(uu1) + 2.0 * g_(I12,i) * uu1 * uu2
-              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22) * SQR(uu2)
+              + 2.0 * g_(I13,i) * uu1 * uu3 + g_(I22,i) * SQR(uu2)
               + 2.0 * g_(I23,i) * uu2 * uu3 + g_(I33,i) * SQR(uu3);
           Real uu0 = std::sqrt(1.0 + temp_var);
           u_tet_(0,i) = norm_to_tet_(0,0,k,j,i) * uu0 + norm_to_tet_(0,1,k,j,i) * uu1
@@ -96,24 +103,18 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
               int lm = AngleInd(l, m);
               Real u_n = -u_tet_(0,i) * nh_cc_(0,l,m) + u_tet_(1,i) * nh_cc_(1,l,m)
                   + u_tet_(2,i) * nh_cc_(2,l,m) + u_tet_(3,i) * nh_cc_(3,l,m);
-              ee_f_minus_(i) += prim_rad(lm,k,j,i) * SQR(u_n) * solid_angle(l,m);
+              ee_f_minus_(i) += cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i) * SQR(u_n)
+                  * solid_angle(l,m);
             }
           }
-        }
-
-        // Calculate velocity modification effective timestep
-        // TODO(CJW): below only works for VL2
-        Real dt_velocity = dt;
-        if (prim_hydro.data() != prim_hydro_alt.data()) {
-          dt_velocity /= 2.0;
         }
 
         // Modify velocity in radiation-dominated regime
         for (int i = is; i <= ie; ++i) {
 
           // Check that radiation dominates fluid
-          Real rho = prim_hydro_alt(IDN,k,j,i);
-          Real pgas = prim_hydro_alt(IPR,k,j,i);
+          Real rho = prim_hydro_end_(IDN,k,j,i);
+          Real pgas = prim_hydro_end_(IPR,k,j,i);
           Real egas = rho + pgas / (gamma_adi - 1.);
           if (ee_f_minus_(i) <= egas) {
             continue;
@@ -133,19 +134,25 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
           for (int l = zs; l <= ze; ++l) {
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
-              rr_tet00 += prim_rad(lm,k,j,i) * solid_angle(l,m);
-              rr_tet01 += prim_rad(lm,k,j,i) * nh_cc_(1,l,m) * solid_angle(l,m);
-              rr_tet02 += prim_rad(lm,k,j,i) * nh_cc_(2,l,m) * solid_angle(l,m);
-              rr_tet03 += prim_rad(lm,k,j,i) * nh_cc_(3,l,m) * solid_angle(l,m);
-              rr_tet11 += prim_rad(lm,k,j,i) * SQR(nh_cc_(1,l,m)) * solid_angle(l,m);
-              rr_tet12 +=
-                  prim_rad(lm,k,j,i) * nh_cc_(1,l,m) * nh_cc_(2,l,m) * solid_angle(l,m);
-              rr_tet13 +=
-                  prim_rad(lm,k,j,i) * nh_cc_(1,l,m) * nh_cc_(3,l,m) * solid_angle(l,m);
-              rr_tet22 += prim_rad(lm,k,j,i) * SQR(nh_cc_(2,l,m)) * solid_angle(l,m);
-              rr_tet23 +=
-                  prim_rad(lm,k,j,i) * nh_cc_(2,l,m) * nh_cc_(3,l,m) * solid_angle(l,m);
-              rr_tet33 += prim_rad(lm,k,j,i) * SQR(nh_cc_(3,l,m)) * solid_angle(l,m);
+              rr_tet00 += cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i) * solid_angle(l,m);
+              rr_tet01 += cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i) * nh_cc_(1,l,m)
+                  * solid_angle(l,m);
+              rr_tet02 += cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i) * nh_cc_(2,l,m)
+                  * solid_angle(l,m);
+              rr_tet03 += cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i) * nh_cc_(3,l,m)
+                  * solid_angle(l,m);
+              rr_tet11 += cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i) * SQR(nh_cc_(1,l,m))
+                  * solid_angle(l,m);
+              rr_tet12 += cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i) * nh_cc_(1,l,m)
+                  * nh_cc_(2,l,m) * solid_angle(l,m);
+              rr_tet13 += cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i) * nh_cc_(1,l,m)
+                  * nh_cc_(3,l,m) * solid_angle(l,m);
+              rr_tet22 += cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i) * SQR(nh_cc_(2,l,m))
+                  * solid_angle(l,m);
+              rr_tet23 += cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i) * nh_cc_(2,l,m)
+                  * nh_cc_(3,l,m) * solid_angle(l,m);
+              rr_tet33 += cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i) * SQR(nh_cc_(3,l,m))
+                  * solid_angle(l,m);
             }
           }
 
@@ -193,9 +200,9 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
               * u_tet_(3,i) - (k_a + k_s) * (-u_tet_(0,i) * rr_tet03
               + u_tet_(1,i) * rr_tet13 + u_tet_(2,i) * rr_tet23
               + u_tet_(3,i) * rr_tet33);
-          Real dmgas_tet1 = dt_velocity * gg_tet1;
-          Real dmgas_tet2 = dt_velocity * gg_tet2;
-          Real dmgas_tet3 = dt_velocity * gg_tet3;
+          Real dmgas_tet1 = dt * gg_tet1;
+          Real dmgas_tet2 = dt * gg_tet2;
+          Real dmgas_tet3 = dt * gg_tet3;
 
           // Estimate new fluid velocity
           Real frac1 = mgas_rad_tet1 == mgas_tet1 ? 0.0
@@ -216,8 +223,8 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
 
         // Calculate quartic coefficients
         for (int i = is; i <= ie; ++i) {
-          Real rho = prim_hydro(IDN,k,j,i);
-          Real tt_minus = prim_hydro(IPR,k,j,i) / rho;
+          Real rho = prim_hydro_end_(IDN,k,j,i);
+          Real tt_minus = prim_hydro_end_(IPR,k,j,i) / rho;
           Real k_a = rho * opacity(OPAA,k,j,i);
           Real k_s = rho * opacity(OPAS,k,j,i);
           Real k_tot = k_a + k_s;
@@ -227,7 +234,7 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
           for (int l = zs; l <= ze; ++l) {
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
-              Real ii_minus = prim_rad(lm,k,j,i);
+              Real ii_minus = cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i);
               Real u_n = -u_tet_(0,i) * nh_cc_(0,l,m) + u_tet_(1,i) * nh_cc_(1,l,m)
                   + u_tet_(2,i) * nh_cc_(2,l,m) + u_tet_(3,i) * nh_cc_(3,l,m);
               Real denominator = 1.0 - dt * k_tot * u_n;
@@ -251,7 +258,7 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
                 FourthPolyRoot(coefficients_(0,i), coefficients_(1,i), &tt_plus_(i));
             if (not quartic_flag or std::isnan(tt_plus_(i))) {
               bad_cell_(i) = true;
-              tt_plus_(i) = prim_hydro(IPR,k,j,i) / prim_hydro(IDN,k,j,i);
+              tt_plus_(i) = prim_hydro_end_(IPR,k,j,i) / prim_hydro_end_(IDN,k,j,i);
             }
           } else {
             tt_plus_(i) = -coefficients_(1,i);
@@ -261,8 +268,8 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
         // Calculate new radiation energy density
         for (int i = is; i <= ie; ++i) {
           if (not bad_cell_(i)) {
-            Real rho = prim_hydro(IDN,k,j,i);
-            Real tt_minus = prim_hydro(IPR,k,j,i) / rho;
+            Real rho = prim_hydro_end_(IDN,k,j,i);
+            Real tt_minus = prim_hydro_end_(IPR,k,j,i) / rho;
             ee_f_plus_(i) =
                 ee_f_minus_(i) + rho / (gamma_adi - 1.0) * (tt_minus - tt_plus_(i));
             ee_f_plus_(i) = std::max(ee_f_plus_(i), 0.0);
@@ -272,14 +279,14 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
         // Calculate new intensity
         for (int i = is; i <= ie; ++i) {
           if (not bad_cell_(i)) {
-            Real rho = prim_hydro(IDN,k,j,i);
+            Real rho = prim_hydro_end_(IDN,k,j,i);
             Real k_a = rho * opacity(OPAA,k,j,i);
             Real k_s = rho * opacity(OPAS,k,j,i);
             Real k_tot = k_a + k_s;
             for (int l = zs; l <= ze; ++l) {
               for (int m = ps; m <= pe; ++m) {
                 int lm = AngleInd(l, m);
-                Real ii_minus = prim_rad(lm,k,j,i);
+                Real ii_minus = cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i);
                 Real u_n = -u_tet_(0,i) * nh_cc_(0,l,m) + u_tet_(1,i) * nh_cc_(1,l,m)
                     + u_tet_(2,i) * nh_cc_(2,l,m) + u_tet_(3,i) * nh_cc_(3,l,m);
                 Real ii_plus = (ii_minus - dt / (4.0 * PI) / u_n / SQR(u_n)

@@ -37,13 +37,13 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
     CellCenteredBoundaryVariable(pmb, p_var, p_coarse_var, flux_x),
     nzeta(num_zeta),
     npsi(num_psi),
-    nang((nzeta + 2*NGHOST) * (npsi + 2*NGHOST)) {
+    nang((nzeta + 2*NGHOST_RAD) * (npsi + 2*NGHOST_RAD)) {
 
   // Calculate index bounds
-  zs = NGHOST;
-  ze = nzeta + NGHOST - 1;
-  ps = NGHOST;
-  pe = npsi + NGHOST - 1;
+  zs = NGHOST_RAD;
+  ze = nzeta + NGHOST_RAD - 1;
+  ps = NGHOST_RAD;
+  pe = npsi + NGHOST_RAD - 1;
   is = pmb->is;
   ie = pmb->ie;
   js = pmb->js;
@@ -58,31 +58,31 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
   int ku = ks == ke ? ke : ke + NGHOST;
 
   // Allocate memory for angles
-  zetaf.NewAthenaArray(nzeta + 2*NGHOST + 1);
-  zetav.NewAthenaArray(nzeta + 2*NGHOST);
-  dzetaf.NewAthenaArray(nzeta + 2*NGHOST);
-  psif.NewAthenaArray(npsi + 2*NGHOST + 1);
-  psiv.NewAthenaArray(npsi + 2*NGHOST);
-  dpsif.NewAthenaArray(npsi + 2*NGHOST);
+  zetaf.NewAthenaArray(nzeta + 2 * NGHOST_RAD + 1);
+  zetav.NewAthenaArray(nzeta + 2 * NGHOST_RAD);
+  dzetaf.NewAthenaArray(nzeta + 2 * NGHOST_RAD);
+  psif.NewAthenaArray(npsi + 2 * NGHOST_RAD + 1);
+  psiv.NewAthenaArray(npsi + 2 * NGHOST_RAD);
+  dpsif.NewAthenaArray(npsi + 2 * NGHOST_RAD);
 
   // Construct polar angles, equally spaced in cosine
   Real dczeta = -2.0 / nzeta;
   zetaf(zs) = 0.0;             // set north pole exactly
   zetaf(ze+1) = PI;            // set south pole exactly
-  for (int l = zs+1; l <= (nzeta-1)/2+NGHOST; ++l) {
-    Real czeta = 1.0 + (l - NGHOST) * dczeta;
+  for (int l = zs+1; l <= (nzeta-1)/2+NGHOST_RAD; ++l) {
+    Real czeta = 1.0 + (l - NGHOST_RAD) * dczeta;
     Real zeta = std::acos(czeta);
     zetaf(l) = zeta;                           // set northern active faces
-    zetaf(ze+NGHOST+1-l) = PI - zeta;          // set southern active faces
+    zetaf(ze+NGHOST_RAD+1-l) = PI - zeta;      // set southern active faces
   }
   if (nzeta%2 == 0) {
-    zetaf(nzeta/2+NGHOST) = PI/2.0;  // set equator exactly if present
+    zetaf(nzeta/2+NGHOST_RAD) = PI/2.0;  // set equator exactly if present
   }
-  for (int l = zs-NGHOST; l <= zs-1; ++l) {
-    zetaf(l) = -zetaf(2*NGHOST - l);                 // set northern ghost faces
-    zetaf(ze+NGHOST+1-l) = 2.0*PI - zetaf(nzeta+l);  // set southern ghost faces
+  for (int l = zs-NGHOST_RAD; l <= zs-1; ++l) {
+    zetaf(l) = -zetaf(2*NGHOST_RAD-l);                   // set northern ghost faces
+    zetaf(ze+NGHOST_RAD+1-l) = 2.0*PI - zetaf(nzeta+l);  // set southern ghost faces
   }
-  for (int l = zs-NGHOST; l <= ze+NGHOST; ++l) {
+  for (int l = zs-NGHOST_RAD; l <= ze+NGHOST_RAD; ++l) {
     zetav(l) = (zetaf(l+1) * std::cos(zetaf(l+1)) - std::sin(zetaf(l+1))
         - zetaf(l) * std::cos(zetaf(l)) + std::sin(zetaf(l))) / (std::cos(zetaf(l+1))
         - std::cos(zetaf(l)));
@@ -94,13 +94,13 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
   psif(ps) = 0.0;             // set origin exactly
   psif(pe+1) = 2.0*PI;        // set origin exactly
   for (int m = ps+1; m <= pe; ++m) {
-    psif(m) = (m - NGHOST) * dpsi;  // set active faces
+    psif(m) = (m - NGHOST_RAD) * dpsi;  // set active faces
   }
-  for (int m = ps-NGHOST; m <= ps-1; ++m) {
-    psif(m) = psif(npsi+m) - 2.0*PI;                  // set beginning ghost faces
-    psif(pe+NGHOST+1-m) = psif(2*NGHOST-m) + 2.0*PI;  // set end ghost faces
+  for (int m = ps-NGHOST_RAD; m <= ps-1; ++m) {
+    psif(m) = psif(npsi+m) - 2.0*PI;                          // set beginning ghost faces
+    psif(pe+NGHOST_RAD+1-m) = psif(2*NGHOST_RAD-m) + 2.0*PI;  // set end ghost faces
   }
-  for (int m = ps-NGHOST; m <= pe+NGHOST; ++m) {
+  for (int m = ps-NGHOST_RAD; m <= pe+NGHOST_RAD; ++m) {
     psiv(m) = 0.5 * (psif(m) + psif(m+1));
     dpsif(m) = psif(m+1) - psif(m);
   }
@@ -116,13 +116,17 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
   nh_g.NewAthenaArray(4, nang);
 
   // Calculate unit normal components in orthonormal frame
-  for (int l = zs-NGHOST; l <= ze+NGHOST; ++l) {
-    for (int m = ps-NGHOST; m <= pe+NGHOST; ++m) {
+  for (int l = zs-NGHOST_RAD; l <= ze+NGHOST_RAD; ++l) {
+    for (int m = ps-NGHOST_RAD; m <= pe+NGHOST_RAD; ++m) {
       int lm = AngleInd(l, m);
       nh_g(0,lm) = 1.0;
       nh_g(1,lm) = std::sin(zetav(l)) * std::cos(psiv(m));
       nh_g(2,lm) = std::sin(zetav(l)) * std::sin(psiv(m));
       nh_g(3,lm) = std::cos(zetav(l));
+      if (nzeta == 1) {
+        nh_g(1,l,m) = (nh_g(1,lm) > 0.0 ? 1.0 : -1.0) * 0.5773502691896258;
+        nh_g(2,l,m) = (nh_g(2,lm) > 0.0 ? 1.0 : -1.0) * 0.5773502691896258;
+      }
     }
   }
 

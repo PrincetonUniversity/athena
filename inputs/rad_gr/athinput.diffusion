@@ -68,7 +68,6 @@ n_polar      = 5                      # number of polar angles in direction spac
 n_azimuthal  = 10                     # number of azimuthal angles in direction space
 coupled      = true                   # flag indicating radiation is coupled to matter
 affect_fluid = false                  # flag indicating radiation back-reacts on fluid
-moment_fix   = false                  # flag indicating two opacity means are used
 density_cgs  = 1.1831321385415344e17  # code unit of density, in g/cm^3
 mol_weight   = 1.0                    # molecular weight of gas, in proton masses
 
