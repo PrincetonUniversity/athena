@@ -964,12 +964,12 @@ void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata) {
     // Prolongation using tri-linear interpolation
     for (int v=0; v<nvar; ++v) {
       for (int k=sk; k<=ek; ++k) {
-        int fk = (fk - ngh) * 2 + ngh;
+        int fk = (k - cn) * 2 + ngh;
         for (int j=sj; j<=ej; ++j) {
-          int fj = (fj - ngh) * 2 + ngh;
+          int fj = (j - cn) * 2 + ngh;
 #pragma ivdep
           for (int i=si; i<=ei; ++i) {
-            int fi = (fi - ngh) * 2 + ngh;
+            int fi = (i - cn) * 2 + ngh;
             if (fk >= 0 && fj >= 0 && fi >= 0)
               dst(v, fk,   fj,   fi  ) =
                 0.015625*(27.0*cbuf_(v,k,j,i)+cbuf_(v,k-1,j-1,i-1)
@@ -1017,12 +1017,12 @@ void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata) {
     if (folddata) {
       for (int v=0; v<nvar; ++v) {
         for (int k=sk; k<=ek; ++k) {
-          int fk = (fk - ngh) * 2 + ngh;
+          int fk = (k - cn) * 2 + ngh;
           for (int j=sj; j<=ej; ++j) {
-            int fj = (fj - ngh) * 2 + ngh;
+            int fj = (j - cn) * 2 + ngh;
 #pragma ivdep
             for (int i=si; i<=ei; ++i) {
-              int fi = (fi - ngh) * 2 + ngh;
+              int fi = (i - cn) * 2 + ngh;
               if (fk >= 0 && fj >= 0 && fi >= 0)
                 old(v, fk,   fj,   fi  ) =
                 0.015625*(27.0*cbufold_(v,k,j,i)+cbufold_(v,k-1,j-1,i-1)
