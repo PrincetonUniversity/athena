@@ -606,7 +606,6 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
       moments_new_.NewAthenaArray(4, pmb->ncells1);
     }
     u_tet_.NewAthenaArray(4, pmb->ncells1);
-    coefficients_.NewAthenaArray(2, pmb->ncells1);
     bad_cell_.NewAthenaArray(pmb->ncells1);
     tt_plus_.NewAthenaArray(pmb->ncells1);
     ee_f_minus_.NewAthenaArray(pmb->ncells1);

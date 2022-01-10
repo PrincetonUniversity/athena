@@ -1044,13 +1044,8 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) 
     // Scaled coefficient for RHS update
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     // Evaluate the time-dependent source terms at the time at the beginning of the stage
-    if (stage == 1) {
-      pr->AddSourceTerms(t_start_stage, dt, pr->prim, ph->w, pf->b, pr->cons, ph->u,
-          pf->bcc);
-    } else {
-      pr->AddSourceTerms(t_start_stage, dt, pr->prim, ph->w, pf->b, pr->cons, ph->u,
-          pf->bcc);
-    }
+    pr->AddSourceTerms(t_start_stage, dt, pr->prim, ph->w, pf->b, pr->cons, ph->u,
+        pf->bcc);
   } else {
     return TaskStatus::fail;
   }

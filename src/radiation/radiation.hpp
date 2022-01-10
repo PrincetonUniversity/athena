@@ -212,7 +212,6 @@ private:
   AthenaArray<Real> moments_old_;     // moments of radiation field before fluid coupling
   AthenaArray<Real> moments_new_;     // moments of radiation field after fluid coupling
   AthenaArray<Real> u_tet_;           // fluid 4-velocity in tetrad frame
-  AthenaArray<Real> coefficients_;    // quartic coefficients for implicit update
   AthenaArray<bool> bad_cell_;        // flag indicating problem with coupling
   AthenaArray<Real> tt_plus_;         // gas temperature after coupling
   AthenaArray<Real> ee_f_minus_;      // fluid-frame radiation energy before coupling

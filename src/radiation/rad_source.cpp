@@ -200,9 +200,9 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
               * u_tet_(3,i) - (k_a + k_s) * (-u_tet_(0,i) * rr_tet03
               + u_tet_(1,i) * rr_tet13 + u_tet_(2,i) * rr_tet23
               + u_tet_(3,i) * rr_tet33);
-          Real dmgas_tet1 = dt * gg_tet1;
-          Real dmgas_tet2 = dt * gg_tet2;
-          Real dmgas_tet3 = dt * gg_tet3;
+          Real dmgas_tet1 = dt / u_tet_(0,i) * gg_tet1;
+          Real dmgas_tet2 = dt / u_tet_(0,i) * gg_tet2;
+          Real dmgas_tet3 = dt / u_tet_(0,i) * gg_tet3;
 
           // Estimate new fluid velocity
           Real frac1 = mgas_rad_tet1 == mgas_tet1 ? 0.0
@@ -221,59 +221,63 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
               std::sqrt(1.0 + SQR(u_tet_(1,i)) + SQR(u_tet_(2,i)) + SQR(u_tet_(3,i)));
         }
 
-        // Calculate quartic coefficients
+        // Calculate new gas temperature and radiation energy density
         for (int i = is; i <= ie; ++i) {
+
+          // Calculate quartic coefficients
           Real rho = prim_hydro_end_(IDN,k,j,i);
           Real tt_minus = prim_hydro_end_(IPR,k,j,i) / rho;
           Real k_a = rho * opacity(OPAA,k,j,i);
           Real k_s = rho * opacity(OPAS,k,j,i);
           Real k_tot = k_a + k_s;
+          ee_f_minus_(i) = 0.0;
           Real var_a = 0.0;
           Real var_b = 0.0;
-          ee_f_minus_(i) = 0.0;
           for (int l = zs; l <= ze; ++l) {
             for (int m = ps; m <= pe; ++m) {
               int lm = AngleInd(l, m);
               Real ii_minus = cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i);
               Real u_n = -u_tet_(0,i) * nh_cc_(0,l,m) + u_tet_(1,i) * nh_cc_(1,l,m)
                   + u_tet_(2,i) * nh_cc_(2,l,m) + u_tet_(3,i) * nh_cc_(3,l,m);
-              Real denominator = 1.0 - dt * k_tot * u_n;
-              var_a += ii_minus * SQR(u_n) / denominator * solid_angle(l,m);
-              var_b += 1.0 / u_n / denominator * solid_angle(l,m);
-              ee_f_minus_(i) += ii_minus * SQR(u_n) * solid_angle(l,m);
+              Real var_c = ii_minus * SQR(u_n) * solid_angle(l,m);
+              Real var_d = 1.0 - dt * k_tot * u_n / nmu_(0,l,m,k,j,i);
+              ee_f_minus_(i) += var_c;
+              var_a += var_c / var_d;
+              var_b += solid_angle(l,m) / (u_n * nmu_(0,l,m,k,j,i) * var_d);
             }
           }
           var_b *= dt / (4.0 * PI);
-          coefficients_(0,i) =
-              -(gamma_adi - 1.0) / rho * var_b * k_a * arad / (1.0 + var_b * k_s);
-          coefficients_(1,i) = -tt_minus - (gamma_adi - 1.0) / rho * ee_f_minus_(i)
-              + (gamma_adi - 1.0) / rho * var_a / (1.0 + var_b * k_s);
-        }
+          Real coeff_4 = var_b * k_a * arad;
+          Real coeff_1 = -rho / (gamma_adi - 1.0) * (1.0 + var_b * k_s);
+          Real coeff_0 =
+              -coeff_1 * tt_minus + (1.0 + var_b * k_s) * ee_f_minus_(i) - var_a;
 
-        // Calculate new gas temperature
-        for (int i = is; i <= ie; ++i) {
+          // Calculate new gas temperature
           bad_cell_(i) = false;
-          if (std::abs(coefficients_(0,i)) > TINY_NUMBER) {
-            bool quartic_flag =
-                FourthPolyRoot(coefficients_(0,i), coefficients_(1,i), &tt_plus_(i));
+          bool quartic_flag = true;
+          if (k_a > 0.0) {
+            if (std::abs(coeff_4) > TINY_NUMBER and std::abs(coeff_1) > TINY_NUMBER) {
+              quartic_flag =
+                  FourthPolyRoot(coeff_4 / coeff_1, coeff_0 / coeff_1, &tt_plus_(i));
+            } else if (std::abs(coeff_4) > TINY_NUMBER) {
+              tt_plus_(i) = std::sqrt(std::sqrt(-coeff_0 / coeff_4));
+            } else {
+              tt_plus_(i) = -coeff_0 / coeff_1;
+            }
             if (not quartic_flag or std::isnan(tt_plus_(i))) {
               bad_cell_(i) = true;
               tt_plus_(i) = prim_hydro_end_(IPR,k,j,i) / prim_hydro_end_(IDN,k,j,i);
             }
           } else {
-            tt_plus_(i) = -coefficients_(1,i);
+            tt_plus_(i) = prim_hydro_end_(IPR,k,j,i) / prim_hydro_end_(IDN,k,j,i);
           }
-        }
 
-        // Calculate new radiation energy density
-        for (int i = is; i <= ie; ++i) {
+          // Calculate new radiation energy density
           if (not bad_cell_(i)) {
-            Real rho = prim_hydro_end_(IDN,k,j,i);
-            Real tt_minus = prim_hydro_end_(IPR,k,j,i) / rho;
             ee_f_plus_(i) =
-                ee_f_minus_(i) + rho / (gamma_adi - 1.0) * (tt_minus - tt_plus_(i));
-            ee_f_plus_(i) = std::max(ee_f_plus_(i), 0.0);
+              ee_f_minus_(i) + rho / (gamma_adi - 1.0) * (tt_minus - tt_plus_(i));
           }
+          ee_f_plus_(i) = std::max(ee_f_plus_(i), 0.0);
         }
 
         // Calculate new intensity
@@ -289,9 +293,10 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
                 Real ii_minus = cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i);
                 Real u_n = -u_tet_(0,i) * nh_cc_(0,l,m) + u_tet_(1,i) * nh_cc_(1,l,m)
                     + u_tet_(2,i) * nh_cc_(2,l,m) + u_tet_(3,i) * nh_cc_(3,l,m);
-                Real ii_plus = (ii_minus - dt / (4.0 * PI) / u_n / SQR(u_n)
+                Real ii_plus =
+                    (ii_minus - dt / (4.0 * PI * u_n * u_n * u_n * nmu_(0,l,m,k,j,i))
                     * (k_a * arad * SQR(SQR(tt_plus_(i))) + k_s * ee_f_plus_(i)))
-                    / (1.0 - dt * k_tot * u_n);
+                    / (1.0 - dt * k_tot * u_n * nmu_(0,l,m,k,j,i));
                 cons_rad(lm,k,j,i) += (ii_plus - ii_minus) * n0_n_mu_(0,l,m,k,j,i);
                 cons_rad(lm,k,j,i) = std::min(cons_rad(lm,k,j,i), 0.0);
               }
