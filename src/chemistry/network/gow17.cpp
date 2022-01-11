@@ -118,7 +118,7 @@ const int ChemNetwork::outcr_[n_cr_] =
                           iSiplus_};
 const Real ChemNetwork::kcr_base_[n_cr_] =
                          {2.0, 1.1, 1.0,
-                          560., 90., 6.52,
+                          520., 92., 6.52,
                           8400.};
 
 //2 body reactions
