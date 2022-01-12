@@ -33,9 +33,6 @@
 #if not GENERAL_RELATIVITY
 #error "This problem generator must be used with general relativity"
 #endif
-#if not MAGNETIC_FIELDS_ENABLED
-#error "This problem generator must be used with magnetic fields"
-#endif
 
 // Global variables
 namespace {
@@ -101,9 +98,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   ux = pin->GetReal("problem", "ux");
   uy = pin->GetReal("problem", "uy");
   uz = pin->GetReal("problem", "uz");
-  bbx = pin->GetReal("problem", "bbx");
-  bby = pin->GetReal("problem", "bby");
-  bbz = pin->GetReal("problem", "bbz");
+  if (MAGNETIC_FIELDS_ENABLED) {
+    bbx = pin->GetReal("problem", "bbx");
+    bby = pin->GetReal("problem", "bby");
+    bbz = pin->GetReal("problem", "bbz");
+  }
   erad = pin->GetReal("problem", "erad");
   fxrad = pin->GetReal("problem", "fxrad");
   fyrad = pin->GetReal("problem", "fyrad");
@@ -120,12 +119,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   duy_imag = pin->GetReal("problem", "duy_imag");
   duz_real = pin->GetReal("problem", "duz_real");
   duz_imag = pin->GetReal("problem", "duz_imag");
-  dbbx_real = pin->GetReal("problem", "dbbx_real");
-  dbbx_imag = pin->GetReal("problem", "dbbx_imag");
-  dbby_real = pin->GetReal("problem", "dbby_real");
-  dbby_imag = pin->GetReal("problem", "dbby_imag");
-  dbbz_real = pin->GetReal("problem", "dbbz_real");
-  dbbz_imag = pin->GetReal("problem", "dbbz_imag");
+  if (MAGNETIC_FIELDS_ENABLED) {
+    dbbx_real = pin->GetReal("problem", "dbbx_real");
+    dbbx_imag = pin->GetReal("problem", "dbbx_imag");
+    dbby_real = pin->GetReal("problem", "dbby_real");
+    dbby_imag = pin->GetReal("problem", "dbby_imag");
+    dbbz_real = pin->GetReal("problem", "dbbz_real");
+    dbbz_imag = pin->GetReal("problem", "dbbz_imag");
+  }
   derad_real = pin->GetReal("problem", "derad_real");
   derad_imag = pin->GetReal("problem", "derad_imag");
   dfxrad_real = pin->GetReal("problem", "dfxrad_real");
@@ -165,6 +166,22 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
+  // Prepare index bounds
+  int il = is - NGHOST;
+  int iu = ie + NGHOST;
+  int jl = js;
+  int ju = je;
+  if (jl != ju) {
+    jl -= NGHOST;
+    ju += NGHOST;
+  }
+  int kl = ks;
+  int ku = ke;
+  if (kl != ku) {
+    kl -= NGHOST;
+    ku += NGHOST;
+  }
+
   // Calculate wavenumber
   Real kx = 2.0 * PI / lx;
   Real ky = 0.0;
@@ -179,9 +196,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real ca = lx / lxy;
 
   // Initialize primitive hydro variables
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie; ++i) {
+  for (int k = kl; k <= ku; ++k) {
+    for (int j = jl; j <= ju; ++j) {
+      for (int i = il; i <= iu; ++i) {
         Real x = pcoord->x1v(i);
         Real y = pcoord->x2v(j);
         Real z = pcoord->x3v(k);
@@ -205,65 +222,67 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Initialize magnetic fields
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie+1; ++i) {
-        Real x = pcoord->x1f(i);
-        Real y = pcoord->x2v(j);
-        Real z = pcoord->x3v(k);
-        Real s = std::sin(kx * x + ky * y);
-        Real c = std::cos(kx * x + ky * y);
-        Real bbx_val_wave = bbx + delta * (dbbx_real * c - dbbx_imag * s);
-        Real bby_val_wave = bby + delta * (dbby_real * c - dbby_imag * s);
-        Real bbx_val = ca * bbx_val_wave - sa * bby_val_wave;
-        pfield->b.x1f(k,j,i) = bbx_val;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k = kl; k <= ku; ++k) {
+      for (int j = jl; j <= ju; ++j) {
+        for (int i = il; i <= iu+1; ++i) {
+          Real x = pcoord->x1f(i);
+          Real y = pcoord->x2v(j);
+          Real z = pcoord->x3v(k);
+          Real s = std::sin(kx * x + ky * y);
+          Real c = std::cos(kx * x + ky * y);
+          Real bbx_val_wave = bbx + delta * (dbbx_real * c - dbbx_imag * s);
+          Real bby_val_wave = bby + delta * (dbby_real * c - dbby_imag * s);
+          Real bbx_val = ca * bbx_val_wave - sa * bby_val_wave;
+          pfield->b.x1f(k,j,i) = bbx_val;
+        }
       }
     }
-  }
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je+1; ++j) {
-      for (int i = is; i <= ie; ++i) {
-        Real x = pcoord->x1v(i);
-        Real y = pcoord->x2f(j);
-        Real z = pcoord->x3v(k);
-        Real s = std::sin(kx * x + ky * y);
-        Real c = std::cos(kx * x + ky * y);
-        Real bbx_val_wave = bbx + delta * (dbbx_real * c - dbbx_imag * s);
-        Real bby_val_wave = bby + delta * (dbby_real * c - dbby_imag * s);
-        Real bby_val = sa * bbx_val_wave + ca * bby_val_wave;
-        pfield->b.x2f(k,j,i) = bby_val;
+    for (int k = kl; k <= ku; ++k) {
+      for (int j = jl; j <= ju+1; ++j) {
+        for (int i = il; i <= iu; ++i) {
+          Real x = pcoord->x1v(i);
+          Real y = pcoord->x2f(j);
+          Real z = pcoord->x3v(k);
+          Real s = std::sin(kx * x + ky * y);
+          Real c = std::cos(kx * x + ky * y);
+          Real bbx_val_wave = bbx + delta * (dbbx_real * c - dbbx_imag * s);
+          Real bby_val_wave = bby + delta * (dbby_real * c - dbby_imag * s);
+          Real bby_val = sa * bbx_val_wave + ca * bby_val_wave;
+          pfield->b.x2f(k,j,i) = bby_val;
+        }
       }
     }
-  }
-  for (int k = ks; k <= ke+1; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie; ++i) {
-        Real x = pcoord->x1v(i);
-        Real y = pcoord->x2v(j);
-        Real z = pcoord->x3f(k);
-        Real s = std::sin(kx * x + ky * y);
-        Real c = std::cos(kx * x + ky * y);
-        Real bbz_val_wave = bbz + delta * (dbbz_real * c - dbbz_imag * s);
-        Real bbz_val = bbz_val_wave;
-        pfield->b.x3f(k,j,i) = bbz_val;
+    for (int k = kl; k <= ku+1; ++k) {
+      for (int j = jl; j <= ju; ++j) {
+        for (int i = il; i <= iu; ++i) {
+          Real x = pcoord->x1v(i);
+          Real y = pcoord->x2v(j);
+          Real z = pcoord->x3f(k);
+          Real s = std::sin(kx * x + ky * y);
+          Real c = std::cos(kx * x + ky * y);
+          Real bbz_val_wave = bbz + delta * (dbbz_real * c - dbbz_imag * s);
+          Real bbz_val = bbz_val_wave;
+          pfield->b.x3f(k,j,i) = bbz_val;
+        }
       }
     }
+    pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pcoord, il, iu, jl, ju, kl,
+        ku);
   }
-  pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pcoord, is, ie, js, je, ks,
-      ke);
 
   // Initialize conserved hydro variables
-  peos->PrimitiveToConserved(phydro->w, pfield->bcc, phydro->u, pcoord, is, ie, js, je,
-      ks, ke);
+  peos->PrimitiveToConserved(phydro->w, pfield->bcc, phydro->u, pcoord, il, iu, jl, ju,
+      kl, ku);
 
   // Initialize radiation
   AthenaArray<Real> g, gi;
-  g.NewAthenaArray(NMETRIC, ie + 1);
-  gi.NewAthenaArray(NMETRIC, ie + 1);
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      pcoord->CellMetric(k, j, is, ie, g, gi);
-      for (int i = is; i <= ie; ++i) {
+  g.NewAthenaArray(NMETRIC, iu + 1);
+  gi.NewAthenaArray(NMETRIC, iu + 1);
+  for (int k = kl; k <= ku; ++k) {
+    for (int j = jl; j <= ju; ++j) {
+      pcoord->CellMetric(k, j, il, iu, g, gi);
+      for (int i = il; i <= iu; ++i) {
 
         // Calculate location
         Real x = pcoord->x1v(i);
@@ -380,20 +399,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Initialize opacity
-  int il = is - NGHOST;
-  int iu = ie + NGHOST;
-  int jl = js;
-  int ju = je;
-  if (jl != ju) {
-    jl -= NGHOST;
-    ju += NGHOST;
-  }
-  int kl = ks;
-  int ku = ke;
-  if (kl != ku) {
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
       for (int i = il; i <= iu; ++i) {
