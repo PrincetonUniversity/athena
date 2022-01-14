@@ -124,8 +124,8 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
       nh_g(2,lm) = std::sin(zetav(l)) * std::sin(psiv(m));
       nh_g(3,lm) = std::cos(zetav(l));
       if (nzeta == 1) {
-        nh_g(1,l,m) = (nh_g(1,lm) > 0.0 ? 1.0 : -1.0) * 0.5773502691896258;
-        nh_g(2,l,m) = (nh_g(2,lm) > 0.0 ? 1.0 : -1.0) * 0.5773502691896258;
+        nh_g(1,l,m) *= 0.816496580927726;
+        nh_g(2,l,m) *= 0.816496580927726;
       }
     }
   }

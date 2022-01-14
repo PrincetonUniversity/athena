@@ -266,8 +266,8 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
       nh_cc_(2,l,m) = std::sin(zetav(l)) * std::sin(psiv(m));
       nh_cc_(3,l,m) = std::cos(zetav(l));
       if (nzeta == 1) {
-        nh_cc_(1,l,m) = (nh_cc_(1,l,m) > 0.0 ? 1.0 : -1.0) * 0.5773502691896258;
-        nh_cc_(2,l,m) = (nh_cc_(2,l,m) > 0.0 ? 1.0 : -1.0) * 0.5773502691896258;
+        nh_cc_(1,l,m) *= 0.816496580927726;
+        nh_cc_(2,l,m) *= 0.816496580927726;
       }
     }
   }
@@ -290,8 +290,8 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
       nh_cf_(2,l,m) = std::sin(zetav(l)) * std::sin(psif(m));
       nh_cf_(3,l,m) = std::cos(zetav(l));
       if (nzeta == 1) {
-        nh_cf_(1,l,m) = (nh_cf_(1,l,m) > 0.0 ? 1.0 : -1.0) * 0.5773502691896258;
-        nh_cf_(2,l,m) = (nh_cf_(2,l,m) > 0.0 ? 1.0 : -1.0) * 0.5773502691896258;
+        nh_cf_(1,l,m) *= 0.816496580927726;
+        nh_cf_(2,l,m) *= 0.816496580927726;
       }
     }
   }
