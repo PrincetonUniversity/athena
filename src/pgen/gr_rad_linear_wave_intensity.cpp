@@ -9,7 +9,7 @@
 // C++ headers
 #include <algorithm>  // max, min
 #include <cstdlib>    // exit (needed for defs.hpp)
-#include <cmath>      // cos, sin, sqrt
+#include <cmath>      // cos, sin
 #include <iostream>   // cout (needed for defs.hpp), endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error (needed for defs.hpp)
@@ -32,9 +32,6 @@
 #endif
 #if not GENERAL_RELATIVITY
 #error "This problem generator must be used with general relativity"
-#endif
-#if not MAGNETIC_FIELDS_ENABLED
-#error "This problem generator must be used with magnetic fields"
 #endif
 
 // Global variables
@@ -73,14 +70,15 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (std::strcmp(COORDINATE_SYSTEM, "minkowski") != 0) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Problem Generator\n"
-        << "gr_rad_constant only supports Minkowski coordinates" << std::endl;
+        << "gr_rad_linear_wave_intensity only supports Minkowski coordinates"
+        << std::endl;
     ATHENA_ERROR(msg);
     return;
   }
   if (pin->GetString("coord", "rad_tetrad") != "cartesian") {
     std::stringstream msg;
     msg << "### FATAL ERROR in Problem Generator\n"
-        << "gr_rad_constant only supports Cartesian tetrad" << std::endl;
+        << "gr_rad_linear_wave_intensity only supports Cartesian tetrad" << std::endl;
     ATHENA_ERROR(msg);
     return;
   }
@@ -91,9 +89,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   ux = pin->GetReal("problem", "ux");
   uy = pin->GetReal("problem", "uy");
   uz = pin->GetReal("problem", "uz");
-  bbx = pin->GetReal("problem", "bbx");
-  bby = pin->GetReal("problem", "bby");
-  bbz = pin->GetReal("problem", "bbz");
+  if (MAGNETIC_FIELDS_ENABLED) {
+    bbx = pin->GetReal("problem", "bbx");
+    bby = pin->GetReal("problem", "bby");
+    bbz = pin->GetReal("problem", "bbz");
+  }
   kappa_a = pin->GetReal("problem", "kappa_a");
   kappa_s = pin->GetReal("problem", "kappa_s");
   drho_real = pin->GetReal("problem", "drho_real");
@@ -106,12 +106,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   duy_imag = pin->GetReal("problem", "duy_imag");
   duz_real = pin->GetReal("problem", "duz_real");
   duz_imag = pin->GetReal("problem", "duz_imag");
-  dbbx_real = pin->GetReal("problem", "dbbx_real");
-  dbbx_imag = pin->GetReal("problem", "dbbx_imag");
-  dbby_real = pin->GetReal("problem", "dbby_real");
-  dbby_imag = pin->GetReal("problem", "dbby_imag");
-  dbbz_real = pin->GetReal("problem", "dbbz_real");
-  dbbz_imag = pin->GetReal("problem", "dbbz_imag");
+  if (MAGNETIC_FIELDS_ENABLED) {
+    dbbx_real = pin->GetReal("problem", "dbbx_real");
+    dbbx_imag = pin->GetReal("problem", "dbbx_imag");
+    dbby_real = pin->GetReal("problem", "dbby_real");
+    dbby_imag = pin->GetReal("problem", "dbby_imag");
+    dbbz_real = pin->GetReal("problem", "dbbz_real");
+    dbbz_imag = pin->GetReal("problem", "dbbz_imag");
+  }
   int n_polar = pin->GetInteger("radiation", "n_polar");
   int n_azimuthal = pin->GetInteger("radiation", "n_azimuthal");
   int n_ang = n_polar * n_azimuthal;
@@ -146,14 +148,31 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
 //   pin: parameters (unused)
 // Outputs: (none)
 // Notes:
-//   initializes constant state with no radiation
+//   Initializes linear wave in x-direction.
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
+  // Prepare index bounds
+  int il = is - NGHOST;
+  int iu = ie + NGHOST;
+  int jl = js;
+  int ju = je;
+  if (jl != ju) {
+    jl -= NGHOST;
+    ju += NGHOST;
+  }
+  int kl = ks;
+  int ku = ke;
+  if (kl != ku) {
+    kl -= NGHOST;
+    ku += NGHOST;
+  }
+
+
   // Initialize primitive hydro variables
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie; ++i) {
+  for (int k = kl; k <= ku; ++k) {
+    for (int j = jl; j <= ju; ++j) {
+      for (int i = il; i <= iu; ++i) {
         Real x = pcoord->x1v(i);
         Real s = std::sin(2.0*PI * x / lambda);
         Real c = std::cos(2.0*PI * x / lambda);
@@ -172,51 +191,53 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Initialize magnetic fields
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie+1; ++i) {
-        Real x = pcoord->x1f(i);
-        Real s = std::sin(2.0*PI * x / lambda);
-        Real c = std::cos(2.0*PI * x / lambda);
-        pfield->b.x1f(k,j,i) = bbx + delta * (dbbx_real * c - dbbx_imag * s);
+  if (MAGNETIC_FIELDS_ENABLED) {
+    for (int k = kl; k <= ku; ++k) {
+      for (int j = jl; j <= ju; ++j) {
+        for (int i = il; i <= iu+1; ++i) {
+          Real x = pcoord->x1f(i);
+          Real s = std::sin(2.0*PI * x / lambda);
+          Real c = std::cos(2.0*PI * x / lambda);
+          pfield->b.x1f(k,j,i) = bbx + delta * (dbbx_real * c - dbbx_imag * s);
+        }
       }
     }
-  }
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je+1; ++j) {
-      for (int i = is; i <= ie; ++i) {
-        Real x = pcoord->x1v(i);
-        Real s = std::sin(2.0*PI * x / lambda);
-        Real c = std::cos(2.0*PI * x / lambda);
-        pfield->b.x2f(k,j,i) = bby + delta * (dbby_real * c - dbby_imag * s);
+    for (int k = kl; k <= ku; ++k) {
+      for (int j = jl; j <= ju+1; ++j) {
+        for (int i = il; i <= iu; ++i) {
+          Real x = pcoord->x1v(i);
+          Real s = std::sin(2.0*PI * x / lambda);
+          Real c = std::cos(2.0*PI * x / lambda);
+          pfield->b.x2f(k,j,i) = bby + delta * (dbby_real * c - dbby_imag * s);
+        }
       }
     }
-  }
-  for (int k = ks; k <= ke+1; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie; ++i) {
-        Real x = pcoord->x1v(i);
-        Real s = std::sin(2.0*PI * x / lambda);
-        Real c = std::cos(2.0*PI * x / lambda);
-        pfield->b.x3f(k,j,i) = bbz + delta * (dbbz_real * c - dbbz_imag * s);
+    for (int k = kl; k <= ku+1; ++k) {
+      for (int j = jl; j <= ju; ++j) {
+        for (int i = il; i <= iu; ++i) {
+          Real x = pcoord->x1v(i);
+          Real s = std::sin(2.0*PI * x / lambda);
+          Real c = std::cos(2.0*PI * x / lambda);
+          pfield->b.x3f(k,j,i) = bbz + delta * (dbbz_real * c - dbbz_imag * s);
+        }
       }
     }
+    pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pcoord, is, ie, js, je, ks,
+        ke);
   }
-  pfield->CalculateCellCenteredField(pfield->b, pfield->bcc, pcoord, is, ie, js, je, ks,
-      ke);
 
   // Initialize conserved hydro variables
-  peos->PrimitiveToConserved(phydro->w, pfield->bcc, phydro->u, pcoord, is, ie, js, je,
-      ks, ke);
+  peos->PrimitiveToConserved(phydro->w, pfield->bcc, phydro->u, pcoord, il, iu, jl, ju,
+      kl, ku);
 
   // Initialize radiation
   Real gamma_sq = 1.0 + SQR(ux) + SQR(uy) + SQR(uz);
   Real erad = gamma_sq * prad->arad * SQR(SQR(pgas / rho));
   prad->CalculateConstantRadiation(erad, ux, uy, uz, prad->cons);
   prad->ConservedToPrimitive(prad->cons, prad->prim, is, ie, js, je, ks, ke);
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      for (int i = is; i <= ie; ++i) {
+  for (int k = kl; k <= ku; ++k) {
+    for (int j = jl; j <= ju; ++j) {
+      for (int i = il; i <= iu; ++i) {
         Real x = pcoord->x1v(i);
         Real s = std::sin(2.0*PI * x / lambda);
         Real c = std::cos(2.0*PI * x / lambda);
@@ -231,20 +252,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   // Initialize opacity
-  int il = is - NGHOST;
-  int iu = ie + NGHOST;
-  int jl = js;
-  int ju = je;
-  if (jl != ju) {
-    jl -= NGHOST;
-    ju += NGHOST;
-  }
-  int kl = ks;
-  int ku = ke;
-  if (kl != ku) {
-    kl -= NGHOST;
-    ku += NGHOST;
-  }
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
       for (int i = il; i <= iu; ++i) {
@@ -270,12 +277,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 void Opacity(MeshBlock *pmb, const AthenaArray<Real> &prim)
 {
   // Prepare index bounds
-  int il = pmb->is;
-  int iu = pmb->ie;
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
   int jl = pmb->js;
   int ju = pmb->je;
+  if (jl != ju) {
+    jl -= NGHOST;
+    ju += NGHOST;
+  }
   int kl = pmb->ks;
   int ku = pmb->ke;
+  if (kl != ku) {
+    kl -= NGHOST;
+    ku += NGHOST;
+  }
 
   // Set coefficients
   Radiation *prad = pmb->prad;
