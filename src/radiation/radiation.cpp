@@ -134,7 +134,12 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   if (coupled_to_matter) {
     moment_fix = pin->GetBoolean("radiation", "moment_fix");
   } else {
-    moment_fix = false;
+    moment_fix = pin->SetBoolean("radiation", "moment_fix", false);
+  }
+  if (coupled_to_matter and nzeta == 1 and npsi == 4) {
+    edd_fix = pin->GetOrAddBoolean("radiation", "edd_fix", false);
+  } else {
+    edd_fix = pin->SetBoolean("radiation", "edd_fix", false);
   }
 
   // Set parameters
@@ -610,6 +615,11 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     tt_plus_.NewAthenaArray(pmb->ncells1);
     ee_f_minus_.NewAthenaArray(pmb->ncells1);
     ee_f_plus_.NewAthenaArray(pmb->ncells1);
+    if (edd_fix) {
+      ii_to_moment_.NewAthenaArray(4, 4, pmb->ncells1);
+      moment_to_ii_.NewAthenaArray(4, 4, pmb->ncells1);
+      edd_moments_.NewAthenaArray(4, pmb->ncells1);
+    }
   }
 
   // Calculate transformation from normal frame to tetrad frame (x1-face)

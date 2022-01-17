@@ -304,6 +304,123 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
           }
         }
 
+        // Calculate forward transformation for Eddington factor correction
+        if (edd_fix) {
+          for (int m = ps, n_ii = 0; m <= pe; ++m, ++n_ii) {
+            int lm = AngleInd(zs, m);
+            for (int i = is; i <= ie; ++i) {
+              Real tet_to_fluid[4][4];
+              tet_to_fluid[0][0] = u_tet_(0,i);
+              tet_to_fluid[0][1] = tet_to_fluid[1][0] = -u_tet_(1,i);
+              tet_to_fluid[0][2] = tet_to_fluid[2][0] = -u_tet_(2,i);
+              tet_to_fluid[0][3] = tet_to_fluid[3][0] = -u_tet_(3,i);
+              tet_to_fluid[1][1] = SQR(u_tet_(1,i)) / (1.0 + u_tet_(0,i)) + 1.0;
+              tet_to_fluid[2][2] = SQR(u_tet_(2,i)) / (1.0 + u_tet_(0,i)) + 1.0;
+              tet_to_fluid[3][3] = SQR(u_tet_(3,i)) / (1.0 + u_tet_(0,i)) + 1.0;
+              tet_to_fluid[1][2] =
+                  tet_to_fluid[2][1] = u_tet_(1,i) * u_tet_(2,i) / (1.0 + u_tet_(0,i));
+              tet_to_fluid[1][3] =
+                  tet_to_fluid[3][1] = u_tet_(1,i) * u_tet_(3,i) / (1.0 + u_tet_(0,i));
+              tet_to_fluid[2][3] =
+                  tet_to_fluid[3][2] = u_tet_(2,i) * u_tet_(3,i) / (1.0 + u_tet_(0,i));
+              Real nfluid0 = tet_to_fluid[0][0] * nh_cc_(0,zs,m)
+                  + tet_to_fluid[0][1] * nh_cc_(1,zs,m)
+                  + tet_to_fluid[0][2] * nh_cc_(2,zs,m)
+                  + tet_to_fluid[0][3] * nh_cc_(3,zs,m);
+              Real nfluid1 = tet_to_fluid[1][0] * nh_cc_(0,zs,m)
+                  + tet_to_fluid[1][1] * nh_cc_(1,zs,m)
+                  + tet_to_fluid[1][2] * nh_cc_(2,zs,m)
+                  + tet_to_fluid[1][3] * nh_cc_(3,zs,m);
+              Real nfluid2 = tet_to_fluid[2][0] * nh_cc_(0,zs,m)
+                  + tet_to_fluid[2][1] * nh_cc_(1,zs,m)
+                  + tet_to_fluid[2][2] * nh_cc_(2,zs,m)
+                  + tet_to_fluid[2][3] * nh_cc_(3,zs,m);
+              Real nfluid3 = tet_to_fluid[3][0] * nh_cc_(0,zs,m)
+                  + tet_to_fluid[3][1] * nh_cc_(1,zs,m)
+                  + tet_to_fluid[3][2] * nh_cc_(2,zs,m)
+                  + tet_to_fluid[3][3] * nh_cc_(3,zs,m);
+              ii_to_moment_(0,n_ii,i) = nfluid0 * nfluid0;
+              ii_to_moment_(1,n_ii,i) = nfluid0 * nfluid1;
+              ii_to_moment_(2,n_ii,i) = nfluid0 * nfluid2;
+              ii_to_moment_(3,n_ii,i) = nfluid1 * nfluid2;
+            }
+          }
+        }
+
+        // Calculate moments for Eddington factor correction
+        if (edd_fix) {
+          for (int n_mom = 0; n_mom < 4; ++n_mom) {
+            for (int i = is; i <= ie; ++i) {
+              edd_moments_(n_mom,i) = 0.0;
+            }
+          }
+          for (int n_mom = 0; n_mom < 3; ++n_mom) {
+            for (int m = ps, n_ii = 0; m <= pe; ++m, ++n_ii) {
+              int lm = AngleInd(zs, m);
+              for (int i = is; i <= ie; ++i) {
+                edd_moments_(n_mom,i) += ii_to_moment_(n_mom,n_ii,i) * cons_rad(lm,k,j,i)
+                    / n0_n_mu_(0,zs,m,k,j,i) * solid_angle(zs,m);
+              }
+            }
+          }
+        }
+
+        // Calculate inverse transformation for Eddington factor correction
+        if (edd_fix) {
+          for (int i = is; i <= ie; ++i) {
+            for (int a = 0; a < 4; ++a) {
+              for (int b = 0; b < 4; ++b) {
+                moment_to_ii_(a,b,i) = 0.0;
+              }
+            }
+            for (int a = 0; a < 4; ++a) {
+              moment_to_ii_(a,a,i) = 1.0;
+            }
+            for (int aa = 0; aa < 4; ++aa) {
+              Real p = ii_to_moment_(aa,aa,i);
+              for (int b = 0; b < 4; ++b) {
+                ii_to_moment_(aa,b,i) /= p;
+                moment_to_ii_(aa,b,i) /= p;
+              }
+              for (int a = 0; a < 4; ++a) {
+                if (a == aa) {
+                  continue;
+                }
+                Real q = ii_to_moment_(a,aa,i);
+                for (int b = 0; b < 4; ++b) {
+                  ii_to_moment_(a,b,i) -= q * ii_to_moment_(aa,b,i);
+                  moment_to_ii_(a,b,i) -= q * moment_to_ii_(aa,b,i);
+                }
+              }
+            }
+          }
+        }
+
+        // Apply Eddington factor correction
+        if (edd_fix) {
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(zs, m);
+            for (int i = is; i <= ie; ++i) {
+              cons_rad(lm,k,j,i) = 0.0;
+            }
+          }
+          for (int n_mom = 0; n_mom < 4; ++n_mom) {
+            for (int m = ps, n_ii = 0; m <= pe; ++m, ++n_ii) {
+              int lm = AngleInd(zs, m);
+              for (int i = is; i <= ie; ++i) {
+                cons_rad(lm,k,j,i) += moment_to_ii_(n_ii,n_mom,i) * edd_moments_(n_mom,i);
+              }
+            }
+          }
+          for (int m = ps; m <= pe; ++m) {
+            int lm = AngleInd(zs, m);
+            for (int i = is; i <= ie; ++i) {
+              cons_rad(lm,k,j,i) *= n0_n_mu_(0,zs,m,k,j,i) / solid_angle(zs,m);
+              cons_rad(lm,k,j,i) = std::min(cons_rad(lm,k,j,i), 0.0);
+            }
+          }
+        }
+
         // Calculate zeroth and first moments of radiation after coupling
         if (affect_fluid) {
           for (int n = 0; n < 4; ++n) {

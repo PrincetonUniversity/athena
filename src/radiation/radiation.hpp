@@ -40,6 +40,7 @@ public:
   bool affect_fluid;
   bool source_terms_defined;
   bool moment_fix;
+  bool edd_fix;
 
   // Parameters
   int nzeta;     // number of polar radiation angles in active zone
@@ -216,6 +217,9 @@ private:
   AthenaArray<Real> tt_plus_;         // gas temperature after coupling
   AthenaArray<Real> ee_f_minus_;      // fluid-frame radiation energy before coupling
   AthenaArray<Real> ee_f_plus_;       // fluid-frame radiation energy after coupling
+  AthenaArray<Real> ii_to_moment_;    // scratch array for Eddington factor correction
+  AthenaArray<Real> moment_to_ii_;    // scratch array for Eddington factor correction
+  AthenaArray<Real> edd_moments_;     // scratch array for Eddington factor correction
 };
 
 #endif // RADIATION_RADIATION_HPP_
