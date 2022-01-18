@@ -583,7 +583,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   ii_r_.NewAthenaArray(nang_zpf, pmb->ncells1 + 1);
 
   // Allocate memory for flux calculation
-  if (coupled_to_matter) {
+  if (coupled_to_matter and tau_multiplier > 0.0) {
     norm_to_tet_1_.NewAthenaArray(4, 4, pmb->ncells3, pmb->ncells2, pmb->ncells1 + 1);
     if (js != je) {
       norm_to_tet_2_.NewAthenaArray(4, 4, pmb->ncells3, pmb->ncells2 + 1, pmb->ncells1);
@@ -623,42 +623,45 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   // Calculate transformation from normal frame to tetrad frame (x1-face)
-  for (int k = ks; k <= ke; ++k) {
-    for (int j = js; j <= je; ++j) {
-      pmy_block->pcoord->Face1Metric(k, j, is, ie+1, g_, gi_);
-      for (int i = is; i <= ie+1; ++i) {
+  if (coupled_to_matter and tau_multiplier > 0.0) {
+    for (int k = ks; k <= ke; ++k) {
+      for (int j = js; j <= je; ++j) {
+        pmy_block->pcoord->Face1Metric(k, j, is, ie+1, g_, gi_);
+        for (int i = is; i <= ie+1; ++i) {
 
-        // Set Minkowski metric
-        Real eta[4][4] = {};
-        eta[0][0] = -1.0;
-        eta[1][1] = 1.0;
-        eta[2][2] = 1.0;
-        eta[3][3] = 1.0;
+          // Set Minkowski metric
+          Real eta[4][4] = {};
+          eta[0][0] = -1.0;
+          eta[1][1] = 1.0;
+          eta[2][2] = 1.0;
+          eta[3][3] = 1.0;
 
-        // Calculate coordinate-to-tetrad transformation
-        Real x1 = pmb->pcoord->x1f(i);
-        Real x2 = pmb->pcoord->x2v(j);
-        Real x3 = pmb->pcoord->x3v(k);
-        pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
+          // Calculate coordinate-to-tetrad transformation
+          Real x1 = pmb->pcoord->x1f(i);
+          Real x2 = pmb->pcoord->x2v(j);
+          Real x3 = pmb->pcoord->x3v(k);
+          pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
 
-        // Calculate normal-to-coordinate transformation
-        Real norm_to_coord[4][4] = {};
-        Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
-        norm_to_coord[0][0] = 1.0 / alpha;
-        norm_to_coord[1][0] = -alpha * gi_(I01,i);
-        norm_to_coord[2][0] = -alpha * gi_(I02,i);
-        norm_to_coord[3][0] = -alpha * gi_(I03,i);
-        norm_to_coord[1][1] = 1.0;
-        norm_to_coord[2][2] = 1.0;
-        norm_to_coord[3][3] = 1.0;
+          // Calculate normal-to-coordinate transformation
+          Real norm_to_coord[4][4] = {};
+          Real alpha = 1.0 / std::sqrt(-gi_(I00,i));
+          norm_to_coord[0][0] = 1.0 / alpha;
+          norm_to_coord[1][0] = -alpha * gi_(I01,i);
+          norm_to_coord[2][0] = -alpha * gi_(I02,i);
+          norm_to_coord[3][0] = -alpha * gi_(I03,i);
+          norm_to_coord[1][1] = 1.0;
+          norm_to_coord[2][2] = 1.0;
+          norm_to_coord[3][3] = 1.0;
 
-        // Concatenate transformations
-        for (int m = 0; m < 4; ++m) {
-          for (int n = 0; n < 4; ++n) {
-            norm_to_tet_1_(m,n,k,j,i) = 0.0;
-            for (int p = 0; p < 4; ++p) {
-              for (int q = 0; q < 4; ++q) {
-                norm_to_tet_1_(m,n,k,j,i) += eta[m][p] * e_cov(p,q) * norm_to_coord[q][n];
+          // Concatenate transformations
+          for (int m = 0; m < 4; ++m) {
+            for (int n = 0; n < 4; ++n) {
+              norm_to_tet_1_(m,n,k,j,i) = 0.0;
+              for (int p = 0; p < 4; ++p) {
+                for (int q = 0; q < 4; ++q) {
+                  norm_to_tet_1_(m,n,k,j,i) +=
+                      eta[m][p] * e_cov(p,q) * norm_to_coord[q][n];
+                }
               }
             }
           }
@@ -668,7 +671,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   // Calculate transformation from normal frame to tetrad frame (x2-face)
-  if (js != je) {
+  if (coupled_to_matter and tau_multiplier > 0.0 and js != je) {
     for (int k = ks; k <= ke; ++k) {
       for (int j = js; j <= je+1; ++j) {
         pmy_block->pcoord->Face2Metric(k, j, is, ie, g_, gi_);
@@ -716,7 +719,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   // Calculate transformation from normal frame to tetrad frame (x3-face)
-  if (ks != ke) {
+  if (coupled_to_matter and tau_multiplier > 0.0 and ks != ke) {
     for (int k = ks; k <= ke+1; ++k) {
       for (int j = js; j <= je; ++j) {
         pmy_block->pcoord->Face3Metric(k, j, is, ie, g_, gi_);
