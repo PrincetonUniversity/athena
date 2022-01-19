@@ -254,6 +254,8 @@ bool BoundaryVariable::ReceiveBoundaryBuffers() {
 #ifdef MPI_PARALLEL
       else { // NOLINT // MPI boundary
         int test;
+        // probe MPI communications.  This is a bit of black magic that seems to promote
+        // communications to top of stack and gets them to complete more quickly
         MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test, MPI_STATUS_IGNORE);
         MPI_Test(&(bd_var_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
         if (!static_cast<bool>(test)) {

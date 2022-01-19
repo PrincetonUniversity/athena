@@ -33,6 +33,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     w(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     u1(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     w1(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    dvn(pmb->ncells1), dvt(pmb->ncells1),
     // C++11: nested brace-init-list in Hydro member initializer list = aggregate init. of
     // flux[3] array --> direct list init. of each array element --> direct init. via
     // constructor overload resolution of non-aggregate class type AthenaArray<Real>
@@ -74,7 +75,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
 
   // If STS RKL2, allocate additional memory registers
   if (STS_ENABLED) {
-    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl1");
+    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl2");
     if (sts_integrator == "rkl2") {
       u0.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
       fl_div.NewAthenaArray(NHYDRO, nc3, nc2, nc1);

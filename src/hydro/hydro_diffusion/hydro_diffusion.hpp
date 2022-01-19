@@ -55,27 +55,26 @@ class HydroDiffusion {
   enum DiffProcess {iso=0, aniso=1};
 
   // functions
-  void CalcDiffusionFlux(const AthenaArray<Real> &prim, const AthenaArray<Real> &cons,
-                         AthenaArray<Real> *flx_out);
+  // iprim is primitives in the inertial system
+  void CalcDiffusionFlux(const AthenaArray<Real> &prim, const AthenaArray<Real> &iprim,
+                         const AthenaArray<Real> &bcc);
   // TODO(felker): Rename+move out of this class. Confusing w/ Hydro::AddDiffusionFluxes()
   // See note in hydro_diffusion.cpp.
   void AddDiffusionFlux(AthenaArray<Real> *flx_src, AthenaArray<Real> *flx_des);
   void AddDiffusionEnergyFlux(AthenaArray<Real> *flux_src, AthenaArray<Real> *flux_des);
   void ClearFlux(AthenaArray<Real> *flx);
-  void SetDiffusivity(AthenaArray<Real> &w, AthenaArray<Real> &bc);
+  void SetDiffusivity(const AthenaArray<Real> &w, const AthenaArray<Real> &bc);
   void NewDiffusionDt(Real &dt_vis, Real &dt_cnd);
 
   // viscosity
-  void ViscousFluxIso(const AthenaArray<Real> &prim, const AthenaArray<Real> &cons,
-                      AthenaArray<Real> *flx_out);
-  void ViscousFluxAniso(const AthenaArray<Real> &prim, const AthenaArray<Real> &cons,
-                        AthenaArray<Real> *flx_out);
+  void ViscousFluxIso(const AthenaArray<Real> &p, const AthenaArray<Real> &p_i,
+                      AthenaArray<Real> *flx);
+  void ViscousFluxAniso(const AthenaArray<Real> &p, const AthenaArray<Real> &p_i,
+                        AthenaArray<Real> *flx);
 
   // thermal conduction
-  void ThermalFluxIso(const AthenaArray<Real> &prim, const AthenaArray<Real> &cons,
-                      AthenaArray<Real> *flx_out);
-  void ThermalFluxAniso(const AthenaArray<Real> &prim, const AthenaArray<Real> &cons,
-                        AthenaArray<Real> *flx_out);
+  void ThermalFluxIso(const AthenaArray<Real> &p, AthenaArray<Real> *flx);
+  void ThermalFluxAniso(const AthenaArray<Real> &p, AthenaArray<Real> *flx);
 
  private:
   Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroDiffusion

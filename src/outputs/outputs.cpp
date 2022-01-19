@@ -135,9 +135,22 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
 
       // set time of last output, time between outputs
       op.next_time = pin->GetOrAddReal(op.block_name,"next_time", pm->time);
-      op.dt = pin->GetReal(op.block_name,"dt");
+      op.dt = pin->GetOrAddReal(op.block_name,"dt", 0.0);
+      op.dcycle = pin->GetOrAddInteger(op.block_name,"dcycle", 0);
 
-      if (op.dt > 0.0) {  // only add output if dt>0
+      if (op.dt == 0.0 && op.dcycle == 0) {
+        msg << "### FATAL ERROR in Outputs constructor" << std::endl
+            << "Either dt or dcycle must be specified in " << op.block_name
+            << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      if (op.dt > 0.0 && op.dcycle > 0) {
+        msg << "### FATAL ERROR in Outputs constructor" << std::endl
+            << "dt and dcycle cannot be specified simultaneously in " << op.block_name
+            << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      if (op.dt > 0.0 || op.dcycle > 0) {  // only add output if dt > 0 or dycle > 0
         // set file number, basename, id, and format
         op.file_number = pin->GetOrAddInteger(op.block_name,"file_number",0);
         op.file_basename = pin->GetString("job","problem_id");
@@ -342,8 +355,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   // NEW_OUTPUT_TYPES:
 
   // (lab-frame) density
-  if (output_params.variable.compare("D") == 0 ||
-      output_params.variable.compare("cons") == 0) {
+  if (ContainVariable(output_params.variable, "D") ||
+      ContainVariable(output_params.variable, "cons")) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "dens";
@@ -353,8 +366,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   }
 
   // (rest-frame) density
-  if (output_params.variable.compare("d") == 0 ||
-      output_params.variable.compare("prim") == 0) {
+  if (ContainVariable(output_params.variable, "d") ||
+      ContainVariable(output_params.variable, "prim")) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "rho";
@@ -365,8 +378,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
 
   // total energy
   if (NON_BAROTROPIC_EOS) {
-    if (output_params.variable.compare("E") == 0 ||
-        output_params.variable.compare("cons") == 0) {
+    if (ContainVariable(output_params.variable, "E") ||
+        ContainVariable(output_params.variable, "cons")) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "Etot";
@@ -382,8 +395,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
 
     // pressure
-    if (output_params.variable.compare("p") == 0 ||
-        output_params.variable.compare("prim") == 0) {
+    if (ContainVariable(output_params.variable, "p") ||
+        ContainVariable(output_params.variable, "prim")) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "press";
@@ -394,8 +407,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   }
 
   // momentum vector
-  if (output_params.variable.compare("m") == 0 ||
-      output_params.variable.compare("cons") == 0) {
+  if (ContainVariable(output_params.variable, "m") ||
+      ContainVariable(output_params.variable, "cons")) {
     pod = new OutputData;
     pod->type = "VECTORS";
     pod->name = "mom";
@@ -428,7 +441,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   }
 
   // each component of momentum
-  if (output_params.variable.compare("m1") == 0) {
+  if (ContainVariable(output_params.variable, "m1")) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "mom1";
@@ -436,7 +449,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     AppendOutputDataNode(pod);
     num_vars_++;
   }
-  if (output_params.variable.compare("m2") == 0) {
+  if (ContainVariable(output_params.variable, "m2")) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "mom2";
@@ -451,7 +464,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     AppendOutputDataNode(pod);
     num_vars_++;
   }
-  if (output_params.variable.compare("m3") == 0) {
+  if (ContainVariable(output_params.variable, "m3")) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "mom3";
@@ -468,8 +481,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   }
 
   // velocity vector
-  if (output_params.variable.compare("v") == 0 ||
-      output_params.variable.compare("prim") == 0) {
+  if (ContainVariable(output_params.variable, "v") ||
+      ContainVariable(output_params.variable, "prim")) {
     pod = new OutputData;
     pod->type = "VECTORS";
     pod->name = "vel";
@@ -502,8 +515,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   }
 
   // each component of velocity
-  if (output_params.variable.compare("vx") == 0 ||
-      output_params.variable.compare("v1") == 0) {
+  if (ContainVariable(output_params.variable, "vx") ||
+      ContainVariable(output_params.variable, "v1")) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "vel1";
@@ -511,8 +524,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     AppendOutputDataNode(pod);
     num_vars_++;
   }
-  if (output_params.variable.compare("vy") == 0 ||
-      output_params.variable.compare("v2") == 0) {
+  if (ContainVariable(output_params.variable, "vy") ||
+      ContainVariable(output_params.variable, "v2")) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "vel2";
@@ -527,8 +540,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     AppendOutputDataNode(pod);
     num_vars_++;
   }
-  if (output_params.variable.compare("vz") == 0 ||
-      output_params.variable.compare("v3") == 0) {
+  if (ContainVariable(output_params.variable, "vz") ||
+      ContainVariable(output_params.variable, "v3")) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "vel3";
@@ -545,9 +558,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   }
 
   if (SELF_GRAVITY_ENABLED) {
-    if (output_params.variable.compare("phi") == 0 ||
-        output_params.variable.compare("prim") == 0 ||
-        output_params.variable.compare("cons") == 0) {
+    if (ContainVariable(output_params.variable, "phi") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "Phi";
@@ -563,8 +576,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     for (int n=0; n<NSCALARS; n++) {
       std::string scalar_name_cons = root_name_cons + std::to_string(n);
       std::string scalar_name_prim = root_name_prim + std::to_string(n);
-      if (output_params.variable.compare(scalar_name_cons) == 0 ||
-          output_params.variable.compare("cons") == 0) {
+      if (ContainVariable(output_params.variable, scalar_name_cons) ||
+          ContainVariable(output_params.variable, "cons")) {
         pod = new OutputData;
         pod->type = "SCALARS";
         pod->name = scalar_name_cons;
@@ -572,8 +585,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         AppendOutputDataNode(pod);
         num_vars_++;
       }
-      if (output_params.variable.compare(scalar_name_prim) == 0 ||
-          output_params.variable.compare("prim") == 0) {
+      if (ContainVariable(output_params.variable, scalar_name_prim) ||
+          ContainVariable(output_params.variable, "prim")) {
         pod = new OutputData;
         pod->type = "SCALARS";
         pod->name = scalar_name_prim;
@@ -587,9 +600,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   // nodes, and it must come after those nodes in the linked list
   if (MAGNETIC_FIELDS_ENABLED) {
     // vector of cell-centered magnetic field
-    if (output_params.variable.compare("bcc") == 0 ||
-        output_params.variable.compare("prim") == 0 ||
-        output_params.variable.compare("cons") == 0) {
+    if (ContainVariable(output_params.variable, "bcc") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
       pod = new OutputData;
       pod->type = "VECTORS";
       pod->name = "Bcc";
@@ -611,7 +624,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
 
     // each component of cell-centered magnetic field
-    if (output_params.variable.compare("bcc1") == 0) {
+    if (ContainVariable(output_params.variable, "bcc1")) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "Bcc1";
@@ -619,7 +632,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       AppendOutputDataNode(pod);
       num_vars_++;
     }
-    if (output_params.variable.compare("bcc2") == 0) {
+    if (ContainVariable(output_params.variable, "bcc2")) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "Bcc2";
@@ -627,7 +640,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       AppendOutputDataNode(pod);
       num_vars_++;
     }
-    if (output_params.variable.compare("bcc3") == 0) {
+    if (ContainVariable(output_params.variable, "bcc3")) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "Bcc3";
@@ -636,8 +649,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       num_vars_++;
     }
     // each component of face-centered magnetic field
-    if (output_params.variable.compare("b1") == 0
-        || output_params.variable.compare("b") == 0) {
+    if (ContainVariable(output_params.variable, "b1")
+        || ContainVariable(output_params.variable, "b")) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "B1";
@@ -645,8 +658,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       AppendOutputDataNode(pod);
       num_vars_++;
     }
-    if (output_params.variable.compare("b2") == 0
-        || output_params.variable.compare("b") == 0) {
+    if (ContainVariable(output_params.variable, "b2")
+        || ContainVariable(output_params.variable, "b")) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "B2";
@@ -654,8 +667,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       AppendOutputDataNode(pod);
       num_vars_++;
     }
-    if (output_params.variable.compare("b3") == 0
-        || output_params.variable.compare("b") == 0) {
+    if (ContainVariable(output_params.variable, "b3")
+        || ContainVariable(output_params.variable, "b")) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "B3";
@@ -665,42 +678,24 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
   } // endif (MAGNETIC_FIELDS_ENABLED)
 
-  if (output_params.variable.compare(0, 3, "uov") == 0
-      || output_params.variable.compare(0, 12, "user_out_var") == 0) {
-    int iv, ns = 0, ne = pmb->nuser_out_var-1;
-    if (sscanf(output_params.variable.c_str(), "uov%d", &iv)>0) {
-      if (iv>=0 && iv<pmb->nuser_out_var)
-        ns=iv, ne=iv;
-    } else if (sscanf(output_params.variable.c_str(), "user_out_var%d", &iv)>0) {
-      if (iv>=0 && iv<pmb->nuser_out_var)
-        ns=iv, ne=iv;
-    }
-    for (int n = ns; n <= ne; ++n) {
+  for (int n = 0; n < pmb->nuser_out_var; ++n) {
+    char abbr_name[16], full_name[32];
+    std::snprintf(abbr_name, sizeof(abbr_name), "uov%d", n);
+    std::snprintf(full_name, sizeof(full_name), "user_out_var%d", n);
+    if ((pmb->user_out_var_names_[n].length() != 0
+         && ContainVariable(output_params.variable, pmb->user_out_var_names_[n]))
+        || ContainVariable(output_params.variable, abbr_name)
+        || ContainVariable(output_params.variable, abbr_name)) {
       pod = new OutputData;
       pod->type = "SCALARS";
       if (pmb->user_out_var_names_[n].length() != 0) {
         pod->name = pmb->user_out_var_names_[n];
       } else {
-        char vn[16];
-        std::snprintf(vn, sizeof(vn), "user_out_var%d", n);
-        pod->name = vn;
+        pod->name = full_name;
       }
       pod->data.InitWithShallowSlice(pmb->user_out_var, 4, n, 1);
       AppendOutputDataNode(pod);
       num_vars_++;
-    }
-  }
-
-  for (int n = 0; n < pmb->nuser_out_var; ++n) {
-    if (pmb->user_out_var_names_[n].length() != 0) {
-      if (output_params.variable.compare(pmb->user_out_var_names_[n]) == 0) {
-        pod = new OutputData;
-        pod->type = "SCALARS";
-        pod->name = pmb->user_out_var_names_[n];
-        pod->data.InitWithShallowSlice(pmb->user_out_var, 4, n, 1);
-        AppendOutputDataNode(pod);
-        num_vars_++;
-      }
     }
   }
 
@@ -781,17 +776,18 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
   bool first=true;
   OutputType* ptype = pfirst_type_;
   while (ptype != nullptr) {
-    if ((pm->time == pm->start_time) ||
-        (pm->time >= ptype->output_params.next_time) ||
-        (pm->time >= pm->tlim) ||
-        (wtflag && ptype->output_params.file_type == "rst")) {
+    if ((pm->time == pm->start_time)
+      || (ptype->output_params.dt > 0.0 && pm->time >= ptype->output_params.next_time)
+      || (ptype->output_params.dcycle > 0 && pm->ncycle%ptype->output_params.dcycle == 0)
+      || (pm->time >= pm->tlim)
+      || (wtflag && ptype->output_params.file_type == "rst")) {
       if (first && ptype->output_params.file_type != "hst") {
         pm->ApplyUserWorkBeforeOutput(pin);
         first = false;
       }
       ptype->WriteOutputFile(pm, pin, wtflag);
     }
-    ptype = ptype->pnext_type; // move to next OutputType node in signly linked list
+    ptype = ptype->pnext_type; // move to next OutputType node in singly linked list
   }
 }
 
@@ -1068,4 +1064,17 @@ void OutputType::CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Re
     }
   }
   return;
+}
+
+bool OutputType::ContainVariable(const std::string &haystack, const std::string &needle) {
+  if (haystack.compare(needle) == 0)
+    return true;
+  if (haystack.find(',' + needle + ',') != std::string::npos)
+    return true;
+  if (haystack.find(needle + ',') == 0)
+    return true;
+  if (haystack.find(',' + needle) != std::string::npos
+    && haystack.find(',' + needle) == haystack.length() - needle.length() - 1)
+    return true;
+  return false;
 }

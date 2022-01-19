@@ -44,14 +44,14 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
         for (int j=pmb->js; j<=pmb->je; ++j) {
 #pragma omp simd
           for (int i=pmb->is; i<=pmb->ie; ++i) {
-            Real den  = prim(IDN,k,j,i);
-            Real mom1 = den*prim(IVX,k,j,i);
-            Real vy   = prim(IVY,k,j,i);
+            const Real &den  = prim(IDN,k,j,i);
+            const Real mom1  = den*prim(IVX,k,j,i);
+            const Real &vy   = prim(IVY,k,j,i);
             cons(IM1,k,j,i) +=dt*Omega_0_*2.0*(den*vy);
             cons(IM2,k,j,i) -=dt*Omega_0_*(2.0-qshear_)*mom1;
             if (NON_BAROTROPIC_EOS) {
-              Real rho_v1 = 0.25*(flux[X1DIR](IDN,k,j,i)+flux[X1DIR](IDN,k,j,i+1))
-                            +0.5*mom1;
+              const Real rho_v1 = 0.25*(flux[X1DIR](IDN,k,j,i)
+                                       +flux[X1DIR](IDN,k,j,i+1))+0.5*mom1;
               Real temp = -rho_v1*vy;
               if (MAGNETIC_FIELDS_ENABLED) {
                 temp += pf->bcc(IB1,k,j,i)*pf->bcc(IB2,k,j,i);
@@ -72,20 +72,20 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
         for (int j=pmb->js; j<=pmb->je; ++j) {
 #pragma omp simd
           for (int i=pmb->is; i<=pmb->ie; ++i) {
-            Real den   = prim(IDN,k,j,i);
-            Real dvk_i = dvKc1(k,i);
-            Real mom1  = den*prim(IVX,k,j,i);
-            Real vy    = prim(IVY,k,j,i);
-            Real vc    = vKc(k,i)+qshear_*Omega_0_*pmb->pcoord->x1v(i);
+            const Real &den   = prim(IDN,k,j,i);
+            const Real &dvk_i = dvKc1(k,i);
+            const Real mom1   = den*prim(IVX,k,j,i);
+            const Real &vy    = prim(IVY,k,j,i);
+            const Real vc     = vKc(k,i)+qshear_*Omega_0_*pmb->pcoord->x1v(i);
             // 2D components
             cons(IM1,k,j,i) += dt*2.0*Omega_0_*(den*(vy+vc));
             cons(IM2,k,j,i) -= dt*(2.0*Omega_0_+dvk_i)*mom1;
             if (NON_BAROTROPIC_EOS) {
-              Real vm    = vKf1(k,i)+qshear_*Omega_0_*pmb->pcoord->x1f(i);
-              Real vp    = vKf1(k,i+1)+qshear_*Omega_0_*pmb->pcoord->x1f(i+1);
-              Real flux_m = flux[X1DIR](IDN,k,j,i);
-              Real flux_p = flux[X1DIR](IDN,k,j,i+1);
-              Real rho_v1 = 0.25*(flux_m+flux_p)+0.5*mom1;
+              const Real vm    = vKf1(k,i)+qshear_*Omega_0_*pmb->pcoord->x1f(i);
+              const Real vp    = vKf1(k,i+1)+qshear_*Omega_0_*pmb->pcoord->x1f(i+1);
+              const Real &flux_m = flux[X1DIR](IDN,k,j,i);
+              const Real &flux_p = flux[X1DIR](IDN,k,j,i+1);
+              const Real rho_v1 = 0.25*(flux_m+flux_p)+0.5*mom1;
               Real temp = -rho_v1*vy;
               if (MAGNETIC_FIELDS_ENABLED) {
                 temp += pf->bcc(IB1,k,j,i)*pf->bcc(IB2,k,j,i);
@@ -95,13 +95,13 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
             }
             // 3D components
             if (pmb->block_size.nx3 > 1) {
-              Real dvk_k  = dvKc2(k,i);
+              const Real &dvk_k  = dvKc2(k,i);
               if (dvk_k != 0.0) {
-                Real mom3 = den*prim(IVZ,k,j,i);
+                const Real mom3 = den*prim(IVZ,k,j,i);
                 cons(IM2,k,j,i) -= dt*dvk_k*mom3;
                 if (NON_BAROTROPIC_EOS) {
-                  Real rho_v3 = 0.25*(flux[X3DIR](IDN,k+1,j,i)+flux[X3DIR](IDN,k,j,i))
-                                +0.5*mom3;
+                  const Real rho_v3 = 0.25*(flux[X3DIR](IDN,k+1,j,i)
+                                           +flux[X3DIR](IDN,k,j,i))+0.5*mom3;
                   Real temp = -rho_v3*vy;
                   if (MAGNETIC_FIELDS_ENABLED) {
                     cons(IEN,k,j,i) += pf->bcc(IB2,k,j,i)*pf->bcc(IB3,k,j,i);
@@ -127,23 +127,23 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
           for (int j=pmb->js; j<=pmb->je; ++j) {
 #pragma omp simd
             for (int i=pmb->is; i<=pmb->ie; ++i) {
-              Real den    = prim(IDN,k,j,i);
-              Real rv     = pmb->pcoord->x1v(i);
-              Real ri     = pmb->pcoord->coord_src1_i_(i); // 1/r
-              Real zv     = pmb->pcoord->x3v(k);
-              Real dv     = std::sqrt(SQR(rv)+SQR(zv));    // d = sqrt(r^2+z^2)
-              Real vc     = std::sqrt(gm_/dv)*rv/dv;       // vk + r\Omega
-              Real rdok_i = -1.5*vc*rv/SQR(dv);            // dvk/dr-vk/r
-              Real dvk_k  = -1.5*vc*zv/SQR(dv);            // dvk/dz
-              Real mom1   = den*prim(IVX,k,j,i);
-              Real vp     = prim(IVY,k,j,i);
-              Real mom3   = den*prim(IVZ,k,j,i);
-              Real flux_xc = 0.5*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i));
-              Real flux_zc = 0.5*(flux[X3DIR](IDN,k+1,j,i)+flux[X3DIR](IDN,k,j,i));
+              const Real &den = prim(IDN,k,j,i);
+              const Real &rv  = pmb->pcoord->x1v(i);
+              const Real &ri  = pmb->pcoord->coord_src1_i_(i); // 1/r
+              const Real &zv  = pmb->pcoord->x3v(k);
+              const Real dv   = std::sqrt(SQR(rv)+SQR(zv));    // d = sqrt(r^2+z^2)
+              const Real vc   = std::sqrt(gm_/dv)*rv/dv;       // vk + r\Omega
+              const Real rdok_i = -1.5*vc*rv/SQR(dv);          // dvk/dr-vk/r
+              const Real dvk_k  = -1.5*vc*zv/SQR(dv);          // dvk/dz
+              const Real mom1   = den*prim(IVX,k,j,i);
+              const Real &vp     = prim(IVY,k,j,i);
+              const Real mom3   = den*prim(IVZ,k,j,i);
+              const Real flux_xc = 0.5*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i));
+              const Real flux_zc = 0.5*(flux[X3DIR](IDN,k+1,j,i)+flux[X3DIR](IDN,k,j,i));
               cons(IM1,k,j,i) += 2.0*dt*vc*ri*(den*vp);
               cons(IM2,k,j,i) -= 0.5*dt*((2.0*vc*ri+rdok_i)*(mom1+flux_xc)
                                           +dvk_k*(mom3+flux_zc));
-              Real src_k = -gm_*zv/(dv*dv*dv);
+              const Real src_k = -gm_*zv/(dv*dv*dv);
               cons(IM3,k,j,i) += dt*src_k*den;
               if (NON_BAROTROPIC_EOS) {
                 cons(IEN,k,j,i) += dt*src_k*flux_zc;
@@ -167,14 +167,14 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
         for (int j=pmb->js; j<=pmb->je; ++j) {
 #pragma omp simd
           for (int i=pmb->is; i<=pmb->ie; ++i) {
-            Real den    = prim(IDN,ks,j,i);
-            Real rv     = pmb->pcoord->x1v(i);
-            Real ri     = pmb->pcoord->coord_src1_i_(i);
-            Real vc     = std::sqrt(gm_/rv);
-            Real rdok_i = -1.5*vc/rv;
-            Real mom1   = den*prim(IVX,ks,j,i);
-            Real vp     = prim(IVY,ks,j,i);
-            Real flux_c = 0.5*(flux[X1DIR](IDN,ks,j,i+1)+flux[X1DIR](IDN,ks,j,i));
+            const Real &den   = prim(IDN,ks,j,i);
+            const Real &rv    = pmb->pcoord->x1v(i);
+            const Real &ri    = pmb->pcoord->coord_src1_i_(i);
+            const Real vc     = std::sqrt(gm_/rv);
+            const Real rdok_i = -1.5*vc/rv;
+            const Real mom1   = den*prim(IVX,ks,j,i);
+            const Real &vp    = prim(IVY,ks,j,i);
+            const Real flux_c = 0.5*(flux[X1DIR](IDN,ks,j,i+1)+flux[X1DIR](IDN,ks,j,i));
             cons(IM1,ks,j,i) += 2.0*dt*vc*ri*(den*vp);
             cons(IM2,ks,j,i) -= dt*(vc*ri+0.5*rdok_i)*(mom1+flux_c);
             if (NON_BAROTROPIC_EOS) {
@@ -199,16 +199,16 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
         for (int j=pmb->js; j<=pmb->je; ++j) {
 #pragma omp simd
           for (int i=pmb->is; i<=pmb->ie; ++i) {
-            Real den    = prim(IDN,ks,j,i);
-            Real rv     = pmb->pcoord->x1v(i);
-            Real ri     = pmb->pcoord->coord_src1_i_(i);
-            Real vk     = vKc(ks,i);
-            Real vc     = vk + Omega_0_*rv;
-            Real rdok_i = dvKc1(ks,i)-vk*ri;
-            Real mom1   = den*prim(IVX,ks,j,i);
-            Real vp     = prim(IVY,ks,j,i);
-            Real src    = SQR(vc)-gm_/rv; // vc^2-gm/r
-            Real flux_c = 0.5*(flux[X1DIR](IDN,ks,j,i+1)+flux[X1DIR](IDN,ks,j,i));
+            const Real &den   = prim(IDN,ks,j,i);
+            const Real &rv    = pmb->pcoord->x1v(i);
+            const Real &ri    = pmb->pcoord->coord_src1_i_(i);
+            const Real &vk    = vKc(ks,i);
+            const Real vc     = vk + Omega_0_*rv;
+            const Real rdok_i = dvKc1(ks,i)-vk*ri;
+            const Real mom1   = den*prim(IVX,ks,j,i);
+            const Real &vp    = prim(IVY,ks,j,i);
+            const Real src    = SQR(vc)-gm_/rv; // vc^2-gm/r
+            const Real flux_c = 0.5*(flux[X1DIR](IDN,ks,j,i+1)+flux[X1DIR](IDN,ks,j,i));
             cons(IM1,ks,j,i) += dt*ri*(2.0*vc*(den*vp)+src*den);
             cons(IM2,ks,j,i) -= dt*(vc*ri+0.5*rdok_i)*(mom1+flux_c);
             if (NON_BAROTROPIC_EOS) {
@@ -243,29 +243,31 @@ void HydroSourceTerms::OrbitalAdvectionSourceTerms
     // sdvk_j = (dvk/dtheta - vk cot(\theta))/r
     for (int k=pmb->ks; k<=pmb->ke; ++k) {
       for (int j=pmb->js; j<=pmb->je; ++j) {
-        Real cv1    = pmb->pcoord->coord_src1_j_(j);   // cot(\theta)
-        Real cv3    = pmb->pcoord->coord_src3_j_(j);   // cot(\theta)
-        Real sv     = std::sin(pmb->pcoord->x2v(j));   // sin(\theta)
+        const Real &cv1    = pmb->pcoord->coord_src1_j_(j);   // cot(\theta)
+        const Real &cv3    = pmb->pcoord->coord_src3_j_(j);   // cot(\theta)
+        const Real sv     = std::sin(pmb->pcoord->x2v(j));   // sin(\theta)
 #pragma omp simd
         for (int i=pmb->is; i<=pmb->ie; ++i) {
-          Real den    = prim(IDN,k,j,i);
-          Real rv     = pmb->pcoord->x1v(i);
-          Real ri     = pmb->pcoord->coord_src1_i_(i); // 1/r
-          Real vk     = vKc(j,i);                      // vk
-          Real vc     = vk + Omega_0_*rv*sv;
-          Real rdok_i = dvKc1(j,i)-vk*ri;              // dvk/dr-vk/r
-          Real sdvk_j = (dvKc2(j,i)-cv3*vk)*ri;        // (dvk/dtheta - vk cot(\theta))/r
-          Real mom1   = den*prim(IVX,k,j,i);
-          Real mom2   = den*prim(IVY,k,j,i);
-          Real vp     = prim(IVZ,k,j,i);
-          Real src    = SQR(vc);
-          Real grav   = gm_/rv;
-          Real flux_xc = 0.5*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i));
-          Real flux_yc = 0.5*(flux[X2DIR](IDN,k,j+1,i)+flux[X2DIR](IDN,k,j,i));
+          const Real &den  = prim(IDN,k,j,i);
+          const Real &rv   = pmb->pcoord->x1v(i);
+          const Real &ri   = pmb->pcoord->coord_src1_i_(i); // 1/r
+          const Real &vk   = vKc(j,i);                      // vk
+          const Real vc    = vk + Omega_0_*rv*sv;
+          const Real &dvk1 = dvKc1(j,i);
+          const Real &dvk2 = dvKc2(j,i);
+          const Real rdok_i = dvk1-vk*ri;          // dvk/dr-vk/r
+          const Real sdvk_j = (dvk2-cv3*vk)*ri;    // (dvk/dtheta - vk cot(\theta))/r
+          const Real mom1   = den*prim(IVX,k,j,i);
+          const Real mom2   = den*prim(IVY,k,j,i);
+          const Real &vp  = prim(IVZ,k,j,i);
+          const Real src    = SQR(vc);
+          const Real grav   = gm_/rv;
+          const Real flux_xc = 0.5*(flux[X1DIR](IDN,k,j,i+1)+flux[X1DIR](IDN,k,j,i));
+          const Real flux_yc = 0.5*(flux[X2DIR](IDN,k,j+1,i)+flux[X2DIR](IDN,k,j,i));
           cons(IM1,k,j,i) += dt*ri*den*(2.0*vc*vp+(src-grav));
           cons(IM2,k,j,i) += dt*ri*den*cv1*(2.0*vc*vp+src);
-          cons(IM3,k,j,i) -= dt*((vc*ri+0.5*rdok_i)*(mom1+flux_xc)
-                                  +(vc*ri+0.5*sdvk_j)*(mom2+flux_yc)*cv3);
+          cons(IM3,k,j,i) -= 0.5*dt*(((vc+Omega_0_*rv*sv)*ri+dvk1)*(mom1+flux_xc)
+                                    +((vc+Omega_0_*rv*sv)*cv3+dvk2)*(mom2+flux_yc)*ri);
           //energy
           if (NON_BAROTROPIC_EOS) {
             // This is consistent with the pointmass.

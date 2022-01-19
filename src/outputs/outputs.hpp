@@ -40,6 +40,7 @@ struct OutputParameters {
   std::string file_type;
   std::string data_format;
   Real next_time, dt;
+  int dcycle;
   int file_number;
   bool output_slicex1, output_slicex2, output_slicex3;
   bool output_sumx1, output_sumx2, output_sumx3;
@@ -104,6 +105,7 @@ class OutputType {
   void SumOutputData(MeshBlock *pmb, int dim);
   void CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Real> &dst,
                                 Coordinates *pco);
+  bool ContainVariable(const std::string &haystack, const std::string &needle);
   // following pure virtual function must be implemented in all derived classes
   virtual void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) = 0;
 

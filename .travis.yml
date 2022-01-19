@@ -181,7 +181,7 @@ stages:
 # Codecov coverage analysis: (Currently, Travis CI builds do not perform any code coverage analysis)
 # Could completely disable this step, since Codecov detects CI status via GitHub Commit Status API, not Bash uploader. Disabled searching for coverage reports.
 after_success:
-  - bash <(curl -s https://codecov.io/bash) -t ccdc959e-e2c3-4811-95c6-512151b39471 -X gcov -X search || echo "Codecov did not collect coverage reports"
+  - bash <(curl -s https://codecov.io/bash) -X gcov -X search || echo "Codecov did not collect coverage reports"
 notifications:
   email:
     on_success: change

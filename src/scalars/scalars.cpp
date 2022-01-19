@@ -67,7 +67,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
 
   // If STS RKL2, allocate additional memory registers
   if (STS_ENABLED) {
-    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl1");
+    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl2");
     if (sts_integrator == "rkl2") {
       s0.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
       s_fl_div.NewAthenaArray(NSCALARS, nc3, nc2, nc1);

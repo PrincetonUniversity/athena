@@ -1,0 +1,34 @@
+# YAML 1.2
+# Metadata for citation of this software according to the CFF format (https://citation-file-format.github.io/)
+cff-version: 1.1.0
+message: If you use this software, please cite it using these metadata.
+title: 'Athena++'
+doi: 10.5281/zenodo.4455880
+authors:
+- name: Athena++ development team
+version: '21.0'
+date-released: 2021-01-06
+repository-code: https://github.com/PrincetonUniversity/athena/releases/tag/v21.0
+license: BSD-3-Clause
+
+references:
+- type: article
+  title: 'Athena++ Adaptive Mesh Refinement Framework: Design and Magnetohydrodynamic Solvers'
+  journal: 'The Astrophysical Journal Supplement Series'
+  year: 2020
+  volume: 249
+  number: 1
+  publisher: 'American Astronomical Society'
+  doi: 10.3847/1538-4365/ab929b
+  authors:
+  - given-names: James
+    family-names: Stone
+    orcid: 0000-0001-5603-1832
+  - given-names: Kengo
+    family-names: Tomida
+    orcid: 0000-0001-8105-8113
+  - given-names: Chris
+    family-names: White
+  - given-names: Kyle
+    family-names: Felker
+    orcid: 0000-0002-3501-482X
