@@ -68,7 +68,7 @@ int RefinementCondition(MeshBlock *pmb);
 // should be turned into a class with setters and getters
 namespace {
 
-Real threshold;
+Real press_threshold;
 Real v1_inner, v2_inner, v3_inner;
 Real n_inner, e_inner;
 Real inner_radius, gamma_param;
@@ -100,10 +100,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     EnrollUserTimeStepFunction(SetMinimumTimeStep);
   }
 
-  // if (adaptive) {
-  //   EnrollUserRefinementCondition(RefinementCondition);
-  //   threshold = pin->GetReal("problem","thr");
-  // }
+  if (adaptive) {
+    EnrollUserRefinementCondition(RefinementCondition);
+    press_threshold = pin->GetReal("problem","press_thresh");
+  }
 
   // enroll user-defined boundary condition
   if (mesh_bcs[BoundaryFace::inner_x1] == GetBoundaryFlag("user")) {
@@ -720,8 +720,8 @@ int RefinementCondition(MeshBlock *pmb) {
     return 0;
   }
 
-  if (maxeps > threshold) return 1;
-  if (maxeps < 0.25*threshold) return -1;
+  if (maxeps > press_threshold) return 1;
+  if (maxeps < 0.25*press_threshold) return -1;
   return 0;
 }
 
