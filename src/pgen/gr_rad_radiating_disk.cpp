@@ -36,7 +36,10 @@
 #endif
 
 // Declarations
-void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
+void ZeroInner(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
+    FaceField &bb, AthenaArray<Real> &prim_rad, Real time, Real dt, int il, int iu,
+    int jl, int ju, int kl, int ku, int ngh);
+void ZeroOuter(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, AthenaArray<Real> &prim_rad, Real time, Real dt, int il, int iu,
     int jl, int ju, int kl, int ku, int ngh);
 Real ThetaGrid(Real x, RegionSize rs);
@@ -45,15 +48,16 @@ void ThinDiskSource(MeshBlock *pmb, const Real time, const Real dt,
 
 // File variables
 namespace {
-Real m, a;         // mass and spin of black hole
+Real mass, spin;   // mass and spin of black hole
 Real h_grid;       // grid compression parameter
 Real m_msun;       // mass of black hole in solar masses
 Real alpha;        // viscosity parameter
 Real r_in, r_out;  // radial limits of radiating disk
 Real e_cgs;        // code unit of energy density, in erg/cm^3
-int j_min, j_max;  // limits on theta-index for disk
-Real zs, ze;       // index bounds on zeta
-Real ps, pe;       // index bounds on psi
+int root_offset;   // offset in level count
+int num_root_th;   // number of blocks in theta-direction at root level
+int zs, ze;        // index bounds on zeta
+int ps, pe;        // index bounds on psi
 }  // namespace
 
 //----------------------------------------------------------------------------------------
@@ -65,34 +69,25 @@ Real ps, pe;       // index bounds on psi
 void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // Read parameters from input file
-  m = pin->GetReal("coord", "m");
-  a = pin->GetReal("coord", "a");
+  mass = pin->GetReal("coord", "m");
+  spin = pin->GetReal("coord", "a");
   h_grid = pin->GetOrAddReal("coord", "h", 1.0);
   m_msun = pin->GetReal("problem", "m_msun");
   alpha = pin->GetReal("problem", "alpha");
   r_in = pin->GetReal("problem", "r_in");
   r_out = pin->GetReal("problem", "r_out");
   e_cgs = pin->GetReal("problem", "e_cgs");
+  root_offset = root_level;
   int nx2 = pin->GetInteger("mesh", "nx2");
-  j_min = (nx2 - 1) / 2 + NGHOST;
-  j_max = nx2 / 2 + NGHOST;
+  num_root_th = nx2 / pin->GetOrAddInteger("meshblock", "nx2", nx2);
   zs = NGHOST_RAD;
   ze = zs + pin->GetInteger("radiation", "n_polar");
   ps = NGHOST_RAD;
   pe = ps + pin->GetInteger("radiation", "n_azimuthal");
 
-  // Check for single block
-  if (nrbx1 != 1 or nrbx2 != 1 or nrbx3 != 1) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in Problem Generator\n"
-        << "Must use only 1 MeshBlock" << std::endl;
-    ATHENA_ERROR(msg);
-    return;
-  }
-
   // Enroll user-defined functions
-  EnrollUserBoundaryFunction(BoundaryFace::inner_x1, FixedBoundary);
-  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, FixedBoundary);
+  EnrollUserBoundaryFunction(BoundaryFace::inner_x1, ZeroInner);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, ZeroOuter);
   EnrollUserMeshGenerator(X2DIR, ThetaGrid);
   EnrollUserExplicitRadSourceFunction(ThinDiskSource);
   return;
@@ -104,44 +99,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //   pin: input parameters (unused)
 // Outputs: (none)
 // Notes:
-//   Uses inner disk formula for temperature from Novikov & Thorne 1973.
+//   Allocate persistent array.
 
 void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
-
-  // Allocate persistent arrays
-  AllocateRealUserMeshBlockDataField(2);
+  AllocateRealUserMeshBlockDataField(1);
   ruser_meshblock_data[0].NewAthenaArray(prad->nang, ke + 1, je + 1, ie + 1);
-  ruser_meshblock_data[1].NewAthenaArray(prad->nang, ke + 1, je + 1, ie + 1);
-
-  // Calculate primitive intensity as a function of r
-  for (int i = is; i <= ie; ++i) {
-    Real r = pcoord->x1v(i);
-    Real erad = 0.0;
-    if (r >= r_in and r <= r_out) {
-      Real r_1_4 = std::sqrt(std::sqrt(r));
-      Real r_3_8 = r_1_4 * std::sqrt(r_1_4);
-      Real aa = 1 + SQR(a) / SQR(r) + 2.0 * m * SQR(a) / (r * SQR(r));
-      Real bb = 1.0 + std::sqrt(m) * a / (r * std::sqrt(r));
-      Real ee = 1.0 + 4.0 * SQR(a) / SQR(r) - 4.0 * m * SQR(a) / (r * SQR(r))
-          + 3.0 * SQR(SQR(a)) / SQR(SQR(r));
-      Real tt_cgs = 4.0e7 / std::sqrt(std::sqrt(alpha))
-          / std::sqrt(std::sqrt(m_msun / 3.0)) / r_3_8 / std::sqrt(aa) * std::sqrt(bb)
-          * std::sqrt(std::sqrt(ee));
-      Real erad_cgs = prad->arad_cgs * SQR(SQR(tt_cgs));
-      erad = erad_cgs / e_cgs;
-    }
-    for (int n = 0; n < prad->nang; ++n) {
-      for (int k = ks; k <= ke; ++k) {
-        for (int j = j_min; j <= j_max; ++j) {
-          ruser_meshblock_data[0](n,k,j,i) = erad / (4.0*PI);
-        }
-      }
-    }
-  }
-
-  // Calculate disk source (conserved intensity as a function of r)
-  prad->PrimitiveToConserved(ruser_meshblock_data[0], ruser_meshblock_data[1], pcoord, is,
-      ie, j_min, j_max, ks, ke);
   return;
 }
 
@@ -161,7 +123,39 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         for (int j = js; j <= je; ++j) {
           for (int i = is; i <= ie; ++i) {
             prad->prim(lm,k,j,i) = 0.0;
-            prad->cons(lm,k,j,i) = 0.0;
+          }
+        }
+      }
+    }
+  }
+  prad->PrimitiveToConserved(prad->prim, prad->cons, pcoord, is, ie, js, je, ks, ke);
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Vanishing radiation field inside radial coordinate
+// Inputs:
+//   pmb: pointer to MeshBlock
+//   pcoord: pointer to Coordinates (not used)
+//   time, dt: current time and timestep of simulation (not used)
+//   il, iu, jl, ju, kl, ku: indices demarkating active region
+// Outputs:
+//   prim: primitives set in ghost zones (not used)
+//   bb: face-centered magnetic field set in ghost zones (not used)
+//   prim_rad: radiation primitives set in ghost zones
+// Notes:
+//   Sets intensity to 0.
+
+void ZeroInner(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
+    FaceField &bb, AthenaArray<Real> &prim_rad, Real time, Real dt, int il, int iu,
+    int jl, int ju, int kl, int ku, int ngh) {
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = pmb->prad->AngleInd(l, m);
+      for (int k = kl; k <= ku; ++k) {
+        for (int j = jl; j <= ju; ++j) {
+          for (int i = il - ngh; i <= il - 1; ++i) {
+            prim_rad(lm,k,j,i) = 0.0;
           }
         }
       }
@@ -171,22 +165,34 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 }
 
 //----------------------------------------------------------------------------------------
-// Fixed boundary
+// Vanishing radiation field outside radial coordinate
 // Inputs:
-//   pmb: pointer to MeshBlock (not used)
+//   pmb: pointer to MeshBlock
 //   pcoord: pointer to Coordinates (not used)
-//   time,dt: current time and timestep of simulation (not used)
-//   is,ie,js,je,ks,ke: indices demarkating active region (not used)
+//   time, dt: current time and timestep of simulation (not used)
+//   il, iu, jl, ju, kl, ku: indices demarkating active region
 // Outputs:
-//   prim: primitives set in ghost zones
-//   bb: face-centered magnetic field set in ghost zones
+//   prim: primitives set in ghost zones (not used)
+//   bb: face-centered magnetic field set in ghost zones (not used)
 //   prim_rad: radiation primitives set in ghost zones
 // Notes:
-//   Does nothing.
+//   Sets intensity to 0.
 
-void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
+void ZeroOuter(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
     FaceField &bb, AthenaArray<Real> &prim_rad, Real time, Real dt, int il, int iu,
     int jl, int ju, int kl, int ku, int ngh) {
+  for (int l = zs; l <= ze; ++l) {
+    for (int m = ps; m <= pe; ++m) {
+      int lm = pmb->prad->AngleInd(l, m);
+      for (int k = kl; k <= ku; ++k) {
+        for (int j = jl; j <= ju; ++j) {
+          for (int i = iu + 1; i <= iu + ngh; ++i) {
+            prim_rad(lm,k,j,i) = 0.0;
+          }
+        }
+      }
+    }
+  }
   return;
 }
 
@@ -201,7 +207,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 //   Implements remapping from Gammie, McKinney, & Toth 2003, ApJ 589 444.
 
 Real ThetaGrid(Real x2, RegionSize rs) {
-  return PI * x2 + (1.0 - h_grid) / 2.0 * std::sin(2.0*PI * x2);
+  return PI * x2 + (1.0 - h_grid) / 2.0 * std::sin(2.0 * PI * x2);
 }
 
 //----------------------------------------------------------------------------------------
@@ -215,31 +221,77 @@ Real ThetaGrid(Real x2, RegionSize rs) {
 // Outputs:
 //   cons_rad: conserved intensity updated
 // Notes:
-//   Applies pre-computed conserved intensity field in midplane.
+//   Uses inner disk formula for temperature from Novikov & Thorne 1973.
 
 void ThinDiskSource(MeshBlock *pmb, const Real time, const Real dt,
     const AthenaArray<Real> &prim_rad, AthenaArray<Real> &cons_rad) {
 
   // Extract information from block
+  Coordinates *pcoord = pmb->pcoord;
   Radiation *prad = pmb->prad;
-  AthenaArray<Real> &cons = pmb->ruser_meshblock_data[1];
   int is = pmb->is;
   int ie = pmb->ie;
+  int js = pmb->js;
+  int je = pmb->je;
   int ks = pmb->ks;
   int ke = pmb->ke;
+  int num_levels = pmb->loc.level - root_offset;
 
-  // Overwrite conserved intensity with stored values
-  for (int l = zs; l <= ze; ++l) {
-    for (int m = ps; m <= pe; ++m) {
-      int lm = prad->AngleInd(l, m);
-      for (int k = ks; k <= ke; ++k) {
-        for (int j = j_min; j <= j_max; ++j) {
-          for (int i = is; i <= ie; ++i) {
-            cons_rad(lm,k,j,i) = cons(lm,k,j,i);
+  // Calculate r-limits of disk region
+  int il = 0;
+  int iu = -1;
+  if (pcoord->x1v(is) <= r_out and pcoord->x1v(ie) >= r_in) {
+    for (il = is; pcoord->x1v(il) < r_in; ++il);
+    for (iu = ie; pcoord->x1v(iu) > r_out; --iu);
+  }
+
+  // Calculate theta-limits of disk region
+  int jl = 0;
+  int ju = -1;
+  int num_th = num_root_th;
+  for (int n = 0; n < num_levels; ++n) {
+    num_th *= 2;
+  }
+  if (num_th % 2 == 1 and pmb->loc.lx2 == num_th / 2) {
+    jl = js + (je - js - 1) / 2;
+    ju = js + (je - js) / 2;
+  } else if (num_th % 2 == 0 and pmb->loc.lx2 == num_th / 2 - 1) {
+    jl = ju = je;
+  } else if (num_th % 2 == 0 and pmb->loc.lx2 == num_th / 2) {
+    jl = ju = js;
+  }
+
+  // Overwrite primitive intensity in disk
+  for (int i = il; i <= iu; ++i) {
+    Real r = pcoord->x1v(i);
+    Real r_1_4 = std::sqrt(std::sqrt(r));
+    Real r_3_8 = r_1_4 * std::sqrt(r_1_4);
+    Real aa = 1 + SQR(spin) / SQR(r) + 2.0 * mass * SQR(spin) / (r * SQR(r));
+    Real bb = 1.0 + std::sqrt(mass) * spin / (r * std::sqrt(r));
+    Real ee = 1.0 + 4.0 * SQR(spin) / SQR(r)
+        - 4.0 * mass * SQR(spin) / (r * SQR(r))
+        + 3.0 * SQR(SQR(spin)) / SQR(SQR(r));
+    Real tt_cgs = 4.0e7 / std::sqrt(std::sqrt(alpha))
+        / std::sqrt(std::sqrt(m_msun / 3.0)) / r_3_8 / std::sqrt(aa)
+        * std::sqrt(bb) * std::sqrt(std::sqrt(ee));
+    Real erad_cgs = prad->arad_cgs * SQR(SQR(tt_cgs));
+    Real ii = erad_cgs / e_cgs / (4.0 * PI);
+    for (int l = zs; l <= ze; ++l) {
+      for (int m = ps; m <= pe; ++m) {
+        int lm = prad->AngleInd(l, m);
+        for (int k = ks; k <= ke; ++k) {
+          for (int j = jl; j <= ju; ++j) {
+            pmb->ruser_meshblock_data[0](lm,k,j,i) = ii;
           }
         }
       }
     }
+  }
+
+  // Overwrite conserved intensity in disk
+  if (ju >= jl and iu >= il) {
+    pmb->prad->PrimitiveToConserved(pmb->ruser_meshblock_data[0], cons_rad, pmb->pcoord,
+        il, iu, jl, ju, ks, ke);
   }
   return;
 }
