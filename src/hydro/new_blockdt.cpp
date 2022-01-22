@@ -21,6 +21,7 @@
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
 #include "../mesh/mesh.hpp"
+#include "../radiation/radiation.hpp"
 #include "../scalars/scalars.hpp"
 #include "hydro.hpp"
 #include "hydro_diffusion/hydro_diffusion.hpp"
@@ -51,12 +52,16 @@ void Hydro::NewBlockTimeStep() {
   Real min_dt_diff  = real_max;
 
   // TODO(felker): skip this next loop if pm->fluid_setup == FluidFormulation::disabled
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
-      pmb->pcoord->CenterWidth1(k, j, is, ie, dt1);
-      pmb->pcoord->CenterWidth2(k, j, is, ie, dt2);
-      pmb->pcoord->CenterWidth3(k, j, is, ie, dt3);
-      if (!RELATIVISTIC_DYNAMICS) {
+  if (!RELATIVISTIC_DYNAMICS) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+
+        // Initialize to cell widths
+        pmb->pcoord->CenterWidth1(k, j, is, ie, dt1);
+        pmb->pcoord->CenterWidth2(k, j, is, ie, dt2);
+        pmb->pcoord->CenterWidth3(k, j, is, ie, dt3);
+
+        // Divide by maximum signal speeds
 #pragma ivdep
         for (int i=is; i<=ie; ++i) {
           wi[IDN] = w(IDN,k,j,i);
@@ -64,7 +69,6 @@ void Hydro::NewBlockTimeStep() {
           wi[IVY] = w(IVY,k,j,i);
           wi[IVZ] = w(IVZ,k,j,i);
           if (NON_BAROTROPIC_EOS) wi[IPR] = w(IPR,k,j,i);
-
           if (MAGNETIC_FIELDS_ENABLED) {
             AthenaArray<Real> &bcc = pmb->pfield->bcc, &b_x1f = pmb->pfield->b.x1f,
                             &b_x2f = pmb->pfield->b.x2f, &b_x3f = pmb->pfield->b.x3f;
@@ -116,6 +120,16 @@ void Hydro::NewBlockTimeStep() {
         }
       }
     }
+  }
+
+  // Recall precomputed timestep in relativistic case
+  if (RELATIVISTIC_DYNAMICS) {
+    min_dt = min_dt_rel_;
+  }
+
+  // Account for additional limitations with GR radiation
+  if (GENERAL_RELATIVITY and RADIATION_ENABLED) {
+    min_dt = std::min(min_dt, pmb->prad->min_dt);
   }
 
   // calculate the timestep limited by the diffusion processes

@@ -112,6 +112,9 @@ class Hydro {
   // 1D scratch arrays
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 
+  // SR/GR
+  Real min_dt_rel_;  // minimum safe timestep in relativity
+
   TimeStepFunc UserTimeStep_;
 
   void AddDiffusionFluxes();

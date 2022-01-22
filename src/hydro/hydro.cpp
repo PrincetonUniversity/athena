@@ -10,6 +10,8 @@
 
 // C++ headers
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -137,6 +139,69 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     // 1D scratch arrays
     laplacian_l_fc_.NewAthenaArray(nc1);
     laplacian_r_fc_.NewAthenaArray(nc1);
+  }
+
+  // Calculate minimum safe timestep in relativity
+  if (RELATIVISTIC_DYNAMICS) {
+    min_dt_rel_ = std::numeric_limits<Real>::max();
+    MeshBlock *pmb = pmy_block;
+    Coordinates *pco = pmb->pcoord;
+    int is = pmb->is;
+    int ie = pmb->ie;
+    int js = pmb->js;
+    int je = pmb->je;
+    int ks = pmb->ks;
+    int ke = pmb->ke;
+    if (GENERAL_RELATIVITY) {
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          pco->CellMetric(k, j, is, ie, g_, gi_);
+          pco->CenterWidth1(k, j, is, ie, dt1_);
+          for (int i = is; i <= ie; ++i) {
+            Real v1_max = -(std::sqrt(SQR(gi_(I01,i)) - gi_(I00,i) * gi_(I11,i))
+                + std::fabs(gi_(I01,i))) / gi_(I00,i);
+            min_dt_rel_ = std::min(min_dt_rel_, dt1_(i) / v1_max);
+          }
+          if (pmb->block_size.nx2 > 1) {
+            pco->CenterWidth2(k, j, is, ie, dt2_);
+            for (int i = is; i <= ie; ++i) {
+              Real v2_max = -(std::sqrt(SQR(gi_(I02,i)) - gi_(I00,i) * gi_(I22,i))
+                  + std::fabs(gi_(I02,i))) / gi_(I00,i);
+              min_dt_rel_ = std::min(min_dt_rel_, dt2_(i) / v2_max);
+            }
+          }
+          if (pmb->block_size.nx3 > 1) {
+            pco->CenterWidth2(k, j, is, ie, dt3_);
+            for (int i = is; i <= ie; ++i) {
+              Real v3_max = -(std::sqrt(SQR(gi_(I03,i)) - gi_(I00,i) * gi_(I33,i))
+                  + std::fabs(gi_(I03,i))) / gi_(I00,i);
+              min_dt_rel_ = std::min(min_dt_rel_, dt3_(i) / v3_max);
+            }
+          }
+        }
+      }
+    } else {
+      for (int k = ks; k <= ke; ++k) {
+        for (int j = js; j <= je; ++j) {
+          pco->CenterWidth1(k, j, is, ie, dt1_);
+          for (int i = is; i <= ie; ++i) {
+            min_dt_rel_ = std::min(min_dt_rel_, dt1_(i));
+          }
+          if (pmb->block_size.nx2 > 1) {
+            pco->CenterWidth2(k, j, is, ie, dt2_);
+            for (int i = is; i <= ie; ++i) {
+              min_dt_rel_ = std::min(min_dt_rel_, dt2_(i));
+            }
+          }
+          if (pmb->block_size.nx3 > 1) {
+            pco->CenterWidth2(k, j, is, ie, dt3_);
+            for (int i = is; i <= ie; ++i) {
+              min_dt_rel_ = std::min(min_dt_rel_, dt3_(i));
+            }
+          }
+        }
+      }
+    }
   }
 
   UserTimeStep_ = pmb->pmy_mesh->UserTimeStep_;

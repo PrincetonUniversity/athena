@@ -54,6 +54,7 @@ public:
   int is, ie;    // start and end x1-indices
   int js, je;    // start and end x2-indices
   int ks, ke;    // start and end x3-indices
+  Real min_dt;   // minimum safe timestep for angular transport
 
   // Physical constants in CGS
   Real c_cgs = 2.99792458e10;                  // speed of light in cm/s

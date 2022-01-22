@@ -765,6 +765,39 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
       }
     }
   }
+
+  // Calculate minimum safe timestep
+  min_dt = std::numeric_limits<Real>::max();
+  for (int k = ks; k <= ke; ++k) {
+    for (int j = js; j <= je; ++j) {
+      for (int i = is; i <= ie; ++i) {
+        Real x1 = pmb->pcoord->x1v(i);
+        Real x2 = pmb->pcoord->x2v(j);
+        Real x3 = pmb->pcoord->x3v(k);
+        pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
+        for (int l = zs; l <= ze; ++l) {
+          for (int m = ps; m <= pe; ++m) {
+            Real na1 = 0.0;
+            for (int n = 0; n < 4; ++n) {
+              for (int p = 0; p < 4; ++p) {
+                na1 += 1.0 / std::sin(zetav(l)) * nh_cc_(n,l,m) * nh_cc_(p,l,m)
+                    * (nh_cc_(0,l,m) * omega(3,n,p) - nh_cc_(3,l,m) * omega(0,n,p));
+              }
+            }
+            min_dt = std::min(min_dt, dzetaf(l) / std::abs(na1 / nmu_(0,l,m,k,j,i)));
+            Real na2 = 0.0;
+            for (int n = 0; n < 4; ++n) {
+              for (int p = 0; p < 4; ++p) {
+                na2 += 1.0 / SQR(std::sin(zetav(l))) * nh_cc_(n,l,m) * nh_cc_(p,l,m)
+                    * (nh_cc_(2,l,m) * omega(1,n,p) - nh_cc_(1,l,m) * omega(2,n,p));
+              }
+            }
+            min_dt = std::min(min_dt, dpsif(m) / std::abs(na2 / nmu_(0,l,m,k,j,i)));
+          }
+        }
+      }
+    }
+  }
 }
 
 //----------------------------------------------------------------------------------------
