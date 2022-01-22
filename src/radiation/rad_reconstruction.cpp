@@ -25,8 +25,10 @@ void Radiation::RadiationDonorCellX1(const AthenaArray<Real> &intensity, int k, 
     for (int m = ps; m <= pe; ++m) {
       int lm = AngleInd(l, m);
       for (int i = is; i <= ie+1; ++i) {
-        ii_l_(lm,i) = intensity(lm,k,j,i-1);
-        ii_r_(lm,i) = intensity(lm,k,j,i);
+        Real n_0_l = n0_n_mu_(0,l,m,k,j,i-1) / nmu_(0,l,m,k,j,i-1);
+        Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
+        ii_l_(lm,i) = intensity(lm,k,j,i-1) * n_0_l;
+        ii_r_(lm,i) = intensity(lm,k,j,i) * n_0_r;
       }
     }
   }
@@ -46,8 +48,10 @@ void Radiation::RadiationDonorCellX2(const AthenaArray<Real> &intensity, int k, 
     for (int m = ps; m <= pe; ++m) {
       int lm = AngleInd(l, m);
       for (int i = is; i <= ie; ++i) {
-        ii_l_(lm,i) = intensity(lm,k,j-1,i);
-        ii_r_(lm,i) = intensity(lm,k,j,i);
+        Real n_0_l = n0_n_mu_(0,l,m,k,j-1,i) / nmu_(0,l,m,k,j-1,i);
+        Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
+        ii_l_(lm,i) = intensity(lm,k,j-1,i) * n_0_l;
+        ii_r_(lm,i) = intensity(lm,k,j,i) * n_0_r;
       }
     }
   }
@@ -67,8 +71,10 @@ void Radiation::RadiationDonorCellX3(const AthenaArray<Real> &intensity, int k, 
     for (int m = ps; m <= pe; ++m) {
       int lm = AngleInd(l, m);
       for (int i = is; i <= ie; ++i) {
-        ii_l_(lm,i) = intensity(lm,k-1,j,i);
-        ii_r_(lm,i) = intensity(lm,k,j,i);
+        Real n_0_l = n0_n_mu_(0,l,m,k-1,j,i) / nmu_(0,l,m,k-1,j,i);
+        Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
+        ii_l_(lm,i) = intensity(lm,k-1,j,i) * n_0_l;
+        ii_r_(lm,i) = intensity(lm,k,j,i) * n_0_r;
       }
     }
   }
@@ -90,16 +96,10 @@ void Radiation::RadiationDonorCellA1(const AthenaArray<Real> &intensity, int k, 
       int lm_c = AngleInd(l, m, true, false);
       int lm_r = AngleInd(l, m, false, false);
       for (int i = is; i <= ie; ++i) {
-        if (na1_n_0_(l,m,k,j,i) != 0.0) {
-          Real n_0_face = na1_n_0_(l,m,k,j,i) / na1_(l,m,k,j,i);
-          Real n_0_cell = n0_n_mu_(0,l-1,m,k,j,i) / nmu_(0,l-1,m,k,j,i);
-          ii_l_(lm_c,i) = intensity(lm_l,k,j,i) * n_0_cell / n_0_face;
-          n_0_cell = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
-          ii_r_(lm_c,i) = intensity(lm_r,k,j,i) * n_0_cell / n_0_face;
-        } else {
-          ii_l_(lm_c,i) = 0.0;
-          ii_r_(lm_c,i) = 0.0;
-        }
+        Real n_0_l = n0_n_mu_(0,l-1,m,k,j,i) / nmu_(0,l-1,m,k,j,i);
+        Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
+        ii_l_(lm_c,i) = intensity(lm_l,k,j,i) * n_0_l;
+        ii_r_(lm_c,i) = intensity(lm_r,k,j,i) * n_0_r;
       }
     }
   }
@@ -121,16 +121,10 @@ void Radiation::RadiationDonorCellA2(const AthenaArray<Real> &intensity, int k, 
       int lm_c = AngleInd(l, m, false, true);
       int lm_r = AngleInd(l, m, false, false);
       for (int i = is; i <= ie; ++i) {
-        if (na2_n_0_(l,m,k,j,i) != 0.0) {
-          Real n_0_face = na2_n_0_(l,m,k,j,i) / na2_(l,m,k,j,i);
-          Real n_0_cell = n0_n_mu_(0,l,m-1,k,j,i) / nmu_(0,l,m-1,k,j,i);
-          ii_l_(lm_c,i) = intensity(lm_l,k,j,i) * n_0_cell / n_0_face;
-          n_0_cell = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
-          ii_r_(lm_c,i) = intensity(lm_r,k,j,i) * n_0_cell / n_0_face;
-        } else {
-          ii_l_(lm_c,i) = 0.0;
-          ii_r_(lm_c,i) = 0.0;
-        }
+        Real n_0_l = n0_n_mu_(0,l,m-1,k,j,i) / nmu_(0,l,m-1,k,j,i);
+        Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
+        ii_l_(lm_c,i) = intensity(lm_l,k,j,i) * n_0_l;
+        ii_r_(lm_c,i) = intensity(lm_r,k,j,i) * n_0_r;
       }
     }
   }
@@ -177,8 +171,10 @@ void Radiation::RadiationPiecewiseLinearX1(const AthenaArray<Real> &intensity, i
             / (SQR(dq_l) + SQR(dq_c) + (cf_l + cb_l - 2.0) * dq2_l) : 0.0;
         Real dqm_r = (dq2_r > 0.0) ? dq2_r * (cf_r * dq_c + cb_r * dq_r)
             / (SQR(dq_c) + SQR(dq_r) + (cf_r + cb_r - 2.0) * dq2_r) : 0.0;
-        ii_l_(lm,i) = q_l + c_l * dqm_l;
-        ii_r_(lm,i) = q_r - c_r * dqm_r;
+        Real n_0_l = n0_n_mu_(0,l,m,k,j,i-1) / nmu_(0,l,m,k,j,i-1);
+        Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
+        ii_l_(lm,i) = (q_l + c_l * dqm_l) * n_0_l;
+        ii_r_(lm,i) = (q_r - c_r * dqm_r) * n_0_r;
       }
     }
   }
@@ -225,8 +221,10 @@ void Radiation::RadiationPiecewiseLinearX2(const AthenaArray<Real> &intensity, i
             / (SQR(dq_l) + SQR(dq_c) + (cf_l + cb_l - 2.0) * dq2_l) : 0.0;
         Real dqm_r = (dq2_r > 0.0) ? dq2_r * (cf_r * dq_c + cb_r * dq_r)
             / (SQR(dq_c) + SQR(dq_r) + (cf_r + cb_r - 2.0) * dq2_r) : 0.0;
-        ii_l_(lm,i) = q_l + c_l * dqm_l;
-        ii_r_(lm,i) = q_r - c_r * dqm_r;
+        Real n_0_l = n0_n_mu_(0,l,m,k,j-1,i) / nmu_(0,l,m,k,j-1,i);
+        Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
+        ii_l_(lm,i) = (q_l + c_l * dqm_l) * n_0_l;
+        ii_r_(lm,i) = (q_r - c_r * dqm_r) * n_0_r;
       }
     }
   }
@@ -273,8 +271,10 @@ void Radiation::RadiationPiecewiseLinearX3(const AthenaArray<Real> &intensity, i
             / (SQR(dq_l) + SQR(dq_c) + (cf_l + cb_l - 2.0) * dq2_l) : 0.0;
         Real dqm_r = (dq2_r > 0.0) ? dq2_r * (cf_r * dq_c + cb_r * dq_r)
             / (SQR(dq_c) + SQR(dq_r) + (cf_r + cb_r - 2.0) * dq2_r) : 0.0;
-        ii_l_(lm,i) = q_l + c_l * dqm_l;
-        ii_r_(lm,i) = q_r - c_r * dqm_r;
+        Real n_0_l = n0_n_mu_(0,l,m,k-1,j,i) / nmu_(0,l,m,k-1,j,i);
+        Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
+        ii_l_(lm,i) = (q_l + c_l * dqm_l) * n_0_l;
+        ii_r_(lm,i) = (q_r - c_r * dqm_r) * n_0_r;
       }
     }
   }
@@ -312,14 +312,10 @@ void Radiation::RadiationPiecewiseLinearA1(const AthenaArray<Real> &intensity, i
       int lm_r = AngleInd(l, m, false, false);
       int lm_rr = AngleInd(l + 1, m, false, false);
       for (int i = is; i <= ie; ++i) {
-        Real n_0_cell = n0_n_mu_(0,l-2,m,k,j,i) / nmu_(0,l-2,m,k,j,i);
-        Real q_ll = intensity(lm_ll,k,j,i) * n_0_cell;
-        n_0_cell = n0_n_mu_(0,l-1,m,k,j,i) / nmu_(0,l-1,m,k,j,i);
-        Real q_l = intensity(lm_l,k,j,i) * n_0_cell;
-        n_0_cell = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
-        Real q_r = intensity(lm_r,k,j,i) * n_0_cell;
-        n_0_cell = n0_n_mu_(0,l+1,m,k,j,i) / nmu_(0,l+1,m,k,j,i);
-        Real q_rr = intensity(lm_rr,k,j,i) * n_0_cell;
+        Real q_ll = intensity(lm_ll,k,j,i);
+        Real q_l = intensity(lm_l,k,j,i);
+        Real q_r = intensity(lm_r,k,j,i);
+        Real q_rr = intensity(lm_rr,k,j,i);
         Real dq_l = q_l - q_ll;
         Real dq_c = q_r - q_l;
         Real dq_r = q_rr - q_r;
@@ -329,14 +325,10 @@ void Radiation::RadiationPiecewiseLinearA1(const AthenaArray<Real> &intensity, i
             / (SQR(dq_l) + SQR(dq_c) + (cf_l + cb_l - 2.0) * dq2_l) : 0.0;
         Real dqm_r = (dq2_r > 0.0) ? dq2_r * (cf_r * dq_c + cb_r * dq_r)
             / (SQR(dq_c) + SQR(dq_r) + (cf_r + cb_r - 2.0) * dq2_r) : 0.0;
-        if (na1_n_0_(l,m,k,j,i) != 0.0) {
-          Real n_0_face = na1_n_0_(l,m,k,j,i) / na1_(l,m,k,j,i);
-          ii_l_(lm_c,i) = (q_l + c_l * dqm_l) / n_0_face;
-          ii_r_(lm_c,i) = (q_r - c_r * dqm_r) / n_0_face;
-        } else {
-          ii_l_(lm_c,i) = 0.0;
-          ii_r_(lm_c,i) = 0.0;
-        }
+        Real n_0_l = n0_n_mu_(0,l-1,m,k,j,i) / nmu_(0,l-1,m,k,j,i);
+        Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
+        ii_l_(lm_c,i) = (q_l + c_l * dqm_l) * n_0_l;
+        ii_r_(lm_c,i) = (q_r - c_r * dqm_r) * n_0_r;
       }
     }
   }
@@ -374,14 +366,10 @@ void Radiation::RadiationPiecewiseLinearA2(const AthenaArray<Real> &intensity, i
       Real cb_r = (x_r - x_l) / (x_r - x_c);
       Real cf_r = (x_rrr - x_r) / (x_rr - x_r);
       for (int i = is; i <= ie; ++i) {
-        Real n_0_cell = n0_n_mu_(0,l,m-2,k,j,i) / nmu_(0,l,m-2,k,j,i);
-        Real q_ll = intensity(lm_ll,k,j,i) * n_0_cell;
-        n_0_cell = n0_n_mu_(0,l,m-1,k,j,i) / nmu_(0,l,m-1,k,j,i);
-        Real q_l = intensity(lm_l,k,j,i) * n_0_cell;
-        n_0_cell = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
-        Real q_r = intensity(lm_r,k,j,i) * n_0_cell;
-        n_0_cell = n0_n_mu_(0,l,m+1,k,j,i) / nmu_(0,l,m+1,k,j,i);
-        Real q_rr = intensity(lm_rr,k,j,i) * n_0_cell;
+        Real q_ll = intensity(lm_ll,k,j,i);
+        Real q_l = intensity(lm_l,k,j,i);
+        Real q_r = intensity(lm_r,k,j,i);
+        Real q_rr = intensity(lm_rr,k,j,i);
         Real dq_l = q_l - q_ll;
         Real dq_c = q_r - q_l;
         Real dq_r = q_rr - q_r;
@@ -391,14 +379,10 @@ void Radiation::RadiationPiecewiseLinearA2(const AthenaArray<Real> &intensity, i
             / (SQR(dq_l) + SQR(dq_c) + (cf_l + cb_l - 2.0) * dq2_l) : 0.0;
         Real dqm_r = (dq2_r > 0.0) ? dq2_r * (cf_r * dq_c + cb_r * dq_r)
             / (SQR(dq_c) + SQR(dq_r) + (cf_r + cb_r - 2.0) * dq2_r) : 0.0;
-        if (na2_n_0_(l,m,k,j,i) != 0.0) {
-          Real n_0_face = na2_n_0_(l,m,k,j,i) / na2_(l,m,k,j,i);
-          ii_l_(lm_c,i) = (q_l + c_l * dqm_l) / n_0_face;
-          ii_r_(lm_c,i) = (q_r - c_r * dqm_r) / n_0_face;
-        } else {
-          ii_l_(lm_c,i) = 0.0;
-          ii_r_(lm_c,i) = 0.0;
-        }
+        Real n_0_l = n0_n_mu_(0,l,m-1,k,j,i) / nmu_(0,l,m-1,k,j,i);
+        Real n_0_r = n0_n_mu_(0,l,m,k,j,i) / nmu_(0,l,m,k,j,i);
+        ii_l_(lm_c,i) = (q_l + c_l * dqm_l) * n_0_l;
+        ii_r_(lm_c,i) = (q_r - c_r * dqm_r) * n_0_r;
       }
     }
   }

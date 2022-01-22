@@ -184,13 +184,8 @@ private:
   AthenaArray<Real> n2_2_;         // n^2 at x^2-faces and angle centers
   AthenaArray<Real> n3_3_;         // n^3 at x^3-faces and angle centers
   AthenaArray<Real> n0_n_mu_;      // n^0 n_mu at cell and angle centers
-  AthenaArray<Real> n1_n_mu_;      // n^1 n_mu at x^1-faces and angle centers
-  AthenaArray<Real> n2_n_mu_;      // n^2 n_mu at x^2-faces and angle centers
-  AthenaArray<Real> n3_n_mu_;      // n^3 n_mu at x^3-faces and angle centers
   AthenaArray<Real> na1_;          // n^zeta at cell centers and zeta-faces
   AthenaArray<Real> na2_;          // n^psi at cell centers and psi-faces
-  AthenaArray<Real> na1_n_0_;      // n^zeta n_0 at cell centers and zeta-faces
-  AthenaArray<Real> na2_n_0_;      // n^psi n_0 at cell centers and psi-faces
   AthenaArray<Real> norm_to_tet_;  // transformation from normal to tetrad frame
 
   // Data arrays - reconstruction
@@ -203,7 +198,7 @@ private:
   AthenaArray<Real> norm_to_tet_3_;  // transformation from normal to tetrad frame
   AthenaArray<Real> u_tet_l_;        // tetrad-frame fluid 4-velocity left of interface
   AthenaArray<Real> u_tet_r_;        // tetrad-frame fluid 4-velocity right of interface
-  AthenaArray<Real> tau_factor_;          // total absorption coefficient
+  AthenaArray<Real> tau_factor_;     // total absorption coefficient
 
   // Data arrays - flux divergence
   AthenaArray<Real> area_l_;    // left face areas

@@ -50,9 +50,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             int lm = AngleInd(l, m);
             for (int i = is; i <= ie+1; ++i) {
               Real n1 = n1_1_(l,m,k,j,i);
-              Real n1_n_0 = n1_n_mu_(0,l,m,k,j,i);
-              flux_x[X1DIR](lm,k,j,i) =
-                  n1_n_0 * (n1 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
+              flux_x[X1DIR](lm,k,j,i) = n1 * (n1 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
             }
           }
         }
@@ -155,11 +153,11 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
               Real ii_1_right = ii_r_(lm,i) * (1.0 - advection_factor_right);
               Real ii_2_left = advection_factor_left;
               Real ii_2_right = advection_factor_right;
-              Real v_1 = n1_n_mu_(0,l,m,k,j,i);
+              Real n1 = n1_1_(l,m,k,j,i);
+              Real v_1 = n1;
               Real dx_l = pmy_block->pcoord->x1f(i) - pmy_block->pcoord->x1v(i-1);
               Real dx_r = pmy_block->pcoord->x1v(i) - pmy_block->pcoord->x1f(i);
               Real v_2 = v_1 * (dx_r * ii_2_left + dx_l * ii_2_right) / (dx_l + dx_r);
-              Real n1 = n1_1_(l,m,k,j,i);
               flux_x[X1DIR](lm,k,j,i) = v_1 * (n1 > 0.0 ? ii_1_left : ii_1_right);
               flux_x[X1DIR](lm,k,j,i) += v_2 * (n1 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
             }
@@ -188,9 +186,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
                 Real n2 = n2_2_(l,m,k,j,i);
-                Real n2_n_0 = n2_n_mu_(0,l,m,k,j,i);
-                flux_x[X2DIR](lm,k,j,i) =
-                    n2_n_0 * (n2 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
+                flux_x[X2DIR](lm,k,j,i) = n2 * (n2 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
               }
             }
           }
@@ -293,9 +289,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
                 Real ii_1_right = ii_r_(lm,i) * (1.0 - advection_factor_right);
                 Real ii_2_left = advection_factor_left;
                 Real ii_2_right = advection_factor_right;
-                Real v_1 = n2_n_mu_(0,l,m,k,j,i);
-                Real v_2 = v_1 * (dx_r * ii_2_left + dx_l * ii_2_right) / (dx_l + dx_r);
                 Real n2 = n2_2_(l,m,k,j,i);
+                Real v_1 = n2;
+                Real v_2 = v_1 * (dx_r * ii_2_left + dx_l * ii_2_right) / (dx_l + dx_r);
                 flux_x[X2DIR](lm,k,j,i) = v_1 * (n2 > 0.0 ? ii_1_left : ii_1_right);
                 flux_x[X2DIR](lm,k,j,i) += v_2 * (n2 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
               }
@@ -325,9 +321,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
               int lm = AngleInd(l, m);
               for (int i = is; i <= ie; ++i) {
                 Real n3 = n3_3_(l,m,k,j,i);
-                Real n3_n_0 = n3_n_mu_(0,l,m,k,j,i);
-                flux_x[X3DIR](lm,k,j,i) =
-                    n3_n_0 * (n3 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
+                flux_x[X3DIR](lm,k,j,i) = n3 * (n3 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
               }
             }
           }
@@ -430,9 +424,9 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
                 Real ii_1_right = ii_r_(lm,i) * (1.0 - advection_factor_right);
                 Real ii_2_left = advection_factor_left;
                 Real ii_2_right = advection_factor_right;
-                Real v_1 = n3_n_mu_(0,l,m,k,j,i);
-                Real v_2 = v_1 * (dx_r * ii_2_left + dx_l * ii_2_right) / (dx_l + dx_r);
                 Real n3 = n3_3_(l,m,k,j,i);
+                Real v_1 = n3;
+                Real v_2 = v_1 * (dx_r * ii_2_left + dx_l * ii_2_right) / (dx_l + dx_r);
                 flux_x[X3DIR](lm,k,j,i) = v_1 * (n3 > 0.0 ? ii_1_left : ii_1_right);
                 flux_x[X3DIR](lm,k,j,i) += v_2 * (n3 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
               }
@@ -461,9 +455,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             int lm = AngleInd(l, m, true, false);
             for (int i = is; i <= ie; ++i) {
               Real na1 = na1_(l,m,k,j,i);
-              Real na1_n_0 = na1_n_0_(l,m,k,j,i);
-              flux_a[ZETADIR](lm,k,j,i) =
-                  na1_n_0 * (na1 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
+              flux_a[ZETADIR](lm,k,j,i) = na1 * (na1 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
             }
           }
         }
@@ -489,9 +481,7 @@ void Radiation::CalculateFluxes(AthenaArray<Real> &prim_rad,
             int lm = AngleInd(l, m, false, true);
             for (int i = is; i <= ie; ++i) {
               Real na2 = na2_(l,m,k,j,i);
-              Real na2_n_0 = na2_n_0_(l,m,k,j,i);
-              flux_a[PSIDIR](lm,k,j,i) =
-                  na2_n_0 * (na2 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
+              flux_a[PSIDIR](lm,k,j,i) = na2 * (na2 > 0.0 ? ii_l_(lm,i) : ii_r_(lm,i));
             }
           }
         }
