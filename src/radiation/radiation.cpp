@@ -7,8 +7,10 @@
 //  \brief implementation of core functions in class Radiation
 
 // C++ headers
-#include <cmath>      // acos, cos, NAN, sin, sqrt
+#include <algorithm>  // min
+#include <cmath>      // abs, acos, cos, NAN, sin, sqrt
 #include <cstring>    // strcmp
+#include <limits>     // numeric_limits
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str, string
@@ -82,7 +84,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     throw std::runtime_error(msg.str().c_str());
   }
 
-  // Verify temporal and special orders
+  // Verify temporal and spatial orders
   if (pin->GetString("time", "integrator") != "vl2") {
     msg << "### FATAL ERROR in Radiation\n";
     msg << "only VL2 integration supported\n";
@@ -264,8 +266,8 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   nh_cf_.NewAthenaArray(4, num_cells_zeta, num_cells_psi + 1);
 
   // Calculate unit normal components in orthonormal frame at angle centers
-  for (int l = zs; l <= ze; ++l) {
-    for (int m = ps; m <= pe; ++m) {
+  for (int l = zs - NGHOST_RAD; l <= ze + NGHOST_RAD; ++l) {
+    for (int m = ps - NGHOST_RAD; m <= pe + NGHOST_RAD; ++m) {
       nh_cc_(0,l,m) = 1.0;
       nh_cc_(1,l,m) = std::sin(zetav(l)) * std::cos(psiv(m));
       nh_cc_(2,l,m) = std::sin(zetav(l)) * std::sin(psiv(m));
@@ -304,11 +306,11 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   // Allocate memory for unit normal and related components in coordinate frame
   nmu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
       pmb->ncells1);
-  n_0_1_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
+  n1_1_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
       pmb->ncells1 + 1);
-  n_0_2_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2 + 1,
+  n2_2_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2 + 1,
       pmb->ncells1);
-  n_0_3_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3 + 1, pmb->ncells2,
+  n3_3_.NewAthenaArray(num_cells_zeta, num_cells_psi, pmb->ncells3 + 1, pmb->ncells2,
       pmb->ncells1);
   n0_n_mu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3, pmb->ncells2,
       pmb->ncells1);
@@ -318,6 +320,10 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
       pmb->ncells2 + 1, pmb->ncells1);
   n3_n_mu_.NewAthenaArray(4, num_cells_zeta, num_cells_psi, pmb->ncells3 + 1,
       pmb->ncells2, pmb->ncells1);
+  na1_.NewAthenaArray(num_cells_zeta + 1, num_cells_psi, pmb->ncells3, pmb->ncells2,
+      pmb->ncells1);
+  na2_.NewAthenaArray(num_cells_zeta, num_cells_psi + 1, pmb->ncells3, pmb->ncells2,
+      pmb->ncells1);
   na1_n_0_.NewAthenaArray(num_cells_zeta + 1, num_cells_psi, pmb->ncells3, pmb->ncells2,
       pmb->ncells1);
   na2_n_0_.NewAthenaArray(num_cells_zeta, num_cells_psi + 1, pmb->ncells3, pmb->ncells2,
@@ -344,8 +350,8 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
         Real x2 = pmb->pcoord->x2v(j);
         Real x3 = pmb->pcoord->x3v(k);
         pmb->pcoord->Tetrad(x1, x2, x3, e, e_cov, omega);
-        for (int l = zs; l <= ze; ++l) {
-          for (int m = ps; m <= pe; ++m) {
+        for (int l = zs - NGHOST_RAD; l <= ze + NGHOST_RAD; ++l) {
+          for (int m = ps - NGHOST_RAD; m <= pe + NGHOST_RAD; ++m) {
             Real n0 = 0.0;
             Real n1 = 0.0;
             Real n2 = 0.0;
@@ -378,7 +384,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
-  // Calculate n_0 and n^1 n_mu
+  // Calculate n^1 and n^1 n_mu
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       for (int i = is; i <= ie+1; ++i) {
@@ -400,7 +406,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
               n_2 += e_cov(n,2) * nh_cc_(n,l,m);
               n_3 += e_cov(n,3) * nh_cc_(n,l,m);
             }
-            n_0_1_(l,m,k,j,i) = n_0;
+            n1_1_(l,m,k,j,i) = n1;
             n1_n_mu_(0,l,m,k,j,i) = n1 * n_0;
             n1_n_mu_(1,l,m,k,j,i) = n1 * n_1;
             n1_n_mu_(2,l,m,k,j,i) = n1 * n_2;
@@ -411,7 +417,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
-  // Calculate n_0 and n^2 n_mu
+  // Calculate n^2 and n^2 n_mu
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je+1; ++j) {
       for (int i = is; i <= ie; ++i) {
@@ -433,7 +439,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
               n_2 += e_cov(n,2) * nh_cc_(n,l,m);
               n_3 += e_cov(n,3) * nh_cc_(n,l,m);
             }
-            n_0_2_(l,m,k,j,i) = n_0;
+            n2_2_(l,m,k,j,i) = n2;
             n2_n_mu_(0,l,m,k,j,i) = n2 * n_0;
             n2_n_mu_(1,l,m,k,j,i) = n2 * n_1;
             n2_n_mu_(2,l,m,k,j,i) = n2 * n_2;
@@ -444,7 +450,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
-  // Calculate n_0 and n^3 n_mu
+  // Calculate n^3 and n^3 n_mu
   for (int k = ks; k <= ke+1; ++k) {
     for (int j = js; j <= je; ++j) {
       for (int i = is; i <= ie; ++i) {
@@ -466,7 +472,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
               n_2 += e_cov(n,2) * nh_cc_(n,l,m);
               n_3 += e_cov(n,3) * nh_cc_(n,l,m);
             }
-            n_0_3_(l,m,k,j,i) = n_0;
+            n3_3_(l,m,k,j,i) = n3;
             n3_n_mu_(0,l,m,k,j,i) = n3 * n_0;
             n3_n_mu_(1,l,m,k,j,i) = n3 * n_1;
             n3_n_mu_(2,l,m,k,j,i) = n3 * n_2;
@@ -477,7 +483,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
-  // Calculate n^zeta n_0
+  // Calculate n^zeta and n^zeta n_0
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       for (int i = is; i <= ie; ++i) {
@@ -498,6 +504,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
             for (int n = 0; n < 4; ++n) {
               n_0 += e_cov(n,0) * nh_fc_(n,l,m);
             }
+            na1_(l,m,k,j,i) = na1;
             na1_n_0_(l,m,k,j,i) = na1 * n_0;
           }
         }
@@ -505,7 +512,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
-  // Calculate n^psi n_0
+  // Calculate n^psi and n^psi n_0
   for (int k = ks; k <= ke; ++k) {
     for (int j = js; j <= je; ++j) {
       for (int i = is; i <= ie; ++i) {
@@ -526,6 +533,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
             for (int n = 0; n < 4; ++n) {
               n_0 += e_cov(n,0) * nh_cf_(n,l,m);
             }
+            na2_(l,m,k,j,i) = na2;
             na2_n_0_(l,m,k,j,i) = na2 * n_0;
           }
         }
