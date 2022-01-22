@@ -1987,8 +1987,11 @@ void KerrSchild::Tetrad(Real r, Real th, Real ph, AthenaArray<Real> &e,
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       e_cov(i,j) = 0.0;
-      for (int k = 0; k < 4; ++k) {
+      for (int k = 0; k < 3; ++k) {
         e_cov(i,j) += g[j][k] * e(i,k);
+      }
+      if (sth != 0.0) {
+        e_cov(i,j) += g[j][3] * e(i,3);
       }
     }
   }
