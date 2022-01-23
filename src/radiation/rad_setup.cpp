@@ -81,6 +81,10 @@ void Radiation::CalculateBeamSource(Real pos_1, Real pos_2, Real pos_3, Real wid
       nh(l,m,1) = std::sin(zetav(l)) * std::cos(psiv(m));
       nh(l,m,2) = std::sin(zetav(l)) * std::sin(psiv(m));
       nh(l,m,3) = std::cos(zetav(l));
+      if (nzeta == 1) {
+        nh_cc_(1,l,m) *= 0.816496580927726;
+        nh_cc_(2,l,m) *= 0.816496580927726;
+      }
     }
   }
 
