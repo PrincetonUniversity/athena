@@ -7,6 +7,9 @@
 //! \brief Adds coriolis force and centrifugal force
 //======================================================================================
 
+// C/C++ headers
+#include <sstream>
+
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
@@ -53,6 +56,13 @@ void HydroSourceTerms::RotatingSystemSourceTerms
       }
     }
   } else if(std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
+    if (pmb->block_size.nx2 == 1) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in HydroSourceTerms::RotatingSystemSourceTerms" << std::endl
+          << "Rotating System does not support spherical polar coordinates in 1D."
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
     // dM1/dt = 2 \rho vc vp / r
     //          +\rho (vc)^2 / r
     // dM2/dt = 2 \rho vp cot(\theta) vc / r
