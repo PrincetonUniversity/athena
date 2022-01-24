@@ -883,24 +883,78 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
             Real zeta_a = std::acos(nh_a[3] / nh_a[0]);
             Real psi_a = std::atan2(nh_a[2], nh_a[1]);
             psi_a += psi_a < 0.0 ? 2.0*PI : 0.0;
-            int l_a;
-            for (l_a = zs-1; l_a <= ze+1; ++l_a) {
-              if (zetav(l_a) > zeta_a) {
-                break;
-              }
+            Real psi_a_alt = psi_a;
+            if (zeta_a < zetav(zs) or zeta_a > zetav(ze)) {
+              psi_a_alt -= PI;
+              psi_a_alt += psi_a_alt < 0.0 ? 2.0*PI : 0.0;
             }
-            int m_a;
-            for (m_a = ps-1; m_a <= pe+1; ++m_a) {
-              if (psiv(m_a) > psi_a) {
-                break;
+            int l_a_m, l_a_p;
+            Real frac_l;
+            if (zeta_a >= zetav(zs) and zeta_a <= zetav(ze)) {
+              for (l_a_p = zs+1; l_a_p < ze; ++l_a_p) {
+                if (zetav(l_a_p) >= zeta_a) {
+                  break;
+                }
               }
+              l_a_m = l_a_p - 1;
+              frac_l = (zeta_a - zetav(l_a_m)) / (zetav(l_a_p) - zetav(l_a_m));
+            } else if (zeta_a < zetav(zs)) {
+              l_a_m = zs;
+              l_a_p = zs;
+              frac_l = (zeta_a - zetaf(zs) + zetav(zs) - zetaf(zs))
+                  / (zetav(zs) - zetaf(zs) + zetav(zs) - zetaf(zs));
+            } else {
+              l_a_m = ze;
+              l_a_p = ze;
+              frac_l = (zetaf(ze+1) - zetav(ze) + zetaf(ze+1) - zeta_a)
+                  / (zetaf(ze+1) - zetav(ze) + zetaf(ze+1) - zetav(ze));
             }
-            polar_ind_north_(0,lm_g,k,dj,i) = AngleInd(l_a - 1, m_a - 1);
-            polar_ind_north_(1,lm_g,k,dj,i) = AngleInd(l_a - 1, m_a);
-            polar_ind_north_(2,lm_g,k,dj,i) = AngleInd(l_a, m_a - 1);
-            polar_ind_north_(3,lm_g,k,dj,i) = AngleInd(l_a, m_a);
-            Real frac_l = (zeta_a - zetav(l_a-1)) / dzetaf(l_a-1);
-            Real frac_m = (psi_a - psiv(m_a-1)) / dpsif(m_a-1);
+            int m_a_m, m_a_p;
+            Real frac_m;
+            if (psi_a >= psiv(ps) and psi_a <= psiv(pe)) {
+              for (m_a_p = ps+1; m_a_p < pe; ++m_a_p) {
+                if (psiv(m_a_p) >= psi_a) {
+                  break;
+                }
+              }
+              m_a_m = m_a_p - 1;
+              frac_m = (psi_a - psiv(m_a_m)) / (psiv(m_a_p) - psiv(m_a_m));
+            } else if (psi_a < psiv(ps)) {
+              m_a_m = pe;
+              m_a_p = ps;
+              frac_m = (psi_a - psif(ps) + psif(pe+1) - psiv(pe))
+                  / (psiv(ps) - psif(ps) + psif(pe+1) - psiv(pe));
+            } else {
+              m_a_m = pe;
+              m_a_p = ps;
+              frac_m = (psi_a - psiv(pe)) / (psiv(ps) - psif(ps) + psif(pe+1) - psiv(pe));
+            }
+            int m_a_alt_m, m_a_alt_p;
+            Real frac_m_alt;
+            if (psi_a_alt >= psiv(ps) and psi_a_alt <= psiv(pe)) {
+              for (m_a_alt_p = ps+1; m_a_alt_p < pe; ++m_a_alt_p) {
+                if (psiv(m_a_alt_p) >= psi_a_alt) {
+                  break;
+                }
+              }
+              m_a_alt_m = m_a_alt_p - 1;
+              frac_m_alt =
+                  (psi_a_alt - psiv(m_a_alt_m)) / (psiv(m_a_alt_p) - psiv(m_a_alt_m));
+            } else if (psi_a_alt <= psiv(ps)) {
+              m_a_alt_m = pe;
+              m_a_alt_p = ps;
+              frac_m = (psi_a_alt - psif(ps) + psif(pe+1) - psiv(pe))
+                  / (psiv(ps) - psif(ps) + psif(pe+1) - psiv(pe));
+            } else {
+              m_a_alt_m = pe;
+              m_a_alt_p = ps;
+              frac_m =
+                  (psi_a_alt - psiv(pe)) / (psiv(ps) - psif(ps) + psif(pe+1) - psiv(pe));
+            }
+            polar_ind_north_(0,lm_g,k,dj,i) = AngleInd(l_a_m, m_a_alt_m);
+            polar_ind_north_(1,lm_g,k,dj,i) = AngleInd(l_a_m, m_a_alt_p);
+            polar_ind_north_(2,lm_g,k,dj,i) = AngleInd(l_a_p, m_a_m);
+            polar_ind_north_(3,lm_g,k,dj,i) = AngleInd(l_a_p, m_a_p);
             polar_frac_north_(0,lm_g,k,dj,i) = (1.0 - frac_l) * (1.0 - frac_m);
             polar_frac_north_(1,lm_g,k,dj,i) = (1.0 - frac_l) * frac_m;
             polar_frac_north_(2,lm_g,k,dj,i) = frac_l * (1.0 - frac_m);
@@ -944,24 +998,78 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
             Real zeta_a = std::acos(nh_a[3] / nh_a[0]);
             Real psi_a = std::atan2(nh_a[2], nh_a[1]);
             psi_a += psi_a < 0.0 ? 2.0*PI : 0.0;
-            int l_a;
-            for (l_a = zs-1; l_a <= ze+1; ++l_a) {
-              if (zetav(l_a) > zeta_a) {
-                break;
-              }
+            Real psi_a_alt = psi_a;
+            if (zeta_a < zetav(zs) or zeta_a > zetav(ze)) {
+              psi_a_alt -= PI;
+              psi_a_alt += psi_a_alt < 0.0 ? 2.0*PI : 0.0;
             }
-            int m_a;
-            for (m_a = ps-1; m_a <= pe+1; ++m_a) {
-              if (psiv(m_a) > psi_a) {
-                break;
+            int l_a_m, l_a_p;
+            Real frac_l;
+            if (zeta_a >= zetav(zs) and zeta_a <= zetav(ze)) {
+              for (l_a_p = zs+1; l_a_p < ze; ++l_a_p) {
+                if (zetav(l_a_p) >= zeta_a) {
+                  break;
+                }
               }
+              l_a_m = l_a_p - 1;
+              frac_l = (zeta_a - zetav(l_a_m)) / (zetav(l_a_p) - zetav(l_a_m));
+            } else if (zeta_a < zetav(zs)) {
+              l_a_m = zs;
+              l_a_p = zs;
+              frac_l = (zeta_a - zetaf(zs) + zetav(zs) - zetaf(zs))
+                  / (zetav(zs) - zetaf(zs) + zetav(zs) - zetaf(zs));
+            } else {
+              l_a_m = ze;
+              l_a_p = ze;
+              frac_l = (zetaf(ze+1) - zetav(ze) + zetaf(ze+1) - zeta_a)
+                  / (zetaf(ze+1) - zetav(ze) + zetaf(ze+1) - zetav(ze));
             }
-            polar_ind_south_(0,lm_g,k,dj,i) = AngleInd(l_a - 1, m_a - 1);
-            polar_ind_south_(1,lm_g,k,dj,i) = AngleInd(l_a - 1, m_a);
-            polar_ind_south_(2,lm_g,k,dj,i) = AngleInd(l_a, m_a - 1);
-            polar_ind_south_(3,lm_g,k,dj,i) = AngleInd(l_a, m_a);
-            Real frac_l = (zeta_a - zetav(l_a-1)) / dzetaf(l_a-1);
-            Real frac_m = (psi_a - psiv(m_a-1)) / dpsif(m_a-1);
+            int m_a_m, m_a_p;
+            Real frac_m;
+            if (psi_a >= psiv(ps) and psi_a <= psiv(pe)) {
+              for (m_a_p = ps+1; m_a_p < pe; ++m_a_p) {
+                if (psiv(m_a_p) >= psi_a) {
+                  break;
+                }
+              }
+              m_a_m = m_a_p - 1;
+              frac_m = (psi_a - psiv(m_a_m)) / (psiv(m_a_p) - psiv(m_a_m));
+            } else if (psi_a < psiv(ps)) {
+              m_a_m = pe;
+              m_a_p = ps;
+              frac_m = (psi_a - psif(ps) + psif(pe+1) - psiv(pe))
+                  / (psiv(ps) - psif(ps) + psif(pe+1) - psiv(pe));
+            } else {
+              m_a_m = pe;
+              m_a_p = ps;
+              frac_m = (psi_a - psiv(pe)) / (psiv(ps) - psif(ps) + psif(pe+1) - psiv(pe));
+            }
+            int m_a_alt_m, m_a_alt_p;
+            Real frac_m_alt;
+            if (psi_a_alt >= psiv(ps) and psi_a_alt <= psiv(pe)) {
+              for (m_a_alt_p = ps+1; m_a_alt_p < pe; ++m_a_alt_p) {
+                if (psiv(m_a_alt_p) >= psi_a_alt) {
+                  break;
+                }
+              }
+              m_a_alt_m = m_a_alt_p - 1;
+              frac_m_alt =
+                  (psi_a_alt - psiv(m_a_alt_m)) / (psiv(m_a_alt_p) - psiv(m_a_alt_m));
+            } else if (psi_a_alt <= psiv(ps)) {
+              m_a_alt_m = pe;
+              m_a_alt_p = ps;
+              frac_m = (psi_a_alt - psif(ps) + psif(pe+1) - psiv(pe))
+                  / (psiv(ps) - psif(ps) + psif(pe+1) - psiv(pe));
+            } else {
+              m_a_alt_m = pe;
+              m_a_alt_p = ps;
+              frac_m =
+                  (psi_a_alt - psiv(pe)) / (psiv(ps) - psif(ps) + psif(pe+1) - psiv(pe));
+            }
+            polar_ind_south_(0,lm_g,k,dj,i) = AngleInd(l_a_m, m_a_alt_m);
+            polar_ind_south_(1,lm_g,k,dj,i) = AngleInd(l_a_m, m_a_alt_p);
+            polar_ind_south_(2,lm_g,k,dj,i) = AngleInd(l_a_p, m_a_m);
+            polar_ind_south_(3,lm_g,k,dj,i) = AngleInd(l_a_p, m_a_p);
             polar_frac_south_(0,lm_g,k,dj,i) = (1.0 - frac_l) * (1.0 - frac_m);
             polar_frac_south_(1,lm_g,k,dj,i) = (1.0 - frac_l) * frac_m;
             polar_frac_south_(2,lm_g,k,dj,i) = frac_l * (1.0 - frac_m);
