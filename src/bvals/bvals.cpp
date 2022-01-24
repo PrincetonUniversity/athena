@@ -219,6 +219,9 @@ void BoundaryValues::StartReceiving(BoundaryCommSubset phase) {
   for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
        ++bvars_it) {
     (*bvars_it)->StartReceiving(phase);
+    if (phase == BoundaryCommSubset::gr_amr) {
+      break;
+    }
   }
 
   // KGF: begin shearing-box exclusive section of original StartReceivingForInit()
@@ -274,6 +277,9 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
   for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
        ++bvars_it) {
     (*bvars_it)->ClearBoundary(phase);
+    if (phase == BoundaryCommSubset::gr_amr) {
+      break;
+    }
   }
   return;
 }

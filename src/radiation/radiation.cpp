@@ -118,6 +118,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) :
   UpdateOpacity = DefaultOpacity;
 
   // Enroll refinement communication
+  pmb->RegisterMeshBlockData(cons);
   if (pmb->pmy_mesh->multilevel) {
     refinement_idx = pmb->pmr->AddToRefinement(&cons, &coarse_cons);
   }

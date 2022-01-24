@@ -1135,7 +1135,6 @@ TaskStatus TimeIntegratorTaskList::SendField(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::SendRad(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     pmb->prad->rbvar.var_cc = &(pmb->prad->cons);
-    pmb->prad->rbvar.coarse_buf = &(pmb->prad->coarse_cons);
     pmb->prad->rbvar.SendBoundaryBuffers();
   } else {
     return TaskStatus::fail;
