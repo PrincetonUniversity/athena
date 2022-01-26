@@ -62,12 +62,13 @@ Real calc_n_inner(ParameterInput *pin, Real v1_inner);
 Real calc_energy_inner(ParameterInput *pin, Real n_inner, Real gamma);
 Real sign_radial_mag_field(Real theta, Real phi);
 
-int RefinementCondition(MeshBlock *pmb);
+int RefinementConditionPressure(MeshBlock *pmb);
+int RefinementConditionDensityJump(MeshBlock *pmb);
 
 // namespaced variables, i.e. globals
 // should be turned into a class with setters and getters
 namespace {
-
+bool enable_pressure_refine;
 Real press_threshold;
 Real v1_inner, v2_inner, v3_inner;
 Real n_inner, e_inner;
@@ -101,8 +102,13 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   }
 
   if (adaptive) {
-    EnrollUserRefinementCondition(RefinementCondition);
-    press_threshold = pin->GetReal("problem","press_thresh");
+    enable_pressure_refine = pin->GetOrAddBoolean("problem", "enable_pressure_refine",false);
+    if (enable_pressure_refine) {
+      EnrollUserRefinementCondition(RefinementConditionPressure);
+      press_threshold = pin->GetReal("problem","press_thresh");
+    } else { // density ratio refinement
+      EnrollUserRefinementCondition(RefinementConditionDensityJump);
+    }
   }
 
   // enroll user-defined boundary condition
@@ -693,7 +699,7 @@ void CMEOuterX1(MeshBlock *pmb,Coordinates *pcoord, AthenaArray<Real> &prim, Fac
 }
 
 // refinement condition: check the maximum pressure gradient
-int RefinementCondition(MeshBlock *pmb) {
+int RefinementConditionPressure(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;
   Real maxeps = 0.0;
   if (pmb->pmy_mesh->f3) {
@@ -722,6 +728,39 @@ int RefinementCondition(MeshBlock *pmb) {
 
   if (maxeps > press_threshold) return 1;
   if (maxeps < 0.25*press_threshold) return -1;
+  return 0;
+}
+
+// refinement condition: density jump
+int RefinementConditionDensityJump(MeshBlock *pmb) {
+  int f2 = pmb->pmy_mesh->f2, f3 = pmb->pmy_mesh->f3;
+  AthenaArray<Real> &w = pmb->phydro->w;
+  // maximum intercell density ratio
+  Real drmax = 1.0;
+  for (int k=pmb->ks-f3; k<=pmb->ke+f3; k++) {
+    for (int j=pmb->js-f2; j<=pmb->je+f2; j++) {
+      for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
+        if (w(IDN,k,j,i-1)/w(IDN,k,j,i) > drmax) drmax = w(IDN,k,j,i-1)/w(IDN,k,j,i);
+        if (w(IDN,k,j,i+1)/w(IDN,k,j,i) > drmax) drmax = w(IDN,k,j,i+1)/w(IDN,k,j,i);
+        if (w(IDN,k,j,i)/w(IDN,k,j,i-1) > drmax) drmax = w(IDN,k,j,i)/w(IDN,k,j,i-1);
+        if (w(IDN,k,j,i)/w(IDN,k,j,i+1) > drmax) drmax = w(IDN,k,j,i)/w(IDN,k,j,i+1);
+        if (f2) {
+          if (w(IDN,k,j-1,i)/w(IDN,k,j,i) > drmax) drmax = w(IDN,k,j-1,i)/w(IDN,k,j,i);
+          if (w(IDN,k,j+1,i)/w(IDN,k,j,i) > drmax) drmax = w(IDN,k,j+1,i)/w(IDN,k,j,i);
+          if (w(IDN,k,j,i)/w(IDN,k,j-1,i) > drmax) drmax = w(IDN,k,j,i)/w(IDN,k,j-1,i);
+          if (w(IDN,k,j,i)/w(IDN,k,j+1,i) > drmax) drmax = w(IDN,k,j,i)/w(IDN,k,j+1,i);
+        }
+        if (f3) {
+          if (w(IDN,k-1,j,i)/w(IDN,k,j,i) > drmax) drmax = w(IDN,k-1,j,i)/w(IDN,k,j,i);
+          if (w(IDN,k+1,j,i)/w(IDN,k,j,i) > drmax) drmax = w(IDN,k+1,j,i)/w(IDN,k,j,i);
+          if (w(IDN,k,j,i)/w(IDN,k-1,j,i) > drmax) drmax = w(IDN,k,j,i)/w(IDN,k-1,j,i);
+          if (w(IDN,k,j,i)/w(IDN,k+1,j,i) > drmax) drmax = w(IDN,k,j,i)/w(IDN,k+1,j,i);
+        }
+      }
+    }
+  }
+  if (drmax > 1.5) return 1;
+  else if (drmax < 1.2) return -1;
   return 0;
 }
 
