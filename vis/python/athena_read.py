@@ -500,7 +500,7 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
                     return 3.0/4.0 * (xp**4-xm**4) / (xp**3-xm**3)
             elif coord == 'schwarzschild':
                 def center_func_1(xm, xp):
-                    return (0.5*(xm**3+xp**3)) ** 1.0/3.0
+                    return (0.5*(xm**3+xp**3)) ** (1.0/3.0)
             else:
                 raise AthenaError('Coordinates not recognized')
         if center_func_2 is None:
