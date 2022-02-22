@@ -883,7 +883,8 @@ Real Thermo::CoolingHotGas(const Real nH, const Real T, const Real Zg) {
 //----------------------------------------------------------------------------------------
 //! \fn Real Thermo::HeatingH2gr(const Real xHI, const Real xH2, const Real nH,
 //!                           const Real T, const Real kgr)
-//! \brief Heating by H2 formation on dust grains, from Hollenbach + McKee 1979
+//! \brief Heating by H2 formation on dust grains, from Hollenbach + McKee
+//         1979, collisional rates from Visser et al. (2018)
 //!
 //! (0) *H + *H + gr -> H2 + gr
 //! Arguments:
@@ -893,25 +894,22 @@ Real Thermo::CoolingHotGas(const Real nH, const Real T, const Real Zg) {
 //! Return:
 //! Heating rate by H2 formation on dust grains in erg H^-1 s^-1.
 Real Thermo::HeatingH2gr(const Real xHI, const Real xH2, const Real nH,
-                           const Real T, const Real kgr) {
-  const Real small_ = 1e-100;
-  Real ncr, f;
+                         const Real T, const Real kgr, const Real dot_xH2_photo) {
+  const Real A = 2.0e-7;
+  const Real D = dot_xH2_photo / 5.7;
+  const Real t = 1. + T/1000.;
+  const Real geff_H = pow(10, -11.06 + 0.0555/t -2.390/(t*t));
+  const Real geff_H2 = pow(10, -11.08 -3.671/t -2.023/(t*t));
   // critical density ncr, heating only effective at n > ncr
-  Real de = 1.6 * xHI * exp( - pow(400./T, 2) )
-                    + 1.4 * xH2 * exp( - (12000./(T + 1200.)));
-  if (de < small_ ) {
-    f = 0;
-  } else {
-    ncr = 1.0e6 / sqrt(T) / de;
-    f = 1. / (1. + ncr/nH);
-  }
+  const Real ncr = (A + D) / (geff_H*xHI + geff_H2*xH2);
+  const Real f = 1. / (1. + ncr/nH);
   return kgr * xHI * (0.2 + 4.2*f) * eV_;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real Thermo::HeatingH2pump(const Real xHI, const Real xH2, const Real nH,
 //!                            const Real T, const Real dot_xH2_photo)
-//! \brief Heating by H2 UV pumping, from Hollenbach + McKee 1979
+//! \brief Heating by H2 UV pumping, Visser et al. (2018)
 //!
 //! Arguments:
 //! xi = ni/nH
@@ -921,19 +919,16 @@ Real Thermo::HeatingH2gr(const Real xHI, const Real xH2, const Real nH,
 //! Return:
 //! Heating rate by H2 UV pumping in erg H^-1 s^-1.
 Real Thermo::HeatingH2pump(const Real xHI, const Real xH2, const Real nH,
-                             const Real T, const Real dot_xH2_photo) {
-  const Real small_ = 1e-100;
-  Real ncr, f;
+                           const Real T, const Real dot_xH2_photo) {
+  const Real A = 2.0e-7;
+  const Real D = dot_xH2_photo / 5.7;
+  const Real t = 1. + T/1000.;
+  const Real geff_H = pow(10, -11.06 + 0.0555/t -2.390/(t*t));
+  const Real geff_H2 = pow(10, -11.08 -3.671/t -2.023/(t*t));
   // critical density ncr, heating only effective at n > ncr
-  const Real de = 1.6 * xHI * exp( - pow(400./T, 2) )
-                    + 1.4 * xH2 * exp( - (12000./(T + 1200.)));
-  if (de < small_ ) {
-    return 0;
-  } else {
-    ncr = 1.0e6 / sqrt(T) / de;
-    f = 1. / (1. + ncr/nH);
-  }
-  return dot_xH2_photo * 9. * 2.2*f * eV_;
+  const Real ncr = (A + D) / (geff_H*xHI + geff_H2*xH2);
+  const Real f = 1. / (1. + ncr/nH);
+  return dot_xH2_photo * 8. * 2.0*f * eV_ * xH2;
 }
 
 //----------------------------------------------------------------------------------------

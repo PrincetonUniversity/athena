@@ -26,7 +26,7 @@ class Thermo {
     static Real HeatingPE_W03(const Real G, const Real Z_PAH, const Real T,
                               const Real ne, const Real phi_PAH);
     static Real HeatingH2gr(const Real xHI, const Real xH2, const Real nH,
-                       const Real T, const Real kgr);
+                       const Real T, const Real kgr, const Real dot_xH2_photo);
     static Real HeatingH2pump(const Real xHI, const Real xH2, const Real nH,
                          const Real T, const Real dot_xH2_photo);
     static Real HeatingH2diss(const Real dot_xH2_photo);

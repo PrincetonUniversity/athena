@@ -638,9 +638,9 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
     GPE = Thermo::HeatingPE_W03(rad_(index_gpe_), Z_PAH_, T, nH_*y_e, phi_PAH_);
   }
   //H2 formation on dust grains
-  GH2gr = Thermo::HeatingH2gr(y_H,  y_H2, nH_, T, kgr_H);
-  //H2 UV pumping
   dot_xH2_photo = kph_H2 * y_H2;
+  GH2gr = Thermo::HeatingH2gr(y_H,  y_H2, nH_, T, kgr_H, dot_xH2_photo);
+  //H2 UV pumping
   GH2pump = Thermo::HeatingH2pump(y_H,  y_H2, nH_, T, dot_xH2_photo);
   //H2 photo dissiociation.
   GH2diss = Thermo::HeatingH2diss(dot_xH2_photo);

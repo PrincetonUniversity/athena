@@ -594,10 +594,10 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
     //photo electric effect on dust
     GPE = Thermo::HeatingPE(rad_[index_gpe_], zdg_, T, nH_*yprev[ige_]);
     //H2 formation on dust grains
-    GH2gr = Thermo::HeatingH2gr(yprev[igH_],  yprev[iH2_],  nH_,
-        T,  kgr_[igr_H_]);
-    //H2 UV pumping
     dot_xH2_photo = kph_[iph_H2_] * yprev[iH2_];
+    GH2gr = Thermo::HeatingH2gr(yprev[igH_],  yprev[iH2_],  nH_,
+        T,  kgr_[igr_H_], dot_xH2_photo);
+    //H2 UV pumping
     GH2pump = Thermo::HeatingH2pump(yprev[igH_],  yprev[iH2_],  nH_,
         T,  dot_xH2_photo);
     //H2 photo dissiociation.
