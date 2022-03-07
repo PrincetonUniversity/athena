@@ -48,8 +48,8 @@ ox3_bc      = periodic  # Outer-X3 boundary condition flag
 
 <hydro>
 gamma = 1.666666666667  # gamma = C_p/C_v
-eos_rho_unit  = 1.0     # Table unit/sim unit for mass density (default=1.0)
-eos_egas_unit = 1.0     # Table unit/sim unit for internal energy density (default=1.0)
+eos_rho_unit  = 1.0     # rho (in sim units) * eos_rho_unit = rho (in table units)
+eos_egas_unit = 1.0     # similar to eos_rho_unit. Both default to 1.0
 
 <problem>
 shock_dir     = 1         # Shock Direction -- (1,2,3) = (x1,x2,x3)

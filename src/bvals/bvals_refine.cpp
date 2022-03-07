@@ -563,7 +563,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
                                   fsi, fei, fsj, fej, fsk, fek);
   if (NSCALARS > 0) {
     PassiveScalars *ps = pmb->pscalars;
-    pmb->peos->PassiveScalarPrimitiveToConserved(ps->r, ph->w, ps->s, pmb->pcoord,
+    pmb->peos->PassiveScalarPrimitiveToConserved(ps->r, ph->u, ps->s, pmb->pcoord,
                                                  fsi, fei, fsj, fej, fsk, fek);
   }
   return;
