@@ -945,7 +945,7 @@ void TransformContravariantFromBoyerLindquist(Real at_bl, Real ar_bl, Real ath_b
     Real *p_a3) {
   if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
     Real delta = SQR(x1) - 2.0 * m * x1 + SQR(a);
-    *p_a0 = ar_bl + 2.0 * m * x1 / delta * ar_bl;
+    *p_a0 = at_bl + 2.0 * m * x1 / delta * ar_bl;
     *p_a1 = ar_bl;
     *p_a2 = ath_bl;
     *p_a3 = aph_bl + a / delta * ar_bl;
