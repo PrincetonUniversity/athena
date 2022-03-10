@@ -26,7 +26,7 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) {
 RadIntegrator::~RadIntegrator() {}
 
 //----------------------------------------------------------------------------------------
-//! \fn void void RadIntegrator::CopyToOutput()
+//! \fn void RadIntegrator::CopyToOutput()
 //! \brief average radiation field over all angles and copy values to output
 void RadIntegrator::CopyToOutput() {
   int is = pmy_mb->is;
@@ -49,7 +49,7 @@ void RadIntegrator::CopyToOutput() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void RadIntegrator::UpdateRadiation(int direction) {}
+//! \fn void RadIntegrator::UpdateRadiation(int direction)
 //! \brief calcuate total column and update radiation
 void RadIntegrator::UpdateRadiation(int direction) {}
 

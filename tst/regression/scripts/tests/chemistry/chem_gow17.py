@@ -32,7 +32,7 @@ def prepare(**kwargs):
 
 def run(**kwargs):
     arguments = [
-            'problem/G0=1e-6',
+            'radiation/G0=1e-6',
             ]
     athena.run('chemistry/athinput.chem_gow17', arguments)
 

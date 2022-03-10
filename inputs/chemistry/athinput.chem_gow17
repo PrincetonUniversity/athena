@@ -49,7 +49,6 @@ active   =   fixed        # post-processing
 
 <problem>
 nH         = 1.0921e+02 #density
-G0         = 1e-6   #radiation field strength, in Draine 1987 units
 unit_length_in_pc = 1.
 s_init      = 1.0e-6 #initial abundances
 
@@ -83,4 +82,5 @@ maxorder   = 3       #maximum order. Default 3.
 stldet     = 0       #stability limit detection. Default 0/false.
 
 <radiation>
+G0         = 1e-6   #radiation field strength, in Draine 1987 units
 n_frequency  = 8

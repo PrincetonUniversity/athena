@@ -308,7 +308,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
     msg << "### FATAL ERROR in ChemNetwork constructor" << std::endl
       << "number of frequencies in radiation: " << nfreq
       << " not equal to that in chemistry: " << n_freq_  << std::endl;
-    throw std::runtime_error(msg.str().c_str());
+    ATHENA_ERROR(msg);
   }
 
   if (NON_BAROTROPIC_EOS) {

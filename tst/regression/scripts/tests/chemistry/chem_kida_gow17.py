@@ -34,7 +34,7 @@ def prepare(**kwargs):
 
 def run(**kwargs):
     arguments = [
-            'problem/G0=1',
+            'radiation/G0=1',
             ]
     athena.run('chemistry/athinput.chem_kida_gow17', arguments)
 

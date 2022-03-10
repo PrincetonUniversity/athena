@@ -15,9 +15,10 @@
 #include "../radiation.hpp" // radiation
 
 class MeshBlock;
-class ParameterInput;
 class Radiation;
-class NeighborBlock;
+#ifdef INCLUDE_CHEMISTRY
+class ChemNetwork;
+#endif
 
 //! \class RadIntegrator
 //! \brief integrate algorithm for radiative transfer
@@ -31,6 +32,9 @@ class RadIntegrator {
 
   Radiation *pmy_rad;
   MeshBlock *pmy_mb;
+#ifdef INCLUDE_CHEMISTRY
+  ChemNetwork* pmy_chemnet;
+#endif
 
   void CopyToOutput();
 
