@@ -27,6 +27,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
 #include "outputs.hpp"
 
 // Only proceed if HDF5 output enabled
@@ -135,6 +136,9 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // Passive scalars:
     if (NSCALARS > 0)
       num_variables[n_dataset] += NSCALARS;
+    if (RADIATION_ENABLED) {
+      num_variables[n_dataset] += pmb->prad->nfreq;
+    }
 
     // n_dataset = 1: face-centered FaceField variable data
     n_dataset++;

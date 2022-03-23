@@ -96,6 +96,8 @@
 #include "../mesh/mesh.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
+#include "../radiation/integrators/rad_integrators.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
@@ -347,6 +349,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   Hydro *phyd = pmb->phydro;
   Field *pfld = pmb->pfield;
   PassiveScalars *psclr = pmb->pscalars;
+  Radiation *prad = pmb->prad;
   Gravity *pgrav = pmb->pgrav;
   OrbitalAdvection *porb = pmb->porb;
   num_vars_ = 0;
@@ -603,6 +606,24 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       }
     }
   }
+
+  if (RADIATION_ENABLED) {
+    if (ContainVariable(output_params.variable, "rad") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
+      std::string name_ir_avg = "ir_avg";
+      for (int i=0; i<prad->nfreq; i++) {
+        std::string vi = name_ir_avg + std::to_string(i);
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = vi;
+        pod->data.InitWithShallowSlice(prad->ir_avg, 4, i, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+    }
+  }
+
   // note, the Bcc variables are stored in a separate HDF5 dataset from the above Output
   // nodes, and it must come after those nodes in the linked list
   if (MAGNETIC_FIELDS_ENABLED) {

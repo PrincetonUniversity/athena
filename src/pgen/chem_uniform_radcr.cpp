@@ -90,6 +90,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
+    //calculate the average radiation field for output of the initial condition
+    prad->pradintegrator->CopyToOutput();
   }
 
   //intialize chemical species

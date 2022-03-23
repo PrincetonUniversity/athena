@@ -30,13 +30,14 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
+#include "../radiation/radiation.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
 // NEW_OUTPUT_TYPES:
 
 // "3" for 1-KE, 2-KE, 3-KE additional columns (come before tot-E)
-#define NHISTORY_VARS ((NHYDRO) + (SELF_GRAVITY_ENABLED > 0) + (NFIELD) + 3 + (NSCALARS))
+//#define nhistory_vars ((NHYDRO) + (SELF_GRAVITY_ENABLED > 0) + (NFIELD) + 3 + (NSCALARS))
 
 //----------------------------------------------------------------------------------------
 //! \fn void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
@@ -47,21 +48,25 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   Real real_max = std::numeric_limits<Real>::max();
   Real real_lowest = std::numeric_limits<Real>::lowest();
   AthenaArray<Real> vol(pmb->ncells1);
-  const int nhistory_output = NHISTORY_VARS + pm->nuser_history_output_;
+  int nhistory_vars = (NHYDRO) + (SELF_GRAVITY_ENABLED > 0) + (NFIELD) + 3 + (NSCALARS);
+  if (RADIATION_ENABLED) {
+    nhistory_vars += pmb->prad->nfreq;
+  }
+  const int nhistory_output = nhistory_vars + pm->nuser_history_output_;
   std::unique_ptr<Real[]> hst_data(new Real[nhistory_output]);
   // initialize built-in variable sums to 0.0
-  for (int n=0; n<NHISTORY_VARS; ++n) hst_data[n] = 0.0;
+  for (int n=0; n<nhistory_vars; ++n) hst_data[n] = 0.0;
   // initialize user-defined history outputs depending on the requested operation
   for (int n=0; n<pm->nuser_history_output_; n++) {
     switch (pm->user_history_ops_[n]) {
       case UserHistoryOperation::sum:
-        hst_data[NHISTORY_VARS+n] = 0.0;
+        hst_data[nhistory_vars+n] = 0.0;
         break;
       case UserHistoryOperation::max:
-        hst_data[NHISTORY_VARS+n] = real_lowest;
+        hst_data[nhistory_vars+n] = real_lowest;
         break;
       case UserHistoryOperation::min:
-        hst_data[NHISTORY_VARS+n] = real_max;
+        hst_data[nhistory_vars+n] = real_max;
         break;
     }
   }
@@ -72,6 +77,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     Hydro *phyd = pmb->phydro;
     Field *pfld = pmb->pfield;
     PassiveScalars *psclr = pmb->pscalars;
+    Radiation *prad = pmb->prad;
     Gravity *pgrav = pmb->pgrav;
     OrbitalAdvection *porb = pmb->porb;
 
@@ -125,6 +131,14 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
               constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD;
               hst_data[prev_out + n] += vol(i)*s;
             }
+            // average radiation field strength:
+            if (RADIATION_ENABLED) {
+              for (int n=0; n<prad->nfreq; n++) {
+                Real& ir = prad->ir_avg(n,k,j,i);
+                constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD + NSCALARS;
+                hst_data[prev_out + n] += vol(i)*ir;
+              }
+            }
           }
         }
       }
@@ -175,6 +189,14 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
               constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD;
               hst_data[prev_out + n] += vol(i)*s;
             }
+            // average radiation field strength:
+            if (RADIATION_ENABLED) {
+              for (int n=0; n<prad->nfreq; n++) {
+                Real& ir = prad->ir_avg(n,k,j,i);
+                constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD + NSCALARS;
+                hst_data[prev_out + n] += vol(i)*ir;
+              }
+            }
           }
         }
       }
@@ -187,13 +209,13 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             // TODO(felker): this should automatically volume-weight the sum, like the
             // built-in variables. But existing user-defined .hst fns are currently
             // weighting their returned values.
-            hst_data[NHISTORY_VARS+n] += usr_val;
+            hst_data[nhistory_vars+n] += usr_val;
             break;
           case UserHistoryOperation::max:
-            hst_data[NHISTORY_VARS+n] = std::max(usr_val, hst_data[NHISTORY_VARS+n]);
+            hst_data[nhistory_vars+n] = std::max(usr_val, hst_data[nhistory_vars+n]);
             break;
           case UserHistoryOperation::min:
-            hst_data[NHISTORY_VARS+n] = std::min(usr_val, hst_data[NHISTORY_VARS+n]);
+            hst_data[nhistory_vars+n] = std::min(usr_val, hst_data[nhistory_vars+n]);
             break;
         }
       }
@@ -203,15 +225,15 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 #ifdef MPI_PARALLEL
   // sum built-in/predefined hst_data[] over all ranks
   if (Globals::my_rank == 0) {
-    MPI_Reduce(MPI_IN_PLACE, hst_data.get(), NHISTORY_VARS, MPI_ATHENA_REAL, MPI_SUM, 0,
+    MPI_Reduce(MPI_IN_PLACE, hst_data.get(), nhistory_vars, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
   } else {
-    MPI_Reduce(hst_data.get(), hst_data.get(), NHISTORY_VARS, MPI_ATHENA_REAL, MPI_SUM,
+    MPI_Reduce(hst_data.get(), hst_data.get(), nhistory_vars, MPI_ATHENA_REAL, MPI_SUM,
                0, MPI_COMM_WORLD);
   }
   // apply separate chosen operations to each user-defined history output
   for (int n=0; n<pm->nuser_history_output_; n++) {
-    Real *usr_hst_data = hst_data.get() + NHISTORY_VARS + n;
+    Real *usr_hst_data = hst_data.get() + nhistory_vars + n;
     MPI_Op usr_op;
     switch (pm->user_history_ops_[n]) {
       case UserHistoryOperation::sum:
@@ -241,6 +263,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     fname.assign(output_params.file_basename);
     fname.append(".hst");
     PassiveScalars *psclr = pmb->pscalars;
+    Radiation *prad = pmb->prad;
 
     // open file for output
     FILE *pfile;
@@ -280,6 +303,11 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 #else
         std::fprintf(pfile,"[%d]=%d-scalar    ", iout++, n);
 #endif //INCLUDE_CHEMISTRY
+      }
+      if (RADIATION_ENABLED) {
+        for (int n=0; n<prad->nfreq; n++) {
+          std::fprintf(pfile,"[%d]=%d-rad    ", iout++, n);
+        }
       }
       for (int n=0; n<pm->nuser_history_output_; n++)
         std::fprintf(pfile,"[%d]=%-7s ", iout++,
