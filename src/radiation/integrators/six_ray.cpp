@@ -14,23 +14,20 @@
 #include <iostream>   // endl
 
 // Athena++ headers
+#include "../../coordinates/coordinates.hpp"
+#include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
 #include "../radiation.hpp"
 #include "../../scalars/scalars.hpp"
 #include "../../bvals/bvals.hpp"
+#include "../../utils/units.hpp"
 
 namespace {
   Real rad_G0; //diffuse radiation field strength in Draine 1987 unit
   Real f_cell, f_prev; //fraction of the column in the cell that goes to shielding
 #ifdef INCLUDE_CHEMISTRY
   Real lunit; //length unit in cm
-  int ncol; //number of column densities needed to track
-  AthenaArray<Real> col;
-#ifdef DEBUG
-  AthenaArray<Real> col_avg, col_Htot, col_CO, col_H2,  col_C;//for debug output
-#endif //DEBUG
-  void GetColMB(int direction); //calculate column densities within the meshblock
 #endif //INCLUDE_CHEMISTRY
 }
 
@@ -48,7 +45,7 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) {
     ATHENA_ERROR(msg);
   }
 #ifdef INCLUDE_CHEMISTRY
-  pmy_chemnet = &pmy_mb->pscalars.chemnet;
+  pmy_chemnet = &pmy_mb->pscalars->chemnet;
   lunit = pmy_chemnet->punit->Length;
   ncol = pmy_chemnet->n_cols_;
   //allocate array for column density
@@ -95,9 +92,29 @@ void RadIntegrator::CopyToOutput() {
   for (int k=ks-NGHOST; k<=ke+NGHOST; ++k) {
     for (int j=js-NGHOST; j<=je+NGHOST; ++j) {
       for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
-        for (int ifreq=0; ifreq < pmy_rad->nfreq; ++ifreq) {
-          pmy_rad->ir_avg(ifreq, k, j, i) =
-            pmy_rad->ir(k, j, i, ifreq * pmy_rad->nang);
+        for (int iang=0; iang < 6; iang++) {
+          //column densities
+#ifdef DEBUG
+          col_Htot(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNHtot_);
+          col_H2(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNH2_);
+          col_CO(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNCO_);
+          col_C(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNC_);
+          //angel averaged column densities
+          for (int icol=0; icol<ncol; icol++) {
+            if (iang == 0) {
+              col_avg(icol, k, j, i) = 0;
+            }
+            col_avg(icol, k, j, i) += col(iang, k, j, i, icol)/6.;
+          }
+#endif //DEBUG
+          //radiation
+          for (int ifreq=0; ifreq < pmy_rad->nfreq; ++ifreq) {
+            if (iang == 0) {
+              pmy_rad->ir_avg(ifreq, k, j, i) = 0;
+            }
+            pmy_rad->ir_avg(ifreq, k, j, i) +=
+              pmy_rad->ir(k, j, i, ifreq * pmy_rad->nang+iang)/6.;
+          }
         }
       }
     }
@@ -116,7 +133,7 @@ void RadIntegrator::UpdateRadiation(int direction) {}
 //! \brief calculate column densities within the meshblock
 //!
 //! direction: 0:+x, 1:+y, 2:+z, 3:-x, 4:-y, 5:-z
-void GetColMB(int direction) {
+void RadIntegrator::GetColMB(int direction) {
   const int iH2 = pmy_chemnet->iH2_;
   const int iCO = pmy_chemnet->iCO_;
   const int iCplus = pmy_chemnet->iCplus_;

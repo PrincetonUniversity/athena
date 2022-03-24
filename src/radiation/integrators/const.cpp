@@ -50,6 +50,12 @@ void RadIntegrator::CopyToOutput() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void RadIntegrator::UpdateRadiation(int direction)
-//! \brief calcuate total column and update radiation
+//! \brief update radiation field
 void RadIntegrator::UpdateRadiation(int direction) {}
 
+#ifdef INCLUDE_CHEMISTRY
+//----------------------------------------------------------------------------------------
+//! \fn void RadIntegrator::GetColMB(int direction)
+//! \brief calcuate total column within the meshblock
+void RadIntegrator::GetColMB(int direction) {}
+#endif //INCLUDE_CHEMISTRY

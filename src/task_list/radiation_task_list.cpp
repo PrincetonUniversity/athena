@@ -27,8 +27,8 @@ RadiationIntegratorTaskList::RadiationIntegratorTaskList(ParameterInput *pin, Me
   integrator = RADIATION_INTEGRATOR;
   // Now assemble list of tasks for each step of chemistry integrator
   {using namespace RadiationIntegratorTaskNames; // NOLINT (build/namespace)
-    if (integrator == "loc_jeans") {
-      AddTask(INT_LOC_JEANS,NONE);
+    if (integrator == "six_ray") {
+      AddTask(INT_SIX_RAY,NONE);
     } else if (integrator == "const") {
       //do nothing, radiation field constant, remain initial value
       AddTask(INT_CONST,NONE);
@@ -36,7 +36,7 @@ RadiationIntegratorTaskList::RadiationIntegratorTaskList(ParameterInput *pin, Me
       std::stringstream msg;
       msg << "### FATAL ERROR in RadiationIntegratorTaskList constructor" << std::endl
         << "integrator=" << integrator << " not valid radiation integrator, "
-        << std::endl << "choose from {jeans, const}" << std::endl;
+        << std::endl << "choose from {six_ray, const}" << std::endl;
       ATHENA_ERROR(msg);
     }
   } // end of using namespace block
@@ -51,10 +51,10 @@ void RadiationIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].dependency=dep;
 
   using namespace RadiationIntegratorTaskNames; // NOLINT (build/namespace)
-  if (id == INT_LOC_JEANS) {
+  if (id == INT_SIX_RAY) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::LocalIntegratorJeans);
+        (&RadiationIntegratorTaskList::SixRayRadiation);
   } else if (id == INT_CONST) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -80,9 +80,10 @@ void RadiationIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 
 //----------------------------------------------------------------------------------------
 //! Local Jeans integrator
-TaskStatus RadiationIntegratorTaskList::LocalIntegratorJeans(MeshBlock *pmb, int stage) {
+TaskStatus RadiationIntegratorTaskList::SixRayRadiation(MeshBlock *pmb, int stage) {
 #ifdef INCLUDE_CHEMISTRY
-  pmb->prad->pradintegrator->UpdateRadiation(0);
+  //pmb->prad->pradintegrator->UpdateRadiation(0);
+  //TODO (Munan Gong): set up six_ray integrator
   pmb->prad->pradintegrator->CopyToOutput();
 #endif
   return TaskStatus::success;

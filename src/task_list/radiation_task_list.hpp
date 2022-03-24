@@ -33,7 +33,7 @@ class RadiationIntegratorTaskList : public TaskList {
   std::string integrator;
 
   //functions
-  enum TaskStatus LocalIntegratorJeans(MeshBlock *pmb, int step);
+  enum TaskStatus SixRayRadiation(MeshBlock *pmb, int step);
   enum TaskStatus ConstRadiation(MeshBlock *pmb, int step);
  private:
   void StartupTaskList(MeshBlock *pmb, int stage) override;
@@ -43,7 +43,7 @@ class RadiationIntegratorTaskList : public TaskList {
 namespace RadiationIntegratorTaskNames {
 const TaskID NONE(0);
 const TaskID INT_CONST(1); //constant radiation, do nothing
-const TaskID INT_LOC_JEANS(2); //local jeans shielding
+const TaskID INT_SIX_RAY(2); //six-ray radiation, only for cartesian uniform grid
 };
 
 #endif // TASK_LIST_RADIATION_TASK_LIST_HPP_

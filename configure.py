@@ -207,7 +207,7 @@ parser.add_argument('--kida_rates',
 # -radiation argument
 parser.add_argument('--radiation',
                     default=None,
-                    choices=["const"],
+                    choices=["const", "six_ray"],
                     help='enable and select radiation radiative transfer method')
 
 # --cvode_path argument

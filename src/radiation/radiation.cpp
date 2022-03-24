@@ -28,13 +28,13 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
 
   if (integrator == "six_ray") {
     nang = 6;
-  } else if (integrator == "loc_jeans" || integrator == "const") {
+  } else if (integrator == "const") {
     nang = 1;
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in Radiation constructor" << std::endl
         << "integrator=" << integrator << " not valid radiation integrator, " << std::endl
-        << "choose from {jeans, six_ray, const}" << std::endl;
+        << "choose from {six_ray, const}" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
 

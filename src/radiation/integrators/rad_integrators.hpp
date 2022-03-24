@@ -18,7 +18,7 @@ class MeshBlock;
 class Radiation;
 #ifdef INCLUDE_CHEMISTRY
 class ChemNetwork;
-#endif
+#endif //INCLUDE_CHEMISTRY
 
 //! \class RadIntegrator
 //! \brief integrate algorithm for radiative transfer
@@ -34,11 +34,21 @@ class RadIntegrator {
   MeshBlock *pmy_mb;
 #ifdef INCLUDE_CHEMISTRY
   ChemNetwork* pmy_chemnet;
-#endif
+  int ncol; //number of column densities needed to track
+  AthenaArray<Real> col; //column densitites
+#ifdef DEBUG
+  AthenaArray<Real> col_avg, col_Htot, col_CO, col_H2,  col_C;//for debug output
+#endif //DEBUG
+#endif //INCLUDE_CHEMISTRY
 
   void CopyToOutput();
 
   void UpdateRadiation(int direction);
+ private:
+#ifdef INCLUDE_CHEMISTRY
+  //calculate column densities within the meshblock, for six_ray
+  void GetColMB(int direction);
+#endif //INCLUDE_CHEMISTRY
 };
 
 #endif // RADIATION_INTEGRATORS_RAD_INTEGRATORS_HPP_
