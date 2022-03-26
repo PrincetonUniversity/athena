@@ -621,6 +621,71 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         AppendOutputDataNode(pod);
         num_vars_++;
       }
+#ifdef DEBUG
+      //for testing six-ray. Not implemented in HDF5 output yet
+      if (RADIATION_INTEGRATOR == "six_ray") {
+        //average column density
+        std::string name_col_avg = "col_avg";
+        for (int i=0; i<prad->pradintegrator->ncol; i++) {
+          std::string vi = name_col_avg + std::to_string(i);
+          pod = new OutputData;
+          pod->type = "SCALARS";
+          pod->name = vi;
+          pod->data.InitWithShallowSlice(prad->pradintegrator->col_avg, 4, i, 1);
+          AppendOutputDataNode(pod);
+          num_vars_++;
+        }
+        //column density components
+        pod = new OutputData;
+        pod->type = "VECTORS";
+        pod->name = "col_Htot_p";
+        pod->data.InitWithShallowSlice(prad->pradintegrator->col_Htot,4,0,3);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+        pod = new OutputData;
+        pod->type = "VECTORS";
+        pod->name = "col_H2_p";
+        pod->data.InitWithShallowSlice(prad->pradintegrator->col_H2,4,0,3);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+        pod = new OutputData;
+        pod->type = "VECTORS";
+        pod->name = "col_CO_p";
+        pod->data.InitWithShallowSlice(prad->pradintegrator->col_CO,4,0,3);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+        pod = new OutputData;
+        pod->type = "VECTORS";
+        pod->name = "col_C_p";
+        pod->data.InitWithShallowSlice(prad->pradintegrator->col_C,4,0,3);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+        pod = new OutputData;
+        pod->type = "VECTORS";
+        pod->name = "col_Htot_m";
+        pod->data.InitWithShallowSlice(prad->pradintegrator->col_Htot,4,3,3);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+        pod = new OutputData;
+        pod->type = "VECTORS";
+        pod->name = "col_H2_m";
+        pod->data.InitWithShallowSlice(prad->pradintegrator->col_H2,4,3,3);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+        pod = new OutputData;
+        pod->type = "VECTORS";
+        pod->name = "col_CO_m";
+        pod->data.InitWithShallowSlice(prad->pradintegrator->col_CO,4,3,3);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+        pod = new OutputData;
+        pod->type = "VECTORS";
+        pod->name = "col_C_m";
+        pod->data.InitWithShallowSlice(prad->pradintegrator->col_C,4,3,3);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+#endif //DEBUG
     }
   }
 

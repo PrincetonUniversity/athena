@@ -89,6 +89,9 @@ void RadIntegrator::CopyToOutput() {
   int ie = pmy_mb->ie;
   int je = pmy_mb->je;
   int ke = pmy_mb->ke;
+  int iang_arr[6] =
+  {BoundaryFace::inner_x1, BoundaryFace::inner_x2, BoundaryFace::inner_x3,
+   BoundaryFace::outer_x1, BoundaryFace::outer_x2, BoundaryFace::outer_x3};
   for (int k=ks-NGHOST; k<=ke+NGHOST; ++k) {
     for (int j=js-NGHOST; j<=je+NGHOST; ++j) {
       for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
