@@ -972,9 +972,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         AddTask(RECV_SCLR,NONE);
         AddTask(SETB_SCLR,(RECV_SCLR|CALC_HYDORB));
       } else {
-        AddTask(SEND_SCLR,INT_SCLR);
+        AddTask(SEND_SCLR,SRCTERM_HYD);
         AddTask(RECV_SCLR,NONE);
-        AddTask(SETB_SCLR,(RECV_SCLR|INT_SCLR));
+        AddTask(SETB_SCLR,(RECV_SCLR|SRCTERM_HYD));
       }
       if (SHEAR_PERIODIC) {
         AddTask(SEND_SCLRSH,SETB_SCLR);
