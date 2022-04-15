@@ -157,7 +157,7 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus IntegrateHydro(MeshBlock *pmb, int stage);
   TaskStatus IntegrateField(MeshBlock *pmb, int stage);
 
-  TaskStatus AddSourceTerm(MeshBlock *pmb, int stage);
+  TaskStatus AddSourceTerms(MeshBlock *pmb, int stage);
 
   TaskStatus DiffuseHydro(MeshBlock *pmb, int stage);
   TaskStatus DiffuseField(MeshBlock *pmb, int stage);
