@@ -930,21 +930,21 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       AddTask(INT_HYD, CALC_HYDFLX);
     }
     if (NSCALARS > 0) {
-      AddTask(SRCTERM_HYD,(INT_HYD|INT_SCLR));
+      AddTask(SRC_TERM,(INT_HYD|INT_SCLR));
     } else {
-      AddTask(SRCTERM_HYD,INT_HYD);
+      AddTask(SRC_TERM,INT_HYD);
     }
     if (ORBITAL_ADVECTION) {
-      AddTask(SEND_HYDORB,SRCTERM_HYD);
+      AddTask(SEND_HYDORB,SRC_TERM);
       AddTask(RECV_HYDORB,NONE);
       AddTask(CALC_HYDORB,(SEND_HYDORB|RECV_HYDORB));
       AddTask(SEND_HYD,CALC_HYDORB);
       AddTask(RECV_HYD,NONE);
       AddTask(SETB_HYD,(RECV_HYD|CALC_HYDORB));
     } else {
-      AddTask(SEND_HYD,SRCTERM_HYD);
+      AddTask(SEND_HYD,SRC_TERM);
       AddTask(RECV_HYD,NONE);
-      AddTask(SETB_HYD,(RECV_HYD|SRCTERM_HYD));
+      AddTask(SETB_HYD,(RECV_HYD|SRC_TERM));
     }
 
     if (SHEAR_PERIODIC) {
@@ -966,15 +966,14 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       } else {
         AddTask(INT_SCLR,CALC_SCLRFLX);
       }
-      // there is no SRCTERM_SCLR task
       if (ORBITAL_ADVECTION) {
         AddTask(SEND_SCLR,CALC_HYDORB);
         AddTask(RECV_SCLR,NONE);
         AddTask(SETB_SCLR,(RECV_SCLR|CALC_HYDORB));
       } else {
-        AddTask(SEND_SCLR,SRCTERM_HYD);
+        AddTask(SEND_SCLR,SRC_TERM);
         AddTask(RECV_SCLR,NONE);
-        AddTask(SETB_SCLR,(RECV_SCLR|SRCTERM_HYD));
+        AddTask(SETB_SCLR,(RECV_SCLR|SRC_TERM));
       }
       if (SHEAR_PERIODIC) {
         AddTask(SEND_SCLRSH,SETB_SCLR);
@@ -1116,7 +1115,7 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   //!   VerbObject() since "HydroFluxCalculate()" doesn't sound quite right.
   //! - There are exceptions to the "verb+object" convention in some TASK_NAMES and
   //!   TaskFunc, e.g. NEW_DT + NewBlockTimeStep() and AMR_FLAG + CheckRefinement(),
-  //!   SRCTERM_HYD and HydroSourceTerms(), USERWORK, PHY_BVAL, PROLONG, CONS2PRIM,
+  //!   SRC_TERM and SourceTerms(), USERWORK, PHY_BVAL, PROLONG, CONS2PRIM,
   //!   ... Although, AMR_FLAG = "flag blocks for AMR" should be FLAG_AMR in VERB_OBJECT
   using namespace HydroIntegratorTaskNames; // NOLINT (build/namespace)
   if (id == CLEAR_ALLBND) {
@@ -1164,10 +1163,10 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::IntegrateField);
     task_list_[ntasks].lb_time = true;
-  } else if (id == SRCTERM_HYD) {
+  } else if (id == SRC_TERM) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::AddSourceTermsHydro);
+        (&TimeIntegratorTaskList::AddSourceTerms);
     task_list_[ntasks].lb_time = true;
   } else if (id == SEND_HYD) {
     task_list_[ntasks].TaskFunc=
@@ -1653,7 +1652,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 //! Functions to add source terms
 
-TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage) {
+TaskStatus TimeIntegratorTaskList::AddSourceTerms(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   Field *pf = pmb->pfield;
   PassiveScalars *ps = pmb->pscalars;
@@ -1670,7 +1669,7 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsHydro(MeshBlock *pmb, int stage
       // Scaled coefficient for RHS update
       Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
       // Evaluate the source terms at the time at the beginning of the stage
-      ph->hsrc.AddHydroSourceTerms(t_start_stage, dt, ph->flux, ph->w, ps->r, pf->bcc,
+      ph->hsrc.AddSourceTerms(t_start_stage, dt, ph->flux, ph->w, ps->r, pf->bcc,
                                    ph->u, ps->s);
     }
     return TaskStatus::next;
