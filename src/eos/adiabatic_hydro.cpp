@@ -93,7 +93,7 @@ void EquationOfState::PrimitiveToConserved(
   Real igm1 = 1.0/(GetGamma() - 1.0);
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
-      #pragma omp simd
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         Real& u_d  = cons(IDN,k,j,i);
         Real& u_m1 = cons(IM1,k,j,i);
