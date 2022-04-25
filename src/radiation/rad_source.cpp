@@ -296,7 +296,7 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
                 Real ii_plus =
                     (ii_minus - dt / (4.0 * PI * u_n * u_n * u_n * nmu_(0,l,m,k,j,i))
                     * (k_a * arad * SQR(SQR(tt_plus_(i))) + k_s * ee_f_plus_(i)))
-                    / (1.0 - dt * k_tot * u_n * nmu_(0,l,m,k,j,i));
+                    / (1.0 - dt * k_tot * u_n / nmu_(0,l,m,k,j,i));
                 cons_rad(lm,k,j,i) += (ii_plus - ii_minus) * n0_n_mu_(0,l,m,k,j,i);
                 cons_rad(lm,k,j,i) = std::min(cons_rad(lm,k,j,i), 0.0);
               }
