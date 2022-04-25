@@ -255,7 +255,7 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
           // Calculate new gas temperature
           bad_cell_(i) = false;
           bool quartic_flag = true;
-          if (k_a > 0.0) {
+          if (k_tot > 0.0) {
             if (std::abs(coeff_4) > TINY_NUMBER and std::abs(coeff_1) > TINY_NUMBER) {
               quartic_flag =
                   FourthPolyRoot(coeff_4 / coeff_1, coeff_0 / coeff_1, &tt_plus_(i));
