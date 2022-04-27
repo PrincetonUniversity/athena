@@ -39,13 +39,12 @@
 // Global variables
 namespace {
 Real rho, pgas;   // initial thermodynamic variables for fluid
-Real ux, uy, uz;  // initial spatial components of fluid 4-velocity
+Real ut, ux;      // initial components of fluid 4-velocity
 Real x0;          // initial location of peak
 Real sigma;       // initial width of Gaussian
 Real e_rad_peak;  // initial peak radiation energy density above background
 Real e_rad_back;  // initial background radiation energy density
 Real k_s;         // scattering coefficient
-Real dd;          // diffusion coefficient
 }  // namespace
 
 //----------------------------------------------------------------------------------------
@@ -76,14 +75,14 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   rho = pin->GetReal("problem", "rho");
   pgas = pin->GetReal("problem", "pgas");
   ux = pin->GetReal("problem", "ux");
-  uy = pin->GetReal("problem", "uy");
-  uz = pin->GetReal("problem", "uz");
   x0 = pin->GetReal("problem", "x0");
   sigma = pin->GetReal("problem", "sigma");
   e_rad_peak = pin->GetReal("problem", "e_rad_peak");
   e_rad_back = pin->GetReal("problem", "e_rad_back");
   k_s = pin->GetReal("problem", "k_s");
-  dd = 1.0 / (3.0 * k_s);
+
+  // Calculate Lorentz factor
+  ut = std::sqrt(1.0 + SQR(ux));
   return;
 }
 
@@ -102,8 +101,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->w(IDN,k,j,i) = phydro->w1(IDN,k,j,i) = rho;
         phydro->w(IPR,k,j,i) = phydro->w1(IPR,k,j,i) = pgas;
         phydro->w(IVX,k,j,i) = phydro->w1(IVX,k,j,i) = ux;
-        phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = uy;
-        phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = uz;
+        phydro->w(IVY,k,j,i) = phydro->w1(IVY,k,j,i) = 0.0;
+        phydro->w(IVZ,k,j,i) = phydro->w1(IVZ,k,j,i) = 0.0;
       }
     }
   }
@@ -118,11 +117,25 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j = js; j <= je; ++j) {
       pcoord->CellMetric(k, j, is, ie, g, gi);
       for (int i = is; i <= ie; ++i) {
+
+        // Locate cell in coordinate frame
+        Real t = 0.0;
         Real x = pcoord->x1v(i);
-        Real e_rad = std::exp(-SQR(x - x0) / (2.0 * SQR(sigma)));
-        Real f_rad = dd / SQR(sigma) * (x - x0) * e_rad;
-        prad->CalculateRadiationInCellLinear(e_rad * e_rad_peak + e_rad_back,
-            f_rad * e_rad_peak, 0.0, 0.0, ux, uy, uz, k, j, i, g, prad->cons);
+
+        // Locate cell in fluid frame
+        Real tp = ut * t - ux * x;
+        Real xp = ut * x - ux * t;
+
+        // Calculate fluid-frame moments
+        Real aa = 0.0;
+        if (tp > -3.0 * k_s * SQR(sigma) / 2.0) {
+          aa = 1.0 / std::sqrt(1.0 + 2.0 * tp / (3.0 * k_s * SQR(sigma)));
+        }
+        Real ef_rad =
+            e_rad_peak * aa * std::exp(-0.5 * SQR(aa * (xp - x0) / sigma)) + e_rad_back;
+        Real ff_rad = SQR(aa / sigma) * (xp - x0) / (3.0 * k_s) * (ef_rad - e_rad_back);
+        prad->CalculateRadiationInCellLinear(ef_rad, ff_rad, 0.0, 0.0, ux, 0.0, 0.0, k, j,
+            i, g, prad->cons);
       }
     }
   }
