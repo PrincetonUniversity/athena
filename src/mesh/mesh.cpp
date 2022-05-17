@@ -57,6 +57,9 @@
 #include <mpi.h>
 #endif
 
+// empty array to pass in place of scalars when NSCALARS=0
+static AthenaArray<Real> empty;
+
 //----------------------------------------------------------------------------------------
 //! Mesh constructor, builds mesh at start of calculation using parameters in input file
 
@@ -1533,8 +1536,14 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           if (pbval->nblevel[0][1][1] != -1) kl -= NGHOST;
           if (pbval->nblevel[2][1][1] != -1) ku += NGHOST;
         }
+        // MSBC: scalars are passed to EOS functions. If there are no scalars, pass any
+        // array.
         pmb->peos->ConservedToPrimitive(ph->u, ph->w1, pf->b,
-                                        ph->w, pf->bcc, pmb->pcoord,
+                                        ph->w, pf->bcc,
+                                        (NSCALARS) ? ps->s : empty,
+                                        (NSCALARS) ? ps->r : empty,
+                                        (NSCALARS) ? ps->r : empty,
+                                        pmb->pcoord,
                                         il, iu, jl, ju, kl, ku);
         if (NSCALARS > 0) {
           // r1/r_old for GR is currently unused:
@@ -1563,7 +1572,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pbval->ApplyPhysicalBoundaries(time, 0.0, pbval->bvars_main_int);
           // Perform 4th order W(U)
           pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
-                                                     ph->w, pf->bcc, pmb->pcoord,
+                                                     ph->w, pf->bcc,
+                                                     (NSCALARS) ? ps->s : empty,
+                                                     (NSCALARS) ? ps->r : empty,
+                                                     (NSCALARS) ? ps->r : empty,
+                                                     pmb->pcoord,
                                                      il, iu, jl, ju, kl, ku);
           if (NSCALARS > 0) {
             pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(

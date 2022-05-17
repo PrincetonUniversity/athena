@@ -66,13 +66,15 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
 //----------------------------------------------------------------------------------------
 //! \fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
 //!           const AthenaArray<Real> &prim_old, const FaceField &b,
-//!           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
-//!           int il, int iu, int jl, int ju, int kl, int ku)
-//! \brief Converts conserved into primitive variables in adiabatic hydro.
+//!           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, AthenaArray<Real> &s,
+//!           const AthenaArray<Real> &r_old, AthenaArray<Real> &r,
+//!           Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku)
+//! \brief Converts conserved into primitive variables.
 
 void EquationOfState::ConservedToPrimitive(
     AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
-    AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
+    AthenaArray<Real> &prim, AthenaArray<Real> &bcc, AthenaArray<Real> &s,
+    const AthenaArray<Real> &r_old, AthenaArray<Real> &r,
     Coordinates *pco, int il,int iu, int jl,int ju, int kl,int ku) {
 
   pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,il,iu,jl,ju,kl,ku);
@@ -109,11 +111,16 @@ void EquationOfState::ConservedToPrimitive(
         Real pb = 0.5*(SQR(bcc1) + SQR(bcc2) + SQR(bcc3));
         Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));
 
+        Real s_cell[NSCALARS];
+        for (int n=0; n<NSCALARS; ++n) {
+          s_cell[n] = s(n,k,j,i);
+        }
+
         // apply pressure/energy floor, correct total energy
         u_e = (u_e - ke - pb > energy_floor_) ?  u_e : energy_floor_ + ke + pb;
         // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point due
         //       to floating point errors/catastrophic cancellation
-        w_p = PresFromRhoEg(u_d, u_e - ke - pb);
+        w_p = PresFromRhoEg(u_d, u_e - ke - pb, s_cell);
       }
     }
   }
@@ -124,13 +131,15 @@ void EquationOfState::ConservedToPrimitive(
 
 //----------------------------------------------------------------------------------------
 //! \fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-//!           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
+//!           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, const AthenaArray<Real> &r,
+//!           AthenaArray<Real> &s, Coordinates *pco,
 //!           int il, int iu, int jl, int ju, int kl, int ku);
 //! \brief Converts primitive variables into conservative variables
 
 void EquationOfState::PrimitiveToConserved(
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
-    AthenaArray<Real> &cons, Coordinates *pco,
+    AthenaArray<Real> &cons, const AthenaArray<Real> &r,
+    AthenaArray<Real> &s, Coordinates *pco,
     int il, int iu, int jl, int ju, int kl, int ku) {
   // Force outer-loop vectorization
 #pragma omp simd
@@ -159,9 +168,15 @@ void EquationOfState::PrimitiveToConserved(
         u_m1 = w_vx*w_d;
         u_m2 = w_vy*w_d;
         u_m3 = w_vz*w_d;
+
+        Real r_cell[NSCALARS];
+        for (int n=0; n<NSCALARS; ++n) {
+          r_cell[n] = r(n,k,j,i);
+        }
         // cellwise conversion
-        u_e = EgasFromRhoP(u_d, w_p) + 0.5*(w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz))
-                                     + (SQR(bcc1) + SQR(bcc2) + SQR(bcc3)));
+        u_e = EgasFromRhoP(u_d, w_p, r_cell) +
+              0.5*(w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz)) +
+                   (SQR(bcc1) + SQR(bcc2) + SQR(bcc3)));
       }
     }
   }
@@ -173,16 +188,18 @@ void EquationOfState::PrimitiveToConserved(
 //! \fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
 //! \brief returns adiabatic sound speed given vector of primitive variables
 
-Real EquationOfState::SoundSpeed(const Real prim[NHYDRO]) {
-  return std::sqrt(AsqFromRhoP(prim[IDN], prim[IPR]));
+Real EquationOfState::SoundSpeed(const Real prim[NHYDRO+NSCALARS]) {
+  return std::sqrt(AsqFromRhoP(prim[IDN], prim[IPR], prim+NSCALARS));
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::FastMagnetosonicSpeed(const Real prim[], const Real bx)
 //! \brief returns fast magnetosonic speed given vector of primitive variables
 //! Note the formula for (C_f)^2 is positive definite, so this func never returns a NaN
-Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx) {
-  Real asq = AsqFromRhoP(prim[IDN], prim[IPR]) * prim[IDN]; // Actually rho*asq
+Real EquationOfState::FastMagnetosonicSpeed(const Real prim[(NWAVE+NSCALARS)],
+                                            const Real bx) {
+  // Actually rho*asq
+  Real asq = AsqFromRhoP(prim[IDN], prim[IPR], prim+NHYDRO) * prim[IDN];
   Real vaxsq = bx*bx;
   Real ct2 = (prim[IBY]*prim[IBY] + prim[IBZ]*prim[IBZ]);
   Real qsq = vaxsq + ct2 + asq;
@@ -234,6 +251,50 @@ void EquationOfState::ApplyPrimitiveConservedFloors(
   w_p = (w_p > pressure_floor_) ? w_p : pressure_floor_;
 
   return;
+}
+
+// overload eos calls without tracers for backward compatibility
+
+//----------------------------------------------------------------------------------------
+//! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
+//! \brief Return gas pressure
+Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
+  if (NSCALARS > 0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in EquationOfState::PresFromRhoEg" << std::endl
+        << "When NSCALARS>0, scalars (s) must be passed as a 3rd argument" << std::endl;
+    ATHENA_ERROR(msg);
+    return -1.0;
+  }
+  return PresFromRhoEg(rho, egas, nullptr);
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
+//! \brief Return internal energy density
+Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
+  if (NSCALARS > 0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in EquationOfState::EgasFromRhoP" << std::endl
+        << "When NSCALARS>0, scalars (r) must be passed as a 3rd argument" << std::endl;
+    ATHENA_ERROR(msg);
+    return -1.0;
+  }
+  return EgasFromRhoP(rho, pres, nullptr);
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
+//! \brief Return adiabatic sound speed squared
+Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
+  if (NSCALARS > 0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in EquationOfState::AsqFromRhoP" << std::endl
+        << "When NSCALARS>0, scalars (r) must be passed as a 3rd argument" << std::endl;
+    ATHENA_ERROR(msg);
+    return -1.0;
+  }
+  return AsqFromRhoP(rho, pres, nullptr);
 }
 
 Real EquationOfState::GetGamma() {

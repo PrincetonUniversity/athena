@@ -40,12 +40,13 @@ Real gm1, iso_cs;
 //! \brief The Roe Riemann solver for hydrodynamics (both adiabatic and isothermal)
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
-                          const int ivx,
-                          AthenaArray<Real> &wl, AthenaArray<Real> &wr,
-                          AthenaArray<Real> &flx, const AthenaArray<Real> &dxw) {
+                          const int ivx, AthenaArray<Real> &wl,
+                          AthenaArray<Real> &wr, AthenaArray<Real> &flx,
+                          const AthenaArray<Real> &dxw, AthenaArray<Real> &rl,
+                          AthenaArray<Real> &rr, AthenaArray<Real> &sflx) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
+  Real wli[(NHYDRO+NSCALARS*GENERAL_EOS)],wri[(NHYDRO+NSCALARS*GENERAL_EOS)];
   Real flxi[(NHYDRO)],fl[(NHYDRO)],fr[(NHYDRO)];
   gm1 = pmy_block->peos->GetGamma() - 1.0;
   iso_cs = pmy_block->peos->GetIsoSoundSpeed();
@@ -66,6 +67,13 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     wri[IVY]=wr(ivy,i);
     wri[IVZ]=wr(ivz,i);
     if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,i);
+
+    if (GENERAL_EOS) {
+      for (int n=0; n<NSCALARS; ++n) {
+        wli[NHYDRO+n]=rl(n,i);
+        wri[NHYDRO+n]=rr(n,i);
+      }
+    }
 
     //--- Step 2.  Compute Roe-averaged data from left- and right-states
 
@@ -171,6 +179,13 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     flx(ivy,k,j,i) = flxi[IVY];
     flx(ivz,k,j,i) = flxi[IVZ];
     if (NON_BAROTROPIC_EOS) flx(IEN,k,j,i) = flxi[IEN];
+
+    for (int n=0; n<NSCALARS; n++) {
+      if (flx(IDN,k,j,i) >= 0.0)
+        sflx(n,k,j,i) = flx(IDN,k,j,i) * rl(n,i);
+      else
+        sflx(n,k,j,i) = flx(IDN,k,j,i) * rr(n,i);
+    }
   }
   return;
 }

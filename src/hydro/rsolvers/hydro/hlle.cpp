@@ -38,10 +38,11 @@
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, AthenaArray<Real> &wl,
                           AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-                          const AthenaArray<Real> &dxw) {
+                          const AthenaArray<Real> &dxw, AthenaArray<Real> &rl,
+                          AthenaArray<Real> &rr, AthenaArray<Real> &sflx) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real wli[(NHYDRO)],wri[(NHYDRO)],wroe[(NHYDRO)];
+  Real wli[(NHYDRO+NSCALARS*GENERAL_EOS)],wri[(NHYDRO+NSCALARS*GENERAL_EOS)];
   Real fl[(NHYDRO)],fr[(NHYDRO)],flxi[(NHYDRO)];
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
   Real gamma;
@@ -68,11 +69,18 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     wri[IVZ]=wr(ivz,i);
     if (NON_BAROTROPIC_EOS) wri[IPR]=wr(IPR,i);
 
+    if (GENERAL_EOS) {
+      for (int n=0; n<NSCALARS; ++n) {
+        wli[NHYDRO+n]=rl(n,i);
+        wri[NHYDRO+n]=rr(n,i);
+      }
+    }
+
     Real el,er,cl,cr,al,ar;
     if  (GENERAL_EOS) {
-      el = pmy_block->peos->EgasFromRhoP(wli[IDN], wli[IPR]) +
+      el = pmy_block->peos->EgasFromRhoP(wli[IDN], wli[IPR], wli + NHYDRO) +
            0.5*wli[IDN]*(SQR(wli[IVX]) + SQR(wli[IVY]) + SQR(wli[IVZ]));
-      er = pmy_block->peos->EgasFromRhoP(wri[IDN], wri[IPR]) +
+      er = pmy_block->peos->EgasFromRhoP(wri[IDN], wri[IPR], wri + NHYDRO) +
            0.5*wri[IDN]*(SQR(wri[IVX]) + SQR(wri[IVY]) + SQR(wri[IVZ]));
       cl = pmy_block->peos->SoundSpeed(wli);
       cr = pmy_block->peos->SoundSpeed(wri);
@@ -157,6 +165,13 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     flx(ivy,k,j,i) = flxi[IVY];
     flx(ivz,k,j,i) = flxi[IVZ];
     if (NON_BAROTROPIC_EOS) flx(IEN,k,j,i) = flxi[IEN];
+
+    for (int n=0; n<NSCALARS; n++) {
+      if (flx(IDN,k,j,i) >= 0.0)
+        sflx(n,k,j,i) = flx(IDN,k,j,i) * rl(n,i);
+      else
+        sflx(n,k,j,i) = flx(IDN,k,j,i) * rr(n,i);
+    }
   }
   return;
 }

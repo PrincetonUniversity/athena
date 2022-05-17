@@ -19,6 +19,7 @@
 
 class MeshBlock;
 class ParameterInput;
+class Hydro;
 
 //! \class PassiveScalars
 //! \brief
@@ -106,5 +107,6 @@ class PassiveScalars {
   void AddDiffusionFluxes();
   // TODO(felker): dedpulicate these arrays and the same named ones in HydroDiffusion
   AthenaArray<Real> dx1_, dx2_, dx3_;
+  friend class Hydro;
 };
 #endif // SCALARS_SCALARS_HPP_

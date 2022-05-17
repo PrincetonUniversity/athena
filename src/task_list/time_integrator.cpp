@@ -32,6 +32,9 @@
 #include "../scalars/scalars.hpp"
 #include "task_list.hpp"
 
+// empty array to pass in place of scalars when NSCALARS=0
+static AthenaArray<Real> empty;
+
 //----------------------------------------------------------------------------------------
 //! TimeIntegratorTaskList constructor
 
@@ -900,21 +903,25 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     // calculate hydro/field diffusive fluxes
     if (!STS_ENABLED) {
       AddTask(DIFFUSE_HYD,NONE);
+      if (NSCALARS > 0)
+        AddTask(DIFFUSE_SCLR,NONE);
       if (MAGNETIC_FIELDS_ENABLED) {
         AddTask(DIFFUSE_FLD,NONE);
         // compute hydro fluxes, integrate hydro variables
-        AddTask(CALC_HYDFLX,(DIFFUSE_HYD|DIFFUSE_FLD));
+        if (NSCALARS > 0) {
+          AddTask(CALC_HYDFLX,(DIFFUSE_HYD|DIFFUSE_FLD|DIFFUSE_SCLR));
+        } else {
+          AddTask(CALC_HYDFLX,(DIFFUSE_HYD|DIFFUSE_FLD));
+        }
       } else { // Hydro
-        AddTask(CALC_HYDFLX,DIFFUSE_HYD);
-      }
-      if (NSCALARS > 0) {
-        AddTask(DIFFUSE_SCLR,NONE);
-        AddTask(CALC_SCLRFLX,(CALC_HYDFLX|DIFFUSE_SCLR));
+        if (NSCALARS > 0) {
+          AddTask(CALC_HYDFLX,DIFFUSE_HYD|DIFFUSE_SCLR);
+        } else {
+          AddTask(CALC_HYDFLX,DIFFUSE_HYD);
+        }
       }
     } else { // STS enabled:
       AddTask(CALC_HYDFLX,NONE);
-      if (NSCALARS > 0)
-        AddTask(CALC_SCLRFLX,CALC_HYDFLX);
     }
     if (pm->multilevel || SHEAR_PERIODIC) { // SMR or AMR or shear periodic
       AddTask(SEND_HYDFLX,CALC_HYDFLX);
@@ -954,8 +961,8 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     if (NSCALARS > 0) {
       if (pm->multilevel || SHEAR_PERIODIC) {
-        AddTask(SEND_SCLRFLX,CALC_SCLRFLX);
-        AddTask(RECV_SCLRFLX,CALC_SCLRFLX);
+        AddTask(SEND_SCLRFLX,CALC_HYDFLX);
+        AddTask(RECV_SCLRFLX,CALC_HYDFLX);
         if (SHEAR_PERIODIC) {
           AddTask(SEND_SCLRFLXSH,RECV_SCLRFLX);
           AddTask(RECV_SCLRFLXSH,(SEND_SCLRFLX|RECV_SCLRFLX));
@@ -964,7 +971,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
           AddTask(INT_SCLR,RECV_SCLRFLX);
         }
       } else {
-        AddTask(INT_SCLR,CALC_SCLRFLX);
+        AddTask(INT_SCLR,CALC_HYDFLX);
       }
       if (ORBITAL_ADVECTION) {
         AddTask(SEND_SCLR,CALC_HYDORB);
@@ -1278,11 +1285,11 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::DiffuseField);
     task_list_[ntasks].lb_time = true;
-  } else if (id == CALC_SCLRFLX) {
-    task_list_[ntasks].TaskFunc=
-        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::CalculateScalarFlux);
-    task_list_[ntasks].lb_time = true;
+//  } else if (id == CALC_SCLRFLX) {
+//    task_list_[ntasks].TaskFunc=
+//        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+//        (&TimeIntegratorTaskList::CalculateScalarFlux);
+//    task_list_[ntasks].lb_time = true;
   } else if (id == SEND_SCLRFLX) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -1460,13 +1467,15 @@ TaskStatus TimeIntegratorTaskList::ClearAllBoundary(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::CalculateHydroFlux(MeshBlock *pmb, int stage) {
   Hydro *phydro = pmb->phydro;
   Field *pfield = pmb->pfield;
+  AthenaArray<Real> &r = (NSCALARS) ? pmb->pscalars->r : phydro->w;
 
   if (stage <= nstages) {
     if (stage_wghts[stage-1].main_stage) {
       if ((integrator == "vl2") && (stage-stage_wghts[0].orbital_stage == 1)) {
-        phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, 1);
+        phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, r, 1);
       } else {
-        phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, pmb->precon->xorder);
+        phydro->CalculateFluxes(phydro->w,  pfield->b,  pfield->bcc, r,
+                                pmb->precon->xorder);
       }
     }
     return TaskStatus::next;
@@ -1984,7 +1993,11 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
     // stage=1: W at t^n and
     // stage=2: W at t^{n+1/2} (VL2) or t^{n+1} (RK2)
     pmb->peos->ConservedToPrimitive(ph->u, ph->w, pf->b,
-                                    ph->w1, pf->bcc, pmb->pcoord,
+                                    ph->w1, pf->bcc,
+                                    (NSCALARS) ? ps->s : empty,
+                                    (NSCALARS) ? ps->r : empty,
+                                    (NSCALARS) ? ps->r : empty,
+                                    pmb->pcoord,
                                     il, iu, jl, ju, kl, ku);
     if (pmb->porb->orbital_advection_defined) {
       pmb->porb->ResetOrbitalSystemConversionFlag();
@@ -2019,7 +2032,11 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
       pbval->ApplyPhysicalBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
       // Perform 4th order W(U)
       pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w, pf->b,
-                                                 ph->w1, pf->bcc, pmb->pcoord,
+                                                 ph->w1, pf->bcc,
+                                                 (NSCALARS) ? ps->s : empty,
+                                                 (NSCALARS) ? ps->r : empty,
+                                                 (NSCALARS) ? ps->r : empty,
+                                                 pmb->pcoord,
                                                  il, iu, jl, ju, kl, ku);
       if (NSCALARS > 0) {
         pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
@@ -2083,20 +2100,20 @@ TaskStatus TimeIntegratorTaskList::CheckRefinement(MeshBlock *pmb, int stage) {
 }
 
 
-TaskStatus TimeIntegratorTaskList::CalculateScalarFlux(MeshBlock *pmb, int stage) {
-  PassiveScalars *ps = pmb->pscalars;
-  if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage) {
-      if ((integrator == "vl2") && (stage-stage_wghts[0].orbital_stage == 1)) {
-        ps->CalculateFluxes(ps->r, 1);
-      } else {
-        ps->CalculateFluxes(ps->r, pmb->precon->xorder);
-      }
-    }
-    return TaskStatus::next;
-  }
-  return TaskStatus::fail;
-}
+//TaskStatus TimeIntegratorTaskList::CalculateScalarFlux(MeshBlock *pmb, int stage) {
+//  PassiveScalars *ps = pmb->pscalars;
+//  if (stage <= nstages) {
+//    if (stage_wghts[stage-1].main_stage) {
+//      if ((integrator == "vl2") && (stage-stage_wghts[0].orbital_stage == 1)) {
+//        ps->CalculateFluxes(ps->r, 1);
+//      } else {
+//        ps->CalculateFluxes(ps->r, pmb->precon->xorder);
+//      }
+//    }
+//    return TaskStatus::next;
+//  }
+//  return TaskStatus::fail;
+//}
 
 
 TaskStatus TimeIntegratorTaskList::SendScalarFlux(MeshBlock *pmb, int stage) {

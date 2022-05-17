@@ -19,26 +19,37 @@
 // Athena++ headers
 #include "../eos.hpp"
 
-Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
+Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real s[NSCALARS]) {
   std::stringstream msg;
   msg << "### FATAL ERROR in EquationOfState::PresFromRhoEg" << std::endl
       << "Function should not be called with current configuration." << std::endl;
   ATHENA_ERROR(msg);
   return -1.0;
 }
-Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
+Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real r[NSCALARS]) {
   std::stringstream msg;
   msg << "### FATAL ERROR in EquationOfState::EgasFromRhoP" << std::endl
       << "Function should not be called with current configuration." << std::endl;
   ATHENA_ERROR(msg);
   return -1.0;
 }
-Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
+Real EquationOfState::AsqFromRhoP(Real rho, Real pres, Real r[NSCALARS]) {
   std::stringstream msg;
   msg << "### FATAL ERROR in EquationOfState::AsqFromRhoP" << std::endl
       << "Function should not be called with current configuration." << std::endl;
   ATHENA_ERROR(msg);
   return -1.0;
+}
+
+// overload eos calls without tracers for backward compatibility
+Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
+  return PresFromRhoEg(rho, egas, nullptr);
+}
+Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
+  return EgasFromRhoP(rho, pres, nullptr);
+}
+Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
+  return AsqFromRhoP(rho, pres, nullptr);
 }
 
 //----------------------------------------------------------------------------------------

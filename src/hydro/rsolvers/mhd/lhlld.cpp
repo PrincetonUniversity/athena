@@ -38,12 +38,15 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           AthenaArray<Real> &wl, AthenaArray<Real> &wr,
                           AthenaArray<Real> &flx,
                           AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw,
+                          AthenaArray<Real> &rl, AthenaArray<Real> &rr,
+                          AthenaArray<Real> &sflx) {
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
-  Real flxi[(NWAVE)];             // temporary variable to store flux
-  Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
-  Real spd[5];                    // signal speeds, left to right
+  Real flxi[(NWAVE)];  // temporary variable to store flux
+  // L/R states, primitive variables (input)
+  Real wli[(NWAVE+NSCALARS*GENERAL_EOS)],wri[(NWAVE+NSCALARS*GENERAL_EOS)];
+  Real spd[5];         // signal speeds, left to right
 
   Real igm1;
   EquationOfState *peos = pmy_block->peos;
@@ -76,6 +79,13 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     wri[IBY]=wr(IBY,i);
     wri[IBZ]=wr(IBZ,i);
 
+    if (GENERAL_EOS) {
+      for (int n=0; n<NSCALARS; ++n) {
+        wli[NHYDRO+n]=rl(n,i);
+        wri[NHYDRO+n]=rr(n,i);
+      }
+    }
+
     Real bxi = bx(k,j,i);
 
     // Compute L/R states for selected conserved variables
@@ -91,7 +101,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     ul.my = wli[IVY]*ul.d;
     ul.mz = wli[IVZ]*ul.d;
     if (GENERAL_EOS) {
-      ul.e  = peos->EgasFromRhoP(ul.d, wli[IPR]) + kel + pbl;
+      ul.e  = peos->EgasFromRhoP(ul.d, wli[IPR], wli + NSCALARS) + kel + pbl;
     } else {
       ul.e  = wli[IPR]*igm1 + kel + pbl;
     }
@@ -103,7 +113,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     ur.my = wri[IVY]*ur.d;
     ur.mz = wri[IVZ]*ur.d;
     if (GENERAL_EOS) {
-      ur.e  = peos->EgasFromRhoP(ur.d, wri[IPR]) + ker + pbr;
+      ur.e  = peos->EgasFromRhoP(ur.d, wri[IPR], wri + NSCALARS) + ker + pbr;
     } else {
       ur.e  = wri[IPR]*igm1 + ker + pbr;
     }
@@ -384,6 +394,13 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     ez(k,j,i) =  flxi[IBZ];
 
     wct(k,j,i) = GetWeightForCT(flxi[IDN], wli[IDN], wri[IDN], dxw(i), dt);
+
+    for (int n=0; n<NSCALARS; n++) {
+      if (flx(IDN,k,j,i) >= 0.0)
+        sflx(n,k,j,i) = flx(IDN,k,j,i) * rl(n,i);
+      else
+        sflx(n,k,j,i) = flx(IDN,k,j,i) * rr(n,i);
+    }
   }
   return;
 }

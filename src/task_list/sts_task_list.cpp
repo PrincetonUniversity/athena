@@ -39,6 +39,9 @@
 #include "../scalars/scalars.hpp"
 #include "task_list.hpp"
 
+// empty array to pass in place of scalars when NSCALARS=0
+static AthenaArray<Real> empty;
+
 //----------------------------------------------------------------------------------------
 //! SuperTimeStepTaskList constructor
 
@@ -896,7 +899,11 @@ TaskStatus SuperTimeStepTaskList::Primitives_STS(MeshBlock *pmb, int stage) {
     //! which is not yet compatible with STS, thus making this a safe choice.
     if (do_sts_hydro || do_sts_field) {
       pmb->peos->ConservedToPrimitive(ph->u, ph->w, pf->b,
-                                      ph->w, pf->bcc, pmb->pcoord,
+                                      ph->w, pf->bcc,
+                                      (NSCALARS) ? ps->coarse_s_ : empty,
+                                      (NSCALARS) ? ps->coarse_r_ : empty,
+                                      (NSCALARS) ? ps->coarse_r_ : empty,
+                                      pmb->pcoord,
                                       il, iu, jl, ju, kl, ku);
       if (pmb->porb->orbital_advection_defined) {
         pmb->porb->ResetOrbitalSystemConversionFlag();
@@ -933,7 +940,11 @@ TaskStatus SuperTimeStepTaskList::Primitives_STS(MeshBlock *pmb, int stage) {
       // Perform 4th order W(U)
       if (do_sts_hydro || do_sts_field) {
         pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w, pf->b,
-                                                   ph->w, pf->bcc, pmb->pcoord,
+                                                   ph->w, pf->bcc,
+                                                   (NSCALARS) ? ps->coarse_s_ : empty,
+                                                   (NSCALARS) ? ps->coarse_r_ : empty,
+                                                   (NSCALARS) ? ps->coarse_r_ : empty,
+                                                   pmb->pcoord,
                                                    il, iu, jl, ju, kl, ku);
       }
       if (do_sts_scalar) {

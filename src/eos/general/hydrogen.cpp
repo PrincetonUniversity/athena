@@ -133,9 +133,9 @@ Real invert(Real(*f) (Real, Real), Real rho, Real sol, Real Ta, Real Tb) {
 } // namespace
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas)
+//! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real s[NSCALARS])
 //! \brief Return gas pressure
-Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
+Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real s[NSCALARS]) {
   rho *= rho_unit_;
   egas *= egas_unit_;
   Real es = egas / rho;
@@ -145,9 +145,9 @@ Real EquationOfState::PresFromRhoEg(Real rho, Real egas) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres)
+//! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real r[NSCALARS])
 //! \brief Return internal energy density
-Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
+Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real r[NSCALARS]) {
   rho *= rho_unit_;
   pres *= egas_unit_;
   Real ps = pres / rho;
@@ -156,9 +156,9 @@ Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres)
+//! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres, Real r[NSCALARS])
 //! \brief Return adiabatic sound speed squared
-Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
+Real EquationOfState::AsqFromRhoP(Real rho, Real pres, Real r[NSCALARS]) {
   rho *= rho_unit_;
   pres *= egas_unit_;
   Real ps = pres / rho;

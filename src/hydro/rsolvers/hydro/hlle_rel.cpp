@@ -38,7 +38,9 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 //! \fn void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 //!                           const int ivx,
 //!                           AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-//!                           AthenaArray<Real> &flux, const AthenaArray<Real> &dxw)
+//!                           AthenaArray<Real> &flux, const AthenaArray<Real> &dxw,
+//!                           const AthenaArray<Real> &rl, const AthenaArray<Real> &rl,
+//!                           const AthenaArray<Real> &sflx)
 //! \brief Riemann solver
 //!
 //! Inputs:
@@ -58,11 +60,18 @@ void HLLENonTransforming(MeshBlock *pmb, const int k, const int j,
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx,
                           AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
-                          AthenaArray<Real> &flux, const AthenaArray<Real> &dxw) {
+                          AthenaArray<Real> &flux, const AthenaArray<Real> &dxw,
+                          AthenaArray<Real> &rl, AthenaArray<Real> &rr,
+                          AthenaArray<Real> &sflx) {
   if (GENERAL_RELATIVITY && ivx == IVY && pmy_block->pcoord->IsPole(j)) {
     HLLENonTransforming(pmy_block, k, j, il, iu, g_, gi_, prim_l, prim_r, flux);
   } else {
     HLLETransforming(pmy_block, k, j, il, iu, ivx, g_, gi_, prim_l, prim_r, cons_, flux);
+  }
+  if (NSCALARS) {
+    AthenaArray<Real> mflux;
+    mflux.InitWithShallowSlice(flux, 4, IDN, 1);
+    pmy_block->pscalars->ComputeUpwindFlux(k, j, il, iu, rl, rr, mflux, sflx);
   }
   return;
 }

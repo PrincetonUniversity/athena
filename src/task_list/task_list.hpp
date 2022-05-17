@@ -188,7 +188,7 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus NewBlockTimeStep(MeshBlock *pmb, int stage);
   TaskStatus CheckRefinement(MeshBlock *pmb, int stage);
 
-  TaskStatus CalculateScalarFlux(MeshBlock *pmb, int stage);
+  // TaskStatus CalculateScalarFlux(MeshBlock *pmb, int stage);
   TaskStatus SendScalarFlux(MeshBlock *pmb, int stage);
   TaskStatus ReceiveScalarFlux(MeshBlock *pmb, int stage);
   TaskStatus IntegrateScalars(MeshBlock *pmb, int stage);

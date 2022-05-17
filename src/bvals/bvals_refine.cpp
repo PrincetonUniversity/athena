@@ -70,6 +70,9 @@
 #include "cc/hydro/bvals_hydro.hpp"
 #include "fc/bvals_fc.hpp"
 
+// empty array to pass in place of scalars when NSCALARS=0
+static AthenaArray<Real> empty;
+
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt,
 //!                                       std::vector<BoundaryVariable *> bvars_subset)
@@ -377,6 +380,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
     }
   }
 
+  PassiveScalars *ps = (NSCALARS) ? pmb->pscalars : nullptr;
   //! \note (felker):
   //! - passing nullptrs (pf) if no MHD.
   //! - Might no longer be an issue to set pf=pmb->pfield even if no MHD.
@@ -385,12 +389,16 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
   //!   no longer members of MeshRefinement that always exist (even if not allocated).
 
   // KGF: COUPLING OF QUANTITIES (must be manually specified)
+  // MSBC: scalars are passed to EOS functions. If there are no scalars, pass any array.
   pmb->peos->ConservedToPrimitive(ph->coarse_cons_, ph->coarse_prim_,
                                   pf->coarse_b_, ph->coarse_prim_,
-                                  pf->coarse_bcc_, pmr->pcoarsec,
+                                  pf->coarse_bcc_,
+                                  (NSCALARS) ? ps->coarse_s_ : empty,
+                                  (NSCALARS) ? ps->coarse_r_ : empty,
+                                  (NSCALARS) ? ps->coarse_r_ : empty,
+                                  pmr->pcoarsec,
                                   si-f1m, ei+f1p, sj-f2m, ej+f2p, sk-f3m, ek+f3p);
   if (NSCALARS > 0) {
-    PassiveScalars *ps = pmb->pscalars;
     pmb->peos->PassiveScalarConservedToPrimitive(ps->coarse_s_, ph->coarse_cons_,
                                                  ps->coarse_r_, ps->coarse_r_,
                                                  pmr->pcoarsec,
@@ -552,6 +560,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
     pf->CalculateCellCenteredField(pf->b, pf->bcc, pmb->pcoord,
                                    fsi, fei, fsj, fej, fsk, fek);
   }
+  PassiveScalars *ps = (NSCALARS) ? pmb->pscalars : nullptr;
   //! \note (felker):
   //! - passing nullptrs (pf) if no MHD (coarse_* no longer in MeshRefinement)
   //!   (may be fine to unconditionally directly set to pmb->pfield now.
@@ -559,11 +568,13 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
 
   // KGF: COUPLING OF QUANTITIES (must be manually specified)
   // calculate conservative variables
-  pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u, pmb->pcoord,
+  pmb->peos->PrimitiveToConserved(ph->w, pf->bcc, ph->u,
+                                  (NSCALARS) ? ps->r : empty,
+                                  (NSCALARS) ? ps->s : empty,
+                                  pmb->pcoord,
                                   fsi, fei, fsj, fej, fsk, fek);
   if (NSCALARS > 0) {
-    PassiveScalars *ps = pmb->pscalars;
-    pmb->peos->PassiveScalarPrimitiveToConserved(ps->r, ph->u, ps->s, pmb->pcoord,
+    pmb->peos->PassiveScalarPrimitiveToConserved(ps->r, ph->w, ps->s, pmb->pcoord,
                                                  fsi, fei, fsj, fej, fsk, fek);
   }
   return;

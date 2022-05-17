@@ -69,22 +69,24 @@ class Hydro {
                              AthenaArray<Real> &u_out,
                              AthenaArray<Real> &fl_div_out,
                              std::vector<int> idx_subset);
-  void CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
-                       AthenaArray<Real> &bcc, const int order);
+  void CalculateFluxes(AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &bcc,
+                       AthenaArray<Real> &r, const int order);
   void CalculateFluxes_STS();
 #if !MAGNETIC_FIELDS_ENABLED  // Hydro:
   void RiemannSolver(
       const int k, const int j, const int il, const int iu,
       const int ivx,
       AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
-      const AthenaArray<Real> &dxw);
+      const AthenaArray<Real> &dxw, AthenaArray<Real> &rl, AthenaArray<Real> &rr,
+      AthenaArray<Real> &sflx);
 #else  // MHD:
   void RiemannSolver(
       const int k, const int j, const int il, const int iu,
       const int ivx, const AthenaArray<Real> &bx,
       AthenaArray<Real> &wl, AthenaArray<Real> &wr, AthenaArray<Real> &flx,
       AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-      AthenaArray<Real> &wct, const AthenaArray<Real> &dxw);
+      AthenaArray<Real> &wct, const AthenaArray<Real> &dxw,
+      AthenaArray<Real> &rl, AthenaArray<Real> &rr, AthenaArray<Real> &sflx);
 #endif
   void CalculateVelocityDifferences(const int k, const int j, const int il, const int iu,
     const int ivx, AthenaArray<Real> &dvn, AthenaArray<Real> &dvt);

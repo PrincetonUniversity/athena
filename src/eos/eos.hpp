@@ -36,14 +36,17 @@ class EquationOfState {
 
   void ConservedToPrimitive(
       AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
-      AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
+      AthenaArray<Real> &prim, AthenaArray<Real> &bcc, AthenaArray<Real> &s,
+      const AthenaArray<Real> &r_old, AthenaArray<Real> &r,
       Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
   void PrimitiveToConserved(const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
-                            AthenaArray<Real> &cons, Coordinates *pco,
+                            AthenaArray<Real> &cons, const AthenaArray<Real> &r,
+                            AthenaArray<Real> &s, Coordinates *pco,
                             int il, int iu, int jl, int ju, int kl, int ku);
   void ConservedToPrimitiveCellAverage(
       AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
       AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
+      AthenaArray<Real> &s, const AthenaArray<Real> &r_old, AthenaArray<Real> &r,
       Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku);
 
   // void PrimitiveToConservedCellAverage(const AthenaArray<Real> &prim,
@@ -78,7 +81,11 @@ class EquationOfState {
   // Sound speed functions in different regimes
 #if !RELATIVISTIC_DYNAMICS  // Newtonian: SR, GR defined as no-op
 #pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
+#if GENERAL_EOS
+  Real SoundSpeed(const Real prim[(NHYDRO+NSCALARS)]);
+#else
   Real SoundSpeed(const Real prim[(NHYDRO)]);
+#endif // GENERAL_EOS
   // Define flooring function for fourth-order EOS as no-op for SR, GR regimes
 #pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this,prim,cons,bcc,k,j) linear(i)
   void ApplyPrimitiveConservedFloors(
@@ -88,7 +95,11 @@ class EquationOfState {
   Real FastMagnetosonicSpeed(const Real[], const Real) {return 0.0;}
 #else  // Newtonian MHD
 #pragma omp declare simd simdlen(SIMD_WIDTH) uniform(this)
+#if GENERAL_EOS
+  Real FastMagnetosonicSpeed(const Real prim[(NWAVE+NSCALARS)], const Real bx);
+#else
   Real FastMagnetosonicSpeed(const Real prim[(NWAVE)], const Real bx);
+#endif // GENERAL_EOS
 #endif  // !MAGNETIC_FIELDS_ENABLED
   void SoundSpeedsSR(Real, Real, Real, Real, Real *, Real *) {return;}
   void SoundSpeedsGR(Real, Real, Real, Real, Real, Real, Real, Real *, Real *)
@@ -142,6 +153,10 @@ class EquationOfState {
 #endif  // !MAGNETIC_FIELDS_ENABLED (GR)
 #endif  // #else (#if !RELATIVISTIC_DYNAMICS, #elif !GENERAL_RELATIVITY)
 
+  Real PresFromRhoEg(Real rho, Real egas, Real s[NSCALARS]);
+  Real EgasFromRhoP(Real rho, Real pres, Real r[NSCALARS]);
+  Real AsqFromRhoP(Real rho, Real pres, Real r[NSCALARS]);
+  // overload eos calls without tracers for backward compatibility
   Real PresFromRhoEg(Real rho, Real egas);
   Real EgasFromRhoP(Real rho, Real pres);
   Real AsqFromRhoP(Real rho, Real pres);

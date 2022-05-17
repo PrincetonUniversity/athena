@@ -21,28 +21,39 @@
 #include "../../hydro.hpp"
 
 //----------------------------------------------------------------------------------------
-// Riemann solver
-// Inputs:
-//   k,j: x3- and x2-indices
-//   il,iu: lower and upper x1-indices
-//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-//   bb: 3D array of normal magnetic fields
-//   prim_l,prim_r: 1D arrays of left and right primitive states
-//   dxw: 1D array of mesh spacing in the x-direction
-// Outputs:
-//   flux: 3D array of hydrodynamical fluxes across interfaces
-//   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces
-//   wct: 3D array of weighting factors for CT
-// Notes:
-//   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
-//   cf. HLLENonTransforming() in hlle_mhd_rel.cpp and hlld_rel.cpp
+//! \fn void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
+//!                               const int ivx, const AthenaArray<Real> &bb,
+//!                               AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
+//!                               AthenaArray<Real> &flux,
+//!                               AthenaArray<Real> &ey, AthenaArray<Real> &ez,
+//!                               AthenaArray<Real> &wct, const AthenaArray<Real> &dxw,
+//!                               AthenaArray<Real> &rl, AthenaArray<Real> &rr,
+//!                               AthenaArray<Real> &sflx) {
+//! \brief Riemann solver
+//!
+//! Inputs:
+//!   k,j: x3- and x2-indices
+//!   il,iu: lower and upper x1-indices
+//!   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
+//!   bb: 3D array of normal magnetic fields
+//!   prim_l,prim_r: 1D arrays of left and right primitive states
+//!   dxw: 1D array of mesh spacing in the x-direction
+//! Outputs:
+//!   flux: 3D array of hydrodynamical fluxes across interfaces
+//!   ey,ez: 3D arrays of magnetic fluxes (electric fields) across interfaces
+//!   wct: 3D array of weighting factors for CT
+//! Notes:
+//!   implements HLLE algorithm similar to that of fluxcalc() in step_ch.c in Harm
+//!   cf. HLLENonTransforming() in hlle_mhd_rel.cpp and hlld_rel.cpp
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, const AthenaArray<Real> &bb,
                           AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
                           AthenaArray<Real> &flux,
                           AthenaArray<Real> &ey, AthenaArray<Real> &ez,
-                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw) {
+                          AthenaArray<Real> &wct, const AthenaArray<Real> &dxw,
+                          AthenaArray<Real> &rl, AthenaArray<Real> &rr,
+                          AthenaArray<Real> &sflx) {
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
@@ -300,6 +311,11 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 
     wct(k,j,i) =
         GetWeightForCT(flux_interface[IDN], prim_l(IDN,i), prim_r(IDN,i), dxw(i), dt);
+  }
+  if (NSCALARS) {
+    AthenaArray<Real> mflux;
+    mflux.InitWithShallowSlice(flux, 4, IDN, 1);
+    pmy_block->pscalars->ComputeUpwindFlux(k, j, il, iu, rl, rr, mflux, sflx);
   }
   return;
 }

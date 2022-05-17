@@ -30,6 +30,7 @@
 void EquationOfState::ConservedToPrimitiveCellAverage(
     AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
     AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
+    AthenaArray<Real> &s, const AthenaArray<Real> &r_old, AthenaArray<Real> &r,
     Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku) {
   MeshBlock *pmb = pmy_block_;
   Hydro *ph = pmb->phydro;
@@ -67,7 +68,8 @@ void EquationOfState::ConservedToPrimitiveCellAverage(
   pco->Laplacian(prim, laplacian_cc, il, iu, jl, ju, kl, ku, nl, nu);
 
   // Convert cell-centered conserved values to cell-centered primitive values
-  ConservedToPrimitive(u_cc, prim_old, b, w_cc, bcc, pco, il, iu,
+  // MSBC: TODO: move PasiveScalarPrimitiveCellAverage here (need s_cc here)
+  ConservedToPrimitive(u_cc, prim_old, b, w_cc, bcc, s, r_old, r, pco, il, iu,
                        jl, ju, kl, ku);
 
   for (int n=nl; n<=nu; ++n) {
