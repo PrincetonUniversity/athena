@@ -29,6 +29,9 @@
 #include <omp.h>
 #endif
 
+// empty array to pass in place of scalars when NSCALARS=0
+static AthenaArray<Real> empty;
+
 //----------------------------------------------------------------------------------------
 //! \fn  void Hydro::CalculateFluxes
 //! \brief Calculate Hydrodynamic Fluxes using the Riemann solver
@@ -43,13 +46,13 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
   // scalars
   PassiveScalars *ps = pmb->pscalars;
-  AthenaArray<Real> &rl_ = ps->rl_;
-  AthenaArray<Real> &rr_ = ps->rr_;
-  AthenaArray<Real> &rlb_ = ps->rlb_;
-  AthenaArray<Real> &rl3d_ = ps->rl3d_;
-  AthenaArray<Real> &rr3d_ = ps->rr3d_;
-  AthenaArray<Real> &s_flux_fc = ps->scr1_nkji_;
-  AthenaArray<Real> &s_laplacian_all_fc = ps->scr2_nkji_;
+  AthenaArray<Real> &rl_ = (NSCALARS) ? ps->rl_ : empty;
+  AthenaArray<Real> &rr_ = (NSCALARS) ? ps->rr_ : empty;
+  AthenaArray<Real> &rlb_ = (NSCALARS) ? ps->rlb_ : empty;
+  AthenaArray<Real> &rl3d_ = (NSCALARS) ? ps->rl3d_ : empty;
+  AthenaArray<Real> &rr3d_ = (NSCALARS) ? ps->rr3d_ : empty;
+  AthenaArray<Real> &s_flux_fc = (NSCALARS) ? ps->scr1_nkji_ : empty;
+  AthenaArray<Real> &s_laplacian_all_fc = (NSCALARS) ? ps->scr2_nkji_ : empty;
 
   // b,bcc are passed as fn parameters becausse clients may want to pass different bcc1,
   // b1, b2, etc., but the remaining members of the Field class are accessed directly via
@@ -91,18 +94,18 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       // reconstruct L/R states
       if (order == 1) {
         pmb->precon->DonorCellX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
-        pmb->precon->DonorCellX1(k, j, is-1, ie+1, r, rl_, rr_);
+        if (NSCALARS) pmb->precon->DonorCellX1(k, j, is-1, ie+1, r, rl_, rr_);
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
-        pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, r, rl_, rr_);
+        if (NSCALARS) pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, r, rl_, rr_);
       } else {
         pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
-        pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, r, rl_, rr_);
+        if (NSCALARS) pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, r, rl_, rr_);
         for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
           for (int i=is; i<=ie+1; ++i) {
             pmb->peos->ApplyPassiveScalarFloors(rl_, n, k, j, i);
-            pmb->peos->ApplyPassiveScalarFloors(rr_, n, k, j, i);
+            if (NSCALARS) pmb->peos->ApplyPassiveScalarFloors(rr_, n, k, j, i);
           }
         }
       }
@@ -114,7 +117,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       // x1flux(IBY) = (v1*b2 - v2*b1) = -EMFZ
       // x1flux(IBZ) = (v1*b3 - v3*b1) =  EMFY
       RiemannSolver(k, j, is, ie+1, IVX, b1, wl_, wr_, x1flux, e3x1, e2x1, w_x1f, dxw_,
-                    rl_, rr_, s1x1flux);
+                    rl_, rr_, s_x1flux);
 #endif
 
       if (order == 4) {
@@ -143,8 +146,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     // construct Laplacian from x1flux
     pmb->pcoord->LaplacianX1All(x1flux, laplacian_all_fc, 0, NHYDRO-1,
                                 kl, ku, jl, ju, is, ie+1);
-    pmb->pcoord->LaplacianX1All(x1flux, s_laplacian_all_fc, 0, NSCALARS-1,
-                                kl, ku, jl, ju, is, ie+1);
+    if (NSCALARS) {
+      pmb->pcoord->LaplacianX1All(s_x1flux, s_laplacian_all_fc, 0, NSCALARS-1,
+                                  kl, ku, jl, ju, is, ie+1);
+    }
 
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -222,17 +227,19 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       // reconstruct the first row
       if (order == 1) {
         pmb->precon->DonorCellX2(k, js-1, il, iu, w, bcc, wl_, wr_);
-        pmb->precon->DonorCellX2(k, js-1, il, iu, r, rl_, rr_);
+        if (NSCALARS) pmb->precon->DonorCellX2(k, js-1, il, iu, r, rl_, rr_);
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX2(k, js-1, il, iu, w, bcc, wl_, wr_);
-        pmb->precon->PiecewiseLinearX2(k, js-1, il, iu, r, rl_, rr_);
+        if (NSCALARS) pmb->precon->PiecewiseLinearX2(k, js-1, il, iu, r, rl_, rr_);
       } else {
         pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, w, bcc, wl_, wr_);
-        pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, r, rl_, rr_);
+        if (NSCALARS) pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, r, rl_, rr_);
         for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
             pmb->peos->ApplyPassiveScalarFloors(rl_, n, k, js-1, i);
+            // MSBC: I don't understand why this line was commented out in
+            // calculate_scalar_fluxes.cpp
             //pmb->peos->ApplyPassiveScalarFloors(rr_, n, k, j, i);
           }
         }
@@ -241,13 +248,13 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         // reconstruct L/R states at j
         if (order == 1) {
           pmb->precon->DonorCellX2(k, j, il, iu, w, bcc, wlb_, wr_);
-          pmb->precon->DonorCellX2(k, j, il, iu, r, rlb_, rr_);
+          if (NSCALARS) pmb->precon->DonorCellX2(k, j, il, iu, r, rlb_, rr_);
         } else if (order == 2) {
           pmb->precon->PiecewiseLinearX2(k, j, il, iu, w, bcc, wlb_, wr_);
-          pmb->precon->PiecewiseLinearX2(k, j, il, iu, r, rlb_, rr_);
+          if (NSCALARS) pmb->precon->PiecewiseLinearX2(k, j, il, iu, r, rlb_, rr_);
         } else {
           pmb->precon->PiecewiseParabolicX2(k, j, il, iu, w, bcc, wlb_, wr_);
-          pmb->precon->PiecewiseParabolicX2(k, j, il, iu, r, rlb_, rr_);
+          if (NSCALARS) pmb->precon->PiecewiseParabolicX2(k, j, il, iu, r, rlb_, rr_);
           for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
@@ -284,7 +291,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
         // swap the arrays for the next step
         wl_.SwapAthenaArray(wlb_);
-        rl_.SwapAthenaArray(rlb_);
+        if (NSCALARS) rl_.SwapAthenaArray(rlb_);
       }
     }
     if (order == 4) {
@@ -296,8 +303,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       // construct Laplacian from x2flux
       pmb->pcoord->LaplacianX2All(x2flux, laplacian_all_fc, 0, NHYDRO-1,
                                   kl, ku, js, je+1, il, iu);
-      pmb->pcoord->LaplacianX2All(s_x2flux, s_laplacian_all_fc, 0, NSCALARS-1,
-                                  kl, ku, js, je+1, il, iu);
+      if (NSCALARS) {
+        pmb->pcoord->LaplacianX2All(s_x2flux, s_laplacian_all_fc, 0, NSCALARS-1,
+                                    kl, ku, js, je+1, il, iu);
+      }
 
       // Approximate x2 face-centered primitive Riemann states
       for (int k=kl; k<=ku; ++k) {
@@ -372,13 +381,13 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       // reconstruct the first row
       if (order == 1) {
         pmb->precon->DonorCellX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
-        pmb->precon->DonorCellX3(ks-1, j, il, iu, r, rl_, rr_);
+        if (NSCALARS) pmb->precon->DonorCellX3(ks-1, j, il, iu, r, rl_, rr_);
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
-        pmb->precon->PiecewiseLinearX3(ks-1, j, il, iu, r, rl_, rr_);
+        if (NSCALARS) pmb->precon->PiecewiseLinearX3(ks-1, j, il, iu, r, rl_, rr_);
       } else {
         pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
-        pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, r, rl_, rr_);
+        if (NSCALARS) pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, r, rl_, rr_);
         for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
@@ -391,13 +400,13 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         // reconstruct L/R states at k
         if (order == 1) {
           pmb->precon->DonorCellX3(k, j, il, iu, w, bcc, wlb_, wr_);
-          pmb->precon->DonorCellX3(k, j, il, iu, r, rlb_, rr_);
+          if (NSCALARS) pmb->precon->DonorCellX3(k, j, il, iu, r, rlb_, rr_);
         } else if (order == 2) {
           pmb->precon->PiecewiseLinearX3(k, j, il, iu, w, bcc, wlb_, wr_);
-          pmb->precon->PiecewiseLinearX3(k, j, il, iu, r, rlb_, rr_);
+          if (NSCALARS) pmb->precon->PiecewiseLinearX3(k, j, il, iu, r, rlb_, rr_);
         } else {
           pmb->precon->PiecewiseParabolicX3(k, j, il, iu, w, bcc, wlb_, wr_);
-          pmb->precon->PiecewiseParabolicX3(k, j, il, iu, r, rlb_, rr_);
+          if (NSCALARS) pmb->precon->PiecewiseParabolicX3(k, j, il, iu, r, rlb_, rr_);
           for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
@@ -433,7 +442,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
         // swap the arrays for the next step
         wl_.SwapAthenaArray(wlb_);
-        rl_.SwapAthenaArray(rlb_);
+        if (NSCALARS) rl_.SwapAthenaArray(rlb_);
       }
     }
     if (order == 4) {
@@ -445,8 +454,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       // construct Laplacian from x3flux
       pmb->pcoord->LaplacianX3All(x3flux, laplacian_all_fc, 0, NHYDRO-1,
                                   ks, ke+1, jl, ju, il, iu);
-      pmb->pcoord->LaplacianX3All(s_x3flux, s_laplacian_all_fc, 0, NSCALARS-1,
-                                  ks, ke+1, jl, ju, il, iu);
+      if (NSCALARS) {
+        pmb->pcoord->LaplacianX3All(s_x3flux, s_laplacian_all_fc, 0, NSCALARS-1,
+                                    ks, ke+1, jl, ju, il, iu);
+      }
 
       // Approximate x3 face-centered primitive Riemann states
       for (int k=ks; k<=ke+1; ++k) {
@@ -504,9 +515,10 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
     } // end if (order == 4)
   }
 
-  if (!STS_ENABLED)
+  if (!STS_ENABLED) {
     AddDiffusionFluxes();
-    ps->AddDiffusionFluxes();
+    if (NSCALARS) ps->AddDiffusionFluxes();
+  }
 
   return;
 }
