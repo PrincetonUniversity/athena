@@ -15,23 +15,23 @@
 #include "../eos.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real s[NSCALARS])
+//! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real* s)
 //! \brief Return gas pressure
-Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real s[NSCALARS]) {
+Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real* s) {
   return (gamma_ - 1.) * egas;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real r[NSCALARS])
+//! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real* r)
 //! \brief Return internal energy density
-Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real r[NSCALARS]) {
+Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real* r) {
   return pres / (gamma_ - 1.);
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres, Real r[NSCALARS])
+//! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres, const Real* r)
 //! \brief Return adiabatic sound speed squared
-Real EquationOfState::AsqFromRhoP(Real rho, Real pres, Real r[NSCALARS]) {
+Real EquationOfState::AsqFromRhoP(Real rho, Real pres, const Real* r) {
   return gamma_ * pres / rho;
 }
 

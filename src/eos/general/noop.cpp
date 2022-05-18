@@ -19,21 +19,21 @@
 // Athena++ headers
 #include "../eos.hpp"
 
-Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real s[NSCALARS]) {
+Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real* s) {
   std::stringstream msg;
   msg << "### FATAL ERROR in EquationOfState::PresFromRhoEg" << std::endl
       << "Function should not be called with current configuration." << std::endl;
   ATHENA_ERROR(msg);
   return -1.0;
 }
-Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real r[NSCALARS]) {
+Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real* r) {
   std::stringstream msg;
   msg << "### FATAL ERROR in EquationOfState::EgasFromRhoP" << std::endl
       << "Function should not be called with current configuration." << std::endl;
   ATHENA_ERROR(msg);
   return -1.0;
 }
-Real EquationOfState::AsqFromRhoP(Real rho, Real pres, Real r[NSCALARS]) {
+Real EquationOfState::AsqFromRhoP(Real rho, Real pres, const Real* r) {
   std::stringstream msg;
   msg << "### FATAL ERROR in EquationOfState::AsqFromRhoP" << std::endl
       << "Function should not be called with current configuration." << std::endl;

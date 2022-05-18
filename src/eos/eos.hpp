@@ -153,9 +153,9 @@ class EquationOfState {
 #endif  // !MAGNETIC_FIELDS_ENABLED (GR)
 #endif  // #else (#if !RELATIVISTIC_DYNAMICS, #elif !GENERAL_RELATIVITY)
 
-  Real PresFromRhoEg(Real rho, Real egas, Real s[NSCALARS]);
-  Real EgasFromRhoP(Real rho, Real pres, Real r[NSCALARS]);
-  Real AsqFromRhoP(Real rho, Real pres, Real r[NSCALARS]);
+  Real PresFromRhoEg(Real rho, Real egas, Real* s);
+  Real EgasFromRhoP(Real rho, Real pres, Real* r);
+  Real AsqFromRhoP(Real rho, Real pres, const Real* r);
   // overload eos calls without tracers for backward compatibility
   Real PresFromRhoEg(Real rho, Real egas);
   Real EgasFromRhoP(Real rho, Real pres);

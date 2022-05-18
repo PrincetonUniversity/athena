@@ -41,23 +41,23 @@ inline Real GetEosData(EosTable *ptable, int kOut, Real var, Real rho) {
 } // namespace
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real s[NSCALARS])
+//! \fn Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real* s)
 //! \brief Return interpolated gas pressure
-Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real s[NSCALARS]) {
+Real EquationOfState::PresFromRhoEg(Real rho, Real egas, Real* s) {
   return GetEosData(ptable, 0, egas, rho) * egas;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real r[NSCALARS])
+//! \fn Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real* r)
 //! \brief Return interpolated internal energy density
-Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real r[NSCALARS]) {
+Real EquationOfState::EgasFromRhoP(Real rho, Real pres, Real* r) {
   return GetEosData(ptable, 1, pres, rho) * pres;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres, Real r[NSCALARS])
+//! \fn Real EquationOfState::AsqFromRhoP(Real rho, Real pres, const Real* r)
 //! \brief Return interpolated adiabatic sound speed squared
-Real EquationOfState::AsqFromRhoP(Real rho, Real pres, Real r[NSCALARS]) {
+Real EquationOfState::AsqFromRhoP(Real rho, Real pres, const Real* r) {
   return GetEosData(ptable, 2, pres, rho) * pres / rho;
 }
 
