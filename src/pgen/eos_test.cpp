@@ -126,8 +126,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       std::cout << "Density, internal energy: " << rho << ", " << egas << '\n';
       u(IDN,0,0,0) = rho;
       u(IEN,0,0,0) = egas;
-      peos->ConservedToPrimitive(u, zeros, f, w, zeros, pcoord, 0, 0, 0, 0, 0, 0);
-      peos->PrimitiveToConserved(w, zeros, u, pcoord, 0, 0, 0, 0, 0, 0);
+      peos->ConservedToPrimitive(u, zeros, f, w, zeros, zeros, zeros, zeros, pcoord,
+                                 0, 0, 0, 0, 0, 0);
+      peos->PrimitiveToConserved(w, zeros, u, zeros, zeros, pcoord, 0, 0, 0, 0, 0, 0);
       p = w(IPR,0,0,0);
       w2[IPR]=p;
       w2[IDN]=rho;

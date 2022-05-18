@@ -226,7 +226,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, is, ie, js, je, ks, ke);
+  peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pscalars->r, pscalars->s, pcoord,
+      is, ie, js, je, ks, ke);
   peos->PassiveScalarPrimitiveToConserved(pscalars->r, phydro->u, pscalars->s, pcoord, is,
       ie, js, je, ks, ke);
 
