@@ -19,6 +19,7 @@
 #include "../../../coordinates/coordinates.hpp"  // Coordinates
 #include "../../../eos/eos.hpp"                  // EquationOfState
 #include "../../../mesh/mesh.hpp"                // MeshBlock
+#include "../../../scalars/scalars.hpp"          // PassiveScalars
 #include "../../hydro.hpp"
 
 //----------------------------------------------------------------------------------------
