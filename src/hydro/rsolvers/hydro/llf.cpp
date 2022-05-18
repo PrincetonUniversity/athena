@@ -39,6 +39,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
   Real wli[(NHYDRO+NSCALARS*GENERAL_EOS)],wri[(NHYDRO+NSCALARS*GENERAL_EOS)];
+  Real du[(NHYDRO)];
   Real fl[(NHYDRO)],fr[(NHYDRO)],flxi[(NHYDRO)];
   Real gm1 = pmy_block->peos->GetGamma() - 1.0;
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
