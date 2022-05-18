@@ -30,12 +30,15 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
 
 //----------------------------------------------------------------------------------------
 //! \fn void EquationOfState::ConservedToPrimitive(AthenaArray<Real> &cons,
-//!           const AthenaArray<Real> &prim_old, const FaceField &b,
-//!           AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
-//!           int il, int iu, int jl, int ju, int kl, int ku)
+//!          const AthenaArray<Real> &prim_old, const FaceField &b,
+//!          AthenaArray<Real> &prim, AthenaArray<Real> &bcc, Coordinates *pco,
+//!          int il, int iu, int jl, int ju, int kl, int ku)
+//! \brief Converts conserved into primitive variables in adiabatic hydro.
+
 void EquationOfState::ConservedToPrimitive(
     AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
-    AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
+    AthenaArray<Real> &prim, AthenaArray<Real> &bcc, AthenaArray<Real> &s,
+    const AthenaArray<Real> &r_old, AthenaArray<Real> &r,
     Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku) {
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -68,13 +71,14 @@ void EquationOfState::ConservedToPrimitive(
 
 //----------------------------------------------------------------------------------------
 //! \fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-//!           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
-//!           int il, int iu, int jl, int ju, int kl, int ku);
+//!          const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
+//!          int il, int iu, int jl, int ju, int kl, int ku);
 //! \brief Converts primitive variables into conservative variables
 
 void EquationOfState::PrimitiveToConserved(
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
-    AthenaArray<Real> &cons, Coordinates *pco,
+    AthenaArray<Real> &cons, const AthenaArray<Real> &r,
+    AthenaArray<Real> &s, Coordinates *pco,
     int il, int iu, int jl, int ju, int kl, int ku) {
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
