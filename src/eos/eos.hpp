@@ -43,6 +43,10 @@ class EquationOfState {
                             AthenaArray<Real> &cons, const AthenaArray<Real> &r,
                             AthenaArray<Real> &s, Coordinates *pco,
                             int il, int iu, int jl, int ju, int kl, int ku);
+  // overload eos calls without tracers for backward compatibility with pgens
+  void PrimitiveToConserved(const AthenaArray<Real> &prim, const AthenaArray<Real> &bc,
+                            AthenaArray<Real> &cons, Coordinates *pco,
+                            int il, int iu, int jl, int ju, int kl, int ku);
   void ConservedToPrimitiveCellAverage(
       AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &b,
       AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
@@ -156,7 +160,7 @@ class EquationOfState {
   Real PresFromRhoEg(Real rho, Real egas, Real* s);
   Real EgasFromRhoP(Real rho, Real pres, Real* r);
   Real AsqFromRhoP(Real rho, Real pres, const Real* r);
-  // overload eos calls without tracers for backward compatibility
+  // overload eos calls without tracers for backward compatibility with pgens
   Real PresFromRhoEg(Real rho, Real egas);
   Real EgasFromRhoP(Real rho, Real pres);
   Real AsqFromRhoP(Real rho, Real pres);

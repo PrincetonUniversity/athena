@@ -184,6 +184,21 @@ void EquationOfState::PrimitiveToConserved(
   return;
 }
 
+// overload eos calls without tracers for backward compatibility with pgens
+void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
+  if (NSCALARS > 0) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in EquationOfState::PrimitiveToConserved" << std::endl
+        << "When NSCALARS>0, scalars must be passed to this function." << std::endl;
+    ATHENA_ERROR(msg);
+    return;
+  }
+  AthenaArray<Real> empty;
+  PrimitiveToConserved(prim, bc, cons, empty, empty, pco, il, iu, jl, ju, kl, ku);
+}
+
 //----------------------------------------------------------------------------------------
 //! \fn Real EquationOfState::SoundSpeed(Real prim[NHYDRO])
 //! \brief returns adiabatic sound speed given vector of primitive variables

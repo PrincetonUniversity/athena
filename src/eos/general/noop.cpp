@@ -51,6 +51,12 @@ Real EquationOfState::EgasFromRhoP(Real rho, Real pres) {
 Real EquationOfState::AsqFromRhoP(Real rho, Real pres) {
   return AsqFromRhoP(rho, pres, nullptr);
 }
+void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
+    const AthenaArray<Real> &bc, AthenaArray<Real> &cons, Coordinates *pco,
+    int il, int iu, int jl, int ju, int kl, int ku) {
+  AthenaArray<Real> empty;
+  PrimitiveToConserved(prim, bc, cons, empty, empty, pco, il, iu, jl, ju, kl, ku);
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void EquationOfState::InitEosConstants(ParameterInput* pin)
