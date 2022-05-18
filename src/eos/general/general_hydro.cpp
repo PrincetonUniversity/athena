@@ -123,8 +123,8 @@ void EquationOfState::ConservedToPrimitive(
 
 //----------------------------------------------------------------------------------------
 //! \fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-//!           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, const AthenaArray<Real> &r,
-//!           AthenaArray<Real> &s, Coordinates *pco,
+//!           const AthenaArray<Real> &bc, AthenaArray<Real> &cons,
+//!           const AthenaArray<Real> &r,AthenaArray<Real> &s, Coordinates *pco,
 //!           int il, int iu, int jl, int ju, int kl, int ku);
 //! \brief Converts primitive variables into conservative variables
 
@@ -162,7 +162,7 @@ void EquationOfState::PrimitiveToConserved(
           r_cell[n] = r(n,k,j,i);
         }
         // cellwise conversion
-        u_e = EgasFromRhoP(u_d, w_p, r_cell) + 0.5*w_d*(SQR(w_vx) + SQR(w_vy) + SQR(w_vz));
+        u_e = EgasFromRhoP(u_d, w_p, r_cell) + 0.5*w_d*(SQR(w_vx)+SQR(w_vy)+SQR(w_vz));
       }
     }
   }

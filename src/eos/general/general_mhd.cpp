@@ -131,8 +131,8 @@ void EquationOfState::ConservedToPrimitive(
 
 //----------------------------------------------------------------------------------------
 //! \fn void EquationOfState::PrimitiveToConserved(const AthenaArray<Real> &prim,
-//!           const AthenaArray<Real> &bc, AthenaArray<Real> &cons, const AthenaArray<Real> &r,
-//!           AthenaArray<Real> &s, Coordinates *pco,
+//!           const AthenaArray<Real> &bc, AthenaArray<Real> &cons,
+//!           const AthenaArray<Real> &r, AthenaArray<Real> &s, Coordinates *pco,
 //!           int il, int iu, int jl, int ju, int kl, int ku);
 //! \brief Converts primitive variables into conservative variables
 
