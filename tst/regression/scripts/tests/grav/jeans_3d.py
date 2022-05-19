@@ -15,8 +15,24 @@ athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
+def kludge_grav_mg():
+    with open('../../src/defs.hpp', 'a') as f:
+        f.write('#undef SELF_GRAVITY_ENABLED\n')
+        f.write('#define SELF_GRAVITY_ENABLED 2\n')
+
+
+def grav_mg_available():
+    with open('../../configure.py', 'r') as f:
+        for line in f:
+            if 'if args[\'grav\'] == "mg":' in line:
+                return True
+
+
 # Prepare Athena++
 def prepare(**kwargs):
+    mg_avail = grav_mg_available()
+    mg = 'mg' if mg_avail else 'none'
+
     logger.debug('Running test ' + __name__)
     athena.configure('mpi', 'fft',
                      prob='jeans',
@@ -27,7 +43,9 @@ def prepare(**kwargs):
 
     athena.configure('mpi',
                      prob='jeans',
-                     grav='mg', **kwargs)
+                     grav=mg, **kwargs)
+    if not mg_avail:
+        kludge_grav_mg()
     athena.make()
     os.system('mv bin/athena bin/athena_mpi_mg')
     os.system('mv obj obj_mpi_mg')
@@ -41,8 +59,10 @@ def prepare(**kwargs):
     os.system('mv obj obj_fft')
 
     athena.configure(prob='jeans',
-                     grav='mg',
+                     grav=mg,
                      **kwargs)
+    if not mg_avail:
+        kludge_grav_mg()
     athena.make()
 
 
