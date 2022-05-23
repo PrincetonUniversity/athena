@@ -589,8 +589,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
     GH2diss = 0.;
   } else {
     GCR = Thermo::HeatingCr(yprev[ige_],  nH_,
-        yprev[igH_],  yprev[igHe_],  yprev[iH2_],
-        kcr_[icr_H_],  kcr_[icr_He_],  kcr_[icr_H2_]);
+        yprev[igH_],   yprev[iH2_], rad_[index_cr_]);
     //photo electric effect on dust
     GPE = Thermo::HeatingPE(rad_[index_gpe_], zdg_, T, nH_*yprev[ige_]);
     //H2 formation on dust grains

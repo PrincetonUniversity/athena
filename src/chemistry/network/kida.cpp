@@ -630,7 +630,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
   //--------------------------heating-----------------------------
   Real GCR, GPE, GH2gr, dot_xH2_photo, GH2pump, GH2diss;
   //CR heating
-  GCR = Thermo::HeatingCr(y_e,  nH_, y_H,  y_He,  y_H2, kcr_H, kcr_He, kcr_H2);
+  GCR = Thermo::HeatingCr(y_e,  nH_, y_H, y_H2, rad_(index_cr_));
   //photo electric effect on dust
   if (is_fixed_PAH_) {
     GPE = Thermo::HeatingPE(rad_(index_gpe_), Z_PAH_, T, nH_*y_e);

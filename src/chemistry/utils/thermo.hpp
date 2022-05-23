@@ -19,8 +19,7 @@ class Thermo {
  public:
     Thermo();
     static Real HeatingCr(const Real xe, const Real nH,
-                     const Real xHI, const Real xHe, const Real xH2,
-                     const Real kHI, const Real kHe, const Real kH2);
+                          const Real xHI, const Real xH2, const Real crir_prim);
     static Real HeatingPE(const Real G, const Real Zd, const Real T,
                             const Real ne);
     static Real HeatingPE_W03(const Real G, const Real Z_PAH, const Real T,
