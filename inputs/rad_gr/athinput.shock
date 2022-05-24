@@ -1,0 +1,106 @@
+<comment>
+problem   = piecewise constant radiation and fluid in GR (flat spacetime)
+configure = -g -r --prob gr_rad_shock --coord minkowski --flux hlle --nghost_rad 0 -hdf5
+
+<job>
+problem_id = shock  # name of run
+
+<time>
+nlim       = -1    # maximum number of timesteps
+tlim       = 40.0  # maximum time to run
+cfl_number = 0.3   # fraction of Courant condition
+integrator = vl2   # time integration algorithm
+xorder     = 2     # order of spatial reconstruction
+ncycle_out = 1     # interval for stdout summary info
+
+<output1>
+file_type = hdf5  # output format
+variable  = prim  # choice of variables to output
+id        = prim  # name of output files
+dt        = 40.0  # output cadence
+xdmf      = 0     # whether to include auxiliary metadata file
+
+<output2>
+file_type = hdf5       # output format
+variable  = rad_fluid  # choice of variables to output
+id        = rad_fluid  # name of output files
+dt        = 40.0       # output cadence
+xdmf      = 0          # whether to include auxiliary metadata file
+
+<output3>
+file_type = hdf5       # output format
+variable  = rad_coord  # choice of variables to output
+id        = rad_coord  # name of output files
+dt        = 40.0       # output cadence
+xdmf      = 0          # whether to include auxiliary metadata file
+
+<mesh>
+nx1    = 800    # number of cells in x-direction
+x1min  = -20.0  # minimum x
+x1max  = 20.0   # maximum x
+ix1_bc = user   # left boundary
+ox1_bc = user   # right boundary
+
+nx2    = 1         # number of cells in y-direction
+x2min  = -0.5      # minimum y
+x2max  = 0.5       # maximum y
+ix2_bc = periodic  # front boundary
+ox2_bc = periodic  # back boundary
+
+nx3    = 1         # number of cells in z-direction
+x3min  = -0.5      # minimum z
+x3max  = 0.5       # maximum z
+ix3_bc = periodic  # bottom boundary
+ox3_bc = periodic  # top boundary
+
+refinement = none  # whether to use mesh refinement
+
+num_threads = 1  # number of threads per process
+
+<meshblock>
+nx1 = 800   # block size in x-direction
+nx2 = 1     # block size in y-direction
+nx3 = 1     # block size in z-direction
+
+<coord>
+rad_tetrad = cartesian  # choice of radiation tetrad
+
+<hydro>
+gamma  = 1.6666666666666667  # ratio of specific heats Gamma
+dfloor = 1.0e-8              # absolute density floor
+pfloor = 1.0e-10             # absolute gas pressure floor
+
+<radiation>
+n_polar      = 5                    # number of polar angles in direction space
+n_azimuthal  = 10                   # number of azimuthal angles in direction space
+coupled      = true                 # flag indicating radiation is coupled to matter
+affect_fluid = true                 # flag indicating radiation affects matter
+moment_fix   = false                # flag indicating equations are altered
+density_cgs  = 9.564611558726074e6  # code unit of density, in g/cm^3
+mol_weight   = 1.0                  # molecular weight of gas, in proton masses
+
+<problem>
+x_shock = 0.0  # position of initial interface
+
+rho_left  = 1.0     # initial gas density on left
+pgas_left = 3.0e-5  # initial gas pressure on left
+ux_left   = 0.015   # initial gas x-velocity on left
+uy_left   = 0.0     # initial gas y-velocity on left
+uz_left   = 0.0     # initial gas z-velocity on left
+erad_left = 1.0e-8  # initial fluid-frame radiation energy on left
+fx_left   = 0.0     # initial fluid-frame x-flux of radiation on left
+fy_left   = 0.0     # initial fluid-frame y-flux of radiation on left
+fz_left   = 0.0     # initial fluid-frame z-flux of radiation on left
+
+rho_right  = 2.4      # initial gas density on right
+pgas_right = 1.61e-4  # initial gas pressure on right
+ux_right   = 6.25e-3  # initial gas x-velocity on right
+uy_right   = 0.0      # initial gas y-velocity on right
+uz_right   = 0.0      # initial gas z-velocity on right
+erad_right = 2.51e-7  # initial fluid-frame radiation energy on right
+fx_right   = 0.0      # initial fluid-frame x-flux of radiation on right
+fy_right   = 0.0      # initial fluid-frame y-flux of radiation on right
+fz_right   = 0.0      # initial fluid-frame z-flux of radiation on right
+
+kappa_a = 0.4  # absorption opacity, in code units rather than cm^2/g
+kappa_s = 0.0  # scattering opacity, in code units rather than cm^2/g
