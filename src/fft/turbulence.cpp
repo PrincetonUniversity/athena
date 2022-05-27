@@ -59,7 +59,8 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
          {nmb, pm->my_blocks(0)->ncells3,
                pm->my_blocks(0)->ncells2, pm->my_blocks(0)->ncells1},
          {nmb, pm->my_blocks(0)->ncells3,
-               pm->my_blocks(0)->ncells2, pm->my_blocks(0)->ncells1} } {
+               pm->my_blocks(0)->ncells2, pm->my_blocks(0)->ncells1} },
+    fv_new_(nullptr) {
   if (f_shear > 1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
@@ -93,7 +94,6 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
   fv_ = new std::complex<Real>*[3];
   fv_sh_ = new std::complex<Real>*[3];
   fv_co_ = new std::complex<Real>*[3];
-  fv_new_ = nullptr;
   if (pm->turb_flag > 1) fv_new_ = new std::complex<Real>*[3];
   for (int nv=0; nv<3; nv++) {
     fv_[nv] = new std::complex<Real>[pmy_fb->cnt_];
