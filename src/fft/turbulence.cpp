@@ -93,6 +93,7 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
   fv_ = new std::complex<Real>*[3];
   fv_sh_ = new std::complex<Real>*[3];
   fv_co_ = new std::complex<Real>*[3];
+  fv_new_ = nullptr;
   if (pm->turb_flag > 1) fv_new_ = new std::complex<Real>*[3];
   for (int nv=0; nv<3; nv++) {
     fv_[nv] = new std::complex<Real>[pmy_fb->cnt_];
