@@ -101,7 +101,16 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
       ATHENA_ERROR(msg);
     }
     autompo_ = pin->GetOrAddBoolean("gravity", "auto_mporigin", true);
+    nodipole_ = pin->GetOrAddBoolean("gravity", "nodipole", false);
     if (autompo_) {
+      if (nodipole_) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
+        << "\"auto_mporigin\"(default) and \"nodipole\" cannot be used together."
+        << std::endl << "To use\"nodipole\", set \"auto_mporigin = false\" and "
+        << "specify the origin for multipole expansion explicitly." << std::endl;
+        ATHENA_ERROR(msg);
+      }
       mpo_(0) = pin->GetOrAddReal("gravity", "mporigin_x1", 0.0);
       mpo_(1) = pin->GetOrAddReal("gravity", "mporigin_x2", 0.0);
       mpo_(2) = pin->GetOrAddReal("gravity", "mporigin_x3", 0.0);
@@ -110,7 +119,6 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
       mpo_(1) = pin->GetReal("gravity", "mporigin_x2");
       mpo_(2) = pin->GetReal("gravity", "mporigin_x3");
     }
-    nodipole_ = pin->GetOrAddBoolean("gravity", "nodipole", false);
     AllocateMultipoleCoefficients();
   }
 
