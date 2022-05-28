@@ -926,6 +926,9 @@ TaskStatus SuperTimeStepTaskList::Primitives_STS(MeshBlock *pmb, int stage) {
       }
       if (do_sts_scalar) {
         pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->r);
+        if (pmb->pmy_mesh->multilevel) {
+          pmb->pscalars->sbvar.coarse_buf = &(pmb->pscalars->coarse_r_);
+        }
       }
       Real time = pmb->pmy_mesh->time;
       if (pmb->pmy_mesh->sts_loc == TaskType::op_split_after) time += pmb->pmy_mesh->dt;
@@ -957,6 +960,9 @@ TaskStatus SuperTimeStepTaskList::PhysicalBoundary_STS(MeshBlock *pmb, int stage
     }
     if (do_sts_scalar) {
       pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->r);
+      if (pmb->pmy_mesh->multilevel) {
+        pmb->pscalars->sbvar.coarse_buf = &(pmb->pscalars->coarse_r_);
+      }
     }
     Real time = pmb->pmy_mesh->time;
     if (pmb->pmy_mesh->sts_loc == TaskType::op_split_after) time += pmb->pmy_mesh->dt;
