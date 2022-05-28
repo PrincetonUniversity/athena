@@ -59,7 +59,8 @@ TurbulenceDriver::TurbulenceDriver(Mesh *pm, ParameterInput *pin) :
          {nmb, pm->my_blocks(0)->ncells3,
                pm->my_blocks(0)->ncells2, pm->my_blocks(0)->ncells1},
          {nmb, pm->my_blocks(0)->ncells3,
-               pm->my_blocks(0)->ncells2, pm->my_blocks(0)->ncells1} } {
+               pm->my_blocks(0)->ncells2, pm->my_blocks(0)->ncells1} },
+    fv_new_(nullptr) {
   if (f_shear > 1) {
     std::stringstream msg;
     msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
