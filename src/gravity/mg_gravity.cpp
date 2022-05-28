@@ -91,6 +91,9 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
   CheckBoundaryFunctions();
   if (mporder_ >= 0) {
     mporder_ = pin->GetOrAddInteger("gravity", "mporder", 0);
+    autompo_ = pin->GetOrAddBoolean("gravity", "auto_mporigin", true);
+    nodipole_ = pin->GetOrAddBoolean("gravity", "nodipole", false);
+    AllocateMultipoleCoefficients();
     if (mporder_ != 2 && mporder_ != 4) {
       std::stringstream msg;
       msg << "### FATAL ERROR in MGGravityDriver::MGGravityDriver" << std::endl
@@ -100,8 +103,6 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
           << "and 4 (hexadecapole)." << std::endl;
       ATHENA_ERROR(msg);
     }
-    autompo_ = pin->GetOrAddBoolean("gravity", "auto_mporigin", true);
-    nodipole_ = pin->GetOrAddBoolean("gravity", "nodipole", false);
     if (autompo_) {
       if (nodipole_) {
         std::stringstream msg;
@@ -119,7 +120,6 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
       mpo_(1) = pin->GetReal("gravity", "mporigin_x2");
       mpo_(2) = pin->GetReal("gravity", "mporigin_x3");
     }
-    AllocateMultipoleCoefficients();
   }
 
   mgtlist_ = new MultigridTaskList(this);
