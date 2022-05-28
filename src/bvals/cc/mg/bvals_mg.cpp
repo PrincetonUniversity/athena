@@ -165,6 +165,7 @@ void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face, AthenaArray<R
      Real time, int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
      const MGCoordinates &coord) {
   AthenaArray<Real> &mpcoeff = pmy_mg_->pmy_driver_->mpcoeff_[0];
+  AthenaArray<Real> &mpo = pmy_mg_->pmy_driver_->mpo_;
   int &mporder = pmy_mg_->pmy_driver_->mporder_;
   switch (face) {
     case BoundaryFace::inner_x1:
@@ -184,7 +185,7 @@ void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face, AthenaArray<R
           break;
         case BoundaryFlag::mg_multipole:
           MGMultipoleInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
-                             mpcoeff, mporder);
+                             mpcoeff, mpo, mporder);
           break;
         default:
           break;
@@ -207,7 +208,7 @@ void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face, AthenaArray<R
           break;
         case BoundaryFlag::mg_multipole:
           MGMultipoleOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
-                             mpcoeff, mporder);
+                             mpcoeff, mpo, mporder);
           break;
         default:
           break;
@@ -230,7 +231,7 @@ void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face, AthenaArray<R
           break;
         case BoundaryFlag::mg_multipole:
           MGMultipoleInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
-                             mpcoeff, mporder);
+                             mpcoeff, mpo, mporder);
           break;
         default:
           break;
@@ -253,7 +254,7 @@ void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face, AthenaArray<R
           break;
         case BoundaryFlag::mg_multipole:
           MGMultipoleOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
-                             mpcoeff, mporder);
+                             mpcoeff, mpo, mporder);
           break;
         default:
           break;
@@ -276,7 +277,7 @@ void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face, AthenaArray<R
           break;
         case BoundaryFlag::mg_multipole:
           MGMultipoleInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
-                             mpcoeff, mporder);
+                             mpcoeff, mpo, mporder);
           break;
         default:
           break;
@@ -299,7 +300,7 @@ void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face, AthenaArray<R
           break;
         case BoundaryFlag::mg_multipole:
           MGMultipoleOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
-                             mpcoeff, mporder);
+                             mpcoeff, mpo, mporder);
           break;
         default:
           break;

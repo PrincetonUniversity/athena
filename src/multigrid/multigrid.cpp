@@ -1062,20 +1062,23 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff) {
   // as it requires non-continuous memory access.
   Real vol = (coord.x1f(is+1)-coord.x1f(is)) * (coord.x2f(js+1)-coord.x2f(js))
            * (coord.x3f(ks+1)-coord.x3f(ks));
+  Real xorigin = pmy_driver_->mpo_(0);
+  Real yorigin = pmy_driver_->mpo_(1);
+  Real zorigin = pmy_driver_->mpo_(2);
   if (pmy_driver_->mporder_ == 4) {
     Real m0=0.0, m1=0.0, m2=0.0, m3=0.0, m4=0.0, m5=0.0, m6=0.0, m7=0.0, m8=0.0, m9=0.0,
          m10=0.0, m11=0.0, m12=0.0, m13=0.0, m14=0.0, m15=0.0, m16=0.0, m17=0.0, m18=0.0,
          m19=0.0, m20=0.0, m21=0.0, m22=0.0, m23=0.0, m24=0.0;
     if (pmy_driver_->nodipole_) {
       for (int k = ks; k <= ke; ++k) {
-        Real z = coord.x3v(k);
+        Real z = coord.x3v(k) - zorigin;
         Real z2 = z*z;
         for (int j = js; j <= je; ++j) {
-          Real y = coord.x2v(j);
+          Real y = coord.x2v(j) - yorigin;
           Real y2 = y*y, yz = y*z;
 #pragma ivdep
           for (int i = is; i <= ie; ++i) {
-            Real x = coord.x1v(i);
+            Real x = coord.x1v(i) - xorigin;
             Real x2 = x*x, xy = x*y, zx = z*x;
             Real r2 = x2 + y2 + z2;
             Real hx2my2 = 0.5*(x2-y2);
@@ -1116,14 +1119,14 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff) {
       }
     } else {
       for (int k = ks; k <= ke; ++k) {
-        Real z = coord.x3v(k);
+        Real z = coord.x3v(k) - zorigin;
         Real z2 = z*z;
         for (int j = js; j <= je; ++j) {
-          Real y = coord.x2v(j);
+          Real y = coord.x2v(j) - yorigin;
           Real y2 = y*y, yz = y*z;
 #pragma ivdep
           for (int i = is; i <= ie; ++i) {
-            Real x = coord.x1v(i);
+            Real x = coord.x1v(i) - xorigin;
             Real x2 = x*x, xy = x*y, zx = z*x;
             Real r2 = x2 + y2 + z2;
             Real hx2my2 = 0.5*(x2-y2);
@@ -1196,14 +1199,14 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff) {
     Real m0=0.0, m1=0.0, m2=0.0, m3=0.0, m4=0.0, m5=0.0, m6=0.0, m7=0.0, m8=0.0;
     if (pmy_driver_->nodipole_) {
       for (int k = ks; k <= ke; ++k) {
-        Real z = coord.x3v(k);
+        Real z = coord.x3v(k) - zorigin;
         Real z2 = z*z;
         for (int j = js; j <= je; ++j) {
-          Real y = coord.x2v(j);
+          Real y = coord.x2v(j) - yorigin;
           Real y2 = y*y, yz = y*z;
 #pragma ivdep
           for (int i = is; i <= ie; ++i) {
-            Real x = coord.x1v(i);
+            Real x = coord.x1v(i) - xorigin;
             Real x2 = x*x, xy = x*y, zx = z*x;
             Real r2 = x2 + y2 + z2;
             Real s = src(k,j,i) * vol;
@@ -1220,14 +1223,14 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff) {
       }
     } else {
       for (int k = ks; k <= ke; ++k) {
-        Real z = coord.x3v(k);
+        Real z = coord.x3v(k) - zorigin;
         Real z2 = z*z;
         for (int j = js; j <= je; ++j) {
-          Real y = coord.x2v(j);
+          Real y = coord.x2v(j) - yorigin;
           Real y2 = y*y, yz = y*z;
 #pragma ivdep
           for (int i = is; i <= ie; ++i) {
-            Real x = coord.x1v(i);
+            Real x = coord.x1v(i) - xorigin;
             Real x2 = x*x, xy = x*y, zx = z*x;
             Real r2 = x2 + y2 + z2;
             Real s = src(k,j,i) * vol;

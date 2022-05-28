@@ -212,6 +212,7 @@ class MultigridDriver {
   void AllocateMultipoleCoefficients();
   void CalculateMultipoleCoefficients();
   virtual void ScaleMultipoleCoefficients();
+  void UpdateMultipoleOrigin();
 
   // small functions
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }
@@ -250,7 +251,8 @@ class MultigridDriver {
   // for multipole expansion
   AthenaArray<Real> *mpcoeff_;
   int mporder_, nmpcoeff_;
-  bool nodipole_;
+  AthenaArray<Real> mpo_;
+  bool autompo_, nodipole_;
 
  private:
   Real *rootbuf_;
@@ -348,21 +350,27 @@ void MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 
 void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
-       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder);
+       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+       const AthenaArray<Real> &mporigin, int mporder);
 void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
-       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder);
+       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+       const AthenaArray<Real> &mporigin, int mporder);
 void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
-       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder);
+       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+       const AthenaArray<Real> &mporigin, int mporder);
 void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
-       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder);
+       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+       const AthenaArray<Real> &mporigin, int mporder);
 void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
-       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder);
+       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+       const AthenaArray<Real> &mporigin, int mporder);
 void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
-       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder);
+       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+       const AthenaArray<Real> &mporigin, int mporder);
 
 #endif // MULTIGRID_MULTIGRID_HPP_

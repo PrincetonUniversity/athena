@@ -20,22 +20,27 @@
 //----------------------------------------------------------------------------------------
 //! \fn void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar, 
 //             int is, int ie, int js, int je, int ks, int ke, int ngh,
-//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder)
+//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+//             const AthenaArray<Real> &mporigin, int mporder)
 //  \brief Multipole boundary condition in the inner-X1 direction
 //   *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
 
 void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
-       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder) {
+       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+       const AthenaArray<Real> &mporigin, int mporder) {
   int i = is;
-  Real x = coord.x1f(i), x2 = x*x;
+  Real xorigin = mporigin(0);
+  Real yorigin = mporigin(1);
+  Real zorigin = mporigin(2);
+  Real x = coord.x1f(i) - xorigin, x2 = x*x;
   if (mporder == 2) {
     for (int k = ks; k <= ke; ++k) {
-      Real z = coord.x3v(k);
+      Real z = coord.x3v(k) - zorigin;
       Real z2 = z*z, zx = z*x;
 #pragma ivdep
       for (int j = js; j <= je; ++j) {
-        Real y = coord.x2v(j);
+        Real y = coord.x2v(j) - yorigin;
         Real y2 = y*y, yz = y*z, xy = x*y;
         Real r2 = x2 + y2 + z2;
         Real ir2 = 1.0/r2, ir1 = std::sqrt(ir2);
@@ -49,11 +54,11 @@ void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
     }
   } else if (mporder == 4) {
     for (int k = ks; k <= ke; ++k) {
-      Real z = coord.x3v(k);
+      Real z = coord.x3v(k) - zorigin;
       Real z2 = z*z, zx = z*x;
 #pragma ivdep
       for (int j = js; j <= je; ++j) {
-        Real y = coord.x2v(j);
+        Real y = coord.x2v(j) - yorigin;
         Real y2 = y*y, yz = y*z, xy = x*y;
         Real r2 = x2 + y2 + z2;
         Real ir2 = 1.0/r2, ir1 = std::sqrt(ir2);
@@ -85,21 +90,26 @@ void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar, 
 //             int is, int ie, int js, int je, int ks, int ke, int ngh,
-//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder)
+//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+//             const AthenaArray<Real> &mporigin, int mporder)
 //   *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
 
 void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
-       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder) {
+       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+       const AthenaArray<Real> &mporigin, int mporder) {
   int i = ie;
-  Real x = coord.x1f(i+1), x2 = x*x;
+  Real xorigin = mporigin(0);
+  Real yorigin = mporigin(1);
+  Real zorigin = mporigin(2);
+  Real x = coord.x1f(i+1) - xorigin, x2 = x*x;
   if (mporder == 2) {
     for (int k = ks; k <= ke; ++k) {
-      Real z = coord.x3v(k);
+      Real z = coord.x3v(k) - zorigin;
       Real z2 = z*z, zx = z*x;
 #pragma ivdep
       for (int j = js; j <= je; ++j) {
-        Real y = coord.x2v(j);
+        Real y = coord.x2v(j) - yorigin;
         Real y2 = y*y, yz = y*z, xy = x*y;
         Real r2 = x2 + y2 + z2;
         Real ir2 = 1.0/r2, ir1 = std::sqrt(ir2);
@@ -113,11 +123,11 @@ void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
     }
   } else if (mporder == 4) {
     for (int k = ks; k <= ke; ++k) {
-      Real z = coord.x3v(k);
+      Real z = coord.x3v(k) - zorigin;
       Real z2 = z*z, zx = z*x;
 #pragma ivdep
       for (int j = js; j <= je; ++j) {
-        Real y = coord.x2v(j);
+        Real y = coord.x2v(j) - yorigin;
         Real y2 = y*y, yz = y*z, xy = x*y;
         Real r2 = x2 + y2 + z2;
         Real ir2 = 1.0/r2, ir1 = std::sqrt(ir2);
@@ -149,22 +159,27 @@ void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar, 
 //             int is, int ie, int js, int je, int ks, int ke, int ngh,
-//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder)
+//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+//             const AthenaArray<Real> &mporigin, int mporder)
 //  \brief Multipole boundary condition in the inner-X2 direction
 //   *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
 
 void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
-       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder) {
+       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+       const AthenaArray<Real> &mporigin, int mporder) {
   int j = js;
-  Real y = coord.x2f(j), y2 = y*y;
+  Real xorigin = mporigin(0);
+  Real yorigin = mporigin(1);
+  Real zorigin = mporigin(2);
+  Real y = coord.x2f(j) - yorigin, y2 = y*y;
   if (mporder == 2) {
     for (int k = ks; k <= ke; ++k) {
-      Real z = coord.x3v(k);
+      Real z = coord.x3v(k) - zorigin;
       Real z2 = z*z, yz = y*z;
 #pragma ivdep
       for (int i = is; i <= ie; ++i) {
-        Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
+        Real x = coord.x1v(i) - xorigin, x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
         Real ir2 = 1.0/r2, ir1 = std::sqrt(ir2);
         Real ir3 = ir2*ir1, ir5 = ir3*ir2;
@@ -177,11 +192,11 @@ void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
     }
   } else if (mporder == 4) {
     for (int k = ks; k <= ke; ++k) {
-      Real z = coord.x3v(k);
+      Real z = coord.x3v(k) - zorigin;
       Real z2 = z*z, yz = y*z;
 #pragma ivdep
       for (int i = is; i <= ie; ++i) {
-        Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
+        Real x = coord.x1v(i) - xorigin, x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
         Real ir2 = 1.0/r2, ir1 = std::sqrt(ir2);
         Real ir3 = ir2*ir1, ir5 = ir3*ir2, ir7 = ir5*ir2, ir9 = ir7*ir2;
@@ -212,22 +227,27 @@ void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar, 
 //             int is, int ie, int js, int je, int ks, int ke, int ngh,
-//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder)
+//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+//             const AthenaArray<Real> &mporigin, int mporder)
 //  \brief Multipole boundary condition in the outer-X2 direction
 //   *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
 
 void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
-       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder) {
+       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+       const AthenaArray<Real> &mporigin, int mporder) {
   int j = je;
-  Real y = coord.x2f(j+1), y2 = y*y;
+  Real xorigin = mporigin(0);
+  Real yorigin = mporigin(1);
+  Real zorigin = mporigin(2);
+  Real y = coord.x2f(j+1) - yorigin, y2 = y*y;
   if (mporder == 2) {
     for (int k = ks; k <= ke; ++k) {
-      Real z = coord.x3v(k);
+      Real z = coord.x3v(k) - zorigin;
       Real z2 = z*z, yz = y*z;
 #pragma ivdep
       for (int i = is; i <= ie; ++i) {
-        Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
+        Real x = coord.x1v(i) - xorigin, x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
         Real ir2 = 1.0/r2, ir1 = std::sqrt(ir2);
         Real ir3 = ir2*ir1, ir5 = ir3*ir2;
@@ -240,11 +260,11 @@ void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
     }
   } else if (mporder == 4) {
     for (int k = ks; k <= ke; ++k) {
-      Real z = coord.x3v(k);
+      Real z = coord.x3v(k) - zorigin;
       Real z2 = z*z, yz = y*z;
 #pragma ivdep
       for (int i = is; i <= ie; ++i) {
-        Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
+        Real x = coord.x1v(i) - xorigin, x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
         Real ir2 = 1.0/r2, ir1 = std::sqrt(ir2);
         Real ir3 = ir2*ir1, ir5 = ir3*ir2, ir7 = ir5*ir2, ir9 = ir7*ir2;
@@ -275,21 +295,26 @@ void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
 //----------------------------------------------------------------------------------------
 //! \fn void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar, 
 //             int is, int ie, int js, int je, int ks, int ke, int ngh,
-//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder)
+//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+//             const AthenaArray<Real> &mporigin, int mporder)
 //  \brief Multipole boundary condition in the inner-X3 direction
 //   *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
 
 void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
-       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder) {
+       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+       const AthenaArray<Real> &mporigin, int mporder) {
   int k = ks;
-  Real z = coord.x3f(k), z2 = z*z;
+  Real xorigin = mporigin(0);
+  Real yorigin = mporigin(1);
+  Real zorigin = mporigin(2);
+  Real z = coord.x3f(k) - zorigin, z2 = z*z;
   if (mporder == 2) {
     for (int j = js; j <= je; ++j) {
-      Real y = coord.x2v(j), y2 = y*y, yz = y*z;
+      Real y = coord.x2v(j) - yorigin, y2 = y*y, yz = y*z;
 #pragma ivdep
       for (int i = is; i <= ie; ++i) {
-        Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
+        Real x = coord.x1v(i) - xorigin, x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
         Real ir2 = 1.0/r2, ir1 = std::sqrt(ir2);
         Real ir3 = ir2*ir1, ir5 = ir3*ir2;
@@ -302,10 +327,10 @@ void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
     }
   } else if (mporder == 4) {
     for (int j = js; j <= je; ++j) {
-      Real y = coord.x2v(j), y2 = y*y, yz = y*z;
+      Real y = coord.x2v(j) - yorigin, y2 = y*y, yz = y*z;
 #pragma ivdep
       for (int i = is; i <= ie; ++i) {
-        Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
+        Real x = coord.x1v(i) - xorigin, x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
         Real ir2 = 1.0/r2, ir1 = std::sqrt(ir2);
         Real ir3 = ir2*ir1, ir5 = ir3*ir2, ir7 = ir5*ir2, ir9 = ir7*ir2;
@@ -337,20 +362,26 @@ void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 //! \fn void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar, 
 //             int is, int ie, int js, int je, int ks, int ke, int ngh,
 //             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder)
+//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+//             const AthenaArray<Real> &mporigin, int mporder)
 //  \brief Multipole boundary condition in the outer-X3 direction
 //   *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
 
 void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
-       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder) {
+       const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+       const AthenaArray<Real> &mporigin, int mporder) {
   int k = ke;
-  Real z = coord.x3f(k+1), z2 = z*z;
+  Real xorigin = mporigin(0);
+  Real yorigin = mporigin(1);
+  Real zorigin = mporigin(2);
+  Real z = coord.x3f(k+1) - zorigin, z2 = z*z;
   if (mporder == 2) {
     for (int j = js; j <= je; ++j) {
-      Real y = coord.x2v(j), y2 = y*y, yz = y*z;
+      Real y = coord.x2v(j) - yorigin, y2 = y*y, yz = y*z;
 #pragma ivdep
       for (int i = is; i <= ie; ++i) {
-        Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
+        Real x = coord.x1v(i) - xorigin, x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
         Real ir2 = 1.0/r2, ir1 = std::sqrt(ir2);
         Real ir3 = ir2*ir1, ir5 = ir3*ir2;
@@ -363,10 +394,10 @@ void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
     }
   } else if (mporder == 4) {
     for (int j = js; j <= je; ++j) {
-      Real y = coord.x2v(j), y2 = y*y, yz = y*z;
+      Real y = coord.x2v(j) - yorigin, y2 = y*y, yz = y*z;
 #pragma ivdep
       for (int i = is; i <= ie; ++i) {
-        Real x = coord.x1v(i), x2 = x*x, xy = x*y, zx = z*x;
+        Real x = coord.x1v(i) - xorigin, x2 = x*x, xy = x*y, zx = z*x;
         Real r2 = x2 + y2 + z2;
         Real ir2 = 1.0/r2, ir1 = std::sqrt(ir2);
         Real ir3 = ir2*ir1, ir5 = ir3*ir2, ir7 = ir5*ir2, ir9 = ir7*ir2;

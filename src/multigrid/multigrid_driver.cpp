@@ -45,7 +45,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
     pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), needinit_(true),
     eps_(-1.0), niter_(-1), coffset_(0), cbuf_(nvar_,3,3,3), cbufold_(nvar_,3,3,3),
-    mporder_(-1), nmpcoeff_(0), nodipole_(false), nb_rank_(0) {
+    mporder_(-1), nmpcoeff_(0), mpo_(3), autompo_(false), nodipole_(false), nb_rank_(0) {
 
   std::cout << std::scientific << std::setprecision(15);
 
@@ -1414,7 +1414,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
         break;
       case BoundaryFlag::mg_multipole:
         MGMultipoleInnerX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord,
-                           mpcoeff, mporder_);
+                           mpcoeff, mpo_, mporder_);
         break;
       default:
         break;
@@ -1434,7 +1434,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
         break;
       case BoundaryFlag::mg_multipole:
         MGMultipoleOuterX1(u, time, nvar_, l, r, bjs, bje, bks, bke, ngh, coord,
-                           mpcoeff, mporder_);
+                           mpcoeff, mpo_, mporder_);
         break;
       default:
         break;
@@ -1454,7 +1454,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
         break;
       case BoundaryFlag::mg_multipole:
         MGMultipoleInnerX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord,
-                           mpcoeff, mporder_);
+                           mpcoeff, mpo_, mporder_);
         break;
       default:
         break;
@@ -1474,7 +1474,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
         break;
       case BoundaryFlag::mg_multipole:
         MGMultipoleOuterX2(u, time, nvar_, bis, bie, l, r, bks, bke, ngh, coord,
-                           mpcoeff, mporder_);
+                           mpcoeff, mpo_, mporder_);
         break;
       default:
         break;
@@ -1495,7 +1495,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
         break;
       case BoundaryFlag::mg_multipole:
         MGMultipoleInnerX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord,
-                           mpcoeff, mporder_);
+                           mpcoeff, mpo_, mporder_);
         break;
       default:
         break;
@@ -1515,7 +1515,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
         break;
       case BoundaryFlag::mg_multipole:
         MGMultipoleOuterX3(u, time, nvar_, bis, bie, bjs, bje, l, r, ngh, coord,
-                           mpcoeff, mporder_);
+                           mpcoeff, mpo_, mporder_);
         break;
       default:
         break;
@@ -1684,7 +1684,7 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
 //                                           AthenaArray<Real> &uold, bool folddata)
-//  \brief prolongate octet boundaries contacting the coarser level
+//  \brief Prolongate octet boundaries contacting the coarser level
 
 void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
                                                 AthenaArray<Real> &uold, bool folddata) {
@@ -1808,7 +1808,7 @@ void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::AllocateMultipoleCoefficients()
-//  \brief allocate arrays for multipole expansion coefficients
+//  \brief Allocate arrays for multipole expansion coefficients
 
 void MultigridDriver::AllocateMultipoleCoefficients() {
   nmpcoeff_ = 0;
@@ -1826,7 +1826,7 @@ void MultigridDriver::AllocateMultipoleCoefficients() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::CalculateMultipoleCoefficients()
-//  \brief calculate multipole expansion coefficients
+//  \brief Calculate multipole expansion coefficients
 
 void MultigridDriver::CalculateMultipoleCoefficients() {
   for (int th = 0; th < nthreads_; ++th)
@@ -1855,7 +1855,7 @@ void MultigridDriver::CalculateMultipoleCoefficients() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::ScaleMultipoleCoefficients()
-//  \brief scale coefficients for multipole expansion
+//  \brief Scale coefficients for multipole expansion
 
 void MultigridDriver::ScaleMultipoleCoefficients() {
   AthenaArray<Real> &mpcoeff = mpcoeff_[0];
@@ -1902,3 +1902,18 @@ void MultigridDriver::ScaleMultipoleCoefficients() {
     mpcoeff(24) *= c44;
   }
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::UpdateMultipoleOrigin()
+//  \brief Calculate the new origin for the multipole expansion using the dipole moment
+//         from the previous multipole moment calculation. This is not very accurate, but
+//         should be reasonably good.
+
+void MultigridDriver::UpdateMultipoleOrigin() {
+  AthenaArray<Real> &mpcoeff = mpcoeff_[0];
+  mpo_(0) = mpcoeff(3) / mpcoeff(0);
+  mpo_(1) = mpcoeff(1) / mpcoeff(0);
+  mpo_(2) = mpcoeff(2) / mpcoeff(0);
+}
+

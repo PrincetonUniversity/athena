@@ -100,6 +100,16 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
           << "and 4 (hexadecapole)." << std::endl;
       ATHENA_ERROR(msg);
     }
+    autompo_ = pin->GetOrAddBoolean("gravity", "auto_mporigin", true);
+    if (autompo_) {
+      mpo_(0) = pin->GetOrAddReal("gravity", "mporigin_x1", 0.0);
+      mpo_(1) = pin->GetOrAddReal("gravity", "mporigin_x2", 0.0);
+      mpo_(2) = pin->GetOrAddReal("gravity", "mporigin_x3", 0.0);
+    } else {
+      mpo_(0) = pin->GetReal("gravity", "mporigin_x1");
+      mpo_(1) = pin->GetReal("gravity", "mporigin_x2");
+      mpo_(2) = pin->GetReal("gravity", "mporigin_x3");
+    }
     nodipole_ = pin->GetOrAddBoolean("gravity", "nodipole", false);
     AllocateMultipoleCoefficients();
   }
@@ -179,6 +189,9 @@ void MGGravityDriver::Solve(int stage) {
     else
       SolveIterativeFixedTimes();
   }
+
+  if (autompo_)
+    UpdateMultipoleOrigin();
 
   // Return the result
 #pragma omp parallel for num_threads(nthreads_)
