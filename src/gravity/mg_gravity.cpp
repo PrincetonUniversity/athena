@@ -198,9 +198,6 @@ void MGGravityDriver::Solve(int stage) {
       SolveIterativeFixedTimes();
   }
 
-  if (autompo_)
-    UpdateMultipoleOrigin();
-
   // Return the result
 #pragma omp parallel for num_threads(nthreads_)
   for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {

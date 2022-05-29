@@ -1264,6 +1264,40 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff) {
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void Multigrid::CalculateCenterOfMass(AthenaArray<Real> &mpcoeff)
+//  \brief Calculate the position of the center of mass from the dipole moment
+
+void Multigrid::CalculateCenterOfMass(AthenaArray<Real> &mpcoeff) {
+  AthenaArray<Real> &src = src_[nlevel_-1];
+  MGCoordinates &coord = coord_[nlevel_-1];
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
+  Real vol = (coord.x1f(is+1)-coord.x1f(is)) * (coord.x2f(js+1)-coord.x2f(js))
+           * (coord.x3f(ks+1)-coord.x3f(ks));
+  Real m0 = 0.0, m1 = 0.0, m2 = 0.0, m3 = 0.0;
+  for (int k = ks; k <= ke; ++k) {
+    Real z = coord.x3v(k);
+    for (int j = js; j <= je; ++j) {
+      Real y = coord.x2v(j);
+#pragma ivdep
+      for (int i = is; i <= ie; ++i) {
+        Real x = coord.x1v(i);
+        Real s = src(k,j,i) * vol;
+        m0 += s;
+        m1 += s*y;
+        m2 += s*z;
+        m3 += s*x;
+      }
+    }
+  }
+  mpcoeff(0) += m0;
+  mpcoeff(1) += m1;
+  mpcoeff(2) += m2;
+  mpcoeff(3) += m3;
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void MGCoordinates::AllocateMGCoordinates(int nx, int ny, int nz)
 //  \brief Allocate coordinate arrays for multigrid
 

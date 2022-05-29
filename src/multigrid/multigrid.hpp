@@ -98,6 +98,7 @@ class Multigrid {
   void SetData(MGVariable type, int n, int k, int j, int i, Real v);
 
   void CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff);
+  void CalculateCenterOfMass(AthenaArray<Real> &mpcoeff);
 
   // small functions
   int GetCurrentNumberOfCells() { return 1<<current_level_; }
@@ -212,7 +213,7 @@ class MultigridDriver {
   void AllocateMultipoleCoefficients();
   void CalculateMultipoleCoefficients();
   virtual void ScaleMultipoleCoefficients();
-  void UpdateMultipoleOrigin();
+  void CalculateCenterOfMass();
 
   // small functions
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }

@@ -427,8 +427,11 @@ void MultigridDriver::SetupMultigrid() {
   if (fsubtract_average_)
     SubtractAverage(MGVariable::src);
 
-  if (mporder_ > 0)
+  if (mporder_ > 0) {
+    if (autompo_)
+      CalculateCenterOfMass();
     CalculateMultipoleCoefficients();
+  }
 
   if (mode_ == 0) { // FMG
 #pragma omp parallel for num_threads(nthreads_)
@@ -1905,15 +1908,37 @@ void MultigridDriver::ScaleMultipoleCoefficients() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::UpdateMultipoleOrigin()
-//  \brief Calculate the new origin for the multipole expansion using the dipole moment
-//         from the previous multipole moment calculation. This is not very accurate, but
-//         should be reasonably good.
+//! \fn void MultigridDriver::CalculateCenterOfMass()
+//  \brief Calculate the position of the center of mass for multipole expansion
 
-void MultigridDriver::UpdateMultipoleOrigin() {
-  AthenaArray<Real> &mpcoeff = mpcoeff_[0];
-  mpo_(0) = mpcoeff(3) / mpcoeff(0);
-  mpo_(1) = mpcoeff(1) / mpcoeff(0);
-  mpo_(2) = mpcoeff(2) / mpcoeff(0);
+void MultigridDriver::CalculateCenterOfMass() {
+  for (int th = 0; th < nthreads_; ++th) {
+    for (int i = 0; i < 4; ++i)
+      mpcoeff_[th](i) = 0.0;
+  }
+#pragma omp parallel for num_threads(nthreads_)
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
+    int th = 0;
+#ifdef OPENMP_PARALLEL
+    th = omp_get_thread_num();
+#endif
+    pmg->CalculateCenterOfMass(mpcoeff_[th]);
+  }
+  for (int th = 1; th < nthreads_; ++th) {
+    for (int i = 0; i < 4; ++i)
+      mpcoeff_[0](i) += mpcoeff_[th](i);
+  }
+#ifdef MPI_PARALLEL
+  MPI_Allreduce(MPI_IN_PLACE, mpcoeff_[0].data(), 4, MPI_ATHENA_REAL,
+                MPI_SUM, MPI_COMM_MULTIGRID);
+#endif
+
+  Real im = 1.0 / mpcoeff_[0](0);
+  mpo_(0) = im  * mpcoeff_[0](3);
+  mpo_(1) = im  * mpcoeff_[0](1);
+  mpo_(2) = im  * mpcoeff_[0](2);
+
+  return;
 }
 
