@@ -112,9 +112,6 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
         << "specify the origin for multipole expansion explicitly." << std::endl;
         ATHENA_ERROR(msg);
       }
-      mpo_(0) = pin->GetOrAddReal("gravity", "mporigin_x1", 0.0);
-      mpo_(1) = pin->GetOrAddReal("gravity", "mporigin_x2", 0.0);
-      mpo_(2) = pin->GetOrAddReal("gravity", "mporigin_x3", 0.0);
     } else {
       mpo_(0) = pin->GetReal("gravity", "mporigin_x1");
       mpo_(1) = pin->GetReal("gravity", "mporigin_x2");
