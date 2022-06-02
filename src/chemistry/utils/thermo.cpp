@@ -893,7 +893,7 @@ Real Thermo::CoolingHotGas(const Real nH, const Real T, const Real Zg) {
 Real Thermo::HeatingH2gr(const Real xHI, const Real xH2, const Real nH,
                          const Real T, const Real kgr, const Real dot_xH2_photo) {
   const Real A = 2.0e-7;
-  const Real D = dot_xH2_photo / 5.7;
+  const Real D = dot_xH2_photo;
   const Real t = 1. + T/1000.;
   const Real geff_H = pow(10, -11.06 + 0.0555/t -2.390/(t*t));
   const Real geff_H2 = pow(10, -11.08 -3.671/t -2.023/(t*t));
@@ -918,7 +918,7 @@ Real Thermo::HeatingH2gr(const Real xHI, const Real xH2, const Real nH,
 Real Thermo::HeatingH2pump(const Real xHI, const Real xH2, const Real nH,
                            const Real T, const Real dot_xH2_photo) {
   const Real A = 2.0e-7;
-  const Real D = dot_xH2_photo / 5.7;
+  const Real D = dot_xH2_photo;
   const Real t = 1. + T/1000.;
   const Real geff_H = pow(10, -11.06 + 0.0555/t -2.390/(t*t));
   const Real geff_H2 = pow(10, -11.08 -3.671/t -2.023/(t*t));
