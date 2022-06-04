@@ -190,7 +190,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 // Fixed boundary condition for left side
 // Inputs:
 //   pmb: pointer to MeshBlock
-//   pcoord: pointer to Coordinates (unused)
+//   pcoord: pointer to Coordinates
 //   il, iu, jl, ju, kl, ku: indices demarkating active region
 //   time, dt: current time and time step (unused)
 //   ngh: effective number of ghost zones to populate
@@ -228,7 +228,7 @@ void FixedLeft(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 // Fixed boundary condition for right side
 // Inputs:
 //   pmb: pointer to MeshBlock
-//   pcoord: pointer to Coordinates (unused)
+//   pcoord: pointer to Coordinates
 //   il, iu, jl, ju, kl, ku: indices demarkating active region
 //   time, dt: current time and time step (unused)
 //   ngh: effective number of ghost zones to populate

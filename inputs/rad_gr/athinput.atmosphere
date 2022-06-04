@@ -1,0 +1,81 @@
+<comment>
+problem   = isothermal Schwarzschild atmosphere
+configure = -g -r --prob gr_rad_atmosphere --coord schwarzschild -hdf5
+
+<job>
+problem_id = atmosphere  # name of run
+
+<time>
+nlim       = -1     # maximum number of timesteps
+tlim       = 100.0  # maximum time to run
+cfl_number = 0.3    # fraction of Courant condition
+integrator = vl2    # time integration algorithm
+xorder     = 2      # order of spatial reconstruction
+ncycle_out = 1      # interval for stdout summary info
+
+<output1>
+file_type = hdf5   # output format
+variable  = prim   # choice of variables to output
+id        = prim   # name of output files
+dt        = 100.0  # output cadence
+xdmf      = 0      # whether to include auxiliary metadata file
+
+<output2>
+file_type = hdf5       # output format
+variable  = rad_fluid  # choice of variables to output
+id        = rad        # name of output files
+dt        = 100.0      # output cadence
+xdmf      = 0          # whether to include auxiliary metadata file
+
+<mesh>
+nx1    = 128                 # number of cells in r-direction
+x1min  = 3.5                 # minimum r
+x1max  = 20.0                # maximum r
+x1rat  = 1.0137100805764425  # geometric ratio in r-direction
+ix1_bc = user                # inner boundary
+ox1_bc = user                # outer boundary
+
+nx2    = 1                  # number of cells in theta-direction
+x2min  = 0.0                # minimum theta
+x2max  = 3.141592653589793  # maximum theta
+ix2_bc = polar_wedge        # north boundary
+ox2_bc = polar_wedge        # south boundary
+
+nx3    = 1                  # number of cells in phi-direction
+x3min  = 0.0                # minimum phi
+x3max  = 6.283185307179586  # maximum phi
+ix3_bc = periodic           # clockwise boundary
+ox3_bc = periodic           # counterclockwise boundary
+
+refinement = none  # whether to use mesh refinement
+
+num_threads = 1  # number of threads per process
+
+<meshblock>
+nx1 = 128  # block size in r-direction
+nx2 = 1    # block size in theta-direction
+nx3 = 1    # block size in phi-direction
+
+<coord>
+m          = 1.0        # code black hole mass
+rad_tetrad = spherical  # choice of radiation tetrad
+
+<hydro>
+gamma  = 1.6666666666666667  # ratio of specific heats Gamma
+dfloor = 1.0e-8              # absolute density floor
+pfloor = 1.0e-8              # absolute gas pressure floor
+
+<radiation>
+n_polar      = 32                     # number of polar angles in direction space
+n_azimuthal  = 4                      # number of azimuthal angles in direction space
+coupled      = true                   # flag indicating radiation is coupled to matter
+affect_fluid = true                   # flag indicating radiation affects matter
+moment_fix   = false                  # flag indicating equations are altered
+density_cgs  = 1.1831321385415344e17  # code unit of density, in g/cm^3
+mol_weight   = 1.0                    # molecular weight of gas, in proton masses
+
+<problem>
+m_msun = 1.0   # understood black hole mass in solar masses
+h_r    = 1.6   # scale height parameter
+beta_r = 43.5  # radiation-to-gas pressure parameter
+tau    = 5.0   # optical depth parameter
