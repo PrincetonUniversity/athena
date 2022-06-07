@@ -2014,8 +2014,12 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
       // Swap Hydro and (possibly) passive scalar quantities in BoundaryVariable interface
       // from conserved to primitive formulations:
       ph->hbvar.SwapHydroQuantity(ph->w1, HydroBoundaryQuantity::prim);
-      if (NSCALARS > 0)
+      if (NSCALARS > 0) {
         ps->sbvar.var_cc = &(ps->r);
+        if (pmb->pmy_mesh->multilevel) {
+          ps->sbvar.coarse_buf = &(ps->coarse_r_);
+        }
+      }
       pbval->ApplyPhysicalBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
       // Perform 4th order W(U)
       pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w, pf->b,
@@ -2050,8 +2054,12 @@ TaskStatus TimeIntegratorTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
     // Swap Hydro and (possibly) passive scalar quantities in BoundaryVariable interface
     // from conserved to primitive formulations:
     ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
-    if (NSCALARS > 0)
+    if (NSCALARS > 0) {
       ps->sbvar.var_cc = &(ps->r);
+      if (pmb->pmy_mesh->multilevel) {
+        ps->sbvar.coarse_buf = &(ps->coarse_r_);
+      }
+    }
     pbval->ApplyPhysicalBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
     return TaskStatus::success;
   }
@@ -2181,6 +2189,9 @@ TaskStatus TimeIntegratorTaskList::SendScalars(MeshBlock *pmb, int stage) {
     // Swap PassiveScalars quantity in BoundaryVariable interface back to conserved var
     // formulation (also needed in SetBoundariesScalars() since the tasks are independent)
     pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->s);
+    if (pmb->pmy_mesh->multilevel) {
+      pmb->pscalars->sbvar.coarse_buf = &(pmb->pscalars->coarse_s_);
+    }
     pmb->pscalars->sbvar.SendBoundaryBuffers();
   } else {
     return TaskStatus::fail;
@@ -2209,6 +2220,9 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesScalars(MeshBlock *pmb, int stag
   if (stage <= nstages) {
     // Set PassiveScalars quantity in BoundaryVariable interface to cons var formulation
     pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->s);
+    if (pmb->pmy_mesh->multilevel) {
+      pmb->pscalars->sbvar.coarse_buf = &(pmb->pscalars->coarse_s_);
+    }
     pmb->pscalars->sbvar.SetBoundaries();
     return TaskStatus::success;
   }
