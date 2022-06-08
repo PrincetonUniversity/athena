@@ -38,7 +38,6 @@ void EquationOfState::PassiveScalarConservedToPrimitive(
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
           const Real &d  = u(IDN,k,j,i);
-          const Real di = 1.0/d;
 
           //for (int n=0; n<NSCALARS; ++n) {
           Real& s_n  = s(n,k,j,i);
@@ -46,7 +45,7 @@ void EquationOfState::PassiveScalarConservedToPrimitive(
           // apply passive scalars floor to conserved variable first, then transform:
           // (multi-D fluxes may have caused it to drop below floor)
           s_n = (s_n < scalar_floor_ * d) ?  scalar_floor_ * d : s_n;
-          r_n = s_n * di;
+          r_n = s_n/d;
           // TODO(felker): continue to monitor the acceptability of this absolute 0. floor
           // (may create very large global conservation violations, e.g. the first few
           // cycles of the slotted cylinder test)
