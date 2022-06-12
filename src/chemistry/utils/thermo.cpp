@@ -888,12 +888,13 @@ Real Thermo::CoolingHotGas(const Real nH, const Real T, const Real Zg) {
 //! xi = ni/nH
 //! T: temperature in K
 //! kgr: grain reaction rates, kgr_ in NL99p.
+//! k_xH2_photo: photo dissociation of H2 by UV light per H2.
 //! Return:
 //! Heating rate by H2 formation on dust grains in erg H^-1 s^-1.
 Real Thermo::HeatingH2gr(const Real xHI, const Real xH2, const Real nH,
-                         const Real T, const Real kgr, const Real dot_xH2_photo) {
+                         const Real T, const Real kgr, const Real k_xH2_photo) {
   const Real A = 2.0e-7;
-  const Real D = dot_xH2_photo;
+  const Real D = k_xH2_photo;
   const Real t = 1. + T/1000.;
   const Real geff_H = pow(10, -11.06 + 0.0555/t -2.390/(t*t));
   const Real geff_H2 = pow(10, -11.08 -3.671/t -2.023/(t*t));
@@ -905,41 +906,41 @@ Real Thermo::HeatingH2gr(const Real xHI, const Real xH2, const Real nH,
 
 //----------------------------------------------------------------------------------------
 //! \fn Real Thermo::HeatingH2pump(const Real xHI, const Real xH2, const Real nH,
-//!                            const Real T, const Real dot_xH2_photo)
+//!                            const Real T, const Real k_xH2_photo)
 //! \brief Heating by H2 UV pumping, Visser et al. (2018)
 //!
 //! Arguments:
 //! xi = ni/nH
 //! T: temperature in K
-//! dot_xH2_photo = dxH2/dt by photo dissociation of H2 by UV light.
+//! k_xH2_photo: photo dissociation of H2 by UV light per H2.
 //! Calculated in RHS in NL99p.
 //! Return:
 //! Heating rate by H2 UV pumping in erg H^-1 s^-1.
 Real Thermo::HeatingH2pump(const Real xHI, const Real xH2, const Real nH,
-                           const Real T, const Real dot_xH2_photo) {
+                           const Real T, const Real k_xH2_photo) {
   const Real A = 2.0e-7;
-  const Real D = dot_xH2_photo;
+  const Real D = k_xH2_photo;
   const Real t = 1. + T/1000.;
   const Real geff_H = pow(10, -11.06 + 0.0555/t -2.390/(t*t));
   const Real geff_H2 = pow(10, -11.08 -3.671/t -2.023/(t*t));
   // critical density ncr, heating only effective at n > ncr
   const Real ncr = (A + D) / (geff_H*xHI + geff_H2*xH2);
   const Real f = 1. / (1. + ncr/nH);
-  return dot_xH2_photo * 8. * 2.0*f * eV_ * xH2;
+  return D * 8. * 2.0*f * eV_ * xH2;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real Thermo::HeatingH2diss(const Real dot_xH2_photo)
+//! \fn Real Thermo::HeatingH2diss(const Real k_xH2_photo, const Real xH2)
 //! \brief Heating by H2 photo dissiociation.
 //!
 //! From Black + Dalgarno 1977, 0.4eV per reaction.
 //! Arguments:
-//! dot_xH2_photo = dxH2/dt by photo dissociation of H2 by UV light.
+//! k_xH2_photo: photo dissociation of H2 by UV light per H2.
 //! Calculated in RHS in NL99p.
 //! Return:
 //! Heating rate by H2 photo dissiociation in erg H^-1 s^-1.
-Real Thermo::HeatingH2diss(const Real dot_xH2_photo) {
-  return dot_xH2_photo * 0.4 * eV_;
+Real Thermo::HeatingH2diss(const Real k_xH2_photo, const Real xH2) {
+  return k_xH2_photo * xH2 * 0.4 * eV_;
 }
 
 //----------------------------------------------------------------------------------------

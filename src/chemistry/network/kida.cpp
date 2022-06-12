@@ -108,6 +108,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   temp_min_rates_ = pin->GetOrAddReal("chemistry", "temp_min_rates", 1.);
   //minimum temperature below which cooling is turned off
   temp_min_cool_ = pin->GetOrAddReal("chemistry", "temp_min_cool", 1.);
+  //cooling for neutral medium is capped at this temperature
+  temp_max_cool_nm_ = pin->GetOrAddReal("chemistry", "temp_max_cool_nm", 1.0e9);
   //dust temperature for dust thermo cooling of the gas at high densities
   temp_dust_thermo_ = pin->GetOrAddReal("chemistry", "temp_dust_thermo", 10.);
   //folder of the network
@@ -628,7 +630,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
 
 
   //--------------------------heating-----------------------------
-  Real GCR, GPE, GH2gr, dot_xH2_photo, GH2pump, GH2diss;
+  Real GCR, GPE, GH2gr, k_xH2_photo, GH2pump, GH2diss;
   //CR heating
   GCR = Thermo::HeatingCr(y_e,  nH_, y_H, y_H2, rad_(index_cr_));
   //photo electric effect on dust
@@ -638,22 +640,28 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
     GPE = Thermo::HeatingPE_W03(rad_(index_gpe_), Z_PAH_, T, nH_*y_e, phi_PAH_);
   }
   //H2 formation on dust grains
-  dot_xH2_photo = kph_H2 * y_H2;
-  GH2gr = Thermo::HeatingH2gr(y_H,  y_H2, nH_, T, kgr_H, dot_xH2_photo);
+  k_xH2_photo = kph_H2;
+  GH2gr = Thermo::HeatingH2gr(y_H,  y_H2, nH_, T, kgr_H, k_xH2_photo);
   //H2 UV pumping
-  GH2pump = Thermo::HeatingH2pump(y_H,  y_H2, nH_, T, dot_xH2_photo);
+  GH2pump = Thermo::HeatingH2pump(y_H,  y_H2, nH_, T, k_xH2_photo);
   //H2 photo dissiociation.
-  GH2diss = Thermo::HeatingH2diss(dot_xH2_photo);
+  GH2diss = Thermo::HeatingH2diss(k_xH2_photo, y_H2);
 
   //--------------------------cooling-----------------------------
   Real LCII, LCI, LOI, LHotGas, LCOR, LH2, LDust, LRec, LH2diss, LHIion;
   Real vth, nCO, grad_small;
   Real NCOeff, gradeff;
   Real k2body_H2_H, k2body_H2_H2, k2body_H_e;
+  Real Tcool_nm;
   if (i2body_H2_H_ >= 0) {
     k2body_H2_H = k2body_(i2body_H2_H_);
   } else {
     k2body_H2_H = 0.;
+  }
+  if (T > temp_max_cool_nm_) {
+    Tcool_nm = temp_max_cool_nm_;
+  } else {
+    Tcool_nm = T;
   }
   if (i2body_H2_H2_ >= 0) {
     k2body_H2_H2 = k2body_(i2body_H2_H2_);
@@ -680,47 +688,47 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
     // C+ fine structure line
     if (ispec_map_.find("C+") != ispec_map_.end()) {
       LCII = Thermo::CoolingCII(y0[ispec_map_["C+"]],
-                                nH_*y_H,  nH_*y_H2, nH_*y_e, T);
+                                nH_*y_H,  nH_*y_H2, nH_*y_e, Tcool_nm);
     } else {
       LCII = 0.;
     }
     // CI fine structure line
     if (ispec_map_.find("C") != ispec_map_.end()) {
-      LCI = Thermo::CoolingCI(y0[ispec_map_["C"]], nH_*y_H, nH_*y_H2, nH_*y_e, T);
+      LCI = Thermo::CoolingCI(y0[ispec_map_["C"]], nH_*y_H, nH_*y_H2, nH_*y_e, Tcool_nm);
     } else {
       LCI = 0.;
     }
     // OI fine structure line
     if (ispec_map_.find("O") != ispec_map_.end()) {
-      LOI = Thermo::CoolingOI(y0[ispec_map_["O"]], nH_*y_H, nH_*y_H2, nH_*y_e, T);
+      LOI = Thermo::CoolingOI(y0[ispec_map_["O"]], nH_*y_H, nH_*y_H2, nH_*y_e, Tcool_nm);
     } else {
       LOI = 0.;
     }
     // cooling of hot gas: radiative cooling, free-free.
-    LHotGas = Thermo::CoolingHotGas(nH_, T, Z_g_);
+    LHotGas = Thermo::CoolingLya(y_H, nH_*y_e, T);//Thermo::CoolingHotGas(nH_, T, Z_g_);
     // CO rotational lines
     if (ispec_map_.find("CO") != ispec_map_.end()) {
       // Calculate effective CO column density
       Real y_CO = y0[ispec_map_["CO"]];
-      vth = sqrt(2. * Thermo::kb_ * T / ChemistryUtility::mCO);
+      vth = sqrt(2. * Thermo::kb_ * Tcool_nm / ChemistryUtility::mCO);
       nCO = nH_ * y_CO;
       grad_small = vth/Leff_CO_max_;
       gradeff = std::max(gradv_, grad_small);
       NCOeff = nCO / gradeff;
-      LCOR = Thermo::CoolingCOR(y_CO, nH_*y_H,  nH_*y_H2, nH_*y_e, T, NCOeff);
+      LCOR = Thermo::CoolingCOR(y_CO, nH_*y_H,  nH_*y_H2, nH_*y_e, Tcool_nm, NCOeff);
     } else {
       LCOR = 0.;
     }
     // H2 vibration and rotation lines
     LH2 = Thermo::CoolingH2(y_H2, nH_*y_H, nH_*y_H2, nH_*y_He,
-                            nH_*y_Hplus, nH_*y_e, T);
+                            nH_*y_Hplus, nH_*y_e, Tcool_nm);
     // dust thermo emission
-    LDust = Thermo::CoolingDustTd(Z_d_, nH_, T, temp_dust_thermo_);
+    LDust = 0.;//Thermo::CoolingDustTd(Z_d_, nH_, Tcool_nm, temp_dust_thermo_);
     // reconbination of e on PAHs
     if (is_fixed_PAH_) {
-      LRec = Thermo::CoolingRec(Z_PAH_, T, nH_*y_e, rad_(index_gpe_));
+      LRec = Thermo::CoolingRec(Z_PAH_, Tcool_nm, nH_*y_e, rad_(index_gpe_));
     } else {
-      LRec = Thermo::CoolingRec_W03(Z_PAH_, T, nH_*y_e, rad_(index_gpe_), phi_PAH_);
+      LRec = Thermo::CoolingRec_W03(Z_PAH_, Tcool_nm, nH_*y_e, rad_(index_gpe_), phi_PAH_);
     }
     // collisional dissociation of H2
     LH2diss = Thermo::CoolingH2diss(y_H, y_H2, k2body_H2_H, k2body_H2_H2);

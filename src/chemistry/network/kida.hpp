@@ -93,6 +93,7 @@ class ChemNetwork : public NetworkWrapper {
   Real temperature_; //temperature of the gas if isothermal
   Real temp_min_rates_; //temperature floor for reaction rates
   Real temp_min_cool_; //temperature minimum for cooling
+  Real temp_max_cool_nm_; //temperature maximum for neutral medium cooling
   Real temp_dust_thermo_; //dust temperature for dust thermo cooling and desorption
 
   //reaction constants
