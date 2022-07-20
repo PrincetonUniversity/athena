@@ -117,6 +117,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     MGGravityBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
                                MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
   std::stringstream msg;
+  RegionSize block_size;
   MeshBlock *pfirst{};
   BoundaryFlag block_bcs[6];
   std::int64_t nbmax;
@@ -609,6 +610,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     MGGravityBoundaryFunction_{MGPeriodicInnerX1, MGPeriodicOuterX1, MGPeriodicInnerX2,
                         MGPeriodicOuterX2, MGPeriodicInnerX3, MGPeriodicOuterX3} {
   std::stringstream msg;
+  RegionSize block_size;
   BoundaryFlag block_bcs[6];
   MeshBlock *pfirst{};
   IOWrapperSizeT *offset{};
@@ -933,6 +935,7 @@ Mesh::~Mesh() {
 //! \brief print the mesh structure information
 
 void Mesh::OutputMeshStructure(int ndim) {
+  RegionSize block_size;
   BoundaryFlag block_bcs[6];
   FILE *fp = nullptr;
 
