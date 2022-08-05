@@ -606,7 +606,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     MGGravityBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     MGGravitySourceMaskFunction_{} {
   std::stringstream msg;
-  RegionSize block_size;
   BoundaryFlag block_bcs[6];
   MeshBlock *pfirst{};
   IOWrapperSizeT *offset{};
@@ -928,7 +927,6 @@ Mesh::~Mesh() {
 //! \brief print the mesh structure information
 
 void Mesh::OutputMeshStructure(int ndim) {
-  RegionSize block_size;
   BoundaryFlag block_bcs[6];
   FILE *fp = nullptr;
 
@@ -1429,8 +1427,13 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (MAGNETIC_FIELDS_ENABLED)
           pmb->pfield->fbvar.SendBoundaryBuffers();
         // and (conserved variable) passive scalar masses:
-        if (NSCALARS > 0)
+        if (NSCALARS > 0) {
+          pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->s);
+          if (pmb->pmy_mesh->multilevel) {
+            pmb->pscalars->sbvar.coarse_buf = &(pmb->pscalars->coarse_s_);
+          }
           pmb->pscalars->sbvar.SendBoundaryBuffers();
+        }
       }
 
       // wait to receive conserved variables
@@ -1468,8 +1471,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->phydro->hbvar.SendBoundaryBuffers();
           if (NSCALARS > 0) {
             pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->r);
+            if (pmb->pmy_mesh->multilevel) {
+              pmb->pscalars->sbvar.coarse_buf = &(pmb->pscalars->coarse_r_);
+            }
             pmb->pscalars->sbvar.SendBoundaryBuffers();
-        }
+          }
         }
 
         // wait to receive AMR/SMR GR primitives
@@ -1486,7 +1492,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                                HydroBoundaryQuantity::cons);
           if (NSCALARS > 0) {
             pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->s);
-        }
+            if (pmb->pmy_mesh->multilevel) {
+              pmb->pscalars->sbvar.coarse_buf = &(pmb->pscalars->coarse_s_);
+            }
+          }
         }
       } // multilevel
 
@@ -1556,8 +1565,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           //! * add MHD loop limit calculation for 4th order W(U)
           // Apply physical boundaries prior to 4th order W(U)
           ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
-          if (NSCALARS > 0)
+          if (NSCALARS > 0) {
             ps->sbvar.var_cc = &(ps->r);
+            if (pmb->pmy_mesh->multilevel) {
+              ps->sbvar.coarse_buf = &(ps->coarse_r_);
+            }
+          }
           pbval->ApplyPhysicalBoundaries(time, 0.0, pbval->bvars_main_int);
           // Perform 4th order W(U)
           pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
@@ -1574,8 +1587,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         // Swap Hydro and (possibly) passive scalar quantities in BoundaryVariable
         // interface from conserved to primitive formulations:
         ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
-        if (NSCALARS > 0)
+        if (NSCALARS > 0) {
           ps->sbvar.var_cc = &(ps->r);
+          if (pmb->pmy_mesh->multilevel) {
+            ps->sbvar.coarse_buf = &(ps->coarse_r_);
+          }
+        }
 
         pbval->ApplyPhysicalBoundaries(time, 0.0, pbval->bvars_main_int);
       }
@@ -1825,8 +1842,13 @@ void Mesh::CorrectMidpointInitialCondition() {
     if (MAGNETIC_FIELDS_ENABLED)
       pmb->pfield->fbvar.SendBoundaryBuffers();
     // and (conserved variable) passive scalar masses:
-    if (NSCALARS > 0)
+    if (NSCALARS > 0) {
+      pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->s);
+      if (pmb->pmy_mesh->multilevel) {
+        pmb->pscalars->sbvar.coarse_buf = &(pmb->pscalars->coarse_s_);
+      }
       pmb->pscalars->sbvar.SendBoundaryBuffers();
+    }
   }
 
   // wait to receive conserved variables
@@ -1838,8 +1860,13 @@ void Mesh::CorrectMidpointInitialCondition() {
     pmb->phydro->hbvar.ReceiveAndSetBoundariesWithWait();
     if (MAGNETIC_FIELDS_ENABLED)
       pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
-    if (NSCALARS > 0)
+    if (NSCALARS > 0) {
+      pmb->pscalars->sbvar.var_cc = &(pmb->pscalars->s);
+      if (pmb->pmy_mesh->multilevel) {
+        pmb->pscalars->sbvar.coarse_buf = &(pmb->pscalars->coarse_s_);
+      }
       pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
+    }
     if (shear_periodic && orbital_advection==0) {
       pmb->phydro->hbvar.AddHydroShearForInit();
     }
