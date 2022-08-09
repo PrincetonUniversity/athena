@@ -14,7 +14,6 @@
 #include <cvode/cvode_direct.h>     // prototype for CVDense
 #include <nvector/nvector_serial.h> // N_Vector type
 #include <sundials/sundials_dense.h>
-#include <sundials/sundials_types.h> // realtype type
 #include <sunlinsol/sunlinsol_dense.h> // access to dense SUNLinearSolver
 #include <sunmatrix/sunmatrix_dense.h> // access to dense SUNMatrix
 
@@ -48,6 +47,7 @@ class ODEWrapper {
   int dim_; //dimenstion
   Real reltol_;//relative tolerance
   AthenaArray<Real> abstol_;
+  SUNContext sunctx_;
   SUNMatrix dense_matrix_;
   SUNLinearSolver dense_ls_;
   void *cvode_mem_;

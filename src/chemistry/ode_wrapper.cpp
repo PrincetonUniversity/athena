@@ -39,8 +39,11 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
     dim_ = NSCALARS;
   }
   abstol_.NewAthenaArray(dim_);
+  //Create the SUNDIALS context
+  flag = SUNContext_Create(NULL, &sunctx_);
+  CheckFlag(&flag, "SUNContext_Create", 1);
   //allocate y_
-  y_ = N_VNew_Serial(dim_);
+  y_ = N_VNew_Serial(dim_, sunctx_);
   CheckFlag(static_cast<void *>(y_), "N_VNew_Serial", 0);
   ydata_ = NV_DATA_S(y_);
   reltol_ = pin->GetOrAddReal("chemistry", "reltol", 1.0e-2);
@@ -53,9 +56,15 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
 ODEWrapper::~ODEWrapper() {
   NV_DATA_S(y_) = ydata_;
   //Free y_ vector
-  N_VDestroy_Serial(y_);
-  // Free integrator memory
+  N_VDestroy(y_);
+  //Free integrator memory
   CVodeFree(&cvode_mem_);
+  //Free linear solver memory
+  SUNLinSolFree(dense_ls_);
+  //Free matrix memory
+  SUNMatDestroy(dense_matrix_);
+  //Free SUNDIALS context
+  SUNContext_Free(&sunctx_);
 }
 
 //----------------------------------------------------------------------------------------
@@ -98,7 +107,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   int stldet = pin->GetOrAddInteger("chemistry", "stldet", 0);
 
   // -----------Initialize absolute value vector----------
-  N_Vector abstol_vec = N_VNew_Serial(dim_);
+  N_Vector abstol_vec = N_VNew_Serial(dim_, sunctx_);
   CheckFlag(static_cast<void *>(abstol_vec), "N_VNew_Serial", 0);
   for (int i=0; i<dim_; i++) {
     NV_Ith_S(abstol_vec, i) = abstol_(i);
@@ -107,7 +116,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   //-------------initialize CVODE------------------
   // Call CVodeCreate to create the solver memory and specify the
   // Backward Differentiation Formula and the use of a Newton iteration
-  cvode_mem_ = CVodeCreate(CV_BDF);
+  cvode_mem_ = CVodeCreate(CV_BDF, sunctx_);
   CheckFlag(static_cast<void *>(cvode_mem_), "CVodeCreate", 0);
 
   // Set the user data pointer to NetworkWrapper
@@ -127,16 +136,16 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   CheckFlag(&flag, "CVodeSVtolerances", 1);
 
   // Create dense SUNMatrix for use in linear solves
-  dense_matrix_ = SUNDenseMatrix(dim_, dim_);
+  dense_matrix_ = SUNDenseMatrix(dim_, dim_, sunctx_);
   CheckFlag(static_cast<void *>(dense_matrix_), "SUNDenseMatrix", 0);
 
   // Create dense SUNLinearSolver object for use by CVode
-  dense_ls_ = SUNDenseLinearSolver(y_, dense_matrix_);
+  dense_ls_ = SUNLinSol_Dense(y_, dense_matrix_, sunctx_);
   CheckFlag(static_cast<void *>(dense_ls_), "SUNDenseLinearSolver", 0);
 
-  // Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode
-  flag = CVDlsSetLinearSolver(cvode_mem_, dense_ls_, dense_matrix_);
-  CheckFlag(&flag, "CVDlsSetLinearSolver", 1);
+  // Call CVodeSetLinearSolver to attach the matrix and linear solver
+  flag = CVodeSetLinearSolver(cvode_mem_, dense_ls_, dense_matrix_);
+  CheckFlag(&flag, "CVodeSetLinearSolver", 1);
 
   //set maximum number of steps
   flag = CVodeSetMaxNumSteps(cvode_mem_, maxsteps);
@@ -170,7 +179,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   }
 
   //Free abstol_ vector
-  N_VDestroy_Serial(abstol_vec);
+  N_VDestroy(abstol_vec);
 
   return;
 }
