@@ -23,6 +23,7 @@
 #include <stdexcept>  // std::runtime_error()
 #include <string>     // c_str()
 #include <vector>     // vector container
+#include <fstream>    // ifstream
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -53,10 +54,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //read density, FUV radiation, and CRIR grids
   const Real nH_min = pin->GetReal("problem", "nH_min"); //minimum density
   const Real nH_max = pin->GetReal("problem", "nH_max"); //maximum density
-  const Real chi_min = pin->GetReal("problem", "chi_min"); //minimum FUV
-  const Real chi_max = pin->GetReal("problem", "chi_max"); //maximum FUV
-  const Real cr_min = pin->GetReal("problem", "cr_min"); //minimum CRIR
-  const Real cr_max = pin->GetReal("problem", "cr_max"); //maximum CRIR
   //initial abundance and sound speed (which sets the initial temperature)
   const Real s_init = pin->GetReal("problem", "s_init");
   const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
@@ -64,8 +61,49 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real pres = 0.;
   //factors between the logspace grids cells
   const Real fac_nH = ( log10(nH_max) - log10(nH_min) ) / (Nx-1.);
-  const Real fac_chi = ( log10(chi_max) - log10(chi_min) ) / (Ny-1.);
-  const Real fac_cr = ( log10(cr_max) - log10(cr_min) ) / (Nz-1.);
+  //arrays for storing chi and crir
+  AthenaArray<Real> chi;
+  AthenaArray<Real> cr;
+  chi.NewAthenaArray(Nz, Ny);
+  cr.NewAthenaArray(Nz, Ny);
+
+  //read chi and crir from text files
+  std::string dir_input = pin->GetString("problem", "dir_input");
+  const Real Zdg = pin->GetReal("chemistry", "Zdg");
+  char dir_z[20];
+  sprintf(dir_z, "Z%.1f/", Zdg);
+  //std::string dir_z = std::to_string(dir_z_buf);
+  std::string fn_chi = dir_input + dir_z + "chi.txt";
+  std::string fn_cr = dir_input + dir_z + "cr.txt";
+  //TODO:debug
+  std::cout << "filename chi: " << fn_chi << std::endl;
+  std::cout << "filename cr: " << fn_cr << std::endl;
+  //open files
+  std::ifstream infile_chi(fn_chi);
+  if (!infile_chi.is_open()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in function MeshBlock::ProblemGenerator"
+      << std::endl << "Cannot open file: " << fn_chi << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  std::ifstream infile_cr(fn_cr);
+  if (!infile_cr.is_open()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in function MeshBlock::ProblemGenerator"
+      << std::endl << "Cannot open file: " << fn_cr << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  //read data into array
+  for (int k=0; k<Nz; ++k) {
+    for (int j=0; j<Ny; ++j) {
+      infile_chi >> chi(k, j);
+      infile_cr >> cr(k, j);
+    }
+  }
+  //close files
+  infile_chi.close();
+  infile_cr.close();
+
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
@@ -89,14 +127,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           for (int ifreq=0; ifreq < prad->nfreq; ++ifreq) {
             for (int iang=0; iang < prad->nang; ++iang) {
               prad->ir(k, j, i, ifreq * prad->nang + iang)
-                = chi_min * pow(10, (j-js)*fac_chi);
+                = chi(k-ks, j-js);
             }
           }
 #ifdef INCLUDE_CHEMISTRY
           for (int iang=0; iang < prad->nang; ++iang) {
             //cr rate
             prad->ir(k, j, i, pscalars->chemnet.index_cr_ * prad->nang + iang)
-              = cr_min * pow(10, (k-ks)*fac_cr);
+              = cr(k-ks, j-js);
           }
 #endif
         }
@@ -125,6 +163,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
+
+  chi.DeleteAthenaArray();
+  cr.DeleteAthenaArray();
 
   return;
 }
