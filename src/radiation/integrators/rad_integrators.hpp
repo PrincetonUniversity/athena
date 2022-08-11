@@ -26,6 +26,7 @@ class ChemNetwork;
 class RadIntegrator {
   friend class Radiation;
   friend class BoundaryValues;
+  friend class RadiationIntegratorTaskList;
  public:
   RadIntegrator(Radiation *prad, ParameterInput *pin);
   ~RadIntegrator();

@@ -128,7 +128,12 @@ void RadIntegrator::CopyToOutput() {
 //----------------------------------------------------------------------------------------
 //! \fn void RadIntegrator::UpdateRadiation(int direction)
 //! \brief calcuate total column and update radiation
-void RadIntegrator::UpdateRadiation(int direction) {}
+void RadIntegrator::UpdateRadiation(int direction) {
+#ifdef INCLUDE_CHEMISTRY
+  //TODO (Munan Gong)
+#endif //INCLUDE_CHEMISTRY
+  return;
+}
 
 #ifdef INCLUDE_CHEMISTRY
 //----------------------------------------------------------------------------------------
