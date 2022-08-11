@@ -621,6 +621,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         AppendOutputDataNode(pod);
         num_vars_++;
       }
+#ifdef INCLUDE_CHEMISTRY
 #ifdef DEBUG
       //for testing six-ray. Not implemented in HDF5 output yet
       if (RADIATION_INTEGRATOR == "six_ray") {
@@ -686,6 +687,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         num_vars_++;
       }
 #endif //DEBUG
+#endif //INCLUDE_CHEMISTRY
     }
   }
 
