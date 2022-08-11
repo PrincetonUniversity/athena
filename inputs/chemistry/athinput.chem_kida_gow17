@@ -67,7 +67,7 @@ Z_g        = 1. #gas metallicity
 CR         = 2e-16  #Cosmic-ray ionization rate per H
 temperature = 20  #T in Kelvin, if const_T_flag is true.
 is_Tcap_2body = false #temperature cap for rates of 2 body reactions
-network_dir = /Users/munangong/athena/src/chemistry/network/kida_network_files/gow17/
+network_dir = /Users/munangong/athena/src/chemistry/network/kida_network_files/gow17
 #chemistry solver parameters
 reltol     = 1.0e-6  #relative tolerance, default 1.0e-2
 abstol     = 1.0e-15 #absolute tolerance, default 1.0e-12
