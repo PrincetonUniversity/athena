@@ -25,6 +25,7 @@ class RadIntegrator;
 class Radiation {
  public:
   Radiation(MeshBlock *pmb, ParameterInput *pin);
+  ~Radiation();
 
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Fluid
   RadIntegrator* pradintegrator; //ptr to radiation integrator

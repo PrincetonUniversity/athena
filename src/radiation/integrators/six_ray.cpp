@@ -66,18 +66,7 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) {
 
 //----------------------------------------------------------------------------------------
 //! destructor
-RadIntegrator::~RadIntegrator() {
-#ifdef INCLUDE_CHEMISTRY
-  col.DeleteAthenaArray();
-#ifdef DEBUG
-  col_avg.DeleteAthenaArray();
-  col_Htot.DeleteAthenaArray();
-  col_H2.DeleteAthenaArray();
-  col_CO.DeleteAthenaArray();
-  col_C.DeleteAthenaArray();
-#endif //DEBUG
-#endif //INCLUDE_CHEMISTRY
-}
+RadIntegrator::~RadIntegrator() {}
 
 //----------------------------------------------------------------------------------------
 //! \fn void RadIntegrator::CopyToOutput()
@@ -97,6 +86,7 @@ void RadIntegrator::CopyToOutput() {
       for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
         for (int iang=0; iang < 6; iang++) {
           //column densities
+#ifdef INCLUDE_CHEMISTRY
 #ifdef DEBUG
           col_Htot(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNHtot_);
           col_H2(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNH2_);
@@ -110,6 +100,7 @@ void RadIntegrator::CopyToOutput() {
             col_avg(icol, k, j, i) += col(iang, k, j, i, icol)/6.;
           }
 #endif //DEBUG
+#endif //INCLUDE_CHEMISTRY
           //radiation
           for (int ifreq=0; ifreq < pmy_rad->nfreq; ++ifreq) {
             if (iang == 0) {

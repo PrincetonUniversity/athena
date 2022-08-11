@@ -54,4 +54,6 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   pradintegrator = new RadIntegrator(this, pin);
 }
 
-
+Radiation::~Radiation() {
+  delete pradintegrator;
+}
