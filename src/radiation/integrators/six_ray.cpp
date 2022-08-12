@@ -38,6 +38,7 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) {
   pmy_rad = prad;
   rad_G0 = pin->GetReal("radiation", "G0");
   f_cell = pin->GetOrAddReal("radiation", "shielding_fraction_cell", 0.5);
+  f_prev = 1. - f_cell;
   std::stringstream msg; //error message
   if (pmy_rad->nang != 6) {
     msg << "### FATAL ERROR in RadIntegrator constructor [RadIntegrator]" << std::endl
@@ -49,10 +50,10 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) {
   lunit = pmy_chemnet->punit->Length;
   ncol = pmy_chemnet->n_cols_;
   //allocate array for column density
-  int ncells1 = pmy_mb->block_size.nx1 + 2; //one ghost cell on each side
+  int ncells1 = pmy_mb->block_size.nx1 + 2*(NGHOST);
   int ncells2 = 1, ncells3 = 1;
-  if (pmy_mb->block_size.nx2 > 1) ncells2 = pmy_mb->block_size.nx2 + 2;
-  if (pmy_mb->block_size.nx3 > 1) ncells3 = pmy_mb->block_size.nx3 + 2;
+  if (pmy_mb->block_size.nx2 > 1) ncells2 = pmy_mb->block_size.nx2 + 2*(NGHOST);
+  if (pmy_mb->block_size.nx3 > 1) ncells3 = pmy_mb->block_size.nx3 + 2*(NGHOST);
   col.NewAthenaArray(6, ncells3, ncells2, ncells1, ncol);
 #ifdef DEBUG
   col_avg.NewAthenaArray(ncol, ncells3, ncells2, ncells1);
