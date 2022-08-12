@@ -877,7 +877,7 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS+ngs_], const Real E) {
 
   //Collisional dissociation, k>~1.0e-30 at T>~5e2.
   Real k9l, k9h, k10l, k10h, ncrH, ncrH2, div_ncr;
-  if (Tcoll > temp_coll_) {
+  if (Tcoll > temp_coll_ && nH_ > small_) {
     //(15) H2 + *H -> 3 *H
     //(16) H2 + H2 -> H2 + 2 *H
     // --(9) Density dependent. See Glover+MacLow2007
@@ -888,7 +888,7 @@ void ChemNetwork::UpdateRates(const Real y[NSCALARS+ngs_], const Real E) {
     k10h = 1.3e-9 * exp(-53300.0 / Tcoll);
     ncrH = pow(10, (3.0 - 0.416 * logT4coll - 0.327 * logT4coll*logT4coll));
     ncrH2 = pow(10, (4.845 - 1.3 * logT4coll + 1.62 * logT4coll*logT4coll));
-    div_ncr = y[igH_]/ncrH + y[iH2_]/ncrH2;
+    div_ncr = y[igH_]/(ncrH + small_) + y[iH2_]/(ncrH2 + small_);
     if (div_ncr < small_) {
       ncr = 1./ small_;
     } else {
