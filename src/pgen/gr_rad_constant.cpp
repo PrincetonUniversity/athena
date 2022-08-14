@@ -42,7 +42,7 @@ Real rho, pgas;               // initial thermodynamic variables for fluid
 Real ux, uy, uz;              // initial spatial components of fluid 4-velocity
 Real e_rad;                   // initial coordinate-frame radiation energy density
 Real ux_rad, uy_rad, uz_rad;  // initial spatial components of isotropic radiation frame
-Real kappa;                   // constant absorption opacity
+Real kappa_a, kappa_s;        // constant absorption and scattering opacities
 Real step_limit;              // factor to use in limiting timestep
 }  // namespace
 
@@ -83,7 +83,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   ux_rad = pin->GetReal("problem", "ux_rad");
   uy_rad = pin->GetReal("problem", "uy_rad");
   uz_rad = pin->GetReal("problem", "uz_rad");
-  kappa = pin->GetReal("problem", "kappa");
+  kappa_a = pin->GetReal("problem", "kappa_a");
+  kappa_s = pin->GetReal("problem", "kappa_s");
   step_limit = pin->GetReal("problem", "step_limit");
 
   // Enroll timestep limiter
@@ -131,8 +132,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
       for (int i = il; i <= iu; ++i) {
-        prad->opacity(OPAS,k,j,i) = 0.0;
-        prad->opacity(OPAA,k,j,i) = kappa;
+        prad->opacity(OPAA,k,j,i) = kappa_a;
+        prad->opacity(OPAS,k,j,i) = kappa_s;
         prad->opacity(OPAP,k,j,i) = 0.0;
       }
     }

@@ -81,7 +81,8 @@ ux_rad = 1.0     # initial radiation isotropic frame 4-velocity in x-direction
 uy_rad = -1.0    # initial radiation isotropic frame 4-velocity in y-direction
 uz_rad = 0.0     # initial radiation isotropic frame 4-velocity in z-direction
 
-kappa = 1.0e-3  # absorption opacity, in code units rather than cm^2/g
+kappa_a = 1.0e-3  # absorption opacity, in code units rather than cm^2/g
+kappa_s = 0.0     # scattering opacity, in code units rather than cm^2/g
 
 step_limit = 0.0  # if positive, used to limit step size to this factor times time for
                   # internal energy to change by order unity
