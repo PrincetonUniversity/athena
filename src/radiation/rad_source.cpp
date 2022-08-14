@@ -54,6 +54,8 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
   if (coupled_to_matter) {
     for (int k = ks; k <= ke; ++k) {
       for (int j = js; j <= je; ++j) {
+
+        // Calculate metric
         pmy_block->pcoord->CellMetric(k, j, is, ie, g_, gi_);
 
         // Calculate zeroth and first moments of radiation before coupling
@@ -93,19 +95,37 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
               + norm_to_tet_(2,2,k,j,i) * uu2 + norm_to_tet_(2,3,k,j,i) * uu3;
           u_tet_(3,i) = norm_to_tet_(3,0,k,j,i) * uu0 + norm_to_tet_(3,1,k,j,i) * uu1
               + norm_to_tet_(3,2,k,j,i) * uu2 + norm_to_tet_(3,3,k,j,i) * uu3;
+          for (int l = zs, lm_compact = 0; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m, ++lm_compact) {
+              u_n_(i,lm_compact) = -u_tet_(0,i) * nh_cc_(0,l,m)
+                  + u_tet_(1,i) * nh_cc_(1,l,m) + u_tet_(2,i) * nh_cc_(2,l,m)
+                  + u_tet_(3,i) * nh_cc_(3,l,m);
+            }
+          }
+        }
+
+        // Transform intensities and solid angles to fluid frame
+        for (int i = is; i <= ie; ++i) {
+          Real solid_angle_sum = 0.0;
+          for (int l = zs, lm_compact = 0; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m, ++lm_compact) {
+              int lm = AngleInd(l, m);
+              ii_f_(i,lm_compact) = cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i)
+                  * SQR(SQR(u_n_(i,lm_compact)));
+              solid_angle_f_(i,lm_compact) = solid_angle(l,m) / SQR(u_n_(i,lm_compact));
+              solid_angle_sum += solid_angle_f_(i,lm_compact);
+            }
+          }
+          for (int lm_compact = 0; lm_compact < nzeta * npsi; ++lm_compact) {
+            solid_angle_f_(i,lm_compact) *= 4.0 * PI / solid_angle_sum;
+          }
         }
 
         // Calculate radiation energy density in fluid frame
         for (int i = is; i <= ie; ++i) {
           ee_f_minus_(i) = 0.0;
-          for (int l = zs; l <= ze; ++l) {
-            for (int m = ps; m <= pe; ++m) {
-              int lm = AngleInd(l, m);
-              Real u_n = -u_tet_(0,i) * nh_cc_(0,l,m) + u_tet_(1,i) * nh_cc_(1,l,m)
-                  + u_tet_(2,i) * nh_cc_(2,l,m) + u_tet_(3,i) * nh_cc_(3,l,m);
-              ee_f_minus_(i) += cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i) * SQR(u_n)
-                  * solid_angle(l,m);
-            }
+          for (int lm_compact = 0; lm_compact < nzeta * npsi; ++lm_compact) {
+            ee_f_minus_(i) += ii_f_(i,lm_compact) * solid_angle_f_(i,lm_compact);
           }
         }
 
@@ -219,6 +239,34 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
           u_tet_(3,i) = (1.0 - frac3) * u_tet_(3,i) + frac3 * urad_tet3;
           u_tet_(0,i) =
               std::sqrt(1.0 + SQR(u_tet_(1,i)) + SQR(u_tet_(2,i)) + SQR(u_tet_(3,i)));
+          for (int l = zs, lm_compact = 0; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m, ++lm_compact) {
+              u_n_(i,lm_compact) = -u_tet_(0,i) * nh_cc_(0,l,m)
+                  + u_tet_(1,i) * nh_cc_(1,l,m) + u_tet_(2,i) * nh_cc_(2,l,m)
+                  + u_tet_(3,i) * nh_cc_(3,l,m);
+            }
+          }
+
+          // Recalculate intensities and solid angles to fluid frame
+          Real solid_angle_sum = 0.0;
+          for (int l = zs, lm_compact = 0; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m, ++lm_compact) {
+              int lm = AngleInd(l, m);
+              ii_f_(i,lm_compact) = cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i)
+                  * SQR(SQR(u_n_(i,lm_compact)));
+              solid_angle_f_(i,lm_compact) = solid_angle(l,m) / SQR(u_n_(i,lm_compact));
+              solid_angle_sum += solid_angle_f_(i,lm_compact);
+            }
+          }
+          for (int lm_compact = 0; lm_compact < nzeta * npsi; ++lm_compact) {
+            solid_angle_f_(i,lm_compact) *= 4.0 * PI / solid_angle_sum;
+          }
+
+          // Recalculate radiation energy density in fluid frame
+          ee_f_minus_(i) = 0.0;
+          for (int lm_compact = 0; lm_compact < nzeta * npsi; ++lm_compact) {
+            ee_f_minus_(i) += ii_f_(i,lm_compact) * solid_angle_f_(i,lm_compact);
+          }
         }
 
         // Calculate new gas temperature and radiation energy density
@@ -230,27 +278,21 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
           Real k_a = rho * opacity(OPAA,k,j,i);
           Real k_s = rho * opacity(OPAS,k,j,i);
           Real k_tot = k_a + k_s;
-          ee_f_minus_(i) = 0.0;
           Real var_a = 0.0;
           Real var_b = 0.0;
-          for (int l = zs; l <= ze; ++l) {
-            for (int m = ps; m <= pe; ++m) {
-              int lm = AngleInd(l, m);
-              Real ii_minus = cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i);
-              Real u_n = -u_tet_(0,i) * nh_cc_(0,l,m) + u_tet_(1,i) * nh_cc_(1,l,m)
-                  + u_tet_(2,i) * nh_cc_(2,l,m) + u_tet_(3,i) * nh_cc_(3,l,m);
-              Real var_c = ii_minus * SQR(u_n) * solid_angle(l,m);
-              Real var_d = 1.0 - dt * k_tot * u_n / nmu_(0,l,m,k,j,i);
-              ee_f_minus_(i) += var_c;
-              var_a += var_c / var_d;
-              var_b += solid_angle(l,m) / (u_n * nmu_(0,l,m,k,j,i) * var_d);
+          for (int l = zs, lm_compact = 0; l <= ze; ++l) {
+            for (int m = ps; m <= pe; ++m, ++lm_compact) {
+              Real var_c = solid_angle_f_(i,lm_compact)
+                  / (nmu_(0,l,m,k,j,i) - u_n_(i,lm_compact) * k_tot * dt);
+              var_a += nmu_(0,l,m,k,j,i) * ii_f_(i,lm_compact) * var_c;
+              var_b -= u_n_(i,lm_compact) * var_c;
             }
           }
           var_b *= dt / (4.0 * PI);
           Real coeff_4 = var_b * k_a * arad;
-          Real coeff_1 = -rho / (gamma_adi - 1.0) * (1.0 + var_b * k_s);
+          Real coeff_1 = rho / (gamma_adi - 1.0) * (1.0 - var_b * k_s);
           Real coeff_0 =
-              -coeff_1 * tt_minus + (1.0 + var_b * k_s) * ee_f_minus_(i) - var_a;
+              var_a - coeff_1 * tt_minus - (1.0 - var_b * k_s) * ee_f_minus_(i);
 
           // Calculate new gas temperature
           bad_cell_(i) = false;
@@ -287,18 +329,16 @@ void Radiation::AddSourceTerms(const Real time, const Real dt,
             Real k_a = rho * opacity(OPAA,k,j,i);
             Real k_s = rho * opacity(OPAS,k,j,i);
             Real k_tot = k_a + k_s;
-            for (int l = zs; l <= ze; ++l) {
-              for (int m = ps; m <= pe; ++m) {
+            for (int l = zs, lm_compact = 0; l <= ze; ++l) {
+              for (int m = ps; m <= pe; ++m, ++lm_compact) {
                 int lm = AngleInd(l, m);
-                Real ii_minus = cons_rad(lm,k,j,i) / n0_n_mu_(0,l,m,k,j,i);
-                Real u_n = -u_tet_(0,i) * nh_cc_(0,l,m) + u_tet_(1,i) * nh_cc_(1,l,m)
-                    + u_tet_(2,i) * nh_cc_(2,l,m) + u_tet_(3,i) * nh_cc_(3,l,m);
-                Real ii_plus =
-                    (ii_minus - dt / (4.0 * PI * u_n * u_n * u_n * nmu_(0,l,m,k,j,i))
-                    * (k_a * arad * SQR(SQR(tt_plus_(i))) + k_s * ee_f_plus_(i)))
-                    / (1.0 - dt * k_tot * u_n / nmu_(0,l,m,k,j,i));
-                cons_rad(lm,k,j,i) += (ii_plus - ii_minus) * n0_n_mu_(0,l,m,k,j,i);
-                cons_rad(lm,k,j,i) = std::min(cons_rad(lm,k,j,i), 0.0);
+                Real var_d = nmu_(0,l,m,k,j,i) * ii_f_(i,lm_compact);
+                Real var_e = -u_n_(i,lm_compact) * dt / (4.0 * PI)
+                    * (k_a * arad * SQR(SQR(tt_plus_(i))) + k_s * ee_f_plus_(i));
+                Real var_f = nmu_(0,l,m,k,j,i) - u_n_(i,lm_compact) * k_tot * dt;
+                Real ii_f_plus = std::max((var_d + var_e) / var_f, 0.0);
+                cons_rad(lm,k,j,i) =
+                    ii_f_plus / SQR(SQR(u_n_(i,lm_compact))) * n0_n_mu_(0,l,m,k,j,i);
               }
             }
           }
