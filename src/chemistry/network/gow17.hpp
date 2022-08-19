@@ -73,9 +73,9 @@ class ChemNetwork : public NetworkWrapper {
   Real temp_max_cool_nm_;
   Real temp_min_rates_;
   Real temp_max_rates_;
-  int is_H2_rovib_cooling_;//whether to include H2 rovibrational cooling
+  bool is_H2_rovib_cooling_;//whether to include H2 rovibrational cooling
   //CR shielding
-  int is_cr_shielding_;
+  bool is_cr_shielding_;
   //parameters of the netowork
   Real zdg_;
   Real xHe_;
@@ -85,7 +85,6 @@ class ChemNetwork : public NetworkWrapper {
   Real xC_;
   Real xO_;
   Real xSi_;
-  Real cr_rate0_;
   //index of species
   static const int iHeplus_;
   static const int iOHx_;

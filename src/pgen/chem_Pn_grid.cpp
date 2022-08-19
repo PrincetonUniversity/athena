@@ -164,8 +164,5 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
 
-  chi.DeleteAthenaArray();
-  cr.DeleteAthenaArray();
-
   return;
 }

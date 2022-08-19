@@ -293,8 +293,6 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   xC_std_ = pin->GetOrAddReal("chemistry", "xC", 1.6e-4);
   xO_std_ = pin->GetOrAddReal("chemistry", "xO", 3.2e-4);
   xSi_std_ = pin->GetOrAddReal("chemistry", "xSi", 1.7e-6);
-  //cosmic ray ionization rate per H
-  cr_rate0_ = pin->GetOrAddReal("chemistry", "CR", 2e-16);
   //units
   Real muH = 1.4; //mass per hydrogen atoms, considering Helum
   Real lunit = pin->GetReal("problem", "unit_length_in_pc") * Constants::pc;
@@ -318,9 +316,9 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
     temperature_ = pin->GetReal("chemistry", "temperature");
   }
   //CR shielding
-  is_cr_shielding_ = pin->GetOrAddInteger("chemistry", "is_cr_shielding", 0);
+  is_cr_shielding_ = pin->GetOrAddBoolean("chemistry", "is_cr_shielding", false);
   //H2 rovibrational cooling
-  is_H2_rovib_cooling_ = pin->GetOrAddInteger("chemistry", "isH2RVcooling", 1);
+  is_H2_rovib_cooling_ = pin->GetOrAddBoolean("chemistry", "isH2RVcooling", true);
   //temperature above or below which heating and cooling is turned off
   Real inf = std::numeric_limits<Real>::infinity();
   temp_max_heat_ = pin->GetOrAddReal("chemistry", "temp_max_heat", inf);

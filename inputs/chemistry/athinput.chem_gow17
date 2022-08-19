@@ -55,7 +55,6 @@ s_init      = 1.0e-6 #initial abundances
 <chemistry>
 #chemistry network parameters
 Zdg        = 1. #metallicity, dust and gas metallicity are the same. default = 1.
-CR         = 2e-16  #Cosmic-ray ionization rate per H
 temperature = 20  #T in Kelvin, if const_T_flag is true.
 #chemistry solver parameters
 reltol     = 1.0e-6  #relative tolerance, default 1.0e-2
@@ -83,4 +82,5 @@ stldet     = 0       #stability limit detection. Default 0/false.
 
 <radiation>
 G0         = 1e-6   #radiation field strength, in Draine 1987 units
+CR         = 2e-16  #Cosmic-ray ionization rate per H
 n_frequency  = 8
