@@ -99,8 +99,28 @@ std::size_t IOWrapper::Read_all(void *buf, IOWrapperSizeT size, IOWrapperSizeT c
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int IOWrapper::Read_at_all(void *buf, IOWrapperSizeT size,
+//! \fn int IOWrapper::Read_at(void *buf, IOWrapperSizeT size,
 //!                            IOWrapperSizeT count, IOWrapperSizeT offset)
+//! \brief wrapper for {MPI_File_read_at_all} versus {std::fseek+std::fread}
+
+std::size_t IOWrapper::Read_at(void *buf, IOWrapperSizeT size,
+                               IOWrapperSizeT count, IOWrapperSizeT offset) {
+#ifdef MPI_PARALLEL
+  MPI_Status status;
+  int nread;
+  if (MPI_File_read_at(fh_,offset,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS)
+    return -1;
+  if (MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
+  return nread/size;
+#else
+  std::fseek(fh_, offset, SEEK_SET);
+  return std::fread(buf,size,count,fh_);
+#endif
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn int IOWrapper::Read_at_all(void *buf, IOWrapperSizeT size,
+//!                                IOWrapperSizeT count, IOWrapperSizeT offset)
 //! \brief wrapper for {MPI_File_read_at_all} versus {std::fseek+std::fread}
 
 std::size_t IOWrapper::Read_at_all(void *buf, IOWrapperSizeT size,
