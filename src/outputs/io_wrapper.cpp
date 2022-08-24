@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -55,7 +56,7 @@ int IOWrapper::Open(const char* fname, FileMode rw) {
       {
         msg << "### FATAL ERROR in function [IOWrapper:Open]"
             << std::endl<< "Output file '" << fname
-            << "' could not be opened" <<std::endl;
+            << "' could not be opened" << std::endl;
         ATHENA_ERROR(msg);
         return false;
       }
@@ -74,6 +75,14 @@ std::size_t IOWrapper::Read(void *buf, IOWrapperSizeT size, IOWrapperSizeT count
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nread;
+  if (count*size > std::numeric_limits<int>::max()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in function [IOWrapper:Read]"
+        << "The data size is too large. size * count = " << count*size
+        << " > " << std::numeric_limits<int>::max() << std::endl;;
+    ATHENA_ERROR(msg);
+    return false;
+  }
   if (MPI_File_read(fh_,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS) return -1;
   if (MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
   return nread/size;
@@ -90,6 +99,14 @@ std::size_t IOWrapper::Read_all(void *buf, IOWrapperSizeT size, IOWrapperSizeT c
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nread;
+  if (count*size > std::numeric_limits<int>::max()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in function [IOWrapper:Read_all]"
+        << "The data size is too large. size * count = " << count*size
+        << " > " << std::numeric_limits<int>::max() << std::endl;;
+    ATHENA_ERROR(msg);
+    return false;
+  }
   if (MPI_File_read_all(fh_,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS) return -1;
   if (MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
   return nread/size;
@@ -101,13 +118,21 @@ std::size_t IOWrapper::Read_all(void *buf, IOWrapperSizeT size, IOWrapperSizeT c
 //----------------------------------------------------------------------------------------
 //! \fn int IOWrapper::Read_at(void *buf, IOWrapperSizeT size,
 //!                            IOWrapperSizeT count, IOWrapperSizeT offset)
-//! \brief wrapper for {MPI_File_read_at_all} versus {std::fseek+std::fread}
+//! \brief wrapper for {MPI_File_read_at} versus {std::fseek+std::fread}
 
 std::size_t IOWrapper::Read_at(void *buf, IOWrapperSizeT size,
                                IOWrapperSizeT count, IOWrapperSizeT offset) {
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nread;
+  if (count*size > std::numeric_limits<int>::max()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in function [IOWrapper:Read_at]"
+        << "The data size is too large. size * count = " << count*size
+        << " > " << std::numeric_limits<int>::max() << std::endl;;
+    ATHENA_ERROR(msg);
+    return false;
+  }
   if (MPI_File_read_at(fh_,offset,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS)
     return -1;
   if (MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
@@ -128,6 +153,14 @@ std::size_t IOWrapper::Read_at_all(void *buf, IOWrapperSizeT size,
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nread;
+  if (count*size > std::numeric_limits<int>::max()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in function [IOWrapper:Read_at_all]"
+        << "The data size is too large. size * count = " << count*size
+        << " > " << std::numeric_limits<int>::max() << std::endl;;
+    ATHENA_ERROR(msg);
+    return false;
+  }
   if (MPI_File_read_at_all(fh_,offset,buf,count*size,MPI_BYTE,&status)!=MPI_SUCCESS)
     return -1;
   if (MPI_Get_count(&status,MPI_BYTE,&nread)==MPI_UNDEFINED) return -1;
@@ -139,40 +172,85 @@ std::size_t IOWrapper::Read_at_all(void *buf, IOWrapperSizeT size,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int IOWrapper::Write(const void *buf, IOWrapperSizeT size, IOWrapperSizeT cnt)
+//! \fn int IOWrapper::Write(const void *buf, IOWrapperSizeT size, IOWrapperSizeT count)
 //! \brief wrapper for {MPI_File_write} versus {std::fwrite}
 
-std::size_t IOWrapper::Write(const void *buf, IOWrapperSizeT size, IOWrapperSizeT cnt) {
+std::size_t IOWrapper::Write(const void *buf, IOWrapperSizeT size, IOWrapperSizeT count) {
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nwrite;
-  if (MPI_File_write(fh_,const_cast<void*>(buf),cnt*size,MPI_BYTE,&status)!=MPI_SUCCESS)
+  if (count*size > std::numeric_limits<int>::max()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in function [IOWrapper:Write]"
+        << "The data size is too large. size * count = " << count*size
+        << " > " << std::numeric_limits<int>::max() << std::endl;;
+    ATHENA_ERROR(msg);
+    return false;
+  }
+  if (MPI_File_write(fh_,const_cast<void*>(buf),count*size,MPI_BYTE,&status)!=MPI_SUCCESS)
     return -1;
   if (MPI_Get_count(&status,MPI_BYTE,&nwrite)==MPI_UNDEFINED) return -1;
   return nwrite/size;
 #else
-  return std::fwrite(buf,size,cnt,fh_);
+  return std::fwrite(buf,size,count,fh_);
 #endif
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int IOWrapper::Write_at_all(const void *buf, IOWrapperSizeT size,
-//!                                 IOWrapperSizeT cnt, IOWrapperSizeT offset)
-//! \brief wrapper for {MPI_File_write_at_all} versus {std::fseek+std::fwrite}.
+//! \fn int IOWrapper::Write_at(const void *buf, IOWrapperSizeT size,
+//!                                 IOWrapperSizeT count, IOWrapperSizeT offset)
+//! \brief wrapper for {MPI_File_write_at} versus {std::fseek+std::fwrite}.
 
-std::size_t IOWrapper::Write_at_all(const void *buf, IOWrapperSizeT size,
-                                    IOWrapperSizeT cnt, IOWrapperSizeT offset) {
+std::size_t IOWrapper::Write_at(const void *buf, IOWrapperSizeT size,
+                                    IOWrapperSizeT count, IOWrapperSizeT offset) {
 #ifdef MPI_PARALLEL
   MPI_Status status;
   int nwrite;
-  if (MPI_File_write_at_all(fh_,offset,const_cast<void*>(buf),cnt*size,MPI_BYTE,&status)
+  if (count*size > std::numeric_limits<int>::max()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in function [IOWrapper:Write_at]"
+        << "The data size is too large. size * count = " << count*size
+        << " > " << std::numeric_limits<int>::max() << std::endl;;
+    ATHENA_ERROR(msg);
+    return false;
+  }
+  if (MPI_File_write_at(fh_,offset,const_cast<void*>(buf),count*size,MPI_BYTE,&status)
       !=MPI_SUCCESS)
     return -1;
   if (MPI_Get_count(&status,MPI_BYTE,&nwrite)==MPI_UNDEFINED) return -1;
   return nwrite/size;
 #else
   std::fseek(fh_, offset, SEEK_SET);
-  return std::fwrite(buf,size,cnt,fh_);
+  return std::fwrite(buf,size,count,fh_);
+#endif
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn int IOWrapper::Write_at_all(const void *buf, IOWrapperSizeT size,
+//!                                 IOWrapperSizeT count, IOWrapperSizeT offset)
+//! \brief wrapper for {MPI_File_write_at_all} versus {std::fseek+std::fwrite}.
+
+std::size_t IOWrapper::Write_at_all(const void *buf, IOWrapperSizeT size,
+                                    IOWrapperSizeT count, IOWrapperSizeT offset) {
+#ifdef MPI_PARALLEL
+  MPI_Status status;
+  int nwrite;
+  if (count*size > std::numeric_limits<int>::max()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in function [IOWrapper:Write_at_all]"
+        << "The data size is too large. size * count = " << count*size
+        << " > " << std::numeric_limits<int>::max() << std::endl;;
+    ATHENA_ERROR(msg);
+    return false;
+  }
+  if (MPI_File_write_at_all(fh_,offset,const_cast<void*>(buf),count*size,MPI_BYTE,&status)
+      !=MPI_SUCCESS)
+    return -1;
+  if (MPI_Get_count(&status,MPI_BYTE,&nwrite)==MPI_UNDEFINED) return -1;
+  return nwrite/size;
+#else
+  std::fseek(fh_, offset, SEEK_SET);
+  return std::fwrite(buf,size,count,fh_);
 #endif
 }
 
