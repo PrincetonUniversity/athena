@@ -90,7 +90,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   Yi_ = pin->GetOrAddReal("chemistry", "Yi", 1e-3);//ortho to para H2 ratio
   //units
   Real muH = 1.4; //mass per hydrogen atoms, considering Helum
-  Real lunit = pin->GetReal("problem", "unit_length_in_pc") * Constants::pc;
+  Real lunit = pin->GetReal("chemistry", "unit_length_in_pc") * Constants::pc;
   Real dunit = muH * Constants::mH;
   Real vunit = Constants::kms;
   punit = new Units(dunit, lunit, vunit);

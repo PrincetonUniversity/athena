@@ -49,7 +49,6 @@ active   =   fixed        # post-processing
 
 <problem>
 nH         = 1.0921e+02 #density
-unit_length_in_pc = 1.
 s_init     =  0. #initial abundances
 s_init_H2  = 0.5
 s_init_He  = 0.1
@@ -83,6 +82,7 @@ h_init      = 1e-1    #first step of first zone. Default 0/CVODE algorithm.
 output_zone_sec = 1 #output diagnostic
 maxorder   = 3       #maximum order. Default 3.
 stldet     = 0       #stability limit detection. Default 0/false.
+unit_length_in_pc = 1.
 
 <radiation>
 G0         = 1e-6   #radiation field strength, in Draine 1987 units

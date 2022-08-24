@@ -54,7 +54,6 @@ chi_min    = 1.0e-2
 chi_max    = 1.0e2
 cr_min     = 2.0e-18
 cr_max     = 2.0e-14
-unit_length_in_pc = 1.
 s_init      = 1.0e-6 #initial abundances
 
 <chemistry>
@@ -75,6 +74,7 @@ user_jac   = 0       #flag for whether use user provided Jacobian. default false
 maxsteps   = 100000000     #maximum number of steps in one integration. default 10000
 h_init      = 1e-4    #first step of first zone. Default 0/CVODE algorithm.
 output_zone_sec = 1 #output diagnostic
+unit_length_in_pc = 1.
 
 #default parameters
 xHe        = 0.1 #He per H, default = 0.1

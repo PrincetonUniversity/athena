@@ -56,7 +56,6 @@ active   =   background   # post-processing
 <problem>
 nH         = 100 #initial density
 vx_kms     = 0.2  #initial x-velocity
-unit_length_in_pc = 1. #length unit
 compute_error = true
 
 <chemistry>
@@ -68,3 +67,4 @@ user_jac   = 0          #flag for whether use user provided Jacobian. default fa
 maxsteps   = 100000     #maximum number of steps in one integration. default 10000
 h_init      = 1e-5      #first step of first zone. Default 0/CVODE algorithm.
 #output_zone_sec = 1     #output diagnostic
+unit_length_in_pc = 1. #length unit

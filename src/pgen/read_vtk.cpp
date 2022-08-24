@@ -25,6 +25,8 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../bvals/bvals.hpp"
+#include "../chemistry/utils/thermo.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
@@ -32,6 +34,9 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/integrators/rad_integrators.hpp"
+#include "../radiation/radiation.hpp"
+#include "../scalars/scalars.hpp"
 #include "../utils/string_utils.hpp" //split() and trim()
 
 //function to read data field from vtk file
@@ -39,6 +44,64 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
                     int component, AthenaArray<Real> &data, int isjoinedvtk);
 //swap bytes
 static void ath_bswap(void *vdat, int len, int cnt);
+
+//User defined boundary conditions
+void SixRayBoundaryInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                           FaceField &b, Real time, Real dt,
+                           int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+
+void SixRayBoundaryOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                           FaceField &b, Real time, Real dt,
+                           int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+
+void SixRayBoundaryInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                           FaceField &b, Real time, Real dt,
+                           int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+
+void SixRayBoundaryOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                           FaceField &b, Real time, Real dt,
+                           int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+
+void SixRayBoundaryInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                           FaceField &b, Real time, Real dt,
+                           int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+
+void SixRayBoundaryOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                           FaceField &b, Real time, Real dt,
+                           int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+
+//Radiation boundary
+namespace {
+  AthenaArray<Real> G0_iang;
+  Real G0, cr_rate;
+} //namespace
+
+//========================================================================================
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//! \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//  to initialize variables which are global to (and therefore can be passed to) other
+//  functions in this file.  Called in Mesh constructor.
+//========================================================================================
+
+void Mesh::InitUserMeshData(ParameterInput *pin)
+{
+  EnrollUserBoundaryFunction(BoundaryFace::inner_x1, SixRayBoundaryInnerX1);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x1, SixRayBoundaryOuterX1);
+  EnrollUserBoundaryFunction(BoundaryFace::inner_x2, SixRayBoundaryInnerX2);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x2, SixRayBoundaryOuterX2);
+  EnrollUserBoundaryFunction(BoundaryFace::inner_x3, SixRayBoundaryInnerX3);
+  EnrollUserBoundaryFunction(BoundaryFace::outer_x3, SixRayBoundaryOuterX3);
+  G0 = pin->GetOrAddReal("radiation", "G0", 0.);
+  G0_iang.NewAthenaArray(6);
+  G0_iang(BoundaryFace::inner_x1) = pin->GetOrAddReal("radiation", "G0_inner_x1", G0);
+  G0_iang(BoundaryFace::inner_x2) = pin->GetOrAddReal("radiation", "G0_inner_x2", G0);
+  G0_iang(BoundaryFace::inner_x3) = pin->GetOrAddReal("radiation", "G0_inner_x3", G0);
+  G0_iang(BoundaryFace::outer_x1) = pin->GetOrAddReal("radiation", "G0_outer_x1", G0);
+  G0_iang(BoundaryFace::outer_x2) = pin->GetOrAddReal("radiation", "G0_outer_x2", G0);
+  G0_iang(BoundaryFace::outer_x3) = pin->GetOrAddReal("radiation", "G0_outer_x3", G0);
+  cr_rate = pin->GetOrAddReal("radiation", "CR", 2e-16);
+  return;
+}
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -78,8 +141,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //gamma-1 for hydro eos
   const Real gm1 = peos->GetGamma() - 1.0;
   //initial abundance
-  const Real s_init = pin->GetOrAddReal("problem", "s_init", 1e-10);
-  const Real sH2_init = pin->GetOrAddReal("problem", "sH2_init", 1e-10);
+  const Real s_init = pin->GetReal("problem", "s_init");
 
   //parse input parameters
   std::string vtkfile0 = pin->GetString("problem", "vtkfile");//id0 file
@@ -336,8 +398,49 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   peos->PrimitiveToConserved(phydro->w, b, phydro->u, pcoord,
                                      is, ie, js, je, ks, ke);
 
-  data.DeleteAthenaArray();
-  b.DeleteAthenaArray();
+  //intialize radiation field
+  if (RADIATION_ENABLED) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          for (int ifreq=0; ifreq < prad->nfreq; ++ifreq) {
+            for (int iang=0; iang < prad->nang; ++iang) {
+              prad->ir(k, j, i, ifreq * prad->nang + iang) = G0_iang(iang);
+            }
+          }
+#ifdef INCLUDE_CHEMISTRY
+          for (int iang=0; iang < prad->nang; ++iang) {
+            //cr rate
+            prad->ir(k, j, i,
+                pscalars->chemnet.index_cr_ * prad->nang + iang) = cr_rate;
+          }
+#endif
+        }
+      }
+    }
+    //calculate the average radiation field for output of the initial condition
+    prad->pradintegrator->CopyToOutput();
+  }
+
+  //intialize chemical species
+  if (NSCALARS > 0) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          for (int ispec=0; ispec < NSCALARS; ++ispec) {
+            pscalars->s(ispec, k, j, i) = s_init * phydro->u(IDN, k, j, i);
+#ifdef INCLUDE_CHEMISTRY
+            Real s_ispec = pin->GetOrAddReal("problem",
+                "s_init_"+pscalars->chemnet.species_names[ispec], -1);
+            if (s_ispec >= 0.) {
+              pscalars->s(ispec, k, j, i) = s_ispec * phydro->u(IDN, k, j, i);
+            }
+#endif
+          }
+        }
+      }
+    }
+  }
 
   return;
 }
@@ -626,3 +729,170 @@ static void ath_bswap(void *vdat, int len, int cnt) {
   }
 }
 
+void SixRayBoundaryInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                           FaceField &b, Real time, Real dt,
+                           int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  //set species and column boundary to zero
+  for (int n=0; n<(NSCALARS); ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma simd
+        for (int i=1; i<=ngh; ++i) {
+          pmb->pscalars->s(n,k,j,il-i) = 0;
+        }
+      }
+    }
+  }
+  //set hydro variables to zero
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma simd
+        for (int i=1; i<=ngh; ++i) {
+          prim(n,k,j,il-i) = 0;
+        }
+      }
+    }
+  }
+  return;
+}
+
+void SixRayBoundaryInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                           FaceField &b, Real time, Real dt,
+                           int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  //set species and column boundary to zero
+  for (int n=0; n<(NSCALARS); ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
+#pragma simd
+        for (int i=il; i<=iu; ++i) {
+          pmb->pscalars->s(n,k,jl-j,i) = 0;
+        }
+      }
+    }
+  }
+  //set hydro variables to zero
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
+#pragma simd
+        for (int i=il; i<=iu; ++i) {
+          prim(n,k,jl-j,i) = 0;
+        }
+      }
+    }
+  }
+  return;
+}
+
+void SixRayBoundaryInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                           FaceField &b, Real time, Real dt,
+                           int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  //set species and column boundary to zero
+  for (int n=0; n<(NSCALARS); ++n) {
+    for (int k=1; k<=ngh; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma simd
+        for (int i=il; i<=iu; ++i) {
+          pmb->pscalars->s(n,kl-k,j,i) = 0;
+        }
+      }
+    }
+  }
+  //set hydro variables to zero
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=1; k<=ngh; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma simd
+        for (int i=il; i<=iu; ++i) {
+          prim(n,kl-k,j,i) = 0;
+        }
+      }
+    }
+  }
+  return;
+}
+
+void SixRayBoundaryOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                           FaceField &b, Real time, Real dt,
+                           int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  //set species and column boundary to zero
+  for (int n=0; n<(NSCALARS); ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma simd
+        for (int i=1; i<=ngh; ++i) {
+          pmb->pscalars->s(n,k,j,iu+i) = 0;
+        }
+      }
+    }
+  }
+  //set hydro variables to zero
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma simd
+        for (int i=1; i<=ngh; ++i) {
+          prim(n,k,j,iu+i) = 0;
+        }
+      }
+    }
+  }
+  return;
+}
+
+void SixRayBoundaryOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                           FaceField &b, Real time, Real dt,
+                           int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  //set species and column boundary to zero
+  for (int n=0; n<(NSCALARS); ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
+#pragma simd
+        for (int i=il; i<=iu; ++i) {
+          pmb->pscalars->s(n,k,ju+j,i) = 0;
+        }
+      }
+    }
+  }
+  //set hydro variables to zero
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=1; j<=ngh; ++j) {
+#pragma simd
+        for (int i=il; i<=iu; ++i) {
+          prim(n,k,ju+j,i) = 0;
+        }
+      }
+    }
+  }
+  return;
+}
+
+void SixRayBoundaryOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
+                           FaceField &b, Real time, Real dt,
+                           int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  //set species and column boundary to zero
+  for (int n=0; n<(NSCALARS); ++n) {
+    for (int k=1; k<=ngh; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma simd
+        for (int i=il; i<=iu; ++i) {
+          pmb->pscalars->s(n,ku+k,j,i) = 0;
+        }
+      }
+    }
+  }
+  //set hydro variables to zero
+  for (int n=0; n<(NHYDRO); ++n) {
+    for (int k=1; k<=ngh; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma simd
+        for (int i=il; i<=iu; ++i) {
+          prim(n,ku+k,j,i) = 0;
+        }
+      }
+    }
+  }
+  return;
+}
