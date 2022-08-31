@@ -226,9 +226,10 @@ int main(int argc, char *argv[]) {
     if (res_flag == 1) {
       restartfile.Open(restart_filename, IOWrapper::FileMode::read);
       pinput->LoadFromFile(restartfile);
-      // If both -r and -i are specified, make sure next_time gets corrected.
+      // make sure next_time gets corrected in case -i input file or cmdline args change
+      // the output next_time, dt, etc.
       // This needs to be corrected on the restart file because we need the old dt.
-      if (iarg_flag == 1) pinput->RollbackNextTime();
+      pinput->RollbackNextTime();
       // leave the restart file open for later use
     }
     if (iarg_flag == 1) {
@@ -295,8 +296,9 @@ int main(int argc, char *argv[]) {
 #endif // ENABLE_EXCEPTIONS
 
   // With current mesh time possibly read from restart file, correct next_time for outputs
-  if (iarg_flag == 1 && res_flag == 1) {
-    // if both -r and -i are specified, ensure that next_time  >= mesh_time - dt
+  if (res_flag == 1) {
+    // ensure that next_time  >= mesh_time - dt, in case input file or command line
+    // overrides it
     pinput->ForwardNextTime(pmesh->time);
   }
 
