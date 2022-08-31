@@ -776,10 +776,13 @@ void OutputType::ClearOutputData() {
 //! \brief scans through singly linked list of OutputTypes and makes any outputs needed.
 
 void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
+  // wtflag = only true for making final outputs due to signal or wall-time/cycle/time
+  // limit. Used by restart file output to change suffix to .final
   bool first=true;
   OutputType* ptype = pfirst_type_;
   while (ptype != nullptr) {
-    if ((pm->time == pm->start_time)
+    if (((pm->time == pm->start_time) // output initial conditions, unless next_time set
+         && (ptype->output_params.next_time <= pm->start_time ))
       || (ptype->output_params.dt > 0.0 && pm->time >= ptype->output_params.next_time)
       || (ptype->output_params.dcycle > 0 && pm->ncycle%ptype->output_params.dcycle == 0)
       || (pm->time >= pm->tlim)

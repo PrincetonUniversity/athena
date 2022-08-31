@@ -31,7 +31,8 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
+//! \fn void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin,
+//                                          bool force_write)
 //! \brief Cycles over all MeshBlocks and writes data to a single restart file.
 
 void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_write) {
@@ -46,9 +47,10 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
 
   fname.assign(output_params.file_basename);
   fname.append(".");
-  // add file number to name, unless write is forced by terminate signal, in which case
-  // replace number in the name by the string "final".  This keeps the restart file
-  // numbers consistent with output.dt when a job is restarted many times.
+  // add file number to name, unless write is forced by signal or main integration loop,
+  // (wall-time / cycle / time limit) in which case replace number in the name by the
+  // string "final".  This keeps the restart file numbers consistent with output.dt when a
+  // job is restarted many times.
   if (!force_write)
     fname.append(number);
   else
