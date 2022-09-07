@@ -112,18 +112,34 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const Real pres = nH*SQR(iso_cs);
   const Real gm1  = peos->GetGamma() - 1.0;
   //index to set density
-  const int ix = pin->GetInteger("problem", "ix")+NGHOST;
-  const int iy = pin->GetInteger("problem", "iy")+NGHOST;
-  const int iz = pin->GetInteger("problem", "iz")+NGHOST;
+  const int ix = pin->GetInteger("problem", "ix");
+  const int iy = pin->GetInteger("problem", "iy");
+  const int iz = pin->GetInteger("problem", "iz");
+  const Real x1min =  pmy_mesh->mesh_size.x1min;
+  const Real x2min =  pmy_mesh->mesh_size.x2min;
+  const Real x3min =  pmy_mesh->mesh_size.x3min;
+  Real ixx, iyy, izz;
 
-  //density
-  phydro->u(IDN, iz, iy, ix) = nH;
-  //velocity, x direction
-  phydro->u(IM1, iz, iy, ix) = nH*vx;
-  //energy
-  if (NON_BAROTROPIC_EOS) {
-    phydro->u(IEN, iz, iy, ix) = pres/gm1;
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+      for (int i=is; i<=ie; ++i) {
+        ixx = (pcoord->x1f(i) - x1min)/pcoord->dx1f(i);
+        iyy = (pcoord->x2f(j) - x2min)/pcoord->dx2f(j);
+        izz = (pcoord->x3f(k) - x3min)/pcoord->dx3f(k);
+        if ( std::abs(ixx-ix)<0.1 && std::abs(iyy-iy)<0.1 && std::abs(izz-iz)<0.1 ) {
+          //density
+          phydro->u(IDN, k, j, i) = nH;
+          //velocity, x direction
+          phydro->u(IM1, k, j, i) = nH*vx;
+          //energy
+          if (NON_BAROTROPIC_EOS) {
+            phydro->u(IEN, k, j, i) = pres/gm1;
+          }
+        }
+      }
+    }
   }
+
 
   //intialize radiation field
   if (RADIATION_ENABLED) {
@@ -151,15 +167,26 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   //intialize chemical species
   if (NSCALARS > 0) {
-    for (int ispec=0; ispec < NSCALARS; ++ispec) {
-      pscalars->s(ispec, iz, iy, ix) = s_init*nH;
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          ixx = (pcoord->x1f(i) - x1min)/pcoord->dx1f(i);
+          iyy = (pcoord->x2f(j) - x2min)/pcoord->dx2f(j);
+          izz = (pcoord->x3f(k) - x3min)/pcoord->dx3f(k);
+          if ( std::abs(ixx-ix)<0.1 && std::abs(iyy-iy)<0.1 && std::abs(izz-iz)<0.1 ) {
+            for (int ispec=0; ispec < NSCALARS; ++ispec) {
+              pscalars->s(ispec, iz, iy, ix) = s_init*nH;
 #ifdef INCLUDE_CHEMISTRY
-      Real s_ispec = pin->GetOrAddReal("problem",
-          "s_init_"+pscalars->chemnet.species_names[ispec], -1);
-      if (s_ispec >= 0.) {
-        pscalars->s(ispec, iz, iy, ix) = s_ispec*nH;
-      }
+              Real s_ispec = pin->GetOrAddReal("problem",
+                  "s_init_"+pscalars->chemnet.species_names[ispec], -1);
+              if (s_ispec >= 0.) {
+                pscalars->s(ispec, iz, iy, ix) = s_ispec*nH;
+              }
 #endif
+            }
+          }
+        }
+      }
     }
   }
   return;
