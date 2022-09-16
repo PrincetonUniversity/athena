@@ -35,6 +35,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/bvals/cc/mg/*.cpp) \
 	     $(wildcard src/bvals/fc/*.cpp) \
 	     $(wildcard src/bvals/orbital/*.cpp) \
+	     $(wildcard src/bvals/sixray/*.cpp) \
 	     $(wildcard src/bvals/utils/*.cpp) \
 	     $(wildcard src/coordinates/*.cpp) \
 	     src/eos/general/$(GENERAL_EOS_FILE) \

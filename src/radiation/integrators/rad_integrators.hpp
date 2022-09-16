@@ -11,6 +11,7 @@
 // Athena++ classes headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
+#include "../../bvals/sixray/bvals_sixray.hpp"
 #include "../../scalars/scalars.hpp"
 #include "../radiation.hpp" // radiation
 
@@ -37,6 +38,8 @@ class RadIntegrator {
   ChemNetwork* pmy_chemnet;
   int ncol; //number of column densities needed to track
   AthenaArray<Real> col; //column densitites
+  //boundary for column densities
+  SixRayBoundaryVariable col_bvar;
 #ifdef DEBUG
   AthenaArray<Real> col_avg, col_Htot, col_CO, col_H2,  col_C;//for debug output
 #endif //DEBUG

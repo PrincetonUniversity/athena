@@ -38,7 +38,13 @@ namespace {
 
 //----------------------------------------------------------------------------------------
 //! constructor, for six_ray radiation integrator
-RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) {
+RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) :
+#ifdef INCLUDE_CHEMISTRY
+    col(6, prad->pmy_block->ncells3, prad->pmy_block->ncells2,
+        prad->pmy_block->ncells1,  prad->pmy_block->pscalars->chemnet.n_cols_),
+    col_bvar(prad->pmy_block, &col)
+#endif //INCLUDE_CHEMISTRY
+{
   pmy_mb = prad->pmy_block;
   pmy_rad = prad;
   G0 = pin->GetOrAddReal("radiation", "G0", 0.);
@@ -63,17 +69,16 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) {
   lunit = pmy_chemnet->punit->Length;
   ncol = pmy_chemnet->n_cols_;
   //allocate array for column density
-  int ncells1 = pmy_mb->block_size.nx1 + 2*(NGHOST);
-  int ncells2 = 1, ncells3 = 1;
-  if (pmy_mb->block_size.nx2 > 1) ncells2 = pmy_mb->block_size.nx2 + 2*(NGHOST);
-  if (pmy_mb->block_size.nx3 > 1) ncells3 = pmy_mb->block_size.nx3 + 2*(NGHOST);
-  col.NewAthenaArray(6, ncells3, ncells2, ncells1, ncol);
+  // enroll SixRayBoundaryVariable object
+  col_bvar.bvar_index = pmy_mb->pbval->bvars.size();
+  pmy_mb->pbval->bvars.push_back(&col_bvar);
+  pmy_mb->pbval->bvars_main_int.push_back(&col_bvar);
 #ifdef DEBUG
-  col_avg.NewAthenaArray(ncol, ncells3, ncells2, ncells1);
-  col_Htot.NewAthenaArray(6, ncells3, ncells2, ncells1);
-  col_H2.NewAthenaArray(6, ncells3, ncells2, ncells1);
-  col_CO.NewAthenaArray(6, ncells3, ncells2, ncells1);
-  col_C.NewAthenaArray(6, ncells3, ncells2, ncells1);
+  col_avg.NewAthenaArray(ncol, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
+  col_Htot.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
+  col_H2.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
+  col_CO.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
+  col_C.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
 #endif //DEBUG
 #endif //INCLUDE_CHEMISTRY
 }
