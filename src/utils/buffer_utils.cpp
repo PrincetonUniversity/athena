@@ -18,6 +18,29 @@
 namespace BufferUtility {
 //----------------------------------------------------------------------------------------
 //! \fn template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
+//!     int sn, int en, int sm, int em,
+//!     int si, int ei, int sj, int ej, int sk, int ek, int &offset)
+//! \brief pack a 5D AthenaArray into a one-dimensional buffer
+
+template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
+         int sn, int en, int sm, int em,
+         int si, int ei, int sj, int ej, int sk, int ek, int &offset) {
+  for (int n=sn; n<=en; ++n) {
+    for (int k=sk; k<=ek; k++) {
+      for (int j=sj; j<=ej; j++) {
+#pragma omp simd
+        for (int i=si; i<=ei; i++) {
+          for (int m=sm; m<=em; m++) {
+            buf[offset++] = src(n,k,j,i,m);
+          }
+        }
+      }
+    }
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
 //!     int sn, int en, int si, int ei, int sj, int ej, int sk, int ek, int &offset)
 //! \brief pack a 4D AthenaArray into a one-dimensional buffer
 
@@ -47,6 +70,30 @@ template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
 #pragma omp simd
       for (int i=si; i<=ei; i++)
         buf[offset++] = src(k, j, i);
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
+//!     int sn, int en, int sm, int em,
+//!     int si, int ei, int sj, int ej, int sk, int ek, int &offset)
+//! \brief unpack a one-dimensional buffer into a 5D AthenaArray
+
+template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
+         int sn, int en, int sm, int em,
+         int si, int ei, int sj, int ej, int sk, int ek, int &offset) {
+  for (int n=sn; n<=en; ++n) {
+    for (int k=sk; k<=ek; ++k) {
+      for (int j=sj; j<=ej; ++j) {
+#pragma omp simd
+        for (int i=si; i<=ei; ++i) {
+          for (int m=sm; m<=em; ++m) {
+            dst(n,k,j,i,m) = buf[offset++];
+          }
+        }
+      }
     }
   }
   return;
@@ -94,10 +141,14 @@ template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
 
 // 13x files include buffer_utils.hpp
 template void UnpackData<Real>(const Real *, AthenaArray<Real> &,
+                               int, int, int, int, int, int, int, int, int, int, int &);
+template void UnpackData<Real>(const Real *, AthenaArray<Real> &,
                                int, int, int, int, int, int, int, int, int &);
 template void UnpackData<Real>(const Real *, AthenaArray<Real> &,
                                int, int, int, int, int, int, int &);
 
+template void PackData<Real>(const AthenaArray<Real> &, Real *,
+                             int, int, int, int, int, int, int, int, int, int, int &);
 template void PackData<Real>(const AthenaArray<Real> &, Real *,
                              int, int, int, int, int, int, int, int, int &);
 template void PackData<Real>(const AthenaArray<Real> &, Real *,

@@ -35,6 +35,9 @@ class SixRayBoundaryVariable : public BoundaryVariable {
 
   AthenaArray<Real> *var;
 
+  //! maximum number of reserved unique "physics ID" component of MPI tag bitfield
+  static constexpr int max_phys_id = 1;
+
   //!@{
   //! BoundaryVariable:
   int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;
@@ -89,8 +92,18 @@ class SixRayBoundaryVariable : public BoundaryVariable {
                          int il, int iu, int ju, int kl, int ku, int ngh) override;
   //!@}
 
+  //send to specific direction
+  void SendSixRayBoundaryBuffers(BoundaryFace direction);
+  //receive from specific direction
+  bool ReceiveSixRayBoundaryBuffers(BoundaryFace direction);
+
  private:
-  int nu_; //size - 1 of the variable's 4th dimension
+  int mu_, ml_; //indexing of the first dimension (chemical species)
+#ifdef MPI_PARALLEL
+  int sixray_phys_id_;
+#endif
+  //get opposite direction of face boundary
+  BoundaryFace GetOppositeBoundaryFace(const BoundaryFace direction);
 
   //!@{
   //! BoundaryBuffer:

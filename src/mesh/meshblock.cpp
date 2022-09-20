@@ -23,6 +23,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
+#include "../bvals/sixray/bvals_sixray.hpp" //SixRayBoundaryVariable
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../fft/athena_fft.hpp"
@@ -179,6 +180,10 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   if (RADIATION_ENABLED) {
     prad = new Radiation(this, pin);
+    //TODO (Munan Gong): this is only for six-ray radiation, and would not be necessary
+    //for local (e.g. constant) radiation treatment. Also later probably this need to be
+    //generalized to other radiation treatment.
+    pbval->AdvanceCounterPhysID(SixRayBoundaryVariable::max_phys_id);
   } else {
     prad = NULL;
   }
