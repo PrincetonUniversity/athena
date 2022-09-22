@@ -26,8 +26,9 @@
 #include "../eos/eos.hpp"                  // EquationOfState
 #include "../field/field.hpp"              // Field
 #include "../hydro/hydro.hpp"              // Hydro
-#include "../mesh/mesh.hpp"
+#include "../mesh/mesh.hpp"                // Mesh, MeshBlock
 #include "../parameter_input.hpp"          // ParameterInput
+#include "../radiation/radiation.hpp"      // Radiation
 
 // Configuration checking
 #if not GENERAL_RELATIVITY
@@ -42,6 +43,9 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                     FaceField &bb, AthenaArray<Real> &prim_rad, Real time, Real dt,
                     int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+void VacuumInsideHorizon(MeshBlock *pmb, const Real time, const Real dt,
+    const AthenaArray<Real> &prim, AthenaArray<Real> &cons);
+void Opacity(MeshBlock *pmb, const AthenaArray<Real> &prim);
 
 namespace {
 void GetBoyerLindquistCoordinates(Real x1, Real x2, Real x3, Real *pr,
@@ -64,14 +68,15 @@ bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p,
                         Real *pbeta);
 Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r, Real theta,
                                Real phi);
+Real CalculateTPeak();
+Real CalculateT(Real log_h);
 
 // Global variables
 Real m, a;                                  // black hole parameters
-Real gamma_adi, k_adi;                      // hydro parameters
+Real gamma_adi, arad;                       // adiabatic index and radiation constant
 Real r_edge, r_peak, l, rho_max;            // fixed torus parameters
 Real psi, sin_psi, cos_psi;                 // tilt parameters
-Real log_h_edge, log_h_peak;                // calculated torus parameters
-Real pgas_over_rho_peak, rho_peak;          // more calculated torus parameters
+Real log_h_edge, log_h_peak, tt_peak;       // calculated torus parameters
 Real rho_min, rho_pow, pgas_min, pgas_pow;  // background parameters
 MagneticFieldConfigs field_config;                     // type of magnetic field
 Real potential_cutoff;                      // sets region of torus to magnetize
@@ -86,6 +91,10 @@ Real x3_min, x3_max;                        // 3D limits in chosen coordinates
 Real r_min, r_max, theta_min, theta_max;    // limits in r,theta for 2D samples
 Real phi_min, phi_max;                      // limits in phi for 3D samples
 Real pert_amp, pert_kr, pert_kz;            // parameters for initial perturbations
+Real m_msun;                                // dimensional black hole mass for radiation
+Real gas_frac_x, gas_frac_z;                // gas fractions for radiation
+Real urad_factor;                           // initial multiplier for radiation
+Real density_cgs, mol_weight;               // dimensional density scale and mol. weight
 } // namespace
 
 //----------------------------------------------------------------------------------------
@@ -100,7 +109,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   rho_pow = pin->GetReal("hydro", "rho_pow");
   pgas_min = pin->GetReal("hydro", "pgas_min");
   pgas_pow = pin->GetReal("hydro", "pgas_pow");
-  k_adi = pin->GetReal("problem", "k_adi");
   r_edge = pin->GetReal("problem", "r_edge");
   r_peak = pin->GetReal("problem", "r_peak");
   l = pin->GetReal("problem", "l");
@@ -150,10 +158,21 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   pert_amp = pin->GetOrAddReal("problem", "pert_amp", 0.0);
   pert_kr = pin->GetOrAddReal("problem", "pert_kr", 0.0);
   pert_kz = pin->GetOrAddReal("problem", "pert_kz", 0.0);
+  if (RADIATION_ENABLED) {
+    m_msun = pin->GetReal("problem", "m_msun");
+    gas_frac_x = pin->GetReal("problem", "gas_frac_x");
+    gas_frac_z = pin->GetReal("problem", "gas_frac_z");
+    urad_factor = pin->GetOrAddReal("problem", "urad_factor", 1.0);
+    density_cgs = pin->GetReal("radiation", "density_cgs");
+    mol_weight = pin->GetReal("radiation", "mol_weight");
+  }
 
   // Enroll boundary functions
   EnrollUserBoundaryFunction(BoundaryFace::inner_x1, InflowBoundary);
   EnrollUserBoundaryFunction(BoundaryFace::outer_x1, FixedBoundary);
+
+  // Enroll source function
+  EnrollUserExplicitRadSourceFunction(VacuumInsideHorizon);
   return;
 }
 
@@ -162,21 +181,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 // Inputs:
 //   pin: input parameters (unused)
 // Outputs: (none)
-// Notes:
-//   user arrays are metric and its inverse
 
 void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
-  if (MAGNETIC_FIELDS_ENABLED) {
-    AllocateUserOutputVariables(2);
-    SetUserOutputVariableName(0, "gamma");
-    SetUserOutputVariableName(1, "pmag");
-  } else {
-    AllocateUserOutputVariables(1);
-    SetUserOutputVariableName(0, "gamma");
-  }
-  AllocateRealUserMeshBlockDataField(2);
-  ruser_meshblock_data[0].NewAthenaArray(NMETRIC, ie+1);
-  ruser_meshblock_data[1].NewAthenaArray(NMETRIC, ie+1);
+  prad->EnrollOpacityFunction(Opacity);
   return;
 }
 
@@ -217,6 +224,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Get ratio of specific heats
   gamma_adi = peos->GetGamma();
 
+  // Get radiation constant
+  arad = 0.0;
+  if (RADIATION_ENABLED) {
+    arad = prad->arad;
+  }
+
   // Reset whichever of l,r_peak is not specified
   if (r_peak >= 0.0) {
     l = CalculateLFromRPeak(r_peak);
@@ -227,15 +240,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Prepare global constants describing primitives
   log_h_edge = LogHAux(r_edge, 1.0);
   log_h_peak = LogHAux(r_peak, 1.0) - log_h_edge;
-  pgas_over_rho_peak = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_peak)-1.0);
-  rho_peak = std::pow(pgas_over_rho_peak/k_adi, 1.0/(gamma_adi-1.0)) / rho_max;
+  tt_peak = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_peak)-1.0);
+  if (RADIATION_ENABLED) {
+    tt_peak = CalculateTPeak();
+  }
 
   // Prepare scratch arrays
   AthenaArray<Real> g, gi;
   g.NewAthenaArray(NMETRIC, iu+1);
   gi.NewAthenaArray(NMETRIC, iu+1);
 
-  // Initialize primitive values
+  // Initialize primitive values and radiation
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       pcoord->CellMetric(k, j, il, iu, g, gi);
@@ -266,9 +281,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           cos_vartheta = cos_theta;
           varphi = (sin_theta < 0.0) ? phi-PI : phi;
         }
-        // unused variables:
-        // Real sin_varphi = std::sin(varphi);
-        // Real cos_varphi = std::cos(varphi);
 
         // Determine if we are in the torus
         Real log_h;
@@ -286,13 +298,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real uu1 = 0.0;
         Real uu2 = 0.0;
         Real uu3 = 0.0;
+        Real urad = 0.0;
 
         // Overwrite primitives inside torus
         if (in_torus) {
           // Calculate thermodynamic variables
-          Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
-          rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-          pgas = pgas_over_rho * rho;
+          Real tt = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
+          if (RADIATION_ENABLED) {
+            tt = CalculateT(log_h);
+          }
+          rho = rho_max * std::pow(tt_peak / tt, 1.0 / (1.0 - gamma_adi));
+          pgas = tt * rho;
+          if (RADIATION_ENABLED) {
+            urad = prad->arad * SQR(SQR(tt)) * urad_factor;
+          }
 
           // Calculate velocities in Boyer-Lindquist coordinates
           Real u0_bl, u1_bl, u2_bl, u3_bl;
@@ -306,8 +325,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           uu3 = u3 - gi(I03,i)/gi(I00,i) * u0;
         }
 
-        // Set primitive values, including cylindrically symmetric radial velocity
-        // perturbations
+        // Set primitive hydro values, including cylindrically symmetric perturbations
         Real rr = r * sin_vartheta;
         Real z = r * cos_vartheta;
         Real amp_rel = 0.0;
@@ -322,11 +340,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->w(IVX,k,j,i) = phydro->w1(IM1,k,j,i) = uu1 + pert_uur;
         phydro->w(IVY,k,j,i) = phydro->w1(IM2,k,j,i) = uu2 + pert_uutheta;
         phydro->w(IVZ,k,j,i) = phydro->w1(IM3,k,j,i) = uu3;
+
+        // Set conserved radiation values
+        if (RADIATION_ENABLED) {
+          prad->CalculateRadiationInCellLinear(urad, 0.0, 0.0, 0.0, phydro->w(IVX,k,j,i),
+              phydro->w(IVY,k,j,i), phydro->w(IVZ,k,j,i), k, j, i, g, prad->cons);
+        }
       }
     }
   }
-
-  // Free scratch arrays
 
   // Initialize magnetic fields
   if (MAGNETIC_FIELDS_ENABLED) {
@@ -379,8 +401,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             if (r >= r_edge) {
               Real log_h = LogHAux(r, std::sin(theta)) - log_h_edge;  // (FM 3.6)
               if (log_h >= 0.0) {
-                Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
-                Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+                Real tt = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
+                if (RADIATION_ENABLED) {
+                  tt = CalculateT(log_h);
+                }
+                Real rho = rho_max * std::pow(tt_peak / tt, 1.0 / (1.0 - gamma_adi));
                 Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
                 a_phi_edges(j,i) = std::pow(r, potential_r_pow)
                                    * std::pow(rho_cutoff, potential_rho_pow);
@@ -400,8 +425,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             if (r >= r_edge) {
               Real log_h = LogHAux(r, std::sin(theta)) - log_h_edge;  // (FM 3.6)
               if (log_h >= 0.0) {
-                Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
-                Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+                Real tt = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
+                if (RADIATION_ENABLED) {
+                  tt = CalculateT(log_h);
+                }
+                Real rho = rho_max * std::pow(tt_peak / tt, 1.0 / (1.0 - gamma_adi));
                 Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
                 a_phi_cells(j,i) = std::pow(r, potential_r_pow)
                                    * std::pow(rho_cutoff, potential_rho_pow);
@@ -456,15 +484,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                 Real varx = cos_psi * x - sin_psi * z;
                 Real vary = y;
                 Real sin_vartheta = std::sqrt(SQR(varx) + SQR(vary));
-                // unused variables:
-                //Real varphi = std::atan2(vary, varx);
-                //Real sin_varphi = std::sin(varphi);
                 Real log_h = LogHAux(r_vals[p], sin_vartheta) - log_h_edge;  // (FM 3.6)
                 if (!(log_h >= 0.0)) {
                   continue;
                 }
-                Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
-                Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+                Real tt = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
+                if (RADIATION_ENABLED) {
+                  tt = CalculateT(log_h);
+                }
+                Real rho = rho_max * std::pow(tt_peak / tt, 1.0 / (1.0 - gamma_adi));
                 Real rho_cutoff = std::max(rho-potential_cutoff, static_cast<Real>(0.0));
                 Real a_varphi = std::pow(r_vals[p], potential_r_pow)
                                 * std::pow(rho_cutoff, potential_rho_pow);
@@ -502,7 +530,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real beta_min_actual = CalculateBetaMin();
         normalization = std::sqrt(beta_min_actual/beta_min);
       }
-      // Calculate vector potential in renormalized case
+
+    // Calculate vector potential in renormalized case
     } else if (field_config == MagneticFieldConfigs::renorm) {
       // Check that this is not a tilted disk
       if (psi != 0.0) {
@@ -565,8 +594,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           if (r >= r_edge) {
             Real log_h = LogHAux(r, std::sin(theta)) - log_h_edge;  // (FM 3.6)
             if (log_h >= 0.0) {
-              Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
-              rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+              Real tt = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
+              if (RADIATION_ENABLED) {
+                tt = CalculateT(log_h);
+              }
+              rho = rho_max * std::pow(tt_peak / tt, 1.0 / (1.0 - gamma_adi));
             }
           }
           a_phi_global_edges(j,i) =
@@ -584,8 +616,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           if (r >= r_edge) {
             Real log_h = LogHAux(r, std::sin(theta)) - log_h_edge;  // (FM 3.6)
             if (log_h >= 0.0) {
-              Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
-              rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+              Real tt = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
+              if (RADIATION_ENABLED) {
+                tt = CalculateT(log_h);
+              }
+              rho = rho_max * std::pow(tt_peak / tt, 1.0 / (1.0 - gamma_adi));
             }
           }
           a_phi_global_cells(j,i) =
@@ -713,8 +748,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             continue;
           }
           Real log_h = LogHAux(r_c, std::sin(theta_c)) - log_h_edge;
-          Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
-          Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+          Real tt = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
+          if (RADIATION_ENABLED) {
+            tt = CalculateT(log_h);
+          }
+          Real rho = rho_max * std::pow(tt_peak / tt, 1.0 / (1.0 - gamma_adi));
           if (rho < sample_cutoff) {
             continue;
           }
@@ -841,9 +879,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
 
-      // Free global arrays
-
-      // Calculate normalization in vertical case
+    // Calculate normalization in vertical case
     } else if (field_config == MagneticFieldConfigs::vertical) {
       // Calculate magnetic field normalization
       if (beta_min < 0.0) {
@@ -852,7 +888,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         Real beta_min_actual = CalculateBetaMin();
         normalization = std::sqrt(beta_min_actual/beta_min);
       }
-      // Handle unknown input
+
+    // Handle unknown input
     } else {
       std::stringstream msg;
       msg << "### FATAL ERROR in Problem Generator\n"
@@ -933,7 +970,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
 
-      // Set magnetic fields according to vector potential for untilted disks
+    // Set magnetic fields according to vector potential for untilted disks
     } else if (psi == 0.0) {
       // Set B^1
       for (int k=kl; k<=ku; ++k) {
@@ -1057,7 +1094,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
 
-      // Set magnetic fields according to vector potential for tilted disks
+    // Set magnetic fields according to vector potential for tilted disks
     } else {
       for (int k=kl+1; k<=ku; ++k) {
         for (int j=jl+1; j<=ju; ++j) {
@@ -1229,11 +1266,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         GetBoyerLindquistCoordinates(pcoord->x1v(i), pcoord->x2v(j), pcoord->x3v(kl), &r,
                                      &theta, &phi);
         Real &rho = phydro->w(IDN,k,j,i);
-        Real &pgas = phydro->w(IEN,k,j,i);
+        Real &pgas = phydro->w(IPR,k,j,i);
         rho = std::max(rho, rho_min * std::pow(r, rho_pow));
         pgas = std::max(pgas, pgas_min * std::pow(r, pgas_pow));
         phydro->w1(IDN,k,j,i) = rho;
-        phydro->w1(IEN,k,j,i) = pgas;
+        phydro->w1(IPR,k,j,i) = pgas;
       }
     }
   }
@@ -1255,71 +1292,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     peos->PrimitiveToConserved(phydro->w, bb, phydro->u, pcoord, il, iu, jl, ju, kl, ku);
   }
 
-  // Call user work function to set output variables
-  UserWorkInLoop();
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-// Function responsible for storing useful quantities for output
-// Inputs: (none)
-// Outputs: (none)
-// Notes:
-//   writes to user_out_var array the following quantities:
-//     0: gamma (normal-frame Lorentz factor)
-//     1: p_mag (magnetic pressure)
-
-void MeshBlock::UserWorkInLoop() {
-  // Create aliases for metric
-  AthenaArray<Real> &g = ruser_meshblock_data[0], &gi = ruser_meshblock_data[1];
-
-  // Go through all cells
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je; ++j) {
-      pcoord->CellMetric(k, j, is, ie, g, gi);
-      for (int i=is; i<=ie; ++i) {
-        // Calculate normal-frame Lorentz factor
-        Real uu1 = phydro->w(IM1,k,j,i);
-        Real uu2 = phydro->w(IM2,k,j,i);
-        Real uu3 = phydro->w(IM3,k,j,i);
-        Real tmp = g(I11,i)*uu1*uu1 + 2.0*g(I12,i)*uu1*uu2 + 2.0*g(I13,i)*uu1*uu3
-                   + g(I22,i)*uu2*uu2 + 2.0*g(I23,i)*uu2*uu3
-                   + g(I33,i)*uu3*uu3;
-        Real gamma = std::sqrt(1.0 + tmp);
-        user_out_var(0,k,j,i) = gamma;
-        if (!MAGNETIC_FIELDS_ENABLED) {
-          continue;
-        }
-
-        // Calculate 4-velocity
-        Real alpha = std::sqrt(-1.0/gi(I00,i));
-        Real u0 = gamma/alpha;
-        Real u1 = uu1 - alpha * gamma * gi(I01,i);
-        Real u2 = uu2 - alpha * gamma * gi(I02,i);
-        Real u3 = uu3 - alpha * gamma * gi(I03,i);
-        Real u_0, u_1, u_2, u_3;
-        pcoord->LowerVectorCell(u0, u1, u2, u3, k, j, i, &u_0, &u_1, &u_2, &u_3);
-
-        // Calculate 4-magnetic field
-        Real bb1 = pfield->bcc(IB1,k,j,i);
-        Real bb2 = pfield->bcc(IB2,k,j,i);
-        Real bb3 = pfield->bcc(IB3,k,j,i);
-        Real b0 = g(I01,i)*u0*bb1 + g(I02,i)*u0*bb2 + g(I03,i)*u0*bb3
-                  + g(I11,i)*u1*bb1 + g(I12,i)*u1*bb2 + g(I13,i)*u1*bb3
-                  + g(I12,i)*u2*bb1 + g(I22,i)*u2*bb2 + g(I23,i)*u2*bb3
-                  + g(I13,i)*u3*bb1 + g(I23,i)*u3*bb2 + g(I33,i)*u3*bb3;
-        Real b1 = (bb1 + b0 * u1) / u0;
-        Real b2 = (bb2 + b0 * u2) / u0;
-        Real b3 = (bb3 + b0 * u3) / u0;
-        Real b_0, b_1, b_2, b_3;
-        pcoord->LowerVectorCell(b0, b1, b2, b3, k, j, i, &b_0, &b_1, &b_2, &b_3);
-
-        // Calculate magnetic pressure
-        Real b_sq = b0*b_0 + b1*b_1 + b2*b_2 + b3*b_3;
-        user_out_var(1,k,j,i) = b_sq/2.0;
-      }
-    }
-  }
+  // Call function to initialize opacities
+  Opacity(this, phydro->w);
   return;
 }
 
@@ -1333,7 +1307,7 @@ void MeshBlock::UserWorkInLoop() {
 // Outputs:
 //   prim: primitives set in ghost zones
 //   bb: face-centered magnetic field set in ghost zones
-//   prim_rad: radiation primitives set in ghost zones (not implemented)
+//   prim_rad: radiation primitives set in ghost zones
 // Notes:
 //   does nothing
 
@@ -1352,7 +1326,7 @@ void FixedBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
 // Outputs:
 //   prim: primitives set in ghost zones
 //   bb: face-centered magnetic field set in ghost zones
-//   prim_rad: radiation primitives set in ghost zones (not implemented)
+//   prim_rad: radiation primitives set in ghost zones
 
 void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim,
                     FaceField &bb, AthenaArray<Real> &prim_rad, Real time, Real dt,
@@ -1366,6 +1340,17 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
         prim(IM1,k,j,i) = std::min(prim(IM1,k,j,il), static_cast<Real>(0.0));
         prim(IM2,k,j,i) = prim(IM2,k,j,il);
         prim(IM3,k,j,i) = prim(IM3,k,j,il);
+      }
+    }
+  }
+
+  // Set radiation variables
+  for (int n=0; n<pmb->prad->nang; ++n) {
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+        for (int i=il-ngh; i <= il-1; ++i) {
+          prim_rad(n,k,j,i) = 0.0;
+        }
       }
     }
   }
@@ -1396,6 +1381,116 @@ void InflowBoundary(MeshBlock *pmb, Coordinates *pcoord, AthenaArray<Real> &prim
     for (int j=jl; j<=ju; ++j) {
       for (int i=il-ngh; i <= il-1; ++i) {
         bb.x3f(k,j,i) = bb.x3f(k,j,il);
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Source function for removing radiation inside horizon
+// Inputs:
+//   pmb: pointer to MeshBlock
+//   time: time of simulation (unused)
+//   dt: simulation timestep (unused)
+//   prim_rad: primitive intensity (unused)
+//   cons_rad: conserved intensity (unused)
+// Outputs:
+//   cons_rad: conserved intensity zeroed
+
+void VacuumInsideHorizon(MeshBlock *pmb, const Real time, const Real dt,
+    const AthenaArray<Real> &prim_rad, AthenaArray<Real> &cons_rad) {
+
+  // Extract information from block
+  Coordinates *pcoord = pmb->pcoord;
+  Radiation *prad = pmb->prad;
+  int is = pmb->is;
+  int ie = pmb->ie;
+  int js = pmb->js;
+  int je = pmb->je;
+  int ks = pmb->ks;
+  int ke = pmb->ke;
+  int ns = 0;
+  int ne = prad->nang - 1;
+  Real minimum_r = pcoord->x1f(is);
+
+  // Calculate horizon radius
+  Real r_hor = m + std::sqrt(SQR(m) - SQR(a));
+  if (minimum_r > r_hor) {
+    return;
+  }
+
+  // Overwrite conserved intensity
+  for (int n = ns; n <= ne; ++n) {
+    for (int k = ks; k <= ke; ++k) {
+      for (int j = js; j <= je; ++j) {
+        for (int i = is; i <= ie; ++i) {
+          Real r = pcoord->x1v(i);
+          if (r > r_hor) {
+            break;
+          }
+          cons_rad(n,k,j,i) = 0.0;
+        }
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Opacity Function
+// Inputs:
+//   pmb: pointer to MeshBlock
+//   prim: primitive variables
+// Outputs: (none)
+// Notes:
+//   sets prad->opacity
+
+void Opacity(MeshBlock *pmb, const AthenaArray<Real> &prim)
+{
+  // Prepare index bounds
+  int il = pmb->is - NGHOST;
+  int iu = pmb->ie + NGHOST;
+  int jl = pmb->js;
+  int ju = pmb->je;
+  if (jl != ju) {
+    jl -= NGHOST;
+    ju += NGHOST;
+  }
+  int kl = pmb->ks;
+  int ku = pmb->ke;
+  if (kl != ku) {
+    kl -= NGHOST;
+    ku += NGHOST;
+  }
+
+  // Calculate conversions
+  Real c_cgs = 2.99792458e10;
+  Real kb_cgs = 1.380649e-16;
+  Real mp_cgs = 1.67262192369e-24;
+  Real gg_msun_cgs = 1.32712440018e26;
+  Real density_scale = density_cgs;
+  Real length_scale = m_msun * gg_msun_cgs / SQR(c_cgs);
+  Real pressure_scale = density_scale * SQR(c_cgs);
+  Real opacity_scale = 1.0 / (density_scale * length_scale);
+
+  // Set coefficients
+  Radiation *prad = pmb->prad;
+  for (int k = kl; k <= ku; ++k) {
+    for (int j = jl; j <= ju; ++j) {
+      for (int i = il; i <= iu; ++i) {
+        Real rho_code = prim(IDN,k,j,i);
+        Real pgas_code = prim(IPR,k,j,i);
+        Real rho_cgs = rho_code * density_scale;
+        Real pgas_cgs = pgas_code * pressure_scale;
+        Real tt_cgs = mol_weight * mp_cgs * pgas_cgs / (kb_cgs * rho_cgs);
+        Real kappa_a_cgs = 4.0e25 * (1.0 + gas_frac_x) * (1.0e-3 + gas_frac_z) * rho_cgs
+            / std::pow(tt_cgs, 3.5);
+        Real kappa_s_cgs = 0.2 * (1.0 + gas_frac_x);
+        Real kappa_a_code = kappa_a_cgs / opacity_scale;
+        Real kappa_s_code = kappa_s_cgs / opacity_scale;
+        prad->opacity(OPAA,k,j,i) = kappa_a_code;
+        prad->opacity(OPAS,k,j,i) = kappa_s_code;
       }
     }
   }
@@ -1806,13 +1901,16 @@ bool CalculateBeta(Real r_m, Real r_c, Real r_p, Real theta_m, Real theta_c,
   Real a_varphi_vals[7];
   Real pgas;
   for (int p = 0; p < 7; ++p) {
-    Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_vals[p])-1.0);
-    Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
+    Real tt = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h_vals[p])-1.0);
+    if (RADIATION_ENABLED) {
+      tt = CalculateT(log_h_vals[p]);
+    }
+    Real rho = rho_max * std::pow(tt_peak / tt, 1.0 / (1.0 - gamma_adi));
     if (p == 0 && rho < sample_cutoff) {
       return false;
     }
     if (p == 0) {
-      pgas = pgas_over_rho * rho;
+      pgas = tt * rho;
     }
     if (field_config == MagneticFieldConfigs::vertical) {
       break;
@@ -1895,9 +1993,12 @@ bool CalculateBetaFromA(Real r_m, Real r_c, Real r_p,
   }
 
   // Calculate primitives
-  Real pgas_over_rho = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
-  Real rho = std::pow(pgas_over_rho/k_adi, 1.0/(gamma_adi-1.0)) / rho_peak;
-  Real pgas = pgas_over_rho * rho;
+  Real tt = (gamma_adi-1.0)/gamma_adi * (std::exp(log_h)-1.0);
+  if (RADIATION_ENABLED) {
+    tt = CalculateT(log_h);
+  }
+  Real rho = rho_max * std::pow(tt_peak / tt, 1.0 / (1.0 - gamma_adi));
+  Real pgas = tt * rho;
 
   // Check A_phi
   if (a_cm == 0.0 || a_cp == 0.0 || a_mc == 0.0 || a_pc == 0.0) {
@@ -1966,5 +2067,104 @@ Real CalculateMagneticPressure(Real bb1, Real bb2, Real bb3, Real r, Real theta,
               + g_20*b2*b0 + g_21*b2*b1 + g_22*b2*b2 + g_23*b2*b3
               + g_30*b3*b0 + g_31*b3*b1 + g_32*b3*b2 + g_33*b3*b3;
   return 0.5*b_sq;
+}
+
+//----------------------------------------------------------------------------------------
+// Function to calculate T from log(h) and rho at pressure maximum
+// Inputs: (none)
+// Outputs:
+//   returned value: temperature (p_gas / rho)
+// Notes:
+//   essentially follows FourthPolyRoot() from rad_source.cpp
+
+Real CalculateTPeak()
+{
+  // Calculate quartic coefficients
+  Real a4 = 4.0 * arad / (3.0 * rho_max);
+  Real a1 = gamma_adi / (gamma_adi - 1.0);
+  Real a0 = 1.0 - std::exp(log_h_peak);
+
+  // Reduce quartic coefficients
+  Real b4 = a4 / a1;
+  Real b0 = a0 / a1;
+
+  // Calculate real root of z^3 - 4*b0/b4 * z - 1/b4^2 = 0
+  Real delta1 = 0.25 - 64.0 * b0 * b0 * b0 * b4 / 27.0;
+  if (delta1 < 0.0) {
+    return 0.0;
+  }
+  delta1 = std::sqrt(delta1);
+  if (delta1 < 0.5) {
+    return 0.0;
+  }
+  Real zroot;
+  if (delta1 > 1.0e11) {  // to avoid small number cancellation
+    zroot = std::pow(delta1, -2.0/3.0) / 3.0;
+  } else {
+    zroot = std::pow(0.5 + delta1, 1.0/3.0) - std::pow(-0.5 + delta1, 1.0/3.0);
+  }
+  if (zroot < 0.0) {
+    return 0.0;
+  }
+  zroot *= std::pow(b4, -2.0/3.0);
+
+  // Calculate quartic root using cubic root
+  Real rcoef = std::sqrt(zroot);
+  Real delta2 = -zroot + 2.0 / (b4 * rcoef);
+  if (delta2 < 0.0) {
+    return false;
+  }
+  delta2 = std::sqrt(delta2);
+  Real root = 0.5 * (delta2 - rcoef);
+  if (root < 0.0) {
+    return 0.0;
+  }
+  return root;
+}
+
+//----------------------------------------------------------------------------------------
+// Function to calculate T from log(h) at arbitrary location using state at pressure max.
+// Inputs: (none)
+// Outputs:
+//   returned value: temperature (p_gas / rho)
+// Notes:
+//   equation has form c * T^p + a1 * T + a0 = 0
+//   uses bisection after bounding root
+
+Real CalculateT(Real log_h)
+{
+  // Parameters
+  int max_iterations = 20;
+  Real tol_rel = 1.0e-6;
+
+  // Calculate coefficients
+  Real c = 4.0 * arad * std::pow(tt_peak, 1.0 / (gamma_adi - 1.0)) / (3.0 * rho_max);
+  Real p = (4.0 * gamma_adi - 5.0) / (gamma_adi - 1.0);
+  Real a1 = gamma_adi / (gamma_adi - 1.0);
+  Real a0 = 1.0 - std::exp(log_h);
+
+  // Calculate bounds
+  Real tt_min = 0.0;
+  Real tt_max_1 = -a0 / a1;
+  Real tt_max_2 = std::pow(-a0 / c, 1.0 / p);
+  Real tt_max = std::min(tt_max_1, tt_max_2);
+
+  // Perform bisection
+  Real tt = 0.5 * (tt_min + tt_max);
+  for (int n = 0; n < max_iterations; ++n) {
+    Real error_rel = 0.5 * (tt_max - tt_min) / tt;
+    if (error_rel < tol_rel) {
+      break;
+    }
+    Real residual = c * std::pow(tt, p) + a1 * tt + a0;
+    if (residual < 0.0) {
+      tt_max = tt;
+    } else if (residual > 0.0) {
+      tt_min = tt;
+    } else if (residual == 0.0) {
+      break;
+    }
+  }
+  return tt;
 }
 } // namespace

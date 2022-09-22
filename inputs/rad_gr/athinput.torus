@@ -1,0 +1,136 @@
+<comment>
+problem   = Fishbone-Moncrief equilibrium torus with radiation
+reference = Fishbone & Moncrief 1976, ApJ 207 962
+configure = --prob=gr_torus -g -b -r --coord=kerr-schild -hdf5
+
+<job>
+problem_id = torus  # name of run
+
+<time>
+nlim       = -1   # maximum number of timesteps
+tlim       = 1.0  # maximum time to run
+cfl_number = 0.2  # fraction of Courant condition
+integrator = vl2  # time integration algorithm
+xorder     = 2    # order of spatial reconstruction
+ncycle_out = 1    # interval for stdout summary info
+
+<output1>
+file_type = hdf5   # output format
+variable  = prim   # choice of variables to output
+id        = prim   # name of output files
+dt        = 10.0   # output cadence
+xdmf      = false  # whether to include auxiliary metadata file
+
+<output2>
+file_type = hdf5       # output format
+variable  = rad_fluid  # choice of variables to output
+id        = rad        # name of output files
+dt        = 10.0       # output cadence
+xdmf      = false      # whether to include auxiliary metadata file
+
+<output3>
+file_type = rst    # output format
+dt        = 100.0  # output cadance
+
+<mesh>
+nx1    = 48                  # number of cells in r-direction
+x1min  = 1.0398077746856649  # minimum r
+x1max  = 50.0                # maximum r
+x1rat  = 1.084031793206032   # ratio of adjacent r-widths
+ix1_bc = user                # inner boundary
+ox1_bc = user                # outer boundary
+
+nx2    = 40                  # number of cells in theta-direction
+x2min  = 0.0                 # minimum theta
+x2max  = 3.1415926535897932  # maximum theta (pi)
+ix2_bc = polar               # upper boundary
+ox2_bc = polar               # lower boundary
+
+nx3    = 80                  # number of cells in phi-direction
+x3min  = 0.0                 # minimum phi
+x3max  = 6.2831853071795862  # maximum phi (2*pi)
+ix3_bc = periodic            # clockwise boundary
+ox3_bc = periodic            # counterclockwise boundary
+
+refinement = static  # whether to use mesh refinement
+
+num_threads = 1  # number of threads per process
+
+<meshblock>
+nx1 = 24  # block size in r-direction
+nx2 = 8   # block size in theta-direction
+nx3 = 16  # block size in phi-direction
+
+<refinement1>
+level = 1                   # refinement level
+x1min = 1.0398077746856649  # minimum r
+x1max = 50.0                # maximum r
+x2min = 1.1780972450961724  # minimum theta
+x2max = 1.9634954084936207  # maximum theta
+x3min = 0.0                 # minimum phi
+x3max = 6.2831853071795862  # maximum phi
+
+<coord>
+m          = 1.0        # black hole mass M
+a          = 0.9        # black hole spin a (0 <= a/M < 1)
+rad_tetrad = spherical  # choice of radiation tetrad
+
+<hydro>
+gamma     = 1.3333333333333333  # ratio of specific heats Gamma
+dfloor    = 1.0e-6              # floor on density rho
+pfloor    = 1.0e-10             # floor on gas pressure p_gas
+rho_min   = 1.0e-3              # floor on rho given by rho_min ...
+rho_pow   = -1.5                # ... * r^rho_pow
+pgas_min  = 1.0e-7              # floor on p_gas given by pgas_min ...
+pgas_pow  = -2.5                # ... * r^pgas_pow
+sigma_max = 100.0               # maximum allowed value of 2*p_mag/rho
+beta_min  = 0.001               # minimum allowed value of p_gas/p_mag
+gamma_max = 50.0                # ceiling on normal Lorentz factor gamma
+
+<radiation>
+n_polar      = 6       # number of polar angles in direction space
+n_azimuthal  = 12      # number of azimuthal angles in direction space
+coupled      = true    # flag indicating radiation is coupled to matter
+affect_fluid = true    # flag indicating radiation affects matter
+moment_fix   = false   # flag indicating equations are altered
+density_cgs  = 1.0e-2  # code unit of density, in g/cm^3
+mol_weight   = 0.5     # molecular weight of gas, in proton masses
+
+<problem>
+r_edge     = 6.0   # radius of inner edge of disk
+r_peak     = 12.0  # radius of pressure maximum; use l instead if negative
+l          = 0.0   # constant ang. mom. per unit mass u^t u_phi; only used if r_peak < 0
+rho_max    = 1.0   # if greater than 0, rescale density to have this peak, and rescale
+                   # pressure by same factor
+tilt_angle = 0.0   # angle (degrees) at which to incline disk spin axis relative to BH
+                   # spin axis (z-axis) in direction of x-axis (theta = pi/2, phi = 0)
+
+field_config      = normal  # normal, renorm (equalize beta then recalculate A_phi), or
+                            # vertical
+potential_cutoff  = 0.2     # amount to subtract from density when calculating potential
+                            # (field_config=normal); floor (relative to max) on potential
+                            # (field_config=renorm)
+potential_r_pow   = 0.0     # vector potential proportional to this power of radius
+potential_rho_pow = 1.0     # vector potential proportional to this power of density
+beta_min          = 100.0   # desired minimum ratio of gas pressure to magnetic pressure;
+                            # magnetic field zeroed if negative
+
+sample_n_r     = 64   # global grid for integrating in the field_config=renorm case and
+                      # normalizing beta: number of cells in r-direction
+sample_n_theta = 64   # number of cells in theta-direction
+sample_n_phi   = 128  # number of cells in phi-direction (only used for beta normalization
+                      # for tilted disks)
+sample_r_rat   = 1.0  # geometric ratio to use in r
+sample_cutoff  = 0.2  # density below which cells are not used for global beta rescaling
+                      # calculation
+
+pert_amp = 0.0  # amplitude of perturbations to cylindrical radial velocity \tilde{u}^R
+                # (combination of \tilde{u}^r and \tilde{u}^\theta) as fraction of
+                # azimuthal velocity \tilde{u}^\phi
+pert_kr  = 0.0  # cylindrical radial wavenumber of perturbations
+pert_kz  = 0.0  # vertical wavenumber of perturbations
+
+m_msun      = 10.0    # understood black hole mass in solar masses
+gas_frac_x  = 1.0     # hydrogen fraction X
+gas_frac_z  = 0.0     # metal fraction Z
+urad_factor = 1.0     # multiplier for initial thermalized radiation energy density

@@ -849,6 +849,14 @@ RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *p_va
       or pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
     polar_vals_.NewAthenaArray(nang);
   }
+  if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) {
+    polar_ind_north_.NewAthenaArray(4, nang, ku + 1, NGHOST, iu + 1);
+    polar_frac_north_.NewAthenaArray(4, nang, ku + 1, NGHOST, iu + 1);
+  }
+  if (pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
+    polar_ind_south_.NewAthenaArray(4, nang, ku + 1, NGHOST, iu + 1);
+    polar_frac_south_.NewAthenaArray(4, nang, ku + 1, NGHOST, iu + 1);
+  }
 
   // Calculate north transformation
   if (pbval_->block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) {

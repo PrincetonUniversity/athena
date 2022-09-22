@@ -287,7 +287,6 @@ void BoundaryValues::ClearBoundary(BoundaryCommSubset phase) {
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt)
 //  \brief Apply all the physical boundary conditions for both hydro and field
-//  TODO(c-white): add radiation to physical boundary calls
 
 void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt) {
   MeshBlock *pmb = pmy_block_;
