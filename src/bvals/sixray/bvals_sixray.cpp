@@ -218,7 +218,6 @@ void SixRayBoundaryVariable::SetBoundarySameLevel(Real *buf, const NeighborBlock
     BufferUtility::UnpackData(buf, *var, nb.fid, nb.fid, ml_, mu_,
                               si, ei, sj, ej, sk, ek, p);
   }
-
   return;
 }
 
@@ -323,74 +322,89 @@ BoundaryFace SixRayBoundaryVariable::GetOppositeBoundaryFace(const BoundaryFace 
 
   return opp_direction;
 }
-
-void SixRayBoundaryVariable::SendSixRayBoundaryBuffers(BoundaryFace direction) {
-  MeshBlock *pmb = pmy_block_;
+NeighborBlock *SixRayBoundaryVariable::GetFaceNeighbor(const BoundaryFace direction) {
+  NeighborBlock *pnb = nullptr;
   for (int n=0; n<pbval_->nneighbor; n++) {
-    NeighborBlock& nb = pbval_->neighbor[n];
-    //only for face neigbor in the specified direction
-    if (nb.ni.type == NeighborConnect::face && nb.fid == direction) {
-      if (bd_var_.sflag[nb.bufid] == BoundaryStatus::completed) continue;
-      int ssize;
-      ssize = LoadBoundaryBufferSameLevel(bd_var_.send[nb.bufid], nb);
-      if (nb.snb.rank == Globals::my_rank) {  // on the same process
-        CopyVariableBufferSameProcess(nb, ssize);
-      }
-#ifdef MPI_PARALLEL
-      else { // MPI
-        MPI_Start(&(bd_var_.req_send[nb.bufid]));
-      }
-#endif
-      bd_var_.sflag[nb.bufid] = BoundaryStatus::completed;
-      //Only done for the first match, and should be the only match for uniform mesh
-      //AMR needed to be add later
-      return;
+    pnb = &pbval_->neighbor[n];
+    //Only done for the first match, and should be the only match for uniform mesh
+    //AMR needed to be add later
+    if (pnb->ni.type == NeighborConnect::face && pnb->fid == direction) {
+      return pnb;
     }
   }
-  std::stringstream msg;
-  msg << "### FATAL ERROR in SixRayBoundaryVariable::SendSixRayBoundaryBuffers()"
-    << std::endl
-    << "BoundaryFace " << direction  << "is undefined." << std::endl;
-  ATHENA_ERROR(msg);
+  return nullptr;
+}
+
+void SixRayBoundaryVariable::SendSixRayBoundaryBuffers(const BoundaryFace direction) {
+  MeshBlock *pmb = pmy_block_;
+  NeighborBlock *pnb = GetFaceNeighbor(direction);
+  //only for face neigbor in the specified direction
+  if (pnb != nullptr) {
+    if (bd_var_.sflag[pnb->bufid] == BoundaryStatus::completed) {
+      return;
+    }
+    int ssize;
+    ssize = LoadBoundaryBufferSameLevel(bd_var_.send[pnb->bufid], *pnb);
+    if (pnb->snb.rank == Globals::my_rank) {  // on the same process
+      CopyVariableBufferSameProcess(*pnb, ssize);
+    }
+#ifdef MPI_PARALLEL
+    else { // MPI
+      MPI_Start(&(bd_var_.req_send[pnb->bufid]));
+    }
+#endif
+    bd_var_.sflag[pnb->bufid] = BoundaryStatus::completed;
+    return;
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in SixRayBoundaryVariable::SendSixRayBoundaryBuffers()"
+      << std::endl
+      << "BoundaryFace " << direction  << "is undefined, or has no neighbor."
+      << std::endl;
+    ATHENA_ERROR(msg);
+  }
   return;
 }
 
-bool SixRayBoundaryVariable::ReceiveSixRayBoundaryBuffers(BoundaryFace direction) {
+bool SixRayBoundaryVariable::ReceiveAndSetSixRayBoundaryBuffers(const BoundaryFace direction) {
   bool bflag = true;
 
-  for (int n=0; n<pbval_->nneighbor; n++) {
-    NeighborBlock& nb = pbval_->neighbor[n];
-    //only for face neigbor in the specified direction
-    if (nb.ni.type == NeighborConnect::face && nb.fid == direction) {
-      if (bd_var_.flag[nb.bufid] == BoundaryStatus::arrived) continue;
-      if (bd_var_.flag[nb.bufid] == BoundaryStatus::waiting) {
-        if (nb.snb.rank == Globals::my_rank) {  // on the same process
-          bflag = false;
-          continue;
-        }
-#ifdef MPI_PARALLEL
-        else { // NOLINT // MPI boundary
-          int test;
-          // probe MPI communications.  This is a bit of black magic that seems to promote
-          // communications to top of stack and gets them to complete more quickly
-          MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test, MPI_STATUS_IGNORE);
-          MPI_Test(&(bd_var_.req_recv[nb.bufid]), &test, MPI_STATUS_IGNORE);
-          if (!static_cast<bool>(test)) {
-            bflag = false;
-            continue;
-          }
-          bd_var_.flag[nb.bufid] = BoundaryStatus::arrived;
-        }
-#endif
+  NeighborBlock *pnb = GetFaceNeighbor(direction);
+  //only for face neigbor in the specified direction
+  if (pnb != nullptr) {
+    if (bd_var_.flag[pnb->bufid] == BoundaryStatus::arrived
+        || bd_var_.flag[pnb->bufid] == BoundaryStatus::completed) {
+      bflag = true;
+    } else if (bd_var_.flag[pnb->bufid] == BoundaryStatus::waiting) {
+      if (pnb->snb.rank == Globals::my_rank) {  // on the same process
+        bflag = false;
       }
-      //Only done for the first match, and should be the only match for uniform mesh
-      //AMR needed to be add later
-      return bflag;
+#ifdef MPI_PARALLEL
+      else { // NOLINT // MPI boundary
+        int test;
+        // probe MPI communications.  This is a bit of black magic that seems to promote
+        // communications to top of stack and gets them to complete more quickly
+        MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test, MPI_STATUS_IGNORE);
+        MPI_Test(&(bd_var_.req_recv[pnb->bufid]), &test, MPI_STATUS_IGNORE);
+        if (!static_cast<bool>(test)) {
+          bflag = false;
+        }
+        bd_var_.flag[pnb->bufid] = BoundaryStatus::arrived;
+      }
+#endif
     }
+    //set boundary
+    if (bd_var_.flag[pnb->bufid] == BoundaryStatus::arrived) {
+      SetBoundarySameLevel(bd_var_.recv[pnb->bufid], *pnb);
+      bd_var_.flag[pnb->bufid] = BoundaryStatus::completed;
+    }
+    return bflag;
+  } else {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in SixRayBoundaryVariable::SendSixRayBoundaryBuffers()"
+      << std::endl
+      << "BoundaryFace " << direction  << " has no neighbor."
+      << std::endl;
+    ATHENA_ERROR(msg);
   }
-  std::stringstream msg;
-  msg << "### FATAL ERROR in SixRayBoundaryVariable::SendSixRayBoundaryBuffers()"
-    << std::endl
-    << "BoundaryFace " << direction  << "is undefined." << std::endl;
-  ATHENA_ERROR(msg);
 }

@@ -93,17 +93,19 @@ class SixRayBoundaryVariable : public BoundaryVariable {
   //!@}
 
   //send to specific direction
-  void SendSixRayBoundaryBuffers(BoundaryFace direction);
+  void SendSixRayBoundaryBuffers(const BoundaryFace direction);
   //receive from specific direction
-  bool ReceiveSixRayBoundaryBuffers(BoundaryFace direction);
+  bool ReceiveAndSetSixRayBoundaryBuffers(const BoundaryFace direction);
+  //get opposite direction of face boundary
+  BoundaryFace GetOppositeBoundaryFace(const BoundaryFace direction);
+  //get face neighbor
+  NeighborBlock *GetFaceNeighbor(const BoundaryFace direction);
 
  private:
   int mu_, ml_; //indexing of the first dimension (chemical species)
 #ifdef MPI_PARALLEL
   int sixray_phys_id_;
 #endif
-  //get opposite direction of face boundary
-  BoundaryFace GetOppositeBoundaryFace(const BoundaryFace direction);
 
   //!@{
   //! BoundaryBuffer:

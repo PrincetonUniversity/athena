@@ -49,9 +49,9 @@ void RadIntegrator::CopyToOutput() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void RadIntegrator::UpdateRadiation(int direction)
+//! \fn void RadIntegrator::UpdateRadiation()
 //! \brief update radiation field
-void RadIntegrator::UpdateRadiation(int direction) {}
+void RadIntegrator::UpdateRadiation() {}
 
 #ifdef INCLUDE_CHEMISTRY
 //----------------------------------------------------------------------------------------

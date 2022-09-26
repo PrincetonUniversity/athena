@@ -29,6 +29,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
+#include "../bvals/sixray/bvals_sixray.hpp" //SixRayBoundaryVariable
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../fft/athena_fft.hpp"
@@ -45,6 +46,8 @@
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../outputs/io_wrapper.hpp"
 #include "../parameter_input.hpp"
+#include "../radiation/radiation.hpp"
+#include "../radiation/integrators/rad_integrators.hpp" //col_bvar
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
 #include "../utils/buffer_utils.hpp"
@@ -1410,6 +1413,11 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       // other BoundaryVariable objects:
       if (SELF_GRAVITY_ENABLED == 1)
         pmb->pgrav->gbvar.SetupPersistentMPI();
+      if (RADIATION_ENABLED) {
+#ifdef INCLUDE_CHEMISTRY
+        pmb->prad->pradintegrator->col_bvar.SetupPersistentMPI();
+#endif //INCLUDE_CHEMISTRY
+      }
     }
 
     // solve gravity for the first time
@@ -1939,6 +1947,9 @@ void Mesh::ReserveMeshBlockPhysIDs() {
   }
   if (NSCALARS > 0) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+  }
+  if (RADIATION_ENABLED) {
+    ReserveTagPhysIDs(SixRayBoundaryVariable::max_phys_id);
   }
 #endif
   return;

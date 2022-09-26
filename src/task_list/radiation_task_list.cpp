@@ -28,21 +28,21 @@ RadiationIntegratorTaskList::RadiationIntegratorTaskList(ParameterInput *pin, Me
   // Now assemble list of tasks for each step of chemistry integrator
   {using namespace RadiationIntegratorTaskNames; // NOLINT (build/namespace)
     if (integrator == "six_ray") {
-      AddTask(GET_COL_MB0,NONE);
-      AddTask(RECV_SEND_COL0,GET_COL_MB0);
-      AddTask(GET_COL_MB1,NONE);
-      AddTask(RECV_SEND_COL1,GET_COL_MB1);
-      AddTask(GET_COL_MB2,NONE);
-      AddTask(RECV_SEND_COL2,GET_COL_MB2);
-      AddTask(GET_COL_MB3,NONE);
-      AddTask(RECV_SEND_COL3,GET_COL_MB3);
-      AddTask(GET_COL_MB4,NONE);
-      AddTask(RECV_SEND_COL4,GET_COL_MB4);
-      AddTask(GET_COL_MB5,NONE);
-      AddTask(RECV_SEND_COL5,GET_COL_MB5);
+      AddTask(GET_COL_MB_IX1,NONE);
+      AddTask(RECV_SEND_COL_IX1,GET_COL_MB_IX1);
+      AddTask(GET_COL_MB_OX1,NONE);
+      AddTask(RECV_SEND_COL_OX1,GET_COL_MB_OX1);
+      AddTask(GET_COL_MB_IX2,NONE);
+      AddTask(RECV_SEND_COL_IX2,GET_COL_MB_IX2);
+      AddTask(GET_COL_MB_OX2,NONE);
+      AddTask(RECV_SEND_COL_OX2,GET_COL_MB_OX2);
+      AddTask(GET_COL_MB_IX3,NONE);
+      AddTask(RECV_SEND_COL_IX3,GET_COL_MB_IX3);
+      AddTask(GET_COL_MB_OX3,NONE);
+      AddTask(RECV_SEND_COL_OX3,GET_COL_MB_OX3);
       AddTask(UPDATE_RAD,
-          RECV_SEND_COL0|RECV_SEND_COL1|RECV_SEND_COL2|
-          RECV_SEND_COL3|RECV_SEND_COL4|RECV_SEND_COL5);
+          RECV_SEND_COL_IX1|RECV_SEND_COL_OX1|RECV_SEND_COL_IX2|
+          RECV_SEND_COL_OX2|RECV_SEND_COL_IX3|RECV_SEND_COL_OX3);
       AddTask(CLEAR_SIXRAY_RECV,UPDATE_RAD);
     } else if (integrator == "const") {
       //do nothing, radiation field constant, remain initial value
@@ -70,54 +70,54 @@ void RadiationIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&RadiationIntegratorTaskList::UpdateRadiationSixRay);
-  } else if (id == GET_COL_MB0) {
+  } else if (id == GET_COL_MB_IX1) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::GetColMB0);
-  } else if (id == GET_COL_MB1) {
+        (&RadiationIntegratorTaskList::GetColMB_ix1);
+  } else if (id == GET_COL_MB_OX1) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::GetColMB1);
-  } else if (id == GET_COL_MB2) {
+        (&RadiationIntegratorTaskList::GetColMB_ox1);
+  } else if (id == GET_COL_MB_IX2) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::GetColMB2);
-  } else if (id == GET_COL_MB3) {
+        (&RadiationIntegratorTaskList::GetColMB_ix2);
+  } else if (id == GET_COL_MB_OX2) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::GetColMB3);
-  } else if (id == GET_COL_MB4) {
+        (&RadiationIntegratorTaskList::GetColMB_ox2);
+  } else if (id == GET_COL_MB_IX3) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::GetColMB4);
-  } else if (id == GET_COL_MB5) {
+        (&RadiationIntegratorTaskList::GetColMB_ix3);
+  } else if (id == GET_COL_MB_OX3) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::GetColMB5);
-  } else if (id == RECV_SEND_COL0) {
+        (&RadiationIntegratorTaskList::GetColMB_ox3);
+  } else if (id == RECV_SEND_COL_IX1) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::RecvAndSend0);
-  } else if (id == RECV_SEND_COL1) {
+        (&RadiationIntegratorTaskList::RecvAndSend_ix1);
+  } else if (id == RECV_SEND_COL_OX1) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::RecvAndSend1);
-  } else if (id == RECV_SEND_COL2) {
+        (&RadiationIntegratorTaskList::RecvAndSend_ox1);
+  } else if (id == RECV_SEND_COL_IX2) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::RecvAndSend2);
-  } else if (id == RECV_SEND_COL3) {
+        (&RadiationIntegratorTaskList::RecvAndSend_ix2);
+  } else if (id == RECV_SEND_COL_OX2) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::RecvAndSend3);
-  } else if (id == RECV_SEND_COL4) {
+        (&RadiationIntegratorTaskList::RecvAndSend_ox2);
+  } else if (id == RECV_SEND_COL_IX3) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::RecvAndSend4);
-  } else if (id == RECV_SEND_COL5) {
+        (&RadiationIntegratorTaskList::RecvAndSend_ix3);
+  } else if (id == RECV_SEND_COL_OX3) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&RadiationIntegratorTaskList::RecvAndSend5);
+        (&RadiationIntegratorTaskList::RecvAndSend_ox3);
   } else if (id == CLEAR_SIXRAY_RECV) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -140,8 +140,9 @@ void RadiationIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
 //! \fn void RadiationIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage)
 //! \brief Initialize boundary
 void RadiationIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
-  //TODO(Munan Gong): sixray boundary e.g.
-  //for fft gravity: pmb->pgrav->gbvar.StartReceiving(BoundaryCommSubset::all);
+#ifdef INCLUDE_CHEMISTRY
+  pmb->prad->pradintegrator->col_bvar.StartReceiving(BoundaryCommSubset::all);
+#endif
   return;
 }
 
@@ -149,50 +150,50 @@ void RadiationIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 //! Six-ray
 
 //meshblock column densities
-TaskStatus RadiationIntegratorTaskList::GetColMB0(MeshBlock *pmb, int step)
+TaskStatus RadiationIntegratorTaskList::GetColMB_ix1(MeshBlock *pmb, int step)
 {
 #ifdef INCLUDE_CHEMISTRY
-  pmb->prad->pradintegrator->GetColMB(0);
+  pmb->prad->pradintegrator->GetColMB(BoundaryFace::inner_x1);
 #endif
   return TaskStatus::success;
 }
 
-TaskStatus RadiationIntegratorTaskList::GetColMB1(MeshBlock *pmb, int step)
+TaskStatus RadiationIntegratorTaskList::GetColMB_ox1(MeshBlock *pmb, int step)
 {
 #ifdef INCLUDE_CHEMISTRY
-  pmb->prad->pradintegrator->GetColMB(1);
+  pmb->prad->pradintegrator->GetColMB(BoundaryFace::outer_x1);
 #endif
   return TaskStatus::success;
 }
 
-TaskStatus RadiationIntegratorTaskList::GetColMB2(MeshBlock *pmb, int step)
+TaskStatus RadiationIntegratorTaskList::GetColMB_ix2(MeshBlock *pmb, int step)
 {
 #ifdef INCLUDE_CHEMISTRY
-  pmb->prad->pradintegrator->GetColMB(2);
+  pmb->prad->pradintegrator->GetColMB(BoundaryFace::inner_x2);
 #endif
   return TaskStatus::success;
 }
 
-TaskStatus RadiationIntegratorTaskList::GetColMB3(MeshBlock *pmb, int step)
+TaskStatus RadiationIntegratorTaskList::GetColMB_ox2(MeshBlock *pmb, int step)
 {
 #ifdef INCLUDE_CHEMISTRY
-  pmb->prad->pradintegrator->GetColMB(3);
+  pmb->prad->pradintegrator->GetColMB(BoundaryFace::outer_x2);
 #endif
   return TaskStatus::success;
 }
 
-TaskStatus RadiationIntegratorTaskList::GetColMB4(MeshBlock *pmb, int step)
+TaskStatus RadiationIntegratorTaskList::GetColMB_ix3(MeshBlock *pmb, int step)
 {
 #ifdef INCLUDE_CHEMISTRY
-  pmb->prad->pradintegrator->GetColMB(4);
+  pmb->prad->pradintegrator->GetColMB(BoundaryFace::inner_x3);
 #endif
   return TaskStatus::success;
 }
 
-TaskStatus RadiationIntegratorTaskList::GetColMB5(MeshBlock *pmb, int step)
+TaskStatus RadiationIntegratorTaskList::GetColMB_ox3(MeshBlock *pmb, int step)
 {
 #ifdef INCLUDE_CHEMISTRY
-  pmb->prad->pradintegrator->GetColMB(5);
+  pmb->prad->pradintegrator->GetColMB(BoundaryFace::outer_x3);
 #endif
   return TaskStatus::success;
 }
@@ -200,43 +201,62 @@ TaskStatus RadiationIntegratorTaskList::GetColMB5(MeshBlock *pmb, int step)
 //boundary receive and send
 
 TaskStatus RadiationIntegratorTaskList::RecvAndSend_direction(MeshBlock *pmb,
-    int step, int direction)
+    int step, BoundaryFace direction)
 {
 #ifdef INCLUDE_CHEMISTRY
-  //TODO (Munan Gong)
+  SixRayBoundaryVariable *pbvar = &pmb->prad->pradintegrator->col_bvar;
+  BoundaryFace direction_opp = pbvar->GetOppositeBoundaryFace(direction);
+  NeighborBlock *pnb = pbvar->GetFaceNeighbor(direction);
+  NeighborBlock *pnb_opp = pbvar->GetFaceNeighbor(direction_opp);
+  bool ret = true;
+  if (pnb == nullptr) {
+    if (pnb_opp != nullptr) {
+      pbvar->SendSixRayBoundaryBuffers(direction_opp);
+    }
+  } else {
+    ret = pbvar->ReceiveAndSetSixRayBoundaryBuffers(direction);
+    if (ret == true) {
+      pmb->prad->pradintegrator->UpdateCol(direction);
+      if (pnb_opp != nullptr) {
+        pbvar->SendSixRayBoundaryBuffers(direction_opp);
+      }
+    } else {
+      return TaskStatus::fail;
+    }
+  }
 #endif
   return TaskStatus::success;
 }
 
-TaskStatus RadiationIntegratorTaskList::RecvAndSend0(MeshBlock *pmb, int step){
-  return RecvAndSend_direction(pmb, step, 0);
+TaskStatus RadiationIntegratorTaskList::RecvAndSend_ix1(MeshBlock *pmb, int step){
+  return RecvAndSend_direction(pmb, step, BoundaryFace::inner_x1);
 }
 
-TaskStatus RadiationIntegratorTaskList::RecvAndSend1(MeshBlock *pmb, int step){
-  return RecvAndSend_direction(pmb, step, 1);
+TaskStatus RadiationIntegratorTaskList::RecvAndSend_ox1(MeshBlock *pmb, int step){
+  return RecvAndSend_direction(pmb, step, BoundaryFace::outer_x1);
 }
 
-TaskStatus RadiationIntegratorTaskList::RecvAndSend2(MeshBlock *pmb, int step){
-  return RecvAndSend_direction(pmb, step, 2);
+TaskStatus RadiationIntegratorTaskList::RecvAndSend_ix2(MeshBlock *pmb, int step){
+  return RecvAndSend_direction(pmb, step, BoundaryFace::inner_x2);
 }
 
-TaskStatus RadiationIntegratorTaskList::RecvAndSend3(MeshBlock *pmb, int step){
-  return RecvAndSend_direction(pmb, step, 3);
+TaskStatus RadiationIntegratorTaskList::RecvAndSend_ox2(MeshBlock *pmb, int step){
+  return RecvAndSend_direction(pmb, step, BoundaryFace::outer_x2);
 }
 
-TaskStatus RadiationIntegratorTaskList::RecvAndSend4(MeshBlock *pmb, int step){
-  return RecvAndSend_direction(pmb, step, 4);
+TaskStatus RadiationIntegratorTaskList::RecvAndSend_ix3(MeshBlock *pmb, int step){
+  return RecvAndSend_direction(pmb, step, BoundaryFace::inner_x3);
 }
 
-TaskStatus RadiationIntegratorTaskList::RecvAndSend5(MeshBlock *pmb, int step){
-  return RecvAndSend_direction(pmb, step, 5);
+TaskStatus RadiationIntegratorTaskList::RecvAndSend_ox3(MeshBlock *pmb, int step){
+  return RecvAndSend_direction(pmb, step, BoundaryFace::outer_x3);
 }
 
 TaskStatus RadiationIntegratorTaskList::ClearSixrayReceive(MeshBlock *pmb,
                                                                  int step)
 {
 #ifdef INCLUDE_CHEMISTRY
-  //TODO (Munan Gong)
+  pmb->prad->pradintegrator->col_bvar.ClearBoundary(BoundaryCommSubset::all);
 #endif
   return TaskStatus::success;
 }
@@ -246,9 +266,7 @@ TaskStatus RadiationIntegratorTaskList::UpdateRadiationSixRay(MeshBlock *pmb,
                                                               int step)
 {
 #ifdef INCLUDE_CHEMISTRY
-  for (int i=0; i<6; i++) {
-    pmb->prad->pradintegrator->UpdateRadiation(i);
-  }
+  pmb->prad->pradintegrator->UpdateRadiation();
   pmb->prad->pradintegrator->CopyToOutput();
 #endif
   return TaskStatus::success;

@@ -47,11 +47,13 @@ class RadIntegrator {
 
   void CopyToOutput();
 
-  void UpdateRadiation(int direction);
+  void UpdateRadiation();
  private:
 #ifdef INCLUDE_CHEMISTRY
   //calculate column densities within the meshblock, for six_ray
-  void GetColMB(int direction);
+  void GetColMB(BoundaryFace direction);
+  //update column density after boundary is received
+  void UpdateCol(BoundaryFace direction);
 #endif //INCLUDE_CHEMISTRY
 };
 
