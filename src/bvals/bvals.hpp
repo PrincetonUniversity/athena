@@ -126,7 +126,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   // called before and during time-stepper:
   void StartReceiving(BoundaryCommSubset phase) final {return;};
   void ClearBoundary(BoundaryCommSubset phase) final {return;};
-  void StartReceivingShear(BoundaryCommSubset phase) final;
+  void StartReceivingShear(BoundaryCommSubset phase) final {return;};
   void ComputeShear(const Real time_fc, const Real time_int);
 
   // non-inhertied / unique functions (do not exist in BoundaryVariable objects):
