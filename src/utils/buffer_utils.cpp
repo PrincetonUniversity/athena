@@ -28,8 +28,8 @@ template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
   for (int n=sn; n<=en; ++n) {
     for (int k=sk; k<=ek; k++) {
       for (int j=sj; j<=ej; j++) {
-#pragma omp simd
         for (int i=si; i<=ei; i++) {
+#pragma omp simd
           for (int m=sm; m<=em; m++) {
             buf[offset++] = src(n,k,j,i,m);
           }
@@ -87,8 +87,8 @@ template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
   for (int n=sn; n<=en; ++n) {
     for (int k=sk; k<=ek; ++k) {
       for (int j=sj; j<=ej; ++j) {
-#pragma omp simd
         for (int i=si; i<=ei; ++i) {
+#pragma omp simd
           for (int m=sm; m<=em; ++m) {
             dst(n,k,j,i,m) = buf[offset++];
           }

@@ -93,6 +93,7 @@ int SixRayBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,
 //! \fn int SixRayBoundaryVariable::SetupPersistentMPI()
 //! \brief Initialize MPI send and receive for six ray
 void SixRayBoundaryVariable::SetupPersistentMPI() {
+  std::cout << "starting SetupPersistentMPI.. " << std::endl;
 #ifdef MPI_PARALLEL
   MeshBlock* pmb = pmy_block_;
   int ssize, rsize;
@@ -120,6 +121,7 @@ void SixRayBoundaryVariable::SetupPersistentMPI() {
     }
   }
 #endif //MPI_PARALLEL
+  std::cout << "ending SetupPersistentMPI.. " << std::endl;
   return;
 }
 
@@ -127,18 +129,19 @@ void SixRayBoundaryVariable::SetupPersistentMPI() {
 //! \fn int SixRayBoundaryVariable::StartReceiving(}
 //! \brief call MPI_Start for six-ray boundary
 void SixRayBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
+  std::cout<< "starting1..." << std::endl;
   MeshBlock *pmb = pmy_block_;
 #ifdef MPI_PARALLEL
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     //only face neighbors are used in six-ray
-    if (nb.ni.type == NeighborConnect::face) {
-      if (nb.snb.rank != Globals::my_rank) {
-        MPI_Start(&(bd_var_.req_recv[nb.bufid]));
-      }
+    if (nb.ni.type == NeighborConnect::face
+        && nb.snb.rank != Globals::my_rank) {
+      MPI_Start(&(bd_var_.req_recv[nb.bufid]));
     }
   }
 #endif
+  std::cout<< "started1..." << std::endl;
   return;
 }
 
@@ -153,13 +156,14 @@ void SixRayBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
       bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
       bd_var_.sflag[nb.bufid] = BoundaryStatus::waiting;
     }
-  }
 #ifdef MPI_PARALLEL
-    if (nb.snb.rank != Globals::my_rank) {
+    if (nb.snb.rank != Globals::my_rank 
+        && nb.ni.type == NeighborConnect::face) {
       // Wait for Isend
       MPI_Wait(&(bd_var_.req_send[nb.bufid]), MPI_STATUS_IGNORE);
     }
 #endif
+  }
   return;
 }
 
@@ -350,7 +354,9 @@ void SixRayBoundaryVariable::SendSixRayBoundaryBuffers(const BoundaryFace direct
     }
 #ifdef MPI_PARALLEL
     else { // MPI
+      std::cout<< "starting2 for direcetion" << direction << std::endl;
       MPI_Start(&(bd_var_.req_send[pnb->bufid]));
+      std::cout<< "started2 for direcetion" << direction << std::endl;
     }
 #endif
     bd_var_.sflag[pnb->bufid] = BoundaryStatus::completed;

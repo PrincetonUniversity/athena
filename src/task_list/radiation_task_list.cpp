@@ -141,7 +141,9 @@ void RadiationIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
 //! \brief Initialize boundary
 void RadiationIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 #ifdef INCLUDE_CHEMISTRY
-  pmb->prad->pradintegrator->col_bvar.StartReceiving(BoundaryCommSubset::all);
+  if (integrator == "six_ray") {
+    pmb->prad->pradintegrator->col_bvar.StartReceiving(BoundaryCommSubset::all);
+  }
 #endif
   return;
 }

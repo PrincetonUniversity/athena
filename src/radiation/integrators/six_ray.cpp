@@ -72,7 +72,7 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) :
   // enroll SixRayBoundaryVariable object
   col_bvar.bvar_index = pmy_mb->pbval->bvars.size();
   pmy_mb->pbval->bvars.push_back(&col_bvar);
-  pmy_mb->pbval->bvars_main_int.push_back(&col_bvar);
+  //pmy_mb->pbval->bvars_main_int.push_back(&col_bvar);
 #ifdef DEBUG
   col_avg.NewAthenaArray(ncol, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
   col_Htot.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
