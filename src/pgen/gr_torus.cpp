@@ -2112,7 +2112,7 @@ Real CalculateTPeak()
   Real rcoef = std::sqrt(zroot);
   Real delta2 = -zroot + 2.0 / (b4 * rcoef);
   if (delta2 < 0.0) {
-    return false;
+    return 0.0;
   }
   delta2 = std::sqrt(delta2);
   Real root = 0.5 * (delta2 - rcoef);
@@ -2134,8 +2134,8 @@ Real CalculateTPeak()
 Real CalculateT(Real log_h)
 {
   // Parameters
-  int max_iterations = 20;
-  Real tol_rel = 1.0e-6;
+  int max_iterations = 25;
+  Real tol_rel = 1.0e-8;
 
   // Calculate coefficients
   Real c = 4.0 * arad * std::pow(tt_peak, 1.0 / (gamma_adi - 1.0)) / (3.0 * rho_max);
@@ -2158,9 +2158,11 @@ Real CalculateT(Real log_h)
     }
     Real residual = c * std::pow(tt, p) + a1 * tt + a0;
     if (residual < 0.0) {
-      tt_max = tt;
-    } else if (residual > 0.0) {
       tt_min = tt;
+      tt = 0.5 * (tt_min + tt_max);
+    } else if (residual > 0.0) {
+      tt_max = tt;
+      tt = 0.5 * (tt_min + tt_max);
     } else if (residual == 0.0) {
       break;
     }

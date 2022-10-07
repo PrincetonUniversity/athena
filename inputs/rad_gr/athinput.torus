@@ -2,17 +2,18 @@
 problem   = Fishbone-Moncrief equilibrium torus with radiation
 reference = Fishbone & Moncrief 1976, ApJ 207 962
 configure = --prob=gr_torus -g -b -r --coord=kerr-schild -hdf5
+comment   = 160/832/4416/25920 blocks for refinement level 0/1/2/3
 
 <job>
 problem_id = torus  # name of run
 
 <time>
-nlim       = -1   # maximum number of timesteps
-tlim       = 1.0  # maximum time to run
-cfl_number = 0.2  # fraction of Courant condition
-integrator = vl2  # time integration algorithm
-xorder     = 2    # order of spatial reconstruction
-ncycle_out = 1    # interval for stdout summary info
+nlim       = -1     # maximum number of timesteps
+tlim       = 100.0  # maximum time to run
+cfl_number = 0.3    # fraction of Courant condition
+integrator = vl2    # time integration algorithm
+xorder     = 2      # order of spatial reconstruction
+ncycle_out = 1      # interval for stdout summary info
 
 <output1>
 file_type = hdf5   # output format
@@ -52,14 +53,14 @@ x3max  = 6.2831853071795862  # maximum phi (2*pi)
 ix3_bc = periodic            # clockwise boundary
 ox3_bc = periodic            # counterclockwise boundary
 
-refinement = static  # whether to use mesh refinement
+refinement = none  # whether to use mesh refinement
 
 num_threads = 1  # number of threads per process
 
 <meshblock>
-nx1 = 24  # block size in r-direction
+nx1 = 12  # block size in r-direction
 nx2 = 8   # block size in theta-direction
-nx3 = 16  # block size in phi-direction
+nx3 = 10  # block size in phi-direction
 
 <refinement1>
 level = 1                   # refinement level
@@ -88,8 +89,8 @@ beta_min  = 0.001               # minimum allowed value of p_gas/p_mag
 gamma_max = 50.0                # ceiling on normal Lorentz factor gamma
 
 <radiation>
-n_polar      = 6       # number of polar angles in direction space
-n_azimuthal  = 12      # number of azimuthal angles in direction space
+n_polar      = 4       # number of polar angles in direction space
+n_azimuthal  = 8       # number of azimuthal angles in direction space
 coupled      = true    # flag indicating radiation is coupled to matter
 affect_fluid = true    # flag indicating radiation affects matter
 moment_fix   = false   # flag indicating equations are altered
