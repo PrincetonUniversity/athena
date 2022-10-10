@@ -28,6 +28,7 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../radiation/radiation.hpp"
+#include "../radiation/integrators/rad_integrators.hpp"
 #include "outputs.hpp"
 
 // Only proceed if HDF5 output enabled
@@ -138,6 +139,12 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       num_variables[n_dataset] += NSCALARS;
     if (RADIATION_ENABLED) {
       num_variables[n_dataset] += pmb->prad->nfreq;
+#ifdef INCLUDE_CHEMISTRY
+#ifdef DEBUG
+      //for testing six-ray
+      num_variables[n_dataset] += pmb->prad->pradintegrator->ncol + 3*8;
+#endif //DEBUG
+#endif //INCLUDE_CHEMISTRY
     }
 
     // n_dataset = 1: face-centered FaceField variable data
