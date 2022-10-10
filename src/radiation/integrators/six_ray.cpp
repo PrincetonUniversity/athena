@@ -69,10 +69,10 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) :
   lunit = pmy_chemnet->punit->Length;
   ncol = pmy_chemnet->n_cols_;
   //allocate array for column density
-  // enroll SixRayBoundaryVariable object
+  //enroll SixRayBoundaryVariable object
+  //to enable functions such as yCopyVariableBufferSameProcess()
   col_bvar.bvar_index = pmy_mb->pbval->bvars.size();
   pmy_mb->pbval->bvars.push_back(&col_bvar);
-  //pmy_mb->pbval->bvars_main_int.push_back(&col_bvar);
 #ifdef DEBUG
   col_avg.NewAthenaArray(ncol, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
   col_Htot.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
