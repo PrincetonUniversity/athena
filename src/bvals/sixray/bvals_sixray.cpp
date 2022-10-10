@@ -401,6 +401,11 @@ bool SixRayBoundaryVariable::ReceiveAndSetSixRayBoundaryBuffers(const BoundaryFa
     }
     //set boundary
     if (bd_var_.flag[pnb->bufid] == BoundaryStatus::arrived) {
+#ifdef MPI_PARALLEL
+      if (pnb->snb.rank != Globals::my_rank) {
+        MPI_Wait(&(bd_var_.req_recv[pnb->bufid]),MPI_STATUS_IGNORE);
+      }
+#endif
       SetBoundarySameLevel(bd_var_.recv[pnb->bufid], *pnb);
       bd_var_.flag[pnb->bufid] = BoundaryStatus::completed;
     }
