@@ -260,10 +260,10 @@ void EquationOfState::ConservedToPrimitive(
           Real wtot = wgas + b_sq;
           pmag = 0.5 * b_sq;
           cons(IDN,k,j,i) = rho * gamma;
-          cons(IEN,k,j,i) = wgas * SQR(gamma) - SQR(b0) - (pgas + pmag);
-          cons(IM1,k,j,i) = wgas * gamma * u1 - b0 * b1;
-          cons(IM2,k,j,i) = wgas * gamma * u2 - b0 * b2;
-          cons(IM3,k,j,i) = wgas * gamma * u3 - b0 * b3;
+          cons(IEN,k,j,i) = wtot * SQR(gamma) - SQR(b0) - (pgas + pmag);
+          cons(IM1,k,j,i) = wtot * gamma * u1 - b0 * b1;
+          cons(IM2,k,j,i) = wtot * gamma * u2 - b0 * b2;
+          cons(IM3,k,j,i) = wtot * gamma * u3 - b0 * b3;
         }
       }
     }

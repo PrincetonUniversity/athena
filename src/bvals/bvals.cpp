@@ -353,54 +353,26 @@ void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
   // KGF: begin shearing-box exclusive section of original StartReceivingForInit()
   // find send_block_id and recv_block_id;
   if (shearing_box != 0) {
-    StartReceivingShear(phase);
-  }
-  return;
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase)
-//! \brief initiate MPI_Irecv() for shearing box
-//!
-//! \note
-//! - cannot simply combine StartReceivingShear() at end of StartReceiving()
-//!   (which is done for ClearBoundary), because the "shared"/non-virtual fn
-//!   BoundaryValues::FindShearBlock() must be called in between 2x fns
-//! - shearing box is currently incompatible with both GR and AMR
-void BoundaryValues::StartReceivingShear(BoundaryCommSubset phase) {
-  switch (phase) {
-    case BoundaryCommSubset::mesh_init:
-      //FindShearBlock(pmy_mesh_->time);
-      break;
-    case BoundaryCommSubset::all:
-      // KGF: must pass "time" parameter from time_integrator.cpp
-      //FindShearBlock(time);
-
-      // KGF: cannot simply combine StartReceivingShear() at end of StartReceiving()
-      // (which is done for ClearBoundary), because the "shared"/non-virtual fn
-      // BoundaryValues::FindShearBlock() must be called in between 2x fns
-
-      //! \todo (felker):
-      //! * consider calling FindShearBlock() at the beginning of this fn,
-      //!   which will allow the 2x StartReceiving() to be combined
-      for (auto bvar : bvars_main_int) {
-        bvar->StartReceivingShear(phase);
-      }
-      break;
-    case BoundaryCommSubset::orbital:
-      for (auto bvar : bvars_main_int) {
-        bvar->StartReceivingShear(phase);
-      }
-      break;
-    case BoundaryCommSubset::gr_amr:
-      // shearing box is currently incompatible with both GR and AMR
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues::StartReceiving" << std::endl
-          << "BoundaryCommSubset::gr_amr was passed as the 'phase' argument while\n"
-          << "SHEARING_BOX=1 is enabled. Shearing box calculations are currently\n"
-          << "incompatible with both AMR and GR" << std::endl;
-      ATHENA_ERROR(msg);
-      break;
+    switch (phase) {
+      case BoundaryCommSubset::mesh_init:
+        break;
+      case BoundaryCommSubset::all:
+      case BoundaryCommSubset::orbital:
+        for (auto bvars_it = bvars_subset.begin(); bvars_it != bvars_subset.end();
+             ++bvars_it) {
+          (*bvars_it)->StartReceivingShear(phase);
+        }
+        break;
+      case BoundaryCommSubset::gr_amr:
+        // shearing box is currently incompatible with both GR and AMR
+        std::stringstream msg;
+        msg << "### FATAL ERROR in BoundaryValues::StartReceiving" << std::endl
+            << "BoundaryCommSubset::gr_amr was passed as the 'phase' argument while\n"
+            << "SHEARING_BOX=1 is enabled. Shearing box calculations are currently\n"
+            << "incompatible with both AMR and GR" << std::endl;
+        ATHENA_ERROR(msg);
+        break;
+    }
   }
   return;
 }
