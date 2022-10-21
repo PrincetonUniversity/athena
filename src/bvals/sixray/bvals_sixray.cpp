@@ -40,8 +40,9 @@
 //
 SixRayBoundaryVariable::SixRayBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *var)
       : BoundaryVariable(pmb), var(var), mu_(var->GetDim1() - 1), ml_(0) {
-  //only take 5 dimention array set up for six ray
-  if (var->GetDim5() != 6) {
+  //only take 0 size array (for const radiation)
+  //or 5 dimention array set up for six ray
+  if (var->GetSize() != 0 && var->GetDim5() != 6) {
     std::stringstream msg;
     msg << "### FATAL ERROR in SixRayBoundaryVariable constructor" << std::endl
         << "An 'AthenaArray<Real> *var' of nx5_ = " << var->GetDim5() << " was passed\n"
@@ -153,7 +154,7 @@ void SixRayBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
       bd_var_.sflag[nb.bufid] = BoundaryStatus::waiting;
     }
 #ifdef MPI_PARALLEL
-    if (nb.snb.rank != Globals::my_rank 
+    if (nb.snb.rank != Globals::my_rank
         && nb.ni.type == NeighborConnect::face) {
       // Wait for Isend
       MPI_Wait(&(bd_var_.req_send[nb.bufid]), MPI_STATUS_IGNORE);

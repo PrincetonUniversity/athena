@@ -16,10 +16,9 @@
 
 //----------------------------------------------------------------------------------------
 //! constructor, for constant radiation integrator
-RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) : 
+RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin)
 #ifdef INCLUDE_CHEMISTRY
-    col(6, prad->pmy_block->ncells3, prad->pmy_block->ncells2,
-        prad->pmy_block->ncells1,  prad->pmy_block->pscalars->chemnet.n_cols_),
+    : col(0, 0, 0, 0),
     col_bvar(prad->pmy_block, &col)
 #endif //INCLUDE_CHEMISTRY
 {
