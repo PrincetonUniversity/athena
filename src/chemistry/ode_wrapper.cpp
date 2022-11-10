@@ -47,7 +47,7 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   CheckFlag(static_cast<void *>(y_), "N_VNew_Serial", 0);
   ydata_ = NV_DATA_S(y_);
   reltol_ = pin->GetOrAddReal("chemistry", "reltol", 1.0e-2);
-  output_zone_sec_ = pin->GetOrAddInteger("chemistry", "output_zone_sec", 0);
+  output_zone_sec_ = pin->GetOrAddBoolean("chemistry", "output_zone_sec", false);
   fac_dtmax_ = pin->GetOrAddReal("chemistry", "fac_dtmax", 10.);
 }
 
@@ -222,9 +222,8 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   const Real scalar_floor = pmy_block_->peos->GetScalarFloor();
   //timing of the chemistry in each cycle
   int nzones = (ie-is+1) * (je-js+1) * (ke-ks+1);
-  clock_t begin, end;
-  Real elapsed_secs;
-  begin = std::clock();
+  clock_t tstart, tstop;
+  tstart = std::clock();
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       //copy s to r_copy
@@ -299,12 +298,15 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
       }
     }
   }
-  end = std::clock();
+  tstop = std::clock();
   if (output_zone_sec_) {
-    elapsed_secs = Real(end - begin) / CLOCKS_PER_SEC;
+    double cpu_time = (tstop>tstart ? static_cast<double> (tstop-tstart) :
+                       1.0)/static_cast<double> (CLOCKS_PER_SEC);
+    std::uint64_t nzones = static_cast<std::uint64_t> (pmy_block_->GetNumberOfMeshBlockCells());
+    double zone_sec = static_cast<double> (nzones) / cpu_time;
     printf("chemistry ODE integration: ");
     printf("ncycle = %d, total time in sec = %.2e, zone/sec=%.2e\n",
-        ncycle, elapsed_secs, Real(nzones)/elapsed_secs);
+        ncycle, cpu_time, Real(nzones)/cpu_time);
   }
   return;
 }

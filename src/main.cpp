@@ -42,6 +42,7 @@
 #include "outputs/io_wrapper.hpp"
 #include "outputs/outputs.hpp"
 #include "parameter_input.hpp"
+#include "radiation/radiation.hpp"
 #include "task_list/radiation_task_list.hpp"
 #include "utils/utils.hpp"
 
@@ -491,7 +492,23 @@ int main(int argc, char *argv[]) {
 
     //radiation
     if (RADIATION_ENABLED) {
+      clock_t tstart_rad, tstop_rad;
+      tstart_rad = std::clock();
+
       pradlist->DoTaskListOneStage(pmesh, 1);
+
+      //radiation tasklist timing output
+      if (pmesh->my_blocks(0)->prad->output_zone_sec) {
+        tstop_rad = std::clock();
+        double cpu_time = (tstop_rad>tstart_rad ? static_cast<double> (tstop_rad-tstart_rad) :
+            1.0)/static_cast<double> (CLOCKS_PER_SEC);
+        std::uint64_t nzones =
+          static_cast<std::uint64_t> (pmesh->my_blocks(0)->GetNumberOfMeshBlockCells());
+        double zone_sec = static_cast<double> (nzones) / cpu_time;
+        printf("Radiation tasklist: ");
+        printf("ncycle = %d, total time in sec = %.2e, zone/sec=%.2e\n",
+            pmesh->ncycle, cpu_time, Real(nzones)/cpu_time);
+      }
     }
 
     if (STS_ENABLED && pmesh->sts_integrator == "rkl2") {

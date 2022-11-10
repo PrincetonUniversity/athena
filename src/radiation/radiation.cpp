@@ -25,6 +25,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block = pmb;
   //number of frequency bands
   nfreq = pin->GetOrAddInteger("radiation","n_frequency",1);
+  output_zone_sec = pin->GetOrAddBoolean("radiation", "output_zone_sec", false);
 
   if (integrator == "six_ray") {
     nang = 6;

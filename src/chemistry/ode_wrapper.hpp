@@ -55,7 +55,7 @@ class ODEWrapper {
   Real *ydata_;
   Real h_init_;
   Real fac_dtmax_;//factor of the max timestep in CVODE relative to the hydrostep
-  int output_zone_sec_;
+  bool output_zone_sec_;
 
   //CVODE checkflag
   void CheckFlag(const void *flagvalue, const char *funcname,

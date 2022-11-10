@@ -36,6 +36,7 @@ class Radiation {
   AthenaArray<Real> ir_avg;
 
   int nang, nfreq, n_fre_ang; // n_fre_ang=nang*nfreq
+  bool output_zone_sec; // output zone/sec for radiation tasklist
 };
 
 #endif // RADIATION_RADIATION_HPP_

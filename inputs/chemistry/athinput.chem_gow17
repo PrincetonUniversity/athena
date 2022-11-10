@@ -68,7 +68,7 @@ abstol_E   = 1e-4 #for internal energy. Set to 0.01 K
 user_jac   = 0       #flag for whether use user provided Jacobian. default false/0
 maxsteps   = 100000     #maximum number of steps in one integration. default 10000
 h_init      = 1e-1    #first step of first zone. Default 0/CVODE algorithm.
-output_zone_sec = 1 #output diagnostic
+output_zone_sec = true #output diagnostic
 unit_length_in_pc = 1.
 
 #default parameters
