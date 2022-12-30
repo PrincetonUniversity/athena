@@ -746,9 +746,8 @@ void MultigridDriver::SolveIterative() {
 //  \brief Solve iteratively niter_ times
 
 void MultigridDriver::SolveIterativeFixedTimes() {
-  for (int n = 0; n < niter_; ++n) {
+  for (int n = 0; n < niter_; ++n)
     SolveVCycle(1, 1);
-  }
   if (fsubtract_average_)
     SubtractAverage(MGVariable::u);
   for (int v = 0; v < nvar_; ++v)
