@@ -751,6 +751,9 @@ void MultigridDriver::SolveIterativeFixedTimes() {
   }
   if (fsubtract_average_)
     SubtractAverage(MGVariable::u);
+  for (int v = 0; v < nvar_; ++v)
+    CalculateDefectNorm(MGNormType::l2, v);
+
   return;
 }
 

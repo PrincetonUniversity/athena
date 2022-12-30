@@ -177,7 +177,7 @@ void MGGravityDriver::Solve(int stage) {
     Multigrid *pmg = *itr;
     // assume all the data are located on the same node
     pmg->LoadSource(pmg->pmy_block_->phydro->u, IDN, NGHOST, four_pi_G_);
-    if (mode_ ==1) // iterative mode - load initial guess
+    if (mode_ == 1) // iterative mode - load initial guess
       pmg->LoadFinestData(pmg->pmy_block_->pgrav->phi, 0, NGHOST);
   }
 

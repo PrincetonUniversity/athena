@@ -1156,7 +1156,7 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff) {
             m13 += s*x*fz2mr2;
             m14 += s*z*hx2my2;
             m15 += s*x*x2mty2;
-            // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
+            // r^4*(Y4-4, Y4-3, Y4-2, Y4-1, Y40, Y41, Y42, Y43, Y44)
             m16 += s*xy*hx2my2;
             m17 += s*yz*tx2my2;
             m18 += s*xy*sz2mr2;
