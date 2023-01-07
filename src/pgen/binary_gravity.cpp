@@ -61,28 +61,69 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  Real x0 = 12.0/1024.0, y0 = 0.0, z0 = 0.0, r = 6.0/1024.0;
+  Real x1 = 6.0/1024.0, x2 = -12.0/1024.0, y1 = 0.0, y2 = 0.0, z1 = 0.0, z2 = 0.0;
+  Real r = 6.0/1024.0;
   Real m1 = 2.0, m2 = 1.0;
   Real G = four_pi_G / (4.0 * PI);
   Real den1 = m1/(4.0*PI/3.0*r*r*r);
   Real den2 = m2/(4.0*PI/3.0*r*r*r);
+  Real dx = pcoord->dx1f(is);
+  Real dd = 0.1*dx;
+  Real dv = 1e-3;
+  Real dr = 0.6*std::sqrt(3.0)*dx;
 
   for (int k = ks; k <= ke; ++k) {
+    Real z = pcoord->x3v(k);
     for (int j = js; j <= je; ++j) {
+     Real y = pcoord->x2v(j);
       for (int i = is; i <= ie; ++i) {
         Real x = pcoord->x1v(i);
-        Real y = pcoord->x2v(j);
-        Real z = pcoord->x3v(k);
+        Real r1 = std::sqrt(SQR(x-x1)+SQR(y-y1)+SQR(z-z1));
+        Real r2 = std::sqrt(SQR(x-x2)+SQR(y-y2)+SQR(z-z2));
+        phydro->u(IDN,k,j,i) = 1e-300;
 
-        Real r1 = sqrt(SQR(x-x0)+SQR(y-y0)+SQR(z-z0));
-        Real r2 = sqrt(SQR(x+x0)+SQR(y+y0)+SQR(z+z0));
-
-        if (r1 < r)
-          phydro->u(IDN,k,j,i) = den1;
-        else if (r2 < r)
-          phydro->u(IDN,k,j,i) = den2;
-        else
-          phydro->u(IDN,k,j,i) = 1e-300;
+        if (r1 < r + dr) {
+          if (r1 < r - dr) {
+            phydro->u(IDN,k,j,i) = den1;
+          } else {
+            Real xf = pcoord->x1f(i);
+            Real yf = pcoord->x2f(j);
+            Real zf = pcoord->x3f(k);
+            for (int kk = 0; kk < 10; ++kk) {
+              Real zz = zf + (kk+0.5)*dd;
+              for (int jj = 0; jj < 10; ++jj) {
+                Real yy = yf + (jj+0.5)*dd;
+                for (int ii = 0; ii < 10; ++ii) {
+                  Real xx = xf + (ii+0.5)*dd;
+                  Real rr = std::sqrt(SQR(xx-x1)+SQR(yy-y1)+SQR(zz-z1));
+                  if (rr < r)
+                    phydro->u(IDN,k,j,i) += dv*den1;
+                }
+              }
+            }
+          }
+        }
+        if (r2 < r + dr) {
+          if (r2 < r - dr) {
+            phydro->u(IDN,k,j,i) = den2;
+          } else {
+            Real xf = pcoord->x1f(i);
+            Real yf = pcoord->x2f(j);
+            Real zf = pcoord->x3f(k);
+            for (int kk = 0; kk < 10; ++kk) {
+              Real zz = zf + (kk+0.5)*dd;
+              for (int jj = 0; jj < 10; ++jj) {
+                Real yy = yf + (jj+0.5)*dd;
+                for (int ii = 0; ii < 10; ++ii) {
+                  Real xx = xf + (ii+0.5)*dd;
+                  Real rr = std::sqrt(SQR(xx-x2)+SQR(yy-y2)+SQR(zz-z2));
+                  if (rr < r)
+                    phydro->u(IDN,k,j,i) += dv*den2;
+                }
+              }
+            }
+          }
+        }
         phydro->u(IEN,k,j,i) = phydro->u(IDN,k,j,i);
         phydro->u(IM1,k,j,i) = 0.0;
         phydro->u(IM2,k,j,i) = 0.0;
@@ -124,6 +165,28 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
+  for (int k = ks; k <= ke; ++k) {
+    Real z = pcoord->x3v(k);
+    for (int j = js; j <= je; ++j) {
+     Real y = pcoord->x2v(j);
+      for (int i = is; i <= ie; ++i) {
+        Real x = pcoord->x1v(i);
+        Real r1 = std::sqrt(SQR(x-x1)+SQR(y-y1)+SQR(z-z1));
+        Real r2 = std::sqrt(SQR(x-x2)+SQR(y-y2)+SQR(z-z2));
+        Real p1, p2, pot0;
+        if (r1 > r)
+          p1 = -G*m1/r1;
+        else
+          p1 = -G*PI*2.0/3.0*den1*(3.0*r*r-r1*r1);
+        if (r2 > r)
+          p2 = -G*m2/r2;
+        else
+          p2 = -G*PI*2.0/3.0*den2*(3.0*r*r-r2*r2);
+        pot0 = p1 + p2;
+        phydro->u(IM2,k,j,i) = pot0;
+      }
+    }
+  }
 }
 
 
@@ -133,7 +196,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  Real x0 = 12.0/1024.0, y0 = 0.0, z0 = 0.0, r = 6.0/1024.0;
+  Real x1 = 8.0/1024.0, x2 = -16.0/1024.0, y1 = 0.0, y2 = 0.0, z1 = 0.0, z2 = 0.0;
+  Real r = 6.0/1024.0;
   Real m1 = 2.0, m2 = 1.0;
   Real G = four_pi_G / (4.0 * PI);
   Real den1 = m1/(4.0*PI/3.0*r*r*r);
@@ -145,6 +209,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   int ks = pmb->ks, ke = pmb->ke;
 
   Real err1 = 0.0, err2 = 0.0;
+
+  for (int b=0; b<nblocal; ++b) {
+    pmb = my_blocks(b);
+    pmb->pgrav->phi.ZeroClear();
+  }
+  if (SELF_GRAVITY_ENABLED == 1) pfgrd->Solve(1,1);
+  else if (SELF_GRAVITY_ENABLED == 2) pmgrd->Solve(1);
 
   for (int b = 0; b < nblocal; ++b) {
     pmb = my_blocks(b);
@@ -162,8 +233,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real dy = pcoord->dx2f(j);
           Real dz = pcoord->dx3f(k);
 
-          Real r1 = sqrt(SQR(x-x0)+SQR(y-y0)+SQR(z-z0));
-          Real r2 = sqrt(SQR(x+x0)+SQR(y+y0)+SQR(z+z0));
+          Real r1 = sqrt(SQR(x-x1)+SQR(y-y1)+SQR(z-z1));
+          Real r2 = sqrt(SQR(x-x2)+SQR(y-y2)+SQR(z-z2));
 
           Real ax = -(pgrav->phi(k,j,i+1)-pgrav->phi(k,j,i-1))/(2.0*dx);
           Real ay = -(pgrav->phi(k,j+1,i)-pgrav->phi(k,j-1,i))/(2.0*dy);
@@ -172,36 +243,36 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real p1, p2, pot0, ax1, ay1, az1, ax2, ay2, az2, ax0, ay0, az0;
           if (r1 > r) {
             p1 = -G*m1/r1;
-            ax1 = -G*m1/(r1*r1*r1)*(x-x0);
-            ay1 = -G*m1/(r1*r1*r1)*(y-y0);
-            az1 = -G*m1/(r1*r1*r1)*(z-z0);
+            ax1 = -G*m1/(r1*r1*r1)*(x-x1);
+            ay1 = -G*m1/(r1*r1*r1)*(y-y1);
+            az1 = -G*m1/(r1*r1*r1)*(z-z1);
           } else {
             p1 = -G*PI*2.0/3.0*den1*(3.0*r*r-r1*r1);
-            ax1 = -G*PI*4.0/3.0*den1*(x-x0);
-            ay1 = -G*PI*4.0/3.0*den1*(y-y0);
-            az1 = -G*PI*4.0/3.0*den1*(z-z0);
+            ax1 = -G*PI*4.0/3.0*den1*(x-x1);
+            ay1 = -G*PI*4.0/3.0*den1*(y-y1);
+            az1 = -G*PI*4.0/3.0*den1*(z-z1);
           }
           if (r2 > r) {
             p2 = -G*m2/r2;
-            ax2 = -G*m2/(r2*r2*r2)*(x+x0);
-            ay2 = -G*m2/(r2*r2*r2)*(y+y0);
-            az2 = -G*m2/(r2*r2*r2)*(z+z0);
+            ax2 = -G*m2/(r2*r2*r2)*(x-x2);
+            ay2 = -G*m2/(r2*r2*r2)*(y-y2);
+            az2 = -G*m2/(r2*r2*r2)*(z-z2);
           } else {
             p2 = -G*PI*2.0/3.0*den2*(3.0*r*r-r2*r2);
-            ax2 = -G*PI*4.0/3.0*den2*(x+x0);
-            ay2 = -G*PI*4.0/3.0*den2*(y+y0);
-            az2 = -G*PI*4.0/3.0*den2*(z+z0);
+            ax2 = -G*PI*4.0/3.0*den2*(x-x2);
+            ay2 = -G*PI*4.0/3.0*den2*(y-y2);
+            az2 = -G*PI*4.0/3.0*den2*(z-z2);
           }
           pot0 = p1 + p2;
           ax0 = ax1 + ax2;
           ay0 = ay1 + ay2;
           az0 = az1 + az2;
 
-          Real perr = std::abs((pot0 - pgrav->phi(k,j,i))/pot0);
-          Real aerr = std::sqrt(SQR(ax-ax0)+SQR(ay-ay0)+SQR(az-az0))
-                    / std::sqrt(SQR(ax0)+SQR(ay0)+SQR(az0));
-          phydro->u(IM1,k,j,i) = pot0;
-          phydro->u(IM2,k,j,i) = perr;
+          Real perr = SQR((pot0 - pgrav->phi(k,j,i))/pot0);
+          Real aerr = (SQR(ax-ax0)+SQR(ay-ay0)+SQR(az-az0))
+                    / (SQR(ax0)+SQR(ay0)+SQR(az0));
+          phydro->u(IM1,k,j,i) = perr;
+          phydro->u(IM2,k,j,i) = pot0;
           phydro->u(IM3,k,j,i) = aerr;
           err1 += perr * vol;
           err2 += aerr * vol;
@@ -220,12 +291,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   Real tvol = x1size * x2size * x3size;
   err1 /= tvol;
   err2 /= tvol;
+  err1 = std::sqrt(err1);
+  err2 = std::sqrt(err2);
   if (Globals::my_rank == 0) {
     std::cout << std::scientific
               << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1);
     std::cout << "=====================================================" << std::endl;
-    std::cout << "Potential    L1 : " << err1 << std::endl;
-    std::cout << "Acceleration L1 : " << err2 << std::endl;
+    std::cout << "Potential    L2 : " << err1 << std::endl;
+    std::cout << "Acceleration L2 : " << err2 << std::endl;
     std::cout << "=====================================================" << std::endl;
   }
 

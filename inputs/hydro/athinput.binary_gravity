@@ -85,17 +85,19 @@ level=4
 <hydro>
 gamma           = 1.666666666667 # gamma = C_p/C_v
 iso_sound_speed = 0.4082482905   # equivalent to sqrt(gamma*p/d) for p=0.1, d=1
+dfloor          = 1e-300
 
 <gravity>
 mgmode          = FMG
 threshold       = 0.0
 output_defect   = true
-ix1_bc          = multipole4
-ox1_bc          = multipole4
-ix2_bc          = multipole4
-ox2_bc          = multipole4
-ix3_bc          = multipole4
-ox3_bc          = multipole4
+ix1_bc          = multipole
+ox1_bc          = multipole
+ix2_bc          = multipole
+ox2_bc          = multipole
+ix3_bc          = multipole
+ox3_bc          = multipole
+mporder         = 4
 
 <problem>
 four_pi_G       = 12.5663706144
