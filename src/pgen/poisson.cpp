@@ -103,7 +103,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phia = four_pi_G*std::exp(-a0*r2);
         }
 
-        if (nlim > 0) {
+        if (nlim != 0) {
           phydro->u(IDN,k,j,i) = den;
           phydro->u(IM1,k,j,i) = 0.0;
           phydro->u(IM2,k,j,i) = 0.0;
