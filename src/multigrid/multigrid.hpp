@@ -198,14 +198,17 @@ class MultigridDriver {
   void SetBoundariesOctets(bool fprolong, bool folddata);
   void SetOctetBoundarySameLevel(AthenaArray<Real> &dst, const AthenaArray<Real> &un,
                        AthenaArray<Real> &uold, const AthenaArray<Real> &unold,
+                       AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
                        int ox1, int ox2, int ox3, bool folddata);
   void SetOctetBoundaryFromCoarser(const AthenaArray<Real> &un,
-                       const AthenaArray<Real> &unold, const LogicalLocation &loc,
+                       const AthenaArray<Real> &unold, AthenaArray<Real> &cbuf,
+                       AthenaArray<Real> &cbufold, const LogicalLocation &loc,
                        int ox1, int ox2, int ox3, bool folddata);
   void ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u, const LogicalLocation &loc,
                                     const MGCoordinates &coord, bool fcbuf);
   void ProlongateOctetBoundaries(AthenaArray<Real> &u, AthenaArray<Real> &uold,
-                                 bool folddata);
+                                 AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
+                                 const AthenaArray<bool> &ncoarse, bool folddata);
   void SetOctetBoundariesBeforeTransfer(bool folddata);
   void RestrictOctetsBeforeTransfer();
 
@@ -219,7 +222,8 @@ class MultigridDriver {
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }
 
   // pure virtual functions
-  virtual void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) = 0;
+  virtual void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
+               AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse) = 0;
 
   int nranks_, nthreads_, nbtotal_, nvar_, mode_;
   int locrootlevel_, nrootlevel_, nmblevel_, ntotallevel_, nreflevel_, maxreflevel_;

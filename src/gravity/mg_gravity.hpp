@@ -52,7 +52,8 @@ class MGGravityDriver : public MultigridDriver {
   MGGravityDriver(Mesh *pm, ParameterInput *pin);
   ~MGGravityDriver();
   void Solve(int stage) final;
-  void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) final;
+  void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
+                 AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse) final;
  private:
   Real four_pi_G_;
   GravityBoundaryTaskList *gtlist_;

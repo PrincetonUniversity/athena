@@ -181,9 +181,6 @@ void MGGravityDriver::Solve(int stage) {
   }
 
   SetupMultigrid();
-  Real mean_rho = 0.0;
-  if (fsubtract_average_)
-    mean_rho = last_ave_/four_pi_G_;
 
   if (mode_ == 0) {
     SolveFMGCycle();
@@ -352,20 +349,16 @@ void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> 
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst)
+//! \fn void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
+//                            AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse)
 //! \brief prolongate octet boundaries using the flux conservation formula
 
-void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst) {
+void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
+                      AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse) {
   constexpr Real ot = 1.0/3.0;
   const int ngh = mgroot_->ngh_;
   const AthenaArray<Real> &u = dst;
   const int ci = ngh, cj = ngh, ck = ngh, l = ngh, r = ngh + 1;
-  int th = 0;
-#ifdef OPENMP_PARALLEL
-  th = omp_get_thread_num();
-#endif
-  const AthenaArray<bool> &ncoarse = ncoarse_[th];
-  const AthenaArray<Real> &cbuf = cbuf_[th];
 
   // x1face
   for (int ox1=-1; ox1<=1; ox1+=2) {
