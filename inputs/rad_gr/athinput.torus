@@ -13,7 +13,7 @@ tlim       = 100.0  # maximum time to run
 cfl_number = 0.3    # fraction of Courant condition
 integrator = vl2    # time integration algorithm
 xorder     = 2      # order of spatial reconstruction
-ncycle_out = 1      # interval for stdout summary info
+ncycle_out = 1000   # interval for stdout summary info
 
 <output1>
 file_type = hdf5   # output format
@@ -113,7 +113,7 @@ potential_cutoff  = 0.2     # amount to subtract from density when calculating p
                             # (field_config=renorm)
 potential_r_pow   = 0.0     # vector potential proportional to this power of radius
 potential_rho_pow = 1.0     # vector potential proportional to this power of density
-beta_min          = 100.0   # desired minimum ratio of gas pressure to magnetic pressure;
+beta_min          = 40.1    # desired minimum ratio of gas pressure to magnetic pressure;
                             # magnetic field zeroed if negative
 
 sample_n_r     = 64   # global grid for integrating in the field_config=renorm case and
