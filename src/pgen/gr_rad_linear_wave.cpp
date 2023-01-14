@@ -84,13 +84,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     ATHENA_ERROR(msg);
     return;
   }
-  if (pin->GetInteger("mesh", "nx3") > 1) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in Problem Generator\n"
-        << "gr_rad_linear_wave only supports 1D and 2D" << std::endl;
-    ATHENA_ERROR(msg);
-    return;
-  }
 
   // Read parameters from input file
   rho = pin->GetReal("problem", "rho");
@@ -201,7 +194,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int i = il; i <= iu; ++i) {
         Real x = pcoord->x1v(i);
         Real y = pcoord->x2v(j);
-        Real z = pcoord->x3v(k);
         Real s = std::sin(kx * x + ky * y);
         Real c = std::cos(kx * x + ky * y);
         Real rho_val = rho + delta * (drho_real * c - drho_imag * s);
@@ -228,7 +220,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         for (int i = il; i <= iu+1; ++i) {
           Real x = pcoord->x1f(i);
           Real y = pcoord->x2v(j);
-          Real z = pcoord->x3v(k);
           Real s = std::sin(kx * x + ky * y);
           Real c = std::cos(kx * x + ky * y);
           Real bbx_val_wave = bbx + delta * (dbbx_real * c - dbbx_imag * s);
@@ -243,7 +234,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         for (int i = il; i <= iu; ++i) {
           Real x = pcoord->x1v(i);
           Real y = pcoord->x2f(j);
-          Real z = pcoord->x3v(k);
           Real s = std::sin(kx * x + ky * y);
           Real c = std::cos(kx * x + ky * y);
           Real bbx_val_wave = bbx + delta * (dbbx_real * c - dbbx_imag * s);
@@ -258,7 +248,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         for (int i = il; i <= iu; ++i) {
           Real x = pcoord->x1v(i);
           Real y = pcoord->x2v(j);
-          Real z = pcoord->x3f(k);
           Real s = std::sin(kx * x + ky * y);
           Real c = std::cos(kx * x + ky * y);
           Real bbz_val_wave = bbz + delta * (dbbz_real * c - dbbz_imag * s);
@@ -287,7 +276,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         // Calculate location
         Real x = pcoord->x1v(i);
         Real y = pcoord->x2v(j);
-        Real z = pcoord->x3v(k);
         Real s = std::sin(kx * x + ky * y);
         Real c = std::cos(kx * x + ky * y);
 
