@@ -310,6 +310,16 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   }
 
   if (NON_BAROTROPIC_EOS) {
+    //check adiabatic index, this is for calling CvCold later
+    const Real eps = 0.01;
+    const Real gm = pin->GetReal("hydro", "gamma");
+    const Real diff = fabs(gm - 5./3.) / (5./3.);
+    if (diff > eps) {
+      std::stringstream msg1; //error message
+      msg1 << "### FATAL ERROR in ChemNetwork constructor" << std::endl
+        << "gow17 network with energy equation: adiabatic index must be 5/3." << std::endl;
+      ATHENA_ERROR(msg1);
+    }
     temperature_ = 0.;
   } else {
     //isothermal
