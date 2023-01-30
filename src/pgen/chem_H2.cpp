@@ -37,6 +37,9 @@
 
 Real threshold;
 int RefinementCondition(MeshBlock *pmb);
+namespace {
+Real HistoryT(MeshBlock *pmb, int iout); //average temperature output
+} // namespace
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -46,6 +49,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     EnrollUserRefinementCondition(RefinementCondition);
     threshold = pin->GetReal("problem", "thr");
   }
+  AllocateUserHistoryOutput(1);
+  EnrollUserHistoryOutput(0, HistoryT, "T");
   return;
 }
 
@@ -61,6 +66,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //read input parameters
   const Real nH = pin->GetReal("problem", "nH"); //density
   const Real vx = pin->GetOrAddReal("problem", "vx_kms", 0); //velocity x
+  const Real fH1 = pin->GetOrAddReal("problem", "fH1", 0.); //H abundance at x>1
   //mean and std of the initial gaussian profile
   const Real gaussian_mean = pin->GetOrAddReal("problem", "gaussian_mean", 0.5);
   const Real gaussian_std = pin->GetOrAddReal("problem", "gaussian_std", 0.1);
@@ -97,8 +103,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                                                /(2.*SQR(gaussian_std)) )*nH; //H
               pscalars->s(1, k, j, i) = 0.5*(nH - pscalars->s(0, k, j, i)); //H2
             } else {
-              pscalars->s(0, k, j, i) = 0; //H
-              pscalars->s(1, k, j, i) = 0.5*nH; //H2
+              pscalars->s(0, k, j, i) = fH1*nH; //H
+              pscalars->s(1, k, j, i) = (1.-fH1)*0.5*nH; //H2
             }
 #endif
           }
@@ -161,6 +167,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   //read input parameters
   const Real nH = pin->GetReal("problem", "nH"); //density
   const Real vx = pin->GetOrAddReal("problem", "vx_kms", 0); //velocity x
+  const Real fH1 = pin->GetOrAddReal("problem", "fH1", 0.); //H abundance at x>1
   const Real gaussian_mean = pin->GetOrAddReal("problem", "gaussian_mean", 0.5);
   const Real gaussian_std = pin->GetOrAddReal("problem", "gaussian_std", 0.1);
   //chemistry parameters
@@ -208,7 +215,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real x = pmb->pcoord->x1v(i);
           Real fH0 = 0;
           if ( (x < xg_min) || (x > xg_max) ) {
-            fH0 = 0;
+            fH0 = fH1;
           } else {
             fH0 = exp( -SQR(x-mu)/(2.*SQR(gaussian_std)) );
           }
@@ -330,3 +337,34 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   }
   return;
 }
+
+namespace {
+
+Real HistoryT(MeshBlock *pmb, int iout) {
+  const Real gm1  = pmb->peos->GetGamma() - 1.0;
+  const Real CvHI = Thermo::CvCold(0., 0.1, 0.);
+  Units *punit = pmb->pscalars->chemnet.punit;
+  int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
+  Real T = 0;
+  AthenaArray<Real> volume; // 1D array of volumes
+  // allocate 1D array for cell volume used in usr def history
+  volume.NewAthenaArray(pmb->ncells1);
+  //total volume
+  Real vol_tot= (pmb->pmy_mesh->mesh_size.x1max - pmb->pmy_mesh->mesh_size.x1min)
+    *(pmb->pmy_mesh->mesh_size.x2max - pmb->pmy_mesh->mesh_size.x2min)
+    *(pmb->pmy_mesh->mesh_size.x3max - pmb->pmy_mesh->mesh_size.x3min);
+
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
+      for (int i=is; i<=ie; i++) {
+        T += volume(i) * pmb->phydro->w(IPR,k,j,i)/pmb->phydro->w(IDN,k,j,i)/gm1
+                        * punit->EnergyDensity / CvHI;//simulation T
+      }
+    }
+  }
+  T /= vol_tot;
+  return T;
+}
+
+} // namespace
