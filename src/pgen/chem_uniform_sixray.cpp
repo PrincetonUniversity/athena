@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file chem_uniform_radcr.cpp
-//! \brief problem generator, uniform chemistry and radiation
+//! \file chem_uniform_sixray.cpp
+//! \brief problem generator, uniform chemistry and radiation with six-ray
 //======================================================================================
 
 // c headers
@@ -34,7 +34,6 @@
 #include "../radiation/integrators/rad_integrators.hpp"
 #include "../radiation/radiation.hpp"
 #include "../scalars/scalars.hpp"
-#include "../utils/units.hpp"
 
 //User defined boundary conditions
 void SixRayBoundaryInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
@@ -94,7 +93,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
   return;
 }
 
-
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //! \brief initialize problem of uniform chemistry and radiation
@@ -107,39 +105,25 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //read density and radiation field strength
   const Real nH = pin->GetReal("problem", "nH");
   const Real vx = pin->GetOrAddReal("problem", "vx_kms", 0);
-  const Real s_init = pin->GetReal("problem", "s_init");
+  const Real s_init = pin->GetOrAddReal("problem", "s_init", 0.);
   const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   const Real pres = nH*SQR(iso_cs);
   const Real gm1  = peos->GetGamma() - 1.0;
-  //index to set density
-  const int ix = pin->GetInteger("problem", "ix");
-  const int iy = pin->GetInteger("problem", "iy");
-  const int iz = pin->GetInteger("problem", "iz");
-  const Real x1min =  pmy_mesh->mesh_size.x1min;
-  const Real x2min =  pmy_mesh->mesh_size.x2min;
-  const Real x3min =  pmy_mesh->mesh_size.x3min;
-  Real ixx, iyy, izz;
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        ixx = (pcoord->x1f(i) - x1min)/pcoord->dx1f(i);
-        iyy = (pcoord->x2f(j) - x2min)/pcoord->dx2f(j);
-        izz = (pcoord->x3f(k) - x3min)/pcoord->dx3f(k);
-        if ( std::abs(ixx-ix)<0.1 && std::abs(iyy-iy)<0.1 && std::abs(izz-iz)<0.1 ) {
-          //density
-          phydro->u(IDN, k, j, i) = nH;
-          //velocity, x direction
-          phydro->u(IM1, k, j, i) = nH*vx;
-          //energy
-          if (NON_BAROTROPIC_EOS) {
-            phydro->u(IEN, k, j, i) = pres/gm1;
-          }
+        //density
+        phydro->u(IDN, k, j, i) = nH;
+        //velocity, x direction
+        phydro->u(IM1, k, j, i) = nH*vx;
+        //energy
+        if (NON_BAROTROPIC_EOS) {
+          phydro->u(IEN, k, j, i) = pres/gm1 + 0.5*nH*SQR(vx);
         }
       }
     }
   }
-
 
   //intialize radiation field
   if (RADIATION_ENABLED) {
@@ -170,20 +154,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          ixx = (pcoord->x1f(i) - x1min)/pcoord->dx1f(i);
-          iyy = (pcoord->x2f(j) - x2min)/pcoord->dx2f(j);
-          izz = (pcoord->x3f(k) - x3min)/pcoord->dx3f(k);
-          if ( std::abs(ixx-ix)<0.1 && std::abs(iyy-iy)<0.1 && std::abs(izz-iz)<0.1 ) {
-            for (int ispec=0; ispec < NSCALARS; ++ispec) {
-              pscalars->s(ispec, iz, iy, ix) = s_init*nH;
+          for (int ispec=0; ispec < NSCALARS; ++ispec) {
+            pscalars->s(ispec, k, j, i) = s_init*nH;
 #ifdef INCLUDE_CHEMISTRY
-              Real s_ispec = pin->GetOrAddReal("problem",
-                  "s_init_"+pscalars->chemnet.species_names[ispec], -1);
-              if (s_ispec >= 0.) {
-                pscalars->s(ispec, iz, iy, ix) = s_ispec*nH;
-              }
-#endif
+            Real s_ispec = pin->GetOrAddReal("problem",
+                "s_init_"+pscalars->chemnet.species_names[ispec], -1);
+            if (s_ispec >= 0.) {
+              pscalars->s(ispec, k, j, i) = s_ispec*nH;
             }
+#endif
           }
         }
       }

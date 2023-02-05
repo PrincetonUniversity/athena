@@ -44,9 +44,8 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
 
   // allocate arrays
   int ncells1 = pmy_block->ncells1;
-  int ncells2 = 1, ncells3 = 1;
-  if (pmy_block->block_size.nx2 > 1) ncells2 = pmy_block->block_size.nx2 + 2*(NGHOST);
-  if (pmy_block->block_size.nx3 > 1) ncells3 = pmy_block->block_size.nx3 + 2*(NGHOST);
+  int ncells2 = pmy_block->ncells2;
+  int ncells3 = pmy_block->ncells3;
   // store frequency and angles as [nfre][ang]
   ir.NewAthenaArray(ncells3, ncells2, ncells1, n_fre_ang);
   ir_avg.NewAthenaArray(nfreq, ncells3, ncells2, ncells1);

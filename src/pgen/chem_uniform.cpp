@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file chem_uniform.cpp
-//! \brief problem generator, uniform mesh with chemistry
+//! \brief problem generator, uniform mesh with chemistry and radiation
 //======================================================================================
 
 // c headers
@@ -36,7 +36,7 @@
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//! \brief initialize problem with uniform chemistry
+//! \brief initialize problem with uniform chemistry and radiation
 //======================================================================================
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //dimensions of meshblock
@@ -45,10 +45,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const int Nz = ke - ks + 1;
   //read density and radiation field strength
   const Real nH = pin->GetReal("problem", "nH");
-  const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   const Real vx = pin->GetOrAddReal("problem", "vx_kms", 0);
-  const Real G0 = pin->GetOrAddReal("radiation", "G0", 0.);
   const Real s_init = pin->GetOrAddReal("problem", "s_init", 0.);
+  const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   const Real pres = nH*SQR(iso_cs);
   const Real gm1  = peos->GetGamma() - 1.0;
 
@@ -69,6 +68,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   //intialize radiation field
   if (RADIATION_ENABLED) {
+    const Real G0 = pin->GetReal("radiation", "G0");
+    const Real cr_rate = pin->GetOrAddReal("radiation", "CR", 2e-16);
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
@@ -77,9 +78,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               prad->ir(k, j, i, ifreq * prad->nang + iang) = G0;
             }
           }
+#ifdef INCLUDE_CHEMISTRY
+          for (int iang=0; iang < prad->nang; ++iang) {
+            //cr rate
+            prad->ir(k, j, i,
+                pscalars->chemnet.index_cr_ * prad->nang + iang) = cr_rate;
+          }
+#endif
         }
       }
     }
+    //calculate the average radiation field for output of the initial condition
+    prad->pradintegrator->CopyToOutput();
   }
 
   //intialize chemical species

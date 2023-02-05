@@ -100,8 +100,21 @@ void RadIntegrator::CopyToOutput() {
   int iang_arr[6] =
   {BoundaryFace::inner_x1, BoundaryFace::inner_x2, BoundaryFace::inner_x3,
    BoundaryFace::outer_x1, BoundaryFace::outer_x2, BoundaryFace::outer_x3};
-  for (int k=ks-NGHOST; k<=ke+NGHOST; ++k) {
-    for (int j=js-NGHOST; j<=je+NGHOST; ++j) {
+  int jl, ju, kl, ku;
+  if (js == 0 && je == 0) {
+    jl = ju = 0;
+  } else {
+    jl = js-NGHOST;
+    ju = je+NGHOST;
+  }
+  if (ks == 0 && ke == 0) {
+    kl = ku = 0;
+  } else {
+    kl = ks-NGHOST;
+    ku = ke+NGHOST;
+  }
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
         for (int iang=0; iang < 6; iang++) {
           //column densities
@@ -651,113 +664,121 @@ void RadIntegrator::UpdateCol(BoundaryFace direction) {
     }
   } else if (direction == BoundaryFace::inner_x2) {
     //+y
-    for (int k=ks; k<=ke; ++k) {
-      for (int i=is; i<=ie; ++i) {
-        NH_ghostzone = lunit *
-          pmy_mb->phydro->w(IDN, k, js-1, i) * pmy_mb->pcoord->dx2f(js-1) * f_prev;
-        NH_boundary = col(direction, k, js-1, i, pmy_chemnet->iNHtot_) + NH_ghostzone;
-        NH2_boundary = col(direction, k, js-1, i, pmy_chemnet->iNH2_)
-          + pmy_mb->pscalars->r(iH2, k, js-1, i) * NH_ghostzone;
-        NCO_boundary = col(direction, k, js-1, i, pmy_chemnet->iNCO_)
-          + pmy_mb->pscalars->r(iCO, k, js-1, i) * NH_ghostzone;
-        xCI = xCtot - pmy_mb->pscalars->r(iCO, k, js-1, i)
-          - pmy_mb->pscalars->r(iCplus, k, js-1, i)
-          - pmy_mb->pscalars->r(iHCOplus, k, js-1, i)
-          - pmy_mb->pscalars->r(iCHx, k, js-1, i);
-        if (xCI < 0) {
-          xCI = 0.;
-        }
-        NC_boundary = col(direction, k, js-1, i, pmy_chemnet->iNC_)
-          + xCI * NH_ghostzone;
-        for (int j=js; j<=je; ++j) {
-          col(direction, k, j, i, pmy_chemnet->iNHtot_) += NH_boundary;
-          col(direction, k, j, i, pmy_chemnet->iNH2_) += NH2_boundary;
-          col(direction, k, j, i, pmy_chemnet->iNCO_) += NCO_boundary;
-          col(direction, k, j, i, pmy_chemnet->iNC_) += NC_boundary;
+    if (js != 0) { // y dimension included
+      for (int k=ks; k<=ke; ++k) {
+        for (int i=is; i<=ie; ++i) {
+          NH_ghostzone = lunit *
+            pmy_mb->phydro->w(IDN, k, js-1, i) * pmy_mb->pcoord->dx2f(js-1) * f_prev;
+          NH_boundary = col(direction, k, js-1, i, pmy_chemnet->iNHtot_) + NH_ghostzone;
+          NH2_boundary = col(direction, k, js-1, i, pmy_chemnet->iNH2_)
+            + pmy_mb->pscalars->r(iH2, k, js-1, i) * NH_ghostzone;
+          NCO_boundary = col(direction, k, js-1, i, pmy_chemnet->iNCO_)
+            + pmy_mb->pscalars->r(iCO, k, js-1, i) * NH_ghostzone;
+          xCI = xCtot - pmy_mb->pscalars->r(iCO, k, js-1, i)
+            - pmy_mb->pscalars->r(iCplus, k, js-1, i)
+            - pmy_mb->pscalars->r(iHCOplus, k, js-1, i)
+            - pmy_mb->pscalars->r(iCHx, k, js-1, i);
+          if (xCI < 0) {
+            xCI = 0.;
+          }
+          NC_boundary = col(direction, k, js-1, i, pmy_chemnet->iNC_)
+            + xCI * NH_ghostzone;
+          for (int j=js; j<=je; ++j) {
+            col(direction, k, j, i, pmy_chemnet->iNHtot_) += NH_boundary;
+            col(direction, k, j, i, pmy_chemnet->iNH2_) += NH2_boundary;
+            col(direction, k, j, i, pmy_chemnet->iNCO_) += NCO_boundary;
+            col(direction, k, j, i, pmy_chemnet->iNC_) += NC_boundary;
+          }
         }
       }
     }
   } else if (direction == BoundaryFace::outer_x2) {
     //-y
-    for (int k=ks; k<=ke; ++k) {
-      for (int i=is; i<=ie; ++i) {
-        NH_ghostzone = lunit *
-          pmy_mb->phydro->w(IDN, k, je+1, i) * pmy_mb->pcoord->dx2f(je+1) * f_prev;
-        NH_boundary = col(direction, k, je+1, i, pmy_chemnet->iNHtot_) + NH_ghostzone;
-        NH2_boundary = col(direction, k, je+1, i, pmy_chemnet->iNH2_)
-          + pmy_mb->pscalars->r(iH2, k, je+1, i) * NH_ghostzone;
-        NCO_boundary = col(direction, k, je+1, i, pmy_chemnet->iNCO_)
-          + pmy_mb->pscalars->r(iCO, k, je+1, i) * NH_ghostzone;
-        xCI = xCtot - pmy_mb->pscalars->r(iCO, k, je+1, i)
-          - pmy_mb->pscalars->r(iCplus, k, je+1, i)
-          - pmy_mb->pscalars->r(iHCOplus, k, je+1, i)
-          - pmy_mb->pscalars->r(iCHx, k, je+1, i);
-        if (xCI < 0) {
-          xCI = 0.;
-        }
-        NC_boundary = col(direction, k, je+1, i, pmy_chemnet->iNC_)
-          + xCI * NH_ghostzone;
-        for (int j=je; j>=js; --j) {
-          col(direction, k, j, i, pmy_chemnet->iNHtot_) += NH_boundary;
-          col(direction, k, j, i, pmy_chemnet->iNH2_) += NH2_boundary;
-          col(direction, k, j, i, pmy_chemnet->iNCO_) += NCO_boundary;
-          col(direction, k, j, i, pmy_chemnet->iNC_) += NC_boundary;
+    if (je != 0) { // y dimension included
+      for (int k=ks; k<=ke; ++k) {
+        for (int i=is; i<=ie; ++i) {
+          NH_ghostzone = lunit *
+            pmy_mb->phydro->w(IDN, k, je+1, i) * pmy_mb->pcoord->dx2f(je+1) * f_prev;
+          NH_boundary = col(direction, k, je+1, i, pmy_chemnet->iNHtot_) + NH_ghostzone;
+          NH2_boundary = col(direction, k, je+1, i, pmy_chemnet->iNH2_)
+            + pmy_mb->pscalars->r(iH2, k, je+1, i) * NH_ghostzone;
+          NCO_boundary = col(direction, k, je+1, i, pmy_chemnet->iNCO_)
+            + pmy_mb->pscalars->r(iCO, k, je+1, i) * NH_ghostzone;
+          xCI = xCtot - pmy_mb->pscalars->r(iCO, k, je+1, i)
+            - pmy_mb->pscalars->r(iCplus, k, je+1, i)
+            - pmy_mb->pscalars->r(iHCOplus, k, je+1, i)
+            - pmy_mb->pscalars->r(iCHx, k, je+1, i);
+          if (xCI < 0) {
+            xCI = 0.;
+          }
+          NC_boundary = col(direction, k, je+1, i, pmy_chemnet->iNC_)
+            + xCI * NH_ghostzone;
+          for (int j=je; j>=js; --j) {
+            col(direction, k, j, i, pmy_chemnet->iNHtot_) += NH_boundary;
+            col(direction, k, j, i, pmy_chemnet->iNH2_) += NH2_boundary;
+            col(direction, k, j, i, pmy_chemnet->iNCO_) += NCO_boundary;
+            col(direction, k, j, i, pmy_chemnet->iNC_) += NC_boundary;
+          }
         }
       }
     }
   } else if (direction == BoundaryFace::inner_x3) {
     //+z
-    for (int j=js; j<=je; ++j) {
-      for (int i=is; i<=ie; ++i) {
-        NH_ghostzone = lunit *
-          pmy_mb->phydro->w(IDN, ks-1, j, i) * pmy_mb->pcoord->dx3f(ks-1) * f_prev;
-        NH_boundary = col(direction, ks-1, j, i, pmy_chemnet->iNHtot_) + NH_ghostzone;
-        NH2_boundary = col(direction, ks-1, j, i, pmy_chemnet->iNH2_)
-          + pmy_mb->pscalars->r(iH2, ks-1, j, i) * NH_ghostzone;
-        NCO_boundary = col(direction, ks-1, j, i, pmy_chemnet->iNCO_)
-          + pmy_mb->pscalars->r(iCO, ks-1, j, i) * NH_ghostzone;
-        xCI = xCtot - pmy_mb->pscalars->r(iCO, ks-1, j, i)
-          - pmy_mb->pscalars->r(iCplus, ks-1, j, i)
-          - pmy_mb->pscalars->r(iHCOplus, ks-1, j, i)
-          - pmy_mb->pscalars->r(iCHx, ks-1, j, i);
-        if (xCI < 0) {
-          xCI = 0.;
-        }
-        NC_boundary = col(direction, ks-1, j, i, pmy_chemnet->iNC_)
-          + xCI * NH_ghostzone;
-        for (int k=ks; k<=ke; ++k) {
-          col(direction, k, j, i, pmy_chemnet->iNHtot_) += NH_boundary;
-          col(direction, k, j, i, pmy_chemnet->iNH2_) += NH2_boundary;
-          col(direction, k, j, i, pmy_chemnet->iNCO_) += NCO_boundary;
-          col(direction, k, j, i, pmy_chemnet->iNC_) += NC_boundary;
+    if (ks != 0) { // z dimension included
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          NH_ghostzone = lunit *
+            pmy_mb->phydro->w(IDN, ks-1, j, i) * pmy_mb->pcoord->dx3f(ks-1) * f_prev;
+          NH_boundary = col(direction, ks-1, j, i, pmy_chemnet->iNHtot_) + NH_ghostzone;
+          NH2_boundary = col(direction, ks-1, j, i, pmy_chemnet->iNH2_)
+            + pmy_mb->pscalars->r(iH2, ks-1, j, i) * NH_ghostzone;
+          NCO_boundary = col(direction, ks-1, j, i, pmy_chemnet->iNCO_)
+            + pmy_mb->pscalars->r(iCO, ks-1, j, i) * NH_ghostzone;
+          xCI = xCtot - pmy_mb->pscalars->r(iCO, ks-1, j, i)
+            - pmy_mb->pscalars->r(iCplus, ks-1, j, i)
+            - pmy_mb->pscalars->r(iHCOplus, ks-1, j, i)
+            - pmy_mb->pscalars->r(iCHx, ks-1, j, i);
+          if (xCI < 0) {
+            xCI = 0.;
+          }
+          NC_boundary = col(direction, ks-1, j, i, pmy_chemnet->iNC_)
+            + xCI * NH_ghostzone;
+          for (int k=ks; k<=ke; ++k) {
+            col(direction, k, j, i, pmy_chemnet->iNHtot_) += NH_boundary;
+            col(direction, k, j, i, pmy_chemnet->iNH2_) += NH2_boundary;
+            col(direction, k, j, i, pmy_chemnet->iNCO_) += NCO_boundary;
+            col(direction, k, j, i, pmy_chemnet->iNC_) += NC_boundary;
+          }
         }
       }
     }
   } else if (direction == BoundaryFace::outer_x3) {
     //-z
-    for (int j=js; j<=je; ++j) {
-      for (int i=is; i<=ie; ++i) {
-        NH_ghostzone = lunit *
-          pmy_mb->phydro->w(IDN, ke+1, j, i) * pmy_mb->pcoord->dx3f(ke+1) * f_prev;
-        NH_boundary = col(direction, ke+1, j, i, pmy_chemnet->iNHtot_) + NH_ghostzone;
-        NH2_boundary = col(direction, ke+1, j, i, pmy_chemnet->iNH2_)
-          + pmy_mb->pscalars->r(iH2, ke+1, j, i) * NH_ghostzone;
-        NCO_boundary = col(direction, ke+1, j, i, pmy_chemnet->iNCO_)
-          + pmy_mb->pscalars->r(iCO, ke+1, j, i) * NH_ghostzone;
-        xCI = xCtot - pmy_mb->pscalars->r(iCO, ke+1, j, i)
-          - pmy_mb->pscalars->r(iCplus, ke+1, j, i)
-          - pmy_mb->pscalars->r(iHCOplus, ke+1, j, i)
-          - pmy_mb->pscalars->r(iCHx, ke+1, j, i);
-        if (xCI < 0) {
-          xCI = 0.;
-        }
-        NC_boundary = col(direction, ke+1, j, i, pmy_chemnet->iNC_)
-          + xCI * NH_ghostzone;
-        for (int k=ke; k>=ks; --k) {
-          col(direction, k, j, i, pmy_chemnet->iNHtot_) += NH_boundary;
-          col(direction, k, j, i, pmy_chemnet->iNH2_) += NH2_boundary;
-          col(direction, k, j, i, pmy_chemnet->iNCO_) += NCO_boundary;
-          col(direction, k, j, i, pmy_chemnet->iNC_) += NC_boundary;
+    if (ke != 0) { // z dimension included
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          NH_ghostzone = lunit *
+            pmy_mb->phydro->w(IDN, ke+1, j, i) * pmy_mb->pcoord->dx3f(ke+1) * f_prev;
+          NH_boundary = col(direction, ke+1, j, i, pmy_chemnet->iNHtot_) + NH_ghostzone;
+          NH2_boundary = col(direction, ke+1, j, i, pmy_chemnet->iNH2_)
+            + pmy_mb->pscalars->r(iH2, ke+1, j, i) * NH_ghostzone;
+          NCO_boundary = col(direction, ke+1, j, i, pmy_chemnet->iNCO_)
+            + pmy_mb->pscalars->r(iCO, ke+1, j, i) * NH_ghostzone;
+          xCI = xCtot - pmy_mb->pscalars->r(iCO, ke+1, j, i)
+            - pmy_mb->pscalars->r(iCplus, ke+1, j, i)
+            - pmy_mb->pscalars->r(iHCOplus, ke+1, j, i)
+            - pmy_mb->pscalars->r(iCHx, ke+1, j, i);
+          if (xCI < 0) {
+            xCI = 0.;
+          }
+          NC_boundary = col(direction, ke+1, j, i, pmy_chemnet->iNC_)
+            + xCI * NH_ghostzone;
+          for (int k=ke; k>=ks; --k) {
+            col(direction, k, j, i, pmy_chemnet->iNHtot_) += NH_boundary;
+            col(direction, k, j, i, pmy_chemnet->iNH2_) += NH2_boundary;
+            col(direction, k, j, i, pmy_chemnet->iNCO_) += NCO_boundary;
+            col(direction, k, j, i, pmy_chemnet->iNC_) += NC_boundary;
+          }
         }
       }
     }

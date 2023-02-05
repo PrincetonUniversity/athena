@@ -14,7 +14,7 @@ dt         = 1e5  # time increment between outputs
 <time>
 cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = 10        # cycle limit
-tlim       = 1e6  # time limit, 1 Gyr
+tlim       = 1e6  # time limit, 1000 Gyr
 
 <mesh>
 nx1        = 50        # Number of zones in X1-direction

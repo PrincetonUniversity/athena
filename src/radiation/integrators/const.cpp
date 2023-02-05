@@ -35,13 +35,26 @@ RadIntegrator::~RadIntegrator() {}
 //! \brief average radiation field over all angles and copy values to output
 void RadIntegrator::CopyToOutput() {
   int is = pmy_mb->is;
-  int js = pmy_mb->js;
-  int ks = pmy_mb->ks;
   int ie = pmy_mb->ie;
+  int js = pmy_mb->js;
   int je = pmy_mb->je;
+  int ks = pmy_mb->ks;
   int ke = pmy_mb->ke;
-  for (int k=ks-NGHOST; k<=ke+NGHOST; ++k) {
-    for (int j=js-NGHOST; j<=je+NGHOST; ++j) {
+  int jl, ju, kl, ku;
+  if (js == 0 && je == 0) {
+    jl = ju = 0;
+  } else {
+    jl = js-NGHOST;
+    ju = je+NGHOST;
+  }
+  if (ks == 0 && ke == 0) {
+    kl = ku = 0;
+  } else {
+    kl = ks-NGHOST;
+    ku = ke+NGHOST;
+  }
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
       for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
         for (int ifreq=0; ifreq < pmy_rad->nfreq; ++ifreq) {
           pmy_rad->ir_avg(ifreq, k, j, i) =

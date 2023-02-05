@@ -21,7 +21,7 @@ def prepare(**kwargs):
     except KeyError:
         cxx = 'g++'
     athena.configure(
-        prob='chem_uniform_radcr',
+        prob='chem_uniform',
         chemistry='gow17',
         radiation='const',
         cxx=cxx,
