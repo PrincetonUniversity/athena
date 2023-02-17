@@ -479,17 +479,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
-
-    for (int stage=1; stage<=ptlist->nstages; ++stage) {
-      ptlist->DoTaskListOneStage(pmesh, stage);
-      if (ptlist->CheckNextMainStage(stage)) {
-        if (SELF_GRAVITY_ENABLED == 1) // fft (0: discrete kernel, 1: continuous kernel)
-          pmesh->pfgrd->Solve(stage, 0);
-        else if (SELF_GRAVITY_ENABLED == 2) // multigrid
-          pmesh->pmgrd->Solve(stage);
-      }
-    }
-
+                                                       //
     //radiation
     if (RADIATION_ENABLED) {
       clock_t tstart_rad, tstop_rad;
@@ -508,6 +498,16 @@ int main(int argc, char *argv[]) {
         printf("Radiation tasklist: ");
         printf("ncycle = %d, total time in sec = %.2e, zone/sec=%.2e\n",
             pmesh->ncycle, cpu_time, Real(nzones)/cpu_time);
+      }
+    }
+
+    for (int stage=1; stage<=ptlist->nstages; ++stage) {
+      ptlist->DoTaskListOneStage(pmesh, stage);
+      if (ptlist->CheckNextMainStage(stage)) {
+        if (SELF_GRAVITY_ENABLED == 1) // fft (0: discrete kernel, 1: continuous kernel)
+          pmesh->pfgrd->Solve(stage, 0);
+        else if (SELF_GRAVITY_ENABLED == 2) // multigrid
+          pmesh->pmgrd->Solve(stage);
       }
     }
 

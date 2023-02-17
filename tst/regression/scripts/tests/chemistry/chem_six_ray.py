@@ -50,11 +50,10 @@ def analyze():
         xs_new = data_new[s]
         err_s = abs(xs_ref - xs_new) / (abs(xs_ref) + small_)
         return err_s
-    # density and pressure should exactly agree
+    # density and velocity should exactly agree
     err_rho = get_rel_diff("rho").max()
-    err_press = get_rel_diff("press").max()
     err_vel = get_rel_diff("vel").max()
-    if err_rho > err_control or err_press > err_control or err_vel > err_control:
+    if err_rho > err_control or err_vel > err_control:
         return False
     #species
     ns = len(species)
