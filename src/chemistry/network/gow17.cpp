@@ -1031,6 +1031,10 @@ Real ChemNetwork::GetStddev(Real arr[], const int len) {
 //! \brief set gradients of v and nH for CO cooling
 void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
   AthenaArray<Real> &w = pmy_mb_->phydro->w;
+  const int js = pmy_mb_->js;
+  const int je = pmy_mb_->je;
+  const int ks = pmy_mb_->ks;
+  const int ke = pmy_mb_->ke;
   Real dvdx, dvdy, dvdz, dvdr_avg, di1, di2;
   Real dx1, dx2, dy1, dy2, dz1, dz2;
   Real dndx, dndy, dndz, gradn;
@@ -1043,17 +1047,25 @@ void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
   dx2 = ( pmy_mb_->pcoord->dx1f(i)+pmy_mb_->pcoord->dx1f(i-1) )/2.;
   dvdx = (di1/dx1 + di2/dx2)/2.;
   //vy
-  di1 = w(IVY, k, j+1, i) - w(IVY, k, j, i);
-  dy1 = ( pmy_mb_->pcoord->dx2f(j+1)+pmy_mb_->pcoord->dx2f(j) )/2.;
-  di2 = w(IVY, k, j, i) - w(IVY, k, j-1, i);
-  dy2 = ( pmy_mb_->pcoord->dx2f(j)+pmy_mb_->pcoord->dx2f(j-1) )/2.;
-  dvdy = (di1/dy1 + di2/dy2)/2.;
+  if (js == 0 && je == 0) { //one cell in y direction
+    dvdy = 0.;
+  } else {
+    di1 = w(IVY, k, j+1, i) - w(IVY, k, j, i);
+    dy1 = ( pmy_mb_->pcoord->dx2f(j+1)+pmy_mb_->pcoord->dx2f(j) )/2.;
+    di2 = w(IVY, k, j, i) - w(IVY, k, j-1, i);
+    dy2 = ( pmy_mb_->pcoord->dx2f(j)+pmy_mb_->pcoord->dx2f(j-1) )/2.;
+    dvdy = (di1/dy1 + di2/dy2)/2.;
+  }
   //vz
-  di1 = w(IVZ, k+1, j, i) - w(IVZ, k, j, i);
-  dz1 = ( pmy_mb_->pcoord->dx3f(k+1)+pmy_mb_->pcoord->dx3f(k) )/2.;
-  di2 = w(IVZ, k, j, i) - w(IVZ, k-1, j, i);
-  dz2 = ( pmy_mb_->pcoord->dx3f(k)+pmy_mb_->pcoord->dx3f(k-1) )/2.;
-  dvdz = (di1/dz1 + di2/dz2)/2.;
+  if (ks == 0 && ke == 0) { //one cell in z direction
+    dvdz = 0.;
+  } else {
+    di1 = w(IVZ, k+1, j, i) - w(IVZ, k, j, i);
+    dz1 = ( pmy_mb_->pcoord->dx3f(k+1)+pmy_mb_->pcoord->dx3f(k) )/2.;
+    di2 = w(IVZ, k, j, i) - w(IVZ, k-1, j, i);
+    dz2 = ( pmy_mb_->pcoord->dx3f(k)+pmy_mb_->pcoord->dx3f(k-1) )/2.;
+    dvdz = (di1/dz1 + di2/dz2)/2.;
+  }
   dvdr_avg = ( fabs(dvdx) + fabs(dvdy) + fabs(dvdz) ) / 3.;
   //asign gradv_, in cgs.
   gradv_ = dvdr_avg * punit->Velocity / punit->Length;

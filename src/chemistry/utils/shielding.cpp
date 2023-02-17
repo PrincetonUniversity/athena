@@ -331,22 +331,22 @@ Real Shielding::fShield_CO_vDB(const Real NCO, const Real NH2) {
 //!
 //! NCO, NH2: column densith of CO and H2 in cm^-2.
 Real Shielding::fShield_CO_V09(const Real NCO, const Real NH2) {
-    const Real N_small_ = 1.0e10;
-    Real logNCO, logNH2;
-    //restrain values on the table
-    if (NCO < N_small_ && NH2 < N_small_) {
-        return 1.0;
-    }
-    if (NCO < N_small_) {
-        logNCO = 10.;
-        logNH2 = log10(NH2);
-    } else if (NH2 < N_small_) {
-        logNH2 = 10.;
-        logNCO = log10(NCO);
-    } else {
-        logNCO = log10(NCO);
-        logNH2 = log10(NH2);
-    }
+  const Real N_small_ = 1.0e10;
+  Real logNCO, logNH2;
+  //restrain values on the table
+  if (NCO < N_small_ && NH2 < N_small_) {
+    return 1.0;
+  }
+  if (NCO < N_small_) {
+    logNCO = 10.;
+    logNH2 = log10(NH2);
+  } else if (NH2 < N_small_) {
+    logNH2 = 10.;
+    logNCO = log10(NCO);
+  } else {
+    logNCO = log10(NCO);
+    logNH2 = log10(NH2);
+  }
 
   int iCO0, iCO1;
   int iH20, iH21;

@@ -91,12 +91,12 @@ RadIntegrator::~RadIntegrator() {}
 //! \fn void RadIntegrator::CopyToOutput()
 //! \brief average radiation field over all angles and copy values to output
 void RadIntegrator::CopyToOutput() {
-  int is = pmy_mb->is;
-  int js = pmy_mb->js;
-  int ks = pmy_mb->ks;
-  int ie = pmy_mb->ie;
-  int je = pmy_mb->je;
-  int ke = pmy_mb->ke;
+  const int is = pmy_mb->is;
+  const int js = pmy_mb->js;
+  const int ks = pmy_mb->ks;
+  const int ie = pmy_mb->ie;
+  const int je = pmy_mb->je;
+  const int ke = pmy_mb->ke;
   int iang_arr[6] =
   {BoundaryFace::inner_x1, BoundaryFace::inner_x2, BoundaryFace::inner_x3,
    BoundaryFace::outer_x1, BoundaryFace::outer_x2, BoundaryFace::outer_x3};
