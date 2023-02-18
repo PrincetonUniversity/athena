@@ -56,18 +56,12 @@ s_init      = 1.0e-6 #initial abundances
 Zdg        = 1. #metallicity, dust and gas metallicity are the same. default = 1.
 temperature = 20  #T in Kelvin, if const_T_flag is true.
 #chemistry solver parameters
-reltol     = 1.0e-6  #relative tolerance, default 1.0e-2
+reltol     = 1.0e-2  #relative tolerance, default 1.0e-2
 abstol     = 1.0e-15 #absolute tolerance, default 1.0e-12
-abstol_OHx   = 1.0e-25 
-abstol_CHx   = 1.0e-25 
-abstol_CO   = 1.0e-25 
-abstol_H3+   = 1.0e-20 
-abstol_HCO+   = 1.0e-32 
-abstol_H2   = 1.0e-10 
-abstol_E   = 1e-4 #for internal energy. Set to 0.01 K
-user_jac   = 0       #flag for whether use user provided Jacobian. default false/0
+#abstol_H2   = 1.0e-10 
+#abstol_E   = 1e-4 #for internal energy. Set to 0.01 K
+user_jac   = false       #flag for whether use user provided Jacobian. default false
 maxsteps   = 100000     #maximum number of steps in one integration. default 10000
-h_init      = 1e-1    #first step of first zone. Default 0/CVODE algorithm.
 output_zone_sec = true #output diagnostic
 unit_length_in_pc = 1.
 
@@ -77,7 +71,7 @@ xC         = 1.6e-4 #C atom per H, this is Z=1 value, default 1.6e-4
 xO         = 3.2e-4 #O atom per H, this is Z=1 value, default 3.2e-4
 xS         = 3.5e-6 #S atom per H, this is Z=1 value, default 3.5e-6
 xSi        = 1.7e-6 #Si atom per H, this is Z=1 value, default 1.7e-6
-maxorder   = 3       #maximum order. Default 3.
+maxorder   = 2       #maximum order. Default 2.
 stldet     = 0       #stability limit detection. Default 0/false.
 
 <radiation>

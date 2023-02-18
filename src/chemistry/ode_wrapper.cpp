@@ -91,14 +91,16 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
       abstol_(dim_-1) = abstol_all;
     }
   }
-  //read initial step
-  h_init_ = pin->GetOrAddReal("chemistry", "h_init", 0.);
+  //read initial step, default -1 uses CVODE estimation
+  h_init_ = pin->GetOrAddReal("chemistry", "h_init", -1);
+  //choice of using the previous stepsize or default estimation from CVODE
+  use_previous_h_ = pin->GetOrAddBoolean("chemistry", "use_previous_h", true);
   //user input Jacobian flag
-  int user_jac = pin->GetOrAddInteger("chemistry", "user_jac", 0);
+  int user_jac = pin->GetOrAddBoolean("chemistry", "user_jac", false);
   //maximum number of steps
   int64_t maxsteps = pin->GetOrAddInteger("chemistry", "maxsteps", 1000);
   //maximum order
-  int maxorder = pin->GetOrAddInteger("chemistry", "maxorder", 3);
+  int maxorder = pin->GetOrAddInteger("chemistry", "maxorder", 2);
   //maximum number of error test fails
   int maxerrtest = pin->GetOrAddInteger("chemistry", "maxerrtest", 7);
   //maximum number of t = h+t warnings
@@ -255,9 +257,10 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
         flag = CVodeReInit(cvode_mem_, tinit, y_);
         CheckFlag(&flag, "CVodeReInit", 1);
         //set initial step
-        if (ncycle == 0) {
+        if (ncycle == 0 && h_init_ > 0.) {
           SetInitStep(h_init_);
-        } else {
+        }
+        if (ncycle != 0 && use_previous_h_) {
           SetInitStep(pmy_spec_->h(k, j, i));
         }
         //set maximum step to be a factor times dt

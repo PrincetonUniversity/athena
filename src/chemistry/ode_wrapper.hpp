@@ -54,6 +54,7 @@ class ODEWrapper {
   N_Vector y_;
   Real *ydata_;
   Real h_init_;
+  bool use_previous_h_;
   Real fac_dtmax_;//factor of the max timestep in CVODE relative to the hydrostep
   bool output_zone_sec_;
 
