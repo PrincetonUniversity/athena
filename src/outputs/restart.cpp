@@ -31,7 +31,8 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
+//! \fn void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin,
+//                                          bool force_write)
 //! \brief Cycles over all MeshBlocks and writes data to a single restart file.
 
 void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_write) {
@@ -46,9 +47,10 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
 
   fname.assign(output_params.file_basename);
   fname.append(".");
-  // add file number to name, unless write is forced by terminate signal, in which case
-  // replace number in the name by the string "final".  This keeps the restart file
-  // numbers consistent with output.dt when a job is restarted many times.
+  // add file number to name, unless write is forced by signal or main integration loop,
+  // (wall-time / cycle / time limit) in which case replace number in the name by the
+  // string "final".  This keeps the restart file numbers consistent with output.dt when a
+  // job is restarted many times.
   if (!force_write)
     fname.append(number);
   else
@@ -85,6 +87,11 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   int nbtotal = pm->nbtotal;
   int myns = pm->nslist[Globals::my_rank];
   int mynb = pm->nblist[Globals::my_rank];
+  int nbmin = pm->nblist[0];
+  for (int n = 1; n < Globals::nranks; ++n) {
+    if (nbmin > pm->nblist[n])
+      nbmin = pm->nblist[n];
+  }
 
   // write the header; this part is serial
   if (Globals::my_rank == 0) {
@@ -121,7 +128,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
 
   // allocate memory for the ID list and the data
   char *idlist = new char[listsize*mynb];
-  char *data = new char[mynb*datasize];
+  char *data = new char[datasize];
 
   // Loop over MeshBlocks and pack the meta data
   int os=0;
@@ -143,7 +150,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
   // Loop over MeshBlocks and pack the data
   for (int b=0; b<pm->nblocal; ++b) {
     MeshBlock *pmb = pm->my_blocks(b);
-    char *pdata = &(data[pmb->lid*datasize]);
+    char *pdata = data;
 
     // NEW_OUTPUT_TYPES: add output of additional physics to restarts here also update
     // MeshBlock::GetBlockSizeInBytes accordingly and MeshBlock constructor for restarts.
@@ -197,11 +204,15 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
                   pmb->ruser_meshblock_data[n].GetSizeInBytes());
       pdata += pmb->ruser_meshblock_data[n].GetSizeInBytes();
     }
+
+    // now write restart data in parallel
+    myoffset = headeroffset + listsize*nbtotal + datasize*(myns+b);
+    if (b < nbmin)
+      resfile.Write_at_all(data, datasize, 1, myoffset);
+    else
+      resfile.Write_at(data, datasize, 1, myoffset);
   }
 
-  // now write restart data in parallel
-  myoffset = headeroffset + listsize*nbtotal + datasize*myns;
-  resfile.Write_at_all(data, datasize, mynb, myoffset);
   resfile.Close();
   delete [] data;
 }

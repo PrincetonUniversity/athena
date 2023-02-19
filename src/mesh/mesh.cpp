@@ -117,7 +117,6 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     MGGravityBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     MGGravitySourceMaskFunction_{} {
   std::stringstream msg;
-  MeshBlock *pfirst{};
   BoundaryFlag block_bcs[6];
   std::int64_t nbmax;
 
@@ -607,7 +606,6 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     MGGravitySourceMaskFunction_{} {
   std::stringstream msg;
   BoundaryFlag block_bcs[6];
-  MeshBlock *pfirst{};
   IOWrapperSizeT *offset{};
   IOWrapperSizeT datasize, listsize, headeroffset;
 
@@ -848,25 +846,38 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   }
 
   // allocate data buffer
+  int nbmin = nblist[0];
+  for (int n = 1; n < Globals::nranks; ++n) {
+    if (nbmin > nblist[n])
+      nbmin = nblist[n];
+  }
   nblocal = nblist[Globals::my_rank];
   gids_ = nslist[Globals::my_rank];
   gide_ = gids_ + nblocal - 1;
-  char *mbdata = new char[datasize*nblocal];
+  char *mbdata = new char[datasize];
   my_blocks.NewAthenaArray(nblocal);
-  // load MeshBlocks (parallel)
-  if (resfile.Read_at_all(mbdata, datasize, nblocal, headeroffset+gids_*datasize) !=
-      static_cast<unsigned int>(nblocal)) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The restart file is broken or input parameters are inconsistent."
-        << std::endl;
-    ATHENA_ERROR(msg);
-  }
   for (int i=gids_; i<=gide_; i++) {
+    if (i - gids_ < nbmin) {
+      // load MeshBlock (parallel)
+      if (resfile.Read_at_all(mbdata, datasize, 1, headeroffset+i*datasize) != 1) {
+        msg << "### FATAL ERROR in Mesh constructor" << std::endl
+            << "The restart file is broken or input parameters are inconsistent."
+            << std::endl;
+        ATHENA_ERROR(msg);
+      }
+    } else {
+      // load MeshBlock (serial)
+      if (resfile.Read_at(mbdata, datasize, 1, headeroffset+i*datasize) != 1) {
+        msg << "### FATAL ERROR in Mesh constructor" << std::endl
+            << "The restart file is broken or input parameters are inconsistent."
+            << std::endl;
+        ATHENA_ERROR(msg);
+      }
+    }
     // Match fixed-width integer precision of IOWrapperSizeT datasize
-    std::uint64_t buff_os = datasize * (i-gids_);
     SetBlockSizeAndBoundaries(loclist[i], block_size, block_bcs);
     my_blocks(i-gids_) = new MeshBlock(i, i-gids_, this, pin, loclist[i], block_size,
-                                       block_bcs, costlist[i], mbdata+buff_os);
+                                       block_bcs, costlist[i], mbdata);
     my_blocks(i-gids_)->pbval->SearchAndSetNeighbors(tree, ranklist, nslist);
   }
   delete [] mbdata;
