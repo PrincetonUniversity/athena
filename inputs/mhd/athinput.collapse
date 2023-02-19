@@ -1,7 +1,7 @@
 <comment>
 problem   = Protostellar collapse
 reference = 
-configure = --prob=collapse --grav mg -mpi -hdf5
+configure = --prob=collapse -b --grav mg -mpi -hdf5
 
 <job>
 problem_id = Collapse   # problem ID: basename of output filenames
@@ -73,6 +73,6 @@ temperature     = 10.0  # initial temperature
 f               = 1.2   # density enhancement
 njeans          = 16    # the number of the Jeans length for AMR
 rhocrit         = 1e-13 # the density where the gas becomes adiabatic [g cm^-3]
-amp             = 0.0   # the amplitude of m=2 density perturbation
-mu              = 0.0   # the normalized mass-to-flux ratio
-omegatff        = 0.0   # the angular velocity times initial free fall time at the center
+amp             = 0.1   # the amplitude of m=2 density perturbation
+mu              = 3.0   # the normalized mass-to-flux ratio
+omegatff        = 0.03  # the angular velocity times initial free fall time at the center
