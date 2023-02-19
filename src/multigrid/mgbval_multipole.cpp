@@ -18,7 +18,7 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar, 
+//! \fn void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
 //             int is, int ie, int js, int je, int ks, int ke, int ngh,
 //             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
 //             const AthenaArray<Real> &mporigin, int mporder)
@@ -88,7 +88,7 @@ void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar, 
+//! \fn void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
 //             int is, int ie, int js, int je, int ks, int ke, int ngh,
 //             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
 //             const AthenaArray<Real> &mporigin, int mporder)
@@ -157,7 +157,7 @@ void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar, 
+//! \fn void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
 //             int is, int ie, int js, int je, int ks, int ke, int ngh,
 //             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
 //             const AthenaArray<Real> &mporigin, int mporder)
@@ -225,7 +225,7 @@ void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar, 
+//! \fn void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
 //             int is, int ie, int js, int je, int ks, int ke, int ngh,
 //             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
 //             const AthenaArray<Real> &mporigin, int mporder)
@@ -293,7 +293,7 @@ void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar, 
+//! \fn void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 //             int is, int ie, int js, int je, int ks, int ke, int ngh,
 //             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
 //             const AthenaArray<Real> &mporigin, int mporder)
@@ -359,7 +359,7 @@ void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar, 
+//! \fn void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 //             int is, int ie, int js, int je, int ks, int ke, int ngh,
 //             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder)
 //             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,

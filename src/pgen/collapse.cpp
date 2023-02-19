@@ -48,7 +48,7 @@ constexpr Real bemass = 197.561;       // the total mass of the critical BE sphe
 
 // dimensional constants
 constexpr Real pi   = M_PI;
-constexpr Real cs10 = 1.9e4;        // sound speed at 10K, cm / s 
+constexpr Real cs10 = 1.9e4;        // sound speed at 10K, cm / s
 constexpr Real msun = 1.9891e33;    // solar mass, g
 constexpr Real pc   = 3.0857000e18; // parsec, cm
 constexpr Real au   = 1.4959787e13; // astronomical unit, cm
@@ -62,10 +62,10 @@ Real m0, v0, t0, l0, rho0, gauss;
 Real mass, temp, f, rhocrit, omega, bz, mu, amp;
 
 // AMR parameter
-Real njeans; // Real is used intentionally 
+Real njeans; // Real is used intentionally
 
 Real totalm;
-}
+} // namespace
 
 // Mask the density outside the initial sphere
 void SourceMask(AthenaArray<Real> &src, int is, int ie, int js, int je,
@@ -259,7 +259,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
       << "---  Dimensional parameters of the simulation  ---" << std::endl
       << "Total mass          : " << mass      << " \t\t[Msun]" << std::endl
       << "Initial temperature : " << temp      << " \t\t[K]" << std::endl
-      << "Sound speed         : " << v0        << " \t\t[cm s^-1]" << std::endl 
+      << "Sound speed         : " << v0        << " \t\t[cm s^-1]" << std::endl
       << "Central density     : " << rho0*f    << " \t[g cm^-3]" << std::endl
       << "Cloud radius        : " << rc*l0/au  << " \t\t[au]" << std::endl
       << "Free fall time      : " << tff*t0/yr << " \t\t[yr]" << std::endl
@@ -333,7 +333,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         if (NON_BAROTROPIC_EOS)
           phydro->u(IEN,k,j,i) = igm1 * phydro->u(IDN,k,j,i) // c_s = 1
                                + 0.5*(SQR(phydro->u(IM1,k,j,i))+SQR(phydro->u(IM2,k,j,i))
-                                     +SQR(phydro->u(IM3,k,j,i)))/SQR(phydro->u(IDN,k,j,i));
+                               + SQR(phydro->u(IM3,k,j,i)))/SQR(phydro->u(IDN,k,j,i));
       }
     }
   }

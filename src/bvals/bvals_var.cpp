@@ -29,7 +29,7 @@
 
 //! constructor
 
-BoundaryVariable::BoundaryVariable(MeshBlock *pmb, bool fflux) : 
+BoundaryVariable::BoundaryVariable(MeshBlock *pmb, bool fflux) :
                   bvar_index(), pmy_block_(pmb), pmy_mesh_(pmb->pmy_mesh),
                   pbval_(pmb->pbval), fflux_(fflux) {}
 

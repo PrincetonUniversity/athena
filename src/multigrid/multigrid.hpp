@@ -154,7 +154,7 @@ class Multigrid {
 
 class MultigridDriver {
  public:
-  MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, 
+  MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
                   MGSourceMaskFunc MGSourceMask, int invar);
   virtual ~MultigridDriver();
 
@@ -273,7 +273,7 @@ class MultigridDriver {
 //  \brief Minimum set of coordinate arrays for Multigrid
 
 struct MGCoordinates {
- public: 
+ public:
   void AllocateMGCoordinates(int nx, int ny, int nz);
   void CalculateMGCoordinates(const RegionSize &size, int ll, int ngh);
 

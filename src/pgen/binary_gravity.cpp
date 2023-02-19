@@ -277,8 +277,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             Real dy = pcoord->dx2f(j);
             Real dz = pcoord->dx3f(k);
 
-            Real r1 = sqrt(SQR(x-x1)+SQR(y-y1)+SQR(z-z1));
-            Real r2 = sqrt(SQR(x-x2)+SQR(y-y2)+SQR(z-z2));
+            Real r1 = std::sqrt(SQR(x-x1)+SQR(y-y1)+SQR(z-z1));
+            Real r2 = std::sqrt(SQR(x-x2)+SQR(y-y2)+SQR(z-z2));
 
             Real ax = -(pgrav->phi(k,j,i+1)-pgrav->phi(k,j,i-1))/(2.0*dx);
             Real ay = -(pgrav->phi(k,j+1,i)-pgrav->phi(k,j-1,i))/(2.0*dy);

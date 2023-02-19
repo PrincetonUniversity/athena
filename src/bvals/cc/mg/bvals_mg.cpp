@@ -643,7 +643,7 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(BoundaryQuantity type,
     int ssize = 0;
     if (nb.snb.rank == Globals::my_rank) {
       pmg = pmy_mg_->pmy_driver_->FindMultigrid(nb.snb.gid);
-      if (!triplebuf_ && 
+      if (!triplebuf_ &&
           pmg->pmgbval->bdata_[bcolor_].flag[nb.targetid] != BoundaryStatus::waiting) {
         bflag = false;
         continue;

@@ -272,8 +272,8 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::CalculateDefect(AthenaArray<Real> &def,
-//!                      const AthenaArray<Real> &u, const AthenaArray<Real> &src,
-//!                      int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th)
+//!           const AthenaArray<Real> &u, const AthenaArray<Real> &src, int rlev,
+//!           int il, int iu, int jl, int ju, int kl, int ku, bool th)
 //! \brief Implementation of the Defect calculation
 //!        rlev = relative level from the finest level of this Multigrid block
 

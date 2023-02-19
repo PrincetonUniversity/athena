@@ -40,7 +40,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
                AthenaArray<Real>::DataStatus::empty)),
     empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
     four_pi_G(pmb->pmy_mesh->four_pi_G_),
-    output_defect(false), fill_ghost(false), 
+    output_defect(false), fill_ghost(false),
     gbvar(pmb, &phi, &coarse_phi, empty_flux, false) {
   if (four_pi_G == 0.0) {
     std::stringstream msg;
@@ -80,7 +80,6 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
   gbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&gbvar);
   pmb->pbval->pgbvar = &gbvar;
-
 }
 
 

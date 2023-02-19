@@ -209,7 +209,7 @@ using FieldDiffusionCoeffFunc = void (*)(
     const AthenaArray<Real> &w,
     const AthenaArray<Real> &bmag,
     int is, int ie, int js, int je, int ks, int ke);
-using MGSourceMaskFunc = void (*)(AthenaArray<Real> &src, 
+using MGSourceMaskFunc = void (*)(AthenaArray<Real> &src,
     int is, int ie, int js, int je, int ks, int ke, const MGCoordinates &coord);
 using OrbitalVelocityFunc = Real (*)(
     OrbitalAdvection *porb, Real x1, Real x2, Real x3);

@@ -37,7 +37,7 @@
 
 // constructor, initializes data structures and parameters
 
-MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, 
+MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
                                  MGSourceMaskFunc MGSourceMask, int invar) :
     nranks_(Globals::nranks), nthreads_(pm->num_mesh_threads_), nbtotal_(pm->nbtotal),
     nvar_(invar), mode_(0), // 0: FMG V(1,1) + iterative, 1: V(1,1) iterative
@@ -46,7 +46,6 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), needinit_(true),
     eps_(-1.0), niter_(-1), coffset_(0), mporder_(-1), nmpcoeff_(0), mpo_(3),
     autompo_(false), nodipole_(false), nb_rank_(0) {
-
   std::cout << std::scientific << std::setprecision(15);
 
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
@@ -302,7 +301,7 @@ void MultigridDriver::SubtractAverage(MGVariable type) {
   if (nb_rank_ > 0)  // every rank has the same number of MeshBlocks
     MPI_Allgather(MPI_IN_PLACE, nb_rank_*nvar_, MPI_ATHENA_REAL,
                   rootbuf_, nb_rank_*nvar_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
-  else 
+  else
     MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nvar_, MPI_ATHENA_REAL,
                    rootbuf_, nvlisti_, nvslisti_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
 #endif
@@ -1630,7 +1629,6 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
     octetbflag_[lev][oid] = true;
     AthenaArray<Real> &u = octets_[lev][oid].u;
     AthenaArray<Real> &uold = octets_[lev][oid].uold;
-    
     LogicalLocation nloc = loc;
     for (int ox3 = -1; ox3 <= 1; ++ox3) {
       nloc.lx3 = loc.lx3 + ox3;
@@ -1722,8 +1720,8 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
 //  \brief Prolongate octet boundaries contacting the coarser level
 
 void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
-              AthenaArray<Real> &uold, AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
-              const AthenaArray<bool> &ncoarse, bool folddata) {
+     AthenaArray<Real> &uold, AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
+     const AthenaArray<bool> &ncoarse, bool folddata) {
   const int ngh = mgroot_->ngh_;
   const int flim = 2 + ngh;
   constexpr Real fac = 0.125;
