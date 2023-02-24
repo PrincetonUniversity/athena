@@ -93,7 +93,6 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   Real lunit = pin->GetReal("chemistry", "unit_length_in_pc") * Constants::pc;
   Real dunit = muH * Constants::mH;
   Real vunit = Constants::kms;
-  punit = new Units(dunit, lunit, vunit);
   //temperature
   if (NON_BAROTROPIC_EOS) {
     //check adiabatic index, this is for calling CvCold later
@@ -106,10 +105,15 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
         << "kida network with energy equation: adiabatic index must be 5/3." << std::endl;
       ATHENA_ERROR(msg1);
     }
+    punit = new Units(dunit, lunit, vunit);
     temperature_ = 0.;
   } else {
-    //isothermal
-    temperature_ = pin->GetReal("chemistry", "temperature");
+    //isothermal, temperature is calculated from a fixed mean molecular weight
+    const Real mu_iso = pin->GetReal("chemistry", "mu_iso");
+    const Real cs = pin->GetReal("hydro", "iso_sound_speed");
+    punit = new Units(dunit, lunit, vunit, mu_iso);
+    temperature_ = cs * cs * punit->Temperature;
+    std::cout << "isothermal temperature = " << temperature_ << " K" << std::endl;
   }
   //whether to cap temperature if the reaction is outside of the temperature range
   //only for 2 body reactions

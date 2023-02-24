@@ -25,6 +25,7 @@ def get_gow17_fields(data, xC_tot=1.6e-4, xO_tot=3.2e-4):
     data["rC"] = xC_tot - data["rCHx"] - data["rCO"] - data["rC+"] - data["rHCO+"]
     data["rO"] = xO_tot - data["rOHx"] - data["rCO"] - data["rHCO+"]
     #temperature in Kelvin
-    Cv = 1.5 * kb * (1.1 + data["re"] - data["rH2"])
-    data["T"] = data["press"]/data["rho"]/gm1*unit_energy_density/Cv
+    if "press" in data.keys():
+        Cv = 1.5 * kb * (1.1 + data["re"] - data["rH2"])
+        data["T"] = data["press"]/data["rho"]/gm1*unit_energy_density/Cv
     return
