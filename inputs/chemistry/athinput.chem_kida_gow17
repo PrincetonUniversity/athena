@@ -63,7 +63,6 @@ is_fixed_PAH = true #fixing PAH abundance for PE heating and Rec cooling
 Z_d        = 1. #dust metallicity for implicity grain reactions
 Z_PAH      = 1. #PAH metallcity (abundance relative to solar)
 Z_g        = 1. #gas metallicity
-temperature = 20  #T in Kelvin, if const_T_flag is true.
 is_Tcap_2body = false #temperature cap for rates of 2 body reactions
 network_dir = /Users/munangong/athena/src/chemistry/network/kida_network_files/gow17
 #chemistry solver parameters
