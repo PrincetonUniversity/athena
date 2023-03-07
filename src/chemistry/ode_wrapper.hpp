@@ -9,13 +9,6 @@
 //! \brief definitions for ode solver classes.
 
 // C headers
-// CVODE headers
-#include <cvode/cvode.h>            // CVODE solver fcts., consts.
-#include <cvode/cvode_direct.h>     // prototype for CVDense
-#include <nvector/nvector_serial.h> // N_Vector type
-#include <sundials/sundials_dense.h>
-#include <sunlinsol/sunlinsol_dense.h> // access to dense SUNLinearSolver
-#include <sunmatrix/sunmatrix_dense.h> // access to dense SUNMatrix
 
 // C++ headers
 
@@ -36,31 +29,11 @@ class ODEWrapper {
   void Initialize(ParameterInput *pin);
   void Integrate(const Real tinit, const Real dt);
 
-  void SetInitStep(const Real h_init);
-  Real GetLastStep() const;
-  Real GetNextStep() const;
-  long int GetNsteps() const; // NOLINT (runtime/int)
-
  private:
   PassiveScalars *pmy_spec_;
   MeshBlock *pmy_block_;
-  int dim_; //dimenstion
-  Real reltol_;//relative tolerance
-  AthenaArray<Real> abstol_;
-  SUNContext sunctx_;
-  SUNMatrix dense_matrix_;
-  SUNLinearSolver dense_ls_;
-  void *cvode_mem_;
-  N_Vector y_;
-  Real *ydata_;
-  Real h_init_;
-  bool use_previous_h_;
-  Real fac_dtmax_;//factor of the max timestep in CVODE relative to the hydrostep
-  bool output_zone_sec_;
-
-  //CVODE checkflag
-  void CheckFlag(const void *flagvalue, const char *funcname,
-                 const int opt) const;
+  int dim_; //dimension  of the ODEs
+  bool output_zone_sec_; //option to output solver performance
 };
 
 

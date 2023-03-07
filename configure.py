@@ -31,7 +31,8 @@
 #   --grav=xxx        use xxx as the self-gravity solver
 #   --chemistry=choice enable chemistry, use choice as chemical network
 #   --kida_rates=choice add special rates to kida network
-#   --cvode_path=path  path to CVODE libraries (chemistry requires the cvode library)
+#   --ode_solver=choice ode solver for chemistry
+#   --cvode_path=path  path to CVODE libraries (cvode solver requires the library)
 #   --radiation=choice  enable radiative transfer, use choice for integrator
 #   --cxx=xxx         use xxx as the C++ compiler
 #   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
@@ -210,6 +211,12 @@ parser.add_argument('--radiation',
                     choices=["const", "six_ray"],
                     help='enable and select radiation radiative transfer method')
 
+# --ode_solver argument
+parser.add_argument('--ode_solver',
+                    default=None,
+                    choices=["cvode", "forward_euler"],
+                    help='ode solver for chemistry')
+
 # --cvode_path argument
 parser.add_argument('--cvode_path',
                     type=str,
@@ -377,6 +384,16 @@ if args['eos'][:8] == 'general/':
     if args['flux'] not in ['hllc', 'hlld']:
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with flux ' + args['flux'])
+
+# Check chemistry
+if args['chemistry'] != None and args['ode_solver'] == None:
+    raise SystemExit('### CONFIGURE ERROR: must choose ode solver for chemistry.')
+
+if args['chemistry'] == 'kida' and args['kida_rates'] == None:
+    raise SystemExit('### CONFIGURE ERROR: must provide rates for kida chemistry.')
+
+if args['ode_solver'] == 'cvode' and args['cvode_path'] == '':
+    raise SystemExit('### CONFIGURE ERROR: must provide library path to cvode.')
 
 # --- Step 3. Set definitions and Makefile options based on above argument
 
@@ -603,14 +620,14 @@ if args['cxx'] == 'clang++-apple':
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 
-# -chemistry argument
+# --chemistry=[network] argument
 if args['chemistry'] is not None:
     definitions['CHEMISTRY_OPTION'] = 'INCLUDE_CHEMISTRY'
     definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/' \
                                         + args['chemistry'] + '.hpp'
     makefile_options['CHEMNET_FILE'] = 'src/chemistry/network/' \
         + args['chemistry'] + '.cpp'
-    makefile_options['CHEMISTRY_FILE'] = 'src/chemistry/*.cpp src/chemistry/utils/*.cpp'
+    makefile_options['CHEMISTRY_FILE'] = 'src/chemistry/network_wrapper.cpp src/chemistry/utils/*.cpp'
     makefile_options['LIBRARY_FLAGS'] += ' -lsundials_cvode -lsundials_nvecserial'
     # specify the number of species for each network
     if args['chemistry'] == "gow17":
@@ -625,6 +642,7 @@ else:
     makefile_options['CHEMISTRY_FILE'] = ''
     definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/network.hpp'
 
+# --kida_rates=[rates] argument
 if args['kida_rates'] is not None:
     if args['chemistry'] == "kida":
         makefile_options['CHEMNET_FILE'] += (
@@ -633,6 +651,9 @@ if args['kida_rates'] is not None:
             + '/kida_'
             + args['kida_rates']
             + '.cpp')
+# --ode_solver=[solver] argument
+if args['ode_solver'] is not None:
+    makefile_options['ODE_SOLVER_FILE'] = args['ode_solver']+'.cpp'
 
 # --cvode_path=[path] argument
 if args['cvode_path'] != '':
@@ -640,7 +661,7 @@ if args['cvode_path'] != '':
     makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['cvode_path']
     makefile_options['LINKER_FLAGS'] += " -Wl,-rpath," + '%s/lib' % args['cvode_path']
 
-# -radiation argument
+# --radiation=[radiation] argument
 if args['radiation'] is not None:
     definitions['RADIATION_ENABLED'] = '1'
     makefile_options['RADIATION_FILE'] = args['radiation']+'.cpp'
@@ -896,6 +917,8 @@ print('  Chemistry:                  ' + (args['chemistry'] if args['chemistry']
 print('  kida_rates:                 ' + (args['kida_rates'] if args['kida_rates']
                                           is not None else 'OFF'))
 print('  Radiation:                  ' + (args['radiation'] if args['radiation']
+                                          is not None else 'OFF'))
+print('  ode_solver:                 ' + (args['ode_solver'] if args['ode_solver']
                                           is not None else 'OFF'))
 print('  cvode_path:                 ' + args['cvode_path'])
 print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))

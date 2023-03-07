@@ -22,6 +22,7 @@ def prepare(**kwargs):
     athena.configure(
         prob='chem_H2',
         chemistry='H2',
+        ode_solver='cvode',
         cxx=cxx,
         eos='isothermal',
         nghost='3',
@@ -36,7 +37,8 @@ def run(**kwargs):
                 'chemistry/reltol=1e-15',
                 'time/integrator=rk2',
                 'time/xorder=2',
-                'mesh/nx1=' + str(nx1)
+                'mesh/nx1=' + str(nx1),
+                'meshblock/nx1=' + str(nx1)
                 ]
         athena.run('chemistry/athinput.chem_H2_gaussian', arguments)
 

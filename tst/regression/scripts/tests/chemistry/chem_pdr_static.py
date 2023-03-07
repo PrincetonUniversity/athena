@@ -23,6 +23,7 @@ def prepare(**kwargs):
     athena.configure(
         prob='chem_uniform_sixray',
         chemistry='gow17',
+        ode_solver='cvode',
         radiation='six_ray',
         cxx=cxx,
         cvode_path=os.environ['CVODE_PATH']

@@ -3,15 +3,21 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file ode_wrapper.cpp
-//! \brief implementation of functions in class ODEWrapper. This is a wrapper
-//! for the ODE solver, CVODE.
+//! \file cvode.cpp
+//! \brief implementation of the CVODE solver
 
 // this class header
 #include "ode_wrapper.hpp"
 
 //c header
 #include <stdio.h> //c style io
+// CVODE headers
+#include <cvode/cvode.h>            // CVODE solver fcts., consts.
+#include <cvode/cvode_direct.h>     // prototype for CVDense
+#include <nvector/nvector_serial.h> // N_Vector type
+#include <sundials/sundials_dense.h>
+#include <sunlinsol/sunlinsol_dense.h> // access to dense SUNLinearSolver
+#include <sunmatrix/sunmatrix_dense.h> // access to dense SUNMatrix
 
 //c++ header
 #include <ctime> //time
@@ -25,6 +31,32 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
+
+namespace {
+  //solver tolerance
+  Real reltol_;//relative tolerance
+  AthenaArray<Real> abstol_;
+  //solver stepsize
+  Real h_init_;
+  bool use_previous_h_;
+  //factor of the max timestep in solver relative to the hydrostep
+  Real fac_dtmax_;
+  //cvode variables
+  SUNContext sunctx_;
+  SUNMatrix dense_matrix_;
+  SUNLinearSolver dense_ls_;
+  void *cvode_mem_;
+  N_Vector y_;
+  Real *ydata_;
+  //functions controlling the stepsize
+  void SetInitStep(const Real h_init);
+  Real GetLastStep();
+  Real GetNextStep();
+  long int GetNsteps(); // NOLINT (runtime/int)
+  //CVODE checkflag function
+  void CheckFlag(const void *flagvalue, const char *funcname,
+                 const int opt);
+}
 
 //----------------------------------------------------------------------------------------
 //! \brief ODEWrapper constructor
@@ -314,21 +346,56 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   return;
 }
 
+namespace {
+
 //----------------------------------------------------------------------------------------
-//! \fn void ODEWrapper::SetInitStep(const Real h_init)
+//! \fn void SetInitStep(const Real h_init)
 //! \brief Set initial stepsize for ODE solver
-void ODEWrapper::SetInitStep(const Real h_init) {
+void SetInitStep(const Real h_init) {
   int flag = CVodeSetInitStep(cvode_mem_, h_init);
   CheckFlag(&flag, "CVodeSetInitStep", 1);
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ODEWrapper::CheckFlag(const void *flagvalue, const char *funcname,
-//!               const int opt) const
+//! \fn Real GetLastStep()
+//! \brief Get last stepsize
+Real GetLastStep() {
+  Real hlast;
+  int flag;
+  flag = CVodeGetLastStep(cvode_mem_, &hlast);
+  CheckFlag(&flag, "CVodeGetLastStep", 1);
+  return hlast;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real GetNextStep()
+//! \brief Get next stepsize
+Real GetNextStep() {
+  Real hlast;
+  int flag;
+  flag = CVodeGetCurrentStep(cvode_mem_, &hlast);
+  CheckFlag(&flag, "CVodeGetLastStep", 1);
+  return hlast;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn long int GetNsteps()
+//! \brief Get the number of steps between two reinits
+long int GetNsteps() { // NOLINT (runtime/int)
+  long int nst; // NOLINT (runtime/int)
+  int flag;
+  flag = CVodeGetNumSteps(cvode_mem_, &nst);
+  CheckFlag(&flag, "CVodeGetNumSteps", 1);
+  return nst;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void CheckFlag(const void *flagvalue, const char *funcname,
+//!                    const int opt)
 //! \brief CVODE flag check
-void ODEWrapper::CheckFlag(const void *flagvalue, const char *funcname,
-               const int opt) const {
+void CheckFlag(const void *flagvalue, const char *funcname,
+               const int opt) {
   const int *errflag;
 
   // Check if SUNDIALS function returned NULL pointer - no memory allocated
@@ -362,35 +429,4 @@ void ODEWrapper::CheckFlag(const void *flagvalue, const char *funcname,
   }
 }
 
-//----------------------------------------------------------------------------------------
-//! \fn Real ODEWrapper::GetLastStep() const
-//! \brief Get last stepsize
-Real ODEWrapper::GetLastStep() const {
-  Real hlast;
-  int flag;
-  flag = CVodeGetLastStep(cvode_mem_, &hlast);
-  CheckFlag(&flag, "CVodeGetLastStep", 1);
-  return hlast;
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn Real ODEWrapper::GetNextStep() const
-//! \brief Get next stepsize
-Real ODEWrapper::GetNextStep() const {
-  Real hlast;
-  int flag;
-  flag = CVodeGetCurrentStep(cvode_mem_, &hlast);
-  CheckFlag(&flag, "CVodeGetLastStep", 1);
-  return hlast;
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn long int ODEWrapper::GetNsteps() const
-//! \brief Get the number of steps between two reinits
-long int ODEWrapper::GetNsteps() const { // NOLINT (runtime/int)
-  long int nst; // NOLINT (runtime/int)
-  int flag;
-  flag = CVodeGetNumSteps(cvode_mem_, &nst);
-  CheckFlag(&flag, "CVodeGetNumSteps", 1);
-  return nst;
-}
+} // namespace

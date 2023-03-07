@@ -22,6 +22,7 @@ def prepare(**kwargs):
     athena.configure(
         prob='chem_uniform',
         chemistry='H2',
+        ode_solver='cvode',
         cxx=cxx,
         eos='isothermal',
         cvode_path=os.environ['CVODE_PATH']
