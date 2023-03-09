@@ -652,6 +652,10 @@ if args['kida_rates'] is not None:
             + args['kida_rates']
             + '.cpp')
 # --ode_solver=[solver] argument
+if args['ode_solver'] == 'cvode':
+    definitions['CVODE_OPTION'] = 'CVODE'
+else:
+    definitions['CVODE_OPTION'] = 'NO_CVODE'
 if args['ode_solver'] is not None:
     makefile_options['ODE_SOLVER_FILE'] = args['ode_solver']+'.cpp'
 

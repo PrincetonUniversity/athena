@@ -17,6 +17,17 @@
 #include "../athena_arrays.hpp"
 #include "network/network.hpp"
 
+// CVODE headers
+#ifdef CVODE
+#include <cvode/cvode.h>            // CVODE solver fcts., consts.
+#include <cvode/cvode_direct.h>     // prototype for CVDense
+#include <nvector/nvector_serial.h> // N_Vector type
+#include <sundials/sundials_dense.h>
+#include <sunlinsol/sunlinsol_dense.h> // access to dense SUNLinearSolver
+#include <sunmatrix/sunmatrix_dense.h> // access to dense SUNMatrix
+#endif //CVODE
+
+class Meshblock;
 class ParameterInput;
 class PassiveScalars;
 
@@ -34,6 +45,20 @@ class ODEWrapper {
   MeshBlock *pmy_block_;
   int dim_; //dimension  of the ODEs
   bool output_zone_sec_; //option to output solver performance
+#ifdef CVODE
+  //cvode variables
+  SUNContext sunctx_;
+  SUNMatrix dense_matrix_;
+  SUNLinearSolver dense_ls_;
+  N_Vector y_;
+  Real *ydata_;
+  void *cvode_mem_;
+  //cvode functions
+  void SetInitStep(const Real h_init) const;
+  Real GetLastStep() const;
+  Real GetNextStep() const;
+  long int GetNsteps() const; // NOLINT (runtime/int)
+#endif //CVODE
 };
 
 
