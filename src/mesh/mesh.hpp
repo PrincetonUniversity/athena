@@ -297,7 +297,7 @@ class Mesh {
   UserHistoryOperation *user_history_ops_;
 
   // global constants
-  Real four_pi_G_, grav_eps_;
+  Real four_pi_G_;
 
   // variables for load balancing control
   bool lb_flag_, lb_automatic_, lb_manual_;
@@ -375,7 +375,6 @@ class Mesh {
   void EnrollOrbitalVelocityDerivative(int i, OrbitalVelocityFunc my_func);
   void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; }
   void SetFourPiG(Real fpg) { four_pi_G_=fpg; }
-  void SetGravityThreshold(Real eps) { grav_eps_=eps; }
 };
 
 

@@ -37,7 +37,7 @@ class Gravity {
   AthenaArray<Real> phi, coarse_phi;   // gravitational potential
   AthenaArray<Real> def;   // defect from the Multigrid solver
   AthenaArray<Real> empty_flux[3];
-  Real gconst, four_pi_G;
+  Real four_pi_G;
   bool output_defect;
   bool fill_ghost;
 
