@@ -41,6 +41,12 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
       ATHENA_ERROR(msg);
       return;
     }
+    for (int i = 0; i < 6; ++i) {
+      if (pmy_block_->pbval->block_bcs[i] == BoundaryFlag::block)
+        mg_block_bcs_[i] = BoundaryFlag::block;
+      else
+        mg_block_bcs_[i] = pmy_driver_->mg_mesh_bcs_[i];
+    }
   } else {
     loc_.lx1 = loc_.lx2 = loc_.lx3 = 0;
     loc_.level = 0;
@@ -48,8 +54,9 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
     size_.nx1 = pmy_driver_->nrbx1_;
     size_.nx2 = pmy_driver_->nrbx2_;
     size_.nx3 = pmy_driver_->nrbx3_;
+    for (int i = 0; i < 6; ++i)
+      mg_block_bcs_[i] = pmy_driver_->mg_mesh_bcs_[i];
   }
-
   rdx_=(size_.x1max-size_.x1min)/static_cast<Real>(size_.nx1);
   rdy_=(size_.x2max-size_.x2min)/static_cast<Real>(size_.nx2);
   rdz_=(size_.x3max-size_.x3min)/static_cast<Real>(size_.nx3);
@@ -57,15 +64,15 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
   nlevel_=0;
   if (pmy_block_ == nullptr) { // root
     int nbx, nby, nbz;
-    for (int l=0; l<20; l++) {
-      if (size_.nx1%(1<<l)==0 && size_.nx2%(1<<l)==0 && size_.nx3%(1<<l)==0) {
+    for (int l = 0; l < 20; l++) {
+      if (size_.nx1%(1<<l) == 0 && size_.nx2%(1<<l) == 0 && size_.nx3%(1<<l) == 0) {
         nbx=size_.nx1/(1<<l), nby=size_.nx2/(1<<l), nbz=size_.nx3/(1<<l);
         nlevel_=l+1;
       }
     }
     int nmaxr=std::max(nbx, std::max(nby, nbz));
     // int nminr=std::min(nbx, std::min(nby, nbz)); // unused variable
-    if (nmaxr!=1 && Globals::my_rank==0) {
+    if (nmaxr != 1 && Globals::my_rank == 0) {
       std::cout
           << "### Warning in Multigrid::Multigrid" << std::endl
           << "The root grid can not be reduced to a single cell." << std::endl
@@ -82,13 +89,13 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
                 << "We recommend to reconsider grid configuration." << std::endl;
     }
   } else {
-    for (int l=0; l<20; l++) {
+    for (int l = 0; l < 20; l++) {
       if ((1<<l) == size_.nx1) {
         nlevel_=l+1;
         break;
       }
     }
-    if (nlevel_==0) {
+    if (nlevel_ == 0) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
           << "The MeshBlock size must be power of two." << std::endl;
@@ -96,7 +103,7 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
       return;
     }
     // *** temporary ***
-    if (std::abs(rdx_-rdy_)>1.0e-5 || std::abs(rdx_-rdz_)>1.0e-5) {
+    if (std::abs(rdx_-rdy_) > 1.0e-5 || std::abs(rdx_-rdz_) > 1.0e-5) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Multigrid::Multigrid" << std::endl
           << "The cell size must be cubic." << std::endl;
@@ -111,21 +118,29 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
   u_ = new AthenaArray<Real>[nlevel_];
   src_ = new AthenaArray<Real>[nlevel_];
   def_ = new AthenaArray<Real>[nlevel_];
-  if (pmy_driver_->ffas_) {
-    if (pmy_block_ == nullptr)
-      uold_ = new AthenaArray<Real>[nlevel_];
-    else
-      uold_ = new AthenaArray<Real>[nlevel_-1];
-  }
-  for (int l=0; l<nlevel_; l++) {
+  coord_ = new MGCoordinates[nlevel_];
+  ccoord_ = new MGCoordinates[nlevel_];
+  if (pmy_block_ == nullptr)
+    uold_ = new AthenaArray<Real>[nlevel_];
+  else
+    uold_ = new AthenaArray<Real>[nlevel_];
+  for (int l = 0; l < nlevel_; l++) {
     int ll=nlevel_-1-l;
-    int ncx=(size_.nx1>>ll)+2*ngh_, ncy=(size_.nx2>>ll)+2*ngh_,
-        ncz=(size_.nx3>>ll)+2*ngh_;
+    int ncx=(size_.nx1>>ll)+2*ngh_;
+    int ncy=(size_.nx2>>ll)+2*ngh_;
+    int ncz=(size_.nx3>>ll)+2*ngh_;
     u_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     src_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     def_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
-    if (pmy_driver_->ffas_ && !((pmy_block_ != nullptr) && (l == nlevel_-1)))
+    if (!((pmy_block_ != nullptr) && (l == nlevel_-1)))
       uold_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
+    coord_[l].AllocateMGCoordinates(ncx,ncy,ncz);
+    coord_[l].CalculateMGCoordinates(size_, ll, ngh_);
+    ncx=(size_.nx1>>(ll+1))+2*ngh_;
+    ncy=(size_.nx2>>(ll+1))+2*ngh_;
+    ncz=(size_.nx3>>(ll+1))+2*ngh_;
+    ccoord_[l].AllocateMGCoordinates(ncx,ncy,ncz);
+    ccoord_[l].CalculateMGCoordinates(size_, ll+1, ngh_);
   }
 }
 
@@ -138,7 +153,9 @@ Multigrid::~Multigrid() {
   delete [] u_;
   delete [] src_;
   delete [] def_;
-  if (pmy_driver_->ffas_) delete [] uold_;
+  delete [] uold_;
+  delete [] coord_;
+  delete [] ccoord_;
 }
 
 
@@ -153,10 +170,15 @@ void Multigrid::LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh) {
   ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
   for (int v=0; v<nvar_; ++v) {
     int nsrc=ns+v;
-    for (int k=ngh, mk=ks; mk<=ke; ++k, ++mk) {
-      for (int j=ngh, mj=js; mj<=je; ++j, ++mj) {
-        for (int i=ngh, mi=is; mi<=ie; ++i, ++mi)
+    for (int mk=ks; mk<=ke; ++mk) {
+      int k = mk - ks + ngh;
+      for (int mj=js; mj<=je; ++mj) {
+        int j = mj - js + ngh;
+#pragma omp simd
+        for (int mi=is; mi<=ie; ++mi) {
+          int i = mi - is + ngh;
           dst(v,mk,mj,mi)=src(nsrc,k,j,i);
+        }
       }
     }
   }
@@ -174,31 +196,55 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
-  if (fac==1.0) {
+  if (fac == 1.0) {
     for (int v=0; v<nvar_; ++v) {
       int nsrc=ns+v;
-      for (int k=ngh, mk=ks; mk<=ke; ++k, ++mk) {
-        for (int j=ngh, mj=js; mj<=je; ++j, ++mj) {
-          for (int i=ngh, mi=is; mi<=ie; ++i, ++mi)
+      for (int mk=ks; mk<=ke; ++mk) {
+        int k = mk - ks + ngh;
+        for (int mj=js; mj<=je; ++mj) {
+          int j = mj - js + ngh;
+#pragma omp simd
+          for (int mi=is; mi<=ie; ++mi) {
+            int i = mi - is + ngh;
             dst(v,mk,mj,mi)=src(nsrc,k,j,i);
+          }
         }
       }
     }
   } else {
     for (int v=0; v<nvar_; ++v) {
       int nsrc=ns+v;
-      for (int k=ngh, mk=ks; mk<=ke; ++k, ++mk) {
-        for (int j=ngh, mj=js; mj<=je; ++j, ++mj) {
-          for (int i=ngh, mi=is; mi<=ie; ++i, ++mi)
+      for (int mk=ks; mk<=ke; ++mk) {
+        int k = mk - ks + ngh;
+        for (int mj=js; mj<=je; ++mj) {
+          int j = mj - js + ngh;
+#pragma omp simd
+          for (int mi=is; mi<=ie; ++mi) {
+            int i = mi - is + ngh;
             dst(v,mk,mj,mi)=src(nsrc,k,j,i)*fac;
+          }
         }
       }
     }
   }
-  current_level_=nlevel_-1;
+  current_level_ = nlevel_-1;
   return;
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::ApplySourceMask()
+//  \brief Apply the user-defined source mask function on the finest level
+
+void Multigrid::ApplySourceMask() {
+  int is, ie, js, je, ks, ke;
+  is = js = ks = ngh_;
+  ie = is + size_.nx1;
+  je = js + size_.nx2;
+  ke = ks + size_.nx3;
+  pmy_driver_->srcmask_(src_[nlevel_-1], is, ie, js, je, ks, ke, coord_[nlevel_-1]);
+  return;
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::RestrictFMGSource()
@@ -210,7 +256,7 @@ void Multigrid::RestrictFMGSource() {
   for (current_level_=nlevel_-1; current_level_>0; current_level_--) {
     int ll=nlevel_-current_level_;
     ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
-    Restrict(src_[current_level_-1], src_[current_level_], is, ie, js, je, ks, ke);
+    Restrict(src_[current_level_-1], src_[current_level_], is, ie, js, je, ks, ke, false);
   }
   return;
 }
@@ -226,10 +272,15 @@ void Multigrid::RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh) {
   int ie=size_.nx1+ngh_+sngh-1, je=size_.nx2+ngh_+sngh-1, ke=size_.nx3+ngh_+sngh-1;
   for (int v=0; v<nvar_; ++v) {
     int ndst=ns+v;
-    for (int k=ngh-sngh, mk=ngh_-sngh; mk<=ke; ++k, ++mk) {
-      for (int j=ngh-sngh, mj=ngh_-sngh; mj<=je; ++j, ++mj) {
-        for (int i=ngh-sngh, mi=ngh_-sngh; mi<=ie; ++i, ++mi)
+    for (int mk=ngh_-sngh; mk<=ke; ++mk) {
+      int k = mk - ngh_ + ngh;
+      for (int mj=ngh_-sngh; mj<=je; ++mj) {
+        int j = mj - ngh_ + ngh;
+#pragma omp simd
+        for (int mi=ngh_-sngh; mi<=ie; ++mi) {
+          int i = mi - ngh_ + ngh;
           dst(ndst,k,j,i)=src(v,mk,mj,mi);
+        }
       }
     }
   }
@@ -247,10 +298,15 @@ void Multigrid::RetrieveDefect(AthenaArray<Real> &dst, int ns, int ngh) {
   int ie=size_.nx1+ngh_+sngh-1, je=size_.nx2+ngh_+sngh-1, ke=size_.nx3+ngh_+sngh-1;
   for (int v=0; v<nvar_; ++v) {
     int ndst=ns+v;
-    for (int k=ngh-sngh, mk=ngh_-sngh; mk<=ke; ++k, ++mk) {
-      for (int j=ngh-sngh, mj=ngh_-sngh; mj<=je; ++j, ++mj) {
-        for (int i=ngh-sngh, mi=ngh_-sngh; mi<=ie; ++i, ++mi)
+    for (int mk=ngh_-sngh; mk<=ke; ++mk) {
+      int k = mk - ngh_ + ngh;
+      for (int mj=ngh_-sngh; mj<=je; ++mj) {
+        int j = mj - ngh_ + ngh;
+#pragma omp simd
+        for (int mi=ngh_-sngh; mi<=ie; ++mi) {
+          int i = mi - ngh_ + ngh;
           dst(ndst,k,j,i)=src(v,mk,mj,mi)*defscale_;
+        }
       }
     }
   }
@@ -275,16 +331,21 @@ void Multigrid::ZeroClearData() {
 void Multigrid::RestrictBlock() {
   int ll=nlevel_-current_level_;
   int is, ie, js, je, ks, ke;
+  int th = false;
+#ifdef OPENMP_PARALLEL
+  if (pmy_block_ == nullptr)
+    th = true;
+#endif
 
   CalculateDefectBlock();
   is=js=ks=ngh_;
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
 
-  Restrict(src_[current_level_-1], def_[current_level_], is, ie, js, je, ks, ke);
+  Restrict(src_[current_level_-1], def_[current_level_], is, ie, js, je, ks, ke, th);
 
   // Full Approximation Scheme - restrict the variable itself
   if (pmy_driver_->ffas_)
-    Restrict(u_[current_level_-1], u_[current_level_], is, ie, js, je, ks, ke);
+    Restrict(u_[current_level_-1], u_[current_level_], is, ie, js, je, ks, ke, th);
 
   current_level_--;
 
@@ -301,6 +362,11 @@ void Multigrid::RestrictBlock() {
 void Multigrid::ProlongateAndCorrectBlock() {
   int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
+  int th = false;
+#ifdef OPENMP_PARALLEL
+  if (pmy_block_ == nullptr)
+    th = true;
+#endif
   is=js=ks=ngh_;
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
 
@@ -310,8 +376,8 @@ void Multigrid::ProlongateAndCorrectBlock() {
       u_[current_level_](s) -= uold_[current_level_](s);
   }
 
-  ProlongateAndCorrect(u_[current_level_+1], u_[current_level_], is, ie, js, je, ks, ke,
-                                                                 ngh_, ngh_, ngh_);
+  ProlongateAndCorrect(u_[current_level_+1], u_[current_level_],
+                       is, ie, js, je, ks, ke, ngh_, ngh_, ngh_, th);
 
   current_level_++;
   return;
@@ -325,11 +391,16 @@ void Multigrid::ProlongateAndCorrectBlock() {
 void Multigrid::FMGProlongateBlock() {
   int ll=nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
+  int th = false;
+#ifdef OPENMP_PARALLEL
+  if (pmy_block_ == nullptr)
+    th = true;
+#endif
   is=js=ks=ngh_;
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
 
-  FMGProlongate(u_[current_level_+1], u_[current_level_], is, ie, js, je, ks, ke,
-                                                          ngh_, ngh_, ngh_);
+  FMGProlongate(u_[current_level_+1], u_[current_level_],
+                is, ie, js, je, ks, ke, ngh_, ngh_, ngh_, th);
 
   current_level_++;
   return;
@@ -343,10 +414,16 @@ void Multigrid::FMGProlongateBlock() {
 void Multigrid::SmoothBlock(int color) {
   int ll = nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
+  int th = false;
+#ifdef OPENMP_PARALLEL
+  if (pmy_block_ == nullptr)
+    th = true;
+#endif
   is = js = ks = ngh_;
   ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
 
-  Smooth(u_[current_level_], src_[current_level_], -ll, is, ie, js, je, ks, ke, color);
+  Smooth(u_[current_level_], src_[current_level_],
+         -ll, is, ie, js, je, ks, ke, color, th);
 
   return;
 }
@@ -359,11 +436,16 @@ void Multigrid::SmoothBlock(int color) {
 void Multigrid::CalculateDefectBlock() {
   int ll = nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
+  int th = false;
+#ifdef OPENMP_PARALLEL
+  if (pmy_block_ == nullptr)
+    th = true;
+#endif
   is = js = ks = ngh_;
   ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
 
   CalculateDefect(def_[current_level_], u_[current_level_], src_[current_level_],
-                  -ll, is, ie, js, je, ks, ke);
+                  -ll, is, ie, js, je, ks, ke, th);
 
   return;
 }
@@ -376,10 +458,16 @@ void Multigrid::CalculateDefectBlock() {
 void Multigrid::CalculateFASRHSBlock() {
   int ll = nlevel_-1-current_level_;
   int is, ie, js, je, ks, ke;
+  int th = false;
+#ifdef OPENMP_PARALLEL
+  if (pmy_block_ == nullptr)
+    th = true;
+#endif
   is = js = ks = ngh_;
   ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
 
-  CalculateFASRHS(src_[current_level_], u_[current_level_], -ll, is, ie, js, je, ks, ke);
+  CalculateFASRHS(src_[current_level_], u_[current_level_],
+                  -ll, is, ie, js, je, ks, ke, th);
 
   return;
 }
@@ -401,6 +489,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
     for (int v=0; v<nvar_; ++v) {
       for (int k=0; k<=2; ++k) {
         for (int j=0; j<=2; ++j) {
+#pragma ivdep
           for (int i=0; i<=2; ++i)
             dst(v, k, j, i) = src(v, ck+k, cj+j, ci+i);
         }
@@ -412,6 +501,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
       for (int v=0; v<nvar_; ++v) {
         for (int k=0; k<=2; ++k) {
           for (int j=0; j<=2; ++j) {
+#pragma ivdep
             for (int i=0; i<=2; ++i)
               odst(v, k, j, i) = osrc(v, ck+k, cj+j, ci+i);
           }
@@ -433,6 +523,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
     for (int v=0; v<nvar_; ++v) {
       for (int k=0; k<=2; ++k) {
         for (int j=0; j<=2; ++j) {
+#pragma ivdep
           for (int i=0; i<=2; ++i)
             dst(v, k, j, i)=src(v, ck+k, cj+j, ci+i);
         }
@@ -444,6 +535,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
       for (int v=0; v<nvar_; ++v) {
         for (int k=0; k<=2; ++k) {
           for (int j=0; j<=2; ++j) {
+#pragma ivdep
             for (int i=0; i<=2; ++i)
               odst(v, k, j, i)=osrc(v, ck+k, cj+j, ci+i);
           }
@@ -470,29 +562,32 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
        dz=rdz_*static_cast<Real>(1<<ll);
 
   CalculateDefect(def_[current_level_], u_[current_level_], src_[current_level_],
-                  -ll, is, ie, js, je, ks, ke);
+                  -ll, is, ie, js, je, ks, ke, false);
 
   Real norm=0.0;
   if (nrm == MGNormType::max) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
+#pragma omp simd reduction(max: norm)
         for (int i=is; i<=ie; ++i)
-          norm=std::max(norm,std::fabs(def(n,k,j,i)));
+          norm = std::max(norm, std::fabs(def(n,k,j,i)));
       }
     }
     return norm;
   } else if (nrm == MGNormType::l1) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
+#pragma omp simd reduction(+: norm)
         for (int i=is; i<=ie; ++i)
-          norm+=std::fabs(def(n,k,j,i));
+          norm += std::fabs(def(n,k,j,i));
       }
     }
   } else { // L2 norm
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
+#pragma omp simd reduction(+: norm)
         for (int i=is; i<=ie; ++i)
-          norm+=SQR(def(n,k,j,i));
+          norm += SQR(def(n,k,j,i));
       }
     }
   }
@@ -516,6 +611,7 @@ Real Multigrid::CalculateTotal(MGVariable type, int n) {
        dz=rdz_*static_cast<Real>(1<<ll);
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
+#pragma omp simd reduction(+: s)
       for (int i=is; i<=ie; ++i)
         s+=src(n,k,j,i);
     }
@@ -535,6 +631,7 @@ void Multigrid::SubtractAverage(MGVariable type, int n, Real ave) {
   ie=is+size_.nx1+1, je=js+size_.nx2+1, ke=ks+size_.nx3+1;
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
+#pragma omp simd
       for (int i=is; i<=ie; ++i)
         dst(n,k,j,i)-=ave;
     }
@@ -581,19 +678,44 @@ void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-//                               int il, int iu, int jl, int ju, int kl, int ku)
+//                               int il, int iu, int jl, int ju, int kl, int ku, bool th)
 //  \brief Actual implementation of prolongation and correction
 
 void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                         int il, int iu, int jl, int ju, int kl, int ku) {
-  for (int v=0; v<nvar_; ++v) {
-    for (int k=kl, fk=kl; k<=ku; ++k, fk+=2) {
-      for (int j=jl, fj=jl; j<=ju; ++j, fj+=2) {
-        for (int i=il, fi=il; i<=iu; ++i, fi+=2)
-          dst(v, k, j, i)=0.125*(src(v, fk,   fj,   fi)+src(v, fk,   fj,   fi+1)
-                                +src(v, fk,   fj+1, fi)+src(v, fk,   fj+1, fi+1)
-                                +src(v, fk+1, fj,   fi)+src(v, fk+1, fj,   fi+1)
-                                +src(v, fk+1, fj+1, fi)+src(v, fk+1, fj+1, fi+1));
+                         int il, int iu, int jl, int ju, int kl, int ku, bool th) {
+  if (th == true && (ku-kl) >=  minth_) {
+    for (int v=0; v<nvar_; ++v) {
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
+      for (int k=kl; k<=ku; ++k) {
+        int fk = 2*k - kl;
+        for (int j=jl; j<=ju; ++j) {
+          int fj = 2*j - jl;
+#pragma ivdep
+          for (int i=il; i<=iu; ++i) {
+            int fi = 2*i - il;
+            dst(v, k, j, i)=0.125*(src(v, fk,   fj,   fi)+src(v, fk,   fj,   fi+1)
+                                  +src(v, fk,   fj+1, fi)+src(v, fk,   fj+1, fi+1)
+                                  +src(v, fk+1, fj,   fi)+src(v, fk+1, fj,   fi+1)
+                                  +src(v, fk+1, fj+1, fi)+src(v, fk+1, fj+1, fi+1));
+          }
+        }
+      }
+    }
+  } else {
+    for (int v=0; v<nvar_; ++v) {
+      for (int k=kl; k<=ku; ++k) {
+        int fk = 2*k - kl;
+        for (int j=jl; j<=ju; ++j) {
+          int fj = 2*j - jl;
+#pragma ivdep
+          for (int i=il; i<=iu; ++i) {
+            int fi = 2*i - il;
+            dst(v, k, j, i)=0.125*(src(v, fk,   fj,   fi)+src(v, fk,   fj,   fi+1)
+                                  +src(v, fk,   fj+1, fi)+src(v, fk,   fj+1, fi+1)
+                                  +src(v, fk+1, fj,   fi)+src(v, fk+1, fj,   fi+1)
+                                  +src(v, fk+1, fj+1, fi)+src(v, fk+1, fj+1, fi+1));
+          }
+        }
       }
     }
   }
@@ -605,47 +727,99 @@ void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst,
 //      const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku,
-//      int fil, int fjl, int fkl)
+//      int fil, int fjl, int fkl, bool th)
 //  \brief Actual implementation of prolongation and correction
 
 void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-     int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl) {
-  for (int v=0; v<nvar_; ++v) {
-    for (int k=kl, fk=fkl; k<=ku; ++k, fk+=2) {
-      for (int j=jl, fj=fjl; j<=ju; ++j, fj+=2) {
-        for (int i=il, fi=fil; i<=iu; ++i, fi+=2) {
-          dst(v,fk  ,fj  ,fi  ) +=
-              0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j-1,i-1)
-                        +9.0*(src(v,k,j,i-1)+src(v,k,j-1,i)+src(v,k-1,j,i))
-                        +3.0*(src(v,k-1,j-1,i)+src(v,k-1,j,i-1)+src(v,k,j-1,i-1)));
-          dst(v,fk  ,fj  ,fi+1) +=
-              0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j-1,i+1)
-                        +9.0*(src(v,k,j,i+1)+src(v,k,j-1,i)+src(v,k-1,j,i))
-                        +3.0*(src(v,k-1,j-1,i)+src(v,k-1,j,i+1)+src(v,k,j-1,i+1)));
-          dst(v,fk  ,fj+1,fi  ) +=
-              0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j+1,i-1)
-                        +9.0*(src(v,k,j,i-1)+src(v,k,j+1,i)+src(v,k-1,j,i))
-                        +3.0*(src(v,k-1,j+1,i)+src(v,k-1,j,i-1)+src(v,k,j+1,i-1)));
-          dst(v,fk+1,fj  ,fi  ) +=
-              0.015625*(27.0*src(v,k,j,i) + src(v,k+1,j-1,i-1)
-                        +9.0*(src(v,k,j,i-1)+src(v,k,j-1,i)+src(v,k+1,j,i))
-                        +3.0*(src(v,k+1,j-1,i)+src(v,k+1,j,i-1)+src(v,k,j-1,i-1)));
-          dst(v,fk+1,fj+1,fi  ) +=
-              0.015625*(27.0*src(v,k,j,i) + src(v,k+1,j+1,i-1)
-                        +9.0*(src(v,k,j,i-1)+src(v,k,j+1,i)+src(v,k+1,j,i))
-                        +3.0*(src(v,k+1,j+1,i)+src(v,k+1,j,i-1)+src(v,k,j+1,i-1)));
-          dst(v,fk+1,fj  ,fi+1) +=
-              0.015625*(27.0*src(v,k,j,i) + src(v,k+1,j-1,i+1)
-                        +9.0*(src(v,k,j,i+1)+src(v,k,j-1,i)+src(v,k+1,j,i))
-                        +3.0*(src(v,k+1,j-1,i)+src(v,k+1,j,i+1)+src(v,k,j-1,i+1)));
-          dst(v,fk  ,fj+1,fi+1) +=
-              0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j+1,i+1)
-                        +9.0*(src(v,k,j,i+1)+src(v,k,j+1,i)+src(v,k-1,j,i))
-                        +3.0*(src(v,k-1,j+1,i)+src(v,k-1,j,i+1)+src(v,k,j+1,i+1)));
-          dst(v,fk+1,fj+1,fi+1) +=
-              0.015625*(27.0*src(v,k,j,i) + src(v,k+1,j+1,i+1)
-                        +9.0*(src(v,k,j,i+1)+src(v,k,j+1,i)+src(v,k+1,j,i))
-                        +3.0*(src(v,k+1,j+1,i)+src(v,k+1,j,i+1)+src(v,k,j+1,i+1)));
+     int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl, bool th) {
+  if (th == true && (ku-kl) >=  minth_/2) {
+    for (int v=0; v<nvar_; ++v) {
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
+      for (int k=kl; k<=ku; ++k) {
+        int fk = 2*(k-kl) + fkl;
+        for (int j=jl; j<=ju; ++j) {
+          int fj = 2*(j-jl) + fjl;
+#pragma ivdep
+          for (int i=il; i<=iu; ++i) {
+            int fi = 2*(i-il) + fil;
+            dst(v,fk  ,fj  ,fi  ) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j-1,i-1)
+                          +9.0*(src(v,k,j,i-1)+src(v,k,j-1,i)+src(v,k-1,j,i))
+                          +3.0*(src(v,k-1,j-1,i)+src(v,k-1,j,i-1)+src(v,k,j-1,i-1)));
+            dst(v,fk  ,fj  ,fi+1) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j-1,i+1)
+                          +9.0*(src(v,k,j,i+1)+src(v,k,j-1,i)+src(v,k-1,j,i))
+                          +3.0*(src(v,k-1,j-1,i)+src(v,k-1,j,i+1)+src(v,k,j-1,i+1)));
+            dst(v,fk  ,fj+1,fi  ) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j+1,i-1)
+                          +9.0*(src(v,k,j,i-1)+src(v,k,j+1,i)+src(v,k-1,j,i))
+                          +3.0*(src(v,k-1,j+1,i)+src(v,k-1,j,i-1)+src(v,k,j+1,i-1)));
+            dst(v,fk+1,fj  ,fi  ) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k+1,j-1,i-1)
+                          +9.0*(src(v,k,j,i-1)+src(v,k,j-1,i)+src(v,k+1,j,i))
+                          +3.0*(src(v,k+1,j-1,i)+src(v,k+1,j,i-1)+src(v,k,j-1,i-1)));
+            dst(v,fk+1,fj+1,fi  ) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k+1,j+1,i-1)
+                          +9.0*(src(v,k,j,i-1)+src(v,k,j+1,i)+src(v,k+1,j,i))
+                          +3.0*(src(v,k+1,j+1,i)+src(v,k+1,j,i-1)+src(v,k,j+1,i-1)));
+            dst(v,fk+1,fj  ,fi+1) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k+1,j-1,i+1)
+                          +9.0*(src(v,k,j,i+1)+src(v,k,j-1,i)+src(v,k+1,j,i))
+                          +3.0*(src(v,k+1,j-1,i)+src(v,k+1,j,i+1)+src(v,k,j-1,i+1)));
+            dst(v,fk  ,fj+1,fi+1) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j+1,i+1)
+                          +9.0*(src(v,k,j,i+1)+src(v,k,j+1,i)+src(v,k-1,j,i))
+                          +3.0*(src(v,k-1,j+1,i)+src(v,k-1,j,i+1)+src(v,k,j+1,i+1)));
+            dst(v,fk+1,fj+1,fi+1) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k+1,j+1,i+1)
+                          +9.0*(src(v,k,j,i+1)+src(v,k,j+1,i)+src(v,k+1,j,i))
+                          +3.0*(src(v,k+1,j+1,i)+src(v,k+1,j,i+1)+src(v,k,j+1,i+1)));
+          }
+        }
+      }
+    }
+  } else {
+    for (int v=0; v<nvar_; ++v) {
+      for (int k=kl; k<=ku; ++k) {
+        int fk = 2*(k-kl) + fkl;
+        for (int j=jl; j<=ju; ++j) {
+          int fj = 2*(j-jl) + fjl;
+#pragma ivdep
+          for (int i=il; i<=iu; ++i) {
+            int fi = 2*(i-il) + fil;
+            dst(v,fk  ,fj  ,fi  ) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j-1,i-1)
+                          +9.0*(src(v,k,j,i-1)+src(v,k,j-1,i)+src(v,k-1,j,i))
+                          +3.0*(src(v,k-1,j-1,i)+src(v,k-1,j,i-1)+src(v,k,j-1,i-1)));
+            dst(v,fk  ,fj  ,fi+1) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j-1,i+1)
+                          +9.0*(src(v,k,j,i+1)+src(v,k,j-1,i)+src(v,k-1,j,i))
+                          +3.0*(src(v,k-1,j-1,i)+src(v,k-1,j,i+1)+src(v,k,j-1,i+1)));
+            dst(v,fk  ,fj+1,fi  ) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j+1,i-1)
+                          +9.0*(src(v,k,j,i-1)+src(v,k,j+1,i)+src(v,k-1,j,i))
+                          +3.0*(src(v,k-1,j+1,i)+src(v,k-1,j,i-1)+src(v,k,j+1,i-1)));
+            dst(v,fk+1,fj  ,fi  ) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k+1,j-1,i-1)
+                          +9.0*(src(v,k,j,i-1)+src(v,k,j-1,i)+src(v,k+1,j,i))
+                          +3.0*(src(v,k+1,j-1,i)+src(v,k+1,j,i-1)+src(v,k,j-1,i-1)));
+            dst(v,fk+1,fj+1,fi  ) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k+1,j+1,i-1)
+                          +9.0*(src(v,k,j,i-1)+src(v,k,j+1,i)+src(v,k+1,j,i))
+                          +3.0*(src(v,k+1,j+1,i)+src(v,k+1,j,i-1)+src(v,k,j+1,i-1)));
+            dst(v,fk+1,fj  ,fi+1) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k+1,j-1,i+1)
+                          +9.0*(src(v,k,j,i+1)+src(v,k,j-1,i)+src(v,k+1,j,i))
+                          +3.0*(src(v,k+1,j-1,i)+src(v,k+1,j,i+1)+src(v,k,j-1,i+1)));
+            dst(v,fk  ,fj+1,fi+1) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k-1,j+1,i+1)
+                          +9.0*(src(v,k,j,i+1)+src(v,k,j+1,i)+src(v,k-1,j,i))
+                          +3.0*(src(v,k-1,j+1,i)+src(v,k-1,j,i+1)+src(v,k,j+1,i+1)));
+            dst(v,fk+1,fj+1,fi+1) +=
+                0.015625*(27.0*src(v,k,j,i) + src(v,k+1,j+1,i+1)
+                          +9.0*(src(v,k,j,i+1)+src(v,k,j+1,i)+src(v,k+1,j,i))
+                          +3.0*(src(v,k+1,j+1,i)+src(v,k+1,j,i+1)+src(v,k,j+1,i+1)));
+          }
         }
       }
     }
@@ -658,17 +832,23 @@ void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<R
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::FMGProlongate(AthenaArray<Real> &dst,
 //           const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku
-//           int fil, int fjl, int fkl)
+//           int fil, int fjl, int fkl, bool th)
 //  \brief Actual implementation of FMG prolongation
 
 void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
                               int il, int iu, int jl, int ju, int kl, int ku,
-                              int fil, int fjl, int fkl) {
-  for (int v=0; v<nvar_; ++v) {
-    for (int k=kl, fk=fkl; k<=ku; ++k, fk+=2) {
-      for (int j=jl, fj=fjl; j<=ju; ++j, fj+=2) {
-        for (int i=il, fi=fil; i<=iu; ++i, fi+=2) {
-          dst(v,fk  ,fj,  fi  )=(
+                              int fil, int fjl, int fkl, bool th) {
+  if (th == true && (ku-kl) >=  minth_/2) {
+    for (int v=0; v<nvar_; ++v) {
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
+      for (int k=kl; k<=ku; ++k) {
+        int fk = 2*(k-kl) + fkl;
+        for (int j=jl; j<=ju; ++j) {
+          int fj = 2*(j-jl) + fjl;
+#pragma ivdep
+          for (int i=il; i<=iu; ++i) {
+            int fi = 2*(i-il) + fil;
+            dst(v,fk  ,fj,  fi  )=(
               + 125.*src(v,k-1,j-1,i-1)+  750.*src(v,k-1,j-1,i  )-  75.*src(v,k-1,j-1,i+1)
               + 750.*src(v,k-1,j,  i-1)+ 4500.*src(v,k-1,j,  i  )- 450.*src(v,k-1,j,  i+1)
               -  75.*src(v,k-1,j+1,i-1)-  450.*src(v,k-1,j+1,i  )+  45.*src(v,k-1,j+1,i+1)
@@ -679,7 +859,7 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
               - 450.*src(v,k+1,j,  i-1)- 2700.*src(v,k+1,j,  i  )+ 270.*src(v,k+1,j,  i+1)
               +  45.*src(v,k+1,j+1,i-1)+  270.*src(v,k+1,j+1,i  )-  27.*src(v,k+1,j+1,i+1)
                                  )/32768.0;
-          dst(v,fk,  fj,  fi+1)=(
+            dst(v,fk,  fj,  fi+1)=(
               -  75.*src(v,k-1,j-1,i-1)+  750.*src(v,k-1,j-1,i  )+ 125.*src(v,k-1,j-1,i+1)
               - 450.*src(v,k-1,j,  i-1)+ 4500.*src(v,k-1,j,  i  )+ 750.*src(v,k-1,j,  i+1)
               +  45.*src(v,k-1,j+1,i-1)-  450.*src(v,k-1,j+1,i  )-  75.*src(v,k-1,j+1,i+1)
@@ -690,7 +870,7 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
               + 270.*src(v,k+1,j,  i-1)- 2700.*src(v,k+1,j,  i  )- 450.*src(v,k+1,j,  i+1)
               -  27.*src(v,k+1,j+1,i-1)+  270.*src(v,k+1,j+1,i  )+  45.*src(v,k+1,j+1,i+1)
                                  )/32768.0;
-          dst(v,fk  ,fj+1,fi  )=(
+            dst(v,fk  ,fj+1,fi  )=(
               -  75.*src(v,k-1,j-1,i-1)-  450.*src(v,k-1,j-1,i  )+  45.*src(v,k-1,j-1,i+1)
               + 750.*src(v,k-1,j,  i-1)+ 4500.*src(v,k-1,j,  i  )- 450.*src(v,k-1,j,  i+1)
               + 125.*src(v,k-1,j+1,i-1)+  750.*src(v,k-1,j+1,i  )-  75.*src(v,k-1,j+1,i+1)
@@ -701,7 +881,7 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
               - 450.*src(v,k+1,j,  i-1)- 2700.*src(v,k+1,j,  i  )+ 270.*src(v,k+1,j,  i+1)
               -  75.*src(v,k+1,j+1,i-1)-  450.*src(v,k+1,j+1,i  )+  45.*src(v,k+1,j+1,i+1)
                                  )/32768.0;
-          dst(v,fk,  fj+1,fi+1)=(
+            dst(v,fk,  fj+1,fi+1)=(
               +  45.*src(v,k-1,j-1,i-1)-  450.*src(v,k-1,j-1,i  )-  75.*src(v,k-1,j-1,i+1)
               - 450.*src(v,k-1,j,  i-1)+ 4500.*src(v,k-1,j,  i  )+ 750.*src(v,k-1,j,  i+1)
               -  75.*src(v,k-1,j+1,i-1)+  750.*src(v,k-1,j+1,i  )+ 125.*src(v,k-1,j+1,i+1)
@@ -712,7 +892,7 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
               + 270.*src(v,k+1,j,  i-1)- 2700.*src(v,k+1,j,  i  )- 450.*src(v,k+1,j,  i+1)
               +  45.*src(v,k+1,j+1,i-1)-  450.*src(v,k+1,j+1,i  )-  75.*src(v,k+1,j+1,i+1)
                                  )/32768.0;
-          dst(v,fk+1,fj,  fi  )=(
+            dst(v,fk+1,fj,  fi  )=(
               -  75.*src(v,k-1,j-1,i-1)-  450.*src(v,k-1,j-1,i  )+  45.*src(v,k-1,j-1,i+1)
               - 450.*src(v,k-1,j,  i-1)- 2700.*src(v,k-1,j,  i  )+ 270.*src(v,k-1,j,  i+1)
               +  45.*src(v,k-1,j+1,i-1)+  270.*src(v,k-1,j+1,i  )-  27.*src(v,k-1,j+1,i+1)
@@ -723,7 +903,7 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
               + 750.*src(v,k+1,j,  i-1)+ 4500.*src(v,k+1,j,  i  )- 450.*src(v,k+1,j,  i+1)
               -  75.*src(v,k+1,j+1,i-1)-  450.*src(v,k+1,j+1,i  )+  45.*src(v,k+1,j+1,i+1)
                                  )/32768.0;
-          dst(v,fk+1,fj,  fi+1)=(
+            dst(v,fk+1,fj,  fi+1)=(
               +  45.*src(v,k-1,j-1,i-1)-  450.*src(v,k-1,j-1,i  )-  75.*src(v,k-1,j-1,i+1)
               + 270.*src(v,k-1,j,  i-1)- 2700.*src(v,k-1,j,  i  )- 450.*src(v,k-1,j,  i+1)
               -  27.*src(v,k-1,j+1,i-1)+  270.*src(v,k-1,j+1,i  )+  45.*src(v,k-1,j+1,i+1)
@@ -734,7 +914,7 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
               - 450.*src(v,k+1,j,  i-1)+ 4500.*src(v,k+1,j,  i  )+ 750.*src(v,k+1,j,  i+1)
               +  45.*src(v,k+1,j+1,i-1)-  450.*src(v,k+1,j+1,i  )-  75.*src(v,k+1,j+1,i+1)
                                  )/32768.0;
-          dst(v,fk+1,fj+1,fi  )=(
+            dst(v,fk+1,fj+1,fi  )=(
               +  45.*src(v,k-1,j-1,i-1)+  270.*src(v,k-1,j-1,i  )-  27.*src(v,k-1,j-1,i+1)
               - 450.*src(v,k-1,j,  i-1)- 2700.*src(v,k-1,j,  i  )+ 270.*src(v,k-1,j,  i+1)
               -  75.*src(v,k-1,j+1,i-1)-  450.*src(v,k-1,j+1,i  )+  45.*src(v,k-1,j+1,i+1)
@@ -745,7 +925,7 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
               + 750.*src(v,k+1,j,  i-1)+ 4500.*src(v,k+1,j,  i  )- 450.*src(v,k+1,j,  i+1)
               + 125.*src(v,k+1,j+1,i-1)+  750.*src(v,k+1,j+1,i  )-  75.*src(v,k+1,j+1,i+1)
                                  )/32768.0;
-          dst(v,fk+1,fj+1,fi+1)=(
+            dst(v,fk+1,fj+1,fi+1)=(
               -  27.*src(v,k-1,j-1,i-1)+  270.*src(v,k-1,j-1,i  )+  45.*src(v,k-1,j-1,i+1)
               + 270.*src(v,k-1,j,  i-1)- 2700.*src(v,k-1,j,  i  )- 450.*src(v,k-1,j,  i+1)
               +  45.*src(v,k-1,j+1,i-1)-  450.*src(v,k-1,j+1,i  )-  75.*src(v,k-1,j+1,i+1)
@@ -756,6 +936,108 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
               - 450.*src(v,k+1,j,  i-1)+ 4500.*src(v,k+1,j,  i  )+ 750.*src(v,k+1,j,  i+1)
               -  75.*src(v,k+1,j+1,i-1)+  750.*src(v,k+1,j+1,i  )+ 125.*src(v,k+1,j+1,i+1)
                                  )/32768.0;
+          }
+        }
+      }
+    }
+  } else {
+    for (int v=0; v<nvar_; ++v) {
+      for (int k=kl; k<=ku; ++k) {
+        int fk = 2*(k-kl) + fkl;
+        for (int j=jl; j<=ju; ++j) {
+          int fj = 2*(j-jl) + fjl;
+#pragma ivdep
+          for (int i=il; i<=iu; ++i) {
+            int fi = 2*(i-il) + fil;
+            dst(v,fk  ,fj,  fi  )=(
+              + 125.*src(v,k-1,j-1,i-1)+  750.*src(v,k-1,j-1,i  )-  75.*src(v,k-1,j-1,i+1)
+              + 750.*src(v,k-1,j,  i-1)+ 4500.*src(v,k-1,j,  i  )- 450.*src(v,k-1,j,  i+1)
+              -  75.*src(v,k-1,j+1,i-1)-  450.*src(v,k-1,j+1,i  )+  45.*src(v,k-1,j+1,i+1)
+              + 750.*src(v,k,  j-1,i-1)+ 4500.*src(v,k,  j-1,i  )- 450.*src(v,k,  j-1,i+1)
+              +4500.*src(v,k,  j,  i-1)+27000.*src(v,k,  j,  i  )-2700.*src(v,k,  j,  i+1)
+              - 450.*src(v,k,  j+1,i-1)- 2700.*src(v,k,  j+1,i  )+ 270.*src(v,k,  j+1,i+1)
+              -  75.*src(v,k+1,j-1,i-1)-  450.*src(v,k+1,j-1,i  )+  45.*src(v,k+1,j-1,i+1)
+              - 450.*src(v,k+1,j,  i-1)- 2700.*src(v,k+1,j,  i  )+ 270.*src(v,k+1,j,  i+1)
+              +  45.*src(v,k+1,j+1,i-1)+  270.*src(v,k+1,j+1,i  )-  27.*src(v,k+1,j+1,i+1)
+                                 )/32768.0;
+            dst(v,fk,  fj,  fi+1)=(
+              -  75.*src(v,k-1,j-1,i-1)+  750.*src(v,k-1,j-1,i  )+ 125.*src(v,k-1,j-1,i+1)
+              - 450.*src(v,k-1,j,  i-1)+ 4500.*src(v,k-1,j,  i  )+ 750.*src(v,k-1,j,  i+1)
+              +  45.*src(v,k-1,j+1,i-1)-  450.*src(v,k-1,j+1,i  )-  75.*src(v,k-1,j+1,i+1)
+              - 450.*src(v,k,  j-1,i-1)+ 4500.*src(v,k,  j-1,i  )+ 750.*src(v,k,  j-1,i+1)
+              -2700.*src(v,k,  j,  i-1)+27000.*src(v,k,  j,  i  )+4500.*src(v,k,  j,  i+1)
+              + 270.*src(v,k,  j+1,i-1)- 2700.*src(v,k,  j+1,i  )- 450.*src(v,k,  j+1,i+1)
+              +  45.*src(v,k+1,j-1,i-1)-  450.*src(v,k+1,j-1,i  )-  75.*src(v,k+1,j-1,i+1)
+              + 270.*src(v,k+1,j,  i-1)- 2700.*src(v,k+1,j,  i  )- 450.*src(v,k+1,j,  i+1)
+              -  27.*src(v,k+1,j+1,i-1)+  270.*src(v,k+1,j+1,i  )+  45.*src(v,k+1,j+1,i+1)
+                                 )/32768.0;
+            dst(v,fk  ,fj+1,fi  )=(
+              -  75.*src(v,k-1,j-1,i-1)-  450.*src(v,k-1,j-1,i  )+  45.*src(v,k-1,j-1,i+1)
+              + 750.*src(v,k-1,j,  i-1)+ 4500.*src(v,k-1,j,  i  )- 450.*src(v,k-1,j,  i+1)
+              + 125.*src(v,k-1,j+1,i-1)+  750.*src(v,k-1,j+1,i  )-  75.*src(v,k-1,j+1,i+1)
+              - 450.*src(v,k,  j-1,i-1)- 2700.*src(v,k,  j-1,i  )+ 270.*src(v,k,  j-1,i+1)
+              +4500.*src(v,k,  j,  i-1)+27000.*src(v,k,  j,  i  )-2700.*src(v,k,  j,  i+1)
+              + 750.*src(v,k,  j+1,i-1)+ 4500.*src(v,k,  j+1,i  )- 450.*src(v,k,  j+1,i+1)
+              +  45.*src(v,k+1,j-1,i-1)+  270.*src(v,k+1,j-1,i  )-  27.*src(v,k+1,j-1,i+1)
+              - 450.*src(v,k+1,j,  i-1)- 2700.*src(v,k+1,j,  i  )+ 270.*src(v,k+1,j,  i+1)
+              -  75.*src(v,k+1,j+1,i-1)-  450.*src(v,k+1,j+1,i  )+  45.*src(v,k+1,j+1,i+1)
+                                 )/32768.0;
+            dst(v,fk,  fj+1,fi+1)=(
+              +  45.*src(v,k-1,j-1,i-1)-  450.*src(v,k-1,j-1,i  )-  75.*src(v,k-1,j-1,i+1)
+              - 450.*src(v,k-1,j,  i-1)+ 4500.*src(v,k-1,j,  i  )+ 750.*src(v,k-1,j,  i+1)
+              -  75.*src(v,k-1,j+1,i-1)+  750.*src(v,k-1,j+1,i  )+ 125.*src(v,k-1,j+1,i+1)
+              + 270.*src(v,k,  j-1,i-1)- 2700.*src(v,k,  j-1,i  )- 450.*src(v,k,  j-1,i+1)
+              -2700.*src(v,k,  j,  i-1)+27000.*src(v,k,  j,  i  )+4500.*src(v,k,  j,  i+1)
+              - 450.*src(v,k,  j+1,i-1)+ 4500.*src(v,k,  j+1,i  )+ 750.*src(v,k,  j+1,i+1)
+              -  27.*src(v,k+1,j-1,i-1)+  270.*src(v,k+1,j-1,i  )+  45.*src(v,k+1,j-1,i+1)
+              + 270.*src(v,k+1,j,  i-1)- 2700.*src(v,k+1,j,  i  )- 450.*src(v,k+1,j,  i+1)
+              +  45.*src(v,k+1,j+1,i-1)-  450.*src(v,k+1,j+1,i  )-  75.*src(v,k+1,j+1,i+1)
+                                 )/32768.0;
+            dst(v,fk+1,fj,  fi  )=(
+              -  75.*src(v,k-1,j-1,i-1)-  450.*src(v,k-1,j-1,i  )+  45.*src(v,k-1,j-1,i+1)
+              - 450.*src(v,k-1,j,  i-1)- 2700.*src(v,k-1,j,  i  )+ 270.*src(v,k-1,j,  i+1)
+              +  45.*src(v,k-1,j+1,i-1)+  270.*src(v,k-1,j+1,i  )-  27.*src(v,k-1,j+1,i+1)
+              + 750.*src(v,k,  j-1,i-1)+ 4500.*src(v,k,  j-1,i  )- 450.*src(v,k,  j-1,i+1)
+              +4500.*src(v,k,  j,  i-1)+27000.*src(v,k,  j,  i  )-2700.*src(v,k,  j,  i+1)
+              - 450.*src(v,k,  j+1,i-1)- 2700.*src(v,k,  j+1,i  )+ 270.*src(v,k,  j+1,i+1)
+              + 125.*src(v,k+1,j-1,i-1)+  750.*src(v,k+1,j-1,i  )-  75.*src(v,k+1,j-1,i+1)
+              + 750.*src(v,k+1,j,  i-1)+ 4500.*src(v,k+1,j,  i  )- 450.*src(v,k+1,j,  i+1)
+              -  75.*src(v,k+1,j+1,i-1)-  450.*src(v,k+1,j+1,i  )+  45.*src(v,k+1,j+1,i+1)
+                                 )/32768.0;
+            dst(v,fk+1,fj,  fi+1)=(
+              +  45.*src(v,k-1,j-1,i-1)-  450.*src(v,k-1,j-1,i  )-  75.*src(v,k-1,j-1,i+1)
+              + 270.*src(v,k-1,j,  i-1)- 2700.*src(v,k-1,j,  i  )- 450.*src(v,k-1,j,  i+1)
+              -  27.*src(v,k-1,j+1,i-1)+  270.*src(v,k-1,j+1,i  )+  45.*src(v,k-1,j+1,i+1)
+              - 450.*src(v,k,  j-1,i-1)+ 4500.*src(v,k,  j-1,i  )+ 750.*src(v,k,  j-1,i+1)
+              -2700.*src(v,k,  j,  i-1)+27000.*src(v,k,  j,  i  )+4500.*src(v,k,  j,  i+1)
+              + 270.*src(v,k,  j+1,i-1)- 2700.*src(v,k,  j+1,i  )- 450.*src(v,k,  j+1,i+1)
+              -  75.*src(v,k+1,j-1,i-1)+  750.*src(v,k+1,j-1,i  )+ 125.*src(v,k+1,j-1,i+1)
+              - 450.*src(v,k+1,j,  i-1)+ 4500.*src(v,k+1,j,  i  )+ 750.*src(v,k+1,j,  i+1)
+              +  45.*src(v,k+1,j+1,i-1)-  450.*src(v,k+1,j+1,i  )-  75.*src(v,k+1,j+1,i+1)
+                                 )/32768.0;
+            dst(v,fk+1,fj+1,fi  )=(
+              +  45.*src(v,k-1,j-1,i-1)+  270.*src(v,k-1,j-1,i  )-  27.*src(v,k-1,j-1,i+1)
+              - 450.*src(v,k-1,j,  i-1)- 2700.*src(v,k-1,j,  i  )+ 270.*src(v,k-1,j,  i+1)
+              -  75.*src(v,k-1,j+1,i-1)-  450.*src(v,k-1,j+1,i  )+  45.*src(v,k-1,j+1,i+1)
+              - 450.*src(v,k,  j-1,i-1)- 2700.*src(v,k,  j-1,i  )+ 270.*src(v,k,  j-1,i+1)
+              +4500.*src(v,k,  j,  i-1)+27000.*src(v,k,  j,  i  )-2700.*src(v,k,  j,  i+1)
+              + 750.*src(v,k,  j+1,i-1)+ 4500.*src(v,k,  j+1,i  )- 450.*src(v,k,  j+1,i+1)
+              -  75.*src(v,k+1,j-1,i-1)-  450.*src(v,k+1,j-1,i  )+  45.*src(v,k+1,j-1,i+1)
+              + 750.*src(v,k+1,j,  i-1)+ 4500.*src(v,k+1,j,  i  )- 450.*src(v,k+1,j,  i+1)
+              + 125.*src(v,k+1,j+1,i-1)+  750.*src(v,k+1,j+1,i  )-  75.*src(v,k+1,j+1,i+1)
+                                 )/32768.0;
+            dst(v,fk+1,fj+1,fi+1)=(
+              -  27.*src(v,k-1,j-1,i-1)+  270.*src(v,k-1,j-1,i  )+  45.*src(v,k-1,j-1,i+1)
+              + 270.*src(v,k-1,j,  i-1)- 2700.*src(v,k-1,j,  i  )- 450.*src(v,k-1,j,  i+1)
+              +  45.*src(v,k-1,j+1,i-1)-  450.*src(v,k-1,j+1,i  )-  75.*src(v,k-1,j+1,i+1)
+              + 270.*src(v,k,  j-1,i-1)- 2700.*src(v,k,  j-1,i  )- 450.*src(v,k,  j-1,i+1)
+              -2700.*src(v,k,  j,  i-1)+27000.*src(v,k,  j,  i  )+4500.*src(v,k,  j,  i+1)
+              - 450.*src(v,k,  j+1,i-1)+ 4500.*src(v,k,  j+1,i  )+ 750.*src(v,k,  j+1,i+1)
+              +  45.*src(v,k+1,j-1,i-1)-  450.*src(v,k+1,j-1,i  )-  75.*src(v,k+1,j-1,i+1)
+              - 450.*src(v,k+1,j,  i-1)+ 4500.*src(v,k+1,j,  i  )+ 750.*src(v,k+1,j,  i+1)
+              -  75.*src(v,k+1,j+1,i-1)+  750.*src(v,k+1,j+1,i  )+ 125.*src(v,k+1,j+1,i+1)
+                                 )/32768.0;
+          }
         }
       }
     }
@@ -763,4 +1045,304 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
 
   return;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff)
+//  \brief Actual implementation of calculation of multipole expansion coeficients
+
+void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff) {
+  AthenaArray<Real> &src = src_[nlevel_-1];
+  MGCoordinates &coord = coord_[nlevel_-1];
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
+  // *** Note ***: Currently this calculates coefficients of the zeroth variable only.
+  // It is trivial to extend it, but I'm afraid it slows down the code considerably
+  // as it requires non-continuous memory access.
+  Real vol = (coord.x1f(is+1)-coord.x1f(is)) * (coord.x2f(js+1)-coord.x2f(js))
+           * (coord.x3f(ks+1)-coord.x3f(ks));
+  Real xorigin = pmy_driver_->mpo_(0);
+  Real yorigin = pmy_driver_->mpo_(1);
+  Real zorigin = pmy_driver_->mpo_(2);
+  if (pmy_driver_->mporder_ == 4) {
+    Real m0=0.0, m1=0.0, m2=0.0, m3=0.0, m4=0.0, m5=0.0, m6=0.0, m7=0.0, m8=0.0, m9=0.0,
+         m10=0.0, m11=0.0, m12=0.0, m13=0.0, m14=0.0, m15=0.0, m16=0.0, m17=0.0, m18=0.0,
+         m19=0.0, m20=0.0, m21=0.0, m22=0.0, m23=0.0, m24=0.0;
+    if (pmy_driver_->nodipole_) {
+      for (int k = ks; k <= ke; ++k) {
+        Real z = coord.x3v(k) - zorigin;
+        Real z2 = z*z;
+        for (int j = js; j <= je; ++j) {
+          Real y = coord.x2v(j) - yorigin;
+          Real y2 = y*y, yz = y*z;
+#pragma ivdep
+          for (int i = is; i <= ie; ++i) {
+            Real x = coord.x1v(i) - xorigin;
+            Real x2 = x*x, xy = x*y, zx = z*x;
+            Real r2 = x2 + y2 + z2;
+            Real hx2my2 = 0.5*(x2-y2);
+            Real x2mty2 = x2-3.0*y2;
+            Real tx2my2 = 3.0*x2-y2;
+            Real fz2mr2 = 5.0*z2-r2;
+            Real sz2mr2 = 7.0*z2-r2;
+            Real sz2mtr2 = 7.0*z2-3.0*r2;
+            Real s = src(k,j,i) * vol;
+            // Y00
+            m0  += s;
+            // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
+            m4  += s*xy;
+            m5  += s*yz;
+            m6  += s*(3.0*z2-r2);
+            m7  += s*zx;
+            m8  += s*hx2my2;
+            // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
+            m9  += s*y*tx2my2;
+            m10 += s*xy*z;
+            m11 += s*y*fz2mr2;
+            m12 += s*z*(z2-3.0*r2);
+            m13 += s*x*fz2mr2;
+            m14 += s*z*hx2my2;
+            m15 += s*x*x2mty2;
+            // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
+            m16 += s*xy*hx2my2;
+            m17 += s*yz*tx2my2;
+            m18 += s*xy*sz2mr2;
+            m19 += s*yz*sz2mtr2;
+            m20 += s*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2);
+            m21 += s*zx*sz2mtr2;
+            m22 += s*hx2my2*sz2mr2;
+            m23 += s*zx*x2mty2;
+            m24 += s*0.125*(x2*x2mty2-y2*tx2my2);
+          }
+        }
+      }
+    } else {
+      for (int k = ks; k <= ke; ++k) {
+        Real z = coord.x3v(k) - zorigin;
+        Real z2 = z*z;
+        for (int j = js; j <= je; ++j) {
+          Real y = coord.x2v(j) - yorigin;
+          Real y2 = y*y, yz = y*z;
+#pragma ivdep
+          for (int i = is; i <= ie; ++i) {
+            Real x = coord.x1v(i) - xorigin;
+            Real x2 = x*x, xy = x*y, zx = z*x;
+            Real r2 = x2 + y2 + z2;
+            Real hx2my2 = 0.5*(x2-y2);
+            Real x2mty2 = x2-3.0*y2;
+            Real tx2my2 = 3.0*x2-y2;
+            Real fz2mr2 = 5.0*z2-r2;
+            Real sz2mr2 = 7.0*z2-r2;
+            Real sz2mtr2 = 7.0*z2-3.0*r2;
+            Real s = src(k,j,i) * vol;
+            // Y00
+            m0  += s;
+            // r*(Y1-1, Y10, Y11)
+            m1  += s*y;
+            m2  += s*z;
+            m3  += s*x;
+            // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
+            m4  += s*xy;
+            m5  += s*yz;
+            m6  += s*(3.0*z2-r2);
+            m7  += s*zx;
+            m8  += s*hx2my2;
+            // r^3*(Y3-3, Y3-2, Y3-1, Y30, Y31, Y32, Y33)
+            m9  += s*y*tx2my2;
+            m10 += s*xy*z;
+            m11 += s*y*fz2mr2;
+            m12 += s*z*(z2-3.0*r2);
+            m13 += s*x*fz2mr2;
+            m14 += s*z*hx2my2;
+            m15 += s*x*x2mty2;
+            // r^4*(Y4-4, Y4-3, Y4-2, Y4-1, Y40, Y41, Y42, Y43, Y44)
+            m16 += s*xy*hx2my2;
+            m17 += s*yz*tx2my2;
+            m18 += s*xy*sz2mr2;
+            m19 += s*yz*sz2mtr2;
+            m20 += s*(35.0*z2*z2-30.0*z2*r2+3.0*r2*r2);
+            m21 += s*zx*sz2mtr2;
+            m22 += s*hx2my2*sz2mr2;
+            m23 += s*zx*x2mty2;
+            m24 += s*0.125*(x2*x2mty2-y2*tx2my2);
+          }
+        }
+      }
+    }
+    mpcoeff(0)  += m0;
+    mpcoeff(1)  += m1;
+    mpcoeff(2)  += m2;
+    mpcoeff(3)  += m3;
+    mpcoeff(4)  += m4;
+    mpcoeff(5)  += m5;
+    mpcoeff(6)  += m6;
+    mpcoeff(7)  += m7;
+    mpcoeff(8)  += m8;
+    mpcoeff(9)  += m9;
+    mpcoeff(10) += m10;
+    mpcoeff(11) += m11;
+    mpcoeff(12) += m12;
+    mpcoeff(13) += m13;
+    mpcoeff(14) += m14;
+    mpcoeff(15) += m15;
+    mpcoeff(16) += m16;
+    mpcoeff(17) += m17;
+    mpcoeff(18) += m18;
+    mpcoeff(19) += m19;
+    mpcoeff(20) += m20;
+    mpcoeff(21) += m21;
+    mpcoeff(22) += m22;
+    mpcoeff(23) += m23;
+    mpcoeff(24) += m24;
+  } else if (pmy_driver_->mporder_ == 2) {
+    Real m0=0.0, m1=0.0, m2=0.0, m3=0.0, m4=0.0, m5=0.0, m6=0.0, m7=0.0, m8=0.0;
+    if (pmy_driver_->nodipole_) {
+      for (int k = ks; k <= ke; ++k) {
+        Real z = coord.x3v(k) - zorigin;
+        Real z2 = z*z;
+        for (int j = js; j <= je; ++j) {
+          Real y = coord.x2v(j) - yorigin;
+          Real y2 = y*y, yz = y*z;
+#pragma ivdep
+          for (int i = is; i <= ie; ++i) {
+            Real x = coord.x1v(i) - xorigin;
+            Real x2 = x*x, xy = x*y, zx = z*x;
+            Real r2 = x2 + y2 + z2;
+            Real s = src(k,j,i) * vol;
+            // Y00
+            m0 += s;
+            // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
+            m4 += s*xy;
+            m5 += s*yz;
+            m6 += s*(3.0*z2-r2);
+            m7 += s*zx;
+            m8 += s*0.5*(x2-y2);
+          }
+        }
+      }
+    } else {
+      for (int k = ks; k <= ke; ++k) {
+        Real z = coord.x3v(k) - zorigin;
+        Real z2 = z*z;
+        for (int j = js; j <= je; ++j) {
+          Real y = coord.x2v(j) - yorigin;
+          Real y2 = y*y, yz = y*z;
+#pragma ivdep
+          for (int i = is; i <= ie; ++i) {
+            Real x = coord.x1v(i) - xorigin;
+            Real x2 = x*x, xy = x*y, zx = z*x;
+            Real r2 = x2 + y2 + z2;
+            Real s = src(k,j,i) * vol;
+            // Y00
+            m0 += s;
+            // r*(Y1-1, Y10, Y11)
+            m1 += s*y;
+            m2 += s*z;
+            m3 += s*x;
+            // r^2*(Y2-2, Y2-1, Y20, Y21, Y22)
+            m4 += s*xy;
+            m5 += s*yz;
+            m6 += s*(3.0*z2-r2);
+            m7 += s*zx;
+            m8 += s*0.5*(x2-y2);
+          }
+        }
+      }
+    }
+    mpcoeff(0) += m0;
+    mpcoeff(1) += m1;
+    mpcoeff(2) += m2;
+    mpcoeff(3) += m3;
+    mpcoeff(4) += m4;
+    mpcoeff(5) += m5;
+    mpcoeff(6) += m6;
+    mpcoeff(7) += m7;
+    mpcoeff(8) += m8;
+  }
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::CalculateCenterOfMass(AthenaArray<Real> &mpcoeff)
+//  \brief Calculate the position of the center of mass from the dipole moment
+
+void Multigrid::CalculateCenterOfMass(AthenaArray<Real> &mpcoeff) {
+  AthenaArray<Real> &src = src_[nlevel_-1];
+  MGCoordinates &coord = coord_[nlevel_-1];
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
+  Real vol = (coord.x1f(is+1)-coord.x1f(is)) * (coord.x2f(js+1)-coord.x2f(js))
+           * (coord.x3f(ks+1)-coord.x3f(ks));
+  Real m0 = 0.0, m1 = 0.0, m2 = 0.0, m3 = 0.0;
+  for (int k = ks; k <= ke; ++k) {
+    Real z = coord.x3v(k);
+    for (int j = js; j <= je; ++j) {
+      Real y = coord.x2v(j);
+#pragma ivdep
+      for (int i = is; i <= ie; ++i) {
+        Real x = coord.x1v(i);
+        Real s = src(k,j,i) * vol;
+        m0 += s;
+        m1 += s*y;
+        m2 += s*z;
+        m3 += s*x;
+      }
+    }
+  }
+  mpcoeff(0) += m0;
+  mpcoeff(1) += m1;
+  mpcoeff(2) += m2;
+  mpcoeff(3) += m3;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGCoordinates::AllocateMGCoordinates(int nx, int ny, int nz)
+//  \brief Allocate coordinate arrays for multigrid
+
+void MGCoordinates::AllocateMGCoordinates(int nx, int ny, int nz) {
+  x1f.NewAthenaArray(nx+1);
+  x2f.NewAthenaArray(ny+1);
+  x3f.NewAthenaArray(nz+1);
+  x1v.NewAthenaArray(nx);
+  x2v.NewAthenaArray(ny);
+  x3v.NewAthenaArray(nz);
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGCoordinates::CalculateMGCoordinates(const RegionSize &size,
+//                                                 int ll, int ngh)
+//  \brief Calculate coordinates for Multigrid
+//         Currently uniform Cartesian only
+
+void MGCoordinates::CalculateMGCoordinates(const RegionSize &size, int ll, int ngh) {
+  int ncx = (size.nx1>>ll), ncy = (size.nx2>>ll), ncz = (size.nx3>>ll);
+  Real dx = (size.x1max-size.x1min)/ncx;
+  Real dy = (size.x2max-size.x2min)/ncy;
+  Real dz = (size.x3max-size.x3min)/ncz;
+  for (int i = 0; i <= ncx+2*ngh; ++i)
+    x1f(i) = size.x1min + (i-ngh)*dx;
+  x1f(ngh) = size.x1min;
+  x1f(ncx+ngh) = size.x1max;
+  for (int i = 0; i < ncx+2*ngh; ++i)
+    x1v(i) = 0.5*(x1f(i)+x1f(i+1));
+
+  for (int j = 0; j <= ncy+2*ngh; ++j)
+    x2f(j) = size.x2min + (j-ngh)*dy;
+  x2f(ngh) = size.x2min;
+  x2f(ncy+ngh) = size.x2max;
+  for (int j = 0; j < ncy+2*ngh; ++j)
+    x2v(j) = 0.5*(x2f(j)+x2f(j+1));
+
+  for (int k = 0; k <= ncz+2*ngh; ++k)
+    x3f(k) = size.x3min + (k-ngh)*dz;
+  x3f(ngh) = size.x3min;
+  x3f(ncz+ngh) = size.x3max;
+  for (int k = 0; k < ncz+2*ngh; ++k)
+    x3v(k) = 0.5*(x3f(k)+x3f(k+1));
+}
+
 

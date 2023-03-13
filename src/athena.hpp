@@ -50,6 +50,8 @@ class Coordinates;
 class ParameterInput;
 class HydroDiffusion;
 class FieldDiffusion;
+struct MGCoordinates;
+
 class OrbitalAdvection;
 
 //--------------------------------------------------------------------------------------
@@ -191,9 +193,9 @@ using MetricFunc = void (*)(
     AthenaArray<Real> &g, AthenaArray<Real> &g_inv,
     AthenaArray<Real> &dg_dx1, AthenaArray<Real> &dg_dx2, AthenaArray<Real> &dg_dx3);
 using MGBoundaryFunc = void (*)(
-    AthenaArray<Real> &dst,Real time, int nvar,
+    AthenaArray<Real> &dst, Real time, int nvar,
     int is, int ie, int js, int je, int ks, int ke, int ngh,
-    Real x0, Real y0, Real z0, Real dx, Real dy, Real dz);
+    const MGCoordinates &coord);
 using ViscosityCoeffFunc = void (*)(
     HydroDiffusion *phdif, MeshBlock *pmb,
     const  AthenaArray<Real> &w, const AthenaArray<Real> &bc,
@@ -207,6 +209,8 @@ using FieldDiffusionCoeffFunc = void (*)(
     const AthenaArray<Real> &w,
     const AthenaArray<Real> &bmag,
     int is, int ie, int js, int je, int ks, int ke);
+using MGSourceMaskFunc = void (*)(AthenaArray<Real> &src,
+    int is, int ie, int js, int je, int ks, int ke, const MGCoordinates &coord);
 using OrbitalVelocityFunc = Real (*)(
     OrbitalAdvection *porb, Real x1, Real x2, Real x3);
 

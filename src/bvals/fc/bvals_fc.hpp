@@ -31,7 +31,7 @@
 class FaceCenteredBoundaryVariable : public BoundaryVariable {
  public:
   FaceCenteredBoundaryVariable(MeshBlock *pmb, FaceField *var, FaceField &coarse_buf,
-                               EdgeField &var_flux);
+                               EdgeField &var_flux, bool fflux);
   ~FaceCenteredBoundaryVariable();
 
   //! \note

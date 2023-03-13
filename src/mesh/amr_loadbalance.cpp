@@ -54,8 +54,10 @@ void Mesh::LoadBalancingAndAdaptiveMeshRefinement(ParameterInput *pin) {
     GatherCostListAndCheckBalance();
     RedistributeAndRefineMeshBlocks(pin, nbtotal + nnew - ndel);
   } else if (lb_flag_ && step_since_lb >= lb_interval_) {
-    if (!GatherCostListAndCheckBalance()) // load imbalance detected
+    if (!GatherCostListAndCheckBalance()) { // load imbalance detected
+      amr_updated = true;
       RedistributeAndRefineMeshBlocks(pin, nbtotal);
+    }
     lb_flag_ = false;
   }
   return;
@@ -565,7 +567,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
       BoundaryFlag block_bcs[6];
       SetBlockSizeAndBoundaries(newloc[n], block_size, block_bcs);
       newlist(n-nbs) = new MeshBlock(n, n-nbs, newloc[n], block_size, block_bcs, this,
-                                     pin, gflag, true);
+                                     pin, true);
       // fill the conservative variables
       if ((loclist[on].level > newloc[n].level)) { // fine to coarse (f2c)
         for (int ll=0; ll<nleaf; ll++) {

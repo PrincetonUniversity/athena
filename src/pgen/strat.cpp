@@ -52,6 +52,10 @@
 #include "../parameter_input.hpp"
 #include "../utils/utils.hpp"     // ran2()
 
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
 // TODO(felker): many unused arguments in these functions: time, iout, ...
 void VertGrav(MeshBlock *pmb, const Real time, const Real dt,
               const AthenaArray<Real> &prim, const AthenaArray<Real> &prim_scalar,
@@ -118,7 +122,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real iso_cs=1.0;
   Real B0 = 0.0;
 
-  Real SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
+  Real SumRd=0.0, SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
   // TODO(felker): tons of unused variables in this file: xmin, xmax, rbx, rby, Ly, ky,...
   Real x1, x2, x3;
   //Real xmin, xmax;
@@ -203,22 +207,23 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           rval = amp*(ran2(&iseed) - 0.5);
           rd = den*std::exp(-x3*x3)*(1.0+2.0*rval);
           if (rd < dfloor) rd = dfloor;
+          SumRd += rd;
           if (NON_BAROTROPIC_EOS) {
             rp = pres/den*rd;
             if (rp < pfloor) rp = pfloor;
           }
           rval = amp*(ran2(&iseed) - 0.5);
           rvx = (0.4/std::sqrt(3.0)) *rval*1e-3;
-          SumRvx += rvx;
+          SumRvx += rd*rvx;
 
           rval = amp*(ran2(&iseed) - 0.5);
           rvy = (0.4/std::sqrt(3.0)) *rval*1e-3;
-          SumRvy += rvy;
+          SumRvy += rd*rvy;
 
           rval = amp*(ran2(&iseed) - 0.5);
           rvz = 0.4*rval*std::sqrt(pres/den);
           rvz = (0.4/std::sqrt(3.0)) *rval*1e-3;
-          SumRvz += rvz;
+          SumRvz += rd*rvz;
           // no perturbations
         } else {
           rd = den*std::exp(-x3*x3);
@@ -321,21 +326,31 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // subtracting off mean of perturbations
 
   if (ipert == 1) {
-    int cell_num = block_size.nx1*block_size.nx2*block_size.nx3;
-    SumRvx /= cell_num;
-    SumRvy /= cell_num;
-    SumRvz /= cell_num;
-    for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie; i++) {
-          phydro->u(IM1,k,j,i) -= rd*SumRvx;
-          phydro->u(IM2,k,j,i) -= rd*SumRvy;
-          phydro->u(IM3,k,j,i) -= rd*SumRvz;
+    if (lid == pmy_mesh->nblocal - 1) {
+#ifdef MPI_PARALLEL
+      MPI_Allreduce(MPI_IN_PLACE, &SumRd,  1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
+      MPI_Allreduce(MPI_IN_PLACE, &SumRvx, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
+      MPI_Allreduce(MPI_IN_PLACE, &SumRvy, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
+      MPI_Allreduce(MPI_IN_PLACE, &SumRvz, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
+#endif
+      int cell_num = pmy_mesh->GetTotalCells();
+      SumRvx /= SumRd*cell_num;
+      SumRvy /= SumRd*cell_num;
+      SumRvz /= SumRd*cell_num;
+      for (int b = 0; b < pmy_mesh->nblocal; ++b) {
+        Hydro *ph = pmy_mesh->my_blocks(b)->phydro;
+        for (int k=ks; k<=ke; k++) {
+          for (int j=js; j<=je; j++) {
+            for (int i=is; i<=ie; i++) {
+              ph->u(IM1,k,j,i) -= ph->u(IDN,k,j,i)*SumRvx;
+              ph->u(IM2,k,j,i) -= ph->u(IDN,k,j,i)*SumRvy;
+              ph->u(IM3,k,j,i) -= ph->u(IDN,k,j,i)*SumRvz;
+            }
+          }
         }
       }
     }
   }
-
   return;
 }
 

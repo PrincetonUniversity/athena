@@ -100,8 +100,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   if (SELF_GRAVITY_ENABLED) {
     SetGravitationalConstant(gconst);
-    Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
-    SetGravityThreshold(eps);
   }
 
   if (Globals::my_rank==0) {

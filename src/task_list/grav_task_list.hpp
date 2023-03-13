@@ -1,12 +1,12 @@
-#ifndef TASK_LIST_FFT_GRAV_TASK_LIST_HPP_
-#define TASK_LIST_FFT_GRAV_TASK_LIST_HPP_
+#ifndef TASK_LIST_GRAV_TASK_LIST_HPP_
+#define TASK_LIST_GRAV_TASK_LIST_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file fft_grav_task_list.hpp
-//! \brief define FFTGravitySolverTaskList
+//! \file grav_task_list.hpp
+//! \brief define GravityBoundaryTaskList
 
 // C headers
 
@@ -22,18 +22,19 @@ class Mesh;
 class MeshBlock;
 
 //----------------------------------------------------------------------------------------
-//! \class FFTGravitySolverTaskList
-//! \brief data and function definitions for FFTGravitySolverTaskList derived class
+//! \class GravityBoundaryTaskList
+//! \brief data and function definitions for GravityBoundaryTaskList derived class
 
-class FFTGravitySolverTaskList : public TaskList {
+class GravityBoundaryTaskList : public TaskList {
  public:
-  FFTGravitySolverTaskList(ParameterInput *pin, Mesh *pm);
+  GravityBoundaryTaskList(ParameterInput *pin, Mesh *pm);
 
   // functions
-  TaskStatus ClearFFTGravityBoundary(MeshBlock *pmb, int stage);
-  TaskStatus SendFFTGravityBoundary(MeshBlock *pmb, int stage);
-  TaskStatus ReceiveFFTGravityBoundary(MeshBlock *pmb, int stage);
-  TaskStatus SetFFTGravityBoundary(MeshBlock *pmb, int stage);
+  TaskStatus ClearGravityBoundary(MeshBlock *pmb, int stage);
+  TaskStatus SendGravityBoundary(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveGravityBoundary(MeshBlock *pmb, int stage);
+  TaskStatus SetGravityBoundary(MeshBlock *pmb, int stage);
+  TaskStatus ProlongateGravityBoundary(MeshBlock *pmb, int stage);
   TaskStatus PhysicalBoundary(MeshBlock *pmb, int stage);
 
  private:
@@ -44,13 +45,14 @@ class FFTGravitySolverTaskList : public TaskList {
 
 //----------------------------------------------------------------------------------------
 //! 64-bit integers with "1" in different bit positions used to ID  each hydro task.
-namespace FFTGravitySolverTaskNames {
+namespace GravityBoundaryTaskNames {
 const TaskID NONE(0);
 const TaskID CLEAR_GRAV(1);
 
 const TaskID SEND_GRAV_BND(2);
 const TaskID RECV_GRAV_BND(3);
 const TaskID SETB_GRAV_BND(4);
-const TaskID GRAV_PHYS_BND(5);
+const TaskID PROLONG_GRAV_BND(5);
+const TaskID GRAV_PHYS_BND(6);
 }
-#endif // TASK_LIST_FFT_GRAV_TASK_LIST_HPP_
+#endif // TASK_LIST_GRAV_TASK_LIST_HPP_

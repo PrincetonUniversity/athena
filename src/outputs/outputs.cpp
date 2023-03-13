@@ -563,10 +563,18 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         ContainVariable(output_params.variable, "cons")) {
       pod = new OutputData;
       pod->type = "SCALARS";
-      pod->name = "Phi";
+      pod->name = "phi";
       pod->data.InitWithShallowSlice(pgrav->phi, 4, 0, 1);
       AppendOutputDataNode(pod);
       num_vars_++;
+      if (pgrav->output_defect) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = "defect-phi";
+        pod->data.InitWithShallowSlice(pgrav->def, 4, 0, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
     }
   } // endif (SELF_GRAVITY_ENABLED)
 

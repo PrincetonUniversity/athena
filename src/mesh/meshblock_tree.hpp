@@ -23,6 +23,8 @@
 #include "../multigrid/multigrid.hpp"
 
 class Mesh;
+struct MGOctet;
+struct LogicalLocationHash;
 
 //--------------------------------------------------------------------------------------
 //! \class MeshBlockTree
@@ -52,7 +54,7 @@ class MeshBlockTree {
   void CountMeshBlock(int& count);
   void GetMeshBlockList(LogicalLocation *list, int *pglist, int& count);
   MeshBlockTree* FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3,
-                              bool amrflag=false);
+                              BoundaryFlag *bcs, bool amrflag=false);
   void CountMGOctets(int *noct);
   void GetMGOctetList(std::vector<MGOctet> *oct,
        std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octmap, int *noct);

@@ -265,7 +265,8 @@ void MeshBlockTree::Derefine(int &ndel) {
   for (int ox3=s3; ox3<=e3; ox3++) {
     for (int ox2=s2; ox2<=e2; ox2++) {
       for (int ox1=-1; ox1<=1; ox1++) {
-        MeshBlockTree *bt = proot_->FindNeighbor(loc_, ox1, ox2, ox3, true);
+        MeshBlockTree *bt = proot_->FindNeighbor(loc_, ox1, ox2, ox3,
+                                                 pmesh_->mesh_bcs, true);
         if (bt != nullptr) {
           if (bt->pleaf_ != nullptr) {
             int lis, lie, ljs, lje, lks, lke;
@@ -352,14 +353,14 @@ void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& co
 
 //----------------------------------------------------------------------------------------
 //! \fn MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
-//!                                   int ox1, int ox2, int ox3, bool amrflag)
-//! \brief find a neighboring block, called from the root of the tree
-//!        If it is coarser or same level, return the pointer to that block.
-//!        If it is a finer block, return the pointer to its parent.
-//!        Note that this function must be called on a completed tree only
+//                     int ox1, int ox2, int ox3, BoundaryFlag *bcs, bool amrflag)
+//  \brief find a neighboring block, called from the root of the tree
+//         If it is coarser or same level, return the pointer to that block.
+//         If it is a finer block, return the pointer to its parent.
+//         Note that this function must be called on a completed tree only
 
 MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
-                                           int ox1, int ox2, int ox3, bool amrflag) {
+               int ox1, int ox2, int ox3, BoundaryFlag *bcs, bool amrflag) {
   std::stringstream msg;
   std::int64_t lx, ly, lz;
   int ll;
@@ -370,24 +371,24 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
   lx+=ox1; ly+=ox2; lz+=ox3;
   // periodic and polar boundaries
   if (lx<0) {
-    if (pmesh_->mesh_bcs[BoundaryFace::inner_x1] == BoundaryFlag::periodic
-        || pmesh_->mesh_bcs[BoundaryFace::inner_x1] == BoundaryFlag::shear_periodic)
+    if (bcs[BoundaryFace::inner_x1] == BoundaryFlag::periodic
+        || bcs[BoundaryFace::inner_x1] == BoundaryFlag::shear_periodic)
       lx=(pmesh_->nrbx1<<(ll-pmesh_->root_level))-1;
     else
       return nullptr;
   }
   if (lx>=pmesh_->nrbx1<<(ll-pmesh_->root_level)) {
-    if (pmesh_->mesh_bcs[BoundaryFace::outer_x1] == BoundaryFlag::periodic
-        || pmesh_->mesh_bcs[BoundaryFace::outer_x1] == BoundaryFlag::shear_periodic)
+    if (bcs[BoundaryFace::outer_x1] == BoundaryFlag::periodic
+        || bcs[BoundaryFace::outer_x1] == BoundaryFlag::shear_periodic)
       lx=0;
     else
       return nullptr;
   }
   bool polar = false;
   if (ly<0) {
-    if (pmesh_->mesh_bcs[BoundaryFace::inner_x2] == BoundaryFlag::periodic) {
+    if (bcs[BoundaryFace::inner_x2] == BoundaryFlag::periodic) {
       ly=(pmesh_->nrbx2<<(ll-pmesh_->root_level))-1;
-    } else if (pmesh_->mesh_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) {
+    } else if (bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar) {
       ly=0;
       polar=true;
     } else {
@@ -395,9 +396,9 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
     }
   }
   if (ly>=pmesh_->nrbx2<<(ll-pmesh_->root_level)) {
-    if (pmesh_->mesh_bcs[BoundaryFace::outer_x2] == BoundaryFlag::periodic) {
+    if (bcs[BoundaryFace::outer_x2] == BoundaryFlag::periodic) {
       ly=0;
-    } else if (pmesh_->mesh_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
+    } else if (bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
       ly=(pmesh_->nrbx2<<(ll-pmesh_->root_level))-1;
       polar=true;
     } else {
@@ -406,13 +407,13 @@ MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
   }
   std::int64_t num_x3 = pmesh_->nrbx3<<(ll-pmesh_->root_level);
   if (lz<0) {
-    if (pmesh_->mesh_bcs[BoundaryFace::inner_x3] == BoundaryFlag::periodic)
+    if (bcs[BoundaryFace::inner_x3] == BoundaryFlag::periodic)
       lz=num_x3-1;
     else
       return nullptr;
   }
   if (lz>=num_x3) {
-    if (pmesh_->mesh_bcs[BoundaryFace::outer_x3] == BoundaryFlag::periodic)
+    if (bcs[BoundaryFace::outer_x3] == BoundaryFlag::periodic)
       lz=0;
     else
       return nullptr;
