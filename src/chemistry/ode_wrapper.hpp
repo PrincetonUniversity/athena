@@ -43,8 +43,8 @@ class ODEWrapper {
  private:
   PassiveScalars *pmy_spec_;
   MeshBlock *pmy_block_;
-  int dim_; //dimension  of the ODEs
   bool output_zone_sec_; //option to output solver performance
+  int dim_; //dimension  of the ODEs
 #ifdef CVODE
   //cvode variables
   SUNContext sunctx_;

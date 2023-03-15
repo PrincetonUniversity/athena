@@ -25,6 +25,7 @@ NetworkWrapper::NetworkWrapper() {}
 //! \brief NetworkWrapper destructor
 NetworkWrapper::~NetworkWrapper() {}
 
+#ifdef CVODE
 //----------------------------------------------------------------------------------------
 //! \fn int NetworkWrapper::WrapJacobian(const realtype t, const N_Vector y,
 //!            const N_Vector ydot, SUNMatrix jac, void *user_data, N_Vector tmp1,
@@ -107,6 +108,7 @@ int NetworkWrapper::WrapRHS(const realtype t, const N_Vector y,
   }
   return 0;
 }
+#endif //CVODE
 
 //----------------------------------------------------------------------------------------
 //! \fn void NetworkWrapper::Jacobian(const Real t,

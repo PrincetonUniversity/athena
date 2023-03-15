@@ -628,7 +628,6 @@ if args['chemistry'] is not None:
     makefile_options['CHEMNET_FILE'] = 'src/chemistry/network/' \
         + args['chemistry'] + '.cpp'
     makefile_options['CHEMISTRY_FILE'] = 'src/chemistry/network_wrapper.cpp src/chemistry/utils/*.cpp'
-    makefile_options['LIBRARY_FLAGS'] += ' -lsundials_cvode -lsundials_nvecserial'
     # specify the number of species for each network
     if args['chemistry'] == "gow17":
         definitions['NUMBER_PASSIVE_SCALARS'] = '12'
@@ -651,9 +650,11 @@ if args['kida_rates'] is not None:
             + '/kida_'
             + args['kida_rates']
             + '.cpp')
+
 # --ode_solver=[solver] argument
 if args['ode_solver'] == 'cvode':
     definitions['CVODE_OPTION'] = 'CVODE'
+    makefile_options['LIBRARY_FLAGS'] += ' -lsundials_cvode -lsundials_nvecserial'
 else:
     definitions['CVODE_OPTION'] = 'NO_CVODE'
 if args['ode_solver'] is not None:

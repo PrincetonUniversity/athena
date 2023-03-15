@@ -9,9 +9,11 @@
 //! \brief definitions for chemical  network.
 
 //CVODE headers.
+#ifdef CVODE
 #include <nvector/nvector_serial.h> // N_Vector type
 #include <sundials/sundials_types.h> // realtype type
 #include <sunmatrix/sunmatrix_dense.h> // access to dense SUNMatrix
+#endif //CVODE
 
 //c++ headers
 #include <string>
@@ -30,12 +32,14 @@ class NetworkWrapper {
   NetworkWrapper();
   virtual ~NetworkWrapper();
 
+#ifdef CVODE
   static int WrapJacobian(const realtype t,
                           const N_Vector y, const N_Vector fy,
                           SUNMatrix jac, void *user_data,
                           N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
   static int WrapRHS(const realtype t, const N_Vector y,
                      N_Vector ydot, void *user_data);
+#endif //CVODE
 
   //Jacobian, only necessary when the input parameter user_jac=1 in <chemistry>
   //if user_jac=0 (default), then numerical jacobian is used.

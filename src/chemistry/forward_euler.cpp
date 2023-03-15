@@ -14,6 +14,9 @@
 
 //c++ header
 #include <ctime> //time
+#include <iostream>   // endl, ostream
+#include <limits>
+#include <sstream>    // stringstream
 #include <stdexcept> //throw exceptions
 #include <string>
 
@@ -25,6 +28,16 @@
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
 
+namespace {
+  Real cfl_cool_sub; //cfl number for subcycling
+  Real yfloor; //species abundance floor for calculating the cooling time
+  int nsub_max; //maximum number of substeps
+  Real GetChemTime(const Real y[NSCALARS], const Real ydot[NSCALARS],
+                   const Real E, const Real Edot);
+  void IntegrateOneSubstep(Real tsub, Real y[NSCALARS], const Real ydot[NSCALARS],
+                           Real &E, const Real Edot);
+} //namespace
+
 //----------------------------------------------------------------------------------------
 //! \brief ODEWrapper constructor
 ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
@@ -35,17 +48,23 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
     dim_ = NSCALARS;
   }
   output_zone_sec_ = pin->GetOrAddBoolean("chemistry", "output_zone_sec", false);
+  cfl_cool_sub = pin->GetOrAddReal("chemistry","cfl_cool_sub",0.1);
+  yfloor = pin->GetOrAddReal("chemistry","yfloor",1e-3);
+  nsub_max = pin->GetOrAddInteger("chemistry","nsub_max",1e5);
 }
 
 //----------------------------------------------------------------------------------------
 //! \brief ODEWrapper destructor
-ODEWrapper::~ODEWrapper() {}
+ODEWrapper::~ODEWrapper() {
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void ODEWrapper::Initialize(ParameterInput *pin)
 //! \brief Initialize ODE solver parameters
 void ODEWrapper::Initialize(ParameterInput *pin) {
-  //TODO: initialization
+  //Note: this cannot be in the constructor, since it needs the PassiveScalars
+  //class, and the ODEWrapper class is constructed in the PassiveScalars constructor.
+  pmy_spec_ = pmy_block_->pscalars;
   return;
 }
 
@@ -53,9 +72,97 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
 //! \fn void ODEWrapper::Integrate(const Real tinit, const Real dt)
 //! \brief Integrate the ODE forward for time dt
 void ODEWrapper::Integrate(const Real tinit, const Real dt) {
+  int is = pmy_block_->is;
+  int js = pmy_block_->js;
+  int ks = pmy_block_->ks;
+  int ie = pmy_block_->ie;
+  int je = pmy_block_->je;
+  int ke = pmy_block_->ke;
+  int ncycle = pmy_block_->pmy_mesh->ncycle;
   clock_t tstart, tstop;
   tstart = std::clock();
-  //TODO: integration
+  const Real scalar_floor = pmy_block_->peos->GetScalarFloor();
+  //primitive conserved variables
+  AthenaArray<Real> &u = pmy_block_->phydro->u;
+  AthenaArray<Real> &bcc = pmy_block_->pfield->bcc;
+  //chemical species and rates
+  Real y[NSCALARS];
+  Real ydot[NSCALARS];
+  //internal energy and rates
+  Real E = 0.;
+  Real Edot = 0.;
+  Real time = pmy_block_->pmy_mesh->time;//code time
+  Real dt_mhd = pmy_block_->pmy_mesh->dt; //MHD timestep
+  //subcycling variables
+  Real tend, tsub, tnow, tleft;
+  Real icount;
+  //loop over all cells
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+      for (int i=is; i<=ie; ++i) {
+        pmy_spec_->chemnet.InitializeNextStep(k, j, i);
+        //copy species abundance
+        for (int ispec=0; ispec<NSCALARS; ispec++) {
+          y[ispec] = pmy_spec_->s(ispec,k,j,i)/u(IDN,k,j,i);
+        }
+        //assign internal energy, if not isothermal eos
+        if (NON_BAROTROPIC_EOS) {
+          E = u(IEN,k,j,i)
+            - 0.5*( SQR(u(IM1,k,j,i)) + SQR(u(IM2,k,j,i)) + SQR(u(IM3,k,j,i))
+                   )/u(IDN,k,j,i);
+          if (MAGNETIC_FIELDS_ENABLED) {
+            E -= 0.5*(
+                SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
+          }
+        }
+        //subcycling
+        icount = 0;
+        tnow = time;
+        tend = time + dt_mhd;
+        tleft = dt_mhd;
+        while (tnow < tend) {
+          //calculate reaction rates
+          pmy_spec_->chemnet.RHS(time, y, E, ydot);
+          //calculate heating and cooling rats
+          if (NON_BAROTROPIC_EOS) {
+            Edot = pmy_spec_->chemnet.Edot(time, y, E);
+          }
+          //advance one substep
+          tsub = cfl_cool_sub * GetChemTime(y, ydot, E, Edot);
+          tsub = std::min(tsub, tleft);
+          IntegrateOneSubstep(tsub, y, ydot, E, Edot);
+          //update timing
+          tnow += tsub;
+          tleft = tend - tnow;
+          icount++;
+          //check maximum number of steps
+          if (icount > nsub_max) {
+            std::stringstream msg;
+            msg << "### FATAL ERROR in function ODEWrapper::Integrate: "
+              << "Maximum number of substeps = " << nsub_max
+              << " exceeded for forward Euler solver." << std::endl;
+            ATHENA_ERROR(msg);
+          }
+        }
+        //copy species abundance back to s
+        for (int ispec=0; ispec<NSCALARS; ispec++) {
+          //apply floor to passive scalar concentrations
+          y[ispec] = (y[ispec] < scalar_floor) ?  scalar_floor : y[ispec];
+          pmy_spec_->s(ispec,k,j,i) = y[ispec]*u(IDN,k,j,i);
+        }
+        //assign internal energy, if not isothermal eos
+        if (NON_BAROTROPIC_EOS) {
+          u(IEN,k,j,i) = E
+            + 0.5*( SQR(u(IM1,k,j,i)) + SQR(u(IM2,k,j,i)) + SQR(u(IM3,k,j,i))
+                )/u(IDN,k,j,i);
+          if (MAGNETIC_FIELDS_ENABLED) {
+            u(IEN,k,j,i) += 0.5*(
+                SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
+          }
+        }
+      }
+    }
+  }
   tstop = std::clock();
   if (output_zone_sec_) {
     double cpu_time = (tstop>tstart ? static_cast<double> (tstop-tstart) :
@@ -68,3 +175,45 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   }
   return;
 }
+
+namespace {
+
+//----------------------------------------------------------------------------------------
+//! \fn Real GetChemTime(const Real y[NSCALARS], const Real ydot[NSCALARS],
+//                       const Real E, const Real Edot)
+//! \brief calculate chemistry timescale
+Real GetChemTime(const Real y[NSCALARS], const Real ydot[NSCALARS],
+                 const Real E, const Real Edot) {
+  const Real small_ = 1024 * std::numeric_limits<float>::min();
+  //put floor in species abundance
+  Real yf[NSCALARS];
+  for (int ispec=0; ispec<NSCALARS; ispec++) {
+    yf[ispec] = std::max(y[ispec], yfloor);
+  }
+  //calculate chemistry timescale
+  Real tchem = std::abs( yf[0]/(ydot[0] + small_) );
+  for (int ispec=1; ispec<NSCALARS; ispec++) {
+    tchem = std::min( tchem, std::abs(yf[ispec]/(ydot[ispec]+small_)) );
+  }
+  if (NON_BAROTROPIC_EOS) {
+    tchem = std::min( tchem, std::abs(E/(Edot+small_)) );
+  }
+  return tchem;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void IntegrateOneSubstep(Real tsub, Real y[NSCALARS], const Real ydot[NSCALARS],
+//!                              Real &E, const Real Edot)
+//! \brief advance chemical abundance and energy for tsub
+void IntegrateOneSubstep(Real tsub, Real y[NSCALARS], const Real ydot[NSCALARS],
+                         Real &E, const Real Edot) {
+  for (int ispec=0; ispec<NSCALARS; ispec++) {
+    y[ispec] += ydot[ispec] * tsub;
+  }
+  if (NON_BAROTROPIC_EOS) {
+    E += Edot * tsub;
+  }
+  return;
+}
+
+} //namespace
