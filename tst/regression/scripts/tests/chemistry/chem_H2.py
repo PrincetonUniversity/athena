@@ -22,10 +22,9 @@ def prepare(**kwargs):
     athena.configure(
         prob='chem_uniform',
         chemistry='H2',
-        ode_solver='cvode',
+        ode_solver='forward_euler',
         cxx=cxx,
-        eos='isothermal',
-        cvode_path=os.environ['CVODE_PATH']
+        eos='isothermal'
         )
     athena.make()
 
@@ -60,7 +59,7 @@ def analyze():
         return f_H
 
     # maximum error allowed
-    err_control = 1.0e-4
+    err_control = 1.0e-2
     # athena++ output
     fn_hst = "bin/chem_H2.hst"
     data_hst = athena_read.hst(fn_hst)

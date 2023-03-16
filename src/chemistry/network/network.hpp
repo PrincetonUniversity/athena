@@ -8,18 +8,19 @@
 //! \file network.hpp
 //! \brief definitions for chemical  network.
 
+//c++ headers
+#include <string>
+
+// Athena++ classes headers
+#include "../../athena.hpp"
+#include "../../defs.hpp"
+
 //CVODE headers.
 #ifdef CVODE
 #include <nvector/nvector_serial.h> // N_Vector type
 #include <sundials/sundials_types.h> // realtype type
 #include <sunmatrix/sunmatrix_dense.h> // access to dense SUNMatrix
 #endif //CVODE
-
-//c++ headers
-#include <string>
-
-// Athena++ classes headers
-#include "../../athena.hpp"
 
 class PassiveScalars;
 class ParameterInput;
