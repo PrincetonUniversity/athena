@@ -630,16 +630,27 @@ if args['chemistry'] is not None:
     makefile_options['CHEMISTRY_FILE'] = 'src/chemistry/network_wrapper.cpp src/chemistry/utils/*.cpp'
     # specify the number of species for each network
     if args['chemistry'] == "gow17":
-        definitions['NUMBER_PASSIVE_SCALARS'] = '12'
+        definitions['NUMBER_CHEMICAL_SPECIES'] = '12'
     elif args['chemistry'] == "H2":
-        definitions['NUMBER_PASSIVE_SCALARS'] = '2'
+        definitions['NUMBER_CHEMICAL_SPECIES'] = '2'
     elif args['chemistry'] == "C12Mg24":
-        definitions['NUMBER_PASSIVE_SCALARS'] = '2'
+        definitions['NUMBER_CHEMICAL_SPECIES'] = '2'
 else:
     definitions['CHEMISTRY_OPTION'] = 'NOT_INCLUDE_CHEMISTRY'
+    definitions['NUMBER_CHEMICAL_SPECIES'] = '0'
     makefile_options['CHEMNET_FILE'] = ''
     makefile_options['CHEMISTRY_FILE'] = ''
     definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/network.hpp'
+
+#check number of species and scalars
+if definitions['NUMBER_PASSIVE_SCALARS'] == '0':
+    definitions['NUMBER_PASSIVE_SCALARS'] = definitions['NUMBER_CHEMICAL_SPECIES']
+elif int(definitions['NUMBER_PASSIVE_SCALARS']) < int(definitions['NUMBER_CHEMICAL_SPECIES']):
+    raise SystemExit(
+      '### CONFIGURE ERROR: number of passive scalars ({:s})'.format(
+          definitions['NUMBER_PASSIVE_SCALARS'])
+       + ' less than the number of chemical species ({:s})!'.format(
+          definitions['NUMBER_CHEMICAL_SPECIES']))
 
 # --kida_rates=[rates] argument
 if args['kida_rates'] is not None:
@@ -912,6 +923,7 @@ print('  Equation of state:          ' + args['eos'])
 print('  Riemann solver:             ' + args['flux'])
 print('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF'))
 print('  Number of scalars:          ' + definitions['NUMBER_PASSIVE_SCALARS'])
+print('  Number of chemical species: ' + definitions['NUMBER_CHEMICAL_SPECIES'])
 print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
