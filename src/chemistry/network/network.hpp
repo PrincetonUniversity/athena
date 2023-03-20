@@ -47,13 +47,13 @@ class NetworkWrapper {
   //the dimension is NSCALSRS+1, because the last equation is energy equation
   //(Edot).
   virtual void Jacobian(const Real t,
-                        const Real y[NSCALARS+1], const Real ydot[NSCALARS+1],
+                        const Real y[NSPECIES+1], const Real ydot[NSPECIES+1],
                         AthenaArray<Real> &jac);
 
-  //Jacobian for isothermal EOS. The dimentions are NSCALARS because the lack
+  //Jacobian for isothermal EOS. The dimentions are NSPECIES because the lack
   //of energy equation
-  virtual void Jacobian_isothermal(const Real t, const Real y[NSCALARS],
-                                   const Real ydot[NSCALARS],
+  virtual void Jacobian_isothermal(const Real t, const Real y[NSPECIES],
+                                   const Real ydot[NSPECIES],
                                    AthenaArray<Real> &jac);
 
   //------------All functions below has to be overloaded------------
@@ -75,15 +75,15 @@ class NetworkWrapper {
   //   E: internal energy
   // output:
   //   ydot: time-derivative of abundance y.
-  virtual void RHS(const Real t, const Real y[NSCALARS], const Real E,
-                   Real ydot[NSCALARS]) = 0;
+  virtual void RHS(const Real t, const Real y[NSPECIES], const Real E,
+                   Real ydot[NSPECIES]) = 0;
   // Energy equation. Currently solved with chemistry as coupled ODE.
   // input:
   //    t: time in code unites
   //    y: chemical abundances, same as in RHS.
   //    E: internal energy
   // return: rate of energy change dE/dt.
-  virtual Real Edot(const Real t, const Real y[NSCALARS], const Real E) = 0;
+  virtual Real Edot(const Real t, const Real y[NSPECIES], const Real E) = 0;
 };
 
 #endif // CHEMISTRY_NETWORK_NETWORK_HPP_

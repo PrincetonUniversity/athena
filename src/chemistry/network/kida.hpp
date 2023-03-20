@@ -37,17 +37,17 @@ class ChemNetwork : public NetworkWrapper {
   ~ChemNetwork();
 
   //a list of species name, used in output
-  std::string species_names[NSCALARS];
+  std::string species_names[NSPECIES];
 
   void InitializeNextStep(const int k, const int j, const int i);
 
-  void RHS(const Real t, const Real y[NSCALARS], const Real ED,
-           Real ydot[NSCALARS]);
+  void RHS(const Real t, const Real y[NSPECIES], const Real ED,
+           Real ydot[NSPECIES]);
 
-  Real Edot(const Real t, const Real y[NSCALARS], const Real ED);
+  Real Edot(const Real t, const Real y[NSPECIES], const Real ED);
 
-  void Jacobian_isothermal(const Real t, const Real y[NSCALARS],
-                           const Real ydot[NSCALARS], AthenaArray<Real> &jac);
+  void Jacobian_isothermal(const Real t, const Real y[NSPECIES],
+                           const Real ydot[NSPECIES], AthenaArray<Real> &jac);
 
   Units *punit;
  private:
@@ -208,18 +208,18 @@ class ChemNetwork : public NetworkWrapper {
 
   //private functions
   void InitializeReactions();
-  void UpdateRates(const Real y[NSCALARS], const Real E);
+  void UpdateRates(const Real y[NSPECIES], const Real E);
   ReactionType SortReaction(KidaReaction* pr) const;
   void CheckReaction(KidaReaction reaction);
   void PrintProperties() const;
   void OutputRates(FILE *pf) const;
   void OutputJacobian(FILE *pf, const AthenaArray<Real> &jac) const;
-  void Jacobian_isothermal_numerical(const Real t, const Real y[NSCALARS],
-                                     const Real ydot[NSCALARS],
+  void Jacobian_isothermal_numerical(const Real t, const Real y[NSPECIES],
+                                     const Real ydot[NSPECIES],
                                      AthenaArray<Real> &jac);
   void SetGrad_v(const int k, const int j, const int i);
-  void UpdateRatesSpecial(const Real y[NSCALARS], const Real E);
-  void UpdateJacobianSpecial(const Real y[NSCALARS], const Real E,
+  void UpdateRatesSpecial(const Real y[NSPECIES], const Real E);
+  void UpdateJacobianSpecial(const Real y[NSPECIES], const Real E,
                              AthenaArray<Real> &jac);
 };
 

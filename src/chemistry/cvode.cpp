@@ -46,9 +46,9 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   dense_matrix_ = NULL;
   dense_ls_ = NULL;
   if (NON_BAROTROPIC_EOS) {
-    dim_ = NSCALARS + 1;
+    dim_ = NSPECIES + 1;
   } else {
-    dim_ = NSCALARS;
+    dim_ = NSPECIES;
   }
   abstol_.NewAthenaArray(dim_);
   //Create the SUNDIALS context
@@ -90,7 +90,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
 
   //tolerance
   Real abstol_all = pin->GetOrAddReal("chemistry", "abstol", 1.0e-12);
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     abstol_(i) = pin->GetOrAddReal("chemistry",
         "abstol_"+pmy_spec_->chemnet.species_names[i], -1);
     if (abstol_(i) < 0) {
@@ -241,7 +241,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       //copy s to r_copy
-      for (int ispec=0; ispec<NSCALARS; ispec++) {
+      for (int ispec=0; ispec<NSPECIES; ispec++) {
         for (int i=is; i<=ie; ++i) {
           pmy_spec_->r_copy(i, ispec) = pmy_spec_->s(ispec,k,j,i)/u(IDN,k,j,i);
         }
@@ -249,11 +249,11 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
       //assign internal energy, if not isothermal eos
       if (NON_BAROTROPIC_EOS) {
         for (int i=is; i<=ie; ++i) {
-          pmy_spec_->r_copy(i, NSCALARS) = u(IEN,k,j,i)
+          pmy_spec_->r_copy(i, NSPECIES) = u(IEN,k,j,i)
             - 0.5*( SQR(u(IM1,k,j,i)) + SQR(u(IM2,k,j,i)) + SQR(u(IM3,k,j,i))
                    )/u(IDN,k,j,i);
           if (MAGNETIC_FIELDS_ENABLED) {
-            pmy_spec_->r_copy(i, NSCALARS) -= 0.5*(
+            pmy_spec_->r_copy(i, NSPECIES) -= 0.5*(
                 SQR(bcc(IB1,k,j,i)) + SQR(bcc(IB2,k,j,i)) + SQR(bcc(IB3,k,j,i)) );
           }
         }
@@ -290,7 +290,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
       }
 
       //copy r_copy back to s
-      for (int ispec=0; ispec<NSCALARS; ispec++) {
+      for (int ispec=0; ispec<NSPECIES; ispec++) {
         for (int i=is; i<=ie; ++i) {
           Real& r_copy_i  = pmy_spec_->r_copy(i,ispec);
           //apply floor to passive scalar concentrations
@@ -302,7 +302,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
       //assign internal energy, if not isothermal eos
       if (NON_BAROTROPIC_EOS) {
         for (int i=is; i<=ie; ++i) {
-          u(IEN,k,j,i) = pmy_spec_->r_copy(i, NSCALARS)
+          u(IEN,k,j,i) = pmy_spec_->r_copy(i, NSPECIES)
             + 0.5*( SQR(u(IM1,k,j,i)) + SQR(u(IM2,k,j,i)) + SQR(u(IM3,k,j,i))
                    )/u(IDN,k,j,i);
           if (MAGNETIC_FIELDS_ENABLED) {

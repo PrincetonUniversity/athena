@@ -165,18 +165,18 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
     species_.push_back(si);
     nline++;
   }
-  if (nline != NSCALARS) {
+  if (nline != NSPECIES) {
     std::stringstream msg; //error message
     msg << "### FATAL ERROR in ChemNetwork constructor [ChemNetwork]" << std::endl
       << "number of species in species.dat does not match the number of scalars ("
-      << NSCALARS << ")" << std::endl;
+      << NSPECIES << ")" << std::endl;
     ATHENA_ERROR(msg);
   }
   //set ice species index
   nices_ = nices;
   id_ices_.NewAthenaArray(nices);
   nices = 0;
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     if (species_[i].name.find("s") == 0) {
       id_ices_(nices) = i;
       nices++;
@@ -296,22 +296,22 @@ ChemNetwork::~ChemNetwork() {
   fclose(pf);
   //TODO(Munan Gong): test Jacobian: this can be deleted later or put a debug macro
   const Real t=0;
-  Real y[NSCALARS];
-  Real ydot[NSCALARS];
+  Real y[NSPECIES];
+  Real ydot[NSPECIES];
   AthenaArray<Real> jac_analytic;
   AthenaArray<Real> jac_numerical;
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     y[i] = 0.1;
     ydot[i] = 0;
   }
   //analytic jacobian
-  jac_analytic.NewAthenaArray(NSCALARS, NSCALARS);
+  jac_analytic.NewAthenaArray(NSPECIES, NSPECIES);
   Jacobian_isothermal(t, y, ydot, jac_analytic);
   FILE *pf1 = fopen("jac_analytic.dat", "w");
   OutputJacobian(pf1, jac_analytic);
   fclose(pf1);
   //numerical jacobian
-  jac_numerical.NewAthenaArray(NSCALARS, NSCALARS);
+  jac_numerical.NewAthenaArray(NSPECIES, NSPECIES);
   Jacobian_isothermal_numerical(t, y, ydot, jac_numerical);
   FILE *pf2 = fopen("jac_numerical.dat", "w");
   OutputJacobian(pf2, jac_numerical);
@@ -361,27 +361,27 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
-//!                       Real ydot[NSCALARS])
+//! \fn void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
+//!                       Real ydot[NSPECIES])
 //! \brief RHS: right-hand-side of ODE.
 //!
 //! dy/dt = ydot(t, y). Here y are the abundance
 //! of species. details see CVODE package documentation.
 //! all input/output variables are in code units
-void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
-                      Real ydot[NSCALARS]) {
+void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
+                      Real ydot[NSPECIES]) {
   Real rate = 0;
   Real E_ergs = ED * punit->EnergyDensity / nH_; //ernergy per hydrogen atom
   //store previous y includeing negative abundance correction
-  Real y0[NSCALARS];//correct negative abundance, only for UpdateRates()
-  Real ydotg[NSCALARS];
+  Real y0[NSPECIES];//correct negative abundance, only for UpdateRates()
+  Real ydotg[NSPECIES];
 
-  for(int i=0; i<NSCALARS; i++) {
+  for(int i=0; i<NSPECIES; i++) {
     ydotg[i] = 0.0;
   }
 
   //correct negative abundance to zero, used in rate update
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     if (y[i] < 0) {
       y0[i] = 0;
     } else {
@@ -390,7 +390,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
     //throw error if nan, or inf, or large negative value occurs
     if ( isnan(y[i]) || isinf(y[i]) ) {
       printf("RHS: ");
-      for (int j=0; j<NSCALARS; j++) {
+      for (int j=0; j<NSPECIES; j++) {
         printf("%s: %.2e  ", species_names[j].c_str(), y[j]);
       }
       printf("\n");
@@ -522,20 +522,20 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
   }
 
   //set ydot to return
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     //return in code units
     ydot[i] = ydotg[i] * punit->Time;
   }
 
   //throw error if nan, or inf, or large value occurs
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     if ( isnan(ydot[i]) || isinf(ydot[i]) ) {
       printf("ydot: ");
-      for (int j=0; j<NSCALARS; j++) {
+      for (int j=0; j<NSPECIES; j++) {
         printf("%s: %.2e  ", species_names[j].c_str(), ydot[j]);
       }
       printf("abundances: ");
-      for (int j=0; j<NSCALARS; j++) {
+      for (int j=0; j<NSPECIES; j++) {
         printf("%s: %.2e  ", species_names[j].c_str(), y[j]);
       }
       printf("\n");
@@ -565,11 +565,11 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED)
+//! \fn Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED)
 //! \brief energy equation dED/dt
 //!
 //! all input/output variables are in code units (ED is the energy density)
-Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
+Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
   Real E_ergs = ED * punit->EnergyDensity / nH_; //ernergy per hydrogen atom
   //isothermal
   if (!NON_BAROTROPIC_EOS) {
@@ -577,9 +577,9 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
   }
   Real T = 0.;
   Real dEdt = 0.;
-  Real y0[NSCALARS];
+  Real y0[NSPECIES];
   //correct negative abundance to zero
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     if (y[i] < 0) {
       y0[i] = 0;
     } else {
@@ -768,7 +768,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
         LH2 , LDust , LRec , LH2diss , LHIion);
     printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
         T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(y_H2, xHe_, y_e), nH_);
-    for (int i=0; i<NSCALARS; i++) {
+    for (int i=0; i<NSPECIES; i++) {
       printf("%s: %.2e  ", species_names[i].c_str(), y0[i]);
     }
     printf("\n");
@@ -788,7 +788,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
         LH2 , LDust , LRec , LH2diss , LHIion);
     printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
         T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(y_H2, xHe_, y_e), nH_);
-    for (int i=0; i<NSCALARS; i++) {
+    for (int i=0; i<NSPECIES; i++) {
       printf("%s: %.2e  ", species_names[i].c_str(), y0[i]);
     }
     printf("\n");
@@ -799,11 +799,11 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
-//!           const Real ydot[NSCALARS], AthenaArray<Real> &jac)
+//! \fn void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSPECIES],
+//!           const Real ydot[NSPECIES], AthenaArray<Real> &jac)
 //! \brief Jacobian for isothermal EOS
-void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
-                                      const Real ydot[NSCALARS],
+void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSPECIES],
+                                      const Real ydot[NSPECIES],
                                       AthenaArray<Real> &jac) {
   //TODO(Munan Gong): check Jacobian by comparing the numerical to the analytic
   //(does this mean Jacobian can be kind of approximate and not exact?)
@@ -814,8 +814,8 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
   const int i_H2 = ispec_map_["H2"];
   const Real xi = rad_(index_cr_);
   //initialize TODO(Munan Gong):check if this is necessary
-  for (int i=0; i<NSCALARS; i++) {
-    for (int j=0; j<NSCALARS; j++) {
+  for (int i=0; i<NSPECIES; i++) {
+    for (int j=0; j<NSPECIES; j++) {
       jac(i,j) = 0.;
     }
   }
@@ -985,8 +985,8 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSCALARS],
   UpdateJacobianSpecial(y, 0., jac);
 
   //set unit for jacobian
-  for (int i=0; i<NSCALARS; i++) {
-    for (int j=0; j<NSCALARS; j++) {
+  for (int i=0; i<NSPECIES; i++) {
+    for (int j=0; j<NSPECIES; j++) {
       jac(i,j) *= punit->Time;
     }
   }
@@ -1434,11 +1434,11 @@ void ChemNetwork::InitializeReactions() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E)
+//! \fn void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E)
 //! \brief update the rates for chemical reactions.
 //!
 //! This is called at the beginning of the RHS. E is in the unit of ergs.
-void ChemNetwork::UpdateRates(const Real y[NSCALARS], const Real E) {
+void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
   const Real y_H2 = y[ispec_map_["H2"]];
   Real y_e;
   if (ispec_map_.find("e-") != ispec_map_.end()) {
@@ -1899,7 +1899,7 @@ void ChemNetwork::CheckReaction(KidaReaction reaction) {
 //! \brief print out reactions and rates, for debug
 void ChemNetwork::PrintProperties() const {
   //print each species.
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     std::cout << "species: " << i << std::endl;
     std::cout << "name=" << species_[i].name << ", index=" << species_[i].index
       << ", charge=" << species_[i].charge_ << std::endl;
@@ -2207,22 +2207,22 @@ void ChemNetwork::OutputJacobian(FILE *pf, const AthenaArray<Real> &jac) const {
 
 //----------------------------------------------------------------------------------------
 //! \fn void ChemNetwork::Jacobian_isothermal_numerical(const Real t,
-//!    const Real y[NSCALARS], const Real ydot[NSCALARS], AthenaArray<Real> &jac)
+//!    const Real y[NSPECIES], const Real ydot[NSPECIES], AthenaArray<Real> &jac)
 //! \brief calculate Jacobian with numerical differentiation
 void ChemNetwork::Jacobian_isothermal_numerical(const Real t,
-    const Real y[NSCALARS], const Real ydot[NSCALARS], AthenaArray<Real> &jac) {
+    const Real y[NSPECIES], const Real ydot[NSPECIES], AthenaArray<Real> &jac) {
   const Real dy = 1e-3;
-  Real y1[NSCALARS];
-  Real y2[NSCALARS];
-  Real ydot1[NSCALARS];
-  Real ydot2[NSCALARS];
-  Real eps[NSCALARS];
-  for (int i=0; i<NSCALARS; i++) {
+  Real y1[NSPECIES];
+  Real y2[NSPECIES];
+  Real ydot1[NSPECIES];
+  Real ydot2[NSPECIES];
+  Real eps[NSPECIES];
+  for (int i=0; i<NSPECIES; i++) {
     eps[i] = dy;
   }
-  for (int i=0; i<NSCALARS; i++) {
-    for (int j=0; j<NSCALARS; j++) {
-      for (int k=0; k<NSCALARS; k++) {
+  for (int i=0; i<NSPECIES; i++) {
+    for (int j=0; j<NSPECIES; j++) {
+      for (int k=0; k<NSPECIES; k++) {
         y1[k] = y[k];
         y2[k] = y[k];
       }
@@ -2272,24 +2272,24 @@ void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E)
+//! \fn void ChemNetwork::UpdateRatesSpecial(const Real y[NSPECIES], const Real E)
 //! \brief update reaction rates for special reactions with formula = 7
 //!
 //! default: no special rates
-void __attribute__((weak)) ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS],
+void __attribute__((weak)) ChemNetwork::UpdateRatesSpecial(const Real y[NSPECIES],
                                                            const Real E) {
   // do nothing
   return;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn ChemNetwork::UpdateJacobianSpecial( const Real y[NSCALARS], const Real E,
+//! \fn ChemNetwork::UpdateJacobianSpecial( const Real y[NSPECIES], const Real E,
 //!       AthenaArray<Real> &jac)
 //! \brief update jacobian coefficients for special reactions with formula = 7
 //!
 //! default: no special rates, and therefore no special terms for Jacobian
 void __attribute__((weak)) ChemNetwork::UpdateJacobianSpecial(
-               const Real y[NSCALARS], const Real E, AthenaArray<Real> &jac) {
+               const Real y[NSPECIES], const Real E, AthenaArray<Real> &jac) {
   // do nothing
   return;
 }

@@ -14,6 +14,7 @@
 #   --flux=xxx        use xxx as the Riemann solver
 #   --nghost=xxx      set NGHOST=xxx
 #   --nscalars=xxx    set NSCALARS=xxx
+#   --nspecies=xxx    set NSPECIES=xxx
 #   -eos_table        enable EOS table
 #   -b                enable magnetic fields
 #   -s                enable special relativity
@@ -115,6 +116,11 @@ parser.add_argument('--nghost',
 parser.add_argument('--nscalars',
                     default='0',
                     help='set number of passive scalars')
+
+# --nspecies=[value] argument
+parser.add_argument('--nspecies',
+                    default='0',
+                    help='set number of chemical species')
 
 # -b argument
 parser.add_argument('-b',
@@ -435,6 +441,9 @@ definitions['NUMBER_GHOST_CELLS'] = args['nghost']
 
 # --nscalars=[value] argument
 definitions['NUMBER_PASSIVE_SCALARS'] = args['nscalars']
+
+# --nspecies=[value] argument
+definitions['NUMBER_CHEMICAL_SPECIES'] = args['nspecies']
 
 # -b argument
 # set variety of macros based on whether MHD/hydro or adi/iso are defined

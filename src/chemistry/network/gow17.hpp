@@ -39,14 +39,14 @@ class ChemNetwork : public NetworkWrapper {
   ~ChemNetwork();
 
   //a list of species name, used in output
-  static const std::string species_names[NSCALARS];
+  static const std::string species_names[NSPECIES];
 
   void InitializeNextStep(const int k, const int j, const int i);
 
-  void RHS(const Real t, const Real y[NSCALARS], const Real ED,
-           Real ydot[NSCALARS]);
+  void RHS(const Real t, const Real y[NSPECIES], const Real ED,
+           Real ydot[NSPECIES]);
 
-  Real Edot(const Real t, const Real y[NSCALARS], const Real ED);
+  Real Edot(const Real t, const Real y[NSPECIES], const Real ED);
 
   Units *punit;
  private:
@@ -65,7 +65,7 @@ class ChemNetwork : public NetworkWrapper {
   static const int index_cr_ = n_ph_ + 1;
   //other variables
   static const std::string ghost_species_names_[ngs_]; // NOLINT (runtime/arrays)
-  std::string species_names_all_[NSCALARS+ngs_];// NOLINT (runtime/arrays)
+  std::string species_names_all_[NSPECIES+ngs_];// NOLINT (runtime/arrays)
   Real nH_; //density, updated at InitializeNextStep
   Real temperature_;
   Real temp_max_heat_;
@@ -178,9 +178,9 @@ class ChemNetwork : public NetworkWrapper {
   static const Real small_;
 
   //private functions
-  void GetGhostSpecies(const Real *y, Real yall[NSCALARS+ngs_]);
+  void GetGhostSpecies(const Real *y, Real yall[NSPECIES+ngs_]);
   Real CII_rec_rate_(const Real temp);
-  void UpdateRates(const Real y[NSCALARS+ngs_], const Real E);
+  void UpdateRates(const Real y[NSPECIES+ngs_], const Real E);
   void OutputRates(FILE *pf) const;
   Real GetStddev(Real arr[], const int len);
   void SetGrad_v(const int k, const int j, const int i);

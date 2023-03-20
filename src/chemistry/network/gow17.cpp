@@ -46,7 +46,7 @@ const Real ChemNetwork::temp_coll_ = 7.0e2;
 const Real ChemNetwork::small_ = 1e-50;
 
 //species names
-const std::string ChemNetwork::species_names[NSCALARS] = // NOLINT (runtime/string)
+const std::string ChemNetwork::species_names[NSPECIES] = // NOLINT (runtime/string)
 {"He+", "OHx", "CHx", "CO", "C+", "HCO+", "H2", "H+", "H3+", "H2+", "O+", "Si+"};
 
 //below are ghost species. The aboundances of ghost species are
@@ -56,42 +56,42 @@ const std::string ChemNetwork::ghost_species_names_[ngs_] = // NOLINT (runtime/s
 
 //index of species
 const int ChemNetwork::iHeplus_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "He+");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "He+");
 const int ChemNetwork::iOHx_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "OHx");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "OHx");
 const int ChemNetwork::iCHx_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "CHx");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "CHx");
 const int ChemNetwork::iCO_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "CO");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "CO");
 const int ChemNetwork::iCplus_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "C+");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "C+");
 const int ChemNetwork::iHCOplus_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "HCO+");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "HCO+");
 const int ChemNetwork::iH2_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "H2");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "H2");
 const int ChemNetwork::iHplus_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "H+");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "H+");
 const int ChemNetwork::iH3plus_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "H3+");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "H3+");
 const int ChemNetwork::iH2plus_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "H2+");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "H2+");
 const int ChemNetwork::iOplus_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "O+");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "O+");
 const int ChemNetwork::iSiplus_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "Si+");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "Si+");
 //index of ghost species
 const int ChemNetwork::igSi_ =
-  ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*Si") + NSCALARS;
+  ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*Si") + NSPECIES;
 const int ChemNetwork::igC_ =
-  ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*C") + NSCALARS;
+  ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*C") + NSPECIES;
 const int ChemNetwork::igO_ =
-  ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*O") + NSCALARS;
+  ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*O") + NSPECIES;
 const int ChemNetwork::igHe_ =
-  ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*He") + NSCALARS;
+  ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*He") + NSPECIES;
 const int ChemNetwork::ige_ =
-  ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*e") + NSCALARS;
+  ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*e") + NSPECIES;
 const int ChemNetwork::igH_ =
-  ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*H") + NSCALARS;
+  ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "*H") + NSPECIES;
 
 
 //-------------------chemical network---------------------
@@ -368,11 +368,11 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
     kgr_[i] = 0;
   }
   //copy species to a full list of species names
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     species_names_all_[i] = species_names[i];
   }
-  for (int i=NSCALARS; i<NSCALARS+ngs_; i++) {
-    species_names_all_[i] = ghost_species_names_[i-NSCALARS];
+  for (int i=NSPECIES; i<NSPECIES+ngs_; i++) {
+    species_names_all_[i] = ghost_species_names_[i-NSPECIES];
   }
   return;
 }
@@ -429,31 +429,31 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
-//!                       Real ydot[NSCALARS])
+//! \fn void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
+//!                       Real ydot[NSPECIES])
 //! \brief RHS: right-hand-side of ODE.
 //!
 //! dy/dt = ydot(t, y). Here y are the abundance
 //! of species. details see CVODE package documentation.
 //! all input/output variables are in code units
-void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
-                      Real ydot[NSCALARS]) {
+void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
+                      Real ydot[NSPECIES]) {
   Real rate;
   //store previous y includeing ghost species
-  Real yprev[NSCALARS+ngs_]; // NOLINT (runtime/arrays)
+  Real yprev[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
   //correct negative abundance
-  Real yprev0[NSCALARS+ngs_]; // NOLINT (runtime/arrays)
-  Real ydotg[NSCALARS+ngs_]; // NOLINT (runtime/arrays)
+  Real yprev0[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
+  Real ydotg[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
   Real E_ergs = ED * punit->EnergyDensity / nH_; //ernergy per hydrogen atom
 
-  for(int i=0; i<NSCALARS+ngs_; i++) {
+  for(int i=0; i<NSPECIES+ngs_; i++) {
     ydotg[i] = 0.0;
   }
 
   // copy y to yprev and set ghost species
   GetGhostSpecies(y, yprev);
   //correct negative abundance to zero, used in rate update
-  for (int i=0; i<NSCALARS+ngs_; i++) {
+  for (int i=0; i<NSPECIES+ngs_; i++) {
     if (yprev[i] < 0) {
       yprev0[i] = 0;
     } else {
@@ -462,7 +462,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
     //throw error if nan, or inf, or large negative value occurs
     if ( isnan(yprev[i]) || isinf(yprev[i]) ) {
       printf("RHS: ");
-      for (int j=0; j<NSCALARS+ngs_; j++) {
+      for (int j=0; j<NSPECIES+ngs_; j++) {
         printf("%s: %.2e  ", species_names_all_[j].c_str(), yprev[j]);
       }
       printf("\n");
@@ -522,20 +522,20 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
   }
 
   //set ydot to return
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     //return in code units
     ydot[i] = ydotg[i] * punit->Time;
   }
 
   //throw error if nan, or inf, or large value occurs
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     if ( isnan(ydot[i]) || isinf(ydot[i]) ) {
       printf("ydot: ");
-      for (int j=0; j<NSCALARS; j++) {
+      for (int j=0; j<NSPECIES; j++) {
         printf("%s: %.2e  ", species_names[j].c_str(), ydot[j]);
       }
       printf("abundances: ");
-      for (int j=0; j<NSCALARS+ngs_; j++) {
+      for (int j=0; j<NSPECIES+ngs_; j++) {
         printf("%s: %.2e  ", species_names_all_[j].c_str(), yprev[j]);
       }
       printf("\n");
@@ -559,11 +559,11 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED)
+//! \fn Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED)
 //! \brief energy equation dED/dt
 //!
 //! all input/output variables are in code units (ED is the energy density)
-Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
+Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
   Real E_ergs = ED * punit->EnergyDensity / nH_; //ernergy per hydrogen atom
   //isothermal
   if (!NON_BAROTROPIC_EOS) {
@@ -572,11 +572,11 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
 
   Real T = 0.;
   Real dEdt = 0.;
-  Real yprev[NSCALARS+ngs_]; // NOLINT (runtime/arrays)
+  Real yprev[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
   // copy y to yprev and set ghost species
   GetGhostSpecies(y, yprev);
   //correct negative abundance to zero
-  for (int i=0; i<NSCALARS+ngs_; i++) {
+  for (int i=0; i<NSPECIES+ngs_; i++) {
     if (yprev[i] < 0) {
       yprev[i] = 0;
     }
@@ -697,7 +697,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
     printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
             T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]),
             nH_);
-    for (int i=0; i<NSCALARS+ngs_; i++) {
+    for (int i=0; i<NSPECIES+ngs_; i++) {
       printf("%s: %.2e  ", species_names_all_[i].c_str(), yprev[i]);
     }
     printf("\n");
@@ -718,7 +718,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
     printf("T=%.2e, dEdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, Cv=%.2e, nH=%.2e\n",
             T, dEDdt, ED, dEdt, E_ergs, Thermo::CvCold(yprev[iH2_], xHe_, yprev[ige_]),
             nH_);
-    for (int i=0; i<NSCALARS+ngs_; i++) {
+    for (int i=0; i<NSPECIES+ngs_; i++) {
       printf("%s: %.2e  ", species_names_all_[i].c_str(), yprev[i]);
     }
     printf("\n");
@@ -730,7 +730,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void ChemNetwork::GetGhostSpecies(const Real *y, Real yghost[NSCALARS+ngs_])
+//! \fn void ChemNetwork::GetGhostSpecies(const Real *y, Real yghost[NSPECIES+ngs_])
 //! \brief calculate the abundances of ghost species with elemental
 //!  conservation laws
 //!
@@ -738,9 +738,9 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
 //! number of species in total. However, it can also be problematic because it
 //! dumps all the numerical error into one species. If that species' abundance is
 //! low, the error can be large
-void ChemNetwork::GetGhostSpecies(const Real *y, Real yghost[NSCALARS+ngs_]) {
+void ChemNetwork::GetGhostSpecies(const Real *y, Real yghost[NSPECIES+ngs_]) {
   //copy the aboundances in y to yghost
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     yghost[i] = y[i];
   }
   //set the ghost species
@@ -780,11 +780,11 @@ Real ChemNetwork::CII_rec_rate_(const Real temp) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ChemNetwork::UpdateRates(const Real y[NSCALARS+ngs_], const Real E)
+//! \fn void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E)
 //! \brief update the rates for chemical reactions.
 //!
 //! This is called at the beginning of the RHS. E is in the unit of ergs.
-void ChemNetwork::UpdateRates(const Real y[NSCALARS+ngs_], const Real E) {
+void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
   Real T, Tcoll;
   //constant or evolve temperature
   if (NON_BAROTROPIC_EOS) {

@@ -143,9 +143,9 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   //allocate memory for the copy of s at intermediate step
   //the +1 dimention is the energy equation
   if (NON_BAROTROPIC_EOS) {
-    r_copy.NewAthenaArray(nc1, NSCALARS+1);
+    r_copy.NewAthenaArray(nc1, NSPECIES+1);
   } else {
-    r_copy.NewAthenaArray(nc1, NSCALARS);
+    r_copy.NewAthenaArray(nc1, NSPECIES);
   }
   //next step size
   h.NewAthenaArray(nc3, nc2, nc1);

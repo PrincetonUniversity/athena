@@ -38,21 +38,21 @@ class ChemNetwork : public NetworkWrapper {
   ~ChemNetwork();
 
   //a list of species name, used in output
-  static const std::string species_names[NSCALARS];
+  static const std::string species_names[NSPECIES];
 
   void InitializeNextStep(const int k, const int j, const int i);
 
-  void RHS(const Real t, const Real y[NSCALARS], const Real ED,
-           Real ydot[NSCALARS]);
+  void RHS(const Real t, const Real y[NSPECIES], const Real ED,
+           Real ydot[NSPECIES]);
 
-  Real Edot(const Real t, const Real y[NSCALARS], const Real ED);
+  Real Edot(const Real t, const Real y[NSPECIES], const Real ED);
 
   Units *punit;
  private:
   PassiveScalars *pmy_spec_;
   MeshBlock *pmy_mb_;
 
-  std::string species_names_all_[NSCALARS];//all species
+  std::string species_names_all_[NSPECIES];//all species
   //index of species
   static const int iH_;
   static const int iH2_;

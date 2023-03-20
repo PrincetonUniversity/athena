@@ -32,9 +32,9 @@ namespace {
   Real cfl_cool_sub; //cfl number for subcycling
   Real yfloor; //species abundance floor for calculating the cooling time
   int nsub_max; //maximum number of substeps
-  Real GetChemTime(const Real y[NSCALARS], const Real ydot[NSCALARS],
+  Real GetChemTime(const Real y[NSPECIES], const Real ydot[NSPECIES],
                    const Real E, const Real Edot);
-  void IntegrateOneSubstep(Real tsub, Real y[NSCALARS], const Real ydot[NSCALARS],
+  void IntegrateOneSubstep(Real tsub, Real y[NSPECIES], const Real ydot[NSPECIES],
                            Real &E, const Real Edot);
 } //namespace
 
@@ -43,9 +43,9 @@ namespace {
 ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
   pmy_block_ = pmb;
   if (NON_BAROTROPIC_EOS) {
-    dim_ = NSCALARS + 1;
+    dim_ = NSPECIES + 1;
   } else {
-    dim_ = NSCALARS;
+    dim_ = NSPECIES;
   }
   output_zone_sec_ = pin->GetOrAddBoolean("chemistry", "output_zone_sec", false);
   cfl_cool_sub = pin->GetOrAddReal("chemistry","cfl_cool_sub",0.1);
@@ -86,8 +86,8 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   AthenaArray<Real> &u = pmy_block_->phydro->u;
   AthenaArray<Real> &bcc = pmy_block_->pfield->bcc;
   //chemical species and rates
-  Real y[NSCALARS];
-  Real ydot[NSCALARS];
+  Real y[NSPECIES];
+  Real ydot[NSPECIES];
   //internal energy and rates
   Real E = 0.;
   Real Edot = 0.;
@@ -102,7 +102,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
       for (int i=is; i<=ie; ++i) {
         pmy_spec_->chemnet.InitializeNextStep(k, j, i);
         //copy species abundance
-        for (int ispec=0; ispec<NSCALARS; ispec++) {
+        for (int ispec=0; ispec<NSPECIES; ispec++) {
           y[ispec] = pmy_spec_->s(ispec,k,j,i)/u(IDN,k,j,i);
         }
         //assign internal energy, if not isothermal eos
@@ -145,7 +145,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
           }
         }
         //copy species abundance back to s
-        for (int ispec=0; ispec<NSCALARS; ispec++) {
+        for (int ispec=0; ispec<NSPECIES; ispec++) {
           //apply floor to passive scalar concentrations
           y[ispec] = (y[ispec] < scalar_floor) ?  scalar_floor : y[ispec];
           pmy_spec_->s(ispec,k,j,i) = y[ispec]*u(IDN,k,j,i);
@@ -179,20 +179,20 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
 namespace {
 
 //----------------------------------------------------------------------------------------
-//! \fn Real GetChemTime(const Real y[NSCALARS], const Real ydot[NSCALARS],
+//! \fn Real GetChemTime(const Real y[NSPECIES], const Real ydot[NSPECIES],
 //                       const Real E, const Real Edot)
 //! \brief calculate chemistry timescale
-Real GetChemTime(const Real y[NSCALARS], const Real ydot[NSCALARS],
+Real GetChemTime(const Real y[NSPECIES], const Real ydot[NSPECIES],
                  const Real E, const Real Edot) {
   const Real small_ = 1024 * std::numeric_limits<float>::min();
   //put floor in species abundance
-  Real yf[NSCALARS];
-  for (int ispec=0; ispec<NSCALARS; ispec++) {
+  Real yf[NSPECIES];
+  for (int ispec=0; ispec<NSPECIES; ispec++) {
     yf[ispec] = std::max(y[ispec], yfloor);
   }
   //calculate chemistry timescale
   Real tchem = std::abs( yf[0]/(ydot[0] + small_) );
-  for (int ispec=1; ispec<NSCALARS; ispec++) {
+  for (int ispec=1; ispec<NSPECIES; ispec++) {
     tchem = std::min( tchem, std::abs(yf[ispec]/(ydot[ispec]+small_)) );
   }
   if (NON_BAROTROPIC_EOS) {
@@ -202,12 +202,12 @@ Real GetChemTime(const Real y[NSCALARS], const Real ydot[NSCALARS],
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void IntegrateOneSubstep(Real tsub, Real y[NSCALARS], const Real ydot[NSCALARS],
+//! \fn void IntegrateOneSubstep(Real tsub, Real y[NSPECIES], const Real ydot[NSPECIES],
 //!                              Real &E, const Real Edot)
 //! \brief advance chemical abundance and energy for tsub
-void IntegrateOneSubstep(Real tsub, Real y[NSCALARS], const Real ydot[NSCALARS],
+void IntegrateOneSubstep(Real tsub, Real y[NSPECIES], const Real ydot[NSPECIES],
                          Real &E, const Real Edot) {
-  for (int ispec=0; ispec<NSCALARS; ispec++) {
+  for (int ispec=0; ispec<NSPECIES; ispec++) {
     y[ispec] += ydot[ispec] * tsub;
   }
   if (NON_BAROTROPIC_EOS) {

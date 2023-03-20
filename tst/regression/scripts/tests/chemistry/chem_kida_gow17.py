@@ -24,7 +24,7 @@ def prepare(**kwargs):
         prob='chem_uniform',
         chemistry='kida',
         ode_solver='cvode',
-        nscalars='18',
+        nspecies='18',
         kida_rates='gow17',
         radiation='const',
         cxx=cxx,

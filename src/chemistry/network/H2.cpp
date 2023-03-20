@@ -31,13 +31,13 @@
 const Real ChemNetwork::kgr_ = 3e-17;
 
 //species names
-const std::string ChemNetwork::species_names[NSCALARS] = // NOLINT (runtime/string)
+const std::string ChemNetwork::species_names[NSPECIES] = // NOLINT (runtime/string)
 {"H", "H2"};
 
 const int ChemNetwork::iH_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "H");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "H");
 const int ChemNetwork::iH2_ =
-  ChemistryUtility::FindStrIndex(species_names, NSCALARS, "H2");
+  ChemistryUtility::FindStrIndex(species_names, NSPECIES, "H2");
 
 //flag for Cv
 static bool is_const_Cv;
@@ -87,20 +87,20 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
-//!                       Real ydot[NSCALARS])
+//! \fn void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
+//!                       Real ydot[NSPECIES])
 //! \brief RHS: right-hand-side of ODE.
 //!
 //! dy/dt = ydot(t, y). Here y are the abundance
 //! of species. details see CVODE package documentation.
 //! all input/output variables are in code units
-void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
-                      Real ydot[NSCALARS]) {
+void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
+                      Real ydot[NSPECIES]) {
   const Real rate_cr = kcr_ * y[iH2_];
   const Real rate_gr = kgr_ * nH_ * y[iH_];
   ydot[iH2_] = rate_gr - rate_cr;
   ydot[iH_] = -2*rate_gr + 2*rate_cr;
-  for (int i=0; i<NSCALARS; i++) {
+  for (int i=0; i<NSPECIES; i++) {
     //return in code units
     ydot[i] *= punit->Time;
   }
@@ -108,11 +108,11 @@ void ChemNetwork::RHS(const Real t, const Real y[NSCALARS], const Real ED,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED)
+//! \fn Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED)
 //! \brief energy equation dED/dt
 //!
 //! all input/output variables are in code units (ED is the energy density)
-Real ChemNetwork::Edot(const Real t, const Real y[NSCALARS], const Real ED) {
+Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
   //isothermal
   if (!NON_BAROTROPIC_EOS) {
     return 0;
