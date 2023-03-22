@@ -150,11 +150,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   //intialize chemical species
-  if (NSCALARS > 0) {
+  if (NSPECIES > 0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          for (int ispec=0; ispec < NSCALARS; ++ispec) {
+          for (int ispec=0; ispec < NSPECIES; ++ispec) {
             pscalars->s(ispec, k, j, i) = s_init*nH;
 #ifdef INCLUDE_CHEMISTRY
             Real s_ispec = pin->GetOrAddReal("problem",
@@ -175,7 +175,7 @@ void SixRayBoundaryInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
                            FaceField &b, Real time, Real dt,
                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   //set species and column boundary to zero
-  for (int n=0; n<(NSCALARS); ++n) {
+  for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma simd
@@ -203,7 +203,7 @@ void SixRayBoundaryInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
                            FaceField &b, Real time, Real dt,
                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   //set species and column boundary to zero
-  for (int n=0; n<(NSCALARS); ++n) {
+  for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
 #pragma simd
@@ -231,7 +231,7 @@ void SixRayBoundaryInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
                            FaceField &b, Real time, Real dt,
                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   //set species and column boundary to zero
-  for (int n=0; n<(NSCALARS); ++n) {
+  for (int n=0; n<(NSPECIES); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma simd
@@ -259,7 +259,7 @@ void SixRayBoundaryOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
                            FaceField &b, Real time, Real dt,
                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   //set species and column boundary to zero
-  for (int n=0; n<(NSCALARS); ++n) {
+  for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma simd
@@ -287,7 +287,7 @@ void SixRayBoundaryOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
                            FaceField &b, Real time, Real dt,
                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   //set species and column boundary to zero
-  for (int n=0; n<(NSCALARS); ++n) {
+  for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
 #pragma simd
@@ -315,7 +315,7 @@ void SixRayBoundaryOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
                            FaceField &b, Real time, Real dt,
                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
   //set species and column boundary to zero
-  for (int n=0; n<(NSCALARS); ++n) {
+  for (int n=0; n<(NSPECIES); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
 #pragma simd

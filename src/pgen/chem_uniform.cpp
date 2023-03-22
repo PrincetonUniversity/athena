@@ -93,11 +93,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   //intialize chemical species
-  if (NSCALARS > 0) {
+  if (NSPECIES > 0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          for (int ispec=0; ispec < NSCALARS; ++ispec) {
+          for (int ispec=0; ispec < NSPECIES; ++ispec) {
             pscalars->s(ispec, k, j, i) = s_init*nH;
 #ifdef INCLUDE_CHEMISTRY
             Real s_ispec = pin->GetOrAddReal("problem",

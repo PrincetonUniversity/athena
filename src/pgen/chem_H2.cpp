@@ -90,11 +90,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   //intialize chemical species
-  if (NSCALARS > 0) {
+  if (NSPECIES > 0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          for (int ispec=0; ispec < NSCALARS; ++ispec) {
+          for (int ispec=0; ispec < NSPECIES; ++ispec) {
 #ifdef INCLUDE_CHEMISTRY
             Real x1 = pcoord->x1v(i);
             //gaussian initial H abundance in [0, 1), and no H in [1, 2]
@@ -125,7 +125,7 @@ int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &r = pmb->pscalars->r;
   Real maxeps = 0.0;
   if (f3) {
-    for (int n=0; n<NSCALARS; ++n) {
+    for (int n=0; n<NSPECIES; ++n) {
       for (int k=pmb->ks-1; k<=pmb->ke+1; k++) {
         for (int j=pmb->js-1; j<=pmb->je+1; j++) {
           for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
@@ -141,7 +141,7 @@ int RefinementCondition(MeshBlock *pmb) {
     }
   } else if (f2) {
     int k = pmb->ks;
-    for (int n=0; n<NSCALARS; ++n) {
+    for (int n=0; n<NSPECIES; ++n) {
       for (int j=pmb->js-1; j<=pmb->je+1; j++) {
         for (int i=pmb->is-1; i<=pmb->ie+1; i++) {
           Real eps = std::sqrt(SQR(0.5*(r(n,k,j,i+1) - r(n,k,j,i-1)))
@@ -200,7 +200,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   }
 
   // Initialize errors to zero
-  Real l1_err[NSCALARS]{}, max_err[NSCALARS]{}, cons_err[1]{},
+  Real l1_err[NSPECIES]{}, max_err[NSPECIES]{}, cons_err[1]{},
        l1_err_T[1]{}, max_err_T[1]{};
   Real T1_a, T1_s;
 
@@ -248,9 +248,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
 #ifdef MPI_PARALLEL
   if (Globals::my_rank == 0) {
-    MPI_Reduce(MPI_IN_PLACE, &l1_err, NSCALARS, MPI_ATHENA_REAL, MPI_SUM, 0,
+    MPI_Reduce(MPI_IN_PLACE, &l1_err, NSPECIES, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
-    MPI_Reduce(MPI_IN_PLACE, &max_err, NSCALARS, MPI_ATHENA_REAL, MPI_MAX, 0,
+    MPI_Reduce(MPI_IN_PLACE, &max_err, NSPECIES, MPI_ATHENA_REAL, MPI_MAX, 0,
                MPI_COMM_WORLD);
     MPI_Reduce(MPI_IN_PLACE, &cons_err, 1, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
@@ -261,9 +261,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
                  MPI_COMM_WORLD);
     }
   } else {
-    MPI_Reduce(&l1_err, &l1_err, NSCALARS, MPI_ATHENA_REAL, MPI_SUM, 0,
+    MPI_Reduce(&l1_err, &l1_err, NSPECIES, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
-    MPI_Reduce(&max_err, &max_err, NSCALARS, MPI_ATHENA_REAL, MPI_MAX, 0,
+    MPI_Reduce(&max_err, &max_err, NSPECIES, MPI_ATHENA_REAL, MPI_MAX, 0,
                MPI_COMM_WORLD);
     MPI_Reduce(&cons_err, &cons_err, 1, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
@@ -281,7 +281,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     // normalize errors by number of cells
     Real vol= (mesh_size.x1max - mesh_size.x1min)*(mesh_size.x2max - mesh_size.x2min)
               *(mesh_size.x3max - mesh_size.x3min);
-    for (int i=0; i<NSCALARS; ++i) {
+    for (int i=0; i<NSPECIES; ++i) {
       l1_err[i] = l1_err[i]/vol;
     }
     cons_err[0] = cons_err[0]/vol;
@@ -311,7 +311,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         ATHENA_ERROR(msg);
       }
       std::fprintf(pfile, "# Nx1  Nx2  Nx3  Ncycle  ");
-      for (int n=0; n<NSCALARS; ++n) {
+      for (int n=0; n<NSPECIES; ++n) {
         std::fprintf(pfile, "r%d_L1  ", n);
         std::fprintf(pfile, "r%d_max  ", n);
       }
@@ -324,7 +324,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     // write errors
     std::fprintf(pfile, "%d  %d", mesh_size.nx1, mesh_size.nx2);
     std::fprintf(pfile, "  %d  %d", mesh_size.nx3, ncycle);
-    for (int n=0; n<NSCALARS; ++n) {
+    for (int n=0; n<NSPECIES; ++n) {
       std::fprintf(pfile, "  %e", l1_err[n]);
       std::fprintf(pfile, "  %e", max_err[n]);
     }

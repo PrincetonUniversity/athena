@@ -141,11 +141,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   //intialize chemical species
-  if (NSCALARS > 0) {
+  if (NSPECIES > 0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          for (int ispec=0; ispec < NSCALARS; ++ispec) {
+          for (int ispec=0; ispec < NSPECIES; ++ispec) {
             Real x1 = pcoord->x1v(i);
             Real nH;
             if (x1 >= xc_start && x1 <= xc_end) {
