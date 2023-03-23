@@ -21,7 +21,7 @@
 #include "../radiation.hpp"
 #include "../../scalars/scalars.hpp"
 #include "../../bvals/bvals.hpp"
-#include "../../utils/units.hpp"
+#include "../../units/units.hpp"
 #ifdef INCLUDE_CHEMISTRY
 #include "../../chemistry/utils/shielding.hpp"
 #include "../../chemistry/utils/thermo.hpp"
@@ -66,7 +66,7 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) :
   }
 #ifdef INCLUDE_CHEMISTRY
   pmy_chemnet = &pmy_mb->pscalars->chemnet;
-  lunit = pmy_chemnet->punit->Length;
+  lunit = pmy_chemnet->punit->code_length_cgs;
   ncol = pmy_chemnet->n_cols_;
   //allocate array for column density
   //enroll SixRayBoundaryVariable object

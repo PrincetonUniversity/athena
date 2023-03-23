@@ -39,7 +39,6 @@
 #include "../radiation/integrators/rad_integrators.hpp"
 #include "../radiation/radiation.hpp"
 #include "../scalars/scalars.hpp"
-#include "../utils/units.hpp"
 
 
 //======================================================================================

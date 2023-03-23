@@ -30,7 +30,7 @@
 #include "../../radiation/integrators/rad_integrators.hpp"
 #include "../../radiation/radiation.hpp"
 #include "../../scalars/scalars.hpp"
-#include "../../utils/units.hpp"
+#include "../../units/units.hpp"
 #include "../utils/chemistry_utils.hpp"
 #include "../utils/thermo.hpp"
 #include "network.hpp"
@@ -294,10 +294,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   xO_std_ = pin->GetOrAddReal("chemistry", "xO", 3.2e-4);
   xSi_std_ = pin->GetOrAddReal("chemistry", "xSi", 1.7e-6);
   //units
-  Real muH = 1.4; //mass per hydrogen atoms, considering Helum
-  Real lunit = pin->GetReal("chemistry", "unit_length_in_pc") * Constants::pc;
-  Real dunit = muH * Constants::mH;
-  Real vunit = Constants::kms;
+  punit = new Units(pin);
+
   //check whether number of frequencies equal to the input file specification
   const int nfreq = pin->GetOrAddInteger("radiation", "n_frequency", 1);
   std::stringstream msg; //error message
@@ -319,14 +317,12 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
         << "gow17 network with energy equation: adiabatic index must be 5/3." << std::endl;
       ATHENA_ERROR(msg1);
     }
-    punit = new Units(dunit, lunit, vunit);
     temperature_ = 0.;
   } else {
     //isothermal, temperature is calculated from a fixed mean molecular weight
     const Real mu_iso = pin->GetReal("chemistry", "mu_iso");
     const Real cs = pin->GetReal("hydro", "iso_sound_speed");
-    punit = new Units(dunit, lunit, vunit, mu_iso);
-    temperature_ = cs * cs * punit->Temperature;
+    temperature_ = cs * cs * punit->code_temperature_mu_cgs * mu_iso;
     std::cout << "isothermal temperature = " << temperature_ << " K" << std::endl;
   }
   //CR shielding
@@ -444,7 +440,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
   //correct negative abundance
   Real yprev0[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
   Real ydotg[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
-  Real E_ergs = ED * punit->EnergyDensity / nH_; //ernergy per hydrogen atom
+  Real E_ergs = ED * punit->code_energydensity_cgs / nH_; //ernergy per hydrogen atom
 
   for(int i=0; i<NSPECIES+ngs_; i++) {
     ydotg[i] = 0.0;
@@ -524,7 +520,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
   //set ydot to return
   for (int i=0; i<NSPECIES; i++) {
     //return in code units
-    ydot[i] = ydotg[i] * punit->Time;
+    ydot[i] = ydotg[i] * punit->code_time_cgs;
   }
 
   //throw error if nan, or inf, or large value occurs
@@ -564,7 +560,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
 //!
 //! all input/output variables are in code units (ED is the energy density)
 Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
-  Real E_ergs = ED * punit->EnergyDensity / nH_; //ernergy per hydrogen atom
+  Real E_ergs = ED * punit->code_energydensity_cgs / nH_; //ernergy per hydrogen atom
   //isothermal
   if (!NON_BAROTROPIC_EOS) {
     return 0;
@@ -682,7 +678,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
             - (LCII + LCI + LOI + LHotGas + LCOR
                 + LH2 + LDust + LRec + LH2diss + LHIion);
   //return in code units
-  Real dEDdt = dEdt * nH_ / punit->EnergyDensity * punit->Time;
+  Real dEDdt = dEdt * nH_ / punit->code_energydensity_cgs * punit->code_time_cgs;
   if ( isnan(dEdt) || isinf(dEdt) ) {
     if ( isnan(LCOR) || isinf(LCOR) ) {
       printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
@@ -1072,6 +1068,6 @@ void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
   }
   dvdr_avg = ( fabs(dvdx) + fabs(dvdy) + fabs(dvdz) ) / 3.;
   //asign gradv_, in cgs.
-  gradv_ = dvdr_avg * punit->Velocity / punit->Length;
+  gradv_ = dvdr_avg * punit->code_velocity_cgs / punit->code_length_cgs;
   return;
 }
