@@ -66,4 +66,3 @@ abstol     = 1.0e-20    #absolute tolerance, default 1.0e-12
 user_jac   = false          #flag for whether use user provided Jacobian. default false
 maxsteps   = 100000     #maximum number of steps in one integration. default 10000
 #output_zone_sec = true     #output diagnostic
-unit_length_in_pc = 1. #length unit

@@ -10,8 +10,8 @@
 
 #include "../athena.hpp"
 
-//! \namespace ChemistryUtility
-//! \brief Utility functions for chemistry
+//! \namespace Interpolation
+//! \brief Utility functions for interpolation
 //TODO (Munan Gong): this is used for chemistry. check out interp_table used for
 //EOS to see whether we can merge them for similar functions
 namespace Interpolation {

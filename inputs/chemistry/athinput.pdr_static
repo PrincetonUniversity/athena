@@ -64,7 +64,6 @@ abstol_E   = 1e-4 #for internal energy. Set to 0.01 K
 user_jac   = false       #flag for whether use user provided Jacobian. default false
 maxsteps   = 100000     #maximum number of steps in one integration. default 10000
 output_zone_sec = true #output diagnostic
-unit_length_in_pc = 1.
 
 #default parameters
 xHe        = 0.1 #He per H, default = 0.1

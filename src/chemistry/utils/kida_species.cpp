@@ -15,6 +15,7 @@
 #include <vector>
 
 //athena++ header
+#include "../../units/units.hpp"
 #include "../../utils/string_utils.hpp"
 
 //atom masses
@@ -39,7 +40,8 @@ KidaSpecies::KidaSpecies(std::string line, int index) :
   mass_ = 0.;
   for (int i=0; i < natom_; i++) {
     atom_count_[i] = std::stoi(fields[i+2]);
-    mass_ += static_cast<float>(atom_count_[i]) * ma_atom_[i] * ChemistryUtility::mH;
+    mass_ += static_cast<float>(atom_count_[i]) * ma_atom_[i]
+      * Constants::hydrogen_mass_cgs;
   }
   //electron mass
   mass_ += static_cast<float>(-charge_) * ChemistryUtility::me;

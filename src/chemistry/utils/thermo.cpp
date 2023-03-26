@@ -13,11 +13,12 @@
 #include <math.h>
 
 // Athena headers
+#include "../../units/units.hpp"
 #include "../../utils/interp.hpp"
 
 //physical constants
 const Real Thermo::eV_ = 1.602e-12;
-const Real Thermo::kb_ = 1.381e-16;
+const Real Thermo::kb_ = Constants::k_boltzmann_cgs;
 const Real Thermo::ca_ = 2.27e-4;
 const Real Thermo::TCMB_ = 2.73;
 //ortho to para ratio of H2

@@ -720,7 +720,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
     if (ispec_map_.find("CO") != ispec_map_.end()) {
       // Calculate effective CO column density
       Real y_CO = y0[ispec_map_["CO"]];
-      vth = sqrt(2. * Thermo::kb_ * Tcool_nm / ChemistryUtility::mCO);
+      vth = sqrt(2. * Constants::k_boltzmann_cgs * Tcool_nm / ChemistryUtility::mCO);
       nCO = nH_ * y_CO;
       grad_small = vth/Leff_CO_max_;
       gradeff = std::max(gradv_, grad_small);
@@ -1311,7 +1311,7 @@ void ChemNetwork::InitializeReactions() {
         frml_gr_(igr) = pr->formula_;
         kgr_(igr) = 0.;
         TDgr_(igr) = pr->gamma_;
-        nu0gr_(igr) = sqrt( 3.0e15*pr->gamma_*Thermo::kb_/(M_PI*M_PI*mi) );
+        nu0gr_(igr) = sqrt( 3.0e15*pr->gamma_*Constants::k_boltzmann_cgs/(M_PI*M_PI*mi) );
         igr++;
       } else {
         error = true;
@@ -1350,7 +1350,7 @@ void ChemNetwork::InitializeReactions() {
         const Real ag = pr->gamma_;
         const Real mi = species_[ispec_map_[pr->reactants_[1]]].mass_;
         const Real q_charge = species_[ispec_map_[pr->reactants_[1]]].charge_;
-        const Real qi = q_charge * ChemistryUtility::qe;
+        const Real qi = q_charge * Constants::echarge_cgs;
         for (int jin=0; jin<n_ingc_; jin++) {
           if (jin < pr->reactants_.size()) {
             ingc_(igc, jin) = ispec_map_[pr->reactants_[jin]];
@@ -1375,8 +1375,8 @@ void ChemNetwork::InitializeReactions() {
           ATHENA_ERROR(msg);
         }
         nu_gc_(igc) = species_[ispec_map_[pr->reactants_[0]]].charge_ / q_charge;
-        r1_gc_(igc) = br*se* M_PI *ag*ag * sqrt( 8.*Thermo::kb_/(M_PI*mi) );
-        t1_gc_(igc) = ag * Thermo::kb_ / (qi*qi);
+        r1_gc_(igc) = br*se* M_PI *ag*ag * sqrt( 8.*Constants::k_boltzmann_cgs/(M_PI*mi) );
+        t1_gc_(igc) = ag * Constants::k_boltzmann_cgs / (qi*qi);
         igc++;
       } else if (pr->formula_ == 9) { //neutral freeze-out
         const Real ag = pr->gamma_;
@@ -1397,7 +1397,7 @@ void ChemNetwork::InitializeReactions() {
         }
         kgc_(igc) = 0.;
         nu_gc_(igc) = 9; //flag for freeze-out reaction
-        r1_gc_(igc) = M_PI *ag*ag * sqrt( 8.*Thermo::kb_/(M_PI*mi) );
+        r1_gc_(igc) = M_PI *ag*ag * sqrt( 8.*Constants::k_boltzmann_cgs/(M_PI*mi) );
         t1_gc_(igc) = 0.;
         igc++;
       } else {

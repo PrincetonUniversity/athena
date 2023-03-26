@@ -75,7 +75,6 @@ maxsteps   = 100000     #maximum number of steps in one integration. default 100
 output_zone_sec = true #output diagnostic
 maxorder   = 2       #maximum order. Default 2.
 stldet     = 0       #stability limit detection. Default 0/false.
-unit_length_in_pc = 1.
 
 <radiation>
 G0         = 1e-6   #radiation field strength, in Draine 1987 units
