@@ -642,8 +642,6 @@ if args['chemistry'] is not None:
         definitions['NUMBER_CHEMICAL_SPECIES'] = '12'
     elif args['chemistry'] == "H2":
         definitions['NUMBER_CHEMICAL_SPECIES'] = '2'
-    elif args['chemistry'] == "C12Mg24":
-        definitions['NUMBER_CHEMICAL_SPECIES'] = '2'
 else:
     definitions['CHEMISTRY_OPTION'] = 'NOT_INCLUDE_CHEMISTRY'
     definitions['NUMBER_CHEMICAL_SPECIES'] = '0'
