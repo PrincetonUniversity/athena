@@ -46,8 +46,6 @@ class ChemNetwork : public NetworkWrapper {
            Real ydot[NSPECIES]);
 
   Real Edot(const Real t, const Real y[NSPECIES], const Real ED);
-
-  Units *punit;
  private:
   PassiveScalars *pmy_spec_;
   MeshBlock *pmy_mb_;

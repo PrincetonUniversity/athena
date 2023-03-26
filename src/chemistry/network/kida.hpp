@@ -48,8 +48,6 @@ class ChemNetwork : public NetworkWrapper {
 
   void Jacobian_isothermal(const Real t, const Real y[NSPECIES],
                            const Real ydot[NSPECIES], AthenaArray<Real> &jac);
-
-  Units *punit;
  private:
   PassiveScalars *pmy_spec_;
   MeshBlock *pmy_mb_;

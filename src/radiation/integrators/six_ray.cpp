@@ -66,7 +66,7 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) :
   }
 #ifdef INCLUDE_CHEMISTRY
   pmy_chemnet = &pmy_mb->pscalars->chemnet;
-  lunit = pmy_chemnet->punit->code_length_cgs;
+  lunit = pmy_mb->punit->code_length_cgs;
   ncol = pmy_chemnet->n_cols_;
   //allocate array for column density
   //enroll SixRayBoundaryVariable object

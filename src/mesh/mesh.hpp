@@ -26,6 +26,7 @@
 #include "../outputs/io_wrapper.hpp"
 #include "../parameter_input.hpp"
 #include "../task_list/task_list.hpp"
+#include "../units/units.hpp"
 #include "../utils/interp_table.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
@@ -106,6 +107,9 @@ class MeshBlock {
   // user MeshBlock data that can be stored in restart files
   AthenaArray<Real> *ruser_meshblock_data;
   AthenaArray<int> *iuser_meshblock_data;
+
+  // units
+  Units *punit;
 
   // mesh-related objects
   Coordinates *pcoord;

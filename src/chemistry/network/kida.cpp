@@ -88,8 +88,6 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   }
   o2pH2_ = pin->GetOrAddReal("chemistry", "o2pH2", 3.);//ortho to para H2 ratio
   Yi_ = pin->GetOrAddReal("chemistry", "Yi", 1e-3);//ortho to para H2 ratio
-  //units
-  punit = new Units(pin);
 
   //temperature
   if (NON_BAROTROPIC_EOS) {
@@ -108,7 +106,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
     //isothermal, temperature is calculated from a fixed mean molecular weight
     const Real mu_iso = pin->GetReal("chemistry", "mu_iso");
     const Real cs = pin->GetReal("hydro", "iso_sound_speed");
-    temperature_ = cs * cs * punit->code_temperature_mu_cgs * mu_iso;
+    temperature_ = cs * cs * pmy_mb_->punit->code_temperature_mu_cgs * mu_iso;
     std::cout << "isothermal temperature = " << temperature_ << " K" << std::endl;
   }
   //whether to cap temperature if the reaction is outside of the temperature range
@@ -312,8 +310,6 @@ ChemNetwork::~ChemNetwork() {
   FILE *pf2 = fopen("jac_numerical.dat", "w");
   OutputJacobian(pf2, jac_numerical);
   fclose(pf2);
-  //delete unit class
-  delete punit;
 }
 
 //----------------------------------------------------------------------------------------
@@ -367,7 +363,8 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
 void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
                       Real ydot[NSPECIES]) {
   Real rate = 0;
-  Real E_ergs = ED * punit->code_energydensity_cgs / nH_; //ernergy per hydrogen atom
+  //ernergy per hydrogen atom
+  Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_;
   //store previous y includeing negative abundance correction
   Real y0[NSPECIES];//correct negative abundance, only for UpdateRates()
   Real ydotg[NSPECIES];
@@ -520,7 +517,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
   //set ydot to return
   for (int i=0; i<NSPECIES; i++) {
     //return in code units
-    ydot[i] = ydotg[i] * punit->code_time_cgs;
+    ydot[i] = ydotg[i] * pmy_mb_->punit->code_time_cgs;
   }
 
   //throw error if nan, or inf, or large value occurs
@@ -566,7 +563,8 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
 //!
 //! all input/output variables are in code units (ED is the energy density)
 Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
-  Real E_ergs = ED * punit->code_energydensity_cgs / nH_; //ernergy per hydrogen atom
+  //ernergy per hydrogen atom
+  Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_;
   //isothermal
   if (!NON_BAROTROPIC_EOS) {
     return 0;
@@ -750,7 +748,8 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
           - (LCII + LCI + LOI + LHotGas + LCOR
               + LH2 + LDust + LRec + LH2diss + LHIion);
   //return in code units
-  Real dEDdt = dEdt * nH_ / punit->code_energydensity_cgs * punit->code_time_cgs;
+  Real dEDdt = dEdt * nH_ / pmy_mb_->punit->code_energydensity_cgs
+                 * pmy_mb_->punit->code_time_cgs;
   if ( isnan(dEdt) || isinf(dEdt) ) {
     if ( isnan(LCOR) || isinf(LCOR) ) {
       printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
@@ -983,7 +982,7 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSPECIES],
   //set unit for jacobian
   for (int i=0; i<NSPECIES; i++) {
     for (int j=0; j<NSPECIES; j++) {
-      jac(i,j) *= punit->code_time_cgs;
+      jac(i,j) *= pmy_mb_->punit->code_time_cgs;
     }
   }
 
@@ -2262,7 +2261,7 @@ void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
   dvdz = (di1/dz1 + di2/dz2)/2.;
   dvdr_avg = ( fabs(dvdx) + fabs(dvdy) + fabs(dvdz) ) / 3.;
   //asign gradv_, in cgs.
-  gradv_ = dvdr_avg * punit->code_velocity_cgs / punit->code_length_cgs;
+  gradv_ = dvdr_avg * pmy_mb_->punit->code_velocity_cgs / pmy_mb_->punit->code_length_cgs;
   return;
 }
 

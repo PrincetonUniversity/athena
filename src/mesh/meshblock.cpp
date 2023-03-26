@@ -100,6 +100,9 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // conditions for the simulation are set in problem generator called from main, not
   // in the Hydro constructor
 
+  // Units
+  punit = new Units(pin);
+
   // mesh-related objects
   // Boundary
   pbval  = new BoundaryValues(this, input_bcs, pin);
@@ -376,6 +379,7 @@ MeshBlock::~MeshBlock() {
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
   delete porb;
+  delete punit;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
   if (NSCALARS > 0) delete pscalars;
   if (RADIATION_ENABLED) {

@@ -293,8 +293,6 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   xC_std_ = pin->GetOrAddReal("chemistry", "xC", 1.6e-4);
   xO_std_ = pin->GetOrAddReal("chemistry", "xO", 3.2e-4);
   xSi_std_ = pin->GetOrAddReal("chemistry", "xSi", 1.7e-6);
-  //units
-  punit = new Units(pin);
 
   //check whether number of frequencies equal to the input file specification
   const int nfreq = pin->GetOrAddInteger("radiation", "n_frequency", 1);
@@ -322,7 +320,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
     //isothermal, temperature is calculated from a fixed mean molecular weight
     const Real mu_iso = pin->GetReal("chemistry", "mu_iso");
     const Real cs = pin->GetReal("hydro", "iso_sound_speed");
-    temperature_ = cs * cs * punit->code_temperature_mu_cgs * mu_iso;
+    temperature_ = cs * cs * pmy_mb_->punit->code_temperature_mu_cgs * mu_iso;
     std::cout << "isothermal temperature = " << temperature_ << " K" << std::endl;
   }
   //CR shielding
@@ -379,7 +377,6 @@ ChemNetwork::~ChemNetwork() {
   FILE *pf = fopen("chem_network.dat", "w");
   OutputRates(pf);
   fclose(pf);
-  delete punit;
 }
 
 //----------------------------------------------------------------------------------------
@@ -440,7 +437,8 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
   //correct negative abundance
   Real yprev0[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
   Real ydotg[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
-  Real E_ergs = ED * punit->code_energydensity_cgs / nH_; //ernergy per hydrogen atom
+  //ernergy per hydrogen atom
+  Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_;
 
   for(int i=0; i<NSPECIES+ngs_; i++) {
     ydotg[i] = 0.0;
@@ -520,7 +518,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
   //set ydot to return
   for (int i=0; i<NSPECIES; i++) {
     //return in code units
-    ydot[i] = ydotg[i] * punit->code_time_cgs;
+    ydot[i] = ydotg[i] * pmy_mb_->punit->code_time_cgs;
   }
 
   //throw error if nan, or inf, or large value occurs
@@ -560,7 +558,8 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
 //!
 //! all input/output variables are in code units (ED is the energy density)
 Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
-  Real E_ergs = ED * punit->code_energydensity_cgs / nH_; //ernergy per hydrogen atom
+  //ernergy per hydrogen atom
+  Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_;
   //isothermal
   if (!NON_BAROTROPIC_EOS) {
     return 0;
@@ -678,7 +677,8 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
             - (LCII + LCI + LOI + LHotGas + LCOR
                 + LH2 + LDust + LRec + LH2diss + LHIion);
   //return in code units
-  Real dEDdt = dEdt * nH_ / punit->code_energydensity_cgs * punit->code_time_cgs;
+  Real dEDdt = dEdt * nH_ / pmy_mb_->punit->code_energydensity_cgs
+                  * pmy_mb_->punit->code_time_cgs;
   if ( isnan(dEdt) || isinf(dEdt) ) {
     if ( isnan(LCOR) || isinf(LCOR) ) {
       printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
@@ -1068,6 +1068,6 @@ void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
   }
   dvdr_avg = ( fabs(dvdx) + fabs(dvdy) + fabs(dvdz) ) / 3.;
   //asign gradv_, in cgs.
-  gradv_ = dvdr_avg * punit->code_velocity_cgs / punit->code_length_cgs;
+  gradv_ = dvdr_avg * pmy_mb_->punit->code_velocity_cgs / pmy_mb_->punit->code_length_cgs;
   return;
 }

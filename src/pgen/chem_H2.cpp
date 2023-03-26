@@ -171,7 +171,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   const Real gaussian_mean = pin->GetOrAddReal("problem", "gaussian_mean", 0.5);
   const Real gaussian_std = pin->GetOrAddReal("problem", "gaussian_std", 0.1);
   //chemistry parameters
-  Units *punit = my_blocks(0)->pscalars->chemnet.punit;
+  Units *punit = my_blocks(0)->punit;
   const Real xi_cr = pin->GetOrAddReal("chemistry", "xi_cr", 2e-16);
   const Real kcr = xi_cr * 3.;
   const Real kgr = 3e-17;
@@ -343,7 +343,6 @@ namespace {
 Real HistoryT(MeshBlock *pmb, int iout) {
   const Real gm1  = pmb->peos->GetGamma() - 1.0;
   const Real CvHI = Thermo::CvCold(0., 0.1, 0.);
-  Units *punit = pmb->pscalars->chemnet.punit;
   int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je, ks = pmb->ks, ke = pmb->ke;
   Real T = 0;
   AthenaArray<Real> volume; // 1D array of volumes
@@ -359,7 +358,7 @@ Real HistoryT(MeshBlock *pmb, int iout) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
       for (int i=is; i<=ie; i++) {
         T += volume(i) * pmb->phydro->w(IPR,k,j,i)/pmb->phydro->w(IDN,k,j,i)/gm1
-                        * punit->code_energydensity_cgs / CvHI;//simulation T
+                        * pmb->punit->code_energydensity_cgs / CvHI;//simulation T
       }
     }
   }
