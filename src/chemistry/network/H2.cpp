@@ -22,7 +22,7 @@
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"       //ParameterInput
 #include "../../scalars/scalars.hpp"
-#include "../../utils/units.hpp"
+#include "../../units/units.hpp"
 #include "../utils/chemistry_utils.hpp"
 #include "../utils/thermo.hpp"
 #include "network.hpp"
@@ -54,11 +54,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   xi_cr_ = pin->GetOrAddReal("chemistry", "xi_cr", 2e-16);
   kcr_ = xi_cr_ * 3.;
   //units
-  Real muH = 1.4; //mass per hydrogen atoms, considering Helium
-  Real lunit = pin->GetReal("chemistry", "unit_length_in_pc") * Constants::pc;
-  Real dunit = muH * Constants::mH;
-  Real vunit = Constants::kms;
-  punit = new Units(dunit, lunit, vunit);
+  punit = new Units(pin);
   //set Cv: constant or H2 abundance dependent
   is_const_Cv = pin->GetOrAddBoolean("problem", "is_const_Cv", true);
 }
@@ -102,7 +98,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
   ydot[iH_] = -2*rate_gr + 2*rate_cr;
   for (int i=0; i<NSPECIES; i++) {
     //return in code units
-    ydot[i] *= punit->Time;
+    ydot[i] *= punit->code_time_cgs;
   }
   return;
 }
@@ -127,13 +123,13 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
   }
   const Real T_floor = 1.;//temperature floor for cooling
   //ernergy per hydrogen atom
-  const Real E_ergs = ED * punit->EnergyDensity / nH_;
+  const Real E_ergs = ED * punit->code_energydensity_cgs / nH_;
   Real T = E_ergs / Thermo::CvCold(x_H2, x_He, x_e);
   if (T < T_floor) {
     return 0;
   }
   Real dEdt = - Thermo::alpha_GD_ * nH_ * sqrt(T) * T;
   //return in code units
-  Real dEDdt = (dEdt * nH_ / punit->EnergyDensity) * punit->Time;
+  Real dEDdt = (dEdt * nH_ / punit->code_energydensity_cgs) * punit->code_time_cgs;
   return dEDdt;
 }

@@ -33,7 +33,7 @@
 #include "../radiation/integrators/rad_integrators.hpp"
 #include "../radiation/radiation.hpp"
 #include "../scalars/scalars.hpp"
-#include "../utils/units.hpp"
+#include "../units/units.hpp"
 
 Real threshold;
 int RefinementCondition(MeshBlock *pmb);
@@ -182,11 +182,11 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   const Real gm = pin->GetReal("hydro", "gamma");
   const Real ED0  = SQR(iso_cs) / (gm - 1.0);
   const Real CvHI = Thermo::CvCold(0., 0.1, 0.);
-  const Real T0 =  (ED0 * punit->EnergyDensity)  / CvHI;
+  const Real T0 =  (ED0 * punit->code_energydensity_cgs)  / CvHI;
   const Real tdust = 2 * CvHI / (3.2e-34 * nH);
 
   //end of the simulation time
-  const Real tchem = time*punit->Time;
+  const Real tchem = time*punit->code_time_cgs;
   const Real mu = gaussian_mean + vx*time;
   const Real xg_min = vx*time;
   const Real xg_max = xg_min + 1.;
@@ -223,7 +223,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real fH2 = 0.5*(1. - fH);
           T1_a = 1. / SQR( tchem/tdust + 1./sqrt(T0) );//analytic T
           T1_s = pmb->phydro->w(IPR,k,j,i)/pmb->phydro->w(IDN,k,j,i)/(gm-1)
-                        * punit->EnergyDensity / CvHI;//simulation T
+                        * punit->code_energydensity_cgs / CvHI;//simulation T
           // Weight l1 error by cell volume
           Real vol = pmb->pcoord->GetCellVolume(k, j, i);
           l1_err[0] += std::abs(fH - pmb->pscalars->r(0,k,j,i))*vol;
@@ -359,7 +359,7 @@ Real HistoryT(MeshBlock *pmb, int iout) {
       pmb->pcoord->CellVolume(k,j,pmb->is,pmb->ie,volume);
       for (int i=is; i<=ie; i++) {
         T += volume(i) * pmb->phydro->w(IPR,k,j,i)/pmb->phydro->w(IDN,k,j,i)/gm1
-                        * punit->EnergyDensity / CvHI;//simulation T
+                        * punit->code_energydensity_cgs / CvHI;//simulation T
       }
     }
   }

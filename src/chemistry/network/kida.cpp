@@ -31,8 +31,8 @@
 #include "../../parameter_input.hpp"       //ParameterInput
 #include "../../radiation/radiation.hpp"
 #include "../../scalars/scalars.hpp"
+#include "../../units/units.hpp"
 #include "../../utils/string_utils.hpp"
-#include "../../utils/units.hpp"
 #include "../utils/chemistry_utils.hpp"
 #include "../utils/thermo.hpp"
 #include "network.hpp"
@@ -89,10 +89,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   o2pH2_ = pin->GetOrAddReal("chemistry", "o2pH2", 3.);//ortho to para H2 ratio
   Yi_ = pin->GetOrAddReal("chemistry", "Yi", 1e-3);//ortho to para H2 ratio
   //units
-  Real muH = 1.4; //mass per hydrogen atoms, considering Helum
-  Real lunit = pin->GetReal("chemistry", "unit_length_in_pc") * Constants::pc;
-  Real dunit = muH * Constants::mH;
-  Real vunit = Constants::kms;
+  punit = new Units(pin);
+
   //temperature
   if (NON_BAROTROPIC_EOS) {
     //check adiabatic index, this is for calling CvCold later
@@ -105,14 +103,12 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
         << "kida network with energy equation: adiabatic index must be 5/3." << std::endl;
       ATHENA_ERROR(msg1);
     }
-    punit = new Units(dunit, lunit, vunit);
     temperature_ = 0.;
   } else {
     //isothermal, temperature is calculated from a fixed mean molecular weight
     const Real mu_iso = pin->GetReal("chemistry", "mu_iso");
     const Real cs = pin->GetReal("hydro", "iso_sound_speed");
-    punit = new Units(dunit, lunit, vunit, mu_iso);
-    temperature_ = cs * cs * punit->Temperature;
+    temperature_ = cs * cs * punit->code_temperature_mu_cgs * mu_iso;
     std::cout << "isothermal temperature = " << temperature_ << " K" << std::endl;
   }
   //whether to cap temperature if the reaction is outside of the temperature range
@@ -371,7 +367,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
 void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
                       Real ydot[NSPECIES]) {
   Real rate = 0;
-  Real E_ergs = ED * punit->EnergyDensity / nH_; //ernergy per hydrogen atom
+  Real E_ergs = ED * punit->code_energydensity_cgs / nH_; //ernergy per hydrogen atom
   //store previous y includeing negative abundance correction
   Real y0[NSPECIES];//correct negative abundance, only for UpdateRates()
   Real ydotg[NSPECIES];
@@ -524,7 +520,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
   //set ydot to return
   for (int i=0; i<NSPECIES; i++) {
     //return in code units
-    ydot[i] = ydotg[i] * punit->Time;
+    ydot[i] = ydotg[i] * punit->code_time_cgs;
   }
 
   //throw error if nan, or inf, or large value occurs
@@ -570,7 +566,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
 //!
 //! all input/output variables are in code units (ED is the energy density)
 Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
-  Real E_ergs = ED * punit->EnergyDensity / nH_; //ernergy per hydrogen atom
+  Real E_ergs = ED * punit->code_energydensity_cgs / nH_; //ernergy per hydrogen atom
   //isothermal
   if (!NON_BAROTROPIC_EOS) {
     return 0;
@@ -754,7 +750,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
           - (LCII + LCI + LOI + LHotGas + LCOR
               + LH2 + LDust + LRec + LH2diss + LHIion);
   //return in code units
-  Real dEDdt = dEdt * nH_ / punit->EnergyDensity * punit->Time;
+  Real dEDdt = dEdt * nH_ / punit->code_energydensity_cgs * punit->code_time_cgs;
   if ( isnan(dEdt) || isinf(dEdt) ) {
     if ( isnan(LCOR) || isinf(LCOR) ) {
       printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
@@ -987,7 +983,7 @@ void ChemNetwork::Jacobian_isothermal(const Real t, const Real y[NSPECIES],
   //set unit for jacobian
   for (int i=0; i<NSPECIES; i++) {
     for (int j=0; j<NSPECIES; j++) {
-      jac(i,j) *= punit->Time;
+      jac(i,j) *= punit->code_time_cgs;
     }
   }
 
@@ -2266,7 +2262,7 @@ void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
   dvdz = (di1/dz1 + di2/dz2)/2.;
   dvdr_avg = ( fabs(dvdx) + fabs(dvdy) + fabs(dvdz) ) / 3.;
   //asign gradv_, in cgs.
-  gradv_ = dvdr_avg * punit->Velocity / punit->Length;
+  gradv_ = dvdr_avg * punit->code_velocity_cgs / punit->code_length_cgs;
   return;
 }
 

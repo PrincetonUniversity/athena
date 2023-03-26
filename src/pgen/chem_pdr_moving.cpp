@@ -34,7 +34,7 @@
 #include "../radiation/integrators/rad_integrators.hpp"
 #include "../radiation/radiation.hpp"
 #include "../scalars/scalars.hpp"
-#include "../utils/units.hpp"
+#include "../units/units.hpp"
 
 //Radiation boundary
 namespace {
@@ -82,9 +82,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const Real nw = pin->GetOrAddReal("problem", "nw", 1e-1);
   const Real Tw = pin->GetOrAddReal("problem", "Tw", 4e4);
   const Real cv = Thermo::CvCold(0.5, 0.1, 0.);
-  const Real dunit = 1.4 * Constants::mH;
-  const Real vunit = Constants::kms;
-  const Real Eunit = dunit * vunit * vunit;
+  const Real Eunit = pscalars->chemnet.punit;
   const Real Eth = nc * Tc * cv / Eunit;
   const Real xc_start = 5.;
   const Real xc_end = 45.;
