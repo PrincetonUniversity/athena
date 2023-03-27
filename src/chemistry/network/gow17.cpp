@@ -558,7 +558,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
 //!
 //! all input/output variables are in code units (ED is the energy density)
 Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
-  //ernergy per hydrogen atom
+  //energy per hydrogen atom
   Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_;
   //isothermal
   if (!NON_BAROTROPIC_EOS) {
