@@ -60,7 +60,7 @@ s_init     = 1.0e-6 #initial abundances
 Zdg        = 1. #metallicity, dust and gas metallicity are the same. default = 1.
 #chemistry solver parameters
 reltol     = 1.0e-3  #relative tolerance, default 1.0e-2
-abstol     = 1.0e-15 #absolute tolerance, default 1.0e-12
+abstol     = 1.0e-20 #absolute tolerance, default 1.0e-12
 abstol_H2   = 1.0e-10 
 abstol_E   = 1e-4 #for internal energy. Set to 0.01 K
 user_jac   = false       #flag for whether use user provided Jacobian. default false
