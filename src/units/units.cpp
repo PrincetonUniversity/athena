@@ -11,6 +11,7 @@
 // C++ headers
 #include <iostream>
 #include <sstream>    // stringstream
+#include <stdexcept> //throw exceptions
 
 // Athena++ headers
 #include "../athena.hpp"
