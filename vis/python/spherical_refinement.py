@@ -115,8 +115,8 @@ def main(**kwargs):
     for L in range(max_levels+1):
 
         # Prepare description of all blocks at current level
-        num_blocks_r = num_r/num_r_block * 2**L
-        num_blocks_theta = num_theta/num_theta_block * 2**L
+        num_blocks_r = num_r//num_r_block * 2**L
+        num_blocks_theta = num_theta//num_theta_block * 2**L
         r_bounds.append(np.empty(num_blocks_r+1))
         theta_bounds.append(np.empty(num_blocks_theta+1))
         for i in range(num_blocks_r+1):
@@ -131,8 +131,8 @@ def main(**kwargs):
         refinement.append(np.ones((num_blocks_r, num_blocks_theta), dtype=bool))
         if L == 0:
             continue
-        for i in range(num_blocks_r/2):
-            for j in range(num_blocks_theta/2):
+        for i in range(num_blocks_r//2):
+            for j in range(num_blocks_theta//2):
                 if not refinement[L-1][i, j]:
                     refinement[L][i*2:(i+1)*2, j*2:(j+1)*2] = False
 
@@ -144,7 +144,7 @@ def main(**kwargs):
             for j in range(num_blocks_theta):
                 if not refinement[L][i, j]:
                     continue
-                if j < (num_blocks_theta+1)/2:
+                if j < (num_blocks_theta+1)//2:
                     theta1 = theta_adjust(theta_bounds[L][j], theta_compress)
                     theta2_unadjusted = pos_face(
                         theta_bounds[L][j], theta_bounds[L][j+1], 1.0, num_theta_block, 1)
@@ -158,11 +158,11 @@ def main(**kwargs):
                                              metric, parameters)
                 if min(w_r, w_theta, w_phi) < width_min:
                     refinement[L][i, j] = False
-                    refinement[L-1][i/2, j/2] = False
+                    refinement[L-1][i//2, j//2] = False
 
         # Make sure only entire blocks from previous level are refined
-        for i in range(num_blocks_r/2):
-            for j in range(num_blocks_theta/2):
+        for i in range(num_blocks_r//2):
+            for j in range(num_blocks_theta//2):
                 if not refinement[L-1][i, j]:
                     refinement[L][i*2:(i+1)*2, j*2:(j+1)*2] = False
 
@@ -185,22 +185,22 @@ def main(**kwargs):
     refinement_regions = []
     num_blocks = np.zeros(max_levels+1, dtype=int)
     num_blocks[0] = (
-        (num_r/num_r_block) * (num_theta/num_theta_block) * (num_phi/num_phi_block))
+        (num_r//num_r_block) * (num_theta//num_theta_block) * (num_phi//num_phi_block))
     for L in range(max_levels):
 
         # Calculate number of blocks in this level
-        num_blocks_r = num_r/num_r_block * 2**L
-        num_blocks_theta = num_theta/num_theta_block * 2**L
-        num_blocks_phi = num_phi/num_phi_block * 2**L
+        num_blocks_r = num_r//num_r_block * 2**L
+        num_blocks_theta = num_theta//num_theta_block * 2**L
+        num_blocks_phi = num_phi//num_phi_block * 2**L
 
         # Find block limit of region to be refined
         j_lims = np.empty(num_blocks_r, dtype=int)
         for i in range(num_blocks_r):
-            if not refinement[L][i, (num_blocks_theta-1)/2]:
+            if not refinement[L][i, (num_blocks_theta-1)//2]:
                 j_lims[i] = -1
                 continue
             j_lim = 0
-            for j in range((num_blocks_theta-1)/2, -1, -1):
+            for j in range((num_blocks_theta-1)//2, -1, -1):
                 if not refinement[L][i, j]:
                     j_lim = j+1
                     break
@@ -237,23 +237,23 @@ def main(**kwargs):
         print('\nThe following {} input blocks can be used to specify maximal refinement:'
               .format(num_refinement))
     for refinement_num, (L, i_start, i_end, j_lim) in enumerate(refinement_regions):
-        num_blocks_r = num_r/num_r_block * 2**L
-        num_blocks_theta = num_theta/num_theta_block * 2**L
+        num_blocks_r = num_r//num_r_block * 2**L
+        num_blocks_theta = num_theta//num_theta_block * 2**L
         if i_start == 0:
             r1 = r_min
         else:
             r1 = pos_face(r_bounds[L][i_start], r_bounds[L][i_start+1],
-                          r_ratio**(1.0/2**L), num_r_block, num_r_block/2)
+                          r_ratio**(1.0/2**L), num_r_block, num_r_block//2)
         if i_end == num_blocks_r-1:
             r2 = r_max
         else:
             r2 = pos_face(r_bounds[L][i_end], r_bounds[L][i_end+1], r_ratio**(1.0/2**L),
-                          num_r_block, num_r_block/2)
+                          num_r_block, num_r_block//2)
         if j_lim == 0:
             theta1 = theta_adjust(theta_min, theta_compress)
         else:
             theta1_unadjusted = pos_face(theta_bounds[L][j_lim], theta_bounds[L][j_lim+1],
-                                         1.0, num_theta_block, num_theta_block/2)
+                                         1.0, num_theta_block, num_theta_block//2)
             theta1 = theta_adjust(theta1_unadjusted, theta_compress)
         theta2 = np.pi - theta1
         print('\n<refinement{0}>'.format(refinement_num+1))

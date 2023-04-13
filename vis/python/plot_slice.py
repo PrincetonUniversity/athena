@@ -75,9 +75,11 @@ def main(**kwargs):
     # Read data
     if quantities[0] == 'Levels':
         data = athena_read.athdf(kwargs['data_file'], quantities=quantities[1:],
-                                 level=level, return_levels=True, num_ghost=kwargs['num_ghost'])
+                                 level=level, return_levels=True,
+                                 num_ghost=kwargs['num_ghost'])
     else:
-        data = athena_read.athdf(kwargs['data_file'], quantities=quantities, level=level, num_ghost=kwargs['num_ghost'])
+        data = athena_read.athdf(kwargs['data_file'], quantities=quantities, level=level,
+                                 num_ghost=kwargs['num_ghost'])
 
     # Check that coordinates work with user choices
     coordinates = data['Coordinates'].decode('ascii', 'replace')
