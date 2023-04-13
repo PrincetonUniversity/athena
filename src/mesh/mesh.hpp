@@ -24,7 +24,6 @@
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
 #include "../outputs/io_wrapper.hpp"
-#include "../particles/particles.hpp"
 #include "../parameter_input.hpp"
 #include "../task_list/task_list.hpp"
 #include "../task_list/im_rad_task_list.hpp"
@@ -129,8 +128,6 @@ class MeshBlock {
   EquationOfState *peos;
   OrbitalAdvection *porb;
 
-  // pointer to particle classes
-  std::vector<Particles *> ppar, ppar_grav;
 
   // functions
   std::size_t GetBlockSizeInBytes();
