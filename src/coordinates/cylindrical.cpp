@@ -22,7 +22,6 @@
 #include "../parameter_input.hpp"
 #include "coordinates.hpp"
 #include "../cr/cr.hpp"
-#include "../thermal_conduction/tc.hpp"
 
 //----------------------------------------------------------------------------------------
 //! Cylindrical coordinates constructor
@@ -394,24 +393,6 @@ void Cylindrical::AddCoordTermsDivergence(int flag,
 
   }
 
-  if(TC_ENABLED && (flag == 2)){
-    ThermalConduction *ptc=pmy_block->ptc;
-    for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
-      for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
-        for (int i=pmy_block->is; i<=pmy_block->ie; ++i) {
-        // src_1 = <M_{phi phi}><1/r>
-          Real m_pp = u_input(TCT,k,j,i);
-          coord_src(TCF1,k,j,i) =  ptc->vmax * coord_src1_i_(i)*m_pp;
-          // set 0 for other components
-          coord_src(TCE,k,j,i) = 0.0;
-          coord_src(TCF2,k,j,i) = 0.0;
-          coord_src(TCF3,k,j,i) = 0.0;
-
-        }
-      }// end j
-    }// end k
-
-  }// end TC_ENABLED
 
 
   return;

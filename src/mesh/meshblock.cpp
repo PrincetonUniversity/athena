@@ -35,7 +35,6 @@
 #include "../radiation/integrators/rad_integrators.hpp"
 #include "../radiation/implicit/radiation_implicit.hpp"
 #include "../cr/cr.hpp"
-#include "../thermal_conduction/tc.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
@@ -258,11 +257,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
 
-  if(TC_ENABLED){
-    ptc = new ThermalConduction(this, pin);
-    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
-  }
-
 
   // OrbitalAdvection: constructor depends on Coordinates, Hydro, Field, PassiveScalars.
   porb = new OrbitalAdvection(this, pin);
@@ -462,11 +456,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
   }
 
-  if(TC_ENABLED){
-    ptc = new ThermalConduction(this, pin);
-    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
-  }
-
 
   // OrbitalAdvection: constructor depends on Coordinates, Hydro, Field, PassiveScalars.
   porb = new OrbitalAdvection(this, pin);
@@ -545,13 +534,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     os += pcr->u_cr.GetSizeInBytes();   
   }
 
-  if(TC_ENABLED){
-    std::memcpy(ptc->u_tc.data(), &(mbdata[os]), ptc->u_tc.GetSizeInBytes());
-    std::memcpy(ptc->u_tc1.data(), &(mbdata[os]), ptc->u_tc1.GetSizeInBytes());
-    os += ptc->u_tc.GetSizeInBytes();      
-  }
-
-
 
   // (conserved variable) Passive scalars:
   if (NSCALARS > 0) {
@@ -592,7 +574,6 @@ MeshBlock::~MeshBlock() {
 
   if(RADIATION_ENABLED || IM_RADIATION_ENABLED) delete prad;
   if(CR_ENABLED) delete pcr;
-  if(TC_ENABLED) delete ptc;  
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
   delete pbval;
@@ -696,8 +677,6 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
     size += prad->ir.GetSizeInBytes();
   if(CR_ENABLED)
     size += pcr->u_cr.GetSizeInBytes();
-  if(TC_ENABLED)
-    size += ptc->u_tc.GetSizeInBytes();
 
   // calculate user MeshBlock data size
   for (int n=0; n<nint_user_meshblock_data_; n++)
@@ -732,8 +711,6 @@ std::size_t MeshBlock::GetBlockSizeInBytesGray() {
   }
   if(CR_ENABLED)
     size += pcr->u_cr.GetSizeInBytes();
-  if(TC_ENABLED)
-    size += ptc->u_tc.GetSizeInBytes();
   
 
   // calculate user MeshBlock data size

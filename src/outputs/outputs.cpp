@@ -93,7 +93,6 @@
 #include "../field/field.hpp"
 #include "../radiation/radiation.hpp"
 #include "../cr/cr.hpp"
-#include "../thermal_conduction/tc.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
@@ -351,7 +350,6 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   Field *pfld = pmb->pfield;
   Radiation *prad=pmb->prad;
   CosmicRay *pcr=pmb->pcr;
-  ThermalConduction *ptc=pmb->ptc;  
   PassiveScalars *psclr = pmb->pscalars;
   Gravity *pgrav = pmb->pgrav;
   OrbitalAdvection *porb = pmb->porb;
@@ -1054,44 +1052,6 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
   }// end Cosmic Rays
 
-
-  if(TC_ENABLED){
-
-      if (ContainVariable(output_params.variable, "Etc") ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
-      pod = new OutputData;
-      pod->type = "SCALARS";
-      pod->name = "Etc";
-      pod->data.InitWithShallowSlice(ptc->u_tc,4,TCE,1);
-      AppendOutputDataNode(pod);
-      num_vars_++;
-    }
-
-   // comoving frame fram radiation flux vector
-      if (ContainVariable(output_params.variable, "Ftc") ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
-      pod = new OutputData;
-      pod->type = "VECTORS";
-      pod->name = "Ftc";
-      pod->data.InitWithShallowSlice(ptc->u_tc,4,TCF1,3);
-      AppendOutputDataNode(pod);
-      num_vars_+=3;
-    }
-
-      if (ContainVariable(output_params.variable, "Kappa") ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
-      pod = new OutputData;
-      pod->type = "VECTORS";
-      pod->name = "Kappa";
-      pod->data.InitWithShallowSlice(ptc->kappa,4,0,3);
-      AppendOutputDataNode(pod);
-      num_vars_+=3;
-    }
-
-  }// end Thermal Conduction
 
 
 

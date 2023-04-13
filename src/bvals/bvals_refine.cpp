@@ -71,7 +71,6 @@
 #include "fc/bvals_fc.hpp"
 #include "../radiation/radiation.hpp"
 #include "../cr/cr.hpp"
-#include "../thermal_conduction/tc.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt,
@@ -147,12 +146,6 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt,
     pcrbvar = &(pcr->cr_bvar); 
   }
 
-  ThermalConduction *ptc=nullptr;
-  CellCenteredBoundaryVariable *ptcbvar = nullptr;
-  if(TC_ENABLED){
-    ptc = pmb->ptc;
-    ptcbvar = &(ptc->tc_bvar);
-  }
 
 
   // For each finer neighbor, to prolongate a boundary we need to fill one more cell
@@ -240,8 +233,6 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt,
     if(CR_ENABLED)
       pcrbvar->var_cc = &(pcr->coarse_cr_);
 
-    if(TC_ENABLED)
-      ptcbvar->var_cc = &(ptc->coarse_tc_);
 
 
     // Step 2. Re-apply physical boundaries on the coarse boundary:
@@ -265,8 +256,6 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt,
     if(CR_ENABLED)
       pcrbvar->var_cc = &(pcr->u_cr);
 
-    if(TC_ENABLED)
-      ptcbvar->var_cc = &(ptc->u_tc);
 
     // Step 3. Finally, the ghost-ghost zones are ready for prolongation:
     ProlongateGhostCells(nb, si, ei, sj, ej, sk, ek);
@@ -416,9 +405,6 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
   if(CR_ENABLED)
     pcr = pmb->pcr;
 
-  ThermalConduction *ptc = nullptr;
-  if(TC_ENABLED)
-    ptc = pmb->ptc;
 
   // convert the ghost zone and ghost-ghost zones into primitive variables
   // this includes cell-centered field calculation
@@ -476,7 +462,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
                                 pmb->cis, pmb->cie, sj, ej, sk, ek, 1,
                                 ph->coarse_prim_, pf->coarse_b_, 
                                 prad->coarse_ir_, pcr->coarse_cr_, 
-                                ptc->coarse_tc_, BoundaryFace::inner_x1,
+                                BoundaryFace::inner_x1,
                                 bvars_subset);
     }
     if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
@@ -484,7 +470,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
                                 pmb->cis, pmb->cie, sj, ej, sk, ek, 1,
                                 ph->coarse_prim_, pf->coarse_b_, 
                                 prad->coarse_ir_, pcr->coarse_cr_, 
-                                ptc->coarse_tc_, BoundaryFace::outer_x1,
+                                BoundaryFace::outer_x1,
                                 bvars_subset);
     }
   }
@@ -494,7 +480,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
                                 si, ei, pmb->cjs, pmb->cje, sk, ek, 1,
                                 ph->coarse_prim_, pf->coarse_b_, 
                                 prad->coarse_ir_, pcr->coarse_cr_, 
-                                ptc->coarse_tc_, BoundaryFace::inner_x2,
+                                BoundaryFace::inner_x2,
                                 bvars_subset);
     }
     if((RADIATION_ENABLED|| IM_RADIATION_ENABLED) && 
@@ -509,7 +495,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
                                 si, ei, pmb->cjs, pmb->cje, sk, ek, 1,
                                 ph->coarse_prim_, pf->coarse_b_, 
                                 prad->coarse_ir_, pcr->coarse_cr_, 
-                                ptc->coarse_tc_, BoundaryFace::outer_x2,
+                                BoundaryFace::outer_x2,
                                 bvars_subset);
     }
     if((RADIATION_ENABLED|| IM_RADIATION_ENABLED) && 
@@ -526,7 +512,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
                                 si, ei, sj, ej, pmb->cks, pmb->cke, 1,
                                 ph->coarse_prim_, pf->coarse_b_, 
                                 prad->coarse_ir_, pcr->coarse_cr_, 
-                                ptc->coarse_tc_, BoundaryFace::inner_x3,
+                                BoundaryFace::inner_x3,
                                 bvars_subset);
     }
     if((RADIATION_ENABLED|| IM_RADIATION_ENABLED) && 
@@ -543,7 +529,7 @@ void BoundaryValues::ApplyPhysicalBoundariesOnCoarseLevel(
                                 si, ei, sj, ej, pmb->cks, pmb->cke, 1,
                                 ph->coarse_prim_, pf->coarse_b_, 
                                 prad->coarse_ir_, pcr->coarse_cr_, 
-                                ptc->coarse_tc_, BoundaryFace::outer_x3,
+                                BoundaryFace::outer_x3,
                                 bvars_subset);
     }
     if((RADIATION_ENABLED|| IM_RADIATION_ENABLED) && 

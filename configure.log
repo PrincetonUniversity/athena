@@ -17,12 +17,13 @@ Your Athena++ distribution has now been configured with the following options:
   Super-Time-Stepping:        OFF
   Debug flags:                OFF
   Code coverage flags:        OFF
-  Linker flags:                
+  Linker flags:                 -lhdf5
   Floating-point precision:   double
   Number of ghost cells:      2
-  MPI parallelism:            OFF
+  MPI parallelism:            ON
   OpenMP parallelism:         OFF
   FFT:                        OFF
-  HDF5 output:                OFF
+  HDF5 output:                ON
+  HDF5 precision:             single
   Compiler:                   g++
-  Compilation command:        g++  -O3 -std=c++11
+  Compilation command:        mpicxx  -O3 -std=c++11

@@ -40,7 +40,6 @@
 #   -radiation        turn on radiation transport
 #   -implicit_radiation implicit radiation transport module
 #   -cr               enable cosmic ray transport
-#   -tc               enable explicit thermal conduction
 # ----------------------------------------------------------------------------------------
 
 # Modules
@@ -178,7 +177,7 @@ parser.add_argument('-omp',
 # --grav=[name] argument
 parser.add_argument('--grav',
                     default='none',
-                    choices=['none', 'fft', 'mg', 'blockfft'],
+                    choices=['none', 'fft', 'mg'],
                     help='select self-gravity solver')
 
 # -fft argument
@@ -209,11 +208,6 @@ parser.add_argument('--hdf5_path',
                     default='',
                     help='path to HDF5 libraries')
 
-# --ali=[value] argument
-parser.add_argument('--ali',
-                    default='32',
-                    help='set number of bytes in alignment')
-
 # -radiation argument
 parser.add_argument('-radiation',
                     action='store_true',
@@ -231,12 +225,6 @@ parser.add_argument('-cr',
                     action='store_true',
                     default=False,
                     help='enable cosmic ray transport')
-                    
-# -thermal conduction argument
-parser.add_argument('-tc',
-                    action='store_true',
-                    default=False,
-                    help='enable thermal conduction')
 
 # The main choices for --cxx flag, using "ctype[-suffix]" formatting, where "ctype" is the
 # major family/suite/group of compilers and "suffix" may represent variants of the
@@ -424,9 +412,6 @@ definitions['NUMBER_GHOST_CELLS'] = args['nghost']
 # --nscalars=[value] argument
 definitions['NUMBER_PASSIVE_SCALARS'] = args['nscalars']
 
-# --ali=[value] argument
-definitions['ALI_LEN'] = args['ali']
-
 # -b argument
 # set variety of macros based on whether MHD/hydro or adi/iso are defined
 if args['b']:
@@ -498,12 +483,8 @@ if args['cr']:
     definitions['CR_ENABLED'] = '1'
 else:
     definitions['CR_ENABLED'] = '0'
-    
-# -tc argument
-if args['tc']:
-    definitions['TC_ENABLED'] = '1'
-else:
-    definitions['TC_ENABLED'] = '0'
+
+
 
 # --cxx=[name] argument
 if args['cxx'] == 'g++':
@@ -754,7 +735,6 @@ else:
 # --grav argument
 if args['grav'] == "none":
     definitions['SELF_GRAVITY_ENABLED'] = '0'
-    definitions['NGRAV_VARIABLES'] = '0'
 else:
     if args['grav'] == "fft":
         definitions['SELF_GRAVITY_ENABLED'] = '1'
@@ -763,13 +743,6 @@ else:
                 '### CONFIGURE ERROR: FFT Poisson solver only be used with FFT')
     if args['grav'] == "mg":
         definitions['SELF_GRAVITY_ENABLED'] = '2'
-
-    if args['grav'] == "blockfft":
-        definitions['SELF_GRAVITY_ENABLED'] = '3'
-        if not args['fft']:
-            raise SystemExit(
-                '### CONFIGURE ERROR: FFT Poisson solver only be used with FFT')
-    definitions['NGRAV_VARIABLES'] = '1'
 
 
 # -fft argument
@@ -785,7 +758,6 @@ if args['fft']:
         makefile_options['LIBRARY_FLAGS'] += ' -lfftw3_omp'
     if args['mpi']:
         makefile_options['MPIFFT_FILE'] = ' $(wildcard src/fft/plimpton/*.cpp)'
-        makefile_options['MPIFFT_FILE'] += ' $(wildcard src/fft/fftmpi/*.cpp)'
     makefile_options['LIBRARY_FLAGS'] += ' -lfftw3'
 
 # -hdf5 argument
@@ -876,9 +848,7 @@ self_grav_string = 'OFF'
 if args['grav'] == 'fft':
     self_grav_string = 'FFT'
 elif args['grav'] == 'mg':
-    self_grav_string = 'multigrid'
-elif args['grav'] == 'blockfft':
-    self_grav_string = 'FFT (using BlockFFTGravity)'
+    self_grav_string = 'Multigrid'
 
 print('Your Athena++ distribution has now been configured with the following options:')
 print('  Problem generator:          ' + args['prob'])
@@ -892,10 +862,8 @@ print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
 print('  Radiative Transfer:         ' + ('ON' if args['radiation'] else 'OFF'))
 print('  Implicit Radiation:         ' + ('ON' if args['implicit_radiation'] else 'OFF'))
 print('  Cosmic Ray Transport:       ' + ('ON' if args['cr'] else 'OFF'))
-print('  Thermal Conduction:         ' + ('ON' if args['tc'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:               ' + self_grav_string)
-print('  Aligned Option:             ' + args['ali'])
 print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
 print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF'))
@@ -914,7 +882,6 @@ print('  Compilation command:        ' + makefile_options['COMPILER_COMMAND'] + 
       + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])
 
 
-
 # write the configuration optitions into a log file
 flog=open('./configure.log', 'w')
 flog.write('Your Athena++ distribution has now been configured with the following options:' + '\n')
@@ -929,10 +896,8 @@ flog.write('  General relativity:         ' + ('ON' if args['g'] else 'OFF')+ '\
 flog.write('  Radiative Transfer:         ' + ('ON' if args['radiation'] else 'OFF') + '\n')
 flog.write('  Implicit Radiation:         ' + ('ON' if args['implicit_radiation'] else 'OFF') + '\n')
 flog.write('  Cosmic Ray Transport:       ' + ('ON' if args['cr'] else 'OFF') + '\n')
-flog.write('  Thermal Conduction:         ' + ('ON' if args['tc'] else 'OFF') + '\n')
 flog.write('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF') + '\n')
 flog.write('  Self-Gravity:               ' + self_grav_string + '\n')
-flog.write('  Aligned Option:             ' + args['ali'] + '\n')
 flog.write('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF') + '\n')
 flog.write('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF') + '\n')
 flog.write('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF') + '\n')

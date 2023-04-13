@@ -49,7 +49,6 @@ class Hydro;
 class Radiation;
 class IMRadiation;
 class CosmicRay;
-class ThermalConduction;
 class Field;
 class Particles;
 class PassiveScalars;
@@ -123,7 +122,6 @@ class MeshBlock {
   Hydro *phydro;
   Radiation *prad;
   CosmicRay *pcr;
-  ThermalConduction *ptc;
   Field *pfield;
   Gravity *pgrav;
   MGGravity* pmg;
@@ -217,7 +215,6 @@ class Mesh {
   friend class Radiation;
   friend class IMRadiation;
   friend class CosmicRay;
-  friend class ThermalConduction;  
   friend class FFTDriver;
   friend class FFTGravityDriver;
   friend class TurbulenceDriver;
@@ -342,7 +339,6 @@ class Mesh {
   // radiation boundaries
   RadBoundaryFunc RadBoundaryFunc_[6];
   CRBoundaryFunc CRBoundaryFunc_[6];
-  TCBoundaryFunc TCBoundaryFunc_[6];
 
   AMRFlagFunc AMRFlag_;
   SrcTermFunc UserSourceTerm_;
@@ -396,14 +392,12 @@ class Mesh {
 
   void EnrollUserRadBoundaryFunction(BoundaryFace face, RadBoundaryFunc my_func);
   void EnrollUserCRBoundaryFunction(BoundaryFace face, CRBoundaryFunc my_func);
-  void EnrollUserTCBoundaryFunction(BoundaryFace face, TCBoundaryFunc my_func);
 
   //! \deprecated (felker):
   //! * provide trivial overload for old-style BoundaryFace enum argument
   void EnrollUserBoundaryFunction(int face, BValFunc my_func);
   void EnrollUserRadBoundaryFunction(int face, RadBoundaryFunc my_func);
   void EnrollUserCRBoundaryFunction(int face, CRBoundaryFunc my_func);
-  void EnrollUserTCBoundaryFunction(int face, TCBoundaryFunc my_func);
 
   void EnrollUserRefinementCondition(AMRFlagFunc amrflag);
   void EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg);

@@ -51,7 +51,6 @@
 #include "../radiation/radiation.hpp"
 #include "../radiation/implicit/radiation_implicit.hpp"
 #include "../cr/cr.hpp"
-#include "../thermal_conduction/tc.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
@@ -1256,27 +1255,7 @@ void Mesh::EnrollUserCRBoundaryFunction(int dir, CRBoundaryFunc my_bc) {
   return;
 }
 
-void Mesh::EnrollUserTCBoundaryFunction(BoundaryFace dir, TCBoundaryFunc my_bc) {
-  std::stringstream msg;
-  if (dir < 0 || dir > 5) {
-    msg << "### FATAL ERROR in EnrollUserTCBoundaryCondition function" << std::endl
-        << "dirName = " << dir << " not valid" << std::endl;
-    ATHENA_ERROR(msg);
-  }
-  if (mesh_bcs[dir] != BoundaryFlag::user) {
-    msg << "### FATAL ERROR in EnrollUserTCBoundaryFunction" << std::endl
-        << "The boundary condition flag must be set to the string 'user' in the "
-        << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
-    ATHENA_ERROR(msg);
-  }
-  TCBoundaryFunc_[static_cast<int>(dir)]=my_bc;
-  return;
-}
 
-void Mesh::EnrollUserTCBoundaryFunction(int dir, TCBoundaryFunc my_bc) {
-  EnrollUserTCBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
-  return;
-}
 
 
 //----------------------------------------------------------------------------------------
@@ -1552,8 +1531,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->prad->rad_bvar.SendBoundaryBuffers();
         if(CR_ENABLED)
           pmb->pcr->cr_bvar.SendBoundaryBuffers();
-        if(TC_ENABLED)
-          pmb->ptc->tc_bvar.SendBoundaryBuffers();
 
 
       }
@@ -1572,8 +1549,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->prad->rad_bvar.ReceiveAndSetBoundariesWithWait();
         if(CR_ENABLED)
           pmb->pcr->cr_bvar.ReceiveAndSetBoundariesWithWait();
-        if(TC_ENABLED)
-          pmb->ptc->tc_bvar.ReceiveAndSetBoundariesWithWait();
 
         if (shear_periodic && orbital_advection==0) {
           pmb->phydro->hbvar.AddHydroShearForInit();
@@ -1757,16 +1732,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pcr->UpdateOpacity(pmb,pcr->u_cr,ph->w,pf->bcc);
         }
       }
-
-      if(TC_ENABLED){
-        for(int i=0; i<nblocal; ++i){
-          pmb=my_blocks(i); ph=pmb->phydro;
-          pf=pmb->pfield;
-          pmb->ptc->UpdateOpacity(pmb,ph->w,pf->bcc);
-
-        }
-      }
-
 
 
    // ---------------------------------------------
@@ -2034,8 +1999,6 @@ void Mesh::CorrectMidpointInitialCondition() {
       pmb->prad->rad_bvar.SendBoundaryBuffers();
     if(CR_ENABLED)
       pmb->pcr->cr_bvar.SendBoundaryBuffers();
-    if(TC_ENABLED)
-      pmb->ptc->tc_bvar.SendBoundaryBuffers();
 
   }
 
@@ -2061,8 +2024,6 @@ void Mesh::CorrectMidpointInitialCondition() {
       pmb->prad->rad_bvar.ReceiveAndSetBoundariesWithWait();
     if(CR_ENABLED)
       pmb->pcr->cr_bvar.ReceiveAndSetBoundariesWithWait();
-    if(TC_ENABLED)
-      pmb->ptc->tc_bvar.ReceiveAndSetBoundariesWithWait();   
 
 
     if (shear_periodic && orbital_advection==0) {
@@ -2135,8 +2096,6 @@ void Mesh::ReserveMeshBlockPhysIDs() {
     ReserveTagPhysIDs(RadBoundaryVariable::max_phys_id);
   if(CR_ENABLED)
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
-  if(TC_ENABLED)
-    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id); 
   
 #endif
   return;

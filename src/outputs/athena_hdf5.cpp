@@ -143,8 +143,6 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     if(CR_ENABLED)
       num_variables[n_dataset] += 13;
 
-    if(TC_ENABLED)
-      num_variables[n_dataset] += 7;
 
     // Passive scalars:
     if (NSCALARS > 0)

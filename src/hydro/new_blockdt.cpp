@@ -23,7 +23,6 @@
 #include "../radiation/radiation.hpp"
 #include "../radiation/implicit/radiation_implicit.hpp"
 #include "../cr/cr.hpp"
-#include "../thermal_conduction/tc.hpp"
 #include "../mesh/mesh.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../scalars/scalars.hpp"
@@ -68,8 +67,6 @@ void Hydro::NewBlockTimeStep() {
     cspeed = pmb->prad->reduced_c;
   if(CR_ENABLED)
     cspeed = std::max(cspeed,pmb->pcr->vmax);
-  if(TC_ENABLED)
-    cspeed = std::max(cspeed,pmb->ptc->vmax);
 
   // TODO(felker): skip this next loop if pm->fluid_setup == FluidFormulation::disabled
   FluidFormulation fluid_status = pmb->pmy_mesh->fluid_setup;

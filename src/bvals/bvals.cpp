@@ -34,7 +34,6 @@
 #include "../hydro/hydro.hpp"
 #include "../radiation/radiation.hpp"
 #include "../cr/cr.hpp"
-#include "../thermal_conduction/tc.hpp"
 #include "../mesh/mesh.hpp"
 #include "../mesh/mesh_refinement.hpp"
 #include "../multigrid/multigrid.hpp"
@@ -357,15 +356,6 @@ void BoundaryValues::CheckUserBoundaries() {
           ATHENA_ERROR(msg);
         }          
       }
-      if(TC_ENABLED){
-        if (pmy_mesh_->TCBoundaryFunc_[i] == nullptr) {
-          std::stringstream msg;
-          msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
-              << "A user-defined boundary is specified but the actual TC_boundary function "
-              << "is not enrolled in direction " << i  << " (in [0,6])." << std::endl;
-          ATHENA_ERROR(msg);
-        }          
-      }
 
     }
   }
@@ -505,20 +495,13 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
     pcrbvar = &(pcr->cr_bvar);
   }
 
-  ThermalConduction *ptc = nullptr;
-  CellCenteredBoundaryVariable *ptcbvar = nullptr;
-  if(TC_ENABLED){
-    ptc = pmb->ptc;
-    ptcbvar = &(ptc->tc_bvar);
-  }
-
 
 
   // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
   if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
     DispatchBoundaryFunctions(pmb, pco, time, dt,
                               pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
-                              ph->w, pf->b, prad->ir, pcr->u_cr, ptc->u_tc, 
+                              ph->w, pf->b, prad->ir, pcr->u_cr,  
                               BoundaryFace::inner_x1, bvars_subset);
     // KGF: COUPLING OF QUANTITIES (must be manually specified)
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -538,7 +521,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
   if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
     DispatchBoundaryFunctions(pmb, pco, time, dt,
                               pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
-                              ph->w, pf->b, prad->ir, pcr->u_cr, ptc->u_tc, 
+                              ph->w, pf->b, prad->ir, pcr->u_cr,  
                               BoundaryFace::outer_x1, bvars_subset);
     // KGF: COUPLING OF QUANTITIES (must be manually specified)
     if (MAGNETIC_FIELDS_ENABLED) {
@@ -559,7 +542,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
     if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, pmb->js, pmb->je, bks, bke, NGHOST,
-                                ph->w, pf->b, prad->ir, pcr->u_cr, ptc->u_tc, 
+                                ph->w, pf->b, prad->ir, pcr->u_cr,  
                                 BoundaryFace::inner_x2, bvars_subset);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -586,7 +569,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
     if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, pmb->js, pmb->je, bks, bke, NGHOST,
-                                ph->w, pf->b, prad->ir, pcr->u_cr, ptc->u_tc, 
+                                ph->w, pf->b, prad->ir, pcr->u_cr,  
                                 BoundaryFace::outer_x2, bvars_subset);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -611,7 +594,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
     if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
-                                ph->w, pf->b, prad->ir, pcr->u_cr, ptc->u_tc, 
+                                ph->w, pf->b, prad->ir, pcr->u_cr,  
                                 BoundaryFace::inner_x3, bvars_subset);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -640,7 +623,7 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
     if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
-                                ph->w, pf->b, prad->ir, pcr->u_cr, ptc->u_tc, 
+                                ph->w, pf->b, prad->ir, pcr->u_cr,  
                                 BoundaryFace::outer_x3, bvars_subset);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
@@ -676,7 +659,7 @@ void BoundaryValues::DispatchBoundaryFunctions(
     MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh,
     AthenaArray<Real> &prim, FaceField &b, AthenaArray<Real> &ir,
-    AthenaArray<Real> &u_cr, AthenaArray<Real> &u_tc, BoundaryFace face,
+    AthenaArray<Real> &u_cr,  BoundaryFace face,
     std::vector<BoundaryVariable *> bvars_subset) {
   if (block_bcs[face] ==  BoundaryFlag::user) {  // user-enrolled BCs
     pmy_mesh_->BoundaryFunction_[face](pmb, pco, prim, b, time, dt,
@@ -693,10 +676,6 @@ void BoundaryValues::DispatchBoundaryFunctions(
                                               il,iu,jl,ju,kl,ku,NGHOST);
     }
 
-    if(TC_ENABLED){
-      pmy_mesh_->TCBoundaryFunc_[face](pmb, pco, pmb->ptc, prim, b, u_tc,time,dt, 
-                                        il, iu, jl, ju, kl, ku, NGHOST);
-    }
 
   }
   // KGF: this is only to silence the compiler -Wswitch warnings about not handling the

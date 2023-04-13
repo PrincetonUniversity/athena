@@ -55,7 +55,6 @@ class OrbitalAdvection;
 class Radiation;
 class IMRadiation;
 class CosmicRay;
-class ThermalConduction;
 
 //--------------------------------------------------------------------------------------
 //! \struct LogicalLocation
@@ -231,12 +230,6 @@ using SRJFunc = void (*)(IMRadiation *pimrad);
 using CRBoundaryFunc = void (*)(
      MeshBlock *pmb, Coordinates *pco, CosmicRay *pcr, 
      const AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &u_cr,
-     Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
-using TCOpacityFunc = void(*) (MeshBlock *pmb, 
-                      AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
-using TCBoundaryFunc = void (*)(
-     MeshBlock *pmb, Coordinates *pco, ThermalConduction *ptc, 
-     const AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &u_tc,
      Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 using CRSrcTermFunc = void (*)(
     MeshBlock *pmb, const Real time, const Real dt,

@@ -29,7 +29,6 @@
 #include "../scalars/scalars.hpp"
 #include "../radiation/radiation.hpp"
 #include "../cr/cr.hpp"
-#include "../thermal_conduction/tc.hpp"
 #include "outputs.hpp"
 
 
@@ -190,11 +189,6 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
       pdata += pmb->pcr->u_cr.GetSizeInBytes(); 
 
     }
-
-    if(TC_ENABLED){
-      std::memcpy(pdata,pmb->ptc->u_tc.data(),pmb->ptc->u_tc.GetSizeInBytes());
-      pdata += pmb->ptc->u_tc.GetSizeInBytes();       
-    }    
 
 
     // (conserved variable) Passive scalars:

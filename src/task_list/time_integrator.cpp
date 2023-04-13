@@ -30,8 +30,6 @@
 #include "../parameter_input.hpp"
 #include "../cr/cr.hpp"
 #include "../cr/integrators/cr_integrators.hpp"
-#include "../thermal_conduction/tc.hpp"
-#include "../thermal_conduction/integrators/tc_integrators.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
 #include "../radiation/radiation.hpp"
@@ -959,7 +957,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       AddTask(SETB_RAD,(RECV_RAD|SRCTERM_RAD));
     }
 
-    if (CR_ENABLED+TC_ENABLED) {
+    if (CR_ENABLED) {
       AddTask(CALC_CRTCFLX,NONE);
       if (pm->multilevel) { // SMR or AMR
         AddTask(SEND_CRTCFLX,CALC_CRTCFLX);
@@ -985,7 +983,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     if(radiation_flag)
       src_aterm = (src_aterm | SRCTERM_RAD);
 
-    if(CR_ENABLED+TC_ENABLED)
+    if(CR_ENABLED)
       src_aterm = (src_aterm | SRCTERM_CRTC);
 
     if (ORBITAL_ADVECTION) {
@@ -1101,7 +1099,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
             setb=(setb|RECV_RADSH);
         }
 
-        if(CR_ENABLED+TC_ENABLED)
+        if(CR_ENABLED)
           setb=(setb|SEND_CRTC|SETB_CRTC);
 
 
@@ -1146,7 +1144,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
             setb=(setb|RECV_RADSH);
         }
 
-        if(CR_ENABLED+TC_ENABLED)
+        if(CR_ENABLED)
           setb=(setb|SEND_CRTC|SETB_CRTC);
 
         AddTask(PROLONG,setb);
@@ -1180,7 +1178,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       before_userwork = (before_userwork|RAD_MOMOPACITY);
     }
 
-    if(CR_ENABLED+TC_ENABLED){
+    if(CR_ENABLED){
       before_bval = (before_bval|SETB_CRTC|SEND_CRTC);
       before_userwork = (before_userwork|CRTC_OPACITY);
     }
@@ -1190,7 +1188,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     if(radiation_flag)
       AddTask(RAD_MOMOPACITY,PHY_BVAL);
 
-    if(CR_ENABLED+TC_ENABLED)
+    if(CR_ENABLED)
       AddTask(CRTC_OPACITY,PHY_BVAL);
 
     if (!STS_ENABLED || pm->sts_integrator == "rkl1") {
@@ -1643,14 +1641,6 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
       pmb->pcr->u_cr1.ZeroClear();
       if(integrator == "ssprk5_4")
         pmb->pcr->u_cr2 = pmb->pcr->u_cr;
-    }
-
-    if(TC_ENABLED){
-      pmb->ptc->u_tc1.ZeroClear();
-      if(integrator == "ssprk5_4")
-        pmb->ptc->u_tc2 = pmb->ptc->u_tc;
-      //initialize the value 
-      pmb->ptc->Initialize(pmb,ph->w,pmb->ptc->u_tc);
     }
 
   }
@@ -2907,7 +2897,6 @@ TaskStatus TimeIntegratorTaskList::ReceiveRadShear(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::CalculateCRTCFlux(MeshBlock *pmb, int stage) {
   Hydro *phydro = pmb->phydro;
   CosmicRay *pcr = pmb->pcr;
-  ThermalConduction *ptc = pmb->ptc;
   Field *pf = pmb->pfield;
 
   if (stage <= nstages) {
@@ -2915,15 +2904,10 @@ TaskStatus TimeIntegratorTaskList::CalculateCRTCFlux(MeshBlock *pmb, int stage) 
       if ((stage == 1) && (integrator == "vl2")) {
         if(CR_ENABLED)
           pcr->pcrintegrator->CalculateFluxes(phydro->w, pf->bcc, pcr->u_cr, 1);
-        if(TC_ENABLED)
-          ptc->ptcintegrator->CalculateFluxes(phydro->w, pf->bcc, ptc->u_tc, 1);
       } else {
         if(CR_ENABLED)
           pcr->pcrintegrator->CalculateFluxes(phydro->w, pf->bcc, pcr->u_cr, 
-                                           pcr->pcrintegrator->cr_xorder);
-        if(TC_ENABLED)
-          ptc->ptcintegrator->CalculateFluxes(phydro->w, pf->bcc, ptc->u_tc, 
-                                           ptc->ptcintegrator->tc_xorder);        
+                                           pcr->pcrintegrator->cr_xorder);      
       }
     }
     return TaskStatus::next;
@@ -2938,7 +2922,6 @@ TaskStatus TimeIntegratorTaskList::CalculateCRTCFlux(MeshBlock *pmb, int stage) 
 
 TaskStatus TimeIntegratorTaskList::IntegrateCRTC(MeshBlock *pmb, int stage) {
   CosmicRay *pcr = pmb->pcr;
-  ThermalConduction *ptc = pmb->ptc;
 
   if (stage <= nstages) {
     if(stage_wghts[stage-1].main_stage){
@@ -2947,9 +2930,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateCRTC(MeshBlock *pmb, int stage) {
       ave_wghts[1] = stage_wghts[stage-1].delta;
       ave_wghts[2] = 0.0;
       if(CR_ENABLED)
-        pmb->WeightedAve(pcr->u_cr1, pcr->u_cr, pcr->u_cr2, ave_wghts,2);
-      if(TC_ENABLED)
-        pmb->WeightedAve(ptc->u_tc1, ptc->u_tc, ptc->u_tc2, ave_wghts,2);      
+        pmb->WeightedAve(pcr->u_cr1, pcr->u_cr, pcr->u_cr2, ave_wghts,2);    
 
 
       ave_wghts[0] = stage_wghts[stage-1].gamma_1;
@@ -2957,22 +2938,16 @@ TaskStatus TimeIntegratorTaskList::IntegrateCRTC(MeshBlock *pmb, int stage) {
       ave_wghts[2] = stage_wghts[stage-1].gamma_3;
       if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0){
         if(CR_ENABLED)
-          pcr->u_cr1.SwapAthenaArray(pcr->u_cr);
-        if(TC_ENABLED)
-          ptc->u_tc1.SwapAthenaArray(ptc->u_tc);        
+          pcr->u_cr1.SwapAthenaArray(pcr->u_cr);      
       }else{
         if(CR_ENABLED)
-          pmb->WeightedAve(pcr->u_cr, pcr->u_cr1, pcr->u_cr2, ave_wghts,2);
-        if(TC_ENABLED)
-          pmb->WeightedAve(ptc->u_tc, ptc->u_tc1, ptc->u_tc2, ave_wghts,2);        
+          pmb->WeightedAve(pcr->u_cr, pcr->u_cr1, pcr->u_cr2, ave_wghts,2);      
       }
 
       const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
   
       if(CR_ENABLED)
        pcr->pcrintegrator->FluxDivergence(wght, pcr->u_cr); 
-      if(TC_ENABLED)
-        ptc->ptcintegrator->FluxDivergence(wght, pmb->phydro->w, ptc->u_tc);
 
       // no geometric source term for radiation
 
@@ -2990,12 +2965,6 @@ TaskStatus TimeIntegratorTaskList::IntegrateCRTC(MeshBlock *pmb, int stage) {
           pmb->WeightedAve(pcr->u_cr2, pcr->u_cr1, pcr->u_cr2, ave_wghts,2);
           pcr->pcrintegrator->FluxDivergence(wght, pcr->u_cr2);
         }
-
-        if(TC_ENABLED){
-          pmb->WeightedAve(ptc->u_tc2, ptc->u_tc1, ptc->u_tc2, ave_wghts,2);
-          ptc->ptcintegrator->FluxDivergence(wght, pmb->phydro->w, ptc->u_tc2); 
-        }
-
       }
     }
     return TaskStatus::next;
@@ -3010,8 +2979,6 @@ TaskStatus TimeIntegratorTaskList::SendCRTCFlux(MeshBlock *pmb, int stage) {
     if(stage_wghts[stage-1].main_stage){
       if(CR_ENABLED)
         pmb->pcr->cr_bvar.SendFluxCorrection();
-      if(TC_ENABLED)
-        pmb->ptc->tc_bvar.SendFluxCorrection();  
     }
     return TaskStatus::success;
   }
@@ -3033,10 +3000,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectCRTCFlux(MeshBlock *pmb, int
       bool flag_tc = true;
       if(CR_ENABLED)
         flag_cr = pmb->pcr->cr_bvar.ReceiveFluxCorrection();
-      if(TC_ENABLED)
-        flag_tc = pmb->ptc->tc_bvar.ReceiveFluxCorrection();
 
-      if ((flag_cr) && (flag_tc)) {
+      if (flag_cr) {
         return TaskStatus::next;
       } else {
         return TaskStatus::fail;
@@ -3055,8 +3020,6 @@ TaskStatus TimeIntegratorTaskList::SendCRTC(MeshBlock *pmb, int stage) {
     // (also needed in SetBoundariesHydro(), since the tasks are independent)
     if(CR_ENABLED)
       pmb->pcr->cr_bvar.SendBoundaryBuffers();
-    if(TC_ENABLED)
-      pmb->ptc->tc_bvar.SendBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -3072,8 +3035,6 @@ TaskStatus TimeIntegratorTaskList::ReceiveCRTC(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     if(CR_ENABLED)
       ret_cr = pmb->pcr->cr_bvar.ReceiveBoundaryBuffers();
-    if(TC_ENABLED)
-      ret_tc = pmb->ptc->tc_bvar.ReceiveBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -3091,8 +3052,6 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesCRTC(MeshBlock *pmb, int stage) 
   if (stage <= nstages) {
     if(CR_ENABLED)
       pmb->pcr->cr_bvar.SetBoundaries();
-    if(TC_ENABLED)
-      pmb->ptc->tc_bvar.SetBoundaries();
     return TaskStatus::success;
   }
   return TaskStatus::fail;
@@ -3102,14 +3061,11 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesCRTC(MeshBlock *pmb, int stage) 
 TaskStatus TimeIntegratorTaskList::CRTCOpacity(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   CosmicRay *pcr = pmb->pcr;
-  ThermalConduction *ptc = pmb->ptc;
   Field *pf = pmb->pfield;
   if (stage <= nstages) {
     if(stage_wghts[stage-1].main_stage){
       if(CR_ENABLED)
         pcr->UpdateOpacity(pmb, pcr->u_cr, ph->w, pf->bcc);
-      if(TC_ENABLED)
-        ptc->UpdateOpacity(pmb, ph->w, pf->bcc);
     }
     return TaskStatus::success;
   }
@@ -3120,7 +3076,6 @@ TaskStatus TimeIntegratorTaskList::CRTCOpacity(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::AddSourceTermsCRTC(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   CosmicRay *pcr = pmb->pcr;
-  ThermalConduction *ptc = pmb->ptc;
   Field *pf = pmb->pfield;
 
   if (stage <= nstages) {
@@ -3134,8 +3089,6 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsCRTC(MeshBlock *pmb, int stage)
       // Both u and ir are partially updated, only w is from the beginning of the step
       if(CR_ENABLED)
         pcr->pcrintegrator->AddSourceTerms(pmb, dt, ph->u, ph->w, pf->bcc, pcr->u_cr);
-      if(TC_ENABLED)
-        ptc->ptcintegrator->AddSourceTerms(pmb, dt, ph->u, ph->w, ptc->u_tc);  
     }
     return TaskStatus::next;    
   } 

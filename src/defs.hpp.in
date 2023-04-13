@@ -53,9 +53,6 @@
 // include cosmic ray transport? default=0 (false)
 #define CR_ENABLED @CR_ENABLED@
 
-// include thermal conduction? default=0 (false)
-#define TC_ENABLED @TC_ENABLED@
-
 // enable special or general relativity? default=0 (false)
 #define RELATIVISTIC_DYNAMICS @RELATIVISTIC_DYNAMICS@
 
@@ -89,7 +86,6 @@
 // debug build macros (DEBUG or NOT_DEBUG)
 #define @DEBUG_OPTION@
 
-#define ALI_LEN @ALI_LEN@
 
 // try/throw/catch C++ exception handling (ENABLE_EXCEPTIONS or DISABLE_EXCEPTIONS)
 // (enabled by default)

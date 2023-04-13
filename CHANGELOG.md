@@ -1,12 +1,6 @@
 # Changelog
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project (mostly) adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
-We will attempt to follow the guideline of incrementing only one of the `X.Y.Z` values for each tag and/or release:
-- `X` (MAJOR) version when you make incompatible API changes,
-- `Y` (MINOR) version when you add functionality in a backwards-compatible manner, and
-- `Z` (PATCH) version when you make backwards-compatible bug fixes.
-
-The `X` vs. `Y` division won’t be strictly followed for Athena++ releases; for example, certain backwards-compatible versions may be released as a new `X` value to signify major new physics capabilities. As of `v1.1.0`, the Athena++ public API is only loosely documented in the GitHub Wiki, so the notion of backwards-compatibility is ambiguous. Nevertheless, versions with major changes to existing Athena++ core classes and  functions will generally be released under a new `X` value.
+The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project (mostly) adheres to Calendar Versioning.
 
 All major changes to the Athena++ private repository between each version/tag are summarized in this `CHANGLEOG.md` document. Each version has an **Issues and Pull Requests** section, whose subsections are automatically populated from the issue/PR labels. The list entries contain links to the private repository issue tracker `#N` id.
 
@@ -22,14 +16,196 @@ The automatically-generated content should be used for reference when writing th
 
 ## [Unreleased](https://github.com/PrincetonUniversity/athena/tree/HEAD)
 
-[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.1-dev...HEAD)
+[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v21.0...HEAD)
 
-### Added
-Feature branches to merge to `master`:
-- Chemistry (`chemistry`)
-- Fourth-order solvers
-  - Hydrodynamics (`hydro4`)
-  - MHD (`mhd4`, `mhd4_3D`)
+## [v21.0](https://github.com/PrincetonUniversity/athena/tree/v21.0) (2021-01-06)
+
+[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v21.0-dev...v21.0)
+
+### Removed
+- Multigrid solver and related regression tests (removed directly from `v21.0-dev`)
+
+## [v21.0-dev](https://github.com/PrincetonUniversity/athena/tree/v21.0-dev) (2021-01-06)
+
+[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v19.0...v21.0-dev)
+
+#### Implemented enhancements:
+
+- Need more flexible task control in STS [\#270](https://github.com/PrincetonUniversity/athena/issues/270)
+- Enable AMR/SMR and source terms with -sts [\#250](https://github.com/PrincetonUniversity/athena/issues/250)
+- Robustness improvements to relativity [\#316](https://github.com/PrincetonUniversity/athena/pull/316) ([c-white](https://github.com/c-white))
+- Change primitive velocities in SR [\#303](https://github.com/PrincetonUniversity/athena/pull/303) ([c-white](https://github.com/c-white))
+- Update passive scalars to have user source terms and work with relativity [\#297](https://github.com/PrincetonUniversity/athena/pull/297) ([c-white](https://github.com/c-white))
+
+#### Fixed bugs:
+
+- Spurious waves emerging from corners using the intel 19.1 compiler and MPI? [\#340](https://github.com/PrincetonUniversity/athena/issues/340)
+- EOS Riemann regression test fails [\#335](https://github.com/PrincetonUniversity/athena/issues/335)
+- Unused and uninitialized variables with orbital advection [\#332](https://github.com/PrincetonUniversity/athena/issues/332)
+- regression tests for diffusion do not work & failed [\#328](https://github.com/PrincetonUniversity/athena/issues/328)
+- Reconstruction of passive scalars uses wrong array size [\#306](https://github.com/PrincetonUniversity/athena/issues/306)
+- malloc error with gcc compiler, spherical polar coordinate and xorder=3 [\#304](https://github.com/PrincetonUniversity/athena/issues/304)
+- RK3 integrator breaks conservation [\#300](https://github.com/PrincetonUniversity/athena/issues/300)
+- Runtime error "pure virtual method called" with intel compiler [\#289](https://github.com/PrincetonUniversity/athena/issues/289)
+- Test GR/SR compatibility with passive scalars [\#281](https://github.com/PrincetonUniversity/athena/issues/281)
+- New Limitation of MeshBlock Size [\#343](https://github.com/PrincetonUniversity/athena/pull/343) ([tomo-ono](https://github.com/tomo-ono))
+- Move Poisson solve to after ptlist-\>DoTaskListOneStage\(\) [\#309](https://github.com/PrincetonUniversity/athena/pull/309) ([pdmullen](https://github.com/pdmullen))
+- Add support for NSCALARS \> NWAVE [\#307](https://github.com/PrincetonUniversity/athena/pull/307) ([msbc](https://github.com/msbc))
+- Fix logic in bvars\_sts designation [\#305](https://github.com/PrincetonUniversity/athena/pull/305) ([pdmullen](https://github.com/pdmullen))
+
+#### Closed issues:
+
+- bugs in using std::min or std::max for single precision [\#326](https://github.com/PrincetonUniversity/athena/issues/326)
+- Mismatch of the function argument in WeightedAve for FaceField [\#318](https://github.com/PrincetonUniversity/athena/issues/318)
+
+#### Merged pull requests:
+
+- Implemented the source term formula for gravitational acceleration [\#344](https://github.com/PrincetonUniversity/athena/pull/344) ([tomidakn](https://github.com/tomidakn))
+- Enable STS in Shearing Box with Orbital Advection [\#342](https://github.com/PrincetonUniversity/athena/pull/342) ([tomo-ono](https://github.com/tomo-ono))
+- Logical location \(long\)is used to set array index \(int\) -- Jenkins passed! [\#341](https://github.com/PrincetonUniversity/athena/pull/341) ([changgoo](https://github.com/changgoo))
+- Fix lack of deallocating dynamic memory [\#338](https://github.com/PrincetonUniversity/athena/pull/338) ([tomo-ono](https://github.com/tomo-ono))
+- fix dependency in tasklist [\#337](https://github.com/PrincetonUniversity/athena/pull/337) ([tomo-ono](https://github.com/tomo-ono))
+- Increased thresholds for eos\_riemann test [\#336](https://github.com/PrincetonUniversity/athena/pull/336) ([msbc](https://github.com/msbc))
+- fix EMF flux correction in shearing box [\#334](https://github.com/PrincetonUniversity/athena/pull/334) ([tomo-ono](https://github.com/tomo-ono))
+- fix unused and uninitialized variables [\#333](https://github.com/PrincetonUniversity/athena/pull/333) ([tomo-ono](https://github.com/tomo-ono))
+- Fix conditionals in TimeIntegratorTaskList fns for compatibility with STS [\#331](https://github.com/PrincetonUniversity/athena/pull/331) ([pdmullen](https://github.com/pdmullen))
+- Docstring Style Correction [\#330](https://github.com/PrincetonUniversity/athena/pull/330) ([changgoo](https://github.com/changgoo))
+- Correct the input block name in the turbulence regression test and make driving isotropic regardless of the box shape [\#329](https://github.com/PrincetonUniversity/athena/pull/329) ([changgoo](https://github.com/changgoo))
+- put cast in the min or max function [\#327](https://github.com/PrincetonUniversity/athena/pull/327) ([tomo-ono](https://github.com/tomo-ono))
+- Implement a New Discretization of the Gravitational Stress Tensor [\#325](https://github.com/PrincetonUniversity/athena/pull/325) ([pdmullen](https://github.com/pdmullen))
+- Change in turbulence input style [\#324](https://github.com/PrincetonUniversity/athena/pull/324) ([changgoo](https://github.com/changgoo))
+- Fix Bug with Mesh Structure Output [\#322](https://github.com/PrincetonUniversity/athena/pull/322) ([tomo-ono](https://github.com/tomo-ono))
+- Orbital Advection & New Shearing Box [\#321](https://github.com/PrincetonUniversity/athena/pull/321) ([tomo-ono](https://github.com/tomo-ono))
+- Fix typo: bounday\_flag.cpp to boundary\_flag.cpp [\#320](https://github.com/PrincetonUniversity/athena/pull/320) ([changgoo](https://github.com/changgoo))
+- Fix mismatch between WeightedAve prototype and definition [\#319](https://github.com/PrincetonUniversity/athena/pull/319) ([pdmullen](https://github.com/pdmullen))
+- Improve performance of turbulence driver [\#317](https://github.com/PrincetonUniversity/athena/pull/317) ([changgoo](https://github.com/changgoo))
+- Update to bug fix on fft pgen [\#315](https://github.com/PrincetonUniversity/athena/pull/315) ([changgoo](https://github.com/changgoo))
+- Fix typo in HLLC and bug in Hydrogen EOS [\#314](https://github.com/PrincetonUniversity/athena/pull/314) ([msbc](https://github.com/msbc))
+- Bug fixes for FFT; New regression test [\#313](https://github.com/PrincetonUniversity/athena/pull/313) ([changgoo](https://github.com/changgoo))
+- Modifying the KH problem and a input file for MHD KH [\#312](https://github.com/PrincetonUniversity/athena/pull/312) ([tomo-ono](https://github.com/tomo-ono))
+
+## [v19.0](https://github.com/PrincetonUniversity/athena/tree/v19.0) (2019-08-06)
+
+[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v19.0-dev...v19.0)
+
+### Removed
+- Multigrid solver and related regression tests (removed directly from `v19.0-dev`)
+
+## [v19.0-dev](https://github.com/PrincetonUniversity/athena/tree/v19.0-dev) (2019-08-06)
+
+**Switched to using CalVer (Calendar Versioning) scheme from SemVer (Semantic Versioning)**. `v1.1.1-dev` was the previous tag and version.
+
+[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.1...v19.0-dev)
+
+#### Implemented enhancements:
+
+- Extend user-defined history outputs beyond parallel summed quantities  [\#237](https://github.com/PrincetonUniversity/athena/issues/237)
+- Add test coverage for Roe Riemann solvers [\#231](https://github.com/PrincetonUniversity/athena/issues/231)
+- Add "logging" module to all regression tests to replace calls to print\(\) [\#203](https://github.com/PrincetonUniversity/athena/issues/203)
+- Warn users about proper polar vs. polar\_wedge boundary condition flag   [\#196](https://github.com/PrincetonUniversity/athena/issues/196)
+- Loading SMR data at native resolution [\#173](https://github.com/PrincetonUniversity/athena/issues/173)
+- Create cleaner failure mode for incorrect input parameter file text formatting [\#168](https://github.com/PrincetonUniversity/athena/issues/168)
+- Extend vis/python/uniform.py to 2D HDF5 files [\#164](https://github.com/PrincetonUniversity/athena/issues/164)
+- \(Non-Zero\) Mean Density Must Be Set for FFT Self-Gravity with Periodic BC's [\#155](https://github.com/PrincetonUniversity/athena/issues/155)
+- include input parameters in hdf5 output? [\#143](https://github.com/PrincetonUniversity/athena/issues/143)
+- Extend TaskList to support more than 64 task IDs [\#286](https://github.com/PrincetonUniversity/athena/pull/286) ([tomidakn](https://github.com/tomidakn))
+- Add timing to regression tests [\#284](https://github.com/PrincetonUniversity/athena/pull/284) ([msbc](https://github.com/msbc))
+- Throw error when reading HDF5 files with ghost zones if their number hasn't been specified. [\#280](https://github.com/PrincetonUniversity/athena/pull/280) ([msbc](https://github.com/msbc))
+- Add user ability to specify names of libraries when linking [\#277](https://github.com/PrincetonUniversity/athena/pull/277) ([c-white](https://github.com/c-white))
+- Remove MeshBlock dependency of FFTDriver [\#276](https://github.com/PrincetonUniversity/athena/pull/276) ([changgoo](https://github.com/changgoo))
+- Move MGGravity from GravityDriver to MeshBlock [\#275](https://github.com/PrincetonUniversity/athena/pull/275) ([tomidakn](https://github.com/tomidakn))
+- Add input option to output more timestep diagnostics [\#273](https://github.com/PrincetonUniversity/athena/pull/273) ([felker](https://github.com/felker))
+- Refactor MeshBlockTree to save memory footprint [\#262](https://github.com/PrincetonUniversity/athena/pull/262) ([tomidakn](https://github.com/tomidakn))
+- Replace AthenaArray\<T\>::InitWithShallowCopy with C++ references [\#261](https://github.com/PrincetonUniversity/athena/pull/261) ([felker](https://github.com/felker))
+- Rewrite shearing box capabilities  [\#260](https://github.com/PrincetonUniversity/athena/pull/260) ([felker](https://github.com/felker))
+- Remove do-nothing DeleteAthenaArray calls [\#258](https://github.com/PrincetonUniversity/athena/pull/258) ([felker](https://github.com/felker))
+- Refactor bvals/ and Mesh::AdaptiveMeshRefinement\(\) [\#257](https://github.com/PrincetonUniversity/athena/pull/257) ([felker](https://github.com/felker))
+- Replace AthenaFFTComplex with std::complex\<Real\> [\#256](https://github.com/PrincetonUniversity/athena/pull/256) ([felker](https://github.com/felker))
+- Deduplicate 4x STS regression tests [\#252](https://github.com/PrincetonUniversity/athena/pull/252) ([pdmullen](https://github.com/pdmullen))
+- Adds logging module to all regression tests to replace calls to print\(\) [\#251](https://github.com/PrincetonUniversity/athena/pull/251) ([msbc](https://github.com/msbc))
+- Global initialization of turbulence realization [\#241](https://github.com/PrincetonUniversity/athena/pull/241) ([changgoo](https://github.com/changgoo))
+- Enable FFT for an entirely refined mesh [\#240](https://github.com/PrincetonUniversity/athena/pull/240) ([changgoo](https://github.com/changgoo))
+- Optimize performance of SR/GR calculations [\#235](https://github.com/PrincetonUniversity/athena/pull/235) ([beiwang2003](https://github.com/beiwang2003))
+- Improve all enumerated types [\#234](https://github.com/PrincetonUniversity/athena/pull/234) ([felker](https://github.com/felker))
+- Add test coverage for MHD and Hydro Roe Riemann solvers  [\#233](https://github.com/PrincetonUniversity/athena/pull/233) ([msbc](https://github.com/msbc))
+- Replace holdovers from C with C++11 alternatives [\#219](https://github.com/PrincetonUniversity/athena/pull/219) ([felker](https://github.com/felker))
+- Update ShowConfig for general EOS [\#218](https://github.com/PrincetonUniversity/athena/pull/218) ([msbc](https://github.com/msbc))
+- Extend line plotting to .athdf files [\#211](https://github.com/PrincetonUniversity/athena/pull/211) ([c-white](https://github.com/c-white))
+- Make C++ exception handling optional; standardize more C++11 headers and namespace usage [\#190](https://github.com/PrincetonUniversity/athena/pull/190) ([felker](https://github.com/felker))
+- Extend Kelvin-Helmholtz problem generator  [\#187](https://github.com/PrincetonUniversity/athena/pull/187) ([felker](https://github.com/felker))
+- Use C++ compiler front ends for main/documented "configure.py --cxx" options but support C front ends; add built-in support for Apple+LLVM with OpenMP workaround [\#186](https://github.com/PrincetonUniversity/athena/pull/186) ([felker](https://github.com/felker))
+
+#### Fixed bugs:
+
+- athena\_read.py silently fails when ghost zones are saved to file [\#279](https://github.com/PrincetonUniversity/athena/issues/279)
+- MPI + continuous turbulence driving with OU process is broken  [\#267](https://github.com/PrincetonUniversity/athena/issues/267)
+- Invalid read in AMR [\#229](https://github.com/PrincetonUniversity/athena/issues/229)
+- NaN'ing outputs may not be caught by some regression tests [\#223](https://github.com/PrincetonUniversity/athena/issues/223)
+- Bug with permuting fft directions in athena\_fft.cpp [\#217](https://github.com/PrincetonUniversity/athena/issues/217)
+- 1D AMR not refining third component of magnetic field correctly [\#212](https://github.com/PrincetonUniversity/athena/issues/212)
+- MPI/AMR segfaulting [\#199](https://github.com/PrincetonUniversity/athena/issues/199)
+- RECV\_\* boundary buffer receive tasks are missing dependencies on matching INT\_\* integration tasks [\#198](https://github.com/PrincetonUniversity/athena/issues/198)
+- Possible incorrect memory access in spherical\_polar coordinates: private & public version [\#192](https://github.com/PrincetonUniversity/athena/issues/192)
+- athena\_read.athdf\(\) handles ghost zones incorrectly [\#184](https://github.com/PrincetonUniversity/athena/issues/184)
+- Possible race condition in OpenMP  [\#183](https://github.com/PrincetonUniversity/athena/issues/183)
+- SMR causes issues with cell sizes difference warning in spherical coordinates with user mesh generator [\#180](https://github.com/PrincetonUniversity/athena/issues/180)
+- uniform.py now writes all 0s when overwriting a file [\#179](https://github.com/PrincetonUniversity/athena/issues/179)
+- OpenMP is broken; add regression tests to prevent this in the future [\#175](https://github.com/PrincetonUniversity/athena/issues/175)
+- Some regression tests never fail [\#174](https://github.com/PrincetonUniversity/athena/issues/174)
+- Python reader fails for slices taken across multiple blocks [\#159](https://github.com/PrincetonUniversity/athena/issues/159)
+- Python HDF5 reader no longer returns refinement levels [\#156](https://github.com/PrincetonUniversity/athena/issues/156)
+- Is ApplyPrimitiveFloors\(\) being called too often? [\#153](https://github.com/PrincetonUniversity/athena/issues/153)
+- Fix bug when saving zero scalars to restart file [\#285](https://github.com/PrincetonUniversity/athena/pull/285) ([msbc](https://github.com/msbc))
+- Fix bug when saving multiple scalars to restart file [\#283](https://github.com/PrincetonUniversity/athena/pull/283) ([msbc](https://github.com/msbc))
+- Fix minor issues with Python HDF5 reader [\#278](https://github.com/PrincetonUniversity/athena/pull/278) ([c-white](https://github.com/c-white))
+- Fix curvilinear reconstruction, add regression test scripts \(passive scalars, MPI shearing box, etc.\), and other QoL improvements [\#274](https://github.com/PrincetonUniversity/athena/pull/274) ([felker](https://github.com/felker))
+- Revert GR optimizations [\#272](https://github.com/PrincetonUniversity/athena/pull/272) ([c-white](https://github.com/c-white))
+- Fix a NaN bug \(\#267\) caused by the incorrect out-of-place FFT [\#268](https://github.com/PrincetonUniversity/athena/pull/268) ([changgoo](https://github.com/changgoo))
+- Fix bug in spherical plotting script [\#265](https://github.com/PrincetonUniversity/athena/pull/265) ([c-white](https://github.com/c-white))
+- Fix shearing box + MPI [\#264](https://github.com/PrincetonUniversity/athena/pull/264) ([felker](https://github.com/felker))
+- Fix FFT permutation bug [\#238](https://github.com/PrincetonUniversity/athena/pull/238) ([changgoo](https://github.com/changgoo))
+- Improve NaN handling in Python scripts [\#224](https://github.com/PrincetonUniversity/athena/pull/224) ([felker](https://github.com/felker))
+- Fix fail criterion for diffusion/\*\_diffusion\* tests [\#222](https://github.com/PrincetonUniversity/athena/pull/222) ([pdmullen](https://github.com/pdmullen))
+- Fix typo in 1D prolongation of magnetic field [\#216](https://github.com/PrincetonUniversity/athena/pull/216) ([c-white](https://github.com/c-white))
+- Fix general EOS bugs and add eos\_test pgen [\#214](https://github.com/PrincetonUniversity/athena/pull/214) ([msbc](https://github.com/msbc))
+- 1D MHD AMR fix [\#213](https://github.com/PrincetonUniversity/athena/pull/213) ([c-white](https://github.com/c-white))
+- Correct energy bug in PrimitiveToConserved in general\_hydro.cpp [\#208](https://github.com/PrincetonUniversity/athena/pull/208) ([msbc](https://github.com/msbc))
+- Apply minor fixes to Python scripts [\#201](https://github.com/PrincetonUniversity/athena/pull/201) ([c-white](https://github.com/c-white))
+- Fix memory access issue with spherical diffusion [\#195](https://github.com/PrincetonUniversity/athena/pull/195) ([c-white](https://github.com/c-white))
+- Improve post-processing and plotting scripts [\#185](https://github.com/PrincetonUniversity/athena/pull/185) ([c-white](https://github.com/c-white))
+- Fix minor OpenMP error and duplicate MPI regression test for OpenMP, hybrid MPI+OpenMP [\#178](https://github.com/PrincetonUniversity/athena/pull/178) ([felker](https://github.com/felker))
+- Fix and extend Python scripts for analysis of HDF5 files [\#167](https://github.com/PrincetonUniversity/athena/pull/167) ([c-white](https://github.com/c-white))
+- Fix Python HDF5 reader's ability to return refinement levels [\#158](https://github.com/PrincetonUniversity/athena/pull/158) ([msbc](https://github.com/msbc))
+- Eliminate redundant calls to ApplyPrimitiveFloors\(\) [\#154](https://github.com/PrincetonUniversity/athena/pull/154) ([felker](https://github.com/felker))
+
+#### Closed issues:
+
+- Add optional time/sts\_nstage\_out input parameter [\#249](https://github.com/PrincetonUniversity/athena/issues/249)
+- Deduplicate 4x STS regression test scripts in diffusion/ [\#242](https://github.com/PrincetonUniversity/athena/issues/242)
+- "register" keyword used in src/fft/plimpton/ files is deprecated and was removed in C++17 [\#230](https://github.com/PrincetonUniversity/athena/issues/230)
+- Make `athinput` a file extension as opposed to a file prefix. [\#226](https://github.com/PrincetonUniversity/athena/issues/226)
+- 1D MHD SMR fields wrong at refinement boundaries with more than 2 ghost zones [\#209](https://github.com/PrincetonUniversity/athena/issues/209)
+- Add interface for operator splitting and super-time-stepping [\#172](https://github.com/PrincetonUniversity/athena/issues/172)
+
+#### Merged pull requests:
+
+- Add user-defined passive scalar floor option in input file [\#291](https://github.com/PrincetonUniversity/athena/pull/291) ([munan](https://github.com/munan))
+- Add MHD capabilities to the general EOS module [\#282](https://github.com/PrincetonUniversity/athena/pull/282) ([msbc](https://github.com/msbc))
+- Add passive scalars [\#263](https://github.com/PrincetonUniversity/athena/pull/263) ([felker](https://github.com/felker))
+- Extend automatic and manual load balancing beyond AMR [\#259](https://github.com/PrincetonUniversity/athena/pull/259) ([tomidakn](https://github.com/tomidakn))
+- Fix edge-case bug in typecast function. [\#255](https://github.com/PrincetonUniversity/athena/pull/255) ([msbc](https://github.com/msbc))
+- Implement OU Process for driven turbulence and Helmholtz decomposition [\#244](https://github.com/PrincetonUniversity/athena/pull/244) ([changgoo](https://github.com/changgoo))
+- Remove "register" keyword from 2x .cpp files in plimpton/ [\#232](https://github.com/PrincetonUniversity/athena/pull/232) ([felker](https://github.com/felker))
+- Fix general EOS hydro function names and prepare for general EOS MHD extension [\#228](https://github.com/PrincetonUniversity/athena/pull/228) ([msbc](https://github.com/msbc))
+- Add compatibility checks for polar, polar\_wedge boundary conditions to class constructor [\#200](https://github.com/PrincetonUniversity/athena/pull/200) ([felker](https://github.com/felker))
+- Generalize the hydrodynamics equation of state capabilities for non-ideal gases [\#197](https://github.com/PrincetonUniversity/athena/pull/197) ([msbc](https://github.com/msbc))
+- Revert to using 1D pencil arrays for performance [\#193](https://github.com/PrincetonUniversity/athena/pull/193) ([tomidakn](https://github.com/tomidakn))
+- Update input params for diffusion regression problems [\#188](https://github.com/PrincetonUniversity/athena/pull/188) ([pdmullen](https://github.com/pdmullen))
+- Integrate code coverage analysis into regression test framework and continuous integration [\#181](https://github.com/PrincetonUniversity/athena/pull/181) ([felker](https://github.com/felker))
+- Implement RKL1 Super-Time-Stepping [\#176](https://github.com/PrincetonUniversity/athena/pull/176) ([pdmullen](https://github.com/pdmullen))
+- Add fourth-order hydrodynamics solver [\#157](https://github.com/PrincetonUniversity/athena/pull/157) ([felker](https://github.com/felker))
+- Add new script for plotting 2D slices [\#151](https://github.com/PrincetonUniversity/athena/pull/151) ([c-white](https://github.com/c-white))
+- Add HDF5 reader and pgen for initializing from HDF5 [\#146](https://github.com/PrincetonUniversity/athena/pull/146) ([c-white](https://github.com/c-white))
 
 ## [v1.1.1](https://github.com/PrincetonUniversity/athena/tree/v1.1.1) (2018-07-31)
 

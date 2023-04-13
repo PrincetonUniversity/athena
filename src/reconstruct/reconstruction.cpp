@@ -227,8 +227,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   if(CR_ENABLED)
     nsize = std::max(nsize,5);
 
-  if(TC_ENABLED)
-    nsize = std::max(nsize,6);
 
   scr1_ni_.NewAthenaArray(nsize, nc1);
   scr2_ni_.NewAthenaArray(nsize, nc1);
@@ -259,10 +257,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   if(CR_ENABLED){
     int cr_order=pin->GetOrAddInteger("time", "cr_xorder", 2);
     order_flag = std::max(cr_order,order_flag);
-  }
-  if(TC_ENABLED){
-    int tc_order = pin->GetOrAddInteger("time", "tc_order", 2);
-    order_flag = std::max(tc_order,order_flag);
   }
 
 
