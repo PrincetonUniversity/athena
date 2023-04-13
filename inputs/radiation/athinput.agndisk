@@ -1,0 +1,86 @@
+<comment>
+problem   = Radiation beam test
+reference = 
+configure = --prob=globaldisk
+
+<job>
+problem_id = disk        # problem ID: basename of output filenames
+
+<output1>
+file_type  = hdf5       # Binary data dump
+dt         = 0.01       # time increment between outputs
+variable   = prim
+xdmf       = 0
+
+#<output2>
+#file_type  = hdf5       # Binary data dump
+#dt         = 0.005       # time increment between outputs
+#variable   = rad_fov
+
+<output3>
+file_type  = rst       # Binary data dump
+dt         = 0.05       # time increment between outputs
+
+
+<time>
+cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1    # cycle limit
+tlim       = 2000000.0      # time limit
+
+<mesh>
+nx1        = 64       # Number of zones in X1-direction
+x1min      = 15.0     # minimum value of X1
+x1max      = 6010.96      # maximum value of X1
+ix1_bc     = user  # inner-X1 boundary flag
+ox1_bc     = user  # inner-X1 boundary flag
+x1rat      = 1.09817
+
+nx2        = 32       # Number of zones in X2-direction
+x2min      = 0.00      # minimum value of X2
+x2max      = 3.141592653589793       # maximum value of X2
+ix2_bc     = polar  # inner-X2 boundary flag
+ox2_bc     = polar  # inner-X2 boundary flag
+
+
+nx3        = 64         # Number of zones in X3-direction
+x3min      = 0.0      # minimum value of X3
+x3max      = 6.283185307179586       # maximum value of X3
+ix3_bc     = periodic  # inner-X3 boundary flag
+ox3_bc     = periodic  # inner-X3 boundary flag
+
+refinement = static
+
+<meshblock>
+nx1         = 8 
+nx2         = 4
+nx3         = 16
+
+<refinement1>
+x1min       = 15
+x1max       = 90
+x2min       = 1.483530
+x2max       = 1.658062
+x3min       = 0.0
+x3max       = 6.283185307179586
+level       = 3
+
+
+<hydro>
+gamma           = 1.6666666666667       # gamma = C_p/C_v
+dfloor          = 1.e-9
+pfloor          = 1.e-12
+
+
+<radiation>
+nmu         = 4
+Prat        = 43.6907
+Crat        = 5694.76
+Tunit       = 2.e5
+rhounit     = 1.e-8
+lunit       = 1.48428e14
+Compton     = 1
+tfloor      = 0.005
+Planck      = 1
+
+<problem>
+

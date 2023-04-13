@@ -1,0 +1,1 @@
+#define FFTMPI_VERSION "1 Oct 2018"

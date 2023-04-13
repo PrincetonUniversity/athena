@@ -116,6 +116,21 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void OutflowOuterX3(Real time, Real dt,
                       int il, int iu, int jl, int ju, int ku, int ngh) override;
 
+
+  void VacuumInnerX1(Real time, Real dt,
+                      int il, int jl, int ju, int kl, int ku, int ngh) override;
+  void VacuumOuterX1(Real time, Real dt,
+                      int iu, int jl, int ju, int kl, int ku, int ngh) override;
+  void VacuumInnerX2(Real time, Real dt,
+                      int il, int iu, int jl, int kl, int ku, int ngh) override;
+  void VacuumOuterX2(Real time, Real dt,
+                      int il, int iu, int ju, int kl, int ku, int ngh) override;
+  void VacuumInnerX3(Real time, Real dt,
+                      int il, int iu, int jl, int ju, int kl, int ngh) override;
+  void VacuumOuterX3(Real time, Real dt,
+                      int il, int iu, int jl, int ju, int ku, int ngh) override;
+
+
   void PolarWedgeInnerX2(Real time, Real dt,
                          int il, int iu, int jl, int kl, int ku, int ngh) override;
   void PolarWedgeOuterX2(Real time, Real dt,

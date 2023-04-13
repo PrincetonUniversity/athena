@@ -258,29 +258,27 @@ void TurbulenceDriver::PowerSpectrum(std::complex<Real> *amp) {
     for (int gk=0; gk<kNx3; gk++) {
       for (int gj=0; gj<kNx2; gj++) {
         for (int gi=0; gi<kNx1; gi++) {
-          std::int64_t nx = GetKcomp(gi, 0, kNx1);
-          std::int64_t ny = GetKcomp(gj, 0, kNx2);
-          std::int64_t nz = GetKcomp(gk, 0, kNx3);
-          Real nmag = std::sqrt(nx*nx+ny*ny+nz*nz);
           int k = gk - kdisp3;
           int j = gj - kdisp2;
           int i = gi - kdisp1;
-          // Draw random number only in the cutoff range.
-          // This ensures that the perturbed velocity field is independent of
-          // the number of cells, which is useful property for resolution study.
-          // Note that this only applies for global_ps_ = true (i.e., rseed >= 0).
-          if ((nmag > nlow) && (nmag < nhigh)) {
-            if ((k >= 0) && (k < knx3) &&
-                (j >= 0) && (j < knx2) &&
-                (i >= 0) && (i < knx1)) {
-              std::int64_t kidx = pfb->GetIndex(i,j,k,idx);
-              Real A = ndist(rng_generator);
-              Real ph = udist(rng_generator)*TWO_PI;
-              amp[kidx] = A*std::complex<Real>(std::cos(ph), std::sin(ph));
-            } else { // if it is not in FFTBlock, just burn unused random numbers
-              Real A = ndist(rng_generator);
-              Real ph = udist(rng_generator)*TWO_PI;
-            }
+          if ((k >= 0) && (k < knx3) &&
+              (j >= 0) && (j < knx2) &&
+              (i >= 0) && (i < knx1)) {
+            // Box-Muller Method
+            //Real q1 = ran2(&rseed);
+            //Real q2 = ran2(&rseed);
+            //Real A = std::sqrt(-2.0*std::log(q1 + 1.e-20))*std::cos(TWO_PI*q2);
+            //Real ph = ran2(&rseed)*TWO_PI;
+            std::int64_t kidx = pfb->GetIndex(i,j,k,idx);
+            Real A = ndist(rng_generator);
+            Real ph = udist(rng_generator)*TWO_PI;
+            amp[kidx] = A*std::complex<Real>(std::cos(ph), std::sin(ph));
+          } else { // if it is not in FFTBlock, just burn unused random numbers
+            Real A = ndist(rng_generator);
+            Real ph = udist(rng_generator)*TWO_PI;
+            //ran2(&rseed);
+            //ran2(&rseed);
+            //ran2(&rseed);
           }
         }
       }

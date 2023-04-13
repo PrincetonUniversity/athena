@@ -1,0 +1,66 @@
+<comment>
+problem   = 3D MHD shwave test of JGG (2008)
+reference = B.M. Johnson, X. Guan, & C.F. Gammie, ApJS 177:373 (2008)
+configure = -shear -b --prob=hgb
+
+<job>
+problem_id = HGB   # problem ID: basename of output filenames
+
+<output1>
+file_type  = hst       # History data dump
+dt         = 0.0062831853 # time increment between outputs
+
+<output2>
+file_type  = vtk       # Binary data dump
+variable   = prim      # variables to be output
+dt         = 0.0062832 # time increment between outputs
+
+<time>
+cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1        # 100000    # cycle limit
+tlim       = 3.1416    # x 10 time limit (10 orbits)
+integrator  = vl2      # time integration algorithm
+xorder      = 2        # order of spatial reconstruction
+ncycle_out  = 1        # interval for stdout summary info
+
+<mesh>
+nx1        = 64         # Number of zones in X1-direction
+x1min      = -0.25      # minimum value of X1
+x1max      = 0.25       # maximum value of X1
+ix1_bc     = shear_periodic      # inner-X1 boundary flag
+ox1_bc     = shear_periodic      # outer-X1 boundary flag
+
+nx2        = 32       # Number of zones in X2-direction
+x2min      = -0.25      # minimum value of X2
+x2max      = 0.25       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
+
+nx3        = 32        # Number of zones in X3-direction
+x3min      = -0.25      # minimum value of X3
+x3max      = 0.25       # maximum value of X3
+ix3_bc     = periodic  # inner-X3 boundary flag
+ox3_bc     = periodic  # outer-X3 boundary flag
+
+num_threads = 1        # maximum number of OMP threads
+
+<meshblock>
+nx1 = 64
+nx2 = 32 
+nx3 = 32 
+
+<hydro>
+gamma = 1.666666666666667 # gamma = C_p/C_v
+iso_sound_speed = 1.0     # isothermal sound speed
+
+<problem>
+amp       = 0.025     # wave amplitude
+nwx       = -2        # wavenumber in x1
+nwy       = 1         # wavenumber in x2
+nwz       = 1         # wavenumber in x3
+ipert     = 6         # shwave 
+Omega0    = 1.0       # orbital freq
+qshear    = 1.5       # shear rate
+beta      = 4000      # plasma beta
+ifield    = 1         # zero-net-flux Bz
+

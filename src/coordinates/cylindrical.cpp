@@ -21,6 +21,8 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "coordinates.hpp"
+#include "../cr/cr.hpp"
+#include "../thermal_conduction/tc.hpp"
 
 //----------------------------------------------------------------------------------------
 //! Cylindrical coordinates constructor
@@ -364,3 +366,129 @@ void Cylindrical::AddCoordTermsDivergence_STS(
   }
   return;
 }
+
+
+
+
+void Cylindrical::AddCoordTermsDivergence(int flag, 
+         const AthenaArray<Real> &u_input, AthenaArray<Real> &coord_src)
+{
+
+  if(CR_ENABLED && (flag == 1)){
+    CosmicRay *pcr=pmy_block->pcr;
+    for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
+      for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
+#pragma omp simd
+        for (int i=pmy_block->is; i<=pmy_block->ie; ++i) {
+        // src_1 = <M_{phi phi}><1/r>
+          Real m_pp =  u_input(CRE,k,j,i)/3.0;        
+          coord_src(CRF1,k,j,i) =  pcr->vmax * coord_src1_i_(i)*m_pp;
+          // 0 for other components
+          coord_src(CRE,k,j,i) = 0.0;
+          coord_src(CRF2,k,j,i) = 0.0;
+          coord_src(CRF3,k,j,i) = 0.0;     
+
+        }
+      }
+    }
+
+  }
+
+  if(TC_ENABLED && (flag == 2)){
+    ThermalConduction *ptc=pmy_block->ptc;
+    for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
+      for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
+        for (int i=pmy_block->is; i<=pmy_block->ie; ++i) {
+        // src_1 = <M_{phi phi}><1/r>
+          Real m_pp = u_input(TCT,k,j,i);
+          coord_src(TCF1,k,j,i) =  ptc->vmax * coord_src1_i_(i)*m_pp;
+          // set 0 for other components
+          coord_src(TCE,k,j,i) = 0.0;
+          coord_src(TCF2,k,j,i) = 0.0;
+          coord_src(TCF3,k,j,i) = 0.0;
+
+        }
+      }// end j
+    }// end k
+
+  }// end TC_ENABLED
+
+
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+// subtract Coordinate (Geometric) source term to get Grad Pc
+
+void Cylindrical::AddCoordTermsDivergence( 
+  const AthenaArray<Real> &u_cr, AthenaArray<Real> &grad_pc)
+{
+  // Go through cellscosmicay
+  if(CR_ENABLED){
+    CosmicRay *pcr=pmy_block->pcr;
+    for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
+      for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
+        for (int i=pmy_block->is; i<=pmy_block->ie; ++i) {
+        // src_1 = <M_{phi phi}><1/r>
+          Real m_ii = u_cr(CRE,k,j,i)/3.0;
+          grad_pc(0,k,j,i) -= coord_src1_i_(i)*m_ii;
+
+        }
+      }// end j
+    }// end k
+  }// ENd CR_ENABLED
+  return;
+}
+
+
+
+
+//--------------------------------------------------------------------------
+
+// For radiation angles
+void Cylindrical::AxisDirection(int *axisx, int *axisy, int *axisz)
+{
+  *axisx = 0;
+  *axisy = 1;
+  *axisz = 2;
+}
+
+
+void Cylindrical::ConvertAngle(MeshBlock *pmb, const int nang,
+                                AthenaArray<Real> &mu)
+{
+  if(RADIATION_ENABLED){
+    int n1z = pmb->ncells1, n2z = pmb->ncells2, n3z = pmb->ncells3; 
+    int ndim=1;
+    if(n2z > 1) ndim = 2;
+    if(n3z > 1) ndim = 3;
+ 
+    for(int k=0; k<n3z; ++k){
+      for(int j=0; j<n2z; ++j){
+         Real& x2 = x2v(j);
+         Real cosx2 = cos(x2);
+         Real sinx2 = sin(x2);
+         if(n2z == 1){
+           cosx2 = 1.0;
+           sinx2 = 0.0;
+         }
+         for(int i=0; i<n1z; ++i){
+           Real *miux = &(mu(0,k,j,i,0));
+           Real *miuy = &(mu(1,k,j,i,0));
+         for(int mi=0; mi<nang; ++mi){
+           Real miux0 = miux[mi];
+           Real miuy0 = miuy[mi];
+           miux[mi] = miux0 * cosx2 + miuy0 * sinx2;
+           miuy[mi] = miuy0 * cosx2 - miux0 * sinx2;
+  
+         } 
+    }}}
+ 
+  
+  }
+
+}
+//###########################################################
+
+

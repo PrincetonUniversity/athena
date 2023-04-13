@@ -3,7 +3,6 @@
 # Modules
 import logging
 import os
-import sys
 import subprocess
 from timeit import default_timer as timer
 from .log_pipe import LogPipe
@@ -24,8 +23,7 @@ def configure(*args, **kwargs):
     current_dir = os.getcwd()
     os.chdir(athena_rel_path)
     try:
-        pybin = sys.executable if sys.executable is not None else 'python'
-        configure_command = [pybin, 'configure.py']
+        configure_command = ['python', 'configure.py']
         for arg in args:
             configure_command.append('-{0}'.format(arg))
         for key, val in kwargs.items():

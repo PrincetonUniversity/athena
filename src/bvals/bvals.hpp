@@ -124,6 +124,8 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   std::vector<BoundaryVariable *> bvars_main_int;
   //! subset of bvars that are exchanged in the SuperTimeStepTaskList
   std::vector<BoundaryVariable *> bvars_sts;
+  //! subset of bvars that are exchanged in the FFTGravitySolverTaskList
+  std::vector<BoundaryVariable *> bvars_fft_grav;
   //! Pointer to the Gravity Boundary Variable
   CellCenteredBoundaryVariable *pgbvar;
 
@@ -220,7 +222,8 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   void DispatchBoundaryFunctions(
       MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
       int il, int iu, int jl, int ju, int kl, int ku, int ngh,
-      AthenaArray<Real> &prim, FaceField &b, BoundaryFace face,
+      AthenaArray<Real> &prim, FaceField &b, AthenaArray<Real> &ir, 
+      AthenaArray<Real> &u_cr, AthenaArray<Real> &u_tc, BoundaryFace face,
       std::vector<BoundaryVariable *> bvars_subset);
 
   void CheckPolarBoundaries();  // called in BoundaryValues() ctor
@@ -237,5 +240,6 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   //! - consider removing these friendship designations:
   friend class CellCenteredBoundaryVariable;
   friend class HydroBoundaryVariable;  // needed for shearing box quantities
+  friend class RadBoundaryVariable; // needed for radiation boundary condition  
 };
 #endif // BVALS_BVALS_HPP_

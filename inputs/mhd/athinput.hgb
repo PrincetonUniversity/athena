@@ -59,6 +59,8 @@ qshear    = 1.5     # shear rate
 Omega0    = 1.0     # angular velocity of the system
 
 <problem>
+Omega0    = 1.0
+qshear    = 1.5
 d0        = 1.0       # background density
 amp       = 0.025     # wave amplitude
 nwx       = -2        # wavenumber in x1

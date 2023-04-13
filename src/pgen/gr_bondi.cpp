@@ -103,9 +103,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     ku += NGHOST;
   }
 
-  // Get mass and spin of black hole
+  // Get mass of black hole
   m = pcoord->GetMass();
-  a = pcoord->GetSpin();
+  m = pcoord->GetSpin();
 
   // Get ratio of specific heats
   Real gamma_adi = peos->GetGamma();

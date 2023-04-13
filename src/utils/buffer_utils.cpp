@@ -26,7 +26,6 @@ template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
   for (int n=sn; n<=en; ++n) {
     for (int k=sk; k<=ek; k++) {
       for (int j=sj; j<=ej; j++) {
-#pragma omp simd
         for (int i=si; i<=ei; i++)
           buf[offset++] = src(n,k,j,i);
       }
@@ -44,7 +43,6 @@ template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
                                     int &offset) {
   for (int k=sk; k<=ek; k++) {
     for (int j=sj; j<=ej; j++) {
-#pragma omp simd
       for (int i=si; i<=ei; i++)
         buf[offset++] = src(k, j, i);
     }
@@ -62,7 +60,6 @@ template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
   for (int n=sn; n<=en; ++n) {
     for (int k=sk; k<=ek; ++k) {
       for (int j=sj; j<=ej; ++j) {
-#pragma omp simd
         for (int i=si; i<=ei; ++i)
           dst(n,k,j,i) = buf[offset++];
       }
@@ -80,7 +77,6 @@ template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
                            int si, int ei, int sj, int ej, int sk, int ek, int &offset) {
   for (int k=sk; k<=ek; ++k) {
     for (int j=sj; j<=ej; ++j) {
-#pragma omp simd
       for (int i=si; i<=ei; ++i)
         dst(k,j,i) = buf[offset++];
     }

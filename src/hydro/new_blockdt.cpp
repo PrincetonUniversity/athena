@@ -20,6 +20,10 @@
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
+#include "../radiation/radiation.hpp"
+#include "../radiation/implicit/radiation_implicit.hpp"
+#include "../cr/cr.hpp"
+#include "../thermal_conduction/tc.hpp"
 #include "../mesh/mesh.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../scalars/scalars.hpp"
@@ -59,6 +63,14 @@ void Hydro::NewBlockTimeStep() {
   Real min_dt_parabolic  = real_max;
   Real min_dt_user  = real_max;
 
+  Real cspeed = 0.0;
+  if(RADIATION_ENABLED)
+    cspeed = pmb->prad->reduced_c;
+  if(CR_ENABLED)
+    cspeed = std::max(cspeed,pmb->pcr->vmax);
+  if(TC_ENABLED)
+    cspeed = std::max(cspeed,pmb->ptc->vmax);
+
   // TODO(felker): skip this next loop if pm->fluid_setup == FluidFormulation::disabled
   FluidFormulation fluid_status = pmb->pmy_mesh->fluid_setup;
   for (int k=ks; k<=ke; ++k) {
@@ -78,33 +90,39 @@ void Hydro::NewBlockTimeStep() {
             if (MAGNETIC_FIELDS_ENABLED) {
               AthenaArray<Real> &bcc = pmb->pfield->bcc, &b_x1f = pmb->pfield->b.x1f,
                               &b_x2f = pmb->pfield->b.x2f, &b_x3f = pmb->pfield->b.x3f;
-              Real bx = bcc(IB1,k,j,i) + std::abs(b_x1f(k,j,i) - bcc(IB1,k,j,i));
+              Real bx = bcc(IB1,k,j,i) + std::fabs(b_x1f(k,j,i) - bcc(IB1,k,j,i));
               wi[IBY] = bcc(IB2,k,j,i);
               wi[IBZ] = bcc(IB3,k,j,i);
               Real cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
-              dt1(i) /= (std::abs(wi[IVX]) + cf);
+              Real speed = std::max(cspeed,(std::fabs(wi[IVX]) + cf));
+              dt1(i) /= (speed);
 
               wi[IBY] = bcc(IB3,k,j,i);
               wi[IBZ] = bcc(IB1,k,j,i);
               bx = bcc(IB2,k,j,i) + std::abs(b_x2f(k,j,i) - bcc(IB2,k,j,i));
               cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
-              dt2(i) /= (std::abs(wi[IVY]) + cf);
+              speed = std::max(cspeed,(std::fabs(wi[IVY]) + cf));              
+              dt2(i) /= (speed);
 
               wi[IBY] = bcc(IB1,k,j,i);
               wi[IBZ] = bcc(IB2,k,j,i);
-              bx = bcc(IB3,k,j,i) + std::abs(b_x3f(k,j,i) - bcc(IB3,k,j,i));
+              bx = bcc(IB3,k,j,i) + std::fabs(b_x3f(k,j,i) - bcc(IB3,k,j,i));
               cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
-              dt3(i) /= (std::abs(wi[IVZ]) + cf);
+              speed = std::max(cspeed,(std::fabs(wi[IVZ]) + cf));
+              dt3(i) /= (speed);
             } else {
               Real cs = pmb->peos->SoundSpeed(wi);
-              dt1(i) /= (std::abs(wi[IVX]) + cs);
-              dt2(i) /= (std::abs(wi[IVY]) + cs);
-              dt3(i) /= (std::abs(wi[IVZ]) + cs);
+              Real speed1 = std::max(cspeed, (std::fabs(wi[IVX]) + cs));
+              Real speed2 = std::max(cspeed, (std::fabs(wi[IVY]) + cs));
+              Real speed3 = std::max(cspeed, (std::fabs(wi[IVZ]) + cs));
+              dt1(i) /= (speed1);
+              dt2(i) /= (speed2);
+              dt3(i) /= (speed3);
             }
           } else { // FluidFormulation::background or disabled. Assume scalar advection:
-            dt1(i) /= (std::abs(wi[IVX]));
-            dt2(i) /= (std::abs(wi[IVY]));
-            dt3(i) /= (std::abs(wi[IVZ]));
+            dt1(i) /= (std::fabs(wi[IVX]));
+            dt2(i) /= (std::fabs(wi[IVY]));
+            dt3(i) /= (std::fabs(wi[IVZ]));
           }
         }
       }
@@ -160,6 +178,11 @@ void Hydro::NewBlockTimeStep() {
   // (user-selected or automaticlaly enforced). May add independent parameter "cfl_diff"
   // in the future (with default = cfl_number).
   min_dt_parabolic *= pmb->pmy_mesh->cfl_number;
+
+  if(IM_RADIATION_ENABLED){
+    min_dt_hyperbolic *= pmb->pmy_mesh->pimrad->cfl_rad;
+    min_dt_parabolic  *= pmb->pmy_mesh->pimrad->cfl_rad;
+  }
 
   // For orbital advection, give a restriction on dt_hyperbolic.
   if (pmb->porb->orbital_advection_active) {

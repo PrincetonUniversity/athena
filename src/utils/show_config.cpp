@@ -41,6 +41,11 @@ void ShowConfig() {
   } else {
     std::cout<<"  General relativity:         OFF " << std::endl;
   }
+  if (RADIATION_ENABLED) {
+    std::cout<<"  Radiative Transfer:         ON" << std::endl;
+  } else {
+    std::cout<<"  Radiative Transfer:         OFF" << std::endl;
+  }
   // configure.py output: "Frame transformations"
   if (SELF_GRAVITY_ENABLED == 1) {
     std::cout<<"  Self-Gravity:               FFT" << std::endl;

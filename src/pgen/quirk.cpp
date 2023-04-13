@@ -5,7 +5,6 @@
 //========================================================================================
 //! \file quirk.cpp
 //! \brief Problem generator for the Quirk test (Quirk 1994)
-//! Variant is from Hanawa et al (2008), section 3.2. First of five shock tubes
 //!
 //! Problem generator for a shock tube with odd-even perturbation.
 //! Physically such a perturbation should not grow but with high resolution schemes
@@ -62,33 +61,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     else
       std::cout << "The scheme looks stable against the Carbuncle phenomenon : delta s = "
                 << deltas << std::endl;
-    // open output file and write out errors
-    std::string fname;
-    fname.assign("carbuncle-diff.dat");
-    std::stringstream msg;
-    FILE *pfile;
-
-    // The file exists -- reopen the file in append mode
-    if ((pfile = std::fopen(fname.c_str(), "r")) != nullptr) {
-      if ((pfile = std::freopen(fname.c_str(), "a", pfile)) == nullptr) {
-        msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop"
-            << std::endl << "Error output file could not be opened" <<std::endl;
-        ATHENA_ERROR(msg);
-      }
-
-      // The file does not exist -- open the file in write mode and add headers
-    } else {
-      if ((pfile = std::fopen(fname.c_str(), "w")) == nullptr) {
-        msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop"
-            << std::endl << "Error output file could not be opened" <<std::endl;
-        ATHENA_ERROR(msg);
-      }
-      std::fprintf(pfile, "# |s_odd - s_even|\n");
-    }
-
-    // write difference
-    std::fprintf(pfile, "%e\n", deltas);
-    std::fclose(pfile);
   }
   return;
 }

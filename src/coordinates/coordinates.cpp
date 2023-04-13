@@ -17,6 +17,7 @@
 #include "../bvals/bvals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../radiation/radiation.hpp"
 #include "../parameter_input.hpp"
 #include "coordinates.hpp"
 
@@ -737,6 +738,127 @@ void Coordinates::AddCoordTermsDivergence(
     const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   return;
+}
+
+void Coordinates::AddCoordTermsDivergence(int flag,
+                     const AthenaArray<Real> &u_cr1, AthenaArray<Real> &u_cr){
+
+  return;
+}
+
+void Coordinates::AddCoordTermsDivergence(const AthenaArray<Real> &u_cr, 
+                                                AthenaArray<Real> &grad_pc) {
+  
+  return;
+}
+
+void Coordinates::ConvertAngle(MeshBlock *pmb, const int nang, AthenaArray<Real> &mu) {
+  return;
+}
+
+void Coordinates::AxisDirection(int *axisx, int *axisy, int *axisz) {
+  return;
+}
+
+void Coordinates::ZetaArea(Radiation *prad, AthenaArray<Real> &area)
+{
+  if(prad->angle_flag == 1){
+    int nzeta = prad->nzeta;
+    int npsi = prad->npsi;
+    if(npsi * nzeta > 0){
+      for(int m=0; m<2*npsi; ++m){
+        for(int n=0; n<2*nzeta+1; ++n){
+          Real sinzeta_sq= 1.0 - prad->coszeta_f(n) * prad->coszeta_f(n);
+          area(m,n) = sinzeta_sq * prad->len_psi(m);
+        }// end psi
+      }// end zeta
+    }else if(nzeta > 0){
+      for(int n=0; n<2*nzeta+1; ++n){
+        area(n) = 1.0 - prad->coszeta_f(n) * prad->coszeta_f(n);
+      }
+    }
+
+  }// end ang_flag = =1   
+
+}
+
+void Coordinates::PsiArea(Radiation *prad, AthenaArray<Real> &area)
+{
+
+  if(prad->angle_flag == 1){
+    int nzeta = prad->nzeta;
+    int npsi = prad->npsi;
+    if(npsi * nzeta > 0){
+      for(int n=0; n<2*nzeta; ++n){
+        for(int m=0; m<2*npsi+1; ++m){
+          area(n,m) = prad->len_zeta(n);
+        }// end psi
+      }// end zeta
+    }else if(npsi > 0){
+      for(int m=0; m<2*npsi+1; ++m){
+        area(m) = 1.0;
+      }
+    }
+
+  }// end ang_flag = =1  
+
+}
+
+void Coordinates::AngularVol(Radiation *prad, AthenaArray<Real> &vol)
+{
+
+  if(prad->angle_flag == 1){
+    int nzeta = prad->nzeta;
+    int npsi = prad->npsi;
+    if(npsi * nzeta > 0){
+      for(int n=0; n<2*nzeta; ++n){
+        for(int m=0; m<2*npsi; ++m){
+          int ang_num = n*(2*npsi)+m;
+          vol(ang_num) = prad->len_zeta(n) * prad->len_psi(m);
+
+        }// end psi
+      }// end zeta
+    }else if(npsi > 0){
+      for(int m=0; m<2*npsi; ++m)
+        vol(m) = prad->len_psi(m);
+    }else if(nzeta > 0){
+      for(int n=0; n<2*nzeta; ++n)
+        vol(n) = prad->len_zeta(n);
+    }
+
+  }// end ang_flag = =1
+
+}
+
+void Coordinates::GetGeometryZeta(Radiation *prad, const int k, const int j, 
+                                  const int i, AthenaArray<Real> &g_zeta)
+{
+  int &nzeta = prad->nzeta;
+  for(int n=0; n<nzeta*2+1; ++n){
+    g_zeta(n) = 1.0;
+  }
+}
+
+void Coordinates::GetGeometryPsi(Radiation *prad, const int k, const int j, 
+                        const int i, const int n_zeta, AthenaArray<Real> &g_psi)
+{
+  int &npsi = prad->npsi;
+  for(int n=0; n<2*npsi+1; ++n){
+    g_psi(n) = 1.0;
+  }
+
+
+}
+  // function overwirte in case nzeta = 0
+void Coordinates::GetGeometryPsi(Radiation *prad, const int k, const int j, 
+                        const int i, AthenaArray<Real> &g_psi)
+{
+
+  int &npsi = prad->npsi;
+  for(int n=0; n<2*npsi+1; ++n){
+    g_psi(n) = 1.0;
+  }
+  
 }
 
 //----------------------------------------------------------------------------------------

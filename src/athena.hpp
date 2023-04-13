@@ -51,8 +51,11 @@ class ParameterInput;
 class HydroDiffusion;
 class FieldDiffusion;
 struct MGCoordinates;
-
 class OrbitalAdvection;
+class Radiation;
+class IMRadiation;
+class CosmicRay;
+class ThermalConduction;
 
 //--------------------------------------------------------------------------------------
 //! \struct LogicalLocation
@@ -167,7 +170,7 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 enum class BoundaryQuantity {cc, fc, cc_flcor, fc_flcor, mggrav,
                              mggrav_f, orbital_cc, orbital_fc};
 enum class HydroBoundaryQuantity {cons, prim};
-enum class BoundaryCommSubset {mesh_init, gr_amr, all, orbital};
+enum class BoundaryCommSubset {mesh_init, gr_amr, all, orbital, radiation,radhydro};
 // TODO(felker): consider generalizing/renaming to QuantityFormulation
 enum class FluidFormulation {evolve, background, disabled}; // rename background -> fixed?
 enum class TaskType {op_split_before, main_int, op_split_after};
@@ -213,5 +216,30 @@ using MGSourceMaskFunc = void (*)(AthenaArray<Real> &src,
     int is, int ie, int js, int je, int ks, int ke, const MGCoordinates &coord);
 using OrbitalVelocityFunc = Real (*)(
     OrbitalAdvection *porb, Real x1, Real x2, Real x3);
+using RadBoundaryFunc = void (*)(
+     MeshBlock *pmb, Coordinates *pco, Radiation *prad, 
+     const AthenaArray<Real> &w, FaceField &b, 
+     AthenaArray<Real> &ir,
+     Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
+using OpacityFunc = void (*)(MeshBlock *pmb, AthenaArray<Real> &prim);
+using FrequencyFunc = void (*)(Radiation *prad);
+using EmissionFunc = void(*)(Radiation *prad, Real tgas);
+using CROpacityFunc = void (*)(MeshBlock *pmb, AthenaArray<Real> &u_cr, 
+                      AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
+using SRJFunc = void (*)(IMRadiation *pimrad);
+
+using CRBoundaryFunc = void (*)(
+     MeshBlock *pmb, Coordinates *pco, CosmicRay *pcr, 
+     const AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &u_cr,
+     Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
+using TCOpacityFunc = void(*) (MeshBlock *pmb, 
+                      AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
+using TCBoundaryFunc = void (*)(
+     MeshBlock *pmb, Coordinates *pco, ThermalConduction *ptc, 
+     const AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &u_tc,
+     Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
+using CRSrcTermFunc = void (*)(
+    MeshBlock *pmb, const Real time, const Real dt,
+    const AthenaArray<Real> &prim, FaceField &b, AthenaArray<Real> &u_cr);
 
 #endif // ATHENA_HPP_

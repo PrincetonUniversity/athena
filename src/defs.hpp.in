@@ -46,7 +46,15 @@
 #define SELF_GRAVITY_ENABLED @SELF_GRAVITY_ENABLED@
 
 // include radiative transfer? default=0 (false)
-#define RADIATION_ENABLED 0
+#define RADIATION_ENABLED @RADIATION_ENABLED@
+
+#define IM_RADIATION_ENABLED @IM_RADIATION_ENABLED@
+
+// include cosmic ray transport? default=0 (false)
+#define CR_ENABLED @CR_ENABLED@
+
+// include thermal conduction? default=0 (false)
+#define TC_ENABLED @TC_ENABLED@
 
 // enable special or general relativity? default=0 (false)
 #define RELATIVISTIC_DYNAMICS @RELATIVISTIC_DYNAMICS@
@@ -81,6 +89,8 @@
 // debug build macros (DEBUG or NOT_DEBUG)
 #define @DEBUG_OPTION@
 
+#define ALI_LEN @ALI_LEN@
+
 // try/throw/catch C++ exception handling (ENABLE_EXCEPTIONS or DISABLE_EXCEPTIONS)
 // (enabled by default)
 #define @EXCEPTION_HANDLING_OPTION@
@@ -98,6 +108,9 @@
 #define NWAVE @NWAVE_VALUE@
 #define NSCALARS @NUMBER_PASSIVE_SCALARS@
 #define NGHOST @NUMBER_GHOST_CELLS@
+#define NGRAV @NGRAV_VARIABLES@
+#define NCR 4   // cosmic ray transport module variable
+#define NTC 4   // thermal conduction variable
 #define MAX_NSTAGE 6     // maximum number of stages per cycle for time-integrator
 #define MAX_NREGISTER 3  // maximum number of (u, b) register pairs for time-integrator
 
@@ -111,10 +124,12 @@
 #define ONE_OVER_SQRT2 0.70710678118654752
 #define ONE_3RD 0.33333333333333333
 #define TWO_3RD 0.66666666666666667
-#define TINY_NUMBER 1.0e-20
-#define HUGE_NUMBER 1.0e+36
+#define TINY_NUMBER Real(1.0e-20)
+#define HUGE_NUMBER Real(1.0e+36)
 #define SQR(x) ( (x)*(x) )
 #define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
+#define PI_FOUR_POWER 97.409091034002415
+#define ONE_PI_FOUR_POWER 0.010265982254684
 
 #ifdef ENABLE_EXCEPTIONS
 #define ATHENA_ERROR(x) throw std::runtime_error(x.str().c_str())

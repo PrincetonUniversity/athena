@@ -64,7 +64,7 @@
 void fft_3d(FFT_DATA *in, FFT_DATA *out, int flag, struct fft_plan_3d *plan)
 
 {
-  int i,offset,num;
+  int i,num;
   double norm;
   FFT_DATA *data,*copy;
 
@@ -177,13 +177,12 @@ struct fft_plan_3d *fft_3d_create_plan(
 {
   struct fft_plan_3d *plan;
   int me,nprocs;
-  int i,num,flag,remapflag,fftflag;
+  int flag,remapflag;
   int first_ilo,first_ihi,first_jlo,first_jhi,first_klo,first_khi;
   int second_ilo,second_ihi,second_jlo,second_jhi,second_klo,second_khi;
   int third_ilo,third_ihi,third_jlo,third_jhi,third_klo,third_khi;
   int out_size,first_size,second_size,third_size,copy_size,scratch_size;
   int np1,np2,ip1,ip2;
-  int list[50];
 
 /* query MPI info */
 

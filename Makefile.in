@@ -25,39 +25,49 @@ GCOV_CMD := @GCOV_COMMAND@
 EXE_DIR := bin/
 EXECUTABLE := $(EXE_DIR)athena
 SRC_FILES := $(wildcard src/*.cpp) \
-	     $(wildcard src/bvals/*.cpp) \
-	     $(wildcard src/bvals/cc/*.cpp) \
-	     $(wildcard src/bvals/cc/fft_grav/*.cpp) \
-	     $(wildcard src/bvals/cc/hydro/*.cpp) \
-	     $(wildcard src/bvals/cc/mg/*.cpp) \
-	     $(wildcard src/bvals/fc/*.cpp) \
-	     $(wildcard src/bvals/orbital/*.cpp) \
-	     $(wildcard src/bvals/utils/*.cpp) \
-	     $(wildcard src/coordinates/*.cpp) \
-	     src/eos/general/$(GENERAL_EOS_FILE) \
-	     src/eos/$(EOS_FILE) \
-	     src/eos/eos_high_order.cpp \
-	     src/eos/eos_scalars.cpp \
-	     $(wildcard src/fft/*.cpp) \
-	     $(wildcard src/field/*.cpp) \
-	     $(wildcard src/field/field_diffusion/*.cpp) \
-	     $(wildcard src/gravity/*.cpp) \
-	     $(wildcard src/hydro/*.cpp) \
-	     $(wildcard src/hydro/srcterms/*.cpp) \
-	     $(wildcard src/hydro/hydro_diffusion/*.cpp) \
-	     src/hydro/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
-	     $(wildcard src/inputs/*.cpp) \
-	     $(wildcard src/mesh/*.cpp) \
-	     $(wildcard src/multigrid/*.cpp) \
-	     $(wildcard src/orbital_advection/*.cpp) \
-	     $(wildcard src/outputs/*.cpp) \
-	     src/pgen/default_pgen.cpp \
-	     src/pgen/$(PROBLEM_FILE) \
-	     $(wildcard src/reconstruct/*.cpp) \
-	     $(wildcard src/scalars/*.cpp) \
-	     $(wildcard src/task_list/*.cpp) \
-	     $(wildcard src/utils/*.cpp) \
-	     $(MPIFFT_FILE)
+    $(wildcard src/bvals/*.cpp) \
+    $(wildcard src/bvals/cc/*.cpp) \
+    $(wildcard src/bvals/cc/fft_grav/*.cpp) \
+    $(wildcard src/bvals/cc/hydro/*.cpp) \
+    $(wildcard src/bvals/cc/mg/*.cpp) \
+    $(wildcard src/bvals/cc/pm/*.cpp) \
+    $(wildcard src/bvals/cc/radiation/*.cpp) \
+    $(wildcard src/bvals/fc/*.cpp) \
+    $(wildcard src/bvals/orbital/*.cpp) \
+    $(wildcard src/bvals/utils/*.cpp) \
+    $(wildcard src/coordinates/*.cpp) \
+    src/eos/general/$(GENERAL_EOS_FILE) \
+    src/eos/$(EOS_FILE) \
+    src/eos/eos_high_order.cpp \
+    src/eos/eos_scalars.cpp \
+    $(wildcard src/fft/*.cpp) \
+    $(wildcard src/field/*.cpp) \
+    $(wildcard src/field/field_diffusion/*.cpp) \
+    $(wildcard src/gravity/*.cpp) \
+    $(wildcard src/hydro/*.cpp) \
+    $(wildcard src/hydro/srcterms/*.cpp) \
+    $(wildcard src/hydro/hydro_diffusion/*.cpp) \
+    $(wildcard src/radiation/*.cpp) \
+    $(wildcard src/radiation/integrators/*.cpp) \
+    $(wildcard src/radiation/integrators/srcterms/*.cpp) \
+    $(wildcard src/radiation/implicit/*.cpp) \
+    $(wildcard src/cr/*.cpp) \
+    $(wildcard src/cr/integrators/*.cpp) \
+    $(wildcard src/thermal_conduction/*.cpp) \
+    $(wildcard src/thermal_conduction/integrators/*.cpp) \
+    src/hydro/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
+    $(wildcard src/inputs/*.cpp) \
+    $(wildcard src/mesh/*.cpp) \
+    $(wildcard src/multigrid/*.cpp) \
+    $(wildcard src/orbital_advection/*.cpp) \
+    $(wildcard src/outputs/*.cpp) \
+    src/pgen/default_pgen.cpp \
+    src/pgen/$(PROBLEM_FILE) \
+    $(wildcard src/reconstruct/*.cpp) \
+    $(wildcard src/scalars/*.cpp) \
+    $(wildcard src/task_list/*.cpp) \
+    $(wildcard src/utils/*.cpp) \
+    $(MPIFFT_FILE)
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))
 GCOV_FILES := $(notdir $(addsuffix .gcov,$(SRC_FILES)))

@@ -141,7 +141,6 @@ struct remap_plan_2d *remap_2d_create_plan(
 
 {
   struct remap_plan_2d *plan;
-  MPI_Comm newcomm;
   struct extent_2d *array;
   struct extent_2d in,out,overlap;
   int i,iproc,nsend,nrecv,ibuf,size,me,nprocs;

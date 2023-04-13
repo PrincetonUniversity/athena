@@ -1,0 +1,91 @@
+<comment>
+problem   = Radiation beam test
+reference = 
+configure = --prob=globalstar
+
+<job>
+problem_id = star        # problem ID: basename of output filenames
+
+<output1>
+file_type  = hdf5      # Binary data dump
+dt         = 1.e-2       # time increment between outputs
+variable   = prim
+
+
+#<output2>
+#file_type  = hdf5       # Binary data dump
+#dt         = 0.005       # time increment between outputs
+#variable   = rad_fov
+
+<output3>
+file_type  = rst       # Binary data dump
+dt         = 0.2      # time increment between outputs
+
+
+<time>
+cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1    # cycle limit
+tlim       = 200000.0     # time limit
+rad_xorder = 3
+
+<mesh>
+nx1        = 192      # Number of zones in X1-direction
+x1min      = 4.0     # minimum value of X1
+x1max      = 420.642863  # maximum value of X1
+ix1_bc     = user  # inner-X1 boundary flag
+ox1_bc     = user  # inner-X1 boundary flag
+x1rat      = 1.0245437
+
+
+nx2        = 32       # Number of zones in X2-direction
+x2min      = 1.1780971267948974      # minimum value of X2
+x2max      = 1.9634955267948957       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # inner-X2 boundary flag
+
+
+
+nx3        = 32       # Number of zones in X3-direction
+x3min      = 0.0      # minimum value of X3
+x3max      = 0.7853984  # maximum value of X3      
+ix3_bc     = periodic  # inner-X3 boundary flag
+ox3_bc     = periodic  # inner-X3 boundary flag
+
+refinement = static
+
+<meshblock>
+nx1         = 16 
+nx2         = 16
+nx3         = 16
+
+<refinement1>
+x1min       = 4.0
+x1max       = 42.0 
+x2min       = 1.1780971267948974
+x2max       = 1.9634955267948957 
+x3min       = 0
+x3max       = 0.7853984
+level       = 2
+
+<hydro>
+gamma           = 1.6666666666667       # gamma = C_p/C_v
+dfloor          = 1.e-10
+pfloor          = 1.e-10
+
+<problem>
+GM          = 5982.99
+
+
+<radiation>
+nmu         = 4
+Prat        = 340.632
+Crat        = 8371.82 
+Compton     = 0
+reduced_factor = 0.2
+Tunit       = 1.55e5
+tfloor      = 0.01
+Planck      = 1
+angle_flag  = 1
+nzeta       = 6
+npsi        = 8
+
