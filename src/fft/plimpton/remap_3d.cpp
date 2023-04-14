@@ -147,6 +147,7 @@ struct remap_plan_3d *remap_3d_create_plan(
 
 {
   struct remap_plan_3d *plan;
+  MPI_Comm newcomm;
   struct extent_3d *array;
   struct extent_3d in,out,overlap;
   int i,iproc,nsend,nrecv,ibuf,size,me,nprocs;
