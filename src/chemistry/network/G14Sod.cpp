@@ -200,7 +200,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
   Real yprev[NSPECIES+ngs_];
   Real yprev0[NSPECIES+ngs_]; //correct negative abundance
   Real ydotg[NSPECIES+ngs_];
-  Real E_ergs = ED * unit_E_in_cgs_ / rho; //ernergy per hydrogen atom
+  Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_; // E in cgs unit
   Real Xe = y[iHplus_] + y[iHeplus_] + 2.*y[iHe2plus_] + y[iH2plus_] - y[iHmin_];
   // tgas = p / rho / kboltzmann * mu * pmass
   Real T = E_ergs/Thermo::kb_*(gamma-1);
@@ -288,8 +288,6 @@ return;
 }
 
 void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
-  // The following rate coff. Ziegler is in the SI unit, converting it back to cgs.
-  const Real rate_in_cgs_ = 1e6;
   Real T = E/Thermo::kb_*(gamma - 1.0);
 
   const Real logT    = log10(T);
@@ -428,7 +426,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   //density
   rho = pmy_mb_->phydro->w(IDN, k, j, i);
   //hydrogen atom number density
-  nH_ =  rho * unit_density_in_nH_/mu;
+  nH_ = rho;
 	return;
 }
 
@@ -436,7 +434,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED){
   //function of evolution of energy
   //return dEdt;
   Real LH2; // Define H2 Cooling Term
-  Real E_ergs = ED * unit_E_in_cgs_ / rho; //ernergy per hydrogen atom
+  Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_;
 
   // Define Temperature
   Real T = E_ergs/Thermo::kb_*(gamma - 1.0);
@@ -457,7 +455,8 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED){
           T);
 
   //return in code units
-  Real dEDdt = - LH2* rho/ unit_E_in_cgs_ * unit_time_in_s_;
+  Real dEDdt = - LH2* nH_ / pmy_mb_->punit->code_energydensity_cgs
+                  * pmy_mb_->punit->code_time_cgs;
 
 #ifdef DEBUG
   	printf("Cooling = %.2e \n", Cooling );
