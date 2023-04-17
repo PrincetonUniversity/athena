@@ -50,6 +50,7 @@
 #include "../radiation/integrators/rad_integrators.hpp" //col_bvar
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
+#include "../units/units.hpp"
 #include "../utils/buffer_utils.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
@@ -320,6 +321,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
   } else {
     max_level = 63;
   }
+
+  // initialize units
+  punit = new Units(pin);
 
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
@@ -727,6 +731,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     max_level = 63;
   }
 
+  // initialize units
+  punit = new Units(pin);
+
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
 
@@ -915,6 +922,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 //! destructor
 
 Mesh::~Mesh() {
+  delete punit;
   for (int b=0; b<nblocal; ++b)
     delete my_blocks(b);
   delete [] nslist;

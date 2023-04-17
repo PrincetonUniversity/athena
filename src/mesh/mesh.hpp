@@ -108,9 +108,6 @@ class MeshBlock {
   AthenaArray<Real> *ruser_meshblock_data;
   AthenaArray<int> *iuser_meshblock_data;
 
-  // units
-  Units *punit;
-
   // mesh-related objects
   Coordinates *pcoord;
   BoundaryValues *pbval;
@@ -126,6 +123,7 @@ class MeshBlock {
   EquationOfState *peos;
   Radiation *prad;
   OrbitalAdvection *porb;
+  Units *punit;
 
   // functions
   std::size_t GetBlockSizeInBytes();
@@ -252,6 +250,7 @@ class Mesh {
   TurbulenceDriver *ptrbd;
   FFTGravityDriver *pfgrd;
   MGGravityDriver *pmgrd;
+  Units *punit;
 
   AthenaArray<Real> *ruser_mesh_data;
   AthenaArray<int> *iuser_mesh_data;
