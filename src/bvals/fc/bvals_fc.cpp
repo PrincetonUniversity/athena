@@ -40,12 +40,17 @@
 
 //! constructor
 
-FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(
-    MeshBlock *pmb, FaceField *var, FaceField &coarse_buf, EdgeField &var_flux)
-    : BoundaryVariable(pmb), var_fc(var), coarse_buf(coarse_buf), e1(var_flux.x1e),
-      e2(var_flux.x2e), e3(var_flux.x3e), flip_across_pole_(flip_across_pole_field) {
+FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(MeshBlock *pmb,
+            FaceField *var, FaceField &coarse_buf, EdgeField &var_flux, bool fflux)
+          : BoundaryVariable(pmb, fflux), var_fc(var), coarse_buf(coarse_buf),
+            e1(var_flux.x1e), e2(var_flux.x2e), e3(var_flux.x3e),
+            flip_across_pole_(flip_across_pole_field) {
   // assuming Field, not generic FaceCenteredBoundaryVariable:
-  //flip_across_pole_ = flip_across_pole_field;
+  // flip_across_pole_ = flip_across_pole_field;
+
+  // KT: fflux is a flag and it is true (false) when flux correction is (not) needed.
+  //     I have not implemented it for FC because currently this is only used for
+  //     magnetic fields which always require flux (EMF) correction.
 
   InitBoundaryData(bd_var_, BoundaryQuantity::fc);
   InitBoundaryData(bd_var_flcor_, BoundaryQuantity::fc_flcor);

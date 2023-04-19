@@ -39,7 +39,7 @@
 //! constructor
 //
 SixRayBoundaryVariable::SixRayBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *var)
-      : BoundaryVariable(pmb), var(var), mu_(var->GetDim1() - 1), ml_(0) {
+      : BoundaryVariable(pmb, false), var(var), mu_(var->GetDim1() - 1), ml_(0) {
   //only take 0 size array (for const radiation)
   //or 5 dimention array set up for six ray
   if (var->GetSize() != 0 && var->GetDim5() != 6) {

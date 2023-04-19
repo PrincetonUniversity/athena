@@ -66,7 +66,7 @@ void FaceCenteredBoundaryVariable::LoadEMFShearingBoxBoundarySameLevel(
     ej = jmax2[nb-3]+jo;
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in CellCenteredBoundaryVariable::"
+    msg << "### FATAL ERROR in FaceCenteredBoundaryVariable::"
         << "LoadShearingBoxBoundarySameLevel"<<std::endl
         << "nb = " << nb << " not valid" << std::endl;
     ATHENA_ERROR(msg);
@@ -169,7 +169,7 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(
     sj = jmin2[nb-3]+xgh;   ej = jmax2[nb-3]+xgh;
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in CellCenteredBoundaryVariable::"
+    msg << "### FATAL ERROR in FaceCenteredBoundaryVariable::"
         << "SetEMFShearingBoxBoundarySameLevel"<<std::endl
         << "nb = " << nb << " not valid" << std::endl;
     ATHENA_ERROR(msg);

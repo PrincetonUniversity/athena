@@ -1,4 +1,3 @@
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -30,9 +29,9 @@
 
 //! constructor
 
-BoundaryVariable::BoundaryVariable(MeshBlock *pmb) : bvar_index(), pmy_block_(pmb),
-                                                     pmy_mesh_(pmb->pmy_mesh),
-                                                     pbval_(pmb->pbval) {}
+BoundaryVariable::BoundaryVariable(MeshBlock *pmb, bool fflux) :
+                  bvar_index(), pmy_block_(pmb), pmy_mesh_(pmb->pmy_mesh),
+                  pbval_(pmb->pbval), fflux_(fflux) {}
 
 //----------------------------------------------------------------------------------------
 //! \fn void BoundaryVariable::InitBoundaryData(BoundaryData<> &bd, BoundaryQuantity type)

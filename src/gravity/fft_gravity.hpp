@@ -22,7 +22,7 @@ class ParameterInput;
 class Coordinates;
 class FFTBlock;
 class FFTDriver;
-class FFTGravitySolverTaskList;
+class GravityBoundaryTaskList;
 
 //! \class FFTGravity
 //! \brief FFT gravity solver for each block
@@ -48,7 +48,7 @@ class FFTGravityDriver : public FFTDriver{
 
  private:
   Real four_pi_G_;
-  FFTGravitySolverTaskList *gtlist_;
+  GravityBoundaryTaskList *gtlist_;
 };
 
 #endif // GRAVITY_FFT_GRAVITY_HPP_

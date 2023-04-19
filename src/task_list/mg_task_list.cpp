@@ -28,7 +28,7 @@ using namespace MultigridTaskNames; // NOLINT (build/namespace)
 //! \brief completes all tasks in this list, will not return until all are tasks done
 
 void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd) {
-  int nthreads = pmd->pmy_mesh_->GetNumMeshThreads();
+  int nthreads = pmd->nthreads_;
   int nmg_left = pmd->GetNumMultigrids();
 
   for (auto itr = pmd->vmg_.begin(); itr<pmd->vmg_.end(); itr++) {
@@ -38,7 +38,7 @@ void MultigridTaskList::DoTaskListOneStage(MultigridDriver *pmd) {
 
   // cycle through all MeshBlocks and perform all tasks possible
   while (nmg_left > 0) {
-#pragma omp parallel for num_threads(nthreads) schedule(dynamic,1)
+#pragma omp parallel for reduction(- : nmg_left) num_threads(nthreads) schedule(dynamic,1)
     for (auto itr = pmd->vmg_.begin(); itr<pmd->vmg_.end(); itr++) {
       Multigrid *pmg = *itr;
       if (DoAllAvailableTasks(pmg, pmg->ts_) == TaskListStatus::complete) nmg_left--;
@@ -205,12 +205,6 @@ TaskStatus MultigridTaskList::ClearBoundaryFluxCons(Multigrid *pmg) {
   return TaskStatus::next;
 }
 
-TaskStatus MultigridTaskList::SendBoundary(Multigrid *pmg) {
-  if (!(pmg->pmgbval->SendMultigridBoundaryBuffers(pmg->btype, false)))
-    return TaskStatus::fail;
-  return TaskStatus::success;
-}
-
 TaskStatus MultigridTaskList::SendBoundaryFluxCons(Multigrid *pmg) {
   if (!(pmg->pmgbval->SendMultigridBoundaryBuffers(pmg->btypef, false)))
     return TaskStatus::fail;
@@ -221,12 +215,6 @@ TaskStatus MultigridTaskList::SendBoundaryForProlongation(Multigrid *pmg) {
   if (!(pmg->pmgbval->SendMultigridBoundaryBuffers(pmg->btype, pmg->pmy_driver_->ffas_)))
     return TaskStatus::fail;
   return TaskStatus::success;
-}
-
-TaskStatus MultigridTaskList::ReceiveBoundary(Multigrid *pmg) {
-  if (!(pmg->pmgbval->ReceiveMultigridBoundaryBuffers(pmg->btype, false)))
-    return TaskStatus::fail;
-  return TaskStatus::next;
 }
 
 TaskStatus MultigridTaskList::ReceiveBoundaryFluxCons(Multigrid *pmg) {

@@ -42,7 +42,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     coarse_r_(NSCALARS, pmb->ncc3, pmb->ncc2, pmb->ncc1,
               (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
                AthenaArray<Real>::DataStatus::empty)),
-    sbvar(pmb, &s, &coarse_s_, s_flux),
+    sbvar(pmb, &s, &coarse_s_, s_flux, true),
 #ifdef INCLUDE_CHEMISTRY
     //construct ptrs to objects related to solving chemistry source term.
     chemnet(pmb, pin),
