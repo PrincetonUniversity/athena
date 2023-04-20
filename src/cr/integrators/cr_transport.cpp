@@ -431,50 +431,12 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
         // curlinear coordinate system
         pmb->pcoord->AddCoordTermsDivergence(cr, grad_pc_);
 
+        // update streaming with grad_pc
+
+        pcr->UpdateStreaming(pmb, cr,w,bcc,grad_pc_,k,j,is,ie);
+
      // calculate streaming velocity with magnetic field
         for(int i=is; i<=ie; ++i){
-
-          Real inv_sqrt_rho = 1.0/sqrt(w(IDN,k,j,i));
-
-          Real pb= bcc(IB1,k,j,i)*bcc(IB1,k,j,i)
-                  +bcc(IB2,k,j,i)*bcc(IB2,k,j,i)
-                  +bcc(IB3,k,j,i)*bcc(IB3,k,j,i);
-
-          Real b_grad_pc = bcc(IB1,k,j,i) * grad_pc_(0,k,j,i) 
-                         + bcc(IB2,k,j,i) * grad_pc_(1,k,j,i) 
-                         + bcc(IB3,k,j,i) * grad_pc_(2,k,j,i);
-
-          Real va1 = bcc(IB1,k,j,i) * inv_sqrt_rho;
-          Real va2 = bcc(IB2,k,j,i) * inv_sqrt_rho;
-          Real va3 = bcc(IB3,k,j,i) * inv_sqrt_rho;
-
-          Real va = sqrt(pb) * inv_sqrt_rho;
-          Real dpc_sign = 0.0;
-
-          if(b_grad_pc > TINY_NUMBER) dpc_sign = 1.0;
-          else if(-b_grad_pc > TINY_NUMBER) dpc_sign = -1.0;
-
-          if(pcr->stream_flag > 0){
-            pcr->v_adv(0,k,j,i) = -va1 * dpc_sign;
-            pcr->v_adv(1,k,j,i) = -va2 * dpc_sign;
-            pcr->v_adv(2,k,j,i) = -va3 * dpc_sign;
-
-            if(va > TINY_NUMBER){
-              pcr->sigma_adv(0,k,j,i) = fabs(b_grad_pc)/(sqrt(pb) * va * 
-                                   (4.0/3.0) * invlim * cr(CRE,k,j,i));
-              pcr->sigma_adv(1,k,j,i) = pcr->max_opacity;
-              pcr->sigma_adv(2,k,j,i) = pcr->max_opacity;
-            }
-
-          }else{
-            pcr->v_adv(0,k,j,i) = 0.0;
-            pcr->v_adv(1,k,j,i) = 0.0;
-            pcr->v_adv(2,k,j,i) = 0.0;
-            pcr->sigma_adv(0,k,j,i)  = pcr->max_opacity;
-            pcr->sigma_adv(1,k,j,i)  = pcr->max_opacity;
-            pcr->sigma_adv(2,k,j,i)  = pcr->max_opacity;
-
-          }
 
           Real v1 = w(IVX,k,j,i);
           Real v2 = w(IVY,k,j,i);

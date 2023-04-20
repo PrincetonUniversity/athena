@@ -64,13 +64,14 @@ public:
   
   //Function in problem generators to update opacity
   void EnrollOpacityFunction(CROpacityFunc MyOpacityFunction);
+  void EnrollStreamingFunction(CRStreamingFunc MyStreamingFunction);
 
   void EnrollUserCRSource(CRSrcTermFunc my_func);
   bool cr_source_defined;
 
   // The function pointer for the diffusion coefficient
   CROpacityFunc UpdateOpacity;
-
+  CRStreamingFunc UpdateStreaming;
 
   AthenaArray<Real> cwidth; 
   AthenaArray<Real> cwidth1;

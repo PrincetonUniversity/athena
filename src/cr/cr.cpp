@@ -192,6 +192,62 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
 
 }
 
+inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr, 
+             AthenaArray<Real> &prim, AthenaArray<Real> &bcc, 
+             AthenaArray<Real> &grad_pc, int k, int j, int is, int ie)
+{
+  CosmicRay *pcr=pmb->pcr;
+  Real invlim = 1.0/pcr->vmax;
+
+  for(int i=is; i<=ie; ++i){
+
+    Real inv_sqrt_rho = 1.0/sqrt(prim(IDN,k,j,i));
+
+    Real pb= bcc(IB1,k,j,i)*bcc(IB1,k,j,i)
+            +bcc(IB2,k,j,i)*bcc(IB2,k,j,i)
+            +bcc(IB3,k,j,i)*bcc(IB3,k,j,i);
+
+    Real b_grad_pc = bcc(IB1,k,j,i) * grad_pc(0,k,j,i) 
+                   + bcc(IB2,k,j,i) * grad_pc(1,k,j,i) 
+                   + bcc(IB3,k,j,i) * grad_pc(2,k,j,i);
+
+    Real va1 = bcc(IB1,k,j,i) * inv_sqrt_rho;
+    Real va2 = bcc(IB2,k,j,i) * inv_sqrt_rho;
+    Real va3 = bcc(IB3,k,j,i) * inv_sqrt_rho;
+
+    Real va = sqrt(pb) * inv_sqrt_rho;
+    Real dpc_sign = 0.0;
+
+    if(b_grad_pc > TINY_NUMBER) dpc_sign = 1.0;
+    else if(-b_grad_pc > TINY_NUMBER) dpc_sign = -1.0;
+
+    if(pcr->stream_flag > 0){
+      pcr->v_adv(0,k,j,i) = -va1 * dpc_sign;
+      pcr->v_adv(1,k,j,i) = -va2 * dpc_sign;
+      pcr->v_adv(2,k,j,i) = -va3 * dpc_sign;
+
+      if(va > TINY_NUMBER){
+        pcr->sigma_adv(0,k,j,i) = fabs(b_grad_pc)/(sqrt(pb) * va * 
+                               (4.0/3.0) * invlim * u_cr(CRE,k,j,i));
+        pcr->sigma_adv(1,k,j,i) = pcr->max_opacity;
+        pcr->sigma_adv(2,k,j,i) = pcr->max_opacity;
+      }
+
+    }else{
+      pcr->v_adv(0,k,j,i) = 0.0;
+      pcr->v_adv(1,k,j,i) = 0.0;
+      pcr->v_adv(2,k,j,i) = 0.0;
+      pcr->sigma_adv(0,k,j,i)  = pcr->max_opacity;
+      pcr->sigma_adv(1,k,j,i)  = pcr->max_opacity;
+      pcr->sigma_adv(2,k,j,i)  = pcr->max_opacity;
+
+    }
+
+  }// end i
+
+
+}// end function
+
 CosmicRay::CosmicRay(MeshBlock *pmb, ParameterInput *pin):
     pmy_block(pmb), u_cr(NCR,pmb->ncells3,pmb->ncells2,pmb->ncells1),
     u_cr1(NCR,pmb->ncells3,pmb->ncells2,pmb->ncells1),
@@ -246,6 +302,8 @@ CosmicRay::CosmicRay(MeshBlock *pmb, ParameterInput *pin):
   // set a default opacity function
   UpdateOpacity = DefaultOpacity;
 
+  UpdateStreaming = DefaultStreaming;
+
   pcrintegrator = new CRIntegrator(this, pin);
 
 }
@@ -257,6 +315,12 @@ CosmicRay::CosmicRay(MeshBlock *pmb, ParameterInput *pin):
 void CosmicRay::EnrollOpacityFunction(CROpacityFunc MyOpacityFunction)
 {
   UpdateOpacity = MyOpacityFunction;
+  
+}
+
+void CosmicRay::EnrollStreamingFunction(CRStreamingFunc MyStreamingFunction)
+{
+  UpdateStreaming = MyStreamingFunction;
   
 }
 
