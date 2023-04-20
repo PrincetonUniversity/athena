@@ -1,7 +1,7 @@
 <comment>
 problem   = Shock Tube Problem with H-He chem network
 reference = Grassi et al. (2014), MNRAS, Volume 439, issue 3, pp 2386-2419
-configure =  --prob chem_G14Sod --chemistry G14Sod --ode_solver=cvode --cvode_path=${YOUR_PATH} --cflag=-std=c++14
+configure =  --prob chem_G14Sod --chemistry G14Sod --ode_solver=cvode --cvode_path=$YOUR_PATH --cflag=-std=c++14
 
 <job>
 problem_id = chem_G14Sod # problem ID: basename of output filenames
@@ -20,7 +20,7 @@ data_format = %12.5e    # Optional data format string
 cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1         # cycle limit
 tlim       = 0.028      # 1.9368e5 time limit, [unit : sqrt(density)*L = 0.1265 yr]
-integrator  = vl2       # time integration algorithm
+integrator  = rk2       # time integration algorithm
 xorder      = 2         # order of spatial reconstruction
 
 <mesh>
@@ -49,31 +49,30 @@ nx3        =  1
 
 <hydro>
 mu       = 1.25
-gamma    = 1.666666666666667     # gamma = C_p/C_v
-LHS_cs   = 3.92423               # Sound speed in LHS cs2 = γkT/m_h/μ; [unit: km s^{-1}] 3.44
-RHS_cs   = 3.50994               # Sound speed in RHS cs2 = γkT/m_h/μ; [unit: km s^{-1}] 3.08 
+gamma    = 1.66666667        # gamma = C_p/C_v
+LHS_cs   = 3.924             # Sound speed in LHS cs2 = γkT/m_h/μ; [unit: km s^{-1}] 3.44
+RHS_cs   = 3.514             # Sound speed in RHS cs2 = γkT/m_h/μ; [unit: km s^{-1}] 3.08 
 pfloor   = 1e-1
 
 <problem>
-shock_dir  = 1            # Shock Direction -- (1,2,3) = (x1,x2,x3)
-xshock     = 0.0          # position of initial interface
-s_init     = 1.0e-6       # initial abundances
-LHS_rho    = 5975.3       # LHS density [unit: mH cm^{-3}]
-RHS_rho    = 746.91       # RHS density [unit: mH cm^{-3}]
+shock_dir  = 1               # Shock Direction -- (1,2,3) = (x1,x2,x3)
+xshock     = 0.0             # position of initial interface
+s_init     = 1.0e-6          # initial abundances
+LHS_rho    = 5975.3          # LHS density [unit: mH cm^{-3}]
+RHS_rho    = 746.91          # RHS density [unit: mH cm^{-3}]
 
-
-s_init_H     = 1.0;          # H aboundance per H
-s_init_H+    = 0.0001092228; # H+ aboundance per H   ,default 8.864e-5; 
-s_init_He    = 0.0805891689; # He aboundance per H   ,default 0.026963;
-s_init_He+   = 0.0;          # He+ aboundance per H  ,default 0.0; 
-s_init_He2+  = 0.0;          # He2+ aboundance per H ,default 0.0;
-s_init_H-    = 8.223e-7;     # H- aboundance per H   ,default 1.11e-16;
-s_init_H2    = 1.0e-6;       # H2 aboundance per H   ,default 5.50e-6; 
-s_init_H2+   = 0.0;          # H2+ aboundance per H  ,default 
+s_init_H     = 0.75615       # H aboundance per H
+s_init_H+    = 8.19224e-5    # H+ aboundance per H   
+s_init_He    = 0.06136       # He aboundance per H   
+s_init_He+   = 0.0           # He+ aboundance per H   
+s_init_He2+  = 0.0           # He2+ aboundance per H 
+s_init_H-    = 8.139862e-7   # H- aboundance per H   
+s_init_H2    = 7.623256e-7   # H2 aboundance per H    
+s_init_H2+   = 0.0           # H2+ aboundance per H  
 
 <chemistry>
 #chemistry solver parameters
-reltol      = 1.0e-8         # relative tolerance, default 1.0e-2
+reltol      = 1.0e-6         # relative tolerance, default 1.0e-2
 abstol      = 1.0e-16        # absolute tolerance, default 1.0e-12
 abstol_E    = 1e-5           # for internal energy. Set to 0.01 K
 user_jac    = 0              # flag for whether use user provided Jacobian. default false/0
@@ -83,6 +82,6 @@ h_init      = 1e-15          # first step of first zone. Default 0/CVODE algorit
 #code units
 <unit>
 unit_system = custom
-mass_cgs     = 6.145195e+31  # unit mass with in a cube
+mass_cgs     = 4.915195e+31  # unit mass in g cm^{-3} (not density)
 length_cgs   = 3.085678e+18  # unit length in pc 
 time_cgs     = 3.085678e+13  # unit time in s 

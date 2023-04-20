@@ -17,7 +17,6 @@
 //  \brief implementation of functions in Grassi 2014 Fig. 21
 //======================================================================================
 
-
 // this class header
 #include "G14Sod.hpp"
 
@@ -42,6 +41,7 @@
 #include <stdio.h>   // FILE, fprintf()
 #include <limits>    // inf
 
+//#define DEBUG 
 
 //species namesspecies_names
 const std::string ChemNetwork::species_names[NSPECIES] = 
@@ -69,8 +69,6 @@ const int ChemNetwork::iH2_ =
 const int ChemNetwork::iH2plus_ =
   ChemistryUtility::FindStrIndex(species_names, NSPECIES, "H2+");
 
-
-//index of ghost species _> change the netwrok definition?
 const int ChemNetwork::ige_ =
       ChemistryUtility::FindStrIndex(ghost_species_names_, ngs_, "e") + NSPECIES;
 const int  ChemNetwork::igr_ = ige_;
@@ -153,27 +151,18 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   pmy_spec_ = pmb->pscalars;
 	pmy_mb_   = pmb;
 
-  //units of density and radiation
-	unit_density_in_nH_ = pin->GetReal("chemistry", "unit_density_in_nH");
-	unit_length_in_cm_ = pin->GetReal("chemistry", "unit_length_in_cm");
-	unit_vel_in_cms_ = pin->GetReal("chemistry", "unit_vel_in_cms");
-	unit_time_in_s_ = unit_length_in_cm_/unit_vel_in_cms_;
-  // Copy from G14 setup doc
-	unit_E_in_cgs_ = 1.67e-24  * mu* unit_density_in_nH_ 
-                    * unit_vel_in_cms_ * unit_vel_in_cms_;
-
   if (NON_BAROTROPIC_EOS) {
     temperature_ = 0.;
   } else {
     //isothermal
     temperature_ = pin->GetReal("chemistry", "temperature");
   }
-    //temperature above or below which heating and cooling is turned off
-    Real inf = std::numeric_limits<Real>::infinity();
-    temp_max_heat_ = pin->GetOrAddReal("chemistry", "temp_max_heat", inf);
-    temp_min_cool_ = pin->GetOrAddReal("chemistry", "temp_min_cool", 1.);
-    //minimum temperature for reaction rates, also applied to energy equation
-    temp_min_rates_ = pin->GetOrAddReal("chemistry", "temp_min_rates", 1.);
+  //temperature above or below which heating and cooling is turned off
+  Real inf = std::numeric_limits<Real>::infinity();
+  temp_max_heat_ = pin->GetOrAddReal("chemistry", "temp_max_heat", inf);
+  temp_min_cool_ = pin->GetOrAddReal("chemistry", "temp_min_cool", 1.);
+  //minimum temperature for reaction rates, also applied to energy equation
+  temp_min_rates_ = pin->GetOrAddReal("chemistry", "temp_min_rates", 1.);
 
   //initialize rates to zero
   for (int i=0; i<n_2body_; i++) {
@@ -202,8 +191,13 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
   Real ydotg[NSPECIES+ngs_];
   Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_; // E in cgs unit
   Real Xe = y[iHplus_] + y[iHeplus_] + 2.*y[iHe2plus_] + y[iH2plus_] - y[iHmin_];
-  // tgas = p / rho / kboltzmann * mu * pmass
-  Real T = E_ergs/Thermo::kb_*(gamma-1);
+  
+  // define temperature 
+  Real xHe = y[iHe_]/y[iH_] + y[iHeplus_]/y[iH_] + y[iHe2plus_]/y[iH_];
+  Real xH2 = y[iH2_]/y[iH_];
+  Real  xe = y[ige_]/y[iH_];
+  Real T = ED/Thermo::CvCold(xH2, xHe, xe);
+  
   // copy y to yprev and set ghost species
   GetGhostSpecies(y, yprev);
 
@@ -228,7 +222,6 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
       msg << "ChemNetwork (G14): RHS(yprev): nan or inf" << std::endl;
       ATHENA_ERROR(msg);
     }
-
   }
 
   // update the rate
@@ -241,17 +234,15 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
       rate *= -1.;
     }
 #ifdef DEBUG
-    if (indi == indj == indk == 1){
-    if (species_names_all_[in2body1_[i]] == "H2" || species_names_all_[in2body2_[i]]== "H2"){
-    	printf("Dec: k2body_[%.2i]*(X_%s)*(X_%s) = %.2e* %.2e * %.2e = %.2e \n",
-    		i, species_names_all_[in2body1_[i]].c_str(), species_names_all_[in2body2_[i]].c_str() ,k2body_[i] ,yprev0[in2body1_[i]], yprev0[in2body2_[i]],rate);
-    }
-    if (species_names_all_[out2body1_[i]] == "H2" || species_names_all_[out2body2_[i]]== "H2"){
+  if (species_names_all_[in2body1_[i]] == "H2" || species_names_all_[in2body2_[i]]== "H2"){
+  	printf("Dec: k2body_[%.2i]*(X_%s)*(X_%s) = %.2e* %.2e * %.2e = %.2e \n",
+  		i, species_names_all_[in2body1_[i]].c_str(), species_names_all_[in2body2_[i]].c_str() ,k2body_[i] ,yprev0[in2body1_[i]], yprev0[in2body2_[i]],rate);
+  }
+  if (species_names_all_[out2body1_[i]] == "H2" || species_names_all_[out2body2_[i]]== "H2"){
 //        printf("%s + %s , k2body_[%.2i]\n",species_names_all_[out2body1_[i]].c_str(), species_names_all_[out2body2_[i]].c_str(),i);
-    	printf("Inc: k2body_[%.2i]*(X_%s)*(X_%s) = %.2e* %.2e * %.2e = %.2e \n",
-    		i, species_names_all_[in2body1_[i]].c_str(), species_names_all_[in2body2_[i]].c_str() ,k2body_[i] ,yprev0[in2body1_[i]], yprev0[in2body2_[i]],rate);
-    }
-	}
+  	printf("Inc: k2body_[%.2i]*(X_%s)*(X_%s) = %.2e* %.2e * %.2e = %.2e \n",
+  		i, species_names_all_[in2body1_[i]].c_str(), species_names_all_[in2body2_[i]].c_str() ,k2body_[i] ,yprev0[in2body1_[i]], yprev0[in2body2_[i]],rate);
+  }
 
 #endif
     ydotg[in2body1_[i]]  -= stoich_in2body1[i]*rate;
@@ -262,7 +253,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
    //set ydot to return
    for (int i=0; i<NSPECIES; i++) {
      //return in code units
-     ydot[i] = ydotg[i] * unit_time_in_s_ * nH_;
+     ydot[i] = ydotg[i] * pmy_mb_->punit->code_time_cgs * nH_;
    }
 #ifdef DEBUG
   OutputRates(stdout);
@@ -288,7 +279,13 @@ return;
 }
 
 void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
-  Real T = E/Thermo::kb_*(gamma - 1.0);
+
+  // temperature
+  Real xHe = y[iHe_]/y[iH_] + y[iHeplus_]/y[iH_] + y[iHe2plus_]/y[iH_];
+  Real xH2 = y[iH2_]/y[iH_];
+  Real  xe = y[ige_]/y[iH_];
+  Real T = E/Thermo::CvCold(xH2, xHe, xe);
+  //Real T = E/Thermo::kb_*(gamma - 1.0)*3/4;
 
   const Real logT    = log10(T);
   const Real lnTe    = log(T* 8.6163e-5);
@@ -437,7 +434,12 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED){
   Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_;
 
   // Define Temperature
-  Real T = E_ergs/Thermo::kb_*(gamma - 1.0);
+  Real xHe = y[iHe_]/y[iH_] + y[iHeplus_]/y[iH_] + y[iHe2plus_]/y[iH_];
+  Real xH2 = y[iH2_]/y[iH_];
+  Real  xe = y[ige_]/y[iH_];
+  Real T = E_ergs/Thermo::CvCold(xH2, xHe, xe);
+  //Real T = E_ergs/Thermo::kb_*(gamma - 1.0);
+
   Real dEdt = 0.;
   Real yprev[NSPECIES+ngs_];
   // copy y to yprev and set ghost species
@@ -450,16 +452,14 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED){
   }
 
   // H2 CE(ro-vibrational) Cooling
-  LH2  = Thermo::CoolingH2(yprev[iH2_], nH_*yprev[iH_],  nH_*yprev[iH2_],
+  LH2  = Thermo::CoolingH2(xH2, nH_*yprev[iH_],  nH_*yprev[iH2_],
           nH_*yprev[iHe_],  nH_*yprev[iHplus_], nH_*yprev[ige_],
           T);
 
   //return in code units
   Real dEDdt = - LH2* nH_ / pmy_mb_->punit->code_energydensity_cgs
                   * pmy_mb_->punit->code_time_cgs;
-
 #ifdef DEBUG
-  	printf("Cooling = %.2e \n", Cooling );
   	printf("T=%.4e, dEDdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, nH=%.2e\n",
             T, dEDdt, ED, dEdt, E_ergs,nH_);
 			for (int i=0; i<NSPECIES+ngs_; i++) {
