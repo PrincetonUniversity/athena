@@ -438,7 +438,6 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED){
   Real xH2 = y[iH2_]/y[iH_];
   Real  xe = y[ige_]/y[iH_];
   Real T = E_ergs/Thermo::CvCold(xH2, xHe, xe);
-  //Real T = E_ergs/Thermo::kb_*(gamma - 1.0);
 
   Real dEdt = 0.;
   Real yprev[NSPECIES+ngs_];
