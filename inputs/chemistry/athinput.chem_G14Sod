@@ -50,25 +50,25 @@ nx3        =  1
 <hydro>
 mu       = 1.25
 gamma    = 1.66666667        # gamma = C_p/C_v
-LHS_cs   = 3.924             # Sound speed in LHS cs2 = γkT/m_h/μ; [unit: km s^{-1}] 3.44
-RHS_cs   = 3.514             # Sound speed in RHS cs2 = γkT/m_h/μ; [unit: km s^{-1}] 3.08 
 pfloor   = 1e-1
 
 <problem>
 shock_dir  = 1               # Shock Direction -- (1,2,3) = (x1,x2,x3)
 xshock     = 0.0             # position of initial interface
 s_init     = 1.0e-6          # initial abundances
-LHS_rho    = 5975.3          # LHS density [unit: mH cm^{-3}]
-RHS_rho    = 746.91          # RHS density [unit: mH cm^{-3}]
+LHS_rho    = 5978.6          # LHS density [unit: mH cm^{-3}]
+RHS_rho    = 747.33          # RHS density [unit: mH cm^{-3}]
+LHS_T    = 1400              # LHS Temperature in K
+RHS_T    = 1120              # RHS Temperature in K
 
-s_init_H     = 0.75615       # H aboundance per H
-s_init_H+    = 8.19224e-5    # H+ aboundance per H   
-s_init_He    = 0.06136       # He aboundance per H   
-s_init_He+   = 0.0           # He+ aboundance per H   
-s_init_He2+  = 0.0           # He2+ aboundance per H 
-s_init_H-    = 8.139862e-7   # H- aboundance per H   
-s_init_H2    = 7.623256e-7   # H2 aboundance per H    
-s_init_H2+   = 0.0           # H2+ aboundance per H  
+s_init_H     = 0.75615       # H number density ratio 
+s_init_H+    = 8.19224e-5    # H+ number density ratio    
+s_init_He    = 0.06134       # He number density ratio    
+s_init_He+   = 0.0           # He+ number density ratio   
+s_init_He2+  = 0.0           # He2+ number density ratio 
+s_init_H-    = 6.202614e-7   # H- number density ratio   
+s_init_H2    = 7.618994e-7   # H2 number density ratio    
+s_init_H2+   = 0.0           # H2+ number density ratio  
 
 <chemistry>
 #chemistry solver parameters
@@ -79,9 +79,8 @@ user_jac    = 0              # flag for whether use user provided Jacobian. defa
 maxsteps    = 300000         # maximum number of steps in one integration. default 10000
 h_init      = 1e-15          # first step of first zone. Default 0/CVODE algorithm.
 
-#code units
-<unit>
-unit_system = custom
-mass_cgs     = 4.915195e+31  # unit mass in g cm^{-3} (not density)
+<units>
+unit_system  = custom        # unit definition
+mass_cgs     = 4.914161e+31  # unit mass in g (not density but density*length^3)
 length_cgs   = 3.085678e+18  # unit length in pc 
-time_cgs     = 3.085678e+13  # unit time in s 
+time_cgs     = 3.1556926e13  # unit time in s 

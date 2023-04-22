@@ -49,8 +49,13 @@
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  // Define Boltzmann constant [unit: erg K^-1]
-  const Real k_b = 1.380649e-16;
+  // Define the constant
+  const Real mu = pin->GetReal("hydro", "mu");
+  const Real k_b = 1.380658e-16;
+  const Real m_h = 1.6733e-24;
+  const Real unit_E_cgs = punit->code_energydensity_cgs;
+  const Real unit_d_cgs = punit->code_density_cgs;
+
   //read density and radiation field strength
   //const Real nH = pin->GetReal("problem", "nH");
   const Real dl = pin->GetReal("problem", "LHS_rho");
@@ -62,12 +67,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   const Real vyr = pin->GetOrAddReal("problem","vyr", 0.);
   const Real vzr = pin->GetOrAddReal("problem","vzr", 0.);
 
-  const Real Lcs   = pin->GetReal("hydro", "LHS_cs");  // unit in K
-  const Real Rcs   = pin->GetReal("hydro", "RHS_cs");
+  const Real TL   = pin->GetReal("problem", "LHS_T");  // unit in K
+  const Real TR   = pin->GetReal("problem", "RHS_T");
   const Real s_init = pin->GetOrAddReal("problem", "s_init", 0.);
-  const Real gm1  = peos->GetGamma() - 1.0;
-  const Real Lpres = dl*SQR(Lcs)/(gm1 + 1.0); // P = n*mu*kT , mu-> molecular weigth
-  const Real Rpres = dr*SQR(Rcs)/(gm1 + 1.0); 
+  const Real gm1  = peos->GetGamma() - 1.0;; 
+  const Real Lpres = (dl*unit_d_cgs)*TL*k_b/mu/m_h;
+  const Real Rpres = (dr*unit_d_cgs)*TR*k_b/mu/m_h;
   // parse shock location (must be inside grid)
   Real xshock = pin->GetReal("problem","xshock");
 
@@ -76,13 +81,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   	for (int j=js; j<=je; ++j) {
 	  for (int i=is; i<=ie; ++i) {
 		if (pcoord->x1v(i) < xshock){
-			phydro->u(IDN,k,j,i)  = dl;          //Left hand side density
+			phydro->u(IDN,k,j,i) = dl;     
 			phydro->u(IM1,k,j,i) = dl*vxl;
-            phydro->u(IM2,k,j,i) = dl*vyl;
-            phydro->u(IM3,k,j,i) = dl*vzl;
+      phydro->u(IM2,k,j,i) = dl*vyl;
+      phydro->u(IM3,k,j,i) = dl*vzl;
 
 			if (NON_BAROTROPIC_EOS) {
-        		phydro->u(IEN,k,j,i) = Lpres/gm1; //Left hand side energy
+        		phydro->u(IEN,k,j,i) = Lpres/gm1/unit_E_cgs;
           }
 		}else{
 			phydro->u(IDN, k, j, i) = dr; 
@@ -90,7 +95,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       phydro->u(IM2,k,j,i) = dr*vyr;
       phydro->u(IM3,k,j,i) = dr*vzr;
 			if (NON_BAROTROPIC_EOS) {
-	    		phydro->u(IEN,k,j,i) = Rpres/gm1;
+	    		phydro->u(IEN,k,j,i) = Rpres/gm1/unit_E_cgs;
       }
 		}
 	  }

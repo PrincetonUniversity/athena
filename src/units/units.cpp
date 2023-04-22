@@ -41,7 +41,7 @@ Units::Units(ParameterInput *pin) :
   //     [length] = kpc
   //     [time] = Myr
   // add other default units system here
-  // set private MLT unit variables here
+  // set private MLT unit variables here 
   if (unit_system.compare("ism") == 0) {
     code_length_cgs_ = Constants::pc_cgs;
     code_mass_cgs_ = 1.4*Constants::hydrogen_mass_cgs*CUBE(code_length_cgs_);
@@ -53,7 +53,7 @@ Units::Units(ParameterInput *pin) :
   } else if (unit_system.compare("custom") == 0) {
     // this must raise error if MLT units are not given in the input file
     code_mass_cgs_ = pin->GetReal("units", "mass_cgs");
-    code_length_cgs_ = pin->GetReal("units", "legnth_cgs");
+    code_length_cgs_ = pin->GetReal("units", "length_cgs");
     code_time_cgs_ = pin->GetReal("units", "time_cgs");
   } else {
     std::stringstream msg;

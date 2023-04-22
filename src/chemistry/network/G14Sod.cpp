@@ -192,11 +192,8 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
   Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_; // E in cgs unit
   Real Xe = y[iHplus_] + y[iHeplus_] + 2.*y[iHe2plus_] + y[iH2plus_] - y[iHmin_];
   
-  // define temperature 
-  Real xHe = y[iHe_]/y[iH_] + y[iHeplus_]/y[iH_] + y[iHe2plus_]/y[iH_];
-  Real xH2 = y[iH2_]/y[iH_];
-  Real  xe = y[ige_]/y[iH_];
-  Real T = ED/Thermo::CvCold(xH2, xHe, xe);
+  // temperature, definition follows G14, T = p/rho/kb*mu, mu = 1.25
+  Real T = E_ergs/Thermo::kb_*(gamma - 1.0)*1.25;
   
   // copy y to yprev and set ghost species
   GetGhostSpecies(y, yprev);
@@ -280,12 +277,8 @@ return;
 
 void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
 
-  // temperature
-  Real xHe = y[iHe_]/y[iH_] + y[iHeplus_]/y[iH_] + y[iHe2plus_]/y[iH_];
-  Real xH2 = y[iH2_]/y[iH_];
-  Real  xe = y[ige_]/y[iH_];
-  Real T = E/Thermo::CvCold(xH2, xHe, xe);
-  //Real T = E/Thermo::kb_*(gamma - 1.0)*3/4;
+  // temperature, definition follows G14, T = p/rho/kb*mu, mu = 1.25 
+  Real T = E/Thermo::kb_*(gamma - 1.0)*1.25;
 
   const Real logT    = log10(T);
   const Real lnTe    = log(T* 8.6163e-5);
@@ -433,11 +426,8 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED){
   Real LH2; // Define H2 Cooling Term
   Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_;
 
-  // Define Temperature
-  Real xHe = y[iHe_]/y[iH_] + y[iHeplus_]/y[iH_] + y[iHe2plus_]/y[iH_];
-  Real xH2 = y[iH2_]/y[iH_];
-  Real  xe = y[ige_]/y[iH_];
-  Real T = E_ergs/Thermo::CvCold(xH2, xHe, xe);
+  // temperature, definition follows G14, T = p/rho/kb*mu, mu = 1.25
+  Real T = E_ergs/Thermo::kb_*(gamma - 1.0)*1.25;
 
   Real dEdt = 0.;
   Real yprev[NSPECIES+ngs_];
@@ -451,7 +441,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED){
   }
 
   // H2 CE(ro-vibrational) Cooling
-  LH2  = Thermo::CoolingH2(xH2, nH_*yprev[iH_],  nH_*yprev[iH2_],
+  LH2  = Thermo::CoolingH2(yprev[iH2_], nH_*yprev[iH_],  nH_*yprev[iH2_],
           nH_*yprev[iHe_],  nH_*yprev[iHplus_], nH_*yprev[ige_],
           T);
 
