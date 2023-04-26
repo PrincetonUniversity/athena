@@ -22,7 +22,6 @@ def prepare(**kwargs):
         prob='chem_G14Sod',
         chemistry='G14Sod',
         ode_solver='cvode',
-        nspecies='8',
         cxx=cxx,
         cflag='-std=c++14',
         cvode_path=os.environ['CVODE_PATH']

@@ -18,10 +18,10 @@
 #include "../../athena_arrays.hpp"
 class ChemNetwork : public NetworkWrapper {
   //OutputProperties in problem generator called by Mesh::UserWorkAfterLoop.
-  friend class Mesh; 
+  friend class Mesh;
   //It would be convenient to know the species names in
   //initialization of chemical species in problem
-  friend class MeshBlock; 
+  friend class MeshBlock;
 public:
 	static const int ngs_     = 1;
 
@@ -40,7 +40,7 @@ public:
   //all input/output variables are in code units
   void RHS(const Real t, const Real y[NSCALARS], const Real ED,
            Real ydot[NSCALARS]);
-  
+
   //energy equation dE/dt, all input/output variables are in code units
   //(ED is the energy density)
   Real Edot(const Real t, const Real y[NSCALARS], const Real ED);
@@ -56,35 +56,13 @@ private:
 	//constants
 	static const int n_2body_ = 20;
 	static const std::string ghost_species_names_[ngs_];
-	const Real gamma = 5./3.;
-	const Real mu = 1.25;
+	const Real muH_ = 1.3224889; // 1. / 0.75615
+  Real mu_; // assume to be constant
+	Real gamma_; // adiabatic index
 	std::string species_names_all_[NSCALARS+ngs_];//all species
-	
-	Real nH_;   //hydrogen number, updated at InitializeNextStep
-	Real rho;   //density, updated at InitializeNextStep
 
-  //	Real indi,indj,indk;
-  //	static const Real gm1 = 2/3; // factor gamma - 1
-	//units of density and radiation
-	Real unit_density_in_nH_;
-	Real unit_length_in_cm_;
-	Real unit_vel_in_cms_;
-	Real unit_time_in_s_;
-	Real unit_E_in_cgs_;//unit of energy density, in erg cm-3
-	Real rate_in_cgs_ ; // convert the rate unit from SI to cgs
-	Real temperature_;
-	Real temp_max_heat_; 
-	Real temp_min_cool_; 
-	Real temp_min_rates_; 
-	Real temp_max_rates_; 
-	//parameters of the netowork
-	Real xHplus_  ;
-	Real xHe_     ;
-	Real xHeplus_ ;
-	Real xHe2plus_;
-	Real xHmin_   ;
-	Real xH2_     ;
-	Real xH2P_    ;
+	Real nH_;   //hydrogen nuclei number denisty, updated at InitializeNextStep
+
 	//index of species
 	static const int iH_;
 	static const int iHplus_;
