@@ -23,7 +23,7 @@ def prepare(**kwargs):
         chemistry='G14Sod',
         ode_solver='cvode',
         cxx=cxx,
-        cflag='-std=c++14',
+        #cflag='-std=c++14',
         cvode_path=os.environ['CVODE_PATH']
         )
     athena.make()
@@ -36,13 +36,11 @@ def run(**kwargs):
 
 def analyze():
     err_control = 1e-3
-    gam1 = 1.666666666666667 - 1.
-    unit_E_cgs = 2.0875e-14
-    _, _, _, data_ref = athena_read.vtk('data/chem_G14Sod_dt_2.5e-3.vtk')
-    _, _, _, data_new = athena_read.vtk('bin/chem_G14Sod.block0.out1.00012.vtk')
-    E_ref = data_ref["press"]/gam1 * unit_E_cgs / data_ref['rho']
-    E_new = data_new["press"]/gam1 * unit_E_cgs / data_new['rho']
-    err   = (abs(E_ref - E_new) / abs(E_ref)).max()
+    _, _, _, data_ref = athena_read.vtk('data/chem_G14Sod.vtk')
+    _, _, _, data_new = athena_read.vtk('bin/chem_G14Sod.block0.out1.00010.vtk')
+    press_ref = data_ref["press"]
+    press_new = data_new["press"]
+    err   = (abs(press_ref - press_new) / abs(press_ref)).max()
     print("E err", err)
     if err < err_control:
         return True

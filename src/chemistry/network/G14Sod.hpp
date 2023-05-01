@@ -56,8 +56,8 @@ private:
 	//constants
 	static const int n_2body_ = 20;
 	static const std::string ghost_species_names_[ngs_];
-	const Real muH_ = 1.3224889; // 1. / 0.75615
-  Real mu_; // assume to be constant
+  Real mu_; // mean molecular weight, assume to be constant
+	Real muH_; // convert mass density to number density of H neuclei
 	Real gamma_; // adiabatic index
 	std::string species_names_all_[NSCALARS+ngs_];//all species
 

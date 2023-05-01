@@ -153,6 +153,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
 
   //constants
   mu_ = pin->GetReal("problem", "mu");
+  muH_ = pin->GetReal("problem", "muH");
   gamma_ = pin->GetReal("hydro", "gamma");
 
   //initialize rates to zero

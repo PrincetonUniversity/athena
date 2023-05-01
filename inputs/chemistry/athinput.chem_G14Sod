@@ -59,6 +59,7 @@ RHS_rho_cgs = 1.25e-21       # RHS density in g/cm^3
 LHS_T_cgs   = 1400           # LHS Temperature in K
 RHS_T_cgs   = 1120           # RHS Temperature in K
 mu       = 1.25              # mean molecular weight, assumed to be constant
+muH      = 1.322343          # density unit = muH * mH
 
 s_init       = 0.0           # default initial abundances
 s_init_H     = 0.9998895527  # H number density ratio 
@@ -73,14 +74,12 @@ s_init_H2+   = 0.0           # H2+ number density ratio
 <chemistry>
 #chemistry solver parameters
 reltol      = 1.0e-6         # relative tolerance, default 1.0e-2
-abstol      = 1.0e-16        # absolute tolerance, default 1.0e-12
-abstol_E    = 1e-5           # for internal energy. Set to 0.01 K
+abstol      = 1.0e-20        # absolute tolerance, default 1.0e-12
 user_jac    = 0              # flag for whether use user provided Jacobian. default false/0
 maxsteps    = 300000         # maximum number of steps in one integration. default 10000
-#h_init      = 1e-15          # first step of first zone. Default 0/CVODE algorithm.
 
 <units>
 unit_system  = custom        # unit definition
-mass_cgs     = 6.502610e31   # unit mass in g ((1/0.75615)*mH*pc^3)
+mass_cgs     = 6.501892e31   # unit mass in g (muH*mH*pc^3)
 length_cgs   = 3.085678e18   # unit length in cm (pc) 
 time_cgs     = 3.085678e13   # unit time in s (pc/(km/s))
