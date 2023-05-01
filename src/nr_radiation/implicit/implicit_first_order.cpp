@@ -47,7 +47,7 @@
 
 void RadIntegrator::FirstOrderFluxDivergenceCoef(const Real wght)
 {
-  Radiation *prad=pmy_rad;
+  NRRadiation *prad=pmy_rad;
   MeshBlock *pmb=prad->pmy_block;
   Coordinates *pco= pmb->pcoord;
 
@@ -395,7 +395,7 @@ void RadIntegrator::FirstOrderFluxDivergenceCoef(const Real wght)
 void RadIntegrator::FirstOrderFluxDivergence(const int k, const int j, const int i, 
                                                           AthenaArray<Real> &ir_ini)
 {
-  Radiation *prad=pmy_rad;
+  NRRadiation *prad=pmy_rad;
   MeshBlock *pmb=prad->pmy_block;
 
 

@@ -27,7 +27,7 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
-#include "../radiation/radiation.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "../cr/cr.hpp"
 #include "outputs.hpp"
 
@@ -179,9 +179,9 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
       pdata += pmb->pfield->b.x3f.GetSizeInBytes();
     }
 
-    if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
-      std::memcpy(pdata,pmb->prad->ir.data(),pmb->prad->ir.GetSizeInBytes());
-      pdata += pmb->prad->ir.GetSizeInBytes();      
+    if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
+      std::memcpy(pdata,pmb->pnrrad->ir.data(),pmb->pnrrad->ir.GetSizeInBytes());
+      pdata += pmb->pnrrad->ir.GetSizeInBytes();      
     }
 
     if(CR_ENABLED){

@@ -34,7 +34,7 @@
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../radiation/radiation.hpp"
+#include "../nr_radiation/radiation.hpp"
 
 // File scope variables
 static int ang;
@@ -48,7 +48,7 @@ int RefinementCondition(MeshBlock *pmb);
  *
  *====================================================================================*/
 
-void TwoBeams(MeshBlock *pmb, Coordinates *pco, Radiation *prad, 
+void TwoBeams(MeshBlock *pmb, Coordinates *pco, NRRadiation *prad, 
             const AthenaArray<Real> &w, FaceField &b,
             AthenaArray<Real> &ir,
             Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
@@ -64,7 +64,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
     EnrollUserRefinementCondition(RefinementCondition);
 
   EnrollUserBoundaryFunction(BoundaryFace::inner_x2, TwoBeamHydro);
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED)
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
     EnrollUserRadBoundaryFunction(BoundaryFace::inner_x2, TwoBeams);
 }
 
@@ -108,20 +108,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
   
   //Now initialize opacity and specific intensity
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
-    int nfreq = prad->nfreq;
-    int nang = prad->nang;
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
+    int nfreq = pnrrad->nfreq;
+    int nang = pnrrad->nang;
     for(int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           for (int ifr=0; ifr < nfreq; ++ifr){
-            prad->sigma_s(k,j,i,ifr) = 0.0;
-            prad->sigma_a(k,j,i,ifr) = 0.0;
-            prad->sigma_pe(k,j,i,ifr) = 0.0;
-            prad->sigma_p(k,j,i,ifr) = 0.0;
+            pnrrad->sigma_s(k,j,i,ifr) = 0.0;
+            pnrrad->sigma_a(k,j,i,ifr) = 0.0;
+            pnrrad->sigma_pe(k,j,i,ifr) = 0.0;
+            pnrrad->sigma_p(k,j,i,ifr) = 0.0;
           }
-          for(int n=0; n<prad->n_fre_ang; ++n){
-              prad->ir(k,j,i,n) = 0.0;
+          for(int n=0; n<pnrrad->n_fre_ang; ++n){
+              pnrrad->ir(k,j,i,n) = 0.0;
           }
         }
       }
@@ -134,7 +134,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
 
 
 
-void TwoBeams(MeshBlock *pmb, Coordinates *pco, Radiation *prad, 
+void TwoBeams(MeshBlock *pmb, Coordinates *pco, NRRadiation *prad, 
           const AthenaArray<Real> &w, FaceField &b, 
           AthenaArray<Real> &ir,
           Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh)

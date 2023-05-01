@@ -1,0 +1,95 @@
+rad_integrators.cpp:  Coordinates *pco=pmb->pcoord;
+rad_integrators.cpp:  int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, 
+rad_integrators.cpp:  ncells3 = pmb->ncells3; 
+rad_integrators.cpp:  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+rad_integrators.cpp:  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+rad_integrators.cpp:  Real gm1 = pmb->peos->GetGamma() - 1.0;
+rad_integrators.cpp:  Real rho_floor = pmb->peos->GetDensityFloor();
+rad_integrators.cpp:  NRRadiation *prad=pmb->pnrrad;  
+rad_integrators.cpp:  Coordinates *pco=pmb->pcoord;
+rad_integrators.cpp:  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+rad_integrators.cpp:  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+rad_integrators.cpp:  for(int k=0; k<pmb->ncells3; ++k){
+rad_integrators.cpp:    for(int j=0; j<pmb->ncells2; ++j){
+rad_integrators.cpp:      for(int i=0; i<pmb->ncells1; ++i){
+rad_integrators.cpp:         tgas = std::max(tgas,pmb->pnrrad->t_floor_(k,j,i));
+rad_integrators.cpp:         tgas = std::min(tgas,pmb->pnrrad->t_ceiling_(k,j,i));
+rad_source.cpp:  NRRadiation *prad=pmb->pnrrad;
+rad_source.cpp:  Coordinates *pco = pmb->pcoord;
+rad_source.cpp:    omega = pmb->pmy_mesh->pimrad->omega;
+rad_source.cpp:  NRRadiation *prad=pmb->pnrrad;
+rad_source.cpp:  Coordinates *pco = pmb->pcoord;
+rad_source.cpp:    int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+rad_source.cpp:    int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+rad_source.cpp:  NRRadiation *prad=pmb->pnrrad;
+rad_source.cpp:  Field *pfield = pmb->pfield;
+rad_source.cpp:  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+rad_source.cpp:  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+rad_source.cpp:  NRRadiation *prad=pmb->pnrrad;
+rad_source.cpp:  Field *pfield = pmb->pfield;
+rad_source.cpp:  Real gm1 = pmb->peos->GetGamma() - 1.0;
+rad_source.cpp:  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+rad_source.cpp:  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+rad_transport.cpp:  Coordinates *pco=pmb->pcoord;
+rad_transport.cpp:  int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, 
+rad_transport.cpp:  ncells3 = pmb->ncells3; 
+rad_transport.cpp:  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+rad_transport.cpp:  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+rad_transport.cpp:        pmb->precon->DonorCellX1(k, j, is-1, ie+1, ir, -1, il_, ir_);
+rad_transport.cpp:        pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, ir, -1, il_, ir_);
+rad_transport.cpp:        pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, ir, -1, il_, ir_);
+rad_transport.cpp:  if(pmb->pmy_mesh->f2){
+rad_transport.cpp:        pmb->precon->DonorCellX2(k, js-1, is, ie, ir, -1, il_, ir_);
+rad_transport.cpp:        pmb->precon->PiecewiseLinearX2(k, js-1, is, ie, ir, -1, il_, ir_);
+rad_transport.cpp:        pmb->precon->PiecewiseParabolicX2(k, js-1, is, ie, ir, -1, il_, ir_);
+rad_transport.cpp:          pmb->precon->DonorCellX2(k, j, is, ie, ir, -1, ilb_, ir_);
+rad_transport.cpp:          pmb->precon->PiecewiseLinearX2(k, j, is, ie, ir, -1, ilb_, ir_);
+rad_transport.cpp:          pmb->precon->PiecewiseParabolicX2(k, j, is, ie, ir, -1, ilb_, ir_);
+rad_transport.cpp:  if(pmb->pmy_mesh->f3){
+rad_transport.cpp:        pmb->precon->DonorCellX3(ks-1, j, is, ie, ir, -1, il_, ir_);
+rad_transport.cpp:        pmb->precon->PiecewiseLinearX3(ks-1, j, is, ie, ir, -1, il_, ir_);
+rad_transport.cpp:        pmb->precon->PiecewiseParabolicX3(ks-1, j, is, ie, ir, -1, il_, ir_);
+rad_transport.cpp:          pmb->precon->DonorCellX3(k, j, is, ie, ir, -1, ilb_, ir_);
+rad_transport.cpp:          pmb->precon->PiecewiseLinearX3(k, j, is, ie, ir, -1, ilb_, ir_);
+rad_transport.cpp:          pmb->precon->PiecewiseParabolicX3(k, j, is, ie, ir, -1, ilb_, ir_);
+rad_transport.cpp:                pmb->precon->DonorCellZeta(prad,zl,zu,q_zeta_,
+rad_transport.cpp:                pmb->precon->PiecewiseLinearZeta(prad,zl,zu,q_zeta_,
+rad_transport.cpp:                pmb->precon->DonorCellPsi(prad,pl,pu,q_psi_,
+rad_transport.cpp:                pmb->precon->PiecewiseLinearPsi(prad,pl,pu,q_psi_,
+rad_transport.cpp:  Coordinates *pco=pmb->pcoord;
+rad_transport.cpp:  int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, 
+rad_transport.cpp:  ncells3 = pmb->ncells3; 
+rad_transport.cpp:  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+rad_transport.cpp:  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+rad_transport.cpp:        pmb->precon->DonorCellX1(k, j, is-1, ie+1, ir, -1, il_, ir_);
+rad_transport.cpp:        pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, ir, -1, il_, ir_);
+rad_transport.cpp:        pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, ir, -1, il_, ir_);
+rad_transport.cpp:  if(pmb->pmy_mesh->f2){
+rad_transport.cpp:          pmb->precon->DonorCellX2(k, js-1, il, iu, ir, -1, il_, ir_);
+rad_transport.cpp:          pmb->precon->PiecewiseLinearX2(k, js-1, il, iu, ir, -1, il_, ir_);
+rad_transport.cpp:          pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, ir, -1, il_, ir_);
+rad_transport.cpp:          pmb->precon->DonorCellX2(k, j, il, iu, ir, -1, ilb_, ir_);
+rad_transport.cpp:          pmb->precon->PiecewiseLinearX2(k, j, il, iu, ir, -1, ilb_, ir_);
+rad_transport.cpp:          pmb->precon->PiecewiseParabolicX2(k, j, il, iu, ir, -1, ilb_, ir_);
+rad_transport.cpp:  if(pmb->pmy_mesh->f3){
+rad_transport.cpp:        pmb->precon->DonorCellX3(ks-1, j, il, iu, ir, -1, il_, ir_);
+rad_transport.cpp:        pmb->precon->PiecewiseLinearX3(ks-1, j, il, iu, ir, -1, il_, ir_);
+rad_transport.cpp:        pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, ir, -1, il_, ir_);
+rad_transport.cpp:          pmb->precon->DonorCellX3(k, j, il, iu, ir, -1, ilb_, ir_);
+rad_transport.cpp:          pmb->precon->PiecewiseLinearX3(k, j, il, iu, ir, -1, ilb_, ir_);
+rad_transport.cpp:          pmb->precon->PiecewiseParabolicX3(k, j, il, iu, ir, -1, ilb_, ir_);
+rad_transport.cpp:  Coordinates *pco= pmb->pcoord;
+rad_transport.cpp:  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+rad_transport.cpp:  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+rad_transport.cpp:  if(pmb->block_size.nx2 > 1){
+rad_transport.cpp:  if(pmb->block_size.nx3 > 1){
+rad_transport.cpp:  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+rad_transport.cpp:  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+rad_transport.cpp:      pmb->pcoord->Face1Area(k,j,is,ie+1,x1area);
+rad_transport.cpp:      if (pmb->block_size.nx2 > 1) {
+rad_transport.cpp:        pmb->pcoord->Face2Area(k,j  ,is,ie,x2area   );
+rad_transport.cpp:        pmb->pcoord->Face2Area(k,j+1,is,ie,x2area_p1);
+rad_transport.cpp:      if (pmb->block_size.nx3 > 1) {
+rad_transport.cpp:        pmb->pcoord->Face3Area(k  ,j,is,ie,x3area   );
+rad_transport.cpp:        pmb->pcoord->Face3Area(k+1,j,is,ie,x3area_p1);
+rad_transport.cpp:      pmb->pcoord->CellVolume(k,j,is,ie,vol);

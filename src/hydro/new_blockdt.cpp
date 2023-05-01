@@ -20,8 +20,8 @@
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
-#include "../radiation/radiation.hpp"
-#include "../radiation/implicit/radiation_implicit.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "../nr_radiation/implicit/radiation_implicit.hpp"
 #include "../cr/cr.hpp"
 #include "../mesh/mesh.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
@@ -63,8 +63,8 @@ void Hydro::NewBlockTimeStep() {
   Real min_dt_user  = real_max;
 
   Real cspeed = 0.0;
-  if(RADIATION_ENABLED)
-    cspeed = pmb->prad->reduced_c;
+  if(NR_RADIATION_ENABLED)
+    cspeed = pmb->pnrrad->reduced_c;
   if(CR_ENABLED)
     cspeed = std::max(cspeed,pmb->pcr->vmax);
 

@@ -31,7 +31,7 @@
 #include "../../coordinates/coordinates.hpp"
 #include "../../eos/eos.hpp"
 
-RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin)
+RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
 {
 
   pmy_rad = prad;
@@ -579,7 +579,7 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
 
   Real rho_floor = pmb->peos->GetDensityFloor();
 
-  Radiation *prad=pmb->prad;  
+  NRRadiation *prad=pmb->pnrrad;  
   Coordinates *pco=pmb->pcoord;
 
   Real& prat = prad->prat;
@@ -612,8 +612,8 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
          Real vel = vx * vx + vy * vy + vz * vz;
          Real tgas = u(IEN,k,j,i) - pb - 0.5*rho*vel;
          tgas = gm1*tgas/rho;
-         tgas = std::max(tgas,pmb->prad->t_floor_(k,j,i));
-         tgas = std::min(tgas,pmb->prad->t_ceiling_(k,j,i));
+         tgas = std::max(tgas,pmb->pnrrad->t_floor_(k,j,i));
+         tgas = std::min(tgas,pmb->pnrrad->t_ceiling_(k,j,i));
          tgas_(k,j,i) = tgas;
         // Do not use the velocity directly in strongly radiation pressure
          // dominated regime
@@ -901,7 +901,7 @@ void RadIntegrator::GetTaufactorAdv(const Real tau, Real &factor)
 void RadIntegrator::PredictVel(AthenaArray<Real> &ir, int k, int j, int i, 
       Real dt, Real rho, Real *vx, Real *vy, Real *vz)
 {
-    Radiation *prad = pmy_rad;
+    NRRadiation *prad = pmy_rad;
   
     Real &prat = prad->prat;
     Real invcrat = 1.0/prad->crat;

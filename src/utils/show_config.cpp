@@ -41,7 +41,7 @@ void ShowConfig() {
   } else {
     std::cout<<"  General relativity:         OFF " << std::endl;
   }
-  if (RADIATION_ENABLED) {
+  if (NR_RADIATION_ENABLED) {
     std::cout<<"  Radiative Transfer:         ON" << std::endl;
   } else {
     std::cout<<"  Radiative Transfer:         OFF" << std::endl;

@@ -17,7 +17,7 @@
 #include "../bvals/bvals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-#include "../radiation/radiation.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "../parameter_input.hpp"
 #include "coordinates.hpp"
 
@@ -760,7 +760,7 @@ void Coordinates::AxisDirection(int *axisx, int *axisy, int *axisz) {
   return;
 }
 
-void Coordinates::ZetaArea(Radiation *prad, AthenaArray<Real> &area)
+void Coordinates::ZetaArea(NRRadiation *prad, AthenaArray<Real> &area)
 {
   if(prad->angle_flag == 1){
     int nzeta = prad->nzeta;
@@ -782,7 +782,7 @@ void Coordinates::ZetaArea(Radiation *prad, AthenaArray<Real> &area)
 
 }
 
-void Coordinates::PsiArea(Radiation *prad, AthenaArray<Real> &area)
+void Coordinates::PsiArea(NRRadiation *prad, AthenaArray<Real> &area)
 {
 
   if(prad->angle_flag == 1){
@@ -804,7 +804,7 @@ void Coordinates::PsiArea(Radiation *prad, AthenaArray<Real> &area)
 
 }
 
-void Coordinates::AngularVol(Radiation *prad, AthenaArray<Real> &vol)
+void Coordinates::AngularVol(NRRadiation *prad, AthenaArray<Real> &vol)
 {
 
   if(prad->angle_flag == 1){
@@ -830,7 +830,7 @@ void Coordinates::AngularVol(Radiation *prad, AthenaArray<Real> &vol)
 
 }
 
-void Coordinates::GetGeometryZeta(Radiation *prad, const int k, const int j, 
+void Coordinates::GetGeometryZeta(NRRadiation *prad, const int k, const int j, 
                                   const int i, AthenaArray<Real> &g_zeta)
 {
   int &nzeta = prad->nzeta;
@@ -839,7 +839,7 @@ void Coordinates::GetGeometryZeta(Radiation *prad, const int k, const int j,
   }
 }
 
-void Coordinates::GetGeometryPsi(Radiation *prad, const int k, const int j, 
+void Coordinates::GetGeometryPsi(NRRadiation *prad, const int k, const int j, 
                         const int i, const int n_zeta, AthenaArray<Real> &g_psi)
 {
   int &npsi = prad->npsi;
@@ -850,7 +850,7 @@ void Coordinates::GetGeometryPsi(Radiation *prad, const int k, const int j,
 
 }
   // function overwirte in case nzeta = 0
-void Coordinates::GetGeometryPsi(Radiation *prad, const int k, const int j, 
+void Coordinates::GetGeometryPsi(NRRadiation *prad, const int k, const int j, 
                         const int i, AthenaArray<Real> &g_psi)
 {
 

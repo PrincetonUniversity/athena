@@ -33,7 +33,7 @@
 
 // calculate the frequency integrated moments of the radiation field
 // including the ghost zones
-void Radiation::CalculateMoment(AthenaArray<Real> &ir_in)
+void NRRadiation::CalculateMoment(AthenaArray<Real> &ir_in)
 {
   Real er, frx, fry, frz, prxx, pryy, przz, prxy, prxz, pryz;
   int n1z = pmy_block->block_size.nx1 + 2*(NGHOST);
@@ -136,7 +136,7 @@ void Radiation::CalculateMoment(AthenaArray<Real> &ir_in)
 // \brief Calculate the radiation moments in the co-moving frame
 // Also load specific intensity for dump
 
-void Radiation::CalculateComMoment()
+void NRRadiation::CalculateComMoment()
 {
 
   Hydro *phydro=pmy_block->phydro;

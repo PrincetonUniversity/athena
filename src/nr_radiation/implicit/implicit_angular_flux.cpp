@@ -50,7 +50,7 @@
 void RadIntegrator::ImplicitAngularFluxesCoef(const Real wght)
 {
 
-  Radiation *prad=pmy_rad;
+  NRRadiation *prad=pmy_rad;
   MeshBlock *pmb=prad->pmy_block;
   Coordinates *pco=pmb->pcoord;
   std::stringstream msg;
@@ -114,7 +114,7 @@ void RadIntegrator::ImplicitPsiFluxCoef(int k, int j, int i, int n_zeta, Real wg
                                                    Real zeta_coef1, Real zeta_coef)
 {
 
-  Radiation *prad=pmy_rad;
+  NRRadiation *prad=pmy_rad;
   Coordinates *pco=prad->pmy_block->pcoord;
   AthenaArray<Real> &area_psi = psi_area_, &ang_vol = ang_vol_, &zeta_area = zeta_area_;
   int &npsi = prad->npsi;
@@ -159,7 +159,7 @@ void RadIntegrator::ImplicitPsiFluxCoef(int k, int j, int i, int n_zeta, Real wg
 void RadIntegrator::ImplicitAngularFluxes(const int k, const int j, const int i, 
                                           AthenaArray<Real> &ir_ini)
 {
-  Radiation *prad=pmy_rad;
+  NRRadiation *prad=pmy_rad;
   MeshBlock *pmb=prad->pmy_block;
   Coordinates *pco=pmb->pcoord;
   std::stringstream msg;
@@ -198,7 +198,7 @@ void RadIntegrator::ImplicitPsiFlux(const int k, const int j, const int i,
                       int ifr, int n_zeta, AthenaArray<Real> &ir_ini)
 {
   
-  Radiation *prad=pmy_rad;
+  NRRadiation *prad=pmy_rad;
   int &npsi = prad->npsi;
   //m=0
   int ang_num = n_zeta*2*npsi;

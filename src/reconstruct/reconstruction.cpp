@@ -250,7 +250,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   scr4_in2_.NewAthenaArray(nc1, nvar_);
 
   int order_flag = xorder;
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
     int rad_order = pin->GetOrAddInteger("time", "rad_xorder", 2);
     order_flag = std::max(rad_order,xorder);
   }

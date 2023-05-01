@@ -55,7 +55,7 @@ void RadIntegrator::CalSourceTerms(MeshBlock *pmb, const Real dt,
         const int k, const int j, const int i, AthenaArray<Real> &u, 
         AthenaArray<Real> &ir_ini, AthenaArray<Real> &ir)
 {
-  Radiation *prad=pmb->prad;
+  NRRadiation *prad=pmb->pnrrad;
   Coordinates *pco = pmb->pcoord;
   
   Real& prat = prad->prat;
@@ -293,7 +293,7 @@ void RadIntegrator::AddMultiGroupCompt(MeshBlock *pmb, const Real dt,
 {
 
   // need to transform lab frame ir to co-moving frame
-  Radiation *prad=pmb->prad;
+  NRRadiation *prad=pmb->pnrrad;
   Coordinates *pco = pmb->pcoord;
   
   Real& prat = prad->prat;
@@ -478,7 +478,7 @@ void RadIntegrator::GetHydroSourceTerms(MeshBlock *pmb,
                        AthenaArray<Real> &ir_ini, AthenaArray<Real> &ir)
 {
 
-  Radiation *prad=pmb->prad;
+  NRRadiation *prad=pmb->pnrrad;
   Field *pfield = pmb->pfield;
 
   Real& prat = prad->prat;
@@ -601,7 +601,7 @@ void RadIntegrator::GetHydroSourceTerms(MeshBlock *pmb,
 void RadIntegrator::AddSourceTerms(MeshBlock *pmb, AthenaArray<Real> &u)
 {
 
-  Radiation *prad=pmb->prad;
+  NRRadiation *prad=pmb->pnrrad;
   Real invcrat = 1.0/prad->crat;
   Field *pfield = pmb->pfield;
 

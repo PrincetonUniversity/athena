@@ -14,7 +14,7 @@
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
 #include "../../../mesh/mesh.hpp"
-#include "../../../radiation/radiation.hpp"
+#include "../../../nr_radiation/radiation.hpp"
 #include "bvals_rad.hpp"
 
 //----------------------------------------------------------------------------------------

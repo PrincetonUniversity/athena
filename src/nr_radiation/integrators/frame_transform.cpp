@@ -47,6 +47,7 @@ void RadIntegrator::LabToCom(const Real vx, const Real vy, const Real vz,
   Real& prat = pmy_rad->prat;
   Real invcrat = 1.0/pmy_rad->crat;
   int& nang=pmy_rad->nang;
+  int& nfreq=pmy_rad->nfreq;
 
   
   
@@ -56,15 +57,16 @@ void RadIntegrator::LabToCom(const Real vx, const Real vy, const Real vz,
   
 
 
-
-  for(int n=0; n<nang; n++){
-    Real vnc = vx * mux[n] + vy * muy[n] + vz * muz[n];
+  for(int ifr=0; ifr<nfreq; ++ifr){
+    for(int n=0; n<nang; n++){
+      Real vnc = vx * mux[n] + vy * muy[n] + vz * muz[n];
       
-    vnc = 1.0 - vnc * invcrat;
-    Real coef = vnc * vnc * vnc * vnc * lorzsq * lorzsq;
+      vnc = 1.0 - vnc * invcrat;
+      Real coef = vnc * vnc * vnc * vnc * lorzsq * lorzsq;
       
-    ir_cm(n) = ir_lab[n] * coef;
-  }
+      ir_cm(ifr*nang+n) = ir_lab[ifr*nang+n] * coef;
+    }
+  }//end ifreq
   
 
   return;
@@ -86,6 +88,7 @@ void RadIntegrator::ComToLab(const Real vx, const Real vy, const Real vz,
 
   Real invcrat = 1.0/pmy_rad->crat;
   int& nang=pmy_rad->nang;  
+  int& nfreq=pmy_rad->nfreq;
   
   
   // square of Lorentz factor
@@ -93,15 +96,16 @@ void RadIntegrator::ComToLab(const Real vx, const Real vy, const Real vz,
   
 
 
-
-  for(int n=0; n<nang; n++){
-    Real vnc = vx * mux[n] + vy * muy[n] + vz * muz[n];
+  for(int ifr=0; ifr<nfreq; ++ifr){
+    for(int n=0; n<nang; n++){
+      Real vnc = vx * mux[n] + vy * muy[n] + vz * muz[n];
       
-    vnc = 1.0 - vnc * invcrat;
-    Real coef = vnc * vnc * vnc * vnc * lorzsq * lorzsq;
-      
-    ir_lab[n] = ir_cm(n) / coef;
-  }
+      vnc = 1.0 - vnc * invcrat;
+      Real coef = vnc * vnc * vnc * vnc * lorzsq * lorzsq;
+       
+      ir_lab[ifr*nang+n] = ir_cm(ifr*nang+n) / coef;
+    }
+  }// end ifreq 
 
 
   return;

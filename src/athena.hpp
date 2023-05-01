@@ -52,7 +52,7 @@ class HydroDiffusion;
 class FieldDiffusion;
 struct MGCoordinates;
 class OrbitalAdvection;
-class Radiation;
+class NRRadiation;
 class IMRadiation;
 class CosmicRay;
 
@@ -216,13 +216,13 @@ using MGSourceMaskFunc = void (*)(AthenaArray<Real> &src,
 using OrbitalVelocityFunc = Real (*)(
     OrbitalAdvection *porb, Real x1, Real x2, Real x3);
 using RadBoundaryFunc = void (*)(
-     MeshBlock *pmb, Coordinates *pco, Radiation *prad, 
+     MeshBlock *pmb, Coordinates *pco, NRRadiation *prad, 
      const AthenaArray<Real> &w, FaceField &b, 
      AthenaArray<Real> &ir,
      Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 using OpacityFunc = void (*)(MeshBlock *pmb, AthenaArray<Real> &prim);
-using FrequencyFunc = void (*)(Radiation *prad);
-using EmissionFunc = void(*)(Radiation *prad, Real tgas);
+using FrequencyFunc = void (*)(NRRadiation *prad);
+using EmissionFunc = void(*)(NRRadiation *prad, Real tgas);
 using CROpacityFunc = void (*)(MeshBlock *pmb, AthenaArray<Real> &u_cr, 
                       AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
 using CRStreamingFunc = void (*)(MeshBlock *pmb, AthenaArray<Real> &u_cr, 

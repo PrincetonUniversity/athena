@@ -16,7 +16,7 @@
 #include "../athena.hpp"
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
-#include "../radiation/radiation.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "im_rad_task_list.hpp"
 
 #ifdef OPENMP_PARALLEL
@@ -87,7 +87,7 @@ void IMRadTaskList::DoTaskListOneStage(Real wght) {
 }
 
 TaskStatus IMRadTaskList::PhysicalBoundary(MeshBlock *pmb) {
-  pmb->prad->rad_bvar.var_cc = &(pmb->prad->ir);
+  pmb->pnrrad->rad_bvar.var_cc = &(pmb->pnrrad->ir);
   pmb->pbval->ApplyPhysicalBoundaries(time, dt, pmb->pbval->bvars_main_int);
   return TaskStatus::success;
 }

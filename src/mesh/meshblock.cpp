@@ -31,9 +31,9 @@
 #include "../gravity/gravity.hpp"
 #include "../gravity/mg_gravity.hpp"
 #include "../hydro/hydro.hpp"
-#include "../radiation/radiation.hpp"
-#include "../radiation/integrators/rad_integrators.hpp"
-#include "../radiation/implicit/radiation_implicit.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "../nr_radiation/integrators/rad_integrators.hpp"
+#include "../nr_radiation/implicit/radiation_implicit.hpp"
 #include "../cr/cr.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
@@ -130,7 +130,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 //set the total number of frequency x angles
 
   nfre_ang = 0;
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
   
     int nfreq = pin->GetOrAddInteger("radiation","n_frequency",1);
     int nmu = pin->GetInteger("radiation","nmu");
@@ -244,11 +244,11 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   peos = new EquationOfState(this, pin);
 
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
        //radiation constructor needs the parameter nfre_ang 
-    prad = new Radiation(this, pin);
+    pnrrad = new NRRadiation(this, pin);
   }
-  if(RADIATION_ENABLED){
+  if(NR_RADIATION_ENABLED){
     pbval->AdvanceCounterPhysID(RadBoundaryVariable::max_phys_id);
   }
 
@@ -347,7 +347,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   nfre_ang = 0;
    
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
 
     int nfreq = pin->GetOrAddInteger("radiation","n_frequency",1);
     int nmu = pin->GetInteger("radiation","nmu");
@@ -443,11 +443,11 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   peos = new EquationOfState(this, pin);
 
 
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
        //radiation constructor needs the parameter nfre_ang 
-    prad = new Radiation(this, pin);
+    pnrrad = new NRRadiation(this, pin);
   }
-  if(RADIATION_ENABLED){
+  if(NR_RADIATION_ENABLED){
     pbval->AdvanceCounterPhysID(RadBoundaryVariable::max_phys_id);
   }
 
@@ -484,47 +484,47 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
 
 
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
-    if(prad->restart_from_gray){
-      std::memcpy(prad->ir_gray.data(), &(mbdata[os]), prad->ir_gray.GetSizeInBytes());
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
+    if(pnrrad->restart_from_gray){
+      std::memcpy(pnrrad->ir_gray.data(), &(mbdata[os]), pnrrad->ir_gray.GetSizeInBytes());
       AthenaArray<Real> fre_ratio;
 
-      fre_ratio.NewAthenaArray(prad->nfreq);
-      Real invcrat = 1.0/prad->crat;
+      fre_ratio.NewAthenaArray(pnrrad->nfreq);
+      Real invcrat = 1.0/pnrrad->crat;
       for(int k=ks; k<=ke; ++k){
         for(int j=js; j<=je; ++j){
           for(int i=is; i<=ie; ++i){
 
             Real Er = 0.0;
-            for(int n=0; n<prad->nang; ++n){
-              Er += prad->ir_gray(k,j,i,n) * prad->wmu(n);
+            for(int n=0; n<pnrrad->nang; ++n){
+              Er += pnrrad->ir_gray(k,j,i,n) * pnrrad->wmu(n);
             }// finish going through all angles
             Real tr = pow(Er,0.25);
 
             // now split to different frequency bins
-            for(int ifr=0; ifr<prad->nfreq; ++ifr){
-              fre_ratio(ifr) = prad->BlackBodySpec(prad->nu_grid(ifr)/tr,
-                                      prad->nu_grid(ifr+1)/tr);  
+            for(int ifr=0; ifr<pnrrad->nfreq; ++ifr){
+              fre_ratio(ifr) = pnrrad->BlackBodySpec(pnrrad->nu_grid(ifr)/tr,
+                                      pnrrad->nu_grid(ifr+1)/tr);  
             }
 
-            for(int ifr=0; ifr<prad->nfreq; ++ifr){
-              for(int n=0; n<prad->nang; ++n){
-                prad->ir(k,j,i,ifr*prad->nang+n) = prad->ir_gray(k,j,i,n) * fre_ratio(ifr);
+            for(int ifr=0; ifr<pnrrad->nfreq; ++ifr){
+              for(int n=0; n<pnrrad->nang; ++n){
+                pnrrad->ir(k,j,i,ifr*pnrrad->nang+n) = pnrrad->ir_gray(k,j,i,n) * fre_ratio(ifr);
               }
             }// end ifr
           }// end i
         }
       }
       fre_ratio.DeleteAthenaArray();
-      os += prad->ir_gray.GetSizeInBytes();
+      os += pnrrad->ir_gray.GetSizeInBytes();
     }else{
-      std::memcpy(prad->ir.data(), &(mbdata[os]), prad->ir.GetSizeInBytes());
-      os += prad->ir.GetSizeInBytes();
+      std::memcpy(pnrrad->ir.data(), &(mbdata[os]), pnrrad->ir.GetSizeInBytes());
+      os += pnrrad->ir.GetSizeInBytes();
     }
 
 //    std::memcpy(prad->ir1.data(), &(mbdata[os]), prad->ir1.GetSizeInBytes());
     // copy the data
-    prad->ir1 = prad->ir;
+    pnrrad->ir1 = pnrrad->ir;
 
   }
 
@@ -572,7 +572,7 @@ MeshBlock::~MeshBlock() {
   if (SELF_GRAVITY_ENABLED == 2) delete pmg;
   if (NSCALARS > 0) delete pscalars;
 
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED) delete prad;
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) delete pnrrad;
   if(CR_ENABLED) delete pcr;
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
@@ -673,8 +673,8 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
   if (NSCALARS > 0)
     size += pscalars->s.GetSizeInBytes();
 
-  if (RADIATION_ENABLED || IM_RADIATION_ENABLED)
-    size += prad->ir.GetSizeInBytes();
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+    size += pnrrad->ir.GetSizeInBytes();
   if(CR_ENABLED)
     size += pcr->u_cr.GetSizeInBytes();
 
@@ -703,11 +703,11 @@ std::size_t MeshBlock::GetBlockSizeInBytesGray() {
   if (NSCALARS > 0)
     size += pscalars->s.GetSizeInBytes();
 
-  if (RADIATION_ENABLED || IM_RADIATION_ENABLED){
-    if(prad->restart_from_gray > 0)
-      size += prad->ir_gray.GetSizeInBytes();
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
+    if(pnrrad->restart_from_gray > 0)
+      size += pnrrad->ir_gray.GetSizeInBytes();
     else
-      size += prad->ir.GetSizeInBytes();
+      size += pnrrad->ir.GetSizeInBytes();
   }
   if(CR_ENABLED)
     size += pcr->u_cr.GetSizeInBytes();

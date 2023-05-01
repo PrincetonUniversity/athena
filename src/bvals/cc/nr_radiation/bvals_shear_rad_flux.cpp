@@ -35,8 +35,8 @@
 #include "../../bvals.hpp"
 #include "../../bvals_interfaces.hpp"
 #include "./bvals_rad.hpp"
-#include "../../../radiation/radiation.hpp"
-#include "../../../radiation/integrators/rad_integrators.hpp"
+#include "../../../nr_radiation/radiation.hpp"
+#include "../../../nr_radiation/integrators/rad_integrators.hpp"
 
 
 // MPI header
@@ -135,7 +135,7 @@ void RadBoundaryVariable::SetFluxShearingBoxBoundaryBuffers() {
   OrbitalAdvection *porb = pmb->porb;
   AthenaArray<Real> &pflux = pflux_;
   int &xgh = pbval_->xgh_;
-  int &xorder = pmb->prad->pradintegrator->rad_xorder;
+  int &xorder = pmb->pnrrad->pradintegrator->rad_xorder;
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;

@@ -32,8 +32,8 @@
 #include "../cr/integrators/cr_integrators.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
-#include "../radiation/radiation.hpp"
-#include "../radiation/integrators/rad_integrators.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "../nr_radiation/integrators/rad_integrators.hpp"
 #include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
   //! - validate Field and Hydro diffusion with RK3, RK4, SSPRK(5,4)
   integrator = pin->GetOrAddString("time", "integrator", "vl2");
 
-  bool radiation_flag = ((bool)RADIATION_ENABLED) && ((bool)(!IM_RADIATION_ENABLED));
+  bool radiation_flag = ((bool)NR_RADIATION_ENABLED) && ((bool)(!IM_RADIATION_ENABLED));
 
   // Read a flag for orbital advection
   ORBITAL_ADVECTION = (pm->orbital_advection != 0)? true : false;
@@ -1602,7 +1602,7 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
 
 void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
 
-  bool radiation_flag = ((bool)RADIATION_ENABLED) && ((bool)(!IM_RADIATION_ENABLED));
+  bool radiation_flag = ((bool)NR_RADIATION_ENABLED) && ((bool)(!IM_RADIATION_ENABLED));
 
   if (stage == 1) {
     // Initialize storage registers
@@ -1632,9 +1632,9 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
     }
 
     if(radiation_flag){
-      pmb->prad->ir1.ZeroClear();
+      pmb->pnrrad->ir1.ZeroClear();
       if(integrator == "ssprk5_4")
-        pmb->prad->ir2 = pmb->prad->ir;
+        pmb->pnrrad->ir2 = pmb->pnrrad->ir;
     }
 
     if(CR_ENABLED){
@@ -2646,7 +2646,7 @@ TaskStatus TimeIntegratorTaskList::CalculateFieldOrbital(MeshBlock *pmb, int sta
 // New steps necessary for radiation/cosmic ray modules
 
 TaskStatus TimeIntegratorTaskList::IntegrateRad(MeshBlock *pmb, int stage) {
-  Radiation *prad = pmb->prad;
+  NRRadiation *prad = pmb->pnrrad;
 
   if (stage <= nstages) {
     if (stage_wghts[stage-1].main_stage){
@@ -2695,7 +2695,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateRad(MeshBlock *pmb, int stage) {
 // tasks for radiation transport
 TaskStatus TimeIntegratorTaskList::CalculateRadFlux(MeshBlock *pmb, int stage) {
   Hydro *phydro = pmb->phydro;
-  Radiation *prad = pmb->prad;
+  NRRadiation *prad = pmb->pnrrad;
   if(stage_wghts[stage-1].main_stage){
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     prad->pradintegrator->GetTgasVel(pmb,dt,phydro->u,phydro->w,
@@ -2722,7 +2722,7 @@ TaskStatus TimeIntegratorTaskList::CalculateRadFlux(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
-  Radiation *prad = pmb->prad;
+  NRRadiation *prad = pmb->pnrrad;
   Field *pf = pmb->pfield;
 
   int is=pmb->is, ie=pmb->ie;
@@ -2767,7 +2767,7 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) 
 TaskStatus TimeIntegratorTaskList::SendRadFlux(MeshBlock *pmb, int stage) {
   if(stage <= nstages){
     if(stage_wghts[stage-1].main_stage){
-      pmb->prad->rad_bvar.SendFluxCorrection();      
+      pmb->pnrrad->rad_bvar.SendFluxCorrection();      
     }
     return TaskStatus::success;
   }
@@ -2778,7 +2778,7 @@ TaskStatus TimeIntegratorTaskList::SendRadFlux(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectRadFlux(MeshBlock *pmb, int stage) {
   if(stage <= nstages){
     if(stage_wghts[stage-1].main_stage){
-      if (pmb->prad->rad_bvar.ReceiveFluxCorrection()) {
+      if (pmb->pnrrad->rad_bvar.ReceiveFluxCorrection()) {
         return TaskStatus::next;
       } else {
         return TaskStatus::fail;
@@ -2793,7 +2793,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectRadFlux(MeshBlock *pmb, int 
 
 TaskStatus TimeIntegratorTaskList::SendRad(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->prad->rad_bvar.SendBoundaryBuffers();
+    pmb->pnrrad->rad_bvar.SendBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -2804,7 +2804,7 @@ TaskStatus TimeIntegratorTaskList::SendRad(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::ReceiveRad(MeshBlock *pmb, int stage) {
   bool ret;
   if (stage <= nstages) {
-    ret = pmb->prad->rad_bvar.ReceiveBoundaryBuffers();
+    ret = pmb->pnrrad->rad_bvar.ReceiveBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -2817,7 +2817,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveRad(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SetBoundariesRad(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->prad->rad_bvar.SetBoundaries();
+    pmb->pnrrad->rad_bvar.SetBoundaries();
     return TaskStatus::success;
   }
   return TaskStatus::fail;
@@ -2826,8 +2826,8 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesRad(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::RadMomOpacity(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
    // only need 
-//    pmb->prad->CalculateMoment(pmb->prad->ir);
-    pmb->prad->UpdateOpacity(pmb,pmb->phydro->w);
+//    pmb->pnrrad->CalculateMoment(pmb->pnrrad->ir);
+    pmb->pnrrad->UpdateOpacity(pmb,pmb->phydro->w);
     return TaskStatus::success;
   }
   return TaskStatus::fail;
@@ -2840,7 +2840,7 @@ TaskStatus TimeIntegratorTaskList::RadMomOpacity(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::SendRadFluxShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     if (stage_wghts[stage-1].main_stage) {
-      pmb->prad->rad_bvar.SendFluxShearingBoxBoundaryBuffers();
+      pmb->pnrrad->rad_bvar.SendFluxShearingBoxBoundaryBuffers();
     }
     return TaskStatus::success;
   }
@@ -2851,8 +2851,8 @@ TaskStatus TimeIntegratorTaskList::SendRadFluxShear(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::ReceiveRadFluxShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     if (stage_wghts[stage-1].main_stage){
-      if (pmb->prad->rad_bvar.ReceiveFluxShearingBoxBoundaryBuffers()) {
-        pmb->prad->rad_bvar.SetFluxShearingBoxBoundaryBuffers();
+      if (pmb->pnrrad->rad_bvar.ReceiveFluxShearingBoxBoundaryBuffers()) {
+        pmb->pnrrad->rad_bvar.SetFluxShearingBoxBoundaryBuffers();
         return TaskStatus::success;
       } else {
         return TaskStatus::fail;
@@ -2867,7 +2867,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveRadFluxShear(MeshBlock *pmb, int stage
 
 TaskStatus TimeIntegratorTaskList::SendRadShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    pmb->prad->rad_bvar.SendShearingBoxBoundaryBuffers();
+    pmb->pnrrad->rad_bvar.SendShearingBoxBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
@@ -2879,12 +2879,12 @@ TaskStatus TimeIntegratorTaskList::ReceiveRadShear(MeshBlock *pmb, int stage) {
   bool ret;
   ret = false;
   if (stage <= nstages) {
-    ret = pmb->prad->rad_bvar.ReceiveShearingBoxBoundaryBuffers();
+    ret = pmb->pnrrad->rad_bvar.ReceiveShearingBoxBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
   if (ret) {
-    pmb->prad->rad_bvar.SetShearingBoxBoundaryBuffers();
+    pmb->pnrrad->rad_bvar.SetShearingBoxBoundaryBuffers();
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;

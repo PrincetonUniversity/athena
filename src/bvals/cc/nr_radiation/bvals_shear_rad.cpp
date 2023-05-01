@@ -29,8 +29,8 @@
 #include "../../../parameter_input.hpp"
 #include "../../../utils/buffer_utils.hpp"
 #include "../../../hydro/hydro.hpp"
-#include "../../../radiation/radiation.hpp"
-#include "../../../radiation/integrators/rad_integrators.hpp"
+#include "../../../nr_radiation/radiation.hpp"
+#include "../../../nr_radiation/integrators/rad_integrators.hpp"
 #include "../../../orbital_advection/orbital_advection.hpp"
 #include "../../bvals.hpp"
 #include "../../bvals_interfaces.hpp"
@@ -54,7 +54,7 @@ void RadBoundaryVariable::AddRadShearForInit() {
   Mesh *pmesh = pmb->pmy_mesh;
   AthenaArray<Real> &var = *var_cc;
   Hydro *phydro = pmb->phydro;
-  Radiation *prad = pmb->prad;
+  NRRadiation *prad = pmb->pnrrad;
 
   int jl = pmb->js - NGHOST;
   int ju = pmb->je + NGHOST;
@@ -110,7 +110,7 @@ void RadBoundaryVariable::ShearQuantities(AthenaArray<Real> &shear_cc_, bool upp
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   Hydro *phydro = pmb->phydro;
-  Radiation *prad = pmb->prad;
+  NRRadiation *prad = pmb->pnrrad;
   int &xgh = pbval_->xgh_;
   int jl = pmb->js - NGHOST;
   int ju = pmb->je + NGHOST+2*xgh+1;
@@ -251,7 +251,7 @@ void RadBoundaryVariable::SetShearingBoxBoundaryBuffers() {
   AthenaArray<Real> &var = *var_cc;
   AthenaArray<Real> &pflux = pflux_;
   int &xgh = pbval_->xgh_;
-  int &xorder = pmb->prad->pradintegrator->rad_xorder;
+  int &xorder = pmb->pnrrad->pradintegrator->rad_xorder;
   int ib[2]{pmb->is - NGHOST, pmb->ie + 1};
   int js = pmb->js, je = pmb->je;
   int kl = pmb->ks, ku = pmb->ke;

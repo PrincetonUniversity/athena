@@ -16,20 +16,20 @@
 
 class MeshBlock;
 class ParameterInput;
-class Radiation;
+class NRRadiation;
 
 //! \class RadIntegrator
 //  \brief integrate algorithm for radiative transfer
 
 
 class RadIntegrator {
-  friend class Radiation;
+  friend class NRRadiation;
   friend class IMRadiation;
 public:
-  RadIntegrator(Radiation *prad, ParameterInput *pin);
+  RadIntegrator(NRRadiation *prad, ParameterInput *pin);
   ~RadIntegrator();
   
-  Radiation *pmy_rad;
+  NRRadiation *pmy_rad;
 
   
   void FluxDivergence(const Real wght, AthenaArray<Real> &ir_in, 

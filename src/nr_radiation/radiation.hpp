@@ -20,7 +20,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../parameter_input.hpp"
-#include "../bvals/cc/radiation/bvals_rad.hpp"
+#include "../bvals/cc/nr_radiation/bvals_rad.hpp"
 
 class MeshBlock;
 class ParameterInput;
@@ -39,12 +39,12 @@ enum {IER=0, IFR1=1, IFR2=2, IFR3=3, IPR11=4, IPR22=5, IPR33=6, IPR12=7,
 
 enum {OPAS=0, OPAA=1, OPAP=2}; // scattering, absorption, Planck, opacity
 
-class Radiation {
+class NRRadiation {
   friend class RadIntegrator;
   friend class Mesh;
 public:
-  Radiation(MeshBlock *pmb, ParameterInput *pin);
-  ~Radiation();
+  NRRadiation(MeshBlock *pmb, ParameterInput *pin);
+  ~NRRadiation();
     
   AthenaArray<Real> ir, ir1, ir2, ir_old; // radiation specific intensity
   AthenaArray<Real> ir_gray;

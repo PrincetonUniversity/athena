@@ -31,7 +31,7 @@
 // \brief function to create the frequency grid
 // specific intensities are still defined as frequency integrated over each
 
-void Radiation::FrequencyGrid()
+void NRRadiation::FrequencyGrid()
 {
   Real h_planck = 6.6260755e-27; // Planck constant
   Real k_b = 1.380649e-16;   // Boltzman constant
@@ -121,7 +121,7 @@ void Radiation::FrequencyGrid()
 // frequency is scaled with kT_0/h
 // using fitting formula to return \int_0^nu_min and \int_0^nu_max
 
-Real Radiation::FitBlackBody(Real nu_t)
+Real NRRadiation::FitBlackBody(Real nu_t)
 {
 
 // the integral at nu_t=1.5 is 0.6154949828394710
@@ -149,7 +149,7 @@ Real Radiation::FitBlackBody(Real nu_t)
 }
 
 
-Real Radiation::BlackBodySpec(Real nu_min, Real nu_max)
+Real NRRadiation::BlackBodySpec(Real nu_min, Real nu_max)
 {
   
   return (FitBlackBody(nu_max) - FitBlackBody(nu_min));
@@ -162,7 +162,7 @@ Real Radiation::BlackBodySpec(Real nu_min, Real nu_max)
 // This is rearranged to 
 // intensity/nu^4=A=(1/y)^4(15/pi^4)\int_y^{infty} x^3dx/(exp(x)-1)
 // we use a fitting formula to get y
-Real Radiation::EffectiveBlackBody(Real intensity, Real nu)
+Real NRRadiation::EffectiveBlackBody(Real intensity, Real nu)
 {
  
   Real ir = std::max(intensity,TINY_NUMBER); 
@@ -213,7 +213,7 @@ Real Radiation::EffectiveBlackBody(Real intensity, Real nu)
 // n_nu2 = \int_{nu_f}^{infty} n\nu^2 d\nu
 // we fit the formula n_nu2/nu^3=A=(1/y)^3\int_y^{infty} x^2/(exp(x)-1) dx
 
-Real Radiation::EffectiveBlackBodyNNu2(Real n_nu2, Real nu)
+Real NRRadiation::EffectiveBlackBodyNNu2(Real n_nu2, Real nu)
 {
   Real fit_a = n_nu2/(nu*nu*nu);
   Real log_fit_a=log(fit_a);
@@ -234,7 +234,7 @@ Real Radiation::EffectiveBlackBodyNNu2(Real n_nu2, Real nu)
 // return the integral (15/pi^4)\int_{\nu/T}^{\infty} \nu J_nu d\nu
 // =(15/pi^4)\int_{\nu/T}^{\infty} x^4/(exp(x)-1) dx
 // the input is nu_t=nu_f/T
-Real Radiation::IntegrateBBNuJ(Real nu_t)
+Real NRRadiation::IntegrateBBNuJ(Real nu_t)
 {
   Real nu_sq = nu_t*nu_t;
   Real nu_four = nu_sq * nu_sq;
@@ -260,7 +260,7 @@ Real Radiation::IntegrateBBNuJ(Real nu_t)
 // return the integral (15/pi^4)\int_{\nu/T}^{\infty} (J_nu/nu)^2 d\nu
 // =(15/pi^4)\int_{\nu/T}^{\infty} x^4/(exp(x)-1)^2 dx
 // the input is nu_t=nu_f/T
-Real Radiation::IntegrateBBJONuSq(Real nu_t)
+Real NRRadiation::IntegrateBBJONuSq(Real nu_t)
 {
   Real nu_sq = nu_t*nu_t;
   Real nu_four = nu_sq * nu_sq;
@@ -286,7 +286,7 @@ Real Radiation::IntegrateBBJONuSq(Real nu_t)
 // (15/pi^4)^2 T_r^5\int x^4/(exp(x)-1)^2 dx
 // The input is J and nu_f
 
-Real Radiation::BBJToJONuSq(Real &bb_j, Real &nu_f)
+Real NRRadiation::BBJToJONuSq(Real &bb_j, Real &nu_f)
 {
   Real j_nu4 = bb_j/(nu_f*nu_f*nu_f*nu_f);
   Real log_j_nu4 = log10(j_nu4);
@@ -312,7 +312,7 @@ Real Radiation::BBJToJONuSq(Real &bb_j, Real &nu_f)
 // return the value n(nu_f)=1/(exp(x)-1)
 // The input is J and nu_f
 
-Real Radiation::BBJtoNnu(Real &bb_j, Real &nu_f)
+Real NRRadiation::BBJtoNnu(Real &bb_j, Real &nu_f)
 {
   Real j_nu4 = bb_j/(nu_f*nu_f*nu_f*nu_f);
   Real log_j_nu4 = log10(j_nu4)+3.0;
@@ -338,7 +338,7 @@ Real Radiation::BBJtoNnu(Real &bb_j, Real &nu_f)
 // return the value Jnu=(15/pi^4)T_r^5\int x^4/(exp(x)-1) dx
 // The input is J and nu_f
 
-Real Radiation::BBJtoJnu(Real &bb_j, Real &nu_f)
+Real NRRadiation::BBJtoJnu(Real &bb_j, Real &nu_f)
 {
   Real j_nu4 = bb_j/(nu_f*nu_f*nu_f*nu_f);
   Real log_j_nu4 = log10(j_nu4);
@@ -362,7 +362,7 @@ Real Radiation::BBJtoJnu(Real &bb_j, Real &nu_f)
   
 }
 
-Real Radiation::DBBjDNNu2(Real &bb_j, Real &nu_f)
+Real NRRadiation::DBBjDNNu2(Real &bb_j, Real &nu_f)
 {
   Real j_nu4 = bb_j/(nu_f*nu_f*nu_f*nu_f);
   Real log_j_nu4 = log10(j_nu4);
@@ -391,7 +391,7 @@ Real Radiation::DBBjDNNu2(Real &bb_j, Real &nu_f)
 // return the integral \int_{nu/T}^{\infty} n \nu^2 d\nu
 // = \int_{nu/T}^{\infty} x^2/(exp(x)-1) dx
 // the input is nu_t=nu_f/T_r
-Real Radiation::IntegrateBBNNu2(Real nu_t)
+Real NRRadiation::IntegrateBBNNu2(Real nu_t)
 {
   Real nu_sq = nu_t*nu_t;
   Real nu_three = nu_t * nu_sq;
@@ -416,7 +416,7 @@ Real Radiation::IntegrateBBNNu2(Real nu_t)
 // and frequency nu_f, we return the integral 
 // nnu2=\int_{nu_f}^{infty} nu^2/(exp(nu/Tr)-1) d\nu
 // We use piecewise linear relationship between J and nnu2
-Real Radiation::ConvertBBJNNu2(Real &bb_j, Real &nu_f)
+Real NRRadiation::ConvertBBJNNu2(Real &bb_j, Real &nu_f)
 {
   Real jnu4 = bb_j/(nu_f*nu_f*nu_f*nu_f);
   Real log_jnu4=log10(jnu4);
@@ -439,7 +439,7 @@ Real Radiation::ConvertBBJNNu2(Real &bb_j, Real &nu_f)
 // inverse conversion from nnu2 to J. 
 // The conversion from J to nnu2, and then from nnu2 to J
 // Should be exact
-Real Radiation::InverseConvertBBJNNu2(Real &nnu2, Real &nu_f)
+Real NRRadiation::InverseConvertBBJNNu2(Real &nnu2, Real &nu_f)
 {
   Real nnu2_nu3=nnu2/(nu_f*nu_f*nu_f);
   Real log_nnu2=log(nnu2_nu3);
@@ -456,7 +456,7 @@ Real Radiation::InverseConvertBBJNNu2(Real &nnu2, Real &nu_f)
 
 // convert J to nnu2 assuming Wien profile spectrum
 
-void Radiation::ConvertBBJWien(Real &bb_j, Real &nu_f, Real &tgas,
+void NRRadiation::ConvertBBJWien(Real &bb_j, Real &nu_f, Real &tgas,
                               Real &nuj, Real &jonusq)
 {
   Real nu_t = nu_f/tgas;
@@ -479,7 +479,7 @@ void Radiation::ConvertBBJWien(Real &bb_j, Real &nu_f, Real &tgas,
 
 }
 
-void Radiation::ConvertBBJWien2(Real &bb_j, Real &nu_f, Real &tgas,
+void NRRadiation::ConvertBBJWien2(Real &bb_j, Real &nu_f, Real &tgas,
                                Real &nnu2, Real &n_nuf)
 {
   Real nu_t = nu_f/tgas;
@@ -500,7 +500,7 @@ void Radiation::ConvertBBJWien2(Real &bb_j, Real &nu_f, Real &tgas,
 
 // convert nnu2 to J assuming Wien profile spectrum
 
-Real Radiation::InverseConvertBBJNNu2Wien(Real &nnu2, Real &nu_f, Real &tgas)
+Real NRRadiation::InverseConvertBBJNNu2Wien(Real &nnu2, Real &nu_f, Real &tgas)
 {
 
   Real nu_t = nu_f/tgas;

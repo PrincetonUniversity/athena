@@ -25,7 +25,7 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../cr/cr.hpp"
-#include "../radiation/radiation.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -691,7 +691,7 @@ void SphericalPolar::AxisDirection(int *axisx, int *axisy, int *axisz)
 void SphericalPolar::ConvertAngle(MeshBlock *pmb, const int nang,
                                AthenaArray<Real> &mu)
 {
-  if(RADIATION_ENABLED){
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
     
     int n1z = pmb->ncells1, n2z = pmb->ncells2, n3z = pmb->ncells3; 
     int ndim=1;
@@ -737,7 +737,7 @@ void SphericalPolar::ConvertAngle(MeshBlock *pmb, const int nang,
 
 // get the geometry factor for zeta flux
 // this needs to go throug all the nzeta
-void SphericalPolar::GetGeometryZeta(Radiation *prad, const int k, const int j, 
+void SphericalPolar::GetGeometryZeta(NRRadiation *prad, const int k, const int j, 
                                   const int i, AthenaArray<Real> &g_zeta)
 {
   int &nzeta = prad->nzeta;
@@ -750,7 +750,7 @@ void SphericalPolar::GetGeometryZeta(Radiation *prad, const int k, const int j,
 
 // get the geometry factor for psi flux
 // this needs to go throug all the nzeta
-void SphericalPolar::GetGeometryPsi(Radiation *prad, const int k, const int j, 
+void SphericalPolar::GetGeometryPsi(NRRadiation *prad, const int k, const int j, 
                         const int i, const int n_zeta, AthenaArray<Real> &g_psi)
 {
   int &npsi = prad->npsi;
@@ -771,7 +771,7 @@ void SphericalPolar::GetGeometryPsi(Radiation *prad, const int k, const int j,
 }
 
 
-void SphericalPolar::GetGeometryPsi(Radiation *prad, const int k, const int j, 
+void SphericalPolar::GetGeometryPsi(NRRadiation *prad, const int k, const int j, 
                         const int i, AthenaArray<Real> &g_psi)
 {
   int &npsi = prad->npsi;

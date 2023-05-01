@@ -18,7 +18,7 @@
 #include "../../../mesh/mesh.hpp"
 #include "../../../coordinates/coordinates.hpp"
 #include "../../../globals.hpp"
-#include "../../../radiation/radiation.hpp"
+#include "../../../nr_radiation/radiation.hpp"
 #include "bvals_rad.hpp"
 
 //----------------------------------------------------------------------------------------

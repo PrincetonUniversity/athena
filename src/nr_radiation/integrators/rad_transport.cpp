@@ -45,7 +45,7 @@
 void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
                      AthenaArray<Real> &ir, const int order)
 {
-  Radiation *prad=pmy_rad;
+  NRRadiation *prad=pmy_rad;
   MeshBlock *pmb=prad->pmy_block;
   Coordinates *pco=pmb->pcoord;
   
@@ -487,7 +487,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
 // calculate advective flux for the implicit scheme
 void RadIntegrator::CalculateFluxes(AthenaArray<Real> &ir, const int order)
 {
-  Radiation *prad=pmy_rad;
+  NRRadiation *prad=pmy_rad;
   MeshBlock *pmb=prad->pmy_block;
   Coordinates *pco=pmb->pcoord;
   
@@ -651,7 +651,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &ir, const int order)
 void RadIntegrator::FluxDivergence(const Real wght)
 {
 
-  Radiation *prad=pmy_rad;
+  NRRadiation *prad=pmy_rad;
   MeshBlock *pmb=prad->pmy_block;
   Coordinates *pco= pmb->pcoord;
 
@@ -734,7 +734,7 @@ void RadIntegrator::FluxDivergence(const Real wght)
 void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in, 
                                                     AthenaArray<Real> &ir_out)
 {
-  Radiation *prad=pmy_rad;
+  NRRadiation *prad=pmy_rad;
   MeshBlock *pmb=prad->pmy_block;
   int nfreq=prad->nfreq;
   int nang=prad->nang;

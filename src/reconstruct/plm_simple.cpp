@@ -23,7 +23,7 @@
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "reconstruction.hpp"
-#include "../radiation/radiation.hpp"
+#include "../nr_radiation/radiation.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseLinearX1(const int k, const int j,
@@ -543,7 +543,7 @@ void Reconstruction::PiecewiseLinearX3(
 // q is always in the order (zeta, psi)
 // q, ql and qr can change
 void Reconstruction::PiecewiseLinearZeta(
-    Radiation *prad, const int zs, const int ze,
+    NRRadiation *prad, const int zs, const int ze,
     AthenaArray<Real> &q, 
     AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
 
@@ -594,7 +594,7 @@ void Reconstruction::PiecewiseLinearZeta(
 }
 
 void Reconstruction::PiecewiseLinearPsi(
-    Radiation *prad, const int ps, const int pe,
+    NRRadiation *prad, const int ps, const int pe,
     AthenaArray<Real> &q, 
     AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
 

@@ -22,9 +22,9 @@
 #include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
 #include "../scalars/scalars.hpp"
-#include "../radiation/radiation.hpp"
-#include "../radiation/integrators/rad_integrators.hpp"
-#include "../radiation/implicit/radiation_implicit.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "../nr_radiation/integrators/rad_integrators.hpp"
+#include "../nr_radiation/implicit/radiation_implicit.hpp"
 #include "im_rad_task_list.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -167,7 +167,7 @@ TaskStatus IMRadHydroTaskList::SetHydroBoundary(MeshBlock *pmb) {
 }
 
 //TaskStatus IMRadHydroTaskList::PhysicalBoundary(MeshBlock *pmb) {
-//  pmb->prad->rad_bvar.var_cc = &(pmb->prad->ir);
+//  pmb->pnrrad->rad_bvar.var_cc = &(pmb->pnrrad->ir);
 //  pmb->pbval->ApplyPhysicalBoundaries(time_, dt_,pmb->pbval->bvars_main_int);
 //  return TaskStatus::success;
 //}
@@ -204,13 +204,13 @@ TaskStatus IMRadHydroTaskList::Primitive(MeshBlock *pmb) {
 }
 
 TaskStatus IMRadHydroTaskList::UpdateOpacity(MeshBlock *pmb) {
-  pmb->prad->UpdateOpacity(pmb, pmb->phydro->w);
+  pmb->pnrrad->UpdateOpacity(pmb, pmb->phydro->w);
   return TaskStatus::success;
 }
 
 TaskStatus IMRadHydroTaskList::AddRadSource(MeshBlock *pmb) {
-  if(pmb->prad->set_source_flag > 0)
-    pmb->prad->pradintegrator->AddSourceTerms(pmb, pmb->phydro->u);
+  if(pmb->pnrrad->set_source_flag > 0)
+    pmb->pnrrad->pradintegrator->AddSourceTerms(pmb, pmb->phydro->u);
   return TaskStatus::success;
 }
 

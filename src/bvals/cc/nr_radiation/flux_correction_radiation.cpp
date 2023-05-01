@@ -27,8 +27,8 @@
 #include "../../../field/field.hpp"
 #include "../../../globals.hpp"
 #include "../../../hydro/hydro.hpp"
-#include "../../../radiation/radiation.hpp"
-#include "../../../radiation/integrators/rad_integrators.hpp"
+#include "../../../nr_radiation/radiation.hpp"
+#include "../../../nr_radiation/integrators/rad_integrators.hpp"
 #include "../../../mesh/mesh.hpp"
 #include "../../../parameter_input.hpp"
 #include "../../../utils/buffer_utils.hpp"
@@ -48,7 +48,7 @@
 int RadBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
                                                        const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
-  Radiation *prad = pmb->prad;
+  NRRadiation *prad = pmb->pnrrad;
   Real qomL = pbval_->qomL_;
   int p = 0;
   if (pbval_->shearing_box == 1 && nb.shear

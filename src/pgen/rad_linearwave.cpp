@@ -35,8 +35,8 @@
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../radiation/radiation.hpp"
-#include "../radiation/integrators/rad_integrators.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "../nr_radiation/integrators/rad_integrators.hpp"
 
 static Real amp = 1.e-6;
 
@@ -78,7 +78,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   MeshBlock *pmb = my_blocks(0);
   for(int nb=0; nb<nblocal; ++nb){
     pmb = my_blocks(nb);
-    if(RADIATION_ENABLED || IM_RADIATION_ENABLED)
+    if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
       pmb->prad->CalculateMoment(pmb->prad->ir);
     //  Compute errors
     for (int k=pmb->ks; k<=pmb->ke; k++) {
@@ -428,7 +428,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/phydro->u(IDN,k,j,i);
         }
         
-        if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
+        if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
           Real der = amp * (er_r * cos(theta) + er_i * sin(theta));
           Real dfr = amp * (fr_r * cos(theta) + fr_i * sin(theta));
         

@@ -25,12 +25,12 @@
 
 class Mesh;
 class ParameterInput;
-class Radiation;
+class NRRadiation;
 class RadIntegrator;
 class TimeIntegratorTaskList;
 
 class IMRadiation {
-  friend class Radiation;
+  friend class NRRadiation;
   friend class RadIntegrator;
 public:
   IMRadiation(Mesh *pm, ParameterInput *pin);

@@ -34,8 +34,8 @@
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../radiation/radiation.hpp"
-#include "../radiation/integrators/rad_integrators.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "../nr_radiation/integrators/rad_integrators.hpp"
 
 
 //======================================================================================
@@ -89,7 +89,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
   
   //Now initialize opacity and specific intensity
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
     int nfreq = prad->nfreq;
     int nang = prad->nang;
     AthenaArray<Real> ir_cm;
@@ -192,7 +192,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
   for(int nb=0; nb<nblocal; ++nb){
     pmb = my_blocks(nb);
-    if(RADIATION_ENABLED || IM_RADIATION_ENABLED)
+    if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
       pmb->prad->CalculateMoment(pmb->prad->ir);
     //  Compute the sum
     for (int k=pmb->ks; k<=pmb->ke; k++) {

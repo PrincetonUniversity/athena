@@ -133,7 +133,7 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     int ndata = std::max(ncoord1, ncoord2);
     ndata = std::max(ndata, ncoord3);
     int array_size = 3*ndata;    
-    if(RADIATION_ENABLED || IM_RADIATION_ENABLED)
+    if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
       array_size = 9 * ndata;    
     data = new float[array_size];
 

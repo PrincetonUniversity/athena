@@ -91,7 +91,7 @@
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
-#include "../radiation/radiation.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "../cr/cr.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
@@ -348,7 +348,7 @@ Outputs::~Outputs() {
 void OutputType::LoadOutputData(MeshBlock *pmb) {
   Hydro *phyd = pmb->phydro;
   Field *pfld = pmb->pfield;
-  Radiation *prad=pmb->prad;
+  NRRadiation *prad=pmb->pnrrad;
   CosmicRay *pcr=pmb->pcr;
   PassiveScalars *psclr = pmb->pscalars;
   Gravity *pgrav = pmb->pgrav;
@@ -612,7 +612,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
 
   // The following radiation/cosmic ray/thermal conduction are all 
   // cell centered variable
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
     if(prad->nfreq == 1){
 
     // (lab-frame) radiation energy density
@@ -1249,12 +1249,12 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
       || (pm->time >= pm->tlim)
       || (wtflag && ptype->output_params.file_type == "rst")) {
 
-      if(rad_mom && (RADIATION_ENABLED || IM_RADIATION_ENABLED)){
+      if(rad_mom && (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)){
         for(int b=0; b<pm->nblocal; ++b){
           pmb = pm->my_blocks(b);
          // Calculate Com-moving moments and grey opacity for dump
-          pmb->prad->CalculateMoment(pmb->prad->ir);
-          pmb->prad->CalculateComMoment();          
+          pmb->pnrrad->CalculateMoment(pmb->pnrrad->ir);
+          pmb->pnrrad->CalculateComMoment();          
         }
         rad_mom = false;           
       }

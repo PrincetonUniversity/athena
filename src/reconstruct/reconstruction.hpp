@@ -166,20 +166,20 @@ class Reconstruction {
                             const AthenaArray<Real> &q, const int array_order,
                             AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void DonorCellZeta(Radiation *prad, const int zs, const int ze,
+  void DonorCellZeta(NRRadiation *prad, const int zs, const int ze,
       AthenaArray<Real> &q, 
       AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void DonorCellPsi(Radiation *prad, const int ps, const int pe,
+  void DonorCellPsi(NRRadiation *prad, const int ps, const int pe,
       AthenaArray<Real> &q, 
       AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void PiecewiseLinearZeta(Radiation *prad, 
+  void PiecewiseLinearZeta(NRRadiation *prad, 
       const int zs, const int ze, AthenaArray<Real> &q, 
       AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
 
-  void PiecewiseLinearPsi(Radiation *prad, 
+  void PiecewiseLinearPsi(NRRadiation *prad, 
       const int zs, const int ze, AthenaArray<Real> &q, 
       AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 

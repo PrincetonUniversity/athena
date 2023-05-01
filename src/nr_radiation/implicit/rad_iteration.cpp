@@ -63,7 +63,7 @@ void IMRadiation::Iteration(Mesh *pm,
      // first save initial state
     for(int nb=0; nb<pm->nblocal; ++nb){
       pmb = pm->my_blocks(nb);
-      Radiation *prad = pmb->prad;
+      NRRadiation *prad = pmb->pnrrad;
       Hydro *ph = pmb->phydro;
       Field *pf = pmb->pfield;
 
@@ -144,7 +144,7 @@ void IMRadiation::Iteration(Mesh *pm,
 
       for(int nb=0; nb<pm->nblocal; ++nb){
         pmb = pm->my_blocks(nb);
-        Radiation *prad = pmb->prad;
+        NRRadiation *prad = pmb->pnrrad;
          // copy the solution over
         prad->ir_old = prad->ir;
         sum_full_ += prad->sum_full;
@@ -203,14 +203,14 @@ void IMRadiation::Iteration(Mesh *pm,
     // now calculate the rad source terms
     for(int nb=0; nb<pm->nblocal; ++nb){
       pmb = pm->my_blocks(nb);
-      Radiation *prad = pmb->prad;
+      NRRadiation *prad = pmb->pnrrad;
       if(prad->set_source_flag > 0)
         prad->pradintegrator->GetHydroSourceTerms(pmb, prad->ir1, prad->ir);
     }
 
-    if((pm->my_blocks(0)->prad->nfreq > 1) && 
-      (pm->my_blocks(0)->prad->pradintegrator->compton_flag_ > 0) &&
-       pm->my_blocks(0)->prad->pradintegrator->split_compton_ > 0)
+    if((pm->my_blocks(0)->pnrrad->nfreq > 1) && 
+      (pm->my_blocks(0)->pnrrad->pradintegrator->compton_flag_ > 0) &&
+       pm->my_blocks(0)->pnrrad->pradintegrator->split_compton_ > 0)
       pimradcomptlist->DoTaskListOneStage(wght);
 
 
@@ -230,7 +230,7 @@ void IMRadiation::Iteration(Mesh *pm,
              AthenaArray<Real> &ir_old, AthenaArray<Real> &ir_new)
  {
 
-   Radiation *prad = pmb->prad;
+   NRRadiation *prad = pmb->pnrrad;
   
    int &nang =prad->nang;
    int &nfreq=prad->nfreq;

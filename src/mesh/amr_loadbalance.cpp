@@ -22,7 +22,7 @@
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../utils/buffer_utils.hpp"
-#include "../radiation/radiation.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
@@ -451,8 +451,8 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
     nx4_tot += var_cc.GetDim4();
   }
   // radiation variables are not included in vars_cc as they need different order
-  if((RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
-    nx4_tot += my_blocks(0)->prad->ir.GetDim1();
+  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+    nx4_tot += my_blocks(0)->pnrrad->ir.GetDim1();
   }
 
   // cell-centered quantities enrolled in SMR/AMR
@@ -695,9 +695,9 @@ void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
     BufferUtility::PackData(var_cc, sendbuf, 0, nu,
                             pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
   }
-  if((RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
-    int nu = pb->prad->ir.GetDim1() - 1;
-    BufferUtility::PackData(pb->prad->ir, sendbuf, pb->ks, pb->ke,
+  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+    int nu = pb->pnrrad->ir.GetDim1() - 1;
+    BufferUtility::PackData(pb->pnrrad->ir, sendbuf, pb->ks, pb->ke,
                             0,  nu, pb->is, pb->ie, pb->js, pb->je, p);
 
   }
@@ -744,9 +744,9 @@ void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
     BufferUtility::PackData(*var_cc, sendbuf, 0, nu,
                             il, iu, jl, ju, kl, ku, p);
   }
-  if((RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
-    int nu = pb->prad->ir.GetDim1() - 1;
-    BufferUtility::PackData(pb->prad->ir, sendbuf, kl, ku,
+  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+    int nu = pb->pnrrad->ir.GetDim1() - 1;
+    BufferUtility::PackData(pb->pnrrad->ir, sendbuf, kl, ku,
                             0,  nu, il, iu, jl, ju, p);
 
   }
@@ -787,9 +787,9 @@ void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
                             pb->cks, pb->cke, p);
   }
 
-  if((RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
-    AthenaArray<Real> &var_cc = pb->prad->ir;
-    AthenaArray<Real> &coarse_cc = pb->prad->coarse_ir_;
+  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+    AthenaArray<Real> &var_cc = pb->pnrrad->ir;
+    AthenaArray<Real> &coarse_cc = pb->pnrrad->coarse_ir_;
     int nu = var_cc.GetDim1() - 1;
 
     pmr->RestrictCellCenteredValues(var_cc, coarse_cc,-1,
@@ -877,10 +877,10 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
   }
 
 
-  if((RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
     // restrict from pob block
-    AthenaArray<Real> &var_cc = pob->prad->ir;
-    AthenaArray<Real> &coarse_cc = pob->prad->coarse_ir_;
+    AthenaArray<Real> &var_cc = pob->pnrrad->ir;
+    AthenaArray<Real> &coarse_cc = pob->pnrrad->coarse_ir_;
     int nu = var_cc.GetDim1() - 1;
 
     pmr->RestrictCellCenteredValues(var_cc, coarse_cc,-1,
@@ -891,7 +891,7 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
 
     // now copy from pob to new pmb
     AthenaArray<Real> &src = coarse_cc;
-    AthenaArray<Real> &dst = pmb->prad->ir;  
+    AthenaArray<Real> &dst = pmb->pnrrad->ir;  
 
     for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
       for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
@@ -1000,14 +1000,14 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
     pob_cc_it++;
   }
 
-  if((RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
     // copy from pmb block
-    AthenaArray<Real> &var_cc = pmb->prad->ir;
-    AthenaArray<Real> &coarse_cc = pmb->prad->coarse_ir_;
+    AthenaArray<Real> &var_cc = pmb->pnrrad->ir;
+    AthenaArray<Real> &coarse_cc = pmb->pnrrad->coarse_ir_;
     int nu = var_cc.GetDim1() - 1;
 
     // fill the coarse buffer
-    AthenaArray<Real> &src = pob->prad->ir;
+    AthenaArray<Real> &src = pob->pnrrad->ir;
     AthenaArray<Real> &dst = coarse_cc;  
 
     for (int k=kl, ck=cks; k<=ku; k++, ck++) {
@@ -1079,9 +1079,9 @@ void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
                               pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
   }
 
-  if((RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
-    int nu = pb->prad->ir.GetDim1() - 1;
-    BufferUtility::UnpackData(recvbuf, pb->prad->ir, pb->ks, pb->ke, 0, nu,
+  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+    int nu = pb->pnrrad->ir.GetDim1() - 1;
+    BufferUtility::UnpackData(recvbuf, pb->pnrrad->ir, pb->ks, pb->ke, 0, nu,
                               pb->is, pb->ie, pb->js, pb->je, p);
 
   }
@@ -1139,9 +1139,9 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
                               il, iu, jl, ju, kl, ku, p);
   }
 
-  if((RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
-    int nu = pb->prad->ir.GetDim1() - 1;
-    BufferUtility::UnpackData(recvbuf, pb->prad->ir, kl, ku, 0, nu,
+  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+    int nu = pb->pnrrad->ir.GetDim1() - 1;
+    BufferUtility::UnpackData(recvbuf, pb->pnrrad->ir, kl, ku, 0, nu,
                               il, iu, jl, ju, p);
 
   }
@@ -1191,10 +1191,10 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
   }
 
 
-  if((RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
     // copy from pmb block
-    AthenaArray<Real> &var_cc = pb->prad->ir;
-    AthenaArray<Real> &coarse_cc = pb->prad->coarse_ir_;
+    AthenaArray<Real> &var_cc = pb->pnrrad->ir;
+    AthenaArray<Real> &coarse_cc = pb->pnrrad->coarse_ir_;
     int nu = var_cc.GetDim1() - 1;
 
     BufferUtility::UnpackData(recvbuf, coarse_cc, kl, ku,

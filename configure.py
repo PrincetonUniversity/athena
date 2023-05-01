@@ -37,7 +37,7 @@
 #   --include=path    use -Ipath when compiling
 #   --lib_path=path   use -Lpath when linking
 #   --lib=xxx         use -lxxx when linking
-#   -radiation        turn on radiation transport
+#   -nr_radiation        turn on radiation transport
 #   -implicit_radiation implicit radiation transport module
 #   -cr               enable cosmic ray transport
 # ----------------------------------------------------------------------------------------
@@ -209,10 +209,10 @@ parser.add_argument('--hdf5_path',
                     help='path to HDF5 libraries')
 
 # -radiation argument
-parser.add_argument('-radiation',
+parser.add_argument('-nr_radiation',
                     action='store_true',
                     default=False,
-                    help='enable radiative transfer')
+                    help='enable non-relativistic radiative transfer')
 
 # -radiation argument
 parser.add_argument('-implicit_radiation',
@@ -468,10 +468,10 @@ if args['g']:
 
 
 # -radiation argument
-if args['radiation']:
-    definitions['RADIATION_ENABLED'] = '1'
+if args['nr_radiation']:
+    definitions['NR_RADIATION_ENABLED'] = '1'
 else:
-    definitions['RADIATION_ENABLED'] = '0'
+    definitions['NR_RADIATION_ENABLED'] = '0'
 
 if args['implicit_radiation']:
     definitions['IM_RADIATION_ENABLED'] = '1'
@@ -859,7 +859,7 @@ print('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF'))
 print('  Number of scalars:          ' + args['nscalars'])
 print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
-print('  Radiative Transfer:         ' + ('ON' if args['radiation'] else 'OFF'))
+print('  Radiative Transfer:         ' + ('ON' if args['nr_radiation'] else 'OFF'))
 print('  Implicit Radiation:         ' + ('ON' if args['implicit_radiation'] else 'OFF'))
 print('  Cosmic Ray Transport:       ' + ('ON' if args['cr'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
@@ -893,7 +893,7 @@ flog.write('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF') + '
 flog.write('  Number of scalars:          ' + args['nscalars'] + '\n')
 flog.write('  Special relativity:         ' + ('ON' if args['s'] else 'OFF') + '\n')
 flog.write('  General relativity:         ' + ('ON' if args['g'] else 'OFF')+ '\n')
-flog.write('  Radiative Transfer:         ' + ('ON' if args['radiation'] else 'OFF') + '\n')
+flog.write('  Radiative Transfer:         ' + ('ON' if args['nr_radiation'] else 'OFF') + '\n')
 flog.write('  Implicit Radiation:         ' + ('ON' if args['implicit_radiation'] else 'OFF') + '\n')
 flog.write('  Cosmic Ray Transport:       ' + ('ON' if args['cr'] else 'OFF') + '\n')
 flog.write('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF') + '\n')

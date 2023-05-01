@@ -32,7 +32,7 @@
 
 // \brief function to create the angular grid
 
-void Radiation::AngularGrid(int angle_flag, int nmu)
+void NRRadiation::AngularGrid(int angle_flag, int nmu)
 {
   std::stringstream msg;
   MeshBlock *pmb=pmy_block;
@@ -352,7 +352,7 @@ void Radiation::AngularGrid(int angle_flag, int nmu)
 
 // nzeta is number of zeta angles in one octant 
 // npsi is the number of psi angles between 0 and pi
-void Radiation::AngularGrid(int angle_flag, int nzeta, int npsi)
+void NRRadiation::AngularGrid(int angle_flag, int nzeta, int npsi)
 {
 
   MeshBlock *pmb=pmy_block;

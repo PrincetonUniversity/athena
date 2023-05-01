@@ -45,7 +45,7 @@ struct TaskStates;
 class Coordinates;
 class Reconstruction;
 class Hydro;
-class Radiation;
+class NRRadiation;
 class IMRadiation;
 class CosmicRay;
 class Field;
@@ -119,7 +119,7 @@ class MeshBlock {
 
   // physics-related objects (possibly containing their derived bvals classes)
   Hydro *phydro;
-  Radiation *prad;
+  NRRadiation *pnrrad;
   CosmicRay *pcr;
   Field *pfield;
   Gravity *pgrav;
@@ -209,7 +209,7 @@ class Mesh {
   friend class MeshRefinement;
   friend class HydroSourceTerms;
   friend class Hydro;
-  friend class Radiation;
+  friend class NRRadiation;
   friend class IMRadiation;
   friend class CosmicRay;
   friend class FFTDriver;

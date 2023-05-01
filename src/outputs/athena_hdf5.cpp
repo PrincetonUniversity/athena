@@ -28,7 +28,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../radiation/radiation.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "outputs.hpp"
 
 // Only proceed if HDF5 output enabled
@@ -137,7 +137,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       if (pmb->pgrav->output_defect)
         num_variables[n_dataset] += 1;
     }
-    if(RADIATION_ENABLED || IM_RADIATION_ENABLED)
+    if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
       num_variables[n_dataset] += 20 *pmb->prad->nfreq;
 
     if(CR_ENABLED)

@@ -17,9 +17,9 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../mesh/mesh.hpp"
-#include "../radiation/radiation.hpp"
-#include "../radiation/implicit/radiation_implicit.hpp"
-#include "../radiation/integrators/rad_integrators.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "../nr_radiation/implicit/radiation_implicit.hpp"
+#include "../nr_radiation/integrators/rad_integrators.hpp"
 #include "../hydro/hydro.hpp"
 #include "im_rad_task_list.hpp"
 
@@ -122,7 +122,7 @@ void IMRadITTaskList::AddTask(const TaskID& id, const TaskID& dep) {
 
 TaskStatus IMRadITTaskList::AddFluxAndSourceTerms(MeshBlock *pmb) {
 
-  Radiation *prad = pmb->prad;
+  NRRadiation *prad = pmb->pnrrad;
   Hydro *ph = pmb->phydro;
   int &rb_or_not = pmy_mesh->pimrad->rb_or_not;
 
@@ -204,32 +204,32 @@ TaskStatus IMRadITTaskList::AddFluxAndSourceTerms(MeshBlock *pmb) {
 
 
 TaskStatus IMRadITTaskList::ClearRadBoundary(MeshBlock *pmb) {
-  pmb->prad->rad_bvar.ClearBoundary(BoundaryCommSubset::radiation);
+  pmb->pnrrad->rad_bvar.ClearBoundary(BoundaryCommSubset::radiation);
   return TaskStatus::success;
 }
 
 TaskStatus IMRadITTaskList::SendRadBoundary(MeshBlock *pmb) {
-  pmb->prad->rad_bvar.SendBoundaryBuffers();
+  pmb->pnrrad->rad_bvar.SendBoundaryBuffers();
   return TaskStatus::success;
 }
 
 TaskStatus IMRadITTaskList::SendRadBoundaryShear(MeshBlock *pmb) {
-  pmb->prad->rad_bvar.SendShearingBoxBoundaryBuffers();
+  pmb->pnrrad->rad_bvar.SendShearingBoxBoundaryBuffers();
   return TaskStatus::success;
 }
 
 
 TaskStatus IMRadITTaskList::ReceiveRadBoundary(MeshBlock *pmb) {
-  bool ret = pmb->prad->rad_bvar.ReceiveBoundaryBuffers();
+  bool ret = pmb->pnrrad->rad_bvar.ReceiveBoundaryBuffers();
   if (!ret)
     return TaskStatus::fail;
   return TaskStatus::success;
 }
 
 TaskStatus IMRadITTaskList::ReceiveRadBoundaryShear(MeshBlock *pmb) {
-  bool ret = pmb->prad->rad_bvar.ReceiveShearingBoxBoundaryBuffers();
+  bool ret = pmb->pnrrad->rad_bvar.ReceiveShearingBoxBoundaryBuffers();
   if(ret){
-    pmb->prad->rad_bvar.SetShearingBoxBoundaryBuffers();
+    pmb->pnrrad->rad_bvar.SetShearingBoxBoundaryBuffers();
     return TaskStatus::success;
   }else{
     return TaskStatus::fail;
@@ -238,20 +238,20 @@ TaskStatus IMRadITTaskList::ReceiveRadBoundaryShear(MeshBlock *pmb) {
 
 
 TaskStatus IMRadITTaskList::SetRadBoundary(MeshBlock *pmb) {
-  pmb->prad->rad_bvar.SetBoundaries();
+  pmb->pnrrad->rad_bvar.SetBoundaries();
   return TaskStatus::success;
 }
 
 
 TaskStatus IMRadITTaskList::CheckResidual(MeshBlock *pmb) {
-  pmy_mesh->pimrad->CheckResidual(pmb, pmb->prad->ir_old,pmb->prad->ir);
+  pmy_mesh->pimrad->CheckResidual(pmb, pmb->pnrrad->ir_old,pmb->pnrrad->ir);
   return TaskStatus::success;
 }
 
 void IMRadITTaskList::StartupTaskList(MeshBlock *pmb) {
-  pmb->prad->rad_bvar.StartReceiving(BoundaryCommSubset::radiation);
+  pmb->pnrrad->rad_bvar.StartReceiving(BoundaryCommSubset::radiation);
   if(pmy_mesh->shear_periodic)
-    pmb->prad->rad_bvar.StartReceivingShear(BoundaryCommSubset::radiation);
+    pmb->pnrrad->rad_bvar.StartReceivingShear(BoundaryCommSubset::radiation);
   return;
 }
 

@@ -39,14 +39,14 @@
 
 // The default opacity function.
 // Do nothing. Keep the opacity as the initial value
-inline void DefaultFrequency(Radiation *prad)
+inline void DefaultFrequency(NRRadiation *prad)
 {
   return;
 }
 
 // The default opacity function.
 // Do nothing. Keep the opacity as the initial value
-inline void DefaultEmission(Radiation *prad, Real tgas)
+inline void DefaultEmission(NRRadiation *prad, Real tgas)
 {
   int &nfreq = prad->nfreq;
   if(nfreq > 1){
@@ -72,7 +72,7 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &prim)
 
 
 
-Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin):
+NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
     pmy_block(pmb), ir(pmb->ncells3,pmb->ncells2,pmb->ncells1,pmb->nfre_ang),
     ir1(pmb->ncells3,pmb->ncells2,pmb->ncells1,pmb->nfre_ang),
 // constructor overload resolution of non-aggregate class type AthenaArray<Real>
@@ -315,7 +315,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin):
   rad_bvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&rad_bvar);
 // enroll radiation boundary value object
-  if(RADIATION_ENABLED){
+  if(NR_RADIATION_ENABLED){
     pmb->pbval->bvars_main_int.push_back(&rad_bvar);
   }
 
@@ -396,7 +396,7 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin):
 
 // destructor
 // destructor not used
-Radiation::~Radiation()
+NRRadiation::~NRRadiation()
 {
 
   ir_old.DeleteAthenaArray();
@@ -434,21 +434,21 @@ Radiation::~Radiation()
 
 //Enrol the function to update opacity
 
-void Radiation::EnrollOpacityFunction(OpacityFunc MyOpacityFunction)
+void NRRadiation::EnrollOpacityFunction(OpacityFunc MyOpacityFunction)
 {
   UpdateOpacity = MyOpacityFunction;
   
 }
 
 
-void Radiation::EnrollFrequencyFunction(FrequencyFunc MyFrequencyFunction)
+void NRRadiation::EnrollFrequencyFunction(FrequencyFunc MyFrequencyFunction)
 {
   UserFrequency = MyFrequencyFunction;
   
 }
 
 
-void Radiation::EnrollEmissionFunction(EmissionFunc MyEmissionSpec)
+void NRRadiation::EnrollEmissionFunction(EmissionFunc MyEmissionSpec)
 {
   UserEmissionSpec = MyEmissionSpec;
   

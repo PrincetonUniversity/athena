@@ -34,8 +34,8 @@
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../radiation/radiation.hpp"
-#include "../radiation/integrators/rad_integrators.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "../nr_radiation/integrators/rad_integrators.hpp"
 
 
 //======================================================================================
@@ -83,7 +83,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   }
   
   //Now initialize opacity and specific intensity
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
     int nfreq = prad->nfreq;
     int nang = prad->nang;
     AthenaArray<Real> ir_cm;

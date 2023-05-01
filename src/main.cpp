@@ -43,8 +43,8 @@
 #include "outputs/outputs.hpp"
 #include "parameter_input.hpp"
 #include "utils/utils.hpp"
-#include "radiation/implicit/radiation_implicit.hpp"
-#include "radiation/radiation.hpp"
+#include "nr_radiation/implicit/radiation_implicit.hpp"
+#include "nr_radiation/radiation.hpp"
 
 // MPI/OpenMP headers
 #ifdef MPI_PARALLEL

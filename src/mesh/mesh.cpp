@@ -48,8 +48,8 @@
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
 #include "../utils/buffer_utils.hpp"
-#include "../radiation/radiation.hpp"
-#include "../radiation/implicit/radiation_implicit.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "../nr_radiation/implicit/radiation_implicit.hpp"
 #include "../cr/cr.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
@@ -894,8 +894,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   }
   delete [] mbdata;
   // check consistency
-  if( (RADIATION_ENABLED || IM_RADIATION_ENABLED) && 
-                    my_blocks(0)->prad->restart_from_gray > 0){
+  if( (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) && 
+                    my_blocks(0)->pnrrad->restart_from_gray > 0){
     if (datasize != my_blocks(0)->GetBlockSizeInBytesGray()) {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl
             << "The restart file is broken or input parameters are inconsistent."
@@ -1481,7 +1481,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         || (SELF_GRAVITY_ENABLED == 2 && pmb->pgrav->fill_ghost))
         pmb->pgrav->gbvar.SetupPersistentMPI();
       if(IM_RADIATION_ENABLED)
-        pmb->prad->rad_bvar.SetupPersistentMPI();
+        pmb->pnrrad->rad_bvar.SetupPersistentMPI();
     }
 
     // solve gravity for the first time
@@ -1505,7 +1505,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pbval->StartReceivingSubset(BoundaryCommSubset::mesh_init,
                                     pbval->bvars_main_int);
         if(IM_RADIATION_ENABLED)
-          pmb->prad->rad_bvar.StartReceiving(BoundaryCommSubset::radiation);
+          pmb->pnrrad->rad_bvar.StartReceiving(BoundaryCommSubset::radiation);
       }
 
       // send conserved variables
@@ -1527,8 +1527,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
 
 
-        if(RADIATION_ENABLED || IM_RADIATION_ENABLED)
-          pmb->prad->rad_bvar.SendBoundaryBuffers();
+        if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+          pmb->pnrrad->rad_bvar.SendBoundaryBuffers();
         if(CR_ENABLED)
           pmb->pcr->cr_bvar.SendBoundaryBuffers();
 
@@ -1545,21 +1545,21 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (NSCALARS > 0)
           pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
 
-        if(RADIATION_ENABLED || IM_RADIATION_ENABLED)
-          pmb->prad->rad_bvar.ReceiveAndSetBoundariesWithWait();
+        if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+          pmb->pnrrad->rad_bvar.ReceiveAndSetBoundariesWithWait();
         if(CR_ENABLED)
           pmb->pcr->cr_bvar.ReceiveAndSetBoundariesWithWait();
 
         if (shear_periodic && orbital_advection==0) {
           pmb->phydro->hbvar.AddHydroShearForInit();
 
-          if(RADIATION_ENABLED || IM_RADIATION_ENABLED)
-            pmb->prad->rad_bvar.AddRadShearForInit();
+          if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+            pmb->pnrrad->rad_bvar.AddRadShearForInit();
         }
         pbval->ClearBoundarySubset(BoundaryCommSubset::mesh_init,
                                    pbval->bvars_main_int);
         if(IM_RADIATION_ENABLED)
-          pmb->prad->rad_bvar.ClearBoundary(BoundaryCommSubset::radiation);  
+          pmb->pnrrad->rad_bvar.ClearBoundary(BoundaryCommSubset::radiation);  
 
       }
 
@@ -1712,10 +1712,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
 
       //for radiation, calculate opacity and moments
-      if(RADIATION_ENABLED || IM_RADIATION_ENABLED){
+      if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
         for (int i=0; i<nblocal; ++i){
           pmb = my_blocks(i); ph = pmb->phydro;
-          Radiation *prad = pmb->prad;
+          NRRadiation *prad = pmb->pnrrad;
           prad->UserFrequency(prad);
           prad->CalculateMoment(prad->ir);
           prad->UpdateOpacity(pmb,ph->w);
@@ -1974,7 +1974,7 @@ void Mesh::CorrectMidpointInitialCondition() {
                                 pbval->bvars_main_int);
 
     if(IM_RADIATION_ENABLED)
-      pmb->prad->rad_bvar.StartReceiving(BoundaryCommSubset::radiation);
+      pmb->pnrrad->rad_bvar.StartReceiving(BoundaryCommSubset::radiation);
 
   }
 
@@ -1995,8 +1995,8 @@ void Mesh::CorrectMidpointInitialCondition() {
       pmb->pscalars->sbvar.SendBoundaryBuffers();
     }
 
-    if(RADIATION_ENABLED || IM_RADIATION_ENABLED)
-      pmb->prad->rad_bvar.SendBoundaryBuffers();
+    if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+      pmb->pnrrad->rad_bvar.SendBoundaryBuffers();
     if(CR_ENABLED)
       pmb->pcr->cr_bvar.SendBoundaryBuffers();
 
@@ -2020,8 +2020,8 @@ void Mesh::CorrectMidpointInitialCondition() {
     }
 
 
-    if(RADIATION_ENABLED || IM_RADIATION_ENABLED)
-      pmb->prad->rad_bvar.ReceiveAndSetBoundariesWithWait();
+    if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+      pmb->pnrrad->rad_bvar.ReceiveAndSetBoundariesWithWait();
     if(CR_ENABLED)
       pmb->pcr->cr_bvar.ReceiveAndSetBoundariesWithWait();
 
@@ -2029,8 +2029,8 @@ void Mesh::CorrectMidpointInitialCondition() {
     if (shear_periodic && orbital_advection==0) {
       pmb->phydro->hbvar.AddHydroShearForInit();
 
-      if(RADIATION_ENABLED || IM_RADIATION_ENABLED)
-        pmb->prad->rad_bvar.AddRadShearForInit();
+      if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+        pmb->pnrrad->rad_bvar.AddRadShearForInit();
 
     }
     pbval->ClearBoundarySubset(BoundaryCommSubset::mesh_init,
@@ -2038,7 +2038,7 @@ void Mesh::CorrectMidpointInitialCondition() {
 
 
     if(IM_RADIATION_ENABLED)
-      pmb->prad->rad_bvar.ClearBoundary(BoundaryCommSubset::radiation);   
+      pmb->pnrrad->rad_bvar.ClearBoundary(BoundaryCommSubset::radiation);   
 
   } // end second exchange of ghost cells
   return;
@@ -2092,7 +2092,7 @@ void Mesh::ReserveMeshBlockPhysIDs() {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
 
-  if(RADIATION_ENABLED || IM_RADIATION_ENABLED)
+  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
     ReserveTagPhysIDs(RadBoundaryVariable::max_phys_id);
   if(CR_ENABLED)
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
