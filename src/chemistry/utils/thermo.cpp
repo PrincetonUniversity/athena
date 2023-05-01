@@ -628,6 +628,7 @@ Real Thermo::CoolingCOR(const Real xCO, const Real nHI, const Real nH2,
 //! Collision species: HI, H2, He, H+, e
 //! Note: Using Glover + Abel 2008 fitting formulas in Table 8, assuming
 //! that ortho to para ration of H2 is 3:1.
+//! Updated H2-e and H2-H+ rates from Glover (2015) MNRAS.451.2082G Appendix A1
 //! Auguments:
 //! xH2 = nH2 / nH
 //! ni: number density of species i, in cm^-3
@@ -653,6 +654,9 @@ Real Thermo::CoolingH2(const Real xH2, const Real nHI, const Real nH2,
   const Real logT3_3 = logT3_2 * logT3;
   const Real logT3_4 = logT3_3 * logT3;
   const Real logT3_5 = logT3_4 * logT3;
+  const Real logT3_6 = logT3_5 * logT3;
+  const Real logT3_7 = logT3_6 * logT3;
+  const Real logT3_8 = logT3_7 * logT3;
   Real LHI, LH2, LHe, LHplus, Le;
   // HI
   if (T < 100) {
@@ -677,18 +681,22 @@ Real Thermo::CoolingH2(const Real xH2, const Real nHI, const Real nH2,
                 -0.81520438e0*logT3_2 +0.29036281e0*logT3_3
                 -0.16596184e0*logT3_4 +0.19191375e0*logT3_5);
   // H+
-  LHplus = pow(10, -2.1716699e1 +1.3865783e0*logT3
-                   -0.37915285e0*logT3_2 +0.11453688e0*logT3_3
-                   -0.23214154e0*logT3_4 +0.058538864e0*logT3_5);
+  LHplus = pow(10, -2.2089523e1 +1.5714711e0*logT3
+                   +0.015391166e0*logT3_2 -0.23619985e0*logT3_3
+                   -0.51002221e0*logT3_4 +0.32168730e0*logT3_5);
   // e
-  if (T < 200) {
-    Le = pow(10, -3.4286155e1 -4.8537163e1*logT3
-                 -7.7121176e1*logT3_2 -5.1352459e1*logT3_3
-                 -1.5169150e1*logT3_4 -0.98120322e0*logT3_5);
+  if (T < 500) {
+    Le = pow(10, -2.1928796e1 + 1.6815730e1*logT3
+                 +9.6743155e1*logT3_2 +3.4319180e2*logT3_3
+                 +7.3471651e2*logT3_4 +9.8367576e2*logT3_5
+                 +8.0181247e2*logT3_6 +3.6414446e2*logT3_7
+                 +7.0609154e1*logT3_8);
   } else {
-    Le = pow(10, -2.2190316e1 +1.5728955e0*logT3
-                 -0.213351e0*logT3_2 +0.96149759e0*logT3_3
-                 -0.91023195e0*logT3_4 +0.13749749e0*logT3_5);
+    Le = pow(10, -2.2921189e1 +1.6802758e0*logT3
+                 +0.93310622e0*logT3_2 +4.0406627e0*logT3_3
+                 -4.7274036e0*logT3_4 -8.8077017e0*logT3_5
+                 +8.9167183*logT3_6 +6.4380698*logT3_7
+                 -6.3701156*logT3_8);
   }
   // total cooling in low density limit
   const Real Gamma_n0 = LHI*nHI + LH2*nH2 + LHe*nHe + LHplus*nHplus + Le*ne;
