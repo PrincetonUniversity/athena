@@ -79,7 +79,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   for(int nb=0; nb<nblocal; ++nb){
     pmb = my_blocks(nb);
     if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
-      pmb->prad->CalculateMoment(pmb->prad->ir);
+      pmb->pnrrad->CalculateMoment(pmb->pnrrad->ir);
     //  Compute errors
     for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js; j<=pmb->je; j++) {
@@ -96,8 +96,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         Real diffrho = (pmb->phydro->u(IDN,k,j,i) - 1.0) - delrho * exp(-omegaimg*time);
         Real diffvel= pmb->phydro->w(IVX,k,j,i) - delv*exp(-omegaimg*time);
         Real diffpre = (pmb->phydro->w(IEN,k,j,i) - 1.0) - delp *exp(-omegaimg*time);
-        Real differ= (pmb->prad->rad_mom(IER,k,j,i) - 1.0) - der*exp(-omegaimg*time);
-        Real difffr= pmb->prad->rad_mom(IFR1,k,j,i) -  dfr *exp(-omegaimg*time);
+        Real differ= (pmb->pnrrad->rad_mom(IER,k,j,i) - 1.0) - der*exp(-omegaimg*time);
+        Real difffr= pmb->pnrrad->rad_mom(IFR1,k,j,i) -  dfr *exp(-omegaimg*time);
 
         l1_err[0] += fabs(diffrho);
         max_err[0] = std::max(fabs(diffrho),max_err[0]);
@@ -434,17 +434,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
         
           Real jr = (1.0+der);
           Real hr = dfr;
-          for(int ifr=0; ifr<prad->nfreq; ++ifr){
-            for(int n=0; n<prad->nang; ++n){
-               Real& weight = prad->wmu(n);
-               Real& miux = prad->mu(0,k,j,i,n);
-               prad->ir(k,j,i,ifr*prad->nang+n)=(jr/(4.0*weight) + hr/(4.0*weight*miux));
+          for(int ifr=0; ifr<pnrrad->nfreq; ++ifr){
+            for(int n=0; n<pnrrad->nang; ++n){
+               Real& weight = pnrrad->wmu(n);
+               Real& miux = pnrrad->mu(0,k,j,i,n);
+               pnrrad->ir(k,j,i,ifr*pnrrad->nang+n)=(jr/(4.0*weight) + hr/(4.0*weight*miux));
             }
             
-            prad->sigma_s(k,j,i,ifr) = 0.0;
-            prad->sigma_a(k,j,i,ifr) = sigma0;
-            prad->sigma_pe(k,j,i,ifr) = sigma0;
-            prad->sigma_p(k,j,i,ifr) = sigma0;
+            pnrrad->sigma_s(k,j,i,ifr) = 0.0;
+            pnrrad->sigma_a(k,j,i,ifr) = sigma0;
+            pnrrad->sigma_pe(k,j,i,ifr) = sigma0;
+            pnrrad->sigma_p(k,j,i,ifr) = sigma0;
 
           }
         

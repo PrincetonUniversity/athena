@@ -84,10 +84,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   
   //Now initialize opacity and specific intensity
   if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
-    int nfreq = prad->nfreq;
-    int nang = prad->nang;
+    int nfreq = pnrrad->nfreq;
+    int nang = pnrrad->nang;
     AthenaArray<Real> ir_cm;
-    ir_cm.NewAthenaArray(prad->n_fre_ang);
+    ir_cm.NewAthenaArray(pnrrad->n_fre_ang);
 
     Real *ir_lab;
     
@@ -99,14 +99,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           Real vx = phydro->u(IM1,k,j,i)/phydro->u(IDN,k,j,i);
           Real vy = phydro->u(IM2,k,j,i)/phydro->u(IDN,k,j,i);
           Real vz = phydro->u(IM3,k,j,i)/phydro->u(IDN,k,j,i);
-          Real *mux = &(prad->mu(0,k,j,i,0));
-          Real *muy = &(prad->mu(1,k,j,i,0));
-          Real *muz = &(prad->mu(2,k,j,i,0));
+          Real *mux = &(pnrrad->mu(0,k,j,i,0));
+          Real *muy = &(pnrrad->mu(1,k,j,i,0));
+          Real *muz = &(pnrrad->mu(2,k,j,i,0));
           
-          ir_lab = &(prad->ir(k,j,i,0));
+          ir_lab = &(pnrrad->ir(k,j,i,0));
         
-//          prad->pradintegrator->ComToLab(vx,vy,vz,mux,muy,muz,ir_cm,ir_lab);
-          for(int n=0; n<prad->n_fre_ang; n++){
+          for(int n=0; n<pnrrad->n_fre_ang; n++){
              ir_lab[n] = er;
           }
           
@@ -118,10 +117,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
      for(int j=0; j<ncells2; ++j)
        for(int i=0; i<ncells1; ++i){
           for (int ifr=0; ifr < nfreq; ++ifr){
-            prad->sigma_s(k,j,i,ifr) = 0.0;
-            prad->sigma_a(k,j,i,ifr) = sigma;
-            prad->sigma_pe(k,j,i,ifr) = sigma;
-            prad->sigma_p(k,j,i,ifr) = sigma; 
+            pnrrad->sigma_s(k,j,i,ifr) = 0.0;
+            pnrrad->sigma_a(k,j,i,ifr) = sigma;
+            pnrrad->sigma_pe(k,j,i,ifr) = sigma;
+            pnrrad->sigma_p(k,j,i,ifr) = sigma; 
           }
 
        }

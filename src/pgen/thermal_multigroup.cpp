@@ -90,12 +90,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   
   //Now initialize opacity and specific intensity
   if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
-    int nfreq = prad->nfreq;
-    int nang = prad->nang;
+    int nfreq = pnrrad->nfreq;
+    int nang = pnrrad->nang;
     AthenaArray<Real> ir_cm;
-    ir_cm.NewAthenaArray(prad->n_fre_ang);
+    ir_cm.NewAthenaArray(pnrrad->n_fre_ang);
 
-    prad->kappa_es=kappa_es;
+    pnrrad->kappa_es=kappa_es;
 
     Real *ir_lab;
     
@@ -107,11 +107,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           Real vx = phydro->u(IM1,k,j,i)/phydro->u(IDN,k,j,i);
           Real vy = phydro->u(IM2,k,j,i)/phydro->u(IDN,k,j,i);
           Real vz = phydro->u(IM3,k,j,i)/phydro->u(IDN,k,j,i);
-          Real *mux = &(prad->mu(0,k,j,i,0));
-          Real *muy = &(prad->mu(1,k,j,i,0));
-          Real *muz = &(prad->mu(2,k,j,i,0));
-          for(int ifr=0; ifr<prad->nfreq; ++ifr){
-            ir_lab = &(prad->ir(k,j,i,ifr*nang));
+          Real *mux = &(pnrrad->mu(0,k,j,i,0));
+          Real *muy = &(pnrrad->mu(1,k,j,i,0));
+          Real *muz = &(pnrrad->mu(2,k,j,i,0));
+          for(int ifr=0; ifr<pnrrad->nfreq; ++ifr){
+            ir_lab = &(pnrrad->ir(k,j,i,ifr*nang));
             if(bd_flag == 0){
               Real er_ini=1.0;
               if(ifr == 0)
@@ -121,7 +121,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               else
                 er_ini = er3;          
 
-              for(int n=0; n<prad->nang; n++){
+              for(int n=0; n<pnrrad->nang; n++){
                 ir_lab[n] = er_ini;
               }
             }// end bd_flag == 0
@@ -129,13 +129,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
               Real emission = er1;
               // Initialize with blackbody spectrum
               if(ifr == nfreq-1){
-                emission *= (1.0-prad->FitBlackBody(prad->nu_grid(ifr)/tr_ini));
+                emission *= (1.0-pnrrad->FitBlackBody(pnrrad->nu_grid(ifr)/tr_ini));
               }else{
-                emission *= prad->BlackBodySpec(prad->nu_grid(ifr)/tr_ini,
-                                      prad->nu_grid(ifr+1)/tr_ini);
+                emission *= pnrrad->BlackBodySpec(pnrrad->nu_grid(ifr)/tr_ini,
+                                      pnrrad->nu_grid(ifr+1)/tr_ini);
               }// end ifr
 
-              for(int n=0; n<prad->nang; n++){
+              for(int n=0; n<pnrrad->nang; n++){
                 ir_lab[n] = emission;
               }
 
@@ -152,20 +152,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
        for(int i=0; i<ncells1; ++i){
           for (int ifr=0; ifr < nfreq; ++ifr){
             if(ifr == 0){
-              prad->sigma_s(k,j,i,ifr) = kappa_es;
-              prad->sigma_a(k,j,i,ifr) = sigma1;
-              prad->sigma_pe(k,j,i,ifr) = sigma1;
-              prad->sigma_p(k,j,i,ifr) = sigma1;
+              pnrrad->sigma_s(k,j,i,ifr) = kappa_es;
+              pnrrad->sigma_a(k,j,i,ifr) = sigma1;
+              pnrrad->sigma_pe(k,j,i,ifr) = sigma1;
+              pnrrad->sigma_p(k,j,i,ifr) = sigma1;
             }else if(ifr == 1){
-              prad->sigma_s(k,j,i,ifr) = kappa_es;
-              prad->sigma_a(k,j,i,ifr) = sigma2;
-              prad->sigma_pe(k,j,i,ifr) = sigma2;
-              prad->sigma_p(k,j,i,ifr) = sigma2;
+              pnrrad->sigma_s(k,j,i,ifr) = kappa_es;
+              pnrrad->sigma_a(k,j,i,ifr) = sigma2;
+              pnrrad->sigma_pe(k,j,i,ifr) = sigma2;
+              pnrrad->sigma_p(k,j,i,ifr) = sigma2;
             }else{
-              prad->sigma_s(k,j,i,ifr) = kappa_es;
-              prad->sigma_a(k,j,i,ifr) = sigma3;
-              prad->sigma_pe(k,j,i,ifr) = sigma3;   
-              prad->sigma_p(k,j,i,ifr) = sigma3;          
+              pnrrad->sigma_s(k,j,i,ifr) = kappa_es;
+              pnrrad->sigma_a(k,j,i,ifr) = sigma3;
+              pnrrad->sigma_pe(k,j,i,ifr) = sigma3;   
+              pnrrad->sigma_p(k,j,i,ifr) = sigma3;          
             }
 
           }
@@ -186,14 +186,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
 
   MeshBlock *pmb = my_blocks(0);
-  int  totnum = pmb->prad->nfreq+1;
+  int  totnum = pmb->pnrrad->nfreq+1;
   AthenaArray<Real> sum_var;
   sum_var.NewAthenaArray(totnum);
 
   for(int nb=0; nb<nblocal; ++nb){
     pmb = my_blocks(nb);
     if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
-      pmb->prad->CalculateMoment(pmb->prad->ir);
+      pmb->pnrrad->CalculateMoment(pmb->pnrrad->ir);
     //  Compute the sum
     for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js; j<=pmb->je; j++) {
@@ -203,8 +203,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
         sum_var(0) += dx*pmb->phydro->w(IPR,k,j,i)/pmb->phydro->w(IDN,k,j,i);
    
-        for(int ifr=0; ifr<pmb->prad->nfreq; ++ifr)
-          sum_var(ifr+1) += pmb->prad->rad_mom_nu(ifr*13+IER,k,j,i) * dx; 
+        for(int ifr=0; ifr<pmb->pnrrad->nfreq; ++ifr)
+          sum_var(ifr+1) += pmb->pnrrad->rad_mom_nu(ifr*13+IER,k,j,i) * dx; 
 
       }// end i
       }// end j

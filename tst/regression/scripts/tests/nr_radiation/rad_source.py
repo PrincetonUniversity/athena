@@ -15,7 +15,7 @@ sys.path.insert(0, '../../vis/python')
 
 # Prepare Athena++
 def prepare(**kwargs):
-  athena.configure('radiation',
+  athena.configure('nr_radiation',
       prob='thermal_relaxation',
       coord='cartesian',
       flux='hllc')
