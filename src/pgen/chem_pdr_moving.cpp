@@ -74,7 +74,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const int Nz = ke - ks + 1;
   //read density and radiation field strength
   const Real vx = pin->GetReal("problem", "vx_kms");
-  const Real s_init = pin->GetOrAddReal("problem", "s_init", 0.);
+  const Real r_init = pin->GetOrAddReal("problem", "r_init", 0.);
   const Real gm1  = peos->GetGamma() - 1.0;
   //2 phase initial condition
   const Real nc = 100.;
@@ -151,10 +151,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             } else {
               nH = nw;
             }
-            pscalars->s(ispec, k, j, i) = s_init*nH;
+            pscalars->s(ispec, k, j, i) = r_init*nH;
 #ifdef INCLUDE_CHEMISTRY
             Real s_ispec = pin->GetOrAddReal("problem",
-                "s_init_"+pscalars->chemnet.species_names[ispec], -1);
+                "r_init_"+pscalars->chemnet.species_names[ispec], -1);
             if (s_ispec >= 0.) {
               pscalars->s(ispec, k, j, i) = s_ispec*nH;
             }

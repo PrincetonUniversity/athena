@@ -54,7 +54,7 @@ chi_min    = 1.0e-2
 chi_max    = 1.0e2
 cr_min     = 2.0e-18
 cr_max     = 2.0e-14
-s_init      = 1.0e-6 #initial abundances
+r_init      = 1.0e-6 #initial abundances
 
 <chemistry>
 #chemistry network parameters

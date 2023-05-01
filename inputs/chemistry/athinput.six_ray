@@ -53,7 +53,7 @@ scalers    = density, pressure #scaler fields to be read in, separated by comma
 vectors    = velocity          #vector fields to be read in, separated by comma, assume 3 components
 #assume float format, and lookup_table default
 is_joined_vtk = 1  #0/1 for unjoined/joined vtk files
-s_init     = 1.0e-6 #initial abundances
+r_init     = 1.0e-6 #initial abundances
 
 <chemistry>
 #chemistry network parameters

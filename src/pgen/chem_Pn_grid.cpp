@@ -54,7 +54,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const Real nH_min = pin->GetReal("problem", "nH_min"); //minimum density
   const Real nH_max = pin->GetReal("problem", "nH_max"); //maximum density
   //initial abundance and sound speed (which sets the initial temperature)
-  const Real s_init = pin->GetReal("problem", "s_init");
+  const Real r_init = pin->GetReal("problem", "r_init");
   const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   const Real gm1  = peos->GetGamma() - 1.0;
   Real pres = 0.;
@@ -149,10 +149,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           for (int ispec=0; ispec < NSPECIES; ++ispec) {
-            pscalars->s(ispec, k, j, i) = s_init * phydro->u(IDN, k, j, i);
+            pscalars->s(ispec, k, j, i) = r_init * phydro->u(IDN, k, j, i);
 #ifdef INCLUDE_CHEMISTRY
             Real s_ispec = pin->GetOrAddReal("problem",
-                "s_init_"+pscalars->chemnet.species_names[ispec], -1);
+                "r_init_"+pscalars->chemnet.species_names[ispec], -1);
             if (s_ispec >= 0.) {
               pscalars->s(ispec, k, j, i) = s_ispec * phydro->u(IDN, k, j, i);
             }

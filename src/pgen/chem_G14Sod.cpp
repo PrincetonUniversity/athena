@@ -60,7 +60,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   const Real TL   = pin->GetReal("problem", "LHS_T_cgs");  // unit in K
   const Real TR   = pin->GetReal("problem", "RHS_T_cgs");
 
-  const Real s_init = pin->GetOrAddReal("problem", "s_init", 0.);
+  const Real r_init = pin->GetOrAddReal("problem", "r_init", 0.);
   const Real gm1  = peos->GetGamma() - 1.0;;
 
   //calculate density and pressure in code units
@@ -102,10 +102,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           for (int ispec=0; ispec < NSCALARS; ++ispec) {
-            pscalars->s(ispec, k, j, i) = s_init*phydro->u(IDN, k, j, i);
+            pscalars->s(ispec, k, j, i) = r_init*phydro->u(IDN, k, j, i);
 #ifdef INCLUDE_CHEMISTRY
             Real s_ispec = pin->GetOrAddReal("problem",
-                "s_init_"+pscalars->chemnet.species_names[ispec], -1);
+                "r_init_"+pscalars->chemnet.species_names[ispec], -1);
             if (s_ispec >= 0.) {
               pscalars->s(ispec, k, j, i) = s_ispec*phydro->u(IDN, k, j, i);
             }

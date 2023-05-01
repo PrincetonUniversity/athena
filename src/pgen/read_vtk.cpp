@@ -141,7 +141,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //gamma-1 for hydro eos
   const Real gm1 = peos->GetGamma() - 1.0;
   //initial abundance
-  const Real s_init = pin->GetReal("problem", "s_init");
+  const Real r_init = pin->GetReal("problem", "r_init");
 
   //parse input parameters
   std::string vtkfile0 = pin->GetString("problem", "vtkfile");//id0 file
@@ -428,10 +428,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           for (int ispec=0; ispec < NSPECIES; ++ispec) {
-            pscalars->s(ispec, k, j, i) = s_init * phydro->u(IDN, k, j, i);
+            pscalars->s(ispec, k, j, i) = r_init * phydro->u(IDN, k, j, i);
 #ifdef INCLUDE_CHEMISTRY
             Real s_ispec = pin->GetOrAddReal("problem",
-                "s_init_"+pscalars->chemnet.species_names[ispec], -1);
+                "r_init_"+pscalars->chemnet.species_names[ispec], -1);
             if (s_ispec >= 0.) {
               pscalars->s(ispec, k, j, i) = s_ispec * phydro->u(IDN, k, j, i);
             }

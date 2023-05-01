@@ -61,15 +61,15 @@ RHS_T_cgs   = 1120           # RHS Temperature in K
 mu       = 1.25              # mean molecular weight, assumed to be constant
 muH      = 1.322343          # density unit = muH * mH
 
-s_init       = 0.0           # default initial abundances
-s_init_H     = 0.9998895527  # H number density ratio 
-s_init_H+    = 0.0001084475  # H+ number density ratio    
-s_init_He    = 0.0806051334  # He number density ratio    
-s_init_He+   = 0.0           # He+ number density ratio   
-s_init_He2+  = 0.0           # He2+ number density ratio 
-s_init_H-    = 0.0           # H- number density ratio   
-s_init_H2    = 9.9988955e-07 # H2 number density ratio    
-s_init_H2+   = 0.0           # H2+ number density ratio  
+r_init       = 0.0           # default initial abundances
+r_init_H     = 0.9998895527  # H number density ratio 
+r_init_H+    = 0.0001084475  # H+ number density ratio    
+r_init_He    = 0.0806051334  # He number density ratio    
+r_init_He+   = 0.0           # He+ number density ratio   
+r_init_He2+  = 0.0           # He2+ number density ratio 
+r_init_H-    = 0.0           # H- number density ratio   
+r_init_H2    = 9.9988955e-07 # H2 number density ratio    
+r_init_H2+   = 0.0           # H2+ number density ratio  
 
 <chemistry>
 #chemistry solver parameters

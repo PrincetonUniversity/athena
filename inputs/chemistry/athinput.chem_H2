@@ -49,8 +49,8 @@ sfloor   =   0            # passive scalar floor
 <problem>
 nH         = 100 #initial density, in units of number density of hydrogen atoms
 vx_kms     = 1.  #initial x-velocity, in km/s
-s_init_H   = 1.0 #initial abundance
-s_init_H2  = 0.0
+r_init_H   = 1.0 #initial abundance
+r_init_H2  = 0.0
 
 <chemistry>
 #chemistry solver parameters

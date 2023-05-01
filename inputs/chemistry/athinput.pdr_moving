@@ -48,8 +48,8 @@ sfloor   =   0                    # passive scalar floor
 
 <problem>
 vx_kms     = 5.
-s_init     = 1.0e-6 #initial abundances
-s_init_H2  = 0.4 #initial abundances
+r_init     = 1.0e-6 #initial abundances
+r_init_H2  = 0.4 #initial abundances
 nw         = 1e-1 #nw*Tw = 4e3
 Tw         = 4e4
 

@@ -46,7 +46,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   //read density and radiation field strength
   const Real nH = pin->GetReal("problem", "nH");
   const Real vx = pin->GetOrAddReal("problem", "vx_kms", 0);
-  const Real s_init = pin->GetOrAddReal("problem", "s_init", 0.);
+  const Real r_init = pin->GetOrAddReal("problem", "r_init", 0.);
   const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   const Real pres = nH*SQR(iso_cs);
   const Real gm1  = peos->GetGamma() - 1.0;
@@ -98,10 +98,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           for (int ispec=0; ispec < NSPECIES; ++ispec) {
-            pscalars->s(ispec, k, j, i) = s_init*nH;
+            pscalars->s(ispec, k, j, i) = r_init*nH;
 #ifdef INCLUDE_CHEMISTRY
             Real s_ispec = pin->GetOrAddReal("problem",
-                "s_init_"+pscalars->chemnet.species_names[ispec], -1);
+                "r_init_"+pscalars->chemnet.species_names[ispec], -1);
             if (s_ispec >= 0.) {
               pscalars->s(ispec, k, j, i) = s_ispec*nH;
             }

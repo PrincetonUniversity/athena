@@ -49,12 +49,12 @@ active   =   fixed        # post-processing
 
 <problem>
 nH         = 1.0921e+02 #density
-s_init     =  0. #initial abundances
-s_init_H2  = 0.5
-s_init_He  = 0.1
-s_init_C   = 1.6e-4
-s_init_O   = 3.2e-4
-s_init_Si  = 1.7e-6
+r_init     =  0. #initial abundances
+r_init_H2  = 0.5
+r_init_He  = 0.1
+r_init_C   = 1.6e-4
+r_init_O   = 3.2e-4
+r_init_Si  = 1.7e-6
 
 <chemistry>
 #chemistry network parameters
