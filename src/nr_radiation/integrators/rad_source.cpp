@@ -174,22 +174,28 @@ void RadIntegrator::CalSourceTerms(MeshBlock *pmb, const Real dt,
   }else{
         
     // map frequency grid 
-    for(int n=0; n<nang; ++n){
-      for(int ifr=0; ifr<nfreq; ++ifr)
-        ir_ori_(ifr) = ir_cm(ifr*nang+n);
+    if(doppler_flag_ > 0){
+
+      for(int n=0; n<nang; ++n){
+        for(int ifr=0; ifr<nfreq; ++ifr)
+          ir_ori_(ifr) = ir_cm(ifr*nang+n);
 
 
-      split_ratio.InitWithShallowSlice(split_ratio_,3,n,1);
-      map_start.InitWithShallowSlice(map_bin_start_,2,n,1);
-      map_end.InitWithShallowSlice(map_bin_end_,2,n,1);
 
-      MapLabToCmFrequency(tran_coef(n), split_ratio, map_start, map_end, 
+
+        split_ratio.InitWithShallowSlice(split_ratio_,3,n,1);
+        map_start.InitWithShallowSlice(map_bin_start_,2,n,1);
+        map_end.InitWithShallowSlice(map_bin_end_,2,n,1);
+
+        MapLabToCmFrequency(tran_coef(n), split_ratio, map_start, map_end, 
                                                      ir_ori_, ir_done_);
 
-      for(int ifr=0; ifr<nfreq; ++ifr)
-        ir_cm(ifr*nang+n) = ir_done_(ifr);
+        for(int ifr=0; ifr<nfreq; ++ifr)
+          ir_cm(ifr*nang+n) = ir_done_(ifr);
 
-    }// end nang
+      }// end nang
+
+    }// end shift in frequency 
 
 
 
@@ -219,34 +225,36 @@ void RadIntegrator::CalSourceTerms(MeshBlock *pmb, const Real dt,
 
 
     // map frequency grid 
-    for(int n=0; n<nang; ++n){
+    if(doppler_flag_ > 0){
+      for(int n=0; n<nang; ++n){
 
-      for(int ifr=0; ifr<nfreq; ++ifr)
-        ir_ori_(ifr) = ir_cm(ifr*nang+n);
+        for(int ifr=0; ifr<nfreq; ++ifr)
+          ir_ori_(ifr) = ir_cm(ifr*nang+n);
 
-      split_ratio.InitWithShallowSlice(split_ratio_,3,n,1);
-      map_start.InitWithShallowSlice(map_bin_start_,2,n,1);
-      map_end.InitWithShallowSlice(map_bin_end_,2,n,1);
+        split_ratio.InitWithShallowSlice(split_ratio_,3,n,1);
+        map_start.InitWithShallowSlice(map_bin_start_,2,n,1);
+        map_end.InitWithShallowSlice(map_bin_end_,2,n,1);
 
-      bool invertible = FreMapMatrix(split_ratio, tran_coef(n), map_start,
+        bool invertible = FreMapMatrix(split_ratio, tran_coef(n), map_start,
                                         map_end, map_count_, fre_map_matrix_);
-      if(invertible){
-        bool success = InverseMapFrequency(tran_coef(n), map_count_, 
+        if(invertible){
+          bool success = InverseMapFrequency(tran_coef(n), map_count_, 
                                           fre_map_matrix_, ir_ori_, ir_done_);
 
-        if(!success)
+          if(!success)
+            MapCmToLabFrequency(tran_coef(n),split_ratio, map_start, map_end, 
+                                                        ir_ori_,ir_done_);
+
+        }else{
           MapCmToLabFrequency(tran_coef(n),split_ratio, map_start, map_end, 
                                                         ir_ori_,ir_done_);
+        }
 
-      }else{
-        MapCmToLabFrequency(tran_coef(n),split_ratio, map_start, map_end, 
-                                                        ir_ori_,ir_done_);
-      }
+        for(int ifr=0; ifr<nfreq; ++ifr)
+          ir_cm(ifr*nang+n) = ir_done_(ifr);
 
-      for(int ifr=0; ifr<nfreq; ++ifr)
-        ir_cm(ifr*nang+n) = ir_done_(ifr);
-
-    }// end nang
+      }// end nang
+    }// end doppler flag
 
   }// end nfreq > 1
        

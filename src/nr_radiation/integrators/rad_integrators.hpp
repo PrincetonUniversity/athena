@@ -216,6 +216,8 @@ private:
                  // advection flux from diffustion flux or not.
   int imp_ang_flx_;
 
+  int doppler_flag_;
+
   int flux_correct_flag_; // flag to do second order flux crrection or not.
   AthenaArray<Real> x1face_area_, x2face_area_, x3face_area_;
   AthenaArray<Real> x2face_area_p1_, x3face_area_p1_;

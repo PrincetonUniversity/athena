@@ -67,6 +67,7 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
   flux_correct_flag_ = pin->GetOrAddInteger("radiation","CorrectFlux",0);
   imp_ang_flx_ = pin->GetOrAddInteger("radiation","implicit_ang_flux",0);
 
+  doppler_flag_ = pin->GetOrAddInteger("radiation","doppler_flag",1);
 
   // multi-group iteration
   // iterations < iterative_tgas_
