@@ -349,7 +349,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   Hydro *phyd = pmb->phydro;
   Field *pfld = pmb->pfield;
   PassiveScalars *psclr = pmb->pscalars;
-  Radiation *prad = pmb->prad;
+  ChemRadiation *pchemrad = pmb->pchemrad;
   Gravity *pgrav = pmb->pgrav;
   OrbitalAdvection *porb = pmb->porb;
   num_vars_ = 0;
@@ -626,12 +626,12 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         ContainVariable(output_params.variable, "prim") ||
         ContainVariable(output_params.variable, "cons")) {
       std::string name_ir_avg = "ir_avg";
-      for (int i=0; i<prad->nfreq; i++) {
+      for (int i=0; i<pchemrad->nfreq; i++) {
         std::string vi = name_ir_avg + std::to_string(i);
         pod = new OutputData;
         pod->type = "SCALARS";
         pod->name = vi;
-        pod->data.InitWithShallowSlice(prad->ir_avg, 4, i, 1);
+        pod->data.InitWithShallowSlice(pchemrad->ir_avg, 4, i, 1);
         AppendOutputDataNode(pod);
         num_vars_++;
       }
@@ -641,12 +641,12 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       if (RADIATION_INTEGRATOR == "six_ray") {
         //average column density
         std::string name_col_avg = "col_avg";
-        for (int i=0; i<prad->pradintegrator->ncol; i++) {
+        for (int i=0; i<pchemrad->pchemradintegrator->ncol; i++) {
           std::string vi = name_col_avg + std::to_string(i);
           pod = new OutputData;
           pod->type = "SCALARS";
           pod->name = vi;
-          pod->data.InitWithShallowSlice(prad->pradintegrator->col_avg, 4, i, 1);
+          pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_avg, 4, i, 1);
           AppendOutputDataNode(pod);
           num_vars_++;
         }
@@ -654,49 +654,49 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod = new OutputData;
         pod->type = "VECTORS";
         pod->name = "col_Htot_p";
-        pod->data.InitWithShallowSlice(prad->pradintegrator->col_Htot,4,0,3);
+        pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_Htot,4,0,3);
         AppendOutputDataNode(pod);
         num_vars_ += 3;
         pod = new OutputData;
         pod->type = "VECTORS";
         pod->name = "col_H2_p";
-        pod->data.InitWithShallowSlice(prad->pradintegrator->col_H2,4,0,3);
+        pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_H2,4,0,3);
         AppendOutputDataNode(pod);
         num_vars_ += 3;
         pod = new OutputData;
         pod->type = "VECTORS";
         pod->name = "col_CO_p";
-        pod->data.InitWithShallowSlice(prad->pradintegrator->col_CO,4,0,3);
+        pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_CO,4,0,3);
         AppendOutputDataNode(pod);
         num_vars_ += 3;
         pod = new OutputData;
         pod->type = "VECTORS";
         pod->name = "col_C_p";
-        pod->data.InitWithShallowSlice(prad->pradintegrator->col_C,4,0,3);
+        pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_C,4,0,3);
         AppendOutputDataNode(pod);
         num_vars_ += 3;
         pod = new OutputData;
         pod->type = "VECTORS";
         pod->name = "col_Htot_m";
-        pod->data.InitWithShallowSlice(prad->pradintegrator->col_Htot,4,3,3);
+        pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_Htot,4,3,3);
         AppendOutputDataNode(pod);
         num_vars_ += 3;
         pod = new OutputData;
         pod->type = "VECTORS";
         pod->name = "col_H2_m";
-        pod->data.InitWithShallowSlice(prad->pradintegrator->col_H2,4,3,3);
+        pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_H2,4,3,3);
         AppendOutputDataNode(pod);
         num_vars_ += 3;
         pod = new OutputData;
         pod->type = "VECTORS";
         pod->name = "col_CO_m";
-        pod->data.InitWithShallowSlice(prad->pradintegrator->col_CO,4,3,3);
+        pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_CO,4,3,3);
         AppendOutputDataNode(pod);
         num_vars_ += 3;
         pod = new OutputData;
         pod->type = "VECTORS";
         pod->name = "col_C_m";
-        pod->data.InitWithShallowSlice(prad->pradintegrator->col_C,4,3,3);
+        pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_C,4,3,3);
         AppendOutputDataNode(pod);
         num_vars_ += 3;
       }

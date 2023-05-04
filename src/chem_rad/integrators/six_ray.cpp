@@ -38,29 +38,29 @@ namespace {
 
 //----------------------------------------------------------------------------------------
 //! constructor, for six_ray radiation integrator
-RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) :
+ChemRadIntegrator::ChemRadIntegrator(ChemRadiation *pchemrad, ParameterInput *pin) :
 #ifdef INCLUDE_CHEMISTRY
-    col(6, prad->pmy_block->ncells3, prad->pmy_block->ncells2,
-        prad->pmy_block->ncells1,  prad->pmy_block->pscalars->chemnet.n_cols_),
-    col_bvar(prad->pmy_block, &col)
+    col(6, pchemrad->pmy_block->ncells3, pchemrad->pmy_block->ncells2,
+        pchemrad->pmy_block->ncells1,  pchemrad->pmy_block->pscalars->chemnet.n_cols_),
+    col_bvar(pchemrad->pmy_block, &col)
 #endif //INCLUDE_CHEMISTRY
 {
-  pmy_mb = prad->pmy_block;
-  pmy_rad = prad;
-  G0 = pin->GetOrAddReal("radiation", "G0", 0.);
+  pmy_mb = pchemrad->pmy_block;
+  pmy_rad = pchemrad;
+  G0 = pin->GetOrAddReal("chem_radiation", "G0", 0.);
   G0_iang.NewAthenaArray(6);
-  G0_iang(BoundaryFace::inner_x1) = pin->GetOrAddReal("radiation", "G0_inner_x1", G0);
-  G0_iang(BoundaryFace::inner_x2) = pin->GetOrAddReal("radiation", "G0_inner_x2", G0);
-  G0_iang(BoundaryFace::inner_x3) = pin->GetOrAddReal("radiation", "G0_inner_x3", G0);
-  G0_iang(BoundaryFace::outer_x1) = pin->GetOrAddReal("radiation", "G0_outer_x1", G0);
-  G0_iang(BoundaryFace::outer_x2) = pin->GetOrAddReal("radiation", "G0_outer_x2", G0);
-  G0_iang(BoundaryFace::outer_x3) = pin->GetOrAddReal("radiation", "G0_outer_x3", G0);
-  cr_rate = pin->GetOrAddReal("radiation", "CR", 2e-16);
-  f_cell = pin->GetOrAddReal("radiation", "shielding_fraction_cell", 0.5);
+  G0_iang(BoundaryFace::inner_x1) = pin->GetOrAddReal("chem_radiation", "G0_inner_x1", G0);
+  G0_iang(BoundaryFace::inner_x2) = pin->GetOrAddReal("chem_radiation", "G0_inner_x2", G0);
+  G0_iang(BoundaryFace::inner_x3) = pin->GetOrAddReal("chem_radiation", "G0_inner_x3", G0);
+  G0_iang(BoundaryFace::outer_x1) = pin->GetOrAddReal("chem_radiation", "G0_outer_x1", G0);
+  G0_iang(BoundaryFace::outer_x2) = pin->GetOrAddReal("chem_radiation", "G0_outer_x2", G0);
+  G0_iang(BoundaryFace::outer_x3) = pin->GetOrAddReal("chem_radiation", "G0_outer_x3", G0);
+  cr_rate = pin->GetOrAddReal("chem_radiation", "CR", 2e-16);
+  f_cell = pin->GetOrAddReal("chem_radiation", "shielding_fraction_cell", 0.5);
   f_prev = 1. - f_cell;
   std::stringstream msg; //error message
   if (pmy_rad->nang != 6) {
-    msg << "### FATAL ERROR in RadIntegrator constructor [RadIntegrator]" << std::endl
+    msg << "### FATAL ERROR in ChemRadIntegrator constructor [ChemRadIntegrator]" << std::endl
       << "Six-ray scheme with nang != 6." << std::endl;
     ATHENA_ERROR(msg);
   }
@@ -85,12 +85,12 @@ RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin) :
 
 //----------------------------------------------------------------------------------------
 //! destructor
-RadIntegrator::~RadIntegrator() {}
+ChemRadIntegrator::~ChemRadIntegrator() {}
 
 //----------------------------------------------------------------------------------------
-//! \fn void RadIntegrator::CopyToOutput()
+//! \fn void ChemRadIntegrator::CopyToOutput()
 //! \brief average radiation field over all angles and copy values to output
-void RadIntegrator::CopyToOutput() {
+void ChemRadIntegrator::CopyToOutput() {
   const int is = pmy_mb->is;
   const int js = pmy_mb->js;
   const int ks = pmy_mb->ks;
@@ -149,9 +149,9 @@ void RadIntegrator::CopyToOutput() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void RadIntegrator::UpdateRadiation()
+//! \fn void ChemRadIntegrator::UpdateRadiation()
 //! \brief calcuate total column and update radiation
-void RadIntegrator::UpdateRadiation() {
+void ChemRadIntegrator::UpdateRadiation() {
 #ifdef INCLUDE_CHEMISTRY
   const Real Zd = pmy_chemnet->zdg_;
   const Real bH2 = 3.0e5; //H2 velocity dispersion
@@ -215,7 +215,7 @@ void RadIntegrator::UpdateRadiation() {
 //! \brief calculate column densities within the meshblock
 //!
 //! direction: 0:+x, 1:-x, 2:+y, 3:-y, 4:+y, 5:-z (bvals/bvals_interfaces.hpp)
-void RadIntegrator::GetColMB(BoundaryFace direction) {
+void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
   const int iH2 = pmy_chemnet->iH2_;
   const int iCO = pmy_chemnet->iCO_;
   const int iCplus = pmy_chemnet->iCplus_;
@@ -580,7 +580,7 @@ void RadIntegrator::GetColMB(BoundaryFace direction) {
       }
     }
   } else {
-    msg << "### FATAL ERROR in RadIntegrator six_ray [GetColMB]" << std::endl
+    msg << "### FATAL ERROR in ChemRadIntegrator six_ray [GetColMB]" << std::endl
       << "direction {0,1,2,3,4,5}:" << direction << " unknown." << std::endl;
     ATHENA_ERROR(msg);
   }
@@ -588,9 +588,9 @@ void RadIntegrator::GetColMB(BoundaryFace direction) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void RadIntegrator::UpdateCol(BoundaryFace direction)
+//! \fn void ChemRadIntegrator::UpdateCol(BoundaryFace direction)
 //! \brief update the columns after receiving boundary
-void RadIntegrator::UpdateCol(BoundaryFace direction) {
+void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
   const int iH2 = pmy_chemnet->iH2_;
   const int iCO = pmy_chemnet->iCO_;
   const int iCplus = pmy_chemnet->iCplus_;
@@ -784,7 +784,7 @@ void RadIntegrator::UpdateCol(BoundaryFace direction) {
     }
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in RadIntegrator six_ray [UpdateCol]" << std::endl
+    msg << "### FATAL ERROR in ChemRadIntegrator six_ray [UpdateCol]" << std::endl
       << "direction:" << direction << " unknown." << std::endl;
     ATHENA_ERROR(msg);
   }

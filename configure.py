@@ -690,11 +690,11 @@ if args['cvode_path'] != '':
 if args['radiation'] is not None:
     definitions['RADIATION_ENABLED'] = '1'
     makefile_options['RADIATION_FILE'] = args['radiation']+'.cpp'
-    definitions['RADIATION_INTEGRATOR'] = args['radiation']
+    definitions['CHEMRADIATION_INTEGRATOR'] = args['radiation']
 else:
     definitions['RADIATION_ENABLED'] = '0'
     makefile_options['RADIATION_FILE'] = 'const.cpp'
-    definitions['RADIATION_INTEGRATOR'] = 'none'
+    definitions['CHEMRADIATION_INTEGRATOR'] = 'none'
 
 # -float argument
 if args['float']:
@@ -947,7 +947,7 @@ print('  Chemistry:                  ' + (args['chemistry'] if args['chemistry']
                                           is not None else 'OFF'))
 print('  kida_rates:                 ' + (args['kida_rates'] if args['kida_rates']
                                           is not None else 'OFF'))
-print('  Radiation:                  ' + (args['radiation'] if args['radiation']
+print('  ChemRadiation:              ' + (args['radiation'] if args['radiation']
                                           is not None else 'OFF'))
 print('  ode_solver:                 ' + (args['ode_solver'] if args['ode_solver']
                                           is not None else 'OFF'))

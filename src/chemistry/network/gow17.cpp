@@ -295,7 +295,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   xSi_std_ = pin->GetOrAddReal("chemistry", "xSi", 1.7e-6);
 
   //check whether number of frequencies equal to the input file specification
-  const int nfreq = pin->GetOrAddInteger("radiation", "n_frequency", 1);
+  const int nfreq = pin->GetOrAddInteger("chem_radiation", "n_frequency", 1);
   std::stringstream msg; //error message
   if (nfreq != n_freq_) {
     msg << "### FATAL ERROR in ChemNetwork constructor" << std::endl
@@ -386,7 +386,7 @@ ChemNetwork::~ChemNetwork() {
 //! k, j, i are the corresponding index of the grid
 void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   Real rad_sum, temp, NH, rho, rho_floor;
-  int nang = pmy_mb_->prad->nang;
+  int nang = pmy_mb_->pchemrad->nang;
   //density
   rho = pmy_mb_->phydro->w(IDN, k, j, i);
   //apply density floor
@@ -400,7 +400,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
     rad_sum = 0;
     //radiation
     for (int iang=0; iang < nang; ++iang) {
-      rad_sum += pmy_mb_->prad->ir(k, j, i, ifreq * nang + iang);
+      rad_sum += pmy_mb_->pchemrad->ir(k, j, i, ifreq * nang + iang);
     }
     if (ifreq == index_cr_) {
       rad_[index_cr_] = rad_sum / static_cast<float>(nang);

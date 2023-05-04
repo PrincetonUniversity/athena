@@ -206,7 +206,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
 //! For each cell:
 //! Step 1: Set the radiation field strength in ChemNetwork.
 //! Depends on the data structure of radiation field, this can be copying
-//! the value from Radiation class to ChemNetwork class, or just pass a pointer.
+//! the value from ChemRadiation class to ChemNetwork class, or just pass a pointer.
 //!
 //! Step 2: re-initialize CVODE with starting time t, and starting abundance
 //! y. If x(k, j, i, ispec), we can just pass a pointer to CVODE, otherwise,

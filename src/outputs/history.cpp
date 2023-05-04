@@ -50,7 +50,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   AthenaArray<Real> vol(pmb->ncells1);
   int nhistory_vars = (NHYDRO) + (SELF_GRAVITY_ENABLED > 0) + (NFIELD) + 3 + (NSCALARS);
   if (RADIATION_ENABLED) {
-    nhistory_vars += pmb->prad->nfreq;
+    nhistory_vars += pmb->pchemrad->nfreq;
   }
   const int nhistory_output = nhistory_vars + pm->nuser_history_output_;
   std::unique_ptr<Real[]> hst_data(new Real[nhistory_output]);
@@ -77,7 +77,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     Hydro *phyd = pmb->phydro;
     Field *pfld = pmb->pfield;
     PassiveScalars *psclr = pmb->pscalars;
-    Radiation *prad = pmb->prad;
+    ChemRadiation *pchemrad = pmb->pchemrad;
     Gravity *pgrav = pmb->pgrav;
     OrbitalAdvection *porb = pmb->porb;
 
@@ -133,8 +133,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             }
             // average radiation field strength:
             if (RADIATION_ENABLED) {
-              for (int n=0; n<prad->nfreq; n++) {
-                Real& ir = prad->ir_avg(n,k,j,i);
+              for (int n=0; n<pchemrad->nfreq; n++) {
+                Real& ir = pchemrad->ir_avg(n,k,j,i);
                 constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD + NSCALARS;
                 hst_data[prev_out + n] += vol(i)*ir;
               }
@@ -191,8 +191,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             }
             // average radiation field strength:
             if (RADIATION_ENABLED) {
-              for (int n=0; n<prad->nfreq; n++) {
-                Real& ir = prad->ir_avg(n,k,j,i);
+              for (int n=0; n<pchemrad->nfreq; n++) {
+                Real& ir = pchemrad->ir_avg(n,k,j,i);
                 constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD + NSCALARS;
                 hst_data[prev_out + n] += vol(i)*ir;
               }
@@ -263,7 +263,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     fname.assign(output_params.file_basename);
     fname.append(".hst");
     PassiveScalars *psclr = pmb->pscalars;
-    Radiation *prad = pmb->prad;
+    ChemRadiation *pchemrad = pmb->pchemrad;
 
     // open file for output
     FILE *pfile;
@@ -309,7 +309,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 #endif //INCLUDE_CHEMISTRY
       }
       if (RADIATION_ENABLED) {
-        for (int n=0; n<prad->nfreq; n++) {
+        for (int n=0; n<pchemrad->nfreq; n++) {
           std::fprintf(pfile,"[%d]=%d-rad    ", iout++, n);
         }
       }

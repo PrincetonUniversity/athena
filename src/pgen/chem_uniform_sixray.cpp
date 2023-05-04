@@ -130,23 +130,23 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          for (int ifreq=0; ifreq < prad->nfreq; ++ifreq) {
-            for (int iang=0; iang < prad->nang; ++iang) {
-              prad->ir(k, j, i, ifreq * prad->nang + iang) = G0_iang(iang);
+          for (int ifreq=0; ifreq < pchemrad->nfreq; ++ifreq) {
+            for (int iang=0; iang < pchemrad->nang; ++iang) {
+              pchemrad->ir(k, j, i, ifreq * pchemrad->nang + iang) = G0_iang(iang);
             }
           }
 #ifdef INCLUDE_CHEMISTRY
-          for (int iang=0; iang < prad->nang; ++iang) {
+          for (int iang=0; iang < pchemrad->nang; ++iang) {
             //cr rate
-            prad->ir(k, j, i,
-                pscalars->chemnet.index_cr_ * prad->nang + iang) = cr_rate;
+            pchemrad->ir(k, j, i,
+                pscalars->chemnet.index_cr_ * pchemrad->nang + iang) = cr_rate;
           }
 #endif
         }
       }
     }
     //calculate the average radiation field for output of the initial condition
-    prad->pradintegrator->CopyToOutput();
+    pchemrad->pchemradintegrator->CopyToOutput();
   }
 
   //intialize chemical species

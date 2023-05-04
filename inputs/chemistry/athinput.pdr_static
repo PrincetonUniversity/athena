@@ -1,7 +1,7 @@
 <comment>
 problem   = Read C. G. Kim's MHD_32pc vtk output, single file.
 reference =
-configure = --prob=chem_gow17 --chemistry=gow17 --radiation=const
+configure = --prob=chem_gow17 --chemistry=gow17 --chem_radiation=const
 
 <job>
 problem_id = pdr_static   # problem ID: basename of output filenames
@@ -74,7 +74,7 @@ xSi        = 1.7e-6 #Si atom per H, this is Z=1 value, default 1.7e-6
 maxorder   = 2       #maximum order. Default 2.
 stldet     = 0       #stability limit detection. Default 0/false.
 
-<radiation>
+<chem_radiation>
 G0           = 0.
 G0_inner_x1  = 6.   #radiation field strength, in Draine 1987 units
 CR           = 2e-16  #Cosmic-ray ionization rate per H

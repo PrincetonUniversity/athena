@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file rad_integrators.hpp
-//! \brief definitions for RadIntegrator class
+//! \brief definitions for ChemRadIntegrator class
 
 // Athena++ classes headers
 #include "../../athena.hpp"
@@ -16,23 +16,23 @@
 #include "../radiation.hpp" // radiation
 
 class MeshBlock;
-class Radiation;
+class ChemRadiation;
 #ifdef INCLUDE_CHEMISTRY
 class ChemNetwork;
 #endif //INCLUDE_CHEMISTRY
 
-//! \class RadIntegrator
+//! \class ChemRadIntegrator
 //! \brief integrate algorithm for radiative transfer
 
-class RadIntegrator {
-  friend class Radiation;
+class ChemRadIntegrator {
+  friend class ChemRadiation;
   friend class BoundaryValues;
-  friend class RadiationIntegratorTaskList;
+  friend class ChemRadiationIntegratorTaskList;
  public:
-  RadIntegrator(Radiation *prad, ParameterInput *pin);
-  ~RadIntegrator();
+  ChemRadIntegrator(ChemRadiation *pchemrad, ParameterInput *pin);
+  ~ChemRadIntegrator();
 
-  Radiation *pmy_rad;
+  ChemRadiation *pmy_rad;
   MeshBlock *pmy_mb;
 #ifdef INCLUDE_CHEMISTRY
   ChemNetwork* pmy_chemnet;

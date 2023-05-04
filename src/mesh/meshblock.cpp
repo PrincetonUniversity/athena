@@ -179,13 +179,13 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   peos = new EquationOfState(this, pin);
 
   if (RADIATION_ENABLED) {
-    prad = new Radiation(this, pin);
+    pchemrad = new ChemRadiation(this, pin);
     //TODO (Munan Gong): this is only for six-ray radiation, and would not be necessary
     //for local (e.g. constant) radiation treatment. Also later probably this need to be
     //generalized to other radiation treatment.
     pbval->AdvanceCounterPhysID(SixRayBoundaryVariable::max_phys_id);
   } else {
-    prad = NULL;
+    pchemrad = NULL;
   }
   // OrbitalAdvection: constructor depends on Coordinates, Hydro, Field, PassiveScalars.
   porb = new OrbitalAdvection(this, pin);
@@ -305,7 +305,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   peos = new EquationOfState(this, pin);
   if (RADIATION_ENABLED) {
-    prad = new Radiation(this, pin);
+    pchemrad = new ChemRadiation(this, pin);
   }
 
   // OrbitalAdvection: constructor depends on Coordinates, Hydro, Field, PassiveScalars.
@@ -345,8 +345,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
 
   if (RADIATION_ENABLED) {
-    std::memcpy(prad->ir.data(), &(mbdata[os]), prad->ir.GetSizeInBytes());
-    os += prad->ir.GetSizeInBytes();
+    std::memcpy(pchemrad->ir.data(), &(mbdata[os]), pchemrad->ir.GetSizeInBytes());
+    os += pchemrad->ir.GetSizeInBytes();
   }
 
   // load user MeshBlock data
@@ -380,7 +380,7 @@ MeshBlock::~MeshBlock() {
   if (SELF_GRAVITY_ENABLED == 2) delete pmg;
   if (NSCALARS > 0) delete pscalars;
   if (RADIATION_ENABLED) {
-    delete prad;
+    delete pchemrad;
   }
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
@@ -485,7 +485,7 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
 #endif
   }
   if (RADIATION_ENABLED) {
-    size += prad->ir.GetSizeInBytes();
+    size += pchemrad->ir.GetSizeInBytes();
   }
 
   // calculate user MeshBlock data size

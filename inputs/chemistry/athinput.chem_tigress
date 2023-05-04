@@ -1,7 +1,7 @@
 <comment>
 problem   = post-processing TIGRESS simulations with chemistry
 reference =
-configure = --prob=read_vtk --chemistry=gow17 --radiation=six_ray \
+configure = --prob=read_vtk --chemistry=gow17 --chem_radiation=six_ray \
   --ode_solver=cvode --cvode_path=$CVODE_PATH --cxx=icc -hdf5 -mpi
 
 <job>
@@ -75,7 +75,7 @@ temp_max_rates = 1.0e5
 maxorder   = 3       #maximum order. Default 2.
 stldet     = 1       #stability limit detection. Default 0/false.
 
-<radiation>
+<chem_radiation>
 G0           = 1
 CR         = 2e-16  #Cosmic-ray ionization rate per H
 n_frequency  = 8 

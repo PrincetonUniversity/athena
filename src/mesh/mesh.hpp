@@ -53,7 +53,7 @@ class EquationOfState;
 class FFTDriver;
 class FFTGravityDriver;
 class TurbulenceDriver;
-class Radiation;
+class ChemRadiation;
 class OrbitalAdvection;
 
 FluidFormulation GetFluidFormulation(const std::string& input_string);
@@ -70,8 +70,8 @@ class MeshBlock {
   friend class Mesh;
   friend class Hydro;
   friend class TaskList;
-  friend class Radiation;
-  friend class RadIntegrator;
+  friend class ChemRadiation;
+  friend class ChemRadIntegrator;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -119,7 +119,7 @@ class MeshBlock {
   MGGravity* pmg;
   PassiveScalars *pscalars;
   EquationOfState *peos;
-  Radiation *prad;
+  ChemRadiation *pchemrad;
   OrbitalAdvection *porb;
   Units *punit;
 

@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file radiation.cpp
-//! \brief implementation of functions in class Radiation
+//! \brief implementation of functions in class ChemRadiation
 
 //C++ headers
 #include <iostream>   // endl
@@ -17,15 +17,15 @@
 #include "integrators/rad_integrators.hpp"
 #include "radiation.hpp"
 
-//! Radiation constructor, initializes data structures and parameters
+//! ChemRadiation constructor, initializes data structures and parameters
 
-Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
+ChemRadiation::ChemRadiation(MeshBlock *pmb, ParameterInput *pin) {
   // read in the parameters
-  integrator = RADIATION_INTEGRATOR;
+  integrator = CHEMRADIATION_INTEGRATOR;
   pmy_block = pmb;
   //number of frequency bands
-  nfreq = pin->GetOrAddInteger("radiation","n_frequency",1);
-  output_zone_sec = pin->GetOrAddBoolean("radiation", "output_zone_sec", false);
+  nfreq = pin->GetOrAddInteger("chem_radiation","n_frequency",1);
+  output_zone_sec = pin->GetOrAddBoolean("chem_radiation", "output_zone_sec", false);
 
   if (integrator == "six_ray") {
     nang = 6;
@@ -33,8 +33,8 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
     nang = 1;
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in Radiation constructor" << std::endl
-        << "integrator=" << integrator << " not valid radiation integrator, " << std::endl
+    msg << "### FATAL ERROR in ChemRadiation constructor" << std::endl
+        << "integrator=" << integrator << " not valid chemradiation integrator, " << std::endl
         << "choose from {six_ray, const}" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }
@@ -51,9 +51,9 @@ Radiation::Radiation(MeshBlock *pmb, ParameterInput *pin) {
   ir_avg.NewAthenaArray(nfreq, ncells3, ncells2, ncells1);
 
   //radiation integrator
-  pradintegrator = new RadIntegrator(this, pin);
+  pchemradintegrator = new ChemRadIntegrator(this, pin);
 }
 
-Radiation::~Radiation() {
-  delete pradintegrator;
+ChemRadiation::~ChemRadiation() {
+  delete pchemradintegrator;
 }

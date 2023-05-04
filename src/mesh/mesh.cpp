@@ -1430,7 +1430,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         pmb->pgrav->gbvar.SetupPersistentMPI();
       if (RADIATION_ENABLED) {
 #ifdef INCLUDE_CHEMISTRY
-        pmb->prad->pradintegrator->col_bvar.SetupPersistentMPI();
+        pmb->pchemrad->pchemradintegrator->col_bvar.SetupPersistentMPI();
 #endif //INCLUDE_CHEMISTRY
       }
     }

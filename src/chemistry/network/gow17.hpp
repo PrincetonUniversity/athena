@@ -27,8 +27,8 @@ class Units;
 //!  The internal calculations are in cgs units. The input and
 //!  return of RHS and Edot must be in code units.
 class ChemNetwork : public NetworkWrapper {
-  friend class Radiation; //number of frequencies n_freq_
-  friend class RadIntegrator; //shielding
+  friend class ChemRadiation; //number of frequencies n_freq_
+  friend class ChemRadIntegrator; //shielding
   //OutputProperties in problem generator called by Mesh::UserWorkAfterLoop.
   friend class Mesh;
   //It would be convenient to know the species names in
@@ -140,7 +140,7 @@ class ChemNetwork : public NetworkWrapper {
   // will be importatant k>~1e-30
   static const Real temp_coll_;
   //photo reactions
-  //radiation related variables, used in RadIntegrator
+  //radiation related variables, used in ChemRadIntegrator
   //radiation field in unit of Draine 1987 field (G0), updated at InitializeNextStep
   //vector: [Gph, GPE]
   Real rad_[n_freq_]; // NOLINT (runtime/arrays)

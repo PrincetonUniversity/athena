@@ -16,14 +16,14 @@
 
 //----------------------------------------------------------------------------------------
 //! constructor, for constant radiation integrator
-RadIntegrator::RadIntegrator(Radiation *prad, ParameterInput *pin)
+ChemRadIntegrator::ChemRadIntegrator(ChemRadiation *pchemrad, ParameterInput *pin)
 #ifdef INCLUDE_CHEMISTRY
     : col(0, 0, 0, 0),
-    col_bvar(prad->pmy_block, &col)
+    col_bvar(pchemrad->pmy_block, &col)
 #endif //INCLUDE_CHEMISTRY
 {
-  pmy_mb = prad->pmy_block;
-  pmy_rad = prad;
+  pmy_mb = pchemrad->pmy_block;
+  pmy_rad = pchemrad;
 }
 
 //----------------------------------------------------------------------------------------

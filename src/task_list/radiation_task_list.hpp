@@ -24,13 +24,13 @@ class Mesh;
 class MeshBlock;
 
 //--------------------------------------------------------------------------------------
-//! \class RadiationIntegratorTaskList
-//  \brief data and function definitions for RadiationIntegratorTaskList derived class
+//! \class ChemRadiationIntegratorTaskList
+//  \brief data and function definitions for ChemRadiationIntegratorTaskList derived class
 //
-class RadiationIntegratorTaskList : public TaskList {
-  friend class RadIntegrator;
+class ChemRadiationIntegratorTaskList : public TaskList {
+  friend class ChemRadIntegrator;
  public:
-  RadiationIntegratorTaskList(ParameterInput *pin, Mesh *pm);
+  ChemRadiationIntegratorTaskList(ParameterInput *pin, Mesh *pm);
   std::string integrator;
 
   //six-ray
@@ -56,7 +56,7 @@ class RadiationIntegratorTaskList : public TaskList {
   enum TaskStatus RecvAndSend_direction(MeshBlock *pmb, int step, BoundaryFace direction);
 };
 
-namespace RadiationIntegratorTaskNames {
+namespace ChemRadiationIntegratorTaskNames {
 const TaskID NONE(0);
 const TaskID INT_CONST(1); //constant radiation, do nothing
 //six-ray radiation

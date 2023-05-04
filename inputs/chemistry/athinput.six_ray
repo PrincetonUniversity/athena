@@ -78,7 +78,7 @@ xSi        = 1.7e-6 #Si atom per H, this is Z=1 value, default 1.7e-6
 maxorder   = 2       #maximum order. Default 2.
 stldet     = 0       #stability limit detection. Default 0/false.
 
-<radiation>
+<chem_radiation>
 G0           = 1
 CR         = 2e-16  #Cosmic-ray ionization rate per H
 n_frequency  = 8 

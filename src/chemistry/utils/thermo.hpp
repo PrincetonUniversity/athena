@@ -15,7 +15,7 @@
 //! \brief Heating and cooling functions
 class Thermo {
   friend class ChemNetwork;
-  friend class RadIntegrator;
+  friend class ChemRadIntegrator;
  public:
     Thermo();
     static Real HeatingCr(const Real xe, const Real nH,

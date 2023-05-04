@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file radiation.hpp
-//! \brief definitions for Radiation class
+//! \brief definitions for ChemRadiation class
 
 //c++ header
 #include <string>
@@ -17,18 +17,18 @@
 #include "../defs.hpp"
 #include "../parameter_input.hpp"
 
-class RadIntegrator;
+class ChemRadIntegrator;
 
 //! \class Radiation
 //! \brief Radiation data and functions
 
-class Radiation {
+class ChemRadiation {
  public:
-  Radiation(MeshBlock *pmb, ParameterInput *pin);
-  ~Radiation();
+  ChemRadiation(MeshBlock *pmb, ParameterInput *pin);
+  ~ChemRadiation();
 
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Fluid
-  RadIntegrator* pradintegrator; //ptr to radiation integrator
+  ChemRadIntegrator* pchemradintegrator; //ptr to radiation integrator
   std::string integrator;
 
   AthenaArray<Real> ir; // radiation specific intensity

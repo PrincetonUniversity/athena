@@ -263,7 +263,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
   InitializeReactions();
 
   //radiation related variables
-  const int nfreq = pin->GetOrAddInteger("radiation", "n_frequency", 1);
+  const int nfreq = pin->GetOrAddInteger("chem_radiation", "n_frequency", 1);
   n_freq_ = n_ph_ + 2;
   std::stringstream msg;
   //check whether number of frequencies equal to the input file specification
@@ -319,7 +319,7 @@ ChemNetwork::~ChemNetwork() {
 //! k, j, i are the corresponding index of the grid
 void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   Real rho, rho_floor, rad_sum;
-  const int nang = pmy_mb_->prad->nang;
+  const int nang = pmy_mb_->pchemrad->nang;
   //density
   rho = pmy_mb_->phydro->w(IDN, k, j, i);
   //apply density floor
@@ -332,7 +332,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
     rad_sum = 0;
     //radiation
     for (int iang=0; iang < nang; ++iang) {
-      rad_sum += pmy_mb_->prad->ir(k, j, i, ifreq * nang + iang);
+      rad_sum += pmy_mb_->pchemrad->ir(k, j, i, ifreq * nang + iang);
     }
     if (ifreq == index_cr_) {
       rad_(index_cr_) = rad_sum / static_cast<float>(nang);

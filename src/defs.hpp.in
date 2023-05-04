@@ -57,8 +57,8 @@
 // include radiative transfer? default=0 (false)
 #define RADIATION_ENABLED @RADIATION_ENABLED@
 
-// Radiation integrator method, used in constructing radiation tasklist
-#define RADIATION_INTEGRATOR "@RADIATION_INTEGRATOR@"
+// ChemRadiation integrator method, used in constructing radiation tasklist
+#define CHEMRADIATION_INTEGRATOR "@CHEMRADIATION_INTEGRATOR@"
 
 // enable special or general relativity? default=0 (false)
 #define RELATIVISTIC_DYNAMICS @RELATIVISTIC_DYNAMICS@

@@ -197,8 +197,8 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     //   pdata += r.GetSizeInBytes();
     // }
     if (RADIATION_ENABLED) {
-      std::memcpy(pdata, pmb->prad->ir.data(), pmb->prad->ir.GetSizeInBytes());
-      pdata += pmb->prad->ir.GetSizeInBytes();
+      std::memcpy(pdata, pmb->pchemrad->ir.data(), pmb->pchemrad->ir.GetSizeInBytes());
+      pdata += pmb->pchemrad->ir.GetSizeInBytes();
     }
 
     // User MeshBlock data:

@@ -142,11 +142,11 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     if (NSCALARS > 0)
       num_variables[n_dataset] += NSCALARS;
     if (RADIATION_ENABLED) {
-      num_variables[n_dataset] += pmb->prad->nfreq;
+      num_variables[n_dataset] += pmb->pchemrad->nfreq;
 #ifdef INCLUDE_CHEMISTRY
 #ifdef DEBUG
       //for testing six-ray
-      num_variables[n_dataset] += pmb->prad->pradintegrator->ncol + 3*8;
+      num_variables[n_dataset] += pmb->pchemrad->pchemradintegrator->ncol + 3*8;
 #endif //DEBUG
 #endif //INCLUDE_CHEMISTRY
     }
