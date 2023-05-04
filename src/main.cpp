@@ -43,7 +43,7 @@
 #include "outputs/outputs.hpp"
 #include "parameter_input.hpp"
 #include "chem_rad/radiation.hpp"
-#include "task_list/radiation_task_list.hpp"
+#include "task_list/chem_rad_task_list.hpp"
 #include "utils/utils.hpp"
 
 // MPI/OpenMP headers
@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
 
 //radiation
   ChemRadiationIntegratorTaskList *pchemradlist = nullptr;
-  if (RADIATION_ENABLED) {
+  if (CHEMRADIATION_ENABLED) {
 #ifdef ENABLE_EXCEPTIONS
     try {
 #endif
@@ -481,7 +481,7 @@ int main(int argc, char *argv[]) {
     if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
                                                        //
     //radiation
-    if (RADIATION_ENABLED) {
+    if (CHEMRADIATION_ENABLED) {
       clock_t tstart_rad, tstop_rad;
       tstart_rad = std::clock();
 

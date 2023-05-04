@@ -126,7 +126,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   //intialize radiation field
-  if (RADIATION_ENABLED) {
+  if (CHEMRADIATION_ENABLED) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {

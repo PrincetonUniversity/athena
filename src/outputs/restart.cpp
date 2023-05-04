@@ -196,7 +196,7 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     //   std::memcpy(pdata, r.data(), r.GetSizeInBytes());
     //   pdata += r.GetSizeInBytes();
     // }
-    if (RADIATION_ENABLED) {
+    if (CHEMRADIATION_ENABLED) {
       std::memcpy(pdata, pmb->pchemrad->ir.data(), pmb->pchemrad->ir.GetSizeInBytes());
       pdata += pmb->pchemrad->ir.GetSizeInBytes();
     }

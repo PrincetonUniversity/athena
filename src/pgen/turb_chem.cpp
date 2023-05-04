@@ -131,7 +131,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
 
   //intialize radiation field
-  if (RADIATION_ENABLED) {
+  if (CHEMRADIATION_ENABLED) {
     const Real G0 = pin->GetReal("radiation", "G0");
     const Real cr_rate = pin->GetOrAddReal("chemistry", "CR", 2e-16);
     for (int k=ks; k<=ke; ++k) {

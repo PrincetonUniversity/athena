@@ -34,7 +34,7 @@
 #   --kida_rates=choice add special rates to kida network
 #   --ode_solver=choice ode solver for chemistry
 #   --cvode_path=path  path to CVODE libraries (cvode solver requires the library)
-#   --radiation=choice  enable radiative transfer, use choice for integrator
+#   --chem_radiation=choice  enable radiative transfer, use choice for integrator
 #   --cxx=xxx         use xxx as the C++ compiler
 #   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
 #   --mpiccmd=name    use name as the command to call the MPI C++ compiler
@@ -211,11 +211,11 @@ parser.add_argument('--kida_rates',
                     choices=["H2", "gow17", "nitrogen", "nitrogen_gas_Sipila"],
                     help='select special rates for kida network')
 
-# -radiation argument
-parser.add_argument('--radiation',
+# --chem_radiation argument
+parser.add_argument('--chem_radiation',
                     default=None,
                     choices=["const", "six_ray"],
-                    help='enable and select radiation radiative transfer method')
+                    help='enable and select radiative transfer method for chemistry')
 
 # --ode_solver argument
 parser.add_argument('--ode_solver',
@@ -686,14 +686,14 @@ if args['cvode_path'] != '':
     makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['cvode_path']
     makefile_options['LINKER_FLAGS'] += " -Wl,-rpath," + '%s/lib' % args['cvode_path']
 
-# --radiation=[radiation] argument
-if args['radiation'] is not None:
-    definitions['RADIATION_ENABLED'] = '1'
-    makefile_options['RADIATION_FILE'] = args['radiation']+'.cpp'
-    definitions['CHEMRADIATION_INTEGRATOR'] = args['radiation']
+# --chem_radiation=[chem_radiation] argument
+if args['chem_radiation'] is not None:
+    definitions['CHEMRADIATION_ENABLED'] = '1'
+    makefile_options['CHEMRADIATION_FILE'] = args['chem_radiation']+'.cpp'
+    definitions['CHEMRADIATION_INTEGRATOR'] = args['chem_radiation']
 else:
-    definitions['RADIATION_ENABLED'] = '0'
-    makefile_options['RADIATION_FILE'] = 'const.cpp'
+    definitions['CHEMRADIATION_ENABLED'] = '0'
+    makefile_options['CHEMRADIATION_FILE'] = 'const.cpp'
     definitions['CHEMRADIATION_INTEGRATOR'] = 'none'
 
 # -float argument
@@ -947,7 +947,7 @@ print('  Chemistry:                  ' + (args['chemistry'] if args['chemistry']
                                           is not None else 'OFF'))
 print('  kida_rates:                 ' + (args['kida_rates'] if args['kida_rates']
                                           is not None else 'OFF'))
-print('  ChemRadiation:              ' + (args['radiation'] if args['radiation']
+print('  ChemRadiation:              ' + (args['chem_radiation'] if args['chem_radiation']
                                           is not None else 'OFF'))
 print('  ode_solver:                 ' + (args['ode_solver'] if args['ode_solver']
                                           is not None else 'OFF'))

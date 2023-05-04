@@ -55,9 +55,9 @@
 #define @CVODE_OPTION@
 
 // include radiative transfer? default=0 (false)
-#define RADIATION_ENABLED @RADIATION_ENABLED@
+#define CHEMRADIATION_ENABLED @CHEMRADIATION_ENABLED@
 
-// ChemRadiation integrator method, used in constructing radiation tasklist
+// ChemRadiation integrator method, used in constructing chemradiation tasklist
 #define CHEMRADIATION_INTEGRATOR "@CHEMRADIATION_INTEGRATOR@"
 
 // enable special or general relativity? default=0 (false)

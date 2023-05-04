@@ -26,7 +26,7 @@ def prepare(**kwargs):
         ode_solver='cvode',
         nspecies='18',
         kida_rates='gow17',
-        radiation='const',
+        chem_radiation='const',
         cxx=cxx,
         cvode_path=os.environ['CVODE_PATH']
         )
@@ -35,7 +35,7 @@ def prepare(**kwargs):
 
 def run(**kwargs):
     arguments = [
-            'radiation/G0=1',
+            'chem_radiation/G0=1',
             'chemistry/network_dir='+os.environ['NETWORK_DIR']
             ]
     athena.run('chemistry/athinput.chem_kida_gow17', arguments)

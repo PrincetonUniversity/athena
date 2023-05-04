@@ -178,7 +178,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   peos = new EquationOfState(this, pin);
 
-  if (RADIATION_ENABLED) {
+  if (CHEMRADIATION_ENABLED) {
     pchemrad = new ChemRadiation(this, pin);
     //TODO (Munan Gong): this is only for six-ray radiation, and would not be necessary
     //for local (e.g. constant) radiation treatment. Also later probably this need to be
@@ -304,7 +304,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
 
   peos = new EquationOfState(this, pin);
-  if (RADIATION_ENABLED) {
+  if (CHEMRADIATION_ENABLED) {
     pchemrad = new ChemRadiation(this, pin);
   }
 
@@ -344,7 +344,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 #endif
   }
 
-  if (RADIATION_ENABLED) {
+  if (CHEMRADIATION_ENABLED) {
     std::memcpy(pchemrad->ir.data(), &(mbdata[os]), pchemrad->ir.GetSizeInBytes());
     os += pchemrad->ir.GetSizeInBytes();
   }
@@ -379,7 +379,7 @@ MeshBlock::~MeshBlock() {
   if (SELF_GRAVITY_ENABLED) delete pgrav;
   if (SELF_GRAVITY_ENABLED == 2) delete pmg;
   if (NSCALARS > 0) delete pscalars;
-  if (RADIATION_ENABLED) {
+  if (CHEMRADIATION_ENABLED) {
     delete pchemrad;
   }
 
@@ -484,7 +484,7 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
     size += pscalars->h.GetSizeInBytes();
 #endif
   }
-  if (RADIATION_ENABLED) {
+  if (CHEMRADIATION_ENABLED) {
     size += pchemrad->ir.GetSizeInBytes();
   }
 

@@ -621,7 +621,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
   }
 
-  if (RADIATION_ENABLED) {
+  if (CHEMRADIATION_ENABLED) {
     if (ContainVariable(output_params.variable, "rad") ||
         ContainVariable(output_params.variable, "prim") ||
         ContainVariable(output_params.variable, "cons")) {

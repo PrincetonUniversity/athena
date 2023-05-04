@@ -141,7 +141,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // Passive scalars:
     if (NSCALARS > 0)
       num_variables[n_dataset] += NSCALARS;
-    if (RADIATION_ENABLED) {
+    if (CHEMRADIATION_ENABLED) {
       num_variables[n_dataset] += pmb->pchemrad->nfreq;
 #ifdef INCLUDE_CHEMISTRY
 #ifdef DEBUG

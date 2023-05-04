@@ -1,5 +1,5 @@
-#ifndef RADIATION_INTEGRATORS_RAD_INTEGRATORS_HPP_
-#define RADIATION_INTEGRATORS_RAD_INTEGRATORS_HPP_
+#ifndef CHEM_RAD_INTEGRATORS_RAD_INTEGRATORS_HPP_
+#define CHEM_RAD_INTEGRATORS_RAD_INTEGRATORS_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -57,4 +57,4 @@ class ChemRadIntegrator {
 #endif //INCLUDE_CHEMISTRY
 };
 
-#endif // RADIATION_INTEGRATORS_RAD_INTEGRATORS_HPP_
+#endif // CHEM_RAD_INTEGRATORS_RAD_INTEGRATORS_HPP_

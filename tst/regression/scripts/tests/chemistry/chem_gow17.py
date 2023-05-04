@@ -24,7 +24,7 @@ def prepare(**kwargs):
         prob='chem_uniform',
         chemistry='gow17',
         ode_solver='cvode',
-        radiation='const',
+        chem_radiation='const',
         cxx=cxx,
         cvode_path=os.environ['CVODE_PATH']
         )
@@ -33,7 +33,7 @@ def prepare(**kwargs):
 
 def run(**kwargs):
     arguments = [
-            'radiation/G0=1e-6',
+            'chem_radiation/G0=1e-6',
             ]
     athena.run('chemistry/athinput.chem_gow17', arguments)
 

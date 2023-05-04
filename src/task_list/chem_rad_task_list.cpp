@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file radiation_task_list.cpp
+//! \file chem_rad_task_list.cpp
 //! \brief derived class for radiation integrator task list.
 
 // C/C++ headers
@@ -18,7 +18,7 @@
 #include "../mesh/mesh.hpp"
 #include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../chem_rad/radiation.hpp"
-#include "radiation_task_list.hpp"
+#include "chem_rad_task_list.hpp"
 #include "task_list.hpp"
 
 //--------------------------------------------------------------------------------------

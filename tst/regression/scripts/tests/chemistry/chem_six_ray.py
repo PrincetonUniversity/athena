@@ -23,7 +23,7 @@ def prepare(**kwargs):
         prob='read_vtk',
         chemistry='gow17',
         ode_solver='cvode',
-        radiation='six_ray',
+        chem_radiation='six_ray',
         cxx=cxx,
         cvode_path=os.environ['CVODE_PATH']
         )

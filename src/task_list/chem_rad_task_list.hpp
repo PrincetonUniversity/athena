@@ -1,12 +1,12 @@
 
-#ifndef TASK_LIST_RADIATION_TASK_LIST_HPP_
-#define TASK_LIST_RADIATION_TASK_LIST_HPP_
+#ifndef TASK_LIST_CHEM_RAD_TASK_LIST_HPP_
+#define TASK_LIST_CHEM_RAD_TASK_LIST_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//!   \file radiation_task_list.hpp
+//!   \file chem_rad_task_list.hpp
 //    \brief provides functionality to control dynamic execution using tasks
 
 // C headers
@@ -76,4 +76,4 @@ const TaskID CLEAR_SIXRAY_RECV(14);
 const TaskID UPDATE_RAD(15);
 };
 
-#endif // TASK_LIST_RADIATION_TASK_LIST_HPP_
+#endif // TASK_LIST_CHEM_RAD_TASK_LIST_HPP_

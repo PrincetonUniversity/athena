@@ -1428,7 +1428,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       if (SELF_GRAVITY_ENABLED == 1
         || (SELF_GRAVITY_ENABLED == 2 && pmb->pgrav->fill_ghost))
         pmb->pgrav->gbvar.SetupPersistentMPI();
-      if (RADIATION_ENABLED) {
+      if (CHEMRADIATION_ENABLED) {
 #ifdef INCLUDE_CHEMISTRY
         pmb->pchemrad->pchemradintegrator->col_bvar.SetupPersistentMPI();
 #endif //INCLUDE_CHEMISTRY
@@ -1963,7 +1963,7 @@ void Mesh::ReserveMeshBlockPhysIDs() {
   if (NSCALARS > 0) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
-  if (RADIATION_ENABLED) {
+  if (CHEMRADIATION_ENABLED) {
     ReserveTagPhysIDs(SixRayBoundaryVariable::max_phys_id);
   }
 #endif

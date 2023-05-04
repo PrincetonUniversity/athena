@@ -1,5 +1,5 @@
-#ifndef RADIATION_RADIATION_HPP_
-#define RADIATION_RADIATION_HPP_
+#ifndef CHEM_RAD_RADIATION_HPP_
+#define CHEM_RAD_RADIATION_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -39,4 +39,4 @@ class ChemRadiation {
   bool output_zone_sec; // output zone/sec for radiation tasklist
 };
 
-#endif // RADIATION_RADIATION_HPP_
+#endif // CHEM_RAD_RADIATION_HPP_

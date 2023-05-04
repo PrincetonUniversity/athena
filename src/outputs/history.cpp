@@ -49,7 +49,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   Real real_lowest = std::numeric_limits<Real>::lowest();
   AthenaArray<Real> vol(pmb->ncells1);
   int nhistory_vars = (NHYDRO) + (SELF_GRAVITY_ENABLED > 0) + (NFIELD) + 3 + (NSCALARS);
-  if (RADIATION_ENABLED) {
+  if (CHEMRADIATION_ENABLED) {
     nhistory_vars += pmb->pchemrad->nfreq;
   }
   const int nhistory_output = nhistory_vars + pm->nuser_history_output_;
@@ -132,7 +132,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
               hst_data[prev_out + n] += vol(i)*s;
             }
             // average radiation field strength:
-            if (RADIATION_ENABLED) {
+            if (CHEMRADIATION_ENABLED) {
               for (int n=0; n<pchemrad->nfreq; n++) {
                 Real& ir = pchemrad->ir_avg(n,k,j,i);
                 constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD + NSCALARS;
@@ -190,7 +190,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
               hst_data[prev_out + n] += vol(i)*s;
             }
             // average radiation field strength:
-            if (RADIATION_ENABLED) {
+            if (CHEMRADIATION_ENABLED) {
               for (int n=0; n<pchemrad->nfreq; n++) {
                 Real& ir = pchemrad->ir_avg(n,k,j,i);
                 constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD + NSCALARS;
@@ -308,7 +308,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         std::fprintf(pfile,"[%d]=%d-scalar    ", iout++, n);
 #endif //INCLUDE_CHEMISTRY
       }
-      if (RADIATION_ENABLED) {
+      if (CHEMRADIATION_ENABLED) {
         for (int n=0; n<pchemrad->nfreq; n++) {
           std::fprintf(pfile,"[%d]=%d-rad    ", iout++, n);
         }
