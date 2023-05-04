@@ -28,12 +28,12 @@ ChemRadIntegrator::ChemRadIntegrator(ChemRadiation *pchemrad, ParameterInput *pi
 
 //----------------------------------------------------------------------------------------
 //! destructor
-RadIntegrator::~RadIntegrator() {}
+ChemRadIntegrator::~ChemRadIntegrator() {}
 
 //----------------------------------------------------------------------------------------
-//! \fn void RadIntegrator::CopyToOutput()
+//! \fn void ChemRadIntegrator::CopyToOutput()
 //! \brief average radiation field over all angles and copy values to output
-void RadIntegrator::CopyToOutput() {
+void ChemRadIntegrator::CopyToOutput() {
   int is = pmy_mb->is;
   int ie = pmy_mb->ie;
   int js = pmy_mb->js;
@@ -67,11 +67,11 @@ void RadIntegrator::CopyToOutput() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void RadIntegrator::UpdateRadiation()
+//! \fn void ChemRadIntegrator::UpdateRadiation()
 //! \brief update radiation field
-void RadIntegrator::UpdateRadiation() {}
+void ChemRadIntegrator::UpdateRadiation() {}
 
 #ifdef INCLUDE_CHEMISTRY
-void RadIntegrator::GetColMB(BoundaryFace direction) {}
-void RadIntegrator::UpdateCol(BoundaryFace direction) {}
+void ChemRadIntegrator::GetColMB(BoundaryFace direction) {}
+void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {}
 #endif //INCLUDE_CHEMISTRY

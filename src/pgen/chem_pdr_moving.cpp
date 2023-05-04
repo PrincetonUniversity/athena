@@ -51,15 +51,15 @@ namespace {
 
 void Mesh::InitUserMeshData(ParameterInput *pin)
 {
-  G0 = pin->GetOrAddReal("radiation", "G0", 0.);
+  G0 = pin->GetOrAddReal("chem_radiation", "G0", 0.);
   G0_iang.NewAthenaArray(6);
-  G0_iang(BoundaryFace::inner_x1) = pin->GetOrAddReal("radiation", "G0_inner_x1", G0);
-  G0_iang(BoundaryFace::inner_x2) = pin->GetOrAddReal("radiation", "G0_inner_x2", G0);
-  G0_iang(BoundaryFace::inner_x3) = pin->GetOrAddReal("radiation", "G0_inner_x3", G0);
-  G0_iang(BoundaryFace::outer_x1) = pin->GetOrAddReal("radiation", "G0_outer_x1", G0);
-  G0_iang(BoundaryFace::outer_x2) = pin->GetOrAddReal("radiation", "G0_outer_x2", G0);
-  G0_iang(BoundaryFace::outer_x3) = pin->GetOrAddReal("radiation", "G0_outer_x3", G0);
-  cr_rate = pin->GetOrAddReal("radiation", "CR", 2e-16);
+  G0_iang(BoundaryFace::inner_x1) = pin->GetOrAddReal("chem_radiation", "G0_inner_x1", G0);
+  G0_iang(BoundaryFace::inner_x2) = pin->GetOrAddReal("chem_radiation", "G0_inner_x2", G0);
+  G0_iang(BoundaryFace::inner_x3) = pin->GetOrAddReal("chem_radiation", "G0_inner_x3", G0);
+  G0_iang(BoundaryFace::outer_x1) = pin->GetOrAddReal("chem_radiation", "G0_outer_x1", G0);
+  G0_iang(BoundaryFace::outer_x2) = pin->GetOrAddReal("chem_radiation", "G0_outer_x2", G0);
+  G0_iang(BoundaryFace::outer_x3) = pin->GetOrAddReal("chem_radiation", "G0_outer_x3", G0);
+  cr_rate = pin->GetOrAddReal("chem_radiation", "CR", 2e-16);
   return;
 }
 
