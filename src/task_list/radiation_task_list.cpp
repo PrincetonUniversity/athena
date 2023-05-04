@@ -16,8 +16,8 @@
 #include "../athena.hpp"
 #include "../defs.hpp"
 #include "../mesh/mesh.hpp"
-#include "../radiation/integrators/rad_integrators.hpp"
-#include "../radiation/radiation.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp"
+#include "../chem_rad/radiation.hpp"
 #include "radiation_task_list.hpp"
 #include "task_list.hpp"
 

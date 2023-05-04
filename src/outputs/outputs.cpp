@@ -96,8 +96,8 @@
 #include "../mesh/mesh.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
-#include "../radiation/radiation.hpp"
-#include "../radiation/integrators/rad_integrators.hpp"
+#include "../chem_rad/radiation.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 

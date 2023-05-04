@@ -46,8 +46,8 @@
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../outputs/io_wrapper.hpp"
 #include "../parameter_input.hpp"
-#include "../radiation/radiation.hpp"
-#include "../radiation/integrators/rad_integrators.hpp" //col_bvar
+#include "../chem_rad/radiation.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp" //col_bvar
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
 #include "../units/units.hpp"

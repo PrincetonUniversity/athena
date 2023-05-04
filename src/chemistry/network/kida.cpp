@@ -29,7 +29,7 @@
 #include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"       //ParameterInput
-#include "../../radiation/radiation.hpp"
+#include "../../chem_rad/radiation.hpp"
 #include "../../scalars/scalars.hpp"
 #include "../../units/units.hpp"
 #include "../../utils/string_utils.hpp"

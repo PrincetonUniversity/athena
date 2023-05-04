@@ -46,8 +46,8 @@ SRC_FILES := $(wildcard src/*.cpp) \
 		 $(wildcard $(CHEMISTRY_FILE)) \
 		 $(CHEMNET_FILE) \
 		 $(wildcard src/chemistry/$(ODE_SOLVER_FILE)) \
-		 $(wildcard src/radiation/*.cpp) \
-		 $(wildcard src/radiation/integrators/$(RADIATION_FILE)) \
+		 $(wildcard src/chem_rad/*.cpp) \
+		 $(wildcard src/chem_rad/integrators/$(RADIATION_FILE)) \
 	     $(wildcard src/fft/*.cpp) \
 	     $(wildcard src/field/*.cpp) \
 	     $(wildcard src/field/field_diffusion/*.cpp) \

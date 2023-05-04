@@ -27,8 +27,6 @@
 #include "../../parameter_input.hpp"       //ParameterInput
 #include "../../mesh/mesh.hpp"
 #include "../../hydro/hydro.hpp"
-#include "../../radiation/radiation.hpp"
-#include "../../radiation/integrators/rad_integrators.hpp"
 #include "../utils/chemistry_utils.hpp"
 #include "../utils/thermo.hpp"
 #include "../../defs.hpp"

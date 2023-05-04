@@ -42,7 +42,7 @@
 #include "outputs/io_wrapper.hpp"
 #include "outputs/outputs.hpp"
 #include "parameter_input.hpp"
-#include "radiation/radiation.hpp"
+#include "chem_rad/radiation.hpp"
 #include "task_list/radiation_task_list.hpp"
 #include "utils/utils.hpp"
 

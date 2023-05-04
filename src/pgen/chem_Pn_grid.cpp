@@ -36,8 +36,8 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../radiation/integrators/rad_integrators.hpp"
-#include "../radiation/radiation.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp"
+#include "../chem_rad/radiation.hpp"
 #include "../scalars/scalars.hpp"
 
 
