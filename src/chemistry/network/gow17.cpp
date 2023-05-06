@@ -21,14 +21,14 @@
 #include <sstream>  //stringstream
 
 //athena++ header
+#include "../../chem_rad/integrators/rad_integrators.hpp"
+#include "../../chem_rad/radiation.hpp"
 #include "../../coordinates/coordinates.hpp"
 #include "../../defs.hpp"
 #include "../../eos/eos.hpp"
 #include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"       //ParameterInput
-#include "../../chem_rad/integrators/rad_integrators.hpp"
-#include "../../chem_rad/radiation.hpp"
 #include "../../scalars/scalars.hpp"
 #include "../../units/units.hpp"
 #include "../utils/chemistry_utils.hpp"
@@ -312,7 +312,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
     if (diff > eps) {
       std::stringstream msg1; //error message
       msg1 << "### FATAL ERROR in ChemNetwork constructor" << std::endl
-        << "gow17 network with energy equation: adiabatic index must be 5/3." << std::endl;
+        << "gow17 network with energy equation: adiabatic index must be 5/3."
+        << std::endl;
       ATHENA_ERROR(msg1);
     }
     temperature_ = 0.;
@@ -644,7 +645,8 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
     LOI = Thermo::CoolingOI(yprev[igO_],  nH_*yprev[igH_],  nH_*yprev[iH2_],
         nH_*yprev[ige_],  Tcool_nm);
     // cooling of hot gas: radiative cooling, free-free.
-    LHotGas = Thermo::CoolingLya(yprev[igH_], nH_*yprev[ige_], T);//Thermo::CoolingHotGas(nH_,  T, zdg_);
+    LHotGas = Thermo::CoolingLya(yprev[igH_], nH_*yprev[ige_], T);
+    //Thermo::CoolingHotGas(nH_,  T, zdg_);
     // CO rotational lines
     // Calculate effective CO column density
     vth = sqrt(2. * Constants::k_boltzmann_cgs * Tcool_nm / ChemistryUtility::mCO);

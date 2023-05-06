@@ -21,6 +21,8 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp"
+#include "../chem_rad/radiation.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
@@ -28,8 +30,6 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../chem_rad/radiation.hpp"
-#include "../chem_rad/integrators/rad_integrators.hpp"
 #include "outputs.hpp"
 
 // Only proceed if HDF5 output enabled

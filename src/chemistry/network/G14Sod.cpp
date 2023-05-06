@@ -20,32 +20,32 @@
 // this class header
 #include "G14Sod.hpp"
 
-//athena++ header
-#include "network.hpp"
-#include "../../scalars/scalars.hpp"
-#include "../../coordinates/coordinates.hpp"
-#include "../../parameter_input.hpp"       //ParameterInput
-#include "../../mesh/mesh.hpp"
-#include "../../hydro/hydro.hpp"
-#include "../utils/chemistry_utils.hpp"
-#include "../utils/thermo.hpp"
-#include "../../defs.hpp"
-#include "../../eos/eos.hpp"
-
-//c++ header
-#include <sstream>   // stringstream
-#include <iostream>  // endl
+//c header
 #include <math.h>    // a^x = pow(a,x)
 #include <stdio.h>   // FILE, fprintf()
-#include <limits>    // inf
 
-//#define DEBUG
+//c++ header
+#include <iostream>  // endl
+#include <limits>    // inf
+#include <sstream>   // stringstream
+
+//athena++ header
+#include "../../coordinates/coordinates.hpp"
+#include "../../defs.hpp"
+#include "../../eos/eos.hpp"
+#include "../../hydro/hydro.hpp"
+#include "../../mesh/mesh.hpp"
+#include "../../parameter_input.hpp"       //ParameterInput
+#include "../../scalars/scalars.hpp"
+#include "../utils/chemistry_utils.hpp"
+#include "../utils/thermo.hpp"
+#include "network.hpp"
 
 //species namesspecies_names
-const std::string ChemNetwork::species_names[NSPECIES] =
+const std::string ChemNetwork::species_names[NSPECIES] =  // NOLINT (runtime/string)
 {"H","H+","He","He+","He2+","H-","H2","H2+"};
 
-const std::string ChemNetwork::ghost_species_names_[ngs_] =
+const std::string ChemNetwork::ghost_species_names_[ngs_] =  // NOLINT (runtime/string)
 {"e"};
 
 
@@ -132,7 +132,7 @@ const Real ChemNetwork::stoich_in2body2[n_2body_] =
                      1, 1, 1, 1, 1,
                      1, 1, 1, 1};
 
- const Real ChemNetwork::stoich_out2body1[n_2body_] =
+const Real ChemNetwork::stoich_out2body1[n_2body_] =
                     {1, 1, 1, 1, 1,
                      1, 1, 1, 1, 1,
                      1, 2, 1, 2, 2,
@@ -145,9 +145,9 @@ const Real ChemNetwork::stoich_out2body2[n_2body_] =
                      1, 0, 1, 1, 1};
 
 ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
-	//number of species and a list of name of species
+  //number of species and a list of name of species
   pmy_spec_ = pmb->pscalars;
-	pmy_mb_   = pmb;
+  pmy_mb_   = pmb;
 
   //constants
   mu_ = pin->GetReal("problem", "mu");
@@ -175,9 +175,9 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
   //function of evolution of the abundance of the element
   Real rate;
   //store previous y includeing ghost species
-  Real yprev[NSPECIES+ngs_];
-  Real yprev0[NSPECIES+ngs_]; //correct negative abundance
-  Real ydotg[NSPECIES+ngs_];
+  Real yprev[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
+  Real yprev0[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
+  Real ydotg[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
   Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_; // E in cgs unit
   Real Xe = y[iHplus_] + y[iHeplus_] + 2.*y[iHe2plus_] + y[iH2plus_] - y[iHmin_];
 
@@ -220,14 +220,18 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
       rate *= -1.;
     }
 #ifdef DEBUG
-    if (species_names_all_[in2body1_[i]] == "H2" || species_names_all_[in2body2_[i]]== "H2"){
+    if (species_names_all_[in2body1_[i]] == "H2"
+        || species_names_all_[in2body2_[i]]== "H2") {
       printf("Dec: k2body_[%.2i]*(X_%s)*(X_%s) = %.2e* %.2e * %.2e = %.2e \n",
-          i, species_names_all_[in2body1_[i]].c_str(), species_names_all_[in2body2_[i]].c_str(),
+          i, species_names_all_[in2body1_[i]].c_str(),
+          species_names_all_[in2body2_[i]].c_str(),
           k2body_[i], yprev0[in2body1_[i]], yprev0[in2body2_[i]],rate);
     }
-    if (species_names_all_[out2body1_[i]] == "H2" || species_names_all_[out2body2_[i]]== "H2"){
+    if (species_names_all_[out2body1_[i]] == "H2"
+        || species_names_all_[out2body2_[i]]== "H2") {
       printf("Inc: k2body_[%.2i]*(X_%s)*(X_%s) = %.2e* %.2e * %.2e = %.2e \n",
-          i, species_names_all_[in2body1_[i]].c_str(), species_names_all_[in2body2_[i]].c_str(),
+          i, species_names_all_[in2body1_[i]].c_str(),
+          species_names_all_[in2body2_[i]].c_str(),
           k2body_[i] ,yprev0[in2body1_[i]], yprev0[in2body2_[i]],rate);
     }
 
@@ -247,7 +251,8 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
   printf("nH_ = %2.e \n",nH_);
   printf("one loop finish, ydot, ydotg yprev = \n");
   for (int j=0; j<NSPECIES+ngs_; j++) {
-    printf("%s: %.2e , %.2e, %.2e ", species_names_all_[j].c_str(), ydot[j],ydotg[j],yprev[j]);
+    printf("%s: %.2e , %.2e, %.2e ", species_names_all_[j].c_str(),
+                                     ydot[j],ydotg[j],yprev[j]);
     printf("\n");
   }
 #endif
@@ -265,7 +270,6 @@ void ChemNetwork::GetGhostSpecies(const Real *y, Real yghost[NSPECIES+ngs_]) {
 }
 
 void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
-
   // temperature, definition follows G14, T = p/rho/kb*mu, mu = 1.25
   Real T = E/Thermo::kb_*(gamma_ - 1.0)*mu_/muH_;
 
@@ -281,29 +285,28 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
                     *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)
                     *lnTe);
   //  (2) H+   + e   -> H    (+ γ)
-  if (T<=5500){
+  if (T<=5500) {
     k2body_[1]  =  3.92e-13*pow(Te,-0.6353);
-  }else{
-  	k2body_[1]  =  exp(-2.861303380689232e1 +
-  		              (-7.241125657826851e-1 + (-2.026044731984691e-2 + (-2.380861877349834e-3 +
-  		              (-3.212605213188796e-4 + (-1.421502914054107e-5 + ( 4.989108920299513e-6 +
-  		              ( 5.755614137575758e-7 + (-1.856767039775261e-8 + (-3.071135243196595e-9 )
-  		              *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)
-  		              *lnTe)*lnTe);
+  } else {
+    k2body_[1]  =  exp(-2.861303380689232e1 +
+                (-7.241125657826851e-1 + (-2.026044731984691e-2 + (-2.380861877349834e-3 +
+                (-3.212605213188796e-4 + (-1.421502914054107e-5 + ( 4.989108920299513e-6 +
+                ( 5.755614137575758e-7 + (-1.856767039775261e-8 + (-3.071135243196595e-9 )
+                *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)
+                *lnTe)*lnTe);
   }
   //  (3) He   + e   -> He+  + 2e [unit in cgs]
   k2body_[2]  = exp(-4.409864886e1 +
-  	               ( 2.391596563e1 + (-1.07532302e1  + (+3.05803875e0 +
-  	               (-5.6851189e-1  + ( 6.79539123e-2 + (-5.0090561e-3 +
-  	               ( 2.06723616e-4 + (-3.64916141e-6)
-  	               	*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe);
+                   ( 2.391596563e1 + (-1.07532302e1  + (+3.05803875e0 +
+                   (-5.6851189e-1  + ( 6.79539123e-2 + (-5.0090561e-3 +
+                   ( 2.06723616e-4 + (-3.64916141e-6)
+                    *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe);
 
   //  (4) He+  + e   -> He   (+ γ)  k_4 = k_4a + k_4b unit in cgs
   k2body_[3]  = 3.92e-13*pow(Te,-0.6353);
-  if (T>9280){
-
-  	k2body_[3]  += 1.54e-9*pow(Te,-1.5)*(1.0+0.3/exp(8.099328789667/Te))/exp(40.49664394833662/Te);
-
+  if (T>9280) {
+    k2body_[3] += 1.54e-9*pow(Te,-1.5)
+                  *(1.0+0.3/exp(8.099328789667/Te))/exp(40.49664394833662/Te);
   }
 
   //  (5) He+  + e   -> He2+ + 2e  unit in cgs
@@ -320,34 +323,34 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
   k2body_[6]  = 6.77e-15*pow(Te,0.8779);
 
   //  (8) H−   + H   -> H2   + e unit in cgs
-  if (T<=1160){
-  	k2body_[7]  = 1.43e-9;
-  }else{
-  	k2body_[7]  = exp(-2.00691389e1  +
-                    ( 2.289800603272916e-1  + ( 3.599837721023835e-2  + (-4.555120027032095e-3 +
-                    (-3.105115447124016e-4  + ( 1.073294010367247e-4  + (-8.36671960467864e-6  +
-                    ( 2.238306228891639e-7)
-                    *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe);
+  if (T<=1160) {
+    k2body_[7]  = 1.43e-9;
+  } else {
+    k2body_[7]  = exp(-2.00691389e1  +
+             ( 2.289800603272916e-1  + ( 3.599837721023835e-2  + (-4.555120027032095e-3 +
+             (-3.105115447124016e-4  + ( 1.073294010367247e-4  + (-8.36671960467864e-6  +
+             ( 2.238306228891639e-7)
+             *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe);
   }
 
   //  (9) H    + H+  -> H2+  (+ γ)
-  if (T<=6700){
-  	k2body_[8]  = 1.85e-23*pow(T,1.8);
-  }else{
-  	k2body_[8]  = 5.81e-16*pow((T/56200), -0.6657*log10(T/56200));
+  if (T<=6700) {
+    k2body_[8]  = 1.85e-23*pow(T,1.8);
+  } else {
+    k2body_[8]  = 5.81e-16*pow((T/56200), -0.6657*log10(T/56200));
   }
   // (10) H    + H2+ -> H2   + H+ unit in cgs
   k2body_[9]  = 6e-10;
 
   // (11) H+   + H2  -> H2+  + H
-  if (T<=3480){
-  	k2body_[10] = 0;
-  }else{
-  	k2body_[10] = exp(-2.424914687731536e1  +
-                    ( 3.400824447095291e0   + (-3.898003964650152e0  + ( 2.045587822403071e0  +
-                    (-5.416182856220388e-1  + ( 8.41077503763412e-2  + (-7.879026154483455e-3 +
-                    ( 4.138398421504563e-4  + (-9.36345888928611e-6)
-                    *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe);
+  if (T<=3480) {
+    k2body_[10] = 0;
+  } else {
+    k2body_[10] = exp(-2.424914687731536e1  +
+              ( 3.400824447095291e0   + (-3.898003964650152e0  + ( 2.045587822403071e0  +
+              (-5.416182856220388e-1  + ( 8.41077503763412e-2  + (-7.879026154483455e-3 +
+              ( 4.138398421504563e-4  + (-9.36345888928611e-6)
+              *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe);
   }
 
   // (12) H2   + e   -> 2 H  + e
@@ -361,16 +364,15 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
                    *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe);
 
   // (14) H−   + H   -> 2 H  + e
-  if (T<=1160){
-  	k2body_[13]  = 2.56e-9*pow(Te,1.78186);
-  }else{
-  	k2body_[13]  =  exp(-2.037260896203573e1 +
-  		              (+1.139449335841631e0 + (-1.421013521554148e-1 + ( 8.46445538663e-3 +
-  		              (-1.4327641212992e-3  + ( 2.012250284791e-4    + (+8.66396324309e-5 +
-  		              (-2.585009680264e-5   + (+2.4555011970392e-6   + (-8.06838246118e-8 )
-  		              *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)
-  		              *lnTe)*lnTe);
-
+  if (T<=1160) {
+    k2body_[13]  = 2.56e-9*pow(Te,1.78186);
+  } else {
+    k2body_[13]  =  exp(-2.037260896203573e1 +
+                    (+1.139449335841631e0 + (-1.421013521554148e-1 + ( 8.46445538663e-3 +
+                    (-1.4327641212992e-3  + ( 2.012250284791e-4    + (+8.66396324309e-5 +
+                    (-2.585009680264e-5   + (+2.4555011970392e-6   + (-8.06838246118e-8 )
+                    *lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)*lnTe)
+                    *lnTe)*lnTe);
   }
   // (15) H−   + H+  -> 2H  (+ γ)
   k2body_[14] = 6.5e-9/sqrt(Te);
@@ -379,19 +381,19 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
   k2body_[15] = 1e-8*pow(T,-0.4);
 
   // (17) H2+  + e   -> 2H  (+ γ)
-  if (T<=617){
+  if (T<=617) {
     k2body_[16] = 1e-8;
-  }else{
-  	k2body_[16] = 1.32e-6*pow(T,-0.76);
+  } else {
+    k2body_[16] = 1.32e-6*pow(T,-0.76);
   }
 
   // (18) H2+  + H-   -> H    + H2
   k2body_[17]  = 5e-7*sqrt(1.0e2/T);
 
   // (19) 3H → H2 + H
-  if (T<=300){
+  if (T<=300) {
     k2body_[18] = 1.3e-32*pow(T/300,-0.38);
-  }else{
+  } else {
     k2body_[18] = 1.3e-32*pow(T/300,-1.0);
   }
 
@@ -403,10 +405,10 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
 void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   //density
   nH_ = pmy_mb_->phydro->w(IDN, k, j, i);
-	return;
+  return;
 }
 
-Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED){
+Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
   //function of evolution of energy
   //return dEdt;
   Real LH2; // Define H2 Cooling Term
@@ -416,7 +418,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED){
   Real T = E_ergs/Thermo::kb_*(gamma_ - 1.0)*mu_/muH_;
 
   Real dEdt = 0.;
-  Real yprev[NSPECIES+ngs_];
+  Real yprev[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
   // copy y to yprev and set ghost species
   GetGhostSpecies(y, yprev);
   //correct negative abundance to zero
@@ -444,18 +446,17 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED){
   printf("=============================\n");
 #endif
   return dEDdt;
-
 }
 
 void ChemNetwork::OutputRates(FILE *pf) const {
   //output the reactions and base rates
-	for (int i=0; i<n_2body_; i++) {
-		fprintf(pf, "%4s  + %4s -> %4s  + %4s,     k2body = %.2e\n",
-		 species_names_all_[in2body1_[i]].c_str(),
-		 species_names_all_[in2body2_[i]].c_str(),
-		 species_names_all_[out2body1_[i]].c_str(),
-		 species_names_all_[out2body2_[i]].c_str(),
-		 k2body_[i]);
-	}
+  for (int i=0; i<n_2body_; i++) {
+    fprintf(pf, "%4s  + %4s -> %4s  + %4s,     k2body = %.2e\n",
+     species_names_all_[in2body1_[i]].c_str(),
+     species_names_all_[in2body2_[i]].c_str(),
+     species_names_all_[out2body1_[i]].c_str(),
+     species_names_all_[out2body2_[i]].c_str(),
+     k2body_[i]);
+  }
   return;
 }

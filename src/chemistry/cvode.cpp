@@ -6,9 +6,6 @@
 //! \file cvode.cpp
 //! \brief implementation of the CVODE solver
 
-// this class header
-#include "ode_wrapper.hpp"
-
 //c header
 #include <stdio.h> //c style io
 
@@ -25,6 +22,9 @@
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
 
+// this class header
+#include "ode_wrapper.hpp"
+
 namespace {
   //solver tolerance
   Real reltol_;//relative tolerance
@@ -36,7 +36,7 @@ namespace {
   Real fac_dtmax_;
   void CheckFlag(const void *flagvalue, const char *funcname,
                  const int opt);
-}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 //! \brief ODEWrapper constructor
@@ -317,7 +317,8 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   if (output_zone_sec_) {
     double cpu_time = (tstop>tstart ? static_cast<double> (tstop-tstart) :
                        1.0)/static_cast<double> (CLOCKS_PER_SEC);
-    std::uint64_t nzones = static_cast<std::uint64_t> (pmy_block_->GetNumberOfMeshBlockCells());
+    std::uint64_t nzones =
+      static_cast<std::uint64_t> (pmy_block_->GetNumberOfMeshBlockCells());
     double zone_sec = static_cast<double> (nzones) / cpu_time;
     printf("chemistry ODE integration: ");
     printf("ncycle = %d, total time in sec = %.2e, zone/sec=%.2e\n",

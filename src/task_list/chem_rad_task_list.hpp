@@ -50,6 +50,7 @@ class ChemRadiationIntegratorTaskList : public TaskList {
   enum TaskStatus UpdateRadiationSixRay(MeshBlock *pmb, int step);
   //constant radiation
   enum TaskStatus ConstRadiation(MeshBlock *pmb, int step);
+
  private:
   void StartupTaskList(MeshBlock *pmb, int stage) override;
   void AddTask(const TaskID& id, const TaskID& dep) override;
@@ -74,6 +75,6 @@ const TaskID RECV_SEND_COL_IX3(12);
 const TaskID RECV_SEND_COL_OX3(13);
 const TaskID CLEAR_SIXRAY_RECV(14);
 const TaskID UPDATE_RAD(15);
-};
+}; // namespace ChemRadiationIntegratorTaskNames
 
 #endif // TASK_LIST_CHEM_RAD_TASK_LIST_HPP_

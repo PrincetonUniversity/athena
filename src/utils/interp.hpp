@@ -12,7 +12,7 @@
 
 //! \namespace Interpolation
 //! \brief Utility functions for interpolation
-//TODO (Munan Gong): this is used for chemistry. check out interp_table used for
+//TODO(Munan Gong): this is used for chemistry. check out interp_table used for
 //EOS to see whether we can merge them for similar functions
 namespace Interpolation {
   Real LP1D(const int len, const Real *xarr, const Real *data,

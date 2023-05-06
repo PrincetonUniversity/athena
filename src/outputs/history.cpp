@@ -23,6 +23,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../chem_rad/radiation.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
@@ -30,14 +31,14 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
-#include "../chem_rad/radiation.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
 // NEW_OUTPUT_TYPES:
 
 // "3" for 1-KE, 2-KE, 3-KE additional columns (come before tot-E)
-//#define nhistory_vars ((NHYDRO) + (SELF_GRAVITY_ENABLED > 0) + (NFIELD) + 3 + (NSCALARS))
+//#define nhistory_vars ((NHYDRO) + (SELF_GRAVITY_ENABLED > 0)
+//+ (NFIELD) + 3 + (NSCALARS))
 
 //----------------------------------------------------------------------------------------
 //! \fn void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
@@ -135,7 +136,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             if (CHEMRADIATION_ENABLED) {
               for (int n=0; n<pchemrad->nfreq; n++) {
                 Real& ir = pchemrad->ir_avg(n,k,j,i);
-                constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD + NSCALARS;
+                constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD
+                  + NSCALARS;
                 hst_data[prev_out + n] += vol(i)*ir;
               }
             }
@@ -193,7 +195,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             if (CHEMRADIATION_ENABLED) {
               for (int n=0; n<pchemrad->nfreq; n++) {
                 Real& ir = pchemrad->ir_avg(n,k,j,i);
-                constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD + NSCALARS;
+                constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD
+                  + NSCALARS;
                 hst_data[prev_out + n] += vol(i)*ir;
               }
             }

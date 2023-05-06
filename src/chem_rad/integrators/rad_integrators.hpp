@@ -48,6 +48,7 @@ class ChemRadIntegrator {
   void CopyToOutput();
 
   void UpdateRadiation();
+
  private:
 #ifdef INCLUDE_CHEMISTRY
   //calculate column densities within the meshblock, for six_ray

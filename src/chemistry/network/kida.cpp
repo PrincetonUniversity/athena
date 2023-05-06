@@ -23,13 +23,13 @@
 #include <sstream>    // stringstream
 
 //athena++ header
+#include "../../chem_rad/radiation.hpp"
 #include "../../defs.hpp"
 #include "../../eos/eos.hpp"
 #include "../../globals.hpp"
 #include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"       //ParameterInput
-#include "../../chem_rad/radiation.hpp"
 #include "../../scalars/scalars.hpp"
 #include "../../units/units.hpp"
 #include "../../utils/string_utils.hpp"
@@ -736,7 +736,8 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
     if (is_fixed_PAH_) {
       LRec = Thermo::CoolingRec(Z_PAH_, Tcool_nm, nH_*y_e, rad_(index_gpe_));
     } else {
-      LRec = Thermo::CoolingRec_W03(Z_PAH_, Tcool_nm, nH_*y_e, rad_(index_gpe_), phi_PAH_);
+      LRec = Thermo::CoolingRec_W03(Z_PAH_, Tcool_nm, nH_*y_e, rad_(index_gpe_),
+                                    phi_PAH_);
     }
     // collisional dissociation of H2
     LH2diss = Thermo::CoolingH2diss(y_H, y_H2, k2body_H2_H, k2body_H2_H2);
@@ -1374,7 +1375,7 @@ void ChemNetwork::InitializeReactions() {
           ATHENA_ERROR(msg);
         }
         nu_gc_(igc) = species_[ispec_map_[pr->reactants_[0]]].charge_ / q_charge;
-        r1_gc_(igc) = br*se* M_PI *ag*ag * sqrt( 8.*Constants::k_boltzmann_cgs/(M_PI*mi) );
+        r1_gc_(igc) = br*se* M_PI *ag*ag * sqrt(8.*Constants::k_boltzmann_cgs/(M_PI*mi));
         t1_gc_(igc) = ag * Constants::k_boltzmann_cgs / (qi*qi);
         igc++;
       } else if (pr->formula_ == 9) { //neutral freeze-out

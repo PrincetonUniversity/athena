@@ -115,7 +115,7 @@ int NetworkWrapper::WrapRHS(const realtype t, const N_Vector y,
 //!               const Real y[NSPECIES+1], const Real ydot[NSPECIES+1],
 //!               AthenaArray<Real> &jac)
 //! \brief Default Jacobian
-//TODO (Munan Gong) the default jacobian is not implemented
+//TODO(Munan Gong) the default jacobian is not implemented
 void __attribute__((weak)) NetworkWrapper::Jacobian(const Real t,
                const Real y[NSPECIES+1], const Real ydot[NSPECIES+1],
                AthenaArray<Real> &jac) {
@@ -133,7 +133,7 @@ void __attribute__((weak)) NetworkWrapper::Jacobian(const Real t,
 //!               const Real y[NSPECIES], const Real ydot[NSPECIES],
 //!              AthenaArray<Real> &jac)
 //! \brief Default Jacobian for isothermal EOS
-//TODO (Munan Gong) the default jacobian for isothermal EOS is not implemented
+//TODO(Munan Gong) the default jacobian for isothermal EOS is not implemented
 void __attribute__((weak)) NetworkWrapper::Jacobian_isothermal(const Real t,
                const Real y[NSPECIES], const Real ydot[NSPECIES],
                AthenaArray<Real> &jac) {

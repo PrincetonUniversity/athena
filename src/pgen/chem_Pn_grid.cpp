@@ -18,16 +18,18 @@
 
 // C++ headers
 #include <algorithm>  // std::find()
+#include <fstream>    // ifstream
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // std::runtime_error()
 #include <string>     // c_str()
 #include <vector>     // vector container
-#include <fstream>    // ifstream
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp"
+#include "../chem_rad/radiation.hpp"
 #include "../chemistry/utils/thermo.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
@@ -36,8 +38,6 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../chem_rad/integrators/rad_integrators.hpp"
-#include "../chem_rad/radiation.hpp"
 #include "../scalars/scalars.hpp"
 
 
@@ -70,11 +70,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::string dir_input = pin->GetString("problem", "dir_input");
   const Real Zdg = pin->GetReal("chemistry", "Zdg");
   char dir_z[20];
-  sprintf(dir_z, "Z%.1f/", Zdg);
+  sprintf(dir_z, "Z%.1f/", Zdg); // NOLINT
   //std::string dir_z = std::to_string(dir_z_buf);
   std::string fn_chi = dir_input + dir_z + "chi.txt";
   std::string fn_cr = dir_input + dir_z + "cr.txt";
-  //TODO:debug
   std::cout << "filename chi: " << fn_chi << std::endl;
   std::cout << "filename cr: " << fn_cr << std::endl;
   //open files

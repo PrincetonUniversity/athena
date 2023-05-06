@@ -34,6 +34,7 @@
 
 // Athena++ headers
 #include "athena.hpp"
+#include "chem_rad/radiation.hpp"
 #include "fft/turbulence.hpp"
 #include "globals.hpp"
 #include "gravity/fft_gravity.hpp"
@@ -42,7 +43,6 @@
 #include "outputs/io_wrapper.hpp"
 #include "outputs/outputs.hpp"
 #include "parameter_input.hpp"
-#include "chem_rad/radiation.hpp"
 #include "task_list/chem_rad_task_list.hpp"
 #include "utils/utils.hpp"
 
@@ -490,7 +490,8 @@ int main(int argc, char *argv[]) {
       //radiation tasklist timing output
       if (pmesh->my_blocks(0)->pchemrad->output_zone_sec) {
         tstop_rad = std::clock();
-        double cpu_time = (tstop_rad>tstart_rad ? static_cast<double> (tstop_rad-tstart_rad) :
+        double cpu_time = (tstop_rad>tstart_rad ?
+            static_cast<double> (tstop_rad-tstart_rad) :
             1.0)/static_cast<double> (CLOCKS_PER_SEC);
         std::uint64_t nzones =
           static_cast<std::uint64_t> (pmesh->my_blocks(0)->GetNumberOfMeshBlockCells());

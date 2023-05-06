@@ -19,36 +19,37 @@
 //  \ Ref: https://www.aanda.org/articles/aa/pdf/2016/02/aa27262-15.pdf
 //======================================================================================
 
-// C++ headers
-#include <string>     // c_str()
-#include <iostream>   // endl
-#include <vector>     // vector container
-#include <sstream>    // stringstream
+// C headers
 #include <stdio.h>    // c style file
 #include <string.h>   // strcmp()
+                      //
+// C++ headers
 #include <algorithm>  // std::find()
+#include <iostream>   // endl
+#include <sstream>    // stringstream
 #include <stdexcept>  // std::runtime_error()
+#include <string>     // c_str()
+#include <vector>     // vector container
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
-#include "../scalars/scalars.hpp"
-#include "../chemistry/utils/thermo.hpp"
-#include "../chem_rad/radiation.hpp"
 #include "../chem_rad/integrators/rad_integrators.hpp"
-#include "../field/field.hpp"
-#include "../eos/eos.hpp"
+#include "../chem_rad/radiation.hpp"
+#include "../chemistry/utils/thermo.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "../scalars/scalars.hpp"
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief initialize problem
 //======================================================================================
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Define the constants
   const Real mu = pin->GetReal("problem", "mu");
   const Real k_b = Constants::k_boltzmann_cgs;
@@ -75,7 +76,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        if (pcoord->x1v(i) < xshock){
+        if (pcoord->x1v(i) < xshock) {
           phydro->u(IDN,k,j,i) = dl;
           phydro->u(IM1,k,j,i) = 0.0;
           phydro->u(IM2,k,j,i) = 0.0;
@@ -84,7 +85,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           if (NON_BAROTROPIC_EOS) {
             phydro->u(IEN,k,j,i) = Lpres/gm1;
           }
-        }else{
+        } else {
           phydro->u(IDN, k, j, i) = dr;
           phydro->u(IM1,k,j,i) = 0.0;
           phydro->u(IM2,k,j,i) = 0.0;

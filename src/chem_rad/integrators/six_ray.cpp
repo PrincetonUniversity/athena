@@ -6,26 +6,26 @@
 //! \file six_ray.cpp
 //! \brief implementation of radiation integrators: six_ray
 
-// this class header
-#include "rad_integrators.hpp"
-
 //c++ headers
-#include <sstream>    // stringstream
 #include <iostream>   // endl
+#include <sstream>    // stringstream
 
 // Athena++ headers
+#include "../../bvals/bvals.hpp"
 #include "../../coordinates/coordinates.hpp"
 #include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
-#include "../radiation.hpp"
 #include "../../scalars/scalars.hpp"
-#include "../../bvals/bvals.hpp"
 #include "../../units/units.hpp"
+#include "../radiation.hpp"
 #ifdef INCLUDE_CHEMISTRY
 #include "../../chemistry/utils/shielding.hpp"
 #include "../../chemistry/utils/thermo.hpp"
 #endif
+
+// this class header
+#include "rad_integrators.hpp"
 
 namespace {
   AthenaArray<Real> G0_iang; //diffuse radiation field strength in Draine 1987 unit
@@ -49,18 +49,19 @@ ChemRadIntegrator::ChemRadIntegrator(ChemRadiation *pchemrad, ParameterInput *pi
   pmy_rad = pchemrad;
   G0 = pin->GetOrAddReal("chem_radiation", "G0", 0.);
   G0_iang.NewAthenaArray(6);
-  G0_iang(BoundaryFace::inner_x1) = pin->GetOrAddReal("chem_radiation", "G0_inner_x1", G0);
-  G0_iang(BoundaryFace::inner_x2) = pin->GetOrAddReal("chem_radiation", "G0_inner_x2", G0);
-  G0_iang(BoundaryFace::inner_x3) = pin->GetOrAddReal("chem_radiation", "G0_inner_x3", G0);
-  G0_iang(BoundaryFace::outer_x1) = pin->GetOrAddReal("chem_radiation", "G0_outer_x1", G0);
-  G0_iang(BoundaryFace::outer_x2) = pin->GetOrAddReal("chem_radiation", "G0_outer_x2", G0);
-  G0_iang(BoundaryFace::outer_x3) = pin->GetOrAddReal("chem_radiation", "G0_outer_x3", G0);
+  G0_iang(BoundaryFace::inner_x1) = pin->GetOrAddReal("chem_radiation","G0_inner_x1",G0);
+  G0_iang(BoundaryFace::inner_x2) = pin->GetOrAddReal("chem_radiation","G0_inner_x2",G0);
+  G0_iang(BoundaryFace::inner_x3) = pin->GetOrAddReal("chem_radiation","G0_inner_x3",G0);
+  G0_iang(BoundaryFace::outer_x1) = pin->GetOrAddReal("chem_radiation","G0_outer_x1",G0);
+  G0_iang(BoundaryFace::outer_x2) = pin->GetOrAddReal("chem_radiation","G0_outer_x2",G0);
+  G0_iang(BoundaryFace::outer_x3) = pin->GetOrAddReal("chem_radiation","G0_outer_x3",G0);
   cr_rate = pin->GetOrAddReal("chem_radiation", "CR", 2e-16);
   f_cell = pin->GetOrAddReal("chem_radiation", "shielding_fraction_cell", 0.5);
   f_prev = 1. - f_cell;
   std::stringstream msg; //error message
   if (pmy_rad->nang != 6) {
-    msg << "### FATAL ERROR in ChemRadIntegrator constructor [ChemRadIntegrator]" << std::endl
+    msg << "### FATAL ERROR in ChemRadIntegrator constructor [ChemRadIntegrator]"
+      << std::endl
       << "Six-ray scheme with nang != 6." << std::endl;
     ATHENA_ERROR(msg);
   }

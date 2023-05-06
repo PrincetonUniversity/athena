@@ -23,6 +23,8 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp"
+#include "../chem_rad/radiation.hpp"
 #include "../chemistry/utils/thermo.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
@@ -31,8 +33,6 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../chem_rad/integrators/rad_integrators.hpp"
-#include "../chem_rad/radiation.hpp"
 #include "../scalars/scalars.hpp"
 #include "../units/units.hpp"
 
@@ -49,16 +49,15 @@ namespace {
 //  functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
-void Mesh::InitUserMeshData(ParameterInput *pin)
-{
+void Mesh::InitUserMeshData(ParameterInput *pin) {
   G0 = pin->GetOrAddReal("chem_radiation", "G0", 0.);
   G0_iang.NewAthenaArray(6);
-  G0_iang(BoundaryFace::inner_x1) = pin->GetOrAddReal("chem_radiation", "G0_inner_x1", G0);
-  G0_iang(BoundaryFace::inner_x2) = pin->GetOrAddReal("chem_radiation", "G0_inner_x2", G0);
-  G0_iang(BoundaryFace::inner_x3) = pin->GetOrAddReal("chem_radiation", "G0_inner_x3", G0);
-  G0_iang(BoundaryFace::outer_x1) = pin->GetOrAddReal("chem_radiation", "G0_outer_x1", G0);
-  G0_iang(BoundaryFace::outer_x2) = pin->GetOrAddReal("chem_radiation", "G0_outer_x2", G0);
-  G0_iang(BoundaryFace::outer_x3) = pin->GetOrAddReal("chem_radiation", "G0_outer_x3", G0);
+  G0_iang(BoundaryFace::inner_x1) = pin->GetOrAddReal("chem_radiation","G0_inner_x1",G0);
+  G0_iang(BoundaryFace::inner_x2) = pin->GetOrAddReal("chem_radiation","G0_inner_x2",G0);
+  G0_iang(BoundaryFace::inner_x3) = pin->GetOrAddReal("chem_radiation","G0_inner_x3",G0);
+  G0_iang(BoundaryFace::outer_x1) = pin->GetOrAddReal("chem_radiation","G0_outer_x1",G0);
+  G0_iang(BoundaryFace::outer_x2) = pin->GetOrAddReal("chem_radiation","G0_outer_x2",G0);
+  G0_iang(BoundaryFace::outer_x3) = pin->GetOrAddReal("chem_radiation","G0_outer_x3",G0);
   cr_rate = pin->GetOrAddReal("chem_radiation", "CR", 2e-16);
   return;
 }

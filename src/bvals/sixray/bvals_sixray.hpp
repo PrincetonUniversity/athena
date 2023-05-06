@@ -1,5 +1,5 @@
-#ifndef BVALS_SIXRAY_HPP_
-#define BVALS_SIXRAY_HPP_
+#ifndef BVALS_SIXRAY_BVALS_SIXRAY_HPP_
+#define BVALS_SIXRAY_BVALS_SIXRAY_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone!@princeton.edu> and other code contributors
@@ -119,7 +119,6 @@ class SixRayBoundaryVariable : public BoundaryVariable {
   void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
   void PolarBoundarySingleAzimuthalBlock() override;
   //!@}
-
 };
 
-#endif // BVALS_SIXRAY_HPP_
+#endif // BVALS_SIXRAY_BVALS_SIXRAY_HPP_

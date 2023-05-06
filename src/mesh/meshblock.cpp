@@ -24,6 +24,7 @@
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
 #include "../bvals/sixray/bvals_sixray.hpp" //SixRayBoundaryVariable
+#include "../chem_rad/radiation.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../fft/athena_fft.hpp"
@@ -34,7 +35,6 @@
 #include "../hydro/hydro.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
-#include "../chem_rad/radiation.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
 #include "../utils/buffer_utils.hpp"
@@ -180,7 +180,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   if (CHEMRADIATION_ENABLED) {
     pchemrad = new ChemRadiation(this, pin);
-    //TODO (Munan Gong): this is only for six-ray radiation, and would not be necessary
+    //TODO(Munan Gong): this is only for six-ray radiation, and would not be necessary
     //for local (e.g. constant) radiation treatment. Also later probably this need to be
     //generalized to other radiation treatment.
     pbval->AdvanceCounterPhysID(SixRayBoundaryVariable::max_phys_id);

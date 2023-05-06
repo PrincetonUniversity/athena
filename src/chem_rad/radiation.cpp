@@ -34,7 +34,8 @@ ChemRadiation::ChemRadiation(MeshBlock *pmb, ParameterInput *pin) {
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in ChemRadiation constructor" << std::endl
-        << "integrator=" << integrator << " not valid chemradiation integrator, " << std::endl
+        << "integrator=" << integrator << " not valid chemradiation integrator, "
+        << std::endl
         << "choose from {six_ray, const}" << std::endl;
     throw std::runtime_error(msg.str().c_str());
   }

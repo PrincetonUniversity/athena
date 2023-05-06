@@ -127,6 +127,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
   }
   Real dEdt = - Thermo::alpha_GD_ * nH_ * sqrt(T) * T;
   //return in code units
-  Real dEDdt = (dEdt * nH_ / pmy_mb_->punit->code_energydensity_cgs) * pmy_mb_->punit->code_time_cgs;
+  Real dEDdt = (dEdt * nH_ / pmy_mb_->punit->code_energydensity_cgs)
+                * pmy_mb_->punit->code_time_cgs;
   return dEDdt;
 }

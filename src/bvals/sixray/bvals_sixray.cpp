@@ -74,7 +74,8 @@ SixRayBoundaryVariable::~SixRayBoundaryVariable() {
 //! \fn int SixRayBoundaryVariable::ComputeVariableBufferSize(
 //!     const NeighborIndexes& ni, int cng)
 //! \brief calculate buffer size for six ray boundary
-int SixRayBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) {
+int SixRayBoundaryVariable::ComputeVariableBufferSize(const NeighborIndexes& ni,
+                                                      int cng) {
   int size;
   MeshBlock *pmb = pmy_block_;
 
@@ -225,7 +226,8 @@ void SixRayBoundaryVariable::SetBoundarySameLevel(Real *buf, const NeighborBlock
 //----------------------------------------------------------------------------------------
 //! \fn int SixRayBoundaryVariable::LoadBoundaryBufferToCoarser(}
 //! \brief
-int SixRayBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) {
+int SixRayBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
+                                                        const NeighborBlock& nb) {
   //mesh refinement not implemented yet
   return 0;
 }
@@ -233,7 +235,8 @@ int SixRayBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf, const Neighbo
 //----------------------------------------------------------------------------------------
 //! \fn int SixRayBoundaryVariable::LoadBoundaryBufferToFiner(}
 //! \brief
-int SixRayBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) {
+int SixRayBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
+                                                      const NeighborBlock& nb) {
   //mesh refinement not implemented yet
   return 0;
 }
@@ -255,7 +258,8 @@ void SixRayBoundaryVariable::SetBoundaryFromFiner(Real *buf, const NeighborBlock
 }
 
 //no flux correction
-int SixRayBoundaryVariable::ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) {
+int SixRayBoundaryVariable::ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni,
+                                                            int cng) {
   return 0;
 }
 void SixRayBoundaryVariable::SendFluxCorrection() {}
@@ -299,7 +303,8 @@ void SixRayBoundaryVariable::PolarWedgeInnerX2(Real time, Real dt,
 void SixRayBoundaryVariable::PolarWedgeOuterX2(Real time, Real dt,
                        int il, int iu, int ju, int kl, int ku, int ngh) {}
 
-BoundaryFace SixRayBoundaryVariable::GetOppositeBoundaryFace(const BoundaryFace direction) {
+BoundaryFace SixRayBoundaryVariable::GetOppositeBoundaryFace(
+                                       const BoundaryFace direction) {
   BoundaryFace opp_direction;
 
     if (direction == BoundaryFace::inner_x1) {
@@ -350,7 +355,7 @@ void SixRayBoundaryVariable::SendSixRayBoundaryBuffers(const BoundaryFace direct
       CopyVariableBufferSameProcess(*pnb, ssize);
     }
 #ifdef MPI_PARALLEL
-    else { // MPI
+    else { // NOLINT // MPI
       MPI_Start(&(bd_var_.req_send[pnb->bufid]));
     }
 #endif
@@ -367,7 +372,8 @@ void SixRayBoundaryVariable::SendSixRayBoundaryBuffers(const BoundaryFace direct
   return;
 }
 
-bool SixRayBoundaryVariable::ReceiveAndSetSixRayBoundaryBuffers(const BoundaryFace direction) {
+bool SixRayBoundaryVariable::ReceiveAndSetSixRayBoundaryBuffers(
+                               const BoundaryFace direction) {
   bool bflag = true;
 
   NeighborBlock *pnb = GetFaceNeighbor(direction);

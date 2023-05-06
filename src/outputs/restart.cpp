@@ -21,12 +21,12 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../chem_rad/radiation.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "../chem_rad/radiation.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 

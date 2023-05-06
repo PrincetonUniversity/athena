@@ -14,16 +14,17 @@
 
 // Athena++ classes headers
 #include "../athena.hpp"
-#include "../defs.hpp"
-#include "../mesh/mesh.hpp"
 #include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../chem_rad/radiation.hpp"
+#include "../defs.hpp"
+#include "../mesh/mesh.hpp"
 #include "chem_rad_task_list.hpp"
 #include "task_list.hpp"
 
 //--------------------------------------------------------------------------------------
 //! ChemRadiationIntegratorTaskList constructor
-ChemRadiationIntegratorTaskList::ChemRadiationIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
+ChemRadiationIntegratorTaskList::ChemRadiationIntegratorTaskList(ParameterInput *pin,
+                                                                 Mesh *pm) {
   integrator = CHEMRADIATION_INTEGRATOR;
   // Now assemble list of tasks for each step of chemistry integrator
   {using namespace ChemRadiationIntegratorTaskNames; // NOLINT (build/namespace)
@@ -152,48 +153,42 @@ void ChemRadiationIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage)
 //! Six-ray
 
 //meshblock column densities
-TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ix1(MeshBlock *pmb, int step)
-{
+TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ix1(MeshBlock *pmb, int step) {
 #ifdef INCLUDE_CHEMISTRY
   pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::inner_x1);
 #endif
   return TaskStatus::success;
 }
 
-TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ox1(MeshBlock *pmb, int step)
-{
+TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ox1(MeshBlock *pmb, int step) {
 #ifdef INCLUDE_CHEMISTRY
   pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::outer_x1);
 #endif
   return TaskStatus::success;
 }
 
-TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ix2(MeshBlock *pmb, int step)
-{
+TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ix2(MeshBlock *pmb, int step) {
 #ifdef INCLUDE_CHEMISTRY
   pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::inner_x2);
 #endif
   return TaskStatus::success;
 }
 
-TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ox2(MeshBlock *pmb, int step)
-{
+TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ox2(MeshBlock *pmb, int step) {
 #ifdef INCLUDE_CHEMISTRY
   pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::outer_x2);
 #endif
   return TaskStatus::success;
 }
 
-TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ix3(MeshBlock *pmb, int step)
-{
+TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ix3(MeshBlock *pmb, int step) {
 #ifdef INCLUDE_CHEMISTRY
   pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::inner_x3);
 #endif
   return TaskStatus::success;
 }
 
-TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ox3(MeshBlock *pmb, int step)
-{
+TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ox3(MeshBlock *pmb, int step) {
 #ifdef INCLUDE_CHEMISTRY
   pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::outer_x3);
 #endif
@@ -203,8 +198,7 @@ TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ox3(MeshBlock *pmb, int ste
 //boundary receive and send
 
 TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_direction(MeshBlock *pmb,
-    int step, BoundaryFace direction)
-{
+    int step, BoundaryFace direction) {
 #ifdef INCLUDE_CHEMISTRY
   SixRayBoundaryVariable *pbvar = &pmb->pchemrad->pchemradintegrator->col_bvar;
   BoundaryFace direction_opp = pbvar->GetOppositeBoundaryFace(direction);
@@ -230,33 +224,32 @@ TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_direction(MeshBlock *pmb
   return TaskStatus::success;
 }
 
-TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ix1(MeshBlock *pmb, int step){
+TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ix1(MeshBlock *pmb, int step) {
   return RecvAndSend_direction(pmb, step, BoundaryFace::inner_x1);
 }
 
-TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ox1(MeshBlock *pmb, int step){
+TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ox1(MeshBlock *pmb, int step) {
   return RecvAndSend_direction(pmb, step, BoundaryFace::outer_x1);
 }
 
-TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ix2(MeshBlock *pmb, int step){
+TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ix2(MeshBlock *pmb, int step) {
   return RecvAndSend_direction(pmb, step, BoundaryFace::inner_x2);
 }
 
-TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ox2(MeshBlock *pmb, int step){
+TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ox2(MeshBlock *pmb, int step) {
   return RecvAndSend_direction(pmb, step, BoundaryFace::outer_x2);
 }
 
-TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ix3(MeshBlock *pmb, int step){
+TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ix3(MeshBlock *pmb, int step) {
   return RecvAndSend_direction(pmb, step, BoundaryFace::inner_x3);
 }
 
-TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ox3(MeshBlock *pmb, int step){
+TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ox3(MeshBlock *pmb, int step) {
   return RecvAndSend_direction(pmb, step, BoundaryFace::outer_x3);
 }
 
 TaskStatus ChemRadiationIntegratorTaskList::ClearSixrayReceive(MeshBlock *pmb,
-                                                                 int step)
-{
+                                                               int step) {
 #ifdef INCLUDE_CHEMISTRY
   pmb->pchemrad->pchemradintegrator->col_bvar.ClearBoundary(BoundaryCommSubset::all);
 #endif
@@ -265,8 +258,7 @@ TaskStatus ChemRadiationIntegratorTaskList::ClearSixrayReceive(MeshBlock *pmb,
 
 //update radiation variables
 TaskStatus ChemRadiationIntegratorTaskList::UpdateRadiationSixRay(MeshBlock *pmb,
-                                                              int step)
-{
+                                                                  int step) {
 #ifdef INCLUDE_CHEMISTRY
   pmb->pchemrad->pchemradintegrator->UpdateRadiation();
   pmb->pchemrad->pchemradintegrator->CopyToOutput();
