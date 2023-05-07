@@ -678,8 +678,8 @@ void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-//                               int il, int iu, int jl, int ju, int kl, int ku, bool th)
-//  \brief Actual implementation of prolongation and correction
+//!                              int il, int iu, int jl, int ju, int kl, int ku, bool th)
+//! \brief Actual implementation of prolongation and correction
 
 void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
                          int il, int iu, int jl, int ju, int kl, int ku, bool th) {
@@ -726,9 +726,9 @@ void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst,
-//      const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku,
-//      int fil, int fjl, int fkl, bool th)
-//  \brief Actual implementation of prolongation and correction
+//!     const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku,
+//!     int fil, int fjl, int fkl, bool th)
+//! \brief Actual implementation of prolongation and correction
 
 void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
      int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl, bool th) {
@@ -831,9 +831,9 @@ void Multigrid::ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<R
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::FMGProlongate(AthenaArray<Real> &dst,
-//           const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku
-//           int fil, int fjl, int fkl, bool th)
-//  \brief Actual implementation of FMG prolongation
+//!          const AthenaArray<Real> &src, int il, int iu, int jl, int ju, int kl, int ku
+//!          int fil, int fjl, int fkl, bool th)
+//! \brief Actual implementation of FMG prolongation
 
 void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
                               int il, int iu, int jl, int ju, int kl, int ku,
@@ -1049,7 +1049,7 @@ void Multigrid::FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &s
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff)
-//  \brief Actual implementation of calculation of multipole expansion coeficients
+//! \brief Actual implementation of calculation of multipole expansion coeficients
 
 void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff) {
   AthenaArray<Real> &src = src_[nlevel_-1];
@@ -1265,7 +1265,7 @@ void Multigrid::CalculateMultipoleCoefficients(AthenaArray<Real> &mpcoeff) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::CalculateCenterOfMass(AthenaArray<Real> &mpcoeff)
-//  \brief Calculate the position of the center of mass from the dipole moment
+//! \brief Calculate the position of the center of mass from the dipole moment
 
 void Multigrid::CalculateCenterOfMass(AthenaArray<Real> &mpcoeff) {
   AthenaArray<Real> &src = src_[nlevel_-1];
@@ -1299,7 +1299,7 @@ void Multigrid::CalculateCenterOfMass(AthenaArray<Real> &mpcoeff) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGCoordinates::AllocateMGCoordinates(int nx, int ny, int nz)
-//  \brief Allocate coordinate arrays for multigrid
+//! \brief Allocate coordinate arrays for multigrid
 
 void MGCoordinates::AllocateMGCoordinates(int nx, int ny, int nz) {
   x1f.NewAthenaArray(nx+1);
@@ -1314,9 +1314,9 @@ void MGCoordinates::AllocateMGCoordinates(int nx, int ny, int nz) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGCoordinates::CalculateMGCoordinates(const RegionSize &size,
-//                                                 int ll, int ngh)
-//  \brief Calculate coordinates for Multigrid
-//         Currently uniform Cartesian only
+//!                                                int ll, int ngh)
+//! \brief Calculate coordinates for Multigrid
+//!        Currently uniform Cartesian only
 
 void MGCoordinates::CalculateMGCoordinates(const RegionSize &size, int ll, int ngh) {
   int ncx = (size.nx1>>ll), ncy = (size.nx2>>ll), ncz = (size.nx3>>ll);

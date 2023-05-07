@@ -13,7 +13,7 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file chem_Z16Sod.cpp
+//! \file G14Sod.cpp
 //  \brief problem generator, uniform mesh with chemistry
 //  \ Only work with single core cpu
 //  \ Ref: https://www.aanda.org/articles/aa/pdf/2016/02/aa27262-15.pdf

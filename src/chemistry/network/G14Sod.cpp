@@ -13,7 +13,7 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file G14ShockTube.cpp
+//! \file G14Sod.cpp
 //  \brief implementation of functions in Grassi 2014 Fig. 21
 //======================================================================================
 

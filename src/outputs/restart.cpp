@@ -33,7 +33,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin,
-//                                          bool force_write)
+//!                                         bool force_write)
 //! \brief Cycles over all MeshBlocks and writes data to a single restart file.
 
 void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_write) {

@@ -1303,10 +1303,10 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
-//   const AthenaArray<Real> &un, AthenaArray<Real> &uold, const AthenaArray<Real> &unold,
-//   AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
-//   int ox1, int ox2, int ox3, bool folddata)
-//  \brief set an Octet boundary from a neighbor Octet on the same level
+//!  const AthenaArray<Real> &un, AthenaArray<Real> &uold, const AthenaArray<Real> &unold,
+//!  AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
+//!  int ox1, int ox2, int ox3, bool folddata)
+//! \brief set an Octet boundary from a neighbor Octet on the same level
 
 void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
      const AthenaArray<Real> &un, AthenaArray<Real> &uold, const AthenaArray<Real> &unold,
@@ -1358,10 +1358,10 @@ void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SetOctetBoundaryFromCoarser(const AthenaArray<Real> &un,
-//                            const AthenaArray<Real> &unold, AthenaArray<Real> &cbuf,
-//                            AthenaArray<Real> &cbufold, const LogicalLocation &loc,
-//                            int ox1, int ox2, int ox3, bool folddata) {
-//  \brief set a boundary in the coarse buffer from a neighbor Octet on the coarser level
+//!                           const AthenaArray<Real> &unold, AthenaArray<Real> &cbuf,
+//!                           AthenaArray<Real> &cbufold, const LogicalLocation &loc,
+//!                           int ox1, int ox2, int ox3, bool folddata) {
+//! \brief set a boundary in the coarse buffer from a neighbor Octet on the coarser level
 
 void MultigridDriver::SetOctetBoundaryFromCoarser(const AthenaArray<Real> &un,
                       const AthenaArray<Real> &unold, AthenaArray<Real> &cbuf,
@@ -1399,8 +1399,8 @@ void MultigridDriver::SetOctetBoundaryFromCoarser(const AthenaArray<Real> &un,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
-//                    const LogicalLocation &loc, const MGCoordinates &coord, bool fcbuf)
-//  \brief Apply physical boundary conditions for an octet
+//!                   const LogicalLocation &loc, const MGCoordinates &coord, bool fcbuf)
+//! \brief Apply physical boundary conditions for an octet
 
 void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
               const LogicalLocation &loc, const MGCoordinates &coord, bool fcbuf) {
@@ -1715,9 +1715,9 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
-//           AthenaArray<Real> &uold, AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
-//           const AthenaArray<bool> &ncoarse,bool folddata)
-//  \brief Prolongate octet boundaries contacting the coarser level
+//!          AthenaArray<Real> &uold, AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
+//!          const AthenaArray<bool> &ncoarse,bool folddata)
+//! \brief Prolongate octet boundaries contacting the coarser level
 
 void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
      AthenaArray<Real> &uold, AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
@@ -1842,7 +1842,7 @@ void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::AllocateMultipoleCoefficients()
-//  \brief Allocate arrays for multipole expansion coefficients
+//! \brief Allocate arrays for multipole expansion coefficients
 
 void MultigridDriver::AllocateMultipoleCoefficients() {
   nmpcoeff_ = 0;
@@ -1860,7 +1860,7 @@ void MultigridDriver::AllocateMultipoleCoefficients() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::CalculateMultipoleCoefficients()
-//  \brief Calculate multipole expansion coefficients
+//! \brief Calculate multipole expansion coefficients
 
 void MultigridDriver::CalculateMultipoleCoefficients() {
   for (int th = 0; th < nthreads_; ++th)
@@ -1889,7 +1889,7 @@ void MultigridDriver::CalculateMultipoleCoefficients() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::ScaleMultipoleCoefficients()
-//  \brief Scale coefficients for multipole expansion
+//! \brief Scale coefficients for multipole expansion
 
 void MultigridDriver::ScaleMultipoleCoefficients() {
   AthenaArray<Real> &mpcoeff = mpcoeff_[0];
@@ -1940,7 +1940,7 @@ void MultigridDriver::ScaleMultipoleCoefficients() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::CalculateCenterOfMass()
-//  \brief Calculate the position of the center of mass for multipole expansion
+//! \brief Calculate the position of the center of mass for multipole expansion
 
 void MultigridDriver::CalculateCenterOfMass() {
   for (int th = 0; th < nthreads_; ++th) {

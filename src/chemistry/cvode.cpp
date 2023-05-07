@@ -328,7 +328,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void SetInitStep(const Real h_init)
+//! \fn void ODEWrapper::SetInitStep(const Real h_init) const
 //! \brief Set initial stepsize for ODE solver
 void ODEWrapper::SetInitStep(const Real h_init) const {
   int flag = CVodeSetInitStep(cvode_mem_, h_init);
@@ -337,7 +337,7 @@ void ODEWrapper::SetInitStep(const Real h_init) const {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real GetLastStep()
+//! \fn Real ODEWrapper::GetLastStep() const
 //! \brief Get last stepsize
 Real ODEWrapper::GetLastStep() const {
   Real hlast;
@@ -348,7 +348,7 @@ Real ODEWrapper::GetLastStep() const {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real GetNextStep()
+//! \fn Real ODEWrapper::GetNextStep() const
 //! \brief Get next stepsize
 Real ODEWrapper::GetNextStep() const {
   Real hlast;
@@ -359,7 +359,7 @@ Real ODEWrapper::GetNextStep() const {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn long int GetNsteps()
+//! \fn long int ODEWrapper::GetNsteps() const
 //! \brief Get the number of steps between two reinits
 long int ODEWrapper::GetNsteps() const { // NOLINT (runtime/int)
   long int nst; // NOLINT (runtime/int)

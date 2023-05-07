@@ -126,7 +126,7 @@ void SixRayBoundaryVariable::SetupPersistentMPI() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int SixRayBoundaryVariable::StartReceiving(}
+//! \fn void SixRayBoundaryVariable::StartReceiving(BoundaryCommSubset phase)
 //! \brief call MPI_Start for six-ray boundary
 void SixRayBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
   MeshBlock *pmb = pmy_block_;
@@ -144,7 +144,7 @@ void SixRayBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int SixRayBoundaryVariable::ClearBoundary(}
+//! \fn void SixRayBoundaryVariable::ClearBoundary(BoundaryCommSubset phase)
 //! \brief Set six-ray boundary to waiting
 void SixRayBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   for (int n=0; n<pbval_->nneighbor; n++) {
@@ -166,7 +166,8 @@ void SixRayBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int SixRayBoundaryVariable::LoadBoundaryBufferSameLevel(}
+//! \fn int SixRayBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
+//!                                                             const NeighborBlock& nb)
 //! \brief Set six-ray boundary buffers for sending to a block on the same level
 int SixRayBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
                                                         const NeighborBlock& nb) {
@@ -191,7 +192,8 @@ int SixRayBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int SixRayBoundaryVariable::SetBoundarySameLevel(}
+//! \fn void SixRayBoundaryVariable::SetBoundarySameLevel(Real *buf,
+//!                                                       const NeighborBlock& nb)
 //! \brief
 void SixRayBoundaryVariable::SetBoundarySameLevel(Real *buf, const NeighborBlock& nb) {
   std::stringstream msg;
@@ -224,7 +226,8 @@ void SixRayBoundaryVariable::SetBoundarySameLevel(Real *buf, const NeighborBlock
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int SixRayBoundaryVariable::LoadBoundaryBufferToCoarser(}
+//! \fn int SixRayBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
+//!                                                             const NeighborBlock& nb)
 //! \brief
 int SixRayBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
                                                         const NeighborBlock& nb) {
@@ -233,7 +236,8 @@ int SixRayBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int SixRayBoundaryVariable::LoadBoundaryBufferToFiner(}
+//! \fn int SixRayBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
+//!                                                           const NeighborBlock& nb)
 //! \brief
 int SixRayBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
                                                       const NeighborBlock& nb) {
@@ -242,7 +246,8 @@ int SixRayBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int SixRayBoundaryVariable::SetBoundaryFromCoarser(}
+//! \fn void SixRayBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
+//!                                                         const NeighborBlock& nb)
 //! \brief
 void SixRayBoundaryVariable::SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) {
   //mesh refinement not implemented yet
@@ -250,7 +255,8 @@ void SixRayBoundaryVariable::SetBoundaryFromCoarser(Real *buf, const NeighborBlo
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn int SixRayBoundaryVariable::SetBoundaryFromFiner(}
+//! \fn void SixRayBoundaryVariable::SetBoundaryFromFiner(Real *buf,
+//!                                                       const NeighborBlock& nb)
 //! \brief
 void SixRayBoundaryVariable::SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) {
   //mesh refinement not implemented yet
