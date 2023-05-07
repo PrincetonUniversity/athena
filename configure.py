@@ -202,7 +202,7 @@ parser.add_argument('--fftw_path',
 # --chemistry argument
 parser.add_argument('--chemistry',
                     default=None,
-                    choices=["gow17", "H2", "kida","G14Sod"],
+                    choices=["gow17", "H2", "kida", "G14Sod"],
                     help='select chemical network')
 
 # --kida_rates argument
@@ -392,10 +392,10 @@ if args['eos'][:8] == 'general/':
                          + 'General EOS is incompatible with flux ' + args['flux'])
 
 # Check chemistry
-if args['chemistry'] != None and args['ode_solver'] == None:
+if args['chemistry'] is not None and args['ode_solver'] is None:
     raise SystemExit('### CONFIGURE ERROR: must choose ode solver for chemistry.')
 
-if args['chemistry'] == 'kida' and args['kida_rates'] == None:
+if args['chemistry'] == 'kida' and args['kida_rates'] is None:
     raise SystemExit('### CONFIGURE ERROR: must provide rates for kida chemistry.')
 
 if args['ode_solver'] == 'cvode' and args['cvode_path'] == '':
@@ -636,14 +636,15 @@ if args['chemistry'] is not None:
                                         + args['chemistry'] + '.hpp'
     makefile_options['CHEMNET_FILE'] = 'src/chemistry/network/' \
         + args['chemistry'] + '.cpp'
-    makefile_options['CHEMISTRY_FILE'] = 'src/chemistry/network_wrapper.cpp src/chemistry/utils/*.cpp'
+    makefile_options['CHEMISTRY_FILE'] = \
+        'src/chemistry/network_wrapper.cpp src/chemistry/utils/*.cpp'
     # specify the number of species for each network
     if args['chemistry'] == "gow17":
         definitions['NUMBER_CHEMICAL_SPECIES'] = '12'
     elif args['chemistry'] == "H2":
         definitions['NUMBER_CHEMICAL_SPECIES'] = '2'
     elif args['chemistry'] == "G14Sod":
-        definitions['NUMBER_CHEMICAL_SPECIES'] = '8'    
+        definitions['NUMBER_CHEMICAL_SPECIES'] = '8'
 else:
     definitions['CHEMISTRY_OPTION'] = 'NOT_INCLUDE_CHEMISTRY'
     definitions['NUMBER_CHEMICAL_SPECIES'] = '0'
@@ -651,15 +652,16 @@ else:
     makefile_options['CHEMISTRY_FILE'] = ''
     definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/network.hpp'
 
-#check number of species and scalars
+# check number of species and scalars
 if definitions['NUMBER_PASSIVE_SCALARS'] == '0':
     definitions['NUMBER_PASSIVE_SCALARS'] = definitions['NUMBER_CHEMICAL_SPECIES']
-elif int(definitions['NUMBER_PASSIVE_SCALARS']) < int(definitions['NUMBER_CHEMICAL_SPECIES']):
+elif int(definitions['NUMBER_PASSIVE_SCALARS']) < int(
+                                     definitions['NUMBER_CHEMICAL_SPECIES']):
     raise SystemExit(
       '### CONFIGURE ERROR: number of passive scalars ({:s})'.format(
-          definitions['NUMBER_PASSIVE_SCALARS'])
-       + ' less than the number of chemical species ({:s})!'.format(
-          definitions['NUMBER_CHEMICAL_SPECIES']))
+        definitions['NUMBER_PASSIVE_SCALARS'])
+      + ' less than the number of chemical species ({:s})!'.format(
+        definitions['NUMBER_CHEMICAL_SPECIES']))
 
 # --kida_rates=[rates] argument
 if args['kida_rates'] is not None:

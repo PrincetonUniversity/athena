@@ -57,7 +57,7 @@ def analyze():
     err_vel = get_rel_diff("vel").max()
     if err_rho > err_control or err_vel > err_control:
         return False
-    #species
+    # species
     ns = len(species)
     err_all = np.zeros(ns+1)
     for i in np.arange(ns):

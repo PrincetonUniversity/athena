@@ -39,7 +39,6 @@ def run(**kwargs):
 def analyze():
     err_control = 1e-1
     small_ = 1e-30
-    gam1 = 1.666666666666667 - 1.
     _, _, _, data_ref = athena_read.vtk('data/chem_pdr_static.vtk')
     _, _, _, data_new = athena_read.vtk('bin/pdr_static.block0.out1.00010.vtk')
     chemistry.get_gow17_fields(data_ref)
@@ -51,7 +50,7 @@ def analyze():
         xs_new = data_new[s]
         err_s = abs(xs_ref - xs_new) / (abs(xs_ref) + small_)
         return err_s
-    #species
+    # species
     ns = len(species)
     err_all = np.zeros(ns+1)
     for i in np.arange(ns):
@@ -60,7 +59,7 @@ def analyze():
         xs_new = data_new["r"+s]
         err_all[i] = (abs(xs_ref - xs_new) / (abs(xs_ref)+small_)).max()
         print(s, err_all[i])
-    #temperature
+    # temperature
     err_all[ns] = (abs(data_ref["T"] - data_new["T"]) / (abs(data_ref["T"])+small_)).max()
     print("T", err_all[ns])
     err_max = err_all.max()
