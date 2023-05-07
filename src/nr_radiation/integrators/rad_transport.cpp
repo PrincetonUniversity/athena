@@ -423,7 +423,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
     for(int k=ks; k<=ke; ++k){
       for(int j=js; j<=je; ++j){
         for(int i=is; i<=ie; ++i){
-          for(int ifr=0; ifr<nang; ++ifr){
+          for(int ifr=0; ifr<nfreq; ++ifr){
 
             int &nzeta = prad->nzeta;
             int &npsi = prad->npsi;
